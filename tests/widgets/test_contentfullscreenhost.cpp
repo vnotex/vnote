@@ -128,7 +128,9 @@ void TestContentFullScreenHost::theWholeTabKeepsItsIdentity() {
     QTRY_VERIFY(fixture.m_find->hasFocus());
     QVERIFY(host.setFullScreen(true, page));
     QVERIFY(QTest::qWaitForWindowExposed(page));
-    QTRY_COMPARE(page->geometry(), screen->geometry());
+    // Check the native surface: offscreen can retain a stale QWidget frame offset.
+    QTRY_COMPARE(page->windowHandle()->geometry(), screen->geometry());
+    QCOMPARE(page->size(), screen->geometry().size());
     QVERIFY(page->isFullScreen());
     QVERIFY(page->isWindow());
     QVERIFY(host.isFullScreen());
@@ -154,7 +156,8 @@ void TestContentFullScreenHost::theWholeTabKeepsItsIdentity() {
     fixture.m_tabs.resize(740 + pass * 60, 520 + pass * 40);
     QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
     QCoreApplication::processEvents();
-    QCOMPARE(page->geometry(), screen->geometry());
+    QCOMPARE(page->windowHandle()->geometry(), screen->geometry());
+    QCOMPARE(page->size(), screen->geometry().size());
     QCOMPARE(fixture.m_tabs.count(), 3);
     QCOMPARE(fixture.m_tabs.indexOf(page), 1);
     QCOMPARE(fixture.m_tabs.widget(0), fixture.m_before);

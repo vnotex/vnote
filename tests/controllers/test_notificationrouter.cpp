@@ -469,7 +469,7 @@ void TestNotificationRouter::test_bufferSavedRetiresBufferIncidents() {
 QString TestNotificationRouter::buildExtraDataFixture(TempDirFixture &p_tmp) const {
   const QString root = p_tmp.createDir("extra");
   for (const char *folder :
-       {"themes", "tasks", "syntax-highlighting", "web", "dicts", "templates"}) {
+       {"themes", "tasks", "syntax-highlighting", "web", "dicts", "templates", "docs"}) {
     const QString name = QString::fromLatin1(folder);
     p_tmp.createDir(QStringLiteral("extra/") + name);
     p_tmp.createTextFile(QStringLiteral("extra/%1/marker.txt").arg(name),
@@ -484,6 +484,7 @@ void TestNotificationRouter::resetInstalledExtraData() const {
                     ConfigMgr2::ConfigDataType::Dicts, ConfigMgr2::ConfigDataType::Templates}) {
     QDir(m_configMgr->getConfigDataFolder(type)).removeRecursively();
   }
+  QDir(m_configMgr->getFileFromConfigFolder(QStringLiteral("docs"))).removeRecursively();
 }
 
 // ConfigMgr2 dumps the bundled data in main(), long before this router exists,

@@ -71,7 +71,9 @@ bool ContentFullScreenHost::setFullScreen(bool p_on, QWidget *p_content) {
   p_content->setWindowFlags((m_windowFlags & ~Qt::WindowType_Mask) | Qt::Window |
                             Qt::FramelessWindowHint);
   if (m_screen) {
-    p_content->setScreen(m_screen);
+    // QWidget::setScreen() requires Qt 6; the native window API also supports Qt 5.
+    p_content->winId();
+    p_content->windowHandle()->setScreen(m_screen);
     p_content->move(m_screen->geometry().topLeft());
   }
   p_content->setAttribute(Qt::WA_QuitOnClose, false);

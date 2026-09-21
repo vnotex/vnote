@@ -22,6 +22,9 @@
             "border" : "@palette#active#dark",
             "bg" : "@palette#active#window"
         },
+        "content" : {
+            "bg" : "@palette#active#base"
+        },
         "selected" : {
             "fg" : "@palette#active#highlighted_text",
             "bg" : "@palette#active#highlight"

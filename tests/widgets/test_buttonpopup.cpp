@@ -2,6 +2,7 @@
 
 #include <QScreen>
 #include <QToolButton>
+#include <QWindow>
 
 #include <widgets/buttonpopup.h>
 
@@ -42,16 +43,18 @@ void TestButtonPopup::editorPopupStaysAnchoredAtScreenEdges() {
   for (int pass = 0; pass < 3; ++pass) {
     popup.popup(anchor);
     QVERIFY(QTest::qWaitForWindowExposed(&popup));
-    QVERIFY(available.contains(popup.geometry()));
+    const auto geometry = popup.windowHandle()->geometry();
+    QVERIFY(available.contains(geometry));
     if (rightEdge) {
-      QCOMPARE(popup.geometry().right(), button.mapToGlobal(QPoint(button.width(), 0)).x() - 1);
+      QCOMPARE(geometry.right(), button.mapToGlobal(QPoint(button.width(), 0)).x() - 1);
     } else {
-      QCOMPARE(popup.x(), available.left());
+      // QMenu omits platform frame margins from QWidget::frameGeometry().
+      QCOMPARE(popup.windowHandle()->frameGeometry().left(), available.left());
     }
     if (pass == 0) {
-      firstPosition = popup.pos();
+      firstPosition = geometry.topLeft();
     } else {
-      QCOMPARE(popup.pos(), firstPosition);
+      QCOMPARE(geometry.topLeft(), firstPosition);
     }
     popup.hide();
   }
@@ -80,9 +83,20 @@ void TestButtonPopup::nativeAndHiddenButtonsKeepQtPlacement() {
 
   // A requested point away from the button models Qt placing an overflow submenu.
   const auto requested = available.center();
+  // Native placement need not equal the requested point (notably on macOS).
+  QMenu nativeMenu(&window);
+  nativeMenu.setWindowFlags(popup.windowFlags());
+  nativeMenu.setWindowModality(popup.windowModality());
+  nativeMenu.addAction(QStringLiteral("Entry"));
+  nativeMenu.setFixedSize(popup.size());
+  nativeMenu.popup(requested);
+  QVERIFY(QTest::qWaitForWindowExposed(&nativeMenu));
+  const auto nativePosition = nativeMenu.pos();
+  nativeMenu.hide();
+
   popup.popup(requested);
   QVERIFY(QTest::qWaitForWindowExposed(&popup));
-  QCOMPARE(popup.pos(), requested);
+  QCOMPARE(popup.pos(), nativePosition);
 }
 } // namespace tests
 

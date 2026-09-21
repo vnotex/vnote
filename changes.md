@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Restore Qt 5 presentation-mode builds, supply Native theme presentation backgrounds, and fix cross-platform CI fixtures and window-geometry checks
 * Restore the bundled Markdown Guide and Shortcuts Help in English and Simplified Chinese, available read-only from the Settings menu with English fallback; refresh the keyboard reference against active bindings
 * Preserve read-only buffers, including View Logs, when recovering visible or hidden workspaces after restart
 * Use a pen-off icon for read-only note tabs and notebook badges to distinguish them from encrypted notes

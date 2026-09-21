@@ -436,7 +436,7 @@ void MarkdownViewWindow2::requestPresentationWhenReady() {
   m_presentationRequestSent = true;
   const auto *theme = getServices().get<ThemeService>();
   QColor background(theme->optionalPaletteColor(
-      QStringLiteral("base#content#bg"))); // palette-token-optional: Native uses system Base
+      QStringLiteral("base#content#bg"))); // palette-token-optional: custom themes may omit this
   if (!background.isValid()) {
     background = theme->getBaseBackground();
   }

@@ -140,7 +140,7 @@ void TestTaskService::testAppTaskLoading() {
   QTemporaryDir bundle;
   QVERIFY(bundle.isValid());
   for (const auto *folder :
-       {"themes", "tasks", "syntax-highlighting", "web", "dicts", "templates"}) {
+       {"themes", "tasks", "syntax-highlighting", "web", "dicts", "templates", "docs"}) {
     QVERIFY(QDir(bundle.path()).mkpath(QLatin1String(folder)));
   }
   QVERIFY(!writeTask(bundle.path() + QStringLiteral("/tasks"), QStringLiteral("ut_app_task.json"),
