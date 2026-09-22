@@ -3,6 +3,7 @@
 
 #include <QApplication>
 #include <QByteArray>
+#include <QDate>
 #include <QDebug>
 #include <QDir>
 #include <QGuiApplication>
@@ -673,8 +674,11 @@ int main(int argc, char *argv[]) {
                          [&pendingShow]() { pendingShow = true; });
 
     // Use embedded artwork: bundled data and the theme are not ready yet.
-    std::unique_ptr<QSplashScreen> splash(new QSplashScreen(
-        QIcon(QStringLiteral(":/vnotex/data/core/logo/vnote.svg")).pixmap(256, 256)));
+    const auto today = QDate::currentDate();
+    const auto splashLogo = today.year() == 2026 && today.month() == 10
+                                ? QStringLiteral(":/vnotex/data/core/logo/vnote_10th.png")
+                                : QStringLiteral(":/vnotex/data/core/logo/vnote.svg");
+    std::unique_ptr<QSplashScreen> splash(new QSplashScreen(QIcon(splashLogo).pixmap(256, 256)));
     splash->setAttribute(Qt::WA_TranslucentBackground);
     splash->show();
     app.processEvents();
