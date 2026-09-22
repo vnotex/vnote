@@ -3,7 +3,8 @@ class MathRenderer extends VxWorker {
         super();
         this.name = 'math';
         this.scriptFolderPath = Utils.parentFolder(document.currentScript.src);
-        this.renderer = window.vxOptions.mathRenderer === 'mathjax' ? 'mathjax' : 'katex';
+        this.renderer = !window.vxOptions.protectedView
+            && window.vxOptions.mathRenderer === 'mathjax' ? 'mathjax' : 'katex';
         this.initialization = null;
         this.rasterInitialization = null;
         this.langs = ['mathjax'];
@@ -83,6 +84,11 @@ class MathRenderer extends VxWorker {
                         }
                     });
                 });
+                if (window.vxOptions.protectedView) {
+                    // The protected template loads the bundled stylesheet before window.load.
+                    // Do not use XHR: its CSP deliberately keeps connect-src at 'none'.
+                    return script;
+                }
                 const stylesheet = new Promise((resolve, reject) => {
                     const url = base + 'katex.min.css';
                     Utils.httpGet(url, 'text', (css) => {
@@ -120,12 +126,6 @@ class MathRenderer extends VxWorker {
             this.transformExtraNodes(p_node, p_className, extraNodes);
             const nodes = Array.from(p_node.getElementsByClassName(p_className));
             if (!nodes.length) {
-                return;
-            }
-            if (window.vxOptions.protectedView) {
-                for (const node of nodes) {
-                    node.textContent = '[Math preview blocked in protected notes]';
-                }
                 return;
             }
             return this.initialize().then(() => {

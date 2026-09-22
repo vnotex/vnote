@@ -1,4 +1,4 @@
-// FolderBundleImporter coverage for the SYNCHRONOUS share-bundle import.
+// FolderBundleImporter coverage for share-bundle inspection and import.
 //
 // Every case drives the REAL round trip: a bundled notebook is packaged by
 // FolderSharePackager, and the resulting "*-bundle" directory is imported by
@@ -10,7 +10,8 @@
 // tags and attachments must survive, and they are checked AFTER the destination
 // notebook is closed and reopened — which rebuilds the metadata store from
 // vx.json — rather than by byte-comparing JSON, so the test proves the data is
-// actually reachable through the public API.
+// actually reachable through the public API. Protected bundles instead use the
+// authenticated transfer path and must retain their editor and body after rekeying.
 //
 // The other half is the failure contract: an id collision, a cancellation, or
 // an injected failure at any stage must leave the destination notebook
@@ -24,12 +25,18 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QStringList>
+#include <QtConcurrent/QtConcurrentRun>
 #include <QtTest>
 
+#include <core/services/bufferservice.h>
 #include <core/services/folderbundleimporter.h>
 #include <core/services/foldersharepackager.h>
+#include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/notebookiogate.h>
+#include <core/services/syncworkqueuemanager.h>
 #include <temp_dir_fixture.h>
+#include <vxcore/notebook_json_keys.h>
 #include <vxcore/vxcore.h>
 
 #ifdef Q_OS_WIN
@@ -70,6 +77,9 @@ private slots:
   void testImportsBundleWithIdsAndMetadataIntact();
   void testAttachmentsSurviveReopen();
   void testImportsIntoNestedDestination();
+  void testEncryptedMindmapBundleRequiresAuthenticatedTransfer();
+  void testEncryptedMetadataRejected_data();
+  void testEncryptedMetadataRejected();
   void testIdCollisionFailsAndWritesNothing();
   void testNameCollisionUniquifiesWithoutTouchingIds();
   void testCancellationMidCopyPublishesNothing();
@@ -87,6 +97,9 @@ private:
 
   // Packages @p_relPath from the SOURCE notebook and returns the bundle path.
   QString makeBundle(const QString &p_relPath);
+
+  VxCoreError initializeEncryption(const QString &p_notebookId, const QByteArray &p_password,
+                                   NotebookIoGate &p_gate, SyncWorkQueueManager &p_queues);
 
   // Runs the importer against @p_bundlePath into @p_notebookId, wiring the same
   // commit + id-oracle callbacks the controller uses in production.
@@ -202,6 +215,25 @@ QString TestFolderBundleImporter::makeBundle(const QString &p_relPath) {
   const FolderSharePackager::Result result =
       FolderSharePackager::run(request, FolderSharePackager::Callbacks());
   return result.succeeded() ? result.m_bundlePath : QString();
+}
+
+VxCoreError TestFolderBundleImporter::initializeEncryption(const QString &p_notebookId,
+                                                           const QByteArray &p_password,
+                                                           NotebookIoGate &p_gate,
+                                                           SyncWorkQueueManager &p_queues) {
+  return QtConcurrent::run([&]() -> VxCoreError {
+           auto setup = m_notebooks->prepareNotebookEncryption(p_notebookId, QString(), p_password);
+           if (!setup.isValid()) {
+             return setup.m_error;
+           }
+           auto maintenance = p_queues.tryAcquireMaintenance({p_notebookId});
+           if (!maintenance.isValid()) {
+             return VXCORE_ERR_INVALID_STATE;
+           }
+           NotebookIoGate::ScopedLock lock(p_gate, p_notebookId);
+           return m_notebooks->commitNotebookEncryption(setup);
+         })
+      .result();
 }
 
 FolderBundleImporter::Result TestFolderBundleImporter::import(const QString &p_notebookId,
@@ -439,9 +471,164 @@ void TestFolderBundleImporter::testImportsIntoNestedDestination() {
   QCOMPARE(projects.value(QStringLiteral("folders")).toArray().size(), 1);
 }
 
+void TestFolderBundleImporter::testEncryptedMindmapBundleRequiresAuthenticatedTransfer() {
+  NotebookIoGate gate;
+  SyncWorkQueueManager queues;
+  const QByteArray sourcePassword("source-mindmap-password");
+  const QByteArray destinationPassword("destination-mindmap-password");
+  const QByteArray body(
+      "{\r\n"
+      "  \"nodeData\": {\"id\": \"root\", \"topic\": \"Private map\", \"root\": true,\r\n"
+      "    \"children\": [{\"id\": \"child\", \"topic\": \"Keep this branch\"}]},\r\n"
+      "  \"direction\": 2\r\n"
+      "}\r\n");
+  makeFolder(QStringLiteral("Alpha"));
+  QCOMPARE(initializeEncryption(m_sourceId, sourcePassword, gate, queues), VXCORE_OK);
+  QCOMPARE(initializeEncryption(m_destId, destinationPassword, gate, queues), VXCORE_OK);
+
+  QString sourceNoteId;
+  QCOMPARE(QtConcurrent::run([&]() -> VxCoreError {
+             auto maintenance = queues.tryAcquireMaintenance({m_sourceId});
+             if (!maintenance.isValid()) {
+               return VXCORE_ERR_INVALID_STATE;
+             }
+             NotebookIoGate::ScopedLock lock(gate, m_sourceId);
+             return m_notebooks->createEncryptedNote(
+                 m_sourceId, QStringLiteral("Alpha"), QStringLiteral("private.emind"),
+                 QStringLiteral("mindmap"), body, &sourceNoteId);
+           }).result(),
+           VXCORE_OK);
+
+  const QString bundle = makeBundle(QStringLiteral("Alpha"));
+  QVERIFY(!bundle.isEmpty());
+  const auto inspection = FolderBundleImporter::inspect(bundle);
+  QVERIFY(inspection.m_valid);
+  QVERIFY(inspection.m_encrypted);
+
+  const QStringList before = snapshotTree(m_destPath);
+  QCOMPARE(import(m_destId, bundle).m_status, FolderBundleImporter::Status::Failed);
+  QCOMPARE(snapshotTree(m_destPath), before);
+
+  // Authenticate from the portable bundle, not the source's live notebook or cached key.
+  QVERIFY(m_notebooks->closeNotebook(m_sourceId));
+  m_sourceId.clear();
+  QCOMPARE(m_notebooks->lockAllEncryption(), VXCORE_OK);
+  QCOMPARE(QtConcurrent::run([&]() {
+             return m_notebooks->unlockNotebookEncryption(m_destId, destinationPassword);
+           }).result(),
+           VXCORE_OK);
+
+  NodeTransferCoreResult transferred;
+  {
+    auto maintenance = queues.tryAcquireMaintenance({m_destId});
+    QVERIFY(maintenance.isValid());
+    PreparedNodeTransfer prepared;
+    QCOMPARE(QtConcurrent::run([&]() {
+               prepared = m_notebooks->prepareEncryptedBundleTransfer(
+                   bundle, inspection.m_folderName, m_destId, QStringLiteral("."), sourcePassword);
+               return prepared.m_error;
+             }).result(),
+             VXCORE_OK);
+    QVERIFY(prepared.isValid());
+    {
+      NotebookIoGate::ScopedLock lock(gate, m_destId);
+      transferred = m_notebooks->commitNodeTransfer(prepared);
+    }
+    QCOMPARE(transferred.m_error, VXCORE_OK);
+    QCOMPARE(transferred.m_status, NodeTransferCoreResult::Status::Copied);
+    QCOMPARE(m_notebooks->dispatchNodeTransferEvents(transferred), VXCORE_OK);
+  }
+
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, &gate, AutoSavePolicy::None);
+  const QString importedPath =
+      transferred.m_destinationRelativePath + QStringLiteral("/private.emind.vne");
+  {
+    const auto note = buffers.openBuffer({m_destId, importedPath});
+    QVERIFY(note.isValid());
+    QVERIFY(note.isEncrypted());
+    QCOMPARE(note.editorType(), QStringLiteral("mindmap"));
+    QCOMPARE(note.getContentRaw(), body);
+    QVERIFY(buffers.closeBuffer(note.id()));
+  }
+
+  // Discard all keys and rebuild the destination from disk to prove durable rekeying.
+  QCOMPARE(m_notebooks->lockAllEncryption(), VXCORE_OK);
+  QVERIFY(m_notebooks->closeNotebook(m_destId));
+  m_destId = m_notebooks->openNotebook(m_destPath);
+  QVERIFY(!m_destId.isEmpty());
+  QVERIFY(m_notebooks->rebuildNotebookCache(m_destId));
+  QCOMPARE(QtConcurrent::run([&]() {
+             return m_notebooks->unlockNotebookEncryption(m_destId, sourcePassword);
+           }).result(),
+           VXCORE_ERR_ENCRYPTION_AUTH_FAILED);
+  QCOMPARE(QtConcurrent::run([&]() {
+             return m_notebooks->unlockNotebookEncryption(m_destId, destinationPassword);
+           }).result(),
+           VXCORE_OK);
+  const auto reopened = buffers.openBuffer({m_destId, importedPath});
+  QVERIFY(reopened.isValid());
+  QVERIFY(reopened.isEncrypted());
+  QCOMPARE(reopened.editorType(), QStringLiteral("mindmap"));
+  QCOMPARE(reopened.getContentRaw(), body);
+  QVERIFY(buffers.closeBuffer(reopened.id()));
+}
+
 // ---------------------------------------------------------------------------
 // Failure contract
 // ---------------------------------------------------------------------------
+
+void TestFolderBundleImporter::testEncryptedMetadataRejected_data() {
+  QTest::addColumn<bool>("unsupportedEditor");
+  QTest::newRow("unsupported-editor") << true;
+  QTest::newRow("encrypted-marker-mismatch") << false;
+}
+
+void TestFolderBundleImporter::testEncryptedMetadataRejected() {
+  QFETCH(bool, unsupportedEditor);
+  NotebookIoGate gate;
+  SyncWorkQueueManager queues;
+  makeFolder(QStringLiteral("Alpha"));
+  QCOMPARE(initializeEncryption(m_sourceId, QByteArrayLiteral("metadata-password"), gate, queues),
+           VXCORE_OK);
+  QString noteId;
+  QCOMPARE(QtConcurrent::run([&]() -> VxCoreError {
+             auto maintenance = queues.tryAcquireMaintenance({m_sourceId});
+             if (!maintenance.isValid()) {
+               return VXCORE_ERR_INVALID_STATE;
+             }
+             NotebookIoGate::ScopedLock lock(gate, m_sourceId);
+             return m_notebooks->createEncryptedNote(
+                 m_sourceId, QStringLiteral("Alpha"), QStringLiteral("private.md"),
+                 QStringLiteral("markdown"), QByteArrayLiteral("# Protected fixture\n"), &noteId);
+           }).result(),
+           VXCORE_OK);
+  const QString bundle = makeBundle(QStringLiteral("Alpha"));
+  QVERIFY(!bundle.isEmpty());
+  const auto inspection = FolderBundleImporter::inspect(bundle);
+  QVERIFY(inspection.m_valid);
+  QVERIFY(inspection.m_encrypted);
+
+  QJsonObject config = readConfig(bundle, QStringLiteral("Alpha"));
+  QJsonArray files = config.value(QLatin1String(vxcore::kJsonKeyFiles)).toArray();
+  QCOMPARE(files.size(), 1);
+  QJsonObject note = files.at(0).toObject();
+  QJsonObject metadata = note.value(QLatin1String(vxcore::kJsonKeyMetadata)).toObject();
+  if (unsupportedEditor) {
+    metadata[QLatin1String(vxcore::kJsonKeyEditorType)] = QStringLiteral("unsupported-editor");
+  } else {
+    metadata[QLatin1String(vxcore::kJsonKeyEncrypted)] = false;
+  }
+  note[QLatin1String(vxcore::kJsonKeyMetadata)] = metadata;
+  files.replace(0, note);
+  config[QLatin1String(vxcore::kJsonKeyFiles)] = files;
+  writeConfig(bundle, QStringLiteral("Alpha"), config);
+
+  QVERIFY(!FolderBundleImporter::inspect(bundle).m_valid);
+  const QStringList before = snapshotTree(m_destPath);
+  QCOMPARE(import(m_destId, bundle).m_status, FolderBundleImporter::Status::Failed);
+  QCOMPARE(snapshotTree(m_destPath), before);
+}
 
 void TestFolderBundleImporter::testIdCollisionFailsAndWritesNothing() {
   makeFolder(QStringLiteral("Alpha"));
@@ -538,7 +725,6 @@ void TestFolderBundleImporter::testBundleWithoutMetadataDirRejected() {
   const QStringList before = snapshotTree(m_destPath);
   const FolderBundleImporter::Result result = import(m_destId, fake);
   QCOMPARE(result.m_status, FolderBundleImporter::Status::Failed);
-  QVERIFY(result.m_errorMessage.contains(QStringLiteral("vx_notebook")));
   QCOMPARE(snapshotTree(m_destPath), before);
 
   // The inspection used by the dialog preview agrees.

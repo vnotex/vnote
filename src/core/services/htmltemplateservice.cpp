@@ -465,6 +465,7 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
                          QStringLiteral("web/js/markjs.js")};
   scripts += c_presentationScripts;
   const QStringList lazyScripts = {QStringLiteral("web/js/prism/prism.min.js"),
+                                   QStringLiteral("web/js/katex/katex.min.js"),
                                    QStringLiteral("web/js/mermaid/mermaid.min.js"),
                                    QStringLiteral("web/js/wavedrom/theme-default.js"),
                                    QStringLiteral("web/js/wavedrom/wavedrom.min.js"),
@@ -475,6 +476,7 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
       QStringLiteral("themes/pure/highlight.css"), QStringLiteral("web/css/imageviewer.css"),
       QStringLiteral("web/css/markdownit.css"),    QStringLiteral("web/css/codeblockactions.css")};
   styles += c_presentationStyles;
+  styles.append(QStringLiteral("web/js/katex/katex.min.css"));
   QHash<QString, QByteArray> resources;
   for (const auto &path : scripts + lazyScripts + styles) {
     auto bytes = readBundled(path);
@@ -488,6 +490,30 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
                     "    scriptNode.nonce = document.currentScript.nonce;");
     }
     resources.insert(QStringLiteral("/app/") + path, bytes);
+  }
+
+  // Keep fonts inside the same shipped-resource allowlist as the KaTeX runtime.
+  const QStringList mathFonts = {
+      QStringLiteral("AMS-Regular"),         QStringLiteral("Caligraphic-Bold"),
+      QStringLiteral("Caligraphic-Regular"), QStringLiteral("Fraktur-Bold"),
+      QStringLiteral("Fraktur-Regular"),     QStringLiteral("Main-Bold"),
+      QStringLiteral("Main-BoldItalic"),     QStringLiteral("Main-Italic"),
+      QStringLiteral("Main-Regular"),        QStringLiteral("Math-BoldItalic"),
+      QStringLiteral("Math-Italic"),         QStringLiteral("SansSerif-Bold"),
+      QStringLiteral("SansSerif-Italic"),    QStringLiteral("SansSerif-Regular"),
+      QStringLiteral("Script-Regular"),      QStringLiteral("Size1-Regular"),
+      QStringLiteral("Size2-Regular"),       QStringLiteral("Size3-Regular"),
+      QStringLiteral("Size4-Regular"),       QStringLiteral("Typewriter-Regular")};
+  for (const auto &font : mathFonts) {
+    for (const auto &format :
+         {QStringLiteral("woff2"), QStringLiteral("woff"), QStringLiteral("ttf")}) {
+      const auto path = QStringLiteral("web/js/katex/fonts/KaTeX_%1.%2").arg(font, format);
+      const auto bytes = readBundled(path);
+      if (bytes.isEmpty()) {
+        return QString();
+      }
+      resources.insert(QStringLiteral("/app/") + path, bytes);
+    }
   }
 
   QJsonArray scriptUrls;
@@ -535,6 +561,7 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
   }
 
   MarkdownWebGlobalOptions options;
+  options.m_mathRenderer = QStringLiteral("katex");
   options.m_webPlantUml = false;
   options.m_webGraphviz = true;
   options.m_protectFromXss = true;

@@ -816,6 +816,9 @@ context-owned prepare/commit/free key setup protocol: prepare and unlock perform
 hashing on a worker **outside** `NotebookIoGate`; commit consumes the prepared handle under
 the notebook maintenance lease and IO gate. Never replace an existing or corrupt key file
 as a recovery shortcut. Password bytes are not trimmed and must not enter logs or hooks.
+Shared-bundle validation accepts the same three protected editor types. Import encrypted
+bundles through authenticated transfer into an unlocked destination vault, never through
+the plaintext `FolderBundleImporter::run()` path.
 
 `BufferService` maintains a lazy, protected-only roster and operation leases. Ordinary
 open/save/resource paths use their cached mode and must not query encryption status, read
@@ -841,6 +844,10 @@ HTML and automatic network loads remain blocked in protected Markdown previews. 
 editors use an unnamed memory-only profile with local storage disabled. Never materialize
 a plaintext temporary note body for an external viewer or exporter. Exporting and
 printing encrypted note bodies are unsupported.
+Protected reading/live previews always use bundled KaTeX with `trust: false`, its stylesheet
+and scoped font resources, regardless of the ordinary math renderer setting. Load that
+stylesheet from the protected template, not XHR; keep the CSP and request allowlist intact.
+In-place math previews remain blocked because their HTML rasterization is not permitted.
 
 Conversion runs through the existing maintenance/IO-gate ordering and changes only the
 note and its encrypted backup. It leaves all asset bytes and metadata unchanged. Protection is

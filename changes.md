@@ -1,5 +1,7 @@
 # Changes
 ## Unreleased
+* Fix shared-folder bundle import rejecting encrypted mind-map notes; preserve authenticated transfer and destination-key protection
+* Enable bundled KaTeX for reading and live previews in encrypted Markdown notes without network access; in-place math previews remain blocked
 * Dispatch inline and display math previews in document order instead of grouping inline formulas first
 * Add an Editor setting for the default clipboard image file format: JPEG (default) or PNG with transparency; Markdown respects it without changing original file/URL formats or lossless Base64 insertion
 * Restore Qt 5 presentation-mode builds, supply Native theme presentation backgrounds, and fix cross-platform CI fixtures and window-geometry checks

@@ -337,7 +337,8 @@ bool collectBundleIds(const QString &p_metadataDir, QStringList *p_outIds, int *
                             .endsWith(QLatin1String(".vne"), Qt::CaseInsensitive);
     const auto editor = metadata.value(QLatin1String(vxcore::kJsonKeyEditorType)).toString();
     if ((!marker.isUndefined() && !marker.isBool()) || encrypted != suffix ||
-        (encrypted && editor != QLatin1String("markdown") && editor != QLatin1String("text"))) {
+        (encrypted && editor != QLatin1String("markdown") && editor != QLatin1String("text") &&
+         editor != QLatin1String("mindmap"))) {
       *p_error = QObject::tr("The protected note metadata is inconsistent.");
       return false;
     }

@@ -236,6 +236,11 @@ if(QT_DEFAULT_MAJOR_VERSION GREATER 5 AND Qt6_VERSION VERSION_GREATER_EQUAL 6.9.
   target_include_directories(test_webengineprofileservice PRIVATE
     ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
   )
+  add_dependencies(test_webengineprofileservice VX_EXTRA_RESOURCE)
+  get_target_property(_profile_resource_dir VX_EXTRA_RESOURCE BINARY_DIR)
+  target_compile_definitions(test_webengineprofileservice PRIVATE
+    VNOTE_TEST_EXTRA_RCC="${_profile_resource_dir}/vnote_extra.rcc"
+  )
   add_custom_command(TARGET test_webengineprofileservice POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
       $<TARGET_FILE:VTextEdit>
