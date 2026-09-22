@@ -430,6 +430,17 @@ void NotebookNodeController::addEditActions(QMenu *p_menu, const NodeIdentifier 
         encryptAction->setEnabled(!p_readOnly);
       }
 
+      const NodeInfo info = getNodeInfo(p_nodeId);
+      if (info.isValid() && !info.isFolder && !info.isExternal && !info.isMissing &&
+          (info.isEncrypted ||
+           p_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive))) {
+        auto *decryptAction = p_menu->addAction(tr("Decrypt"));
+        decryptAction->setObjectName(QStringLiteral("decryptNote"));
+        connect(decryptAction, &QAction::triggered, this,
+                [this, p_nodeId]() { decryptNote(resolveSelection(p_nodeId)); });
+        decryptAction->setEnabled(!p_readOnly && !isSelectionReadOnly(resolveSelection(p_nodeId)));
+      }
+
       auto *pinAction = p_menu->addAction(tr("Pin to &Quick Access"));
       connect(pinAction, &QAction::triggered, this,
               [this, p_nodeId]() { pinNodesToQuickAccess(resolveSelection(p_nodeId)); });
@@ -2011,4 +2022,20 @@ void NotebookNodeController::encryptNote(const QList<NodeIdentifier> &p_ids) {
     }
   }
   emit encryptNoteRequested(p_ids);
+}
+
+void NotebookNodeController::decryptNote(const QList<NodeIdentifier> &p_ids) {
+  if (p_ids.isEmpty() || isSelectionReadOnly(p_ids)) {
+    return;
+  }
+  for (const auto &id : p_ids) {
+    const NodeInfo info = getNodeInfo(id);
+    if (!info.isValid() || info.isFolder || info.isExternal || info.isMissing ||
+        !isNotebookBundled(id.notebookId) ||
+        (!info.isEncrypted &&
+         !id.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive))) {
+      return;
+    }
+  }
+  emit decryptNoteRequested(p_ids);
 }

@@ -115,6 +115,15 @@ void NotebookExplorer2::setViewAreaController(ViewAreaController *p_controller) 
 }
 
 void NotebookExplorer2::encryptNote(const QList<NodeIdentifier> &p_ids) {
+  convertNoteEncryption(p_ids, true);
+}
+
+void NotebookExplorer2::decryptNote(const QList<NodeIdentifier> &p_ids) {
+  convertNoteEncryption(p_ids, false);
+}
+
+void NotebookExplorer2::convertNoteEncryption(const QList<NodeIdentifier> &p_ids, bool p_encrypt) {
+  const QString title = p_encrypt ? tr("Encrypt Note") : tr("Decrypt Note");
   if (p_ids.isEmpty() || m_noteEncryptionActive || m_nodeTransferActive || m_folderShareActive ||
       !m_viewAreaController || !m_nodeExplorer) {
     return;
@@ -126,25 +135,28 @@ void NotebookExplorer2::encryptNote(const QList<NodeIdentifier> &p_ids) {
   const QString notebookId = p_ids.first().notebookId;
   for (const auto &id : p_ids) {
     if (id.notebookId != notebookId) {
-      onErrorOccurred(tr("Encrypt Note"), tr("Select notes from one notebook at a time."));
+      onErrorOccurred(title, tr("Select notes from one notebook at a time."));
       return;
     }
   }
   if (m_viewAreaController->isNoteConversionBlocked()) {
-    onErrorOccurred(tr("Encrypt Note"),
-                    tr("A note encryption transaction needs recovery. Restart VNote first."));
+    onErrorOccurred(title,
+                    tr("Note conversion needs recovery. Restart VNote before editing or syncing."));
     return;
   }
   auto *buffers = m_services.get<BufferService>();
   if (!buffers || !buffers->beginProtectedOperation()) {
-    onErrorOccurred(tr("Encrypt Note"), tr("Note encryption is currently locking."));
+    onErrorOccurred(title, tr("Note encryption is currently locking."));
     return;
   }
   const auto operation = qScopeGuard([&]() { buffers->endProtectedOperation(); });
   const QScopedValueRollback<bool> active(m_noteEncryptionActive, true);
-  QProgressDialog progress(tr("Preparing note encryption..."), QString(), 0, 0, nullptr);
-  progress.setWindowTitle(tr("Encrypt Note"));
-  progress.setObjectName(QStringLiteral("noteEncryptionProgress"));
+  QProgressDialog progress(p_encrypt ? tr("Preparing note encryption...")
+                                     : tr("Preparing note decryption..."),
+                           QString(), 0, 0, nullptr);
+  progress.setWindowTitle(title);
+  progress.setObjectName(p_encrypt ? QStringLiteral("noteEncryptionProgress")
+                                   : QStringLiteral("noteDecryptionProgress"));
   progress.setWindowModality(Qt::ApplicationModal);
   progress.setWindowFlags(Qt::Dialog | Qt::CustomizeWindowHint | Qt::WindowTitleHint);
   progress.setCancelButton(nullptr);
@@ -154,12 +166,12 @@ void NotebookExplorer2::encryptNote(const QList<NodeIdentifier> &p_ids) {
   progress.show();
 
   const auto showError = [&](const QString &p_message) {
-    QMessageBox::warning(&progress, tr("Encrypt Note"), p_message);
+    QMessageBox::warning(&progress, title, p_message);
   };
   PreparedNotebookEncryption setup;
   QString errorMessage;
   const auto preparationError =
-      prepareNotebookEncryption(notebookId, setup, progress, errorMessage);
+      prepareNotebookEncryption(notebookId, setup, progress, errorMessage, p_encrypt);
   if (preparationError != VXCORE_OK) {
     if (preparationError != VXCORE_ERR_CANCELLED) {
       showError(errorMessage);
@@ -175,7 +187,7 @@ void NotebookExplorer2::encryptNote(const QList<NodeIdentifier> &p_ids) {
     }
     seen.insert(id);
     progress.setLabelText(tr("Preparing \"%1\"...").arg(id.relativePath));
-    auto conversion = m_viewAreaController->prepareNoteConversion(id);
+    auto conversion = m_viewAreaController->prepareNoteConversion(id, p_encrypt);
     conversions.append(conversion);
     if (conversion->m_error != VXCORE_OK) {
       for (const auto &pending : conversions) {
@@ -186,18 +198,27 @@ void NotebookExplorer2::encryptNote(const QList<NodeIdentifier> &p_ids) {
     }
   }
   QMessageBox confirmation(
-      QMessageBox::Warning, tr("Encrypt Note"),
-      tr("Encrypt the contents of %n selected note(s)?", "", conversions.size()),
+      QMessageBox::Warning, title,
+      p_encrypt
+          ? tr("Encrypt the contents of %n selected note(s)?", "", conversions.size())
+          : tr("Convert %n selected encrypted note(s) to normal notes?", "", conversions.size()),
       QMessageBox::Ok | QMessageBox::Cancel, &progress);
-  confirmation.setObjectName(QStringLiteral("noteEncryptionConfirmation"));
-  QString warning =
-      tr("Prior Git history, cloud versions and backup copies are not erased. "
-         "Filenames, folders and tags remain visible. Encryption is not secure deletion.");
-  warning += tr("\n\nImages and attachments stored as separate files are NOT encrypted. "
-                "Comments also remain unencrypted. To include an image in an encrypted "
-                "Markdown note, use Insert as Base64.");
+  confirmation.setObjectName(p_encrypt ? QStringLiteral("noteEncryptionConfirmation")
+                                       : QStringLiteral("noteDecryptionConfirmation"));
+  QString warning;
+  if (p_encrypt) {
+    warning = tr("Prior Git history, cloud versions and backup copies are not erased. "
+                 "Filenames, folders and tags remain visible. Encryption is not secure deletion.");
+    warning += tr("\n\nImages and attachments stored as separate files are NOT encrypted. "
+                  "Comments also remain unencrypted. To include an image in an encrypted "
+                  "Markdown note, use Insert as Base64.");
+  } else {
+    warning = tr("The note contents, including embedded Base64 images, will be stored unencrypted. "
+                 "Future syncs and backups may contain plaintext. Separate images, attachments "
+                 "and comments are unchanged. Existing history and backup copies are not erased.");
+  }
   confirmation.setInformativeText(warning);
-  confirmation.button(QMessageBox::Ok)->setText(tr("Encrypt"));
+  confirmation.button(QMessageBox::Ok)->setText(p_encrypt ? tr("Encrypt") : tr("Decrypt"));
   confirmation.setDefaultButton(QMessageBox::Cancel);
   confirmation.setEscapeButton(QMessageBox::Cancel);
   if (confirmation.exec() != QMessageBox::Ok) {
@@ -208,16 +229,17 @@ void NotebookExplorer2::encryptNote(const QList<NodeIdentifier> &p_ids) {
   }
   QStringList errors;
   for (const auto &conversion : conversions) {
-    progress.setLabelText(tr("Encrypting \"%1\"...").arg(conversion->m_nodeId.relativePath));
-    const auto error =
-        m_viewAreaController->applyNoteConversion(conversion, setup.isValid() ? &setup : nullptr);
+    progress.setLabelText((p_encrypt ? tr("Encrypting \"%1\"...") : tr("Decrypting \"%1\"..."))
+                              .arg(conversion->m_nodeId.relativePath));
+    const auto error = m_viewAreaController->applyNoteConversion(
+        conversion, p_encrypt && setup.isValid() ? &setup : nullptr);
     if (error != VXCORE_OK) {
       errors.append(
           tr("%1: %2").arg(conversion->m_nodeId.relativePath, conversion->m_errorMessage));
       break;
     }
     m_nodeExplorer->reloadNode({notebookId, conversion->m_nodeId.parentPath()});
-    m_nodeExplorer->selectNode({notebookId, conversion->m_encryptedPath});
+    m_nodeExplorer->selectNode({notebookId, conversion->m_targetPath});
   }
   for (const auto &pending : conversions) {
     m_viewAreaController->cancelNoteConversion(pending);
@@ -230,7 +252,8 @@ void NotebookExplorer2::encryptNote(const QList<NodeIdentifier> &p_ids) {
 VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebookId,
                                                          PreparedNotebookEncryption &p_setup,
                                                          QProgressDialog &p_progress,
-                                                         QString &p_errorMessage) {
+                                                         QString &p_errorMessage,
+                                                         bool p_allowSetup) {
   p_errorMessage.clear();
   auto *notebooks = m_services.get<NotebookCoreService>();
   if (!notebooks || !m_viewAreaController) {
@@ -263,7 +286,7 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
           QLatin1Char('\n') + tr("Master-password source notebook: %1").arg(location(p_sourceId));
     }
     p_errorMessage =
-        tr("Could not prepare note encryption.\n\nNotebook: %1\n\n%2").arg(notebook, message);
+        tr("Could not prepare note conversion.\n\nNotebook: %1\n\n%2").arg(notebook, message);
     return p_error;
   };
   const auto unlock = [&](const QString &p_id, const QString &p_name) {
@@ -297,6 +320,10 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
                              .value(QLatin1String(vxcore::kJsonKeyName))
                              .toString();
     return unlock(p_notebookId, name);
+  }
+  if (!p_allowSetup) {
+    return fail(VXCORE_ERR_ENCRYPTION_FORMAT,
+                tr("The notebook encryption key is missing. Restore it before decrypting notes."));
   }
 
   struct Source {
@@ -439,7 +466,7 @@ NewNoteResult NotebookExplorer2::createEncryptedNote(const NewNoteInput &p_input
 
   PreparedNotebookEncryption setup;
   const auto error =
-      prepareNotebookEncryption(p_input.notebookId, setup, progress, result.errorMessage);
+      prepareNotebookEncryption(p_input.notebookId, setup, progress, result.errorMessage, true);
   if (error != VXCORE_OK) {
     return result;
   }
@@ -1141,6 +1168,8 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::onMarkRequested);
   connect(explorer, &CombinedNodeExplorer::encryptNoteRequested, this,
           &NotebookExplorer2::encryptNote);
+  connect(explorer, &CombinedNodeExplorer::decryptNoteRequested, this,
+          &NotebookExplorer2::decryptNote);
   connect(explorer, &CombinedNodeExplorer::ignoreRequested, this,
           &NotebookExplorer2::onIgnoreRequested);
   connect(explorer, &CombinedNodeExplorer::manageTagsRequested, this,
@@ -1208,6 +1237,8 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::onMarkRequested);
   connect(explorer, &TwoColumnsNodeExplorer::encryptNoteRequested, this,
           &NotebookExplorer2::encryptNote);
+  connect(explorer, &TwoColumnsNodeExplorer::decryptNoteRequested, this,
+          &NotebookExplorer2::decryptNote);
   connect(explorer, &TwoColumnsNodeExplorer::ignoreRequested, this,
           &NotebookExplorer2::onIgnoreRequested);
   connect(explorer, &TwoColumnsNodeExplorer::manageTagsRequested, this,

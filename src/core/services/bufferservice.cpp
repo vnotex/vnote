@@ -2248,15 +2248,40 @@ bool BufferService::captureActiveWriterContent(const QString &p_bufferId,
 bool BufferService::beginNoteConversion(const QString &p_bufferId, QByteArray *p_outBody) {
   if (isContentReplacementActive(p_bufferId))
     return false;
-  if (!p_outBody || QThread::currentThread() != thread() || p_bufferId.isEmpty() ||
-      isBufferReadOnly(p_bufferId) || (m_bufferFlags.value(p_bufferId) & Encrypted) != 0 ||
-      m_virtualBufferIds.contains(p_bufferId) || isSaveQueueBusy(p_bufferId)) {
+  if (QThread::currentThread() != thread() || p_bufferId.isEmpty() ||
+      isBufferReadOnly(p_bufferId) || m_virtualBufferIds.contains(p_bufferId) ||
+      isSaveQueueBusy(p_bufferId)) {
     return false;
   }
   if (m_noteConversions && m_noteConversions->entries.contains(p_bufferId))
     return false;
   if (BufferCoreService::getBuffer(p_bufferId).isEmpty())
     return false;
+  const bool encrypted = (m_bufferFlags.value(p_bufferId) & Encrypted) != 0;
+  if (!encrypted && !p_outBody)
+    return false;
+  const auto protectedState =
+      encrypted && m_protectedBuffers ? m_protectedBuffers->buffers.value(p_bufferId) : nullptr;
+  const auto protectedEligible = [&]() {
+    if (m_protectedLocking || m_protectedOperations == 0 || !protectedState ||
+        !m_protectedBuffers || m_protectedBuffers->buffers.value(p_bufferId) != protectedState ||
+        (m_bufferFlags.value(p_bufferId) & Encrypted) == 0) {
+      return false;
+    }
+    QMutexLocker lock(&protectedState->mutex);
+    return protectedState->current.load(std::memory_order_acquire) && !protectedState->locking &&
+           !protectedState->readOnly.load(std::memory_order_acquire) &&
+           protectedState->operations == 0 &&
+           (p_outBody ? !protectedState->editorType.isEmpty()
+                      : protectedState->editorType.isEmpty());
+  };
+  if (encrypted && !protectedEligible())
+    return false;
+  if (!p_outBody && (m_activeWriters.contains(p_bufferId) || m_dirtyBuffers.contains(p_bufferId) ||
+                     currentRevision(p_bufferId) != lastSavedRevision(p_bufferId) ||
+                     BufferCoreService::isModified(p_bufferId))) {
+    return false;
+  }
   if (!m_noteConversions)
     m_noteConversions.reset(new NoteConversions);
   NoteConversions::Entry entry;
@@ -2272,6 +2297,8 @@ bool BufferService::beginNoteConversion(const QString &p_bufferId, QByteArray *p
   m_bufferFlags[p_bufferId] |= Converting;
   if (m_dirtyBuffers.isEmpty())
     m_autoSaveTimer->stop();
+  if (!p_outBody)
+    return true;
   try {
     QString text;
     const bool edited = currentRevision(p_bufferId) != lastSavedRevision(p_bufferId) ||
@@ -2280,13 +2307,14 @@ bool BufferService::beginNoteConversion(const QString &p_bufferId, QByteArray *p
       *p_outBody = encodeContent(p_bufferId, text);
     } else {
       VxCoreError error;
-      *p_outBody = BufferCoreService::getContentRaw(p_bufferId, &error);
+      *p_outBody = encrypted ? getContentRaw(protectedHandle(p_bufferId), &error)
+                             : BufferCoreService::getContentRaw(p_bufferId, &error);
       if (error != VXCORE_OK) {
         endNoteConversion(p_bufferId, false);
         return false;
       }
     }
-    if (isSaveQueueBusy(p_bufferId)) {
+    if (isSaveQueueBusy(p_bufferId) || (encrypted && !protectedEligible())) {
       endNoteConversion(p_bufferId, false);
       return false;
     }

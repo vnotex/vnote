@@ -187,6 +187,8 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
           &TwoColumnsNodeExplorer::markRequested);
   connect(p_controller, &NotebookNodeController::encryptNoteRequested, this,
           &TwoColumnsNodeExplorer::encryptNoteRequested);
+  connect(p_controller, &NotebookNodeController::decryptNoteRequested, this,
+          &TwoColumnsNodeExplorer::decryptNoteRequested);
   connect(p_controller, &NotebookNodeController::ignoreRequested, this,
           &TwoColumnsNodeExplorer::ignoreRequested);
   connect(p_controller, &NotebookNodeController::manageTagsRequested, this,

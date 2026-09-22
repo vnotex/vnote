@@ -99,6 +99,8 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::markRequested);
   connect(m_controller, &NotebookNodeController::encryptNoteRequested, this,
           &CombinedNodeExplorer::encryptNoteRequested);
+  connect(m_controller, &NotebookNodeController::decryptNoteRequested, this,
+          &CombinedNodeExplorer::decryptNoteRequested);
   connect(m_controller, &NotebookNodeController::ignoreRequested, this,
           &CombinedNodeExplorer::ignoreRequested);
   connect(m_controller, &NotebookNodeController::manageTagsRequested, this,

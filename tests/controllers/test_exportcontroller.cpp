@@ -1,11 +1,13 @@
 #include <QtTest>
 
+#include <QCryptographicHash>
 #include <QFile>
 #include <QFileInfo>
 #include <QMetaObject>
 #include <QScopeGuard>
 #include <QSignalSpy>
 #include <QWidget>
+#include <QtConcurrent/QtConcurrentRun>
 
 #include <cstring>
 
@@ -224,6 +226,7 @@ private slots:
   void testWorkspaceExportEmptyYieldsNoOutput();
   void testEncryptedNoteExport_data();
   void testEncryptedNoteExport();
+  void testDecryptedNoteExportsNormally();
 
 private:
   struct ControllerFixture {
@@ -890,6 +893,118 @@ void TestExportController::testEncryptedNoteExport() {
   QVERIFY(!QFileInfo::exists(destination));
 
   QVERIFY(QDir(output.path()).entryList(QDir::AllEntries | QDir::NoDotAndDotDot).isEmpty());
+}
+
+void TestExportController::testDecryptedNoteExportsNormally() {
+  ControllerFixture fixture(m_ctx);
+  const auto notebook = fixture.notebookService->createNotebook(
+      m_tempDir.filePath(QStringLiteral("decrypted-export")),
+      QStringLiteral("{\"name\":\"Decrypted exports\"}"), vnotex::NotebookType::Bundled);
+  QVERIFY(!notebook.isEmpty());
+  vnotex::PreparedNotebookEncryption setup;
+  QCOMPARE(QtConcurrent::run([&]() {
+             setup = fixture.notebookService->prepareNotebookEncryption(
+                 notebook, QString(), QByteArrayLiteral("decrypted-export-password"));
+             return setup.m_error;
+           }).result(),
+           VXCORE_OK);
+  QVERIFY(setup.isValid());
+  vnotex::SyncWorkQueueManager queues;
+  const QString name = QStringLiteral("current.md");
+  const QByteArray persistedBody = QByteArrayLiteral("# Persisted private content\n");
+  QString noteId;
+  QCOMPARE(QtConcurrent::run([&]() -> VxCoreError {
+             auto maintenance = queues.tryAcquireMaintenance({notebook});
+             if (!maintenance.isValid()) {
+               return VXCORE_ERR_INVALID_STATE;
+             }
+             vnotex::NotebookIoGate::ScopedLock lock(*fixture.ioGate, notebook);
+             const auto error = fixture.notebookService->commitNotebookEncryption(setup);
+             return error == VXCORE_OK
+                        ? fixture.notebookService->createEncryptedNote(notebook, QString(), name,
+                                                                       QStringLiteral("markdown"),
+                                                                       persistedBody, &noteId)
+                        : error;
+           }).result(),
+           VXCORE_OK);
+  auto note = fixture.bufferService->openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  const auto cleanup = qScopeGuard([&]() {
+    fixture.bufferService->endNoteConversion(note.id(), false);
+    fixture.bufferService->unregisterActiveWriter(note.id(), 1);
+    fixture.bufferService->closeBuffer(note.id());
+    fixture.notebookService->lockAllEncryption();
+  });
+  QVERIFY(note.isEncrypted());
+  QCOMPARE(note.getContentRaw(), persistedBody);
+  const QString currentContent =
+      QStringLiteral("# Current private content\nunsaved-before-decrypt\n");
+  const QByteArray currentBytes = currentContent.toUtf8();
+  fixture.bufferService->registerActiveWriter(note.id(), 1, [&]() { return currentContent; });
+  fixture.bufferService->markDirty(note.id());
+  const auto sourceNode = note.nodeId();
+  const auto sourcePath = note.resolvedPath();
+  QByteArray sourceSha256;
+  {
+    vnotex::NotebookIoGate::ScopedLock lock(*fixture.ioGate, notebook);
+    QFile source(sourcePath);
+    QVERIFY(source.open(QIODevice::ReadOnly));
+    QCryptographicHash hash(QCryptographicHash::Sha256);
+    QVERIFY(hash.addData(&source));
+    sourceSha256 = hash.result().toHex();
+  }
+
+  TempDirFixture output;
+  QVERIFY(output.isValid());
+  vnotex::ExportContext context;
+  context.currentNodeId = sourceNode;
+  vnotex::ExportOption option;
+  // CurrentNote reads the real published file, not a caller-supplied editor snapshot.
+  option.m_source = vnotex::ExportSource::CurrentNote;
+  option.m_targetFormat = vnotex::ExportFormat::Markdown;
+  option.m_outputDir = output.path();
+  option.m_exportAttachments = false;
+  QSignalSpy finished(fixture.controller, &vnotex::ExportController::exportFinished);
+  fixture.controller->doExport(option, context);
+  QCOMPARE(finished.count(), 1);
+  QVERIFY(finished.takeFirst().at(0).toStringList().isEmpty());
+  QVERIFY(QDir(output.path()).entryList(QDir::AllEntries | QDir::NoDotAndDotDot).isEmpty());
+
+  QString targetPath;
+  {
+    QVERIFY(fixture.bufferService->beginProtectedOperation());
+    const auto operation = qScopeGuard([&]() { fixture.bufferService->endProtectedOperation(); });
+    QByteArray captured;
+    QVERIFY(fixture.bufferService->beginNoteConversion(note.id(), &captured));
+    QCOMPARE(QtConcurrent::run([&]() -> VxCoreError {
+               auto maintenance = queues.tryAcquireMaintenance({notebook});
+               if (!maintenance.isValid()) {
+                 return VXCORE_ERR_INVALID_STATE;
+               }
+               vnotex::NotebookIoGate::ScopedLock lock(*fixture.ioGate, notebook);
+               return fixture.notebookService->unprotectNote(sourceNode, &captured, sourceSha256,
+                                                             &targetPath);
+             }).result(),
+             VXCORE_OK);
+    fixture.bufferService->endNoteConversion(note.id(), true);
+    QVERIFY(fixture.bufferService->closeBuffer(note.id()));
+  }
+  QCOMPARE(targetPath, name);
+  QCOMPARE(fixture.notebookService->lockAllEncryption(), VXCORE_OK);
+  note = fixture.bufferService->openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  QVERIFY(!note.isEncrypted());
+  QCOMPARE(note.nodeId().relativePath, name);
+  QCOMPARE(note.getContentRaw(), currentBytes);
+  QVERIFY(!QFileInfo::exists(sourcePath));
+
+  context.currentNodeId = note.nodeId();
+  fixture.controller->doExport(option, context);
+  QCOMPARE(finished.count(), 1);
+  QCOMPARE(finished.takeFirst().at(0).toStringList(), QStringList{output.filePath(name)});
+  QFile exported(output.filePath(name));
+  QVERIFY(exported.open(QIODevice::ReadOnly));
+  QCOMPARE(exported.readAll(), currentBytes);
 }
 
 } // namespace tests

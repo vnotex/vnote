@@ -126,6 +126,7 @@ public slots:
 
   // The real dialog flow, also callable by isolated widget smoke harnesses.
   void encryptNote(const QList<NodeIdentifier> &p_ids);
+  void decryptNote(const QList<NodeIdentifier> &p_ids);
 
 #ifdef VNOTE_TESTING
   // Test-only seam (per ADR-6) that simulates the post-newNotebook() auto-open
@@ -255,11 +256,13 @@ private:
   // literal-content options.
   void doNewNote(const NodeIdentifier &p_parentId, const NewNoteDialog2::Options &p_options);
   NewNoteResult createEncryptedNote(const NewNoteInput &p_input);
+  void convertNoteEncryption(const QList<NodeIdentifier> &p_ids, bool p_encrypt);
   // Shared password/key-source UI for conversion and creation. Only prepares:
   // callers commit under maintenance and the IO gate after all prompts finish.
   VxCoreError prepareNotebookEncryption(const QString &p_notebookId,
                                         PreparedNotebookEncryption &p_setup,
-                                        QProgressDialog &p_progress, QString &p_errorMessage);
+                                        QProgressDialog &p_progress, QString &p_errorMessage,
+                                        bool p_allowSetup);
   void setCurrentNotebookInternal(const QString &p_notebookId);
   // Functional read-only guard for toolbar-driven mutation slots. Resolves the
   // current notebook id the same way the read-only badge does and queries

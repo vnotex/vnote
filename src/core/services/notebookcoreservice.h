@@ -260,6 +260,10 @@ public:
   // and has quiesced every existing view/buffer without closing its backup.
   VxCoreError protectNote(const NodeIdentifier &p_nodeId, const QByteArray &p_body,
                           const QByteArray &p_sourceSha256, QString *p_outPath);
+  // Same worker/lease/gate contract. Null body uses the authenticated persisted
+  // body; nonnull (including empty) supplies the current editor bytes.
+  VxCoreError unprotectNote(const NodeIdentifier &p_nodeId, const QByteArray *p_body,
+                            const QByteArray &p_sourceSha256, QString *p_outPath);
   VxCoreError createEncryptedNote(const QString &p_notebookId, const QString &p_parentPath,
                                   const QString &p_name, const QString &p_editorType,
                                   const QByteArray &p_body, QString *p_outFileId);

@@ -49,7 +49,7 @@ struct NoteEncryptionConversion {
   VxCoreError m_error = VXCORE_ERR_INVALID_STATE;
   QString m_errorMessage;
   NodeIdentifier m_nodeId;
-  QString m_encryptedPath;
+  QString m_targetPath;
 
 private:
   friend class ViewAreaController;
@@ -90,7 +90,8 @@ public:
                                                    const QString &p_sourceNotebookId,
                                                    QByteArray &p_password);
   VxCoreError unlockNoteEncryption(const QString &p_notebookId, QByteArray &p_password);
-  std::shared_ptr<NoteEncryptionConversion> prepareNoteConversion(const NodeIdentifier &p_nodeId);
+  std::shared_ptr<NoteEncryptionConversion> prepareNoteConversion(const NodeIdentifier &p_nodeId,
+                                                                  bool p_encrypt);
   VxCoreError applyNoteConversion(const std::shared_ptr<NoteEncryptionConversion> &p_conversion,
                                   PreparedNotebookEncryption *p_setup = nullptr);
   void cancelNoteConversion(const std::shared_ptr<NoteEncryptionConversion> &p_conversion);

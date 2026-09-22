@@ -72,6 +72,7 @@ public:
   void renameNode(const NodeIdentifier &p_nodeId);
   void markNode(const NodeIdentifier &p_nodeId);
   void encryptNote(const QList<NodeIdentifier> &p_ids);
+  void decryptNote(const QList<NodeIdentifier> &p_ids);
   // T9 (notebook-explorer-drag-reorder): virtual so the GUI drag-drop test
   // (tests/gui/test_notebook_node_view_reorder.cpp) can intercept the call
   // with a recording subclass and assert the view dispatched correctly.
@@ -349,6 +350,7 @@ signals:
 
   void markRequested(const QList<NodeIdentifier> &p_ids);
   void encryptNoteRequested(const QList<NodeIdentifier> &p_ids);
+  void decryptNoteRequested(const QList<NodeIdentifier> &p_ids);
 
   void ignoreRequested(const NodeIdentifier &p_nodeId);
 

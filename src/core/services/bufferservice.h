@@ -322,6 +322,13 @@ public:
 
   // Capture the active or temporarily suspended writer without changing buffer content.
   bool captureActiveWriterContent(const QString &p_bufferId, QString *p_outText) const;
+  // GUI-thread reservation after views are frozen and the save queue is idle.
+  // Nonnull output captures current writer/raw bytes; protected capture requires
+  // an authenticated editor. Null output reserves only a clean, unloaded protected
+  // placeholder (no authenticated editor, writer or unsaved changes), without
+  // reading its body. Both protected modes require an active protected-operation
+  // scope and idle protected operations; ordinary capture needs no protected scope.
+  // End with false to restore the suspended writer and dirty state on cancellation.
   bool beginNoteConversion(const QString &p_bufferId, QByteArray *p_outBody);
   void endNoteConversion(const QString &p_bufferId, bool p_committed);
 

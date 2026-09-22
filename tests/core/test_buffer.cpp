@@ -1,6 +1,8 @@
+#include <QCryptographicHash>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QJsonDocument>
 #include <QScopeGuard>
 #include <QSemaphore>
 #include <QSignalSpy>
@@ -43,6 +45,20 @@ bool writeReplacementFile(const QString &p_path, const QByteArray &p_bytes) {
   QFile file(p_path);
   return file.open(QIODevice::WriteOnly | QIODevice::Truncate) &&
          file.write(p_bytes) == p_bytes.size();
+}
+
+VxCoreError runNoteConversionWorker(SyncWorkQueueManager &p_queues, NotebookIoGate &p_gate,
+                                    const QString &p_notebookId,
+                                    const std::function<VxCoreError()> &p_operation) {
+  return QtConcurrent::run([&]() -> VxCoreError {
+           auto maintenance = p_queues.tryAcquireMaintenance({p_notebookId});
+           if (!maintenance.isValid()) {
+             return VXCORE_ERR_INVALID_STATE;
+           }
+           NotebookIoGate::ScopedLock lock(p_gate, p_notebookId);
+           return p_operation();
+         })
+      .result();
 }
 
 struct ReplacementCompletion {
@@ -274,6 +290,10 @@ private slots:
   void testInvalidBufferOperations();
   void testMixedNoteSaveWhileProtectedLocking();
   void testEncryptedBodyKeepsAssetsPlaintext();
+  void testEncryptedNoteConversionCancellationKeepsWriter();
+  void testEncryptedNoteConversionPublishesCurrentWriter();
+  void testUnloadedEncryptedNoteConversionKeepsPersistedBody();
+  void testPlainNoteConversionStillPublishesCurrentWriter();
 
   // Search-result replacement persistence and lifecycle.
   void testSearchReplacementWriterDurability_data();
@@ -1049,6 +1069,446 @@ void TestBuffer::testEncryptedBodyKeepsAssetsPlaintext() {
   QVERIFY(!QFileInfo::exists(attachmentPath));
   QVERIFY(note.deleteAsset(image));
   QVERIFY(!QFileInfo::exists(imagePath));
+}
+
+void TestBuffer::testEncryptedNoteConversionCancellationKeepsWriter() {
+  const auto notebookId = m_notebookService->createNotebook(
+      m_tempDir.filePath(QStringLiteral("conversion-cancel")),
+      QStringLiteral("{\"name\":\"Conversion cancellation\"}"), NotebookType::Bundled);
+  QVERIFY(!notebookId.isEmpty());
+  const QByteArray password("conversion-cancel-password");
+  NotebookIoGate gate;
+  SyncWorkQueueManager queues;
+  HookManager hooks;
+  QString editor = QStringLiteral("dirty writer before cancellation\r\n");
+  BufferService buffers(m_context, &hooks, &gate, AutoSavePolicy::AutoSave);
+  PreparedNotebookEncryption setup;
+  QCOMPARE(QtConcurrent::run([&]() {
+             setup = m_notebookService->prepareNotebookEncryption(notebookId, QString(), password);
+             return setup.m_error;
+           }).result(),
+           VXCORE_OK);
+  QString noteId;
+  QCOMPARE(runNoteConversionWorker(
+               queues, gate, notebookId,
+               [&]() {
+                 const auto error = m_notebookService->commitNotebookEncryption(setup);
+                 return error == VXCORE_OK ? m_notebookService->createEncryptedNote(
+                                                 notebookId, QString(), QStringLiteral("cancel.md"),
+                                                 QStringLiteral("markdown"),
+                                                 QByteArrayLiteral("persisted body"), &noteId)
+                                           : error;
+               }),
+           VXCORE_OK);
+  auto note = buffers.openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  QVERIFY(note.isEncrypted());
+  QCOMPARE(note.getContentRaw(), QByteArrayLiteral("persisted body"));
+  const auto sourcePath = note.resolvedPath();
+  const auto ciphertext = readReplacementFile(sourcePath);
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.endNoteConversion(note.id(), false);
+    buffers.cancelProtectedLocking();
+    buffers.shutdown();
+    buffers.unregisterActiveWriter(note.id(), 1);
+    buffers.closeBuffer(note.id());
+    m_notebookService->lockAllEncryption();
+  });
+  buffers.registerActiveWriter(note.id(), 1, [&]() { return editor; });
+  buffers.markDirty(note.id());
+  QByteArray captured;
+  QVERIFY(buffers.beginProtectedLocking());
+  QVERIFY(!buffers.beginNoteConversion(note.id(), &captured));
+  QVERIFY(buffers.isDirty(note.id()));
+  QCOMPARE(readReplacementFile(sourcePath), ciphertext);
+  buffers.cancelProtectedLocking();
+
+  {
+    QVERIFY(buffers.beginProtectedOperation());
+    const auto operation = qScopeGuard([&]() { buffers.endProtectedOperation(); });
+    QVERIFY(buffers.beginNoteConversion(note.id(), &captured));
+    QCOMPARE(captured, editor.toUtf8());
+    QVERIFY(note.isReadOnly());
+    buffers.endNoteConversion(note.id(), false);
+    QVERIFY(!note.isReadOnly());
+    QVERIFY(buffers.isDirty(note.id()));
+    QCOMPARE(readReplacementFile(sourcePath), ciphertext);
+
+    // Cancellation restores the live callback, not a frozen copy of its old text.
+    editor = QStringLiteral("writer changed after cancellation\r\n");
+    buffers.markDirty(note.id());
+    ReplacementGateBarrier barrier(gate, notebookId);
+    const auto releaseBarrier = qScopeGuard([&]() { barrier.release(); });
+    buffers.syncNow(note.id());
+    QVERIFY(buffers.isSaveQueueBusy(note.id()));
+    editor = QStringLiteral("latest writer while the earlier save is held\r\n");
+    buffers.markDirty(note.id());
+    QVERIFY(!buffers.beginNoteConversion(note.id(), &captured));
+    QVERIFY(!note.isReadOnly());
+    QVERIFY(buffers.isDirty(note.id()));
+    barrier.release();
+    QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 10000);
+    QTRY_VERIFY_WITH_TIMEOUT(buffers.protectedBufferOperationsIdle(note.id()), 10000);
+    buffers.syncNow(note.id());
+    QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 10000);
+    QTRY_VERIFY_WITH_TIMEOUT(buffers.protectedBufferOperationsIdle(note.id()), 10000);
+    QVERIFY(!buffers.isDirty(note.id()));
+  }
+  buffers.unregisterActiveWriter(note.id(), 1);
+  QVERIFY(buffers.closeBuffer(note.id()));
+  QCOMPARE(m_notebookService->lockAllEncryption(), VXCORE_OK);
+  QCOMPARE(QtConcurrent::run([&]() {
+             return m_notebookService->unlockNotebookEncryption(notebookId, password);
+           }).result(),
+           VXCORE_OK);
+  note = buffers.openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  QVERIFY(note.isEncrypted());
+  QCOMPARE(note.getContentRaw(), editor.toUtf8());
+}
+
+void TestBuffer::testEncryptedNoteConversionPublishesCurrentWriter() {
+  const auto notebookId = m_notebookService->createNotebook(
+      m_tempDir.filePath(QStringLiteral("conversion-writer")),
+      QStringLiteral("{\"name\":\"Conversion writer\"}"), NotebookType::Bundled);
+  QVERIFY(!notebookId.isEmpty());
+  const QByteArray password("conversion-writer-password");
+  NotebookIoGate gate;
+  SyncWorkQueueManager queues;
+  HookManager hooks;
+  PreparedNotebookEncryption setup;
+  QCOMPARE(QtConcurrent::run([&]() {
+             setup = m_notebookService->prepareNotebookEncryption(notebookId, QString(), password);
+             return setup.m_error;
+           }).result(),
+           VXCORE_OK);
+  QCOMPARE(
+      runNoteConversionWorker(queues, gate, notebookId,
+                              [&]() { return m_notebookService->commitNotebookEncryption(setup); }),
+      VXCORE_OK);
+  auto *gb18030 = QTextCodec::codecForName("GB18030");
+  QVERIFY(gb18030);
+  const QStringList writers = {QStringLiteral("current dirty writer\r\n"), QString(),
+                               QStringLiteral("\u4F60\u597D current writer\r\n")};
+  for (int index = 0; index < writers.size(); ++index) {
+    const auto filename = QStringLiteral("writer-%1.md").arg(index);
+    const auto encoding = index == 2 ? QStringLiteral("GB18030") : QStringLiteral("UTF-8");
+    QString editor = writers[index];
+    BufferService buffers(m_context, &hooks, &gate, AutoSavePolicy::AutoSave);
+    const auto expected = index == 2 ? gb18030->fromUnicode(editor) : editor.toUtf8();
+    QCOMPARE(QtConcurrent::run([&]() {
+               return m_notebookService->unlockNotebookEncryption(notebookId, password);
+             }).result(),
+             VXCORE_OK);
+    QString noteId;
+    QCOMPARE(runNoteConversionWorker(queues, gate, notebookId,
+                                     [&]() {
+                                       return m_notebookService->createEncryptedNote(
+                                           notebookId, QString(), filename,
+                                           QStringLiteral("markdown"),
+                                           QByteArrayLiteral("different nonempty persisted body"),
+                                           &noteId);
+                                     }),
+             VXCORE_OK);
+    auto note = buffers.openBufferByNodeId(noteId);
+    QVERIFY(note.isValid());
+    QVERIFY(note.isEncrypted());
+    QCOMPARE(note.getContentRaw(), QByteArrayLiteral("different nonempty persisted body"));
+    QVERIFY(note.setContentRaw(QByteArrayLiteral("different core-only body")));
+    QVERIFY(note.setEncoding(encoding));
+    buffers.registerActiveWriter(note.id(), 1, [&]() { return editor; });
+    buffers.markDirty(note.id());
+    const auto sourcePath = note.resolvedPath();
+    const auto sourceSha256 =
+        QCryptographicHash::hash(readReplacementFile(sourcePath), QCryptographicHash::Sha256)
+            .toHex();
+    const auto sourceNode = note.nodeId();
+    const auto cleanup = qScopeGuard([&]() {
+      buffers.endNoteConversion(note.id(), false);
+      buffers.cancelProtectedLocking();
+      buffers.shutdown();
+      buffers.unregisterActiveWriter(note.id(), 1);
+      buffers.closeBuffer(note.id());
+      m_notebookService->lockAllEncryption();
+    });
+    QString targetPath;
+    {
+      QVERIFY(buffers.beginProtectedOperation());
+      const auto operation = qScopeGuard([&]() { buffers.endProtectedOperation(); });
+      QByteArray captured;
+      QVERIFY(buffers.beginNoteConversion(note.id(), &captured));
+      QCOMPARE(captured, expected);
+      // &captured remains nonnull for the empty-writer case: persisted bytes must not win.
+      QCOMPARE(runNoteConversionWorker(queues, gate, notebookId,
+                                       [&]() {
+                                         return m_notebookService->unprotectNote(
+                                             sourceNode, &captured, sourceSha256, &targetPath);
+                                       }),
+               VXCORE_OK);
+      buffers.endNoteConversion(note.id(), true);
+      QVERIFY(buffers.closeBuffer(note.id()));
+    }
+    QCOMPARE(targetPath, filename);
+    QVERIFY(!QFileInfo::exists(sourcePath));
+    note = buffers.openBufferByNodeId(noteId);
+    QVERIFY(note.isValid());
+    QVERIFY(!note.isEncrypted());
+    QCOMPARE(note.nodeId().relativePath, filename);
+    QVERIFY(QFileInfo::exists(note.resolvedPath()));
+    QCOMPARE(QFileInfo(note.resolvedPath()).size(), qint64(expected.size()));
+    QCOMPARE(readReplacementFile(note.resolvedPath()), expected);
+    QCOMPARE(note.getContentRaw(), expected);
+
+    // Encoding is transient; restore the captured view setting on the new ordinary handle.
+    QVERIFY(note.setEncoding(encoding));
+    QCOMPARE(buffers.decodeContent(note.id(), note.getContentRaw()), editor);
+    buffers.registerActiveWriter(note.id(), 1, [&]() { return editor; });
+    editor += QStringLiteral("normal save after conversion\r\n");
+    buffers.markDirty(note.id());
+    buffers.syncNow(note.id());
+    QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 10000);
+    QCOMPARE(readReplacementFile(note.resolvedPath()),
+             index == 2 ? gb18030->fromUnicode(editor) : editor.toUtf8());
+    QVERIFY(buffers.beginProtectedLocking());
+    QCOMPARE(m_notebookService->lockAllEncryption(), VXCORE_OK);
+    QVERIFY(note.isValid());
+    QVERIFY(!note.isReadOnly());
+    editor += QStringLiteral("normal save after Lock All\r\n");
+    buffers.markDirty(note.id());
+    buffers.syncNow(note.id());
+    QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 10000);
+    QCOMPARE(readReplacementFile(note.resolvedPath()),
+             index == 2 ? gb18030->fromUnicode(editor) : editor.toUtf8());
+    QVERIFY(!buffers.isDirty(note.id()));
+    buffers.cancelProtectedLocking();
+  }
+}
+
+void TestBuffer::testUnloadedEncryptedNoteConversionKeepsPersistedBody() {
+  const auto notebookId = m_notebookService->createNotebook(
+      m_tempDir.filePath(QStringLiteral("conversion-placeholder")),
+      QStringLiteral("{\"name\":\"Conversion placeholder\"}"), NotebookType::Bundled);
+  QVERIFY(!notebookId.isEmpty());
+  const QByteArray password("conversion-placeholder-password");
+  const QByteArray body("persisted nonempty body\r\nwith another line\r\n");
+  NotebookIoGate gate;
+  SyncWorkQueueManager queues;
+  PreparedNotebookEncryption setup;
+  QCOMPARE(QtConcurrent::run([&]() {
+             setup = m_notebookService->prepareNotebookEncryption(notebookId, QString(), password);
+             return setup.m_error;
+           }).result(),
+           VXCORE_OK);
+  QString noteId;
+  QString dirtyNoteId;
+  QCOMPARE(runNoteConversionWorker(
+               queues, gate, notebookId,
+               [&]() {
+                 auto error = m_notebookService->commitNotebookEncryption(setup);
+                 if (error == VXCORE_OK) {
+                   error = m_notebookService->createEncryptedNote(
+                       notebookId, QString(), QStringLiteral("placeholder.md"),
+                       QStringLiteral("markdown"), body, &noteId);
+                 }
+                 return error == VXCORE_OK
+                            ? m_notebookService->createEncryptedNote(
+                                  notebookId, QString(), QStringLiteral("dirty-placeholder.md"),
+                                  QStringLiteral("markdown"), body, &dirtyNoteId)
+                            : error;
+               }),
+           VXCORE_OK);
+  QString bufferId;
+  QString dirtyBufferId;
+  {
+    const auto note = m_bufferService->openBufferByNodeId(noteId);
+    const auto dirty = m_bufferService->openBufferByNodeId(dirtyNoteId);
+    QVERIFY(note.isValid());
+    QVERIFY(dirty.isValid());
+    QCOMPARE(note.getContentRaw(), body);
+    bufferId = note.id();
+    dirtyBufferId = dirty.id();
+  }
+  char *configJson = nullptr;
+  QCOMPARE(vxcore_context_get_config(m_context, &configJson), VXCORE_OK);
+  const auto originalConfig = QByteArray(configJson);
+  vxcore_string_free(configJson);
+  const bool recoverSession = QJsonDocument::fromJson(originalConfig)
+                                  .object()
+                                  .value(QStringLiteral("recoverLastSession"))
+                                  .toBool();
+  const auto restoreConfiguration = qScopeGuard([&]() {
+    if (m_context) {
+      vxcore_context_update_config(m_context, recoverSession ? "{\"recoverLastSession\":true}"
+                                                             : "{\"recoverLastSession\":false}");
+    }
+  });
+  QCOMPARE(vxcore_context_update_config(m_context, "{\"recoverLastSession\":true}"), VXCORE_OK);
+
+  // Recreate the real context, rather than opening/loading a buffer to mimic a restored tab.
+  delete m_bufferService;
+  m_bufferService = nullptr;
+  delete m_hookMgr;
+  m_hookMgr = nullptr;
+  delete m_notebookService;
+  m_notebookService = nullptr;
+  const auto shutdownError = vxcore_prepare_shutdown(m_context);
+  vxcore_context_destroy(m_context);
+  m_context = nullptr;
+  const auto createError = vxcore_context_create(nullptr, &m_context);
+  m_notebookService = new NotebookCoreService(m_context, this);
+  m_hookMgr = new HookManager(this);
+  m_bufferService = new BufferService(m_context, m_hookMgr, AutoSavePolicy::AutoSave, this);
+  QCOMPARE(createError, VXCORE_OK);
+  QCOMPARE(shutdownError, VXCORE_OK);
+  QVERIFY(
+      !m_notebookService->encryptionStatus(notebookId).value(QStringLiteral("unlocked")).toBool());
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, &gate, AutoSavePolicy::None);
+  auto note = buffers.getBufferHandle(bufferId);
+  auto dirty = buffers.getBufferHandle(dirtyBufferId);
+  QVERIFY(note.isValid());
+  QVERIFY(dirty.isValid());
+  QVERIFY(note.isEncrypted());
+  QVERIFY(dirty.isEncrypted());
+  QVERIFY(note.editorType().isEmpty());
+  QVERIFY(dirty.editorType().isEmpty());
+  const auto sourceNode = note.nodeId();
+  const auto sourcePath = note.resolvedPath();
+  const auto ciphertext = readReplacementFile(sourcePath);
+  const auto dirtyPath = dirty.resolvedPath();
+  const auto dirtyCiphertext = readReplacementFile(dirtyPath);
+  const auto sourceSha256 =
+      QCryptographicHash::hash(ciphertext, QCryptographicHash::Sha256).toHex();
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.endNoteConversion(note.id(), false);
+    buffers.shutdown();
+    buffers.unregisterActiveWriter(note.id(), 1);
+    buffers.closeBuffer(note.id());
+    buffers.closeBuffer(dirty.id());
+    m_notebookService->lockAllEncryption();
+  });
+  QString targetPath;
+  {
+    QVERIFY(buffers.beginProtectedOperation());
+    const auto operation = qScopeGuard([&]() { buffers.endProtectedOperation(); });
+    QCOMPARE(QtConcurrent::run([&]() {
+               return m_notebookService->unlockNotebookEncryption(notebookId, password);
+             }).result(),
+             VXCORE_OK);
+    QVERIFY(note.editorType().isEmpty());
+    const QString writer = QStringLiteral("a writer cannot be silently discarded");
+    buffers.registerActiveWriter(note.id(), 1, [&]() { return writer; });
+    QVERIFY(!buffers.beginNoteConversion(note.id(), nullptr));
+    QVERIFY(!note.isReadOnly());
+    QString retainedWriter;
+    QVERIFY(buffers.captureActiveWriterContent(note.id(), &retainedWriter));
+    QCOMPARE(retainedWriter, writer);
+    buffers.unregisterActiveWriter(note.id(), 1);
+    buffers.markDirty(dirty.id());
+    QVERIFY(!buffers.beginNoteConversion(dirty.id(), nullptr));
+    QVERIFY(buffers.isDirty(dirty.id()));
+    QVERIFY(!dirty.isReadOnly());
+    QCOMPARE(readReplacementFile(dirtyPath), dirtyCiphertext);
+    QVERIFY(buffers.beginNoteConversion(note.id(), nullptr));
+    QVERIFY(note.editorType().isEmpty());
+    QCOMPARE(readReplacementFile(sourcePath), ciphertext);
+    QCOMPARE(runNoteConversionWorker(queues, gate, notebookId,
+                                     [&]() {
+                                       return m_notebookService->unprotectNote(
+                                           sourceNode, nullptr, sourceSha256, &targetPath);
+                                     }),
+             VXCORE_OK);
+    buffers.endNoteConversion(note.id(), true);
+    QVERIFY(buffers.closeBuffer(note.id()));
+    QVERIFY(buffers.closeBuffer(dirty.id()));
+  }
+  QCOMPARE(targetPath, QStringLiteral("placeholder.md"));
+  QVERIFY(!QFileInfo::exists(sourcePath));
+  QCOMPARE(m_notebookService->lockAllEncryption(), VXCORE_OK);
+  note = buffers.openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  QVERIFY(!note.isEncrypted());
+  QCOMPARE(note.nodeId().relativePath, targetPath);
+  QCOMPARE(note.getContentRaw(), body);
+  QCOMPARE(readReplacementFile(note.resolvedPath()), body);
+  QVERIFY(note.setContentRaw(QByteArrayLiteral("normal edit without any unlocked key")));
+  QVERIFY(note.save());
+  QCOMPARE(readReplacementFile(note.resolvedPath()),
+           QByteArrayLiteral("normal edit without any unlocked key"));
+}
+
+void TestBuffer::testPlainNoteConversionStillPublishesCurrentWriter() {
+  const auto notebookId = m_notebookService->createNotebook(
+      m_tempDir.filePath(QStringLiteral("conversion-plain")),
+      QStringLiteral("{\"name\":\"Ordinary conversion\"}"), NotebookType::Bundled);
+  QVERIFY(!notebookId.isEmpty());
+  const auto noteId =
+      m_notebookService->createFile(notebookId, QString(), QStringLiteral("ordinary.md"));
+  QVERIFY(!noteId.isEmpty());
+  NotebookIoGate gate;
+  SyncWorkQueueManager queues;
+  HookManager hooks;
+  QString editor = QStringLiteral("current ordinary writer, not disk or core\r\n");
+  BufferService buffers(m_context, &hooks, &gate, AutoSavePolicy::AutoSave);
+  const QByteArray password("ordinary-conversion-password");
+  PreparedNotebookEncryption setup;
+  QCOMPARE(QtConcurrent::run([&]() {
+             setup = m_notebookService->prepareNotebookEncryption(notebookId, QString(), password);
+             return setup.m_error;
+           }).result(),
+           VXCORE_OK);
+  QCOMPARE(
+      runNoteConversionWorker(queues, gate, notebookId,
+                              [&]() { return m_notebookService->commitNotebookEncryption(setup); }),
+      VXCORE_OK);
+  auto note = buffers.openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  QVERIFY(!note.isEncrypted());
+  QVERIFY(note.editorType().isEmpty());
+  QVERIFY(note.setContentRaw(QByteArrayLiteral("ordinary disk body")));
+  QVERIFY(note.save());
+  QVERIFY(note.setContentRaw(QByteArrayLiteral("different core-only ordinary body")));
+  buffers.registerActiveWriter(note.id(), 1, [&]() { return editor; });
+  buffers.markDirty(note.id());
+  const auto sourcePath = note.resolvedPath();
+  const auto sourceNode = note.nodeId();
+  const auto sourceSha256 =
+      QCryptographicHash::hash(readReplacementFile(sourcePath), QCryptographicHash::Sha256).toHex();
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.endNoteConversion(note.id(), false);
+    buffers.shutdown();
+    buffers.unregisterActiveWriter(note.id(), 1);
+    buffers.closeBuffer(note.id());
+    m_notebookService->lockAllEncryption();
+  });
+  QVERIFY(!buffers.beginNoteConversion(note.id(), nullptr));
+  QVERIFY(buffers.isDirty(note.id()));
+  QByteArray captured;
+  // Ordinary capture deliberately has no beginProtectedOperation() scope or authenticated editor.
+  QVERIFY(buffers.beginNoteConversion(note.id(), &captured));
+  QCOMPARE(captured, editor.toUtf8());
+  QString targetPath;
+  QCOMPARE(runNoteConversionWorker(queues, gate, notebookId,
+                                   [&]() {
+                                     return m_notebookService->protectNote(
+                                         sourceNode, captured, sourceSha256, &targetPath);
+                                   }),
+           VXCORE_OK);
+  buffers.endNoteConversion(note.id(), true);
+  QVERIFY(buffers.closeBuffer(note.id()));
+  QCOMPARE(targetPath, QStringLiteral("ordinary.md.vne"));
+  QVERIFY(!QFileInfo::exists(sourcePath));
+  QCOMPARE(m_notebookService->lockAllEncryption(), VXCORE_OK);
+  QCOMPARE(QtConcurrent::run([&]() {
+             return m_notebookService->unlockNotebookEncryption(notebookId, password);
+           }).result(),
+           VXCORE_OK);
+  note = buffers.openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  QVERIFY(note.isEncrypted());
+  QCOMPARE(note.nodeId().relativePath, targetPath);
+  QCOMPARE(note.editorType(), QStringLiteral("markdown"));
+  QCOMPARE(note.getContentRaw(), editor.toUtf8());
 }
 
 // ============ Search-result replacement persistence ============

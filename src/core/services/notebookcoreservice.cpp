@@ -451,6 +451,29 @@ VxCoreError NotebookCoreService::protectNote(const NodeIdentifier &p_nodeId,
   return error;
 }
 
+VxCoreError NotebookCoreService::unprotectNote(const NodeIdentifier &p_nodeId,
+                                               const QByteArray *p_body,
+                                               const QByteArray &p_sourceSha256,
+                                               QString *p_outPath) {
+  if (p_outPath) {
+    p_outPath->clear();
+  }
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const char *body = p_body ? (p_body->isEmpty() ? "" : p_body->constData()) : nullptr;
+  char *path = nullptr;
+  const VxCoreError error = vxcore_encryption_unprotect_note(
+      m_context, p_nodeId.notebookId.toUtf8().constData(),
+      p_nodeId.relativePath.toUtf8().constData(), body,
+      p_body ? static_cast<size_t>(p_body->size()) : 0, p_sourceSha256.constData(), &path);
+  if (error == VXCORE_OK && p_outPath) {
+    *p_outPath = QString::fromUtf8(path);
+  }
+  vxcore_string_free(path);
+  return error;
+}
+
 VxCoreError
 NotebookCoreService::createEncryptedNote(const QString &p_notebookId, const QString &p_parentPath,
                                          const QString &p_name, const QString &p_editorType,
