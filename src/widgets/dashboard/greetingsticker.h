@@ -3,16 +3,19 @@
 
 #include "sticker.h"
 
+#include <QDateTime>
+
+class QHideEvent;
 class QLabel;
+class QScrollArea;
 class QShowEvent;
+class QTimer;
 
 namespace vnotex {
 
-// Pure presentational dashboard sticker that displays a time-of-day greeting
-// ("Good morning!", "Good afternoon!", or "Good evening!") based on the current
-// time. It has no settings and no inter-sticker communication. The greeting is
-// (re)computed only in showEvent (no QTimer), so the text may go stale if the
-// sticker is left open across a time boundary — an accepted simplicity tradeoff.
+// Time-of-day greeting with an inline tip during the first five minutes of each
+// local clock hour. Hidden stickers do no catalog or timer work; reopening
+// reconciles the current window while retaining that hour's selected tip.
 class GreetingSticker : public Sticker {
   Q_OBJECT
 public:
@@ -31,11 +34,20 @@ public:
 
 protected:
   void showEvent(QShowEvent *p_event) override;
+  void hideEvent(QHideEvent *p_event) override;
+
+  virtual QDateTime currentDateTime() const;
+  virtual QString randomTip() const;
 
 private:
   void updateGreeting();
 
+  QLabel *m_greetingLabel = nullptr;
   QLabel *m_label = nullptr;
+  QScrollArea *m_tipArea = nullptr;
+  QTimer *m_timer = nullptr;
+  QDateTime m_tipHour;
+  QString m_tipText;
 };
 
 } // namespace vnotex

@@ -1100,6 +1100,8 @@ add_qt_test(test_historysticker
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/activitysticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/sticker.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/stickerfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/tooltipservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/tooltipservice.h
     ${CMAKE_SOURCE_DIR}/src/models/historylistmodel.cpp
     ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
@@ -1144,6 +1146,8 @@ add_qt_test(test_activitysticker
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/greetingsticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/sticker.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/stickerfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/tooltipservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/tooltipservice.h
     ${CMAKE_SOURCE_DIR}/src/models/historylistmodel.cpp
     ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp
@@ -1187,6 +1191,8 @@ add_qt_test(test_greetingsticker
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/activitysticker.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dashboard/sticker.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/stickerfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/tooltipservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/tooltipservice.h
     ${CMAKE_SOURCE_DIR}/src/models/historylistmodel.cpp
     ${CMAKE_SOURCE_DIR}/src/views/filenodedelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/views/nodeiconhelper.cpp

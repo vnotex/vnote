@@ -8,6 +8,7 @@
 #include <QJsonParseError>
 #include <QLocale>
 #include <QPointer>
+#include <QRandomGenerator>
 #include <QResource>
 #include <QScopeGuard>
 
@@ -46,6 +47,72 @@ QString ToolTipService::selectTipText(const QJsonObject &p_tip, const QStringLis
   return p_tip.value(QStringLiteral("en_US")).toString().trimmed();
 }
 
+QJsonArray ToolTipService::loadCatalog(const QString &p_catalogPath) {
+  QString catalogPath = p_catalogPath;
+  const QString extraRcc(QStringLiteral("app:vnote_extra.rcc"));
+  bool rccRegistered = false;
+  auto rccCleanup = qScopeGuard([&extraRcc, &rccRegistered] {
+    if (rccRegistered) {
+      QResource::unregisterResource(extraRcc);
+    }
+  });
+  if (catalogPath.isEmpty()) {
+    if (!QResource::registerResource(extraRcc)) {
+      qWarning() << "ToolTipService: failed to register resource" << extraRcc;
+      return {};
+    }
+    rccRegistered = true;
+    catalogPath = QStringLiteral(":/vnotex/data/extra/tooltips.json");
+  }
+
+  QFile file(catalogPath);
+  if (!file.open(QIODevice::ReadOnly)) {
+    qWarning() << "ToolTipService: failed to read catalog" << catalogPath << file.errorString();
+    return {};
+  }
+  const auto data = file.readAll();
+  if (file.error() != QFileDevice::NoError) {
+    qWarning() << "ToolTipService: failed to read catalog" << catalogPath << file.errorString();
+    return {};
+  }
+  QJsonParseError parseError;
+  const auto document = QJsonDocument::fromJson(data, &parseError);
+  if (parseError.error != QJsonParseError::NoError || !document.isArray()) {
+    qWarning() << "ToolTipService: invalid catalog" << catalogPath << parseError.errorString();
+    return {};
+  }
+  const auto tips = document.array();
+  if (tips.isEmpty()) {
+    qWarning() << "ToolTipService: no usable tips" << catalogPath;
+    return {};
+  }
+
+  return tips;
+}
+
+QString ToolTipService::randomTip(const QString &p_catalogPath) {
+  const auto tips = loadCatalog(p_catalogPath);
+  if (tips.isEmpty()) {
+    return {};
+  }
+
+  const auto uiLanguages = QLocale().uiLanguages();
+  quint32 count = 0;
+  QString selected;
+  for (const auto &item : tips) {
+    auto text = selectTipText(item.toObject(), uiLanguages);
+    if (!text.isEmpty() && QRandomGenerator::global()->bounded(++count) == 0) {
+      selected = std::move(text);
+    }
+  }
+  if (selected.isEmpty()) {
+    qWarning() << "ToolTipService: no usable tips"
+               << (p_catalogPath.isEmpty() ? QStringLiteral(":/vnotex/data/extra/tooltips.json")
+                                           : p_catalogPath);
+  }
+  return selected;
+}
+
 bool ToolTipService::showTipIfDue(const QDate &p_today) {
   auto *configMgr = m_services.get<ConfigMgr2>();
   auto *notifications = m_services.get<NotificationService>();
@@ -68,42 +135,8 @@ bool ToolTipService::showTipIfDue(const QDate &p_today) {
     return false;
   }
 
-  QString catalogPath = m_catalogPathOverride;
-  const QString extraRcc(QStringLiteral("app:vnote_extra.rcc"));
-  bool rccRegistered = false;
-  auto rccCleanup = qScopeGuard([&extraRcc, &rccRegistered] {
-    if (rccRegistered) {
-      QResource::unregisterResource(extraRcc);
-    }
-  });
-  if (catalogPath.isEmpty()) {
-    if (!QResource::registerResource(extraRcc)) {
-      qWarning() << "ToolTipService: failed to register resource" << extraRcc;
-      return false;
-    }
-    rccRegistered = true;
-    catalogPath = QStringLiteral(":/vnotex/data/extra/tooltips.json");
-  }
-
-  QFile file(catalogPath);
-  if (!file.open(QIODevice::ReadOnly)) {
-    qWarning() << "ToolTipService: failed to read catalog" << catalogPath << file.errorString();
-    return false;
-  }
-  const auto data = file.readAll();
-  if (file.error() != QFileDevice::NoError) {
-    qWarning() << "ToolTipService: failed to read catalog" << catalogPath << file.errorString();
-    return false;
-  }
-  QJsonParseError parseError;
-  const auto document = QJsonDocument::fromJson(data, &parseError);
-  if (parseError.error != QJsonParseError::NoError || !document.isArray()) {
-    qWarning() << "ToolTipService: invalid catalog" << catalogPath << parseError.errorString();
-    return false;
-  }
-  const auto tips = document.array();
+  const auto tips = loadCatalog(m_catalogPathOverride);
   if (tips.isEmpty()) {
-    qWarning() << "ToolTipService: no usable tips" << catalogPath;
     return false;
   }
 
@@ -124,7 +157,10 @@ bool ToolTipService::showTipIfDue(const QDate &p_today) {
     }
   }
   if (text.isEmpty()) {
-    qWarning() << "ToolTipService: no usable tips" << catalogPath;
+    qWarning() << "ToolTipService: no usable tips"
+               << (m_catalogPathOverride.isEmpty()
+                       ? QStringLiteral(":/vnotex/data/extra/tooltips.json")
+                       : m_catalogPathOverride);
     return false;
   }
 
