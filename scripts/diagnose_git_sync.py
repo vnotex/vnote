@@ -3,7 +3,9 @@
 
 Run: python scripts/diagnose_git_sync.py
 Uses native WinHTTP, as VNote does on Windows with either Qt 5.15 or Qt 6.
+Health checks cover runtime, proxy/TLS, HTTPS clock reference, credentials and disk.
 Only Git discovery GETs are sent: no clone, commit, push, or keychain access.
+No Windows settings are changed. Raw response headers and proxy values are not logged.
 Optional disk probes touch only newly created temporary directories.
 Exit codes: 0 = checked probes passed, 1 = problem found, 2 = incomplete/cancelled.
 Passing discovery does NOT prove a PAT is valid or that a push will succeed.
@@ -63,12 +65,15 @@ def report_exception(error):
 
 def load_runtime():
     # Keep imports (including native _ctypes loading) inside the logged exception boundary.
-    global base64, ct, wt, datetime, getpass, os, Path, stat, tempfile
-    global quote, unquote, urlsplit, warnings
+    global base64, ct, wt, datetime, timezone, getpass, os, Path, stat, tempfile
+    global quote, unquote, urlsplit, warnings, parsedate_to_datetime, monotonic, shutil
     import base64
     import ctypes as ct
     from ctypes import wintypes as wt
-    from datetime import datetime
+    from datetime import datetime, timezone
+    from email.utils import parsedate_to_datetime
+    from time import monotonic
+    import shutil
     import getpass
     import os
     from pathlib import Path
@@ -121,6 +126,7 @@ class WinHTTP:
 
     def __init__(self):
         self.dll = ct.WinDLL("winhttp", use_last_error=True)
+        self.clock_sample = None
         self.callback_type = ct.WINFUNCTYPE(None, wt.HANDLE, ct.c_size_t,
                                            wt.DWORD, ct.c_void_p, wt.DWORD)
         handle, ptr, dword = wt.HANDLE, ct.c_void_p, wt.DWORD
@@ -145,8 +151,59 @@ class WinHTTP:
             fn.restype, fn.argtypes = result, args
             setattr(self, name, fn)
 
-    def probe(self, url, service, username="", pat=""):
+    def check_proxy(self):
+        report("STEP: Checking WinHTTP proxy configuration")
+
+        class ProxyInfo(ct.Structure):
+            _fields_ = [("access", wt.DWORD), ("proxy", ct.c_void_p),
+                        ("bypass", ct.c_void_p)]
+
+        class BrowserProxyInfo(ct.Structure):
+            _fields_ = [("auto_detect", wt.BOOL), ("pac", ct.c_void_p),
+                        ("proxy", ct.c_void_p), ("bypass", ct.c_void_p)]
+
+        kernel = ct.WinDLL("kernel32", use_last_error=True)
+        kernel.GlobalFree.argtypes = [ct.c_void_p]
+        kernel.GlobalFree.restype = ct.c_void_p
+        outcomes = []
+        for api, structure, fields in (
+                ("WinHttpGetDefaultProxyConfiguration", ProxyInfo, ("proxy", "bypass")),
+                ("WinHttpGetIEProxyConfigForCurrentUser", BrowserProxyInfo,
+                 ("pac", "proxy", "bypass"))):
+            info = structure()
+            fn = getattr(self.dll, api)
+            fn.argtypes, fn.restype = [ct.POINTER(structure)], wt.BOOL
+            if not fn(ct.byref(info)):
+                report("INCOMPLETE: %s unavailable; Windows error=%d." % (api, ct.get_last_error()))
+                outcomes.append("INCOMPLETE")
+                continue
+            try:
+                if structure is ProxyInfo:
+                    if info.access in (1, 3):
+                        report("PASS: Default WinHTTP proxy configuration readable; mode=%s." %
+                               ("direct" if info.access == 1 else "named proxy"))
+                    else:
+                        report("INCOMPLETE: Unrecognized default WinHTTP proxy mode=%d." % info.access)
+                        outcomes.append("INCOMPLETE")
+                else:
+                    report("INFO: Browser proxy settings: manual=%s, PAC=%s, auto-detect=%s." %
+                           (bool(info.proxy), bool(info.pac), bool(info.auto_detect)))
+                    report("  Browser/per-user proxy settings are not applied by this diagnostic.")
+            finally:
+                # Opaque pointers: never decode proxy URLs (they can contain credentials).
+                for field in fields:
+                    pointer = getattr(info, field)
+                    if pointer:
+                        kernel.GlobalFree(pointer)
+        for name in ("HTTP_PROXY", "HTTPS_PROXY", "ALL_PROXY", "NO_PROXY"):
+            report("INFO: %s environment variable: %s (not applied by this diagnostic)." %
+                   (name, "set" if os.environ.get(name) else "unset"))
+        report("INFO: Connectivity is tested through WinHTTP, not a direct DNS/TCP socket bypass.")
+        return summarize(outcomes)
+
+    def probe(self, url, service, username="", pat="", check_clock=False):
         flags, handles = wt.DWORD(), []
+        self.clock_sample = None
 
         @self.callback_type
         def callback(handle, context, status, info, length):
@@ -174,8 +231,13 @@ class WinHTTP:
             session = check(self.Open("VNote-sync-diagnostic/1", 0, None, None, 0), "session")
             handles.append(session)  # WINHTTP_ACCESS_TYPE_DEFAULT_PROXY, as in libgit2.
             # Match libgit2's best-effort TLS 1.0/1.1/1.2/1.3 mask and fallback.
-            if not option(session, 84, 0x80 | 0x200 | 0x800 | 0x2000):
-                option(session, 84, 0x80 | 0x200 | 0x800)
+            if option(session, 84, 0x80 | 0x200 | 0x800 | 0x2000):
+                report("INFO: WinHTTP TLS protocol mask accepted (includes TLS 1.3).")
+            elif option(session, 84, 0x80 | 0x200 | 0x800):
+                report("INFO: WinHTTP TLS protocol mask accepted without TLS 1.3.")
+            else:
+                report("INFO: TLS protocol mask unavailable; using Windows defaults.")
+            report("INFO: TLS negotiation still depends on Windows policy; certificate checks stay on.")
             check(self.SetTimeouts(session, 15000, 15000, 15000, 15000), "timeouts")
             connection = check(self.Connect(session, url.hostname.encode("idna").decode(),
                                             url.port or 443, 0), "connect")
@@ -192,12 +254,19 @@ class WinHTTP:
             previous = self.SetStatusCallback(request, callback, 0x10000, 0)
             if previous == ct.c_void_p(-1).value:
                 raise TransportError("certificate callback", ct.get_last_error(), flags.value)
-            headers = ""
+            headers = "Cache-Control: no-cache\r\nPragma: no-cache\r\n"
             if pat:
                 basic = base64.b64encode((username + ":" + pat).encode("utf-8")).decode("ascii")
-                headers = "Authorization: Basic " + basic + "\r\n"
+                headers += "Authorization: Basic " + basic + "\r\n"
+            started = datetime.now(timezone.utc)
+            tick = monotonic()
             check(self.SendRequest(request, headers, len(headers), None, 0, 0, 0), "send")
             check(self.ReceiveResponse(request, None), "receive")
+            finished, elapsed = datetime.now(timezone.utc), monotonic() - tick
+            if check_clock:
+                # Only the anonymous HTTPS response is used; raw headers never leave this check.
+                self.clock_sample = (header(request, 9), header(request, 48),
+                                     started, finished, elapsed)
             status, size = wt.DWORD(), wt.DWORD(ct.sizeof(wt.DWORD))
             check(self.QueryHeaders(request, 19 | 0x20000000, None, ct.byref(status),
                                     ct.byref(size), None), "HTTP status")
@@ -241,11 +310,11 @@ def parse_url(text):
     return url, username
 
 
-def report_network(client, url, service, username="", pat=""):
+def report_network(client, url, service, username="", pat="", check_clock=False):
     label = "fetch" if service == "git-upload-pack" else "push discovery (GET only)"
     report("STEP:", label, "with PAT" if pat else "without PAT")
     try:
-        status, git = client.probe(url, service, username, pat)
+        status, git = client.probe(url, service, username, pat, check_clock=check_clock)
     except TransportError as error:
         report("FAIL: %s: WinHTTP %s at %s; secure flags=0x%08x" %
               (label, error.code, error.stage, error.flags))
@@ -256,6 +325,7 @@ def report_network(client, url, service, username="", pat=""):
         report("  Check Windows clock/root certificates and proxy/antivirus HTTPS inspection.")
         report("  Do not disable certificate verification. Qt OpenSSL DLLs do not fix WinHTTP.")
         return "FAIL", False
+    report("PASS: HTTPS response received; Windows accepted TLS and the endpoint certificate.")
     if 300 <= status < 400:
         report("INCOMPLETE: %s: HTTP %s redirect; not followed to protect credentials." % (label, status))
         report("  Use the final HTTPS clone URL. VNote may follow an initial redirect.")
@@ -280,6 +350,113 @@ def report_network(client, url, service, username="", pat=""):
     return outcome, status in (200, 401, 403, 404)
 
 
+def summarize(outcomes):
+    return "FAIL" if "FAIL" in outcomes else "INCOMPLETE" if "INCOMPLETE" in outcomes else "PASS"
+
+
+def report_clock(sample):
+    report("STEP: Checking UTC clock against the anonymous HTTPS response")
+    if sample is None:
+        report("INCOMPLETE: No HTTPS clock reference; verify Windows date/time and time zone manually.")
+        return "INCOMPLETE"
+    date, age, started, finished, elapsed = sample
+    try:
+        reference = parsedate_to_datetime(date)
+        if reference.tzinfo is None:
+            raise ValueError
+        reference = reference.astimezone(timezone.utc)
+    except (TypeError, ValueError, OverflowError):
+        report("INCOMPLETE: HTTPS clock reference missing or malformed; no raw header is logged.")
+        return "INCOMPLETE"
+    if age and (not age.isascii() or not age.isdigit() or int(age) != 0):
+        report("INCOMPLETE: HTTPS clock reference may be cached or has an invalid cache age.")
+        report("  Verify Windows date/time manually; a cached response is not a fresh time reference.")
+        return "INCOMPLETE"
+    wall_elapsed = (finished - started).total_seconds()
+    if elapsed < 0 or abs(wall_elapsed - elapsed) > 2:
+        report("INCOMPLETE: Local clock changed during the request; retry after time synchronization.")
+        return "INCOMPLETE"
+    offset = (reference - started).total_seconds() - elapsed / 2
+    if abs(offset) > 300 + elapsed / 2:
+        report("INCOMPLETE: Local clock is about %d seconds %s the HTTPS reference." %
+               (round(abs(offset)), "behind" if offset > 0 else "ahead of"))
+        report("  Check Windows date/time, time zone and Sync now; server/proxy time may also be wrong.")
+        return "INCOMPLETE"
+    report("PASS: UTC clock agrees with HTTPS reference within 5 minutes plus request uncertainty.")
+    report("INFO: This is a server/proxy time sanity check, not authoritative NTP synchronization.")
+    return "PASS"
+
+
+def check_username(url, username):
+    report("STEP: Checking Git login selection")
+    report("INFO: Git login is %s; value is not logged." %
+           ("provided in the URL" if url.username else "defaulted to x-access-token"))
+    if url.hostname.lower() == "gitee.com" and username == "x-access-token":
+        report("INCOMPLETE: Gitee needs the PAT owner's account login, not the default GitHub login.")
+        report("  Use https://LOGIN@gitee.com/OWNER/REPO.git; LOGIN need not be OWNER. No PAT in URL.")
+        return "INCOMPLETE"
+    report("PASS: Git login selection checked; account identity and permissions remain unverified.")
+    return "PASS"
+
+
+def check_pat(pat):
+    if not pat:
+        report("INCOMPLETE: PAT checks skipped; no token entered.")
+        return "INCOMPLETE"
+    if any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in pat):
+        report("FAIL: PAT input contains whitespace/control characters; token was not sent.")
+        report("  Copy the token exactly and re-enter it; no input is logged or automatically trimmed.")
+        return "FAIL"
+    report("PASS: PAT input format checked; this does not establish token validity.")
+    return "PASS"
+
+
+def check_disk_space(root):
+    try:
+        free = shutil.disk_usage(root).free
+    except OSError as error:
+        report("INCOMPLETE: Free-space query unavailable; Windows error=%s, errno=%s." %
+               (getattr(error, "winerror", None), error.errno))
+        return "INCOMPLETE"
+    report("INFO: Notebook volume available space: %d MiB." % (free // (1024 * 1024)))
+    if free == 0:
+        report("FAIL: No available disk space for Git objects, index or temporary files.")
+        return "FAIL"
+    if free < 100 * 1024 * 1024:
+        report("INCOMPLETE: Less than 100 MiB available; required space depends on notebook/history size.")
+        return "INCOMPLETE"
+    report("PASS: Available disk space exceeds the 100 MiB warning threshold; capacity is not guaranteed.")
+    return "PASS"
+
+
+def check_git_metadata(gitdir):
+    outcomes = []
+    for name in ("HEAD", "config", "index"):
+        try:
+            path = gitdir / name
+            if path.exists():
+                info = path.lstat()
+                readonly = bool(getattr(info, "st_file_attributes", 0) & 1)
+                with path.open("rb") as stream:
+                    stream.read(1)  # Check read access only, never print or modify contents.
+                report("PASS: Git %s readable; readonly=%s." % (name, readonly))
+                if readonly:
+                    report("INCOMPLETE: Readonly Git metadata may prevent updates; no attributes changed.")
+                    outcomes.append("INCOMPLETE")
+            try:
+                (gitdir / (name + ".lock")).lstat()
+            except FileNotFoundError:
+                continue
+            report("INCOMPLETE: Git %s.lock exists; an active VNote/Git operation may own it." % name)
+            report("  Retry after normal operations finish; this check does not delete lock files.")
+            outcomes.append("INCOMPLETE")
+        except OSError as error:
+            report("FAIL: Git %s metadata access: Windows error=%s, errno=%s." %
+                   (name, getattr(error, "winerror", None), error.errno))
+            outcomes.append("FAIL")
+    return outcomes
+
+
 def check_notebook(folder, write_probe):
     report("STEP: Checking notebook filesystem")
     root = Path(folder)
@@ -288,10 +465,15 @@ def check_notebook(folder, write_probe):
         if not root.is_dir():
             report("FAIL: Notebook folder does not exist or is not a directory.")
             return ["FAIL"]
+        outcomes.append(check_disk_space(root))
         config = root / "vx_notebook" / "config.json"
         if not config.is_file():
             report("FAIL: vx_notebook/config.json is missing; this is not a bundled notebook root.")
             outcomes.append("FAIL")
+        else:
+            with config.open("rb") as stream:
+                stream.read(1)
+            report("PASS: Notebook config is readable (contents are not logged or validated).")
         for name in (".git", "vx_notebook/vx_sync"):
             path = root / name
             try:
@@ -308,6 +490,8 @@ def check_notebook(folder, write_probe):
             elif not path.is_dir() or not (path / "HEAD").is_file():
                 report("FAIL: vx_notebook/vx_sync exists without a usable HEAD; partial Git setup.")
                 outcomes.append("FAIL")
+            if path.is_dir():
+                outcomes.extend(check_git_metadata(path))
         if not write_probe:
             report("INCOMPLETE: Disk write checks skipped.")
             return outcomes + ["INCOMPLETE"]
@@ -336,14 +520,19 @@ def check_notebook(folder, write_probe):
 
 
 def main():
-    if sys.platform != "win32":
-        report("This diagnostic must run on the affected Windows machine (native WinHTTP).")
-        return 2
+    report("STEP: Checking diagnostic runtime")
+    if sys.platform != "win32" or sys.version_info < (3, 8):
+        report("FAIL: This diagnostic requires native Windows and Python 3.8 or newer.")
+        return 1
+    report("PASS: Windows/Python runtime supported by this diagnostic.")
     report("VNote Git sync diagnostic: Windows WinHTTP, independent of Qt 5.15/Qt 6.")
     report("Windows:", sys.getwindowsversion(), "Python bits:", ct.sizeof(ct.c_void_p) * 8)
-    report("Local time:", datetime.now().astimezone().isoformat(), "-- verify this clock")
+    report("Local time:", datetime.now().astimezone().isoformat())
+    report("UTC time:", datetime.now(timezone.utc).isoformat())
+    report("INFO: Git CLI, Python packages and Qt OpenSSL DLLs are not required by these probes.")
     report("No clone/push/keychain access. PAT is not saved. Do not put a PAT in the URL.")
     report("Default WinHTTP proxy; diagnostic-only 15s stage timeouts; no redirects.")
+    report("INFO: Windows settings are inspected only, never changed.")
     while True:
         try:
             url, username = parse_url(input("Exact HTTPS clone URL used in VNote: ").strip())
@@ -351,43 +540,74 @@ def main():
         except ValueError as error:
             report(error)
     report("Target host:", url.hostname)
-    if not url.username:
-        report("INFO: VNote uses login x-access-token for this URL. Gitee may require the PAT")
-        report("  owner's account login: https://LOGIN@gitee.com/OWNER/REPO.git (no PAT in URL).")
+    checks = {"Runtime": "PASS", "Git login selection": check_username(url, username)}
     folder = input("Existing notebook folder (blank to skip disk checks): ").strip().strip('"')
-    outcomes = []
     if folder:
         consent = input("Create/remove unique temporary disk probes there? [y/N]: ").lower() == "y"
-        outcomes.extend(check_notebook(folder, consent))
+        checks["Notebook filesystem"] = summarize(check_notebook(folder, consent))
     else:
-        outcomes.append("INCOMPLETE")
+        report("INCOMPLETE: Notebook filesystem checks skipped; no notebook folder entered.")
+        checks["Notebook filesystem"] = "INCOMPLETE"
     report("STEP: Initializing WinHTTP")
-    client = WinHTTP()
-    result, reachable = report_network(client, url, "git-upload-pack")
+    client = None
+    try:
+        client = WinHTTP()
+        report("PASS: Native WinHTTP library and required request APIs loaded.")
+        checks["WinHTTP runtime"] = "PASS"
+    except (OSError, AttributeError) as error:
+        report("FAIL: Native WinHTTP runtime unavailable; check Windows installation/updates.")
+        report_exception(error)
+        checks["WinHTTP runtime"] = "FAIL"
+    reachable = False
+    checks["Fetch discovery"] = "INCOMPLETE"
+    if client is not None:
+        try:
+            checks["Proxy inspection"] = client.check_proxy()
+        except (OSError, AttributeError) as error:
+            report("INCOMPLETE: Proxy configuration inspection unavailable.")
+            report_exception(error)
+            checks["Proxy inspection"] = "INCOMPLETE"
+        checks["Fetch discovery"], reachable = report_network(
+            client, url, "git-upload-pack", check_clock=True)
+        checks["UTC clock reference"] = report_clock(client.clock_sample)
+    else:
+        report("INCOMPLETE: Proxy, HTTPS discovery and clock reference skipped; WinHTTP unavailable.")
+        checks.update({"Proxy inspection": "INCOMPLETE", "UTC clock reference": "INCOMPLETE"})
+    checks["PAT input"] = "INCOMPLETE"
+    checks["Push discovery"] = "INCOMPLETE"
     if reachable and input("Test with your PAT on this host? [y/N]: ").lower() == "y":
         # Windows getpass can block on console input even when stdin is redirected.
         if not sys.stdin.isatty():
-            raise getpass.GetPassWarning("A real console is required")
-        report("STEP: Reading PAT securely (input is not logged)")
-        with warnings.catch_warnings():
-            warnings.simplefilter("error", getpass.GetPassWarning)
-            pat = getpass.getpass("PAT (hidden; Enter to skip): ")
-        if pat:
-            result, reachable = report_network(client, url, "git-upload-pack", username, pat)
-            outcomes.append(result)
-            if reachable:
-                result, _ = report_network(client, url, "git-receive-pack", username, pat)
-                outcomes.append(result)
-            pat = ""
+            report("INCOMPLETE: No secure input terminal; PAT checks skipped. Run in a console.")
         else:
-            outcomes.extend([result, "INCOMPLETE"])
+            report("STEP: Reading PAT securely (input is not logged)")
+            with warnings.catch_warnings():
+                warnings.simplefilter("error", getpass.GetPassWarning)
+                pat = getpass.getpass("PAT (hidden; Enter to skip): ")
+            checks["PAT input"] = check_pat(pat)
+            if checks["PAT input"] == "PASS":
+                result, reachable = report_network(client, url, "git-upload-pack", username, pat)
+                # Expected anonymous 401/403/404 must not taint successful authenticated discovery.
+                if checks["Fetch discovery"] != "FAIL":
+                    checks["Fetch discovery"] = result
+                if reachable:
+                    checks["Push discovery"], _ = report_network(
+                        client, url, "git-receive-pack", username, pat)
+            pat = ""
     else:
-        outcomes.extend([result, "INCOMPLETE"])
+        report("INCOMPLETE: PAT checks skipped; consent declined or endpoint unavailable.")
+    if checks["Push discovery"] == "INCOMPLETE":
+        report("INCOMPLETE: Push discovery was skipped or could not complete; no upload was attempted.")
+    report("\nHealth check summary:")
+    for label, result in checks.items():
+        report("  %s: %s" % (label, result))
     report("\nLimits: discovery is not a clone/push; even HTTP 200 does not prove PAT validity")
-    report("or branch write permission. Existing-file locks and VNote's keychain are not tested.")
+    report("or branch write permission. Existing-file write locks and VNote's keychain are not tested.")
+    report("NOT TESTED: VNote keychain build support/entry, runtime sync registration or proxy overrides.")
+    report("INFO: Windows roots/TLS are checked only through this endpoint, not a system-wide audit.")
     report("For 'Password entry not found', re-enter the PAT in VNote after fixing TLS/disk errors.")
-    report("Share this output, not the PAT. No response headers/body or full URL are printed.")
-    summary = "FAIL" if "FAIL" in outcomes else "INCOMPLETE" if "INCOMPLETE" in outcomes else "PASS"
+    report("Share this output, not the PAT. No raw response headers/body, proxy values or full URL are printed.")
+    summary = summarize(checks.values())
     report("RESULT:", summary)
     return {"PASS": 0, "FAIL": 1, "INCOMPLETE": 2}[summary]
 
