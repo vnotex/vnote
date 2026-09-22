@@ -13,8 +13,8 @@ class QTimer;
 
 namespace vnotex {
 
-// Time-of-day greeting with an inline tip during the first five minutes of each
-// local clock hour. Hidden stickers do no catalog or timer work; reopening
+// A two-line greeting, replaced in full by a tip for the first five minutes
+// of each local clock hour. Hidden stickers do no catalog or timer work; reopening
 // reconciles the current window while retaining that hour's selected tip.
 class GreetingSticker : public Sticker {
   Q_OBJECT
@@ -42,7 +42,6 @@ protected:
 private:
   void updateGreeting();
 
-  QLabel *m_greetingLabel = nullptr;
   QLabel *m_label = nullptr;
   QScrollArea *m_tipArea = nullptr;
   QTimer *m_timer = nullptr;

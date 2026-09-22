@@ -12,6 +12,7 @@
 #include <QScopeGuard>
 #include <QScrollArea>
 #include <QScrollBar>
+#include <QTextDocument>
 #include <QTimer>
 #include <QVBoxLayout>
 #include <QWheelEvent>
@@ -28,10 +29,13 @@ using namespace vnotex;
 
 namespace tests {
 namespace {
-const QString c_subtitle = QStringLiteral("Read, write, and think");
-
 QDateTime at(int p_hour, int p_minute = 0, int p_second = 0, int p_msec = 0) {
   return QDateTime(QDate(2026, 9, 23), QTime(p_hour, p_minute, p_second, p_msec));
+}
+
+QString normalGreetingForHour(int p_hour) {
+  return GreetingSticker::greetingForHour(p_hour) + QLatin1Char('\n') +
+         QStringLiteral("Read, write, and think");
 }
 
 class ClockedGreeting final : public GreetingSticker {
@@ -48,7 +52,22 @@ public:
 
   QScrollArea *area() const { return findChild<QScrollArea *>(); }
   QLabel *body() const { return qobject_cast<QLabel *>(area()->widget()); }
-  QLabel *greeting() const { return findChild<QLabel *>(QString(), Qt::FindDirectChildrenOnly); }
+  QString displayedText() const {
+    QStringList texts;
+    for (auto *label : findChildren<QLabel *>()) {
+      if (!label->isVisible()) {
+        continue;
+      }
+      if (label->textFormat() == Qt::RichText) {
+        QTextDocument document;
+        document.setHtml(label->text());
+        texts.append(document.toPlainText());
+      } else {
+        texts.append(label->text());
+      }
+    }
+    return texts.join(QLatin1Char('\n'));
+  }
 
   void refresh() {
     QVERIFY(QMetaObject::invokeMethod(findChild<QTimer *>(), "timeout", Qt::QueuedConnection));
@@ -204,22 +223,20 @@ void TestGreetingSticker::test_hourlyBoundaries() {
   ClockedGreeting sticker(services);
   sticker.now = at(11, 59, 59, 999);
   sticker.show();
-  QCOMPARE(sticker.body()->text(), c_subtitle);
-  QVERIFY(sticker.greeting()->text().contains(GreetingSticker::greetingForHour(11)));
+  QCOMPARE(sticker.displayedText(), normalGreetingForHour(11));
   sticker.now = at(12);
   sticker.refresh();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip A"));
-  QVERIFY(sticker.greeting()->text().contains(GreetingSticker::greetingForHour(12)));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip A"));
   sticker.refresh();
   sticker.now = at(12, 4, 59, 999);
   sticker.refresh();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip A"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip A"));
   sticker.now = at(12, 5);
   sticker.refresh();
-  QCOMPARE(sticker.body()->text(), c_subtitle);
+  QCOMPARE(sticker.displayedText(), normalGreetingForHour(12));
   sticker.now = at(13);
   sticker.refresh();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip B"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip B"));
 }
 
 void TestGreetingSticker::test_reopenAndMissedHours() {
@@ -229,37 +246,39 @@ void TestGreetingSticker::test_reopenAndMissedHours() {
   sticker.refresh(); // Hidden delivery must not consume the first selection.
   sticker.now = at(12, 3);
   sticker.show();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip A"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip A"));
   sticker.now = at(12, 3, 30);
   sticker.hide();
   sticker.now = at(12, 4);
   sticker.show();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip A"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip A"));
   sticker.now = at(12, 5);
   sticker.refresh();
-  QCOMPARE(sticker.body()->text(), c_subtitle);
+  QCOMPARE(sticker.displayedText(), normalGreetingForHour(12));
   sticker.hide();
   sticker.now = at(12, 10);
   sticker.show();
-  QCOMPARE(sticker.body()->text(), c_subtitle);
+  QCOMPARE(sticker.displayedText(), normalGreetingForHour(12));
   sticker.hide();
   sticker.now = at(14, 2);
   sticker.refresh();
   sticker.now = at(15, 2);
   sticker.show();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip B"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip B"));
   sticker.hide();
   sticker.now = sticker.now.addDays(1);
   sticker.show();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip C"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip C"));
 }
 
 void TestGreetingSticker::test_realDeadlines_data() {
   QTest::addColumn<QDateTime>("origin");
   QTest::addColumn<QString>("before");
   QTest::addColumn<QString>("after");
-  QTest::newRow("noon") << at(11, 59, 59, 900) << c_subtitle << QStringLiteral("Tip A");
-  QTest::newRow("expiry") << at(12, 4, 59, 900) << QStringLiteral("Tip A") << c_subtitle;
+  QTest::newRow("noon") << at(11, 59, 59, 900) << normalGreetingForHour(11)
+                        << QStringLiteral("Tip A");
+  QTest::newRow("expiry") << at(12, 4, 59, 900) << QStringLiteral("Tip A")
+                          << normalGreetingForHour(12);
 }
 
 void TestGreetingSticker::test_realDeadlines() {
@@ -272,10 +291,9 @@ void TestGreetingSticker::test_realDeadlines() {
   // Start advancing only after the synchronous show, so native window creation
   // cannot race the initial assertion on a busy CI host.
   sticker.show();
-  QCOMPARE(sticker.body()->text(), before);
+  QCOMPARE(sticker.displayedText(), before);
   sticker.elapsed.start();
-  QTRY_COMPARE_WITH_TIMEOUT(sticker.body()->text(), after, 2000);
-  QVERIFY(sticker.greeting()->text().contains(GreetingSticker::greetingForHour(12)));
+  QTRY_COMPARE_WITH_TIMEOUT(sticker.displayedText(), after, 2000);
 
   auto *pending = new ClockedGreeting(services);
   pending->now = at(12, 4, 59, 900);
@@ -295,25 +313,24 @@ void TestGreetingSticker::test_lateActivationAndInvalidClock() {
   ClockedGreeting sticker(services);
   sticker.now = at(12, 4);
   sticker.show();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip A"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip A"));
   sticker.now = at(12, 7);
   sticker.refresh();
-  QCOMPARE(sticker.body()->text(), c_subtitle);
+  QCOMPARE(sticker.displayedText(), normalGreetingForHour(12));
   sticker.now = at(18, 2);
   QVERIFY(QMetaObject::invokeMethod(qGuiApp, "applicationStateChanged", Qt::DirectConnection,
                                     Q_ARG(Qt::ApplicationState, Qt::ApplicationActive)));
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip B"));
-  QVERIFY(sticker.greeting()->text().contains(GreetingSticker::greetingForHour(18)));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip B"));
   sticker.now = QDateTime();
   sticker.refresh();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip B"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip B"));
   sticker.hide();
   sticker.now = at(19, 2);
   QVERIFY(QMetaObject::invokeMethod(qGuiApp, "applicationStateChanged", Qt::DirectConnection,
                                     Q_ARG(Qt::ApplicationState, Qt::ApplicationActive)));
   sticker.now = at(20, 2);
   sticker.show();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip C"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip C"));
 }
 
 void TestGreetingSticker::test_repeatedLocalHour() {
@@ -321,10 +338,10 @@ void TestGreetingSticker::test_repeatedLocalHour() {
   ClockedGreeting sticker(services);
   sticker.now = QDateTime::fromString(QStringLiteral("2026-11-01T01:02:00-04:00"), Qt::ISODate);
   sticker.show();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip A"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip A"));
   sticker.now = QDateTime::fromString(QStringLiteral("2026-11-01T01:02:00-05:00"), Qt::ISODate);
   sticker.refresh();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Tip B"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Tip B"));
 }
 
 void TestGreetingSticker::test_localizedCatalog_data() {
@@ -350,7 +367,7 @@ void TestGreetingSticker::test_localizedCatalog() {
   ClockedGreeting sticker(services);
   sticker.tipSource = [&] { return ToolTipService::randomTip(path); };
   sticker.show();
-  QCOMPARE(sticker.body()->text(), expected);
+  QCOMPARE(sticker.displayedText(), expected);
   const auto pair =
       tmp.createFile(QStringLiteral("pair.json"), R"([{"en_US":"One"},{"en_US":"Two"}])");
   const auto selected = ToolTipService::randomTip(pair);
@@ -377,16 +394,16 @@ void TestGreetingSticker::test_failedCatalogIsCached() {
   ClockedGreeting sticker(services);
   sticker.tipSource = [&] { return ToolTipService::randomTip(path); };
   sticker.show();
-  QCOMPARE(sticker.body()->text(), c_subtitle);
+  QCOMPARE(sticker.displayedText(), normalGreetingForHour(12));
   tmp.createFile(name, R"([{"en_US":"Repaired"}])");
   sticker.now = at(12, 2);
   sticker.refresh();
   sticker.hide();
   sticker.show();
-  QCOMPARE(sticker.body()->text(), c_subtitle);
+  QCOMPARE(sticker.displayedText(), normalGreetingForHour(12));
   sticker.now = at(13, 2);
   sticker.refresh();
-  QCOMPARE(sticker.body()->text(), QStringLiteral("Repaired"));
+  QCOMPARE(sticker.displayedText(), QStringLiteral("Repaired"));
 }
 
 void TestGreetingSticker::test_literalAndLongText() {
@@ -397,27 +414,29 @@ void TestGreetingSticker::test_literalAndLongText() {
   auto *sticker = new ClockedGreeting(services);
   const auto literal = QStringLiteral("Use <b>literal</b> & keep writing");
   sticker->tips = QStringList{literal, longest};
+  sticker->now = at(11, 59);
   populateFrame(&frame, sticker);
   frame.setFixedWidth(300);
   frame.show();
-  QCOMPARE(sticker->body()->text(), literal);
+  QCOMPARE(sticker->displayedText(), normalGreetingForHour(11));
+  sticker->now = at(12);
+  sticker->refresh();
+  QCOMPARE(sticker->displayedText(), literal);
   QCOMPARE(sticker->body()->textFormat(), Qt::PlainText);
   sticker->now = at(13);
   sticker->refresh();
-  for (int width : {300, 180}) {
+  for (int width : {300, 140}) {
     frame.setFixedWidth(width);
     QTest::qWait(50);
     // The longest shipped tip may fit at 300px with the native font. It must
-    // remain fully laid out at either width and actually scroll at 180px.
+    // remain fully laid out at either width and actually scroll at 140px.
     QTRY_VERIFY(sticker->body()->height() >=
                 sticker->body()->heightForWidth(sticker->body()->width()));
-    if (width == 180) {
+    if (width == 140) {
       QVERIFY(sticker->area()->verticalScrollBar()->maximum() > 0);
     }
-    QCOMPARE(sticker->body()->text(), longest);
+    QCOMPARE(sticker->displayedText(), longest);
     QCOMPARE(frame.size(), QSize(width, 100));
-    QVERIFY(sticker->greeting()->isVisible());
-    QVERIFY(sticker->greeting()->visibleRegion().contains(sticker->greeting()->rect()));
     QVERIFY(!sticker->area()->horizontalScrollBar()->isVisible());
     auto *bar = sticker->area()->verticalScrollBar();
     bar->setValue(bar->maximum());
@@ -432,7 +451,7 @@ void TestGreetingSticker::test_literalAndLongText() {
   frame.setFixedWidth(300);
   sticker->now = at(13, 5);
   sticker->refresh();
-  QCOMPARE(sticker->body()->text(), c_subtitle);
+  QCOMPARE(sticker->displayedText(), normalGreetingForHour(13));
   QTRY_COMPARE(sticker->area()->verticalScrollBar()->maximum(), 0);
 }
 
@@ -448,7 +467,7 @@ void TestGreetingSticker::test_boardDoesNotGrow() {
   board.sticker->tips = QStringList{longest};
   board.sticker->now = at(12);
   board.sticker->refresh();
-  QTRY_COMPARE(board.sticker->body()->text(), longest);
+  QTRY_COMPARE(board.sticker->displayedText(), longest);
   QTest::qWait(50);
   QCOMPARE(board.left->width(), leftWidth);
   QCOMPARE(board.right->width(), rightWidth);

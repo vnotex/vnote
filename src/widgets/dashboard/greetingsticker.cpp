@@ -34,11 +34,6 @@ GreetingSticker::GreetingSticker(ServiceLocator &p_services, QWidget *p_parent)
     : Sticker(p_services, p_parent) {
   auto *layout = new QVBoxLayout(this);
   layout->setContentsMargins(0, 0, 0, 0);
-  layout->setSpacing(2);
-
-  m_greetingLabel = new QLabel(this);
-  m_greetingLabel->setAlignment(Qt::AlignCenter);
-  layout->addWidget(m_greetingLabel);
 
   m_label = new QLabel(this);
   m_label->setAlignment(Qt::AlignCenter);
@@ -125,10 +120,14 @@ void GreetingSticker::updateGreeting() {
     m_tipText = randomTip();
   }
 
-  m_greetingLabel->setText(QStringLiteral("<h3 style=\"margin: 0\">%1</h3>")
-                               .arg(greetingForHour(time.hour()).toHtmlEscaped()));
-  const auto text = tipWindow && !m_tipText.isEmpty() ? m_tipText : tr("Read, write, and think");
-  if (m_label->text() != text) {
+  const bool showTip = tipWindow && !m_tipText.isEmpty();
+  const auto format = showTip ? Qt::PlainText : Qt::RichText;
+  const auto text = showTip ? m_tipText
+                            : QStringLiteral("<h3>%1</h3><p>%2</p>")
+                                  .arg(greetingForHour(time.hour()).toHtmlEscaped(),
+                                       tr("Read, write, and think").toHtmlEscaped());
+  if (m_label->textFormat() != format || m_label->text() != text) {
+    m_label->setTextFormat(format);
     m_label->setText(text);
     m_tipArea->verticalScrollBar()->setValue(0);
   }
