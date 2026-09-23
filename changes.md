@@ -1,52 +1,49 @@
 # Changes
-## Unreleased
-* Add default-level Git sync phase timings, queue outcomes and bounded credential diagnostics; fix callback payload lifetime when credential bundles are moved
-* Show full filesystem paths in History sticker item tooltips while keeping filename labels
-* Show the 256x256 10th-anniversary splash during October 2026, using the local date; keep the default logo at all other times
-* Fix shared-folder bundle import rejecting encrypted mind-map notes; preserve authenticated transfer and destination-key protection
-* Enable bundled KaTeX for reading and live previews in encrypted Markdown notes without network access; in-place math previews remain blocked
-* Dispatch inline and display math previews in document order instead of grouping inline formulas first
-* Add an Editor setting for the default clipboard image file format: JPEG (default) or PNG with transparency; Markdown respects it without changing original file/URL formats or lossless Base64 insertion
-* Restore Qt 5 presentation-mode builds, supply Native theme presentation backgrounds, and fix cross-platform CI fixtures and window-geometry checks
-* Restore the bundled Markdown Guide and Shortcuts Help in English and Simplified Chinese, available read-only from the Settings menu with English fallback; refresh the keyboard reference against active bindings
-* Preserve read-only buffers, including View Logs, when recovering visible or hidden workspaces after restart
-* Use a pen-off icon for read-only note tabs and notebook badges to distinguish them from encrypted notes
-* Keep editor-toolbar Outline, Tags, Attachments, Word Count and Insert Table popups anchored to their buttons and on-screen, including in presentation mode
-* Present rendered Markdown as offline reveal.js slides with light/dark palettes matching the current VNote theme: F9 toggles presentation, H2/H3 split slides, H3 slides pin their parent H2, and oversized content scrolls
-* Render Markdown heading fold arrows with CSS so they do not paste as oversized SVGs into rich-text editors
-* Refresh PDF Highlight, Draw, and Text box icons when switching themes
-* Match the PDF viewer's unused space to the active theme, including live theme changes, without recoloring PDF pages
-* Place PDF Find And Replace beside Outline, before the page-navigation controls
-* Keep Outline and Find And Replace on view-window toolbars and group secondary actions under a three-dot Menu; retain PDF-specific viewer controls and move Readable Width into its renamed Menu
-* Add a default-on, per-window Allow Auto Section Number menu toggle to temporarily disable Markdown read, edit and outline numbering without changing saved settings
-* Restore the missing left border on normal buttons in the Lucius theme
-* Fix macOS CI event-loop stalls while preserving native keychain coverage, and make sync IO-gate tests independent of worker scheduling
-* Fix crashes when sync credential storage is destroyed with native keychain operations still in flight, and repair cross-platform CI test linking and teardown
-* Generate transparent PlantUML UML PNG previews in light themes, preserving explicit diagram backgrounds and node fills
-* Let light-theme graph canvases blend into the page, including PlantUML, Mermaid, Flowchart, WaveDrom and Graphviz SVGs
-* Add Lucius, a light theme based on Jonathan Filip's Lucius Light normal-contrast palette, covering the interface, editors and Markdown preview
-* Restore the startup splash after the single-instance check, without flashing it for secondary launches
-* Fix note encryption failing with "Not found" when the notebook has an empty Git sync directory
-* Explain encryption preflight failures with notebook locations and localized guidance for unreadable sync metadata or conflicting key files
-* Remove buffer reload logging and log external file changes only at debug level to avoid log-viewing feedback at normal log levels
-* Keep the custom title bar Close icon visible on hover in Dreamy and Jadeite themes
-* Match the United Entry icon color to the other main toolbar icons, including live theme changes
-* Load tasks on first request so freshly installed bundled tasks are available without restarting VNote
-* Translate daily tips using the preferred UI language when the system regional format uses a different locale
-* Add an enabled-by-default General Settings option to allow Ctrl+Alt shortcuts; turn it off and restart to avoid AltGr conflicts without losing custom bindings
-* Add a text-only Edit JSON button to the right of the Settings toolbar to edit vnotex.json in VNote
+## v4.8.0
+A feature release with Markdown presentations, search-and-replace across notes, new light themes and more flexible encrypted notes on top of VNote 4.7.0:
 
-* **Export**
-    * Add a compact palette-icon Follow Theme button to select the active theme's rendering and syntax styles in the export dialog
-    * HTML exports resolve the selected theme palette like read mode, preserving table borders and other themed colors
-    * The exported outline panel opens and closes smoothly, with a refreshed toggle, active-section styling, keyboard controls and reduced-motion support
-    * Exported outline and code-block toolbar labels, tooltips and accessibility text use the application language, including Simplified Chinese and Japanese
-    * HTML code blocks retain the same Copy and Collapse/Expand toolbar as read mode; copying a collapsed block still copies all of its code
-
-* **Search**
-    * The Search panel can replace selected or all reviewed Simple content matches with literal text; confirmation saves affected notes including existing unsaved edits, with cancellation and failed-write recovery
-    * Content search results now navigate to the correct editor line
+* **Presentations and Markdown**
+    * Present rendered Markdown as offline reveal.js slides with F9; H2/H3 headings split slides, H3 slides retain their parent H2, and oversized content scrolls
+    * Presentation palettes follow the active VNote theme, including Native; PDF presentations retain their controls in whole-view fullscreen and refit when the viewport changes
+    * A default-on, per-window Allow Auto Section Number toggle temporarily disables numbering in Markdown read mode, edit mode and the outline without changing saved settings
+    * Choose whether a sole leading level-1 heading is excluded from automatic section numbering or numbering starts at the first heading
+    * Select JPEG (default) or PNG with transparency for clipboard images saved as files; original file/URL formats and lossless Base64 insertion remain unchanged
+    * Inline and display math previews are dispatched in document order, and CSS heading-fold arrows no longer paste as oversized SVGs into rich-text editors
+* **Search and replace**
+    * Replace selected or all reviewed Simple content-search matches with literal text; confirmation saves affected notes, including existing unsaved edits, with cancellation and failed-write recovery
+    * Content-search results navigate to the correct editor line
     * Vi-mode search updates incrementally and uses correct source positions in folded documents and table cells
+* **Encrypted notes**
+    * Decrypt selected encrypted notes in place to return them to normal notes
+    * Shared-folder bundle import accepts encrypted mind-map notes while preserving authenticated transfer and destination-key protection
+    * Bundled KaTeX works offline in encrypted Markdown reading and live previews; in-place math previews remain blocked
+    * Note encryption works when the notebook has an empty Git sync directory; preflight failures include notebook locations and localized guidance for unreadable sync metadata or conflicting key files
+* **Export**
+    * A compact palette-icon Follow Theme button selects the active theme's rendering and syntax styles
+    * HTML exports resolve the selected theme palette like read mode, preserving table borders and other themed colors
+    * The exported outline opens and closes smoothly, with refreshed controls, active-section styling, keyboard support and reduced-motion support
+    * HTML code blocks retain read mode's Copy and Collapse/Expand toolbar; copying a collapsed block still copies all of its code
+    * Exported outline and code-block labels, tooltips and accessibility text follow the application language, including Simplified Chinese and Japanese
+* **Themes and interface**
+    * Added three light themes: Lucius, based on Jonathan Filip's Lucius Light normal-contrast palette; Dreamy, with light lavender colors; and Jadeite, with linen and teal colors
+    * Light-theme graph canvases blend into the page, including PlantUML, Mermaid, Flowchart, WaveDrom and Graphviz SVGs; PlantUML PNG previews are transparent while preserving explicit diagram backgrounds and node fills
+    * PDF viewer backgrounds and scrollbars follow the active theme without recoloring PDF pages, and annotation icons refresh on theme changes
+    * Outline and Find And Replace stay on view-window toolbars while secondary actions move into a three-dot Menu; PDF Find sits beside Outline and Readable Width is available in the Menu
+    * Editor-toolbar Outline, Tags, Attachments, Word Count and Insert Table popups stay anchored to their buttons and on-screen, including in presentation mode
+    * Read-only note tabs and notebook badges use a pen-off icon, and History sticker tooltips show full filesystem paths
+    * Refined Pink Shock syntax colors, restored the Lucius button border and Dreamy/Jadeite Close hover contrast, and made the United Entry icon follow toolbar colors
+    * The startup splash appears only for the primary instance; a 256x256 anniversary splash is shown during October 2026 according to the local date
+* **Help and settings**
+    * Restored read-only Markdown Guide and Shortcuts Help from the Settings menu in English and Simplified Chinese, with English fallback and an updated keyboard reference
+    * The greeting sticker shows hourly tips, and localized tips follow the preferred UI language rather than the system regional format
+    * A default-on General setting allows Ctrl+Alt shortcuts; disable it and restart to avoid AltGr conflicts without losing custom bindings
+    * A text-only Edit JSON button on the Settings toolbar opens vnotex.json in VNote
+* **Reliability and diagnostics**
+    * Read-only buffers, including View Logs, survive visible and hidden workspace recovery after restart
+    * Freshly installed bundled tasks load on first request without requiring a restart
+    * Removed buffer-reload log feedback at normal log levels and added Git sync phase timings, queue outcomes and bounded credential diagnostics, plus Windows Git/WinHTTP diagnostic tooling
+    * Fixed sync credential callback lifetimes and shutdown crashes with native keychain operations in flight; repaired Qt 5 presentation builds and cross-platform CI fixtures, keychain event loops and sync IO-gate checks
+* **Translations**: Simplified Chinese and Japanese catalogs updated for the new strings
 
 ## v4.7.0
 A feature release with encrypted notes, richer Markdown editing, offline math rendering and faster keyboard navigation on top of VNote 4.6.1:
