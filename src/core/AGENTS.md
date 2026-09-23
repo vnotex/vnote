@@ -130,6 +130,27 @@ Bundled help lives in `docs/en_US/` and `docs/zh_CN/`. After translators load, `
 guides through `BufferService` in forced Read mode with read-only buffers; missing locales fall
 back to `en_US`.
 
+### Single-Instance IPC
+
+`SingleInstanceGuard` keeps the live-lock/unreachable case fail-closed. Each accepted socket
+has independent `QDataStream` transactions: never compare the wire's UTF-16 character count
+with `bytesAvailable()`, or discard a connection because another launch is still connected.
+Drain data already buffered at accept/disconnect as well as on `readyRead`.
+
+Requests use `Qt_5_12`: `quint32 opcode`, `quint32 UTF-16 size`, then a serialized `QString`
+only for nonempty payloads. The primary commits the complete request, queues its signal, and
+writes/flushes a non-blocking ACK (`quint32 accepted opcode`, `quint32(0)`) before GUI handlers
+can run. ACK means accepted for dispatch, not that opening the file has already succeeded.
+Client forwarding returns `bool`, sharing one 30-second deadline for write drain and ACK.
+No retries: a timeout may follow acceptance. Failure aborts that connection and `main()` exits
+nonzero without sending further commands. Empty file lists are a successful no-op; ordinary
+launches still request Show, detached launches do not. Restart the primary after upgrading:
+older primaries do not acknowledge requests from the new client.
+
+Regression coverage: `tests/core/test_singleinstanceguard.cpp`, using unique pipe names and
+lock paths plus real child senders (including delayed startup, fragmentation and overlapping
+connections). Never exercise tests against the production `vnote` pipe or lock.
+
 ### Ctrl+Alt Shortcut Filtering
 
 Settings → General → **Allow Ctrl+Alt shortcuts** persists

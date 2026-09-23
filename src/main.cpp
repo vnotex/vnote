@@ -632,12 +632,10 @@ int main(int argc, char *argv[]) {
         if (cmdOptions.m_detachedView) {
           // Forward as a detached-view open. Do NOT raise/show the running main
           // window; only the new detached window should appear.
-          guard.requestOpenFilesDetached(cmdOptions.m_pathsToOpen);
+          ret = guard.requestOpenFilesDetached(cmdOptions.m_pathsToOpen) ? 0 : 1;
         } else {
-          guard.requestOpenFiles(cmdOptions.m_pathsToOpen);
-          guard.requestShow();
+          ret = guard.requestOpenFiles(cmdOptions.m_pathsToOpen) && guard.requestShow() ? 0 : 1;
         }
-        ret = 0;
       } else {
         // BusyUnreachable: the lock is held but the holder cannot be reached.
         // This used to fail OPEN and become a second primary. Exit instead.
