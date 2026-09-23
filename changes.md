@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Add default-level Git sync phase timings, queue outcomes and bounded credential diagnostics; fix callback payload lifetime when credential bundles are moved
 * Show full filesystem paths in History sticker item tooltips while keeping filename labels
 * Show the 256x256 10th-anniversary splash during October 2026, using the local date; keep the default logo at all other times
 * Fix shared-folder bundle import rejecting encrypted mind-map notes; preserve authenticated transfer and destination-key protection

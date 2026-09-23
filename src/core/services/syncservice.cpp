@@ -541,7 +541,7 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
     qWarning() << "SyncService::triggerSyncNow: ignored after shutdown";
     return;
   }
-  qCDebug(syncCategory) << "SyncService::triggerSyncNow: notebookId:" << p_notebookId;
+  qCInfo(syncCategory) << "SyncService::triggerSyncNow: notebookId:" << p_notebookId;
 
   auto *workQueue = m_workQueue;
   NotebookCoreService *notebookSvc = m_notebookCoreService;
@@ -603,6 +603,7 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
   const auto result = workQueue->enqueue(notebookId, work, onCancelled, QStringLiteral("trigger"));
   switch (result) {
   case SyncWorkQueueManager::EnqueueResult::Accepted: {
+    qCInfo(syncCategory) << "SyncService::triggerSyncNow: trigger enqueued for" << notebookId;
     if (token) {
       QMutexLocker locker(&m_cancellationMutex);
       auto it = m_cancellations.find(notebookId);
@@ -620,15 +621,15 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
     return;
   }
   case SyncWorkQueueManager::EnqueueResult::Coalesced:
-    qCDebug(syncCategory) << "SyncService::triggerSyncNow: trigger coalesced with pending sync for"
-                          << notebookId;
+    qCInfo(syncCategory) << "SyncService::triggerSyncNow: trigger coalesced with pending sync for"
+                         << notebookId;
     if (token) {
       vxcore_sync_free_cancellation(token);
     }
     // No syncStarted emit — the existing pending sync already emitted.
     return;
   case SyncWorkQueueManager::EnqueueResult::QueueFull:
-    qCWarning(syncCategory) << "SyncService::triggerSyncNow: queue full for" << notebookId;
+    qCInfo(syncCategory) << "SyncService::triggerSyncNow: queue full for" << notebookId;
     if (token) {
       vxcore_sync_free_cancellation(token);
     }
@@ -639,7 +640,7 @@ void SyncService::triggerSyncNow(const QString &p_notebookId) {
     // omitting the emit keeps the signal contract clean.
     return;
   case SyncWorkQueueManager::EnqueueResult::Rejected:
-    qCWarning(syncCategory) << "SyncService::triggerSyncNow: enqueue rejected for" << notebookId;
+    qCInfo(syncCategory) << "SyncService::triggerSyncNow: enqueue rejected for" << notebookId;
     if (token) {
       vxcore_sync_free_cancellation(token);
     }
@@ -1284,6 +1285,7 @@ void SyncService::onWorkerCredentialsSetFinished(const QString &p_notebookId,
 void SyncService::onSyncStarted(const QString &p_notebookId) {
   if (m_shutDown)
     return;
+  qCInfo(syncCategory) << "SyncService::onSyncStarted: notebookId:" << p_notebookId;
   // T26: in-flight state is tracked by SyncWorkQueueManager via its work
   // item lifecycle; no separate flag to flip here.
   emit syncStarted(p_notebookId);
@@ -1292,9 +1294,9 @@ void SyncService::onSyncStarted(const QString &p_notebookId) {
 void SyncService::onSyncFinished(const QString &p_notebookId, VxCoreError p_result) {
   if (m_shutDown)
     return;
-  qCDebug(syncCategory) << "SyncService::onSyncFinished: notebookId:" << p_notebookId
-                        << "result:" << static_cast<int>(p_result)
-                        << "message:" << vxErrorToString(p_result);
+  qCInfo(syncCategory) << "SyncService::onSyncFinished: notebookId:" << p_notebookId
+                       << "result:" << static_cast<int>(p_result)
+                       << "message:" << vxErrorToString(p_result);
   // T26: in-flight state is tracked by SyncWorkQueueManager via its work
   // item lifecycle; no separate flag to clear here.
 

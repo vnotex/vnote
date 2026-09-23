@@ -17,6 +17,48 @@ VNote defines the following logging categories:
 | `lcUi` | `vnote.ui` | User interface events and state changes |
 | `lcConfig` | `vnote.config` | Configuration loading and management |
 
+## Git Sync Diagnostics
+
+Normal launches record sync lifecycle and Git phase diagnostics at INFO; no `--verbose`
+or debug logging rules are required. Do not use `--quiet` when collecting a report.
+
+For a sync failure, use **Sync Now** on the affected notebook, wait for the result (or
+note that it remains running), and share the complete `vnote.log` with the VNote version
+and approximate attempt time. Do not paste a PAT or credentials into the report.
+
+Read the sequence as follows:
+
+- `SyncService::triggerSyncNow` / `enqueueAutoSync`: accepted, coalesced, full or rejected
+  queue submission. Accepted does not mean the worker has started.
+- `SyncOps::triggerSync start`: worker entry, followed by IO-gate wait/acquisition,
+  `stage_commit`, `network`, and the final numeric result and `elapsed_ms`.
+- `GitSync ... phase=... event=start|finish`: phases are `config`, `stage`, `commit`,
+  `fetch`, `rebase`, `push`, `initialize`, `clone`, `bootstrap-fetch`,
+  `bootstrap-checkout`, `remote-probe` and `continue-rebase`. Nonzero `code` is a failure;
+  an unmatched start identifies the last phase entered, not necessarily the cause of a stall.
+- `phase=push-retry`: existing attempt limit and backoff delay. Fetch failures do not
+  enter a new retry policy; only the existing push-retry loop is instrumented.
+- `SyncService::onSyncFinished`: result delivered to the GUI, including ordinary success
+  and non-authentication failures previously hidden at DEBUG.
+
+Join GUI lifecycle entries by `notebookId`. Join a `SyncOps` worker entry to its Git
+phases by the matching `worker` hash; `context` is an opaque in-process object identifier.
+These identifiers may be reused and must not be compared across application sessions.
+GUI callbacks run on a different thread and do not carry the Git worker identifier.
+
+Credential diagnostics report only provider/PAT presence, URL-username presence or
+`username_source=url|default`, allowed credential types and callback results. The first
+three credential callbacks are logged, followed by one suppression marker; the network
+phase summary contains the total `callback_attempts`. Callback `code=0` means credentials
+were constructed, not accepted by the server. Zero callbacks can occur with anonymous or
+preemptive authentication and does not prove a PAT was absent.
+
+The added diagnostics never record credential values, remote URLs, HTTP headers/bodies,
+usernames, branch/file names or note content. No raw HTTP tracing is enabled. Existing
+log messages may still contain local paths and underlying error text; review before
+sharing. A generic libgit2 "redirects or authentication replays" error remains ambiguous:
+callback counts help distinguish the paths, but are not an HTTP status trace.
+
 ## Rule Precedence (CANONICAL)
 
 Qt logging rules apply in order; the LAST matching rule wins. `installDefaultLoggingRules()` sets:
