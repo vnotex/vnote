@@ -7,12 +7,16 @@
 
 #include <QtTest>
 
+#include <QAbstractItemDelegate>
 #include <QDate>
+#include <QDir>
+#include <QHelpEvent>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QListView>
 #include <QShowEvent>
 #include <QToolButton>
+#include <QToolTip>
 #include <QVariantMap>
 
 #include <core/hookcontext.h>
@@ -47,6 +51,7 @@ private slots:
 
   void test_factoryRegistersHistory();
   void test_firstShowLoadsRecent();
+  void test_tooltipsShowFullPaths();
   void test_calendarHookSwitchesToDate();
   void test_invalidPayloadPreservesMode();
   void test_secondShowRefreshesActiveMode();
@@ -194,6 +199,50 @@ void TestHistorySticker::test_firstShowLoadsRecent() {
   sendShow(&sticker);
   QCOMPARE(lv->model()->rowCount(), 2);
   sticker.hide();
+}
+
+void TestHistorySticker::test_tooltipsShowFullPaths() {
+  const QString otherId = createTestNotebook(QStringLiteral("other_nb"));
+  QVERIFY(!otherId.isEmpty());
+  openFile(m_nbId, QStringLiteral("shared.md"));
+  openFile(otherId, QStringLiteral("shared.md"));
+  const QString folder = QStringLiteral("nested folder");
+  QVERIFY(!m_notebookService->createFolder(m_nbId, QString(), folder).isEmpty());
+  QVERIFY(!m_notebookService->createFile(m_nbId, folder, QStringLiteral("shared.md")).isEmpty());
+  QVERIFY(!m_bufferCore->openBuffer(m_nbId, folder + QStringLiteral("/shared.md")).isEmpty());
+
+  HistorySticker sticker(*m_services);
+  sendShow(&sticker);
+  QListView *lv = listViewOf(&sticker);
+  QVERIFY(lv != nullptr);
+
+  for (int mode = 0; mode < 2; ++mode) {
+    if (mode == 1) {
+      QVariantMap args;
+      args[QStringLiteral("date")] = QDate::currentDate().toString(QStringLiteral("yyyy-MM-dd"));
+      m_hookManager->doAction(HookNames::DashboardCalendarDateChanged, args);
+    }
+    QCOMPARE(lv->model()->rowCount(), 3);
+    for (int row = 0; row < lv->model()->rowCount(); ++row) {
+      const QModelIndex index = lv->model()->index(row, 0);
+      const NodeIdentifier id =
+          index.data(INodeListModel::NodeIdentifierRole).value<NodeIdentifier>();
+      QVERIFY(id.notebookId == m_nbId || id.notebookId == otherId);
+      const QString root =
+          id.notebookId == m_nbId ? QStringLiteral("hist_nb") : QStringLiteral("other_nb");
+      const QString expected = QDir::fromNativeSeparators(
+          m_tempDir->filePath(root + QLatin1Char('/') + id.relativePath));
+      QCOMPARE(index.data(Qt::DisplayRole).toString(), QStringLiteral("shared.md"));
+      QCOMPARE(index.data(INodeListModel::PathRole).toString(), id.relativePath);
+      QCOMPARE(QDir::fromNativeSeparators(index.data(Qt::ToolTipRole).toString()), expected);
+
+      QHelpEvent event(QEvent::ToolTip, QPoint(10, 10), lv->mapToGlobal(QPoint(10, 10)));
+      QStyleOptionViewItem option;
+      QVERIFY(lv->itemDelegate()->helpEvent(&event, lv, option, index));
+      QCOMPARE(QDir::fromNativeSeparators(QToolTip::text()), expected);
+      QToolTip::hideText();
+    }
+  }
 }
 
 void TestHistorySticker::test_calendarHookSwitchesToDate() {

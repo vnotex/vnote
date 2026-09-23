@@ -84,6 +84,12 @@ QVector<NodeInfo> HistoryService::buildAllHistory() const {
   return nodes;
 }
 
+QString HistoryService::absolutePathFor(const NodeIdentifier &p_id) const {
+  return m_notebookService
+             ? m_notebookService->buildAbsolutePath(p_id.notebookId, p_id.relativePath)
+             : QString();
+}
+
 QString HistoryService::previewFor(const NodeIdentifier &p_id) const {
   if (!m_notebookService ||
       p_id.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {

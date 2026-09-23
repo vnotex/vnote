@@ -1,5 +1,6 @@
 #include <QtTest>
 
+#include <QDir>
 #include <QJsonArray>
 #include <QJsonObject>
 
@@ -241,9 +242,10 @@ void TestHistoryListModel::test_dataRoles() {
   QVariant displayVal = model.data(idx, Qt::DisplayRole);
   QCOMPARE(displayVal.toString(), QStringLiteral("roles.md"));
 
-  // ToolTipRole returns the relative path.
+  // ToolTipRole identifies the file by its full filesystem path.
   QVariant tooltipVal = model.data(idx, Qt::ToolTipRole);
-  QCOMPARE(tooltipVal.toString(), QStringLiteral("roles.md"));
+  QCOMPARE(QDir::fromNativeSeparators(tooltipVal.toString()),
+           QDir::fromNativeSeparators(m_tempDir.filePath(QStringLiteral("roles_nb/roles.md"))));
 
   // PathRole returns the relative path.
   QVariant pathVal = model.data(idx, INodeListModel::PathRole);

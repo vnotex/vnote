@@ -103,7 +103,7 @@ QVariant HistoryListModel::data(const QModelIndex &p_index, int p_role) const {
     return info.name;
 
   case Qt::ToolTipRole:
-    return info.id.relativePath;
+    return m_historyService ? m_historyService->absolutePathFor(info.id) : QString();
 
   default:
     return QVariant();

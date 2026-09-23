@@ -41,6 +41,9 @@ public:
   // Returns empty if the service is unavailable or the file cannot be read.
   QString previewFor(const NodeIdentifier &p_id) const;
 
+  // Resolve the full filesystem path; empty if the service or notebook is unavailable.
+  QString absolutePathFor(const NodeIdentifier &p_id) const;
+
 signals:
   // Reserved for future consumers that want to react to history changes.
   // NOTE: there is NO emitter yet — history writes still happen inside vxcore
