@@ -3370,6 +3370,22 @@
         <source>Leave both empty to remove the size.</source>
         <translation>サイズを削除するには、両方を空欄にしてください。</translation>
     </message>
+    <message>
+        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="66"/>
+        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="69"/>
+        <source>Scale (%)</source>
+        <translation>拡大率（%）</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="125"/>
+        <source>Scale both dimensions proportionally from the current size</source>
+        <translation>現在のサイズを基準に幅と高さを同じ比率で変更します</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="126"/>
+        <source>Enter a width and height to enable scaling</source>
+        <translation>幅と高さを入力すると拡大率を変更できます</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::ImportFolderController</name>
@@ -4271,8 +4287,8 @@
     <message>
         <location line="-40"/>
         <location line="+52"/>
-        <source>Copy</source>
-        <translation>コピー</translation>
+        <source>Copy Ima&amp;ge</source>
+        <translation>画像をコピー(&amp;G)</translation>
     </message>
     <message>
         <location line="-45"/>
@@ -4319,13 +4335,9 @@
     <message>
         <location line="-18"/>
         <location line="+60"/>
-        <source>Set Size</source>
-        <translation>サイズを設定</translation>
-    </message>
-    <message>
         <location line="+45"/>
-        <source>Set Image Size</source>
-        <translation>画像サイズを設定</translation>
+        <source>Resize Image</source>
+        <translation>画像のサイズを変更</translation>
     </message>
     <message>
         <location line="+116"/>

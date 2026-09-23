@@ -157,7 +157,7 @@ quick-note creation errors. Parented message boxes retain their existing behavio
 | `NewQuickAccessItemDialog` | (inline) | Add a quick-access entry (used inside Settings) |
 | `SnippetInfoWidget2` / snippet dialogs | `SnippetController` | Snippet metadata |
 | `ImageInsertDialog` | (inline, `MarkdownEditor`) | Insert an image; also the size-authoring surface (see below) |
-| `ImageSizeDialog` | (inline, `MarkdownEditor`) | `Image > Set Size…` on an existing image |
+| `ImageSizeDialog` | (inline, `MarkdownEditor`) | `Resize Image` on an existing image |
 
 ## Inserted Image Encoding
 
@@ -181,15 +181,26 @@ Two surfaces, both legacy-style dialogs (no `2` suffix, no `ServiceLocator`, dri
 - **`ImageInsertDialog`** gains optional **Width (px)** / **Height (px)** fields. They are left
   **empty by default**; the source image's natural size appears only as *placeholder* text.
   Prefilling would turn every single insert into an HTML `<img>`.
-- **`ImageSizeDialog`** is the `Image > Set Size…` action, prefilled from the image under the
+- **`ImageSizeDialog`** is the `Resize Image` action, prefilled from the image under the
   cursor. Leaving **both** fields empty means "no size".
+  Its **Scale (%)** slider writes both pixel fields proportionally, with 100% representing
+  the current dimensions. Manual field edits establish a new baseline; slider moves always
+  scale that fixed baseline, not the previously rounded output. The range is 1–200%, reduced
+  when needed to keep both dimensions within six digits. Opening the dialog never fills
+  unspecified fields, and only OK changes the note.
+
+For missing dimensions, use local image metadata, protected bytes through `readProtectedImage`,
+or an already-loaded image preview's **logical** size, matched in block-relative coordinates.
+Never fetch a remote image just to resize it or read a protected image through a normal file path.
+If a complete positive size cannot be inferred, manual fields remain usable and the slider is
+unavailable until a valid width and height establish a baseline.
 
 Any nonzero size makes the emitted reference an HTML `<img …/>` rather than a Markdown link:
 Markdown has no portable way to express one (`=WxH` is understood by this editor but by few other
 tools). `vte::MarkdownUtils::generateImageLink(title, url, alt, w, h)` makes that choice in one
 place.
 
-### `Set Size…` conversion table
+### `Resize Image` conversion table
 
 `MarkdownEditor::setImageSize()`. All edits go through a single `QTextCursor` edit block (one undo
 step), applied in **descending span order** so earlier spans stay valid.

@@ -2,9 +2,11 @@
 
 #include <QAction>
 #include <QApplication>
+#include <QBuffer>
 #include <QClipboard>
 #include <QDir>
 #include <QFileInfo>
+#include <QImageReader>
 #include <QMenu>
 #include <QMessageBox>
 #include <QMimeData>
@@ -2088,10 +2090,8 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
   if (m_protectedBuffer) {
     const auto resource = links[index].m_destination;
     const auto generation = m_protectedResourceGeneration;
-    auto *menu = new QMenu(tr("Image"), p_menu);
-    p_menu->insertMenu(p_before, menu);
     {
-      auto *copyAction = menu->addAction(tr("Copy"));
+      auto *copyAction = new QAction(tr("Copy Ima&ge"), p_menu);
       connect(copyAction, &QAction::triggered, this, [this, resource, generation]() {
         if (m_protectedResourcesRevoked || generation != m_protectedResourceGeneration) {
           return;
@@ -2107,22 +2107,26 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
           ClipboardUtils::setImageToClipboard(QApplication::clipboard(), image);
         }
       });
+      p_menu->insertAction(p_before, copyAction);
     }
-    auto *importAction = menu->addAction(tr("Import Image..."));
+    auto *importAction = new QAction(tr("Import Image..."), p_menu);
     connect(importAction, &QAction::triggered, this, &MarkdownEditor::typeImage);
-    auto *copyAddress = menu->addAction(tr("Copy Image Address"));
+    p_menu->insertAction(p_before, importAction);
+    auto *copyAddress = new QAction(tr("Copy Image Address"), p_menu);
     connect(copyAddress, &QAction::triggered, this, [this, resource, generation]() {
       if (!m_protectedResourcesRevoked && generation == m_protectedResourceGeneration) {
         ClipboardUtils::setLinkToClipboard(resource);
       }
     });
+    p_menu->insertAction(p_before, copyAddress);
     const auto link = links[index];
-    auto *size = menu->addAction(tr("Set Size"));
+    auto *size = new QAction(tr("Resize Image"), p_menu);
     connect(size, &QAction::triggered, this, [this, link, generation]() {
       if (!m_protectedResourcesRevoked && generation == m_protectedResourceGeneration) {
         setImageSize(link);
       }
     });
+    p_menu->insertAction(p_before, size);
     p_menu->insertSeparator(p_before);
     return true;
   }
@@ -2130,21 +2134,17 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
   const QString imgPath =
       vte::MarkdownUtils::linkUrlToPath(getBasePath(), links[index].m_destination);
 
-  // Create "Image" submenu and position it before the standard actions.
-  auto imageSubMenu = new QMenu(tr("Image"), p_menu);
-  p_menu->insertMenu(p_before, imageSubMenu);
-
   {
-    auto act = new QAction(tr("View Image"), imageSubMenu);
-    connect(act, &QAction::triggered, imageSubMenu,
+    auto act = new QAction(tr("View Image"), p_menu);
+    connect(act, &QAction::triggered, p_menu,
             [imgPath]() { WidgetUtils::openUrlByDesktop(PathUtils::pathToUrl(imgPath)); });
-    imageSubMenu->addAction(act);
+    p_menu->insertAction(p_before, act);
   }
 
   if (QFileInfo::exists(imgPath)) {
     // Local image.
-    auto act = new QAction(tr("Copy"), imageSubMenu);
-    connect(act, &QAction::triggered, imageSubMenu, [imgPath]() {
+    auto act = new QAction(tr("Copy Ima&ge"), p_menu);
+    connect(act, &QAction::triggered, p_menu, [imgPath]() {
       auto clipboard = QApplication::clipboard();
       clipboard->clear();
 
@@ -2160,26 +2160,26 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
         ClipboardUtils::setImageToClipboard(clipboard, img);
       }
     });
-    imageSubMenu->addAction(act);
+    p_menu->insertAction(p_before, act);
   } else {
-    // Online image: add Copy In-Place Preview to the submenu.
-    prependInPlacePreviewMenu(imageSubMenu, nullptr, p_cursorPos, p_block);
+    // Online image: offer Copy In-Place Preview when available.
+    prependInPlacePreviewMenu(p_menu, p_before, p_cursorPos, p_block);
   }
 
   {
-    auto act = new QAction(tr("Copy Image Address"), imageSubMenu);
-    connect(act, &QAction::triggered, imageSubMenu,
+    auto act = new QAction(tr("Copy Image Address"), p_menu);
+    connect(act, &QAction::triggered, p_menu,
             [imgPath]() { ClipboardUtils::setLinkToClipboard(imgPath); });
-    imageSubMenu->addAction(act);
+    p_menu->insertAction(p_before, act);
   }
 
   {
     // Enabled for BOTH syntaxes: setting a size on a Markdown image converts it
     // to HTML, clearing it on an HTML image may convert it back.
     const auto link = links[index];
-    auto act = new QAction(tr("Set Size"), imageSubMenu);
-    connect(act, &QAction::triggered, imageSubMenu, [this, link]() { setImageSize(link); });
-    imageSubMenu->addAction(act);
+    auto act = new QAction(tr("Resize Image"), p_menu);
+    connect(act, &QAction::triggered, p_menu, [this, link]() { setImageSize(link); });
+    p_menu->insertAction(p_before, act);
   }
 
   p_menu->insertSeparator(p_before);
@@ -2222,7 +2222,49 @@ void MarkdownEditor::setImageSize(const vte::md::ImageLinkInfo &p_link) {
   }
   const QString region = content.mid(regionStart, regionEnd - regionStart);
 
-  ImageSizeDialog dialog(tr("Set Image Size"), p_link.m_width, p_link.m_height, this);
+  QSize imageSize(p_link.m_width, p_link.m_height);
+  if (imageSize.isEmpty()) {
+    if (m_protectedBuffer) {
+      QByteArray bytes;
+      if (readProtectedImage(p_link.m_destination, bytes)) {
+        QBuffer buffer(&bytes);
+        buffer.open(QIODevice::ReadOnly);
+        QImageReader reader(&buffer);
+        reader.setDecideFormatFromContent(true);
+        imageSize = reader.size();
+      }
+      bytes.fill('\0');
+      bytes.clear();
+    } else {
+      const auto path = vte::MarkdownUtils::linkUrlToPath(getBasePath(), p_link.m_destination);
+      if (QFileInfo::exists(path)) {
+        QImageReader reader(path);
+        reader.setDecideFormatFromContent(true);
+        imageSize = reader.size();
+      }
+    }
+
+    // Reuse an already-loaded preview for remote images; never fetch just to resize.
+    if (imageSize.isEmpty()) {
+      const auto block = m_textEdit->document()->findBlock(regionStart);
+      const auto data = vte::TextBlockData::get(block);
+      const auto previews = data ? data->getBlockPreviewData() : nullptr;
+      if (previews) {
+        const int startInBlock = regionStart - block.position();
+        const int endInBlock = regionEnd - block.position();
+        for (const auto *preview : previews->getPreviewData()) {
+          const auto *image = preview->getImageData();
+          if (preview->source() == vte::PreviewData::ImageLink && image &&
+              image->m_startPos == startInBlock && image->m_endPos == endInBlock) {
+            imageSize = image->m_imageSize;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  ImageSizeDialog dialog(tr("Resize Image"), p_link.m_width, p_link.m_height, imageSize, this);
   if (dialog.exec() != QDialog::Accepted) {
     return;
   }

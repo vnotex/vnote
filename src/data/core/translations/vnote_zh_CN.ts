@@ -3370,6 +3370,22 @@
         <source>Leave both empty to remove the size.</source>
         <translation>两项均留空可移除尺寸设置。</translation>
     </message>
+    <message>
+        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="66"/>
+        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="69"/>
+        <source>Scale (%)</source>
+        <translation>缩放比例（%）</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="125"/>
+        <source>Scale both dimensions proportionally from the current size</source>
+        <translation>基于当前尺寸按比例调整宽度和高度</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="126"/>
+        <source>Enter a width and height to enable scaling</source>
+        <translation>输入宽度和高度以启用缩放</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::ImportFolderController</name>
@@ -4271,8 +4287,8 @@
     <message>
         <location line="-40"/>
         <location line="+52"/>
-        <source>Copy</source>
-        <translation>复制</translation>
+        <source>Copy Ima&amp;ge</source>
+        <translation>复制图片(&amp;G)</translation>
     </message>
     <message>
         <location line="-45"/>
@@ -4319,13 +4335,9 @@
     <message>
         <location line="-18"/>
         <location line="+60"/>
-        <source>Set Size</source>
-        <translation>设置尺寸</translation>
-    </message>
-    <message>
         <location line="+45"/>
-        <source>Set Image Size</source>
-        <translation>设置图像尺寸</translation>
+        <source>Resize Image</source>
+        <translation>调整图片大小</translation>
     </message>
     <message>
         <location line="+116"/>

@@ -3,7 +3,12 @@
 
 #include "dialog.h"
 
+#include <QSize>
+#include <QSizeF>
+
+class QLabel;
 class QLineEdit;
+class QSlider;
 
 namespace vnotex {
 
@@ -16,7 +21,8 @@ namespace vnotex {
 class ImageSizeDialog : public Dialog {
   Q_OBJECT
 public:
-  ImageSizeDialog(const QString &p_title, int p_width, int p_height, QWidget *p_parent = nullptr);
+  ImageSizeDialog(const QString &p_title, int p_width, int p_height, const QSize &p_imageSize,
+                  QWidget *p_parent = nullptr);
 
   // 0 means "unspecified" for that axis.
   int getImageWidth() const;
@@ -28,6 +34,16 @@ protected:
 
 private:
   void setupUI(int p_width, int p_height);
+
+  void resetScaleBase();
+
+  QSize m_imageSize;
+
+  QSizeF m_scaleBaseSize;
+
+  QSlider *m_scaleSlider = nullptr;
+
+  QLabel *m_scaleValueLabel = nullptr;
 
   QLineEdit *m_widthEdit = nullptr;
 
