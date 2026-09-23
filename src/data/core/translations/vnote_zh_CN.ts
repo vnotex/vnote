@@ -6256,8 +6256,28 @@ Notebook: %1
     </message>
     <message>
         <location line="+22"/>
-        <source>The notebook encryption key is missing. Restore it before decrypting notes.</source>
-        <translation>笔记本加密密钥丢失。请恢复密钥后再解密笔记。</translation>
+        <source>The notebook encryption key is missing or needs recovery. Restore the original vx_notebook/encryption.vne before continuing. A new key cannot recover previously encrypted notes.</source>
+        <translation>笔记本加密密钥丢失或需要恢复。请恢复原始 vx_notebook/encryption.vne 后再继续。新密钥无法恢复以前加密的笔记。</translation>
+    </message>
+    <message>
+        <source>The notebook encryption state changed. Retry the operation.</source>
+        <translation>笔记本的加密状态已改变。请重试此操作。</translation>
+    </message>
+    <message>
+        <source>This notebook has no encryption.vne key file, and its previous use of encryption is unknown.
+
+If it was encrypted before, cancel and restore the original vx_notebook/encryption.vne. A newly generated key cannot recover previously encrypted notes.
+
+Continue only if this notebook has never used encryption.</source>
+        <translation>此笔记本没有 encryption.vne 密钥文件，无法确定以前是否使用过加密。
+
+如果以前加密过，请取消并恢复原始 vx_notebook/encryption.vne。新生成的密钥无法恢复以前加密的笔记。
+
+仅当此笔记本从未使用过加密时才继续。</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>继续</translation>
     </message>
     <message>
         <location line="+41"/>

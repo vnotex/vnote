@@ -113,13 +113,55 @@ PreparedNotebookEncryption ViewAreaController::prepareNoteEncryption(
   return prepared;
 }
 
+VxCoreError ViewAreaController::reconcileNoteEncryption(const QString &p_notebookId,
+                                                        bool p_confirmUninitialized) {
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  auto *queues = m_services.get<SyncWorkQueueManager>();
+  auto *gate = m_services.get<NotebookIoGate>();
+  if (!notebooks || !queues || !gate) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  auto maintenance = queues->tryAcquireMaintenance({p_notebookId});
+  if (!maintenance) {
+    return VXCORE_ERR_SYNC_IN_PROGRESS;
+  }
+  // The worker releases its gate before the UI-thread maintenance lease ends.
+  return runEncryptionWorker([&]() {
+    NotebookIoGate::ScopedTryLock lock(*gate, p_notebookId, 5000);
+    if (!lock.isLocked()) {
+      return VXCORE_ERR_SYNC_IN_PROGRESS;
+    }
+    return notebooks->reconcileNotebookEncryption(p_notebookId, p_confirmUninitialized);
+  });
+}
+
 VxCoreError ViewAreaController::unlockNoteEncryption(const QString &p_notebookId,
                                                      QByteArray &p_password) {
   auto *notebooks = m_services.get<NotebookCoreService>();
-  const VxCoreError error = notebooks ? runEncryptionWorker([&]() {
-    return notebooks->unlockNotebookEncryption(p_notebookId, p_password);
-  })
-                                      : VXCORE_ERR_NOT_INITIALIZED;
+  VxCoreError error = VXCORE_ERR_NOT_INITIALIZED;
+  if (notebooks) {
+    auto status = notebooks->encryptionStatus(p_notebookId, QString(), &error);
+    if (error == VXCORE_OK && !status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool()) {
+      error = VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED;
+    }
+    const auto marker = status.value(QLatin1String(vxcore::kJsonKeyEncryptionInitialized));
+    if (error == VXCORE_OK && !notebooks->isNotebookReadOnly(p_notebookId) &&
+        (!marker.isBool() || !marker.toBool())) {
+      error = reconcileNoteEncryption(p_notebookId, false);
+      if (error == VXCORE_OK) {
+        status = notebooks->encryptionStatus(p_notebookId, QString(), &error);
+        if (error == VXCORE_OK &&
+            !status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool()) {
+          error = VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED;
+        }
+      }
+    }
+    if (error == VXCORE_OK) {
+      // Read-only unlock never reconciles; password hashing stays outside the gate.
+      error = runEncryptionWorker(
+          [&]() { return notebooks->unlockNotebookEncryption(p_notebookId, p_password); });
+    }
+  }
   erasePassword(p_password);
   return error;
 }

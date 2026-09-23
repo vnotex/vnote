@@ -1,4 +1,8 @@
 # Changes
+## Unreleased
+* Encryption setup records a persistent notebook initialization marker instead of scanning all folder metadata; legacy notebooks require explicit confirmation before first setup when their encryption history is unknown
+* Note conversion no longer audits unrelated folder metadata; missing known keys still require recovery, and cancelling legacy confirmation leaves notes and configuration unchanged
+
 ## v4.8.0
 A feature release with Markdown presentations, search-and-replace across notes, new light themes and more flexible encrypted notes on top of VNote 4.7.0:
 

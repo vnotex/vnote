@@ -247,6 +247,9 @@ public:
   // Caller must hold the notebook maintenance lease and NotebookIoGate. Commit
   // performs no KDF and consumes a matching setup on both success and failure.
   VxCoreError commitNotebookEncryption(PreparedNotebookEncryption &p_prepared);
+  // Same maintenance/gate contract; no KDF. Only explicit legacy consent may
+  // confirm an unknown notebook without a key as uninitialized.
+  VxCoreError reconcileNotebookEncryption(const QString &p_notebookId, bool p_confirmUninitialized);
   VxCoreError unlockNotebookEncryption(const QString &p_notebookId, const QByteArray &p_password);
   // Close protected buffers/read operations and discard prepared setups first.
   VxCoreError lockAllEncryption();

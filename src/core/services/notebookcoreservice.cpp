@@ -377,6 +377,16 @@ VxCoreError NotebookCoreService::commitNotebookEncryption(PreparedNotebookEncryp
   return error;
 }
 
+VxCoreError NotebookCoreService::reconcileNotebookEncryption(const QString &p_notebookId,
+                                                             bool p_confirmUninitialized) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray notebookId = p_notebookId.toUtf8();
+  return vxcore_encryption_reconcile_notebook(m_context, notebookId.constData(),
+                                              p_confirmUninitialized);
+}
+
 VxCoreError NotebookCoreService::unlockNotebookEncryption(const QString &p_notebookId,
                                                           const QByteArray &p_password) {
   if (!checkContext()) {

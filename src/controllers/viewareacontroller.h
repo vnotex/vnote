@@ -89,6 +89,7 @@ public:
   PreparedNotebookEncryption prepareNoteEncryption(const QString &p_notebookId,
                                                    const QString &p_sourceNotebookId,
                                                    QByteArray &p_password);
+  VxCoreError reconcileNoteEncryption(const QString &p_notebookId, bool p_confirmUninitialized);
   VxCoreError unlockNoteEncryption(const QString &p_notebookId, QByteArray &p_password);
   std::shared_ptr<NoteEncryptionConversion> prepareNoteConversion(const NodeIdentifier &p_nodeId,
                                                                   bool p_encrypt);

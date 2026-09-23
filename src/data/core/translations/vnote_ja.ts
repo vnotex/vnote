@@ -6256,8 +6256,28 @@ Notebook: %1
     </message>
     <message>
         <location line="+22"/>
-        <source>The notebook encryption key is missing. Restore it before decrypting notes.</source>
-        <translation>ノートブックの暗号鍵が見つかりません。ノートを復号する前に暗号鍵を復元してください。</translation>
+        <source>The notebook encryption key is missing or needs recovery. Restore the original vx_notebook/encryption.vne before continuing. A new key cannot recover previously encrypted notes.</source>
+        <translation>ノートブックの暗号鍵が見つからないか、復旧が必要です。元の vx_notebook/encryption.vne を復元してから続行してください。新しい鍵では以前に暗号化したノートを復元できません。</translation>
+    </message>
+    <message>
+        <source>The notebook encryption state changed. Retry the operation.</source>
+        <translation>ノートブックの暗号化状態が変わりました。操作をやり直してください。</translation>
+    </message>
+    <message>
+        <source>This notebook has no encryption.vne key file, and its previous use of encryption is unknown.
+
+If it was encrypted before, cancel and restore the original vx_notebook/encryption.vne. A newly generated key cannot recover previously encrypted notes.
+
+Continue only if this notebook has never used encryption.</source>
+        <translation>このノートブックには encryption.vne 鍵ファイルがなく、以前に暗号化を使用していたかどうか不明です。
+
+以前に暗号化していた場合は、キャンセルして元の vx_notebook/encryption.vne を復元してください。新しく生成した鍵では以前に暗号化したノートを復元できません。
+
+このノートブックで暗号化を一度も使用していない場合のみ続行してください。</translation>
+    </message>
+    <message>
+        <source>Continue</source>
+        <translation>続行</translation>
     </message>
     <message>
         <location line="+41"/>

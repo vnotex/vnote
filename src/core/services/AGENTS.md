@@ -816,6 +816,12 @@ context-owned prepare/commit/free key setup protocol: prepare and unlock perform
 hashing on a worker **outside** `NotebookIoGate`; commit consumes the prepared handle under
 the notebook maintenance lease and IO gate. Never replace an existing or corrupt key file
 as a recovery shortcut. Password bytes are not trimmed and must not enter logs or hooks.
+`ViewAreaController::reconcileNoteEncryption` acquires maintenance then a worker IO-gate
+try-lock before persisting the notebook's `encryptionInitialized` marker. The explorer must
+explicitly confirm unknown/keyless legacy notebooks before passing consent; Cancel, Escape,
+and window close write nothing. Boolean false is not the same as an absent/null status marker.
+After consent, reread status before setup; existing writable keys reconcile without consent.
+Read-only unlock skips persistence, and password hashing remains outside the IO gate.
 Shared-bundle validation accepts the same three protected editor types. Import encrypted
 bundles through authenticated transfer into an unlocked destination vault, never through
 the plaintext `FolderBundleImporter::run()` path.
