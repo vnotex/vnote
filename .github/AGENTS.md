@@ -14,8 +14,9 @@ See also: [../AGENTS.md](../AGENTS.md) (repo-wide rules, submodule push discipli
 
 The `win64-windows7` package is built against Qt 5.15.2, which has **no Schannel TLS backend**
 on Windows — unlike Qt 6, which falls back to Schannel and therefore ships no OpenSSL at all.
-Git sync is unaffected on both variants because libgit2 uses WinHTTP. So on Qt 5 a missing or
-unloadable OpenSSL breaks exactly two things: the update check
+Git sync does not depend on Qt's OpenSSL: Qt5 CI selects libgit2's Schannel backend, while
+Qt6 and default Windows builds use WinHTTP. On Qt 5, missing or unloadable OpenSSL breaks
+exactly two things: the update check
 (`src/core/services/updateservice.cpp`) and image hosting (`src/imagehost/`).
 
 - CI **builds OpenSSL 1.1.1w from source** in the Qt5 job (`.github/workflows/ci-win.yml`),
