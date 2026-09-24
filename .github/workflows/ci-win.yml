@@ -68,6 +68,22 @@ jobs:
           git submodule sync --recursive
           git -c "http.extraheader=$auth_header" -c protocol.version=2 submodule update --init --force --recursive --depth=1
 
+      - name: Use Schannel for Git HTTPS (Qt5 only)
+        if: ${{ matrix.config.qt_major == 5 }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # vxcore forces WinHTTP, so -DUSE_HTTPS alone cannot override it.
+          # Change only this job's checkout; Qt6 and default builds stay on WinHTTP.
+          $cmakePath = 'libs/vxcore/third_party/CMakeLists.txt'
+          $source = [System.IO.File]::ReadAllText($cmakePath)
+          $expected = 'set(USE_HTTPS "WinHTTP" CACHE STRING "" FORCE)'
+          if ([regex]::Matches($source, [regex]::Escape($expected)).Count -ne 1) {
+            throw 'Expected exactly one forced WinHTTP setting in vxcore'
+          }
+          $replacement = 'set(USE_HTTPS "Schannel" CACHE STRING "" FORCE)'
+          [System.IO.File]::WriteAllText($cmakePath, $source.Replace($expected, $replacement))
+
       - name: Cache Qt
         id: cache-qt
         uses: actions/cache@v4
@@ -118,9 +134,9 @@ jobs:
       # Qt 5.15 on Windows has NO Schannel TLS backend, so without a loadable
       # OpenSSL every HTTPS feature (update check, image hosting) dies with
       # "QSslSocket::connectToHostEncrypted: TLS initialization failed".
-      # Qt 6 is unaffected (it falls back to Schannel) and git sync is unaffected
-      # on both (libgit2 uses WinHTTP), so the blast radius is exactly those two
-      # call sites.
+      # Qt 6 is unaffected (it falls back to Schannel). Git sync uses native
+      # Windows TLS (libgit2 Schannel in Qt5 CI, WinHTTP in Qt6), so the blast
+      # radius is exactly those two call sites.
       #
       # This replaced a clone of vnotex/openssl-utils pinned at 1.1.1j/Win_x64.
       # Those prebuilt DLLs import MSVCR100.dll -- the VC++ 2010 runtime, which is
@@ -367,6 +383,9 @@ jobs:
           where cl || echo "cl.exe not on PATH"
           cmake -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DQT_DEFAULT_MAJOR_VERSION=%QT_MAJOR% -DVNOTE_BUILD_TESTS=%VNOTE_TESTS% -DOPENSSL_EXTRA_LIB_DIR=%VX_OPENSSL_EXTRA_LIB_DIR% -DOPENSSL_LICENSE_FILE=%VX_OPENSSL_LICENSE_FILE% %GITHUB_WORKSPACE% > cmake-configure.log 2>&1 || (type cmake-configure.log && exit /b 1)
           type cmake-configure.log
+          if "%QT_MAJOR%"=="5" (
+            findstr /x /c:"USE_HTTPS:STRING=Schannel" CMakeCache.txt || exit /b 1
+          )
           REM cmd reports only the LAST command's exit code, so every step here
           REM needs its own `|| exit /b 1`. Without them a failed build (and the
           REM failed pack and failed extraction that follow it) was reported as
