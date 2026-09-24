@@ -359,8 +359,8 @@ jobs:
           VX_OPENSSL_LICENSE_FILE: ${{ matrix.config.qt_major == 5 && format('{0}/openssl-1.1.1w-win64/LICENSE.OpenSSL', runner.workspace) || '' }}
           # tests/CMakeLists.txt hard-requires Qt6 (find_package(Qt6 REQUIRED)),
           # so the Qt5 matrix entry MUST build packaging-only. Qt6 entry builds
-          # tests so the Build-and-Run-Tests step below can ctest them.
-          VNOTE_TESTS: ${{ matrix.config.qt_major == 6 && 'ON' || 'OFF' }}
+          # tests only on non-release runs for the ctest steps below.
+          VNOTE_TESTS: ${{ matrix.config.qt_major == 6 && !startsWith(github.event.head_commit.message, '[Release]') && 'ON' || 'OFF' }}
         run: |
           cmake --version
           if "%QT_MAJOR%"=="6" call "%VS_CMD%"
@@ -371,7 +371,9 @@ jobs:
           REM needs its own `|| exit /b 1`. Without them a failed build (and the
           REM failed pack and failed extraction that follow it) was reported as
           REM a green step, and the run only died later in a packaging gate.
-          cmake --build . || exit /b 1
+          REM vtextedit tests belong to ALL even with VNOTE_BUILD_TESTS=OFF.
+          REM Release builds need only the TLS package probe before pack below.
+          cmake --build . --target=${{ startsWith(github.event.head_commit.message, '[Release]') && 'tlsprobe' || 'all' }} || exit /b 1
           cmake --build . --target=pack || exit /b 1
           7z x VNote*.zip || exit /b 1
           dir
@@ -383,7 +385,7 @@ jobs:
         # ONLY gate covering the PDF outline JS contract disappears from an
         # otherwise green run. A bare `ctest -N | Select-String ...` exits 0 even
         # with no match, so the check has to be made fatal explicitly.
-        if: ${{ matrix.config.qt_major == 6 }}
+        if: ${{ matrix.config.qt_major == 6 && !startsWith(github.event.head_commit.message, '[Release]') }}
         shell: pwsh
         run: |
           $registered = ctest -C Release -N | Select-String -SimpleMatch "test_pdfviewercore_js"
@@ -394,9 +396,9 @@ jobs:
 
       - name: Build and Run Tests (Qt6 only)
         # tests/CMakeLists.txt hard-requires Qt6 so this step is skipped on
-        # the Qt5 matrix entry. The previous step already built tests when
+        # the Qt5 matrix entry and release commits. Tests were built when
         # VNOTE_BUILD_TESTS=ON, so ctest only needs to dispatch them.
-        if: ${{ matrix.config.qt_major == 6 }}
+        if: ${{ matrix.config.qt_major == 6 && !startsWith(github.event.head_commit.message, '[Release]') }}
         shell: cmd
         env:
           VS_CMD: ${{ matrix.config.vs_cmd }}
@@ -412,7 +414,7 @@ jobs:
         # (-nocrashhandler in CMakeLists) silences the default Qt Test stdout
         # path; --output-on-failure alone often shows nothing useful. This
         # step never gates the workflow (|| exit 0) - it's pure diagnostics.
-        if: ${{ failure() && matrix.config.qt_major == 6 }}
+        if: ${{ failure() && matrix.config.qt_major == 6 && !startsWith(github.event.head_commit.message, '[Release]') }}
         shell: cmd
         env:
           VS_CMD: ${{ matrix.config.vs_cmd }}

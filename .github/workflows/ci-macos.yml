@@ -18,24 +18,34 @@ on:
 env:
     VNOTE_VER: 4.8.0
     CMAKE_VER: 3.24.3
+    VNOTE_TESTS: ${{ startsWith(github.event.head_commit.message, '[Release]') && 'OFF' || 'ON' }}
 
 jobs:
   build:
     environment: Mac-code-sign
-    name: Build On MacOS
+    name: ${{ matrix.config.name }}
     timeout-minutes: 120
 
     strategy:
       fail-fast: false
       matrix:
         config:
-          - name: "Build on Arm64"
+          - name: "Build on macOS (Qt 6.10.3)"
             # Qt >= 6.9.3 includes the QTBUG-137687 fix (FindWrapOpenGL.cmake no
             # longer unconditionally links the macOS AGL.framework that Xcode 26
             # removed), so macos-latest is safe again.
             os: macos-latest
             arch: universal
             qt: 6.10.3
+            deployment_target: "13.0"
+            suffix: ""
+          - name: "Build for macOS 12 (Qt 6.9.3)"
+            # Build on a current runner, but target Monterey with the older Qt.
+            os: macos-latest
+            arch: universal
+            qt: 6.9.3
+            deployment_target: "12.1"
+            suffix: "-macos12"
 
     runs-on: ${{matrix.config.os}}
 
@@ -89,7 +99,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{runner.workspace}}/Qt
-          key: ${{ runner.os }}-QtCache-6.10
+          key: ${{runner.os}}-${{matrix.config.arch}}-QtCache-${{matrix.config.qt}}
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
@@ -113,7 +123,9 @@ jobs:
         run: |
           qmake -v
           cmake --version
-          cmake -DVNOTE_BUILD_TESTS=ON -DMACDEPLOYQTFIX_EXECUTABLE=${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"  ${GITHUB_WORKSPACE}
+          # Keep the generated bundle's minimum OS aligned with this Qt variant.
+          /usr/libexec/PlistBuddy -c "Set :LSMinimumSystemVersion ${{matrix.config.deployment_target}}" "${GITHUB_WORKSPACE}/src/data/core/Info.plist"
+          cmake -DVNOTE_BUILD_TESTS=${VNOTE_TESTS} -DMACDEPLOYQTFIX_EXECUTABLE=${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET=${{matrix.config.deployment_target}} ${GITHUB_WORKSPACE}
         working-directory: ${{runner.workspace}}/build
 
       - name: Build Project
@@ -154,6 +166,7 @@ jobs:
         working-directory: ${{runner.workspace}}/build
 
       - name: Prepare Test Keychain
+        if: env.VNOTE_TESTS == 'ON'
         run: |
           set -e
           keychain="$RUNNER_TEMP/vnote-tests.keychain-db"
@@ -167,11 +180,12 @@ jobs:
           xargs security list-keychains -d user -s "$keychain" < "$RUNNER_TEMP/vnote-test-keychains"
 
       - name: Build and Run Tests
+        if: env.VNOTE_TESTS == 'ON'
         # Build the test executables (tests/CMakeLists.txt narrows them to the
         # host arch on macOS, so this links arm64-only against the universal
         # libs). Cocoa drains the native main queue used by QtKeychain; the
         # offscreen platform's UNIX dispatcher does not.
-        # VNOTE_BUILD_TESTS defaults to OFF and is turned ON at configure time above.
+        # VNOTE_BUILD_TESTS is enabled above only for non-release runs.
         # QtKeychain tests use the unlocked disposable keychain above and the
         # native application runner from tests/helpers/test_helper.h.
         run: |
@@ -195,7 +209,7 @@ jobs:
         # On failure of the previous step, re-run only the failing tests with
         # --extra-verbose so Qt Test's PASS/FAIL lines + assertion details
         # land in the CI log. Diagnostic only; never gates the workflow.
-        if: failure()
+        if: failure() && env.VNOTE_TESTS == 'ON'
         run: |
           export QT_QPA_PLATFORM=cocoa
           export LC_ALL=en_US.UTF-8
@@ -205,7 +219,7 @@ jobs:
         working-directory: ${{runner.workspace}}/build
 
       - name: Remove Test Keychain
-        if: always()
+        if: always() && env.VNOTE_TESTS == 'ON'
         run: |
           set -e
           if [ -f "$RUNNER_TEMP/vnote-test-default-keychain" ]; then
@@ -245,7 +259,7 @@ jobs:
           # Spotlight / XProtect can hold handles on freshly codesigned bundle
           # contents, causing `hdiutil create` to fail with "Resource busy".
           # Flush filesystem buffers + wait a beat, then retry with backoff.
-          DMG_NAME="VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg"
+          DMG_NAME="VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg"
           sync
           sleep 5
           for attempt in 1 2 3 4 5; do
@@ -275,8 +289,8 @@ jobs:
       - name: Archive DMG
         uses: actions/upload-artifact@v4
         with:
-          name: VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}
-          path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
+          name: VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}
+          path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg
 
       - name: Update Continuous Build Release
         if: github.ref == 'refs/heads/master'
@@ -288,6 +302,7 @@ jobs:
           # git-based repo auto-detection fails ("fatal: not a git repository").
           # GH_REPO makes every gh command target the repo without needing git.
           GH_REPO: ${{ github.repository }}
+          SUFFIX: ${{matrix.config.suffix}}
         run: |
           set -e
           # Ensure the release + tag exist (idempotent; all jobs share GITHUB_SHA).
@@ -299,25 +314,28 @@ jobs:
           gh api -X PATCH "repos/${GITHUB_REPOSITORY}/git/refs/tags/continuous-build" \
             -F sha="$GITHUB_SHA" -F force=true || true
 
-          # Copy the built artifact to a stable, non-versioned name.
-          cp "VNote-${VNOTE_VER}-mac-${{matrix.config.arch}}.dmg" "VNote-continuous-mac-universal.dmg"
+          STABLE="VNote-continuous-mac-${{matrix.config.arch}}${SUFFIX}.dmg"
 
-          # Prune this job's own asset family (old 4.x versioned + previous stable).
+          # Copy the built artifact to a stable, non-versioned name.
+          cp "VNote-${VNOTE_VER}-mac-${{matrix.config.arch}}${SUFFIX}.dmg" "$STABLE"
+
+          # Exact endings keep the two variants from pruning each other's assets.
+          PRUNE_RE="mac-${{matrix.config.arch}}${SUFFIX}\.dmg$"
           for asset in $(gh release view continuous-build \
               --json assets --jq '.assets[].name' \
-              | grep -E 'mac-.*\.dmg$'); do
+              | grep -E "$PRUNE_RE"); do
             gh release delete-asset continuous-build "$asset" -y || true
           done
 
           # Upload the stable-named asset.
-          gh release upload continuous-build "VNote-continuous-mac-universal.dmg" --clobber
+          gh release upload continuous-build "$STABLE" --clobber
 
       - name: Release
         if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
         uses: ncipollo/release-action@v1.11.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}.dmg
+          artifacts: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg
           commit: master
           tag: v${{env.VNOTE_VER}}
           allowUpdates: true

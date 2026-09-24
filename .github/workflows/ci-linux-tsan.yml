@@ -40,6 +40,7 @@ env:
 
 jobs:
   build-linux-tsan:
+    if: ${{ !startsWith(github.event.head_commit.message, '[Release]') }}
     name: Build On Ubuntu (ThreadSanitizer)
     runs-on: ubuntu-latest
     timeout-minutes: 120

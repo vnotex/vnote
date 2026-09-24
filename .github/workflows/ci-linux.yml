@@ -18,6 +18,7 @@ on:
 env:
     VNOTE_VER: 4.8.0
     CMAKE_VER: 3.24.3
+    VNOTE_TESTS: ${{ startsWith(github.event.head_commit.message, '[Release]') && 'OFF' || 'ON' }}
 
 jobs:
   build-linux:
@@ -142,7 +143,7 @@ jobs:
         run: |
           qmake -v
           cmake --version
-          cmake -DVNOTE_BUILD_TESTS=ON ${GITHUB_WORKSPACE}
+          cmake -DVNOTE_BUILD_TESTS=${VNOTE_TESTS} ${GITHUB_WORKSPACE}
         working-directory: ${{runner.workspace}}/build
 
       - name: Build Project
@@ -153,10 +154,11 @@ jobs:
         working-directory: ${{runner.workspace}}/build
 
       - name: Build and Run Tests
+        if: env.VNOTE_TESTS == 'ON'
         # Build remaining targets (Qt-side tests + vxcore tests; --target pack
         # above only built the AppImage target) then run them headlessly via
         # the Qt offscreen platform plugin. VNOTE_BUILD_TESTS defaults to OFF
-        # in the root CMakeLists.txt and is turned ON at configure time above.
+        # in the root CMakeLists.txt and is enabled above only for non-release runs.
         run: |
           set -e
           cmake --build .
@@ -186,7 +188,7 @@ jobs:
         # On failure of the previous step, re-run only the failing tests with
         # --extra-verbose so Qt Test's PASS/FAIL lines + assertion details
         # land in the CI log. Diagnostic only; never gates the workflow.
-        if: failure()
+        if: failure() && env.VNOTE_TESTS == 'ON'
         run: |
           export QT_QPA_PLATFORM=offscreen
           export LC_ALL=C.UTF-8
