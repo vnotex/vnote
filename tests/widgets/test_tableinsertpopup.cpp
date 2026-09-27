@@ -1,5 +1,6 @@
 #include <QtTest>
 
+#include <QMouseEvent>
 #include <QToolButton>
 
 #include <widgets/tableinsertpopup.h>
@@ -18,6 +19,8 @@ private slots:
   void testDialogFallbackEmitsRequest();
 
 private:
+  void movePointer(const QPoint &p_pos);
+
   QToolButton m_button;
   TableInsertPopup *m_popup = nullptr;
   QWidget *m_grid = nullptr;
@@ -38,11 +41,18 @@ void TestTableInsertPopup::cleanup() {
   m_grid = nullptr;
 }
 
+void TestTableInsertPopup::movePointer(const QPoint &p_pos) {
+  // Test Qt input handling without relying on native cursor warping on CI desktops.
+  QMouseEvent move(QEvent::MouseMove, p_pos, m_grid->mapToGlobal(p_pos), Qt::NoButton, Qt::NoButton,
+                   Qt::NoModifier);
+  QCoreApplication::sendEvent(m_grid, &move);
+}
+
 void TestTableInsertPopup::testHoverAndClickEmitsBodyRowsAndColumns() {
   QSignalSpy selected(m_popup, &TableInsertPopup::tableSelected);
   const QPoint cell(m_grid->width() * 7 / 14, m_grid->height() * 5 / 14);
-  QTest::mouseMove(m_grid, cell);
-  QTRY_COMPARE(m_popup->getHoveredBodyRows(), 3);
+  movePointer(cell);
+  QCOMPARE(m_popup->getHoveredBodyRows(), 3);
   QCOMPARE(m_popup->getHoveredColumns(), 4);
 
   QTest::mouseClick(m_grid, Qt::LeftButton, Qt::NoModifier, cell);
@@ -54,13 +64,14 @@ void TestTableInsertPopup::testHoverAndClickEmitsBodyRowsAndColumns() {
 
 void TestTableInsertPopup::testOutsideGridClickIgnored() {
   QSignalSpy selected(m_popup, &TableInsertPopup::tableSelected);
-  QTest::mouseMove(m_grid, QPoint(m_grid->width() * 13 / 14, m_grid->height() * 13 / 14));
-  QTRY_COMPARE(m_popup->getHoveredBodyRows(), 7);
+  movePointer(QPoint(m_grid->width() * 13 / 14, m_grid->height() * 13 / 14));
+  QCOMPARE(m_popup->getHoveredBodyRows(), 7);
   QCOMPARE(m_popup->getHoveredColumns(), 7);
 
   const QPoint outside(m_grid->width() + 1, m_grid->height() / 2);
-  QTest::mouseMove(m_grid, outside);
-  QTRY_COMPARE(m_popup->getHoveredBodyRows(), 0);
+  QEvent leave(QEvent::Leave);
+  QCoreApplication::sendEvent(m_grid, &leave);
+  QCOMPARE(m_popup->getHoveredBodyRows(), 0);
   QCOMPARE(m_popup->getHoveredColumns(), 0);
   QTest::mouseClick(m_grid, Qt::LeftButton, Qt::NoModifier, outside);
   QCOMPARE(selected.count(), 0);
