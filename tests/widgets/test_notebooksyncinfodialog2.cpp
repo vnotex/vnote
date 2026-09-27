@@ -45,6 +45,8 @@ private slots:
 };
 
 void TestNotebookSyncInfoDialog2::initTestCase() {
+  // QtTest drives QWidget message-box buttons, not native Cocoa sheets.
+  QCoreApplication::setAttribute(Qt::AA_DontUseNativeDialogs);
   // CRITICAL: enable test mode BEFORE any vxcore_context_create. Mirrors
   // tests/AGENTS.md guidance.
   vxcore_set_test_mode(1);
