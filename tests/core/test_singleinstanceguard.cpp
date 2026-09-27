@@ -275,7 +275,8 @@ QProcess *TestSingleInstanceGuard::startSender(const QString &p_mode, const QStr
   auto *child = new QProcess();
   m_children.append(child);
   child->setProgram(QCoreApplication::applicationFilePath());
-  child->setWorkingDirectory(m_dir->path());
+  // Resolve temporary-directory aliases (such as macOS /var) before the child chdir.
+  child->setWorkingDirectory(QDir(m_dir->path()).canonicalPath());
   child->setArguments(QStringList{QStringLiteral("--send-ipc"), serverName(), lockPath(), p_mode} +
                       p_files);
   child->start();
@@ -320,7 +321,7 @@ void TestSingleInstanceGuard::testChildForwarding() {
   QTRY_COMPARE(detachedOpened.count(), !empty && detached ? 1 : 0);
   QTRY_COMPARE(shown.count(), detached ? 0 : 1);
   if (!empty) {
-    const QStringList expected{files.at(0), m_dir->filePath(files.at(1))};
+    const QStringList expected{files.at(0), QDir(child->workingDirectory()).filePath(files.at(1))};
     const auto &spy = detached ? detachedOpened : opened;
     QCOMPARE(spy.at(0).at(0).toStringList(), expected);
   }
