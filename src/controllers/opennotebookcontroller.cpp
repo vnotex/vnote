@@ -1,14 +1,16 @@
 #include "opennotebookcontroller.h"
 
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QMetaObject>
-#include <QRegularExpression>
 #include <QString>
+#include <QTemporaryDir>
 #include <QThread>
+#include <QUuid>
 #include <QtConcurrentRun>
 #include <memory>
 
@@ -28,12 +30,6 @@ using namespace vnotex;
 
 namespace {
 
-// MUST match OpenNotebookDialog2::kRemoteUrlSchemeRegex character-for-character
-// (per T24 learnings.md, the dialog is the single source of truth, but the
-// controller's validator MUST agree so the dialog and a direct controller
-// caller produce identical accept/reject outcomes for the same input).
-const char *const kRemoteUrlSchemeRegex = "^(https://|file:///)\\S+$";
-
 // Helper: extract the leaf notebook name from the just-cloned config.json so
 // the cloneFinished signal can carry a human-readable name. Returns empty on
 // any error -- callers should treat as advisory only.
@@ -45,11 +41,50 @@ QString notebookNameFromConfig(NotebookCoreService *p_svc, const QString &p_note
   return cfg.value(QLatin1String(vxcore::kJsonKeyName)).toString();
 }
 
+bool isOwnedClone(const QString &p_root, const QString &p_marker, const QByteArray &p_owner) {
+  const QFileInfo root(p_root);
+  const QFileInfo marker(QDir(p_root).filePath(p_marker));
+  if (!root.isDir() || root.isSymLink() || marker.isSymLink() ||
+      QFileInfo(marker.absolutePath()).isSymLink() ||
+      QDir::cleanPath(marker.canonicalFilePath()) !=
+          QDir::cleanPath(QDir(root.canonicalFilePath()).filePath(p_marker))) {
+    return false;
+  }
+  QFile file(marker.absoluteFilePath());
+  return file.open(QIODevice::ReadOnly) && file.size() == p_owner.size() &&
+         file.readAll() == p_owner;
+}
+
+bool markOwnedClone(const QString &p_root, const QString &p_marker, const QByteArray &p_owner) {
+  const QDir metadata(QDir(p_root).filePath(QStringLiteral("vx_notebook")));
+  const auto folder = metadata.filePath(QStringLiteral("vx_transfer"));
+  if (QFileInfo(folder).isSymLink() ||
+      (!QDir(folder).exists() && !metadata.mkdir(QStringLiteral("vx_transfer"))) ||
+      QDir::cleanPath(QFileInfo(folder).canonicalFilePath()) !=
+          QDir::cleanPath(QDir(QFileInfo(p_root).canonicalFilePath())
+                              .filePath(QStringLiteral("vx_notebook/vx_transfer")))) {
+    return false;
+  }
+  QFile file(QDir(p_root).filePath(p_marker));
+  if (!file.open(QIODevice::WriteOnly | QIODevice::NewOnly)) {
+    return false;
+  }
+  const bool written = file.write(p_owner) == p_owner.size() && file.flush();
+  file.close();
+  return written && isOwnedClone(p_root, p_marker, p_owner);
+}
+
+void removeCloneMarker(const QString &p_root, const QString &p_marker, const QByteArray &p_owner) {
+  if (isOwnedClone(p_root, p_marker, p_owner)) {
+    QFile::remove(QDir(p_root).filePath(p_marker));
+  }
+}
+
 // Helper: tear down a notebook root that the controller CREATED (never an
 // existing user dir). Mirrors NewNotebookController::bootstrapSync rollback
 // (newnotebookcontroller.cpp:266-279) verbatim: 20 x 100ms QDir::removeRecursively
 // retries to dodge the Windows libgit2 file-handle race.
-void teardownCreatedDir(const QString &p_dir) {
+void teardownCreatedDir(const QString &p_dir, const QString &p_marker, const QByteArray &p_owner) {
   if (p_dir.isEmpty()) {
     return;
   }
@@ -58,6 +93,10 @@ void teardownCreatedDir(const QString &p_dir) {
     return;
   }
   for (int attempt = 0; attempt < 20 && dir.exists(); ++attempt) {
+    if (!isOwnedClone(p_dir, p_marker, p_owner)) {
+      qWarning() << "OpenNotebookController: clone ownership changed; preserving destination";
+      return;
+    }
     if (dir.removeRecursively()) {
       break;
     }
@@ -84,6 +123,7 @@ OpenNotebookController::OpenNotebookController(ServiceLocator &p_services, QObje
   // T22: enable cross-thread marshalling of cloneFinished's struct payload.
   // qRegisterMetaType is idempotent so multiple controller instances are safe.
   qRegisterMetaType<CloneAndOpenResult>("vnotex::CloneAndOpenResult");
+  qRegisterMetaType<CloneAndOpenResult>("CloneAndOpenResult");
 }
 
 OpenNotebookValidationResult
@@ -186,20 +226,12 @@ CloneAndOpenValidationResult
 OpenNotebookController::validateCloneInput(const CloneAndOpenInput &p_input) const {
   CloneAndOpenValidationResult result;
 
-  const QString url = p_input.remoteUrl.trimmed();
-  if (url.isEmpty()) {
-    result.valid = false;
-    result.message = tr("Remote URL must not be empty.");
-    return result;
-  }
-
-  // URL-scheme guard — identical regex to OpenNotebookDialog2 per T24
-  // contract.
-  static const QRegularExpression scheme(QString::fromLatin1(kRemoteUrlSchemeRegex));
-  if (!scheme.match(url).hasMatch()) {
-    result.valid = false;
-    result.message = tr("Remote URL must use HTTPS or file:// scheme (got: %1).").arg(url);
-    return result;
+  const auto &credentials = p_input.syncSettings.m_credentials;
+  const bool suppliedCredentials =
+      !credentials.m_username.isEmpty() || !credentials.m_secret.isEmpty();
+  const auto message = validateSyncSettings(p_input.syncSettings, suppliedCredentials);
+  if (!message.isEmpty()) {
+    return {false, message};
   }
 
   const QString finalDir = p_input.finalDestDir.trimmed();
@@ -214,48 +246,13 @@ OpenNotebookController::validateCloneInput(const CloneAndOpenInput &p_input) con
     return result;
   }
 
-  // Dest contract (post refine-open-notebook-dialog): the local root folder
-  // may EITHER not exist (we create it via the staging rename) OR be an
-  // existing empty directory. cloneAndOpen's worker thread converts the
-  // existing-empty case back to the "does not exist" precondition via a
-  // single pre-rename rmdir hop. Anything else (file, non-empty dir,
-  // unwritable parent for the non-existing case) is rejected.
   const QFileInfo finalInfo(finalDir);
-  if (finalInfo.exists()) {
-    if (!finalInfo.isDir()) {
-      result.valid = false;
-      result.message = tr("Local root folder must be a directory.");
-      return result;
-    }
-    const QDir destDir(finalDir);
-    const QStringList entries =
-        destDir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System);
-    if (!entries.isEmpty()) {
-      result.valid = false;
-      result.message =
-          tr("Local root folder must be empty (contains %1 item(s)).").arg(entries.size());
-      return result;
-    }
-    // Existing-empty dir: parent's writability is implied by the dir's own
-    // existence (we wouldn't be able to read it otherwise on any sane FS).
-    // We still need to be able to create the staging sibling, which the
-    // existing FileUtils2::generateCloneStagingDir path verifies separately.
-  } else {
-    // Non-existing: parent must exist + be a writable directory so we can
-    // create the staging dir AND (eventually) the final dir alongside.
-    const QFileInfo parentInfo(finalInfo.absolutePath());
-    if (!parentInfo.exists() || !parentInfo.isDir()) {
-      result.valid = false;
-      result.message = tr("Parent folder of destination does not exist or is not a directory: %1.")
-                           .arg(parentInfo.absoluteFilePath());
-      return result;
-    }
-    if (!parentInfo.isWritable()) {
-      result.valid = false;
-      result.message = tr("Parent folder of destination is not writable: %1.")
-                           .arg(parentInfo.absoluteFilePath());
-      return result;
-    }
+  if (finalInfo.exists() || finalInfo.isSymLink()) {
+    return {false, tr("Local root folder must not already exist.")};
+  }
+  const QFileInfo parentInfo(finalInfo.absolutePath());
+  if (!parentInfo.exists() || !parentInfo.isDir() || !parentInfo.isWritable()) {
+    return {false, tr("Parent folder of destination must exist and be writable.")};
   }
 
   // Duplicate-open guard against the resolved final dir.
@@ -280,6 +277,12 @@ OpenNotebookController::validateCloneInput(const CloneAndOpenInput &p_input) con
 }
 
 void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
+  if (m_currentCloneToken) {
+    CloneAndOpenResult result;
+    result.errorMessage = tr("A remote notebook is already being opened.");
+    emit cloneFinished(result);
+    return;
+  }
   // Step 1: pre-validate on the caller thread so dialog dismissal happens
   // synchronously when the user typed something obviously wrong. Returning
   // early via cloneFinished keeps the contract simple: every call emits
@@ -303,16 +306,14 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
         this, [this, result]() { emit cloneFinished(result); }, Qt::QueuedConnection);
     return;
   }
-  // SyncService / SyncCredentialsStore are required only for the PAT path.
-  // We resolve them up-front so the worker thread never touches the
-  // ServiceLocator (no DI overhead inside the closure).
-  const bool needsSync = !p_input.pat.isEmpty();
+  // Resolve services before dispatch; anonymous downloads need no vault access.
+  const bool needsSync = !p_input.syncSettings.m_credentials.m_secret.isEmpty();
   auto *syncService = needsSync ? m_services.get<SyncService>() : nullptr;
   auto *credStore = needsSync ? m_services.get<SyncCredentialsStore>() : nullptr;
   if (needsSync && (!syncService || !credStore)) {
     CloneAndOpenResult result;
     result.success = false;
-    result.errorMessage = tr("Sync services not available; cannot use a PAT.");
+    result.errorMessage = tr("Sync services not available; cannot save credentials.");
     QMetaObject::invokeMethod(
         this, [this, result]() { emit cloneFinished(result); }, Qt::QueuedConnection);
     return;
@@ -323,52 +324,40 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
   const QString parentDir = finalInfo.absolutePath();
   const QString leafName = finalInfo.fileName();
 
-  // Step 2: stage on the SAME filesystem as the final destination so the
-  // QDir::rename in step 5 is atomic (cross-filesystem rename fails on
-  // Windows).
-  QString stagingErr;
-  const QString stagingDir = FileUtils2::generateCloneStagingDir(parentDir, leafName, &stagingErr);
-  if (stagingDir.isEmpty()) {
+  // Allocate exclusively beside the final destination. WebDAV Clone requires a
+  // genuinely empty target, so no ownership file is written before the download.
+  QTemporaryDir staging(
+      QDir(parentDir).filePath(QStringLiteral(".%1.vnote-clone-pending-XXXXXX").arg(leafName)));
+  if (!staging.isValid()) {
     CloneAndOpenResult result;
     result.success = false;
-    result.errorMessage = tr("Failed to create staging directory: %1").arg(stagingErr);
+    result.errorMessage = tr("Failed to create staging directory: %1").arg(staging.errorString());
     QMetaObject::invokeMethod(
         this, [this, result]() { emit cloneFinished(result); }, Qt::QueuedConnection);
     return;
   }
+  const QString stagingDir = staging.path();
+  staging.setAutoRemove(false); // Owned by the worker until rename or cleanup.
+  const QByteArray cloneOwner = QUuid::createUuid().toString(QUuid::WithoutBraces).toLatin1();
+  const QString cloneMarker =
+      QStringLiteral("vx_notebook/vx_transfer/.clone-owner-") + QString::fromLatin1(cloneOwner);
 
-  // Build config + credentials JSON once on the caller thread so the worker
-  // closure captures simple QStrings. PAT contents are NEVER logged.
+  SyncSettings settings = p_input.syncSettings;
+  settings.m_remoteUrl = canonicalSyncRemoteUrl(settings);
   QJsonObject configObj;
-  configObj[QStringLiteral("backend")] = p_input.backend;
-  configObj[QStringLiteral("remoteUrl")] = p_input.remoteUrl.trimmed();
-  configObj[QStringLiteral("autoSyncEnabled")] = p_input.autoSyncEnabled;
+  configObj[QLatin1String(vxcore::kJsonKeyBackend)] = settings.m_backend;
+  configObj[QLatin1String(vxcore::kJsonKeyRemoteUrl)] = settings.m_remoteUrl;
+  configObj[QLatin1String(vxcore::kJsonKeyAutoSyncEnabled)] = p_input.autoSyncEnabled;
   const QString configJson =
       QString::fromUtf8(QJsonDocument(configObj).toJson(QJsonDocument::Compact));
-
-  QString credentialsJson;
-  if (!p_input.pat.isEmpty()) {
-    QJsonObject credsObj;
-    credsObj[QStringLiteral("pat")] = p_input.pat;
-    credentialsJson = QString::fromUtf8(QJsonDocument(credsObj).toJson(QJsonDocument::Compact));
-  }
-
-  const bool patEmpty = p_input.pat.isEmpty();
-  const QString remoteUrl = p_input.remoteUrl.trimmed();
-  const QString pat = p_input.pat; // capture by value -- lambda lifetime is bounded by QFuture
+  const QString credentialsJson =
+      needsSync ? syncCredentialsJson(settings.m_credentials) : QString();
+  const bool autoSyncEnabled = p_input.autoSyncEnabled;
 
   // openurl-followups Item 2: create the cancellation token on the GUI
   // thread BEFORE spawning the worker. The token outlives the worker
   // (freed below in the GUI-thread tail), so the captured raw pointer the
   // worker uses is guaranteed valid for the entire clone duration.
-  //
-  // If a previous clone left a stale token (shouldn't happen — cloneAndOpen
-  // is expected to be called serially per controller instance — but be
-  // defensive), free it first.
-  if (m_currentCloneToken) {
-    vxcore_sync_free_cancellation(m_currentCloneToken);
-    m_currentCloneToken = nullptr;
-  }
   m_currentCloneToken = vxcore_sync_create_cancellation();
   VxCoreSyncCancellation *cancellationToken = m_currentCloneToken;
 
@@ -376,16 +365,14 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
   // the worker thread (the resolution above is the last DI access).
   // Progress signal fired immediately so the dialog can show indeterminate
   // feedback.
-  QMetaObject::invokeMethod(
-      this, [this]() { emit cloneProgressUpdated(0, 100, tr("Cloning...")); },
-      Qt::QueuedConnection);
+  emit cloneProgressUpdated(0, 100, tr("Cloning..."));
 
   // We deliberately discard the returned QFuture: the worker's only
   // observable outputs are the queued-signal emissions, and cancellation is
   // routed through the cancellation token (not the QFuture).
   (void)QtConcurrent::run([this, notebookService, syncService, credStore, stagingDir, finalDir,
-                           configJson, credentialsJson, remoteUrl, pat, patEmpty,
-                           cancellationToken]() {
+                           configJson, credentialsJson, settings, needsSync, autoSyncEnabled,
+                           cancellationToken, cloneOwner, cloneMarker]() {
     // emitFinished: bounces back to the GUI thread, frees the cancellation
     // token BEFORE emitting cloneFinished (so any listener calling
     // cancelClone() in response sees nullptr), then emits.
@@ -424,60 +411,32 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
         result.errorMessage = tr("Clone cancelled by user.");
       } else {
         result.errorMessage = tr("Failed to clone remote notebook. "
-                                 "Verify the URL is reachable, the PAT (if any) is valid, "
+                                 "Verify the URL is reachable, the credentials (if any) are valid, "
                                  "and the remote is an actual VNote notebook.");
       }
       emitFinished(result);
       return;
     }
 
-    // Step 4: rename staging -> final. Vxcore's NotebookManager already
-    // recorded root_folder=stagingDir in session.json, but that's fine: step
-    // 5 below closes + re-opens against finalDir to refresh the record.
-    //
-    // refine-open-notebook-dialog: if finalDir exists (validation guarantees
-    // it is an empty directory), remove it first so the atomic rename can
-    // proceed. Windows QDir::rename cannot overwrite even an empty dir, so
-    // this pre-rmdir hop is mandatory on Windows; on POSIX it's harmless.
-    // The 20x100ms retry loop mirrors teardownCreatedDir's defensive pattern
-    // for transient antivirus / Explorer-preview handles.
-    if (QFileInfo::exists(finalDir)) {
-      QDir d(finalDir);
-      bool removed = false;
-      for (int attempt = 0; attempt < 20 && !removed; ++attempt) {
-        if (d.removeRecursively()) {
-          removed = true;
-          break;
-        }
-        QThread::msleep(100);
-      }
-      if (!removed) {
-        // We never modified finalDir's contents (it was empty going in and
-        // rmdir failed). The user's original folder is intact; only the
-        // staging dir needs cleanup.
-        notebookService->closeNotebook(stagingNotebookId);
-        QString rmErr;
-        FileUtils2::removeStagingDir(stagingDir, &rmErr);
-        CloneAndOpenResult result;
-        result.success = false;
-        result.errorMessage = tr("Could not prepare local root folder %1.").arg(finalDir);
-        emitFinished(result);
-        return;
-      }
+    // Only completed downloads receive an exclusive ownership marker. Keep it
+    // in excluded private storage through reopen/enable so final-root rollback
+    // cannot remove a destination whose ownership changed after the rename.
+    if (!markOwnedClone(stagingDir, cloneMarker, cloneOwner)) {
+      notebookService->closeNotebook(stagingNotebookId);
+      FileUtils2::removeStagingDir(stagingDir, nullptr);
+      CloneAndOpenResult result;
+      result.errorMessage = tr("Could not record ownership of the downloaded notebook.");
+      emitFinished(result);
+      return;
     }
 
-    QString renameErr;
-    if (!FileUtils2::renameStagingToFinal(stagingDir, finalDir, &renameErr)) {
-      // Rename failed: rollback. Close the staging notebook so vxcore drops
-      // the stale registration. removeStagingDir handles the dir; the
-      // (non-existent) finalDir needs no cleanup.
+    // Refuse every foreign destination, including a path created while downloading.
+    const QFileInfo destination(finalDir);
+    if (destination.exists() || destination.isSymLink() || !QDir().rename(stagingDir, finalDir)) {
       notebookService->closeNotebook(stagingNotebookId);
-      QString rmErr;
-      FileUtils2::removeStagingDir(stagingDir, &rmErr);
+      FileUtils2::removeStagingDir(stagingDir, nullptr);
       CloneAndOpenResult result;
-      result.success = false;
-      result.errorMessage =
-          tr("Failed to move cloned notebook into destination: %1").arg(trimDiagnostic(renameErr));
+      result.errorMessage = tr("Failed to move cloned notebook into the destination.");
       emitFinished(result);
       return;
     }
@@ -497,7 +456,7 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
     if (finalNotebookId.isEmpty()) {
       // Re-open failed: best-effort cleanup of the just-created finalDir
       // (which we own — user didn't have anything there before us).
-      teardownCreatedDir(finalDir);
+      teardownCreatedDir(finalDir, cloneMarker, cloneOwner);
       CloneAndOpenResult result;
       result.success = false;
       result.errorMessage = tr("Cloned notebook could not be re-opened from %1.").arg(finalDir);
@@ -507,32 +466,32 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
 
     const QString notebookName = notebookNameFromConfig(notebookService, finalNotebookId);
 
-    // Step 6: if PAT was supplied, persist + register sync (-> S5). The no-PAT
-    // path skips registration and instead persists partial sync info (-> S2).
-    if (patEmpty) {
-      // No PAT supplied: land as a normal, fully-writable notebook with partial
-      // sync info persisted (sync state S2). syncEnabled=true + backend="git" +
-      // remoteUrl set, but NO PAT in the keychain and NO vxcore sync
-      // registration -> the notebook opens SILENTLY and will not sync until the
-      // user completes the sync info (adds a token) via the Sync Info dialog
-      // (S2 -> S5). We write the three flat sync keys DIRECTLY here; we MUST NOT
-      // route through SyncService::enableSyncForNotebook / bootstrapAndPersist /
-      // bootstrapApply because those reject an empty PAT by contract. This write
-      // runs AFTER openNotebookEx (the clone wrote syncEnabled=false), so our
-      // true value is the final persisted state.
-      QJsonObject cfg = notebookService->getNotebookConfig(finalNotebookId);
-      cfg[QLatin1String(vxcore::kJsonKeySyncEnabled)] = true;
-      cfg[QLatin1String(vxcore::kJsonKeySyncBackend)] = QStringLiteral("git");
-      cfg[QLatin1String(vxcore::kJsonKeySyncRemoteUrl)] = remoteUrl;
-      notebookService->updateNotebookConfig(
-          finalNotebookId, QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact)));
+    // Anonymous downloads remain writable and silently persist partial S2.
+    // Authenticated downloads persist the same routing before registration.
+    QJsonObject cfg = notebookService->getNotebookConfig(finalNotebookId);
+    cfg[QLatin1String(vxcore::kJsonKeySyncEnabled)] = true;
+    cfg[QLatin1String(vxcore::kJsonKeySyncBackend)] = settings.m_backend;
+    cfg[QLatin1String(vxcore::kJsonKeySyncRemoteUrl)] = settings.m_remoteUrl;
+    cfg[QLatin1String(vxcore::kJsonKeyAutoSyncEnabled)] = autoSyncEnabled;
+    if (!notebookService->updateNotebookConfig(
+            finalNotebookId,
+            QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact)))) {
+      notebookService->closeNotebook(finalNotebookId);
+      teardownCreatedDir(finalDir, cloneMarker, cloneOwner);
+      CloneAndOpenResult failed;
+      failed.errorMessage = tr("Failed to save the downloaded notebook's sync settings.");
+      emitFinished(failed);
+      return;
+    }
+    if (!needsSync) {
 
       CloneAndOpenResult result;
       result.success = true;
       result.notebookId = finalNotebookId;
       result.notebookName = notebookName;
       result.isReadOnly = false;
-      result.partialSyncNoPat = true;
+      result.partialSyncMissingCredentials = true;
+      removeCloneMarker(finalDir, cloneMarker, cloneOwner);
       emitFinished(result);
       return;
     }
@@ -546,13 +505,14 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
     // here.
     QMetaObject::invokeMethod(
         this,
-        [this, syncService, credStore, finalNotebookId, finalDir, notebookName, remoteUrl, pat,
-         emitFinished]() {
+        [this, syncService, credStore, finalNotebookId, finalDir, notebookName, settings,
+         emitFinished, cloneMarker, cloneOwner]() {
           auto conn = std::make_shared<QMetaObject::Connection>();
           *conn = connect(
               syncService, &SyncService::enableFinished, this,
-              [this, conn, credStore, finalNotebookId, finalDir, notebookName, emitFinished](
-                  const QString &p_resultId, VxCoreError p_result, const QString &p_message) {
+              [this, conn, credStore, finalNotebookId, finalDir, notebookName, emitFinished,
+               cloneMarker, cloneOwner](const QString &p_resultId, VxCoreError p_result,
+                                        const QString &p_message) {
                 if (p_resultId != finalNotebookId) {
                   return;
                 }
@@ -563,6 +523,7 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
                   ok.notebookId = finalNotebookId;
                   ok.notebookName = notebookName;
                   ok.isReadOnly = false;
+                  removeCloneMarker(finalDir, cloneMarker, cloneOwner);
                   emitFinished(ok);
                   return;
                 }
@@ -577,7 +538,7 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
                 if (notebookService) {
                   notebookService->closeNotebook(finalNotebookId);
                 }
-                teardownCreatedDir(finalDir);
+                teardownCreatedDir(finalDir, cloneMarker, cloneOwner);
                 CloneAndOpenResult fail;
                 fail.success = false;
                 fail.errorMessage = tr("Cloned notebook but failed to enable sync: %1")
@@ -585,7 +546,7 @@ void OpenNotebookController::cloneAndOpen(const CloneAndOpenInput &p_input) {
                 emitFinished(fail);
               },
               Qt::QueuedConnection);
-          syncService->enableSyncForNotebook(finalNotebookId, remoteUrl, pat);
+          syncService->enableSyncForNotebook(finalNotebookId, settings);
         },
         Qt::QueuedConnection);
   });

@@ -5,6 +5,8 @@
 #include <QObject>
 #include <QString>
 
+#include <core/services/syncsettings.h>
+
 // Forward-declare the opaque C handle in the global namespace so member
 // declarations below match the type used by vxcore's C API
 // (vxcore_sync_create_cancellation / vxcore_sync_cancel /
@@ -19,11 +21,7 @@ class ServiceLocator;
 // Input data structure for opening an existing notebook.
 struct OpenNotebookInput {
   QString rootFolderPath;
-  // T23: Forwarded to NotebookCoreService::openNotebookEx as the readOnly
-  // option flag. Defaults to false so existing local-folder callers
-  // (NotebookExplorer2::importNotebook) preserve their RW behavior without
-  // change. Set true by the remote-clone path when the user supplies no PAT
-  // (snapshot-only MVP per open-notebook-remote-readonly plan).
+  // Explicit local-folder read-only option; remote downloads remain writable.
   bool readOnly = false;
 };
 
@@ -41,32 +39,12 @@ struct OpenNotebookValidationResult {
   QString message;
 };
 
-// T22: Input for an end-to-end clone-then-open flow.
-//
-// The caller (typically OpenNotebookDialog2 via NotebookExplorer2) supplies
-// the user's URL/PAT/destination choices; the controller owns staging-dir
-// safety, async dispatch, and rollback semantics so the UI thread never
-// blocks on libgit2 fetch/checkout.
-//
-// Field semantics:
-//   * remoteUrl     : HTTPS or file:// URL (other schemes rejected at
-//                     validate time). Required, non-empty.
-//   * pat           : Personal access token. Empty means anonymous clone and
-//                     the resulting notebook is opened read-only (no sync
-//                     registration -- snapshot-only MVP).
-//   * finalDestDir  : Absolute path of the user-chosen final destination
-//                     folder. MUST NOT exist; the controller creates a
-//                     sibling staging dir, clones into it, then renames
-//                     into this path on success.
-//   * backend       : Sync backend name (currently "git"; future-proofed).
-//   * autoSyncEnabled: Boolean gate for auto-sync. Passed through to vxcore
-//                     in the config JSON. Ignored for RO clones since they
-//                     never register with SyncService.
+// The controller downloads into an owned sibling staging directory, then renames
+// to a destination that MUST NOT already exist. Empty credentials request an
+// anonymous, writable download with partial sync settings (S2).
 struct CloneAndOpenInput {
-  QString remoteUrl;
-  QString pat;
+  SyncSettings syncSettings;
   QString finalDestDir;
-  QString backend = QStringLiteral("git");
   bool autoSyncEnabled = true;
 };
 
@@ -80,14 +58,10 @@ struct CloneAndOpenResult {
   QString notebookId;
   QString notebookName;
   QString errorMessage;
-  // True when the notebook was opened in read-only mode (empty PAT path).
+  // Remote downloads are writable, including anonymous partial-sync downloads.
   bool isReadOnly = false;
-  // True when the notebook was cloned from a remote URL with NO PAT: it lands
-  // as a normal, fully-writable notebook with partial sync info persisted
-  // (sync state S2 — syncEnabled=true, syncBackend="git", syncRemoteUrl=<url>,
-  // no token). Such a clone must open SILENTLY (no PAT auto-prompt). Distinct
-  // from isReadOnly, which is NOT used by the no-PAT path anymore.
-  bool partialSyncNoPat = false;
+  // True for a silent S2 open without saved credentials or runtime registration.
+  bool partialSyncMissingCredentials = false;
 };
 
 // T22: Pre-flight validation result for CloneAndOpenInput. Mirrors the shape
@@ -99,15 +73,8 @@ struct CloneAndOpenValidationResult {
 
 // Controller for opening existing notebooks (local folder or remote URL).
 //
-// Local-folder path: validate root, open via NotebookCoreService::openNotebook.
-// Remote-URL path (T22): validate URL/PAT/destination, generate a staging dir
-// next to the final destination, clone into staging (worker thread), rename
-// to final, optionally enable sync if PAT was supplied, fully rollback on
-// failure. View (OpenNotebookDialog2) collects input and displays results;
-// see src/widgets/dialogs/opennotebookdialog2.h. T25 wired the
-// NotebookExplorer2 toolbar "Open Notebook" button to that dialog so the
-// legacy QFileDialog::getExistingDirectory path is no longer reachable from
-// the UI.
+// Remote downloads use shared settings validation and never write remotely.
+// Authenticated downloads enable sync only after final rename and reopen.
 class OpenNotebookController : public QObject {
   Q_OBJECT
 
@@ -123,18 +90,8 @@ public:
   // When p_input.readOnly is true the notebook opens read-only (T23).
   OpenNotebookResult openNotebook(const OpenNotebookInput &p_input);
 
-  // T22: Validate clone inputs before any disk/network work. Mirrors the
-  // dialog's inline checks in OpenNotebookDialog2::validateRemoteInputs so
-  // both layers agree on what is acceptable. Checks (in order):
-  //   * remoteUrl non-empty
-  //   * remoteUrl matches https:// or file:/// scheme (SSH/HTTP/git
-  //     rejected)
-  //   * finalDestDir non-empty
-  //   * parent of finalDestDir exists and is a writable directory
-  //   * finalDestDir itself does NOT exist (we create it via the staging
-  //     rename, see cloneAndOpen)
-  //   * finalDestDir is not already an open notebook root (duplicate guard
-  //     mirroring validateRootFolder)
+  // Shared URL/backend validation; destination must not exist, including an
+  // empty directory. Parent must be an existing writable directory.
   CloneAndOpenValidationResult validateCloneInput(const CloneAndOpenInput &p_input) const;
 
   // T22: Clone a remote notebook into p_input.finalDestDir and open it.
@@ -143,26 +100,9 @@ public:
   // when subscribing from the GUI thread (which the dialog already does
   // via QObject::connect default).
   //
-  // Flow per plan (open-notebook-remote-readonly T22):
-  //   1. validateCloneInput; on fail emit cloneFinished(success=false).
-  //   2. Generate staging dir via FileUtils2::generateCloneStagingDir.
-  //   3. Spawn worker via QtConcurrent::run:
-  //        a. Build config/credentials JSON.
-  //        b. Call NotebookCoreService::cloneNotebookFromUrl into staging.
-  //        c. On clone fail: removeStagingDir + emit failure.
-  //        d. On clone OK: renameStagingToFinal. On rename fail: rollback
-  //           (close notebook + delete finalDestDir).
-  //        e. Re-open via openNotebookEx with the FINAL dir so vxcore
-  //           refreshes its NotebookRecord.root_folder away from the
-  //           now-renamed staging path (CRITICAL — without this vxcore
-  //           remembers the obsolete staging path and the next session
-  //           restore fails).
-  //        f. If PAT non-empty: persist via SyncCredentialsStore +
-  //           SyncService::enableSyncForNotebook. On failure: full
-  //           rollback (delete keychain, close notebook, delete
-  //           finalDestDir).
-  //        g. If PAT empty: skip sync registration (RO snapshot).
-  //        h. Emit cloneFinished(success=true, ..., isReadOnly=PAT empty).
+  // Clone into owned staging, rename, close/reopen against the final root, then
+  // register authenticated sync or persist anonymous S2 settings. Failure removes
+  // only staging/the final root created by this operation, never an existing path.
   //
   // openurl-followups Item 2: cancellation. The controller now creates a
   // VxCoreSyncCancellation token at clone start, stores it in

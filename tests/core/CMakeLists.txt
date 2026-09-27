@@ -641,6 +641,23 @@ target_compile_definitions(test_synccredentialsstore PRIVATE VNOTE_TESTING)
 # preprocessor checks (QSKIP guards) compile against the same code path.
 if(VNOTE_KEYCHAIN_AVAILABLE)
   target_compile_definitions(test_synccredentialsstore PRIVATE VNOTE_KEYCHAIN_AVAILABLE)
+  if(QT_DEFAULT_MAJOR_VERSION GREATER 5)
+    if(TARGET Qt6Keychain::Qt6Keychain)
+      target_link_libraries(test_synccredentialsstore PRIVATE Qt6Keychain::Qt6Keychain)
+    elseif(TARGET qt6keychain)
+      target_link_libraries(test_synccredentialsstore PRIVATE qt6keychain)
+    endif()
+  else()
+    if(TARGET Qt5Keychain::Qt5Keychain)
+      target_link_libraries(test_synccredentialsstore PRIVATE Qt5Keychain::Qt5Keychain)
+    elseif(TARGET qt5keychain)
+      target_link_libraries(test_synccredentialsstore PRIVATE qt5keychain)
+    endif()
+  endif()
+  if(qtkeychain_SOURCE_DIR)
+    target_include_directories(test_synccredentialsstore PRIVATE
+      ${qtkeychain_SOURCE_DIR} ${qtkeychain_BINARY_DIR})
+  endif()
 endif()
 
 # Task 3 (Sync Info Disable empty-credential fix): SyncService::enableSyncForNotebook
@@ -979,6 +996,7 @@ add_qt_test(test_syncops_gate_release
   LINKS
     core_services
     vxcore
+    nlohmann_json
   GUILESS
 )
 
@@ -1077,3 +1095,14 @@ add_qt_test(test_nodetransferservice
     vxcore
   GUILESS
 )
+
+
+# Actual staged service, save and metadata-refresh paths against verified HTTPS DAV.
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
+add_qt_test(test_webdav_sync_service
+  SOURCES test_webdav_sync_service.cpp
+  LINKS core_services vxcore vxcore_webdav_curl nlohmann_json sqlite3 sodium
+  RUNNER ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/libs/vxcore/tests/run_webdav_test.py --
+  GUILESS
+)
+set_tests_properties(test_webdav_sync_service PROPERTIES TIMEOUT 900)

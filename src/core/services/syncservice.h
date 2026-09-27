@@ -2,14 +2,15 @@
 #define SYNCSERVICE_H
 
 #include <QHash>
-#include <QMutex>
 #include <QObject>
 #include <QSet>
 #include <QString>
 #include <QStringList>
 
+#include <functional>
 #include <memory>
 
+#include "syncsettings.h"
 #include <core/noncopyable.h>
 
 #include <vxcore/vxcore_types.h>
@@ -25,42 +26,19 @@ class SyncWorkQueueManager;
 class EventBridge;
 struct NotebookOpenEvent;
 
-// SyncService is the GUI-thread facade for the per-notebook git sync stack.
-//
-// Internally it owns a SyncWorker (T6) on a private QThread and wraps the
-// SyncCredentialsStore (T4). All UI consumers (T10/T11/T13/T14/T15/T16/T17)
-// interact ONLY with this facade; they never touch the worker, the credentials
-// store, or vxcore directly.
-//
-// Threading model:
-//   * The SyncService instance lives on the GUI thread. All public methods and
-//     signals are GUI-thread.
-//   * SyncWorker lives on a private QThread owned by SyncService. Worker
-//     signals are connected to internal re-emit slots via Qt::QueuedConnection
-//     so that they hop back onto the GUI thread before forwarding to consumers.
-//   * Service -> worker calls go through QMetaObject::invokeMethod with
-//     Qt::QueuedConnection.
+// GUI-thread facade over SyncWorkQueueManager. Each staged sync owns its token
+// and deferred-apply handshake through GUI refresh acknowledgement; workers
+// never access metadata.db or wait for GUI work while holding NotebookIoGate.
 //
 // Per ADR-1: SyncService NEVER pulls in sync/sync_manager.h directly; all
 // vxcore sync calls go through NotebookCoreService.
 //
-// Per ADR-9: PATs are routed through SyncCredentialsStore. SyncService never
-// caches PAT values in member variables. PATs received via slot args are
-// forwarded to the credentials store and to the worker (in JSON form, captured
-// only by short-lived lambdas that release the data once the worker has been
-// invoked).
+// Credentials are routed through SyncCredentialsStore and never cached in
+// service members. Secrets live only in transient operation captures.
 //
-// Per ADR-6: SyncWorker exposes test seams as unconditional public methods to
-// avoid duplicate-symbol issues from dual-compiling. SyncService follows the
-// same pattern: testSetInProgress is unconditional. The VNOTE_TESTING compile
-// definition remains reserved on the test target.
-//
-// T17 wires the NotebookBeforeClose hook (refusing to close while a sync is
-// in progress for that notebook) inside the constructor, and exposes a public
-// shutdown() method that quits the worker thread with a bounded 30s wait and
-// a terminate() fallback. shutdown() is also wired from main.cpp via
-// QCoreApplication::aboutToQuit (DirectConnection) so that QApplication tear-
-// down does not race with in-flight worker operations.
+// Test seams are unconditional to avoid duplicate-symbol problems in direct
+// compile tests. NotebookBeforeClose refuses queued or running sync; shutdown
+// is wired to aboutToQuit and does not depend on further GUI event delivery.
 class SyncService : public QObject, private Noncopyable {
   Q_OBJECT
 
@@ -68,21 +46,9 @@ public:
   explicit SyncService(ServiceLocator &p_services, QObject *p_parent = nullptr);
   ~SyncService() override;
 
-  // Enable git sync for a notebook.
-  //
-  // Sequence:
-  //   1. Store @p_pat in the OS keychain via SyncCredentialsStore.
-  //   2. On credentialsStored, build the credentials JSON and invoke
-  //      SyncWorker::enableSync via QueuedConnection.
-  //   3. On credentialsStoreError, emit enableFinished with VXCORE_ERR_UNKNOWN
-  //      and the keychain error message; the worker is NOT called. (A generic
-  //      credentialsError for the same id from a concurrent retrieve/delete is
-  //      intentionally ignored here so it cannot abort the enable.)
-  //
-  // The PAT lives only in the lambda capture between (1) and (2); it is never
-  // assigned to a SyncService member.
-  void enableSyncForNotebook(const QString &p_notebookId, const QString &p_remoteUrl,
-                             const QString &p_pat);
+  // Validate settings, save credentials to the OS vault, then enqueue enable.
+  // A vault failure stops before any backend/network work.
+  void enableSyncForNotebook(const QString &p_notebookId, const SyncSettings &p_settings);
 
   // Disable sync for a notebook. Invokes SyncWorker::disableSync; on
   // disableFinished, deletes the keychain entry via SyncCredentialsStore.
@@ -148,7 +114,7 @@ public:
   // persist step failed (next reconcile would observe S4 and bail).
   //
   // Sequence:
-  //   1. enableSyncForNotebook(id, url, pat) — async via worker.
+  //   1. enableSyncForNotebook(id, settings) — async via worker.
   //   2. On enableFinished VXCORE_OK: write the three flat sync keys to
   //      notebook JSON via NotebookCoreService::updateNotebookConfig.
   //        - On persist success: trigger initial sync, emit
@@ -162,27 +128,19 @@ public:
   //      state. Emit bootstrapAndPersistFinished(id, enableResult,
   //      enableMsg). No rollback needed (nothing to undo).
   //
-  // PAT is forwarded to enableSyncForNotebook and NEVER cached on the
-  // service. Per Wave 0.5: no SyncService mutex is held while emitting the
-  // finished signal.
-  void bootstrapAndPersist(const QString &p_notebookId, const QString &p_remoteUrl,
-                           const QString &p_pat);
+  // Credentials are forwarded to enableSyncForNotebook, never cached here.
+  void bootstrapAndPersist(const QString &p_notebookId, const SyncSettings &p_settings);
 
-  // Replace the stored PAT for a notebook. Sequence mirrors enableSyncForNotebook
-  // but invokes SyncWorker::setCredentials instead of enableSync.
-  void updateCredentials(const QString &p_notebookId, const QString &p_newPat);
+  // WebDAV reauthenticates and verifies the remote UUID before updating the
+  // username binding. Git keeps its provider-only credential refresh.
+  void updateCredentials(const QString &p_notebookId, const SyncCredential &p_credentials);
 
-  // Resolve a batch of conflicts. Each (filePath -> resolution) entry is
-  // enqueued on the SyncWorkQueueManager for this notebookId with coalesceKey
-  // "resolve-<filePath>" (so duplicate resolutions for the same path collapse,
-  // while different paths run in FIFO order). After all resolves are queued,
-  // a final triggerSync is enqueued with coalesceKey "trigger" (same key
-  // SyncService::triggerSyncNow uses) so any concurrent manual trigger is
-  // absorbed into this trailing run.
+  // Resolve one FIFO batch, preserving per-file failures. Only a successful
+  // batch runs the trailing staged sync, within the same queue item.
   void resolveConflicts(const QString &p_notebookId, const QHash<QString, QString> &p_resolutions);
+  QSet<QString> keepBothUnsupportedPaths(const QString &p_notebookId) const;
 
-  // Returns true if a sync (or enable/disable etc. operation that maps to
-  // syncStarted/syncFinished) is currently in flight for @p_notebookId.
+  // Includes queued/running sync and pending credential lifecycle operations.
   bool isSyncInProgress(const QString &p_notebookId) const;
 
   // Returns true if the notebook config marks sync as enabled (ADR-8 flat keys:
@@ -264,19 +222,10 @@ public:
   // Public accessor for the credentials store. Used by T1 bootstrapSync
   // rollback path to delete orphan keychain PAT on enable failure.
   SyncCredentialsStore *credentialsStore() const { return m_credentialsStore; }
+  SyncWorkQueueManager *workQueueManager() const { return m_workQueue; }
 
-  // Bounded shutdown of the underlying SyncWorker thread.
-  // Sequence:
-  //   1. Set the m_shutDown flag so subsequent public-API calls are no-ops.
-  //   2. Call m_thread->quit() to ask the worker thread's event loop to exit.
-  //   3. Wait up to 30 seconds for the thread to finish.
-  //   4. If the wait times out, log a qWarning and call terminate() + a short
-  //      bounded wait as a last resort.
-  // Idempotent: calling shutdown() more than once is safe (subsequent calls
-  // observe the flag and return immediately).
-  // Wired from main.cpp's QCoreApplication::aboutToQuit handler with
-  // Qt::DirectConnection so that the GUI event loop teardown does not skip
-  // the call.
+  // Cancel/wake handshakes before joining workers, then retire reservations on
+  // this thread. Idempotent and safe when the GUI event loop has stopped.
   void shutdown();
 
 signals:
@@ -292,13 +241,13 @@ signals:
   // active sync was found — best-effort).
   void syncCancelled(const QString &p_notebookId, bool p_wasQueued);
   void conflictsDetected(const QString &p_notebookId, const QStringList &p_conflictFiles);
+  void workingTreeChanged(const QString &p_notebookId, const QStringList &p_changedPaths);
   void enableFinished(const QString &p_notebookId, VxCoreError p_result, const QString &p_message);
   void disableFinished(const QString &p_notebookId, VxCoreError p_result);
   void credentialsSetFinished(const QString &p_notebookId, VxCoreError p_result);
 
   // Emitted after a notebook reconcile attempt completes.
-  // p_result: VXCORE_OK if enableSync dispatched, VXCORE_ERR_SYNC_AUTH_FAILED
-  // if PAT lookup failed, VXCORE_ERR_INVALID_PARAM if config incomplete.
+  // Reports the actual enable result, credential failure, or invalid configuration.
   void reconcileFinished(const QString &p_notebookId, VxCoreError p_result);
 
   // F1.6 / Task 13.4 — Final outcome of bootstrapAndPersist().
@@ -310,10 +259,7 @@ signals:
                                    const QString &p_message);
 
 private slots:
-  // Internal forwarders. All connected to worker signals via QueuedConnection
-  // so they execute on the GUI thread. T23: only enable / disable / credentials
-  // remain wired to SyncWorker — vxcore does not emit lifecycle events for
-  // those. T24 will retire these along with the worker.
+  // Worker completions are posted to these GUI-thread forwarders.
   void onWorkerEnableFinished(const QString &p_notebookId, VxCoreError p_result,
                               const QString &p_message);
   void onWorkerDisableFinished(const QString &p_notebookId, VxCoreError p_result);
@@ -323,28 +269,34 @@ private slots:
   void onNotebookAfterOpen(const NotebookOpenEvent &p_event);
   void onMainWindowAfterStart();
 
-  // T23: single-source sync lifecycle forwarders. EventBridge translates
-  // vxcore sync.started / sync.finished / sync.conflict events into Qt
-  // signals on the GUI thread; SyncService re-emits as its own public
-  // signals. Covers manual + auto + initial-on-enable triggers uniformly.
+  // Sole GUI lifecycle/timestamp surface for both staged queue work and
+  // externally initiated vxcore lifecycle events.
   void onSyncStarted(const QString &p_notebookId);
   void onSyncFinished(const QString &p_notebookId, VxCoreError p_result);
   void onSyncConflictFiles(const QString &p_notebookId, const QStringList &p_files);
 
-  // T31: vxcore's MaybeEnqueueSync emits sync.should_run; EventBridge re-emits
-  // it as syncShouldRun(QString). This slot routes the auto-sync request onto
-  // SyncWorkQueueManager via SyncOps::triggerSync (NO cancellation token —
-  // auto path is fire-and-forget). Skips silently if the notebook has been
-  // closed / disabled between vxcore's emit and our handler running.
+  // Route sync.should_run through the ordinary debounce/coalesce policy.
+  // Automatic operations have the same cancellable lifetime as manual sync.
   void onSyncShouldRun(const QString &p_notebookId);
 
   void onDebounceTimeout(const QString &p_notebookId);
 
 private:
-  // Build a credentials JSON for the worker out of a PAT string.
-  static QString buildCredentialsJson(const QString &p_pat);
-  // Build a config JSON (backend=git, remoteUrl=...) for the worker.
-  static QString buildConfigJson(const QString &p_remoteUrl);
+  struct SyncOperation;
+  void enqueueSync(const QString &p_notebookId, const QHash<QString, QString> &p_resolutions,
+                   bool p_automatic);
+  void runSyncOperation(const std::shared_ptr<SyncOperation> &p_operation);
+  VxCoreError applySyncOperation(const std::shared_ptr<SyncOperation> &p_operation);
+  void beginSyncApply(const std::shared_ptr<SyncOperation> &p_operation);
+  void pollSyncApply(const std::shared_ptr<SyncOperation> &p_operation);
+  void finishSyncApply(const std::shared_ptr<SyncOperation> &p_operation);
+  void cancelSyncOperation(const std::shared_ptr<SyncOperation> &p_operation, bool p_shutdown);
+  bool isCurrentOperation(const std::shared_ptr<SyncOperation> &p_operation) const;
+
+  // Actual backend/URL plus this notebook's existing auto-sync preference.
+  QString buildConfigJson(const QString &p_notebookId, const SyncSettings &p_settings) const;
+  bool hasInterruptedRetirement(const QString &p_notebookId) const;
+  void deleteStoredCredentials(const QString &p_notebookId, std::function<void()> p_finished);
 
   // Reconcile vxcore SyncManager runtime state for a notebook whose on-disk
   // config says syncEnabled=true but whose SyncManager::configs_ is empty.
@@ -387,7 +339,7 @@ private:
   // work. Resolved from ServiceLocator (production main.cpp registers one
   // with bounded shutdown via aboutToQuit). Tests that do not register a
   // SyncWorkQueueManager fall back to a SyncService-owned instance so the
-  // queued operations still run; shutdown() drains the owned instance.
+  // queued operations still run; shutdown() drains either instance.
   std::unique_ptr<SyncWorkQueueManager> m_ownedWorkQueue;
   SyncWorkQueueManager *m_workQueue = nullptr;
 
@@ -395,14 +347,12 @@ private:
   // via m_workQueue->inFlightState(id).running; mutate in tests via
   // SyncWorkQueueManager::testForceInFlight (called from testSetInProgress).
 
-  // Wave 12.2 / F5.9: per-notebook cancellation tokens for in-flight
-  // triggerSyncNow. Created in triggerSyncNow before dispatch, freed in the
-  // syncFinished slot on the GUI thread. Guarded by m_cancellationMutex.
-  // Value is the raw C handle (VxCoreSyncCancellation*) returned by
-  // vxcore_sync_create_cancellation; we store it as void* so the header
-  // doesn't need to include vxcore.h.
-  mutable QMutex m_cancellationMutex;
-  QHash<QString, void *> m_cancellations;
+  // GUI-owned generation registry; queued callbacks must still own this entry
+  // before changing reservations. Tokens live in their shared operation state.
+  QHash<quint64, std::shared_ptr<SyncOperation>> m_syncOperations;
+  quint64 m_nextSyncGeneration = 0;
+  QHash<QString, QSet<QString>> m_keepBothUnsupported;
+  QHash<QString, QString> m_syncErrorMessages;
 
   // Set true by shutdown(); subsequent public-API operations early-return.
   bool m_shutDown = false;
@@ -410,6 +360,10 @@ private:
   // Prevents double reconcile when both MainWindowAfterStart and a subsequent
   // user-initiated NotebookAfterOpen fire for the same notebook in one session.
   QSet<QString> m_reconcileAttempted;
+
+  // GUI-owned operation identities only; credentials remain in short-lived captures.
+  QSet<QString> m_credentialOperations;
+  QSet<QString> m_deletingCredentials;
 
   // Per-notebook consecutive auth-failure counter (Wave: silent-sync fix).
   // Incremented on every VXCORE_ERR_SYNC_AUTH_FAILED in onSyncFinished.

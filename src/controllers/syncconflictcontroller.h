@@ -23,8 +23,8 @@ class SyncService;
 //     resolutions to SyncService::resolveConflicts. resolveConflicts internally
 //     queues a final triggerSync after all per-file resolutions, so the next
 //     SyncService::syncFinished signal indicates the resolution pass is done.
-//   * Re-emit the lifecycle events as conflictsResolved (after syncFinished)
-//     and conflictsAbandoned (on dialog Cancel).
+//   * Emit conflictsResolved only after a successful trailing sync with no
+//     remaining conflicts, and conflictsAbandoned on dialog Cancel.
 //
 // Per ADR-1: this controller never includes sync/sync_manager.h. All vxcore
 // sync interaction goes through SyncService.
@@ -49,8 +49,8 @@ public:
   // resolutions. The dialog auto-deletes on close (Qt::WA_DeleteOnClose).
   //
   // On user OK, SyncService::resolveConflicts is invoked with the per-file
-  // resolutions; conflictsResolved is emitted after the next syncFinished
-  // arrives for @p_notebookId.
+  // resolutions; conflictsResolved requires a successful trailing sync and an
+  // empty conflict snapshot. Any per-file or sync failure keeps the incident active.
   //
   // On user Cancel, conflictsAbandoned is emitted; SyncService is NOT invoked.
   void presentConflicts(const QString &p_notebookId, const QStringList &p_conflictFiles,
@@ -59,7 +59,7 @@ public:
 signals:
   // Emitted after the user-selected resolutions have been forwarded to
   // SyncService::resolveConflicts and the subsequent SyncService::syncFinished
-  // has fired for the same notebookId.
+  // has succeeded for the same notebookId with no remaining conflicts.
   void conflictsResolved(const QString &p_notebookId);
 
   // Emitted when the user cancels the resolution dialog. SyncService is not

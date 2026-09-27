@@ -90,25 +90,36 @@ State-model counterpart (S0-S7, reconcile, disable cleanup): [Sync State Model](
 
 ### Current executor
 
-**SyncWorkQueueManager is the sole Qt-side sync dispatch primitive.** SyncWorker has been removed (see commit `42ba209c`). All async sync operations (enable, disable, setCredentials, triggerSync, resolveConflict, auto-sync) route through `m_workQueueManager->enqueue(notebookId, lambda, [coalesceKey])` where lambda calls a `SyncOps::*` free function. Completion bounces back to the GUI thread via `QMetaObject::invokeMethod(this, ..., Qt::QueuedConnection)`.
+`SyncWorkQueueManager` is the sole sync executor. `SyncService::enqueueSync` gives each operation
+its own cancellation token, generation and shared handshake lifetime. Manual, automatic and
+bootstrap sync use the existing `trigger` coalesce key. Distinct conflict-resolution batches
+are not coalesced; one FIFO item processes the choices and trailing sync, retaining per-file
+failures rather than losing choices to the queue depth limit.
 
-### Sync dispatch flow
+Git keeps the stage/network route. For `DeferredLocalApply`, the same work item owns all stages:
 
-**User-initiated path:**
-`SyncService::triggerSyncNow` → `m_workQueueManager->enqueue(id, λ→SyncOps::triggerSync, "trigger")` → pool thread → `vxcore_sync_trigger` → vxcore emits `sync.started` / `sync.finished` / `sync.conflict` events → `EventBridge` → `SyncService` Qt signals.
+1. `SyncOps::triggerSync` queries capabilities before work; a missing apply callback is an error.
+   Snapshot/staging holds `NotebookIoGate`, then network exchange releases it.
+2. With no gate held, the worker requests a GUI reservation. `BufferService::beginSyncApply`
+   protects unsaved physical paths without saving/discarding text, freezes clean views through
+   the existing content-replacement surface, and suspends new saves/external-change polling.
+3. One operation-owned 25 ms single-shot timer waits at most five seconds for prior buffer saves.
+   `CommentService::syncProtectedPaths` adds actual sidecars with active participants or
+   pending/in-flight/failed writes. Never flush GUI comment participants from a worker.
+4. The GUI sets the runtime notebook apply flag; the worker reacquires the gate for `syncApplyPhase`.
+   Core preflights the entire cohort before publication. No worker touches metadata.db.
+5. After releasing the gate, the worker waits for GUI `refreshAfterSync`, clean-buffer reload,
+   explicit `workingTreeChanged` and reservation retirement. Partial errors still refresh actual
+   installed paths; neither apply nor refresh failure stamps success.
 
-**Auto-sync path:**
-vxcore file events → `SyncManager::MaybeEnqueueSync` → emit `sync.should_run` → `EventBridge::syncShouldRun` → `SyncService::onSyncShouldRun` → per-notebook trailing-throttle debounce (see below) → `enqueueAutoSync` → `m_workQueueManager->enqueue(id, λ→SyncOps::triggerSync, "trigger")` → … (same tail as user path).
+`onSyncFinished` remains the sole Qt lifecycle/timestamp completion owner. Do not call composite
+`vxcore_sync_trigger` from the worker or emit a second lifecycle pair. Shutdown cancels/wakes
+handshakes before joining workers; late callbacks check generation/phase and cannot revive a
+reservation. Never use BlockingQueuedConnection, event-pumping loops or an unbounded GUI gate lock.
 
-**Coalescing:** both paths use `coalesceKey="trigger"` so the second of two concurrent trigger requests is dropped (returns `Coalesced` result). This prevents redundant network round-trips when a user clicks Sync while an auto-sync is already queued (or vice versa).
-
-**Queue cap:** default 4 pending items per notebook. Excess enqueues return `QueueFull`, which surfaces as `syncFailed(SYNC_IN_PROGRESS, "sync queue full")` on the manual path and as a silent `qCDebug` log on the auto-sync path.
-
-**Cancellation:** `SyncService::cancelSync(id)` calls `m_workQueueManager->cancelPending(id)` first (removes queued items, emits `syncCancelled(id, wasQueued=true)` for each dropped item) THEN cancels the in-flight token via `vxcore_sync_cancel` (emits `syncCancelled(id, wasQueued=false)` when the in-flight sync unwinds and returns).
-
-`isSyncInProgress(id)` now delegates to `SyncWorkQueueManager::inFlightState(id).running` — there is no longer a separate `m_inFlight` set on `SyncService`. The queue manager is the single source of truth for in-flight state.
-
-**Cancellation event payload:** `SyncCancelledEvent` (typed hook event for `vnote.sync.cancelled`) carries `notebookId` (QString) and `wasQueued` (bool). `wasQueued=true` indicates the cancellation removed a pending queue entry; `wasQueued=false` indicates the in-flight sync was aborted via `vxcore_sync_cancel`.
+Queued/running work AND pending vault operations count as in progress. Cancellation removes
+pending items before signaling running operation tokens; queued successors never overwrite a
+running operation's token. Other notebooks remain independent.
 
 ### Auto-sync debounce (trailing throttle)
 
@@ -163,7 +174,7 @@ Coverage: `tests/core/test_sync_service_freshness.cpp` (4 cases: stale→trigger
 
 The auto-save path NEVER calls `vxcore_buffer_save` on the UI thread. `BufferService` (`bufferservice.h`/`.cpp`) snapshots `(content, revision)` on the GUI thread and hands the work to `BufferSaveQueue` (`buffersavequeue.h`/`.cpp`), a per-notebook FIFO that wraps `BufferCoreService::saveBuffer` on a worker so auto-save IO never blocks the editor.
 
-Save workers and `SyncOps::triggerSync` share `NotebookIoGate` ([`notebookiogate.h`](notebookiogate.h)/[`.cpp`](notebookiogate.cpp)), a per-notebook async mutex, but they hold it for different windows. Save workers wrap their full `BufferCoreService::saveBuffer` call in `NotebookIoGate::ScopedLock(notebookId)`. `SyncOps::triggerSync` ([`syncops.cpp`](syncops.cpp)) splits the sync into two phases against [`ISyncNotebookService`](isyncnotebookservice.h): it acquires the gate, calls [`NotebookCoreService::syncStageOnly`](notebookcoreservice.h) (which wraps `vxcore_sync_stage_only` — StageAll + CommitIndex), releases the gate, then calls [`NotebookCoreService::syncNetworkPhase`](notebookcoreservice.h) (which wraps `vxcore_sync_network_phase` — FetchOrigin + RebaseOntoOrigin + PushOrigin) WITHOUT the gate held. This guarantees a sync never reads a half-flushed file, a save never lands inside someone else's `git add`/commit, and a save queued on the same notebook gets to run the instant the local commit lands instead of waiting on a network round-trip. The injection seam through `ISyncNotebookService` also makes the released-early property unit-testable without a real remote — see `tests/core/test_syncops_gate_release.cpp`. The full rationale lives in [Save Path Threading Contract](#save-path-threading-contract) below.
+Save workers and sync preparation share `NotebookIoGate` per notebook. Git releases it before its existing network phase; WebDAV releases it for all network work, then reacquires it only after the GUI-owned reservation and save drain described above. The reservation also makes structural core mutations return busy while local publication is active.
 
 Performance instrumentation: the Qt logging category `vnote.perf.save` covers UI-thread enqueue + worker save latency, and vxcore emits `VXCORE_LOG_DEBUG` lines tagged `[perf.mark_dirty]` / `[perf.maybe_enqueue]` for the synchronous tail that still runs on the caller thread. Both are off by default; enable them when chasing UI-thread regressions.
 
@@ -180,19 +191,40 @@ The git sync backend sets `core.autocrlf=false` (`git_sync_pipeline.cpp`), so sy
 
 ## Credential Cleanup Invariants
 
-The keychain PAT for a notebook is tied to its lifecycle. To avoid orphan vault entries (which surface to users as qtkeychain Win32 error 8 and similar storage faults on the next enable attempt), `m_credentialsStore->deleteCredentials(notebookId)` runs at FIVE well-defined sites. Every code path that retires a notebook or its sync registration goes through one of these.
+`SyncSettings` / `SyncCredential` in `syncsettings.*` are the shared application contract.
+Enable requires a Git PAT, or a WebDAV username plus password/app password. WebDAV URLs are
+canonical absolute HTTPS collections without userinfo/query/fragment; UI validation never
+allows the core's literal-loopback HTTP test exception. Secrets are never trimmed, logged,
+persisted in notebook JSON or cached on SyncService; operation captures are transient.
 
-| Lifecycle | Site | When fires | When does NOT fire |
-|---|---|---|---|
-| Bootstrap rollback (new-notebook flow) | `src/controllers/newnotebookcontroller.cpp:258` | `bootstrapSync` receives `enableFinished` with a non-OK result. Runs BEFORE `closeNotebook` so the keychain slot is freed before the notebook is torn down. | Bootstrap succeeds (notebook keeps the PAT it just stored). |
-| `bootstrapAndPersist` atomic rollback | `src/core/services/syncservice.cpp:815` | Persist fails AFTER vxcore enable already succeeded AND the compensating `disableSyncForNotebook` returns `VXCORE_OK`. Removes the orphan PAT left by the successful enable. | Persist succeeds (normal path); or rollback `disableSyncForNotebook` itself fails (loud `qCritical` log, PAT preserved for operator inspection). |
-| Notebook removal (`NotebookAfterClose`) | `src/core/services/syncservice.cpp:176` (hook handler installed in ctor at line 172) | `NotebookCoreService::closeNotebook` returns `VXCORE_OK` (the hook only fires on success). Centralized point covering ManageNotebooks close, NewNotebook rollback close, VNote3 migration, etc. Idempotent: notebooks that never enabled sync are a no-op. | `closeNotebook` returns an error (notebook is still listed, may still need its PAT). |
-| Sync disable success | `src/core/services/syncservice.cpp:423` (inside `if (p_result == VXCORE_OK)` at line 406) | `disableSyncForNotebook` worker returns `VXCORE_OK`. Runs AFTER the three flat sync JSON keys are cleared. | **INTENTIONAL**: disable failure does NOT call `deleteCredentials` (lines 433-439). The PAT is preserved so the user can retry without re-entering credentials after a transient backend error; the next successful disable cleans both JSON and keychain. |
-| S6 startup sweep | `src/core/services/syncservice.cpp:1280` (`onMainWindowAfterStart`) | App start, for each notebook where `!isSyncEnabled(id) && m_credentialsStore->hasCredentials(id)` (disk says disabled but keychain still holds a PAT). Backstop for previous-session crashes between the JSON-clear and keychain-delete steps. | Disk and keychain already agree (normal case). |
+`SyncCredentialsStore` retains namespace **VNote** and key **notebook_sync_pat_ + notebook ID**.
+Git values remain raw PAT strings. WebDAV uses `vnote-sync-credentials-v1\n` followed by compact
+JSON with `backend`, `username`, `secret`. Unknown/malformed envelopes fail with fixed redacted
+messages, never a PAT fallback. Register both `SyncCredential` and `vnotex::SyncCredential`
+metatype names before queued connections. Retrieved and selected backends must match.
 
-**Rule for new sync-related code paths**: any time you retire a notebook, roll back an enable, or transition to a state where the on-disk JSON no longer claims sync is enabled, route through one of the five sites above. Do not call `deleteCredentials` from controllers or widgets; the cleanup contract lives in `SyncService` (and the one historical exception in `NewNotebookController::bootstrapSync`, which is documented in `src/controllers/AGENTS.md`).
+An unavailable vault stops enable before backend/network work. Store failures use
+`credentialsStoreError`; retrieval/deletion errors use `credentialsError`.
+`EntryNotFound` deletion is successful and idempotent. There is no plaintext fallback.
 
-**Idempotent delete across platforms (issue #2718)**: `SyncCredentialsStore::deleteCredentials` normalizes `QKeychain::EntryNotFound` to success (emits `credentialsDeleted`, not `credentialsError`). macOS's Apple keychain `DeletePasswordJob` reports a missing-entry delete as an error (`errSecItemNotFound`), whereas Windows Credential Manager and libsecret return success; the normalization makes deleting a never-stored PAT a no-op everywhere. This matters because `NotebookAfterClose` unconditionally deletes the PAT even for notebooks that never enabled sync (e.g. the clone-staging notebook in `OpenNotebookController::cloneAndOpen`). Relatedly, `storeCredentials` failures emit a dedicated `credentialsStoreError` signal (not the generic `credentialsError`); the enable/update flows in `SyncService` filter on `credentialsStoreError` so a concurrent retrieve/delete error for the same notebook id cannot be misread as a store failure and abort the enable.
+The five authoritative cleanup sites remain:
+
+| Site | Boundary |
+|---|---|
+| New-notebook bootstrap rollback | Request deletion before closing/removing its owned root |
+| bootstrapAndPersist rollback | Compensating successful disable owns cleanup; preserve the original persist error |
+| NotebookAfterClose | GUI-thread deletion, including a cloned staging notebook |
+| Successful core disable | Clear routing, then settle native vault deletion before disableFinished |
+| Startup disabled-notebook sweep | Idempotent deletion even when a fresh in-memory existence cache is empty |
+
+A failed core disable preserves routing and credentials. Delete failure is reported; it is not
+silently treated as a successful credential removal. Enable waits for an earlier close/startup
+delete for the same UUID, so staging-close cleanup cannot erase a clone's newly stored secret.
+
+Same-URL WebDAV credential updates authenticate through Initialize and verify remote UUID before
+changing the username binding; failed authentication preserves usable runtime/baseline. Pending
+`webdav/retirement.json` blocks new credential ingress and sync until controller recovery finishes.
+Successful disable never removes remote notes, WebDAV journals or recoverable snapshots.
 
 ## SearchService drain pool
 
@@ -394,83 +426,41 @@ in-place update, because there is nothing to report progress on. See `src/widget
 
 ## Sync State Model
 
-> Moved here from the root `AGENTS.md`. It overlaps the
-> [Threading rules for SyncService](#threading-rules-for-syncservice) section above and
-> `libs/vxcore/src/sync/AGENTS.md`; deduping the three is a pending follow-up.
+The eight states are shared by Git and WebDAV. The predicates are portable routing fields,
+credential presence in the OS vault, and runtime registration. Only exactly `git` and `webdav`
+are supported; disabled or unknown backend configurations cannot become S5.
 
-Threading rules: see `libs/vxcore/src/sync/AGENTS.md` § Threading & Callback Contract.
-Qt-side dispatch (single queue via `SyncWorkQueueManager` + `SyncOps`, coalescing, cancellation, auto-sync routing through `EventBridge::syncShouldRun`): see [Threading rules for SyncService](#threading-rules-for-syncservice) above. The per-notebook `autoSyncEnabled` flag (boolean, default true) is a pure on/off gate inside vxcore's `MaybeEnqueueSync`: when false, vxcore suppresses `sync.should_run` entirely. It carries no cadence. Auto-sync cadence is owned Qt-side by `SyncService`, which applies a trailing-throttle debounce keyed off the global `autoSyncDebounceSeconds` app-config value (stored in vxcore's `vxcore.json` but consumed only by VNote).
+| State | Disk routing | Credential | Runtime |
+|---|---|---|---|
+| S0 | Disabled/absent | Absent | Absent |
+| S1 | Enabled, supported backend, missing URL | Maybe | Absent |
+| S2 | Enabled, supported backend and URL | Absent | Absent |
+| S3 | Enabled, missing/unsupported backend | Maybe | Absent |
+| S4 | Complete enabled routing | Present | Absent |
+| S5 | Complete enabled routing | Present | Registered |
+| S6 | Disabled | Present/orphaned | Absent |
+| S7 | Underlying state is temporarily busy | Queued/running sync or vault operation | In progress |
 
-Notebook sync has 8 reachable states (S0-S7). Every controller, widget, and service that touches sync must reason in terms of these states. The state is the tuple of: on-disk JSON sync fields, PAT presence in the OS keychain, and runtime registration in vxcore's `states_` map.
+S5 is configured/ready, not a claim that the current password or remote connectivity is valid.
+S1–S4 and S6 require recovery; S7 overlays active work rather than introducing transport-specific
+states. The per-notebook `autoSyncEnabled` boolean gates auto sync; the global debounce remains
+consumer policy, never a backend timer.
 
-### Canonical State Predicates
+`NotebookSyncInfoController::bootstrapApply(settings)` uses `bootstrapAndPersist` for disabled or
+partial existing notebooks and keeps their files on failure. `applyChanges(settings)` handles
+credential updates and confirmed endpoint changes. See the controller guide for journaled WebDAV
+retirement and Git-owned cleanup; never wipe the entire `vx_sync` tree.
 
-| State | syncEnabled (JSON) | syncBackend (JSON) | syncRemoteUrl (JSON) | PAT in keychain | states_ entry |
-|---|---|---|---|---|---|
-| S0 | false / absent | absent | absent | absent | absent |
-| S1 | true | "git" | empty | maybe | absent |
-| S2 | true | "git" | set | **absent** | absent |
-| S3 | true | empty | maybe | maybe | absent |
-| S4 | true | "git" | set | present | **absent** |
-| S5 | true | "git" | set | present | present |
-| S6 | false | absent | absent | **present** | absent |
-| S7 | true | "git" | set | present | present + active sync |
+Reconcile reads the stored backend/URL and typed credentials, rejects unsupported/mismatched
+credentials, and reports the actual asynchronous enable result. Incomplete routing is not marked
+attempted; credential retrieval failures permit retry. Successful reconcile may use the existing
+two-minute freshness gate to enqueue a normal sync, without adding another scheduler.
 
-S5 is the only "ready" state. S1-S4 and S6 are partial/inconsistent; S0 is cleanly disabled; S7 is in-flight.
-
-F3.5 in-flight sub-states (fetching/resolving/pushing) are NOT modeled as separate SyncState values, they remain runtime properties exposed by SyncService progress signals while the notebook is in S7.
-
-### Recovery Paths: bootstrapApply vs applyChanges
-
-| Path | Use when | Behavior |
-|---|---|---|
-| `NotebookSyncInfoController::bootstrapApply(url, pat)` | Notebook is in S1/S2/S3/S4 (any partial state). Atomic enable for an existing notebook. | Calls `SyncService::enableSyncForNotebook` directly; on success persists `syncRemoteUrl` and triggers initial sync; on failure keeps notebook in current state (NO delete, unlike `NewNotebookController::bootstrapSync`). |
-| `NotebookSyncInfoController::applyChanges(url, pat)` | Notebook is in S5 (registered). PAT refresh or URL change. | PAT-only update routes through `SyncService::updateCredentials`. URL change triggers `confirmUrlChangeRequested` signal and, on confirm, runs atomic disable+wipe `vx_notebook/vx_sync/`+re-enable. |
-
-The dialog (`NotebookSyncInfoDialog2`) auto-routes to `bootstrapApply` when `m_bootstrapMode == true` OR when `SyncService::isSyncRegistered(id) == false`. This is defense in depth: even when a caller bypasses the bootstrap entry point, partial-state notebooks still get the atomic path.
-
-### Reconcile Semantics
-
-`SyncService::reconcileSyncForNotebook` is called by `MainWindowAfterStart` and on notebook open to lift S4 notebooks (disk-complete, runtime-absent) into S5.
-
-Key invariants (`src/core/services/syncservice.cpp:858-970`):
-- `m_reconcileAttempted.insert(id)` happens **after** all precondition checks pass (line 893), not before. The disk-enabled check (line 869), idempotence guard (line 875), and complete-config check (line 884) all run first; any of them returning early leaves the attempted set untouched. Precondition failures therefore do NOT block future retries. Concrete consequence: a notebook in S1/S3 (enabled but no backend/url, or no backend) hits the `incomplete config` branch at line 885, emits `reconcileFinished(VXCORE_ERR_INVALID_PARAM)`, and is NOT marked attempted. When the user later supplies the missing URL via `bootstrapApply` and the notebook reaches S4, the very next reconcile trigger (notebook open or app start) will pass the precondition check and proceed.
-- `m_reconcileAttempted.remove(id)` fires on transient PAT fetch failure (line 945) so the next reconcile call retries. The same key is re-cleared by `updateCredentials` (line 969) before manually re-driving reconcile, so a user re-entering a fresh PAT never hits the "already attempted" guard.
-- No remove on success (notebook is registered; no retry needed).
-- Idempotence check at line 875 prevents duplicate in-flight reconciles when `MainWindowAfterStart` and `NotebookAfterOpen` race.
-
-**Post-reconcile freshness gate (auto-sync on open / app start).** After reconcile's `SyncOps::enableSync` work item returns `VXCORE_OK`, `SyncService::maybeTriggerPostReconcile(notebookId)` (`src/core/services/syncservice.cpp`) optionally enqueues a follow-up `triggerSyncNow` so the notebook is auto-synced when the user reopens VNote (or opens a notebook for the first time in the session) after remote changes. Closes the multi-device staleness window where reconcile alone only registered the notebook and the first `FetchOrigin` waited for the next save / manual Sync Now. The gate skips when: shutdown is in progress; the notebook is no longer enabled or registered; a sync is already in flight for the notebook; or the per-device last successful sync timestamp is newer than `kPostReconcileFreshnessMs` (2 minutes — covers rapid open/close cycles without thrashing). Both L1 (`onMainWindowAfterStart`, per-notebook sweep) and L2 (`onNotebookAfterOpen`, single notebook) inherit this behavior since both call `reconcileSyncForNotebook`. Full rationale and test seams live in [Post-reconcile freshness gate (`maybeTriggerPostReconcile`)](#post-reconcile-freshness-gate-maybetriggerpostreconcile) above.
-
-### bootstrapAndPersist Rollback × Reconcile
-
-`SyncService::bootstrapAndPersist` (`src/core/services/syncservice.cpp:409-508`) is the atomic enable+persist path used by `NewNotebookController` (W13.4, F1.6). On persist failure AFTER vxcore enable already succeeded, it issues a rollback by calling `disableSyncForNotebook`, which per "Disable Cleanup" below clears the three flat sync JSON keys then deletes the keychain entry.
-
-Interaction with reconcile:
-- **Rollback succeeds** (the common case): the notebook returns to clean S0. The disk-enabled check at `reconcileSyncForNotebook` line 869 fails immediately, the function early-returns, `m_reconcileAttempted` is never touched, and reconcile is correctly a no-op. The notebook needs a fresh user-initiated bootstrap, not silent re-registration. This is the intended recovery story.
-- **Rollback fails** (rare; both persist AND disable failed, logged at `qCritical` line 497): the notebook is left in a partial state. If JSON still has all three keys set (vxcore enable succeeded, JSON write succeeded for some keys, then disable failed leaving keys intact), the notebook is effectively in S4. On the next reconcile trigger, all precondition checks pass, `m_reconcileAttempted` gets set, and reconcile will attempt to register the notebook. This is the expected recovery path for that edge case; the loud `qCritical` log gives operators a chance to investigate.
-
-The key property: rollback NEVER causes reconcile to silently resurrect a notebook the user wanted disabled. Either rollback succeeded (so disk is clean and reconcile bails) or rollback failed (so disk truthfully says "enabled" and reconcile correctly tries to complete the job).
-
-### Disable Cleanup
-
-`SyncService::disableSyncForNotebook` on `VXCORE_OK` clears all three flat sync keys (`syncEnabled`, `syncBackend`, `syncRemoteUrl`) from notebook JSON BEFORE deleting the keychain entry (`src/core/services/syncservice.cpp:246-290`). On failure, JSON is preserved for retry. This closes the "resurrection trap" where a disabled notebook would reappear as S6 (orphan PAT) or S1 (orphan disk fields) on next app start.
-
-For the full table of all five credential cleanup sites (bootstrap rollback, `bootstrapAndPersist` rollback, notebook removal, sync disable, S6 startup sweep) and the "when fires / when does NOT fire" matrix, see [Credential Cleanup Invariants](#credential-cleanup-invariants) above.
-
-### Startup S6 Sweep
-
-`SyncService::onMainWindowAfterStart` (`src/core/services/syncservice.cpp:828-854`) sweeps S6 orphans before reconciling. For each notebook it iterates, if `!isSyncEnabled(id) && m_credentialsStore->hasCredentials(id)` (the S6 predicate: disk says disabled but a PAT is still in the keychain), it calls `m_credentialsStore->deleteCredentials(id)` to drop the orphan PAT. This handles the scenario where a previous session's disable succeeded inside vxcore but the app crashed (or was killed) before the keychain delete completed, leaving an orphan PAT that the new "disable clears JSON then keychain" ordering would otherwise not catch on its own.
-
-The sweep runs BEFORE `reconcileSyncForNotebook(nbId)` on each notebook, so by the time reconcile examines the notebook the keychain state is consistent with disk truth.
-
-### Re-enable UI Affordance
-
-S0 notebooks expose a re-enable surface via the same Sync button and Sync Info menu used for S5 (`src/widgets/notebookexplorer2.cpp:1512-1635`). For S0:
-- Button label: "Enable Sync" (distinct from "Sync Now" for S5)
-- On click: opens `NotebookSyncInfoDialog2` with `setBootstrapMode(true)` and all fields empty
-- Sync Info menu item enabled regardless of `syncEnabled` (dialog opens in bootstrap mode with disable button hidden)
-
-Without this affordance, users who disable sync cannot re-enable without recreating the notebook.
+Bootstrap persistence failure compensates through disable and preserves the original error.
+Disable clears `syncEnabled`, `syncBackend`, and `syncRemoteUrl`; it preserves the device's
+`autoSyncEnabled` preference. Completion follows vault cleanup. Startup idempotently deletes
+credentials for disabled notebooks before reconciliation, including orphans not represented in a
+fresh cache. S0 retains the existing Enable Sync / Sync Info affordance.
 
 ### Sync Architecture Layers
 
@@ -487,7 +477,7 @@ VNote consumes vxcore as an embedded library following the contract documented i
 
 The `Buffer2` / [`BufferService`](bufferservice.h) auto-save path used to call `vxcore_buffer_save` inline on the UI thread, so any slow filesystem operation (large file flush, virus scanner, network drive, antivirus quarantine) froze the editor. That synchronous call now runs on a worker via [`BufferSaveQueue`](buffersavequeue.h). The UI thread's job is reduced to: snapshot the current content plus a monotonically increasing revision, call `BufferSaveQueue::enqueue(...)`, and return. No disk I/O on the UI thread.
 
-Save work and any git-stage / git-commit work on the SAME notebook are serialized by [`NotebookIoGate`](notebookiogate.h), a per-notebook async mutex. `BufferSaveQueue` workers acquire `NotebookIoGate::ScopedLock(notebookId)` for the full duration of their disk write. [`SyncOps::triggerSync`](syncops.cpp) now runs sync as two phases: it holds the gate ONLY around [`vxcore_sync_stage_only`](../../../libs/vxcore/include/vxcore/vxcore.h) (StageAll + CommitIndex, working-tree-touching), then releases it BEFORE calling [`vxcore_sync_network_phase`](../../../libs/vxcore/include/vxcore/vxcore.h) (FetchOrigin + RebaseOntoOrigin + PushOrigin). The result: a sync never reads a half-written file, a save never lands inside someone else's `git add`/commit, AND a queued save on the same notebook resumes the moment the local commit lands, regardless of how long the network round-trip takes.
+Save, sync preparation and deferred local installation on the SAME notebook share `NotebookIoGate`. Git retains its existing two-phase route. WebDAV has a third, network-free apply stage under the gate, bracketed by GUI reservation/drain and metadata refresh. Never hold the gate while waiting for GUI acknowledgement; never use the persisted read-only flag as this temporary reservation.
 
 vxcore's `mark_dirty` → `MaybeEnqueueSync` → `Emit("sync.should_run")` chain remains synchronous on the caller thread BY DESIGN. In steady state it is microseconds, and pushing it onto another thread would buy nothing while costing event-ordering guarantees. **This contract does NOT change vxcore.** The threading discipline is consumer-side only: keep `vxcore_buffer_save` off the UI thread, and the `mark_dirty` tail it triggers stays off the UI thread for free.
 

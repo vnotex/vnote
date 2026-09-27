@@ -65,7 +65,7 @@ mechanism only and must never gain a `ConfigMgr2` dependency. Full contract, inc
 | `TextViewWindowController` | Plain text editing |
 | `PdfViewWindowController` | PDF viewing |
 | `MindMapViewWindowController` | Mind map viewing |
-| `NotebookSyncInfoController` | Sync enable/disable, PAT refresh, URL change, bootstrap recovery |
+| `NotebookSyncInfoController` | Git/WebDAV enable/disable, credential rotation, binding retirement, bootstrap recovery |
 | `NewNotebookController` (sync portion) | New-notebook bootstrap via `bootstrapSync` (deletes notebook on enable failure) |
 | `DashboardController` | Home dashboard (vx://home) layout model, occupancy math, seed/default, and WidgetConfig persistence; the `DashboardBoard` widget is its pure view |
 | `NotificationRouter` | Turns subsystem failure signals into `NotificationMessage`s; owns attention/dedup policy (see below) |
@@ -121,45 +121,71 @@ notebooks' unresolved failures.
 
 ## NotebookSyncInfoController: bootstrapApply vs applyChanges
 
-`NotebookSyncInfoController` exposes two recovery paths. Picking the wrong one is the root cause of B7 (chicken-and-egg) and B8 (resurrection trap) historically. See [Sync State Model](../core/services/AGENTS.md#sync-state-model) for the S0-S7 predicates.
+Both entry points take `SyncSettings`; all creation, enable, reconfiguration and remote-open
+flows use the shared validation/canonicalization in `core/services/syncsettings.*`.
+Only `git` and `webdav` are supported. Raw notebooks cannot enable sync; unknown configured
+backends report an error instead of opening a Git form.
 
-| Method | Source | Use when | Failure behavior |
-|---|---|---|---|
-| `bootstrapApply(url, pat)` | `notebooksyncinfocontroller.cpp` (atomic enable for existing notebook) | Notebook is partial (S1/S2/S3/S4). Always called by `NotebookSyncInfoDialog2` when `m_bootstrapMode == true` OR when `SyncService::isSyncRegistered(id) == false`. | Keeps notebook intact (no delete). Emits `error(message)` then `applyComplete(false)`. Diverges from `NewNotebookController::bootstrapSync` which removes the half-created notebook on failure. |
-| `applyChanges(url, pat)` | `notebooksyncinfocontroller.cpp:107-146` | Notebook is fully registered (S5). PAT refresh or URL change. | PAT-only changes route through `SyncService::updateCredentials`. |
+| Method | Use when | Failure behavior |
+|---|---|---|
+| `bootstrapApply(settings)` | Existing notebook is disabled or partial (S0–S4) | Uses `SyncService::bootstrapAndPersist`; keeps working files on failure |
+| `applyChanges(settings)` | Existing sync settings or credentials change | Waits for the operation result before `applyComplete`; no optimistic persistence |
 
-Implementation patterns:
+A blank secret retrieves existing credentials only into the transient operation. Stored and
+selected backends must match. A supplied WebDAV username requires a new secret; passwords are
+never trimmed or prefilled. Same-URL WebDAV credential rotation authenticates and verifies the
+remote notebook UUID before changing its username binding. Git HTTPS username-only changes
+retain repository history and update origin through the existing initialization path.
 
-- **One-shot signal disconnect**: `bootstrapApply` connects to `SyncService::enableFinished` via `std::make_shared<QMetaObject::Connection>`; the lambda filters by `m_notebookId`, self-disconnects, then emits `applyComplete`. Mirrors `NewNotebookController::bootstrapSync` (`newnotebookcontroller.cpp:217-244`) minus the delete-on-failure branch.
-- **Persist after success only**: `persistRemoteUrl(p_url)` runs inside the success branch of the lambda. vxcore is the source of truth; the on-disk URL advertises success only when vxcore actually accepted it.
+## Endpoint changes and recovery
 
-## URL Change on S5: confirmUrlChangeRequested
+A different URL or method requires confirmation, including a persisted binding found after
+Disable cleared the portable routing fields. Queued/running sync or vault work blocks changes.
+Under the existing `SyncWorkQueueManager` maintenance lease, restore any interrupted archive,
+then call `NotebookCoreService::checkSyncReconfiguration()`. Its offline core inspection catches
+unregistered Git index conflicts as well as WebDAV conflicts and pending transactions. Never
+infer that absence of a runtime backend means absence of recoverable on-disk state.
 
-Changing only the HTTPS username is non-destructive: `applyPendingUrlChange`
-retrieves the saved PAT if necessary, then `performAtomicUrlReChange` delegates
-to `bootstrapApply` without disabling sync or deleting the gitdir. vxcore
-re-enables the backend and `OpenExistingRepo` updates origin's username in place.
-The dialog waits for `applyComplete` before closing or clearing its edits.
+WebDAV retirement writes `vx_notebook/vx_sync/webdav/retirement.json` before moving current
+binding files/snapshots into `retired/<operationId>/`. The existing `retired` directory is never
+moved into its own descendant. Archive failure restores moved entries and aborts before disabling
+usable runtime state. An interrupted archive must be restored before any new enable.
 
-Changing the repository location on a registered notebook is destructive (drops the existing git remote linkage). `NotebookSyncInfoController::applyChanges` detects URL change on a registered notebook and gates it behind a confirmation flow:
-
-1. **Detect**: `urlChanged && isSyncRegistered(id) && !newUrl.isEmpty()` → cache new URL + PAT in member state, emit `confirmUrlChangeRequested(oldUrl, newUrl)`, return without further work.
-2. **Dialog catches signal**: shows a `QMessageBox` with the URL change warning. On confirm calls `controller->confirmUrlChange(true)`; on cancel calls `controller->confirmUrlChange(false)` (which clears pending state, no-op).
-3. **PAT preservation**: if the PAT field was empty, controller fetches the existing PAT from the keychain via async `SyncCredentialsStore::retrieveCredentials` BEFORE running disable (disable wipes the keychain entry per `SyncService::disableSyncForNotebook`).
-4. **Atomic re-register**: `performAtomicUrlReChange` chains `disableSyncForNotebook` → on `VXCORE_OK` wipes `<root>/vx_notebook/vx_sync/` via `QDir::removeRecursively` (required because vxcore `DisableSync` only clears in-memory maps; the gitdir remains and a re-enable against a different URL would otherwise see the stale `remote.origin.url`) → calls `enableSyncForNotebook(newUrl, pat)` → on `VXCORE_OK` restores the three flat sync keys, calls `triggerSyncNow`, emits `applyComplete(true)`.
-5. **Failure recovery**: re-enable failure leaves notebook in clean S0 (sync fields stay cleared per W2.T5 disable JSON clear). The W4.T2 "Enable Sync" UI affordance is the retry surface.
+Git state is removed only AFTER successful disable releases repository handles. Remove only the
+explicit Git-owned allowlist; never recursively remove `vx_sync` or its `webdav` child. Working
+notes remain intact. After successful disable but failed re-enable, keep clean disabled routing
+and visible retry guidance. `disableFinished` follows settled vault cleanup, so a later enable
+cannot have its newly stored credential erased by an earlier delete.
 
 ## NewNotebookController bootstrapSync Rollback
 
-`NewNotebookController::bootstrapSync` (`src/controllers/newnotebookcontroller.cpp`) wires the new-notebook flow to `SyncService::enableSyncForNotebook` and on failure tears the half-created notebook down. The cleanup order is invariant:
+`NewNotebookInput` contains `syncMethod` (`none`, `git`, `webdav`) and `SyncSettings`. When enabled,
+the selection must match the settings backend. Creation remains create-then-enable. On failure:
+request credential deletion, close the newly created notebook, then remove ONLY its owned root.
+WebDAV Initialize never publishes ordinary notebook data, so this rollback does not delete a
+partially published remote notebook. This controller's pre-close cleanup is the historical
+exception to the service-owned credential cleanup sites.
 
-1. `credStore->deleteCredentials(p_notebookId)` (line 258) — free the keychain slot for the just-stored PAT.
-2. `notebookService->closeNotebook(p_notebookId)` (line 261) — drop the notebook from vxcore.
-3. `QDir::removeRecursively` on the rootPath (lines 266+) with Windows-retry loop.
+## Remote open ownership
 
-**Why this ordering matters**: `deleteCredentials` MUST run BEFORE `closeNotebook`. Although `SyncService` also wipes the PAT from inside the `NotebookAfterClose` hook handler (see `src/core/services/AGENTS.md` § Credential Cleanup Invariants), keeping the explicit pre-close delete in `bootstrapSync` is defense in depth: it ensures the keychain entry is gone even if the hook subscription is ever broken, reordered, or skipped (e.g., by a future refactor that runs `closeNotebook` against a different service handle). The hook then runs idempotently and is a no-op.
+`CloneAndOpenInput` carries `SyncSettings`, destination and auto-sync preference. The final
+folder MUST NOT exist, even if empty. Allocate an exclusive sibling `QTemporaryDir` and leave
+it EMPTY for the backend clone; ownership markers are added only after download.
+After download, an exclusive random owner marker in excluded `vx_notebook/vx_transfer` travels
+with the rename. Verify ownership before rollback of a newly created final root; never remove a
+foreign destination created during the network operation. Remove the owner marker before success.
+Do not use the old rename helper that deletes root `staging-marker.json`: that name may be a real
+remote notebook file.
 
-This is the ONLY controller-side `deleteCredentials` call site. All other credential cleanup belongs to `SyncService`.
+Authenticated open registers the selected backend. Anonymous open is writable partial S2 and
+sets `partialSyncMissingCredentials`; it must not automatically prompt for credentials.
+
+## Conflict resolution completion
+
+`SyncConflictController` passes `SyncService::keepBothUnsupportedPaths()` to `SyncConflictDialog2`;
+no dialog queries a busy backend or guesses capability from filenames. Metadata/encrypted
+revisions are indivisible. Emit `conflictsResolved` only after successful trailing sync and no
+remaining conflicts. A per-file failure or failed trailing sync keeps the incident active.
 
 ## Related Modules
 

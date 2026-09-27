@@ -148,6 +148,10 @@ if(APPLE)
 endif()
 
 get_target_property(VX_SODIUM_SOURCE_DIR sodium SOURCE_DIR)
+get_target_property(VX_PUGIXML_LICENSE pugixml VXCORE_LICENSE_FILE)
+if(NOT APPLE)
+    get_target_property(VX_CURL_LICENSE vxcore_webdav_curl VXCORE_LICENSE_FILE)
+endif()
 
 # Copy the qt.conf on Windows
 if(WIN32)
@@ -167,6 +171,9 @@ elseif(APPLE)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${VX_SODIUM_SOURCE_DIR}/LICENSE"
         "$<TARGET_FILE_DIR:vnote>/../Resources/LICENSE.libsodium-cmake"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VX_PUGIXML_LICENSE}"
+        "$<TARGET_FILE_DIR:vnote>/../Resources/LICENSE.pugixml"
         COMMENT "Copying resources and crypto licenses into app bundle Resources"
     )
 endif()
@@ -180,6 +187,8 @@ if (WIN32)
         DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.libsodium)
     install(FILES "${VX_SODIUM_SOURCE_DIR}/LICENSE"
         DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.libsodium-cmake)
+    install(FILES "${VX_PUGIXML_LICENSE}" DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.pugixml)
+    install(FILES "${VX_CURL_LICENSE}" DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.curl)
     install(FILES ${VX_QM_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}/translations" OPTIONAL)
 elseif(APPLE)
     set(CMAKE_MACOSX_RPATH ON)
@@ -213,6 +222,8 @@ else()
         DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.libsodium)
     install(FILES "${VX_SODIUM_SOURCE_DIR}/LICENSE"
         DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.libsodium-cmake)
+    install(FILES "${VX_PUGIXML_LICENSE}" DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.pugixml)
+    install(FILES "${VX_CURL_LICENSE}" DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.curl)
     install(FILES ${VX_QM_FILES} DESTINATION "${CMAKE_INSTALL_DATADIR}/translations" OPTIONAL)
 
     set(desktop.path applications)

@@ -6,13 +6,14 @@
 #include <QString>
 
 #include "core/noncopyable.h"
+#include "syncsettings.h"
 
 namespace vnotex {
 
 class ServiceLocator;
 
-// SyncCredentialsStore is a thin async wrapper around QtKeychain for storing
-// per-notebook git sync Personal Access Tokens (PATs).
+// SyncCredentialsStore stores per-notebook sync credentials in the OS keychain.
+// Git entries remain raw PATs; WebDAV entries use a versioned JSON envelope.
 //
 // Per ADR-9, this store has NO plaintext fallback. When QtKeychain is
 // unavailable (built with VNOTE_USE_KEYCHAIN=OFF, or runtime keychain init
@@ -28,8 +29,8 @@ class ServiceLocator;
 // the backend finishes. In-flight jobs finish even if the store is destroyed;
 // their completion callbacks are disconnected in that case.
 //
-// PAT values are not cached; they live only in in-flight jobs. Calls use the
-// OS keychain. Only a lightweight existence cache (notebook IDs only, no PATs)
+// Secrets are not cached; they live only in in-flight jobs. Calls use the
+// OS keychain. Only a lightweight existence cache (notebook IDs only)
 // is maintained to support synchronous hasCredentials() probes by the UI.
 class SyncCredentialsStore : public QObject, private Noncopyable {
   Q_OBJECT
@@ -64,18 +65,18 @@ public:
   virtual bool hasCredentials(const QString &p_notebookId) const;
 
 public slots:
-  // Asynchronously store a PAT for the given notebook.
+  // Asynchronously store credentials for the given notebook.
   // Emits credentialsStored on success, credentialsStoreError on failure
   // (a dedicated signal so store-awaiting callers can filter store failures
   // without catching unrelated retrieve/delete errors for the same id).
-  virtual void storeCredentials(const QString &p_notebookId, const QString &p_pat);
+  virtual void storeCredentials(const QString &p_notebookId, const SyncCredential &p_credentials);
 
-  // Asynchronously retrieve the PAT for the given notebook.
-  // Emits credentialsRetrieved on success (with the PAT string), or
+  // Asynchronously retrieve typed credentials for the given notebook.
+  // Emits credentialsRetrieved on success, or
   // credentialsError on failure (including not-found and backend errors).
   virtual void retrieveCredentials(const QString &p_notebookId);
 
-  // Asynchronously delete the PAT for the given notebook.
+  // Asynchronously delete credentials for the given notebook.
   // Emits credentialsDeleted on success, credentialsError on failure.
   virtual void deleteCredentials(const QString &p_notebookId);
 
@@ -90,7 +91,7 @@ public slots:
 
 signals:
   void credentialsStored(const QString &p_notebookId);
-  void credentialsRetrieved(const QString &p_notebookId, const QString &p_pat);
+  void credentialsRetrieved(const QString &p_notebookId, const SyncCredential &p_credentials);
   void credentialsDeleted(const QString &p_notebookId);
   void credentialsError(const QString &p_notebookId, const QString &p_errorString);
 

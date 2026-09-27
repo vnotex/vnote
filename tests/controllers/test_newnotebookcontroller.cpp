@@ -1,5 +1,6 @@
 #include <QtTest>
 
+#include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
 
@@ -48,6 +49,7 @@ private slots:
 
   // Creation tests.
   void testCreateRawNotebook();
+  void testWebDavCreationAndRawRejection();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -276,6 +278,9 @@ void TestNewNotebookController::emptyRootStillEnforcedForGit() {
   input.rootFolderPath = nonEmptyDir;
   input.type = NotebookType::Bundled;
   input.syncMethod = QStringLiteral("git");
+  input.syncSettings = {QStringLiteral("git"),
+                        QStringLiteral("https://example.test/notebook.git"),
+                        {QStringLiteral("git"), {}, QStringLiteral("test-secret")}};
 
   NewNotebookController controller(m_services);
   ValidationResult resNonEmpty = controller.validateAll(input);
@@ -288,6 +293,30 @@ void TestNewNotebookController::emptyRootStillEnforcedForGit() {
   input.rootFolderPath = emptyDir;
   ValidationResult resEmpty = controller.validateAll(input);
   QVERIFY2(resEmpty.valid, qPrintable(resEmpty.message));
+}
+
+void TestNewNotebookController::testWebDavCreationAndRawRejection() {
+  NewNotebookInput input;
+  input.name = QStringLiteral("WebDAV notebook");
+  input.rootFolderPath = m_tempDir.filePath(QStringLiteral("webdav-created"));
+  input.syncMethod = QStringLiteral("webdav");
+  input.syncSettings = {
+      QStringLiteral("webdav"),
+      QStringLiteral("https://example.test/notes/"),
+      {QStringLiteral("webdav"), QStringLiteral("alice"), QStringLiteral(" password bytes ")}};
+  NewNotebookController controller(m_services);
+  const auto result = controller.createNotebook(input);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+  const auto config = m_service->getNotebookConfig(result.notebookId);
+  QCOMPARE(config.value(QStringLiteral("syncBackend")).toString(), QStringLiteral("webdav"));
+  QVERIFY(config.value(QStringLiteral("syncEnabled")).toBool());
+  const auto bytes = QJsonDocument(config).toJson(QJsonDocument::Compact);
+  QVERIFY(!bytes.contains("alice"));
+  QVERIFY(!bytes.contains("password bytes"));
+  input.rootFolderPath = m_tempDir.filePath(QStringLiteral("raw-with-sync"));
+  input.type = NotebookType::Raw;
+  QVERIFY(!controller.createNotebook(input).success);
+  QVERIFY(!QFileInfo::exists(input.rootFolderPath));
 }
 
 } // namespace tests

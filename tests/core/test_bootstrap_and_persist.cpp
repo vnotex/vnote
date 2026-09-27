@@ -28,6 +28,8 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
+#include <core/services/syncstateclassifier.h>
+#include <core/services/syncworkqueuemanager.h>
 #include <temp_dir_fixture.h>
 
 #include <sync/sync_json_keys.h>
@@ -121,6 +123,7 @@ void TestBootstrapAndPersist::happy_path_s5() {
   // T5: track UUID-based notebook writes so cleanup runs before ctx destroy.
   tests::KeychainGuard guard(&credStore);
   SyncService syncService(services);
+  services.registerService<SyncService>(&syncService);
 
   TempDirFixture localTemp;
   QVERIFY(localTemp.isValid());
@@ -138,11 +141,15 @@ void TestBootstrapAndPersist::happy_path_s5() {
   QString nbRoot = localTemp.filePath(QStringLiteral("nb_happy"));
   QDir().mkpath(nbRoot);
   QString nbId = notebookService.createNotebook(
-      nbRoot, R"({"name":"Happy NB","description":"","version":"1"})", NotebookType::Bundled);
+      nbRoot, R"({"name":"Happy NB","description":"","version":"1","autoSyncEnabled":false})",
+      NotebookType::Bundled);
   QVERIFY(!nbId.isEmpty());
 
   QSignalSpy finSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
-  syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_134"));
+  syncService.bootstrapAndPersist(
+      nbId, SyncSettings{QStringLiteral("git"),
+                         remoteUrl,
+                         {QStringLiteral("git"), QString(), QStringLiteral("ghp_TEST_PAT_134")}});
 
   QVERIFY(finSpy.wait(15000));
   QCOMPARE(finSpy.count(), 1);
@@ -174,9 +181,20 @@ void TestBootstrapAndPersist::happy_path_s5() {
   QCOMPARE(cfg.value(QLatin1String(vxcore::kJsonKeySyncEnabled)).toBool(), true);
   QCOMPARE(cfg.value(QLatin1String(vxcore::kJsonKeySyncBackend)).toString(), QStringLiteral("git"));
   QCOMPARE(cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString(), remoteUrl);
+  QCOMPARE(cfg.value(QLatin1String(vxcore::kJsonKeyAutoSyncEnabled)).toBool(), false);
 
   // Runtime registered.
   QVERIFY(syncService.isSyncRegistered(nbId));
+  QTRY_VERIFY_WITH_TIMEOUT(!syncService.isSyncInProgress(nbId), 15000);
+  SyncStateClassifier classifier(services);
+  QCOMPARE(classifier.classify(nbId), SyncState::S5);
+  auto lease = syncService.workQueueManager()->tryAcquireMaintenance({nbId});
+  QVERIFY(lease);
+  syncService.triggerSyncNow(nbId);
+  QCOMPARE(classifier.classify(nbId), SyncState::S7);
+  syncService.cancelSync(nbId);
+  QCOMPARE(classifier.classify(nbId), SyncState::S5);
+  lease.release();
 
   // Cleanup.
   // SEGFAULT fix (post vxcore-metadata-events plan): bootstrapAndPersist
@@ -250,7 +268,10 @@ void TestBootstrapAndPersist::persist_failure_rolls_back_to_original_state() {
   syncService.testForceNextPersistFailure(injectedMsg);
 
   QSignalSpy finSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
-  syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_134b"));
+  syncService.bootstrapAndPersist(
+      nbId, SyncSettings{QStringLiteral("git"),
+                         remoteUrl,
+                         {QStringLiteral("git"), QString(), QStringLiteral("ghp_TEST_PAT_134b")}});
 
   QVERIFY(finSpy.wait(15000));
   QCOMPARE(finSpy.count(), 1);
@@ -346,7 +367,10 @@ void TestBootstrapAndPersist::rollback_failure_preserves_persist_error() {
 
   QSignalSpy storeErrorSpy(&credStore, &SyncCredentialsStore::credentialsStoreError);
   QSignalSpy finSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
-  syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_134c"));
+  syncService.bootstrapAndPersist(
+      nbId, SyncSettings{QStringLiteral("git"),
+                         remoteUrl,
+                         {QStringLiteral("git"), QString(), QStringLiteral("ghp_TEST_PAT_134c")}});
 
   QVERIFY(finSpy.wait(15000));
   QCOMPARE(finSpy.count(), 1);

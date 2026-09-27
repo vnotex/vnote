@@ -17,10 +17,14 @@
 #include <QtTest>
 
 #include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
 #include <QJsonObject>
 #include <QMetaObject>
 #include <QSignalSpy>
 #include <QStringList>
+#include <QUrl>
+#include <temp_dir_fixture.h>
 
 #include <controllers/newnotebookcontroller.h>
 #include <core/hookcontext.h>
@@ -63,7 +67,7 @@ public:
         Qt::QueuedConnection);
   }
 
-  void storeCredentials(const QString &p_notebookId, const QString & /*p_pat*/) override {
+  void storeCredentials(const QString &p_notebookId, const SyncCredential &) override {
     storeCalls.append(p_notebookId);
     QMetaObject::invokeMethod(
         this, [this, p_notebookId]() { emit credentialsStored(p_notebookId); },
@@ -80,7 +84,7 @@ class StrayErrorCredentialsStore : public SyncCredentialsStore {
 public:
   using SyncCredentialsStore::SyncCredentialsStore;
 
-  void storeCredentials(const QString &p_notebookId, const QString & /*p_pat*/) override {
+  void storeCredentials(const QString &p_notebookId, const SyncCredential &) override {
     QMetaObject::invokeMethod(
         this,
         [this, p_notebookId]() {
@@ -92,19 +96,14 @@ public:
   }
 };
 
-// Exposes test-only helpers to synthesize the enableFinished / disableFinished
-// signals that the cleanup paths react to.
+// Inject a worker failure without making the public completion signal an input.
 class TestableSyncService : public SyncService {
 public:
   using SyncService::SyncService;
 
-  void emitEnableFinishedForTest(const QString &p_notebookId, VxCoreError p_result,
-                                 const QString &p_message) {
-    emit enableFinished(p_notebookId, p_result, p_message);
-  }
-
   void emitDisableFinishedForTest(const QString &p_notebookId, VxCoreError p_result) {
-    emit disableFinished(p_notebookId, p_result);
+    QMetaObject::invokeMethod(this, "onWorkerDisableFinished", Qt::DirectConnection,
+                              Q_ARG(QString, p_notebookId), Q_ARG(VxCoreError, p_result));
   }
 };
 
@@ -162,30 +161,28 @@ void TestSyncServiceCredentialsCleanup::testBootstrapSyncRollback_CallsDeleteCre
   TestableSyncService syncSvc(services);
   services.registerService<SyncService>(&syncSvc);
 
+  TempDirFixture temporary;
+  QVERIFY(temporary.isValid());
   NewNotebookController controller(services);
+  NewNotebookInput input;
+  input.name = QStringLiteral("Bootstrap rollback");
+  input.rootFolderPath = temporary.filePath(QStringLiteral("owned-notebook"));
+  const auto created = controller.createNotebook(input);
+  QVERIFY(created.success);
+  const auto notebookId = created.notebookId;
   QSignalSpy failedSpy(&controller, &NewNotebookController::bootstrapFailed);
-
-  const QString notebookId = QStringLiteral("nb-bootstrap-rollback");
-  controller.bootstrapSync(notebookId, QStringLiteral("https://example.invalid/repo.git"),
-                           QStringLiteral("fake-pat"), /*p_dialogParent=*/nullptr);
-
-  // Let enableSyncForNotebook wire its one-shot enableFinished listener.
-  pumpEvents();
-
-  // Synthesize the failure outcome that the bootstrap rollback branch reacts to.
-  syncSvc.emitEnableFinishedForTest(notebookId, VXCORE_ERR_UNKNOWN,
-                                    QStringLiteral("injected enable failure"));
-
-  // Wait briefly for the bootstrapFailed signal so we know the rollback ran.
-  if (failedSpy.isEmpty()) {
-    failedSpy.wait(1000);
+  controller.bootstrapSync(
+      notebookId,
+      {QStringLiteral("git"),
+       QUrl::fromLocalFile(temporary.filePath(QStringLiteral("missing-remote.git"))).toString(),
+       {QStringLiteral("git"), {}, QStringLiteral("fake-pat")}},
+      nullptr);
+  QTRY_COMPARE_WITH_TIMEOUT(failedSpy.count(), 1, 15000);
+  QVERIFY(fakeStore.deleteCalls.contains(notebookId));
+  QVERIFY(!QFileInfo::exists(input.rootFolderPath));
+  for (const auto &notebook : notebookSvc.listNotebooks()) {
+    QVERIFY(notebook.toObject().value(QStringLiteral("id")).toString() != notebookId);
   }
-  pumpEvents();
-
-  QVERIFY2(fakeStore.deleteCalls.contains(notebookId),
-           qPrintable(QStringLiteral("Expected deleteCredentials to be called for %1 "
-                                     "during bootstrap rollback; deleteCalls=[%2]")
-                          .arg(notebookId, fakeStore.deleteCalls.join(QLatin1Char(',')))));
 
   syncSvc.shutdown();
 }
@@ -239,18 +236,19 @@ void TestSyncServiceCredentialsCleanup::testSyncDisableSuccess_CallsDeleteCreden
   TestableSyncService syncSvc(services);
   services.registerService<SyncService>(&syncSvc);
 
-  const QString notebookId = QStringLiteral("nb-disable-success");
-
-  // Drive disableSyncForNotebook so its one-shot disableFinished listener is
-  // attached; the real worker may also run against a non-registered notebook
-  // but its later emit hits a disconnected lambda (one-shot self-disconnect).
+  TempDirFixture directory;
+  QVERIFY(directory.isValid());
+  const auto notebookId = notebookSvc.createNotebook(
+      directory.filePath(QStringLiteral("notebook")),
+      QStringLiteral("{\"name\":\"Disable\",\"syncEnabled\":true,\"syncBackend\":\"git\","
+                     "\"syncRemoteUrl\":\"https://example.test/notes.git\"}"),
+      NotebookType::Bundled);
+  QVERIFY(!notebookId.isEmpty());
+  QSignalSpy finished(&syncSvc, &SyncService::disableFinished);
   syncSvc.disableSyncForNotebook(notebookId);
-
-  // Emit the success outcome BEFORE the worker can bounce back so the cleanup
-  // branch runs deterministically with VXCORE_OK.
-  syncSvc.emitDisableFinishedForTest(notebookId, VXCORE_OK);
-
-  pumpEvents();
+  QTRY_COMPARE(finished.count(), 1);
+  QCOMPARE(qvariant_cast<VxCoreError>(finished.first().at(1)), VXCORE_OK);
+  QVERIFY(!notebookSvc.getNotebookConfig(notebookId).value(QStringLiteral("syncEnabled")).toBool());
 
   QVERIFY2(fakeStore.deleteCalls.contains(notebookId),
            qPrintable(QStringLiteral("Expected deleteCredentials to be called for %1 "
@@ -258,6 +256,7 @@ void TestSyncServiceCredentialsCleanup::testSyncDisableSuccess_CallsDeleteCreden
                           .arg(notebookId, fakeStore.deleteCalls.join(QLatin1Char(',')))));
 
   syncSvc.shutdown();
+  notebookSvc.closeNotebook(notebookId);
 }
 
 void TestSyncServiceCredentialsCleanup::testSyncDisableFailure_DoesNotCallDeleteCredentials() {
@@ -274,7 +273,6 @@ void TestSyncServiceCredentialsCleanup::testSyncDisableFailure_DoesNotCallDelete
 
   const QString notebookId = QStringLiteral("nb-disable-failure");
 
-  syncSvc.disableSyncForNotebook(notebookId);
   syncSvc.emitDisableFinishedForTest(notebookId, VXCORE_ERR_UNKNOWN);
 
   pumpEvents();
@@ -304,8 +302,10 @@ void TestSyncServiceCredentialsCleanup::testStrayCredentialsError_DoesNotAbortEn
 
   QSignalSpy enableSpy(&syncSvc, &SyncService::enableFinished);
 
-  syncSvc.enableSyncForNotebook(notebookId, QStringLiteral("https://example.invalid/repo.git"),
-                                QStringLiteral("fake-pat"));
+  syncSvc.enableSyncForNotebook(notebookId,
+                                {QStringLiteral("git"),
+                                 QStringLiteral("https://example.invalid/repo.git"),
+                                 {QStringLiteral("git"), {}, QStringLiteral("fake-pat")}});
 
   // Let the store emit its stray generic credentialsError.
   pumpEvents();
@@ -318,8 +318,9 @@ void TestSyncServiceCredentialsCleanup::testStrayCredentialsError_DoesNotAbortEn
     const auto args = enableSpy.at(i);
     const auto code = static_cast<VxCoreError>(args.at(1).toInt());
     const QString msg = args.at(2).toString();
-    QVERIFY2(!(code == VXCORE_ERR_UNKNOWN && msg.contains(QStringLiteral("not found"))),
-             qPrintable(QStringLiteral("Stray credentialsError wrongly aborted enable: %1").arg(msg)));
+    QVERIFY2(
+        !(code == VXCORE_ERR_UNKNOWN && msg.contains(QStringLiteral("not found"))),
+        qPrintable(QStringLiteral("Stray credentialsError wrongly aborted enable: %1").arg(msg)));
   }
 
   syncSvc.shutdown();

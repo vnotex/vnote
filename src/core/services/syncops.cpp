@@ -5,6 +5,7 @@
 
 #include <functional>
 #include <memory>
+#include <sync/sync_backend.h>
 #include <thread>
 #include <utility>
 
@@ -15,37 +16,6 @@
 
 namespace vnotex {
 namespace {
-
-// Brief human-readable mapping for the error code carried by enableSync's
-// completion callback. Mirrors SyncWorker's local vxErrorToString helper.
-QString vxErrorToString(VxCoreError p_code) {
-  switch (p_code) {
-  case VXCORE_OK:
-    return QStringLiteral("OK");
-  case VXCORE_ERR_NULL_POINTER:
-    return QStringLiteral("null service");
-  case VXCORE_ERR_NOT_FOUND:
-    return QStringLiteral("not found");
-  case VXCORE_ERR_UNSUPPORTED:
-    return QStringLiteral("unsupported");
-  case VXCORE_ERR_NOT_INITIALIZED:
-    return QStringLiteral("not initialized");
-  case VXCORE_ERR_SYNC_IN_PROGRESS:
-    return QStringLiteral("sync in progress");
-  case VXCORE_ERR_SYNC_CONFLICT:
-    return QStringLiteral("sync conflict");
-  case VXCORE_ERR_SYNC_AUTH_FAILED:
-    return QStringLiteral("sync auth failed");
-  case VXCORE_ERR_SYNC_NETWORK:
-    return QStringLiteral("sync network error");
-  case VXCORE_ERR_SYNC_NOT_ENABLED:
-    return QStringLiteral("sync not enabled");
-  case VXCORE_ERR_UNKNOWN:
-    return QStringLiteral("unknown error");
-  default:
-    return QStringLiteral("vxcore error %1").arg(static_cast<int>(p_code));
-  }
-}
 
 void logSyncResult(const char *p_operation, const QString &p_notebookId,
                    unsigned long long p_worker, VxCoreError p_code, qint64 p_elapsedMs) {
@@ -115,7 +85,7 @@ void enableSync(NotebookCoreService *p_svc, QString p_notebookId, QString p_conf
     logSyncResult("SyncOps::enableSync", p_notebookId, worker, VXCORE_ERR_NULL_POINTER,
                   timer.elapsed());
     if (p_onFinished) {
-      p_onFinished(VXCORE_ERR_NULL_POINTER, vxErrorToString(VXCORE_ERR_NULL_POINTER));
+      p_onFinished(VXCORE_ERR_NULL_POINTER, QStringLiteral("null service"));
     }
     return;
   }
@@ -129,13 +99,13 @@ void enableSync(NotebookCoreService *p_svc, QString p_notebookId, QString p_conf
 
   logSyncResult("SyncOps::enableSync", p_notebookId, worker, code, timer.elapsed());
   if (p_onFinished) {
-    p_onFinished(code, code == VXCORE_OK ? QString() : vxErrorToString(code));
+    p_onFinished(code, p_svc->syncErrorMessage(code));
   }
 }
 
 void triggerSync(ISyncNotebookService *p_svc, QString p_notebookId,
                  VxCoreSyncCancellation *p_cancel, std::function<void(VxCoreError)> p_onFinished,
-                 NotebookIoGate *p_gate) {
+                 NotebookIoGate *p_gate, std::function<VxCoreError()> p_applyPhase) {
   QElapsedTimer timer;
   timer.start();
   const auto worker =
@@ -155,14 +125,17 @@ void triggerSync(ISyncNotebookService *p_svc, QString p_notebookId,
     return;
   }
 
-  // vxcore-sync-stage-only V3: staged pattern.
-  // Gate held ONLY around stage+commit phase. Network phase runs WITHOUT
-  // the gate so concurrent saves on the same notebook resume immediately
-  // after the local commit lands, regardless of network latency. See
-  // root AGENTS.md § Save Path Threading Contract.
-  bool didCommit = false;
-  VxCoreError code = VXCORE_OK;
-  {
+  uint32_t capabilities = 0;
+  auto code = p_svc->syncCapabilities(p_notebookId, &capabilities);
+  const bool deferredApply =
+      (capabilities & static_cast<uint32_t>(vxcore::SyncCapability::DeferredLocalApply)) != 0;
+  if (code == VXCORE_OK && deferredApply && !p_applyPhase) {
+    code = VXCORE_ERR_NOT_IMPLEMENTED;
+  }
+
+  // Snapshot/staging excludes saves; network work never holds the notebook gate.
+  if (code == VXCORE_OK) {
+    bool didCommit = false;
     std::unique_ptr<NotebookIoGate::ScopedLock> lock;
     if (p_gate) {
       QElapsedTimer gateTimer;
@@ -188,7 +161,6 @@ void triggerSync(ISyncNotebookService *p_svc, QString p_notebookId,
                         << "didCommit:" << didCommit << "elapsed_ms:" << stageTimer.elapsed();
     }
   }
-
   if (code == VXCORE_OK) {
     QElapsedTimer networkTimer;
     networkTimer.start();
@@ -198,9 +170,12 @@ void triggerSync(ISyncNotebookService *p_svc, QString p_notebookId,
     logSyncResult("SyncOps::triggerSync network", p_notebookId, worker, code,
                   networkTimer.elapsed());
   }
+  if (code == VXCORE_OK && deferredApply) {
+    code = p_applyPhase();
+  }
 
   logSyncResult("SyncOps::triggerSync", p_notebookId, worker, code, timer.elapsed());
-  // NOTE: p_cancel is owned by the caller (SyncService). Do NOT free.
+  // The caller owns the token through apply acknowledgement and completion.
   if (p_onFinished) {
     p_onFinished(code);
   }

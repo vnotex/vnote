@@ -6,6 +6,7 @@
 #include <core/services/isyncnotebookservice.h>
 #include <core/services/notebookiogate.h>
 #include <core/services/syncops.h>
+#include <sync/sync_backend.h>
 
 namespace tests {
 
@@ -13,6 +14,22 @@ namespace tests {
 // the notebook gate. Scheduling delays must not change the observation window.
 class FakeSyncNotebookService : public vnotex::ISyncNotebookService {
 public:
+  VxCoreError syncCapabilities(const QString &, uint32_t *p_capabilities) override {
+    if (!p_capabilities) {
+      return VXCORE_ERR_NULL_POINTER;
+    }
+    *p_capabilities = m_capabilities;
+    return VXCORE_OK;
+  }
+
+  VxCoreError syncApplyPhase(const QString &, VxCoreSyncCancellation *, const QStringList &,
+                             QStringList *p_changedPaths) override {
+    if (!p_changedPaths) {
+      return VXCORE_ERR_NULL_POINTER;
+    }
+    p_changedPaths->clear();
+    return VXCORE_ERR_NOT_IMPLEMENTED;
+  }
   VxCoreError syncStageOnly(const QString &p_notebookId,
                             VxCoreSyncCancellation *p_cancellationToken,
                             bool *p_didCommit) override {
@@ -36,6 +53,7 @@ public:
   }
 
   QSemaphore m_stageEntered;
+  uint32_t m_capabilities = 0;
   QSemaphore m_continueStage;
   QSemaphore m_networkEntered;
   QSemaphore m_continueNetwork;
@@ -46,6 +64,8 @@ class TestSyncOpsGateRelease : public QObject {
 
 private slots:
   void testGateReleasedBeforeNetworkPhase();
+  void testDeferredApplyRequiresCallback();
+  void testDeferredApplyFailureReachesCompletionOutsideGate();
 };
 
 void TestSyncOpsGateRelease::testGateReleasedBeforeNetworkPhase() {
@@ -89,6 +109,46 @@ void TestSyncOpsGateRelease::testGateReleasedBeforeNetworkPhase() {
   QVERIFY2(gateReleasedDuringNetwork, "Network work must not block notebook saves");
   QCOMPARE(finishedCode, VXCORE_OK);
   QCOMPARE(finishedCount, 1);
+}
+
+void TestSyncOpsGateRelease::testDeferredApplyRequiresCallback() {
+  FakeSyncNotebookService fake;
+  fake.m_capabilities = static_cast<uint32_t>(vxcore::SyncCapability::DeferredLocalApply);
+  // A broken guard must fail the assertions, not hang inside the fake phases.
+  fake.m_continueStage.release();
+  fake.m_continueNetwork.release();
+  VxCoreError result = VXCORE_OK;
+  vnotex::SyncOps::triggerSync(&fake, QStringLiteral("deferred"), nullptr,
+                               [&](VxCoreError p_result) { result = p_result; });
+  QCOMPARE(result, VXCORE_ERR_NOT_IMPLEMENTED);
+  QCOMPARE(fake.m_stageEntered.available(), 0);
+  QCOMPARE(fake.m_networkEntered.available(), 0);
+}
+
+void TestSyncOpsGateRelease::testDeferredApplyFailureReachesCompletionOutsideGate() {
+  FakeSyncNotebookService fake;
+  fake.m_capabilities = static_cast<uint32_t>(vxcore::SyncCapability::DeferredLocalApply);
+  fake.m_continueStage.release();
+  fake.m_continueNetwork.release();
+  vnotex::NotebookIoGate gate;
+  const auto notebookId = QStringLiteral("deferred");
+  VxCoreError result = VXCORE_OK;
+  bool applied = false;
+  bool gateAvailable = false;
+  std::thread worker([&] {
+    vnotex::SyncOps::triggerSync(
+        &fake, notebookId, nullptr, [&](VxCoreError p_result) { result = p_result; }, &gate,
+        [&] {
+          applied = true;
+          vnotex::NotebookIoGate::ScopedTryLock probe(gate, notebookId, 0);
+          gateAvailable = probe.isLocked();
+          return VXCORE_ERR_IO;
+        });
+  });
+  worker.join();
+  QVERIFY(applied);
+  QVERIFY(gateAvailable);
+  QCOMPARE(result, VXCORE_ERR_IO);
 }
 
 } // namespace tests

@@ -1,9 +1,14 @@
 #include "synccredentialsstore.h"
 
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QJsonParseError>
 #include <QMetaObject>
 #include <QStringLiteral>
 #include <QThread>
 #include <QtGlobal>
+
+#include <sync/sync_json_keys.h>
 
 #ifdef VNOTE_KEYCHAIN_AVAILABLE
 #include <keychain.h>
@@ -17,6 +22,50 @@ namespace {
 // runtime. The string is part of the public contract: T14 (bootstrap path) and
 // upstream UI catch this exact token to surface a user-facing message.
 const char *const c_keychainUnavailableError = "secure-keychain-unavailable";
+const char *const c_invalidCredentialsError = "Invalid stored sync credentials.";
+const char *const c_credentialEnvelopePrefix = "vnote-sync-credentials-v1\n";
+
+bool validCredentials(const SyncCredential &p_credentials) {
+  return isSupportedSyncBackend(p_credentials.m_backend) && !p_credentials.m_secret.isEmpty() &&
+         (p_credentials.m_backend != QLatin1String("webdav") ||
+          !p_credentials.m_username.isEmpty());
+}
+
+#ifdef VNOTE_KEYCHAIN_AVAILABLE
+QString encodeCredentials(const SyncCredential &p_credentials) {
+  if (p_credentials.m_backend == QLatin1String("git"))
+    return p_credentials.m_secret;
+  QJsonObject envelope;
+  envelope[QLatin1String(vxcore::kJsonKeyBackend)] = p_credentials.m_backend;
+  envelope[QLatin1String(vxcore::kJsonKeyUsername)] = p_credentials.m_username;
+  envelope[QStringLiteral("secret")] = p_credentials.m_secret;
+  return QString::fromLatin1(c_credentialEnvelopePrefix) +
+         QString::fromUtf8(QJsonDocument(envelope).toJson(QJsonDocument::Compact));
+}
+
+bool decodeCredentials(const QString &p_value, SyncCredential &p_credentials) {
+  const auto prefix = QString::fromLatin1(c_credentialEnvelopePrefix);
+  if (!p_value.startsWith(QLatin1String("vnote-sync-credentials-"))) {
+    p_credentials = {QStringLiteral("git"), QString(), p_value};
+    return validCredentials(p_credentials);
+  }
+  if (!p_value.startsWith(prefix))
+    return false;
+  QJsonParseError error;
+  const auto document = QJsonDocument::fromJson(p_value.mid(prefix.size()).toUtf8(), &error);
+  if (error.error != QJsonParseError::NoError || !document.isObject())
+    return false;
+  const auto envelope = document.object();
+  const auto backend = envelope.value(QLatin1String(vxcore::kJsonKeyBackend));
+  const auto username = envelope.value(QLatin1String(vxcore::kJsonKeyUsername));
+  const auto secret = envelope.value(QStringLiteral("secret"));
+  if (envelope.size() != 3 || !backend.isString() || !username.isString() || !secret.isString() ||
+      backend.toString() != QLatin1String("webdav"))
+    return false;
+  p_credentials = {backend.toString(), username.toString(), secret.toString()};
+  return validCredentials(p_credentials);
+}
+#endif
 
 #ifndef VNOTE_KEYCHAIN_AVAILABLE
 // Log the unavailability warning ONCE per process to avoid log spam when
@@ -35,6 +84,8 @@ void logKeychainUnavailableOnce() {
 
 SyncCredentialsStore::SyncCredentialsStore(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {
+  qRegisterMetaType<SyncCredential>("SyncCredential");
+  qRegisterMetaType<SyncCredential>("vnotex::SyncCredential");
   // Maintain the in-memory existence cache by listening to the store's own
   // completion signals. Connections are made in the constructor, BEFORE any
   // caller can attach QSignalSpy / external slots, so cache updates always
@@ -45,7 +96,7 @@ SyncCredentialsStore::SyncCredentialsStore(ServiceLocator &p_services, QObject *
   connect(this, &SyncCredentialsStore::credentialsStored, this,
           [this](const QString &p_notebookId) { m_knownCredentialIds.insert(p_notebookId); });
   connect(this, &SyncCredentialsStore::credentialsRetrieved, this,
-          [this](const QString &p_notebookId, const QString & /*p_pat*/) {
+          [this](const QString &p_notebookId, const SyncCredential &) {
             m_knownCredentialIds.insert(p_notebookId);
           });
   connect(this, &SyncCredentialsStore::credentialsDeleted, this,
@@ -83,14 +134,26 @@ QString SyncCredentialsStore::keychainKey(const QString &p_notebookId) {
   return QStringLiteral("notebook_sync_pat_") + p_notebookId;
 }
 
-void SyncCredentialsStore::storeCredentials(const QString &p_notebookId, const QString &p_pat) {
+void SyncCredentialsStore::storeCredentials(const QString &p_notebookId,
+                                            const SyncCredential &p_credentials) {
   // Create and start jobs on the store's thread, including calls from
   // NotebookAfterClose/AfterOpen hooks running on a QtConcurrent worker.
   if (thread() != QThread::currentThread()) {
     const QString notebookId = p_notebookId;
-    const QString pat = p_pat;
+    const SyncCredential credentials = p_credentials;
     QMetaObject::invokeMethod(
-        this, [this, notebookId, pat]() { storeCredentials(notebookId, pat); },
+        this, [this, notebookId, credentials]() { storeCredentials(notebookId, credentials); },
+        Qt::QueuedConnection);
+    return;
+  }
+  if (!validCredentials(p_credentials) ||
+      (p_credentials.m_backend == QLatin1String("git") &&
+       p_credentials.m_secret.startsWith(QLatin1String("vnote-sync-credentials-")))) {
+    QMetaObject::invokeMethod(
+        this,
+        [this, p_notebookId]() {
+          emit credentialsStoreError(p_notebookId, QString::fromLatin1(c_invalidCredentialsError));
+        },
         Qt::QueuedConnection);
     return;
   }
@@ -103,7 +166,7 @@ void SyncCredentialsStore::storeCredentials(const QString &p_notebookId, const Q
   auto *job = new QKeychain::WritePasswordJob(serviceName());
   job->setInsecureFallback(false);
   job->setKey(keychainKey(p_notebookId));
-  job->setTextData(p_pat);
+  job->setTextData(encodeCredentials(p_credentials));
 
   const QString notebookId = p_notebookId;
   connect(job, &QKeychain::Job::finished, this, [this, job, notebookId](QKeychain::Job *) {
@@ -116,7 +179,6 @@ void SyncCredentialsStore::storeCredentials(const QString &p_notebookId, const Q
 
   job->start();
 #else
-  Q_UNUSED(p_pat);
   logKeychainUnavailableOnce();
   const QString notebookId = p_notebookId;
   QMetaObject::invokeMethod(
@@ -144,9 +206,16 @@ void SyncCredentialsStore::retrieveCredentials(const QString &p_notebookId) {
   const QString notebookId = p_notebookId;
   connect(job, &QKeychain::Job::finished, this, [this, job, notebookId](QKeychain::Job *) {
     if (job->error() == QKeychain::NoError) {
-      // textData() is the PAT; pass via signal but never log.
-      emit credentialsRetrieved(notebookId, job->textData());
+      SyncCredential credentials;
+      if (decodeCredentials(job->textData(), credentials)) {
+        emit credentialsRetrieved(notebookId, credentials);
+      } else {
+        m_knownCredentialIds.remove(notebookId);
+        emit credentialsError(notebookId, QString::fromLatin1(c_invalidCredentialsError));
+      }
     } else {
+      if (job->error() == QKeychain::EntryNotFound)
+        m_knownCredentialIds.remove(notebookId);
       emit credentialsError(notebookId, job->errorString());
     }
   });

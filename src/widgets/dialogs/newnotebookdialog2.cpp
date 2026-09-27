@@ -44,24 +44,21 @@ void NewNotebookDialog2::setupUI() {
   auto *syncLayout = WidgetsFactory::createFormLayout();
   layout->addLayout(syncLayout);
 
-  // Sync method selection. Visible only for Bundled notebooks.
-  // For Git sync, the actual remote URL + PAT are collected BEFORE notebook
-  // creation via the Configure... button (pre-create flow per
-  // notebook-sync-config-pre-create plan).
+  // Collect sync settings before creation for either supported backend.
   m_syncMethodLabel = new QLabel(tr("Sync method"), mainWidget);
   m_syncMethodLabel->setObjectName(QStringLiteral("syncMethodLabel"));
   m_syncMethodCombo = WidgetsFactory::createComboBox(mainWidget);
   m_syncMethodCombo->setObjectName(QStringLiteral("syncMethodCombo"));
   m_syncMethodCombo->addItem(tr("None"), QStringLiteral("none"));
   m_syncMethodCombo->addItem(tr("Git"), QStringLiteral("git"));
-  m_syncMethodCombo->setToolTip(tr("Git sync is supported only for bundled notebooks. "
-                                   "Sync settings are configured immediately via the "
-                                   "Configure button before notebook creation"));
+  m_syncMethodCombo->addItem(tr("WebDAV"), QStringLiteral("webdav"));
+  m_syncMethodCombo->setToolTip(tr("Sync is supported only for bundled notebooks. "
+                                   "Use Configure before notebook creation"));
 
   m_configureSyncButton = new QPushButton(tr("Configure"), mainWidget);
   m_configureSyncButton->setObjectName(QStringLiteral("configureSyncButton"));
-  m_configureSyncButton->setToolTip(tr("Configure Git sync remote URL and credentials"));
-  m_configureSyncButton->hide(); // shown only when Git is the active selection
+  m_configureSyncButton->setToolTip(tr("Configure the sync remote URL and credentials"));
+  m_configureSyncButton->hide();
 
   m_syncMethodContainer = new QWidget(mainWidget);
   auto *syncMethodLayout = new QHBoxLayout(m_syncMethodContainer);
@@ -79,9 +76,14 @@ void NewNotebookDialog2::setupUI() {
 
   connect(m_syncMethodCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
           [this](int) {
-            const bool gitSelected =
-                m_syncMethodCombo->currentData().toString() == QStringLiteral("git");
-            m_configureSyncButton->setVisible(gitSelected && m_syncMethodContainer->isVisible());
+            const auto backend = m_syncMethodCombo->currentData().toString();
+            const bool enabled = isSupportedSyncBackend(backend);
+            if (backend != m_pendingSettings.m_backend) {
+              m_syncConfigured = false;
+              m_pendingSettings = SyncSettings();
+              m_pendingSettings.m_backend = backend;
+            }
+            m_configureSyncButton->setVisible(enabled);
             updateOkButtonState();
           });
 
@@ -94,13 +96,9 @@ void NewNotebookDialog2::setupUI() {
 void NewNotebookDialog2::onTypeComboChanged() {
   const bool isBundled = m_infoWidget->getType() == NotebookType::Bundled;
   if (!isBundled) {
-    // Force back to "None" so an accidental Raw selection doesn't persist a
-    // git sync choice.
     m_syncMethodCombo->setCurrentIndex(0);
-    // Reset pre-create sync config when switching to Raw.
     m_syncConfigured = false;
-    m_pendingRemoteUrl.clear();
-    m_pendingPat.clear();
+    m_pendingSettings = SyncSettings();
   }
   m_syncMethodLabel->setVisible(isBundled);
   m_syncMethodContainer->setVisible(isBundled);
@@ -117,9 +115,7 @@ void NewNotebookDialog2::acceptedButtonClicked() {
   input.assetsFolder = m_infoWidget->getAssetsFolder();
   input.lineEnding = m_infoWidget->getLineEnding();
   input.syncMethod = getSelectedSyncMethod();
-  // T4: pass pre-collected sync config (set by onConfigureSyncClicked() in T3).
-  input.remoteUrl = m_pendingRemoteUrl;
-  input.pat = m_pendingPat;
+  input.syncSettings = m_pendingSettings;
 
   // Delegate to controller.
   NewNotebookResult result = m_controller->createNotebook(input);
@@ -139,13 +135,13 @@ void NewNotebookDialog2::acceptedButtonClicked() {
   qCDebug(syncCategory) << "NewNotebookDialog2::acceptedButtonClicked: created syncMethod:"
                         << input.syncMethod << "newNotebookId:" << m_newNotebookId;
 
-  if (input.syncMethod != QStringLiteral("git")) {
+  if (input.syncMethod == QStringLiteral("none")) {
     // Non-sync path: the notebook is fully ready. Accept and close.
     accept();
     return;
   }
 
-  // Git sync path (T4 of pre-create plan): chain bootstrapSync. Dialog stays
+  // Chain bootstrapSync for either backend. The dialog stays
   // open until bootstrapSucceeded/bootstrapFailed arrives. bootstrapSync
   // shows its own progress modal on top of this dialog and rolls back on
   // failure (closes notebook, removes root) so the user can retry by
@@ -195,45 +191,40 @@ void NewNotebookDialog2::acceptedButtonClicked() {
                 // Dialog stays open.
               });
 
-  m_controller->bootstrapSync(result.notebookId, input.remoteUrl, input.pat, this);
+  m_controller->bootstrapSync(result.notebookId, input.syncSettings, this);
 }
 
 QString NewNotebookDialog2::getNewNotebookId() const { return m_newNotebookId; }
 
 QString NewNotebookDialog2::getSelectedSyncMethod() const {
-  if (!m_syncMethodCombo || !m_syncMethodCombo->isVisible()) {
+  if (!m_syncMethodCombo || m_infoWidget->getType() != NotebookType::Bundled) {
     return QStringLiteral("none");
   }
   return m_syncMethodCombo->currentData().toString();
 }
 
 void NewNotebookDialog2::onConfigureSyncClicked() {
-  // Pre-create overload of NotebookSyncInfoDialog2: collects remote URL + PAT
-  // without persisting to vxcore. T4 reads them back via m_pendingRemoteUrl /
-  // m_pendingPat in acceptedButtonClicked() to perform create+bootstrap
-  // atomically.
   NotebookSyncInfoDialog2 dlg(m_services, this);
-  const QString notebookName = m_infoWidget->getName().trimmed();
-  dlg.setPreCreateNotebookName(notebookName);
+  dlg.setBackend(getSelectedSyncMethod());
+  dlg.setPreCreateNotebookName(m_infoWidget->getName().trimmed());
   if (dlg.exec() == QDialog::Accepted) {
-    m_pendingRemoteUrl = dlg.enteredRemoteUrl().trimmed();
-    m_pendingPat = dlg.enteredPat();
-    m_syncConfigured = !m_pendingRemoteUrl.isEmpty();
-    qCDebug(syncCategory)
-        << "NewNotebookDialog2::onConfigureSyncClicked: configured remoteUrlPresent:"
-        << m_syncConfigured;
+    auto settings = dlg.enteredSettings();
+    // The inner selector is authoritative; changing it also changes creation.
+    m_syncMethodCombo->setCurrentIndex(m_syncMethodCombo->findData(settings.m_backend));
+    m_pendingSettings = std::move(settings);
+    m_syncConfigured = validateSyncSettings(m_pendingSettings, true).isEmpty();
   }
   updateOkButtonState();
 }
 
 void NewNotebookDialog2::updateOkButtonState() {
   const QString syncMethod = getSelectedSyncMethod();
-  const bool needsSync = (syncMethod == QStringLiteral("git"));
-  const bool ok = !needsSync || m_syncConfigured;
+  const bool needsSync = isSupportedSyncBackend(syncMethod);
+  const bool ok = !needsSync || (m_syncConfigured && m_pendingSettings.m_backend == syncMethod);
   setButtonEnabled(QDialogButtonBox::Ok, ok);
   if (auto *box = getDialogButtonBox()) {
     if (auto *okBtn = box->button(QDialogButtonBox::Ok)) {
-      okBtn->setToolTip(ok ? QString() : tr("Click 'Configure' to set up Git sync first"));
+      okBtn->setToolTip(ok ? QString() : tr("Click 'Configure' to set up sync first"));
     }
   }
 }

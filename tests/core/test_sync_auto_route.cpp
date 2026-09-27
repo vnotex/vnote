@@ -161,7 +161,10 @@ void TestSyncAutoRoute::test_auto_route_full_roundtrip() {
       QVERIFY(!nbId.isEmpty());
 
       QSignalSpy enableSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
-      syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_TEST_T31"));
+      syncService.bootstrapAndPersist(
+          nbId, SyncSettings{QStringLiteral("git"),
+                             remoteUrl,
+                             {QStringLiteral("git"), QString(), QStringLiteral("ghp_TEST_T31")}});
       QVERIFY2(enableSpy.wait(20000), "bootstrapAndPersistFinished did not arrive within 20s");
       // CI Linux runners have no D-Bus session / org.freedesktop.secrets
       // provider; bootstrapAndPersist propagates the keychain failure
@@ -267,7 +270,10 @@ void TestSyncAutoRoute::test_auto_route_silent_on_queue_full() {
       QVERIFY(!nbId.isEmpty());
 
       QSignalSpy enableSpy(&syncService, &SyncService::bootstrapAndPersistFinished);
-      syncService.bootstrapAndPersist(nbId, remoteUrl, QStringLiteral("ghp_T31_QF"));
+      syncService.bootstrapAndPersist(
+          nbId, SyncSettings{QStringLiteral("git"),
+                             remoteUrl,
+                             {QStringLiteral("git"), QString(), QStringLiteral("ghp_T31_QF")}});
       QVERIFY2(enableSpy.wait(20000), "bootstrapAndPersistFinished did not arrive within 20s");
 
       guard.track(nbId);

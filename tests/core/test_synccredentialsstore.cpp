@@ -10,9 +10,16 @@
 
 #include <QCoreApplication>
 #include <QDateTime>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QProcess>
+#include <QProcessEnvironment>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QString>
+#include <QTemporaryDir>
 #include <QThread>
+#include <QUuid>
 #include <QtTest>
 
 #include <test_helper.h>
@@ -22,6 +29,10 @@
 #include <vxcore/vxcore.h>
 
 #include "../helpers/keychain_guard.h"
+
+#ifdef VNOTE_KEYCHAIN_AVAILABLE
+#include <keychain.h>
+#endif
 
 using namespace vnotex;
 
@@ -39,6 +50,39 @@ void captureMessageHandler(QtMsgType p_type, const QMessageLogContext &p_ctx,
   g_logCapture += p_msg;
   g_logCapture += QLatin1Char('\n');
 }
+
+#ifdef VNOTE_KEYCHAIN_AVAILABLE
+bool writeRawVault(const QString &p_id, const QString &p_value) {
+  QObject receiver;
+  QKeychain::Error error = QKeychain::OtherError;
+  auto *job = new QKeychain::WritePasswordJob(SyncCredentialsStore::serviceName());
+  job->setInsecureFallback(false);
+  job->setKey(SyncCredentialsStore::keychainKey(p_id));
+  job->setTextData(p_value);
+  QObject::connect(job, &QKeychain::Job::finished, &receiver,
+                   [&error](QKeychain::Job *p_job) { error = p_job->error(); });
+  QSignalSpy finished(job, &QKeychain::Job::finished);
+  job->start();
+  return (!finished.isEmpty() || finished.wait(5000)) && error == QKeychain::NoError;
+}
+
+bool readRawVault(const QString &p_id, QString &p_value) {
+  QObject receiver;
+  QKeychain::Error error = QKeychain::OtherError;
+  auto *job = new QKeychain::ReadPasswordJob(SyncCredentialsStore::serviceName());
+  job->setInsecureFallback(false);
+  job->setKey(SyncCredentialsStore::keychainKey(p_id));
+  QObject::connect(job, &QKeychain::Job::finished, &receiver,
+                   [&error, &p_value, job](QKeychain::Job *) {
+                     error = job->error();
+                     if (error == QKeychain::NoError)
+                       p_value = job->textData();
+                   });
+  QSignalSpy finished(job, &QKeychain::Job::finished);
+  job->start();
+  return (!finished.isEmpty() || finished.wait(5000)) && error == QKeychain::NoError;
+}
+#endif
 } // namespace
 
 class TestSyncCredentialsStore : public QObject {
@@ -55,6 +99,11 @@ private slots:
   void deleteMissingEntryEmitsDeleted();
   void keychainUnavailableEmitsError();
   void patNotLogged();
+  void legacyGitEntryRemainsRaw();
+  void webdavEnvelopeSurvivesFreshStoreAndQueuedDelivery();
+  void malformedEnvelopeIsRedacted_data();
+  void malformedEnvelopeIsRedacted();
+  void invalidTypedCredentialUsesStoreError();
 
   // W2.T0 (sync-completion-flow-overhaul) — synchronous hasCredentials cache.
   void testHasCredentialsAfterStore();
@@ -128,6 +177,163 @@ int TestSyncCredentialsStore::waitForEither(QSignalSpy &p_a, QSignalSpy &p_b, in
   return 0;
 }
 
+void TestSyncCredentialsStore::legacyGitEntryRemainsRaw() {
+#ifndef VNOTE_KEYCHAIN_AVAILABLE
+  QSKIP("Requires QtKeychain and an unlocked OS vault; not credential verification");
+#else
+  SyncCredentialsStore store(m_services);
+  KeychainGuard guard(&store);
+  const auto id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+  const auto pat = QStringLiteral(" legacy Git token with whitespace ");
+  guard.track(id);
+  QVERIFY2(writeRawVault(id, pat), "Requires a usable unlocked OS vault");
+  QSignalSpy retrieved(&store, &SyncCredentialsStore::credentialsRetrieved);
+  QSignalSpy errors(&store, &SyncCredentialsStore::credentialsError);
+  store.retrieveCredentials(id);
+  QCOMPARE(waitForEither(retrieved, errors, 5000), 1);
+  const auto credentials = qvariant_cast<SyncCredential>(retrieved.first().at(1));
+  QCOMPARE(credentials.m_backend, QStringLiteral("git"));
+  QCOMPARE(credentials.m_secret, pat);
+  QVERIFY(credentials.m_username.isEmpty());
+  QSignalSpy stored(&store, &SyncCredentialsStore::credentialsStored);
+  QSignalSpy storeErrors(&store, &SyncCredentialsStore::credentialsStoreError);
+  store.storeCredentials(id, credentials);
+  QCOMPARE(waitForEither(stored, storeErrors, 5000), 1);
+  QString raw;
+  QVERIFY(readRawVault(id, raw));
+  QCOMPARE(raw, pat);
+  guard.cleanup();
+#endif
+}
+
+void TestSyncCredentialsStore::webdavEnvelopeSurvivesFreshStoreAndQueuedDelivery() {
+#ifndef VNOTE_KEYCHAIN_AVAILABLE
+  QSKIP("Requires QtKeychain and an unlocked OS vault; not credential verification");
+#else
+  const auto inheritedId = QString::fromUtf8(qgetenv("VNOTE_CREDENTIAL_RESTART_TEST_ID"));
+  const auto id =
+      inheritedId.isEmpty() ? QUuid::createUuid().toString(QUuid::WithoutBraces) : inheritedId;
+  const SyncCredential credentials{QStringLiteral("webdav"), QString::fromUtf8("用户 name"),
+                                   QStringLiteral(" app-password\\\"\n ")};
+  SyncCredentialsStore fresh(m_services);
+  KeychainGuard guard(&fresh);
+  if (inheritedId.isEmpty())
+    guard.track(id);
+  g_logCapture.clear();
+  const auto previous = qInstallMessageHandler(captureMessageHandler);
+  const auto restore = qScopeGuard([previous]() { qInstallMessageHandler(previous); });
+  if (inheritedId.isEmpty()) {
+    SyncCredentialsStore first(m_services);
+    QSignalSpy stored(&first, &SyncCredentialsStore::credentialsStored);
+    QSignalSpy errors(&first, &SyncCredentialsStore::credentialsStoreError);
+    first.storeCredentials(id, credentials);
+    QCOMPARE(waitForEither(stored, errors, 5000), 1);
+  }
+  QString raw;
+  QVERIFY(readRawVault(id, raw));
+  const auto prefix = QStringLiteral("vnote-sync-credentials-v1\n");
+  QVERIFY(raw.startsWith(prefix));
+  const auto envelope = QJsonDocument::fromJson(raw.mid(prefix.size()).toUtf8()).object();
+  QCOMPARE(envelope.value(QStringLiteral("backend")).toString(), credentials.m_backend);
+  QCOMPARE(envelope.value(QStringLiteral("username")).toString(), credentials.m_username);
+  QCOMPARE(envelope.value(QStringLiteral("secret")).toString(), credentials.m_secret);
+  if (inheritedId.isEmpty()) {
+    QTemporaryDir childTemp;
+    QVERIFY(childTemp.isValid());
+    auto environment = QProcessEnvironment::systemEnvironment();
+    environment.insert(QStringLiteral("VNOTE_CREDENTIAL_RESTART_TEST_ID"), id);
+    for (const auto &name :
+         {QStringLiteral("TMP"), QStringLiteral("TEMP"), QStringLiteral("TMPDIR")})
+      environment.insert(name, childTemp.path());
+    QProcess child;
+    child.setProcessEnvironment(environment);
+    child.start(QCoreApplication::applicationFilePath(),
+                {QStringLiteral("webdavEnvelopeSurvivesFreshStoreAndQueuedDelivery")});
+    QVERIFY(child.waitForStarted(5000));
+    QVERIFY(child.waitForFinished(20000));
+    const auto output = child.readAllStandardOutput() + child.readAllStandardError();
+    QVERIFY(!output.contains(credentials.m_secret.toUtf8()));
+    QCOMPARE(child.exitStatus(), QProcess::NormalExit);
+    QCOMPARE(child.exitCode(), 0);
+  }
+  bool delivered = false;
+  SyncCredential received;
+  connect(
+      &fresh, &SyncCredentialsStore::credentialsRetrieved, &fresh,
+      [&](const QString &p_id, const SyncCredential &p_credential) {
+        if (p_id == id) {
+          received = p_credential;
+          delivered = true;
+        }
+      },
+      Qt::QueuedConnection);
+  fresh.retrieveCredentials(id);
+  QTRY_VERIFY(delivered);
+  QCOMPARE(received.m_backend, credentials.m_backend);
+  QCOMPARE(received.m_username, credentials.m_username);
+  QCOMPARE(received.m_secret, credentials.m_secret);
+  QVERIFY(fresh.hasCredentials(id));
+  QVERIFY(QMetaType::type("SyncCredential") != QMetaType::UnknownType);
+  QVERIFY(QMetaType::type("vnotex::SyncCredential") != QMetaType::UnknownType);
+  QVERIFY(!g_logCapture.contains(credentials.m_secret));
+  QVERIFY(!g_logCapture.contains(credentials.m_username));
+  guard.cleanup();
+#endif
+}
+
+void TestSyncCredentialsStore::malformedEnvelopeIsRedacted_data() {
+  QTest::addColumn<QString>("payload");
+  QTest::newRow("unknown-version") << QStringLiteral("vnote-sync-credentials-v2\nsecret-sentinel");
+  QTest::newRow("invalid-json") << QStringLiteral(
+      "vnote-sync-credentials-v1\n{\"secret\":\"secret-sentinel");
+  QTest::newRow("unknown-backend") << QStringLiteral(
+      "vnote-sync-credentials-v1\n"
+      "{\"backend\":\"other\",\"username\":\"user\",\"secret\":\"secret-sentinel\"}");
+  QTest::newRow("git-is-not-an-envelope") << QStringLiteral(
+      "vnote-sync-credentials-v1\n"
+      "{\"backend\":\"git\",\"username\":\"user\",\"secret\":\"secret-sentinel\"}");
+}
+
+void TestSyncCredentialsStore::malformedEnvelopeIsRedacted() {
+#ifndef VNOTE_KEYCHAIN_AVAILABLE
+  QSKIP("Requires QtKeychain and an unlocked OS vault; not credential verification");
+#else
+  QFETCH(QString, payload);
+  SyncCredentialsStore store(m_services);
+  KeychainGuard guard(&store);
+  const auto id = QUuid::createUuid().toString(QUuid::WithoutBraces);
+  guard.track(id);
+  QVERIFY2(writeRawVault(id, payload), "Requires a usable unlocked OS vault");
+  QSignalSpy retrieved(&store, &SyncCredentialsStore::credentialsRetrieved);
+  QSignalSpy errors(&store, &SyncCredentialsStore::credentialsError);
+  g_logCapture.clear();
+  const auto previous = qInstallMessageHandler(captureMessageHandler);
+  const auto restore = qScopeGuard([previous]() { qInstallMessageHandler(previous); });
+  store.retrieveCredentials(id);
+  QCOMPARE(waitForEither(retrieved, errors, 5000), 2);
+  QCOMPARE(retrieved.count(), 0);
+  QVERIFY(!store.hasCredentials(id));
+  const auto error = errors.first().at(1).toString();
+  QVERIFY(!error.contains(QStringLiteral("secret-sentinel")));
+  QVERIFY(!error.contains(payload));
+  QVERIFY(!g_logCapture.contains(QStringLiteral("secret-sentinel")));
+  guard.cleanup();
+#endif
+}
+
+void TestSyncCredentialsStore::invalidTypedCredentialUsesStoreError() {
+  SyncCredentialsStore store(m_services);
+  QSignalSpy stored(&store, &SyncCredentialsStore::credentialsStored);
+  QSignalSpy storeErrors(&store, &SyncCredentialsStore::credentialsStoreError);
+  QSignalSpy unrelatedErrors(&store, &SyncCredentialsStore::credentialsError);
+  store.storeCredentials(QStringLiteral("invalid-backend"),
+                         {QStringLiteral("unknown"), QString(), QStringLiteral("secret")});
+  QTRY_COMPARE(storeErrors.count(), 1);
+  QCOMPARE(stored.count(), 0);
+  QCOMPARE(unrelatedErrors.count(), 0);
+  QVERIFY(!store.hasCredentials(QStringLiteral("invalid-backend")));
+}
+
 void TestSyncCredentialsStore::storeRetrieve() {
 #ifndef VNOTE_KEYCHAIN_AVAILABLE
   QSKIP("VNOTE_KEYCHAIN_AVAILABLE not set: cannot test happy path");
@@ -148,7 +354,7 @@ void TestSyncCredentialsStore::storeRetrieve() {
   // Store
   QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
   QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsStoreError);
-  store.storeCredentials(notebookId, pat);
+  store.storeCredentials(notebookId, {QStringLiteral("git"), QString(), pat});
   int which = waitForEither(storedSpy, errorSpy, 5000);
   if (which == 2) {
     const QString errMsg = errorSpy.first().at(1).toString();
@@ -165,7 +371,7 @@ void TestSyncCredentialsStore::storeRetrieve() {
   which = waitForEither(retrievedSpy, errorSpy2, 5000);
   QCOMPARE(which, 1);
   QCOMPARE(retrievedSpy.first().at(0).toString(), notebookId);
-  QCOMPARE(retrievedSpy.first().at(1).toString(), pat);
+  QCOMPARE(qvariant_cast<SyncCredential>(retrievedSpy.first().at(1)).m_secret, pat);
 
   // Start a native read, then destroy its facade before Apple's main-queue
   // callback runs. The in-flight job must survive and let the next job finish.
@@ -177,7 +383,7 @@ void TestSyncCredentialsStore::storeRetrieve() {
   retrievedSpy.clear();
   store.retrieveCredentials(notebookId);
   QCOMPARE(waitForEither(retrievedSpy, errorSpy2, 5000), 1);
-  QCOMPARE(retrievedSpy.first().at(1).toString(), pat);
+  QCOMPARE(qvariant_cast<SyncCredential>(retrievedSpy.first().at(1)).m_secret, pat);
 
   // POST-test cleanup: delete what THIS test wrote
   guard.cleanup();
@@ -196,7 +402,7 @@ void TestSyncCredentialsStore::delete_() {
   // Store first
   QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
   QSignalSpy errSpy1(&store, &SyncCredentialsStore::credentialsStoreError);
-  store.storeCredentials(notebookId, pat);
+  store.storeCredentials(notebookId, {QStringLiteral("git"), QString(), pat});
   int which = waitForEither(storedSpy, errSpy1, 5000);
   if (which == 2) {
     const QString errMsg = errSpy1.first().at(1).toString();
@@ -213,16 +419,13 @@ void TestSyncCredentialsStore::delete_() {
   QCOMPARE(which, 1);
   QCOMPARE(deletedSpy.first().at(0).toString(), notebookId);
 
-  // Subsequent retrieve should produce either an error (key not found) or an
-  // empty PAT. Both outcomes confirm the entry is gone.
+  // A missing entry cannot produce usable credentials.
   QSignalSpy retrievedSpy(&store, &SyncCredentialsStore::credentialsRetrieved);
   QSignalSpy errSpy3(&store, &SyncCredentialsStore::credentialsError);
   store.retrieveCredentials(notebookId);
   which = waitForEither(retrievedSpy, errSpy3, 5000);
-  QVERIFY(which != 0);
-  if (which == 1) {
-    QVERIFY(retrievedSpy.first().at(1).toString().isEmpty());
-  }
+  QCOMPARE(which, 2);
+  QCOMPARE(retrievedSpy.count(), 0);
 
   // POST-test cleanup: guard tracks the store() call above
   guard.cleanup();
@@ -254,7 +457,8 @@ void TestSyncCredentialsStore::deleteMissingEntryEmitsDeleted() {
   {
     QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
     QSignalSpy storeErrSpy(&store, &SyncCredentialsStore::credentialsStoreError);
-    store.storeCredentials(notebookId, QStringLiteral("ghp_PROBE"));
+    store.storeCredentials(notebookId,
+                           {QStringLiteral("git"), QString(), QStringLiteral("ghp_PROBE")});
     const int stored = waitForEither(storedSpy, storeErrSpy, 5000);
     if (stored == 2) {
       const QString errMsg = storeErrSpy.first().at(1).toString();
@@ -293,7 +497,7 @@ void TestSyncCredentialsStore::keychainUnavailableEmitsError() {
   const QString notebookId = QStringLiteral("nb_t4_unavailable");
 
   QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsStoreError);
-  store.storeCredentials(notebookId, QStringLiteral("any_pat"));
+  store.storeCredentials(notebookId, {QStringLiteral("git"), QString(), QStringLiteral("any_pat")});
   QVERIFY(errorSpy.wait(5000));
   QCOMPARE(errorSpy.count(), 1);
   QCOMPARE(errorSpy.first().at(0).toString(), notebookId);
@@ -320,7 +524,7 @@ void TestSyncCredentialsStore::patNotLogged() {
   {
     QSignalSpy doneSpy(&store, &SyncCredentialsStore::credentialsStored);
     QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsStoreError);
-    store.storeCredentials(notebookId, uniquePat);
+    store.storeCredentials(notebookId, {QStringLiteral("git"), QString(), uniquePat});
     waitForEither(doneSpy, errSpy, 5000);
   }
   {
@@ -385,7 +589,7 @@ void TestSyncCredentialsStore::testHasCredentialsAfterStore() {
 
   QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
   QSignalSpy errorSpy(&store, &SyncCredentialsStore::credentialsStoreError);
-  store.storeCredentials(notebookId, pat);
+  store.storeCredentials(notebookId, {QStringLiteral("git"), QString(), pat});
   int which = waitForEither(storedSpy, errorSpy, 5000);
   if (which == 2) {
     const QString errMsg = errorSpy.first().at(1).toString();
@@ -418,7 +622,7 @@ void TestSyncCredentialsStore::testHasCredentialsAfterDelete() {
   {
     QSignalSpy storedSpy(&store, &SyncCredentialsStore::credentialsStored);
     QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsStoreError);
-    store.storeCredentials(notebookId, pat);
+    store.storeCredentials(notebookId, {QStringLiteral("git"), QString(), pat});
     int which = waitForEither(storedSpy, errSpy, 5000);
     if (which == 2) {
       const QString errMsg = errSpy.first().at(1).toString();
@@ -470,7 +674,7 @@ void TestSyncCredentialsStore::testRefreshKnownIdsPopulatesCache() {
     SyncCredentialsStore seedStore(m_services);
     QSignalSpy storedSpy(&seedStore, &SyncCredentialsStore::credentialsStored);
     QSignalSpy errSpy(&seedStore, &SyncCredentialsStore::credentialsStoreError);
-    seedStore.storeCredentials(notebookId, pat);
+    seedStore.storeCredentials(notebookId, {QStringLiteral("git"), QString(), pat});
     int which = waitForEither(storedSpy, errSpy, 5000);
     if (which == 2) {
       const QString errMsg = errSpy.first().at(1).toString();
@@ -530,8 +734,9 @@ void TestSyncCredentialsStore::testStoreSafeFromWorkerThread() {
   g_logCapture.clear();
   g_previousHandler = qInstallMessageHandler(captureMessageHandler);
 
-  QThread *worker =
-      QThread::create([&store, notebookId, pat]() { store.storeCredentials(notebookId, pat); });
+  QThread *worker = QThread::create([&store, notebookId, pat]() {
+    store.storeCredentials(notebookId, {QStringLiteral("git"), QString(), pat});
+  });
   QSignalSpy doneSpy(&store, &SyncCredentialsStore::credentialsStored);
   QSignalSpy errSpy(&store, &SyncCredentialsStore::credentialsStoreError);
   worker->start();

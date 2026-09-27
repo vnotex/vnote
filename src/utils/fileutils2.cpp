@@ -1,6 +1,5 @@
 #include "fileutils2.h"
 
-#include <QDateTime>
 #include <QDebug>
 #include <QFile>
 #include <QJsonDocument>
@@ -16,11 +15,6 @@
 using namespace vnotex;
 
 namespace {
-// SSOT for the staging marker filename. The marker is written by
-// generateCloneStagingDir, consumed by sweepOrphanStagingDirs, and
-// disposed by renameStagingToFinal on success.
-static const QString kStagingMarkerName = QStringLiteral("staging-marker.json");
-
 // Recursive worker for FileUtils2::copyDirCollectingErrors.
 // @p_relPrefix: the destination-root-relative path of p_dirPath (empty at the
 // root), always lower-cased and with forward slashes, so the preserve-list
@@ -196,9 +190,8 @@ Error FileUtils2::copyFile(const QString &p_filePath, const QString &p_destPath,
     // Clear the read-only attribute first; QFile::remove fails on read-only
     // files on Windows. Destinations dumped from a read-only .rcc resource are
     // themselves read-only, so this is required for upgrades to overwrite them.
-    QFile::setPermissions(p_destPath,
-                          QFile::permissions(p_destPath) | QFileDevice::WriteOwner |
-                              QFileDevice::WriteUser);
+    QFile::setPermissions(p_destPath, QFile::permissions(p_destPath) | QFileDevice::WriteOwner |
+                                          QFileDevice::WriteUser);
     if (!QFile::remove(p_destPath)) {
       return Error::error(
           ErrorCode::FailToRemoveFile,
@@ -223,9 +216,8 @@ Error FileUtils2::copyFile(const QString &p_filePath, const QString &p_destPath,
     // QFile::copy propagates the source's permissions to the destination. When
     // the source is a read-only .rcc resource, the new file is read-only, which
     // would break the next upgrade's overwrite. Make it writable.
-    if (!QFile::setPermissions(p_destPath,
-                               QFile::permissions(p_destPath) | QFileDevice::WriteOwner |
-                                   QFileDevice::WriteUser)) {
+    if (!QFile::setPermissions(p_destPath, QFile::permissions(p_destPath) |
+                                               QFileDevice::WriteOwner | QFileDevice::WriteUser)) {
       qWarning() << "failed to make copied file writable, subsequent overwrites may fail:"
                  << p_destPath;
     }
@@ -315,8 +307,7 @@ Error FileUtils2::copyDirCollectingErrors(const QString &p_dirPath, const QStrin
 
 Error FileUtils2::installVersionedDir(const QString &p_srcDir, const QString &p_destDir,
                                       const QString &p_version, QStringList *p_failedPaths,
-                                      bool p_force,
-                                      const QSet<QString> *p_skipExistingRelPaths) {
+                                      bool p_force, const QSet<QString> *p_skipExistingRelPaths) {
   // 1. A missing/invalid source must never be recorded as a completed install.
   const QFileInfo srcInfo(p_srcDir);
   if (!srcInfo.exists() || !srcInfo.isDir()) {
@@ -366,9 +357,9 @@ Error FileUtils2::installVersionedDir(const QString &p_srcDir, const QString &p_
     if (p_failedPaths) {
       p_failedPaths->append(stampPath);
     }
-    return Error::error(ErrorCode::FailToWriteFile,
-                        QStringLiteral("failed to open version stamp for writing: %1")
-                            .arg(stampPath));
+    return Error::error(
+        ErrorCode::FailToWriteFile,
+        QStringLiteral("failed to open version stamp for writing: %1").arg(stampPath));
   }
 
   if (stampFile.write(data) != data.size()) {
@@ -601,118 +592,6 @@ QStringList FileUtils2::entryListRecursively(const QString &p_dirPath,
   return entries;
 }
 
-QString FileUtils2::generateCloneStagingDir(const QString &p_finalParentDir,
-                                            const QString &p_finalLeafName, QString *p_errorOut) {
-  if (p_errorOut) {
-    *p_errorOut = QString();
-  }
-
-  // Ensure parent directory exists
-  QDir parentDir(p_finalParentDir);
-  if (!parentDir.exists()) {
-    if (p_errorOut) {
-      *p_errorOut = QStringLiteral("Parent directory does not exist: %1").arg(p_finalParentDir);
-    }
-    return QString();
-  }
-
-  // Generate unique staging dir name with timestamp
-  qint64 timestampMs = QDateTime::currentMSecsSinceEpoch();
-  QString stagingDirName = QStringLiteral(".%1.vnote-clone-pending-%2")
-                               .arg(p_finalLeafName, QString::number(timestampMs));
-
-  // Ensure uniqueness by adding collision counter if needed
-  QString stagingDirPath = parentDir.filePath(stagingDirName);
-  int collisionCounter = 0;
-  while (QDir(stagingDirPath).exists()) {
-    ++collisionCounter;
-    stagingDirName =
-        QStringLiteral(".%1.vnote-clone-pending-%2-%3")
-            .arg(p_finalLeafName, QString::number(timestampMs), QString::number(collisionCounter));
-    stagingDirPath = parentDir.filePath(stagingDirName);
-  }
-
-  // Create the staging directory
-  if (!parentDir.mkpath(stagingDirName)) {
-    if (p_errorOut) {
-      *p_errorOut = QStringLiteral("Failed to create staging directory: %1").arg(stagingDirPath);
-    }
-    return QString();
-  }
-
-  // Create marker file with metadata
-  QString finalDirPath = parentDir.filePath(p_finalLeafName);
-  QJsonObject markerJson;
-  markerJson.insert(QStringLiteral("createdUtc"), QJsonValue(static_cast<double>(timestampMs)));
-  markerJson.insert(QStringLiteral("finalDir"), QJsonValue(QDir(finalDirPath).absolutePath()));
-
-  QString markerFilePath = QDir(stagingDirPath).filePath(kStagingMarkerName);
-  QFile markerFile(markerFilePath);
-  if (!markerFile.open(QIODevice::WriteOnly)) {
-    if (p_errorOut) {
-      *p_errorOut = QStringLiteral("Failed to create marker file: %1").arg(markerFilePath);
-    }
-    QDir(stagingDirPath).removeRecursively();
-    return QString();
-  }
-
-  markerFile.write(QJsonDocument(markerJson).toJson());
-  markerFile.close();
-
-  return QDir(stagingDirPath).absolutePath();
-}
-
-bool FileUtils2::renameStagingToFinal(const QString &p_stagingDir, const QString &p_finalDir,
-                                      QString *p_errorOut) {
-  if (p_errorOut) {
-    *p_errorOut = QString();
-  }
-
-  QDir stagingDir(p_stagingDir);
-  QDir finalDir(p_finalDir);
-
-  // Check if staging dir exists
-  if (!stagingDir.exists()) {
-    if (p_errorOut) {
-      *p_errorOut = QStringLiteral("Staging directory does not exist: %1").arg(p_stagingDir);
-    }
-    return false;
-  }
-
-  // Check if final dir already exists (collision)
-  if (finalDir.exists()) {
-    if (p_errorOut) {
-      *p_errorOut = QStringLiteral("Final directory already exists: %1").arg(p_finalDir);
-    }
-    return false;
-  }
-
-  // Perform atomic rename using QDir::rename
-  // QDir::rename is atomic on POSIX; on Windows it's best-effort.
-  // The staging dir MUST be on the same filesystem as the final dir for atomicity.
-  if (!stagingDir.rename(p_stagingDir, p_finalDir)) {
-    if (p_errorOut) {
-      *p_errorOut = QStringLiteral("Failed to rename staging directory to final destination")
-                        .append(QStringLiteral(" (%1 -> %2)").arg(p_stagingDir, p_finalDir));
-    }
-    return false;
-  }
-
-  // Best-effort: the staging marker has no meaning in the final dir (sweep
-  // matches by .*.vnote-clone-pending-* name, which the rename has already
-  // changed). Without this delete, the file appears as an "external file"
-  // in the notebook explorer because BundledFolderManager::ListExternalNodes
-  // does not skip it. Failure here is cosmetic only — never fail the rename
-  // on it (the controller would otherwise tear down the user's freshly
-  // cloned notebook).
-  const QString markerPath = QDir(p_finalDir).filePath(kStagingMarkerName);
-  if (QFile::exists(markerPath) && !QFile::remove(markerPath)) {
-    qWarning() << "renameStagingToFinal: failed to remove staging marker at" << markerPath;
-  }
-
-  return true;
-}
-
 bool FileUtils2::removeStagingDir(const QString &p_stagingDir, QString *p_errorOut) {
   if (p_errorOut) {
     *p_errorOut = QString();
@@ -742,49 +621,4 @@ bool FileUtils2::removeStagingDir(const QString &p_stagingDir, QString *p_errorO
   }
 
   return true;
-}
-
-QStringList FileUtils2::sweepOrphanStagingDirs(const QString &p_parentDir, qint64 p_olderThanMs) {
-  QStringList orphans;
-
-  QDir parentDir(p_parentDir);
-  if (!parentDir.exists()) {
-    return orphans;
-  }
-
-  qint64 now = QDateTime::currentMSecsSinceEpoch();
-
-  // Find all entries matching pattern .*.vnote-clone-pending-*
-  QStringList filters;
-  filters << QStringLiteral(".*.vnote-clone-pending-*");
-
-  // QDir::Hidden is REQUIRED: staging dir names start with '.', which Linux
-  // (and Qt's default entryList behavior) treat as hidden. Without this flag
-  // the sweep returns an empty list on Linux and silently no-ops on startup.
-  auto entries = parentDir.entryList(filters, QDir::AllDirs | QDir::Hidden | QDir::NoDotAndDotDot |
-                                                  QDir::NoSymLinks);
-
-  for (const auto &entry : entries) {
-    QString entryPath = parentDir.filePath(entry);
-
-    // Read marker file to check creation timestamp
-    QString markerPath = QDir(entryPath).filePath(kStagingMarkerName);
-    QFile markerFile(markerPath);
-    if (!markerFile.open(QIODevice::ReadOnly)) {
-      continue; // Skip entries without valid marker
-    }
-
-    QJsonObject markerJson = QJsonDocument::fromJson(markerFile.readAll()).object();
-    markerFile.close();
-
-    qint64 createdUtc = markerJson.value(QStringLiteral("createdUtc")).toVariant().toLongLong();
-    qint64 ageMs = now - createdUtc;
-
-    // If older than threshold, add to orphan list
-    if (ageMs > p_olderThanMs) {
-      orphans.append(QDir(entryPath).absolutePath());
-    }
-  }
-
-  return orphans;
 }

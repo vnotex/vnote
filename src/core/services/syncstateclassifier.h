@@ -11,7 +11,7 @@ class ServiceLocator;
 
 // Canonical sync state for a notebook. The state is the tuple of:
 //   * on-disk JSON sync fields (syncEnabled, syncBackend, syncRemoteUrl)
-//   * PAT presence in the OS keychain (via SyncCredentialsStore)
+//   * credential presence in the OS keychain (via SyncCredentialsStore)
 //   * runtime registration in vxcore's states_ map (via SyncService)
 //
 // See the "Sync State Model" section in the repo root AGENTS.md for the
@@ -24,14 +24,14 @@ class ServiceLocator;
 // notebook is in S7. Do NOT add S8 or a nested sub-state enum for these
 // transient distinctions; they are runtime properties, not canonical states.
 enum class SyncState {
-  S0, // Cleanly disabled: !syncEnabled, no backend/url, no PAT, not registered.
-  S1, // Partial: enabled, backend=git, URL empty, not registered (PAT optional).
-  S2, // Partial: enabled, backend=git, URL set, NO PAT, not registered.
-  S3, // Partial: enabled, backend empty, not registered (PAT optional).
-  S4, // Partial: enabled, backend=git, URL set, PAT present, NOT registered.
-  S5, // Ready: enabled, backend=git, URL set, PAT present, registered.
-  S6, // Orphan PAT: !syncEnabled but keychain still has a PAT for this id.
-  S7, // S5 + active in-flight sync. (Currently mapped to S5; see classify().)
+  S0, // Disabled without stored credentials (including stale runtime registration).
+  S1, // Partial: enabled, supported backend, URL empty.
+  S2, // Partial: enabled, supported backend, URL set, no credentials.
+  S3, // Partial: enabled, backend missing or unsupported.
+  S4, // Partial: enabled, supported backend, URL and credentials set, not registered.
+  S5, // Ready: enabled, supported backend, URL and credentials set, registered.
+  S6, // Orphan credentials: disabled but credentials remain in the keychain.
+  S7, // S5 + active sync operation.
 };
 
 // SyncStateClassifier is a stateless, read-through service that maps a
@@ -53,8 +53,9 @@ public:
   // tests can exhaustively cover all 8 states without spinning up vxcore
   // and a keychain. classify() is a thin wrapper that gathers the live
   // predicates then delegates here.
-  static SyncState classifyFromPredicates(bool p_syncEnabled, bool p_hasPat, bool p_registered,
-                                          const QString &p_backend, const QString &p_remoteUrl);
+  static SyncState classifyFromPredicates(bool p_syncEnabled, bool p_hasCredentials,
+                                          bool p_registered, const QString &p_backend,
+                                          const QString &p_remoteUrl);
 
   // Human-readable short tooltip describing @p_state. Always non-empty.
   QString tooltipFor(SyncState p_state) const;

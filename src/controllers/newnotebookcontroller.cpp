@@ -113,13 +113,29 @@ ValidationResult NewNotebookController::validateAll(const NewNotebookInput &p_in
     result.valid = false;
     result.message = tr("Invalid line ending format.");
   }
+  if (!result.valid) {
+    return result;
+  }
+  if (p_input.syncMethod != QLatin1String("none")) {
+    if (p_input.type != NotebookType::Bundled) {
+      return {false, tr("Sync is not available for raw notebooks.")};
+    }
+    if (!isSupportedSyncBackend(p_input.syncMethod) ||
+        p_input.syncMethod != p_input.syncSettings.m_backend) {
+      return {false, tr("Unsupported or inconsistent sync backend.")};
+    }
+    const auto message = validateSyncSettings(p_input.syncSettings, true);
+    if (!message.isEmpty()) {
+      return {false, message};
+    }
+  }
 
   return result;
 }
 
 NewNotebookResult NewNotebookController::createNotebook(const NewNotebookInput &p_input) {
   qCDebug(syncCategory) << "NewNotebookController::createNotebook: entry syncMethod:"
-                        << p_input.syncMethod << "remoteUrl:notInInputStruct";
+                        << p_input.syncMethod;
 
   NewNotebookResult result;
 
@@ -179,9 +195,10 @@ QString NewNotebookController::buildConfigJson(const NewNotebookInput &p_input) 
   // (syncEnabled, syncBackend), not a nested "sync" object. syncRemoteUrl is
   // intentionally NOT set here — it stays empty until T14 bootstrap runs
   // enableSync against the empty root (per ADR-7: create-then-enable).
-  if (p_input.syncMethod == QStringLiteral("git")) {
+  if (p_input.type == NotebookType::Bundled && isSupportedSyncBackend(p_input.syncMethod)) {
+    Q_ASSERT(p_input.syncMethod == p_input.syncSettings.m_backend);
     configObj[QLatin1String(vxcore::kJsonKeySyncEnabled)] = true;
-    configObj[QLatin1String(vxcore::kJsonKeySyncBackend)] = QStringLiteral("git");
+    configObj[QLatin1String(vxcore::kJsonKeySyncBackend)] = p_input.syncMethod;
   }
   return QString::fromUtf8(QJsonDocument(configObj).toJson(QJsonDocument::Compact));
 }
@@ -202,8 +219,8 @@ QProgressDialog *NewNotebookController::createBootstrapModal(QWidget *p_parent) 
   return modal;
 }
 
-void NewNotebookController::bootstrapSync(const QString &p_notebookId, const QString &p_remoteUrl,
-                                          const QString &p_pat, QWidget *p_dialogParent) {
+void NewNotebookController::bootstrapSync(const QString &p_notebookId,
+                                          const SyncSettings &p_settings, QWidget *p_dialogParent) {
   auto *notebookService = m_services.get<NotebookCoreService>();
   auto *syncService = m_services.get<SyncService>();
   if (!notebookService || !syncService) {
@@ -233,12 +250,11 @@ void NewNotebookController::bootstrapSync(const QString &p_notebookId, const QSt
   QProgressDialog *modal = createBootstrapModal(p_dialogParent);
   modal->show();
 
-  // One-shot connection: enableFinished can fire for any notebook, so we filter
-  // by id inside the lambda and disconnect manually after handling our id.
+  // Use the atomic service path so persistence failure also rolls back enable.
   auto conn = std::make_shared<QMetaObject::Connection>();
   *conn =
-      connect(syncService, &SyncService::enableFinished, this,
-              [this, conn, notebookService, syncService, p_notebookId, p_remoteUrl, rootPath,
+      connect(syncService, &SyncService::bootstrapAndPersistFinished, this,
+              [this, conn, notebookService, syncService, p_notebookId, rootPath,
                modal](const QString &p_resultId, VxCoreError p_result, const QString &p_message) {
                 if (p_resultId != p_notebookId) {
                   return;
@@ -250,16 +266,6 @@ void NewNotebookController::bootstrapSync(const QString &p_notebookId, const QSt
                 modal->deleteLater();
 
                 if (p_result == VXCORE_OK) {
-                  // Persist the flat ADR-8 syncRemoteUrl key into the notebook config.
-                  QJsonObject cfg = notebookService->getNotebookConfig(p_notebookId);
-                  cfg[QLatin1String(vxcore::kJsonKeySyncRemoteUrl)] = p_remoteUrl;
-                  const QString cfgJson =
-                      QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
-                  notebookService->updateNotebookConfig(p_notebookId, cfgJson);
-
-                  // Idempotent initial sync push.
-                  syncService->triggerSyncNow(p_notebookId);
-
                   emit bootstrapSucceeded(p_notebookId);
                   return;
                 }
@@ -299,6 +305,6 @@ void NewNotebookController::bootstrapSync(const QString &p_notebookId, const QSt
                 emit bootstrapFailed(p_notebookId, p_message);
               });
 
-  // Fire enableSync LAST so the connect is in place before the signal could fire.
-  syncService->enableSyncForNotebook(p_notebookId, p_remoteUrl, p_pat);
+  // Validation/keychain/backend failure all use the same owned-notebook rollback.
+  syncService->bootstrapAndPersist(p_notebookId, p_settings);
 }

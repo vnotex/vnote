@@ -2,10 +2,13 @@
 #define OPENNOTEBOOKDIALOG2_H
 
 #include "scrolldialog.h"
+#include <core/services/syncsettings.h>
 
 #include <QString>
 
 class QButtonGroup;
+class QComboBox;
+class QLabel;
 class QLineEdit;
 class QProgressBar;
 class QPushButton;
@@ -23,10 +26,9 @@ struct CloneAndOpenResult;
 // Two modes:
 //   * Local Folder: pick a root folder on disk via LocationInputWithBrowseButton
 //     and open it through OpenNotebookController::openNotebook().
-//   * Remote URL  : provide an HTTPS or file:// URL, an optional PAT (empty
-//     means read-only), and a local root folder. The local root folder may
-//     either NOT exist yet (the controller creates it) OR be an existing
-//     empty directory. Clone wiring drives
+//   * Remote URL: Git or WebDAV, optional credentials, and a new local root
+//     folder that must not exist. Anonymous downloads remain editable, with
+//     sync inactive until credentials are supplied. Clone wiring drives
 //     OpenNotebookController::cloneAndOpen and exposes mid-clone Cancel via
 //     OpenNotebookController::cancelClone.
 //
@@ -71,9 +73,7 @@ public:
   Mode currentMode() const;
 
 signals:
-  // Emitted on a successful open. p_suppressSyncPrompt is true ONLY for a
-  // no-PAT remote clone that landed as writable S2 and must open silently
-  // (no PAT auto-prompt). False for all normal opens (local + with-PAT clone).
+  // Anonymous downloads open writable partial sync state without a prompt.
   void notebookOpened(const QString &p_notebookId, bool p_suppressSyncPrompt);
 
 protected:
@@ -106,6 +106,8 @@ private:
   void setupUI();
   void setupLocalPage(QWidget *p_page);
   void setupRemotePage(QWidget *p_page);
+  void refreshBackendFields();
+  SyncSettings enteredSettings() const;
 
   // Recompute the Open button enabled state from the active mode's validation.
   void updateOpenButtonState();
@@ -156,6 +158,12 @@ private:
 
   // Remote-mode page.
   QWidget *m_remotePage = nullptr;
+  QComboBox *m_backendCombo = nullptr;
+  QLabel *m_remoteUrlLabel = nullptr;
+  QLabel *m_secretLabel = nullptr;
+  QLabel *m_gitUsernameLabel = nullptr;
+  QLabel *m_webdavUsernameLabel = nullptr;
+  QLineEdit *m_webdavUsernameEdit = nullptr;
   QLineEdit *m_remoteUrlEdit = nullptr;
   QLineEdit *m_remotePatEdit = nullptr;
   QLineEdit *m_remoteUsernameEdit = nullptr;

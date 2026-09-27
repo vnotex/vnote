@@ -41,14 +41,21 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
 #include <QRegularExpression>
 #include <QSignalSpy>
 #include <QString>
+#include <QTemporaryDir>
+#include <QUrl>
+#include <QUuid>
 #include <QtTest>
+#include <curl/curl.h>
+#include <stdexcept>
 
 #include <controllers/opennotebookcontroller.h>
 #include <core/servicelocator.h>
@@ -56,7 +63,6 @@
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
 #include <core/services/syncstateclassifier.h>
-#include <temp_dir_fixture.h>
 
 #include "../helpers/keychain_guard.h"
 
@@ -67,6 +73,57 @@ using namespace vnotex;
 
 namespace tests {
 
+namespace {
+
+size_t collectTlsControl(char *p_bytes, size_t p_size, size_t p_count, void *p_output) {
+  auto &output = *static_cast<QByteArray *>(p_output);
+  const auto length = p_size * p_count;
+  if (length > size_t(4 * 1024 * 1024 - output.size())) {
+    return 0;
+  }
+  output.append(p_bytes, int(length));
+  return length;
+}
+
+QJsonObject tlsControl(const QJsonObject &p_request) {
+  const auto url = qgetenv("VXCORE_WEBDAV_TEST_CONTROL_URL");
+  const auto ca = qgetenv("VXCORE_WEBDAV_TEST_CA_FILE");
+  const auto authorization =
+      QByteArray("Authorization: Bearer ") + qgetenv("VXCORE_WEBDAV_TEST_CONTROL_TOKEN");
+  const auto body = QJsonDocument(p_request).toJson(QJsonDocument::Compact);
+  auto *handle = curl_easy_init();
+  if (!handle) {
+    throw std::runtime_error("Could not initialize TLS fixture control");
+  }
+  auto *headers = curl_slist_append(nullptr, "Content-Type: application/json");
+  headers = curl_slist_append(headers, authorization.constData());
+  QByteArray response;
+  curl_easy_setopt(handle, CURLOPT_URL, url.constData());
+  curl_easy_setopt(handle, CURLOPT_POSTFIELDS, body.constData());
+  curl_easy_setopt(handle, CURLOPT_POSTFIELDSIZE_LARGE, curl_off_t(body.size()));
+  curl_easy_setopt(handle, CURLOPT_HTTPHEADER, headers);
+  curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, 1L);
+  curl_easy_setopt(handle, CURLOPT_SSL_VERIFYHOST, 2L);
+  curl_easy_setopt(handle, CURLOPT_CAINFO, ca.constData());
+  curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, collectTlsControl);
+  curl_easy_setopt(handle, CURLOPT_WRITEDATA, &response);
+  curl_easy_setopt(handle, CURLOPT_TIMEOUT, 20L);
+  curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
+  const auto result = curl_easy_perform(handle);
+  long status = 0;
+  curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &status);
+  curl_slist_free_all(headers);
+  curl_easy_cleanup(handle);
+  const auto document = QJsonDocument::fromJson(response);
+  if (result != CURLE_OK || status != 200 || !document.isObject() ||
+      !document.object().value(QStringLiteral("ok")).toBool()) {
+    throw std::runtime_error("Verified TLS fixture control failed (details redacted)");
+  }
+  return document.object();
+}
+
+} // namespace
+
 class TestOpenNotebookControllerClone : public QObject {
   Q_OBJECT
 
@@ -76,8 +133,12 @@ private slots:
 
   void testCloneNoPatWritableS2HappyPath();
   void testValidationRejectsExistingDestDir();
+  void testValidationRejectsEmptyDestDir();
+  void testDestinationCreatedDuringCloneIsPreserved();
   void testNonNotebookRemoteCleansUp();
   void testCloneFailureRollback();
+  void testCancellationRemovesOnlyOwnedStaging();
+  void testWebDavAnonymousCloneUsesEmptyOwnedStaging();
 
 private:
   // Initialize a bare git repo at p_bareRepoPath and seed it with a VNote
@@ -89,11 +150,11 @@ private:
   // seedVNoteBareRepo and duplicated here verbatim to keep the controllers
   // test target self-contained (no transitive dep on the core test target).
   QString seedVNoteBareRepo(const QString &p_bareRepoPath, const QString &p_notebookGuid,
-                            const QString &p_notebookName, TempDirFixture &p_workTemp);
+                            const QString &p_notebookName, QTemporaryDir &p_workTemp);
 
   // Initialize a bare git repo seeded with a single non-VNote text file so
   // vxcore_sync_clone's vx_notebook/config.json validation rejects it.
-  QString seedNonVNoteBareRepo(const QString &p_bareRepoPath, TempDirFixture &p_workTemp);
+  QString seedNonVNoteBareRepo(const QString &p_bareRepoPath, QTemporaryDir &p_workTemp);
 
   // Convert a native Windows / POSIX path into a file:// URL acceptable to
   // libgit2 (always uses forward slashes + leading slash).
@@ -110,6 +171,12 @@ void TestOpenNotebookControllerClone::initTestCase() {
   // CRITICAL: enable test mode BEFORE vxcore_context_create so the test
   // operates in %TEMP%\vxcore_test* instead of real AppData.
   vxcore_set_test_mode(1);
+  QVERIFY2(QUrl(QString::fromUtf8(qgetenv("VXCORE_WEBDAV_TEST_URL"))).scheme() ==
+               QLatin1String("https"),
+           "Run this test through the TLS WebDAV fixture runner");
+  QVERIFY(QFileInfo::exists(QString::fromUtf8(qgetenv("VXCORE_WEBDAV_TEST_CA_FILE"))));
+  QVERIFY(!qgetenv("VXCORE_WEBDAV_TEST_CONTROL_TOKEN").isEmpty());
+  QCOMPARE(curl_global_init(CURL_GLOBAL_DEFAULT), CURLE_OK);
 
   VxCoreError err = vxcore_context_create("{}", &m_ctx);
   QCOMPARE(err, VXCORE_OK);
@@ -165,7 +232,7 @@ QString TestOpenNotebookControllerClone::toFileUrl(const QString &p_nativePath) 
 QString TestOpenNotebookControllerClone::seedVNoteBareRepo(const QString &p_bareRepoPath,
                                                            const QString &p_notebookGuid,
                                                            const QString &p_notebookName,
-                                                           TempDirFixture &p_workTemp) {
+                                                           QTemporaryDir &p_workTemp) {
   if (QProcess::execute(QStringLiteral("git"),
                         {QStringLiteral("init"), QStringLiteral("--bare"),
                          QStringLiteral("--initial-branch=main"), p_bareRepoPath}) != 0) {
@@ -226,7 +293,7 @@ QString TestOpenNotebookControllerClone::seedVNoteBareRepo(const QString &p_bare
 }
 
 QString TestOpenNotebookControllerClone::seedNonVNoteBareRepo(const QString &p_bareRepoPath,
-                                                              TempDirFixture &p_workTemp) {
+                                                              QTemporaryDir &p_workTemp) {
   if (QProcess::execute(QStringLiteral("git"),
                         {QStringLiteral("init"), QStringLiteral("--bare"),
                          QStringLiteral("--initial-branch=main"), p_bareRepoPath}) != 0) {
@@ -277,7 +344,7 @@ QString TestOpenNotebookControllerClone::seedNonVNoteBareRepo(const QString &p_b
 }
 
 void TestOpenNotebookControllerClone::testCloneNoPatWritableS2HappyPath() {
-  TempDirFixture localTemp;
+  QTemporaryDir localTemp(QDir::tempPath() + QStringLiteral("/oc-XXXXXX"));
   QVERIFY(localTemp.isValid());
 
   const QString bareDir = localTemp.filePath(QStringLiteral("remote_happy.git"));
@@ -289,8 +356,7 @@ void TestOpenNotebookControllerClone::testCloneNoPatWritableS2HappyPath() {
   }
 
   CloneAndOpenInput input;
-  input.remoteUrl = remoteUrl;
-  input.pat = QString(); // no PAT -> writable partial-sync (S2), opens silently
+  input.syncSettings.m_remoteUrl = remoteUrl;
   input.finalDestDir = localTemp.filePath(QStringLiteral("clone_dest_happy"));
   input.autoSyncEnabled = true;
 
@@ -312,7 +378,7 @@ void TestOpenNotebookControllerClone::testCloneNoPatWritableS2HappyPath() {
   QCOMPARE(result.notebookId, notebookGuid);
   QCOMPARE(result.notebookName, notebookName);
   QVERIFY2(!result.isReadOnly, "no-PAT clone must be WRITABLE (partial-sync S2), not read-only");
-  QVERIFY2(result.partialSyncNoPat, "no-PAT clone must set partialSyncNoPat (silent S2 open)");
+  QVERIFY2(result.partialSyncMissingCredentials, "anonymous clone must open silently in S2");
 
   // Final dir exists and contains the cloned VNote layout. The staging dir
   // must have been renamed away (no leftover .vnote-clone-pending-* sibling).
@@ -357,16 +423,10 @@ void TestOpenNotebookControllerClone::testCloneNoPatWritableS2HappyPath() {
 }
 
 void TestOpenNotebookControllerClone::testValidationRejectsExistingDestDir() {
-  TempDirFixture localTemp;
+  QTemporaryDir localTemp(QDir::tempPath() + QStringLiteral("/oc-XXXXXX"));
   QVERIFY(localTemp.isValid());
 
-  // Pre-create the user-chosen destination as a NON-EMPTY dir --
-  // validateCloneInput must reject. Per commit e6caf855 ("allow
-  // OpenNotebookController clone into non-existing or empty dest"), EMPTY
-  // existing dirs are now accepted (the worker rmdirs them before the
-  // staging->final rename); only NON-EMPTY existing dirs are rejected. The
-  // sentinel file below both verifies post-rollback safety AND makes the dir
-  // non-empty, which is what triggers the validation failure tested here.
+  // Existing directories are never owned by the download, even if empty.
   const QString existingDestDir = localTemp.filePath(QStringLiteral("non_empty_exists"));
   QVERIFY(QDir().mkpath(existingDestDir));
   // Add a sentinel file so we can confirm we don't touch it on rollback.
@@ -377,16 +437,13 @@ void TestOpenNotebookControllerClone::testValidationRejectsExistingDestDir() {
 
   CloneAndOpenInput input;
   // URL must pass scheme validation so we reach the dest-exists check.
-  input.remoteUrl = QStringLiteral("file:///nonexistent.git");
+  input.syncSettings.m_remoteUrl = QStringLiteral("file:///nonexistent.git");
   input.finalDestDir = existingDestDir;
 
   OpenNotebookController controller(m_services);
   // Pre-flight validate: synchronous answer, no worker dispatch.
   const auto validation = controller.validateCloneInput(input);
   QVERIFY2(!validation.valid, "non-empty existing dest dir must be rejected by validation");
-  QVERIFY2(validation.message.contains(QStringLiteral("must be empty")),
-           qPrintable(QStringLiteral("validation message must mention 'must be empty' (got: %1)")
-                          .arg(validation.message)));
 
   // cloneAndOpen with the same input must short-circuit through
   // cloneFinished without ever creating a staging dir.
@@ -410,8 +467,63 @@ void TestOpenNotebookControllerClone::testValidationRejectsExistingDestDir() {
   QVERIFY2(pending.isEmpty(), "validation failure must not create a staging dir");
 }
 
+void TestOpenNotebookControllerClone::testValidationRejectsEmptyDestDir() {
+  QTemporaryDir localTemp(QDir::tempPath() + QStringLiteral("/oc-XXXXXX"));
+  const auto existing = localTemp.filePath(QStringLiteral("empty"));
+  QVERIFY(QDir().mkdir(existing));
+  CloneAndOpenInput input;
+  input.syncSettings.m_remoteUrl = QStringLiteral("file:///not-contacted.git");
+  input.finalDestDir = existing;
+  OpenNotebookController controller(m_services);
+  QVERIFY(!controller.validateCloneInput(input).valid);
+  QSignalSpy finished(&controller, &OpenNotebookController::cloneFinished);
+  controller.cloneAndOpen(input);
+  QTRY_COMPARE(finished.count(), 1);
+  QVERIFY(!finished.first().at(0).value<CloneAndOpenResult>().success);
+  QVERIFY(QDir(existing).exists());
+  QVERIFY(QDir(existing).isEmpty());
+  QVERIFY(QDir(localTemp.path())
+              .entryList({QStringLiteral(".*.vnote-clone-pending-*")},
+                         QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot)
+              .isEmpty());
+}
+
+void TestOpenNotebookControllerClone::testDestinationCreatedDuringCloneIsPreserved() {
+  QTemporaryDir localTemp(QDir::tempPath() + QStringLiteral("/oc-XXXXXX"));
+  const auto url = seedVNoteBareRepo(localTemp.filePath(QStringLiteral("raced.git")),
+                                     QStringLiteral("clone-raced-destination"),
+                                     QStringLiteral("Raced"), localTemp);
+  QVERIFY(!url.isEmpty());
+  CloneAndOpenInput input;
+  input.syncSettings.m_remoteUrl = url;
+  input.finalDestDir = localTemp.filePath(QStringLiteral("destination"));
+  OpenNotebookController controller(m_services);
+  QSignalSpy finished(&controller, &OpenNotebookController::cloneFinished);
+  QVERIFY(controller.validateCloneInput(input).valid);
+  // Synchronous delivery of the progress callback precedes clone completion.
+  // Create a foreign destination after validation/staging, before final rename.
+  connect(&controller, &OpenNotebookController::cloneProgressUpdated, &controller,
+          [&input](int, int, const QString &) {
+            QDir().mkpath(input.finalDestDir);
+            QFile sentinel(QDir(input.finalDestDir).filePath(QStringLiteral("foreign.txt")));
+            if (sentinel.open(QIODevice::WriteOnly)) {
+              sentinel.write("foreign data");
+            }
+          });
+  controller.cloneAndOpen(input);
+  QTRY_COMPARE_WITH_TIMEOUT(finished.count(), 1, 30000);
+  QVERIFY(!finished.first().at(0).value<CloneAndOpenResult>().success);
+  QFile sentinel(QDir(input.finalDestDir).filePath(QStringLiteral("foreign.txt")));
+  QVERIFY(sentinel.open(QIODevice::ReadOnly));
+  QCOMPARE(sentinel.readAll(), QByteArray("foreign data"));
+  QVERIFY(QDir(localTemp.path())
+              .entryList({QStringLiteral(".*.vnote-clone-pending-*")},
+                         QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot)
+              .isEmpty());
+}
+
 void TestOpenNotebookControllerClone::testNonNotebookRemoteCleansUp() {
-  TempDirFixture localTemp;
+  QTemporaryDir localTemp(QDir::tempPath() + QStringLiteral("/oc-XXXXXX"));
   QVERIFY(localTemp.isValid());
 
   const QString bareDir = localTemp.filePath(QStringLiteral("remote_nonvnote.git"));
@@ -421,8 +533,7 @@ void TestOpenNotebookControllerClone::testNonNotebookRemoteCleansUp() {
   }
 
   CloneAndOpenInput input;
-  input.remoteUrl = remoteUrl;
-  input.pat = QString();
+  input.syncSettings.m_remoteUrl = remoteUrl;
   input.finalDestDir = localTemp.filePath(QStringLiteral("clone_dest_nonvnote"));
 
   OpenNotebookController controller(m_services);
@@ -454,7 +565,7 @@ void TestOpenNotebookControllerClone::testNonNotebookRemoteCleansUp() {
 }
 
 void TestOpenNotebookControllerClone::testCloneFailureRollback() {
-  TempDirFixture localTemp;
+  QTemporaryDir localTemp(QDir::tempPath() + QStringLiteral("/oc-XXXXXX"));
   QVERIFY(localTemp.isValid());
 
   // Point at a file:// URL whose bare repo does not exist. libgit2 will fail
@@ -463,8 +574,7 @@ void TestOpenNotebookControllerClone::testCloneFailureRollback() {
   // failure -- network down, auth rejected, repo missing, etc.
   const QString badBareDir = localTemp.filePath(QStringLiteral("does_not_exist.git"));
   CloneAndOpenInput input;
-  input.remoteUrl = toFileUrl(badBareDir);
-  input.pat = QString();
+  input.syncSettings.m_remoteUrl = toFileUrl(badBareDir);
   input.finalDestDir = localTemp.filePath(QStringLiteral("clone_dest_unreachable"));
 
   OpenNotebookController controller(m_services);
@@ -489,6 +599,128 @@ void TestOpenNotebookControllerClone::testCloneFailureRollback() {
           .entryInfoList({QStringLiteral(".*.vnote-clone-pending-*")},
                          QDir::Hidden | QDir::Dirs | QDir::NoDotAndDotDot);
   QVERIFY2(pending.isEmpty(), "staging dir must be cleaned up after a clone-step failure");
+}
+
+void TestOpenNotebookControllerClone::testCancellationRemovesOnlyOwnedStaging() {
+  QTemporaryDir localTemp(QDir::tempPath() + QStringLiteral("/oc-XXXXXX"));
+  const auto url = seedVNoteBareRepo(localTemp.filePath(QStringLiteral("cancel.git")),
+                                     QStringLiteral("clone-cancelled-notebook"),
+                                     QStringLiteral("Cancelled"), localTemp);
+  QVERIFY(!url.isEmpty());
+  CloneAndOpenInput input;
+  input.syncSettings.m_remoteUrl = url;
+  input.finalDestDir = localTemp.filePath(QStringLiteral("cancelled"));
+  OpenNotebookController controller(m_services);
+  QSignalSpy finished(&controller, &OpenNotebookController::cloneFinished);
+  connect(&controller, &OpenNotebookController::cloneProgressUpdated, &controller,
+          [&controller](int, int, const QString &) { controller.cancelClone(); });
+  controller.cloneAndOpen(input);
+  QTRY_COMPARE_WITH_TIMEOUT(finished.count(), 1, 30000);
+  const auto result = finished.first().at(0).value<CloneAndOpenResult>();
+  QVERIFY(!result.success);
+  QVERIFY(result.notebookId.isEmpty());
+  QVERIFY(!QFileInfo::exists(input.finalDestDir));
+  QVERIFY(QDir(localTemp.path())
+              .entryList({QStringLiteral(".*.vnote-clone-pending-*")},
+                         QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot)
+              .isEmpty());
+  for (const auto &notebook : m_services.get<NotebookCoreService>()->listNotebooks()) {
+    QVERIFY(notebook.toObject().value(QStringLiteral("id")).toString() !=
+            QStringLiteral("clone-cancelled-notebook"));
+  }
+}
+
+void TestOpenNotebookControllerClone::testWebDavAnonymousCloneUsesEmptyOwnedStaging() {
+  QTemporaryDir localTemp(QDir::tempPath() + QStringLiteral("/oc-XXXXXX"));
+  QVERIFY(localTemp.isValid());
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  const auto sourceId = notebooks->createNotebook(localTemp.filePath(QStringLiteral("source")),
+                                                  QStringLiteral("{\"name\":\"WebDAV remote\"}"),
+                                                  NotebookType::Bundled);
+  QVERIFY(!sourceId.isEmpty());
+  QVERIFY(!notebooks->createFile(sourceId, QString(), QStringLiteral("seed.md")).isEmpty());
+  const QDir source(localTemp.filePath(QStringLiteral("source")));
+  QFile folderMetadata(source.filePath(QStringLiteral("vx_notebook/contents/vx.json")));
+  QVERIFY(folderMetadata.open(QIODevice::ReadOnly));
+  const auto folderBytes = folderMetadata.readAll();
+  folderMetadata.close();
+  QFile seed(source.filePath(QStringLiteral("seed.md")));
+  QVERIFY(seed.open(QIODevice::ReadOnly));
+  const auto seedBytes = seed.readAll();
+  seed.close();
+  auto remoteConfig = notebooks->getNotebookConfig(sourceId);
+  notebooks->closeNotebook(sourceId);
+  const auto remoteId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+  remoteConfig[QStringLiteral("id")] = remoteId;
+  tlsControl({{QStringLiteral("action"), QStringLiteral("reset")}});
+  tlsControl({{QStringLiteral("action"), QStringLiteral("configure")},
+              {QStringLiteral("anonymous_read"), true}});
+  const auto put = [](const QString &path, const QByteArray &bytes) {
+    tlsControl({{QStringLiteral("action"), QStringLiteral("put")},
+                {QStringLiteral("path"), path},
+                {QStringLiteral("content_base64"), QString::fromLatin1(bytes.toBase64())},
+                {QStringLiteral("parents"), true}});
+  };
+  put(QStringLiteral("vx_notebook/config.json"),
+      QJsonDocument(remoteConfig).toJson(QJsonDocument::Compact));
+  put(QStringLiteral("vx_notebook/contents/vx.json"), folderBytes);
+  put(QStringLiteral("seed.md"), seedBytes);
+  const auto notePath = QString::fromUtf8("notes/caf\xc3\xa9 #%.md");
+  const QByteArray noteBytes("ordinary remote bytes\r\n");
+  put(notePath, noteBytes);
+  // This ordinary remote file must not be mistaken for an ownership marker.
+  put(QStringLiteral("staging-marker.json"), QByteArray("{\"user\":\"data\"}"));
+  const auto before = tlsControl({{QStringLiteral("action"), QStringLiteral("tree")}});
+
+  CloneAndOpenInput input;
+  input.syncSettings.m_backend = QStringLiteral("webdav");
+  input.syncSettings.m_remoteUrl = QString::fromUtf8(qgetenv("VXCORE_WEBDAV_TEST_URL"));
+  input.finalDestDir = localTemp.filePath(QStringLiteral("download"));
+  input.autoSyncEnabled = false;
+  OpenNotebookController controller(m_services);
+  QSignalSpy finished(&controller, &OpenNotebookController::cloneFinished);
+  controller.cloneAndOpen(input);
+  QTRY_COMPARE_WITH_TIMEOUT(finished.count(), 1, 30000);
+  const auto result = finished.first().at(0).value<CloneAndOpenResult>();
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+  QCOMPARE(result.notebookId, remoteId);
+  QVERIFY(result.partialSyncMissingCredentials);
+  QVERIFY(!result.isReadOnly);
+  QVERIFY(!m_services.get<SyncService>()->isSyncRegistered(remoteId));
+  QCOMPARE(m_services.get<SyncStateClassifier>()->classify(remoteId), SyncState::S2);
+  const auto config = notebooks->getNotebookConfig(remoteId);
+  QCOMPARE(config.value(QStringLiteral("syncBackend")).toString(), QStringLiteral("webdav"));
+  QCOMPARE(config.value(QStringLiteral("syncRemoteUrl")).toString(),
+           input.syncSettings.m_remoteUrl);
+  QVERIFY(!config.value(QStringLiteral("autoSyncEnabled")).toBool());
+  QFile downloaded(QDir(input.finalDestDir).filePath(notePath));
+  QVERIFY(downloaded.open(QIODevice::ReadOnly));
+  QCOMPARE(downloaded.readAll(), noteBytes);
+  downloaded.close();
+  QFile markerPayload(QDir(input.finalDestDir).filePath(QStringLiteral("staging-marker.json")));
+  QVERIFY(markerPayload.open(QIODevice::ReadOnly));
+  QCOMPARE(markerPayload.readAll(), QByteArray("{\"user\":\"data\"}"));
+  markerPayload.close();
+  QVERIFY(!notebooks->isNotebookReadOnly(remoteId));
+  QVERIFY(!notebooks->createFile(remoteId, QString(), QStringLiteral("local-only.md")).isEmpty());
+  QVERIFY(QDir(localTemp.path())
+              .entryList({QStringLiteral(".*.vnote-clone-pending-*")},
+                         QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot)
+              .isEmpty());
+  QDirIterator markers(input.finalDestDir, {QStringLiteral(".clone-owner-*")},
+                       QDir::Files | QDir::Hidden, QDirIterator::Subdirectories);
+  QVERIFY(!markers.hasNext());
+  QCOMPARE(tlsControl({{QStringLiteral("action"), QStringLiteral("tree")}}), before);
+  const auto requests = tlsControl({{QStringLiteral("action"), QStringLiteral("requests")}})
+                            .value(QStringLiteral("requests"))
+                            .toArray();
+  QVERIFY(!requests.isEmpty());
+  for (const auto &request : requests) {
+    const auto method = request.toObject().value(QStringLiteral("method")).toString();
+    QVERIFY(method == QLatin1String("GET") || method == QLatin1String("PROPFIND") ||
+            method == QLatin1String("OPTIONS"));
+  }
+  notebooks->closeNotebook(remoteId);
 }
 
 } // namespace tests

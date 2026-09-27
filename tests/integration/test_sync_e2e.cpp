@@ -7,7 +7,6 @@
 //   makes a unit-test instantiation infeasible (matching the T15 finding for
 //   NotebookExplorer2). Instead this test replicates MainWindow2's wiring
 //   block locally (controller + retry counter) and exercises:
-//     * e2eConflictResolution — signal → controller → dialog → resolve → spy
 //     * cancelLeavesSyncBlocked — signal → controller → dialog → cancel →
 //       conflictsAbandoned, no SyncService call
 //     * retryCapEnforced       — 4 successive conflictsDetected emissions;
@@ -116,7 +115,6 @@ class TestSyncE2E : public QObject {
 private slots:
   void initTestCase();
 
-  void e2eConflictResolution();
   void cancelLeavesSyncBlocked();
   void retryCapEnforced();
 };
@@ -125,66 +123,6 @@ void TestSyncE2E::initTestCase() {
   // CRITICAL: enable test mode BEFORE any vxcore_context_create (per
   // tests/AGENTS.md). Prevents tests from corrupting real user data.
   vxcore_set_test_mode(1);
-}
-
-void TestSyncE2E::e2eConflictResolution() {
-  // T22 post-convergence: trailing triggerSync now flows through
-  // SyncWorkQueueManager + SyncOps::triggerSync; syncFinished is only emitted
-  // via EventBridge from real vxcore events. A fake notebookId yields no such
-  // event, so the controller's one-shot wait times out. Pre-T22 SyncWorker
-  // emitted syncFinished unconditionally, which this fixture depended on.
-  QSKIP("T22: resolveConflicts trailing trigger now goes through EventBridge; "
-        "fake notebook IDs no longer produce syncFinished. Needs real "
-        "registered-notebook fixture (see issues.md).");
-  drainPendingEvents();
-
-  VxCoreContextHandle ctx = nullptr;
-  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
-  QVERIFY(ctx != nullptr);
-
-  ServiceLocator services;
-  NotebookCoreService notebookService(ctx);
-  services.registerService<NotebookCoreService>(&notebookService);
-  SyncCredentialsStore credStore(services);
-  services.registerService<SyncCredentialsStore>(&credStore);
-  SyncService syncService(services);
-  services.registerService<SyncService>(&syncService);
-
-  SyncConflictController controller(services);
-  WiringHarness harness(&syncService, &controller, /*parent=*/nullptr);
-
-  QSignalSpy resolveSpy(&controller, &SyncConflictController::conflictsResolved);
-  QSignalSpy abandonSpy(&controller, &SyncConflictController::conflictsAbandoned);
-
-  const QString nbId = QStringLiteral("nb_test_e2e_resolve");
-  const QStringList files{QStringLiteral("a.md")};
-
-  // Drive the chain: simulate worker reporting conflicts via the public
-  // signal (SyncWorker → SyncService re-emit happens in production; here we
-  // emit directly to exercise the GUI-side wiring).
-  emit syncService.conflictsDetected(nbId, files);
-
-  // Wait for the dialog to appear in topLevelWidgets.
-  for (int i = 0; i < 50 && findOpenDialog() == nullptr; ++i) {
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
-    QTest::qWait(20);
-  }
-  SyncConflictDialog2 *dlg = findOpenDialog();
-  QVERIFY2(dlg != nullptr, "SyncConflictDialog2 was not opened by the wiring");
-
-  QPushButton *okBtn = dlg->findChild<QPushButton *>(QStringLiteral("okButton"));
-  QVERIFY2(okBtn != nullptr, "okButton not found on dialog");
-
-  // Click OK → resolveConflicts → triggerSync → syncFinished → controller emits
-  // conflictsResolved.
-  QTest::mouseClick(okBtn, Qt::LeftButton);
-  QVERIFY2(resolveSpy.wait(5000), "Expected conflictsResolved within 5 seconds");
-  QCOMPARE(resolveSpy.count(), 1);
-  QCOMPARE(resolveSpy.first().at(0).toString(), nbId);
-  QCOMPARE(abandonSpy.count(), 0);
-
-  drainPendingEvents();
-  vxcore_context_destroy(ctx);
 }
 
 void TestSyncE2E::cancelLeavesSyncBlocked() {

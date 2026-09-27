@@ -186,7 +186,7 @@ void TestDuplicateOpenGuard::testOpenNotebookRejectsDuplicateOnCloneAndOpen() {
   // The cloneAndOpen path calls validateCloneInput, which checks for duplicates.
   // We simulate the final directory being the same as notebook2's root.
   CloneAndOpenInput cloneInput;
-  cloneInput.remoteUrl = QStringLiteral("file:///fake");
+  cloneInput.syncSettings.m_remoteUrl = QStringLiteral("file:///fake");
   cloneInput.finalDestDir = rootFolder2;
 
   CloneAndOpenValidationResult result = controller.validateCloneInput(cloneInput);

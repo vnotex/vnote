@@ -587,6 +587,19 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
   // Sync UI lifecycle wiring (T15). Refresh the Sync button + menu entry on
   // any sync state transition for ANY notebook (the slot filters by current).
   if (auto *syncSvc = m_services.get<SyncService>()) {
+    connect(syncSvc, &SyncService::workingTreeChanged, this,
+            [this](const QString &p_notebookId, const QStringList &p_changedPaths) {
+              if (p_notebookId != m_currentNotebookId || p_changedPaths.isEmpty() ||
+                  !m_nodeExplorer) {
+                return;
+              }
+              // Explicit apply refresh must bypass filesystem-event suppression.
+              // Metadata may alter ancestry, so refresh the tree and restore surviving state.
+              cacheCurrentExplorerState();
+              m_nodeExplorer->reloadNode({p_notebookId, QString()});
+              applyCachedExplorerState(p_notebookId);
+              syncWatchedPaths();
+            });
     connect(syncSvc, &SyncService::syncStarted, this, [this](const QString &p_notebookId) {
       // Maintain active-sync fs-event suppression: only suppress on
       // the currently displayed notebook (a sync on a different
@@ -845,7 +858,7 @@ void NotebookExplorer2::setupUI() {
   m_readOnlyBadgeLabel->setObjectName(QStringLiteral("readOnlyBadgeLabel"));
   m_readOnlyBadgeLabel->setContentsMargins(6, 2, 6, 2);
   m_readOnlyBadgeLabel->setTextFormat(Qt::RichText);
-  m_readOnlyBadgeLabel->setToolTip(tr("Read-only notebook (no PAT)"));
+  m_readOnlyBadgeLabel->setToolTip(tr("Read-only notebook"));
   m_readOnlyBadgeLabel->setStyleSheet(QStringLiteral("QLabel { font-style: italic; }"));
   m_readOnlyBadgeLabel->hide();
   m_mainLayout->addWidget(m_readOnlyBadgeLabel);
@@ -1418,7 +1431,7 @@ void NotebookExplorer2::setCurrentNotebookInternal(const QString &p_notebookId) 
 
   // T26: surface read-only state to the user inline. Hidden for writable
   // notebooks; rich-text label with embedded pen-off icon when read-only. The
-  // tooltip ("Read-only notebook (no PAT)") was set once in setupUI() and
+  // tooltip was set once in setupUI() and
   // does not need to be updated per-switch.
   bool readOnly = false;
   if (!m_currentNotebookId.isEmpty()) {
@@ -3039,9 +3052,10 @@ void NotebookExplorer2::updateSyncButtonState() {
 #ifdef VNOTE_TESTING
 void NotebookExplorer2::testTriggerNewNotebookCreated(const QString &p_notebookId,
                                                       const QString &p_syncMethod) {
-  if (p_syncMethod == QStringLiteral("git") && !p_notebookId.isEmpty()) {
+  if (isSupportedSyncBackend(p_syncMethod) && !p_notebookId.isEmpty()) {
     auto *dlg = new NotebookSyncInfoDialog2(m_services, p_notebookId, this);
     dlg->setAttribute(Qt::WA_DeleteOnClose);
+    dlg->setBackend(p_syncMethod);
     dlg->setBootstrapMode(true);
     dlg->open();
   }

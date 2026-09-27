@@ -60,9 +60,12 @@ void enableSync(NotebookCoreService *p_svc, QString p_notebookId, QString p_conf
 // in a `NotebookIoGate::ScopedLock(notebookId)` and releases it BEFORE
 // invoking the network phase. Callers MUST NOT acquire the gate themselves
 // before invoking this; the per-notebook mutex is non-recursive.
+// DeferredLocalApply requires p_applyPhase before preparation starts. It owns
+// GUI reservation, gated installation, refresh and retirement; this function
+// invokes it only after successful network work, with no gate held.
 void triggerSync(ISyncNotebookService *p_svc, QString p_notebookId,
                  VxCoreSyncCancellation *p_cancel, std::function<void(VxCoreError)> p_onFinished,
-                 NotebookIoGate *p_gate = nullptr);
+                 NotebookIoGate *p_gate = nullptr, std::function<VxCoreError()> p_applyPhase = {});
 
 // Resolve a single sync conflict for the given file via
 // vxcore_sync_resolve_conflict (routed through NotebookCoreService — matches

@@ -3,6 +3,7 @@
 
 #include <QDialog>
 #include <QHash>
+#include <QSet>
 #include <QString>
 #include <QStringList>
 #include <QVector>
@@ -37,7 +38,9 @@ class SyncConflictDialog2 : public QDialog {
 
 public:
   explicit SyncConflictDialog2(ServiceLocator &p_services, const QString &p_notebookId,
-                               const QStringList &p_conflictFiles, QWidget *p_parent = nullptr);
+                               const QStringList &p_conflictFiles,
+                               const QSet<QString> &p_keepBothUnsupportedPaths,
+                               QWidget *p_parent = nullptr);
 
   // Returns the per-file resolutions currently selected in the UI. Used by
   // tests to validate selection state and by the controller to read the final
@@ -65,6 +68,7 @@ private:
   QString m_notebookId;
 
   QStringList m_conflictFiles;
+  QSet<QString> m_keepBothUnsupportedPaths;
 
   // Per-row button groups, indexed in lock-step with m_conflictFiles. Each
   // group owns the three radio buttons (local/remote/both) for one row.

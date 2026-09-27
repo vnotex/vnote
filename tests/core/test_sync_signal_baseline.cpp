@@ -182,7 +182,11 @@ void TestSyncSignalBaseline::manualSyncSignalSequence() {
 
     // ---- Enable sync so a subsequent trigger has a registered notebook ------
     QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
-    syncService.enableSyncForNotebook(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_BASELINE"));
+    syncService.enableSyncForNotebook(
+        nbId,
+        SyncSettings{QStringLiteral("git"),
+                     remoteUrl,
+                     {QStringLiteral("git"), QString(), QStringLiteral("ghp_TEST_PAT_BASELINE")}});
     QVERIFY(enableSpy.wait(15000));
     QCOMPARE(enableSpy.count(), 1);
 

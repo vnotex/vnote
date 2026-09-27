@@ -11,6 +11,7 @@
 #include <QMutexLocker>
 #include <QSaveFile>
 #include <QScopedPointer>
+#include <QThread>
 #include <QThreadPool>
 
 #include <exception>
@@ -168,6 +169,44 @@ void CommentService::updateFlushParticipant(quint64 p_id, const NodeIdentifier *
   }
   it->m_generation = p_generation;
   m_stateChanged.wakeAll();
+}
+
+QStringList CommentService::syncProtectedPaths(const QString &p_notebookId) const {
+  Q_ASSERT(QThread::currentThread() == thread());
+  if (!m_notebookService || p_notebookId.isEmpty())
+    return {};
+  QHash<QString, NodeIdentifier> nodes;
+  {
+    QMutexLocker locker(&m_mutex);
+    for (const auto &participant : m_participants) {
+      if (participant.m_nodeId.notebookId == p_notebookId)
+        nodes.insert(jobKey(participant.m_nodeId), participant.m_nodeId);
+    }
+    for (auto it = m_jobStates.constBegin(); it != m_jobStates.constEnd(); ++it) {
+      if (it->m_nodeId.notebookId == p_notebookId &&
+          (m_running.value(it.key()) || !m_queues.value(it.key()).isEmpty() ||
+           it->m_latestScheduledSequence > it->m_latestCompletedSequence ||
+           !it->m_latestCompletedOk)) {
+        nodes.insert(it.key(), it->m_nodeId);
+      }
+    }
+  }
+  const auto root = m_notebookService->buildAbsolutePath(p_notebookId, QString());
+  if (root.isEmpty())
+    return {};
+  QStringList paths;
+  for (const auto &node : nodes) {
+    const auto location = resolveLocation(node);
+    if (!location.isValid())
+      continue;
+    const auto path = QDir::fromNativeSeparators(QDir(root).relativeFilePath(location.m_storePath));
+    if (!QDir::isAbsolutePath(path) && path != QLatin1String("..") &&
+        !path.startsWith(QLatin1String("../")) && path != QLatin1String(".")) {
+      paths.append(path);
+    }
+  }
+  paths.removeDuplicates();
+  return paths;
 }
 
 // ============ Location ============

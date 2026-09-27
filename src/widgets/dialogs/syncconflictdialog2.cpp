@@ -46,9 +46,11 @@ const char *const kKeepBoth = "keep_both";
 } // namespace
 
 SyncConflictDialog2::SyncConflictDialog2(ServiceLocator &p_services, const QString &p_notebookId,
-                                         const QStringList &p_conflictFiles, QWidget *p_parent)
+                                         const QStringList &p_conflictFiles,
+                                         const QSet<QString> &p_keepBothUnsupportedPaths,
+                                         QWidget *p_parent)
     : QDialog(p_parent), m_services(p_services), m_notebookId(p_notebookId),
-      m_conflictFiles(p_conflictFiles) {
+      m_conflictFiles(p_conflictFiles), m_keepBothUnsupportedPaths(p_keepBothUnsupportedPaths) {
   Q_UNUSED(m_services);
   Q_UNUSED(m_notebookId);
 
@@ -66,6 +68,13 @@ void SyncConflictDialog2::setupUI() {
                  this);
   headerLabel->setWordWrap(true);
   rootLayout->addWidget(headerLabel);
+  auto *hint = new QLabel(
+      tr("Each choice keeps a complete version, including deletion. Keep both preserves ordinary "
+         "files without merging. For notebook or folder indexes, choosing one version can leave "
+         "other retained content unindexed."),
+      this);
+  hint->setWordWrap(true);
+  rootLayout->addWidget(hint);
 
   // Scroll area hosting the per-file row stack. The container widget owns the
   // row layout; we let the scroll area resize the inner widget so long file
@@ -109,10 +118,10 @@ void SyncConflictDialog2::setupUI() {
 
     auto *bothRb = new QRadioButton(tr("Keep both"), row);
     bothRb->setObjectName(radioObjectName(i, "both"));
-    if (filePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
+    if (m_keepBothUnsupportedPaths.contains(filePath)) {
       bothRb->setEnabled(false);
-      bothRb->setToolTip(tr("Protected files require one complete version; "
-                            "the other version remains in Git history"));
+      bothRb->setToolTip(tr("Metadata and protected files require one complete version; "
+                            "Keep both is not supported"));
     }
 
     rowLayout->addWidget(localRb);

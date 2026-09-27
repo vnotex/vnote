@@ -49,11 +49,10 @@ SyncErrorPresenter::PresentedError SyncErrorPresenter::present(Context p_ctx, Vx
     return result;
   }
 
-  // Rule 3: Not found in CredentialRead context → re-enter token guidance.
+  // Rule 3: Not found in CredentialRead context → re-enter credentials.
   if (p_ctx == Context::CredentialRead && containsInsensitive(p_rawMessage, "not found")) {
     result.primary =
-        VX_TR("Stored credential not found. The token may have been deleted from the Credential "
-              "Manager. Please re-enter your authentication token in the Sync settings.");
+        VX_TR("Stored credentials were not found. Please re-enter your credentials in Sync Info.");
     return result;
   }
 
@@ -68,10 +67,8 @@ SyncErrorPresenter::PresentedError SyncErrorPresenter::present(Context p_ctx, Vx
 
   // Rule 5: Auth failed error code → auth failure guidance.
   if (p_code == VXCORE_ERR_SYNC_AUTH_FAILED) {
-    result.primary =
-        VX_TR("Authentication failed. Your credentials may be expired or incorrect. Please verify "
-              "your username and password, or re-enter your authentication token in the Sync "
-              "settings.");
+    result.primary = VX_TR("Authentication failed. Your credentials may be expired or incorrect. "
+                           "Please re-enter your credentials in Sync Info.");
     return result;
   }
 
@@ -79,7 +76,7 @@ SyncErrorPresenter::PresentedError SyncErrorPresenter::present(Context p_ctx, Vx
   if (p_code == VXCORE_ERR_SYNC_NETWORK) {
     result.primary =
         VX_TR("Network error while synchronizing. Please check your internet connection and verify "
-              "that your remote repository URL is accessible.");
+              "that your remote URL is accessible.");
     return result;
   }
 

@@ -127,6 +127,12 @@ public:
   void cancelSearchReplacement(int p_token);
   bool isContentReplacementActive(const QString &p_bufferId) const;
 
+  // GUI-thread reservation. Never saves/discards drafts; readiness drains only
+  // saves already queued before begin. Paths are physical notebook-relative paths.
+  bool beginSyncApply(const QString &p_notebookId, QStringList *p_protectedPaths);
+  bool isSyncApplyReady(const QString &p_notebookId) const;
+  void endSyncApply(const QString &p_notebookId, const QStringList &p_changedPaths);
+
   // ============ Per-Buffer Encoding (transient) ============
 
   // Encoding used to decode/encode this buffer's raw bytes. Defaults to
@@ -503,6 +509,10 @@ private:
   QHash<int, std::shared_ptr<SearchReplacement>> m_searchReplacements;
   QHash<QString, int> m_replacementReservations;
   QSet<QString> m_failedReplacements; // Unsaved recovery text must not be retried automatically.
+  QHash<QString, QHash<QString, QString>> m_syncApplyBuffers;
+  QSet<QString> m_syncApplyReservedBuffers;
+  QSet<QString> m_syncApplyFrozenBuffers;
+  QSet<QString> m_syncApplyEndingNotebooks;
   QVector<int> m_replacementHookIds;
   int m_nextReplacementToken = 0;
   bool m_replacementStopping = false;

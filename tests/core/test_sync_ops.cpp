@@ -175,7 +175,10 @@ void TestSyncOps::disableSyncInvokesCallbackOnSuccess() {
     QVERIFY(!nbId.isEmpty());
 
     QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
-    syncService.enableSyncForNotebook(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_SYNCOPS"));
+    syncService.enableSyncForNotebook(nbId, SyncSettings{QStringLiteral("git"),
+                                                         remoteUrl,
+                                                         {QStringLiteral("git"), QString(),
+                                                          QStringLiteral("ghp_TEST_PAT_SYNCOPS")}});
     QVERIFY(enableSpy.wait(15000));
     QCOMPARE(enableSpy.count(), 1);
 
@@ -363,7 +366,10 @@ void TestSyncOps::triggerSyncInvokesCallback() {
     QVERIFY(!nbId.isEmpty());
 
     QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
-    syncService.enableSyncForNotebook(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_TRIGGER"));
+    syncService.enableSyncForNotebook(nbId, SyncSettings{QStringLiteral("git"),
+                                                         remoteUrl,
+                                                         {QStringLiteral("git"), QString(),
+                                                          QStringLiteral("ghp_TEST_PAT_TRIGGER")}});
     QVERIFY(enableSpy.wait(15000));
     const VxCoreError enableResult = qvariant_cast<VxCoreError>(enableSpy.first().at(1));
     if (enableResult == VXCORE_ERR_UNKNOWN) {
@@ -429,7 +435,11 @@ void TestSyncOps::triggerSyncDoesNotFreeToken() {
     QVERIFY(!nbId.isEmpty());
 
     QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
-    syncService.enableSyncForNotebook(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_TRIGGER_TOK"));
+    syncService.enableSyncForNotebook(nbId,
+                                      SyncSettings{QStringLiteral("git"),
+                                                   remoteUrl,
+                                                   {QStringLiteral("git"), QString(),
+                                                    QStringLiteral("ghp_TEST_PAT_TRIGGER_TOK")}});
     QVERIFY(enableSpy.wait(15000));
     const VxCoreError enableResult = qvariant_cast<VxCoreError>(enableSpy.first().at(1));
     if (enableResult == VXCORE_ERR_UNKNOWN) {

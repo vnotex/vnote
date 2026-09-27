@@ -1,4 +1,4 @@
-// T17: SyncService lifecycle (NotebookBeforeClose hook + bounded shutdown)
+// SyncService lifecycle and NotebookBeforeClose hook
 // ----------------------------------------------------------------------------
 // Verifies:
 //   1. blockCloseWhileSyncing  — When SyncService reports a sync in progress
@@ -8,11 +8,7 @@
 //   2. cancelReasonMetadata    — A second hook handler subscribed at a higher
 //      priority value (runs LATER) observes the HookContext flagged with
 //      isCancelled() and the metadata key "syncCancelReason" populated.
-//   3. boundedShutdown         — When the worker thread is hung past the 30s
-//      timeout, SyncService::shutdown() returns within ~31s after invoking
-//      QThread::terminate(), and a qWarning containing "shutdown timed out"
-//      is emitted.
-//   4. visualBlockedDialog     — End-to-end visual proof of the in-band
+//   3. visualBlockedDialog     — End-to-end visual proof of the in-band
 //      channel: real notebook, real sync-in-progress flag, real
 //      ManageNotebooksDialog2 close flow, and the resulting information
 //      BANNER (not a modal) grabbed to PNG carrying the accurate sync reason.
@@ -31,7 +27,6 @@
 
 #include <QApplication>
 #include <QDir>
-#include <QElapsedTimer>
 #include <QEvent>
 #include <QMessageBox>
 #include <QPixmap>
@@ -65,22 +60,6 @@ using namespace vnotex;
 
 namespace tests {
 
-// Globals used by the QtMessageHandler hook installed in boundedShutdown().
-static QStringList g_capturedQtMessages;
-static QtMessageHandler g_previousMessageHandler = nullptr;
-
-static void captureQtMessage(QtMsgType, const QMessageLogContext &, const QString &p_msg) {
-  g_capturedQtMessages << p_msg;
-  if (g_previousMessageHandler) {
-    // Re-emit through previous handler so QtTest still surfaces messages.
-    // Avoid recursion by temporarily clearing the global hook.
-    auto previous = g_previousMessageHandler;
-    g_previousMessageHandler = nullptr;
-    previous(QtWarningMsg, QMessageLogContext(), p_msg);
-    g_previousMessageHandler = previous;
-  }
-}
-
 class TestSyncServiceLifecycle : public QObject {
   Q_OBJECT
 
@@ -89,7 +68,6 @@ private slots:
 
   void blockCloseWhileSyncing();
   void cancelReasonMetadata();
-  void boundedShutdown();
   void visualBlockedDialog();
 
   // sync-in-progress-ux T2: triggerSyncNow MUST NOT emit
@@ -137,10 +115,9 @@ void TestSyncServiceLifecycle::blockCloseWhileSyncing() {
   QCOMPARE(outCtx.hookName(), QString(HookNames::NotebookBeforeClose));
   QCOMPARE(outCtx.getMetadata(QStringLiteral("pendingCount")).toInt(), 0);
   const QString reason = outCtx.getMetadata(QStringLiteral("syncCancelReason")).toString();
-  QVERIFY2(
-      reason.contains(QStringLiteral("Sync"), Qt::CaseInsensitive) &&
-          reason.contains(QStringLiteral("in progress"), Qt::CaseInsensitive),
-      qPrintable(QStringLiteral("Unexpected reason: %1").arg(reason)));
+  QVERIFY2(reason.contains(QStringLiteral("Sync"), Qt::CaseInsensitive) &&
+               reason.contains(QStringLiteral("in progress"), Qt::CaseInsensitive),
+           qPrintable(QStringLiteral("Unexpected reason: %1").arg(reason)));
 
   // Reset the in-progress flag and verify the hook is no longer cancelled, and
   // that the out-param carries no stale reason from the previous call.
@@ -200,71 +177,6 @@ void TestSyncServiceLifecycle::cancelReasonMetadata() {
 
   syncService.testSetInProgress(QStringLiteral("nbB"), false);
   guard.cleanup();
-  vxcore_context_destroy(ctx);
-}
-
-void TestSyncServiceLifecycle::boundedShutdown() {
-  VxCoreContextHandle ctx = nullptr;
-  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
-
-  ServiceLocator services;
-  HookManager hookMgr;
-  services.registerService<HookManager>(&hookMgr);
-  NotebookCoreService notebookService(ctx);
-  services.registerService<NotebookCoreService>(&notebookService);
-  SyncCredentialsStore credStore(services);
-  services.registerService<SyncCredentialsStore>(&credStore);
-  tests::KeychainGuard guard(&credStore);
-  SyncService syncService(services);
-  services.registerService<SyncService>(&syncService);
-
-  // Arm the worker's hang seam so the next dispatched slot blocks for 35s.
-  // shutdown() then has to time-out (30s) and call terminate() to recover.
-  guard.cleanup();
-  QSKIP("T24: SyncWorker::testHangNextOperation seam removed; needs port to "
-        "SyncOps/SyncWorkQueueManager");
-  syncService.triggerSyncNow(QStringLiteral("nbHang"));
-
-  // Give the queued triggerSync slot a moment to start running so the worker
-  // thread is actually inside QThread::msleep when shutdown begins.
-  QTest::qWait(300);
-
-  // Install a Qt message handler so we can capture the qWarning emitted by
-  // shutdown() when the wait times out. Restore on exit.
-  g_capturedQtMessages.clear();
-  g_previousMessageHandler = qInstallMessageHandler(captureQtMessage);
-
-  QElapsedTimer elapsed;
-  elapsed.start();
-  syncService.shutdown();
-  const qint64 shutdownMs = elapsed.elapsed();
-
-  qInstallMessageHandler(g_previousMessageHandler);
-  g_previousMessageHandler = nullptr;
-
-  qDebug() << "shutdown() completed in" << shutdownMs << "ms";
-  QVERIFY2(shutdownMs < 31000,
-           qPrintable(QStringLiteral("shutdown took %1 ms (expected < 31000)").arg(shutdownMs)));
-
-  bool sawTimeoutWarning = false;
-  for (const QString &m : g_capturedQtMessages) {
-    if (m.contains(QStringLiteral("shutdown timed out"), Qt::CaseInsensitive)) {
-      sawTimeoutWarning = true;
-      break;
-    }
-  }
-  QVERIFY2(sawTimeoutWarning,
-           qPrintable(QStringLiteral("expected 'shutdown timed out' in qWarning output; got: %1")
-                          .arg(g_capturedQtMessages.join(QStringLiteral("\n")))));
-
-  // Idempotent: a second shutdown() must be safe and instant.
-  QElapsedTimer elapsed2;
-  elapsed2.start();
-  syncService.shutdown();
-  const qint64 secondMs = elapsed2.elapsed();
-  QVERIFY2(secondMs < 100,
-           qPrintable(QStringLiteral("second shutdown took %1 ms (expected < 100)").arg(secondMs)));
-
   vxcore_context_destroy(ctx);
 }
 
@@ -359,9 +271,10 @@ void TestSyncServiceLifecycle::visualBlockedDialog() {
                bannerText.contains(QStringLiteral("in progress"), Qt::CaseInsensitive),
            qPrintable(QStringLiteral("Unexpected banner text: %1").arg(bannerText)));
   // The old hardcoded, misleading string must be gone.
-  QVERIFY2(!bannerText.contains(QStringLiteral("unsaved changes"), Qt::CaseInsensitive),
-           qPrintable(QStringLiteral("banner still shows the misleading generic string: %1")
-                          .arg(bannerText)));
+  QVERIFY2(
+      !bannerText.contains(QStringLiteral("unsaved changes"), Qt::CaseInsensitive),
+      qPrintable(
+          QStringLiteral("banner still shows the misleading generic string: %1").arg(bannerText)));
 
   // Visual-proof artifact: capture the banner-bearing dialog.
   bool grabbed = false;

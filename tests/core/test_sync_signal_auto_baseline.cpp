@@ -205,16 +205,18 @@ void TestSyncSignalAutoBaseline::autoSyncEmitsViaEventBridgeOnly() {
       // meaningful; the EventBridge spies alone characterize the auto path.
 
       // ---- Enable sync ----------------------------------------------------------
-      // Note: NotebookConfig::auto_sync_enabled default is true. SyncService::
-      // enableSyncForNotebook always builds {"backend":"git","remoteUrl":...} without
-      // an explicit autoSyncEnabled key, so the notebook keeps the default-true gate.
+      // SyncService preserves the notebook's existing autoSyncEnabled setting.
+      // This newly created notebook has its default-true gate.
       // vxcore's MaybeEnqueueSync only suppresses the sync.should_run emission when
       // auto_sync_enabled is false; with the gate open the first file.saved passes
       // through and the auto path fires. Cadence is owned Qt-side now, so there is no
       // per-notebook interval to set here.
       QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
-      syncService.enableSyncForNotebook(nbId, remoteUrl,
-                                        QStringLiteral("ghp_TEST_PAT_T2_BASELINE"));
+      syncService.enableSyncForNotebook(nbId,
+                                        SyncSettings{QStringLiteral("git"),
+                                                     remoteUrl,
+                                                     {QStringLiteral("git"), QString(),
+                                                      QStringLiteral("ghp_TEST_PAT_T2_BASELINE")}});
       QVERIFY2(enableSpy.wait(15000), "enableFinished did not arrive within 15s");
       // enableFinished payload: (notebookId, VxCoreError, message).
       // CI Linux runners have no D-Bus session / org.freedesktop.secrets

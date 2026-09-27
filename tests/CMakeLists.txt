@@ -34,7 +34,7 @@ find_package(Qt6 OPTIONAL_COMPONENTS Qml)
 
 # Helper function to create a test executable
 function(add_qt_test NAME)
-  cmake_parse_arguments(ARG "GUILESS" "" "SOURCES;LINKS" ${ARGN})
+  cmake_parse_arguments(ARG "GUILESS" "" "SOURCES;LINKS;RUNNER;ARGS" ${ARGN})
 
   add_executable(${NAME} ${ARG_SOURCES})
 
@@ -63,7 +63,11 @@ function(add_qt_test NAME)
   target_compile_features(${NAME} PRIVATE cxx_std_14)
 
   # Add the test to CTest
-  add_test(NAME ${NAME} COMMAND ${NAME})
+  if(ARG_RUNNER)
+    add_test(NAME ${NAME} COMMAND ${ARG_RUNNER} $<TARGET_FILE:${NAME}> ${ARG_ARGS})
+  else()
+    add_test(NAME ${NAME} COMMAND ${NAME} ${ARG_ARGS})
+  endif()
 
   # Set test properties
   set_tests_properties(${NAME} PROPERTIES

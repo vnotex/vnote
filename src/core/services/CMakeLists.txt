@@ -39,6 +39,7 @@ set(SERVICES_SOURCES
   synccredentialsstore.cpp
   syncops.cpp
   syncservice.cpp
+  syncsettings.cpp
   syncstateclassifier.cpp
   syncerrorpresenter.cpp
   syncworkqueuemanager.cpp
@@ -104,6 +105,7 @@ set(SERVICES_HEADERS
   synccredentialsstore.h
   syncops.h
   syncservice.h
+  syncsettings.h
   syncstateclassifier.h
   syncerrorpresenter.h
   syncworkqueuemanager.h

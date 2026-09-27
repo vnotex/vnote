@@ -186,7 +186,11 @@ void TestBootstrap::happyPath() {
   // SyncManager shutdown races with the worker and crashes inside libgit2.
   QSignalSpy syncFinishedSpy(&syncService, &SyncService::syncFinished);
 
-  controller.bootstrapSync(nbId, remoteUrl, QStringLiteral("ghp_TEST_PAT_T14"), nullptr);
+  controller.bootstrapSync(nbId,
+                           {QStringLiteral("git"),
+                            remoteUrl,
+                            {QStringLiteral("git"), {}, QStringLiteral("ghp_TEST_PAT_T14")}},
+                           nullptr);
 
   // Wait for either signal. Timeout generous to allow keychain + clone + push.
   bool got = succSpy.wait(30000) || !failSpy.isEmpty();
@@ -257,7 +261,11 @@ void TestBootstrap::authFailureCleanup() {
   QSignalSpy succSpy(&controller, &NewNotebookController::bootstrapSucceeded);
   QSignalSpy failSpy(&controller, &NewNotebookController::bootstrapFailed);
 
-  controller.bootstrapSync(nbId, badUrl, QStringLiteral("ghp_TEST_PAT_T14_FAIL"), nullptr);
+  controller.bootstrapSync(nbId,
+                           {QStringLiteral("git"),
+                            badUrl,
+                            {QStringLiteral("git"), {}, QStringLiteral("ghp_TEST_PAT_T14_FAIL")}},
+                           nullptr);
 
   // Wait for failure.
   QVERIFY(failSpy.wait(30000) || !succSpy.isEmpty());

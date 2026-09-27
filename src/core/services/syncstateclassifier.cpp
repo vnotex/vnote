@@ -11,57 +11,20 @@
 
 namespace vnotex {
 
-namespace {
-constexpr const char *kBackendGit = "git";
-} // namespace
-
 SyncStateClassifier::SyncStateClassifier(ServiceLocator &p_services) : m_services(p_services) {}
 
-SyncState SyncStateClassifier::classifyFromPredicates(bool p_syncEnabled, bool p_hasPat,
+SyncState SyncStateClassifier::classifyFromPredicates(bool p_syncEnabled, bool p_hasCredentials,
                                                       bool p_registered, const QString &p_backend,
                                                       const QString &p_remoteUrl) {
-  // S0 — cleanly disabled. No PAT, not registered, no flat sync fields.
-  if (!p_syncEnabled && !p_hasPat && !p_registered) {
-    return SyncState::S0;
-  }
-
-  // S6 — orphan PAT: disabled on disk but keychain still has a credential.
-  if (!p_syncEnabled && p_hasPat) {
-    return SyncState::S6;
-  }
-
-  // From here on, p_syncEnabled is true (the cleanly-disabled / orphan branches
-  // above are the only non-enabled outcomes).
-
-  // S7 / S5 — fully configured. S7 ("active sync") additionally requires a
-  // runtime in-flight probe which is intentionally NOT performed here; the
-  // classifier reports S5 in that case and a higher-level consumer can
-  // overlay the "in-progress" badge using SyncService::isSyncInProgress().
-  // See Task 8.6 doc work for the badge composition policy.
-  if (p_registered && p_backend == QLatin1String(kBackendGit) && !p_remoteUrl.isEmpty() &&
-      p_hasPat) {
-    return SyncState::S5;
-  }
-
-  // S3 — enabled but backend is empty (config never specified a backend).
-  if (p_backend.isEmpty()) {
+  if (!p_syncEnabled)
+    return p_hasCredentials ? SyncState::S6 : SyncState::S0;
+  if (!isSupportedSyncBackend(p_backend))
     return SyncState::S3;
-  }
-
-  // From here on, backend == "git" and we are not yet registered.
-
-  // S1 — enabled, backend=git, but URL is empty.
-  if (p_remoteUrl.isEmpty()) {
+  if (p_remoteUrl.isEmpty())
     return SyncState::S1;
-  }
-
-  // S2 — enabled, backend=git, URL set, NO PAT.
-  if (!p_hasPat) {
+  if (!p_hasCredentials)
     return SyncState::S2;
-  }
-
-  // S4 — enabled, backend=git, URL set, PAT present, NOT registered.
-  return SyncState::S4;
+  return p_registered ? SyncState::S5 : SyncState::S4;
 }
 
 SyncState SyncStateClassifier::classify(const QString &p_notebookId) const {
@@ -80,10 +43,11 @@ SyncState SyncStateClassifier::classify(const QString &p_notebookId) const {
   const QString backend = cfg.value(QLatin1String(vxcore::kJsonKeySyncBackend)).toString();
   const QString remoteUrl = cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
 
-  const bool hasPat = credentials->hasCredentials(p_notebookId);
+  const bool hasCredentials = credentials->hasCredentials(p_notebookId);
   const bool registered = syncSvc->isSyncRegistered(p_notebookId);
-
-  return classifyFromPredicates(syncEnabled, hasPat, registered, backend, remoteUrl);
+  const auto state =
+      classifyFromPredicates(syncEnabled, hasCredentials, registered, backend, remoteUrl);
+  return state == SyncState::S5 && syncSvc->isSyncInProgress(p_notebookId) ? SyncState::S7 : state;
 }
 
 QString SyncStateClassifier::tooltipFor(SyncState p_state) const {
@@ -96,15 +60,15 @@ QString SyncStateClassifier::tooltipFor(SyncState p_state) const {
   case SyncState::S2:
     return VX_TR("Sync is partially configured: missing credentials");
   case SyncState::S3:
-    return VX_TR("Sync is partially configured: no backend selected");
+    return VX_TR("Sync is partially configured: backend is missing or unsupported");
   case SyncState::S4:
     return VX_TR("Sync is configured on disk but not yet active. Reopen the "
                  "notebook to activate");
   case SyncState::S5:
     return VX_TR("Sync is ready");
   case SyncState::S6:
-    return VX_TR("Orphan credentials detected: sync is disabled but a stored "
-                 "token remains. Re-enable sync or wipe the token");
+    return VX_TR("Orphan credentials detected: sync is disabled but stored "
+                 "credentials remain. Re-enable sync or remove the credentials");
   case SyncState::S7:
     return VX_TR("Sync is in progress");
   }

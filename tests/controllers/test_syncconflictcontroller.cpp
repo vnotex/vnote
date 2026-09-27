@@ -17,6 +17,7 @@
 #include <QApplication>
 #include <QHash>
 #include <QPushButton>
+#include <QRadioButton>
 #include <QSignalSpy>
 #include <QStringList>
 #include <QTest>
@@ -43,8 +44,9 @@ class TestSyncConflictController : public QObject {
 private slots:
   void initTestCase();
 
-  void okPathRoutesResolutions();
+  void failedResolutionKeepsIncidentActive();
   void cancelPath();
+  void keepBothUsesBackendData();
 
 private:
   // Walk top-level widgets and locate the (single) SyncConflictDialog2 spawned
@@ -89,79 +91,69 @@ void drainPendingEvents() {
 
 } // namespace
 
-void TestSyncConflictController::okPathRoutesResolutions() {
-  // T22 post-convergence: SyncService::resolveConflicts now routes the trailing
-  // triggerSync through SyncWorkQueueManager + SyncOps::triggerSync, whose
-  // syncFinished signal is emitted by EventBridge observing real vxcore events.
-  // A fake/unregistered notebookId never produces those events, so the one-shot
-  // syncFinished hook in SyncConflictController never fires (5s spy timeout).
-  // The pre-T22 SyncWorker dispatch emitted syncFinished unconditionally from
-  // the worker slot regardless of vxcore error, which is what this fixture
-  // relied on. Skipping until the fixture is rebuilt against a real registered
-  // notebook (bare-repo + enableSync, mirroring test_sync_ops).
-  QSKIP("T22: resolveConflicts now propagates via EventBridge; fixture needs a "
-        "real registered notebook to produce syncFinished. See "
-        ".sisyphus/notepads/sync-queue-convergence/issues.md.");
+void TestSyncConflictController::failedResolutionKeepsIncidentActive() {
   VxCoreContextHandle ctx = nullptr;
   QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
-  QVERIFY(ctx != nullptr);
-
-  ServiceLocator services;
-  NotebookCoreService notebookService(ctx);
-  services.registerService<NotebookCoreService>(&notebookService);
-  SyncCredentialsStore credStore(services);
-  services.registerService<SyncCredentialsStore>(&credStore);
-  SyncService syncService(services);
-  services.registerService<SyncService>(&syncService);
-
-  SyncConflictController controller(services);
-
-  QSignalSpy resolveSpy(&controller, &SyncConflictController::conflictsResolved);
-  QSignalSpy abandonSpy(&controller, &SyncConflictController::conflictsAbandoned);
-
-  const QString nbId = QStringLiteral("fake-notebook-id-ok");
-  const QStringList conflicts{QStringLiteral("x.md"), QStringLiteral("y.md")};
-
-  controller.presentConflicts(nbId, conflicts, /*parent=*/nullptr);
-
-  // Allow Qt to actually show the dialog so it appears in topLevelWidgets.
-  for (int i = 0; i < 50 && findOpenDialog() == nullptr; ++i) {
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
-    QTest::qWait(20);
+  {
+    ServiceLocator services;
+    NotebookCoreService notebookService(ctx);
+    services.registerService<NotebookCoreService>(&notebookService);
+    SyncCredentialsStore credStore(services);
+    services.registerService<SyncCredentialsStore>(&credStore);
+    SyncService syncService(services);
+    services.registerService<SyncService>(&syncService);
+    SyncConflictController controller(services);
+    QSignalSpy resolved(&controller, &SyncConflictController::conflictsResolved);
+    QSignalSpy finished(&syncService, &SyncService::syncFinished);
+    controller.presentConflicts(QStringLiteral("no-longer-registered"), {QStringLiteral("note.md")},
+                                nullptr);
+    QTRY_VERIFY(findOpenDialog());
+    auto *ok = findOpenDialog()->findChild<QPushButton *>(QStringLiteral("okButton"));
+    QVERIFY(ok);
+    ok->click();
+    QTRY_COMPARE(finished.count(), 1);
+    QVERIFY(qvariant_cast<VxCoreError>(finished.first().at(1)) != VXCORE_OK);
+    QCOMPARE(resolved.count(), 0);
+    syncService.shutdown();
+    drainPendingEvents();
   }
-  SyncConflictDialog2 *dlg = findOpenDialog();
-  QVERIFY2(dlg != nullptr, "SyncConflictDialog2 was not opened by presentConflicts()");
-
-  // Sanity: expected children exist with the documented objectNames.
-  QPushButton *okBtn = dlg->findChild<QPushButton *>(QStringLiteral("okButton"));
-  QVERIFY2(okBtn != nullptr, "okButton not found on dialog");
-  QPushButton *cancelBtn = dlg->findChild<QPushButton *>(QStringLiteral("cancelButton"));
-  QVERIFY2(cancelBtn != nullptr, "cancelButton not found on dialog");
-
-  // Click OK. This drives the dialog's accepted -> onAccepted() chain which
-  // emits resolutionsChosen, then calls accept(). The controller then forwards
-  // the resolutions to SyncService::resolveConflicts, which queues
-  // resolveConflict per file followed by triggerSync. triggerSync emits
-  // syncStarted/syncFailed/syncFinished even on a non-existent notebookId
-  // (vxcore reports an error code, but syncFinished fires unconditionally per
-  // syncworker.cpp). The trailing syncFinished is what unblocks the
-  // controller's one-shot lambda.
-  QTest::mouseClick(okBtn, Qt::LeftButton);
-
-  // Pump the event loop until conflictsResolved fires (5s budget per spec).
-  QVERIFY2(resolveSpy.wait(5000), "Expected conflictsResolved within 5 seconds");
-  QCOMPARE(resolveSpy.count(), 1);
-  QCOMPARE(resolveSpy.first().at(0).toString(), nbId);
-  // Cancel must not have fired on the OK path.
-  QCOMPARE(abandonSpy.count(), 0);
-
-  // Drain any tail events so the dialog is fully torn down before we destroy
-  // vxcore (avoids QObject thread-affinity warnings during teardown) AND so
-  // the deferred-delete event from WA_DeleteOnClose runs BEFORE the next test
-  // starts walking topLevelWidgets().
-  drainPendingEvents();
-
   vxcore_context_destroy(ctx);
+}
+
+void TestSyncConflictController::keepBothUsesBackendData() {
+  ServiceLocator services;
+  const QStringList paths{QStringLiteral("vx_notebook/config.json"),
+                          QStringLiteral("encrypted.vne"), QStringLiteral("special.txt"),
+                          QStringLiteral("photo.bin"), QStringLiteral("ordinary.vne")};
+  SyncConflictDialog2 dialog(services, QStringLiteral("notebook"), paths,
+                             {paths.at(0), paths.at(1), paths.at(2)}, nullptr);
+  QSignalSpy chosen(&dialog, &SyncConflictDialog2::resolutionsChosen);
+  for (int i = 0; i < paths.size(); ++i) {
+    auto *both = dialog.findChild<QRadioButton *>(QStringLiteral("radio_%1_both").arg(i));
+    auto *remote = dialog.findChild<QRadioButton *>(QStringLiteral("radio_%1_remote").arg(i));
+    QVERIFY(both);
+    QVERIFY(remote);
+    QCOMPARE(both->isEnabled(), i >= 3);
+    if (i < 3) {
+      both->click();
+      QCOMPARE(dialog.resolutions().value(paths.at(i)), QStringLiteral("keep_local"));
+      remote->click();
+      QCOMPARE(dialog.resolutions().value(paths.at(i)), QStringLiteral("keep_remote"));
+    } else {
+      both->click();
+      QCOMPARE(dialog.resolutions().value(paths.at(i)), QStringLiteral("keep_both"));
+    }
+  }
+  auto *ok = dialog.findChild<QPushButton *>(QStringLiteral("okButton"));
+  QVERIFY(ok);
+  ok->click();
+  QCOMPARE(chosen.count(), 1);
+  SyncConflictDialog2 cancelled(services, QStringLiteral("notebook"), paths, {}, nullptr);
+  QSignalSpy cancelledChoices(&cancelled, &SyncConflictDialog2::resolutionsChosen);
+  auto *cancel = cancelled.findChild<QPushButton *>(QStringLiteral("cancelButton"));
+  QVERIFY(cancel);
+  cancel->click();
+  QCOMPARE(cancelledChoices.count(), 0);
 }
 
 void TestSyncConflictController::cancelPath() {

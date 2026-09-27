@@ -1,4 +1,5 @@
 find_package(Qt6 REQUIRED COMPONENTS WebEngineWidgets)
+find_package(Python3 REQUIRED COMPONENTS Interpreter)
 
 add_qt_test(test_duplicate_open_guard
   SOURCES
@@ -374,11 +375,11 @@ add_qt_test(test_open_notebook_controller_clone
     Qt6::Widgets
     core_services
     vxcore
+    vxcore_webdav_curl
+  RUNNER ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/libs/vxcore/tests/run_webdav_test.py --
+  ARGS -nocrashhandler
 )
-# QTEST_MAIN crash-handler deadlocks with ctest's stdout pipe driver on
-# Windows (per T14 / test_bootstrap learnings). Use -nocrashhandler.
-set_property(TEST test_open_notebook_controller_clone PROPERTY
-  COMMAND $<TARGET_FILE:test_open_notebook_controller_clone> -nocrashhandler)
+# The runner supplies verified TLS and isolates every client configuration.
 set_tests_properties(test_open_notebook_controller_clone PROPERTIES
   TIMEOUT 180
 )

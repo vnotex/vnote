@@ -1,16 +1,17 @@
 #include "opennotebookdialog2.h"
 
 #include <QButtonGroup>
+#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFileInfo>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QLineEdit>
 #include <QProgressBar>
 #include <QPushButton>
 #include <QRadioButton>
-#include <QRegularExpression>
 #include <QStackedWidget>
 #include <QVBoxLayout>
 
@@ -33,19 +34,13 @@ const char *const kLocalRootInputName = "localRootInput";
 const char *const kRemoteUrlEditName = "remoteUrlEdit";
 const char *const kRemotePatEditName = "remotePatEdit";
 const char *const kGitUsernameEditName = "gitUsernameEdit";
+const char *const kBackendComboName = "syncBackendCombo";
+const char *const kWebdavUsernameEditName = "webdavUsernameEdit";
 const char *const kRemoteDestInputName = "remoteDestInput";
 const char *const kProgressBarName = "openNotebookProgressBar";
 const char *const kOpenButtonName = "openButton";
 const char *const kCancelButtonName = "cancelButton";
 const char *const kOpenV3ButtonName = "openV3NotebookButton";
-
-// Single source of truth for the URL-scheme guard. T22's
-// OpenNotebookController::validateCloneInput() MUST mirror this regex so the
-// dialog and controller agree on what is acceptable. Accepts:
-//   * https://...
-//   * file:///...   (note: three slashes; covers Windows/POSIX file URLs)
-// Rejects everything else (ssh, http, git, scp-like, bare paths, ...).
-const char *const kRemoteUrlSchemeRegex = "^(https://|file:///)\\S+$";
 
 } // namespace
 
@@ -89,7 +84,7 @@ void OpenNotebookDialog2::setupUI() {
   m_remoteModeRadio = new QRadioButton(tr("Remote URL"), mainWidget);
   m_remoteModeRadio->setObjectName(QLatin1String(kRemoteModeRadioName));
   m_remoteModeRadio->setToolTip(
-      tr("Clone a VNote notebook from a remote git URL or a file:// path"));
+      tr("Download a VNote notebook from a Git remote or a WebDAV collection"));
 
   m_modeGroup = new QButtonGroup(this);
   m_modeGroup->setExclusive(true);
@@ -189,20 +184,36 @@ void OpenNotebookDialog2::setupLocalPage(QWidget *p_page) {
 void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   auto *layout = new QFormLayout(p_page);
 
+  m_backendCombo = WidgetsFactory::createComboBox(p_page);
+  m_backendCombo->setObjectName(QLatin1String(kBackendComboName));
+  m_backendCombo->addItem(tr("Git"), QStringLiteral("git"));
+  m_backendCombo->addItem(tr("WebDAV"), QStringLiteral("webdav"));
+  layout->addRow(tr("Sync method"), m_backendCombo);
+
   // Remote URL field.
   m_remoteUrlEdit = new QLineEdit(p_page);
   m_remoteUrlEdit->setObjectName(QLatin1String(kRemoteUrlEditName));
   m_remoteUrlEdit->setPlaceholderText(
       tr("https://github.com/user/repo.git  or  file:///path/to/repo.git"));
   m_remoteUrlEdit->setToolTip(tr("Remote git URL. Only HTTPS and file:// schemes are supported"));
-  layout->addRow(tr("Remote URL"), m_remoteUrlEdit);
+  m_remoteUrlLabel = new QLabel(tr("Remote URL"), p_page);
+  layout->addRow(m_remoteUrlLabel, m_remoteUrlEdit);
 
   m_remoteUsernameEdit = WidgetsFactory::createUrlUserNameEdit(m_remoteUrlEdit, p_page);
   m_remoteUsernameEdit->setObjectName(QLatin1String(kGitUsernameEditName));
   m_remoteUsernameEdit->setPlaceholderText(tr("Required by Gitee; optional for GitHub"));
   m_remoteUsernameEdit->setToolTip(
       tr("Login of the Personal Access Token owner, not necessarily the repository owner"));
-  layout->addRow(tr("Git username"), m_remoteUsernameEdit);
+  m_gitUsernameLabel = new QLabel(tr("Git username"), p_page);
+  layout->addRow(m_gitUsernameLabel, m_remoteUsernameEdit);
+
+  m_webdavUsernameEdit = WidgetsFactory::createLineEdit(p_page);
+  m_webdavUsernameEdit->setObjectName(QLatin1String(kWebdavUsernameEditName));
+  m_webdavUsernameEdit->setPlaceholderText(tr("Optional for anonymous download"));
+  m_webdavUsernameEdit->setToolTip(
+      tr("WebDAV account username; leave both credentials empty for anonymous download"));
+  m_webdavUsernameLabel = new QLabel(tr("Username"), p_page);
+  layout->addRow(m_webdavUsernameLabel, m_webdavUsernameEdit);
 
   // PAT field (password echo). "(optional)" hint lives in the placeholder so
   // the label stays compact; see plan refine-open-notebook-dialog.
@@ -213,20 +224,17 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   m_remotePatEdit->setToolTip(
       tr("If empty, the notebook opens normally (fully editable) with sync configured but "
          "inactive. Add a token later to start syncing"));
-  layout->addRow(tr("Personal Access Token"), m_remotePatEdit);
+  m_secretLabel = new QLabel(tr("Personal Access Token"), p_page);
+  layout->addRow(m_secretLabel, m_remotePatEdit);
 
-  // Local root folder: project-standard LocationInputWithBrowseButton. Must
-  // either not exist (will be created during clone) or be an existing empty
-  // directory. Validation enforces the contract; see validateRemoteInputs()
-  // and OpenNotebookController::validateCloneInput().
+  // The owned staging directory is renamed into a destination that must not exist.
   m_remoteDestInput = new LocationInputWithBrowseButton(p_page);
   m_remoteDestInput->setObjectName(QLatin1String(kRemoteDestInputName));
   m_remoteDestInput->setBrowseType(LocationInputWithBrowseButton::Folder,
                                    tr("Select Local Root Folder"));
-  m_remoteDestInput->setPlaceholderText(tr("Folder to clone into (must not exist or be empty)"));
+  m_remoteDestInput->setPlaceholderText(tr("Folder to download into (must not exist)"));
   m_remoteDestInput->setToolTip(
-      tr("Local folder that will receive the cloned notebook. It must either not exist yet "
-         "(it will be created) or be an existing empty directory"));
+      tr("New local folder that will receive the notebook; the parent folder must already exist"));
   layout->addRow(tr("Local root folder"), m_remoteDestInput);
 
   // Wire field-change validation. Per plan refine-open-notebook-dialog the
@@ -240,6 +248,46 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
           [this](const QString &) { onRemoteFieldsChanged(); });
   connect(m_remoteDestInput, &LocationInputWithBrowseButton::textChanged, this,
           [this](const QString &) { onRemoteFieldsChanged(); });
+  connect(m_webdavUsernameEdit, &QLineEdit::textChanged, this,
+          &OpenNotebookDialog2::onRemoteFieldsChanged);
+  connect(m_backendCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
+    m_remotePatEdit->clear();
+    m_webdavUsernameEdit->clear();
+    refreshBackendFields();
+    onRemoteFieldsChanged();
+  });
+  refreshBackendFields();
+}
+
+SyncSettings OpenNotebookDialog2::enteredSettings() const {
+  SyncSettings settings;
+  settings.m_backend = m_backendCombo->currentData().toString();
+  settings.m_remoteUrl = m_remoteUrlEdit->text().trimmed();
+  settings.m_credentials.m_backend = settings.m_backend;
+  settings.m_credentials.m_secret = m_remotePatEdit->text();
+  if (settings.m_backend == QLatin1String("webdav")) {
+    settings.m_credentials.m_username = m_webdavUsernameEdit->text();
+  }
+  return settings;
+}
+
+void OpenNotebookDialog2::refreshBackendFields() {
+  const bool webdav = m_backendCombo->currentData().toString() == QLatin1String("webdav");
+  m_remoteUrlLabel->setText(webdav ? tr("Collection URL") : tr("Remote URL"));
+  m_remoteUrlEdit->setPlaceholderText(
+      webdav ? tr("https://example.com/dav/notebook/")
+             : tr("https://github.com/user/repo.git  or  file:///path/to/repo.git"));
+  m_remoteUrlEdit->setToolTip(
+      webdav ? tr("Existing HTTPS collection containing one VNote notebook")
+             : tr("Remote git URL. Only HTTPS and file:// schemes are supported"));
+  m_secretLabel->setText(webdav ? tr("Password or app password") : tr("Personal Access Token"));
+  m_remotePatEdit->setToolTip(
+      tr("Leave credentials empty to download anonymously if the server permits it. "
+         "The notebook remains editable; add credentials later to start syncing"));
+  m_gitUsernameLabel->setVisible(!webdav);
+  m_remoteUsernameEdit->setVisible(!webdav);
+  m_webdavUsernameLabel->setVisible(webdav);
+  m_webdavUsernameEdit->setVisible(webdav);
 }
 
 OpenNotebookDialog2::Mode OpenNotebookDialog2::currentMode() const {
@@ -269,6 +317,9 @@ void OpenNotebookDialog2::onRemoteFieldsChanged() {
 }
 
 void OpenNotebookDialog2::updateOpenButtonState() {
+  if (m_cloneInProgress) {
+    return;
+  }
   if (currentMode() == LocalMode) {
     const QString path = m_localRootInput ? m_localRootInput->text().trimmed() : QString();
     if (path.isEmpty()) {
@@ -308,16 +359,12 @@ void OpenNotebookDialog2::updateOpenButtonState() {
 OpenNotebookDialog2::RemoteValidation OpenNotebookDialog2::validateRemoteInputs() const {
   RemoteValidation result;
 
-  // URL: empty -> silent invalid; bad scheme -> silent invalid (banner stays
-  // quiet per the "no banner on URL change" mandate). Open just disables.
-  const QString url = m_remoteUrlEdit ? m_remoteUrlEdit->text().trimmed() : QString();
-  if (url.isEmpty()) {
-    return result;
-  }
-  static const QRegularExpression scheme(QString::fromLatin1(kRemoteUrlSchemeRegex));
-  if (!scheme.match(url).hasMatch()) {
-    result.message = tr("Remote URL must use HTTPS or file:// scheme (got: %1).").arg(url);
-    // surfaceInBanner stays false: URL errors are silent.
+  const auto settings = enteredSettings();
+  const bool suppliedWebdavCredentials =
+      settings.m_backend == QLatin1String("webdav") &&
+      (!settings.m_credentials.m_username.isEmpty() || !settings.m_credentials.m_secret.isEmpty());
+  result.message = validateSyncSettings(settings, suppliedWebdavCredentials);
+  if (!result.message.isEmpty()) {
     return result;
   }
 
@@ -333,35 +380,21 @@ OpenNotebookDialog2::RemoteValidation OpenNotebookDialog2::validateRemoteInputs(
     return result;
   }
   const QFileInfo destInfo(dest);
-  if (destInfo.exists()) {
-    if (!destInfo.isDir()) {
-      result.message = tr("Local root folder must be a directory.");
-      result.surfaceInBanner = true;
-      return result;
-    }
-    // Must be empty (no visible OR hidden/system entries) so the worker's
-    // pre-rename rmdir hop is safe and the atomic rename can proceed.
-    const QDir destDir(dest);
-    const QStringList entries =
-        destDir.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System);
-    if (!entries.isEmpty()) {
-      result.message =
-          tr("Local root folder must be empty (contains %1 item(s)).").arg(entries.size());
-      result.surfaceInBanner = true;
-      return result;
-    }
-  } else {
-    const QFileInfo parentInfo(destInfo.absolutePath());
-    if (!parentInfo.exists() || !parentInfo.isDir()) {
-      result.message = tr("Parent folder does not exist.");
-      result.surfaceInBanner = true;
-      return result;
-    }
-    if (!parentInfo.isWritable()) {
-      result.message = tr("Parent folder is not writable.");
-      result.surfaceInBanner = true;
-      return result;
-    }
+  if (destInfo.exists() || destInfo.isSymLink()) {
+    result.message = tr("Local root folder must not already exist.");
+    result.surfaceInBanner = true;
+    return result;
+  }
+  const QFileInfo parentInfo(destInfo.absolutePath());
+  if (!parentInfo.exists() || !parentInfo.isDir()) {
+    result.message = tr("Parent folder does not exist.");
+    result.surfaceInBanner = true;
+    return result;
+  }
+  if (!parentInfo.isWritable()) {
+    result.message = tr("Parent folder is not writable.");
+    result.surfaceInBanner = true;
+    return result;
   }
 
   result.valid = true;
@@ -425,16 +458,18 @@ void OpenNotebookDialog2::handleLocalOpen() {
 }
 
 void OpenNotebookDialog2::handleRemoteOpen() {
-  // openurl-followups Item 2: drive the controller's async clone+open path.
-  // The previous T24 stub displayed a QMessageBox::information with a
-  // "wired in T25" message; T25 only wired the explorer button to spawn
-  // this dialog, NOT the dialog's internal remote-mode handler. This is
-  // the actual wiring.
+  if (m_cloneInProgress) {
+    return;
+  }
+  const auto validation = validateRemoteInputs();
+  if (!validation.valid) {
+    setInformationText(validation.message, InformationLevel::Error);
+    return;
+  }
   CloneAndOpenInput input;
-  input.remoteUrl = m_remoteUrlEdit ? m_remoteUrlEdit->text().trimmed() : QString();
-  input.pat = m_remotePatEdit ? m_remotePatEdit->text() : QString();
+  input.syncSettings = enteredSettings();
   input.finalDestDir = m_remoteDestInput ? m_remoteDestInput->text().trimmed() : QString();
-  // Backend / autoSyncEnabled keep CloneAndOpenInput's defaults ("git", true).
+  // autoSyncEnabled keeps the controller input's default.
 
   // Disable inputs so the user cannot mutate them mid-clone. The Cancel
   // button stays ENABLED so the user can abort the in-flight clone (the
@@ -463,6 +498,8 @@ void OpenNotebookDialog2::handleRemoteOpen() {
 }
 
 void OpenNotebookDialog2::setRemoteInputsEnabled(bool p_enabled) {
+  m_backendCombo->setEnabled(p_enabled);
+  m_webdavUsernameEdit->setEnabled(p_enabled);
   if (m_remoteUrlEdit)
     m_remoteUrlEdit->setEnabled(p_enabled);
   if (m_remotePatEdit)
@@ -498,7 +535,7 @@ void OpenNotebookDialog2::onCloneFinished(const CloneAndOpenResult &p_result) {
 
   if (p_result.success) {
     m_openedNotebookId = p_result.notebookId;
-    emit notebookOpened(m_openedNotebookId, p_result.partialSyncNoPat);
+    emit notebookOpened(m_openedNotebookId, p_result.partialSyncMissingCredentials);
     accept();
     return;
   }

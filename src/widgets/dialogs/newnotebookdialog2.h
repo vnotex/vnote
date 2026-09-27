@@ -2,6 +2,7 @@
 #define NEWNOTEBOOKDIALOG2_H
 
 #include "scrolldialog.h"
+#include <core/services/syncsettings.h>
 
 class QComboBox;
 class QLabel;
@@ -27,7 +28,7 @@ public:
   QString getNewNotebookId() const;
 
   // Returns the userData string of the currently selected sync method
-  // ("none" or "git"). Returns "none" if the combo is hidden (e.g. Raw type)
+  // ("none", "git" or "webdav"). Returns "none" for Raw notebooks
   // or unavailable.
   QString getSelectedSyncMethod() const;
 
@@ -37,17 +38,13 @@ protected:
 private slots:
   void onTypeComboChanged();
 
-  // Opens NotebookSyncInfoDialog2 in pre-create mode to collect remote URL +
-  // PAT before the notebook exists. Stashes the result in m_pendingRemoteUrl /
-  // m_pendingPat for T4 to consume in acceptedButtonClicked().
+  // Collect settings before creating the notebook; bootstrap owns persistence.
   void onConfigureSyncClicked();
 
 private:
   void setupUI();
 
-  // Recompute the OK button enabled state. When Git sync is selected but the
-  // user hasn't run Configure... yet, OK is disabled with an explanatory
-  // tooltip.
+  // Sync creation requires valid settings collected through Configure.
   void updateOkButtonState();
 
   ServiceLocator &m_services;
@@ -62,14 +59,11 @@ private:
   QLabel *m_syncMethodLabel = nullptr;
   QComboBox *m_syncMethodCombo = nullptr;
 
-  // Pre-create sync config (T3 of notebook-sync-config-pre-create plan).
-  // The Configure... button is shown next to the sync method combo when Git
-  // is selected; clicking it opens NotebookSyncInfoDialog2 in pre-create mode.
+  // User-entered settings live only for this create/bootstrap operation.
   QPushButton *m_configureSyncButton = nullptr;
   QWidget *m_syncMethodContainer = nullptr; // wraps combo + Configure... button
   bool m_syncConfigured = false;
-  QString m_pendingRemoteUrl;
-  QString m_pendingPat;
+  SyncSettings m_pendingSettings;
 
   // Result.
   QString m_newNotebookId;

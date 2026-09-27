@@ -357,6 +357,17 @@ public:
                             bool *p_didCommit) override;
   VxCoreError syncNetworkPhase(const QString &p_notebookId,
                                VxCoreSyncCancellation *p_cancellationToken) override;
+  VxCoreError syncCapabilities(const QString &p_notebookId, uint32_t *p_capabilities) override;
+  VxCoreError syncApplyPhase(const QString &p_notebookId,
+                             VxCoreSyncCancellation *p_cancellationToken,
+                             const QStringList &p_protectedPaths,
+                             QStringList *p_changedPaths) override;
+  // GUI-thread reservation and metadata finalization; never perform network I/O.
+  VxCoreError setSyncApplyInProgress(const QString &p_notebookId, bool p_active);
+  VxCoreError refreshAfterSync(const QString &p_notebookId);
+  VxCoreError checkSyncReconfiguration(const QString &p_notebookId);
+  // Copy immediately on the operation thread, before dispatching completion to the GUI.
+  QString syncErrorMessage(VxCoreError p_error) const;
   VxCoreError getSyncStatus(const QString &p_notebookId, QString &p_outStatusJson);
   VxCoreError getSyncConflicts(const QString &p_notebookId, QString &p_outConflictsJson);
   VxCoreError resolveSyncConflict(const QString &p_notebookId, const QString &p_filePath,

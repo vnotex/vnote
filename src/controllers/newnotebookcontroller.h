@@ -5,6 +5,7 @@
 #include <QString>
 
 #include <core/services/notebookcoreservice.h>
+#include <core/services/syncsettings.h>
 
 class QProgressDialog;
 class QWidget;
@@ -22,18 +23,9 @@ struct NewNotebookInput {
   NotebookType type = NotebookType::Bundled;
   // Empty inherits the global editor setting; overrides apply only to bundled notebooks.
   QString lineEnding;
-  // Sync method selected at creation time. "none" (default) creates a notebook
-  // without sync configuration. "git" injects flat sync markers (per ADR-8)
-  // into the vxcore notebook config so that bootstrap (T14) can later enable
-  // sync against the empty root (per ADR-7: create-then-enable).
+  // Creation selection: none, git, or webdav. Enabled settings must match it.
   QString syncMethod = QStringLiteral("none");
-  // Sync remote URL (only meaningful when syncMethod == "git"). Captured from
-  // the in-dialog "Configure..." sub-dialog before notebook creation, so it
-  // can be passed atomically to bootstrapSync after vxcore_notebook_create.
-  QString remoteUrl;
-  // Personal Access Token for git remotes that require auth. Optional.
-  // Stored only in memory; written to keychain by SyncService.
-  QString pat;
+  SyncSettings syncSettings;
 };
 
 // Result structure for notebook creation.
@@ -76,7 +68,7 @@ public:
   // Returns result with success status and notebook ID or error message.
   NewNotebookResult createNotebook(const NewNotebookInput &p_input);
 
-  // Bootstrap git sync on a notebook that already exists (per ADR-7:
+  // Bootstrap sync on a notebook that already exists (per ADR-7:
   // CREATE-THEN-ENABLE). Caller MUST have invoked createNotebook() first; this
   // method only fires enableSync (with credentials) via SyncService and persists
   // the remote URL into the notebook config on success. On failure the
@@ -92,8 +84,8 @@ public:
   //   * bootstrapSucceeded(notebookId) on VXCORE_OK,
   //   * bootstrapFailed(notebookId, errorMessage) otherwise.
   //
-  // The PAT is forwarded to SyncService and never cached on this controller.
-  void bootstrapSync(const QString &p_notebookId, const QString &p_remoteUrl, const QString &p_pat,
+  // Credentials are forwarded transiently and never cached on this controller.
+  void bootstrapSync(const QString &p_notebookId, const SyncSettings &p_settings,
                      QWidget *p_dialogParent);
 
   // Create the indeterminate progress modal used by bootstrapSync. Exposed as

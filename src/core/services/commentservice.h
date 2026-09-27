@@ -7,6 +7,7 @@
 #include <QPointer>
 #include <QQueue>
 #include <QString>
+#include <QStringList>
 #include <QWaitCondition>
 
 #include <functional>
@@ -196,6 +197,10 @@ public:
                                   const std::function<bool()> &p_isCancelled = {});
 
   bool isFlushCheckpointCurrent(const FlushCheckpoint &p_checkpoint) const;
+
+  // GUI-thread lookup only: preserves participant drafts and unfinished writes
+  // without invoking flush callbacks or waiting for comment workers.
+  QStringList syncProtectedPaths(const QString &p_notebookId) const;
 
   // Stop accepting new jobs and wait up to @p_timeoutMs for workers to drain.
   bool shutdown(int p_timeoutMs = 5000);

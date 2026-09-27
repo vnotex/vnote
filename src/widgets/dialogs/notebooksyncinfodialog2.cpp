@@ -2,6 +2,7 @@
 
 #include <memory>
 
+#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QFont>
 #include <QFormLayout>
@@ -33,6 +34,9 @@ namespace {
 
 // QObject names that tests use to discover widgets via findChild<>(). MUST be
 // kept in sync with the documentation in the dialog header.
+const char *const kBackendComboName = "syncBackendCombo";
+const char *const kWebdavUsernameEditName = "webdavUsernameEdit";
+const char *const kWebdavHintName = "webdavHint";
 const char *const kRemoteUrlEditName = "remoteUrlEdit";
 const char *const kRemoteUrlHintLabelName = "remoteUrlHintLabel";
 const char *const kPatEditName = "patEdit";
@@ -81,6 +85,13 @@ NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services,
   if (m_controller) {
     connect(m_controller, &NotebookSyncInfoController::dataLoaded, this,
             [this](const QString &p_name, const QString &p_remoteUrl, const QString &p_lastSync) {
+              m_syncEnabled = m_controller->syncEnabled();
+              m_rawNotebook = m_controller->isRawNotebook();
+              m_lastAppliedBackend = m_controller->backend();
+              if (m_lastAppliedBackend.isEmpty()) {
+                m_lastAppliedBackend = QStringLiteral("git");
+              }
+              setBackend(m_lastAppliedBackend);
               if (m_notebookNameLabel && !p_name.isEmpty()) {
                 m_notebookNameLabel->setText(p_name);
               }
@@ -102,14 +113,12 @@ NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services,
     m_controller->loadInitialData();
   }
 
-  // Default current state to Idle. SyncService signals will move this to
-  // Syncing/Conflict/Error as events arrive.
-  setCurrentStateLabel(SyncStateLevel::Idle, tr("Idle"));
+  if (isSupportedSyncBackend(m_backendCombo->currentData().toString()) && !m_rawNotebook) {
+    setCurrentStateLabel(SyncStateLevel::Idle, tr("Idle"));
+  }
 }
 
-// Pre-create overload: used by NewNotebookDialog2 to collect URL + PAT before
-// the notebook exists in vxcore. The controller is NOT constructed; values are
-// read back via enteredRemoteUrl()/enteredPat().
+// Pre-create mode collects settings without constructing a controller.
 NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services, QWidget *p_parent)
     : ScrollDialog(p_parent), m_services(p_services), m_preCreateMode(true) {
   setupUI();
@@ -143,16 +152,7 @@ NotebookSyncInfoDialog2::NotebookSyncInfoDialog2(ServiceLocator &p_services, QWi
   // Set window title for clarity.
   setWindowTitle(tr("Configure Sync"));
 
-  // Override the "leave blank to keep existing" hint that setupUI() sets
-  // by default — there's no existing PAT for a brand-new notebook.
-  if (m_patEdit) {
-    m_patEdit->setPlaceholderText(QString());
-    m_patEdit->setToolTip(
-        tr("Personal Access Token used to authenticate against the remote (optional)"));
-  }
-
-  // m_controller remains nullptr — this signals pre-create mode to
-  // acceptedButtonClicked, which bypasses applyChanges.
+  refreshBackendFields();
 }
 
 void NotebookSyncInfoDialog2::setupUI() {
@@ -166,8 +166,8 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_readOnlyBanner =
       new InlineBanner(InlineBanner::Severity::Warning,
                        tr("This notebook is currently open in read-only mode. To enable editing, "
-                          "close this notebook and re-open it from the remote URL with a valid "
-                          "Personal Access Token. Adding a PAT here will be saved, but editing "
+                          "close this notebook and re-open it from the remote URL with valid "
+                          "credentials. Credentials added here will be saved, but editing "
                           "will only become available after closing and re-opening the notebook."),
                        centralWidget);
   m_readOnlyBanner->setObjectName(QString::fromLatin1(kReadOnlyBannerLabelName));
@@ -181,12 +181,20 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_notebookNameLabel->setTextInteractionFlags(Qt::TextSelectableByMouse);
   formLayout->addRow(tr("Notebook"), m_notebookNameLabel);
 
+  m_backendCombo = WidgetsFactory::createComboBox(centralWidget);
+  m_backendCombo->setObjectName(QLatin1String(kBackendComboName));
+  m_backendCombo->addItem(tr("Git"), QStringLiteral("git"));
+  m_backendCombo->addItem(tr("WebDAV"), QStringLiteral("webdav"));
+  m_backendCombo->setToolTip(tr("Disable sync before switching the active backend"));
+  formLayout->addRow(tr("Sync method"), m_backendCombo);
+
   // 2. Remote URL (editable).
   m_remoteUrlEdit = WidgetsFactory::createLineEdit(centralWidget);
   m_remoteUrlEdit->setObjectName(QString::fromLatin1(kRemoteUrlEditName));
   m_remoteUrlEdit->setPlaceholderText(tr("https://github.com/example/notes.git"));
   m_remoteUrlEdit->setToolTip(tr("Remote git repository URL used for syncing this notebook"));
-  formLayout->addRow(tr("Remote URL"), m_remoteUrlEdit);
+  m_remoteUrlLabel = new QLabel(tr("Remote URL"), centralWidget);
+  formLayout->addRow(m_remoteUrlLabel, m_remoteUrlEdit);
   connect(m_remoteUrlEdit, &QLineEdit::textChanged, this, &NotebookSyncInfoDialog2::onFieldEdited);
 
   // 2b. Remote URL prerequisite hint (visible in both legacy and pre-create
@@ -212,12 +220,30 @@ void NotebookSyncInfoDialog2::setupUI() {
   }
   formLayout->addRow(QString(), m_remoteUrlHintLabel);
 
-  auto *usernameEdit = WidgetsFactory::createUrlUserNameEdit(m_remoteUrlEdit, centralWidget);
-  usernameEdit->setObjectName(QLatin1String(kGitUsernameEditName));
-  usernameEdit->setPlaceholderText(tr("Required by Gitee; optional for GitHub"));
-  usernameEdit->setToolTip(
+  m_webdavHint = new InlineBanner(
+      InlineBanner::Severity::Info,
+      tr("Use a dedicated existing HTTPS collection. Notes remain ordinary files. "
+         "Safe conditional writes are required; empty remote folders may be retained."),
+      centralWidget);
+  m_webdavHint->setObjectName(QLatin1String(kWebdavHintName));
+  formLayout->addRow(m_webdavHint);
+
+  m_gitUsernameEdit = WidgetsFactory::createUrlUserNameEdit(m_remoteUrlEdit, centralWidget);
+  m_gitUsernameEdit->setObjectName(QLatin1String(kGitUsernameEditName));
+  m_gitUsernameEdit->setPlaceholderText(tr("Required by Gitee; optional for GitHub"));
+  m_gitUsernameEdit->setToolTip(
       tr("Login of the Personal Access Token owner, not necessarily the repository owner"));
-  formLayout->addRow(tr("Git user name"), usernameEdit);
+  m_gitUsernameLabel = new QLabel(tr("Git user name"), centralWidget);
+  formLayout->addRow(m_gitUsernameLabel, m_gitUsernameEdit);
+
+  m_webdavUsernameEdit = WidgetsFactory::createLineEdit(centralWidget);
+  m_webdavUsernameEdit->setObjectName(QLatin1String(kWebdavUsernameEditName));
+  m_webdavUsernameEdit->setToolTip(
+      tr("Changing the username requires a new password or app password"));
+  m_webdavUsernameLabel = new QLabel(tr("Username"), centralWidget);
+  formLayout->addRow(m_webdavUsernameLabel, m_webdavUsernameEdit);
+  connect(m_webdavUsernameEdit, &QLineEdit::textChanged, this,
+          &NotebookSyncInfoDialog2::onFieldEdited);
 
   // 3. PAT (editable, password-masked, NEVER prefilled).
   m_patEdit = WidgetsFactory::createLineEdit(centralWidget);
@@ -226,7 +252,8 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_patEdit->setPlaceholderText(tr("Leave blank to keep existing"));
   m_patEdit->setToolTip(tr("Personal Access Token used to authenticate against the remote.\n"
                            "Leave blank to keep the existing token"));
-  formLayout->addRow(tr("Personal Access Token"), m_patEdit);
+  m_secretLabel = new QLabel(tr("Personal Access Token"), centralWidget);
+  formLayout->addRow(m_secretLabel, m_patEdit);
   connect(m_patEdit, &QLineEdit::textChanged, this, &NotebookSyncInfoDialog2::onFieldEdited);
 
   // 4. Last Sync (read-only).
@@ -254,9 +281,8 @@ void NotebookSyncInfoDialog2::setupUI() {
   // currently expose a danger-button helper, so we set the property directly.
   m_disableSyncButton->setProperty(PropertyDefs::c_dangerButton, true);
   m_disableSyncButton->setToolTip(
-      tr("Disable git sync for this notebook. Local commit history is preserved\n"
-         "on disk, but no further syncing will occur and the stored credentials\n"
-         "are deleted from the system keychain"));
+      tr("Disable sync for this notebook and delete credentials from the system keychain. "
+         "Local files and recovery data are preserved"));
   actionLayout->addWidget(m_disableSyncButton);
   connect(m_disableSyncButton, &QPushButton::clicked, this,
           &NotebookSyncInfoDialog2::onDisableSyncClicked);
@@ -287,6 +313,12 @@ void NotebookSyncInfoDialog2::setupUI() {
   }
 
   setWindowTitle(tr("Sync Info"));
+  connect(m_backendCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
+    m_patEdit->clear();
+    m_webdavUsernameEdit->clear();
+    refreshBackendFields();
+  });
+  refreshBackendFields();
 }
 
 void NotebookSyncInfoDialog2::connectSyncServiceSignals() {
@@ -318,13 +350,13 @@ void NotebookSyncInfoDialog2::setBootstrapMode(bool p_enabled) {
   }
 
   if (auto *applyBtn = box->button(QDialogButtonBox::Apply)) {
-    applyBtn->setVisible(!p_enabled);
+    applyBtn->setVisible(!p_enabled && !m_preCreateMode);
   }
   if (auto *resetBtn = box->button(QDialogButtonBox::Reset)) {
-    resetBtn->setVisible(!p_enabled);
+    resetBtn->setVisible(!p_enabled && !m_preCreateMode);
   }
   if (m_disableSyncButton) {
-    m_disableSyncButton->setVisible(!p_enabled);
+    m_disableSyncButton->setVisible(!p_enabled && m_syncEnabled && !m_rawNotebook);
   }
   if (auto *okBtn = box->button(QDialogButtonBox::Ok)) {
     okBtn->setText(p_enabled ? tr("Bootstrap") : tr("OK"));
@@ -348,36 +380,27 @@ void NotebookSyncInfoDialog2::setPreCreateNotebookName(const QString &p_name) {
 }
 
 bool NotebookSyncInfoDialog2::changesPending() const {
-  if (!m_remoteUrlEdit || !m_patEdit) {
-    return false;
-  }
-  // PAT is dirty whenever the field is non-empty (any text means the user
-  // wants to replace the existing PAT). URL is dirty when it differs from the
-  // last-applied value.
-  if (!m_patEdit->text().isEmpty()) {
-    return true;
-  }
-  return m_remoteUrlEdit->text() != m_lastAppliedRemoteUrl;
+  return m_remoteUrlEdit &&
+         (m_remoteUrlEdit->text() != m_lastAppliedRemoteUrl ||
+          m_backendCombo->currentData().toString() != m_lastAppliedBackend ||
+          !m_patEdit->text().isEmpty() || !m_webdavUsernameEdit->text().isEmpty());
 }
 
 void NotebookSyncInfoDialog2::onFieldEdited() { refreshDirtyButtons(); }
 
 void NotebookSyncInfoDialog2::refreshDirtyButtons() {
-  // Apply/Reset hidden in bootstrap mode, so don't toggle their state then.
-  if (m_bootstrapMode) {
-    return;
-  }
-  const bool dirty = changesPending();
-  setButtonEnabled(QDialogButtonBox::Apply, dirty);
-  setButtonEnabled(QDialogButtonBox::Reset, dirty);
+  const bool available =
+      !m_rawNotebook && isSupportedSyncBackend(m_backendCombo->currentData().toString());
+  setButtonEnabled(QDialogButtonBox::Ok, available && !m_applying);
+  setButtonEnabled(QDialogButtonBox::Apply, available && !m_applying && changesPending());
+  setButtonEnabled(QDialogButtonBox::Reset, !m_applying && changesPending());
 }
 
 void NotebookSyncInfoDialog2::onDisableSyncClicked() {
   const QMessageBox::StandardButton ret = QMessageBox::warning(
       this, tr("Disable Sync"),
-      tr("Disable git sync for this notebook? Local commit history will be preserved\n"
-         "on disk but no further syncing will occur. (The PAT will be deleted from\n"
-         "the keychain.)"),
+      tr("Disable sync for this notebook? Local files and recovery data will be preserved. "
+         "No further syncing will occur, and credentials will be deleted from the keychain."),
       QMessageBox::Ok | QMessageBox::Cancel, QMessageBox::Cancel);
 
   if (ret != QMessageBox::Ok) {
@@ -395,192 +418,79 @@ void NotebookSyncInfoDialog2::onDisableSyncClicked() {
   accept();
 }
 
-void NotebookSyncInfoDialog2::acceptedButtonClicked() {
-  // Pre-create mode: caller (NewNotebookDialog2) reads URL/PAT via accessors
-  // and does the actual create+bootstrap atomically. We just close the dialog.
+void NotebookSyncInfoDialog2::acceptedButtonClicked() { applySettings(true); }
+
+void NotebookSyncInfoDialog2::appliedButtonClicked() { applySettings(false); }
+
+void NotebookSyncInfoDialog2::applySettings(bool p_closeOnSuccess) {
+  if (m_applying || m_rawNotebook) {
+    return;
+  }
+  const auto settings = enteredSettings();
+  auto error = validateSyncSettings(settings, m_preCreateMode);
+  if (error.isEmpty() && settings.m_backend == QLatin1String("webdav") &&
+      !settings.m_credentials.m_username.isEmpty() && settings.m_credentials.m_secret.isEmpty()) {
+    error = tr("Enter a new password or app password when specifying a username.");
+  }
+  if (!error.isEmpty()) {
+    setInformationText(error, InformationLevel::Error);
+    return;
+  }
   if (m_preCreateMode) {
     accept();
     return;
   }
-
-  qCDebug(syncCategory) << "NotebookSyncInfoDialog2::acceptedButtonClicked: accept bootstrapMode:"
-                        << m_bootstrapMode;
-
-  // W3.T2: route through controller->bootstrapApply() when the user is
-  // performing the initial enable (bootstrapMode==true) OR when the notebook
-  // is partial (sync_enabled on disk but not yet registered at vxcore
-  // runtime). In either case, applyChanges would silently fail / hit the
-  // chicken-and-egg path, so bootstrapApply (which atomically enables sync +
-  // persists URL on success) is the correct entry point.
-  //
-  // The dialog STAYS OPEN during the async bootstrap and only accept()s when
-  // applyComplete(true) fires. On applyComplete(false) the dialog stays open
-  // so the user can read the error (surfaced via the controller's error()
-  // signal / state label) and retry without losing their input.
-  if (m_controller) {
-    auto *syncSvc = m_services.get<SyncService>();
-    const bool partial = (syncSvc != nullptr) && !syncSvc->isSyncRegistered(m_notebookId);
-    if (m_bootstrapMode || partial) {
-      qCDebug(syncCategory) << "NotebookSyncInfoDialog2::acceptedButtonClicked: routing to "
-                               "bootstrapApply bootstrapMode:"
-                            << m_bootstrapMode << "partial:" << partial;
-      // One-shot connection to applyComplete: only accept() on success.
-      auto conn = std::make_shared<QMetaObject::Connection>();
-      *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
-                      [this, conn](bool p_success) {
-                        QObject::disconnect(*conn);
-                        if (p_success) {
-                          // Snapshot the URL and clear the PAT field per the
-                          // leave-blank-to-keep semantics before closing.
-                          if (m_remoteUrlEdit) {
-                            m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
-                          }
-                          if (m_patEdit) {
-                            m_patEdit->clear();
-                          }
-                          refreshDirtyButtons();
-                          accept();
-                        }
-                        // On failure, the dialog stays open. The error()
-                        // signal from the controller surfaces the message
-                        // via the existing state label / log path.
-                      });
-      m_controller->bootstrapApply(m_remoteUrlEdit->text(), m_patEdit->text());
-      return;
-    }
+  if (!m_controller) {
+    return;
   }
 
-  // T11: the controller decides whether to send URL only, PAT only, or both
-  // based on which fields are dirty. Then we still close the dialog so the
-  // bootstrap-mode flow can complete.
-  //
-  // T29 follow-up: when the notebook is read-only (cloned without PAT) and
-  // the user just typed a PAT, defer accept() until applyComplete reports
-  // success so we can pop a final "close and re-open" modal. Per MVP scope
-  // we do NOT live-transition RO→RW — the user must close and re-open to
-  // pick up the new credentials. The modal is shown ONLY on success so the
-  // user isn't told their PAT was saved when in fact a backend failure
-  // surfaced via the error() signal.
-  if (m_controller && m_isReadOnlyNotebook && m_patEdit && !m_patEdit->text().isEmpty()) {
-    auto conn = std::make_shared<QMetaObject::Connection>();
-    *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
-                    [this, conn](bool p_success) {
-                      QObject::disconnect(*conn);
-                      if (p_success) {
+  auto *syncSvc = m_services.get<SyncService>();
+  const bool bootstrap =
+      m_bootstrapMode || !m_syncEnabled || (syncSvc && !syncSvc->isSyncRegistered(m_notebookId));
+  const bool showReadOnlyNotice =
+      m_isReadOnlyNotebook && !settings.m_credentials.m_secret.isEmpty();
+  m_applying = true;
+  m_backendCombo->setEnabled(false);
+  m_remoteUrlEdit->setEnabled(false);
+  m_gitUsernameEdit->setEnabled(false);
+  m_webdavUsernameEdit->setEnabled(false);
+  m_patEdit->setEnabled(false);
+  m_disableSyncButton->setEnabled(false);
+  refreshDirtyButtons();
+  auto conn = std::make_shared<QMetaObject::Connection>();
+  *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
+                  [this, conn, p_closeOnSuccess, showReadOnlyNotice](bool p_success) {
+                    QObject::disconnect(*conn);
+                    m_applying = false;
+                    if (p_success) {
+                      m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
+                      m_lastAppliedBackend = m_backendCombo->currentData().toString();
+                      m_syncEnabled = m_controller->syncEnabled();
+                      m_patEdit->clear();
+                      m_webdavUsernameEdit->clear();
+                      if (showReadOnlyNotice) {
                         QMessageBox::information(
-                            this, tr("PAT saved"),
-                            tr("Personal Access Token has been saved. Please close "
-                               "and re-open this notebook to enable editing."));
-                        if (m_remoteUrlEdit) {
-                          m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
-                        }
-                        if (m_patEdit) {
-                          m_patEdit->clear();
-                        }
-                        refreshDirtyButtons();
-                        accept();
+                            this, tr("Credentials Saved"),
+                            tr("Credentials have been saved. Please close and re-open this "
+                               "notebook to enable editing."));
                       }
-                      // On failure, stay open so the user can retry; the
-                      // error() signal surfaces the message via onError.
-                    });
-    m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
-    return;
-  }
-
-  if (m_controller) {
-    // Username changes may first retrieve the saved PAT asynchronously. Keep
-    // the dialog/controller alive until that reconfiguration has completed.
-    auto conn = std::make_shared<QMetaObject::Connection>();
-    *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
-                    [this, conn](bool p_success) {
-                      QObject::disconnect(*conn);
-                      if (p_success) {
-                        m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
-                        m_patEdit->clear();
-                        refreshDirtyButtons();
-                        accept();
-                      }
-                    });
-    m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
-    return;
-  }
-
-  accept();
-}
-
-void NotebookSyncInfoDialog2::appliedButtonClicked() {
-  // W3.T2: mirror the partial-detection branch from acceptedButtonClicked so
-  // Apply on a partial / bootstrap-mode notebook routes to bootstrapApply
-  // instead of the chicken-and-egg applyChanges path. Unlike OK, Apply must
-  // NOT accept() the dialog on success — the Apply button is for in-place
-  // updates only.
-  if (m_controller) {
-    auto *syncSvc = m_services.get<SyncService>();
-    const bool partial = (syncSvc != nullptr) && !syncSvc->isSyncRegistered(m_notebookId);
-    if (m_bootstrapMode || partial) {
-      qCDebug(syncCategory)
-          << "NotebookSyncInfoDialog2::appliedButtonClicked: routing to bootstrapApply "
-             "bootstrapMode:"
-          << m_bootstrapMode << "partial:" << partial;
-      // Temporarily disable the Apply button during the async bootstrap so
-      // the user cannot double-fire. Re-enabled via refreshDirtyButtons()
-      // after applyComplete fires.
-      if (auto *box = getDialogButtonBox()) {
-        if (auto *applyBtn = box->button(QDialogButtonBox::Apply)) {
-          applyBtn->setEnabled(false);
-        }
-      }
-      auto conn = std::make_shared<QMetaObject::Connection>();
-      *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
-                      [this, conn](bool p_success) {
-                        QObject::disconnect(*conn);
-                        if (p_success && m_remoteUrlEdit) {
-                          m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
-                        }
-                        if (p_success && m_patEdit) {
-                          m_patEdit->clear();
-                        }
-                        refreshDirtyButtons();
-                      });
-      m_controller->bootstrapApply(m_remoteUrlEdit->text(), m_patEdit->text());
-      return;
-    }
-
-    // T29 follow-up: if the user just typed a PAT into a read-only notebook,
-    // wire a one-shot completion handler BEFORE the async applyChanges call
-    // so applyComplete cannot race past our connect. The handler pops the
-    // "close and re-open" modal on success. Unlike the OK path this does NOT
-    // accept() the dialog (Apply keeps the dialog open by contract).
-    if (m_isReadOnlyNotebook && m_patEdit && !m_patEdit->text().isEmpty()) {
-      auto conn = std::make_shared<QMetaObject::Connection>();
-      *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
-                      [this, conn](bool p_success) {
-                        QObject::disconnect(*conn);
-                        if (p_success) {
-                          QMessageBox::information(
-                              this, tr("PAT saved"),
-                              tr("Personal Access Token has been saved. Please close "
-                                 "and re-open this notebook to enable editing."));
-                        }
-                      });
-    }
-
-    auto conn = std::make_shared<QMetaObject::Connection>();
-    *conn = connect(m_controller, &NotebookSyncInfoController::applyComplete, this,
-                    [this, conn](bool p_success) {
-                      QObject::disconnect(*conn);
-                      if (p_success) {
-                        m_lastAppliedRemoteUrl = m_remoteUrlEdit->text();
-                        m_patEdit->clear();
-                      }
-                      refreshDirtyButtons();
-                    });
-    m_controller->applyChanges(m_remoteUrlEdit->text(), m_patEdit->text());
+                    }
+                    refreshBackendFields();
+                    if (p_success && p_closeOnSuccess) {
+                      accept();
+                    }
+                  });
+  if (bootstrap) {
+    m_controller->bootstrapApply(settings);
+  } else {
+    m_controller->applyChanges(settings);
   }
 }
 
 void NotebookSyncInfoDialog2::resetButtonClicked() {
   m_remoteUrlEdit->setText(m_lastAppliedRemoteUrl);
+  setBackend(m_lastAppliedBackend);
+  m_webdavUsernameEdit->clear();
   m_patEdit->clear();
   refreshDirtyButtons();
 }
@@ -693,11 +603,77 @@ QString NotebookSyncInfoDialog2::enteredRemoteUrl() const {
   return m_remoteUrlEdit ? m_remoteUrlEdit->text() : QString();
 }
 
-QString NotebookSyncInfoDialog2::enteredPat() const {
-  return m_patEdit ? m_patEdit->text() : QString();
+SyncSettings NotebookSyncInfoDialog2::enteredSettings() const {
+  SyncSettings settings;
+  settings.m_backend = m_backendCombo->currentData().toString();
+  settings.m_remoteUrl = enteredRemoteUrl().trimmed();
+  settings.m_credentials.m_backend = settings.m_backend;
+  if (settings.m_backend == QLatin1String("webdav")) {
+    settings.m_credentials.m_username = m_webdavUsernameEdit->text();
+  }
+  settings.m_credentials.m_secret = m_patEdit->text();
+  return settings;
 }
 
 bool NotebookSyncInfoDialog2::isPreCreateMode() const { return m_preCreateMode; }
+
+void NotebookSyncInfoDialog2::setBackend(const QString &p_backend) {
+  int index = m_backendCombo->findData(p_backend);
+  if (index < 0) {
+    m_backendCombo->addItem(tr("Unsupported (%1)").arg(p_backend), p_backend);
+    index = m_backendCombo->count() - 1;
+  }
+  m_backendCombo->setCurrentIndex(index);
+  refreshBackendFields();
+}
+
+void NotebookSyncInfoDialog2::refreshBackendFields() {
+  const auto backend = m_backendCombo->currentData().toString();
+  const bool git = backend == QLatin1String("git");
+  const bool webdav = backend == QLatin1String("webdav");
+  const bool available = (git || webdav) && !m_rawNotebook;
+  m_backendCombo->setEnabled(!m_syncEnabled && !m_rawNotebook && !m_applying);
+  m_remoteUrlEdit->setEnabled(available && !m_applying);
+  m_patEdit->setEnabled(available && !m_applying);
+  m_remoteUrlLabel->setText(webdav ? tr("Collection URL") : tr("Remote URL"));
+  m_remoteUrlEdit->setPlaceholderText(!available ? QString()
+                                      : webdav   ? tr("https://example.com/dav/notebook/")
+                                                 : tr("https://github.com/example/notes.git"));
+  m_remoteUrlEdit->setToolTip(!available ? QString()
+                              : webdav
+                                  ? tr("Dedicated existing HTTPS notebook collection")
+                                  : tr("Remote git repository URL used for syncing this notebook"));
+  m_remoteUrlHintLabel->setVisible(git && !m_rawNotebook);
+  m_webdavHint->setVisible(webdav && !m_rawNotebook);
+  m_gitUsernameLabel->setVisible(git && !m_rawNotebook);
+  m_gitUsernameEdit->setVisible(git && !m_rawNotebook);
+  m_gitUsernameEdit->setEnabled(git && !m_rawNotebook && !m_applying &&
+                                m_remoteUrlEdit->text().startsWith(QLatin1String("https://")));
+  m_webdavUsernameLabel->setVisible(webdav && !m_rawNotebook);
+  m_webdavUsernameEdit->setVisible(webdav && !m_rawNotebook);
+  m_webdavUsernameEdit->setEnabled(available && !m_applying);
+  m_webdavUsernameEdit->setPlaceholderText(m_syncEnabled ? tr("Leave blank to keep existing")
+                                                         : QString());
+  m_secretLabel->setText(webdav ? tr("Password or app password") : tr("Personal Access Token"));
+  m_secretLabel->setVisible(available);
+  m_patEdit->setVisible(available);
+  m_patEdit->setPlaceholderText(m_syncEnabled ? tr("Leave blank to keep existing") : QString());
+  m_patEdit->setToolTip(webdav
+                            ? tr("Password or app password; never stored in notebook settings")
+                            : tr("Personal Access Token used to authenticate against the remote"));
+  m_disableSyncButton->setVisible(m_syncEnabled && !m_rawNotebook && !m_preCreateMode &&
+                                  !m_bootstrapMode);
+  m_disableSyncButton->setEnabled(!m_applying);
+  if (!available) {
+    const auto error = m_rawNotebook ? tr("Sync is unavailable for raw notebooks.")
+                                     : tr("Unsupported sync backend.");
+    setInformationText(error, InformationLevel::Error);
+    setCurrentStateLabel(SyncStateLevel::Error, error);
+  } else {
+    setInformationText(QString(), InformationLevel::Info);
+  }
+  refreshDirtyButtons();
+}
 
 void NotebookSyncInfoDialog2::onConfirmUrlChange(const QString &p_oldUrl, const QString &p_newUrl) {
   if (!m_controller) {
@@ -706,7 +682,8 @@ void NotebookSyncInfoDialog2::onConfirmUrlChange(const QString &p_oldUrl, const 
 
   const QMessageBox::StandardButton ret =
       QMessageBox::warning(this, tr("Sync"),
-                           tr("This will wipe local sync state and re-clone from the new URL.\n"
+                           tr("This changes the sync endpoint. Current working files will be kept; "
+                              "local sync state will be retired or rebuilt after confirmation.\n"
                               "Old URL: %1\nNew URL: %2\n\nContinue?")
                                .arg(p_oldUrl.isEmpty() ? tr("(none)") : p_oldUrl,
                                     p_newUrl.isEmpty() ? tr("(none)") : p_newUrl),

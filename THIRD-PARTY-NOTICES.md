@@ -6,7 +6,8 @@ VNote binaries, together with the notices those licenses require us to keep.
 
 ## Scope
 
-This file covers the bundled **icon sets** and the **libsodium cryptography dependency**.
+This file covers the bundled **icon sets**, **libsodium cryptography dependency**, and
+**WebDAV transport/XML dependencies**.
 
 It does **not** restate licenses that already ship next to the code they cover:
 
@@ -49,6 +50,21 @@ The build copies the exact upstream `LICENSE` files as `LICENSE.libsodium` and
 beside the executable; macOS bundles carry them in `Contents/Resources`; Linux
 installs them under `${datadir}/licenses/vnote`. Standalone vxcore installs include
 both under `${datadir}/licenses/vxcore`. These copies are required, not optional.
+
+---
+
+## WebDAV transport and XML
+
+| Material | Pinned source | License and copyright |
+|---|---|---|
+| libcurl (Windows/Linux) | [curl 8.22.0](https://github.com/curl/curl/releases/tag/curl-8_22_0) | curl license; Copyright (c) 1996–2026 Daniel Stenberg and contributors |
+| pugixml | [pugixml 1.16](https://github.com/zeux/pugixml/releases/tag/v1.16) | MIT; Copyright (c) 2006–2026 Arseny Kapoulkine |
+
+`libs/vxcore/third_party/CMakeLists.txt` pins release archives by SHA-256. The build installs
+verbatim upstream `COPYING` / `LICENSE.md` as `LICENSE.curl` / `LICENSE.pugixml` beside Windows
+executables and under `${datadir}/licenses/vnote` on Linux; standalone vxcore uses
+`${datadir}/licenses/vxcore`. macOS links the SDK/system libcurl rather than redistributing a
+new curl runtime; its bundle carries `LICENSE.pugixml` in `Contents/Resources`.
 
 ---
 

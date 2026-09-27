@@ -2,6 +2,8 @@
 
 #include <QDateTime>
 #include <QDebug>
+#include <QElapsedTimer>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -9,9 +11,12 @@
 #include <QLocale>
 #include <QMetaObject>
 #include <QMutexLocker>
+#include <QPointer>
 #include <QThread>
 #include <QTimer>
+#include <QWaitCondition>
 
+#include <atomic>
 #include <memory>
 
 #include <core/hookcontext.h>
@@ -19,6 +24,8 @@
 #include <core/hooknames.h>
 #include <core/logging.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
+#include <core/services/commentservice.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/eventbridge.h>
 #include <core/services/hookmanager.h>
@@ -75,6 +82,40 @@ QString vxErrorToString(VxCoreError p_code) {
 }
 
 } // namespace
+
+struct SyncService::SyncOperation {
+  enum class Phase {
+    Network,
+    Requested,
+    Reserving,
+    Draining,
+    Ready,
+    Applying,
+    Applied,
+    Retiring,
+    Retired
+  };
+  QString notebookId;
+  quint64 generation = 0;
+  std::unique_ptr<VxCoreSyncCancellation, decltype(&vxcore_sync_free_cancellation)> token{
+      vxcore_sync_create_cancellation(), vxcore_sync_free_cancellation};
+  QHash<QString, QString> resolutions;
+  std::atomic_bool cancelled{false};
+  std::atomic_bool stopping{false};
+  QMutex mutex;
+  QWaitCondition changed;
+  Phase phase = Phase::Network;
+  VxCoreError result = VXCORE_OK;
+  QString error;
+  QStringList protectedPaths;
+  bool deferred = false;
+  QStringList changedPaths;
+  // GUI-owned only.
+  bool buffersReserved = false;
+  bool coreReserved = false;
+  QPointer<QTimer> timer;
+  QElapsedTimer drainTime;
+};
 
 SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {
@@ -195,11 +236,16 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
           if (p_event.notebookId.isEmpty()) {
             return;
           }
-          dropDebounceTimer(p_event.notebookId);
-          unregisterSyncRuntime(p_event.notebookId);
-          if (m_credentialsStore) {
-            m_credentialsStore->deleteCredentials(p_event.notebookId);
-          }
+          const auto retire = [this, id = p_event.notebookId]() {
+            dropDebounceTimer(id);
+            unregisterSyncRuntime(id);
+            if (m_credentialsStore)
+              deleteStoredCredentials(id, {});
+          };
+          if (QThread::currentThread() == thread())
+            retire();
+          else
+            QMetaObject::invokeMethod(this, retire, Qt::QueuedConnection);
         },
         /*priority=*/10);
 
@@ -211,40 +257,26 @@ SyncService::SyncService(ServiceLocator &p_services, QObject *p_parent)
 }
 
 void SyncService::shutdown() {
-  if (m_shutDown) {
+  if (m_shutDown)
     return;
-  }
   m_shutDown = true;
   for (QTimer *timer : qAsConst(m_debounceTimers)) {
-    if (timer) {
-      timer->stop();
-      timer->deleteLater();
-    }
+    timer->stop();
+    timer->deleteLater();
   }
   m_debounceTimers.clear();
-
-  // T24: SyncWorker thread teardown is gone. Drain any locally-owned
-  // SyncWorkQueueManager with a bounded budget. When the ServiceLocator
-  // provides a shared instance, main.cpp's aboutToQuit handler shuts it
-  // down with the same bounded budget — SyncWorkQueueManager::shutdown is
-  // idempotent so the double-call is safe.
-  if (m_ownedWorkQueue) {
-    m_ownedWorkQueue->shutdown(kShutdownTimeoutMs);
+  const auto operations = m_syncOperations;
+  // Wake every worker before joining: the GUI event loop need not run again.
+  for (const auto &operation : operations)
+    cancelSyncOperation(operation, true);
+  if (m_workQueue && !m_workQueue->shutdown(kShutdownTimeoutMs)) {
+    qCWarning(syncCategory) << "Waiting for cancelled sync workers before releasing services";
+    // Workers hold service/context pointers. Never free them after a timed-out join.
+    m_workQueue->shutdown(-1);
   }
-
-  // Wave 12.2 / F5.9: release any leftover cancellation tokens. After the
-  // work queue has drained, no SyncOps callback can be in flight, so freeing
-  // is safe.
-  QHash<QString, void *> leftover;
-  {
-    QMutexLocker locker(&m_cancellationMutex);
-    leftover.swap(m_cancellations);
-  }
-  for (auto it = leftover.begin(); it != leftover.end(); ++it) {
-    if (it.value()) {
-      vxcore_sync_free_cancellation(static_cast<VxCoreSyncCancellation *>(it.value()));
-    }
-  }
+  for (const auto &operation : operations)
+    finishSyncApply(operation);
+  m_syncOperations.clear();
 }
 
 SyncService::~SyncService() {
@@ -255,52 +287,91 @@ SyncService::~SyncService() {
   m_debounceTimers.clear();
 }
 
-QString SyncService::buildCredentialsJson(const QString &p_pat) {
+QString SyncService::buildConfigJson(const QString &p_notebookId,
+                                     const SyncSettings &p_settings) const {
   QJsonObject obj;
-  obj[QStringLiteral("pat")] = p_pat;
+  obj[QLatin1String(vxcore::kJsonKeyBackend)] = p_settings.m_backend;
+  obj[QLatin1String(vxcore::kJsonKeyRemoteUrl)] = canonicalSyncRemoteUrl(p_settings);
+  const auto cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
+  obj[QLatin1String(vxcore::kJsonKeyAutoSyncEnabled)] =
+      cfg.value(QLatin1String(vxcore::kJsonKeyAutoSyncEnabled)).toBool(true);
   return QString::fromUtf8(QJsonDocument(obj).toJson(QJsonDocument::Compact));
 }
 
-QString SyncService::buildConfigJson(const QString &p_remoteUrl) {
-  QJsonObject obj;
-  obj[QStringLiteral("backend")] = QStringLiteral("git");
-  obj[QStringLiteral("remoteUrl")] = p_remoteUrl;
-  return QString::fromUtf8(QJsonDocument(obj).toJson(QJsonDocument::Compact));
+bool SyncService::hasInterruptedRetirement(const QString &p_notebookId) const {
+  const auto path = m_notebookCoreService->buildAbsolutePath(
+      p_notebookId, QStringLiteral("vx_notebook/vx_sync/webdav/retirement.json"));
+  if (path.isEmpty())
+    return false;
+  const QFileInfo info(path);
+  return info.exists() || info.isSymLink();
 }
 
-void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QString &p_remoteUrl,
-                                        const QString &p_pat) {
+void SyncService::enableSyncForNotebook(const QString &p_notebookId,
+                                        const SyncSettings &p_settings) {
   if (m_shutDown) {
     qWarning() << "SyncService::enableSyncForNotebook: ignored after shutdown";
     return;
   }
   qCDebug(syncCategory) << "SyncService::enableSyncForNotebook: notebookId:" << p_notebookId;
 
-  // Defensive guard: reject empty PAT before any keychain/worker invocation.
-  if (p_pat.isEmpty()) {
-    qCWarning(syncCategory) << "enableSyncForNotebook rejected: empty PAT";
+  const auto validationError = validateSyncSettings(p_settings, true);
+  if (!validationError.isEmpty()) {
+    const auto code = isSupportedSyncBackend(p_settings.m_backend) ? VXCORE_ERR_INVALID_PARAM
+                                                                   : VXCORE_ERR_UNKNOWN_BACKEND;
     QMetaObject::invokeMethod(
         this,
-        [this, notebookId = p_notebookId]() {
-          emit enableFinished(notebookId, VXCORE_ERR_INVALID_PARAM,
-                              tr("PAT is required to enable sync."));
+        [this, p_notebookId, validationError, code]() {
+          emit enableFinished(p_notebookId, code, validationError);
         },
         Qt::QueuedConnection);
     return;
   }
-
-  // Defensive guard: reject empty remote URL before any keychain/worker invocation.
-  if (p_remoteUrl.trimmed().isEmpty()) {
-    qCWarning(syncCategory) << "enableSyncForNotebook rejected: empty remote URL";
+  if (hasInterruptedRetirement(p_notebookId)) {
     QMetaObject::invokeMethod(
         this,
-        [this, notebookId = p_notebookId]() {
-          emit enableFinished(notebookId, VXCORE_ERR_INVALID_PARAM,
-                              tr("Remote URL is required to enable sync."));
+        [this, p_notebookId]() {
+          emit enableFinished(
+              p_notebookId, VXCORE_ERR_INVALID_STATE,
+              tr("Open Sync Info to restore the interrupted sync configuration change."));
         },
         Qt::QueuedConnection);
     return;
   }
+  if (m_deletingCredentials.contains(p_notebookId)) {
+    // Clone closes its staging notebook before reopening the same UUID at the
+    // final root. Let that close's vault delete finish before storing anew.
+    auto deleted = std::make_shared<QMetaObject::Connection>();
+    auto failed = std::make_shared<QMetaObject::Connection>();
+    const auto resume = [this, p_notebookId, p_settings, deleted, failed]() {
+      QObject::disconnect(*deleted);
+      QObject::disconnect(*failed);
+      enableSyncForNotebook(p_notebookId, p_settings);
+    };
+    *deleted = connect(m_credentialsStore, &SyncCredentialsStore::credentialsDeleted, this,
+                       [p_notebookId, resume](const QString &id) {
+                         if (id == p_notebookId)
+                           resume();
+                       });
+    *failed = connect(m_credentialsStore, &SyncCredentialsStore::credentialsError, this,
+                      [p_notebookId, resume](const QString &id, const QString &) {
+                        if (id == p_notebookId)
+                          resume();
+                      });
+    return;
+  }
+  if (m_credentialOperations.contains(p_notebookId) ||
+      (isSyncRegistered(p_notebookId) && isSyncInProgress(p_notebookId))) {
+    QMetaObject::invokeMethod(
+        this,
+        [this, p_notebookId]() {
+          emit enableFinished(p_notebookId, VXCORE_ERR_SYNC_IN_PROGRESS,
+                              tr("Sync is in progress. Try again when it finishes."));
+        },
+        Qt::QueuedConnection);
+    return;
+  }
+  m_credentialOperations.insert(p_notebookId);
 
   // F4.5: fire vnote.sync.before_enable BEFORE any lock acquisition or worker
   // dispatch. Observe-only: HookContext::cancel() is intentionally ignored —
@@ -309,16 +380,13 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
   if (auto *hookMgr = m_services.get<HookManager>()) {
     QVariantMap args;
     args[QLatin1String(vxcore::kJsonKeyNotebookId)] = p_notebookId;
-    args[QStringLiteral("remoteUrl")] = p_remoteUrl;
+    args[QLatin1String(vxcore::kJsonKeyRemoteUrl)] = canonicalSyncRemoteUrl(p_settings);
     hookMgr->doAction(HookNames::SyncBeforeEnable, args);
   }
 
-  const QString configJson = buildConfigJson(p_remoteUrl);
-
-  // PAT is captured ONLY in the lambda below; it is never assigned to a
-  // SyncService member. The lambda destructs (releasing the capture) after
-  // the worker has been invoked.
-  const QString credsJson = buildCredentialsJson(p_pat);
+  const QString configJson = buildConfigJson(p_notebookId, p_settings);
+  // Secrets remain only in the store job and these transient operation captures.
+  const QString credsJson = syncCredentialsJson(p_settings.m_credentials);
   const QString notebookId = p_notebookId;
 
   // Create heap-stored connection handles so the lambda can disconnect itself
@@ -342,6 +410,10 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
               return;
             }
             cleanup();
+            if (m_shutDown) {
+              m_credentialOperations.remove(notebookId);
+              return;
+            }
             // T20: route enable through SyncWorkQueueManager (per-notebook FIFO)
             // instead of the legacy SyncWorker QMetaObject::invokeMethod path.
             // SyncOps::enableSync invokes the completion callback on the pool
@@ -365,8 +437,9 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
                   Qt::QueuedConnection);
               return;
             }
-            workQueue->enqueue(
-                notebookId, [this, notebookId, configJson, credsJson, notebookSvc]() {
+            const auto queued = workQueue->enqueue(
+                notebookId,
+                [this, notebookId, configJson, credsJson, notebookSvc]() {
                   SyncOps::enableSync(notebookSvc, notebookId, configJson, credsJson,
                                       [this, notebookId](VxCoreError p_code, QString p_msg) {
                                         QMetaObject::invokeMethod(
@@ -376,7 +449,19 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
                                             },
                                             Qt::QueuedConnection);
                                       });
+                },
+                [this, notebookId]() {
+                  QMetaObject::invokeMethod(
+                      this,
+                      [this, notebookId]() {
+                        onWorkerEnableFinished(notebookId, VXCORE_ERR_CANCELLED,
+                                               tr("Sync cancelled."));
+                      },
+                      Qt::QueuedConnection);
                 });
+            if (queued != SyncWorkQueueManager::EnqueueResult::Accepted)
+              onWorkerEnableFinished(notebookId, VXCORE_ERR_SYNC_IN_PROGRESS,
+                                     tr("The sync queue is busy. Try again."));
           });
 
   *errorConn =
@@ -386,127 +471,37 @@ void SyncService::enableSyncForNotebook(const QString &p_notebookId, const QStri
                   return;
                 }
                 cleanup();
-                const auto presented = SyncErrorPresenter::present(
-                    SyncErrorPresenter::Context::CredentialWrite, VXCORE_ERR_UNKNOWN, p_errMsg);
-                qWarning() << "SyncService::enableSyncForNotebook: keychain store failed:"
-                           << p_errMsg << "| user-facing:" << presented.primary;
-                emit enableFinished(notebookId, VXCORE_ERR_UNKNOWN, p_errMsg);
+                qWarning() << "SyncService::enableSyncForNotebook: keychain store failed";
+                onWorkerEnableFinished(notebookId, VXCORE_ERR_UNKNOWN, p_errMsg);
               });
 
-  m_credentialsStore->storeCredentials(notebookId, p_pat);
+  m_credentialsStore->storeCredentials(notebookId, p_settings.m_credentials);
 }
 
 void SyncService::disableSyncForNotebook(const QString &p_notebookId) {
-  if (m_shutDown) {
-    qWarning() << "SyncService::disableSyncForNotebook: ignored after shutdown";
+  if (m_shutDown)
     return;
-  }
-  qCDebug(syncCategory) << "SyncService::disableSyncForNotebook: notebookId:" << p_notebookId;
-
-  // Sync is being turned off — drop any auth-failure cooldown for this id.
-  m_authFailureCount.remove(p_notebookId);
-
-  const QString notebookId = p_notebookId;
-
-  // After the worker reports disableFinished for THIS notebook:
-  //   1. If vxcore disable_sync succeeded (VXCORE_OK), clear the on-disk JSON
-  //      sync fields (syncEnabled / syncBackend / syncRemoteUrl). vxcore's
-  //      DisableSync only clears in-memory maps (W1.T2 evidence) — without
-  //      this Qt-side reset the notebook would still look sync-enabled on next
-  //      app launch and reconcileSyncForNotebook would resurrect it (B8).
-  //      Failure to update the JSON is logged but does NOT block the keychain
-  //      cleanup (best-effort to avoid orphan PAT in S6).
-  //   2. If vxcore disable_sync failed, PRESERVE the JSON fields so the user
-  //      can retry without losing config state.
-  //   3. Always delete the keychain entry afterwards.
-  // One-shot connection.
-  auto *conn = new QMetaObject::Connection;
-  *conn =
-      connect(
-          this, &SyncService::disableFinished, this,
-          [this, notebookId, conn](const QString &p_finishedNotebookId, VxCoreError p_result) {
-            if (p_finishedNotebookId != notebookId) {
-              return;
-            }
-            QObject::disconnect(*conn);
-            delete conn;
-
-            // W2.T5 + Task 3 (fix-qtkeychain-win32-error-8): on disable SUCCESS
-            // clear the three flat sync JSON keys AND wipe the PAT from the
-            // keychain AND fire the after_disable hook. All success-only side
-            // effects live inside this single guard so the failure branch
-            // (else) can preserve everything for a clean retry.
-            if (p_result == VXCORE_OK) {
-              dropDebounceTimer(notebookId);
-
-              if (m_notebookCoreService) {
-                QJsonObject cfg = m_notebookCoreService->getNotebookConfig(notebookId);
-                cfg.remove(QLatin1String(vxcore::kJsonKeySyncEnabled));
-                cfg.remove(QLatin1String(vxcore::kJsonKeySyncBackend));
-                cfg.remove(QLatin1String(vxcore::kJsonKeySyncRemoteUrl));
-                const QString newJson =
-                    QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
-                const bool ok = m_notebookCoreService->updateNotebookConfig(notebookId, newJson);
-                if (!ok) {
-                  qCWarning(syncCategory)
-                      << "SyncService::disableSyncForNotebook: failed to clear JSON sync fields for"
-                      << "notebookId:" << notebookId
-                      << "(continuing with keychain cleanup as best-effort)";
-                }
-              }
-
-              m_credentialsStore->deleteCredentials(notebookId);
-
-              // F4.5: fire vnote.sync.after_disable on success only. Fired AFTER
-              // the JSON sync fields are cleared and AFTER scheduling keychain
-              // delete, outside any SyncService mutex. Observe-only.
-              if (auto *hookMgr = m_services.get<HookManager>()) {
-                QVariantMap args;
-                args[QLatin1String(vxcore::kJsonKeyNotebookId)] = notebookId;
-                hookMgr->doAction(HookNames::SyncAfterDisable, args);
-              }
-            } else {
-              // INTENTIONAL: do NOT call deleteCredentials on disable failure;
-              // the next successful disable attempt will clean both JSON and
-              // keychain. Preserving the PAT here keeps it available for retry
-              // so the user does not have to re-enter credentials after a
-              // transient backend error. The companion JSON keys are likewise
-              // preserved above (the success guard never runs on failure).
-              // Orphan-PAT recovery for the rare case where a previous-session
-              // disable wiped JSON but not keychain is handled by the S6
-              // startup sweep in onMainWindowAfterStart.
-              qCDebug(syncCategory)
-                  << "SyncService::disableSyncForNotebook: disable failed; preserving JSON and "
-                  << "keychain PAT for retry; notebookId:" << notebookId
-                  << "result:" << static_cast<int>(p_result);
-            }
-          });
-
-  // T18: route disable through SyncWorkQueueManager (per-notebook serialized
-  // executor) instead of the legacy SyncWorker QMetaObject::invokeMethod path.
-  // The work body runs on a QThreadPool worker; SyncOps::disableSync invokes
-  // the completion callback on that same thread, so we bounce back to the GUI
-  // thread via QMetaObject::invokeMethod(this, ..., Qt::QueuedConnection) to
-  // invoke onWorkerDisableFinished, which preserves the disableFinished signal
-  // contract (emitted on the GUI thread, exactly once per call).
-  auto *workQueue = m_workQueue;
-  NotebookCoreService *notebookSvc = m_notebookCoreService;
-  if (!workQueue) {
-    qCWarning(syncCategory)
-        << "SyncService::disableSyncForNotebook: SyncWorkQueueManager unavailable; falling back"
-        << "to synchronous failure for notebookId:" << notebookId;
+  if (m_credentialOperations.contains(p_notebookId)) {
     QMetaObject::invokeMethod(
-        this, [this, notebookId]() { onWorkerDisableFinished(notebookId, VXCORE_ERR_UNKNOWN); },
+        this,
+        [this, p_notebookId]() { emit disableFinished(p_notebookId, VXCORE_ERR_SYNC_IN_PROGRESS); },
         Qt::QueuedConnection);
     return;
   }
-  workQueue->enqueue(notebookId, [this, notebookId, notebookSvc]() {
-    SyncOps::disableSync(notebookSvc, notebookId, [this, notebookId](VxCoreError p_err) {
-      QMetaObject::invokeMethod(
-          this, [this, notebookId, p_err]() { onWorkerDisableFinished(notebookId, p_err); },
-          Qt::QueuedConnection);
-    });
-  });
+  m_credentialOperations.insert(p_notebookId);
+  const auto finish = [this, p_notebookId](VxCoreError code) {
+    QMetaObject::invokeMethod(
+        this, [this, p_notebookId, code]() { onWorkerDisableFinished(p_notebookId, code); },
+        Qt::QueuedConnection);
+  };
+  const auto queued = m_workQueue->enqueue(
+      p_notebookId,
+      [this, p_notebookId, finish]() {
+        SyncOps::disableSync(m_notebookCoreService, p_notebookId, finish);
+      },
+      [finish]() { finish(VXCORE_ERR_CANCELLED); });
+  if (queued != SyncWorkQueueManager::EnqueueResult::Accepted)
+    finish(VXCORE_ERR_SYNC_IN_PROGRESS);
 }
 
 void SyncService::unregisterSyncRuntime(const QString &p_notebookId) {
@@ -514,6 +509,7 @@ void SyncService::unregisterSyncRuntime(const QString &p_notebookId) {
     return;
   }
   dropDebounceTimer(p_notebookId);
+  m_keepBothUnsupported.remove(p_notebookId);
   if (!m_notebookCoreService) {
     qCWarning(syncCategory)
         << "SyncService::unregisterSyncRuntime: NotebookCoreService unavailable for"
@@ -537,182 +533,444 @@ void SyncService::unregisterSyncRuntime(const QString &p_notebookId) {
 }
 
 void SyncService::triggerSyncNow(const QString &p_notebookId) {
-  if (m_shutDown) {
-    qWarning() << "SyncService::triggerSyncNow: ignored after shutdown";
+  enqueueSync(p_notebookId, {}, false);
+}
+
+void SyncService::enqueueSync(const QString &p_notebookId,
+                              const QHash<QString, QString> &p_resolutions, bool p_automatic) {
+  if (m_shutDown)
+    return;
+  if (hasInterruptedRetirement(p_notebookId)) {
+    if (!p_automatic) {
+      m_syncErrorMessages.insert(
+          p_notebookId, tr("Open Sync Info to restore the interrupted sync configuration change."));
+      onSyncFinished(p_notebookId, VXCORE_ERR_INVALID_STATE);
+    }
     return;
   }
-  qCInfo(syncCategory) << "SyncService::triggerSyncNow: notebookId:" << p_notebookId;
+  qCInfo(syncCategory) << "SyncService::enqueueSync: notebookId:" << p_notebookId;
 
-  auto *workQueue = m_workQueue;
-  NotebookCoreService *notebookSvc = m_notebookCoreService;
-  if (!workQueue) {
-    qCWarning(syncCategory) << "SyncService::triggerSyncNow: SyncWorkQueueManager unavailable for"
+  if (!m_workQueue) {
+    qCWarning(syncCategory) << "SyncService::enqueueSync: work queue unavailable for"
                             << p_notebookId;
-    emit syncFailed(p_notebookId, VXCORE_ERR_UNKNOWN,
-                    QStringLiteral("SyncWorkQueueManager unavailable"));
+    if (!p_automatic)
+      emit syncFailed(p_notebookId, VXCORE_ERR_NOT_INITIALIZED,
+                      tr("The sync work queue is unavailable."));
     return;
   }
-
-  // T21: per-call cancellation token. Created BEFORE enqueue (so the work
-  // lambda can capture it), but only inserted into m_cancellations on
-  // EnqueueResult::Accepted. On Coalesced / QueueFull / Rejected the token is
-  // freed inline (never enters the map). On Accepted, the token is freed by
-  // either SyncService::onSyncFinished (T23: single-source EventBridge path)
-  // or the onCancelled callback registered with the queue (drop-from-pending
-  // path).
-  VxCoreSyncCancellation *token = vxcore_sync_create_cancellation();
-  const QString notebookId = p_notebookId;
-
-  auto work = [this, notebookId, notebookSvc, token]() {
-    // T8: pass the shared NotebookIoGate to SyncOps so the git-stage phase
-    // serializes against BufferSaveQueue workers on the same notebook.
-    NotebookIoGate *gate = m_services.get<NotebookIoGate>();
-    // vxcore-sync-stage-only V3: the staged path (stage_only + network_phase)
-    // does NOT emit sync.started/sync.finished events from vxcore, so
-    // EventBridge no longer fires onSyncStarted/onSyncFinished automatically.
-    // Drive them directly from this orchestrator instead.
-    QMetaObject::invokeMethod(
-        this, [this, notebookId]() { onSyncStarted(notebookId); }, Qt::QueuedConnection);
-    SyncOps::triggerSync(
-        notebookSvc, notebookId, token,
-        [this, notebookId](VxCoreError p_code) {
-          // Bounce back to GUI thread to emit syncFinished (and release the
-          // cancellation token via onSyncFinished).
-          QMetaObject::invokeMethod(
-              this, [this, notebookId, p_code]() { onSyncFinished(notebookId, p_code); },
-              Qt::QueuedConnection);
-        },
-        gate);
-  };
-
-  auto onCancelled = [this, notebookId, token]() {
-    // Fires OUTSIDE the queue mutex when the pending item is dropped via
-    // cancelPending(). Free our token and remove the matching map entry.
-    {
-      QMutexLocker locker(&m_cancellationMutex);
-      auto it = m_cancellations.find(notebookId);
-      if (it != m_cancellations.end() && it.value() == token) {
-        m_cancellations.erase(it);
-      }
-    }
-    if (token) {
-      vxcore_sync_free_cancellation(token);
-    }
-  };
-
-  const auto result = workQueue->enqueue(notebookId, work, onCancelled, QStringLiteral("trigger"));
-  switch (result) {
-  case SyncWorkQueueManager::EnqueueResult::Accepted: {
-    qCInfo(syncCategory) << "SyncService::triggerSyncNow: trigger enqueued for" << notebookId;
-    if (token) {
-      QMutexLocker locker(&m_cancellationMutex);
-      auto it = m_cancellations.find(notebookId);
-      if (it != m_cancellations.end() && it.value() != nullptr && it.value() != token) {
-        qCWarning(syncCategory)
-            << "SyncService::triggerSyncNow: overwriting stale cancellation token for" << notebookId
-            << "(prior sync likely still running)";
-      }
-      m_cancellations.insert(notebookId, token);
-    }
-    // T21: do NOT emit syncStarted here — EventBridge observes vxcore's
-    // sync.started event for both auto and manual triggers (post-T7) and
-    // routes it through onSyncStarted (T23). setInProgress is also handled
-    // there. We only mark the queue as accepted.
+  auto operation = std::make_shared<SyncOperation>();
+  operation->notebookId = p_notebookId;
+  operation->generation = ++m_nextSyncGeneration;
+  operation->resolutions = p_resolutions;
+  if (!operation->token) {
+    emit syncFailed(p_notebookId, VXCORE_ERR_OUT_OF_MEMORY,
+                    QString::fromUtf8(vxcore_error_message(VXCORE_ERR_OUT_OF_MEMORY)));
     return;
   }
-  case SyncWorkQueueManager::EnqueueResult::Coalesced:
-    qCInfo(syncCategory) << "SyncService::triggerSyncNow: trigger coalesced with pending sync for"
-                         << notebookId;
-    if (token) {
-      vxcore_sync_free_cancellation(token);
+  m_syncOperations.insert(operation->generation, operation);
+  const auto result = m_workQueue->enqueue(
+      p_notebookId, [this, operation]() { runSyncOperation(operation); },
+      [this, operation]() {
+        operation->cancelled.store(true);
+        vxcore_sync_cancel(operation->token.get());
+        QMetaObject::invokeMethod(
+            this, [this, operation]() { m_syncOperations.remove(operation->generation); },
+            Qt::QueuedConnection);
+      },
+      p_resolutions.isEmpty() ? QStringLiteral("trigger") : QString());
+  if (result == SyncWorkQueueManager::EnqueueResult::Accepted) {
+    qCInfo(syncCategory) << "SyncService::enqueueSync: enqueued for" << p_notebookId;
+  } else {
+    m_syncOperations.remove(operation->generation);
+    qCInfo(syncCategory) << "Sync enqueue not accepted for" << p_notebookId << int(result);
+    // Trigger overflow/coalescing remains silent. A rejected resolution batch
+    // must be visible: no choice from this batch was accepted.
+    if (!p_resolutions.isEmpty()) {
+      m_syncErrorMessages.insert(p_notebookId,
+                                 tr("The sync queue is full. Conflict choices were not applied."));
+      onSyncFinished(p_notebookId, VXCORE_ERR_SYNC_IN_PROGRESS);
     }
-    // No syncStarted emit — the existing pending sync already emitted.
-    return;
-  case SyncWorkQueueManager::EnqueueResult::QueueFull:
-    qCInfo(syncCategory) << "SyncService::triggerSyncNow: queue full for" << notebookId;
-    if (token) {
-      vxcore_sync_free_cancellation(token);
-    }
-    // T2 (sync-in-progress-ux): silent treatment to match onSyncShouldRun
-    // (auto-sync path) — QueueFull/Rejected are not user-visible failures.
-    // UI surfaces only via log; no syncFailed signal because IN_PROGRESS
-    // would be classified as non-error in onSyncFailedSurface anyway, and
-    // omitting the emit keeps the signal contract clean.
-    return;
-  case SyncWorkQueueManager::EnqueueResult::Rejected:
-    qCInfo(syncCategory) << "SyncService::triggerSyncNow: enqueue rejected for" << notebookId;
-    if (token) {
-      vxcore_sync_free_cancellation(token);
-    }
-    // T2 (sync-in-progress-ux): silent treatment to match onSyncShouldRun
-    // (auto-sync path) — QueueFull/Rejected are not user-visible failures.
-    // UI surfaces only via log; no syncFailed signal because IN_PROGRESS
-    // would be classified as non-error in onSyncFailedSurface anyway, and
-    // omitting the emit keeps the signal contract clean.
-    return;
   }
 }
 
-void SyncService::cancelSync(const QString &p_notebookId) {
-  if (m_shutDown) {
-    qWarning() << "SyncService::cancelSync: ignored after shutdown";
-    return;
-  }
+bool SyncService::isCurrentOperation(const std::shared_ptr<SyncOperation> &p_operation) const {
+  return m_syncOperations.value(p_operation->generation) == p_operation;
+}
 
-  // T21: first drop any pending (queued, not-yet-running) sync items. Their
-  // onCancelled callbacks (registered in triggerSyncNow) free the associated
-  // tokens and remove their map entries.
-  int dropped = 0;
-  if (m_workQueue) {
-    dropped = m_workQueue->cancelPending(p_notebookId);
-  }
-  if (dropped > 0) {
-    qCDebug(syncCategory) << "SyncService::cancelSync: dropped" << dropped << "pending sync(s) for"
-                          << p_notebookId;
-    emit syncCancelled(p_notebookId, /*wasQueued=*/true);
-    if (auto *hookMgr = m_services.get<HookManager>()) {
-      SyncCancelledEvent event;
-      event.notebookId = p_notebookId;
-      event.wasQueued = true;
-      hookMgr->doAction(HookNames::SyncCancelled, event);
+void SyncService::runSyncOperation(const std::shared_ptr<SyncOperation> &p_operation) {
+  const auto &id = p_operation->notebookId;
+  QMetaObject::invokeMethod(
+      this,
+      [this, p_operation]() {
+        if (isCurrentOperation(p_operation))
+          onSyncStarted(p_operation->notebookId);
+      },
+      Qt::QueuedConnection);
+  VxCoreError result = VXCORE_OK;
+  QString error;
+  try {
+    // One queue item owns the whole batch: no cap can silently drop a choice,
+    // and a later successful resolution cannot erase an earlier error.
+    for (auto it = p_operation->resolutions.constBegin(); it != p_operation->resolutions.constEnd();
+         ++it) {
+      if (p_operation->cancelled.load()) {
+        result = VXCORE_ERR_CANCELLED;
+        break;
+      }
+      SyncOps::resolveConflict(
+          m_notebookCoreService, id, it.key(), it.value(), [&](VxCoreError code) {
+            if (code != VXCORE_OK) {
+              const auto detail = m_notebookCoreService->syncErrorMessage(code);
+              if (result == VXCORE_OK)
+                result = code;
+              if (!error.isEmpty())
+                error += QLatin1Char('\n');
+              error += it.key() + QStringLiteral(": ") + detail;
+            }
+          });
     }
-    return;
+    if (p_operation->cancelled.load() && result == VXCORE_OK)
+      result = VXCORE_ERR_CANCELLED;
+    if (result == VXCORE_OK) {
+      SyncOps::triggerSync(
+          m_notebookCoreService, id, p_operation->token.get(),
+          [&](VxCoreError code) {
+            result = code;
+            if (code != VXCORE_OK) {
+              // The apply callback may already have copied a more specific
+              // failure before GUI refresh touched the context's last error.
+              QMutexLocker locker(&p_operation->mutex);
+              error = p_operation->error;
+              locker.unlock();
+              if (error.isEmpty())
+                error = m_notebookCoreService->syncErrorMessage(code);
+            }
+          },
+          m_services.get<NotebookIoGate>(),
+          [this, p_operation]() { return applySyncOperation(p_operation); });
+    }
+  } catch (...) {
+    result = VXCORE_ERR_UNKNOWN;
+    error = tr("Sync could not complete.");
   }
+  // Capture diagnostics before any subsequent C call can overwrite last_error.
+  if (result != VXCORE_OK && error.isEmpty())
+    error = m_notebookCoreService->syncErrorMessage(result);
+  QString conflictJson;
+  QJsonArray conflicts;
+  if (!p_operation->stopping.load() &&
+      m_notebookCoreService->getSyncConflicts(id, conflictJson) == VXCORE_OK) {
+    conflicts = QJsonDocument::fromJson(conflictJson.toUtf8())
+                    .object()
+                    .value(QStringLiteral("conflicts"))
+                    .toArray();
+  }
+  if (result == VXCORE_OK && !conflicts.isEmpty()) {
+    result = VXCORE_ERR_SYNC_CONFLICT;
+    error = QString::fromUtf8(vxcore_error_message(result));
+  }
+  QMetaObject::invokeMethod(
+      this,
+      [this, p_operation, result, error, conflicts]() {
+        if (m_shutDown || !isCurrentOperation(p_operation))
+          return;
+        QStringList paths;
+        QSet<QString> unsupported;
+        for (const auto &value : conflicts) {
+          const auto conflict = value.toObject();
+          const auto path = conflict.value(QLatin1String(vxcore::kJsonKeyPath)).toString();
+          paths.append(path);
+          if (!conflict.value(QLatin1String(vxcore::kJsonKeyCanKeepBoth)).toBool(true))
+            unsupported.insert(path);
+        }
+        m_keepBothUnsupported.insert(p_operation->notebookId, unsupported);
+        if (!paths.isEmpty())
+          onSyncConflictFiles(p_operation->notebookId, paths);
+        m_syncErrorMessages.insert(p_operation->notebookId, error);
+        m_syncOperations.remove(p_operation->generation);
+        onSyncFinished(p_operation->notebookId, result == VXCORE_OK && p_operation->cancelled.load()
+                                                    ? VXCORE_ERR_CANCELLED
+                                                    : result);
+      },
+      Qt::QueuedConnection);
+}
 
-  // Nothing pending dropped — fall back to cooperative cancel of the in-flight
-  // op via its cancellation token (existing path).
-  VxCoreSyncCancellation *token = nullptr;
+VxCoreError SyncService::applySyncOperation(const std::shared_ptr<SyncOperation> &p_operation) {
   {
-    QMutexLocker locker(&m_cancellationMutex);
-    auto it = m_cancellations.find(p_notebookId);
-    if (it != m_cancellations.end()) {
-      token = static_cast<VxCoreSyncCancellation *>(it.value());
-    }
+    QMutexLocker locker(&p_operation->mutex);
+    p_operation->deferred = true;
+    p_operation->phase = SyncOperation::Phase::Requested;
   }
-  if (!token) {
-    qCDebug(syncCategory) << "SyncService::cancelSync: no active sync for" << p_notebookId;
-    // F4.5: still fire vnote.sync.cancelled best-effort so observers can
-    // record cancel intent even if no in-flight op was found.
-    if (auto *hookMgr = m_services.get<HookManager>()) {
-      SyncCancelledEvent event;
-      event.notebookId = p_notebookId;
-      event.wasQueued = false;
-      hookMgr->doAction(HookNames::SyncCancelled, event);
+  // No IO gate is held while asking the GUI to reserve/drain open buffers.
+  QMetaObject::invokeMethod(
+      this, [this, p_operation]() { beginSyncApply(p_operation); }, Qt::QueuedConnection);
+  {
+    QMutexLocker locker(&p_operation->mutex);
+    while (p_operation->phase != SyncOperation::Phase::Ready &&
+           p_operation->phase != SyncOperation::Phase::Retired && !p_operation->stopping.load())
+      p_operation->changed.wait(&p_operation->mutex);
+    if (p_operation->stopping.load())
+      return VXCORE_ERR_CANCELLED;
+    if (p_operation->phase == SyncOperation::Phase::Retired)
+      return p_operation->result;
+    p_operation->phase = SyncOperation::Phase::Applying;
+  }
+  QStringList changedPaths;
+  QString error;
+  VxCoreError result = VXCORE_ERR_CANCELLED;
+  try {
+    auto *gate = m_services.get<NotebookIoGate>();
+    if (!gate) {
+      result = VXCORE_ERR_NOT_INITIALIZED;
+      error = tr("The notebook IO gate is unavailable.");
+    } else {
+      NotebookIoGate::ScopedLock lock(*gate, p_operation->notebookId);
+      if (!p_operation->cancelled.load()) {
+        result =
+            m_notebookCoreService->syncApplyPhase(p_operation->notebookId, p_operation->token.get(),
+                                                  p_operation->protectedPaths, &changedPaths);
+        if (result != VXCORE_OK)
+          error = m_notebookCoreService->syncErrorMessage(result);
+      }
     }
+  } catch (...) {
+    result = VXCORE_ERR_UNKNOWN;
+    error = tr("Sync could not install the downloaded files.");
+  }
+  {
+    QMutexLocker locker(&p_operation->mutex);
+    p_operation->result = result;
+    p_operation->error = error;
+    p_operation->changedPaths = changedPaths;
+    p_operation->phase = SyncOperation::Phase::Applied;
+  }
+  // Publication is over and the gate released before GUI refresh or callbacks.
+  QMetaObject::invokeMethod(
+      this, [this, p_operation]() { finishSyncApply(p_operation); }, Qt::QueuedConnection);
+  QMutexLocker locker(&p_operation->mutex);
+  while (p_operation->phase != SyncOperation::Phase::Retired && !p_operation->stopping.load())
+    p_operation->changed.wait(&p_operation->mutex);
+  return p_operation->stopping.load() ? VXCORE_ERR_CANCELLED : p_operation->result;
+}
+
+void SyncService::beginSyncApply(const std::shared_ptr<SyncOperation> &p_operation) {
+  if (!isCurrentOperation(p_operation))
+    return;
+  if (m_shutDown || p_operation->cancelled.load()) {
+    cancelSyncOperation(p_operation, m_shutDown);
     return;
   }
-  qCDebug(syncCategory) << "SyncService::cancelSync: signalling token for" << p_notebookId;
-  // vxcore_sync_cancel is thread-safe (atomic flag inside the token).
-  vxcore_sync_cancel(token);
+  {
+    QMutexLocker locker(&p_operation->mutex);
+    if (p_operation->phase != SyncOperation::Phase::Requested)
+      return;
+    p_operation->phase = SyncOperation::Phase::Reserving;
+  }
+  auto *buffers = m_services.get<BufferService>();
+  QStringList protectedPaths;
+  bool reserved = false;
+  try {
+    reserved = buffers && buffers->beginSyncApply(p_operation->notebookId, &protectedPaths);
+  } catch (...) {
+    // No worker can publish until this GUI request has signalled Ready.
+  }
+  if (!isCurrentOperation(p_operation)) {
+    if (reserved)
+      buffers->endSyncApply(p_operation->notebookId, {});
+    return;
+  }
+  p_operation->buffersReserved = reserved;
+  {
+    QMutexLocker locker(&p_operation->mutex);
+    p_operation->protectedPaths = protectedPaths;
+    p_operation->phase = SyncOperation::Phase::Draining;
+    if (!reserved && !p_operation->cancelled.load()) {
+      p_operation->result = VXCORE_ERR_SYNC_IN_PROGRESS;
+      p_operation->error = tr("An open note is being replaced or converted. Try sync again.");
+    }
+  }
+  if (!reserved || m_shutDown || p_operation->cancelled.load()) {
+    finishSyncApply(p_operation);
+    return;
+  }
+  p_operation->drainTime.start();
+  p_operation->timer = new QTimer(this);
+  p_operation->timer->setSingleShot(true);
+  p_operation->timer->setInterval(25);
+  connect(p_operation->timer.data(), &QTimer::timeout, this,
+          [this, p_operation]() { pollSyncApply(p_operation); });
+  pollSyncApply(p_operation);
+}
 
-  emit syncCancelled(p_notebookId, /*wasQueued=*/false);
+void SyncService::pollSyncApply(const std::shared_ptr<SyncOperation> &p_operation) {
+  if (!isCurrentOperation(p_operation))
+    return;
+  {
+    QMutexLocker locker(&p_operation->mutex);
+    if (p_operation->phase != SyncOperation::Phase::Draining)
+      return;
+  }
+  if (m_shutDown || p_operation->cancelled.load()) {
+    cancelSyncOperation(p_operation, m_shutDown);
+    return;
+  }
+  auto *buffers = m_services.get<BufferService>();
+  if (!buffers || !buffers->isSyncApplyReady(p_operation->notebookId)) {
+    if (p_operation->drainTime.elapsed() < 5000) {
+      p_operation->timer->start();
+      return;
+    }
+    {
+      QMutexLocker locker(&p_operation->mutex);
+      p_operation->result = VXCORE_ERR_SYNC_IN_PROGRESS;
+      p_operation->error = tr("An open note is still being saved. Try sync again.");
+    }
+    finishSyncApply(p_operation);
+    return;
+  }
+  if (auto *comments = m_services.get<CommentService>())
+    p_operation->protectedPaths.append(comments->syncProtectedPaths(p_operation->notebookId));
+  p_operation->protectedPaths.removeDuplicates();
+  const auto result = m_notebookCoreService->setSyncApplyInProgress(p_operation->notebookId, true);
+  const auto error =
+      result == VXCORE_OK ? QString() : m_notebookCoreService->syncErrorMessage(result);
+  p_operation->coreReserved = result == VXCORE_OK;
+  {
+    QMutexLocker locker(&p_operation->mutex);
+    p_operation->result = result;
+    p_operation->error = error;
+    if (result == VXCORE_OK && !p_operation->cancelled.load()) {
+      p_operation->phase = SyncOperation::Phase::Ready;
+      p_operation->changed.wakeAll();
+      return;
+    }
+  }
+  finishSyncApply(p_operation);
+}
 
-  // F4.5: fire vnote.sync.cancelled AFTER vxcore_sync_cancel returns. No
-  // SyncService mutex is held here (snapshot/release done above). Observe-only.
+void SyncService::finishSyncApply(const std::shared_ptr<SyncOperation> &p_operation) {
+  if (!isCurrentOperation(p_operation))
+    return;
+  VxCoreError result;
+  QString error;
+  QStringList changedPaths;
+  bool deferred;
+  {
+    QMutexLocker locker(&p_operation->mutex);
+    if (p_operation->phase == SyncOperation::Phase::Applying ||
+        p_operation->phase == SyncOperation::Phase::Reserving ||
+        p_operation->phase == SyncOperation::Phase::Retiring ||
+        p_operation->phase == SyncOperation::Phase::Retired)
+      return;
+    result = p_operation->result;
+    error = p_operation->error;
+    changedPaths = p_operation->changedPaths;
+    deferred = p_operation->deferred;
+    p_operation->phase = SyncOperation::Phase::Retiring;
+  }
+  if (result == VXCORE_OK && p_operation->cancelled.load())
+    result = VXCORE_ERR_CANCELLED;
+  if (p_operation->timer) {
+    p_operation->timer->stop();
+    p_operation->timer->deleteLater();
+    p_operation->timer = nullptr;
+  }
+  if (deferred) {
+    const auto refreshed = m_notebookCoreService->refreshAfterSync(p_operation->notebookId);
+    if (result == VXCORE_OK && refreshed != VXCORE_OK) {
+      result = refreshed;
+      error = m_notebookCoreService->syncErrorMessage(refreshed);
+    }
+  }
+  // Refresh/reload while still reserved; clear the core flag only after the
+  // GUI has reconciled its caches. Never reload dirty buffer text.
+  if (p_operation->buffersReserved) {
+    if (auto *buffers = m_services.get<BufferService>())
+      buffers->endSyncApply(p_operation->notebookId, changedPaths);
+    p_operation->buffersReserved = false;
+  }
+  if (p_operation->coreReserved) {
+    const auto cleared =
+        m_notebookCoreService->setSyncApplyInProgress(p_operation->notebookId, false);
+    p_operation->coreReserved = false;
+    if (result == VXCORE_OK && cleared != VXCORE_OK) {
+      result = cleared;
+      error = m_notebookCoreService->syncErrorMessage(cleared);
+    }
+  }
+  if (result == VXCORE_OK && p_operation->cancelled.load())
+    result = VXCORE_ERR_CANCELLED;
+  if (!changedPaths.isEmpty()) {
+    try {
+      emit workingTreeChanged(p_operation->notebookId, changedPaths);
+    } catch (...) {
+      if (result == VXCORE_OK) {
+        result = VXCORE_ERR_UNKNOWN;
+        error = tr("An open view could not refresh after sync.");
+      }
+    }
+  }
+  if (result == VXCORE_OK && p_operation->cancelled.load())
+    result = VXCORE_ERR_CANCELLED;
+  {
+    QMutexLocker locker(&p_operation->mutex);
+    p_operation->result = result;
+    p_operation->error = error;
+    p_operation->phase = SyncOperation::Phase::Retired;
+    p_operation->changed.wakeAll();
+  }
+}
+
+void SyncService::cancelSyncOperation(const std::shared_ptr<SyncOperation> &p_operation,
+                                      bool p_shutdown) {
+  p_operation->cancelled.store(true);
+  if (p_shutdown)
+    p_operation->stopping.store(true);
+  vxcore_sync_cancel(p_operation->token.get());
+  bool canRetire;
+  bool reserving;
+  {
+    QMutexLocker locker(&p_operation->mutex);
+    reserving = p_operation->phase == SyncOperation::Phase::Reserving;
+    canRetire = p_operation->phase != SyncOperation::Phase::Applying &&
+                p_operation->phase != SyncOperation::Phase::Reserving &&
+                p_operation->phase != SyncOperation::Phase::Retiring &&
+                p_operation->phase != SyncOperation::Phase::Network;
+    if (canRetire && p_operation->result == VXCORE_OK)
+      p_operation->result = VXCORE_ERR_CANCELLED;
+    p_operation->changed.wakeAll();
+  }
+  // Cancellation can be reentrant from a clean-view freeze signal. The buffer
+  // service installs its whole reservation before emitting, so retire it now
+  // and let beginSyncApply observe that it no longer owns the reservation.
+  if (reserving) {
+    if (auto *buffers = m_services.get<BufferService>())
+      buffers->endSyncApply(p_operation->notebookId, {});
+  }
+  if (canRetire)
+    finishSyncApply(p_operation);
+}
+
+void SyncService::cancelSync(const QString &p_notebookId) {
+  if (m_shutDown)
+    return;
+  const int dropped = m_workQueue ? m_workQueue->cancelPending(p_notebookId) : 0;
+  const auto operations = m_syncOperations;
+  bool inFlight = false;
+  for (const auto &operation : operations) {
+    if (operation->notebookId == p_notebookId && !operation->cancelled.load()) {
+      cancelSyncOperation(operation, false);
+      inFlight = true;
+    }
+  }
+  if (dropped > 0)
+    emit syncCancelled(p_notebookId, true);
+  if (inFlight)
+    emit syncCancelled(p_notebookId, false);
   if (auto *hookMgr = m_services.get<HookManager>()) {
     SyncCancelledEvent event;
     event.notebookId = p_notebookId;
-    event.wasQueued = false;
+    event.wasQueued = dropped > 0;
     hookMgr->doAction(HookNames::SyncCancelled, event);
   }
 }
@@ -730,8 +988,7 @@ void SyncService::cancelSync(const QString &p_notebookId) {
 // bootstrapAndPersistFinished contract (exactly one emission per call) is
 // preserved by routing all completion edges through a single emit at the
 // final step of whichever branch runs.
-void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString &p_remoteUrl,
-                                      const QString &p_pat) {
+void SyncService::bootstrapAndPersist(const QString &p_notebookId, const SyncSettings &p_settings) {
   if (m_shutDown) {
     qWarning() << "SyncService::bootstrapAndPersist: ignored after shutdown";
     return;
@@ -739,15 +996,16 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
   qCDebug(syncCategory) << "SyncService::bootstrapAndPersist: notebookId:" << p_notebookId;
 
   const QString notebookId = p_notebookId;
-  const QString remoteUrl = p_remoteUrl;
+  const QString remoteUrl = canonicalSyncRemoteUrl(p_settings);
+  const QString backend = p_settings.m_backend;
 
   // One-shot bridge on enableFinished. Filters by notebookId, self-disconnects,
   // then enqueues the persist work (or short-circuits on enable failure).
   auto conn = std::make_shared<QMetaObject::Connection>();
   *conn = connect(
       this, &SyncService::enableFinished, this,
-      [this, conn, notebookId, remoteUrl](const QString &p_finishedId, VxCoreError p_enResult,
-                                          const QString &p_enMsg) {
+      [this, conn, notebookId, remoteUrl, backend](const QString &p_finishedId,
+                                                   VxCoreError p_enResult, const QString &p_enMsg) {
         if (p_finishedId != notebookId) {
           return;
         }
@@ -777,10 +1035,10 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
         // shared state that the rest of SyncService also touches on the GUI
         // thread. FIFO ordering with the prior enable item is guaranteed by
         // enqueue-ing on the same notebookId.
-        workQueue->enqueue(notebookId, [this, notebookId, remoteUrl]() {
+        workQueue->enqueue(notebookId, [this, notebookId, remoteUrl, backend]() {
           QMetaObject::invokeMethod(
               this,
-              [this, notebookId, remoteUrl]() {
+              [this, notebookId, remoteUrl, backend]() {
                 bool persistOk = false;
                 QString persistErr;
                 if (m_testForceNextPersistFailure) {
@@ -791,7 +1049,7 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
                 } else if (m_notebookCoreService) {
                   QJsonObject cfg = m_notebookCoreService->getNotebookConfig(notebookId);
                   cfg[QLatin1String(vxcore::kJsonKeySyncEnabled)] = true;
-                  cfg[QLatin1String(vxcore::kJsonKeySyncBackend)] = QStringLiteral("git");
+                  cfg[QLatin1String(vxcore::kJsonKeySyncBackend)] = backend;
                   cfg[QLatin1String(vxcore::kJsonKeySyncRemoteUrl)] = remoteUrl;
                   const QString cfgJson =
                       QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
@@ -806,31 +1064,10 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
 
                 auto *wq = m_workQueue;
                 if (persistOk) {
-                  // T20: enqueue initial sync as a third FIFO work item.
-                  // Best-effort; ignore its result code (we already committed
-                  // success at the bootstrap level).
-                  if (wq) {
-                    NotebookCoreService *notebookSvc = m_notebookCoreService;
-                    NotebookIoGate *gate = m_services.get<NotebookIoGate>();
-                    wq->enqueue(notebookId, [this, notebookSvc, notebookId, gate]() {
-                      // V3: emit lifecycle signals here — staged path does not
-                      // emit vxcore sync.started / sync.finished events.
-                      QMetaObject::invokeMethod(
-                          this, [this, notebookId]() { onSyncStarted(notebookId); },
-                          Qt::QueuedConnection);
-                      SyncOps::triggerSync(
-                          notebookSvc, notebookId, /*p_cancel=*/nullptr,
-                          [this, notebookId](VxCoreError p_code) {
-                            QMetaObject::invokeMethod(
-                                this,
-                                [this, notebookId, p_code]() {
-                                  onSyncFinished(notebookId, p_code);
-                                },
-                                Qt::QueuedConnection);
-                          },
-                          gate);
-                    });
-                  }
+                  // Bootstrap persists routing first; its initial sync uses
+                  // the same cancellable, acknowledged staged operation.
+                  if (wq)
+                    triggerSyncNow(notebookId);
                   emit bootstrapAndPersistFinished(notebookId, VXCORE_OK, QString());
                   return;
                 }
@@ -858,255 +1095,130 @@ void SyncService::bootstrapAndPersist(const QString &p_notebookId, const QString
                   return;
                 }
 
-                NotebookCoreService *notebookSvc = m_notebookCoreService;
-                wq->enqueue(notebookId, [this, notebookId, notebookSvc, origPersistErr,
-                                         forceRollbackFail]() {
-                  auto onDone = [this, notebookId, origPersistErr](VxCoreError p_disResult) {
-                    QMetaObject::invokeMethod(
-                        this,
-                        [this, notebookId, origPersistErr, p_disResult]() {
-                          if (p_disResult != VXCORE_OK) {
-                            qCritical()
-                                << "SyncService::bootstrapAndPersist: ROLLBACK FAILED for "
-                                   "notebook"
-                                << notebookId << ":" << vxErrorToString(p_disResult)
-                                << "- notebook may be in inconsistent state (vxcore enabled "
-                                   "but JSON not persisted). Original persist error "
-                                   "preserved.";
-                          } else {
-                            qCWarning(syncCategory)
-                                << "SyncService::bootstrapAndPersist: rollback succeeded for"
-                                << notebookId;
-                            // PAT was just stored for the enable; the
-                            // notebook is being rolled back to clean S0,
-                            // so drop the orphan keychain entry too.
-                            if (m_credentialsStore) {
-                              m_credentialsStore->deleteCredentials(notebookId);
-                            }
-                          }
-                          emit bootstrapAndPersistFinished(notebookId, VXCORE_ERR_UNKNOWN,
-                                                           origPersistErr);
-                        },
-                        Qt::QueuedConnection);
-                  };
-
-                  if (forceRollbackFail) {
-                    // Test seam: synthesize a disable failure without
-                    // touching vxcore.
-                    onDone(VXCORE_ERR_UNKNOWN);
-                    return;
-                  }
-                  SyncOps::disableSync(notebookSvc, notebookId, onDone);
-                });
+                // Disable's public completion is after JSON cleanup and the
+                // vault delete has settled, so a retry cannot race that delete.
+                auto rollback = std::make_shared<QMetaObject::Connection>();
+                *rollback = connect(
+                    this, &SyncService::disableFinished, this,
+                    [this, notebookId, origPersistErr, rollback](const QString &id,
+                                                                 VxCoreError code) {
+                      if (id != notebookId)
+                        return;
+                      QObject::disconnect(*rollback);
+                      if (code != VXCORE_OK)
+                        qCritical() << "SyncService::bootstrapAndPersist: ROLLBACK FAILED for" << id
+                                    << vxErrorToString(code);
+                      emit bootstrapAndPersistFinished(id, VXCORE_ERR_UNKNOWN, origPersistErr);
+                    });
+                if (forceRollbackFail)
+                  onWorkerDisableFinished(notebookId, VXCORE_ERR_UNKNOWN);
+                else
+                  disableSyncForNotebook(notebookId);
               },
               Qt::QueuedConnection);
         });
       });
 
-  enableSyncForNotebook(notebookId, remoteUrl, p_pat);
+  enableSyncForNotebook(notebookId, p_settings);
 }
 
-void SyncService::updateCredentials(const QString &p_notebookId, const QString &p_newPat) {
-  if (m_shutDown) {
-    qWarning() << "SyncService::updateCredentials: ignored after shutdown";
+void SyncService::updateCredentials(const QString &p_notebookId,
+                                    const SyncCredential &p_credentials) {
+  if (m_shutDown)
+    return;
+  if (hasInterruptedRetirement(p_notebookId)) {
+    emit credentialsSetFinished(p_notebookId, VXCORE_ERR_INVALID_STATE);
     return;
   }
-  qCDebug(syncCategory) << "SyncService::updateCredentials: notebookId:" << p_notebookId;
-
-  // User supplied a new PAT — give it a fresh chance even if the previous PAT
-  // tripped the auth-failure circuit-breaker.
-  if (m_authFailureCount.remove(p_notebookId)) {
-    qCInfo(syncCategory)
-        << "SyncService::updateCredentials: cleared auth-failure counter on PAT update"
-        << "notebookId:" << p_notebookId;
+  const auto cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
+  SyncSettings settings;
+  settings.m_backend = cfg.value(QLatin1String(vxcore::kJsonKeySyncBackend)).toString();
+  settings.m_remoteUrl = cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
+  settings.m_credentials = p_credentials;
+  if (!isSyncEnabled(p_notebookId) || !validateSyncSettings(settings, true).isEmpty()) {
+    emit credentialsSetFinished(p_notebookId, isSupportedSyncBackend(settings.m_backend)
+                                                  ? VXCORE_ERR_INVALID_PARAM
+                                                  : VXCORE_ERR_UNKNOWN_BACKEND);
+    return;
   }
+  if (isSyncInProgress(p_notebookId)) {
+    emit credentialsSetFinished(p_notebookId, VXCORE_ERR_SYNC_IN_PROGRESS);
+    return;
+  }
+  m_authFailureCount.remove(p_notebookId);
 
-  // F4 chicken-and-egg fix: if the notebook is NOT registered in vxcore's
-  // runtime states_ map but its on-disk config says sync is enabled, the
-  // worker's setCredentials path would fail with VXCORE_ERR_SYNC_NOT_ENABLED
-  // because vxcore_sync_set_credentials requires a states_ entry. Route to
-  // the full enableSyncForNotebook flow (which registers the notebook AND
-  // applies credentials atomically), then re-emit its enableFinished as
-  // credentialsSetFinished so the public API contract is preserved for
-  // callers that only listen for credentialsSetFinished.
-  if (!isSyncRegistered(p_notebookId) && isSyncEnabled(p_notebookId)) {
-    qCDebug(syncCategory) << "SyncService::updateCredentials routing to enableSyncForNotebook "
-                             "(notebook unregistered) id="
-                          << p_notebookId;
-
-    const QJsonObject cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
-    const QString persistedUrl = cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
-    if (persistedUrl.isEmpty()) {
-      qCWarning(syncCategory)
-          << "SyncService::updateCredentials: cannot route to enableSyncForNotebook; "
-             "syncRemoteUrl is empty in notebook config for"
-          << p_notebookId;
-      emit credentialsSetFinished(p_notebookId, VXCORE_ERR_INVALID_PARAM);
-      return;
-    }
-
-    // One-shot bridge: enableFinished -> credentialsSetFinished. Filter by
-    // notebookId because enableFinished is a shared signal. The lambda
-    // self-disconnects after firing for this notebook to avoid leaking
-    // connections across multiple updateCredentials calls.
-    const QString routedNotebookId = p_notebookId;
-    auto *bridgeConn = new QMetaObject::Connection;
-    *bridgeConn =
+  // A new WebDAV backend authenticates and verifies the remote UUID before
+  // atomically rotating usernameHash. Failed initialization keeps the old runtime.
+  // No state deletion or transfer is part of credential rotation.
+  if (!isSyncRegistered(p_notebookId) || settings.m_backend == QLatin1String("webdav")) {
+    auto bridge = std::make_shared<QMetaObject::Connection>();
+    *bridge =
         connect(this, &SyncService::enableFinished, this,
-                [this, routedNotebookId, bridgeConn](const QString &p_finishedNotebookId,
-                                                     VxCoreError p_result, const QString &) {
-                  if (p_finishedNotebookId != routedNotebookId) {
+                [this, p_notebookId, bridge](const QString &id, VxCoreError code, const QString &) {
+                  if (id != p_notebookId)
                     return;
-                  }
-                  QObject::disconnect(*bridgeConn);
-                  delete bridgeConn;
-                  emit credentialsSetFinished(routedNotebookId, p_result);
+                  QObject::disconnect(*bridge);
+                  emit credentialsSetFinished(id, code);
                 });
-
-    // Connect FIRST, then invoke. enableSyncForNotebook is async (keychain
-    // store -> worker dispatch via QueuedConnection) so there's no race, but
-    // we follow the convention used elsewhere in this file.
-    enableSyncForNotebook(p_notebookId, persistedUrl, p_newPat);
+    enableSyncForNotebook(p_notebookId, settings);
     return;
   }
 
-  const QString credsJson = buildCredentialsJson(p_newPat);
-  const QString notebookId = p_notebookId;
-
-  auto *storedConn = new QMetaObject::Connection;
-  auto *errorConn = new QMetaObject::Connection;
-
-  auto cleanup = [storedConn, errorConn]() {
-    QObject::disconnect(*storedConn);
-    QObject::disconnect(*errorConn);
-    delete storedConn;
-    delete errorConn;
+  m_credentialOperations.insert(p_notebookId);
+  const auto credentialsJson = syncCredentialsJson(p_credentials);
+  auto stored = std::make_shared<QMetaObject::Connection>();
+  auto failed = std::make_shared<QMetaObject::Connection>();
+  const auto disconnect = [stored, failed]() {
+    QObject::disconnect(*stored);
+    QObject::disconnect(*failed);
   };
-
-  *storedConn =
+  *stored =
       connect(m_credentialsStore, &SyncCredentialsStore::credentialsStored, this,
-              [this, notebookId, credsJson, cleanup](const QString &p_storedNotebookId) {
-                if (p_storedNotebookId != notebookId) {
+              [this, p_notebookId, credentialsJson, disconnect](const QString &id) {
+                if (id != p_notebookId)
+                  return;
+                disconnect();
+                if (m_shutDown) {
+                  m_credentialOperations.remove(id);
                   return;
                 }
-                cleanup();
-                // T19: route setCredentials through SyncWorkQueueManager (per-notebook
-                // serialized executor). The PAT-bearing credsJson is captured by-value
-                // in the enqueued lambda and again in the SyncOps::setCredentials call;
-                // both copies are destroyed when their respective scopes end. NEVER
-                // log credsJson. Completion bounces back to the GUI thread via
-                // QueuedConnection so onWorkerCredentialsSetFinished preserves the
-                // credentialsSetFinished signal contract (GUI-thread, exactly once).
-                auto *workQueue = m_services.get<SyncWorkQueueManager>();
-                NotebookCoreService *notebookSvc = m_notebookCoreService;
-                if (!workQueue) {
-                  qCWarning(syncCategory)
-                      << "SyncService::updateCredentials: SyncWorkQueueManager unavailable;"
-                      << "falling back to synchronous failure for notebookId:" << notebookId;
+                const auto finish = [this, id](VxCoreError code) {
                   QMetaObject::invokeMethod(
-                      this,
-                      [this, notebookId]() {
-                        onWorkerCredentialsSetFinished(notebookId, VXCORE_ERR_UNKNOWN);
-                      },
+                      this, [this, id, code]() { onWorkerCredentialsSetFinished(id, code); },
                       Qt::QueuedConnection);
-                  return;
-                }
-                workQueue->enqueue(notebookId, [this, notebookId, credsJson, notebookSvc]() {
-                  SyncOps::setCredentials(notebookSvc, notebookId, credsJson,
-                                          [this, notebookId](VxCoreError p_err) {
-                                            QMetaObject::invokeMethod(
-                                                this,
-                                                [this, notebookId, p_err]() {
-                                                  onWorkerCredentialsSetFinished(notebookId, p_err);
-                                                },
-                                                Qt::QueuedConnection);
-                                          });
-                });
+                };
+                const auto queued = m_workQueue->enqueue(
+                    id,
+                    [this, id, credentialsJson, finish]() {
+                      SyncOps::setCredentials(m_notebookCoreService, id, credentialsJson, finish);
+                    },
+                    [finish]() { finish(VXCORE_ERR_CANCELLED); });
+                if (queued != SyncWorkQueueManager::EnqueueResult::Accepted)
+                  onWorkerCredentialsSetFinished(id, VXCORE_ERR_SYNC_IN_PROGRESS);
               });
-
-  *errorConn =
-      connect(m_credentialsStore, &SyncCredentialsStore::credentialsStoreError, this,
-              [this, notebookId, cleanup](const QString &p_errNotebookId, const QString &p_errMsg) {
-                if (p_errNotebookId != notebookId) {
-                  return;
-                }
-                cleanup();
-                qWarning() << "SyncService::updateCredentials: keychain store failed:" << p_errMsg;
-                emit credentialsSetFinished(notebookId, VXCORE_ERR_UNKNOWN);
-              });
-
-  m_credentialsStore->storeCredentials(notebookId, p_newPat);
+  *failed = connect(m_credentialsStore, &SyncCredentialsStore::credentialsStoreError, this,
+                    [this, p_notebookId, disconnect](const QString &id, const QString &) {
+                      if (id != p_notebookId)
+                        return;
+                      disconnect();
+                      qWarning() << "SyncService::updateCredentials: keychain store failed";
+                      onWorkerCredentialsSetFinished(id, VXCORE_ERR_UNKNOWN);
+                    });
+  m_credentialsStore->storeCredentials(p_notebookId, p_credentials);
 }
 
 void SyncService::resolveConflicts(const QString &p_notebookId,
                                    const QHash<QString, QString> &p_resolutions) {
-  if (m_shutDown) {
-    qWarning() << "SyncService::resolveConflicts: ignored after shutdown";
-    return;
-  }
-  qCDebug(syncCategory) << "SyncService::resolveConflicts: notebookId:" << p_notebookId
-                        << "count:" << p_resolutions.size();
+  enqueueSync(p_notebookId, p_resolutions, false);
+}
 
-  auto *workQueue = m_workQueue;
-  auto *notebookSvc = m_notebookCoreService;
-  if (!workQueue) {
-    qCWarning(syncCategory) << "SyncService::resolveConflicts: SyncWorkQueueManager unavailable for"
-                            << p_notebookId;
-    return;
-  }
-
-  // T22: enqueue each resolution as its own work item on the per-notebook
-  // FIFO queue. coalesceKey "resolve-<filePath>" collapses duplicate clicks
-  // for the same path but keeps distinct paths independent.
-  for (auto it = p_resolutions.constBegin(); it != p_resolutions.constEnd(); ++it) {
-    const QString filePath = it.key();
-    const QString resolution = it.value();
-    const QString notebookId = p_notebookId;
-    workQueue->enqueue(
-        notebookId,
-        [notebookSvc, notebookId, filePath, resolution]() {
-          SyncOps::resolveConflict(notebookSvc, notebookId, filePath, resolution,
-                                   [notebookId, filePath](VxCoreError p_code) {
-                                     if (p_code != VXCORE_OK) {
-                                       qCWarning(syncCategory)
-                                           << "SyncService::resolveConflicts: resolve failed for"
-                                           << notebookId << filePath << "code:" << p_code;
-                                     }
-                                   });
-        },
-        /*onCancelled=*/nullptr, QStringLiteral("resolve-") + filePath);
-  }
-
-  // T22: trailing triggerSync enqueued AFTER all resolves. Same coalesceKey
-  // "trigger" as SyncService::triggerSyncNow so a concurrent manual click
-  // collapses into this trailing run. Per-notebook FIFO guarantees this
-  // trigger executes only after every queued resolve has completed.
-  const QString notebookId = p_notebookId;
-  NotebookIoGate *gate = m_services.get<NotebookIoGate>();
-  workQueue->enqueue(
-      notebookId,
-      [this, notebookSvc, notebookId, gate]() {
-        // V3: emit lifecycle signals here — staged path skips vxcore events.
-        QMetaObject::invokeMethod(
-            this, [this, notebookId]() { onSyncStarted(notebookId); }, Qt::QueuedConnection);
-        SyncOps::triggerSync(
-            notebookSvc, notebookId, /*p_cancel=*/nullptr,
-            [this, notebookId](VxCoreError p_code) {
-              if (p_code != VXCORE_OK) {
-                qCDebug(syncCategory) << "SyncService::resolveConflicts: trailing trigger result"
-                                      << notebookId << "code:" << p_code;
-              }
-              QMetaObject::invokeMethod(
-                  this, [this, notebookId, p_code]() { onSyncFinished(notebookId, p_code); },
-                  Qt::QueuedConnection);
-            },
-            gate);
-      },
-      /*onCancelled=*/nullptr, QStringLiteral("trigger"));
+QSet<QString> SyncService::keepBothUnsupportedPaths(const QString &p_notebookId) const {
+  return m_keepBothUnsupported.value(p_notebookId);
 }
 
 bool SyncService::isSyncInProgress(const QString &p_notebookId) const {
-  return m_workQueue ? m_workQueue->inFlightState(p_notebookId).running : false;
+  return m_credentialOperations.contains(p_notebookId) ||
+         (m_workQueue && m_workQueue->hasPending(p_notebookId));
 }
 
 bool SyncService::isSyncEnabled(const QString &p_notebookId) const {
@@ -1124,7 +1236,12 @@ bool SyncService::isSyncReady(const QString &p_notebookId) const {
   if (!m_notebookCoreService) {
     return false;
   }
-  const bool ready = m_notebookCoreService->isSyncReady(p_notebookId);
+  const auto cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
+  SyncSettings settings;
+  settings.m_backend = cfg.value(QLatin1String(vxcore::kJsonKeySyncBackend)).toString();
+  settings.m_remoteUrl = cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
+  const bool ready = cfg.value(QLatin1String(vxcore::kJsonKeySyncEnabled)).toBool() &&
+                     validateSyncSettings(settings, false).isEmpty();
   qCDebug(syncCategory) << "SyncService::isSyncReady: query notebookId:" << p_notebookId
                         << "syncReady:" << ready;
   return ready;
@@ -1262,17 +1379,74 @@ void SyncService::maybeTriggerPostReconcile(const QString &p_notebookId) {
 
 void SyncService::onWorkerEnableFinished(const QString &p_notebookId, VxCoreError p_result,
                                          const QString &p_message) {
+  m_credentialOperations.remove(p_notebookId);
   qCDebug(syncCategory) << "SyncService::onWorkerEnableFinished: notebookId:" << p_notebookId
                         << "result:" << vxErrorToString(p_result);
   emit enableFinished(p_notebookId, p_result, p_message);
 }
 
 void SyncService::onWorkerDisableFinished(const QString &p_notebookId, VxCoreError p_result) {
-  emit disableFinished(p_notebookId, p_result);
+  if (p_result != VXCORE_OK) {
+    // A failed disable retains both routing and credentials for an explicit retry.
+    m_credentialOperations.remove(p_notebookId);
+    emit disableFinished(p_notebookId, p_result);
+    return;
+  }
+  dropDebounceTimer(p_notebookId);
+  m_authFailureCount.remove(p_notebookId);
+  m_keepBothUnsupported.remove(p_notebookId);
+  m_reconcileAttempted.remove(p_notebookId);
+  auto cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
+  cfg.remove(QLatin1String(vxcore::kJsonKeySyncEnabled));
+  cfg.remove(QLatin1String(vxcore::kJsonKeySyncBackend));
+  cfg.remove(QLatin1String(vxcore::kJsonKeySyncRemoteUrl));
+  if (!m_notebookCoreService->updateNotebookConfig(
+          p_notebookId, QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact)))) {
+    qCWarning(syncCategory) << "Could not clear disabled sync routing for" << p_notebookId;
+  }
+  deleteStoredCredentials(p_notebookId, [this, p_notebookId]() {
+    if (auto *hooks = m_services.get<HookManager>()) {
+      QVariantMap args;
+      args[QLatin1String(vxcore::kJsonKeyNotebookId)] = p_notebookId;
+      hooks->doAction(HookNames::SyncAfterDisable, args);
+    }
+    emit disableFinished(p_notebookId, VXCORE_OK);
+  });
+}
+
+void SyncService::deleteStoredCredentials(const QString &p_notebookId,
+                                          std::function<void()> p_finished) {
+  m_credentialOperations.insert(p_notebookId);
+  m_deletingCredentials.insert(p_notebookId);
+  auto deleted = std::make_shared<QMetaObject::Connection>();
+  auto failed = std::make_shared<QMetaObject::Connection>();
+  const auto complete = [this, p_notebookId, deleted, failed, p_finished]() {
+    QObject::disconnect(*deleted);
+    QObject::disconnect(*failed);
+    m_credentialOperations.remove(p_notebookId);
+    m_deletingCredentials.remove(p_notebookId);
+    if (p_finished)
+      p_finished();
+  };
+  *deleted = connect(m_credentialsStore, &SyncCredentialsStore::credentialsDeleted, this,
+                     [p_notebookId, complete](const QString &id) {
+                       if (id == p_notebookId)
+                         complete();
+                     });
+  *failed = connect(m_credentialsStore, &SyncCredentialsStore::credentialsError, this,
+                    [p_notebookId, complete](const QString &id, const QString &) {
+                      if (id == p_notebookId) {
+                        qWarning() << "SyncService: disabled credential cleanup failed";
+                        complete();
+                      }
+                    });
+  // The busy identity prevents a new store racing this still-running delete.
+  m_credentialsStore->deleteCredentials(p_notebookId);
 }
 
 void SyncService::onWorkerCredentialsSetFinished(const QString &p_notebookId,
                                                  VxCoreError p_result) {
+  m_credentialOperations.remove(p_notebookId);
   emit credentialsSetFinished(p_notebookId, p_result);
 }
 
@@ -1299,21 +1473,6 @@ void SyncService::onSyncFinished(const QString &p_notebookId, VxCoreError p_resu
                        << "message:" << vxErrorToString(p_result);
   // T26: in-flight state is tracked by SyncWorkQueueManager via its work
   // item lifecycle; no separate flag to clear here.
-
-  // Wave 12.2 / F5.9: release the cancellation token (if any). Snapshot
-  // under the mutex, then free outside — rule W0.5.
-  VxCoreSyncCancellation *token = nullptr;
-  {
-    QMutexLocker locker(&m_cancellationMutex);
-    auto it = m_cancellations.find(p_notebookId);
-    if (it != m_cancellations.end()) {
-      token = static_cast<VxCoreSyncCancellation *>(it.value());
-      m_cancellations.erase(it);
-    }
-  }
-  if (token) {
-    vxcore_sync_free_cancellation(token);
-  }
 
   // Track consecutive auth failures for the auto-sync circuit-breaker.
   // Reset on any success so a single good sync clears the cooldown.
@@ -1345,8 +1504,11 @@ void SyncService::onSyncFinished(const QString &p_notebookId, VxCoreError p_resu
   }
 
   if (p_result != VXCORE_OK) {
-    emit syncFailed(p_notebookId, p_result, vxErrorToString(p_result));
+    const auto message = m_syncErrorMessages.take(p_notebookId);
+    emit syncFailed(p_notebookId, p_result,
+                    message.isEmpty() ? vxErrorToString(p_result) : message);
   }
+  m_syncErrorMessages.remove(p_notebookId);
   emit syncFinished(p_notebookId, p_result);
 }
 
@@ -1417,49 +1579,7 @@ void SyncService::dropDebounceTimer(const QString &p_notebookId) {
 }
 
 void SyncService::enqueueAutoSync(const QString &p_notebookId) {
-  auto *workQueue = m_workQueue;
-  if (!workQueue) {
-    qCInfo(syncCategory) << "SyncService::enqueueAutoSync: SyncWorkQueueManager unavailable for"
-                         << p_notebookId;
-    return;
-  }
-
-  NotebookCoreService *notebookSvc = m_notebookCoreService;
-  const QString notebookId = p_notebookId;
-  NotebookIoGate *gate = m_services.get<NotebookIoGate>();
-  auto work = [this, notebookSvc, notebookId, gate]() {
-    // vxcore-sync-stage-only V3: staged path does not emit lifecycle
-    // events through vxcore; drive Qt syncStarted/syncFinished here.
-    QMetaObject::invokeMethod(
-        this, [this, notebookId]() { onSyncStarted(notebookId); }, Qt::QueuedConnection);
-    SyncOps::triggerSync(
-        notebookSvc, notebookId, /*p_cancel=*/nullptr,
-        /*onFinished=*/
-        [this, notebookId](VxCoreError p_code) {
-          QMetaObject::invokeMethod(
-              this, [this, notebookId, p_code]() { onSyncFinished(notebookId, p_code); },
-              Qt::QueuedConnection);
-        },
-        gate);
-  };
-
-  const auto result =
-      workQueue->enqueue(notebookId, work, /*onCancelled=*/nullptr, QStringLiteral("trigger"));
-  switch (result) {
-  case SyncWorkQueueManager::EnqueueResult::Accepted:
-    qCInfo(syncCategory) << "SyncService::enqueueAutoSync: auto-sync enqueued for" << notebookId;
-    return;
-  case SyncWorkQueueManager::EnqueueResult::Coalesced:
-    qCInfo(syncCategory) << "SyncService::enqueueAutoSync: auto-sync coalesced for" << notebookId;
-    return;
-  case SyncWorkQueueManager::EnqueueResult::QueueFull:
-    qCInfo(syncCategory) << "SyncService::enqueueAutoSync: auto-sync dropped (queue full) for"
-                         << notebookId;
-    return;
-  case SyncWorkQueueManager::EnqueueResult::Rejected:
-    qCInfo(syncCategory) << "SyncService::enqueueAutoSync: auto-sync rejected for" << notebookId;
-    return;
-  }
+  enqueueSync(p_notebookId, {}, true);
 }
 
 void SyncService::onDebounceTimeout(const QString &p_notebookId) {
@@ -1571,14 +1691,12 @@ void SyncService::onMainWindowAfterStart() {
       continue;
     }
 
-    // W2.T5/S6: Orphan PAT cleanup. Legacy disable paths (prior to W2.T5) did
-    // not consistently clear keychain credentials, leaving an orphan PAT for
-    // notebooks whose JSON now says sync is disabled. Sweep here at app start
-    // so the keychain stays in sync with disk truth.
-    if (m_credentialsStore && !isSyncEnabled(nbId) && m_credentialsStore->hasCredentials(nbId)) {
+    // Probe-free idempotent deletion also reaches entries left by a prior
+    // process: the existence cache deliberately starts empty on restart.
+    if (m_credentialsStore && !isSyncEnabled(nbId) && !isSyncInProgress(nbId)) {
       qCDebug(syncCategory)
-          << "SyncService::onMainWindowAfterStart: S6 orphan PAT cleanup for notebookId=" << nbId;
-      m_credentialsStore->deleteCredentials(nbId);
+          << "SyncService::onMainWindowAfterStart: disabled credential cleanup for" << nbId;
+      deleteStoredCredentials(nbId, {});
     }
 
     reconcileSyncForNotebook(nbId);
@@ -1588,155 +1706,92 @@ void SyncService::onMainWindowAfterStart() {
 // See AGENTS.md "Reconcile Semantics" for invariant rationale on the
 // precondition-check-after-insert ordering and m_reconcileAttempted lifecycle.
 void SyncService::reconcileSyncForNotebook(const QString &p_notebookId) {
-  qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: ENTRY notebookId:"
-                        << p_notebookId << "shutDown:" << m_shutDown
-                        << "hasNotebookCoreService:" << (m_notebookCoreService != nullptr)
-                        << "hasCredentialsStore:" << (m_credentialsStore != nullptr);
-  if (m_shutDown || !m_notebookCoreService || !m_credentialsStore) {
+  if (m_shutDown || !m_notebookCoreService || !m_credentialsStore ||
+      m_reconcileAttempted.contains(p_notebookId) || isSyncInProgress(p_notebookId))
+    return;
+  const auto cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
+  if (!cfg.value(QLatin1String(vxcore::kJsonKeySyncEnabled)).toBool())
+    return;
+  if (hasInterruptedRetirement(p_notebookId)) {
+    emit syncFailed(p_notebookId, VXCORE_ERR_INVALID_STATE,
+                    tr("Open Sync Info to restore the interrupted sync configuration change."));
+    emit reconcileFinished(p_notebookId, VXCORE_ERR_INVALID_STATE);
     return;
   }
-
-  const QJsonObject cfg = m_notebookCoreService->getNotebookConfig(p_notebookId);
-  const bool diskEnabled = cfg.value(QLatin1String(vxcore::kJsonKeySyncEnabled)).toBool();
-  if (!diskEnabled) {
-    qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: skip - disk says not enabled"
-                          << p_notebookId;
+  SyncSettings settings;
+  settings.m_backend = cfg.value(QLatin1String(vxcore::kJsonKeySyncBackend)).toString();
+  settings.m_remoteUrl = cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
+  const auto validationError = validateSyncSettings(settings, false);
+  if (!validationError.isEmpty()) {
+    const auto code = settings.m_backend.isEmpty() || isSupportedSyncBackend(settings.m_backend)
+                          ? VXCORE_ERR_INVALID_PARAM
+                          : VXCORE_ERR_UNKNOWN_BACKEND;
+    emit syncFailed(p_notebookId, code, validationError);
+    emit reconcileFinished(p_notebookId, code);
     return;
   }
-
-  if (m_reconcileAttempted.contains(p_notebookId)) {
-    qCDebug(syncCategory)
-        << "SyncService::reconcileSyncForNotebook: already attempted in this process"
-        << p_notebookId;
+  if (isSyncRegistered(p_notebookId))
     return;
-  }
-
-  const QString backend = cfg.value(QLatin1String(vxcore::kJsonKeySyncBackend)).toString();
-  const QString remoteUrl = cfg.value(QLatin1String(vxcore::kJsonKeySyncRemoteUrl)).toString();
-  if (backend.isEmpty() || remoteUrl.isEmpty()) {
-    qCWarning(syncCategory) << "SyncService::reconcileSyncForNotebook: incomplete config"
-                            << "notebookId:" << p_notebookId << "backend:" << backend
-                            << "remoteUrl:" << remoteUrl;
-    emit reconcileFinished(p_notebookId, VXCORE_ERR_INVALID_PARAM);
-    return;
-  }
-
-  // Mark as attempted AFTER precondition checks pass, so transient failures can retry
   m_reconcileAttempted.insert(p_notebookId);
-  qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: reconcile attempted set inserted"
-                        << "notebookId:" << p_notebookId;
-
-  qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: requesting PAT"
-                        << "notebookId:" << p_notebookId;
-
-  auto connOk = std::make_shared<QMetaObject::Connection>();
-  auto connErr = std::make_shared<QMetaObject::Connection>();
-
-  *connOk =
-      connect(m_credentialsStore, &SyncCredentialsStore::credentialsRetrieved, this,
-              [this, p_notebookId, connOk, connErr, backend, remoteUrl](const QString &p_evNbId,
-                                                                        const QString &p_pat) {
-                if (p_evNbId != p_notebookId) {
-                  return;
-                }
-                QObject::disconnect(*connOk);
-                QObject::disconnect(*connErr);
-
-                qCDebug(syncCategory)
-                    << "SyncService::reconcileSyncForNotebook: got PAT, dispatching enableSync"
-                    << "notebookId:" << p_notebookId;
-
-                QJsonObject cfgObj;
-                cfgObj.insert(QStringLiteral("backend"), backend);
-                cfgObj.insert(QStringLiteral("remoteUrl"), remoteUrl);
-                const QString configJson =
-                    QString::fromUtf8(QJsonDocument(cfgObj).toJson(QJsonDocument::Compact));
-
-                QJsonObject credsObj;
-                credsObj.insert(QStringLiteral("pat"), p_pat);
-                const QString credentialsJson =
-                    QString::fromUtf8(QJsonDocument(credsObj).toJson(QJsonDocument::Compact));
-
-                // T24: route reconcile enable through SyncWorkQueueManager +
-                // SyncOps instead of the removed SyncWorker. Best-effort:
-                // completion result is folded into reconcileFinished below
-                // (we still report VXCORE_OK to indicate dispatch succeeded,
-                // mirroring the pre-T24 behavior).
-                //
-                // After enable returns VXCORE_OK we bounce back to the GUI
-                // thread and call maybeTriggerPostReconcile, which auto-fires
-                // a triggerSyncNow IF the notebook is "stale" (last successful
-                // sync > kPostReconcileFreshnessMs ago). Closes the multi-
-                // device staleness window where opening a notebook would only
-                // enqueue enableSync, leaving the first FetchOrigin to wait
-                // for the next save/manual-sync. The completion lambda runs
-                // on a pool thread; the QueuedConnection hop puts the gate
-                // (which inspects per-notebook state via SyncService members)
-                // back on the GUI thread.
-                auto *workQueue = m_workQueue;
-                NotebookCoreService *notebookSvc = m_notebookCoreService;
-                if (workQueue) {
-                  const QString nbId = p_notebookId;
-                  workQueue->enqueue(nbId, [this, notebookSvc, nbId, configJson,
-                                            credentialsJson]() {
-                    SyncOps::enableSync(notebookSvc, nbId, configJson, credentialsJson,
-                                        [this, nbId](VxCoreError p_code, QString) {
-                                          if (p_code != VXCORE_OK) {
-                                            return;
-                                          }
-                                          QMetaObject::invokeMethod(
-                                              this,
-                                              [this, nbId]() { maybeTriggerPostReconcile(nbId); },
-                                              Qt::QueuedConnection);
-                                        });
-                  });
-                } else {
-                  qCWarning(syncCategory) << "SyncService::reconcileSyncForNotebook: "
-                                             "SyncWorkQueueManager unavailable for"
-                                          << p_notebookId;
-                }
-                emit reconcileFinished(p_notebookId, VXCORE_OK);
-              });
-
-  *connErr =
-      connect(
-          m_credentialsStore, &SyncCredentialsStore::credentialsError, this,
-          [this, p_notebookId, connOk, connErr](const QString &p_evNbId, const QString &p_errMsg) {
-            if (p_evNbId != p_notebookId) {
-              return;
-            }
-            QObject::disconnect(*connOk);
-            QObject::disconnect(*connErr);
-
-            // Clear the "attempted" marker so a retry (e.g., after user re-enters PAT) can proceed
-            m_reconcileAttempted.remove(p_notebookId);
-            qCDebug(syncCategory) << "SyncService::reconcileSyncForNotebook: reconcile attempted "
-                                     "set removed on PAT fetch failure"
-                                  << "notebookId:" << p_notebookId;
-
-            qCWarning(syncCategory)
-                << "SyncService::reconcileSyncForNotebook: PAT fetch failed"
-                << "notebookId:" << p_notebookId << "error:" << p_errMsg
-                << "-> leaving notebook usable; Sync Now will fail until user re-enters PAT";
-            emit reconcileFinished(p_notebookId, VXCORE_ERR_SYNC_AUTH_FAILED);
-          });
-
+  m_credentialOperations.insert(p_notebookId);
+  auto retrieved = std::make_shared<QMetaObject::Connection>();
+  auto failed = std::make_shared<QMetaObject::Connection>();
+  const auto disconnect = [retrieved, failed]() {
+    QObject::disconnect(*retrieved);
+    QObject::disconnect(*failed);
+  };
+  const auto finish = [this, p_notebookId](VxCoreError code) {
+    m_credentialOperations.remove(p_notebookId);
+    if (code != VXCORE_OK)
+      m_reconcileAttempted.remove(p_notebookId);
+    emit reconcileFinished(p_notebookId, code);
+    if (code == VXCORE_OK && !m_shutDown)
+      maybeTriggerPostReconcile(p_notebookId);
+  };
+  *retrieved = connect(
+      m_credentialsStore, &SyncCredentialsStore::credentialsRetrieved, this,
+      [this, p_notebookId, settings, disconnect,
+       finish](const QString &id, const SyncCredential &credentials) mutable {
+        if (id != p_notebookId)
+          return;
+        disconnect();
+        if (m_shutDown) {
+          finish(VXCORE_ERR_CANCELLED);
+          return;
+        }
+        settings.m_credentials = credentials;
+        if (!validateSyncSettings(settings, true).isEmpty()) {
+          finish(VXCORE_ERR_SYNC_AUTH_FAILED);
+          return;
+        }
+        const auto configJson = buildConfigJson(id, settings);
+        const auto credentialsJson = syncCredentialsJson(credentials);
+        const auto complete = [this, finish](VxCoreError code) {
+          QMetaObject::invokeMethod(this, [finish, code]() { finish(code); }, Qt::QueuedConnection);
+        };
+        const auto queued = m_workQueue->enqueue(
+            id,
+            [this, id, configJson, credentialsJson, complete]() {
+              SyncOps::enableSync(m_notebookCoreService, id, configJson, credentialsJson,
+                                  [complete](VxCoreError code, QString) { complete(code); });
+            },
+            [complete]() { complete(VXCORE_ERR_CANCELLED); });
+        if (queued != SyncWorkQueueManager::EnqueueResult::Accepted)
+          finish(VXCORE_ERR_SYNC_IN_PROGRESS);
+      });
+  *failed = connect(m_credentialsStore, &SyncCredentialsStore::credentialsError, this,
+                    [p_notebookId, disconnect, finish](const QString &id, const QString &) {
+                      if (id != p_notebookId)
+                        return;
+                      disconnect();
+                      finish(VXCORE_ERR_SYNC_AUTH_FAILED);
+                    });
   m_credentialsStore->retrieveCredentials(p_notebookId);
 }
 
 void SyncService::ensureSyncEnabled(const QString &p_notebookId) {
   qCDebug(syncCategory) << "SyncService::ensureSyncEnabled: notebookId:" << p_notebookId;
   if (m_shutDown) {
-    return;
-  }
-  // Idempotence: ensureSyncEnabled exists to lift S4 (disk-complete but runtime-
-  // unregistered) into S5. If the notebook is already registered in vxcore's
-  // states_ map, there is nothing to do. This avoids redundant reconcile work
-  // when callers fire ensureSyncEnabled in multiple paths (e.g., dialog Apply
-  // followed by OK both routing through onCredentialsSetFinished).
-  if (isSyncRegistered(p_notebookId)) {
-    qCDebug(syncCategory) << "SyncService::ensureSyncEnabled: skip - notebook already registered"
-                          << p_notebookId;
     return;
   }
   // Clear any prior "already-attempted" marker so reconcileSyncForNotebook

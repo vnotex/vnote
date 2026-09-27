@@ -8,9 +8,7 @@
 //      page; local page is no longer current.
 //   3. In remote mode, an invalid URL scheme (ssh://...) keeps the Open
 //      button disabled.
-//   4. In remote mode, a valid HTTPS URL + a non-existent or existing-empty
-//      destination enables the Open button; an existing non-empty path
-//      disables it (refine-open-notebook-dialog: relaxed dest contract).
+//   4. A valid remote URL enables Open only for a destination that does not exist.
 //
 // This file also hosts the NewNoteDialog2 constructor-options coverage (macOS
 // Services note capture) because it already owns a fully wired ServiceLocator +
@@ -80,9 +78,9 @@ private slots:
   // 3. Remote mode: paste invalid URL scheme (ssh://...) -> Open disabled.
   void testInvalidRemoteUrlSchemeKeepsOpenDisabled();
 
-  // 4. Remote mode: valid HTTPS URL + valid destination (non-existing OR
-  //    existing-empty) -> Open enabled. Non-empty existing dest -> disabled.
+  // Existing destinations, including empty directories, must never be taken over.
   void testValidRemoteUrlEnablesOpenButton();
+  void testWebdavAnonymousAndAuthenticatedInputs();
 
   // 5. The "Open V3 Notebook" secondary button exists, sits in ResetRole (so it
   //    sorts ahead of Open/Cancel on every platform layout), and closes the
@@ -411,11 +409,7 @@ void TestOpenNotebookDialog2::testInvalidRemoteUrlSchemeKeepsOpenDisabled() {
 // =============================================================================
 // Subtest 4: Valid URL + valid destination enables Open.
 //
-// Post refine-open-notebook-dialog the dest contract is "non-existing OR
-// existing-empty", so this subtest covers three branches:
-//   a) non-existing path with a writable parent       -> Open ENABLED
-//   b) existing empty directory                       -> Open ENABLED
-//   c) existing non-empty directory                   -> Open DISABLED
+// Destination ownership: only a new path is accepted.
 //
 // The user-typed/browse value lands in the LocationInputWithBrowseButton's
 // internal QLineEdit; we drive it via setText() to bypass the modal QFileDialog
@@ -467,13 +461,13 @@ void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton() {
   QVERIFY2(openBtn->isEnabled(),
            "Open must be enabled when URL is https://... and dest does not exist");
 
-  // (b) Existing EMPTY directory: still enabled (relaxed contract).
+  // (b) Existing EMPTY directory: refused just like the controller.
   const QString existingEmptyDest = QDir::cleanPath(parentDir + QStringLiteral("/empty-dest"));
   QVERIFY(QDir().mkpath(existingEmptyDest));
   QVERIFY(QFileInfo(existingEmptyDest).isDir());
   destInput->setText(existingEmptyDest);
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-  QVERIFY2(openBtn->isEnabled(), "Open must be enabled when dest is an existing empty directory");
+  QVERIFY2(!openBtn->isEnabled(), "Open must refuse an existing empty directory");
 
   // (c) Existing NON-EMPTY directory: disabled. Seed a sentinel file inside.
   const QString existingNonEmptyDest =
@@ -491,6 +485,58 @@ void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton() {
            "Open must be DISABLED when dest is an existing non-empty directory");
 
   delete svc;
+}
+
+void TestOpenNotebookDialog2::testWebdavAnonymousAndAuthenticatedInputs() {
+  ServiceLocator services;
+  NotebookCoreService notebooks(m_ctx);
+  services.registerService<NotebookCoreService>(&notebooks);
+  TempDirFixture temp;
+  QVERIFY(temp.isValid());
+  OpenNotebookDialog2 dialog(services);
+  dialog.show();
+  auto *remote = dialog.findChild<QRadioButton *>(QStringLiteral("remoteModeRadio"));
+  auto *backend = dialog.findChild<QComboBox *>(QStringLiteral("syncBackendCombo"));
+  auto *url = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
+  auto *gitUsername = dialog.findChild<QLineEdit *>(QStringLiteral("gitUsernameEdit"));
+  auto *username = dialog.findChild<QLineEdit *>(QStringLiteral("webdavUsernameEdit"));
+  auto *secret = dialog.findChild<QLineEdit *>(QStringLiteral("remotePatEdit"));
+  auto *destination =
+      dialog.findChild<LocationInputWithBrowseButton *>(QStringLiteral("remoteDestInput"));
+  auto *open = dialog.findChild<QPushButton *>(QStringLiteral("openButton"));
+  QVERIFY(remote && backend && url && gitUsername && username && secret && destination && open);
+  remote->setChecked(true);
+  secret->setText(QStringLiteral("git-token"));
+  backend->setCurrentIndex(backend->findData(QStringLiteral("webdav")));
+  QVERIFY(secret->text().isEmpty());
+  QCOMPARE(secret->echoMode(), QLineEdit::Password);
+  QVERIFY(gitUsername->isHidden());
+  QVERIFY(username->isVisible());
+  destination->setText(temp.filePath(QStringLiteral("download")));
+  url->setText(QStringLiteral("https://example.com/dav/notebook/"));
+  QVERIFY(open->isEnabled()); // Anonymous download is allowed, not anonymous enable.
+
+  username->setText(QStringLiteral("writer"));
+  QVERIFY(!open->isEnabled()); // No accidental partial credentials.
+  secret->setText(QStringLiteral("  app password  "));
+  QVERIFY(open->isEnabled());
+  QCOMPARE(url->text(), QStringLiteral("https://example.com/dav/notebook/"));
+  url->setText(QStringLiteral("http://127.0.0.1/dav/notebook/"));
+  QVERIFY(!open->isEnabled());
+  url->setText(QStringLiteral("https://example.com/dav/notebook/?password=forbidden"));
+  QVERIFY(!open->isEnabled());
+  url->setText(QStringLiteral("https://example.com/dav/notebook/"));
+  QVERIFY(open->isEnabled());
+  username->clear();
+  QVERIFY(!open->isEnabled()); // A password without an account is not anonymous.
+  secret->clear();
+  QVERIFY(open->isEnabled());
+
+  backend->setCurrentIndex(backend->findData(QStringLiteral("git")));
+  QVERIFY(username->isHidden());
+  QVERIFY(gitUsername->isVisible());
+  url->setText(QStringLiteral("file:///repo.git"));
+  QVERIFY(open->isEnabled()); // Git local-file remotes retain their behavior.
 }
 
 // =============================================================================

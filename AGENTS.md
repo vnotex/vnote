@@ -253,7 +253,7 @@ Noncopyable, `VNOTEX_DEPRECATED` and exception handling: [src/core/AGENTS.md](sr
 ## Sync State Model
 
 Notebook sync has 8 reachable states (S0-S7), defined by the tuple of on-disk JSON sync fields,
-PAT presence in the OS keychain, and runtime registration in vxcore's `states_` map. **S5 is the
+credential presence in the OS keychain (Git PAT or WebDAV login), and runtime registration in vxcore's `states_` map. **S5 is the
 only "ready" state**; S1-S4 and S6 are partial/inconsistent, S0 is cleanly disabled, S7 is
 in-flight. Every controller, widget, and service that touches sync must reason in these terms.
 
@@ -267,7 +267,8 @@ vxcore-side threading contract:
 ## Save Path Threading Contract
 
 Buffer saves run on a worker via `BufferSaveQueue`; save and git-stage/commit work on the SAME
-notebook are serialized by the per-notebook `NotebookIoGate` async mutex.
+notebook are serialized by the per-notebook `NotebookIoGate` async mutex. WebDAV additionally installs incoming changes under
+the gate after a GUI-owned buffer reservation and save drain; metadata refresh remains GUI-thread-only.
 
 > **Forbidden Patterns (post-T7):**
 > - Calling `vxcore_buffer_save` directly from the UI thread. Use [`BufferSaveQueue::enqueue`](src/core/services/buffersavequeue.h) instead.

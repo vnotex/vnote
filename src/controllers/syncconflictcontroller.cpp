@@ -4,10 +4,14 @@
 
 #include <QDebug>
 #include <QHash>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QMetaObject>
 #include <QString>
 
 #include <core/servicelocator.h>
+#include <core/services/notebookcoreservice.h>
 #include <core/services/synclog.h>
 #include <core/services/syncservice.h>
 #include <widgets/dialogs/syncconflictdialog2.h>
@@ -38,37 +42,40 @@ void SyncConflictController::presentConflicts(const QString &p_notebookId,
     return;
   }
 
-  auto *dlg = new SyncConflictDialog2(m_services, p_notebookId, p_conflictFiles, p_parent);
+  auto *dlg =
+      new SyncConflictDialog2(m_services, p_notebookId, p_conflictFiles,
+                              m_syncService->keepBothUnsupportedPaths(p_notebookId), p_parent);
   // Auto-clean: dialog destroys itself when closed (after either accept or
   // reject). The lambdas connected below run BEFORE the close (signal/slot is
   // direct), so they observe a still-valid dialog.
   dlg->setAttribute(Qt::WA_DeleteOnClose);
 
-  // OK path: when the user clicks OK the dialog emits resolutionsChosen with
-  // the per-file resolution map. We then:
-  //   1. Wire a one-shot connection on SyncService::syncFinished filtered to
-  //      this notebookId so that the very next syncFinished arrival emits
-  //      conflictsResolved exactly once.
-  //   2. Forward the resolutions to SyncService::resolveConflicts which
-  //      internally queues per-file resolveConflict slots followed by a
-  //      triggerSync; the trailing triggerSync is what produces syncFinished.
-  // The shared_ptr<Connection> lets the lambda disconnect itself on its first
-  // (and only) firing - the standard "one-shot" pattern from T7/T11/T14.
-  connect(dlg, &SyncConflictDialog2::resolutionsChosen, this,
-          [this, p_notebookId](const QHash<QString, QString> &p_resolutions) {
-            auto conn = std::make_shared<QMetaObject::Connection>();
-            *conn = connect(m_syncService, &SyncService::syncFinished, this,
-                            [this, p_notebookId, conn](const QString &p_finishedNotebookId,
-                                                       VxCoreError p_result) {
-                              Q_UNUSED(p_result);
-                              if (p_finishedNotebookId != p_notebookId) {
-                                return;
-                              }
-                              QObject::disconnect(*conn);
-                              emit conflictsResolved(p_notebookId);
-                            });
-            m_syncService->resolveConflicts(p_notebookId, p_resolutions);
-          });
+  // A failed file resolution or trailing sync leaves the incident active.
+  // Successful completion must also have no durable unresolved conflicts.
+  connect(
+      dlg, &SyncConflictDialog2::resolutionsChosen, this,
+      [this, p_notebookId](const QHash<QString, QString> &p_resolutions) {
+        auto conn = std::make_shared<QMetaObject::Connection>();
+        *conn = connect(
+            m_syncService, &SyncService::syncFinished, this,
+            [this, p_notebookId, conn](const QString &p_finishedNotebookId, VxCoreError p_result) {
+              if (p_finishedNotebookId != p_notebookId) {
+                return;
+              }
+              QObject::disconnect(*conn);
+              auto *notebooks = m_services.get<NotebookCoreService>();
+              QString conflicts;
+              if (p_result == VXCORE_OK && notebooks &&
+                  notebooks->getSyncConflicts(p_notebookId, conflicts) == VXCORE_OK) {
+                const auto document = QJsonDocument::fromJson(conflicts.toUtf8());
+                const auto value = document.object().value(QStringLiteral("conflicts"));
+                if (document.isObject() && value.isArray() && value.toArray().isEmpty()) {
+                  emit conflictsResolved(p_notebookId);
+                }
+              }
+            });
+        m_syncService->resolveConflicts(p_notebookId, p_resolutions);
+      });
 
   // Cancel path: dialog Cancel emits QDialog::rejected. resolutionsChosen is
   // NOT emitted (per the T12 ADR), so the OK lambda above never fires; the

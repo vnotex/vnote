@@ -99,9 +99,11 @@ void TestSyncHooks::beforeEnableFires() {
         },
         10);
 
-    syncService.enableSyncForNotebook(QStringLiteral("nb-xyz"),
-                                      QStringLiteral("https://example.com/repo.git"),
-                                      QStringLiteral("ghp_SHOULD_NOT_APPEAR"));
+    syncService.enableSyncForNotebook(
+        QStringLiteral("nb-xyz"),
+        SyncSettings{QStringLiteral("git"),
+                     QStringLiteral("https://example.com/repo.git"),
+                     {QStringLiteral("git"), QString(), QStringLiteral("ghp_SHOULD_NOT_APPEAR")}});
 
     // before_enable fires synchronously before any async dispatch.
     QCOMPARE(fireCount, 1);

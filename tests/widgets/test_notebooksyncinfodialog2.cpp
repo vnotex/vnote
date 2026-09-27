@@ -1,33 +1,15 @@
-// Tests for NotebookSyncInfoDialog2 routing logic (W3.T2 — Bug G dialog fix).
-//
-// Validates the dispatch decision in acceptedButtonClicked() and
-// appliedButtonClicked() between bootstrapApply() and applyChanges():
-//   - bootstrap mode (post-create) -> bootstrapApply()
-//   - partial notebook (isSyncRegistered=false) -> bootstrapApply() even in
-//     edit mode (auto-route to fix the chicken-and-egg state)
-//   - registered notebook + edit mode -> applyChanges() (legacy behavior,
-//     no regression)
-//
-// The two paths differ in URL-persistence timing:
-//   - bootstrapApply persists syncRemoteUrl ONLY on success (inside the
-//     enableFinished lambda).
-//   - applyChanges persists syncRemoteUrl SYNCHRONOUSLY before the async
-//     PAT update.
-// Under a forced enable failure (via SyncWorker::testForceError) the on-disk
-// syncRemoteUrl is a clean signal: empty = bootstrap path, new URL =
-// applyChanges path.
-//
-// Per ADR-9: tests use literal `test_pat_12345` for PAT; the PAT MUST NOT
-// appear in ctest stdout/stderr (verified separately by grep).
-// Per ADR-1: this test never includes sync/sync_manager.h.
+// Real sync-dialog behavior: backend-specific fields, strict validation, atomic
+// enable failure, and Git username reconfiguration without losing local history.
 
 #include <QApplication>
+#include <QComboBox>
 #include <QDialogButtonBox>
 #include <QDir>
 #include <QFile>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLineEdit>
+#include <QMessageBox>
 #include <QProcess>
 #include <QPushButton>
 #include <QSignalSpy>
@@ -56,20 +38,10 @@ private slots:
   void initTestCase();
   void testGitUsernameEditsRemoteWithoutExposingToken();
   void testGitUsernameChangePreservesLocalHistory();
+  void testWebdavPreCreateValidationAndSecretMasking();
+  void testExistingBackendSelectionAndRawProtection();
 
-  // W3.T2 routing tests
-  void testAcceptedRoutesToBootstrapApplyWhenBootstrapMode();
-  void testAcceptedRoutesToApplyChangesWhenRegistered();
-  void testAcceptedRoutesToBootstrapApplyWhenPartialEvenInEditMode();
-  void testAppliedSameDispatchAsAccepted();
-  void testDialogStaysOpenUntilApplyComplete();
-
-private:
-  // Initialize a bare git repo at p_bareRepoPath and seed it with one commit
-  // containing a single file "seed.md" on the default branch (main). Returns
-  // the file:// URL suitable for cloning, or empty on failure. Mirrors the
-  // helper from test_notebooksyncinfocontroller.cpp and test_syncservice.cpp.
-  static QString seedBareRepo(const QString &p_bareRepoPath, TempDirFixture &p_workTemp);
+  void testFailedBootstrapLeavesNotebookAndDialogIntact();
 };
 
 void TestNotebookSyncInfoDialog2::initTestCase() {
@@ -92,7 +64,7 @@ void TestNotebookSyncInfoDialog2::testGitUsernameEditsRemoteWithoutExposingToken
   QTest::keyClicks(usernameEdit, "contributor");
   QCOMPARE(dialog.enteredRemoteUrl(),
            QStringLiteral("https://contributor@gitee.com/team/notes.git"));
-  QCOMPARE(dialog.enteredPat(), QStringLiteral("test-token"));
+  QCOMPARE(dialog.enteredSettings().m_credentials.m_secret, QStringLiteral("test-token"));
   QCOMPARE(patEdit->echoMode(), QLineEdit::Password);
 
   // Loading/resetting the authoritative URL must not retain the previous login.
@@ -105,27 +77,143 @@ void TestNotebookSyncInfoDialog2::testGitUsernameEditsRemoteWithoutExposingToken
   QVERIFY(!usernameEdit->isEnabled());
 }
 
+void TestNotebookSyncInfoDialog2::testWebdavPreCreateValidationAndSecretMasking() {
+  ServiceLocator services;
+  NotebookSyncInfoDialog2 dialog(services);
+  dialog.show();
+  auto *backend = dialog.findChild<QComboBox *>(QStringLiteral("syncBackendCombo"));
+  auto *url = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
+  auto *username = dialog.findChild<QLineEdit *>(QStringLiteral("webdavUsernameEdit"));
+  auto *gitUsername = dialog.findChild<QLineEdit *>(QStringLiteral("gitUsernameEdit"));
+  auto *secret = dialog.findChild<QLineEdit *>(QStringLiteral("patEdit"));
+  auto *ok = dialog.findChild<QPushButton *>(QStringLiteral("okButton"));
+  QVERIFY(backend && url && username && gitUsername && secret && ok);
+  secret->setText(QStringLiteral("git-token"));
+  dialog.setBackend(QStringLiteral("webdav"));
+  QVERIFY(backend->isEnabled());
+  QVERIFY(username->isVisible());
+  QVERIFY(gitUsername->isHidden());
+  QVERIFY(secret->text().isEmpty()); // A Git token must not become a DAV password.
+  QCOMPARE(secret->echoMode(), QLineEdit::Password);
+  QSignalSpy accepted(&dialog, &QDialog::accepted);
+
+  url->setText(QStringLiteral("https://example.com/dav/notebook/"));
+  username->setText(QStringLiteral("writer"));
+  ok->click();
+  QCOMPARE(accepted.count(), 0); // No anonymous enable.
+  secret->setText(QStringLiteral("  app password  "));
+  url->setText(QStringLiteral("http://127.0.0.1/dav/notebook/"));
+  ok->click();
+  QCOMPARE(accepted.count(), 0); // UI test mode does not relax HTTPS.
+  url->setText(QStringLiteral("https://writer@example.com/dav/notebook/"));
+  ok->click();
+  QCOMPARE(accepted.count(), 0); // DAV credentials may not leak into a routing URL.
+  url->setText(QStringLiteral("https://example.com/dav/notebook/"));
+  ok->click();
+  QCOMPARE(accepted.count(), 1);
+  const auto settings = dialog.enteredSettings();
+  QCOMPARE(settings.m_backend, QStringLiteral("webdav"));
+  QCOMPARE(settings.m_credentials.m_username, QStringLiteral("writer"));
+  QCOMPARE(settings.m_credentials.m_secret, QStringLiteral("  app password  "));
+  QCOMPARE(settings.m_remoteUrl, QStringLiteral("https://example.com/dav/notebook/"));
+}
+
+void TestNotebookSyncInfoDialog2::testExistingBackendSelectionAndRawProtection() {
+  VxCoreContextHandle ctx = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
+  {
+    ServiceLocator services;
+    NotebookCoreService notebooks(ctx);
+    services.registerService<NotebookCoreService>(&notebooks);
+    TempDirFixture temp;
+    QVERIFY(temp.isValid());
+    const QString activeId = notebooks.createNotebook(
+        temp.createDir("active"),
+        QStringLiteral(
+            R"({"name":"DAV","syncEnabled":true,"syncBackend":"webdav","syncRemoteUrl":"https://example.com/dav/"})"),
+        NotebookType::Bundled);
+    QVERIFY(!activeId.isEmpty());
+    {
+      NotebookSyncInfoDialog2 active(services, activeId);
+      auto *backend = active.findChild<QComboBox *>(QStringLiteral("syncBackendCombo"));
+      auto *secret = active.findChild<QLineEdit *>(QStringLiteral("patEdit"));
+      auto *username = active.findChild<QLineEdit *>(QStringLiteral("webdavUsernameEdit"));
+      QVERIFY(backend && secret && username);
+      QCOMPARE(backend->currentData().toString(), QStringLiteral("webdav"));
+      QVERIFY(!backend->isEnabled());
+      QVERIFY(secret->text().isEmpty());
+      QVERIFY(username->text().isEmpty()); // No vault read is needed to display settings.
+      username->setText(QStringLiteral("different-account"));
+      QSignalSpy accepted(&active, &QDialog::accepted);
+      active.findChild<QPushButton *>(QStringLiteral("okButton"))->click();
+      QCOMPARE(accepted.count(), 0);
+      QVERIFY(active.changesPending());
+    }
+    const QString unknownId = notebooks.createNotebook(
+        temp.createDir("unknown"),
+        QStringLiteral(
+            R"({"name":"Unknown","syncEnabled":true,"syncBackend":"unknown","syncRemoteUrl":"https://example.com/"})"),
+        NotebookType::Bundled);
+    QVERIFY(!unknownId.isEmpty());
+    // The controller reports unsupported/raw configurations synchronously from
+    // loadInitialData(), inside the dialog constructor. Drive those real modal
+    // errors before inspecting the disabled controls.
+    int rejectedConfigurations = 0;
+    QTimer dismissConfigurationError;
+    connect(&dismissConfigurationError, &QTimer::timeout, this, [&rejectedConfigurations]() {
+      if (auto *box = qobject_cast<QMessageBox *>(QApplication::activeModalWidget())) {
+        ++rejectedConfigurations;
+        box->accept();
+      }
+    });
+    dismissConfigurationError.start(10);
+    {
+      NotebookSyncInfoDialog2 unknown(services, unknownId);
+      QCOMPARE(rejectedConfigurations, 1);
+      QCOMPARE(unknown.enteredSettings().m_backend, QStringLiteral("unknown"));
+      QVERIFY(!unknown.findChild<QPushButton *>(QStringLiteral("okButton"))->isEnabled());
+      QVERIFY(unknown.findChild<QLineEdit *>(QStringLiteral("gitUsernameEdit"))->isHidden());
+      QVERIFY(unknown.findChild<QLineEdit *>(QStringLiteral("patEdit"))->isHidden());
+    }
+    const QString rawId = notebooks.createNotebook(
+        temp.createDir("raw"), QStringLiteral(R"({"name":"Raw"})"), NotebookType::Raw);
+    QVERIFY(!rawId.isEmpty());
+    {
+      NotebookSyncInfoDialog2 raw(services, rawId);
+      QCOMPARE(rejectedConfigurations, 2);
+      QVERIFY(!raw.findChild<QComboBox *>(QStringLiteral("syncBackendCombo"))->isEnabled());
+      QVERIFY(!raw.findChild<QPushButton *>(QStringLiteral("okButton"))->isEnabled());
+    }
+    dismissConfigurationError.stop();
+    QVERIFY(notebooks.closeNotebook(rawId));
+    QVERIFY(notebooks.closeNotebook(unknownId));
+    QVERIFY(notebooks.closeNotebook(activeId));
+  }
+  vxcore_context_destroy(ctx);
+}
+
 void TestNotebookSyncInfoDialog2::testGitUsernameChangePreservesLocalHistory() {
   class MemoryCredentialsStore : public SyncCredentialsStore {
   public:
     explicit MemoryCredentialsStore(ServiceLocator &p_services)
         : SyncCredentialsStore(p_services) {}
-    void storeCredentials(const QString &p_id, const QString &p_pat) override {
-      QTimer::singleShot(0, this, [this, p_id, p_pat]() {
-        m_pat = p_pat;
+    void storeCredentials(const QString &p_id, const SyncCredential &p_credentials) override {
+      QTimer::singleShot(0, this, [this, p_id, p_credentials]() {
+        m_credentials = p_credentials;
         emit credentialsStored(p_id);
       });
     }
     void retrieveCredentials(const QString &p_id) override {
-      QTimer::singleShot(0, this, [this, p_id]() { emit credentialsRetrieved(p_id, m_pat); });
+      QTimer::singleShot(0, this,
+                         [this, p_id]() { emit credentialsRetrieved(p_id, m_credentials); });
     }
     void deleteCredentials(const QString &p_id) override {
       QTimer::singleShot(0, this, [this, p_id]() {
-        m_pat.clear();
+        m_credentials = SyncCredential();
         emit credentialsDeleted(p_id);
       });
     }
-    QString m_pat;
+    SyncCredential m_credentials;
   };
 
   VxCoreContextHandle ctx = nullptr;
@@ -193,7 +281,8 @@ void TestNotebookSyncInfoDialog2::testGitUsernameChangePreservesLocalHistory() {
     QCOMPARE(vxcore_sync_enable(ctx, id.toUtf8().constData(), syncConfig.constData(),
                                 R"({"pat":"test-token"})"),
              VXCORE_OK);
-    credentials.storeCredentials(id, QStringLiteral("test-token"));
+    credentials.storeCredentials(id,
+                                 {QStringLiteral("git"), QString(), QStringLiteral("test-token")});
     QTRY_VERIFY(credentials.hasCredentials(id));
 
     NotebookSyncInfoDialog2 dialog(services, id);
@@ -227,527 +316,83 @@ void TestNotebookSyncInfoDialog2::testGitUsernameChangePreservesLocalHistory() {
     QCOMPARE(retainedCommit, originalCommit);
     QVERIFY(note.open(QIODevice::ReadOnly));
     QCOMPARE(note.readAll(), QByteArray("local content not pushed anywhere\n"));
-    QCOMPARE(credentials.m_pat, QStringLiteral("test-token"));
+    QCOMPARE(credentials.m_credentials.m_secret, QStringLiteral("test-token"));
     syncService.shutdown();
     QVERIFY(notebookService.closeNotebook(id));
   }
   vxcore_context_destroy(ctx);
 }
 
-QString TestNotebookSyncInfoDialog2::seedBareRepo(const QString &p_bareRepoPath,
-                                                  TempDirFixture &p_workTemp) {
-  if (QProcess::execute(QStringLiteral("git"),
-                        {QStringLiteral("init"), QStringLiteral("--bare"),
-                         QStringLiteral("--initial-branch=main"), p_bareRepoPath}) != 0) {
-    QDir().rmpath(p_bareRepoPath);
-    if (QProcess::execute(QStringLiteral("git"), {QStringLiteral("init"), QStringLiteral("--bare"),
-                                                  p_bareRepoPath}) != 0) {
-      return QString();
+void TestNotebookSyncInfoDialog2::testFailedBootstrapLeavesNotebookAndDialogIntact() {
+  class DeniedCredentialsStore : public SyncCredentialsStore {
+  public:
+    explicit DeniedCredentialsStore(ServiceLocator &p_services)
+        : SyncCredentialsStore(p_services) {}
+    void storeCredentials(const QString &p_id, const SyncCredential &) override {
+      QTimer::singleShot(0, this, [this, p_id]() {
+        emit credentialsStoreError(p_id, QStringLiteral("secure-keychain-unavailable"));
+      });
     }
-  }
+  };
 
-  QString workDir = p_workTemp.filePath(QStringLiteral("seed_work_") +
-                                        QString::number(QDateTime::currentMSecsSinceEpoch()));
-  if (QProcess::execute(QStringLiteral("git"),
-                        {QStringLiteral("clone"), p_bareRepoPath, workDir}) != 0) {
-    return QString();
-  }
-
-  QProcess::execute(QStringLiteral("git"),
-                    {QStringLiteral("-C"), workDir, QStringLiteral("config"),
-                     QStringLiteral("user.email"), QStringLiteral("seed@example.com")});
-  QProcess::execute(QStringLiteral("git"), {QStringLiteral("-C"), workDir, QStringLiteral("config"),
-                                            QStringLiteral("user.name"), QStringLiteral("Seed")});
-
-  QFile seed(workDir + QStringLiteral("/seed.md"));
-  if (!seed.open(QIODevice::WriteOnly)) {
-    return QString();
-  }
-  seed.write("# Seed\n");
-  seed.close();
-
-  if (QProcess::execute(
-          QStringLiteral("git"),
-          {QStringLiteral("-C"), workDir, QStringLiteral("add"), QStringLiteral("seed.md")}) != 0) {
-    return QString();
-  }
-  if (QProcess::execute(QStringLiteral("git"),
-                        {QStringLiteral("-C"), workDir, QStringLiteral("commit"),
-                         QStringLiteral("-m"), QStringLiteral("seed")}) != 0) {
-    return QString();
-  }
-  if (QProcess::execute(QStringLiteral("git"),
-                        {QStringLiteral("-C"), workDir, QStringLiteral("push"),
-                         QStringLiteral("origin"), QStringLiteral("HEAD")}) != 0) {
-    return QString();
-  }
-
-  QString normalized = QDir::fromNativeSeparators(p_bareRepoPath);
-  if (!normalized.startsWith(QLatin1Char('/'))) {
-    normalized.prepend(QLatin1Char('/'));
-  }
-  return QStringLiteral("file://") + normalized;
-}
-
-// =============================================================================
-// W3.T2 Test 1 — Bootstrap mode click OK routes to bootstrapApply.
-// =============================================================================
-//
-// Setup: partial notebook (syncEnabled=true on disk, NOT registered at
-// runtime), syncRemoteUrl initially empty on disk. Pre-arm SyncWorker
-// testForceError so the enable dispatched by bootstrapApply fails. After
-// click, the on-disk syncRemoteUrl MUST remain empty — proving the dialog
-// routed through bootstrapApply (which only persists URL on success), not
-// applyChanges (which persists synchronously regardless of async outcome).
-//
-void TestNotebookSyncInfoDialog2::testAcceptedRoutesToBootstrapApplyWhenBootstrapMode() {
-  VxCoreContextHandle ctx = nullptr;
-  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
-  QVERIFY(ctx != nullptr);
-
-  ServiceLocator services;
-  NotebookCoreService notebookService(ctx);
-  services.registerService<NotebookCoreService>(&notebookService);
-  SyncCredentialsStore credStore(services);
-  services.registerService<SyncCredentialsStore>(&credStore);
-  SyncService syncService(services);
-  services.registerService<SyncService>(&syncService);
-
-  TempDirFixture localTemp;
-  QVERIFY(localTemp.isValid());
-
-  // Partial notebook: syncEnabled=true on disk but never enabled at runtime.
-  QString nbRoot = localTemp.filePath(QStringLiteral("nb_bootstrap_mode_root"));
-  QDir().mkpath(nbRoot);
-  const QString nbId = notebookService.createNotebook(
-      nbRoot, R"({"name":"Bootstrap Mode Test","syncEnabled":true,"syncBackend":"git"})",
-      NotebookType::Bundled);
-  QVERIFY(!nbId.isEmpty());
-
-  // Pre-condition: not registered at runtime, syncRemoteUrl empty on disk.
-  QVERIFY(!syncService.isSyncRegistered(nbId));
+  VxCoreContextHandle context = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &context), VXCORE_OK);
   {
-    const QJsonObject cfg = notebookService.getNotebookConfig(nbId);
-    QCOMPARE(cfg.value(QStringLiteral("syncRemoteUrl")).toString(), QString());
-  }
-
-  // Arm the next worker enable to fail (testForceError is one-shot,
-  // consume-and-clear; mirrors the W3.T1 controller test pattern).
-  QSKIP("T24: SyncWorker::testForceError seam removed; needs port to SyncOps/SyncWorkQueueManager");
-
-  {
-    NotebookSyncInfoDialog2 dialog(services, nbId);
+    ServiceLocator services;
+    NotebookCoreService notebooks(context);
+    services.registerService<NotebookCoreService>(&notebooks);
+    DeniedCredentialsStore credentials(services);
+    services.registerService<SyncCredentialsStore>(&credentials);
+    SyncService sync(services);
+    services.registerService<SyncService>(&sync);
+    TempDirFixture temp;
+    QVERIFY(temp.isValid());
+    const auto root = temp.createDir("failed-enable");
+    const auto id = notebooks.createNotebook(root, QStringLiteral(R"({"name":"Failed enable"})"),
+                                             NotebookType::Bundled);
+    QVERIFY(!id.isEmpty());
+    NotebookSyncInfoDialog2 dialog(services, id);
     dialog.setBootstrapMode(true);
-
-    // Wait for loadInitialData to settle (dataLoaded signal already fired
-    // from the constructor; pump the loop once for safety).
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-
-    auto *urlEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
-    auto *patEdit = dialog.findChild<QLineEdit *>(QStringLiteral("patEdit"));
-    auto *okBtn = dialog.findChild<QPushButton *>(QStringLiteral("okButton"));
-    QVERIFY(urlEdit);
-    QVERIFY(patEdit);
-    QVERIFY(okBtn);
-
-    const QString newUrl = QStringLiteral("file:///tmp/will_fail_bootstrap_mode.git");
-    urlEdit->setText(newUrl);
-    patEdit->setText(QStringLiteral("test_pat_12345"));
-
-    auto *ctrl = dialog.findChild<NotebookSyncInfoController *>();
-    QVERIFY(ctrl);
-    QSignalSpy applySpy(ctrl, &NotebookSyncInfoController::applyComplete);
-
-    okBtn->click();
-
-    QVERIFY(applySpy.wait(15000));
-    QCOMPARE(applySpy.count(), 1);
-    QCOMPARE(applySpy.first().at(0).toBool(), false);
-
-    // Critical assertion: bootstrapApply did NOT persist the URL on failure.
-    // applyChanges would have persisted synchronously regardless.
-    const QJsonObject cfgAfter = notebookService.getNotebookConfig(nbId);
-    QCOMPARE(cfgAfter.value(QStringLiteral("syncRemoteUrl")).toString(), QString());
-
-    // And the notebook MUST NOT be registered (enable failed).
-    QVERIFY(!syncService.isSyncRegistered(nbId));
+    dialog.setBackend(QStringLiteral("webdav"));
+    dialog.show();
+    auto *url = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
+    auto *username = dialog.findChild<QLineEdit *>(QStringLiteral("webdavUsernameEdit"));
+    auto *secret = dialog.findChild<QLineEdit *>(QStringLiteral("patEdit"));
+    auto *ok = dialog.findChild<QPushButton *>(QStringLiteral("okButton"));
+    auto *controller = dialog.findChild<NotebookSyncInfoController *>();
+    QVERIFY(url && username && secret && ok && controller);
+    url->setText(QStringLiteral("https://example.com/dav/notebook/"));
+    username->setText(QStringLiteral("writer"));
+    secret->setText(QStringLiteral("app-password"));
+    QSignalSpy completed(controller, &NotebookSyncInfoController::applyComplete);
+    QSignalSpy accepted(&dialog, &QDialog::accepted);
+    QTimer dismissError;
+    connect(&dismissError, &QTimer::timeout, this, []() {
+      for (auto *widget : QApplication::topLevelWidgets()) {
+        if (auto *box = qobject_cast<QMessageBox *>(widget)) {
+          box->accept();
+        }
+      }
+    });
+    dismissError.start(10);
+    ok->click();
+    QVERIFY(!ok->isEnabled()); // No duplicate enables while the vault operation is pending.
+    QTRY_COMPARE(completed.count(), 1);
+    dismissError.stop();
+    QVERIFY(!completed.first().first().toBool());
+    QCOMPARE(accepted.count(), 0);
+    QVERIFY(dialog.isVisible());
+    QVERIFY(ok->isEnabled());
+    QVERIFY(QDir(root).exists());
+    QVERIFY(!sync.isSyncRegistered(id));
+    const auto config = notebooks.getNotebookConfig(id);
+    QVERIFY(!config.value(QStringLiteral("syncEnabled")).toBool());
+    QVERIFY(config.value(QStringLiteral("syncRemoteUrl")).toString().isEmpty());
+    QCOMPARE(secret->text(), QStringLiteral("app-password")); // Retry retains user input.
+    sync.shutdown();
+    QVERIFY(notebooks.closeNotebook(id));
   }
-
-  credStore.deleteCredentials(nbId);
-  QTest::qWait(300);
-  vxcore_context_destroy(ctx);
-}
-
-// =============================================================================
-// W3.T2 Test 2 — Registered notebook in edit mode routes to applyChanges.
-// =============================================================================
-//
-// Setup: enable sync against a real bare repo so the notebook is REGISTERED
-// at runtime. Then open the dialog in edit mode (no bootstrapMode) with only
-// a new PAT (no URL change, to avoid the confirmUrlChange dialog branch).
-// applyChanges must dispatch via updateCredentials, which on a registered
-// notebook fires credentialsSetFinished — NOT enableFinished (bootstrapApply's
-// signature). This proves the legacy applyChanges path is still used (no
-// regression for the well-formed editing case) when bootstrap is not required.
-//
-void TestNotebookSyncInfoDialog2::testAcceptedRoutesToApplyChangesWhenRegistered() {
-  VxCoreContextHandle ctx = nullptr;
-  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
-  QVERIFY(ctx != nullptr);
-
-  ServiceLocator services;
-  NotebookCoreService notebookService(ctx);
-  services.registerService<NotebookCoreService>(&notebookService);
-  SyncCredentialsStore credStore(services);
-  services.registerService<SyncCredentialsStore>(&credStore);
-  SyncService syncService(services);
-  services.registerService<SyncService>(&syncService);
-
-  TempDirFixture localTemp;
-  QVERIFY(localTemp.isValid());
-
-  QString bareDir = localTemp.filePath(QStringLiteral("remote_registered.git"));
-  QString oldUrl = seedBareRepo(bareDir, localTemp);
-  if (oldUrl.isEmpty()) {
-    vxcore_context_destroy(ctx);
-    QSKIP("git not available or bare-repo seeding failed");
-  }
-
-  QString nbRoot = localTemp.filePath(QStringLiteral("nb_registered_root"));
-  QDir().mkpath(nbRoot);
-  const QString nbId = notebookService.createNotebook(
-      nbRoot, R"({"name":"Registered NB","description":"","version":"1"})", NotebookType::Bundled);
-  QVERIFY(!nbId.isEmpty());
-
-  // Enable sync up-front so the notebook is registered at runtime.
-  QSignalSpy enableSpy(&syncService, &SyncService::enableFinished);
-  syncService.enableSyncForNotebook(nbId, oldUrl, QStringLiteral("test_pat_12345"));
-  QVERIFY(enableSpy.wait(15000));
-  QCOMPARE(enableSpy.count(), 1);
-  if (qvariant_cast<VxCoreError>(enableSpy.first().at(1)) == VXCORE_ERR_UNKNOWN) {
-    qWarning() << "enableSyncForNotebook returned VXCORE_ERR_UNKNOWN; message:"
-               << enableSpy.first().at(2).toString();
-    credStore.deleteCredentials(nbId);
-    QTest::qWait(500);
-    vxcore_context_destroy(ctx);
-    QSKIP("OS keychain backend not usable in this test environment");
-  }
-  QVERIFY(syncService.isSyncRegistered(nbId));
-
-  // Persist the OLD URL into the flat config so loadInitialData primes the
-  // controller's m_currentRemoteUrl cache to oldUrl, making PAT-only edits
-  // appear non-URL-changing to applyChanges.
-  {
-    QJsonObject cfg = notebookService.getNotebookConfig(nbId);
-    cfg[QStringLiteral("syncRemoteUrl")] = oldUrl;
-    const QString cfgJson = QString::fromUtf8(QJsonDocument(cfg).toJson(QJsonDocument::Compact));
-    QVERIFY(notebookService.updateNotebookConfig(nbId, cfgJson));
-  }
-
-  {
-    NotebookSyncInfoDialog2 dialog(services, nbId);
-
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
-
-    auto *urlEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
-    auto *patEdit = dialog.findChild<QLineEdit *>(QStringLiteral("patEdit"));
-    auto *okBtn = dialog.findChild<QPushButton *>(QStringLiteral("okButton"));
-    QVERIFY(urlEdit);
-    QVERIFY(patEdit);
-    QVERIFY(okBtn);
-
-    // urlEdit should already hold oldUrl from loadInitialData.
-    QCOMPARE(urlEdit->text(), oldUrl);
-    // Keep URL UNCHANGED (do not setText). Only update PAT.
-    patEdit->setText(QStringLiteral("test_pat_12345"));
-
-    auto *ctrl = dialog.findChild<NotebookSyncInfoController *>();
-    QVERIFY(ctrl);
-    QSignalSpy applySpy(ctrl, &NotebookSyncInfoController::applyComplete);
-    QSignalSpy credsSetSpy(&syncService, &SyncService::credentialsSetFinished);
-
-    // Baseline: enableFinished already fired once during enableSyncForNotebook;
-    // applyChanges -> updateCredentials on a registered notebook must NOT
-    // fire it again. bootstrapApply WOULD (it calls enableSyncForNotebook).
-    const int baselineEnableCount = enableSpy.count();
-
-    okBtn->click();
-
-    // Wait for either applyComplete (registered+PAT-only path) or for the
-    // dialog to finish.
-    QVERIFY(applySpy.wait(15000));
-    QCOMPARE(applySpy.count(), 1);
-
-    // applyChanges with PAT on registered notebook routes to setCredentials,
-    // which emits credentialsSetFinished — NOT enableFinished.
-    QCOMPARE(credsSetSpy.count(), 1);
-    QCOMPARE(enableSpy.count(), baselineEnableCount); // no spurious re-enable
-
-    // Sanity: notebook still registered (no disable/re-enable cycle).
-    QVERIFY(syncService.isSyncRegistered(nbId));
-  }
-
-  credStore.deleteCredentials(nbId);
-  QTest::qWait(300);
-  vxcore_context_destroy(ctx);
-}
-
-// =============================================================================
-// W3.T2 Test 3 — Partial notebook in edit mode auto-routes to bootstrapApply.
-// =============================================================================
-//
-// Even without setBootstrapMode(true), a partial notebook (syncEnabled on
-// disk but unregistered at runtime) must auto-route through bootstrapApply
-// so we don't hit the chicken-and-egg path where applyChanges fires
-// updateCredentials against an unregistered notebook (silent fail per
-// vxcore W1.T3 contract).
-//
-// Forced enable error + post-condition: syncRemoteUrl still empty on disk
-// (proves bootstrap path was used).
-//
-void TestNotebookSyncInfoDialog2::testAcceptedRoutesToBootstrapApplyWhenPartialEvenInEditMode() {
-  VxCoreContextHandle ctx = nullptr;
-  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
-  QVERIFY(ctx != nullptr);
-
-  ServiceLocator services;
-  NotebookCoreService notebookService(ctx);
-  services.registerService<NotebookCoreService>(&notebookService);
-  SyncCredentialsStore credStore(services);
-  services.registerService<SyncCredentialsStore>(&credStore);
-  SyncService syncService(services);
-  services.registerService<SyncService>(&syncService);
-
-  TempDirFixture localTemp;
-  QVERIFY(localTemp.isValid());
-
-  QString nbRoot = localTemp.filePath(QStringLiteral("nb_partial_edit_root"));
-  QDir().mkpath(nbRoot);
-  const QString nbId = notebookService.createNotebook(
-      nbRoot, R"({"name":"Partial Edit","syncEnabled":true,"syncBackend":"git"})",
-      NotebookType::Bundled);
-  QVERIFY(!nbId.isEmpty());
-
-  QVERIFY(!syncService.isSyncRegistered(nbId));
-
-  QSKIP("T24: SyncWorker::testForceError seam removed; needs port to SyncOps/SyncWorkQueueManager");
-
-  {
-    NotebookSyncInfoDialog2 dialog(services, nbId);
-    // DO NOT call setBootstrapMode. The dialog should still auto-route to
-    // bootstrapApply because isSyncRegistered == false.
-
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-
-    auto *urlEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
-    auto *patEdit = dialog.findChild<QLineEdit *>(QStringLiteral("patEdit"));
-    auto *okBtn = dialog.findChild<QPushButton *>(QStringLiteral("okButton"));
-    QVERIFY(urlEdit);
-    QVERIFY(patEdit);
-    QVERIFY(okBtn);
-
-    urlEdit->setText(QStringLiteral("file:///tmp/partial_auto_route.git"));
-    patEdit->setText(QStringLiteral("test_pat_12345"));
-
-    auto *ctrl = dialog.findChild<NotebookSyncInfoController *>();
-    QVERIFY(ctrl);
-    QSignalSpy applySpy(ctrl, &NotebookSyncInfoController::applyComplete);
-
-    okBtn->click();
-
-    QVERIFY(applySpy.wait(15000));
-    QCOMPARE(applySpy.count(), 1);
-    QCOMPARE(applySpy.first().at(0).toBool(), false);
-
-    // syncRemoteUrl must still be empty — proves bootstrap path used.
-    const QJsonObject cfgAfter = notebookService.getNotebookConfig(nbId);
-    QCOMPARE(cfgAfter.value(QStringLiteral("syncRemoteUrl")).toString(), QString());
-  }
-
-  credStore.deleteCredentials(nbId);
-  QTest::qWait(300);
-  vxcore_context_destroy(ctx);
-}
-
-// =============================================================================
-// W3.T2 Test 4 — appliedButtonClicked uses the same partial-detection branch.
-// =============================================================================
-//
-// Apply (not OK) on a partial notebook routes to bootstrapApply, same as
-// acceptedButtonClicked. Unlike OK, Apply must NOT accept() the dialog on
-// success — verified by the QDialog::accepted spy.
-//
-void TestNotebookSyncInfoDialog2::testAppliedSameDispatchAsAccepted() {
-  VxCoreContextHandle ctx = nullptr;
-  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
-  QVERIFY(ctx != nullptr);
-
-  ServiceLocator services;
-  NotebookCoreService notebookService(ctx);
-  services.registerService<NotebookCoreService>(&notebookService);
-  SyncCredentialsStore credStore(services);
-  services.registerService<SyncCredentialsStore>(&credStore);
-  SyncService syncService(services);
-  services.registerService<SyncService>(&syncService);
-
-  TempDirFixture localTemp;
-  QVERIFY(localTemp.isValid());
-
-  QString nbRoot = localTemp.filePath(QStringLiteral("nb_apply_partial_root"));
-  QDir().mkpath(nbRoot);
-  const QString nbId = notebookService.createNotebook(
-      nbRoot, R"({"name":"Apply Partial","syncEnabled":true,"syncBackend":"git"})",
-      NotebookType::Bundled);
-  QVERIFY(!nbId.isEmpty());
-
-  QVERIFY(!syncService.isSyncRegistered(nbId));
-
-  QSKIP("T24: SyncWorker::testForceError seam removed; needs port to SyncOps/SyncWorkQueueManager");
-
-  {
-    NotebookSyncInfoDialog2 dialog(services, nbId);
-    // No bootstrapMode; rely on partial detection.
-
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-
-    auto *urlEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
-    auto *patEdit = dialog.findChild<QLineEdit *>(QStringLiteral("patEdit"));
-    auto *applyBtn = dialog.findChild<QPushButton *>(QStringLiteral("applyButton"));
-    QVERIFY(urlEdit);
-    QVERIFY(patEdit);
-    QVERIFY(applyBtn);
-
-    urlEdit->setText(QStringLiteral("file:///tmp/apply_partial.git"));
-    patEdit->setText(QStringLiteral("test_pat_12345"));
-
-    // Apply button only enables when there are pending changes (URL changed
-    // OR PAT non-empty). Both are true; refresh and enable.
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-
-    auto *ctrl = dialog.findChild<NotebookSyncInfoController *>();
-    QVERIFY(ctrl);
-    QSignalSpy applySpy(ctrl, &NotebookSyncInfoController::applyComplete);
-    QSignalSpy acceptedSpy(&dialog, &QDialog::accepted);
-
-    // Apply button must be enabled to fire. setEnabled(true) defensively
-    // because we can't rely on the dirty-flag QSS path having ticked.
-    applyBtn->setEnabled(true);
-    applyBtn->click();
-
-    QVERIFY(applySpy.wait(15000));
-    QCOMPARE(applySpy.count(), 1);
-    QCOMPARE(applySpy.first().at(0).toBool(), false);
-
-    // Dialog MUST NOT have been accepted by Apply.
-    QCOMPARE(acceptedSpy.count(), 0);
-
-    // syncRemoteUrl must still be empty (bootstrap path on failure).
-    const QJsonObject cfgAfter = notebookService.getNotebookConfig(nbId);
-    QCOMPARE(cfgAfter.value(QStringLiteral("syncRemoteUrl")).toString(), QString());
-  }
-
-  credStore.deleteCredentials(nbId);
-  QTest::qWait(300);
-  vxcore_context_destroy(ctx);
-}
-
-// =============================================================================
-// W3.T2 Test 5 — Dialog stays open during async bootstrap; accepts after.
-// =============================================================================
-//
-// Real bare repo + testHangNextOperation() introduces a measurable delay
-// between OK click and applyComplete arrival. During that window the dialog
-// MUST remain unaccepted (would otherwise close before async completion).
-// Once applyComplete(true) fires, the dialog accepts.
-//
-void TestNotebookSyncInfoDialog2::testDialogStaysOpenUntilApplyComplete() {
-  VxCoreContextHandle ctx = nullptr;
-  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
-  QVERIFY(ctx != nullptr);
-
-  ServiceLocator services;
-  NotebookCoreService notebookService(ctx);
-  services.registerService<NotebookCoreService>(&notebookService);
-  SyncCredentialsStore credStore(services);
-  services.registerService<SyncCredentialsStore>(&credStore);
-  SyncService syncService(services);
-  services.registerService<SyncService>(&syncService);
-
-  TempDirFixture localTemp;
-  QVERIFY(localTemp.isValid());
-
-  QString bareDir = localTemp.filePath(QStringLiteral("remote_stays_open.git"));
-  QString remoteUrl = seedBareRepo(bareDir, localTemp);
-  if (remoteUrl.isEmpty()) {
-    vxcore_context_destroy(ctx);
-    QSKIP("git not available or bare-repo seeding failed");
-  }
-
-  QString nbRoot = localTemp.filePath(QStringLiteral("nb_stays_open_root"));
-  QDir().mkpath(nbRoot);
-  const QString nbId = notebookService.createNotebook(
-      nbRoot, R"({"name":"Stays Open","syncEnabled":true,"syncBackend":"git"})",
-      NotebookType::Bundled);
-  QVERIFY(!nbId.isEmpty());
-
-  QVERIFY(!syncService.isSyncRegistered(nbId));
-
-  // Hang the next worker op for ~1s to ensure we have a window where the
-  // bootstrap is in flight but applyComplete has not yet fired.
-  QSKIP("T24: SyncWorker::testHangNextOperation seam removed; needs port to "
-        "SyncOps/SyncWorkQueueManager");
-
-  {
-    NotebookSyncInfoDialog2 dialog(services, nbId);
-    dialog.setBootstrapMode(true);
-
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-
-    auto *urlEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
-    auto *patEdit = dialog.findChild<QLineEdit *>(QStringLiteral("patEdit"));
-    auto *okBtn = dialog.findChild<QPushButton *>(QStringLiteral("okButton"));
-    QVERIFY(urlEdit);
-    QVERIFY(patEdit);
-    QVERIFY(okBtn);
-
-    urlEdit->setText(remoteUrl);
-    patEdit->setText(QStringLiteral("test_pat_12345"));
-
-    auto *ctrl = dialog.findChild<NotebookSyncInfoController *>();
-    QVERIFY(ctrl);
-    QSignalSpy applySpy(ctrl, &NotebookSyncInfoController::applyComplete);
-    QSignalSpy acceptedSpy(&dialog, &QDialog::accepted);
-
-    okBtn->click();
-
-    // Immediately after click: dialog NOT yet accepted (async in flight).
-    QCOMPARE(acceptedSpy.count(), 0);
-
-    // After ~300ms — still less than the hang duration — dialog still open.
-    QTest::qWait(300);
-    QCOMPARE(acceptedSpy.count(), 0);
-
-    // Now wait for the async chain to complete.
-    QVERIFY(applySpy.wait(20000));
-    QCOMPARE(applySpy.count(), 1);
-
-    if (!applySpy.first().at(0).toBool()) {
-      credStore.deleteCredentials(nbId);
-      QTest::qWait(500);
-      vxcore_context_destroy(ctx);
-      QSKIP("OS keychain backend or git enable not usable in this test environment");
-    }
-
-    // Pump event loop so the queued accept() (fired by our applyComplete
-    // lambda inside the dialog) takes effect before we check.
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 200);
-
-    QCOMPARE(acceptedSpy.count(), 1);
-  }
-
-  credStore.deleteCredentials(nbId);
-  QTest::qWait(500);
-  vxcore_context_destroy(ctx);
+  vxcore_context_destroy(context);
 }
 
 } // namespace tests

@@ -910,6 +910,86 @@ VxCoreError NotebookCoreService::syncNetworkPhase(const QString &p_notebookId,
   return vxcore_sync_network_phase(m_context, nbId.constData(), p_cancellationToken);
 }
 
+VxCoreError NotebookCoreService::syncCapabilities(const QString &p_notebookId,
+                                                  uint32_t *p_capabilities) {
+  if (!p_capabilities) {
+    return VXCORE_ERR_NULL_POINTER;
+  }
+  *p_capabilities = 0;
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const auto notebookId = p_notebookId.toUtf8();
+  return vxcore_sync_get_capabilities(m_context, notebookId.constData(), p_capabilities);
+}
+
+VxCoreError NotebookCoreService::syncApplyPhase(const QString &p_notebookId,
+                                                VxCoreSyncCancellation *p_cancellationToken,
+                                                const QStringList &p_protectedPaths,
+                                                QStringList *p_changedPaths) {
+  if (!p_changedPaths) {
+    return VXCORE_ERR_NULL_POINTER;
+  }
+  p_changedPaths->clear();
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const auto notebookId = p_notebookId.toUtf8();
+  const auto protectedPaths =
+      QJsonDocument(QJsonArray::fromStringList(p_protectedPaths)).toJson(QJsonDocument::Compact);
+  char *changedJson = nullptr;
+  const auto error = vxcore_sync_apply_phase(m_context, notebookId.constData(), p_cancellationToken,
+                                             protectedPaths.constData(), &changedJson);
+  if (changedJson) {
+    QJsonParseError parseError;
+    const auto document = QJsonDocument::fromJson(QByteArray(changedJson), &parseError);
+    vxcore_string_free(changedJson);
+    if (parseError.error != QJsonParseError::NoError || !document.isArray()) {
+      return error == VXCORE_OK ? VXCORE_ERR_INVALID_STATE : error;
+    }
+    QStringList changed;
+    const auto array = document.array();
+    changed.reserve(array.size());
+    for (const auto &value : array) {
+      if (!value.isString()) {
+        return error == VXCORE_OK ? VXCORE_ERR_INVALID_STATE : error;
+      }
+      changed.append(value.toString());
+    }
+    *p_changedPaths = std::move(changed);
+  }
+  return error;
+}
+
+VxCoreError NotebookCoreService::setSyncApplyInProgress(const QString &p_notebookId,
+                                                        bool p_active) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const auto notebookId = p_notebookId.toUtf8();
+  return vxcore_sync_set_apply_in_progress(m_context, notebookId.constData(), p_active ? 1 : 0);
+}
+
+VxCoreError NotebookCoreService::refreshAfterSync(const QString &p_notebookId) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const auto notebookId = p_notebookId.toUtf8();
+  return vxcore_sync_refresh_notebook(m_context, notebookId.constData());
+}
+
+VxCoreError NotebookCoreService::checkSyncReconfiguration(const QString &p_notebookId) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const auto notebookId = p_notebookId.toUtf8();
+  return vxcore_sync_check_reconfiguration(m_context, notebookId.constData());
+}
+
+QString NotebookCoreService::syncErrorMessage(VxCoreError p_error) const {
+  return p_error == VXCORE_OK ? QString() : contextErrorMessage(p_error);
+}
+
 VxCoreError NotebookCoreService::getSyncStatus(const QString &p_notebookId,
                                                QString &p_outStatusJson) {
   p_outStatusJson.clear();
