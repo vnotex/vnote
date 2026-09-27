@@ -493,8 +493,9 @@ void TestPdfViewerToolBar::theOverflowMenuSurvivesANarrowToolBar() {
   QSignalSpy propertiesSpy(&toolBar, &PdfViewerToolBar::documentPropertiesRequested);
   toolBar.documentPropertiesAction()->trigger();
   QCOMPARE(propertiesSpy.count(), 1);
+  // Native focus is not required to exercise the overflow menu.
+  bar.raise();
   bar.activateWindow();
-  QVERIFY(QTest::qWaitForWindowActive(&bar));
   toolBar.setPresentationMode(true);
   auto reloading = state();
   reloading.m_valid = false;

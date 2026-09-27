@@ -367,10 +367,21 @@ void TestNotebookSyncInfoDialog2::testFailedBootstrapLeavesNotebookAndDialogInta
     QSignalSpy completed(controller, &NotebookSyncInfoController::applyComplete);
     QSignalSpy accepted(&dialog, &QDialog::accepted);
     QTimer dismissError;
-    connect(&dismissError, &QTimer::timeout, this, []() {
-      for (auto *widget : QApplication::topLevelWidgets()) {
-        if (auto *box = qobject_cast<QMessageBox *>(widget)) {
-          box->accept();
+    int dismissedErrors = 0;
+    connect(&dismissError, &QTimer::timeout, this, [&]() {
+      auto *modal = QApplication::activeModalWidget();
+      auto widgets = QApplication::topLevelWidgets();
+      widgets.prepend(modal);
+      for (auto *widget : widgets) {
+        auto *box = qobject_cast<QMessageBox *>(widget);
+        if (!box || (!box->isVisible() && box != modal)) {
+          continue;
+        }
+        if (auto *button = box->button(QMessageBox::Ok)) {
+          dismissError.stop();
+          ++dismissedErrors;
+          button->click();
+          return;
         }
       }
     });
@@ -379,6 +390,7 @@ void TestNotebookSyncInfoDialog2::testFailedBootstrapLeavesNotebookAndDialogInta
     QVERIFY(!ok->isEnabled()); // No duplicate enables while the vault operation is pending.
     QTRY_COMPARE(completed.count(), 1);
     dismissError.stop();
+    QCOMPARE(dismissedErrors, 1);
     QVERIFY(!completed.first().first().toBool());
     QCOMPARE(accepted.count(), 0);
     QVERIFY(dialog.isVisible());
