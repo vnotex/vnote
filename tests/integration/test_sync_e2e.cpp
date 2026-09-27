@@ -1,40 +1,29 @@
-// T16 — End-to-end test for the sync conflict resolution flow + retry cap.
-//
-// PRAGMATIC DEVIATION (per T15 deferral pattern + T16 IF clause):
-//   The plan's ideal e2e wires SyncService → SyncConflictController via
-//   MainWindow2. MainWindow2's ctor pulls ConfigMgr2/SessionConfig/ToolBarHelper2/
-//   ThemeService/HookManager/QWebEngineView/QWindowKit/SystemTray/etc., which
-//   makes a unit-test instantiation infeasible (matching the T15 finding for
-//   NotebookExplorer2). Instead this test replicates MainWindow2's wiring
-//   block locally (controller + retry counter) and exercises:
-//     * cancelLeavesSyncBlocked — signal → controller → dialog → cancel →
-//       conflictsAbandoned, no SyncService call
-//     * retryCapEnforced       — 4 successive conflictsDetected emissions;
-//       the 4th must NOT spawn a dialog and a QMessageBox::warning must fire
-//
-// The full MainWindow2 e2e is deferred to F3 manual QA per the same convention.
-//
-// Per ADR-1: never include sync/sync_manager.h.
-// Per ADR-6: no virtual methods; test seam is unconditional.
-
+// Real registered-notebook conflict resolution through SyncService, controller and dialog.
 #include <QApplication>
 #include <QDialog>
+#include <QDir>
 #include <QEvent>
-#include <QHash>
-#include <QMessageBox>
+#include <QFile>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QObject>
+#include <QProcess>
 #include <QPushButton>
+#include <QRadioButton>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QString>
 #include <QStringList>
+#include <QTemporaryDir>
 #include <QTest>
-#include <QTimer>
+#include <QUrl>
 #include <QWidget>
 #include <QtTest>
 
 #include <controllers/syncconflictcontroller.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/notebookiogate.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
 #include <widgets/dialogs/syncconflictdialog2.h>
@@ -68,44 +57,30 @@ SyncConflictDialog2 *findOpenDialog() {
   return nullptr;
 }
 
-// Replicates MainWindow2's T16 wiring: SyncService::conflictsDetected fires
-// presentConflicts; >3 attempts in a row triggers a fallback warning instead.
-// The warning is captured via a QObject event filter on QApplication so we can
-// assert without showing a real modal box.
-struct WiringHarness : public QObject {
-  WiringHarness(SyncService *p_svc, SyncConflictController *p_ctrl, QWidget *p_parent)
-      : QObject(p_parent), m_parent(p_parent), m_ctrl(p_ctrl) {
-    QObject::connect(p_svc, &SyncService::conflictsDetected, this,
-                     [this](const QString &nb, const QStringList &files) {
-                       int &count = m_retry[nb];
-                       ++count;
-                       if (count > 3) {
-                         m_retry.remove(nb);
-                         ++m_warnCount;
-                         m_lastWarnedNotebook = nb;
-                         // Suppress real modal dialog by NOT calling QMessageBox; in
-                         // production MainWindow2 calls QMessageBox::warning here.
-                         // Counting + recording is sufficient for the assertion.
-                         return;
-                       }
-                       m_ctrl->presentConflicts(nb, files, m_parent);
-                     });
-    QObject::connect(p_svc, &SyncService::syncFinished, this,
-                     [this](const QString &nb, VxCoreError result) {
-                       if (result == VXCORE_OK) {
-                         m_retry.remove(nb);
-                       }
-                     });
-    QObject::connect(p_ctrl, &SyncConflictController::conflictsAbandoned, this,
-                     [this](const QString &nb) { m_retry.remove(nb); });
-  }
+void connectConflicts(SyncService &p_service, SyncConflictController &p_controller) {
+  QObject::connect(&p_service, &SyncService::conflictsDetected, &p_controller,
+                   [&p_controller](const QString &p_id, const QStringList &p_files) {
+                     p_controller.presentConflicts(p_id, p_files, nullptr);
+                   });
+}
 
-  QWidget *m_parent = nullptr;
-  SyncConflictController *m_ctrl = nullptr;
-  QHash<QString, int> m_retry;
-  int m_warnCount = 0;
-  QString m_lastWarnedNotebook;
-};
+bool runGit(const QStringList &p_arguments, QByteArray *p_output = nullptr) {
+  QProcess process;
+  process.start(QStringLiteral("git"), p_arguments);
+  if (!process.waitForFinished(15000) || process.exitStatus() != QProcess::NormalExit ||
+      process.exitCode() != 0) {
+    qWarning().noquote() << process.readAllStandardError();
+    return false;
+  }
+  if (p_output)
+    *p_output = process.readAllStandardOutput();
+  return true;
+}
+
+bool writeNote(const QString &p_path, const QByteArray &p_bytes) {
+  QFile file(p_path);
+  return file.open(QIODevice::WriteOnly) && file.write(p_bytes) == p_bytes.size();
+}
 
 } // namespace
 
@@ -116,7 +91,7 @@ private slots:
   void initTestCase();
 
   void cancelLeavesSyncBlocked();
-  void retryCapEnforced();
+  void registeredNotebookConflictResolution();
 };
 
 void TestSyncE2E::initTestCase() {
@@ -140,7 +115,7 @@ void TestSyncE2E::cancelLeavesSyncBlocked() {
   services.registerService<SyncService>(&syncService);
 
   SyncConflictController controller(services);
-  WiringHarness harness(&syncService, &controller, nullptr);
+  connectConflicts(syncService, controller);
 
   QSignalSpy abandonSpy(&controller, &SyncConflictController::conflictsAbandoned);
   QSignalSpy resolveSpy(&controller, &SyncConflictController::conflictsResolved);
@@ -173,76 +148,91 @@ void TestSyncE2E::cancelLeavesSyncBlocked() {
   }
   QCOMPARE(resolveSpy.count(), 0);
   QCOMPARE(syncFinishedSpy.count(), 0);
-  // Counter was reset by the abandon handler — sync remains blocked until
-  // the user manually retries (next conflictsDetected starts at count=1).
-  QCOMPARE(harness.m_retry.value(nbId, 0), 0);
 
   drainPendingEvents();
   vxcore_context_destroy(ctx);
 }
 
-void TestSyncE2E::retryCapEnforced() {
-  drainPendingEvents();
-
-  VxCoreContextHandle ctx = nullptr;
-  QCOMPARE(vxcore_context_create("{}", &ctx), VXCORE_OK);
-
+void TestSyncE2E::registeredNotebookConflictResolution() {
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  VxCoreContextHandle raw = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &raw), VXCORE_OK);
+  const auto release = qScopeGuard([&]() { vxcore_context_destroy(raw); });
   ServiceLocator services;
-  NotebookCoreService notebookService(ctx);
-  services.registerService<NotebookCoreService>(&notebookService);
-  SyncCredentialsStore credStore(services);
-  services.registerService<SyncCredentialsStore>(&credStore);
-  SyncService syncService(services);
-  services.registerService<SyncService>(&syncService);
-
+  NotebookIoGate gate;
+  services.registerService<NotebookIoGate>(&gate);
+  NotebookCoreService notebooks(raw);
+  notebooks.setNotebookIoGate(&gate);
+  services.registerService<NotebookCoreService>(&notebooks);
+  SyncCredentialsStore credentials(services);
+  services.registerService<SyncCredentialsStore>(&credentials);
+  SyncService sync(services);
+  services.registerService<SyncService>(&sync);
   SyncConflictController controller(services);
-  WiringHarness harness(&syncService, &controller, nullptr);
+  connectConflicts(sync, controller);
 
-  const QString nbId = QStringLiteral("nb_test_e2e_cap");
-  const QStringList files{QStringLiteral("a.md")};
+  const auto remote = directory.filePath(QStringLiteral("remote.git"));
+  QVERIFY(runGit({"init", "--bare", "--initial-branch=main", remote}));
+  const auto root = directory.filePath(QStringLiteral("notebook"));
+  const auto id = notebooks.createNotebook(root, QStringLiteral(R"({"name":"Conflict E2E"})"),
+                                           NotebookType::Bundled);
+  QVERIFY(!id.isEmpty());
+  QVERIFY(writeNote(root + QStringLiteral("/note.md"), "baseline\n"));
+  const auto url = QUrl::fromLocalFile(remote).toString();
+  const QJsonObject config{{"backend", "git"}, {"remoteUrl", url}, {"autoSyncEnabled", false}};
+  QCOMPARE(notebooks.enableSync(id, QString::fromUtf8(QJsonDocument(config).toJson()),
+                                QStringLiteral(R"({"pat":"local-test-only"})")),
+           VXCORE_OK);
+  auto notebookConfig = notebooks.getNotebookConfig(id);
+  notebookConfig[QStringLiteral("syncEnabled")] = true;
+  notebookConfig[QStringLiteral("syncBackend")] = QStringLiteral("git");
+  notebookConfig[QStringLiteral("syncRemoteUrl")] = url;
+  QVERIFY(notebooks.updateNotebookConfig(
+      id, QString::fromUtf8(QJsonDocument(notebookConfig).toJson())));
 
-  // Emit 3 times — each must spawn a dialog. We immediately close it (reject)
-  // so the next emission can proceed.
-  for (int attempt = 1; attempt <= 3; ++attempt) {
-    emit syncService.conflictsDetected(nbId, files);
-    for (int i = 0; i < 50 && findOpenDialog() == nullptr; ++i) {
-      QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
-      QTest::qWait(20);
-    }
-    SyncConflictDialog2 *dlg = findOpenDialog();
-    QVERIFY2(dlg != nullptr,
-             qPrintable(QStringLiteral("Dialog missing on attempt %1").arg(attempt)));
-    // Reject (Cancel) — but we DO NOT want to reset the counter via the
-    // abandon handler; remove the connection by directly calling done() on
-    // the dialog's reject path AFTER snapshotting count. In production the
-    // user typically clicks OK; here we just need the dialog torn down.
-    // To preserve the counter we manually re-bump it after reject.
-    int beforeRetry = harness.m_retry.value(nbId, 0);
-    dlg->reject();
-    drainPendingEvents();
-    // Restore counter: in real usage the count grows because OK→resolve→
-    // conflict re-fires; here we simulate that by re-stuffing the value.
-    harness.m_retry[nbId] = beforeRetry;
+  const auto peer = directory.filePath(QStringLiteral("peer"));
+  QVERIFY(runGit({"clone", remote, peer}));
+  QVERIFY(runGit({"-C", peer, "config", "user.name", "Conflict peer"}));
+  QVERIFY(runGit({"-C", peer, "config", "user.email", "peer@example.invalid"}));
+  QVERIFY(writeNote(peer + QStringLiteral("/note.md"), "remote winner\n"));
+  QVERIFY(runGit({"-C", peer, "add", "note.md"}));
+  QVERIFY(runGit({"-C", peer, "commit", "-m", "Remote edit"}));
+  QVERIFY(runGit({"-C", peer, "push", "origin", "HEAD"}));
+  {
+    NotebookIoGate::ScopedLock lock(gate, id);
+    QVERIFY(writeNote(root + QStringLiteral("/note.md"), "local contender\n"));
   }
 
-  QCOMPARE(harness.m_warnCount, 0);
-  QCOMPARE(harness.m_retry.value(nbId, 0), 3);
-
-  // 4th emission must NOT spawn a dialog; warning counter must increment.
-  emit syncService.conflictsDetected(nbId, files);
-  for (int i = 0; i < 10; ++i) {
-    QCoreApplication::processEvents(QEventLoop::AllEvents, 20);
-    QTest::qWait(20);
-  }
-  QCOMPARE(findOpenDialog(), static_cast<SyncConflictDialog2 *>(nullptr));
-  QCOMPARE(harness.m_warnCount, 1);
-  QCOMPARE(harness.m_lastWarnedNotebook, nbId);
-  // Counter reset after the warning so the next user-initiated Sync starts
-  // fresh.
-  QCOMPARE(harness.m_retry.value(nbId, 0), 0);
-
+  QSignalSpy finished(&sync, &SyncService::syncFinished);
+  QSignalSpy resolved(&controller, &SyncConflictController::conflictsResolved);
+  sync.triggerSyncNow(id);
+  QTRY_COMPARE_WITH_TIMEOUT(finished.count(), 1, 15000);
+  QCOMPARE(qvariant_cast<VxCoreError>(finished.first().at(1)), VXCORE_ERR_SYNC_CONFLICT);
+  QTRY_VERIFY(findOpenDialog());
+  QCOMPARE(resolved.count(), 0);
+  auto *remoteChoice =
+      findOpenDialog()->findChild<QRadioButton *>(QStringLiteral("radio_0_remote"));
+  QVERIFY(remoteChoice);
+  remoteChoice->click();
+  auto *accept = findOpenDialog()->findChild<QPushButton *>(QStringLiteral("okButton"));
+  QVERIFY(accept);
+  accept->click();
+  QTRY_COMPARE_WITH_TIMEOUT(resolved.count(), 1, 15000);
+  QCOMPARE(resolved.first().at(0).toString(), id);
+  QCOMPARE(finished.count(), 2);
+  QCOMPARE(qvariant_cast<VxCoreError>(finished.last().at(1)), VXCORE_OK);
+  QFile note(root + QStringLiteral("/note.md"));
+  QVERIFY(note.open(QIODevice::ReadOnly));
+  QCOMPARE(note.readAll(), QByteArray("remote winner\n"));
+  note.close();
+  QByteArray published;
+  QVERIFY(runGit({"--git-dir=" + remote, "show", "main:note.md"}, &published));
+  QCOMPARE(published, QByteArray("remote winner\n"));
+  sync.shutdown();
+  QCOMPARE(notebooks.unregisterSyncRuntime(id), VXCORE_OK);
+  QVERIFY(notebooks.closeNotebook(id));
   drainPendingEvents();
-  vxcore_context_destroy(ctx);
 }
 
 } // namespace tests

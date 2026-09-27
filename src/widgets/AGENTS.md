@@ -89,6 +89,10 @@ docked panels in the right area; Qt respects their minimum sizes. A successful
 - `NotebookExplorer2` — sidebar explorer for notebook nodes; wires together the MVC triad (model, view, controller)
 - `NotebookSelector2` — notebook dropdown selector
 
+`NotebookExplorer2` owns both its `NotebookAfterClose` and `FileBeforeSave` hook handles
+and removes them in its destructor. `HookManager` callbacks are not QObject connections;
+widget destruction does not disconnect them automatically.
+
 Windows directory watches on expanded descendants can block a parent folder rename.
 `NotebookExplorer2` pauses its watches at `NotebookCoreService::folderRenameStarted`
 and restores them at `folderRenameFinished`, rebasing descendants only on success.

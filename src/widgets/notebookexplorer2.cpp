@@ -575,7 +575,7 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
   // Subscribe to NotebookAfterClose to refresh the explorer.
   auto *hookMgr = m_services.get<HookManager>();
   if (hookMgr) {
-    hookMgr->addAction<NotebookCloseEvent>(
+    m_notebookAfterCloseHookId = hookMgr->addAction<NotebookCloseEvent>(
         HookNames::NotebookAfterClose,
         [this](HookContext &p_ctx, const NotebookCloseEvent &) {
           Q_UNUSED(p_ctx)
@@ -823,6 +823,11 @@ NotebookExplorer2::NotebookExplorer2(ServiceLocator &p_services, QWidget *p_pare
 }
 
 NotebookExplorer2::~NotebookExplorer2() {
+  if (m_notebookAfterCloseHookId >= 0) {
+    if (auto *hookMgr = m_services.get<HookManager>()) {
+      hookMgr->removeAction(m_notebookAfterCloseHookId);
+    }
+  }
   if (m_fileBeforeSaveHookId >= 0) {
     if (auto *hookMgr = m_services.get<HookManager>()) {
       hookMgr->removeAction(m_fileBeforeSaveHookId);

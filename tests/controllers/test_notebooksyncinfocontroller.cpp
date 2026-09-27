@@ -22,12 +22,14 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QProcess>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QUrl>
 #include <QUuid>
 #include <QtTest>
 #include <memory>
 
+#include <keychain_guard.h>
 #include <test_helper.h>
 
 #include <controllers/notebooksyncinfocontroller.h>
@@ -144,6 +146,7 @@ private slots:
   void initTestCase();
 
   void applyChangesRoutesUrlAndPat();
+  void gitUsernameChangePreservesHistory();
   void disableSyncRoutesCorrectly();
 
   // W3.T1 — bootstrapApply: atomic S1/S2/S3/S4 -> S5 transition on an
@@ -238,6 +241,83 @@ QString TestNotebookSyncInfoController::seedBareRepo(const QString &p_bareRepoPa
     normalized.prepend(QLatin1Char('/'));
   }
   return QStringLiteral("file://") + normalized;
+}
+
+void TestNotebookSyncInfoController::gitUsernameChangePreservesHistory() {
+  TempDirFixture directory;
+  QVERIFY(directory.isValid());
+  VxCoreContextHandle context = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &context), VXCORE_OK);
+  const auto release = qScopeGuard([&]() { vxcore_context_destroy(context); });
+  ServiceLocator services;
+  NotebookCoreService notebooks(context);
+  services.registerService<NotebookCoreService>(&notebooks);
+  SyncCredentialsStore credentials(services);
+  services.registerService<SyncCredentialsStore>(&credentials);
+  KeychainGuard vault(&credentials);
+  SyncService sync(services);
+  services.registerService<SyncService>(&sync);
+  const auto remote = seedBareRepo(directory.filePath("remote.git"), directory);
+  QVERIFY(!remote.isEmpty());
+  const auto root = directory.filePath("notebook");
+  const auto id = notebooks.createNotebook(root, QStringLiteral(R"({"name":"Username change"})"),
+                                           NotebookType::Bundled);
+  QVERIFY(!id.isEmpty());
+  const QJsonObject config{{"backend", "git"}, {"remoteUrl", remote}, {"autoSyncEnabled", false}};
+  QCOMPARE(notebooks.enableSync(id, QString::fromUtf8(QJsonDocument(config).toJson()),
+                                QStringLiteral(R"({"pat":"local-test-only"})")),
+           VXCORE_OK);
+  const auto gitDir = root + QStringLiteral("/vx_notebook/vx_sync");
+  const auto git = [&](const QStringList &p_arguments, QByteArray *p_output = nullptr) {
+    QProcess process;
+    QStringList arguments{QStringLiteral("--git-dir=") + gitDir};
+    arguments.append(p_arguments);
+    process.start(QStringLiteral("git"), arguments);
+    if (!process.waitForFinished(10000) || process.exitStatus() != QProcess::NormalExit ||
+        process.exitCode() != 0)
+      return false;
+    if (p_output)
+      *p_output = process.readAllStandardOutput().trimmed();
+    return true;
+  };
+  QByteArray previousHead;
+  QVERIFY(git({"rev-parse", "HEAD"}, &previousHead));
+  const QString oldUrl = QStringLiteral("https://old-user@127.0.0.1:1/notebook.git");
+  const QString newUrl = QStringLiteral("https://new-user@127.0.0.1:1/notebook.git");
+  QVERIFY(git({"remote", "set-url", "origin", oldUrl}));
+  auto notebookConfig = notebooks.getNotebookConfig(id);
+  notebookConfig[QStringLiteral("syncEnabled")] = true;
+  notebookConfig[QStringLiteral("syncBackend")] = QStringLiteral("git");
+  notebookConfig[QStringLiteral("syncRemoteUrl")] = oldUrl;
+  QVERIFY(notebooks.updateNotebookConfig(
+      id, QString::fromUtf8(QJsonDocument(notebookConfig).toJson())));
+  NotebookSyncInfoController controller(services, id);
+  QSignalSpy confirmation(&controller, &NotebookSyncInfoController::confirmUrlChangeRequested);
+  QSignalSpy applied(&controller, &NotebookSyncInfoController::applyComplete);
+  QSignalSpy vaultErrors(&credentials, &SyncCredentialsStore::credentialsStoreError);
+  connect(&controller, &NotebookSyncInfoController::applyComplete, &sync,
+          [&](bool) { sync.cancelSync(id); });
+  controller.applyChanges(gitSettings(newUrl, QStringLiteral("new-test-credential")));
+  QTRY_COMPARE_WITH_TIMEOUT(applied.count(), 1, 15000);
+  if (!vaultErrors.isEmpty()) {
+    sync.shutdown();
+    notebooks.unregisterSyncRuntime(id);
+    notebooks.closeNotebook(id);
+    QSKIP("OS keychain backend is unavailable");
+  }
+  QVERIFY(applied.first().at(0).toBool());
+  QCOMPARE(confirmation.count(), 0);
+  sync.shutdown();
+  QByteArray origin;
+  QVERIFY(git({"remote", "get-url", "origin"}, &origin));
+  QCOMPARE(origin, newUrl.toUtf8());
+  QVERIFY(git({"merge-base", "--is-ancestor", QString::fromLatin1(previousHead), "HEAD"}));
+  QCOMPARE(notebooks.getNotebookConfig(id).value(QStringLiteral("syncRemoteUrl")).toString(),
+           newUrl);
+  QVERIFY(sync.isSyncRegistered(id));
+  QCOMPARE(notebooks.unregisterSyncRuntime(id), VXCORE_OK);
+  QVERIFY(notebooks.closeNotebook(id));
+  vault.cleanup();
 }
 
 void TestNotebookSyncInfoController::applyChangesRoutesUrlAndPat() {

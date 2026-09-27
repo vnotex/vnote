@@ -384,9 +384,10 @@ private:
   // expectation auto-expires.
   QHash<QString, qint64> m_expectedFsChangesDeadline;
 
-  // Hook handle for FileBeforeSave subscription; -1 when unregistered.
+  // Hook handles; -1 when unregistered.
   // Stored so the destructor can call HookManager::removeAction symmetrically.
   int m_fileBeforeSaveHookId = -1;
+  int m_notebookAfterCloseHookId = -1;
 
   // Set of notebook IDs whose sync is in flight. While a notebook's ID is in
   // this set, fs events on its watched paths are dropped without arming the

@@ -2,6 +2,7 @@
 ## Unreleased
 * Encryption setup records a persistent notebook initialization marker instead of scanning all folder metadata; legacy notebooks require explicit confirmation before first setup when their encryption history is unknown
 * Note conversion no longer audits unrelated folder metadata; missing known keys still require recovery, and cancelling legacy confirmation leaves notes and configuration unchanged
+* Fix a use-after-free when a notebook closes after its explorer widget has been destroyed
 * Add WebDAV notebook sync with ordinary editable remote files, secure per-device credentials, remote open, conflict choices, cancellation and journaled recovery
 * Preserve open editor/comment drafts during WebDAV sync and refresh clean editors, previews and notebook trees after incoming changes
 * Require a dedicated existing HTTPS collection with safe conditional writes; retain empty remote folders rather than risk recursive deletion
