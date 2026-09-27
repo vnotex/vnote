@@ -63,3 +63,16 @@ them**: it never downloads, extracts, executes or installs a release artifact, a
 modifies its own install directory. These artifacts exist as the interface for a future
 *external* updater. Client-side rules: root [AGENTS.md § Update Check](../AGENTS.md#update-check);
 implementation detail: [../src/core/services/AGENTS.md § Update Check](../src/core/services/AGENTS.md#update-check).
+
+## Linux test runtime
+
+`ci-linux.yml` installs test-only runtime dependencies after packaging and runs
+both the suite and failure diagnostics through `scripts/run-linux-tests.sh`.
+The wrapper creates a private D-Bus session and unlocked GNOME keyring, verifies
+Secret Service with a write/read/delete probe, then tears down the daemon and
+private XDG directories. Keep the credential tests on a real vault; headers from
+`libsecret-1-dev` alone do not provide one.
+
+TLS fixtures use Ubuntu's `/usr/bin/openssl` explicitly, not a PATH executable
+shadowed by the separate packaging OpenSSL install. These environment changes
+apply only to tests; release commits skip the runtime setup and test invocations.

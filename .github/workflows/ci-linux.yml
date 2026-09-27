@@ -153,6 +153,11 @@ jobs:
           cmake --build . --target pack
         working-directory: ${{runner.workspace}}/build
 
+      - name: Install Test Dependencies
+        if: env.VNOTE_TESTS == 'ON'
+        run: |
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dbus gnome-keyring libglib2.0-bin libsecret-tools openssl
+
       - name: Build and Run Tests
         if: env.VNOTE_TESTS == 'ON'
         # Build remaining targets (Qt-side tests + vxcore tests; --target pack
@@ -181,7 +186,7 @@ jobs:
             echo "test_pdfviewercore_js not registered; Qt6::Qml (qtdeclarative) missing" >&2
             exit 1
           fi
-          ctest --output-on-failure
+          bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --output-on-failure
         working-directory: ${{runner.workspace}}/build
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
@@ -194,7 +199,7 @@ jobs:
           export LC_ALL=C.UTF-8
           export LANG=C.UTF-8
           export LD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${LD_LIBRARY_PATH:-}"
-          ctest --rerun-failed --extra-verbose || true
+          bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --rerun-failed --extra-verbose || true
         working-directory: ${{runner.workspace}}/build
 
       - name: Fix Package
