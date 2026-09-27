@@ -57,6 +57,8 @@ private:
   QPushButton *m_openRootFolderButton = nullptr;
   QComboBox *m_typeComboBox = nullptr;
   QComboBox *m_syncMethodCombo = nullptr;
+  QLineEdit *m_syncMethodEdit = nullptr;
+  QString m_displayedSyncMethod;
   QPushButton *m_configureSyncButton = nullptr;
   QLineEdit *m_assetsFolderEdit = nullptr;
   LocationInputWithBrowseButton *m_recycleBinFolderInput = nullptr;

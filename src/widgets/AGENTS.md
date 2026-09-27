@@ -387,10 +387,10 @@ Each dialog is driven by a corresponding controller in `../controllers/`.
 `NewNotebookDialog2` and `ManageNotebooksDialog2` share `NotebookInfoWidget`. The form owns
 field layout and editability; dialogs/controllers retain creation, sync, validation and persistence.
 Root and type are immutable after creation. Sync method sits below Type, editable only during
-creation; management displays it read-only and hides Configure. Unsupported fields stay visible
-but non-editable; read-only text remains selectable. `setNotebookInfo()` populates or resets fields without emitting
-`inputEdited()`, so loading a notebook never dirties the management dialog. Creation evaluates
-name snippets; editing an existing notebook preserves its literal name.
+creation; management shows selectable read-only text and hides Configure. Unsupported fields stay
+visible but non-editable; read-only text remains selectable. `setNotebookInfo()` populates or resets
+fields without emitting `inputEdited()`, so loading a notebook never dirties the management dialog.
+Creation evaluates name snippets; editing an existing notebook preserves its literal name.
 
 ### Search / Snippet / Tag
 
