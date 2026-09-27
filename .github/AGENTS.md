@@ -76,3 +76,11 @@ private XDG directories. Keep the credential tests on a real vault; headers from
 TLS fixtures use Ubuntu's `/usr/bin/openssl` explicitly, not a PATH executable
 shadowed by the separate packaging OpenSSL install. These environment changes
 apply only to tests; release commits skip the runtime setup and test invocations.
+
+## macOS test temporary paths
+
+Both non-release test launches resolve `TMPDIR` to its physical path before
+starting Qt or Python fixtures. The system `/var` alias resolves to `/private/var`
+and otherwise trips the intentional sync path-safety checks. Keep those guards
+and deliberate symlinks inside test fixtures unchanged; only the outer temporary
+root is normalized, without affecting build or packaging paths.

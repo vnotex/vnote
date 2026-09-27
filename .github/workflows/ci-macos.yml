@@ -191,6 +191,9 @@ jobs:
         run: |
           set -e
           cmake --build .
+          # Path-safety fixtures need a physical temp root, not macOS's /var alias.
+          TMPDIR=$(cd "$TMPDIR" && pwd -P)
+          export TMPDIR
           export QT_QPA_PLATFORM=cocoa
           # Force a UTF-8 locale so std::filesystem::path round-trips through
           # std::string preserve non-ASCII bytes. Without this, CJK filenames
@@ -211,6 +214,9 @@ jobs:
         # land in the CI log. Diagnostic only; never gates the workflow.
         if: failure() && env.VNOTE_TESTS == 'ON'
         run: |
+          # Path-safety fixtures need a physical temp root, not macOS's /var alias.
+          TMPDIR=$(cd "$TMPDIR" && pwd -P)
+          export TMPDIR
           export QT_QPA_PLATFORM=cocoa
           export LC_ALL=en_US.UTF-8
           export LANG=en_US.UTF-8
