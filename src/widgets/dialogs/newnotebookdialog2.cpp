@@ -2,11 +2,7 @@
 
 #include <memory>
 
-#include <QComboBox>
 #include <QFileInfo>
-#include <QFormLayout>
-#include <QHBoxLayout>
-#include <QLabel>
 #include <QPushButton>
 #include <QVBoxLayout>
 
@@ -17,7 +13,6 @@
 #include <core/services/synclog.h>
 #include <core/sessionconfig.h>
 
-#include "../widgetsfactory.h"
 #include "notebookinfowidget.h"
 #include "notebooksyncinfodialog2.h"
 
@@ -41,67 +36,21 @@ void NewNotebookDialog2::setupUI() {
   m_infoWidget = new NotebookInfoWidget(m_services, NotebookInfoWidget::Mode::Create, mainWidget);
   layout->addWidget(m_infoWidget);
 
-  auto *syncLayout = WidgetsFactory::createFormLayout();
-  layout->addLayout(syncLayout);
-
-  // Collect sync settings before creation for either supported backend.
-  m_syncMethodLabel = new QLabel(tr("Sync method"), mainWidget);
-  m_syncMethodLabel->setObjectName(QStringLiteral("syncMethodLabel"));
-  m_syncMethodCombo = WidgetsFactory::createComboBox(mainWidget);
-  m_syncMethodCombo->setObjectName(QStringLiteral("syncMethodCombo"));
-  m_syncMethodCombo->addItem(tr("None"), QStringLiteral("none"));
-  m_syncMethodCombo->addItem(tr("Git"), QStringLiteral("git"));
-  m_syncMethodCombo->addItem(tr("WebDAV"), QStringLiteral("webdav"));
-  m_syncMethodCombo->setToolTip(tr("Sync is supported only for bundled notebooks. "
-                                   "Use Configure before notebook creation"));
-
-  m_configureSyncButton = new QPushButton(tr("Configure"), mainWidget);
-  m_configureSyncButton->setObjectName(QStringLiteral("configureSyncButton"));
-  m_configureSyncButton->setToolTip(tr("Configure the sync remote URL and credentials"));
-  m_configureSyncButton->hide();
-
-  m_syncMethodContainer = new QWidget(mainWidget);
-  auto *syncMethodLayout = new QHBoxLayout(m_syncMethodContainer);
-  syncMethodLayout->setContentsMargins(0, 0, 0, 0);
-  syncMethodLayout->addWidget(m_syncMethodCombo, 1);
-  syncMethodLayout->addWidget(m_configureSyncButton);
-
-  syncLayout->addRow(m_syncMethodLabel, m_syncMethodContainer);
-
-  connect(m_infoWidget, &NotebookInfoWidget::typeChanged, this,
-          &NewNotebookDialog2::onTypeComboChanged);
-
-  connect(m_configureSyncButton, &QPushButton::clicked, this,
+  connect(m_infoWidget, &NotebookInfoWidget::configureSyncRequested, this,
           &NewNotebookDialog2::onConfigureSyncClicked);
-
-  connect(m_syncMethodCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [this](int) {
-            const auto backend = m_syncMethodCombo->currentData().toString();
-            const bool enabled = isSupportedSyncBackend(backend);
-            if (backend != m_pendingSettings.m_backend) {
+  connect(m_infoWidget, &NotebookInfoWidget::syncMethodChanged, this,
+          [this](const QString &p_backend) {
+            if (p_backend != m_pendingSettings.m_backend) {
               m_syncConfigured = false;
               m_pendingSettings = SyncSettings();
-              m_pendingSettings.m_backend = backend;
+              m_pendingSettings.m_backend = p_backend;
             }
-            m_configureSyncButton->setVisible(enabled);
             updateOkButtonState();
           });
 
   setCentralWidget(mainWidget);
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   setWindowTitle(tr("New Notebook"));
-  onTypeComboChanged();
-}
-
-void NewNotebookDialog2::onTypeComboChanged() {
-  const bool isBundled = m_infoWidget->getType() == NotebookType::Bundled;
-  if (!isBundled) {
-    m_syncMethodCombo->setCurrentIndex(0);
-    m_syncConfigured = false;
-    m_pendingSettings = SyncSettings();
-  }
-  m_syncMethodLabel->setVisible(isBundled);
-  m_syncMethodContainer->setVisible(isBundled);
   updateOkButtonState();
 }
 
@@ -114,7 +63,7 @@ void NewNotebookDialog2::acceptedButtonClicked() {
   input.type = m_infoWidget->getType();
   input.assetsFolder = m_infoWidget->getAssetsFolder();
   input.lineEnding = m_infoWidget->getLineEnding();
-  input.syncMethod = getSelectedSyncMethod();
+  input.syncMethod = m_infoWidget->getSyncMethod();
   input.syncSettings = m_pendingSettings;
 
   // Delegate to controller.
@@ -196,21 +145,14 @@ void NewNotebookDialog2::acceptedButtonClicked() {
 
 QString NewNotebookDialog2::getNewNotebookId() const { return m_newNotebookId; }
 
-QString NewNotebookDialog2::getSelectedSyncMethod() const {
-  if (!m_syncMethodCombo || m_infoWidget->getType() != NotebookType::Bundled) {
-    return QStringLiteral("none");
-  }
-  return m_syncMethodCombo->currentData().toString();
-}
-
 void NewNotebookDialog2::onConfigureSyncClicked() {
   NotebookSyncInfoDialog2 dlg(m_services, this);
-  dlg.setBackend(getSelectedSyncMethod());
+  dlg.setBackend(m_infoWidget->getSyncMethod());
   dlg.setPreCreateNotebookName(m_infoWidget->getName().trimmed());
   if (dlg.exec() == QDialog::Accepted) {
     auto settings = dlg.enteredSettings();
     // The inner selector is authoritative; changing it also changes creation.
-    m_syncMethodCombo->setCurrentIndex(m_syncMethodCombo->findData(settings.m_backend));
+    m_infoWidget->setSyncMethod(settings.m_backend);
     m_pendingSettings = std::move(settings);
     m_syncConfigured = validateSyncSettings(m_pendingSettings, true).isEmpty();
   }
@@ -218,7 +160,7 @@ void NewNotebookDialog2::onConfigureSyncClicked() {
 }
 
 void NewNotebookDialog2::updateOkButtonState() {
-  const QString syncMethod = getSelectedSyncMethod();
+  const QString syncMethod = m_infoWidget->getSyncMethod();
   const bool needsSync = isSupportedSyncBackend(syncMethod);
   const bool ok = !needsSync || (m_syncConfigured && m_pendingSettings.m_backend == syncMethod);
   setButtonEnabled(QDialogButtonBox::Ok, ok);

@@ -41,6 +41,7 @@ struct NotebookInfo {
   QString assetsFolder;
   QString recycleBinFolder;
   QString type;
+  QString syncMethod; // Empty means no configured synchronization.
   QString lineEnding; // Empty means inherit the global editor setting.
   bool readOnly = false;
 };

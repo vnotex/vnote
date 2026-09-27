@@ -32,6 +32,8 @@ public:
   QString getDescription() const;
   QString getRootFolder() const;
   NotebookType getType() const;
+  QString getSyncMethod() const;
+  void setSyncMethod(const QString &p_method);
   QString getAssetsFolder() const;
   QString getRecycleBinFolder() const;
   QString getLineEnding() const;
@@ -39,6 +41,8 @@ public:
 signals:
   void inputEdited();
   void typeChanged(NotebookType p_type);
+  void syncMethodChanged(const QString &p_method);
+  void configureSyncRequested();
 
 private:
   void setupUI(ServiceLocator &p_services);
@@ -52,6 +56,8 @@ private:
   LocationInputWithBrowseButton *m_rootFolderInput = nullptr;
   QPushButton *m_openRootFolderButton = nullptr;
   QComboBox *m_typeComboBox = nullptr;
+  QComboBox *m_syncMethodCombo = nullptr;
+  QPushButton *m_configureSyncButton = nullptr;
   QLineEdit *m_assetsFolderEdit = nullptr;
   LocationInputWithBrowseButton *m_recycleBinFolderInput = nullptr;
   QComboBox *m_lineEndingComboBox = nullptr;

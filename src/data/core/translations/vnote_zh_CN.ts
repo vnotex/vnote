@@ -5303,44 +5303,14 @@
 <context>
     <name>vnotex::NewNotebookDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="+51"/>
-        <source>Sync method</source>
-        <translation>同步方式</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>None</source>
-        <translation>无</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Git</source>
-        <translation>Git</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure button before notebook creation</source>
-        <translation>Git 同步仅支持自包笔记本。同步设置会在创建笔记本前通过“配置”按钮立即进行配置</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Configure</source>
-        <translation>配置</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Configure Git sync remote URL and credentials</source>
-        <translation>配置 Git 同步远端 URL 与凭据</translation>
-    </message>
-    <message>
-        <location line="+27"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="90"/>
         <source>New Notebook</source>
         <translation>新建笔记本</translation>
     </message>
     <message>
-        <location line="+146"/>
-        <source>Click &apos;Configure&apos; to set up Git sync first</source>
-        <translation>点击&quot;配置&quot;以先配置 Git 同步</translation>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="236"/>
+        <source>Click &apos;Configure&apos; to set up sync first</source>
+        <translation>点击“配置”以先设置同步</translation>
     </message>
 </context>
 <context>
@@ -6618,6 +6588,41 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
         <translation>笔记本的根文件夹。
 对于原生笔记本，可选择一个已包含文件的现有文件夹。
 该文件夹的内容会被索引为笔记本节点</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="100"/>
+        <source>Sync method</source>
+        <translation>同步方式</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="107"/>
+        <source>None</source>
+        <translation>无</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="108"/>
+        <source>Git</source>
+        <translation>Git</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="109"/>
+        <source>WebDAV</source>
+        <translation>WebDAV</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="111"/>
+        <source>Sync is supported only for bundled notebooks. Use Configure before notebook creation</source>
+        <translation>同步仅支持自包笔记本。请在创建笔记本前点击“配置”</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="114"/>
+        <source>Configure</source>
+        <translation>配置</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="116"/>
+        <source>Configure the sync remote URL and credentials</source>
+        <translation>配置同步远端 URL 和凭据</translation>
     </message>
 </context>
 <context>

@@ -5,6 +5,7 @@
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
 
+#include <sync/sync_json_keys.h>
 #include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
@@ -45,6 +46,7 @@ NotebookInfo ManageNotebooksController::getNotebookInfo(const QString &p_noteboo
   info.readOnly = notebookService->isNotebookReadOnly(p_notebookId);
 
   if (info.type == QStringLiteral("bundled")) {
+    info.syncMethod = config.value(QLatin1String(vxcore::kJsonKeySyncBackend)).toString();
     const auto metadata = config.value(QLatin1String(vxcore::kJsonKeyMetadata)).toObject();
     const auto lineEnding = metadata.value(QLatin1String(vxcore::kJsonKeyLineEnding)).toString();
     if (isRecognizedLineEnding(lineEnding)) {

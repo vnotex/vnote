@@ -5303,44 +5303,14 @@
 <context>
     <name>vnotex::NewNotebookDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="+51"/>
-        <source>Sync method</source>
-        <translation>同期方法</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>None</source>
-        <translation>なし</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Git</source>
-        <translation>Git</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Git sync is supported only for bundled notebooks. Sync settings are configured immediately via the Configure button before notebook creation</source>
-        <translation>Git 同期はバンドルノートブックのみサポートされます。同期設定はノートブック作成前に「設定」ボタンで直ちに構成されます</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Configure</source>
-        <translation>構成</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Configure Git sync remote URL and credentials</source>
-        <translation>Git 同期のリモート URL と認証情報を構成</translation>
-    </message>
-    <message>
-        <location line="+27"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="90"/>
         <source>New Notebook</source>
         <translation>新規ノートブック</translation>
     </message>
     <message>
-        <location line="+146"/>
-        <source>Click &apos;Configure&apos; to set up Git sync first</source>
-        <translation>まず &apos;構成&apos; をクリックして Git 同期を設定してください</translation>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="236"/>
+        <source>Click &apos;Configure&apos; to set up sync first</source>
+        <translation>まず「構成」をクリックして同期を設定してください</translation>
     </message>
 </context>
 <context>
@@ -6618,6 +6588,41 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
         <translation>ノートブックのルートフォルダー。
 Raw ノートブックの場合、ファイルを含む既存のフォルダーを選択できます。
 フォルダーの内容はノートブックのノードとしてインデックス化されます</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="100"/>
+        <source>Sync method</source>
+        <translation>同期方法</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="107"/>
+        <source>None</source>
+        <translation>なし</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="108"/>
+        <source>Git</source>
+        <translation>Git</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="109"/>
+        <source>WebDAV</source>
+        <translation>WebDAV</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="111"/>
+        <source>Sync is supported only for bundled notebooks. Use Configure before notebook creation</source>
+        <translation>同期はバンドルノートブックのみ対応しています。ノートブックを作成する前に「構成」を使用してください</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="114"/>
+        <source>Configure</source>
+        <translation>構成</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="116"/>
+        <source>Configure the sync remote URL and credentials</source>
+        <translation>同期のリモート URL と認証情報を構成</translation>
     </message>
 </context>
 <context>

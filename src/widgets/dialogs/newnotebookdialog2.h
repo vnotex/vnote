@@ -4,10 +4,6 @@
 #include "scrolldialog.h"
 #include <core/services/syncsettings.h>
 
-class QComboBox;
-class QLabel;
-class QPushButton;
-
 namespace vnotex {
 
 class NotebookInfoWidget;
@@ -27,17 +23,10 @@ public:
   // Get the ID of the newly created notebook (valid after accept()).
   QString getNewNotebookId() const;
 
-  // Returns the userData string of the currently selected sync method
-  // ("none", "git" or "webdav"). Returns "none" for Raw notebooks
-  // or unavailable.
-  QString getSelectedSyncMethod() const;
-
 protected:
   void acceptedButtonClicked() Q_DECL_OVERRIDE;
 
 private slots:
-  void onTypeComboChanged();
-
   // Collect settings before creating the notebook; bootstrap owns persistence.
   void onConfigureSyncClicked();
 
@@ -55,13 +44,7 @@ private:
   // UI widgets.
   NotebookInfoWidget *m_infoWidget = nullptr;
 
-  // Sync method selection (visible only for Bundled notebooks).
-  QLabel *m_syncMethodLabel = nullptr;
-  QComboBox *m_syncMethodCombo = nullptr;
-
   // User-entered settings live only for this create/bootstrap operation.
-  QPushButton *m_configureSyncButton = nullptr;
-  QWidget *m_syncMethodContainer = nullptr; // wraps combo + Configure... button
   bool m_syncConfigured = false;
   SyncSettings m_pendingSettings;
 

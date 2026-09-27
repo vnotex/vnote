@@ -4,6 +4,7 @@
 #include <QDesktopServices>
 #include <QFormLayout>
 #include <QHBoxLayout>
+#include <QLabel>
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QPushButton>
@@ -15,6 +16,7 @@
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <core/services/snippetcoreservice.h>
+#include <core/services/syncsettings.h>
 #include <core/sessionconfig.h>
 #include <utils/pathutils.h>
 #include <widgets/lineeditwithsnippet.h>
@@ -95,6 +97,34 @@ void NotebookInfoWidget::setupUI(ServiceLocator &p_services) {
                                 "Raw: plain folder structure with minimal VNote metadata"));
   layout->addRow(tr("Type"), m_typeComboBox);
 
+  auto *syncMethodLabel = new QLabel(tr("Sync method"), this);
+  syncMethodLabel->setObjectName(QStringLiteral("syncMethodLabel"));
+  auto *syncMethodContainer = new QWidget(this);
+  auto *syncMethodLayout = new QHBoxLayout(syncMethodContainer);
+  syncMethodLayout->setContentsMargins(0, 0, 0, 0);
+  m_syncMethodCombo = WidgetsFactory::createComboBox(syncMethodContainer);
+  m_syncMethodCombo->setObjectName(QStringLiteral("syncMethodCombo"));
+  m_syncMethodCombo->addItem(tr("None"), QStringLiteral("none"));
+  m_syncMethodCombo->addItem(tr("Git"), QStringLiteral("git"));
+  m_syncMethodCombo->addItem(tr("WebDAV"), QStringLiteral("webdav"));
+  if (m_mode == Mode::Create) {
+    m_syncMethodCombo->setToolTip(tr("Sync is supported only for bundled notebooks. "
+                                     "Use Configure before notebook creation"));
+  }
+  m_configureSyncButton = new QPushButton(tr("Configure"), syncMethodContainer);
+  m_configureSyncButton->setObjectName(QStringLiteral("configureSyncButton"));
+  m_configureSyncButton->setToolTip(tr("Configure the sync remote URL and credentials"));
+  syncMethodLayout->addWidget(m_syncMethodCombo, 1);
+  syncMethodLayout->addWidget(m_configureSyncButton);
+  layout->addRow(syncMethodLabel, syncMethodContainer);
+  connect(m_configureSyncButton, &QPushButton::clicked, this,
+          &NotebookInfoWidget::configureSyncRequested);
+  connect(m_syncMethodCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
+    updateEditability();
+    emit syncMethodChanged(getSyncMethod());
+    emit inputEdited();
+  });
+
   auto *advancedToggle = new QToolButton(this);
   advancedToggle->setText(tr("Advanced"));
   advancedToggle->setCheckable(true);
@@ -147,6 +177,7 @@ void NotebookInfoWidget::setupUI(ServiceLocator &p_services) {
     m_recycleBinFolderInput->setText(QStringLiteral("vx_notebook/recycle_bin"));
   } else {
     m_typeComboBox->setCurrentIndex(-1);
+    m_syncMethodCombo->setCurrentIndex(-1);
   }
 
   layout->addRow(advanced);
@@ -158,6 +189,7 @@ void NotebookInfoWidget::setupUI(ServiceLocator &p_services) {
   connect(m_typeComboBox, QOverload<int>::of(&QComboBox::currentIndexChanged), this, [this]() {
     if (m_mode == Mode::Create && getType() == NotebookType::Raw) {
       m_lineEndingComboBox->setCurrentIndex(0);
+      m_syncMethodCombo->setCurrentIndex(0);
     }
     updateEditability();
     emit typeChanged(getType());
@@ -174,6 +206,10 @@ void NotebookInfoWidget::updateEditability() {
   m_rootFolderInput->setReadOnly(m_mode != Mode::Create || !editable);
   m_openRootFolderButton->setEnabled(m_hasNotebook && !getRootFolder().isEmpty());
   m_typeComboBox->setEnabled(m_mode == Mode::Create && editable);
+  m_syncMethodCombo->setEnabled(m_mode == Mode::Create && editable && bundled);
+  m_configureSyncButton->setVisible(m_mode == Mode::Create && bundled &&
+                                    isSupportedSyncBackend(getSyncMethod()));
+  m_configureSyncButton->setEnabled(editable);
   m_recycleBinFolderInput->setReadOnly(m_mode != Mode::Edit || !editable || !bundled);
   m_lineEndingComboBox->setEnabled(editable && bundled);
   if (m_mode == Mode::Create) {
@@ -199,6 +235,10 @@ void NotebookInfoWidget::setNotebookInfo(const NotebookInfo &p_info) {
   m_typeComboBox->setCurrentIndex(p_info.type == QStringLiteral("bundled") ? 0
                                   : p_info.type == QStringLiteral("raw")   ? 1
                                                                            : -1);
+  setSyncMethod(p_info.syncMethod);
+  if (!m_hasNotebook) {
+    m_syncMethodCombo->setCurrentIndex(-1);
+  }
   const int index = m_lineEndingComboBox->findData(p_info.lineEnding);
   m_lineEndingComboBox->setCurrentIndex(index < 0 ? 0 : index);
   updateEditability();
@@ -214,6 +254,27 @@ QString NotebookInfoWidget::getRootFolder() const { return m_rootFolderInput->te
 NotebookType NotebookInfoWidget::getType() const {
   return static_cast<NotebookType>(m_typeComboBox->currentData().toInt());
 }
+QString NotebookInfoWidget::getSyncMethod() const {
+  if (getType() != NotebookType::Bundled || m_syncMethodCombo->currentIndex() < 0) {
+    return QStringLiteral("none");
+  }
+  return m_syncMethodCombo->currentData().toString();
+}
+
+void NotebookInfoWidget::setSyncMethod(const QString &p_method) {
+  // Retain at most one unsupported backend for read-only display.
+  while (m_syncMethodCombo->count() > 3) {
+    m_syncMethodCombo->removeItem(3);
+  }
+  const auto method = p_method.isEmpty() ? QStringLiteral("none") : p_method;
+  int index = m_syncMethodCombo->findData(method);
+  if (index < 0) {
+    m_syncMethodCombo->addItem(method, method);
+    index = m_syncMethodCombo->count() - 1;
+  }
+  m_syncMethodCombo->setCurrentIndex(index);
+}
+
 QString NotebookInfoWidget::getAssetsFolder() const { return m_assetsFolderEdit->text(); }
 QString NotebookInfoWidget::getRecycleBinFolder() const { return m_recycleBinFolderInput->text(); }
 QString NotebookInfoWidget::getLineEnding() const {
