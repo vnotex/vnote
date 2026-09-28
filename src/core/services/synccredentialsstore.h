@@ -13,7 +13,7 @@ namespace vnotex {
 class ServiceLocator;
 
 // SyncCredentialsStore stores per-notebook sync credentials in the OS keychain.
-// Git entries remain raw PATs; WebDAV entries use a versioned JSON envelope.
+// Git entries remain raw PATs; WebDAV/Jianguoyun use backend-tagged versioned envelopes.
 //
 // Per ADR-9, this store has NO plaintext fallback. When QtKeychain is
 // unavailable (built with VNOTE_USE_KEYCHAIN=OFF, or runtime keychain init

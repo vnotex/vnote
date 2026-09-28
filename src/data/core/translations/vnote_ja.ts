@@ -4,29 +4,24 @@
 <context>
     <name>CommentColor</name>
     <message>
-        <location filename="../../../core/services/commenttypes.cpp" line="+90"/>
         <source>Yellow</source>
-        <translation>黄色</translation>
+        <translation type="vanished">黄色</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Green</source>
-        <translation>緑</translation>
+        <translation type="vanished">緑</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Blue</source>
-        <translation>青</translation>
+        <translation type="vanished">青</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Pink</source>
-        <translation>ピンク</translation>
+        <translation type="vanished">ピンク</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Purple</source>
-        <translation>紫</translation>
+        <translation type="vanished">紫</translation>
     </message>
 </context>
 <context>
@@ -152,7 +147,7 @@
         <translation>クロスコピー</translation>
     </message>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="+191"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="+208"/>
         <source>Setting up sync</source>
         <translation>同期を設定中</translation>
     </message>
@@ -347,447 +342,331 @@
         <translation>デバッグ</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="+245"/>
-        <location line="+33"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+145"/>
-        <location line="+23"/>
-        <location line="+53"/>
-        <location line="+10"/>
         <source>Refusing to share: %1 is a symbolic link, junction or reparse point.</source>
-        <translation>共有を中止しました：%1 はシンボリックリンク、ジャンクションまたは再解析ポイントです。</translation>
+        <translation type="vanished">共有を中止しました：%1 はシンボリックリンク、ジャンクションまたは再解析ポイントです。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="-79"/>
         <source>Source directory is missing: %1</source>
-        <translation>ソースディレクトリが見つかりません：%1</translation>
+        <translation type="vanished">ソースディレクトリが見つかりません：%1</translation>
     </message>
     <message>
-        <location line="+34"/>
         <source>Refusing to share: %1 is not a regular file.</source>
-        <translation>共有を中止しました：%1 は通常のファイルではありません。</translation>
+        <translation type="vanished">共有を中止しました：%1 は通常のファイルではありません。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Refusing to share: %1 is not readable.</source>
-        <translation>共有を中止しました：%1 を読み取れません。</translation>
+        <translation type="vanished">共有を中止しました：%1 を読み取れません。</translation>
     </message>
     <message>
-        <location line="+69"/>
         <source>&quot;%1&quot; and &quot;%2&quot; in %3 would collide on the destination filesystem, which does not distinguish letter case.</source>
-        <translation>%3 内の「%1」と「%2」は、大文字と小文字を区別しないコピー先ファイルシステムで衝突します。</translation>
+        <translation type="vanished">%3 内の「%1」と「%2」は、大文字と小文字を区別しないコピー先ファイルシステムで衝突します。</translation>
     </message>
     <message>
-        <location line="+392"/>
         <source>The encrypted notebook key envelope could not be read.</source>
-        <translation>暗号化されたノートブックのキーエンベロープを読み取れませんでした。</translation>
+        <translation type="vanished">暗号化されたノートブックのキーエンベロープを読み取れませんでした。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>The encrypted notebook key envelope is damaged.</source>
-        <translation>暗号化されたノートブックのキーエンベロープが破損しています。</translation>
+        <translation type="vanished">暗号化されたノートブックのキーエンベロープが破損しています。</translation>
     </message>
     <message>
-        <location line="+12"/>
         <source>Cannot share protected notes with an absolute or parent-escaping assets folder. The assets folder must stay within each note&apos;s folder so its image and attachment links remain valid.</source>
-        <translation>アセットフォルダーが絶対パス、またはノートのフォルダー外を指す相対パスで指定されている場合、保護されたノートは共有できません。画像や添付ファイルへのリンクを維持するには、アセットフォルダーを各ノートのフォルダー内に配置する必要があります。</translation>
+        <translation type="vanished">アセットフォルダーが絶対パス、またはノートのフォルダー外を指す相対パスで指定されている場合、保護されたノートは共有できません。画像や添付ファイルへのリンクを維持するには、アセットフォルダーを各ノートのフォルダー内に配置する必要があります。</translation>
     </message>
     <message>
-        <location line="+116"/>
         <source>The encrypted bundle envelope could not be written.</source>
-        <translation>暗号化されたバンドルのエンベロープを書き込めませんでした。</translation>
+        <translation type="vanished">暗号化されたバンドルのエンベロープを書き込めませんでした。</translation>
     </message>
     <message>
-        <location line="+71"/>
         <source>The notebook key envelope changed while sharing.</source>
-        <translation>共有中にノートブックのキーエンベロープが変更されました。</translation>
+        <translation type="vanished">共有中にノートブックのキーエンベロープが変更されました。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="-184"/>
         <source>A file record in vx.json is not an object.</source>
-        <translation>vx.json 内のファイルレコードがオブジェクトではありません。</translation>
+        <translation type="vanished">vx.json 内のファイルレコードがオブジェクトではありません。</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>A file record is missing a valid &quot;id&quot;.</source>
-        <translation>ファイルレコードに有効な「id」がありません。</translation>
+        <translation type="vanished">ファイルレコードに有効な「id」がありません。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>A file record is missing a valid &quot;name&quot;.</source>
-        <translation>ファイルレコードに有効な「name」がありません。</translation>
+        <translation type="vanished">ファイルレコードに有効な「name」がありません。</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>File record &quot;%1&quot; has non-numeric timestamps.</source>
-        <translation>ファイルレコード「%1」のタイムスタンプが数値ではありません。</translation>
+        <translation type="vanished">ファイルレコード「%1」のタイムスタンプが数値ではありません。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>File record &quot;%1&quot; has a non-object &quot;metadata&quot;.</source>
-        <translation>ファイルレコード「%1」の「metadata」がオブジェクトではありません。</translation>
+        <translation type="vanished">ファイルレコード「%1」の「metadata」がオブジェクトではありません。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>File record &quot;%1&quot; has a non-array &quot;tags&quot;.</source>
-        <translation>ファイルレコード「%1」の「tags」が配列ではありません。</translation>
+        <translation type="vanished">ファイルレコード「%1」の「tags」が配列ではありません。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>File record &quot;%1&quot; has a non-string tag entry.</source>
-        <translation>ファイルレコード「%1」に文字列ではないタグ項目があります。</translation>
+        <translation type="vanished">ファイルレコード「%1」に文字列ではないタグ項目があります。</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>File record &quot;%1&quot; has a non-array &quot;attachments&quot;.</source>
-        <translation>ファイルレコード「%1」の「attachments」が配列ではありません。</translation>
+        <translation type="vanished">ファイルレコード「%1」の「attachments」が配列ではありません。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>File record &quot;%1&quot; has a non-string attachment entry.</source>
-        <translation>ファイルレコード「%1」に文字列ではない添付ファイル項目があります。</translation>
+        <translation type="vanished">ファイルレコード「%1」に文字列ではない添付ファイル項目があります。</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>Missing folder metadata: %1</source>
-        <translation>フォルダーのメタデータがありません：%1</translation>
+        <translation type="vanished">フォルダーのメタデータがありません：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Cannot read folder metadata: %1</source>
-        <translation>フォルダーのメタデータを読み取れません：%1</translation>
+        <translation type="vanished">フォルダーのメタデータを読み取れません：%1</translation>
     </message>
     <message>
-        <location filename="../../../core/services/folderbundleimporter.cpp" line="+218"/>
-        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="+9"/>
         <source>Malformed folder metadata: %1</source>
-        <translation>フォルダーのメタデータの形式が不正です：%1</translation>
+        <translation type="vanished">フォルダーのメタデータの形式が不正です：%1</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldermetadatavalidator.cpp" line="+6"/>
         <source>Folder metadata is missing a valid &quot;id&quot;: %1</source>
-        <translation>フォルダーのメタデータに有効な「id」がありません：%1</translation>
+        <translation type="vanished">フォルダーのメタデータに有効な「id」がありません：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Folder metadata is missing a valid &quot;name&quot;: %1</source>
-        <translation>フォルダーのメタデータに有効な「name」がありません：%1</translation>
+        <translation type="vanished">フォルダーのメタデータに有効な「name」がありません：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Folder metadata name does not match its directory: %1</source>
-        <translation>フォルダーのメタデータの名前がディレクトリと一致しません：%1</translation>
+        <translation type="vanished">フォルダーのメタデータの名前がディレクトリと一致しません：%1</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <location line="+35"/>
         <source>Duplicate id &quot;%1&quot; in %2</source>
-        <translation>%2 内で id「%1」が重複しています</translation>
+        <translation type="vanished">%2 内で id「%1」が重複しています</translation>
     </message>
     <message>
-        <location line="-28"/>
         <source>Folder metadata has non-numeric timestamps: %1</source>
-        <translation>フォルダーのメタデータのタイムスタンプが数値ではありません：%1</translation>
+        <translation type="vanished">フォルダーのメタデータのタイムスタンプが数値ではありません：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Folder metadata has a non-object &quot;metadata&quot;: %1</source>
-        <translation>フォルダーのメタデータの「metadata」がオブジェクトではありません：%1</translation>
+        <translation type="vanished">フォルダーのメタデータの「metadata」がオブジェクトではありません：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Folder metadata has a non-array &quot;files&quot;: %1</source>
-        <translation>フォルダーのメタデータの「files」が配列ではありません：%1</translation>
+        <translation type="vanished">フォルダーのメタデータの「files」が配列ではありません：%1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Folder metadata has a non-array &quot;folders&quot;: %1</source>
-        <translation>フォルダーのメタデータの「folders」が配列ではありません：%1</translation>
+        <translation type="vanished">フォルダーのメタデータの「folders」が配列ではありません：%1</translation>
     </message>
     <message>
-        <location line="+21"/>
-        <location line="+33"/>
         <source>Unsafe child name &quot;%1&quot; in %2</source>
-        <translation>%2 内に安全でない子項目名「%1」があります</translation>
+        <translation type="vanished">%2 内に安全でない子項目名「%1」があります</translation>
     </message>
     <message>
-        <location line="-27"/>
-        <location line="+33"/>
         <source>Duplicate or colliding child name &quot;%1&quot; in %2</source>
-        <translation>%2 内に重複または衝突する子項目名「%1」があります</translation>
+        <translation type="vanished">%2 内に重複または衝突する子項目名「%1」があります</translation>
     </message>
     <message>
-        <location line="-19"/>
         <source>Indexed file &quot;%1&quot; is missing from disk under %2</source>
-        <translation>インデックスされたファイル「%1」が %2 のディスク上にありません</translation>
+        <translation type="vanished">インデックスされたファイル「%1」が %2 のディスク上にありません</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>A folder entry in %1 is not a string.</source>
-        <translation>%1 内のフォルダー項目が文字列ではありません。</translation>
+        <translation type="vanished">%1 内のフォルダー項目が文字列ではありません。</translation>
     </message>
     <message>
-        <location line="+24"/>
         <source>Indexed folder &quot;%1&quot; is missing from disk under %2</source>
-        <translation>インデックスされたフォルダー「%1」が %2 のディスク上にありません</translation>
+        <translation type="vanished">インデックスされたフォルダー「%1」が %2 のディスク上にありません</translation>
     </message>
     <message>
-        <location line="+26"/>
         <source>Orphan folder metadata found at %1</source>
-        <translation>%1 に孤立したフォルダーのメタデータが見つかりました</translation>
+        <translation type="vanished">%1 に孤立したフォルダーのメタデータが見つかりました</translation>
     </message>
     <message>
-        <location filename="../../../core/services/folderbundleimporter.cpp" line="-9"/>
-        <location line="+162"/>
-        <location line="+49"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="-545"/>
-        <location line="+49"/>
         <source>Cannot read %1</source>
-        <translation>%1 を読み取れません</translation>
+        <translation type="vanished">%1 を読み取れません</translation>
     </message>
     <message>
-        <location line="-192"/>
-        <location line="+148"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="-44"/>
         <source>Cannot write %1</source>
-        <translation>%1 を書き込めません</translation>
+        <translation type="vanished">%1 を書き込めません</translation>
     </message>
     <message>
-        <location line="+14"/>
-        <location line="+42"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+14"/>
-        <location line="+42"/>
         <source>Read failed for %1</source>
-        <translation>%1 の読み取りに失敗しました</translation>
+        <translation type="vanished">%1 の読み取りに失敗しました</translation>
     </message>
     <message>
-        <location line="-199"/>
-        <location line="+164"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="-35"/>
         <source>Write failed for %1</source>
-        <translation>%1 の書き込みに失敗しました</translation>
+        <translation type="vanished">%1 の書き込みに失敗しました</translation>
     </message>
     <message>
-        <location line="-302"/>
-        <location line="+24"/>
-        <location line="+136"/>
         <source>Refusing to import: %1 is a symbolic link, junction or reparse point.</source>
-        <translation>インポートを中止しました: %1 はシンボリックリンク、ジャンクションまたは再解析ポイントです。</translation>
+        <translation type="vanished">インポートを中止しました: %1 はシンボリックリンク、ジャンクションまたは再解析ポイントです。</translation>
     </message>
     <message>
-        <location line="-153"/>
         <source>Bundle directory is missing: %1</source>
-        <translation>バンドルのディレクトリが見つかりません: %1</translation>
+        <translation type="vanished">バンドルのディレクトリが見つかりません: %1</translation>
     </message>
     <message>
-        <location line="+34"/>
         <source>Refusing to import: %1 is not a regular file.</source>
-        <translation>インポートを中止しました: %1 は通常のファイルではありません。</translation>
+        <translation type="vanished">インポートを中止しました: %1 は通常のファイルではありません。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Refusing to import: %1 is not readable.</source>
-        <translation>インポートを中止しました: %1 を読み取れません。</translation>
+        <translation type="vanished">インポートを中止しました: %1 を読み取れません。</translation>
     </message>
     <message>
-        <location line="+56"/>
         <source>&quot;%1&quot; and &quot;%2&quot; in %3 would collide in this notebook, whose filesystem does not distinguish letter case.</source>
-        <translation>%3 内の「%1」と「%2」は、このノートブックのファイルシステムが大文字と小文字を区別しないため衝突します。</translation>
+        <translation type="vanished">%3 内の「%1」と「%2」は、このノートブックのファイルシステムが大文字と小文字を区別しないため衝突します。</translation>
     </message>
     <message>
-        <location line="+55"/>
         <source>The selected path is not a folder.</source>
-        <translation>選択されたパスはフォルダではありません。</translation>
+        <translation type="vanished">選択されたパスはフォルダではありません。</translation>
     </message>
     <message>
-        <location line="+27"/>
         <source>This folder is not a VNote share bundle: it has no &quot;%1&quot; directory.</source>
-        <translation>このフォルダは VNote の共有バンドルではありません: 「%1」ディレクトリがありません。</translation>
+        <translation type="vanished">このフォルダは VNote の共有バンドルではありません: 「%1」ディレクトリがありません。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>This folder is not a VNote share bundle: it contains no folder to import.</source>
-        <translation>このフォルダは VNote の共有バンドルではありません: インポートできるフォルダが含まれていません。</translation>
+        <translation type="vanished">このフォルダは VNote の共有バンドルではありません: インポートできるフォルダが含まれていません。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>This folder is not a VNote share bundle: it contains more than one folder.</source>
-        <translation>このフォルダは VNote の共有バンドルではありません: フォルダが複数含まれています。</translation>
+        <translation type="vanished">このフォルダは VNote の共有バンドルではありません: フォルダが複数含まれています。</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>The bundle&apos;s folder name is not usable: %1</source>
-        <translation>バンドルのフォルダ名は使用できません: %1</translation>
+        <translation type="vanished">バンドルのフォルダ名は使用できません: %1</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>This folder is not a VNote share bundle: the metadata for &quot;%1&quot; is missing.</source>
-        <translation>このフォルダは VNote の共有バンドルではありません: 「%1」のメタデータがありません。</translation>
+        <translation type="vanished">このフォルダは VNote の共有バンドルではありません: 「%1」のメタデータがありません。</translation>
     </message>
     <message>
-        <location line="+38"/>
         <source>The protected note metadata is inconsistent.</source>
-        <translation>保護されたノートのメタデータに不整合があります。</translation>
+        <translation type="vanished">保護されたノートのメタデータに不整合があります。</translation>
     </message>
     <message>
-        <location line="+65"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+10"/>
         <source>Flush failed for %1</source>
-        <translation>%1 のフラッシュに失敗しました</translation>
+        <translation type="vanished">%1 のフラッシュに失敗しました</translation>
     </message>
     <message>
-        <location line="+45"/>
-        <location line="+13"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+47"/>
-        <location line="+14"/>
         <source>Cannot create %1</source>
-        <translation>%1 を作成できません</translation>
+        <translation type="vanished">%1 を作成できません</translation>
     </message>
     <message>
-        <location line="+176"/>
         <source>The protected bundle is missing its notebook key envelope.</source>
-        <translation>保護されたバンドルにノートブックのキーエンベロープがありません。</translation>
+        <translation type="vanished">保護されたバンドルにノートブックのキーエンベロープがありません。</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>The encrypted bundle&apos;s key envelope or metadata is incomplete.</source>
-        <translation>暗号化されたバンドルのキーエンベロープまたはメタデータが不完全です。</translation>
+        <translation type="vanished">暗号化されたバンドルのキーエンベロープまたはメタデータが不完全です。</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>%1 — %2 notes, %3 subfolders</source>
-        <translation>%1 — ノート %2 件、サブフォルダ %3 件</translation>
+        <translation type="vanished">%1 — ノート %2 件、サブフォルダ %3 件</translation>
     </message>
     <message>
-        <location line="+31"/>
         <source>Internal error: no commit handler was supplied.</source>
-        <translation>内部エラー: コミットハンドラが指定されていません。</translation>
+        <translation type="vanished">内部エラー: コミットハンドラが指定されていません。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Internal error: no id oracle was supplied.</source>
-        <translation>内部エラー: ID オラクルが指定されていません。</translation>
+        <translation type="vanished">内部エラー: ID オラクルが指定されていません。</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>Encrypted bundles require the authenticated notebook transfer flow.</source>
-        <translation>暗号化されたバンドルには、認証を伴うノートブック転送手順が必要です。</translation>
+        <translation type="vanished">暗号化されたバンドルには、認証を伴うノートブック転送手順が必要です。</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>This bundle contains protected content but has no usable key envelope.</source>
-        <translation>このバンドルには保護された内容が含まれていますが、使用できるキーエンベロープがありません。</translation>
+        <translation type="vanished">このバンドルには保護された内容が含まれていますが、使用できるキーエンベロープがありません。</translation>
     </message>
     <message>
-        <location line="+26"/>
         <source>The bundle contains duplicate node ids and cannot be imported.</source>
-        <translation>バンドルに重複したノード ID が含まれているため、インポートできません。</translation>
+        <translation type="vanished">バンドルに重複したノード ID が含まれているため、インポートできません。</translation>
     </message>
     <message>
-        <location line="+23"/>
-        <location line="+157"/>
         <source>This folder is already in this notebook. Importing it again would overwrite the existing notes, so nothing was changed.</source>
-        <translation>このフォルダはすでにこのノートブックにあります。再度インポートすると既存のノートが上書きされるため、何も変更していません。</translation>
+        <translation type="vanished">このフォルダはすでにこのノートブックにあります。再度インポートすると既存のノートが上書きされるため、何も変更していません。</translation>
     </message>
     <message>
-        <location line="-145"/>
         <source>Could not find a free name for &quot;%1&quot; in the destination.</source>
-        <translation>保存先で「%1」に使用できる名前が見つかりませんでした。</translation>
+        <translation type="vanished">保存先で「%1」に使用できる名前が見つかりませんでした。</translation>
     </message>
     <message>
-        <location line="+15"/>
         <source>Cannot create a staging folder inside the notebook.</source>
-        <translation>ノートブック内に一時フォルダを作成できません。</translation>
+        <translation type="vanished">ノートブック内に一時フォルダを作成できません。</translation>
     </message>
     <message>
-        <location line="+142"/>
         <source>&quot;%1&quot; was created in the destination while the import was being prepared.</source>
-        <translation>インポートの準備中に、保存先に「%1」が作成されました。</translation>
+        <translation type="vanished">インポートの準備中に、保存先に「%1」が作成されました。</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Injected attach failure.</source>
-        <translation>注入されたアタッチ失敗。</translation>
+        <translation type="vanished">注入されたアタッチ失敗。</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>The folder could not be added to the notebook.</source>
-        <translation>フォルダをノートブックに追加できませんでした。</translation>
+        <translation type="vanished">フォルダをノートブックに追加できませんでした。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+34"/>
         <source>The source folder changed while it was being copied.</source>
-        <translation>コピー中にソースフォルダーが変更されました。</translation>
+        <translation type="vanished">コピー中にソースフォルダーが変更されました。</translation>
     </message>
     <message>
-        <location line="+12"/>
-        <location line="+19"/>
         <source>The source folder changed while it was being copied (%1).</source>
-        <translation>コピー中にソースフォルダーが変更されました（%1）。</translation>
+        <translation type="vanished">コピー中にソースフォルダーが変更されました（%1）。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/folderbundleimporter.cpp" line="-456"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+24"/>
         <source>The copied folder is incomplete.</source>
-        <translation>コピーされたフォルダーが不完全です。</translation>
+        <translation type="vanished">コピーされたフォルダーが不完全です。</translation>
     </message>
     <message>
-        <location line="+14"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+14"/>
         <source>The copied folder is incomplete or corrupted (%1).</source>
-        <translation>コピーされたフォルダーが不完全または破損しています（%1）。</translation>
+        <translation type="vanished">コピーされたフォルダーが不完全または破損しています（%1）。</translation>
     </message>
     <message>
-        <location line="+18"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+18"/>
         <source>The copied folder is corrupted (%1).</source>
-        <translation>コピーされたフォルダーが破損しています（%1）。</translation>
+        <translation type="vanished">コピーされたフォルダーが破損しています（%1）。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+170"/>
         <source>Cannot create a temporary folder in the destination.</source>
-        <translation>コピー先に一時フォルダーを作成できません。</translation>
+        <translation type="vanished">コピー先に一時フォルダーを作成できません。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/folderbundleimporter.cpp" line="+283"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+23"/>
         <source>A temporary copy could not be removed and is still at %1. Delete it manually.</source>
-        <translation>一時コピーを削除できず、%1 に残っています。手動で削除してください。</translation>
+        <translation type="vanished">一時コピーを削除できず、%1 に残っています。手動で削除してください。</translation>
     </message>
     <message>
-        <location line="+48"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+49"/>
         <source>Injected copy failure.</source>
-        <translation>注入されたコピー失敗です。</translation>
+        <translation type="vanished">注入されたコピー失敗です。</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+36"/>
         <source>Injected verification failure.</source>
-        <translation>注入された検証失敗です。</translation>
+        <translation type="vanished">注入された検証失敗です。</translation>
     </message>
     <message>
-        <location line="+34"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+19"/>
         <source>Injected publish failure.</source>
-        <translation>注入された公開失敗です。</translation>
+        <translation type="vanished">注入された公開失敗です。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+39"/>
         <source>The folder changed while it was being prepared.</source>
-        <translation>準備中にフォルダーが変更されました。</translation>
+        <translation type="vanished">準備中にフォルダーが変更されました。</translation>
     </message>
     <message>
-        <location line="+47"/>
         <source>Could not move the prepared bundle into %1.</source>
-        <translation>準備したバンドルを %1 に移動できませんでした。</translation>
+        <translation type="vanished">準備したバンドルを %1 に移動できませんでした。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Could not create the bundle folder in the destination.</source>
-        <translation>コピー先にバンドルフォルダーを作成できませんでした。</translation>
+        <translation type="vanished">コピー先にバンドルフォルダーを作成できませんでした。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindowtoolbarhelper2.cpp" line="-83"/>
+        <location line="-83"/>
         <source>Menu</source>
         <translation>メニュー</translation>
     </message>
@@ -846,6 +725,59 @@
         <location line="+6"/>
         <source>Do an OR combination of keywords.</source>
         <translation>キーワードのOR結合を実行します。</translation>
+    </message>
+</context>
+<context>
+    <name>SyncSettings</name>
+    <message>
+        <location filename="../../../core/services/syncsettings.cpp" line="+107"/>
+        <source>Unsupported sync backend.</source>
+        <translation>未対応の同期バックエンドです。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Remote URL must not be empty.</source>
+        <translation>リモート URL を入力してください。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Remote URL must use HTTPS or file:// scheme.</source>
+        <translation>リモート URL には HTTPS または file:// スキームが必要です。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Jianguoyun requires a dedicated HTTPS collection under https://dav.jianguoyun.com/dav/, not the account root.</source>
+        <translation>Jianguoyun には https://dav.jianguoyun.com/dav/ 配下の専用 HTTPS コレクションが必要です。アカウントのルートは指定できません。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>WebDAV requires an absolute HTTP or HTTPS collection URL with a host and a safe path, without user information, query, or fragment.</source>
+        <translation>WebDAV には、ホストと安全なパスを含む絶対 HTTP または HTTPS コレクション URL が必要です。ユーザー情報、クエリ、フラグメントは含めないでください。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Credentials do not match the selected sync backend.</source>
+        <translation>認証情報が選択した同期バックエンドと一致しません。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>PAT is required to enable sync.</source>
+        <translation>同期を有効にするにはパーソナルアクセストークン（PAT）が必要です。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>A username and app password are required for Jianguoyun sync.</source>
+        <translation>Jianguoyun の同期にはユーザー名とアプリパスワードが必要です。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>A username is required to enable WebDAV sync.</source>
+        <translation>WebDAV 同期を有効にするにはユーザー名が必要です。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>A password or app password is required to enable WebDAV sync.</source>
+        <translation>WebDAV 同期を有効にするにはパスワードまたはアプリパスワードが必要です。</translation>
     </message>
 </context>
 <context>
@@ -1128,195 +1060,144 @@
 <context>
     <name>vnotex::BufferService</name>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="+2093"/>
         <source>The note is no longer open.</source>
-        <translation>このノートはすでに閉じられています。</translation>
+        <translation type="vanished">このノートはすでに閉じられています。</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>A note was closed while the folder was being prepared.</source>
-        <translation>フォルダーの準備中にノートが閉じられました。</translation>
+        <translation type="vanished">フォルダーの準備中にノートが閉じられました。</translation>
     </message>
     <message>
-        <location line="+13"/>
-        <location line="+21"/>
-        <location line="+26"/>
-        <location line="+44"/>
         <source>An open note is still being saved. Try again in a moment.</source>
-        <translation>開いているノートを保存中です。しばらくしてから再実行してください。</translation>
+        <translation type="vanished">開いているノートを保存中です。しばらくしてから再実行してください。</translation>
     </message>
     <message>
-        <location line="-56"/>
         <source>The note changed while its snapshot was being saved.</source>
-        <translation>スナップショットの保存中にノートが変更されました。</translation>
+        <translation type="vanished">スナップショットの保存中にノートが変更されました。</translation>
     </message>
     <message>
-        <location line="+16"/>
         <source>Could not read the latest content of an open note.</source>
-        <translation>開いているノートの最新の内容を読み取れませんでした。</translation>
+        <translation type="vanished">開いているノートの最新の内容を読み取れませんでした。</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>An open note has unsaved changes but its notebook is read-only.</source>
-        <translation>開いているノートに未保存の変更がありますが、そのノートブックは読み取り専用です。</translation>
+        <translation type="vanished">開いているノートに未保存の変更がありますが、そのノートブックは読み取り専用です。</translation>
     </message>
     <message>
-        <location line="-52"/>
-        <location line="+62"/>
         <source>Saving an open note was cancelled.</source>
-        <translation>開いているノートの保存がキャンセルされました。</translation>
+        <translation type="vanished">開いているノートの保存がキャンセルされました。</translation>
     </message>
     <message>
-        <location line="-2075"/>
-        <location line="+217"/>
-        <location line="+73"/>
-        <location line="+121"/>
-        <location line="+67"/>
-        <location line="+43"/>
         <source>Replacement was cancelled.</source>
-        <translation>置換がキャンセルされました。</translation>
+        <translation type="vanished">置換がキャンセルされました。</translation>
     </message>
     <message>
-        <location line="-515"/>
-        <location line="+5"/>
         <source>The note cannot be read or exceeds the search size limit.</source>
-        <translation>ノートを読み取れないか、検索対象サイズの上限を超えています。</translation>
+        <translation type="vanished">ノートを読み取れないか、検索対象サイズの上限を超えています。</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>The note has a binary or non-round-trippable encoding.</source>
-        <translation>ノートはバイナリ形式か、読み書きで元のバイト列を保持できないエンコーディングです。</translation>
+        <translation type="vanished">ノートはバイナリ形式か、読み書きで元のバイト列を保持できないエンコーディングです。</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Binary content cannot be replaced.</source>
-        <translation>バイナリ形式の内容は置換できません。</translation>
+        <translation type="vanished">バイナリ形式の内容は置換できません。</translation>
     </message>
     <message>
-        <location line="+8"/>
-        <location line="+331"/>
-        <location line="+85"/>
         <source>Could not prepare the replacement.</source>
-        <translation>置換を準備できませんでした。</translation>
+        <translation type="vanished">置換を準備できませんでした。</translation>
     </message>
     <message>
-        <location line="-179"/>
         <source>Replacement is available only for Simple search results.</source>
-        <translation>置換は Simple 検索の結果でのみ利用できます。</translation>
+        <translation type="vanished">置換は Simple 検索の結果でのみ利用できます。</translation>
     </message>
     <message>
-        <location line="+12"/>
-        <location line="+25"/>
         <source>The search target is not an available notebook file.</source>
-        <translation>検索対象は、ノートブック内で利用可能なファイルではありません。</translation>
+        <translation type="vanished">検索対象は、ノートブック内で利用可能なファイルではありません。</translation>
     </message>
     <message>
-        <location line="-18"/>
         <source>The search target has moved or is no longer available.</source>
-        <translation>検索対象が移動されたか、利用できなくなっています。</translation>
+        <translation type="vanished">検索対象が移動されたか、利用できなくなっています。</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>The notebook is closed or read-only.</source>
-        <translation>ノートブックが閉じられているか、読み取り専用です。</translation>
+        <translation type="vanished">ノートブックが閉じられているか、読み取り専用です。</translation>
     </message>
     <message>
-        <location line="+15"/>
         <source>Protected notes cannot be replaced from search results.</source>
-        <translation>保護されたノートは検索結果から置換できません。</translation>
+        <translation type="vanished">保護されたノートは検索結果から置換できません。</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>The note is missing, read-only, or exceeds the search size limit.</source>
-        <translation>ノートが見つからないか、読み取り専用か、検索対象サイズの上限を超えています。</translation>
+        <translation type="vanished">ノートが見つからないか、読み取り専用か、検索対象サイズの上限を超えています。</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>The note has competing open buffers.</source>
-        <translation>このノートを開いている複数のバッファが競合しています。</translation>
+        <translation type="vanished">このノートを開いている複数のバッファが競合しています。</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>The note is unavailable, protected, read-only, or already being replaced.</source>
-        <translation>ノートが利用できないか、保護されているか、読み取り専用か、すでに置換中です。</translation>
+        <translation type="vanished">ノートが利用できないか、保護されているか、読み取り専用か、すでに置換中です。</translation>
     </message>
     <message>
-        <location line="+59"/>
         <source>The note is still being saved. Try again in a moment.</source>
-        <translation>ノートはまだ保存中です。しばらくしてから再実行してください。</translation>
+        <translation type="vanished">ノートはまだ保存中です。しばらくしてから再実行してください。</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Could not check the note for changes on disk.</source>
-        <translation>ディスク上のノートの変更を確認できませんでした。</translation>
+        <translation type="vanished">ディスク上のノートの変更を確認できませんでした。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>The note changed on disk. Search again before replacing.</source>
-        <translation>ディスク上のノートが変更されました。置換する前に再度検索してください。</translation>
+        <translation type="vanished">ディスク上のノートが変更されました。置換する前に再度検索してください。</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+49"/>
-        <location line="+38"/>
         <source>The note changed while preparing the replacement.</source>
-        <translation>置換の準備中にノートが変更されました。</translation>
+        <translation type="vanished">置換の準備中にノートが変更されました。</translation>
     </message>
     <message>
-        <location line="-80"/>
         <source>Could not capture the current note content.</source>
-        <translation>現在のノートの内容を取得できませんでした。</translation>
+        <translation type="vanished">現在のノートの内容を取得できませんでした。</translation>
     </message>
     <message>
-        <location line="+59"/>
-        <location line="+5"/>
         <source>The replacement cannot be represented in the note&apos;s encoding.</source>
-        <translation>置換後の内容は、ノートのエンコーディングでは表現できません。</translation>
+        <translation type="vanished">置換後の内容は、ノートのエンコーディングでは表現できません。</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Saving the replacement was cancelled.</source>
-        <translation>置換後の内容の保存がキャンセルされました。</translation>
+        <translation type="vanished">置換後の内容の保存がキャンセルされました。</translation>
     </message>
     <message>
-        <location line="+20"/>
         <source>The replacement could not be queued. Try again in a moment.</source>
-        <translation>置換処理をキューに追加できませんでした。しばらくしてから再実行してください。</translation>
+        <translation type="vanished">置換処理をキューに追加できませんでした。しばらくしてから再実行してください。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Could not save the replacement.</source>
-        <translation>置換後の内容を保存できませんでした。</translation>
+        <translation type="vanished">置換後の内容を保存できませんでした。</translation>
     </message>
     <message>
-        <location line="+44"/>
         <source>An editor could not refresh after replacement.</source>
-        <translation>置換後にエディタを更新できませんでした。</translation>
+        <translation type="vanished">置換後にエディタを更新できませんでした。</translation>
     </message>
     <message>
-        <location line="+15"/>
         <source>The note was saved, but an after-save hook failed.</source>
-        <translation>ノートは保存されましたが、保存後のフックが失敗しました。</translation>
+        <translation type="vanished">ノートは保存されましたが、保存後のフックが失敗しました。</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>Replacement edits remain unsaved: %1</source>
-        <translation>置換による変更が未保存のままです: %1</translation>
+        <translation type="vanished">置換による変更が未保存のままです: %1</translation>
     </message>
     <message>
-        <location line="+1368"/>
         <source>The note is being replaced.</source>
-        <translation>ノートの内容を置換中です。</translation>
+        <translation type="vanished">ノートの内容を置換中です。</translation>
     </message>
     <message>
-        <location line="+109"/>
         <source>The notebook is busy syncing. Try again in a moment.</source>
-        <translation>ノートブックを同期中です。しばらくしてから再実行してください。</translation>
+        <translation type="vanished">ノートブックを同期中です。しばらくしてから再実行してください。</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>Could not write an open note to disk.</source>
-        <translation>開いているノートをディスクに書き込めませんでした。</translation>
+        <translation type="vanished">開いているノートをディスクに書き込めませんでした。</translation>
     </message>
 </context>
 <context>
@@ -1381,26 +1262,20 @@
 <context>
     <name>vnotex::CommentService</name>
     <message>
-        <location filename="../../../core/services/commentservice.cpp" line="+247"/>
-        <location line="+101"/>
-        <location line="+4"/>
         <source>Cannot locate the comment store for this file.</source>
-        <translation>このファイルのコメントストアが見つかりません。</translation>
+        <translation type="vanished">このファイルのコメントストアが見つかりません。</translation>
     </message>
     <message>
-        <location line="-91"/>
         <source>Cannot read %1.</source>
-        <translation>%1 を読み取れません。</translation>
+        <translation type="vanished">%1 を読み取れません。</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>%1 is not valid JSON (%2).</source>
-        <translation>%1 は有効な JSON ではありません（%2）。</translation>
+        <translation type="vanished">%1 は有効な JSON ではありません（%2）。</translation>
     </message>
     <message>
-        <location line="+96"/>
         <source>This notebook is read-only.</source>
-        <translation>このノートブックは読み取り専用です。</translation>
+        <translation type="vanished">このノートブックは読み取り専用です。</translation>
     </message>
 </context>
 <context>
@@ -1414,70 +1289,56 @@
 <context>
     <name>vnotex::CustomCommandProvider</name>
     <message>
-        <location filename="../../../imagehost/customcommandprovider.cpp" line="+15"/>
         <source>Custom Command</source>
-        <translation>カスタムコマンド</translation>
+        <translation type="vanished">カスタムコマンド</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Command is not configured</source>
-        <translation>コマンドが設定されていません</translation>
+        <translation type="vanished">コマンドが設定されていません</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Failed to create temporary file</source>
-        <translation>一時ファイルの作成に失敗しました</translation>
+        <translation type="vanished">一時ファイルの作成に失敗しました</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <location line="+95"/>
         <source>Invalid command: %1</source>
-        <translation>無効なコマンド: %1</translation>
+        <translation type="vanished">無効なコマンド: %1</translation>
     </message>
     <message>
-        <location line="-83"/>
         <source>Command not found: %1</source>
-        <translation>コマンドが見つかりません: %1</translation>
+        <translation type="vanished">コマンドが見つかりません: %1</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Command timed out after 30 seconds</source>
-        <translation>コマンドが 30 秒後にタイムアウトしました</translation>
+        <translation type="vanished">コマンドが 30 秒後にタイムアウトしました</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>Command failed (exit code %1): %2</source>
-        <translation>コマンドが失敗しました (終了コード %1): %2</translation>
+        <translation type="vanished">コマンドが失敗しました (終了コード %1): %2</translation>
     </message>
     <message>
-        <location line="+18"/>
         <source>No URL returned by command</source>
-        <translation>コマンドから URL が返されませんでした</translation>
+        <translation type="vanished">コマンドから URL が返されませんでした</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Delete is not supported by custom command provider</source>
-        <translation>カスタムコマンドプロバイダーでは削除はサポートされていません</translation>
+        <translation type="vanished">カスタムコマンドプロバイダーでは削除はサポートされていません</translation>
     </message>
     <message>
-        <location line="+19"/>
         <source>Typora-compatible upload command. The image file path is appended as the last argument. The last non-empty line of stdout is used as the uploaded image URL</source>
-        <translation>Typora 互換のアップロードコマンド。画像ファイルのパスが最後の引数として追加されます。標準出力の最後の非空行がアップロード済み画像の URL として使用されます</translation>
+        <translation type="vanished">Typora 互換のアップロードコマンド。画像ファイルのパスが最後の引数として追加されます。標準出力の最後の非空行がアップロード済み画像の URL として使用されます</translation>
     </message>
     <message>
-        <location line="+12"/>
         <source>Command is empty</source>
-        <translation>コマンドが空です</translation>
+        <translation type="vanished">コマンドが空です</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Program not found in PATH: %1</source>
-        <translation>PATH にプログラムが見つかりません: %1</translation>
+        <translation type="vanished">PATH にプログラムが見つかりません: %1</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Configuration is valid. Program found: %1</source>
-        <translation>設定は有効です。プログラムが見つかりました: %1</translation>
+        <translation type="vanished">設定は有効です。プログラムが見つかりました: %1</translation>
     </message>
 </context>
 <context>
@@ -2902,146 +2763,115 @@
 <context>
     <name>vnotex::GitHubProvider</name>
     <message>
-        <location filename="../../../imagehost/githubprovider.cpp" line="+20"/>
         <source>GitHub Repository</source>
-        <translation>GitHub リポジトリ</translation>
+        <translation type="vanished">GitHub リポジトリ</translation>
     </message>
     <message>
-        <location line="+20"/>
         <source>GitHub Personal Access Token with &apos;repo&apos; scope. Generate at GitHub → Settings → Developer settings → Personal access tokens</source>
-        <translation>&apos;repo&apos; スコープを持つ GitHub 個人アクセストークン。GitHub → Settings → Developer settings → Personal access tokens で生成してください</translation>
+        <translation type="vanished">&apos;repo&apos; スコープを持つ GitHub 個人アクセストークン。GitHub → Settings → Developer settings → Personal access tokens で生成してください</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Your GitHub username</source>
-        <translation>あなたの GitHub ユーザー名</translation>
+        <translation type="vanished">あなたの GitHub ユーザー名</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Name of the GitHub repository to store images. Must already exist</source>
-        <translation>画像を保存する GitHub リポジトリの名前。既に存在している必要があります</translation>
+        <translation type="vanished">画像を保存する GitHub リポジトリの名前。既に存在している必要があります</translation>
     </message>
     <message>
-        <location line="+22"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
-        <translation>PersonalAccessToken/UserName/RepositoryName は空にできません。</translation>
+        <translation type="vanished">PersonalAccessToken/UserName/RepositoryName は空にできません。</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>Private repository is not supported.</source>
-        <translation>プライベートリポジトリはサポートされていません。</translation>
+        <translation type="vanished">プライベートリポジトリはサポートされていません。</translation>
     </message>
     <message>
-        <location line="+43"/>
         <source>Failed to create image with empty path.</source>
-        <translation>空のパスで画像を作成できません。</translation>
+        <translation type="vanished">空のパスで画像を作成できません。</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <location line="+57"/>
         <source>Invalid GitHub image host configuration.</source>
-        <translation>無効な GitHub 画像ホスト設定です。</translation>
+        <translation type="vanished">無効な GitHub 画像ホスト設定です。</translation>
     </message>
     <message>
-        <location line="-46"/>
         <source>The resource already exists at the image host (%1).</source>
-        <translation>画像ホスト (%1) にリソースが既に存在します。</translation>
+        <translation type="vanished">画像ホスト (%1) にリソースが既に存在します。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
-        <translation>画像ホスト (%1) (%2) (%3) のリソースの照会に失敗しました。</translation>
+        <translation type="vanished">画像ホスト (%1) (%2) (%3) のリソースの照会に失敗しました。</translation>
     </message>
     <message>
-        <location line="+12"/>
-        <location line="+11"/>
         <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
-        <translation>画像ホスト (%1) (%2) (%3) でのリソースの作成に失敗しました。</translation>
+        <translation type="vanished">画像ホスト (%1) (%2) (%3) でのリソースの作成に失敗しました。</translation>
     </message>
     <message>
-        <location line="+62"/>
         <source>Failed to fetch SHA about the resource (%1) (%2).</source>
-        <translation>リソース (%1) (%2) の SHA の取得に失敗しました。</translation>
+        <translation type="vanished">リソース (%1) (%2) の SHA の取得に失敗しました。</translation>
     </message>
     <message>
-        <location line="+12"/>
         <source>Failed to delete resource (%1) (%2).</source>
-        <translation>リソース (%1) (%2) の削除に失敗しました。</translation>
+        <translation type="vanished">リソース (%1) (%2) の削除に失敗しました。</translation>
     </message>
 </context>
 <context>
     <name>vnotex::GiteeProvider</name>
     <message>
-        <location filename="../../../imagehost/giteeprovider.cpp" line="+19"/>
         <source>Gitee Repository</source>
-        <translation>Gitee リポジトリ</translation>
+        <translation type="vanished">Gitee リポジトリ</translation>
     </message>
     <message>
-        <location line="+20"/>
         <source>Gitee Personal Access Token with &apos;projects&apos; scope. Generate at Gitee → Settings → Security Settings → Personal Access Tokens</source>
-        <translation>&apos;projects&apos; スコープを持つ Gitee 個人アクセストークン。Gitee → Settings → Security Settings → Personal Access Tokens で生成してください</translation>
+        <translation type="vanished">&apos;projects&apos; スコープを持つ Gitee 個人アクセストークン。Gitee → Settings → Security Settings → Personal Access Tokens で生成してください</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Your Gitee username</source>
-        <translation>あなたの Gitee ユーザー名</translation>
+        <translation type="vanished">あなたの Gitee ユーザー名</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Name of the Gitee repository to store images. Must already exist</source>
-        <translation>画像を保存する Gitee リポジトリの名前。既に存在している必要があります</translation>
+        <translation type="vanished">画像を保存する Gitee リポジトリの名前。既に存在している必要があります</translation>
     </message>
     <message>
-        <location line="+21"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
-        <translation>PersonalAccessToken/UserName/RepositoryName は空にできません。</translation>
+        <translation type="vanished">PersonalAccessToken/UserName/RepositoryName は空にできません。</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>Private repository is not supported.</source>
-        <translation>プライベートリポジトリはサポートされていません。</translation>
+        <translation type="vanished">プライベートリポジトリはサポートされていません。</translation>
     </message>
     <message>
-        <location line="+46"/>
         <source>Failed to create image with empty path.</source>
-        <translation>空のパスで画像を作成できません。</translation>
+        <translation type="vanished">空のパスで画像を作成できません。</translation>
     </message>
     <message>
-        <location line="+5"/>
-        <location line="+63"/>
         <source>Invalid Gitee image host configuration.</source>
-        <translation>無効な Gitee 画像ホスト設定です。</translation>
+        <translation type="vanished">無効な Gitee 画像ホスト設定です。</translation>
     </message>
     <message>
-        <location line="-50"/>
         <source>The resource already exists at the image host (%1).</source>
-        <translation>画像ホスト (%1) にリソースが既に存在します。</translation>
+        <translation type="vanished">画像ホスト (%1) にリソースが既に存在します。</translation>
     </message>
     <message>
-        <location line="+4"/>
         <source>Failed to query the resource at the image host (%1) (%2) (%3).</source>
-        <translation>画像ホスト (%1) (%2) (%3) のリソースの照会に失敗しました。</translation>
+        <translation type="vanished">画像ホスト (%1) (%2) (%3) のリソースの照会に失敗しました。</translation>
     </message>
     <message>
-        <location line="+13"/>
-        <location line="+12"/>
         <source>Failed to create resource at the image host (%1) (%2) (%3).</source>
-        <translation>画像ホスト (%1) (%2) (%3) でのリソースの作成に失敗しました。</translation>
+        <translation type="vanished">画像ホスト (%1) (%2) (%3) でのリソースの作成に失敗しました。</translation>
     </message>
     <message>
-        <location line="+35"/>
         <source>Failed to fetch information about the resource (%1).</source>
-        <translation>リソース (%1) の情報の取得に失敗しました。</translation>
+        <translation type="vanished">リソース (%1) の情報の取得に失敗しました。</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Failed to fetch SHA about the resource (%1) (%2).</source>
-        <translation>リソース (%1) (%2) の SHA の取得に失敗しました。</translation>
+        <translation type="vanished">リソース (%1) (%2) の SHA の取得に失敗しました。</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>Failed to delete resource (%1) (%2).</source>
-        <translation>リソース (%1) (%2) の削除に失敗しました。</translation>
+        <translation type="vanished">リソース (%1) (%2) の削除に失敗しました。</translation>
     </message>
 </context>
 <context>
@@ -3265,29 +3095,24 @@
 <context>
     <name>vnotex::ImageHostService</name>
     <message>
-        <location filename="../../../core/services/imagehostservice.cpp" line="+219"/>
         <source>No provider</source>
-        <translation>プロバイダーなし</translation>
+        <translation type="vanished">プロバイダーなし</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>Upload cancelled by hook</source>
-        <translation>フックによりアップロードがキャンセルされました</translation>
+        <translation type="vanished">フックによりアップロードがキャンセルされました</translation>
     </message>
     <message>
-        <location line="+27"/>
         <source>GitHub Repository</source>
-        <translation>GitHub リポジトリ</translation>
+        <translation type="vanished">GitHub リポジトリ</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Gitee Repository</source>
-        <translation>Gitee リポジトリ</translation>
+        <translation type="vanished">Gitee リポジトリ</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Custom Command</source>
-        <translation>カスタムコマンド</translation>
+        <translation type="vanished">カスタムコマンド</translation>
     </message>
 </context>
 <context>
@@ -3356,7 +3181,7 @@
 <context>
     <name>vnotex::ImageSizeDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="+49"/>
+        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="+54"/>
         <source>Width (px)</source>
         <translation>幅（px）</translation>
     </message>
@@ -3366,23 +3191,23 @@
         <translation>高さ（px）</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+32"/>
         <source>Leave both empty to remove the size.</source>
         <translation>サイズを削除するには、両方を空欄にしてください。</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="66"/>
-        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="69"/>
+        <location line="-27"/>
+        <location line="+3"/>
         <source>Scale (%)</source>
         <translation>拡大率（%）</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="125"/>
+        <location line="+55"/>
         <source>Scale both dimensions proportionally from the current size</source>
         <translation>現在のサイズを基準に幅と高さを同じ比率で変更します</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/imagesizedialog.cpp" line="126"/>
+        <location line="+1"/>
         <source>Enter a width and height to enable scaling</source>
         <translation>幅と高さを入力すると拡大率を変更できます</translation>
     </message>
@@ -3988,7 +3813,7 @@
 <context>
     <name>vnotex::ManageNotebooksController</name>
     <message>
-        <location filename="../../../controllers/managenotebookscontroller.cpp" line="+64"/>
+        <location filename="../../../controllers/managenotebookscontroller.cpp" line="+66"/>
         <source>Please specify a name for the notebook.</source>
         <translation>ノートブックの名前を指定してください。</translation>
     </message>
@@ -4104,7 +3929,7 @@
 <context>
     <name>vnotex::MarkdownEditor</name>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="+244"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="+246"/>
         <location line="+972"/>
         <source>Insert Link</source>
         <translation>リンクを挿入</translation>
@@ -4279,13 +4104,11 @@
         <translation>リッチ貼り付け</translation>
     </message>
     <message>
-        <location line="+491"/>
-        <location line="+43"/>
         <source>Image</source>
-        <translation>画像</translation>
+        <translation type="vanished">画像</translation>
     </message>
     <message>
-        <location line="-40"/>
+        <location line="+492"/>
         <location line="+52"/>
         <source>Copy Ima&amp;ge</source>
         <translation>画像をコピー(&amp;G)</translation>
@@ -4296,23 +4119,23 @@
         <translation>この画像はブロックされているか、利用できません</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+11"/>
         <source>Import Image...</source>
         <translation>画像をインポート...</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location line="+57"/>
+        <location line="+3"/>
+        <location line="+55"/>
         <source>Copy Image Address</source>
         <translation>画像のアドレスをコピー</translation>
     </message>
     <message>
-        <location line="+446"/>
+        <location line="+488"/>
         <source>Use the image menu to copy an embedded image</source>
         <translation>埋め込み画像をコピーするには画像メニューを使用してください</translation>
     </message>
     <message>
-        <location line="-1768"/>
+        <location line="-1808"/>
         <location line="+752"/>
         <source>Paste as Plain Text</source>
         <translation>プレーンテキストとして貼り付け</translation>
@@ -4328,14 +4151,14 @@
         <translation>スニペットを挿入</translation>
     </message>
     <message>
-        <location line="+518"/>
+        <location line="+516"/>
         <source>&amp;View Image</source>
         <translation>画像を表示(&amp;V)</translation>
     </message>
     <message>
-        <location line="-18"/>
-        <location line="+60"/>
-        <location line="+45"/>
+        <location line="-15"/>
+        <location line="+57"/>
+        <location line="+87"/>
         <source>Resize Image</source>
         <translation>画像のサイズを変更</translation>
     </message>
@@ -4356,7 +4179,7 @@
         <translation>リンクをコピー</translation>
     </message>
     <message>
-        <location line="-673"/>
+        <location line="-713"/>
         <source>Fetching images to local...</source>
         <translation>ローカルにイメージを取得しています...</translation>
     </message>
@@ -5255,7 +5078,7 @@
 <context>
     <name>vnotex::NewNotebookController</name>
     <message>
-        <location filename="../../../controllers/newnotebookcontroller.cpp" line="-151"/>
+        <location filename="../../../controllers/newnotebookcontroller.cpp" line="-168"/>
         <source>Please specify a name for the notebook.</source>
         <translation>ノートブックの名前を指定してください。</translation>
     </message>
@@ -5285,7 +5108,17 @@
         <translation>改行コードの形式が無効です。</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+7"/>
+        <source>Sync is not available for raw notebooks.</source>
+        <translation>Raw ノートブックでは同期を利用できません。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Unsupported or inconsistent sync backend.</source>
+        <translation>同期バックエンドが未対応か、設定と一致していません。</translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService が利用できません。</translation>
     </message>
@@ -5295,7 +5128,7 @@
         <translation>(%1) でのノートブックの作成に失敗しました。</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+61"/>
         <source>Sync services not available; cannot bootstrap notebook.</source>
         <translation>同期サービスが利用できないため、ノートブックをブートストラップできません。</translation>
     </message>
@@ -5303,12 +5136,12 @@
 <context>
     <name>vnotex::NewNotebookDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="90"/>
+        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="+53"/>
         <source>New Notebook</source>
         <translation>新規ノートブック</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/newnotebookdialog2.cpp" line="236"/>
+        <location line="+119"/>
         <source>Click &apos;Configure&apos; to set up sync first</source>
         <translation>まず「構成」をクリックして同期を設定してください</translation>
     </message>
@@ -5450,135 +5283,104 @@
 <context>
     <name>vnotex::NodeTransferService</name>
     <message>
-        <location filename="../../../core/services/nodetransferservice.cpp" line="+93"/>
-        <location line="+56"/>
-        <location line="+160"/>
         <source>Node transfer was cancelled.</source>
-        <translation>ノードの転送がキャンセルされました。</translation>
+        <translation type="vanished">ノードの転送がキャンセルされました。</translation>
     </message>
     <message>
-        <location line="-205"/>
         <source>The source item no longer exists.</source>
-        <translation>転送元の項目はすでに存在しません。</translation>
+        <translation type="vanished">転送元の項目はすでに存在しません。</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>The source item kind no longer matches the clipboard entry.</source>
-        <translation>転送元の項目の種類がクリップボードの項目と一致しなくなりました。</translation>
+        <translation type="vanished">転送元の項目の種類がクリップボードの項目と一致しなくなりました。</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Close all notes inside this item before moving it.</source>
-        <translation>この項目を移動する前に、項目内のすべてのノートを閉じてください。</translation>
+        <translation type="vanished">この項目を移動する前に、項目内のすべてのノートを閉じてください。</translation>
     </message>
     <message>
-        <location line="+18"/>
         <source>An open note is still being saved.</source>
-        <translation>開いているノートの保存がまだ完了していません。</translation>
+        <translation type="vanished">開いているノートの保存がまだ完了していません。</translation>
     </message>
     <message>
-        <location line="+29"/>
         <source>The open-note set changed while it was being saved.</source>
-        <translation>保存中に、開いているノートの構成が変わりました。</translation>
+        <translation type="vanished">保存中に、開いているノートの構成が変わりました。</translation>
     </message>
     <message>
-        <location line="+19"/>
-        <location line="+285"/>
         <source>Pending comments could not be saved.</source>
-        <translation>未保存のコメントを保存できませんでした。</translation>
+        <translation type="vanished">未保存のコメントを保存できませんでした。</translation>
     </message>
     <message>
-        <location line="-269"/>
-        <location line="+63"/>
         <source>The source changed while it was being prepared.</source>
-        <translation>準備中に転送元が変更されました。</translation>
+        <translation type="vanished">準備中に転送元が変更されました。</translation>
     </message>
     <message>
-        <location line="-52"/>
-        <location line="+277"/>
         <source>A source or destination notebook is busy syncing.</source>
-        <translation>転送元または転送先のノートブックを同期中です。</translation>
+        <translation type="vanished">転送元または転送先のノートブックを同期中です。</translation>
     </message>
     <message>
-        <location line="-203"/>
         <source>Node transfer was cancelled by a hook.</source>
-        <translation>フックによりノードの転送がキャンセルされました。</translation>
+        <translation type="vanished">フックによりノードの転送がキャンセルされました。</translation>
     </message>
     <message>
-        <location line="+30"/>
-        <location line="+190"/>
         <source>A source or destination notebook is busy.</source>
-        <translation>転送元または転送先のノートブックは処理中です。</translation>
+        <translation type="vanished">転送元または転送先のノートブックは処理中です。</translation>
     </message>
     <message>
-        <location line="-177"/>
         <source>The source changed before transfer commit.</source>
-        <translation>転送の確定前に転送元が変更されました。</translation>
+        <translation type="vanished">転送の確定前に転送元が変更されました。</translation>
     </message>
     <message>
-        <location line="+50"/>
         <source>Protected operations are unavailable while locking.</source>
-        <translation>ロック処理中は保護された内容に対する操作を利用できません。</translation>
+        <translation type="vanished">ロック処理中は保護された内容に対する操作を利用できません。</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>The destination notebook is busy syncing.</source>
-        <translation>転送先のノートブックは同期中です。</translation>
+        <translation type="vanished">転送先のノートブックは同期中です。</translation>
     </message>
     <message>
-        <location line="+25"/>
         <source>The import was cancelled and nothing was changed.</source>
-        <translation>インポートは取り消され、何も変更していません。</translation>
+        <translation type="vanished">インポートは取り消され、何も変更していません。</translation>
     </message>
     <message>
-        <location line="+12"/>
         <source>The destination notebook is busy.</source>
-        <translation>転送先のノートブックは処理中です。</translation>
+        <translation type="vanished">転送先のノートブックは処理中です。</translation>
     </message>
     <message>
-        <location line="+24"/>
         <source>The move resume token is invalid.</source>
-        <translation>移動を再開するためのトークンが無効です。</translation>
+        <translation type="vanished">移動を再開するためのトークンが無効です。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Close all notes inside this item before finishing the move.</source>
-        <translation>移動を完了する前に、この項目内のすべてのノートを閉じてください。</translation>
+        <translation type="vanished">移動を完了する前に、この項目内のすべてのノートを閉じてください。</translation>
     </message>
     <message>
-        <location line="+23"/>
         <source>Move finalization was cancelled.</source>
-        <translation>移動の完了処理がキャンセルされました。</translation>
+        <translation type="vanished">移動の完了処理がキャンセルされました。</translation>
     </message>
     <message>
-        <location line="+33"/>
         <source>The source changed before move finalization.</source>
-        <translation>移動の完了処理前に移動元が変更されました。</translation>
+        <translation type="vanished">移動の完了処理前に移動元が変更されました。</translation>
     </message>
     <message>
-        <location line="+87"/>
         <source>The node transfer request is incomplete.</source>
-        <translation>ノードの転送要求が不完全です。</translation>
+        <translation type="vanished">ノードの転送要求が不完全です。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Cross-notebook transfer requires two different notebooks.</source>
-        <translation>ノートブック間の転送には、異なる 2 つのノートブックが必要です。</translation>
+        <translation type="vanished">ノートブック間の転送には、異なる 2 つのノートブックが必要です。</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>A source or destination notebook is not open.</source>
-        <translation>転送元または転送先のノートブックが開かれていません。</translation>
+        <translation type="vanished">転送元または転送先のノートブックが開かれていません。</translation>
     </message>
     <message>
-        <location line="+8"/>
         <source>Cross-notebook transfer supports bundled notebooks only.</source>
-        <translation>ノートブック間の転送はバンドル型ノートブックのみをサポートしています。</translation>
+        <translation type="vanished">ノートブック間の転送はバンドル型ノートブックのみをサポートしています。</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>The selected transfer requires a writable notebook.</source>
-        <translation>選択した転送には、書き込み可能なノートブックが必要です。</translation>
+        <translation type="vanished">選択した転送には、書き込み可能なノートブックが必要です。</translation>
     </message>
 </context>
 <context>
@@ -5696,81 +5498,67 @@
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+695"/>
         <source>Unable to unlock: incorrect password or damaged key data</source>
-        <translation>ロックを解除できません：パスワードが正しくないか、キーデータが破損しています</translation>
+        <translation type="vanished">ロックを解除できません：パスワードが正しくないか、キーデータが破損しています</translation>
     </message>
     <message>
-        <location line="+618"/>
         <source>Invalid arguments</source>
-        <translation>引数が無効です</translation>
+        <translation type="vanished">引数が無効です</translation>
     </message>
     <message>
-        <location line="+38"/>
         <source>Cancelled by hook</source>
-        <translation>フックによりキャンセルされました</translation>
+        <translation type="vanished">フックによりキャンセルされました</translation>
     </message>
     <message>
-        <location line="+83"/>
         <source>OK</source>
-        <translation>成功</translation>
+        <translation type="vanished">成功</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Invalid argument</source>
-        <translation>引数が無効です</translation>
+        <translation type="vanished">引数が無効です</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Folder not found</source>
-        <translation>フォルダーが見つかりません</translation>
+        <translation type="vanished">フォルダーが見つかりません</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Invalid state</source>
-        <translation>状態が無効です</translation>
+        <translation type="vanished">状態が無効です</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Submitted order is not a valid permutation of the folder&apos;s children</source>
-        <translation>送信された順序はフォルダーの子項目の有効な並べ替えではありません</translation>
+        <translation type="vanished">送信された順序はフォルダーの子項目の有効な並べ替えではありません</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Reorder is not supported for this notebook type</source>
-        <translation>このノートブックの種類では並べ替えはサポートされていません</translation>
+        <translation type="vanished">このノートブックの種類では並べ替えはサポートされていません</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Unknown error while reordering</source>
-        <translation>並べ替え中に不明なエラーが発生しました</translation>
+        <translation type="vanished">並べ替え中に不明なエラーが発生しました</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>vxcore error %1 while reordering</source>
-        <translation>並べ替え中に vxcore エラー %1 が発生しました</translation>
+        <translation type="vanished">並べ替え中に vxcore エラー %1 が発生しました</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <location line="+44"/>
         <source>vxcore context is not initialized</source>
-        <translation>vxcore コンテキストが初期化されていません</translation>
+        <translation type="vanished">vxcore コンテキストが初期化されていません</translation>
     </message>
 </context>
 <context>
     <name>vnotex::NotebookExplorer2</name>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="+741"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="+852"/>
         <source>Select one of all the notebooks as current notebook.&lt;br/&gt;Move mouse on one item to check its details.</source>
         <translation>すべてのノートブックの1つを現在のノートブックとして選択します。&lt;br/&gt;1つの項目にマウスを移動して、その詳細を確認します。</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Read-only notebook (no PAT)</source>
-        <translation>読み取り専用ノートブック（PAT なし）</translation>
+        <translation type="vanished">読み取り専用ノートブック（PAT なし）</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+47"/>
         <source>This title bar contains buttons and menu to manage notebooks and notes.</source>
         <translation>このタイトルバーには、ノートブックとノートを管理するためのボタンとメニューが含まれています。</translation>
     </message>
@@ -6078,13 +5866,13 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
 %4</translation>
     </message>
     <message>
-        <location line="-2185"/>
-        <location line="+2215"/>
+        <location line="-2296"/>
+        <location line="+2326"/>
         <source>%1: %2</source>
         <translation>%1: %2</translation>
     </message>
     <message>
-        <location line="-2327"/>
+        <location line="-2438"/>
         <source>Encrypt Note</source>
         <translation>ノートを暗号化</translation>
     </message>
@@ -6099,28 +5887,28 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>ノートブックの鍵ファイル（vx_notebook/encryption.vne）に未解決の同期競合があります。ノートブックをバックアップし、その競合を解決してから再試行してください。鍵ファイルを削除したり、内容をテキストとしてマージしたりしないでください。</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+21"/>
         <source>Master-password source notebook: %1</source>
         <translation>マスターパスワードの提供元ノートブック: %1</translation>
     </message>
     <message>
-        <location line="-148"/>
+        <location line="-154"/>
         <source>Select notes from one notebook at a time.</source>
         <translation>一度に選択するノートは同じノートブック内のものにしてください。</translation>
     </message>
     <message>
-        <location line="+302"/>
+        <location line="+395"/>
         <source>A note encryption transaction needs recovery. Restart VNote first.</source>
         <translation>ノート暗号化トランザクションに復旧が必要です。先に VNote を再起動してください。</translation>
     </message>
     <message>
-        <location line="-291"/>
-        <location line="+302"/>
+        <location line="-384"/>
+        <location line="+395"/>
         <source>Note encryption is currently locking.</source>
         <translation>ノート暗号化機能は現在ロック処理中です。</translation>
     </message>
     <message>
-        <location line="-325"/>
+        <location line="-418"/>
         <source>Decrypt Note</source>
         <translation>ノートを復号</translation>
     </message>
@@ -6131,12 +5919,12 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
     </message>
     <message>
         <location line="+10"/>
-        <location line="+302"/>
+        <location line="+395"/>
         <source>Preparing note encryption...</source>
         <translation>ノートの暗号化を準備中...</translation>
     </message>
     <message>
-        <location line="-301"/>
+        <location line="-394"/>
         <source>Preparing note decryption...</source>
         <translation>ノートの復号を準備中...</translation>
     </message>
@@ -6209,7 +5997,7 @@ Images and attachments stored as separate files are NOT encrypted. Comments also
         <translation>ロックを解除できません：パスワードが正しくないか、キーデータが破損しています</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+20"/>
         <source>Could not prepare note conversion.
 
 Notebook: %1
@@ -6237,15 +6025,17 @@ Notebook: %1
         <translation>ノートブックのロックを解除中...</translation>
     </message>
     <message>
-        <location line="+22"/>
+        <location line="-33"/>
         <source>The notebook encryption key is missing or needs recovery. Restore the original vx_notebook/encryption.vne before continuing. A new key cannot recover previously encrypted notes.</source>
         <translation>ノートブックの暗号鍵が見つからないか、復旧が必要です。元の vx_notebook/encryption.vne を復元してから続行してください。新しい鍵では以前に暗号化したノートを復元できません。</translation>
     </message>
     <message>
+        <location line="+4"/>
         <source>The notebook encryption state changed. Retry the operation.</source>
         <translation>ノートブックの暗号化状態が変わりました。操作をやり直してください。</translation>
     </message>
     <message>
+        <location line="+77"/>
         <source>This notebook has no encryption.vne key file, and its previous use of encryption is unknown.
 
 If it was encrypted before, cancel and restore the original vx_notebook/encryption.vne. A newly generated key cannot recover previously encrypted notes.
@@ -6258,11 +6048,12 @@ Continue only if this notebook has never used encryption.</source>
 このノートブックで暗号化を一度も使用していない場合のみ続行してください。</translation>
     </message>
     <message>
+        <location line="+6"/>
         <source>Continue</source>
         <translation>続行</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+70"/>
         <source>Choose Master Password</source>
         <translation>マスターパスワードを選択</translation>
     </message>
@@ -6272,7 +6063,8 @@ Continue only if this notebook has never used encryption.</source>
         <translation>次の初期化済みノートブックのマスターパスワードを使用:</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="-78"/>
+        <location line="+103"/>
         <source>Set Up Note Encryption</source>
         <translation>ノートの暗号化を設定</translation>
     </message>
@@ -6297,7 +6089,7 @@ Continue only if this notebook has never used encryption.</source>
         <translation>暗号化を設定</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+41"/>
         <source>Preparing the notebook key...</source>
         <translation>ノートブックのキーを準備中...</translation>
     </message>
@@ -6317,7 +6109,12 @@ Continue only if this notebook has never used encryption.</source>
         <translation>暗号化されたノートを作成中...</translation>
     </message>
     <message>
-        <location line="+1983"/>
+        <location line="+300"/>
+        <source>Read-only notebook</source>
+        <translation>読み取り専用ノートブック</translation>
+    </message>
+    <message>
+        <location line="+1701"/>
         <source>%1 copied, %2 moved, %3 left at the source, %4 failed.</source>
         <translation>%1 件をコピー、%2 件を移動、%3 件は転送元に残り、%4 件が失敗しました。</translation>
     </message>
@@ -6439,7 +6236,7 @@ Open the bundle location?</source>
 <context>
     <name>vnotex::NotebookInfoWidget</name>
     <message>
-        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="+43"/>
+        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="+45"/>
         <source>Notebook name</source>
         <translation>ノートブック名</translation>
     </message>
@@ -6506,7 +6303,13 @@ Raw: plain folder structure with minimal VNote metadata</source>
         <translation>種類</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+13"/>
+        <location line="+177"/>
+        <source>Jianguoyun (WebDAV)</source>
+        <translation>Jianguoyun（WebDAV）</translation>
+    </message>
+    <message>
+        <location line="-153"/>
         <source>Advanced</source>
         <translation>詳細</translation>
     </message>
@@ -6574,7 +6377,7 @@ Changing this setting does not move existing assets, attachments, or comments</s
         <translation>改行コード</translation>
     </message>
     <message>
-        <location line="+40"/>
+        <location line="+46"/>
         <source>Root folder of the notebook.
 A new notebook requires an empty folder or a non-existent path (will be created)</source>
         <translation>ノートブックのルートフォルダー。
@@ -6590,37 +6393,40 @@ Raw ノートブックの場合、ファイルを含む既存のフォルダー�
 フォルダーの内容はノートブックのノードとしてインデックス化されます</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="100"/>
+        <location line="-126"/>
         <source>Sync method</source>
         <translation>同期方法</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="107"/>
+        <location line="+8"/>
+        <location line="+177"/>
         <source>None</source>
         <translation>なし</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="108"/>
+        <location line="-176"/>
+        <location line="+177"/>
         <source>Git</source>
         <translation>Git</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="109"/>
+        <location line="-176"/>
+        <location line="+177"/>
         <source>WebDAV</source>
         <translation>WebDAV</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="111"/>
+        <location line="-175"/>
         <source>Sync is supported only for bundled notebooks. Use Configure before notebook creation</source>
         <translation>同期はバンドルノートブックのみ対応しています。ノートブックを作成する前に「構成」を使用してください</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="114"/>
+        <location line="+2"/>
         <source>Configure</source>
         <translation>構成</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/notebookinfowidget.cpp" line="116"/>
+        <location line="+2"/>
         <source>Configure the sync remote URL and credentials</source>
         <translation>同期のリモート URL と認証情報を構成</translation>
     </message>
@@ -7008,129 +6814,268 @@ Description: %4</source>
 <context>
     <name>vnotex::NotebookSyncInfoController</name>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="+85"/>
-        <location line="+25"/>
         <source>Notebook service not available.</source>
-        <translation>ノートブックサービスが利用できません。</translation>
+        <translation type="vanished">ノートブックサービスが利用できません。</translation>
     </message>
     <message>
-        <location line="+10"/>
         <source>Failed to update notebook configuration.</source>
-        <translation>ノートブックの設定の更新に失敗しました。</translation>
+        <translation type="vanished">ノートブックの設定の更新に失敗しました。</translation>
     </message>
     <message>
-        <location line="+62"/>
-        <location line="+26"/>
-        <location line="+24"/>
-        <location line="+192"/>
         <source>Sync service not available.</source>
-        <translation>同期サービスが利用できません。</translation>
+        <translation type="vanished">同期サービスが利用できません。</translation>
     </message>
     <message>
-        <location line="-185"/>
         <source>Remote URL is required to enable sync.</source>
-        <translation>同期を有効にするにはリモート URL が必要です。</translation>
+        <translation type="vanished">同期を有効にするにはリモート URL が必要です。</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>A personal access token (PAT) is required to enable sync.</source>
-        <translation>同期を有効にするには個人アクセストークン (PAT) が必要です。</translation>
+        <translation type="vanished">同期を有効にするには個人アクセストークン (PAT) が必要です。</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="+454"/>
+        <location line="+35"/>
+        <source>Sync is not available for raw notebooks.</source>
+        <translation>Raw ノートブックでは同期を利用できません。</translation>
+    </message>
+    <message>
+        <location line="-33"/>
+        <source>Unsupported sync backend.</source>
+        <translation>未対応の同期バックエンドです。</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Sync services not available.</source>
+        <translation>同期サービスを利用できません。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <location line="+205"/>
+        <source>Wait for queued or running synchronization to finish, then try again.</source>
+        <translation>待機中または実行中の同期が完了してから、もう一度お試しください。</translation>
+    </message>
+    <message>
+        <location line="-195"/>
+        <source>Unsupported sync backend. Disable it before choosing another method.</source>
+        <translation>未対応の同期バックエンドです。同期を無効にしてから別の方式を選択してください。</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Cannot restore an incomplete sync-state archive. No settings were changed.</source>
+        <translation>未完了の同期状態アーカイブを復元できません。設定は変更されていません。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Sync recovery state is unreadable or invalid. Preserve it and repair it before changing settings.</source>
+        <translation>同期の復旧状態を読み取れないか、無効です。復旧データを保持して修復してから設定を変更してください。</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Resolve conflicts and complete pending sync recovery before changing the method or URL.</source>
+        <translation>同期方式や URL を変更する前に、競合を解決し、保留中の同期復旧を完了してください。</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Wait for synchronization to finish, then try again.</source>
+        <translation>同期が完了してから、もう一度お試しください。</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Failed to update sync credentials. Existing sync state was preserved.</source>
+        <translation>同期の認証情報を更新できませんでした。既存の同期状態は保持されています。</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>Supply a new password or app password when entering a username.</source>
+        <translation>ユーザー名を入力する場合は、新しいパスワードまたはアプリパスワードを指定してください。</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Saved credentials do not match the selected backend. Supply new credentials.</source>
+        <translation>保存済みの認証情報が選択したバックエンドと一致しません。新しい認証情報を指定してください。</translation>
+    </message>
+    <message>
+        <location line="+23"/>
+        <source>Cannot read saved credentials. Supply credentials and try again.</source>
+        <translation>保存済みの認証情報を読み取れません。認証情報を指定して、もう一度お試しください。</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Could not enable the new sync endpoint. The notebook is disabled; use Enable Sync to retry. Previous sync state was retained.</source>
+        <translation>新しい同期先を有効にできませんでした。ノートブックの同期は無効です。「同期を有効にする」で再試行してください。以前の同期状態は保持されています。</translation>
+    </message>
+    <message>
+        <location line="+2"/>
         <source>Failed to enable sync for notebook.</source>
         <translation>ノートブックの同期を有効にできませんでした。</translation>
     </message>
     <message>
-        <location line="+61"/>
+        <location line="+19"/>
+        <source>Synchronization or unresolved conflicts prevent changing this endpoint.</source>
+        <translation>実行中の同期または未解決の競合があるため、同期先を変更できません。</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Could not archive the previous sync binding. No new endpoint was enabled; preserve the recovery files and retry.</source>
+        <translation>以前の同期先の関連付けをアーカイブできませんでした。新しい同期先は有効になっていません。復旧ファイルを保持して再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+19"/>
+        <source>Could not disable sync. Previous sync state was restored.</source>
+        <translation>同期を無効にできませんでした。以前の同期状態を復元しました。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Could not restore the sync archive. Preserve recovery files before retrying.</source>
+        <translation>同期アーカイブを復元できませんでした。復旧ファイルを保持してから再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Sync is disabled, but its archive could not be finalized. Preserve recovery files before retrying.</source>
+        <translation>同期は無効ですが、アーカイブを確定できませんでした。復旧ファイルを保持してから再試行してください。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Sync is disabled, but old Git sync data could not be removed. Working files and provider recovery data were preserved.</source>
+        <translation>同期は無効ですが、古い Git 同期データを削除できませんでした。作業ファイルとプロバイダーの復旧データは保持されています。</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Wait for synchronization to finish before disabling sync.</source>
+        <translation>同期が完了してから無効にしてください。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Failed to disable sync. Existing settings and credentials were retained.</source>
+        <translation>同期を無効にできませんでした。既存の設定と認証情報は保持されています。</translation>
+    </message>
+    <message>
+        <location line="-170"/>
         <source>Credentials store not available.</source>
         <translation>認証情報ストアが利用できません。</translation>
     </message>
     <message>
-        <location line="+33"/>
         <source>URL change failed: cannot read existing credentials. Please retry.</source>
-        <translation>URL の変更に失敗しました: 既存の認証情報を読み取れません。再試行してください。</translation>
+        <translation type="vanished">URL の変更に失敗しました: 既存の認証情報を読み取れません。再試行してください。</translation>
     </message>
     <message>
-        <location line="+73"/>
         <source>URL change failed: disable error.</source>
-        <translation>URL の変更に失敗しました: 無効化エラー。</translation>
+        <translation type="vanished">URL の変更に失敗しました: 無効化エラー。</translation>
     </message>
     <message>
-        <location line="+87"/>
         <source>URL change failed: re-enable error. Notebook now in disabled state; use Enable Sync to retry.</source>
-        <translation>URL の変更に失敗しました: 再有効化エラー。ノートブックは現在無効状態です。[同期を有効化] で再試行してください。</translation>
+        <translation type="vanished">URL の変更に失敗しました: 再有効化エラー。ノートブックは現在無効状態です。[同期を有効化] で再試行してください。</translation>
     </message>
 </context>
 <context>
     <name>vnotex::NotebookSyncInfoDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="+92"/>
-        <location line="+143"/>
-        <location line="+373"/>
+        <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="+103"/>
+        <location line="+161"/>
+        <location line="+256"/>
         <source>Never</source>
         <translation>常にしない</translation>
     </message>
     <message>
-        <location line="-501"/>
-        <location line="+493"/>
+        <location line="-403"/>
+        <location line="+395"/>
         <source>Idle</source>
         <translation>アイドル</translation>
     </message>
     <message>
-        <location line="-456"/>
+        <location line="-359"/>
         <source>Configure Sync</source>
         <translation>同期の構成</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>Personal Access Token used to authenticate against the remote (optional)</source>
-        <translation>リモートに対する認証に使用する個人アクセストークン (任意)</translation>
+        <translation type="vanished">リモートに対する認証に使用する個人アクセストークン (任意)</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>This notebook is currently open in read-only mode. To enable editing, close this notebook and re-open it from the remote URL with a valid Personal Access Token. Adding a PAT here will be saved, but editing will only become available after closing and re-opening the notebook.</source>
-        <translation>このノートブックは現在読み取り専用モードで開かれています。編集を有効にするには、このノートブックを閉じ、有効な個人アクセストークンでリモート URL から再度開いてください。ここで追加した PAT は保存されますが、編集はノートブックを閉じて再度開いた後にのみ可能になります。</translation>
+        <translation type="vanished">このノートブックは現在読み取り専用モードで開かれています。編集を有効にするには、このノートブックを閉じ、有効な個人アクセストークンでリモート URL から再度開いてください。ここで追加した PAT は保存されますが、編集はノートブックを閉じて再度開いた後にのみ可能になります。</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+42"/>
+        <location line="+451"/>
         <source>https://github.com/example/notes.git</source>
         <translation>https://github.com/example/notes.git</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-450"/>
+        <location line="+456"/>
         <source>Remote git repository URL used for syncing this notebook</source>
         <translation>このノートブックの同期に使用するリモート Git リポジトリの URL</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="-443"/>
         <source>The remote repository must already exist. Create an empty repo on your Git host first.</source>
         <translation>リモートリポジトリは既に存在している必要があります。先に Git ホスト上に空のリポジトリを作成してください。</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+45"/>
+        <location line="+420"/>
+        <location line="+7"/>
         <source>Leave blank to keep existing</source>
         <translation>既存のものを保持するには空白のままにしてください</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-426"/>
         <source>Personal Access Token used to authenticate against the remote.
 Leave blank to keep the existing token</source>
         <translation>リモートに対する認証に使用する個人アクセストークン。
 既存のトークンを保持するには空白のままにしてください</translation>
     </message>
     <message>
-        <location line="-45"/>
+        <location line="-73"/>
         <source>Notebook</source>
         <translation>ノートブック</translation>
     </message>
     <message>
+        <location line="-14"/>
+        <source>This notebook is currently open in read-only mode. To enable editing, close this notebook and re-open it from the remote URL with valid credentials. Credentials added here will be saved, but editing will only become available after closing and re-opening the notebook.</source>
+        <translation>このノートブックは読み取り専用で開かれています。編集するには、一度閉じてから、有効な認証情報を使ってリモート URL から開き直してください。ここで追加した認証情報は保存されますが、編集できるのは閉じて開き直した後です。</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Git</source>
+        <translation>Git</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>WebDAV</source>
+        <translation>WebDAV</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Jianguoyun (WebDAV)</source>
+        <translation>Jianguoyun（WebDAV）</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Disable sync before switching the active backend</source>
+        <translation>現在のバックエンドを切り替える前に同期を無効にしてください</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Sync method</source>
+        <translation>同期方式</translation>
+    </message>
+    <message>
         <location line="+7"/>
+        <location line="+444"/>
         <source>Remote URL</source>
         <translation>リモート URL</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="-415"/>
+        <location line="+436"/>
+        <source>Use a dedicated existing HTTP or HTTPS collection. HTTPS is recommended; HTTP sends credentials and data in plaintext. Notes remain ordinary files. Safe conditional writes are required; empty remote folders may be retained.</source>
+        <translation>既存の専用 HTTP または HTTPS コレクションを使用してください。HTTPS を推奨します。HTTP では認証情報とデータが平文で送信されます。ノートは通常のファイルのままです。安全な条件付き書き込みが必要で、リモートの空フォルダーは保持される場合があります。</translation>
+    </message>
+    <message>
+        <location line="-427"/>
         <source>Required by Gitee; optional for GitHub</source>
         <translation>Gitee では必須、GitHub では任意</translation>
     </message>
@@ -7145,12 +7090,23 @@ Leave blank to keep the existing token</source>
         <translation>Git ユーザー名</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+6"/>
+        <source>Changing the username requires a new password or app password</source>
+        <translation>ユーザー名の変更には新しいパスワードまたはアプリパスワードが必要です</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Username</source>
+        <translation>ユーザー名</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <location line="+421"/>
         <source>Personal Access Token</source>
         <translation>個人アクセストークン</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="-412"/>
         <source>Last sync</source>
         <translation>最終同期</translation>
     </message>
@@ -7161,26 +7117,63 @@ Leave blank to keep the existing token</source>
     </message>
     <message>
         <location line="+8"/>
-        <location line="+126"/>
+        <location line="+123"/>
         <source>Disable Sync</source>
         <translation>同期を無効化</translation>
     </message>
     <message>
-        <location line="-120"/>
+        <location line="-117"/>
+        <source>Disable sync for this notebook and delete credentials from the system keychain. Local files and recovery data are preserved</source>
+        <translation>このノートブックの同期を無効にし、システムキーチェーンから認証情報を削除します。ローカルファイルと復旧データは保持されます</translation>
+    </message>
+    <message>
+        <location line="+118"/>
+        <source>Disable sync for this notebook? Local files and recovery data will be preserved. No further syncing will occur, and credentials will be deleted from the keychain.</source>
+        <translation>このノートブックの同期を無効にしますか？ローカルファイルと復旧データは保持されます。以後は同期されず、認証情報はキーチェーンから削除されます。</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>Enter a new password or app password when specifying a username.</source>
+        <translation>ユーザー名を指定する場合は、新しいパスワードまたはアプリパスワードを入力してください。</translation>
+    </message>
+    <message>
+        <location line="+40"/>
+        <source>Credentials Saved</source>
+        <translation>認証情報を保存しました</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Credentials have been saved. Please close and re-open this notebook to enable editing.</source>
+        <translation>認証情報を保存しました。編集を有効にするには、ノートブックを閉じて開き直してください。</translation>
+    </message>
+    <message>
+        <location line="+232"/>
+        <source>This changes the sync endpoint. Current working files will be kept; local sync state will be retired or rebuilt after confirmation.
+Old URL: %1
+New URL: %2
+
+Continue?</source>
+        <translation>同期先を変更します。現在の作業ファイルは保持され、確認後にローカルの同期状態を退避または再構築します。
+以前の URL: %1
+新しい URL: %2
+
+続行しますか？</translation>
+    </message>
+    <message>
         <source>Disable git sync for this notebook. Local commit history is preserved
 on disk, but no further syncing will occur and the stored credentials
 are deleted from the system keychain</source>
-        <translation>このノートブックの Git 同期を無効化します。ローカルのコミット履歴は
+        <translation type="vanished">このノートブックの Git 同期を無効化します。ローカルのコミット履歴は
 ディスク上に保持されますが、以降の同期は行われず、保存されている認証情報は
 システムキーチェーンから削除されます</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="-391"/>
         <source>Sync Info</source>
         <translation>同期情報</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+47"/>
         <source>Bootstrap</source>
         <translation>ブートストラップ</translation>
     </message>
@@ -7190,28 +7183,23 @@ are deleted from the system keychain</source>
         <translation>OK</translation>
     </message>
     <message>
-        <location line="+48"/>
         <source>Disable git sync for this notebook? Local commit history will be preserved
 on disk but no further syncing will occur. (The PAT will be deleted from
 the keychain.)</source>
-        <translation>このノートブックの Git 同期を無効化しますか? ローカルのコミット履歴はディスク上に
+        <translation type="vanished">このノートブックの Git 同期を無効化しますか? ローカルのコミット履歴はディスク上に
 保持されますが、以降の同期は行われません。(PAT はキーチェーンから
 削除されます。)</translation>
     </message>
     <message>
-        <location line="+93"/>
-        <location line="+90"/>
         <source>PAT saved</source>
-        <translation>PAT を保存しました</translation>
+        <translation type="vanished">PAT を保存しました</translation>
     </message>
     <message>
-        <location line="-89"/>
-        <location line="+90"/>
         <source>Personal Access Token has been saved. Please close and re-open this notebook to enable editing.</source>
-        <translation>個人アクセストークンを保存しました。編集を有効にするには、このノートブックを閉じて再度開いてください。</translation>
+        <translation type="vanished">個人アクセストークンを保存しました。編集を有効にするには、このノートブックを閉じて再度開いてください。</translation>
     </message>
     <message>
-        <location line="+30"/>
+        <location line="+140"/>
         <source>Syncing...</source>
         <translation>同期中...</translation>
     </message>
@@ -7236,26 +7224,95 @@ the keychain.)</source>
         <translation>競合 (%1 ファイル)</translation>
     </message>
     <message>
-        <location line="+76"/>
-        <location line="+29"/>
+        <location line="+81"/>
+        <source>Unsupported (%1)</source>
+        <translation>未対応（%1）</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Collection URL</source>
+        <translation>コレクション URL</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>https://dav.jianguoyun.com/dav/vnote-notebook/</source>
+        <translation>https://dav.jianguoyun.com/dav/vnote-notebook/</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>https://example.com/dav/notebook/</source>
+        <translation>https://example.com/dav/notebook/</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Dedicated Jianguoyun collection, not the /dav/ account root</source>
+        <translation>Jianguoyun の専用コレクション。アカウントのルート /dav/ は指定できません</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Dedicated existing HTTP or HTTPS notebook collection. HTTP sends credentials and data in plaintext</source>
+        <translation>既存の専用 HTTP または HTTPS ノートブックコレクション。HTTP では認証情報とデータが平文で送信されます</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Use a dedicated Jianguoyun collection and an app password. The remote is VNote-managed storage, not ordinary notebook files. Do not edit it in the cloud. History and deleted data are retained, so storage use grows. Disabling sync does not remove remote data.</source>
+        <translation>Jianguoyun の専用コレクションとアプリパスワードを使用してください。リモートは VNote が管理するストレージで、通常のノートブックファイルではありません。クラウド上で編集しないでください。履歴と削除済みデータが保持されるため、ストレージ使用量は増加します。同期を無効にしてもリモートデータは削除されません。</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>App password</source>
+        <translation>アプリパスワード</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Password or app password</source>
+        <translation>パスワードまたはアプリパスワード</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Jianguoyun app password, not your account password; never stored in notebook settings</source>
+        <translation>アカウントのパスワードではなく、Jianguoyun のアプリパスワードを使用します。ノートブックの設定には保存されません</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Password or app password; never stored in notebook settings</source>
+        <translation>パスワードまたはアプリパスワード。ノートブックの設定には保存されません</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Personal Access Token used to authenticate against the remote</source>
+        <translation>リモートの認証に使用するパーソナルアクセストークン</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Sync is unavailable for raw notebooks.</source>
+        <translation>Raw ノートブックでは同期を利用できません。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Unsupported sync backend.</source>
+        <translation>未対応の同期バックエンドです。</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <location line="+30"/>
         <source>Sync</source>
         <translation>同期</translation>
     </message>
     <message>
-        <location line="-28"/>
         <source>This will wipe local sync state and re-clone from the new URL.
 Old URL: %1
 New URL: %2
 
 Continue?</source>
-        <translation>ローカルの同期状態を消去し、新しい URL から再クローンします。
+        <translation type="vanished">ローカルの同期状態を消去し、新しい URL から再クローンします。
 旧 URL: %1
 新 URL: %2
 
 続行しますか?</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-26"/>
         <location line="+1"/>
         <source>(none)</source>
         <translation>(なし)</translation>
@@ -7407,7 +7464,7 @@ Continue?</source>
 <context>
     <name>vnotex::OpenNotebookController</name>
     <message>
-        <location filename="../../../controllers/opennotebookcontroller.cpp" line="+97"/>
+        <location filename="../../../controllers/opennotebookcontroller.cpp" line="+137"/>
         <source>Please specify a folder path.</source>
         <translation>フォルダーパスを指定してください。</translation>
     </message>
@@ -7433,27 +7490,60 @@ Continue?</source>
     </message>
     <message>
         <location line="+24"/>
-        <location line="+145"/>
+        <location line="+108"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService が利用できません。</translation>
     </message>
     <message>
-        <location line="-130"/>
+        <location line="-93"/>
         <source>Failed to open notebook from (%1). The folder may not be a valid VNote notebook.</source>
         <translation>(%1) からノートブックを開けませんでした。フォルダーが有効な VNote ノートブックではない可能性があります。</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+40"/>
+        <source>Local root folder must not already exist.</source>
+        <translation>ローカルルートフォルダーには、まだ存在しないフォルダーを指定してください。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Parent folder of destination must exist and be writable.</source>
+        <translation>保存先の親フォルダーは既存で、書き込み可能である必要があります。</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>A remote notebook is already being opened.</source>
+        <translation>リモートノートブックを開いています。</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <source>Sync services not available; cannot save credentials.</source>
+        <translation>同期サービスを利用できないため、認証情報を保存できません。</translation>
+    </message>
+    <message>
+        <location line="+97"/>
+        <source>Failed to clone remote notebook. Verify the URL is reachable, the credentials (if any) are valid, and the remote is an actual VNote notebook.</source>
+        <translation>リモートノートブックを複製できませんでした。URL にアクセスできること、認証情報を指定した場合はそれが有効であること、リモートが VNote ノートブックであることを確認してください。</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Could not record ownership of the downloaded notebook.</source>
+        <translation>ダウンロードしたノートブックの所有権を記録できませんでした。</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Failed to move cloned notebook into the destination.</source>
+        <translation>複製したノートブックを保存先に移動できませんでした。</translation>
+    </message>
+    <message>
         <source>Remote URL must not be empty.</source>
-        <translation>リモート URL を空にすることはできません。</translation>
+        <translation type="vanished">リモート URL を空にすることはできません。</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Remote URL must use HTTPS or file:// scheme (got: %1).</source>
-        <translation>リモート URL は HTTPS または file:// スキームを使用する必要があります（指定値：%1）。</translation>
+        <translation type="vanished">リモート URL は HTTPS または file:// スキームを使用する必要があります（指定値：%1）。</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="-199"/>
         <source>Local root folder path must not be empty.</source>
         <translation>ローカルルートフォルダーのパスを空にすることはできません。</translation>
     </message>
@@ -7463,72 +7553,69 @@ Continue?</source>
         <translation>ローカルルートフォルダーのパスが無効です。</translation>
     </message>
     <message>
-        <location line="+14"/>
         <source>Local root folder must be a directory.</source>
-        <translation>ローカルルートフォルダーはディレクトリである必要があります。</translation>
+        <translation type="vanished">ローカルルートフォルダーはディレクトリである必要があります。</translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>Local root folder must be empty (contains %1 item(s)).</source>
-        <translation>ローカルルートフォルダーは空である必要があります（%1 個の項目を含んでいます）。</translation>
+        <translation type="vanished">ローカルルートフォルダーは空である必要があります（%1 個の項目を含んでいます）。</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>Parent folder of destination does not exist or is not a directory: %1.</source>
-        <translation>宛先の親フォルダーが存在しないか、ディレクトリではありません：%1。</translation>
+        <translation type="vanished">宛先の親フォルダーが存在しないか、ディレクトリではありません：%1。</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>Parent folder of destination is not writable: %1.</source>
-        <translation>宛先の親フォルダーに書き込めません：%1。</translation>
+        <translation type="vanished">宛先の親フォルダーに書き込めません：%1。</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+25"/>
         <source>A notebook (%1) is already open at this destination.</source>
         <translation>この宛先には既にノートブック (%1) が開かれています。</translation>
     </message>
     <message>
-        <location line="+42"/>
         <source>Sync services not available; cannot use a PAT.</source>
-        <translation>同期サービスを利用できません。PAT を使用できません。</translation>
+        <translation type="vanished">同期サービスを利用できません。PAT を使用できません。</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+64"/>
         <source>Failed to create staging directory: %1</source>
         <translation>ステージングディレクトリの作成に失敗しました：%1</translation>
     </message>
     <message>
-        <location line="+46"/>
+        <location line="+34"/>
         <source>Cloning...</source>
         <translation>クローン中...</translation>
     </message>
     <message>
-        <location line="+44"/>
+        <location line="+43"/>
         <source>Clone cancelled by user.</source>
         <translation>クローンはユーザーによってキャンセルされました。</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Failed to clone remote notebook. Verify the URL is reachable, the PAT (if any) is valid, and the remote is an actual VNote notebook.</source>
-        <translation>リモートノートブックのクローンに失敗しました。URL に到達可能であること、PAT（ある場合）が有効であること、リモートが実際の VNote ノートブックであることを確認してください。</translation>
+        <translation type="vanished">リモートノートブックのクローンに失敗しました。URL に到達可能であること、PAT（ある場合）が有効であること、リモートが実際の VNote ノートブックであることを確認してください。</translation>
     </message>
     <message>
-        <location line="+37"/>
         <source>Could not prepare local root folder %1.</source>
-        <translation>ローカルルートフォルダー %1 を準備できませんでした。</translation>
+        <translation type="vanished">ローカルルートフォルダー %1 を準備できませんでした。</translation>
     </message>
     <message>
-        <location line="+17"/>
         <source>Failed to move cloned notebook into destination: %1</source>
-        <translation>クローンしたノートブックを宛先に移動できませんでした：%1</translation>
+        <translation type="vanished">クローンしたノートブックを宛先に移動できませんでした：%1</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+51"/>
         <source>Cloned notebook could not be re-opened from %1.</source>
         <translation>クローンしたノートブックを %1 から再度開けませんでした。</translation>
     </message>
     <message>
-        <location line="+80"/>
+        <location line="+20"/>
+        <source>Failed to save the downloaded notebook&apos;s sync settings.</source>
+        <translation>ダウンロードしたノートブックの同期設定を保存できませんでした。</translation>
+    </message>
+    <message>
+        <location line="+62"/>
         <source>Cloned notebook but failed to enable sync: %1</source>
         <translation>ノートブックをクローンしましたが、同期の有効化に失敗しました：%1</translation>
     </message>
@@ -7536,7 +7623,7 @@ Continue?</source>
 <context>
     <name>vnotex::OpenNotebookDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="+84"/>
+        <location filename="../../../widgets/dialogs/opennotebookdialog2.cpp" line="+81"/>
         <source>Local folder</source>
         <translation>ローカルフォルダー</translation>
     </message>
@@ -7547,17 +7634,17 @@ Continue?</source>
     </message>
     <message>
         <location line="+3"/>
-        <location line="+109"/>
+        <location line="+132"/>
+        <location line="+79"/>
         <source>Remote URL</source>
         <translation>リモート URL</translation>
     </message>
     <message>
-        <location line="-106"/>
         <source>Clone a VNote notebook from a remote git URL or a file:// path</source>
-        <translation>リモート git URL または file:// パスから VNote ノートブックをクローンします</translation>
+        <translation type="vanished">リモート git URL または file:// パスから VNote ノートブックをクローンします</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="-167"/>
         <source>Open</source>
         <translation>開く</translation>
     </message>
@@ -7597,27 +7684,152 @@ Continue?</source>
         <translation>ルートフォルダのパス</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+11"/>
+        <source>Git</source>
+        <translation>Git</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>WebDAV</source>
+        <translation>WebDAV</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Jianguoyun (WebDAV)</source>
+        <translation>Jianguoyun（WebDAV）</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Sync method</source>
+        <translation>同期方式</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Open an existing VNote-managed Jianguoyun collection with your username and app password. The remote is not ordinary notebook files; do not edit it in the cloud. History and deleted data are retained, so storage use grows. Disabling sync does not remove remote data.</source>
+        <translation>ユーザー名とアプリパスワードで、VNote が管理する既存の Jianguoyun コレクションを開きます。リモートは通常のノートブックファイルではないため、クラウド上で編集しないでください。履歴と削除済みデータが保持されるため、ストレージ使用量は増加します。同期を無効にしてもリモートデータは削除されません。</translation>
+    </message>
+    <message>
+        <location line="+34"/>
+        <location line="+88"/>
+        <source>Optional for anonymous download</source>
+        <translation>匿名ダウンロードの場合は省略可能</translation>
+    </message>
+    <message>
+        <location line="-86"/>
+        <location line="+89"/>
+        <source>WebDAV account username; leave both credentials empty for anonymous download</source>
+        <translation>WebDAV アカウントのユーザー名。匿名ダウンロードでは両方の認証情報を空にしてください</translation>
+    </message>
+    <message>
+        <location line="-88"/>
+        <source>Username</source>
+        <translation>ユーザー名</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <location line="+63"/>
         <source>Personal Access Token</source>
         <translation>個人アクセストークン</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="-55"/>
+        <source>Folder to download into (must not exist)</source>
+        <translation>ダウンロード先フォルダー（まだ存在しないもの）</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>New local folder that will receive the notebook; the parent folder must already exist</source>
+        <translation>ノートブックを保存する新しいローカルフォルダー。親フォルダーは既存である必要があります</translation>
+    </message>
+    <message>
+        <location line="+1"/>
         <source>Local root folder</source>
         <translation>ローカルのルートフォルダ</translation>
     </message>
     <message>
-        <location line="-34"/>
+        <location line="+40"/>
+        <source>Collection URL</source>
+        <translation>コレクション URL</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>https://dav.jianguoyun.com/dav/vnote-notebook/</source>
+        <translation>https://dav.jianguoyun.com/dav/vnote-notebook/</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>https://example.com/dav/notebook/</source>
+        <translation>https://example.com/dav/notebook/</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Existing VNote-managed Jianguoyun collection, not the /dav/ account root</source>
+        <translation>VNote が管理する既存の Jianguoyun コレクション。アカウントのルート /dav/ は指定できません</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Existing HTTP or HTTPS collection containing one VNote notebook. HTTP sends credentials and data in plaintext</source>
+        <translation>VNote ノートブックが入った既存の HTTP または HTTPS コレクション。HTTP では認証情報とデータが平文で送信されます</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>App password</source>
+        <translation>アプリパスワード</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Password or app password</source>
+        <translation>パスワードまたはアプリパスワード</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Required Jianguoyun app password</source>
+        <translation>Jianguoyun のアプリパスワード（必須）</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Jianguoyun app password, not your account password. Anonymous download is not supported</source>
+        <translation>アカウントのパスワードではなく、Jianguoyun のアプリパスワードを使用します。匿名ダウンロードには対応していません</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Leave credentials empty to download anonymously if the server permits it. The notebook remains editable; add credentials later to start syncing</source>
+        <translation>サーバーが許可する場合は、認証情報を空にして匿名でダウンロードできます。ノートブックは編集可能で、後から認証情報を追加すると同期を開始できます</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Required Jianguoyun account username</source>
+        <translation>Jianguoyun アカウントのユーザー名（必須）</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Jianguoyun account username; both username and app password are required</source>
+        <translation>Jianguoyun アカウントのユーザー名。ユーザー名とアプリパスワードの両方が必要です</translation>
+    </message>
+    <message>
+        <location line="+100"/>
+        <source>Local root folder must not already exist.</source>
+        <translation>ローカルルートフォルダーには、まだ存在しないフォルダーを指定してください。</translation>
+    </message>
+    <message>
+        <location line="-205"/>
+        <location line="+85"/>
         <source>https://github.com/user/repo.git  or  file:///path/to/repo.git</source>
         <translation>https://github.com/user/repo.git  または  file:///path/to/repo.git</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="-212"/>
+        <source>Download a VNote notebook from a Git remote or a WebDAV collection</source>
+        <translation>Git リモートまたは WebDAV コレクションから VNote ノートブックをダウンロードします</translation>
+    </message>
+    <message>
+        <location line="+128"/>
+        <location line="+89"/>
         <source>Remote git URL. Only HTTPS and file:// schemes are supported</source>
         <translation>リモート git URL。HTTPS と file:// スキームのみサポートされます</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-83"/>
         <source>Required by Gitee; optional for GitHub</source>
         <translation>Gitee では必須、GitHub では任意</translation>
     </message>
@@ -7632,52 +7844,48 @@ Continue?</source>
         <translation>Git ユーザー名</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+16"/>
+        <location line="+70"/>
         <source>Optional — leave empty to open without syncing yet</source>
         <translation>任意 — 空欄のままにすると同期せずに開きます</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-68"/>
         <source>If empty, the notebook opens normally (fully editable) with sync configured but inactive. Add a token later to start syncing</source>
         <translation>空欄の場合、ノートブックは通常どおり（完全に編集可能な状態で）開き、同期は構成されますが非アクティブです。後でトークンを追加すると同期を開始できます</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+9"/>
         <source>Select Local Root Folder</source>
         <translation>ローカルルートフォルダーを選択</translation>
     </message>
     <message>
-        <location line="+1"/>
         <source>Folder to clone into (must not exist or be empty)</source>
-        <translation>クローン先のフォルダー（存在しないか空である必要があります）</translation>
+        <translation type="vanished">クローン先のフォルダー（存在しないか空である必要があります）</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Local folder that will receive the cloned notebook. It must either not exist yet (it will be created) or be an existing empty directory</source>
-        <translation>クローンしたノートブックを受け取るローカルフォルダー。まだ存在しない（作成されます）か、既存の空のディレクトリである必要があります</translation>
+        <translation type="vanished">クローンしたノートブックを受け取るローカルフォルダー。まだ存在しない（作成されます）か、既存の空のディレクトリである必要があります</translation>
     </message>
     <message>
-        <location line="+91"/>
         <source>Remote URL must use HTTPS or file:// scheme (got: %1).</source>
-        <translation>リモート URL は HTTPS または file:// スキームを使用する必要があります（指定値：%1）。</translation>
+        <translation type="vanished">リモート URL は HTTPS または file:// スキームを使用する必要があります（指定値：%1）。</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+162"/>
         <source>Local root folder path is not valid.</source>
         <translation>ローカルルートフォルダーのパスが無効です。</translation>
     </message>
     <message>
-        <location line="+7"/>
         <source>Local root folder must be a directory.</source>
-        <translation>ローカルルートフォルダーはディレクトリである必要があります。</translation>
+        <translation type="vanished">ローカルルートフォルダーはディレクトリである必要があります。</translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>Local root folder must be empty (contains %1 item(s)).</source>
-        <translation>ローカルルートフォルダーは空である必要があります（%1 個の項目を含んでいます）。</translation>
+        <translation type="vanished">ローカルルートフォルダーは空である必要があります（%1 個の項目を含んでいます）。</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+12"/>
         <source>Parent folder does not exist.</source>
         <translation>親フォルダーが存在しません。</translation>
     </message>
@@ -7687,17 +7895,17 @@ Continue?</source>
         <translation>親フォルダーに書き込めません。</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+32"/>
         <source>Cancelling clone...</source>
         <translation>クローンをキャンセル中...</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+67"/>
         <source>Cloning...</source>
         <translation>クローン中...</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+65"/>
         <source>Clone cancelled.</source>
         <translation>クローンをキャンセルしました。</translation>
     </message>
@@ -8506,14 +8714,12 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SearchService</name>
     <message>
-        <location filename="../../../core/services/searchservice.cpp" line="+516"/>
         <source>The search result contains an invalid match range.</source>
-        <translation>検索結果に無効な一致範囲が含まれています。</translation>
+        <translation type="vanished">検索結果に無効な一致範囲が含まれています。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>Search results are out of date. Save affected notes and search again.</source>
-        <translation>検索結果が古くなっています。対象のノートを保存してから再度検索してください。</translation>
+        <translation type="vanished">検索結果が古くなっています。対象のノートを保存してから再度検索してください。</translation>
     </message>
 </context>
 <context>
@@ -8810,12 +9016,17 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SyncConflictDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/syncconflictdialog2.cpp" line="+64"/>
+        <location filename="../../../widgets/dialogs/syncconflictdialog2.cpp" line="+66"/>
         <source>Sync conflict detected for %1 file(s). Choose how to resolve each:</source>
         <translation>%1 個のファイルで同期競合が検出されました。各ファイルの解決方法を選択してください:</translation>
     </message>
     <message>
-        <location line="+39"/>
+        <location line="+6"/>
+        <source>Each choice keeps a complete version, including deletion. Keep both preserves ordinary files without merging. For notebook or folder indexes, choosing one version can leave other retained content unindexed.</source>
+        <translation>各選択肢は削除状態を含む完全な版を保持します。「両方を保持」は通常のファイルをマージせずに保持します。ノートブックやフォルダーの索引で一方を選ぶと、保持された他の内容が索引に登録されない場合があります。</translation>
+    </message>
+    <message>
+        <location line="+40"/>
         <source>Keep local</source>
         <translation>ローカルを保持</translation>
     </message>
@@ -8831,8 +9042,12 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location line="+4"/>
+        <source>Metadata and protected files require one complete version; Keep both is not supported</source>
+        <translation>メタデータと保護されたファイルは、一方の完全な版を選ぶ必要があります。「両方を保持」には対応していません</translation>
+    </message>
+    <message>
         <source>Protected files require one complete version; the other version remains in Git history</source>
-        <translation>保護されたファイルでは、どちらかのバージョンを丸ごと選択する必要があります。もう一方のバージョンは Git 履歴に残ります</translation>
+        <translation type="vanished">保護されたファイルでは、どちらかのバージョンを丸ごと選択する必要があります。もう一方のバージョンは Git 履歴に残ります</translation>
     </message>
     <message>
         <location line="+45"/>
@@ -8872,34 +9087,28 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SyncService</name>
     <message>
-        <location filename="../../../core/services/syncservice.cpp" line="+154"/>
         <source>Sync is in progress for this notebook. Please wait for sync to complete before closing.</source>
-        <translation>このノートブックの同期が進行中です。閉じる前に同期の完了をお待ちください。</translation>
+        <translation type="vanished">このノートブックの同期が進行中です。閉じる前に同期の完了をお待ちください。</translation>
     </message>
     <message>
-        <location line="+2"/>
         <source>Sync work is queued for this notebook (%1 item(s)). Cancel the queued sync from the toolbar before closing.</source>
-        <translation>このノートブックの同期作業がキューに入っています (%1 項目)。閉じる前にツールバーからキュー内の同期をキャンセルしてください。</translation>
+        <translation type="vanished">このノートブックの同期作業がキューに入っています (%1 項目)。閉じる前にツールバーからキュー内の同期をキャンセルしてください。</translation>
     </message>
     <message>
-        <location line="+130"/>
         <source>PAT is required to enable sync.</source>
-        <translation>同期を有効にするには PAT が必要です。</translation>
+        <translation type="vanished">同期を有効にするには PAT が必要です。</translation>
     </message>
     <message>
-        <location line="+13"/>
         <source>Remote URL is required to enable sync.</source>
-        <translation>同期を有効にするにはリモート URL が必要です。</translation>
+        <translation type="vanished">同期を有効にするにはリモート URL が必要です。</translation>
     </message>
     <message>
-        <location line="+502"/>
         <source>Failed to persist sync configuration to notebook after enable.</source>
-        <translation>有効化後、同期設定をノートブックに保存できませんでした。</translation>
+        <translation type="vanished">有効化後、同期設定をノートブックに保存できませんでした。</translation>
     </message>
     <message>
-        <location line="+3"/>
         <source>Notebook service not available.</source>
-        <translation>ノートブックサービスが利用できません。</translation>
+        <translation type="vanished">ノートブックサービスが利用できません。</translation>
     </message>
 </context>
 <context>
@@ -9151,25 +9360,22 @@ Notebook: %3</source>
 <context>
     <name>vnotex::Task</name>
     <message>
-        <location filename="../../../core/services/task.cpp" line="+403"/>
         <source>[Task (%1) started]
 </source>
-        <translation>[タスク (%1) が開始されました]
+        <translation type="vanished">[タスク (%1) が開始されました]
 </translation>
     </message>
     <message>
-        <location line="+11"/>
         <source>[Task (%1) error occurred (%2)]
 </source>
-        <translation>[タスク (%1) でエラーが発生しました (%2)]
+        <translation type="vanished">[タスク (%1) でエラーが発生しました (%2)]
 </translation>
     </message>
     <message>
-        <location line="+9"/>
         <source>
 [Task (%1) finished (%2)]
 </source>
-        <translation>
+        <translation type="vanished">
 [タスク (%1) が終了しました (%2)]
 </translation>
     </message>
@@ -9830,55 +10036,43 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::UpdateService</name>
     <message>
-        <location filename="../../../core/services/updateservice.cpp" line="+207"/>
         <source>Refusing to contact an unexpected host: %1</source>
-        <translation>予期しないホストへの接続を拒否しました: %1</translation>
+        <translation type="vanished">予期しないホストへの接続を拒否しました: %1</translation>
     </message>
     <message>
-        <location line="-4"/>
-        <location line="+35"/>
         <source>Cancelled.</source>
-        <translation>キャンセルされました。</translation>
+        <translation type="vanished">キャンセルされました。</translation>
     </message>
     <message>
-        <location line="+5"/>
         <source>The request to %1 timed out.</source>
-        <translation>%1 へのリクエストがタイムアウトしました。</translation>
+        <translation type="vanished">%1 へのリクエストがタイムアウトしました。</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <location line="+25"/>
         <source>Too many redirects.</source>
-        <translation>リダイレクトが多すぎます。</translation>
+        <translation type="vanished">リダイレクトが多すぎます。</translation>
     </message>
     <message>
-        <location line="-44"/>
-        <location line="+36"/>
         <source>The response from %1 is unexpectedly large.</source>
-        <translation>%1 からの応答が大きすぎます。</translation>
+        <translation type="vanished">%1 からの応答が大きすぎます。</translation>
     </message>
     <message>
-        <location line="+105"/>
         <source>The latest release could not be identified.</source>
-        <translation>最新リリースを特定できませんでした。</translation>
+        <translation type="vanished">最新リリースを特定できませんでした。</translation>
     </message>
 </context>
 <context>
     <name>vnotex::VNote3MigrationService</name>
     <message>
-        <location filename="../../../core/services/vnote3migrationservice.cpp" line="+374"/>
         <source>File &apos;%1&apos;: notebook has no attachment folder configured, skipping attachments</source>
-        <translation>ファイル &apos;%1&apos;: ノートブックに添付ファイルフォルダーが設定されていないため、添付ファイルをスキップします</translation>
+        <translation type="vanished">ファイル &apos;%1&apos;: ノートブックに添付ファイルフォルダーが設定されていないため、添付ファイルをスキップします</translation>
     </message>
     <message>
-        <location line="+62"/>
         <source>File &apos;%1&apos;: attachment subfolders are not listed in the attachment panel; use &apos;Open Folder&apos; to reach them</source>
-        <translation>ファイル &apos;%1&apos;: 添付ファイルのサブフォルダーは添付パネルに表示されません。&apos;フォルダーを開く&apos; から参照してください</translation>
+        <translation type="vanished">ファイル &apos;%1&apos;: 添付ファイルのサブフォルダーは添付パネルに表示されません。&apos;フォルダーを開く&apos; から参照してください</translation>
     </message>
     <message>
-        <location line="+6"/>
         <source>File &apos;%1&apos;: attachment copy incomplete, keeping the legacy attachment folder</source>
-        <translation>ファイル &apos;%1&apos;: 添付ファイルのコピーが不完全なため、従来の添付ファイルフォルダーを維持します</translation>
+        <translation type="vanished">ファイル &apos;%1&apos;: 添付ファイルのコピーが不完全なため、従来の添付ファイルフォルダーを維持します</translation>
     </message>
 </context>
 <context>
@@ -9922,7 +10116,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewAreaController</name>
     <message>
-        <location filename="../../../controllers/viewareacontroller.cpp" line="+138"/>
+        <location filename="../../../controllers/viewareacontroller.cpp" line="+180"/>
         <source>The note encryption services are unavailable.</source>
         <translation>ノート暗号化サービスが利用できません。</translation>
     </message>

@@ -19,6 +19,7 @@
 #include <core/servicelocator.h>
 #include <utils/pathutils.h>
 
+#include "../inlinebanner.h"
 #include "../locationinputwithbrowsebutton.h"
 #include "../widgetsfactory.h"
 
@@ -35,6 +36,7 @@ const char *const kRemoteUrlEditName = "remoteUrlEdit";
 const char *const kRemotePatEditName = "remotePatEdit";
 const char *const kGitUsernameEditName = "gitUsernameEdit";
 const char *const kBackendComboName = "syncBackendCombo";
+const char *const kManagedStorageHintName = "managedStorageHint";
 const char *const kWebdavUsernameEditName = "webdavUsernameEdit";
 const char *const kRemoteDestInputName = "remoteDestInput";
 const char *const kProgressBarName = "openNotebookProgressBar";
@@ -188,7 +190,24 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   m_backendCombo->setObjectName(QLatin1String(kBackendComboName));
   m_backendCombo->addItem(tr("Git"), QStringLiteral("git"));
   m_backendCombo->addItem(tr("WebDAV"), QStringLiteral("webdav"));
+  m_backendCombo->addItem(tr("Jianguoyun (WebDAV)"), QStringLiteral("jianguoyun"));
   layout->addRow(tr("Sync method"), m_backendCombo);
+  auto *managedHint = new InlineBanner(
+      InlineBanner::Severity::Warning,
+      tr("Open an existing VNote-managed Jianguoyun collection with your username and app "
+         "password. "
+         "The remote is not ordinary notebook files; do not edit it in the cloud. History and "
+         "deleted "
+         "data are retained, so storage use grows. Disabling sync does not remove remote data."),
+      p_page);
+  managedHint->setObjectName(QLatin1String(kManagedStorageHintName));
+  managedHint->hide();
+  layout->addRow(managedHint);
+  connect(m_backendCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), managedHint,
+          [this, managedHint]() {
+            managedHint->setVisible(m_backendCombo->currentData().toString() ==
+                                    QLatin1String("jianguoyun"));
+          });
 
   // Remote URL field.
   m_remoteUrlEdit = new QLineEdit(p_page);
@@ -265,30 +284,46 @@ SyncSettings OpenNotebookDialog2::enteredSettings() const {
   settings.m_remoteUrl = m_remoteUrlEdit->text().trimmed();
   settings.m_credentials.m_backend = settings.m_backend;
   settings.m_credentials.m_secret = m_remotePatEdit->text();
-  if (settings.m_backend == QLatin1String("webdav")) {
+  if (isPasswordSyncBackend(settings.m_backend)) {
     settings.m_credentials.m_username = m_webdavUsernameEdit->text();
   }
   return settings;
 }
 
 void OpenNotebookDialog2::refreshBackendFields() {
-  const bool webdav = m_backendCombo->currentData().toString() == QLatin1String("webdav");
-  m_remoteUrlLabel->setText(webdav ? tr("Collection URL") : tr("Remote URL"));
+  const auto backend = m_backendCombo->currentData().toString();
+  const bool passwordBackend = isPasswordSyncBackend(backend);
+  const bool managed = backend == QLatin1String("jianguoyun");
+  m_remoteUrlLabel->setText(passwordBackend ? tr("Collection URL") : tr("Remote URL"));
   m_remoteUrlEdit->setPlaceholderText(
-      webdav ? tr("https://example.com/dav/notebook/")
-             : tr("https://github.com/user/repo.git  or  file:///path/to/repo.git"));
+      managed           ? tr("https://dav.jianguoyun.com/dav/vnote-notebook/")
+      : passwordBackend ? tr("https://example.com/dav/notebook/")
+                        : tr("https://github.com/user/repo.git  or  file:///path/to/repo.git"));
   m_remoteUrlEdit->setToolTip(
-      webdav ? tr("Existing HTTP or HTTPS collection containing one VNote notebook. "
-                  "HTTP sends credentials and data in plaintext")
-             : tr("Remote git URL. Only HTTPS and file:// schemes are supported"));
-  m_secretLabel->setText(webdav ? tr("Password or app password") : tr("Personal Access Token"));
+      managed ? tr("Existing VNote-managed Jianguoyun collection, not the /dav/ account root")
+      : passwordBackend ? tr("Existing HTTP or HTTPS collection containing one VNote notebook. "
+                             "HTTP sends credentials and data in plaintext")
+                        : tr("Remote git URL. Only HTTPS and file:// schemes are supported"));
+  m_secretLabel->setText(managed           ? tr("App password")
+                         : passwordBackend ? tr("Password or app password")
+                                           : tr("Personal Access Token"));
+  m_remotePatEdit->setPlaceholderText(
+      managed ? tr("Required Jianguoyun app password")
+              : tr("Optional — leave empty to open without syncing yet"));
   m_remotePatEdit->setToolTip(
-      tr("Leave credentials empty to download anonymously if the server permits it. "
-         "The notebook remains editable; add credentials later to start syncing"));
-  m_gitUsernameLabel->setVisible(!webdav);
-  m_remoteUsernameEdit->setVisible(!webdav);
-  m_webdavUsernameLabel->setVisible(webdav);
-  m_webdavUsernameEdit->setVisible(webdav);
+      managed ? tr("Jianguoyun app password, not your account password. Anonymous download is not "
+                   "supported")
+              : tr("Leave credentials empty to download anonymously if the server permits it. "
+                   "The notebook remains editable; add credentials later to start syncing"));
+  m_webdavUsernameEdit->setPlaceholderText(managed ? tr("Required Jianguoyun account username")
+                                                   : tr("Optional for anonymous download"));
+  m_webdavUsernameEdit->setToolTip(
+      managed ? tr("Jianguoyun account username; both username and app password are required")
+              : tr("WebDAV account username; leave both credentials empty for anonymous download"));
+  m_gitUsernameLabel->setVisible(!passwordBackend);
+  m_remoteUsernameEdit->setVisible(!passwordBackend);
+  m_webdavUsernameLabel->setVisible(passwordBackend);
+  m_webdavUsernameEdit->setVisible(passwordBackend);
 }
 
 OpenNotebookDialog2::Mode OpenNotebookDialog2::currentMode() const {
@@ -361,10 +396,11 @@ OpenNotebookDialog2::RemoteValidation OpenNotebookDialog2::validateRemoteInputs(
   RemoteValidation result;
 
   const auto settings = enteredSettings();
-  const bool suppliedWebdavCredentials =
-      settings.m_backend == QLatin1String("webdav") &&
-      (!settings.m_credentials.m_username.isEmpty() || !settings.m_credentials.m_secret.isEmpty());
-  result.message = validateSyncSettings(settings, suppliedWebdavCredentials);
+  const bool requireCredentials =
+      settings.m_backend == QLatin1String("jianguoyun") ||
+      (isPasswordSyncBackend(settings.m_backend) && (!settings.m_credentials.m_username.isEmpty() ||
+                                                     !settings.m_credentials.m_secret.isEmpty()));
+  result.message = validateSyncSettings(settings, requireCredentials);
   if (!result.message.isEmpty()) {
     return result;
   }

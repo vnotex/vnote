@@ -299,12 +299,17 @@ QString SyncService::buildConfigJson(const QString &p_notebookId,
 }
 
 bool SyncService::hasInterruptedRetirement(const QString &p_notebookId) const {
-  const auto path = m_notebookCoreService->buildAbsolutePath(
-      p_notebookId, QStringLiteral("vx_notebook/vx_sync/webdav/retirement.json"));
-  if (path.isEmpty())
-    return false;
-  const QFileInfo info(path);
-  return info.exists() || info.isSymLink();
+  for (const auto &backend : {QStringLiteral("webdav"), QStringLiteral("jianguoyun")}) {
+    const auto path = m_notebookCoreService->buildAbsolutePath(
+        p_notebookId,
+        QStringLiteral("vx_notebook/vx_sync/") + backend + QStringLiteral("/retirement.json"));
+    if (!path.isEmpty()) {
+      const QFileInfo info(path);
+      if (info.exists() || info.isSymLink())
+        return true;
+    }
+  }
+  return false;
 }
 
 void SyncService::enableSyncForNotebook(const QString &p_notebookId,
@@ -1147,10 +1152,10 @@ void SyncService::updateCredentials(const QString &p_notebookId,
   }
   m_authFailureCount.remove(p_notebookId);
 
-  // A new WebDAV backend authenticates and verifies the remote UUID before
+  // A new password backend authenticates and verifies the remote UUID before
   // atomically rotating usernameHash. Failed initialization keeps the old runtime.
   // No state deletion or transfer is part of credential rotation.
-  if (!isSyncRegistered(p_notebookId) || settings.m_backend == QLatin1String("webdav")) {
+  if (!isSyncRegistered(p_notebookId) || isPasswordSyncBackend(settings.m_backend)) {
     auto bridge = std::make_shared<QMetaObject::Connection>();
     *bridge =
         connect(this, &SyncService::enableFinished, this,

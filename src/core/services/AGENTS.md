@@ -192,13 +192,16 @@ The git sync backend sets `core.autocrlf=false` (`git_sync_pipeline.cpp`), so sy
 ## Credential Cleanup Invariants
 
 `SyncSettings` / `SyncCredential` in `syncsettings.*` are the shared application contract.
-Enable requires a Git PAT, or a WebDAV username plus password/app password. WebDAV URLs are
+Enable requires a Git PAT, or a WebDAV/Jianguoyun username plus password/app password. WebDAV URLs are
 canonical absolute HTTP or HTTPS collections without userinfo/query/fragment. HTTPS is
 recommended: HTTP exposes credentials and notebook data in transit. Secrets are never trimmed, logged,
 persisted in notebook JSON or cached on SyncService; operation captures are transient.
+`jianguoyun` is a distinct managed-storage backend, requiring HTTPS at `dav.jianguoyun.com` with
+an existing collection below `/dav/`. Both Qt and core enforce this; the exact loopback fixture
+exception additionally requires `vxcore_is_test_mode()`, never environment variables alone.
 
 `SyncCredentialsStore` retains namespace **VNote** and key **notebook_sync_pat_ + notebook ID**.
-Git values remain raw PAT strings. WebDAV uses `vnote-sync-credentials-v1\n` followed by compact
+Git values remain raw PAT strings. WebDAV and Jianguoyun use `vnote-sync-credentials-v1\n` followed by compact
 JSON with `backend`, `username`, `secret`. Unknown/malformed envelopes fail with fixed redacted
 messages, never a PAT fallback. Register both `SyncCredential` and `vnotex::SyncCredential`
 metatype names before queued connections. Retrieved and selected backends must match.
@@ -221,10 +224,13 @@ A failed core disable preserves routing and credentials. Delete failure is repor
 silently treated as a successful credential removal. Enable waits for an earlier close/startup
 delete for the same UUID, so staging-close cleanup cannot erase a clone's newly stored secret.
 
-Same-URL WebDAV credential updates authenticate through Initialize and verify remote UUID before
+Same-URL WebDAV/Jianguoyun credential updates authenticate through Initialize and verify remote UUID before
 changing the username binding; failed authentication preserves usable runtime/baseline. Pending
-`webdav/retirement.json` blocks new credential ingress and sync until controller recovery finishes.
-Successful disable never removes remote notes, WebDAV journals or recoverable snapshots.
+either `webdav/retirement.json` or `jianguoyun/retirement.json` blocks new credential ingress and
+sync until controller recovery finishes, even after routing was cleared. Successful disable
+never removes remote data, provider journals or recoverable snapshots. Jianguoyun shares the
+existing deferred apply executor, not a separate scheduler; raw-token CAS and versioned remote
+storage are core mechanisms documented in the owning sync guide.
 
 ## SearchService drain pool
 
@@ -428,9 +434,9 @@ for launch/shutdown ownership and `src/widgets/AGENTS.md` § Notification System
 
 ## Sync State Model
 
-The eight states are shared by Git and WebDAV. The predicates are portable routing fields,
-credential presence in the OS vault, and runtime registration. Only exactly `git` and `webdav`
-are supported; disabled or unknown backend configurations cannot become S5.
+The eight states are shared by Git, WebDAV and Jianguoyun. The predicates are portable routing
+fields, credential presence in the OS vault, and runtime registration. Only exactly `git`,
+`webdav` and `jianguoyun` are supported; disabled or unknown configurations cannot become S5.
 
 | State | Disk routing | Credential | Runtime |
 |---|---|---|---|
@@ -450,7 +456,7 @@ consumer policy, never a backend timer.
 
 `NotebookSyncInfoController::bootstrapApply(settings)` uses `bootstrapAndPersist` for disabled or
 partial existing notebooks and keeps their files on failure. `applyChanges(settings)` handles
-credential updates and confirmed endpoint changes. See the controller guide for journaled WebDAV
+credential updates and confirmed endpoint changes. See the controller guide for journaled provider
 retirement and Git-owned cleanup; never wipe the entire `vx_sync` tree.
 
 Reconcile reads the stored backend/URL and typed credentials, rejects unsupported/mismatched

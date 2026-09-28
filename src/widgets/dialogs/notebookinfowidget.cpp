@@ -108,6 +108,7 @@ void NotebookInfoWidget::setupUI(ServiceLocator &p_services) {
     m_syncMethodCombo->addItem(tr("None"), QStringLiteral("none"));
     m_syncMethodCombo->addItem(tr("Git"), QStringLiteral("git"));
     m_syncMethodCombo->addItem(tr("WebDAV"), QStringLiteral("webdav"));
+    m_syncMethodCombo->addItem(tr("Jianguoyun (WebDAV)"), QStringLiteral("jianguoyun"));
     m_syncMethodCombo->setToolTip(tr("Sync is supported only for bundled notebooks. "
                                      "Use Configure before notebook creation"));
     m_configureSyncButton = new QPushButton(tr("Configure"), syncMethodContainer);
@@ -281,10 +282,11 @@ void NotebookInfoWidget::setSyncMethod(const QString &p_method) {
     m_syncMethodCombo->setCurrentIndex(m_syncMethodCombo->findData(method));
   } else {
     m_displayedSyncMethod = method;
-    m_syncMethodEdit->setText(method == QLatin1String("none")     ? tr("None")
-                              : method == QLatin1String("git")    ? tr("Git")
-                              : method == QLatin1String("webdav") ? tr("WebDAV")
-                                                                  : method);
+    m_syncMethodEdit->setText(method == QLatin1String("none")         ? tr("None")
+                              : method == QLatin1String("git")        ? tr("Git")
+                              : method == QLatin1String("webdav")     ? tr("WebDAV")
+                              : method == QLatin1String("jianguoyun") ? tr("Jianguoyun (WebDAV)")
+                                                                      : method);
   }
 }
 

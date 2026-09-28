@@ -23,7 +23,7 @@ struct NewNotebookInput {
   NotebookType type = NotebookType::Bundled;
   // Empty inherits the global editor setting; overrides apply only to bundled notebooks.
   QString lineEnding;
-  // Creation selection: none, git, or webdav. Enabled settings must match it.
+  // Creation selection: none, git, webdav, or jianguoyun. Enabled settings must match it.
   QString syncMethod = QStringLiteral("none");
   SyncSettings syncSettings;
 };

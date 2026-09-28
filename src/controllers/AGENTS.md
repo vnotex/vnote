@@ -100,7 +100,7 @@ relaunch. Protected installations fail with manual-update guidance, not UAC/ACL 
 | `TextViewWindowController` | Plain text editing |
 | `PdfViewWindowController` | PDF viewing |
 | `MindMapViewWindowController` | Mind map viewing |
-| `NotebookSyncInfoController` | Git/WebDAV enable/disable, credential rotation, binding retirement, bootstrap recovery |
+| `NotebookSyncInfoController` | Git/WebDAV/Jianguoyun enable/disable, credential rotation, binding retirement, bootstrap recovery |
 | `NewNotebookController` (sync portion) | New-notebook bootstrap via `bootstrapSync` (deletes notebook on enable failure) |
 | `DashboardController` | Home dashboard (vx://home) layout model, occupancy math, seed/default, and WidgetConfig persistence; the `DashboardBoard` widget is its pure view |
 | `NotificationRouter` | Turns subsystem failure signals into `NotificationMessage`s; owns attention/dedup policy (see below) |
@@ -158,7 +158,7 @@ notebooks' unresolved failures.
 
 Both entry points take `SyncSettings`; all creation, enable, reconfiguration and remote-open
 flows use the shared validation/canonicalization in `core/services/syncsettings.*`.
-Only `git` and `webdav` are supported. Raw notebooks cannot enable sync; unknown configured
+Only `git`, `webdav` and `jianguoyun` are supported. Raw notebooks cannot enable sync; unknown configured
 backends report an error instead of opening a Git form.
 
 | Method | Use when | Failure behavior |
@@ -167,8 +167,8 @@ backends report an error instead of opening a Git form.
 | `applyChanges(settings)` | Existing sync settings or credentials change | Waits for the operation result before `applyComplete`; no optimistic persistence |
 
 A blank secret retrieves existing credentials only into the transient operation. Stored and
-selected backends must match. A supplied WebDAV username requires a new secret; passwords are
-never trimmed or prefilled. Same-URL WebDAV credential rotation authenticates and verifies the
+selected backends must match. A supplied WebDAV/Jianguoyun username requires a new secret; passwords are
+never trimmed or prefilled. Same-URL WebDAV/Jianguoyun credential rotation authenticates and verifies the
 remote notebook UUID before changing its username binding. Git HTTPS username-only changes
 retain repository history and update origin through the existing initialization path.
 
@@ -178,27 +178,32 @@ A different URL or method requires confirmation, including a persisted binding f
 Disable cleared the portable routing fields. Queued/running sync or vault work blocks changes.
 Under the existing `SyncWorkQueueManager` maintenance lease, restore any interrupted archive,
 then call `NotebookCoreService::checkSyncReconfiguration()`. Its offline core inspection catches
-unregistered Git index conflicts as well as WebDAV conflicts and pending transactions. Never
+unregistered Git index conflicts as well as both DAV providers' conflicts and pending transactions. Never
 infer that absence of a runtime backend means absence of recoverable on-disk state.
 
-WebDAV retirement writes `vx_notebook/vx_sync/webdav/retirement.json` before moving current
+Provider retirement writes `vx_notebook/vx_sync/<backend>/retirement.json`, with backend restricted
+to `webdav` or `jianguoyun`, before moving current
 binding files/snapshots into `retired/<operationId>/`. The existing `retired` directory is never
 moved into its own descendant. Archive failure restores moved entries and aborts before disabling
-usable runtime state. An interrupted archive must be restored before any new enable.
+usable runtime state. An interrupted archive must be restored before any new enable. Inspect
+both provider directories independently; never mix journal backend tags, and preserve the legacy
+WebDAV journal shape. Retired-only directories are not corrupt active bindings.
 
 Git state is removed only AFTER successful disable releases repository handles. Remove only the
-explicit Git-owned allowlist; never recursively remove `vx_sync` or its `webdav` child. Working
+explicit Git-owned allowlist; never recursively remove `vx_sync` or either provider child. Working
 notes remain intact. After successful disable but failed re-enable, keep clean disabled routing
 and visible retry guidance. `disableFinished` follows settled vault cleanup, so a later enable
 cannot have its newly stored credential erased by an earlier delete.
 
 ## NewNotebookController bootstrapSync Rollback
 
-`NewNotebookInput` contains `syncMethod` (`none`, `git`, `webdav`) and `SyncSettings`. When enabled,
+`NewNotebookInput` contains `syncMethod` (`none`, `git`, `webdav`, `jianguoyun`) and `SyncSettings`. When enabled,
 the selection must match the settings backend. Creation remains create-then-enable. On failure:
 request credential deletion, close the newly created notebook, then remove ONLY its owned root.
-WebDAV Initialize never publishes ordinary notebook data, so this rollback does not delete a
-partially published remote notebook. This controller's pre-close cleanup is the historical
+WebDAV Initialize never publishes ordinary notebook data; Jianguoyun Initialize never publishes
+genesis. Initial sync is queued only after routing persistence, so a later sync failure does not
+enter this owned-root setup rollback or occupy a remote collection without retaining its local
+notebook. This controller's pre-close cleanup is the historical
 exception to the service-owned credential cleanup sites.
 
 ## Remote open ownership
@@ -212,8 +217,10 @@ foreign destination created during the network operation. Remove the owner marke
 Do not use the old rename helper that deletes root `staging-marker.json`: that name may be a real
 remote notebook file.
 
-Authenticated open registers the selected backend. Anonymous open is writable partial S2 and
-sets `partialSyncMissingCredentials`; it must not automatically prompt for credentials.
+Authenticated open registers the selected backend. Jianguoyun requires credentials and the UI
+must disclose managed remote storage, retained history and no cloud-side notebook editing.
+Anonymous Git/WebDAV open remains writable partial S2 and sets `partialSyncMissingCredentials`;
+it must not automatically prompt for credentials.
 
 ## Conflict resolution completion
 

@@ -23,6 +23,7 @@
 #include <core/services/syncservice.h>
 #include <temp_dir_fixture.h>
 #include <widgets/dialogs/notebooksyncinfodialog2.h>
+#include <widgets/inlinebanner.h>
 
 #include <vxcore/vxcore.h>
 #include <vxcore/vxcore_types.h>
@@ -38,8 +39,8 @@ private slots:
   void initTestCase();
   void testGitUsernameEditsRemoteWithoutExposingToken();
   void testGitUsernameChangePreservesLocalHistory();
-  void testWebdavPreCreateValidationAndSecretMasking_data();
-  void testWebdavPreCreateValidationAndSecretMasking();
+  void testPasswordPreCreateValidationAndSecretMasking_data();
+  void testPasswordPreCreateValidationAndSecretMasking();
   void testExistingBackendSelectionAndRawProtection();
 
   void testFailedBootstrapLeavesNotebookAndDialogIntact();
@@ -80,13 +81,19 @@ void TestNotebookSyncInfoDialog2::testGitUsernameEditsRemoteWithoutExposingToken
   QVERIFY(!usernameEdit->isEnabled());
 }
 
-void TestNotebookSyncInfoDialog2::testWebdavPreCreateValidationAndSecretMasking_data() {
+void TestNotebookSyncInfoDialog2::testPasswordPreCreateValidationAndSecretMasking_data() {
+  QTest::addColumn<QString>("backendId");
   QTest::addColumn<QString>("remoteUrl");
-  QTest::newRow("https") << QStringLiteral("https://example.com/dav/notebook/");
-  QTest::newRow("http-nonloopback") << QStringLiteral("http://example.com/dav/notebook/");
+  QTest::newRow("webdav-https") << QStringLiteral("webdav")
+                                << QStringLiteral("https://example.com/dav/notebook/");
+  QTest::newRow("webdav-http-nonloopback")
+      << QStringLiteral("webdav") << QStringLiteral("http://example.com/dav/notebook/");
+  QTest::newRow("jianguoyun") << QStringLiteral("jianguoyun")
+                              << QStringLiteral("https://dav.jianguoyun.com/dav/notebook/");
 }
 
-void TestNotebookSyncInfoDialog2::testWebdavPreCreateValidationAndSecretMasking() {
+void TestNotebookSyncInfoDialog2::testPasswordPreCreateValidationAndSecretMasking() {
+  QFETCH(QString, backendId);
   QFETCH(QString, remoteUrl);
   ServiceLocator services;
   NotebookSyncInfoDialog2 dialog(services);
@@ -99,10 +106,15 @@ void TestNotebookSyncInfoDialog2::testWebdavPreCreateValidationAndSecretMasking(
   auto *ok = dialog.findChild<QPushButton *>(QStringLiteral("okButton"));
   QVERIFY(backend && url && username && gitUsername && secret && ok);
   secret->setText(QStringLiteral("git-token"));
-  dialog.setBackend(QStringLiteral("webdav"));
+  dialog.setBackend(backendId);
   QVERIFY(backend->isEnabled());
   QVERIFY(username->isVisible());
   QVERIFY(gitUsername->isHidden());
+  auto *hint = dialog.findChild<InlineBanner *>(QStringLiteral("webdavHint"));
+  QVERIFY(hint && hint->isVisible());
+  QCOMPARE(hint->getSeverity(), backendId == QLatin1String("jianguoyun")
+                                    ? InlineBanner::Severity::Warning
+                                    : InlineBanner::Severity::Info);
   QVERIFY(secret->text().isEmpty()); // A Git token must not become a DAV password.
   QCOMPARE(secret->echoMode(), QLineEdit::Password);
   QSignalSpy accepted(&dialog, &QDialog::accepted);
@@ -122,7 +134,7 @@ void TestNotebookSyncInfoDialog2::testWebdavPreCreateValidationAndSecretMasking(
   ok->click();
   QCOMPARE(accepted.count(), 1);
   const auto settings = dialog.enteredSettings();
-  QCOMPARE(settings.m_backend, QStringLiteral("webdav"));
+  QCOMPARE(settings.m_backend, backendId);
   QCOMPARE(settings.m_credentials.m_username, QStringLiteral("writer"));
   QCOMPARE(settings.m_credentials.m_secret, QStringLiteral("  app password  "));
   QCOMPARE(settings.m_remoteUrl, remoteUrl);

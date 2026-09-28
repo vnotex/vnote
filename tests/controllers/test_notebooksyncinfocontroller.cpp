@@ -55,12 +55,20 @@ SyncSettings gitSettings(const QString &p_url, const QString &p_secret) {
 class UnavailableCredentialsStore : public SyncCredentialsStore {
 public:
   using SyncCredentialsStore::SyncCredentialsStore;
+  int storeCalls = 0;
+  SyncCredential savedCredential;
   void storeCredentials(const QString &p_id, const SyncCredential &) override {
+    ++storeCalls;
     QMetaObject::invokeMethod(
         this,
         [this, p_id]() {
           emit credentialsStoreError(p_id, QStringLiteral("secure-keychain-unavailable"));
         },
+        Qt::QueuedConnection);
+  }
+  void retrieveCredentials(const QString &p_id) override {
+    QMetaObject::invokeMethod(
+        this, [this, p_id]() { emit credentialsRetrieved(p_id, savedCredential); },
         Qt::QueuedConnection);
   }
   void deleteCredentials(const QString &p_id) override {
@@ -80,8 +88,13 @@ struct RetirementFixture {
   QString root;
   QString statePath;
   QByteArray stateBytes;
+  QString backend;
+  QString oldUrl;
 
-  RetirementFixture() {
+  explicit RetirementFixture(const QString &p_backend = QStringLiteral("webdav"))
+      : backend(p_backend), oldUrl(p_backend == QLatin1String("jianguoyun")
+                                       ? QStringLiteral("https://dav.jianguoyun.com/dav/old/")
+                                       : QStringLiteral("https://old.example.test/notes/")) {
     if (vxcore_context_create("{}", &context) != VXCORE_OK) {
       return;
     }
@@ -94,14 +107,18 @@ struct RetirementFixture {
     root = directory.filePath(QStringLiteral("notebook"));
     id = notebooks->createNotebook(root, QStringLiteral("{\"name\":\"Retirement\"}"),
                                    NotebookType::Bundled);
-    statePath = root + QStringLiteral("/vx_notebook/vx_sync/webdav/state.json");
-    QJsonObject state{
-        {QStringLiteral("version"), 1},
-        {QStringLiteral("notebookId"), id},
-        {QStringLiteral("remoteUrl"), QStringLiteral("https://old.example.test/notes/")},
-        {QStringLiteral("usernameHash"), QString(64, QLatin1Char('a'))},
-        {QStringLiteral("entries"), QJsonObject()},
-        {QStringLiteral("conflicts"), QJsonObject()}};
+    statePath =
+        root + QStringLiteral("/vx_notebook/vx_sync/") + backend + QStringLiteral("/state.json");
+    QJsonObject state{{QStringLiteral("version"), 1},
+                      {QStringLiteral("notebookId"), id},
+                      {QStringLiteral("remoteUrl"), oldUrl},
+                      {QStringLiteral("usernameHash"), QString(64, QLatin1Char('a'))},
+                      {QStringLiteral("entries"), QJsonObject()},
+                      {QStringLiteral("conflicts"), QJsonObject()}};
+    if (backend == QLatin1String("jianguoyun")) {
+      state[QStringLiteral("repositoryId")] = QString();
+      state[QStringLiteral("head")] = QJsonValue(QJsonValue::Null);
+    }
     stateBytes = QJsonDocument(state).toJson(QJsonDocument::Compact);
     writeBytes(statePath, stateBytes);
     writeBytes(root + QStringLiteral("/note.txt"), QByteArray("user text\n"));
@@ -131,10 +148,12 @@ struct RetirementFixture {
     QFile file(p_path);
     return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
   }
-  static SyncSettings replacement() {
-    return {QStringLiteral("webdav"),
-            QStringLiteral("https://new.example.test/notes/"),
-            {QStringLiteral("webdav"), QStringLiteral("alice"), QStringLiteral("new secret")}};
+  static SyncSettings replacement(const QString &p_backend = QStringLiteral("webdav")) {
+    return {p_backend,
+            p_backend == QLatin1String("jianguoyun")
+                ? QStringLiteral("https://dav.jianguoyun.com/dav/new/")
+                : QStringLiteral("https://new.example.test/notes/"),
+            {p_backend, QStringLiteral("alice"), QStringLiteral("new secret")}};
   }
 };
 } // namespace
@@ -161,10 +180,16 @@ private slots:
   // T2 — Empty-input guards
   void testBootstrapApplyEmptyUrlFails();
   void testBootstrapApplyEmptyPatFails();
+  void endpointRetirementPreservesPayloadsAfterDisable_data();
   void endpointRetirementPreservesPayloadsAfterDisable();
   void archiveFailureLeavesRegisteredGitUsable();
   void gitEndpointCleanupPreservesWebDavArchive();
+  void incompleteArchiveRestoredBeforeEnable_data();
   void incompleteArchiveRestoredBeforeEnable();
+  void mixedBackendRetirementJournalFailsClosed();
+  void mismatchedStoredCredentialsFailBeforeEnable_data();
+  void mismatchedStoredCredentialsFailBeforeEnable();
+  void pendingRecoveryAndQueuedWorkBlockRetirement_data();
   void pendingRecoveryAndQueuedWorkBlockRetirement();
 
   // W3.T3 — URL-change-on-S5 atomic disable+re-enable flow. Closes bug B4
@@ -1337,20 +1362,43 @@ void TestNotebookSyncInfoController::testUrlChangeReenableFailureSurfacesError()
   vxcore_context_destroy(ctx);
 }
 
+void TestNotebookSyncInfoController::endpointRetirementPreservesPayloadsAfterDisable_data() {
+  QTest::addColumn<QString>("backend");
+  QTest::newRow("webdav") << QStringLiteral("webdav");
+  QTest::newRow("jianguoyun") << QStringLiteral("jianguoyun");
+}
+
 void TestNotebookSyncInfoController::endpointRetirementPreservesPayloadsAfterDisable() {
-  RetirementFixture fixture;
+  QFETCH(QString, backend);
+  RetirementFixture fixture(backend);
   QVERIFY(!fixture.id.isEmpty());
   QVERIFY(QFileInfo::exists(fixture.statePath));
   const auto dav = QFileInfo(fixture.statePath).absolutePath();
-  const auto snapshot = QStringLiteral("snapshots/old-operation/body");
+  const auto older = backend == QLatin1String("jianguoyun")
+                         ? QUuid::createUuid().toString(QUuid::WithoutBraces)
+                         : QStringLiteral("older");
+  const auto prior = QStringLiteral("retired/") + older + QLatin1Char('/');
+  const auto snapshot =
+      backend == QLatin1String("jianguoyun")
+          ? QStringLiteral("snapshots/") + QUuid::createUuid().toString(QUuid::WithoutBraces) +
+                QLatin1Char('/') + QUuid::createUuid().toString(QUuid::WithoutBraces)
+          : QStringLiteral("snapshots/old-operation/body");
+  const auto olderSnapshot =
+      backend == QLatin1String("jianguoyun")
+          ? QStringLiteral("snapshots/") + QUuid::createUuid().toString(QUuid::WithoutBraces) +
+                QLatin1Char('/') + QUuid::createUuid().toString(QUuid::WithoutBraces)
+          : QStringLiteral("snapshots/saved");
   QVERIFY(RetirementFixture::writeBytes(QDir(dav).filePath(snapshot), "retained bytes"));
-  QVERIFY(RetirementFixture::writeBytes(QDir(dav).filePath(QStringLiteral("retired/older/saved")),
-                                        "older archive"));
+  QVERIFY(
+      RetirementFixture::writeBytes(QDir(dav).filePath(prior + olderSnapshot), "older archive"));
+  if (backend == QLatin1String("jianguoyun"))
+    QVERIFY(RetirementFixture::writeBytes(QDir(dav).filePath(prior + QStringLiteral("state.json")),
+                                          fixture.stateBytes));
   NotebookSyncInfoController controller(fixture.services, fixture.id);
   QSignalSpy confirm(&controller, &NotebookSyncInfoController::confirmUrlChangeRequested);
   QSignalSpy applied(&controller, &NotebookSyncInfoController::applyComplete);
   QSignalSpy disabled(fixture.sync.get(), &SyncService::disableFinished);
-  controller.bootstrapApply(RetirementFixture::replacement());
+  controller.bootstrapApply(RetirementFixture::replacement(backend));
   QCOMPARE(confirm.count(), 1); // Even though portable routing was cleared by disable.
   QCOMPARE(RetirementFixture::bytes(fixture.statePath), fixture.stateBytes);
   controller.confirmUrlChange(true);
@@ -1362,7 +1410,7 @@ void TestNotebookSyncInfoController::endpointRetirementPreservesPayloadsAfterDis
                             .entryList(QDir::Dirs | QDir::NoDotAndDotDot);
   QString currentArchive;
   for (const auto &archive : archives) {
-    if (archive != QLatin1String("older")) {
+    if (archive != older) {
       QVERIFY(currentArchive.isEmpty());
       currentArchive = QDir(dav).filePath(QStringLiteral("retired/") + archive);
     }
@@ -1372,7 +1420,7 @@ void TestNotebookSyncInfoController::endpointRetirementPreservesPayloadsAfterDis
            fixture.stateBytes);
   QCOMPARE(RetirementFixture::bytes(QDir(currentArchive).filePath(snapshot)),
            QByteArray("retained bytes"));
-  QCOMPARE(RetirementFixture::bytes(QDir(dav).filePath(QStringLiteral("retired/older/saved"))),
+  QCOMPARE(RetirementFixture::bytes(QDir(dav).filePath(prior + olderSnapshot)),
            QByteArray("older archive"));
   QCOMPARE(RetirementFixture::bytes(fixture.root + QStringLiteral("/note.txt")),
            QByteArray("user text\n"));
@@ -1450,6 +1498,21 @@ void TestNotebookSyncInfoController::gitEndpointCleanupPreservesWebDavArchive() 
   const auto preserved =
       fixture.root + QStringLiteral("/vx_notebook/vx_sync/webdav/retired/previous/payload");
   QVERIFY(RetirementFixture::writeBytes(preserved, "WebDAV recovery bytes"));
+  const auto managedArchive = fixture.root +
+                              QStringLiteral("/vx_notebook/vx_sync/jianguoyun/retired/") +
+                              QUuid::createUuid().toString(QUuid::WithoutBraces);
+  QJsonObject managedState = QJsonDocument::fromJson(fixture.stateBytes).object();
+  managedState[QStringLiteral("remoteUrl")] = QStringLiteral("https://dav.jianguoyun.com/dav/old/");
+  managedState[QStringLiteral("repositoryId")] = QString();
+  managedState[QStringLiteral("head")] = QJsonValue(QJsonValue::Null);
+  const auto managedBytes = QJsonDocument(managedState).toJson(QJsonDocument::Compact);
+  QVERIFY(
+      RetirementFixture::writeBytes(managedArchive + QStringLiteral("/state.json"), managedBytes));
+  const auto managedSnapshot = managedArchive + QStringLiteral("/snapshots/") +
+                               QUuid::createUuid().toString(QUuid::WithoutBraces) +
+                               QLatin1Char('/') +
+                               QUuid::createUuid().toString(QUuid::WithoutBraces);
+  QVERIFY(RetirementFixture::writeBytes(managedSnapshot, "managed recovery"));
   const auto workingFile = fixture.root + QStringLiteral("/seed.md");
   const auto workingBytes = RetirementFixture::bytes(workingFile);
   QVERIFY(!workingBytes.isEmpty());
@@ -1465,11 +1528,20 @@ void TestNotebookSyncInfoController::gitEndpointCleanupPreservesWebDavArchive() 
   QVERIFY(!fixture.sync->isSyncRegistered(fixture.id));
   QVERIFY(!QFileInfo::exists(fixture.root + QStringLiteral("/vx_notebook/vx_sync/HEAD")));
   QCOMPARE(RetirementFixture::bytes(preserved), QByteArray("WebDAV recovery bytes"));
+  QCOMPARE(RetirementFixture::bytes(managedArchive + QStringLiteral("/state.json")), managedBytes);
+  QCOMPARE(RetirementFixture::bytes(managedSnapshot), QByteArray("managed recovery"));
   QCOMPARE(RetirementFixture::bytes(workingFile), workingBytes);
 }
 
+void TestNotebookSyncInfoController::incompleteArchiveRestoredBeforeEnable_data() {
+  QTest::addColumn<QString>("backend");
+  QTest::newRow("webdav") << QStringLiteral("webdav");
+  QTest::newRow("jianguoyun") << QStringLiteral("jianguoyun");
+}
+
 void TestNotebookSyncInfoController::incompleteArchiveRestoredBeforeEnable() {
-  RetirementFixture fixture;
+  QFETCH(QString, backend);
+  RetirementFixture fixture(backend);
   QVERIFY(!fixture.id.isEmpty());
   const auto dav = QFileInfo(fixture.statePath).absolutePath();
   const auto operationId = QUuid::createUuid().toString(QUuid::WithoutBraces);
@@ -1478,22 +1550,26 @@ void TestNotebookSyncInfoController::incompleteArchiveRestoredBeforeEnable() {
   QVERIFY(QDir().rename(fixture.statePath, QDir(archive).filePath(QStringLiteral("state.json"))));
   // First entry moved, second not yet moved: replay must restore precisely those
   // already archived, not attempt to relocate the whole directory into itself.
-  QVERIFY(
-      RetirementFixture::writeBytes(QDir(dav).filePath(QStringLiteral("snapshots/body")), "saved"));
+  const auto snapshot =
+      backend == QLatin1String("jianguoyun")
+          ? QStringLiteral("snapshots/") + QUuid::createUuid().toString(QUuid::WithoutBraces) +
+                QLatin1Char('/') + QUuid::createUuid().toString(QUuid::WithoutBraces)
+          : QStringLiteral("snapshots/body");
+  QVERIFY(RetirementFixture::writeBytes(QDir(dav).filePath(snapshot), "saved"));
   const QJsonObject journal{
       {QStringLiteral("version"), 1},
       {QStringLiteral("notebookId"), fixture.id},
       {QStringLiteral("operationId"), operationId},
       {QStringLiteral("phase"), QStringLiteral("prepared")},
       {QStringLiteral("entries"),
-       QJsonArray{QJsonObject{{QStringLiteral("backend"), QStringLiteral("webdav")},
+       QJsonArray{QJsonObject{{QStringLiteral("backend"), backend},
                               {QStringLiteral("name"), QStringLiteral("state.json")}},
-                  QJsonObject{{QStringLiteral("backend"), QStringLiteral("webdav")},
+                  QJsonObject{{QStringLiteral("backend"), backend},
                               {QStringLiteral("name"), QStringLiteral("snapshots")}}}}};
   QVERIFY(RetirementFixture::writeBytes(QDir(dav).filePath(QStringLiteral("retirement.json")),
                                         QJsonDocument(journal).toJson(QJsonDocument::Compact)));
-  auto settings = RetirementFixture::replacement();
-  settings.m_remoteUrl = QStringLiteral("https://old.example.test:443/notes");
+  auto settings = RetirementFixture::replacement(backend);
+  settings.m_remoteUrl = fixture.oldUrl;
   NotebookSyncInfoController controller(fixture.services, fixture.id);
   QSignalSpy applied(&controller, &NotebookSyncInfoController::applyComplete);
   QSignalSpy confirmed(&controller, &NotebookSyncInfoController::confirmUrlChangeRequested);
@@ -1502,14 +1578,20 @@ void TestNotebookSyncInfoController::incompleteArchiveRestoredBeforeEnable() {
   QVERIFY(!applied.first().at(0).toBool()); // Keychain unavailable, old binding restored.
   QCOMPARE(confirmed.count(), 0);
   QCOMPARE(RetirementFixture::bytes(fixture.statePath), fixture.stateBytes);
-  QCOMPARE(RetirementFixture::bytes(QDir(dav).filePath(QStringLiteral("snapshots/body"))),
-           QByteArray("saved"));
+  QCOMPARE(RetirementFixture::bytes(QDir(dav).filePath(snapshot)), QByteArray("saved"));
   QVERIFY(!QFileInfo::exists(QDir(dav).filePath(QStringLiteral("retirement.json"))));
   QVERIFY(!QFileInfo::exists(archive));
 }
 
+void TestNotebookSyncInfoController::pendingRecoveryAndQueuedWorkBlockRetirement_data() {
+  QTest::addColumn<QString>("backend");
+  QTest::newRow("webdav") << QStringLiteral("webdav");
+  QTest::newRow("jianguoyun") << QStringLiteral("jianguoyun");
+}
+
 void TestNotebookSyncInfoController::pendingRecoveryAndQueuedWorkBlockRetirement() {
-  RetirementFixture fixture;
+  QFETCH(QString, backend);
+  RetirementFixture fixture(backend);
   QVERIFY(!fixture.id.isEmpty());
   const auto pending =
       QFileInfo(fixture.statePath).absolutePath() + QStringLiteral("/pending.json");
@@ -1519,7 +1601,7 @@ void TestNotebookSyncInfoController::pendingRecoveryAndQueuedWorkBlockRetirement
   QSignalSpy applied(&controller, &NotebookSyncInfoController::applyComplete);
   QSignalSpy confirmed(&controller, &NotebookSyncInfoController::confirmUrlChangeRequested);
   QSignalSpy disabled(fixture.sync.get(), &SyncService::disableFinished);
-  controller.bootstrapApply(RetirementFixture::replacement());
+  controller.bootstrapApply(RetirementFixture::replacement(backend));
   QCOMPARE(applied.count(), 1);
   QVERIFY(!applied.first().at(0).toBool());
   QCOMPARE(confirmed.count(), 0);
@@ -1531,13 +1613,89 @@ void TestNotebookSyncInfoController::pendingRecoveryAndQueuedWorkBlockRetirement
   auto lease = queue->tryAcquireMaintenance({fixture.id});
   QVERIFY(lease);
   QCOMPARE(queue->enqueue(fixture.id, []() {}), SyncWorkQueueManager::EnqueueResult::Accepted);
-  controller.bootstrapApply(RetirementFixture::replacement());
+  controller.bootstrapApply(RetirementFixture::replacement(backend));
   QCOMPARE(applied.count(), 2);
   QVERIFY(!applied.last().at(0).toBool());
   QCOMPARE(confirmed.count(), 0);
   QCOMPARE(disabled.count(), 0);
   QCOMPARE(RetirementFixture::bytes(fixture.statePath), fixture.stateBytes);
   lease.release();
+}
+
+void TestNotebookSyncInfoController::mixedBackendRetirementJournalFailsClosed() {
+  RetirementFixture fixture(QStringLiteral("jianguoyun"));
+  QVERIFY(!fixture.id.isEmpty());
+  const auto directory = QFileInfo(fixture.statePath).absolutePath();
+  const auto operationId = QUuid::createUuid().toString(QUuid::WithoutBraces);
+  const auto archive = QDir(directory).filePath(QStringLiteral("retired/") + operationId);
+  QVERIFY(QDir().mkpath(archive));
+  const auto archivedState = QDir(archive).filePath(QStringLiteral("state.json"));
+  QVERIFY(QDir().rename(fixture.statePath, archivedState));
+  const auto snapshot = QDir(directory).filePath(QStringLiteral("snapshots/body"));
+  QVERIFY(RetirementFixture::writeBytes(snapshot, "recoverable payload"));
+  const QJsonObject journal{
+      {QStringLiteral("version"), 1},
+      {QStringLiteral("notebookId"), fixture.id},
+      {QStringLiteral("operationId"), operationId},
+      {QStringLiteral("phase"), QStringLiteral("prepared")},
+      {QStringLiteral("entries"),
+       QJsonArray{QJsonObject{{QStringLiteral("backend"), QStringLiteral("jianguoyun")},
+                              {QStringLiteral("name"), QStringLiteral("snapshots")}},
+                  QJsonObject{{QStringLiteral("backend"), QStringLiteral("webdav")},
+                              {QStringLiteral("name"), QStringLiteral("state.json")}}}}};
+  const auto journalPath = QDir(directory).filePath(QStringLiteral("retirement.json"));
+  const auto journalBytes = QJsonDocument(journal).toJson(QJsonDocument::Compact);
+  QVERIFY(RetirementFixture::writeBytes(journalPath, journalBytes));
+  auto settings = RetirementFixture::replacement(QStringLiteral("jianguoyun"));
+  settings.m_remoteUrl = fixture.oldUrl;
+  QSignalSpy enabled(fixture.sync.get(), &SyncService::enableFinished);
+  fixture.sync->enableSyncForNotebook(fixture.id, settings);
+  QTRY_COMPARE(enabled.count(), 1);
+  QCOMPARE(qvariant_cast<VxCoreError>(enabled.first().at(1)), VXCORE_ERR_INVALID_STATE);
+  QCOMPARE(fixture.credentials->storeCalls, 0);
+  NotebookSyncInfoController controller(fixture.services, fixture.id);
+  QSignalSpy applied(&controller, &NotebookSyncInfoController::applyComplete);
+  controller.bootstrapApply(settings);
+  QCOMPARE(applied.count(), 1);
+  QVERIFY(!applied.first().at(0).toBool());
+  QVERIFY(!QFileInfo::exists(fixture.statePath));
+  QCOMPARE(RetirementFixture::bytes(archivedState), fixture.stateBytes);
+  QCOMPARE(RetirementFixture::bytes(journalPath), journalBytes);
+  QCOMPARE(RetirementFixture::bytes(snapshot), QByteArray("recoverable payload"));
+  QCOMPARE(fixture.credentials->storeCalls, 0);
+}
+
+void TestNotebookSyncInfoController::mismatchedStoredCredentialsFailBeforeEnable_data() {
+  QTest::addColumn<QString>("backend");
+  QTest::addColumn<QString>("savedBackend");
+  QTest::newRow("webdav-git") << QStringLiteral("webdav") << QStringLiteral("git");
+  QTest::newRow("jianguoyun-git") << QStringLiteral("jianguoyun") << QStringLiteral("git");
+  QTest::newRow("jianguoyun-webdav") << QStringLiteral("jianguoyun") << QStringLiteral("webdav");
+  QTest::newRow("webdav-jianguoyun") << QStringLiteral("webdav") << QStringLiteral("jianguoyun");
+}
+
+void TestNotebookSyncInfoController::mismatchedStoredCredentialsFailBeforeEnable() {
+  QFETCH(QString, backend);
+  QFETCH(QString, savedBackend);
+  RetirementFixture fixture(backend);
+  QVERIFY(!fixture.id.isEmpty());
+  fixture.credentials->savedCredential = {savedBackend, QStringLiteral("old-account"),
+                                          QStringLiteral("old-secret")};
+  const auto config = fixture.notebooks->getNotebookConfig(fixture.id);
+  SyncSettings settings;
+  settings.m_backend = backend;
+  settings.m_remoteUrl = fixture.oldUrl;
+  NotebookSyncInfoController controller(fixture.services, fixture.id);
+  QSignalSpy applied(&controller, &NotebookSyncInfoController::applyComplete);
+  QSignalSpy enabled(fixture.sync.get(), &SyncService::enableFinished);
+  controller.applyChanges(settings);
+  QTRY_COMPARE(applied.count(), 1);
+  QVERIFY(!applied.first().at(0).toBool());
+  QCOMPARE(enabled.count(), 0);
+  QCOMPARE(fixture.credentials->storeCalls, 0);
+  QCOMPARE(fixture.notebooks->getNotebookConfig(fixture.id), config);
+  QCOMPARE(RetirementFixture::bytes(fixture.statePath), fixture.stateBytes);
+  QVERIFY(!fixture.sync->isSyncRegistered(fixture.id));
 }
 
 } // namespace tests

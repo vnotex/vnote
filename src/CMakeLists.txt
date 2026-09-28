@@ -65,16 +65,6 @@ add_executable(vnote WIN32 MACOSX_BUNDLE
     ${VX_APP_ICON_RC_WIN} ${VX_APP_ICON_MACOS} ${VX_RESOURCE_FILES}
 )
 
-# Translations
-if((QT_DEFAULT_MAJOR_VERSION EQUAL 6))
-    if((Qt6Widgets_VERSION VERSION_GREATER_EQUAL 6.7.0))
-        qt_add_lupdate(TS_FILES ${VX_TS_FILES}
-            SOURCE_TARGETS vnote)
-    else()
-        qt_add_lupdate(vnote TS_FILES ${VX_TS_FILES})
-    endif()
-endif()
-
 add_dependencies(vnote VX_EXTRA_RESOURCE)
 
 if(APPLE)
@@ -105,6 +95,19 @@ target_compile_definitions(vnote PRIVATE
 # core_net must be declared before core, which links it.
 add_subdirectory(net)
 add_subdirectory(core)
+
+# Shared sync validation is compiled in core_services rather than in vnote.
+if((QT_DEFAULT_MAJOR_VERSION EQUAL 6))
+    if((Qt6Widgets_VERSION VERSION_GREATER_EQUAL 6.7.0))
+        qt_add_lupdate(TS_FILES ${VX_TS_FILES}
+            SOURCE_TARGETS vnote
+            SOURCES core/services/syncsettings.cpp)
+    else()
+        qt_add_lupdate(vnote TS_FILES ${VX_TS_FILES}
+            SOURCES core/services/syncsettings.cpp)
+    endif()
+endif()
+
 add_subdirectory(gui)
 add_subdirectory(export)
 add_subdirectory(imagehost)

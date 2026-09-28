@@ -9,6 +9,7 @@
 #include <QUrl>
 
 #include <sync/sync_json_keys.h>
+#include <vxcore/vxcore.h>
 
 using namespace vnotex;
 
@@ -36,7 +37,11 @@ bool isSafeCollectionPath(const QString &p_encodedPath) {
 } // namespace
 
 bool vnotex::isSupportedSyncBackend(const QString &p_backend) {
-  return p_backend == QLatin1String("git") || p_backend == QLatin1String("webdav");
+  return p_backend == QLatin1String("git") || isPasswordSyncBackend(p_backend);
+}
+
+bool vnotex::isPasswordSyncBackend(const QString &p_backend) {
+  return p_backend == QLatin1String("webdav") || p_backend == QLatin1String("jianguoyun");
 }
 
 QString vnotex::canonicalSyncRemoteUrl(const SyncSettings &p_settings) {
@@ -46,7 +51,7 @@ QString vnotex::canonicalSyncRemoteUrl(const SyncSettings &p_settings) {
     static const QRegularExpression scheme(QStringLiteral("^(https://|file:///)\\S+$"));
     return scheme.match(remoteUrl).hasMatch() ? remoteUrl : QString();
   }
-  if (p_settings.m_backend != QLatin1String("webdav")) {
+  if (!isPasswordSyncBackend(p_settings.m_backend)) {
     return QString();
   }
 
@@ -60,7 +65,9 @@ QString vnotex::canonicalSyncRemoteUrl(const SyncSettings &p_settings) {
   }
 
   auto path = url.path(QUrl::FullyEncoded);
-  if (!isSafeCollectionPath(path)) {
+  const bool managed = p_settings.m_backend == QLatin1String("jianguoyun");
+  if (!isSafeCollectionPath(path) ||
+      (managed && (!path.startsWith(QLatin1Char('/')) || path.contains(QLatin1String("//"))))) {
     return QString();
   }
   while (path.endsWith(QLatin1Char('/'))) {
@@ -75,7 +82,24 @@ QString vnotex::canonicalSyncRemoteUrl(const SyncSettings &p_settings) {
       (scheme == QLatin1String("https") && url.port() == 443)) {
     url.setPort(-1);
   }
-  return url.toString(QUrl::FullyEncoded);
+  const auto canonical = url.toString(QUrl::FullyEncoded);
+  if (managed) {
+    if (scheme != QLatin1String("https") || path == QLatin1String("/")) {
+      return QString();
+    }
+    const auto host = url.host();
+    const bool testEndpoint =
+        vxcore_is_test_mode() &&
+        (host == QLatin1String("localhost") || host == QLatin1String("127.0.0.1") ||
+         host == QLatin1String("::1")) &&
+        canonical == QString::fromUtf8(qgetenv("VXCORE_WEBDAV_TEST_URL"));
+    if (!testEndpoint &&
+        (host != QLatin1String("dav.jianguoyun.com") || url.port(-1) != -1 ||
+         !path.startsWith(QLatin1String("/dav/")) || path == QLatin1String("/dav/"))) {
+      return QString();
+    }
+  }
+  return canonical;
 }
 
 QString vnotex::validateSyncSettings(const SyncSettings &p_settings, bool p_requireCredentials) {
@@ -89,6 +113,11 @@ QString vnotex::validateSyncSettings(const SyncSettings &p_settings, bool p_requ
     if (p_settings.m_backend == QLatin1String("git")) {
       return QCoreApplication::translate("SyncSettings",
                                          "Remote URL must use HTTPS or file:// scheme.");
+    }
+    if (p_settings.m_backend == QLatin1String("jianguoyun")) {
+      return QCoreApplication::translate("SyncSettings",
+                                         "Jianguoyun requires a dedicated HTTPS collection under "
+                                         "https://dav.jianguoyun.com/dav/, not the account root.");
     }
     return QCoreApplication::translate(
         "SyncSettings", "WebDAV requires an absolute HTTP or HTTPS collection URL with a host and "
@@ -106,6 +135,11 @@ QString vnotex::validateSyncSettings(const SyncSettings &p_settings, bool p_requ
     if (p_settings.m_backend == QLatin1String("git")) {
       if (credentials.m_secret.isEmpty()) {
         return QCoreApplication::translate("SyncSettings", "PAT is required to enable sync.");
+      }
+    } else if (p_settings.m_backend == QLatin1String("jianguoyun")) {
+      if (credentials.m_username.isEmpty() || credentials.m_secret.isEmpty()) {
+        return QCoreApplication::translate(
+            "SyncSettings", "A username and app password are required for Jianguoyun sync.");
       }
     } else {
       if (credentials.m_username.isEmpty()) {
@@ -125,7 +159,7 @@ QString vnotex::syncCredentialsJson(const SyncCredential &p_credentials) {
   QJsonObject object;
   if (p_credentials.m_backend == QLatin1String("git")) {
     object[QLatin1String(vxcore::kJsonKeyPat)] = p_credentials.m_secret;
-  } else if (p_credentials.m_backend == QLatin1String("webdav")) {
+  } else if (isPasswordSyncBackend(p_credentials.m_backend)) {
     QJsonObject extra;
     extra[QLatin1String(vxcore::kJsonKeyUsername)] = p_credentials.m_username;
     extra[QLatin1String(vxcore::kJsonKeyPassword)] = p_credentials.m_secret;

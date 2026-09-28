@@ -100,7 +100,8 @@ private slots:
   void keychainUnavailableEmitsError();
   void patNotLogged();
   void legacyGitEntryRemainsRaw();
-  void webdavEnvelopeSurvivesFreshStoreAndQueuedDelivery();
+  void passwordEnvelopeSurvivesFreshStoreAndQueuedDelivery_data();
+  void passwordEnvelopeSurvivesFreshStoreAndQueuedDelivery();
   void malformedEnvelopeIsRedacted_data();
   void malformedEnvelopeIsRedacted();
   void invalidTypedCredentialUsesStoreError();
@@ -206,14 +207,21 @@ void TestSyncCredentialsStore::legacyGitEntryRemainsRaw() {
 #endif
 }
 
-void TestSyncCredentialsStore::webdavEnvelopeSurvivesFreshStoreAndQueuedDelivery() {
+void TestSyncCredentialsStore::passwordEnvelopeSurvivesFreshStoreAndQueuedDelivery_data() {
+  QTest::addColumn<QString>("backend");
+  QTest::newRow("webdav") << QStringLiteral("webdav");
+  QTest::newRow("jianguoyun") << QStringLiteral("jianguoyun");
+}
+
+void TestSyncCredentialsStore::passwordEnvelopeSurvivesFreshStoreAndQueuedDelivery() {
+  QFETCH(QString, backend);
 #ifndef VNOTE_KEYCHAIN_AVAILABLE
   QSKIP("Requires QtKeychain and an unlocked OS vault; not credential verification");
 #else
   const auto inheritedId = QString::fromUtf8(qgetenv("VNOTE_CREDENTIAL_RESTART_TEST_ID"));
   const auto id =
       inheritedId.isEmpty() ? QUuid::createUuid().toString(QUuid::WithoutBraces) : inheritedId;
-  const SyncCredential credentials{QStringLiteral("webdav"), QString::fromUtf8("用户 name"),
+  const SyncCredential credentials{backend, QString::fromUtf8("用户 name"),
                                    QStringLiteral(" app-password\\\"\n ")};
   SyncCredentialsStore fresh(m_services);
   KeychainGuard guard(&fresh);
@@ -248,7 +256,7 @@ void TestSyncCredentialsStore::webdavEnvelopeSurvivesFreshStoreAndQueuedDelivery
     QProcess child;
     child.setProcessEnvironment(environment);
     child.start(QCoreApplication::applicationFilePath(),
-                {QStringLiteral("webdavEnvelopeSurvivesFreshStoreAndQueuedDelivery")});
+                {QStringLiteral("passwordEnvelopeSurvivesFreshStoreAndQueuedDelivery:") + backend});
     QVERIFY(child.waitForStarted(5000));
     QVERIFY(child.waitForFinished(20000));
     const auto output = child.readAllStandardOutput() + child.readAllStandardError();
@@ -289,6 +297,9 @@ void TestSyncCredentialsStore::malformedEnvelopeIsRedacted_data() {
   QTest::newRow("unknown-backend") << QStringLiteral(
       "vnote-sync-credentials-v1\n"
       "{\"backend\":\"other\",\"username\":\"user\",\"secret\":\"secret-sentinel\"}");
+  QTest::newRow("jianguoyun-missing-username") << QStringLiteral(
+      "vnote-sync-credentials-v1\n"
+      "{\"backend\":\"jianguoyun\",\"username\":\"\",\"secret\":\"secret-sentinel\"}");
   QTest::newRow("git-is-not-an-envelope") << QStringLiteral(
       "vnote-sync-credentials-v1\n"
       "{\"backend\":\"git\",\"username\":\"user\",\"secret\":\"secret-sentinel\"}");

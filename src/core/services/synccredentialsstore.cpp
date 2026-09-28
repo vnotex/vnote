@@ -27,8 +27,7 @@ const char *const c_credentialEnvelopePrefix = "vnote-sync-credentials-v1\n";
 
 bool validCredentials(const SyncCredential &p_credentials) {
   return isSupportedSyncBackend(p_credentials.m_backend) && !p_credentials.m_secret.isEmpty() &&
-         (p_credentials.m_backend != QLatin1String("webdav") ||
-          !p_credentials.m_username.isEmpty());
+         (!isPasswordSyncBackend(p_credentials.m_backend) || !p_credentials.m_username.isEmpty());
 }
 
 #ifdef VNOTE_KEYCHAIN_AVAILABLE
@@ -60,7 +59,7 @@ bool decodeCredentials(const QString &p_value, SyncCredential &p_credentials) {
   const auto username = envelope.value(QLatin1String(vxcore::kJsonKeyUsername));
   const auto secret = envelope.value(QStringLiteral("secret"));
   if (envelope.size() != 3 || !backend.isString() || !username.isString() || !secret.isString() ||
-      backend.toString() != QLatin1String("webdav"))
+      !isPasswordSyncBackend(backend.toString()))
     return false;
   p_credentials = {backend.toString(), username.toString(), secret.toString()};
   return validCredentials(p_credentials);

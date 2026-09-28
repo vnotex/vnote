@@ -185,6 +185,7 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_backendCombo->setObjectName(QLatin1String(kBackendComboName));
   m_backendCombo->addItem(tr("Git"), QStringLiteral("git"));
   m_backendCombo->addItem(tr("WebDAV"), QStringLiteral("webdav"));
+  m_backendCombo->addItem(tr("Jianguoyun (WebDAV)"), QStringLiteral("jianguoyun"));
   m_backendCombo->setToolTip(tr("Disable sync before switching the active backend"));
   formLayout->addRow(tr("Sync method"), m_backendCombo);
 
@@ -429,7 +430,7 @@ void NotebookSyncInfoDialog2::applySettings(bool p_closeOnSuccess) {
   }
   const auto settings = enteredSettings();
   auto error = validateSyncSettings(settings, m_preCreateMode);
-  if (error.isEmpty() && settings.m_backend == QLatin1String("webdav") &&
+  if (error.isEmpty() && isPasswordSyncBackend(settings.m_backend) &&
       !settings.m_credentials.m_username.isEmpty() && settings.m_credentials.m_secret.isEmpty()) {
     error = tr("Enter a new password or app password when specifying a username.");
   }
@@ -609,7 +610,7 @@ SyncSettings NotebookSyncInfoDialog2::enteredSettings() const {
   settings.m_backend = m_backendCombo->currentData().toString();
   settings.m_remoteUrl = enteredRemoteUrl().trimmed();
   settings.m_credentials.m_backend = settings.m_backend;
-  if (settings.m_backend == QLatin1String("webdav")) {
+  if (isPasswordSyncBackend(settings.m_backend)) {
     settings.m_credentials.m_username = m_webdavUsernameEdit->text();
   }
   settings.m_credentials.m_secret = m_patEdit->text();
@@ -631,36 +632,56 @@ void NotebookSyncInfoDialog2::setBackend(const QString &p_backend) {
 void NotebookSyncInfoDialog2::refreshBackendFields() {
   const auto backend = m_backendCombo->currentData().toString();
   const bool git = backend == QLatin1String("git");
-  const bool webdav = backend == QLatin1String("webdav");
-  const bool available = (git || webdav) && !m_rawNotebook;
+  const bool passwordBackend = isPasswordSyncBackend(backend);
+  const bool managed = backend == QLatin1String("jianguoyun");
+  const bool available = (git || passwordBackend) && !m_rawNotebook;
   m_backendCombo->setEnabled(!m_syncEnabled && !m_rawNotebook && !m_applying);
   m_remoteUrlEdit->setEnabled(available && !m_applying);
   m_patEdit->setEnabled(available && !m_applying);
-  m_remoteUrlLabel->setText(webdav ? tr("Collection URL") : tr("Remote URL"));
-  m_remoteUrlEdit->setPlaceholderText(!available ? QString()
-                                      : webdav   ? tr("https://example.com/dav/notebook/")
-                                                 : tr("https://github.com/example/notes.git"));
-  m_remoteUrlEdit->setToolTip(!available ? QString()
-                              : webdav
-                                  ? tr("Dedicated existing HTTP or HTTPS notebook collection. "
-                                       "HTTP sends credentials and data in plaintext")
-                                  : tr("Remote git repository URL used for syncing this notebook"));
+  m_remoteUrlLabel->setText(passwordBackend ? tr("Collection URL") : tr("Remote URL"));
+  m_remoteUrlEdit->setPlaceholderText(
+      !available        ? QString()
+      : managed         ? tr("https://dav.jianguoyun.com/dav/vnote-notebook/")
+      : passwordBackend ? tr("https://example.com/dav/notebook/")
+                        : tr("https://github.com/example/notes.git"));
+  m_remoteUrlEdit->setToolTip(
+      !available        ? QString()
+      : managed         ? tr("Dedicated Jianguoyun collection, not the /dav/ account root")
+      : passwordBackend ? tr("Dedicated existing HTTP or HTTPS notebook collection. "
+                             "HTTP sends credentials and data in plaintext")
+                        : tr("Remote git repository URL used for syncing this notebook"));
   m_remoteUrlHintLabel->setVisible(git && !m_rawNotebook);
-  m_webdavHint->setVisible(webdav && !m_rawNotebook);
+  m_webdavHint->setSeverity(managed ? InlineBanner::Severity::Warning
+                                    : InlineBanner::Severity::Info);
+  m_webdavHint->setText(
+      managed
+          ? tr("Use a dedicated Jianguoyun collection and an app password. The remote is "
+               "VNote-managed storage, not ordinary notebook files. Do not edit it in the cloud. "
+               "History and deleted data are retained, so storage use grows. Disabling sync "
+               "does not remove remote data.")
+          : tr("Use a dedicated existing HTTP or HTTPS collection. HTTPS is recommended; HTTP "
+               "sends "
+               "credentials and data in plaintext. Notes remain ordinary files. "
+               "Safe conditional writes are required; empty remote folders may be retained."));
+  m_webdavHint->setVisible(passwordBackend && !m_rawNotebook);
   m_gitUsernameLabel->setVisible(git && !m_rawNotebook);
   m_gitUsernameEdit->setVisible(git && !m_rawNotebook);
   m_gitUsernameEdit->setEnabled(git && !m_rawNotebook && !m_applying &&
                                 m_remoteUrlEdit->text().startsWith(QLatin1String("https://")));
-  m_webdavUsernameLabel->setVisible(webdav && !m_rawNotebook);
-  m_webdavUsernameEdit->setVisible(webdav && !m_rawNotebook);
+  m_webdavUsernameLabel->setVisible(passwordBackend && !m_rawNotebook);
+  m_webdavUsernameEdit->setVisible(passwordBackend && !m_rawNotebook);
   m_webdavUsernameEdit->setEnabled(available && !m_applying);
   m_webdavUsernameEdit->setPlaceholderText(m_syncEnabled ? tr("Leave blank to keep existing")
                                                          : QString());
-  m_secretLabel->setText(webdav ? tr("Password or app password") : tr("Personal Access Token"));
+  m_secretLabel->setText(managed           ? tr("App password")
+                         : passwordBackend ? tr("Password or app password")
+                                           : tr("Personal Access Token"));
   m_secretLabel->setVisible(available);
   m_patEdit->setVisible(available);
   m_patEdit->setPlaceholderText(m_syncEnabled ? tr("Leave blank to keep existing") : QString());
-  m_patEdit->setToolTip(webdav
+  m_patEdit->setToolTip(managed ? tr("Jianguoyun app password, not your account password; never "
+                                     "stored in notebook settings")
+                        : passwordBackend
                             ? tr("Password or app password; never stored in notebook settings")
                             : tr("Personal Access Token used to authenticate against the remote"));
   m_disableSyncButton->setVisible(m_syncEnabled && !m_rawNotebook && !m_preCreateMode &&

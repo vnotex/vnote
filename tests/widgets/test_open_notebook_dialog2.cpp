@@ -55,6 +55,7 @@
 #include <widgets/dialogs/notebooksyncinfodialog2.h>
 #include <widgets/dialogs/notetemplateselector.h>
 #include <widgets/dialogs/opennotebookdialog2.h>
+#include <widgets/inlinebanner.h>
 #include <widgets/lineeditwithsnippet.h>
 #include <widgets/locationinputwithbrowsebutton.h>
 
@@ -87,6 +88,8 @@ private slots:
   // Existing destinations, including empty directories, must never be taken over.
   void testValidRemoteUrlEnablesOpenButton();
   void testWebdavAnonymousAndAuthenticatedInputs();
+  void testJianguoyunRequiresAuthenticatedManagedCollection();
+  void testNewNotebookManagedSelectionRequiresConfiguration();
   void testNewNotebookSyncFailureShowsDetails();
 
   // 5. The "Open V3 Notebook" secondary button exists, sits in ResetRole (so it
@@ -492,6 +495,90 @@ void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton() {
            "Open must be DISABLED when dest is an existing non-empty directory");
 
   delete svc;
+}
+
+void TestOpenNotebookDialog2::testJianguoyunRequiresAuthenticatedManagedCollection() {
+  ServiceLocator services;
+  NotebookCoreService notebooks(m_ctx);
+  services.registerService<NotebookCoreService>(&notebooks);
+  TempDirFixture temp;
+  QVERIFY(temp.isValid());
+  OpenNotebookDialog2 dialog(services);
+  dialog.show();
+  auto *backend = dialog.findChild<QComboBox *>(QStringLiteral("syncBackendCombo"));
+  auto *url = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
+  auto *username = dialog.findChild<QLineEdit *>(QStringLiteral("webdavUsernameEdit"));
+  auto *secret = dialog.findChild<QLineEdit *>(QStringLiteral("remotePatEdit"));
+  auto *destination =
+      dialog.findChild<LocationInputWithBrowseButton *>(QStringLiteral("remoteDestInput"));
+  auto *open = dialog.findChild<QPushButton *>(QStringLiteral("openButton"));
+  auto *warning = dialog.findChild<InlineBanner *>(QStringLiteral("managedStorageHint"));
+  QVERIFY(backend && url && username && secret && destination && open && warning);
+  dialog.findChild<QRadioButton *>(QStringLiteral("remoteModeRadio"))->setChecked(true);
+  const auto index = backend->findData(QStringLiteral("jianguoyun"));
+  QVERIFY(index >= 0);
+  secret->setText(QStringLiteral("old-backend-secret"));
+  backend->setCurrentIndex(index);
+  QVERIFY(secret->text().isEmpty());
+  QVERIFY(warning->isVisible());
+  QCOMPARE(warning->getSeverity(), InlineBanner::Severity::Warning);
+  QCOMPARE(secret->echoMode(), QLineEdit::Password);
+  destination->setText(temp.filePath(QStringLiteral("managed-clone")));
+  url->setText(QStringLiteral("https://dav.jianguoyun.com/dav/notebook/"));
+  QVERIFY(!open->isEnabled());
+  username->setText(QStringLiteral("account"));
+  QVERIFY(!open->isEnabled());
+  secret->setText(QStringLiteral(" app password "));
+  QVERIFY(open->isEnabled());
+  url->setText(QStringLiteral("https://dav.jianguoyun.com/dav/"));
+  QVERIFY(!open->isEnabled());
+  url->setText(QStringLiteral("http://dav.jianguoyun.com/dav/notebook/"));
+  QVERIFY(!open->isEnabled());
+  url->setText(QStringLiteral("https://example.com/dav/notebook/"));
+  QVERIFY(!open->isEnabled());
+  backend->setCurrentIndex(backend->findData(QStringLiteral("webdav")));
+  QVERIFY(warning->isHidden());
+  QVERIFY(secret->text().isEmpty());
+  QVERIFY(username->text().isEmpty());
+  QVERIFY(open->isEnabled()); // Strict WebDAV still permits anonymous download.
+}
+
+void TestOpenNotebookDialog2::testNewNotebookManagedSelectionRequiresConfiguration() {
+  NewNotebookDialog2 dialog(m_newNoteServices);
+  dialog.show();
+  auto *method = dialog.findChild<QComboBox *>(QStringLiteral("syncMethodCombo"));
+  auto *configure = dialog.findChild<QPushButton *>(QStringLiteral("configureSyncButton"));
+  auto *ok = dialog.getDialogButtonBox()->button(QDialogButtonBox::Ok);
+  QVERIFY(method && configure && ok);
+  const int index = method->findData(QStringLiteral("jianguoyun"));
+  QVERIFY(index >= 0);
+  method->setCurrentIndex(index);
+  QVERIFY(configure->isVisible());
+  QVERIFY(!ok->isEnabled());
+  bool configured = false;
+  QTimer::singleShot(0, &dialog, [&]() {
+    auto *form = qobject_cast<NotebookSyncInfoDialog2 *>(QApplication::activeModalWidget());
+    if (!form)
+      return;
+    const auto closeOnFailure = qScopeGuard([form]() {
+      if (form->isVisible())
+        form->reject();
+    });
+    QCOMPARE(form->enteredSettings().m_backend, QStringLiteral("jianguoyun"));
+    form->findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"))
+        ->setText(QStringLiteral("https://dav.jianguoyun.com/dav/notebook/"));
+    form->findChild<QLineEdit *>(QStringLiteral("webdavUsernameEdit"))
+        ->setText(QStringLiteral("account"));
+    form->findChild<QLineEdit *>(QStringLiteral("patEdit"))
+        ->setText(QStringLiteral("app-password"));
+    form->findChild<QPushButton *>(QStringLiteral("okButton"))->click();
+    configured = form->result() == QDialog::Accepted;
+  });
+  configure->click();
+  QVERIFY(configured);
+  QVERIFY(ok->isEnabled());
+  method->setCurrentIndex(method->findData(QStringLiteral("webdav")));
+  QVERIFY(!ok->isEnabled()); // Credentials cannot cross providers.
 }
 
 void TestOpenNotebookDialog2::testWebdavAnonymousAndAuthenticatedInputs() {

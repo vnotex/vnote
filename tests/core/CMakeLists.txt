@@ -1106,3 +1106,11 @@ add_qt_test(test_webdav_sync_service
   GUILESS
 )
 set_tests_properties(test_webdav_sync_service PROPERTIES TIMEOUT 900)
+
+add_qt_test(test_jianguoyun_sync_service
+  SOURCES test_jianguoyun_sync_service.cpp
+  LINKS core_services vxcore vxcore_webdav_curl nlohmann_json sqlite3 sodium
+  RUNNER ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/libs/vxcore/tests/run_webdav_test.py --profile jianguoyun --
+  GUILESS
+)
+set_tests_properties(test_jianguoyun_sync_service PROPERTIES TIMEOUT 1800)

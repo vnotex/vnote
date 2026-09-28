@@ -9,7 +9,7 @@ namespace vnotex {
 struct SyncCredential {
   QString m_backend;
   QString m_username;
-  QString m_secret; // Git PAT or WebDAV password/app password; never configuration.
+  QString m_secret; // Git PAT or password/app password; never configuration.
 };
 
 struct SyncSettings {
@@ -19,12 +19,13 @@ struct SyncSettings {
 };
 
 bool isSupportedSyncBackend(const QString &p_backend);
+bool isPasswordSyncBackend(const QString &p_backend);
 
 // Returns an empty string on success, otherwise a translated, redacted message.
 QString validateSyncSettings(const SyncSettings &p_settings, bool p_requireCredentials);
 
 // Returns an empty string for an invalid URL or unsupported backend. Git URLs are
-// only trimmed; WebDAV URLs are fully encoded with exactly one trailing slash.
+// only trimmed; password-backend URLs are fully encoded with one trailing slash.
 QString canonicalSyncRemoteUrl(const SyncSettings &p_settings);
 
 // Returns compact C-API credential JSON, or empty for an unsupported backend.

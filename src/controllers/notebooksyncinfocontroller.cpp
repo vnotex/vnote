@@ -31,7 +31,12 @@ using namespace vnotex;
 
 namespace {
 
-const QString c_archiveJournal = QStringLiteral("webdav/retirement.json");
+const QStringList c_passwordBackends = {QStringLiteral("webdav"), QStringLiteral("jianguoyun")};
+
+// Private directory names are backend ids only for this closed, validated pair.
+QString passwordBackendDirectory(const QString &p_backend) {
+  return isPasswordSyncBackend(p_backend) ? p_backend : QString();
+}
 const QStringList c_gitEntries = {
     QStringLiteral("HEAD"),           QStringLiteral("config"),     QStringLiteral("description"),
     QStringLiteral("hooks"),          QStringLiteral("info"),       QStringLiteral("objects"),
@@ -106,61 +111,80 @@ bool sameEndpoint(const SyncSettings &p_old, const SyncSettings &p_new) {
          oldUrl.adjusted(QUrl::RemoveUserInfo) == newUrl.adjusted(QUrl::RemoveUserInfo);
 }
 
-// Journal contains only validated relative names. It is written before any move;
-// on a failed/incomplete archive every moved entry is restored before any enable.
-// Committed archives are retained indefinitely and are never mixed into a new binding.
-bool recoverArchive(const QString &p_syncDir, const QString &p_notebookId) {
-  QDir sync(p_syncDir);
-  const auto journalPath = sync.filePath(c_archiveJournal);
-  if (!pathPresent(journalPath)) {
-    return true;
-  }
-  QJsonObject journal;
-  if (!safeDirectory(sync.filePath(QStringLiteral("webdav"))) ||
-      !readObject(journalPath, journal) || journal.value(QStringLiteral("version")).toInt() != 1 ||
-      journal.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString() != p_notebookId ||
-      !journal.value(QStringLiteral("entries")).isArray()) {
+bool readRetirementJournal(const QString &p_path, const QString &p_notebookId,
+                           const QString &p_backend, QJsonObject &p_journal) {
+  if (!isPasswordSyncBackend(p_backend) || !readObject(p_path, p_journal) ||
+      p_journal.value(QStringLiteral("version")).toInt() != 1 ||
+      p_journal.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString() != p_notebookId ||
+      p_journal.value(QStringLiteral("entries")).isArray() == false) {
     return false;
   }
-  const auto operationId = journal.value(QStringLiteral("operationId")).toString();
+  const auto operationId = p_journal.value(QStringLiteral("operationId")).toString();
   if (QUuid(operationId).isNull() ||
       QUuid(operationId).toString(QUuid::WithoutBraces) != operationId) {
     return false;
   }
-  const auto phase = journal.value(QStringLiteral("phase")).toString();
+  const auto phase = p_journal.value(QStringLiteral("phase")).toString();
   if (phase != QLatin1String("prepared") && phase != QLatin1String("archived") &&
       phase != QLatin1String("disabled")) {
     return false;
   }
-  const QString archive = sync.filePath(QStringLiteral("webdav/retired/") + operationId);
-  if (!safeDirectory(sync.filePath(QStringLiteral("webdav/retired"))) || !safeDirectory(archive)) {
-    return false;
-  }
-  const auto entries = journal.value(QStringLiteral("entries")).toArray();
   QSet<QString> seen;
-  for (const auto &value : entries) {
+  for (const auto &value : p_journal.value(QStringLiteral("entries")).toArray()) {
     if (!value.isObject()) {
       return false;
     }
     const auto entry = value.toObject();
-    const auto backend = entry.value(QLatin1String(vxcore::kJsonKeyBackend)).toString();
     const auto name = entry.value(QStringLiteral("name")).toString();
-    if (!safeLeaf(name) || backend != QLatin1String("webdav") || seen.contains(name)) {
+    if (!safeLeaf(name) || seen.contains(name) ||
+        entry.value(QLatin1String(vxcore::kJsonKeyBackend)).toString() != p_backend) {
       return false;
     }
     seen.insert(name);
   }
+  return true;
+}
+
+// Journal contains only validated relative names. It is written before any move;
+// on a failed/incomplete archive every moved entry is restored before any enable.
+// Committed archives are retained indefinitely and are never mixed into a new binding.
+bool recoverArchive(const QString &p_syncDir, const QString &p_notebookId,
+                    const QString &p_backend) {
+  const auto directory = passwordBackendDirectory(p_backend);
+  if (directory.isEmpty())
+    return false;
+  QDir sync(p_syncDir);
+  const auto journalPath = sync.filePath(directory + QStringLiteral("/retirement.json"));
+  if (!pathPresent(journalPath)) {
+    return true;
+  }
+  QJsonObject journal;
+  if (!safeDirectory(sync.filePath(directory)) ||
+      readRetirementJournal(journalPath, p_notebookId, p_backend, journal) == false) {
+    return false;
+  }
+  const auto operationId = journal.value(QStringLiteral("operationId")).toString();
+  const auto phase = journal.value(QStringLiteral("phase")).toString();
+  const QString archive = sync.filePath(directory + QStringLiteral("/retired/") + operationId);
+  if (!safeDirectory(sync.filePath(directory + QStringLiteral("/retired"))) ||
+      !safeDirectory(archive)) {
+    return false;
+  }
+  const auto entries = journal.value(QStringLiteral("entries")).toArray();
   if (phase == QLatin1String("disabled")) {
     return QFile::remove(journalPath);
   }
   for (auto it = entries.constEnd(); it != entries.constBegin();) {
     const auto entry = (*--it).toObject();
     const auto name = entry.value(QStringLiteral("name")).toString();
-    const auto source = sync.filePath(QStringLiteral("webdav/") + name);
+    const auto source = sync.filePath(directory + QLatin1Char('/') + name);
     const auto target = QDir(archive).filePath(name);
     const bool hasSource = pathPresent(source);
     const bool hasTarget = pathPresent(target);
-    if (hasSource == hasTarget || (hasTarget && !QDir().rename(target, source))) {
+    const QFileInfo existing(hasSource ? source : target);
+    if (hasSource == hasTarget || existing.isSymLink() ||
+        (existing.isDir() && !safeDirectory(existing.absoluteFilePath())) ||
+        (hasTarget && !QDir().rename(target, source))) {
       return false;
     }
   }
@@ -171,40 +195,52 @@ bool recoverArchive(const QString &p_syncDir, const QString &p_notebookId) {
   return true;
 }
 
+bool recoverArchives(const QString &p_syncDir, const QString &p_notebookId) {
+  bool recovered = true;
+  for (const auto &backend : c_passwordBackends)
+    recovered = recoverArchive(p_syncDir, p_notebookId, backend) && recovered;
+  return recovered;
+}
+
 // Discover bindings from private state even after Disable cleared portable routing.
 // The core's read-only reconfiguration check owns conflict/recovery validation.
 bool inspectBindings(const QString &p_syncDir, const QString &p_notebookId,
                      QList<SyncSettings> &p_bindings) {
   QDir sync(p_syncDir);
-  if (!safeDirectory(p_syncDir) || !safeDirectory(sync.filePath(QStringLiteral("webdav")))) {
+  if (!safeDirectory(p_syncDir)) {
     return false;
   }
   if (!sync.exists()) {
     return true;
   }
-  const QDir dav(sync.filePath(QStringLiteral("webdav")));
-  if (pathPresent(dav.filePath(QStringLiteral("state.json")))) {
-    QJsonObject state;
-    if (!readObject(dav.filePath(QStringLiteral("state.json")), state) ||
-        state.value(QStringLiteral("version")).toInt() != 1 ||
-        state.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString() != p_notebookId ||
-        !state.value(QStringLiteral("entries")).isObject() ||
-        !state.value(QStringLiteral("conflicts")).isObject()) {
+  for (const auto &backend : c_passwordBackends) {
+    const QDir provider(sync.filePath(passwordBackendDirectory(backend)));
+    if (!safeDirectory(provider.path())) {
       return false;
     }
-    SyncSettings binding;
-    binding.m_backend = QStringLiteral("webdav");
-    binding.m_remoteUrl = state.value(QLatin1String(vxcore::kJsonKeyRemoteUrl)).toString();
-    if (!validateSyncSettings(binding, false).isEmpty()) {
-      return false;
-    }
-    p_bindings.append(binding);
-  } else if (dav.exists()) {
-    const auto entries =
-        dav.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System);
-    for (const auto &entry : entries) {
-      if (entry != QLatin1String("retired")) {
+    if (pathPresent(provider.filePath(QStringLiteral("state.json")))) {
+      QJsonObject state;
+      if (!readObject(provider.filePath(QStringLiteral("state.json")), state) ||
+          state.value(QStringLiteral("version")).toInt() != 1 ||
+          state.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString() != p_notebookId ||
+          !state.value(QStringLiteral("entries")).isObject() ||
+          !state.value(QStringLiteral("conflicts")).isObject()) {
         return false;
+      }
+      SyncSettings binding;
+      binding.m_backend = backend;
+      binding.m_remoteUrl = state.value(QLatin1String(vxcore::kJsonKeyRemoteUrl)).toString();
+      if (!validateSyncSettings(binding, false).isEmpty()) {
+        return false;
+      }
+      p_bindings.append(binding);
+    } else if (provider.exists()) {
+      const auto entries =
+          provider.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System);
+      for (const auto &entry : entries) {
+        if (entry != QLatin1String("retired")) {
+          return false;
+        }
       }
     }
   }
@@ -212,7 +248,7 @@ bool inspectBindings(const QString &p_syncDir, const QString &p_notebookId,
       sync.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System);
   bool hasGit = false;
   for (const auto &entry : entries) {
-    if (entry == QLatin1String("webdav")) {
+    if (isPasswordSyncBackend(entry)) {
       continue;
     }
     if (entry.endsWith(QLatin1String(".lock")) || entry.startsWith(QLatin1String("rebase-")) ||
@@ -253,28 +289,19 @@ bool inspectBindings(const QString &p_syncDir, const QString &p_notebookId,
   return true;
 }
 
-bool archiveWebDavBinding(const QString &p_syncDir, const QString &p_notebookId,
-                          const SyncSettings &p_settings) {
-  QDir sync(p_syncDir);
-  QList<SyncSettings> bindings;
-  if (!inspectBindings(p_syncDir, p_notebookId, bindings)) {
+bool archivePasswordBinding(const QString &p_syncDir, const QString &p_notebookId,
+                            const QString &p_backend) {
+  const auto directory = passwordBackendDirectory(p_backend);
+  if (directory.isEmpty())
     return false;
-  }
-  bool retire = false;
-  for (const auto &binding : bindings) {
-    retire = retire ||
-             (binding.m_backend == QLatin1String("webdav") && !sameEndpoint(binding, p_settings));
-  }
-  if (!retire) {
-    return true;
-  }
+  QDir sync(p_syncDir);
   const auto operationId = QUuid::createUuid().toString(QUuid::WithoutBraces);
-  const auto archive = sync.filePath(QStringLiteral("webdav/retired/") + operationId);
-  if (!safeDirectory(sync.filePath(QStringLiteral("webdav/retired")))) {
+  const auto archive = sync.filePath(directory + QStringLiteral("/retired/") + operationId);
+  if (!safeDirectory(sync.filePath(directory + QStringLiteral("/retired")))) {
     return false;
   }
   QJsonArray entries;
-  const QDir source(sync.filePath(QStringLiteral("webdav")));
+  const QDir source(sync.filePath(directory));
   for (const auto &info : source.entryInfoList(QDir::AllEntries | QDir::NoDotAndDotDot |
                                                QDir::Hidden | QDir::System)) {
     const auto name = info.fileName();
@@ -285,7 +312,7 @@ bool archiveWebDavBinding(const QString &p_syncDir, const QString &p_notebookId,
         (info.isDir() && !safeDirectory(info.absoluteFilePath()))) {
       return false;
     }
-    entries.append(QJsonObject{{QLatin1String(vxcore::kJsonKeyBackend), QStringLiteral("webdav")},
+    entries.append(QJsonObject{{QLatin1String(vxcore::kJsonKeyBackend), p_backend},
                                {QStringLiteral("name"), name}});
   }
   QJsonObject journal{{QStringLiteral("version"), 1},
@@ -293,7 +320,7 @@ bool archiveWebDavBinding(const QString &p_syncDir, const QString &p_notebookId,
                       {QStringLiteral("operationId"), operationId},
                       {QStringLiteral("phase"), QStringLiteral("prepared")},
                       {QStringLiteral("entries"), entries}};
-  const auto journalPath = sync.filePath(c_archiveJournal);
+  const auto journalPath = source.filePath(QStringLiteral("retirement.json"));
   if (!writeObject(journalPath, journal)) {
     return false;
   }
@@ -310,20 +337,22 @@ bool archiveWebDavBinding(const QString &p_syncDir, const QString &p_notebookId,
     ok = writeObject(journalPath, journal);
   }
   if (!ok) {
-    recoverArchive(p_syncDir, p_notebookId);
+    recoverArchive(p_syncDir, p_notebookId, p_backend);
   }
   return ok;
 }
 
 // Called only after successful disable has released libgit2's mapped objects.
-// Never remove the sync root recursively: WebDAV state and retained payloads
-// belong to a separate backend and must survive every Git URL change.
+// Never remove the sync root recursively: password-provider state and retained
+// payloads must survive every Git URL change.
 bool removeGitBinding(const QString &p_syncDir) {
   const QDir sync(p_syncDir);
   const auto entries =
       sync.entryInfoList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden | QDir::System);
   for (const auto &entry : entries) {
-    if (entry.fileName() == QLatin1String("webdav")) {
+    if (isPasswordSyncBackend(entry.fileName())) {
+      if (!safeDirectory(entry.absoluteFilePath()))
+        return false;
       continue;
     }
     if (!c_gitEntries.contains(entry.fileName()) || entry.isSymLink() ||
@@ -332,27 +361,38 @@ bool removeGitBinding(const QString &p_syncDir) {
     }
   }
   for (const auto &entry : entries) {
-    if (entry.fileName() != QLatin1String("webdav") &&
+    if (!isPasswordSyncBackend(entry.fileName()) &&
         !(entry.isDir() ? QDir(entry.absoluteFilePath()).removeRecursively()
                         : QFile::remove(entry.absoluteFilePath()))) {
       return false;
     }
   }
-  QDir().rmdir(p_syncDir); // Nonrecursive: preserves a remaining WebDAV subtree.
+  QDir().rmdir(p_syncDir); // Nonrecursive: preserves remaining provider subtrees.
   return true;
 }
 
-bool commitArchive(const QString &p_syncDir) {
-  const auto path = QDir(p_syncDir).filePath(c_archiveJournal);
+bool commitArchive(const QString &p_syncDir, const QString &p_notebookId,
+                   const QString &p_backend) {
+  const auto directory = passwordBackendDirectory(p_backend);
+  if (directory.isEmpty())
+    return false;
+  const auto path = QDir(p_syncDir).filePath(directory + QStringLiteral("/retirement.json"));
   if (!pathPresent(path)) {
     return true;
   }
   QJsonObject journal;
-  if (!readObject(path, journal)) {
+  if (!readRetirementJournal(path, p_notebookId, p_backend, journal)) {
     return false;
   }
   journal[QStringLiteral("phase")] = QStringLiteral("disabled");
   return writeObject(path, journal) && QFile::remove(path);
+}
+
+bool commitArchives(const QString &p_syncDir, const QString &p_notebookId) {
+  bool committed = true;
+  for (const auto &backend : c_passwordBackends)
+    committed = commitArchive(p_syncDir, p_notebookId, backend) && committed;
+  return committed;
 }
 
 } // namespace
@@ -465,7 +505,7 @@ void NotebookSyncInfoController::startApply(const SyncSettings &p_settings, bool
       notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("vx_notebook/vx_sync"));
   auto lease = sync->workQueueManager()->tryAcquireMaintenance({m_notebookId});
   if (syncDir.isEmpty() || !lease || !safeDirectory(QFileInfo(syncDir).absolutePath()) ||
-      !safeDirectory(syncDir) || !recoverArchive(syncDir, m_notebookId)) {
+      !safeDirectory(syncDir) || !recoverArchives(syncDir, m_notebookId)) {
     finishFailure(tr("Cannot restore an incomplete sync-state archive. No settings were changed."));
     return;
   }
@@ -544,12 +584,12 @@ void NotebookSyncInfoController::startApply(const SyncSettings &p_settings, bool
 void NotebookSyncInfoController::withCredentials(SyncSettings p_settings,
                                                  std::function<void(const SyncSettings &)> p_next) {
   const auto &credentials = p_settings.m_credentials;
-  const bool webdav = p_settings.m_backend == QLatin1String("webdav");
-  if (webdav && !credentials.m_username.isEmpty() && credentials.m_secret.isEmpty()) {
+  const bool passwordBackend = isPasswordSyncBackend(p_settings.m_backend);
+  if (passwordBackend && !credentials.m_username.isEmpty() && credentials.m_secret.isEmpty()) {
     finishFailure(tr("Supply a new password or app password when entering a username."));
     return;
   }
-  if (!credentials.m_secret.isEmpty() && (!webdav || !credentials.m_username.isEmpty())) {
+  if (!credentials.m_secret.isEmpty() && (!passwordBackend || !credentials.m_username.isEmpty())) {
     const auto message = validateSyncSettings(p_settings, true);
     if (!message.isEmpty()) {
       finishFailure(message);
@@ -652,14 +692,24 @@ void NotebookSyncInfoController::retireAndEnable(const SyncSettings &p_settings)
   auto lease = sync->workQueueManager()->tryAcquireMaintenance({m_notebookId});
   const auto syncDir =
       notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("vx_notebook/vx_sync"));
-  if (syncDir.isEmpty() || !lease || !recoverArchive(syncDir, m_notebookId) ||
+  if (syncDir.isEmpty() || !lease || !recoverArchives(syncDir, m_notebookId) ||
       notebooks->checkSyncReconfiguration(m_notebookId) != VXCORE_OK) {
     finishFailure(tr("Synchronization or unresolved conflicts prevent changing this endpoint."));
     return;
   }
   QList<SyncSettings> bindings;
-  if (!inspectBindings(syncDir, m_notebookId, bindings) ||
-      !archiveWebDavBinding(syncDir, m_notebookId, p_settings)) {
+  bool archived = inspectBindings(syncDir, m_notebookId, bindings);
+  if (archived) {
+    for (const auto &binding : bindings) {
+      if (isPasswordSyncBackend(binding.m_backend) && !sameEndpoint(binding, p_settings) &&
+          !archivePasswordBinding(syncDir, m_notebookId, binding.m_backend)) {
+        archived = false;
+        break;
+      }
+    }
+  }
+  if (!archived) {
+    recoverArchives(syncDir, m_notebookId);
     finishFailure(tr("Could not archive the previous sync binding. No new endpoint was enabled; "
                      "preserve the recovery files and retry."));
     return;
@@ -678,20 +728,20 @@ void NotebookSyncInfoController::retireAndEnable(const SyncSettings &p_settings)
         }
         disconnect(*connection);
         if (result != VXCORE_OK) {
-          const bool restored = recoverArchive(syncDir, m_notebookId);
+          const bool restored = recoverArchives(syncDir, m_notebookId);
           finishFailure(restored ? tr("Could not disable sync. Previous sync state was restored.")
                                  : tr("Could not restore the sync archive. Preserve recovery files "
                                       "before retrying."));
           return;
         }
-        if (!commitArchive(syncDir)) {
+        if (!commitArchives(syncDir, m_notebookId)) {
           finishFailure(tr("Sync is disabled, but its archive could not be finalized. Preserve "
                            "recovery files before retrying."));
           return;
         }
         if (retireGit && !removeGitBinding(syncDir)) {
           finishFailure(tr("Sync is disabled, but old Git sync data could not be removed. Working "
-                           "files and WebDAV recovery data were preserved."));
+                           "files and provider recovery data were preserved."));
           return;
         }
         enable(p_settings, true);
