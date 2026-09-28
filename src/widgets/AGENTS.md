@@ -391,6 +391,8 @@ creation; management shows selectable read-only text and hides Configure. Unsupp
 visible but non-editable; read-only text remains selectable. `setNotebookInfo()` populates or resets
 fields without emitting `inputEdited()`, so loading a notebook never dirties the management dialog.
 Creation evaluates name snippets; editing an existing notebook preserves its literal name.
+New-notebook sync failures display both `SyncErrorPresenter` guidance and nonempty backend
+details in the existing plain-text information area; details must not be confined to debug logs.
 
 ### Search / Snippet / Tag
 

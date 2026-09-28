@@ -115,30 +115,33 @@ void NewNotebookDialog2::acceptedButtonClicked() {
                         accept();
                       });
 
-  *failConn =
-      connect(m_controller, &NewNotebookController::bootstrapFailed, this,
-              [this, succConn, failConn](const QString &p_id, const QString &p_errMsg) {
-                if (p_id != m_newNotebookId) {
-                  return;
-                }
-                QObject::disconnect(*succConn);
-                QObject::disconnect(*failConn);
-                qCDebug(syncCategory)
-                    << "NewNotebookDialog2::acceptedButtonClicked: bootstrap failed "
-                       "notebookId:"
-                    << p_id << "err:" << p_errMsg;
-                // bootstrapSync already rolled back the partial notebook
-                // (closed + removed root). User can adjust and retry.
-                m_newNotebookId.clear(); // notebook no longer exists
+  *failConn = connect(
+      m_controller, &NewNotebookController::bootstrapFailed, this,
+      [this, succConn, failConn](const QString &p_id, const QString &p_errMsg) {
+        if (p_id != m_newNotebookId) {
+          return;
+        }
+        QObject::disconnect(*succConn);
+        QObject::disconnect(*failConn);
+        qCDebug(syncCategory) << "NewNotebookDialog2::acceptedButtonClicked: bootstrap failed "
+                                 "notebookId:"
+                              << p_id << "err:" << p_errMsg;
+        // bootstrapSync already rolled back the partial notebook
+        // (closed + removed root). User can adjust and retry.
+        m_newNotebookId.clear(); // notebook no longer exists
 
-                const auto presented = SyncErrorPresenter::present(
-                    SyncErrorPresenter::Context::CredentialWrite, VXCORE_ERR_UNKNOWN, p_errMsg);
-                setInformationText(presented.primary, ScrollDialog::InformationLevel::Error);
-                if (!presented.details.isEmpty()) {
-                  qCDebug(syncCategory) << "SyncErrorPresenter details:" << presented.details;
-                }
-                // Dialog stays open.
-              });
+        const auto presented = SyncErrorPresenter::present(
+            SyncErrorPresenter::Context::CredentialWrite, VXCORE_ERR_UNKNOWN, p_errMsg);
+        QString message = presented.primary;
+        if (!presented.details.trimmed().isEmpty() && presented.details != presented.primary) {
+          message += QLatin1Char('\n') + presented.details;
+        }
+        setInformationText(message, ScrollDialog::InformationLevel::Error);
+        if (!presented.details.isEmpty()) {
+          qCDebug(syncCategory) << "SyncErrorPresenter details:" << presented.details;
+        }
+        // Dialog stays open.
+      });
 
   m_controller->bootstrapSync(result.notebookId, input.syncSettings, this);
 }

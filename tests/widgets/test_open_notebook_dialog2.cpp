@@ -31,22 +31,28 @@
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QRadioButton>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QStackedWidget>
 #include <QTimer>
 #include <QtTest>
 
 #include <application.h>
+#include <controllers/newnotebookcontroller.h>
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/filetypecoreservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/snippetcoreservice.h>
+#include <core/services/syncerrorpresenter.h>
 #include <core/services/templateservice.h>
+#include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
 #include <temp_dir_fixture.h>
+#include <widgets/dialogs/newnotebookdialog2.h>
 #include <widgets/dialogs/newnotedialog2.h>
+#include <widgets/dialogs/notebooksyncinfodialog2.h>
 #include <widgets/dialogs/notetemplateselector.h>
 #include <widgets/dialogs/opennotebookdialog2.h>
 #include <widgets/lineeditwithsnippet.h>
@@ -81,6 +87,7 @@ private slots:
   // Existing destinations, including empty directories, must never be taken over.
   void testValidRemoteUrlEnablesOpenButton();
   void testWebdavAnonymousAndAuthenticatedInputs();
+  void testNewNotebookSyncFailureShowsDetails();
 
   // 5. The "Open V3 Notebook" secondary button exists, sits in ResetRole (so it
   //    sorts ahead of Open/Cancel on every platform layout), and closes the
@@ -1091,6 +1098,90 @@ void TestOpenNotebookDialog2::testNewNoteUserTypedNameIsNeverUniquified() {
 
   // foo.txt already exists, but the user's base name must survive verbatim.
   QCOMPARE(nameEdit->text(), QStringLiteral("foo.txt"));
+}
+
+void TestOpenNotebookDialog2::testNewNotebookSyncFailureShowsDetails() {
+  auto &session = m_configMgr->getSessionConfig();
+  const QString oldRoot = session.getNewNotebookDefaultRootFolderPath();
+  QStringList existingIds;
+  for (const auto &value : m_newNoteNotebookSvc->listNotebooks()) {
+    existingIds.append(value.toObject().value(QLatin1String(vxcore::kJsonKeyId)).toString());
+  }
+  const auto cleanup = qScopeGuard([&]() {
+    session.setNewNotebookDefaultRootFolderPath(oldRoot);
+    // Missing SyncService fails before bootstrap owns rollback.
+    for (const auto &value : m_newNoteNotebookSvc->listNotebooks()) {
+      const QString id = value.toObject().value(QLatin1String(vxcore::kJsonKeyId)).toString();
+      if (!existingIds.contains(id)) {
+        m_newNoteNotebookSvc->closeNotebook(id);
+      }
+    }
+  });
+
+  NewNotebookDialog2 dialog(m_newNoteServices);
+  dialog.show();
+  auto *name = dialog.findChild<QLineEdit *>(QStringLiteral("notebookNameEdit"));
+  auto *root = dialog.findChild<LocationInputWithBrowseButton *>(QStringLiteral("rootFolderInput"));
+  auto *backend = dialog.findChild<QComboBox *>(QStringLiteral("syncMethodCombo"));
+  auto *configure = dialog.findChild<QPushButton *>(QStringLiteral("configureSyncButton"));
+  auto *controller = dialog.findChild<NewNotebookController *>();
+  auto *buttons = dialog.findChild<QDialogButtonBox *>();
+  QVERIFY(name && root && backend && configure && controller && buttons);
+  name->setText(QStringLiteral("WebDAV diagnostic"));
+  root->setText(m_newNoteTempDir.filePath(QStringLiteral("webdav_diagnostic")));
+  backend->setCurrentIndex(backend->findData(QStringLiteral("webdav")));
+
+  QTimer timeout;
+  timeout.setSingleShot(true);
+  connect(&timeout, &QTimer::timeout, &dialog, [&]() {
+    if (auto *settings = dialog.findChild<NotebookSyncInfoDialog2 *>()) {
+      settings->reject();
+    }
+  });
+  timeout.start(5000);
+  QTimer::singleShot(0, &dialog, [&]() {
+    auto *settings = dialog.findChild<NotebookSyncInfoDialog2 *>();
+    QVERIFY(settings);
+    auto *url = settings->findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
+    auto *username = settings->findChild<QLineEdit *>(QStringLiteral("webdavUsernameEdit"));
+    auto *secret = settings->findChild<QLineEdit *>(QStringLiteral("patEdit"));
+    auto *ok = settings->findChild<QPushButton *>(QStringLiteral("okButton"));
+    QVERIFY(url && username && secret && ok);
+    url->setText(QStringLiteral("https://example.test/dav/notebook/"));
+    username->setText(QStringLiteral("writer"));
+    secret->setText(QStringLiteral("test-password"));
+    ok->click();
+  });
+  configure->click();
+  timeout.stop();
+  auto *ok = buttons->button(QDialogButtonBox::Ok);
+  QVERIFY(ok && ok->isEnabled());
+
+  // No SyncService is registered: exercise an actual bootstrap failure without
+  // a network or native keychain dependency, then inspect what the user sees.
+  QSignalSpy failed(controller, &NewNotebookController::bootstrapFailed);
+  QSignalSpy finished(&dialog, &QDialog::finished);
+  ok->click();
+  QCOMPARE(failed.count(), 1);
+  const QString diagnostic = failed.first().at(1).toString();
+  const QString summary = SyncErrorPresenter::present(SyncErrorPresenter::Context::CredentialWrite,
+                                                      VXCORE_ERR_UNKNOWN, QString())
+                              .primary;
+  QVERIFY(!diagnostic.isEmpty());
+  QPlainTextEdit *information = nullptr;
+  for (auto *edit : dialog.findChildren<QPlainTextEdit *>()) {
+    if (edit->isReadOnly() && edit->isVisible()) {
+      information = edit;
+      break;
+    }
+  }
+  QVERIFY(information);
+  QVERIFY2(information->toPlainText().contains(diagnostic), qPrintable(information->toPlainText()));
+  QVERIFY(information->toPlainText().contains(summary));
+  QVERIFY(!information->toPlainText().contains(QStringLiteral("test-password")));
+  QCOMPARE(finished.count(), 0);
+  QVERIFY(dialog.isVisible());
+  QVERIFY(dialog.getNewNotebookId().isEmpty());
 }
 
 // =============================================================================

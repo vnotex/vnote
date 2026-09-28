@@ -648,9 +648,16 @@ add_custom_command(TARGET test_import_folder_dialog2 POST_BUILD
 # newnotedialog2.cpp + notetemplateselector.cpp + newnotecontroller.cpp, and
 # core_configs for ConfigMgr2/WidgetConfig. fileutils2.cpp is no longer compiled
 # inline because core_configs already provides it.
+# NewNotebookDialog2 sync-error coverage also reuses the configured service graph.
 add_qt_test(test_open_notebook_dialog2
   SOURCES
     test_open_notebook_dialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/newnotebookdialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebookinfowidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebooksyncinfodialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/inlinebanner.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/newnotebookcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/opennotebookdialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/newnotedialog2.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notetemplateselector.cpp
