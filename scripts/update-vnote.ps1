@@ -610,6 +610,7 @@ function Read-VerifiedVNoteManifest {
     $reader = $null
     $savedPath = $env:PATH
     $savedPreference = $ErrorActionPreference
+    Push-Location -LiteralPath ([IO.Path]::GetDirectoryName($Path))
     try {
         # Keep these exact bytes immutable across verification and JSON parsing.
         $manifestStream = [IO.File]::Open([IO.Path]::GetFullPath($Path), [IO.FileMode]::Open,
@@ -621,12 +622,16 @@ function Read-VerifiedVNoteManifest {
             throw 'The release manifest or signature is empty or exceeds its permitted byte limit.'
         }
         $env:PATH = [IO.Path]::GetFullPath($script:VNoteInstallRoot) + ';' + $savedPath
+        # minisign's narrow file APIs cannot open Unicode ancestors passed in argv.
+        # The native CWD supports Unicode; release filenames are ASCII.
+        $manifestArgument = Resolve-Path -LiteralPath $Path -Relative
+        $signatureArgument = Resolve-Path -LiteralPath $SignaturePath -Relative
         $verified = $false
         Write-Host 'Authenticating the signed release manifest...'
         foreach ($key in $TrustedKeys) {
             if ([string]::IsNullOrWhiteSpace($key)) { throw 'A trusted VNote signing key is empty.' }
             if ($null -ne $script:VNotePreparationGuard) { $null = & $script:VNotePreparationGuard }
-            $arguments = @('-V', '-P', $key, '-m', [IO.Path]::GetFullPath($Path), '-x', [IO.Path]::GetFullPath($SignaturePath))
+            $arguments = @('-V', '-P', $key, '-m', $manifestArgument, '-x', $signatureArgument)
             try {
                 # Windows PowerShell turns redirected native stderr into ErrorRecords.
                 # A key-rotation mismatch is expected; it must not prevent trying key two.
@@ -657,6 +662,7 @@ function Read-VerifiedVNoteManifest {
         if ($null -ne $reader) { $reader.Dispose() }
         if ($null -ne $signatureStream) { $signatureStream.Dispose() }
         if ($null -ne $manifestStream) { $manifestStream.Dispose() }
+        Pop-Location
     }
 }
 

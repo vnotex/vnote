@@ -589,26 +589,35 @@ else {
             "signing; see docs/update-signing.md.")
     }
 
-    & $minisign.Source -S -s $MinisignSecretKey -m $releaseManifestPath `
-        -x $sigPath -t $trustedComment -W | Out-Null
-    if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $sigPath)) {
-        throw ("minisign failed to sign $releaseManifestPath. If the key is " +
-            "password-protected, re-create it with an empty password: automated " +
-            "signing cannot answer a prompt.")
-    }
+    $secretKeyPath = (Resolve-Path -LiteralPath $MinisignSecretKey).Path
+    # Keep Unicode output-directory ancestors in the native CWD, not minisign's argv.
+    Push-Location -LiteralPath $OutputDir
+    try {
+        $keyArgument = Resolve-Path -LiteralPath $secretKeyPath -Relative
+        $manifestArgument = [IO.Path]::GetFileName($releaseManifestPath)
+        $signatureArgument = [IO.Path]::GetFileName($sigPath)
+        & $minisign.Source -S -s $keyArgument -m $manifestArgument `
+            -x $signatureArgument -t $trustedComment -W | Out-Null
+        if ($LASTEXITCODE -ne 0 -or -not (Test-Path -LiteralPath $sigPath)) {
+            throw ("minisign failed to sign $releaseManifestPath. If the key is " +
+                "password-protected, re-create it with an empty password: automated " +
+                "signing cannot answer a prompt.")
+        }
 
-    # Verify what was just produced, with the PUBLIC half derived from the
-    # secret key. Shipping a signature nobody checked would defeat the purpose.
-    $pubForCheck = Join-Path $OutputDir "$packageName.verify.pub"
-    & $minisign.Source -R -s $MinisignSecretKey -p $pubForCheck 2>&1 | Out-Null
-    if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $pubForCheck)) {
-        & $minisign.Source -V -p $pubForCheck -m $releaseManifestPath -x $sigPath | Out-Null
-        $verified = $LASTEXITCODE -eq 0
-        Remove-Item -LiteralPath $pubForCheck -Force -ErrorAction SilentlyContinue
-        if (-not $verified) {
-            throw "The signature just produced for $releaseManifestPath does not verify."
+        # Verify what was just produced, with the PUBLIC half derived from the
+        # secret key. Shipping a signature nobody checked would defeat the purpose.
+        $pubForCheck = "$packageName.verify.pub"
+        & $minisign.Source -R -s $keyArgument -p $pubForCheck 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0 -and (Test-Path -LiteralPath $pubForCheck)) {
+            & $minisign.Source -V -p $pubForCheck -m $manifestArgument -x $signatureArgument | Out-Null
+            $verified = $LASTEXITCODE -eq 0
+            Remove-Item -LiteralPath $pubForCheck -Force -ErrorAction SilentlyContinue
+            if (-not $verified) {
+                throw "The signature just produced for $releaseManifestPath does not verify."
+            }
         }
     }
+    finally { Pop-Location }
 
     Write-Host "  wrote $sigPath (signed, self-verified)"
 }

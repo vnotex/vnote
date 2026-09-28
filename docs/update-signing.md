@@ -43,6 +43,12 @@ produced and audited with a stock tool rather than something invented here.
   license by SHA-256 and performs no network fetch during configure or normal
   builds. The three updater files are non-optional package contents. Prepend the
   installation root to the verifier process's PATH for the package's UCRT DLLs.
+  Minisign 0.11 uses narrow Windows file APIs: invoke it from the manifest's
+  directory with relative file arguments, keeping Unicode ancestors in the
+  working directory rather than argv. Release filenames remain ASCII. Signing
+  likewise uses the output directory and a relative path to the secret key;
+  key-path components outside the shared ancestor must be representable in the
+  system code page. Restore the caller's location on success and failure.
 - Verify **exact manifest bytes before parsing**, using `minisign -V -P <key>
   -m <manifest> -x <signature>` with individual arguments. One embedded trusted
   key must verify both the manifest and trusted-comment signatures. Missing

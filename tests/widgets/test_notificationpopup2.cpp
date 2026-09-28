@@ -64,6 +64,7 @@ private slots:
   void test_visiblePopupShowsAMessageThatArrivesWhileOpen();
   void test_dismissedMessagesAreNotRendered();
   void test_twoMultilineCardsFitBeforeScrolling();
+  void test_detailsAreRenderedCollapsed_data();
   void test_detailsAreRenderedCollapsed();
   void test_visiblePopupShrinksAfterContentUpdate();
   void test_badgeTracksActiveCountAcrossEviction();
@@ -293,7 +294,18 @@ void TestNotificationPopup2::test_twoMultilineCardsFitBeforeScrolling() {
 // m_details is the home for what used to be QMessageBox::setDetailedText. It
 // belongs to the popup only, and starts collapsed so a long blob does not
 // dominate the list.
+void TestNotificationPopup2::test_detailsAreRenderedCollapsed_data() {
+  QTest::addColumn<bool>("decorated");
+  QTest::newRow("native") << false;
+  QTest::newRow("decorated-tool") << true;
+}
+
 void TestNotificationPopup2::test_detailsAreRenderedCollapsed() {
+  QFETCH(bool, decorated);
+  if (decorated) {
+    // Match the macOS ButtonPopup flags, including a native window frame.
+    m_popup->setWindowFlags(Qt::Tool | Qt::NoDropShadowWindowHint);
+  }
   auto font = m_popup->font();
   font.setPixelSize(12);
   m_popup->setFont(font);

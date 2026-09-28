@@ -219,7 +219,10 @@ void NotificationPopup2::updateContentHeight() {
   if (isVisible() && height() > previousHeight) {
     const auto available = screen()->availableGeometry();
     const int maxY = qMax(available.top(), available.bottom() - height() + 1);
-    move(x(), qBound(available.top(), y(), maxY));
+    // Tool windows have a frame: move()/pos() and geometry() use different origins.
+    auto bounds = geometry();
+    bounds.moveTop(qBound(available.top(), bounds.top(), maxY));
+    setGeometry(bounds);
   }
 }
 

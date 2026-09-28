@@ -437,8 +437,14 @@ function Sign-FixtureManifest {
     param($Artifacts, $Manifest)
     Write-FixtureJson $Artifacts.Manifest $Manifest
     [IO.File]::Delete($Artifacts.Signature)
-    & $MinisignPath -S -W -s $script:SecretKey -m $Artifacts.Manifest -x $Artifacts.Signature -t 'VNote regression fixture' | Out-Null
-    Assert-Fixture ($LASTEXITCODE -eq 0) 'Signing the mutated fixture failed'
+    Push-Location -LiteralPath ([IO.Path]::GetDirectoryName($Artifacts.Manifest))
+    try {
+        $key = Resolve-Path -LiteralPath $script:SecretKey -Relative
+        & $MinisignPath -S -W -s $key -m ([IO.Path]::GetFileName($Artifacts.Manifest)) `
+            -x ([IO.Path]::GetFileName($Artifacts.Signature)) -t 'VNote regression fixture' | Out-Null
+        Assert-Fixture ($LASTEXITCODE -eq 0) 'Signing the mutated fixture failed'
+    }
+    finally { Pop-Location }
 }
 
 function Sign-FixtureArchive {
@@ -628,14 +634,17 @@ try {
     $script:OutsideSnapshot = Get-FixtureSnapshot $script:Outside
     $script:SecretKey = Join-Path $script:Root 'ephemeral.key'
     $publicFile = Join-Path $script:Root 'ephemeral.pub'
-    & $MinisignPath -G -W -s $script:SecretKey -p $publicFile | Out-Null
-    Assert-Fixture ($LASTEXITCODE -eq 0) 'Could not generate an ephemeral signing key'
+    # minisign uses narrow file APIs: retain the Unicode root as its CWD, not argv.
+    Push-Location -LiteralPath $script:Root
+    try {
+        & $MinisignPath -G -W -s 'ephemeral.key' -p 'ephemeral.pub' | Out-Null
+        Assert-Fixture ($LASTEXITCODE -eq 0) 'Could not generate an ephemeral signing key'
+        & $MinisignPath -G -W -s 'wrong.key' -p 'wrong.pub' | Out-Null
+        Assert-Fixture ($LASTEXITCODE -eq 0) 'Could not generate an unrelated signing key'
+    }
+    finally { Pop-Location }
     $script:PublicKey = [IO.File]::ReadAllLines($publicFile)[1]
-    $wrongSecret = Join-Path $script:Root 'wrong.key'
-    $wrongPublic = Join-Path $script:Root 'wrong.pub'
-    & $MinisignPath -G -W -s $wrongSecret -p $wrongPublic | Out-Null
-    Assert-Fixture ($LASTEXITCODE -eq 0) 'Could not generate an unrelated signing key'
-    $wrongKey = [IO.File]::ReadAllLines($wrongPublic)[1]
+    $wrongKey = [IO.File]::ReadAllLines((Join-Path $script:Root 'wrong.pub'))[1]
     $compiledA = New-FixtureDirectory 'compiled A'
     $compiledB = New-FixtureDirectory 'compiled B'
     $script:ExeA = Join-Path $compiledA 'vnote.exe'
