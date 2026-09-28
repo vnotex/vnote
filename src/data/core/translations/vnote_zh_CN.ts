@@ -138,13 +138,13 @@
     </message>
     <message>
         <location line="+11"/>
-        <source>&amp;View</source>
-        <translation>查看(&amp;V)</translation>
+        <source>&amp;View Image</source>
+        <translation>查看图片(&amp;V)</translation>
     </message>
     <message>
         <location line="+8"/>
-        <source>Copy</source>
-        <translation>复制</translation>
+        <source>Copy Ima&amp;ge</source>
+        <translation>复制图片(&amp;G)</translation>
     </message>
     <message>
         <location line="+114"/>
@@ -4329,8 +4329,8 @@
     </message>
     <message>
         <location line="+518"/>
-        <source>View Image</source>
-        <translation>查看图片</translation>
+        <source>&amp;View Image</source>
+        <translation>查看图片(&amp;V)</translation>
     </message>
     <message>
         <location line="-18"/>
@@ -4941,8 +4941,8 @@
     </message>
     <message>
         <location line="+18"/>
-        <source>Copy</source>
-        <translation>复制</translation>
+        <source>Copy Ima&amp;ge</source>
+        <translation>复制图片(&amp;G)</translation>
     </message>
     <message>
         <location line="+20"/>

@@ -138,13 +138,13 @@
     </message>
     <message>
         <location line="+11"/>
-        <source>&amp;View</source>
-        <translation>表示(&amp;V)</translation>
+        <source>&amp;View Image</source>
+        <translation>画像を表示(&amp;V)</translation>
     </message>
     <message>
         <location line="+8"/>
-        <source>Copy</source>
-        <translation>コピー</translation>
+        <source>Copy Ima&amp;ge</source>
+        <translation>画像をコピー(&amp;G)</translation>
     </message>
     <message>
         <location line="+114"/>
@@ -4329,8 +4329,8 @@
     </message>
     <message>
         <location line="+518"/>
-        <source>View Image</source>
-        <translation>画像を表示</translation>
+        <source>&amp;View Image</source>
+        <translation>画像を表示(&amp;V)</translation>
     </message>
     <message>
         <location line="-18"/>
@@ -4941,8 +4941,8 @@
     </message>
     <message>
         <location line="+18"/>
-        <source>Copy</source>
-        <translation>コピー</translation>
+        <source>Copy Ima&amp;ge</source>
+        <translation>画像をコピー(&amp;G)</translation>
     </message>
     <message>
         <location line="+20"/>

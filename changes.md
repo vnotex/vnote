@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Clarify Markdown image context-menu labels and use matching View Image (V) and Copy Image (G) access keys in read and edit modes
 * Show underlying sync setup error details in the New Notebook dialog, including the failed WebDAV check, HTTP status and missing or weak ETags
 * Encryption setup records a persistent notebook initialization marker instead of scanning all folder metadata; legacy notebooks require explicit confirmation before first setup when their encryption history is unknown
 * Note conversion no longer audits unrelated folder metadata; missing known keys still require recovery, and cancelling legacy confirmation leaves notes and configuration unchanged

@@ -388,7 +388,7 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
     {
       auto defaultCopyImageAct = pageAction(QWebEnginePage::CopyImageToClipboard);
       if (actions.contains(defaultCopyImageAct)) {
-        QAction *copyImageAct = new QAction(tr("Copy"), menu);
+        QAction *copyImageAct = new QAction(tr("Copy Ima&ge"), menu);
         copyImageAct->setToolTip(defaultCopyImageAct->toolTip());
         connect(copyImageAct, &QAction::triggered, this, &MarkdownViewer::copyImage);
         menu->insertAction(defaultCopyImageAct, copyImageAct);

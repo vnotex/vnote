@@ -2135,7 +2135,7 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
       vte::MarkdownUtils::linkUrlToPath(getBasePath(), links[index].m_destination);
 
   {
-    auto act = new QAction(tr("View Image"), p_menu);
+    auto act = new QAction(tr("&View Image"), p_menu);
     connect(act, &QAction::triggered, p_menu,
             [imgPath]() { WidgetUtils::openUrlByDesktop(PathUtils::pathToUrl(imgPath)); });
     p_menu->insertAction(p_before, act);

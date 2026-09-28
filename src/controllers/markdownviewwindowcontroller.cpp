@@ -45,7 +45,7 @@ QMenu *MarkdownViewWindowController::createContextMenu(
   }
 
   if (p_info.inReadMode && p_info.imageUrl.isValid()) {
-    auto *viewAct = new QAction(QObject::tr("&View"), p_standardMenu);
+    auto *viewAct = new QAction(QObject::tr("&View Image"), p_standardMenu);
     connect(viewAct, &QAction::triggered, p_standardMenu, p_viewImageHandler);
     // Place next to the image actions; fall back to appending if unknown.
     QAction *anchor = p_info.defaultCopyImageAction; // may be nullptr
@@ -53,7 +53,7 @@ QMenu *MarkdownViewWindowController::createContextMenu(
   }
 
   if (p_info.defaultCopyImageAction && actions.contains(p_info.defaultCopyImageAction)) {
-    auto *copyImageAct = new QAction(QObject::tr("Copy"), p_standardMenu);
+    auto *copyImageAct = new QAction(QObject::tr("Copy Ima&ge"), p_standardMenu);
     copyImageAct->setToolTip(p_info.defaultCopyImageAction->toolTip());
     connect(copyImageAct, &QAction::triggered, p_standardMenu, p_copyImageHandler);
     p_standardMenu->insertAction(p_info.defaultCopyImageAction, copyImageAct);

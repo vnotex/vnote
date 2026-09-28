@@ -60,7 +60,6 @@ private slots:
   void testContextMenu_crossCopyTargets();
   void testContextMenu_noCrossCopyTargets();
   void testContextMenu_copyImagePresent();
-  void testContextMenu_noCopyImage();
   void testContextMenu_viewImageReadMode();
   void testContextMenu_viewImageNotInReadMode();
   void testContextMenu_viewImageInvalidUrl();
@@ -413,9 +412,16 @@ void TestMarkdownViewWindowController::testContextMenu_copyImagePresent() {
   ServiceLocator services;
   MarkdownViewWindowController controller(services);
   QMenu menu;
+  auto *copyTextAct = menu.addAction("&Copy");
   auto *defaultCopyImageAct = menu.addAction("Copy image");
+  bool copyTextCalled = false;
+  bool defaultCopyImageCalled = false;
+  connect(copyTextAct, &QAction::triggered, &menu, [&]() { copyTextCalled = true; });
+  connect(defaultCopyImageAct, &QAction::triggered, &menu,
+          [&]() { defaultCopyImageCalled = true; });
 
   MarkdownViewerContextInfo info;
+  info.copyAction = copyTextAct;
   info.defaultCopyImageAction = defaultCopyImageAct;
 
   bool copyImageCalled = false;
@@ -423,38 +429,12 @@ void TestMarkdownViewWindowController::testContextMenu_copyImagePresent() {
       info, &menu, [&copyImageCalled]() { copyImageCalled = true; }, []() {},
       [](const QString &) {}, []() {}, []() {});
 
-  QVERIFY(!defaultCopyImageAct->isVisible());
-
-  bool foundReplacement = false;
-  for (auto *act : result->actions()) {
-    if (act != defaultCopyImageAct && act->text() == "Copy") {
-      foundReplacement = true;
-      act->trigger();
-    }
-  }
-
-  QVERIFY(foundReplacement);
-  QVERIFY(copyImageCalled);
-}
-
-void TestMarkdownViewWindowController::testContextMenu_noCopyImage() {
-  ServiceLocator services;
-  MarkdownViewWindowController controller(services);
-  QMenu menu;
-  menu.addAction("Dummy");
-
-  MarkdownViewerContextInfo info;
-
-  auto *result = controller.createContextMenu(
-      info, &menu, []() {}, []() {}, [](const QString &) {}, []() {}, []() {});
-
-  int copyImageCount = 0;
-  for (auto *act : result->actions()) {
-    if (act->text() == "Copy Image") {
-      ++copyImageCount;
-    }
-  }
-  QCOMPARE(copyImageCount, 0);
+  result->popup(QPoint(100, 100));
+  QTRY_VERIFY(result->isVisible());
+  QTest::keyClick(result, Qt::Key_G);
+  QTRY_VERIFY(copyImageCalled);
+  QVERIFY(!copyTextCalled);
+  QVERIFY(!defaultCopyImageCalled);
 }
 
 void TestMarkdownViewWindowController::testContextMenu_viewImageReadMode() {
@@ -487,13 +467,15 @@ void TestMarkdownViewWindowController::testContextMenu_viewImageReadMode() {
     }
   }
   QVERIFY(viewAct);
-  // "View" should be inserted before the default copy-image action.
+  // The view action should precede the default copy-image action.
   QVERIFY(viewIdx >= 0);
   QVERIFY(copyImageIdx >= 0);
   QVERIFY(viewIdx < copyImageIdx);
 
-  viewAct->trigger();
-  QVERIFY(viewCalled);
+  result->popup(QPoint(100, 100));
+  QTRY_VERIFY(result->isVisible());
+  QTest::keyClick(result, Qt::Key_V);
+  QTRY_VERIFY(viewCalled);
 }
 
 void TestMarkdownViewWindowController::testContextMenu_viewImageNotInReadMode() {
