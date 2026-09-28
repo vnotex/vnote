@@ -193,8 +193,8 @@ The git sync backend sets `core.autocrlf=false` (`git_sync_pipeline.cpp`), so sy
 
 `SyncSettings` / `SyncCredential` in `syncsettings.*` are the shared application contract.
 Enable requires a Git PAT, or a WebDAV username plus password/app password. WebDAV URLs are
-canonical absolute HTTPS collections without userinfo/query/fragment; UI validation never
-allows the core's literal-loopback HTTP test exception. Secrets are never trimmed, logged,
+canonical absolute HTTP or HTTPS collections without userinfo/query/fragment. HTTPS is
+recommended: HTTP exposes credentials and notebook data in transit. Secrets are never trimmed, logged,
 persisted in notebook JSON or cached on SyncService; operation captures are transient.
 
 `SyncCredentialsStore` retains namespace **VNote** and key **notebook_sync_pat_ + notebook ID**.

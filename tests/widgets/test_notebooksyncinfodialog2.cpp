@@ -38,6 +38,7 @@ private slots:
   void initTestCase();
   void testGitUsernameEditsRemoteWithoutExposingToken();
   void testGitUsernameChangePreservesLocalHistory();
+  void testWebdavPreCreateValidationAndSecretMasking_data();
   void testWebdavPreCreateValidationAndSecretMasking();
   void testExistingBackendSelectionAndRawProtection();
 
@@ -79,7 +80,14 @@ void TestNotebookSyncInfoDialog2::testGitUsernameEditsRemoteWithoutExposingToken
   QVERIFY(!usernameEdit->isEnabled());
 }
 
+void TestNotebookSyncInfoDialog2::testWebdavPreCreateValidationAndSecretMasking_data() {
+  QTest::addColumn<QString>("remoteUrl");
+  QTest::newRow("https") << QStringLiteral("https://example.com/dav/notebook/");
+  QTest::newRow("http-nonloopback") << QStringLiteral("http://example.com/dav/notebook/");
+}
+
 void TestNotebookSyncInfoDialog2::testWebdavPreCreateValidationAndSecretMasking() {
+  QFETCH(QString, remoteUrl);
   ServiceLocator services;
   NotebookSyncInfoDialog2 dialog(services);
   dialog.show();
@@ -99,25 +107,25 @@ void TestNotebookSyncInfoDialog2::testWebdavPreCreateValidationAndSecretMasking(
   QCOMPARE(secret->echoMode(), QLineEdit::Password);
   QSignalSpy accepted(&dialog, &QDialog::accepted);
 
-  url->setText(QStringLiteral("https://example.com/dav/notebook/"));
+  url->setText(remoteUrl);
   username->setText(QStringLiteral("writer"));
   ok->click();
   QCOMPARE(accepted.count(), 0); // No anonymous enable.
   secret->setText(QStringLiteral("  app password  "));
-  url->setText(QStringLiteral("http://127.0.0.1/dav/notebook/"));
+  url->setText(QStringLiteral("ftp://example.com/dav/notebook/"));
   ok->click();
-  QCOMPARE(accepted.count(), 0); // UI test mode does not relax HTTPS.
+  QCOMPARE(accepted.count(), 0); // Only HTTP and HTTPS collections are supported.
   url->setText(QStringLiteral("https://writer@example.com/dav/notebook/"));
   ok->click();
   QCOMPARE(accepted.count(), 0); // DAV credentials may not leak into a routing URL.
-  url->setText(QStringLiteral("https://example.com/dav/notebook/"));
+  url->setText(remoteUrl);
   ok->click();
   QCOMPARE(accepted.count(), 1);
   const auto settings = dialog.enteredSettings();
   QCOMPARE(settings.m_backend, QStringLiteral("webdav"));
   QCOMPARE(settings.m_credentials.m_username, QStringLiteral("writer"));
   QCOMPARE(settings.m_credentials.m_secret, QStringLiteral("  app password  "));
-  QCOMPARE(settings.m_remoteUrl, QStringLiteral("https://example.com/dav/notebook/"));
+  QCOMPARE(settings.m_remoteUrl, remoteUrl);
 }
 
 void TestNotebookSyncInfoDialog2::testExistingBackendSelectionAndRawProtection() {

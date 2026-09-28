@@ -6,7 +6,7 @@
 * Fix a use-after-free when a notebook closes after its explorer widget has been destroyed
 * Add WebDAV notebook sync with ordinary editable remote files, secure per-device credentials, remote open, conflict choices, cancellation and journaled recovery
 * Preserve open editor/comment drafts during WebDAV sync and refresh clean editors, previews and notebook trees after incoming changes
-* Require a dedicated existing HTTPS collection with safe conditional writes; retain empty remote folders rather than risk recursive deletion
+* Support dedicated existing HTTP or HTTPS WebDAV collections with safe conditional writes; HTTPS is recommended because HTTP exposes credentials and notebook data; retain empty remote folders rather than risk recursive deletion
 
 ## v4.8.0
 A feature release with Markdown presentations, search-and-replace across notes, new light themes and more flexible encrypted notes on top of VNote 4.7.0:

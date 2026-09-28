@@ -521,8 +521,8 @@ void TestOpenNotebookDialog2::testWebdavAnonymousAndAuthenticatedInputs() {
   secret->setText(QStringLiteral("  app password  "));
   QVERIFY(open->isEnabled());
   QCOMPARE(url->text(), QStringLiteral("https://example.com/dav/notebook/"));
-  url->setText(QStringLiteral("http://127.0.0.1/dav/notebook/"));
-  QVERIFY(!open->isEnabled());
+  url->setText(QStringLiteral("http://example.com/dav/notebook/"));
+  QVERIFY(open->isEnabled());
   url->setText(QStringLiteral("https://example.com/dav/notebook/?password=forbidden"));
   QVERIFY(!open->isEnabled());
   url->setText(QStringLiteral("https://example.com/dav/notebook/"));

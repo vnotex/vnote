@@ -222,7 +222,8 @@ void NotebookSyncInfoDialog2::setupUI() {
 
   m_webdavHint = new InlineBanner(
       InlineBanner::Severity::Info,
-      tr("Use a dedicated existing HTTPS collection. Notes remain ordinary files. "
+      tr("Use a dedicated existing HTTP or HTTPS collection. HTTPS is recommended; HTTP sends "
+         "credentials and data in plaintext. Notes remain ordinary files. "
          "Safe conditional writes are required; empty remote folders may be retained."),
       centralWidget);
   m_webdavHint->setObjectName(QLatin1String(kWebdavHintName));
@@ -641,7 +642,8 @@ void NotebookSyncInfoDialog2::refreshBackendFields() {
                                                  : tr("https://github.com/example/notes.git"));
   m_remoteUrlEdit->setToolTip(!available ? QString()
                               : webdav
-                                  ? tr("Dedicated existing HTTPS notebook collection")
+                                  ? tr("Dedicated existing HTTP or HTTPS notebook collection. "
+                                       "HTTP sends credentials and data in plaintext")
                                   : tr("Remote git repository URL used for syncing this notebook"));
   m_remoteUrlHintLabel->setVisible(git && !m_rawNotebook);
   m_webdavHint->setVisible(webdav && !m_rawNotebook);

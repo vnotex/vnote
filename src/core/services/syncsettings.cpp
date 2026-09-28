@@ -51,8 +51,9 @@ QString vnotex::canonicalSyncRemoteUrl(const SyncSettings &p_settings) {
   }
 
   QUrl url(remoteUrl, QUrl::StrictMode);
-  // The Qt surface never permits HTTP, even for a test-mode core context.
-  if (!url.isValid() || url.isRelative() || url.scheme() != QLatin1String("https") ||
+  const auto scheme = url.scheme();
+  if (!url.isValid() || url.isRelative() ||
+      (scheme != QLatin1String("http") && scheme != QLatin1String("https")) ||
       url.host().isEmpty() || url.authority(QUrl::FullyEncoded).contains(QLatin1Char('@')) ||
       url.hasQuery() || url.hasFragment()) {
     return QString();
@@ -69,9 +70,9 @@ QString vnotex::canonicalSyncRemoteUrl(const SyncSettings &p_settings) {
   // Keep the path encoded while changing its trailing slash: decoded reserved
   // characters must not acquire URL syntax or get percent-encoded a second time.
   url.setPath(path, QUrl::StrictMode);
-  url.setScheme(QStringLiteral("https"));
   url.setHost(url.host().toLower());
-  if (url.port() == 443) {
+  if ((scheme == QLatin1String("http") && url.port() == 80) ||
+      (scheme == QLatin1String("https") && url.port() == 443)) {
     url.setPort(-1);
   }
   return url.toString(QUrl::FullyEncoded);
@@ -90,8 +91,8 @@ QString vnotex::validateSyncSettings(const SyncSettings &p_settings, bool p_requ
                                          "Remote URL must use HTTPS or file:// scheme.");
     }
     return QCoreApplication::translate(
-        "SyncSettings", "WebDAV requires an absolute HTTPS collection URL with a host and a safe "
-                        "path, without user information, query, or fragment.");
+        "SyncSettings", "WebDAV requires an absolute HTTP or HTTPS collection URL with a host and "
+                        "a safe path, without user information, query, or fragment.");
   }
 
   const auto &credentials = p_settings.m_credentials;

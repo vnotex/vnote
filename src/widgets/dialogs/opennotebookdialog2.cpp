@@ -278,7 +278,8 @@ void OpenNotebookDialog2::refreshBackendFields() {
       webdav ? tr("https://example.com/dav/notebook/")
              : tr("https://github.com/user/repo.git  or  file:///path/to/repo.git"));
   m_remoteUrlEdit->setToolTip(
-      webdav ? tr("Existing HTTPS collection containing one VNote notebook")
+      webdav ? tr("Existing HTTP or HTTPS collection containing one VNote notebook. "
+                  "HTTP sends credentials and data in plaintext")
              : tr("Remote git URL. Only HTTPS and file:// schemes are supported"));
   m_secretLabel->setText(webdav ? tr("Password or app password") : tr("Personal Access Token"));
   m_remotePatEdit->setToolTip(

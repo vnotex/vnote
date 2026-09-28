@@ -1,4 +1,4 @@
-// Invalid settings must stop before vault or backend work.
+// Sync URL canonicalization and validation before vault or backend work.
 #include <QSignalSpy>
 #include <QtTest>
 
@@ -6,6 +6,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/synccredentialsstore.h>
 #include <core/services/syncservice.h>
+#include <core/services/syncsettings.h>
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
@@ -27,6 +28,8 @@ private slots:
   void cleanupTestCase();
   void invalidSettings_data();
   void invalidSettings();
+  void webdavCanonicalRemoteUrl_data();
+  void webdavCanonicalRemoteUrl();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -60,8 +63,8 @@ void TestSyncService::invalidSettings_data() {
       << QStringLiteral("webdav") << QStringLiteral("https://example.com/notebook/")
       << QStringLiteral("webdav") << QStringLiteral("user") << QString()
       << int(VXCORE_ERR_INVALID_PARAM);
-  QTest::newRow("webdav-insecure-url")
-      << QStringLiteral("webdav") << QStringLiteral("http://127.0.0.1/notebook/")
+  QTest::newRow("webdav-unsupported-scheme")
+      << QStringLiteral("webdav") << QStringLiteral("ftp://example.com/notebook/")
       << QStringLiteral("webdav") << QStringLiteral("user") << QStringLiteral("secret")
       << int(VXCORE_ERR_INVALID_PARAM);
   QTest::newRow("webdav-rejects-git-credential")
@@ -95,6 +98,28 @@ void TestSyncService::invalidSettings() {
   QCOMPARE(vault.writes, 0);
   QVERIFY(!sync.isSyncRegistered(id));
   QVERIFY(!sync.isSyncInProgress(id));
+}
+
+void TestSyncService::webdavCanonicalRemoteUrl_data() {
+  QTest::addColumn<QString>("remote");
+  QTest::addColumn<QString>("canonical");
+  QTest::newRow("http-default-port") << QStringLiteral("http://example.com:80/notebook/")
+                                     << QStringLiteral("http://example.com/notebook/");
+  QTest::newRow("http-retains-https-port") << QStringLiteral("http://example.com:443/notebook/")
+                                           << QStringLiteral("http://example.com:443/notebook/");
+  QTest::newRow("https-default-port") << QStringLiteral("https://example.com:443/notebook/")
+                                      << QStringLiteral("https://example.com/notebook/");
+  QTest::newRow("https-retains-http-port") << QStringLiteral("https://example.com:80/notebook/")
+                                           << QStringLiteral("https://example.com:80/notebook/");
+}
+
+void TestSyncService::webdavCanonicalRemoteUrl() {
+  QFETCH(QString, remote);
+  QFETCH(QString, canonical);
+  SyncSettings settings;
+  settings.m_backend = QStringLiteral("webdav");
+  settings.m_remoteUrl = remote;
+  QCOMPARE(canonicalSyncRemoteUrl(settings), canonical);
 }
 
 } // namespace tests
