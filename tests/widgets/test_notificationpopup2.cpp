@@ -10,10 +10,14 @@
 #include <QFileInfo>
 #include <QJsonObject>
 #include <QLabel>
+#include <QLayout>
 #include <QLocale>
 #include <QPointer>
 #include <QPushButton>
 #include <QScopeGuard>
+#include <QScreen>
+#include <QScrollArea>
+#include <QScrollBar>
 #include <QToolButton>
 
 #include <core/configmgr2.h>
@@ -32,6 +36,23 @@ using namespace vnotex;
 
 namespace tests {
 
+namespace {
+QLabel *findLabel(QWidget *p_parent, const QString &p_text) {
+  for (auto *label : p_parent->findChildren<QLabel *>()) {
+    if (label->text() == p_text) {
+      return label;
+    }
+  }
+  return nullptr;
+}
+
+bool viewportContains(QScrollArea *p_area, QWidget *p_widget) {
+  return p_widget->isVisible() &&
+         p_area->viewport()->rect().contains(
+             QRect(p_widget->mapTo(p_area->viewport(), QPoint()), p_widget->size()));
+}
+} // namespace
+
 class TestNotificationPopup2 : public QObject {
   Q_OBJECT
 
@@ -42,7 +63,9 @@ private slots:
   void test_visiblePopupDropsAnEvictedRow();
   void test_visiblePopupShowsAMessageThatArrivesWhileOpen();
   void test_dismissedMessagesAreNotRendered();
+  void test_twoMultilineCardsFitBeforeScrolling();
   void test_detailsAreRenderedCollapsed();
+  void test_visiblePopupShrinksAfterContentUpdate();
   void test_badgeTracksActiveCountAcrossEviction();
   void testToolTips_optOutOutlivesProducer();
 
@@ -199,16 +222,96 @@ void TestNotificationPopup2::test_dismissedMessagesAreNotRendered() {
   m_popup->hide();
 }
 
+void TestNotificationPopup2::test_twoMultilineCardsFitBeforeScrolling() {
+  auto font = m_popup->font();
+  font.setPixelSize(12);
+  m_popup->setFont(font);
+  const auto available = m_popup->screen()->availableGeometry();
+  QVERIFY2(available.height() >= 600, "geometry fixtures need a 600px available screen");
+  const int cap = qMax(120, static_cast<int>(available.height() * 0.6));
+
+  // A toolbar can request the empty menu's preferred size before messages arrive.
+  m_popup->sizeHint();
+
+  QStringList texts;
+  for (int i = 0; i < 2; ++i) {
+    NotificationMessage msg;
+    msg.m_title = QStringLiteral("Card %1").arg(i);
+    msg.m_text = QStringLiteral("Card %1 line 1\nLine 2\nLine 3\nLine 4").arg(i);
+    msg.m_actions = {{QStringLiteral("Open"), [] {}, false}, {QStringLiteral("Later"), {}, true}};
+    texts.append(msg.m_text);
+    m_notifications->notify(msg);
+  }
+
+  // Exercise production aboutToShow, including the first opening's cached size hint.
+  m_popup->popup(available.topLeft() + QPoint(20, 20));
+  const auto hidePopup = qScopeGuard([&] { m_popup->hide(); });
+  QTRY_VERIFY(m_popup->isVisible());
+  QVERIFY(QTest::qWaitForWindowExposed(m_popup));
+  auto *area = m_popup->findChild<QScrollArea *>();
+  QVERIFY(area);
+  renderedTexts();
+  auto *bodyLayout = area->widget()->layout();
+  const int contentHeight = bodyLayout->totalHeightForWidth(area->maximumViewportSize().width());
+  QVERIFY2(contentHeight > area->fontMetrics().lineSpacing() * 12,
+           "fixture must exceed the old twelve-line list");
+  QVERIFY2(contentHeight < cap, "fixture must fit below the existing screen-height cap");
+
+  QTRY_COMPARE(area->verticalScrollBar()->maximum(), 0);
+  for (const auto &text : texts) {
+    auto *label = findLabel(area, text);
+    QVERIFY(label);
+    QTRY_VERIFY(viewportContains(area, label));
+    const auto buttons = label->parentWidget()->findChildren<QPushButton *>();
+    QCOMPARE(buttons.size(), 2);
+    for (auto *button : buttons) {
+      QTRY_VERIFY(viewportContains(area, button));
+    }
+  }
+
+  const int count = qMin(NotificationService::c_maxMessages,
+                         available.height() / area->fontMetrics().lineSpacing() + 2);
+  for (int i = 2; i < count; ++i) {
+    NotificationMessage msg;
+    msg.m_title = QStringLiteral("Backlog %1").arg(i);
+    msg.m_text = QStringLiteral("Short message");
+    m_notifications->notify(msg);
+  }
+  renderedTexts();
+  QTRY_VERIFY(area->verticalScrollBar()->maximum() > 0);
+  QTRY_VERIFY(area->height() <= cap);
+  area->verticalScrollBar()->setValue(area->verticalScrollBar()->maximum());
+  auto *oldestText = findLabel(area, texts.first());
+  QVERIFY(oldestText);
+  const auto oldestButtons = oldestText->parentWidget()->findChildren<QPushButton *>();
+  QCOMPARE(oldestButtons.size(), 2);
+  for (auto *button : oldestButtons) {
+    QTRY_VERIFY(viewportContains(area, button));
+  }
+}
+
 // m_details is the home for what used to be QMessageBox::setDetailedText. It
 // belongs to the popup only, and starts collapsed so a long blob does not
 // dominate the list.
 void TestNotificationPopup2::test_detailsAreRenderedCollapsed() {
+  auto font = m_popup->font();
+  font.setPixelSize(12);
+  m_popup->setFont(font);
+  const auto available = m_popup->screen()->availableGeometry();
+  QVERIFY2(available.height() >= 600, "geometry fixtures need a 600px available screen");
+  const int cap = qMax(120, static_cast<int>(available.height() * 0.6));
+
   NotificationMessage msg;
   msg.m_text = QStringLiteral("summary");
-  msg.m_details = QStringLiteral("the long backend explanation");
+  msg.m_details = QStringLiteral("Detail line\n").repeated(13) + QStringLiteral("Last detail");
   m_notifications->notify(msg);
 
   openPopup();
+  const auto hidePopup = qScopeGuard([&] { m_popup->hide(); });
+  QTRY_VERIFY(m_popup->isVisible());
+  QVERIFY(QTest::qWaitForWindowExposed(m_popup));
+  auto *area = m_popup->findChild<QScrollArea *>();
+  QVERIFY(area);
 
   QPushButton *toggle = nullptr;
   for (auto *btn : m_popup->findChildren<QPushButton *>()) {
@@ -218,14 +321,90 @@ void TestNotificationPopup2::test_detailsAreRenderedCollapsed() {
     }
   }
   QVERIFY2(toggle, "no Details disclosure was rendered for a message with details");
-  QVERIFY2(!renderedTexts().contains(QStringLiteral("the long backend explanation")),
-           "the details blob was expanded by default");
+  QVERIFY2(!renderedTexts().contains(msg.m_details), "the details blob was expanded by default");
+  QTRY_COMPARE(area->verticalScrollBar()->maximum(), 0);
+  const auto collapsedSize = m_popup->size();
+  // Live growth at the bottom edge must remain reachable without changing X.
+  m_popup->move(available.left() + 20, available.bottom() - m_popup->height() + 1);
+  const int originalX = m_popup->x();
 
-  toggle->click();
-  QVERIFY2(renderedTexts().contains(QStringLiteral("the long backend explanation")),
-           "toggling Details did not reveal the blob");
+  QTest::mouseClick(toggle, Qt::LeftButton);
+  QVERIFY2(renderedTexts().contains(msg.m_details), "toggling Details did not reveal the blob");
+  auto *details = findLabel(area, msg.m_details);
+  QVERIFY(details);
+  const int expandedHeight =
+      area->widget()->layout()->totalHeightForWidth(area->maximumViewportSize().width());
+  QVERIFY2(expandedHeight < cap, "expanded details fixture must fit below the screen cap");
+  QTRY_VERIFY(m_popup->height() > collapsedSize.height());
+  QTRY_COMPARE(area->verticalScrollBar()->maximum(), 0);
+  QTRY_VERIFY(viewportContains(area, details));
+  for (auto *button : details->parentWidget()->findChildren<QPushButton *>()) {
+    QTRY_VERIFY(viewportContains(area, button));
+  }
+  QTRY_VERIFY(m_popup->geometry().top() >= available.top());
+  QTRY_VERIFY(m_popup->geometry().bottom() <= available.bottom());
+  QCOMPARE(m_popup->x(), originalX);
 
-  m_popup->hide();
+  QTest::mouseClick(toggle, Qt::LeftButton);
+  QVERIFY(!renderedTexts().contains(msg.m_details));
+  QTRY_COMPARE(m_popup->size(), collapsedSize);
+  QTRY_COMPARE(area->verticalScrollBar()->maximum(), 0);
+}
+
+void TestNotificationPopup2::test_visiblePopupShrinksAfterContentUpdate() {
+  auto font = m_popup->font();
+  font.setPixelSize(12);
+  m_popup->setFont(font);
+  const auto available = m_popup->screen()->availableGeometry();
+  QVERIFY2(available.height() >= 600, "geometry fixtures need a 600px available screen");
+  const int cap = qMax(120, static_cast<int>(available.height() * 0.6));
+
+  NotificationMessage tallMessage;
+  tallMessage.m_title = QStringLiteral("Long notification");
+  tallMessage.m_text = QStringLiteral("Long line\n")
+                           .repeated(available.height() / m_popup->fontMetrics().lineSpacing() + 2);
+  tallMessage.m_actions = {{QStringLiteral("Open"), [] {}, false},
+                           {QStringLiteral("Later"), {}, true}};
+  const auto id = m_notifications->notify(tallMessage);
+  openPopup();
+  const auto hidePopup = qScopeGuard([&] { m_popup->hide(); });
+  QTRY_VERIFY(m_popup->isVisible());
+  QVERIFY(QTest::qWaitForWindowExposed(m_popup));
+  auto *area = m_popup->findChild<QScrollArea *>();
+  QVERIFY(area);
+  QTRY_VERIFY(area->verticalScrollBar()->maximum() > 0);
+  QTRY_VERIFY(area->height() <= cap);
+  const int tallHeight = area->height();
+
+  NotificationMessage shortMessage;
+  shortMessage.m_title = QStringLiteral("Short notification");
+  shortMessage.m_text = QStringLiteral("Short replacement");
+  shortMessage.m_actions = {{QStringLiteral("Open"), [] {}, false},
+                            {QStringLiteral("Later"), {}, true}};
+  QVERIFY(m_notifications->update(id, shortMessage));
+  QVERIFY(!renderedTexts().contains(tallMessage.m_text));
+  QTRY_VERIFY(m_popup->isVisible());
+  QTRY_VERIFY(area->height() < tallHeight);
+  QTRY_COMPARE(area->verticalScrollBar()->maximum(), 0);
+  auto *shortText = findLabel(area, shortMessage.m_text);
+  QVERIFY(shortText);
+  QTRY_VERIFY(viewportContains(area, shortText));
+  const auto buttons = shortText->parentWidget()->findChildren<QPushButton *>();
+  QCOMPARE(buttons.size(), 2);
+  QStringList actionLabels;
+  for (auto *button : buttons) {
+    actionLabels.append(button->text());
+    QTRY_VERIFY(viewportContains(area, button));
+  }
+  QCOMPARE(actionLabels, QStringList({QStringLiteral("Open"), QStringLiteral("Later")}));
+
+  m_notifications->clearAll();
+  renderedTexts();
+  auto *emptyLabel = findLabel(area, tr("No notifications"));
+  QVERIFY(emptyLabel);
+  QTRY_VERIFY(m_popup->isVisible());
+  QTRY_VERIFY(viewportContains(area, emptyLabel));
+  QTRY_COMPARE(area->verticalScrollBar()->maximum(), 0);
 }
 
 void TestNotificationPopup2::test_badgeTracksActiveCountAcrossEviction() {

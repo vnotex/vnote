@@ -5,6 +5,8 @@
 
 #include <core/services/notificationservice.h>
 
+class QScrollArea;
+class QShowEvent;
 class QToolButton;
 class QVBoxLayout;
 class QWidget;
@@ -31,8 +33,13 @@ public:
   // Rebuild the message rows from the current service state.
   void rebuild();
 
+protected:
+  void showEvent(QShowEvent *p_event) override;
+
 private:
   void setupUI();
+
+  void updateContentHeight();
 
   QIcon severityIcon(NotificationMessage::Severity p_severity) const;
 
@@ -44,9 +51,13 @@ private:
 
   TitleBar *m_titleBar = nullptr;
 
+  QScrollArea *m_scrollArea = nullptr;
+
   QVBoxLayout *m_listLayout = nullptr;
 
   QWidget *m_emptyLabel = nullptr;
+
+  bool m_updatingHeight = false;
 };
 
 } // namespace vnotex

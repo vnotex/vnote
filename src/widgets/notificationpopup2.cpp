@@ -1,11 +1,14 @@
 #include "notificationpopup2.h"
 
+#include <QActionEvent>
 #include <QFrame>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPointer>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QScopedValueRollback>
+#include <QScreen>
 #include <QScrollArea>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -141,19 +144,83 @@ void NotificationPopup2::setupUI() {
   bodyLayout->addLayout(m_listLayout);
   bodyLayout->addStretch();
 
-  auto *scroll = new QScrollArea(m_container);
-  scroll->setWidgetResizable(true);
-  scroll->setFrameShape(QFrame::NoFrame);
-  scroll->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-  scroll->setWidget(bodyWidget);
-  scroll->setMaximumHeight(qMax(
-      120, static_cast<int>(WidgetUtils::availableScreenSize(this).height() * c_maxHeightRatio)));
-  scroll->setMinimumHeight(
-      qMin(scroll->fontMetrics().lineSpacing() * c_minHeightLines, scroll->maximumHeight()));
+  m_scrollArea = new QScrollArea(m_container);
+  m_scrollArea->setWidgetResizable(true);
+  m_scrollArea->setFrameShape(QFrame::NoFrame);
+  m_scrollArea->setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+  m_scrollArea->setWidget(bodyWidget);
 
-  mainLayout->addWidget(scroll);
+  mainLayout->addWidget(m_scrollArea);
 
   addWidget(m_container);
+  updateContentHeight();
+}
+
+void NotificationPopup2::showEvent(QShowEvent *p_event) {
+  ButtonPopup::showEvent(p_event);
+  updateContentHeight();
+}
+
+void NotificationPopup2::updateContentHeight() {
+  if (m_updatingHeight) {
+    return;
+  }
+  QScopedValueRollback<bool> updatingHeight(m_updatingHeight, true);
+  const int previousHeight = height();
+  m_container->ensurePolished();
+  auto *body = m_scrollArea->widget();
+  auto *bodyLayout = body->layout();
+  auto *containerLayout = m_container->layout();
+  bodyLayout->invalidate();
+  bodyLayout->activate();
+
+  const int frameHeight = 2 * m_scrollArea->frameWidth();
+  const int cap = qMax(
+      120, static_cast<int>(WidgetUtils::availableScreenSize(this).height() * c_maxHeightRatio));
+  const int floor = qMin(m_scrollArea->fontMetrics().lineSpacing() * c_minHeightLines, cap);
+  int viewportWidth = m_scrollArea->maximumViewportSize().width();
+  if (!isVisible()) {
+    const auto preferredSize = m_container->sizeHint()
+                                   .expandedTo(m_container->minimumSize())
+                                   .expandedTo(m_container->minimumSizeHint());
+    const auto margins = containerLayout->contentsMargins();
+    viewportWidth = preferredSize.width() - margins.left() - margins.right() - frameHeight;
+  }
+
+  // Measure without a scrollbar so an earlier overflow cannot keep itself necessary.
+  // A visible widget action may also widen; one more pass uses that final width.
+  for (int pass = 0; pass < 2; ++pass) {
+    const int bodyWidth = qMax(viewportWidth, body->minimumSizeHint().width());
+    int contentHeight =
+        bodyLayout->hasHeightForWidth() ? bodyLayout->totalHeightForWidth(bodyWidth) : -1;
+    if (contentHeight < 0) {
+      contentHeight = bodyLayout->totalSizeHint().height();
+    }
+    const int target = qBound(floor, contentHeight + frameHeight, cap);
+    if (m_scrollArea->minimumHeight() != target || m_scrollArea->maximumHeight() != target) {
+      // Bypass QScrollArea's cached, independently capped preferred height.
+      m_scrollArea->setFixedHeight(target);
+    }
+    containerLayout->invalidate();
+    containerLayout->activate();
+    m_container->updateGeometry();
+
+    // QMenu caches widget-action geometry independently of the container's layout.
+    QActionEvent actionChanged(QEvent::ActionChanged, actions().first());
+    QMenu::actionEvent(&actionChanged);
+    const int finalWidth = m_scrollArea->maximumViewportSize().width();
+    if (!isVisible() || finalWidth == viewportWidth) {
+      break;
+    }
+    viewportWidth = finalWidth;
+  }
+
+  // Leave Qt's placement alone unless in-place growth needs more screen room.
+  if (isVisible() && height() > previousHeight) {
+    const auto available = screen()->availableGeometry();
+    const int maxY = qMax(available.top(), available.bottom() - height() + 1);
+    move(x(), qBound(available.top(), y(), maxY));
+  }
 }
 
 const char *NotificationPopup2::severityState(NotificationMessage::Severity p_severity) {
@@ -213,6 +280,7 @@ void NotificationPopup2::rebuild() {
   QLayoutItem *item = nullptr;
   while ((item = m_listLayout->takeAt(0)) != nullptr) {
     if (auto *w = item->widget()) {
+      w->hide();
       w->deleteLater();
     }
     delete item;
@@ -221,6 +289,7 @@ void NotificationPopup2::rebuild() {
   auto *service = m_services.get<NotificationService>();
   if (!service) {
     m_emptyLabel->setVisible(true);
+    updateContentHeight();
     return;
   }
 
@@ -282,7 +351,12 @@ void NotificationPopup2::rebuild() {
       auto *toggle = new QPushButton(tr("Details"), row);
       toggle->setCheckable(true);
       toggle->setFlat(true);
-      connect(toggle, &QPushButton::toggled, detailsLabel, &QLabel::setVisible);
+      connect(toggle, &QPushButton::toggled, this, [this, detailsLabel](bool p_checked) {
+        detailsLabel->setVisible(p_checked);
+        // Refresh the row's minimum height before measuring its parent layout.
+        detailsLabel->parentWidget()->layout()->activate();
+        updateContentHeight();
+      });
 
       auto *toggleLayout = new QHBoxLayout();
       toggleLayout->setContentsMargins(0, 0, 0, 0);
@@ -387,7 +461,9 @@ void NotificationPopup2::rebuild() {
     rowLayout->addLayout(actionLayout);
 
     m_listLayout->addWidget(row);
+    row->show();
   }
 
   m_emptyLabel->setVisible(shown == 0);
+  updateContentHeight();
 }
