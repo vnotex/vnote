@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-    Generates the incremental-update artifacts for one VNote Windows package.
+    Generates full-package and optional delta artifacts for one VNote Windows package.
 
 .DESCRIPTION
     Produces, for a single extracted package directory:
@@ -26,10 +26,10 @@
          The RELEASE ASSET manifest: the same object as (1) plus `fullPackage`
          and, when built, `delta`.
 
-    NOTE: the VNote client itself no longer consumes these artifacts - it only
-    checks for a newer release and points the user at the release page. They are
-    published as the interface for a future EXTERNAL updater. See the "Update
-    Check" section of AGENTS.md and docs/update-signing.md.
+    Ordinary VNote update checks ignore these artifacts. Only the explicit
+    Windows Update Now action launches the deployed EXTERNAL PowerShell updater,
+    which requires a signed manifest and consumes the full package, never deltas.
+    See the "Update Check" section of AGENTS.md and docs/update-signing.md.
 
 .PARAMETER ExtractedDir
     The extracted package directory, e.g. build/VNote-4.3.2-win64. Its files
@@ -45,8 +45,8 @@
     Full git SHA of the build.
 
 .PARAMETER Channel
-    "stable" or "continuous". ONLY "stable" is eligible as a delta base on the
-    client, so this must be derived from the workflow's real release predicate,
+    "stable" or "continuous". ONLY "stable" is eligible for delta generation
+    here, so this must be derived from the workflow's real release predicate,
     never from "was this a tag build" (this repo cuts releases from a master
     push and creates the tag afterwards).
 
@@ -70,11 +70,10 @@
     Path to the minisign secret key used to sign the release-asset manifest.
     Produces `VNote-<ver>-<variant>.manifest.json.minisig`.
 
-    NOTE: the VNote client no longer consumes manifests or signatures at all -
-    it only checks for a newer release and points the user at the release page.
-    These artifacts are published as the interface for a future EXTERNAL
-    updater, which is what would require the signature. See
-    docs/update-signing.md.
+    The external Windows updater verifies the exact release-manifest bytes
+    with its bundled minisign before parsing them. Both Qt variants require a
+    signature; ordinary in-process checks still ignore manifests and assets.
+    See docs/update-signing.md.
 
     Defaults to $env:MINISIGN_SECRET_KEY_FILE. The key MUST have an empty
     password: minisign reads a passphrase from the console, not stdin, so a
@@ -316,7 +315,7 @@ $fullZip = Join-Path $OutputDir "$packageName.zip"
 
 # Built entry by entry from the CURRENT directory contents, so the freshly
 # written manifest.json is inside and every entry sits under exactly one
-# top-level directory (the client strips exactly one level for a full package).
+# top-level directory (the external updater strips exactly this wrapper).
 # Sorted for determinism.
 $fullEntries = @()
 foreach ($file in (Get-ChildItem -LiteralPath $ExtractedDir -Recurse -File -Force | Sort-Object FullName)) {
@@ -488,8 +487,8 @@ if ($base) {
                     if (Test-Path -LiteralPath $deltaZip) { Remove-Item -LiteralPath $deltaZip -Force }
 
                     # Entries are INSTALL-ROOT-RELATIVE with NO top-level
-                    # directory, which is what the client expects for a delta
-                    # (unlike the full package).
+                    # directory, as required by the published delta format.
+                    # The external Windows updater consumes only full packages.
                     $deltaEntries = @()
                     foreach ($rel in ($changed | Sort-Object)) {
                         $deltaEntries += @{
@@ -502,8 +501,8 @@ if ($base) {
 
                     Test-ZipIntegrity -Path $deltaZip
 
-                    # The client requires EXACT entry-set equality, so verify it
-                    # here rather than letting every user discover a mismatch.
+                    # The delta format requires EXACT entry-set equality;
+                    # verify it here rather than publishing a mismatched archive.
                     $deltaPaths = @(Get-ZipEntryNames -Path $deltaZip)
                     $missing = @($changed | Where-Object { $deltaPaths -notcontains $_ })
                     if ($missing.Count -gt 0) {
@@ -546,8 +545,8 @@ Write-Host "  wrote $releaseManifestPath"
 # ---------------------------------------------------------------------------
 # 5. Detached minisign signature over the release manifest
 # ---------------------------------------------------------------------------
-# The client verifies this before parsing anything, and refuses a manifest it
-# cannot verify. An unsigned release is therefore inert, not merely unverified.
+# The external Windows updater verifies this before parsing anything and refuses
+# a manifest it cannot verify. Ordinary checks never request this artifact.
 
 if (-not $MinisignSecretKey) { $MinisignSecretKey = $env:MINISIGN_SECRET_KEY_FILE }
 

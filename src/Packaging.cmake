@@ -31,6 +31,17 @@ function(windeployqt target)
         endif()
     endif()
 
+    set(UPDATER_OUTPUT_DIR "${CMAKE_CURRENT_BINARY_DIR}/win-updater")
+    add_custom_target(prepare_win_updater
+        COMMAND "${CMAKE_COMMAND}"
+            "-DUPDATER_OUTPUT_DIR=${UPDATER_OUTPUT_DIR}"
+            -P "${PROJECT_SOURCE_DIR}/package/prepare-win-updater.cmake"
+        BYPRODUCTS "${UPDATER_OUTPUT_DIR}/minisign.exe"
+                   "${UPDATER_OUTPUT_DIR}/LICENSE.minisign"
+        COMMENT "Preparing Windows updater..."
+        VERBATIM
+    )
+
     add_custom_target(deploy
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/"
         COMMAND "${CMAKE_COMMAND}" -E
@@ -51,9 +62,16 @@ function(windeployqt target)
         DEPENDS vnote lrelease
     )
 
+    add_dependencies(deploy prepare_win_updater)
     add_dependencies(pack deploy)
 
     install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/winqt/" DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
+    install(FILES
+        "${PROJECT_SOURCE_DIR}/scripts/update-vnote.ps1"
+        "${UPDATER_OUTPUT_DIR}/minisign.exe"
+        "${UPDATER_OUTPUT_DIR}/LICENSE.minisign"
+        DESTINATION "${CMAKE_INSTALL_BINDIR}/updater"
+    )
 
     # Qt's own tools_openssl_x64 package (OpenSSL 1.1.1, installing to
     # Tools/OpenSSL/Win_x64/bin -- exactly what this globs for) has been DELISTED

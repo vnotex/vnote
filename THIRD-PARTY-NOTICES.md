@@ -6,8 +6,8 @@ VNote binaries, together with the notices those licenses require us to keep.
 
 ## Scope
 
-This file covers the bundled **icon sets**, **libsodium cryptography dependency**, and
-**WebDAV transport/XML dependencies**.
+This file covers the bundled **icon sets**, **libsodium cryptography dependency**,
+**Windows minisign verifier**, and **WebDAV transport/XML dependencies**.
 
 It does **not** restate licenses that already ship next to the code they cover:
 
@@ -50,6 +50,19 @@ The build copies the exact upstream `LICENSE` files as `LICENSE.libsodium` and
 beside the executable; macOS bundles carry them in `Contents/Resources`; Linux
 installs them under `${datadir}/licenses/vnote`. Standalone vxcore installs include
 both under `${datadir}/licenses/vxcore`. These copies are required, not optional.
+
+---
+
+## minisign (Windows updater)
+
+- **Upstream:** [minisign 0.11](https://github.com/jedisct1/minisign/releases/tag/0.11)
+- **License:** ISC; [upstream LICENSE](https://github.com/jedisct1/minisign/blob/0.11/LICENSE)
+- **Deployed files:** `updater/minisign.exe` and verbatim `updater/LICENSE.minisign`
+
+The external Windows PowerShell updater uses this bundled executable to verify
+release-manifest signatures. `prepare_win_updater` pins the upstream archive, executable
+and license by SHA-256; the license is a required, non-optional Windows package file.
+This notice does not replace or remove the separate libsodium notices above.
 
 ---
 
@@ -170,9 +183,11 @@ window caption buttons, which is worth knowing before replacing them.
 
 ## Known gap
 
-These notices ship in the **source tree** only. They are not compiled into
-`core.qrc` and VNote has no About dialog that displays them, so a user who
-receives only a built binary does not receive the notices with it. Both the ISC
-and MIT texts ask that the notice appear "in all copies". Closing that properly
-means either shipping this file alongside the binary from `src/Packaging.cmake`
-or surfacing it in the UI — a packaging/product decision, not made here.
+The icon-set notices above ship in the **source tree** only. They are not
+compiled into `core.qrc` and VNote has no About dialog that displays them, so a
+user receiving only a built binary does not receive those icon notices. This
+does not describe the separate dependency license files installed above,
+including `updater/LICENSE.minisign`. Both the ISC and MIT texts ask that the
+notice appear "in all copies". Closing the icon-notice gap properly means either
+shipping this file alongside the binary from `src/Packaging.cmake` or surfacing
+it in the UI — a packaging/product decision, not made here.

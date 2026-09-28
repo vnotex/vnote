@@ -5,6 +5,11 @@
 #include <QPointer>
 #include <QString>
 
+#ifdef Q_OS_WIN
+#include <QStringList>
+#include <functional>
+#endif
+
 #include <core/services/notificationservice.h>
 #include <core/services/updateservice.h>
 
@@ -24,10 +29,10 @@ class UpdateDialog;
 //   * whether a failure is reported loudly (manual check) or silently
 //     (startup check).
 //
-// The only thing offered when an update exists is the release page: VNote does
-// not download anything. It is a QObject, NOT a QWidget, so it stays testable
-// without a GUI; the only widget it needs is a parent for the dialog and
-// message boxes it opens.
+// Ordinary checks only offer a release page. On Windows, an explicit action
+// may launch the deployed external updater and request a cancellable shutdown.
+// This is a QObject, NOT a QWidget; the widget parent is only for the dialog
+// and message boxes it opens.
 class UpdateController : public QObject {
   Q_OBJECT
 
@@ -40,9 +45,26 @@ public:
   // starts a throttled background check when enabled.
   void runStartupTasks();
 
+#ifdef Q_OS_WIN
+  // Unconditional test seams. Only a nonempty launcher enables the install-root
+  // override and skips the current test executable's installation identity.
+  // Pipe peer PID/token authentication remains mandatory.
+  void testSetScriptLauncher(const std::function<bool(const QString &, const QStringList &,
+                                                      const QString &, qint64 *)> &p_launcher);
+  void testSetScriptInstallDir(const QString &p_dir);
+#endif
+
 public slots:
   // Menu entry. Always reports its outcome and is never throttled.
   void checkForUpdatesManually();
+
+#ifdef Q_OS_WIN
+  // Called synchronously after the main window's cancellable forced-close path.
+  void completeScriptUpdateShutdown(bool p_accepted);
+
+signals:
+  void scriptUpdateShutdownRequested();
+#endif
 
 private slots:
   void onCheckFinished(const vnotex::UpdateInfo &p_info);
@@ -69,6 +91,18 @@ private:
   // Action that opens the release page of @p_info, falling back to the current
   // source's releases page.
   NotificationAction makeCheckReleaseAction(const UpdateInfo &p_info) const;
+
+#ifdef Q_OS_WIN
+  struct ScriptUpdateSession;
+
+  NotificationAction makeScriptUpdateAction(const UpdateInfo &p_info);
+  void startScriptUpdate(const UpdateInfo &p_info);
+  void acceptScriptUpdateConnections(ScriptUpdateSession *p_session);
+  void readScriptUpdateSocket(ScriptUpdateSession *p_session);
+  void retireScriptUpdate(ScriptUpdateSession *p_session);
+  void failScriptUpdate(ScriptUpdateSession *p_session, const QString &p_message);
+  void reportScriptUpdateFailure(const UpdateInfo &p_info, const QString &p_message);
+#endif
 
   // Drops the tracked offer notification. A new check supersedes whatever the
   // previous one advertised, so its button must not outlive it.
@@ -98,6 +132,16 @@ private:
   // The notification carrying the current offer, 0 when there is none. Assigned
   // ONLY from calls using the "update.available" key.
   quint64 m_offerNotificationId = 0;
+
+#ifdef Q_OS_WIN
+  quint64 m_offerGeneration = 0;
+  // QObject child; failed sessions are deleted later, outside socket callbacks.
+  // An accepted session stays owned until the controller is destroyed.
+  ScriptUpdateSession *m_scriptUpdateSession = nullptr;
+  std::function<bool(const QString &, const QStringList &, const QString &, qint64 *)>
+      m_scriptLauncher;
+  QString m_scriptInstallDir;
+#endif
 };
 
 } // namespace vnotex

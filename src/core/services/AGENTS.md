@@ -272,9 +272,9 @@ folder, using notebook identity and path-component boundaries. Coverage lives in
 
 Mechanism half of the update check: the release API, the source-scoped host allowlist,
 manual redirect walking, the response cap and cancellation. The full contract (source
-selection, the "VNote never modifies its own install directory and never downloads
-anything" invariant, the forbidden patterns) lives in the [Update Check](#update-check) section below; only the service-specific rules are
-repeated here.
+selection, ordinary checks' read-only-install invariant, and the separate explicit Windows
+external-updater boundary) lives in [Update Check](#update-check) below; only the
+service-specific rules are repeated here.
 
 ### It is a CHECK, and only a check
 
@@ -413,14 +413,16 @@ away:
   expressed as a test; the CWD redirect is what catches a regression writing to a relative
   path.
 
-### NotificationService fields consumed by the updater
+### NotificationService fields consumed by UpdateController
 
 `UpdateController` posts ONE notification per offer, keyed `update.available`, via
 `NotificationService::renotify()` — the toast is raised only by `messageAdded` carrying
 `Interrupt`, so a later check must replace the message rather than fold into it. The offer is
-`Duration::Persist` with a single `Check Release` action; there is no progress bar and no
-in-place update, because there is nothing to report progress on. See `src/widgets/AGENTS.md`
-§ Notification System for the rendering side.
+`Duration::Persist` with `Check Release` first. Windows alone may append the explicit
+`Update Now` action (`m_dismissOnTrigger=false`); other platforms retain only the release
+page. Download/install progress belongs to the external script's visible console, not to
+`UpdateService`. See [../../controllers/AGENTS.md § Update Check](../../controllers/AGENTS.md#update-check)
+for launch/shutdown ownership and `src/widgets/AGENTS.md` § Notification System for rendering.
 
 ---
 
@@ -532,31 +534,35 @@ This mirrors the vxcore/VNote ownership split used by sync: vxcore emits per-fil
 > Moved here from the root `AGENTS.md`. The mechanism-only notes in
 > [UpdateService](#updateservice) above are the service-scoped subset of this section.
 
-VNote checks a forge for a newer release and, when one exists, tells the user and offers
-the **release page**. That is the whole feature.
+Ordinary startup and manual checks fetch release metadata and offer the **release page**.
+They do not install anything. Only explicit activation of the Windows notification's
+`Update Now` action may launch the deployed external script; the manual-check dialog stays
+unchanged. The exception adds no installation behavior to `UpdateService` or `UpdateInfo`.
 
-> **VNote never modifies its own install directory, and never downloads anything.** There is
-> no lease file, no staging tree, no journal, no swap, no restart-to-apply, no downloader,
-> and nothing is ever extracted or executed. The only thing the check writes is the
-> `lastUpdateCheckTime` / `skippedUpdateVersion` config values. This invariant is what makes
-> a read-only install location (`/usr/bin`, Program Files, a read-only DMG) launchable
-> (issue #2728) — do not reintroduce install-tree mutation, or a downloader, without
-> replacing this section.
+> **An ordinary check never modifies the install directory or downloads release artifacts.**
+> It creates no lease, staging tree or journal, and extracts or executes nothing. Its only
+> writes are the `lastUpdateCheckTime` / `skippedUpdateVersion` config values. Read-only
+> installations must remain launchable without an install-directory write probe (issue #2728).
 
-The built-in incremental updater that used to live here (manifest verification, delta
-chains, `UpdateInstaller`, `UpdateLease`, `ZipExtractor`, the vendored `miniz` /
-`minicrypto`) has been removed. **Release CI still publishes manifests, minisign signatures
-and delta ZIPs unchanged**; they are now the interface for a future *external* updater, not
-something this client consumes. See `docs/update-signing.md`.
+The removed C++ installer, delta chains, `UpdateInstaller`, `UpdateLease`, `ZipExtractor`
+and vendored `miniz` / `minicrypto` must not return. The external Windows updater is a
+separate process consuming signed **full packages only**, with no unsigned/source fallback.
+Its authenticated, launch-scoped graceful-close handshake must receive explicit acceptance
+and wait for full original-process exit before replacement. It must preserve portable
+`config` and unowned files, retain a complete backup, and fail with manual-update guidance
+rather than elevate. See [../../../docs/update-signing.md](../../../docs/update-signing.md)
+for authentication/replacement requirements and
+[../../controllers/AGENTS.md § Update Check](../../controllers/AGENTS.md#update-check) for launch ownership.
 
 ### Ownership map
 
 | Layer | Unit | Responsibility |
 |---|---|---|
 | Service | [`UpdateService`](updateservice.h) | release API, per-source endpoints/headers, manual redirect walking, source-scoped host allowlist, response cap, cancellation, worker lifetime |
-| Controller | [`UpdateController`](../../controllers/updatecontroller.h) | ALL policy: configured source, 24 h throttle, skipped version, manual-vs-startup surface, failure loudness |
+| Controller | [`UpdateController`](../../controllers/updatecontroller.h) | ALL policy: configured source, 24 h throttle, skipped version, manual-vs-startup surface, failure loudness; explicit Windows helper launch and authenticated shutdown session |
 | View | [`UpdateDialog`](../../widgets/dialogs/updatedialog.h) | version, notes, Open Release Page / Skip This Version / Later |
-| View | [`NotificationPopup2`](../../widgets/notificationpopup2.h) | the startup surface: one persistent, interrupting "Update Available" row with a Check Release action |
+| View | [`NotificationPopup2`](../../widgets/notificationpopup2.h) | the startup surface: one persistent, interrupting "Update Available" row with Check Release first and Windows-only Update Now |
+| External process | `scripts/update-vnote.ps1` (deployed under `updater/`) | exact-tag asset selection, signed full-package verification, safe replacement/backup and same-token relaunch after accepted shutdown |
 
 `UpdateService` deliberately does NOT depend on `ConfigMgr2`: `core_configs` links
 `core_services`, so the reverse dependency would be circular. The installed version is
@@ -564,8 +570,8 @@ injected and every config-dependent decision lives in `UpdateController`, which 
 configured source down via `setSource()`.
 
 `UpdateInfo` carries exactly `updateAvailable`, `currentVersion`, `latestVersion`,
-`releaseNotes` and `releaseUrl`. The release's `assets[]` array is **ignored entirely** —
-no asset is selected and no asset URL is ever requested
+`releaseNotes` and `releaseUrl`. During an ordinary check, the release's `assets[]` array is
+**ignored entirely** — no asset is selected and no asset URL is ever requested
 (`testAssetsAreIgnoredEntirely` pins this).
 
 `checkForUpdates()` returns whether the request was ACCEPTED (a call made during another
@@ -622,10 +628,11 @@ because it blocks on a nested event loop.
 
 ### Forbidden patterns
 
-- **Never** download, extract, execute or install a release artifact.
+- **Never** download, extract, execute or install a release artifact during an ordinary check.
 - **Never** write outside the configuration directory as part of an update check.
-- **Never** read `assets[]`; the release page is the only affordance.
-- **Never** give `UpdateService` a `ConfigMgr2` dependency — add the policy to the controller.
+- **Never** read `assets[]` in `UpdateService`; asset selection belongs only to the external script.
+- **Never** give `UpdateService` a `ConfigMgr2` dependency — add policy to the controller.
+- **Never** add in-process installation, delta application or a general-purpose quit endpoint.
 
 ---
 

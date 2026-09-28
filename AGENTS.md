@@ -303,28 +303,47 @@ Full contract: [src/core/services/AGENTS.md § Search Threading Contract](src/co
 
 ## Update Check
 
-VNote checks a forge for a newer release and, when one exists, tells the user and offers the
-**release page**. That is the whole feature.
+Ordinary startup and manual checks fetch release metadata and offer the **release page**.
+`UpdateService` and `UpdateInfo` remain check-only: no asset selection, download, verification
+or installation is added to them.
 
-> **VNote never modifies its own install directory, and never downloads anything.** There is
-> no lease file, no staging tree, no journal, no swap, no restart-to-apply, no downloader,
-> and nothing is ever extracted or executed. The only thing the check writes is the
-> `lastUpdateCheckTime` / `skippedUpdateVersion` config values. This invariant is what makes
-> a read-only install location (`/usr/bin`, Program Files, a read-only DMG) launchable
-> (issue #2728) — do not reintroduce install-tree mutation, or a downloader, without
-> replacing this section.
+> **An ordinary check never modifies the install directory or downloads release artifacts.**
+> It creates no lease, staging tree or journal, and extracts or executes nothing. Its only
+> writes are the `lastUpdateCheckTime` / `skippedUpdateVersion` config values. Startup must
+> remain usable from read-only installations (`/usr/bin`, Program Files, a read-only DMG;
+> issue #2728), without probing install-directory writability.
 
-Repo-wide forbidden patterns (they constrain `.github/`, packaging, controllers and widgets
-alike, none of which load the service doc):
+The sole installation exception is an **explicit Windows “Update Now” notification action**
+launching the deployed external PowerShell script. Keep “Check Release” first and available;
+the manual-check dialog is unchanged and has no automatic-install entry point. The action
+must disclose downloading, closing and reopening VNote; checks never activate it themselves.
 
-- **Never** download, extract, execute or install a release artifact.
+The external updater must authenticate the offered version's signed full-package manifest
+with the bundled minisign verifier before using it, then verify the archive and payload.
+It consumes no deltas, never falls back to another source or unsigned artifacts, and requests
+shutdown only after preparation succeeds. A launch-scoped, PID/token-authenticated pipe and
+an explicit accepted close authorize installation; cancellation or pipe EOF does not. Wait
+for the original process to exit, including save/sync drains, without force-killing it.
+
+Preserve portable `config` and all unowned files by cloning the stopped installation and
+overlaying verified payload files, then swapping sibling directories. Reject path/reparse
+hazards and incompatible collisions; retain a complete recovery backup and restore it if
+the second rename fails. Protected installations require manual-update guidance, **never
+elevation, ACL changes or dependency installation**. Reopen with the helper's inherited token;
+report installed-but-not-reopened separately. Two renames are not power-loss atomic.
+
+Repo-wide forbidden patterns (also constrain CI, packaging, controllers and widgets):
+
+- **Never** download, extract, execute or install a release artifact during an ordinary check.
 - **Never** write outside the configuration directory as part of an update check.
-- **Never** read `assets[]`; the release page is the only affordance.
-- **Never** give `UpdateService` a `ConfigMgr2` dependency — add the policy to the controller.
+- **Never** read `assets[]` in `UpdateService`; only the explicit external updater selects assets.
+- **Never** give `UpdateService` a `ConfigMgr2` dependency — add policy to the controller.
+- **Never** restore the C++ installer, delta application or a general-purpose quit CLI/protocol.
 
-Release CI still publishes manifests, minisign signatures and delta ZIPs (see
-`docs/update-signing.md`); they are the interface for a future *external* updater, not this
-client. Endpoints, the GitHub/Gitee source table, redirect and allowlist rules, and threading:
+Both Windows release variants publish signed full-package manifests; Qt6 may also publish
+unused delta ZIPs. Signing and external-verifier contract: [docs/update-signing.md](docs/update-signing.md).
+Controller launch/shutdown ownership: [src/controllers/AGENTS.md § Update Check](src/controllers/AGENTS.md#update-check).
+Endpoints, source-scoped redirects and check threading:
 [src/core/services/AGENTS.md § Update Check](src/core/services/AGENTS.md#update-check).
 
 ---

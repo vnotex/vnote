@@ -36,11 +36,46 @@ original path identifiers; optional stable UUID/kind/resume data must not affect
 
 Still violating the "no `QDialog`" rule, but **deliberately and with a recorded rationale** (do not "fix" these in passing): `UpdateController` (it opens `UpdateDialog` for a manual "Check for Updates"; `tests/controllers/CMakeLists.txt` notes it is not GUILESS and stubs the dialog rather than linking it), `SyncConflictController` (rationale in `syncconflictcontroller.h:17-47`), `NewNotebookController`'s `QProgressDialog`, `ViewAreaController`'s `SettingsWidget`/`DashboardContent` construction, and the `QMenu`-building controllers (`NotebookNodeController`, `MarkdownViewWindowController`).
 
+## Update Check
+
 `UpdateController` owns **ALL** update policy: the configured release source, the 24 h throttle,
-the skipped version, the manual-vs-startup surface, and failure loudness. `UpdateService` is
-mechanism only and must never gain a `ConfigMgr2` dependency. Full contract, including the
-"VNote never modifies its own install directory and never downloads anything" invariant:
+the skipped version, the manual-vs-startup surface, and failure loudness. Ordinary checks are
+read-only with respect to the installation and fetch no release assets. `UpdateService` and
+`UpdateInfo` stay unchanged and check-only; the service must never gain a `ConfigMgr2`
+dependency. Full check contract:
 [`../core/services/AGENTS.md` § Update Check](../core/services/AGENTS.md#update-check).
+
+Only explicit activation of Windows' `Update Now` notification action may start the deployed
+external PowerShell updater. Keep `Check Release` first, the existing manual-check dialog
+unchanged, and `m_dismissOnTrigger=false` on the new action. Preserve attention, persistence,
+throttle/skip and supersession behavior; stale/dismissed/evicted offer callbacks cannot
+launch. Allow one active attempt, and retire failures/cancellations so explicit retry works.
+Launch failures are interrupting Warning notifications in category `update`, key
+`update.install`, retaining the release-page fallback.
+
+Snapshot `CoreConfig::getUpdateSource()` on activation using the existing source converters;
+absent config normalizes to Gitee. Pass the immutable offered version and compile-time x64
+Qt variant, never a newly discovered release. Production launches require the running root
+`vnote.exe` and installed `updater/update-vnote.ps1`, `minisign.exe` and `LICENSE.minisign`;
+never search the repository or PATH for missing helpers. Copy helpers into private temporary
+storage and transfer cleanup ownership only after successful detached launch. Use resolved
+system Windows PowerShell, individual arguments, a visible console, process-scoped execution
+policy and install-root-prefixed PATH for bundled UCRT; never elevate or construct shell code.
+
+A per-attempt, user-access-only `QLocalServer` owns the PID/token-authenticated bounded
+HELLO/OK → READY → ACCEPTED/CANCELLED handshake. Do not extend `SingleInstanceGuard` or add
+a general quit command. READY is accepted once, only from the authenticated helper after
+verified download/extraction and preflight; it emits `scriptUpdateShutdownRequested()`.
+`MainWindow2` owns the existing cancellable forced-close path: preserve/restore `m_requestQuit`
+on refusal and return the `close()` result to `completeScriptUpdateShutdown()`. Flush the
+explicit response in that call stack, never block the GUI, and retain an accepted session
+through teardown. EOF, timeout or cancellation never authorizes installation. The helper must
+wait on the retained original process handle through save/sync drains without force-killing.
+
+The external process alone owns signed full-package authentication, preservation of portable
+`config` and unowned files, clone/overlay/swap with complete recovery backup, and same-token
+relaunch. Protected installations fail with manual-update guidance, not UAC/ACL changes.
+[../../docs/update-signing.md](../../docs/update-signing.md) owns that contract.
 
 ## Controller Inventory
 

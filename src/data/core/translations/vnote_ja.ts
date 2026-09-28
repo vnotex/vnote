@@ -9677,6 +9677,102 @@ This removes the file and any sub-tasks it contains: %2</source>
         <source>TLS is unavailable: no working secure-socket backend was found.</source>
         <translation>TLS を利用できません: 利用可能なセキュアソケットのバックエンドが見つかりませんでした。</translation>
     </message>
+    <message>
+        <source>VNote %1 is available. Update Now downloads the update, then closes and reopens VNote.</source>
+        <translation>VNote %1 が公開されています。「今すぐ更新」は更新をダウンロードしてから VNote を終了し、再起動します。</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation>今すぐ更新</translation>
+    </message>
+    <message>
+        <source>Automatic update requires numeric three-component versions and a newer release.</source>
+        <translation>自動更新には、3 つの数値で構成されるバージョン番号と、現在より新しいリリースが必要です。</translation>
+    </message>
+    <message>
+        <source>Automatic update requires an x64 Windows build of VNote.</source>
+        <translation>自動更新には x64 Windows 版 VNote が必要です。</translation>
+    </message>
+    <message>
+        <source>Automatic update must run from the installation's root vnote.exe.</source>
+        <translation>自動更新はインストールフォルダー直下の vnote.exe から実行する必要があります。</translation>
+    </message>
+    <message>
+        <source>The installed updater file is missing: %1</source>
+        <translation>インストール済みの更新プログラムのファイルがありません: %1</translation>
+    </message>
+    <message>
+        <source>Could not locate the Windows system directory.</source>
+        <translation>Windows のシステムフォルダーを特定できませんでした。</translation>
+    </message>
+    <message>
+        <source>Windows PowerShell is unavailable at %1.</source>
+        <translation>%1 で Windows PowerShell を利用できません。</translation>
+    </message>
+    <message>
+        <source>Could not create a private temporary updater directory: %1</source>
+        <translation>更新プログラム専用の一時フォルダーを作成できませんでした: %1</translation>
+    </message>
+    <message>
+        <source>Could not copy the installed updater file %1: %2</source>
+        <translation>インストール済みの更新プログラムのファイル %1 をコピーできませんでした: %2</translation>
+    </message>
+    <message>
+        <source>Could not open the updater's private connection: %1</source>
+        <translation>更新プログラム専用の接続を開けませんでした: %1</translation>
+    </message>
+    <message>
+        <source>The updater did not connect within 15 seconds. Windows PowerShell may be missing, blocked by Group Policy, or unable to start. Check its console.</source>
+        <translation>更新プログラムが 15 秒以内に接続しませんでした。Windows PowerShell が存在しないか、グループポリシーでブロックされているか、起動できない可能性があります。コンソールを確認してください。</translation>
+    </message>
+    <message>
+        <source>Windows PowerShell could not be started.</source>
+        <translation>Windows PowerShell を起動できませんでした。</translation>
+    </message>
+    <message>
+        <source>Could not start Windows PowerShell: %1</source>
+        <translation>Windows PowerShell を起動できませんでした: %1</translation>
+    </message>
+    <message>
+        <source>The updater did not return a valid process identity.</source>
+        <translation>更新プログラムから有効なプロセス識別情報が返されませんでした。</translation>
+    </message>
+    <message>
+        <source>The updater disconnected before shutdown was accepted. Check the updater console for details.</source>
+        <translation>終了が許可される前に更新プログラムの接続が切断されました。詳細は更新プログラムのコンソールを確認してください。</translation>
+    </message>
+    <message>
+        <source>Could not read the updater's private connection.</source>
+        <translation>更新プログラム専用の接続を読み取れませんでした。</translation>
+    </message>
+    <message>
+        <source>The updater sent an invalid connection message.</source>
+        <translation>更新プログラムが無効な接続メッセージを送信しました。</translation>
+    </message>
+    <message>
+        <source>The updater's connection message exceeded its size limit.</source>
+        <translation>更新プログラムの接続メッセージがサイズ制限を超えました。</translation>
+    </message>
+    <message>
+        <source>Could not acknowledge the updater's private connection.</source>
+        <translation>更新プログラム専用の接続を確認できませんでした。</translation>
+    </message>
+    <message>
+        <source>The updater sent an unexpected or unauthenticated message.</source>
+        <translation>更新プログラムが予期しないメッセージ、または認証されていないメッセージを送信しました。</translation>
+    </message>
+    <message>
+        <source>Temporary updater files were retained at %1.</source>
+        <translation>更新プログラムの一時ファイルは %1 に保持されています。</translation>
+    </message>
+    <message>
+        <source>Automatic Update Failed</source>
+        <translation>自動更新に失敗しました</translation>
+    </message>
+    <message>
+        <source>Automatic update is unavailable. Use Check Release to update manually.</source>
+        <translation>自動更新を利用できません。「リリースを確認」から手動で更新してください。</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::UpdateDialog</name>

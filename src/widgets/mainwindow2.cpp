@@ -383,6 +383,17 @@ void MainWindow2::setupUI() {
   // MainWindowAfterStart subscription is registered before the hook fires.
   // It owns all update policy; MainWindow2 only forwards the menu action.
   m_updateController = new UpdateController(m_serviceLocator, this, this);
+#if defined(Q_OS_WIN)
+  connect(m_updateController, &UpdateController::scriptUpdateShutdownRequested, this, [this]() {
+    const int previousRequest = m_requestQuit;
+    m_requestQuit = 0;
+    const bool accepted = close();
+    if (!accepted) {
+      m_requestQuit = previousRequest;
+    }
+    m_updateController->completeScriptUpdateShutdown(accepted);
+  });
+#endif
   if (auto *hookMgr = m_serviceLocator.get<HookManager>()) {
     hookMgr->addAction(
         HookNames::MainWindowAfterStart,

@@ -9675,6 +9675,102 @@ This removes the file and any sub-tasks it contains: %2</source>
         <source>TLS is unavailable: no working secure-socket backend was found.</source>
         <translation>TLS 不可用：未找到可用的安全套接字后端。</translation>
     </message>
+    <message>
+        <source>VNote %1 is available. Update Now downloads the update, then closes and reopens VNote.</source>
+        <translation>VNote %1 已发布。“立即更新”将下载更新，然后关闭并重新打开 VNote。</translation>
+    </message>
+    <message>
+        <source>Update Now</source>
+        <translation>立即更新</translation>
+    </message>
+    <message>
+        <source>Automatic update requires numeric three-component versions and a newer release.</source>
+        <translation>自动更新要求版本号由三个数字部分组成，且目标版本比当前版本更新。</translation>
+    </message>
+    <message>
+        <source>Automatic update requires an x64 Windows build of VNote.</source>
+        <translation>自动更新需要 x64 Windows 版 VNote。</translation>
+    </message>
+    <message>
+        <source>Automatic update must run from the installation's root vnote.exe.</source>
+        <translation>自动更新必须从安装目录根目录下的 vnote.exe 启动。</translation>
+    </message>
+    <message>
+        <source>The installed updater file is missing: %1</source>
+        <translation>缺少已安装的更新程序文件：%1</translation>
+    </message>
+    <message>
+        <source>Could not locate the Windows system directory.</source>
+        <translation>无法定位 Windows 系统目录。</translation>
+    </message>
+    <message>
+        <source>Windows PowerShell is unavailable at %1.</source>
+        <translation>无法在 %1 找到可用的 Windows PowerShell。</translation>
+    </message>
+    <message>
+        <source>Could not create a private temporary updater directory: %1</source>
+        <translation>无法创建更新程序的专用临时目录：%1</translation>
+    </message>
+    <message>
+        <source>Could not copy the installed updater file %1: %2</source>
+        <translation>无法复制已安装的更新程序文件 %1：%2</translation>
+    </message>
+    <message>
+        <source>Could not open the updater's private connection: %1</source>
+        <translation>无法建立更新程序的专用连接：%1</translation>
+    </message>
+    <message>
+        <source>The updater did not connect within 15 seconds. Windows PowerShell may be missing, blocked by Group Policy, or unable to start. Check its console.</source>
+        <translation>更新程序未在 15 秒内连接。Windows PowerShell 可能缺失、被组策略阻止或无法启动。请查看其控制台。</translation>
+    </message>
+    <message>
+        <source>Windows PowerShell could not be started.</source>
+        <translation>无法启动 Windows PowerShell。</translation>
+    </message>
+    <message>
+        <source>Could not start Windows PowerShell: %1</source>
+        <translation>无法启动 Windows PowerShell：%1</translation>
+    </message>
+    <message>
+        <source>The updater did not return a valid process identity.</source>
+        <translation>更新程序未返回有效的进程标识。</translation>
+    </message>
+    <message>
+        <source>The updater disconnected before shutdown was accepted. Check the updater console for details.</source>
+        <translation>更新程序在关闭请求获准前断开了连接。请查看更新程序控制台了解详情。</translation>
+    </message>
+    <message>
+        <source>Could not read the updater's private connection.</source>
+        <translation>无法读取更新程序的专用连接。</translation>
+    </message>
+    <message>
+        <source>The updater sent an invalid connection message.</source>
+        <translation>更新程序发送了无效的连接消息。</translation>
+    </message>
+    <message>
+        <source>The updater's connection message exceeded its size limit.</source>
+        <translation>更新程序的连接消息超过了大小限制。</translation>
+    </message>
+    <message>
+        <source>Could not acknowledge the updater's private connection.</source>
+        <translation>无法确认更新程序的专用连接。</translation>
+    </message>
+    <message>
+        <source>The updater sent an unexpected or unauthenticated message.</source>
+        <translation>更新程序发送了意外或未经验证的消息。</translation>
+    </message>
+    <message>
+        <source>Temporary updater files were retained at %1.</source>
+        <translation>更新程序的临时文件已保留在 %1。</translation>
+    </message>
+    <message>
+        <source>Automatic Update Failed</source>
+        <translation>自动更新失败</translation>
+    </message>
+    <message>
+        <source>Automatic update is unavailable. Use Check Release to update manually.</source>
+        <translation>自动更新不可用。请使用“查看发布”手动更新。</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::UpdateDialog</name>

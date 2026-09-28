@@ -527,6 +527,21 @@ add_qt_test(test_updatecontroller
     Qt6::Widgets
 )
 
+if(WIN32)
+  # Explicit prerequisite: build prepare_win_updater before running this test.
+  # Do not add deployment downloads to normal application or test build targets.
+  add_test(NAME test_windows_script_update
+    COMMAND "$ENV{SystemRoot}/System32/WindowsPowerShell/v1.0/powershell.exe"
+      -NoLogo -NoProfile -ExecutionPolicy Bypass
+      -File "${CMAKE_SOURCE_DIR}/scripts/e2e/test-update-vnote.ps1"
+      -MinisignPath "${CMAKE_BINARY_DIR}/src/win-updater/minisign.exe"
+  )
+  set_tests_properties(test_windows_script_update PROPERTIES
+    TIMEOUT 180
+    REQUIRED_FILES "${CMAKE_BINARY_DIR}/src/win-updater/minisign.exe"
+  )
+endif()
+
 # DashboardController::previewStickerGeometry parity with setStickerGeometry.
 # GUILESS: the controller is a plain QObject, StickerFactory is stubbed (the
 # real one references every built-in sticker widget) and no ConfigMgr2 is

@@ -58,12 +58,33 @@ exactly two things: the update check
 
 ## Update artifacts
 
-Release CI still publishes manifests, minisign signatures and delta ZIPs (see
-[../docs/update-signing.md](../docs/update-signing.md)). **The VNote client does not consume
-them**: it never downloads, extracts, executes or installs a release artifact, and never
-modifies its own install directory. These artifacts exist as the interface for a future
-*external* updater. Client-side rules: root [AGENTS.md § Update Check](../AGENTS.md#update-check);
-implementation detail: [../src/core/services/AGENTS.md § Update Check](../src/core/services/AGENTS.md#update-check).
+Ordinary startup/manual checks remain metadata-only and read-only for the installation;
+`UpdateService` ignores assets. The sole installation entry point is the explicit Windows
+`Update Now` notification action launching the deployed external PowerShell updater, not an
+in-process installer or a manual-dialog action. The script consumes signed **full packages
+only**, with no unsigned or cross-source fallback. See
+[../docs/update-signing.md](../docs/update-signing.md) and root
+[AGENTS.md § Update Check](../AGENTS.md#update-check).
+
+On the existing `[Release]` master-push condition, **both** `win64` (Qt6) and
+`win64-windows7` (Qt5) must publish a ZIP, `.manifest.json` and `.manifest.json.minisig`.
+Use `SkipDelta=$true` for Qt5; retain Qt6 delta publication, although this updater never
+consumes deltas. Apply the stable-channel and artifact-list gates to both variants. Missing
+`MINISIGN_SECRET_KEY` must fail release signing, and secret files stay outside the workspace.
+Missing Gitee mirrors fail closed at runtime; never switch the user's source to GitHub.
+
+`prepare_win_updater` must run `package/prepare-win-updater.cmake` with
+`UPDATER_OUTPUT_DIR=<build>/src/win-updater` as a **deploy-only prerequisite**: no network on
+configure or ordinary builds. Pin minisign 0.11 archive, executable and upstream ISC license
+by SHA-256; accept only hash-matching cache entries and extract only in the build tree.
+Signing uses this prepared verifier, not a second unpinned download.
+
+Install `update-vnote.ps1`, `minisign.exe` and `LICENSE.minisign` under `updater/`, all
+non-optional; retain the existing libsodium notices. Keep the root executable allowlist at
+`vnote.exe` and `QtWebEngineProcess.exe`. For both variants, the extracted-package gate must
+assert all three helper files and run the **packaged** `updater/minisign.exe -v`, prepending
+that package root to the subprocess PATH so Qt5's bundled UCRT is available. Preserve the
+Qt5 TLS probe and all existing composition checks; verifier presence alone is not runtime proof.
 
 ## Linux test runtime
 

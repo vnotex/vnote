@@ -6,11 +6,12 @@
 // covers what the controller alone decides:
 //
 //   * an available update becomes ONE interrupting, persistent notification
-//     whose only affordance is the release page -- VNote downloads nothing;
+//     with a release-page fallback and an opt-in Windows script action;
 //   * an up-to-date result is silent on a startup check;
 //   * a later check supersedes the previous offer instead of stacking a second
 //     one;
-//   * the tracked-id bookkeeping when the retention cap evicts the message.
+//   * the tracked-id bookkeeping when the retention cap evicts the message;
+//   * the Windows launch-scoped, PID/token-authenticated shutdown handshake.
 //
 // The "Check Release" action calls QDesktopServices::openUrl(), which would open
 // a real browser, so an `https` scheme URL handler is installed for the whole
@@ -18,8 +19,21 @@
 
 #include <QtTest>
 
+#include <QApplication>
 #include <QDesktopServices>
 #include <QUrl>
+
+#ifdef Q_OS_WIN
+#include <QDir>
+#include <QElapsedTimer>
+#include <QFile>
+#include <QLocalSocket>
+#include <QProcess>
+#include <QScopedPointer>
+#include <QTemporaryDir>
+
+#include <cstdio>
+#endif
 
 #include <controllers/updatecontroller.h>
 #include <core/servicelocator.h>
@@ -44,15 +58,91 @@ UpdateInfo makeInfo(bool p_updateAvailable, const QString &p_latest = QStringLit
   return info;
 }
 
-QStringList actionLabels(const NotificationMessage &p_msg) {
-  QStringList labels;
-  for (const auto &action : p_msg.m_actions) {
-    labels.append(action.m_label);
-  }
-  return labels;
+#ifdef Q_OS_WIN
+const QString c_installKey = QStringLiteral("update.install");
+const char *const c_scriptChildMode = "--update-script-child";
+
+QString namedArgument(const QStringList &p_arguments, const QString &p_name) {
+  const int index = p_arguments.indexOf(p_name);
+  return index >= 0 && index + 1 < p_arguments.size() ? p_arguments.at(index + 1) : QString();
 }
 
+QByteArray readPipeFrame(QLocalSocket &p_socket, int p_timeout) {
+  QElapsedTimer timer;
+  timer.start();
+  while (!p_socket.canReadLine()) {
+    if (p_socket.state() == QLocalSocket::UnconnectedState) {
+      return QByteArrayLiteral("CLOSED");
+    }
+    const int remaining = p_timeout - int(timer.elapsed());
+    if (remaining <= 0 || !p_socket.waitForReadyRead(remaining)) {
+      if (p_socket.canReadLine()) {
+        break;
+      }
+      return p_socket.state() == QLocalSocket::UnconnectedState ? QByteArrayLiteral("CLOSED")
+                                                                : QByteArrayLiteral("QUIET");
+    }
+  }
+  return QByteArrayLiteral("FRAME ") + p_socket.readLine(257).toBase64();
+}
+
+QByteArray writePipeBytes(QLocalSocket &p_socket, const QByteArray &p_bytes) {
+  if (p_socket.write(p_bytes) == p_bytes.size() &&
+      (p_socket.bytesToWrite() == 0 || p_socket.waitForBytesWritten(5000))) {
+    return QByteArrayLiteral("WROTE");
+  }
+  return p_socket.state() == QLocalSocket::UnconnectedState ? QByteArrayLiteral("CLOSED")
+                                                            : QByteArrayLiteral("WRITE_FAILED");
+}
+#endif
+
 } // namespace
+
+#ifdef Q_OS_WIN
+// A real pipe peer, controlled over QProcess stdin. No controller authentication
+// seam is used: this process's PID must match the launcher's returned identity.
+int runScriptChild() {
+  const auto arguments = QCoreApplication::arguments();
+  const auto pipeName = namedArgument(arguments, QStringLiteral("-PipeName"));
+  // This fixture intentionally has no ConfigMgr2. A child must receive the
+  // normalized Gitee source, not an empty or unrecognized source.
+  if (pipeName.isEmpty() || namedArgument(arguments, QStringLiteral("-Token")).isEmpty() ||
+      namedArgument(arguments, QStringLiteral("-Source")) != QLatin1String("gitee")) {
+    return 2;
+  }
+
+  QLocalSocket socket;
+  char commandBuffer[4096];
+  while (std::fgets(commandBuffer, sizeof(commandBuffer), stdin)) {
+    const QByteArray command = QByteArray(commandBuffer).trimmed();
+    QByteArray response;
+    if (command == "CONNECT" || command.startsWith("CONNECT ")) {
+      socket.connectToServer(pipeName);
+      if (!socket.waitForConnected(5000)) {
+        response = "CONNECT_FAILED";
+      } else if (command.startsWith("CONNECT ")) {
+        response = writePipeBytes(socket, QByteArray::fromBase64(command.mid(8)));
+      } else {
+        response = "CONNECTED";
+      }
+    } else if (command.startsWith("WRITE ")) {
+      response = writePipeBytes(socket, QByteArray::fromBase64(command.mid(6)));
+    } else if (command == "READ") {
+      response = readPipeFrame(socket, 5000);
+    } else if (command == "PROBE") {
+      response = readPipeFrame(socket, 150);
+    } else if (command == "DISCONNECT") {
+      socket.abort();
+      response = "DISCONNECTED";
+    } else {
+      return 3;
+    }
+    std::fprintf(stdout, "%s\n", response.constData());
+    std::fflush(stdout);
+  }
+  return 0;
+}
+#endif
 
 // Intercepts QDesktopServices::openUrl() so the suite never opens a browser.
 class UrlSink : public QObject {
@@ -77,6 +167,17 @@ private slots:
   void test_aLaterCheckSupersedesThePreviousOffer();
   void test_aDroppedManualRequestCannotRelabelARunningCheck();
   void test_evictingTheTrackedMessageClearsTheTrackedId();
+#ifdef Q_OS_WIN
+  void test_launchFailureKeepsReleaseFallbackAndAllowsRetry();
+  void test_duplicateActivationStartsOnlyOneHelper();
+  void test_dismissedOfferCallbackDoesNotLaunch();
+  void test_fragmentedHandshakeRequiresExplicitAcceptance();
+  void test_invalidFramesNeverRequestShutdown_data();
+  void test_invalidFramesNeverRequestShutdown();
+  void test_wrongPeerPidCannotRequestShutdown();
+  void test_cancelledShutdownAllowsRetry();
+  void test_resetLauncherRestoresProductionIdentityChecks();
+#endif
 
 private:
   // A COPY: the store is rebuilt on every notify(), so holding a pointer across
@@ -88,6 +189,23 @@ private:
   UpdateService *m_updateService = nullptr;
   UpdateController *m_controller = nullptr;
   UrlSink *m_urlSink = nullptr;
+#ifdef Q_OS_WIN
+  void installScriptLauncher();
+  QProcess *startScriptChild(const QStringList &p_arguments, const QString &p_workingDirectory);
+  QByteArray childCommand(QProcess *p_child, const QByteArray &p_command);
+  bool writeToScript(QProcess *p_child, const QByteArray &p_bytes);
+  QByteArray readFromScript(QProcess *p_child);
+  bool authenticateScript(QProcess *p_child);
+  QByteArray requestFrame(const char *p_verb) const;
+  void triggerScriptAction(const NotificationMessage &p_offer);
+
+  QScopedPointer<QTemporaryDir> m_installDir;
+  QVector<QProcess *> m_scriptChildren;
+  QStringList m_launchArguments;
+  QStringList m_scratchDirectories;
+  int m_launchCount = 0;
+  bool m_failLaunch = false;
+#endif
 };
 
 bool TestUpdateController::activeWithKey(const QString &p_key, NotificationMessage *p_out) const {
@@ -116,11 +234,47 @@ void TestUpdateController::init() {
   // of the way. The check-result path is driven directly through the service's
   // signals instead.
   m_controller = new UpdateController(*m_services, nullptr);
+#ifdef Q_OS_WIN
+  m_launchCount = 0;
+  m_failLaunch = false;
+  m_installDir.reset(new QTemporaryDir(QDir::tempPath() + QStringLiteral("/vnote script-XXXXXX")));
+  QVERIFY(m_installDir->isValid());
+  QVERIFY(QDir(m_installDir->path()).mkdir(QStringLiteral("updater")));
+  const QStringList files{QStringLiteral("vnote.exe"), QStringLiteral("updater/update-vnote.ps1"),
+                          QStringLiteral("updater/minisign.exe"),
+                          QStringLiteral("updater/LICENSE.minisign")};
+  for (const auto &name : files) {
+    QFile file(m_installDir->filePath(name));
+    QVERIFY(file.open(QIODevice::WriteOnly));
+    QCOMPARE(file.write("private controller fixture"), qint64(26));
+  }
+  m_controller->testSetScriptInstallDir(m_installDir->path());
+  installScriptLauncher();
+#endif
 }
 
 void TestUpdateController::cleanup() {
   delete m_controller;
   m_controller = nullptr;
+#ifdef Q_OS_WIN
+  for (auto *child : m_scriptChildren) {
+    if (child->state() != QProcess::NotRunning) {
+      child->kill();
+      child->waitForFinished(5000);
+    }
+    delete child;
+  }
+  m_scriptChildren.clear();
+  // Production transfers scratch ownership to the detached script. These
+  // substitute children never install anything; remove their scratch only
+  // after all owned child processes have stopped.
+  for (const auto &path : m_scratchDirectories) {
+    QDir(path).removeRecursively();
+  }
+  m_scratchDirectories.clear();
+  m_launchArguments.clear();
+  m_installDir.reset();
+#endif
   delete m_updateService;
   m_updateService = nullptr;
   delete m_notifications;
@@ -135,7 +289,7 @@ void TestUpdateController::cleanup() {
 
 // The offer must be Interrupt (a toast is raised ONLY by messageAdded carrying
 // Interrupt) and Persist (the user must be able to find it whenever they are
-// ready), and its ONLY action is the release page: VNote downloads nothing.
+// ready). The first action must remain the release-page fallback on every platform.
 void TestUpdateController::test_availableUpdateBecomesAnInterruptingReleasePageOffer() {
   emit m_updateService->checkFinished(makeInfo(true));
 
@@ -144,7 +298,11 @@ void TestUpdateController::test_availableUpdateBecomesAnInterruptingReleasePageO
   QCOMPARE(offer.m_category, QStringLiteral("update"));
   QCOMPARE(offer.m_attention, NotificationMessage::Attention::Interrupt);
   QCOMPARE(offer.m_duration, NotificationMessage::Duration::Persist);
-  QCOMPARE(actionLabels(offer), QStringList{QStringLiteral("Check Release")});
+#ifdef Q_OS_WIN
+  QCOMPARE(offer.m_actions.size(), 2);
+#else
+  QCOMPARE(offer.m_actions.size(), 1);
+#endif
   QVERIFY2(offer.m_text.contains(QStringLiteral("4.4.3")), qPrintable(offer.m_text));
 
   offer.m_actions.at(0).m_callback();
@@ -181,6 +339,13 @@ void TestUpdateController::test_aLaterCheckSupersedesThePreviousOffer() {
   // renotify() retires the previous generation rather than leaving two rows.
   QVERIFY2(!m_notifications->isActive(firstId), "the superseded offer is still active");
   QCOMPARE(m_notifications->activeCount(), 1);
+#ifdef Q_OS_WIN
+  triggerScriptAction(first);
+  QCOMPARE(m_launchCount, 0);
+  triggerScriptAction(second);
+  QCOMPARE(m_launchCount, 1);
+  QVERIFY(authenticateScript(m_scriptChildren.last()));
+#endif
 }
 
 // The regression this guards: `startCheck()` used to set the manual/startup
@@ -257,15 +422,360 @@ void TestUpdateController::test_evictingTheTrackedMessageClearsTheTrackedId() {
   QVERIFY2(m_notifications->messages().size() <= NotificationService::c_maxMessages,
            "the store grew past the cap");
 
+#ifdef Q_OS_WIN
+  triggerScriptAction(offer);
+  QCOMPARE(m_launchCount, 0);
+#endif
+
   // With the tracked id cleared, a fresh offer lands as a NEW active message
   // instead of trying to dismiss a dead one.
   emit m_updateService->checkFinished(makeInfo(true));
   NotificationMessage second;
   QVERIFY(activeWithKey(c_offerKey, &second));
   QVERIFY(second.m_id != offerId);
+#ifdef Q_OS_WIN
+  triggerScriptAction(second);
+  QCOMPARE(m_launchCount, 1);
+  QVERIFY(authenticateScript(m_scriptChildren.last()));
+#endif
 }
+
+#ifdef Q_OS_WIN
+void TestUpdateController::installScriptLauncher() {
+  m_controller->testSetScriptLauncher([this](const QString &, const QStringList &p_arguments,
+                                             const QString &p_workingDirectory, qint64 *p_pid) {
+    ++m_launchCount;
+    m_launchArguments = p_arguments;
+    m_scratchDirectories.append(p_workingDirectory);
+    if (m_failLaunch) {
+      return false;
+    }
+    auto *child = startScriptChild(p_arguments, p_workingDirectory);
+    if (child->state() == QProcess::NotRunning) {
+      return false;
+    }
+    *p_pid = child->processId();
+    return true;
+  });
+}
+
+QProcess *TestUpdateController::startScriptChild(const QStringList &p_arguments,
+                                                 const QString &p_workingDirectory) {
+  auto *child = new QProcess();
+  m_scriptChildren.append(child);
+  child->setProgram(QCoreApplication::applicationFilePath());
+  child->setArguments(QStringList{QString::fromLatin1(c_scriptChildMode)} + p_arguments);
+  child->setWorkingDirectory(p_workingDirectory);
+  child->start();
+  child->waitForStarted(5000);
+  return child;
+}
+
+QByteArray TestUpdateController::childCommand(QProcess *p_child, const QByteArray &p_command) {
+  if (p_child->write(p_command + '\n') < 0 ||
+      !QTest::qWaitFor(
+          [p_child]() {
+            return p_child->canReadLine() || p_child->state() == QProcess::NotRunning;
+          },
+          7000) ||
+      !p_child->canReadLine()) {
+    qWarning() << "Script child command failed:" << p_command << p_child->errorString()
+               << p_child->readAllStandardError();
+    return {};
+  }
+  return p_child->readLine().trimmed();
+}
+
+bool TestUpdateController::writeToScript(QProcess *p_child, const QByteArray &p_bytes) {
+  return childCommand(p_child, QByteArrayLiteral("WRITE ") + p_bytes.toBase64()) == "WROTE";
+}
+
+QByteArray TestUpdateController::readFromScript(QProcess *p_child) {
+  const auto response = childCommand(p_child, QByteArrayLiteral("READ"));
+  return response.startsWith("FRAME ") ? QByteArray::fromBase64(response.mid(6)) : response;
+}
+
+bool TestUpdateController::authenticateScript(QProcess *p_child) {
+  return childCommand(p_child, QByteArrayLiteral("CONNECT")) == "CONNECTED" &&
+         writeToScript(p_child, requestFrame("HELLO")) && readFromScript(p_child) == "OK\n";
+}
+
+QByteArray TestUpdateController::requestFrame(const char *p_verb) const {
+  return QByteArray(p_verb) + ' ' +
+         namedArgument(m_launchArguments, QStringLiteral("-Token")).toLatin1() + '\n';
+}
+
+void TestUpdateController::triggerScriptAction(const NotificationMessage &p_offer) {
+  QVERIFY(p_offer.m_actions.size() > 1);
+  const auto action = p_offer.m_actions.at(1);
+  QVERIFY(bool(action.m_callback));
+  action.m_callback();
+  // Honor the same dismissal contract as the notification surface, rather than
+  // merely asserting a flag that a real activation might otherwise ignore.
+  if (action.m_dismissOnTrigger) {
+    m_notifications->dismiss(p_offer.m_id);
+  }
+}
+
+void TestUpdateController::test_launchFailureKeepsReleaseFallbackAndAllowsRetry() {
+  emit m_updateService->checkFinished(makeInfo(true));
+  NotificationMessage offer;
+  QVERIFY(activeWithKey(c_offerKey, &offer));
+  QSignalSpy shutdown(m_controller, &UpdateController::scriptUpdateShutdownRequested);
+  QSignalSpy added(m_notifications, &NotificationService::messageAdded);
+
+  m_failLaunch = true;
+  triggerScriptAction(offer);
+  QCOMPARE(m_launchCount, 1);
+  QCOMPARE(m_scriptChildren.size(), 0);
+  QCOMPARE(shutdown.count(), 0);
+  QCOMPARE(added.count(), 1);
+  NotificationMessage failure;
+  QVERIFY(activeWithKey(c_installKey, &failure));
+  QCOMPARE(failure.m_category, QStringLiteral("update"));
+  QCOMPARE(failure.m_attention, NotificationMessage::Attention::Interrupt);
+  QCOMPARE(failure.m_severity, NotificationMessage::Severity::Warning);
+  QVERIFY(m_notifications->isActive(offer.m_id));
+  QVERIFY(!failure.m_actions.isEmpty());
+  failure.m_actions.first().m_callback();
+  offer.m_actions.first().m_callback();
+  QCOMPARE(m_urlSink->m_opened,
+           (QList<QUrl>{QUrl(makeInfo(true).releaseUrl), QUrl(makeInfo(true).releaseUrl)}));
+
+  m_failLaunch = false;
+  triggerScriptAction(offer);
+  QCOMPARE(m_launchCount, 2);
+  QCOMPARE(m_scriptChildren.size(), 1);
+  QVERIFY(authenticateScript(m_scriptChildren.last()));
+  QVERIFY(!activeWithKey(c_installKey, &failure));
+  QVERIFY(m_notifications->isActive(offer.m_id));
+  QCOMPARE(shutdown.count(), 0);
+}
+
+void TestUpdateController::test_duplicateActivationStartsOnlyOneHelper() {
+  emit m_updateService->checkFinished(makeInfo(true));
+  NotificationMessage offer;
+  QVERIFY(activeWithKey(c_offerKey, &offer));
+  QSignalSpy shutdown(m_controller, &UpdateController::scriptUpdateShutdownRequested);
+  triggerScriptAction(offer);
+  triggerScriptAction(offer);
+  QCOMPARE(m_launchCount, 1);
+  QCOMPARE(m_scriptChildren.size(), 1);
+  QVERIFY(authenticateScript(m_scriptChildren.last()));
+  triggerScriptAction(offer);
+  QCOMPARE(m_launchCount, 1);
+  QCOMPARE(shutdown.count(), 0);
+  QVERIFY(m_notifications->isActive(offer.m_id));
+}
+
+void TestUpdateController::test_dismissedOfferCallbackDoesNotLaunch() {
+  emit m_updateService->checkFinished(makeInfo(true));
+  NotificationMessage offer;
+  QVERIFY(activeWithKey(c_offerKey, &offer));
+  m_notifications->dismiss(offer.m_id);
+  triggerScriptAction(offer);
+  QCOMPARE(m_launchCount, 0);
+
+  emit m_updateService->checkFinished(makeInfo(true));
+  NotificationMessage next;
+  QVERIFY(activeWithKey(c_offerKey, &next));
+  triggerScriptAction(offer);
+  QCOMPARE(m_launchCount, 0);
+  triggerScriptAction(next);
+  QCOMPARE(m_launchCount, 1);
+  QVERIFY(authenticateScript(m_scriptChildren.last()));
+}
+
+void TestUpdateController::test_fragmentedHandshakeRequiresExplicitAcceptance() {
+  emit m_updateService->checkFinished(makeInfo(true));
+  NotificationMessage offer;
+  QVERIFY(activeWithKey(c_offerKey, &offer));
+  QSignalSpy shutdown(m_controller, &UpdateController::scriptUpdateShutdownRequested);
+  triggerScriptAction(offer);
+  QCOMPARE(m_scriptChildren.size(), 1);
+  auto *child = m_scriptChildren.last();
+  QCOMPARE(childCommand(child, "CONNECT"), QByteArray("CONNECTED"));
+
+  const auto hello = requestFrame("HELLO");
+  QVERIFY(writeToScript(child, hello.left(3)));
+  QCOMPARE(childCommand(child, "PROBE"), QByteArray("QUIET"));
+  QCOMPARE(shutdown.count(), 0);
+  QVERIFY(writeToScript(child, hello.mid(3)));
+  QCOMPARE(readFromScript(child), QByteArray("OK\n"));
+  QCOMPARE(shutdown.count(), 0);
+
+  // Neither HELLO nor an unsolicited completion authorizes installation.
+  m_controller->completeScriptUpdateShutdown(true);
+  QCOMPARE(childCommand(child, "PROBE"), QByteArray("QUIET"));
+  const auto ready = requestFrame("READY");
+  QVERIFY(writeToScript(child, ready.left(ready.size() - 1)));
+  QCOMPARE(childCommand(child, "PROBE"), QByteArray("QUIET"));
+  QCOMPARE(shutdown.count(), 0);
+  QVERIFY(writeToScript(child, ready.right(1)));
+  QTRY_COMPARE(shutdown.count(), 1);
+  QCOMPARE(childCommand(child, "PROBE"), QByteArray("QUIET"));
+
+  QVERIFY(writeToScript(child, ready));
+  QCOMPARE(childCommand(child, "PROBE"), QByteArray("QUIET"));
+  QCOMPARE(shutdown.count(), 1);
+  m_controller->completeScriptUpdateShutdown(true);
+  QCOMPARE(readFromScript(child), QByteArray("ACCEPTED\n"));
+  QVERIFY(writeToScript(child, ready));
+  m_controller->completeScriptUpdateShutdown(false);
+  QCOMPARE(childCommand(child, "PROBE"), QByteArray("QUIET"));
+  QCOMPARE(shutdown.count(), 1);
+  triggerScriptAction(offer);
+  QCOMPARE(m_launchCount, 1);
+
+  // An accepted attempt remains alive until application/controller teardown.
+  delete m_controller;
+  m_controller = nullptr;
+  QCOMPARE(readFromScript(child), QByteArray("CLOSED"));
+}
+
+void TestUpdateController::test_invalidFramesNeverRequestShutdown_data() {
+  QTest::addColumn<bool>("authenticateFirst");
+  QTest::addColumn<QByteArray>("payload");
+  QTest::newRow("wrong-hello-token") << false << QByteArray("HELLO wrong-token\n");
+  QTest::newRow("ready-before-hello") << false << QByteArray("READY {token}\n");
+  QTest::newRow("wrong-ready-token") << true << QByteArray("READY wrong-token\n");
+  QTest::newRow("repeated-hello") << true << QByteArray("HELLO {token}\n");
+  QTest::newRow("malformed-ready") << true << QByteArray("READY  {token}\n");
+  QTest::newRow("non-ascii-ready") << true << (QByteArray("READY {token}") + char(0x80) + '\n');
+  QTest::newRow("overlong-unterminated-frame") << true << QByteArray(257, 'X');
+}
+
+void TestUpdateController::test_invalidFramesNeverRequestShutdown() {
+  QFETCH(bool, authenticateFirst);
+  QFETCH(QByteArray, payload);
+  emit m_updateService->checkFinished(makeInfo(true));
+  NotificationMessage offer;
+  QVERIFY(activeWithKey(c_offerKey, &offer));
+  QSignalSpy shutdown(m_controller, &UpdateController::scriptUpdateShutdownRequested);
+  triggerScriptAction(offer);
+  QCOMPARE(m_scriptChildren.size(), 1);
+  auto *child = m_scriptChildren.last();
+  if (authenticateFirst) {
+    QVERIFY(authenticateScript(child));
+  } else {
+    QCOMPARE(childCommand(child, "CONNECT"), QByteArray("CONNECTED"));
+  }
+  payload.replace("{token}", namedArgument(m_launchArguments, QStringLiteral("-Token")).toLatin1());
+  QVERIFY(writeToScript(child, payload));
+  QCOMPARE(readFromScript(child), QByteArray("CLOSED"));
+  QCOMPARE(shutdown.count(), 0);
+  NotificationMessage failure;
+  QVERIFY(activeWithKey(c_installKey, &failure));
+  QVERIFY(m_notifications->isActive(offer.m_id));
+
+  triggerScriptAction(offer);
+  QCOMPARE(m_launchCount, 2);
+  QVERIFY(authenticateScript(m_scriptChildren.last()));
+  QVERIFY(!activeWithKey(c_installKey, &failure));
+  QCOMPARE(shutdown.count(), 0);
+}
+
+void TestUpdateController::test_wrongPeerPidCannotRequestShutdown() {
+  emit m_updateService->checkFinished(makeInfo(true));
+  NotificationMessage offer;
+  QVERIFY(activeWithKey(c_offerKey, &offer));
+  QSignalSpy shutdown(m_controller, &UpdateController::scriptUpdateShutdownRequested);
+  triggerScriptAction(offer);
+  QCOMPARE(m_scriptChildren.size(), 1);
+  auto *helper = m_scriptChildren.last();
+  auto *intruder = startScriptChild(m_launchArguments, helper->workingDirectory());
+  QVERIFY(intruder->state() != QProcess::NotRunning);
+  QVERIFY(intruder->processId() != helper->processId());
+  const auto unauthorized = requestFrame("HELLO") + requestFrame("READY");
+  const auto result = childCommand(intruder, "CONNECT " + unauthorized.toBase64());
+  QVERIFY(result == "WROTE" || result == "CLOSED");
+  QCOMPARE(readFromScript(intruder), QByteArray("CLOSED"));
+  QCOMPARE(shutdown.count(), 0);
+
+  // Knowing the token is insufficient, but rejecting the unrelated process
+  // must not prevent the real launched helper from completing its handshake.
+  QVERIFY(authenticateScript(helper));
+  QVERIFY(writeToScript(helper, requestFrame("READY")));
+  QTRY_COMPARE(shutdown.count(), 1);
+  m_controller->completeScriptUpdateShutdown(false);
+  QCOMPARE(readFromScript(helper), QByteArray("CANCELLED\n"));
+  QCOMPARE(m_launchCount, 1);
+}
+
+void TestUpdateController::test_cancelledShutdownAllowsRetry() {
+  emit m_updateService->checkFinished(makeInfo(true));
+  NotificationMessage offer;
+  QVERIFY(activeWithKey(c_offerKey, &offer));
+  QSignalSpy shutdown(m_controller, &UpdateController::scriptUpdateShutdownRequested);
+  triggerScriptAction(offer);
+  QCOMPARE(m_scriptChildren.size(), 1);
+  auto *first = m_scriptChildren.last();
+  QVERIFY(authenticateScript(first));
+  QVERIFY(writeToScript(first, requestFrame("READY")));
+  QTRY_COMPARE(shutdown.count(), 1);
+  m_controller->completeScriptUpdateShutdown(false);
+  QCOMPARE(readFromScript(first), QByteArray("CANCELLED\n"));
+  QCOMPARE(readFromScript(first), QByteArray("CLOSED"));
+  QVERIFY(m_notifications->isActive(offer.m_id));
+
+  triggerScriptAction(offer);
+  QCOMPARE(m_launchCount, 2);
+  QCOMPARE(m_scriptChildren.size(), 2);
+  auto *second = m_scriptChildren.last();
+  QVERIFY(authenticateScript(second));
+  QVERIFY(writeToScript(second, requestFrame("READY")));
+  QTRY_COMPARE(shutdown.count(), 2);
+  m_controller->completeScriptUpdateShutdown(false);
+  QCOMPARE(readFromScript(second), QByteArray("CANCELLED\n"));
+}
+
+void TestUpdateController::test_resetLauncherRestoresProductionIdentityChecks() {
+  emit m_updateService->checkFinished(makeInfo(true));
+  NotificationMessage offer;
+  QVERIFY(activeWithKey(c_offerKey, &offer));
+  triggerScriptAction(offer);
+  QCOMPARE(m_scriptChildren.size(), 1);
+  auto *child = m_scriptChildren.last();
+  QVERIFY(authenticateScript(child));
+  QCOMPARE(childCommand(child, "DISCONNECT"), QByteArray("DISCONNECTED"));
+  NotificationMessage failure;
+  QTRY_VERIFY(activeWithKey(c_installKey, &failure));
+
+  // The private installed-root override must cease granting an exception for
+  // this test executable once the custom launcher has been removed.
+  m_controller->testSetScriptLauncher({});
+  QSignalSpy added(m_notifications, &NotificationService::messageAdded);
+  triggerScriptAction(offer);
+  QCOMPARE(added.count(), 1);
+  QVERIFY(activeWithKey(c_installKey, &failure));
+  QCOMPARE(failure.m_severity, NotificationMessage::Severity::Warning);
+  QCOMPARE(failure.m_attention, NotificationMessage::Attention::Interrupt);
+  QCOMPARE(m_launchCount, 1);
+  QVERIFY(m_notifications->isActive(offer.m_id));
+
+  installScriptLauncher();
+  triggerScriptAction(offer);
+  QCOMPARE(m_launchCount, 2);
+  QVERIFY(authenticateScript(m_scriptChildren.last()));
+}
+#endif
 
 } // namespace tests
 
-QTEST_MAIN(tests::TestUpdateController)
+int main(int argc, char *argv[]) {
+#ifdef Q_OS_WIN
+  if (argc > 1 && QByteArray(argv[1]) == tests::c_scriptChildMode) {
+    QCoreApplication app(argc, argv);
+    return tests::runScriptChild();
+  }
+#endif
+  QApplication app(argc, argv);
+  app.setAttribute(Qt::AA_Use96Dpi, true);
+#ifdef QT_KEYPAD_NAVIGATION
+  QApplication::setNavigationMode(Qt::NavigationModeNone);
+#endif
+  QTEST_SET_MAIN_SOURCE_PATH
+  tests::TestUpdateController testObject;
+  return QTest::qExec(&testObject, argc, argv);
+}
 #include "test_updatecontroller.moc"

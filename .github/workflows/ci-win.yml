@@ -489,7 +489,7 @@ jobs:
           # cmark's CLI is installed by the vendored cmark and, with the flat
           # layout, lands in the package root. VNote links cmark as a library
           # and never runs it. vnote.exe and QtWebEngineProcess.exe are the only
-          # executables the package should carry.
+          # executables the package root should carry; minisign lives in updater/.
           $strayExe = @(Get-ChildItem -File -Filter '*.exe' $extracted |
                         Where-Object { $_.Name -notin @('vnote.exe', 'QtWebEngineProcess.exe') })
           if ($strayExe) {
@@ -497,6 +497,33 @@ jobs:
             exit 1
           }
           Write-Host "No SDK artifacts under $extracted"
+
+      - name: Verify packaged Windows updater
+        shell: pwsh
+        working-directory: ${{runner.workspace}}/build
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pkg = (Resolve-Path -LiteralPath "VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}").Path
+          foreach ($file in @('update-vnote.ps1', 'minisign.exe', 'LICENSE.minisign')) {
+            $path = Join-Path $pkg "updater/$file"
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "Package is missing $path"
+            }
+          }
+
+          # The verifier is below the root; Qt5's bundled UCRT DLLs are at the root.
+          $originalPath = $env:PATH
+          $env:PATH = "$pkg;$originalPath"
+          try {
+            & (Join-Path $pkg 'updater/minisign.exe') -v
+            if ($LASTEXITCODE -ne 0) {
+              throw "Packaged minisign cannot run (exit $LASTEXITCODE)"
+            }
+          }
+          finally {
+            $env:PATH = $originalPath
+          }
+          Write-Host "Windows updater present and bundled verifier runnable in $pkg"
 
       # The import-table gate above proves the OpenSSL DLLs need only the modern
       # runtime family. This one proves that family is actually IN the package,
@@ -574,8 +601,8 @@ jobs:
           # Qt install directory shadow the packaged DLLs.
           #
           # The ZIP was already produced by CPack before extraction, so this does
-          # not alter the published artifact; the Remove-Item is hygiene. Qt 5
-          # runs no gen-update-package.ps1, so there is no manifest interaction.
+          # not alter that ZIP. Remove the probe before release manifest generation
+          # below, which rebuilds the ZIP from this directory on both Qt variants.
           $copied = Join-Path $pkg 'tlsprobe.exe'
           Copy-Item -LiteralPath $probe -Destination $copied -Force
           Push-Location $pkg
@@ -600,18 +627,15 @@ jobs:
       # variant name is final) and before the composition check below (which
       # inspects the extracted directory, now including manifest.json).
       #
-      # NOTE: the VNote client no longer consumes these at all -- it only checks
-      # for a newer release and points the user at the release page (see the
-      # "Update Check" section of the root AGENTS.md). They are published as the
-      # artifact interface for a future EXTERNAL updater; see
-      # docs/update-signing.md.
+      # Ordinary update checks remain metadata-only. The explicit Windows
+      # external updater consumes signed full packages for both variants, never
+      # deltas; see docs/update-signing.md.
       #
       # The MSI was produced earlier by `cmake --build . --target=pack`, so it
       # does NOT contain manifest.json. That is intentional and unchanged.
       #
-      # Qt6 / `win64` ONLY. The Qt5 `win64-windows7` variant deliberately ships
-      # no update assets; nothing depends on them, so generating them for that
-      # variant would only add build surface.
+      # Qt6 / `win64` retains optional delta publication; Qt5 / `win64-windows7`
+      # publishes a signed full-package manifest with delta generation disabled.
       - name: Generate update manifest and delta
         # Update artifacts are only meaningful for a real release. This repo
         # cuts releases from a `[Release]` master push (the tag is created
@@ -619,7 +643,7 @@ jobs:
         # `Release` step below. Non-release commits (PRs, continuous master
         # builds) skip manifest/delta generation entirely; those channels never
         # publish update assets, so producing them only risks failing the build.
-        if: matrix.config.qt_major == 6 && github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
+        if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
         shell: pwsh
         working-directory: ${{runner.workspace}}/build
         env:
@@ -628,9 +652,8 @@ jobs:
           # STABLE release and download its published manifest.
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GH_REPO: ${{ github.repository }}
-          # Ed25519 signing key for the release manifest. The client REFUSES any
-          # manifest it cannot verify, so an unsigned release is inert. Absent
-          # on forks and on PRs from forks, where the generator warns instead.
+          # Ed25519 signing key for the release manifest. The external updater
+          # refuses unsigned manifests, so an absent release secret is fatal.
           MINISIGN_SECRET_KEY: ${{ secrets.MINISIGN_SECRET_KEY }}
         run: |
           # Channel is derived from THIS workflow's real release predicate,
@@ -652,15 +675,17 @@ jobs:
           # JSON, and would have published an UNSIGNED manifest that every
           # client refuses.
           $signArgs = @{}
+          if ('${{ matrix.config.qt_major }}' -eq '5') {
+            $signArgs['SkipDelta'] = $true
+          }
           if ($env:MINISIGN_SECRET_KEY) {
-            # minisign is not preinstalled on the runner image.
-            $msVer = '0.11'
-            $msZip = Join-Path $env:RUNNER_TEMP 'minisign.zip'
-            $msDir = Join-Path $env:RUNNER_TEMP 'minisign'
-            curl.exe -sSL -o $msZip "https://github.com/jedisct1/minisign/releases/download/$msVer/minisign-$msVer-win64.zip"
-            Expand-Archive -Path $msZip -DestinationPath $msDir -Force
-            $msExe = (Get-ChildItem $msDir -Recurse -Filter minisign.exe | Select-Object -First 1).DirectoryName
-            $env:PATH = "$msExe;$env:PATH"
+            # Reuse the hash-pinned verifier already prepared by deploy.
+            $msDir = (Resolve-Path -LiteralPath 'src/win-updater').Path
+            if (-not (Test-Path -LiteralPath (Join-Path $msDir 'minisign.exe') -PathType Leaf)) {
+              throw "Prepared minisign is missing from $msDir"
+            }
+            $pkg = (Resolve-Path -LiteralPath "VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}").Path
+            $env:PATH = "$msDir;$pkg;$env:PATH"
 
             # Materialize the key outside the workspace so it can never be
             # picked up by a packaging glob, and remove it in the finally block.
@@ -705,8 +730,8 @@ jobs:
 
       - name: Assert update manifest channel
         # Only runs when the previous step generated the manifests, i.e. on a
-        # `[Release]` master push of the Qt6 / `win64` variant.
-        if: matrix.config.qt_major == 6 && github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
+        # `[Release]` master push for either Windows variant.
+        if: github.ref == 'refs/heads/master' && startsWith(github.event.head_commit.message, '[Release]')
         shell: pwsh
         working-directory: ${{runner.workspace}}/build
         run: |
@@ -880,14 +905,8 @@ jobs:
           # GREEN while uploading no assets at all.
           $base = ("${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-win64${{matrix.config.suffix}}").Replace('\', '/')
 
-          # The Qt5 `win64-windows7` variant publishes the ZIP only: it runs no
-          # manifest/delta generation, so naming those files here would ask for
-          # artifacts that are never produced.
-          $required = if ('${{ matrix.config.qt_major }}' -eq '6') {
-            @("$base.zip", "$base.manifest.json", "$base.manifest.json.minisig")
-          } else {
-            @("$base.zip")
-          }
+          # Both Windows variants require a signed full package.
+          $required = @("$base.zip", "$base.manifest.json", "$base.manifest.json.minisig")
 
           # The delta is genuinely optional: the first release shipping this
           # feature has no predecessor manifest to diff against, so the
@@ -911,7 +930,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           # Both matrix jobs target the same draft (allowUpdates:true):
-          # Qt6 -> ...win64.*, Qt5.15 -> ...win64-windows7.zip
+          # Qt6 -> ...win64.*, Qt5.15 -> ...win64-windows7.* (no delta)
           #
           # Composed by the step above rather than written literally, because
           # the two variants publish different asset sets and every entry must
