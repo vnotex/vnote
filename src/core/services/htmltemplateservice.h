@@ -17,10 +17,9 @@ namespace vnotex {
 class ConfigMgr2;
 class PdfViewerConfig;
 class MarkdownEditorConfig;
-class MindMapEditorConfig;
 struct WebResource;
 
-// Service for loading and caching HTML templates (PDF viewer, Markdown viewer, MindMap editor).
+// Service for loading and caching HTML templates (PDF and Markdown viewers).
 // Replaces HtmlTemplateHelper's singleton-dependent logic with DI via ConfigMgr2.
 //
 // Receives ConfigMgr2 via constructor for resolving config file paths.
@@ -80,17 +79,6 @@ public:
                                           QHash<QString, QByteArray> &p_resources) const;
   static QString protectedContentSecurityPolicy(const QString &p_nonce);
 
-  // ============ MindMap Editor Template ============
-
-  // Update MindMap editor template from config + theme data.
-  // @p_webStyleSheetFile: path from ThemeService (or empty).
-  void updateMindMapEditorTemplate(const MindMapEditorConfig &p_config,
-                                   const QString &p_webStyleSheetFile = QString(),
-                                   bool p_force = false);
-
-  // Get the cached MindMap editor template HTML.
-  const QString &getMindMapEditorTemplate() const;
-
 private:
   struct Template {
     int m_revision = -1;
@@ -144,10 +132,6 @@ private:
   void generatePdfViewerTemplate(const PdfViewerConfig &p_config, const QString &p_commentColorsCss,
                                  const QString &p_webStyleContent, Template &p_template) const;
 
-  void generateMindMapEditorTemplate(const MindMapEditorConfig &p_config,
-                                     const QString &p_webStyleSheetFile,
-                                     Template &p_template) const;
-
   ConfigMgr2 *m_configMgr = nullptr;
 
   Template m_pdfViewerTemplate;
@@ -159,7 +143,6 @@ private:
   QString m_pdfViewerWebStyleContent;
 
   Template m_markdownViewerTemplate;
-  Template m_mindMapEditorTemplate;
 };
 
 } // namespace vnotex

@@ -33,6 +33,7 @@ enum class AutoSavePolicy {
 
 // Callback type for fetching latest content from an active writer (ViewWindow2).
 // Returns Unicode editor text; shared save-time overrides apply when capturing a snapshot.
+// May throw when an editor cannot produce a valid snapshot.
 using ContentFetchCallback = std::function<QString()>;
 
 // Hook-aware wrapper around BufferCoreService.
@@ -269,19 +270,21 @@ public:
   bool isDirty(const QString &p_bufferId) const;
 
   // True while a save for this buffer is pending OR a worker is running.
-  // isDirty() is NOT a substitute: syncNow() clears the dirty flag the moment
+  // isDirty() is NOT a substitute: ordinary syncNow() clears the dirty flag when
   // it enqueues, before the worker has written anything. Consumers that need a
   // durability barrier (e.g. deleting a file the note used to reference) must
   // check BOTH isDirty() and this.
   bool isSaveQueueBusy(const QString &p_bufferId) const;
 
   // Immediately sync a dirty buffer's content from its active writer.
-  // Used on focus-loss for instant consistency.
-  void syncNow(const QString &p_bufferId);
+  // Returns false only if editor snapshot capture fails, retaining dirty state.
+  // True includes skipped/reserved buffers and queued saves; it is not a durability barrier.
+  bool syncNow(const QString &p_bufferId);
 
   // Pull the active writer's latest text into the vxcore buffer RIGHT NOW,
   // in memory only: no disk write, and the configured auto-save policy is not
-  // consulted. Returns false only when the in-memory update itself failed.
+  // consulted. Returns false if capture or the in-memory update fails, or the
+  // buffer is reserved for content replacement.
   //
   // syncNow() is NOT a substitute: it routes through the auto-save policy, so
   // under AutoSave it hands the snapshot to the async queue instead of applying
@@ -310,10 +313,15 @@ public:
   // mutex-less vxcore Buffer).
   //
   // Returns false with *p_outError set on: a still-busy queue, a vanished
-  // buffer, a read-only buffer, a hook cancellation, a gate timeout, or a
-  // failed write. Returns true when the buffer is durable (including the case
-  // where it was not modified at all).
+  // buffer, a read-only buffer, a hook cancellation, a gate timeout, failed
+  // editor capture, or a failed write. Returns true when the buffer is durable
+  // (including the case where it was not modified at all).
   bool saveForSnapshot(const QString &p_bufferId, int p_gateTimeoutMs, QString *p_outError);
+
+  // Copy and invoke a writer callback with exception handling. Empty text is valid.
+  // On failure, clear *p_content and set *p_error when supplied.
+  static bool fetchEditorContent(const ContentFetchCallback &p_callback, QString *p_content,
+                                 QString *p_error = nullptr);
 
   // Register a content fetch callback for a buffer's active writer.
   // @p_callback: Called to get the latest content from the editor.
@@ -327,6 +335,7 @@ public:
   void unregisterActiveWriter(const QString &p_bufferId, quintptr p_writerKey);
 
   // Capture the active or temporarily suspended writer without changing buffer content.
+  // Returns false if no writer is available or its snapshot capture fails.
   bool captureActiveWriterContent(const QString &p_bufferId, QString *p_outText) const;
   // GUI-thread reservation after views are frozen and the save queue is idle.
   // Nonnull output captures current writer/raw bytes; protected capture requires
@@ -335,6 +344,7 @@ public:
   // reading its body. Both protected modes require an active protected-operation
   // scope and idle protected operations; ordinary capture needs no protected scope.
   // End with false to restore the suspended writer and dirty state on cancellation.
+  // Failed writer capture restores the reservation instead of falling back to raw bytes.
   bool beginNoteConversion(const QString &p_bufferId, QByteArray *p_outBody);
   void endNoteConversion(const QString &p_bufferId, bool p_committed);
 
@@ -376,13 +386,13 @@ signals:
   // Emitted when auto-save fails for a buffer.
   void bufferAutoSaveFailed(const QString &p_bufferId);
 
-  // Emitted after 3 consecutive auto-save failures; auto-save suspended for this buffer.
+  // Emitted when the save-failure limit is reached; snapshot rejection does not count.
   void bufferAutoSaveAborted(const QString &p_bufferId);
 
   // Emitted after attachment list/content changes for a buffer.
   void attachmentChanged(const QString &p_bufferId);
 
-  // Emitted when an async save reports an error from the BufferSaveQueue worker.
+  // Emitted when editor snapshot capture or a save reports an error.
   void saveError(const QString &p_bufferId, const QString &p_errorMsg);
 
   // Emitted when an open buffer's file is detected as changed or missing on disk.
@@ -425,7 +435,9 @@ private:
   void onAutoSaveTimerTick();
 
   // Sync content from active writer to vxcore buffer and execute auto-save policy.
-  bool executeSyncForBuffer(const QString &p_bufferId);
+  // True lets syncNow clear dirty state; false leaves dirty-state ownership here.
+  // p_snapshotOk is false only for failed capture, not for skipped or deferred work.
+  bool executeSyncForBuffer(const QString &p_bufferId, bool *p_snapshotOk = nullptr);
 
   // Async save-completion handler wired to BufferSaveQueue::saveFinished.
   void onSaveFinished(const QString &p_bufferId, quint64 p_revision, bool p_ok,

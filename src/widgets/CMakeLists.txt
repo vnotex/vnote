@@ -72,7 +72,6 @@ target_sources(vnote PRIVATE
     editors/markdownviewer.cpp editors/markdownviewer.h
     editors/markdownvieweradapter.cpp editors/markdownvieweradapter.h
     editors/mindmapeditor.cpp editors/mindmapeditor.h
-    editors/mindmapeditoradapter.cpp editors/mindmapeditoradapter.h
     editors/pdfviewer.cpp editors/pdfviewer.h
     editors/pdfvieweradapter.cpp editors/pdfvieweradapter.h
     editors/plantumlhelper.cpp editors/plantumlhelper.h

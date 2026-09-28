@@ -270,6 +270,11 @@ void ViewWindow2::applyEditorPositionState(QTextEdit *p_edit, const ViewPosition
   }
 }
 
+bool ViewWindow2::tryGetLatestContent(QString *p_content, QString *p_error) const {
+  return BufferService::fetchEditorContent([this]() { return getLatestContent(); }, p_content,
+                                           p_error);
+}
+
 bool ViewWindow2::isModified() const {
   // Use local dirty flag OR vxcore modified flag.
   // m_editorDirty is set immediately on keystroke;
@@ -365,14 +370,21 @@ bool ViewWindow2::aboutToClose(bool p_force) {
     return true;
   }
 
-  // Force close or not modified: existing behavior.
+  // Force close skips the prompt, not snapshot failure.
 
   // Sync pending changes before close.
   if (m_editorDirty && m_buffer.isValid()) {
     auto *bufferService = m_services.get<BufferService>();
     if (bufferService) {
-      if (!m_buffer.isEncrypted() || !bufferService->isProtectedLocking()) {
-        bufferService->syncNow(m_buffer.id());
+      if (m_buffer.isEncrypted() && bufferService->isProtectedLocking()) {
+        // Locking already captured and saved the frozen writer. Do not recapture it.
+        if (bufferService->isDirty(m_buffer.id()) || m_buffer.isModified()) {
+          showMessage(tr("Failed to save note (%1).").arg(getName()));
+          return false;
+        }
+      } else if (!bufferService->syncNow(m_buffer.id())) {
+        showMessage(tr("Unable to read the editor content"));
+        return false;
       }
       m_editorDirty = false;
     }
@@ -468,7 +480,7 @@ EncodingButton *ViewWindow2::ensureEncodingButton() {
   return m_encodingButton;
 }
 
-void ViewWindow2::showMessage(const QString &p_msg) {
+void ViewWindow2::showMessage(const QString &p_msg) const {
   if (m_statusBar) {
     m_statusBar->showMessage(p_msg);
   } else if (m_statusWidget) {
@@ -784,7 +796,13 @@ void ViewWindow2::handleTypeAction(int p_action) { Q_UNUSED(p_action); }
 
 void ViewWindow2::fetchWordCountInfo(
     const std::function<void(const WordCountInfo &)> &p_callback) const {
-  auto info = WordCountPanel::calculateWordCount(getLatestContent());
+  QString content;
+  QString error;
+  if (!tryGetLatestContent(&content, &error)) {
+    showMessage(error);
+    return;
+  }
+  auto info = WordCountPanel::calculateWordCount(content);
   p_callback(info);
 }
 
@@ -816,10 +834,21 @@ bool ViewWindow2::save() {
     return false;
   }
 
+  // Even a clean buffer may have an editor that cannot produce a valid snapshot.
+  {
+    QString content;
+    QString error;
+    if (!tryGetLatestContent(&content, &error)) {
+      showMessage(error);
+      return false;
+    }
+  }
+
   // Sync editor content to vxcore buffer first.
   auto *bufferService = m_services.get<BufferService>();
-  if (bufferService) {
-    bufferService->syncNow(m_buffer.id());
+  if (bufferService && !bufferService->syncNow(m_buffer.id())) {
+    showMessage(tr("Unable to read the editor content"));
+    return false;
   }
 
   // Clear local dirty state BEFORE save so that when BufferService emits
@@ -943,7 +972,10 @@ void ViewWindow2::onFocusLost() {
     if (m_buffer.isEncrypted() && bufferService && bufferService->isProtectedLocking())
       return;
     if (bufferService) {
-      bufferService->syncNow(m_buffer.id());
+      if (!bufferService->syncNow(m_buffer.id())) {
+        showMessage(tr("Unable to read the editor content"));
+        return;
+      }
       m_lastKnownRevision = m_buffer.getRevision();
       m_editorDirty = false;
     }

@@ -150,13 +150,6 @@
         <file>web/js/mark.js/mark.min.js</file>
         <file>web/js/markjs.js</file>
 
-        <file>web/mindmap-editor-template.html</file>
-        <file>web/js/mindmap/lib/mind-elixir/MindElixir.js</file>
-        <file>web/js/mindmap/core/mindmap-core.js</file>
-        <file>web/js/mindmap/features/outline/outline.js</file>
-        <file>web/js/mindmap/features/link-handler/link-handler.js</file>
-        <file>web/js/mindmapeditor.js</file>
-
         <file>web/pdf.js/build/pdf.mjs</file>
         <file>web/pdf.js/build/pdf.sandbox.mjs</file>
         <file>web/pdf.js/build/pdf.worker.mjs</file>

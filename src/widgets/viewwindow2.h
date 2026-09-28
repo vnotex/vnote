@@ -197,6 +197,9 @@ public:
   // Pure virtual: must be implemented by subclasses.
   virtual QString getLatestContent() const = 0;
 
+  // Capture the latest editor content, reporting snapshot errors without throwing.
+  bool tryGetLatestContent(QString *p_content, QString *p_error = nullptr) const;
+
   // Whether this window has unsaved modifications.
   bool isModified() const;
 
@@ -223,7 +226,7 @@ public:
 
   // Called before the window is closed.
   // Return true if it is OK to proceed (e.g., unsaved changes have been handled).
-  // @p_force: if true, close without prompting user.
+  // @p_force: if true, close without prompting user; snapshot failure still prevents close.
   // Default implementation syncs dirty content and unregisters from BufferService.
   virtual bool aboutToClose(bool p_force);
 
@@ -383,7 +386,7 @@ protected:
   // Fetch word count info asynchronously.
   // Subclasses override to provide mode-specific word counting (e.g., async JS
   // extraction in read mode). The callback receives a WordCountInfo struct.
-  // Default: calculates from getLatestContent() synchronously.
+  // Default: calculates from a checked editor snapshot synchronously; failure aborts the request.
   virtual void
   fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &p_callback) const;
 
@@ -437,7 +440,7 @@ protected:
   EncodingButton *ensureEncodingButton();
 
   // Show a transient message in the status widget (or fallback).
-  void showMessage(const QString &p_msg);
+  void showMessage(const QString &p_msg) const;
 
   // Create a standard toolbar with the configured icon size.
   static QToolBar *createToolBar(QWidget *p_parent = nullptr);

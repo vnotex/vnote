@@ -10,7 +10,6 @@
 #include <core/configmgr2.h>
 #include <core/markdowneditorconfig.h>
 #include <core/markdownwebglobaloptions.h>
-#include <core/mindmapeditorconfig.h>
 #include <core/pdfviewerconfig.h>
 #include <core/vxpdfscheme.h>
 #include <core/webresource.h>
@@ -581,37 +580,4 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
   html.replace(QStringLiteral("<!-- VX_SCRIPTS_PLACEHOLDER -->"), scriptTags);
   p_resources.swap(resources);
   return html;
-}
-
-// ============ MindMap Editor Template ============
-
-void HtmlTemplateService::updateMindMapEditorTemplate(const MindMapEditorConfig &p_config,
-                                                      const QString &p_webStyleSheetFile,
-                                                      bool p_force) {
-  if (!p_force && p_config.revision() == m_mindMapEditorTemplate.m_revision) {
-    return;
-  }
-
-  m_mindMapEditorTemplate.m_revision = p_config.revision();
-  generateMindMapEditorTemplate(p_config, p_webStyleSheetFile, m_mindMapEditorTemplate);
-}
-
-const QString &HtmlTemplateService::getMindMapEditorTemplate() const {
-  return m_mindMapEditorTemplate.m_template;
-}
-
-void HtmlTemplateService::generateMindMapEditorTemplate(const MindMapEditorConfig &p_config,
-                                                        const QString &p_webStyleSheetFile,
-                                                        Template &p_template) const {
-  const auto &editorResource = p_config.getEditorResource();
-  p_template.m_templatePath = resolveConfigFile(editorResource.m_template);
-
-  p_template.m_template = readFile(p_template.m_templatePath);
-  if (p_template.m_template.isEmpty()) {
-    p_template.m_template = errorPage();
-    return;
-  }
-
-  fillThemeStyles(p_template.m_template, p_webStyleSheetFile, QString());
-  fillResources(p_template.m_template, editorResource);
 }

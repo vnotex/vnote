@@ -42,3 +42,11 @@ set(QWINDOWKIT_BUILD_EXAMPLES OFF CACHE BOOL "Disable qwindowkit examples" FORCE
 set(QWINDOWKIT_INSTALL OFF CACHE BOOL "Disable qwindowkit install targets" FORCE)
 set(QWINDOWKIT_ENABLE_WINDOWS_SYSTEM_BORDERS ON CACHE BOOL "Enable Win10/11 native top border" FORCE)
 add_subdirectory(qwindowkit)
+
+# m3 - Native mind-map editor
+set(M3_BUILD_SHARED OFF CACHE BOOL "Build m3 as static libraries" FORCE)
+set(M3_BUILD_QT ON CACHE BOOL "Build m3 Qt editor" FORCE)
+set(M3_BUILD_QT_DEMO OFF CACHE BOOL "Disable m3 Qt demo" FORCE)
+set(M3_BUILD_TESTS OFF CACHE BOOL "Disable m3 tests" FORCE)
+set(M3_INSTALL OFF CACHE BOOL "Disable m3 install targets" FORCE)
+add_subdirectory(m3)

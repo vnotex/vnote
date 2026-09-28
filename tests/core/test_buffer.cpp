@@ -28,6 +28,7 @@
 
 #include <functional>
 #include <memory>
+#include <stdexcept>
 #include <thread>
 
 using namespace vnotex;
@@ -294,6 +295,11 @@ private slots:
   void testEncryptedNoteConversionPublishesCurrentWriter();
   void testUnloadedEncryptedNoteConversionKeepsPersistedBody();
   void testPlainNoteConversionStillPublishesCurrentWriter();
+
+  // Editor snapshots must fail closed without losing the live writer.
+  void testRejectedWriterSnapshots_data();
+  void testRejectedWriterSnapshots();
+  void testReentrantWriterSnapshot();
 
   // Search-result replacement persistence and lifecycle.
   void testSearchReplacementWriterDurability_data();
@@ -1509,6 +1515,244 @@ void TestBuffer::testPlainNoteConversionStillPublishesCurrentWriter() {
   QCOMPARE(note.nodeId().relativePath, targetPath);
   QCOMPARE(note.editorType(), QStringLiteral("markdown"));
   QCOMPARE(note.getContentRaw(), editor.toUtf8());
+}
+
+void TestBuffer::testRejectedWriterSnapshots_data() {
+  QTest::addColumn<bool>("encrypted");
+  QTest::addColumn<bool>("unknownException");
+  QTest::newRow("ordinary-standard") << false << false;
+  QTest::newRow("ordinary-unknown") << false << true;
+  QTest::newRow("protected-standard") << true << false;
+  QTest::newRow("protected-unknown") << true << true;
+}
+
+void TestBuffer::testRejectedWriterSnapshots() {
+  QFETCH(bool, encrypted);
+  QFETCH(bool, unknownException);
+  const auto notebookId = m_notebookService->createNotebook(
+      m_tempDir.filePath(QStringLiteral("snapshot-rejection-%1")
+                             .arg(QString::fromLatin1(QTest::currentDataTag()))),
+      QStringLiteral("{\"name\":\"Rejected writer snapshot\"}"), NotebookType::Bundled);
+  QVERIFY(!notebookId.isEmpty());
+  const QByteArray original("persisted body before the rejected native draft\n");
+  const QString corrected = QStringLiteral("corrected native draft saved normally\n");
+  NotebookIoGate gate;
+  SyncWorkQueueManager queues;
+  HookManager hooks;
+  int afterSaves = 0;
+  BufferService buffers(m_context, &hooks, &gate, AutoSavePolicy::AutoSave);
+  Buffer2 note;
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.endNoteConversion(note.id(), false);
+    buffers.shutdown();
+    buffers.unregisterActiveWriter(note.id(), 1);
+    if (note.isValid())
+      buffers.closeBuffer(note.id());
+    if (encrypted)
+      m_notebookService->lockAllEncryption();
+  });
+  QString noteId;
+  if (encrypted) {
+    PreparedNotebookEncryption setup;
+    QCOMPARE(QtConcurrent::run([&]() {
+               setup = m_notebookService->prepareNotebookEncryption(
+                   notebookId, QString(), QByteArrayLiteral("snapshot-rejection-password"));
+               return setup.m_error;
+             }).result(),
+             VXCORE_OK);
+    QCOMPARE(runNoteConversionWorker(
+                 queues, gate, notebookId,
+                 [&]() {
+                   const auto error = m_notebookService->commitNotebookEncryption(setup);
+                   return error == VXCORE_OK
+                              ? m_notebookService->createEncryptedNote(
+                                    notebookId, QString(), QStringLiteral("snapshot.md"),
+                                    QStringLiteral("markdown"), original, &noteId)
+                              : error;
+                 }),
+             VXCORE_OK);
+  } else {
+    noteId = m_notebookService->createFile(notebookId, QString(), QStringLiteral("snapshot.md"));
+    QVERIFY(!noteId.isEmpty());
+  }
+  note = buffers.openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  QCOMPARE(note.isEncrypted(), encrypted);
+  if (!encrypted) {
+    QVERIFY(note.setContentRaw(original));
+    QVERIFY(note.save());
+  }
+  QCOMPARE(note.getContentRaw(), original);
+  const auto path = note.resolvedPath();
+  const auto persisted = readReplacementFile(path);
+  const auto savedRevision = buffers.lastSavedRevision(note.id());
+  const auto coreRevision = note.getRevision();
+  hooks.addAction(
+      HookNames::FileAfterSave, [&](HookContext &, const QVariantMap &) { ++afterSaves; }, 10);
+  QSignalSpy synced(buffers.asQObject(), SIGNAL(bufferContentSynced(QString)));
+  QSignalSpy saved(buffers.asQObject(), SIGNAL(bufferAutoSaved(QString)));
+  QSignalSpy failed(buffers.asQObject(), SIGNAL(bufferAutoSaveFailed(QString)));
+  QSignalSpy errors(buffers.asQObject(), SIGNAL(saveError(QString, QString)));
+  QVERIFY(synced.isValid());
+  QVERIFY(saved.isValid());
+  QVERIFY(failed.isValid());
+  QVERIFY(errors.isValid());
+  const ContentFetchCallback rejected = [unknownException]() -> QString {
+    if (unknownException)
+      throw 17;
+    throw std::runtime_error("native draft rejected");
+  };
+  buffers.registerActiveWriter(note.id(), 1, rejected);
+  buffers.markDirty(note.id());
+  const auto dirtyRevision = buffers.currentRevision(note.id());
+  QVERIFY(dirtyRevision > savedRevision);
+
+  QString text = QStringLiteral("stale output must not survive failure");
+  QString error;
+  QVERIFY(!BufferService::fetchEditorContent(rejected, &text, &error));
+  QVERIFY(text.isEmpty());
+  QVERIFY(!error.isEmpty());
+  QVERIFY(!buffers.pullActiveWriterContent(note.id()));
+  QCOMPARE(note.getContentRaw(), original);
+  // Cover both the in-memory manual-save preparation and queued autosave policy.
+  buffers.setAutoSavePolicy(AutoSavePolicy::None);
+  QVERIFY(!buffers.syncNow(note.id()));
+  QVERIFY(buffers.isDirty(note.id()));
+  buffers.setAutoSavePolicy(AutoSavePolicy::AutoSave);
+  QVERIFY(!buffers.syncNow(note.id()));
+  QVERIFY(buffers.isDirty(note.id()));
+  text = QStringLiteral("stale export snapshot");
+  QVERIFY(!buffers.captureActiveWriterContent(note.id(), &text));
+  QVERIFY(text.isEmpty());
+  error.clear();
+  QVERIFY(!buffers.saveForSnapshot(note.id(), 1000, &error));
+  QVERIFY(!error.isEmpty());
+  {
+    if (encrypted)
+      QVERIFY(buffers.beginProtectedOperation());
+    const auto operation = qScopeGuard([&]() {
+      if (encrypted)
+        buffers.endProtectedOperation();
+    });
+    QByteArray body;
+    QVERIFY(!buffers.beginNoteConversion(note.id(), &body));
+    QVERIFY(!note.isReadOnly());
+    QVERIFY(buffers.isDirty(note.id()));
+    // A missing writer would make pull succeed with stale raw bytes.
+    QVERIFY(!buffers.pullActiveWriterContent(note.id()));
+  }
+  QCOMPARE(note.getContentRaw(), original);
+  QCOMPARE(readReplacementFile(path), persisted);
+  QCOMPARE(note.getRevision(), coreRevision);
+  QCOMPARE(buffers.currentRevision(note.id()), dirtyRevision);
+  QCOMPARE(buffers.lastSavedRevision(note.id()), savedRevision);
+  QCOMPARE(synced.count(), 0);
+  QCOMPARE(saved.count(), 0);
+  QCOMPARE(afterSaves, 0);
+  QVERIFY(!buffers.isSaveQueueBusy(note.id()));
+
+  // Let the real shared timer subtract its dirty set and attempt the failing capture.
+  // No direct slot invocation, timer replacement, or new markDirty() masks a lost retry.
+  const auto failuresBeforeTick = failed.count();
+  const auto errorsBeforeTick = errors.count();
+  QTRY_VERIFY_WITH_TIMEOUT(failed.count() > failuresBeforeTick, 10000);
+  QVERIFY(errors.count() > errorsBeforeTick);
+  QVERIFY(buffers.isDirty(note.id()));
+  QVERIFY(!buffers.isSaveQueueBusy(note.id()));
+  QCOMPARE(note.getContentRaw(), original);
+  QCOMPARE(readReplacementFile(path), persisted);
+  QCOMPARE(note.getRevision(), coreRevision);
+  QCOMPARE(buffers.currentRevision(note.id()), dirtyRevision);
+  QCOMPARE(buffers.lastSavedRevision(note.id()), savedRevision);
+  QCOMPARE(synced.count(), 0);
+  QCOMPARE(saved.count(), 0);
+  QCOMPARE(afterSaves, 0);
+
+  buffers.registerActiveWriter(note.id(), 1, [corrected]() { return corrected; });
+  // A second reservation proves the failed conversion released its freeze and writer.
+  {
+    if (encrypted)
+      QVERIFY(buffers.beginProtectedOperation());
+    const auto operation = qScopeGuard([&]() {
+      if (encrypted)
+        buffers.endProtectedOperation();
+    });
+    QByteArray body;
+    QVERIFY(buffers.beginNoteConversion(note.id(), &body));
+    QCOMPARE(body, corrected.toUtf8());
+    buffers.endNoteConversion(note.id(), false);
+  }
+  QVERIFY(buffers.syncNow(note.id()));
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 10000);
+  QCOMPARE(note.getContentRaw(), corrected.toUtf8());
+  QCOMPARE(buffers.lastSavedRevision(note.id()), dirtyRevision);
+  QVERIFY(!buffers.isDirty(note.id()));
+  if (!encrypted)
+    QCOMPARE(readReplacementFile(path), corrected.toUtf8());
+  buffers.unregisterActiveWriter(note.id(), 1);
+  QVERIFY(buffers.closeBuffer(note.id()));
+  note = buffers.openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  QCOMPARE(note.getContentRaw(), corrected.toUtf8());
+
+  // Empty text is a successful writer snapshot, not a missing writer or a failed capture.
+  buffers.registerActiveWriter(note.id(), 1, []() { return QString(); });
+  buffers.markDirty(note.id());
+  text = QStringLiteral("previous nonempty snapshot");
+  QVERIFY(buffers.captureActiveWriterContent(note.id(), &text));
+  QVERIFY(text.isEmpty());
+  error.clear();
+  QVERIFY2(buffers.saveForSnapshot(note.id(), 1000, &error), qPrintable(error));
+  QCOMPARE(buffers.lastSavedRevision(note.id()), buffers.currentRevision(note.id()));
+  QVERIFY(!buffers.isDirty(note.id()));
+  QVERIFY(note.getContentRaw().isEmpty());
+  buffers.unregisterActiveWriter(note.id(), 1);
+  QVERIFY(buffers.closeBuffer(note.id()));
+  note = buffers.openBufferByNodeId(noteId);
+  QVERIFY(note.isValid());
+  QCOMPARE(note.isEncrypted(), encrypted);
+  QVERIFY(note.getContentRaw().isEmpty());
+  if (!encrypted)
+    QCOMPARE(readReplacementFile(path), QByteArray());
+}
+
+void TestBuffer::testReentrantWriterSnapshot() {
+  const auto target = createReplacementTarget(QStringLiteral("reentrant-snapshot.md"),
+                                              QByteArrayLiteral("original disk bytes"));
+  QVERIFY(!target.m_id.isEmpty());
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, AutoSavePolicy::AutoSave);
+  auto note = buffers.openBufferByNodeId(target.m_id);
+  QVERIFY(note.isValid());
+  const auto cleanup = qScopeGuard([&]() {
+    buffers.shutdown();
+    buffers.unregisterActiveWriter(note.id(), 1);
+    buffers.unregisterActiveWriter(note.id(), 2);
+    buffers.closeBuffer(note.id());
+  });
+  const QString first = QStringLiteral("snapshot from the writer that lost focus");
+  const QString next = QStringLiteral("snapshot from the newly focused writer");
+  buffers.registerActiveWriter(
+      note.id(), 1, [&, snapshot = std::make_shared<QString>(first), next]() {
+        buffers.registerActiveWriter(note.id(), 2, [next]() { return next; });
+        buffers.unregisterActiveWriter(note.id(), 1);
+        // The in-progress snapshot remains alive after its registration is replaced.
+        return *snapshot;
+      });
+  QVERIFY(buffers.pullActiveWriterContent(note.id()));
+  QCOMPARE(note.getContentRaw(), first.toUtf8());
+  QCOMPARE(readReplacementFile(replacementFilePath(target)),
+           QByteArrayLiteral("original disk bytes"));
+  QString captured;
+  QVERIFY(buffers.captureActiveWriterContent(note.id(), &captured));
+  QCOMPARE(captured, next);
+  buffers.markDirty(note.id());
+  QVERIFY(buffers.syncNow(note.id()));
+  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 10000);
+  QCOMPARE(note.getContentRaw(), next.toUtf8());
+  QCOMPARE(readReplacementFile(replacementFilePath(target)), next.toUtf8());
+  QCOMPARE(buffers.lastSavedRevision(note.id()), buffers.currentRevision(note.id()));
+  QVERIFY(!buffers.isDirty(note.id()));
 }
 
 // ============ Search-result replacement persistence ============

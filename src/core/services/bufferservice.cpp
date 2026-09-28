@@ -19,6 +19,7 @@
 #include <QtConcurrent/QtConcurrentRun>
 #include <QtGlobal>
 #include <atomic>
+#include <exception>
 #include <limits>
 #include <new>
 
@@ -2155,12 +2156,12 @@ bool BufferService::isSaveQueueBusy(const QString &p_bufferId) const {
   return m_saveQueue->isBusy(notebookId, p_bufferId);
 }
 
-void BufferService::syncNow(const QString &p_bufferId) {
+bool BufferService::syncNow(const QString &p_bufferId) {
   if (isContentReplacementActive(p_bufferId) || m_failedReplacements.contains(p_bufferId) ||
       m_syncApplyReservedBuffers.contains(p_bufferId))
-    return;
+    return true;
   if (!m_dirtyBuffers.contains(p_bufferId)) {
-    return;
+    return true;
   }
 
   // Virtual buffers have no file content to sync.
@@ -2169,16 +2170,18 @@ void BufferService::syncNow(const QString &p_bufferId) {
     if (m_dirtyBuffers.isEmpty()) {
       m_autoSaveTimer->stop();
     }
-    return;
+    return true;
   }
 
-  if (executeSyncForBuffer(p_bufferId)) {
+  bool snapshotOk = true;
+  if (executeSyncForBuffer(p_bufferId, &snapshotOk)) {
     m_dirtyBuffers.remove(p_bufferId);
   }
 
   if (m_dirtyBuffers.isEmpty()) {
     m_autoSaveTimer->stop();
   }
+  return snapshotOk;
 }
 
 bool BufferService::pullActiveWriterContent(const QString &p_bufferId) {
@@ -2188,14 +2191,19 @@ bool BufferService::pullActiveWriterContent(const QString &p_bufferId) {
     return true;
   }
 
-  auto it = m_activeWriters.find(p_bufferId);
-  if (it == m_activeWriters.end() || !it->callback) {
+  const auto writer = m_activeWriters.value(p_bufferId);
+  if (!writer.callback) {
     // No editor attached: the vxcore buffer already holds the latest text.
     return true;
   }
 
-  const QString content = it->callback();
-  if (it->encrypted) {
+  QString content;
+  QString errorMessage;
+  if (!fetchEditorContent(writer.callback, &content, &errorMessage)) {
+    emit saveError(p_bufferId, errorMessage);
+    return false;
+  }
+  if (writer.encrypted) {
     const auto buffer = protectedHandle(p_bufferId);
     const auto error = withProtectedBuffer(buffer, true, [&]() {
       if (m_saveQueue->isProtectedBusy(p_bufferId)) {
@@ -2268,9 +2276,13 @@ bool BufferService::saveForSnapshot(const QString &p_bufferId, int p_gateTimeout
     if (m_hookMgr->doAction(HookNames::FileBeforeSave, event)) {
       return fail(tr("Saving an open note was cancelled."));
     }
-    const auto writer = m_activeWriters.constFind(p_bufferId);
-    const bool hasWriter = writer != m_activeWriters.constEnd() && bool(writer->callback);
-    const QString content = hasWriter ? writer->callback() : QString();
+    const auto writer = m_activeWriters.value(p_bufferId);
+    const bool hasWriter = bool(writer.callback);
+    QString content;
+    QString errorMessage;
+    if (hasWriter && !fetchEditorContent(writer.callback, &content, &errorMessage)) {
+      return fail(errorMessage);
+    }
     const auto revision = currentRevision(p_bufferId);
     QByteArray snapshot;
     {
@@ -2364,29 +2376,50 @@ bool BufferService::saveForSnapshot(const QString &p_bufferId, int p_gateTimeout
   return true;
 }
 
+bool BufferService::fetchEditorContent(const ContentFetchCallback &p_callback, QString *p_content,
+                                       QString *p_error) {
+  if (p_error)
+    p_error->clear();
+  if (!p_content) {
+    if (p_error)
+      *p_error = tr("Unable to read the editor content");
+    return false;
+  }
+  try {
+    // The callback can unregister itself or change the writer map while running.
+    const auto callback = p_callback;
+    *p_content = callback();
+    return true;
+  } catch (const std::exception &error) {
+    if (p_error)
+      *p_error = QString::fromUtf8(error.what());
+  } catch (...) {
+    if (p_error)
+      *p_error = tr("Unable to read the editor content");
+  }
+  p_content->clear();
+  return false;
+}
+
 bool BufferService::captureActiveWriterContent(const QString &p_bufferId,
                                                QString *p_outText) const {
   if (!p_outText || QThread::currentThread() != thread())
     return false;
-  ContentFetchCallback callback;
-  const auto writer = m_activeWriters.constFind(p_bufferId);
-  if (writer != m_activeWriters.constEnd())
-    callback = writer->callback;
-  if (!callback) {
+  auto writer = m_activeWriters.value(p_bufferId);
+  if (!writer.callback) {
     const auto request = m_searchReplacements.value(m_replacementReservations.value(p_bufferId));
     if (request && request->hadWriter)
-      callback = request->writer.callback;
+      writer = request->writer;
   }
-  if (!callback && m_noteConversions) {
+  if (!writer.callback && m_noteConversions) {
     const auto suspended = m_noteConversions->entries.constFind(p_bufferId);
     if (suspended != m_noteConversions->entries.constEnd() && suspended->hadWriter) {
-      callback = suspended->writer.callback;
+      writer = suspended->writer;
     }
   }
-  if (!callback)
+  if (!writer.callback)
     return false;
-  *p_outText = callback();
-  return true;
+  return fetchEditorContent(writer.callback, p_outText);
 }
 
 bool BufferService::beginNoteConversion(const QString &p_bufferId, QByteArray *p_outBody) {
@@ -2429,12 +2462,17 @@ bool BufferService::beginNoteConversion(const QString &p_bufferId, QByteArray *p
   if (!m_noteConversions)
     m_noteConversions.reset(new NoteConversions);
   NoteConversions::Entry entry;
-  const auto writer = m_activeWriters.constFind(p_bufferId);
-  if (writer != m_activeWriters.constEnd()) {
-    entry.writer = writer.value();
-    entry.hadWriter = true;
+  {
+    const auto writer = m_activeWriters.constFind(p_bufferId);
+    if (writer != m_activeWriters.constEnd()) {
+      entry.writer = writer.value();
+      entry.hadWriter = true;
+    }
   }
   entry.wasDirty = m_dirtyBuffers.contains(p_bufferId);
+  const bool captureWriter =
+      entry.hadWriter && (currentRevision(p_bufferId) != lastSavedRevision(p_bufferId) ||
+                          BufferCoreService::isModified(p_bufferId));
   m_noteConversions->entries.insert(p_bufferId, std::move(entry));
   m_activeWriters.remove(p_bufferId);
   m_dirtyBuffers.remove(p_bufferId);
@@ -2445,9 +2483,11 @@ bool BufferService::beginNoteConversion(const QString &p_bufferId, QByteArray *p
     return true;
   try {
     QString text;
-    const bool edited = currentRevision(p_bufferId) != lastSavedRevision(p_bufferId) ||
-                        BufferCoreService::isModified(p_bufferId);
-    if (edited && captureActiveWriterContent(p_bufferId, &text)) {
+    if (captureWriter) {
+      if (!captureActiveWriterContent(p_bufferId, &text)) {
+        endNoteConversion(p_bufferId, false);
+        return false;
+      }
       *p_outBody = encodeContent(p_bufferId, text);
     } else {
       VxCoreError error;
@@ -2548,7 +2588,9 @@ void BufferService::onAutoSaveTimerTick() {
   qCDebug(perfSave) << "[perf.save] tick_ms=" << elapsed;
 }
 
-bool BufferService::executeSyncForBuffer(const QString &p_bufferId) {
+bool BufferService::executeSyncForBuffer(const QString &p_bufferId, bool *p_snapshotOk) {
+  if (p_snapshotOk)
+    *p_snapshotOk = true;
   if (isContentReplacementActive(p_bufferId) || m_failedReplacements.contains(p_bufferId) ||
       m_syncApplyReservedBuffers.contains(p_bufferId))
     return false;
@@ -2560,26 +2602,39 @@ bool BufferService::executeSyncForBuffer(const QString &p_bufferId) {
     return true;
   }
 
-  auto it = m_activeWriters.find(p_bufferId);
-  if (it == m_activeWriters.end() || !it->callback) {
+  const auto writer = m_activeWriters.value(p_bufferId);
+  if (!writer.callback) {
     // No active writer — content already synced from previous focus-loss.
     return true;
   }
-  if (it->encrypted) {
-    const QString content = it->callback();
-    executeProtectedSync(protectedHandle(p_bufferId), content, currentRevision(p_bufferId));
-    return false;
-  }
 
-  // Skip auto-save disk write for externally changed/missing files.
+  // Skip auto-save disk write for externally changed/missing ordinary files.
   // (Inline check before snapshot — cheap.)
-  BufferState state = BufferCoreService::getState(p_bufferId);
-  if (state == BufferState::FileChanged || state == BufferState::FileMissing) {
-    return true;
+  if (!writer.encrypted) {
+    BufferState state = BufferCoreService::getState(p_bufferId);
+    if (state == BufferState::FileChanged || state == BufferState::FileMissing) {
+      return true;
+    }
   }
 
   // Fetch latest editor content as a QString snapshot — UI thread only.
-  QString content = it->callback();
+  QString content;
+  QString errorMessage;
+  if (!fetchEditorContent(writer.callback, &content, &errorMessage)) {
+    if (p_snapshotOk)
+      *p_snapshotOk = false;
+    // Timer ticks remove their dirty IDs before capture, so restore this one.
+    m_dirtyBuffers.insert(p_bufferId);
+    if (!m_autoSaveTimer->isActive())
+      m_autoSaveTimer->start();
+    emit saveError(p_bufferId, errorMessage);
+    emit bufferAutoSaveFailed(p_bufferId);
+    return false;
+  }
+  if (writer.encrypted) {
+    executeProtectedSync(protectedHandle(p_bufferId), content, currentRevision(p_bufferId));
+    return false;
+  }
 
   // Capture the revision tied to this snapshot (T6). markRevisionSaved on
   // completion advances lastSavedRevision and clears dirty iff it catches up

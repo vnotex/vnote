@@ -10,3 +10,6 @@
 [submodule "libs/qwindowkit"]
 	path = libs/qwindowkit
 	url = https://github.com/vnotex/qwindowkit
+[submodule "libs/m3"]
+	path = libs/m3
+	url = https://github.com/vnotex/m3.git

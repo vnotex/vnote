@@ -1,217 +1,326 @@
 #include "mindmapviewwindow2.h"
 
-#include <QWebEngineProfile>
-#include <QWebEngineSettings>
-
-#include <QDesktopServices>
+#include <QPalette>
+#include <QPointer>
+#include <QScopeGuard>
 #include <QToolBar>
-#include <QUrl>
+#include <QToolButton>
 
-#include <controllers/mindmapviewwindowcontroller.h>
-#include <core/configmgr2.h>
-#include <core/editorconfig.h>
-#include <core/mindmapeditorconfig.h>
+#include <utility>
+
+#include <vxcore/vxcore.h>
+
 #include <core/servicelocator.h>
-#include <core/services/htmltemplateservice.h>
 #include <gui/services/themeservice.h>
-#include <gui/services/webengineprofileservice.h>
-#include <utils/pathutils.h>
-#include <utils/utils.h>
 
 #include "editors/mindmapeditor.h"
-#include "editors/mindmapeditoradapter.h"
-#include "findandreplacewidget2.h"
+#include "editors/statuswidget.h"
+#include "inlinebanner.h"
+#include "outlinepopup.h"
+#include "outlineprovider.h"
 #include "viewwindowtoolbarhelper2.h"
-#include "webpage.h"
 
 using namespace vnotex;
 
 MindMapViewWindow2::MindMapViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
                                        QWidget *p_parent)
     : ViewWindow2(p_services, p_buffer, p_parent) {
-  m_controller = new MindMapViewWindowController(p_services, this);
   m_mode = ViewWindowMode::Edit;
+  setupOutlineProvider();
   setupUI();
 }
 
-MindMapViewWindow2::~MindMapViewWindow2() {
-  if (m_protectedProfile) {
-    // Pages and adapters must die before the memory-only profile.
-    delete m_editor;
-    m_editor = nullptr;
-    delete m_protectedProfile;
-    m_protectedProfile = nullptr;
-  }
-}
-
 void MindMapViewWindow2::setupUI() {
-  setupEditor();
+  m_editor = new MindMapEditor(getServices(), getBuffer(), this);
   setCentralWidget(m_editor);
-
+  connectEditorSignals();
   setupToolBar();
+  // Find results and native diagnostics use the existing ViewWindow2 message surface.
+  setStatusWidget(QSharedPointer<StatusWidget>::create());
 
-  // Initial sync from buffer.
+  m_loadErrorBanner = new InlineBanner(InlineBanner::Severity::Error, QString(), this);
+  addTopWidget(m_loadErrorBanner);
+  m_loadErrorBanner->hide();
+  applyEditorPalette();
+  setupShortcuts();
   syncEditorFromBuffer();
 }
 
-void MindMapViewWindow2::setupEditor() {
-  Q_ASSERT(!m_editor);
-
-  auto *configMgr = getServices().get<ConfigMgr2>();
-  const auto &editorConfig = configMgr->getEditorConfig();
-  const auto &mindMapEditorConfig = editorConfig.getMindMapEditorConfig();
-
-  m_controller->checkAndUpdateConfigRevision();
-
-  // Update the mindmap editor HTML template via HtmlTemplateService (DI, not legacy singleton).
-  auto *tmplService = getServices().get<HtmlTemplateService>();
-  tmplService->updateMindMapEditorTemplate(mindMapEditorConfig);
-
-  auto *themeService = getServices().get<ThemeService>();
-
-  auto *adapterObj = new MindMapEditorAdapter(nullptr);
-
-  auto *profileService = getServices().get<WebEngineProfileService>();
-  QWebEngineProfile *profile = profileService ? profileService->profile() : nullptr;
-  if (getBuffer().isEncrypted()) {
-    m_protectedProfile = new QWebEngineProfile(this);
-    m_protectedProfile->setHttpCacheType(QWebEngineProfile::NoCache);
-    m_protectedProfile->setPersistentCookiesPolicy(QWebEngineProfile::NoPersistentCookies);
-    profile = m_protectedProfile;
-  }
-  m_editor = new MindMapEditor(adapterObj, themeService->getBaseBackground(), 1.0, this, profile);
-  if (m_protectedProfile) {
-    qobject_cast<WebPage *>(m_editor->page())->setSensitiveContent(true);
-    m_editor->settings()->setAttribute(QWebEngineSettings::LocalStorageEnabled, false);
-    m_editor->settings()->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
-  }
-  connect(m_editor, &WebViewer::localFileOpenRequested, this, [](const QUrl &p_url) {
-    QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
-  });
-
-  connectEditorSignals();
-}
-
 void MindMapViewWindow2::connectEditorSignals() {
-  // Content change: mark dirty via base class, let BufferService handle sync.
-  connect(m_editor, &MindMapEditor::contentsChanged, this, [this]() { onEditorContentsChanged(); });
+  connect(m_editor, &MindMapEditor::contentsChanged, this, [this]() {
+    if (m_propagateEditorToBuffer) {
+      onEditorContentsChanged();
+    }
+  });
+  connect(m_editor, &MindMapEditor::statusMessageRequested, this, [this](const QString &p_message) {
+    m_lastEditorError = p_message;
+    showMessage(p_message);
+  });
+  connect(m_editor, &m3::qt::MindMapEditor::documentChanged, this, [this]() {
+    if (m_propagateEditorToBuffer && m_contentLoaded) {
+      refreshOutline();
+    }
+  });
+  connect(m_editor, &m3::qt::MindMapEditor::selectionChanged, this,
+          [this](const QString &, const QString &) { updateCurrentHeading(); });
 }
 
 void MindMapViewWindow2::setupToolBar() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
-
   addLeftCommonToolBarActions(toolBar);
   addRightCommonToolBarActions(toolBar);
 }
 
+void MindMapViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
+  auto *outlineAction = addAction(p_toolBar, ViewWindowToolBarHelper2::Outline);
+  auto *button = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(outlineAction));
+  if (button) {
+    if (auto *popup = qobject_cast<OutlinePopup *>(button->menu())) {
+      popup->setOutlineProvider(m_outlineProvider);
+    }
+  }
+}
+
 void MindMapViewWindow2::syncEditorFromBuffer() {
-  const auto &buffer = getBuffer();
+  const QPointer<MindMapViewWindow2> guard(this);
+  const auto generation = ++m_generation;
+  const bool propagate = m_propagateEditorToBuffer;
+  m_propagateEditorToBuffer = false;
+  const auto restorePropagation = qScopeGuard([guard, propagate]() {
+    if (guard) {
+      guard->m_propagateEditorToBuffer = propagate;
+    }
+  });
+  m_contentLoaded = false;
+  m_lastEditorError.clear();
+  clearOutline();
+  if (!guard || generation != m_generation) {
+    return;
+  }
+
+  // Keep raw bytes: an invalid nonempty document must never turn into an empty new map.
+  const Buffer2 buffer = getBuffer();
+  m_editor->setBuffer(buffer);
+  if (!guard || generation != m_generation) {
+    return;
+  }
   if (buffer.isValid()) {
-    auto *tmplService = getServices().get<HtmlTemplateService>();
-    const auto &templateHtml = tmplService->getMindMapEditorTemplate();
-
-    // Resolve absolute content path for the base URL.
-    const auto contentPath = m_controller->buildAbsolutePath(buffer.nodeId());
-    m_editor->setHtml(templateHtml, PathUtils::pathToUrl(contentPath));
-
-    // Set mindmap data from buffer content.
-    auto content = QString::fromUtf8(buffer.peekContentRaw());
-    adapter()->setData(content);
-    m_editor->setModified(buffer.isModified());
-  } else {
-    m_editor->setHtml(QString());
-    adapter()->setData(QString());
-    m_editor->setModified(false);
+    VxCoreError error = VXCORE_OK;
+    const QByteArray content = buffer.getContentRaw(&error);
+    if (error == VXCORE_OK) {
+      const bool loaded = m_editor->loadContent(content);
+      if (!guard || generation != m_generation) {
+        return;
+      }
+      m_contentLoaded = loaded;
+    } else {
+      // Detach the unavailable source rather than feeding fabricated/empty content to m3.
+      m_editor->setBuffer(Buffer2());
+      if (!guard || generation != m_generation) {
+        return;
+      }
+      m_lastEditorError =
+          tr("Unable to read the mind map: %1").arg(QString::fromUtf8(vxcore_error_message(error)));
+    }
   }
 
+  m_editor->setModified(buffer.isValid() && buffer.isModified());
   m_lastKnownRevision = buffer.isValid() ? buffer.getRevision() : 0;
-}
-
-QString MindMapViewWindow2::getLatestContent() const {
-  QString content;
-  adapter()->saveData([&content](const QString &p_data) { content = p_data; });
-
-  while (content.isNull()) {
-    Utils::sleepWait(50);
+  m_propagateEditorToBuffer = propagate;
+  if (m_contentLoaded) {
+    m_loadErrorBanner->hide();
+    refreshOutline();
+  } else {
+    const auto message =
+        m_lastEditorError.isEmpty() ? tr("Unable to load the mind map.") : m_lastEditorError;
+    m_loadErrorBanner->setText(message);
+    m_loadErrorBanner->show();
+    showMessage(message);
   }
-
-  return content;
 }
+
+QString MindMapViewWindow2::getLatestContent() const { return m_editor->contentForSave(); }
 
 QString MindMapViewWindow2::selectedText() const {
-  return m_editor ? m_editor->selectedText() : QString();
+  return m_contentLoaded ? m_editor->selectedText() : QString();
 }
 
 void MindMapViewWindow2::setModified(bool p_modified) { m_editor->setModified(p_modified); }
 
 void MindMapViewWindow2::setMode(ViewWindowMode p_mode) {
   Q_UNUSED(p_mode);
-  // Mind maps have a single edit surface, including after protected-note reopen.
   m_mode = ViewWindowMode::Edit;
 }
 
+void MindMapViewWindow2::handleNodeRetargeted(const NodeIdentifier &p_newNodeId) {
+  ViewWindow2::handleNodeRetargeted(p_newNodeId);
+  ++m_generation;
+  // Rename/move updates resource policy only; drafts, history and camera stay native-owned.
+  m_editor->setBuffer(getBuffer());
+}
+
 void MindMapViewWindow2::handleEditorConfigChange() {
-  // Always update layout mode (WidgetConfig changes don't affect editor config revision).
+  const QPointer<MindMapViewWindow2> guard(this);
   ViewWindow2::handleEditorConfigChange();
-
-  if (m_controller->checkAndUpdateConfigRevision()) {
-    auto *configMgr = getServices().get<ConfigMgr2>();
-    const auto &editorConfig = configMgr->getEditorConfig();
-    const auto &mindMapEditorConfig = editorConfig.getMindMapEditorConfig();
-
-    auto *tmplService = getServices().get<HtmlTemplateService>();
-    tmplService->updateMindMapEditorTemplate(mindMapEditorConfig);
+  if (guard) {
+    applyEditorPalette();
   }
 }
 
 void MindMapViewWindow2::handleThemeChanged() {
+  const QPointer<MindMapViewWindow2> guard(this);
   ViewWindow2::handleThemeChanged();
+  if (guard) {
+    applyEditorPalette();
+  }
+}
 
+void MindMapViewWindow2::applyEditorPalette() {
   if (!m_editor) {
     return;
   }
-
-  // Force-regenerate MindMap template with theme stylesheet.
-  auto *configMgr = getServices().get<ConfigMgr2>();
-  const auto &mindMapConfig = configMgr->getEditorConfig().getMindMapEditorConfig();
-  auto *tmplService = getServices().get<HtmlTemplateService>();
-  auto *themeService = getServices().get<ThemeService>();
-  tmplService->updateMindMapEditorTemplate(
-      mindMapConfig, themeService->getFile(Theme::File::WebStyleSheet), /*p_force=*/true);
-
-  // Update WebEngine page background color.
-  m_editor->page()->setBackgroundColor(themeService->getBaseBackground());
-
-  // Reload the editor content with the new template.
-  syncEditorFromBuffer();
-}
-
-void MindMapViewWindow2::scrollUp() {}
-
-void MindMapViewWindow2::scrollDown() {}
-
-void MindMapViewWindow2::zoom(bool p_zoomIn) { Q_UNUSED(p_zoomIn); }
-
-MindMapEditorAdapter *MindMapViewWindow2::adapter() const {
-  if (m_editor) {
-    return dynamic_cast<MindMapEditorAdapter *>(m_editor->adapter());
+  QPalette contentPalette = palette();
+  if (auto *theme = getServices().get<ThemeService>()) {
+    const QColor background(theme->paletteColor(QStringLiteral("base#content#bg")));
+    const QColor foreground(theme->paletteColor(QStringLiteral("base#content#fg")));
+    if (background.isValid()) {
+      contentPalette.setColor(QPalette::Base, background);
+      contentPalette.setColor(QPalette::Window, background);
+      contentPalette.setColor(QPalette::Button, background);
+    }
+    if (foreground.isValid()) {
+      contentPalette.setColor(QPalette::Text, foreground);
+      contentPalette.setColor(QPalette::WindowText, foreground);
+      contentPalette.setColor(QPalette::ButtonText, foreground);
+    }
   }
-
-  return nullptr;
+  const QPointer<MindMapViewWindow2> guard(this);
+  m_editor->setPalette(contentPalette);
+  if (guard) {
+    m_editor->setFont(font());
+  }
 }
 
-// ============ Find and Replace ============
+void MindMapViewWindow2::scrollUp() {
+  if (m_contentLoaded) {
+    m_editor->scrollSteps(0, -1);
+  }
+}
+
+void MindMapViewWindow2::scrollDown() {
+  if (m_contentLoaded) {
+    m_editor->scrollSteps(0, 1);
+  }
+}
+
+void MindMapViewWindow2::zoom(bool p_zoomIn) {
+  if (m_contentLoaded) {
+    m_editor->zoom(p_zoomIn ? 1.2 : 1.0 / 1.2);
+  }
+}
+
+void MindMapViewWindow2::resetZoom() {
+  if (m_contentLoaded) {
+    m_editor->resetZoom();
+  }
+}
+
+QSharedPointer<OutlineProvider> MindMapViewWindow2::getOutlineProvider() const {
+  return m_outlineProvider;
+}
+
+void MindMapViewWindow2::setupOutlineProvider() {
+  m_outlineProvider = QSharedPointer<OutlineProvider>::create();
+  m_outlineProvider->setAutoSectionNumberAllowed(false);
+  m_outlineProvider->setReorderSupported(false);
+  connect(m_outlineProvider.data(), &OutlineProvider::headingClicked, this, [this](int p_index) {
+    if (!m_contentLoaded || p_index < 0 || p_index >= m_outlineNodeIds.size()) {
+      return;
+    }
+    // Copy across revealNode(): committing a draft can synchronously rebuild the outline.
+    const QString nodeId = m_outlineNodeIds.at(p_index);
+    m_editor->revealNode(nodeId);
+  });
+}
+
+void MindMapViewWindow2::clearOutline() {
+  m_outlineNodeIds.clear();
+  m_outlineIndexes.clear();
+  const QPointer<MindMapViewWindow2> guard(this);
+  m_outlineProvider->setCurrentHeadingIndex(-1);
+  if (guard) {
+    m_outlineProvider->setOutline(QSharedPointer<Outline>::create());
+  }
+}
+
+void MindMapViewWindow2::refreshOutline() {
+  if (!m_contentLoaded) {
+    clearOutline();
+    return;
+  }
+  const QPointer<MindMapViewWindow2> guard(this);
+  const auto generation = m_generation;
+  const auto entries = m_editor->outline();
+  if (!guard || generation != m_generation) {
+    return;
+  }
+  if (entries.isEmpty()) {
+    const auto error = m_editor->lastError();
+    clearOutline();
+    if (guard && generation == m_generation) {
+      showMessage(error.isEmpty() ? tr("Unable to read the mind map outline.") : error);
+    }
+    return;
+  }
+  auto outline = QSharedPointer<Outline>::create();
+  outline->m_headings.reserve(entries.size());
+  QStringList nodeIds;
+  nodeIds.reserve(entries.size());
+  QHash<QString, int> indexes;
+  indexes.reserve(entries.size());
+  for (const auto &entry : entries) {
+    indexes.insert(entry.id, nodeIds.size());
+    nodeIds.append(entry.id);
+    outline->m_headings.append(Outline::Heading(entry.topic, entry.level));
+  }
+  m_outlineNodeIds = std::move(nodeIds);
+  m_outlineIndexes = std::move(indexes);
+  m_outlineProvider->setOutline(outline);
+  if (guard && generation == m_generation) {
+    updateCurrentHeading();
+  }
+}
+
+void MindMapViewWindow2::updateCurrentHeading() {
+  const auto id = m_contentLoaded ? m_editor->selectedNodeId() : QString();
+  m_outlineProvider->setCurrentHeadingIndex(id.isEmpty() ? -1 : m_outlineIndexes.value(id, -1));
+}
+
+void MindMapViewWindow2::findText(const QString &p_text, FindOptions p_options,
+                                  bool p_incremental) {
+  const QPointer<MindMapViewWindow2> guard(this);
+  const auto generation = m_generation;
+  m3::qt::FindResult result;
+  if (m_contentLoaded) {
+    result = m_editor->findText(p_text,
+                                p_options.testFlag(FindOption::CaseSensitive) ? Qt::CaseSensitive
+                                                                              : Qt::CaseInsensitive,
+                                p_options.testFlag(FindOption::FindBackward), p_incremental);
+  }
+  if (guard && generation == m_generation) {
+    showFindResult(QStringList(p_text), result.totalMatches, result.currentMatch);
+  }
+}
 
 void MindMapViewWindow2::handleFindTextChanged(const QString &p_text, FindOptions p_options) {
-  if (p_options & FindOption::IncrementalSearch) {
-    m_editor->findText(p_text, p_options);
+  if (p_text.isEmpty() || p_options.testFlag(FindOption::IncrementalSearch)) {
+    findText(p_text, p_options, true);
   }
 }
 
 void MindMapViewWindow2::handleFindNext(const QStringList &p_texts, FindOptions p_options) {
-  // We do not use mark.js for searching as the contents are mainly SVG.
-  m_editor->findText(p_texts.empty() ? QString() : p_texts[0], p_options);
+  findText(p_texts.isEmpty() ? QString() : p_texts.constFirst(), p_options, false);
 }
 
 void MindMapViewWindow2::handleReplace(const QString &p_text, FindOptions p_options,
@@ -219,30 +328,19 @@ void MindMapViewWindow2::handleReplace(const QString &p_text, FindOptions p_opti
   Q_UNUSED(p_text);
   Q_UNUSED(p_options);
   Q_UNUSED(p_replaceText);
-  showMessage(tr("Replace is not supported yet"));
+  showMessage(tr("Replacement is not supported for mind maps."));
 }
 
 void MindMapViewWindow2::handleReplaceAll(const QString &p_text, FindOptions p_options,
                                           const QString &p_replaceText) {
-  Q_UNUSED(p_text);
-  Q_UNUSED(p_options);
-  Q_UNUSED(p_replaceText);
-  showMessage(tr("Replace is not supported yet"));
+  handleReplace(p_text, p_options, p_replaceText);
 }
 
-void MindMapViewWindow2::handleFindAndReplaceWidgetClosed() {
-  m_editor->findText(QString(), FindOption::FindNone);
-}
+void MindMapViewWindow2::clearHighlights() { m_editor->clearFind(); }
+
+void MindMapViewWindow2::handleFindAndReplaceWidgetClosed() { clearHighlights(); }
 
 void MindMapViewWindow2::handleFindAndReplaceWidgetOpened() {
-  if (!m_findConfigured) {
-    // Mindmap search: disable replace and limit options (same as legacy).
-    auto *findWidget = findChild<FindAndReplaceWidget2 *>();
-    if (findWidget) {
-      findWidget->setReplaceEnabled(false);
-      findWidget->setOptionsEnabled(FindOption::WholeWordOnly | FindOption::RegularExpression,
-                                    false);
-    }
-    m_findConfigured = true;
-  }
+  setFindAndReplaceReplaceEnabled(false);
+  setFindAndReplaceOptionsEnabled(FindOption::WholeWordOnly | FindOption::RegularExpression, false);
 }

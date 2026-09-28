@@ -352,7 +352,6 @@ add_qt_test(test_textviewwindowcontroller
     ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/pdfviewerconfig.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/mindmapeditorconfig.cpp
   LINKS
     core_services
     vxcore
@@ -377,7 +376,6 @@ add_qt_test(test_pdfviewwindowcontroller
     ${CMAKE_SOURCE_DIR}/src/core/pdfviewerconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/mindmapeditorconfig.cpp
   LINKS
     core_services
     vxcore
@@ -401,7 +399,6 @@ add_qt_test(test_markdownviewwindowcontroller
     ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
     ${CMAKE_SOURCE_DIR}/src/core/pdfviewerconfig.cpp
-    ${CMAKE_SOURCE_DIR}/src/core/mindmapeditorconfig.cpp
   LINKS
     core_services
     vxcore

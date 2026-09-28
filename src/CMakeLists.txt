@@ -138,6 +138,7 @@ target_link_libraries(vnote PRIVATE
     qhotkey
     vxcore
     QWindowKit::Widgets
+    m3::qt_editor
 )
 
 if((QT_DEFAULT_MAJOR_VERSION GREATER 5))
@@ -177,7 +178,19 @@ elseif(APPLE)
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         "${VX_PUGIXML_LICENSE}"
         "$<TARGET_FILE_DIR:vnote>/../Resources/LICENSE.pugixml"
-        COMMENT "Copying resources and crypto licenses into app bundle Resources"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/libs/m3/LICENSE"
+        "$<TARGET_FILE_DIR:vnote>/../Resources/LICENSE.m3"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/libs/m3/third_party/nlohmann/LICENSE.MIT"
+        "$<TARGET_FILE_DIR:vnote>/../Resources/LICENSE.m3-nlohmann"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/libs/m3/third_party/lucide/LICENSE"
+        "$<TARGET_FILE_DIR:vnote>/../Resources/LICENSE.m3-lucide"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${PROJECT_SOURCE_DIR}/libs/m3/third_party/unicode/LICENSE"
+        "$<TARGET_FILE_DIR:vnote>/../Resources/LICENSE.m3-unicode"
+        COMMENT "Copying resources and third-party licenses into app bundle Resources"
     )
 endif()
 
@@ -192,6 +205,14 @@ if (WIN32)
         DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.libsodium-cmake)
     install(FILES "${VX_PUGIXML_LICENSE}" DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.pugixml)
     install(FILES "${VX_CURL_LICENSE}" DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.curl)
+    install(FILES "${PROJECT_SOURCE_DIR}/libs/m3/LICENSE"
+        DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.m3)
+    install(FILES "${PROJECT_SOURCE_DIR}/libs/m3/third_party/nlohmann/LICENSE.MIT"
+        DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.m3-nlohmann)
+    install(FILES "${PROJECT_SOURCE_DIR}/libs/m3/third_party/lucide/LICENSE"
+        DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.m3-lucide)
+    install(FILES "${PROJECT_SOURCE_DIR}/libs/m3/third_party/unicode/LICENSE"
+        DESTINATION ${CMAKE_INSTALL_BINDIR} RENAME LICENSE.m3-unicode)
     install(FILES ${VX_QM_FILES} DESTINATION "${CMAKE_INSTALL_BINDIR}/translations" OPTIONAL)
 elseif(APPLE)
     set(CMAKE_MACOSX_RPATH ON)
@@ -227,6 +248,14 @@ else()
         DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.libsodium-cmake)
     install(FILES "${VX_PUGIXML_LICENSE}" DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.pugixml)
     install(FILES "${VX_CURL_LICENSE}" DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.curl)
+    install(FILES "${PROJECT_SOURCE_DIR}/libs/m3/LICENSE"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.m3)
+    install(FILES "${PROJECT_SOURCE_DIR}/libs/m3/third_party/nlohmann/LICENSE.MIT"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.m3-nlohmann)
+    install(FILES "${PROJECT_SOURCE_DIR}/libs/m3/third_party/lucide/LICENSE"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.m3-lucide)
+    install(FILES "${PROJECT_SOURCE_DIR}/libs/m3/third_party/unicode/LICENSE"
+        DESTINATION ${CMAKE_INSTALL_DATADIR}/licenses/vnote RENAME LICENSE.m3-unicode)
     install(FILES ${VX_QM_FILES} DESTINATION "${CMAKE_INSTALL_DATADIR}/translations" OPTIONAL)
 
     set(desktop.path applications)

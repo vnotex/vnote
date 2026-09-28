@@ -269,7 +269,8 @@ void MainWindow2::setupUI() {
   if (themeService) {
     connect(themeService, &ThemeService::themeAboutToChange, this, [this]() {
       if (!m_progressDialog) {
-        m_progressDialog = new QProgressDialog(this);
+        m_progressDialog = new QProgressDialog(this, Qt::Dialog | Qt::WindowDoesNotAcceptFocus);
+        m_progressDialog->setAttribute(Qt::WA_ShowWithoutActivating);
         m_progressDialog->setWindowModality(Qt::WindowModal);
         m_progressDialog->setCancelButton(nullptr);
         m_progressDialog->setMinimumDuration(0);
@@ -793,7 +794,11 @@ void MainWindow2::exportNotes(ViewWindow2 *p_source) {
     const QString path = buffer.resolvedPath();
     // A virtual view (vx://home) is a valid buffer with no file; it is not an export source.
     if (!path.isEmpty() && !buffer.nodeId().isVirtual()) {
-      context.bufferContent = viewWin->getLatestContent();
+      QString error;
+      if (!viewWin->tryGetLatestContent(&context.bufferContent, &error)) {
+        QMessageBox::warning(this, tr("Export"), error);
+        return;
+      }
       context.bufferName = viewWin->getName();
       context.currentNodeId = buffer.nodeId();
       context.bufferPath = path;
@@ -1003,7 +1008,11 @@ void MainWindow2::setupDocks() {
               if (buffer.nodeId() == p_nodeId) {
                 const QString path = buffer.resolvedPath();
                 if (!path.isEmpty() && !buffer.nodeId().isVirtual()) {
-                  context.bufferContent = viewWin->getLatestContent();
+                  QString error;
+                  if (!viewWin->tryGetLatestContent(&context.bufferContent, &error)) {
+                    QMessageBox::warning(this, tr("Export"), error);
+                    return;
+                  }
                   context.bufferName = viewWin->getName();
                   context.bufferPath = path;
                 }

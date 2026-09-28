@@ -1696,3 +1696,32 @@ add_qt_test(test_commentpanel
 target_include_directories(test_commentpanel PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )
+
+# Native mind-map host boundary: compile the real subclass and resource-policy
+# controller against isolated BufferService fixtures, with no WebEngine adapter.
+add_qt_test(test_mindmapeditor
+  SOURCES
+    test_mindmapeditor.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/mindmapeditor.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/mindmapviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
+  LINKS
+    m3::qt_editor
+    core_services
+    core_configs
+    VTextEdit
+    Qt6::Widgets
+    Qt6::Network
+    Qt6::Svg
+)
+target_include_directories(test_mindmapeditor PRIVATE
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+
+# Required even when this is the only widget target built.
+add_custom_command(TARGET test_mindmapeditor POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit>
+    $<TARGET_FILE_DIR:test_mindmapeditor>
+)
