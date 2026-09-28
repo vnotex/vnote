@@ -1231,6 +1231,16 @@ add_qt_test(test_encoding_button
     Qt6::Core5Compat
 )
 
+# Message-only status rows collapse when empty; permanent controls remain visible.
+add_qt_test(test_statuswidget
+  SOURCES
+    test_statuswidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/statuswidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/statuswidget.h
+  LINKS
+    Qt6::Widgets
+)
+
 # StatusBar: reusable column-based status bar infra (no services / no Buffer2).
 # NOT GUILESS — QLabel/QToolButton/QLineEdit/QMenu need QApplication. Only needs
 # Qt6::Widgets; no VTextEdit runtime dep, so no DLL copy step is required.

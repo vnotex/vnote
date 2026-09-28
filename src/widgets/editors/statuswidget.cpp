@@ -34,6 +34,18 @@ StatusWidget::~StatusWidget() {
   }
 }
 
+void StatusWidget::setVisible(bool p_visible) {
+  QWidget::setVisible(p_visible && (m_editorWidget || m_outerLayout->count() > 1 ||
+                                    !m_messageLabel->text().isEmpty()));
+}
+
+void StatusWidget::updateVisibility() {
+  // A shared widget may receive content before it is attached to its host.
+  if (parentWidget() || isVisible()) {
+    setVisible(true);
+  }
+}
+
 void StatusWidget::showMessage(const QString &p_msg, int p_milliseconds) {
   if (p_msg.isEmpty()) {
     clearMessage();
@@ -46,6 +58,7 @@ void StatusWidget::showMessage(const QString &p_msg, int p_milliseconds) {
   if (p_milliseconds > 0) {
     m_messageTimer->start(p_milliseconds);
   }
+  updateVisibility();
 }
 
 void StatusWidget::setEditorStatusWidget(const QSharedPointer<QWidget> &p_editorWidget) {
@@ -54,6 +67,7 @@ void StatusWidget::setEditorStatusWidget(const QSharedPointer<QWidget> &p_editor
   m_editorWidget->setParent(m_stackHost);
   m_mainLayout->addWidget(m_editorWidget.data());
   m_mainLayout->setCurrentWidget(m_editorWidget.data());
+  updateVisibility();
 }
 
 void StatusWidget::addCornerWidget(QWidget *p_widget) {
@@ -63,6 +77,7 @@ void StatusWidget::addCornerWidget(QWidget *p_widget) {
   p_widget->setParent(this);
   m_outerLayout->addWidget(p_widget, 0);
   p_widget->show();
+  updateVisibility();
 }
 
 void StatusWidget::resizeEvent(QResizeEvent *p_event) {
@@ -80,4 +95,5 @@ void StatusWidget::clearMessage() {
   if (m_editorWidget) {
     m_mainLayout->setCurrentWidget(m_editorWidget.data());
   }
+  updateVisibility();
 }

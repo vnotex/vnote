@@ -10,13 +10,16 @@ class QStackedLayout;
 class QHBoxLayout;
 
 namespace vnotex {
-// A status widget wrapper for ViewWindow.
+// A status widget wrapper for ViewWindow. Empty message-only rows collapse.
 class StatusWidget : public QWidget {
   Q_OBJECT
 public:
   explicit StatusWidget(QWidget *p_parent = nullptr);
 
   ~StatusWidget();
+
+  // Explicit show requests must not reserve a blank status row.
+  void setVisible(bool p_visible) Q_DECL_OVERRIDE;
 
   void showMessage(const QString &p_msg, int p_milliseconds = 3000);
 
@@ -33,6 +36,8 @@ protected:
 
 private:
   void clearMessage();
+
+  void updateVisibility();
 
   // Outer left-to-right layout: [stack host (stretch)] [corner widgets...].
   QHBoxLayout *m_outerLayout = nullptr;
