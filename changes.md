@@ -1,6 +1,6 @@
 # Changes
 ## Unreleased
-* Show underlying sync setup error details in the New Notebook dialog instead of only a generic failure message
+* Show underlying sync setup error details in the New Notebook dialog, including the failed WebDAV check, HTTP status and missing or weak ETags
 * Encryption setup records a persistent notebook initialization marker instead of scanning all folder metadata; legacy notebooks require explicit confirmation before first setup when their encryption history is unknown
 * Note conversion no longer audits unrelated folder metadata; missing known keys still require recovery, and cancelling legacy confirmation leaves notes and configuration unchanged
 * Place Sync method below Type in the shared notebook form; keep it read-only and selectable in Manage Notebooks
