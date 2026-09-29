@@ -163,7 +163,11 @@ overload owns the remaining direct controls. Theme refresh reaches both.
 Text keeps **Find And Replace → Presentation Mode → Menu**. Markdown keeps
 **Outline → Find And Replace → Presentation Mode → Menu**. PDF keeps
 **Outline → Find And Replace → Presentation Mode** together before page/zoom controls.
-MindMap inherits Find And Replace plus Menu. Widget-hosted Settings and Dashboard
+MindMap adds Lucide Undo and Redo after the left common actions and inherits
+Find And Replace plus Menu. The native ViewWindow toolbar borrows the editor
+command actions; the editor retains shortcuts, inline-edit commits and history
+availability. Invalid content gates native mutations through read-only mode until
+a successful reload restores the buffer policy. Widget-hosted Settings and Dashboard
 retain their content-owned toolbars; locked-note placeholders have none.
 
 #### Whole-view fullscreen

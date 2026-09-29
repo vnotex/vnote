@@ -1,5 +1,6 @@
 #include "mindmapviewwindow2.h"
 
+#include <QAction>
 #include <QPalette>
 #include <QPointer>
 #include <QScopeGuard>
@@ -69,6 +70,15 @@ void MindMapViewWindow2::setupToolBar() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
   addLeftCommonToolBarActions(toolBar);
+  toolBar->addSeparator();
+  // The editor retains command ownership, shortcuts and history availability.
+  for (const auto &name : {QStringLiteral("undo"), QStringLiteral("redo")}) {
+    auto *action = m_editor->commandAction(name);
+    const auto iconName = name + QStringLiteral("_editor.svg");
+    action->setProperty("iconName", iconName);
+    action->setIcon(ViewWindowToolBarHelper2::generateIcon(getServices(), iconName));
+    toolBar->addAction(action);
+  }
   addRightCommonToolBarActions(toolBar);
 }
 

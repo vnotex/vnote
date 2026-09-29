@@ -33,6 +33,8 @@
         <file>icons/folder_node.svg</file>
         <file>icons/other_item.svg</file>
         <file>icons/save_editor.svg</file>
+        <file>icons/undo_editor.svg</file>
+        <file>icons/redo_editor.svg</file>
         <file>icons/apply_editor.svg</file>
         <file>icons/buffer.svg</file>
         <file>icons/attachment_editor.svg</file>

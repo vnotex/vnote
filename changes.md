@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Add theme-aware Lucide Undo and Redo buttons to the native mind-map toolbar
 * Add Jianguoyun WebDAV sync with VNote-managed versioned remote storage, remote clone, whole-version conflicts and resumable journaled recovery; existing generic WebDAV/Nextcloud keeps its strict ordinary-file protocol
 * Preserve encrypted key/file cohorts, dirty editor/comment drafts and separate provider recovery archives during Jianguoyun sync; retained remote history and deleted data are not automatically removed
 * Clarify Markdown image context-menu labels and use matching View Image (V) and Copy Image (G) access keys in read and edit modes

@@ -398,6 +398,12 @@ void TestMindMapEditor::invalidContentFailsClosedAndRecovers() {
   MindMapEditor editor(*m_services, buffer);
   QVERIFY(editor.loadContent(buffer.getContentRaw()));
   QVERIFY(showEditor(editor));
+  const auto baseline = editor.toJson();
+  QVERIFY(editor.renameNode(QStringLiteral("r"), QStringLiteral("First edit")));
+  QVERIFY(editor.renameNode(QStringLiteral("r"), QStringLiteral("Second edit")));
+  QVERIFY(editor.undo());
+  QVERIFY(editor.canUndo() && editor.canRedo());
+  editor.setModified(false);
   const auto retained = editor.toJson();
   const QByteArray malformed("{\"schemaVersion\":1,\"nodes\":[invalid");
   QVERIFY(writeFile(buffer.resolvedPath(), malformed));
@@ -409,6 +415,13 @@ void TestMindMapEditor::invalidContentFailsClosedAndRecovers() {
   QVERIFY(!status.isEmpty());
   QVERIFY(!editor.isVisible() || !editor.isEnabled());
   QVERIFY_EXCEPTION_THROWN(editor.contentForSave(), std::runtime_error);
+  QVERIFY(!editor.commandAction(QStringLiteral("undo"))->isEnabled());
+  QVERIFY(!editor.commandAction(QStringLiteral("redo"))->isEnabled());
+  QVERIFY(!editor.undo());
+  QVERIFY(!editor.redo());
+  editor.setBuffer(buffer);
+  QVERIFY(!editor.commandAction(QStringLiteral("undo"))->isEnabled());
+  QVERIFY(!editor.commandAction(QStringLiteral("redo"))->isEnabled());
   QCOMPARE(editor.toJson(), retained);
   QCOMPARE(buffer.getContentRaw(), malformed);
   QCOMPARE(readFile(buffer.resolvedPath()), malformed);
@@ -420,9 +433,12 @@ void TestMindMapEditor::invalidContentFailsClosedAndRecovers() {
   QVERIFY(buffer.reload());
   QVERIFY(editor.loadContent(buffer.getContentRaw()));
   QVERIFY(editor.isVisible() && editor.isEnabled());
-  QCOMPARE(editor.contentForSave().toUtf8(), retained);
+  QCOMPARE(editor.contentForSave().toUtf8(), baseline);
   QCOMPARE(readFile(buffer.resolvedPath()), original);
   QVERIFY(dirty.isEmpty());
+  QVERIFY(editor.renameNode(QStringLiteral("r"), QStringLiteral("Recovered edit")));
+  QVERIFY(editor.undo());
+  QCOMPARE(editor.toJson(), baseline);
 }
 
 void TestMindMapEditor::pendingDraftAndRejectedSnapshot() {

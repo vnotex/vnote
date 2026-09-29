@@ -111,6 +111,11 @@ void MindMapEditor::invalidateContent(const QString &p_error) {
   if (!guard || generation != m_generation) {
     return;
   }
+  // Borrowed toolbar actions must not mutate the retained, invalid document.
+  setReadOnly(true);
+  if (!guard || generation != m_generation) {
+    return;
+  }
   hide();
   if (guard && generation == m_generation) {
     emit statusMessageRequested(p_error);
@@ -138,7 +143,7 @@ void MindMapEditor::setBuffer(const Buffer2 &p_buffer) {
     m_contentLoaded = false;
     m_loadError = tr("The mind map has not been loaded.");
   }
-  setReadOnly(m_buffer.isReadOnly());
+  setReadOnly(!m_contentLoaded || m_buffer.isReadOnly());
   if (!guard || generation != m_generation) {
     return;
   }
@@ -188,6 +193,10 @@ bool MindMapEditor::loadContent(const QByteArray &p_content) {
   }
   m_contentLoaded = true;
   m_modified = false;
+  setReadOnly(m_buffer.isReadOnly());
+  if (!guard || generation != m_generation) {
+    return false;
+  }
   setEnabled(true);
   if (!guard || generation != m_generation) {
     return false;
