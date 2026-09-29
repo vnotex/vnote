@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Remove the Lucius Markdown read-mode width cap while preserving responsive content padding
 * Refine Dreamy with an Apprentice-inspired dark palette, coordinated editor and reader syntax, readable selections and matching control icons
 * Use text-only View and Settings menus on the main toolbar; move their primary actions inside the menus and Themes under Settings, keeping the notification button
 * Add theme-aware Lucide Undo and Redo buttons to the native mind-map toolbar
