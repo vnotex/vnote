@@ -63,6 +63,7 @@ public:
   // Overload that accepts a palette preprocessor for GUI-specific transformations.
   static Theme *fromFolder(const QString &p_folder, PalettePreprocessor p_preprocessor);
 
+  // An explicit locale overrides UI preferences; empty follows QLocale().uiLanguages().
   static QString getDisplayName(const QString &p_folder, const QString &p_locale);
 
   static QString getFile(const QString &p_themeFolder, File p_fileType);

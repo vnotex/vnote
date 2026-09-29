@@ -7,7 +7,9 @@
 #include <QFileInfo>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLocale>
 #include <QRegularExpression>
+#include <QScopeGuard>
 #include <QScopedPointer>
 #include <QSet>
 #include <QTemporaryDir>
@@ -27,6 +29,8 @@ class TestTheme : public QObject {
 private slots:
   void initTestCase();
   void cleanupTestCase();
+  void testDisplayNameFollowsUiLocale_data();
+  void testDisplayNameFollowsUiLocale();
   void testEnabledContrast_data();
   void testEnabledContrast();
   void testTranslateStyleByPalette_jsonQuotedValue();
@@ -188,6 +192,62 @@ bool writeUtf8(const QString &path, const QString &content) {
   return true;
 }
 } // anonymous namespace
+
+void TestTheme::testDisplayNameFollowsUiLocale_data() {
+  QTest::addColumn<QString>("defaultLocale");
+  QTest::addColumn<QString>("requestedLocale");
+  QTest::addColumn<QJsonObject>("metadata");
+  QTest::addColumn<QString>("expectedName");
+
+  const QJsonObject names{{QStringLiteral("display_name"), QStringLiteral("Default name")},
+                          {QStringLiteral("display_name_zh_CN"), QStringLiteral("中文名称")},
+                          {QStringLiteral("display_name_fr"), QStringLiteral("Nom français")}};
+  QTest::newRow("default-chinese")
+      << QStringLiteral("zh_CN") << QString() << names << QStringLiteral("中文名称");
+  QTest::newRow("explicit-chinese-before-default-is-set")
+      << QStringLiteral("en_US") << QStringLiteral("zh_CN") << names << QStringLiteral("中文名称");
+  QTest::newRow("explicit-english-overrides-default-chinese")
+      << QStringLiteral("zh_CN") << QStringLiteral("en_US") << names
+      << QStringLiteral("Default name");
+  QTest::newRow("script-tag-falls-back-to-region")
+      << QStringLiteral("en_US") << QStringLiteral("zh-Hans-CN") << names
+      << QStringLiteral("中文名称");
+  auto scriptNames = names;
+  scriptNames.insert(QStringLiteral("display_name_zh_Hans_CN"), QStringLiteral("简体中文名称"));
+  QTest::newRow("exact-script-name-precedes-region")
+      << QStringLiteral("en_US") << QStringLiteral("zh-Hans-CN") << scriptNames
+      << QStringLiteral("简体中文名称");
+  QTest::newRow("language-name-fallback") << QStringLiteral("en_US") << QStringLiteral("fr_BE")
+                                          << names << QStringLiteral("Nom français");
+  QTest::newRow("untranslated-locale-falls-back-to-generic")
+      << QStringLiteral("en_US") << QStringLiteral("ja_JP") << names
+      << QStringLiteral("Default name");
+  auto noGenericName = names;
+  noGenericName.remove(QStringLiteral("display_name"));
+  QTest::newRow("missing-generic-name-falls-back-to-folder")
+      << QStringLiteral("en_US") << QStringLiteral("ja_JP") << noGenericName
+      << QStringLiteral("localized-theme");
+}
+
+void TestTheme::testDisplayNameFollowsUiLocale() {
+  QFETCH(QString, defaultLocale);
+  QFETCH(QString, requestedLocale);
+  QFETCH(QJsonObject, metadata);
+  QFETCH(QString, expectedName);
+
+  const QLocale previousLocale;
+  const auto restoreLocale = qScopeGuard([&]() { QLocale::setDefault(previousLocale); });
+  QLocale::setDefault(QLocale(defaultLocale));
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  const auto themeDir = tmp.filePath(QStringLiteral("localized-theme"));
+  QVERIFY(QDir().mkpath(themeDir));
+  const QJsonDocument palette(QJsonObject{{QStringLiteral("metadata"), metadata}});
+  QVERIFY(writeUtf8(QDir(themeDir).filePath(QStringLiteral("palette.json")),
+                    QString::fromUtf8(palette.toJson())));
+
+  QCOMPARE(vnotex::Theme::getDisplayName(themeDir, requestedLocale), expectedName);
+}
 
 void TestTheme::testFetchWebStyleSheet_resolvesTokens() {
   QString src = findPureThemePath();

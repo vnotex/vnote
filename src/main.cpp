@@ -687,8 +687,9 @@ int main(int argc, char *argv[]) {
     configMgr.initAfterQtAppStarted();
 
     // Create ThemeService after bundled themes have been installed.
+    // Preserve Default (empty) so names follow UI languages, not regional formatting.
     ThemeService themeService({configMgr.getCoreConfig().getTheme(),
-                               configMgr.getCoreConfig().getLocaleToUse(),
+                               configMgr.getCoreConfig().getLocale(),
                                configService.getDataPath(DataLocation::App)});
     serviceLocator.registerService<ThemeService>(&themeService);
     app.setThemeService(&themeService);

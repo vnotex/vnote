@@ -4,8 +4,10 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonDocument>
+#include <QLocale>
 #include <QRegularExpression>
 #include <QSettings>
+#include <QStringList>
 
 #include "exception.h"
 #include <utils/fileutils2.h>
@@ -41,16 +43,21 @@ QString Theme::getDisplayName(const QString &p_folder, const QString &p_locale) 
   const auto metaObj = obj[QStringLiteral("metadata")].toObject();
   QString prefix("display_name");
 
-  if (!p_locale.isEmpty()) {
-    // Check full locale.
-    auto fullLocale = QStringLiteral("%1_%2").arg(prefix, p_locale);
-    if (metaObj.contains(fullLocale)) {
-      return metaObj.value(fullLocale).toString();
+  const auto locales = p_locale.isEmpty() ? QLocale().uiLanguages() : QStringList{p_locale};
+  for (auto locale : locales) {
+    locale.replace(QLatin1Char('-'), QLatin1Char('_'));
+    auto name = metaObj.value(QStringLiteral("%1_%2").arg(prefix, locale)).toString();
+    if (name.isEmpty()) {
+      // Match script tags such as zh-Hans-CN to existing zh_CN metadata.
+      name = metaObj.value(QStringLiteral("%1_%2").arg(prefix, QLocale(locale).name())).toString();
     }
-
-    auto shortLocale = QStringLiteral("%1_%2").arg(prefix, p_locale.split('_')[0]);
-    if (metaObj.contains(shortLocale)) {
-      return metaObj.value(shortLocale).toString();
+    if (name.isEmpty()) {
+      name =
+          metaObj.value(QStringLiteral("%1_%2").arg(prefix, locale.section(QLatin1Char('_'), 0, 0)))
+              .toString();
+    }
+    if (!name.isEmpty()) {
+      return name;
     }
   }
 

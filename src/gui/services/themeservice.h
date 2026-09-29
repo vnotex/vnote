@@ -21,7 +21,7 @@ struct ThemeServiceConfig {
   // Current theme to load.
   QString themeName;
 
-  // Locale for display names (e.g., "en_US").
+  // Configured UI-language override (e.g., "zh_CN"); empty follows Qt UI-language preferences.
   QString locale;
 
   QString appDataPath;

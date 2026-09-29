@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Show localized theme names using UI-language preferences for Default language, including Chinese script tags, while honoring an explicit language selection at startup
 * Remove the Lucius Markdown read-mode width cap while preserving responsive content padding
 * Refine Dreamy with an Apprentice-inspired dark palette, coordinated editor and reader syntax, readable selections and matching control icons
 * Use text-only View and Settings menus on the main toolbar; move their primary actions inside the menus and Themes under Settings, keeping the notification button
