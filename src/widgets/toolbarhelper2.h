@@ -85,9 +85,9 @@ private:
 
   void updateQuickAccessMenu(QMenu *p_menu);
 
-  void setupExpandButton(QToolBar *p_toolBar);
+  void setupViewButton(QToolBar *p_toolBar);
 
-  void setupThemeSwitcherButton(QToolBar *p_toolBar);
+  void setupThemesMenu(QMenu *p_menu);
 
   void setupNotificationButton(QToolBar *p_toolBar);
 

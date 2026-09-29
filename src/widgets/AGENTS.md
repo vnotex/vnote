@@ -54,8 +54,8 @@ Gate: `tests/widgets/test_buttonpopup.cpp`.
 
 ## Hiding the QToolButton Menu Indicator
 Plain-text status-bar / toolbar `QToolButton`s that open an `InstantPopup` menu
-(e.g. the status bar "Spelling" menu, the `EncodingButton`, the toolbar theme
-switcher) must NOT show the built-in dropdown-arrow menu indicator. Use the
+(e.g. the status bar "Spelling" menu, the `EncodingButton`, the main toolbar
+"View" and "Settings" menus) must NOT show the built-in dropdown-arrow menu indicator. Use the
 single shared mechanism — the dynamic property:
 
 ```cpp
@@ -76,6 +76,11 @@ text-only status-bar look.
 ### MainWindow
 
 - `MainWindow2` — new main window shell with ServiceLocator DI; owns the top-level layout, toolbar, sidebar, and view area
+
+The main toolbar ends with text-only **View** and **Settings** menus, then the
+notification button. View starts with **Expand Content Area**; Settings starts
+with the **Settings** action and a **Themes** submenu. Those primary actions
+are also registered on the main window so their shortcuts work with menus closed.
 
 Outline and Comments request a 2:1 height split on fresh layouts (missing or invalid
 saved dock state) and explicit **Reset Main Window Layout**. `MainWindow2::
@@ -488,7 +493,7 @@ The in-app notification UI is the **View** layer over `NotificationService` (dat
 Three surfaces, one rule each:
 
 - `NotificationToast` (`notificationtoast.{h,cpp}`) is the **transient** surface for `Attention::Interrupt`. It is a plain **child `QFrame` of `MainWindow2`**, anchored bottom-right of the central widget — NOT a `QMenu` and NOT a `Qt::Tool` top-level. A child widget cannot take window activation, so an arriving toast can never eat the user's keystrokes; being a child (rather than a `Qt::Tool` window) also avoids the Windows native-unmap-on-deactivate quirk, multi-monitor clamping and taskbar overlap.
-- `NotificationButton2` (`QToolButton`) lives on the settings toolbar immediately after the Theme button. It paints a red badge with `NotificationService::activeCount()` and refreshes its bell icon on `ThemeService::themeChanged`. It **does not auto-show the popup** — `showPopup()` is called on click, or by `MainWindow2` forwarding `NotificationToast::popupRequested`.
+- `NotificationButton2` (`QToolButton`) lives on the settings toolbar immediately after the Settings menu. It paints a red badge with `NotificationService::activeCount()` and refreshes its bell icon on `ThemeService::themeChanged`. It **does not auto-show the popup** — `showPopup()` is called on click, or by `MainWindow2` forwarding `NotificationToast::popupRequested`.
 - `NotificationPopup2` (extends `ButtonPopup`) is the click-to-open **notification centre**: messages newest-first with severity icon + title + text + optional collapsible "Details" + optional progress bar + per-message action buttons + Dismiss, in a height-capped `QScrollArea`, under the shared `TitleBar` holding "Notifications" and Clear All. Do NOT hand-roll a titlebar.
 
 The popup list has a minimum height of 12 font line spacings, clamped to its screen-height cap.

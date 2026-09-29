@@ -3809,6 +3809,10 @@
         <source>Restart</source>
         <translation>重启</translation>
     </message>
+    <message>
+        <source>View</source>
+        <translation>视图</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::ManageNotebooksController</name>

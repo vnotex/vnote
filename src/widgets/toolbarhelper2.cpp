@@ -264,11 +264,9 @@ QToolBar *ToolBarHelper2::setupSettingsToolBar(QToolBar *p_toolBar) {
     tb = createToolBar(MainWindow2::tr("Settings"), "SettingsToolBar");
   }
 
-  setupExpandButton(tb);
+  setupViewButton(tb);
 
   setupSettingsButton(tb);
-
-  setupThemeSwitcherButton(tb);
 
   setupNotificationButton(tb);
 
@@ -383,20 +381,9 @@ void ToolBarHelper2::updateQuickAccessMenu(QMenu *p_menu) {
   });
 }
 
-void ToolBarHelper2::setupThemeSwitcherButton(QToolBar *p_toolBar) {
-  auto *btn = new QToolButton(p_toolBar);
-  btn->setPopupMode(QToolButton::InstantPopup);
-
-  // Hide the dropdown arrow indicator via the shared theme-wide property (see
-  // src/widgets/AGENTS.md § Hiding the QToolButton Menu Indicator).
-  btn->setProperty("NoMenuIndicator", true);
-
-  auto *act = new QAction(MainWindow2::tr("Themes"), btn);
-  setActionIcon(act, QStringLiteral("theme_switcher.svg"));
-  btn->setDefaultAction(act);
-
-  auto *menu = WidgetsFactory::createMenu(p_toolBar);
-  btn->setMenu(menu);
+void ToolBarHelper2::setupThemesMenu(QMenu *p_menu) {
+  auto *menu = p_menu->addMenu(MainWindow2::tr("Themes"));
+  setActionIcon(menu->menuAction(), QStringLiteral("theme_switcher.svg"));
 
   MainWindow2::connect(menu, &QMenu::aboutToShow, menu, [this, menu]() {
     menu->clear();
@@ -440,8 +427,6 @@ void ToolBarHelper2::setupThemeSwitcherButton(QToolBar *p_toolBar) {
     // Apply the theme.
     themeService->switchTheme(themeName);
   });
-
-  p_toolBar->addWidget(btn);
 }
 
 void ToolBarHelper2::setupNotificationButton(QToolBar *p_toolBar) {
@@ -451,13 +436,19 @@ void ToolBarHelper2::setupNotificationButton(QToolBar *p_toolBar) {
 
 NotificationButton2 *ToolBarHelper2::notificationButton() const { return m_notificationButton; }
 
-void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
+void ToolBarHelper2::setupViewButton(QToolBar *p_toolBar) {
   const auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();
 
-  auto btn = WidgetsFactory::createToolButton(p_toolBar);
+  auto *menu = WidgetsFactory::createMenu(p_toolBar);
+  auto *viewAct = p_toolBar->addAction(MainWindow2::tr("View"));
+  viewAct->setMenu(menu);
+  auto *btn = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(viewAct));
+  btn->setPopupMode(QToolButton::InstantPopup);
+  btn->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  btn->setAutoRaise(true);
+  btn->setProperty("NoMenuIndicator", true);
 
-  auto defaultText = MainWindow2::tr("Expand Content Area");
-  auto expandAct = new QAction(defaultText, btn);
+  auto *expandAct = menu->addAction(MainWindow2::tr("Expand Content Area"));
   setActionIcon(expandAct, QStringLiteral("expand.svg"));
   WidgetUtils::addActionShortcut(expandAct,
                                  coreConfig.getShortcut(CoreConfig::Shortcut::ExpandContentArea));
@@ -467,11 +458,7 @@ void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
   MainWindow2::connect(m_mainWindow, &MainWindow2::layoutChanged, expandAct, [expandAct, this]() {
     expandAct->setChecked(m_mainWindow->isContentAreaExpanded());
   });
-  btn->addAction(expandAct);
-  btn->setDefaultAction(expandAct);
-
-  auto menu = WidgetsFactory::createMenu(p_toolBar);
-  btn->setMenu(menu);
+  m_mainWindow->addAction(expandAct);
 
   {
     auto fullScreenAct = new FullScreenToggleAction(
@@ -517,17 +504,22 @@ void ToolBarHelper2::setupExpandButton(QToolBar *p_toolBar) {
       MainWindow2::connect(actWrapper, &QAction::triggered, act, [act]() { act->trigger(); });
     }
   }
-
-  p_toolBar->addWidget(btn);
 }
 
 void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
   const auto &coreConfig = m_services.get<ConfigMgr2>()->getCoreConfig();
 
-  auto btn = WidgetsFactory::createToolButton(p_toolBar);
+  auto *menu = WidgetsFactory::createMenu(p_toolBar);
+  auto *menuAct = p_toolBar->addAction(MainWindow2::tr("Settings"));
+  menuAct->setMenu(menu);
+  auto *btn = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(menuAct));
+  btn->setPopupMode(QToolButton::InstantPopup);
+  btn->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  btn->setAutoRaise(true);
+  btn->setProperty("NoMenuIndicator", true);
 
-  auto defaultText = MainWindow2::tr("Settings");
-  auto settingsAct = new QAction(defaultText, btn);
+  auto *settingsAct = menu->addAction(MainWindow2::tr("Settings"));
+  settingsAct->setMenuRole(QAction::NoRole);
   setActionIcon(settingsAct, QStringLiteral("settings.svg"));
   QAction::connect(settingsAct, &QAction::triggered, [this]() {
     auto *content = new SettingsWidget(m_services, m_mainWindow);
@@ -536,12 +528,10 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
   });
   WidgetUtils::addActionShortcut(settingsAct,
                                  coreConfig.getShortcut(CoreConfig::Shortcut::Settings));
-  btn->addAction(settingsAct);
-  btn->setDefaultAction(settingsAct);
-  btn->setText(defaultText);
+  m_mainWindow->addAction(settingsAct);
 
-  auto menu = WidgetsFactory::createMenu(p_toolBar);
-  btn->setMenu(menu);
+  setupThemesMenu(menu);
+  menu->addSeparator();
 
   auto *lockAll = menu->addAction(MainWindow2::tr("Lock All"));
   lockAll->setObjectName(QStringLiteral("lockAllProtectedNotes"));
@@ -618,8 +608,6 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
       menu->addAction(MainWindow2::tr("Quit"), menu, [this]() { m_mainWindow->close(); });
   quitAct->setMenuRole(QAction::QuitRole);
   WidgetUtils::addActionShortcut(quitAct, coreConfig.getShortcut(CoreConfig::Shortcut::Quit));
-
-  p_toolBar->addWidget(btn);
 }
 
 UnitedEntryMgr *ToolBarHelper2::unitedEntryMgr() const { return m_unitedEntryMgr; }
