@@ -23,6 +23,7 @@
             "bg" : "@palette#active#window"
         },
         "content" : {
+            "fg" : "@palette#active#text",
             "bg" : "@palette#active#base"
         },
         "selected" : {

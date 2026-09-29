@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Use the system text color for Native theme content, including the mind-map editor
 * Add Simplified Chinese display names for Dreamy (梦幻), Jadeite (翡翠), and Pink Shock (粉红冲击)
 * Show localized theme names using UI-language preferences for Default language, including Chinese script tags, while honoring an explicit language selection at startup
 * Remove the Lucius Markdown read-mode width cap while preserving responsive content padding
