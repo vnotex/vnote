@@ -8,7 +8,8 @@
         "//comment" : "Otherwise, this value specify the theme name to use for syntax highlighting.",
         "//comment" : "If empty, 'editor-highlight-theme' will be used.",
         "markdown-editor-highlight-theme" : "Markdown Default",
-        "display_name" : "Pink Shock"
+        "display_name" : "Pink Shock",
+        "display_name_zh_CN" : "粉红冲击"
     },
     "palette" : {
         "bg3_0" : "#B98F98",

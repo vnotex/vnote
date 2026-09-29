@@ -9,6 +9,7 @@
         "//comment" : "If empty, 'editor-highlight-theme' will be used.",
         "markdown-editor-highlight-theme" : "",
         "display_name" : "Dreamy",
+        "display_name_zh_CN" : "梦幻",
         "description" : "Apprentice-inspired dark palette (https://github.com/romainl/Apprentice); brighter xterm grays and reds keep UI text readable"
     },
     "palette" : {
