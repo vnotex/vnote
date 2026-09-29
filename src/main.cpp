@@ -131,6 +131,11 @@ void loadTranslators(QApplication &p_app, const ConfigMgr2 &configMgr) {
   if (vtexteditTranslator->load(locale, "vtextedit", "_", translationsPath)) {
     p_app.installTranslator(vtexteditTranslator.release());
   }
+
+  std::unique_ptr<QTranslator> m3Translator(new QTranslator(&p_app));
+  if (m3Translator->load(locale, "m3", "_", translationsPath)) {
+    p_app.installTranslator(m3Translator.release());
+  }
 }
 
 void setOpenGLOption(const ConfigMgr2 &configMgr) {

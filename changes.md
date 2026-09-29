@@ -6,6 +6,7 @@
 * Remove the Lucius Markdown read-mode width cap while preserving responsive content padding
 * Refine Dreamy with an Apprentice-inspired dark palette, coordinated editor and reader syntax, readable selections and matching control icons
 * Use text-only View and Settings menus on the main toolbar; move their primary actions inside the menus and Themes under Settings, keeping the notification button
+* Translate the native mind-map editor into Simplified Chinese and Japanese and bundle its catalogs with VNote
 * Add theme-aware Lucide Undo and Redo buttons to the native mind-map toolbar
 * Add Jianguoyun WebDAV sync with VNote-managed versioned remote storage, remote clone, whole-version conflicts and resumable journaled recovery; existing generic WebDAV/Nextcloud keeps its strict ordinary-file protocol
 * Preserve encrypted key/file cohorts, dirty editor/comment drafts and separate provider recovery archives during Jianguoyun sync; retained remote history and deleted data are not automatically removed
