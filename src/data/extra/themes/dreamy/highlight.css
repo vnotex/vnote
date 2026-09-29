@@ -5,11 +5,12 @@ https://prismjs.com/download.html#themes=prism-tomorrow&languages=markup+css+cli
  * Based on https://github.com/chriskempson/tomorrow-theme
  * @author Rose Pritchard
  */
-/* Dreamy light recoloring with a lavender palette. */
+/* Dreamy: Apprentice-inspired colors (https://github.com/romainl/Apprentice).
+ * Comments use a brighter xterm gray for readability. */
 
 code[class*="language-"],
 pre[class*="language-"] {
-    color: #342744;
+    color: #bcbcbc;
     background: none;
     font-size: 1em;
     text-align: left;
@@ -39,7 +40,7 @@ pre[class*="language-"] {
 
 :not(pre) > code[class*="language-"],
 pre[class*="language-"] {
-    background: #e9dff3;
+    background: #1c1c1c;
 }
 
 /* Inline code */
@@ -54,57 +55,58 @@ pre[class*="language-"] {
 .token.prolog,
 .token.doctype,
 .token.cdata {
-    color: #655575;
+    color: #9e9e9e;
 }
 
 .token.punctuation {
-    color: #342744;
+    color: #bcbcbc;
 }
 
 .token.tag,
 .token.attr-name,
-.token.namespace,
-.token.deleted {
-    color: #a33c53;
+.token.selector,
+.token.important,
+.token.keyword,
+.token.operator {
+    color: #87afd7;
 }
 
-.token.function-name {
-    color: #4e598f;
+.token.function-name,
+.token.function {
+    color: #ffffaf;
 }
 
 .token.boolean,
 .token.number,
-.token.function {
-    color: #7c591e;
+.token.constant,
+.token.char {
+    color: #ff8700;
+}
+
+.token.class-name,
+.token.namespace,
+.token.builtin {
+    color: #8787af;
 }
 
 .token.property,
-.token.class-name,
-.token.constant,
-.token.symbol {
-    color: #7c456b;
-}
-
-.token.selector,
-.token.important,
+.token.variable,
 .token.atrule,
-.token.keyword,
-.token.builtin {
-    color: #60439b;
+.token.entity,
+.token.url {
+    color: #5fafaf;
 }
 
 .token.string,
-.token.char,
 .token.attr-value,
 .token.regex,
-.token.variable {
-    color: #306548;
+.token.symbol,
+.token.inserted {
+    color: #87af87;
 }
 
-.token.operator,
-.token.entity,
-.token.url {
-    color: #4e598f;
+.token.deleted {
+    color: #d78787;
 }
 
 .token.important,
@@ -117,10 +119,6 @@ pre[class*="language-"] {
 
 .token.entity {
     cursor: help;
-}
-
-.token.inserted {
-    color: #306548;
 }
 
 pre[class*="language-"].line-numbers {
@@ -142,7 +140,7 @@ pre[class*="language-"].line-numbers > code {
     left: -3.8em;
     width: 3em; /* works for line-numbers below 1000 lines */
     letter-spacing: -1px;
-    border-right: 1px solid #b8a7ce;
+    border-right: 1px solid #585858;
 
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -158,7 +156,7 @@ pre[class*="language-"].line-numbers > code {
 
         .line-numbers-rows > span:before {
             content: counter(linenumber);
-            color: #655575;
+            color: #9e9e9e;
             display: block;
             padding-right: 0.8em;
             text-align: right;
@@ -210,11 +208,11 @@ div.code-toolbar > .toolbar button {
 div.code-toolbar > .toolbar a,
 div.code-toolbar > .toolbar button,
 div.code-toolbar > .toolbar span {
-    color: #655575;
+    color: #9e9e9e;
     font-size: .8em;
     padding: 0 .5em;
-    background: #e5d9f2;
-    box-shadow: 0 2px 0 0 rgba(52, 39, 68, 0.16);
+    background: #303030;
+    box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.24);
     border-radius: .5em;
 }
 

@@ -525,6 +525,7 @@
         <file>themes/dreamy/right_disabled.svg</file>
         <file>themes/dreamy/sizegrip.svg</file>
         <file>themes/dreamy/text-editor.theme</file>
+        <file>themes/dreamy/editor-highlight.theme</file>
         <file>themes/dreamy/up.svg</file>
         <file>themes/dreamy/up_disabled.svg</file>
         <file>themes/dreamy/web.css</file>

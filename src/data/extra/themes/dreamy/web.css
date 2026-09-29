@@ -1,5 +1,4 @@
 body {
-    --vx-plantuml-preview-background: transparent;
     margin: 0 auto;
     font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji";
     color: @base#content#fg;
@@ -82,7 +81,7 @@ p, ul, ol {
 }
 
 mark {
-    color: @base#content#fg;
+    color: @palette#fg_mark_reader;
     background-color: @palette#bg_mark;
 }
 
@@ -182,7 +181,8 @@ table tr th :last-child, table tr td :last-child {
 div.vx-mermaid-graph {
     margin: 16px 0px 16px 0px;
     overflow-y: hidden;
-    color: @base#content#fg;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-flowchartjs-graph {
@@ -190,7 +190,8 @@ div.vx-flowchartjs-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    color: @base#content#fg;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-wavedrom-graph {
@@ -198,7 +199,8 @@ div.vx-wavedrom-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    color: @base#content#fg;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 div.vx-plantuml-graph {
@@ -206,22 +208,8 @@ div.vx-plantuml-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    color: @base#content#fg;
-}
-
-/* Light themes share the page background, including PlantUML's inline SVG canvas. */
-div.vx-mermaid-graph > svg,
-div.vx-flowchartjs-graph > svg,
-div.vx-wavedrom-graph > svg,
-div.vx-plantuml-graph svg,
-div.vx-graphviz-graph > svg {
-    background-color: transparent !important;
-}
-
-/* Graphviz paints its canvas as a polygon; node and cluster fills stay intact. */
-div.vx-graphviz-graph > svg > g.graph > polygon:first-of-type {
-    fill: none;
-    stroke: none;
+    background: @palette#bg_graph_canvas;
+    color: @palette#fg_graph_caption;
 }
 
 ::selection {
@@ -245,18 +233,18 @@ div.vx-graphviz-graph > svg > g.graph > polygon:first-of-type {
 }
 
 ::-webkit-scrollbar-thumb {
-    background: rgba(101, 85, 117, 0.3);
+    background: @base#normal#border;
     border-radius: 4px;
     min-height: 40px;
     min-width: 40px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: rgba(101, 85, 117, 0.5);
+    background: @base#disabled#fg;
 }
 
 ::-webkit-scrollbar-thumb:active {
-    background: rgba(101, 85, 117, 0.7);
+    background: @base#muted#fg;
 }
 
 ::-webkit-scrollbar-button {
@@ -266,12 +254,12 @@ div.vx-graphviz-graph > svg > g.graph > polygon:first-of-type {
 }
 
 #vx-content span.vx-search-match {
-    color: @base#content#fg;
+    color: @palette#fg_search;
     background-color: @palette#bg_search;
 }
 
 #vx-content span.vx-current-search-match {
-    color: @base#content#fg;
+    color: @palette#fg_search;
     background-color: @palette#bg_search_current;
 }
 

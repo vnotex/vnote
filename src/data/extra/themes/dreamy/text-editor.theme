@@ -1,6 +1,6 @@
 {
     "metadata" : {
-        "revision" : 0,
+        "revision" : 1,
         "name" : "Dreamy",
         "type" : "vtextedit"
     },
@@ -25,7 +25,7 @@
         },
         "SelectedText" : {
             "//comment" : "Selected text highlight",
-            "text-color" : "@base#content#fg",
+            "text-color" : "@palette#fg_mark_reader",
             "background-color" : "@palette#bg_mark"
         },
         "IndicatorsBorder" : {
@@ -49,17 +49,17 @@
         },
         "IncrementalSearch" : {
             "//comment" : "Incremental search highlight",
-            "text-color" : "@base#content#fg",
+            "text-color" : "@palette#fg_search",
             "background-color" : "@palette#bg_search_incremental"
         },
         "Search" : {
             "//comment" : "Search highlight",
-            "text-color" : "@base#content#fg",
+            "text-color" : "@palette#fg_search",
             "background-color" : "@palette#bg_search"
         },
         "SearchUnderCursor" : {
             "//comment" : "Search highlight under cursor",
-            "text-color" : "@base#content#fg",
+            "text-color" : "@palette#fg_search",
             "background-color" : "@palette#bg_search_current"
         }
     },
@@ -78,7 +78,7 @@
             "selected-background-color" : "@base#content#selection#bg"
         },
         "Preview" : {
-            "background-color" : "@base#content#bg"
+            "background-color" : "@palette#bg_graph_canvas"
         }
     },
     "markdown-syntax-styles" : {
@@ -191,7 +191,7 @@
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "MARK" : {
-            "text-color" : "@base#content#fg",
+            "text-color" : "@palette#fg_mark_reader",
             "background-color" : "@palette#bg_mark"
         },
         "TABLE" : {
