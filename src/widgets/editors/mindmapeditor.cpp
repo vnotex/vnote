@@ -205,7 +205,7 @@ QString MindMapEditor::contentForSave() {
   const QPointer<MindMapEditor> guard(this);
   const auto generation = m_generation;
   // Locking still permits the framework's final durability snapshot. Do not cancel its draft.
-  const bool committed = commitActiveEdit();
+  const bool committed = commitActiveEdit(true);
   if (!guard || generation != m_generation) {
     throw std::runtime_error("The mind map changed while capturing its content.");
   }

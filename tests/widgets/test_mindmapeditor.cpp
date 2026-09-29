@@ -1,5 +1,6 @@
 #include <QtTest>
 
+#include <QAction>
 #include <QBuffer>
 #include <QDir>
 #include <QFile>
@@ -14,6 +15,8 @@
 #include <QPainter>
 #include <QPlainTextEdit>
 #include <QPointer>
+#include <QScopeGuard>
+#include <QShortcut>
 #include <QSignalSpy>
 #include <QTcpServer>
 #include <QTcpSocket>
@@ -235,6 +238,8 @@ private slots:
   void nativeSaveRoundTripKeepsHistory();
   void invalidContentFailsClosedAndRecovers();
   void pendingDraftAndRejectedSnapshot();
+  void autosaveKeepsInlineEditor_data();
+  void autosaveKeepsInlineEditor();
   void readOnlyStillNavigates();
   void retargetRefreshesRelativeImagesWithoutReloading();
   void reloadAndRetargetCancelStaleHttpImages();
@@ -446,7 +451,13 @@ void TestMindMapEditor::pendingDraftAndRejectedSnapshot() {
   QCOMPARE(editor.toJson(), committed);
   QCOMPARE(buffer.getContentRaw(), original);
 
+  const QPointer<QPlainTextEdit> retainedInput(input);
+  const int cursorPosition = input->textCursor().position();
   const auto saved = editor.contentForSave();
+  QVERIFY(retainedInput && retainedInput->isVisible() && retainedInput->hasFocus());
+  QCOMPARE(retainedInput->textCursor().position(), cursorPosition);
+  QCOMPARE(editor.contentForSave(), saved);
+  QVERIFY(retainedInput && retainedInput->isVisible() && retainedInput->hasFocus());
   QVERIFY(!editor.hasPendingEdit());
   QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("topic")).toString(),
            QStringLiteral("Pending native save"));
@@ -456,7 +467,7 @@ void TestMindMapEditor::pendingDraftAndRejectedSnapshot() {
   QCOMPARE(semantic.count(), 1);
 
   editor.setModified(false);
-  input = beginDraft(editor);
+  input = retainedInput;
   QVERIFY(input);
   const auto rejected = QStringLiteral("Rejected") + QChar(0) + QStringLiteral("draft");
   input->setPlainText(rejected);
@@ -475,13 +486,117 @@ void TestMindMapEditor::pendingDraftAndRejectedSnapshot() {
   QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("topic")).toString(),
            QStringLiteral("Corrected draft"));
   QVERIFY(!editor.hasPendingEdit());
-  input = beginDraft(editor);
-  QVERIFY(input);
+  QVERIFY(retainedInput && retainedInput->isVisible() && retainedInput->hasFocus());
+  input = retainedInput;
   input->setPlainText(QStringLiteral("Discard this draft only"));
   QTest::keyClick(input, Qt::Key_Escape);
   QVERIFY(!editor.hasPendingEdit());
   QVERIFY(editor.isModified());
   QCOMPARE(editor.contentForSave(), corrected);
+}
+
+void TestMindMapEditor::autosaveKeepsInlineEditor_data() {
+  QTest::addColumn<bool>("link");
+  QTest::newRow("node") << false;
+  QTest::newRow("link") << true;
+}
+
+void TestMindMapEditor::autosaveKeepsInlineEditor() {
+  QFETCH(bool, link);
+  auto buffer = openNote(QStringLiteral("autosave.emind"), fixture());
+  QVERIFY(buffer.isValid());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  const QString target = link ? editor.addLink(QStringLiteral("r"), QStringLiteral("a"), false,
+                                               QStringLiteral("Initial link"))
+                              : QStringLiteral("a");
+  QVERIFY(!target.isEmpty());
+  QVERIFY(link ? editor.selectLink(target) : editor.selectNode(target));
+  const auto selectedNodes = editor.selectedNodeIds();
+  const auto selectedLink = editor.selectedLinkId();
+  const auto zoom = view->transform();
+  auto *input = beginDraft(editor);
+  QVERIFY(input);
+  const QPointer<QPlainTextEdit> retained(input);
+  const auto writerKey = reinterpret_cast<quintptr>(&editor);
+  m_buffers->registerActiveWriter(buffer.id(), writerKey,
+                                  [&editor] { return editor.contentForSave(); });
+  const auto unregister =
+      qScopeGuard([&] { m_buffers->unregisterActiveWriter(buffer.id(), writerKey); });
+  connect(&editor, &MindMapEditor::contentsChanged, &editor,
+          [&] { m_buffers->markDirty(buffer.id()); });
+  QSignalSpy saved(m_buffers->asQObject(), SIGNAL(bufferAutoSaved(QString)));
+  QVERIFY(saved.isValid());
+  m_buffers->setAutoSavePolicy(AutoSavePolicy::AutoSave);
+  const auto verifyLiveInput = [&] {
+    return retained && retained->isVisible() && retained->hasFocus() &&
+           editor.selectedNodeIds() == selectedNodes && editor.selectedLinkId() == selectedLink &&
+           view->transform() == zoom;
+  };
+  input->setPlainText(QStringLiteral("First autosaved topic"));
+  auto caret = input->textCursor();
+  caret.setPosition(6);
+  caret.setPosition(15, QTextCursor::KeepAnchor);
+  input->setTextCursor(caret);
+  QTRY_VERIFY_WITH_TIMEOUT(saved.count() >= 1, 5000);
+  QVERIFY(verifyLiveInput());
+  QCOMPARE(input->textCursor().position(), 15);
+  QCOMPARE(input->textCursor().anchor(), 6);
+  QVERIFY(!editor.hasPendingEdit());
+  QVERIFY(readFile(buffer.resolvedPath()).contains("First autosaved topic"));
+  QVERIFY(!m_buffers->isDirty(buffer.id()));
+  editor.setModified(false);
+  const auto revision = m_buffers->currentRevision(buffer.id());
+  const auto snapshot = editor.contentForSave();
+  QCOMPARE(editor.contentForSave(), snapshot);
+  QVERIFY(verifyLiveInput());
+  QCOMPARE(m_buffers->currentRevision(buffer.id()), revision);
+
+  input->moveCursor(QTextCursor::End);
+  QTest::keyClicks(input, " continued");
+  QVERIFY(editor.hasPendingEdit() && editor.isModified() && m_buffers->isDirty(buffer.id()));
+  QTRY_VERIFY_WITH_TIMEOUT(saved.count() >= 2, 5000);
+  QVERIFY(verifyLiveInput());
+  QCOMPARE(input->toPlainText(), QStringLiteral("First autosaved topic continued"));
+  QVERIFY(readFile(buffer.resolvedPath()).contains("First autosaved topic continued"));
+  QVERIFY(!editor.hasPendingEdit());
+  m_buffers->setAutoSavePolicy(AutoSavePolicy::None);
+
+  bool captured = false;
+  bool saveOk = false;
+  auto save = [&] {
+    captured = true;
+    saveOk = m_buffers->pullActiveWriterContent(buffer.id()) && buffer.save();
+    if (saveOk)
+      editor.setModified(false);
+  };
+  QAction saveAction(&editor);
+  saveAction.setShortcut(QKeySequence::Save);
+  saveAction.setShortcutContext(Qt::WindowShortcut);
+  editor.addAction(&saveAction);
+  connect(&saveAction, &QAction::triggered, &editor, save);
+  QShortcut alternate(QKeySequence(Qt::CTRL | Qt::ALT | Qt::Key_S), &editor);
+  alternate.setContext(Qt::WindowShortcut);
+  connect(&alternate, &QShortcut::activated, &editor, save);
+  QTest::keyClicks(input, " manual");
+  QTest::keyClick(input, Qt::Key_S, Qt::ControlModifier);
+  QTRY_VERIFY(captured);
+  QVERIFY(saveOk && verifyLiveInput());
+  QVERIFY(readFile(buffer.resolvedPath()).contains("continued manual"));
+  captured = false;
+  QTest::keyClicks(input, " custom");
+  QTest::keyClick(input, Qt::Key_S, Qt::ControlModifier | Qt::AltModifier);
+  QTRY_VERIFY(captured);
+  QVERIFY(saveOk && verifyLiveInput());
+  QVERIFY(readFile(buffer.resolvedPath()).contains("continued manual custom"));
+  const auto persisted = editor.toJson();
+  QTest::keyClicks(input, " unsaved");
+  QTest::keyClick(input, Qt::Key_Escape);
+  QVERIFY(!retained || !retained->isVisible());
+  QCOMPARE(editor.toJson(), persisted);
+  QVERIFY(!readFile(buffer.resolvedPath()).contains("unsaved"));
 }
 
 void TestMindMapEditor::readOnlyStillNavigates() {
