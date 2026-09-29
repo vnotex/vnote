@@ -3745,8 +3745,8 @@
     </message>
     <message>
         <location line="+10"/>
-        <source>Windows</source>
-        <translation>ウインドウ</translation>
+        <source>Windows List</source>
+        <translation>ウインドウ一覧</translation>
     </message>
     <message>
         <location line="+49"/>

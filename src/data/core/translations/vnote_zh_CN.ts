@@ -3745,8 +3745,8 @@
     </message>
     <message>
         <location line="+10"/>
-        <source>Windows</source>
-        <translation>窗口</translation>
+        <source>Windows List</source>
+        <translation>窗口列表</translation>
     </message>
     <message>
         <location line="+49"/>

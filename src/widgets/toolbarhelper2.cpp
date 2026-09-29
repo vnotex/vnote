@@ -485,8 +485,8 @@ void ToolBarHelper2::setupViewButton(QToolBar *p_toolBar) {
   menu->addSeparator();
 
   {
-    // Windows.
-    auto subMenu = menu->addMenu(MainWindow2::tr("Windows"));
+    // Windows list.
+    auto subMenu = menu->addMenu(MainWindow2::tr("Windows List"));
     for (auto dock : m_mainWindow->getDocks()) {
       if (!dock) {
         continue;
