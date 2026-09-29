@@ -3,6 +3,7 @@
 * Add Jianguoyun WebDAV sync with VNote-managed versioned remote storage, remote clone, whole-version conflicts and resumable journaled recovery; existing generic WebDAV/Nextcloud keeps its strict ordinary-file protocol
 * Preserve encrypted key/file cohorts, dirty editor/comment drafts and separate provider recovery archives during Jianguoyun sync; retained remote history and deleted data are not automatically removed
 * Clarify Markdown image context-menu labels and use matching View Image (V) and Copy Image (G) access keys in read and edit modes
+* Use `.mmm` as the preferred built-in MindMap suffix while retaining `.emind` support; saved custom suffix settings remain unchanged
 * Show underlying sync setup error details in the New Notebook dialog, including the failed WebDAV check, HTTP status and missing or weak ETags
 * Encryption setup records a persistent notebook initialization marker instead of scanning all folder metadata; legacy notebooks require explicit confirmation before first setup when their encryption history is unknown
 * Note conversion no longer audits unrelated folder metadata; missing known keys still require recovery, and cancelling legacy confirmation leaves notes and configuration unchanged

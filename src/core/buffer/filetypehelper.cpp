@@ -91,7 +91,7 @@ void FileTypeHelper::setupBuiltInTypes() {
     // if (suffixes && !suffixes->isEmpty()) {
     //   type.m_suffixes = *suffixes;
     // } else {
-    type.m_suffixes << QStringLiteral("emind");
+    type.m_suffixes << QStringLiteral("mmm") << QStringLiteral("emind");
     // }
 
     m_fileTypes.push_back(type);
