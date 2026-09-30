@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Fix table previews and source formatting for tables immediately after paragraph or list-item text, without requiring a blank line (#2763)
 * Use the system text color for Native theme content, including the mind-map editor
 * Add Simplified Chinese display names for Dreamy (梦幻), Jadeite (翡翠), and Pink Shock (粉红冲击)
 * Show localized theme names using UI-language preferences for Default language, including Chinese script tags, while honoring an explicit language selection at startup
