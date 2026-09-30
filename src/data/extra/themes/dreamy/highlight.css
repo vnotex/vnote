@@ -5,12 +5,12 @@ https://prismjs.com/download.html#themes=prism-tomorrow&languages=markup+css+cli
  * Based on https://github.com/chriskempson/tomorrow-theme
  * @author Rose Pritchard
  */
-/* Dreamy: Apprentice-inspired colors (https://github.com/romainl/Apprentice).
- * Comments use a brighter xterm gray for readability. */
+/* Dreamy: light syntax coordinated with Phycat Mauve.
+ * https://github.com/sumruler/typora-theme-phycat */
 
 code[class*="language-"],
 pre[class*="language-"] {
-    color: #bcbcbc;
+    color: #333333;
     background: none;
     font-size: 1em;
     text-align: left;
@@ -36,11 +36,12 @@ pre[class*="language-"] {
     padding: 1em;
     margin: .5em 0;
     overflow: auto;
+    border-radius: 8px;
 }
 
 :not(pre) > code[class*="language-"],
 pre[class*="language-"] {
-    background: #1c1c1c;
+    background: #f2eff9;
 }
 
 /* Inline code */
@@ -55,11 +56,11 @@ pre[class*="language-"] {
 .token.prolog,
 .token.doctype,
 .token.cdata {
-    color: #9e9e9e;
+    color: #6f6077;
 }
 
 .token.punctuation {
-    color: #bcbcbc;
+    color: #333333;
 }
 
 .token.tag,
@@ -68,25 +69,25 @@ pre[class*="language-"] {
 .token.important,
 .token.keyword,
 .token.operator {
-    color: #87afd7;
+    color: #6a3f7a;
 }
 
 .token.function-name,
 .token.function {
-    color: #ffffaf;
+    color: #805700;
 }
 
 .token.boolean,
 .token.number,
 .token.constant,
 .token.char {
-    color: #ff8700;
+    color: #96501b;
 }
 
 .token.class-name,
 .token.namespace,
 .token.builtin {
-    color: #8787af;
+    color: #5e35b1;
 }
 
 .token.property,
@@ -94,7 +95,7 @@ pre[class*="language-"] {
 .token.atrule,
 .token.entity,
 .token.url {
-    color: #5fafaf;
+    color: #365f91;
 }
 
 .token.string,
@@ -102,11 +103,11 @@ pre[class*="language-"] {
 .token.regex,
 .token.symbol,
 .token.inserted {
-    color: #87af87;
+    color: #326c4c;
 }
 
 .token.deleted {
-    color: #d78787;
+    color: #ad354b;
 }
 
 .token.important,
@@ -140,7 +141,7 @@ pre[class*="language-"].line-numbers > code {
     left: -3.8em;
     width: 3em; /* works for line-numbers below 1000 lines */
     letter-spacing: -1px;
-    border-right: 1px solid #585858;
+    border-right: 1px solid #c8acd4;
 
     -webkit-user-select: none;
     -moz-user-select: none;
@@ -156,7 +157,7 @@ pre[class*="language-"].line-numbers > code {
 
         .line-numbers-rows > span:before {
             content: counter(linenumber);
-            color: #9e9e9e;
+            color: #6f6077;
             display: block;
             padding-right: 0.8em;
             text-align: right;
@@ -208,10 +209,10 @@ div.code-toolbar > .toolbar button {
 div.code-toolbar > .toolbar a,
 div.code-toolbar > .toolbar button,
 div.code-toolbar > .toolbar span {
-    color: #9e9e9e;
+    color: #6f6077;
     font-size: .8em;
     padding: 0 .5em;
-    background: #303030;
+    background: #f3e5f5;
     box-shadow: 0 2px 0 0 rgba(0, 0, 0, 0.24);
     border-radius: .5em;
 }

@@ -1,8 +1,34 @@
+/* Dreamy adapts the palette and heading treatment of Phycat Mauve.
+ * https://github.com/sumruler/typora-theme-phycat
+ *
+ * MIT License
+ * Copyright (c) [2024] [徐继龙]
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 body {
+    --vx-plantuml-preview-background: transparent;
     margin: 0 auto;
     font-family: "YaHei Consolas Hybrid", "Noto Sans", "Helvetica Neue", "Segoe UI", Helvetica, Tahoma, Arial, Geneva, Georgia, Palatino, "Times New Roman", "冬青黑体", "Microsoft YaHei", "微软雅黑", "Microsoft YaHei UI", "WenQuanYi Micro Hei", "文泉驿雅黑", Dengxian, "等线体", STXihei, "华文细黑", "Liberation Sans", "Droid Sans", NSimSun, "新宋体", SimSun, "宋体", "Apple Color Emoji", "Segoe UI Emoji";
     color: @base#content#fg;
-    line-height: 1.5;
+    line-height: 1.8;
     padding: 16px;
     background-color: @base#content#bg;
     font-size: 16px;
@@ -11,9 +37,11 @@ body {
 h1, h2, h3, h4, h5, h6 {
     color: @palette#fg_heading;
     font-weight: bold;
-    margin-top: 20px;
-    margin-bottom: 10px;
+    margin-top: 1.4em;
+    margin-bottom: 0.7em;
     padding: 0;
+    line-height: 1.5;
+    overflow-wrap: break-word;
 }
 
 p {
@@ -22,15 +50,40 @@ p {
 }
 
 h1 {
-    font-size: 26px;
+    color: @base#content#fg;
+    font-size: 28px;
+    text-align: center;
+}
+
+h1::after {
+    content: "";
+    display: block;
+    width: 40px;
+    height: 4px;
+    margin: 12px auto 0;
+    border-radius: 4px;
+    background: linear-gradient(to right, @palette#bg_heading_start, @palette#bg_heading_middle);
 }
 
 h2 {
+    color: @palette#fg_heading_on_fill;
     font-size: 24px;
+    width: fit-content;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: linear-gradient(to right, @palette#bg_heading_start, @palette#bg_heading_middle, @palette#bg_heading_start);
+}
+
+h2 a, h2 a:hover, h2 a:visited, h2 strong {
+    color: inherit;
 }
 
 h3 {
     font-size: 22px;
+    padding-left: 10px;
+    border-left: 4px solid @palette#border_heading;
 }
 
 h4 {
@@ -42,7 +95,12 @@ h5 {
 }
 
 h6 {
+    color: @base#muted#fg;
     font-size: 18px;
+}
+
+strong {
+    color: @palette#fg_heading;
 }
 
 a {
@@ -50,12 +108,13 @@ a {
     margin: 0;
     padding: 0;
     vertical-align: baseline;
-    text-decoration: none;
+    text-decoration: underline;
+    text-underline-offset: 3px;
     word-break: break-word;
 }
 
 a:hover {
-    text-decoration: underline;
+    color: @palette#fg_inline_code;
 }
 
 a:visited {
@@ -68,27 +127,32 @@ ul, ol {
 }
 
 li {
-    line-height: 24px;
+    line-height: 1.8;
 }
 
 li ul, li ol {
-    margin-left: 16px;
+    margin-left: 8px;
+    border-left: 1px solid @palette#border_table;
 }
 
 p, ul, ol {
     font-size: 16px;
-    line-height: 24px;
+    line-height: 1.8;
 }
 
 mark {
     color: @palette#fg_mark_reader;
     background-color: @palette#bg_mark;
+    padding: 0 3px;
+    border-radius: 4px;
 }
 
 pre {
     display: block;
     overflow-y: hidden;
     overflow-x: auto;
+    border-radius: 8px;
+    background-color: @palette#bg_code_block;
     -moz-tab-size: 4;
     -o-tab-size: 4;
     tab-size: 4;
@@ -97,14 +161,16 @@ pre {
 code {
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
     color: @palette#fg_inline_code;
+    background-color: @palette#bg_inline_code;
+    padding: 2px 4px;
+    border-radius: 4px;
     word-break: break-word;
 }
 
 pre code {
     display: block;
-    padding-left: 0.5em;
-    padding-right: 0.5em;
-    color: @palette#fg_inline_code;
+    padding: 0.75em 1em;
+    color: @base#content#fg;
     background-color: @palette#bg_code_block;
     line-height: 1.5;
     font-family: "YaHei Consolas Hybrid", Consolas, Monaco, "Andale Mono", Monospace, "Courier New";
@@ -112,6 +178,10 @@ pre code {
     -moz-tab-size: 4;
     -o-tab-size: 4;
     tab-size: 4;
+}
+
+pre[class*="language-"] code {
+    padding: 0;
 }
 
 aside {
@@ -122,13 +192,23 @@ aside {
 
 blockquote {
     color: @palette#fg_blockquote;
-    border-left: .5em solid @palette#fg_blockquote;
-    padding: 0 1em;
-    margin-left: 0;
+    background-color: @palette#bg_blockquote;
+    border-left: 4px solid @palette#bg_heading_middle;
+    border-radius: 8px;
+    padding: 0.75em 1em;
+    margin: 1em 0;
 }
 
 blockquote p {
     color: @palette#fg_blockquote;
+}
+
+blockquote > :first-child {
+    margin-top: 0;
+}
+
+blockquote > :last-child {
+    margin-bottom: 0;
 }
 
 hr {
@@ -142,15 +222,19 @@ hr {
 
 table {
    padding: 0;
-   margin: 1rem 0.5rem;
+   margin: 1rem 0;
    border-collapse: collapse;
 }
 
 table tr {
    border-top: 1px solid @palette#border_table;
-   background-color: @palette#bg1_51;
+   background-color: @base#content#bg;
    margin: 0;
    padding: 0;
+}
+
+table tr:nth-child(even) {
+   background-color: @palette#bg1_51;
 }
 
 table tr:hover {
@@ -158,6 +242,8 @@ table tr:hover {
 }
 
 table tr th {
+   color: @palette#fg_heading;
+   background-color: @palette#bg_mark;
    font-weight: bold;
    border: 1px solid @palette#border_table;
    margin: 0;
@@ -181,7 +267,6 @@ table tr th :last-child, table tr td :last-child {
 div.vx-mermaid-graph {
     margin: 16px 0px 16px 0px;
     overflow-y: hidden;
-    background: @palette#bg_graph_canvas;
     color: @palette#fg_graph_caption;
 }
 
@@ -190,7 +275,6 @@ div.vx-flowchartjs-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: @palette#bg_graph_canvas;
     color: @palette#fg_graph_caption;
 }
 
@@ -199,7 +283,6 @@ div.vx-wavedrom-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: @palette#bg_graph_canvas;
     color: @palette#fg_graph_caption;
 }
 
@@ -208,8 +291,22 @@ div.vx-plantuml-graph {
     margin: 16px 0px 16px 0px;
     width: fit-content;
     overflow: hidden;
-    background: @palette#bg_graph_canvas;
     color: @palette#fg_graph_caption;
+}
+
+/* Light themes share the page background, including PlantUML's inline SVG canvas. */
+div.vx-mermaid-graph > svg,
+div.vx-flowchartjs-graph > svg,
+div.vx-wavedrom-graph > svg,
+div.vx-plantuml-graph svg,
+div.vx-graphviz-graph > svg {
+    background-color: transparent !important;
+}
+
+/* Graphviz paints its canvas as a polygon; node and cluster fills stay intact. */
+div.vx-graphviz-graph > svg > g.graph > polygon:first-of-type {
+    fill: none;
+    stroke: none;
 }
 
 ::selection {
@@ -266,7 +363,7 @@ div.vx-plantuml-graph {
 .vx-alert{
     background-color: @palette#bg_alert_info !important;
     padding: 12px 24px 12px 30px !important;
-    border-radius:0 !important;
+    border-radius:8px !important;
     border:none !important;
     border-left: 4px solid @base#info#fg !important;
     color: inherit !important;

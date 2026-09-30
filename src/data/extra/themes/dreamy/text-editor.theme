@@ -1,6 +1,6 @@
 {
     "metadata" : {
-        "revision" : 1,
+        "revision" : 2,
         "name" : "Dreamy",
         "type" : "vtextedit"
     },
@@ -83,7 +83,7 @@
     },
     "markdown-syntax-styles" : {
         "H1" : {
-            "text-color" : "@palette#fg_heading",
+            "text-color" : "@base#content#fg",
             "bold" : true,
             "font-size" : 17
         },
@@ -140,12 +140,14 @@
         },
         "CODE" : {
             "text-color" : "@palette#fg_inline_code",
+            "background-color" : "@palette#bg_inline_code",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "EMPH" : {
             "italic" : true
         },
         "STRONG" : {
+            "text-color" : "@palette#fg_heading",
             "bold" : true
         },
         "HTML_ENTITY" : {
@@ -161,12 +163,12 @@
             "text-color" : "@base#muted#fg"
         },
         "VERBATIM" : {
-            "text-color" : "@palette#fg_inline_code",
+            "text-color" : "@base#content#fg",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "//comment" : "Please modify the syntax highlight theme as well if you change this",
         "FENCEDCODEBLOCK" : {
-            "text-color" : "@palette#fg_inline_code",
+            "text-color" : "@base#content#fg",
             "font-family" : "YaHei Consolas Hybrid, Consolas, Monaco, Andale Mono, Monospace, Courier New"
         },
         "BLOCKQUOTE" : {
