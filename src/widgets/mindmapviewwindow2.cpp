@@ -150,10 +150,12 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
       const qreal factor = m_zoomComboBox->itemData(p_index).toDouble();
       if (factor == 0.0) {
         m_editor->fitToContents();
+        const QSignalBlocker blocker(m_zoomComboBox);
+        m_zoomComboBox->setCurrentIndex(p_index);
       } else {
         m_editor->zoom(factor / m_editor->zoomFactor());
+        syncZoomControls();
       }
-      syncZoomControls();
     }
   });
   m_zoomComboAction = p_toolBar->addWidget(m_zoomComboBox);
