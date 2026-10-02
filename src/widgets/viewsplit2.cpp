@@ -5,6 +5,7 @@
 #include <QApplication>
 #include <QClipboard>
 #include <QDesktopServices>
+#include <QDir>
 #include <QHBoxLayout>
 #include <QMenu>
 #include <QMouseEvent>
@@ -653,9 +654,9 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
   const auto &nodeId = win->getNodeId();
   QString absPath = win->getBuffer().resolvedPath();
 
-  auto *copyPathAct = menu.addAction(tr("Copy Path"), [absPath]() {
+  auto *copyPathAct = menu.addAction(tr("Copy Path"), [absPath, isVirtual = nodeId.isVirtual()]() {
     if (!absPath.isEmpty()) {
-      ClipboardUtils::setTextToClipboard(absPath);
+      ClipboardUtils::setTextToClipboard(isVirtual ? absPath : QDir::toNativeSeparators(absPath));
     }
   });
   copyPathAct->setEnabled(!absPath.isEmpty());

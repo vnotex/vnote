@@ -39,14 +39,10 @@ add_qt_test(test_attachmentcontroller
     # core_services — listing them again makes MSVC report duplicate symbols.
     ${CMAKE_SOURCE_DIR}/src/utils/clipboardutils.cpp
   LINKS
-    # GUILESS withholds Qt6::Gui + Qt6::Widgets, so both are listed explicitly:
-    # the controller uses QDesktopServices, and clipboardutils.cpp calls
-    # QApplication::clipboard(). No QApplication is constructed.
-    Qt6::Gui
-    Qt6::Widgets
     core_services
     vxcore
-  GUILESS
+  # Avoid QTEST_MAIN crash-handler deadlocks with captured output on Windows.
+  ARGS -nocrashhandler
 )
 
 # FolderShareController (share-bundled-folder). Drives the whole SYNCHRONOUS

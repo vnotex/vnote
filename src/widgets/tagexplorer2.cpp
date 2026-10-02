@@ -4,6 +4,7 @@
 #include <QClipboard>
 #include <QDataStream>
 #include <QDesktopServices>
+#include <QDir>
 #include <QFileInfo>
 #include <QIODevice>
 #include <QInputDialog>
@@ -141,7 +142,7 @@ void TagExplorer2::setupUI() {
               const QString absPath =
                   notebookSvc->buildAbsolutePath(nodeId.notebookId, nodeId.relativePath);
               if (!absPath.isEmpty()) {
-                QApplication::clipboard()->setText(absPath);
+                QApplication::clipboard()->setText(QDir::toNativeSeparators(absPath));
               }
             });
 

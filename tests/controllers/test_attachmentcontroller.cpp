@@ -1,11 +1,14 @@
 #include <QtTest>
 
+#include <QApplication>
+#include <QClipboard>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QMap>
+#include <QMimeData>
 #include <QScopeGuard>
 #include <QSemaphore>
 #include <QSignalSpy>
@@ -24,6 +27,7 @@
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
+#include <utils/clipboardutils.h>
 
 namespace tests {
 
@@ -39,8 +43,8 @@ public slots:
 };
 
 // Regression gate for the controller GUI cleanup: AttachmentController no longer
-// opens a QFileDialog / QMessageBox, so a GUILESS test can drive add + delete
-// straight through without blocking on a modal.
+// opens a QFileDialog / QMessageBox, so tests can drive add + delete directly.
+// QApplication is needed only for the real clipboard regression.
 class TestAttachmentController : public QObject {
   Q_OBJECT
 
@@ -49,6 +53,7 @@ private slots:
   void cleanupTestCase();
   void cleanup();
 
+  void testCopyAttachmentPathsUsesNativeSeparators();
   void testOpenAttachmentsOpensReadableBuffer();
   void testAddAttachmentsCopiesFilesAndEmits();
   void testAddAttachmentsWithoutBufferIsNoOp();
@@ -584,6 +589,36 @@ void TestAttachmentController::testDeleteAttachmentsWithInvalidBufferIsNoOp() {
   QCOMPARE(deletedSpy.count(), 0);
 }
 
+void TestAttachmentController::testCopyAttachmentPathsUsesNativeSeparators() {
+  reopenCleanBuffer();
+  auto *clipboard = QApplication::clipboard();
+  const auto *mimeData = clipboard->mimeData();
+  auto previousData =
+      mimeData ? vnotex::ClipboardUtils::cloneMimeData(mimeData) : std::make_unique<QMimeData>();
+  const auto restoreClipboard =
+      qScopeGuard([&]() { clipboard->setMimeData(previousData.release()); });
+
+  QStringList names;
+  QStringList expected;
+  for (const auto &filename : {QStringLiteral("copy path.txt"), QStringLiteral("附件.txt")}) {
+    const QString source = writeSourceFile(filename);
+    QVERIFY(!source.isEmpty());
+    const QString name = m_buffer.insertAttachment(source);
+    QVERIFY(!name.isEmpty());
+    names.append(name);
+    expected.append(
+        QDir::toNativeSeparators(m_buffer.getAttachmentsFolder() + QLatin1Char('/') + name));
+  }
+
+  vnotex::AttachmentController controller(m_services);
+  controller.setBuffer(&m_buffer);
+  controller.copyAttachmentPaths({names.first()});
+  QCOMPARE(clipboard->text(), expected.first());
+
+  controller.copyAttachmentPaths(names);
+  QCOMPARE(clipboard->text(), expected.join(QLatin1Char('\n')));
+}
+
 void TestAttachmentController::testDeleteAttachmentsWithEmptyListIsNoOp() {
   reopenCleanBuffer();
 
@@ -604,5 +639,5 @@ void TestAttachmentController::testDeleteAttachmentsWithEmptyListIsNoOp() {
 
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestAttachmentController)
+QTEST_MAIN(tests::TestAttachmentController)
 #include "test_attachmentcontroller.moc"

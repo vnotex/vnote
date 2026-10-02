@@ -163,7 +163,7 @@ void AttachmentController::copyAttachmentPaths(const QStringList &p_filenames) {
   QStringList paths;
   paths.reserve(p_filenames.size());
   for (const auto &name : p_filenames) {
-    paths.append(folder + QLatin1Char('/') + name);
+    paths.append(QDir::toNativeSeparators(folder + QLatin1Char('/') + name));
   }
 
   ClipboardUtils::setTextToClipboard(paths.join(QLatin1Char('\n')));

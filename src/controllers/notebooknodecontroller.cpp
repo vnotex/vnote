@@ -1871,7 +1871,7 @@ void NotebookNodeController::copyNodePaths(const QList<NodeIdentifier> &p_ids) {
   for (const auto &id : p_ids) {
     QString path = buildAbsolutePath(id);
     if (!path.isEmpty()) {
-      paths.append(path);
+      paths.append(QDir::toNativeSeparators(path));
     }
   }
 
