@@ -19,6 +19,7 @@
 #include "inlinebanner.h"
 #include "outlinepopup.h"
 #include "outlineprovider.h"
+#include "propertydefs.h"
 #include "viewwindowtoolbarhelper2.h"
 
 using namespace vnotex;
@@ -98,6 +99,7 @@ void MindMapViewWindow2::setupToolBar() {
       auto *button = qobject_cast<QToolButton *>(toolBar->widgetForAction(action));
       if (button) {
         button->setPopupMode(QToolButton::InstantPopup);
+        button->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
       }
     }
   }
