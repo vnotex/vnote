@@ -1,6 +1,7 @@
 #ifndef MINDMAPVIEWWINDOW2_H
 #define MINDMAPVIEWWINDOW2_H
 
+#include <QColor>
 #include <QHash>
 
 #include "viewwindow2.h"
@@ -11,6 +12,7 @@ namespace vnotex {
 
 class InlineBanner;
 class MindMapEditor;
+class PresentationToolBarEffect;
 
 // Single native editing surface; ViewWindow2 retains buffer/save/focus ownership.
 class MindMapViewWindow2 : public ViewWindow2 {
@@ -18,6 +20,7 @@ class MindMapViewWindow2 : public ViewWindow2 {
 public:
   explicit MindMapViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
                               QWidget *p_parent = nullptr);
+  ~MindMapViewWindow2() override;
 
   QString getLatestContent() const override;
   QSharedPointer<OutlineProvider> getOutlineProvider() const override;
@@ -41,6 +44,7 @@ protected slots:
   void handleFindAndReplaceWidgetOpened() override;
 
 protected:
+  void paintEvent(QPaintEvent *p_event) override;
   void syncEditorFromBuffer() override;
   void scrollUp() override;
   void scrollDown() override;
@@ -65,6 +69,9 @@ private:
 
   // Owned by QObject.
   MindMapEditor *m_editor = nullptr;
+  QAction *m_presentationAction = nullptr;
+  PresentationToolBarEffect *m_presentationEffect = nullptr;
+  QColor m_presentationBackground;
   QAction *m_zoomOutAction = nullptr;
   QAction *m_zoomInAction = nullptr;
   QAction *m_zoomComboAction = nullptr;

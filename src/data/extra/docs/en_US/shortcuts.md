@@ -94,7 +94,7 @@ Zoom in/out.
 - `Ctrl+0`  
 Reset zoom.
 - `F9`  
-Toggle presentation mode in Markdown, text, or PDF. Markdown switches to read mode and presents slides.
+Toggle presentation mode in Markdown, text, PDF, or mind maps. Markdown switches to read mode and presents slides.
 - `Escape`  
 Leave presentation mode; if a popup is open, close the popup first.
 

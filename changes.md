@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Add fullscreen mind-map Presentation Mode with F9, Escape to exit, and the same fading toolbar as text notes
 * Add theme-aware Zoom Out, a Fit/100%/125%/150%/200% combo and Zoom In to the mind-map toolbar, synchronized with shortcuts and Ctrl+wheel; show Fit on opening, reloading and fitting a map
 * Use the system text color for Native theme content, including the mind-map editor
 * Add Simplified Chinese display names for Dreamy (梦幻), Jadeite (翡翠), and Pink Shock (粉红冲击)

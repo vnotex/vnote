@@ -4828,6 +4828,10 @@
 <context>
     <name>vnotex::MindMapViewWindow2</name>
     <message>
+        <source>Presentation Mode</source>
+        <translation>プレゼンテーションモード</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+222"/>
         <location line="+8"/>
         <source>Replace is not supported yet</source>

@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QComboBox>
 #include <QLineEdit>
+#include <QPainter>
 #include <QPalette>
 #include <QPointer>
 #include <QScopeGuard>
@@ -14,6 +15,8 @@
 
 #include <vxcore/vxcore.h>
 
+#include <core/configmgr2.h>
+#include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <gui/services/themeservice.h>
 
@@ -22,6 +25,7 @@
 #include "inlinebanner.h"
 #include "outlinepopup.h"
 #include "outlineprovider.h"
+#include "presentationtoolbareffect.h"
 #include "propertydefs.h"
 #include "viewwindowtoolbarhelper2.h"
 
@@ -34,6 +38,8 @@ MindMapViewWindow2::MindMapViewWindow2(ServiceLocator &p_services, const Buffer2
   setupOutlineProvider();
   setupUI();
 }
+
+MindMapViewWindow2::~MindMapViewWindow2() { setViewFullScreen(false); }
 
 void MindMapViewWindow2::setupUI() {
   m_editor = new MindMapEditor(getServices(), getBuffer(), this);
@@ -161,6 +167,32 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   connect(m_editor, &m3::qt::MindMapEditor::zoomChanged, this,
           &MindMapViewWindow2::syncZoomControls);
   syncZoomControls();
+
+  const auto iconName = QStringLiteral("presentation_editor.svg");
+  m_presentationAction = p_toolBar->addAction(
+      ViewWindowToolBarHelper2::generateIcon(getServices(), iconName), tr("Presentation Mode"));
+  m_presentationAction->setProperty("iconName", iconName);
+  ViewWindowToolBarHelper2::addActionShortcut(
+      m_presentationAction,
+      getServices().get<ConfigMgr2>()->getEditorConfig().getShortcut(
+          EditorConfig::Shortcut::PresentationMode),
+      this);
+  m_presentationAction->setCheckable(true);
+  m_presentationEffect = new PresentationToolBarEffect(p_toolBar, this);
+
+  connect(m_presentationAction, &QAction::triggered, this, [this]() {
+    setViewFullScreen(!isViewFullScreen());
+    const QSignalBlocker blocker(m_presentationAction);
+    m_presentationAction->setChecked(isViewFullScreen());
+  });
+  connect(this, &ViewWindow2::viewFullScreenExitRequested, this,
+          [this]() { setViewFullScreen(false); });
+  connect(this, &ViewWindow2::viewFullScreenChanged, this, [this](bool p_on) {
+    const QSignalBlocker blocker(m_presentationAction);
+    m_presentationAction->setChecked(p_on);
+    m_presentationEffect->setActive(p_on);
+    update();
+  });
 }
 
 void MindMapViewWindow2::syncZoomControls() {
@@ -282,6 +314,14 @@ void MindMapViewWindow2::handleThemeChanged() {
   }
 }
 
+void MindMapViewWindow2::paintEvent(QPaintEvent *p_event) {
+  ViewWindow2::paintEvent(p_event);
+  if (isViewFullScreen()) {
+    QPainter painter(this);
+    painter.fillRect(rect(), m_presentationBackground);
+  }
+}
+
 void MindMapViewWindow2::applyEditorPalette() {
   if (!m_editor) {
     return;
@@ -300,6 +340,10 @@ void MindMapViewWindow2::applyEditorPalette() {
       contentPalette.setColor(QPalette::WindowText, foreground);
       contentPalette.setColor(QPalette::ButtonText, foreground);
     }
+  }
+  m_presentationBackground = contentPalette.color(QPalette::Base);
+  if (isViewFullScreen()) {
+    update();
   }
   const QPointer<MindMapViewWindow2> guard(this);
   m_editor->setPalette(contentPalette);

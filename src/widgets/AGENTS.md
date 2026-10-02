@@ -150,7 +150,7 @@ secondary actions in a three-dot **Menu** (`menu.svg`):
 | spacer | |
 | `addAdditionalRightToolBarActions()` | Markdown: Outline; PDF: sidebar, Outline, Find And Replace, Presentation Mode, page and zoom controls |
 | Find And Replace | Default position; PDF opts out because Find is beside Outline |
-| `addAdditionalViewToolBarActions()` | Text and Markdown: Presentation Mode |
+| `addAdditionalViewToolBarActions()` | Text and Markdown: Presentation Mode; MindMap: zoom controls, then Presentation Mode |
 | Menu | Readable Width and Print, when `isPrintSupported()` |
 
 `addAdditionalToolBarMenuAction()` lets PDF reuse its existing menu action; the
@@ -169,7 +169,7 @@ Text keeps **Find And Replace → Presentation Mode → Menu**. Markdown keeps
 **Outline → Find And Replace → Presentation Mode → Menu**. PDF keeps
 **Outline → Find And Replace → Presentation Mode** together before page/zoom controls.
 MindMap adds Lucide Undo and Redo after the left common actions and keeps
-Outline → Find And Replace → Zoom Out → percentage combo → Zoom In → Menu.
+Outline → Find And Replace → Zoom Out → percentage combo → Zoom In → Presentation Mode → Menu.
 Zoom controls observe the native editor's `zoomChanged` signal and `isZoomFit()`
 state, including initial/deferred fit, context-menu Fit, shortcuts and Ctrl+wheel.
 The dropdown contains only Fit, 100%, 125%, 150% and 200%. Opening/reloading a map
@@ -215,20 +215,21 @@ restore under the current parent rather than moving the view back.
   restores the PDF zoom/scroll snapshot and toolbar state.
 - **Restore before structural changes:** conversion/replacement freeze,
   `setCentralWidget()`, `aboutToClose()` and teardown leave fullscreen first.
-  Text/PDF teardown exits while derived state and any adapter still exist. Guarded
+  Text/PDF/MindMap teardown exits while derived state and any adapter still exist. Guarded
   pointers and destruction handling restore surviving parent layouts without
   touching a dying widget.
 
-Markdown, Text and PDF have a checkable **Presentation Mode** action: checked while presenting,
+Markdown, Text, PDF and MindMap have a checkable **Presentation Mode** action: checked while presenting,
 click again to exit. Its view-scoped shortcut defaults to **F9**, configured through
 `editor.core.shortcuts.PresentationMode`; an empty string disables the shortcut.
-PDF's action remains usable even if the viewer reloads.
+PDF's action remains usable even if the viewer reloads. MindMap presents the existing
+editor without reloading content, changing read-only policy or resetting zoom.
 Only the QToolBar gets an opacity effect: **10% inactive, 100% active**. Active
 means the presentation window is active and the toolbar is hovered, contains
 keyboard focus, or owns an open popup (including submenus, zoom and extension
 menus). The effect includes the toolbar's styled background, not only its buttons.
-`PresentationToolBarEffect` shares this policy between Markdown, text and PDF. During presentation,
-both views paint the parent backdrop with the theme's `base#content#bg`, so a matching
+`PresentationToolBarEffect` shares this policy between Markdown, text, PDF and MindMap. During presentation,
+the views paint the parent backdrop with the theme's `base#content#bg`, so a matching
 toolbar-colored parent cannot mask the fade.
 Theme changes refresh that color; normal mode restores normal frame painting.
 PDF, Find and popup windows remain opaque. Exit removes the effect,
