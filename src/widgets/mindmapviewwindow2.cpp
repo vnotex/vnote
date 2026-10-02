@@ -2,6 +2,7 @@
 
 #include <QAction>
 #include <QComboBox>
+#include <QLineEdit>
 #include <QPalette>
 #include <QPointer>
 #include <QScopeGuard>
@@ -133,12 +134,26 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   m_zoomOutAction = addZoomAction(QStringLiteral("zoomOut"), false);
   m_zoomComboBox = new QComboBox(p_toolBar);
   m_zoomComboBox->setObjectName(QStringLiteral("mindMapZoomCombo"));
-  for (const int percent : {10, 25, 50, 75, 100, 125, 150, 200, 300, 400}) {
+  // Display arbitrary scales without adding extra choices to the popup.
+  m_zoomComboBox->setEditable(true);
+  m_zoomComboBox->setInsertPolicy(QComboBox::NoInsert);
+  m_zoomComboBox->setMinimumContentsLength(5);
+  m_zoomComboBox->setCompleter(nullptr);
+  m_zoomComboBox->lineEdit()->setReadOnly(true);
+  m_zoomComboBox->lineEdit()->setProperty(PropertyDefs::c_embeddedLineEdit, true);
+  m_zoomComboBox->addItem(m_editor->commandAction(QStringLiteral("fit"))->text(), 0.0);
+  for (const int percent : {100, 125, 150, 200}) {
     m_zoomComboBox->addItem(QStringLiteral("%1%").arg(percent), percent / 100.0);
   }
   connect(m_zoomComboBox, QOverload<int>::of(&QComboBox::activated), this, [this](int p_index) {
-    if (m_contentLoaded) {
-      m_editor->zoom(m_zoomComboBox->itemData(p_index).toDouble() / m_editor->zoomFactor());
+    if (m_contentLoaded && p_index >= 0 && p_index < m_zoomComboBox->count()) {
+      const qreal factor = m_zoomComboBox->itemData(p_index).toDouble();
+      if (factor == 0.0) {
+        m_editor->fitToContents();
+      } else {
+        m_editor->zoom(factor / m_editor->zoomFactor());
+      }
+      syncZoomControls();
     }
   });
   m_zoomComboAction = p_toolBar->addWidget(m_zoomComboBox);
@@ -157,24 +172,14 @@ void MindMapViewWindow2::syncZoomControls() {
   const QSignalBlocker blocker(m_zoomComboBox);
   const qreal factor = m_editor->zoomFactor();
   int index = -1;
-  for (int i = 0; i < m_zoomComboBox->count(); ++i) {
+  for (int i = 1; i < m_zoomComboBox->count(); ++i) {
     if (qFuzzyCompare(m_zoomComboBox->itemData(i).toDouble(), factor)) {
       index = i;
       break;
     }
   }
-  if (index < 0) {
-    const auto text = QStringLiteral("%1%").arg(qRound(factor * 100.0));
-    if (m_customZoomIndex < 0) {
-      m_zoomComboBox->addItem(text, factor);
-      m_customZoomIndex = m_zoomComboBox->count() - 1;
-    } else {
-      m_zoomComboBox->setItemText(m_customZoomIndex, text);
-      m_zoomComboBox->setItemData(m_customZoomIndex, factor);
-    }
-    index = m_customZoomIndex;
-  }
   m_zoomComboBox->setCurrentIndex(index);
+  m_zoomComboBox->setEditText(QStringLiteral("%1%").arg(qRound(factor * 100.0)));
 }
 
 void MindMapViewWindow2::syncEditorFromBuffer() {

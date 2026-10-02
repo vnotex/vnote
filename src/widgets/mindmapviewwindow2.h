@@ -69,7 +69,6 @@ private:
   QAction *m_zoomInAction = nullptr;
   QAction *m_zoomComboAction = nullptr;
   QComboBox *m_zoomComboBox = nullptr;
-  int m_customZoomIndex = -1;
   InlineBanner *m_loadErrorBanner = nullptr;
   QSharedPointer<OutlineProvider> m_outlineProvider;
   QStringList m_outlineNodeIds;

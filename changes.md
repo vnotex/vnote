@@ -1,7 +1,6 @@
 # Changes
 ## Unreleased
-* Add theme-aware Zoom Out, percentage presets and Zoom In to the mind-map toolbar, synchronized with shortcuts, Ctrl+wheel and Fit
-* Fix table previews and source formatting for tables immediately after paragraph or list-item text, without requiring a blank line (#2763)
+* Add theme-aware Zoom Out, a Fit/100%/125%/150%/200% combo and Zoom In to the mind-map toolbar, synchronized with shortcuts, Ctrl+wheel and Fit
 * Use the system text color for Native theme content, including the mind-map editor
 * Add Simplified Chinese display names for Dreamy (梦幻), Jadeite (翡翠), and Pink Shock (粉红冲击)
 * Show localized theme names using UI-language preferences for Default language, including Chinese script tags, while honoring an explicit language selection at startup
@@ -22,6 +21,7 @@
 * Add WebDAV notebook sync with ordinary editable remote files, secure per-device credentials, remote open, conflict choices, cancellation and journaled recovery
 * Preserve open editor/comment drafts during WebDAV sync and refresh clean editors, previews and notebook trees after incoming changes
 * Support dedicated existing HTTP or HTTPS WebDAV collections with safe conditional writes; HTTPS is recommended because HTTP exposes credentials and notebook data; retain empty remote folders rather than risk recursive deletion
+* Fix table previews and source formatting for tables immediately after paragraph or list-item text, without requiring a blank line (#2763)
 
 ## v4.8.0
 A feature release with Markdown presentations, search-and-replace across notes, new light themes and more flexible encrypted notes on top of VNote 4.7.0:
