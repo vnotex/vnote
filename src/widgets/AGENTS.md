@@ -168,10 +168,14 @@ overload owns the remaining direct controls. Theme refresh reaches both.
 Text keeps **Find And Replace → Presentation Mode → Menu**. Markdown keeps
 **Outline → Find And Replace → Presentation Mode → Menu**. PDF keeps
 **Outline → Find And Replace → Presentation Mode** together before page/zoom controls.
-MindMap adds Lucide Undo and Redo after the left common actions and inherits
-Find And Replace plus Menu. The native ViewWindow toolbar borrows the editor
-command actions; the editor retains shortcuts, inline-edit commits and history
-availability. Invalid content gates native mutations through read-only mode until
+MindMap adds Lucide Undo and Redo after the left common actions and keeps
+Outline → Find And Replace → Zoom Out → percentage combo → Zoom In → Menu.
+Zoom controls observe the native editor's `zoomFactorChanged` signal, including
+initial fit, context-menu Fit, shortcuts and Ctrl+wheel. Presets span 10–400%;
+one reusable custom row displays other scales. Unloaded/invalid content disables
+the zoom controls; read-only maps remain zoomable. The native ViewWindow toolbar
+borrows the editor's editing command actions; the editor retains shortcuts,
+inline-edit commits and history availability. Invalid content gates native mutations through read-only mode until
 a successful reload restores the buffer policy. Widget-hosted Settings and Dashboard
 retain their content-owned toolbars; locked-note placeholders have none.
 

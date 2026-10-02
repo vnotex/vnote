@@ -5,6 +5,8 @@
 
 #include "viewwindow2.h"
 
+class QComboBox;
+
 namespace vnotex {
 
 class InlineBanner;
@@ -47,11 +49,13 @@ protected:
   QString selectedText() const override;
   bool isPrintSupported() const override { return false; }
   void addAdditionalRightToolBarActions(QToolBar *p_toolBar) override;
+  void addAdditionalViewToolBarActions(QToolBar *p_toolBar) override;
 
 private:
   void setupUI();
   void setupToolBar();
   void connectEditorSignals();
+  void syncZoomControls();
   void setupOutlineProvider();
   void refreshOutline();
   void clearOutline();
@@ -61,6 +65,11 @@ private:
 
   // Owned by QObject.
   MindMapEditor *m_editor = nullptr;
+  QAction *m_zoomOutAction = nullptr;
+  QAction *m_zoomInAction = nullptr;
+  QAction *m_zoomComboAction = nullptr;
+  QComboBox *m_zoomComboBox = nullptr;
+  int m_customZoomIndex = -1;
   InlineBanner *m_loadErrorBanner = nullptr;
   QSharedPointer<OutlineProvider> m_outlineProvider;
   QStringList m_outlineNodeIds;

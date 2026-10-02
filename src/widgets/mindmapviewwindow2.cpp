@@ -1,9 +1,11 @@
 #include "mindmapviewwindow2.h"
 
 #include <QAction>
+#include <QComboBox>
 #include <QPalette>
 #include <QPointer>
 #include <QScopeGuard>
+#include <QSignalBlocker>
 #include <QToolBar>
 #include <QToolButton>
 
@@ -116,6 +118,65 @@ void MindMapViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
   }
 }
 
+void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
+  p_toolBar->addSeparator();
+  const auto addZoomAction = [this, p_toolBar](const QString &p_name, bool p_zoomIn) {
+    const auto iconName =
+        p_zoomIn ? QStringLiteral("zoom_in_editor.svg") : QStringLiteral("zoom_out_editor.svg");
+    auto *action =
+        p_toolBar->addAction(ViewWindowToolBarHelper2::generateIcon(getServices(), iconName),
+                             m_editor->commandAction(p_name)->text());
+    action->setProperty("iconName", iconName);
+    connect(action, &QAction::triggered, this, [this, p_zoomIn]() { zoom(p_zoomIn); });
+    return action;
+  };
+  m_zoomOutAction = addZoomAction(QStringLiteral("zoomOut"), false);
+  m_zoomComboBox = new QComboBox(p_toolBar);
+  m_zoomComboBox->setObjectName(QStringLiteral("mindMapZoomCombo"));
+  for (const int percent : {10, 25, 50, 75, 100, 125, 150, 200, 300, 400}) {
+    m_zoomComboBox->addItem(QStringLiteral("%1%").arg(percent), percent / 100.0);
+  }
+  connect(m_zoomComboBox, QOverload<int>::of(&QComboBox::activated), this, [this](int p_index) {
+    if (m_contentLoaded) {
+      m_editor->zoom(m_zoomComboBox->itemData(p_index).toDouble() / m_editor->zoomFactor());
+    }
+  });
+  m_zoomComboAction = p_toolBar->addWidget(m_zoomComboBox);
+  m_zoomInAction = addZoomAction(QStringLiteral("zoomIn"), true);
+  connect(m_editor, &m3::qt::MindMapEditor::zoomFactorChanged, this,
+          &MindMapViewWindow2::syncZoomControls);
+  syncZoomControls();
+}
+
+void MindMapViewWindow2::syncZoomControls() {
+  m_zoomOutAction->setEnabled(m_contentLoaded);
+  m_zoomComboAction->setEnabled(m_contentLoaded);
+  m_zoomComboBox->setEnabled(m_contentLoaded);
+  m_zoomInAction->setEnabled(m_contentLoaded);
+
+  const QSignalBlocker blocker(m_zoomComboBox);
+  const qreal factor = m_editor->zoomFactor();
+  int index = -1;
+  for (int i = 0; i < m_zoomComboBox->count(); ++i) {
+    if (qFuzzyCompare(m_zoomComboBox->itemData(i).toDouble(), factor)) {
+      index = i;
+      break;
+    }
+  }
+  if (index < 0) {
+    const auto text = QStringLiteral("%1%").arg(qRound(factor * 100.0));
+    if (m_customZoomIndex < 0) {
+      m_zoomComboBox->addItem(text, factor);
+      m_customZoomIndex = m_zoomComboBox->count() - 1;
+    } else {
+      m_zoomComboBox->setItemText(m_customZoomIndex, text);
+      m_zoomComboBox->setItemData(m_customZoomIndex, factor);
+    }
+    index = m_customZoomIndex;
+  }
+  m_zoomComboBox->setCurrentIndex(index);
+}
+
 void MindMapViewWindow2::syncEditorFromBuffer() {
   const QPointer<MindMapViewWindow2> guard(this);
   const auto generation = ++m_generation;
@@ -127,6 +188,7 @@ void MindMapViewWindow2::syncEditorFromBuffer() {
     }
   });
   m_contentLoaded = false;
+  syncZoomControls();
   m_lastEditorError.clear();
   clearOutline();
   if (!guard || generation != m_generation) {
@@ -162,6 +224,7 @@ void MindMapViewWindow2::syncEditorFromBuffer() {
   m_editor->setModified(buffer.isValid() && buffer.isModified());
   m_lastKnownRevision = buffer.isValid() ? buffer.getRevision() : 0;
   m_propagateEditorToBuffer = propagate;
+  syncZoomControls();
   if (m_contentLoaded) {
     m_loadErrorBanner->hide();
     refreshOutline();

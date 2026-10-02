@@ -25,6 +25,7 @@
 #include <QTemporaryDir>
 #include <QToolBar>
 #include <QUrl>
+#include <QWheelEvent>
 #include <QtConcurrent/QtConcurrentRun>
 
 #include <controllers/mindmapviewwindowcontroller.h>
@@ -244,6 +245,7 @@ private slots:
   void autosaveKeepsInlineEditor_data();
   void autosaveKeepsInlineEditor();
   void readOnlyStillNavigates();
+  void zoomStateTracksCanvasWithoutEditing();
   void retargetRefreshesRelativeImagesWithoutReloading();
   void reloadAndRetargetCancelStaleHttpImages();
   void protectedImagesRefuseExternalAndRevokeOnLock();
@@ -880,6 +882,69 @@ void TestMindMapEditor::protectedImagesRefuseExternalAndRevokeOnLock() {
   QTRY_VERIFY(rendersColor(editor, embeddedColor));
   QCOMPARE(server.requestCount(), 0);
   QCOMPARE(readFile(buffer.resolvedPath()), ciphertext);
+}
+
+void TestMindMapEditor::zoomStateTracksCanvasWithoutEditing() {
+  const auto content = fixture();
+  const auto buffer = openNote(QStringLiteral("zoom.mmm"), content, true);
+  QVERIFY(buffer.isValid());
+  MindMapEditor editor(*m_services, buffer);
+  editor.resize(1000, 700);
+  QSignalSpy changed(&editor, &m3::qt::MindMapEditor::zoomFactorChanged);
+  QVERIFY(editor.loadContent(content));
+  const auto committed = editor.toJson();
+  QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  // Initial fit is deferred until the canvas has a visible viewport.
+  QTRY_COMPARE(changed.count(), 1);
+  QCOMPARE(changed.last().at(0).toDouble(), editor.zoomFactor());
+  QCOMPARE(editor.zoomFactor(), view->transform().m11());
+
+  editor.resetZoom();
+  QCOMPARE(editor.zoomFactor(), 1.0);
+  changed.clear();
+  editor.resetZoom();
+  editor.zoom(1.0);
+  QVERIFY(changed.isEmpty());
+
+  editor.zoom(1.2);
+  QCOMPARE(changed.count(), 1);
+  QCOMPARE(editor.zoomFactor(), 1.2);
+  QCOMPARE(changed.last().at(0).toDouble(), view->transform().m11());
+  changed.clear();
+  editor.zoom(100.0);
+  QCOMPARE(editor.zoomFactor(), 4.0);
+  QCOMPARE(changed.count(), 1);
+  editor.zoom(1.2);
+  QCOMPARE(changed.count(), 1);
+  editor.zoom(0.001);
+  QVERIFY(qFuzzyCompare(editor.zoomFactor(), 0.1));
+  QCOMPARE(changed.count(), 2);
+  editor.zoom(0.5);
+  QCOMPARE(changed.count(), 2);
+
+  editor.resetZoom();
+  changed.clear();
+  const QPoint position = view->viewport()->rect().center();
+  QWheelEvent wheel(position, view->viewport()->mapToGlobal(position), QPoint(), QPoint(0, 120),
+                    Qt::NoButton, Qt::ControlModifier, Qt::NoScrollPhase, false);
+  QApplication::sendEvent(view->viewport(), &wheel);
+  QCOMPARE(changed.count(), 1);
+  QCOMPARE(editor.zoomFactor(), 1.2);
+  QCOMPARE(changed.last().at(0).toDouble(), view->transform().m11());
+
+  changed.clear();
+  editor.commandAction(QStringLiteral("fit"))->trigger();
+  QCOMPARE(changed.count(), 1);
+  QCOMPARE(changed.last().at(0).toDouble(), editor.zoomFactor());
+  QCOMPARE(editor.zoomFactor(), view->transform().m11());
+  changed.clear();
+  editor.scrollSteps(1, 1);
+  QVERIFY(changed.isEmpty());
+  QCOMPARE(editor.toJson(), committed);
+  QCOMPARE(buffer.getContentRaw(), content);
+  QVERIFY(dirty.isEmpty());
 }
 
 } // namespace tests
