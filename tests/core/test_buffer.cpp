@@ -1683,9 +1683,8 @@ void TestBuffer::testRejectedWriterSnapshots() {
     buffers.endNoteConversion(note.id(), false);
   }
   QVERIFY(buffers.syncNow(note.id()));
-  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 10000);
+  QTRY_COMPARE_WITH_TIMEOUT(buffers.lastSavedRevision(note.id()), dirtyRevision, 10000);
   QCOMPARE(note.getContentRaw(), corrected.toUtf8());
-  QCOMPARE(buffers.lastSavedRevision(note.id()), dirtyRevision);
   QVERIFY(!buffers.isDirty(note.id()));
   if (!encrypted)
     QCOMPARE(readReplacementFile(path), corrected.toUtf8());
@@ -1748,10 +1747,10 @@ void TestBuffer::testReentrantWriterSnapshot() {
   QCOMPARE(captured, next);
   buffers.markDirty(note.id());
   QVERIFY(buffers.syncNow(note.id()));
-  QTRY_VERIFY_WITH_TIMEOUT(!buffers.isSaveQueueBusy(note.id()), 10000);
+  QTRY_COMPARE_WITH_TIMEOUT(buffers.lastSavedRevision(note.id()),
+                            buffers.currentRevision(note.id()), 10000);
   QCOMPARE(note.getContentRaw(), next.toUtf8());
   QCOMPARE(readReplacementFile(replacementFilePath(target)), next.toUtf8());
-  QCOMPARE(buffers.lastSavedRevision(note.id()), buffers.currentRevision(note.id()));
   QVERIFY(!buffers.isDirty(note.id()));
 }
 

@@ -189,6 +189,7 @@ public:
       return false;
     m_signalChanged = true;
     auto limit = m_previousLimit;
+    // POSIX cases must include an incoming payload larger than this write limit.
     limit.rlim_cur = 64 * 1024;
     if (setrlimit(RLIMIT_FSIZE, &limit) != 0) {
       restore();
@@ -767,17 +768,21 @@ void TestJianguoyunSyncService::exerciseEncryptedCohort(bool p_interrupted) {
                                       size_t(password.size()), envelope, masterKey, notebookKey),
            VXCORE_OK);
   QCOMPARE(Encryption::GenerateKey(noteKey), VXCORE_OK);
-  const QByteArray incomingPlaintext("private managed replacement body");
+  // Exceed the POSIX write limit after a smaller incoming file has been installed.
+  const QByteArray incomingPlaintext =
+      QByteArray("private managed replacement body\n") + QByteArray(128 * 1024, 'x');
   const std::vector<uint8_t> body(incomingPlaintext.cbegin(), incomingPlaintext.cend());
   const auto replacement = m_temp->filePath(QStringLiteral("replacement.vne"));
   QCOMPARE(Encryption::WriteNoteSnapshot(vxcore::PathFromUtf8(replacement.toStdString()), envelope,
                                          notebookKey, noteKey, header.document_id, body,
                                          {{"editorType", "markdown"}}),
            VXCORE_OK);
+  QVERIFY(QFileInfo(replacement).size() > 64 * 1024);
   std::string encodedEnvelope;
   QCOMPARE(Encryption::EncodeKeyEnvelope(envelope, encodedEnvelope), VXCORE_OK);
   QVERIFY(peerWrite(c_envelope, QByteArray::fromStdString(encodedEnvelope)));
   QVERIFY(peerWrite(notePath, readBytes(replacement)));
+  QVERIFY(peerWrite(QStringLiteral("clean.md"), "installed before encrypted failure\n"));
   QCOMPARE(peerSync(), VXCORE_OK);
   if (p_interrupted) {
     QVERIFY(m_buffers->closeBuffer(note.id()));

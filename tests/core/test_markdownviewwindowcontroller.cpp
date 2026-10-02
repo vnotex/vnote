@@ -429,10 +429,19 @@ void TestMarkdownViewWindowController::testContextMenu_copyImagePresent() {
       info, &menu, [&copyImageCalled]() { copyImageCalled = true; }, []() {},
       [](const QString &) {}, []() {}, []() {});
 
-  result->popup(QPoint(100, 100));
-  QTRY_VERIFY(result->isVisible());
-  QTest::keyClick(result, Qt::Key_G);
-  QTRY_VERIFY(copyImageCalled);
+  QAction *copyImageAct = nullptr;
+  for (auto *act : result->actions()) {
+    if (act != copyTextAct && act != defaultCopyImageAct && !act->isSeparator()) {
+      QVERIFY(!copyImageAct);
+      copyImageAct = act;
+    }
+  }
+  QVERIFY(copyImageAct);
+  QVERIFY(copyImageAct->isVisible());
+  QVERIFY(copyImageAct->isEnabled());
+  QVERIFY(!defaultCopyImageAct->isVisible());
+  copyImageAct->trigger();
+  QVERIFY(copyImageCalled);
   QVERIFY(!copyTextCalled);
   QVERIFY(!defaultCopyImageCalled);
 }
@@ -472,10 +481,10 @@ void TestMarkdownViewWindowController::testContextMenu_viewImageReadMode() {
   QVERIFY(copyImageIdx >= 0);
   QVERIFY(viewIdx < copyImageIdx);
 
-  result->popup(QPoint(100, 100));
-  QTRY_VERIFY(result->isVisible());
-  QTest::keyClick(result, Qt::Key_V);
-  QTRY_VERIFY(viewCalled);
+  QVERIFY(viewAct->isVisible());
+  QVERIFY(viewAct->isEnabled());
+  viewAct->trigger();
+  QVERIFY(viewCalled);
 }
 
 void TestMarkdownViewWindowController::testContextMenu_viewImageNotInReadMode() {

@@ -705,6 +705,7 @@ add_qt_test(test_open_notebook_dialog2_cancel
   SOURCES
     test_open_notebook_dialog2_cancel.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/opennotebookdialog2.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/inlinebanner.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/locationinputwithbrowsebutton.cpp
