@@ -45,6 +45,9 @@
         <file>icons/type_heading_editor.svg</file>
         <file>icons/type_bold_editor.svg</file>
         <file>icons/type_italic_editor.svg</file>
+        <file>icons/text_color_editor.svg</file>
+        <file>icons/fill_color_editor.svg</file>
+        <file>icons/icons_editor.svg</file>
         <file>icons/type_strikethrough_editor.svg</file>
         <file>icons/type_unordered_list_editor.svg</file>
         <file>icons/type_ordered_list_editor.svg</file>

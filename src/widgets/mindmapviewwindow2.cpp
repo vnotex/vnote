@@ -79,6 +79,28 @@ void MindMapViewWindow2::setupToolBar() {
     action->setIcon(ViewWindowToolBarHelper2::generateIcon(getServices(), iconName));
     toolBar->addAction(action);
   }
+  toolBar->addSeparator();
+  toolBar->addAction(m_editor->commandAction(QStringLiteral("fontSize")));
+  const struct {
+    const char *name;
+    const char *icon;
+  } formattingActions[] = {
+      {"toggleBold", "type_bold_editor.svg"},      {"toggleItalic", "type_italic_editor.svg"},
+      {"resetStyle", "reset_editor.svg"},          {"textColorPopup", "text_color_editor.svg"},
+      {"fillColorPopup", "fill_color_editor.svg"}, {"iconsPopup", "icons_editor.svg"}};
+  for (const auto &entry : formattingActions) {
+    auto *action = m_editor->commandAction(QString::fromLatin1(entry.name));
+    const auto iconName = QString::fromLatin1(entry.icon);
+    action->setProperty("iconName", iconName);
+    action->setIcon(ViewWindowToolBarHelper2::generateIcon(getServices(), iconName));
+    toolBar->addAction(action);
+    if (action->menu()) {
+      auto *button = qobject_cast<QToolButton *>(toolBar->widgetForAction(action));
+      if (button) {
+        button->setPopupMode(QToolButton::InstantPopup);
+      }
+    }
+  }
   addRightCommonToolBarActions(toolBar);
 }
 

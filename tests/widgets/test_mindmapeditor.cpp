@@ -2,6 +2,7 @@
 
 #include <QAction>
 #include <QBuffer>
+#include <QComboBox>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -12,6 +13,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMenu>
 #include <QPainter>
 #include <QPlainTextEdit>
 #include <QPointer>
@@ -21,6 +23,7 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
+#include <QToolBar>
 #include <QUrl>
 #include <QtConcurrent/QtConcurrentRun>
 
@@ -372,6 +375,21 @@ void TestMindMapEditor::nativeSaveRoundTripKeepsHistory() {
   QVERIFY(!childId.isEmpty());
   QVERIFY(editor.isModified());
   QVERIFY(!dirty.isEmpty());
+  const auto unformatted = editor.contentForSave();
+  QVERIFY(editor.selectNode(childId));
+  editor.setModified(false);
+  dirty.clear();
+  auto *bold = editor.commandAction(QStringLiteral("toggleBold"));
+  QVERIFY(bold && bold->isEnabled());
+  bold->trigger();
+  QCOMPARE(node(editor, childId)
+               .value(QStringLiteral("style"))
+               .toObject()
+               .value(QStringLiteral("fontWeight"))
+               .toString(),
+           QStringLiteral("bold"));
+  QVERIFY(editor.isModified());
+  QCOMPARE(dirty.count(), 1);
   const auto saved = editor.contentForSave();
   QVERIFY(buffer.setContentRaw(saved.toUtf8()));
   QVERIFY(buffer.save());
@@ -379,9 +397,15 @@ void TestMindMapEditor::nativeSaveRoundTripKeepsHistory() {
   editor.setModified(false);
   QVERIFY(!editor.isModified());
   QVERIFY(editor.undo());
+  QCOMPARE(editor.contentForSave(), unformatted);
+  QVERIFY(!bold->isChecked());
+  QVERIFY(editor.undo());
   QCOMPARE(editor.contentForSave(), baseline);
   QVERIFY(editor.redo());
+  QCOMPARE(editor.contentForSave(), unformatted);
+  QVERIFY(editor.redo());
   QCOMPARE(editor.contentForSave(), saved);
+  QVERIFY(bold->isChecked());
   QCOMPARE(readFile(buffer.resolvedPath()), saved.toUtf8());
 
   MindMapEditor reopened(*m_services, buffer);
@@ -389,6 +413,12 @@ void TestMindMapEditor::nativeSaveRoundTripKeepsHistory() {
   QCOMPARE(reopened.contentForSave(), saved);
   QCOMPARE(node(reopened, childId).value(QStringLiteral("topic")).toString(),
            QString::fromUtf8("Native saved 世界"));
+  QCOMPARE(node(reopened, childId)
+               .value(QStringLiteral("style"))
+               .toObject()
+               .value(QStringLiteral("fontWeight"))
+               .toString(),
+           QStringLiteral("bold"));
 }
 
 void TestMindMapEditor::invalidContentFailsClosedAndRecovers() {
@@ -398,6 +428,19 @@ void TestMindMapEditor::invalidContentFailsClosedAndRecovers() {
   MindMapEditor editor(*m_services, buffer);
   QVERIFY(editor.loadContent(buffer.getContentRaw()));
   QVERIFY(showEditor(editor));
+  QToolBar toolbar;
+  const QStringList formattingNames = {
+      QStringLiteral("fontSize"),       QStringLiteral("toggleBold"),
+      QStringLiteral("toggleItalic"),   QStringLiteral("resetStyle"),
+      QStringLiteral("textColorPopup"), QStringLiteral("fillColorPopup"),
+      QStringLiteral("iconsPopup")};
+  for (const auto &name : formattingNames) {
+    auto *action = editor.commandAction(name);
+    QVERIFY(action);
+    toolbar.addAction(action);
+  }
+  auto *size = toolbar.findChild<QComboBox *>(QStringLiteral("toolbarFontSize"));
+  QVERIFY(size);
   const auto baseline = editor.toJson();
   QVERIFY(editor.renameNode(QStringLiteral("r"), QStringLiteral("First edit")));
   QVERIFY(editor.renameNode(QStringLiteral("r"), QStringLiteral("Second edit")));
@@ -419,6 +462,20 @@ void TestMindMapEditor::invalidContentFailsClosedAndRecovers() {
   QVERIFY(!editor.commandAction(QStringLiteral("redo"))->isEnabled());
   QVERIFY(!editor.undo());
   QVERIFY(!editor.redo());
+  for (const auto &name : formattingNames) {
+    auto *action = editor.commandAction(name);
+    QVERIFY(!action->isEnabled());
+    action->trigger();
+    if (auto *menu = action->menu()) {
+      menu->popup(editor.mapToGlobal(QPoint(0, 0)));
+      QCoreApplication::processEvents();
+      QVERIFY(!menu->isVisible());
+    }
+  }
+  const int sizeIndex = size->findData(24.0);
+  QVERIFY(sizeIndex >= 0);
+  size->setCurrentIndex(sizeIndex);
+  QVERIFY(QMetaObject::invokeMethod(size, "activated", Q_ARG(int, sizeIndex)));
   editor.setBuffer(buffer);
   QVERIFY(!editor.commandAction(QStringLiteral("undo"))->isEnabled());
   QVERIFY(!editor.commandAction(QStringLiteral("redo"))->isEnabled());
@@ -436,6 +493,21 @@ void TestMindMapEditor::invalidContentFailsClosedAndRecovers() {
   QCOMPARE(editor.contentForSave().toUtf8(), baseline);
   QCOMPARE(readFile(buffer.resolvedPath()), original);
   QVERIFY(dirty.isEmpty());
+  for (const auto &name : formattingNames) {
+    QVERIFY(editor.commandAction(name)->isEnabled());
+  }
+  size->setCurrentIndex(sizeIndex);
+  QVERIFY(QMetaObject::invokeMethod(size, "activated", Q_ARG(int, sizeIndex)));
+  QCOMPARE(node(editor, QStringLiteral("r"))
+               .value(QStringLiteral("style"))
+               .toObject()
+               .value(QStringLiteral("fontSize"))
+               .toDouble(),
+           24.0);
+  QVERIFY(editor.isModified());
+  QVERIFY(!dirty.isEmpty());
+  QVERIFY(editor.undo());
+  QCOMPARE(editor.toJson(), baseline);
   QVERIFY(editor.renameNode(QStringLiteral("r"), QStringLiteral("Recovered edit")));
   QVERIFY(editor.undo());
   QCOMPARE(editor.toJson(), baseline);
