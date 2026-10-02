@@ -11,6 +11,7 @@
 #include <QToolBar>
 #include <QToolButton>
 
+#include <cmath>
 #include <utility>
 
 #include <vxcore/vxcore.h>
@@ -39,7 +40,11 @@ MindMapViewWindow2::MindMapViewWindow2(ServiceLocator &p_services, const Buffer2
   setupUI();
 }
 
-MindMapViewWindow2::~MindMapViewWindow2() { setViewFullScreen(false); }
+MindMapViewWindow2::~MindMapViewWindow2() {
+  // Focus loss during child teardown must not query the already-destroyed editor.
+  disconnect(m_zoomComboBox->lineEdit(), nullptr, this, nullptr);
+  setViewFullScreen(false);
+}
 
 void MindMapViewWindow2::setupUI() {
   m_editor = new MindMapEditor(getServices(), getBuffer(), this);
@@ -140,12 +145,11 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   m_zoomOutAction = addZoomAction(QStringLiteral("zoomOut"), false);
   m_zoomComboBox = new QComboBox(p_toolBar);
   m_zoomComboBox->setObjectName(QStringLiteral("mindMapZoomCombo"));
-  // Display arbitrary scales without adding extra choices to the popup.
+  // Display and enter arbitrary scales without adding extra choices to the popup.
   m_zoomComboBox->setEditable(true);
   m_zoomComboBox->setInsertPolicy(QComboBox::NoInsert);
-  m_zoomComboBox->setMinimumContentsLength(5);
+  m_zoomComboBox->setMinimumContentsLength(8);
   m_zoomComboBox->setCompleter(nullptr);
-  m_zoomComboBox->lineEdit()->setReadOnly(true);
   m_zoomComboBox->lineEdit()->setProperty(PropertyDefs::c_embeddedLineEdit, true);
   m_zoomComboBox->addItem(m_editor->commandAction(QStringLiteral("fit"))->text(), 0.0);
   for (const int percent : {100, 125, 150, 200}) {
@@ -159,6 +163,30 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
       } else {
         m_editor->zoom(factor / m_editor->zoomFactor());
       }
+      syncZoomControls();
+    }
+  });
+  connect(m_zoomComboBox->lineEdit(), &QLineEdit::returnPressed, this, [this]() {
+    if (!m_contentLoaded) {
+      return;
+    }
+    QString text = m_zoomComboBox->currentText().trimmed();
+    if (text.compare(m_zoomComboBox->itemText(0), Qt::CaseInsensitive) == 0) {
+      m_editor->fitToContents();
+    } else {
+      if (text.endsWith(QLatin1Char('%'))) {
+        text.chop(1);
+      }
+      bool ok = false;
+      const double percent = text.trimmed().toDouble(&ok);
+      if (ok && std::isfinite(percent) && percent > 0.0) {
+        m_editor->zoom(percent / 100.0 / m_editor->zoomFactor());
+      }
+    }
+    syncZoomControls();
+  });
+  connect(m_zoomComboBox->lineEdit(), &QLineEdit::editingFinished, this, [this]() {
+    if (!m_zoomComboBox->lineEdit()->hasFocus()) {
       syncZoomControls();
     }
   });
@@ -207,6 +235,7 @@ void MindMapViewWindow2::syncZoomControls() {
   const QSignalBlocker blocker(m_zoomComboBox);
   if (m_editor->isZoomFit()) {
     m_zoomComboBox->setCurrentIndex(0);
+    m_zoomComboBox->setEditText(m_zoomComboBox->itemText(0));
     return;
   }
   const qreal factor = m_editor->zoomFactor();
@@ -218,7 +247,7 @@ void MindMapViewWindow2::syncZoomControls() {
     }
   }
   m_zoomComboBox->setCurrentIndex(index);
-  m_zoomComboBox->setEditText(QStringLiteral("%1%").arg(qRound(factor * 100.0)));
+  m_zoomComboBox->setEditText(QString::number(factor * 100.0, 'g', 6) + QLatin1Char('%'));
 }
 
 void MindMapViewWindow2::syncEditorFromBuffer() {

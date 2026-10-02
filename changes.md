@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Allow typing custom percentages in the mind-map zoom field and applying them with Enter; keep the preset dropdown on the arrow
 * Add fullscreen mind-map Presentation Mode with F9, Escape to exit, collapsed node properties on entry, and the same fading toolbar as text notes
 * Add theme-aware Zoom Out, a Fit/100%/125%/150%/200% combo and Zoom In to the mind-map toolbar, synchronized with shortcuts and Ctrl+wheel; show Fit on opening, reloading and fitting a map
 * Use the system text color for Native theme content, including the mind-map editor

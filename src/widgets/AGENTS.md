@@ -172,7 +172,11 @@ MindMap adds Lucide Undo and Redo after the left common actions and keeps
 Outline → Find And Replace → Zoom Out → percentage combo → Zoom In → Presentation Mode → Menu.
 Zoom controls observe the native editor's `zoomChanged` signal and `isZoomFit()`
 state, including initial/deferred fit, context-menu Fit, shortcuts and Ctrl+wheel.
-The dropdown contains only Fit, 100%, 125%, 150% and 200%. Opening/reloading a map
+The dropdown contains only Fit, 100%, 125%, 150% and 200%. Click its arrow for presets;
+the text field accepts a percentage (for example `137.5` or `137.5%`) and Enter applies
+it, using the native manual-zoom limits of 10%–400%. The localized Fit label also works.
+Invalid input or leaving the field without Enter restores the actual zoom without
+applying the draft. Custom values never add preset rows. Opening/reloading a map
 or requesting a one-shot fit shows Fit, even when its scale matches a preset.
 Manual zoom/reset switches to the actual percentage, including same-scale mode
 changes, without adding custom entries. Unloaded/invalid content disables
