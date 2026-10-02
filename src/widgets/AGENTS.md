@@ -224,6 +224,9 @@ click again to exit. Its view-scoped shortcut defaults to **F9**, configured thr
 `editor.core.shortcuts.PresentationMode`; an empty string disables the shortcut.
 PDF's action remains usable even if the viewer reloads. MindMap presents the existing
 editor without reloading content, changing read-only policy or resetting zoom.
+Each confirmed MindMap presentation entry collapses the node-properties card through
+`MindMapEditor::collapseNodeProperties()`, including with no selected node. Users may
+expand it again while presenting; exit leaves their current card preference unchanged.
 Only the QToolBar gets an opacity effect: **10% inactive, 100% active**. Active
 means the presentation window is active and the toolbar is hovered, contains
 keyboard focus, or owns an open popup (including submenus, zoom and extension

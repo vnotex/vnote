@@ -192,6 +192,9 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
     m_presentationAction->setChecked(p_on);
     m_presentationEffect->setActive(p_on);
     update();
+    if (p_on) {
+      m_editor->collapseNodeProperties();
+    }
   });
 }
 
