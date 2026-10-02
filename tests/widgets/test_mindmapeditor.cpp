@@ -890,15 +890,14 @@ void TestMindMapEditor::zoomStateTracksCanvasWithoutEditing() {
   QVERIFY(buffer.isValid());
   MindMapEditor editor(*m_services, buffer);
   editor.resize(1000, 700);
-  QSignalSpy changed(&editor, &m3::qt::MindMapEditor::zoomFactorChanged);
+  QSignalSpy changed(&editor, &m3::qt::MindMapEditor::zoomChanged);
   QVERIFY(editor.loadContent(content));
+  QVERIFY(editor.isZoomFit());
   const auto committed = editor.toJson();
   QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
   auto *view = showEditor(editor);
   QVERIFY(view);
-  // Initial fit is deferred until the canvas has a visible viewport.
-  QTRY_COMPARE(changed.count(), 1);
-  QCOMPARE(changed.last().at(0).toDouble(), editor.zoomFactor());
+  QVERIFY(editor.isZoomFit());
   QCOMPARE(editor.zoomFactor(), view->transform().m11());
 
   editor.resetZoom();
@@ -911,6 +910,8 @@ void TestMindMapEditor::zoomStateTracksCanvasWithoutEditing() {
   editor.zoom(1.2);
   QCOMPARE(changed.count(), 1);
   QCOMPARE(editor.zoomFactor(), 1.2);
+  QVERIFY(!editor.isZoomFit());
+  QCOMPARE(changed.last().at(1).toBool(), false);
   QCOMPARE(changed.last().at(0).toDouble(), view->transform().m11());
   changed.clear();
   editor.zoom(100.0);
@@ -937,11 +938,43 @@ void TestMindMapEditor::zoomStateTracksCanvasWithoutEditing() {
   changed.clear();
   editor.commandAction(QStringLiteral("fit"))->trigger();
   QCOMPARE(changed.count(), 1);
+  QVERIFY(editor.isZoomFit());
+  QCOMPARE(changed.last().at(1).toBool(), true);
   QCOMPARE(changed.last().at(0).toDouble(), editor.zoomFactor());
   QCOMPARE(editor.zoomFactor(), view->transform().m11());
   changed.clear();
   editor.scrollSteps(1, 1);
   QVERIFY(changed.isEmpty());
+
+  // Fit/manual intent must remain observable even before geometry can change.
+  editor.hide();
+  editor.resetZoom();
+  changed.clear();
+  editor.fitToContents();
+  QVERIFY(editor.isZoomFit());
+  QCOMPARE(editor.zoomFactor(), 1.0);
+  QCOMPARE(changed.count(), 1);
+  QCOMPARE(changed.last().at(1).toBool(), true);
+  editor.fitToContents();
+  QCOMPARE(changed.count(), 1);
+  editor.zoom(1.0);
+  QVERIFY(!editor.isZoomFit());
+  QCOMPARE(editor.zoomFactor(), 1.0);
+  QCOMPARE(changed.count(), 2);
+  QCOMPARE(changed.last().at(1).toBool(), false);
+  editor.fitToContents();
+  changed.clear();
+  editor.resetZoom();
+  QVERIFY(!editor.isZoomFit());
+  QCOMPARE(editor.zoomFactor(), 1.0);
+  QCOMPARE(changed.count(), 1);
+  QCOMPARE(changed.last().at(1).toBool(), false);
+  editor.resetZoom();
+  QCOMPARE(changed.count(), 1);
+  editor.fitToContents();
+  QVERIFY(showEditor(editor));
+  QVERIFY(editor.isZoomFit());
+  QCOMPARE(editor.zoomFactor(), view->transform().m11());
   QCOMPARE(editor.toJson(), committed);
   QCOMPARE(buffer.getContentRaw(), content);
   QVERIFY(dirty.isEmpty());

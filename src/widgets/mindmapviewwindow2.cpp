@@ -150,17 +150,15 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
       const qreal factor = m_zoomComboBox->itemData(p_index).toDouble();
       if (factor == 0.0) {
         m_editor->fitToContents();
-        const QSignalBlocker blocker(m_zoomComboBox);
-        m_zoomComboBox->setCurrentIndex(p_index);
       } else {
         m_editor->zoom(factor / m_editor->zoomFactor());
-        syncZoomControls();
       }
+      syncZoomControls();
     }
   });
   m_zoomComboAction = p_toolBar->addWidget(m_zoomComboBox);
   m_zoomInAction = addZoomAction(QStringLiteral("zoomIn"), true);
-  connect(m_editor, &m3::qt::MindMapEditor::zoomFactorChanged, this,
+  connect(m_editor, &m3::qt::MindMapEditor::zoomChanged, this,
           &MindMapViewWindow2::syncZoomControls);
   syncZoomControls();
 }
@@ -172,6 +170,10 @@ void MindMapViewWindow2::syncZoomControls() {
   m_zoomInAction->setEnabled(m_contentLoaded);
 
   const QSignalBlocker blocker(m_zoomComboBox);
+  if (m_editor->isZoomFit()) {
+    m_zoomComboBox->setCurrentIndex(0);
+    return;
+  }
   const qreal factor = m_editor->zoomFactor();
   int index = -1;
   for (int i = 1; i < m_zoomComboBox->count(); ++i) {

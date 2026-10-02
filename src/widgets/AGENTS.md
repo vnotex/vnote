@@ -170,11 +170,12 @@ Text keeps **Find And Replace → Presentation Mode → Menu**. Markdown keeps
 **Outline → Find And Replace → Presentation Mode** together before page/zoom controls.
 MindMap adds Lucide Undo and Redo after the left common actions and keeps
 Outline → Find And Replace → Zoom Out → percentage combo → Zoom In → Menu.
-Zoom controls observe the native editor's `zoomFactorChanged` signal, including
-initial fit, context-menu Fit, shortcuts and Ctrl+wheel. The dropdown contains only
-Fit, 100%, 125%, 150% and 200%. Selecting Fit performs a one-shot canvas fit and
-keeps the Fit label. Subsequent scale changes or numeric selections restore the
-actual percentage display without adding custom entries. Unloaded/invalid content disables
+Zoom controls observe the native editor's `zoomChanged` signal and `isZoomFit()`
+state, including initial/deferred fit, context-menu Fit, shortcuts and Ctrl+wheel.
+The dropdown contains only Fit, 100%, 125%, 150% and 200%. Opening/reloading a map
+or requesting a one-shot fit shows Fit, even when its scale matches a preset.
+Manual zoom/reset switches to the actual percentage, including same-scale mode
+changes, without adding custom entries. Unloaded/invalid content disables
 the zoom controls; read-only maps remain zoomable. The native ViewWindow toolbar
 borrows the editor's editing command actions; the editor retains shortcuts,
 inline-edit commits and history availability. Invalid content gates native mutations through read-only mode until

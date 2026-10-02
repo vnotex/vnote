@@ -1,6 +1,6 @@
 # Changes
 ## Unreleased
-* Add theme-aware Zoom Out, a Fit/100%/125%/150%/200% combo and Zoom In to the mind-map toolbar, synchronized with shortcuts and Ctrl+wheel; keep Fit displayed after selecting it
+* Add theme-aware Zoom Out, a Fit/100%/125%/150%/200% combo and Zoom In to the mind-map toolbar, synchronized with shortcuts and Ctrl+wheel; show Fit on opening, reloading and fitting a map
 * Use the system text color for Native theme content, including the mind-map editor
 * Add Simplified Chinese display names for Dreamy (梦幻), Jadeite (翡翠), and Pink Shock (粉红冲击)
 * Show localized theme names using UI-language preferences for Default language, including Chinese script tags, while honoring an explicit language selection at startup
