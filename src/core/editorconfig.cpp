@@ -4,6 +4,7 @@
 #include <QMetaEnum>
 
 #include "markdowneditorconfig.h"
+#include "mindmapeditorconfig.h"
 #include "pdfviewerconfig.h"
 #include "texteditorconfig.h"
 
@@ -54,6 +55,7 @@ QJsonObject EditorConfig::ImageHostItem::toJson() const {
 EditorConfig::EditorConfig(IConfigMgr *p_mgr, IConfig *p_topConfig)
     : IConfig(p_mgr, p_topConfig), m_textEditorConfig(new TextEditorConfig(p_mgr, p_topConfig)),
       m_markdownEditorConfig(new MarkdownEditorConfig(p_mgr, p_topConfig, m_textEditorConfig)),
+      m_mindMapEditorConfig(new MindMapEditorConfig(p_mgr, p_topConfig)),
       m_pdfViewerConfig(new PdfViewerConfig(p_mgr, p_topConfig)) {
   m_sectionName = QStringLiteral("editor");
   initDefaults();
@@ -72,6 +74,7 @@ void EditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_textEditorConfig->fromJson(p_jobj.value(m_textEditorConfig->getSectionName()).toObject());
   m_markdownEditorConfig->fromJson(
       p_jobj.value(m_markdownEditorConfig->getSectionName()).toObject());
+  m_mindMapEditorConfig->fromJson(p_jobj.value(m_mindMapEditorConfig->getSectionName()).toObject());
   m_pdfViewerConfig->fromJson(p_jobj.value(m_pdfViewerConfig->getSectionName()).toObject());
 }
 
@@ -157,6 +160,7 @@ QJsonObject EditorConfig::toJson() const {
   QJsonObject obj;
   obj[m_textEditorConfig->getSectionName()] = m_textEditorConfig->toJson();
   obj[m_markdownEditorConfig->getSectionName()] = m_markdownEditorConfig->toJson();
+  obj[m_mindMapEditorConfig->getSectionName()] = m_mindMapEditorConfig->toJson();
   obj[m_pdfViewerConfig->getSectionName()] = m_pdfViewerConfig->toJson();
   obj[QStringLiteral("core")] = saveCore();
   obj[QStringLiteral("imageHost")] = saveImageHost();
@@ -181,6 +185,12 @@ const MarkdownEditorConfig &EditorConfig::getMarkdownEditorConfig() const {
 PdfViewerConfig &EditorConfig::getPdfViewerConfig() { return *m_pdfViewerConfig; }
 
 const PdfViewerConfig &EditorConfig::getPdfViewerConfig() const { return *m_pdfViewerConfig; }
+
+MindMapEditorConfig &EditorConfig::getMindMapEditorConfig() { return *m_mindMapEditorConfig; }
+
+const MindMapEditorConfig &EditorConfig::getMindMapEditorConfig() const {
+  return *m_mindMapEditorConfig;
+}
 
 int EditorConfig::getToolBarIconSize() const { return m_toolBarIconSize; }
 

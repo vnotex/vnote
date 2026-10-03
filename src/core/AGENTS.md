@@ -165,6 +165,24 @@ rewrite of the user's bindings. Turning the option on and restarting must
 restore them, including custom bindings. Setters persist the preference without
 changing the loaded masks or partially rebinding a running session.
 
+### MindMap editor preferences
+
+`EditorConfig::getMindMapEditorConfig()` owns `editor.mindMapEditor` in `vnotex.json`.
+The nested `style` has `font-family` (trimmed comma-separated fallback list, default empty)
+and `font-size` (integer points, 0–256; 0 inherits the interface font). These controls are
+independent global preferences, not theme or document style. Malformed values retain defaults.
+Behavior defaults are `undoLimit: 100` (0 unlimited), `confirmSubtreeDeletion: true`, and
+`autoRandomBranchColor: true`; negative undo limits normalize to 0.
+
+`shortcuts` contains only overrides using m3 command member names and PortableText arrays:
+missing keys inherit m3, `[]` disables a binding, and arrays replace its full list. For example,
+`"addChild": ["Ctrl+J"]`. These JSON-only settings require restart. VNote-owned zoom keys and
+buffer/encryption resource policy are not MindMap preferences. Unknown/invalid raw entries
+survive saves, including JSON nulls: `ConfigMgr2` restores the whole user-owned shortcuts
+object after merge-patching. `toJson()` writes raw data; `getShortcuts()` exposes a separate
+runtime copy masked once by `MainConfig::fromJson()` for the Ctrl+Alt policy above.
+
+
 ### VxCoreLogBridge
 
 `VxCoreLogBridge` routes vxcore's internal log lines through Qt's `qInstallMessageHandler` pipeline so they land in VNote's unified log file alongside `qDebug`/`qWarning`/`qCritical` output. Without it, vxcore would write to its own stderr/file sinks and the two log streams would diverge.

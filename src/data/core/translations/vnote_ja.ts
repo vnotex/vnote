@@ -10828,4 +10828,79 @@ Continue?</source>
         <translation>文字数 (空白を含む)</translation>
     </message>
 </context>
+<context>
+    <name>vnotex::MindMapEditorPage</name>
+    <message>
+        <source>MindMap Editor</source>
+        <translation>マインドマップエディター</translation>
+    </message>
+    <message>
+        <source>Style</source>
+        <translation>スタイル</translation>
+    </message>
+    <message>
+        <source>Default (interface font)</source>
+        <translation>既定（インターフェイスのフォント）</translation>
+    </message>
+    <message>
+        <source>Comma-separated font families in fallback order; leave empty to use the interface font</source>
+        <translation>フォントファミリーを優先順にカンマで区切って指定します。空欄の場合はインターフェイスのフォントを使用します</translation>
+    </message>
+    <message>
+        <source>Font family</source>
+        <translation>フォントファミリー</translation>
+    </message>
+    <message>
+        <source> pt</source>
+        <translation> pt</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation>既定</translation>
+    </message>
+    <message>
+        <source>Default text size in points; node-specific sizes still override it</source>
+        <translation>既定の文字サイズ（ポイント単位）。ノード固有のサイズ設定が優先されます</translation>
+    </message>
+    <message>
+        <source>Font size</source>
+        <translation>フォントサイズ</translation>
+    </message>
+    <message>
+        <source>Behavior</source>
+        <translation>動作</translation>
+    </message>
+    <message>
+        <source>Unlimited</source>
+        <translation>無制限</translation>
+    </message>
+    <message>
+        <source>Maximum retained document commands; lowering this limit discards excess undo and redo history</source>
+        <translation>保持する文書コマンド数の上限。この値を下げると、超過した元に戻す・やり直す履歴が破棄されます</translation>
+    </message>
+    <message>
+        <source>Undo limit</source>
+        <translation>元に戻す回数の上限</translation>
+    </message>
+    <message>
+        <source>Confirm subtree deletion</source>
+        <translation>サブツリーの削除を確認</translation>
+    </message>
+    <message>
+        <source>Ask before deleting nodes and their descendants</source>
+        <translation>ノードとその子孫を削除する前に確認します</translation>
+    </message>
+    <message>
+        <source>Automatic branch colors</source>
+        <translation>分岐の自動配色</translation>
+    </message>
+    <message>
+        <source>Assign colors to new main branches without recoloring existing nodes</source>
+        <translation>新しい主分岐に色を割り当てます。既存のノードの色は変更しません</translation>
+    </message>
+    <message>
+        <source>Keyboard shortcuts can be configured in section [editor.mindMapEditor.shortcuts]</source>
+        <translation>キーボードショートカットは [editor.mindMapEditor.shortcuts] セクションで設定できます</translation>
+    </message>
+</context>
 </TS>

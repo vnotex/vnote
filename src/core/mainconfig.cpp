@@ -1,6 +1,7 @@
 #include "mainconfig.h"
 
 #include <QDebug>
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QKeySequence>
 #include <QVersionNumber>
@@ -9,6 +10,7 @@
 #include "editorconfig.h"
 #include "iconfigmgr.h"
 #include "markdowneditorconfig.h"
+#include "mindmapeditorconfig.h"
 #include "pdfviewerconfig.h"
 #include "texteditorconfig.h"
 #include "widgetconfig.h"
@@ -64,6 +66,21 @@ void MainConfig::fromJson(const QJsonObject &p_jobj) {
     filter(coreConfig);
     filter(getEditorConfig());
     coreConfig.m_shortcutLeaderKeyFiltered = containsCtrlAlt(coreConfig.m_shortcutLeaderKey);
+
+    auto &mindMapConfig = getEditorConfig().getMindMapEditorConfig();
+    for (auto it = mindMapConfig.m_effectiveShortcuts.begin();
+         it != mindMapConfig.m_effectiveShortcuts.end(); ++it) {
+      if (!it.value().isArray()) {
+        continue;
+      }
+      auto bindings = it.value().toArray();
+      for (int i = bindings.size() - 1; i >= 0; --i) {
+        if (bindings.at(i).isString() && containsCtrlAlt(bindings.at(i).toString())) {
+          bindings.removeAt(i);
+        }
+      }
+      it.value() = bindings;
+    }
   }
 }
 

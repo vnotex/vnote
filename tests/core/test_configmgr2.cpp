@@ -15,6 +15,7 @@
 #include <core/error.h>
 #include <core/mainconfig.h>
 #include <core/markdowneditorconfig.h>
+#include <core/mindmapeditorconfig.h>
 #include <core/pdfviewerconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/commenttypes.h>
@@ -84,6 +85,10 @@ private slots:
   void testOutlineAutoSectionNumber_migrationAndPersistence_data();
   void testOutlineAutoSectionNumber_migrationAndPersistence();
   void testMathRenderer_mergeNormalizationAndPersistence();
+  void testMindMapEditor_mergeAndNormalization_data();
+  void testMindMapEditor_mergeAndNormalization();
+  void testMindMapEditor_settersPersistAndClearStyleIndependently();
+  void testMindMapEditor_shortcutFilteringPreservesRawOverrides();
 
   // Absent-key safety, which is provided by the defaults merge in ConfigMgr2::init().
   void testAbsentKeyKeepsTheCppDefaultForEveryField();
@@ -923,6 +928,229 @@ void TestConfigMgr2::testMathRenderer_mergeNormalizationAndPersistence() {
   md.setMathRenderer(QStringLiteral("invalid"));
   QCOMPARE(md.getMathRenderer(), QStringLiteral("katex"));
   QCOMPARE(md.getMathJaxScript(), overrideScript);
+}
+
+void TestConfigMgr2::testMindMapEditor_mergeAndNormalization_data() {
+  QTest::addColumn<QJsonObject>("onDisk");
+  QTest::addColumn<QString>("family");
+  QTest::addColumn<int>("pointSize");
+  QTest::addColumn<int>("undoLimit");
+  QTest::addColumn<bool>("confirmDeletion");
+  QTest::addColumn<bool>("branchColors");
+
+  const auto document = [](const QJsonObject &p_section) {
+    return QJsonObject{
+        {QStringLiteral("editor"), QJsonObject{{QStringLiteral("mindMapEditor"), p_section}}}};
+  };
+  QTest::newRow("absent-section") << QJsonObject() << QString() << 0 << 100 << true << true;
+  QTest::newRow("partial-family")
+      << document({{QStringLiteral("style"),
+                    QJsonObject{{QStringLiteral("font-family"),
+                                 QStringLiteral("  Missing Family, Arial  ")}}}})
+      << QStringLiteral("Missing Family, Arial") << 0 << 100 << true << true;
+  QTest::newRow("partial-point-size")
+      << document({{QStringLiteral("style"), QJsonObject{{QStringLiteral("font-size"), 18}}}})
+      << QString() << 18 << 100 << true << true;
+  QTest::newRow("explicit-zero-and-false")
+      << document({{QStringLiteral("style"),
+                    QJsonObject{{QStringLiteral("font-family"), QStringLiteral("Arial")},
+                                {QStringLiteral("font-size"), 0}}},
+                   {QStringLiteral("undoLimit"), 0},
+                   {QStringLiteral("confirmSubtreeDeletion"), false},
+                   {QStringLiteral("autoRandomBranchColor"), false}})
+      << QStringLiteral("Arial") << 0 << 0 << false << false;
+  QTest::newRow("clamp-negative") << document({{QStringLiteral("style"),
+                                                QJsonObject{{QStringLiteral("font-size"), -20}}},
+                                               {QStringLiteral("undoLimit"), -10}})
+                                  << QString() << 0 << 0 << true << true;
+  QTest::newRow("clamp-large-font")
+      << document({{QStringLiteral("style"), QJsonObject{{QStringLiteral("font-size"), 300}}},
+                   {QStringLiteral("undoLimit"), 7}})
+      << QString() << 256 << 7 << true << true;
+  QTest::newRow("malformed-types")
+      << document({{QStringLiteral("style"),
+                    QJsonObject{{QStringLiteral("font-family"), 42},
+                                {QStringLiteral("font-size"), QStringLiteral("18")}}},
+                   {QStringLiteral("undoLimit"), QStringLiteral("7")},
+                   {QStringLiteral("confirmSubtreeDeletion"), 0},
+                   {QStringLiteral("autoRandomBranchColor"), QStringLiteral("false")}})
+      << QString() << 0 << 100 << true << true;
+  QTest::newRow("fractional-integers")
+      << document({{QStringLiteral("style"), QJsonObject{{QStringLiteral("font-size"), 18.5}}},
+                   {QStringLiteral("undoLimit"), 7.5}})
+      << QString() << 0 << 100 << true << true;
+  QTest::newRow("out-of-range-integers")
+      << document({{QStringLiteral("style"), QJsonObject{{QStringLiteral("font-size"), 1e20}}},
+                   {QStringLiteral("undoLimit"), 1e20}})
+      << QString() << 0 << 100 << true << true;
+  QTest::newRow("malformed-style-and-booleans")
+      << document({{QStringLiteral("style"), false},
+                   {QStringLiteral("undoLimit"), true},
+                   {QStringLiteral("confirmSubtreeDeletion"), QJsonArray()},
+                   {QStringLiteral("autoRandomBranchColor"), QJsonObject()}})
+      << QString() << 0 << 100 << true << true;
+}
+
+void TestConfigMgr2::testMindMapEditor_mergeAndNormalization() {
+  QFETCH(QJsonObject, onDisk);
+  QFETCH(QString, family);
+  QFETCH(int, pointSize);
+  QFETCH(int, undoLimit);
+  QFETCH(bool, confirmDeletion);
+  QFETCH(bool, branchColors);
+  const auto original =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("mindMapEditor")};
+  const auto loaded = valueAt(loadThroughMergePath(onDisk), path).toObject();
+  const auto style = loaded.value(QStringLiteral("style")).toObject();
+  QCOMPARE(style.value(QStringLiteral("font-family")), QJsonValue(family));
+  QCOMPARE(style.value(QStringLiteral("font-size")), QJsonValue(pointSize));
+  QCOMPARE(loaded.value(QStringLiteral("undoLimit")), QJsonValue(undoLimit));
+  QCOMPARE(loaded.value(QStringLiteral("confirmSubtreeDeletion")), QJsonValue(confirmDeletion));
+  QCOMPARE(loaded.value(QStringLiteral("autoRandomBranchColor")), QJsonValue(branchColors));
+
+  ConfigMgr2 restarted(m_configService);
+  restarted.init();
+  const auto &mindMap = restarted.getEditorConfig().getMindMapEditorConfig();
+  QCOMPARE(mindMap.getFontFamily(), family);
+  QCOMPARE(mindMap.getFontPointSize(), pointSize);
+  QCOMPARE(mindMap.getUndoLimit(), undoLimit);
+  QCOMPARE(mindMap.getConfirmSubtreeDeletion(), confirmDeletion);
+  QCOMPARE(mindMap.getAutoRandomBranchColor(), branchColors);
+}
+
+void TestConfigMgr2::testMindMapEditor_settersPersistAndClearStyleIndependently() {
+  const auto original =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  QVERIFY(!loadThroughMergePath(QJsonObject()).isEmpty());
+  {
+    ConfigMgr2 settings(m_configService);
+    settings.init();
+    auto &mindMap = settings.getEditorConfig().getMindMapEditorConfig();
+    mindMap.setFontFamily(QStringLiteral("  Missing Family, Arial  "));
+    mindMap.setFontPointSize(300);
+    QCOMPARE(mindMap.getFontPointSize(), 256);
+    mindMap.setFontPointSize(-1);
+    QCOMPARE(mindMap.getFontPointSize(), 0);
+    mindMap.setFontPointSize(18);
+    mindMap.setUndoLimit(-1);
+    QCOMPARE(mindMap.getUndoLimit(), 0);
+    mindMap.setUndoLimit(2);
+    mindMap.setConfirmSubtreeDeletion(false);
+    mindMap.setAutoRandomBranchColor(false);
+    // Destruction flushes the normal pending configuration write.
+  }
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("mindMapEditor")};
+  const auto persisted =
+      valueAt(m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex")), path)
+          .toObject();
+  QCOMPARE(persisted.value(QStringLiteral("style")).toObject(),
+           (QJsonObject{{QStringLiteral("font-family"), QStringLiteral("Missing Family, Arial")},
+                        {QStringLiteral("font-size"), 18}}));
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    auto &mindMap = restarted.getEditorConfig().getMindMapEditorConfig();
+    QCOMPARE(mindMap.getFontFamily(), QStringLiteral("Missing Family, Arial"));
+    QCOMPARE(mindMap.getFontPointSize(), 18);
+    QCOMPARE(mindMap.getUndoLimit(), 2);
+    QVERIFY(!mindMap.getConfirmSubtreeDeletion());
+    QVERIFY(!mindMap.getAutoRandomBranchColor());
+    mindMap.setFontFamily(QStringLiteral("  "));
+    QCOMPARE(mindMap.getFontPointSize(), 18);
+  }
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    auto &mindMap = restarted.getEditorConfig().getMindMapEditorConfig();
+    QVERIFY(mindMap.getFontFamily().isEmpty());
+    QCOMPARE(mindMap.getFontPointSize(), 18);
+    mindMap.setFontPointSize(0);
+  }
+  ConfigMgr2 restarted(m_configService);
+  restarted.init();
+  const auto &mindMap = restarted.getEditorConfig().getMindMapEditorConfig();
+  QVERIFY(mindMap.getFontFamily().isEmpty());
+  QCOMPARE(mindMap.getFontPointSize(), 0);
+  QCOMPARE(mindMap.getUndoLimit(), 2);
+  QVERIFY(!mindMap.getConfirmSubtreeDeletion());
+  QVERIFY(!mindMap.getAutoRandomBranchColor());
+}
+
+void TestConfigMgr2::testMindMapEditor_shortcutFilteringPreservesRawOverrides() {
+  const auto original =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  const QJsonArray allowed{QStringLiteral("Ctrl+J"), QStringLiteral("Ctrl+K, Alt+J"), 42,
+                           QJsonValue(QJsonValue::Null), QStringLiteral("")};
+  auto mixed = allowed;
+  mixed.prepend(QStringLiteral("Ctrl+K, Ctrl+Alt+Shift+J"));
+  const QJsonObject raw{{QStringLiteral("addChild"), mixed},
+                        {QStringLiteral("redo"), QJsonArray{QStringLiteral("Ctrl+Alt+R")}},
+                        {QStringLiteral("toggleBold"), QJsonArray()},
+                        {QStringLiteral("resetStyle"), QStringLiteral("invalid-non-array")},
+                        {QStringLiteral("futureCommand"), QJsonValue(QJsonValue::Null)},
+                        {QStringLiteral("futureOptions"),
+                         QJsonObject{{QStringLiteral("unknown"), QJsonValue(QJsonValue::Null)}}}};
+  const QJsonObject onDisk{
+      {QStringLiteral("core"), QJsonObject{{QStringLiteral("allowCtrlAltShortcuts"), false}}},
+      {QStringLiteral("editor"), QJsonObject{{QStringLiteral("mindMapEditor"),
+                                              QJsonObject{{QStringLiteral("shortcuts"), raw}}}}}};
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("mindMapEditor"),
+                         QStringLiteral("shortcuts")};
+  QCOMPARE(valueAt(loadThroughMergePath(onDisk), path).toObject(), raw);
+  auto filtered = raw;
+  filtered[QStringLiteral("addChild")] = allowed;
+  filtered[QStringLiteral("redo")] = QJsonArray();
+  {
+    ConfigMgr2 settings(m_configService);
+    settings.init();
+    auto &mindMap = settings.getEditorConfig().getMindMapEditorConfig();
+    QCOMPARE(mindMap.getShortcuts(), filtered);
+    mindMap.setFontFamily(QStringLiteral("Arial"));
+    mindMap.setFontPointSize(18);
+    settings.getCoreConfig().setCtrlAltShortcutsAllowed(true);
+    // Editing the policy must not alter the loaded runtime view before restart.
+    QCOMPARE(mindMap.getShortcuts(), filtered);
+    QCOMPARE(mindMap.toJson().value(QStringLiteral("shortcuts")).toObject(), raw);
+  }
+  QCOMPARE(
+      valueAt(m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex")), path)
+          .toObject(),
+      raw);
+  {
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    auto &mindMap = restarted.getEditorConfig().getMindMapEditorConfig();
+    QCOMPARE(mindMap.getShortcuts(), raw);
+    QCOMPARE(mindMap.getFontPointSize(), 18);
+    // Reloading the same object must replace, not accumulate, its previous filter.
+    auto loaded = restarted.getConfig().toJson();
+    auto core = loaded.value(QStringLiteral("core")).toObject();
+    core[QStringLiteral("allowCtrlAltShortcuts")] = false;
+    loaded[QStringLiteral("core")] = core;
+    restarted.getConfig().fromJson(loaded);
+    QCOMPARE(mindMap.getShortcuts(), filtered);
+    core[QStringLiteral("allowCtrlAltShortcuts")] = true;
+    loaded[QStringLiteral("core")] = core;
+    restarted.getConfig().fromJson(loaded);
+    QCOMPARE(mindMap.getShortcuts(), raw);
+    mindMap.setFontFamily(QString());
+    mindMap.setFontPointSize(0);
+  }
+  QCOMPARE(
+      valueAt(m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex")), path)
+          .toObject(),
+      raw);
 }
 
 // ============ Absent-key safety (the defaults merge) ============

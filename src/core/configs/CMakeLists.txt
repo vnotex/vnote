@@ -8,6 +8,7 @@ set(CONFIGS_SOURCES
   ${CMAKE_SOURCE_DIR}/src/core/widgetconfig.cpp
   ${CMAKE_SOURCE_DIR}/src/core/texteditorconfig.cpp
   ${CMAKE_SOURCE_DIR}/src/core/markdowneditorconfig.cpp
+  ${CMAKE_SOURCE_DIR}/src/core/mindmapeditorconfig.cpp
   ${CMAKE_SOURCE_DIR}/src/core/pdfviewerconfig.cpp
   ${CMAKE_SOURCE_DIR}/src/core/global.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp

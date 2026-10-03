@@ -3,6 +3,7 @@
 #include <QDir>
 #include <QFileDialog>
 #include <QInputDialog>
+#include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QPointer>
@@ -11,6 +12,9 @@
 #include <stdexcept>
 
 #include <controllers/mindmapviewwindowcontroller.h>
+#include <core/configmgr2.h>
+#include <core/editorconfig.h>
+#include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 
@@ -19,8 +23,78 @@
 using namespace vnotex;
 
 namespace {
-m3::qt::EditorConfig editorConfig(const Buffer2 &p_buffer) {
+m3::qt::EditorConfig editorConfig(ServiceLocator &p_services, const Buffer2 &p_buffer) {
   m3::qt::EditorConfig config;
+  if (auto *manager = p_services.get<ConfigMgr2>()) {
+    const auto &settings = manager->getEditorConfig().getMindMapEditorConfig();
+    config.style = {settings.getFontFamily(), settings.getFontPointSize()};
+    config.undoLimit = settings.getUndoLimit();
+    config.confirmSubtreeDeletion = settings.getConfirmSubtreeDeletion();
+    config.autoRandomBranchColor = settings.getAutoRandomBranchColor();
+
+    using Shortcuts = m3::qt::EditorConfig::Shortcuts;
+    static const struct {
+      const char *name;
+      QList<QKeySequence> Shortcuts::*bindings;
+    } overrides[] = {{"undo", &Shortcuts::undo},
+                     {"redo", &Shortcuts::redo},
+                     {"addChild", &Shortcuts::addChild},
+                     {"addSibling", &Shortcuts::addSibling},
+                     {"addSiblingBefore", &Shortcuts::addSiblingBefore},
+                     {"editSelection", &Shortcuts::editSelection},
+                     {"acceptTopic", &Shortcuts::acceptTopic},
+                     {"deleteSelection", &Shortcuts::deleteSelection},
+                     {"toggleExpanded", &Shortcuts::toggleExpanded},
+                     {"moveNode", &Shortcuts::moveNode},
+                     {"moveUp", &Shortcuts::moveUp},
+                     {"moveDown", &Shortcuts::moveDown},
+                     {"addLink", &Shortcuts::addLink},
+                     {"selectParent", &Shortcuts::selectParent},
+                     {"selectChild", &Shortcuts::selectChild},
+                     {"previousSibling", &Shortcuts::previousSibling},
+                     {"nextSibling", &Shortcuts::nextSibling},
+                     {"selectRoot", &Shortcuts::selectRoot},
+                     {"clearSelection", &Shortcuts::clearSelection},
+                     {"fit", &Shortcuts::fit},
+                     {"toggleBold", &Shortcuts::toggleBold},
+                     {"toggleItalic", &Shortcuts::toggleItalic},
+                     {"resetStyle", &Shortcuts::resetStyle},
+                     {"textColor", &Shortcuts::textColor},
+                     {"fillColor", &Shortcuts::fillColor},
+                     {"editTags", &Shortcuts::editTags},
+                     {"editIcons", &Shortcuts::editIcons},
+                     {"editNote", &Shortcuts::editNote},
+                     {"editTopic", &Shortcuts::editTopic},
+                     {"showHelp", &Shortcuts::showHelp},
+                     {"toggleProperties", &Shortcuts::toggleProperties}};
+    for (const auto &entry : overrides) {
+      const auto value = settings.getShortcuts().value(QLatin1String(entry.name));
+      if (!value.isArray()) {
+        continue;
+      }
+      QList<QKeySequence> bindings;
+      const auto values = value.toArray();
+      for (const auto &binding : values) {
+        if (!binding.isString()) {
+          continue;
+        }
+        const auto sequence =
+            QKeySequence::fromString(binding.toString(), QKeySequence::PortableText);
+        bool valid = !sequence.isEmpty();
+        for (int i = 0; valid && i < sequence.count(); ++i) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+          valid = sequence[i].key() != Qt::Key_unknown;
+#else
+          valid = (sequence[i] & ~Qt::KeyboardModifierMask) != Qt::Key_unknown;
+#endif
+        }
+        if (valid) {
+          bindings.append(sequence);
+        }
+      }
+      config.shortcuts.*(entry.bindings) = std::move(bindings);
+    }
+  }
   config.resourceBasePath = p_buffer.getResourceBasePath();
   config.resolveRelativeUrls = !p_buffer.isEncrypted();
   // ViewWindow2 owns these window-scoped shortcuts. Native toolbar actions remain available.
@@ -32,7 +106,7 @@ m3::qt::EditorConfig editorConfig(const Buffer2 &p_buffer) {
 } // namespace
 
 MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent)
-    : m3::qt::MindMapEditor(editorConfig(p_buffer), p_parent), m_services(p_services) {
+    : m3::qt::MindMapEditor(editorConfig(p_services, p_buffer), p_parent), m_services(p_services) {
   m_controller = new MindMapViewWindowController(p_services, this);
   connect(this, &m3::qt::MindMapEditor::imageRequested, m_controller,
           &MindMapViewWindowController::requestImage);
@@ -77,6 +151,22 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
             SLOT(onProtectedLockingChanged(bool)));
   }
   setBuffer(p_buffer);
+}
+
+void MindMapEditor::applyConfig() {
+  auto *manager = m_services.get<ConfigMgr2>();
+  if (!manager) {
+    return;
+  }
+  const auto &settings = manager->getEditorConfig().getMindMapEditorConfig();
+  const m3::qt::EditorConfig::Style style{settings.getFontFamily(), settings.getFontPointSize()};
+  setConfirmSubtreeDeletion(settings.getConfirmSubtreeDeletion());
+  setAutoRandomBranchColor(settings.getAutoRandomBranchColor());
+  const QPointer<MindMapEditor> guard(this);
+  setUndoLimit(settings.getUndoLimit());
+  if (guard) {
+    setStyle(style);
+  }
 }
 
 bool MindMapEditor::canUseBuffer() const {

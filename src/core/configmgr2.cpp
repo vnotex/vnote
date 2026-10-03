@@ -98,6 +98,21 @@ void ConfigMgr2::restoreUserOwnedObjects(QJsonObject &p_merged, const QJsonObjec
     mergedSection[key] = rawSection.value(key);
     p_merged[section] = mergedSection;
   }
+
+  // Shortcut overrides are raw user data, including unknown keys and null values.
+  // Restore the whole object so merge-patch deletion cannot rewrite those entries.
+  const auto editorKey = QStringLiteral("editor");
+  const auto mindMapKey = QStringLiteral("mindMapEditor");
+  const auto shortcutsKey = QStringLiteral("shortcuts");
+  const auto rawShortcuts =
+      p_raw.value(editorKey).toObject().value(mindMapKey).toObject().value(shortcutsKey);
+  if (rawShortcuts.isObject()) {
+    auto editor = p_merged.value(editorKey).toObject();
+    auto mindMap = editor.value(mindMapKey).toObject();
+    mindMap[shortcutsKey] = rawShortcuts;
+    editor[mindMapKey] = mindMap;
+    p_merged[editorKey] = editor;
+  }
 }
 
 // RFC 7386 JSON Merge Patch: @p_patch (the user's document) applied on top of @p_target (the

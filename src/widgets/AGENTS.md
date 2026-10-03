@@ -312,6 +312,20 @@ for why neither print route works there.
 in forced edit mode; do not launch an external editor or depend on a `MainWindow2` pointer.
 Configuration persistence remains owned by `ConfigMgr2`; this action only opens the file.
 
+### MindMap editor settings
+
+Settings → Editor → **MindMap Editor** exposes default fallback font families, point size,
+undo limit, deletion confirmation and automatic colors for new main branches. Apply saves
+`editor.mindMapEditor` and uses `EditorPage::notifyEditorConfigChange()`'s existing one-second
+coalesced hook; editing controls alone changes nothing, and Reset reloads saved values.
+The hook reaches all registered maps, including hidden/detached windows. The wrapper's
+`applyConfig()` updates live policy and style without reloading documents or shortcuts.
+Preserve inline drafts, selection, zoom, dirty state and per-node pixel-size overrides.
+Theme changes still supply the host font/palette; explicit map defaults survive them.
+Shortcuts are JSON-only, loaded on restart. Zoom remains ViewWindow-owned, and resource bases
+and relative-URL resolution remain buffer/encryption-owned, never user preferences.
+
+
 ### Automatic section numbers
 
 Markdown windows expose **Allow Auto Section Number** in **Menu**, immediately after

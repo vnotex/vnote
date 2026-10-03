@@ -34,6 +34,7 @@
 #include "dialogs/settings/generalpage.h"
 #include "dialogs/settings/imagehostpage.h"
 #include "dialogs/settings/markdowneditorpage.h"
+#include "dialogs/settings/mindmapeditorpage.h"
 #include "dialogs/settings/notemanagementpage.h"
 #include "dialogs/settings/quickaccesspage.h"
 #include "dialogs/settings/syncpage.h"
@@ -287,6 +288,11 @@ void SettingsWidget::setupPages() {
 
     {
       auto *subPage = new MarkdownEditorPage(m_services, this);
+      addSubPage(subPage, item);
+    }
+
+    {
+      auto *subPage = new MindMapEditorPage(m_services, this);
       addSubPage(subPage, item);
     }
   }

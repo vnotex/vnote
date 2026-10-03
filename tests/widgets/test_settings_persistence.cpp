@@ -10,6 +10,7 @@
 #include <QCheckBox>
 #include <QtTest>
 
+#include <QJsonArray>
 #include <QLineEdit>
 #include <QPlainTextEdit>
 #include <QPushButton>
@@ -17,13 +18,18 @@
 
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
+#include <core/editorconfig.h>
+#include <core/mainconfig.h>
+#include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/filetypecoreservice.h>
+#include <core/services/hookmanager.h>
 #include <core/services/templateservice.h>
 #include <core/sessionconfig.h>
 #include <widgets/dialogs/settings/fileassociationpage.h>
 #include <widgets/dialogs/settings/generalpage.h>
+#include <widgets/dialogs/settings/mindmapeditorpage.h>
 #include <widgets/dialogs/settings/notemanagementpage.h>
 #include <widgets/dialogs/settings/quickaccesspage.h>
 
@@ -50,6 +56,7 @@ private slots:
 
   void test_noteManagementLoadsRecycleBinCleanupSettings();
   void test_noteManagementPersistsRecycleBinCleanupSettings();
+  void test_mindMapPreferencesPersistAndReset();
 
 private:
   void seedQuickAccess(const QStringList &p_paths);
@@ -61,6 +68,8 @@ private:
   ServiceLocator *m_services = nullptr;
   ConfigMgr2 *m_configMgr = nullptr;
   TemplateService *m_templateService = nullptr;
+  HookManager *m_hooks = nullptr;
+  QJsonObject m_originalMindMapConfig;
 };
 
 void TestSettingsPersistence::initTestCase() {
@@ -71,9 +80,14 @@ void TestSettingsPersistence::initTestCase() {
   QVERIFY(m_context != nullptr);
   m_configService = new ConfigCoreService(m_context);
   m_fileTypeService = new FileTypeCoreService(m_context, QStringLiteral("en_US"));
+  m_hooks = new HookManager();
 }
 
 void TestSettingsPersistence::cleanupTestCase() {
+  // EditorPage's shared single-shot timer captures this suite-owned service.
+  QTest::qWait(1100);
+  delete m_hooks;
+  m_hooks = nullptr;
   delete m_fileTypeService;
   m_fileTypeService = nullptr;
   delete m_configService;
@@ -89,10 +103,12 @@ void TestSettingsPersistence::init() {
   m_services = new ServiceLocator();
   m_services->registerService<ConfigCoreService>(m_configService);
   m_services->registerService<FileTypeCoreService>(m_fileTypeService);
+  m_services->registerService<HookManager>(m_hooks);
 
   m_configMgr = new ConfigMgr2(m_configService);
   m_configMgr->init();
   m_services->registerService<ConfigMgr2>(m_configMgr);
+  m_originalMindMapConfig = m_configMgr->getEditorConfig().getMindMapEditorConfig().toJson();
 
   // QuickAccessPage embeds a NoteTemplateSelector, which dereferences this
   // service unconditionally while building its combo box.
@@ -101,6 +117,8 @@ void TestSettingsPersistence::init() {
 }
 
 void TestSettingsPersistence::cleanup() {
+  m_configMgr->getEditorConfig().getMindMapEditorConfig().fromJson(m_originalMindMapConfig);
+  m_configMgr->updateMainConfig(m_configMgr->getConfig().toJson());
   m_configMgr->getCoreConfig().setAppName(QStringLiteral("VNote"));
   m_configMgr->getCoreConfig().setRecycleBinAutoCleanupEnabled(false, 0);
   m_configMgr->getCoreConfig().setRecycleBinRetentionDays(60);
@@ -300,6 +318,84 @@ void TestSettingsPersistence::test_noteManagementPersistsRecycleBinCleanupSettin
   QVERIFY(reloadedEnabled->isChecked());
   QVERIFY(reloadedRetention->isEnabled());
   QCOMPARE(reloadedRetention->value(), 90);
+}
+
+void TestSettingsPersistence::test_mindMapPreferencesPersistAndReset() {
+  auto &config = m_configMgr->getEditorConfig().getMindMapEditorConfig();
+  const QJsonObject shortcuts{{QStringLiteral("addChild"), QJsonArray{QStringLiteral("Ctrl+J")}},
+                              {QStringLiteral("toggleBold"), QJsonArray{}},
+                              {QStringLiteral("unknown"), QJsonValue::Null}};
+  config.fromJson(QJsonObject{{QStringLiteral("shortcuts"), shortcuts}});
+  MindMapEditorPage page(*m_services);
+  page.load();
+  auto *family = page.findChild<QLineEdit *>(QStringLiteral("mindMapFontFamily"));
+  auto *size = page.findChild<QSpinBox *>(QStringLiteral("mindMapFontSize"));
+  auto *limit = page.findChild<QSpinBox *>(QStringLiteral("mindMapUndoLimit"));
+  auto *confirm = page.findChild<QCheckBox *>(QStringLiteral("mindMapConfirmSubtreeDeletion"));
+  auto *colors = page.findChild<QCheckBox *>(QStringLiteral("mindMapAutoRandomBranchColor"));
+  QVERIFY(family && size && limit && confirm && colors);
+  const auto savedDefaults = config.toJson();
+  family->setText(QStringLiteral("  Missing Font, Noto Sans  "));
+  size->setValue(18);
+  limit->setValue(2);
+  confirm->setChecked(false);
+  colors->setChecked(false);
+  QCOMPARE(config.toJson(), savedDefaults);
+  QVERIFY(!page.isRestartNeeded());
+  QVERIFY(page.save());
+  QCOMPARE(config.getFontFamily(), QStringLiteral("Missing Font, Noto Sans"));
+  QCOMPARE(config.getFontPointSize(), 18);
+  QCOMPARE(config.getUndoLimit(), 2);
+  QVERIFY(!config.getConfirmSubtreeDeletion() && !config.getAutoRandomBranchColor());
+  QCOMPARE(config.toJson().value(QStringLiteral("shortcuts")).toObject(), shortcuts);
+  for (const auto &query : {QStringLiteral("font"), QStringLiteral("undo"),
+                            QStringLiteral("branch"), QStringLiteral("shortcuts")}) {
+    QVERIFY(page.search(query));
+  }
+  const auto persisted = [&] {
+    return m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"))
+        .value(QStringLiteral("editor"))
+        .toObject()
+        .value(QStringLiteral("mindMapEditor"))
+        .toObject();
+  };
+  QTRY_COMPARE(persisted(), config.toJson());
+  {
+    ConfigMgr2 freshManager(m_configService);
+    freshManager.init();
+    QCOMPARE(freshManager.getEditorConfig().getMindMapEditorConfig().toJson(), config.toJson());
+    m_services->registerService<ConfigMgr2>(&freshManager);
+    MindMapEditorPage freshPage(*m_services);
+    freshPage.load();
+    QCOMPARE(freshPage.findChild<QLineEdit *>(QStringLiteral("mindMapFontFamily"))->text(),
+             config.getFontFamily());
+    QCOMPARE(freshPage.findChild<QSpinBox *>(QStringLiteral("mindMapFontSize"))->value(), 18);
+    QCOMPARE(freshPage.findChild<QSpinBox *>(QStringLiteral("mindMapUndoLimit"))->value(), 2);
+    QVERIFY(!freshPage.findChild<QCheckBox *>(QStringLiteral("mindMapConfirmSubtreeDeletion"))
+                 ->isChecked());
+    QVERIFY(!freshPage.findChild<QCheckBox *>(QStringLiteral("mindMapAutoRandomBranchColor"))
+                 ->isChecked());
+    m_services->registerService<ConfigMgr2>(m_configMgr);
+  }
+  family->setText(QStringLiteral("Discarded"));
+  size->setValue(40);
+  limit->setValue(0);
+  confirm->setChecked(true);
+  colors->setChecked(true);
+  page.reset();
+  QCOMPARE(family->text(), QStringLiteral("Missing Font, Noto Sans"));
+  QCOMPARE(size->value(), 18);
+  QCOMPARE(limit->value(), 2);
+  QVERIFY(!confirm->isChecked() && !colors->isChecked());
+  family->clear();
+  size->setValue(0);
+  QVERIFY(page.save());
+  QVERIFY(config.getFontFamily().isEmpty());
+  QCOMPARE(config.getFontPointSize(), 0);
+  QCOMPARE(config.getUndoLimit(), 2);
+  QVERIFY(!config.getConfirmSubtreeDeletion() && !config.getAutoRandomBranchColor());
+  QCOMPARE(config.toJson().value(QStringLiteral("shortcuts")).toObject(), shortcuts);
+  QTRY_COMPARE(persisted(), config.toJson());
 }
 
 } // namespace tests

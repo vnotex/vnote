@@ -21,6 +21,7 @@ target_sources(vnote PRIVATE
     logger.cpp logger.h
     mainconfig.cpp mainconfig.h
     markdowneditorconfig.cpp markdowneditorconfig.h
+    mindmapeditorconfig.cpp mindmapeditorconfig.h
     nodeinfo.h
     noncopyable.h
     vxcorelogbridge.cpp vxcorelogbridge.h

@@ -6,7 +6,9 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QFontDatabase>
 #include <QGraphicsScene>
+#include <QGraphicsTextItem>
 #include <QGraphicsView>
 #include <QHostAddress>
 #include <QImage>
@@ -30,6 +32,9 @@
 
 #include <controllers/mindmapviewwindowcontroller.h>
 #include <core/configmgr2.h>
+#include <core/editorconfig.h>
+#include <core/mainconfig.h>
+#include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/configcoreservice.h>
@@ -249,6 +254,8 @@ private slots:
   void retargetRefreshesRelativeImagesWithoutReloading();
   void reloadAndRetargetCancelStaleHttpImages();
   void protectedImagesRefuseExternalAndRevokeOnLock();
+  void configuredShortcutsDriveRealCommands();
+  void livePreferencesPreserveDraftAndReadOnlyBuffer();
 
 private:
   Buffer2 openNote(const QString &p_relativePath, const QByteArray &p_content,
@@ -265,6 +272,7 @@ private:
   std::unique_ptr<BufferService> m_buffers;
   std::unique_ptr<ServiceLocator> m_services;
   QString m_notebookId;
+  QJsonObject m_originalMindMapConfig;
 };
 
 void TestMindMapEditor::initTestCase() { vxcore_set_test_mode(1); }
@@ -277,6 +285,7 @@ void TestMindMapEditor::init() {
   m_configCore = std::make_unique<ConfigCoreService>(m_context);
   m_config = std::make_unique<ConfigMgr2>(m_configCore.get());
   m_config->init();
+  m_originalMindMapConfig = m_config->getEditorConfig().getMindMapEditorConfig().toJson();
   m_hooks = std::make_unique<HookManager>();
   m_gate = std::make_unique<NotebookIoGate>();
   m_notebooks = std::make_unique<NotebookCoreService>(m_context);
@@ -295,6 +304,10 @@ void TestMindMapEditor::init() {
 }
 
 void TestMindMapEditor::cleanup() {
+  if (m_config) {
+    m_config->getEditorConfig().getMindMapEditorConfig().fromJson(m_originalMindMapConfig);
+    m_config->updateMainConfig(m_config->getConfig().toJson());
+  }
   m_services.reset();
   if (m_buffers) {
     m_buffers->cancelProtectedLocking();
@@ -978,6 +991,120 @@ void TestMindMapEditor::zoomStateTracksCanvasWithoutEditing() {
   QCOMPARE(editor.toJson(), committed);
   QCOMPARE(buffer.getContentRaw(), content);
   QVERIFY(dirty.isEmpty());
+}
+
+void TestMindMapEditor::configuredShortcutsDriveRealCommands() {
+  auto &settings = m_config->getEditorConfig().getMindMapEditorConfig();
+  settings.fromJson(QJsonObject{
+      {QStringLiteral("style"), QJsonObject{{QStringLiteral("font-size"), 18}}},
+      {QStringLiteral("undoLimit"), 2},
+      {QStringLiteral("confirmSubtreeDeletion"), false},
+      {QStringLiteral("autoRandomBranchColor"), false},
+      {QStringLiteral("shortcuts"),
+       QJsonObject{{QStringLiteral("addChild"),
+                    QJsonArray{QStringLiteral("Ctrl+J"), 7, QStringLiteral("not a key")}},
+                   {QStringLiteral("toggleBold"), QJsonArray{}}}}});
+  auto buffer = openNote(QStringLiteral("configured.emind"), fixture());
+  QVERIFY(buffer.isValid());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  const auto before = editor.toJson();
+  QTest::keyClick(view->viewport(), Qt::Key_B);
+  QCOMPARE(editor.toJson(), before);
+  QVERIFY(editor.selectNode(QStringLiteral("r")));
+  QTest::keyClick(view->viewport(), Qt::Key_J, Qt::ControlModifier);
+  const auto created = editor.selectedNodeId();
+  QVERIFY(!created.isEmpty() && created != QStringLiteral("r"));
+  QCOMPARE(node(editor, QStringLiteral("r")).value(QStringLiteral("children")).toArray().size(), 2);
+  QVERIFY(!node(editor, created)
+               .value(QStringLiteral("style"))
+               .toObject()
+               .contains(QStringLiteral("branchColor")));
+  auto *input = view->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  QVERIFY(input && input->isVisible());
+  QCOMPARE(input->font().pointSize(), 18);
+  QTest::keyClick(input, Qt::Key_Escape);
+  QVERIFY(editor.selectNode(created));
+  QTest::keyClick(view->viewport(), Qt::Key_Delete);
+  QVERIFY(editor.nodeJson(created).isEmpty());
+}
+
+void TestMindMapEditor::livePreferencesPreserveDraftAndReadOnlyBuffer() {
+  const QByteArray content = QByteArrayLiteral(R"({"schemaVersion":1,"rootId":"r","nodes":[
+    {"id":"r","topic":"Root","children":["a","b"]},
+    {"id":"a","topic":"Inherited"},
+    {"id":"b","topic":"Pixel override","style":{"fontSize":24}}],"crossLinks":[]})");
+  auto buffer = openNote(QStringLiteral("live.emind"), content);
+  auto readOnlyBuffer = openNote(QStringLiteral("readonly.emind"), content, true);
+  QVERIFY(buffer.isValid() && readOnlyBuffer.isValid());
+  MindMapEditor editor(*m_services, buffer), readOnly(*m_services, readOnlyBuffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  QVERIFY(readOnly.loadContent(readOnlyBuffer.getContentRaw()));
+  QVERIFY(showEditor(readOnly));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  QPointer<QPlainTextEdit> input = beginDraft(editor);
+  QVERIFY(input);
+  input->selectAll();
+  QTest::keyClicks(input, "Unsaved preference draft");
+  const auto cursor = input->textCursor();
+  const auto committed = editor.toJson();
+  const auto bufferRevision = buffer.getRevision();
+  QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
+  QSignalSpy readOnlyDirty(&readOnly, &MindMapEditor::contentsChanged);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+  const auto families = QFontDatabase::families();
+#else
+  const auto families = QFontDatabase().families();
+#endif
+  QVERIFY(!families.isEmpty());
+  const auto family = families.first().section(QLatin1Char('['), 0, 0).trimmed();
+  auto &settings = m_config->getEditorConfig().getMindMapEditorConfig();
+  settings.setFontFamily(QStringLiteral("missing-vnote-font, ") + family);
+  settings.setFontPointSize(18);
+  settings.setUndoLimit(2);
+  settings.setConfirmSubtreeDeletion(false);
+  settings.setAutoRandomBranchColor(false);
+  editor.applyConfig();
+  readOnly.applyConfig();
+  for (auto *map : {&editor, &readOnly}) {
+    auto *scene = map->findChild<QGraphicsView *>()->scene();
+    bool inherited = false, overridden = false;
+    for (auto *item : scene->items()) {
+      auto *text = qgraphicsitem_cast<QGraphicsTextItem *>(item);
+      if (!text) {
+        continue;
+      }
+      if (text->toPlainText() == QStringLiteral("Root")) {
+        QCOMPARE(text->font().pointSize(), 18);
+        QCOMPARE(text->font().family(), family);
+        inherited = true;
+      } else if (text->toPlainText() == QStringLiteral("Pixel override")) {
+        QCOMPARE(text->font().pixelSize(), 24);
+        overridden = true;
+      }
+    }
+    QVERIFY(inherited && overridden);
+    QCOMPARE(map->toJson(), committed);
+  }
+  QVERIFY(input && input->isVisible() && input->hasFocus());
+  QCOMPARE(input->font().pointSize(), 18);
+  QCOMPARE(input->toPlainText(), QStringLiteral("Unsaved preference draft"));
+  QCOMPARE(input->textCursor().position(), cursor.position());
+  QCOMPARE(input->textCursor().anchor(), cursor.anchor());
+  QVERIFY(editor.hasPendingEdit() && editor.isModified());
+  QVERIFY(readOnly.isReadOnly() && !readOnly.isModified());
+  QVERIFY(dirty.isEmpty() && readOnlyDirty.isEmpty());
+  QCOMPARE(buffer.getContentRaw(), content);
+  QCOMPARE(readOnlyBuffer.getContentRaw(), content);
+  QCOMPARE(buffer.getRevision(), bufferRevision);
+  const auto saved = editor.contentForSave();
+  QVERIFY(saved.contains(QStringLiteral("Unsaved preference draft")));
+  QVERIFY(input && input->hasFocus());
 }
 
 } // namespace tests

@@ -19,6 +19,7 @@ class ViConfig;
 namespace vnotex {
 class TextEditorConfig;
 class MarkdownEditorConfig;
+class MindMapEditorConfig;
 class PdfViewerConfig;
 class IConfigMgr;
 
@@ -100,6 +101,9 @@ public:
 
   MarkdownEditorConfig &getMarkdownEditorConfig();
   const MarkdownEditorConfig &getMarkdownEditorConfig() const;
+
+  MindMapEditorConfig &getMindMapEditorConfig();
+  const MindMapEditorConfig &getMindMapEditorConfig() const;
 
   PdfViewerConfig &getPdfViewerConfig();
   const PdfViewerConfig &getPdfViewerConfig() const;
@@ -188,6 +192,8 @@ private:
   QSharedPointer<TextEditorConfig> m_textEditorConfig;
 
   QScopedPointer<MarkdownEditorConfig> m_markdownEditorConfig;
+
+  QScopedPointer<MindMapEditorConfig> m_mindMapEditorConfig;
 
   QScopedPointer<PdfViewerConfig> m_pdfViewerConfig;
 

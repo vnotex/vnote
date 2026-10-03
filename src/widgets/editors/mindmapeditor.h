@@ -18,6 +18,7 @@ public:
   // Commits the active draft; throws std::runtime_error rather than returning stale content.
   QString contentForSave();
   void setBuffer(const Buffer2 &p_buffer);
+  void applyConfig();
   void setModified(bool p_modified);
   bool isModified() const;
 

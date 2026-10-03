@@ -10826,4 +10826,79 @@ Continue?</source>
         <translation>字(有空格)</translation>
     </message>
 </context>
+<context>
+    <name>vnotex::MindMapEditorPage</name>
+    <message>
+        <source>MindMap Editor</source>
+        <translation>思维导图编辑器</translation>
+    </message>
+    <message>
+        <source>Style</source>
+        <translation>样式</translation>
+    </message>
+    <message>
+        <source>Default (interface font)</source>
+        <translation>默认（界面字体）</translation>
+    </message>
+    <message>
+        <source>Comma-separated font families in fallback order; leave empty to use the interface font</source>
+        <translation>按回退顺序排列的字体族，以逗号分隔；留空则使用界面字体</translation>
+    </message>
+    <message>
+        <source>Font family</source>
+        <translation>字体族</translation>
+    </message>
+    <message>
+        <source> pt</source>
+        <translation> 磅</translation>
+    </message>
+    <message>
+        <source>Default</source>
+        <translation>默认</translation>
+    </message>
+    <message>
+        <source>Default text size in points; node-specific sizes still override it</source>
+        <translation>默认字号，单位为磅；节点单独设置的字号仍优先使用</translation>
+    </message>
+    <message>
+        <source>Font size</source>
+        <translation>字号</translation>
+    </message>
+    <message>
+        <source>Behavior</source>
+        <translation>行为</translation>
+    </message>
+    <message>
+        <source>Unlimited</source>
+        <translation>无限制</translation>
+    </message>
+    <message>
+        <source>Maximum retained document commands; lowering this limit discards excess undo and redo history</source>
+        <translation>保留的文档命令数上限；降低此值会丢弃超出的撤销和重做历史</translation>
+    </message>
+    <message>
+        <source>Undo limit</source>
+        <translation>撤销上限</translation>
+    </message>
+    <message>
+        <source>Confirm subtree deletion</source>
+        <translation>删除子树前确认</translation>
+    </message>
+    <message>
+        <source>Ask before deleting nodes and their descendants</source>
+        <translation>删除节点及其后代节点前询问</translation>
+    </message>
+    <message>
+        <source>Automatic branch colors</source>
+        <translation>自动分支颜色</translation>
+    </message>
+    <message>
+        <source>Assign colors to new main branches without recoloring existing nodes</source>
+        <translation>为新的主分支分配颜色，不改变现有节点的颜色</translation>
+    </message>
+    <message>
+        <source>Keyboard shortcuts can be configured in section [editor.mindMapEditor.shortcuts]</source>
+        <translation>可在 [editor.mindMapEditor.shortcuts] 节中配置快捷键</translation>
+    </message>
+</context>
 </TS>

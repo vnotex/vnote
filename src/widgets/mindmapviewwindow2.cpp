@@ -333,6 +333,9 @@ void MindMapViewWindow2::handleNodeRetargeted(const NodeIdentifier &p_newNodeId)
 void MindMapViewWindow2::handleEditorConfigChange() {
   const QPointer<MindMapViewWindow2> guard(this);
   ViewWindow2::handleEditorConfigChange();
+  if (guard && m_editor) {
+    m_editor->applyConfig();
+  }
   if (guard) {
     applyEditorPalette();
   }
