@@ -267,7 +267,7 @@ bool MindMapEditor::loadContent(const QByteArray &p_content) {
     return false;
   }
   m_loadError.clear();
-  const bool loaded = p_content.isEmpty() ? newDocument() : loadJson(p_content);
+  const bool loaded = loadJson(p_content);
   if (!guard) {
     return false;
   }

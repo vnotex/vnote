@@ -307,6 +307,11 @@ for why neither print route works there.
 - `MindMapViewWindow2` — mind map viewer
 - `WidgetViewWindow2` — generic widget-hosting window
 
+`MindMapEditor::loadContent()` delegates blank-input initialization to m3's `loadJson()`.
+Empty or JSON-whitespace-only files open with the selected **Central topic** root, not a
+blank canvas. Loading leaves the buffer clean and file bytes unchanged; edits/save persist
+the initialized map normally. Invalid nonblank input still fails closed.
+
 `SettingsWidget` adds a right-aligned, text-only **Edit JSON** toolbar action. Resolve
 `vnotex.json` through `ConfigMgr2::getFileFromConfigFolder()` and open it with `BufferService`
 in forced edit mode; do not launch an external editor or depend on a `MainWindow2` pointer.

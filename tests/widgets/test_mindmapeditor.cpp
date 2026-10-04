@@ -244,6 +244,7 @@ private slots:
   void initTestCase();
   void init();
   void cleanup();
+  void nativeSaveRoundTripKeepsHistory_data();
   void nativeSaveRoundTripKeepsHistory();
   void invalidContentFailsClosedAndRecovers();
   void pendingDraftAndRejectedSnapshot();
@@ -371,20 +372,31 @@ Buffer2 TestMindMapEditor::openProtectedNote(const QByteArray &p_content) {
   return error == VXCORE_OK ? m_buffers->openBufferByNodeId(noteId) : Buffer2();
 }
 
+void TestMindMapEditor::nativeSaveRoundTripKeepsHistory_data() {
+  QTest::addColumn<QByteArray>("input");
+  QTest::newRow("empty") << QByteArray();
+  QTest::newRow("json-whitespace") << QByteArray(" \t\r\n");
+}
+
 void TestMindMapEditor::nativeSaveRoundTripKeepsHistory() {
-  auto buffer = openNote(QStringLiteral("empty.emind"), {});
+  QFETCH(QByteArray, input);
+  auto buffer = openNote(QStringLiteral("empty.emind"), input);
   QVERIFY(buffer.isValid());
   MindMapEditor editor(*m_services, buffer);
   QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
   QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  QVERIFY(showEditor(editor));
   QVERIFY(dirty.isEmpty());
   QVERIFY(!editor.isModified());
-  QCOMPARE(buffer.getContentRaw(), QByteArray());
-  QCOMPARE(readFile(buffer.resolvedPath()), QByteArray());
+  QCOMPARE(buffer.getContentRaw(), input);
+  QCOMPARE(readFile(buffer.resolvedPath()), input);
 
   const auto rootId =
       QJsonDocument::fromJson(editor.toJson()).object().value(QStringLiteral("rootId")).toString();
-  QVERIFY(!rootId.isEmpty());
+  QCOMPARE(rootId, QStringLiteral("root"));
+  QCOMPARE(editor.selectedNodeId(), rootId);
+  QCOMPARE(node(editor, rootId).value(QStringLiteral("topic")).toString(),
+           QStringLiteral("Central topic"));
   const auto baseline = editor.contentForSave();
   const auto childId = editor.addNode(rootId, QString::fromUtf8("Native saved 世界"));
   QVERIFY(!childId.isEmpty());
