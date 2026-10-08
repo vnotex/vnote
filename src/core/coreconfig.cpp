@@ -160,6 +160,7 @@ const QStringList &CoreConfig::getAvailableLocales() {
     s_availableLocales << QStringLiteral("en_US");
     s_availableLocales << QStringLiteral("zh_CN");
     s_availableLocales << QStringLiteral("ja_JP");
+    s_availableLocales << QStringLiteral("ko_KR");
   }
 
   return s_availableLocales;

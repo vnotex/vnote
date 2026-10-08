@@ -50,7 +50,7 @@ function(windeployqt target)
             --no-quick-import
             --no-opengl-sw
             --no-compiler-runtime
-            --translations zh_CN,ja
+            --translations zh_CN,ja,ko
             --dir "${CMAKE_CURRENT_BINARY_DIR}/winqt/"
             $<TARGET_FILE:${target}>
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/generic/"

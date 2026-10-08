@@ -130,6 +130,22 @@ Bundled help lives in `docs/en_US/` and `docs/zh_CN/`. After translators load, `
 guides through `BufferService` in forced Read mode with read-only buffers; missing locales fall
 back to `en_US`.
 
+### Interface translations
+
+`CoreConfig::getAvailableLocales()` exposes `en_US`, `zh_CN`, `ja_JP` and `ko_KR`.
+Settings uses Qt's native language/country names; a changed locale takes effect after restart.
+`main()` loads `vnote`, `vtextedit`, `m3` and Qt catalogs with `QLocale` and the `_` separator
+from `app:translations`. Catalog filenames use `*_ko`, while Korean TS language attributes
+and localized JSON keys use `ko_KR`.
+
+Refresh and translate all three VNote catalogs (`vnote_zh_CN.ts`, `vnote_ja.ts`, `vnote_ko.ts`)
+under `src/data/core/translations/`. Preserve placeholders, rich text and numerus forms
+(Korean uses one form). `src/CMakeLists.txt` builds VNote QM files and packages the
+checked-in editor and Qt QM files; Windows deployment includes `zh_CN,ja,ko`.
+Korean Qt catalogs are the Qt 5.15.2 `qtbase_ko.qm` and `qtwebengine_ko.qm`, with the latter
+shipped as `qwebengine_ko.qm` to match the existing loader prefix. They also load on Qt 6.
+Startup tips and Git task labels are separate localized JSON in `src/data/extra/`.
+
 ### Single-Instance IPC
 
 `SingleInstanceGuard` keeps the live-lock/unreachable case fail-closed. Each accepted socket

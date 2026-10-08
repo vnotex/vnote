@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Add Korean interface translations, including text and mind-map editors, startup tips, Git tasks, and bundled Qt dialogs
 * Copy filesystem paths with native separators in notebook, attachment, tag, and tab actions (#2762)
 * Allow typing custom percentages in the mind-map zoom field and applying them with Enter; keep the preset dropdown on the arrow
 * Add fullscreen mind-map Presentation Mode with F9, Escape to exit, collapsed node properties on entry, and the same fading toolbar as text notes

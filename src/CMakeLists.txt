@@ -32,7 +32,8 @@ set_source_files_properties(${VX_APP_ICON_MACOS} PROPERTIES
 
 # Translations
 set(VX_TS_FILES data/core/translations/vnote_zh_CN.ts
-    data/core/translations/vnote_ja.ts)
+    data/core/translations/vnote_ja.ts
+    data/core/translations/vnote_ko.ts)
 # Generate .qm files from .ts files (lrelease)
 set_source_files_properties(${VX_TS_FILES} PROPERTIES
     OUTPUT_LOCATION "${CMAKE_CURRENT_BINARY_DIR}/translations")
@@ -43,14 +44,18 @@ add_custom_target(lrelease DEPENDS ${VX_QM_FILES})
 # submodules; refresh their .ts files explicitly, then run lrelease and commit the .qm files.
 list(APPEND VX_QM_FILES
     ${CMAKE_CURRENT_LIST_DIR}/../libs/vtextedit/src/data/translations/vtextedit_ja.qm
+    ${CMAKE_CURRENT_LIST_DIR}/../libs/vtextedit/src/data/translations/vtextedit_ko.qm
     ${CMAKE_CURRENT_LIST_DIR}/../libs/vtextedit/src/data/translations/vtextedit_zh_CN.qm
     ${CMAKE_CURRENT_LIST_DIR}/../libs/m3/src/qt/translations/m3_ja.qm
+    ${CMAKE_CURRENT_LIST_DIR}/../libs/m3/src/qt/translations/m3_ko.qm
     ${CMAKE_CURRENT_LIST_DIR}/../libs/m3/src/qt/translations/m3_zh_CN.qm
     ${CMAKE_CURRENT_LIST_DIR}/data/core/translations/qdialogbuttonbox_zh_CN.qm
     ${CMAKE_CURRENT_LIST_DIR}/data/core/translations/qtbase_ja.qm
+    ${CMAKE_CURRENT_LIST_DIR}/data/core/translations/qtbase_ko.qm
     ${CMAKE_CURRENT_LIST_DIR}/data/core/translations/qtbase_zh_CN.qm
     ${CMAKE_CURRENT_LIST_DIR}/data/core/translations/qtv_ja.qm
     ${CMAKE_CURRENT_LIST_DIR}/data/core/translations/qtv_zh_CN.qm
+    ${CMAKE_CURRENT_LIST_DIR}/data/core/translations/qwebengine_ko.qm
     ${CMAKE_CURRENT_LIST_DIR}/data/core/translations/qwebengine_zh_CN.qm
 )
 

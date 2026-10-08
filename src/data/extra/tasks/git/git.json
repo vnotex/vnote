@@ -7,7 +7,8 @@
             "label": {
                 "en_US": "Initialize",
                 "zh_CN": "初始化",
-                "ja_JP": "イニシャライズ"
+                "ja_JP": "イニシャライズ",
+                "ko_KR": "초기화"
             },
             "icon": "initialization.svg",
             "command": "git init -b main"
@@ -16,7 +17,8 @@
             "label": {
                 "en_US": "Status",
                 "zh_CN": "状态",
-                "ja_JP": "ステータス"
+                "ja_JP": "ステータス",
+                "ko_KR": "상태"
             },
             "icon": "status.svg",
             "command": "git status"
@@ -25,7 +27,8 @@
             "label": {
                 "en_US": "Commit",
                 "zh_CN": "提交",
-                "ja_JP": "全てコミット"
+                "ja_JP": "全てコミット",
+                "ko_KR": "커밋"
             },
             "icon": "commit.svg",
             "windows" :{
@@ -39,12 +42,14 @@
                     "description": {
                         "en_US": "Please input the commit message",
                         "zh_CN": "请输入提交信息",
-                        "ja_JP": "コミットメッセージを提供してください"
+                        "ja_JP": "コミットメッセージを提供してください",
+                        "ko_KR": "커밋 메시지를 입력하세요"
                     },
                     "default": {
                         "en_US": "Update note at ${magic:datetime}",
                         "zh_CN": "更新笔记于 ${magic:datetime}",
-                        "ja_JP": "アップデート ${magic:datetime}"
+                        "ja_JP": "アップデート ${magic:datetime}",
+                        "ko_KR": "${magic:datetime}에 노트 업데이트"
                     }
                 }
             ]
@@ -53,7 +58,8 @@
             "label": {
                 "en_US": "Push",
                 "zh_CN": "上传",
-                "ja_JP": "プッシュ"
+                "ja_JP": "プッシュ",
+                "ko_KR": "푸시"
             },
             "icon": "push.svg",
             "command": "git push"
@@ -62,7 +68,8 @@
             "label": {
                 "en_US": "Pull",
                 "zh_CN": "下载",
-                "ja_JP": "プル"
+                "ja_JP": "プル",
+                "ko_KR": "풀"
             },
             "icon": "pull.svg",
             "command": "git pull --no-rebase"
@@ -71,7 +78,8 @@
             "label": {
                 "en_US": "Log",
                 "zh_CN": "日志",
-                "ja_JP": "ログ"
+                "ja_JP": "ログ",
+                "ko_KR": "로그"
             },
             "icon": "history.svg",
             "command": "git log -10 --graph --pretty=format:'%h -%d %s (%cr) <%an>' --abbrev-commit"

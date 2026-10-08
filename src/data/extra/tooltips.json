@@ -1,50 +1,62 @@
 [
   {
     "en_US": "Use Add Sticker on the dashboard to add the tools you need",
-    "zh_CN": "使用仪表盘上的“添加挂件”，添加你需要的工具"
+    "zh_CN": "使用仪表盘上的“添加挂件”，添加你需要的工具",
+    "ko_KR": "대시보드에서 스티커 추가를 사용하여 필요한 도구를 추가하세요"
   },
   {
     "en_US": "Use Lock Dashboard to keep stickers from being moved or removed accidentally",
-    "zh_CN": "使用“锁定仪表盘”，防止意外移动或移除挂件"
+    "zh_CN": "使用“锁定仪表盘”，防止意外移动或移除挂件",
+    "ko_KR": "대시보드 잠금을 사용하여 스티커가 실수로 이동되거나 제거되지 않도록 하세요"
   },
   {
     "en_US": "When importing a folder shared from VNote, choose Shared folder from VNote to keep note IDs, dates, tags and attachments",
-    "zh_CN": "导入从 VNote 分享的文件夹时，选择“来自 VNote 的分享文件夹”，保留笔记的 ID、日期、标签和附件"
+    "zh_CN": "导入从 VNote 分享的文件夹时，选择“来自 VNote 的分享文件夹”，保留笔记的 ID、日期、标签和附件",
+    "ko_KR": "VNote에서 공유한 폴더를 가져올 때 VNote에서 공유한 폴더를 선택하면 노트 ID, 날짜, 태그 및 첨부 파일을 유지할 수 있습니다"
   },
   {
     "en_US": "In edit mode, drag and drop headings in the Outline panel to reorder sections of a Markdown note",
-    "zh_CN": "在编辑模式下，在大纲面板中拖放标题，可调整 Markdown 笔记中章节的顺序"
+    "zh_CN": "在编辑模式下，在大纲面板中拖放标题，可调整 Markdown 笔记中章节的顺序",
+    "ko_KR": "편집 모드에서 개요 패널의 제목을 끌어다 놓아 Markdown 노트의 섹션 순서를 변경하세요"
   },
   {
     "en_US": "VNote's first commit was on October 1, 2016",
-    "zh_CN": "VNote 的首次代码提交是在 2016 年 10 月 1 日"
+    "zh_CN": "VNote 的首次代码提交是在 2016 年 10 月 1 日",
+    "ko_KR": "VNote의 첫 번째 커밋은 2016년 10월 1일에 이루어졌습니다"
   },
   {
     "en_US": "Press Ctrl+G, then W to enter Navigation Mode and use the displayed hints to navigate without the mouse",
-    "zh_CN": "按 Ctrl+G，再按 W 进入导航模式，使用显示的提示键，无需鼠标即可导航"
+    "zh_CN": "按 Ctrl+G，再按 W 进入导航模式，使用显示的提示键，无需鼠标即可导航",
+    "ko_KR": "Ctrl+G를 누른 다음 W를 눌러 탐색 모드로 전환하고, 표시된 힌트 키를 사용하여 마우스 없이 탐색하세요"
   },
   {
     "en_US": "Use Cross Copy to easily copy and paste Markdown content into other editors",
-    "zh_CN": "使用“交叉复制”，轻松将 Markdown 内容复制并粘贴到其他编辑器"
+    "zh_CN": "使用“交叉复制”，轻松将 Markdown 内容复制并粘贴到其他编辑器",
+    "ko_KR": "교차 복사를 사용하여 Markdown 콘텐츠를 다른 편집기에 쉽게 복사하여 붙여 넣으세요"
   },
   {
     "en_US": "The Markdown editor can parse clipboard content as Markdown and download linked images when pasting",
-    "zh_CN": "Markdown 编辑器可在粘贴时将剪贴板内容解析为 Markdown，并下载其中链接的图片"
+    "zh_CN": "Markdown 编辑器可在粘贴时将剪贴板内容解析为 Markdown，并下载其中链接的图片",
+    "ko_KR": "Markdown 편집기는 붙여 넣을 때 클립보드 콘텐츠를 Markdown으로 해석하고 링크된 이미지를 다운로드할 수 있습니다"
   },
   {
     "en_US": "Use Auto Section Number to easily add section numbers to your note",
-    "zh_CN": "使用“自动章节编号”，轻松为笔记添加章节编号"
+    "zh_CN": "使用“自动章节编号”，轻松为笔记添加章节编号",
+    "ko_KR": "섹션 번호 자동 매기기를 사용하여 노트에 섹션 번호를 쉽게 추가하세요"
   },
   {
     "en_US": "Detach a tab to open it in a standalone window",
-    "zh_CN": "分离标签页，即可在独立窗口中打开笔记"
+    "zh_CN": "分离标签页，即可在独立窗口中打开笔记",
+    "ko_KR": "탭을 분리하면 독립된 창에서 노트를 열 수 있습니다"
   },
   {
     "en_US": "Create a Mind Map note to organize your ideas visually",
-    "zh_CN": "创建思维导图笔记，以可视化方式整理思路"
+    "zh_CN": "创建思维导图笔记，以可视化方式整理思路",
+    "ko_KR": "마인드맵 노트를 만들어 아이디어를 시각적으로 정리하세요"
   },
   {
     "en_US": "Use Presentation Mode to present your note at a meeting",
-    "zh_CN": "使用“演示模式”，在会议中展示笔记"
+    "zh_CN": "使用“演示模式”，在会议中展示笔记",
+    "ko_KR": "프레젠테이션 모드를 사용하여 회의에서 노트를 발표하세요"
   }
 ]
