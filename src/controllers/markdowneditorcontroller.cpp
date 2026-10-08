@@ -33,20 +33,22 @@ MarkdownEditorController::generateSectionNumbers(const QVector<vte::md::HeadingI
                                                  const QString &p_pattern,
                                                  bool p_detectHeading1ForSectionNumber) {
   QVector<QString> result(p_headings.size());
-  const auto analysis = SectionNumberUtils::analyzeStructure(
-      p_headings, [](const vte::md::HeadingInfo &p_heading) { return p_heading.m_level; },
-      p_detectHeading1ForSectionNumber);
+  const auto levelFor = [](const vte::md::HeadingInfo &p_heading) {
+    return p_heading.m_isEmpty ? 0 : p_heading.m_level;
+  };
+  const auto analysis =
+      SectionNumberUtils::analyzeStructure(p_headings, levelFor, p_detectHeading1ForSectionNumber);
   if (analysis.m_skip) {
     return result;
   }
   const auto pattern = SectionNumberUtils::normalizePattern(p_pattern);
   int maximumLevel = analysis.m_baseLevel;
   for (int i = analysis.m_firstNumberedHeading; i < p_headings.size(); ++i) {
-    maximumLevel = qMax(maximumLevel, p_headings[i].m_level);
+    maximumLevel = qMax(maximumLevel, levelFor(p_headings[i]));
   }
   QVector<int> numbers(maximumLevel + 1, 0);
   for (int i = analysis.m_firstNumberedHeading; i < p_headings.size(); ++i) {
-    const int level = p_headings[i].m_level;
+    const int level = levelFor(p_headings[i]);
     if (level <= 0) {
       continue;
     }

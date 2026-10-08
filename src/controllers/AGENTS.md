@@ -106,6 +106,15 @@ relaunch. Protected installations fail with manual-update guidance, not UAC/ACL 
 | `NotificationRouter` | Turns subsystem failure signals into `NotificationMessage`s; owns attention/dedup policy (see below) |
 | `CommentController` | The ONLY mutator of a file's `comments.json` set. Owns the active `NodeIdentifier`, debounces and coalesces add/edit/color/delete intents, receives asynchronous `CommentService` completion, and surfaces failures **without** marking the buffer modified (see below) |
 
+## Editor Section Numbering
+
+`MarkdownEditorController::generateSectionNumbers()` leaves AST-empty headings untouched
+and excludes them from counters, base-level selection and sole-H1 title detection. Use
+`HeadingInfo::m_isEmpty`, not the rendered title: image-only headings still have content.
+This lets a user pause after `#` and continue typing `#abc` without an inserted number.
+The result stays index-aligned with the parsed headings. This is an editor source-writing
+policy only; Markdown parsing and read-mode/outline numbering are unchanged.
+
 ## NotificationRouter
 
 Translates already-existing subsystem failure signals into notifications. It exists because

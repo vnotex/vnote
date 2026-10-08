@@ -57,6 +57,9 @@ class TestMarkdownEditorController : public QObject {
 private slots:
   void testSourceSectionNumbers_data();
   void testSourceSectionNumbers();
+  void testEmptySourceHeadings_data();
+  void testEmptySourceHeadings();
+  void testTypingHashWithoutSectionNumber();
 
   // ============ Group 2: getPreviewHelperConfig (static) ============
 
@@ -179,6 +182,95 @@ void TestMarkdownEditorController::testSourceSectionNumbers() {
   QCOMPARE(MarkdownEditorController::generateSectionNumbers(headings, pattern,
                                                             detectHeading1ForSectionNumber),
            expected);
+}
+
+void TestMarkdownEditorController::testEmptySourceHeadings_data() {
+  QTest::addColumn<QString>("source");
+  QTest::addColumn<QString>("expected");
+  QTest::addColumn<bool>("detectTitle");
+  QTest::newRow("bare-markers") << QStringLiteral("#\n##\n###\n####\n#####\n######")
+                                << QStringLiteral("#\n##\n###\n####\n#####\n######") << false;
+  QTest::newRow("whitespace-and-closing-markers")
+      << QStringLiteral("## \t\n### ###\n## Topic ###\n")
+      << QStringLiteral("## \t\n### ###\n## 1. Topic ###\n") << false;
+  QTest::newRow("empty-sibling") << QStringLiteral("## Alpha\n##\n## Beta\n")
+                                 << QStringLiteral("## 1. Alpha\n##\n## 2. Beta\n") << false;
+  QTest::newRow("empty-shallower-level")
+      << QStringLiteral("### Alpha\n#\n### Beta\n")
+      << QStringLiteral("### 1. Alpha\n#\n### 2. Beta\n") << false;
+  QTest::newRow("empty-before-title") << QStringLiteral("#\n# Title\n## Topic\n")
+                                      << QStringLiteral("#\n# Title\n## 1. Topic\n") << true;
+  QTest::newRow("empty-after-title") << QStringLiteral("# Title\n#\n## Topic\n")
+                                     << QStringLiteral("# Title\n#\n## 1. Topic\n") << true;
+  QTest::newRow("nontext-content")
+      << QStringLiteral("## ![](missing.png)\n## <img src=\"missing.png\">\n## \\#\n")
+      << QStringLiteral("## 1. ![](missing.png)\n## 2. <img src=\"missing.png\">\n## 3. \\#\n")
+      << false;
+}
+
+void TestMarkdownEditorController::testEmptySourceHeadings() {
+  QFETCH(QString, source);
+  QFETCH(QString, expected);
+  QFETCH(bool, detectTitle);
+  auto textConfig = QSharedPointer<vte::TextEditorConfig>::create();
+  textConfig->m_inputMode = vte::InputMode::NormalMode;
+  vte::VMarkdownEditor editor(QSharedPointer<vte::MarkdownEditorConfig>::create(textConfig),
+                              QSharedPointer<vte::TextEditorParameters>::create());
+  QSignalSpy headings(editor.getHighlighter(), &vte::MarkdownHighlighter::headingsUpdated);
+  editor.setHeadingSectionNumberProvider(
+      [detectTitle](const QVector<vte::md::HeadingInfo> &p_headings) {
+        return MarkdownEditorController::generateSectionNumbers(p_headings, QStringLiteral("1.1."),
+                                                                detectTitle);
+      });
+  editor.setHeadingSectionNumberingActive(true);
+  editor.setText(source);
+  QTRY_VERIFY_WITH_TIMEOUT(!headings.isEmpty(), 5000);
+  if (source == expected) {
+    // A no-op must survive the source numberer's inactivity interval.
+    QTest::qWait(800);
+  }
+  QTRY_COMPARE_WITH_TIMEOUT(editor.document()->toPlainText(), expected, 5000);
+}
+
+void TestMarkdownEditorController::testTypingHashWithoutSectionNumber() {
+  auto textConfig = QSharedPointer<vte::TextEditorConfig>::create();
+  textConfig->m_inputMode = vte::InputMode::NormalMode;
+  vte::VMarkdownEditor editor(QSharedPointer<vte::MarkdownEditorConfig>::create(textConfig),
+                              QSharedPointer<vte::TextEditorParameters>::create());
+  editor.setHeadingSectionNumberProvider([](const QVector<vte::md::HeadingInfo> &p_headings) {
+    // With title detection disabled, a bare H1 would otherwise receive a number.
+    return MarkdownEditorController::generateSectionNumbers(p_headings, QStringLiteral("1.1."),
+                                                            false);
+  });
+  editor.setHeadingSectionNumberingActive(true);
+  editor.resize(640, 240);
+  editor.show();
+  auto *edit = editor.getTextEdit();
+  edit->setFocus();
+  QSignalSpy headings(editor.getHighlighter(), &vte::MarkdownHighlighter::headingsUpdated);
+  QTest::keyClicks(edit, "#");
+  QTRY_VERIFY_WITH_TIMEOUT(!headings.isEmpty(), 5000);
+  QTest::qWait(800);
+  QCOMPARE(editor.document()->toPlainText(), QStringLiteral("#"));
+  QCOMPARE(edit->textCursor().position(), 1);
+  QTest::keyClicks(edit, "abc");
+  QTest::qWait(800);
+  QCOMPARE(editor.document()->toPlainText(), QStringLiteral("#abc"));
+  QCOMPARE(edit->textCursor().position(), 4);
+
+  auto cursor = edit->textCursor();
+  cursor.setPosition(1);
+  edit->setTextCursor(cursor);
+  QTest::keyClicks(edit, " ");
+  QTRY_COMPARE_WITH_TIMEOUT(editor.document()->toPlainText(), QStringLiteral("# 1. abc"), 5000);
+  cursor = edit->textCursor();
+  cursor.setPosition(1);
+  cursor.movePosition(QTextCursor::End, QTextCursor::KeepAnchor);
+  cursor.removeSelectedText();
+  edit->setTextCursor(cursor);
+  QTest::qWait(800);
+  QCOMPARE(editor.document()->toPlainText(), QStringLiteral("#"));
+  QCOMPARE(edit->textCursor().position(), 1);
 }
 
 // ============ Group 2: getPreviewHelperConfig ============
