@@ -27,6 +27,7 @@
 #include <QTemporaryDir>
 #include <QToolBar>
 #include <QUrl>
+#include <QVBoxLayout>
 #include <QWheelEvent>
 #include <QtConcurrent/QtConcurrentRun>
 
@@ -117,6 +118,8 @@ QGraphicsView *showEditor(MindMapEditor &p_editor) {
   if (!QTest::qWaitFor([view]() { return view->isVisible() && view->hasFocus(); })) {
     return nullptr;
   }
+  // Let the initial queued centering settle before tests start a user interaction.
+  QCoreApplication::processEvents();
   return view;
 }
 
@@ -245,6 +248,7 @@ private slots:
   void init();
   void cleanup();
   void nativeSaveRoundTripKeepsHistory_data();
+  void defaultZoomSurvivesHostLayout();
   void nativeSaveRoundTripKeepsHistory();
   void invalidContentFailsClosedAndRecovers();
   void pendingDraftAndRejectedSnapshot();
@@ -370,6 +374,42 @@ Buffer2 TestMindMapEditor::openProtectedNote(const QByteArray &p_content) {
                                   : committed;
                      }).result();
   return error == VXCORE_OK ? m_buffers->openBufferByNodeId(noteId) : Buffer2();
+}
+
+void TestMindMapEditor::defaultZoomSurvivesHostLayout() {
+  const auto buffer = openNote(QStringLiteral("default-zoom.mmm"), {});
+  QVERIFY(buffer.isValid());
+  QWidget host;
+  QVBoxLayout layout(&host);
+  host.resize(1000, 700);
+  host.show();
+  QCoreApplication::processEvents();
+  MindMapEditor editor(*m_services, buffer, &host);
+  QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
+  // loadContent() shows the child before ViewArea2 inserts its enclosing tab.
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  layout.addWidget(&editor);
+  QCoreApplication::processEvents();
+  QCoreApplication::processEvents();
+  auto *view = editor.findChild<QGraphicsView *>();
+  QVERIFY(view && view->isVisible());
+  QGraphicsTextItem *root = nullptr;
+  for (auto *item : view->scene()->items()) {
+    auto *label = dynamic_cast<QGraphicsTextItem *>(item);
+    if (label && label->toPlainText() == QStringLiteral("Central topic")) {
+      root = label;
+      break;
+    }
+  }
+  QVERIFY(root && root->isVisible());
+  const QRect rootRect = view->mapFromScene(root->sceneBoundingRect()).boundingRect();
+  QVERIFY(rootRect.height() >= root->boundingRect().height());
+  QVERIFY(view->viewport()->rect().contains(rootRect));
+  QCOMPARE(editor.zoomFactor(), 1.0);
+  QCOMPARE(editor.selectedNodeId(), QStringLiteral("root"));
+  QVERIFY(!editor.isZoomFit() && !editor.isModified() && dirty.isEmpty());
+  QCOMPARE(buffer.getContentRaw(), QByteArray());
+  QCOMPARE(readFile(buffer.resolvedPath()), QByteArray());
 }
 
 void TestMindMapEditor::nativeSaveRoundTripKeepsHistory_data() {
@@ -917,12 +957,13 @@ void TestMindMapEditor::zoomStateTracksCanvasWithoutEditing() {
   editor.resize(1000, 700);
   QSignalSpy changed(&editor, &m3::qt::MindMapEditor::zoomChanged);
   QVERIFY(editor.loadContent(content));
-  QVERIFY(editor.isZoomFit());
+  QVERIFY(!editor.isZoomFit());
+  QCOMPARE(editor.zoomFactor(), 1.0);
   const auto committed = editor.toJson();
   QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
   auto *view = showEditor(editor);
   QVERIFY(view);
-  QVERIFY(editor.isZoomFit());
+  QVERIFY(!editor.isZoomFit());
   QCOMPARE(editor.zoomFactor(), view->transform().m11());
 
   editor.resetZoom();
