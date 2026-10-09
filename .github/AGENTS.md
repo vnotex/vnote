@@ -10,6 +10,13 @@ See also: [../AGENTS.md](../AGENTS.md) (repo-wide rules, submodule push discipli
 
 ---
 
+## Release packaging dependencies
+
+`pack` must build `cmark_exe` before CPack runs: upstream cmark installs its CLI
+unconditionally, even though Windows package pruning removes it afterward. Release
+CI deliberately skips `all` to avoid building tests, so do not rely on a prior
+all-target build or weaken the install/pruning checks to hide a missing executable.
+
 ## Windows 7 variant (Qt 5.15) and OpenSSL
 
 The `win64-windows7` package is built against Qt 5.15.2, which has **no Schannel TLS backend**

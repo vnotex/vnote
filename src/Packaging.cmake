@@ -279,7 +279,8 @@ add_custom_target(pack
                   COMMAND ${CMAKE_CPACK_COMMAND} "--config" "${CMAKE_BINARY_DIR}/BundleConfig.cmake" "--verbose"
                   COMMENT "Running CPACK. Please wait..."
                   DEPENDS vnote)
-add_dependencies(pack lrelease)
+# CPack installs the upstream CLI before Windows package pruning removes it.
+add_dependencies(pack lrelease cmark_exe)
 
 set(CPACK_GENERATOR)
 
