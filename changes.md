@@ -1,31 +1,41 @@
 # Changes
-## Unreleased
-* Add Korean interface translations, including text and mind-map editors, startup tips, Git tasks, and bundled Qt dialogs
-* Copy filesystem paths with native separators in notebook, attachment, tag, and tab actions (#2762)
-* Allow typing custom percentages in the mind-map zoom field and applying them with Enter; keep the preset dropdown on the arrow
-* Add fullscreen mind-map Presentation Mode with F9, Escape to exit, collapsed node properties on entry, and the same fading toolbar as text notes
-* Add theme-aware Zoom Out, a Fit/100%/125%/150%/200% combo and Zoom In to the mind-map toolbar, synchronized with shortcuts and Ctrl+wheel; show Fit on opening, reloading and fitting a map
-* Use the system text color for Native theme content, including the mind-map editor
-* Add Simplified Chinese display names for Dreamy (梦幻), Jadeite (翡翠), and Pink Shock (粉红冲击)
-* Show localized theme names using UI-language preferences for Default language, including Chinese script tags, while honoring an explicit language selection at startup
-* Remove the Lucius Markdown read-mode width cap while preserving responsive content padding
-* Restyle Dreamy with a Phycat Mauve-inspired light palette, plum accents, rounded gradient headings, coordinated editor and reader syntax, and matching control icons
-* Use text-only View and Settings menus on the main toolbar; move their primary actions inside the menus and Themes under Settings, keeping the notification button
-* Translate the native mind-map editor into Simplified Chinese and Japanese and bundle its catalogs with VNote
-* Add theme-aware Lucide Undo and Redo buttons to the native mind-map toolbar
-* Add Jianguoyun WebDAV sync with VNote-managed versioned remote storage, remote clone, whole-version conflicts and resumable journaled recovery; existing generic WebDAV/Nextcloud keeps its strict ordinary-file protocol
-* Preserve encrypted key/file cohorts, dirty editor/comment drafts and separate provider recovery archives during Jianguoyun sync; retained remote history and deleted data are not automatically removed
-* Clarify Markdown image context-menu labels and use matching View Image (V) and Copy Image (G) access keys in read and edit modes
-* Use `.mmm` as the preferred built-in MindMap suffix while retaining `.emind` support; saved custom suffix settings remain unchanged
-* Show underlying sync setup error details in the New Notebook dialog, including the failed WebDAV check, HTTP status and missing or weak ETags
-* Encryption setup records a persistent notebook initialization marker instead of scanning all folder metadata; legacy notebooks require explicit confirmation before first setup when their encryption history is unknown
-* Note conversion no longer audits unrelated folder metadata; missing known keys still require recovery, and cancelling legacy confirmation leaves notes and configuration unchanged
-* Place Sync method below Type in the shared notebook form; keep it read-only and selectable in Manage Notebooks
-* Fix a use-after-free when a notebook closes after its explorer widget has been destroyed
-* Add WebDAV notebook sync with ordinary editable remote files, secure per-device credentials, remote open, conflict choices, cancellation and journaled recovery
-* Preserve open editor/comment drafts during WebDAV sync and refresh clean editors, previews and notebook trees after incoming changes
-* Support dedicated existing HTTP or HTTPS WebDAV collections with safe conditional writes; HTTPS is recommended because HTTP exposes credentials and notebook data; retain empty remote folders rather than risk recursive deletion
-* Fix table previews and source formatting for tables immediately after paragraph or list-item text, without requiring a blank line (#2763)
+## v4.9.0
+A feature release with WebDAV synchronization, a native mind-map editor and opt-in Windows updates on top of VNote 4.8.0:
+
+* **Notebook synchronization**
+    * Sync notebooks through WebDAV with ordinary editable remote files, secure per-device credentials, remote open, conflict choices, cancellation and journaled recovery
+    * Generic WebDAV and Nextcloud use dedicated existing collections with conditional writes; HTTPS is recommended because HTTP exposes credentials and notebook data, and empty remote folders are retained rather than recursively deleted
+    * Add Jianguoyun sync with VNote-managed versioned remote storage, remote clone, whole-version conflicts and resumable recovery; retained remote history and deleted data are not automatically removed
+    * Preserve encrypted key/file cohorts and open editor/comment drafts during sync, retain separate provider recovery archives, and refresh clean editors, previews and notebook trees after incoming changes
+    * Show underlying setup failures in New Notebook, including failed WebDAV checks, HTTP status and missing or weak ETags; display the sync method below notebook type and keep it selectable in Manage Notebooks
+* **Mind maps**
+    * Replace the web-based mind-map view with the native m3 editor, including theme-aware formatting controls, Undo and Redo, links, images, search and an outline
+    * Use `.mmm` as the preferred built-in suffix while retaining `.emind` support and existing custom suffix settings
+    * Add persistent settings for default fonts, text size, undo history, subtree-deletion confirmation and automatic branch colors; applying settings updates open maps without reloading them
+    * Open and reload maps at 100% zoom; toolbar zoom controls stay synchronized with shortcuts and Ctrl+wheel, offer Fit and percentage presets, and accept custom percentages with Enter
+    * Present mind maps fullscreen with F9 and exit with Escape; node properties start collapsed and the toolbar fades like text-note presentations
+    * Empty mind-map files open with a Central topic ready to edit, and saving no longer closes an active inline edit
+* **Markdown and images**
+    * Preview and format tables immediately after paragraph or list-item text without requiring a blank line (#2763)
+    * Skip empty headings when generating editor section numbers; turning Allow Auto Section Number off restores only source prefixes changed in the current editor session, preserving manual numbering
+    * Put image actions directly in the context menu, align View Image (V) and Copy Image (G) access keys in read and edit modes, and add proportional percentage resizing to Set Image Size
+    * Support Shift+wheel horizontal scrolling in the text editor
+* **Themes and interface**
+    * Restyle Dreamy with a Phycat Mauve-inspired light palette, plum accents, rounded gradient headings, coordinated editor and reader syntax, and matching control icons
+    * Use system text colors for Native theme content, including mind maps, and remove the Lucius Markdown read-mode width cap while preserving responsive padding
+    * Localized theme names follow UI-language preferences for Default language, including Chinese script tags; add Simplified Chinese names for Dreamy, Jadeite and Pink Shock
+    * Use text-only View and Settings menus on the main toolbar, move Themes under Settings, and rename the window submenu to Windows List
+    * Hide Comments for unsupported views, collapse empty editor status rows, and size notification popups to their content
+    * Copy filesystem paths with native separators in notebook, attachment, tag and tab actions (#2762)
+* **Encrypted notes and reliability**
+    * Record notebook encryption initialization explicitly instead of scanning all folder metadata; legacy notebooks with unknown encryption history require confirmation before first setup
+    * Note conversion no longer audits unrelated folder metadata; missing known keys still require recovery, and cancelling legacy confirmation leaves notes and configuration unchanged
+    * Fix a use-after-free when a notebook closes after its explorer widget is destroyed, and improve delivery of files opened through a secondary VNote instance
+* **Updates and packaging**
+    * Add an explicit Windows Update Now notification action using an external updater; it verifies signed full packages before requesting shutdown, preserves portable configuration and unowned files, and retains a recovery backup
+    * Ordinary update checks remain check-only, with Check Release available; protected installations receive manual-update guidance rather than elevation, and reopening follows an accepted shutdown
+    * Add a separate universal macOS package targeting 12.1 alongside the macOS 13+ package; use Schannel for Git sync in Windows 7 builds
+* **Translations**: Simplified Chinese (zh_CN) and Japanese (ja) catalogs updated, including the native mind-map editor; add Korean interface translations for VNote, text and mind-map editors, startup tips, Git tasks and bundled Qt dialogs
 
 ## v4.8.0
 A feature release with Markdown presentations, search-and-replace across notes, new light themes and more flexible encrypted notes on top of VNote 4.7.0:
