@@ -2509,6 +2509,15 @@ bool BufferService::beginNoteConversion(const QString &p_bufferId, QByteArray *p
   }
 }
 
+bool BufferService::isNoteConversionWritable(const QString &p_bufferId) const {
+  if (QThread::currentThread() != thread() || !m_noteConversions ||
+      !m_noteConversions->entries.contains(p_bufferId)) {
+    return false;
+  }
+  // Converting freezes editor writes; it must not veto its own conversion.
+  return (m_bufferFlags.value(p_bufferId) & (ReadOnly | Converting)) == Converting;
+}
+
 void BufferService::endNoteConversion(const QString &p_bufferId, bool p_committed) {
   if (!m_noteConversions)
     return;

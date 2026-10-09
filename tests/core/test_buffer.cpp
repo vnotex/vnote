@@ -295,6 +295,7 @@ private slots:
   void testEncryptedNoteConversionPublishesCurrentWriter();
   void testUnloadedEncryptedNoteConversionKeepsPersistedBody();
   void testPlainNoteConversionStillPublishesCurrentWriter();
+  void testNoteConversionRejectsReadOnlyUpgrade();
 
   // Editor snapshots must fail closed without losing the live writer.
   void testRejectedWriterSnapshots_data();
@@ -1132,10 +1133,13 @@ void TestBuffer::testEncryptedNoteConversionCancellationKeepsWriter() {
   {
     QVERIFY(buffers.beginProtectedOperation());
     const auto operation = qScopeGuard([&]() { buffers.endProtectedOperation(); });
+    QVERIFY(!buffers.isNoteConversionWritable(note.id()));
     QVERIFY(buffers.beginNoteConversion(note.id(), &captured));
     QCOMPARE(captured, editor.toUtf8());
     QVERIFY(note.isReadOnly());
+    QVERIFY(buffers.isNoteConversionWritable(note.id()));
     buffers.endNoteConversion(note.id(), false);
+    QVERIFY(!buffers.isNoteConversionWritable(note.id()));
     QVERIFY(!note.isReadOnly());
     QVERIFY(buffers.isDirty(note.id()));
     QCOMPARE(readReplacementFile(sourcePath), ciphertext);
@@ -1491,8 +1495,13 @@ void TestBuffer::testPlainNoteConversionStillPublishesCurrentWriter() {
   QVERIFY(buffers.isDirty(note.id()));
   QByteArray captured;
   // Ordinary capture deliberately has no beginProtectedOperation() scope or authenticated editor.
+  QVERIFY(!buffers.isNoteConversionWritable(note.id()));
   QVERIFY(buffers.beginNoteConversion(note.id(), &captured));
   QCOMPARE(captured, editor.toUtf8());
+  QVERIFY(note.isReadOnly());
+  QVERIFY(buffers.isNoteConversionWritable(note.id()));
+  QVERIFY(!note.save());
+  QCOMPARE(readReplacementFile(sourcePath), QByteArrayLiteral("ordinary disk body"));
   QString targetPath;
   QCOMPARE(runNoteConversionWorker(queues, gate, notebookId,
                                    [&]() {
@@ -1515,6 +1524,42 @@ void TestBuffer::testPlainNoteConversionStillPublishesCurrentWriter() {
   QCOMPARE(note.nodeId().relativePath, targetPath);
   QCOMPARE(note.editorType(), QStringLiteral("markdown"));
   QCOMPARE(note.getContentRaw(), editor.toUtf8());
+}
+
+void TestBuffer::testNoteConversionRejectsReadOnlyUpgrade() {
+  const QString path = QStringLiteral("conversion-read-only.md");
+  QVERIFY(!m_notebookService->createFile(m_notebookId, QString(), path).isEmpty());
+  auto note = m_bufferService->openBuffer({m_notebookId, path});
+  QVERIFY(note.isValid());
+  const auto cleanup = qScopeGuard([&]() {
+    m_bufferService->endNoteConversion(note.id(), false);
+    m_bufferService->closeBuffer(note.id());
+  });
+  const QByteArray original("read-only conversion must preserve these bytes");
+  QVERIFY(note.setContentRaw(original));
+  QVERIFY(note.save());
+  const auto sourcePath = note.resolvedPath();
+  QVERIFY(!m_bufferService->isNoteConversionWritable(QString()));
+  QVERIFY(!m_bufferService->isNoteConversionWritable(note.id()));
+
+  QByteArray captured;
+  QVERIFY(m_bufferService->beginNoteConversion(note.id(), &captured));
+  QVERIFY(m_bufferService->isNoteConversionWritable(note.id()));
+  QCOMPARE(captured, original);
+  // A real read-only override acquired during confirmation must not be mistaken
+  // for the conversion's temporary editing freeze.
+  const auto readOnly = m_bufferService->getBufferHandle(note.id(), true);
+  QVERIFY(readOnly.isReadOnly());
+  QVERIFY(!m_bufferService->isNoteConversionWritable(note.id()));
+  QVERIFY(!note.save());
+  m_bufferService->endNoteConversion(note.id(), false);
+  QVERIFY(!m_bufferService->isNoteConversionWritable(note.id()));
+  QVERIFY(note.isReadOnly());
+  QVERIFY(!m_bufferService->beginNoteConversion(note.id(), &captured));
+  QVERIFY(!note.save());
+  QCOMPARE(readReplacementFile(sourcePath), original);
+  QVERIFY(m_bufferService->closeBuffer(note.id()));
+  QVERIFY(!m_bufferService->isNoteConversionWritable(note.id()));
 }
 
 void TestBuffer::testRejectedWriterSnapshots_data() {

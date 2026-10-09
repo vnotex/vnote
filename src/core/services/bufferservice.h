@@ -347,6 +347,10 @@ public:
   // Failed writer capture restores the reservation instead of falling back to raw bytes.
   bool beginNoteConversion(const QString &p_bufferId, QByteArray *p_outBody);
   void endNoteConversion(const QString &p_bufferId, bool p_committed);
+  // GUI-thread query for the reserved conversion only, not ordinary editor writes.
+  // Requires a live reservation without a genuine read-only override. The caller
+  // must still validate the notebook's current writability and captured checkpoint.
+  bool isNoteConversionWritable(const QString &p_bufferId) const;
 
   // ============ External Change Detection ============
 

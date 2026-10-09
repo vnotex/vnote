@@ -59,6 +59,35 @@ log messages may still contain local paths and underlying error text; review bef
 sharing. A generic libgit2 "redirects or authentication replays" error remains ambiguous:
 callback counts help distinguish the paths, but are not an HTTP status trace.
 
+## Note Conversion Diagnostics
+
+Encrypt/Decrypt Note records `NoteConversion` preparation results, apply start/success
+and cancellation at INFO, and failures at WARNING. Normal launches include these
+entries; `--verbose` is not required. Do not use `--quiet` when collecting a report.
+Share the full `vnote.log`, VNote version and approximate attempt time, and say whether
+the note was open and had unsaved edits. Never share a password or encryption key.
+
+Correlate entries by `notebookId`, `fileId`, and `bufferId` when present. `encrypt true`
+means encryption, `false` means decryption. Read the failure's `phase`, numeric `code`
+and `recoveryRequired` fields:
+
+- `checkpoint` includes a separate rejection `reason`: node config/identity/type,
+  encryption/editor state, node path, notebook read-only state, view/buffer
+  participants, comments, buffer reservation/read-only state, revision, save queue
+  or protected operations. Revision refusals also record expected/current revisions.
+- `maintenance` or `io-gate` means conversion could not acquire its exclusion boundary.
+- `key-setup`, `protect` or `unprotect` means the backend failed, not the GUI checkpoint.
+  For example, `protect` with code 18 (`VXCORE_ERR_FILE_CHANGED_OUTSIDE`) means the
+  backend detected an external change; it is distinct from checkpoint code 10
+  (`VXCORE_ERR_INVALID_STATE`). The phase/code does not identify every backend cause.
+- `release-buffer`, `reopen-buffer`, `restore-workspace` or `restore-views` identifies
+  a failure after storage conversion. Follow the recovery guidance in the dialog;
+  do not assume the original plaintext file is still the authoritative note.
+
+These new entries contain opaque identifiers, direction, counts, revisions and status
+only, never paths, filenames, note text, passwords, keys or source hashes. Existing log
+messages may contain paths and underlying error text; review the log before sharing.
+
 ## Rule Precedence (CANONICAL)
 
 Qt logging rules apply in order; the LAST matching rule wins. `installDefaultLoggingRules()` sets:

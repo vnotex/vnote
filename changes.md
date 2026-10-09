@@ -1,4 +1,8 @@
 # Changes
+## Unreleased
+* Fix encryption/decryption of open notes incorrectly rejecting their own temporary editing freeze as a read-only change
+* Add privacy-safe note-conversion logs identifying failed checkpoints and backend phases
+
 ## v4.9.0
 A feature release with WebDAV synchronization, a native mind-map editor and opt-in Windows updates on top of VNote 4.8.0:
 

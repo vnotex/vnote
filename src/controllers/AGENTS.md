@@ -289,6 +289,14 @@ drains saves/comments and passes the body plus expected source SHA-256 through
 note references, or rewrite content. `LegacyImageMigrationController` is only for
 legacy image migration; it must not contain encryption planning or retention code.
 
+The apply checkpoint must use `BufferService::isNoteConversionWritable()` for a
+reserved buffer, not `Buffer2::isReadOnly()`: the conversion's own `Converting` flag
+intentionally freezes editor writes. Missing reservations and genuine read-only
+overrides still reject conversion; keep the live notebook read-only, revision,
+participant, save/comment and source-hash checks. Conversion diagnostics identify
+checkpoint reasons and backend phases without logging note bodies, paths, passwords
+or hashes; see [logging diagnostics](../../docs/logging.md#note-conversion-diagnostics).
+
 Dialogs must disclose that separate image/attachment files and comment sidecars
 stay unencrypted. Attachments keep normal Open/Open Folder/Copy Path operations.
 Encrypted note bodies cannot be exported or printed. Do not add a plaintext-copy

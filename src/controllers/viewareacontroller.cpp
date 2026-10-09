@@ -11,6 +11,7 @@
 #include <QFutureWatcher>
 #include <QGuiApplication>
 #include <QRegularExpression>
+#include <QScopeGuard>
 #include <QScopedValueRollback>
 #include <QSet>
 #include <QThread>
@@ -172,6 +173,13 @@ ViewAreaController::prepareNoteConversion(const NodeIdentifier &p_nodeId, bool p
   conversion->m_nodeId = p_nodeId;
   auto &state = *conversion->m_state;
   state.encrypt = p_encrypt;
+  const auto logPreparation = qScopeGuard([&state, result = conversion.get()]() {
+    auto log = result->m_error == VXCORE_OK ? qInfo() : qWarning();
+    log << "NoteConversion phase=prepare event=finish"
+        << "notebookId" << result->m_nodeId.notebookId << "fileId" << state.fileId << "encrypt"
+        << state.encrypt << "code" << result->m_error << "buffers" << state.bufferIds.size()
+        << "views" << state.windowIds.size();
+  });
   auto *notebooks = m_services.get<NotebookCoreService>();
   auto *buffers = m_services.get<BufferService>();
   auto *comments = m_services.get<CommentService>();
@@ -367,6 +375,9 @@ void ViewAreaController::cancelNoteConversion(
     return;
   }
   auto &state = *p_conversion->m_state;
+  qInfo() << "NoteConversion phase=cancel event=start"
+          << "notebookId" << p_conversion->m_nodeId.notebookId << "fileId" << state.fileId
+          << "encrypt" << state.encrypt << "code" << p_conversion->m_error;
   auto *buffers = m_services.get<BufferService>();
   for (const auto &id : state.bufferIds) {
     buffers->endNoteConversion(id, false);
@@ -389,6 +400,8 @@ VxCoreError ViewAreaController::applyNoteConversion(
     PreparedNotebookEncryption *p_setup) {
   if (!p_conversion || p_conversion->m_error != VXCORE_OK || !p_conversion->m_state->active ||
       p_conversion->m_state->blocked) {
+    qWarning() << "NoteConversion phase=validate event=reject reason=inactive-conversion"
+               << "code" << VXCORE_ERR_INVALID_STATE;
     return VXCORE_ERR_INVALID_STATE;
   }
   auto &state = *p_conversion->m_state;
@@ -399,7 +412,14 @@ VxCoreError ViewAreaController::applyNoteConversion(
   auto *queues = m_services.get<SyncWorkQueueManager>();
   auto *gate = m_services.get<NotebookIoGate>();
   auto *workspaces = m_services.get<WorkspaceCoreService>();
+  const char *phase = "validate";
+  qInfo() << "NoteConversion phase=apply event=start"
+          << "notebookId" << nodeId.notebookId << "fileId" << state.fileId << "encrypt"
+          << state.encrypt;
   const auto fail = [&](VxCoreError p_error, const QString &p_message, bool p_blocked) {
+    qWarning() << "NoteConversion event=fail" << "phase" << phase << "notebookId"
+               << nodeId.notebookId << "fileId" << state.fileId << "encrypt" << state.encrypt
+               << "code" << p_error << "recoveryRequired" << p_blocked;
     p_conversion->m_error = p_error;
     p_conversion->m_errorMessage = p_message;
     if (p_blocked) {
@@ -420,31 +440,53 @@ VxCoreError ViewAreaController::applyNoteConversion(
   if (!workspaces) {
     return fail(VXCORE_ERR_INVALID_STATE, tr("The workspace service is unavailable."), false);
   }
+  phase = "maintenance";
   state.maintenance = queues->tryAcquireMaintenance({nodeId.notebookId});
   if (!state.maintenance) {
     return fail(VXCORE_ERR_SYNC_IN_PROGRESS,
                 tr("The notebook is busy syncing. Retry after sync finishes."), false);
   }
+  const auto rejectCheckpoint = [&](const char *p_reason, const QString &p_bufferId = QString()) {
+    qWarning() << "NoteConversion phase=checkpoint event=reject" << "reason" << p_reason
+               << "notebookId" << nodeId.notebookId << "fileId" << state.fileId << "bufferId"
+               << p_bufferId << "encrypt" << state.encrypt;
+    return false;
+  };
   const auto checkpointCurrent = [&]() {
     VxCoreError configError = VXCORE_OK;
     const auto nodeConfig =
         notebooks->getFolderConfig(nodeId.notebookId, nodeId.relativePath, &configError);
     const auto metadata = nodeConfig.value(QLatin1String(vxcore::kJsonKeyMetadata)).toObject();
-    if (configError != VXCORE_OK ||
-        nodeConfig.value(QLatin1String(vxcore::kJsonKeyId)).toString() != state.fileId ||
-        nodeConfig.value(QLatin1String(vxcore::kJsonKeyType)).toString() ==
-            QLatin1String("folder") ||
-        metadata.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool() == state.encrypt ||
-        nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive) == state.encrypt ||
-        (!state.encrypt && metadata.value(QLatin1String(vxcore::kJsonKeyEditorType)).toString() !=
-                               state.editorType)) {
-      return false;
+    if (configError != VXCORE_OK) {
+      qWarning() << "NoteConversion phase=checkpoint" << "configCode" << configError;
+      return rejectCheckpoint("node-config");
     }
-    if (notebooks->getNodePathById(nodeId.notebookId, state.fileId) != nodeId.relativePath ||
-        notebooks->isNotebookReadOnly(nodeId.notebookId) ||
-        m_view->findWindowIdsByNode(nodeId, false) != state.windowIds ||
-        !comments->isFlushCheckpointCurrent(state.comments)) {
-      return false;
+    if (nodeConfig.value(QLatin1String(vxcore::kJsonKeyId)).toString() != state.fileId) {
+      return rejectCheckpoint("file-identity");
+    }
+    if (nodeConfig.value(QLatin1String(vxcore::kJsonKeyType)).toString() ==
+        QLatin1String("folder")) {
+      return rejectCheckpoint("node-type");
+    }
+    if (metadata.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool() == state.encrypt ||
+        nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive) == state.encrypt) {
+      return rejectCheckpoint("encryption-state");
+    }
+    if (!state.encrypt &&
+        metadata.value(QLatin1String(vxcore::kJsonKeyEditorType)).toString() != state.editorType) {
+      return rejectCheckpoint("editor-type");
+    }
+    if (notebooks->getNodePathById(nodeId.notebookId, state.fileId) != nodeId.relativePath) {
+      return rejectCheckpoint("node-path");
+    }
+    if (notebooks->isNotebookReadOnly(nodeId.notebookId)) {
+      return rejectCheckpoint("notebook-read-only");
+    }
+    if (m_view->findWindowIdsByNode(nodeId, false) != state.windowIds) {
+      return rejectCheckpoint("view-participants");
+    }
+    if (!comments->isFlushCheckpointCurrent(state.comments)) {
+      return rejectCheckpoint("comments");
     }
     QStringList currentIds;
     for (const auto &value : buffers->listBuffers()) {
@@ -455,21 +497,38 @@ VxCoreError ViewAreaController::applyNoteConversion(
       }
     }
     if (currentIds != state.bufferIds) {
-      return false;
+      return rejectCheckpoint("buffer-participants");
     }
     for (const auto &id : state.bufferIds) {
       const auto handle = buffers->getBufferHandle(id);
-      if (!handle.isValid() || handle.isEncrypted() == state.encrypt || handle.isReadOnly() ||
-          buffers->currentRevision(id) != state.revisions.value(id) ||
-          buffers->isSaveQueueBusy(id) ||
-          (!state.encrypt &&
-           (!buffers->protectedBufferOperationsIdle(id) ||
-            (state.hasBodyOverride && handle.editorType() != state.editorType)))) {
-        return false;
+      if (!handle.isValid()) {
+        return rejectCheckpoint("buffer-missing", id);
+      }
+      if (handle.isEncrypted() == state.encrypt) {
+        return rejectCheckpoint("buffer-encryption-state", id);
+      }
+      if (!buffers->isNoteConversionWritable(id)) {
+        return rejectCheckpoint("buffer-reservation-or-read-only", id);
+      }
+      const auto revision = buffers->currentRevision(id);
+      if (revision != state.revisions.value(id)) {
+        qWarning() << "NoteConversion phase=checkpoint" << "bufferId" << id << "expectedRevision"
+                   << state.revisions.value(id) << "revision" << revision;
+        return rejectCheckpoint("buffer-revision", id);
+      }
+      if (buffers->isSaveQueueBusy(id)) {
+        return rejectCheckpoint("save-queue", id);
+      }
+      if (!state.encrypt && !buffers->protectedBufferOperationsIdle(id)) {
+        return rejectCheckpoint("protected-operations", id);
+      }
+      if (!state.encrypt && state.hasBodyOverride && handle.editorType() != state.editorType) {
+        return rejectCheckpoint("buffer-editor-type", id);
       }
     }
     return true;
   };
+  phase = "io-gate";
   const VxCoreError error = runEncryptionWorker([&]() {
     NotebookIoGate::ScopedTryLock lock(*gate, nodeId.notebookId, 5000);
     if (!lock.isLocked()) {
@@ -477,22 +536,28 @@ VxCoreError ViewAreaController::applyNoteConversion(
     }
     // Read the GUI-owned writer/revision/participant state on its own thread.
     // No dialogs, nested event processing, or KDF occurs while this gate is held.
+    phase = "checkpoint";
     bool current = false;
-    QMetaObject::invokeMethod(
-        this, [&]() { current = checkpointCurrent(); }, Qt::BlockingQueuedConnection);
+    if (!QMetaObject::invokeMethod(
+            this, [&]() { current = checkpointCurrent(); }, Qt::BlockingQueuedConnection)) {
+      qWarning() << "NoteConversion phase=checkpoint event=reject reason=dispatch-failed";
+    }
     if (!current) {
       return VXCORE_ERR_INVALID_STATE;
     }
     if (!state.encrypt) {
+      phase = "unprotect";
       return notebooks->unprotectNote(nodeId, state.hasBodyOverride ? &state.capturedBody : nullptr,
                                       state.sourceSha256, &p_conversion->m_targetPath);
     }
     if (p_setup && p_setup->isValid()) {
+      phase = "key-setup";
       const VxCoreError setupError = notebooks->commitNotebookEncryption(*p_setup);
       if (setupError != VXCORE_OK) {
         return setupError;
       }
     }
+    phase = "protect";
     return notebooks->protectNote(nodeId, state.capturedBody, state.sourceSha256,
                                   &p_conversion->m_targetPath);
   });
@@ -518,6 +583,7 @@ VxCoreError ViewAreaController::applyNoteConversion(
 
   // Conversion succeeded only after authenticated publication and cleanup.
   // Closing before storage success would discard the original pending backup.
+  phase = "release-buffer";
   const auto workspaceSnapshot = workspaces->listWorkspaces();
   for (const auto &id : state.bufferIds) {
     buffers->endNoteConversion(id, true);
@@ -527,6 +593,7 @@ VxCoreError ViewAreaController::applyNoteConversion(
                   true);
     }
   }
+  phase = "reopen-buffer";
   const QString targetPath = notebooks->getNodePathById(nodeId.notebookId, state.fileId);
   if (targetPath != p_conversion->m_targetPath) {
     return fail(VXCORE_ERR_INVALID_STATE, tr("The converted note's identity changed."), true);
@@ -543,6 +610,7 @@ VxCoreError ViewAreaController::applyNoteConversion(
                 tr("The converted note is durable, but could not be reopened."), true);
   }
   buffers->setBufferEncoding(reopened.id(), state.encoding);
+  phase = "restore-workspace";
   for (const auto &value : workspaceSnapshot) {
     const auto object = value.toObject();
     const QString workspaceId = object.value(QLatin1String(vxcore::kJsonKeyId)).toString();
@@ -596,6 +664,7 @@ VxCoreError ViewAreaController::applyNoteConversion(
       break;
     }
   };
+  phase = "restore-views";
   if (!m_view->recreateNoteViews(state.windowIds, reopened,
                                  state.encrypt ? reopened.editorType() : state.editorType,
                                  replaceHidden)) {
@@ -636,6 +705,9 @@ VxCoreError ViewAreaController::applyNoteConversion(
     m_fileCheckInProgress = false;
   }
   p_conversion->m_error = VXCORE_OK;
+  qInfo() << "NoteConversion phase=apply event=finish"
+          << "notebookId" << nodeId.notebookId << "fileId" << state.fileId << "encrypt"
+          << state.encrypt << "code" << VXCORE_OK;
   emit windowsChanged();
   emit currentViewWindowChanged();
   return VXCORE_OK;
