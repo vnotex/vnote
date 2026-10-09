@@ -342,7 +342,19 @@ Markdown windows expose **Allow Auto Section Number** in **Menu**, immediately a
 The default-on permission lives only in the window's `OutlineProvider`, never in configuration or
 outline snapshots. OFF vetoes read decoration, edit-mode source numbering, and dock/popup outline
 numbering; ON respects each existing global preference. Settings changes, mode changes and new
-outline snapshots must not reset it. Disabling does not remove numbers already written to source.
+outline snapshots must not reset it. Explicitly switching this menu permission OFF also restores
+only source prefixes changed by VNote in the current editor session, as one standalone undo step.
+Overwritten manual prefixes are restored; already-matching/manual prefixes remain untouched.
+Ownership is not inferred on reopen, or transferred through replacement/cut-paste/reorder of
+tracked spans. Exact undo checkpoints can restore their previous lineage. Global preference
+changes, provider clearing and temporary mode suspension remain nondestructive.
+
+Restoration requires a writable, stable, current editor and must not overwrite another split's
+unsaved content. Without an existing editor it does nothing. Unchanged restoration creates no
+source edit, dirty state or revision/cache update; unavailable restoration shows guidance and
+leaves the permission OFF so the user can re-toggle to retry. Read mode uses the same hidden
+document, commits its encoded content and updates the viewer text in place, preserving undo
+history and the top line rather than resetting the page.
 
 Markdown read-mode numbering lives in `src/data/extra/web/js/sectionnumber.js`, not the parser.
 `MarkdownViewerAdapter::sectionNumberOptions` retains per-view enablement and the shared

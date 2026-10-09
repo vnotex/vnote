@@ -560,6 +560,9 @@ void MarkdownViewWindow2::addAdditionalMenuActions(QMenu *p_menu) {
       m_outlineProvider->setAutoSectionNumberAllowed(p_checked);
       updateSectionNumberOptions();
       updateEditSectionNumberOptions(true);
+      if (!p_checked) {
+        removeSessionHeadingSectionNumbers();
+      }
     });
   }
 
@@ -1790,6 +1793,78 @@ void MarkdownViewWindow2::updateEditSectionNumberOptions(bool p_activate) {
   m_editor->setHeadingSectionNumberingActive(
       p_activate && m_mode == ViewWindowMode::Edit && m_propagateEditorToBuffer &&
       !m_switchingMode && buffer.isValid() && !buffer.isReadOnly() && !m_editor->isReadOnly());
+}
+
+void MarkdownViewWindow2::removeSessionHeadingSectionNumbers() {
+  // Without an editor, this window has no session-owned source prefixes.
+  if (!m_editor) {
+    return;
+  }
+  const auto unavailable = [this]() {
+    showMessage(tr("Section numbers could not be restored now. Auto section numbering remains off. "
+                   "Make this note current and editable, then turn Allow Auto Section Number on "
+                   "and off to retry."));
+  };
+  auto &buffer = getBuffer();
+  auto *bufferService = getServices().get<BufferService>();
+  const bool readMode = m_mode == ViewWindowMode::Read;
+  if (!buffer.isValid() || buffer.isReadOnly() || !isEnabled() || isNoteConversionFrozen() ||
+      !m_editor->isEnabled() || m_editor->isReadOnly() || m_switchingMode ||
+      m_removingHeadingSectionNumbers || !bufferService ||
+      bufferService->isContentReplacementActive(buffer.id()) ||
+      (buffer.isEncrypted() && bufferService->isProtectedLocking()) ||
+      (readMode ? m_propagateEditorToBuffer || !adapter()
+                : m_mode != ViewWindowMode::Edit || !m_propagateEditorToBuffer)) {
+    unavailable();
+    return;
+  }
+  QScopedValueRollback<bool> removing(m_removingHeadingSectionNumbers, true);
+
+  // A different split may still own unsaved text. Never replace its writer with
+  // this document until both the writer and any external revision agree.
+  QString writerText;
+  if (!bufferService->captureActiveWriterContent(buffer.id(), &writerText) ||
+      writerText != m_editor->getText()) {
+    unavailable();
+    return;
+  }
+  if (buffer.getRevision() != m_lastKnownRevision) {
+    VxCoreError error = VXCORE_OK;
+    const auto raw = buffer.peekContentRaw(&error);
+    const auto encoded = bufferService->encodeContent(buffer.id(), writerText);
+    if (error != VXCORE_OK || raw != QByteArrayViewCompat(encoded)) {
+      unavailable();
+      return;
+    }
+  }
+  bufferService->registerActiveWriter(buffer.id(), reinterpret_cast<quintptr>(this),
+                                      [this]() { return getLatestContent(); });
+
+  using RemovalResult = vte::VMarkdownEditor::HeadingSectionNumberRemovalResult;
+  const auto result = m_editor->removeHeadingSectionNumbers();
+  if (result == RemovalResult::Unavailable) {
+    unavailable();
+    return;
+  }
+  if (result == RemovalResult::Unchanged || !readMode) {
+    // Edit mode uses the ordinary contentsChanged dirty/preview path.
+    return;
+  }
+
+  // Read mode keeps the same hidden document and undo stack authoritative.
+  // Commit without reloading either the editor or the viewer page.
+  const auto text = m_editor->getText();
+  if (!buffer.setContentRaw(bufferService->encodeContent(buffer.id(), text))) {
+    m_editor->getTextEdit()->document()->undo();
+    unavailable();
+    return;
+  }
+  onEditorContentsChanged();
+  const int revision = buffer.getRevision();
+  m_textEditorBufferRevision = revision;
+  m_lastKnownRevision = revision;
+  adapter()->setText(revision, text, adapter()->getTopLineNumber());
+  m_viewerBufferRevision = revision;
 }
 
 void MarkdownViewWindow2::handleEditorConfigChange() {

@@ -155,6 +155,7 @@ private:
 
   void updateSectionNumberOptions();
   void updateEditSectionNumberOptions(bool p_activate);
+  void removeSessionHeadingSectionNumbers();
 
   void setupPreviewHelper();
 
@@ -268,6 +269,7 @@ private:
   QString m_editSectionNumberPattern = QStringLiteral("1.1.");
   bool m_editDetectHeading1ForSectionNumber = true;
   bool m_switchingMode = false; // Reentrancy guard.
+  bool m_removingHeadingSectionNumbers = false;
   quint64 m_navigationGeneration = 0;
   int m_textEditorBufferRevision = 0;
   int m_viewerBufferRevision = 0;
