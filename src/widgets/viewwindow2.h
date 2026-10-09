@@ -121,10 +121,10 @@ public:
   // Subclasses that support outlines (e.g., MarkdownViewWindow2) override this.
   virtual QSharedPointer<OutlineProvider> getOutlineProvider() const;
 
-  // Per-file comments, for the comment dock. Null when this window type has no
-  // comment support (the default). Deliberately mirrors getOutlineProvider() so
-  // MainWindow2 can re-point the dock on currentViewWindowChanged with the same
-  // three lines, and a future Markdown implementation needs no dock rework.
+  // Whether this window supports the Comments dock. File types opt in explicitly.
+  virtual bool isCommentsSupported() const { return false; }
+
+  // Per-file comments for the dock. Null by default.
   virtual QSharedPointer<CommentProvider> getCommentProvider() const;
 
   // Deliver one complete snapshot on the GUI thread, inline or asynchronously.

@@ -44,6 +44,8 @@ public:
 
   QSharedPointer<OutlineProvider> getOutlineProvider() const Q_DECL_OVERRIDE;
 
+  bool isCommentsSupported() const Q_DECL_OVERRIDE { return true; }
+
   QSharedPointer<CommentProvider> getCommentProvider() const Q_DECL_OVERRIDE;
 
   // A PDF is never edited in place, so this window can never be modified and

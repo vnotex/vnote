@@ -870,10 +870,14 @@ private:
 The comment dock is a deliberate clone of the Outline dock's shape, so that adding comments to a
 second file type needs no dock work at all.
 
-- `ViewWindow2::getCommentProvider()` sits beside `getOutlineProvider()` and returns null by
-  default. `PdfViewWindow2` overrides it; `MainWindow2` re-points the dock on
-  `currentViewWindowChanged` with the same one line as the outline. A window type with no comment
-  support hands back null and the panel simply goes empty and disabled.
+- `ViewWindow2::isCommentsSupported()` defaults to false; only `PdfViewWindow2` opts in.
+  `getCommentProvider()` returns null by default. `MainWindow2` switches providers before updating
+  visibility on `currentViewWindowChanged`, so pending edits flush to the original provider.
+  Unsupported views (including no current view) hide Comments and disable its dock/menu toggle.
+  Switching to a PDF shows Comments, except while Expand Content Area hides non-floating,
+  non-kept docks. Startup restoration and expand/collapse apply the same capability gate.
+  Fresh/reset layouts defer the default Outline/Comments split until both docks can be sized;
+  successfully restored layouts retain their saved proportions.
 - `CommentProvider` is a pure DATA + SIGNALS object. It holds a `CommentSet` and a selection, and
   carries the view's intents (`activateRequested`, `textEditRequested`, `colorChangeRequested`,
   `deleteRequested`) outward. **It never writes the store and holds no service** — every mutation

@@ -229,6 +229,8 @@ private:
 
   void setupCommentPanel();
 
+  void updateCommentDockVisibility();
+
   // Setup TagExplorer2 as dock widget.
   void setupTagExplorer();
 
@@ -402,6 +404,8 @@ private:
   QStringList m_visibleDocksBeforeExpand;
 
   bool m_layoutReset = false;
+
+  bool m_defaultRightDockResizePending = false;
 
   // True once kickOffPostInit's deferred startup work has completed and the
   // view area has re-enabled core propagation. Until then, openFiles() queues

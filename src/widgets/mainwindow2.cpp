@@ -60,6 +60,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/syncservice.h>
 #include <core/sessionconfig.h>
+#include <core/widgetconfig.h>
 #include <gui/services/navigationmodeservice.h>
 #include <gui/services/themeservice.h>
 #include <gui/services/tooltipservice.h>
@@ -204,6 +205,7 @@ MainWindow2::MainWindow2(ServiceLocator &p_serviceLocator, QWidget *p_parent)
   // size and position.  View-area layout is deferred to kickOffPostInit()
   // to avoid creating splits before the event loop is running.
   restoreWindowGeometry();
+  updateCommentDockVisibility();
 }
 
 MainWindow2::~MainWindow2() {
@@ -614,6 +616,7 @@ void MainWindow2::restoreWindowGeometry() {
 
   // Fresh (or invalid) dock state: size after the window's first layout pass.
   // Never override a successfully restored user split.
+  m_defaultRightDockResizePending = true;
   QTimer::singleShot(0, this, &MainWindow2::resizeDefaultRightDocks);
 }
 
@@ -901,6 +904,22 @@ void MainWindow2::setupCommentPanel() {
   }
 }
 
+void MainWindow2::updateCommentDockVisibility() {
+  const auto *win = m_viewArea->getCurrentViewWindow();
+  const bool supported = win && win->isCommentsSupported();
+  auto *dock = m_dockWidgetHelper.getDock(DockWidgetHelper::CommentDock);
+  dock->toggleViewAction()->setEnabled(supported);
+
+  const auto &keepDocks = m_serviceLocator.get<ConfigMgr2>()
+                              ->getWidgetConfig()
+                              .getMainWindowKeepDocksExpandingContentArea();
+  dock->setVisible(supported && (!m_contentAreaExpanded || dock->isFloating() ||
+                                 keepDocks.contains(dock->objectName())));
+  if (m_defaultRightDockResizePending && !dock->isHidden()) {
+    QTimer::singleShot(0, this, &MainWindow2::resizeDefaultRightDocks);
+  }
+}
+
 void MainWindow2::setupTagExplorer() {
   m_tagExplorer = new TagExplorer2(m_serviceLocator, this);
   m_tagExplorer->setObjectName("TagExplorer2.vnotex");
@@ -1056,9 +1075,8 @@ void MainWindow2::setupDocks() {
           [this]() {
             auto *win = m_viewArea->getCurrentViewWindow();
             m_outlineViewer->setOutlineProvider(win ? win->getOutlineProvider() : nullptr);
-            // Same re-point contract as the outline: a window type with no
-            // comment support hands back null and the dock simply goes empty.
             m_commentPanel->setCommentProvider(win ? win->getCommentProvider() : nullptr);
+            updateCommentDockVisibility();
 
             // Keep the OS window title in sync with the current note, and follow renames
             // of the currently-active window. Drop the previous window's connection first.
@@ -1265,6 +1283,7 @@ void MainWindow2::setContentAreaExpanded(bool p_expanded) {
     m_dockWidgetHelper.restoreDocks(m_visibleDocksBeforeExpand);
     m_visibleDocksBeforeExpand.clear();
   }
+  updateCommentDockVisibility();
 
   emit layoutChanged();
 }
@@ -1313,6 +1332,7 @@ void MainWindow2::resetStateAndGeometry() {
   sessionConfig.setMainWindowStateGeometry(sg);
 
   // Reset to default size.
+  m_defaultRightDockResizePending = true;
   resize(1200, 800);
   QTimer::singleShot(0, this, [this]() {
     validateDockProportions();
@@ -1323,6 +1343,9 @@ void MainWindow2::resetStateAndGeometry() {
 }
 
 void MainWindow2::resizeDefaultRightDocks() {
+  if (!m_defaultRightDockResizePending) {
+    return;
+  }
   auto *outline = m_dockWidgetHelper.getDock(DockWidgetHelper::OutlineDock);
   auto *comments = m_dockWidgetHelper.getDock(DockWidgetHelper::CommentDock);
   if (!outline || !comments || outline->isFloating() || comments->isFloating() ||
@@ -1335,6 +1358,7 @@ void MainWindow2::resizeDefaultRightDocks() {
 
   // Initial 2:1 height split, adjusted by Qt for available space and minimum sizes.
   resizeDocks({outline, comments}, {600, 300}, Qt::Vertical);
+  m_defaultRightDockResizePending = false;
 }
 
 void MainWindow2::validateDockProportions() {

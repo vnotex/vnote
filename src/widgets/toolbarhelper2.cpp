@@ -496,6 +496,9 @@ void ToolBarHelper2::setupViewButton(QToolBar *p_toolBar) {
       auto actWrapper = subMenu->addAction(act->text());
       actWrapper->setCheckable(act->isCheckable());
       actWrapper->setChecked(act->isChecked());
+      actWrapper->setEnabled(act->isEnabled());
+      MainWindow2::connect(act, &QAction::changed, actWrapper,
+                           [act, actWrapper]() { actWrapper->setEnabled(act->isEnabled()); });
       MainWindow2::connect(act, &QAction::toggled, actWrapper, [actWrapper](bool checked) {
         if (actWrapper->isChecked() != checked) {
           actWrapper->setChecked(checked);
