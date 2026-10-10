@@ -175,10 +175,10 @@ ViewAreaController::prepareNoteConversion(const NodeIdentifier &p_nodeId, bool p
   state.encrypt = p_encrypt;
   const auto logPreparation = qScopeGuard([&state, result = conversion.get()]() {
     auto log = result->m_error == VXCORE_OK ? qInfo() : qWarning();
-    log << "NoteConversion phase=prepare event=finish"
-        << "notebookId" << result->m_nodeId.notebookId << "fileId" << state.fileId << "encrypt"
-        << state.encrypt << "code" << result->m_error << "buffers" << state.bufferIds.size()
-        << "views" << state.windowIds.size();
+    log << "NoteConversion phase=prepare event=finish" << vxcore::kJsonKeyNotebookId
+        << result->m_nodeId.notebookId << "fileId" << state.fileId << "encrypt" << state.encrypt
+        << "code" << result->m_error << "buffers" << state.bufferIds.size() << "views"
+        << state.windowIds.size();
   });
   auto *notebooks = m_services.get<NotebookCoreService>();
   auto *buffers = m_services.get<BufferService>();
@@ -375,9 +375,9 @@ void ViewAreaController::cancelNoteConversion(
     return;
   }
   auto &state = *p_conversion->m_state;
-  qInfo() << "NoteConversion phase=cancel event=start"
-          << "notebookId" << p_conversion->m_nodeId.notebookId << "fileId" << state.fileId
-          << "encrypt" << state.encrypt << "code" << p_conversion->m_error;
+  qInfo() << "NoteConversion phase=cancel event=start" << vxcore::kJsonKeyNotebookId
+          << p_conversion->m_nodeId.notebookId << "fileId" << state.fileId << "encrypt"
+          << state.encrypt << "code" << p_conversion->m_error;
   auto *buffers = m_services.get<BufferService>();
   for (const auto &id : state.bufferIds) {
     buffers->endNoteConversion(id, false);
@@ -413,11 +413,10 @@ VxCoreError ViewAreaController::applyNoteConversion(
   auto *gate = m_services.get<NotebookIoGate>();
   auto *workspaces = m_services.get<WorkspaceCoreService>();
   const char *phase = "validate";
-  qInfo() << "NoteConversion phase=apply event=start"
-          << "notebookId" << nodeId.notebookId << "fileId" << state.fileId << "encrypt"
-          << state.encrypt;
+  qInfo() << "NoteConversion phase=apply event=start" << vxcore::kJsonKeyNotebookId
+          << nodeId.notebookId << "fileId" << state.fileId << "encrypt" << state.encrypt;
   const auto fail = [&](VxCoreError p_error, const QString &p_message, bool p_blocked) {
-    qWarning() << "NoteConversion event=fail" << "phase" << phase << "notebookId"
+    qWarning() << "NoteConversion event=fail" << "phase" << phase << vxcore::kJsonKeyNotebookId
                << nodeId.notebookId << "fileId" << state.fileId << "encrypt" << state.encrypt
                << "code" << p_error << "recoveryRequired" << p_blocked;
     p_conversion->m_error = p_error;
@@ -448,8 +447,8 @@ VxCoreError ViewAreaController::applyNoteConversion(
   }
   const auto rejectCheckpoint = [&](const char *p_reason, const QString &p_bufferId = QString()) {
     qWarning() << "NoteConversion phase=checkpoint event=reject" << "reason" << p_reason
-               << "notebookId" << nodeId.notebookId << "fileId" << state.fileId << "bufferId"
-               << p_bufferId << "encrypt" << state.encrypt;
+               << vxcore::kJsonKeyNotebookId << nodeId.notebookId << "fileId" << state.fileId
+               << "bufferId" << p_bufferId << "encrypt" << state.encrypt;
     return false;
   };
   const auto checkpointCurrent = [&]() {
@@ -705,9 +704,9 @@ VxCoreError ViewAreaController::applyNoteConversion(
     m_fileCheckInProgress = false;
   }
   p_conversion->m_error = VXCORE_OK;
-  qInfo() << "NoteConversion phase=apply event=finish"
-          << "notebookId" << nodeId.notebookId << "fileId" << state.fileId << "encrypt"
-          << state.encrypt << "code" << VXCORE_OK;
+  qInfo() << "NoteConversion phase=apply event=finish" << vxcore::kJsonKeyNotebookId
+          << nodeId.notebookId << "fileId" << state.fileId << "encrypt" << state.encrypt << "code"
+          << VXCORE_OK;
   emit windowsChanged();
   emit currentViewWindowChanged();
   return VXCORE_OK;
