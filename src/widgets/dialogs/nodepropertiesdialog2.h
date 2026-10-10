@@ -9,6 +9,7 @@ struct NodeIdentifier;
 struct NodeInfo;
 
 class NodePropertiesDialog2 : public ScrollDialog {
+  Q_OBJECT
 public:
   NodePropertiesDialog2(ServiceLocator &p_services, const NodeIdentifier &p_nodeId,
                         const NodeInfo &p_nodeInfo, QWidget *p_parent = nullptr);

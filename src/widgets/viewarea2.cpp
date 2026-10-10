@@ -1,6 +1,7 @@
 #include "viewarea2.h"
 
 #include <QApplication>
+#include <QCoreApplication>
 #include <QInputDialog>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -44,6 +45,7 @@ using namespace vnotex;
 namespace {
 // Session tabs retain visible metadata only until explicit authentication.
 class LockedNoteView final : public ViewWindow2 {
+  Q_DECLARE_TR_FUNCTIONS(LockedNoteView)
 public:
   LockedNoteView(ServiceLocator &p_services, const Buffer2 &p_buffer,
                  const FileOpenSettings &p_settings, QWidget *p_parent)

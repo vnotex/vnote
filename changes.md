@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Fix missing Chinese, Japanese and Korean translations in Sort/Properties dialogs, locked notes, counts, settings, command-line help and exported HTML link prompts
 * Fix encryption/decryption of open notes incorrectly rejecting their own temporary editing freeze as a read-only change
 * Add privacy-safe note-conversion logs identifying failed checkpoints and backend phases
 

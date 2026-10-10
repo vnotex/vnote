@@ -49,8 +49,7 @@
         return;
       }
 
-      var prompt = 'This link points to a Markdown file. ' +
-                   'Open the corresponding HTML file instead?\n\n' + alternative;
+      var prompt = window.vxI18n.tr('export.markdownLinkFallback') + '\n\n' + alternative;
       if (!window.confirm(prompt)) {
         return;
       }

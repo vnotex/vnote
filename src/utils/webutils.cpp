@@ -121,7 +121,11 @@ QString WebUtils::translationScript() {
       {QStringLiteral("outline.hide"), QCoreApplication::translate("WebUtils", "Hide outline")},
       {QStringLiteral("code.copy"), QCoreApplication::translate("WebUtils", "Copy")},
       {QStringLiteral("code.collapse"), QCoreApplication::translate("WebUtils", "Collapse")},
-      {QStringLiteral("code.expand"), QCoreApplication::translate("WebUtils", "Expand")}};
+      {QStringLiteral("code.expand"), QCoreApplication::translate("WebUtils", "Expand")},
+      {QStringLiteral("export.markdownLinkFallback"),
+       QCoreApplication::translate(
+           "WebUtils", "This link points to a Markdown file. "
+                       "Open the corresponding HTML file instead?")}};
   auto json = QString::fromUtf8(QJsonDocument(texts).toJson(QJsonDocument::Compact));
   // JSON quoting is not enough inside an HTML script element. Also keep the output
   // valid for JavaScript engines that treat Unicode line separators as syntax.

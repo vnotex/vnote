@@ -5,43 +5,37 @@
 #include <QCoreApplication>
 #include <QDebug>
 
-// MIGRATION: Use QCoreApplication::translate instead of MainWindow::tr
-// #include <widgets/mainwindow.h>
-// using vnotex::MainWindow;
-
-// Translation context for command line options
-static const char *c_context = "vnotex::MainWindow";
-
 CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_arguments) {
   QCommandLineParser parser;
   parser.setApplicationDescription(
-      QCoreApplication::translate(c_context, "A pleasant note-taking platform."));
+      QCoreApplication::translate("CommandLineOptions", "A pleasant note-taking platform."));
   const auto helpOpt = parser.addHelpOption();
   const auto versionOpt = parser.addVersionOption();
 
   // Positional arguments.
-  parser.addPositionalArgument("paths",
-                               QCoreApplication::translate(c_context, "Files or folders to open."));
+  parser.addPositionalArgument(
+      "paths", QCoreApplication::translate("CommandLineOptions", "Files or folders to open."));
 
-  const QCommandLineOption verboseOpt("verbose",
-                                      QCoreApplication::translate(c_context, "Print more logs."));
+  const QCommandLineOption verboseOpt(
+      "verbose", QCoreApplication::translate("CommandLineOptions", "Print more logs."));
   parser.addOption(verboseOpt);
 
-  const QCommandLineOption logStderrOpt("log-stderr",
-                                        QCoreApplication::translate(c_context, "Log to stderr."));
+  const QCommandLineOption logStderrOpt(
+      "log-stderr", QCoreApplication::translate("CommandLineOptions", "Log to stderr."));
   parser.addOption(logStderrOpt);
 
   const QCommandLineOption quietOpt(
-      "quiet", QCoreApplication::translate(c_context, "Suppress non-critical console logs."));
+      "quiet", QCoreApplication::translate("CommandLineOptions", "Suppress non-critical console logs."));
   parser.addOption(quietOpt);
 
   const QCommandLineOption watchThemesOpt(
-      "watch-themes", QCoreApplication::translate(c_context, "Watch theme folder for changes."));
+      "watch-themes",
+      QCoreApplication::translate("CommandLineOptions", "Watch theme folder for changes."));
   parser.addOption(watchThemesOpt);
 
   const QCommandLineOption detachedViewOpt(
       "detached-view",
-      QCoreApplication::translate(c_context, "Open files in a detached view split."));
+      QCoreApplication::translate("CommandLineOptions", "Open files in a detached view split."));
   parser.addOption(detachedViewOpt);
 
   // WebEngine options.
@@ -49,18 +43,18 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
   {
     QCommandLineOption webRemoteDebuggingPortOpt(
         "remote-debugging-port",
-        QCoreApplication::translate(c_context, "WebEngine remote debugging port."),
-        QCoreApplication::translate(c_context, "port_number"));
+        QCoreApplication::translate("CommandLineOptions", "WebEngine remote debugging port."),
+        QCoreApplication::translate("CommandLineOptions", "port_number"));
     webRemoteDebuggingPortOpt.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(webRemoteDebuggingPortOpt);
 
     QCommandLineOption webNoSandboxOpt(
-        "no-sandbox", QCoreApplication::translate(c_context, "WebEngine without sandbox."));
+        "no-sandbox", QCoreApplication::translate("CommandLineOptions", "WebEngine without sandbox."));
     webNoSandboxOpt.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(webNoSandboxOpt);
 
     QCommandLineOption webDisableGpu(
-        "disable-gpu", QCoreApplication::translate(c_context, "WebEngine with GPU disabled."));
+        "disable-gpu", QCoreApplication::translate("CommandLineOptions", "WebEngine with GPU disabled."));
     webDisableGpu.setFlags(QCommandLineOption::HiddenFromHelp);
     parser.addOption(webDisableGpu);
   }

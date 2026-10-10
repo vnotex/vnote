@@ -938,6 +938,10 @@
         <source>Expand</source>
         <translation>展開</translation>
     </message>
+    <message>
+        <source>This link points to a Markdown file. Open the corresponding HTML file instead?</source>
+        <translation>このリンクは Markdown ファイルを指しています。代わりに対応する HTML ファイルを開きますか？</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::ActivitySticker</name>
@@ -1745,7 +1749,7 @@
     <message>
         <location line="+15"/>
         <source>Icon size of the editor tool bar</source>
-        <translation>Icon size of the editor tool bar</translation>
+        <translation>エディターツールバーのアイコンサイズ</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -6751,6 +6755,22 @@ Open the bundle location?</source>
         <source>Failed to share the folder.</source>
         <translation>フォルダーの共有に失敗しました。</translation>
     </message>
+    <message>
+        <source>(notebook root)</source>
+        <translation>（ノートブックのルート）</translation>
+    </message>
+    <message>
+        <source>Reorder children of %1. Order is saved to the configuration file.</source>
+        <translation>%1 の子項目を並べ替えます。順序は設定ファイルに保存されます。</translation>
+    </message>
+    <message>
+        <source>Sort Folders</source>
+        <translation>フォルダーの並べ替え</translation>
+    </message>
+    <message>
+        <source>Sort Notes</source>
+        <translation>ノートの並べ替え</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::NotebookInfoWidget</name>
@@ -7311,12 +7331,12 @@ Raw ノートブックの場合、ファイルを含む既存のフォルダー�
     <message>
         <location line="+57"/>
         <source>Raw</source>
-        <translation>Raw</translation>
+        <translation>通常</translation>
     </message>
     <message>
         <location line="+0"/>
         <source>Bundled</source>
-        <translation>Bundled</translation>
+        <translation>バンドル</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -11300,6 +11320,53 @@ Continue?</source>
         <location line="+4"/>
         <source>Characters (with spaces)</source>
         <translation>文字数 (空白を含む)</translation>
+    </message>
+</context>
+<context>
+    <name>CommandLineOptions</name>
+    <message>
+        <source>A pleasant note-taking platform.</source>
+        <translation>快適なノート作成プラットフォーム。</translation>
+    </message>
+    <message>
+        <source>Files or folders to open.</source>
+        <translation>開くファイルまたはフォルダー。</translation>
+    </message>
+    <message>
+        <source>Print more logs.</source>
+        <translation>詳細なログを出力します。</translation>
+    </message>
+    <message>
+        <source>Log to stderr.</source>
+        <translation>標準エラー出力にログを出力します。</translation>
+    </message>
+    <message>
+        <source>Suppress non-critical console logs.</source>
+        <translation>重大でないコンソールログを抑制します。</translation>
+    </message>
+    <message>
+        <source>Watch theme folder for changes.</source>
+        <translation>テーマフォルダーの変更を監視します。</translation>
+    </message>
+    <message>
+        <source>Open files in a detached view split.</source>
+        <translation>ファイルを独立した分割ビューで開きます。</translation>
+    </message>
+    <message>
+        <source>WebEngine remote debugging port.</source>
+        <translation>WebEngine のリモートデバッグ用ポート。</translation>
+    </message>
+    <message>
+        <source>port_number</source>
+        <translation>ポート番号</translation>
+    </message>
+    <message>
+        <source>WebEngine without sandbox.</source>
+        <translation>WebEngine のサンドボックスを無効にします。</translation>
+    </message>
+    <message>
+        <source>WebEngine with GPU disabled.</source>
+        <translation>WebEngine の GPU を無効にします。</translation>
     </message>
 </context>
 </TS>

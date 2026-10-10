@@ -586,6 +586,8 @@ int main(int argc, char *argv[]) {
       app.setApplicationVersion(ConfigMgr2::getApplicationVersion());
     }
 
+    loadTranslators(app, configMgr);
+
     CommandLineOptions cmdOptions;
     bool earlyExit = false;
     switch (cmdOptions.parse(app.arguments())) {
@@ -758,7 +760,6 @@ int main(int argc, char *argv[]) {
 #endif
     }
 
-    loadTranslators(app, configMgr);
     DocsUtils::setLocale(configMgr.getCoreConfig().getLocaleToUse());
     DocsUtils::addSearchPath(configMgr.getFileFromConfigFolder(QStringLiteral("docs")));
 

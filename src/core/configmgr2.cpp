@@ -230,13 +230,14 @@ void ConfigMgr2::init() {
     }
   }
 
+  // Read-only bundle lookup is also needed by early command-line help.
+  initAppPrefixPath();
+
   qCDebug(lcConfig) << "ConfigMgr2 initialized successfully";
 }
 
 void ConfigMgr2::initAfterQtAppStarted() {
-  // Handle version upgrade after Qt app is ready
-  initAppPrefixPath();
-
+  // Handle version upgrade after Qt app is ready.
 #if defined(VX_DEBUG_REFRESH)
   qInfo() << "application version may not have changed, but forced to update for debugging";
   ensureExtraData(true);

@@ -938,6 +938,10 @@
         <source>Expand</source>
         <translation>펼치기</translation>
     </message>
+    <message>
+        <source>This link points to a Markdown file. Open the corresponding HTML file instead?</source>
+        <translation>이 링크는 Markdown 파일을 가리킵니다. 대신 해당 HTML 파일을 여시겠습니까?</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::ActivitySticker</name>
@@ -4992,6 +4996,10 @@
         <source>Local</source>
         <translation>로컬</translation>
     </message>
+    <message>
+        <source>Section numbers could not be restored now. Auto section numbering remains off. Make this note current and editable, then turn Allow Auto Section Number on and off to retry.</source>
+        <translation>지금은 섹션 번호를 복원할 수 없습니다. 자동 섹션 번호 매기기는 꺼진 상태로 유지됩니다. 이 노트를 현재 노트로 선택하고 편집 가능한 상태로 만든 다음, 자동 섹션 번호 허용을 켰다가 꺼서 다시 시도하세요.</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::MarkdownViewer</name>
@@ -6745,6 +6753,22 @@ Last sync init failed: error code %1</source>
         <translation>
 
 마지막 동기화 초기화 실패: 오류 코드 %1</translation>
+    </message>
+    <message>
+        <source>(notebook root)</source>
+        <translation>(노트북 루트)</translation>
+    </message>
+    <message>
+        <source>Reorder children of %1. Order is saved to the configuration file.</source>
+        <translation>%1의 하위 항목 순서를 변경합니다. 순서는 설정 파일에 저장됩니다.</translation>
+    </message>
+    <message>
+        <source>Sort Folders</source>
+        <translation>폴더 정렬</translation>
+    </message>
+    <message>
+        <source>Sort Notes</source>
+        <translation>노트 정렬</translation>
     </message>
 </context>
 <context>
@@ -11295,6 +11319,53 @@ Continue?</source>
         <location line="+4"/>
         <source>Characters (with spaces)</source>
         <translation>글자 수(공백 포함)</translation>
+    </message>
+</context>
+<context>
+    <name>CommandLineOptions</name>
+    <message>
+        <source>A pleasant note-taking platform.</source>
+        <translation>쾌적한 노트 작성 플랫폼.</translation>
+    </message>
+    <message>
+        <source>Files or folders to open.</source>
+        <translation>열 파일 또는 폴더.</translation>
+    </message>
+    <message>
+        <source>Print more logs.</source>
+        <translation>더 자세한 로그를 출력합니다.</translation>
+    </message>
+    <message>
+        <source>Log to stderr.</source>
+        <translation>표준 오류로 로그를 출력합니다.</translation>
+    </message>
+    <message>
+        <source>Suppress non-critical console logs.</source>
+        <translation>중요하지 않은 콘솔 로그를 숨깁니다.</translation>
+    </message>
+    <message>
+        <source>Watch theme folder for changes.</source>
+        <translation>테마 폴더의 변경 사항을 감시합니다.</translation>
+    </message>
+    <message>
+        <source>Open files in a detached view split.</source>
+        <translation>파일을 분리된 분할 보기에서 엽니다.</translation>
+    </message>
+    <message>
+        <source>WebEngine remote debugging port.</source>
+        <translation>WebEngine 원격 디버깅 포트.</translation>
+    </message>
+    <message>
+        <source>port_number</source>
+        <translation>포트_번호</translation>
+    </message>
+    <message>
+        <source>WebEngine without sandbox.</source>
+        <translation>WebEngine 샌드박스를 비활성화합니다.</translation>
+    </message>
+    <message>
+        <source>WebEngine with GPU disabled.</source>
+        <translation>WebEngine GPU를 비활성화합니다.</translation>
     </message>
 </context>
 </TS>

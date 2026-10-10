@@ -938,6 +938,10 @@
         <source>Expand</source>
         <translation>展开</translation>
     </message>
+    <message>
+        <source>This link points to a Markdown file. Open the corresponding HTML file instead?</source>
+        <translation>此链接指向 Markdown 文件。是否改为打开对应的 HTML 文件？</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::ActivitySticker</name>
@@ -1118,7 +1122,7 @@
         <location line="+34"/>
         <source>%n attachment(s)</source>
         <translation>
-            <numerusform></numerusform>
+            <numerusform>%n 个附件</numerusform>
         </translation>
     </message>
     <message>
@@ -1146,7 +1150,7 @@
         <location line="+1"/>
         <source>Delete %n attachment(s)?</source>
         <translation>
-            <numerusform></numerusform>
+            <numerusform>是否删除 %n 个附件？</numerusform>
         </translation>
     </message>
 </context>
@@ -2874,7 +2878,7 @@
     <message>
         <location line="+1"/>
         <source>Desktop</source>
-        <translation>Desktop</translation>
+        <translation>桌面</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2884,7 +2888,7 @@
     <message>
         <location line="+1"/>
         <source>Software</source>
-        <translation>Software</translation>
+        <translation>软件</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -6298,21 +6302,21 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <location line="+4"/>
         <source>Permanently delete %n node(s)? This cannot be undone.</source>
         <translation>
-            <numerusform></numerusform>
+            <numerusform>是否永久删除 %n 个节点？此操作无法撤销。</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location line="+2"/>
         <source>Move %n node(s) to recycle bin?</source>
         <translation>
-            <numerusform></numerusform>
+            <numerusform>是否将 %n 个节点移到回收站？</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <location line="+19"/>
         <source>Remove %n node(s) from notebook index? Files will remain on disk.</source>
         <translation>
-            <numerusform></numerusform>
+            <numerusform>是否从笔记本索引中移除 %n 个节点？文件将保留在磁盘上。</numerusform>
         </translation>
     </message>
     <message>
@@ -6750,6 +6754,22 @@ Open the bundle location?</source>
         <location line="+15"/>
         <source>Failed to share the folder.</source>
         <translation>分享文件夹失败。</translation>
+    </message>
+    <message>
+        <source>(notebook root)</source>
+        <translation>（笔记本根目录）</translation>
+    </message>
+    <message>
+        <source>Reorder children of %1. Order is saved to the configuration file.</source>
+        <translation>调整 %1 的子项顺序。顺序将保存到配置文件。</translation>
+    </message>
+    <message>
+        <source>Sort Folders</source>
+        <translation>排序文件夹</translation>
+    </message>
+    <message>
+        <source>Sort Notes</source>
+        <translation>排序笔记</translation>
     </message>
 </context>
 <context>
@@ -8996,7 +9016,7 @@ The legacy notebook would be kept for data backup.</source>
         <location line="+14"/>
         <source>%n result(s)</source>
         <translation>
-            <numerusform></numerusform>
+            <numerusform>%n 个结果</numerusform>
         </translation>
     </message>
     <message>
@@ -11300,6 +11320,53 @@ Continue?</source>
         <location line="+4"/>
         <source>Characters (with spaces)</source>
         <translation>字(有空格)</translation>
+    </message>
+</context>
+<context>
+    <name>CommandLineOptions</name>
+    <message>
+        <source>A pleasant note-taking platform.</source>
+        <translation>一个舒适的笔记平台。</translation>
+    </message>
+    <message>
+        <source>Files or folders to open.</source>
+        <translation>要打开的文件或文件夹。</translation>
+    </message>
+    <message>
+        <source>Print more logs.</source>
+        <translation>输出更多日志。</translation>
+    </message>
+    <message>
+        <source>Log to stderr.</source>
+        <translation>将日志输出到标准错误。</translation>
+    </message>
+    <message>
+        <source>Suppress non-critical console logs.</source>
+        <translation>隐藏非关键控制台日志。</translation>
+    </message>
+    <message>
+        <source>Watch theme folder for changes.</source>
+        <translation>监视主题文件夹的更改。</translation>
+    </message>
+    <message>
+        <source>Open files in a detached view split.</source>
+        <translation>在独立的视图分割中打开文件。</translation>
+    </message>
+    <message>
+        <source>WebEngine remote debugging port.</source>
+        <translation>WebEngine 远程调试端口。</translation>
+    </message>
+    <message>
+        <source>port_number</source>
+        <translation>端口号</translation>
+    </message>
+    <message>
+        <source>WebEngine without sandbox.</source>
+        <translation>禁用 WebEngine 沙箱。</translation>
+    </message>
+    <message>
+        <source>WebEngine with GPU disabled.</source>
+        <translation>禁用 WebEngine GPU 加速。</translation>
     </message>
 </context>
 </TS>

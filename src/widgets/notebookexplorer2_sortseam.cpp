@@ -6,9 +6,8 @@
 //
 // Free function in the `vnotex` namespace — NOT a member of NotebookExplorer2
 // — so AUTOMOC in test builds does not generate qt_metacall references to
-// every slot in NotebookExplorer2. tr-equivalent calls use
-// QCoreApplication::translate with the explicit "NotebookExplorer2" context so
-// existing translations under that key are preserved.
+// every slot in NotebookExplorer2. Literal translation calls use its namespaced
+// context so Qt Linguist can extract the dialog text.
 
 #include "notebookexplorer2_sortseam.h"
 
@@ -29,10 +28,6 @@
 namespace vnotex {
 
 namespace {
-
-inline QString trCtx(const char *p_text) {
-  return QCoreApplication::translate("NotebookExplorer2", p_text);
-}
 
 // vxcore's FileRecord/FolderRecord default both timestamps to 0 and emit them
 // unconditionally, so a "missing" timestamp arrives as the NUMBER zero, not as
@@ -91,13 +86,17 @@ SortDialogResult runSortDialogsForChildren(const NodeIdentifier &p_parentId,
 
   const QString parentName =
       p_parentId.relativePath.isEmpty()
-          ? trCtx("(notebook root)")
+          ? QCoreApplication::translate("vnotex::NotebookExplorer2", "(notebook root)")
           : QStringLiteral("(%1)").arg(QFileInfo(p_parentId.relativePath).fileName());
   const QString subtitle =
-      trCtx("Reorder children of %1. Order is saved to the configuration file.").arg(parentName);
+      QCoreApplication::translate(
+          "vnotex::NotebookExplorer2",
+          "Reorder children of %1. Order is saved to the configuration file.")
+          .arg(parentName);
 
   if (!folderEntries.isEmpty()) {
-    SortDialog2 dlg(trCtx("Sort Folders"), subtitle, folderEntries, p_parent);
+    SortDialog2 dlg(QCoreApplication::translate("vnotex::NotebookExplorer2", "Sort Folders"),
+                    subtitle, folderEntries, p_parent);
     dlg.setWindowModality(Qt::WindowModal);
     if (dlg.exec() == QDialog::Accepted) {
       const QStringList chosen = dlg.getSortedOrder();
@@ -108,7 +107,8 @@ SortDialogResult runSortDialogsForChildren(const NodeIdentifier &p_parentId,
   }
 
   if (!fileEntries.isEmpty()) {
-    SortDialog2 dlg(trCtx("Sort Notes"), subtitle, fileEntries, p_parent);
+    SortDialog2 dlg(QCoreApplication::translate("vnotex::NotebookExplorer2", "Sort Notes"),
+                    subtitle, fileEntries, p_parent);
     dlg.setWindowModality(Qt::WindowModal);
     if (dlg.exec() == QDialog::Accepted) {
       const QStringList chosen = dlg.getSortedOrder();
