@@ -32,6 +32,7 @@ public:
     CommentDock,
     ConsoleDock,
     LocationListDock,
+    ToolsDock,
     MaxDock
   };
   Q_ENUM(DockType)

@@ -127,6 +127,16 @@ public:
   // Per-file comments for the dock. Null by default.
   virtual QSharedPointer<CommentProvider> getCommentProvider() const;
 
+  // Sampled on active-window changes, like Comments; no live capability notifications.
+  virtual bool IsToolsPanelSupported() const { return false; }
+  virtual QString getToolsPanelTitle() const { return tr("Tools"); }
+
+  // A supporting view owns a dedicated, reusable panel, optionally created lazily.
+  // Never return this, the central widget, an ancestor of the host, or a shared panel.
+  // The host temporarily reparents it for display and tolerates its destruction.
+  // When released, the panel is hidden and parented back to this view for normal cleanup.
+  virtual QWidget *getToolsPanel() { return nullptr; }
+
   // Deliver one complete snapshot on the GUI thread, inline or asynchronously.
   virtual void fetchNavigationTargets(NavigationTargetsCallback p_callback) {
     if (p_callback) {
@@ -600,6 +610,12 @@ protected:
   // Subclasses should connect their editor's contentsChanged/textChanged signal to this.
   void onEditorContentsChanged();
 
+  // Reuse writer/revision synchronization for externally hosted editable controls.
+  // These hooks do not move keyboard focus; derived views must avoid duplicating
+  // the built-in focus tracking for widgets already inside the ViewWindow subtree.
+  void onFocusGained();
+  void onFocusLost();
+
   // Current view mode (Read or Edit).
   ViewWindowMode m_mode = ViewWindowMode::Read;
 
@@ -641,10 +657,6 @@ private:
   };
 
   void setupUI();
-
-  // Focus event handlers for auto-save integration.
-  void onFocusGained();
-  void onFocusLost();
 
   // Main handler for external file changes — shows dialog or auto-reloads.
   void handleExternalChange(BufferState p_state);

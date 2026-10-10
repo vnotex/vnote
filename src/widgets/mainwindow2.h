@@ -3,6 +3,7 @@
 
 #include <QHash>
 #include <QMainWindow>
+#include <QPointer>
 #include <QString>
 #include <QStringList>
 #include <QVector>
@@ -34,6 +35,7 @@ struct FileOpenSettings;
 class NotebookExplorer2;
 class OutlineViewer;
 class CommentPanel;
+class ToolsPanelHost;
 class TagExplorer2;
 class SnippetPanel2;
 class SearchPanel2;
@@ -231,6 +233,12 @@ private:
 
   void updateCommentDockVisibility();
 
+  void setupToolsPanel();
+
+  void updateToolsDock();
+
+  void updateToolsDockVisibility();
+
   // Setup TagExplorer2 as dock widget.
   void setupTagExplorer();
 
@@ -332,6 +340,9 @@ private:
   OutlineViewer *m_outlineViewer = nullptr;
 
   CommentPanel *m_commentPanel = nullptr;
+
+  QPointer<ToolsPanelHost> m_toolsPanelHost;
+  QMetaObject::Connection m_toolsWindowDestroyedConn;
 
   // TagExplorer2 dock widget.
   TagExplorer2 *m_tagExplorer = nullptr;

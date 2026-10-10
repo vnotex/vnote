@@ -24,6 +24,9 @@ public:
 
   QString getLatestContent() const override;
   QSharedPointer<OutlineProvider> getOutlineProvider() const override;
+  bool IsToolsPanelSupported() const override;
+  QString getToolsPanelTitle() const override;
+  QWidget *getToolsPanel() override;
   void setMode(ViewWindowMode p_mode) override;
   void handleNodeRetargeted(const NodeIdentifier &p_newNodeId) override;
 
@@ -69,6 +72,7 @@ private:
 
   // Owned by QObject.
   MindMapEditor *m_editor = nullptr;
+  QMetaObject::Connection m_toolsPanelFocusConn;
   QAction *m_presentationAction = nullptr;
   PresentationToolBarEffect *m_presentationEffect = nullptr;
   QColor m_presentationBackground;

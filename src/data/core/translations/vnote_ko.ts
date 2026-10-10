@@ -5224,11 +5224,21 @@
     </message>
     <message>
         <location line="+9"/>
+        <source>Separate node properties panel</source>
+        <translation>노드 속성 패널 분리</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Show node properties in the Tools dock instead of the editor (reopen editor to apply)</source>
+        <translation>편집기 대신 도구 도크에 노드 속성 표시 (적용하려면 편집기를 다시 여세요)</translation>
+    </message>
+    <message>
+        <location line="+10"/>
         <source>Keyboard shortcuts can be configured in section [editor.mindMapEditor.shortcuts]</source>
         <translation>키보드 단축키는 [editor.mindMapEditor.shortcuts] 섹션에서 설정할 수 있습니다</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+30"/>
         <source>MindMap Editor</source>
         <translation>마인드맵 편집기</translation>
     </message>

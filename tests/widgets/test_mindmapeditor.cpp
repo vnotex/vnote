@@ -4,6 +4,7 @@
 #include <QBuffer>
 #include <QComboBox>
 #include <QDir>
+#include <QDockWidget>
 #include <QFile>
 #include <QFileInfo>
 #include <QFontDatabase>
@@ -15,17 +16,21 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLineEdit>
+#include <QMainWindow>
 #include <QMenu>
 #include <QPainter>
 #include <QPlainTextEdit>
 #include <QPointer>
 #include <QScopeGuard>
+#include <QScrollArea>
 #include <QShortcut>
 #include <QSignalSpy>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
 #include <QToolBar>
+#include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
 #include <QWheelEvent>
@@ -261,6 +266,8 @@ private slots:
   void protectedImagesRefuseExternalAndRevokeOnLock();
   void configuredShortcutsDriveRealCommands();
   void livePreferencesPreserveDraftAndReadOnlyBuffer();
+  void separatedPropertiesRespectAdapterPolicy();
+  void propertyPlacementAppliesToNewEditors();
 
 private:
   Buffer2 openNote(const QString &p_relativePath, const QByteArray &p_content,
@@ -1158,6 +1165,108 @@ void TestMindMapEditor::livePreferencesPreserveDraftAndReadOnlyBuffer() {
   const auto saved = editor.contentForSave();
   QVERIFY(saved.contains(QStringLiteral("Unsaved preference draft")));
   QVERIFY(input && input->hasFocus());
+}
+
+void TestMindMapEditor::separatedPropertiesRespectAdapterPolicy() {
+  m_config->getEditorConfig().getMindMapEditorConfig().setSeparateNodePropertiesPanel(true);
+  auto buffer = openNote(QStringLiteral("properties.mmm"), fixture());
+  QVERIFY(buffer.isValid());
+  QMainWindow window;
+  auto *editor = new MindMapEditor(*m_services, buffer, &window);
+  window.setCentralWidget(editor);
+  QVERIFY(editor->loadContent(buffer.getContentRaw()));
+  auto *panel = editor->nodePropertiesPanel();
+  QVERIFY(panel);
+  auto *dock = new QDockWidget(&window);
+  dock->setWidget(panel);
+  window.addDockWidget(Qt::RightDockWidgetArea, dock);
+  window.resize(1100, 800);
+  window.show();
+  window.activateWindow();
+  QVERIFY(QTest::qWaitForWindowExposed(&window));
+  QCOMPARE(editor->nodePropertiesPanel(), panel);
+  auto *url = panel->findChild<QLineEdit *>(QStringLiteral("nodeUrl"));
+  auto *scroll = panel->findChild<QScrollArea *>();
+  QVERIFY(url && scroll);
+  scroll->ensureWidgetVisible(url);
+  QVERIFY(editor->selectNode(QStringLiteral("a")));
+  url->setFocus();
+  QSignalSpy dirty(editor, &MindMapEditor::contentsChanged);
+  QTest::keyClicks(url, "https://example.test/node");
+  QCOMPARE(node(*editor, QStringLiteral("a")).value(QStringLiteral("hyperLink")).toString(),
+           QStringLiteral("https://example.test/node"));
+  QVERIFY(editor->isModified() && !dirty.isEmpty());
+  const auto saved = editor->contentForSave();
+  MindMapEditor reopened(*m_services, buffer);
+  QVERIFY(reopened.loadContent(saved.toUtf8()));
+  QCOMPARE(node(reopened, QStringLiteral("a")).value(QStringLiteral("hyperLink")).toString(),
+           url->text());
+
+  editor->setModified(false);
+  dirty.clear();
+  const auto committed = editor->toJson();
+  editor->setEnabled(false);
+  QTest::keyClicks(url, "blocked-disabled");
+  QCOMPARE(editor->toJson(), committed);
+  QVERIFY(dirty.isEmpty() && !editor->isModified());
+  editor->setEnabled(true);
+  editor->setReadOnly(true);
+  QTest::keyClicks(url, "blocked-readonly");
+  QCOMPARE(editor->toJson(), committed);
+  QVERIFY(dirty.isEmpty());
+  editor->setReadOnly(false);
+  editor->clearSelection();
+  QVERIFY(url->text().isEmpty());
+  QTest::keyClicks(url, "blocked-no-selection");
+  QCOMPARE(editor->toJson(), committed);
+  QVERIFY(dirty.isEmpty());
+
+  QVERIFY(editor->selectNode(QStringLiteral("a")));
+  QVERIFY(!editor->loadContent(QByteArrayLiteral("invalid mind map")));
+  QTest::keyClicks(url, "blocked-invalid");
+  QCOMPARE(editor->toJson(), committed);
+  QVERIFY(dirty.isEmpty());
+  QVERIFY(editor->loadContent(saved.toUtf8()));
+  QVERIFY(editor->selectNode(QStringLiteral("a")));
+  url->setFocus();
+  QTest::keyClicks(url, "/recovered");
+  QVERIFY(node(*editor, QStringLiteral("a"))
+              .value(QStringLiteral("hyperLink"))
+              .toString()
+              .endsWith(QStringLiteral("/recovered")));
+  QVERIFY(editor->isModified());
+}
+
+void TestMindMapEditor::propertyPlacementAppliesToNewEditors() {
+  auto &config = m_config->getEditorConfig().getMindMapEditorConfig();
+  config.setSeparateNodePropertiesPanel(true);
+  auto buffer = openNote(QStringLiteral("placement.mmm"), fixture());
+  QVERIFY(buffer.isValid());
+  MindMapEditor separated(*m_services, buffer);
+  QVERIFY(separated.loadContent(buffer.getContentRaw()));
+  auto *panel = separated.nodePropertiesPanel();
+  QVERIFY(panel);
+  config.setSeparateNodePropertiesPanel(false);
+  separated.applyConfig();
+  QCOMPARE(separated.nodePropertiesPanel(), panel);
+
+  MindMapEditor embedded(*m_services, buffer);
+  QVERIFY(embedded.loadContent(buffer.getContentRaw()));
+  QVERIFY(!embedded.nodePropertiesPanel());
+  QVERIFY(showEditor(embedded));
+  auto *toggle = embedded.findChild<QToolButton *>(QStringLiteral("nodePropertiesToggle"));
+  auto *card = embedded.findChild<QWidget *>(QStringLiteral("nodePropertiesPanel"));
+  auto *scroll = card ? card->findChild<QScrollArea *>() : nullptr;
+  QVERIFY(toggle && card && scroll);
+  QVERIFY(toggle->isVisible() && !toggle->isChecked() && scroll->isHidden());
+  toggle->click();
+  QVERIFY(scroll->isVisible());
+  config.setSeparateNodePropertiesPanel(true);
+  embedded.applyConfig();
+  QVERIFY(!embedded.nodePropertiesPanel());
+  QVERIFY(scroll->isVisible());
+  MindMapEditor separatedAgain(*m_services, buffer);
+  QVERIFY(separatedAgain.nodePropertiesPanel());
 }
 
 } // namespace tests

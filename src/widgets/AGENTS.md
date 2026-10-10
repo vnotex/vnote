@@ -232,9 +232,10 @@ click again to exit. Its view-scoped shortcut defaults to **F9**, configured thr
 `editor.core.shortcuts.PresentationMode`; an empty string disables the shortcut.
 PDF's action remains usable even if the viewer reloads. MindMap presents the existing
 editor without reloading content, changing read-only policy or resetting zoom.
-Each confirmed MindMap presentation entry collapses the node-properties card through
+Each confirmed MindMap presentation entry collapses the embedded node-properties card through
 `MindMapEditor::collapseNodeProperties()`, including with no selected node. Users may
 expand it again while presenting; exit leaves their current card preference unchanged.
+Separated node properties stay expanded in the Tools dock; presentation does not collapse them.
 Only the QToolBar gets an opacity effect: **10% inactive, 100% active**. Active
 means the presentation window is active and the toolbar is hovered, contains
 keyboard focus, or owns an open popup (including submenus, zoom and extension
@@ -322,6 +323,17 @@ in forced edit mode; do not launch an external editor or depend on a `MainWindow
 Configuration persistence remains owned by `ConfigMgr2`; this action only opens the file.
 
 ### MindMap editor settings
+
+**Separate node properties panel** defaults on in Settings → Editor → MindMap Editor.
+Each editor owns exactly one properties widget: either hosted by Tools with no canvas toggle,
+or embedded as a collapsed card with its expand/collapse toggle. Placement changes apply to
+newly opened/reopened maps, not live editors. `MindMapViewWindow2` exposes the existing m3
+`nodePropertiesPanel()` in separated mode; it must never create a duplicate or reparent a
+panel already borrowed by `ToolsPanelHost`. m3 gates external edits by editor enabled/read-only
+policy and destroys the surviving panel before its controller/view, regardless of visual parent.
+For focus transitions outside the ViewWindow subtree, MindMap reuses the base writer/revision
+hooks so editing Tools before focusing the canvas still saves correctly. Canvas transitions keep
+the existing base handling; logical writer activation never moves keyboard focus from the dock.
 
 Settings → Editor → **MindMap Editor** exposes default fallback font families, point size,
 undo limit, deletion confirmation and automatic colors for new main branches. Apply saves

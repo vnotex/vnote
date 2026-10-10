@@ -1615,6 +1615,15 @@ target_include_directories(test_pdfannotationtoolbar PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )
 
+# Borrowed tools panels retain their provider-owned lifetime across dock transitions.
+add_qt_test(test_toolspanelhost
+  SOURCES
+    test_toolspanelhost.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/toolspanelhost.cpp
+  LINKS
+    Qt6::Widgets
+)
+
 # Same-parent window-flag promotion behind ViewWindow2's native fullscreen.
 # Gate tab identity, layout restoration, focus, exit intents and widget lifetime
 # without compiling viewwindow2.cpp and its full application dependencies.

@@ -97,6 +97,21 @@ void MindMapEditorPage::setupUI() {
     connect(m_autoRandomBranchColor, &QCheckBox::stateChanged, this,
             &MindMapEditorPage::pageIsChanged);
   }
+  {
+    const auto label = tr("Separate node properties panel");
+    m_separateNodePropertiesPanel = WidgetsFactory::createCheckBox(label, this);
+    m_separateNodePropertiesPanel->setObjectName(
+        QStringLiteral("mindMapSeparateNodePropertiesPanel"));
+    m_separateNodePropertiesPanel->setToolTip(
+        tr("Show node properties in the Tools dock instead of the editor "
+           "(reopen editor to apply)"));
+    behavior->addWidget(SettingsPageHelper::createSeparator(this));
+    behavior->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_separateNodePropertiesPanel, m_separateNodePropertiesPanel->toolTip(), this));
+    addSearchItem(label, m_separateNodePropertiesPanel->toolTip(), m_separateNodePropertiesPanel);
+    connect(m_separateNodePropertiesPanel, &QCheckBox::stateChanged, this,
+            &MindMapEditorPage::pageIsChanged);
+  }
   const auto shortcuts =
       tr("Keyboard shortcuts can be configured in section [editor.mindMapEditor.shortcuts]");
   auto *description = SettingsPageHelper::createDescription(shortcuts, this);
@@ -113,6 +128,7 @@ void MindMapEditorPage::loadInternal() {
   m_undoLimit->setValue(config.getUndoLimit());
   m_confirmSubtreeDeletion->setChecked(config.getConfirmSubtreeDeletion());
   m_autoRandomBranchColor->setChecked(config.getAutoRandomBranchColor());
+  m_separateNodePropertiesPanel->setChecked(config.getSeparateNodePropertiesPanel());
 }
 
 bool MindMapEditorPage::saveInternal() {
@@ -122,6 +138,7 @@ bool MindMapEditorPage::saveInternal() {
   config.setUndoLimit(m_undoLimit->value());
   config.setConfirmSubtreeDeletion(m_confirmSubtreeDeletion->isChecked());
   config.setAutoRandomBranchColor(m_autoRandomBranchColor->isChecked());
+  config.setSeparateNodePropertiesPanel(m_separateNodePropertiesPanel->isChecked());
   EditorPage::notifyEditorConfigChange(m_services.get<HookManager>());
   return true;
 }

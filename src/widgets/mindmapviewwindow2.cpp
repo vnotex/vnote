@@ -1,7 +1,9 @@
 #include "mindmapviewwindow2.h"
 
 #include <QAction>
+#include <QApplication>
 #include <QComboBox>
+#include <QCoreApplication>
 #include <QLineEdit>
 #include <QPainter>
 #include <QPalette>
@@ -41,9 +43,28 @@ MindMapViewWindow2::MindMapViewWindow2(ServiceLocator &p_services, const Buffer2
 }
 
 MindMapViewWindow2::~MindMapViewWindow2() {
+  disconnect(m_toolsPanelFocusConn);
   // Focus loss during child teardown must not query the already-destroyed editor.
   disconnect(m_zoomComboBox->lineEdit(), nullptr, this, nullptr);
   setViewFullScreen(false);
+}
+
+bool MindMapViewWindow2::IsToolsPanelSupported() const {
+  return m_editor && m_editor->nodePropertiesPanel();
+}
+
+QString MindMapViewWindow2::getToolsPanelTitle() const {
+  return QCoreApplication::translate("m3::qt::NodePropertiesPanel", "Node Properties");
+}
+
+QWidget *MindMapViewWindow2::getToolsPanel() {
+  QPointer<QWidget> panel = m_editor ? m_editor->nodePropertiesPanel() : nullptr;
+  // Only the first handoff moves it out of the editor. An already-hosted panel
+  // must stay in ToolsPanelHost, whose same-panel binding is intentionally a no-op.
+  if (panel && panel->parentWidget() == m_editor) {
+    panel->setParent(this);
+  }
+  return panel.data();
 }
 
 void MindMapViewWindow2::setupUI() {
@@ -63,6 +84,31 @@ void MindMapViewWindow2::setupUI() {
 }
 
 void MindMapViewWindow2::connectEditorSignals() {
+  m_toolsPanelFocusConn =
+      connect(qApp, &QApplication::focusChanged, this, [this](QWidget *p_old, QWidget *p_now) {
+        auto *panel = m_editor->nodePropertiesPanel();
+        if (!panel || isAncestorOf(panel)) {
+          return;
+        }
+        const auto inView = [this](QWidget *p_widget) {
+          return p_widget && (p_widget == this || isAncestorOf(p_widget));
+        };
+        // Canvas transitions already run the base focus hooks. Cover only the
+        // external controls which the ViewWindow's QWidget ancestry cannot see.
+        if (inView(p_old) || inView(p_now)) {
+          return;
+        }
+        const auto inPanel = [panel](QWidget *p_widget) {
+          return p_widget && (p_widget == panel || panel->isAncestorOf(p_widget));
+        };
+        const bool hadFocus = inPanel(p_old);
+        const bool hasFocus = inPanel(p_now);
+        if (hasFocus && !hadFocus) {
+          onFocusGained();
+        } else if (!hasFocus && hadFocus) {
+          onFocusLost();
+        }
+      });
   connect(m_editor, &MindMapEditor::contentsChanged, this, [this]() {
     if (m_propagateEditorToBuffer) {
       onEditorContentsChanged();

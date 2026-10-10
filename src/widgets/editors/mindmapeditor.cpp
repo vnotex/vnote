@@ -25,12 +25,14 @@ using namespace vnotex;
 namespace {
 m3::qt::EditorConfig editorConfig(ServiceLocator &p_services, const Buffer2 &p_buffer) {
   m3::qt::EditorConfig config;
+  config.separateNodePropertiesPanel = true;
   if (auto *manager = p_services.get<ConfigMgr2>()) {
     const auto &settings = manager->getEditorConfig().getMindMapEditorConfig();
     config.style = {settings.getFontFamily(), settings.getFontPointSize()};
     config.undoLimit = settings.getUndoLimit();
     config.confirmSubtreeDeletion = settings.getConfirmSubtreeDeletion();
     config.autoRandomBranchColor = settings.getAutoRandomBranchColor();
+    config.separateNodePropertiesPanel = settings.getSeparateNodePropertiesPanel();
 
     using Shortcuts = m3::qt::EditorConfig::Shortcuts;
     static const struct {

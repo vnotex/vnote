@@ -333,13 +333,18 @@ void TestSettingsPersistence::test_mindMapPreferencesPersistAndReset() {
   auto *limit = page.findChild<QSpinBox *>(QStringLiteral("mindMapUndoLimit"));
   auto *confirm = page.findChild<QCheckBox *>(QStringLiteral("mindMapConfirmSubtreeDeletion"));
   auto *colors = page.findChild<QCheckBox *>(QStringLiteral("mindMapAutoRandomBranchColor"));
-  QVERIFY(family && size && limit && confirm && colors);
+  auto *separate =
+      page.findChild<QCheckBox *>(QStringLiteral("mindMapSeparateNodePropertiesPanel"));
+  QVERIFY(family && size && limit && confirm && colors && separate);
+  QVERIFY(separate->isChecked());
+  QVERIFY(config.getSeparateNodePropertiesPanel());
   const auto savedDefaults = config.toJson();
   family->setText(QStringLiteral("  Missing Font, Noto Sans  "));
   size->setValue(18);
   limit->setValue(2);
   confirm->setChecked(false);
   colors->setChecked(false);
+  separate->setChecked(false);
   QCOMPARE(config.toJson(), savedDefaults);
   QVERIFY(!page.isRestartNeeded());
   QVERIFY(page.save());
@@ -347,9 +352,11 @@ void TestSettingsPersistence::test_mindMapPreferencesPersistAndReset() {
   QCOMPARE(config.getFontPointSize(), 18);
   QCOMPARE(config.getUndoLimit(), 2);
   QVERIFY(!config.getConfirmSubtreeDeletion() && !config.getAutoRandomBranchColor());
+  QVERIFY(!config.getSeparateNodePropertiesPanel());
   QCOMPARE(config.toJson().value(QStringLiteral("shortcuts")).toObject(), shortcuts);
-  for (const auto &query : {QStringLiteral("font"), QStringLiteral("undo"),
-                            QStringLiteral("branch"), QStringLiteral("shortcuts")}) {
+  for (const auto &query :
+       {QStringLiteral("font"), QStringLiteral("undo"), QStringLiteral("branch"),
+        QStringLiteral("shortcuts"), QStringLiteral("properties"), QStringLiteral("Tools")}) {
     QVERIFY(page.search(query));
   }
   const auto persisted = [&] {
@@ -375,6 +382,8 @@ void TestSettingsPersistence::test_mindMapPreferencesPersistAndReset() {
                  ->isChecked());
     QVERIFY(!freshPage.findChild<QCheckBox *>(QStringLiteral("mindMapAutoRandomBranchColor"))
                  ->isChecked());
+    QVERIFY(!freshPage.findChild<QCheckBox *>(QStringLiteral("mindMapSeparateNodePropertiesPanel"))
+                 ->isChecked());
     m_services->registerService<ConfigMgr2>(m_configMgr);
   }
   family->setText(QStringLiteral("Discarded"));
@@ -382,11 +391,13 @@ void TestSettingsPersistence::test_mindMapPreferencesPersistAndReset() {
   limit->setValue(0);
   confirm->setChecked(true);
   colors->setChecked(true);
+  separate->setChecked(true);
   page.reset();
   QCOMPARE(family->text(), QStringLiteral("Missing Font, Noto Sans"));
   QCOMPARE(size->value(), 18);
   QCOMPARE(limit->value(), 2);
   QVERIFY(!confirm->isChecked() && !colors->isChecked());
+  QVERIFY(!separate->isChecked());
   family->clear();
   size->setValue(0);
   QVERIFY(page.save());
@@ -396,6 +407,14 @@ void TestSettingsPersistence::test_mindMapPreferencesPersistAndReset() {
   QVERIFY(!config.getConfirmSubtreeDeletion() && !config.getAutoRandomBranchColor());
   QCOMPARE(config.toJson().value(QStringLiteral("shortcuts")).toObject(), shortcuts);
   QTRY_COMPARE(persisted(), config.toJson());
+  separate->setChecked(true);
+  QVERIFY(!page.isRestartNeeded());
+  QVERIFY(page.save());
+  QVERIFY(config.getSeparateNodePropertiesPanel());
+  QTRY_COMPARE(persisted(), config.toJson());
+  separate->setChecked(false);
+  page.load();
+  QVERIFY(separate->isChecked());
 }
 
 } // namespace tests

@@ -5144,12 +5144,12 @@
 <context>
     <name>vnotex::MindMapEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+129"/>
+        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+146"/>
         <source>MindMap Editor</source>
         <translation>マインドマップエディター</translation>
     </message>
     <message>
-        <location line="-99"/>
+        <location line="-116"/>
         <source>Style</source>
         <translation>スタイル</translation>
     </message>
@@ -5230,6 +5230,16 @@
     </message>
     <message>
         <location line="+9"/>
+        <source>Separate node properties panel</source>
+        <translation>ノードのプロパティパネルを分離</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Show node properties in the Tools dock instead of the editor (reopen editor to apply)</source>
+        <translation>エディター内ではなくツールドックにノードのプロパティを表示します（エディターを開き直すと適用されます）</translation>
+    </message>
+    <message>
+        <location line="+10"/>
         <source>Keyboard shortcuts can be configured in section [editor.mindMapEditor.shortcuts]</source>
         <translation>キーボードショートカットは [editor.mindMapEditor.shortcuts] セクションで設定できます</translation>
     </message>

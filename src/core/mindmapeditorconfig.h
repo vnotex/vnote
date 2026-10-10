@@ -26,6 +26,9 @@ public:
   bool getAutoRandomBranchColor() const;
   void setAutoRandomBranchColor(bool p_enabled);
 
+  bool getSeparateNodePropertiesPanel() const;
+  void setSeparateNodePropertiesPanel(bool p_enabled);
+
   const QJsonObject &getShortcuts() const;
 
   void fromJson(const QJsonObject &p_jobj) override;
@@ -39,6 +42,7 @@ private:
   int m_undoLimit = 100;
   bool m_confirmSubtreeDeletion = true;
   bool m_autoRandomBranchColor = true;
+  bool m_separateNodePropertiesPanel = true;
 
   // Keep user overrides intact; MainConfig filters only the load-time runtime copy.
   QJsonObject m_shortcuts;

@@ -141,6 +141,7 @@ target_sources(vnote PRIVATE
     titlebarcontainer.cpp titlebarcontainer.h
     titletoolbar2.cpp titletoolbar2.h
     toolbarhelper2.cpp toolbarhelper2.h
+    toolspanelhost.cpp toolspanelhost.h
     treewidget.cpp treewidget.h
     detachedwindow.cpp detachedwindow.h
     viewarea2.cpp viewarea2.h

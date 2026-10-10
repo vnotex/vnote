@@ -56,6 +56,8 @@ QString DockWidgetHelper::iconFileName(DockType p_dockType) {
     return "outline_dock.svg";
   case DockType::CommentDock:
     return "comment_dock.svg";
+  case DockType::ToolsDock:
+    return "settings.svg";
   case DockType::HistoryDock:
     return "history_dock.svg";
   case DockType::TagDock:
@@ -131,8 +133,16 @@ void DockWidgetHelper::setupDocks() {
   setupDock(DockType::OutlineDock, tr("Outline"), QStringLiteral("OutlineDock.vnotex"),
             Qt::RightDockWidgetArea, Qt::AllDockWidgetAreas, true);
 
+  setupDock(DockType::ToolsDock, tr("Tools"), QStringLiteral("ToolsDock.vnotex"),
+            Qt::RightDockWidgetArea, Qt::AllDockWidgetAreas, true);
+
   setupDock(DockType::CommentDock, tr("Comments"), QStringLiteral("CommentDock.vnotex"),
             Qt::RightDockWidgetArea, Qt::AllDockWidgetAreas, true);
+
+  if (m_docks[OutlineDock] && m_docks[ToolsDock] && m_docks[CommentDock]) {
+    m_mainWindow->splitDockWidget(m_docks[OutlineDock], m_docks[ToolsDock], Qt::Vertical);
+    m_mainWindow->splitDockWidget(m_docks[ToolsDock], m_docks[CommentDock], Qt::Vertical);
+  }
 
   setupDock(DockType::ConsoleDock, tr("Console"), QStringLiteral("ConsoleDock.vnotex"),
             Qt::BottomDockWidgetArea, Qt::AllDockWidgetAreas, false);
@@ -170,6 +180,12 @@ bool DockWidgetHelper::setupDock(DockType p_dockType, const QString &p_title,
 
   auto dock = createDockWidget(p_dockType, p_title, m_mainWindow);
   m_docks[p_dockType] = dock;
+  connect(dock, &QObject::destroyed, this, [this, p_dockType, dock]() {
+    // An old shell can be deleted after setupDocks() has installed its replacement.
+    if (p_dockType >= 0 && p_dockType < m_docks.size() && m_docks[p_dockType] == dock) {
+      m_docks[p_dockType] = nullptr;
+    }
+  });
   dock->setObjectName(p_objectName);
   dock->setAllowedAreas(p_allowedAreas);
   addWidgetToDock(dock, widget);
@@ -189,6 +205,12 @@ QDockWidget *DockWidgetHelper::createDockWidget(DockType p_dockType, const QStri
   dock->setToolTip(p_title);
   dock->setProperty(PropertyDefs::c_dockWidgetIndex, p_dockType);
   dock->setProperty(PropertyDefs::c_dockWidgetTitle, p_title);
+  if (p_dockType == ToolsDock) {
+    connect(dock, &QWidget::windowTitleChanged, dock, [dock](const QString &p_title) {
+      dock->setToolTip(p_title);
+      dock->setProperty(PropertyDefs::c_dockWidgetTitle, p_title);
+    });
+  }
   return dock;
 }
 

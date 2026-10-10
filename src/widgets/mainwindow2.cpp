@@ -90,6 +90,7 @@
 #include <widgets/snippetpanel2.h>
 #include <widgets/tagexplorer2.h>
 #include <widgets/taskpanel2.h>
+#include <widgets/toolspanelhost.h>
 #include <widgets/viewarea2.h>
 #include <widgets/viewwindow2.h>
 
@@ -206,9 +207,17 @@ MainWindow2::MainWindow2(ServiceLocator &p_serviceLocator, QWidget *p_parent)
   // to avoid creating splits before the event loop is running.
   restoreWindowGeometry();
   updateCommentDockVisibility();
+  updateToolsDock();
 }
 
 MainWindow2::~MainWindow2() {
+  // Release borrowed content before the helper member and view children are destroyed.
+  disconnect(m_toolsWindowDestroyedConn);
+  if (m_toolsPanelHost) {
+    disconnect(m_toolsPanelHost, nullptr, this, nullptr);
+    m_toolsPanelHost->setPanel(nullptr, nullptr);
+  }
+
   // Detach the injected task context before it is destroyed, since TaskService
   // (owned in main.cpp) outlives this window.
   if (m_taskContext) {
@@ -920,6 +929,66 @@ void MainWindow2::updateCommentDockVisibility() {
   }
 }
 
+void MainWindow2::setupToolsPanel() {
+  m_toolsPanelHost = new ToolsPanelHost(m_serviceLocator, this);
+  m_toolsPanelHost->setObjectName(QStringLiteral("ToolsPanelHost.vnotex"));
+  connect(m_toolsPanelHost, &ToolsPanelHost::panelChanged, this,
+          &MainWindow2::updateToolsDockVisibility);
+}
+
+void MainWindow2::updateToolsDock() {
+  disconnect(m_toolsWindowDestroyedConn);
+  QPointer<ViewWindow2> win = m_viewArea->getCurrentViewWindow();
+  if (win) {
+    // Same-ID recreation can suppress current-window changes, even for unsupported views.
+    // Resolve the replacement only after the old window's destruction has unwound.
+    m_toolsWindowDestroyedConn = connect(win, &QObject::destroyed, this,
+                                         &MainWindow2::updateToolsDock, Qt::QueuedConnection);
+  }
+  QPointer<ToolsPanelHost> host = m_toolsPanelHost;
+  if (!host) {
+    return;
+  }
+
+  QPointer<QWidget> panel;
+  QString title;
+  if (win && win->IsToolsPanelSupported() && win) {
+    panel = win->getToolsPanel();
+    if (win && panel) {
+      title = win->getToolsPanelTitle();
+    }
+  }
+  if (!host || (win && win != m_viewArea->getCurrentViewWindow())) {
+    return;
+  }
+  host->setPanel(win, panel);
+  if (auto *dock = m_dockWidgetHelper.getDock(DockWidgetHelper::ToolsDock)) {
+    dock->setWindowTitle(win && panel && host && host->getPanel() == panel ? title : tr("Tools"));
+  }
+  updateToolsDockVisibility();
+}
+
+void MainWindow2::updateToolsDockVisibility() {
+  auto *dock = m_dockWidgetHelper.getDock(DockWidgetHelper::ToolsDock);
+  if (!dock || !m_toolsPanelHost) {
+    return;
+  }
+  // Destruction callbacks must not query a possibly dying ViewWindow.
+  const bool available = m_toolsPanelHost->getPanel() != nullptr;
+  dock->toggleViewAction()->setEnabled(available);
+  if (!available) {
+    dock->setWindowTitle(tr("Tools"));
+  }
+  const auto &keepDocks = m_serviceLocator.get<ConfigMgr2>()
+                              ->getWidgetConfig()
+                              .getMainWindowKeepDocksExpandingContentArea();
+  dock->setVisible(available && (!m_contentAreaExpanded || dock->isFloating() ||
+                                 keepDocks.contains(dock->objectName())));
+  if (m_defaultRightDockResizePending && !dock->isHidden()) {
+    QTimer::singleShot(0, this, &MainWindow2::resizeDefaultRightDocks);
+  }
+}
+
 void MainWindow2::setupTagExplorer() {
   m_tagExplorer = new TagExplorer2(m_serviceLocator, this);
   m_tagExplorer->setObjectName("TagExplorer2.vnotex");
@@ -952,6 +1021,8 @@ void MainWindow2::setupDocks() {
   setupOutlineViewer();
 
   setupCommentPanel();
+
+  setupToolsPanel();
 
   setupTagExplorer();
 
@@ -1073,10 +1144,11 @@ void MainWindow2::setupDocks() {
   // Wire current-window changes to the outline viewer.
   connect(m_viewArea->getController(), &ViewAreaController::currentViewWindowChanged, this,
           [this]() {
-            auto *win = m_viewArea->getCurrentViewWindow();
+            QPointer<ViewWindow2> win = m_viewArea->getCurrentViewWindow();
             m_outlineViewer->setOutlineProvider(win ? win->getOutlineProvider() : nullptr);
             m_commentPanel->setCommentProvider(win ? win->getCommentProvider() : nullptr);
             updateCommentDockVisibility();
+            updateToolsDock();
 
             // Keep the OS window title in sync with the current note, and follow renames
             // of the currently-active window. Drop the previous window's connection first.
@@ -1179,6 +1251,8 @@ QWidget *MainWindow2::getDockWidget(DockWidgetHelper::DockType p_dockType) const
     return m_outlineViewer;
   case DockWidgetHelper::DockType::CommentDock:
     return m_commentPanel;
+  case DockWidgetHelper::DockType::ToolsDock:
+    return m_toolsPanelHost.data();
   case DockWidgetHelper::DockType::TagDock:
     return m_tagExplorer;
   case DockWidgetHelper::DockType::SnippetDock:
@@ -1284,6 +1358,7 @@ void MainWindow2::setContentAreaExpanded(bool p_expanded) {
     m_visibleDocksBeforeExpand.clear();
   }
   updateCommentDockVisibility();
+  updateToolsDockVisibility();
 
   emit layoutChanged();
 }
@@ -1344,6 +1419,12 @@ void MainWindow2::resetStateAndGeometry() {
 
 void MainWindow2::resizeDefaultRightDocks() {
   if (!m_defaultRightDockResizePending) {
+    return;
+  }
+  auto *tools = m_dockWidgetHelper.getDock(DockWidgetHelper::ToolsDock);
+  if (tools && !tools->isHidden()) {
+    // Let Qt allocate all three panels from their size hints on the fresh layout.
+    m_defaultRightDockResizePending = false;
     return;
   }
   auto *outline = m_dockWidgetHelper.getDock(DockWidgetHelper::OutlineDock);

@@ -187,8 +187,10 @@ changing the loaded masks or partially rebinding a running session.
 The nested `style` has `font-family` (trimmed comma-separated fallback list, default empty)
 and `font-size` (integer points, 0–256; 0 inherits the interface font). These controls are
 independent global preferences, not theme or document style. Malformed values retain defaults.
-Behavior defaults are `undoLimit: 100` (0 unlimited), `confirmSubtreeDeletion: true`, and
-`autoRandomBranchColor: true`; negative undo limits normalize to 0.
+Behavior defaults are `undoLimit: 100` (0 unlimited), `confirmSubtreeDeletion: true`,
+`autoRandomBranchColor: true`, and `separateNodePropertiesPanel: true`; negative undo limits
+normalize to 0. The properties-panel placement is sampled when a mind map editor is created.
+Settings Apply persists it, but existing maps retain their placement until closed and reopened.
 
 `shortcuts` contains only overrides using m3 command member names and PortableText arrays:
 missing keys inherit m3, `[]` disables a binding, and arrays replace its full list. For example,
