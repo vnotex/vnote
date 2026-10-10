@@ -120,7 +120,7 @@ process lifetime. The destructor revokes whatever is left.
 
 ### Navigation policy
 
-`WebPage` is shared by PDF, MindMap, Markdown and the Windows warm-up page, so the allowance is
+`WebPage` is shared by PDF, Mind Map, Markdown and the Windows warm-up page, so the allowance is
 per-consumer: `WebPage::setAllowedMainFrameUrlPredicate()` defaults to unset (byte-identical
 behaviour for every existing consumer) and only `PdfViewer` installs one, matching **only** the
 viewer route. `vx://home`, `vx://settings` and user-authored links keep flowing through

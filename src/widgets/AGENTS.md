@@ -150,7 +150,7 @@ secondary actions in a three-dot **Menu** (`menu.svg`):
 | spacer | |
 | `addAdditionalRightToolBarActions()` | Markdown: Outline; PDF: sidebar, Outline, Find And Replace, Presentation Mode, page and zoom controls |
 | Find And Replace | Default position; PDF opts out because Find is beside Outline |
-| `addAdditionalViewToolBarActions()` | Text and Markdown: Presentation Mode; MindMap: zoom controls, then Presentation Mode |
+| `addAdditionalViewToolBarActions()` | Text and Markdown: Presentation Mode; Mind Map: zoom controls, then Presentation Mode |
 | Menu | Readable Width and Print, when `isPrintSupported()` |
 
 `addAdditionalToolBarMenuAction()` lets PDF reuse its existing menu action; the
@@ -168,7 +168,7 @@ overload owns the remaining direct controls. Theme refresh reaches both.
 Text keeps **Find And Replace → Presentation Mode → Menu**. Markdown keeps
 **Outline → Find And Replace → Presentation Mode → Menu**. PDF keeps
 **Outline → Find And Replace → Presentation Mode** together before page/zoom controls.
-MindMap adds Lucide Undo and Redo after the left common actions and keeps
+Mind Map adds Lucide Undo and Redo after the left common actions and keeps
 Outline → Find And Replace → Zoom Out → percentage combo → Zoom In → Presentation Mode → Menu.
 Zoom controls observe the native editor's `zoomChanged` signal and `isZoomFit()`
 state, including new/load reset, deferred explicit Fit, shortcuts and Ctrl+wheel.
@@ -223,16 +223,16 @@ restore under the current parent rather than moving the view back.
   restores the PDF zoom/scroll snapshot and toolbar state.
 - **Restore before structural changes:** conversion/replacement freeze,
   `setCentralWidget()`, `aboutToClose()` and teardown leave fullscreen first.
-  Text/PDF/MindMap teardown exits while derived state and any adapter still exist. Guarded
+  Text/PDF/Mind Map teardown exits while derived state and any adapter still exist. Guarded
   pointers and destruction handling restore surviving parent layouts without
   touching a dying widget.
 
-Markdown, Text, PDF and MindMap have a checkable **Presentation Mode** action: checked while presenting,
+Markdown, Text, PDF and Mind Map have a checkable **Presentation Mode** action: checked while presenting,
 click again to exit. Its view-scoped shortcut defaults to **F9**, configured through
 `editor.core.shortcuts.PresentationMode`; an empty string disables the shortcut.
-PDF's action remains usable even if the viewer reloads. MindMap presents the existing
+PDF's action remains usable even if the viewer reloads. Mind Map presents the existing
 editor without reloading content, changing read-only policy or resetting zoom.
-Each confirmed MindMap presentation entry collapses the embedded node-properties card through
+Each confirmed mind map presentation entry collapses the embedded node-properties card through
 `MindMapEditor::collapseNodeProperties()`, including with no selected node. Users may
 expand it again while presenting; exit leaves their current card preference unchanged.
 Separated node properties stay expanded in the Tools dock; presentation does not collapse them.
@@ -240,7 +240,7 @@ Only the QToolBar gets an opacity effect: **10% inactive, 100% active**. Active
 means the presentation window is active and the toolbar is hovered, contains
 keyboard focus, or owns an open popup (including submenus, zoom and extension
 menus). The effect includes the toolbar's styled background, not only its buttons.
-`PresentationToolBarEffect` shares this policy between Markdown, text, PDF and MindMap. During presentation,
+`PresentationToolBarEffect` shares this policy between Markdown, text, PDF and Mind Map. During presentation,
 the views paint the parent backdrop with the theme's `base#content#bg`, so a matching
 toolbar-colored parent cannot mask the fade.
 Theme changes refresh that color; normal mode restores normal frame painting.
@@ -322,20 +322,20 @@ the initialized map normally. Invalid nonblank input still fails closed.
 in forced edit mode; do not launch an external editor or depend on a `MainWindow2` pointer.
 Configuration persistence remains owned by `ConfigMgr2`; this action only opens the file.
 
-### MindMap editor settings
+### Mind map editor settings
 
-**Separate node properties panel** defaults on in Settings → Editor → MindMap Editor.
+**Separate node properties panel** defaults on in Settings → Editor → Mind Map Editor.
 Each editor owns exactly one properties widget: either hosted by Tools with no canvas toggle,
 or embedded as a collapsed card with its expand/collapse toggle. Placement changes apply to
 newly opened/reopened maps, not live editors. `MindMapViewWindow2` exposes the existing m3
 `nodePropertiesPanel()` in separated mode; it must never create a duplicate or reparent a
 panel already borrowed by `ToolsPanelHost`. m3 gates external edits by editor enabled/read-only
 policy and destroys the surviving panel before its controller/view, regardless of visual parent.
-For focus transitions outside the ViewWindow subtree, MindMap reuses the base writer/revision
+For focus transitions outside the ViewWindow subtree, Mind Map reuses the base writer/revision
 hooks so editing Tools before focusing the canvas still saves correctly. Canvas transitions keep
 the existing base handling; logical writer activation never moves keyboard focus from the dock.
 
-Settings → Editor → **MindMap Editor** exposes default fallback font families, point size,
+Settings → Editor → **Mind Map Editor** exposes default fallback font families, point size,
 undo limit, deletion confirmation and automatic colors for new main branches. Apply saves
 `editor.mindMapEditor` and uses `EditorPage::notifyEditorConfigChange()`'s existing one-second
 coalesced hook; editing controls alone changes nothing, and Reset reloads saved values.

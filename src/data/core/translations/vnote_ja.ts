@@ -5145,7 +5145,7 @@
     <name>vnotex::MindMapEditorPage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+146"/>
-        <source>MindMap Editor</source>
+        <source>Mind Map Editor</source>
         <translation>マインドマップエディター</translation>
     </message>
     <message>

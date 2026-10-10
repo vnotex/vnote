@@ -5239,7 +5239,7 @@
     </message>
     <message>
         <location line="+30"/>
-        <source>MindMap Editor</source>
+        <source>Mind Map Editor</source>
         <translation>마인드맵 편집기</translation>
     </message>
 </context>

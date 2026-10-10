@@ -48,7 +48,7 @@ inline QString assetRoot() { return QStringLiteral("web/pdf.js/"); }
 
 // The VNote-owned classic scripts the PDF template injects from outside the
 // pdf.js tree. This is an exact allowlist rather than a `web/js/` prefix: the
-// handler must not become a proxy for the Markdown/MindMap asset trees, for
+// handler must not become a proxy for the Markdown/Mind Map asset trees, for
 // `web/css/user.css`, or for the stale destination-only files the extra-data
 // installer never prunes. Keep it in step with
 // PdfViewerConfig::defaultViewerResource()'s `built_in` block.

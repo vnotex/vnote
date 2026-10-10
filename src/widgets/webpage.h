@@ -21,7 +21,7 @@ public:
   // Opt-in allowlist for main-frame navigations that must be handled IN the page
   // rather than routed out through externalLinkRequested.
   //
-  // This page class is shared by PDF, MindMap, Markdown and the Windows warm-up
+  // This page class is shared by PDF, Mind Map, Markdown and the Windows warm-up
   // page, so the allowance MUST stay per-consumer: the default (no predicate)
   // keeps every existing consumer's behaviour byte for byte, and only the PDF
   // viewer installs one, for its own `vxpdf://` viewer route.

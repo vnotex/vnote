@@ -137,7 +137,7 @@ void TestHtmlTemplateService::testFillThemeStylesWithContent_rejectsClosingStyle
 }
 
 void TestHtmlTemplateService::testFillThemeStyles_pathBasedUnchanged() {
-  // Regression test: the original path-based fillThemeStyles is preserved for MindMap.
+  // Regression test: the original path-based fillThemeStyles is preserved for Mind Map.
   QTemporaryFile webFile;
   QVERIFY(webFile.open());
   webFile.write("/* web css */");

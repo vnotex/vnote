@@ -104,7 +104,7 @@ private:
   // sources additionally get `type="module"`, decided purely by extension so the
   // persisted WebResource JSON needs no new key.
   //
-  // Markdown/MindMap resolution is deliberately left on `file://` and out of scope.
+  // Markdown/Mind Map resolution is deliberately left on `file://` and out of scope.
   static void fillPdfResources(QString &p_template, const WebResource &p_resource);
 
   // Fill resource placeholders by inlining content (for export templates).

@@ -181,7 +181,7 @@ rewrite of the user's bindings. Turning the option on and restarting must
 restore them, including custom bindings. Setters persist the preference without
 changing the loaded masks or partially rebinding a running session.
 
-### MindMap editor preferences
+### Mind map editor preferences
 
 `EditorConfig::getMindMapEditorConfig()` owns `editor.mindMapEditor` in `vnotex.json`.
 The nested `style` has `font-family` (trimmed comma-separated fallback list, default empty)
@@ -195,7 +195,7 @@ Settings Apply persists it, but existing maps retain their placement until close
 `shortcuts` contains only overrides using m3 command member names and PortableText arrays:
 missing keys inherit m3, `[]` disables a binding, and arrays replace its full list. For example,
 `"addChild": ["Ctrl+J"]`. These JSON-only settings require restart. VNote-owned zoom keys and
-buffer/encryption resource policy are not MindMap preferences. Unknown/invalid raw entries
+buffer/encryption resource policy are not mind map preferences. Unknown/invalid raw entries
 survive saves, including JSON nulls: `ConfigMgr2` restores the whole user-owned shortcuts
 object after merge-patching. `toJson()` writes raw data; `getShortcuts()` exposes a separate
 runtime copy masked once by `MainConfig::fromJson()` for the Ctrl+Alt policy above.

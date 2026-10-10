@@ -143,6 +143,6 @@ bool MindMapEditorPage::saveInternal() {
   return true;
 }
 
-QString MindMapEditorPage::title() const { return tr("MindMap Editor"); }
+QString MindMapEditorPage::title() const { return tr("Mind Map Editor"); }
 
 QString MindMapEditorPage::slug() const { return QStringLiteral("mindmapeditor"); }

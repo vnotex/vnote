@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Standardize English mind map wording in settings and documentation
 * Fix missing Chinese, Japanese and Korean translations in Sort/Properties dialogs, locked notes, counts, settings, command-line help and exported HTML link prompts
 * Fix encryption/decryption of open notes incorrectly rejecting their own temporary editing freeze as a read-only change
 * Add privacy-safe note-conversion logs identifying failed checkpoints and backend phases
@@ -408,7 +409,7 @@ VNote 4 is a major release built on a brand-new native core (**vxcore**) that po
 * **Platforms**: Windows, Linux, and macOS (universal Intel + Apple Silicon); built with Qt 6, with a Qt 5.15.2 build still provided for Windows 7 compatibility
 
 ## v3.20.0
-* MindMap: add outline and linking support
+* Mind Map: add outline and linking support
 * Refine themes
 * Support searching tags
 * Enhanced QuickAccess with unique id
