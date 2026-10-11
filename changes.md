@@ -1,6 +1,6 @@
 # Changes
 ## Unreleased
-* Fix Chinese input when renaming attachments on Windows by using a focused rename dialog instead of popup inline editing (#2755)
+* Fix Chinese input when renaming attachments on Windows with a focused rename dialog; reopen the attachment list with the renamed file selected and focused after success (#2755)
 * Standardize English mind map wording in settings and documentation
 * Fix missing Chinese, Japanese and Korean translations in Sort/Properties dialogs, locked notes, counts, settings, command-line help and exported HTML link prompts
 * Fix encryption/decryption of open notes incorrectly rejecting their own temporary editing freeze as a read-only change

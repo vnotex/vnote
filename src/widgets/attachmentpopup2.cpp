@@ -259,6 +259,7 @@ void AttachmentPopup2::setupUI() {
             const QPersistentModelIndex index(p_index);
             const auto oldName = index.data(Qt::EditRole).toString();
             const auto bufferId = m_buffer->id();
+            const auto popupPosition = pos();
             QPointer<AttachmentPopup2> guard(this);
             hide();
             bool accepted = false;
@@ -268,7 +269,22 @@ void AttachmentPopup2::setupUI() {
                 !m_buffer->isValid() || m_buffer->id() != bufferId) {
               return;
             }
-            m_model->setData(index, name, Qt::EditRole);
+            if (!m_model->setData(index, name, Qt::EditRole) || !guard || !index.isValid()) {
+              return;
+            }
+            // Showing the popup refreshes the model, so resolve the stored name again.
+            const auto renamedName = index.data(Qt::DisplayRole).toString();
+            popup(popupPosition);
+            for (int row = 0; row < m_model->rowCount(); ++row) {
+              if (m_model->attachmentAt(row) == renamedName) {
+                const auto renamedIndex = m_model->index(row, 0);
+                m_listView->selectionModel()->setCurrentIndex(
+                    renamedIndex, QItemSelectionModel::ClearAndSelect);
+                m_listView->scrollTo(renamedIndex);
+                m_listView->setFocus(Qt::PopupFocusReason);
+                break;
+              }
+            }
 #else
             m_listView->setEditTriggers(QAbstractItemView::AllEditTriggers);
             m_listView->edit(p_index);
