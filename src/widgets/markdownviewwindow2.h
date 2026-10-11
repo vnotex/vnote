@@ -305,6 +305,8 @@ private:
   // Whether external code-block highlight styles have been fetched from the theme.
   // Reset on theme change so styles are re-initialized from the new theme.
   bool m_codeBlockStylesInitialized = false;
+  bool m_codeBlockStylesPending = false;
+  quint64 m_highlightStyleGeneration = 0;
 
   // Image tracking for obsolete-image cleanup. Both sets hold the EXACT
   // markdown destination string, which may be a note-relative local path or a

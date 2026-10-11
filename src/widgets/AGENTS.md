@@ -283,8 +283,11 @@ Restore saved splitter sizes after viewer readiness, which otherwise redistribut
 Discard pending sizes on read/edit or edit-view-mode changes so hidden-pane sizes cannot collapse a new layout.
 Edit-mode external syntax highlighting parses the same template-owned bundled `highlight.css`
 through the existing adapter; encrypted notes must never read the installed/custom stylesheet.
-The shared vtextedit block cache stores converted formats by source text, so unchanged code
-blocks can retain previous theme colors until edited or reopened.
+Install the per-editor code/math palette after viewer readiness, including a lazily created editor.
+Theme changes reset stylesheet state before reload; generation and adapter checks reject obsolete
+CSS callbacks. Installing changed colors invalidates vtextedit's source-text and applied-format
+caches and rehighlights unchanged blocks without replacing text, selection or undo history.
+Ordinary editing retains the same cache keys and lookups; no per-block theme hashing is needed.
 
 **HTML5 fullscreen remains disabled.** Enabling
 `QWebEngineSettings::FullScreenSupportEnabled` advertises it to every web view

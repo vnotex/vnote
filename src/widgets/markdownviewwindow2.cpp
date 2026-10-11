@@ -750,6 +750,7 @@ void MarkdownViewWindow2::setupTextEditor() {
   });
 
   applyReadableWidth();
+  ensureExternalHighlightStyles();
 }
 
 bool MarkdownViewWindow2::setupViewer() {
@@ -868,6 +869,9 @@ bool MarkdownViewWindow2::setupViewer() {
   connect(m_viewer->page(), &QWebEnginePage::loadStarted, this, [this]() {
     const bool wasReady = m_viewerReady;
     m_viewerReady = false;
+    // A navigation can discard a pending stylesheet parse on the same adapter.
+    ++m_highlightStyleGeneration;
+    m_codeBlockStylesPending = false;
     // A requested Edit -> Read transition may still be loading its initial page.
     if (!m_preparingPresentation && (wasReady || m_presentationRequestSent)) {
       setPresentationMode(false);
@@ -884,6 +888,7 @@ bool MarkdownViewWindow2::setupViewer() {
   // Viewer ready signal.
   connect(adapterObj, &MarkdownViewerAdapter::ready, this, [this]() {
     m_viewerReady = true;
+    ensureExternalHighlightStyles();
     if (m_refreshMathPreviewsOnReady) {
       m_refreshMathPreviewsOnReady = false;
       if (m_editor) {
@@ -2021,6 +2026,9 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
 }
 
 void MarkdownViewWindow2::handleThemeChanged() {
+  ++m_highlightStyleGeneration;
+  m_codeBlockStylesInitialized = false;
+  m_codeBlockStylesPending = false;
   setPresentationMode(false);
   updateEditSectionNumberOptions(false);
   ViewWindow2::handleThemeChanged(); // base: refreshes toolbar icons
@@ -2097,9 +2105,6 @@ void MarkdownViewWindow2::handleThemeChanged() {
     m_debugViewer->page()->setBackgroundColor(themeService->getBaseBackground());
   }
 
-  // Reset external code block highlight styles so they are re-initialized
-  // from the new theme's HighlightStyleSheet on next highlight request.
-  m_codeBlockStylesInitialized = false;
   updateEditSectionNumberOptions(true);
 }
 
@@ -2589,7 +2594,10 @@ void MarkdownViewWindow2::handleExternalMathHighlightRequest(int p_idx, quint64 
 }
 
 void MarkdownViewWindow2::ensureExternalHighlightStyles() {
-  if (m_codeBlockStylesInitialized) {
+  if (m_codeBlockStylesInitialized || m_codeBlockStylesPending) {
+    return;
+  }
+  if (!m_editor || !m_viewerReady || !adapter() || !adapter()->isReady()) {
     return;
   }
 
@@ -2618,9 +2626,19 @@ void MarkdownViewWindow2::ensureExternalHighlightStyles() {
   if (content.isEmpty()) {
     return;
   }
-  m_codeBlockStylesInitialized = true;
-  adapter()->fetchStylesFromStyleSheet(
-      content, [this](const QVector<MarkdownViewerAdapter::CssRuleStyle> *rules) {
+  m_codeBlockStylesPending = true;
+  const auto generation = ++m_highlightStyleGeneration;
+  const QPointer<MarkdownViewerAdapter> source(adapter());
+  source->fetchStylesFromStyleSheet(
+      content,
+      [this, generation, source](const QVector<MarkdownViewerAdapter::CssRuleStyle> *rules) {
+        if (generation != m_highlightStyleGeneration) {
+          return;
+        }
+        m_codeBlockStylesPending = false;
+        if (!source || source != adapter() || !rules || !m_editor) {
+          return;
+        }
         MarkdownEditor::ExternalCodeBlockHighlightStyles styles;
 
         const QString prefix(".token.");
@@ -2646,7 +2664,10 @@ void MarkdownViewWindow2::ensureExternalHighlightStyles() {
           }
         }
 
-        MarkdownEditor::setExternalCodeBlockHighlihgtStyles(styles);
+        // Installing the palette clears cached token formats and requests a fresh
+        // highlight without replacing the document or its undo history.
+        m_codeBlockStylesInitialized = true;
+        m_editor->setExternalCodeBlockHighlihgtStyles(styles);
       });
 }
 
