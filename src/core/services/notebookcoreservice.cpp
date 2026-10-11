@@ -398,6 +398,29 @@ VxCoreError NotebookCoreService::unlockNotebookEncryption(const QString &p_noteb
                                            static_cast<size_t>(p_password.size()));
 }
 
+VxCoreError NotebookCoreService::unlockNoteEncryption(const QString &p_notebookId,
+                                                      const QString &p_filePath,
+                                                      const QByteArray &p_password) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray notebookId = p_notebookId.toUtf8();
+  const QByteArray filePath = p_filePath.toUtf8();
+  return vxcore_encryption_unlock_note(m_context, notebookId.constData(), filePath.constData(),
+                                       p_password.constData(),
+                                       static_cast<size_t>(p_password.size()));
+}
+
+VxCoreError NotebookCoreService::migrateNoteEncryption(const QString &p_notebookId,
+                                                       const QString &p_filePath) {
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  const QByteArray notebookId = p_notebookId.toUtf8();
+  const QByteArray filePath = p_filePath.toUtf8();
+  return vxcore_encryption_migrate_note(m_context, notebookId.constData(), filePath.constData());
+}
+
 VxCoreError NotebookCoreService::lockAllEncryption() {
   if (!checkContext()) {
     return VXCORE_ERR_NOT_INITIALIZED;

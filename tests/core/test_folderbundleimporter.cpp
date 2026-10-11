@@ -77,6 +77,7 @@ private slots:
   void testImportsBundleWithIdsAndMetadataIntact();
   void testAttachmentsSurviveReopen();
   void testImportsIntoNestedDestination();
+  void testEncryptedMindmapBundleRequiresAuthenticatedTransfer_data();
   void testEncryptedMindmapBundleRequiresAuthenticatedTransfer();
   void testEncryptedMetadataRejected_data();
   void testEncryptedMetadataRejected();
@@ -471,7 +472,14 @@ void TestFolderBundleImporter::testImportsIntoNestedDestination() {
   QCOMPARE(projects.value(QStringLiteral("folders")).toArray().size(), 1);
 }
 
+void TestFolderBundleImporter::testEncryptedMindmapBundleRequiresAuthenticatedTransfer_data() {
+  QTest::addColumn<bool>("corruptUnrelatedVault");
+  QTest::newRow("no-vault") << false;
+  QTest::newRow("corrupt-unrelated-vault") << true;
+}
+
 void TestFolderBundleImporter::testEncryptedMindmapBundleRequiresAuthenticatedTransfer() {
+  QFETCH(bool, corruptUnrelatedVault);
   NotebookIoGate gate;
   SyncWorkQueueManager queues;
   const QByteArray sourcePassword("source-mindmap-password");
@@ -499,8 +507,32 @@ void TestFolderBundleImporter::testEncryptedMindmapBundleRequiresAuthenticatedTr
            }).result(),
            VXCORE_OK);
 
+  QString destinationAnchor;
+  QCOMPARE(QtConcurrent::run([&]() -> VxCoreError {
+             NotebookIoGate::ScopedLock lock(gate, m_destId);
+             return m_notebooks->createEncryptedNote(
+                 m_destId, QString(), QStringLiteral("destination-key.txt"), QStringLiteral("text"),
+                 QByteArrayLiteral("destination context"), &destinationAnchor);
+           }).result(),
+           VXCORE_OK);
+  QVERIFY(!QFileInfo::exists(m_sourcePath + QStringLiteral("/vx_notebook/encryption.vne")));
+  QVERIFY(!QFileInfo::exists(m_destPath + QStringLiteral("/vx_notebook/encryption.vne")));
+  const QString sourceVault = m_sourcePath + QStringLiteral("/vx_notebook/encryption.vne");
+  const QByteArray unrelatedBytes("unrelated damaged legacy vault");
+  if (corruptUnrelatedVault) {
+    QFile key(sourceVault);
+    QVERIFY(key.open(QIODevice::WriteOnly));
+    QCOMPARE(key.write(unrelatedBytes), qint64(unrelatedBytes.size()));
+  }
   const QString bundle = makeBundle(QStringLiteral("Alpha"));
   QVERIFY(!bundle.isEmpty());
+  QVERIFY(!QFileInfo::exists(bundle + QStringLiteral("/vx_notebook/encryption.vne")));
+  QVERIFY(QFileInfo::exists(bundle + QStringLiteral("/vx_notebook/config.json")));
+  if (corruptUnrelatedVault) {
+    QFile key(sourceVault);
+    QVERIFY(key.open(QIODevice::ReadOnly));
+    QCOMPARE(key.readAll(), unrelatedBytes);
+  }
   const auto inspection = FolderBundleImporter::inspect(bundle);
   QVERIFY(inspection.m_valid);
   QVERIFY(inspection.m_encrypted);
@@ -514,7 +546,8 @@ void TestFolderBundleImporter::testEncryptedMindmapBundleRequiresAuthenticatedTr
   m_sourceId.clear();
   QCOMPARE(m_notebooks->lockAllEncryption(), VXCORE_OK);
   QCOMPARE(QtConcurrent::run([&]() {
-             return m_notebooks->unlockNotebookEncryption(m_destId, destinationPassword);
+             return m_notebooks->unlockNoteEncryption(
+                 m_destId, QStringLiteral("destination-key.txt.vne"), destinationPassword);
            }).result(),
            VXCORE_OK);
 
@@ -559,11 +592,11 @@ void TestFolderBundleImporter::testEncryptedMindmapBundleRequiresAuthenticatedTr
   QVERIFY(!m_destId.isEmpty());
   QVERIFY(m_notebooks->rebuildNotebookCache(m_destId));
   QCOMPARE(QtConcurrent::run([&]() {
-             return m_notebooks->unlockNotebookEncryption(m_destId, sourcePassword);
+             return m_notebooks->unlockNoteEncryption(m_destId, importedPath, sourcePassword);
            }).result(),
            VXCORE_ERR_ENCRYPTION_AUTH_FAILED);
   QCOMPARE(QtConcurrent::run([&]() {
-             return m_notebooks->unlockNotebookEncryption(m_destId, destinationPassword);
+             return m_notebooks->unlockNoteEncryption(m_destId, importedPath, destinationPassword);
            }).result(),
            VXCORE_OK);
   const auto reopened = buffers.openBuffer({m_destId, importedPath});

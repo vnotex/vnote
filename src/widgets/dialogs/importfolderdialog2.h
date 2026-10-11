@@ -50,8 +50,7 @@ public:
 
   // Currently selected mode.
   Mode currentMode() const;
-  void
-  setDestinationUnlocker(std::function<VxCoreError(const QString &, QByteArray &)> p_unlocker) {
+  void setDestinationUnlocker(std::function<VxCoreError(const QString &)> p_unlocker) {
     m_destinationUnlocker = std::move(p_unlocker);
   }
 
@@ -80,7 +79,7 @@ private:
 
   ServiceLocator &m_services;
   NodeIdentifier m_parentId;
-  std::function<VxCoreError(const QString &, QByteArray &)> m_destinationUnlocker;
+  std::function<VxCoreError(const QString &)> m_destinationUnlocker;
 
   // Controller handles validation and import logic.
   ImportFolderController *m_controller = nullptr;

@@ -136,7 +136,8 @@ void MainWindow2::drainProtectedOpens() {
   while (!m_protectedOpens->requests.isEmpty()) {
     const auto request = m_protectedOpens->requests.takeFirst();
     VxCoreError error;
-    const auto status = notebooks->encryptionStatus(request.first.notebookId, QString(), &error);
+    const auto status =
+        notebooks->encryptionStatus(request.first.notebookId, request.first.relativePath, &error);
     const QString vault = status.value(QLatin1String(vxcore::kJsonKeyVaultId)).toString();
     const QString rejectionKey = vault.isEmpty() ? request.first.notebookId : vault;
     if (rejectedVaults.contains(rejectionKey))
@@ -159,7 +160,8 @@ void MainWindow2::drainProtectedOpens() {
       progress.setCancelButton(nullptr);
       progress.setMinimumDuration(0);
       progress.show();
-      error = controller->unlockNoteEncryption(request.first.notebookId, password);
+      error = controller->unlockNoteEncryption(request.first.notebookId, request.first.relativePath,
+                                               password);
     }
     if (error == VXCORE_OK) {
       m_protectedOpens->retrying = true;

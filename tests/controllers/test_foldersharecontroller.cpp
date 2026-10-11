@@ -93,6 +93,9 @@ private slots:
   void testProtectedBundlePreservesRelativeAssets_data();
   void testProtectedBundlePreservesRelativeAssets();
   void testProtectedBundleRejectsEscapingAssets();
+  void testProtectedBundleRejectsMalformedEnvelope_data();
+  void testProtectedBundleRejectsMalformedEnvelope();
+  void testProtectedBundleRevalidatesCopiedHeader();
   void testEmptyAttachmentsOmittedIsValid();
   void testNonStringAttachmentEntryRejected();
   void testRejectsRawNotebook();
@@ -608,6 +611,83 @@ void TestFolderShareController::testProtectedBundleRejectsEscapingAssets() {
     QVERIFY(!result.m_errorMessage.isEmpty());
     QCOMPARE(leftoverEntries(destination(), QString()), QStringList());
   }
+}
+
+void TestFolderShareController::testProtectedBundleRejectsMalformedEnvelope_data() {
+  QTest::addColumn<QString>("fileName");
+  QTest::newRow("unindexed-note") << QStringLiteral("orphan.md.vne");
+  QTest::newRow("unindexed-backup") << QStringLiteral("orphan.md.vne.vswp");
+}
+
+void TestFolderShareController::testProtectedBundleRejectsMalformedEnvelope() {
+  QFETCH(QString, fileName);
+  makeFolder(QStringLiteral("Alpha"));
+  makeFile(QStringLiteral("Alpha"), QStringLiteral("ordinary.md"), "ordinary note");
+  QFile malformed(m_notebookPath + QStringLiteral("/Alpha/") + fileName);
+  QVERIFY(malformed.open(QIODevice::WriteOnly));
+  const QByteArray invalid("not an encrypted snapshot");
+  QCOMPARE(malformed.write(invalid), qint64(invalid.size()));
+  malformed.close();
+
+  FolderSharePackager::Request request;
+  request.m_notebookRoot = m_notebookPath;
+  request.m_contentRoot = m_notebookPath + QStringLiteral("/Alpha");
+  request.m_metadataRoot = QFileInfo(configPath(QStringLiteral("Alpha"))).path();
+  request.m_destinationParent = destination();
+  request.m_folderName = QStringLiteral("Alpha");
+  const auto result = FolderSharePackager::run(request, {});
+  QCOMPARE(result.m_status, FolderSharePackager::Status::Failed);
+  QCOMPARE(leftoverEntries(destination(), QString()), QStringList());
+}
+
+void TestFolderShareController::testProtectedBundleRevalidatesCopiedHeader() {
+  makeFolder(QStringLiteral("Alpha"));
+  auto setup = m_notebooks->prepareNotebookEncryption(m_notebookId, QString(),
+                                                      QByteArrayLiteral("copied-header-password"));
+  QVERIFY(setup.isValid());
+  SyncWorkQueueManager queues;
+  {
+    auto maintenance = queues.tryAcquireMaintenance({m_notebookId});
+    QVERIFY(maintenance.isValid());
+    NotebookIoGate::ScopedLock lock(*m_gate, m_notebookId);
+    QCOMPARE(m_notebooks->commitNotebookEncryption(setup), VXCORE_OK);
+    QString noteId;
+    QCOMPARE(m_notebooks->createEncryptedNote(
+                 m_notebookId, QStringLiteral("Alpha"), QStringLiteral("private.md"),
+                 QStringLiteral("markdown"), QByteArrayLiteral("secret"), &noteId),
+             VXCORE_OK);
+  }
+  QCOMPARE(m_notebooks->lockAllEncryption(), VXCORE_OK);
+
+  FolderSharePackager::Request request;
+  request.m_notebookRoot = m_notebookPath;
+  request.m_contentRoot = m_notebookPath + QStringLiteral("/Alpha");
+  request.m_metadataRoot = QFileInfo(configPath(QStringLiteral("Alpha"))).path();
+  request.m_destinationParent = destination();
+  request.m_folderName = QStringLiteral("Alpha");
+  bool changed = false;
+  FolderSharePackager::Callbacks callbacks;
+  callbacks.m_phaseChanged = [&](FolderSharePackager::Phase phase) {
+    if (phase != FolderSharePackager::Phase::Publishing) {
+      return;
+    }
+    // All copy/hash passes have finished. A publishing callback is still allowed
+    // to pump events, so classification must use the staged bytes after this gate.
+    const auto staged = QDir(destination())
+                            .entryList({QStringLiteral(".vnote-share-*")},
+                                       QDir::Dirs | QDir::Hidden | QDir::NoDotAndDotDot);
+    QCOMPARE(staged.size(), 1);
+    QFile note(destination() + QLatin1Char('/') + staged.first() +
+               QStringLiteral("/Alpha/private.md.vne"));
+    QVERIFY(note.open(QIODevice::ReadWrite));
+    QCOMPARE(note.write("bad", 3), qint64(3));
+    note.close();
+    changed = true;
+  };
+  const auto result = FolderSharePackager::run(request, callbacks);
+  QVERIFY(changed);
+  QCOMPARE(result.m_status, FolderSharePackager::Status::Failed);
+  QCOMPARE(leftoverEntries(destination(), QString()), QStringList());
 }
 
 void TestFolderShareController::testEmptyAttachmentsOmittedIsValid() {

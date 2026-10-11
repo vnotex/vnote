@@ -370,7 +370,9 @@ int main(int argc, char *argv[]) {
     // constructed BEFORE BufferService (which captures it by pointer) and
     // remain alive until after BufferService shutdown.
     NotebookIoGate notebookIoGate;
+    SyncWorkQueueManager syncWorkQueueManager;
     BufferService bufferService(context, &hookManager, &notebookIoGate);
+    bufferService.setSyncWorkQueueManager(&syncWorkQueueManager);
     TagCoreService tagCoreService(context);
     TagService tagService(context, &hookManager);
     SnippetCoreService snippetCoreService(context);
@@ -423,7 +425,6 @@ int main(int argc, char *argv[]) {
     // executor used by SyncService for all async sync dispatch. Registered
     // BEFORE SyncService so the latter picks it up via ServiceLocator.
     // Shutdown is driven from QCoreApplication::aboutToQuit below.
-    SyncWorkQueueManager syncWorkQueueManager;
     serviceLocator.registerService<SyncWorkQueueManager>(&syncWorkQueueManager);
 
     SyncService syncService(serviceLocator);

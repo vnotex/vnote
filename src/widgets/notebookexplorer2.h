@@ -262,7 +262,7 @@ private:
   VxCoreError prepareNotebookEncryption(const QString &p_notebookId,
                                         PreparedNotebookEncryption &p_setup,
                                         QProgressDialog &p_progress, QString &p_errorMessage,
-                                        bool p_allowSetup);
+                                        bool p_allowSetup, const QString &p_filePath = QString());
   void setCurrentNotebookInternal(const QString &p_notebookId);
   // Functional read-only guard for toolbar-driven mutation slots. Resolves the
   // current notebook id the same way the read-only badge does and queries

@@ -22,10 +22,13 @@ namespace vnotex {
 //
 // A nested source such as "Projects/Alpha" is FLATTENED to a top-level "Alpha";
 // the ancestors are not included. Indexed ids, timestamps, tags and child order
-// are preserved. A protected bundle additionally carries the wrapped notebook
-// key and a sync-disabled portable config. Plaintext assets and the original
-// relative assets-folder setting are preserved without body rewrites; absolute
-// or parent-escaping assets-folder layouts are refused before publication.
+// are preserved. A protected bundle additionally carries a sync-disabled portable
+// config. The wrapped notebook key is included only when a selected note or backup
+// is legacy v1; self-contained v2 bundles neither read nor include an unrelated
+// key file. Header classification is unauthenticated and rechecked on staged bytes
+// before publication; importing protected bodies still requires authentication.
+// Plaintext assets and the original relative assets-folder setting are preserved
+// without body rewrites; absolute or parent-escaping layouts are refused.
 //
 // Design notes
 // ------------

@@ -102,6 +102,7 @@ NoteEncryptionConversion::~NoteEncryptionConversion() {
 
 PreparedNotebookEncryption ViewAreaController::prepareNoteEncryption(
     const QString &p_notebookId, const QString &p_sourceNotebookId, QByteArray &p_password) {
+  const auto passwordGuard = qScopeGuard([&]() { erasePassword(p_password); });
   PreparedNotebookEncryption prepared;
   auto *notebooks = m_services.get<NotebookCoreService>();
   if (notebooks) {
@@ -110,8 +111,25 @@ PreparedNotebookEncryption ViewAreaController::prepareNoteEncryption(
       return prepared.m_error;
     });
   }
-  erasePassword(p_password);
   return prepared;
+}
+
+VxCoreError ViewAreaController::commitNoteEncryption(const QString &p_notebookId,
+                                                     PreparedNotebookEncryption &p_setup) {
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  auto *queues = m_services.get<SyncWorkQueueManager>();
+  auto *gate = m_services.get<NotebookIoGate>();
+  if (!notebooks || !queues || !gate)
+    return VXCORE_ERR_NOT_INITIALIZED;
+  auto maintenance = queues->tryAcquireMaintenance({p_notebookId});
+  if (!maintenance)
+    return VXCORE_ERR_SYNC_IN_PROGRESS;
+  return runEncryptionWorker([&]() {
+    NotebookIoGate::ScopedTryLock lock(*gate, p_notebookId, 5000);
+    if (!lock.isLocked())
+      return VXCORE_ERR_SYNC_IN_PROGRESS;
+    return notebooks->commitNotebookEncryption(p_setup);
+  });
 }
 
 VxCoreError ViewAreaController::reconcileNoteEncryption(const QString &p_notebookId,
@@ -137,34 +155,34 @@ VxCoreError ViewAreaController::reconcileNoteEncryption(const QString &p_noteboo
 }
 
 VxCoreError ViewAreaController::unlockNoteEncryption(const QString &p_notebookId,
+                                                     const QString &p_filePath,
                                                      QByteArray &p_password) {
+  const auto passwordGuard = qScopeGuard([&]() { erasePassword(p_password); });
   auto *notebooks = m_services.get<NotebookCoreService>();
-  VxCoreError error = VXCORE_ERR_NOT_INITIALIZED;
-  if (notebooks) {
-    auto status = notebooks->encryptionStatus(p_notebookId, QString(), &error);
-    if (error == VXCORE_OK && !status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool()) {
-      error = VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED;
-    }
-    const auto marker = status.value(QLatin1String(vxcore::kJsonKeyEncryptionInitialized));
-    if (error == VXCORE_OK && !notebooks->isNotebookReadOnly(p_notebookId) &&
-        (!marker.isBool() || !marker.toBool())) {
-      error = reconcileNoteEncryption(p_notebookId, false);
-      if (error == VXCORE_OK) {
-        status = notebooks->encryptionStatus(p_notebookId, QString(), &error);
-        if (error == VXCORE_OK &&
-            !status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool()) {
-          error = VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED;
-        }
-      }
-    }
-    if (error == VXCORE_OK) {
-      // Read-only unlock never reconciles; password hashing stays outside the gate.
-      error = runEncryptionWorker(
-          [&]() { return notebooks->unlockNotebookEncryption(p_notebookId, p_password); });
-    }
+  if (!notebooks)
+    return VXCORE_ERR_NOT_INITIALIZED;
+  if (p_filePath.isEmpty())
+    return VXCORE_ERR_INVALID_PARAM;
+  VxCoreError error = VXCORE_OK;
+  const auto status = notebooks->encryptionStatus(p_notebookId, p_filePath, &error);
+  if (error != VXCORE_OK)
+    return error;
+  if (!status.value(QLatin1String(vxcore::kJsonKeyEncrypted)).toBool()) {
+    return VXCORE_ERR_ENCRYPTION_FORMAT;
   }
-  erasePassword(p_password);
-  return error;
+  // Exact selected-note source; password hashing never holds the IO gate.
+  return runEncryptionWorker(
+      [&]() { return notebooks->unlockNoteEncryption(p_notebookId, p_filePath, p_password); });
+}
+
+VxCoreError ViewAreaController::unlockNotebookEncryption(const QString &p_notebookId,
+                                                         QByteArray &p_password) {
+  const auto passwordGuard = qScopeGuard([&]() { erasePassword(p_password); });
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  if (!notebooks)
+    return VXCORE_ERR_NOT_INITIALIZED;
+  return runEncryptionWorker(
+      [&]() { return notebooks->unlockNotebookEncryption(p_notebookId, p_password); });
 }
 
 std::shared_ptr<NoteEncryptionConversion>

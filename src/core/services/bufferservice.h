@@ -21,6 +21,7 @@ namespace vnotex {
 class HookManager;
 class BufferSaveQueue;
 class NotebookIoGate;
+class SyncWorkQueueManager;
 struct SearchFileResult;
 
 // Auto-save policy for buffer content.
@@ -69,6 +70,9 @@ public:
 
   // Set the auto-save policy directly.
   void setAutoSavePolicy(AutoSavePolicy p_policy);
+
+  // Inject the shared GUI-owned maintenance coordinator before protected opens.
+  void setSyncWorkQueueManager(SyncWorkQueueManager *p_queues);
 
   // Map an EditorConfig auto-save policy value and apply it.
   // @p_configPolicy: 0=None, 1=AutoSave, 2=BackupFile (matches EditorConfig::AutoSavePolicy).
@@ -474,6 +478,7 @@ private:
 
   HookManager *m_hookMgr = nullptr;
   NotebookIoGate *m_ioGate = nullptr;
+  SyncWorkQueueManager *m_syncWorkQueues = nullptr;
   // Owned gate used only by the convenience ctor (test/legacy). Nullptr when
   // a shared gate is supplied externally.
   NotebookIoGate *m_ownedIoGate = nullptr;

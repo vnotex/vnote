@@ -51,7 +51,7 @@
 #include <temp_dir_fixture.h>
 #include <test_helper.h>
 
-#include "core/notebook.h"
+#include "core/encryptednote.h"
 #include "sync/sync_backend_registry.h"
 #include "sync/sync_json_keys.h"
 #include "sync/webdav/webdav_sync_backend.h"
@@ -1250,13 +1250,12 @@ void TestWebDavSyncService::liveEncryptedLeaseRefusesEnvelopeReplacement() {
   QCOMPARE(note.getContentRaw(), plaintext);
   const auto notePath = note.nodeId().relativePath;
   const auto oldCiphertext = readBytes(path(notePath));
-  const auto oldEnvelope = readBytes(path(c_envelope));
+  QVERIFY(!QFileInfo::exists(path(c_envelope)));
   QCOMPARE(sync(), VXCORE_OK);
   m_lastSuccess = m_notebooks->getLastSyncUtc(m_id);
   QCOMPARE(remoteBytes(notePath), oldCiphertext);
-  QCOMPARE(remoteBytes(c_envelope), oldEnvelope);
 
-  using Encryption = vxcore::NotebookEncryption;
+  using Encryption = vxcore::EncryptedNote;
   Encryption::KeyEnvelope envelope;
   Encryption::Key masterKey, notebookKey, noteKey;
   Encryption::ObjectHeader header;
@@ -1274,37 +1273,26 @@ void TestWebDavSyncService::liveEncryptedLeaseRefusesEnvelopeReplacement() {
                                          envelope, notebookKey, noteKey, header.document_id, body,
                                          {{"editorType", "markdown"}}),
            VXCORE_OK);
-  std::string encodedEnvelope;
-  QCOMPARE(Encryption::EncodeKeyEnvelope(envelope, encodedEnvelope), VXCORE_OK);
-  const auto incomingEnvelope = QByteArray::fromStdString(encodedEnvelope);
   const auto incomingCiphertext = readBytes(staged);
-  putRemote(c_envelope, incomingEnvelope);
   putRemote(notePath, incomingCiphertext);
   auto lease = note.acquireProtectedLease();
   QVERIFY(lease && lease->isCurrent());
   const auto refused = sync();
   QVERIFY(refused == VXCORE_ERR_SYNC_IN_PROGRESS || refused == VXCORE_ERR_ENCRYPTION_LOCKED);
-  QCOMPARE(readBytes(path(c_envelope)), oldEnvelope);
+  QVERIFY(!QFileInfo::exists(path(c_envelope)));
   QCOMPARE(readBytes(path(notePath)), oldCiphertext);
-  // Pending key-envelope recovery deliberately blocks all protected core reads,
-  // including cached plaintext. The view-owned text is not reread through this guard.
-  const void *unavailable = reinterpret_cast<const void *>(quintptr(1));
-  size_t unavailableSize = 1;
-  QCOMPARE(vxcore_buffer_get_content_raw(m_context, note.id().toUtf8().constData(), &unavailable,
-                                         &unavailableSize),
-           VXCORE_ERR_SYNC_CONFLICT);
-  QVERIFY(unavailable == nullptr);
-  QCOMPARE(unavailableSize, size_t(0));
+  // The refused replacement cannot invalidate the still-leased self-contained note.
+  QCOMPARE(note.getContentRaw(), plaintext);
   QCOMPARE(m_notebooks->getLastSyncUtc(m_id), m_lastSuccess);
   QVERIFY(m_changed->isEmpty());
   lease.reset();
   QVERIFY(m_buffers->closeBuffer(note.id()));
   QCOMPARE(m_notebooks->lockAllEncryption(), VXCORE_OK);
   QCOMPARE(sync(), VXCORE_OK);
-  QCOMPARE(readBytes(path(c_envelope)), incomingEnvelope);
+  QVERIFY(!QFileInfo::exists(path(c_envelope)));
   QCOMPARE(readBytes(path(notePath)), incomingCiphertext);
   QVERIFY(!m_notebooks->encryptionStatus(m_id).value(QStringLiteral("unlocked")).toBool());
-  QCOMPARE(m_notebooks->unlockNotebookEncryption(m_id, password), VXCORE_OK);
+  QCOMPARE(m_notebooks->unlockNoteEncryption(m_id, notePath, password), VXCORE_OK);
   note = m_buffers->openBufferByNodeId(noteId);
   QVERIFY(note.isValid());
   QCOMPARE(note.getContentRaw(), incomingPlaintext);

@@ -395,31 +395,8 @@ void ImportFolderDialog2::importBundle() {
   callbacks.m_sourcePassword = [passwordPrompt](QByteArray *out) {
     return passwordPrompt(tr("Unlock Encrypted Bundle"), tr("Source master password:"), out);
   };
-  callbacks.m_unlockDestination = [this, selfGuard, passwordPrompt](const QString &id) {
-    if (!selfGuard)
-      return false;
-    auto *notebooks = m_services.get<NotebookCoreService>();
-    if (!notebooks)
-      return false;
-    VxCoreError error = VXCORE_OK;
-    const auto status = notebooks->encryptionStatus(id, QString(), &error);
-    if (error != VXCORE_OK || !status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool())
-      return false;
-    if (status.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool())
-      return true;
-    if (!m_destinationUnlocker)
-      return false;
-    QByteArray password;
-    if (!passwordPrompt(tr("Unlock Destination Notebook"), tr("Destination master password:"),
-                        &password)) {
-      return false;
-    }
-    error = m_destinationUnlocker(id, password);
-    volatile char *data = password.data();
-    for (int index = 0; index < password.size(); ++index)
-      data[index] = 0;
-    password.clear();
-    return error == VXCORE_OK;
+  callbacks.m_unlockDestination = [this, selfGuard](const QString &id) {
+    return selfGuard && m_destinationUnlocker && m_destinationUnlocker(id) == VXCORE_OK;
   };
   auto *buffers = m_services.get<BufferService>();
   const auto validation = m_controller->validateBundle(input);

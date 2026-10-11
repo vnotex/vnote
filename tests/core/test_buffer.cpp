@@ -1168,7 +1168,8 @@ void TestBuffer::testEncryptedNoteConversionCancellationKeepsWriter() {
   QVERIFY(buffers.closeBuffer(note.id()));
   QCOMPARE(m_notebookService->lockAllEncryption(), VXCORE_OK);
   QCOMPARE(QtConcurrent::run([&]() {
-             return m_notebookService->unlockNotebookEncryption(notebookId, password);
+             return m_notebookService->unlockNoteEncryption(
+                 notebookId, QStringLiteral("cancel.md.vne"), password);
            }).result(),
            VXCORE_OK);
   note = buffers.openBufferByNodeId(noteId);
@@ -1206,10 +1207,18 @@ void TestBuffer::testEncryptedNoteConversionPublishesCurrentWriter() {
     QString editor = writers[index];
     BufferService buffers(m_context, &hooks, &gate, AutoSavePolicy::AutoSave);
     const auto expected = index == 2 ? gb18030->fromUnicode(editor) : editor.toUtf8();
-    QCOMPARE(QtConcurrent::run([&]() {
-               return m_notebookService->unlockNotebookEncryption(notebookId, password);
-             }).result(),
-             VXCORE_OK);
+    if (index > 0) {
+      QCOMPARE(QtConcurrent::run([&]() {
+                 setup =
+                     m_notebookService->prepareNotebookEncryption(notebookId, QString(), password);
+                 return setup.m_error;
+               }).result(),
+               VXCORE_OK);
+      QCOMPARE(runNoteConversionWorker(
+                   queues, gate, notebookId,
+                   [&]() { return m_notebookService->commitNotebookEncryption(setup); }),
+               VXCORE_OK);
+    }
     QString noteId;
     QCOMPARE(runNoteConversionWorker(queues, gate, notebookId,
                                      [&]() {
@@ -1402,7 +1411,8 @@ void TestBuffer::testUnloadedEncryptedNoteConversionKeepsPersistedBody() {
     QVERIFY(buffers.beginProtectedOperation());
     const auto operation = qScopeGuard([&]() { buffers.endProtectedOperation(); });
     QCOMPARE(QtConcurrent::run([&]() {
-               return m_notebookService->unlockNotebookEncryption(notebookId, password);
+               return m_notebookService->unlockNoteEncryption(notebookId, sourceNode.relativePath,
+                                                              password);
              }).result(),
              VXCORE_OK);
     QVERIFY(note.editorType().isEmpty());
@@ -1515,7 +1525,7 @@ void TestBuffer::testPlainNoteConversionStillPublishesCurrentWriter() {
   QVERIFY(!QFileInfo::exists(sourcePath));
   QCOMPARE(m_notebookService->lockAllEncryption(), VXCORE_OK);
   QCOMPARE(QtConcurrent::run([&]() {
-             return m_notebookService->unlockNotebookEncryption(notebookId, password);
+             return m_notebookService->unlockNoteEncryption(notebookId, targetPath, password);
            }).result(),
            VXCORE_OK);
   note = buffers.openBufferByNodeId(noteId);

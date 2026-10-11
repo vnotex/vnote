@@ -13,6 +13,7 @@
 #include <QLoggingCategory>
 #include <QMutexLocker>
 #include <QPointer>
+#include <QScopeGuard>
 #include <QTextCodec>
 #include <QThread>
 #include <QTimer>
@@ -30,6 +31,7 @@
 #include <core/services/hookmanager.h>
 #include <core/services/notebookiogate.h>
 #include <core/services/searchservice.h>
+#include <core/services/syncworkqueuemanager.h>
 #include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
@@ -46,6 +48,17 @@ QTextCodec *resolveCodec(const QString &p_codecName) {
     }
   }
   return QTextCodec::codecForName("UTF-8");
+}
+
+QString protectedPathIdentity(const QString &p_path) {
+  const QFileInfo file(p_path);
+  QString path = file.canonicalFilePath();
+  if (path.isEmpty())
+    path = file.absoluteFilePath();
+#ifdef Q_OS_WIN
+  path = path.toCaseFolded();
+#endif
+  return QDir::cleanPath(path);
 }
 } // namespace
 
@@ -67,6 +80,7 @@ struct ProtectedBufferState {
 
 struct BufferService::ProtectedBuffers {
   QHash<QString, std::shared_ptr<ProtectedBufferState>> buffers;
+  QSet<NodeIdentifier> opening; // Canonical physical paths, scoped by notebook.
 };
 
 struct BufferService::NoteConversions {
@@ -350,7 +364,8 @@ bool BufferService::beginSyncApply(const QString &p_notebookId, QStringList *p_p
   if (!p_protectedPaths)
     return false;
   p_protectedPaths->clear();
-  if (p_notebookId.isEmpty() || m_replacementStopping || m_syncApplyBuffers.contains(p_notebookId))
+  if (p_notebookId.isEmpty() || m_replacementStopping ||
+      replacementAffectsNode(p_notebookId, QString(), true))
     return false;
   for (const auto &request : m_searchReplacements) {
     if (request->target.m_notebookId == p_notebookId)
@@ -470,6 +485,18 @@ bool BufferService::replacementAffectsNode(const QString &p_notebookId, const QS
                                            bool p_folder) const {
   if (m_syncApplyBuffers.contains(p_notebookId))
     return true;
+  if (m_protectedBuffers) {
+    for (const auto &opening : m_protectedBuffers->opening) {
+      if (opening.notebookId != p_notebookId)
+        continue;
+      if (p_folder && p_path.isEmpty())
+        return true;
+      const auto path = protectedPathIdentity(getResolvedPath(p_notebookId, p_path));
+      if (opening.relativePath == path ||
+          (p_folder && opening.relativePath.startsWith(path + QLatin1Char('/'))))
+        return true;
+    }
+  }
   for (auto token : m_replacementReservations) {
     const auto request = m_searchReplacements.value(token);
     if (!request || request->target.m_notebookId != p_notebookId)
@@ -854,6 +881,11 @@ void BufferService::finishSearchReplacement(int p_token, bool p_changed, bool p_
 
 void BufferService::setAutoSavePolicy(AutoSavePolicy p_policy) { m_autoSavePolicy = p_policy; }
 
+void BufferService::setSyncWorkQueueManager(SyncWorkQueueManager *p_queues) {
+  Q_ASSERT(QThread::currentThread() == thread());
+  m_syncWorkQueues = p_queues;
+}
+
 void BufferService::syncAutoSavePolicy(int p_configPolicy) {
   // Map EditorConfig::AutoSavePolicy (0=None, 1=AutoSave, 2=BackupFile)
   // to BufferService::AutoSavePolicy.
@@ -947,16 +979,97 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
       actual.notebookId = cstrToQString(notebookId);
       actual.relativePath = cstrToQString(relativePath);
     }
+    actual.relativePath = QDir::cleanPath(actual.relativePath);
     event.notebookId = actual.notebookId;
     event.filePath = actual.relativePath;
-    NotebookIoGate::ScopedTryLock gate(*m_ioGate, actual.notebookId, 50);
-    if (!gate.isLocked()) {
-      if (p_outErr) {
-        *p_outErr = VXCORE_ERR_SYNC_IN_PROGRESS;
-      }
-      return Buffer2();
+    if (replacementAffectsNode(actual.notebookId, actual.relativePath, false)) {
+      *p_outErr = VXCORE_ERR_SYNC_IN_PROGRESS;
+      return {};
     }
-    bufferId = BufferCoreService::openBuffer(actual.notebookId, actual.relativePath, p_outErr);
+    if (!m_protectedBuffers)
+      m_protectedBuffers.reset(new ProtectedBuffers);
+    // Reserve the path before the worker wait can reenter through queued opens,
+    // close/rename hooks, or a sync apply request.
+    const NodeIdentifier opening{actual.notebookId, protectedPathIdentity(getResolvedPath(
+                                                        actual.notebookId, actual.relativePath))};
+    m_protectedBuffers->opening.insert(opening);
+    const auto openingGuard = qScopeGuard([&]() { m_protectedBuffers->opening.remove(opening); });
+    if (!beginProtectedOperation()) {
+      *p_outErr = VXCORE_ERR_ENCRYPTION_LOCKED;
+      return {};
+    }
+    const auto operationGuard = qScopeGuard([&]() { endProtectedOperation(); });
+    bool readOnly = p_settings.m_readOnly;
+    bool notebookReadOnly = false;
+    *p_outErr = vxcore_notebook_is_read_only(m_context, actual.notebookId.toUtf8().constData(),
+                                             &notebookReadOnly);
+    if (*p_outErr != VXCORE_OK)
+      return {};
+    readOnly = readOnly || notebookReadOnly;
+    bool loaded = false;
+    for (const auto &value : BufferCoreService::listBuffers()) {
+      const auto info = value.toObject();
+      const auto owner = info.value(QLatin1String(vxcore::kJsonKeyNotebookId)).toString();
+      const auto path = info.value(QStringLiteral("filePath")).toString();
+      if (protectedPathIdentity(getResolvedPath(owner, path)) != opening.relativePath)
+        continue;
+      loaded = loaded || info.value(QStringLiteral("contentLoaded")).toBool();
+      readOnly = readOnly ||
+                 (m_bufferFlags.value(info.value(QLatin1String(vxcore::kJsonKeyId)).toString()) &
+                  ReadOnly);
+    }
+    SyncWorkQueueManager::MaintenanceLease maintenance;
+    if (!readOnly && !loaded) {
+      if (m_syncWorkQueues) {
+        maintenance = m_syncWorkQueues->tryAcquireMaintenance({actual.notebookId});
+        if (!maintenance) {
+          *p_outErr = VXCORE_ERR_SYNC_IN_PROGRESS;
+          return {};
+        }
+        QEventLoop loop;
+        QFutureWatcher<VxCoreError> watcher;
+        connect(&watcher, &QFutureWatcher<VxCoreError>::finished, &loop, &QEventLoop::quit);
+        watcher.setFuture(QtConcurrent::run([this, actual]() {
+          NotebookIoGate::ScopedTryLock gate(*m_ioGate, actual.notebookId, 5000);
+          if (!gate.isLocked())
+            return VXCORE_ERR_SYNC_IN_PROGRESS;
+          return vxcore_encryption_migrate_note(m_context, actual.notebookId.toUtf8().constData(),
+                                                actual.relativePath.toUtf8().constData());
+        }));
+        if (!watcher.isFinished())
+          loop.exec();
+        watcher.waitForFinished();
+        *p_outErr = watcher.result();
+      } else {
+        // Standalone consumers may read v2 without a coordinator, but must not
+        // silently rewrite a legacy note without a maintenance reservation.
+        char *json = nullptr;
+        *p_outErr = vxcore_encryption_get_status(m_context, actual.notebookId.toUtf8().constData(),
+                                                 actual.relativePath.toUtf8().constData(), &json);
+        const auto status =
+            json ? QJsonDocument::fromJson(QByteArray(json)).object() : QJsonObject();
+        vxcore_string_free(json);
+        if (*p_outErr == VXCORE_OK &&
+            status.value(QLatin1String(vxcore::kJsonKeyVersion)).toInt() == 1) {
+          *p_outErr = status.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool()
+                          ? VXCORE_ERR_NOT_INITIALIZED
+                          : VXCORE_ERR_ENCRYPTION_LOCKED;
+          if (*p_outErr == VXCORE_ERR_NOT_INITIALIZED) {
+            qWarning() << "Writable legacy protected open requires SyncWorkQueueManager";
+          }
+        }
+      }
+    }
+    if (*p_outErr == VXCORE_OK) {
+      // Migration has completed and released the worker gate. Keep maintenance
+      // until core load captures its new fingerprint, before any view is exposed.
+      NotebookIoGate::ScopedTryLock gate(*m_ioGate, actual.notebookId, 50);
+      if (!gate.isLocked()) {
+        *p_outErr = VXCORE_ERR_SYNC_IN_PROGRESS;
+      } else {
+        bufferId = BufferCoreService::openBuffer(actual.notebookId, actual.relativePath, p_outErr);
+      }
+    }
   } else {
     bufferId = BufferCoreService::openBuffer(p_nodeId.notebookId, p_nodeId.relativePath, p_outErr);
   }

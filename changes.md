@@ -1,4 +1,9 @@
 # Changes
+## Unreleased
+* Make newly encrypted notes and backups self-contained: each v2 `.vne` carries its wrapped keys and no longer depends on a shared notebook vault
+* Migrate legacy encrypted notes and backups on writable open without rewriting their encrypted payload; read-only opens leave the original files unchanged
+* Preserve shared master-password unlocking across notes; retain old vaults for unmigrated notes and historical copies. Older VNote versions cannot read v2 notes
+
 ## v4.9.1
 A maintenance release with more flexible mind-map tools, theme fixes and attachment improvements on top of VNote 4.9.0:
 

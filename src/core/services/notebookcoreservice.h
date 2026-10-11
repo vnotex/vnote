@@ -240,7 +240,7 @@ public:
   // Encryption operations are synchronous and acquire no locks here. The caller
   // must run prepare/unlock (KDF work) on a worker outside NotebookIoGate.
   // Password bytes are borrowed unchanged for the call; the caller owns wiping them.
-  // An empty source notebook ID prepares a new vault instead of reusing a source.
+  // An empty source notebook ID prepares a new context instead of reusing a source.
   PreparedNotebookEncryption prepareNotebookEncryption(const QString &p_notebookId,
                                                        const QString &p_sourceNotebookId,
                                                        const QByteArray &p_password);
@@ -250,7 +250,13 @@ public:
   // Same maintenance/gate contract; no KDF. Only explicit legacy consent may
   // confirm an unknown notebook without a key as uninitialized.
   VxCoreError reconcileNotebookEncryption(const QString &p_notebookId, bool p_confirmUninitialized);
+  // Explicit compatibility operation for a legacy external key envelope.
   VxCoreError unlockNotebookEncryption(const QString &p_notebookId, const QByteArray &p_password);
+  VxCoreError unlockNoteEncryption(const QString &p_notebookId, const QString &p_filePath,
+                                   const QByteArray &p_password);
+  // Explicit writable open only, before loading a buffer. Caller holds maintenance
+  // and the worker IO gate; migration performs no password hashing.
+  VxCoreError migrateNoteEncryption(const QString &p_notebookId, const QString &p_filePath);
   // Close protected buffers/read operations and discard prepared setups first.
   VxCoreError lockAllEncryption();
   // Explicit UI/protected-candidate query only, never an ordinary-operation preflight.

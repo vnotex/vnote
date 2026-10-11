@@ -170,13 +170,25 @@ void NotebookExplorer2::convertNoteEncryption(const QList<NodeIdentifier> &p_ids
   };
   PreparedNotebookEncryption setup;
   QString errorMessage;
-  const auto preparationError =
-      prepareNotebookEncryption(notebookId, setup, progress, errorMessage, p_encrypt);
-  if (preparationError != VXCORE_OK) {
-    if (preparationError != VXCORE_ERR_CANCELLED) {
-      showError(errorMessage);
+  if (p_encrypt) {
+    const auto error = prepareNotebookEncryption(notebookId, setup, progress, errorMessage, true);
+    if (error != VXCORE_OK) {
+      if (error != VXCORE_ERR_CANCELLED)
+        showError(errorMessage);
+      return;
     }
-    return;
+  } else {
+    // A selection may contain different embedded contexts; unlock every exact source
+    // before reserving views or acquiring any maintenance lease.
+    for (const auto &id : p_ids) {
+      const auto error = prepareNotebookEncryption(notebookId, setup, progress, errorMessage, false,
+                                                   id.relativePath);
+      if (error != VXCORE_OK) {
+        if (error != VXCORE_ERR_CANCELLED)
+          showError(errorMessage);
+        return;
+      }
+    }
   }
 
   QVector<std::shared_ptr<NoteEncryptionConversion>> conversions;
@@ -252,8 +264,8 @@ void NotebookExplorer2::convertNoteEncryption(const QList<NodeIdentifier> &p_ids
 VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebookId,
                                                          PreparedNotebookEncryption &p_setup,
                                                          QProgressDialog &p_progress,
-                                                         QString &p_errorMessage,
-                                                         bool p_allowSetup) {
+                                                         QString &p_errorMessage, bool p_allowSetup,
+                                                         const QString &p_filePath) {
   p_errorMessage.clear();
   auto *notebooks = m_services.get<NotebookCoreService>();
   if (!notebooks || !m_viewAreaController) {
@@ -264,21 +276,19 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
                         const QString &p_sourceId = QString()) {
     QString message;
     if (p_error == VXCORE_ERR_ENCRYPTION_SYNC_STATE) {
-      message = tr("Cannot check encryption key conflicts in the notebook's local Git sync data "
-                   "(vx_notebook/vx_sync). Check folder permissions and repair the local sync "
-                   "repository before retrying. Do not delete encryption.vne or Git history.");
+      message = tr("Cannot check legacy encryption key conflicts in the notebook's local sync "
+                   "data. Repair the local sync state before retrying. Do not delete the key "
+                   "file or sync history.");
     } else if (p_error == VXCORE_ERR_SYNC_CONFLICT) {
-      message = tr("The notebook key file (vx_notebook/encryption.vne) has an unresolved sync "
-                   "conflict. Back up the notebook and resolve that conflict before retrying. "
-                   "Do not delete the key file or merge its contents as text.");
+      message =
+          tr("The legacy notebook key file has an unresolved sync conflict. Back up the "
+             "notebook and resolve that conflict before retrying. Do not merge keys as text.");
     } else if (p_error == VXCORE_ERR_ENCRYPTION_AUTH_FAILED) {
       message = tr("Unable to unlock: incorrect password or damaged key data");
     } else if (p_error == VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED) {
-      message = tr("The notebook encryption key is missing or needs recovery. Restore the original "
-                   "vx_notebook/encryption.vne before continuing. A new key cannot recover "
-                   "previously encrypted notes.");
-    } else if (p_error == VXCORE_ERR_INVALID_STATE) {
-      message = tr("The notebook encryption state changed. Retry the operation.");
+      message = tr("The selected legacy note needs its original vx_notebook/encryption.vne. "
+                   "Restore that file from a backup. Creating a new encryption context cannot "
+                   "recover existing encrypted notes.");
     } else {
       message = p_message.isEmpty() ? QString::fromUtf8(vxcore_error_message(p_error)) : p_message;
     }
@@ -292,14 +302,15 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
           QLatin1Char('\n') + tr("Master-password source notebook: %1").arg(location(p_sourceId));
     }
     p_errorMessage =
-        tr("Could not prepare note conversion.\n\nNotebook: %1\n\n%2").arg(notebook, message);
+        tr("Could not prepare note encryption.\n\nNotebook: %1\n\n%2").arg(notebook, message);
     return p_error;
   };
-  const auto unlock = [&](const QString &p_id, const QString &p_name) {
+  const auto unlock = [&](const QString &p_id, const QString &p_name, const QString &p_path) {
     bool accepted = false;
-    QString passwordText = QInputDialog::getText(
-        &p_progress, tr("Unlock Notebook"), tr("Enter the master password for \"%1\".").arg(p_name),
-        QLineEdit::Password, QString(), &accepted);
+    QString passwordText =
+        QInputDialog::getText(&p_progress, tr("Unlock Protected Notes"),
+                              tr("Enter the master password for \"%1\".").arg(p_name),
+                              QLineEdit::Password, QString(), &accepted);
     if (!accepted) {
       passwordText.fill(QChar(0));
       return VXCORE_ERR_CANCELLED;
@@ -307,93 +318,65 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
     QByteArray password = passwordText.toUtf8();
     passwordText.fill(QChar(0));
     passwordText.clear();
-    p_progress.setLabelText(tr("Unlocking notebook..."));
-    const auto error = m_viewAreaController->unlockNoteEncryption(p_id, password);
+    p_progress.setLabelText(tr("Unlocking protected notes..."));
+    const auto error = p_path.isEmpty()
+                           ? m_viewAreaController->unlockNotebookEncryption(p_id, password)
+                           : m_viewAreaController->unlockNoteEncryption(p_id, p_path, password);
     return error == VXCORE_OK || error == VXCORE_ERR_CANCELLED ? error
                                                                : fail(error, QString(), p_id);
   };
 
-  const auto reconcile = [&](const QString &p_id, bool p_confirmUninitialized,
-                             QJsonObject &p_status) {
-    auto error = m_viewAreaController->reconcileNoteEncryption(p_id, p_confirmUninitialized);
-    if (error == VXCORE_OK) {
-      p_status = notebooks->encryptionStatus(p_id, QString(), &error);
-    }
-    return error == VXCORE_OK ? error : fail(error, QString(), p_id);
-  };
-  const auto ensureExistingKey = [&](const QString &p_id, QJsonObject &p_status) {
-    if (!p_status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool()) {
-      return fail(VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED, QString(), p_id);
-    }
-    auto marker = p_status.value(QLatin1String(vxcore::kJsonKeyEncryptionInitialized));
-    if (!notebooks->isNotebookReadOnly(p_id) && (!marker.isBool() || !marker.toBool())) {
-      const auto error = reconcile(p_id, false, p_status);
-      if (error != VXCORE_OK) {
-        return error;
-      }
-      if (!p_status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool()) {
-        return fail(VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED, QString(), p_id);
-      }
-      marker = p_status.value(QLatin1String(vxcore::kJsonKeyEncryptionInitialized));
-      if (!marker.isBool() || !marker.toBool()) {
-        return fail(VXCORE_ERR_INVALID_STATE, QString(), p_id);
-      }
-    }
-    return VXCORE_OK;
-  };
-
   VxCoreError statusError = VXCORE_OK;
-  auto status = notebooks->encryptionStatus(p_notebookId, QString(), &statusError);
-  if (statusError != VXCORE_OK) {
+  auto status = notebooks->encryptionStatus(p_notebookId, p_filePath, &statusError);
+  if (statusError != VXCORE_OK)
     return fail(statusError);
+  if (status.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool())
+    return VXCORE_OK;
+  const QString name = notebooks->getNotebookConfig(p_notebookId)
+                           .value(QLatin1String(vxcore::kJsonKeyName))
+                           .toString();
+  if (!p_filePath.isEmpty()) {
+    return unlock(p_notebookId, name, p_filePath);
   }
-  if (!status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool()) {
-    if (!p_allowSetup) {
-      return fail(VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED);
-    }
-    const auto marker = status.value(QLatin1String(vxcore::kJsonKeyEncryptionInitialized));
-    if (!marker.isBool()) {
-      QMessageBox confirmation(
-          QMessageBox::Warning, tr("Set Up Note Encryption"),
-          tr("This notebook has no encryption.vne key file, and its previous use of encryption "
-             "is unknown.\n\nIf it was encrypted before, cancel and restore the original "
-             "vx_notebook/encryption.vne. A newly generated key cannot recover previously "
-             "encrypted notes.\n\nContinue only if this notebook has never used encryption."),
-          QMessageBox::Cancel, &p_progress);
-      confirmation.setObjectName(QStringLiteral("noteEncryptionLegacyConfirmation"));
-      auto *continueButton = confirmation.addButton(tr("Continue"), QMessageBox::AcceptRole);
-      confirmation.setDefaultButton(QMessageBox::Cancel);
-      confirmation.setEscapeButton(QMessageBox::Cancel);
-      confirmation.exec();
-      if (confirmation.clickedButton() != continueButton) {
-        return VXCORE_ERR_CANCELLED;
-      }
-      const auto error = reconcile(p_notebookId, true, status);
-      if (error != VXCORE_OK) {
-        return error;
-      }
-    }
-  }
+  if (!p_allowSetup)
+    return fail(VXCORE_ERR_INVALID_PARAM);
+
+  QMessageBox choice(QMessageBox::Question, tr("Set Up Note Encryption"),
+                     tr("Unlock an existing encrypted note to reuse its master password, or "
+                        "explicitly create a new encryption context. A new context does not "
+                        "unlock notes encrypted with an older context."),
+                     QMessageBox::Cancel, &p_progress);
+  choice.setObjectName(QStringLiteral("noteEncryptionContextChoice"));
+  auto *existing = choice.addButton(tr("Unlock Existing Encrypted Note"), QMessageBox::ActionRole);
+  existing->setObjectName(QStringLiteral("unlockExistingEncryptedNote"));
+  QPushButton *legacy = nullptr;
   if (status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool()) {
-    const auto error = ensureExistingKey(p_notebookId, status);
-    if (error != VXCORE_OK) {
-      return error;
+    legacy = choice.addButton(tr("Unlock Legacy Notebook Key"), QMessageBox::ActionRole);
+    legacy->setObjectName(QStringLiteral("unlockLegacyNotebookKey"));
+  }
+  auto *create = choice.addButton(tr("Create New Encryption Context"), QMessageBox::ActionRole);
+  create->setObjectName(QStringLiteral("createEncryptionContext"));
+  choice.setDefaultButton(QMessageBox::Cancel);
+  choice.setEscapeButton(QMessageBox::Cancel);
+  choice.exec();
+  if (choice.clickedButton() == existing) {
+    const QString root = notebooks->buildAbsolutePath(p_notebookId, QString());
+    const QString selected = QFileDialog::getOpenFileName(
+        &p_progress, tr("Unlock Existing Encrypted Note"), root, tr("Encrypted notes (*.vne)"));
+    if (selected.isEmpty())
+      return VXCORE_ERR_CANCELLED;
+    const QString relative = QDir(root).relativeFilePath(selected);
+    if (relative == QLatin1String("..") || relative.startsWith(QLatin1String("../")) ||
+        QDir::isAbsolutePath(relative)) {
+      return fail(VXCORE_ERR_INVALID_PARAM, tr("Select an encrypted note in this notebook."));
     }
-    if (status.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool()) {
-      return VXCORE_OK;
-    }
-    const QString name = notebooks->getNotebookConfig(p_notebookId)
-                             .value(QLatin1String(vxcore::kJsonKeyName))
-                             .toString();
-    return unlock(p_notebookId, name);
+    return unlock(p_notebookId, name, relative);
   }
-  const auto marker = status.value(QLatin1String(vxcore::kJsonKeyEncryptionInitialized));
-  if (!marker.isBool()) {
-    return fail(VXCORE_ERR_INVALID_STATE);
+  if (legacy && choice.clickedButton() == legacy) {
+    return unlock(p_notebookId, name, QString());
   }
-  if (marker.toBool()) {
-    return fail(VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED);
-  }
+  if (choice.clickedButton() != create)
+    return VXCORE_ERR_CANCELLED;
 
   struct Source {
     QString id;
@@ -401,7 +384,7 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
   };
   QVector<Source> sources;
   QSet<QString> vaults;
-  QStringList labels;
+  QStringList labels{tr("Use a new master password")};
   for (const auto &value : notebooks->listNotebooks()) {
     const auto notebook = value.toObject();
     const QString id = notebook.value(QLatin1String(vxcore::kJsonKeyId)).toString();
@@ -410,6 +393,7 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
       continue;
     }
     VxCoreError error = VXCORE_OK;
+    // No-file status includes the active in-memory context, even without a vault file.
     const auto sourceStatus = notebooks->encryptionStatus(id, QString(), &error);
     const QString vault = sourceStatus.value(QLatin1String(vxcore::kJsonKeyVaultId)).toString();
     if (error != VXCORE_OK ||
@@ -427,35 +411,29 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
   QString sourceId;
   QByteArray password;
   if (!sources.isEmpty()) {
-    int index = 0;
-    if (sources.size() > 1) {
-      bool accepted = false;
-      const QString label = QInputDialog::getItem(
-          &p_progress, tr("Choose Master Password"),
-          tr("Use the master password of this initialized notebook:"), labels, 0, false, &accepted);
-      if (!accepted) {
-        return VXCORE_ERR_CANCELLED;
-      }
-      index = labels.indexOf(label);
-    }
-    const auto &source = sources.at(index);
-    sourceId = source.id;
-    VxCoreError error = VXCORE_OK;
-    auto sourceStatus = notebooks->encryptionStatus(source.id, QString(), &error);
-    if (error != VXCORE_OK) {
-      return fail(error, QString(), source.id);
-    }
-    error = ensureExistingKey(source.id, sourceStatus);
-    if (error != VXCORE_OK) {
-      return error;
-    }
-    if (!sourceStatus.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool()) {
-      const auto error = unlock(source.id, source.label);
-      if (error != VXCORE_OK) {
-        return error;
+    bool accepted = false;
+    const QString label = QInputDialog::getItem(
+        &p_progress, tr("Choose Master Password"),
+        tr("Create a new master password or reuse an available notebook context:"), labels, 0,
+        false, &accepted);
+    if (!accepted)
+      return VXCORE_ERR_CANCELLED;
+    const int index = labels.indexOf(label) - 1;
+    if (index >= 0) {
+      const auto &source = sources.at(index);
+      sourceId = source.id;
+      VxCoreError error = VXCORE_OK;
+      const auto sourceStatus = notebooks->encryptionStatus(source.id, QString(), &error);
+      if (error != VXCORE_OK)
+        return fail(error, QString(), source.id);
+      if (!sourceStatus.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool()) {
+        error = unlock(source.id, source.label, QString());
+        if (error != VXCORE_OK)
+          return error;
       }
     }
-  } else {
+  }
+  if (sourceId.isEmpty()) {
     QDialog dialog(&p_progress);
     dialog.setWindowTitle(tr("Set Up Note Encryption"));
     dialog.setObjectName(QStringLiteral("noteEncryptionSetup"));
@@ -472,8 +450,8 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
     auto *confirmation = new QLineEdit(&dialog);
     confirmation->setObjectName(QStringLiteral("confirmMasterPassword"));
     confirmation->setEchoMode(QLineEdit::Password);
-    layout->addRow(tr("Master password:"), first);
-    layout->addRow(tr("Confirm password:"), confirmation);
+    layout->addRow(tr("Master password"), first);
+    layout->addRow(tr("Confirm password"), confirmation);
     auto *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
     buttons->button(QDialogButtonBox::Ok)->setText(tr("Set Up Encryption"));
     buttons->button(QDialogButtonBox::Ok)->setEnabled(false);
@@ -490,31 +468,12 @@ VxCoreError NotebookExplorer2::prepareNotebookEncryption(const QString &p_notebo
     connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
     first->setFocus();
     const bool accepted = dialog.exec() == QDialog::Accepted;
-    if (accepted) {
+    if (accepted)
       password = first->text().toUtf8();
-    }
     first->clear();
     confirmation->clear();
-    if (!accepted) {
+    if (!accepted)
       return VXCORE_ERR_CANCELLED;
-    }
-  }
-  // Password/source dialogs may outlive external changes. Never treat their
-  // earlier keyless snapshot as permission to initialize a changed notebook.
-  status = notebooks->encryptionStatus(p_notebookId, QString(), &statusError);
-  if (statusError == VXCORE_OK) {
-    const auto currentMarker = status.value(QLatin1String(vxcore::kJsonKeyEncryptionInitialized));
-    if (status.value(QLatin1String(vxcore::kJsonKeyInitialized)).toBool() ||
-        !currentMarker.isBool()) {
-      statusError = VXCORE_ERR_INVALID_STATE;
-    } else if (currentMarker.toBool()) {
-      statusError = VXCORE_ERR_ENCRYPTION_RECOVERY_REQUIRED;
-    }
-  }
-  if (statusError != VXCORE_OK) {
-    password.fill('\0');
-    password.clear();
-    return fail(statusError);
   }
   p_progress.setLabelText(tr("Preparing the notebook key..."));
   p_setup = m_viewAreaController->prepareNoteEncryption(p_notebookId, sourceId, password);
@@ -2239,9 +2198,28 @@ void NotebookExplorer2::onImportFolderRequested(const NodeIdentifier &p_targetFo
   }
 
   ImportFolderDialog2 dialog(m_services, p_targetFolderId, window());
-  dialog.setDestinationUnlocker([this](const QString &id, QByteArray &password) {
-    return m_viewAreaController ? m_viewAreaController->unlockNoteEncryption(id, password)
-                                : VXCORE_ERR_NOT_INITIALIZED;
+  dialog.setDestinationUnlocker([this](const QString &id) {
+    if (!m_viewAreaController)
+      return VXCORE_ERR_NOT_INITIALIZED;
+    const QScopedValueRollback<bool> active(m_noteEncryptionActive, true);
+    QProgressDialog progress(tr("Preparing destination encryption..."), QString(), 0, 0, nullptr);
+    progress.setWindowTitle(tr("Import Encrypted Folder"));
+    progress.setWindowModality(Qt::ApplicationModal);
+    progress.setCancelButton(nullptr);
+    progress.setMinimumDuration(0);
+    progress.show();
+    PreparedNotebookEncryption setup;
+    QString message;
+    auto error = prepareNotebookEncryption(id, setup, progress, message, true);
+    if (error == VXCORE_OK && setup.isValid()) {
+      error = m_viewAreaController->commitNoteEncryption(id, setup);
+      if (error != VXCORE_OK)
+        message = QString::fromUtf8(vxcore_error_message(error));
+    }
+    if (error != VXCORE_OK && error != VXCORE_ERR_CANCELLED) {
+      QMessageBox::warning(&progress, tr("Import Encrypted Folder"), message);
+    }
+    return error;
   });
   if (dialog.exec() == QDialog::Accepted) {
     NodeIdentifier newNodeId = dialog.getNewNodeId();

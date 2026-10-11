@@ -35,6 +35,7 @@
 #endif
 
 #include <vxcore/notebook_json_keys.h>
+#include <vxcore/vxcore.h>
 
 using namespace vnotex;
 
@@ -125,6 +126,11 @@ bool operator==(const TreeEntry &p_a, const TreeEntry &p_b) {
     return true;
   }
   return p_a.size == p_b.size && p_a.mtimeMs == p_b.mtimeMs;
+}
+
+bool isProtectedFile(const TreeEntry &p_entry) {
+  return !p_entry.isDir && (p_entry.rel.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive) ||
+                            p_entry.rel.endsWith(QLatin1String(".vne.vswp"), Qt::CaseInsensitive));
 }
 
 using CancelFn = std::function<bool()>;
@@ -232,6 +238,33 @@ bool ancestorChainIsSafe(const QString &p_root, const QString &p_relativePath, Q
                      .arg(current);
       return false;
     }
+  }
+  return true;
+}
+
+// The core codec owns format/version validation. Inspect every protected physical
+// file, including unindexed notes and recovery backups, not just metadata records.
+bool inspectProtectedFiles(const QString &p_root, const QString &p_contentRelative,
+                           const QVector<TreeEntry> &p_entries, bool *p_requiresNotebookKey,
+                           QString *p_error) {
+  *p_requiresNotebookKey = false;
+  for (const TreeEntry &entry : p_entries) {
+    if (!isProtectedFile(entry)) {
+      continue;
+    }
+    const QString relative = p_contentRelative + QLatin1Char('/') + entry.rel;
+    if (!ancestorChainIsSafe(p_root, relative, p_error)) {
+      return false;
+    }
+    bool required = false;
+    const auto error = vxcore_encryption_requires_notebook_key(
+        (p_root + QLatin1Char('/') + relative).toUtf8().constData(), &required);
+    if (error != VXCORE_OK) {
+      *p_error = QObject::tr("Cannot inspect protected note %1: %2")
+                     .arg(entry.rel, QString::fromUtf8(vxcore_error_message(error)));
+      return false;
+    }
+    *p_requiresNotebookKey = *p_requiresNotebookKey || required;
   }
   return true;
 }
@@ -623,9 +656,8 @@ FolderSharePackager::Result FolderSharePackager::run(const Request &p_request,
   }
 
   const bool encryptedBundle =
-      std::any_of(contentEntries.cbegin(), contentEntries.cend(), [](const TreeEntry &entry) {
-        return entry.rel.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive);
-      });
+      std::any_of(contentEntries.cbegin(), contentEntries.cend(), isProtectedFile);
+  bool requiresNotebookKey = false;
   QByteArray keyEnvelope;
   QByteArray sourceNotebookConfig;
   QByteArray portableNotebookConfig;
@@ -642,18 +674,30 @@ FolderSharePackager::Result FolderSharePackager::run(const Request &p_request,
                        &error)) {
       return cancelled(isCancelled) ? cancel() : fail(error);
     }
-    if (!ancestorChainIsSafe(p_request.m_notebookRoot, keyRelative, &error) ||
+    if (!inspectProtectedFiles(p_request.m_notebookRoot, contentRelative, contentEntries,
+                               &requiresNotebookKey, &error) ||
         !ancestorChainIsSafe(p_request.m_notebookRoot, configRelative, &error))
       return fail(error);
-    QFile key(p_request.m_notebookRoot + QLatin1Char('/') + keyRelative);
     QFile config(p_request.m_notebookRoot + QLatin1Char('/') + configRelative);
-    if (!key.open(QIODevice::ReadOnly) || key.size() > 4096 || !config.open(QIODevice::ReadOnly)) {
-      return fail(QObject::tr("The encrypted notebook key envelope could not be read."));
+    if (!config.open(QIODevice::ReadOnly)) {
+      return fail(QObject::tr("The encrypted notebook configuration could not be read."));
     }
-    keyEnvelope = key.readAll();
     sourceNotebookConfig = config.readAll();
-    if (keyEnvelope.size() < 12 || keyEnvelope.left(8) != QByteArray("VNEKEY1\0", 8)) {
-      return fail(QObject::tr("The encrypted notebook key envelope is damaged."));
+    if (config.error() != QFileDevice::NoError) {
+      return fail(QObject::tr("The encrypted notebook configuration could not be read."));
+    }
+    if (requiresNotebookKey) {
+      if (!ancestorChainIsSafe(p_request.m_notebookRoot, keyRelative, &error))
+        return fail(error);
+      QFile key(p_request.m_notebookRoot + QLatin1Char('/') + keyRelative);
+      if (!key.open(QIODevice::ReadOnly)) {
+        return fail(QObject::tr("The encrypted notebook key envelope could not be read."));
+      }
+      keyEnvelope = key.read(4097);
+      if (key.error() != QFileDevice::NoError || keyEnvelope.size() < 12 ||
+          keyEnvelope.size() > 4096 || keyEnvelope.left(8) != QByteArray("VNEKEY1\0", 8)) {
+        return fail(QObject::tr("The encrypted notebook key envelope is damaged."));
+      }
     }
     const QJsonObject original = QJsonDocument::fromJson(sourceNotebookConfig).object();
     const QString assetsFolder = QDir::fromNativeSeparators(
@@ -778,7 +822,7 @@ FolderSharePackager::Result FolderSharePackager::run(const Request &p_request,
       QSaveFile file(path);
       return file.open(QIODevice::WriteOnly) && file.write(bytes) == bytes.size() && file.commit();
     };
-    if (!save(tempRoot + QLatin1Char('/') + keyRelative, keyEnvelope) ||
+    if ((requiresNotebookKey && !save(tempRoot + QLatin1Char('/') + keyRelative, keyEnvelope)) ||
         !save(tempRoot + QLatin1Char('/') + configRelative, portableNotebookConfig) ||
         !save(tempRoot + QStringLiteral("/vx_notebook/contents/vx.json"), portableRootConfig)) {
       return failAndClean(QObject::tr("The encrypted bundle envelope could not be written."));
@@ -846,13 +890,29 @@ FolderSharePackager::Result FolderSharePackager::run(const Request &p_request,
     return failAndClean(error);
   }
   if (encryptedBundle) {
-    QFile key(p_request.m_notebookRoot + QLatin1Char('/') + keyRelative);
+    // Reclassify the actual copied snapshot after every event-pumping callback.
+    // A v2-to-v1 replacement before/during copying must not publish without its key.
+    bool stagedRequiresNotebookKey = false;
+    if (!inspectProtectedFiles(tempRoot, p_request.m_folderName, contentEntries,
+                               &stagedRequiresNotebookKey, &error)) {
+      return failAndClean(error);
+    }
+    if (stagedRequiresNotebookKey != requiresNotebookKey) {
+      return failAndClean(QObject::tr("The protected note format changed while sharing."));
+    }
     QFile config(p_request.m_notebookRoot + QLatin1Char('/') + configRelative);
-    if (!ancestorChainIsSafe(p_request.m_notebookRoot, keyRelative, &error) ||
-        !ancestorChainIsSafe(p_request.m_notebookRoot, configRelative, &error) ||
-        !key.open(QIODevice::ReadOnly) || !config.open(QIODevice::ReadOnly) ||
-        key.readAll() != keyEnvelope || config.readAll() != sourceNotebookConfig) {
-      return failAndClean(QObject::tr("The notebook key envelope changed while sharing."));
+    if (!ancestorChainIsSafe(p_request.m_notebookRoot, configRelative, &error) ||
+        !config.open(QIODevice::ReadOnly) || config.readAll() != sourceNotebookConfig ||
+        config.error() != QFileDevice::NoError) {
+      return failAndClean(QObject::tr("The notebook configuration changed while sharing."));
+    }
+    if (requiresNotebookKey) {
+      QFile key(p_request.m_notebookRoot + QLatin1Char('/') + keyRelative);
+      if (!ancestorChainIsSafe(p_request.m_notebookRoot, keyRelative, &error) ||
+          !key.open(QIODevice::ReadOnly) || key.read(4097) != keyEnvelope ||
+          key.error() != QFileDevice::NoError) {
+        return failAndClean(QObject::tr("The notebook key envelope changed while sharing."));
+      }
     }
   }
   // The caller's own last-moment assertion (e.g. "no open note gained an

@@ -814,20 +814,32 @@ Coverage: `tests/core/test_commentservice.cpp`.
 
 ## Per-note encryption
 
-Only bundled Markdown/text/mind-map note bodies support protection. `NotebookCoreService` exposes the
-context-owned prepare/commit/free key setup protocol: prepare and unlock perform password
-hashing on a worker **outside** `NotebookIoGate`; commit consumes the prepared handle under
-the notebook maintenance lease and IO gate. Never replace an existing or corrupt key file
-as a recovery shortcut. Password bytes are not trimmed and must not enter logs or hooks.
-`ViewAreaController::reconcileNoteEncryption` acquires maintenance then a worker IO-gate
-try-lock before persisting the notebook's `encryptionInitialized` marker. The explorer must
-explicitly confirm unknown/keyless legacy notebooks before passing consent; Cancel, Escape,
-and window close write nothing. Boolean false is not the same as an absent/null status marker.
-After consent, reread status before setup; existing writable keys reconcile without consent.
-Read-only unlock skips persistence, and password hashing remains outside the IO gate.
+Only bundled Markdown/text/mind-map note bodies support protection. New note and backup
+writes use self-contained v2 `.vne` envelopes: the salt/KDF parameters and complete wrapped
+master/notebook/document key chain travel with each note. The shared master password is
+never stored. Legacy v1 notes read `vx_notebook/encryption.vne` through the core's legacy
+key-source strategy; v2 must not depend on that file or its legacy initialization marker.
+
+`NotebookCoreService` exposes context-owned prepare/commit/free setup. Prepare and exact-path
+`unlockNoteEncryption` perform password hashing on a worker **outside** `NotebookIoGate`;
+commit consumes the handle under notebook maintenance and the IO gate. Setup installs only
+an in-memory writing context and Git binary attributes, never a vault or initialization
+marker. Reuse an unlocked default; otherwise explicitly unlock an existing note/legacy vault
+or create a new context. Source-context reuse requires an already-unlocked source. Password
+bytes are not trimmed and must not enter logs or hooks. Cancel, Escape and window close do
+not commit setup. Legacy reconciliation remains explicit, never an unlock/setup prerequisite.
+
+`BufferService` receives the shared `SyncWorkQueueManager` and migrates a legacy note before
+its first explicit writable open, under GUI-owned maintenance and a worker IO gate. Reserve
+the physical path against reentrant operations; do not rewrite beneath a live loaded buffer.
+Authenticate the complete note and any backup before replacing either. Backup-first atomic
+rewrites preserve payload bytes and permit retry after partial progress. Invalid backups
+fail without discarding possible unsaved data. Read-only opens, history and search never
+migrate. Keep the old vault for unmigrated notes, historical revisions and external backups.
+
 Shared-bundle validation accepts the same three protected editor types. Import encrypted
-bundles through authenticated transfer into an unlocked destination vault, never through
-the plaintext `FolderBundleImporter::run()` path.
+bundles through authenticated transfer into an unlocked destination context, never through
+the plaintext `FolderBundleImporter::run()` path. Self-contained bundles need no vault.
 
 `BufferService` maintains a lazy, protected-only roster and operation leases. Ordinary
 open/save/resource paths use their cached mode and must not query encryption status, read
@@ -863,6 +875,7 @@ note and its encrypted backup. It leaves all asset bytes and metadata unchanged.
 at rest, not a sandbox against in-process plugins or access control against someone who
 has unlocked the master key. Filenames/folders/tags stay visible. Existing Git history,
 cloud versions and OS backups can retain plaintext; conversion does not rewrite them or
-promise secure deletion. Backups and synced copies must retain the wrapped key file and
-encrypted notes/backups. Authenticity does not prevent replay of an older valid
-revision; OS swap/crash dumps and allocator-level erasure of Qt objects are not guaranteed.
+promise secure deletion. Backups and synced copies must retain encrypted notes/backups;
+legacy v1 copies additionally require their original wrapped key file. Authenticity does not
+prevent replay of an older valid revision; OS swap/crash dumps and allocator-level erasure of
+Qt objects are not guaranteed.

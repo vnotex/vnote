@@ -635,22 +635,14 @@ FolderBundleImporter::Inspection FolderBundleImporter::inspect(const QString &p_
     return inspection;
   }
   const QString envelope = p_bundlePath + QStringLiteral("/vx_notebook/encryption.vne");
-  inspection.m_encrypted = QFileInfo::exists(envelope);
-  if (protectedNotes && !inspection.m_encrypted) {
-    inspection.m_message =
-        QObject::tr("The protected bundle is missing its notebook key envelope.");
+  inspection.m_encrypted = protectedNotes || QFileInfo::exists(envelope);
+  // Native authenticated transfer resolves each note's own key source. A legacy
+  // vault is neither required nor authoritative for self-contained notes.
+  if (inspection.m_encrypted &&
+      (!QFileInfo::exists(p_bundlePath + QStringLiteral("/vx_notebook/config.json")) ||
+       !QFileInfo::exists(p_bundlePath + QStringLiteral("/vx_notebook/contents/vx.json")))) {
+    inspection.m_message = QObject::tr("The encrypted bundle's notebook metadata is incomplete.");
     return inspection;
-  }
-  if (inspection.m_encrypted) {
-    QFile key(envelope);
-    if (FolderMetadataValidator::isLinkOrReparsePoint(envelope) || !key.open(QIODevice::ReadOnly) ||
-        key.size() < 12 || key.size() > 4096 || key.read(8) != QByteArray("VNEKEY1\0", 8) ||
-        !QFileInfo::exists(p_bundlePath + QStringLiteral("/vx_notebook/config.json")) ||
-        !QFileInfo::exists(p_bundlePath + QStringLiteral("/vx_notebook/contents/vx.json"))) {
-      inspection.m_message =
-          QObject::tr("The encrypted bundle's key envelope or metadata is incomplete.");
-      return inspection;
-    }
   }
 
   inspection.m_valid = true;
@@ -720,7 +712,7 @@ FolderBundleImporter::Result FolderBundleImporter::run(const Request &p_request,
   for (const auto &entry : contentEntries) {
     if (entry.rel.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
       return fail(
-          QObject::tr("This bundle contains protected content but has no usable key envelope."));
+          QObject::tr("Encrypted bundles require the authenticated notebook transfer flow."));
     }
   }
   if (!enumerateTree(bundleMetadataRoot, QString(), &metadataEntries, isCancelled, &error)) {

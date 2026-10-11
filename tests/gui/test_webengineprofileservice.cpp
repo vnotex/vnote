@@ -190,7 +190,8 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
            VXCORE_OK);
   QCOMPARE(notebooks.lockAllEncryption(), VXCORE_OK);
   QCOMPARE(QtConcurrent::run([&]() {
-             return notebooks.unlockNotebookEncryption(notebook, password);
+             return notebooks.unlockNoteEncryption(notebook, QStringLiteral("private.md.vne"),
+                                                   password);
            }).result(),
            VXCORE_OK);
   auto note = buffers.openBufferByNodeId(noteId);

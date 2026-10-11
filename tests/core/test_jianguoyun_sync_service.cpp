@@ -28,7 +28,7 @@
 #include <csignal>
 #include <sys/resource.h>
 #endif
-#include "core/notebook.h"
+#include "core/encryptednote.h"
 #include "sync/credential_provider.h"
 #include "sync/sync_backend_registry.h"
 #include "sync/sync_json_keys.h"
@@ -754,11 +754,12 @@ void TestJianguoyunSyncService::exerciseEncryptedCohort(bool p_interrupted) {
   auto note = m_buffers->openBufferByNodeId(noteId);
   QVERIFY(note.isValid() && note.isEncrypted());
   const auto notePath = note.nodeId().relativePath;
-  const auto oldCiphertext = readBytes(path(notePath)), oldEnvelope = readBytes(path(c_envelope));
+  const auto oldCiphertext = readBytes(path(notePath));
+  QVERIFY(!QFileInfo::exists(path(c_envelope)));
   QCOMPARE(sync(), VXCORE_OK);
   QCOMPARE(peerClone(), VXCORE_OK);
   const auto previous = m_notebooks->getLastSyncUtc(m_id);
-  using Encryption = vxcore::NotebookEncryption;
+  using Encryption = vxcore::EncryptedNote;
   Encryption::KeyEnvelope envelope;
   Encryption::Key masterKey, notebookKey, noteKey;
   Encryption::ObjectHeader header;
@@ -778,9 +779,6 @@ void TestJianguoyunSyncService::exerciseEncryptedCohort(bool p_interrupted) {
                                          {{"editorType", "markdown"}}),
            VXCORE_OK);
   QVERIFY(QFileInfo(replacement).size() > 64 * 1024);
-  std::string encodedEnvelope;
-  QCOMPARE(Encryption::EncodeKeyEnvelope(envelope, encodedEnvelope), VXCORE_OK);
-  QVERIFY(peerWrite(c_envelope, QByteArray::fromStdString(encodedEnvelope)));
   QVERIFY(peerWrite(notePath, readBytes(replacement)));
   QVERIFY(peerWrite(QStringLiteral("clean.md"), "installed before encrypted failure\n"));
   QCOMPARE(peerSync(), VXCORE_OK);
@@ -807,7 +805,7 @@ void TestJianguoyunSyncService::exerciseEncryptedCohort(bool p_interrupted) {
     QVERIFY(lease && lease->isCurrent());
     const auto refused = sync();
     QVERIFY(refused == VXCORE_ERR_SYNC_IN_PROGRESS || refused == VXCORE_ERR_ENCRYPTION_LOCKED);
-    QCOMPARE(readBytes(path(c_envelope)), oldEnvelope);
+    QVERIFY(!QFileInfo::exists(path(c_envelope)));
     QCOMPARE(readBytes(path(notePath)), oldCiphertext);
     QCOMPARE(m_notebooks->getLastSyncUtc(m_id), previous);
     QVERIFY(m_changed->isEmpty());
@@ -816,8 +814,8 @@ void TestJianguoyunSyncService::exerciseEncryptedCohort(bool p_interrupted) {
     QCOMPARE(m_notebooks->lockAllEncryption(), VXCORE_OK);
   }
   QCOMPARE(sync(), VXCORE_OK);
-  QCOMPARE(readBytes(path(c_envelope)), QByteArray::fromStdString(encodedEnvelope));
-  QCOMPARE(m_notebooks->unlockNotebookEncryption(m_id, password), VXCORE_OK);
+  QVERIFY(!QFileInfo::exists(path(c_envelope)));
+  QCOMPARE(m_notebooks->unlockNoteEncryption(m_id, notePath, password), VXCORE_OK);
   note = m_buffers->openBufferByNodeId(noteId);
   QVERIFY(note.isValid());
   QCOMPARE(note.getContentRaw(), incomingPlaintext);
