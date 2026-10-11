@@ -97,6 +97,7 @@ public:
   }
 
   int unlockRequests = 0;
+  QList<NodeIdentifier> protectedOpenNodes;
   QVector<ReplacementCompletion> completions;
   QVector<ReplacementState> states;
   std::function<void(const ReplacementState &)> stateCallback;
@@ -107,8 +108,9 @@ signals:
   void finished();
 
 private slots:
-  void onProtectedOpenRequested(const NodeIdentifier &, const FileOpenSettings &) {
+  void onProtectedOpenRequested(const NodeIdentifier &p_nodeId, const FileOpenSettings &) {
     ++unlockRequests;
+    protectedOpenNodes.append(p_nodeId);
   }
 
   void onState(const QString &p_id, bool p_active, bool p_changed, bool p_saved) {
@@ -255,7 +257,6 @@ private slots:
   void testOpenCancelledByHook();
 
   // Per-buffer content operations
-  void testGetContentRaw();
   void testSetContentRaw();
   void testSave();
   void testSaveCancelledByHook();
@@ -289,6 +290,8 @@ private slots:
 
   // Invalid buffer guard
   void testInvalidBufferOperations();
+  void testProtectedOpenWhileMaintenanceBusy();
+  void testProtectedOpenFailureDispatch();
   void testMixedNoteSaveWhileProtectedLocking();
   void testEncryptedBodyKeepsAssetsPlaintext();
   void testEncryptedNoteConversionCancellationKeepsWriter();
@@ -441,14 +444,6 @@ void TestBuffer::testOpenCancelledByHook() {
 }
 
 // ============ Per-buffer content operations ============
-
-void TestBuffer::testGetContentRaw() {
-  Buffer2 buf =
-      m_bufferService->openBuffer(NodeIdentifier{m_notebookId, QStringLiteral("test.md")});
-  QVERIFY(buf.isValid());
-  // Just verify it doesn't crash. Content may be empty for a new file.
-  buf.getContentRaw();
-}
 
 void TestBuffer::testSetContentRaw() {
   Buffer2 buf =
@@ -918,6 +913,126 @@ void TestBuffer::testInvalidBufferOperations() {
   QVERIFY(buf.renameAttachment(QStringLiteral("a"), QStringLiteral("b")).isEmpty());
   QVERIFY(buf.listAttachments().isEmpty());
   QVERIFY(buf.getAttachmentsFolder().isEmpty());
+}
+
+void TestBuffer::testProtectedOpenWhileMaintenanceBusy() {
+  NotebookIoGate gate;
+  SyncWorkQueueManager queues;
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, &gate, AutoSavePolicy::None);
+  buffers.setSyncWorkQueueManager(&queues);
+  ReplacementObserver observer(buffers);
+  const QByteArray password("protected-open-regression-password");
+  auto setup = m_notebookService->prepareNotebookEncryption(m_notebookId, QString(), password);
+  QVERIFY(setup.isValid());
+  QString noteId;
+  QCOMPARE(runNoteConversionWorker(queues, gate, m_notebookId,
+                                   [&]() {
+                                     auto error =
+                                         m_notebookService->commitNotebookEncryption(setup);
+                                     return error == VXCORE_OK
+                                                ? m_notebookService->createEncryptedNote(
+                                                      m_notebookId, QString(),
+                                                      QStringLiteral("busy-protected.md"),
+                                                      QStringLiteral("markdown"),
+                                                      QByteArrayLiteral("protected body"), &noteId)
+                                                : error;
+                                   }),
+           VXCORE_OK);
+  const NodeIdentifier node{m_notebookId, QStringLiteral("busy-protected.md.vne")};
+  QFile file(m_notebookService->buildAbsolutePath(node.notebookId, node.relativePath));
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  const auto original = file.readAll();
+  file.close();
+  QCOMPARE(m_notebookService->lockAllEncryption(), VXCORE_OK);
+
+  // Same-notebook maintenance is busy, but a self-contained read does not migrate.
+  auto maintenance = queues.tryAcquireMaintenance({m_notebookId});
+  QVERIFY(maintenance);
+  VxCoreError error = VXCORE_OK;
+  QVERIFY(!buffers.openBuffer(node, FileOpenSettings(), &error).isValid());
+  QCOMPARE(error, VXCORE_ERR_ENCRYPTION_LOCKED);
+  QCOMPARE(observer.unlockRequests, 1);
+  QCOMPARE(observer.protectedOpenNodes.constLast(), node);
+  QCOMPARE(QtConcurrent::run([&]() {
+             return m_notebookService->unlockNoteEncryption(node.notebookId, node.relativePath,
+                                                            password);
+           }).result(),
+           VXCORE_OK);
+  auto note = buffers.openBuffer(node, FileOpenSettings(), &error);
+  QVERIFY(note.isValid());
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(note.getContentRaw(), QByteArrayLiteral("protected body"));
+  QCOMPARE(observer.unlockRequests, 1);
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  QCOMPARE(file.readAll(), original);
+  file.close();
+  QVERIFY(buffers.closeBuffer(note.id()));
+  QCOMPARE(m_notebookService->lockAllEncryption(), VXCORE_OK);
+}
+
+void TestBuffer::testProtectedOpenFailureDispatch() {
+  NotebookIoGate gate;
+  SyncWorkQueueManager queues;
+  HookManager hooks;
+  BufferService buffers(m_context, &hooks, &gate, AutoSavePolicy::None);
+  buffers.setSyncWorkQueueManager(&queues);
+  ReplacementObserver observer(buffers);
+  auto setup = m_notebookService->prepareNotebookEncryption(
+      m_notebookId, QString(), QByteArrayLiteral("protected-open-errors-password"));
+  QVERIFY(setup.isValid());
+  QString noteId;
+  QCOMPARE(runNoteConversionWorker(queues, gate, m_notebookId,
+                                   [&]() {
+                                     auto error =
+                                         m_notebookService->commitNotebookEncryption(setup);
+                                     return error == VXCORE_OK
+                                                ? m_notebookService->createEncryptedNote(
+                                                      m_notebookId, QString(),
+                                                      QStringLiteral("failure-protected.md"),
+                                                      QStringLiteral("markdown"),
+                                                      QByteArrayLiteral("original body"), &noteId)
+                                                : error;
+                                   }),
+           VXCORE_OK);
+  const NodeIdentifier node{m_notebookId, QStringLiteral("failure-protected.md.vne")};
+  QCOMPARE(m_notebookService->lockAllEncryption(), VXCORE_OK);
+  VxCoreError error = VXCORE_OK;
+  QStringList protectedPaths;
+  QVERIFY(buffers.beginSyncApply(m_notebookId, &protectedPaths));
+  const auto releaseApply = qScopeGuard([&]() { buffers.endSyncApply(m_notebookId, {}); });
+  QVERIFY(!buffers.openBuffer(node, FileOpenSettings(), &error).isValid());
+  QCOMPARE(error, VXCORE_ERR_SYNC_IN_PROGRESS);
+  QCOMPARE(observer.unlockRequests, 1);
+  QCOMPARE(observer.protectedOpenNodes.constLast(), node);
+  buffers.endSyncApply(m_notebookId, {});
+
+  const int cancelHook = hooks.addAction(
+      HookNames::FileBeforeOpen,
+      [](HookContext &context, const QVariantMap &) { context.cancel(); }, 10);
+  QVERIFY(!buffers.openBuffer(node, FileOpenSettings(), &error).isValid());
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(observer.unlockRequests, 1);
+  hooks.removeAction(cancelHook);
+  QVERIFY(buffers.beginProtectedLocking());
+  QVERIFY(!buffers.openBuffer(node, FileOpenSettings(), &error).isValid());
+  QCOMPARE(error, VXCORE_ERR_ENCRYPTION_LOCKED);
+  QCOMPARE(observer.unlockRequests, 1);
+  buffers.cancelProtectedLocking();
+  QVERIFY(!buffers.openBuffer(node, FileOpenSettings(), &error).isValid());
+  QCOMPARE(error, VXCORE_ERR_ENCRYPTION_LOCKED);
+  QCOMPARE(observer.unlockRequests, 2);
+
+  QFile file(m_notebookService->buildAbsolutePath(node.notebookId, node.relativePath));
+  QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
+  const QByteArray malformed("invalid encrypted envelope");
+  QCOMPARE(file.write(malformed), qint64(malformed.size()));
+  file.close();
+  QVERIFY(!buffers.openBuffer(node, FileOpenSettings(), &error).isValid());
+  QCOMPARE(error, VXCORE_ERR_ENCRYPTION_FORMAT);
+  QCOMPARE(observer.unlockRequests, 3);
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  QCOMPARE(file.readAll(), malformed);
 }
 
 void TestBuffer::testMixedNoteSaveWhileProtectedLocking() {

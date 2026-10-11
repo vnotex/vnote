@@ -376,6 +376,8 @@ signals:
   void searchReplacementFinished(int p_token, const NodeIdentifier &p_nodeId,
                                  const QString &p_bufferId, int p_replacedMatches, bool p_saved,
                                  const QString &p_error);
+  // Failed protected open, after releasing reservations: the UI unlocks or explains the error.
+  // Intentional cancellation and an in-progress Lock All do not emit this signal.
   void protectedOpenRequested(const NodeIdentifier &p_nodeId, const FileOpenSettings &p_settings);
   void protectedLockingChanged(bool p_locking);
   void protectedSaveFinished(const QString &p_bufferId, quint64 p_generation, quint64 p_revision,

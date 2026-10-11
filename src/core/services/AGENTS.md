@@ -832,6 +832,10 @@ not commit setup. Legacy reconciliation remains explicit, never an unlock/setup 
 `BufferService` receives the shared `SyncWorkQueueManager` and migrates a legacy note before
 its first explicit writable open, under GUI-owned maintenance and a worker IO gate. Reserve
 the physical path against reentrant operations; do not rewrite beneath a live loaded buffer.
+Probe the format under a bounded IO gate, then release that gate before migration/load.
+Self-contained v2 reads do not acquire a migration maintenance lease. Every failed protected
+open reaches `protectedOpenRequested` after its reservations unwind, so the UI can unlock or
+explain the failure. Intentional cancellation and an in-progress Lock All stay silent.
 Authenticate the complete note and any backup before replacing either. Backup-first atomic
 rewrites preserve payload bytes and permit retry after partial progress. Invalid backups
 fail without discarding possible unsaved data. Read-only opens, history and search never

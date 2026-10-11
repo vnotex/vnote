@@ -902,7 +902,10 @@ void BufferService::syncAutoSavePolicy(int p_configPolicy) {
 
 Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
                                   const FileOpenSettings &p_settings, VxCoreError *p_outErr) {
-  if (replacementAffectsNode(p_nodeId.notebookId, p_nodeId.relativePath, false)) {
+  const bool protectedCandidate =
+      p_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive);
+  if (replacementAffectsNode(p_nodeId.notebookId, p_nodeId.relativePath, false) &&
+      !(protectedCandidate && m_syncApplyBuffers.contains(p_nodeId.notebookId))) {
     if (p_outErr)
       *p_outErr = VXCORE_ERR_CANCELLED;
     return {};
@@ -936,6 +939,14 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
     event.searchOptions = static_cast<int>(p_settings.m_searchHighlight.m_options);
     event.searchCurrentMatchLine = p_settings.m_searchHighlight.m_currentMatchLine;
   }
+  // Dispatch only after the later opening/operation/maintenance/gate scopes unwind.
+  // The UI owns password prompts and error presentation for every protected failure.
+  const auto protectedOpenResult = qScopeGuard([&]() {
+    if (protectedCandidate && *p_outErr != VXCORE_OK && *p_outErr != VXCORE_ERR_CANCELLED &&
+        !m_protectedLocking) {
+      emit protectedOpenRequested({event.notebookId, event.filePath}, p_settings);
+    }
+  });
   if (m_hookMgr->doAction(HookNames::FileBeforeOpen, event)) {
     qDebug() << "BufferService::openBuffer cancelled by hook";
     return Buffer2(); // Cancelled by plugin.
@@ -948,7 +959,12 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
       vxcore_path_resolve(m_context, p_nodeId.relativePath.toUtf8().constData(), &resolvedNotebook,
                           &relativePath);
       notebookId = cstrToQString(resolvedNotebook);
-      vxcore_string_free(relativePath);
+      if (!notebookId.isEmpty()) {
+        event.notebookId = notebookId;
+        event.filePath = cstrToQString(relativePath);
+      } else {
+        vxcore_string_free(relativePath);
+      }
     }
     if (m_syncApplyBuffers.contains(notebookId)) {
       *p_outErr = VXCORE_ERR_SYNC_IN_PROGRESS;
@@ -957,7 +973,7 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
   }
 
   QString bufferId;
-  if (p_nodeId.relativePath.endsWith(QLatin1String(".vne"), Qt::CaseInsensitive)) {
+  if (protectedCandidate) {
     if (m_protectedLocking) {
       if (p_outErr) {
         *p_outErr = VXCORE_ERR_ENCRYPTION_LOCKED;
@@ -1018,8 +1034,27 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
                  (m_bufferFlags.value(info.value(QLatin1String(vxcore::kJsonKeyId)).toString()) &
                   ReadOnly);
     }
-    SyncWorkQueueManager::MaintenanceLease maintenance;
+    QJsonObject protectionStatus;
+    bool needsMigration = false;
     if (!readOnly && !loaded) {
+      // Self-contained notes are reads, not notebook maintenance. Bound this probe
+      // with the IO gate, then release it before either migration or the load gate.
+      NotebookIoGate::ScopedTryLock gate(*m_ioGate, actual.notebookId, 50);
+      if (!gate.isLocked()) {
+        *p_outErr = VXCORE_ERR_SYNC_IN_PROGRESS;
+        return {};
+      }
+      char *json = nullptr;
+      *p_outErr = vxcore_encryption_get_status(m_context, actual.notebookId.toUtf8().constData(),
+                                               actual.relativePath.toUtf8().constData(), &json);
+      protectionStatus = json ? QJsonDocument::fromJson(QByteArray(json)).object() : QJsonObject();
+      vxcore_string_free(json);
+      if (*p_outErr != VXCORE_OK)
+        return {};
+      needsMigration = protectionStatus.value(QLatin1String(vxcore::kJsonKeyVersion)).toInt() == 1;
+    }
+    SyncWorkQueueManager::MaintenanceLease maintenance;
+    if (needsMigration) {
       if (m_syncWorkQueues) {
         maintenance = m_syncWorkQueues->tryAcquireMaintenance({actual.notebookId});
         if (!maintenance) {
@@ -1043,20 +1078,11 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
       } else {
         // Standalone consumers may read v2 without a coordinator, but must not
         // silently rewrite a legacy note without a maintenance reservation.
-        char *json = nullptr;
-        *p_outErr = vxcore_encryption_get_status(m_context, actual.notebookId.toUtf8().constData(),
-                                                 actual.relativePath.toUtf8().constData(), &json);
-        const auto status =
-            json ? QJsonDocument::fromJson(QByteArray(json)).object() : QJsonObject();
-        vxcore_string_free(json);
-        if (*p_outErr == VXCORE_OK &&
-            status.value(QLatin1String(vxcore::kJsonKeyVersion)).toInt() == 1) {
-          *p_outErr = status.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool()
-                          ? VXCORE_ERR_NOT_INITIALIZED
-                          : VXCORE_ERR_ENCRYPTION_LOCKED;
-          if (*p_outErr == VXCORE_ERR_NOT_INITIALIZED) {
-            qWarning() << "Writable legacy protected open requires SyncWorkQueueManager";
-          }
+        *p_outErr = protectionStatus.value(QLatin1String(vxcore::kJsonKeyUnlocked)).toBool()
+                        ? VXCORE_ERR_NOT_INITIALIZED
+                        : VXCORE_ERR_ENCRYPTION_LOCKED;
+        if (*p_outErr == VXCORE_ERR_NOT_INITIALIZED) {
+          qWarning() << "Writable legacy protected open requires SyncWorkQueueManager";
         }
       }
     }
@@ -1075,11 +1101,8 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
   }
 
   if (bufferId.isEmpty()) {
-    if (*p_outErr == VXCORE_ERR_ENCRYPTION_LOCKED && !m_protectedLocking) {
-      emit protectedOpenRequested({event.notebookId, event.filePath}, p_settings);
-      return Buffer2();
-    }
-    qWarning() << "BufferService::openBuffer failed for" << p_nodeId.relativePath;
+    if (*p_outErr != VXCORE_ERR_ENCRYPTION_LOCKED)
+      qWarning() << "BufferService::openBuffer failed for" << p_nodeId.relativePath;
     return Buffer2(); // Failed to open.
   }
 
