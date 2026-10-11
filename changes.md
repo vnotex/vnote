@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Fix missing code-block syntax highlighting in encrypted Markdown edit mode by initializing token colors from the protected viewer's bundled stylesheet
 * Fix encrypted Markdown previews ignoring dark themes; apply bundled reader and syntax styles on opening and theme changes without discarding editor drafts or undo history
 * Fix Chinese input when renaming attachments on Windows with a focused rename dialog; reopen the attachment list with the renamed file selected and focused after success (#2755)
 * Standardize English mind map wording in settings and documentation

@@ -281,6 +281,10 @@ nonce and off-the-record profile. Publish the replacement before revoking the ol
 destroy old pages before their profile, and retain the editor, draft and undo history.
 Restore saved splitter sizes after viewer readiness, which otherwise redistributes live-preview panes.
 Discard pending sizes on read/edit or edit-view-mode changes so hidden-pane sizes cannot collapse a new layout.
+Edit-mode external syntax highlighting parses the same template-owned bundled `highlight.css`
+through the existing adapter; encrypted notes must never read the installed/custom stylesheet.
+The shared vtextedit block cache stores converted formats by source text, so unchanged code
+blocks can retain previous theme colors until edited or reopened.
 
 **HTML5 fullscreen remains disabled.** Enabling
 `QWebEngineSettings::FullScreenSupportEnabled` advertises it to every web view

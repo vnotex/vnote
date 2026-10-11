@@ -90,6 +90,7 @@ using namespace vnotex;
 
 struct MarkdownViewWindow2::ProtectedView {
   WebEngineProfileService::ProtectedPage page;
+  QByteArray highlightStyleSheet;
   bool documentPublished = false;
   bool loaded = false;
   QList<int> splitterSizesOnReady;
@@ -783,6 +784,13 @@ bool MarkdownViewWindow2::setupViewer() {
       const auto html = htmlTemplateService->protectedMarkdownViewerTemplate(
           page.token, page.nonce, themeService->getCurrentTheme().name(),
           qGray(background.rgb()) < 128, resources);
+      for (auto it = resources.cbegin(); it != resources.cend(); ++it) {
+        if (it.key().startsWith(QStringLiteral("/app/themes/")) &&
+            it.key().endsWith(QStringLiteral("/highlight.css"))) {
+          m_protectedView->highlightStyleSheet = it.value();
+          break;
+        }
+      }
       m_protectedView->documentPublished =
           profiles->setProtectedDocument(page.profile, html, resources);
     }
@@ -2581,23 +2589,36 @@ void MarkdownViewWindow2::handleExternalMathHighlightRequest(int p_idx, quint64 
 }
 
 void MarkdownViewWindow2::ensureExternalHighlightStyles() {
-  if (getBuffer().isEncrypted() || m_codeBlockStylesInitialized) {
-    return;
-  }
-  m_codeBlockStylesInitialized = true;
-  auto *themeService = getServices().get<ThemeService>();
-  const auto file = themeService->getFile(Theme::File::HighlightStyleSheet);
-  if (file.isEmpty()) {
-    qWarning() << "no highlight style sheet specified for external code block highlight";
+  if (m_codeBlockStylesInitialized) {
     return;
   }
 
   QString content;
-  Error err = FileUtils2::readTextFile(file, &content);
-  if (err) {
-    qWarning() << "failed to read highlight style sheet for external code block highlight" << file
-               << err.what();
+  if (getBuffer().isEncrypted()) {
+    // Only the template-owned bundled stylesheet may enter a protected renderer.
+    if (!m_protectedView) {
+      return;
+    }
+    content = QString::fromUtf8(m_protectedView->highlightStyleSheet);
+  } else {
+    auto *themeService = getServices().get<ThemeService>();
+    const auto file = themeService->getFile(Theme::File::HighlightStyleSheet);
+    if (file.isEmpty()) {
+      qWarning() << "no highlight style sheet specified for external code block highlight";
+      return;
+    }
+
+    Error err = FileUtils2::readTextFile(file, &content);
+    if (err) {
+      qWarning() << "failed to read highlight style sheet for external code block highlight" << file
+                 << err.what();
+      return;
+    }
   }
+  if (content.isEmpty()) {
+    return;
+  }
+  m_codeBlockStylesInitialized = true;
   adapter()->fetchStylesFromStyleSheet(
       content, [this](const QVector<MarkdownViewerAdapter::CssRuleStyle> *rules) {
         MarkdownEditor::ExternalCodeBlockHighlightStyles styles;
