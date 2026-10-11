@@ -2,6 +2,64 @@
 <!DOCTYPE TS>
 <TS version="2.1" language="zh_CN">
 <context>
+    <name>CommandLineOptions</name>
+    <message>
+        <location filename="../../../commandlineoptions.cpp" line="+11"/>
+        <source>A pleasant note-taking platform.</source>
+        <translation>一个舒适的笔记平台。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Files or folders to open.</source>
+        <translation>要打开的文件或文件夹。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Print more logs.</source>
+        <translation>输出更多日志。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Log to stderr.</source>
+        <translation>将日志输出到标准错误。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Suppress non-critical console logs.</source>
+        <translation>隐藏非关键控制台日志。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Watch theme folder for changes.</source>
+        <translation>监视主题文件夹的更改。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Open files in a detached view split.</source>
+        <translation>在独立的视图分割中打开文件。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>WebEngine remote debugging port.</source>
+        <translation>WebEngine 远程调试端口。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>port_number</source>
+        <translation>端口号</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>WebEngine without sandbox.</source>
+        <translation>禁用 WebEngine 沙箱。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>WebEngine with GPU disabled.</source>
+        <translation>禁用 WebEngine GPU 加速。</translation>
+    </message>
+</context>
+<context>
     <name>CommentColor</name>
     <message>
         <location filename="../../../core/services/commenttypes.cpp" line="+90"/>
@@ -60,7 +118,7 @@
 <context>
     <name>LockedNoteView</name>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="+55"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="+57"/>
         <source>This note is locked. Unlock it to read its contents.</source>
         <translation>此笔记已锁定。解锁后即可阅读其内容。</translation>
     </message>
@@ -939,8 +997,17 @@
         <translation>展开</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>This link points to a Markdown file. Open the corresponding HTML file instead?</source>
         <translation>此链接指向 Markdown 文件。是否改为打开对应的 HTML 文件？</translation>
+    </message>
+</context>
+<context>
+    <name>m3::qt::NodePropertiesPanel</name>
+    <message>
+        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+57"/>
+        <source>Node Properties</source>
+        <translation>节点属性</translation>
     </message>
 </context>
 <context>
@@ -1084,7 +1151,7 @@
 <context>
     <name>vnotex::AttachmentPopup2</name>
     <message>
-        <location filename="../../../widgets/attachmentpopup2.cpp" line="+93"/>
+        <location filename="../../../widgets/attachmentpopup2.cpp" line="+96"/>
         <source>Add</source>
         <translation>添加</translation>
     </message>
@@ -1110,11 +1177,12 @@
     </message>
     <message>
         <location line="+25"/>
+        <location line="+77"/>
         <source>Rename</source>
         <translation>重命名</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="-61"/>
         <source>Copy Path</source>
         <translation>复制路径</translation>
     </message>
@@ -1127,12 +1195,12 @@
     </message>
     <message>
         <location line="-186"/>
-        <location line="+209"/>
+        <location line="+243"/>
         <source>Attachments not supported for this notebook type</source>
         <translation>该类型的笔记本不支持附件</translation>
     </message>
     <message>
-        <location line="-158"/>
+        <location line="-192"/>
         <source>Add Attachments</source>
         <translation>添加附件</translation>
     </message>
@@ -1612,17 +1680,17 @@
 <context>
     <name>vnotex::DockWidgetHelper</name>
     <message>
-        <location filename="../../../widgets/dockwidgethelper.cpp" line="+131"/>
+        <location filename="../../../widgets/dockwidgethelper.cpp" line="+133"/>
         <source>Outline</source>
         <translation>大纲</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+14"/>
         <source>Console</source>
         <translation>控制台</translation>
     </message>
     <message>
-        <location line="-21"/>
+        <location line="-29"/>
         <source>Search</source>
         <translation>搜索</translation>
     </message>
@@ -1653,11 +1721,16 @@
     </message>
     <message>
         <location line="+8"/>
+        <source>Tools</source>
+        <translation>工具</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>Comments</source>
         <translation>批注</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+11"/>
         <source>Location List</source>
         <translation>位置列表</translation>
     </message>
@@ -3803,7 +3876,7 @@
 <context>
     <name>vnotex::MainWindow2</name>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="+146"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="+147"/>
         <location line="+24"/>
         <source>Unlock Protected Notes</source>
         <translation>解锁受保护笔记</translation>
@@ -3825,8 +3898,8 @@
     </message>
     <message>
         <location line="+15"/>
-        <location line="+658"/>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="+474"/>
+        <location line="+666"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="+476"/>
         <source>Lock All</source>
         <translation>全部锁定</translation>
     </message>
@@ -3866,13 +3939,19 @@
         <translation>不支持导出加密笔记。</translation>
     </message>
     <message>
-        <location line="+430"/>
+        <location line="+177"/>
+        <location line="+14"/>
+        <source>Tools</source>
+        <translation>工具</translation>
+    </message>
+    <message>
+        <location line="+304"/>
         <location line="+49"/>
         <source>Global</source>
         <translation>全局</translation>
     </message>
     <message>
-        <location line="+412"/>
+        <location line="+419"/>
         <source>Applying stylesheet...</source>
         <translation>正在应用样式表...</translation>
     </message>
@@ -3893,7 +3972,7 @@
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="-524"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="-526"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
@@ -3924,9 +4003,9 @@
         <translation>导入文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="-905"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="-977"/>
         <location line="+22"/>
-        <location line="+230"/>
+        <location line="+292"/>
         <location filename="../../../widgets/toolbarhelper2.cpp" line="+90"/>
         <source>Export</source>
         <translation>导出</translation>
@@ -3949,13 +4028,13 @@
     </message>
     <message>
         <location line="+18"/>
-        <location line="+252"/>
+        <location line="+254"/>
         <location line="+8"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location line="-202"/>
+        <location line="-204"/>
         <source>United Entry</source>
         <translation>统一入口</translation>
     </message>
@@ -3990,7 +4069,7 @@
         <translation>窗口列表</translation>
     </message>
     <message>
-        <location line="+55"/>
+        <location line="+57"/>
         <source>Open Configuration Folder</source>
         <translation>打开配置文件夹</translation>
     </message>
@@ -4051,7 +4130,7 @@
         <translation>重启</translation>
     </message>
     <message>
-        <location line="-165"/>
+        <location line="-167"/>
         <source>View</source>
         <translation>视图</translation>
     </message>
@@ -4905,29 +4984,29 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+335"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+337"/>
         <source>Presentation Mode</source>
         <translation>演示模式</translation>
     </message>
     <message>
         <location line="+89"/>
         <location line="+34"/>
-        <location line="+417"/>
+        <location line="+424"/>
         <source>Unable to start presentation</source>
         <translation>无法启动演示</translation>
     </message>
     <message>
-        <location line="-291"/>
+        <location line="-298"/>
         <source>Printing encrypted notes is not supported</source>
         <translation>不支持打印加密笔记</translation>
     </message>
     <message>
-        <location line="+214"/>
+        <location line="+218"/>
         <source>Unable to open protected preview</source>
         <translation>无法打开受保护内容的预览</translation>
     </message>
     <message>
-        <location line="+339"/>
+        <location line="+408"/>
         <source>Are you sure to open link (%1)?</source>
         <translation>确定要打开链接（%1）吗？</translation>
     </message>
@@ -4943,7 +5022,7 @@
         <translation>受保护笔记中的链接只能打开笔记本内已索引的笔记</translation>
     </message>
     <message>
-        <location line="+384"/>
+        <location line="+387"/>
         <source>Unable to load protected note content</source>
         <translation>无法加载受保护笔记的内容</translation>
     </message>
@@ -4953,7 +5032,7 @@
         <translation>当前无法恢复章节编号。自动章节编号仍处于关闭状态。请将此笔记设为当前笔记并使其可编辑，然后开启再关闭“允许自动章节编号”以重试。</translation>
     </message>
     <message>
-        <location line="+407"/>
+        <location line="+414"/>
         <location line="+9"/>
         <source>Replace is not supported in read mode</source>
         <translation>阅读模式不支持替换</translation>
@@ -4965,7 +5044,7 @@
         <translation>阅读模式下不支持插入代码片段</translation>
     </message>
     <message>
-        <location line="+258"/>
+        <location line="+287"/>
         <source>Printed to PDF</source>
         <translation>已打印为PDF</translation>
     </message>
@@ -5071,7 +5150,7 @@
 <context>
     <name>vnotex::MindMapEditor</name>
     <message>
-        <location filename="../../../widgets/editors/mindmapeditor.cpp" line="+141"/>
+        <location filename="../../../widgets/editors/mindmapeditor.cpp" line="+143"/>
         <source>Are you sure to open link (%1)?</source>
         <translation>确定要打开链接（%1）吗？</translation>
     </message>
@@ -5247,7 +5326,7 @@
 <context>
     <name>vnotex::MindMapViewWindow2</name>
     <message>
-        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+201"/>
+        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+190"/>
         <source>Presentation Mode</source>
         <translation>演示模式</translation>
     </message>
@@ -6766,18 +6845,22 @@ Open the bundle location?</source>
         <translation>分享文件夹失败。</translation>
     </message>
     <message>
+        <location filename="../../../widgets/notebookexplorer2_sortseam.cpp" line="+89"/>
         <source>(notebook root)</source>
         <translation>（笔记本根目录）</translation>
     </message>
     <message>
+        <location line="+3"/>
         <source>Reorder children of %1. Order is saved to the configuration file.</source>
         <translation>调整 %1 的子项顺序。顺序将保存到配置文件。</translation>
     </message>
     <message>
+        <location line="+6"/>
         <source>Sort Folders</source>
         <translation>排序文件夹</translation>
     </message>
     <message>
+        <location line="+12"/>
         <source>Sort Notes</source>
         <translation>排序笔记</translation>
     </message>
@@ -10620,7 +10703,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewAreaController</name>
     <message>
-        <location filename="../../../controllers/viewareacontroller.cpp" line="+180"/>
+        <location filename="../../../controllers/viewareacontroller.cpp" line="+188"/>
         <source>The note encryption services are unavailable.</source>
         <translation>笔记加密服务不可用。</translation>
     </message>
@@ -10645,22 +10728,22 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>无法保存待保存的批注。</translation>
     </message>
     <message>
-        <location line="+118"/>
+        <location line="+129"/>
         <source>The workspace service is unavailable.</source>
         <translation>工作区服务不可用。</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
         <source>The notebook is busy syncing. Retry after sync finishes.</source>
         <translation>笔记本正在同步。请在同步完成后重试。</translation>
     </message>
     <message>
-        <location line="+88"/>
+        <location line="+132"/>
         <source>The note changed after confirmation. Nothing was converted; retry.</source>
         <translation>确认后笔记发生变化。未转换任何内容，请重试。</translation>
     </message>
     <message>
-        <location line="-327"/>
+        <location line="-383"/>
         <source>Note conversion requires a writable managed note.</source>
         <translation>笔记转换需要由 VNote 管理的可写笔记。</translation>
     </message>
@@ -10683,22 +10766,22 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+43"/>
-        <location line="+174"/>
+        <location line="+230"/>
         <source>Open this note and recover or discard its pending backup before decrypting it.</source>
         <translation>请打开此笔记，恢复或丢弃其待处理的备份后再解密。</translation>
     </message>
     <message>
-        <location line="-172"/>
+        <location line="-228"/>
         <source>The note could not be read for conversion.</source>
         <translation>无法读取笔记以进行转换。</translation>
     </message>
     <message>
-        <location line="+68"/>
+        <location line="+79"/>
         <source>Note conversion needs recovery. Restart VNote before editing or syncing.</source>
         <translation>笔记转换需要恢复。请重启 VNote 后再编辑或同步。</translation>
     </message>
     <message>
-        <location line="+94"/>
+        <location line="+139"/>
         <source>The destination note or its backup already exists. Rename it before decrypting this note.</source>
         <translation>目标笔记或其备份已存在。请将其重命名后再解密此笔记。</translation>
     </message>
@@ -10708,12 +10791,12 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>恢复后的文件名与此笔记的编辑器类型不匹配。请重命名加密笔记或恢复文件类型配置后再解密。</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+22"/>
         <source>The converted note is durable, but its old buffer could not be released.</source>
         <translation>转换后的笔记已保存到磁盘，但无法释放其旧缓冲区。</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>The converted note&apos;s identity changed.</source>
         <translation>转换后的笔记标识已发生变化。</translation>
     </message>
@@ -10723,7 +10806,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>转换后的笔记已保存到磁盘，但无法重新打开。</translation>
     </message>
     <message>
-        <location line="+19"/>
+        <location line="+20"/>
         <source>The converted note is durable, but its workspace could not be restored.</source>
         <translation>转换后的笔记已保存到磁盘，但无法恢复其工作区。</translation>
     </message>
@@ -10743,7 +10826,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>转换后的笔记已保存到磁盘，但无法恢复其活动标签页。</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+22"/>
         <source>The converted note is durable, but its views could not be recreated.</source>
         <translation>转换后的笔记已保存到磁盘，但无法重新创建其视图。</translation>
     </message>
@@ -10753,7 +10836,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>转换后的笔记已保存到磁盘，但无法打开其视图。</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+48"/>
         <source>A protected operation is in progress. Finish it before locking.</source>
         <translation>受保护内容的操作正在进行。请完成后再锁定。</translation>
     </message>
@@ -11203,6 +11286,11 @@ Continue?</source>
             <numerusform>已添加 %n 文件为附件</numerusform>
         </translation>
     </message>
+    <message>
+        <location filename="../../../widgets/viewwindow2.h" line="+132"/>
+        <source>Tools</source>
+        <translation>工具</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::WebViewExporter</name>
@@ -11330,53 +11418,6 @@ Continue?</source>
         <location line="+4"/>
         <source>Characters (with spaces)</source>
         <translation>字(有空格)</translation>
-    </message>
-</context>
-<context>
-    <name>CommandLineOptions</name>
-    <message>
-        <source>A pleasant note-taking platform.</source>
-        <translation>一个舒适的笔记平台。</translation>
-    </message>
-    <message>
-        <source>Files or folders to open.</source>
-        <translation>要打开的文件或文件夹。</translation>
-    </message>
-    <message>
-        <source>Print more logs.</source>
-        <translation>输出更多日志。</translation>
-    </message>
-    <message>
-        <source>Log to stderr.</source>
-        <translation>将日志输出到标准错误。</translation>
-    </message>
-    <message>
-        <source>Suppress non-critical console logs.</source>
-        <translation>隐藏非关键控制台日志。</translation>
-    </message>
-    <message>
-        <source>Watch theme folder for changes.</source>
-        <translation>监视主题文件夹的更改。</translation>
-    </message>
-    <message>
-        <source>Open files in a detached view split.</source>
-        <translation>在独立的视图分割中打开文件。</translation>
-    </message>
-    <message>
-        <source>WebEngine remote debugging port.</source>
-        <translation>WebEngine 远程调试端口。</translation>
-    </message>
-    <message>
-        <source>port_number</source>
-        <translation>端口号</translation>
-    </message>
-    <message>
-        <source>WebEngine without sandbox.</source>
-        <translation>禁用 WebEngine 沙箱。</translation>
-    </message>
-    <message>
-        <source>WebEngine with GPU disabled.</source>
-        <translation>禁用 WebEngine GPU 加速。</translation>
     </message>
 </context>
 </TS>

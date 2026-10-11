@@ -1,13 +1,19 @@
 # Changes
-## Unreleased
-* Refresh cached code-block and math syntax colors on theme changes without reopening notes or losing drafts, selection or Undo/Redo history
-* Fix missing code-block syntax highlighting in encrypted Markdown edit mode by initializing token colors from the protected viewer's bundled stylesheet
-* Fix encrypted Markdown previews ignoring dark themes; apply bundled reader and syntax styles on opening and theme changes without discarding editor drafts or undo history
-* Fix Chinese input when renaming attachments on Windows with a focused rename dialog; reopen the attachment list with the renamed file selected and focused after success (#2755)
-* Standardize English mind map wording in settings and documentation
-* Fix missing Chinese, Japanese and Korean translations in Sort/Properties dialogs, locked notes, counts, settings, command-line help and exported HTML link prompts
-* Fix encryption/decryption of open notes incorrectly rejecting their own temporary editing freeze as a read-only change
-* Add privacy-safe note-conversion logs identifying failed checkpoints and backend phases
+## v4.9.1
+A maintenance release with more flexible mind-map tools, theme fixes and attachment improvements on top of VNote 4.9.0:
+
+* **Mind maps**
+    * Show node properties in a Tools dock by default, with a setting to keep them embedded in the editor; dock titles follow the active view and property edits remain synchronized when focus moves to the dock
+    * Keep folding local to each editor and preserve node positions when folding and expanding branches
+    * Standardize English mind map wording in settings and documentation
+* **Markdown and themes**
+    * Refresh cached code-block and math syntax colors when switching themes without reopening notes or losing drafts, selection or Undo/Redo history
+    * Restore code-block syntax highlighting in encrypted Markdown edit mode and apply bundled reader and syntax styles to encrypted previews on opening and theme changes, including dark themes
+* **Attachments and encrypted notes**
+    * Fix Chinese input when renaming attachments on Windows; after a successful rename, reopen the attachment list with the renamed file selected and focused (#2755)
+    * Fix encryption and decryption of open notes incorrectly treating their temporary editing freeze as a read-only change
+    * Add privacy-safe note-conversion diagnostics identifying failed checkpoints and backend phases
+* **Translations**: Simplified Chinese (zh_CN), Japanese (ja) and Korean (ko) catalogs updated; restore missing translations in Sort/Properties dialogs, locked notes, counts, settings, command-line help and exported HTML link prompts
 
 ## v4.9.0
 A feature release with WebDAV synchronization, a native mind-map editor and opt-in Windows updates on top of VNote 4.8.0:
