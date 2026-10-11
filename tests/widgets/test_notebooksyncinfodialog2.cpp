@@ -13,6 +13,7 @@
 #include <QProcess>
 #include <QPushButton>
 #include <QSignalSpy>
+#include <QThread>
 #include <QTimer>
 #include <QtTest>
 
@@ -390,7 +391,13 @@ void TestNotebookSyncInfoDialog2::testFailedBootstrapLeavesNotebookAndDialogInta
     QSignalSpy accepted(&dialog, &QDialog::accepted);
     QTimer dismissError;
     int dismissedErrors = 0;
+    const int callerLoopLevel = QThread::currentThread()->loopLevel();
     connect(&dismissError, &QTimer::timeout, this, [&]() {
+      // Cocoa can dispatch timers during show(), before QMessageBox::exec()
+      // enters its event loop. An earlier click cannot end that loop.
+      if (QThread::currentThread()->loopLevel() <= callerLoopLevel) {
+        return;
+      }
       auto *modal = QApplication::activeModalWidget();
       auto widgets = QApplication::topLevelWidgets();
       widgets.prepend(modal);
