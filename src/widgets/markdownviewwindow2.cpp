@@ -92,6 +92,7 @@ struct MarkdownViewWindow2::ProtectedView {
   WebEngineProfileService::ProtectedPage page;
   bool documentPublished = false;
   bool loaded = false;
+  QList<int> splitterSizesOnReady;
 };
 
 // ============ Constructor ============
@@ -714,25 +715,15 @@ void MarkdownViewWindow2::setupTextEditor() {
   // Honour a persisted zoom delta for the in-place previews.
   m_previewHelper->editorZoomChanged();
 
-  // Connect viewer <-> editor web channel signals.
-  connect(adapter(), &MarkdownViewerAdapter::ready, m_editor->getHighlighter(),
-          &vte::MarkdownHighlighter::updateHighlight);
-  connect(m_editor, &MarkdownEditor::htmlToMarkdownRequested, adapter(),
-          &MarkdownViewerAdapter::htmlToMarkdownRequested);
-  connect(adapter(), &MarkdownViewerAdapter::htmlToMarkdownReady, m_editor,
-          &MarkdownEditor::handleHtmlToMarkdownData);
+  connectViewerToEditor();
 
   // External code block highlighting pipeline.
   connect(m_editor, &MarkdownEditor::externalCodeBlockHighlightRequested, this,
           &MarkdownViewWindow2::handleExternalCodeBlockHighlightRequest);
-  connect(adapter(), &MarkdownViewerAdapter::highlightCodeBlockReady, m_editor,
-          &MarkdownEditor::handleExternalCodeBlockHighlightData);
 
   // External display math ($$...$$) source highlighting pipeline.
   connect(m_editor, &MarkdownEditor::externalMathHighlightRequested, this,
           &MarkdownViewWindow2::handleExternalMathHighlightRequest);
-  connect(adapter(), &MarkdownViewerAdapter::highlightMathReady, m_editor,
-          &MarkdownEditor::handleExternalMathHighlightData);
 
   // Switch to read mode when editor requests it.
   // Save first to avoid losing unsaved changes (legacy: read(true) calls save).
@@ -784,8 +775,14 @@ bool MarkdownViewWindow2::setupViewer() {
     if (m_protectedView->page.profile) {
       QHash<QString, QByteArray> resources;
       const auto &page = m_protectedView->page;
-      const auto html =
-          htmlTemplateService->protectedMarkdownViewerTemplate(page.token, page.nonce, resources);
+      QColor background(themeService->optionalPaletteColor(QStringLiteral(
+          "base#content#bg"))); // palette-token-optional: custom themes may omit this
+      if (!background.isValid()) {
+        background = themeService->getBaseBackground();
+      }
+      const auto html = htmlTemplateService->protectedMarkdownViewerTemplate(
+          page.token, page.nonce, themeService->getCurrentTheme().name(),
+          qGray(background.rgb()) < 128, resources);
       m_protectedView->documentPublished =
           profiles->setProtectedDocument(page.profile, html, resources);
     }
@@ -889,6 +886,11 @@ bool MarkdownViewWindow2::setupViewer() {
     if (m_mode == ViewWindowMode::Edit) {
       setEditViewMode(m_editViewMode);
     }
+    if (m_protectedView && !m_protectedView->splitterSizesOnReady.isEmpty()) {
+      // Live-preview readiness distributes panes; preserve a theme reload's ratio afterward.
+      m_splitter->setSizes(m_protectedView->splitterSizesOnReady);
+      m_protectedView->splitterSizesOnReady.clear();
+    }
     requestPresentationWhenReady();
   });
 
@@ -941,6 +943,66 @@ bool MarkdownViewWindow2::setupViewer() {
   // edit mode so the security prompt lives in one place.
   connect(m_viewer, &WebViewer::externalLinkRequested, this,
           [this](const QUrl &p_url) { handleOpenFileRequest(p_url.toString()); });
+  if (m_editor) {
+    connectViewerToEditor();
+  }
+  return true;
+}
+
+void MarkdownViewWindow2::connectViewerToEditor() {
+  connect(adapter(), &MarkdownViewerAdapter::ready, m_editor->getHighlighter(),
+          &vte::MarkdownHighlighter::updateHighlight);
+  connect(m_editor, &MarkdownEditor::htmlToMarkdownRequested, adapter(),
+          &MarkdownViewerAdapter::htmlToMarkdownRequested);
+  connect(adapter(), &MarkdownViewerAdapter::htmlToMarkdownReady, m_editor,
+          &MarkdownEditor::handleHtmlToMarkdownData);
+  connect(adapter(), &MarkdownViewerAdapter::highlightCodeBlockReady, m_editor,
+          &MarkdownEditor::handleExternalCodeBlockHighlightData);
+  connect(adapter(), &MarkdownViewerAdapter::highlightMathReady, m_editor,
+          &MarkdownEditor::handleExternalMathHighlightData);
+}
+
+bool MarkdownViewWindow2::reloadProtectedViewer() {
+  Q_ASSERT(m_viewer && m_protectedView);
+  const auto position = capturePositionState();
+  const auto sizes = m_splitter->sizes();
+  auto *oldViewer = m_viewer;
+  const auto zoomFactor = oldViewer->zoomFactor();
+  const bool visible = !oldViewer->isHidden();
+  const bool focused =
+      oldViewer->hasFocus() || oldViewer->isAncestorOf(QApplication::focusWidget());
+  const bool wasReady = oldViewer->adapter()->isReady();
+  QScopedPointer<ProtectedView> oldProtectedView;
+  oldProtectedView.swap(m_protectedView);
+  m_viewer = nullptr;
+
+  // Profiles are immutable document generations. Keep the old one usable until
+  // its replacement is published; never destroy the editor or its undo history.
+  if (!setupViewer()) {
+    m_viewer = oldViewer;
+    oldProtectedView.swap(m_protectedView);
+    m_viewerReady = wasReady;
+    m_refreshMathPreviewsOnReady = false;
+    return false;
+  }
+  ++m_navigationGeneration;
+  getServices().get<WebEngineProfileService>()->revokeProtectedProfile(
+      oldProtectedView->page.profile);
+  delete oldViewer;
+  delete oldProtectedView->page.profile;
+
+  m_viewer->setZoomFactor(zoomFactor);
+  m_viewer->setVisible(visible);
+  m_splitter->setSizes(sizes);
+  m_protectedView->splitterSizesOnReady = sizes;
+  if (focused) {
+    m_viewer->setFocus();
+  }
+  syncViewerFromBuffer(false);
+  if (m_mode == ViewWindowMode::Edit && m_editor) {
+    adapter()->setText(m_editor->getText(), getEditLineNumber());
+  }
+  restorePositionState(position);
   return true;
 }
 
@@ -1283,6 +1345,9 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   // re-enter this method. Skip if already switching.
   if (m_switchingMode) {
     return;
+  }
+  if (m_protectedView) {
+    m_protectedView->splitterSizesOnReady.clear();
   }
   if (!m_preparingPresentation) {
     setPresentationMode(false);
@@ -2010,7 +2075,11 @@ void MarkdownViewWindow2::handleThemeChanged() {
     m_viewer->page()->setBackgroundColor(themeService->getBaseBackground());
 
     // Reload viewer with new template (preserves buffer content, does not sync scroll from editor).
-    syncViewerFromBuffer(false);
+    if (m_protectedView) {
+      reloadProtectedViewer();
+    } else {
+      syncViewerFromBuffer(false);
+    }
 
     // Re-apply readable width colors if in readable-width mode.
     applyReadableWidth();
@@ -2134,6 +2203,9 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
   if (m_editViewMode != p_mode) {
     m_editViewMode = p_mode;
     modeChanged = true;
+    if (m_protectedView) {
+      m_protectedView->splitterSizesOnReady.clear();
+    }
   }
 
   switch (p_mode) {

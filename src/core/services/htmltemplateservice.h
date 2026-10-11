@@ -75,7 +75,9 @@ public:
 
   // Per-view, bundled-only template and exact URL-to-byte execution allowlist.
   // Empty on missing/invalid bundled resources; never falls back to config files.
+  // Custom themes use a bundled dark/light fallback; Native dark uses the dark fallback.
   QString protectedMarkdownViewerTemplate(const QString &p_token, const QString &p_nonce,
+                                          const QString &p_themeName, bool p_darkTheme,
                                           QHash<QString, QByteArray> &p_resources) const;
   static QString protectedContentSecurityPolicy(const QString &p_nonce);
 

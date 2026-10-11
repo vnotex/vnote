@@ -266,12 +266,21 @@ The local core and shared black-theme fonts/layout are viewer-only, media-gated 
 exported reader CSS excludes them. Each entry selects the black or white reveal.js palette from
 the current VNote content background (`base#content#bg`, backed by system Base for Native,
 with `getBaseBackground()` as fallback for custom themes); Qt `qGray < 128` selects dark.
-The adapter passes that mode explicitly, including
-for protected previews whose reader stylesheet stays light. The white palette is a small scoped
-CSS override, not a duplicate font bundle. Code surfaces and scrollbar color-scheme follow it;
+The adapter passes that mode explicitly, including for protected previews. The white palette is
+a small scoped CSS override, not a duplicate font bundle. Code surfaces and scrollbar color-scheme follow it;
 the light class is restored with the reader's other classes on exit. Theme changes still end
 presentation; the next entry picks the new palette. Protected previews retain their explicit
 bundled-resource allowlist and unchanged CSP. JavaScript must never request HTML5 fullscreen.
+
+Protected Markdown reading/live previews use the selected theme from the shipped RCC, with
+its bundled palette resolved before CSS is served. Never load the editable installed theme,
+custom CSS or palette. Custom themes use bundled `vscode-dark`/`pure` according to the same
+content-background darkness rule; Native dark uses `vscode-dark`, while Native light keeps
+its literal bundled reader CSS. Theme changes replace only the viewer with a fresh token,
+nonce and off-the-record profile. Publish the replacement before revoking the old profile,
+destroy old pages before their profile, and retain the editor, draft and undo history.
+Restore saved splitter sizes after viewer readiness, which otherwise redistributes live-preview panes.
+Discard pending sizes on read/edit or edit-view-mode changes so hidden-pane sizes cannot collapse a new layout.
 
 **HTML5 fullscreen remains disabled.** Enabling
 `QWebEngineSettings::FullScreenSupportEnabled` advertises it to every web view

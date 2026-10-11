@@ -141,6 +141,10 @@ private:
 
   bool setupViewer();
 
+  void connectViewerToEditor();
+
+  bool reloadProtectedViewer();
+
   void setPresentationMode(bool p_on);
 
   void requestPresentationWhenReady();

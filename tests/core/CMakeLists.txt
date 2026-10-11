@@ -603,6 +603,7 @@ target_include_directories(test_imagehostasync PRIVATE ${CMAKE_SOURCE_DIR}/src)
 add_qt_test(test_htmltemplateservice
   SOURCES
     test_htmltemplateservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
   LINKS
     core_services
     core_configs

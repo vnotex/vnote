@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Fix encrypted Markdown previews ignoring dark themes; apply bundled reader and syntax styles on opening and theme changes without discarding editor drafts or undo history
 * Fix Chinese input when renaming attachments on Windows with a focused rename dialog; reopen the attachment list with the renamed file selected and focused after success (#2755)
 * Standardize English mind map wording in settings and documentation
 * Fix missing Chinese, Japanese and Korean translations in Sort/Properties dialogs, locked notes, counts, settings, command-line help and exported HTML link prompts

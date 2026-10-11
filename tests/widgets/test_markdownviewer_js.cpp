@@ -751,7 +751,7 @@ void TestMarkdownViewerJs::testPresentation_followsThemeAndRestoresReader() {
   setupPresentationPage(page);
   QJsonObject result;
   evaluateNavigation(page, QStringLiteral(R"JS(
-// Protected previews have a light reader even when the application theme is dark.
+// Presentation must restore the reader even when its colors differ from the deck.
 vxcore.contentContainer.innerHTML = '<h2>Theme</h2><p>Text <code>inline</code></p>' +
   '<pre><code>const answer = 42;</code></pre><a href="https://example.com">Link</a>';
 document.body.style.backgroundColor = 'rgb(240, 240, 240)';

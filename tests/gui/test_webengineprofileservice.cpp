@@ -59,6 +59,7 @@ class TestWebEngineProfileService : public QObject {
 
 private slots:
   void profileStorageStaysUnderConfiguredRoot();
+  void protectedMathReadingAndLivePreview_data();
   void protectedMathReadingAndLivePreview();
 };
 
@@ -99,7 +100,46 @@ void TestWebEngineProfileService::profileStorageStaysUnderConfiguredRoot() {
   QVERIFY(!QFileInfo::exists(defaultStorage));
 }
 
+void TestWebEngineProfileService::protectedMathReadingAndLivePreview_data() {
+  QTest::addColumn<QString>("themeName");
+  QTest::addColumn<bool>("darkTheme");
+  QTest::addColumn<QString>("background");
+  QTest::addColumn<QString>("foreground");
+  QTest::addColumn<QString>("linkColor");
+  QTest::addColumn<QString>("keywordColor");
+  QTest::newRow("bundled-dark") << QStringLiteral("vscode-dark") << true
+                                << QStringLiteral("rgb(30, 30, 30)")
+                                << QStringLiteral("rgb(212, 212, 212)")
+                                << QStringLiteral("rgb(119, 201, 255)")
+                                << QStringLiteral("rgb(86, 156, 214)");
+  QTest::newRow("bundled-light") << QStringLiteral("pure") << false
+                                 << QStringLiteral("rgb(255, 255, 255)")
+                                 << QStringLiteral("rgb(34, 34, 34)")
+                                 << QStringLiteral("rgb(0, 153, 255)")
+                                 << QStringLiteral("rgb(0, 119, 170)");
+  QTest::newRow("custom-dark") << QStringLiteral("custom-dark") << true
+                               << QStringLiteral("rgb(30, 30, 30)")
+                               << QStringLiteral("rgb(212, 212, 212)")
+                               << QStringLiteral("rgb(119, 201, 255)")
+                               << QStringLiteral("rgb(86, 156, 214)");
+  QTest::newRow("native-dark") << QStringLiteral("native") << true
+                               << QStringLiteral("rgb(30, 30, 30)")
+                               << QStringLiteral("rgb(212, 212, 212)")
+                               << QStringLiteral("rgb(119, 201, 255)")
+                               << QStringLiteral("rgb(86, 156, 214)");
+  QTest::newRow("path-is-not-a-theme")
+      << QStringLiteral("../themes/pure") << true << QStringLiteral("rgb(30, 30, 30)")
+      << QStringLiteral("rgb(212, 212, 212)") << QStringLiteral("rgb(119, 201, 255)")
+      << QStringLiteral("rgb(86, 156, 214)");
+}
+
 void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
+  QFETCH(QString, themeName);
+  QFETCH(bool, darkTheme);
+  QFETCH(QString, background);
+  QFETCH(QString, foreground);
+  QFETCH(QString, linkColor);
+  QFETCH(QString, keywordColor);
   QTemporaryDir temp;
   QVERIFY(temp.isValid());
   const QString rcc = QStringLiteral(VNOTE_TEST_EXTRA_RCC);
@@ -127,7 +167,9 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
   // Notebook-close hooks still need the live BufferService.
   const auto closeNotebook = qScopeGuard([&]() { notebooks.closeNotebook(notebook); });
   const QByteArray password("protected-math-test-password");
-  const QByteArray firstText("Inline $x^2+y^2=z^2$.\n\n$$\n\\frac{1}{2}\n$$\n");
+  const QByteArray firstText("Inline $x^2+y^2=z^2$.\n\n$$\n\\frac{1}{2}\n$$\n\n"
+                             "[Link](https://protected.invalid/)\n\n"
+                             "```javascript\nconst answer = 42;\n```\n");
   QString noteId;
   QCOMPARE(QtConcurrent::run([&]() -> VxCoreError {
              auto setup = notebooks.prepareNotebookEncryption(notebook, QString(), password);
@@ -171,7 +213,7 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
   const auto revoke = qScopeGuard([&]() { service.revokeProtectedProfile(profile.get()); });
   QHash<QString, QByteArray> resources;
   auto html = templates.protectedMarkdownViewerTemplate(protectedPage.token, protectedPage.nonce,
-                                                        resources);
+                                                        themeName, darkTheme, resources);
   QVERIFY(!html.isEmpty());
   // The generated options precede the first bundled script. Supply only the
   // bridge notifications needed by the real viewer; no worker, font, loader or
@@ -179,7 +221,7 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
   const auto scriptsStart =
       html.indexOf(QStringLiteral("<script nonce=\"%1\" src=").arg(protectedPage.nonce));
   QVERIFY(scriptsStart >= 0);
-  html.insert(scriptsStart, QStringLiteral(R"JS(<script nonce="%1">
+  const auto bridge = QStringLiteral(R"JS(<script nonce="%1">
     window.vxOptions.mathRenderer = 'mathjax';
     window.qt = { webChannelTransport: { send() {} } };
     window.__renderCount = 0;
@@ -197,12 +239,12 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
       }
     };
   </script>
-)JS")
-                                .arg(protectedPage.nonce));
+)JS");
+  html.insert(scriptsStart, bridge.arg(protectedPage.nonce));
   QVERIFY(service.setProtectedDocument(profile.get(), html, resources));
   QSignalSpy loaded(&page, &QWebEnginePage::loadFinished);
   page.load(protectedPage.url);
-  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 10000);
+  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 30000);
   QVERIFY(loaded.at(0).at(0).toBool());
   QVERIFY(evaluateJavaScript(page, QStringLiteral("window.vxcore.initialized")).toBool());
 
@@ -237,6 +279,25 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
   QVERIFY(initial.value(QStringLiteral("styled")).toBool());
   QVERIFY(initial.value(QStringLiteral("fontsLoaded")).toBool());
   QVERIFY(!initial.value(QStringLiteral("usedMathJax")).toBool());
+  QTRY_VERIFY_WITH_TIMEOUT(
+      evaluateJavaScript(
+          page, QStringLiteral("!!document.querySelector('#vx-content pre .token.keyword')"))
+          .toBool(),
+      10000);
+  const auto colors = evaluateJavaScript(page, QStringLiteral(R"JS((() => {
+    const root = document.getElementById('vx-content');
+    return {
+      background: getComputedStyle(document.body).backgroundColor,
+      foreground: getComputedStyle(root.querySelector('p')).color,
+      link: getComputedStyle(root.querySelector('a')).color,
+      keyword: getComputedStyle(root.querySelector('pre .token.keyword')).color
+    };
+  })())JS"))
+                          .toMap();
+  QCOMPARE(colors.value(QStringLiteral("background")).toString(), background);
+  QCOMPARE(colors.value(QStringLiteral("foreground")).toString(), foreground);
+  QCOMPARE(colors.value(QStringLiteral("link")).toString(), linkColor);
+  QCOMPARE(colors.value(QStringLiteral("keyword")).toString(), keywordColor);
 
   // A second editor snapshot replaces the reading DOM, rather than appending
   // another math pass or leaving already-typeset content behind.
@@ -333,6 +394,47 @@ $\htmlClass{protected-injected}{unsafe}$
       QByteArray::fromBase64(firstPreview.value(QStringLiteral("data")).toByteArray());
   QVERIFY(!QImage::fromData(blockedImage, "PNG").isNull());
   QCOMPARE(firstPreview.value(QStringLiteral("data")), secondPreview.value(QStringLiteral("data")));
+
+  // Theme changes need a fresh generation, never a republish under pending jobs.
+  QVERIFY(!service.setProtectedDocument(profile.get(), html, resources));
+  service.revokeProtectedProfile(profile.get());
+  QSignalSpy retiredLoad(&page, &QWebEnginePage::loadFinished);
+  page.load(protectedPage.url);
+  QTRY_COMPARE_WITH_TIMEOUT(retiredLoad.count(), 1, 10000);
+  QVERIFY(!retiredLoad.at(0).at(0).toBool());
+
+  const auto replacement = service.createProtectedProfile(note);
+  QVERIFY(replacement.profile);
+  std::unique_ptr<QWebEngineProfile> replacementProfile(replacement.profile);
+  QWebEnginePage replacementPage(replacementProfile.get());
+  const auto revokeReplacement =
+      qScopeGuard([&]() { service.revokeProtectedProfile(replacementProfile.get()); });
+  auto replacementHtml = templates.protectedMarkdownViewerTemplate(
+      replacement.token, replacement.nonce,
+      darkTheme ? QStringLiteral("pure") : QStringLiteral("vscode-dark"), !darkTheme, resources);
+  const auto replacementScripts =
+      replacementHtml.indexOf(QStringLiteral("<script nonce=\"%1\" src=").arg(replacement.nonce));
+  QVERIFY(replacementScripts >= 0);
+  replacementHtml.insert(replacementScripts, bridge.arg(replacement.nonce));
+  QVERIFY(service.setProtectedDocument(replacement.profile, replacementHtml, resources));
+  QSignalSpy replacementLoaded(&replacementPage, &QWebEnginePage::loadFinished);
+  replacementPage.load(replacement.url);
+  QTRY_COMPARE_WITH_TIMEOUT(replacementLoaded.count(), 1, 30000);
+  QVERIFY(replacementLoaded.at(0).at(0).toBool());
+  replacementPage.runJavaScript(QStringLiteral("vxcore.setMarkdownText('Updated $x^2$')"));
+  QTRY_COMPARE_WITH_TIMEOUT(
+      evaluateJavaScript(replacementPage, QStringLiteral("window.__renderCount")).toInt(), 1,
+      15000);
+  QCOMPARE(evaluateJavaScript(replacementPage,
+                              QStringLiteral("getComputedStyle(document.body).backgroundColor"))
+               .toString(),
+           darkTheme ? QStringLiteral("rgb(255, 255, 255)") : QStringLiteral("rgb(30, 30, 30)"));
+  QVERIFY(
+      evaluateJavaScript(
+          replacementPage,
+          QStringLiteral("document.getElementById('vx-content').textContent.includes('Updated') && "
+                         "!!document.querySelector('#vx-content .katex')"))
+          .toBool());
 }
 
 } // namespace tests

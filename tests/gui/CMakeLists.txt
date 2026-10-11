@@ -225,6 +225,7 @@ if(QT_DEFAULT_MAJOR_VERSION GREATER 5 AND Qt6_VERSION VERSION_GREATER_EQUAL 6.9.
   add_qt_test(test_webengineprofileservice
     SOURCES
       test_webengineprofileservice.cpp
+      ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
       ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
       ${CMAKE_SOURCE_DIR}/src/gui/services/webengineprofileservice.cpp
       ${CMAKE_SOURCE_DIR}/src/gui/services/vxpdfschemehandler.cpp
@@ -236,6 +237,8 @@ if(QT_DEFAULT_MAJOR_VERSION GREATER 5 AND Qt6_VERSION VERSION_GREATER_EQUAL 6.9.
   target_include_directories(test_webengineprofileservice PRIVATE
     ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
   )
+  # Each theme row starts two isolated Chromium document generations.
+  set_tests_properties(test_webengineprofileservice PROPERTIES TIMEOUT 300)
   add_dependencies(test_webengineprofileservice VX_EXTRA_RESOURCE)
   get_target_property(_profile_resource_dir VX_EXTRA_RESOURCE BINARY_DIR)
   target_compile_definitions(test_webengineprofileservice PRIVATE

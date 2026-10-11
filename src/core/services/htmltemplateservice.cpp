@@ -6,11 +6,13 @@
 #include <QJsonDocument>
 #include <QRegularExpression>
 #include <QResource>
+#include <QScopedPointer>
 
 #include <core/configmgr2.h>
 #include <core/markdowneditorconfig.h>
 #include <core/markdownwebglobaloptions.h>
 #include <core/pdfviewerconfig.h>
+#include <core/theme.h>
 #include <core/vxpdfscheme.h>
 #include <core/webresource.h>
 #include <utils/fileutils2.h>
@@ -376,7 +378,8 @@ QString HtmlTemplateService::protectedContentSecurityPolicy(const QString &p_non
 }
 
 QString HtmlTemplateService::protectedMarkdownViewerTemplate(
-    const QString &p_token, const QString &p_nonce, QHash<QString, QByteArray> &p_resources) const {
+    const QString &p_token, const QString &p_nonce, const QString &p_themeName, bool p_darkTheme,
+    QHash<QString, QByteArray> &p_resources) const {
   p_resources.clear();
   static const QRegularExpression c_token(QStringLiteral("^[a-f0-9]{32}$"));
   if (!c_token.match(p_token).hasMatch() || !c_token.match(p_nonce).hasMatch()) {
@@ -411,6 +414,33 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
   if (html.isEmpty()) {
     return QString();
   }
+  // Resolve the shipped palette, not the editable installed theme. Only a single
+  // folder component can select resources inside this private RCC mount.
+  static const QRegularExpression c_themeName(QStringLiteral("\\A[A-Za-z0-9_-]+\\z"));
+  QString themeName = p_themeName;
+  if ((themeName == QStringLiteral("native") && p_darkTheme) ||
+      !c_themeName.match(themeName).hasMatch() ||
+      !QFile::exists(bundleRoot + QStringLiteral("themes/") + themeName +
+                     QStringLiteral("/palette.json"))) {
+    themeName = p_darkTheme ? QStringLiteral("vscode-dark") : QStringLiteral("pure");
+  }
+  const auto themePath = QStringLiteral("themes/") + themeName;
+  const auto webStylePath = themePath + QStringLiteral("/web.css");
+  if (readBundled(themePath + QStringLiteral("/palette.json")).isEmpty()) {
+    return QString();
+  }
+  QByteArray webStyle;
+  if (themeName == QStringLiteral("native")) {
+    // Native's shipped web CSS is literal; its palette requires GUI backfilling.
+    webStyle = readBundled(webStylePath);
+  } else {
+    QScopedPointer<Theme> theme(Theme::fromFolder(bundleRoot + themePath));
+    webStyle = theme->fetchWebStyleSheet().toUtf8();
+  }
+  if (webStyle.isEmpty()) {
+    return QString();
+  }
+
   const auto origin = QStringLiteral("vxnote://") + p_token;
   // Ordering follows the built-in Markdown viewer resource definition. This is
   // a fixed execution allowlist, intentionally independent of user config.
@@ -471,14 +501,14 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
                                    QStringLiteral("web/js/viz.js/viz.js"),
                                    QStringLiteral("web/js/viz.js/full.render.js")};
   QStringList styles = {
-      QStringLiteral("web/css/globalstyles.css"),  QStringLiteral("themes/pure/web.css"),
-      QStringLiteral("themes/pure/highlight.css"), QStringLiteral("web/css/imageviewer.css"),
-      QStringLiteral("web/css/markdownit.css"),    QStringLiteral("web/css/codeblockactions.css")};
+      QStringLiteral("web/css/globalstyles.css"),   webStylePath,
+      themePath + QStringLiteral("/highlight.css"), QStringLiteral("web/css/imageviewer.css"),
+      QStringLiteral("web/css/markdownit.css"),     QStringLiteral("web/css/codeblockactions.css")};
   styles += c_presentationStyles;
   styles.append(QStringLiteral("web/js/katex/katex.min.css"));
   QHash<QString, QByteArray> resources;
   for (const auto &path : scripts + lazyScripts + styles) {
-    auto bytes = readBundled(path);
+    auto bytes = path == webStylePath ? webStyle : readBundled(path);
     if (bytes.isEmpty()) {
       return QString();
     }
