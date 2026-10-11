@@ -17,6 +17,7 @@
 #include <QDir>
 #include <QFile>
 #include <QGuiApplication>
+#include <QImage>
 #include <QJSEngine>
 #include <QJSValue>
 #include <QJsonArray>
@@ -24,6 +25,7 @@
 #include <QJsonObject>
 #include <QStandardPaths>
 #include <QString>
+#include <QTemporaryDir>
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
 #include <QtTest>
@@ -390,6 +392,10 @@ class TestMarkdownViewerJs : public QObject {
   Q_OBJECT
 
 private slots:
+  void testCrossCopy_localImages_data();
+  void testCrossCopy_localImages();
+  void testCrossCopy_svgImages_data();
+  void testCrossCopy_svgImages();
   void testPresentation_followsThemeAndRestoresReader();
   void testPresentation_groupingAndRestoration();
   void testPresentation_pinnedHeaderScrolling();
@@ -421,6 +427,7 @@ private slots:
   void testSectionNumber_renderLifecycleAndFolding();
 
 private:
+  void runCrossCopyScript(const QString &p_script, const QUrl &p_baseUrl, QJsonObject &p_result);
   // Evaluates the prelude plus the real markdownviewer.js.
   void setup(QJSEngine &p_engine, bool p_initializedAtChannel);
   void setupHeadingFolding(QJSEngine &p_engine);
@@ -431,6 +438,224 @@ private:
   void setupNavigationPage(QWebEnginePage &p_page, bool p_protected = false);
   void evaluateNavigation(QWebEnginePage &p_page, const QString &p_script, QJsonObject &p_result);
 };
+
+void TestMarkdownViewerJs::runCrossCopyScript(const QString &p_script, const QUrl &p_baseUrl,
+                                              QJsonObject &p_result) {
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  QSignalSpy loaded(&page, &QWebEnginePage::loadFinished);
+  page.setHtml(QStringLiteral("<!doctype html><html><body></body></html>"), p_baseUrl);
+  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 10000);
+  QVERIFY(loaded.at(0).at(0).toBool());
+  QString source;
+  QString error;
+  for (const auto *name : {"utils.js", "svg-to-image.js", "crosscopy.js"}) {
+    source += readFile(webDir() + QStringLiteral("/js/") + QLatin1String(name), &error) +
+              QLatin1Char('\n');
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+  }
+  source += QStringLiteral(R"JS(
+(async function() {
+%1
+})().then(function(result) {
+  window.__crossCopyResult = JSON.stringify(result);
+  document.title = 'cross-copy-finished';
+}, function(error) {
+  window.__crossCopyResult = JSON.stringify({error: String(error) + '\n' + error.stack});
+  document.title = 'cross-copy-finished';
+});
+)JS")
+                .arg(p_script);
+  page.runJavaScript(source);
+  QTRY_COMPARE_WITH_TIMEOUT(page.title(), QStringLiteral("cross-copy-finished"), 15000);
+  const auto state = std::make_shared<std::pair<bool, QVariant>>(false, QVariant());
+  page.runJavaScript(QStringLiteral("window.__crossCopyResult"), [state](const QVariant &p_value) {
+    state->second = p_value;
+    state->first = true;
+  });
+  QTRY_VERIFY_WITH_TIMEOUT(state->first, 10000);
+  const auto result = QJsonDocument::fromJson(state->second.toString().toUtf8());
+  QVERIFY2(result.isObject(), qPrintable(state->second.toString()));
+  p_result = result.object();
+  QVERIFY2(!p_result.contains(QStringLiteral("error")),
+           qPrintable(p_result.value(QStringLiteral("error")).toString()));
+}
+
+void TestMarkdownViewerJs::testCrossCopy_localImages_data() {
+  QTest::addColumn<QString>("target");
+  QTest::newRow("wechat") << QStringLiteral("WeChat Public Account Editor");
+  QTest::newRow("evernote") << QStringLiteral("Evernote");
+}
+
+void TestMarkdownViewerJs::testCrossCopy_localImages() {
+  QFETCH(QString, target);
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const auto imagePath = dir.filePath(QString::fromUtf8("local 图片.PNG"));
+  QImage image(3, 2, QImage::Format_ARGB32);
+  image.fill(QColor(17, 85, 153));
+  QVERIFY(image.save(imagePath));
+  QFile pngFile(imagePath);
+  QVERIFY(pngFile.open(QIODevice::ReadOnly));
+  const auto png = pngFile.readAll();
+  const auto gif =
+      QByteArray::fromBase64("R0lGODlhAQABAIAAAP///wAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw==");
+  QFile gifFile(dir.filePath(QStringLiteral("animation.gif")));
+  QVERIFY(gifFile.open(QIODevice::WriteOnly));
+  QCOMPARE(gifFile.write(gif), gif.size());
+  gifFile.close();
+  const auto dataUrl =
+      QStringLiteral("data:image/png;base64,") + QString::fromLatin1(png.toBase64());
+  const QJsonObject fixtures{
+      {QStringLiteral("target"), target},
+      {QStringLiteral("absolute"), QUrl::fromLocalFile(imagePath).toString()},
+      {QStringLiteral("data"), dataUrl}};
+  QJsonObject result;
+  runCrossCopyScript(
+      QStringLiteral("const fixtures = %1;\n")
+              .arg(QString::fromUtf8(QJsonDocument(fixtures).toJson(QJsonDocument::Compact))) +
+          QStringLiteral(R"JS(
+let result;
+const copy = new CrossCopy({setCrossCopyTargets() {}, setCrossCopyResult(id, stamp, html) {result = html;}});
+const html = '<img id="relative" src="local%20图片.PNG" srcset="unused.png 2x" alt="caption" '
+    + 'title="title" width="30" height="20" style="border:1px solid;vertical-align:middle">'
+    + '<img id="absolute" src="' + fixtures.absolute + '">'
+    + '<img id="gif" src="animation.gif"><img id="missing" src="missing.png">'
+    + '<img id="https" src="https://example.invalid/image.png">'
+    + '<img id="http" src="http://example.invalid/image.png">'
+    + '<img id="protocol" src="//example.invalid/image.png">'
+    + '<img id="empty" src=" "><img id="absent">'
+    + '<img id="data" src="' + fixtures.data + '">';
+await copy.crossCopy(1, 2, fixtures.target, document.baseURI, html);
+const doc = new DOMParser().parseFromString(result, 'text/html');
+const sources = {};
+doc.querySelectorAll('img').forEach(img => { sources[img.id] = img.getAttribute('src'); });
+const img = doc.getElementById('relative');
+return {sources, count: doc.querySelectorAll('img').length, alt: img.alt, title: img.title,
+    width: img.width, height: img.height, border: img.style.borderTopWidth,
+    align: img.style.verticalAlign, srcset: img.hasAttribute('srcset'),
+    fragments: result.includes('<!--StartFragment-->') && result.includes('<!--EndFragment-->')};
+)JS"),
+      QUrl::fromLocalFile(dir.path() + QLatin1Char('/')), result);
+  const auto sources = result.value(QStringLiteral("sources")).toObject();
+  QCOMPARE(sources.value(QStringLiteral("relative")).toString(), dataUrl);
+  QCOMPARE(sources.value(QStringLiteral("absolute")).toString(), dataUrl);
+  QCOMPARE(sources.value(QStringLiteral("gif")).toString(),
+           QStringLiteral("data:image/gif;base64,") + QString::fromLatin1(gif.toBase64()));
+  QCOMPARE(sources.value(QStringLiteral("data")).toString(), dataUrl);
+  QCOMPARE(sources.value(QStringLiteral("missing")).toString(), QStringLiteral("missing.png"));
+  QCOMPARE(sources.value(QStringLiteral("https")).toString(),
+           QStringLiteral("https://example.invalid/image.png"));
+  QCOMPARE(sources.value(QStringLiteral("http")).toString(),
+           QStringLiteral("http://example.invalid/image.png"));
+  QCOMPARE(sources.value(QStringLiteral("protocol")).toString(),
+           QStringLiteral("//example.invalid/image.png"));
+  QCOMPARE(sources.value(QStringLiteral("empty")).toString(), QStringLiteral(" "));
+  QVERIFY(sources.value(QStringLiteral("absent")).isNull());
+  QCOMPARE(result.value(QStringLiteral("count")).toInt(), 10);
+  QCOMPARE(result.value(QStringLiteral("alt")).toString(), QStringLiteral("caption"));
+  QCOMPARE(result.value(QStringLiteral("title")).toString(), QStringLiteral("title"));
+  QCOMPARE(result.value(QStringLiteral("width")).toInt(), 30);
+  QCOMPARE(result.value(QStringLiteral("height")).toInt(), 20);
+  QCOMPARE(result.value(QStringLiteral("border")).toString(), QStringLiteral("1px"));
+  QCOMPARE(result.value(QStringLiteral("align")).toString(), QStringLiteral("middle"));
+  QVERIFY(!result.value(QStringLiteral("srcset")).toBool());
+  QCOMPARE(result.value(QStringLiteral("fragments")).toBool(),
+           target == QStringLiteral("Evernote"));
+}
+
+void TestMarkdownViewerJs::testCrossCopy_svgImages_data() {
+  testCrossCopy_localImages_data();
+  QTest::newRow("generic-rule") << QStringLiteral("SVG only");
+}
+
+void TestMarkdownViewerJs::testCrossCopy_svgImages() {
+  QFETCH(QString, target);
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const QByteArray svg =
+      "<svg xmlns='http://www.w3.org/2000/svg' width='40' height='20' "
+      "id='graph-svg' viewBox='0 0 40 20'><rect width='40' height='20' fill='#115599'/></svg>";
+  QFile svgFile(dir.filePath(QStringLiteral("local.svg")));
+  QVERIFY(svgFile.open(QIODevice::WriteOnly));
+  QCOMPARE(svgFile.write(svg), svg.size());
+  svgFile.close();
+  const QJsonObject fixtures{{QStringLiteral("target"), target},
+                             {QStringLiteral("data"), QStringLiteral("data:image/svg+xml;base64,") +
+                                                          QString::fromLatin1(svg.toBase64())}};
+  QJsonObject result;
+  runCrossCopyScript(
+      QStringLiteral("const fixtures = %1;\n")
+              .arg(QString::fromUtf8(QJsonDocument(fixtures).toJson(QJsonDocument::Compact))) +
+          QStringLiteral(R"JS(
+document.body.innerHTML = '<div id="content" style="color:rgb(17,85,153)">'
+  + '<div id="graph"><svg id="graph-svg" width="120" height="60" viewBox="0 0 120 60">'
+  + '<title>Graph title</title><rect width="120" height="60" fill="currentColor"/>'
+  + '<foreignObject x="10" y="10" width="90" height="35">'
+  + '<div xmlns="http://www.w3.org/1999/xhtml" style="background:rgb(230,40,30);width:80px;height:25px">'
+  + 'Graph<br>label</div></foreignObject></svg></div>'
+  + '<mjx-container id="math"><svg width="40" height="20" viewBox="0 0 40 20" style="vertical-align:-2px">'
+  + '<defs><path id="math-glyph" d="M0 0h40v20H0z"/></defs>'
+  + '<svg><use href="#math-glyph" fill="currentColor"/></svg></svg>'
+  + '<mjx-assistive-mml><math>equation</math></mjx-assistive-mml></mjx-container></div>';
+const container = document.getElementById('content');
+const original = container.outerHTML;
+let result;
+const copy = new CrossCopy({contentContainer:container, setCrossCopyTargets() {},
+  setCrossCopyResult(id, stamp, html) {result = html;}});
+copy.addTarget('SVG only', {rules:[CrossCopy.rule_svgToImage]});
+const html = original + '<img id="local" src="local.svg" width="40" height="20">'
+  + '<img id="data" src="' + fixtures.data + '">'
+  + '<div id="detached" style="color:rgb(17,85,153)"><svg width="40" height="20" viewBox="0 0 40 20">'
+  + '<rect width="40" height="20" fill="currentColor"/></svg></div>';
+await copy.crossCopy(1, 2, fixtures.target, document.baseURI, html);
+const doc = new DOMParser().parseFromString(result, 'text/html');
+const images = {};
+for (const id of ['graph','math','local','data','detached']) {
+  const root = doc.getElementById(id);
+  const img = root.tagName === 'IMG' ? root : root.querySelector('img');
+  if (!img) { throw new Error('SVG not converted: ' + id); }
+  images[id] = {src: img.src, width: img.style.width, height: img.style.height,
+                align: img.style.verticalAlign, alt:img.alt};
+  // A rich-text destination may discard CSS but must retain the logical image size.
+  img.removeAttribute('style');
+  images[id].unstyledWidth = img.width;
+  images[id].unstyledHeight = img.height;
+}
+return {images, svgs:doc.querySelectorAll('svg').length,
+        mathImages:doc.getElementById('math').querySelectorAll('img').length,
+        assistive:doc.querySelectorAll('mjx-assistive-mml').length,
+        unchanged:original === container.outerHTML};
+)JS"),
+      QUrl::fromLocalFile(dir.path() + QLatin1Char('/')), result);
+  QCOMPARE(result.value(QStringLiteral("svgs")).toInt(), 0);
+  QCOMPARE(result.value(QStringLiteral("mathImages")).toInt(), 1);
+  QCOMPARE(result.value(QStringLiteral("assistive")).toInt(), 0);
+  QVERIFY(result.value(QStringLiteral("unchanged")).toBool());
+  const auto images = result.value(QStringLiteral("images")).toObject();
+  for (const auto *id : {"graph", "math", "local", "data", "detached"}) {
+    const auto entry = images.value(QLatin1String(id)).toObject();
+    const auto data = entry.value(QStringLiteral("src")).toString();
+    QVERIFY2(data.startsWith(QStringLiteral("data:image/png;base64,")), qPrintable(data));
+    const auto png =
+        QByteArray::fromBase64(data.mid(data.indexOf(QLatin1Char(',')) + 1).toLatin1());
+    const auto raster = QImage::fromData(png, "PNG");
+    const bool graph = QLatin1String(id) == QLatin1String("graph");
+    QCOMPARE(raster.size(), graph ? QSize(240, 120) : QSize(80, 40));
+    QCOMPARE(entry.value(QStringLiteral("unstyledWidth")).toInt(), graph ? 120 : 40);
+    QCOMPARE(entry.value(QStringLiteral("unstyledHeight")).toInt(), graph ? 60 : 20);
+    QCOMPARE(raster.pixelColor(2, 2), QColor(17, 85, 153));
+    if (graph) {
+      // The foreignObject label must be painted, not merely the graph outline.
+      QCOMPARE(raster.pixelColor(30, 60), QColor(230, 40, 30));
+      QCOMPARE(entry.value(QStringLiteral("alt")).toString(), QStringLiteral("Graph title"));
+      QCOMPARE(entry.value(QStringLiteral("width")).toString(), QStringLiteral("120px"));
+    }
+  }
+  QCOMPARE(
+      images.value(QStringLiteral("math")).toObject().value(QStringLiteral("align")).toString(),
+      QStringLiteral("-2px"));
+}
 
 void TestMarkdownViewerJs::setup(QJSEngine &p_engine, bool p_initializedAtChannel) {
   QString err;

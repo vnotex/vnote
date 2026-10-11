@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Embed local images as base64 in WeChat and Evernote cross-copy; use a generic SVG-to-image rule to copy SVG graphs and math as embedded PNGs
 * Fix CI fixtures for self-contained encrypted notes and macOS sync-error dialogs
 * Use icon-only View and Settings menus in the main toolbar, with the Lucide View icon
 * Remember Comments and Tools dock sizes across editor switches and restarts, replacing the fixed Outline/Comments split ratio

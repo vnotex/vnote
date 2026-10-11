@@ -54,7 +54,8 @@ class CrossCopy {
         let rules = [
             CrossCopy.rule_addFragment,
             CrossCopy.rule_removeBackground.bind(undefined, ['mark', 'pre', 'svg']),
-            CrossCopy.rule_replaceLocalImageWithLabel
+            CrossCopy.rule_embedLocalImages,
+            CrossCopy.rule_svgToImage
         ];
 
         this.addTarget('Evernote', {
@@ -94,7 +95,8 @@ class CrossCopy {
     addTargetWeChatPublicAccountEditor() {
         let rules = [
             CrossCopy.rule_removeBackground.bind(undefined, ['mark', 'pre', 'svg']),
-            CrossCopy.rule_replaceLocalImageWithLabel,
+            CrossCopy.rule_embedLocalImages,
+            CrossCopy.rule_svgToImage,
             CrossCopy.rule_removeMarginPadding.bind(undefined, [])
         ];
 
@@ -113,11 +115,12 @@ class CrossCopy {
         });
     }
 
-    crossCopy(p_id, p_timeStamp, p_target, p_baseUrl, p_html) {
+    async crossCopy(p_id, p_timeStamp, p_target, p_baseUrl, p_html) {
         let target = this.targets[p_target];
         if (!target) {
             console.error("no matching cross-copy target", p_target);
             this.adapter.setCrossCopyResult(p_id, p_timeStamp, p_html);
+            return;
         }
 
         let info = {
@@ -125,11 +128,11 @@ class CrossCopy {
             baseUrl: p_baseUrl
         };
 
-        let result = this.executeRules(target.rules, info, p_html);
+        let result = await this.executeRules(target.rules, info, p_html);
         this.adapter.setCrossCopyResult(p_id, p_timeStamp, result);
     }
 
-    executeRules(p_rules, p_info, p_html) {
+    async executeRules(p_rules, p_info, p_html) {
         if (!p_rules || p_rules.length == 0) {
             return p_html;
         }
@@ -149,7 +152,7 @@ class CrossCopy {
 
         // Go through each rule.
         for (let i = 0; i < p_rules.length; ++i) {
-            p_rules[i](p_info, doc);
+            await p_rules[i](p_info, doc);
         }
 
         return doc.documentElement.outerHTML;
@@ -270,27 +273,227 @@ class CrossCopy {
         }
     }
 
-    // TODO: if we deploy a http server, can we eliminate this tricky rule?
-    static rule_replaceLocalImageWithLabel(p_info, p_doc) {
-        let imgs = p_doc.getElementsByTagName('img');
-        for (let i = 0; i < imgs.length; ++i) {
-            let img = imgs[i];
-            let httpRegExp = new RegExp('^http[s]://');
-            if (httpRegExp.test(img.src)) {
-                continue;
-            }
-
-            let dataRegExp = new RegExp('^data:image/');
-            if (dataRegExp.test(img.src)) {
-                continue;
-            }
-
-            let spanNode = p_doc.createElement('span');
-            spanNode.style = 'font-weight: bold; color: white; background-color: red;'
-            spanNode.textContent = 'INSERT_IMAGE_HERE';
-            img.parentNode.replaceChild(spanNode, img);
-            --i;
+    static localImageUrl(p_src, p_baseUrl) {
+        const src = (p_src || '').trim();
+        // A protocol-relative web URL must not become a file://host URL.
+        if (!src || src.startsWith('//')) {
+            return null;
         }
+        const url = new URL(src, p_baseUrl || document.baseURI);
+        return url.protocol === 'file:' || url.protocol === 'blob:' ? url : null;
+    }
+
+    static readImageDataUrl(p_url) {
+        return new Promise((resolve, reject) => {
+            Utils.httpGet(p_url.href, 'blob', (blob) => {
+                if (!blob || !blob.size) {
+                    reject(new Error('Unable to read local image'));
+                    return;
+                }
+                // Some file handlers omit the MIME type.
+                if (!blob.type || blob.type === 'application/octet-stream') {
+                    const types = {png: 'png', jpg: 'jpeg', jpeg: 'jpeg', gif: 'gif',
+                                   svg: 'svg+xml', webp: 'webp', bmp: 'bmp', avif: 'avif',
+                                   ico: 'x-icon'};
+                    const type = types[p_url.pathname.split('.').pop().toLowerCase()];
+                    if (type) {
+                        blob = blob.slice(0, blob.size, 'image/' + type);
+                    }
+                }
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reader.onabort = () => reject(new Error('Unable to encode image'));
+                reader.readAsDataURL(blob);
+            }, 30000);
+        });
+    }
+
+    static async rule_embedLocalImages(p_info, p_doc) {
+        await Promise.all(Array.from(p_doc.getElementsByTagName('img')).map(async (img) => {
+            try {
+                const url = CrossCopy.localImageUrl(img.getAttribute('src'), p_info.baseUrl);
+                if (url) {
+                    img.setAttribute('src', await CrossCopy.readImageDataUrl(url));
+                    img.removeAttribute('srcset');
+                }
+            } catch (error) {
+                // Keep unreadable images, rather than deleting them or blocking the copy.
+                console.warn('failed to embed cross-copy image', error);
+            }
+        }));
+    }
+
+    // Generic rule: rasterize outer SVGs and SVG image sources, independent of the target.
+    static async rule_svgToImage(p_info, p_doc) {
+        const svgs = Array.from(p_doc.querySelectorAll('svg')).filter((svg) =>
+            !svg.parentElement.closest('svg'));
+        for (const svg of svgs) {
+            try {
+                const raster = await CrossCopy.rasterizeSvg(svg, p_info, true);
+                const img = p_doc.createElement('img');
+                img.src = raster.dataUrl;
+                img.style.cssText = svg.style.cssText;
+                img.style.width = raster.width + 'px';
+                img.style.height = raster.height + 'px';
+                img.width = Math.max(1, Math.round(raster.width));
+                img.height = Math.max(1, Math.round(raster.height));
+                img.alt = svg.getAttribute('aria-label') || (svg.querySelector('title') || {}).textContent || '';
+                if (svg.hasAttribute('title')) {
+                    img.title = svg.getAttribute('title');
+                }
+                const parent = svg.parentNode;
+                parent.replaceChild(img, svg);
+                if (parent.tagName.toLowerCase() === 'mjx-container') {
+                    const assistive = parent.querySelector('mjx-assistive-mml');
+                    if (assistive) {
+                        assistive.remove();
+                    }
+                }
+            } catch (error) {
+                console.warn('failed to rasterize cross-copy SVG', error);
+            }
+        }
+
+        for (const img of Array.from(p_doc.getElementsByTagName('img'))) {
+            try {
+                let src = (img.getAttribute('src') || '').trim();
+                const url = CrossCopy.localImageUrl(src, p_info.baseUrl);
+                if (url && (url.protocol === 'blob:' || /\.svg$/i.test(url.pathname))) {
+                    src = await CrossCopy.readImageDataUrl(url);
+                }
+                if (!/^data:image\/svg\+xml[;,]/i.test(src)) {
+                    continue;
+                }
+                const text = await new Promise((resolve, reject) => {
+                    Utils.httpGet(src, 'text', (response) => response ? resolve(response)
+                        : reject(new Error('Unable to read SVG image')), 30000);
+                });
+                const doc = new DOMParser().parseFromString(text, 'image/svg+xml');
+                if (doc.querySelector('parsererror') || doc.documentElement.localName !== 'svg') {
+                    throw new Error('Invalid SVG image');
+                }
+                const raster = await CrossCopy.rasterizeSvg(doc.documentElement, p_info);
+                if (!img.hasAttribute('width') && !img.hasAttribute('height')
+                    && !img.style.width && !img.style.height) {
+                    img.width = Math.max(1, Math.round(raster.width));
+                    img.height = Math.max(1, Math.round(raster.height));
+                }
+                img.src = raster.dataUrl;
+                img.removeAttribute('srcset');
+            } catch (error) {
+                console.warn('failed to rasterize cross-copy SVG image', error);
+            }
+        }
+    }
+
+    static async rasterizeSvg(p_svg, p_info, p_matchLiveSvg = false) {
+        // IDs inside an SVG image file belong to that file, not the viewer document.
+        const container = p_matchLiveSvg && p_info.inst.adapter.contentContainer;
+        let live = null;
+        if (container) {
+            // MathJax roots may have no ID, but their local glyph definitions do.
+            const ids = [p_svg].concat(Array.from(p_svg.querySelectorAll('[id]')));
+            for (const node of ids) {
+                if (!node.id) {
+                    continue;
+                }
+                const matches = container.querySelectorAll('[id="' + CSS.escape(node.id) + '"]');
+                if (matches.length === 1) {
+                    live = matches[0].closest('svg');
+                    while (live && live.parentElement.closest('svg')
+                           && container.contains(live.parentElement.closest('svg'))) {
+                        live = live.parentElement.closest('svg');
+                    }
+                    if (live) {
+                        break;
+                    }
+                }
+            }
+        }
+        const source = live || p_svg;
+        const clone = source.cloneNode(true);
+        if (live) {
+            const originals = [live].concat(Array.from(live.querySelectorAll('*')));
+            const copies = [clone].concat(Array.from(clone.querySelectorAll('*')));
+            originals.forEach((node, index) => {
+                // Definition paint inherits from each <use>, not its hidden <defs> tree.
+                if (node.closest('defs, symbol')) {
+                    return;
+                }
+                const style = window.getComputedStyle(node);
+                for (const property of style) {
+                    copies[index].style.setProperty(property, style.getPropertyValue(property));
+                }
+            });
+        } else {
+            // Clipboard fragments carry inherited text styles on wrapping spans.
+            for (const property of ['color', 'font-size', 'font-family', 'font-weight']) {
+                for (let node = p_svg; node; node = node.parentElement) {
+                    const value = node.style && node.style.getPropertyValue(property);
+                    if (value) {
+                        clone.style.setProperty(property, value);
+                        break;
+                    }
+                }
+            }
+        }
+        for (const image of clone.querySelectorAll('image')) {
+            const href = image.getAttribute('href') || image.getAttributeNS('http://www.w3.org/1999/xlink', 'href');
+            const url = CrossCopy.localImageUrl(href, p_info.baseUrl);
+            if (url) {
+                const dataUrl = await CrossCopy.readImageDataUrl(url);
+                image.setAttribute('href', dataUrl);
+                image.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', dataUrl);
+            }
+        }
+        const load = () => new Promise((resolve, reject) => {
+            const uri = 'data:image/svg+xml;charset=utf-8,'
+                + encodeURIComponent(new XMLSerializer().serializeToString(clone));
+            SvgToImage.loadImage(uri, {}, (error, image) => error ? reject(error) : resolve(image));
+        });
+        const box = live && live.getBoundingClientRect();
+        let width = box && box.width;
+        let height = box && box.height;
+        if (!(width > 0 && height > 0)) {
+            const viewBox = clone.viewBox.baseVal;
+            if (viewBox.width > 0 && viewBox.height > 0) {
+                if (!clone.hasAttribute('width') || clone.getAttribute('width').includes('%')) {
+                    clone.setAttribute('width', parseFloat(clone.style.maxWidth) || viewBox.width);
+                }
+                if (!clone.hasAttribute('height') || clone.getAttribute('height').includes('%')) {
+                    clone.setAttribute('height', viewBox.height);
+                }
+            }
+            const image = await load();
+            width = image.naturalWidth;
+            height = image.naturalHeight;
+        }
+        if (!(width > 0 && height > 0)) {
+            throw new Error('Empty SVG bounds');
+        }
+        // Scale the vector viewport, not an already-decoded low-resolution bitmap.
+        const scale = Math.min(Math.max(2, window.devicePixelRatio || 1),
+                               8192 / Math.max(width, height),
+                               Math.sqrt(40000000 / (width * height)));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.max(1, Math.floor(width * scale));
+        canvas.height = Math.max(1, Math.floor(height * scale));
+        if (!clone.hasAttribute('viewBox')) {
+            clone.setAttribute('viewBox', '0 0 ' + width + ' ' + height);
+        }
+        clone.setAttribute('width', canvas.width);
+        clone.setAttribute('height', canvas.height);
+        clone.style.width = canvas.width + 'px';
+        clone.style.height = canvas.height + 'px';
+        clone.style.maxWidth = 'none';
+        clone.style.maxHeight = 'none';
+        const image = await load();
+        canvas.getContext('2d').drawImage(image, 0, 0);
+        const dataUrl = canvas.toDataURL('image/png');
+        if (!dataUrl.startsWith('data:image/png;base64,')) {
+            throw new Error('Unable to encode SVG raster');
+        }
+        return {dataUrl: dataUrl, width: width, height: height};
     }
 
     static rule_removeAllStyles(p_tagsToExclude, p_info, p_doc) {
