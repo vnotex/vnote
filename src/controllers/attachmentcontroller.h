@@ -36,7 +36,7 @@ public:
   // The caller (view) owns the confirmation dialog; this never shows UI.
   void deleteAttachments(const QStringList &p_filenames);
 
-  // Request inline rename on the given model index.
+  // Request a view-owned rename editor for the given model index.
   void startRename(const QModelIndex &p_index);
 
   // Open the attachments folder in the system file manager.

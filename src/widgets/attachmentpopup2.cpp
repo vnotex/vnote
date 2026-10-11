@@ -3,10 +3,13 @@
 #include <QAction>
 #include <QFileDialog>
 #include <QHBoxLayout>
+#include <QInputDialog>
 #include <QKeyEvent>
 #include <QLabel>
+#include <QLineEdit>
 #include <QListView>
 #include <QMessageBox>
+#include <QPersistentModelIndex>
 #include <QPointer>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -247,12 +250,30 @@ void AttachmentPopup2::setupUI() {
     updateButtonsState();
   });
 
-  // Connect rename request to inline editing.
+  // Both the Rename button and F2 use the same editor.
   connect(m_controller, &AttachmentController::renameRequested, this,
           [this](const QModelIndex &p_index) {
+#ifdef Q_OS_WIN
+            // A Windows popup grabs keys but leaves IME focus on the note. Release the
+            // popup grab and use a main-window-owned dialog with its own native focus.
+            const QPersistentModelIndex index(p_index);
+            const auto oldName = index.data(Qt::EditRole).toString();
+            const auto bufferId = m_buffer->id();
+            QPointer<AttachmentPopup2> guard(this);
+            hide();
+            bool accepted = false;
+            const auto name = QInputDialog::getText(dialogParent(), tr("Rename"), oldName,
+                                                     QLineEdit::Normal, oldName, &accepted);
+            if (!guard || !accepted || !index.isValid() || !m_buffer ||
+                !m_buffer->isValid() || m_buffer->id() != bufferId) {
+              return;
+            }
+            m_model->setData(index, name, Qt::EditRole);
+#else
             m_listView->setEditTriggers(QAbstractItemView::AllEditTriggers);
             m_listView->edit(p_index);
             m_listView->setEditTriggers(QAbstractItemView::NoEditTriggers);
+#endif
           });
 
   // -- Unsupported label --
