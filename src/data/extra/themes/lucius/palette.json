@@ -516,7 +516,7 @@
                     },
                     "inactive": {
                         "fg": "@base#content#selected#inactive#fg",
-                        "bg": "@base#content#selected#inactive#bg"
+                        "bg": "@base#content#selected#bg"
                     }
                 }
             }

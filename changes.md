@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Keep Lucius tree selections blue when unfocused so they remain distinct from gray hover highlights
 * Add the standard Select All action to the Markdown read-mode context menu
 * Keep KaTeX cross-copy clear at its natural size by sharing the in-place preview's tight, padded layout and high-DPI renderer
 * Embed local images as base64 in WeChat and Evernote cross-copy; use a generic SVG-to-image rule for graphs and MathJax, and rasterize complete KaTeX formulas with embedded fonts
