@@ -168,6 +168,85 @@ class MathRenderer extends VxWorker {
         }
     }
 
+    createKatexWrapper() {
+        const wrapper = document.createElement('span');
+        const style = window.getComputedStyle(this.vxcore.contentContainer);
+        wrapper.style.display = 'inline-block';
+        wrapper.style.color = style.color;
+        wrapper.style.font = style.font;
+        wrapper.style.background = 'transparent';
+        wrapper.style.padding = '2px';
+        return wrapper;
+    }
+
+    prepareKatexWrapper(p_wrapper) {
+        const display = p_wrapper.querySelector('.katex-display');
+        if (display) {
+            display.style.margin = '0';
+            // Absolute tags do not contribute to this shrink-to-fit wrapper's
+            // width. Keep their baseline, but reserve space beside the formula.
+            const tag = display.querySelector('.katex-html > .tag');
+            if (tag) {
+                tag.style.position = 'static';
+                tag.style.display = 'inline-block';
+                tag.style.marginLeft = '1em';
+                // SVG image clones cannot preserve cross-row CSS counters.
+                // A standalone image numbers its own automatic tags from one.
+                tag.querySelectorAll('.eqn-num').forEach((number, index) => {
+                    number.classList.remove('eqn-num');
+                    number.style.display = 'inline-block';
+                    number.textContent = '(' + (index + 1) + ')';
+                });
+            }
+        }
+    }
+
+    // Snapshot expanded math using the same tight, padded layout as in-place previews.
+    rasterizeKatex(p_root, p_pixelRatio) {
+        // Keep offscreen positioning on a host, not on the node cloned into the PNG.
+        const host = document.createElement('div');
+        host.classList.add('vx-math-raster');
+        host.style.cssText = 'position:fixed;left:-100000px;top:0;pointer-events:none';
+        host.setAttribute('aria-hidden', 'true');
+        let wrapper;
+        let verticalAlign = null;
+        const display = p_root.closest('.katex-display');
+        return Promise.resolve().then(() => {
+            wrapper = this.createKatexWrapper();
+            const clone = p_root.cloneNode(true);
+            const style = window.getComputedStyle(p_root);
+            // Pin font size without turning unitless line-height into inherited pixels;
+            // superscripts and fractions must keep scaling their own line boxes.
+            for (const property of ['font-size', 'font-family', 'font-weight', 'font-style', 'color']) {
+                clone.style.setProperty(property, style.getPropertyValue(property));
+            }
+            if (display) {
+                const displayClone = display.cloneNode(false);
+                displayClone.appendChild(clone);
+                wrapper.appendChild(displayClone);
+            } else {
+                wrapper.appendChild(clone);
+            }
+            this.prepareKatexWrapper(wrapper);
+            host.appendChild(wrapper);
+            document.body.appendChild(host);
+            return this.waitForMathFonts(wrapper);
+        }).then(() => {
+            if (!display) {
+                const marker = document.createElement('span');
+                marker.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0;vertical-align:baseline';
+                wrapper.appendChild(marker);
+                verticalAlign = marker.getBoundingClientRect().bottom
+                    - wrapper.getBoundingClientRect().bottom;
+                marker.remove();
+            }
+            return this.rasterizeHtml(wrapper, p_pixelRatio);
+        }).then((raster) => {
+            raster.verticalAlign = verticalAlign;
+            return raster;
+        }).finally(() => host.remove());
+    }
+
     // Returns MathJax's SVG or an attached KaTeX wrapper owned by the preview caller.
     renderText(p_container, p_text, p_callback) {
         if (window.vxOptions.protectedView) {
@@ -185,34 +264,10 @@ class MathRenderer extends VxWorker {
                 window.MathJax.texReset();
                 return window.MathJax.tex2svg(check.text, options).firstElementChild;
             }
-            wrapper = document.createElement('span');
-            const style = window.getComputedStyle(this.vxcore.contentContainer);
-            wrapper.style.display = 'inline-block';
-            wrapper.style.color = style.color;
-            wrapper.style.font = style.font;
-            wrapper.style.background = 'transparent';
-            wrapper.style.padding = '2px';
+            wrapper = this.createKatexWrapper();
             p_container.appendChild(wrapper);
             this.renderKatex(wrapper, check, {});
-            const display = wrapper.querySelector('.katex-display');
-            if (display) {
-                display.style.margin = '0';
-                // Absolute tags do not contribute to this shrink-to-fit wrapper's
-                // width. Keep their baseline, but reserve space beside the formula.
-                const tag = display.querySelector('.katex-html > .tag');
-                if (tag) {
-                    tag.style.position = 'static';
-                    tag.style.display = 'inline-block';
-                    tag.style.marginLeft = '1em';
-                    // SVG image clones cannot preserve cross-row CSS counters.
-                    // A standalone preview numbers its own automatic tags from one.
-                    tag.querySelectorAll('.eqn-num').forEach((number, index) => {
-                        number.classList.remove('eqn-num');
-                        number.style.display = 'inline-block';
-                        number.textContent = '(' + (index + 1) + ')';
-                    });
-                }
-            }
+            this.prepareKatexWrapper(wrapper);
             return wrapper;
         }).catch((error) => {
             if (wrapper && wrapper.parentNode) {

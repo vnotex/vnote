@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Keep KaTeX cross-copy clear at its natural size by sharing the in-place preview's tight, padded layout and high-DPI renderer
 * Embed local images as base64 in WeChat and Evernote cross-copy; use a generic SVG-to-image rule for graphs and MathJax, and rasterize complete KaTeX formulas with embedded fonts
 * Fix CI fixtures for self-contained encrypted notes and macOS sync-error dialogs
 * Use icon-only View and Settings menus in the main toolbar, with the Lucide View icon

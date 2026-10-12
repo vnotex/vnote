@@ -346,18 +346,7 @@ class CrossCopy {
                     throw new Error('Original KaTeX equation unavailable');
                 }
                 const source = matches[0];
-                await renderer.waitForMathFonts(source);
-                let verticalAlign = null;
-                if (!source.closest('.katex-display')) {
-                    // Same baseline measurement as the math export path; no persistent DOM edit.
-                    const marker = document.createElement('span');
-                    marker.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0;vertical-align:baseline';
-                    source.parentNode.insertBefore(marker, source.nextSibling);
-                    verticalAlign = marker.getBoundingClientRect().bottom
-                        - source.getBoundingClientRect().bottom;
-                    marker.remove();
-                }
-                const raster = await renderer.rasterizeHtml(source, window.devicePixelRatio || 1);
+                const raster = await renderer.rasterizeKatex(source, window.devicePixelRatio || 1);
                 const img = p_doc.createElement('img');
                 img.src = raster.dataUrl;
                 img.width = Math.max(1, Math.round(raster.width));
@@ -367,8 +356,8 @@ class CrossCopy {
                 img.setAttribute('data-math-png', 'true');
                 const annotation = source.querySelector('annotation[encoding="application/x-tex"]');
                 img.alt = annotation ? annotation.textContent : '';
-                if (verticalAlign !== null) {
-                    img.style.verticalAlign = verticalAlign + 'px';
+                if (raster.verticalAlign !== null) {
+                    img.style.verticalAlign = raster.verticalAlign + 'px';
                 }
                 const parent = root.parentElement;
                 if (parent.classList.contains('katex-display')) {

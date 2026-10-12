@@ -659,12 +659,21 @@ return {images, svgs:doc.querySelectorAll('svg').length,
       QStringLiteral("-2px"));
 }
 
-void TestMarkdownViewerJs::testCrossCopy_katexImages_data() { testCrossCopy_localImages_data(); }
+void TestMarkdownViewerJs::testCrossCopy_katexImages_data() {
+  QTest::addColumn<QString>("target");
+  QTest::addColumn<qreal>("pixelRatio");
+  QTest::newRow("wechat-1x") << QStringLiteral("WeChat Public Account Editor") << qreal(1);
+  QTest::newRow("wechat-2x") << QStringLiteral("WeChat Public Account Editor") << qreal(2);
+  QTest::newRow("evernote-1x") << QStringLiteral("Evernote") << qreal(1);
+  QTest::newRow("evernote-2x") << QStringLiteral("Evernote") << qreal(2);
+}
 
 void TestMarkdownViewerJs::testCrossCopy_katexImages() {
   QFETCH(QString, target);
+  QFETCH(qreal, pixelRatio);
   const QJsonObject fixtures{
       {QStringLiteral("target"), target},
+      {QStringLiteral("pixelRatio"), pixelRatio},
       {QStringLiteral("js"), QUrl::fromLocalFile(webDir() + QStringLiteral("/js")).toString()}};
   QJsonObject result;
   runCrossCopyScript(
@@ -672,6 +681,7 @@ void TestMarkdownViewerJs::testCrossCopy_katexImages() {
               .arg(QString::fromUtf8(QJsonDocument(fixtures).toJson(QJsonDocument::Compact))) +
           QStringLiteral(R"JS(
 window.vxOptions = {mathRenderer:'katex'};
+Object.defineProperty(window, 'devicePixelRatio', {value:fixtures.pixelRatio});
 document.body.innerHTML = '<div id="content" style="width:640px;font:18px Arial;color:rgb(17,85,153)">'
   + '<p id="first">Before <eqn style="color:rgb(180,40,60)"></eqn> After</p>'
   + '<p id="second">Before <eqn style="color:rgb(40,80,180)"></eqn> After</p>'
@@ -712,17 +722,43 @@ for (const id of ['second','first','display']) {
   const root = doc.getElementById(id);
   const img = root.querySelector('img');
   if (!img) {throw new Error('Missing KaTeX image: ' + id);}
-  const source = document.querySelector('#' + id + ' .katex');
-  const rect = source.getBoundingClientRect();
   const align = img.style.verticalAlign;
+  const tex = id === 'display'
+    ? document.querySelector('#display annotation').textContent
+    : formula.replace('\\velocity', 'V');
+  const delimiter = id === 'display' ? '$$' : '$';
+  const preview = await new Promise(resolve =>
+    mathWorker.renderText(document.body, delimiter + tex + delimiter, resolve));
+  await mathWorker.waitForMathFonts(preview);
+  const rect = preview.getBoundingClientRect();
+  const previewWidth = Math.ceil(Math.max(rect.width, preview.scrollWidth));
+  const previewHeight = Math.ceil(Math.max(rect.height, preview.scrollHeight));
+  preview.remove();
   img.removeAttribute('style');
-  images.push({src:img.src, width:img.width, height:img.height, align,
-    expectedWidth:Math.ceil(Math.max(rect.width,source.scrollWidth)),
-    expectedHeight:Math.ceil(Math.max(rect.height,source.scrollHeight)),
+  images.push({src:img.src, width:img.width, height:img.height, align, previewWidth, previewHeight,
     text:root.textContent, parentTag:img.parentElement.tagName,
     count:root.querySelectorAll('img').length});
 }
 const successUnchanged = original === vxcore.contentContainer.outerHTML;
+// Changing the reader width must not shrink the formula by baking page margins into its PNG.
+vxcore.contentContainer.style.width = '1280px';
+const wideOriginal = vxcore.contentContainer.outerHTML;
+await copy.crossCopy(2, 3, fixtures.target, document.baseURI, copied.innerHTML);
+const wide = new DOMParser().parseFromString(html, 'text/html');
+const widthIndependent = Array.from(wide.querySelectorAll('img')).every((img, index) =>
+  img.width === images[index].width && img.height === images[index].height);
+const wideUnchanged = wideOriginal === vxcore.contentContainer.outerHTML;
+const rasterize = mathWorker.rasterizeHtml;
+try {
+  mathWorker.rasterizeHtml = () => Promise.reject(new Error('Injected raster failure'));
+  await copy.crossCopy(3, 4, fixtures.target, document.baseURI, copied.innerHTML);
+} finally {
+  mathWorker.rasterizeHtml = rasterize;
+}
+const rejected = new DOMParser().parseFromString(html, 'text/html');
+const rejectedIntact = rejected.querySelectorAll('.katex').length === 3
+  && rejected.querySelectorAll('img').length === 0
+  && rejected.querySelectorAll('.katex svg').length === copied.querySelectorAll('.katex svg').length;
 const unmatched = document.querySelector('#first .katex').cloneNode(true);
 // Rerendering invalidates the old clipboard identity, even when another formula looks identical.
 mathWorker.renderKatex(document.querySelector('#first eqn'), {text:formula, display:false}, macros);
@@ -731,7 +767,8 @@ const unmatchedText = unmatched.textContent;
 await copy.crossCopy(3, 4, fixtures.target, document.baseURI, unmatched.outerHTML);
 const failed = new DOMParser().parseFromString(html, 'text/html');
 return {images, fragments:doc.querySelectorAll('.katex, .katex-display, math, svg').length,
-  unchanged:successUnchanged && beforeFailure === vxcore.contentContainer.outerHTML,
+  unchanged:successUnchanged && wideUnchanged && beforeFailure === vxcore.contentContainer.outerHTML,
+  widthIndependent, rejectedIntact, temporaryWrappers:document.querySelectorAll('.vx-math-raster').length,
   unmatchedText:failed.querySelector('.katex').textContent === unmatchedText,
   unmatchedSvg:failed.querySelectorAll('.katex svg').length === unmatched.querySelectorAll('svg').length,
   unmatchedImages:failed.querySelectorAll('img').length};
@@ -742,6 +779,9 @@ return {images, fragments:doc.querySelectorAll('.katex, .katex-display, math, sv
   QVERIFY(result.value(QStringLiteral("unmatchedText")).toBool());
   QVERIFY(result.value(QStringLiteral("unmatchedSvg")).toBool());
   QCOMPARE(result.value(QStringLiteral("unmatchedImages")).toInt(), 0);
+  QVERIFY(result.value(QStringLiteral("widthIndependent")).toBool());
+  QVERIFY(result.value(QStringLiteral("rejectedIntact")).toBool());
+  QCOMPARE(result.value(QStringLiteral("temporaryWrappers")).toInt(), 0);
   const auto images = result.value(QStringLiteral("images")).toArray();
   QCOMPARE(images.size(), 3);
   const QColor colors[] = {QColor(40, 80, 180), QColor(180, 40, 60), QColor(17, 85, 153)};
@@ -750,23 +790,30 @@ return {images, fragments:doc.querySelectorAll('.katex, .katex-display, math, sv
     QCOMPARE(entry.value(QStringLiteral("count")).toInt(), 1);
     const int width = entry.value(QStringLiteral("width")).toInt();
     const int height = entry.value(QStringLiteral("height")).toInt();
-    QCOMPARE(width, entry.value(QStringLiteral("expectedWidth")).toInt());
-    QCOMPARE(height, entry.value(QStringLiteral("expectedHeight")).toInt());
+    QCOMPARE(width, entry.value(QStringLiteral("previewWidth")).toInt());
+    QCOMPARE(height, entry.value(QStringLiteral("previewHeight")).toInt());
     const auto data = entry.value(QStringLiteral("src")).toString();
     QVERIFY(data.startsWith(QStringLiteral("data:image/png;base64,")));
     const auto png =
         QByteArray::fromBase64(data.mid(data.indexOf(QLatin1Char(',')) + 1).toLatin1());
     const auto raster = QImage::fromData(png, "PNG");
-    QCOMPARE(raster.size(), QSize(width * 2, height * 2));
+    QCOMPARE(raster.size(), QSize(qRound(width * 2 * pixelRatio), qRound(height * 2 * pixelRatio)));
     QColor ink;
-    for (int y = 0; y < raster.height() && !ink.isValid(); ++y) {
+    QRect inkBounds;
+    for (int y = 0; y < raster.height(); ++y) {
       for (int x = 0; x < raster.width(); ++x) {
-        if (raster.pixelColor(x, y).alpha() == 255) {
-          ink = raster.pixelColor(x, y);
-          break;
+        const auto color = raster.pixelColor(x, y);
+        if (color.alpha() > 32) {
+          inkBounds |= QRect(x, y, 1, 1);
+        }
+        if (!ink.isValid() && color.alpha() == 255) {
+          ink = color;
         }
       }
     }
+    // Preview padding leaves glyphs intact instead of cropping fractions and radicals.
+    QVERIFY(inkBounds.left() > 0 && inkBounds.top() > 0);
+    QVERIFY(inkBounds.right() < raster.width() - 1 && inkBounds.bottom() < raster.height() - 1);
     // Font antialiasing/unpremultiplication can round channels by a few levels.
     QVERIFY(ink.isValid());
     QVERIFY(qAbs(ink.red() - colors[i].red()) <= 3);
