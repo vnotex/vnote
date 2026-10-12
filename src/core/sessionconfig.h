@@ -3,6 +3,7 @@
 
 #include "iconfig.h"
 
+#include <QSize>
 #include <QString>
 #include <QVector>
 
@@ -19,7 +20,9 @@ public:
   struct MainWindowStateGeometry {
     bool operator==(const MainWindowStateGeometry &p_other) const {
       return m_mainState == p_other.m_mainState && m_mainGeometry == p_other.m_mainGeometry &&
-             m_visibleDocksBeforeExpand == p_other.m_visibleDocksBeforeExpand;
+             m_visibleDocksBeforeExpand == p_other.m_visibleDocksBeforeExpand &&
+             m_commentDockSize == p_other.m_commentDockSize &&
+             m_toolsDockSize == p_other.m_toolsDockSize;
     }
 
     QByteArray m_mainState;
@@ -27,6 +30,10 @@ public:
     QByteArray m_mainGeometry;
 
     QStringList m_visibleDocksBeforeExpand;
+
+    QSize m_commentDockSize;
+
+    QSize m_toolsDockSize;
   };
 
   struct QuickNoteScheme {

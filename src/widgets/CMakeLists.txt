@@ -60,6 +60,7 @@ target_sources(vnote PRIVATE
     dialogs/tableinsertdialog.cpp dialogs/tableinsertdialog.h
     dialogs/updatedialog.cpp dialogs/updatedialog.h
     dialogs/viewtagsdialog2.cpp dialogs/viewtagsdialog2.h
+    docksizememory.cpp docksizememory.h
     dockwidgethelper.cpp dockwidgethelper.h
     editors/graphhelper.cpp editors/graphhelper.h
     editors/graphvizhelper.cpp editors/graphvizhelper.h

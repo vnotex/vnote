@@ -36,6 +36,7 @@ class NotebookExplorer2;
 class OutlineViewer;
 class CommentPanel;
 class ToolsPanelHost;
+class DockSizeMemory;
 class TagExplorer2;
 class SnippetPanel2;
 class SearchPanel2;
@@ -319,9 +320,6 @@ private:
 
   void saveStateAndGeometry();
 
-  // Initial right-dock height ratio; only for fresh/reset layouts, never restored sessions.
-  void resizeDefaultRightDocks();
-
   // Clamp dock widths/heights that fall outside acceptable bounds after state restore.
   void validateDockProportions();
 
@@ -416,7 +414,9 @@ private:
 
   bool m_layoutReset = false;
 
-  bool m_defaultRightDockResizePending = false;
+  DockSizeMemory *m_commentDockSize = nullptr;
+
+  DockSizeMemory *m_toolsDockSize = nullptr;
 
   // True once kickOffPostInit's deferred startup work has completed and the
   // view area has re-enabled core propagation. Until then, openFiles() queues

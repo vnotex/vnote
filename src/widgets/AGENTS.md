@@ -82,12 +82,14 @@ notification button. View starts with **Expand Content Area**; Settings starts
 with the **Settings** action and a **Themes** submenu. Those primary actions
 are also registered on the main window so their shortcuts work with menus closed.
 
-Outline and Comments request a 2:1 height split on fresh layouts (missing or invalid
-saved dock state) and explicit **Reset Main Window Layout**. `MainWindow2::
-resizeDefaultRightDocks()` runs after a layout pass, only for separate, visible,
-docked panels in the right area; Qt respects their minimum sizes. A successful
-`restoreState()` keeps the user's split. Never enforce this default in
-`validateDockProportions()`, which also runs after saved-state restoration.
+Comments and Tools remember their separate docked sizes across editor switches,
+content-area expansion and restarts, including when saved while hidden. `DockSizeMemory`
+restores after the dock is shown and laid out; same-row/column peers share the remaining
+space and Qt still enforces size constraints. Parent-window hide/show does not replay
+an old size. Floating and tabbed geometry remains owned by Qt's main-window state.
+`SessionConfig::MainWindowStateGeometry` stores `commentDockSize` and `toolsDockSize`
+as optional `[width, height]` values. **Reset Main Window Layout** clears both preferences.
+Fresh layouts use Qt's size hints; there is no fixed Outline/Comments ratio.
 
 ### Notebook Explorer
 
@@ -904,8 +906,8 @@ second file type needs no dock work at all.
   Unsupported views (including no current view) hide Comments and disable its dock/menu toggle.
   Switching to a PDF shows Comments, except while Expand Content Area hides non-floating,
   non-kept docks. Startup restoration and expand/collapse apply the same capability gate.
-  Fresh/reset layouts defer the default Outline/Comments split until both docks can be sized;
-  successfully restored layouts retain their saved proportions.
+  Remembered Comments dimensions are applied only after its dock is shown and laid out;
+  unsupported views must not replace them with hidden or pre-layout geometry.
 - `CommentProvider` is a pure DATA + SIGNALS object. It holds a `CommentSet` and a selection, and
   carries the view's intents (`activateRequested`, `textEditRequested`, `colorChangeRequested`,
   `deleteRequested`) outward. **It never writes the store and holds no service** — every mutation

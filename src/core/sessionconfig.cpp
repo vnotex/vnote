@@ -267,6 +267,13 @@ QJsonObject SessionConfig::saveStateAndGeometry() const {
                  m_mainWindowStateGeometry.m_mainGeometry);
   writeStringList(obj, QStringLiteral("visibleDocksBeforeExpand"),
                   m_mainWindowStateGeometry.m_visibleDocksBeforeExpand);
+  const auto writeSize = [&obj](const QString &p_key, const QSize &p_size) {
+    if (!p_size.isEmpty()) {
+      obj[p_key] = QJsonArray{p_size.width(), p_size.height()};
+    }
+  };
+  writeSize(QStringLiteral("commentDockSize"), m_mainWindowStateGeometry.m_commentDockSize);
+  writeSize(QStringLiteral("toolsDockSize"), m_mainWindowStateGeometry.m_toolsDockSize);
   return obj;
 }
 
@@ -390,6 +397,14 @@ void SessionConfig::loadStateAndGeometry(const QJsonObject &p_session) {
       readByteArray(obj, QStringLiteral("mainWindowGeometry"));
   m_mainWindowStateGeometry.m_visibleDocksBeforeExpand =
       readStringList(obj, QStringLiteral("visibleDocksBeforeExpand"));
+  const auto readSize = [&obj](const QString &p_key) {
+    const auto size = obj.value(p_key).toArray();
+    return size.size() == 2 && size[0].toInt() > 0 && size[1].toInt() > 0
+               ? QSize(size[0].toInt(), size[1].toInt())
+               : QSize();
+  };
+  m_mainWindowStateGeometry.m_commentDockSize = readSize(QStringLiteral("commentDockSize"));
+  m_mainWindowStateGeometry.m_toolsDockSize = readSize(QStringLiteral("toolsDockSize"));
 }
 
 QByteArray SessionConfig::getViewAreaSessionAndClear() {

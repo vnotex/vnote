@@ -41,6 +41,7 @@
 #endif
 
 #include "constants.h"
+#include "docksizememory.h"
 #include "notificationbutton2.h"
 #include "notificationtoast.h"
 #include "systemtrayhelper.h"
@@ -621,14 +622,10 @@ void MainWindow2::restoreWindowGeometry() {
   }
 
   if (!sg.m_mainState.isEmpty() && restoreState(sg.m_mainState)) {
+    m_commentDockSize->setSize(sg.m_commentDockSize);
+    m_toolsDockSize->setSize(sg.m_toolsDockSize);
     m_dockWidgetHelper.updateDockWidgetTabBar();
-    return;
   }
-
-  // Fresh (or invalid) dock state: size after the window's first layout pass.
-  // Never override a successfully restored user split.
-  m_defaultRightDockResizePending = true;
-  QTimer::singleShot(0, this, &MainWindow2::resizeDefaultRightDocks);
 }
 
 void MainWindow2::loadStateAndGeometry() {
@@ -749,6 +746,8 @@ void MainWindow2::saveStateAndGeometry() {
   SessionConfig::MainWindowStateGeometry sg;
   sg.m_mainState = saveState();
   sg.m_mainGeometry = saveGeometry();
+  sg.m_commentDockSize = m_commentDockSize->getSize();
+  sg.m_toolsDockSize = m_toolsDockSize->getSize();
 
   auto &sessionConfig = m_serviceLocator.get<ConfigMgr2>()->getSessionConfig();
   sessionConfig.setMainWindowStateGeometry(sg);
@@ -926,9 +925,6 @@ void MainWindow2::updateCommentDockVisibility() {
                               .getMainWindowKeepDocksExpandingContentArea();
   dock->setVisible(supported && (!m_contentAreaExpanded || dock->isFloating() ||
                                  keepDocks.contains(dock->objectName())));
-  if (m_defaultRightDockResizePending && !dock->isHidden()) {
-    QTimer::singleShot(0, this, &MainWindow2::resizeDefaultRightDocks);
-  }
 }
 
 void MainWindow2::setupToolsPanel() {
@@ -986,9 +982,6 @@ void MainWindow2::updateToolsDockVisibility() {
                               .getMainWindowKeepDocksExpandingContentArea();
   dock->setVisible(available && (!m_contentAreaExpanded || dock->isFloating() ||
                                  keepDocks.contains(dock->objectName())));
-  if (m_defaultRightDockResizePending && !dock->isHidden()) {
-    QTimer::singleShot(0, this, &MainWindow2::resizeDefaultRightDocks);
-  }
 }
 
 void MainWindow2::setupTagExplorer() {
@@ -1040,6 +1033,10 @@ void MainWindow2::setupDocks() {
 
   m_dockWidgetHelper.setupDocks();
   m_dockWidgetHelper.postSetup();
+  m_commentDockSize =
+      new DockSizeMemory(this, m_dockWidgetHelper.getDock(DockWidgetHelper::CommentDock));
+  m_toolsDockSize =
+      new DockSizeMemory(this, m_dockWidgetHelper.getDock(DockWidgetHelper::ToolsDock));
 
   // Refresh dock tab icons when theme changes.
   auto *themeService = m_serviceLocator.get<ThemeService>();
@@ -1408,40 +1405,13 @@ void MainWindow2::resetStateAndGeometry() {
   SessionConfig::MainWindowStateGeometry sg;
   sessionConfig.setMainWindowStateGeometry(sg);
 
-  // Reset to default size.
-  m_defaultRightDockResizePending = true;
+  // Reset to default size without restoring a previous dock preference.
+  m_commentDockSize->setSize(QSize());
+  m_toolsDockSize->setSize(QSize());
   resize(1200, 800);
-  QTimer::singleShot(0, this, [this]() {
-    validateDockProportions();
-    resizeDefaultRightDocks();
-  });
+  QTimer::singleShot(0, this, &MainWindow2::validateDockProportions);
 
   emit layoutChanged();
-}
-
-void MainWindow2::resizeDefaultRightDocks() {
-  if (!m_defaultRightDockResizePending) {
-    return;
-  }
-  auto *tools = m_dockWidgetHelper.getDock(DockWidgetHelper::ToolsDock);
-  if (tools && !tools->isHidden()) {
-    // Let Qt allocate all three panels from their size hints on the fresh layout.
-    m_defaultRightDockResizePending = false;
-    return;
-  }
-  auto *outline = m_dockWidgetHelper.getDock(DockWidgetHelper::OutlineDock);
-  auto *comments = m_dockWidgetHelper.getDock(DockWidgetHelper::CommentDock);
-  if (!outline || !comments || outline->isFloating() || comments->isFloating() ||
-      outline->isHidden() || comments->isHidden() ||
-      dockWidgetArea(outline) != Qt::RightDockWidgetArea ||
-      dockWidgetArea(comments) != Qt::RightDockWidgetArea ||
-      tabifiedDockWidgets(outline).contains(comments)) {
-    return;
-  }
-
-  // Initial 2:1 height split, adjusted by Qt for available space and minimum sizes.
-  resizeDocks({outline, comments}, {600, 300}, Qt::Vertical);
-  m_defaultRightDockResizePending = false;
 }
 
 void MainWindow2::validateDockProportions() {

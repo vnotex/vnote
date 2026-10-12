@@ -1,3 +1,11 @@
+add_qt_test(test_docksizememory
+  SOURCES
+    test_docksizememory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/docksizememory.cpp
+  LINKS
+    Qt6::Widgets
+)
+
 # issue #2656: "Insert As Relative Link" must preserve heading anchors. The
 # anchor-append logic is extracted into the dependency-free LinkInsertUtils so
 # it can be unit-tested without the full MarkdownEditor / clipboard / dialog
