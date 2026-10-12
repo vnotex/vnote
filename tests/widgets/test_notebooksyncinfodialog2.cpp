@@ -13,7 +13,6 @@
 #include <QProcess>
 #include <QPushButton>
 #include <QSignalSpy>
-#include <QThread>
 #include <QTimer>
 #include <QtTest>
 
@@ -390,25 +389,23 @@ void TestNotebookSyncInfoDialog2::testFailedBootstrapLeavesNotebookAndDialogInta
     QSignalSpy completed(controller, &NotebookSyncInfoController::applyComplete);
     QSignalSpy accepted(&dialog, &QDialog::accepted);
     QTimer dismissError;
-    int dismissedErrors = 0;
-    const int callerLoopLevel = QThread::currentThread()->loopLevel();
+    bool sawErrorBox = false;
     connect(&dismissError, &QTimer::timeout, this, [&]() {
-      // Cocoa can dispatch timers during show(), before QMessageBox::exec()
-      // enters its event loop. An earlier click cannot end that loop.
-      if (QThread::currentThread()->loopLevel() <= callerLoopLevel) {
-        return;
-      }
+      // Keep dismissing until applyComplete: Cocoa may deliver the first click
+      // during show(), hiding the box before exec() starts its nested loop.
       auto *modal = QApplication::activeModalWidget();
       auto widgets = QApplication::topLevelWidgets();
       widgets.prepend(modal);
       for (auto *widget : widgets) {
         auto *box = qobject_cast<QMessageBox *>(widget);
-        if (!box || (!box->isVisible() && box != modal)) {
+        if (!box || box->parentWidget() != &dialog) {
+          continue;
+        }
+        sawErrorBox = sawErrorBox || box->isVisible() || box == modal;
+        if (!sawErrorBox) {
           continue;
         }
         if (auto *button = box->button(QMessageBox::Ok)) {
-          dismissError.stop();
-          ++dismissedErrors;
           button->click();
           return;
         }
@@ -417,9 +414,10 @@ void TestNotebookSyncInfoDialog2::testFailedBootstrapLeavesNotebookAndDialogInta
     dismissError.start(10);
     ok->click();
     QVERIFY(!ok->isEnabled()); // No duplicate enables while the vault operation is pending.
-    QTRY_COMPARE(completed.count(), 1);
+    QVERIFY(completed.wait(5000));
+    QCOMPARE(completed.count(), 1);
     dismissError.stop();
-    QCOMPARE(dismissedErrors, 1);
+    QVERIFY(sawErrorBox);
     QVERIFY(!completed.first().first().toBool());
     QCOMPARE(accepted.count(), 0);
     QVERIFY(dialog.isVisible());

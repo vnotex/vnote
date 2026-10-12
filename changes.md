@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Fix CI fixtures for self-contained encrypted notes and macOS sync-error dialogs
 * Use icon-only View and Settings menus in the main toolbar, with the Lucide View icon
 * Remember Comments and Tools dock sizes across editor switches and restarts, replacing the fixed Outline/Comments split ratio
 * Fix encrypted-note opens silently failing while notebook maintenance is busy; self-contained notes no longer require a migration lease, and protected-open errors reach the unlock UI

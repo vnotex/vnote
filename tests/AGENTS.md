@@ -105,6 +105,10 @@ void TestMyService::initTestCase() {
 - Tests will corrupt actual user configuration
 - Test mode redirects to isolated temp directories
 
+Encryption fixtures created by `prepare_notebook` / `commit_notebook` are self-contained v2
+notes. Reopen them with `vxcore_encryption_unlock_note`, using the notebook-relative path
+captured before closing the buffer; `unlock_notebook` is only for explicit legacy-vault tests.
+
 ## Writing Service Tests
 
 ```cpp
@@ -196,6 +200,12 @@ which the offscreen UNIX dispatcher does not drain. Do not set
 `QT_EVENT_DISPATCHER_CORE_FOUNDATION`: it also replaces worker-thread dispatchers and
 can stall queued work. Tests also need an unlocked default keychain; macOS CI creates
 a disposable one and restores the previous default after testing.
+
+For asynchronous modal-error tests, wait for controller completion with `QSignalSpy::wait`.
+Keep the dismissal timer active until completion and restrict it to the tested dialog's
+message box. Cocoa can deliver a click during `show()`, before `exec()` starts its nested
+loop: allow repeated clicks on an already-observed box even if that early click hid it.
+Do not stop on the first click or infer dialog readiness from `QThread::loopLevel()`.
 
 ### VTextEdit.dll runtime copy
 

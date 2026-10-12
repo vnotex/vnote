@@ -537,11 +537,12 @@ void TestBufferEncoding::testProtectedWriterLineEndings() {
   const auto ciphertext = file.readAll();
   QVERIFY(!ciphertext.contains("private-line-ending-sentinel"));
   file.close();
+  const auto notePath = buffer.nodeId().relativePath.toUtf8();
   buffers.unregisterActiveWriter(buffer.id(), 1);
   QVERIFY(buffers.closeBuffer(buffer.id()));
   QCOMPARE(vxcore_encryption_lock_all(m_context), VXCORE_OK);
-  QCOMPARE(vxcore_encryption_unlock_notebook(m_context, notebook.constData(), password.constData(),
-                                             size_t(password.size())),
+  QCOMPARE(vxcore_encryption_unlock_note(m_context, notebook.constData(), notePath.constData(),
+                                         password.constData(), size_t(password.size())),
            VXCORE_OK);
   buffer = buffers.openBufferByNodeId(noteId);
   QVERIFY(buffer.isValid());
