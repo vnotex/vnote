@@ -53,7 +53,7 @@ Hidden overflow buttons keep Qt placement, as do non-editor popups using the
 Gate: `tests/widgets/test_buttonpopup.cpp`.
 
 ## Hiding the QToolButton Menu Indicator
-Plain-text status-bar / toolbar `QToolButton`s that open an `InstantPopup` menu
+Status-bar / toolbar `QToolButton`s that open an `InstantPopup` menu
 (e.g. the status bar "Spelling" menu, the `EncodingButton`, the main toolbar
 "View" and "Settings" menus) must NOT show the built-in dropdown-arrow menu indicator. Use the
 single shared mechanism — the dynamic property:
@@ -77,10 +77,11 @@ text-only status-bar look.
 
 - `MainWindow2` — new main window shell with ServiceLocator DI; owns the top-level layout, toolbar, sidebar, and view area
 
-The main toolbar ends with text-only **View** and **Settings** menus, then the
+The main toolbar ends with icon-only **View** and **Settings** menus, then the
 notification button. View starts with **Expand Content Area**; Settings starts
 with the **Settings** action and a **Themes** submenu. Those primary actions
 are also registered on the main window so their shortcuts work with menus closed.
+View uses Lucide `view.svg`; Settings uses `settings.svg`. Both retain translated action labels.
 
 Comments and Tools remember their separate docked sizes across editor switches,
 content-area expansion and restarts, including when saved while hidden. `DockSizeMemory`

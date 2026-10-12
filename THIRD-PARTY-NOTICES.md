@@ -94,6 +94,7 @@ Covers 62 files in `src/data/core/icons/`:
   upstream `pen-off` and `shirt`.
 
 `undo_editor.svg` and `redo_editor.svg` use upstream `undo-2` and `redo-2` (ISC).
+`view.svg` uses upstream [View](https://lucide.dev/icons/view) (ISC).
 
 The files are modified from upstream in one respect: VNote rewrites Lucide
 `currentColor` stroke and fill values to explicit `#000000` so

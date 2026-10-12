@@ -441,10 +441,11 @@ void ToolBarHelper2::setupViewButton(QToolBar *p_toolBar) {
 
   auto *menu = WidgetsFactory::createMenu(p_toolBar);
   auto *viewAct = p_toolBar->addAction(MainWindow2::tr("View"));
+  setActionIcon(viewAct, QStringLiteral("view.svg"));
   viewAct->setMenu(menu);
   auto *btn = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(viewAct));
   btn->setPopupMode(QToolButton::InstantPopup);
-  btn->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
   btn->setAutoRaise(true);
   btn->setProperty("NoMenuIndicator", true);
 
@@ -516,10 +517,11 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
 
   auto *menu = WidgetsFactory::createMenu(p_toolBar);
   auto *menuAct = p_toolBar->addAction(MainWindow2::tr("Settings"));
+  setActionIcon(menuAct, QStringLiteral("settings.svg"));
   menuAct->setMenu(menu);
   auto *btn = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(menuAct));
   btn->setPopupMode(QToolButton::InstantPopup);
-  btn->setToolButtonStyle(Qt::ToolButtonTextOnly);
+  btn->setToolButtonStyle(Qt::ToolButtonIconOnly);
   btn->setAutoRaise(true);
   btn->setProperty("NoMenuIndicator", true);
 

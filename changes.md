@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Use icon-only View and Settings menus in the main toolbar, with the Lucide View icon
 * Remember Comments and Tools dock sizes across editor switches and restarts, replacing the fixed Outline/Comments split ratio
 * Fix encrypted-note opens silently failing while notebook maintenance is busy; self-contained notes no longer require a migration lease, and protected-open errors reach the unlock UI
 * Make newly encrypted notes and backups self-contained: each v2 `.vne` carries its wrapped keys and no longer depends on a shared notebook vault
