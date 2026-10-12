@@ -7,6 +7,7 @@ class MathRenderer extends VxWorker {
             && window.vxOptions.mathRenderer === 'mathjax' ? 'mathjax' : 'katex';
         this.initialization = null;
         this.rasterInitialization = null;
+        this.katexId = 0;
         this.langs = ['mathjax'];
     }
 
@@ -159,6 +160,12 @@ class MathRenderer extends VxWorker {
             trust: false,
             macros: p_macros
         });
+        const root = p_node.querySelector('.katex');
+        if (root) {
+            // Native clipboard HTML may omit the TeX annotation. Keep exact source identity
+            // for cross-copy, including repeated formulas and macros expanded during rendering.
+            root.setAttribute('data-vx-katex-id', String(++this.katexId));
+        }
     }
 
     // Returns MathJax's SVG or an attached KaTeX wrapper owned by the preview caller.

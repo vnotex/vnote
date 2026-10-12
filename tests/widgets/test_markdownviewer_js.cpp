@@ -396,6 +396,8 @@ private slots:
   void testCrossCopy_localImages();
   void testCrossCopy_svgImages_data();
   void testCrossCopy_svgImages();
+  void testCrossCopy_katexImages_data();
+  void testCrossCopy_katexImages();
   void testPresentation_followsThemeAndRestoresReader();
   void testPresentation_groupingAndRestoration();
   void testPresentation_pinnedHeaderScrolling();
@@ -657,6 +659,128 @@ return {images, svgs:doc.querySelectorAll('svg').length,
       QStringLiteral("-2px"));
 }
 
+void TestMarkdownViewerJs::testCrossCopy_katexImages_data() { testCrossCopy_localImages_data(); }
+
+void TestMarkdownViewerJs::testCrossCopy_katexImages() {
+  QFETCH(QString, target);
+  const QJsonObject fixtures{
+      {QStringLiteral("target"), target},
+      {QStringLiteral("js"), QUrl::fromLocalFile(webDir() + QStringLiteral("/js")).toString()}};
+  QJsonObject result;
+  runCrossCopyScript(
+      QStringLiteral("const fixtures = %1;\n")
+              .arg(QString::fromUtf8(QJsonDocument(fixtures).toJson(QJsonDocument::Compact))) +
+          QStringLiteral(R"JS(
+window.vxOptions = {mathRenderer:'katex'};
+document.body.innerHTML = '<div id="content" style="width:640px;font:18px Arial;color:rgb(17,85,153)">'
+  + '<p id="first">Before <eqn style="color:rgb(180,40,60)"></eqn> After</p>'
+  + '<p id="second">Before <eqn style="color:rgb(40,80,180)"></eqn> After</p>'
+  + '<section id="display"><eqn></eqn></section></div>';
+let html;
+window.vxcore = {
+  contentContainer:document.getElementById('content'),
+  registerWorker(worker) { window.mathWorker = worker; worker.vxcore = this; },
+  getWorker(name) { return name === 'math' ? mathWorker : null; },
+  setCrossCopyTargets() {}, setCrossCopyResult(id, stamp, result) {html = result;}
+};
+for (const file of ['vxworker.js', 'mathjax.js']) {
+  await new Promise(resolve => Utils.loadScript(fixtures.js + '/' + file, resolve));
+}
+await mathWorker.initialize();
+const formula = String.raw`\frac{\velocity^2+1}{\sqrt{y}}`;
+const macros = {'\\velocity':'V'};
+mathWorker.renderKatex(document.querySelector('#first eqn'), {text:formula, display:false}, macros);
+mathWorker.renderKatex(document.querySelector('#second eqn'), {text:formula, display:false}, macros);
+mathWorker.renderKatex(document.querySelector('#display eqn'), {
+  text:String.raw`\begin{aligned}\cot\Theta_{max}&=\frac{\sqrt{V^2-v_0^2}}{v_0}\\\Theta_{max}&=\arcsin\sqrt{1-\frac{v_0^2}{V^2}}\end{aligned}`,
+  display:true
+}, macros);
+await mathWorker.waitForMathFonts(vxcore.contentContainer);
+const original = vxcore.contentContainer.outerHTML;
+const copied = document.createElement('div');
+// Reversing identical formulas must still select each formula's own live color/layout.
+for (const id of ['second','first','display']) {
+  copied.appendChild(document.getElementById(id).cloneNode(true));
+}
+// Native Chromium copy omits the annotation; it cannot be used to locate or re-render math.
+copied.querySelectorAll('annotation').forEach(node => node.remove());
+const copy = new CrossCopy(vxcore);
+await copy.crossCopy(1, 2, fixtures.target, document.baseURI, copied.innerHTML);
+const doc = new DOMParser().parseFromString(html, 'text/html');
+const images = [];
+for (const id of ['second','first','display']) {
+  const root = doc.getElementById(id);
+  const img = root.querySelector('img');
+  if (!img) {throw new Error('Missing KaTeX image: ' + id);}
+  const source = document.querySelector('#' + id + ' .katex');
+  const rect = source.getBoundingClientRect();
+  const align = img.style.verticalAlign;
+  img.removeAttribute('style');
+  images.push({src:img.src, width:img.width, height:img.height, align,
+    expectedWidth:Math.ceil(Math.max(rect.width,source.scrollWidth)),
+    expectedHeight:Math.ceil(Math.max(rect.height,source.scrollHeight)),
+    text:root.textContent, parentTag:img.parentElement.tagName,
+    count:root.querySelectorAll('img').length});
+}
+const successUnchanged = original === vxcore.contentContainer.outerHTML;
+const unmatched = document.querySelector('#first .katex').cloneNode(true);
+// Rerendering invalidates the old clipboard identity, even when another formula looks identical.
+mathWorker.renderKatex(document.querySelector('#first eqn'), {text:formula, display:false}, macros);
+const beforeFailure = vxcore.contentContainer.outerHTML;
+const unmatchedText = unmatched.textContent;
+await copy.crossCopy(3, 4, fixtures.target, document.baseURI, unmatched.outerHTML);
+const failed = new DOMParser().parseFromString(html, 'text/html');
+return {images, fragments:doc.querySelectorAll('.katex, .katex-display, math, svg').length,
+  unchanged:successUnchanged && beforeFailure === vxcore.contentContainer.outerHTML,
+  unmatchedText:failed.querySelector('.katex').textContent === unmatchedText,
+  unmatchedSvg:failed.querySelectorAll('.katex svg').length === unmatched.querySelectorAll('svg').length,
+  unmatchedImages:failed.querySelectorAll('img').length};
+)JS"),
+      QUrl::fromLocalFile(webDir() + QLatin1Char('/')), result);
+  QCOMPARE(result.value(QStringLiteral("fragments")).toInt(), 0);
+  QVERIFY(result.value(QStringLiteral("unchanged")).toBool());
+  QVERIFY(result.value(QStringLiteral("unmatchedText")).toBool());
+  QVERIFY(result.value(QStringLiteral("unmatchedSvg")).toBool());
+  QCOMPARE(result.value(QStringLiteral("unmatchedImages")).toInt(), 0);
+  const auto images = result.value(QStringLiteral("images")).toArray();
+  QCOMPARE(images.size(), 3);
+  const QColor colors[] = {QColor(40, 80, 180), QColor(180, 40, 60), QColor(17, 85, 153)};
+  for (int i = 0; i < images.size(); ++i) {
+    const auto entry = images.at(i).toObject();
+    QCOMPARE(entry.value(QStringLiteral("count")).toInt(), 1);
+    const int width = entry.value(QStringLiteral("width")).toInt();
+    const int height = entry.value(QStringLiteral("height")).toInt();
+    QCOMPARE(width, entry.value(QStringLiteral("expectedWidth")).toInt());
+    QCOMPARE(height, entry.value(QStringLiteral("expectedHeight")).toInt());
+    const auto data = entry.value(QStringLiteral("src")).toString();
+    QVERIFY(data.startsWith(QStringLiteral("data:image/png;base64,")));
+    const auto png =
+        QByteArray::fromBase64(data.mid(data.indexOf(QLatin1Char(',')) + 1).toLatin1());
+    const auto raster = QImage::fromData(png, "PNG");
+    QCOMPARE(raster.size(), QSize(width * 2, height * 2));
+    QColor ink;
+    for (int y = 0; y < raster.height() && !ink.isValid(); ++y) {
+      for (int x = 0; x < raster.width(); ++x) {
+        if (raster.pixelColor(x, y).alpha() == 255) {
+          ink = raster.pixelColor(x, y);
+          break;
+        }
+      }
+    }
+    // Font antialiasing/unpremultiplication can round channels by a few levels.
+    QVERIFY(ink.isValid());
+    QVERIFY(qAbs(ink.red() - colors[i].red()) <= 3);
+    QVERIFY(qAbs(ink.green() - colors[i].green()) <= 3);
+    QVERIFY(qAbs(ink.blue() - colors[i].blue()) <= 3);
+    if (i < 2) {
+      QCOMPARE(entry.value(QStringLiteral("text")).toString(), QStringLiteral("Before  After"));
+      QVERIFY(entry.value(QStringLiteral("align")).toString().endsWith(QStringLiteral("px")));
+    } else {
+      QCOMPARE(entry.value(QStringLiteral("parentTag")).toString(), QStringLiteral("DIV"));
+    }
+  }
+}
+
 void TestMarkdownViewerJs::setup(QJSEngine &p_engine, bool p_initializedAtChannel) {
   QString err;
   const QString src = readFile(webDir() + QStringLiteral("/js/markdownviewer.js"), &err);
@@ -758,7 +882,7 @@ var window = this;
 var console = { log: function(){}, warn: function(){}, error: function(){} };
 var vxOptions = { mathRenderer: 'katex' };
 var scripts = [], styles = [], results = [], passes = 0;
-var reading = { textContent: '$a+b$' };
+var reading = { textContent: '$a+b$', querySelector: function() { return null; } };
 function element() {
   return { style: {}, querySelector: function() { return null; } };
 }

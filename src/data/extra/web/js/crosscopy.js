@@ -54,6 +54,7 @@ class CrossCopy {
         let rules = [
             CrossCopy.rule_addFragment,
             CrossCopy.rule_removeBackground.bind(undefined, ['mark', 'pre', 'svg']),
+            CrossCopy.rule_katexToImage,
             CrossCopy.rule_embedLocalImages,
             CrossCopy.rule_svgToImage
         ];
@@ -95,6 +96,7 @@ class CrossCopy {
     addTargetWeChatPublicAccountEditor() {
         let rules = [
             CrossCopy.rule_removeBackground.bind(undefined, ['mark', 'pre', 'svg']),
+            CrossCopy.rule_katexToImage,
             CrossCopy.rule_embedLocalImages,
             CrossCopy.rule_svgToImage,
             CrossCopy.rule_removeMarginPadding.bind(undefined, [])
@@ -323,10 +325,70 @@ class CrossCopy {
         }));
     }
 
+    // KaTeX is HTML/CSS, with small SVG fragments that cannot be copied independently.
+    static async rule_katexToImage(p_info, p_doc) {
+        const roots = Array.from(p_doc.querySelectorAll('.katex')).filter((root) =>
+            !root.parentElement.closest('.katex'));
+        if (!roots.length) {
+            return;
+        }
+        const adapter = p_info.inst.adapter;
+        const renderer = typeof adapter.getWorker === 'function' && adapter.getWorker('math');
+        for (const root of roots) {
+            try {
+                if (!renderer || !adapter.contentContainer) {
+                    throw new Error('Math renderer unavailable');
+                }
+                const id = root.getAttribute('data-vx-katex-id');
+                const matches = id && adapter.contentContainer.querySelectorAll(
+                    '.katex[data-vx-katex-id="' + CSS.escape(id) + '"]');
+                if (!matches || matches.length !== 1) {
+                    throw new Error('Original KaTeX equation unavailable');
+                }
+                const source = matches[0];
+                await renderer.waitForMathFonts(source);
+                let verticalAlign = null;
+                if (!source.closest('.katex-display')) {
+                    // Same baseline measurement as the math export path; no persistent DOM edit.
+                    const marker = document.createElement('span');
+                    marker.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0;vertical-align:baseline';
+                    source.parentNode.insertBefore(marker, source.nextSibling);
+                    verticalAlign = marker.getBoundingClientRect().bottom
+                        - source.getBoundingClientRect().bottom;
+                    marker.remove();
+                }
+                const raster = await renderer.rasterizeHtml(source, window.devicePixelRatio || 1);
+                const img = p_doc.createElement('img');
+                img.src = raster.dataUrl;
+                img.width = Math.max(1, Math.round(raster.width));
+                img.height = Math.max(1, Math.round(raster.height));
+                img.style.width = raster.width + 'px';
+                img.style.height = raster.height + 'px';
+                img.setAttribute('data-math-png', 'true');
+                const annotation = source.querySelector('annotation[encoding="application/x-tex"]');
+                img.alt = annotation ? annotation.textContent : '';
+                if (verticalAlign !== null) {
+                    img.style.verticalAlign = verticalAlign + 'px';
+                }
+                const parent = root.parentElement;
+                if (parent.classList.contains('katex-display')) {
+                    const block = p_doc.createElement('div');
+                    block.style.textAlign = 'center';
+                    block.appendChild(img);
+                    parent.parentNode.replaceChild(block, parent);
+                } else {
+                    parent.replaceChild(img, root);
+                }
+            } catch (error) {
+                console.warn('failed to rasterize cross-copy KaTeX', error);
+            }
+        }
+    }
+
     // Generic rule: rasterize outer SVGs and SVG image sources, independent of the target.
     static async rule_svgToImage(p_info, p_doc) {
         const svgs = Array.from(p_doc.querySelectorAll('svg')).filter((svg) =>
-            !svg.parentElement.closest('svg'));
+            !svg.parentElement.closest('svg, .katex'));
         for (const svg of svgs) {
             try {
                 const raster = await CrossCopy.rasterizeSvg(svg, p_info, true);
