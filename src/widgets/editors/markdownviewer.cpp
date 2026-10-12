@@ -326,6 +326,11 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
   QMenu *menu(createStandardContextMenu());
 #endif
 
+  auto *selectAllAct = pageAction(QWebEnginePage::SelectAll);
+  if (!menu->actions().contains(selectAllAct)) {
+    menu->addAction(selectAllAct);
+  }
+
   const QList<QAction *> actions = menu->actions();
 
 #if defined(Q_OS_WIN)
