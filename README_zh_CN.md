@@ -12,11 +12,19 @@
 ![VNote](pics/vnote.png)
 
 ## 简介
-**VNote**是一个专注于Markdown的基于Qt的开源免费的笔记应用。VNote希望能提供一个拥有完美编辑体验的舒适的笔记平台。
+**VNote**是一个基于Qt的开源免费笔记应用，将笔记管理与出色的编辑体验相结合，支持多种文档格式。
 
-VNote不是一个简单的Markdown编辑器。通过提供强大的笔记管理，VNote使得使用Markdown记笔记更轻松简单。将来，VNote会支持更多的文档格式。
+VNote支持**Linux**、**Windows**和**macOS**平台。
 
-得益于Qt，VNote当前可以高效地运行在**Linux**，**Windows**，以及**macOS**平台上。
+### 支持的格式
+**VNote不只是Markdown编辑器——以下格式现已支持：**
+
+* **Markdown**（`.md`、`.mkd`、`.rmd`、`.markdown`）：编写、编辑和预览Markdown笔记
+* **纯文本和源代码**（`.txt`、`.log`、`.py`、`.cpp`、`.js`、`.json`、`.yaml`等）：编辑文本笔记、日志、代码和配置文件
+* **思维导图**（`.mmm`、`.emind`）：使用原生思维导图编辑器创建和编辑导图
+* **PDF**（`.pdf`）：使用内置阅读器阅读PDF文档
+
+内置PDF阅读器需要基于**Qt 6.9及以上版本**的构建。较旧的构建（包括Windows 7 / Qt 5.15版本）会使用系统默认应用打开PDF。
 
 ![主界面](pics/main.webp)
 
