@@ -35,6 +35,7 @@
 
 #include <vtextedit/markdownhighlighter.h>
 #include <vtextedit/markdownutils.h>
+#include <vtextedit/texteditutils.h>
 #include <vtextedit/vtextedit.h>
 
 #include <controllers/imagehostcontroller.h>
@@ -1349,6 +1350,19 @@ void MarkdownViewWindow2::fetchNavigationTargets(NavigationTargetsCallback p_cal
   }
 }
 
+static void syncEditorPositionFromReadMode(MarkdownEditor *p_editor, int p_lineNumber) {
+  if (p_lineNumber < 0) {
+    return;
+  }
+
+  // Keep the exact edit cursor and selection when the mapped source is already on screen.
+  // The range also covers folded source represented by an in-place preview.
+  const auto range = vte::TextEditUtils::visibleBlockRange(p_editor->getTextEdit());
+  if (p_lineNumber < range.first || p_lineNumber > range.second) {
+    p_editor->scrollToLine(p_lineNumber, false);
+  }
+}
+
 void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffer) {
   if (p_mode == m_mode) {
     return;
@@ -1532,7 +1546,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
       if (m_editor && m_textEditorBufferRevision != bufferRevision) {
         syncTextEditorFromBuffer(transition.syncPositionFromPrevMode);
       } else if (m_editor && transition.syncPositionFromPrevMode) {
-        m_editor->scrollToLine(getReadLineNumber(), false);
+        syncEditorPositionFromReadMode(m_editor, getReadLineNumber());
       }
       break;
     default:
@@ -1597,14 +1611,21 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
     m_editor->setReadOnly(state.readOnly);
     m_editor->setContentPath(state.basePath);
     m_editor->setBasePath(state.basePath);
-    m_editor->setText(state.content);
+    // Saving our own text may advance the buffer revision without changing the document.
+    // Avoid resetting the cursor, selection and undo history in that case.
+    const bool contentChanged = m_editor->getText() != state.content;
+    if (contentChanged) {
+      m_editor->setText(state.content);
+    }
     m_editor->setModified(state.modified);
 
-    int lineNumber = -1;
     if (p_syncPositionFromReadMode) {
-      lineNumber = getReadLineNumber();
+      if (contentChanged) {
+        m_editor->scrollToLine(getReadLineNumber(), false);
+      } else {
+        syncEditorPositionFromReadMode(m_editor, getReadLineNumber());
+      }
     }
-    m_editor->scrollToLine(lineNumber, false);
   } else {
     m_editor->setReadOnly(true);
     m_editor->setContentPath(QString());

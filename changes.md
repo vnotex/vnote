@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Preserve the Markdown edit cursor and selection when returning from read mode if the mapped position is already visible (#2768)
 * Keep Lucius tree selections blue when unfocused so they remain distinct from gray hover highlights
 * Add the standard Select All action to the Markdown read-mode context menu
 * Keep KaTeX cross-copy clear at its natural size by sharing the in-place preview's tight, padded layout and high-DPI renderer
