@@ -2,9 +2,15 @@
 
 #include <QAction>
 #include <QBuffer>
+#include <QClipboard>
 #include <QComboBox>
+#include <QContextMenuEvent>
+#include <QDialogButtonBox>
 #include <QDir>
 #include <QDockWidget>
+#include <QDragEnterEvent>
+#include <QDropEvent>
+#include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
 #include <QFontDatabase>
@@ -17,11 +23,15 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QLineEdit>
+#include <QListWidget>
 #include <QMainWindow>
 #include <QMenu>
+#include <QMimeData>
 #include <QPainter>
 #include <QPlainTextEdit>
 #include <QPointer>
+#include <QPushButton>
+#include <QRadioButton>
 #include <QScopeGuard>
 #include <QScrollArea>
 #include <QShortcut>
@@ -29,6 +39,7 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
+#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QUrl>
@@ -39,6 +50,8 @@
 #include <controllers/mindmapviewwindowcontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/hookevents.h>
+#include <core/hooknames.h>
 #include <core/mainconfig.h>
 #include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
@@ -49,8 +62,13 @@
 #include <core/services/notebookiogate.h>
 #include <core/services/syncworkqueuemanager.h>
 #include <vxcore/vxcore.h>
+#include <widgets/dialogs/imageinsertdialog.h>
+#include <widgets/dialogs/linkinsertdialog.h>
+#include <widgets/dialogs/selectdialog.h>
 #include <widgets/editors/mindmapeditor.h>
 
+#include <deque>
+#include <functional>
 #include <memory>
 #include <stdexcept>
 
@@ -243,6 +261,181 @@ private:
   bool m_listening = false;
 };
 
+// Drives the real modal UI without a production test hook. Each step waits for its
+// expected widget/ready state; the deadline closes an unexpected dialog and fails the test.
+class InsertionDialogs : public QObject {
+public:
+  using Step = std::function<bool(QDialog *)>;
+  explicit InsertionDialogs(std::initializer_list<Step> p_steps) : m_steps(p_steps) {
+    m_elapsed.start();
+    connect(&m_timer, &QTimer::timeout, this, [this] {
+      auto *dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget());
+      if (m_elapsed.elapsed() > 10000) {
+        m_failed = true;
+        qWarning() << "Insertion dialog did not reach the expected state" << dialog;
+        if (auto *selector = qobject_cast<SelectDialog *>(dialog)) {
+          const auto *list = selector->findChild<QListWidget *>();
+          for (int index = 0; list && index < list->count(); ++index) {
+            qWarning() << "Available choice:" << list->item(index)->text();
+          }
+        }
+        if (dialog) {
+          dialog->reject();
+        }
+        m_timer.stop();
+        return;
+      }
+      if (!m_busy && dialog && !m_steps.empty()) {
+        m_busy = true;
+        const bool handled = m_steps.front()(dialog);
+        m_busy = false;
+        if (handled) {
+          m_steps.pop_front();
+          m_elapsed.restart();
+          if (m_steps.empty()) {
+            m_timer.stop();
+          }
+        }
+      }
+    });
+    m_timer.start(0);
+  }
+  bool complete() const { return !m_failed && m_steps.empty(); }
+  static Step choose(const QString &p_label, std::function<void()> p_before = {}) {
+    return [p_label, p_before](QDialog *p_dialog) {
+      auto *selector = qobject_cast<SelectDialog *>(p_dialog);
+      if (!selector) {
+        return false;
+      }
+      auto *list = selector->findChild<QListWidget *>();
+      if (!list || !selector->isActiveWindow() || !list->hasFocus()) {
+        selector->activateWindow();
+        QApplication::setActiveWindow(selector);
+        if (list) {
+          list->setFocus();
+        }
+        return false;
+      }
+      for (int index = 0; index < list->count(); ++index) {
+        if (list->item(index)->text() == p_label) {
+          if (p_before) {
+            p_before();
+          }
+          // Ctrl+V enters exec() from the key press before QTest can send its
+          // release. A real user releases Ctrl before choosing a letter.
+          QTest::keyRelease(list, Qt::Key_Control);
+          QTest::keyClick(list, list->item(index)->data(Qt::UserRole).toInt() < 0
+                                    ? Qt::Key_Z
+                                    : static_cast<Qt::Key>(Qt::Key_A + index));
+          return !selector->isVisible();
+        }
+      }
+      return false;
+    };
+  }
+  static Step image(bool p_base64, int p_width = 0, int p_height = 0) {
+    return [=](QDialog *p_dialog) {
+      auto *dialog = qobject_cast<ImageInsertDialog *>(p_dialog);
+      if (!dialog || dialog->getImage().isNull()) {
+        return false;
+      }
+      auto *radio = dialog->findChild<QRadioButton *>(p_base64 ? QStringLiteral("imageInsertBase64")
+                                                               : QStringLiteral("imageInsertFile"));
+      QTest::mouseClick(radio, Qt::LeftButton);
+      auto *width = dialog->findChild<QLineEdit *>(QStringLiteral("imageWidthEdit"));
+      auto *height = dialog->findChild<QLineEdit *>(QStringLiteral("imageHeightEdit"));
+      if (!width->isEnabled() || !height->isEnabled()) {
+        return false;
+      }
+      if (p_width) {
+        width->setText(QString::number(p_width));
+      }
+      if (p_height) {
+        height->setText(QString::number(p_height));
+      }
+      auto *ok = dialog->findChild<QDialogButtonBox *>()->button(QDialogButtonBox::Ok);
+      if (!ok->isEnabled()) {
+        return false;
+      }
+      QTest::mouseClick(ok, Qt::LeftButton);
+      return true;
+    };
+  }
+  static Step link(const QString &p_url, bool p_replace = true) {
+    return [=](QDialog *p_dialog) {
+      auto *dialog = qobject_cast<LinkInsertDialog *>(p_dialog);
+      if (!dialog) {
+        return false;
+      }
+      QLineEdit *url = nullptr;
+      for (auto *input : dialog->findChildren<QLineEdit *>()) {
+        if (input->isVisible()) {
+          if (url) {
+            return false;
+          }
+          url = input;
+        }
+      }
+      if (!url || !url->hasFocus()) {
+        return false;
+      }
+      if (p_replace) {
+        url->setText(p_url);
+      }
+      auto *ok = dialog->findChild<QDialogButtonBox *>()->button(QDialogButtonBox::Ok);
+      if (!ok->isEnabled()) {
+        return false;
+      }
+      QTest::mouseClick(ok, Qt::LeftButton);
+      return true;
+    };
+  }
+
+private:
+  std::deque<Step> m_steps;
+  QTimer m_timer;
+  QElapsedTimer m_elapsed;
+  bool m_failed = false;
+  bool m_busy = false;
+};
+
+QPoint topicPoint(QGraphicsView *p_view, const QString &p_topic) {
+  for (auto *item : p_view->scene()->items()) {
+    auto *label = dynamic_cast<QGraphicsTextItem *>(item);
+    if (label && label->isVisible() && label->toPlainText() == p_topic) {
+      return p_view->mapFromScene(label->sceneBoundingRect().center());
+    }
+  }
+  return QPoint(-100, -100);
+}
+
+bool dropResource(QGraphicsView *p_view, const QMimeData &p_mime, const QPoint &p_point,
+                  Qt::DropActions p_actions = Qt::CopyAction) {
+  QDragEnterEvent enter(p_point, p_actions, &p_mime, Qt::LeftButton, Qt::NoModifier);
+  QCoreApplication::sendEvent(p_view->viewport(), &enter);
+  if (!enter.isAccepted()) {
+    return false;
+  }
+  QDropEvent drop(QPointF(p_point), p_actions, &p_mime, Qt::LeftButton, Qt::NoModifier);
+  QCoreApplication::sendEvent(p_view->viewport(), &drop);
+  return drop.isAccepted();
+}
+
+bool pasteResource(MindMapEditor &p_editor, QGraphicsView *p_view) {
+  p_editor.activateWindow();
+  QApplication::setActiveWindow(&p_editor);
+  p_view->setFocus(Qt::OtherFocusReason);
+  if (!QTest::qWaitFor([&] {
+        return p_view->hasFocus() && p_editor.commandAction(QStringLiteral("paste"))->isEnabled();
+      })) {
+    qWarning() << "Canvas paste unavailable" << p_editor.canInsert() << p_editor.selectedNodeIds()
+               << p_view->hasFocus();
+    return false;
+  }
+  QTest::keyClick(p_view->viewport(), Qt::Key_V, Qt::ControlModifier);
+  return true;
+}
+
 } // namespace
 
 class TestMindMapEditor : public QObject {
@@ -268,6 +461,21 @@ private slots:
   void livePreferencesPreserveDraftAndReadOnlyBuffer();
   void separatedPropertiesRespectAdapterPolicy();
   void propertyPlacementAppliesToNewEditors();
+  void clipboardImageRoundTrip_data();
+  void clipboardImageRoundTrip();
+  void imageDropTargetsHitNode();
+  void browserImageChoicesSnapshotClipboard();
+  void embeddedImageAcquisition();
+  void hyperlinkAndExplicitTextChoices();
+  void batchInsertionIsAtomic();
+  void insertionCancellationAndDrafts();
+  void protectedInsertionCancelsOnLock();
+  void insertionRetargetAndPolicy_data();
+  void insertionRetargetAndPolicy();
+  void batchAcquisitionRejectsStaleTarget();
+  void attachmentFailureDoesNotFallback();
+  void oversizedImageDoesNotPreview();
+  void contextInsertionUsesSharedDialogs();
 
 private:
   Buffer2 openNote(const QString &p_relativePath, const QByteArray &p_content,
@@ -1267,6 +1475,686 @@ void TestMindMapEditor::propertyPlacementAppliesToNewEditors() {
   QVERIFY(scroll->isVisible());
   MindMapEditor separatedAgain(*m_services, buffer);
   QVERIFY(separatedAgain.nodePropertiesPanel());
+}
+
+void TestMindMapEditor::clipboardImageRoundTrip_data() {
+  QTest::addColumn<QString>("format");
+  QTest::addColumn<bool>("base64");
+  QTest::newRow("embedded-lossless") << QStringLiteral("jpeg") << true;
+  QTest::newRow("file-png-alpha") << QStringLiteral("png") << false;
+  QTest::newRow("file-jpeg-white-alpha") << QStringLiteral("jpeg") << false;
+}
+
+void TestMindMapEditor::clipboardImageRoundTrip() {
+  QFETCH(QString, format);
+  QFETCH(bool, base64);
+  auto buffer = openNote(QStringLiteral("clipboard.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  QVERIFY(editor.updateNode(
+      QStringLiteral("a"),
+      QByteArrayLiteral(
+          "{\"hyperLink\":\"https://example.test/keep\",\"style\":{\"fontWeight\":\"bold\"}}")));
+  const auto before = node(editor, QStringLiteral("a"));
+  const auto baseline = editor.toJson();
+  editor.setModified(false);
+  m_config->getEditorConfig().setDefaultImageFormat(format);
+  QImage pixels(120, 60, QImage::Format_ARGB32);
+  pixels.fill(Qt::transparent);
+  const QColor color(28, 170, 62);
+  {
+    QPainter painter(&pixels);
+    painter.fillRect(QRect(20, 10, 80, 40), color);
+  }
+  QApplication::clipboard()->setImage(pixels);
+  InsertionDialogs dialogs({InsertionDialogs::image(base64, 90, 45)});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(dialogs.complete());
+  const auto after = node(editor, QStringLiteral("a"));
+  QCOMPARE(after.value(QStringLiteral("topic")), before.value(QStringLiteral("topic")));
+  QCOMPARE(after.value(QStringLiteral("style")), before.value(QStringLiteral("style")));
+  QCOMPARE(after.value(QStringLiteral("hyperLink")), before.value(QStringLiteral("hyperLink")));
+  const auto image = after.value(QStringLiteral("image")).toObject();
+  QCOMPARE(image.value(QStringLiteral("width")).toInt(), 90);
+  QCOMPARE(image.value(QStringLiteral("height")).toInt(), 45);
+  const auto url = image.value(QStringLiteral("url")).toString();
+  QByteArray bytes;
+  if (base64) {
+    QVERIFY(url.startsWith(QStringLiteral("data:image/png;base64,")));
+    bytes = QByteArray::fromBase64(url.mid(url.indexOf(QLatin1Char(',')) + 1).toLatin1());
+  } else {
+    QVERIFY(QUrl(url).isRelative());
+    bytes =
+        readFile(QDir(buffer.getResourceBasePath()).filePath(QUrl(url).path(QUrl::FullyDecoded)));
+  }
+  const auto decoded = QImage::fromData(bytes);
+  QVERIFY(!decoded.isNull());
+  QCOMPARE(decoded.size(), pixels.size());
+  if (base64 || format == QStringLiteral("png")) {
+    QCOMPARE(decoded.pixelColor(0, 0).alpha(), 0);
+    QCOMPARE(decoded.pixelColor(60, 30), color);
+  } else {
+    QVERIFY(bytes.startsWith(QByteArray::fromHex("ffd8")));
+    QCOMPARE(decoded.pixelColor(0, 0), QColor(Qt::white));
+  }
+  QTRY_VERIFY(rendersColor(editor, decoded.pixelColor(60, 30)));
+  QVERIFY(editor.isModified());
+  const auto committed = editor.toJson();
+  QVERIFY(editor.undo());
+  QCOMPARE(editor.toJson(), baseline);
+  QVERIFY(editor.redo());
+  QCOMPARE(editor.toJson(), committed);
+  QTRY_VERIFY(rendersColor(editor, decoded.pixelColor(60, 30)));
+  QVERIFY(buffer.setContentRaw(editor.contentForSave().toUtf8()));
+  QVERIFY(buffer.save());
+  MindMapEditor reopened(*m_services, buffer);
+  QVERIFY(reopened.loadContent(readFile(buffer.resolvedPath())));
+  QVERIFY(showEditor(reopened));
+  QCOMPARE(node(reopened, QStringLiteral("a")), after);
+  QTRY_VERIFY(rendersColor(reopened, decoded.pixelColor(60, 30)));
+}
+
+void TestMindMapEditor::imageDropTargetsHitNode() {
+  const auto buffer = openNote(QStringLiteral("drop.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  const QColor sourceColor(220, 45, 70), thumbnailColor(20, 180, 90);
+  const auto path = m_directory->filePath(QStringLiteral("image # 25%.png"));
+  QVERIFY(writeFile(path, imageBytes(sourceColor)));
+  const auto selected = editor.selectedNodeId();
+  const auto root = node(editor, selected);
+  const auto camera = view->transform();
+  QMimeData mime;
+  mime.setUrls({QUrl::fromLocalFile(path)});
+  mime.setImageData(QImage::fromData(imageBytes(thumbnailColor)));
+  const auto point = topicPoint(view, QStringLiteral("Child"));
+  InsertionDialogs dialogs(
+      {InsertionDialogs::choose(QStringLiteral("Insert As Image")), InsertionDialogs::image(true)});
+  QVERIFY(dropResource(view, mime, point));
+  QVERIFY(dialogs.complete());
+  QCOMPARE(node(editor, selected), root);
+  QCOMPARE(editor.selectedNodeId(), selected);
+  QCOMPARE(view->transform(), camera);
+  QTRY_VERIFY(rendersColor(editor, sourceColor));
+  QVERIFY(!rendersColor(editor, thumbnailColor));
+  const auto committed = editor.toJson();
+  QVERIFY(!dropResource(view, mime, QPoint(-10, -10)));
+  QVERIFY(!dropResource(view, mime, point, Qt::MoveAction));
+  QCOMPARE(editor.toJson(), committed);
+  QVERIFY(editor.undo());
+  mime.removeFormat(QStringLiteral("application/x-qt-image"));
+  InsertionDialogs urlOnly(
+      {InsertionDialogs::choose(QStringLiteral("Insert As Image")), InsertionDialogs::image(true)});
+  QVERIFY(dropResource(view, mime, topicPoint(view, QStringLiteral("Child"))));
+  QVERIFY(urlOnly.complete());
+  QTRY_VERIFY(rendersColor(editor, sourceColor));
+}
+
+void TestMindMapEditor::browserImageChoicesSnapshotClipboard() {
+  const auto buffer = openNote(QStringLiteral("browser.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  ImageServer server;
+  QVERIFY(server.isListening());
+  const QColor captured(222, 38, 66), downloaded(24, 172, 64), replacement(36, 62, 212);
+  const auto setBrowserClipboard = [&] {
+    auto *mime = new QMimeData();
+    mime->setHtml(QStringLiteral("<img src=\"%1\">").arg(server.url()));
+    mime->setImageData(QImage::fromData(imageBytes(captured)));
+    QApplication::clipboard()->setMimeData(mime);
+  };
+  setBrowserClipboard();
+  InsertionDialogs pixels(
+      {InsertionDialogs::choose(
+           QStringLiteral("Insert From Image Data"),
+           [&] { QApplication::clipboard()->setImage(QImage::fromData(imageBytes(replacement))); }),
+       InsertionDialogs::image(true)});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(pixels.complete());
+  QTRY_VERIFY(rendersColor(editor, captured));
+  QCOMPARE(server.requestCount(), 0);
+  QVERIFY(editor.undo());
+
+  // Direct links do not acquire/store an asset. The normal asynchronous display loader
+  // may request pixels only after the semantic image link has been committed.
+  setBrowserClipboard();
+  const auto assetsBefore = QDir(buffer.getAssetsFolder()).entryList(QDir::Files);
+  InsertionDialogs links({InsertionDialogs::choose(QStringLiteral("Insert As Image Link"))});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(links.complete());
+  QCOMPARE(node(editor, QStringLiteral("r"))
+               .value(QStringLiteral("image"))
+               .toObject()
+               .value(QStringLiteral("url"))
+               .toString(),
+           server.url());
+  QCOMPARE(QDir(buffer.getAssetsFolder()).entryList(QDir::Files), assetsBefore);
+  QTRY_COMPARE(server.requestCount(), 1);
+  QVERIFY(server.reply(0, imageBytes(downloaded)));
+  QTRY_VERIFY(rendersColor(editor, downloaded));
+  QVERIFY(editor.undo());
+
+  setBrowserClipboard();
+  QTimer respond;
+  connect(&respond, &QTimer::timeout, this, [&] {
+    if (server.requestCount() == 2) {
+      server.reply(1, imageBytes(downloaded));
+      respond.stop();
+    }
+  });
+  respond.start(0);
+  InsertionDialogs urls(
+      {InsertionDialogs::choose(QStringLiteral("Insert From URL")), InsertionDialogs::image(true)});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(urls.complete());
+  QTRY_VERIFY(rendersColor(editor, downloaded));
+  QCOMPARE(server.requestCount(), 2);
+}
+
+void TestMindMapEditor::embeddedImageAcquisition() {
+  const auto buffer = openNote(QStringLiteral("embedded.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  const QColor color(216, 36, 65);
+  const auto source = dataUrl(imageBytes(color));
+  QApplication::clipboard()->setText(source);
+  InsertionDialogs paste({InsertionDialogs::choose(QStringLiteral("Insert as Base64")),
+                          InsertionDialogs::image(true)});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(paste.complete());
+  QTRY_VERIFY(rendersColor(editor, color));
+  QVERIFY(editor.undo());
+  QApplication::clipboard()->clear();
+  InsertionDialogs typed({[&](QDialog *p_dialog) {
+                            auto *dialog = qobject_cast<ImageInsertDialog *>(p_dialog);
+                            if (!dialog) {
+                              return false;
+                            }
+                            // From is the first editable field; paste through its real native input
+                            // path.
+                            auto *from = dialog->findChildren<QLineEdit *>().first();
+                            from->setFocus();
+                            QApplication::clipboard()->setText(source);
+                            QTest::keyClick(from, Qt::Key_V, Qt::ControlModifier);
+                            return true;
+                          },
+                          InsertionDialogs::image(true)});
+  editor.typeImage();
+  QVERIFY(typed.complete());
+  QTRY_VERIFY(rendersColor(editor, color));
+  QVERIFY(editor.undo());
+  const auto before = editor.toJson();
+  QSignalSpy errors(&editor, &MindMapEditor::statusMessageRequested);
+  QApplication::clipboard()->setText(QStringLiteral("data:image/png;base64,@@invalid"));
+  InsertionDialogs invalid({InsertionDialogs::choose(QStringLiteral("Insert as Base64"))});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(invalid.complete());
+  QCOMPARE(editor.toJson(), before);
+  QVERIFY(!errors.isEmpty());
+}
+
+void TestMindMapEditor::hyperlinkAndExplicitTextChoices() {
+  auto buffer = openNote(QStringLiteral("links.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  const auto original = node(editor, QStringLiteral("a"));
+  QApplication::clipboard()->setText(QStringLiteral("https://example.test/original"));
+  InsertionDialogs toolbar({InsertionDialogs::link(QStringLiteral("https://example.test/chosen"))});
+  editor.typeLink();
+  QVERIFY(toolbar.complete());
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("topic")),
+           original.value(QStringLiteral("topic")));
+  InsertionDialogs remove({InsertionDialogs::link(QString())});
+  editor.typeLink();
+  QVERIFY(remove.complete());
+  QVERIFY(
+      node(editor, QStringLiteral("a")).value(QStringLiteral("hyperLink")).toString().isEmpty());
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("topic")),
+           original.value(QStringLiteral("topic")));
+
+  const auto path = QDir(buffer.getResourceBasePath()).filePath(QStringLiteral("file # 25%.txt"));
+  const QByteArray content("Chosen file content\nSecond line");
+  QVERIFY(writeFile(path, content));
+  auto url = QUrl::fromLocalFile(path);
+  url.setFragment(QStringLiteral("Heading # 20%"));
+  const auto setUrl = [&] {
+    auto *mime = new QMimeData();
+    mime->setUrls({url});
+    QApplication::clipboard()->setMimeData(mime);
+  };
+  setUrl();
+  InsertionDialogs relative({InsertionDialogs::choose(QStringLiteral("Insert As Relative Link")),
+                             InsertionDialogs::link(QString(), false)});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(relative.complete());
+  const auto relativeUrl =
+      QUrl(node(editor, QStringLiteral("a")).value(QStringLiteral("hyperLink")).toString());
+  QVERIFY(relativeUrl.isRelative());
+  QCOMPARE(QFileInfo(relativeUrl.path(QUrl::FullyDecoded)).fileName(), QFileInfo(path).fileName());
+  QCOMPARE(relativeUrl.fragment(QUrl::FullyDecoded), url.fragment(QUrl::FullyDecoded));
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("topic")),
+           original.value(QStringLiteral("topic")));
+
+  setUrl();
+  InsertionDialogs attach({InsertionDialogs::choose(QStringLiteral("Attach And Insert Link"))});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(attach.complete());
+  const auto attachmentLink =
+      QUrl(node(editor, QStringLiteral("a")).value(QStringLiteral("hyperLink")).toString());
+  QVERIFY(attachmentLink.isRelative());
+  QVERIFY(attachmentLink.fragment().isEmpty());
+  const auto copied =
+      QDir(buffer.getResourceBasePath()).filePath(attachmentLink.path(QUrl::FullyDecoded));
+  QVERIFY(copied != path);
+  QCOMPARE(readFile(copied), content);
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("topic")),
+           original.value(QStringLiteral("topic")));
+  const auto previous = node(editor, QStringLiteral("a"));
+  setUrl();
+  InsertionDialogs fileText({InsertionDialogs::choose(QStringLiteral("Insert File Content"))});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(fileText.complete());
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("topic")).toString(),
+           QString::fromUtf8(content));
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("hyperLink")),
+           previous.value(QStringLiteral("hyperLink")));
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("style")),
+           original.value(QStringLiteral("style")));
+  auto *textMime = new QMimeData();
+  textMime->setUrls({url});
+  const auto sourceText = QStringLiteral("Explicit clipboard text # 25%");
+  textMime->setText(sourceText);
+  QApplication::clipboard()->setMimeData(textMime);
+  InsertionDialogs text({InsertionDialogs::choose(QStringLiteral("Insert As Text"))});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(text.complete());
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("topic")).toString(), sourceText);
+}
+
+void TestMindMapEditor::batchInsertionIsAtomic() {
+  const auto buffer = openNote(QStringLiteral("batch.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  QVERIFY(editor.setExpanded(QStringLiteral("a"), false));
+  const auto parent = node(editor, QStringLiteral("a"));
+  const auto baseline = editor.toJson();
+  const auto first = m_directory->filePath(QStringLiteral("first.png"));
+  const auto second = m_directory->filePath(QStringLiteral("second.png"));
+  const QColor red(215, 38, 56), green(21, 175, 61);
+  QVERIFY(writeFile(first, imageBytes(red)));
+  QVERIFY(writeFile(second, imageBytes(green)));
+  const auto setUrls = [&](const QString &p_second) {
+    auto *mime = new QMimeData();
+    mime->setUrls({QUrl::fromLocalFile(first), QUrl::fromLocalFile(p_second)});
+    QApplication::clipboard()->setMimeData(mime);
+  };
+  setUrls(second);
+  InsertionDialogs batch({InsertionDialogs::choose(QStringLiteral("Insert as Base64"))});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(batch.complete());
+  const auto changedParent = node(editor, QStringLiteral("a"));
+  QCOMPARE(changedParent.value(QStringLiteral("topic")), parent.value(QStringLiteral("topic")));
+  QCOMPARE(changedParent.value(QStringLiteral("style")), parent.value(QStringLiteral("style")));
+  const auto children = changedParent.value(QStringLiteral("children")).toArray();
+  QCOMPARE(children.size(), 3);
+  QCOMPARE(children.first().toString(), QStringLiteral("b"));
+  QCOMPARE(node(editor, children.at(1).toString()).value(QStringLiteral("topic")).toString(),
+           QStringLiteral("first.png"));
+  QCOMPARE(node(editor, children.at(2).toString()).value(QStringLiteral("topic")).toString(),
+           QStringLiteral("second.png"));
+  QCOMPARE(editor.selectedNodeId(), QStringLiteral("a"));
+  QTRY_VERIFY(rendersColor(editor, red) && rendersColor(editor, green));
+  const auto committed = editor.toJson();
+  QVERIFY(editor.undo());
+  QCOMPARE(editor.toJson(), baseline);
+  QVERIFY(editor.redo());
+  QCOMPARE(editor.toJson(), committed);
+  QVERIFY(editor.undo());
+  const auto invalid = m_directory->filePath(QStringLiteral("bad.png"));
+  QVERIFY(writeFile(invalid, QByteArrayLiteral("not an image")));
+  const auto assetsBefore = QDir(buffer.getAssetsFolder()).entryList(QDir::Files);
+  setUrls(invalid);
+  QSignalSpy errors(&editor, &MindMapEditor::statusMessageRequested);
+  InsertionDialogs failed({InsertionDialogs::choose(QStringLiteral("Insert As Image"))});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(failed.complete());
+  QCOMPARE(editor.toJson(), baseline);
+  QCOMPARE(QDir(buffer.getAssetsFolder()).entryList(QDir::Files), assetsBefore);
+  QVERIFY(!errors.isEmpty());
+}
+
+void TestMindMapEditor::insertionCancellationAndDrafts() {
+  const auto buffer = openNote(QStringLiteral("lifecycle.mmm"), fixture());
+  auto editor = std::make_unique<MindMapEditor>(*m_services, buffer);
+  QVERIFY(editor->loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(*editor);
+  QVERIFY(view);
+  const auto baseline = editor->toJson();
+  QApplication::clipboard()->setText(QStringLiteral("https://example.test/source"));
+  InsertionDialogs canceled({InsertionDialogs::choose(QStringLiteral("Cancel"))});
+  QVERIFY(pasteResource(*editor, view));
+  QVERIFY(canceled.complete());
+  QCOMPARE(editor->toJson(), baseline);
+
+  QApplication::clipboard()->setImage(QImage::fromData(imageBytes(QColor(224, 35, 54))));
+  InsertionDialogs readonly({[&](QDialog *p_dialog) {
+    if (!qobject_cast<ImageInsertDialog *>(p_dialog)) {
+      return false;
+    }
+    editor->setReadOnly(true);
+    return true;
+  }});
+  editor->typeImage();
+  QVERIFY(readonly.complete());
+  QCOMPARE(editor->toJson(), baseline);
+  QVERIFY(!editor->canInsert());
+  editor->setReadOnly(false);
+
+  InsertionDialogs stale({[&](QDialog *p_dialog) {
+    if (!qobject_cast<ImageInsertDialog *>(p_dialog)) {
+      return false;
+    }
+    editor->renameNode(QStringLiteral("r"), QStringLiteral("Changed while acquiring"));
+    p_dialog->accept();
+    return true;
+  }});
+  editor->typeImage();
+  QVERIFY(stale.complete());
+  QVERIFY(node(*editor, QStringLiteral("r")).value(QStringLiteral("image")).toObject().isEmpty());
+  QCOMPARE(node(*editor, QStringLiteral("r")).value(QStringLiteral("topic")).toString(),
+           QStringLiteral("Changed while acquiring"));
+
+  auto *draft = beginDraft(*editor);
+  QVERIFY(draft);
+  draft->setPlainText(QStringLiteral("Durable initiating draft"));
+  InsertionDialogs committed({InsertionDialogs::image(true)});
+  editor->typeImage();
+  QVERIFY(committed.complete());
+  QCOMPARE(node(*editor, QStringLiteral("r")).value(QStringLiteral("topic")).toString(),
+           QStringLiteral("Durable initiating draft"));
+  QVERIFY(!node(*editor, QStringLiteral("r")).value(QStringLiteral("image")).toObject().isEmpty());
+  draft = beginDraft(*editor);
+  QVERIFY(draft);
+  QString invalid = QStringLiteral("invalid");
+  invalid.append(QChar::Null);
+  draft->setPlainText(invalid);
+  const auto beforeRejected = editor->toJson();
+  editor->typeImage();
+  QCOMPARE(editor->toJson(), beforeRejected);
+  QVERIFY(!QApplication::activeModalWidget());
+  QTest::keyClick(draft, Qt::Key_Escape);
+
+  InsertionDialogs destroyed({[&](QDialog *p_dialog) {
+    if (!qobject_cast<ImageInsertDialog *>(p_dialog)) {
+      return false;
+    }
+    editor.reset();
+    return true;
+  }});
+  editor->typeImage();
+  QVERIFY(destroyed.complete());
+  QVERIFY(!editor);
+}
+
+void TestMindMapEditor::protectedInsertionCancelsOnLock() {
+  const auto buffer = openProtectedNote(fixture());
+  QVERIFY(buffer.isValid());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  const auto baseline = editor.toJson();
+  QApplication::clipboard()->setImage(QImage::fromData(imageBytes(QColor(217, 37, 67))));
+  bool locked = false;
+  InsertionDialogs lock({[&](QDialog *p_dialog) {
+    auto *dialog = qobject_cast<ImageInsertDialog *>(p_dialog);
+    if (!dialog || !dialog->insertAsBase64()) {
+      return false;
+    }
+    locked = m_buffers->beginProtectedLocking();
+    return true;
+  }});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(lock.complete());
+  QVERIFY(locked);
+  QCOMPARE(editor.toJson(), baseline);
+  QVERIFY(!editor.canInsert());
+  m_buffers->cancelProtectedLocking();
+  QVERIFY(editor.canInsert());
+}
+
+void TestMindMapEditor::insertionRetargetAndPolicy_data() {
+  QTest::addColumn<int>("transition");
+  QTest::newRow("reload") << 0;
+  QTest::newRow("retarget") << 1;
+  QTest::newRow("disable") << 2;
+  QTest::newRow("remove-target") << 3;
+  QTest::newRow("selection-keeps-captured-target") << 4;
+}
+
+void TestMindMapEditor::insertionRetargetAndPolicy() {
+  QFETCH(int, transition);
+  const auto buffer = openNote(QStringLiteral("retarget.mmm"), fixture());
+  const auto replacement = openNote(QStringLiteral("replacement.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  QVERIFY(showEditor(editor));
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  QApplication::clipboard()->setImage(QImage::fromData(imageBytes(QColor(220, 36, 64))));
+  const auto assetsBefore = QDir(buffer.getAssetsFolder()).entryList(QDir::Files);
+  bool changed = false;
+  InsertionDialogs dialogs({[&](QDialog *p_dialog) {
+    if (!qobject_cast<ImageInsertDialog *>(p_dialog)) {
+      return false;
+    }
+    if (transition == 0) {
+      changed = editor.loadContent(fixture());
+    } else if (transition == 1) {
+      editor.setBuffer(replacement);
+      changed = editor.loadContent(replacement.getContentRaw());
+    } else if (transition == 2) {
+      editor.setEnabled(false);
+      changed = !editor.isEnabled();
+    } else if (transition == 3) {
+      changed = editor.removeNode(QStringLiteral("a"));
+      p_dialog->accept();
+    } else {
+      changed = editor.selectNode(QStringLiteral("r"));
+      return InsertionDialogs::image(true)(p_dialog);
+    }
+    return true;
+  }});
+  editor.typeImage();
+  QVERIFY(dialogs.complete());
+  QVERIFY(changed);
+  if (transition == 4) {
+    QVERIFY(!node(editor, QStringLiteral("a")).value(QStringLiteral("image")).toObject().isEmpty());
+    QVERIFY(node(editor, QStringLiteral("r")).value(QStringLiteral("image")).toObject().isEmpty());
+    QCOMPARE(editor.selectedNodeId(), QStringLiteral("r"));
+  } else {
+    QVERIFY(node(editor, QStringLiteral("a")).value(QStringLiteral("image")).toObject().isEmpty());
+    QCOMPARE(QDir(buffer.getAssetsFolder()).entryList(QDir::Files), assetsBefore);
+  }
+}
+
+void TestMindMapEditor::batchAcquisitionRejectsStaleTarget() {
+  const auto buffer = openNote(QStringLiteral("batch-stale.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  ImageServer server;
+  QVERIFY(server.isListening());
+  const auto first = m_directory->filePath(QStringLiteral("prepared.png"));
+  const auto bytes = imageBytes(QColor(216, 35, 62));
+  QVERIFY(writeFile(first, bytes));
+  const auto assetsBefore = QDir(buffer.getAssetsFolder()).entryList(QDir::Files);
+  auto *mime = new QMimeData();
+  mime->setUrls({QUrl::fromLocalFile(first), QUrl(server.url())});
+  QApplication::clipboard()->setMimeData(mime);
+  bool changed = false;
+  QTimer response;
+  connect(&response, &QTimer::timeout, this, [&] {
+    if (server.requestCount() == 1) {
+      response.stop();
+      changed = editor.renameNode(QStringLiteral("r"), QStringLiteral("Changed during download"));
+      server.reply(0, bytes);
+    }
+  });
+  response.start(0);
+  InsertionDialogs dialogs({InsertionDialogs::choose(QStringLiteral("Insert As Image"))});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(dialogs.complete());
+  QVERIFY(changed);
+  QCOMPARE(node(editor, QStringLiteral("r")).value(QStringLiteral("children")).toArray(),
+           QJsonArray{QStringLiteral("a")});
+  QCOMPARE(node(editor, QStringLiteral("r")).value(QStringLiteral("topic")).toString(),
+           QStringLiteral("Changed during download"));
+  QCOMPARE(QDir(buffer.getAssetsFolder()).entryList(QDir::Files), assetsBefore);
+}
+
+void TestMindMapEditor::attachmentFailureDoesNotFallback() {
+  const auto buffer = openNote(QStringLiteral("attachment.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  const auto source = m_directory->filePath(QStringLiteral("attachment.txt"));
+  QVERIFY(writeFile(source, QByteArrayLiteral("Attachment contents")));
+  const auto before = editor.toJson();
+  auto *mime = new QMimeData();
+  mime->setUrls({QUrl::fromLocalFile(source)});
+  QApplication::clipboard()->setMimeData(mime);
+  QSignalSpy errors(&editor, &MindMapEditor::statusMessageRequested);
+  InsertionDialogs failed({InsertionDialogs::choose(QStringLiteral("Attach And Insert Link"),
+                                                    [&] { QFile::remove(source); })});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(failed.complete());
+  QCOMPARE(editor.toJson(), before);
+  QVERIFY(buffer.listAttachments().isEmpty());
+  QVERIFY(!errors.isEmpty());
+
+  // A post-copy hook changes the captured node. Roll back only the just-created attachment.
+  QVERIFY(writeFile(source, QByteArrayLiteral("Attachment contents")));
+  mime = new QMimeData();
+  mime->setUrls({QUrl::fromLocalFile(source)});
+  QApplication::clipboard()->setMimeData(mime);
+  const auto hook = m_hooks->addAction<AttachmentAddEvent>(
+      HookNames::AttachmentAfterAdd,
+      [&](HookContext &, const AttachmentAddEvent &) {
+        editor.renameNode(QStringLiteral("r"), QStringLiteral("Changed in attachment hook"));
+      },
+      10);
+  const auto removeHook = qScopeGuard([&] { m_hooks->removeAction(hook); });
+  InsertionDialogs stale({InsertionDialogs::choose(QStringLiteral("Attach And Insert Link"))});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(stale.complete());
+  QCOMPARE(node(editor, QStringLiteral("r")).value(QStringLiteral("topic")).toString(),
+           QStringLiteral("Changed in attachment hook"));
+  QVERIFY(
+      node(editor, QStringLiteral("r")).value(QStringLiteral("hyperLink")).toString().isEmpty());
+  QVERIFY(buffer.listAttachments().isEmpty());
+  QVERIFY(QDir(buffer.getAttachmentsFolder()).entryList(QDir::Files).isEmpty());
+}
+
+void TestMindMapEditor::oversizedImageDoesNotPreview() {
+  const auto buffer = openNote(QStringLiteral("oversized.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  QVERIFY(showEditor(editor));
+  const auto source = m_directory->filePath(QStringLiteral("too-large.png"));
+  QFile oversized(source);
+  QVERIFY(oversized.open(QIODevice::WriteOnly));
+  QVERIFY(oversized.resize(32 * 1024 * 1024 + 1));
+  oversized.close();
+  auto *mime = new QMimeData();
+  mime->setUrls({QUrl::fromLocalFile(source)});
+  QApplication::clipboard()->setMimeData(mime);
+  const auto before = editor.toJson();
+  InsertionDialogs dialogs({[](QDialog *p_dialog) {
+    auto *dialog = qobject_cast<ImageInsertDialog *>(p_dialog);
+    if (!dialog) {
+      return false;
+    }
+    // Trigger the real queued From-field acquisition, then observe disabled acceptance.
+    QMetaObject::invokeMethod(dialog, "checkImagePathInput", Qt::DirectConnection);
+    auto *ok = dialog->findChild<QDialogButtonBox *>()->button(QDialogButtonBox::Ok);
+    if (!dialog->getImage().isNull() || ok->isEnabled()) {
+      return false;
+    }
+    QTest::mouseClick(dialog->findChild<QDialogButtonBox *>()->button(QDialogButtonBox::Cancel),
+                      Qt::LeftButton);
+    return true;
+  }});
+  editor.typeImage();
+  QVERIFY(dialogs.complete());
+  QCOMPARE(editor.toJson(), before);
+}
+
+void TestMindMapEditor::contextInsertionUsesSharedDialogs() {
+  const auto buffer = openNote(QStringLiteral("context.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  const auto topic = node(editor, QStringLiteral("a")).value(QStringLiteral("topic"));
+  const auto openContextAction = [&](const QString &p_label) {
+    bool triggered = false;
+    QTimer choose;
+    connect(&choose, &QTimer::timeout, this, [&] {
+      auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+      if (!menu) {
+        return;
+      }
+      choose.stop();
+      for (auto *action : menu->actions()) {
+        if (action->text() == p_label && action->isEnabled()) {
+          menu->hide();
+          triggered = true;
+          action->trigger();
+          return;
+        }
+      }
+      menu->close();
+    });
+    const auto point = topicPoint(view, QStringLiteral("Child"));
+    choose.start(0);
+    QContextMenuEvent event(QContextMenuEvent::Mouse, point, view->viewport()->mapToGlobal(point));
+    QCoreApplication::sendEvent(view->viewport(), &event);
+    return triggered;
+  };
+  QApplication::clipboard()->setText(QStringLiteral("https://example.test/context"));
+  InsertionDialogs link({InsertionDialogs::link(QString(), false)});
+  QVERIFY(openContextAction(QStringLiteral("Add URL")));
+  QVERIFY(link.complete());
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("hyperLink")).toString(),
+           QStringLiteral("https://example.test/context"));
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("topic")), topic);
+  const QColor color(218, 37, 62);
+  QApplication::clipboard()->setImage(QImage::fromData(imageBytes(color)));
+  InsertionDialogs image({InsertionDialogs::image(true)});
+  QVERIFY(openContextAction(QStringLiteral("Add Image")));
+  QVERIFY(image.complete());
+  QTRY_VERIFY(rendersColor(editor, color));
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("topic")), topic);
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("hyperLink")).toString(),
+           QStringLiteral("https://example.test/context"));
 }
 
 } // namespace tests

@@ -39,7 +39,21 @@ void LinkInsertDialog::setupUI(const QString &p_title, const QString &p_linkText
   setWindowTitle(p_title);
 }
 
+void LinkInsertDialog::setUrlOnly(bool p_allowEmpty) {
+  m_urlOnly = true;
+  m_allowEmptyUrl = p_allowEmpty;
+  auto *layout = qobject_cast<QFormLayout *>(m_linkTextEdit->parentWidget()->layout());
+  layout->labelForField(m_linkTextEdit)->hide();
+  m_linkTextEdit->hide();
+  checkInput(false);
+}
+
 void LinkInsertDialog::checkInput(bool p_autoCompleteText) {
+  if (m_urlOnly) {
+    setButtonEnabled(QDialogButtonBox::Ok, m_allowEmptyUrl || !m_linkUrlEdit->text().isEmpty());
+    return;
+  }
+
   bool ok = true;
 
   const auto linkUrl = m_linkUrlEdit->text();
@@ -84,7 +98,7 @@ QString LinkInsertDialog::getLinkUrl() const {
 void LinkInsertDialog::showEvent(QShowEvent *p_event) {
   ScrollDialog::showEvent(p_event);
 
-  if (!m_linkUrlEdit->text().isEmpty() || m_linkTextEdit->text().isEmpty()) {
+  if (!m_urlOnly && (!m_linkUrlEdit->text().isEmpty() || m_linkTextEdit->text().isEmpty())) {
     m_linkTextEdit->setFocus();
     m_linkTextEdit->selectAll();
   } else {

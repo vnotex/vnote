@@ -3,6 +3,7 @@
 #include <QBuffer>
 #include <QButtonGroup>
 #include <QDir>
+#include <QFile>
 #include <QFileDialog>
 #include <QFileInfo>
 #include <QGridLayout>
@@ -33,6 +34,8 @@
 using namespace vnotex;
 
 namespace {
+constexpr int c_imageByteLimit = 32 * 1024 * 1024;
+
 // Tests find widgets by object name, never by label text.
 const char *kImageWidthEditName = "imageWidthEdit";
 const char *kImageHeightEditName = "imageHeightEdit";
@@ -100,7 +103,8 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   auto altValidator = new QRegularExpressionValidator(
       QRegularExpression(QStringLiteral("[^\"'()]*")), m_imageAltEdit);
   m_imageAltEdit->setValidator(altValidator);
-  gridLayout->addWidget(new QLabel(tr("Alt text"), mainWidget), 2, 0, 1, 1);
+  m_imageAltLabel = new QLabel(tr("Alt text"), mainWidget);
+  gridLayout->addWidget(m_imageAltLabel, 2, 0, 1, 1);
   gridLayout->addWidget(m_imageAltEdit, 2, 1, 1, 3);
 
   // Optional size. Left EMPTY by default on purpose: pre-filling the source
@@ -137,7 +141,7 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   connect(m_base64Radio, &QRadioButton::toggled, this, [this](bool p_base64) {
     // Reference-style Markdown has no portable width/height syntax. The file
     // choice retains the existing HTML size controls and their entered values.
-    const bool sized = !p_base64;
+    const bool sized = m_mindMapMode || !p_base64;
     m_imageWidthEdit->setEnabled(sized);
     m_imageHeightEdit->setEnabled(sized);
   });
@@ -174,6 +178,21 @@ void ImageInsertDialog::setImageControlsVisible(bool p_visible) {
   m_previewArea->setVisible(p_visible);
 }
 
+void ImageInsertDialog::setMindMapMode() {
+  m_mindMapMode = true;
+  m_imageAltLabel->hide();
+  m_imageAltEdit->hide();
+  m_imageWidthEdit->setEnabled(true);
+  m_imageHeightEdit->setEnabled(true);
+  // QLineEdit's default 32767-character limit truncates common embedded image URLs.
+  // Match the controller's bound for percent-encoded Base64 plus its header.
+  m_imagePathEdit->setMaxLength(257 + ((c_imageByteLimit + 2) / 3) * 4 * 3);
+  const auto insertToolTip =
+      tr("Base64 keeps the image inside the note body. Image files are not encrypted");
+  m_imageFileRadio->setToolTip(insertToolTip);
+  m_base64Radio->setToolTip(insertToolTip);
+}
+
 void ImageInsertDialog::showEvent(QShowEvent *p_event) {
   Dialog::showEvent(p_event);
 
@@ -183,6 +202,15 @@ void ImageInsertDialog::showEvent(QShowEvent *p_event) {
 
 void ImageInsertDialog::checkImagePathInput() {
   const QString text = m_imagePathEdit->text();
+  if (m_mindMapMode && text.startsWith(QLatin1String("data:image/"), Qt::CaseInsensitive)) {
+    setImage(QImage());
+    m_source = Source::ImageData;
+    // The host owns data-URL decoding and its buffer/operation lifetime checks.
+    // It may replace this source or destroy the dialog while handling the signal.
+    emit imageDataUrlRequested(text);
+    return;
+  }
+
   QUrl url = QUrl::fromUserInput(text);
   if (text.isEmpty() || !url.isValid()) {
     setImage(QImage());
@@ -191,7 +219,22 @@ void ImageInsertDialog::checkImagePathInput() {
 
   if (url.isLocalFile()) {
     const auto localFile = url.toLocalFile();
-    if (QFileInfo::exists(localFile)) {
+    if (m_mindMapMode) {
+      const QFileInfo info(localFile);
+      QFile input(localFile);
+      if (!info.isFile() || info.size() > c_imageByteLimit || !input.open(QIODevice::ReadOnly) ||
+          input.size() > c_imageByteLimit) {
+        setImage(QImage());
+      } else {
+        auto data = input.read(qMin(input.size(), qint64(c_imageByteLimit)));
+        if (input.error() != QFileDevice::NoError || !input.atEnd()) {
+          setImage(QImage());
+        } else {
+          setSourceImageData(data);
+        }
+        data.fill('\0');
+      }
+    } else if (QFileInfo::exists(localFile)) {
       QByteArray data;
       if (FileUtils2::readFile(localFile, &data)) {
         setImage(QImage());
@@ -206,6 +249,10 @@ void ImageInsertDialog::checkImagePathInput() {
   } else {
     setImage(QImage());
     m_source = Source::ImageData;
+    if (m_mindMapMode && url.scheme() != QLatin1String("http") &&
+        url.scheme() != QLatin1String("https")) {
+      return;
+    }
 
     if (!m_downloader) {
       m_downloader = new NetworkAccess(this);
@@ -254,9 +301,15 @@ int ImageInsertDialog::getImageWidth() const { return positiveIntOrZero(m_imageW
 int ImageInsertDialog::getImageHeight() const { return positiveIntOrZero(m_imageHeightEdit); }
 
 QString ImageInsertDialog::getImagePath() const {
-  const auto url = QUrl::fromUserInput(m_imagePathEdit->text());
-  return url.isLocalFile() ? url.toLocalFile() : m_imagePathEdit->text();
+  const auto text = m_imagePathEdit->text();
+  if (m_mindMapMode && text.startsWith(QLatin1String("data:image/"), Qt::CaseInsensitive)) {
+    return text;
+  }
+  const auto url = QUrl::fromUserInput(text);
+  return url.isLocalFile() ? url.toLocalFile() : text;
 }
+
+quint64 ImageInsertDialog::getImageSourceRevision() const { return m_imageSourceRevision; }
 
 ImageInsertDialog::Source ImageInsertDialog::getImageSource() const { return m_source; }
 
@@ -299,6 +352,10 @@ void ImageInsertDialog::setInsertAsBase64(bool p_base64) {
 bool ImageInsertDialog::insertAsBase64() const { return m_base64Radio->isChecked(); }
 
 void ImageInsertDialog::setImage(const QImage &p_image) {
+  ++m_imageSourceRevision;
+  if (m_mindMapMode) {
+    m_imagePathCheckTimer->stop();
+  }
   m_imageData.clear();
   m_image = p_image;
   if (m_image.isNull()) {
@@ -319,8 +376,9 @@ void ImageInsertDialog::setImage(const QImage &p_image) {
 }
 
 void ImageInsertDialog::setSourceImageData(const QByteArray &p_data) {
+  m_source = Source::ImageData;
   QByteArray preview;
-  if (m_encryptedNote) {
+  if (m_encryptedNote || m_mindMapMode) {
     QByteArray mime;
     if (!ImageUtils::protectedImageData(p_data, preview, mime)) {
       setImage(QImage());
@@ -330,16 +388,28 @@ void ImageInsertDialog::setSourceImageData(const QByteArray &p_data) {
     preview = p_data;
   }
   setImage(QImage::fromData(preview));
-  m_imageData = p_data;
+  if (m_encryptedNote || m_mindMapMode) {
+    preview.fill('\0');
+  }
+  if (!m_mindMapMode || !m_image.isNull()) {
+    m_imageData = p_data;
+  }
 }
 
 void ImageInsertDialog::setImagePath(const QString &p_path) {
   setImage(QImage());
   m_imagePathEdit->setText(p_path);
+  if (m_mindMapMode) {
+    m_imagePathCheckTimer->start();
+  }
 }
 
 void ImageInsertDialog::handleImageDownloaded(const NetworkReply &p_data, const QString &p_url) {
   if (QUrl(p_url) != QUrl::fromUserInput(m_imagePathEdit->text())) {
+    return;
+  }
+  if (m_mindMapMode && p_data.m_error != QNetworkReply::NoError) {
+    setImage(QImage());
     return;
   }
   setSourceImageData(p_data.m_data);

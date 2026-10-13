@@ -1732,6 +1732,27 @@ target_include_directories(test_commentpanel PRIVATE
 add_qt_test(test_mindmapeditor
   SOURCES
     test_mindmapeditor.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/imageinsertdialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/linkinsertdialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/selectdialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/listwidget.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/styleditemdelegate.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/simplesegmenthighlighter.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/editors/linkinsertutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/htmlutils.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/mindmapeditor.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/mindmapviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
@@ -1745,6 +1766,8 @@ add_qt_test(test_mindmapeditor
     Qt6::Network
     Qt6::Svg
 )
+# Includes real modal acquisition, HTTP barriers and protected-note fixtures.
+set_tests_properties(test_mindmapeditor PROPERTIES TIMEOUT 180)
 target_include_directories(test_mindmapeditor PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )

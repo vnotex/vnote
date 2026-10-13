@@ -193,6 +193,27 @@ inline-edit commits and history availability. Invalid content gates native mutat
 a successful reload restores the buffer policy. Widget-hosted Settings and Dashboard
 retain their content-owned toolbars; locked-note placeholders have none.
 
+#### Mind-map resource insertion
+
+`MindMapEditor` uses m3's MIME hooks, not canvas event filters. A single source updates
+its captured selected/drop-hit node; a URL batch prepares complete child records and
+calls native `addNodes()` once. URL lists take precedence over clipboard thumbnails.
+`SelectDialog` owns quick choices; shared `ImageInsertDialog::setMindMapMode()` and
+`LinkInsertDialog::setUrlOnly()` own acquisition. Hyperlinks never rename a topic.
+
+Insertion captures buffer generation, operation serial, target ID and complete target
+record after accepting the initiating draft. Revalidate after modal UI and IO/hooks;
+selection changes never retarget an open operation. Locking, read-only, disabling,
+reload and buffer replacement reject the active dialog. Roll back only resources made
+by an uncommitted operation through its captured `Buffer2`; committed resources survive
+Undo/Redo. The controller validates passive images up to 32 MiB and owns acquisition,
+local asset/attachment preparation and encoded relative URLs. Protected display and
+link-opening restrictions remain independent from explicit user-authorized acquisition.
+
+Insert Link/Image toolbar actions use the adapter's `canInsert()` and
+`insertionAvailabilityChanged()`, not m3's cross-link `addLink` command. Keep these
+QActions in the toolbar so narrow-width overflow and theme refresh retain them.
+
 #### Whole-view fullscreen
 
 `ViewWindow2::setViewFullScreen(bool)` promotes the **existing ViewWindow** to

@@ -24,7 +24,12 @@ public:
 
   void setBuffer(const Buffer2 &p_buffer);
   void requestImage(const QString &p_url, quint64 p_requestId);
-  QString insertImage(const QString &p_filePath, QString *p_error);
+  QByteArray readImageData(const QString &p_source, QString *p_error);
+  QString insertImage(const QByteArray &p_data, const QString &p_title, bool p_base64,
+                      QString *p_createdAsset, QString *p_error);
+  QString insertAttachment(const QString &p_filePath, QString *p_createdAttachment,
+                           QString *p_error);
+  QString relativeLink(const QUrl &p_url) const;
   void requestOpenLink(const QString &p_url);
   void openConfirmedExternalLink(const QUrl &p_url);
 

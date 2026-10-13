@@ -41,11 +41,18 @@ public:
   QString getImagePath() const;
   void setImagePath(const QString &p_path);
 
+  // Changes whenever the path, pixels or source bytes are replaced, even by the same source.
+  quint64 getImageSourceRevision() const;
+
   ImageInsertDialog::Source getImageSource() const;
   void setImageSource(ImageInsertDialog::Source p_source);
 
   const QImage &getImage() const;
   void setImage(const QImage &p_image);
+
+  // Retains the original source bytes; mind-map/encrypted previews first validate passive data.
+  // The dialog owns its QByteArray value; callers may release their input after this call.
+  void setSourceImageData(const QByteArray &p_data);
 
   // Original source bytes, or the configured JPEG/PNG for a clipboard QImage saved as a file.
   // JPEG composites alpha onto white; PNG preserves it.
@@ -56,6 +63,14 @@ public:
   void setEncryptedNote(bool p_encrypted);
   void setInsertAsBase64(bool p_base64);
   bool insertAsBase64() const;
+
+  // Call before supplying a source. Mind map images have no alt text and always support size.
+  void setMindMapMode();
+
+signals:
+  // Synchronous mind-map-only acquisition. Capture getImageSourceRevision() and the URL,
+  // then recheck both and the host operation before replying with setSourceImageData().
+  void imageDataUrlRequested(const QString &p_url);
 
 protected:
   void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
@@ -74,10 +89,12 @@ private:
                const QString &p_imagePath);
 
   void setImageControlsVisible(bool p_visible);
-  void setSourceImageData(const QByteArray &p_data);
 
   bool m_browserEnabled = true;
   bool m_encryptedNote = false;
+  bool m_mindMapMode = false;
+
+  quint64 m_imageSourceRevision = 0;
 
   // ConfigMgr2 (owner-supplied) for the default image format and session media path.
   ConfigMgr2 *m_configMgr = nullptr;
@@ -89,6 +106,8 @@ private:
   QPushButton *m_browseBtn = nullptr;
 
   QLineEdit *m_imageTitleEdit = nullptr;
+
+  QLabel *m_imageAltLabel = nullptr;
 
   QLineEdit *m_imageAltEdit = nullptr;
 

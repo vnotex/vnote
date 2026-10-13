@@ -1,12 +1,19 @@
 #include "mindmapeditor.h"
 
+#include <QApplication>
+#include <QClipboard>
+#include <QDialog>
 #include <QDir>
-#include <QFileDialog>
-#include <QInputDialog>
+#include <QEvent>
+#include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMimeData>
+#include <QMimeDatabase>
 #include <QPointer>
+#include <QRegularExpression>
+#include <QScopeGuard>
 #include <QUrl>
 
 #include <stdexcept>
@@ -17,6 +24,13 @@
 #include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <gui/services/themeservice.h>
+#include <utils/fileutils2.h>
+#include <utils/htmlutils.h>
+#include <utils/pathutils.h>
+#include <widgets/dialogs/imageinsertdialog.h>
+#include <widgets/dialogs/linkinsertdialog.h>
+#include <widgets/dialogs/selectdialog.h>
 
 #include "../messageboxhelper.h"
 
@@ -152,6 +166,15 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
     connect(buffers->asQObject(), SIGNAL(protectedLockingChanged(bool)), this,
             SLOT(onProtectedLockingChanged(bool)));
   }
+  connect(this, &m3::qt::MindMapEditor::selectionChanged, this,
+          [this](const QString &, const QString &) { emit insertionAvailabilityChanged(); });
+  connect(this, &m3::qt::MindMapEditor::readOnlyChanged, this, [this](bool) {
+    const QPointer<MindMapEditor> guard(this);
+    invalidateInsertion();
+    if (guard) {
+      emit insertionAvailabilityChanged();
+    }
+  });
   setBuffer(p_buffer);
 }
 
@@ -215,6 +238,16 @@ void MindMapEditor::invalidateContent(const QString &p_error) {
 }
 
 void MindMapEditor::setBuffer(const Buffer2 &p_buffer) {
+  const QPointer<MindMapEditor> alive(this);
+  const auto notify = qScopeGuard([alive] {
+    if (alive) {
+      emit alive->insertionAvailabilityChanged();
+    }
+  });
+  invalidateInsertion();
+  if (!alive) {
+    return;
+  }
   const bool changedDocument =
       m_buffer.id() != p_buffer.id() || m_buffer.isEncrypted() != p_buffer.isEncrypted();
   const auto generation = ++m_generation;
@@ -256,6 +289,15 @@ bool MindMapEditor::loadContent(const QByteArray &p_content) {
     return false;
   }
   const QPointer<MindMapEditor> guard(this);
+  const auto notify = qScopeGuard([guard] {
+    if (guard) {
+      emit guard->insertionAvailabilityChanged();
+    }
+  });
+  invalidateInsertion();
+  if (!guard) {
+    return false;
+  }
   const auto generation = ++m_generation;
   m_loading = true;
   // Reloads invalidate outstanding host work even when the buffer/base did not change.
@@ -334,98 +376,591 @@ bool MindMapEditor::isModified() const { return m_modified; }
 void MindMapEditor::onProtectedLockingChanged(bool p_locking) {
   Q_UNUSED(p_locking);
   if (m_buffer.isEncrypted()) {
+    const QPointer<MindMapEditor> guard(this);
+    invalidateInsertion();
+    if (!guard) {
+      return;
+    }
     ++m_generation;
     // Cache refresh preserves drafts/history; ViewWindow2 owns locking's UI freeze and save.
     reloadImages();
+    if (guard) {
+      emit insertionAvailabilityChanged();
+    }
   }
 }
 
-QString MindMapEditor::resolveDroppedFileUrl(const QString &p_filePath) const {
-  if (!canEdit() || m_buffer.isEncrypted()) {
-    return QString();
+namespace {
+QUrl resourceUrl(const QString &p_text) {
+  if (p_text.isEmpty() || p_text.contains(QLatin1Char('\n')) ||
+      p_text.contains(QLatin1Char('\r'))) {
+    return {};
   }
-  const auto base = m_buffer.getResourceBasePath();
-  return base.isEmpty() ? QString() : QDir(base).relativeFilePath(p_filePath);
+  if (QFileInfo::exists(p_text)) {
+    return QUrl::fromLocalFile(QFileInfo(p_text).absoluteFilePath());
+  }
+  const QUrl url(p_text, QUrl::StrictMode);
+  if (url.isValid() &&
+      (url.scheme() == QStringLiteral("http") || url.scheme() == QStringLiteral("https") ||
+       p_text.startsWith(QStringLiteral("data:image/"), Qt::CaseInsensitive) ||
+       (url.isLocalFile() && QFileInfo::exists(url.toLocalFile())))) {
+    return url;
+  }
+  return {};
 }
 
-void MindMapEditor::onAddUrl(const QString &p_nodeId) {
-  if (!canEdit()) {
+bool imageSource(const QUrl &p_url) {
+  return p_url.toString().startsWith(QStringLiteral("data:image/"), Qt::CaseInsensitive) ||
+         PathUtils::isImageUrl(PathUtils::urlToPath(p_url));
+}
+
+QString existingLocalSource(const QUrl &p_url) {
+  return p_url.isLocalFile() && QFileInfo::exists(p_url.toLocalFile()) ? p_url.toLocalFile()
+                                                                       : QString();
+}
+
+QString sourceTopic(const QUrl &p_url) {
+  return p_url.isLocalFile() ? QFileInfo(p_url.toLocalFile()).fileName()
+                             : p_url.toString(QUrl::FullyEncoded);
+}
+} // namespace
+
+struct MindMapEditor::Insertion {
+  quint64 generation = 0;
+  quint64 serial = 0;
+  Buffer2 buffer;
+  QString target;
+  QByteArray record;
+  QStringList assets;
+  QStringList attachments;
+  bool committed = false;
+
+  ~Insertion() {
+    if (!committed) {
+      for (const auto &asset : assets) {
+        if (!buffer.deleteAsset(asset)) {
+          qWarning() << "Unable to clean up an uncommitted mind-map image asset";
+        }
+      }
+      for (const auto &attachment : attachments) {
+        if (!buffer.deleteAttachment(attachment)) {
+          qWarning() << "Unable to clean up an uncommitted mind-map attachment";
+        }
+      }
+    }
+  }
+};
+
+struct MindMapEditor::MimeSnapshot {
+  QList<QUrl> urls;
+  QImage pixels;
+  QString text;
+  QString htmlImage;
+};
+
+MindMapEditor::MimeSnapshot MindMapEditor::snapshotMimeData(const QMimeData *p_source) {
+  MimeSnapshot snapshot;
+  if (!p_source) {
+    return snapshot;
+  }
+  snapshot.urls = p_source->urls();
+  snapshot.text = p_source->text();
+  // URL lists take precedence over file-manager thumbnails and rich clipboard fragments.
+  if (!snapshot.urls.isEmpty()) {
+    return snapshot;
+  }
+  const auto html = p_source->html();
+  if (!html.isEmpty() && HtmlUtils::hasOnlyImgTag(html)) {
+    // image-parser-allow: clipboard HTML only, matching Markdown's acquisition policy.
+    const QRegularExpression expression(QStringLiteral("<img ([^>]*)src=\"([^\"]+)\"([^>]*)>"));
+    const auto match = expression.match(html);
+    if (match.hasMatch()) {
+      snapshot.htmlImage = match.captured(2);
+    }
+  }
+  if (p_source->hasImage()) {
+    snapshot.pixels = qvariant_cast<QImage>(p_source->imageData());
+  }
+  return snapshot;
+}
+
+bool MindMapEditor::canInsert() const { return canEdit() && selectedNodeIds().size() == 1; }
+
+bool MindMapEditor::canInsertFromMimeData(const QMimeData *p_source,
+                                          MimeInsertionSource p_origin) const {
+  Q_UNUSED(p_origin);
+  // Hover/action availability must not decode pixels, inspect files or acquire resources.
+  return canEdit() && p_source &&
+         (p_source->hasUrls() || p_source->hasImage() || p_source->hasHtml() ||
+          p_source->hasText());
+}
+
+void MindMapEditor::invalidateInsertion() {
+  ++m_insertionSerial;
+  const auto dialog = m_insertionDialog;
+  m_insertionDialog.clear();
+  if (dialog) {
+    dialog->reject();
+  }
+}
+
+void MindMapEditor::changeEvent(QEvent *p_event) {
+  const QPointer<MindMapEditor> guard(this);
+  m3::qt::MindMapEditor::changeEvent(p_event);
+  if (guard && p_event->type() == QEvent::EnabledChange) {
+    invalidateInsertion();
+    if (guard) {
+      emit insertionAvailabilityChanged();
+    }
+  }
+}
+
+std::unique_ptr<MindMapEditor::Insertion> MindMapEditor::beginInsertion(const QString &p_nodeId) {
+  if (!canEdit() || p_nodeId.isEmpty() || selectedNodeIds().size() > 1) {
+    return {};
+  }
+  const QPointer<MindMapEditor> guard(this);
+  const QString target(p_nodeId);
+  const auto generation = m_generation;
+  const auto selection = selectedNodeIds();
+  invalidateInsertion();
+  if (!guard || generation != m_generation || !canEdit()) {
+    return {};
+  }
+  const auto serial = m_insertionSerial;
+  // Drop deliberately commits here, not in the native default host's dispatch.
+  const bool accepted = commitActiveEdit();
+  if (!guard || !accepted || generation != m_generation || serial != m_insertionSerial ||
+      selection != selectedNodeIds() || !canEdit()) {
+    return {};
+  }
+  auto operation = std::make_unique<Insertion>();
+  operation->generation = generation;
+  operation->serial = serial;
+  operation->buffer = m_buffer;
+  operation->target = target;
+  operation->record = nodeJson(target);
+  if (!guard || !insertionCurrent(*operation)) {
+    return {};
+  }
+  return operation;
+}
+
+bool MindMapEditor::insertionCurrent(const Insertion &p_insertion) const {
+  return p_insertion.generation == m_generation && p_insertion.serial == m_insertionSerial &&
+         p_insertion.buffer.id() == m_buffer.id() && canEdit() && !m_buffer.getBuffer().isEmpty() &&
+         !p_insertion.record.isEmpty() && nodeJson(p_insertion.target) == p_insertion.record;
+}
+
+int MindMapEditor::execInsertionDialog(Insertion &p_insertion, QDialog *p_dialog) {
+  if (!insertionCurrent(p_insertion)) {
+    return QDialog::Rejected;
+  }
+  const QPointer<MindMapEditor> guard(this);
+  const QPointer<QDialog> dialog(p_dialog);
+  m_insertionDialog = dialog;
+  const auto result = dialog->exec();
+  if (!guard) {
+    return QDialog::Rejected;
+  }
+  if (m_insertionDialog == dialog) {
+    m_insertionDialog.clear();
+  }
+  return dialog && insertionCurrent(p_insertion) ? result : QDialog::Rejected;
+}
+
+bool MindMapEditor::prepareImage(Insertion &p_insertion, const QString &p_source,
+                                 const QImage &p_pixels, int p_storage, QJsonObject &p_record) {
+  const QPointer<MindMapEditor> guard(this);
+  QPointer<ImageInsertDialog> dialog(new ImageInsertDialog(tr("Insert Image"), QString(), QString(),
+                                                           QString(), m_services.get<ConfigMgr2>(),
+                                                           true, this));
+  const auto cleanup = qScopeGuard([dialog] { delete dialog.data(); });
+  dialog->setMindMapMode();
+  dialog->setEncryptedNote(p_insertion.buffer.isEncrypted());
+  if (p_storage >= 0) {
+    dialog->setInsertAsBase64(p_storage != 0);
+  }
+  connect(dialog, &ImageInsertDialog::imageDataUrlRequested, dialog,
+          [guard, dialog, &p_insertion](const QString &p_url) {
+            if (!guard || !dialog || !guard->insertionCurrent(p_insertion)) {
+              return;
+            }
+            const auto revision = dialog->getImageSourceRevision();
+            const QString source(p_url);
+            QString error;
+            auto data = guard->m_controller->readImageData(source, &error);
+            if (guard && dialog && guard->insertionCurrent(p_insertion) &&
+                revision == dialog->getImageSourceRevision() && dialog->getImagePath() == source) {
+              dialog->setSourceImageData(data);
+              if (!error.isEmpty()) {
+                emit guard->statusMessageRequested(error);
+              }
+            }
+            data.fill('\0');
+          });
+  // Track even pre-show acquisition: nested network events may lock or retarget the note.
+  m_insertionDialog = dialog;
+  if (!p_pixels.isNull()) {
+    dialog->setImage(p_pixels);
+    dialog->setImageSource(ImageInsertDialog::ImageData);
+  } else if (!p_source.isEmpty()) {
+    if (p_source.startsWith(QStringLiteral("data:image/"), Qt::CaseInsensitive)) {
+      QString error;
+      auto data = m_controller->readImageData(p_source, &error);
+      if (!guard || !dialog || !insertionCurrent(p_insertion)) {
+        data.fill('\0');
+        return false;
+      }
+      dialog->setSourceImageData(data);
+      data.fill('\0');
+      if (!error.isEmpty()) {
+        emit statusMessageRequested(error);
+        return false;
+      }
+    } else {
+      dialog->setImagePath(p_source);
+    }
+  }
+  if (!guard || !dialog || !insertionCurrent(p_insertion)) {
+    return false;
+  }
+  const auto result = execInsertionDialog(p_insertion, dialog);
+  if (!guard || !dialog || result != QDialog::Accepted || !insertionCurrent(p_insertion)) {
+    return false;
+  }
+  auto data = dialog->getImageData();
+  const auto title = dialog->getImageTitle();
+  const auto width = dialog->getImageWidth();
+  const auto height = dialog->getImageHeight();
+  const auto base64 = dialog->insertAsBase64();
+  QString created;
+  QString error;
+  const auto url = m_controller->insertImage(data, title, base64, &created, &error);
+  data.fill('\0');
+  if (!created.isEmpty()) {
+    p_insertion.assets.append(created);
+  }
+  if (!guard || !insertionCurrent(p_insertion)) {
+    return false;
+  }
+  if (url.isEmpty()) {
+    emit statusMessageRequested(error);
+    return false;
+  }
+  p_record.insert(QStringLiteral("image"), QJsonObject{{QStringLiteral("url"), url},
+                                                       {QStringLiteral("width"), width},
+                                                       {QStringLiteral("height"), height}});
+  return true;
+}
+
+bool MindMapEditor::prepareLink(Insertion &p_insertion, const QString &p_url, bool p_allowEmpty,
+                                QJsonObject &p_record) {
+  const QPointer<MindMapEditor> guard(this);
+  QPointer<LinkInsertDialog> dialog(
+      new LinkInsertDialog(tr("Insert Link"), QString(), p_url, true, this));
+  const auto cleanup = qScopeGuard([dialog] { delete dialog.data(); });
+  dialog->setUrlOnly(p_allowEmpty);
+  const auto result = execInsertionDialog(p_insertion, dialog);
+  if (!guard || !dialog || result != QDialog::Accepted || !insertionCurrent(p_insertion)) {
+    return false;
+  }
+  p_record.insert(QStringLiteral("hyperLink"), dialog->getLinkUrl());
+  return true;
+}
+
+void MindMapEditor::applyInsertion(Insertion &p_insertion, const QJsonArray &p_records) {
+  if (p_records.isEmpty() || !insertionCurrent(p_insertion)) {
     return;
   }
   const QPointer<MindMapEditor> guard(this);
-  const auto generation = m_generation;
-  const QString nodeId(p_nodeId);
-  const auto node = QJsonDocument::fromJson(nodeJson(nodeId));
-  if (!guard || generation != m_generation || !node.isObject() || !canEdit()) {
-    return;
+  if (p_records.size() == 1) {
+    p_insertion.committed =
+        updateNode(p_insertion.target,
+                   QJsonDocument(p_records.first().toObject()).toJson(QJsonDocument::Compact));
+  } else {
+    p_insertion.committed =
+        addNodes(p_insertion.target, QJsonDocument(p_records).toJson(QJsonDocument::Compact))
+            .size() == p_records.size();
+    if (guard && p_insertion.committed && p_insertion.generation == m_generation &&
+        p_insertion.serial == m_insertionSerial) {
+      setExpanded(p_insertion.target, true);
+    }
   }
-  QPointer<QInputDialog> dialog(new QInputDialog(this));
-  dialog->setWindowTitle(tr("Edit URL"));
-  dialog->setLabelText(tr("URL:"));
-  dialog->setInputMode(QInputDialog::TextInput);
-  dialog->setTextValue(node.object().value(QStringLiteral("hyperLink")).toString());
-  if (m_buffer.isEncrypted()) {
-    connect(m_services.get<BufferService>()->asQObject(), SIGNAL(protectedLockingChanged(bool)),
-            dialog.data(), SLOT(reject()));
+}
+
+void MindMapEditor::typeImage() {
+  if (canInsert()) {
+    onAddImage(selectedNodeId());
   }
-  const int result = dialog->exec();
-  const QString url = dialog ? dialog->textValue() : QString();
-  delete dialog.data();
-  if (!guard || generation != m_generation || result != QDialog::Accepted || !canEdit()) {
-    return;
+}
+
+void MindMapEditor::typeLink() {
+  if (canInsert()) {
+    onAddUrl(selectedNodeId());
   }
-  const auto currentNode = nodeJson(nodeId);
-  if (!guard || generation != m_generation || currentNode.isEmpty() || !canEdit()) {
-    return;
-  }
-  updateNode(nodeId, QJsonDocument(QJsonObject{{QStringLiteral("hyperLink"), url}})
-                         .toJson(QJsonDocument::Compact));
 }
 
 void MindMapEditor::onAddImage(const QString &p_nodeId) {
-  if (!canEdit()) {
-    return;
+  // Toolbar seeding prefers pixels even when the clipboard also has a URL list.
+  const auto *mime = QApplication::clipboard()->mimeData();
+  const QImage pixels =
+      mime && mime->hasImage() ? qvariant_cast<QImage>(mime->imageData()) : QImage();
+  QString source;
+  if (mime && pixels.isNull()) {
+    const auto urls = mime->urls();
+    if (urls.size() == 1) {
+      source = urls.first().toString(QUrl::FullyEncoded);
+    } else if (urls.isEmpty()) {
+      source = resourceUrl(mime->text()).toString(QUrl::FullyEncoded);
+    }
   }
   const QPointer<MindMapEditor> guard(this);
-  const auto generation = m_generation;
-  const QString nodeId(p_nodeId);
-  const auto node = nodeJson(nodeId);
-  if (!guard || generation != m_generation || node.isEmpty() || !canEdit()) {
+  auto operation = beginInsertion(p_nodeId);
+  if (!guard || !operation) {
     return;
   }
-  QPointer<QFileDialog> dialog(new QFileDialog(this, tr("Insert Image")));
-  dialog->setAcceptMode(QFileDialog::AcceptOpen);
-  dialog->setFileMode(QFileDialog::ExistingFile);
-  dialog->setNameFilter(tr("Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp *.svg);;All Files (*)"));
-  if (m_buffer.isEncrypted()) {
-    connect(m_services.get<BufferService>()->asQObject(), SIGNAL(protectedLockingChanged(bool)),
-            dialog.data(), SLOT(reject()));
+  QJsonObject record;
+  if (prepareImage(*operation, source, pixels, -1, record) && guard) {
+    applyInsertion(*operation, QJsonArray{record});
   }
-  const int result = dialog->exec();
-  const QStringList files = dialog ? dialog->selectedFiles() : QStringList();
-  delete dialog.data();
-  if (!guard || generation != m_generation || result != QDialog::Accepted || files.size() != 1 ||
-      !canEdit()) {
+}
+
+void MindMapEditor::onAddUrl(const QString &p_nodeId) {
+  const auto snapshot = snapshotMimeData(QApplication::clipboard()->mimeData());
+  const QPointer<MindMapEditor> guard(this);
+  auto operation = beginInsertion(p_nodeId);
+  if (!guard || !operation) {
     return;
   }
-  const auto currentNode = nodeJson(nodeId);
-  if (!guard || generation != m_generation || currentNode.isEmpty() || !canEdit()) {
-    return;
-  }
-  QString error;
-  const QString url = m_controller->insertImage(files.constFirst(), &error);
-  if (!guard || generation != m_generation || !canEdit()) {
-    return;
-  }
+  auto url = QJsonDocument::fromJson(operation->record)
+                 .object()
+                 .value(QStringLiteral("hyperLink"))
+                 .toString();
+  const bool allowEmpty = !url.isEmpty();
   if (url.isEmpty()) {
-    if (!error.isEmpty()) {
-      emit statusMessageRequested(error);
-    }
+    url = snapshot.urls.size() == 1 ? snapshot.urls.first().toString(QUrl::FullyEncoded)
+                                    : resourceUrl(snapshot.text).toString(QUrl::FullyEncoded);
+  }
+  QJsonObject record;
+  if (prepareLink(*operation, url, allowEmpty, record) && guard) {
+    applyInsertion(*operation, QJsonArray{record});
+  }
+}
+
+void MindMapEditor::insertFromMimeData(const QString &p_nodeId, const QMimeData *p_source,
+                                       MimeInsertionSource p_origin) {
+  if (!canInsertFromMimeData(p_source, p_origin)) {
     return;
   }
-  const QJsonObject image{
-      {QStringLiteral("url"), url}, {QStringLiteral("width"), 0}, {QStringLiteral("height"), 0}};
-  updateNode(
-      nodeId,
-      QJsonDocument(QJsonObject{{QStringLiteral("image"), image}}).toJson(QJsonDocument::Compact));
+  const auto snapshot = snapshotMimeData(p_source);
+  const QPointer<MindMapEditor> guard(this);
+  auto operation = beginInsertion(p_nodeId);
+  if (!guard || !operation) {
+    return;
+  }
+  QList<QUrl> urls = snapshot.urls;
+  const bool htmlImage = urls.isEmpty() && !snapshot.htmlImage.isEmpty();
+  const bool pixels = urls.isEmpty() && !snapshot.pixels.isNull();
+  if (htmlImage) {
+    urls.append(QUrl::fromUserInput(snapshot.htmlImage));
+  } else if (!pixels && urls.isEmpty()) {
+    const auto url = resourceUrl(snapshot.text);
+    if (url.isEmpty()) {
+      return;
+    }
+    urls.append(url);
+  }
+  if (urls.isEmpty() && !pixels) {
+    return;
+  }
+  const bool batch = urls.size() > 1;
+  InsertionKind kind = InsertionKind::Image;
+  const bool directImage =
+      (pixels && !htmlImage && snapshot.text.isEmpty()) || (htmlImage && !pixels);
+  if (!directImage) {
+    QString foreground = palette().color(QPalette::Text).name();
+    QString border = palette().color(QPalette::Mid).name();
+    if (auto *theme = m_services.get<ThemeService>()) {
+      foreground = theme->paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg"));
+      border = theme->paletteColor(QStringLiteral("widgets#quickselector#item_icon#border"));
+    }
+    QPointer<SelectDialog> dialog(new SelectDialog(p_origin == MimeInsertionSource::Drop
+                                                       ? tr("Insert From Drop")
+                                                       : tr("Insert From Clipboard"),
+                                                   foreground, border, this));
+    const auto cleanup = qScopeGuard([dialog] { delete dialog.data(); });
+    const auto add = [dialog](const QString &p_label, InsertionKind p_kind) {
+      dialog->addSelection(p_label, static_cast<int>(p_kind));
+    };
+    bool allImages = !urls.isEmpty();
+    bool allLocal = !urls.isEmpty();
+    bool allAttachments = !urls.isEmpty() && operation->buffer.isAttachmentSupported();
+    const auto attachmentFolder = operation->buffer.getAttachmentsFolder();
+    for (const auto &url : urls) {
+      const auto local = existingLocalSource(url);
+      allImages = allImages && imageSource(url);
+      allLocal = allLocal && !local.isEmpty();
+      allAttachments = allAttachments && !local.isEmpty() && QFileInfo(local).isFile() &&
+                       !attachmentFolder.isEmpty() &&
+                       !PathUtils::pathContains(attachmentFolder, local);
+    }
+    const bool base64 = pixels || allImages;
+    if (base64 && operation->buffer.isEncrypted()) {
+      add(tr("Insert as Base64"), InsertionKind::Base64);
+    }
+    if (htmlImage && pixels) {
+      add(tr("Insert From URL"), InsertionKind::ImageFromUrl);
+      add(tr("Insert From Image Data"), InsertionKind::ImageFromData);
+      add(tr("Insert As Image Link"), InsertionKind::ImageLink);
+    } else if (pixels) {
+      add(tr("Insert As Image"), InsertionKind::Image);
+      add(tr("Insert As Text"), InsertionKind::Text);
+      const auto textUrl = resourceUrl(snapshot.text);
+      if (!textUrl.isEmpty() && imageSource(textUrl)) {
+        add(tr("Insert As Image Link"), InsertionKind::ImageLink);
+      }
+    } else if (allImages) {
+      add(tr("Insert As Image"), InsertionKind::Image);
+      if (!batch) {
+        add(tr("Insert As Image Link"), InsertionKind::ImageLink);
+        if (allLocal) {
+          add(tr("Insert As Relative Image Link"), InsertionKind::RelativeImageLink);
+        }
+      }
+    }
+    if (base64 && !operation->buffer.isEncrypted()) {
+      add(tr("Insert as Base64"), InsertionKind::Base64);
+    }
+    if (!pixels && !htmlImage) {
+      add(tr("Insert As Link"), InsertionKind::Link);
+      if (allLocal) {
+        add(tr("Insert As Relative Link"), InsertionKind::RelativeLink);
+      }
+      if (allAttachments) {
+        add(tr("Attach And Insert Link"), InsertionKind::Attachment);
+      }
+      add(tr("Insert As Text"), InsertionKind::Text);
+      if (!batch && allLocal && QFileInfo(urls.first().toLocalFile()).isFile() &&
+          QMimeDatabase()
+              .mimeTypeForFile(urls.first().toLocalFile())
+              .inherits(QStringLiteral("text/plain"))) {
+        add(tr("Insert File Content"), InsertionKind::FileContent);
+      }
+    }
+    const auto result = execInsertionDialog(*operation, dialog);
+    if (!guard || !dialog || result != QDialog::Accepted || !insertionCurrent(*operation)) {
+      return;
+    }
+    kind = static_cast<InsertionKind>(dialog->getSelection());
+  }
+
+  QJsonArray records;
+  const int count = batch ? urls.size() : 1;
+  for (int index = 0; index < count; ++index) {
+    if (!guard || !insertionCurrent(*operation)) {
+      return;
+    }
+    const auto url = urls.isEmpty() ? resourceUrl(snapshot.text) : urls.at(index);
+    QJsonObject record;
+    if (batch) {
+      record.insert(QStringLiteral("topic"), sourceTopic(url));
+    }
+    QString error;
+    if (kind == InsertionKind::Image || kind == InsertionKind::Base64 ||
+        kind == InsertionKind::ImageFromUrl || kind == InsertionKind::ImageFromData) {
+      const bool asBase64 =
+          kind == InsertionKind::Base64 || (directImage && operation->buffer.isEncrypted());
+      if (batch) {
+        auto data = m_controller->readImageData(url.toString(QUrl::FullyEncoded), &error);
+        if (!guard || !insertionCurrent(*operation)) {
+          data.fill('\0');
+          return;
+        }
+        QString created;
+        QString prepared;
+        if (!data.isEmpty()) {
+          prepared = m_controller->insertImage(data, sourceTopic(url), asBase64, &created, &error);
+        }
+        data.fill('\0');
+        if (!created.isEmpty()) {
+          operation->assets.append(created);
+        }
+        if (!guard || !insertionCurrent(*operation)) {
+          return;
+        }
+        if (prepared.isEmpty()) {
+          emit statusMessageRequested(error);
+          return;
+        }
+        record.insert(QStringLiteral("image"), QJsonObject{{QStringLiteral("url"), prepared},
+                                                           {QStringLiteral("width"), 0},
+                                                           {QStringLiteral("height"), 0}});
+      } else {
+        const auto image =
+            pixels && kind != InsertionKind::ImageFromUrl ? snapshot.pixels : QImage();
+        if (!prepareImage(*operation, url.toString(QUrl::FullyEncoded), image,
+                          directImage ? -1 : int(asBase64), record)) {
+          return;
+        }
+      }
+    } else if (kind == InsertionKind::ImageLink || kind == InsertionKind::RelativeImageLink) {
+      const auto prepared = kind == InsertionKind::RelativeImageLink
+                                ? m_controller->relativeLink(url)
+                                : url.toString(QUrl::FullyEncoded);
+      if (prepared.isEmpty()) {
+        emit statusMessageRequested(tr("Unable to resolve the image link"));
+        return;
+      }
+      record.insert(QStringLiteral("image"), QJsonObject{{QStringLiteral("url"), prepared},
+                                                         {QStringLiteral("width"), 0},
+                                                         {QStringLiteral("height"), 0}});
+    } else if (kind == InsertionKind::Link || kind == InsertionKind::RelativeLink) {
+      const auto prepared = kind == InsertionKind::RelativeLink ? m_controller->relativeLink(url)
+                                                                : url.toString(QUrl::FullyEncoded);
+      if (prepared.isEmpty()) {
+        emit statusMessageRequested(tr("Unable to resolve the link"));
+        return;
+      }
+      if (batch) {
+        record.insert(QStringLiteral("hyperLink"), prepared);
+      } else if (!prepareLink(*operation, prepared, false, record)) {
+        return;
+      }
+    } else if (kind == InsertionKind::Attachment) {
+      QString created;
+      const auto prepared = m_controller->insertAttachment(url.toLocalFile(), &created, &error);
+      if (!created.isEmpty()) {
+        operation->attachments.append(created);
+      }
+      if (!guard || !insertionCurrent(*operation)) {
+        return;
+      }
+      if (prepared.isEmpty()) {
+        emit statusMessageRequested(error);
+        return;
+      }
+      record.insert(QStringLiteral("hyperLink"), prepared);
+    } else if (kind == InsertionKind::Text) {
+      record.insert(QStringLiteral("topic"), !batch && !snapshot.text.isEmpty()
+                                                 ? snapshot.text
+                                                 : url.toString(QUrl::FullyEncoded));
+    } else if (kind == InsertionKind::FileContent) {
+      QString text;
+      const auto readError = FileUtils2::readTextFile(url.toLocalFile(), &text);
+      if (!guard || !insertionCurrent(*operation)) {
+        return;
+      }
+      if (readError) {
+        emit statusMessageRequested(tr("Unable to read the selected file"));
+        return;
+      }
+      record.insert(QStringLiteral("topic"), text);
+    }
+    if (!guard || !insertionCurrent(*operation)) {
+      return;
+    }
+    records.append(record);
+  }
+  applyInsertion(*operation, records);
 }

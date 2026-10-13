@@ -10,13 +10,19 @@
 #include <QPointer>
 #include <QTimer>
 
+#include <core/configmgr2.h>
+#include <core/editorconfig.h>
 #include <core/fileopensettings.h>
+#include <core/markdowneditorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <gui/utils/imageutils.h>
 #include <net/networkutils.h>
+#include <utils/fileutils2.h>
+#include <utils/pathutils.h>
 #include <vxcore/notebook_json_keys.h>
+#include <widgets/editors/linkinsertutils.h>
 
 using namespace vnotex;
 
@@ -254,7 +260,61 @@ void MindMapViewWindowController::requestNetworkImage(const QUrl &p_source, cons
   });
 }
 
-QString MindMapViewWindowController::insertImage(const QString &p_filePath, QString *p_error) {
+QByteArray MindMapViewWindowController::readImageData(const QString &p_source, QString *p_error) {
+  if (p_error) {
+    p_error->clear();
+  }
+  const auto fail = [p_error](const QString &p_message) {
+    if (p_error) {
+      *p_error = p_message;
+    }
+    return QByteArray();
+  };
+  const QPointer<MindMapViewWindowController> guard(this);
+  const auto generation = m_generation;
+  const auto lease = m_buffer.isEncrypted() ? m_buffer.acquireProtectedLease() : nullptr;
+  if (!isCurrent(generation, lease) || m_buffer.isReadOnly()) {
+    return fail(tr("The note is not available for image insertion"));
+  }
+
+  QByteArray bytes;
+  bool loaded = false;
+  if (p_source.startsWith(QStringLiteral("data:image/"), Qt::CaseInsensitive)) {
+    loaded = decodeImageUrl(p_source, bytes);
+  } else {
+    const auto source = QFileInfo(p_source).isAbsolute() ? QUrl::fromLocalFile(p_source)
+                                                         : QUrl(p_source, QUrl::StrictMode);
+    if (source.isValid() && source.isLocalFile()) {
+      loaded = readImageFile(source.toLocalFile(), bytes);
+    } else if (source.isValid() && (source.scheme() == QStringLiteral("http") ||
+                                    source.scheme() == QStringLiteral("https"))) {
+      auto reply = NetworkAccess::request(source);
+      loaded = reply.m_error == QNetworkReply::NoError;
+      bytes = std::move(reply.m_data);
+    }
+  }
+  if (!guard || !isCurrent(generation, lease) || m_buffer.isReadOnly()) {
+    bytes.fill('\0');
+    return fail(tr("The note changed during image acquisition"));
+  }
+  QByteArray sanitized;
+  QByteArray mime;
+  const bool valid = loaded && !bytes.isEmpty() && bytes.size() <= c_imageByteLimit &&
+                     ImageUtils::protectedImageData(bytes, sanitized, mime);
+  bytes.fill('\0');
+  if (!valid) {
+    sanitized.fill('\0');
+    return fail(tr("Unable to read image: unsupported, invalid or larger than 32 MiB"));
+  }
+  return sanitized;
+}
+
+QString MindMapViewWindowController::insertImage(const QByteArray &p_data, const QString &p_title,
+                                                 bool p_base64, QString *p_createdAsset,
+                                                 QString *p_error) {
+  if (p_createdAsset) {
+    p_createdAsset->clear();
+  }
   if (p_error) {
     p_error->clear();
   }
@@ -264,35 +324,134 @@ QString MindMapViewWindowController::insertImage(const QString &p_filePath, QStr
     }
     return QString();
   };
+  const QPointer<MindMapViewWindowController> guard(this);
   const auto generation = m_generation;
   const auto lease = m_buffer.isEncrypted() ? m_buffer.acquireProtectedLease() : nullptr;
   if (!isCurrent(generation, lease) || m_buffer.isReadOnly()) {
     return fail(tr("The note is not available for image insertion"));
   }
-
-  QByteArray bytes;
-  if (!readImageFile(p_filePath, bytes)) {
-    bytes.fill('\0');
-    return fail(tr("Unable to read image (maximum size is 32 MiB)"));
-  }
   QByteArray sanitized;
   QByteArray mime;
-  const bool valid = ImageUtils::protectedImageData(bytes, sanitized, mime);
-  bytes.fill('\0');
-  if (!valid) {
+  if (p_data.isEmpty() || p_data.size() > c_imageByteLimit ||
+      !ImageUtils::protectedImageData(p_data, sanitized, mime)) {
     sanitized.fill('\0');
-    return fail(tr("Unable to embed image: unsupported or invalid image data"));
+    return fail(tr("Unable to insert image: unsupported, invalid or larger than 32 MiB"));
   }
-  if (!isCurrent(generation, lease) || m_buffer.isReadOnly()) {
+  if (p_base64) {
+    auto encoded = sanitized.toBase64();
     sanitized.fill('\0');
-    return fail(tr("The note is not available for image insertion"));
+    const auto result = QStringLiteral("data:%1;base64,%2")
+                            .arg(QString::fromLatin1(mime), QString::fromLatin1(encoded));
+    encoded.fill('\0');
+    return result;
   }
-  auto encoded = sanitized.toBase64();
+
+  auto buffer = m_buffer;
+  const auto base = buffer.getResourceBasePath();
+  const auto folder = buffer.getAssetsFolder();
+  if (base.isEmpty() || folder.isEmpty()) {
+    sanitized.fill('\0');
+    return fail(tr("Unable to resolve the note's image folder"));
+  }
+  const auto name =
+      FileUtils2::generateRandomFileName(p_title, ImageUtils::guessImageSuffix(sanitized));
+  const auto asset = buffer.insertAssetRaw(name, sanitized);
   sanitized.fill('\0');
-  const auto result = QStringLiteral("data:%1;base64,%2")
-                          .arg(QString::fromLatin1(mime), QString::fromLatin1(encoded));
-  encoded.fill('\0');
-  return result;
+  if (!guard || !isCurrent(generation, lease) || m_buffer.isReadOnly()) {
+    if (!asset.isEmpty()) {
+      buffer.deleteAsset(asset);
+    }
+    return fail(tr("The note changed during image insertion"));
+  }
+  if (asset.isEmpty()) {
+    return fail(tr("Unable to create the image asset"));
+  }
+  const auto path =
+      QDir::isAbsolutePath(asset) ? asset : QDir(folder).filePath(QFileInfo(asset).fileName());
+  const auto url = relativeLink(QUrl::fromLocalFile(path));
+  if (url.isEmpty()) {
+    buffer.deleteAsset(asset);
+    return fail(tr("Unable to resolve the image asset link"));
+  }
+  if (p_createdAsset) {
+    *p_createdAsset = asset;
+  }
+  return url;
+}
+
+QString MindMapViewWindowController::insertAttachment(const QString &p_filePath,
+                                                      QString *p_createdAttachment,
+                                                      QString *p_error) {
+  if (p_createdAttachment) {
+    p_createdAttachment->clear();
+  }
+  if (p_error) {
+    p_error->clear();
+  }
+  const auto fail = [p_error](const QString &p_message) {
+    if (p_error) {
+      *p_error = p_message;
+    }
+    return QString();
+  };
+  const QPointer<MindMapViewWindowController> guard(this);
+  const auto generation = m_generation;
+  const auto lease = m_buffer.isEncrypted() ? m_buffer.acquireProtectedLease() : nullptr;
+  if (!isCurrent(generation, lease) || m_buffer.isReadOnly() || !m_buffer.isAttachmentSupported()) {
+    return fail(tr("The note is not available for attachment insertion"));
+  }
+  auto buffer = m_buffer;
+  const auto folder = buffer.getAttachmentsFolder();
+  const QFileInfo source(p_filePath);
+  if (folder.isEmpty() || buffer.getResourceBasePath().isEmpty() || !source.isAbsolute() ||
+      !source.isFile() || PathUtils::pathContains(folder, p_filePath)) {
+    return fail(tr("The selected file cannot be attached to this note"));
+  }
+  const auto attachment = buffer.insertAttachment(p_filePath);
+  if (!guard || !isCurrent(generation, lease) || m_buffer.isReadOnly()) {
+    if (!attachment.isEmpty()) {
+      buffer.deleteAttachment(attachment);
+    }
+    return fail(tr("The note changed during attachment insertion"));
+  }
+  if (attachment.isEmpty()) {
+    return fail(tr("Unable to copy the attachment"));
+  }
+  const auto url = relativeLink(QUrl::fromLocalFile(QDir(folder).filePath(attachment)));
+  if (url.isEmpty()) {
+    buffer.deleteAttachment(attachment);
+    return fail(tr("Unable to resolve the attachment link"));
+  }
+  if (p_createdAttachment) {
+    *p_createdAttachment = attachment;
+  }
+  return url;
+}
+
+QString MindMapViewWindowController::relativeLink(const QUrl &p_url) const {
+  const auto base = m_buffer.getResourceBasePath();
+  if (!bufferAvailable() || base.isEmpty() || !p_url.isValid() || !p_url.isLocalFile()) {
+    return QString();
+  }
+  const auto path = p_url.toLocalFile();
+  if (!QDir::isAbsolutePath(path)) {
+    return QString();
+  }
+  auto relative = QDir::fromNativeSeparators(PathUtils::relativePath(base, path));
+  QUrl link;
+  if (QDir::isAbsolutePath(relative)) {
+    link = QUrl::fromLocalFile(path);
+  } else {
+    auto *config = m_services.get<ConfigMgr2>();
+    if (config &&
+        config->getEditorConfig().getMarkdownEditorConfig().getPrependDotInRelativeLink() &&
+        !relative.startsWith(QLatin1Char('.'))) {
+      relative.prepend(QStringLiteral("./"));
+    }
+    link.setPath(relative, QUrl::DecodedMode);
+  }
+  return LinkInsertUtils::appendFragmentToLink(link.toString(QUrl::FullyEncoded),
+                                               p_url.fragment(QUrl::FullyEncoded));
 }
 
 void MindMapViewWindowController::requestOpenLink(const QString &p_url) {

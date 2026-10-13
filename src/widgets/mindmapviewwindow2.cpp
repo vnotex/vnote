@@ -18,6 +18,8 @@
 
 #include <vxcore/vxcore.h>
 
+#include <QShortcut>
+
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
@@ -125,6 +127,8 @@ void MindMapViewWindow2::connectEditorSignals() {
   });
   connect(m_editor, &m3::qt::MindMapEditor::selectionChanged, this,
           [this](const QString &, const QString &) { updateCurrentHeading(); });
+  connect(m_editor, &MindMapEditor::insertionAvailabilityChanged, this,
+          &MindMapViewWindow2::syncInsertionActions);
 }
 
 void MindMapViewWindow2::setupToolBar() {
@@ -163,7 +167,55 @@ void MindMapViewWindow2::setupToolBar() {
       }
     }
   }
+  toolBar->addSeparator();
+  const auto insertionAction = [this, toolBar](const QString &p_label, const QString &p_icon) {
+    auto *action =
+        new QAction(ViewWindowToolBarHelper2::generateIcon(getServices(), p_icon), p_label, this);
+    action->setToolTip(p_label);
+    action->setProperty("iconName", p_icon);
+    toolBar->addAction(action);
+    return action;
+  };
+  m_insertLinkAction = insertionAction(tr("Insert Link"), QStringLiteral("type_link_editor.svg"));
+  m_insertImageAction =
+      insertionAction(tr("Insert Image"), QStringLiteral("type_image_editor.svg"));
+  connect(m_insertLinkAction, &QAction::triggered, m_editor, &MindMapEditor::typeLink);
+  connect(m_insertImageAction, &QAction::triggered, m_editor, &MindMapEditor::typeImage);
+  refreshInsertionShortcuts();
+  syncInsertionActions();
   addRightCommonToolBarActions(toolBar);
+}
+
+void MindMapViewWindow2::syncInsertionActions() {
+  const bool available = m_contentLoaded && m_editor->canInsert();
+  if (m_insertLinkAction) {
+    m_insertLinkAction->setEnabled(available);
+    m_insertImageAction->setEnabled(available);
+  }
+}
+
+void MindMapViewWindow2::refreshInsertionShortcuts() {
+  qDeleteAll(m_insertionShortcuts);
+  m_insertionShortcuts.clear();
+  if (!m_insertLinkAction) {
+    return;
+  }
+  m_insertLinkAction->setText(tr("Insert Link"));
+  m_insertImageAction->setText(tr("Insert Image"));
+  const auto &config = getServices().get<ConfigMgr2>()->getEditorConfig();
+  const auto bind = [this, &config](QAction *p_action, EditorConfig::Shortcut p_shortcut) {
+    // The shared helper parents its optional QShortcut to the shortcut widget.
+    // Retain only the children it creates so a live config refresh cannot duplicate bindings.
+    const int previousChildren = children().size();
+    ViewWindowToolBarHelper2::addActionShortcut(p_action, config.getShortcut(p_shortcut), this);
+    for (int index = previousChildren; index < children().size(); ++index) {
+      if (auto *shortcut = qobject_cast<QShortcut *>(children().at(index))) {
+        m_insertionShortcuts.append(shortcut);
+      }
+    }
+  };
+  bind(m_insertLinkAction, EditorConfig::Shortcut::TypeLink);
+  bind(m_insertImageAction, EditorConfig::Shortcut::TypeImage);
 }
 
 void MindMapViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
@@ -308,6 +360,7 @@ void MindMapViewWindow2::syncEditorFromBuffer() {
   });
   m_contentLoaded = false;
   syncZoomControls();
+  syncInsertionActions();
   m_lastEditorError.clear();
   clearOutline();
   if (!guard || generation != m_generation) {
@@ -344,6 +397,7 @@ void MindMapViewWindow2::syncEditorFromBuffer() {
   m_lastKnownRevision = buffer.isValid() ? buffer.getRevision() : 0;
   m_propagateEditorToBuffer = propagate;
   syncZoomControls();
+  syncInsertionActions();
   if (m_contentLoaded) {
     m_loadErrorBanner->hide();
     refreshOutline();
@@ -383,6 +437,8 @@ void MindMapViewWindow2::handleEditorConfigChange() {
     m_editor->applyConfig();
   }
   if (guard) {
+    refreshInsertionShortcuts();
+    syncInsertionActions();
     applyEditorPalette();
   }
 }

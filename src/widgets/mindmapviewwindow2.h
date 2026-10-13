@@ -7,6 +7,7 @@
 #include "viewwindow2.h"
 
 class QComboBox;
+class QShortcut;
 
 namespace vnotex {
 
@@ -63,6 +64,8 @@ private:
   void setupToolBar();
   void connectEditorSignals();
   void syncZoomControls();
+  void syncInsertionActions();
+  void refreshInsertionShortcuts();
   void setupOutlineProvider();
   void refreshOutline();
   void clearOutline();
@@ -76,6 +79,9 @@ private:
   QAction *m_presentationAction = nullptr;
   PresentationToolBarEffect *m_presentationEffect = nullptr;
   QColor m_presentationBackground;
+  QAction *m_insertLinkAction = nullptr;
+  QAction *m_insertImageAction = nullptr;
+  QList<QShortcut *> m_insertionShortcuts;
   QAction *m_zoomOutAction = nullptr;
   QAction *m_zoomInAction = nullptr;
   QAction *m_zoomComboAction = nullptr;
