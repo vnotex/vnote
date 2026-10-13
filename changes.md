@@ -1,5 +1,7 @@
 # Changes
 ## Unreleased
+* Honor rapid repeated clicks on mind-map expand/collapse buttons, including in read-only maps, without starting inline editing
+* Keep mind-map expand/collapse buttons highlighted under a stationary pointer after folding or expanding
 * Start mind-map inline editing by double-clicking the topic label or blank space inside a node, including empty topics; exclude images and the expand/collapse button
 * Hide the Title row in mind-map image insertion dialogs while retaining it for Markdown
 * Insert mind-map images and hyperlinks from clipboard, drag-and-drop, toolbar and context menu using shared acquisition dialogs; preserve existing topics for links and insert multi-item batches as one undoable child command
