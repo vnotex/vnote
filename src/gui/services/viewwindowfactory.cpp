@@ -3,6 +3,7 @@
 #include <QDebug>
 #include <QtGlobal>
 
+#include <widgets/imageviewwindow.h>
 #include <widgets/markdownviewwindow2.h>
 #include <widgets/mindmapviewwindow2.h>
 #include <widgets/textviewwindow2.h>
@@ -27,6 +28,11 @@ void ViewWindowFactory::registerBuiltInCreators() {
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,
                      ViewWindowMode) -> ViewWindow2 * {
                     return new TextViewWindow2(p_services, p_buffer, p_parent);
+                  });
+  registerCreator("Image",
+                  [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,
+                     ViewWindowMode) -> ViewWindow2 * {
+                    return new ImageViewWindow(p_services, p_buffer, p_parent);
                   });
   registerCreator("Others",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,

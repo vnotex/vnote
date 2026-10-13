@@ -1,3 +1,4 @@
+#include <QScopeGuard>
 #include <QtTest>
 
 #include <core/services/filetypecoreservice.h>
@@ -25,6 +26,7 @@ private slots:
   void testGetFileTypeByNameUnknown();
   void testGetFileTypeByPath();
   void testFileTypeFields();
+  void testImageFallbackPrecedence();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -141,6 +143,46 @@ void TestFileTypeService::testFileTypeFields() {
   QVERIFY(!m_service->getFileTypeByName(QStringLiteral("PDF")).m_isSearchable);
   QVERIFY(m_service->getFileTypeByName(QStringLiteral("MindMap")).m_isSearchable);
   QVERIFY(!m_service->getFileTypeByName(QStringLiteral("Others")).m_isSearchable);
+}
+
+void TestFileTypeService::testImageFallbackPrecedence() {
+  QTemporaryDir dir;
+  QVERIFY(dir.isValid());
+  const auto png = QByteArray::fromBase64(
+      "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADElEQVR4nGP4z8AAAAMBAQDJ"
+      "/pLvAAAAAElFTkSuQmCC");
+  const auto path = dir.filePath(QStringLiteral("image.png"));
+  QFile file(path);
+  QVERIFY(file.open(QIODevice::WriteOnly));
+  QCOMPARE(file.write(png), qint64(png.size()));
+  file.close();
+  const auto upperPath = dir.filePath(QStringLiteral("uppercase.PNG"));
+  QVERIFY(QFile::copy(path, upperPath));
+
+  for (const auto &candidate : {path, upperPath, QStringLiteral("notes/assets/image.png")}) {
+    const auto type = m_service->getFileType(candidate);
+    QCOMPARE(type.m_typeName, QStringLiteral("Image"));
+    QVERIFY(!type.m_isNewable);
+    QVERIFY(!type.m_isSearchable);
+  }
+  QCOMPARE(m_service->getFileType(QStringLiteral("diagram.svg")).m_typeName,
+           QStringLiteral("Text"));
+  QCOMPARE(m_service->getFileType(QStringLiteral("note.md")).m_typeName,
+           QStringLiteral("Markdown"));
+  QCOMPARE(m_service->getFileType(QStringLiteral("unknown.xyz123")).m_typeName,
+           m_service->getFileTypeBySuffix(QStringLiteral("xyz123")).m_typeName);
+
+  const auto original = m_service->getAllFileTypes();
+  const auto restore = qScopeGuard([&]() { m_service->setAllFileTypes(original); });
+  auto overridden = original;
+  for (auto &type : overridden) {
+    type.m_suffixes.removeAll(QStringLiteral("png"));
+    if (type.m_typeName == QStringLiteral("Text")) {
+      type.m_suffixes.append(QStringLiteral("png"));
+    }
+  }
+  QVERIFY(m_service->setAllFileTypes(overridden));
+  QCOMPARE(m_service->getFileType(path).m_typeName, QStringLiteral("Text"));
 }
 
 } // namespace tests

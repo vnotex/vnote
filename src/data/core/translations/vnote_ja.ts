@@ -1001,6 +1001,57 @@
         <source>This link points to a Markdown file. Open the corresponding HTML file instead?</source>
         <translation>このリンクは Markdown ファイルを指しています。代わりに対応する HTML ファイルを開きますか？</translation>
     </message>
+    <message>
+        <location line="+3"/>
+        <source>Zoom In</source>
+        <translation>拡大</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Zoom Out</source>
+        <translation>縮小</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Reset (fit and center)</source>
+        <translation>リセット（全体表示して中央配置）</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Unable to display image</source>
+        <translation>画像を表示できません</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::ImageViewWindow</name>
+    <message>
+        <location filename="../../../widgets/imageviewwindow.cpp" line="+99"/>
+        <source>Zoom In</source>
+        <translation>拡大</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Zoom Out</source>
+        <translation>縮小</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Reset (fit and center)</source>
+        <translation>リセット（全体表示して中央配置）</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <source>Unable to display image</source>
+        <translation>画像を表示できません</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::FileTypeCoreService</name>
+    <message>
+        <location filename="../../../core/services/filetypecoreservice.cpp" line="+110"/>
+        <source>Image</source>
+        <translation>画像</translation>
+    </message>
 </context>
 <context>
     <name>m3::qt::NodePropertiesPanel</name>

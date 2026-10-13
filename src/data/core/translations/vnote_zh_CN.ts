@@ -1001,6 +1001,57 @@
         <source>This link points to a Markdown file. Open the corresponding HTML file instead?</source>
         <translation>此链接指向 Markdown 文件。是否改为打开对应的 HTML 文件？</translation>
     </message>
+    <message>
+        <location line="+3"/>
+        <source>Zoom In</source>
+        <translation>放大</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Zoom Out</source>
+        <translation>缩小</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Reset (fit and center)</source>
+        <translation>重置（适应并居中）</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Unable to display image</source>
+        <translation>无法显示图片</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::ImageViewWindow</name>
+    <message>
+        <location filename="../../../widgets/imageviewwindow.cpp" line="+99"/>
+        <source>Zoom In</source>
+        <translation>放大</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Zoom Out</source>
+        <translation>缩小</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Reset (fit and center)</source>
+        <translation>重置（适应并居中）</translation>
+    </message>
+    <message>
+        <location line="-32"/>
+        <source>Unable to display image</source>
+        <translation>无法显示图片</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::FileTypeCoreService</name>
+    <message>
+        <location filename="../../../core/services/filetypecoreservice.cpp" line="+110"/>
+        <source>Image</source>
+        <translation>图片</translation>
+    </message>
 </context>
 <context>
     <name>m3::qt::NodePropertiesPanel</name>

@@ -100,9 +100,23 @@ FileType FileTypeCoreService::getFileType(const QString &p_filePath) const {
   // Use vxcore API to get file type by suffix
   FileType type = getFileTypeBySuffix(suffix);
 
-  // If suffix not found (returns Others), check if it's a text file
-  if (type.m_typeName == "Others" && FileUtils2::isText(p_filePath)) {
-    return getFileType("Text");
+  // Explicit suffix mappings win; infer a viewer only for otherwise unknown files.
+  if (type.m_typeName == "Others") {
+    if (FileUtils2::isImage(p_filePath)) {
+      FileType image;
+      image.m_typeName = QStringLiteral("Image");
+      image.m_defaultDisplayName = QStringLiteral("Image");
+      image.m_displayName = tr("Image");
+      if (!suffix.isEmpty()) {
+        image.m_suffixes = {suffix};
+      }
+      image.m_isNewable = false;
+      image.m_isSearchable = false;
+      return image;
+    }
+    if (FileUtils2::isText(p_filePath)) {
+      return getFileType("Text");
+    }
   }
 
   return type;

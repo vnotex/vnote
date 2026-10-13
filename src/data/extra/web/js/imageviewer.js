@@ -1,141 +1,306 @@
 class ImageViewer {
     constructor() {
-        this.viewBoxMouseDown = false;
-        this.viewBoxOffsetToMouse = { x: 0, y: 0 }
         this.viewImageClass = 'vx-image-view-image';
+        this.loadGeneration = 0;
+        this.activePointerId = null;
+        this.dragMoved = false;
+        this.naturalWidth = 0;
+        this.naturalHeight = 0;
+        this.scale = 1;
+        this.fitMode = true;
+        this.left = 0;
+        this.top = 0;
+        this.viewport = { width: 0, height: 0 };
 
-        window.vxcore.on('ready', () => {
-            this.viewBoxContainer = document.getElementById('vx-image-view-box');
-            this.viewBox = document.getElementById('vx-image-view');
-            this.closeButton = document.getElementById('vx-image-view-close');
-
-            this.setupImageViewBox();
-        });
+        window.vxcore.on('ready', () => this.setupImageViewBox());
     }
 
     setupImageViewBox() {
-        // Left and top in pixel.
-        let moveImage = (img, left, top) => {
-            if (img.style.position != 'absolute') {
-                img.style.position = 'absolute';
-                img.style.zIndex = parseInt(this.closeButton.style.zIndex) - 1;
-            }
-
-            img.style.left = left + 'px';
-            img.style.top  = top + 'px';
-        };
-
-        // View box.
+        if (this.initialized) {
+            return true;
+        }
+        this.viewBoxContainer = document.getElementById('vx-image-view-box');
+        this.viewBox = document.getElementById('vx-image-view');
+        this.closeButton = document.getElementById('vx-image-view-close');
+        this.controls = document.getElementById('vx-image-view-controls');
+        this.zoomInButton = document.getElementById('vx-image-view-zoom-in');
+        this.zoomOutButton = document.getElementById('vx-image-view-zoom-out');
+        this.resetButton = document.getElementById('vx-image-view-reset');
+        this.error = document.getElementById('vx-image-view-error');
+        // Exported HTML and renderer harnesses need no modal markup.
+        if (!this.viewBoxContainer || !this.viewBox || !this.closeButton || !this.controls
+            || !this.zoomInButton || !this.zoomOutButton || !this.resetButton || !this.error) {
+            return false;
+        }
+        this.initialized = true;
+        for (const [button, key] of [[this.zoomInButton, 'image.zoomIn'],
+                                    [this.zoomOutButton, 'image.zoomOut'],
+                                    [this.resetButton, 'image.reset']]) {
+            const label = window.vxI18n.tr(key);
+            button.title = label;
+            button.setAttribute('aria-label', label);
+        }
+        this.error.textContent = window.vxI18n.tr('image.error');
+        this.zoomInButton.onclick = () => this.zoom(true);
+        this.zoomOutButton.onclick = () => this.zoom(false);
+        this.resetButton.onclick = () => this.resetZoom();
+        this.controls.onclick = (e) => e.stopPropagation();
+        this.closeButton.onclick = () => this.closeImageViewBox();
         this.viewBoxContainer.onclick = (e) => {
-            e = e || window.event;
-            if (e.target.id != this.viewBox.id) {
-                // Click outside the image to close the box.
+            if (e.target === this.viewBoxContainer && !this.dragMoved) {
                 this.closeImageViewBox();
             }
-
-            e.preventDefault();
         };
-
-        this.viewBoxContainer.onwheel = (e) => {
-            e = e || window.event;
-            let ctrl = !!e.ctrlKey;
-            if (ctrl) {
+        this.viewBoxContainer.onpointerdown = (e) => {
+            if (e.target === this.viewBoxContainer) {
+                this.dragMoved = false;
+            }
+        };
+        this.viewBoxContainer.addEventListener('wheel', (e) => {
+            if (e.ctrlKey || e.target !== this.viewBox || !this.naturalWidth) {
                 return;
             }
-
-            let target = e.target;
-            if (target != this.viewBox) {
+            if (e.deltaY) {
+                this._zoomAt(e.deltaY < 0, e.clientX, e.clientY);
+            }
+            e.preventDefault();
+            e.stopPropagation();
+        }, { passive: false });
+        this.viewBox.draggable = false;
+        this.viewBox.ondragstart = (e) => e.preventDefault();
+        this.viewBox.onpointerdown = (e) => {
+            if (e.button !== 0 || this.activePointerId !== null || !this.naturalWidth) {
                 return;
             }
-
-            let rect = target.getBoundingClientRect();
-            let centerX = e.clientX - rect.left;
-            let centerY = e.clientY - rect.top;
-
-            let oriWidth = target.getAttribute('oriWidth');
-            let oriHeight = target.getAttribute('oriWidth');
-            if (!oriWidth) {
-                oriWidth = rect.width;
-                oriHeight = rect.height;
-
-                target.setAttribute('oriWidth', oriWidth);
-                target.setAttribute('oriHeight', oriHeight);
-            }
-
-            let step = Math.floor(oriWidth / 4);
-
-            let value = e.wheelDelta || -e.detail;
-            // delta >= 0 is up, which will trigger zoom in.
-            let delta = Math.max(-1, Math.min(1, value));
-
-            let newWidth = rect.width + (delta < 0 ? -step : step);
-            if (newWidth < 200) {
-                e.preventDefault();
+            this.activePointerId = e.pointerId;
+            this.dragMoved = false;
+            this.pointerX = e.clientX;
+            this.pointerY = e.clientY;
+            this.viewBox.setPointerCapture(e.pointerId);
+            this.viewBox.classList.add('vx-image-dragging');
+            e.preventDefault();
+        };
+        this.viewBox.onpointermove = (e) => {
+            if (e.pointerId !== this.activePointerId) {
                 return;
             }
-
-            let factor = newWidth / rect.width;
-
-            target.style.width = newWidth + 'px';
-
-            // Adjust the image around the center point.
-            moveImage(target, e.clientX - centerX * factor, e.clientY - centerY * factor);
-
+            const dx = e.clientX - this.pointerX;
+            const dy = e.clientY - this.pointerY;
+            this.dragMoved = this.dragMoved || dx !== 0 || dy !== 0;
+            this.left += dx;
+            this.top += dy;
+            this.pointerX = e.clientX;
+            this.pointerY = e.clientY;
+            this._applyGeometry();
             e.preventDefault();
         };
-
-        // Content image.
-        this.viewBox.onmousedown = (e) => {
-            e = e || window.event;
-            let target = e.target;
-            this.viewBoxMouseDown = true;
-            this.viewBoxOffsetToMouse = {
-                x: target.offsetLeft - e.clientX,
-                y: target.offsetTop - e.clientY
-            };
-            e.preventDefault();
-        };
-
-        this.viewBox.onmouseup = (e) => {
-            e = e || window.event;
-            this.viewBoxMouseDown = false;
-            e.preventDefault();
-        };
-
-        this.viewBox.onmousemove = (e) => {
-            e = e || window.event;
-            let target = e.target;
-            if (this.viewBoxMouseDown) {
-                moveImage(target,
-                          e.clientX + this.viewBoxOffsetToMouse.x,
-                          e.clientY + this.viewBoxOffsetToMouse.y);
+        const endDrag = (e) => {
+            if (e.pointerId === this.activePointerId) {
+                this._endDrag();
             }
-
-            e.preventDefault();
         };
+        this.viewBox.onpointerup = endDrag;
+        this.viewBox.onpointercancel = endDrag;
+        this.viewBox.onlostpointercapture = endDrag;
+        window.addEventListener('blur', () => this._endDrag());
+        window.addEventListener('resize', () => this._resize());
+        return true;
+    }
 
-        // Close button.
-        this.closeButton.onclick = () => {
-            this.closeImageViewBox();
-        };
-    };
+    _endDrag() {
+        const id = this.activePointerId;
+        this.activePointerId = null;
+        if (this.viewBox) {
+            if (id !== null && this.viewBox.hasPointerCapture(id)) {
+                this.viewBox.releasePointerCapture(id);
+            }
+            this.viewBox.classList.remove('vx-image-dragging');
+        }
+    }
+
+    _detachLoad() {
+        if (this.viewBox) {
+            this.viewBox.onload = null;
+            this.viewBox.onerror = null;
+        }
+    }
 
     closeImageViewBox() {
-        this.viewBoxContainer.style.display = "none";
-    };
+        ++this.loadGeneration;
+        this._detachLoad();
+        this._endDrag();
+        if (this.viewBoxContainer) {
+            this.viewBoxContainer.style.display = 'none';
+        }
+        if (this.viewBox) {
+            this.viewBox.removeAttribute('src');
+        }
+    }
+
+    isViewingImage() {
+        return !!this.viewBoxContainer && this.viewBoxContainer.style.display === 'block';
+    }
+
+    _beginLoad(p_background) {
+        if (!this.setupImageViewBox()) {
+            return null;
+        }
+        const generation = ++this.loadGeneration;
+        this._detachLoad();
+        this._endDrag();
+        this.dragMoved = false;
+        this.naturalWidth = this.naturalHeight = 0;
+        this.scale = 1;
+        this.fitMode = true;
+        this.left = this.top = 0;
+        this.viewBox.removeAttribute('src');
+        this.viewBox.removeAttribute('style');
+        this.viewBox.style.display = 'none';
+        this.viewBox.style.backgroundColor = p_background;
+        this.error.hidden = true;
+        const colors = window.getComputedStyle(document.body);
+        this.viewBoxContainer.style.setProperty('--vx-image-view-fg', colors.color);
+        this.viewBoxContainer.style.setProperty('--vx-image-view-bg', colors.backgroundColor);
+        this.viewBoxContainer.style.display = 'block';
+        this._resize();
+        this._updateControls();
+        return generation;
+    }
+
+    _loadImage(p_src, p_generation) {
+        if (p_generation !== this.loadGeneration || !this.isViewingImage()) {
+            return;
+        }
+        let settled = false;
+        const finish = (failed) => {
+            if (settled || p_generation !== this.loadGeneration || !this.isViewingImage()) {
+                return;
+            }
+            settled = true;
+            this._detachLoad();
+            if (failed || this.viewBox.naturalWidth <= 0 || this.viewBox.naturalHeight <= 0) {
+                this.viewBox.style.display = 'none';
+                this.viewBox.removeAttribute('src');
+                this.naturalWidth = this.naturalHeight = 0;
+                this.error.hidden = false;
+                this._updateControls();
+                return;
+            }
+            this.naturalWidth = this.viewBox.naturalWidth;
+            this.naturalHeight = this.viewBox.naturalHeight;
+            this.viewBox.style.display = 'block';
+            this.resetZoom();
+        };
+        this.viewBox.onload = () => finish(false);
+        this.viewBox.onerror = () => finish(true);
+        if (!p_src) {
+            finish(true);
+            return;
+        }
+        this.viewBox.src = p_src;
+        if (this.viewBox.complete) {
+            finish(false);
+        }
+    }
+
+    viewImage(p_imgSrc, p_background = 'transparent') {
+        const generation = this._beginLoad(p_background);
+        if (generation !== null) {
+            this._loadImage(p_imgSrc, generation);
+        }
+    }
+
+    viewIMG(p_imgNode) {
+        this.viewImage(p_imgNode.src);
+    }
+
+    _fitScale() {
+        return Math.min(1, this.viewport.width / this.naturalWidth,
+                        this.viewport.height / this.naturalHeight);
+    }
+
+    _updateControls() {
+        const loaded = this.naturalWidth > 0 && this.naturalHeight > 0;
+        this.zoomInButton.disabled = !loaded || this.scale >= 16;
+        this.zoomOutButton.disabled = !loaded || this.scale <= Math.min(0.05, this._fitScale());
+        this.resetButton.disabled = !loaded;
+    }
+
+    _applyGeometry() {
+        if (!this.naturalWidth || !this.isViewingImage()) {
+            return;
+        }
+        const width = this.naturalWidth * this.scale;
+        const height = this.naturalHeight * this.scale;
+        const clamp = (offset, image, viewport) => image <= viewport
+            ? (viewport - image) / 2 : Math.max(viewport - image, Math.min(0, offset));
+        this.left = clamp(this.left, width, this.viewport.width);
+        this.top = clamp(this.top, height, this.viewport.height);
+        Object.assign(this.viewBox.style, {
+            width: width + 'px', height: height + 'px',
+            left: this.left + 'px', top: this.top + 'px'
+        });
+        this._updateControls();
+    }
+
+    resetZoom() {
+        this._endDrag();
+        this.fitMode = true;
+        if (!this.naturalWidth || !this.isViewingImage()
+            || this.viewport.width <= 0 || this.viewport.height <= 0) {
+            return;
+        }
+        this.scale = this._fitScale();
+        this.left = (this.viewport.width - this.naturalWidth * this.scale) / 2;
+        this.top = (this.viewport.height - this.naturalHeight * this.scale) / 2;
+        this._applyGeometry();
+    }
+
+    _zoomAt(p_zoomIn, p_x, p_y) {
+        if (!this.naturalWidth || !this.isViewingImage()
+            || this.viewport.width <= 0 || this.viewport.height <= 0) {
+            return;
+        }
+        const scale = Math.max(Math.min(0.05, this._fitScale()),
+                               Math.min(16, p_zoomIn ? this.scale * 1.25 : this.scale / 1.25));
+        const ratio = scale / this.scale;
+        this.left = p_x - (p_x - this.left) * ratio;
+        this.top = p_y - (p_y - this.top) * ratio;
+        this.scale = scale;
+        this.fitMode = false;
+        this._applyGeometry();
+    }
+
+    zoom(p_zoomIn) {
+        this._zoomAt(p_zoomIn, this.viewport.width / 2, this.viewport.height / 2);
+    }
+
+    _resize() {
+        if (!this.isViewingImage()) {
+            return;
+        }
+        const previous = this.viewport;
+        this.viewport = { width: this.viewBoxContainer.clientWidth,
+                          height: this.viewBoxContainer.clientHeight };
+        this.controls.style.left = Math.max(0, this.viewport.width - this.controls.offsetWidth - 12) + 'px';
+        this.controls.style.top = Math.max(0, this.viewport.height - this.controls.offsetHeight - 12) + 'px';
+        if (this.fitMode) {
+            this.resetZoom();
+        } else {
+            this.left += (this.viewport.width - previous.width) / 2;
+            this.top += (this.viewport.height - previous.height) / 2;
+            this._applyGeometry();
+        }
+    }
 
     setupForAllImages(p_container) {
         this.closeImageViewBox();
-
-        let images = p_container.getElementsByTagName('img');
-        for (let i = 0; i < images.length; ++i) {
-            if (images[i] === this.viewBox) {
-                continue;
+        for (const image of p_container.getElementsByTagName('img')) {
+            if (image !== this.viewBox) {
+                this.setupIMGToView(image);
             }
-
-            this.setupIMGToView(images[i]);
         }
-    };
+    }
 
     setupIMGToView(p_node) {
         if (!p_node || p_node.nodeName.toLowerCase() != 'img') {
@@ -151,27 +316,6 @@ class ImageViewer {
             };
         };
         p_node.ondblclick = func(this, p_node);
-    };
-
-    viewImage(p_imgSrc, p_background = 'transparent') {
-        this.viewBoxMouseDown = false;
-        this.viewBoxContainer.style.display = 'block';
-
-        this.viewBox.src = p_imgSrc;
-        this.viewBox.style.backgroundColor = p_background;
-
-        // Restore view box.
-        this.viewBox.style.width = '';
-        this.viewBox.style.position = '';
-        this.viewBox.style.zIndex = '';
-    };
-
-    viewIMG(p_imgNode) {
-        this.viewImage(p_imgNode.src);
-    };
-
-    isViewingImage() {
-        return this.viewBoxContainer.style.display === 'block';
     };
 
     setupSVGToView(p_node, p_forceBackground = false) {
@@ -219,24 +363,21 @@ class ImageViewer {
     };
 
     viewSVG(p_svgNode, p_background = 'transparent') {
-        // Serialize as well-formed XML instead of HTML outerHTML. outerHTML in
-        // an HTML document leaves void/empty elements (e.g. Mermaid's <br>
-        // inside a <foreignObject> label) un-self-closed, producing invalid XML
-        // that the browser cannot load as an image/svg+xml data URI, leaving the
-        // double-click preview popup blank. encodeURIComponent safely escapes
-        // '#', newlines and other characters that break a data: URI.
-        var svg = new XMLSerializer().serializeToString(p_svgNode);
-        var src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+        // XMLSerializer keeps SVG/foreignObject well formed; URI escaping preserves '#'.
+        const svg = new XMLSerializer().serializeToString(p_svgNode);
+        const src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
         if (window.vxOptions.protectedView) {
+            const generation = this._beginLoad(p_background);
+            if (generation === null) {
+                return;
+            }
             window.vxMarkdownAdapter.protectedImageUrl(src, (url) => {
-                if (url) {
-                    this.viewImage(url, p_background);
-                }
+                this._loadImage(url, generation);
             });
             return;
         }
         this.viewImage(src, p_background);
-    };
+    }
 }
 
 window.vxImageViewer = new ImageViewer;

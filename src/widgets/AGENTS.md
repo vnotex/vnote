@@ -115,6 +115,27 @@ The split-pane editor area, designed around vxcore workspaces:
 - `ViewSplit2` — QTabWidget-based split pane; each instance maps 1:1 to a vxcore workspace
 - `ViewWindow2` — abstract base for file viewer windows; receives a `Buffer2` in its constructor
 
+#### Image viewers
+
+`ImageViewWindow` is a read-only `ViewWindow2`: it decodes the first oriented frame directly
+from the protected-validated borrowed buffer bytes, never from text or a separately opened
+file. Image MIME inference applies only after the saved suffix registry returns `Others`;
+explicit mappings (including standalone SVG as Text) and external programs keep precedence.
+Decoder failure clears the previous image and disables all camera controls until a good reload.
+
+Native tabs and the Markdown double-click popup share centered, non-upscaling Fit/Reset,
+1.25× zoom steps, manual bounds `[min(0.05, fit), 16]`, and bounded left-button panning.
+Only fit mode refits on resize; manual mode preserves scale and the image-space center.
+Camera changes never dirty the buffer and are not persisted. Overlay controls stay outside
+image transforms. Qt's optimized viewport scrolling also moves child widgets: the native
+view explicitly restores the toolbar position after scrolling. Keep its 32×32 hit targets,
+4px spacing, 12px bottom/right inset, and explicit theme-icon refresh.
+
+The popup uses intrinsic dimensions and generation-scoped image handlers; close, replacement,
+and protected-SVG authorization callbacks cannot revive an obsolete image. Keep the existing
+`protectedImageUrl()` path and safe no-op setup when exported HTML lacks modal markup.
+Web labels come from `WebUtils::translationScript()`, not note HTML or inline event attributes.
+
 #### Read-only session recovery
 
 `ViewArea2` saves each buffer's read-only state in workspace `bufferMetadata.readOnly`,
