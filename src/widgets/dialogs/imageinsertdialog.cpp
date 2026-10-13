@@ -94,7 +94,8 @@ void ImageInsertDialog::setupUI(const QString &p_title, const QString &p_imageTi
   auto titleValidator = new QRegularExpressionValidator(
       QRegularExpression(QStringLiteral("[^\\[\\]]*")), m_imageTitleEdit);
   m_imageTitleEdit->setValidator(titleValidator);
-  gridLayout->addWidget(new QLabel(tr("Title"), mainWidget), 1, 0, 1, 1);
+  m_imageTitleLabel = new QLabel(tr("Title"), mainWidget);
+  gridLayout->addWidget(m_imageTitleLabel, 1, 0, 1, 1);
   gridLayout->addWidget(m_imageTitleEdit, 1, 1, 1, 3);
   connect(m_imageTitleEdit, &QLineEdit::textChanged, this, &ImageInsertDialog::checkInput);
 
@@ -180,6 +181,8 @@ void ImageInsertDialog::setImageControlsVisible(bool p_visible) {
 
 void ImageInsertDialog::setMindMapMode() {
   m_mindMapMode = true;
+  m_imageTitleLabel->hide();
+  m_imageTitleEdit->hide();
   m_imageAltLabel->hide();
   m_imageAltEdit->hide();
   m_imageWidthEdit->setEnabled(true);
@@ -196,8 +199,9 @@ void ImageInsertDialog::setMindMapMode() {
 void ImageInsertDialog::showEvent(QShowEvent *p_event) {
   Dialog::showEvent(p_event);
 
-  m_imageTitleEdit->selectAll();
-  m_imageTitleEdit->setFocus();
+  auto *input = m_mindMapMode ? m_imagePathEdit : m_imageTitleEdit;
+  input->selectAll();
+  input->setFocus();
 }
 
 void ImageInsertDialog::checkImagePathInput() {
@@ -288,8 +292,9 @@ void ImageInsertDialog::browseFile() {
 
   setImagePath(filePath);
 
-  m_imageTitleEdit->selectAll();
-  m_imageTitleEdit->setFocus();
+  auto *input = m_mindMapMode ? m_imagePathEdit : m_imageTitleEdit;
+  input->selectAll();
+  input->setFocus();
 }
 
 QString ImageInsertDialog::getImageTitle() const { return m_imageTitleEdit->text(); }

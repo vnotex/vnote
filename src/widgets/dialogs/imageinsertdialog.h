@@ -64,7 +64,7 @@ public:
   void setInsertAsBase64(bool p_base64);
   bool insertAsBase64() const;
 
-  // Call before supplying a source. Mind map images have no alt text and always support size.
+  // Call before supplying a source. Hides title/alt controls; mind map images always support size.
   void setMindMapMode();
 
 signals:
@@ -104,6 +104,8 @@ private:
   QLineEdit *m_imagePathEdit = nullptr;
 
   QPushButton *m_browseBtn = nullptr;
+
+  QLabel *m_imageTitleLabel = nullptr;
 
   QLineEdit *m_imageTitleEdit = nullptr;
 

@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Hide the Title row in mind-map image insertion dialogs while retaining it for Markdown
 * Insert mind-map images and hyperlinks from clipboard, drag-and-drop, toolbar and context menu using shared acquisition dialogs; preserve existing topics for links and insert multi-item batches as one undoable child command
 * Remove obsolete attachment entries during Scan after files are renamed or deleted externally, including when no new files are found (#2771)
 * Restore the Scan button tooltip in the attachment popup
