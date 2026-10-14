@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Show whole percentages in the mind-map zoom selector without reducing the actual zoom precision
 * Clarify mind-map shortcuts help instructions and emphasize key bindings in bold
 * Add Shortcuts Help to the mind-map empty-space context menu to open the keyboard shortcuts overlay
 * View double-clicked mind-map images in an editor overlay like Markdown, with a dimmed backdrop, Close button, zoom, pan and reset-to-fit; support read-only maps and close protected previews on locking

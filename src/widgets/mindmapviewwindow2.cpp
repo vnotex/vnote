@@ -243,7 +243,7 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   m_zoomOutAction = addZoomAction(QStringLiteral("zoomOut"), false);
   m_zoomComboBox = new QComboBox(p_toolBar);
   m_zoomComboBox->setObjectName(QStringLiteral("mindMapZoomCombo"));
-  // Display and enter arbitrary scales without adding extra choices to the popup.
+  // Accept arbitrary scales without adding extra choices to the popup.
   m_zoomComboBox->setEditable(true);
   m_zoomComboBox->setInsertPolicy(QComboBox::NoInsert);
   m_zoomComboBox->setMinimumContentsLength(8);
@@ -345,7 +345,12 @@ void MindMapViewWindow2::syncZoomControls() {
     }
   }
   m_zoomComboBox->setCurrentIndex(index);
-  m_zoomComboBox->setEditText(QString::number(factor * 100.0, 'g', 6) + QLatin1Char('%'));
+  // Ignore floating-point noise at whole percentages; otherwise truncate.
+  const qreal percent = factor * 100.0;
+  const int nearestPercent = qRound(percent);
+  const int displayPercent =
+      qFuzzyCompare(percent, qreal(nearestPercent)) ? nearestPercent : static_cast<int>(percent);
+  m_zoomComboBox->setEditText(QString::number(displayPercent) + QLatin1Char('%'));
 }
 
 void MindMapViewWindow2::syncEditorFromBuffer() {

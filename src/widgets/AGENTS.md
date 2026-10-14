@@ -253,8 +253,10 @@ it, using the native manual-zoom limits of 10%–400%. The localized Fit label a
 Invalid input or leaving the field without Enter restores the actual zoom without
 applying the draft. Custom values never add preset rows. Opening/reloading a map shows
 100%; explicitly requesting a one-shot fit shows Fit, even when its scale matches a preset.
-Manual zoom/reset switches to the actual percentage, including same-scale mode
-changes, without adding custom entries. Unloaded/invalid content disables
+Manual zoom/reset, including same-scale mode changes, displays only the integer part
+of the percentage (`83.3333%` becomes `83%`) without adding custom entries. This is display-only:
+native zoom and fractional input keep their precision, and floating-point noise at whole
+percentages must not lower the displayed value. Unloaded/invalid content disables
 the zoom controls; read-only maps remain zoomable. The native ViewWindow toolbar
 borrows the editor's editing command actions; the editor retains shortcuts,
 inline-edit commits and history availability. Invalid content gates native mutations through read-only mode until
