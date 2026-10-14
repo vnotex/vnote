@@ -21,6 +21,19 @@ If a service here needs to tell the user something, use one of these three sanct
 
 The compile error is the enforcement: losing the `Qt::Widgets` link removes the QtWidgets include directories, so a regression fails to compile rather than silently re-introducing the dependency.
 
+## On-demand note file size
+
+`NotebookCoreService::getFileSize()` wraps `vxcore_node_get_file_size()` and returns
+`VxCoreError` plus a 64-bit byte count (zeroed on failure). It queries the current
+regular file on disk without reading its contents or consulting/updating node metadata.
+The count excludes unsaved buffer edits and includes encrypted-file envelope bytes;
+it is file length, not allocated disk space. Metadata indexing is not required.
+
+`NodePropertiesDialog2` calls this only for notes when the dialog opens, showing exact
+bytes or `N/A` on failure; folders have no Size row. Do not add this query to
+`getFileInfo()`, node listings, or `NodeInfo`: those paths must incur no new size-related
+filesystem work. Existing metadata APIs still have their own presence/timestamp checks.
+
 ## TaskService lazy loading
 
 `TaskService::init()` initializes variables only; it must not scan files before

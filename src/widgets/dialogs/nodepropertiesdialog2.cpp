@@ -46,6 +46,15 @@ void NodePropertiesDialog2::setupUI(const NodeIdentifier &p_nodeId, const NodeIn
   auto *typeLabel = new QLabel(p_nodeInfo.isFolder ? tr("Folder") : tr("Note"), mainWidget);
   mainLayout->addRow(tr("Type"), typeLabel);
 
+  // Size is queried on demand, never stored in the explorer's metadata cache.
+  if (!p_nodeInfo.isFolder) {
+    quint64 size = 0;
+    const auto error = notebookSvc->getFileSize(p_nodeId.notebookId, p_nodeId.relativePath, size);
+    auto *sizeLabel = new QLabel(
+        error == VXCORE_OK ? tr("%1 bytes").arg(size) : tr("N/A"), mainWidget);
+    mainLayout->addRow(tr("Size"), sizeLabel);
+  }
+
   // Created.
   auto *createdLabel =
       new QLabel(p_nodeInfo.createdTimeUtc.toLocalTime().toString(), mainWidget);

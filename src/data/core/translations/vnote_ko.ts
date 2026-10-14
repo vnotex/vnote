@@ -5792,6 +5792,14 @@
 <context>
     <name>vnotex::NodePropertiesDialog2</name>
     <message>
+        <source>Size</source>
+        <translation>크기</translation>
+    </message>
+    <message>
+        <source>%1 bytes</source>
+        <translation>%1 바이트</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/dialogs/nodepropertiesdialog2.cpp" line="+23"/>
         <source>Properties - %1</source>
         <translation>속성 - %1</translation>

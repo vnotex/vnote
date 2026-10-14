@@ -1848,6 +1848,19 @@ QJsonObject NotebookCoreService::getFileInfo(const QString &p_notebookId, const 
   return parseJsonObjectFromCStr(json);
 }
 
+VxCoreError NotebookCoreService::getFileSize(const QString &p_notebookId,
+                                            const QString &p_filePath, quint64 &p_outSize) const {
+  p_outSize = 0;
+  if (!checkContext()) {
+    return VXCORE_ERR_NOT_INITIALIZED;
+  }
+  uint64_t size = 0;
+  const auto error = vxcore_node_get_file_size(m_context, p_notebookId.toUtf8().constData(),
+                                              p_filePath.toUtf8().constData(), &size);
+  p_outSize = size;
+  return error;
+}
+
 QJsonObject NotebookCoreService::getFileMetadata(const QString &p_notebookId,
                                                  const QString &p_filePath) const {
   if (!checkContext()) {

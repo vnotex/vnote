@@ -537,6 +537,9 @@ public:
   // deleted on disk). The returned QJsonObject is empty on failure, as before.
   QJsonObject getFileInfo(const QString &p_notebookId, const QString &p_filePath,
                           VxCoreError *p_outErr = nullptr) const;
+  // Current on-disk byte count; output is zero on failure, never cached in NodeInfo.
+  VxCoreError getFileSize(const QString &p_notebookId, const QString &p_filePath,
+                          quint64 &p_outSize) const;
   QJsonObject getFileMetadata(const QString &p_notebookId, const QString &p_filePath) const;
   bool updateFileMetadata(const QString &p_notebookId, const QString &p_filePath,
                           const QString &p_metadataJson);
