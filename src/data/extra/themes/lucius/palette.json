@@ -161,7 +161,7 @@
             },
             "hover": {
                 "fg": "@base#content#fg",
-                "bg": "@palette#bg2_7",
+                "bg": "@base#content#hover#bg",
                 "border": "@base#master#bg"
             }
         },

@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Keep Lucius text selections visible when hovering single-line inputs and spin boxes, including mind-map properties
 * Put 173 curated efficiency, project, management, TODO, diary, importance/priority, office and engineering emoji first in the mind-map icon picker's All categories view, including numbered keycaps 0-10; add matching search keywords while retaining the complete Unicode catalog and category ordering
 * Show whole percentages in the mind-map zoom selector without reducing the actual zoom precision
 * Clarify mind-map shortcuts help instructions and emphasize key bindings in bold
