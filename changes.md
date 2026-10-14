@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Add Shortcuts Help to the mind-map empty-space context menu to open the keyboard shortcuts overlay
 * View double-clicked mind-map images in an editor overlay like Markdown, with a dimmed backdrop, Close button, zoom, pan and reset-to-fit; support read-only maps and close protected previews on locking
 * Honor rapid repeated clicks on mind-map expand/collapse buttons, including in read-only maps, without starting inline editing
 * Keep mind-map expand/collapse buttons highlighted under a stationary pointer after folding or expanding
