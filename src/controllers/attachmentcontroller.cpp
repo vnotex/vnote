@@ -49,6 +49,10 @@ void AttachmentController::scanAttachments(const QStringList &p_excludedPaths) {
     qWarning() << "scanAttachments: notebook service unavailable";
     return;
   }
+  auto *bufferService = m_services.get<BufferService>();
+  if (bufferService && bufferService->removeObsoleteAttachments(*m_buffer)) {
+    emit attachmentDeleted();
+  }
   const auto candidates = m_buffer->listUnindexedAttachments();
   if (candidates.isEmpty()) {
     return;

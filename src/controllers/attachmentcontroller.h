@@ -26,7 +26,8 @@ public:
   // The caller (view) owns the file dialog; this never shows UI.
   void addAttachments(const QStringList &p_files);
 
-  // Register unindexed files in place, excluding local paths owned by the viewer.
+  // Remove missing attachment entries and register unindexed files in place,
+  // excluding local paths owned by the viewer. Never delete files or edit note content.
   void scanAttachments(const QStringList &p_excludedPaths);
 
   // Open attachments through the standard buffer/view-window flow.

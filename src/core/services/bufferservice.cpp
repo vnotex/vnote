@@ -2152,6 +2152,54 @@ bool BufferService::registerAttachment(const QString &p_bufferId, const QString 
   return true;
 }
 
+bool BufferService::removeObsoleteAttachments(const Buffer2 &p_buffer) {
+  if (!p_buffer.isValid() || !p_buffer.isAttachmentSupported() || p_buffer.isReadOnly()) {
+    return false;
+  }
+  const auto nodeId = p_buffer.nodeId();
+  {
+    NotebookIoGate::ScopedTryLock lock(*m_ioGate, nodeId.notebookId, 0);
+    if (!lock.isLocked()) {
+      qWarning() << "removeObsoleteAttachments: notebook is busy";
+      return false;
+    }
+    const auto notebookId = nodeId.notebookId.toUtf8();
+    const auto filePath = nodeId.relativePath.toUtf8();
+    char *outPath = nullptr;
+    const auto pathError = vxcore_node_get_attachments_folder(
+        m_context, notebookId.constData(), filePath.constData(), &outPath);
+    const auto folder = cstrToQString(outPath);
+    if (pathError != VXCORE_OK || folder.isEmpty()) {
+      qWarning() << "removeObsoleteAttachments: cannot resolve attachment folder"
+                 << QString::fromUtf8(vxcore_error_message(pathError));
+      return false;
+    }
+
+    const QDir directory(folder);
+    auto attachments = listAttachments(p_buffer);
+    const auto originalCount = attachments.size();
+    for (int index = attachments.size() - 1; index >= 0; --index) {
+      const QFileInfo file(directory.filePath(attachments.at(index).toString()));
+      if (!file.exists() && !file.isSymLink()) {
+        attachments.removeAt(index);
+      }
+    }
+    if (attachments.size() == originalCount) {
+      return false;
+    }
+    const auto json = QJsonDocument(attachments).toJson(QJsonDocument::Compact);
+    const auto error = vxcore_file_update_attachments(
+        m_context, notebookId.constData(), filePath.constData(), json.constData());
+    if (error != VXCORE_OK) {
+      qWarning() << "removeObsoleteAttachments failed:"
+                 << QString::fromUtf8(vxcore_error_message(error));
+      return false;
+    }
+  }
+  emit attachmentChanged(p_buffer.id());
+  return true;
+}
+
 bool BufferService::deleteAttachment(const Buffer2 &p_buffer, const QString &p_filename) {
   const QString &p_bufferId = p_buffer.m_bufferId;
   if (p_buffer.isReadOnly()) {

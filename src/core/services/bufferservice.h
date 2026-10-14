@@ -238,6 +238,9 @@ public:
   using BufferCoreService::getAttachmentsFolder;
   using BufferCoreService::listUnindexedAttachments;
   bool registerAttachment(const QString &p_bufferId, const QString &p_filename);
+  // Metadata-only reconciliation; never deletes attachment files or fires deletion hooks.
+  // Returns true only when obsolete entries were removed and persisted.
+  bool removeObsoleteAttachments(const Buffer2 &p_buffer);
   QJsonArray listAttachments(const Buffer2 &p_buffer) const;
 
   // ============ Auto-Save & Dirty Tracking ============
