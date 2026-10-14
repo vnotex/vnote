@@ -10,6 +10,7 @@
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
 #include <core/services/notebookcoreservice.h>
+#include <utils/stringutils.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
@@ -51,7 +52,7 @@ void NodePropertiesDialog2::setupUI(const NodeIdentifier &p_nodeId, const NodeIn
     quint64 size = 0;
     const auto error = notebookSvc->getFileSize(p_nodeId.notebookId, p_nodeId.relativePath, size);
     auto *sizeLabel = new QLabel(
-        error == VXCORE_OK ? tr("%1 bytes").arg(size) : tr("N/A"), mainWidget);
+        error == VXCORE_OK ? formatFileSize(size) : tr("N/A"), mainWidget);
     mainLayout->addRow(tr("Size"), sizeLabel);
   }
 

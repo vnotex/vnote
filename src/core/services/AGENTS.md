@@ -29,8 +29,9 @@ regular file on disk without reading its contents or consulting/updating node me
 The count excludes unsaved buffer edits and includes encrypted-file envelope bytes;
 it is file length, not allocated disk space. Metadata indexing is not required.
 
-`NodePropertiesDialog2` calls this only for notes when the dialog opens, showing exact
-bytes or `N/A` on failure; folders have no Size row. Do not add this query to
+`NodePropertiesDialog2` calls this only for notes when the dialog opens, showing a
+human-friendly size via `formatFileSize()` or `N/A` on failure; folders have no Size row.
+Do not add this query to
 `getFileInfo()`, node listings, or `NodeInfo`: those paths must incur no new size-related
 filesystem work. Existing metadata APIs still have their own presence/timestamp checks.
 

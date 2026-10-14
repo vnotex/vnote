@@ -1,5 +1,7 @@
-// test_stringutils.cpp - Tests for vnotex::naturalCompare
+// test_stringutils.cpp - Tests for string utilities
 #include <QtTest>
+
+#include <limits>
 
 #include <utils/stringutils.h>
 
@@ -11,6 +13,10 @@ class TestStringUtils : public QObject {
   Q_OBJECT
 
 private slots:
+  void testFormatFileSize_data();
+  void testFormatFileSize();
+  void testFormatFileSizeLocale();
+
   void testNaturalCompare_data();
   void testNaturalCompare();
 
@@ -20,6 +26,39 @@ private slots:
   void testNonAsciiByteOrdering();
   void testStrictWeakOrdering();
 };
+
+void TestStringUtils::testFormatFileSize_data() {
+  QTest::addColumn<quint64>("bytes");
+  QTest::addColumn<QString>("expected");
+
+  QTest::newRow("zero") << quint64(0) << QStringLiteral("0 B");
+  QTest::newRow("one-byte") << quint64(1) << QStringLiteral("1 B");
+  QTest::newRow("below-KB") << quint64(1023) << QStringLiteral("1023 B");
+  QTest::newRow("KB") << quint64(1024) << QStringLiteral("1.00 KB");
+  QTest::newRow("fractional-KB") << quint64(1536) << QStringLiteral("1.50 KB");
+  QTest::newRow("rounded-KB") << quint64(12345) << QStringLiteral("12.06 KB");
+  QTest::newRow("below-MB") << ((quint64(1) << 20) - 1) << QStringLiteral("1024.00 KB");
+  QTest::newRow("MB") << (quint64(1) << 20) << QStringLiteral("1.00 MB");
+  QTest::newRow("GB") << (quint64(1) << 30) << QStringLiteral("1.00 GB");
+  QTest::newRow("TB") << (quint64(1) << 40) << QStringLiteral("1.00 TB");
+  QTest::newRow("PB") << (quint64(1) << 50) << QStringLiteral("1.00 PB");
+  QTest::newRow("below-EB") << ((quint64(1) << 60) - 1) << QStringLiteral("1024.00 PB");
+  QTest::newRow("EB") << (quint64(1) << 60) << QStringLiteral("1.00 EB");
+  QTest::newRow("unsigned-range") << (quint64(1) << 63) << QStringLiteral("8.00 EB");
+  QTest::newRow("maximum") << std::numeric_limits<quint64>::max() << QStringLiteral("16.00 EB");
+}
+
+void TestStringUtils::testFormatFileSize() {
+  QFETCH(quint64, bytes);
+  QFETCH(QString, expected);
+  QCOMPARE(formatFileSize(bytes, QLocale::c()), expected);
+}
+
+void TestStringUtils::testFormatFileSizeLocale() {
+  const QLocale locale(QLocale::German, QLocale::Germany);
+  QCOMPARE(formatFileSize(1536, locale), QStringLiteral("1,50 KB"));
+  QCOMPARE(formatFileSize(1023, locale), QStringLiteral("1.023 B"));
+}
 
 void TestStringUtils::testNaturalCompare_data() {
   QTest::addColumn<QString>("lhs");

@@ -9,7 +9,7 @@
 | `PathUtils` | Path manipulation, normalization, and resolution |
 | `HtmlUtils` | HTML processing and sanitization |
 | `FileUtils2` | File operations |
-| `StringUtils` | String manipulation utilities |
+| `stringutils.h` | Free string comparison and size-formatting helpers |
 | `ProcessUtils` | External process execution |
 | `ClipboardUtils` | Clipboard read/write operations |
 | `ContentMediaUtils` | Content and media processing |
@@ -18,6 +18,20 @@
 | `UrlDragDropUtils` | URL drag-and-drop handling |
 | `AsyncWorker` | Asynchronous task execution |
 | `CallbackPool` | Callback management pool |
+
+## String helpers
+
+`stringutils.h` exposes free functions in `vnotex`, including `naturalCompare()` and
+`formatFileSize(quint64, const QLocale &)`. The formatter defaults to the current locale
+and performs no filesystem access. It returns `"<number> <unit>"` with invariant unit
+symbols `B`, `KB`, `MB`, `GB`, `TB`, `PB`, `EB`, using traditional 1024-based steps.
+Bytes are integral; larger units have two decimal places (1536 bytes becomes `1.50 KB`
+in the C locale). Numbers follow the supplied locale, including decimal separators and
+grouping. The full unsigned 64-bit range is supported without signed narrowing.
+
+Units are selected from the original byte count, before display rounding; a value just
+below the next threshold can therefore display `1024.00` in the lower unit.
+Coverage: `tests/utils/test_stringutils.cpp`.
 
 ## C++ to web translations
 

@@ -5796,10 +5796,6 @@
         <translation>大小</translation>
     </message>
     <message>
-        <source>%1 bytes</source>
-        <translation>%1 字节</translation>
-    </message>
-    <message>
         <location filename="../../../widgets/dialogs/nodepropertiesdialog2.cpp" line="+23"/>
         <source>Properties - %1</source>
         <translation>属性 - %1</translation>
