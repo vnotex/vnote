@@ -138,7 +138,6 @@ void AttachmentPopup2::setupUI() {
       m_controller->scanAttachments(paths);
     });
     m_scanBtn->setDefaultAction(act);
-    m_scanBtn->setToolTip(QString());
     buttonsLayout->addWidget(m_scanBtn);
   }
 

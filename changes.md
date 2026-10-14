@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Restore the Scan button tooltip in the attachment popup
 * Preserve the Markdown edit cursor and selection when returning from read mode if the mapped position is already visible (#2768)
 * Keep Lucius tree selections blue when unfocused so they remain distinct from gray hover highlights
 * Add the standard Select All action to the Markdown read-mode context menu
