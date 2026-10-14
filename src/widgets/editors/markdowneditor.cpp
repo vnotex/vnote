@@ -450,8 +450,12 @@ void MarkdownEditor::onProtectedLockingChanged(bool p_locking) {
   }
 }
 
-bool MarkdownEditor::readProtectedImage(const QString &p_url, QByteArray &p_data) const {
+bool MarkdownEditor::readProtectedImage(const QString &p_url, QByteArray &p_data,
+                                        QByteArray *p_mime) const {
   p_data.clear();
+  if (p_mime) {
+    p_mime->clear();
+  }
   if (!m_protectedBuffer || m_protectedResourcesRevoked || !m_buffer2) {
     return false;
   }
@@ -503,7 +507,7 @@ bool MarkdownEditor::readProtectedImage(const QString &p_url, QByteArray &p_data
     }
   }
   QByteArray mime;
-  const bool ok = ImageUtils::protectedImageData(input, p_data, mime);
+  const bool ok = ImageUtils::protectedImageData(input, p_data, p_mime ? *p_mime : mime);
   input.fill('\0');
   return ok;
 }
@@ -2091,6 +2095,32 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
     const auto resource = links[index].m_destination;
     const auto generation = m_protectedResourceGeneration;
     {
+      auto *viewAction = new QAction(tr("&View Image"), p_menu);
+      connect(viewAction, &QAction::triggered, this, [this, resource, generation]() {
+        if (m_protectedResourcesRevoked || generation != m_protectedResourceGeneration) {
+          return;
+        }
+        QByteArray bytes;
+        QByteArray mime;
+        const bool valid = readProtectedImage(resource, bytes, &mime);
+        if (!valid || m_protectedResourcesRevoked || generation != m_protectedResourceGeneration) {
+          bytes.fill('\0');
+          bytes.clear();
+          emit statusMessageRequested(tr("This image is blocked or unavailable"));
+          return;
+        }
+        auto base64 = bytes.toBase64();
+        bytes.fill('\0');
+        bytes.clear();
+        const auto url = QStringLiteral("data:%1;base64,%2")
+                             .arg(QString::fromLatin1(mime), QString::fromLatin1(base64));
+        base64.fill('\0');
+        base64.clear();
+        emit imageViewRequested(url);
+      });
+      p_menu->insertAction(p_before, viewAction);
+    }
+    {
       auto *copyAction = new QAction(tr("Copy Ima&ge"), p_menu);
       connect(copyAction, &QAction::triggered, this, [this, resource, generation]() {
         if (m_protectedResourcesRevoked || generation != m_protectedResourceGeneration) {
@@ -2136,8 +2166,16 @@ bool MarkdownEditor::prependImageMenu(QMenu *p_menu, QAction *p_before, int p_cu
 
   {
     auto act = new QAction(tr("&View Image"), p_menu);
-    connect(act, &QAction::triggered, p_menu,
-            [imgPath]() { WidgetUtils::openUrlByDesktop(PathUtils::pathToUrl(imgPath)); });
+    connect(act, &QAction::triggered, this, [this, imgPath]() {
+      auto url = PathUtils::pathToUrl(imgPath);
+      if (url.scheme().isEmpty() && !url.host().isEmpty()) {
+        url.setScheme(QStringLiteral("https"));
+      } else if (url.isRelative()) {
+        url = QUrl::fromLocalFile(QDir(getBasePath()).absolutePath() + QLatin1Char('/'))
+                  .resolved(url);
+      }
+      emit imageViewRequested(url.toString(QUrl::FullyEncoded));
+    });
     p_menu->insertAction(p_before, act);
   }
 

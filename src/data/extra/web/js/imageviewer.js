@@ -12,7 +12,65 @@ class ImageViewer {
         this.top = 0;
         this.viewport = { width: 0, height: 0 };
 
-        window.vxcore.on('ready', () => this.setupImageViewBox());
+        this.pendingNativeRequest = null;
+        this.activeNativeId = 0;
+        this.lastNativeId = 0;
+        this.nativeAdapter = null;
+        window.vxcore.on('ready', () => {
+            this.setupImageViewBox();
+            this._scheduleNativeOpen();
+        });
+        window.vxcore.on('fullMarkdownRendered', () => this._scheduleNativeOpen());
+    }
+
+    bindAdapter(p_adapter) {
+        if (!p_adapter || this.nativeAdapter === p_adapter
+            || !p_adapter.imageViewRequested || !p_adapter.imageViewCancelRequested
+            || !p_adapter.setImageViewState) {
+            return;
+        }
+        this.nativeAdapter = p_adapter;
+        p_adapter.imageViewRequested.connect((id, url) => {
+            if (id <= this.lastNativeId) {
+                return;
+            }
+            this.closeImageViewBox();
+            this.lastNativeId = id;
+            this.pendingNativeRequest = { id, url };
+            this._scheduleNativeOpen();
+        });
+        p_adapter.imageViewCancelRequested.connect((id) => {
+            this.lastNativeId = Math.max(this.lastNativeId, id);
+            if (this.activeNativeId === id
+                || (this.pendingNativeRequest && this.pendingNativeRequest.id === id)) {
+                this.closeImageViewBox();
+            }
+        });
+    }
+
+    _scheduleNativeOpen() {
+        // finishWorker emits before draining pendingData and other render listeners.
+        // One microtask after that event is sufficient; never poll a busy renderer.
+        Promise.resolve().then(() => this._openPendingNativeImage());
+    }
+
+    _openPendingNativeImage() {
+        const request = this.pendingNativeRequest;
+        const core = window.vxcore;
+        if (!request || !core.initialized || core.numOfOngoingWorkers !== 0
+            || !core.pendingData || core.pendingData.text !== null) {
+            return;
+        }
+        this.pendingNativeRequest = null;
+        const generation = this._beginLoad('transparent');
+        if (generation === null) {
+            this.nativeAdapter.setImageViewState(request.id, false);
+            return;
+        }
+        this.activeNativeId = request.id;
+        this._loadImage(request.url, generation);
+        // The modal (including its loading/error state and Close) now exists.
+        this.nativeAdapter.setImageViewState(request.id, true);
     }
 
     setupImageViewBox() {
@@ -104,6 +162,13 @@ class ImageViewer {
         this.viewBox.onlostpointercapture = endDrag;
         window.addEventListener('blur', () => this._endDrag());
         window.addEventListener('resize', () => this._resize());
+        window.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && (this.isViewingImage() || this.pendingNativeRequest)) {
+                this.closeImageViewBox();
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        }, true);
         return true;
     }
 
@@ -126,6 +191,10 @@ class ImageViewer {
     }
 
     closeImageViewBox() {
+        const id = this.activeNativeId
+            || (this.pendingNativeRequest ? this.pendingNativeRequest.id : 0);
+        this.activeNativeId = 0;
+        this.pendingNativeRequest = null;
         ++this.loadGeneration;
         this._detachLoad();
         this._endDrag();
@@ -135,6 +204,9 @@ class ImageViewer {
         if (this.viewBox) {
             this.viewBox.removeAttribute('src');
         }
+        if (id && this.nativeAdapter) {
+            this.nativeAdapter.setImageViewState(id, false);
+        }
     }
 
     isViewingImage() {
@@ -142,6 +214,7 @@ class ImageViewer {
     }
 
     _beginLoad(p_background) {
+        this.closeImageViewBox();
         if (!this.setupImageViewBox()) {
             return null;
         }
@@ -294,7 +367,10 @@ class ImageViewer {
     }
 
     setupForAllImages(p_container) {
-        this.closeImageViewBox();
+        // Rebinding rendered images closes an open popup, not an unopened native intent.
+        if (this.isViewingImage()) {
+            this.closeImageViewBox();
+        }
         for (const image of p_container.getElementsByTagName('img')) {
             if (image !== this.viewBox) {
                 this.setupIMGToView(image);

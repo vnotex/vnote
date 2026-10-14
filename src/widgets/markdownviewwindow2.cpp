@@ -125,6 +125,7 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
 // ============ Destructor ============
 
 MarkdownViewWindow2::~MarkdownViewWindow2() {
+  cancelEditorImageView();
   setPresentationMode(false);
   if (m_viewer && m_debugViewer) {
     m_viewer->page()->setDevToolsPage(nullptr);
@@ -143,6 +144,7 @@ MarkdownViewWindow2::~MarkdownViewWindow2() {
 }
 
 void MarkdownViewWindow2::releaseProtectedView() {
+  cancelEditorImageView();
   setPresentationMode(false);
   ++m_navigationGeneration;
   if (m_viewer) {
@@ -182,6 +184,7 @@ void MarkdownViewWindow2::releaseProtectedView() {
 // ============ setupUI ============
 
 void MarkdownViewWindow2::setupUI() {
+  installEventFilter(this);
   // Keep the inspector outside the editor/preview splitter.
   m_mainSplitter = new QSplitter(Qt::Vertical, this);
   m_mainSplitter->setContentsMargins(0, 0, 0, 0);
@@ -398,7 +401,9 @@ void MarkdownViewWindow2::setPresentationMode(bool p_on) {
     m_presentationRequestSent = false;
     m_presentationActive = false;
     ++m_presentationGeneration;
-    qApp->removeEventFilter(this);
+    if (!m_editorImageRequest) {
+      qApp->removeEventFilter(this);
+    }
     if (cancelWeb && adapter() && adapter()->isReady()) {
       adapter()->setPresentationMode(false, false);
     }
@@ -604,6 +609,7 @@ void MarkdownViewWindow2::handlePrint() {
 }
 
 bool MarkdownViewWindow2::aboutToClose(bool p_force) {
+  cancelEditorImageView();
   setPresentationMode(false);
   updateEditSectionNumberOptions(false);
   const bool isLast = isLastWindowForBuffer();
@@ -860,6 +866,13 @@ bool MarkdownViewWindow2::setupViewer() {
             showFindResult(p_texts, p_totalMatches, p_currentMatchIndex);
           });
 
+  connect(adapterObj, &MarkdownViewerAdapter::imageViewStateChanged, this,
+          &MarkdownViewWindow2::handleImageViewStateChanged);
+  connect(adapterObj, &MarkdownViewerAdapter::imageViewCancelled, this, [this](quint64 p_id) {
+    if (p_id == m_editorImageRequest) {
+      cancelEditorImageView();
+    }
+  });
   connect(adapterObj, &MarkdownViewerAdapter::presentationStateChanged, this,
           &MarkdownViewWindow2::handlePresentationStateChanged);
   connect(adapterObj, &MarkdownViewerAdapter::textUpdated, this, [this]() {
@@ -897,10 +910,11 @@ bool MarkdownViewWindow2::setupViewer() {
       }
     }
     applyReadableWidth();
-    if (m_mode == ViewWindowMode::Edit) {
+    if (m_mode == ViewWindowMode::Edit && !m_editorImageRequest) {
       setEditViewMode(m_editViewMode);
     }
-    if (m_protectedView && !m_protectedView->splitterSizesOnReady.isEmpty()) {
+    if (!m_editorImageRequest && m_protectedView &&
+        !m_protectedView->splitterSizesOnReady.isEmpty()) {
       // Live-preview readiness distributes panes; preserve a theme reload's ratio afterward.
       m_splitter->setSizes(m_protectedView->splitterSizesOnReady);
       m_protectedView->splitterSizesOnReady.clear();
@@ -977,6 +991,7 @@ void MarkdownViewWindow2::connectViewerToEditor() {
 }
 
 bool MarkdownViewWindow2::reloadProtectedViewer() {
+  cancelEditorImageView();
   Q_ASSERT(m_viewer && m_protectedView);
   const auto position = capturePositionState();
   const auto sizes = m_splitter->sizes();
@@ -1135,7 +1150,84 @@ QSharedPointer<Outline> MarkdownViewWindow2::headingsToOutline(const QVector<T> 
 
 // ============ connectEditorSignals ============
 
+void MarkdownViewWindow2::requestEditorImageView(const QString &p_url) {
+  cancelEditorImageView();
+  if (m_mode != ViewWindowMode::Edit || !m_editor || !adapter() || !isEnabled() || !isVisible()) {
+    return;
+  }
+  // Flush the live draft before the request, even for an initializing/hidden preview.
+  // JS waits for every queued render; the editor and buffer are never reloaded here.
+  if (m_syncPreviewTimer) {
+    m_syncPreviewTimer->stop();
+  }
+  adapter()->setText(m_editor->getText(), getEditLineNumber());
+  m_imageSplitterSizes = m_splitter->sizes();
+  m_imageEditorVisible = !m_editor->isHidden();
+  m_imageViewerVisible = !m_viewer->isHidden();
+  m_imageHandleVisible = m_splitter->count() > 1 && !m_splitter->handle(1)->isHidden();
+  auto *focus = QApplication::focusWidget();
+  m_imageOriginalFocus = focus && (focus == m_editor || m_editor->isAncestorOf(focus))
+                             ? focus
+                             : m_editor->getTextEdit();
+  m_editorImageRequest = adapter()->requestImageView(p_url);
+  qApp->installEventFilter(this);
+}
+
+void MarkdownViewWindow2::handleImageViewStateChanged(quint64 p_id, bool p_opened) {
+  if (!m_editorImageRequest || p_id != m_editorImageRequest) {
+    return;
+  }
+  if (!p_opened) {
+    cancelEditorImageView(true);
+    return;
+  }
+  if (m_mode != ViewWindowMode::Edit || !isVisible() || !isEnabled()) {
+    cancelEditorImageView();
+    return;
+  }
+  m_editorImageOpened = true;
+  if (m_editViewMode == MarkdownEditorConfig::EditViewMode::EditOnly) {
+    // Keep ownership in the splitter; do not touch mode, document, cursor or undo.
+    m_viewer->show();
+    m_editor->hide();
+    if (m_splitter->count() > 1) {
+      m_splitter->handle(1)->hide();
+    }
+  }
+  m_viewer->setFocus();
+}
+
+void MarkdownViewWindow2::cancelEditorImageView(bool p_restoreFocus) {
+  const bool restore = m_editorImageRequest != 0;
+  const auto focus = m_imageOriginalFocus;
+  // Invalidate before calling the adapter: cancellation may synchronously signal back.
+  m_editorImageRequest = 0;
+  m_editorImageOpened = false;
+  m_imageOriginalFocus.clear();
+  if (!m_presentationRequested) {
+    qApp->removeEventFilter(this);
+  }
+  if (adapter()) {
+    adapter()->cancelImageView();
+  }
+  if (restore && m_editor && m_viewer) {
+    // Child visibility may be restored under a hidden tab; never show its parent.
+    m_editor->setVisible(m_imageEditorVisible);
+    m_viewer->setVisible(m_imageViewerVisible);
+    if (m_splitter->count() > 1) {
+      m_splitter->handle(1)->setVisible(m_imageHandleVisible);
+    }
+    m_splitter->setSizes(m_imageSplitterSizes);
+    if (p_restoreFocus && isVisible() && isEnabled() && focus && focus->isVisible()) {
+      focus->setFocus(Qt::OtherFocusReason);
+    }
+  }
+  m_imageSplitterSizes.clear();
+}
+
 void MarkdownViewWindow2::connectEditorSignals() {
+  connect(m_editor, &MarkdownEditor::imageViewRequested, this,
+          &MarkdownViewWindow2::requestEditorImageView);
   // Focus forwarding.
   connect(m_editor, &vte::VTextEditor::focusIn, this, [this]() { emit focused(this); });
 
@@ -1364,6 +1456,7 @@ static void syncEditorPositionFromReadMode(MarkdownEditor *p_editor, int p_lineN
 }
 
 void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffer) {
+  cancelEditorImageView();
   if (p_mode == m_mode) {
     return;
   }
@@ -1641,6 +1734,7 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
 
 // Path 2: Buffer -> Viewer.
 void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) {
+  cancelEditorImageView();
   if (!m_preparingPresentation) {
     setPresentationMode(false);
   }
@@ -1727,6 +1821,7 @@ void MarkdownViewWindow2::syncEditorPositionToPreview() {
 
 // ViewWindow2 pure virtual override.
 void MarkdownViewWindow2::syncEditorFromBuffer() {
+  cancelEditorImageView();
   setPresentationMode(false);
   syncTextEditorFromBuffer(false);
   syncViewerFromBuffer(false);
@@ -1967,6 +2062,7 @@ void MarkdownViewWindow2::removeSessionHeadingSectionNumbers() {
 }
 
 void MarkdownViewWindow2::handleEditorConfigChange() {
+  cancelEditorImageView();
   setPresentationMode(false);
   updateEditSectionNumberOptions(false);
   updateSectionNumberOptions();
@@ -2047,6 +2143,7 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
 }
 
 void MarkdownViewWindow2::handleThemeChanged() {
+  cancelEditorImageView();
   ++m_highlightStyleGeneration;
   m_codeBlockStylesInitialized = false;
   m_codeBlockStylesPending = false;
@@ -2229,6 +2326,10 @@ void MarkdownViewWindow2::updateWebViewerConfig() {
 
 void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_mode) {
   Q_ASSERT(m_mode == ViewWindowMode::Edit);
+  if (m_editorImageRequest && p_mode == m_editViewMode) {
+    return;
+  }
+  cancelEditorImageView();
   ++m_navigationGeneration;
   if (m_viewer) {
     m_viewer->invalidateNavigationTargets();
@@ -2345,6 +2446,10 @@ void MarkdownViewWindow2::handleFindAndReplaceWidgetOpened() {
 // ============ Focus ============
 
 void MarkdownViewWindow2::focusEditor() {
+  if (m_editorImageOpened && m_viewer) {
+    m_viewer->setFocus();
+    return;
+  }
   switch (m_mode) {
   case ViewWindowMode::Read:
     if (m_viewer) {
@@ -2569,6 +2674,28 @@ void MarkdownViewWindow2::handleTypeAction(int p_action) {
 // ============ Helpers ============
 
 bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (p_obj == this && (p_event->type() == QEvent::Hide || p_event->type() == QEvent::Close ||
+                        (p_event->type() == QEvent::EnabledChange && !isEnabled()))) {
+    cancelEditorImageView();
+  }
+  if (m_editorImageRequest &&
+      (p_event->type() == QEvent::KeyPress || p_event->type() == QEvent::ShortcutOverride) &&
+      static_cast<QKeyEvent *>(p_event)->key() == Qt::Key_Escape &&
+      !QApplication::activePopupWidget()) {
+    auto *widget = qobject_cast<QWidget *>(p_obj);
+    auto *focus = QApplication::focusWidget();
+    const bool belongsToView =
+        (widget && (widget == this || isAncestorOf(widget)) && widget->window() == window()) ||
+        (qobject_cast<QWindow *>(p_obj) && focus && (focus == this || isAncestorOf(focus)) &&
+         QApplication::activeWindow() == window());
+    if (belongsToView) {
+      p_event->accept();
+      if (p_event->type() == QEvent::KeyPress) {
+        cancelEditorImageView(true);
+      }
+      return true;
+    }
+  }
   if (m_presentationRequested && !m_presentationActive) {
     if (p_obj == this && ((p_event->type() == QEvent::Hide && !p_event->spontaneous()) ||
                           p_event->type() == QEvent::Close ||

@@ -123,6 +123,13 @@ file. Image MIME inference applies only after the saved suffix registry returns 
 explicit mappings (including standalone SVG as Text) and external programs keep precedence.
 Decoder failure clears the previous image and disables all camera controls until a good reload.
 
+`FileTypeCoreService` exposes an application-level **Image** built-in when the saved registry
+has none. Installed Qt decoder aliases supply its suffixes, excluding existing assignments.
+List/name/suffix lookups agree and never write configuration; Settings → File Associations
+persists the row only on Apply. A saved Image row, including empty/custom suffixes and display
+metadata, remains authoritative. Image is never newable or searchable. Unassociated image MIME
+files still use the viewer even when their decoder is unavailable, producing its explicit error.
+
 Native tabs and the Markdown double-click popup share centered, non-upscaling Fit/Reset,
 1.25× zoom steps, manual bounds `[min(0.05, fit), 16]`, and bounded left-button panning.
 Only fit mode refits on resize; manual mode preserves scale and the image-space center.
@@ -135,6 +142,19 @@ The popup uses intrinsic dimensions and generation-scoped image handlers; close,
 and protected-SVG authorization callbacks cannot revive an obsolete image. Keep the existing
 `protectedImageUrl()` path and safe no-op setup when exported HTML lacks modal markup.
 Web labels come from `WebUtils::translationScript()`, not note HTML or inline event attributes.
+
+Markdown **View Image** context actions in Read and Edit use this same web popup, never the
+system application. Read uses the already-authorized media URL; protected Edit reads through
+`readProtectedImage()` and retains the validated passive MIME/bytes, including animation.
+Ordinary relative/local, remote and data image URLs retain their normal resource policy.
+
+EditOnly temporarily shows the existing preview after the popup opens, then restores editor
+visibility, splitter sizes and focus; EditPreview keeps its current split. Neither path changes
+mode, editor text, cursor or undo history, and the web view is never reparented. Adapter request
+IDs survive resets; deferred requests wait for both channel readiness and all queued rendering.
+Bind the image signals through both channel-first and ready-first initialization paths. Close,
+Escape, tab hide, theme/config reload and protected locking cancel stale requests before
+restoring or replacing the view. Render image rebinding must not discard an unopened request.
 
 #### Read-only session recovery
 

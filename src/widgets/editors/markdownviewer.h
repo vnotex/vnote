@@ -6,8 +6,6 @@
 
 #include <QClipboard>
 
-class QUrl;
-
 #include <controllers/markdownviewwindowcontroller.h>
 #include <core/editorconfig.h>
 
@@ -72,11 +70,6 @@ private:
 
   void handleCopyImageUrlAction();
 
-  // Open the image under the cursor in an external application (read mode).
-  // Local files open with the OS default app; remote (http/https) URLs open in
-  // the browser after a security confirmation.
-  void openImageExternally(const QUrl &p_url);
-
   // Copy the clicked image.
   // Used to replace the default CopyImageToClipboard action.
   void copyImage();
@@ -93,6 +86,7 @@ private:
   quint64 m_navigationGeneration = 0;
 
   bool m_protectedView = false;
+  bool m_pageLoadStarted = false;
 
   // Managed by QObject.
   MarkdownViewerAdapter *m_adapter = nullptr;

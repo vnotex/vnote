@@ -174,8 +174,12 @@ void FileAssociationPage::loadBuiltInTypesGroup() {
       continue;
     }
 
+    const bool isImage = ft.m_typeName.compare(QLatin1String("Image"), Qt::CaseInsensitive) == 0;
     auto *lineEdit = WidgetsFactory::createLineEdit(this);
     lineEdit->setProperty(c_nameProperty, ft.m_typeName);
+    if (isImage) {
+      lineEdit->setObjectName(QStringLiteral("imageSuffixesEdit"));
+    }
     lineEdit->setPlaceholderText(tr("Suffixes separated by ;"));
     lineEdit->setToolTip(tr("List of suffixes for this file type"));
     lineEdit->setText(ft.m_suffixes.join(c_suffixSeparator));
@@ -184,8 +188,8 @@ void FileAssociationPage::loadBuiltInTypesGroup() {
     if (!firstRow) {
       m_builtInCardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     }
-    m_builtInCardLayout->addWidget(
-        SettingsPageHelper::createSettingRow(ft.m_displayName, QString(), lineEdit, this));
+    m_builtInCardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        ft.m_displayName, isImage ? tr("Read-only image viewer") : QString(), lineEdit, this));
 
     firstRow = false;
   }

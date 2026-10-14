@@ -189,6 +189,9 @@ signals:
   // Caller connects to file-open handling.
   void openFileRequested(const QString &p_filePath);
 
+  // Web-loadable URL; protected images have already passed the resource validator.
+  void imageViewRequested(const QString &p_url);
+
   // Emitted when an image is inserted into the buffer (new architecture).
   // Allows view windows to track inserted images for cleanup.
   void imageInserted(const QString &p_imagePath, const QString &p_urlInLink);
@@ -267,7 +270,8 @@ private:
   void insertImageFromUrl(const QString &p_url, bool p_quiet, bool p_base64);
 
   void installProtectedResourceReader();
-  bool readProtectedImage(const QString &p_url, QByteArray &p_data) const;
+  bool readProtectedImage(const QString &p_url, QByteArray &p_data,
+                          QByteArray *p_mime = nullptr) const;
   void openLink(const QString &p_url);
 
   // Update headings outline.

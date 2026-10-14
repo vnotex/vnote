@@ -2,9 +2,11 @@
 
 #include <QDebug>
 #include <QFileInfo>
+#include <QImageReader>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QSet>
 
 #include <vxcore/vxcore.h>
 
@@ -20,12 +22,15 @@ FileType FileTypeCoreService::parseFileType(const QJsonObject &p_obj) const {
   FileType type;
 
   type.m_typeName = p_obj["name"].toString();
-  type.m_isNewable = p_obj["isNewable"].toBool();
-  type.m_isSearchable = p_obj["isSearchable"].toBool(false);
+  const bool isImage = type.m_typeName.compare(QLatin1String("Image"), Qt::CaseInsensitive) == 0;
+  type.m_isNewable = !isImage && p_obj["isNewable"].toBool();
+  type.m_isSearchable = !isImage && p_obj["isSearchable"].toBool(false);
 
   // Get default displayName from vxcore
   QString defaultDisplayName = p_obj["displayName"].toString();
   type.m_defaultDisplayName = defaultDisplayName;
+  type.m_displayName =
+      isImage && defaultDisplayName == QLatin1String("Image") ? tr("Image") : defaultDisplayName;
 
   // Check for locale-specific displayName in metadata (e.g., displayName_zh_CN)
   if (!m_locale.isEmpty() && p_obj.contains("metadata") && p_obj["metadata"].isObject()) {
@@ -33,11 +38,7 @@ FileType FileTypeCoreService::parseFileType(const QJsonObject &p_obj) const {
     QString localeKey = QStringLiteral("displayName_") + m_locale;
     if (metadata.contains(localeKey) && metadata[localeKey].isString()) {
       type.m_displayName = metadata[localeKey].toString();
-    } else {
-      type.m_displayName = defaultDisplayName;
     }
-  } else {
-    type.m_displayName = defaultDisplayName;
   }
 
   // Get suffixes from vxcore
@@ -68,6 +69,32 @@ FileType FileTypeCoreService::parseFileTypeFromJson(const char *p_json) const {
   return parseFileType(doc.object());
 }
 
+FileType FileTypeCoreService::defaultImageFileType(const QVector<FileType> &p_types) const {
+  QSet<QString> assignedSuffixes;
+  for (const auto &type : p_types) {
+    for (const auto &suffix : type.m_suffixes) {
+      assignedSuffixes.insert(suffix.toLower());
+    }
+  }
+
+  FileType image;
+  image.m_typeName = QStringLiteral("Image");
+  image.m_defaultDisplayName = QStringLiteral("Image");
+  image.m_displayName = tr("Image");
+  image.m_isNewable = false;
+  image.m_isSearchable = false;
+  const auto formats = QImageReader::supportedImageFormats();
+  for (const auto &format : formats) {
+    const auto suffix = QString::fromLatin1(format).trimmed().toLower();
+    if (!suffix.isEmpty() && !assignedSuffixes.contains(suffix)) {
+      image.m_suffixes.append(suffix);
+    }
+  }
+  image.m_suffixes.removeDuplicates();
+  image.m_suffixes.sort();
+  return image;
+}
+
 QVector<FileType> FileTypeCoreService::parseFileTypesFromJson(const char *p_json) const {
   QVector<FileType> fileTypes;
 
@@ -82,10 +109,16 @@ QVector<FileType> FileTypeCoreService::parseFileTypesFromJson(const char *p_json
   }
 
   QJsonArray typesArray = doc.array();
+  bool hasImage = false;
   for (const auto &typeVal : typesArray) {
     if (typeVal.isObject()) {
       fileTypes.push_back(parseFileType(typeVal.toObject()));
+      hasImage = hasImage || fileTypes.constLast().m_typeName.compare(QLatin1String("Image"),
+                                                                      Qt::CaseInsensitive) == 0;
     }
+  }
+  if (!hasImage) {
+    fileTypes.push_back(defaultImageFileType(fileTypes));
   }
 
   return fileTypes;
@@ -103,16 +136,9 @@ FileType FileTypeCoreService::getFileType(const QString &p_filePath) const {
   // Explicit suffix mappings win; infer a viewer only for otherwise unknown files.
   if (type.m_typeName == "Others") {
     if (FileUtils2::isImage(p_filePath)) {
-      FileType image;
-      image.m_typeName = QStringLiteral("Image");
-      image.m_defaultDisplayName = QStringLiteral("Image");
-      image.m_displayName = tr("Image");
-      if (!suffix.isEmpty()) {
-        image.m_suffixes = {suffix};
-      }
-      image.m_isNewable = false;
-      image.m_isSearchable = false;
-      return image;
+      // Keep saved Image metadata/suffixes authoritative even for MIME inference.
+      const auto image = getFileTypeByName(QStringLiteral("Image"));
+      return image.m_typeName.isEmpty() ? type : image;
     }
     if (FileUtils2::isText(p_filePath)) {
       return getFileType("Text");
@@ -135,6 +161,16 @@ FileType FileTypeCoreService::getFileTypeBySuffix(const QString &p_suffix) const
 
   FileType type = parseFileTypeFromJson(json_str);
   vxcore_string_free(json_str);
+  // Reject unrelated suffixes before querying the full registry for an absent Image default.
+  // A saved Image (including empty/custom suffixes) is never reseeded by this lookup.
+  if (type.m_typeName == QLatin1String("Others") &&
+      !type.m_suffixes.contains(p_suffix, Qt::CaseInsensitive) &&
+      QImageReader::supportedImageFormats().contains(p_suffix.toLatin1().toLower())) {
+    const auto image = getFileTypeByName(QStringLiteral("Image"));
+    if (image.m_suffixes.contains(p_suffix, Qt::CaseInsensitive)) {
+      return image;
+    }
+  }
   return type;
 }
 
@@ -157,6 +193,17 @@ FileType FileTypeCoreService::getFileTypeByName(const QString &p_typeName) const
   VxCoreError err =
       vxcore_filetype_get_by_name(m_context, p_typeName.toUtf8().constData(), &json_str);
 
+  if (err == VXCORE_ERR_NOT_FOUND &&
+      p_typeName.compare(QLatin1String("Image"), Qt::CaseInsensitive) == 0) {
+    const auto types = getAllFileTypes();
+    for (const auto &type : types) {
+      if (type.m_typeName.compare(QLatin1String("Image"), Qt::CaseInsensitive) == 0) {
+        return type;
+      }
+    }
+    return FileType();
+  }
+
   if (err != VXCORE_OK || !json_str) {
     // Name not found - return empty FileType (vxcore returns VXCORE_ERR_NOT_FOUND)
     if (err != VXCORE_ERR_NOT_FOUND) {
@@ -176,8 +223,9 @@ bool FileTypeCoreService::setAllFileTypes(const QVector<FileType> &p_types) {
   for (const auto &ft : p_types) {
     QJsonObject obj;
     obj["name"] = ft.m_typeName;
-    obj["isNewable"] = ft.m_isNewable;
-    obj["isSearchable"] = ft.m_isSearchable;
+    const bool isImage = ft.m_typeName.compare(QLatin1String("Image"), Qt::CaseInsensitive) == 0;
+    obj["isNewable"] = !isImage && ft.m_isNewable;
+    obj["isSearchable"] = !isImage && ft.m_isSearchable;
     obj["displayName"] =
         ft.m_defaultDisplayName.isEmpty() ? ft.m_displayName : ft.m_defaultDisplayName;
 

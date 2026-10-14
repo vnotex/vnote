@@ -127,6 +127,7 @@ new QWebChannel(qt.webChannelTransport,
             revertTaskListItem(p_lineNumber);
         });
 
+        installImageViewHandler();
         console.log('QWebChannel has been set up');
         if (window.vxcore.initialized) {
             window.vxcore.kickOffMarkdown();
@@ -134,7 +135,14 @@ new QWebChannel(qt.webChannelTransport,
         }
     });
 
+function installImageViewHandler() {
+    if (window.vxImageViewer) {
+        window.vxImageViewer.bindAdapter(window.vxMarkdownAdapter);
+    }
+}
+
 window.vxcore.on('ready', function() {
+    installImageViewHandler();
     if (window.vxMarkdownAdapter) {
         window.vxcore.kickOffMarkdown();
         installTaskListHandler();

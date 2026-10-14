@@ -2,7 +2,6 @@
 
 #include <QApplication>
 #include <QContextMenuEvent>
-#include <QDesktopServices>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QMenu>
@@ -39,7 +38,6 @@
 #include <utils/clipboardutils.h>
 #include <utils/utils.h>
 #include <utils/widgetutils.h>
-#include <widgets/messageboxhelper.h>
 
 using namespace vnotex;
 
@@ -89,6 +87,26 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
   page()->setWebChannel(channel);
 
   connect(page(), &QWebEnginePage::loadStarted, this, &MarkdownViewer::invalidateNavigationTargets);
+  connect(page(), &QWebEnginePage::loadStarted, this, [this]() {
+    // A request queued before the initial load starts belongs to that first page.
+    // Later navigation/reload must invalidate requests from the previous page.
+    if (!m_pageLoadStarted) {
+      m_pageLoadStarted = true;
+      return;
+    }
+    if (m_adapter->isReady()) {
+      m_adapter->reset();
+    } else {
+      m_adapter->cancelImageView();
+    }
+  });
+  connect(page(), &QWebEnginePage::loadFinished, this, [this](bool p_ok) {
+    if (!p_ok) {
+      m_adapter->cancelImageView();
+    }
+  });
+  connect(page(), &QWebEnginePage::renderProcessTerminated, m_adapter,
+          &MarkdownViewerAdapter::cancelImageView);
   connect(m_adapter, &MarkdownViewerAdapter::textUpdated, this,
           &MarkdownViewer::invalidateNavigationTargets);
 
@@ -351,10 +369,6 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
   if (m_controller) {
     auto info = populateContextInfo();
     const QUrl imageUrl = info.imageUrl;
-    if (m_protectedView) {
-      // Embedded data stays copyable; do not hand data/scoped URLs to external apps.
-      info.imageUrl = QUrl();
-    }
     m_controller->createContextMenu(
         info, menu, [this]() { copyImage(); }, [this]() { emit editRequested(); },
         [this](const QString &target) {
@@ -363,7 +377,7 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
           clipboard->setProperty(c_propertyCrossCopy, true);
           triggerPageAction(QWebEnginePage::Copy);
         },
-        [this, imageUrl]() { openImageExternally(imageUrl); },
+        [this, imageUrl]() { m_adapter->requestImageView(imageUrl.toString(QUrl::FullyEncoded)); },
         [this]() { emit exportRequested(); });
   } else {
     // Fallback: inline logic for when no controller is set (e.g., WebViewExporter).
@@ -463,31 +477,6 @@ void MarkdownViewer::handleCopyImageUrlAction() {
       }
     }
   }
-}
-
-void MarkdownViewer::openImageExternally(const QUrl &p_url) {
-  if (m_protectedView) {
-    return;
-  }
-  if (!p_url.isValid()) {
-    return;
-  }
-  const auto scheme = p_url.scheme();
-  if (scheme == QStringLiteral("http") || scheme == QStringLiteral("https")) {
-    int ret = MessageBoxHelper::questionYesNo(
-        MessageBoxHelper::Warning, tr("Are you sure to open link (%1)?").arg(p_url.toString()),
-        tr("Malicious link might do harm to your device."), QString(), this);
-    if (ret == QMessageBox::Yes) {
-      QDesktopServices::openUrl(p_url);
-    }
-    return;
-  }
-
-  // Local file (or file:// URL): open with the default application.
-  if (p_url.isLocalFile()) {
-    WidgetUtils::openUrlByDesktop(p_url);
-  }
-  // Other schemes (data:/blob:/ftp:) are unsupported for external viewing; ignore.
 }
 
 void MarkdownViewer::copyImage() {

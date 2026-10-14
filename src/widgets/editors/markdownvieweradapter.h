@@ -137,6 +137,9 @@ public:
 
   void saveContent();
 
+  quint64 requestImageView(const QString &p_url);
+  void cancelImageView();
+
   // Should be called before WebViewer.setHtml().
   void reset();
 
@@ -169,6 +172,8 @@ public slots:
   void setWorkFinished();
 
   void setPresentationState(bool p_active, const QString &p_error);
+
+  void setImageViewState(quint64 p_id, bool p_opened);
 
   // The line number at the top.
   void setTopLineNumber(int p_lineNumber);
@@ -227,6 +232,9 @@ signals:
 
   void presentationModeRequested(bool p_active, bool p_darkTheme);
 
+  void imageViewRequested(quint64 p_id, const QString &p_url);
+  void imageViewCancelRequested(quint64 p_id);
+
   // Current Markdown text is updated.
   void textUpdated(const QString &p_text);
 
@@ -274,6 +282,9 @@ signals:
 signals:
   void presentationStateChanged(bool p_active, const QString &p_error);
 
+  void imageViewStateChanged(quint64 p_id, bool p_opened);
+  void imageViewCancelled(quint64 p_id);
+
   void graphPreviewDataReady(const PreviewData &p_data);
 
   void mathPreviewDataReady(const PreviewData &p_data);
@@ -313,6 +324,11 @@ private:
   void scrollToAnchor(const QString &p_anchor);
 
   bool m_protectedView = false;
+
+  // Never reset the sequence on page reload; delayed web replies must stay obsolete.
+  quint64 m_imageViewSequence = 0;
+  quint64 m_imageViewRequest = 0;
+  QString m_pendingImageViewUrl;
 
   int m_revision = 0;
 

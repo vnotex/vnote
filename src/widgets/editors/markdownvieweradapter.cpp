@@ -6,6 +6,8 @@
 #include <QTimer>
 #include <QUrl>
 
+#include <utility>
+
 #include "../outlineprovider.h"
 #include "graphvizhelper.h"
 #include "plantumlhelper.h"
@@ -418,6 +420,47 @@ void MarkdownViewerAdapter::setPresentationState(bool p_active, const QString &p
   emit presentationStateChanged(p_active, p_error);
 }
 
+quint64 MarkdownViewerAdapter::requestImageView(const QString &p_url) {
+  cancelImageView();
+  const auto id = ++m_imageViewSequence;
+  m_imageViewRequest = id;
+  m_pendingImageViewUrl = p_url;
+  const auto dispatch = [this, id]() {
+    if (id == m_imageViewRequest) {
+      const auto url = std::move(m_pendingImageViewUrl);
+      emit imageViewRequested(id, url);
+    }
+  };
+  if (isReady()) {
+    dispatch();
+  } else {
+    // The queued closure retains only identity, not protected image bytes.
+    pendAction(dispatch);
+  }
+  return id;
+}
+
+void MarkdownViewerAdapter::cancelImageView() {
+  const auto id = m_imageViewRequest;
+  m_imageViewRequest = 0;
+  m_pendingImageViewUrl.clear();
+  if (id) {
+    emit imageViewCancelRequested(id);
+    emit imageViewCancelled(id);
+  }
+}
+
+void MarkdownViewerAdapter::setImageViewState(quint64 p_id, bool p_opened) {
+  if (!p_id || p_id != m_imageViewRequest) {
+    return;
+  }
+  if (!p_opened) {
+    m_imageViewRequest = 0;
+    m_pendingImageViewUrl.clear();
+  }
+  emit imageViewStateChanged(p_id, p_opened);
+}
+
 void MarkdownViewerAdapter::saveContent() { emit contentRequested(); }
 
 void MarkdownViewerAdapter::setSavedContent(const QString &p_headContent,
@@ -427,6 +470,7 @@ void MarkdownViewerAdapter::setSavedContent(const QString &p_headContent,
 }
 
 void MarkdownViewerAdapter::reset() {
+  cancelImageView();
   m_revision = 0;
   setReady(false);
   m_topLineNumber = -1;

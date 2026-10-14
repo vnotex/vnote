@@ -4,6 +4,8 @@
 #include "viewwindow2.h"
 
 #include <QColor>
+#include <QList>
+#include <QPointer>
 #include <QScopedPointer>
 #include <QSet>
 #include <QSharedPointer>
@@ -145,6 +147,10 @@ private:
 
   bool reloadProtectedViewer();
 
+  void requestEditorImageView(const QString &p_url);
+  void handleImageViewStateChanged(quint64 p_id, bool p_opened);
+  void cancelEditorImageView(bool p_restoreFocus = false);
+
   void setPresentationMode(bool p_on);
 
   void requestPresentationWhenReady();
@@ -279,6 +285,13 @@ private:
   int m_viewerBufferRevision = 0;
   ViewWindowMode m_previousMode = ViewWindowMode::Invalid;
   bool m_viewerReady = false;
+  quint64 m_editorImageRequest = 0;
+  bool m_editorImageOpened = false;
+  bool m_imageEditorVisible = false;
+  bool m_imageViewerVisible = false;
+  bool m_imageHandleVisible = false;
+  QList<int> m_imageSplitterSizes;
+  QPointer<QWidget> m_imageOriginalFocus;
   // Intent, dispatch and web confirmation are distinct while the page/deck initializes.
   bool m_presentationRequested = false;
   bool m_presentationRequestSent = false;
