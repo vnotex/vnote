@@ -6,6 +6,7 @@
 #include <QDir>
 #include <QEvent>
 #include <QFileInfo>
+#include <QHideEvent>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
@@ -13,6 +14,7 @@
 #include <QMimeDatabase>
 #include <QPointer>
 #include <QRegularExpression>
+#include <QResizeEvent>
 #include <QScopeGuard>
 #include <QUrl>
 
@@ -31,6 +33,7 @@
 #include <widgets/dialogs/imageinsertdialog.h>
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/selectdialog.h>
+#include <widgets/imageviewer.h>
 
 #include "../messageboxhelper.h"
 
@@ -138,6 +141,8 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
       markModified();
     }
   });
+  connect(this, &m3::qt::MindMapEditor::nodeImageActivated, this,
+          [this](const QString &, const QImage &p_image) { showImage(p_image); });
   connect(this, &m3::qt::MindMapEditor::nodeLinkActivated, this,
           [this](const QString &, const QString &p_url) {
             if (m_contentLoaded && canUseBuffer()) {
@@ -178,7 +183,67 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
   setBuffer(p_buffer);
 }
 
+MindMapEditor::~MindMapEditor() { closeImageViewer(); }
+
+void MindMapEditor::showImage(const QImage &p_image) {
+  if (p_image.isNull() || !m_contentLoaded || m_loading || !isEnabled() || !isVisible() ||
+      !canUseBuffer()) {
+    return;
+  }
+  if (!m_imageOverlay) {
+    m_imageOriginalFocus = QApplication::focusWidget();
+    m_imageOverlay = new ImageViewer(m_services, this, ImageViewer::Mode::Overlay);
+    m_imageOverlay->setObjectName(QStringLiteral("mindMapImageViewer"));
+    connect(m_imageOverlay, &ImageViewer::closeRequested, this,
+            [this]() { closeImageViewer(true); });
+  }
+  const QPointer<ImageViewer> overlay = m_imageOverlay;
+  overlay->setGeometry(rect());
+  overlay->setImage(p_image);
+  overlay->show();
+  if (overlay) {
+    overlay->raise();
+    overlay->setFocus(Qt::OtherFocusReason);
+  }
+}
+
+void MindMapEditor::closeImageViewer(bool p_restoreFocus) {
+  const QPointer<MindMapEditor> guard(this);
+  const auto overlay = m_imageOverlay;
+  const auto focus = m_imageOriginalFocus;
+  m_imageOverlay.clear();
+  m_imageOriginalFocus.clear();
+  // Destroy the decoded pixels synchronously, especially when protected content locks.
+  delete overlay.data();
+  if (guard && p_restoreFocus && isVisible() && isEnabled() && canUseBuffer()) {
+    if (focus && focus->isVisible() && focus->isEnabled()) {
+      focus->setFocus(Qt::OtherFocusReason);
+    } else {
+      setFocus(Qt::OtherFocusReason);
+    }
+  }
+}
+
+void MindMapEditor::hideEvent(QHideEvent *p_event) {
+  const QPointer<MindMapEditor> guard(this);
+  closeImageViewer();
+  if (guard) {
+    m3::qt::MindMapEditor::hideEvent(p_event);
+  }
+}
+
+void MindMapEditor::resizeEvent(QResizeEvent *p_event) {
+  const QPointer<MindMapEditor> guard(this);
+  m3::qt::MindMapEditor::resizeEvent(p_event);
+  if (guard && m_imageOverlay) {
+    m_imageOverlay->setGeometry(rect());
+  }
+}
+
 void MindMapEditor::applyConfig() {
+  if (m_imageOverlay) {
+    m_imageOverlay->handleThemeChanged();
+  }
   auto *manager = m_services.get<ConfigMgr2>();
   if (!manager) {
     return;
@@ -239,6 +304,10 @@ void MindMapEditor::invalidateContent(const QString &p_error) {
 
 void MindMapEditor::setBuffer(const Buffer2 &p_buffer) {
   const QPointer<MindMapEditor> alive(this);
+  closeImageViewer();
+  if (!alive) {
+    return;
+  }
   const auto notify = qScopeGuard([alive] {
     if (alive) {
       emit alive->insertionAvailabilityChanged();
@@ -289,6 +358,10 @@ bool MindMapEditor::loadContent(const QByteArray &p_content) {
     return false;
   }
   const QPointer<MindMapEditor> guard(this);
+  closeImageViewer();
+  if (!guard) {
+    return false;
+  }
   const auto notify = qScopeGuard([guard] {
     if (guard) {
       emit guard->insertionAvailabilityChanged();
@@ -377,6 +450,10 @@ void MindMapEditor::onProtectedLockingChanged(bool p_locking) {
   Q_UNUSED(p_locking);
   if (m_buffer.isEncrypted()) {
     const QPointer<MindMapEditor> guard(this);
+    closeImageViewer();
+    if (!guard) {
+      return;
+    }
     invalidateInsertion();
     if (!guard) {
       return;
@@ -508,6 +585,10 @@ void MindMapEditor::changeEvent(QEvent *p_event) {
   const QPointer<MindMapEditor> guard(this);
   m3::qt::MindMapEditor::changeEvent(p_event);
   if (guard && p_event->type() == QEvent::EnabledChange) {
+    closeImageViewer();
+    if (!guard) {
+      return;
+    }
     invalidateInsertion();
     if (guard) {
       emit insertionAvailabilityChanged();

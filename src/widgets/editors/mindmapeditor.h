@@ -12,6 +12,7 @@ class QJsonObject;
 #include <core/services/buffer2.h>
 
 namespace vnotex {
+class ImageViewer;
 class MindMapViewWindowController;
 class ServiceLocator;
 
@@ -19,6 +20,7 @@ class MindMapEditor : public m3::qt::MindMapEditor {
   Q_OBJECT
 public:
   MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent = nullptr);
+  ~MindMapEditor() override;
 
   bool loadContent(const QByteArray &p_content);
   // Commits the active draft; throws std::runtime_error rather than returning stale content.
@@ -42,6 +44,8 @@ protected:
   void insertFromMimeData(const QString &p_nodeId, const QMimeData *p_source,
                           MimeInsertionSource p_origin) override;
   void changeEvent(QEvent *p_event) override;
+  void hideEvent(QHideEvent *p_event) override;
+  void resizeEvent(QResizeEvent *p_event) override;
   void onAddUrl(const QString &p_nodeId) override;
   void onAddImage(const QString &p_nodeId) override;
 
@@ -76,6 +80,8 @@ private:
   void applyInsertion(Insertion &p_insertion, const QJsonArray &p_records);
   bool canUseBuffer() const;
   bool canEdit() const;
+  void showImage(const QImage &p_image);
+  void closeImageViewer(bool p_restoreFocus = false);
   void markModified();
   void invalidateContent(const QString &p_error);
 
@@ -86,6 +92,8 @@ private:
   quint64 m_generation = 0;
   quint64 m_insertionSerial = 0;
   QPointer<QDialog> m_insertionDialog;
+  QPointer<ImageViewer> m_imageOverlay;
+  QPointer<QWidget> m_imageOriginalFocus;
   QString m_loadError;
   bool m_loading = false;
   bool m_contentLoaded = false;

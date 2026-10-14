@@ -130,7 +130,23 @@ persists the row only on Apply. A saved Image row, including empty/custom suffix
 metadata, remains authoritative. Image is never newable or searchable. Unassociated image MIME
 files still use the viewer even when their decoder is unavailable, producing its explicit error.
 
-Native tabs and the Markdown double-click popup share centered, non-upscaling Fit/Reset,
+`ImageViewer` owns the native camera shared by `ImageViewWindow` and the mind-map image overlay.
+Mind-map plain left double-click activates only decoded images, including in read-only maps;
+placeholders, resize handles and modified/group gestures never open the overlay. The m3 activation
+signal carries an implicitly shared pixel snapshot, not a resource URL: the host must not fetch
+or decode again. The overlay is a child covering the editor, never a separate window. It follows
+editor resizes and uses a 90%-opaque theme backdrop, a top-right Close button and the shared
+bottom-right camera controls. Escape, Close or a backdrop click dismiss it; image clicks and
+pans do not. Explicit dismissal restores the previous focus. Tab stays within the controls;
+editing shortcuts and Ctrl+wheel never reach the covered map. Claim native QWindow keys as well
+as widget keys so the first Escape closes the image, not Presentation Mode.
+
+Tab hide, disable, reload, buffer replacement and protected locking destroy the overlay.
+Viewing never changes map history, content or zoom; protected revocation destroys the decoded
+pixels synchronously before cache refresh. Overlay transparency overrides only its own surfaces,
+not toolbars or native image tabs, and follows live theme changes.
+
+Native tabs and the mind-map/Markdown popups share centered, non-upscaling Fit/Reset,
 1.25× zoom steps, manual bounds `[min(0.05, fit), 16]`, and bounded left-button panning.
 Only fit mode refits on resize; manual mode preserves scale and the image-space center.
 Camera changes never dirty the buffer and are not persisted. Overlay controls stay outside
@@ -138,7 +154,7 @@ image transforms. Qt's optimized viewport scrolling also moves child widgets: th
 view explicitly restores the toolbar position after scrolling. Keep its 32×32 hit targets,
 4px spacing, 12px bottom/right inset, and explicit theme-icon refresh.
 
-The popup uses intrinsic dimensions and generation-scoped image handlers; close, replacement,
+The Markdown popup uses intrinsic dimensions and generation-scoped image handlers; close, replacement,
 and protected-SVG authorization callbacks cannot revive an obsolete image. Keep the existing
 `protectedImageUrl()` path and safe no-op setup when exported HTML lacks modal markup.
 Web labels come from `WebUtils::translationScript()`, not note HTML or inline event attributes.

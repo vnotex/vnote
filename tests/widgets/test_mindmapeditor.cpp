@@ -14,6 +14,7 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QFontDatabase>
+#include <QGraphicsPixmapItem>
 #include <QGraphicsScene>
 #include <QGraphicsTextItem>
 #include <QGraphicsView>
@@ -66,6 +67,7 @@
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/editors/mindmapeditor.h>
+#include <widgets/imageviewer.h>
 
 #include <deque>
 #include <functional>
@@ -194,6 +196,31 @@ bool rendersColor(MindMapEditor &p_editor, const QColor &p_color) {
     }
   }
   return false;
+}
+
+QPoint imagePoint(QGraphicsView *p_view, const QColor &p_color) {
+  const auto pixels = p_view->viewport()->grab().toImage();
+  QRect bounds;
+  for (int y = 0; y < pixels.height(); ++y) {
+    for (int x = 0; x < pixels.width(); ++x) {
+      if (pixels.pixelColor(x, y) == p_color) {
+        bounds |= QRect(x, y, 1, 1);
+      }
+    }
+  }
+  return bounds.isEmpty() ? QPoint(-100, -100)
+                          : (QPointF(bounds.center()) / pixels.devicePixelRatio()).toPoint();
+}
+
+ImageViewer *openImagePopup(MindMapEditor &p_editor, QGraphicsView *p_view, const QColor &p_color) {
+  const auto point = imagePoint(p_view, p_color);
+  if (!p_view->viewport()->rect().contains(point)) {
+    return nullptr;
+  }
+  QTest::mouseClick(p_view->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  QTest::mouseDClick(p_view->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  QTest::mouseRelease(p_view->viewport(), Qt::LeftButton, Qt::NoModifier, point);
+  return p_editor.findChild<ImageViewer *>(QStringLiteral("mindMapImageViewer"));
 }
 
 // An actual loopback HTTP peer with explicit response barriers. No real network,
@@ -457,6 +484,10 @@ private slots:
   void retargetRefreshesRelativeImagesWithoutReloading();
   void reloadAndRetargetCancelStaleHttpImages();
   void protectedImagesRefuseExternalAndRevokeOnLock();
+  void imagePopupPreservesDocument_data();
+  void imagePopupPreservesDocument();
+  void imagePopupInvalidation_data();
+  void imagePopupInvalidation();
   void configuredShortcutsDriveRealCommands();
   void livePreferencesPreserveDraftAndReadOnlyBuffer();
   void separatedPropertiesRespectAdapterPolicy();
@@ -1112,7 +1143,8 @@ void TestMindMapEditor::protectedImagesRefuseExternalAndRevokeOnLock() {
   QSignalSpy deliveries(policy, &MindMapViewWindowController::imageReady);
   QSignalSpy requests(&editor, &m3::qt::MindMapEditor::imageRequested);
   QVERIFY(editor.loadContent(body));
-  QVERIFY(showEditor(editor));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
   QTRY_COMPARE(requests.count(), 1);
   QTRY_COMPARE(deliveries.count(), 1);
   QVERIFY(qvariant_cast<QImage>(deliveries.last().at(2)).isNull());
@@ -1139,10 +1171,13 @@ void TestMindMapEditor::protectedImagesRefuseExternalAndRevokeOnLock() {
   QTRY_VERIFY(rendersColor(editor, embeddedColor));
   const auto committed = editor.toJson();
   QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
+  QPointer<ImageViewer> popup = openImagePopup(editor, view, embeddedColor);
+  QVERIFY(popup && popup->isVisible());
   const int priorRequests = requests.count();
   const auto priorDeliveries = deliveries.count();
   editor.reloadImages();
   QVERIFY(m_buffers->beginProtectedLocking());
+  QVERIFY(popup.isNull());
   QTRY_VERIFY(requests.count() > priorRequests);
   QTRY_VERIFY(deliveries.count() > priorDeliveries);
   QVERIFY(qvariant_cast<QImage>(deliveries.last().at(2)).isNull());
@@ -1162,6 +1197,147 @@ void TestMindMapEditor::protectedImagesRefuseExternalAndRevokeOnLock() {
   QTRY_VERIFY(rendersColor(editor, embeddedColor));
   QCOMPARE(server.requestCount(), 0);
   QCOMPARE(readFile(buffer.resolvedPath()), ciphertext);
+}
+
+void TestMindMapEditor::imagePopupPreservesDocument_data() {
+  QTest::addColumn<bool>("readOnly");
+  QTest::newRow("editable") << false;
+  QTest::newRow("read-only") << true;
+}
+
+void TestMindMapEditor::imagePopupPreservesDocument() {
+  QFETCH(bool, readOnly);
+  const QColor color(231, 37, 53);
+  const auto content = fixture(QStringLiteral("popup.png"));
+  const auto buffer = openNote(QStringLiteral("popup.mmm"), content, readOnly);
+  QVERIFY(buffer.isValid());
+  const auto path = QDir(buffer.getResourceBasePath()).filePath(QStringLiteral("popup.png"));
+  QVERIFY(writeFile(path, imageBytes(color)));
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(content));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QTRY_VERIFY(rendersColor(editor, color));
+  // Viewing must use already-authorized pixels, not a second file read.
+  QVERIFY(QFile::remove(path));
+  if (!readOnly) {
+    QVERIFY(!editor.addNode(QStringLiteral("r"), QStringLiteral("Existing undo entry")).isEmpty());
+    editor.setModified(false);
+  }
+  const auto committed = editor.toJson();
+  const auto camera = view->transform();
+  const bool undoAvailable = editor.commandAction(QStringLiteral("undo"))->isEnabled();
+  QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
+  QPointer<ImageViewer> popup = openImagePopup(editor, view, color);
+  QVERIFY(popup && popup->isVisible());
+  QVERIFY(!popup->isWindow());
+  QCOMPARE(popup->window(), editor.window());
+  QCOMPARE(popup->geometry(), editor.rect());
+  editor.resize(800, 600);
+  QCOMPARE(popup->geometry(), editor.rect());
+  auto *viewer = popup.data();
+  auto *imageView = viewer->findChild<QGraphicsView *>();
+  QVERIFY(imageView);
+  QTRY_COMPARE(imageView->transform().m11(), 1.0);
+  auto *image = dynamic_cast<QGraphicsPixmapItem *>(imageView->scene()->items().first());
+  QVERIFY(image);
+  QCOMPARE(image->pixmap().size(), QSize(120, 60));
+  QCOMPARE(image->pixmap().toImage().pixelColor(60, 30), color);
+  auto *zoomIn = viewer->findChild<QAction *>(QStringLiteral("imageZoomIn"));
+  auto *reset = viewer->findChild<QAction *>(QStringLiteral("imageReset"));
+  QVERIFY(zoomIn && reset);
+  zoomIn->trigger();
+  QCOMPARE(imageView->transform().m11(), 1.25);
+  reset->trigger();
+  QCOMPARE(imageView->transform().m11(), 1.0);
+  QTRY_VERIFY(imageView->hasFocus());
+  QTest::keyClick(imageView, Qt::Key_B, Qt::ControlModifier);
+  QTest::keyClick(imageView, Qt::Key_Z, Qt::ControlModifier);
+  QTest::keyClick(imageView, Qt::Key_F2);
+  QTest::keyClick(imageView, Qt::Key_Delete);
+  const QPoint center = imageView->viewport()->rect().center();
+  QWheelEvent wheel(center, imageView->viewport()->mapToGlobal(center), QPoint(), QPoint(0, 120),
+                    Qt::NoButton, Qt::ControlModifier, Qt::NoScrollPhase, false);
+  QApplication::sendEvent(imageView->viewport(), &wheel);
+  QVERIFY(wheel.isAccepted());
+  QCOMPARE(editor.toJson(), committed);
+  QVERIFY(!editor.hasPendingEdit());
+  QCOMPARE(view->transform(), camera);
+  QTest::mouseClick(imageView->viewport(), Qt::LeftButton, Qt::NoModifier, center);
+  QVERIFY(popup && popup->isVisible());
+  // A drag that starts on the image and ends on the backdrop is not a backdrop click.
+  QTest::mousePress(imageView->viewport(), Qt::LeftButton, Qt::NoModifier, center);
+  QTest::mouseMove(imageView->viewport(), QPoint(4, 4));
+  QTest::mouseRelease(imageView->viewport(), Qt::LeftButton, Qt::NoModifier, QPoint(4, 4));
+  QVERIFY(popup && popup->isVisible());
+  for (int i = 0; i < 6; ++i) {
+    QTest::keyClick(QApplication::focusWidget(), Qt::Key_Tab);
+    QVERIFY(popup->isAncestorOf(QApplication::focusWidget()));
+  }
+  QTest::keyClick(QApplication::focusWidget(), Qt::Key_Escape);
+  QVERIFY(popup.isNull());
+  QTRY_VERIFY(view->hasFocus());
+  for (const bool closeButton : {false, true}) {
+    popup = openImagePopup(editor, view, color);
+    QVERIFY(popup && popup->isVisible());
+    if (closeButton) {
+      auto *close = popup->findChild<QToolButton *>(QStringLiteral("imageClose"));
+      QVERIFY(close);
+      QTest::mouseClick(close, Qt::LeftButton);
+    } else {
+      auto *viewport = popup->findChild<QGraphicsView *>()->viewport();
+      QTest::mouseClick(viewport, Qt::LeftButton, Qt::NoModifier, QPoint(4, 4));
+    }
+    QVERIFY(popup.isNull());
+    QTRY_VERIFY(view->hasFocus());
+  }
+  QCOMPARE(editor.toJson(), committed);
+  QCOMPARE(view->transform(), camera);
+  QCOMPARE(editor.commandAction(QStringLiteral("undo"))->isEnabled(), undoAvailable);
+  QVERIFY(!editor.isModified());
+  QVERIFY(!editor.hasPendingEdit());
+  QVERIFY(dirty.isEmpty());
+  QCOMPARE(buffer.getContentRaw(), content);
+}
+
+void TestMindMapEditor::imagePopupInvalidation_data() {
+  QTest::addColumn<QString>("transition");
+  for (const auto *name : {"hide", "disable", "reload", "retarget", "invalid-content"}) {
+    QTest::newRow(name) << QString::fromLatin1(name);
+  }
+}
+
+void TestMindMapEditor::imagePopupInvalidation() {
+  QFETCH(QString, transition);
+  const QColor color(13, 181, 67);
+  const auto content = fixture(dataUrl(imageBytes(color)));
+  const auto buffer = openNote(QStringLiteral("popup.mmm"), content);
+  QVERIFY(buffer.isValid());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(content));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QTRY_VERIFY(rendersColor(editor, color));
+  QPointer<ImageViewer> popup = openImagePopup(editor, view, color);
+  QVERIFY(popup && popup->isVisible());
+  if (transition == QLatin1String("hide")) {
+    editor.hide();
+  } else if (transition == QLatin1String("disable")) {
+    editor.setEnabled(false);
+  } else if (transition == QLatin1String("reload")) {
+    QVERIFY(editor.loadContent(content));
+  } else if (transition == QLatin1String("retarget")) {
+    const auto other = openNote(QStringLiteral("other.mmm"), fixture());
+    QVERIFY(other.isValid());
+    editor.setBuffer(other);
+  } else {
+    QVERIFY(!editor.loadContent(QByteArrayLiteral("invalid JSON")));
+  }
+  QVERIFY(popup.isNull());
+  QCoreApplication::processEvents();
+  QVERIFY(!editor.findChild<ImageViewer *>(QStringLiteral("mindMapImageViewer")));
+  QVERIFY(!editor.isModified());
+  QCOMPARE(buffer.getContentRaw(), content);
 }
 
 void TestMindMapEditor::zoomStateTracksCanvasWithoutEditing() {

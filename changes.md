@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* View double-clicked mind-map images in an editor overlay like Markdown, with a dimmed backdrop, Close button, zoom, pan and reset-to-fit; support read-only maps and close protected previews on locking
 * Honor rapid repeated clicks on mind-map expand/collapse buttons, including in read-only maps, without starting inline editing
 * Keep mind-map expand/collapse buttons highlighted under a stationary pointer after folding or expanding
 * Start mind-map inline editing by double-clicking the topic label or blank space inside a node, including empty topics; exclude images and the expand/collapse button

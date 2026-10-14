@@ -3,15 +3,8 @@
 
 #include "viewwindow2.h"
 
-#include <QSizeF>
-
-class QAction;
-class QGraphicsPixmapItem;
-class QGraphicsView;
-class QLabel;
-class QToolBar;
-
 namespace vnotex {
+class ImageViewer;
 
 // Read-only, first-frame image viewer. The camera never modifies the buffer.
 class ImageViewWindow : public ViewWindow2 {
@@ -33,27 +26,9 @@ protected:
   void zoom(bool p_zoomIn) override;
   void resetZoom() override;
   bool isPrintSupported() const override { return false; }
-  bool eventFilter(QObject *p_obj, QEvent *p_event) override;
 
 private:
-  qreal fitScale() const;
-  void fitImage();
-  void scheduleFit();
-  void updateControls();
-  void positionOverlay();
-  void cancelDrag();
-
-  QGraphicsView *m_view = nullptr;
-  QGraphicsPixmapItem *m_image = nullptr;
-  QLabel *m_error = nullptr;
-  QToolBar *m_controls = nullptr;
-  QAction *m_zoomIn = nullptr;
-  QAction *m_zoomOut = nullptr;
-  QAction *m_reset = nullptr;
-  QSizeF m_imageSize;
-  qreal m_scale = 1.0;
-  bool m_fitMode = true;
-  bool m_fitPending = false;
+  ImageViewer *m_viewer = nullptr;
 };
 
 } // namespace vnotex
