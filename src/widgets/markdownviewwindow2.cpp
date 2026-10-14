@@ -1155,12 +1155,12 @@ void MarkdownViewWindow2::requestEditorImageView(const QString &p_url) {
   if (m_mode != ViewWindowMode::Edit || !m_editor || !adapter() || !isEnabled() || !isVisible()) {
     return;
   }
-  // Flush the live draft before the request, even for an initializing/hidden preview.
-  // JS waits for every queued render; the editor and buffer are never reloaded here.
+  // The source URL is already resolved. Do not rebuild the note merely to view it.
   if (m_syncPreviewTimer) {
+    m_deferredPreviewUpdate |= m_syncPreviewTimer->isActive() &&
+                               m_editViewMode == MarkdownEditorConfig::EditViewMode::EditPreview;
     m_syncPreviewTimer->stop();
   }
-  adapter()->setText(m_editor->getText(), getEditLineNumber());
   m_imageSplitterSizes = m_splitter->sizes();
   m_imageEditorVisible = !m_editor->isHidden();
   m_imageViewerVisible = !m_viewer->isHidden();
@@ -1169,7 +1169,13 @@ void MarkdownViewWindow2::requestEditorImageView(const QString &p_url) {
   m_imageOriginalFocus = focus && (focus == m_editor || m_editor->isAncestorOf(focus))
                              ? focus
                              : m_editor->getTextEdit();
-  m_editorImageRequest = adapter()->requestImageView(p_url);
+  QSizeF viewportHint;
+  if (m_editViewMode == MarkdownEditorConfig::EditViewMode::EditOnly) {
+    const auto size = m_splitter->contentsRect().size();
+    m_viewer->resize(size);
+    viewportHint = QSizeF(size) / m_viewer->zoomFactor();
+  }
+  m_editorImageRequest = adapter()->requestImageView(p_url, viewportHint);
   qApp->installEventFilter(this);
 }
 
@@ -1187,12 +1193,15 @@ void MarkdownViewWindow2::handleImageViewStateChanged(quint64 p_id, bool p_opene
   }
   m_editorImageOpened = true;
   if (m_editViewMode == MarkdownEditorConfig::EditViewMode::EditOnly) {
-    // Keep ownership in the splitter; do not touch mode, document, cursor or undo.
-    m_viewer->show();
+    // Hide first: showing both panes would briefly resize the prepared image to half width.
+    const bool updatesEnabled = m_splitter->updatesEnabled();
+    m_splitter->setUpdatesEnabled(false);
     m_editor->hide();
     if (m_splitter->count() > 1) {
       m_splitter->handle(1)->hide();
     }
+    m_viewer->show();
+    m_splitter->setUpdatesEnabled(updatesEnabled);
   }
   m_viewer->setFocus();
 }
@@ -1212,17 +1221,35 @@ void MarkdownViewWindow2::cancelEditorImageView(bool p_restoreFocus) {
   }
   if (restore && m_editor && m_viewer) {
     // Child visibility may be restored under a hidden tab; never show its parent.
+    const bool updatesEnabled = m_splitter->updatesEnabled();
+    m_splitter->setUpdatesEnabled(false);
+    if (!m_imageViewerVisible) {
+      m_viewer->hide();
+    }
     m_editor->setVisible(m_imageEditorVisible);
     m_viewer->setVisible(m_imageViewerVisible);
     if (m_splitter->count() > 1) {
       m_splitter->handle(1)->setVisible(m_imageHandleVisible);
     }
     m_splitter->setSizes(m_imageSplitterSizes);
+    m_splitter->setUpdatesEnabled(updatesEnabled);
     if (p_restoreFocus && isVisible() && isEnabled() && focus && focus->isVisible()) {
       focus->setFocus(Qt::OtherFocusReason);
     }
   }
   m_imageSplitterSizes.clear();
+  if (p_restoreFocus) {
+    resumeDeferredPreviewUpdate();
+  }
+}
+
+void MarkdownViewWindow2::resumeDeferredPreviewUpdate() {
+  if (m_deferredPreviewUpdate && !m_editorImageRequest && m_editor && m_viewer &&
+      m_syncPreviewTimer && !m_syncPreviewTimer->isActive() && isVisible() && isEnabled() &&
+      m_mode == ViewWindowMode::Edit &&
+      m_editViewMode == MarkdownEditorConfig::EditViewMode::EditPreview) {
+    m_syncPreviewTimer->start();
+  }
 }
 
 void MarkdownViewWindow2::connectEditorSignals() {
@@ -1802,12 +1829,17 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
 
 // Path 4: Editor -> Viewer (debounced preview).
 void MarkdownViewWindow2::syncEditorContentsToPreview() {
+  if (m_editorImageRequest) {
+    m_deferredPreviewUpdate = true;
+    return;
+  }
   if (!m_viewerReady || isReadMode() ||
       m_editViewMode == MarkdownEditorConfig::EditViewMode::EditOnly) {
     return;
   }
   // NOTE: Do NOT update m_viewerBufferRevision here.
   // This is visual preview sync only, not a buffer sync event.
+  m_deferredPreviewUpdate = false;
   adapter()->setText(m_editor->getText(), m_editor->getTopLine());
 }
 
@@ -2674,6 +2706,10 @@ void MarkdownViewWindow2::handleTypeAction(int p_action) {
 // ============ Helpers ============
 
 bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (p_obj == this && (p_event->type() == QEvent::Show ||
+                        (p_event->type() == QEvent::EnabledChange && isEnabled()))) {
+    resumeDeferredPreviewUpdate();
+  }
   if (p_obj == this && (p_event->type() == QEvent::Hide || p_event->type() == QEvent::Close ||
                         (p_event->type() == QEvent::EnabledChange && !isEnabled()))) {
     cancelEditorImageView();

@@ -420,21 +420,22 @@ void MarkdownViewerAdapter::setPresentationState(bool p_active, const QString &p
   emit presentationStateChanged(p_active, p_error);
 }
 
-quint64 MarkdownViewerAdapter::requestImageView(const QString &p_url) {
+quint64 MarkdownViewerAdapter::requestImageView(const QString &p_url,
+                                                const QSizeF &p_viewportHint) {
   cancelImageView();
   const auto id = ++m_imageViewSequence;
   m_imageViewRequest = id;
   m_pendingImageViewUrl = p_url;
-  const auto dispatch = [this, id]() {
+  const auto dispatch = [this, id, p_viewportHint]() {
     if (id == m_imageViewRequest) {
       const auto url = std::move(m_pendingImageViewUrl);
-      emit imageViewRequested(id, url);
+      emit imageViewRequested(id, url, p_viewportHint.width(), p_viewportHint.height());
     }
   };
   if (isReady()) {
     dispatch();
   } else {
-    // The queued closure retains only identity, not protected image bytes.
+    // The queued closure retains only identity/geometry, not protected image bytes.
     pendAction(dispatch);
   }
   return id;

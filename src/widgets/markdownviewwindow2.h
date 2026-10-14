@@ -150,6 +150,7 @@ private:
   void requestEditorImageView(const QString &p_url);
   void handleImageViewStateChanged(quint64 p_id, bool p_opened);
   void cancelEditorImageView(bool p_restoreFocus = false);
+  void resumeDeferredPreviewUpdate();
 
   void setPresentationMode(bool p_on);
 
@@ -287,6 +288,7 @@ private:
   bool m_viewerReady = false;
   quint64 m_editorImageRequest = 0;
   bool m_editorImageOpened = false;
+  bool m_deferredPreviewUpdate = false;
   bool m_imageEditorVisible = false;
   bool m_imageViewerVisible = false;
   bool m_imageHandleVisible = false;

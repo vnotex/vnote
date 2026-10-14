@@ -148,13 +148,24 @@ system application. Read uses the already-authorized media URL; protected Edit r
 `readProtectedImage()` and retains the validated passive MIME/bytes, including animation.
 Ordinary relative/local, remote and data image URLs retain their normal resource policy.
 
-EditOnly temporarily shows the existing preview after the popup opens, then restores editor
-visibility, splitter sizes and focus; EditPreview keeps its current split. Neither path changes
-mode, editor text, cursor or undo history, and the web view is never reparented. Adapter request
-IDs survive resets; deferred requests wait for both channel readiness and all queued rendering.
-Bind the image signals through both channel-first and ready-first initialization paths. Close,
-Escape, tab hide, theme/config reload and protected locking cancel stale requests before
-restoring or replacing the view. Render image rebinding must not discard an unopened request.
+Image requests do not rerender the note just to display a resolved URL. Pending live-preview
+updates are deferred until normal popup close or a still-live tab is shown/re-enabled; teardown
+must not restart the preview timer. EditPreview keeps its current split and draft/undo history.
+
+Native-requested overlays stay invisible until the image/error is ready. Visible pages await
+image decoding; hidden Qt WebEngine pages cannot settle `decode()` until shown, so a loaded
+image with valid intrinsic dimensions uses synchronous first-paint decoding instead. EditOnly
+supplies a final CSS viewport hint (including page zoom) and fits before revealing the existing
+preview. Pre-open resizes retain that hint; the native-open acknowledgement permits correction
+against the actual viewport. Never expose an unfitted image when both viewport sizes are zero.
+Hide the editor before showing the preview to avoid an intermediate half-width split; restore
+its exact visibility, sizes and focus afterward, without reparenting or changing editing mode.
+
+Adapter request IDs survive resets; deferred requests wait for channel readiness and queued
+rendering. Bind through both channel-first and ready-first initialization paths. Close, Escape,
+tab hide, theme/config reload and protected locking cancel stale requests before restoring or
+replacing the view. Render image rebinding must not discard an unopened request, and stale
+decode/acknowledgement callbacks must not publish it.
 
 #### Read-only session recovery
 

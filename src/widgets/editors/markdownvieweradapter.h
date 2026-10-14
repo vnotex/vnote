@@ -137,7 +137,7 @@ public:
 
   void saveContent();
 
-  quint64 requestImageView(const QString &p_url);
+  quint64 requestImageView(const QString &p_url, const QSizeF &p_viewportHint = QSizeF());
   void cancelImageView();
 
   // Should be called before WebViewer.setHtml().
@@ -232,7 +232,7 @@ signals:
 
   void presentationModeRequested(bool p_active, bool p_darkTheme);
 
-  void imageViewRequested(quint64 p_id, const QString &p_url);
+  void imageViewRequested(quint64 p_id, const QString &p_url, qreal p_width, qreal p_height);
   void imageViewCancelRequested(quint64 p_id);
 
   // Current Markdown text is updated.

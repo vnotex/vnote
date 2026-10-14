@@ -16,6 +16,8 @@ class ImageViewer {
         this.activeNativeId = 0;
         this.lastNativeId = 0;
         this.nativeAdapter = null;
+        this.viewportHint = null;
+        this.nativeOpenAcknowledged = false;
         window.vxcore.on('ready', () => {
             this.setupImageViewBox();
             this._scheduleNativeOpen();
@@ -30,13 +32,13 @@ class ImageViewer {
             return;
         }
         this.nativeAdapter = p_adapter;
-        p_adapter.imageViewRequested.connect((id, url) => {
+        p_adapter.imageViewRequested.connect((id, url, width, height) => {
             if (id <= this.lastNativeId) {
                 return;
             }
             this.closeImageViewBox();
             this.lastNativeId = id;
-            this.pendingNativeRequest = { id, url };
+            this.pendingNativeRequest = { id, url, width, height };
             this._scheduleNativeOpen();
         });
         p_adapter.imageViewCancelRequested.connect((id) => {
@@ -62,15 +64,13 @@ class ImageViewer {
             return;
         }
         this.pendingNativeRequest = null;
-        const generation = this._beginLoad('transparent');
+        const generation = this._beginLoad('transparent', request);
         if (generation === null) {
             this.nativeAdapter.setImageViewState(request.id, false);
             return;
         }
         this.activeNativeId = request.id;
         this._loadImage(request.url, generation);
-        // The modal (including its loading/error state and Close) now exists.
-        this.nativeAdapter.setImageViewState(request.id, true);
     }
 
     setupImageViewBox() {
@@ -125,6 +125,7 @@ class ImageViewer {
             e.stopPropagation();
         }, { passive: false });
         this.viewBox.draggable = false;
+        this.viewBox.decoding = 'sync';
         this.viewBox.ondragstart = (e) => e.preventDefault();
         this.viewBox.onpointerdown = (e) => {
             if (e.button !== 0 || this.activePointerId !== null || !this.naturalWidth) {
@@ -195,6 +196,8 @@ class ImageViewer {
             || (this.pendingNativeRequest ? this.pendingNativeRequest.id : 0);
         this.activeNativeId = 0;
         this.pendingNativeRequest = null;
+        this.viewportHint = null;
+        this.nativeOpenAcknowledged = false;
         ++this.loadGeneration;
         this._detachLoad();
         this._endDrag();
@@ -213,7 +216,7 @@ class ImageViewer {
         return !!this.viewBoxContainer && this.viewBoxContainer.style.display === 'block';
     }
 
-    _beginLoad(p_background) {
+    _beginLoad(p_background, p_nativeRequest = null) {
         this.closeImageViewBox();
         if (!this.setupImageViewBox()) {
             return null;
@@ -234,6 +237,15 @@ class ImageViewer {
         const colors = window.getComputedStyle(document.body);
         this.viewBoxContainer.style.setProperty('--vx-image-view-fg', colors.color);
         this.viewBoxContainer.style.setProperty('--vx-image-view-bg', colors.backgroundColor);
+        if (p_nativeRequest && p_nativeRequest.width > 0 && p_nativeRequest.height > 0) {
+            const root = document.documentElement;
+            this.viewportHint = {
+                width: Math.max(0, p_nativeRequest.width - (window.innerWidth - root.clientWidth)),
+                height: Math.max(0, p_nativeRequest.height - (window.innerHeight - root.clientHeight))
+            };
+        }
+        // Prepare native context requests without flashing an empty overlay in live preview.
+        this.viewBoxContainer.style.visibility = p_nativeRequest ? 'hidden' : '';
         this.viewBoxContainer.style.display = 'block';
         this._resize();
         this._updateControls();
@@ -241,28 +253,59 @@ class ImageViewer {
     }
 
     _loadImage(p_src, p_generation) {
-        if (p_generation !== this.loadGeneration || !this.isViewingImage()) {
+        const nativeId = this.activeNativeId;
+        const current = () => p_generation === this.loadGeneration && this.isViewingImage()
+            && (!nativeId || nativeId === this.activeNativeId);
+        if (!current()) {
             return;
         }
         let settled = false;
-        const finish = (failed) => {
-            if (settled || p_generation !== this.loadGeneration || !this.isViewingImage()) {
+        const publish = (failed) => {
+            if (!current()) {
                 return;
             }
-            settled = true;
-            this._detachLoad();
             if (failed || this.viewBox.naturalWidth <= 0 || this.viewBox.naturalHeight <= 0) {
                 this.viewBox.style.display = 'none';
                 this.viewBox.removeAttribute('src');
                 this.naturalWidth = this.naturalHeight = 0;
                 this.error.hidden = false;
                 this._updateControls();
+            } else {
+                this.naturalWidth = this.viewBox.naturalWidth;
+                this.naturalHeight = this.viewBox.naturalHeight;
+                // Geometry must precede display, including the hidden EditOnly viewport hint.
+                this.resetZoom();
+            }
+            this.viewBoxContainer.style.visibility = '';
+            if (nativeId) {
+                this.nativeAdapter.setImageViewState(nativeId, true, () => {
+                    if (current()) {
+                        // The native pane swap has returned. Only now trust a positive live size.
+                        this.nativeOpenAcknowledged = true;
+                        this._resize();
+                    }
+                });
+            }
+        };
+        const finish = (failed) => {
+            if (settled || !current()) {
                 return;
             }
-            this.naturalWidth = this.viewBox.naturalWidth;
-            this.naturalHeight = this.viewBox.naturalHeight;
-            this.viewBox.style.display = 'block';
-            this.resetZoom();
+            settled = true;
+            this._detachLoad();
+            if (failed) {
+                publish(true);
+                return;
+            }
+            if (nativeId && this.viewportHint && this.viewportHint.width > 0
+                && this.viewportHint.height > 0 && document.visibilityState === 'hidden') {
+                // Hidden Qt WebEngine surfaces cannot settle decode() until shown. Prepare the
+                // loaded image now; decoding='sync' includes its pixels in the first paint.
+                publish(false);
+                return;
+            }
+            // decode() waits for pixels; a rejection alone does not invalidate a loaded SVG.
+            this.viewBox.decode().then(() => publish(false), () => publish(false));
         };
         this.viewBox.onload = () => finish(false);
         this.viewBox.onerror = () => finish(true);
@@ -303,6 +346,10 @@ class ImageViewer {
         if (!this.naturalWidth || !this.isViewingImage()) {
             return;
         }
+        if (this.viewport.width <= 0 || this.viewport.height <= 0) {
+            this.viewBox.style.display = 'none';
+            return;
+        }
         const width = this.naturalWidth * this.scale;
         const height = this.naturalHeight * this.scale;
         const clamp = (offset, image, viewport) => image <= viewport
@@ -311,7 +358,7 @@ class ImageViewer {
         this.top = clamp(this.top, height, this.viewport.height);
         Object.assign(this.viewBox.style, {
             width: width + 'px', height: height + 'px',
-            left: this.left + 'px', top: this.top + 'px'
+            left: this.left + 'px', top: this.top + 'px', display: 'block'
         });
         this._updateControls();
     }
@@ -319,8 +366,11 @@ class ImageViewer {
     resetZoom() {
         this._endDrag();
         this.fitMode = true;
-        if (!this.naturalWidth || !this.isViewingImage()
-            || this.viewport.width <= 0 || this.viewport.height <= 0) {
+        if (!this.naturalWidth || !this.isViewingImage()) {
+            return;
+        }
+        if (this.viewport.width <= 0 || this.viewport.height <= 0) {
+            this.viewBox.style.display = 'none';
             return;
         }
         this.scale = this._fitScale();
@@ -353,8 +403,13 @@ class ImageViewer {
             return;
         }
         const previous = this.viewport;
-        this.viewport = { width: this.viewBoxContainer.clientWidth,
-                          height: this.viewBoxContainer.clientHeight };
+        const actual = { width: this.viewBoxContainer.clientWidth,
+                         height: this.viewBoxContainer.clientHeight };
+        if (this.nativeOpenAcknowledged && actual.width > 0 && actual.height > 0) {
+            this.viewportHint = null;
+        }
+        // Hidden pages may still report zero or an old split width until native opening finishes.
+        this.viewport = this.viewportHint || actual;
         this.controls.style.left = Math.max(0, this.viewport.width - this.controls.offsetWidth - 12) + 'px';
         this.controls.style.top = Math.max(0, this.viewport.height - this.controls.offsetHeight - 12) + 'px';
         if (this.fitMode) {

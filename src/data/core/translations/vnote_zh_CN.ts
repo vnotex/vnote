@@ -2627,10 +2627,6 @@
         <source>File suffixes to open with the system default application</source>
         <translation>使用系统默认程序打开的文件后缀</translation>
     </message>
-    <message>
-        <source>Read-only image viewer</source>
-        <translation>只读图片查看器</translation>
-    </message>
 </context>
 <context>
     <name>vnotex::FindAndReplaceWidget2</name>

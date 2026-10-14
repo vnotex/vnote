@@ -188,8 +188,8 @@ void FileAssociationPage::loadBuiltInTypesGroup() {
     if (!firstRow) {
       m_builtInCardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     }
-    m_builtInCardLayout->addWidget(SettingsPageHelper::createSettingRow(
-        ft.m_displayName, isImage ? tr("Read-only image viewer") : QString(), lineEdit, this));
+    m_builtInCardLayout->addWidget(
+        SettingsPageHelper::createSettingRow(ft.m_displayName, QString(), lineEdit, this));
 
     firstRow = false;
   }
