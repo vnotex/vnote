@@ -1,38 +1,41 @@
 # Changes
-## Unreleased
-* Fix mind-map node Copy/Paste in m3: paste complete child subtrees with fresh IDs, preserved properties/internal links, visible selection and one-step undo
-* Move Copy/Paste to the second section of mind-map node context menus, directly below node creation
-* Add Expand All and Collapse All to mind-map node context menus, recursively folding only that subtree, including in read-only maps
-* Add testing-only `--no-single-instance` to skip the instance lock and IPC; config and notebooks are not isolated, so use a separate disposable portable profile and test data
-* Remove redundant text-editor and Markdown zoom controls from Settings; adjust zoom directly in the editor
-* Remember Markdown read zoom, shared text-editor zoom and mind-map fixed or Fit zoom in session state
-* Show the configured shortcut and tooltip on the mind-map context-menu Shortcuts Help action
-* Make mind-map emoji picker selection and hover highlights follow the theme, with an outline marking the keyboard target
-* Keep Lucius text selections visible when hovering single-line inputs and spin boxes, including mind-map properties
-* Put 173 curated efficiency, project, management, TODO, diary, importance/priority, office and engineering emoji first in the mind-map icon picker's All categories view, including numbered keycaps 0-10; add matching search keywords while retaining the complete Unicode catalog and category ordering
-* Show whole percentages in the mind-map zoom selector without reducing the actual zoom precision
-* Clarify mind-map shortcuts help instructions and emphasize key bindings in bold
-* Add Shortcuts Help to the mind-map empty-space context menu to open the keyboard shortcuts overlay
-* View double-clicked mind-map images in an editor overlay like Markdown, with a dimmed backdrop, Close button, zoom, pan and reset-to-fit; support read-only maps and close protected previews on locking
-* Honor rapid repeated clicks on mind-map expand/collapse buttons, including in read-only maps, without starting inline editing
-* Keep mind-map expand/collapse buttons highlighted under a stationary pointer after folding or expanding
-* Start mind-map inline editing by double-clicking the topic label or blank space inside a node, including empty topics; exclude images and the expand/collapse button
-* Hide the Title row in mind-map image insertion dialogs while retaining it for Markdown
-* Insert mind-map images and hyperlinks from clipboard, drag-and-drop, toolbar and context menu using shared acquisition dialogs; preserve existing topics for links and insert multi-item batches as one undoable child command
-* Remove obsolete attachment entries during Scan after files are renamed or deleted externally, including when no new files are found (#2771)
-* Restore the Scan button tooltip in the attachment popup
-* Preserve the Markdown edit cursor and selection when returning from read mode if the mapped position is already visible (#2768)
-* Keep Lucius tree selections blue when unfocused so they remain distinct from gray hover highlights
-* Add the standard Select All action to the Markdown read-mode context menu
-* Keep KaTeX cross-copy clear at its natural size by sharing the in-place preview's tight, padded layout and high-DPI renderer
-* Embed local images as base64 in WeChat and Evernote cross-copy; use a generic SVG-to-image rule for graphs and MathJax, and rasterize complete KaTeX formulas with embedded fonts
-* Fix CI fixtures for self-contained encrypted notes and macOS sync-error dialogs
-* Use icon-only View and Settings menus in the main toolbar, with the Lucide View icon
-* Remember Comments and Tools dock sizes across editor switches and restarts, replacing the fixed Outline/Comments split ratio
-* Fix encrypted-note opens silently failing while notebook maintenance is busy; self-contained notes no longer require a migration lease, and protected-open errors reach the unlock UI
-* Make newly encrypted notes and backups self-contained: each v2 `.vne` carries its wrapped keys and no longer depends on a shared notebook vault
-* Migrate legacy encrypted notes and backups on writable open without rewriting their encrypted payload; read-only opens leave the original files unchanged
-* Preserve shared master-password unlocking across notes; retain old vaults for unmigrated notes and historical copies. Older VNote versions cannot read v2 notes
+## v4.10.0
+A feature release with richer mind-map editing and exports, image viewing and self-contained encrypted notes on top of VNote 4.9.1:
+
+* **Mind maps**
+    * Add independent trees, full-branch duplication, and native node Copy/Paste with fresh IDs, preserved properties and internal links, visible selection and one-step undo
+    * Add recursive Expand All and Collapse All to node context menus, including in read-only maps; put Copy/Paste directly below node creation
+    * Add a layout menu and remember the default layout; support automatic section numbering with the shared editor numbering pattern
+    * Insert images and hyperlinks from the clipboard, drag-and-drop, toolbar and context menu through shared dialogs; preserve existing topics for links and insert multi-item batches as one undoable command
+    * Add icon and tag inputs to node context menus and Copy Link for node URLs; hide the unused Title field in mind-map image insertion dialogs
+    * Open inline editing by double-clicking a topic label or blank node space, including empty topics, without interfering with images or expand/collapse controls
+    * Honor rapid repeated expand/collapse clicks and keep hover feedback under a stationary pointer, including in read-only maps
+    * Prioritize 173 curated productivity, project, diary, office and engineering emoji, including numbered keycaps 0-10, while retaining the full Unicode catalog and category order; add search keywords and theme-aware selection, hover and keyboard-target highlights
+    * Make Shortcuts Help available from node and empty-space context menus, show its configured shortcut, and clarify the overlay instructions with bold key bindings
+* **Export**
+    * Export mind maps as readable Markdown, native HTML with selectable node text and inline SVG connectors, or PDF; include independent trees and preserve peer-root heading structure
+    * HTML presents the full-width map at its natural size with topic links to continuous articles containing notes, images, icons, tags and links; PDF fits the map on the first page and keeps articles readable on subsequent pages
+    * Use the live editor snapshot for Current Buffer exports and disk contents for Current Note and batch exports; wait for PDF images and fonts before printing and report rendering, timeout and output failures
+* **Images and Markdown**
+    * Open images in read-only tabs and expose image file associations in Settings
+    * View Markdown and mind-map images in overlays with zoom, pan and reset-to-fit controls; support read-only maps and close protected image previews when notes are locked
+    * Embed local images in WeChat and Evernote cross-copy, rasterize SVG graphs and MathJax, and render complete KaTeX formulas with embedded fonts and clear high-DPI output
+    * Preserve the edit cursor and selection when returning from Markdown read mode if the mapped position is already visible (#2768); add Select All to the read-mode context menu
+* **Encrypted notes**
+    * Make newly encrypted notes and backups self-contained: each v2 `.vne` carries its wrapped keys instead of depending on a shared notebook vault
+    * Migrate legacy notes and backups on writable open without rewriting encrypted payloads; read-only opens leave files unchanged, shared master-password unlocking remains available, and old vaults are retained for unmigrated notes and historical copies
+    * **Older VNote versions cannot read v2 encrypted notes**
+    * Fix encrypted-note opens silently failing during notebook maintenance; self-contained notes no longer need a migration lease, and protected-open errors reach the unlock UI
+* **Interface and reliability**
+    * Remember Markdown read zoom, shared text-editor zoom and mind-map fixed or Fit zoom in session state; remove redundant Settings zoom controls and show whole percentages without reducing actual mind-map zoom precision
+    * Remember Comments and Tools dock sizes across editor switches and restarts, and use icon-only View and Settings menus in the main toolbar
+    * Closing a detached window closes its tabs instead of reattaching them to the main window
+    * Show note sizes in Properties using human-friendly units
+    * Remove obsolete attachment entries during Scan after external renames or deletions, even when no new files are found (#2771), and restore the Scan tooltip
+    * Keep Lucius tree selections distinct from hover highlights when unfocused and preserve text-selection visibility while hovering inputs and spin boxes
+    * Add testing-only `--no-single-instance` to bypass the instance lock and IPC; use a separate disposable portable profile and test data because configuration and notebooks are not isolated
+    * Fix libgit2 runtime consistency and encrypted-note, sync-dialog and mind-map integration regression fixtures
+* **Translations**: Simplified Chinese (zh_CN), Japanese (ja) and Korean (ko) catalogs updated
 
 ## v4.9.1
 A maintenance release with more flexible mind-map tools, theme fixes and attachment improvements on top of VNote 4.9.0:

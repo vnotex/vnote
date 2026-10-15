@@ -412,7 +412,7 @@
     <message>
         <location filename="../../../core/services/foldermetadatavalidator.cpp" line="+245"/>
         <location line="+33"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+145"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+151"/>
         <location line="+23"/>
         <location line="+53"/>
         <location line="+10"/>
@@ -435,12 +435,23 @@
         <translation>拒绝共享：%1 不可读。</translation>
     </message>
     <message>
-        <location line="+69"/>
+        <location line="+67"/>
+        <source>Cannot inspect protected note %1: %2</source>
+        <translation>无法检查受保护笔记 %1：%2</translation>
+    </message>
+    <message>
+        <location line="+29"/>
         <source>&quot;%1&quot; and &quot;%2&quot; in %3 would collide on the destination filesystem, which does not distinguish letter case.</source>
         <translation>%3 中的“%1”与“%2”在不区分大小写的目标文件系统上会冲突。</translation>
     </message>
     <message>
-        <location line="+392"/>
+        <location line="+391"/>
+        <location line="+4"/>
+        <source>The encrypted notebook configuration could not be read.</source>
+        <translation>无法读取加密笔记本配置。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>The encrypted notebook key envelope could not be read.</source>
         <translation>无法读取笔记本的加密密钥封装数据。</translation>
     </message>
@@ -450,7 +461,7 @@
         <translation>笔记本的加密密钥封装数据已损坏。</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+13"/>
         <source>Cannot share protected notes with an absolute or parent-escaping assets folder. The assets folder must stay within each note&apos;s folder so its image and attachment links remain valid.</source>
         <translation>资源文件夹使用绝对路径或路径超出笔记所在文件夹时，无法分享受保护的笔记。资源文件夹必须位于每篇笔记所在的文件夹内，以确保其图片和附件链接保持有效。</translation>
     </message>
@@ -460,7 +471,17 @@
         <translation>无法写入加密分享包的封装数据。</translation>
     </message>
     <message>
-        <location line="+71"/>
+        <location line="+73"/>
+        <source>The protected note format changed while sharing.</source>
+        <translation>受保护笔记的格式在分享过程中发生了变化。</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>The notebook configuration changed while sharing.</source>
+        <translation>笔记本配置在分享过程中发生了变化。</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>The notebook key envelope changed while sharing.</source>
         <translation>分享期间笔记本的密钥封装数据发生变化。</translation>
     </message>
@@ -602,7 +623,7 @@
         <location filename="../../../core/services/folderbundleimporter.cpp" line="-9"/>
         <location line="+162"/>
         <location line="+49"/>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="-545"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="-571"/>
         <location line="+49"/>
         <source>Cannot read %1</source>
         <translation>无法读取 %1</translation>
@@ -706,17 +727,12 @@
         <translation>无法创建 %1</translation>
     </message>
     <message>
-        <location line="+176"/>
-        <source>The protected bundle is missing its notebook key envelope.</source>
-        <translation>受保护的分享包缺少笔记本密钥封装数据。</translation>
+        <location line="+179"/>
+        <source>The encrypted bundle&apos;s notebook metadata is incomplete.</source>
+        <translation>加密数据包的笔记本元数据不完整。</translation>
     </message>
     <message>
-        <location line="+10"/>
-        <source>The encrypted bundle&apos;s key envelope or metadata is incomplete.</source>
-        <translation>加密分享包的密钥封装数据或元数据不完整。</translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="+9"/>
         <source>%1 — %2 notes, %3 subfolders</source>
         <translation>%1 — %2 篇笔记，%3 个子文件夹</translation>
     </message>
@@ -732,13 +748,9 @@
     </message>
     <message>
         <location line="+11"/>
+        <location line="+17"/>
         <source>Encrypted bundles require the authenticated notebook transfer flow.</source>
         <translation>加密分享包必须使用带认证的笔记本转移流程。</translation>
-    </message>
-    <message>
-        <location line="+17"/>
-        <source>This bundle contains protected content but has no usable key envelope.</source>
-        <translation>此分享包含有受保护的内容，但没有可用的密钥封装数据。</translation>
     </message>
     <message>
         <location line="+26"/>
@@ -788,7 +800,7 @@
         <translation>源文件夹在复制过程中发生了变化（%1）。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/folderbundleimporter.cpp" line="-456"/>
+        <location filename="../../../core/services/folderbundleimporter.cpp" line="-448"/>
         <location filename="../../../core/services/foldersharepackager.cpp" line="+24"/>
         <source>The copied folder is incomplete.</source>
         <translation>复制后的文件夹不完整。</translation>
@@ -806,12 +818,12 @@
         <translation>复制后的文件夹已损坏（%1）。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+170"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+181"/>
         <source>Cannot create a temporary folder in the destination.</source>
         <translation>无法在目标位置创建临时文件夹。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/folderbundleimporter.cpp" line="+283"/>
+        <location filename="../../../core/services/folderbundleimporter.cpp" line="+275"/>
         <location filename="../../../core/services/foldersharepackager.cpp" line="+23"/>
         <source>A temporary copy could not be removed and is still at %1. Delete it manually.</source>
         <translation>临时副本无法删除，仍位于 %1。请手动删除。</translation>
@@ -835,7 +847,7 @@
         <translation>注入的发布失败。</translation>
     </message>
     <message>
-        <location filename="../../../core/services/foldersharepackager.cpp" line="+39"/>
+        <location filename="../../../core/services/foldersharepackager.cpp" line="+55"/>
         <source>The folder changed while it was being prepared.</source>
         <translation>文件夹在准备过程中发生了变化。</translation>
     </message>
@@ -856,9 +868,17 @@
     </message>
 </context>
 <context>
+    <name>QPlatformTheme</name>
+    <message>
+        <location filename="../../../widgets/imageviewer.cpp" line="+125"/>
+        <source>Close</source>
+        <translation>关闭</translation>
+    </message>
+</context>
+<context>
     <name>QWebEnginePage</name>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="+581"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="+575"/>
         <source>&amp;Back</source>
         <translation>后退(&amp;B)</translation>
     </message>
@@ -1007,7 +1027,7 @@
         <translation>此链接指向 Markdown 文件。是否改为打开对应的 HTML 文件？</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+2"/>
         <source>Zoom In</source>
         <translation>放大</translation>
     </message>
@@ -1028,40 +1048,9 @@
     </message>
 </context>
 <context>
-    <name>vnotex::ImageViewWindow</name>
-    <message>
-        <location filename="../../../widgets/imageviewwindow.cpp" line="+99"/>
-        <source>Zoom In</source>
-        <translation>放大</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Zoom Out</source>
-        <translation>缩小</translation>
-    </message>
-    <message>
-        <location line="+2"/>
-        <source>Reset (fit and center)</source>
-        <translation>重置（适应并居中）</translation>
-    </message>
-    <message>
-        <location line="-32"/>
-        <source>Unable to display image</source>
-        <translation>无法显示图片</translation>
-    </message>
-</context>
-<context>
-    <name>vnotex::FileTypeCoreService</name>
-    <message>
-        <location filename="../../../core/services/filetypecoreservice.cpp" line="+110"/>
-        <source>Image</source>
-        <translation>图片</translation>
-    </message>
-</context>
-<context>
     <name>m3::qt::NodePropertiesPanel</name>
     <message>
-        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+57"/>
+        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+63"/>
         <source>Node Properties</source>
         <translation>节点属性</translation>
     </message>
@@ -1222,7 +1211,7 @@
         <translation>扫描</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+20"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
@@ -1250,13 +1239,13 @@
         </translation>
     </message>
     <message>
-        <location line="-186"/>
-        <location line="+243"/>
+        <location line="-185"/>
+        <location line="+242"/>
         <source>Attachments not supported for this notebook type</source>
         <translation>该类型的笔记本不支持附件</translation>
     </message>
     <message>
-        <location line="-192"/>
+        <location line="-191"/>
         <source>Add Attachments</source>
         <translation>添加附件</translation>
     </message>
@@ -1266,7 +1255,7 @@
         <translation>所有文件 (*)</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+66"/>
         <source>Delete Attachments</source>
         <translation>删除附件</translation>
     </message>
@@ -1309,7 +1298,7 @@
 <context>
     <name>vnotex::BufferService</name>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="+2245"/>
+        <location filename="../../../core/services/bufferservice.cpp" line="+2429"/>
         <source>The note is no longer open.</source>
         <translation>该笔记已不再打开。</translation>
     </message>
@@ -1348,9 +1337,9 @@
         <translation>保存已打开的笔记已取消。</translation>
     </message>
     <message>
-        <location line="-2230"/>
+        <location line="-2400"/>
         <location line="+217"/>
-        <location line="+198"/>
+        <location line="+211"/>
         <location line="+121"/>
         <location line="+67"/>
         <location line="+43"/>
@@ -1358,7 +1347,7 @@
         <translation>替换已取消。</translation>
     </message>
     <message>
-        <location line="-640"/>
+        <location line="-653"/>
         <location line="+5"/>
         <source>The note cannot be read or exceeds the search size limit.</source>
         <translation>无法读取笔记，或笔记超出搜索大小限制。</translation>
@@ -1375,7 +1364,7 @@
     </message>
     <message>
         <location line="+8"/>
-        <location line="+456"/>
+        <location line="+469"/>
         <location line="+85"/>
         <source>Could not prepare the replacement.</source>
         <translation>无法准备替换操作。</translation>
@@ -1485,7 +1474,7 @@
         <translation>替换所做的修改仍未保存：%1</translation>
     </message>
     <message>
-        <location line="+1394"/>
+        <location line="+1551"/>
         <source>The note is being replaced.</source>
         <translation>笔记正在替换中。</translation>
     </message>
@@ -1977,18 +1966,18 @@
 <context>
     <name>vnotex::ExportController</name>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="+36"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="+37"/>
         <source>Export is already in progress.</source>
         <translation>已有导出任务正在进行中。</translation>
     </message>
     <message>
         <location line="+11"/>
-        <location line="+194"/>
+        <location line="+196"/>
         <source>NotebookCoreService not available.</source>
         <translation>NotebookCoreService 不可用。</translation>
     </message>
     <message>
-        <location line="-188"/>
+        <location line="-190"/>
         <source>Failed to create exporter.</source>
         <translation>无法创建导出器。</translation>
     </message>
@@ -2044,7 +2033,7 @@
         <translation>不支持的导出来源。</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+67"/>
         <location line="+95"/>
         <source>Failed to resolve file path for (%1).</source>
         <translation>无法解析(%1)的文件路径。</translation>
@@ -2465,85 +2454,82 @@
 <context>
     <name>vnotex::Exporter</name>
     <message>
-        <location filename="../../../export/exporter.cpp" line="+37"/>
-        <location line="+24"/>
+        <location filename="../../../export/exporter.cpp" line="+54"/>
+        <location line="+28"/>
         <source>Failed to create output folder (%1).</source>
         <translation>无法创建输出文件夹(%1)。</translation>
     </message>
     <message>
         <location line="+19"/>
-        <location line="+88"/>
-        <location line="+62"/>
-        <location line="+58"/>
+        <location line="+71"/>
+        <location line="+89"/>
+        <location line="+37"/>
         <source>Failed to create output folder under (%1).</source>
         <translation>无法在(%1)中创建输出文件夹。</translation>
     </message>
     <message>
-        <location line="-179"/>
+        <location line="-257"/>
         <source>Failed to read file (%1): %2</source>
         <translation>无法读取文件 (%1)：%2</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+137"/>
         <source>Failed to write file (%1): %2</source>
         <translation>无法写入文件（%1）：%2</translation>
     </message>
     <message>
-        <location line="+6"/>
-        <source>Failed to copy file (%1): %2</source>
-        <translation>无法复制文件（%1）：%2</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Failed to export markdown due to empty content and file path.</source>
-        <translation>由于内容和文件路径均为空，无法导出 Markdown。</translation>
-    </message>
-    <message>
-        <location line="+33"/>
+        <location line="+294"/>
         <source>Failed to copy attachment folder (%1): %2</source>
         <translation>无法复制附件文件夹（%1）：%2</translation>
     </message>
     <message>
-        <location line="+53"/>
-        <location line="+76"/>
+        <location line="-189"/>
+        <location line="+61"/>
         <source>all_in_one_export</source>
         <translation>多合一导出</translation>
     </message>
     <message>
-        <location line="-72"/>
-        <location line="+76"/>
+        <location line="-58"/>
+        <location line="+62"/>
         <source>Exported to (%1).</source>
         <translation>输出到(%1)。</translation>
     </message>
     <message>
-        <location line="-213"/>
+        <location line="-202"/>
         <source>Unknown target format %1.</source>
         <translation>未知的目标格式%1。</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+10"/>
         <source>File (%1) exported to (%2)</source>
         <translation>文件(%1)已导出为(%2)</translation>
     </message>
     <message>
         <location line="+2"/>
+        <location line="+90"/>
         <source>Failed to export file (%1)</source>
         <translation>无法导出文件(%1)</translation>
     </message>
     <message>
-        <location line="+393"/>
+        <location line="+136"/>
+        <source>No export renderer registered for (%1).</source>
+        <translation>未为 (%1) 注册导出渲染器。</translation>
+    </message>
+    <message>
+        <location line="+98"/>
         <source>Custom command: %1</source>
         <translation>自定义命令: %1</translation>
     </message>
     <message>
-        <location line="-304"/>
-        <location line="+62"/>
-        <location line="+165"/>
+        <location line="-262"/>
+        <location line="+47"/>
+        <location line="+41"/>
+        <location line="+55"/>
         <source>Failed to create temporary directory to hold HTML files.</source>
         <translation>无法创建临时目录存放HTML文件。</translation>
     </message>
     <message>
-        <location line="-45"/>
+        <location line="+58"/>
         <source>Asked to stop. Aborting.</source>
         <translation>用户取消。正在终止。</translation>
     </message>
@@ -2571,7 +2557,7 @@
         <translation>文件关联</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+30"/>
         <location line="+84"/>
         <location line="+42"/>
         <source>Suffixes separated by ;</source>
@@ -2631,6 +2617,15 @@
         <location line="+5"/>
         <source>File suffixes to open with the system default application</source>
         <translation>使用系统默认程序打开的文件后缀</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::FileTypeCoreService</name>
+    <message>
+        <location filename="../../../core/services/filetypecoreservice.cpp" line="+33"/>
+        <location line="+50"/>
+        <source>Image</source>
+        <translation>图片</translation>
     </message>
 </context>
 <context>
@@ -3369,6 +3364,154 @@
     </message>
 </context>
 <context>
+    <name>vnotex::HtmlPdfExporter</name>
+    <message>
+        <location filename="../../../export/htmlpdfexporter.cpp" line="+136"/>
+        <source>A PDF conversion is already running.</source>
+        <translation>已有 PDF 转换正在进行。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>PDF conversion requires input HTML, an output file and a page layout.</source>
+        <translation>PDF 转换需要输入 HTML、输出文件和页面布局。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Qt PDF conversion requires exactly one HTML file. Use wkhtmltopdf for multiple documents.</source>
+        <translation>Qt PDF 转换只支持一个 HTML 文件。转换多个文档时请使用 wkhtmltopdf。</translation>
+    </message>
+    <message>
+        <location line="+36"/>
+        <source>Failed to load HTML for PDF conversion (%1). The file is not readable.</source>
+        <translation>无法加载用于 PDF 转换的 HTML (%1)。该文件不可读。</translation>
+    </message>
+    <message>
+        <location line="+35"/>
+        <source>Failed to load HTML for PDF conversion (%1).</source>
+        <translation>无法加载用于 PDF 转换的 HTML (%1)。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Timed out loading HTML for PDF conversion (%1).</source>
+        <translation>加载用于 PDF 转换的 HTML (%1) 超时。</translation>
+    </message>
+    <message>
+        <location line="+38"/>
+        <source>Failed while waiting for PDF images and fonts (%1).</source>
+        <translation>等待 PDF 图片和字体时失败 (%1)。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Timed out waiting for PDF images and fonts (%1).</source>
+        <translation>等待 PDF 图片和字体超时 (%1)。</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Failed to print HTML to PDF (%1).</source>
+        <translation>无法将 HTML 打印为 PDF (%1)。</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Timed out printing HTML to PDF (%1).</source>
+        <translation>将 HTML 打印为 PDF 超时 (%1)。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Failed to write PDF file (%1): %2</source>
+        <translation>无法写入 PDF 文件 (%1)：%2</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Failed to commit PDF file (%1): %2</source>
+        <translation>无法提交 PDF 文件 (%1)：%2</translation>
+    </message>
+    <message>
+        <location line="+83"/>
+        <source>Table of Contents</source>
+        <translation>目录</translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>Configure a wkhtmltopdf executable to export PDF with this backend.</source>
+        <translation>请配置 wkhtmltopdf 可执行文件以使用此后端导出 PDF。</translation>
+    </message>
+    <message>
+        <location line="+20"/>
+        <source>Custom wkhtmltopdf arguments may change the page geometry; not fitting Mermaid diagrams to the page. A large diagram may overflow it.</source>
+        <translation>自定义的 wkhtmltopdf 参数可能改变页面尺寸，因此不会将 Mermaid 图表适配到页面。较大的图表可能会溢出页面。</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>No CJK-capable font that wkhtmltopdf can load was found; non-Latin text may be rendered as blank boxes. Install e.g. Noto Sans SC.</source>
+        <translation>未找到 wkhtmltopdf 可加载的中日韩字体，非拉丁文字可能显示为空白方块。请安装如 Noto Sans SC 之类的字体。</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Failed to prepare the intermediate HTML file (%1) for wkhtmltopdf.</source>
+        <translation>无法为 wkhtmltopdf 准备中间 HTML 文件 (%1)。</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Failed to create the temporary directory for PDF conversion.</source>
+        <translation>无法创建用于 PDF 转换的临时目录。</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Failed to run wkhtmltopdf (%1). If the path points to a launcher or shim (e.g. a scoop shim), try the real executable instead.</source>
+        <translation>无法运行 wkhtmltopdf (%1)。如果该路径指向启动器或垫片（例如 scoop shim），请改用真正的可执行文件。</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>wkhtmltopdf did not produce an output file (%1).</source>
+        <translation>wkhtmltopdf 未生成输出文件 (%1)。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Copy output file (%1) to (%2).</source>
+        <translation>复制输出文件(%1)为(%2)。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Failed to copy exported PDF to (%1): %2</source>
+        <translation>无法将导出的 PDF 复制到 (%1)：%2</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Failed to write exported PDF (%1): %2</source>
+        <translation>无法写入导出的 PDF (%1)：%2</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Failed to read the temporary PDF file: %1</source>
+        <translation>无法读取临时 PDF 文件：%1</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Failed to commit exported PDF (%1): %2</source>
+        <translation>无法提交导出的 PDF (%1)：%2</translation>
+    </message>
+    <message>
+        <location line="+72"/>
+        <source>Timed out starting process (%1).</source>
+        <translation>启动进程 (%1) 超时。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Failed to start process (%1): %2</source>
+        <translation>无法启动进程 (%1)：%2</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Process (%1) did not finish normally: %2</source>
+        <translation>进程 (%1) 未正常结束：%2</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Process (%1) finished with exit code %2</source>
+        <translation>进程 (%1) 已结束，退出代码为 %2</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::ImageHostController</name>
     <message>
         <location filename="../../../controllers/imagehostcontroller.cpp" line="+28"/>
@@ -3485,7 +3628,7 @@
 <context>
     <name>vnotex::ImageInsertDialog</name>
     <message>
-        <location filename="../../../widgets/dialogs/imageinsertdialog.cpp" line="+84"/>
+        <location filename="../../../widgets/dialogs/imageinsertdialog.cpp" line="+87"/>
         <source>&amp;Browse</source>
         <translation>浏览(&amp;B)</translation>
     </message>
@@ -3500,12 +3643,12 @@
         <translation>标题</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+10"/>
         <source>Alt text</source>
         <translation>替代文本</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+13"/>
         <source>Width (px)</source>
         <translation>宽度（像素）</translation>
     </message>
@@ -3535,7 +3678,12 @@
         <translation>Base64 将图片保存在笔记正文中。图片文件不会被加密。引用式图片会忽略自定义尺寸</translation>
     </message>
     <message>
-        <location line="+87"/>
+        <location line="+44"/>
+        <source>Base64 keeps the image inside the note body. Image files are not encrypted</source>
+        <translation>Base64 将图片保存在笔记正文中。图片文件不会被加密</translation>
+    </message>
+    <message>
+        <location line="+89"/>
         <source>Select Image To Insert</source>
         <translation>选择图片插入</translation>
     </message>
@@ -3577,6 +3725,29 @@
         <location line="+1"/>
         <source>Enter a width and height to enable scaling</source>
         <translation>输入宽度和高度以启用缩放</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::ImageViewWindow</name>
+    <message>
+        <location filename="../../../widgets/imageviewer.cpp" line="-15"/>
+        <source>Zoom In</source>
+        <translation>放大</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Zoom Out</source>
+        <translation>缩小</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Reset (fit and center)</source>
+        <translation>重置（适应并居中）</translation>
+    </message>
+    <message>
+        <location line="-36"/>
+        <source>Unable to display image</source>
+        <translation>无法显示图片</translation>
     </message>
 </context>
 <context>
@@ -3819,17 +3990,7 @@
         <translation>源端主密码：</translation>
     </message>
     <message>
-        <location line="+17"/>
-        <source>Unlock Destination Notebook</source>
-        <translation>解锁目标笔记本</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>Destination master password:</source>
-        <translation>目标端主密码：</translation>
-    </message>
-    <message>
-        <location line="+15"/>
+        <location line="+9"/>
         <source>Protected operations are unavailable while locking.</source>
         <translation>锁定期间无法执行受保护内容的相关操作。</translation>
     </message>
@@ -3932,13 +4093,13 @@
 <context>
     <name>vnotex::MainWindow2</name>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="+147"/>
-        <location line="+24"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="+149"/>
+        <location line="+25"/>
         <source>Unlock Protected Notes</source>
         <translation>解锁受保护笔记</translation>
     </message>
     <message>
-        <location line="-24"/>
+        <location line="-25"/>
         <source>Master password</source>
         <translation>主密码</translation>
     </message>
@@ -3948,19 +4109,19 @@
         <translation>正在解锁受保护笔记...</translation>
     </message>
     <message>
-        <location line="+16"/>
+        <location line="+17"/>
         <source>Unable to unlock: incorrect password or damaged key data</source>
         <translation>无法解锁：密码错误或密钥数据损坏</translation>
     </message>
     <message>
         <location line="+15"/>
-        <location line="+666"/>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="+476"/>
+        <location line="+664"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="+478"/>
         <source>Lock All</source>
         <translation>全部锁定</translation>
     </message>
     <message>
-        <location line="-563"/>
+        <location line="-561"/>
         <source>Loading theme...</source>
         <translation>正在加载主题...</translation>
     </message>
@@ -3975,7 +4136,7 @@
         <translation>经 3 次尝试后仍无法解决同步冲突。请手动解决或联系支持。</translation>
     </message>
     <message>
-        <location line="+324"/>
+        <location line="+320"/>
         <source>Do you want to minimize %1 to system tray instead of quitting when closed?</source>
         <translation>关闭时，是否将%1最小化到系统托盘而非退出？</translation>
     </message>
@@ -3990,24 +4151,24 @@
         <translation>%1仍然在此运行。</translation>
     </message>
     <message>
-        <location line="+52"/>
+        <location line="+54"/>
         <source>Exporting encrypted notes is not supported.</source>
         <translation>不支持导出加密笔记。</translation>
     </message>
     <message>
-        <location line="+177"/>
+        <location line="+174"/>
         <location line="+14"/>
         <source>Tools</source>
         <translation>工具</translation>
     </message>
     <message>
-        <location line="+304"/>
+        <location line="+305"/>
         <location line="+49"/>
         <source>Global</source>
         <translation>全局</translation>
     </message>
     <message>
-        <location line="+419"/>
+        <location line="+392"/>
         <source>Applying stylesheet...</source>
         <translation>正在应用样式表...</translation>
     </message>
@@ -4028,7 +4189,7 @@
         <translation>退出</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="-526"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="-528"/>
         <source>File</source>
         <translation>文件</translation>
     </message>
@@ -4059,9 +4220,9 @@
         <translation>导入文件夹</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="-977"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="-948"/>
         <location line="+22"/>
-        <location line="+292"/>
+        <location line="+290"/>
         <location filename="../../../widgets/toolbarhelper2.cpp" line="+90"/>
         <source>Export</source>
         <translation>导出</translation>
@@ -4084,13 +4245,13 @@
     </message>
     <message>
         <location line="+18"/>
-        <location line="+254"/>
-        <location line="+8"/>
+        <location line="+255"/>
+        <location line="+9"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location line="-204"/>
+        <location line="-206"/>
         <source>United Entry</source>
         <translation>统一入口</translation>
     </message>
@@ -4110,7 +4271,7 @@
         <translation>主题</translation>
     </message>
     <message>
-        <location line="+66"/>
+        <location line="+67"/>
         <source>Expand Content Area</source>
         <translation>扩展内容区</translation>
     </message>
@@ -4125,7 +4286,7 @@
         <translation>窗口列表</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+58"/>
         <source>Open Configuration Folder</source>
         <translation>打开配置文件夹</translation>
     </message>
@@ -4186,7 +4347,7 @@
         <translation>重启</translation>
     </message>
     <message>
-        <location line="-167"/>
+        <location line="-169"/>
         <source>View</source>
         <translation>视图</translation>
     </message>
@@ -4311,12 +4472,12 @@
     <name>vnotex::MarkdownEditor</name>
     <message>
         <location filename="../../../widgets/editors/markdowneditor.cpp" line="+246"/>
-        <location line="+972"/>
+        <location line="+976"/>
         <source>Insert Link</source>
         <translation>插入链接</translation>
     </message>
     <message>
-        <location line="-938"/>
+        <location line="-942"/>
         <source>Insert Image</source>
         <translation>插入图片</translation>
     </message>
@@ -4326,7 +4487,7 @@
         <translation>插入表格</translation>
     </message>
     <message>
-        <location line="+195"/>
+        <location line="+199"/>
         <source>Failed to read local image file (%1) (%2).</source>
         <translation>无法读取本地图片文件(%1)(%2)。</translation>
     </message>
@@ -4485,13 +4646,14 @@
         <translation>多功能粘贴</translation>
     </message>
     <message>
-        <location line="+492"/>
-        <location line="+52"/>
+        <location line="+516"/>
+        <location line="+60"/>
         <source>Copy Ima&amp;ge</source>
         <translation>复制图片(&amp;G)</translation>
     </message>
     <message>
-        <location line="-45"/>
+        <location line="-75"/>
+        <location line="+22"/>
         <source>This image is blocked or unavailable</source>
         <translation>此图片已被阻止或不可用</translation>
     </message>
@@ -4502,7 +4664,7 @@
     </message>
     <message>
         <location line="+3"/>
-        <location line="+55"/>
+        <location line="+63"/>
         <source>Copy Image Address</source>
         <translation>复制图片地址</translation>
     </message>
@@ -4512,7 +4674,7 @@
         <translation>请使用图片菜单复制嵌入的图片</translation>
     </message>
     <message>
-        <location line="-1808"/>
+        <location line="-1840"/>
         <location line="+752"/>
         <source>Paste as Plain Text</source>
         <translation>粘贴为纯文本</translation>
@@ -4528,13 +4690,14 @@
         <translation>插入片段</translation>
     </message>
     <message>
-        <location line="+516"/>
+        <location line="+470"/>
+        <location line="+70"/>
         <source>&amp;View Image</source>
         <translation>查看图片(&amp;V)</translation>
     </message>
     <message>
         <location line="-15"/>
-        <location line="+57"/>
+        <location line="+65"/>
         <location line="+87"/>
         <source>Resize Image</source>
         <translation>调整图片大小</translation>
@@ -4556,7 +4719,7 @@
         <translation>复制链接</translation>
     </message>
     <message>
-        <location line="-713"/>
+        <location line="-745"/>
         <source>Fetching images to local...</source>
         <translation>正在获取图片到本地...</translation>
     </message>
@@ -4599,7 +4762,7 @@
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+223"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+218"/>
         <source>Read</source>
         <translation>阅读</translation>
     </message>
@@ -4635,17 +4798,17 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+156"/>
+        <location line="+140"/>
         <source>Auto Section Number</source>
         <translation>自动章节编号</translation>
     </message>
     <message>
-        <location line="-153"/>
+        <location line="-137"/>
         <source>Automatically number headings in read mode unless the document is already numbered</source>
         <translation>在阅读模式下自动为标题编号，已有编号的文档除外</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+10"/>
         <source>HTML tag</source>
         <translation>HTML标签</translation>
     </message>
@@ -5022,7 +5185,7 @@
         <translation>覆盖用于渲染数学公式的MathJax脚本</translation>
     </message>
     <message>
-        <location line="-545"/>
+        <location line="-529"/>
         <source>Markdown Editor</source>
         <translation>Markdown编辑器</translation>
     </message>
@@ -5030,29 +5193,29 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+337"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+342"/>
         <source>Presentation Mode</source>
         <translation>演示模式</translation>
     </message>
     <message>
-        <location line="+89"/>
+        <location line="+91"/>
         <location line="+34"/>
-        <location line="+424"/>
+        <location line="+429"/>
         <source>Unable to start presentation</source>
         <translation>无法启动演示</translation>
     </message>
     <message>
-        <location line="-298"/>
+        <location line="-303"/>
         <source>Printing encrypted notes is not supported</source>
         <translation>不支持打印加密笔记</translation>
     </message>
     <message>
-        <location line="+218"/>
+        <location line="+216"/>
         <source>Unable to open protected preview</source>
         <translation>无法打开受保护内容的预览</translation>
     </message>
     <message>
-        <location line="+408"/>
+        <location line="+521"/>
         <source>Are you sure to open link (%1)?</source>
         <translation>确定要打开链接（%1）吗？</translation>
     </message>
@@ -5068,29 +5231,29 @@
         <translation>受保护笔记中的链接只能打开笔记本内已索引的笔记</translation>
     </message>
     <message>
-        <location line="+387"/>
+        <location line="+409"/>
         <source>Unable to load protected note content</source>
         <translation>无法加载受保护笔记的内容</translation>
     </message>
     <message>
-        <location line="+242"/>
+        <location line="+248"/>
         <source>Section numbers could not be restored now. Auto section numbering remains off. Make this note current and editable, then turn Allow Auto Section Number on and off to retry.</source>
         <translation>当前无法恢复章节编号。自动章节编号仍处于关闭状态。请将此笔记设为当前笔记并使其可编辑，然后开启再关闭“允许自动章节编号”以重试。</translation>
     </message>
     <message>
-        <location line="+414"/>
+        <location line="+419"/>
         <location line="+9"/>
         <source>Replace is not supported in read mode</source>
         <translation>阅读模式不支持替换</translation>
     </message>
     <message>
-        <location line="+76"/>
+        <location line="+80"/>
         <location line="+8"/>
         <source>Snippet insertion is not supported in read mode</source>
         <translation>阅读模式下不支持插入代码片段</translation>
     </message>
     <message>
-        <location line="+287"/>
+        <location line="+313"/>
         <source>Printed to PDF</source>
         <translation>已打印为PDF</translation>
     </message>
@@ -5130,7 +5293,7 @@
 <context>
     <name>vnotex::MarkdownViewer</name>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="-208"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="-183"/>
         <source>&amp;Edit</source>
         <translation>编辑(&amp;E)</translation>
     </message>
@@ -5145,17 +5308,7 @@
         <translation>复制图片地址</translation>
     </message>
     <message>
-        <location line="+62"/>
-        <source>Are you sure to open link (%1)?</source>
-        <translation>确定要打开链接（%1）吗？</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Malicious link might do harm to your device.</source>
-        <translation>恶意链接可能会危害您的设备。</translation>
-    </message>
-    <message>
-        <location line="+212"/>
+        <location line="+250"/>
         <source>Cross Copy</source>
         <translation>交叉复制</translation>
     </message>
@@ -5163,7 +5316,7 @@
 <context>
     <name>vnotex::MarkdownViewerAdapter</name>
     <message>
-        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="+390"/>
+        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="+392"/>
         <source>No Background</source>
         <translation>无背景</translation>
     </message>
@@ -5196,7 +5349,7 @@
 <context>
     <name>vnotex::MindMapEditor</name>
     <message>
-        <location filename="../../../widgets/editors/mindmapeditor.cpp" line="+143"/>
+        <location filename="../../../widgets/editors/mindmapeditor.cpp" line="+164"/>
         <source>Are you sure to open link (%1)?</source>
         <translation>确定要打开链接（%1）吗？</translation>
     </message>
@@ -5206,7 +5359,7 @@
         <translation>恶意链接可能会危害您的设备。</translation>
     </message>
     <message>
-        <location line="+86"/>
+        <location line="+195"/>
         <source>The mind map buffer is unavailable.</source>
         <translation>思维导图缓冲区不可用。</translation>
     </message>
@@ -5216,7 +5369,7 @@
         <translation>思维导图尚未加载。</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+45"/>
         <source>The mind map buffer is unavailable or changed while loading.</source>
         <translation>思维导图缓冲区不可用或在加载过程中发生了更改。</translation>
     </message>
@@ -5246,35 +5399,110 @@
         <translation>无法序列化思维导图。</translation>
     </message>
     <message>
-        <location line="+39"/>
-        <source>Edit URL</source>
-        <translation>编辑URL</translation>
+        <location line="+303"/>
+        <source>Insert Link</source>
+        <translation>插入链接</translation>
+    </message>
+    <message>
+        <location line="+128"/>
+        <source>Insert From Drop</source>
+        <translation>从拖放内容插入</translation>
     </message>
     <message>
         <location line="+1"/>
-        <source>URL:</source>
-        <translation>URL：</translation>
+        <source>Insert From Clipboard</source>
+        <translation>从剪切板插入</translation>
     </message>
     <message>
-        <location line="+32"/>
-        <source>Insert Image</source>
-        <translation>插入图片</translation>
+        <location line="+20"/>
+        <location line="+23"/>
+        <source>Insert as Base64</source>
+        <translation>以 Base64 插入</translation>
+    </message>
+    <message>
+        <location line="-20"/>
+        <source>Insert From URL</source>
+        <translation>从URL插入</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Insert From Image Data</source>
+        <translation>从图片数据插入</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+6"/>
+        <location line="+5"/>
+        <source>Insert As Image Link</source>
+        <translation>插入为图片链接</translation>
+    </message>
+    <message>
+        <location line="-9"/>
+        <location line="+7"/>
+        <source>Insert As Image</source>
+        <translation>插入为图片</translation>
+    </message>
+    <message>
+        <location line="-6"/>
+        <location line="+25"/>
+        <source>Insert As Text</source>
+        <translation>插入为文本</translation>
+    </message>
+    <message>
+        <location line="-15"/>
+        <source>Insert As Relative Image Link</source>
+        <translation>插入为相对图片链接</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Insert As Link</source>
+        <translation>插入为链接</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Insert As Relative Link</source>
+        <translation>插入为相对链接</translation>
     </message>
     <message>
         <location line="+3"/>
-        <source>Images (*.png *.jpg *.jpeg *.gif *.bmp *.webp *.svg);;All Files (*)</source>
-        <translation>图片 (*.png *.jpg *.jpeg *.gif *.bmp *.webp *.svg);;全部文件 (*)</translation>
+        <source>Attach And Insert Link</source>
+        <translation>添加为附件并插入链接</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Insert File Content</source>
+        <translation>插入文件内容</translation>
+    </message>
+    <message>
+        <location line="+64"/>
+        <source>Unable to resolve the image link</source>
+        <translation>无法解析图片链接</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Unable to resolve the link</source>
+        <translation>无法解析链接</translation>
+    </message>
+    <message>
+        <location line="+33"/>
+        <source>Unable to read the selected file</source>
+        <translation>无法读取所选文件</translation>
+    </message>
+    <message>
+        <location line="-380"/>
+        <source>Insert Image</source>
+        <translation>插入图片</translation>
     </message>
 </context>
 <context>
     <name>vnotex::MindMapEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+146"/>
+        <location filename="../../../widgets/dialogs/settings/mindmapeditorpage.cpp" line="+162"/>
         <source>Mind Map Editor</source>
         <translation>思维导图编辑器</translation>
     </message>
     <message>
-        <location line="-116"/>
+        <location line="-132"/>
         <source>Style</source>
         <translation>样式</translation>
     </message>
@@ -5354,15 +5582,17 @@
         <translation>为新的主分支分配颜色，不改变现有节点的颜色</translation>
     </message>
     <message>
+        <location line="+9"/>
         <source>Automatic section numbering</source>
         <translation>自动章节编号</translation>
     </message>
     <message>
+        <location line="+4"/>
         <source>Number topic labels using the shared Section Number Pattern; main and orphan roots remain unnumbered</source>
         <translation>使用共用的章节编号模式为主题标签编号；主根节点和所有游离根节点均不编号</translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+10"/>
         <source>Separate node properties panel</source>
         <translation>分离节点属性面板</translation>
     </message>
@@ -5378,44 +5608,135 @@
     </message>
 </context>
 <context>
+    <name>vnotex::MindMapExporter</name>
+    <message>
+        <location filename="../../../export/mindmapexporter.cpp" line="+41"/>
+        <source>Invalid NUL in MindMap source.</source>
+        <translation>思维导图源数据包含无效的 NUL 字符。</translation>
+    </message>
+    <message>
+        <location line="+15"/>
+        <source>Failed to parse MindMap: %1</source>
+        <translation>无法解析思维导图：%1</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Failed to project MindMap: %1</source>
+        <translation>无法将思维导图转换为 Markdown：%1</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <source>MindMap HTML export requires the GUI thread.</source>
+        <translation>思维导图 HTML 导出需要在 GUI 线程中执行。</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>MIME HTML export is not supported for MindMap.</source>
+        <translation>思维导图不支持 MIME HTML 导出。</translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>MindMap image unavailable: %1</source>
+        <translation>思维导图图片不可用：%1</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Failed to load MindMap: %1</source>
+        <translation>无法加载思维导图：%1</translation>
+    </message>
+    <message>
+        <location line="+28"/>
+        <source>Timed out waiting for MindMap export images.</source>
+        <translation>等待思维导图导出图片超时。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+16"/>
+        <source>Failed to render MindMap: %1</source>
+        <translation>无法渲染思维导图：%1</translation>
+    </message>
+    <message>
+        <location line="-5"/>
+        <source>Failed to write MindMap HTML (%1): %2</source>
+        <translation>无法写入思维导图 HTML (%1)：%2</translation>
+    </message>
+    <message>
+        <location line="+17"/>
+        <source>The native MindMap HTML structure is incompatible with export.</source>
+        <translation>原生思维导图 HTML 结构与导出功能不兼容。</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>The native MindMap HTML geometry is incompatible with export.</source>
+        <translation>原生思维导图 HTML 几何布局与导出功能不兼容。</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>MindMap PDF export requires a page layout.</source>
+        <translation>思维导图 PDF 导出需要页面布局。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>MindMap PDF printable area is too small.</source>
+        <translation>思维导图 PDF 可打印区域过小。</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::MindMapViewWindow2</name>
     <message>
+        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+120"/>
+        <location line="+24"/>
+        <source>Insert Link</source>
+        <translation>插入链接</translation>
+    </message>
+    <message>
+        <location line="-22"/>
+        <location line="+23"/>
+        <source>Insert Image</source>
+        <translation>插入图片</translation>
+    </message>
+    <message>
+        <location line="+31"/>
         <source>Layout</source>
         <translation>布局</translation>
     </message>
     <message>
+        <location line="+14"/>
         <source>Balanced</source>
         <translation>均衡</translation>
     </message>
     <message>
+        <location line="+1"/>
         <source>Right</source>
         <translation>向右</translation>
     </message>
     <message>
+        <location line="+1"/>
         <source>Left</source>
         <translation>向左</translation>
     </message>
     <message>
+        <location line="+1"/>
         <source>Outline</source>
         <translation>大纲</translation>
     </message>
     <message>
-        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+190"/>
+        <location line="+147"/>
         <source>Presentation Mode</source>
         <translation>演示模式</translation>
     </message>
     <message>
-        <location line="+92"/>
+        <location line="+109"/>
         <source>Unable to read the mind map: %1</source>
         <translation>无法读取思维导图：%1</translation>
     </message>
     <message>
-        <location line="+13"/>
+        <location line="+15"/>
         <source>Unable to load the mind map.</source>
         <translation>无法加载思维导图。</translation>
     </message>
     <message>
-        <location line="+151"/>
+        <location line="+153"/>
         <source>Unable to read the mind map outline.</source>
         <translation>无法读取思维导图大纲。</translation>
     </message>
@@ -5428,23 +5749,73 @@
 <context>
     <name>vnotex::MindMapViewWindowController</name>
     <message>
-        <location filename="../../../controllers/mindmapviewwindowcontroller.cpp" line="+270"/>
-        <location line="+18"/>
+        <location filename="../../../controllers/mindmapviewwindowcontroller.cpp" line="+143"/>
+        <location line="+54"/>
         <source>The note is not available for image insertion</source>
         <translation>此笔记当前无法插入图片</translation>
     </message>
     <message>
-        <location line="-12"/>
-        <source>Unable to read image (maximum size is 32 MiB)</source>
-        <translation>无法读取图片（大小上限为32 MiB）</translation>
+        <location line="-33"/>
+        <source>The note changed during image acquisition</source>
+        <translation>笔记在获取图片时发生了变化</translation>
     </message>
     <message>
-        <location line="+8"/>
-        <source>Unable to embed image: unsupported or invalid image data</source>
-        <translation>无法嵌入图片：图片数据不受支持或无效</translation>
+        <location line="+9"/>
+        <source>Unable to read image: unsupported, invalid or larger than 32 MiB</source>
+        <translation>无法读取图片：格式不受支持、数据无效或大小超过 32 MiB</translation>
     </message>
     <message>
-        <location line="+29"/>
+        <location line="+31"/>
+        <source>Unable to insert image: unsupported, invalid or larger than 32 MiB</source>
+        <translation>无法插入图片：格式不受支持、数据无效或大小超过 32 MiB</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Unable to resolve the note&apos;s image folder</source>
+        <translation>无法解析笔记的图片文件夹</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>The note changed during image insertion</source>
+        <translation>笔记在插入图片时发生了变化</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Unable to create the image asset</source>
+        <translation>无法创建图片资源</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>Unable to resolve the image asset link</source>
+        <translation>无法解析图片资源链接</translation>
+    </message>
+    <message>
+        <location line="+27"/>
+        <source>The note is not available for attachment insertion</source>
+        <translation>笔记当前无法插入附件</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The selected file cannot be attached to this note</source>
+        <translation>无法将所选文件作为附件添加到此笔记</translation>
+    </message>
+    <message>
+        <location line="+7"/>
+        <source>The note changed during attachment insertion</source>
+        <translation>笔记在插入附件时发生了变化</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Unable to copy the attachment</source>
+        <translation>无法复制附件</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Unable to resolve the attachment link</source>
+        <translation>无法解析附件链接</translation>
+    </message>
+    <message>
+        <location line="+49"/>
         <source>Unable to open an invalid link</source>
         <translation>无法打开无效链接</translation>
     </message>
@@ -5866,11 +6237,12 @@
 <context>
     <name>vnotex::NodePropertiesDialog2</name>
     <message>
+        <location filename="../../../widgets/dialogs/nodepropertiesdialog2.cpp" line="+56"/>
         <source>Size</source>
         <translation>大小</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/nodepropertiesdialog2.cpp" line="+23"/>
+        <location line="-32"/>
         <source>Properties - %1</source>
         <translation>属性 - %1</translation>
     </message>
@@ -5900,7 +6272,7 @@
         <translation>类型</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+14"/>
         <source>Created</source>
         <translation>创建时间</translation>
     </message>
@@ -5925,7 +6297,8 @@
         <translation>UUID</translation>
     </message>
     <message>
-        <location line="-1"/>
+        <location line="-35"/>
+        <location line="+34"/>
         <source>N/A</source>
         <translation>无</translation>
     </message>
@@ -6179,7 +6552,7 @@
 <context>
     <name>vnotex::NotebookCoreService</name>
     <message>
-        <location filename="../../../core/services/notebookcoreservice.cpp" line="+705"/>
+        <location filename="../../../core/services/notebookcoreservice.cpp" line="+728"/>
         <source>Unable to unlock: incorrect password or damaged key data</source>
         <translation>无法解锁：密码错误或密钥数据损坏</translation>
     </message>
@@ -6243,7 +6616,7 @@
 <context>
     <name>vnotex::NotebookExplorer2</name>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="+852"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="+811"/>
         <source>Select one of all the notebooks as current notebook.&lt;br/&gt;Move mouse on one item to check its details.</source>
         <translation>从全部笔记本中选择一个作为当前笔记本。&lt;br/&gt;移动鼠标到某个项目上查看详情。</translation>
     </message>
@@ -6514,7 +6887,18 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>所有文件 (*)</translation>
     </message>
     <message>
-        <location line="+111"/>
+        <location line="+55"/>
+        <source>Preparing destination encryption...</source>
+        <translation>正在准备目标加密环境...</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <location line="+14"/>
+        <source>Import Encrypted Folder</source>
+        <translation>导入加密文件夹</translation>
+    </message>
+    <message>
+        <location line="+60"/>
         <source>Ignore</source>
         <translation>忽略</translation>
     </message>
@@ -6556,49 +6940,39 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
 %4</translation>
     </message>
     <message>
-        <location line="-2296"/>
-        <location line="+2326"/>
+        <location line="-2262"/>
+        <location line="+2292"/>
         <source>%1: %2</source>
         <translation>%1：%2</translation>
     </message>
     <message>
-        <location line="-2438"/>
+        <location line="-2416"/>
         <source>Encrypt Note</source>
         <translation>加密笔记</translation>
     </message>
     <message>
-        <location line="+141"/>
-        <source>Cannot check encryption key conflicts in the notebook&apos;s local Git sync data (vx_notebook/vx_sync). Check folder permissions and repair the local sync repository before retrying. Do not delete encryption.vne or Git history.</source>
-        <translation>无法检查笔记本本地 Git 同步数据（vx_notebook/vx_sync）中的加密密钥冲突。请检查文件夹权限并修复本地同步仓库后重试。请勿删除 encryption.vne 或 Git 历史记录。</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>The notebook key file (vx_notebook/encryption.vne) has an unresolved sync conflict. Back up the notebook and resolve that conflict before retrying. Do not delete the key file or merge its contents as text.</source>
-        <translation>笔记本密钥文件（vx_notebook/encryption.vne）存在未解决的同步冲突。请先备份笔记本并解决该冲突，然后重试。请勿删除密钥文件或以文本方式合并其内容。</translation>
-    </message>
-    <message>
-        <location line="+21"/>
+        <location line="+176"/>
         <source>Master-password source notebook: %1</source>
         <translation>主密码来源笔记本：%1</translation>
     </message>
     <message>
-        <location line="-154"/>
+        <location line="-164"/>
         <source>Select notes from one notebook at a time.</source>
         <translation>每次只能选择同一笔记本中的笔记。</translation>
     </message>
     <message>
-        <location line="+395"/>
+        <location line="+354"/>
         <source>A note encryption transaction needs recovery. Restart VNote first.</source>
         <translation>笔记加密事务需要恢复。请先重启 VNote。</translation>
     </message>
     <message>
-        <location line="-384"/>
-        <location line="+395"/>
+        <location line="-343"/>
+        <location line="+354"/>
         <source>Note encryption is currently locking.</source>
         <translation>笔记加密功能正在锁定。</translation>
     </message>
     <message>
-        <location line="-418"/>
+        <location line="-377"/>
         <source>Decrypt Note</source>
         <translation>解密笔记</translation>
     </message>
@@ -6609,17 +6983,17 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
     </message>
     <message>
         <location line="+10"/>
-        <location line="+395"/>
+        <location line="+354"/>
         <source>Preparing note encryption...</source>
         <translation>正在准备加密笔记...</translation>
     </message>
     <message>
-        <location line="-394"/>
+        <location line="-353"/>
         <source>Preparing note decryption...</source>
         <translation>正在准备解密笔记...</translation>
     </message>
     <message>
-        <location line="+34"/>
+        <location line="+46"/>
         <source>Preparing &quot;%1&quot;...</source>
         <translation>正在准备“%1”...</translation>
     </message>
@@ -6682,79 +7056,33 @@ Images and attachments stored as separate files are NOT encrypted. Comments also
         <translation>笔记加密服务不可用。</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+7"/>
+        <source>Cannot check legacy encryption key conflicts in the notebook&apos;s local sync data. Repair the local sync state before retrying. Do not delete the key file or sync history.</source>
+        <translation>无法检查笔记本本地同步数据中的旧版加密密钥冲突。请修复本地同步状态后重试。不要删除密钥文件或同步历史。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>The legacy notebook key file has an unresolved sync conflict. Back up the notebook and resolve that conflict before retrying. Do not merge keys as text.</source>
+        <translation>旧版笔记本密钥文件存在未解决的同步冲突。请备份笔记本并解决该冲突后重试。不要将密钥作为文本合并。</translation>
+    </message>
+    <message>
+        <location line="+3"/>
         <source>Unable to unlock: incorrect password or damaged key data</source>
         <translation>无法解锁：密码错误或密钥数据损坏</translation>
     </message>
     <message>
-        <location line="+20"/>
-        <source>Could not prepare note conversion.
-
-Notebook: %1
-
-%2</source>
-        <translation>无法准备笔记转换。
-
-笔记本：%1
-
-%2</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Unlock Notebook</source>
-        <translation>解锁笔记本</translation>
-    </message>
-    <message>
-        <location line="+0"/>
+        <location line="+25"/>
         <source>Enter the master password for &quot;%1&quot;.</source>
         <translation>请输入“%1”的主密码。</translation>
     </message>
     <message>
-        <location line="+9"/>
-        <source>Unlocking notebook...</source>
-        <translation>正在解锁笔记本...</translation>
-    </message>
-    <message>
-        <location line="-33"/>
-        <source>The notebook encryption key is missing or needs recovery. Restore the original vx_notebook/encryption.vne before continuing. A new key cannot recover previously encrypted notes.</source>
-        <translation>笔记本加密密钥丢失或需要恢复。请恢复原始 vx_notebook/encryption.vne 后再继续。新密钥无法恢复以前加密的笔记。</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>The notebook encryption state changed. Retry the operation.</source>
-        <translation>笔记本的加密状态已改变。请重试此操作。</translation>
-    </message>
-    <message>
-        <location line="+77"/>
-        <source>This notebook has no encryption.vne key file, and its previous use of encryption is unknown.
-
-If it was encrypted before, cancel and restore the original vx_notebook/encryption.vne. A newly generated key cannot recover previously encrypted notes.
-
-Continue only if this notebook has never used encryption.</source>
-        <translation>此笔记本没有 encryption.vne 密钥文件，无法确定以前是否使用过加密。
-
-如果以前加密过，请取消并恢复原始 vx_notebook/encryption.vne。新生成的密钥无法恢复以前加密的笔记。
-
-仅当此笔记本从未使用过加密时才继续。</translation>
-    </message>
-    <message>
-        <location line="+6"/>
-        <source>Continue</source>
-        <translation>继续</translation>
-    </message>
-    <message>
-        <location line="+70"/>
+        <location line="+104"/>
         <source>Choose Master Password</source>
         <translation>选择主密码</translation>
     </message>
     <message>
-        <location line="+1"/>
-        <source>Use the master password of this initialized notebook:</source>
-        <translation>使用以下已初始化笔记本的主密码：</translation>
-    </message>
-    <message>
-        <location line="-78"/>
-        <location line="+103"/>
+        <location line="-72"/>
+        <location line="+94"/>
         <source>Set Up Note Encryption</source>
         <translation>设置笔记加密</translation>
     </message>
@@ -6764,22 +7092,12 @@ Continue only if this notebook has never used encryption.</source>
         <translation>请设置主密码。忘记的密码无法重置：没有此密码，就无法恢复加密笔记的内容。</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Master password:</source>
-        <translation>主密码：</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Confirm password:</source>
-        <translation>确认密码：</translation>
-    </message>
-    <message>
-        <location line="+2"/>
+        <location line="+14"/>
         <source>Set Up Encryption</source>
         <translation>设置加密</translation>
     </message>
     <message>
-        <location line="+41"/>
+        <location line="+22"/>
         <source>Preparing the notebook key...</source>
         <translation>正在准备笔记本密钥...</translation>
     </message>
@@ -6804,7 +7122,7 @@ Continue only if this notebook has never used encryption.</source>
         <translation>只读笔记本</translation>
     </message>
     <message>
-        <location line="+1701"/>
+        <location line="+1720"/>
         <source>%1 copied, %2 moved, %3 left at the source, %4 failed.</source>
         <translation>已复制 %1 项，已移动 %2 项，留在源位置 %3 项，失败 %4 项。</translation>
     </message>
@@ -6893,7 +7211,86 @@ Last sync init failed: error code %1</source>
         <translation>正在准备…</translation>
     </message>
     <message>
-        <location line="+0"/>
+        <location line="-2135"/>
+        <source>The selected legacy note needs its original vx_notebook/encryption.vne. Restore that file from a backup. Creating a new encryption context cannot recover existing encrypted notes.</source>
+        <translation>所选旧版笔记需要其原始 vx_notebook/encryption.vne 文件。请从备份中恢复该文件。创建新的加密上下文无法恢复已有的加密笔记。</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Could not prepare note encryption.
+
+Notebook: %1
+
+%2</source>
+        <translation>无法准备笔记加密。
+
+笔记本：%1
+
+%2</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Unlock Protected Notes</source>
+        <translation>解锁受保护笔记</translation>
+    </message>
+    <message>
+        <location line="+10"/>
+        <source>Unlocking protected notes...</source>
+        <translation>正在解锁受保护笔记...</translation>
+    </message>
+    <message>
+        <location line="+24"/>
+        <source>Unlock an existing encrypted note to reuse its master password, or explicitly create a new encryption context. A new context does not unlock notes encrypted with an older context.</source>
+        <translation>解锁已有的加密笔记以复用其主密码，或明确选择创建新的加密上下文。新的上下文无法解锁使用旧上下文加密的笔记。</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+15"/>
+        <source>Unlock Existing Encrypted Note</source>
+        <translation>解锁已有的加密笔记</translation>
+    </message>
+    <message>
+        <location line="-11"/>
+        <source>Unlock Legacy Notebook Key</source>
+        <translation>解锁旧版笔记本密钥</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>Create New Encryption Context</source>
+        <translation>创建新的加密上下文</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Encrypted notes (*.vne)</source>
+        <translation>加密笔记 (*.vne)</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Select an encrypted note in this notebook.</source>
+        <translation>请选择此笔记本中的一篇加密笔记。</translation>
+    </message>
+    <message>
+        <location line="+16"/>
+        <source>Use a new master password</source>
+        <translation>使用新的主密码</translation>
+    </message>
+    <message>
+        <location line="+30"/>
+        <source>Create a new master password or reuse an available notebook context:</source>
+        <translation>创建新的主密码或复用可用的笔记本上下文：</translation>
+    </message>
+    <message>
+        <location line="+36"/>
+        <source>Master password</source>
+        <translation>主密码</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Confirm password</source>
+        <translation>确认密码</translation>
+    </message>
+    <message>
+        <location line="+1970"/>
         <location line="+71"/>
         <source>Cancel</source>
         <translation>取消</translation>
@@ -10294,14 +10691,14 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>行距</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+10"/>
         <location line="+2"/>
         <source>Spell check</source>
         <translation>拼写检查</translation>
     </message>
     <message>
-        <location line="-158"/>
-        <location line="+253"/>
+        <location line="-142"/>
+        <location line="+233"/>
         <source>Text Editor</source>
         <translation>文本编辑器</translation>
     </message>
@@ -10752,7 +11149,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewArea2</name>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="+876"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="+875"/>
         <source>New Workspace</source>
         <translation>新建工作空间</translation>
     </message>
@@ -10771,7 +11168,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewAreaController</name>
     <message>
-        <location filename="../../../controllers/viewareacontroller.cpp" line="+188"/>
+        <location filename="../../../controllers/viewareacontroller.cpp" line="+206"/>
         <source>The note encryption services are unavailable.</source>
         <translation>笔记加密服务不可用。</translation>
     </message>
@@ -11363,44 +11760,34 @@ Continue?</source>
 <context>
     <name>vnotex::WebViewExporter</name>
     <message>
-        <location filename="../../../export/webviewexporter.cpp" line="+710"/>
-        <source>Table of Contents</source>
-        <translation>目录</translation>
+        <location filename="../../../export/webviewexporter.cpp" line="+322"/>
+        <source>Export rendering services are unavailable.</source>
+        <translation>导出渲染服务不可用。</translation>
     </message>
     <message>
-        <location line="+134"/>
+        <location line="+5"/>
+        <source>MIME HTML export is not supported.</source>
+        <translation>不支持 MIME HTML 导出。</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>Failed or cancelled while preparing HTML for (%1).</source>
+        <translation>为 (%1) 准备 HTML 时失败或被取消。</translation>
+    </message>
+    <message>
+        <location line="+72"/>
+        <source>Failed or cancelled while serializing HTML.</source>
+        <translation>序列化 HTML 时失败或被取消。</translation>
+    </message>
+    <message>
+        <location line="+66"/>
+        <source>Failed to write exported HTML file (%1): %2</source>
+        <translation>无法写入导出的 HTML 文件 (%1)：%2</translation>
+    </message>
+    <message>
+        <location line="+255"/>
         <source>Timed out while rasterizing the diagrams of this note.</source>
         <translation>光栅化此笔记中的图表时超时。</translation>
-    </message>
-    <message>
-        <location line="+177"/>
-        <source>Custom wkhtmltopdf arguments may change the page geometry; not fitting Mermaid diagrams to the page. A large diagram may overflow it.</source>
-        <translation>自定义的 wkhtmltopdf 参数可能改变页面尺寸，因此不会将 Mermaid 图表适配到页面。较大的图表可能会溢出页面。</translation>
-    </message>
-    <message>
-        <location line="+12"/>
-        <source>No CJK-capable font that wkhtmltopdf can load was found; non-Latin text may be rendered as blank boxes. Install e.g. Noto Sans SC.</source>
-        <translation>未找到 wkhtmltopdf 可加载的中日韩字体，非拉丁文字可能显示为空白方块。请安装如 Noto Sans SC 之类的字体。</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Failed to prepare the intermediate HTML file (%1) for wkhtmltopdf.</source>
-        <translation>无法为 wkhtmltopdf 准备中间 HTML 文件 (%1)。</translation>
-    </message>
-    <message>
-        <location line="+22"/>
-        <source>Failed to run wkhtmltopdf (%1). If the path points to a launcher or shim (e.g. a scoop shim), try the real executable instead.</source>
-        <translation>无法运行 wkhtmltopdf (%1)。如果该路径指向启动器或垫片（例如 scoop shim），请改用真正的可执行文件。</translation>
-    </message>
-    <message>
-        <location line="+9"/>
-        <source>wkhtmltopdf did not produce an output file (%1).</source>
-        <translation>wkhtmltopdf 未生成输出文件 (%1)。</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Copy output file (%1) to (%2).</source>
-        <translation>复制输出文件(%1)为(%2)。</translation>
     </message>
 </context>
 <context>
