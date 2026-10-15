@@ -2,7 +2,6 @@
 
 #include "imgsrcrewriter.h"
 
-#include "exportfontresolver.h"
 #include "exportstyleresolver.h"
 #include "wkhtmltopdfhtmlpatch.h"
 
@@ -10,11 +9,8 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
-#include <QProcess>
 #include <QRegularExpression>
-#include <QSaveFile>
 #include <QScopedPointer>
-#include <QTemporaryDir>
 #include <QWebEnginePage>
 #include <QWidget>
 #include <core/configmgr2.h>
@@ -23,13 +19,13 @@
 #include <core/htmltemplateutils.h>
 #include <core/markdowneditorconfig.h>
 #include <core/markdownwebglobaloptions.h>
+#include <core/servicelocator.h>
 #include <core/services/htmltemplateservice.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/themeutils.h>
 #include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
 #include <utils/pathutils.h>
-#include <utils/processutils.h>
 #include <utils/utils.h>
 #include <utils/webutils.h>
 #include <widgets/editors/graphvizhelper.h>
@@ -288,8 +284,9 @@ QString generateMarkdownExportTemplate(ConfigMgr2 &p_configMgr,
 
 } // namespace
 
-vnotex::WebViewExporter::WebViewExporter(ServiceLocator &p_services, QWidget *p_parent)
-    : QObject(p_parent), m_services(p_services) {}
+WebViewExporter::WebViewExporter(ServiceLocator &p_services, QWidget *p_widgetParent,
+                                 QObject *p_parent)
+    : ExportRenderer(p_services, p_widgetParent, p_parent) {}
 
 WebViewExporter::~WebViewExporter() { clear(); }
 
@@ -306,77 +303,69 @@ void WebViewExporter::clear() {
   m_exportOngoing = false;
 }
 
-bool vnotex::WebViewExporter::doExport(const ExportOption &p_option, const QString &p_content,
-                                       const QString &p_filePath, const QString &p_fileName,
-                                       const QString &p_resourcePath, const QString &p_destPath) {
-  bool ret = false;
-  m_askedToStop = false;
+bool WebViewExporter::renderMarkdown(const ExportInput &p_input, ExportMarkdown &p_output) {
+  p_output.content = p_input.content;
+  p_output.fileName = p_input.file.fileName.isEmpty() ? QFileInfo(p_input.file.filePath).fileName()
+                                                      : p_input.file.fileName;
+  p_output.copyMedia =
+      p_input.file.fileTypeName.compare(QStringLiteral("Markdown"), Qt::CaseInsensitive) == 0;
+  return true;
+}
 
+bool WebViewExporter::renderHtml(const ExportInput &p_input, const ExportHtmlRequest &p_request,
+                                 const QString &p_outputFile) {
   Q_ASSERT(!m_exportOngoing);
+  // A template contains request-specific geometry, scripts and rendering flags. Recreate the
+  // hidden page so neither an incompatible request nor an earlier document can leak into it.
+  clear();
+  if (!m_services.get<ThemeService>() || !m_services.get<ConfigMgr2>()) {
+    emit logRequested(tr("Export rendering services are unavailable."));
+    return false;
+  }
+  const auto &option = p_request.options;
+  if (option.m_htmlOption.m_useMimeHtmlFormat) {
+    emit logRequested(tr("MIME HTML export is not supported."));
+    return false;
+  }
+  prepare(p_request);
   m_exportOngoing = true;
-
   m_webViewStates = WebViewState::Started;
 
-  const auto contentPath = p_filePath.isEmpty() ? p_resourcePath : p_filePath;
+  const auto &file = p_input.file;
+  const auto contentPath = file.filePath.isEmpty() ? file.resourcePath : file.filePath;
   auto baseUrl = PathUtils::pathToUrl(contentPath);
   m_viewer->adapter()->reset();
   m_viewer->setHtml(m_htmlTemplate, baseUrl);
 
-  auto textContent = p_content;
-  if (p_option.m_targetFormat == ExportFormat::PDF && p_option.m_pdfOption.m_addTableOfContents &&
-      !p_option.m_pdfOption.m_useWkhtmltopdf) {
-    // Add `[TOC]` at the beginning.
-    m_viewer->adapter()->setText("[TOC]\n\n" + textContent);
-  } else {
-    m_viewer->adapter()->setText(textContent);
-  }
+  const bool addToc =
+      p_request.purpose == ExportHtmlPurpose::Pdf && option.m_pdfOption.m_addTableOfContents &&
+      !option.m_pdfOption.m_useWkhtmltopdf &&
+      file.fileTypeName.compare(QStringLiteral("Markdown"), Qt::CaseInsensitive) == 0;
+  m_viewer->adapter()->setText(addToc ? QStringLiteral("[TOC]\n\n") + p_input.content
+                                      : p_input.content);
 
+  QElapsedTimer timer;
+  timer.start();
   while (!isWebViewReady()) {
     Utils::sleepWait(100);
-
-    if (m_askedToStop) {
-      goto exit_export;
-    }
-
-    if (isWebViewFailed()) {
-      qWarning() << "WebView failed when exporting"
-                 << (p_filePath.isEmpty() ? p_fileName : p_filePath);
-      goto exit_export;
+    if (m_askedToStop || isWebViewFailed() || timer.hasExpired(30000)) {
+      emit logRequested(
+          tr("Failed or cancelled while preparing HTML for (%1).").arg(file.fileName));
+      m_exportOngoing = false;
+      return false;
     }
   }
 
-  qDebug() << "WebView is ready";
-
-  // Add extra wait to make sure Web side is really ready.
+  // Let the diagram adapters finish their queued work before serializing the live DOM.
   Utils::sleepWait(200);
-
-  switch (p_option.m_targetFormat) {
-  case ExportFormat::HTML: {
-    // TODO: MIME HTML format is not supported yet.
-    Q_ASSERT(!p_option.m_htmlOption.m_useMimeHtmlFormat);
-    RasterFlags rasterFlags;
-    rasterFlags.setFlag(RasterizeMath, p_option.m_rasterizeMathEnabled);
-    rasterFlags.setFlag(RasterizeDiagrams, p_option.m_rasterizeDiagramsEnabled);
-    ret = doExportHtml(p_option.m_htmlOption, p_destPath, baseUrl, rasterFlags,
-                       p_option.m_pdfOption.m_layout.data());
-    break;
-  }
-
-  case ExportFormat::PDF:
-    if (p_option.m_pdfOption.m_useWkhtmltopdf) {
-      ret = doExportWkhtmltopdf(p_option.m_pdfOption, p_destPath, baseUrl);
-    } else {
-      ret = doExportPdf(p_option.m_pdfOption, p_destPath);
-    }
-    break;
-
-  default:
-    break;
-  }
-
-exit_export:
+  RasterFlags rasterFlags;
+  rasterFlags.setFlag(RasterizeMath, option.m_rasterizeMathEnabled);
+  rasterFlags.setFlag(RasterizeDiagrams, option.m_rasterizeDiagramsEnabled);
+  const bool success =
+      !m_askedToStop && doExportHtml(option.m_htmlOption, p_outputFile, baseUrl, rasterFlags,
+                                     option.m_pdfOption.m_layout.data());
   m_exportOngoing = false;
-  return ret;
+  return success;
 }
 
 void WebViewExporter::stop() { m_askedToStop = true; }
@@ -392,14 +381,16 @@ bool WebViewExporter::doExportHtml(const ExportHtmlOption &p_htmlOption,
                                    RasterFlags p_rasterFlags, const QPageLayout *p_layout) {
   ExportState state = ExportState::Busy;
 
-  connect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this,
+  const auto connection =
+      connect(
+          m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this,
           [&, this](const QString &p_headContent, const QString &p_styleContent,
                     const QString &p_content, const QString &p_bodyClassList) {
             qDebug() << "doExportHtml contentReady";
             // Maybe unnecessary. Just to avoid duplicated signal connections.
             disconnect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this, 0);
 
-            if (p_content.isEmpty() || m_askedToStop) {
+            if (m_askedToStop) {
               state = ExportState::Failed;
               return;
             }
@@ -425,15 +416,19 @@ bool WebViewExporter::doExportHtml(const ExportHtmlOption &p_htmlOption,
 
   m_viewer->adapter()->saveContent();
 
+  QElapsedTimer timer;
+  timer.start();
   while (state == ExportState::Busy) {
     Utils::sleepWait(100);
 
-    if (m_askedToStop) {
+    if (m_askedToStop || timer.hasExpired(30000)) {
+      emit logRequested(tr("Failed or cancelled while serializing HTML."));
       break;
     }
   }
 
-  return state == ExportState::Finished;
+  disconnect(connection);
+  return !m_askedToStop && state == ExportState::Finished;
 }
 
 bool WebViewExporter::writeHtmlFile(const QString &p_file, const QUrl &p_baseUrl,
@@ -493,6 +488,7 @@ bool WebViewExporter::writeHtmlFile(const QString &p_file, const QUrl &p_baseUrl
   Error err = FileUtils2::writeFile(p_file, htmlContent);
   if (err) {
     qWarning() << "failed to write exported HTML file" << p_file << err.what();
+    emit logRequested(tr("Failed to write exported HTML file (%1): %2").arg(p_file, err.what()));
     return false;
   }
 
@@ -512,10 +508,9 @@ QSize WebViewExporter::pageLayoutSize(const QPageLayout &p_layout) const {
   return QSize(rect.width() * m_viewer->logicalDpiX(), rect.height() * m_viewer->logicalDpiY());
 }
 
-void WebViewExporter::prepare(const ExportOption &p_option) {
+void WebViewExporter::prepare(const ExportHtmlRequest &p_request) {
   Q_ASSERT(!m_viewer && !m_exportOngoing);
-  Q_ASSERT(p_option.m_targetFormat == ExportFormat::PDF ||
-           p_option.m_targetFormat == ExportFormat::HTML);
+  const auto &p_option = p_request.options;
 
   auto *themeService = m_services.get<ThemeService>();
   auto *configMgr = m_services.get<ConfigMgr2>();
@@ -524,20 +519,16 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
 
   auto *adapter = new MarkdownViewerAdapter(m_services, this);
   m_viewer = new MarkdownViewer(adapter, m_services, themeService->getBaseBackground(), 1,
-                                static_cast<QWidget *>(parent()));
+                                m_widgetParent.data());
   m_viewer->hide();
-  connect(m_viewer->page(), &QWebEnginePage::loadFinished, this,
-          [this]() { m_webViewStates |= WebViewState::LoadFinished; });
+  connect(m_viewer->page(), &QWebEnginePage::loadFinished, this, [this](bool p_ok) {
+    m_webViewStates |= p_ok ? WebViewState::LoadFinished : WebViewState::Failed;
+  });
   connect(adapter, &MarkdownViewerAdapter::workFinished, this,
           [this]() { m_webViewStates |= WebViewState::WorkFinished; });
 
-  bool scrollable = true;
-  if (p_option.m_targetFormat == ExportFormat::PDF ||
-      (p_option.m_targetFormat == ExportFormat::HTML && !p_option.m_htmlOption.m_scrollable) ||
-      (p_option.m_targetFormat == ExportFormat::Custom &&
-       !p_option.m_customOption->m_targetPageScrollable)) {
-    scrollable = false;
-  }
+  const bool scrollable =
+      p_request.purpose != ExportHtmlPurpose::Pdf && p_option.m_htmlOption.m_scrollable;
 
   const auto &config = configMgr->getEditorConfig().getMarkdownEditorConfig();
 
@@ -549,9 +540,11 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
 
   bool useWkhtmltopdf = false;
   QSize pageBodySize(1024, 768);
-  if (p_option.m_targetFormat == ExportFormat::PDF) {
+  if (p_request.purpose == ExportHtmlPurpose::Pdf) {
     useWkhtmltopdf = p_option.m_pdfOption.m_useWkhtmltopdf;
-    pageBodySize = pageLayoutSize(*(p_option.m_pdfOption.m_layout));
+    if (p_option.m_pdfOption.m_layout) {
+      pageBodySize = pageLayoutSize(*p_option.m_pdfOption.m_layout);
+    }
   }
 
   qDebug() << "export page body size" << pageBodySize;
@@ -606,108 +599,17 @@ void WebViewExporter::prepare(const ExportOption &p_option) {
   // v3 SVG output has no matchFontHeight, so the `minScale` option is a no-op (verified by
   // measuring rendered equation height across scale/minScale combinations).
   paras.m_mathJaxScale = useWkhtmltopdf ? 1.5 : -1;
-  // Keep the code-block toolbar only for genuine HTML export. For PDF/Custom,
-  // force it off. The intermediate HTML feeding PDF/custom has target format HTML but sets
-  // m_removeCodeToolBarEnabled = true explicitly, so it is honored here and still drops the
-  // toolbar; genuine HTML export leaves the option at its false default.
+  // Intermediate consumers must not receive interactive export chrome.
   paras.m_removeCodeToolBarEnabled =
-      p_option.m_targetFormat == ExportFormat::HTML ? p_option.m_removeCodeToolBarEnabled : true;
+      p_request.purpose != ExportHtmlPurpose::Standalone || p_option.m_removeCodeToolBarEnabled;
 
   m_htmlTemplate = generateMarkdownViewerTemplate(*configMgr, config, paras, webStyleContent);
 
   {
-    const bool addOutlinePanel =
-        p_option.m_targetFormat == ExportFormat::HTML && p_option.m_htmlOption.m_addOutlinePanel;
+    const bool addOutlinePanel = p_request.purpose == ExportHtmlPurpose::Standalone &&
+                                 p_option.m_htmlOption.m_addOutlinePanel;
     m_exportHtmlTemplate = generateMarkdownExportTemplate(*configMgr, config, addOutlinePanel,
                                                           paras.m_headingFoldingEnabled);
-  }
-
-  if (useWkhtmltopdf) {
-    prepareWkhtmltopdfArguments(p_option.m_pdfOption);
-  }
-}
-
-static QString marginToStrMM(qreal p_margin) { return QStringLiteral("%1mm").arg(p_margin); }
-
-void WebViewExporter::prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOption) {
-  m_wkhtmltopdfArgs.clear();
-
-  // Page layout.
-  {
-    const auto &layout = p_pdfOption.m_layout;
-    m_wkhtmltopdfArgs << "--page-size" << layout->pageSize().key();
-    m_wkhtmltopdfArgs << "--orientation"
-                      << (layout->orientation() == QPageLayout::Portrait ? "Portrait"
-                                                                         : "Landscape");
-
-    const auto marginsMM = layout->margins(QPageLayout::Millimeter);
-    m_wkhtmltopdfArgs << "--margin-bottom" << marginToStrMM(marginsMM.bottom());
-    m_wkhtmltopdfArgs << "--margin-left" << marginToStrMM(marginsMM.left());
-    m_wkhtmltopdfArgs << "--margin-right" << marginToStrMM(marginsMM.right());
-    m_wkhtmltopdfArgs << "--margin-top" << marginToStrMM(marginsMM.top());
-
-    // Header/footer. Emit each non-empty field; values are unicode-encoded so
-    // non-ASCII (e.g. CJK) content survives, matching the TOC header handling.
-    const bool hasHeader = !p_pdfOption.m_headerLeft.isEmpty() ||
-                           !p_pdfOption.m_headerCenter.isEmpty() ||
-                           !p_pdfOption.m_headerRight.isEmpty();
-    const bool hasFooter = !p_pdfOption.m_footerLeft.isEmpty() ||
-                           !p_pdfOption.m_footerCenter.isEmpty() ||
-                           !p_pdfOption.m_footerRight.isEmpty();
-
-    if (!p_pdfOption.m_headerLeft.isEmpty()) {
-      m_wkhtmltopdfArgs << "--header-left" << HtmlUtils::unicodeEncode(p_pdfOption.m_headerLeft);
-    }
-    if (!p_pdfOption.m_headerCenter.isEmpty()) {
-      m_wkhtmltopdfArgs << "--header-center"
-                        << HtmlUtils::unicodeEncode(p_pdfOption.m_headerCenter);
-    }
-    if (!p_pdfOption.m_headerRight.isEmpty()) {
-      m_wkhtmltopdfArgs << "--header-right" << HtmlUtils::unicodeEncode(p_pdfOption.m_headerRight);
-    }
-    if (hasHeader) {
-      m_wkhtmltopdfArgs << "--header-spacing" << QString::number(marginsMM.top() / 3, 'f', 2);
-    }
-
-    if (!p_pdfOption.m_footerLeft.isEmpty()) {
-      m_wkhtmltopdfArgs << "--footer-left" << HtmlUtils::unicodeEncode(p_pdfOption.m_footerLeft);
-    }
-    if (!p_pdfOption.m_footerCenter.isEmpty()) {
-      m_wkhtmltopdfArgs << "--footer-center"
-                        << HtmlUtils::unicodeEncode(p_pdfOption.m_footerCenter);
-    }
-    if (!p_pdfOption.m_footerRight.isEmpty()) {
-      m_wkhtmltopdfArgs << "--footer-right" << HtmlUtils::unicodeEncode(p_pdfOption.m_footerRight);
-    }
-    if (hasFooter) {
-      m_wkhtmltopdfArgs << "--footer-spacing" << QString::number(marginsMM.bottom() / 3, 'f', 2);
-    }
-  }
-
-  m_wkhtmltopdfArgs << "--encoding" << "utf-8";
-
-  // Delay 10 seconds for MathJax.
-  m_wkhtmltopdfArgs << "--javascript-delay" << "5000";
-
-  m_wkhtmltopdfArgs << "--enable-local-file-access";
-
-  // Append additional global option.
-  if (!p_pdfOption.m_wkhtmltopdfArgs.isEmpty()) {
-    m_wkhtmltopdfArgs.append(ProcessUtils::parseCombinedArgString(p_pdfOption.m_wkhtmltopdfArgs));
-  }
-
-  // The Mermaid sizing workaround (see wkhtmltopdfhtmlpatch.h) is an in-page script, so disabling
-  // JavaScript would silently drop every diagram from the PDF. Appended AFTER the user arguments
-  // because wkhtmltopdf applies these switches in order and the last one wins: that neutralizes
-  // `--disable-javascript` and its short form, including inside a bundle such as `-qn`, without
-  // parsing (and possibly corrupting) the user's argument list.
-  m_wkhtmltopdfArgs << "--enable-javascript";
-
-  // Must be put after the global object options.
-  if (p_pdfOption.m_addTableOfContents) {
-    m_wkhtmltopdfArgs << "toc";
-    m_wkhtmltopdfArgs << "--toc-text-size-shrink" << "1.0";
-    m_wkhtmltopdfArgs << "--toc-header-text" << HtmlUtils::unicodeEncode(tr("Table of Contents"));
   }
 }
 
@@ -850,243 +752,4 @@ bool WebViewExporter::prepareLivePageForExport(RasterFlags p_flags, const QPageL
   }
   disconnect(conn);
   return true;
-}
-
-bool WebViewExporter::doExportPdf(const ExportPdfOption &p_pdfOption, const QString &p_outputFile) {
-  ExportState state = ExportState::Busy;
-
-  // Qt WebEngine renders Mermaid correctly; only the math needs flattening (issue #2681).
-  if (!prepareLivePageForExport(RasterizeMath)) {
-    return false;
-  }
-
-  m_viewer->page()->printToPdf(
-      [&, this](const QByteArray &p_result) {
-        qDebug() << "doExportPdf printToPdf ready";
-        if (p_result.isEmpty() || m_askedToStop) {
-          state = ExportState::Failed;
-          return;
-        }
-
-        Q_ASSERT(!p_outputFile.isEmpty());
-
-        Error err = FileUtils2::writeFile(p_outputFile, p_result);
-        if (err) {
-          qWarning() << "failed to write exported PDF file" << p_outputFile << err.what();
-          state = ExportState::Failed;
-          return;
-        }
-
-        state = ExportState::Finished;
-      },
-      *p_pdfOption.m_layout);
-
-  while (state == ExportState::Busy) {
-    Utils::sleepWait(100);
-
-    if (m_askedToStop) {
-      break;
-    }
-  }
-
-  return state == ExportState::Finished;
-}
-
-bool WebViewExporter::doExportWkhtmltopdf(const ExportPdfOption &p_pdfOption,
-                                          const QString &p_outputFile, const QUrl &p_baseUrl) {
-  if (p_pdfOption.m_wkhtmltopdfExePath.isEmpty()) {
-    qWarning() << "invalid wkhtmltopdf executable path";
-    return false;
-  }
-
-  ExportState state = ExportState::Busy;
-
-  // Rasterize the diagrams (and the math) before serializing the DOM: wkhtmltopdf re-shapes SVG
-  // text with a substituted font, which clips diagram labels.
-  if (!prepareLivePageForExport(RasterizeMath | RasterizeDiagrams, p_pdfOption.m_layout.data())) {
-    return false;
-  }
-
-  connect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this,
-          [&, this](const QString &p_headContent, const QString &p_styleContent,
-                    const QString &p_content, const QString &p_bodyClassList) {
-            qDebug() << "doExportWkhtmltopdf contentReady";
-            // Maybe unnecessary. Just to avoid duplicated signal connections.
-            disconnect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this, 0);
-
-            if (p_content.isEmpty() || m_askedToStop) {
-              state = ExportState::Failed;
-              return;
-            }
-
-            // Save HTML to a temp dir.
-            QTemporaryDir tmpDir;
-            if (!tmpDir.isValid()) {
-              state = ExportState::Failed;
-              return;
-            }
-
-            auto tmpHtmlFile = tmpDir.filePath("vnote_export_tmp.html");
-            if (!writeHtmlFile(tmpHtmlFile, p_baseUrl, p_headContent, p_styleContent, p_content,
-                               p_bodyClassList, true, true, false)) {
-              state = ExportState::Failed;
-              return;
-            }
-
-            // Convert HTML to PDF via wkhtmltopdf.
-            if (htmlToPdfViaWkhtmltopdf(p_pdfOption, QStringList() << tmpHtmlFile, p_outputFile)) {
-              state = ExportState::Finished;
-            } else {
-              state = ExportState::Failed;
-            }
-          });
-
-  m_viewer->adapter()->saveContent();
-
-  while (state == ExportState::Busy) {
-    Utils::sleepWait(100);
-
-    if (m_askedToStop) {
-      break;
-    }
-  }
-
-  return state == ExportState::Finished;
-}
-
-// Inject the Mermaid workarounds (see wkhtmltopdfhtmlpatch.h) into p_htmlFile in place.
-// Byte-level: the file is never decoded, so its encoding survives untouched. Every caller passes a
-// file living in a QTemporaryDir, so the user's own output is never mutated. Returns false when the
-// file cannot be patched; the caller must then abort instead of feeding wkhtmltopdf an input that
-// can hang it forever.
-static bool patchHtmlForWkhtmltopdf(const QString &p_htmlFile, int p_maxWidthPx, int p_maxHeightPx,
-                                    const QByteArray &p_textFamily,
-                                    const QByteArray &p_monoFamily) {
-  QFile file(p_htmlFile);
-  if (!file.open(QIODevice::ReadOnly)) {
-    qWarning() << "failed to read intermediate HTML file for patching" << p_htmlFile
-               << file.errorString();
-    return false;
-  }
-  auto content = file.readAll();
-  if (file.error() != QFileDevice::NoError) {
-    qWarning() << "failed to read intermediate HTML file for patching" << p_htmlFile
-               << file.errorString();
-    return false;
-  }
-  file.close();
-
-  if (!insertWkhtmltopdfHtmlPatches(content, p_maxWidthPx, p_maxHeightPx, p_textFamily,
-                                    p_monoFamily)) {
-    qWarning() << "no </head> found in intermediate HTML file" << p_htmlFile;
-    return false;
-  }
-
-  QSaveFile out(p_htmlFile);
-  if (!out.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
-    qWarning() << "failed to open intermediate HTML file for writing" << p_htmlFile
-               << out.errorString();
-    return false;
-  }
-
-  if (out.write(content) != content.size() || !out.commit()) {
-    qWarning() << "failed to write patched intermediate HTML file" << p_htmlFile
-               << out.errorString();
-    return false;
-  }
-
-  return true;
-}
-
-bool WebViewExporter::htmlToPdfViaWkhtmltopdf(const ExportPdfOption &p_pdfOption,
-                                              const QStringList &p_htmlFiles,
-                                              const QString &p_outputFile) {
-  QStringList args(m_wkhtmltopdfArgs);
-
-  // Fit Mermaid diagrams to the text column and to one printable page (see wkhtmltopdfhtmlpatch.h).
-  // Both limits are derived from the page layout VNote itself passes to wkhtmltopdf, so they are
-  // only trustworthy when nothing else can change the page geometry or the print scaling. The
-  // user's extra arguments are appended after VNote's and win, and far more of them than just the
-  // margin/page-size options affect the result (`--zoom`, `--default-header`,
-  // `--header-html`/`--footer-html` reservation, `--disable-smart-shrinking`, `--user-style-sheet`,
-  // ...). Rather than chase that list, ANY custom argument turns both clamps off: that is exactly
-  // the pre-existing behavior, and it is reported.
-  int maxWidthPx = 0;
-  int maxHeightPx = 0;
-  if (p_pdfOption.m_layout) {
-    maxWidthPx = wkhtmltopdfContentWidthPx(*p_pdfOption.m_layout);
-    maxHeightPx = wkhtmltopdfPageContentHeightPx(*p_pdfOption.m_layout);
-  }
-  if ((maxWidthPx > 0 || maxHeightPx > 0) && !p_pdfOption.m_wkhtmltopdfArgs.isEmpty()) {
-    emit logRequested(tr("Custom wkhtmltopdf arguments may change the page geometry; not fitting "
-                         "Mermaid diagrams to the page. A large diagram may overflow it."));
-    maxWidthPx = 0;
-    maxHeightPx = 0;
-  }
-
-  // Force an installed, CJK-capable family at the head of the stack (see wkhtmltopdfhtmlpatch.h
-  // workaround 5). Unlike the size clamps this stays on even with custom arguments: no wkhtmltopdf
-  // option can make a Latin-only font grow CJK glyphs.
-  const SystemFontProbe fontProbe;
-  const auto fonts = resolveWkhtmltopdfFonts(fontProbe);
-  if (fonts.m_text.isEmpty()) {
-    emit logRequested(tr("No CJK-capable font that wkhtmltopdf can load was found; non-Latin text "
-                         "may be rendered as blank boxes. Install e.g. Noto Sans SC."));
-  }
-
-  // Prepare the args.
-  for (auto const &file : p_htmlFiles) {
-    if (!patchHtmlForWkhtmltopdf(file, maxWidthPx, maxHeightPx, fonts.m_text, fonts.m_mono)) {
-      emit logRequested(
-          tr("Failed to prepare the intermediate HTML file (%1) for wkhtmltopdf.").arg(file));
-      return false;
-    }
-
-    // Note: system's locale settings (Language for non-Unicode programs) is important to
-    // wkhtmltopdf. Input file could be encoded via
-    // QUrl::fromLocalFile(p_htmlFile).toString(QUrl::EncodeUnicode) to handle non-ASCII path. But
-    // for the output file, it is useless.
-    args << QUrl::fromLocalFile(QDir::toNativeSeparators(file)).toString(QUrl::EncodeUnicode);
-  }
-
-  // To handle non-ASCII path, export it to a temp file and then copy it.
-  QTemporaryDir tmpDir;
-  if (!tmpDir.isValid()) {
-    return false;
-  }
-
-  const auto tmpFile = tmpDir.filePath("vx_tmp_output.pdf");
-  args << QDir::toNativeSeparators(tmpFile);
-
-  bool ret = startProcess(QDir::toNativeSeparators(p_pdfOption.m_wkhtmltopdfExePath), args);
-  if (!ret) {
-    emit logRequested(tr("Failed to run wkhtmltopdf (%1). If the path points to a launcher or "
-                         "shim (e.g. a scoop shim), try the real executable instead.")
-                          .arg(p_pdfOption.m_wkhtmltopdfExePath));
-    return false;
-  }
-
-  // wkhtmltopdf may exit normally without producing anything (e.g. it rejects an option). Do not
-  // report success in that case.
-  if (!QFileInfo::exists(tmpFile)) {
-    emit logRequested(tr("wkhtmltopdf did not produce an output file (%1).").arg(p_outputFile));
-    return false;
-  }
-
-  emit logRequested(tr("Copy output file (%1) to (%2).").arg(tmpFile, p_outputFile));
-  Error err = FileUtils2::copyFile(tmpFile, p_outputFile);
-  if (err) {
-    qWarning() << "failed to copy exported PDF file" << tmpFile << err.what();
-    return false;
-  }
-
-  return true;
-}
-
-bool WebViewExporter::startProcess(const QString &p_program, const QStringList &p_args) {
-  emit logRequested(p_program + " " + ProcessUtils::combineArgString(p_args));
-
-  auto ret = ProcessUtils::start(
-      p_program, p_args, [this](const QString &p_log) { emit logRequested(p_log); }, m_askedToStop);
-  return ret == ProcessUtils::State::Succeeded;
 }

@@ -3,18 +3,15 @@
 
 #include <QImage>
 #include <QObject>
-#include <QSet>
 #include <QString>
 #include <QUrl>
 
 #include <core/services/buffer2.h>
 
-class QNetworkAccessManager;
-class QNetworkReply;
-
 namespace vnotex {
 
 class ServiceLocator;
+class MindMapImageLoader;
 
 class MindMapViewWindowController : public QObject {
   Q_OBJECT
@@ -45,13 +42,11 @@ private:
   void invalidateRequests();
   bool bufferAvailable() const;
   bool isCurrent(quint64 p_generation, const std::shared_ptr<ProtectedBufferLease> &p_lease) const;
-  void requestNetworkImage(const QUrl &p_source, const QString &p_url, quint64 p_requestId);
   void confirmExternalLink(const QUrl &p_url);
 
   ServiceLocator &m_services;
   Buffer2 m_buffer;
-  QNetworkAccessManager *m_imageNetwork = nullptr;
-  QSet<QNetworkReply *> m_imageReplies;
+  MindMapImageLoader *m_imageLoader = nullptr;
   quint64 m_generation = 0;
   QUrl m_pendingExternalLink;
   quint64 m_pendingExternalGeneration = 0;

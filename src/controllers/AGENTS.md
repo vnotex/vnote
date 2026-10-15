@@ -307,3 +307,44 @@ and a data-URI definition as one undoable edit. Image insertion lists Base64 fir
 and selects it by default only for encrypted Markdown. Ordinary notes retain
 normal defaults. Base64 is encoding, not encryption: the embedded bytes receive
 protection only when saved as part of an encrypted note body.
+
+
+## Source-aware export
+
+`ExportController` only selects sources, resolves canonical file-type names through
+`FileTypeCoreService`, rejects protected notes and forwards progress/results. It must not
+construct editors or WebEngine pages. Current Buffer keeps the committed live snapshot from
+`MainWindow2`; an explicitly supplied empty snapshot is authoritative, never a disk fallback.
+Current Note and batch selections use disk snapshots without saving open notes.
+
+`ExportRendererFactory` in `src/export` is a value-owned, lowercase-keyed registry. Built-ins map
+Markdown/Text/Others to `WebViewExporter` and MindMap to `MindMapExporter`; unknown or empty
+types use Others. `Exporter` owns naming, attachments, per-operation renderer reuse, batch
+failure policy and final conversion. Every HTML consumer (standalone, PDF or custom) uses an
+`ExportHtmlRequest` carrying its purpose; do not restore format-only source routing or infer
+native types from suffixes inside renderers/batch loops.
+
+MindMap Markdown is the m3 C API's complete readable forest projection with `.md` naming and
+media copied from that projection's resource base. It is not a lossless native round trip.
+Native HTML uses an export-only, fully expanded editor, rebased before every load, and waits
+for queued image requests to settle. Missing images retain explicit placeholders; cancellation,
+malformed input and the whole-export image deadline fail rather than snapshot incomplete work.
+Standalone HTML keeps the map/articles toggle. PDF fits the entire proportional map on page 1,
+then prints the complete articles from page 2; custom HTML exposes both views without print geometry.
+
+`HtmlPdfExporter` owns final transport, not source rendering. Qt loads the rendered HTML by file
+URL (including >2 MiB documents), allows local sidecars and the existing unprotected remote-image
+policy, and waits for decoded images/fonts before printing. Its off-record profile/page and scoped
+non-displayed WebEngine view provide the render surface required for `image.decode()` completion.
+Load, resource and print waits are bounded/cancellable; late callbacks cannot publish output or
+complete another operation, and PDF bytes commit through `QSaveFile`. wkhtmltopdf remains the only
+multi-document PDF backend; missing executables are failures, not backend fallbacks.
+
+Intermediate Markdown policy: Qt PDF rasterizes math but retains vector diagrams; wkhtmltopdf
+also enables SVG-to-PNG and diagram rasterization with its paper geometry and MathJax scale 1.5;
+custom HTML enables math/SVG-to-PNG but retains vector diagrams and its selected scrollability.
+Keep temporary HTML/resources alive until the external consumer returns. Raw custom input stays raw.
+
+Behavior coverage: `tests/export/test_mindmapexport.cpp`, `test_htmlpdfexporter.cpp`, and the
+complete controller/protected-editor targets. The controller's substitute exporter tests source
+policy only; it is not evidence of rendering correctness.

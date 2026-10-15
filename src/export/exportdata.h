@@ -169,8 +169,8 @@ struct ExportOption {
 
   // Defaults to false so direct HTML export keeps the code-block toolbar.
   // The intermediate HTML feeding PDF/custom explicitly sets this true
-  // (Exporter::getExportOptionForIntermediateHtml), and WebViewExporter::prepare() forces
-  // it true for non-HTML target formats (PDF/Custom), so those paths still drop the toolbar.
+  // (Exporter::getExportOptionForIntermediateHtml); WebViewExporter also honors the
+  // originating ExportHtmlRequest purpose when preparing its template.
   bool m_removeCodeToolBarEnabled = false;
 };
 

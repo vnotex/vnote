@@ -179,6 +179,7 @@ set_tests_properties(test_bootstrap PROPERTIES
 add_qt_test(test_exportcontroller
   SOURCES
     test_exportcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/export/exportrendererfactory.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/exportcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/export/exportdata.cpp
   LINKS

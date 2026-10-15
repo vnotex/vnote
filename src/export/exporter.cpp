@@ -2,11 +2,13 @@
 
 #include <QDebug>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QTemporaryDir>
 #include <QWidget>
+#include <utility>
 
-#include "webviewexporter.h"
+#include "htmlpdfexporter.h"
 #include <utils/contentmediautils.h>
 #include <utils/fileutils2.h>
 #include <utils/pathutils.h>
@@ -14,8 +16,8 @@
 
 using namespace vnotex;
 
-Exporter::Exporter(ServiceLocator &p_services, QWidget *p_parent)
-    : QObject(p_parent), m_services(p_services) {}
+Exporter::Exporter(ServiceLocator &p_services, ExportRendererFactory p_renderers, QWidget *p_parent)
+    : QObject(p_parent), m_services(p_services), m_renderers(std::move(p_renderers)) {}
 
 static QString makeOutputFolder(const QString &p_outputDir, const QString &p_folderName) {
   const auto name = FileUtils2::generateFileNameWithSequence(p_outputDir, p_folderName);
@@ -27,10 +29,25 @@ static QString makeOutputFolder(const QString &p_outputDir, const QString &p_fol
   return outputFolder;
 }
 
+bool Exporter::loadInput(const ExportFileInfo &p_file, const QString *p_suppliedContent,
+                         ExportInput &p_input) {
+  p_input.file = p_file;
+  if (p_suppliedContent) {
+    p_input.content = *p_suppliedContent;
+    return true;
+  }
+  const auto error = FileUtils2::readTextFile(p_file.filePath, &p_input.content);
+  if (error) {
+    emit logRequested(tr("Failed to read file (%1): %2").arg(p_file.filePath, error.what()));
+    return false;
+  }
+  return true;
+}
+
 QString Exporter::doExportFile(const ExportOption &p_option, const QString &p_content,
                                const QString &p_filePath, const QString &p_fileName,
                                const QString &p_resourcePath, const QString &p_attachmentFolderPath,
-                               bool p_isMarkdown) {
+                               const QString &p_fileTypeName) {
   m_askedToStop = false;
 
   if (!QDir().mkpath(p_option.m_outputDir)) {
@@ -43,9 +60,13 @@ QString Exporter::doExportFile(const ExportOption &p_option, const QString &p_co
   fileInfo.fileName = p_fileName;
   fileInfo.resourcePath = p_resourcePath;
   fileInfo.attachmentFolderPath = p_attachmentFolderPath;
-  fileInfo.isMarkdown = p_isMarkdown;
+  fileInfo.fileTypeName = p_fileTypeName;
 
-  auto outputFile = doExport(p_option, p_option.m_outputDir, fileInfo, p_content);
+  ExportInput input;
+  QString outputFile;
+  if (loadInput(fileInfo, &p_content, input)) {
+    outputFile = doExport(p_option, p_option.m_outputDir, input);
+  }
   cleanUp();
   return outputFile;
 }
@@ -87,9 +108,12 @@ QStringList Exporter::doExportBatch(const ExportOption &p_option,
         break;
       }
 
-      const auto outputFile = doExport(p_option, outputFolder, p_files[i]);
-      if (!outputFile.isEmpty()) {
-        outputFiles << outputFile;
+      ExportInput input;
+      if (loadInput(p_files[i], nullptr, input)) {
+        const auto outputFile = doExport(p_option, outputFolder, input);
+        if (!outputFile.isEmpty()) {
+          outputFiles << outputFile;
+        }
       }
 
       emit progressUpdated(i + 1, p_files.size());
@@ -101,125 +125,132 @@ QStringList Exporter::doExportBatch(const ExportOption &p_option,
 }
 
 QString Exporter::doExport(const ExportOption &p_option, const QString &p_outputDir,
-                           const ExportFileInfo &p_file, const QString &p_content) {
-  auto content = p_content;
-  if (content.isEmpty() && !p_file.filePath.isEmpty()) {
-    Error err = FileUtils2::readTextFile(p_file.filePath, &content);
-    if (err) {
-      emit logRequested(tr("Failed to read file (%1): %2").arg(p_file.filePath, err.what()));
-      return QString();
-    }
-  }
-
-  QString outputFile;
-
+                           const ExportInput &p_input) {
+  QString output;
   switch (p_option.m_targetFormat) {
   case ExportFormat::Markdown:
-    outputFile = doExportMarkdown(p_option, p_outputDir, content, p_file.filePath, p_file.fileName,
-                                  p_file.resourcePath, p_file.attachmentFolderPath);
+    output = doExportMarkdown(p_outputDir, p_input);
     break;
-
   case ExportFormat::HTML:
-    outputFile = doExportHtml(p_option, p_outputDir, content, p_file.filePath, p_file.fileName,
-                              p_file.resourcePath, QString(), p_file.attachmentFolderPath);
+    output = doExportHtml(getExportOptionForIntermediateHtml(p_option, p_outputDir), p_outputDir,
+                          p_input);
     break;
-
   case ExportFormat::PDF:
-    outputFile = doExportPdf(p_option, p_outputDir, content, p_file.filePath, p_file.fileName,
-                             p_file.resourcePath, QString(), p_file.attachmentFolderPath);
+    output = doExportPdf(p_option, p_outputDir, p_input);
     break;
-
   case ExportFormat::Custom:
-    outputFile = doExportCustom(p_option, p_outputDir, content, p_file.filePath, p_file.fileName,
-                                p_file.resourcePath, QString(), p_file.attachmentFolderPath);
+    output = doExportCustom(p_option, p_outputDir, p_input);
     break;
-
   default:
     emit logRequested(
         tr("Unknown target format %1.").arg(exportFormatString(p_option.m_targetFormat)));
     break;
   }
-
-  const auto sourceFile = p_file.filePath.isEmpty() ? p_file.fileName : p_file.filePath;
-  if (!outputFile.isEmpty()) {
-    emit logRequested(tr("File (%1) exported to (%2)").arg(sourceFile, outputFile));
+  const auto &file = p_input.file;
+  const auto source = file.filePath.isEmpty() ? file.fileName : file.filePath;
+  if (!output.isEmpty()) {
+    if (p_option.m_exportAttachments) {
+      exportAttachments(file.attachmentFolderPath, file.filePath, QFileInfo(output).absolutePath(),
+                        output);
+    }
+    emit logRequested(tr("File (%1) exported to (%2)").arg(source, output));
   } else {
-    emit logRequested(tr("Failed to export file (%1)").arg(sourceFile));
+    emit logRequested(tr("Failed to export file (%1)").arg(source));
   }
-
-  return outputFile;
+  return output;
 }
 
-QString Exporter::doExportMarkdown(const ExportOption &p_option, const QString &p_outputDir,
-                                   const QString &p_content, const QString &p_filePath,
-                                   const QString &p_fileName, const QString &p_resourcePath,
-                                   const QString &p_attachmentFolderPath) {
-  Q_UNUSED(p_option);
-
-  auto outputName = p_fileName;
-  if (outputName.isEmpty()) {
-    outputName = QFileInfo(p_filePath).fileName();
+QString Exporter::doExportMarkdown(const QString &p_outputDir, const ExportInput &p_input) {
+  auto *adapter = renderer(p_input.file.fileTypeName);
+  ExportMarkdown markdown;
+  if (!adapter || !adapter->renderMarkdown(p_input, markdown) || checkAskedToStop()) {
+    return QString();
   }
-
-  const auto name = FileUtils2::generateFileNameWithSequence(p_outputDir, outputName, "");
-  const auto outputFolder = PathUtils::concatenateFilePath(p_outputDir, name);
-  QDir outDir(outputFolder);
-  if (!outDir.mkpath(outputFolder)) {
+  const auto name = FileUtils2::generateFileNameWithSequence(p_outputDir, markdown.fileName, "");
+  const auto folder = QDir(p_outputDir).filePath(name);
+  if (!QDir().mkpath(folder)) {
     emit logRequested(tr("Failed to create output folder under (%1).").arg(p_outputDir));
     return QString();
   }
-
-  auto destFilePath = outDir.filePath(outputName);
-  if (!p_content.isEmpty()) {
-    Error err = FileUtils2::writeFile(destFilePath, p_content);
-    if (err) {
-      emit logRequested(tr("Failed to write file (%1): %2").arg(destFilePath, err.what()));
-      return QString();
-    }
-  } else if (!p_filePath.isEmpty()) {
-    Error err = FileUtils2::copyFile(p_filePath, destFilePath, false);
-    if (err) {
-      emit logRequested(tr("Failed to copy file (%1): %2").arg(p_filePath, err.what()));
-      return QString();
-    }
-  } else {
-    emit logRequested(tr("Failed to export markdown due to empty content and file path."));
+  const auto destination = QDir(folder).filePath(markdown.fileName);
+  const auto error = FileUtils2::writeFile(destination, markdown.content);
+  if (error) {
+    emit logRequested(tr("Failed to write file (%1): %2").arg(destination, error.what()));
+    QFile::remove(destination);
     return QString();
   }
-
-  const auto mediaSourceFile = p_filePath.isEmpty() ? destFilePath : p_filePath;
-  ContentMediaUtils::copyMediaFiles(mediaSourceFile, nullptr, destFilePath);
-
-  if (p_option.m_exportAttachments) {
-    exportAttachments(p_attachmentFolderPath, mediaSourceFile, outputFolder, destFilePath);
+  if (markdown.copyMedia) {
+    ContentMediaUtils::copyMarkdownMediaFiles(markdown.content, p_input.file.resourcePath, nullptr,
+                                              destination);
   }
-
-  Q_UNUSED(p_resourcePath);
-  return destFilePath;
+  return destination;
 }
 
-void Exporter::exportAttachments(const QString &p_attachmentFolderPath,
-                                 const QString &p_srcFilePath, const QString &p_outputFolder,
-                                 const QString &p_destFilePath) {
-  if (p_attachmentFolderPath.isEmpty() || !QDir(p_attachmentFolderPath).exists()) {
-    return;
+QString Exporter::outputPath(const ExportInput &p_input, const QString &p_outputDir,
+                             const QString &p_suffix) {
+  auto base = QFileInfo(p_input.file.fileName).completeBaseName();
+  if (base.isEmpty()) {
+    base = QFileInfo(p_input.file.filePath).completeBaseName();
   }
+  return QDir(p_outputDir)
+      .filePath(FileUtils2::generateFileNameWithSequence(p_outputDir, base, p_suffix));
+}
 
-  auto relativePath =
-      PathUtils::relativePath(PathUtils::parentDirPath(p_srcFilePath), p_attachmentFolderPath);
-  if (relativePath.isEmpty() || relativePath == QStringLiteral(".")) {
-    relativePath = QFileInfo(p_attachmentFolderPath).fileName();
+QString Exporter::doExportHtml(const ExportHtmlRequest &p_request, const QString &p_outputDir,
+                               const ExportInput &p_input) {
+  auto *adapter = renderer(p_input.file.fileTypeName);
+  if (!adapter || checkAskedToStop()) {
+    return QString();
   }
-
-  auto destAttachmentFolderPath = QDir(p_outputFolder).filePath(relativePath);
-  destAttachmentFolderPath = FileUtils2::renameIfExistsCaseInsensitive(destAttachmentFolderPath);
-  Error err = FileUtils2::copyDir(p_attachmentFolderPath, destAttachmentFolderPath, false);
-  if (err) {
-    emit logRequested(
-        tr("Failed to copy attachment folder (%1): %2").arg(p_attachmentFolderPath, err.what()));
+  const auto destination =
+      outputPath(p_input, p_outputDir,
+                 p_request.options.m_htmlOption.m_useMimeHtmlFormat ? QStringLiteral("mht")
+                                                                    : QStringLiteral("html"));
+  if (!adapter->renderHtml(p_input, p_request, destination) || checkAskedToStop()) {
+    QFile::remove(destination);
+    return QString();
   }
+  return destination;
+}
 
-  Q_UNUSED(p_destFilePath);
+QString Exporter::doExportPdf(const ExportOption &p_option, const QString &p_outputDir,
+                              const ExportInput &p_input) {
+  QTemporaryDir temporary;
+  if (!temporary.isValid()) {
+    emit logRequested(tr("Failed to create temporary directory to hold HTML files."));
+    return QString();
+  }
+  const auto html = doExportHtml(getExportOptionForIntermediateHtml(p_option, temporary.path()),
+                                 temporary.path(), p_input);
+  if (html.isEmpty() || checkAskedToStop()) {
+    return QString();
+  }
+  const auto destination = outputPath(p_input, p_outputDir, QStringLiteral("pdf"));
+  return pdfExporter()->exportFiles(p_option.m_pdfOption, {html}, destination) ? destination
+                                                                               : QString();
+}
+
+QStringList Exporter::renderBatchHtml(const ExportHtmlRequest &p_request,
+                                      const QVector<ExportFileInfo> &p_files,
+                                      const QString &p_outputDir) {
+  QStringList htmlFiles;
+  emit progressUpdated(0, p_files.size());
+  for (int i = 0; i < p_files.size(); ++i) {
+    if (checkAskedToStop()) {
+      return {};
+    }
+    ExportInput input;
+    if (loadInput(p_files[i], nullptr, input)) {
+      const auto html = doExportHtml(p_request, p_outputDir, input);
+      if (!html.isEmpty()) {
+        htmlFiles << html;
+      } else {
+        emit logRequested(tr("Failed to export file (%1)").arg(p_files[i].filePath));
+      }
+    }
+    emit progressUpdated(i + 1, p_files.size());
+  }
+  return htmlFiles;
 }
 
 QString Exporter::doExportPdfAllInOne(const ExportOption &p_option,
@@ -237,28 +268,8 @@ QString Exporter::doExportPdfAllInOne(const ExportOption &p_option,
     return QString();
   }
 
-  auto tmpOption(getExportOptionForIntermediateHtml(p_option, tmpDir.path()));
-  // These intermediate files are fed to wkhtmltopdf, so the diagrams must be rasterized here,
-  // while a live DOM still exists to re-render them in.
-  tmpOption.m_rasterizeDiagramsEnabled = true;
-
-  QStringList htmlFiles;
-  emit progressUpdated(0, p_files.size());
-  for (int i = 0; i < p_files.size(); ++i) {
-    if (checkAskedToStop()) {
-      return QString();
-    }
-
-    const auto htmlFile =
-        doExportHtml(tmpOption, tmpDir.path(), QString(), p_files[i].filePath, p_files[i].fileName,
-                     p_files[i].resourcePath, QString(), QString());
-    if (!htmlFile.isEmpty()) {
-      htmlFiles << htmlFile;
-    }
-    emit progressUpdated(i + 1, p_files.size());
-  }
-
-  cleanUpWebViewExporter();
+  const auto htmlFiles = renderBatchHtml(
+      getExportOptionForIntermediateHtml(p_option, tmpDir.path()), p_files, tmpDir.path());
 
   if (htmlFiles.isEmpty()) {
     return QString();
@@ -271,8 +282,7 @@ QString Exporter::doExportPdfAllInOne(const ExportOption &p_option,
   auto fileName =
       FileUtils2::generateFileNameWithSequence(outputFolder, tr("all_in_one_export"), "pdf");
   auto destFilePath = PathUtils::concatenateFilePath(outputFolder, fileName);
-  if (getWebViewExporter(p_option)->htmlToPdfViaWkhtmltopdf(p_option.m_pdfOption, htmlFiles,
-                                                            destFilePath)) {
+  if (pdfExporter()->exportFiles(p_option.m_pdfOption, htmlFiles, destFilePath)) {
     emit logRequested(tr("Exported to (%1).").arg(destFilePath));
     return destFilePath;
   }
@@ -299,25 +309,11 @@ QString Exporter::doExportCustomAllInOne(const ExportOption &p_option,
       return QString();
     }
 
-    auto tmpOption(getExportOptionForIntermediateHtml(p_option, tmpDir.path()));
-
-    emit progressUpdated(0, p_files.size());
-    for (int i = 0; i < p_files.size(); ++i) {
-      if (checkAskedToStop()) {
-        return QString();
-      }
-
-      const auto htmlFile =
-          doExportHtml(tmpOption, tmpDir.path(), QString(), p_files[i].filePath,
-                       p_files[i].fileName, p_files[i].resourcePath, QString(), QString());
-      if (!htmlFile.isEmpty()) {
-        inputFiles << htmlFile;
-        resourcePaths << PathUtils::parentDirPath(htmlFile);
-      }
-      emit progressUpdated(i + 1, p_files.size());
+    inputFiles = renderBatchHtml(getExportOptionForIntermediateHtml(p_option, tmpDir.path()),
+                                 p_files, tmpDir.path());
+    for (const auto &input : inputFiles) {
+      resourcePaths << QFileInfo(input).absolutePath();
     }
-
-    cleanUpWebViewExporter();
 
     if (inputFiles.isEmpty()) {
       return QString();
@@ -356,181 +352,127 @@ QString Exporter::doExportCustomAllInOne(const ExportOption &p_option,
   return QString();
 }
 
-QString Exporter::doExportHtml(const ExportOption &p_option, const QString &p_outputDir,
-                               const QString &p_content, const QString &p_filePath,
-                               const QString &p_fileName, const QString &p_resourcePath,
-                               const QString &p_destPath, const QString &p_attachmentFolderPath) {
-  auto outputFilePath = p_destPath;
-  if (outputFilePath.isEmpty()) {
-    QString suffix =
-        p_option.m_htmlOption.m_useMimeHtmlFormat ? QStringLiteral("mht") : QStringLiteral("html");
-    auto baseName = QFileInfo(p_fileName).completeBaseName();
-    if (baseName.isEmpty()) {
-      baseName = QFileInfo(p_filePath).completeBaseName();
+QString Exporter::doExportCustom(const ExportOption &p_option, const QString &p_outputDir,
+                                 const ExportInput &p_input) {
+  Q_ASSERT(p_option.m_customOption);
+  QTemporaryDir temporary;
+  QString input = p_input.file.filePath;
+  QString resourcePath = p_input.file.resourcePath;
+  if (p_option.m_customOption->m_useHtmlInput) {
+    if (!temporary.isValid()) {
+      emit logRequested(tr("Failed to create temporary directory to hold HTML files."));
+      return QString();
     }
-    auto fileName = FileUtils2::generateFileNameWithSequence(p_outputDir, baseName, suffix);
-    outputFilePath = PathUtils::concatenateFilePath(p_outputDir, fileName);
+    input = doExportHtml(getExportOptionForIntermediateHtml(p_option, temporary.path()),
+                         temporary.path(), p_input);
+    resourcePath = QFileInfo(input).absolutePath();
   }
+  if (input.isEmpty() || checkAskedToStop()) {
+    return QString();
+  }
+  const auto destination =
+      outputPath(p_input, p_outputDir, p_option.m_customOption->m_targetSuffix);
+  return doExportCustom(p_option, {input}, {resourcePath}, destination) ? destination : QString();
+}
 
-  bool success = getWebViewExporter(p_option)->doExport(p_option, p_content, p_filePath, p_fileName,
-                                                        p_resourcePath, outputFilePath);
-  if (success) {
-    if (p_option.m_exportAttachments) {
-      exportAttachments(p_attachmentFolderPath, p_filePath, p_outputDir, outputFilePath);
+ExportRenderer *Exporter::renderer(const QString &p_fileTypeName) {
+  const auto key = p_fileTypeName.toLower();
+  auto *adapter = m_activeRenderers.value(key);
+  if (!adapter) {
+    adapter = m_renderers.create(p_fileTypeName, qobject_cast<QWidget *>(parent()), this);
+    if (!adapter) {
+      emit logRequested(tr("No export renderer registered for (%1).").arg(p_fileTypeName));
+      return nullptr;
     }
-    return outputFilePath;
+    connect(adapter, &ExportRenderer::logRequested, this, &Exporter::logRequested);
+    m_activeRenderers.insert(key, adapter);
   }
-
-  return QString();
+  return adapter;
 }
 
-WebViewExporter *Exporter::getWebViewExporter(const ExportOption &p_option) {
-  if (!m_webViewExporter) {
-    m_webViewExporter = new WebViewExporter(m_services, static_cast<QWidget *>(parent()));
-    connect(m_webViewExporter, &WebViewExporter::logRequested, this, &Exporter::logRequested);
-    m_webViewExporter->prepare(p_option);
+HtmlPdfExporter *Exporter::pdfExporter() {
+  if (!m_pdfExporter) {
+    m_pdfExporter = new HtmlPdfExporter(m_services, this);
+    connect(m_pdfExporter, &HtmlPdfExporter::logRequested, this, &Exporter::logRequested);
   }
-
-  return m_webViewExporter;
+  return m_pdfExporter;
 }
 
-void Exporter::cleanUpWebViewExporter() {
-  if (m_webViewExporter) {
-    m_webViewExporter->clear();
-    delete m_webViewExporter;
-    m_webViewExporter = nullptr;
-  }
+void Exporter::cleanUp() {
+  qDeleteAll(m_activeRenderers);
+  m_activeRenderers.clear();
+  delete m_pdfExporter;
+  m_pdfExporter = nullptr;
 }
-
-void Exporter::cleanUp() { cleanUpWebViewExporter(); }
 
 void Exporter::stop() {
   m_askedToStop = true;
   emit askedToStop();
-
-  if (m_webViewExporter) {
-    m_webViewExporter->stop();
+  for (auto *adapter : m_activeRenderers) {
+    adapter->stop();
+  }
+  if (m_pdfExporter) {
+    m_pdfExporter->stop();
   }
 }
 
 bool Exporter::checkAskedToStop() const {
   if (m_askedToStop) {
     emit const_cast<Exporter *>(this)->logRequested(tr("Asked to stop. Aborting."));
-    return true;
   }
-
-  return false;
+  return m_askedToStop;
 }
 
-QString Exporter::doExportPdf(const ExportOption &p_option, const QString &p_outputDir,
-                              const QString &p_content, const QString &p_filePath,
-                              const QString &p_fileName, const QString &p_resourcePath,
-                              const QString &p_destPath, const QString &p_attachmentFolderPath) {
-  auto outputFilePath = p_destPath;
-  if (outputFilePath.isEmpty()) {
-    auto baseName = QFileInfo(p_fileName).completeBaseName();
-    if (baseName.isEmpty()) {
-      baseName = QFileInfo(p_filePath).completeBaseName();
-    }
-    auto fileName = FileUtils2::generateFileNameWithSequence(p_outputDir, baseName, "pdf");
-    outputFilePath = PathUtils::concatenateFilePath(p_outputDir, fileName);
+ExportHtmlRequest Exporter::getExportOptionForIntermediateHtml(const ExportOption &p_option,
+                                                               const QString &p_outputDir) {
+  ExportHtmlRequest request;
+  request.options = p_option;
+  if (p_option.m_targetFormat == ExportFormat::HTML) {
+    return request;
   }
-
-  bool success = getWebViewExporter(p_option)->doExport(p_option, p_content, p_filePath, p_fileName,
-                                                        p_resourcePath, outputFilePath);
-  if (success) {
-    if (p_option.m_exportAttachments) {
-      exportAttachments(p_attachmentFolderPath, p_filePath, p_outputDir, outputFilePath);
-    }
-    return outputFilePath;
-  }
-
-  return QString();
+  const bool pdf = p_option.m_targetFormat == ExportFormat::PDF;
+  request.purpose = pdf ? ExportHtmlPurpose::Pdf : ExportHtmlPurpose::Custom;
+  auto &options = request.options;
+  options.m_exportAttachments = false;
+  options.m_targetFormat = ExportFormat::HTML;
+  options.m_intermediateHtml = true;
+  options.m_transformSvgToPngEnabled = !pdf || p_option.m_pdfOption.m_useWkhtmltopdf;
+  options.m_rasterizeDiagramsEnabled = pdf && p_option.m_pdfOption.m_useWkhtmltopdf;
+  options.m_rasterizeMathEnabled = true;
+  options.m_removeCodeToolBarEnabled = true;
+  options.m_htmlOption.m_embedStyles = true;
+  options.m_htmlOption.m_completePage = true;
+  options.m_htmlOption.m_embedImages = false;
+  options.m_htmlOption.m_useMimeHtmlFormat = false;
+  options.m_htmlOption.m_addOutlinePanel = false;
+  options.m_htmlOption.m_scrollable =
+      !pdf && p_option.m_customOption && p_option.m_customOption->m_targetPageScrollable;
+  options.m_outputDir = p_outputDir;
+  return request;
 }
 
-QString Exporter::doExportCustom(const ExportOption &p_option, const QString &p_outputDir,
-                                 const QString &p_content, const QString &p_filePath,
-                                 const QString &p_fileName, const QString &p_resourcePath,
-                                 const QString &p_destPath, const QString &p_attachmentFolderPath) {
-  Q_ASSERT(p_option.m_customOption);
-
-  QStringList inputFiles;
-  QStringList resourcePaths;
-
-  QTemporaryDir tmpDir;
-  if (p_option.m_customOption->m_useHtmlInput) {
-    if (!tmpDir.isValid()) {
-      emit logRequested(tr("Failed to create temporary directory to hold HTML files."));
-      return QString();
-    }
-
-    auto tmpOption(getExportOptionForIntermediateHtml(p_option, tmpDir.path()));
-    auto htmlFile = doExportHtml(tmpOption, tmpDir.path(), p_content, p_filePath, p_fileName,
-                                 p_resourcePath, QString(), QString());
-    if (htmlFile.isEmpty()) {
-      return QString();
-    }
-
-    if (checkAskedToStop()) {
-      return QString();
-    }
-
-    cleanUpWebViewExporter();
-
-    inputFiles << htmlFile;
-    resourcePaths << PathUtils::parentDirPath(htmlFile);
-  } else {
-    inputFiles << p_filePath;
-    resourcePaths << p_resourcePath;
+void Exporter::exportAttachments(const QString &p_attachmentFolderPath,
+                                 const QString &p_srcFilePath, const QString &p_outputFolder,
+                                 const QString &p_destFilePath) {
+  if (p_attachmentFolderPath.isEmpty() || !QDir(p_attachmentFolderPath).exists()) {
+    return;
   }
 
-  auto outputFilePath = p_destPath;
-  if (outputFilePath.isEmpty()) {
-    auto baseName = QFileInfo(p_fileName).completeBaseName();
-    if (baseName.isEmpty()) {
-      baseName = QFileInfo(p_filePath).completeBaseName();
-    }
-    auto fileName = FileUtils2::generateFileNameWithSequence(
-        p_outputDir, baseName, p_option.m_customOption->m_targetSuffix);
-    outputFilePath = PathUtils::concatenateFilePath(p_outputDir, fileName);
+  auto relativePath =
+      PathUtils::relativePath(PathUtils::parentDirPath(p_srcFilePath), p_attachmentFolderPath);
+  if (relativePath.isEmpty() || relativePath == QStringLiteral(".")) {
+    relativePath = QFileInfo(p_attachmentFolderPath).fileName();
   }
 
-  bool success = doExportCustom(p_option, inputFiles, resourcePaths, outputFilePath);
-  if (success) {
-    if (p_option.m_exportAttachments) {
-      exportAttachments(p_attachmentFolderPath, p_filePath, p_outputDir, outputFilePath);
-    }
-
-    return outputFilePath;
+  auto destAttachmentFolderPath = QDir(p_outputFolder).filePath(relativePath);
+  destAttachmentFolderPath = FileUtils2::renameIfExistsCaseInsensitive(destAttachmentFolderPath);
+  Error err = FileUtils2::copyDir(p_attachmentFolderPath, destAttachmentFolderPath, false);
+  if (err) {
+    emit logRequested(
+        tr("Failed to copy attachment folder (%1): %2").arg(p_attachmentFolderPath, err.what()));
   }
 
-  return QString();
-}
-
-ExportOption Exporter::getExportOptionForIntermediateHtml(const ExportOption &p_option,
-                                                          const QString &p_outputDir) {
-  ExportOption tmpOption(p_option);
-  tmpOption.m_exportAttachments = false;
-  tmpOption.m_targetFormat = ExportFormat::HTML;
-  tmpOption.m_intermediateHtml = true;
-  tmpOption.m_transformSvgToPngEnabled = true;
-  // The intermediate HTML is consumed by Pandoc or wkhtmltopdf, neither of which renders MathJax
-  // SVG faithfully.
-  tmpOption.m_rasterizeMathEnabled = true;
-  tmpOption.m_removeCodeToolBarEnabled = true;
-
-  tmpOption.m_htmlOption.m_embedStyles = true;
-  tmpOption.m_htmlOption.m_completePage = true;
-  tmpOption.m_htmlOption.m_embedImages = false;
-  tmpOption.m_htmlOption.m_useMimeHtmlFormat = false;
-  tmpOption.m_htmlOption.m_addOutlinePanel = false;
-  tmpOption.m_htmlOption.m_scrollable = false;
-  if (p_option.m_targetFormat == ExportFormat::Custom && p_option.m_customOption &&
-      p_option.m_customOption->m_targetPageScrollable) {
-    tmpOption.m_htmlOption.m_scrollable = true;
-  }
-  tmpOption.m_outputDir = p_outputDir;
-  return tmpOption;
+  Q_UNUSED(p_destFilePath);
 }
 
 bool Exporter::doExportCustom(const ExportOption &p_option, const QStringList &p_files,
@@ -543,7 +485,11 @@ bool Exporter::doExportCustom(const ExportOption &p_option, const QStringList &p
   auto state = ProcessUtils::start(
       cmd, [this](const QString &msg) { emit logRequested(msg); }, m_askedToStop);
 
-  return state == ProcessUtils::Succeeded;
+  if (state != ProcessUtils::Succeeded || checkAskedToStop() || !QFileInfo(p_filePath).isFile()) {
+    QFile::remove(p_filePath);
+    return false;
+  }
+  return true;
 }
 
 QString Exporter::evaluateCommand(const ExportOption &p_option, const QStringList &p_files,

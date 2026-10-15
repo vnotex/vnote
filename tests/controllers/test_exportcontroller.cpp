@@ -10,6 +10,7 @@
 #include <QtConcurrent/QtConcurrentRun>
 
 #include <cstring>
+#include <utility>
 
 #include <controllers/exportcontroller.h>
 #include <core/nodeidentifier.h>
@@ -25,10 +26,7 @@
 #include <core/services/workspacecoreservice.h>
 #include <export/exportdata.h>
 #include <export/exporter.h>
-#include <export/webviewexporter.h>
 #include <temp_dir_fixture.h>
-#include <utils/contentmediautils.h>
-#include <utils/processutils.h>
 
 #include <vxcore/vxcore.h>
 
@@ -43,7 +41,7 @@ struct RecordedExport {
   QString fileName;
   QString resourcePath;
   QString attachmentFolderPath;
-  bool isMarkdown = false;
+  QString fileTypeName;
 };
 
 static QVector<RecordedExport> g_recordedExports;
@@ -52,60 +50,10 @@ static QVector<RecordedExport> g_recordedExports;
 
 namespace vnotex {
 
-WebViewExporter::WebViewExporter(ServiceLocator &p_services, QWidget *p_parent)
-    : QObject(p_parent), m_services(p_services) {}
+void registerBuiltinExportRenderers(ExportRendererFactory &) {}
 
-WebViewExporter::~WebViewExporter() = default;
-
-const QMetaObject WebViewExporter::staticMetaObject = QObject::staticMetaObject;
-
-const QMetaObject *WebViewExporter::metaObject() const { return &QObject::staticMetaObject; }
-
-void *WebViewExporter::qt_metacast(const char *p_clname) {
-  if (!p_clname) {
-    return nullptr;
-  }
-  if (!std::strcmp(p_clname, "vnotex::WebViewExporter")) {
-    return static_cast<void *>(this);
-  }
-  return QObject::qt_metacast(p_clname);
-}
-
-int WebViewExporter::qt_metacall(QMetaObject::Call p_call, int p_id, void **p_args) {
-  return QObject::qt_metacall(p_call, p_id, p_args);
-}
-
-bool WebViewExporter::doExport(const ExportOption &, const QString &, const QString &,
-                               const QString &, const QString &, const QString &) {
-  return false;
-}
-
-void WebViewExporter::prepare(const ExportOption &) {}
-
-void WebViewExporter::clear() {}
-
-void WebViewExporter::stop() {}
-
-bool WebViewExporter::htmlToPdfViaWkhtmltopdf(const ExportPdfOption &, const QStringList &,
-                                              const QString &) {
-  return false;
-}
-
-void ContentMediaUtils::copyMediaFiles(const QString &, INotebookBackend *, const QString &) {}
-
-ProcessUtils::State ProcessUtils::start(const QString &, const QStringList &,
-                                        const std::function<void(const QString &)> &,
-                                        const bool &) {
-  return State::Succeeded;
-}
-
-ProcessUtils::State
-ProcessUtils::start(const QString &, const std::function<void(const QString &)> &, const bool &) {
-  return State::Succeeded;
-}
-
-Exporter::Exporter(ServiceLocator &p_services, QWidget *p_parent)
-    : QObject(p_parent), m_services(p_services) {}
+Exporter::Exporter(ServiceLocator &p_services, ExportRendererFactory p_renderers, QWidget *p_parent)
+    : QObject(p_parent), m_services(p_services), m_renderers(std::move(p_renderers)) {}
 
 const QMetaObject Exporter::staticMetaObject = QObject::staticMetaObject;
 
@@ -132,9 +80,9 @@ void Exporter::logRequested(const QString &) {}
 QString Exporter::doExportFile(const ExportOption &p_option, const QString &p_content,
                                const QString &p_filePath, const QString &p_fileName,
                                const QString &p_resourcePath, const QString &p_attachmentFolderPath,
-                               bool p_isMarkdown) {
+                               const QString &p_fileTypeName) {
   tests::g_recordedExports.append(tests::RecordedExport{p_filePath, p_fileName, p_resourcePath,
-                                                        p_attachmentFolderPath, p_isMarkdown});
+                                                        p_attachmentFolderPath, p_fileTypeName});
 
   if (!QDir().mkpath(p_option.m_outputDir)) {
     return QString();

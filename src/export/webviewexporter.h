@@ -1,18 +1,14 @@
 #ifndef WEBVIEWEXPORTER_H
 #define WEBVIEWEXPORTER_H
 
-#include <QObject>
-
-#include "exportdata.h"
-
-#include <core/servicelocator.h>
+#include "exportrenderer.h"
 
 class QWidget;
 
 namespace vnotex {
 class MarkdownViewer;
 
-class WebViewExporter : public QObject {
+class WebViewExporter : public ExportRenderer {
   Q_OBJECT
 public:
   enum WebViewState { Started = 0, LoadFinished = 0x1, WorkFinished = 0x2, Failed = 0x4 };
@@ -31,27 +27,16 @@ public:
   };
   Q_DECLARE_FLAGS(RasterFlags, RasterFlag);
 
-  // We need QWidget as parent.
-  explicit WebViewExporter(ServiceLocator &p_services, QWidget *p_parent);
+  WebViewExporter(ServiceLocator &p_services, QWidget *p_widgetParent, QObject *p_parent);
 
-  ~WebViewExporter();
+  ~WebViewExporter() override;
 
-  bool doExport(const ExportOption &p_option, const QString &p_content, const QString &p_filePath,
-                const QString &p_fileName, const QString &p_resourcePath,
-                const QString &p_destPath);
+  bool renderMarkdown(const ExportInput &p_input, ExportMarkdown &p_output) override;
 
-  void prepare(const ExportOption &p_option);
+  bool renderHtml(const ExportInput &p_input, const ExportHtmlRequest &p_request,
+                  const QString &p_outputFile) override;
 
-  // Release resources after one batch of export.
-  void clear();
-
-  void stop();
-
-  bool htmlToPdfViaWkhtmltopdf(const ExportPdfOption &p_pdfOption, const QStringList &p_htmlFiles,
-                               const QString &p_outputFile);
-
-signals:
-  void logRequested(const QString &p_log);
+  void stop() override;
 
 private:
   enum class ExportState { Busy = 0, Finished, Failed };
@@ -62,7 +47,9 @@ private:
   // costs another 75% in file size for a difference that only shows under magnification.
   static constexpr int c_diagramRasterDpi = 384;
 
-  ServiceLocator &m_services;
+  void prepare(const ExportHtmlRequest &p_request);
+
+  void clear();
 
   bool isWebViewReady() const;
 
@@ -95,16 +82,7 @@ private:
 
   bool fixBodyResources(const QUrl &p_baseUrl, const QString &p_folder, QString &p_html);
 
-  bool doExportPdf(const ExportPdfOption &p_pdfOption, const QString &p_outputFile);
-
-  bool doExportWkhtmltopdf(const ExportPdfOption &p_pdfOption, const QString &p_outputFile,
-                           const QUrl &p_baseUrl);
-
   QSize pageLayoutSize(const QPageLayout &p_layout) const;
-
-  void prepareWkhtmltopdfArguments(const ExportPdfOption &p_pdfOption);
-
-  bool startProcess(const QString &p_program, const QStringList &p_args);
 
   bool m_askedToStop = false;
 
@@ -113,7 +91,7 @@ private:
   WebViewStates m_webViewStates = WebViewState::Started;
 
   // Managed by QObject.
-  MarkdownViewer *m_viewer = nullptr;
+  QPointer<MarkdownViewer> m_viewer;
 
   QString m_htmlTemplate;
 
@@ -124,8 +102,6 @@ private:
   // directly into the exported HTML so a static file is self-contained even when
   // Utils.fetchStyleContent() fails to capture the highlight <link>.
   QString m_syntaxHighlightStyleFile;
-
-  QStringList m_wkhtmltopdfArgs;
 };
 } // namespace vnotex
 

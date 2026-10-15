@@ -1756,6 +1756,7 @@ add_qt_test(test_mindmapeditor
     ${CMAKE_SOURCE_DIR}/src/utils/htmlutils.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/mindmapeditor.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/mindmapviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/mindmapimageloader.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
   LINKS

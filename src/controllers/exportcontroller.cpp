@@ -8,6 +8,7 @@
 #include <QRegularExpression>
 #include <QWidget>
 #include <exception>
+#include <utility>
 
 #include <core/exception.h>
 #include <core/servicelocator.h>
@@ -88,7 +89,7 @@ void ExportController::doExport(const ExportOption &p_option, const ExportContex
 
         const auto outputFile = exporter->doExportFile(p_option, p_context.bufferContent, filePath,
                                                        fileName, QFileInfo(filePath).absolutePath(),
-                                                       attachmentsFolder, isMarkdownFile(filePath));
+                                                       attachmentsFolder, fileTypeName(filePath));
         if (!outputFile.isEmpty()) {
           outputFiles.append(outputFile);
         }
@@ -129,7 +130,7 @@ void ExportController::doExport(const ExportOption &p_option, const ExportContex
             p_option.m_exportAttachments ? notebookService->getAttachmentsFolder(
                                                p_context.currentNodeId.notebookId, relativePath)
                                          : QString(),
-            isMarkdownFile(filePath));
+            fileTypeName(filePath));
         if (!outputFile.isEmpty()) {
           outputFiles.append(outputFile);
         }
@@ -224,7 +225,9 @@ bool ExportController::isExporting() const { return m_isExporting; }
 
 Exporter *ExportController::ensureExporter() {
   if (!m_exporter) {
-    m_exporter = new Exporter(m_services, m_widgetParent.data());
+    ExportRendererFactory renderers(m_services);
+    registerBuiltinExportRenderers(renderers);
+    m_exporter = new Exporter(m_services, std::move(renderers), m_widgetParent.data());
     connect(m_exporter, &Exporter::progressUpdated, this, &ExportController::progressUpdated);
     connect(m_exporter, &Exporter::logRequested, this, &ExportController::logRequested);
   }
@@ -276,7 +279,7 @@ void ExportController::collectExportFiles(const QString &p_notebookId, const QSt
     info.attachmentFolderPath =
         p_exportAttachments ? notebookService->getAttachmentsFolder(p_notebookId, relativePath)
                             : QString();
-    info.isMarkdown = isMarkdownFile(filePath);
+    info.fileTypeName = fileTypeName(filePath);
     p_files.append(info);
   }
 
@@ -369,7 +372,7 @@ void ExportController::collectWorkspaceFiles(const QString &p_workspaceId, bool 
     info.fileName = QFileInfo(filePath).fileName();
     info.resourcePath = QFileInfo(filePath).absolutePath();
     info.attachmentFolderPath = attachmentFolderPath;
-    info.isMarkdown = isMarkdownFile(filePath);
+    info.fileTypeName = fileTypeName(filePath);
     p_files.append(info);
   }
 }
@@ -409,14 +412,16 @@ bool ExportController::refuseProtectedBatch(const QStringList &p_protectedFiles)
   return true;
 }
 
-bool ExportController::isMarkdownFile(const QString &p_filePath) const {
+QString ExportController::fileTypeName(const QString &p_filePath) const {
   auto *fileTypeService = m_services.get<FileTypeCoreService>();
-  if (!fileTypeService) {
-    return false;
+  if (fileTypeService) {
+    const auto suffix = QFileInfo(p_filePath).suffix().toLower();
+    const auto name = fileTypeService->getFileTypeBySuffix(suffix).m_typeName;
+    if (!name.isEmpty()) {
+      return name;
+    }
   }
-
-  const auto suffix = QFileInfo(p_filePath).suffix().toLower();
-  return fileTypeService->getFileTypeBySuffix(suffix).isMarkdown();
+  return QStringLiteral("Others");
 }
 
 QString ExportController::normalizedRelativePath(const QString &p_relativePath) const {

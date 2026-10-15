@@ -50,7 +50,7 @@ private:
                              QVector<ExportFileInfo> &p_files, QStringList &p_protectedFiles);
   bool isProtectedExportSource(const NodeIdentifier &p_nodeId, const QString &p_path) const;
   bool refuseProtectedBatch(const QStringList &p_protectedFiles);
-  bool isMarkdownFile(const QString &p_filePath) const;
+  QString fileTypeName(const QString &p_filePath) const;
   QString normalizedRelativePath(const QString &p_relativePath) const;
   QString notebookBatchName(const QString &p_notebookId) const;
   QString folderBatchName(const QString &p_notebookId, const QString &p_folderPath) const;

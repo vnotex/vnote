@@ -9,8 +9,23 @@
 | `ThemeService` | GUI-aware theme management — loading themes, applying stylesheets |
 | `ViewWindowFactory` | Registry pattern mapping file types to `ViewWindow2` creators; plugins register new viewers here. The built-in `"Pdf"` creator is **build-conditional**: it is registered only on **Qt 6.9+**, because the vendored pdf.js v6 bundle is ESM-only, needs Chromium 125+, and is served over the `vxpdf://` `QWebEngineUrlScheme` — see [`../data/extra/web/pdf.js/AGENTS.md`](../data/extra/web/pdf.js/AGENTS.md) |
 | `WebEngineProfileService` | Owns the shared named `QWebEngineProfile` **and** the `vxpdf://` scheme handler (`VxPdfSchemeHandler`), plus the PDF document token registry (`registerPdfDocument` / `unregisterPdfDocument`) |
+| `MindMapImageLoader` | Scoped passive image transport shared by native editing and export; authorization stays with the controller |
 | `NavigationModeService` | Keyboard navigation mode service |
 | `ToolTipService` | One scoped startup attempt to post a localized daily usage tip |
+
+## Native MindMap image transport
+
+`MindMapImageLoader` handles unprotected data/file/relative/HTTP(S) resources only. Preserve the
+32 MiB limit, bounded reply buffers, 15-second inactivity and total deadlines, five redirects,
+`NoLessSafeRedirectPolicy`, shared network request policy and sanitized image decoding. Every
+unsupported/missing/invalid resource settles once with a null image. Cancellation advances the
+request generation, aborts/disconnects replies, wipes temporary bytes and suppresses late results.
+
+`MindMapViewWindowController` remains the authorization boundary. Protected buffers never enter
+the unprotected loader: data URLs use the static decoder, relative resources use the authenticated
+`Buffer2::readResource` path and file/network URLs remain forbidden. Keep lease/generation checks,
+protected-lock invalidation and completion-time protection checks in the controller. Native export
+uses a separate scoped loader; it must not borrow a live editor's resources or protected access.
 
 ## Daily usage tip state
 

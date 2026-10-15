@@ -3,6 +3,8 @@
 # Added to vnote target directly (same pattern as core/)
 
 target_sources(vnote PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/mindmapimageloader.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/mindmapimageloader.h
     ${CMAKE_CURRENT_SOURCE_DIR}/navigationmodeservice.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/navigationmodeservice.h
     ${CMAKE_CURRENT_SOURCE_DIR}/themeservice.cpp
