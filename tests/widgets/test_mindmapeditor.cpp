@@ -492,6 +492,7 @@ private slots:
   void livePreferencesPreserveDraftAndReadOnlyBuffer();
   void separatedPropertiesRespectAdapterPolicy();
   void propertyPlacementAppliesToNewEditors();
+  void nodeClipboardRoundTrip();
   void clipboardImageRoundTrip_data();
   void clipboardImageRoundTrip();
   void imageDropTargetsHitNode();
@@ -1651,6 +1652,45 @@ void TestMindMapEditor::propertyPlacementAppliesToNewEditors() {
   QVERIFY(scroll->isVisible());
   MindMapEditor separatedAgain(*m_services, buffer);
   QVERIFY(separatedAgain.nodePropertiesPanel());
+}
+
+void TestMindMapEditor::nodeClipboardRoundTrip() {
+  auto buffer = openNote(QStringLiteral("node-clipboard.mmm"), fixture());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  QVERIFY(editor.setExpanded(QStringLiteral("a"), false));
+  const auto original = node(editor, QStringLiteral("a"));
+  QTest::keyClick(view->viewport(), Qt::Key_C, Qt::ControlModifier);
+  QCOMPARE(QApplication::clipboard()->text(), QStringLiteral("Child"));
+  QVERIFY(editor.selectNode(QStringLiteral("r")));
+  const auto before = editor.toJson();
+  InsertionDialogs noResourceDialog({});
+  QVERIFY(pasteResource(editor, view));
+  QVERIFY(noResourceDialog.complete());
+  const auto children =
+      node(editor, QStringLiteral("r")).value(QStringLiteral("children")).toArray();
+  QCOMPARE(children.size(), 2);
+  QCOMPARE(children.first().toString(), QStringLiteral("a"));
+  const auto copiedId = children.last().toString();
+  QVERIFY(copiedId != QStringLiteral("a"));
+  const auto copied = node(editor, copiedId);
+  QCOMPARE(copied.value(QStringLiteral("topic")), original.value(QStringLiteral("topic")));
+  QCOMPARE(copied.value(QStringLiteral("style")), original.value(QStringLiteral("style")));
+  const auto descendants = copied.value(QStringLiteral("children")).toArray();
+  QCOMPARE(descendants.size(), 1);
+  QVERIFY(descendants.first().toString() != QStringLiteral("b"));
+  QCOMPARE(node(editor, descendants.first().toString()).value(QStringLiteral("topic")).toString(),
+           QStringLiteral("Hidden descendant"));
+  const auto after = editor.toJson();
+  QCOMPARE(editor.contentForSave().toUtf8(), after);
+  QVERIFY(editor.isModified());
+  QVERIFY(editor.undo());
+  QCOMPARE(editor.toJson(), before);
+  QVERIFY(editor.redo());
+  QCOMPARE(editor.toJson(), after);
 }
 
 void TestMindMapEditor::clipboardImageRoundTrip_data() {
