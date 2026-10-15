@@ -1125,6 +1125,10 @@ void TestHtmlPdfExporter::printableNativeForest() {
   QStringList pageText;
   bool readableBody = false;
   int articleImages = 0;
+  constexpr double pointsPerCssPixel = 72.0 / 96.0;
+  constexpr double imageExtentTolerance = pointsPerCssPixel + 1e-4;
+  const auto mapZoom = state.value(QStringLiteral("mapZoom")).toString();
+  const double mapScale = mapZoom == QStringLiteral("normal") ? 1.0 : mapZoom.toDouble();
   for (int index = 0; index < pages.size(); ++index) {
     const auto page = pages[index].toObject();
     QCOMPARE(page.value(QStringLiteral("width")).toDouble() >
@@ -1149,14 +1153,29 @@ void TestHtmlPdfExporter::printableNativeForest() {
     } else {
       articleImages += images.size();
     }
+    const double imageScale = index == 0 ? mapScale : 1.0;
+    const double expectedImageWidth = 123.0 * imageScale * pointsPerCssPixel;
+    const double expectedImageHeight = 67.0 * imageScale * pointsPerCssPixel;
     for (const auto &value : images) {
       const auto image = value.toObject();
       const double imageWidth = image.value(QStringLiteral("width")).toDouble();
       const double imageHeight = image.value(QStringLiteral("height")).toDouble();
       QVERIFY(imageWidth > 0 && imageHeight > 0);
-      // Chromium rounds layout-zoomed image extents to CSS pixels before printing. Bound the
-      // error in PDF points rather than a ratio that amplifies rounding on a small fitted map.
-      QVERIFY(std::abs(imageWidth - imageHeight * 123.0 / 67.0) < 1.0);
+      // Chromium snaps image rectangle edges to CSS pixels before printing, so each extent
+      // may differ by one CSS pixel. Check both axes to catch distortion and unintended scaling.
+      QVERIFY2(std::abs(imageWidth - expectedImageWidth) <= imageExtentTolerance &&
+                   std::abs(imageHeight - expectedImageHeight) <= imageExtentTolerance,
+               qPrintable(QStringLiteral("Image %1 x %2 pt on page %3 (%4 x %5 pt): "
+                                         "expected %6 x %7 pt +/- %8 pt per axis; map zoom %9")
+                              .arg(imageWidth, 0, 'g', 15)
+                              .arg(imageHeight, 0, 'g', 15)
+                              .arg(index + 1)
+                              .arg(page.value(QStringLiteral("width")).toDouble(), 0, 'g', 15)
+                              .arg(page.value(QStringLiteral("height")).toDouble(), 0, 'g', 15)
+                              .arg(expectedImageWidth, 0, 'g', 15)
+                              .arg(expectedImageHeight, 0, 'g', 15)
+                              .arg(imageExtentTolerance, 0, 'g', 15)
+                              .arg(mapZoom)));
       QVERIFY(imageWidth <= printable.width() * 72.0 / 25.4 + 1);
       QVERIFY(imageHeight <= printable.height() * 72.0 / 25.4 + 1);
     }

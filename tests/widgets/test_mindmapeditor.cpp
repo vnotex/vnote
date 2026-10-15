@@ -1808,6 +1808,7 @@ void TestMindMapEditor::clipboardImageRoundTrip() {
 }
 
 void TestMindMapEditor::imageDropTargetsHitNode() {
+  m_config->getEditorConfig().getMindMapEditorConfig().setAutoSectionNumbering(false);
   const auto buffer = openNote(QStringLiteral("drop.mmm"), fixture());
   MindMapEditor editor(*m_services, buffer);
   QVERIFY(editor.loadContent(buffer.getContentRaw()));
@@ -2357,6 +2358,7 @@ void TestMindMapEditor::oversizedImageDoesNotPreview() {
 }
 
 void TestMindMapEditor::contextInsertionUsesSharedDialogs() {
+  m_config->getEditorConfig().getMindMapEditorConfig().setAutoSectionNumbering(false);
   const auto buffer = openNote(QStringLiteral("context.mmm"), fixture());
   MindMapEditor editor(*m_services, buffer);
   QVERIFY(editor.loadContent(buffer.getContentRaw()));
