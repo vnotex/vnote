@@ -89,6 +89,9 @@ private slots:
   void testMathRenderer_mergeNormalizationAndPersistence();
   void testMindMapEditor_mergeAndNormalization_data();
   void testMindMapEditor_mergeAndNormalization();
+  void testMindMapEditor_defaultLayoutNormalization_data();
+  void testMindMapEditor_defaultLayoutNormalization();
+  void testMindMapEditor_defaultLayoutUsesMainConfig();
   void testMindMapEditor_settersPersistAndClearStyleIndependently();
   void testMindMapEditor_shortcutFilteringPreservesRawOverrides();
 
@@ -1110,6 +1113,102 @@ void TestConfigMgr2::testMindMapEditor_mergeAndNormalization() {
   QCOMPARE(mindMap.getUndoLimit(), undoLimit);
   QCOMPARE(mindMap.getConfirmSubtreeDeletion(), confirmDeletion);
   QCOMPARE(mindMap.getAutoRandomBranchColor(), branchColors);
+}
+
+void TestConfigMgr2::testMindMapEditor_defaultLayoutNormalization_data() {
+  using Layout = MindMapEditorConfig::LayoutDirection;
+  QTest::addColumn<QJsonValue>("value");
+  QTest::addColumn<int>("direction");
+  QTest::addColumn<QString>("token");
+  QTest::newRow("missing") << QJsonValue(QJsonValue::Undefined) << int(Layout::Balanced)
+                           << QStringLiteral("balanced");
+  QTest::newRow("balanced") << QJsonValue(QStringLiteral("balanced")) << int(Layout::Balanced)
+                            << QStringLiteral("balanced");
+  QTest::newRow("right-case-insensitive")
+      << QJsonValue(QStringLiteral("RIGHT")) << int(Layout::Right) << QStringLiteral("right");
+  QTest::newRow("left") << QJsonValue(QStringLiteral("left")) << int(Layout::Left)
+                        << QStringLiteral("left");
+  QTest::newRow("outline") << QJsonValue(QStringLiteral("outline")) << int(Layout::Outline)
+                           << QStringLiteral("outline");
+  QTest::newRow("unknown") << QJsonValue(QStringLiteral("unknown")) << int(Layout::Balanced)
+                           << QStringLiteral("balanced");
+  QTest::newRow("not-a-string") << QJsonValue(2) << int(Layout::Balanced)
+                                << QStringLiteral("balanced");
+}
+
+void TestConfigMgr2::testMindMapEditor_defaultLayoutNormalization() {
+  QFETCH(QJsonValue, value);
+  QFETCH(int, direction);
+  QFETCH(QString, token);
+  const auto original =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  QJsonObject section;
+  if (!value.isUndefined()) {
+    section[QStringLiteral("defaultLayoutDirection")] = value;
+  }
+  const QJsonObject onDisk{
+      {QStringLiteral("editor"), QJsonObject{{QStringLiteral("mindMapEditor"), section}}}};
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("mindMapEditor"),
+                         QStringLiteral("defaultLayoutDirection")};
+  QCOMPARE(valueAt(loadThroughMergePath(onDisk), path), QJsonValue(token));
+  ConfigMgr2 restarted(m_configService);
+  restarted.init();
+  QCOMPARE(int(restarted.getEditorConfig().getMindMapEditorConfig().getDefaultLayoutDirection()),
+           direction);
+}
+
+void TestConfigMgr2::testMindMapEditor_defaultLayoutUsesMainConfig() {
+  using Layout = MindMapEditorConfig::LayoutDirection;
+  const auto savedMain =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto savedSession =
+      m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), savedMain);
+    m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                        savedSession);
+  });
+  const QJsonObject mainBefore{
+      {QStringLiteral("metadata"),
+       QJsonObject{{QStringLiteral("version"), ConfigMgr2::getApplicationVersion()}}}};
+  const QJsonObject sessionBefore{
+      {QStringLiteral("editor"), QJsonObject{{QStringLiteral("mindMapZoomFactor"), 1.5}}}};
+  QVERIFY(
+      m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), mainBefore)
+          .isOk());
+  QVERIFY(m_configService
+              ->updateConfigByName(DataLocation::Local, QStringLiteral("session"), sessionBefore)
+              .isOk());
+  const struct {
+    Layout direction;
+    const char *token;
+  } choices[] = {{Layout::Right, "right"},
+                 {Layout::Left, "left"},
+                 {Layout::Outline, "outline"},
+                 {Layout::Balanced, "balanced"}};
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("mindMapEditor"),
+                         QStringLiteral("defaultLayoutDirection")};
+  for (const auto &choice : choices) {
+    {
+      ConfigMgr2 settings(m_configService);
+      settings.init();
+      settings.getEditorConfig().getMindMapEditorConfig().setDefaultLayoutDirection(
+          choice.direction);
+      // Destruction flushes the normal pending main-config write.
+    }
+    QCOMPARE(valueAt(m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex")),
+                     path),
+             QJsonValue(QString::fromLatin1(choice.token)));
+    QCOMPARE(m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session")),
+             sessionBefore);
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    QCOMPARE(int(restarted.getEditorConfig().getMindMapEditorConfig().getDefaultLayoutDirection()),
+             int(choice.direction));
+  }
 }
 
 void TestConfigMgr2::testMindMapEditor_settersPersistAndClearStyleIndependently() {

@@ -16,6 +16,8 @@ void MindMapEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_autoRandomBranchColor = p_jobj.value(QStringLiteral("autoRandomBranchColor")).toBool(true);
   m_separateNodePropertiesPanel =
       p_jobj.value(QStringLiteral("separateNodePropertiesPanel")).toBool(true);
+  m_defaultLayoutDirection =
+      stringToLayoutDirection(p_jobj.value(QStringLiteral("defaultLayoutDirection")).toString());
   m_shortcuts = p_jobj.value(QStringLiteral("shortcuts")).toObject();
   m_effectiveShortcuts = m_shortcuts;
 }
@@ -31,6 +33,7 @@ QJsonObject MindMapEditorConfig::toJson() const {
   obj[QStringLiteral("confirmSubtreeDeletion")] = m_confirmSubtreeDeletion;
   obj[QStringLiteral("autoRandomBranchColor")] = m_autoRandomBranchColor;
   obj[QStringLiteral("separateNodePropertiesPanel")] = m_separateNodePropertiesPanel;
+  obj[QStringLiteral("defaultLayoutDirection")] = layoutDirectionToString(m_defaultLayoutDirection);
   obj[QStringLiteral("shortcuts")] = m_shortcuts;
   return obj;
 }
@@ -71,6 +74,41 @@ bool MindMapEditorConfig::getSeparateNodePropertiesPanel() const {
 
 void MindMapEditorConfig::setSeparateNodePropertiesPanel(bool p_enabled) {
   updateConfig(m_separateNodePropertiesPanel, p_enabled, this);
+}
+
+MindMapEditorConfig::LayoutDirection MindMapEditorConfig::getDefaultLayoutDirection() const {
+  return m_defaultLayoutDirection;
+}
+
+void MindMapEditorConfig::setDefaultLayoutDirection(LayoutDirection p_direction) {
+  updateConfig(m_defaultLayoutDirection, p_direction, this);
+}
+
+MindMapEditorConfig::LayoutDirection
+MindMapEditorConfig::stringToLayoutDirection(const QString &p_direction) {
+  if (p_direction.compare(QStringLiteral("right"), Qt::CaseInsensitive) == 0) {
+    return LayoutDirection::Right;
+  }
+  if (p_direction.compare(QStringLiteral("left"), Qt::CaseInsensitive) == 0) {
+    return LayoutDirection::Left;
+  }
+  if (p_direction.compare(QStringLiteral("outline"), Qt::CaseInsensitive) == 0) {
+    return LayoutDirection::Outline;
+  }
+  return LayoutDirection::Balanced;
+}
+
+QString MindMapEditorConfig::layoutDirectionToString(LayoutDirection p_direction) {
+  switch (p_direction) {
+  case LayoutDirection::Right:
+    return QStringLiteral("right");
+  case LayoutDirection::Left:
+    return QStringLiteral("left");
+  case LayoutDirection::Outline:
+    return QStringLiteral("outline");
+  default:
+    return QStringLiteral("balanced");
+  }
 }
 
 const QJsonObject &MindMapEditorConfig::getShortcuts() const { return m_effectiveShortcuts; }

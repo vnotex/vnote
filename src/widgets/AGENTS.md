@@ -270,7 +270,12 @@ and the actual editor state after a rejected command; do not block QAction `chan
 which maintain QActionGroup's current member. Accept an active inline draft before switching,
 and reject application to a replacement buffer. Layout changes alone do not dirty the document,
 consume undo history or reset zoom/selection. Read-only maps remain switchable; unloaded or
-invalid content disables both the button and its menu actions. Layout stays editor-local.
+invalid content disables both the button and its menu actions. The button uses Lucide's
+`layout_dashboard_editor.svg`. An explicit successful menu choice also updates
+`editor.mindMapEditor.defaultLayoutDirection` in `vnotex.json`, not `session.json`, even when
+that choice is already active. New/reopened editors use this default; existing maps retain
+their local mode. Startup, API changes and rejected switches never overwrite the preference.
+The stable tokens and fallback are documented in [core preferences](../core/AGENTS.md#mind-map-editor-preferences).
 
 #### Mind-map resource insertion
 

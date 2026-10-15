@@ -24,6 +24,7 @@
 
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
@@ -233,7 +234,7 @@ void MindMapViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
 
 void MindMapViewWindow2::setupLayoutMenu(QToolBar *p_toolBar) {
   using LayoutDirection = m3::qt::MindMapEditor::LayoutDirection;
-  const auto iconName = QStringLiteral("view_mode_editor.svg");
+  const auto iconName = QStringLiteral("layout_dashboard_editor.svg");
   m_layoutAction = p_toolBar->addAction(
       ViewWindowToolBarHelper2::generateIcon(getServices(), iconName), tr("Layout"));
   m_layoutAction->setObjectName(QStringLiteral("mindMapLayoutAction"));
@@ -255,18 +256,47 @@ void MindMapViewWindow2::setupLayoutMenu(QToolBar *p_toolBar) {
   addMode(tr("Outline"), LayoutDirection::Outline);
   connect(m_layoutActionGroup, &QActionGroup::triggered, this, [this](QAction *p_action) {
     const auto direction = static_cast<LayoutDirection>(p_action->data().toInt());
-    if (!m_contentLoaded || !m_editor->isEnabled() || direction == m_editor->layoutDirection()) {
+    if (!m_contentLoaded || !m_editor->isEnabled()) {
       syncLayoutControls();
       return;
     }
     const QPointer<MindMapViewWindow2> guard(this);
     const auto generation = m_generation;
-    const bool committed = m_editor->commitActiveEdit();
+    bool applied = direction == m_editor->layoutDirection();
+    if (!applied) {
+      const bool committed = m_editor->commitActiveEdit();
+      if (!guard) {
+        return;
+      }
+      if (committed && generation == m_generation && m_contentLoaded && m_editor->isEnabled()) {
+        applied = m_editor->setLayoutDirection(direction);
+      }
+    }
     if (!guard) {
       return;
     }
-    if (committed && generation == m_generation && m_contentLoaded && m_editor->isEnabled()) {
-      m_editor->setLayoutDirection(direction);
+    if (applied && generation == m_generation && m_contentLoaded && m_editor->isEnabled() &&
+        m_editor->layoutDirection() == direction) {
+      using DefaultLayout = MindMapEditorConfig::LayoutDirection;
+      auto defaultLayout = DefaultLayout::Balanced;
+      switch (direction) {
+      case LayoutDirection::Right:
+        defaultLayout = DefaultLayout::Right;
+        break;
+      case LayoutDirection::Left:
+        defaultLayout = DefaultLayout::Left;
+        break;
+      case LayoutDirection::Outline:
+        defaultLayout = DefaultLayout::Outline;
+        break;
+      default:
+        break;
+      }
+      getServices()
+          .get<ConfigMgr2>()
+          ->getEditorConfig()
+          .getMindMapEditorConfig()
+          .setDefaultLayoutDirection(defaultLayout);
     }
     if (guard) {
       syncLayoutControls();

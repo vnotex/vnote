@@ -180,6 +180,27 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
       emit insertionAvailabilityChanged();
     }
   });
+  if (auto *manager = p_services.get<ConfigMgr2>()) {
+    using DefaultLayout = MindMapEditorConfig::LayoutDirection;
+    auto direction = LayoutDirection::Balanced;
+    switch (manager->getEditorConfig().getMindMapEditorConfig().getDefaultLayoutDirection()) {
+    case DefaultLayout::Right:
+      direction = LayoutDirection::Right;
+      break;
+    case DefaultLayout::Left:
+      direction = LayoutDirection::Left;
+      break;
+    case DefaultLayout::Outline:
+      direction = LayoutDirection::Outline;
+      break;
+    default:
+      break;
+    }
+    // Sample once, before loading the real map; live config changes must not rearrange it.
+    if (direction != layoutDirection()) {
+      setLayoutDirection(direction);
+    }
+  }
   setBuffer(p_buffer);
 }
 

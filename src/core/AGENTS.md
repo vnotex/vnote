@@ -212,6 +212,14 @@ Behavior defaults are `undoLimit: 100` (0 unlimited), `confirmSubtreeDeletion: t
 normalize to 0. The properties-panel placement is sampled when a mind map editor is created.
 Settings Apply persists it, but existing maps retain their placement until closed and reopened.
 
+`defaultLayoutDirection` is a stable string: `balanced` (default), `right`, `left`, or
+`outline`. Known values are case-insensitive; missing, non-string and unknown values fall
+back to Balanced. Explicit successful Layout-menu choices update this main-config preference,
+including choosing an already-active layout after another map changed the default. Each new
+or reopened editor samples it once before loading content; existing editors and reloads keep
+their local layout. Programmatic layout changes and rejected switches do not update the default.
+This preference is never stored in `session.json`; the existing zoom session state is unchanged.
+
 `shortcuts` contains only overrides using m3 command member names and PortableText arrays:
 missing keys inherit m3, `[]` disables a binding, and arrays replace its full list. For example,
 `"addChild": ["Ctrl+J"]`. These JSON-only settings require restart. VNote-owned zoom keys and
