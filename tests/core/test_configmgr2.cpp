@@ -1233,6 +1233,7 @@ void TestConfigMgr2::testMindMapEditor_settersPersistAndClearStyleIndependently(
     mindMap.setUndoLimit(2);
     mindMap.setConfirmSubtreeDeletion(false);
     mindMap.setAutoRandomBranchColor(false);
+    mindMap.setAutoSectionNumbering(false);
     // Destruction flushes the normal pending configuration write.
   }
   const QStringList path{QStringLiteral("editor"), QStringLiteral("mindMapEditor")};
@@ -1251,6 +1252,8 @@ void TestConfigMgr2::testMindMapEditor_settersPersistAndClearStyleIndependently(
     QCOMPARE(mindMap.getUndoLimit(), 2);
     QVERIFY(!mindMap.getConfirmSubtreeDeletion());
     QVERIFY(!mindMap.getAutoRandomBranchColor());
+    QVERIFY(!mindMap.getAutoSectionNumbering());
+    mindMap.setAutoSectionNumbering(true);
     mindMap.setFontFamily(QStringLiteral("  "));
     QCOMPARE(mindMap.getFontPointSize(), 18);
   }
@@ -1270,6 +1273,7 @@ void TestConfigMgr2::testMindMapEditor_settersPersistAndClearStyleIndependently(
   QCOMPARE(mindMap.getUndoLimit(), 2);
   QVERIFY(!mindMap.getConfirmSubtreeDeletion());
   QVERIFY(!mindMap.getAutoRandomBranchColor());
+  QVERIFY(mindMap.getAutoSectionNumbering());
 }
 
 void TestConfigMgr2::testMindMapEditor_shortcutFilteringPreservesRawOverrides() {

@@ -476,7 +476,9 @@ hooks so editing Tools before focusing the canvas still saves correctly. Canvas 
 the existing base handling; logical writer activation never moves keyboard focus from the dock.
 
 Settings → Editor → **Mind Map Editor** exposes default fallback font families, point size,
-undo limit, deletion confirmation and automatic colors for new main branches. Apply saves
+undo limit, deletion confirmation, automatic colors for new main branches and automatic section
+numbering (enabled by default). Numbering reuses Editor's **Section Number Pattern**, excludes
+main/orphan roots and restarts below each root; it changes labels, not saved topics. Apply saves
 `editor.mindMapEditor` and uses `EditorPage::notifyEditorConfigChange()`'s existing one-second
 coalesced hook; editing controls alone changes nothing, and Reset reloads saved values.
 The hook reaches all registered maps, including hidden/detached windows. The wrapper's

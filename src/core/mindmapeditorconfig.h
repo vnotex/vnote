@@ -29,6 +29,9 @@ public:
   bool getAutoRandomBranchColor() const;
   void setAutoRandomBranchColor(bool p_enabled);
 
+  bool getAutoSectionNumbering() const;
+  void setAutoSectionNumbering(bool p_enabled);
+
   bool getSeparateNodePropertiesPanel() const;
   void setSeparateNodePropertiesPanel(bool p_enabled);
 
@@ -51,6 +54,7 @@ private:
   int m_undoLimit = 100;
   bool m_confirmSubtreeDeletion = true;
   bool m_autoRandomBranchColor = true;
+  bool m_autoSectionNumbering = true;
   bool m_separateNodePropertiesPanel = true;
   LayoutDirection m_defaultLayoutDirection = LayoutDirection::Balanced;
 

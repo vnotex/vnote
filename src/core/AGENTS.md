@@ -208,7 +208,7 @@ The nested `style` has `font-family` (trimmed comma-separated fallback list, def
 and `font-size` (integer points, 0–256; 0 inherits the interface font). These controls are
 independent global preferences, not theme or document style. Malformed values retain defaults.
 Behavior defaults are `undoLimit: 100` (0 unlimited), `confirmSubtreeDeletion: true`,
-`autoRandomBranchColor: true`, and `separateNodePropertiesPanel: true`; negative undo limits
+`autoRandomBranchColor: true`, `autoSectionNumbering: true`, and `separateNodePropertiesPanel: true`; negative undo limits
 normalize to 0. The properties-panel placement is sampled when a mind map editor is created.
 Settings Apply persists it, but existing maps retain their placement until closed and reopened.
 
@@ -219,6 +219,11 @@ including choosing an already-active layout after another map changed the defaul
 or reopened editor samples it once before loading content; existing editors and reloads keep
 their local layout. Programmatic layout changes and rejected switches do not update the default.
 This preference is never stored in `session.json`; the existing zoom session state is unchanged.
+
+Automatic section numbering is display-only and applies live. The adapter and native exporter
+pass the existing global `EditorConfig::getSectionNumberPattern()` to m3; do not persist a second
+mind-map pattern. Supported patterns are `1.1`, `1.1.`, and `1.1)` (default `1.1.`). Main and all
+orphan roots remain unnumbered; each tree's children restart at 1. Authored topics stay unchanged.
 
 `shortcuts` contains only overrides using m3 command member names and PortableText arrays:
 missing keys inherit m3, `[]` disables a binding, and arrays replace its full list. For example,

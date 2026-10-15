@@ -1478,6 +1478,12 @@ void TestMindMapEditor::configuredShortcutsDriveRealCommands() {
 }
 
 void TestMindMapEditor::livePreferencesPreserveDraftAndReadOnlyBuffer() {
+  auto &editorSettings = m_config->getEditorConfig();
+  const auto oldPattern = editorSettings.getSectionNumberPattern();
+  const auto restorePattern = qScopeGuard([&]() {
+    editorSettings.setSectionNumberPattern(oldPattern);
+  });
+  editorSettings.setSectionNumberPattern(QStringLiteral("1.1."));
   const QByteArray content = QByteArrayLiteral(R"({"schemaVersion":1,"rootId":"r","nodes":[
     {"id":"r","topic":"Root","children":["a","b"]},
     {"id":"a","topic":"Inherited"},
@@ -1489,11 +1495,24 @@ void TestMindMapEditor::livePreferencesPreserveDraftAndReadOnlyBuffer() {
   QVERIFY(editor.loadContent(buffer.getContentRaw()));
   QVERIFY(readOnly.loadContent(readOnlyBuffer.getContentRaw()));
   QVERIFY(showEditor(readOnly));
+  const auto labels = [](const MindMapEditor &p_map) {
+    QStringList result;
+    for (auto *item : p_map.findChild<QGraphicsView *>()->scene()->items()) {
+      if (auto *text = qgraphicsitem_cast<QGraphicsTextItem *>(item)) {
+        result.append(text->toPlainText());
+      }
+    }
+    return result;
+  };
+  QVERIFY(labels(readOnly).contains(QStringLiteral("Root")));
+  QVERIFY(labels(readOnly).contains(QStringLiteral("1. Inherited")));
+  QVERIFY(labels(readOnly).contains(QStringLiteral("2. Pixel override")));
   auto *view = showEditor(editor);
   QVERIFY(view);
   QVERIFY(editor.selectNode(QStringLiteral("a")));
   QPointer<QPlainTextEdit> input = beginDraft(editor);
   QVERIFY(input);
+  QCOMPARE(input->toPlainText(), QStringLiteral("Inherited"));
   input->selectAll();
   QTest::keyClicks(input, "Unsaved preference draft");
   const auto cursor = input->textCursor();
@@ -1514,6 +1533,7 @@ void TestMindMapEditor::livePreferencesPreserveDraftAndReadOnlyBuffer() {
   settings.setUndoLimit(2);
   settings.setConfirmSubtreeDeletion(false);
   settings.setAutoRandomBranchColor(false);
+  editorSettings.setSectionNumberPattern(QStringLiteral("1.1)"));
   editor.applyConfig();
   readOnly.applyConfig();
   for (auto *map : {&editor, &readOnly}) {
@@ -1528,12 +1548,13 @@ void TestMindMapEditor::livePreferencesPreserveDraftAndReadOnlyBuffer() {
         QCOMPARE(text->font().pointSize(), 18);
         QCOMPARE(text->font().family(), family);
         inherited = true;
-      } else if (text->toPlainText() == QStringLiteral("Pixel override")) {
+      } else if (text->toPlainText() == QStringLiteral("2) Pixel override")) {
         QCOMPARE(text->font().pixelSize(), 24);
         overridden = true;
       }
     }
     QVERIFY(inherited && overridden);
+    QVERIFY(labels(*map).contains(QStringLiteral("2) Pixel override")));
     QCOMPARE(map->toJson(), committed);
   }
   QVERIFY(input && input->isVisible() && input->hasFocus());
@@ -1547,8 +1568,21 @@ void TestMindMapEditor::livePreferencesPreserveDraftAndReadOnlyBuffer() {
   QCOMPARE(buffer.getContentRaw(), content);
   QCOMPARE(readOnlyBuffer.getContentRaw(), content);
   QCOMPARE(buffer.getRevision(), bufferRevision);
+  settings.setAutoSectionNumbering(false);
+  editor.applyConfig();
+  readOnly.applyConfig();
+  QVERIFY(labels(readOnly).contains(QStringLiteral("Inherited")));
+  QVERIFY(labels(editor).contains(QStringLiteral("Pixel override")));
+  QVERIFY(input && input->isVisible() && input->hasFocus());
+  QCOMPARE(input->toPlainText(), QStringLiteral("Unsaved preference draft"));
+  QCOMPARE(input->textCursor().position(), cursor.position());
+  QCOMPARE(editor.toJson(), committed);
+  QCOMPARE(readOnly.toJson(), committed);
+  QVERIFY(dirty.isEmpty() && readOnlyDirty.isEmpty());
   const auto saved = editor.contentForSave();
   QVERIFY(saved.contains(QStringLiteral("Unsaved preference draft")));
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("topic")).toString(),
+           QStringLiteral("Unsaved preference draft"));
   QVERIFY(input && input->hasFocus());
 }
 

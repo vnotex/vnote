@@ -49,6 +49,8 @@ m3::qt::EditorConfig editorConfig(ServiceLocator &p_services, const Buffer2 &p_b
     config.undoLimit = settings.getUndoLimit();
     config.confirmSubtreeDeletion = settings.getConfirmSubtreeDeletion();
     config.autoRandomBranchColor = settings.getAutoRandomBranchColor();
+    config.autoSectionNumbering = settings.getAutoSectionNumbering();
+    config.sectionNumberPattern = manager->getEditorConfig().getSectionNumberPattern();
     config.separateNodePropertiesPanel = settings.getSeparateNodePropertiesPanel();
 
     using Shortcuts = m3::qt::EditorConfig::Shortcuts;
@@ -273,10 +275,15 @@ void MindMapEditor::applyConfig() {
   const m3::qt::EditorConfig::Style style{settings.getFontFamily(), settings.getFontPointSize()};
   setConfirmSubtreeDeletion(settings.getConfirmSubtreeDeletion());
   setAutoRandomBranchColor(settings.getAutoRandomBranchColor());
+  const bool numbering = settings.getAutoSectionNumbering();
+  const auto pattern = manager->getEditorConfig().getSectionNumberPattern();
   const QPointer<MindMapEditor> guard(this);
   setUndoLimit(settings.getUndoLimit());
   if (guard) {
     setStyle(style);
+  }
+  if (guard) {
+    setSectionNumbering(numbering, pattern);
   }
 }
 

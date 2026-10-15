@@ -1857,8 +1857,8 @@
     </message>
     <message>
         <location line="+32"/>
-        <source>Pattern used for automatic section numbers in outline</source>
-        <translation>アウトラインの自動セクション番号に使用するパターン</translation>
+        <source>Pattern used for automatic section numbers in outlines, Markdown and mind maps</source>
+        <translation>アウトライン、Markdown、マインドマップの自動セクション番号に使用するパターン</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -5354,7 +5354,15 @@
         <translation>新しい主分岐に色を割り当てます。既存のノードの色は変更しません</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <source>Automatic section numbering</source>
+        <translation>自動セクション番号</translation>
+    </message>
+    <message>
+        <source>Number topic labels using the shared Section Number Pattern; main and orphan roots remain unnumbered</source>
+        <translation>共通のセクション番号パターンでトピックに番号を付けます。メインルートと独立ツリーのルートには番号を付けません</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>Separate node properties panel</source>
         <translation>ノードのプロパティパネルを分離</translation>
     </message>

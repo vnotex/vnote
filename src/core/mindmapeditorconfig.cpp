@@ -14,6 +14,7 @@ void MindMapEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_undoLimit = qMax(0, p_jobj.value(QStringLiteral("undoLimit")).toInt(100));
   m_confirmSubtreeDeletion = p_jobj.value(QStringLiteral("confirmSubtreeDeletion")).toBool(true);
   m_autoRandomBranchColor = p_jobj.value(QStringLiteral("autoRandomBranchColor")).toBool(true);
+  m_autoSectionNumbering = p_jobj.value(QStringLiteral("autoSectionNumbering")).toBool(true);
   m_separateNodePropertiesPanel =
       p_jobj.value(QStringLiteral("separateNodePropertiesPanel")).toBool(true);
   m_defaultLayoutDirection =
@@ -32,6 +33,7 @@ QJsonObject MindMapEditorConfig::toJson() const {
   obj[QStringLiteral("undoLimit")] = m_undoLimit;
   obj[QStringLiteral("confirmSubtreeDeletion")] = m_confirmSubtreeDeletion;
   obj[QStringLiteral("autoRandomBranchColor")] = m_autoRandomBranchColor;
+  obj[QStringLiteral("autoSectionNumbering")] = m_autoSectionNumbering;
   obj[QStringLiteral("separateNodePropertiesPanel")] = m_separateNodePropertiesPanel;
   obj[QStringLiteral("defaultLayoutDirection")] = layoutDirectionToString(m_defaultLayoutDirection);
   obj[QStringLiteral("shortcuts")] = m_shortcuts;
@@ -66,6 +68,12 @@ bool MindMapEditorConfig::getAutoRandomBranchColor() const { return m_autoRandom
 
 void MindMapEditorConfig::setAutoRandomBranchColor(bool p_enabled) {
   updateConfig(m_autoRandomBranchColor, p_enabled, this);
+}
+
+bool MindMapEditorConfig::getAutoSectionNumbering() const { return m_autoSectionNumbering; }
+
+void MindMapEditorConfig::setAutoSectionNumbering(bool p_enabled) {
+  updateConfig(m_autoSectionNumbering, p_enabled, this);
 }
 
 bool MindMapEditorConfig::getSeparateNodePropertiesPanel() const {

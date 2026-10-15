@@ -28,6 +28,7 @@ private:
   QSpinBox *m_undoLimit = nullptr;
   QCheckBox *m_confirmSubtreeDeletion = nullptr;
   QCheckBox *m_autoRandomBranchColor = nullptr;
+  QCheckBox *m_autoSectionNumbering = nullptr;
   QCheckBox *m_separateNodePropertiesPanel = nullptr;
 };
 } // namespace vnotex

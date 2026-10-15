@@ -354,15 +354,15 @@ QJsonObject documentState(QWebEnginePage &p_page) {
       mapPosition:getComputedStyle(map).position, visualPosition:getComputedStyle(visual).position,
       visualOverflow:getComputedStyle(visual).overflow,
       bodyFont:parseFloat(getComputedStyle(document.body).fontSize),
-      topics:nodes.map(node => node.querySelector('.m3-topic').innerText.replace(/\s+/g, ' ').trim()),
       nodeIds:nodes.map(node => node.dataset.nodeId), rootTopic:rect(rootTopic),
       topicUserSelect:getComputedStyle(rootTopic).userSelect,
       topicAnchors:nodes.every(node => {
         const link = node.querySelector('.m3-topic');
         const target = document.getElementById(link.hash.slice(1));
+        const anchor = 'm3-node-' + Array.from(new TextEncoder().encode(node.dataset.nodeId),
+          byte => byte.toString(16).padStart(2, '0')).join('');
         return link.tagName === 'A' && link.getAttribute('draggable') === 'false' && target &&
-          target.querySelector('.m3-article-topic').innerText.replace(/\s+/g, ' ').trim() ===
-            link.innerText.replace(/\s+/g, ' ').trim();
+          target.tagName === 'ARTICLE' && target.id === anchor && articles.contains(target);
       }),
       rtlDirection:getComputedStyle(nodes.find(node => node.dataset.nodeId === 'n9')
         .querySelector('.m3-topic').firstElementChild).direction,
@@ -617,10 +617,10 @@ void verifyMapDocument(const QJsonObject &p_state, bool p_tall = false) {
   QVERIFY(p_state.value(QStringLiteral("ancestorsUnscaled")).toBool());
   QVERIFY(p_state.value(QStringLiteral("articlesUnscaled")).toBool());
   QCOMPARE(p_state.value(QStringLiteral("mapTransform")).toString(), QStringLiteral("none"));
-  const auto exportedTopics = p_state.value(QStringLiteral("topics")).toArray();
-  QCOMPARE(exportedTopics.size(), topics(p_tall).size());
-  for (const auto &topic : topics(p_tall)) {
-    QVERIFY2(exportedTopics.contains(topic.simplified()), qPrintable(topic));
+  const auto nodeIds = p_state.value(QStringLiteral("nodeIds")).toArray();
+  QCOMPARE(nodeIds.size(), topics(p_tall).size());
+  for (int index = 0; index < topics(p_tall).size(); ++index) {
+    QVERIFY(nodeIds.contains(QStringLiteral("n%1").arg(index)));
   }
   QCOMPARE(p_state.value(QStringLiteral("svgNamespace")).toString(),
            QStringLiteral("http://www.w3.org/2000/svg"));

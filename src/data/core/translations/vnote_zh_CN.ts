@@ -1857,8 +1857,8 @@
     </message>
     <message>
         <location line="+32"/>
-        <source>Pattern used for automatic section numbers in outline</source>
-        <translation>大纲中自动章节编号使用的模式</translation>
+        <source>Pattern used for automatic section numbers in outlines, Markdown and mind maps</source>
+        <translation>大纲、Markdown 和思维导图中自动章节编号使用的模式</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -5354,7 +5354,15 @@
         <translation>为新的主分支分配颜色，不改变现有节点的颜色</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <source>Automatic section numbering</source>
+        <translation>自动章节编号</translation>
+    </message>
+    <message>
+        <source>Number topic labels using the shared Section Number Pattern; main and orphan roots remain unnumbered</source>
+        <translation>使用共用的章节编号模式为主题标签编号；主根节点和所有游离根节点均不编号</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>Separate node properties panel</source>
         <translation>分离节点属性面板</translation>
     </message>

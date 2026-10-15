@@ -98,6 +98,20 @@ void MindMapEditorPage::setupUI() {
             &MindMapEditorPage::pageIsChanged);
   }
   {
+    const auto label = tr("Automatic section numbering");
+    m_autoSectionNumbering = WidgetsFactory::createCheckBox(label, this);
+    m_autoSectionNumbering->setObjectName(QStringLiteral("mindMapAutoSectionNumbering"));
+    m_autoSectionNumbering->setToolTip(
+        tr("Number topic labels using the shared Section Number Pattern; "
+           "main and orphan roots remain unnumbered"));
+    behavior->addWidget(SettingsPageHelper::createSeparator(this));
+    behavior->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_autoSectionNumbering, m_autoSectionNumbering->toolTip(), this));
+    addSearchItem(label, m_autoSectionNumbering->toolTip(), m_autoSectionNumbering);
+    connect(m_autoSectionNumbering, &QCheckBox::stateChanged, this,
+            &MindMapEditorPage::pageIsChanged);
+  }
+  {
     const auto label = tr("Separate node properties panel");
     m_separateNodePropertiesPanel = WidgetsFactory::createCheckBox(label, this);
     m_separateNodePropertiesPanel->setObjectName(
@@ -128,6 +142,7 @@ void MindMapEditorPage::loadInternal() {
   m_undoLimit->setValue(config.getUndoLimit());
   m_confirmSubtreeDeletion->setChecked(config.getConfirmSubtreeDeletion());
   m_autoRandomBranchColor->setChecked(config.getAutoRandomBranchColor());
+  m_autoSectionNumbering->setChecked(config.getAutoSectionNumbering());
   m_separateNodePropertiesPanel->setChecked(config.getSeparateNodePropertiesPanel());
 }
 
@@ -138,6 +153,7 @@ bool MindMapEditorPage::saveInternal() {
   config.setUndoLimit(m_undoLimit->value());
   config.setConfirmSubtreeDeletion(m_confirmSubtreeDeletion->isChecked());
   config.setAutoRandomBranchColor(m_autoRandomBranchColor->isChecked());
+  config.setAutoSectionNumbering(m_autoSectionNumbering->isChecked());
   config.setSeparateNodePropertiesPanel(m_separateNodePropertiesPanel->isChecked());
   EditorPage::notifyEditorConfigChange(m_services.get<HookManager>());
   return true;

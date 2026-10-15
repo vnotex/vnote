@@ -1863,8 +1863,8 @@
     </message>
     <message>
         <location line="+12"/>
-        <source>Pattern used for automatic section numbers in outline</source>
-        <translation>개요의 자동 절 번호에 사용할 패턴</translation>
+        <source>Pattern used for automatic section numbers in outlines, Markdown and mind maps</source>
+        <translation>개요, Markdown 및 마인드맵의 자동 절 번호에 사용할 패턴</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -5349,7 +5349,15 @@
         <translation>기존 노드의 색상을 변경하지 않고 새 주 분기에 색상 지정</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <source>Automatic section numbering</source>
+        <translation>자동 절 번호 매기기</translation>
+    </message>
+    <message>
+        <source>Number topic labels using the shared Section Number Pattern; main and orphan roots remain unnumbered</source>
+        <translation>공유 절 번호 패턴으로 주제에 번호를 표시하며 주 루트와 모든 독립 트리 루트에는 번호를 매기지 않음</translation>
+    </message>
+    <message>
+        <location line="+24"/>
         <source>Separate node properties panel</source>
         <translation>노드 속성 패널 분리</translation>
     </message>

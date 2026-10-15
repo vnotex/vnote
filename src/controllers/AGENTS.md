@@ -333,6 +333,9 @@ The visual map is selectable HTML node text plus inline SVG connectors, not a wh
 only supplied node images are raster data. Standalone and Custom HTML use the same native
 `toHtml()` document: a natural 100% map directly in normal flow, without width caps, nested scrolling,
 viewer controls or sizing JavaScript. Topic anchors navigate to the continuous articles below it.
+The visual map uses the mind-map automatic-numbering preference and shared editor section-number
+pattern, refreshed for every export including renderer reuse. Main/orphan roots and article titles
+remain unnumbered; article anchors use node identity rather than decorated visual text.
 The requested m3 favicon is hosted on GitHub; map content, styles and supplied images are embedded.
 
 Article depth restarts at 1 for every main/orphan root. H1–H6 are flat articles without list wrappers;

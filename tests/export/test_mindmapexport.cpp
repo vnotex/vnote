@@ -17,6 +17,7 @@
 #include <QPageSize>
 #include <QPointer>
 #include <QRegularExpression>
+#include <QScopeGuard>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
@@ -30,7 +31,11 @@
 
 #include <memory>
 
+#include <core/configmgr2.h>
+#include <core/editorconfig.h>
+#include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
 #include <export/exporter.h>
 #include <export/exportrendererfactory.h>
 #include <export/mindmapexporter.h>
@@ -375,6 +380,8 @@ public:
                          images.some(mapImage => mapImage.src === image.src)),
               topics: Array.from(document.querySelectorAll('#mindmap .m3-node .m3-topic'),
                                  topic => topic.textContent.replace(/\s+/g, ' ').trim()),
+              articleTopics: Array.from(document.querySelectorAll('#articles .m3-article-topic'),
+                                        topic => topic.textContent.replace(/\s+/g, ' ').trim()),
               treeEdges: document.querySelectorAll('.m3-connectors .m3-tree-edge').length,
               crossLinks: document.querySelectorAll('.m3-connectors .m3-cross-link').length,
               text: document.querySelector('#articles').textContent,
@@ -458,6 +465,8 @@ private slots:
   void snapshotsAreAuthoritative_data();
   void snapshotsAreAuthoritative();
   void standaloneContainsBothImagesAndCompleteArticles();
+  void sectionNumberingReflectsSettingsOnReuse_data();
+  void sectionNumberingReflectsSettingsOnReuse();
   void batchRebasesSameRelativeImage();
   void malformedAndCollidingInputs_data();
   void malformedAndCollidingInputs();
@@ -610,7 +619,7 @@ void TestMindMapExport::standaloneContainsBothImagesAndCompleteArticles() {
   HtmlPage page;
   QVERIFY(page.load(output));
   auto state = page.presentation();
-  QCOMPARE(state.value(QStringLiteral("topics")).toStringList(), forestTopics());
+  QCOMPARE(state.value(QStringLiteral("articleTopics")).toStringList(), forestTopics());
   QCOMPARE(state.value(QStringLiteral("treeEdges")).toInt(), 5);
   QCOMPARE(state.value(QStringLiteral("crossLinks")).toInt(), 1);
   QVERIFY(state.value(QStringLiteral("map")).toBool());
@@ -618,6 +627,87 @@ void TestMindMapExport::standaloneContainsBothImagesAndCompleteArticles() {
   QVERIFY(state.value(QStringLiteral("articles")).toBool());
   QVERIFY(state.value(QStringLiteral("articleImages")).toBool());
   QVERIFY(containsForest(state.value(QStringLiteral("text")).toString()));
+}
+
+void TestMindMapExport::sectionNumberingReflectsSettingsOnReuse_data() {
+  QTest::addColumn<bool>("initiallyEnabled");
+  QTest::newRow("initially-enabled") << true;
+  QTest::newRow("initially-disabled") << false;
+}
+
+void TestMindMapExport::sectionNumberingReflectsSettingsOnReuse() {
+  QFETCH(bool, initiallyEnabled);
+  QTemporaryDir temporary;
+  QVERIFY(temporary.isValid());
+  VxCoreContextHandle context = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &context), VXCORE_OK);
+  const auto destroyContext = qScopeGuard([&] { vxcore_context_destroy(context); });
+  ConfigCoreService configCore(context);
+  ConfigMgr2 config(&configCore);
+  config.init();
+  ServiceLocator services;
+  services.registerService(&config);
+  MindMapExporter renderer(services, nullptr, nullptr);
+  auto &editorSettings = config.getEditorConfig();
+  auto &mindMapSettings = editorSettings.getMindMapEditorConfig();
+  const auto originalPattern = editorSettings.getSectionNumberPattern();
+  const auto originalEnabled = mindMapSettings.getAutoSectionNumbering();
+  const auto restoreSettings = qScopeGuard([&] {
+    editorSettings.setSectionNumberPattern(originalPattern);
+    mindMapSettings.setAutoSectionNumbering(originalEnabled);
+  });
+
+  auto document = QJsonDocument::fromJson(forest(QString()).toUtf8()).object();
+  auto nodes = document.value(QStringLiteral("nodes")).toArray();
+  nodes.append(QJsonObject{{QStringLiteral("id"), QStringLiteral("another-orphan")},
+                           {QStringLiteral("topic"), QStringLiteral("Another orphan")},
+                           {QStringLiteral("children"), QJsonArray{QStringLiteral("authored")}}});
+  nodes.append(QJsonObject{{QStringLiteral("id"), QStringLiteral("authored")},
+                           {QStringLiteral("topic"), QStringLiteral("1. Authored child")}});
+  document.insert(QStringLiteral("nodes"), nodes);
+  document.insert(QStringLiteral("orphanIds"),
+                  QJsonArray{QStringLiteral("orphan"), QStringLiteral("another-orphan")});
+  ExportInput input;
+  input.file = source(temporary.filePath(QStringLiteral("numbered.emind")));
+  input.content = QString::fromUtf8(QJsonDocument(document).toJson(QJsonDocument::Compact));
+  auto authoredTopics = forestTopics();
+  authoredTopics.append(QStringLiteral("Another orphan"));
+  authoredTopics.append(QStringLiteral("1. Authored child"));
+  const QStringList numbers{QString(), QStringLiteral("1"), QStringLiteral("1.1"),
+                            QStringLiteral("1.1.1"), QStringLiteral("1.1.1.1"), QString(),
+                            QStringLiteral("1"), QString(), QStringLiteral("1")};
+  ExportHtmlRequest request;
+  request.purpose = ExportHtmlPurpose::Standalone;
+  HtmlPage page;
+  struct NumberingSettings {
+    bool enabled;
+    QString pattern;
+    QString suffix;
+  };
+  const NumberingSettings settings[] = {
+      {initiallyEnabled, QStringLiteral("1.1)"), QStringLiteral(")")},
+      {true, QStringLiteral("1.1"), QString()},
+      {false, QStringLiteral("1.1"), QString()},
+      {true, QStringLiteral("1.1."), QStringLiteral(".")}};
+  for (int index = 0; index < 4; ++index) {
+    const auto &setting = settings[index];
+    mindMapSettings.setAutoSectionNumbering(setting.enabled);
+    editorSettings.setSectionNumberPattern(setting.pattern);
+    const auto output = temporary.filePath(QStringLiteral("numbered-%1.html").arg(index));
+    QVERIFY(renderer.renderHtml(input, request, output));
+    QVERIFY(page.load(output));
+    const auto state = page.presentation();
+    auto visualTopics = authoredTopics;
+    if (setting.enabled) {
+      for (int node = 0; node < visualTopics.size(); ++node) {
+        if (!numbers[node].isEmpty()) {
+          visualTopics[node].prepend(numbers[node] + setting.suffix + QLatin1Char(' '));
+        }
+      }
+    }
+    QCOMPARE(state.value(QStringLiteral("topics")).toStringList(), visualTopics);
+    QCOMPARE(state.value(QStringLiteral("articleTopics")).toStringList(), authoredTopics);
+  }
 }
 
 void TestMindMapExport::batchRebasesSameRelativeImage() {

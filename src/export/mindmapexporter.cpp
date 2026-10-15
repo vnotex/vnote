@@ -112,8 +112,11 @@ bool MindMapExporter::renderHtml(const ExportInput &p_input, const ExportHtmlReq
       config.resourceBasePath = p_input.file.resourcePath;
       config.resolveRelativeUrls = false;
       if (auto *manager = m_services.get<ConfigMgr2>()) {
-        const auto &settings = manager->getEditorConfig().getMindMapEditorConfig();
+        const auto &editorSettings = manager->getEditorConfig();
+        const auto &settings = editorSettings.getMindMapEditorConfig();
         config.style = {settings.getFontFamily(), settings.getFontPointSize()};
+        config.autoSectionNumbering = settings.getAutoSectionNumbering();
+        config.sectionNumberPattern = editorSettings.getSectionNumberPattern();
       }
       m_editor = new m3::qt::MindMapEditor(config, m_widgetParent.data());
       m_editor->hide();
@@ -158,6 +161,12 @@ bool MindMapExporter::renderHtml(const ExportInput &p_input, const ExportHtmlReq
     if (!m_editor->loadJson(p_input.content.toUtf8())) {
       emit logRequested(tr("Failed to load MindMap: %1").arg(m_editor->lastError()));
       return false;
+    }
+    // Refresh reused exporters after loading, rather than remeasuring the previous document.
+    if (auto *manager = m_services.get<ConfigMgr2>()) {
+      const auto &settings = manager->getEditorConfig();
+      m_editor->setSectionNumbering(settings.getMindMapEditorConfig().getAutoSectionNumbering(),
+                                    settings.getSectionNumberPattern());
     }
 
     QEventLoop loop;
