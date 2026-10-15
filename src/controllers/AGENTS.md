@@ -329,8 +329,17 @@ media copied from that projection's resource base. It is not a lossless native r
 Native HTML uses an export-only, fully expanded editor, rebased before every load, and waits
 for queued image requests to settle. Missing images retain explicit placeholders; cancellation,
 malformed input and the whole-export image deadline fail rather than snapshot incomplete work.
-Standalone HTML keeps the map/articles toggle. PDF fits the entire proportional map on page 1,
-then prints the complete articles from page 2; custom HTML exposes both views without print geometry.
+The visual map is selectable HTML node text plus inline SVG connectors, not a whole-map PNG;
+only embedded node images are raster data. Standalone HTML keeps responsive fitting and the
+map/articles toggle. PDF fits the entire proportional map on page 1, then prints the complete
+articles from page 2; custom HTML exposes both views without print geometry.
+
+For native PDF layout, read the trusted `#mindmap` `data-width`/`data-height` marker and reserve a
+scaled `#map-viewport`. Keep the map out of flow and use CSS **layout zoom**, overriding the normal
+fit script with `!important`. A paint-only transform, even inside a clipped absolute container,
+causes Chromium to shrink the entire printed document: the regression produced 8 pt article text
+instead of 12 pt. The Qt 6.9+ host test loads actual PDF bytes through the bundled reader and checks
+extractable map text plus article text size; DOM bounds and a valid PDF signature alone miss this.
 
 `HtmlPdfExporter` owns final transport, not source rendering. Qt loads the rendered HTML by file
 URL (including >2 MiB documents), allows local sidecars and the existing unprotected remote-image

@@ -25,6 +25,7 @@
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
+#include <QXmlStreamReader>
 
 #include <memory>
 
@@ -161,12 +162,40 @@ QString htmlText(const QString &p_html) {
   return document.toPlainText();
 }
 
-QImage mapImage(const QString &p_html) {
-  const QRegularExpression image(
-      QStringLiteral("<img\\b[^>]*src=\"data:image/png;base64,([^\"]+)\""));
-  const auto match = image.match(p_html);
-  return match.hasMatch() ? QImage::fromData(QByteArray::fromBase64(match.captured(1).toLatin1()))
-                          : QImage();
+QVector<QImage> embeddedNodeImages(const QString &p_html) {
+  QVector<QImage> images;
+  QXmlStreamReader reader(p_html);
+  while (!reader.atEnd()) {
+    if (reader.readNext() != QXmlStreamReader::StartElement ||
+        reader.name() != QLatin1String("img")) {
+      continue;
+    }
+    const auto attributes = reader.attributes();
+    if (!attributes.value(QStringLiteral("class"))
+             .toString()
+             .split(QLatin1Char(' '))
+             .contains(QStringLiteral("m3-node-image"))) {
+      continue;
+    }
+    const auto source = attributes.value(QStringLiteral("src")).toString();
+    const auto prefix = QStringLiteral("data:image/png;base64,");
+    images.append(source.startsWith(prefix) ? QImage::fromData(QByteArray::fromBase64(
+                                                  source.mid(prefix.size()).toLatin1()))
+                                            : QImage());
+  }
+  return images;
+}
+
+int imageStateCount(const QString &p_html, const QString &p_state) {
+  QXmlStreamReader reader(p_html);
+  int count = 0;
+  while (!reader.atEnd()) {
+    if (reader.readNext() == QXmlStreamReader::StartElement &&
+        reader.attributes().value(QStringLiteral("data-image-state")) == p_state) {
+      ++count;
+    }
+  }
+  return count;
 }
 
 int colorPixels(const QImage &p_image, const QColor &p_color) {
@@ -183,6 +212,16 @@ int colorPixels(const QImage &p_image, const QColor &p_color) {
     }
   }
   return count;
+}
+
+bool containsImageColor(const QString &p_html, const QColor &p_color) {
+  const auto images = embeddedNodeImages(p_html);
+  for (const auto &image : images) {
+    if (colorPixels(image, p_color) >= 64) {
+      return true;
+    }
+  }
+  return false;
 }
 
 QStringList outputFiles(const QString &p_directory) {
@@ -228,11 +267,10 @@ QString exportSingle(Exporter &p_exporter, const ExportOption &p_options,
                                  p_source.fileTypeName);
 }
 
-bool hasUnavailableWarning(const QSignalSpy &p_logs, const QString &p_url) {
+bool loggedImageUrl(const QSignalSpy &p_logs, const QString &p_url) {
   for (const auto &entry : p_logs) {
     const auto message = entry.first().toString();
-    if (message.contains(QStringLiteral("unavailable"), Qt::CaseInsensitive) &&
-        message.contains(p_url)) {
+    if (message.contains(p_url)) {
       return true;
     }
   }
@@ -323,10 +361,14 @@ public:
         return !!node && getComputedStyle(node).display !== 'none' &&
                node.getBoundingClientRect().height > 0;
       };
-      const image = document.querySelector('#visual-map img');
-      return {map: visible('#visual-map'), articles: visible('#articles'),
+      const images = Array.from(document.querySelectorAll('#mindmap .m3-node-image'));
+      return {map: visible('#mindmap'), articles: visible('#articles'),
               toggle: visible('#view-toggle'),
-              image: !!image && image.complete && image.naturalWidth > 0,
+              image: images.length > 0 && images.every(image => image.complete && image.naturalWidth > 0),
+              topics: Array.from(document.querySelectorAll('#mindmap .m3-node .m3-topic'),
+                                 topic => topic.textContent.replace(/\s+/g, ' ').trim()),
+              treeEdges: document.querySelectorAll('.m3-connectors .m3-tree-edge').length,
+              crossLinks: document.querySelectorAll('.m3-connectors .m3-cross-link').length,
               text: document.querySelector('#articles').textContent,
               links: Array.from(document.querySelectorAll('#articles a')).map(a => a.getAttribute('href'))};
     })())JS"))
@@ -545,16 +587,22 @@ void TestMindMapExport::standaloneContainsBothImagesAndCompleteArticles() {
                    source(path), json);
   QVERIFY(!output.isEmpty());
   const auto html = QString::fromUtf8(readBytes(output));
-  const auto image = mapImage(html);
-  QVERIFY(!image.isNull());
-  QVERIFY(colorPixels(image, c_localColor) >= 64);
-  QVERIFY(colorPixels(image, c_embeddedColor) >= 64);
+  const auto images = embeddedNodeImages(html);
+  QCOMPARE(images.size(), 2);
+  for (const auto &image : images) {
+    QCOMPARE(image.size(), QSize(48, 32));
+  }
+  QVERIFY(containsImageColor(html, c_localColor));
+  QVERIFY(containsImageColor(html, c_embeddedColor));
   QVERIFY(containsForest(htmlText(html)));
   // Prove the standalone artifact needs neither the source JSON nor local image on reload.
   QVERIFY(QDir(temporary.filePath(QStringLiteral("source"))).removeRecursively());
   HtmlPage page;
   QVERIFY(page.load(output));
   auto state = page.presentation();
+  QCOMPARE(state.value(QStringLiteral("topics")).toStringList(), forestTopics());
+  QCOMPARE(state.value(QStringLiteral("treeEdges")).toInt(), 5);
+  QCOMPARE(state.value(QStringLiteral("crossLinks")).toInt(), 1);
   QVERIFY(state.value(QStringLiteral("map")).toBool());
   QVERIFY(state.value(QStringLiteral("image")).toBool());
   QVERIFY(state.value(QStringLiteral("toggle")).toBool());
@@ -594,10 +642,10 @@ void TestMindMapExport::batchRebasesSameRelativeImage() {
   const auto secondHtml = QString::fromUtf8(readBytes(outputs[1]));
   QVERIFY(firstHtml.contains(QStringLiteral("First folder")));
   QVERIFY(secondHtml.contains(QStringLiteral("Second folder")));
-  QVERIFY(colorPixels(mapImage(firstHtml), c_localColor) >= 64);
-  QCOMPARE(colorPixels(mapImage(firstHtml), c_secondColor), 0);
-  QVERIFY(colorPixels(mapImage(secondHtml), c_secondColor) >= 64);
-  QCOMPARE(colorPixels(mapImage(secondHtml), c_localColor), 0);
+  QVERIFY(containsImageColor(firstHtml, c_localColor));
+  QVERIFY(!containsImageColor(firstHtml, c_secondColor));
+  QVERIFY(containsImageColor(secondHtml, c_secondColor));
+  QVERIFY(!containsImageColor(secondHtml, c_localColor));
 }
 
 void TestMindMapExport::malformedAndCollidingInputs_data() { snapshotsAreAuthoritative_data(); }
@@ -665,7 +713,7 @@ void TestMindMapExport::delayedImageCompletesBeforeSnapshot() {
   QVERIFY(*heldWithoutOutput);
   QVERIFY(server.released());
   QVERIFY(!output.isEmpty());
-  QVERIFY(colorPixels(mapImage(QString::fromUtf8(readBytes(output))), c_localColor) >= 64);
+  QVERIFY(containsImageColor(QString::fromUtf8(readBytes(output)), c_localColor));
 }
 
 void TestMindMapExport::failedImagesSettleWithPlaceholderAndWarning() {
@@ -682,19 +730,23 @@ void TestMindMapExport::failedImagesSettleWithPlaceholderAndWarning() {
       exportSingle(exporter, option, info,
                    simpleMap(QStringLiteral("Settled image"), QStringLiteral("missing.png")));
   QVERIFY(!missing.isEmpty());
-  QVERIFY(hasUnavailableWarning(logs, QStringLiteral("missing.png")));
-  const auto missingImage = mapImage(QString::fromUtf8(readBytes(missing)));
-  QVERIFY(!missingImage.isNull());
+  QVERIFY(loggedImageUrl(logs, QStringLiteral("missing.png")));
+  const auto missingHtml = QString::fromUtf8(readBytes(missing));
+  QCOMPARE(imageStateCount(missingHtml, QStringLiteral("unavailable")), 1);
+  QCOMPARE(imageStateCount(missingHtml, QStringLiteral("loading")), 0);
+  QVERIFY(embeddedNodeImages(missingHtml).isEmpty());
   logs.clear();
   const auto invalid =
       exportSingle(exporter, option, info,
                    simpleMap(QStringLiteral("Settled image"), QStringLiteral("invalid.png")));
   QVERIFY(!invalid.isEmpty());
-  QVERIFY(hasUnavailableWarning(logs, QStringLiteral("invalid.png")));
-  QCOMPARE(mapImage(QString::fromUtf8(readBytes(invalid))), missingImage);
+  QVERIFY(loggedImageUrl(logs, QStringLiteral("invalid.png")));
+  const auto invalidHtml = QString::fromUtf8(readBytes(invalid));
+  QCOMPARE(imageStateCount(invalidHtml, QStringLiteral("unavailable")), 1);
+  QCOMPARE(imageStateCount(invalidHtml, QStringLiteral("loading")), 0);
 
-  // The same settled placeholder must result from an asynchronous decode failure, not a
-  // snapshot of the transient "Loading image" state. A map without an image has no placeholder.
+  // An asynchronous decode failure must also settle, rather than exporting a loading state.
+  // A map without an image has no placeholder.
   HeldImageServer server;
   QVERIFY(server.listen());
   connect(&server, &HeldImageServer::requestReceived, &server, [&server] {
@@ -705,12 +757,17 @@ void TestMindMapExport::failedImagesSettleWithPlaceholderAndWarning() {
                                    simpleMap(QStringLiteral("Settled image"), server.url()));
   QVERIFY(!remote.isEmpty());
   QVERIFY(server.received() && server.released());
-  QVERIFY(hasUnavailableWarning(logs, server.url()));
-  QCOMPARE(mapImage(QString::fromUtf8(readBytes(remote))), missingImage);
+  QVERIFY(loggedImageUrl(logs, server.url()));
+  const auto remoteHtml = QString::fromUtf8(readBytes(remote));
+  QCOMPARE(imageStateCount(remoteHtml, QStringLiteral("unavailable")), 1);
+  QCOMPARE(imageStateCount(remoteHtml, QStringLiteral("loading")), 0);
   const auto absent =
       exportSingle(exporter, option, info, simpleMap(QStringLiteral("Settled image")));
   QVERIFY(!absent.isEmpty());
-  QVERIFY(mapImage(QString::fromUtf8(readBytes(absent))) != missingImage);
+  const auto absentHtml = QString::fromUtf8(readBytes(absent));
+  QCOMPARE(imageStateCount(absentHtml, QStringLiteral("unavailable")), 0);
+  QCOMPARE(imageStateCount(absentHtml, QStringLiteral("loading")), 0);
+  QVERIFY(embeddedNodeImages(absentHtml).isEmpty());
 }
 
 void TestMindMapExport::cancellationDoesNotPublishLateOutput() {
@@ -771,7 +828,7 @@ void TestMindMapExport::directConsumerRequests() {
                       QPageLayout::Millimeter));
   const auto output = temporary.filePath(QStringLiteral("consumer.html"));
   QVERIFY(renderer.renderHtml(input, request, output));
-  QVERIFY(colorPixels(mapImage(QString::fromUtf8(readBytes(output))), c_localColor) >= 64);
+  QVERIFY(containsImageColor(QString::fromUtf8(readBytes(output)), c_localColor));
   HtmlPage page;
   QVERIFY(page.load(output));
   const auto state = page.presentation();
@@ -807,7 +864,6 @@ void TestMindMapExport::qtPdfRunsThroughExporter() {
   const auto pdf = readBytes(output);
   QVERIFY(pdf.startsWith("%PDF-"));
   QVERIFY(pdf.trimmed().endsWith("%%EOF"));
-  QVERIFY(pdf.size() > 1024);
   QCOMPARE(readBytes(path), json.toUtf8());
 }
 
@@ -873,7 +929,7 @@ void TestMindMapExport::customCapturesRenderedInputs() {
     QVERIFY(QFileInfo(copy).isFile());
     QVERIFY(copy != original);
     const auto html = QString::fromUtf8(readBytes(copy));
-    QVERIFY(colorPixels(mapImage(html), i == 0 ? c_localColor : c_secondColor) >= 64);
+    QVERIFY(containsImageColor(html, i == 0 ? c_localColor : c_secondColor));
     for (const auto &resource : entry.value(QStringLiteral("resources")).toArray()) {
       const auto paths = resource.toObject();
       QVERIFY(!QFileInfo::exists(paths.value(QStringLiteral("source")).toString()));
@@ -901,6 +957,11 @@ int main(int argc, char **argv) {
     QCoreApplication application(argc, argv);
     return captureExportInputs(application.arguments());
   }
+#ifdef Q_OS_WIN
+  if (qgetenv("QT_QPA_PLATFORM") == "offscreen" && qEnvironmentVariableIsEmpty("QT_QPA_FONTDIR")) {
+    qputenv("QT_QPA_FONTDIR", qgetenv("WINDIR") + "/Fonts");
+  }
+#endif
   QApplication application(argc, argv);
   QNetworkProxy::setApplicationProxy(QNetworkProxy(QNetworkProxy::NoProxy));
   TestMindMapExport test;

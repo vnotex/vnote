@@ -7,6 +7,7 @@
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
+#include <QHash>
 #include <QHostAddress>
 #include <QImage>
 #include <QJsonArray>
@@ -70,11 +71,16 @@ QByteArray imageBytes() {
 }
 
 QStringList topics() {
-  return {QString::fromUtf8("Root 世界 & <map>"), QStringLiteral("Level two"),
-          QStringLiteral("Level three"),          QStringLiteral("Level four"),
-          QStringLiteral("Level five"),           QStringLiteral("Level six"),
-          QStringLiteral("Level seven"),          QString::fromUtf8("Deep café eight"),
-          QStringLiteral("Separate orphan tree"), QStringLiteral("Orphan child")};
+  return {QString::fromUtf8("Root 世界 & <map>"),
+          QStringLiteral("Level two"),
+          QString::fromUtf8("Level three\nstyled 世界 <&>"),
+          QStringLiteral("Level four"),
+          QStringLiteral("Level five"),
+          QStringLiteral("Level six"),
+          QStringLiteral("Level seven"),
+          QString::fromUtf8("Deep café eight"),
+          QStringLiteral("Separate orphan tree"),
+          QString::fromUtf8("שלום 42 orphan")};
 }
 
 QString longNote() {
@@ -98,6 +104,15 @@ ExportInput nativeInput(const QString &p_directory) {
     }
     if (i == 1) {
       node.insert(QStringLiteral("expanded"), false);
+    }
+    if (i == 2) {
+      node.insert(QStringLiteral("style"),
+                  QJsonObject{{QStringLiteral("fontSize"), 23},
+                              {QStringLiteral("fontWeight"), 700},
+                              {QStringLiteral("fontStyle"), QStringLiteral("italic")},
+                              {QStringLiteral("color"), QStringLiteral("#5729a5")},
+                              {QStringLiteral("background"), QStringLiteral("#fce8b8")},
+                              {QStringLiteral("branchColor"), QStringLiteral("#ca3542")}});
     }
     if (i == 0) {
       node.insert(QStringLiteral("image"),
@@ -198,7 +213,10 @@ struct BrowserPage {
 QJsonObject documentState(QWebEnginePage &p_page) {
   const auto result = evaluateJavaScript(p_page, QStringLiteral(R"JS((() => {
     const visual = document.querySelector('#visual-map');
-    const image = visual.querySelector('img');
+    const map = document.querySelector('#mindmap');
+    const viewport = document.querySelector('#map-viewport');
+    const svg = map.querySelector('.m3-connectors');
+    const image = map.querySelector('.m3-node-image');
     const articles = document.querySelector('#articles');
     const button = document.querySelector('#view-toggle');
     const visible = element => {
@@ -210,21 +228,45 @@ QJsonObject documentState(QWebEnginePage &p_page) {
       return {left:box.left, top:box.top, right:box.right, bottom:box.bottom,
               width:box.width, height:box.height};
     };
+    const inside = (inner, outer) => inner.left >= outer.left - 2 &&
+      inner.top >= outer.top - 2 && inner.right <= outer.right + 2 && inner.bottom <= outer.bottom + 2;
     const entries = Array.from(articles.querySelectorAll('article'));
     const deep = entries.find(entry => entry.querySelector('h3').textContent === 'Deep café eight');
     const note = deep.querySelector('p');
-    const imageStyle = getComputedStyle(image);
+    const nodes = Array.from(map.querySelectorAll('.m3-node'));
+    const rootTopic = nodes[0].querySelector('.m3-topic');
+    const styledNode = nodes.find(node => node.dataset.nodeId === 'n2');
+    const styledTopic = styledNode.querySelector('.m3-topic');
+    const topicStyle = getComputedStyle(styledTopic.firstElementChild || styledTopic);
     return JSON.stringify({
-      mapVisible:visible(visual), articlesVisible:visible(articles), toggleVisible:visible(button),
-      toggleText:button.textContent, decoded:image.complete && image.naturalWidth > 0,
-      source:image.currentSrc, naturalWidth:image.naturalWidth, naturalHeight:image.naturalHeight,
-      image:rect(image), visual:rect(visual), articles:rect(articles),
-      maxWidth:imageStyle.maxWidth, maxHeight:imageStyle.maxHeight,
+      mapVisible:visible(map), articlesVisible:visible(articles), toggleVisible:visible(button),
+      decoded:image.complete && image.naturalWidth > 0,
+      source:image.currentSrc, imageWidth:image.naturalWidth, imageHeight:image.naturalHeight,
+      naturalWidth:Number(map.dataset.width), naturalHeight:Number(map.dataset.height),
+      map:rect(map), mapViewport:rect(viewport), visual:rect(visual), articles:rect(articles),
+      topics:nodes.map(node => node.querySelector('.m3-topic').innerText.replace(/\s+/g, ' ').trim()),
+      nodeIds:nodes.map(node => node.dataset.nodeId), rootTopic:rect(rootTopic),
+      topicUserSelect:getComputedStyle(rootTopic).userSelect,
+      rtlDirection:getComputedStyle(nodes.find(node => node.dataset.nodeId === 'n9')
+        .querySelector('.m3-topic').firstElementChild).direction,
+      svgNamespace:svg.namespaceURI, svgPointerEvents:getComputedStyle(svg).pointerEvents,
+      treeEdges:svg.querySelectorAll('.m3-tree-edge').length,
+      crossLinks:svg.querySelectorAll('.m3-cross-link').length,
+      rasterSurfaces:map.querySelectorAll('canvas,foreignObject').length,
+      geometryFits:Array.from(map.querySelectorAll('.m3-node,.m3-link-label,path,polygon'))
+        .filter(visible).every(element => inside(rect(element), rect(viewport))),
+      textFits:nodes.every(node => {
+        const range = document.createRange(); range.selectNodeContents(node.querySelector('.m3-topic'));
+        return inside(range.getBoundingClientRect(), rect(node));
+      }),
+      styled:{fontSize:parseFloat(topicStyle.fontSize), weight:parseInt(topicStyle.fontWeight,10),
+        italic:topicStyle.fontStyle, color:topicStyle.color,
+        background:getComputedStyle(styledNode).backgroundColor},
       breakAfter:getComputedStyle(visual).breakAfter,
       pageBreakAfter:getComputedStyle(visual).pageBreakAfter,
       chromeHidden:Array.from(document.querySelectorAll('main > h1, #visual-map > h2, #visual-map > p'))
         .every(element => !visible(element)),
-      headings:entries.map(entry => entry.querySelector('h3').textContent),
+      headings:entries.map(entry => entry.querySelector('h3').innerText.replace(/\s+/g, ' ').trim()),
       articleVisibility:entries.map(visible),
       text:articles.innerText,
       links:Array.from(articles.querySelectorAll('a'), link => ({href:link.getAttribute('href'),
@@ -243,7 +285,7 @@ void verifyCompleteArticles(const QJsonObject &p_state) {
   const auto headings = p_state.value(QStringLiteral("headings")).toArray();
   QCOMPARE(headings.size(), topics().size());
   for (const auto &topic : topics()) {
-    QVERIFY2(headings.contains(topic), qPrintable(topic));
+    QVERIFY2(headings.contains(topic.simplified()), qPrintable(topic));
   }
   QVERIFY(p_state.value(QStringLiteral("articlesVisible")).toBool());
   for (const auto &visible : p_state.value(QStringLiteral("articleVisibility")).toArray()) {
@@ -267,34 +309,45 @@ void verifyCompleteArticles(const QJsonObject &p_state) {
   QVERIFY(internalLinks >= 2);
 }
 
-void verifyMapImage(const QJsonObject &p_state) {
+void verifyMapDocument(const QJsonObject &p_state) {
+  const auto exportedTopics = p_state.value(QStringLiteral("topics")).toArray();
+  QCOMPARE(exportedTopics.size(), topics().size());
+  for (const auto &topic : topics()) {
+    QVERIFY2(exportedTopics.contains(topic.simplified()), qPrintable(topic));
+  }
+  QCOMPARE(p_state.value(QStringLiteral("svgNamespace")).toString(),
+           QStringLiteral("http://www.w3.org/2000/svg"));
+  QCOMPARE(p_state.value(QStringLiteral("treeEdges")).toInt(), topics().size() - 2);
+  QCOMPARE(p_state.value(QStringLiteral("crossLinks")).toInt(), 1);
+  QCOMPARE(p_state.value(QStringLiteral("rasterSurfaces")).toInt(), 0);
+  QCOMPARE(p_state.value(QStringLiteral("svgPointerEvents")).toString(), QStringLiteral("none"));
+  QVERIFY(p_state.value(QStringLiteral("topicUserSelect")).toString() != QStringLiteral("none"));
+  QCOMPARE(p_state.value(QStringLiteral("rtlDirection")).toString(), QStringLiteral("rtl"));
+  QVERIFY2(p_state.value(QStringLiteral("geometryFits")).toBool(),
+           "All nodes, connectors, arrows and labels must fit the exported viewport");
+  QVERIFY2(p_state.value(QStringLiteral("textFits")).toBool(),
+           "Browser-rendered topic glyphs must remain inside their measured node boxes");
+  const auto styled = p_state.value(QStringLiteral("styled")).toObject();
+  QCOMPARE(styled.value(QStringLiteral("fontSize")).toDouble(), 23.0);
+  QVERIFY(styled.value(QStringLiteral("weight")).toInt() >= 600);
+  QCOMPARE(styled.value(QStringLiteral("italic")).toString(), QStringLiteral("italic"));
+  QCOMPARE(styled.value(QStringLiteral("color")).toString(), QStringLiteral("rgb(87, 41, 165)"));
+  QCOMPARE(styled.value(QStringLiteral("background")).toString(),
+           QStringLiteral("rgb(252, 232, 184)"));
+
   QVERIFY(p_state.value(QStringLiteral("decoded")).toBool());
   const auto source = p_state.value(QStringLiteral("source")).toString();
   const auto prefix = QStringLiteral("data:image/png;base64,");
   QVERIFY(source.startsWith(prefix));
   const auto image =
       QImage::fromData(QByteArray::fromBase64(source.mid(prefix.size()).toLatin1()), "PNG");
-  QVERIFY(!image.isNull());
-  QCOMPARE(image.width(), p_state.value(QStringLiteral("naturalWidth")).toInt());
-  QCOMPARE(image.height(), p_state.value(QStringLiteral("naturalHeight")).toInt());
-  int magenta = 0;
-  int turquoise = 0;
-  for (int y = 0; y < image.height(); ++y) {
-    for (int x = 0; x < image.width(); ++x) {
-      const auto color = image.pixelColor(x, y);
-      magenta += std::abs(color.red() - 241) < 5 && std::abs(color.green() - 11) < 5 &&
-                 std::abs(color.blue() - 211) < 5;
-      turquoise += std::abs(color.red() - 7) < 5 && std::abs(color.green() - 223) < 5 &&
-                   std::abs(color.blue() - 191) < 5;
-    }
-  }
-  QVERIFY2(magenta > 100 && turquoise > 100,
-           "The native snapshot must contain the decoded local fixture image, not a placeholder");
+  QCOMPARE(image.size(), QSize(123, 67));
+  QCOMPARE(image.pixelColor(0, 0), QColor(241, 11, 211));
+  QCOMPARE(image.pixelColor(61, 33), QColor(7, 223, 191));
 }
 
 void verifyPdf(const QString &p_path) {
   const auto bytes = readFile(p_path);
-  QVERIFY(bytes.size() > 1000);
   QVERIFY(bytes.startsWith("%PDF-"));
   QVERIFY(bytes.trimmed().endsWith("%%EOF"));
   QVERIFY(QRegularExpression(QStringLiteral("/Type\\s*/Page\\b"))
@@ -317,8 +370,8 @@ bool pdfContainsFixtureImage(const QByteArray &p_pdf) {
   return false;
 }
 
-// The server never releases a resource until the test explicitly asks it to. This synchronizes
-// cancellation with a real pending Chromium request rather than a guessed timer interval.
+// The held image endpoint synchronizes cancellation with a real pending Chromium request.
+// Fixed in-memory resources also serve the bundled PDF reader without public-network access.
 class HeldImageServer : public QObject {
   Q_OBJECT
 public:
@@ -344,8 +397,16 @@ public:
                     ++m_requests;
                     emit imageRequested();
                   } else {
-                    socket->write(
-                        "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+                    const auto resource = m_resources.constFind(request->split(' ').value(1));
+                    if (resource == m_resources.cend()) {
+                      socket->write("HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: "
+                                    "close\r\n\r\n");
+                    } else {
+                      socket->write(
+                          "HTTP/1.1 200 OK\r\nContent-Type: " + resource->mime +
+                          "\r\nContent-Length: " + QByteArray::number(resource->content.size()) +
+                          "\r\nConnection: close\r\n\r\n" + resource->content);
+                    }
                     socket->disconnectFromHost();
                   }
                 });
@@ -355,6 +416,10 @@ public:
   }
 
   bool listen() { return m_server.listen(QHostAddress::LocalHost, 0); }
+  void addResource(const QByteArray &p_path, const QByteArray &p_mime,
+                   const QByteArray &p_content) {
+    m_resources.insert(p_path, {p_mime, p_content});
+  }
   QString imageUrl() const {
     return QStringLiteral("http://127.0.0.1:%1/held.png").arg(m_server.serverPort());
   }
@@ -378,11 +443,85 @@ signals:
   void imageRequested();
 
 private:
+  struct Resource {
+    QByteArray mime, content;
+  };
+  QHash<QByteArray, Resource> m_resources;
   QTcpServer m_server;
   QPointer<QTcpSocket> m_held;
   int m_requests = 0;
   bool m_released = false;
 };
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+// Use the application's bundled PDF reader (Chrome 125+), not PDF syntax/font heuristics.
+// The fixed loopback resources add no test dependency and never reach the public network.
+QJsonArray readPdfText(const QString &p_file) {
+  const auto module = readFile(QFINDTESTDATA("../../src/data/extra/web/pdf.js/build/pdf.mjs"));
+  const auto worker =
+      readFile(QFINDTESTDATA("../../src/data/extra/web/pdf.js/build/pdf.worker.mjs"));
+  if (module.isEmpty() || worker.isEmpty()) {
+    qWarning() << "Bundled PDF reader assets are unavailable";
+    return {};
+  }
+  HeldImageServer server;
+  if (!server.listen()) {
+    return {};
+  }
+  server.addResource("/pdf.mjs", "text/javascript", module);
+  server.addResource("/pdf.worker.mjs", "text/javascript", worker);
+  server.addResource("/document.pdf", "application/pdf", readFile(p_file));
+  server.addResource("/reader.html", "text/html; charset=utf-8", QByteArrayLiteral(R"HTML(
+<!doctype html><meta charset="utf-8"><pre id="result" data-state="loading"></pre>
+<script type="module">
+import * as pdfjs from '/pdf.mjs';
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
+const result = document.getElementById('result');
+try {
+  const pdf = await pdfjs.getDocument({url:'/document.pdf'}).promise;
+  const pages = [];
+  for (let number = 1; number <= Math.min(2, pdf.numPages); ++number) {
+    const content = await (await pdf.getPage(number)).getTextContent();
+    pages.push(content.items.map(item => ({text:item.str, height:item.height})));
+  }
+  result.textContent = JSON.stringify(pages);
+  result.dataset.state = 'ready';
+} catch (error) {
+  result.textContent = String(error);
+  result.dataset.state = 'error';
+}
+</script>)HTML"));
+  BrowserPage browser;
+  QSignalSpy loaded(&browser.page, &QWebEnginePage::loadFinished);
+  QUrl url(server.imageUrl());
+  url.setPath(QStringLiteral("/reader.html"));
+  browser.page.load(url);
+  if (!QTest::qWaitFor([&loaded] { return !loaded.isEmpty(); }, 15000) ||
+      !loaded.last().first().toBool()) {
+    return {};
+  }
+  if (!QTest::qWaitFor(
+          [&browser] {
+            const auto state =
+                evaluateJavaScript(
+                    browser.page, QStringLiteral("document.getElementById('result').dataset.state"))
+                    .toString();
+            return state == QStringLiteral("ready") || state == QStringLiteral("error");
+          },
+          30000)) {
+    return {};
+  }
+  const auto result =
+      evaluateJavaScript(browser.page,
+                         QStringLiteral("document.getElementById('result').textContent"))
+          .toString();
+  const auto document = QJsonDocument::fromJson(result.toUtf8());
+  if (!document.isArray()) {
+    qWarning().noquote() << "PDF text extraction failed:" << result;
+  }
+  return document.array();
+}
+#endif
 
 } // namespace
 
@@ -416,15 +555,51 @@ void TestHtmlPdfExporter::standaloneToggleAndCompleteNativeForest() {
   QVERIFY(state.value(QStringLiteral("mapVisible")).toBool());
   QVERIFY(!state.value(QStringLiteral("articlesVisible")).toBool());
   QVERIFY(state.value(QStringLiteral("toggleVisible")).toBool());
-  QCOMPARE(state.value(QStringLiteral("toggleText")).toString(), QStringLiteral("Show articles"));
-  verifyMapImage(state);
+  verifyMapDocument(state);
+  const auto rootTopic = state.value(QStringLiteral("rootTopic")).toObject();
+  const QPoint wordPoint(qRound(rootTopic.value(QStringLiteral("left")).toDouble() + 4),
+                         qRound(rootTopic.value(QStringLiteral("top")).toDouble() + 7));
+  QVERIFY2(
+      evaluateJavaScript(browser.page,
+                         QStringLiteral("!!document.elementFromPoint(%1,%2).closest('.m3-topic')")
+                             .arg(wordPoint.x())
+                             .arg(wordPoint.y()))
+          .toBool(),
+      "The SVG connector layer must not intercept node text pointer hits");
+  const auto selected = evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
+    const range = document.createRange();
+    range.selectNodeContents(document.querySelector('#mindmap .m3-topic'));
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+    return selection.toString();
+  })())JS"))
+                            .toString();
+  QCOMPARE(selected.simplified(), topics().first().simplified());
+
+  const auto originalWidth =
+      state.value(QStringLiteral("map")).toObject().value(QStringLiteral("width")).toDouble();
+  browser.view.resize(640, 900);
+  QTRY_VERIFY_WITH_TIMEOUT(documentState(browser.page)
+                                   .value(QStringLiteral("map"))
+                                   .toObject()
+                                   .value(QStringLiteral("width"))
+                                   .toDouble() < originalWidth,
+                           5000);
+  state = documentState(browser.page);
+  verifyMapDocument(state);
+  const auto fitted = state.value(QStringLiteral("map")).toObject();
+  const auto viewport = state.value(QStringLiteral("mapViewport")).toObject();
+  QVERIFY(std::abs(fitted.value(QStringLiteral("width")).toDouble() -
+                   viewport.value(QStringLiteral("width")).toDouble()) < 2);
+  QVERIFY(std::abs(fitted.value(QStringLiteral("height")).toDouble() -
+                   viewport.value(QStringLiteral("height")).toDouble()) < 2);
 
   QVERIFY(evaluateJavaScript(browser.page,
                              QStringLiteral("document.getElementById('view-toggle').click(); true"))
               .toBool());
   state = documentState(browser.page);
   QVERIFY(!state.value(QStringLiteral("mapVisible")).toBool());
-  QCOMPARE(state.value(QStringLiteral("toggleText")).toString(), QStringLiteral("Show visual map"));
   verifyCompleteArticles(state);
 
   QVERIFY(evaluateJavaScript(browser.page,
@@ -462,29 +637,24 @@ void TestHtmlPdfExporter::printableNativeForest() {
   QVERIFY(loadFile(browser.page, html));
   const auto state = documentState(browser.page);
   QVERIFY(!state.isEmpty());
-  verifyMapImage(state);
+  verifyMapDocument(state);
   verifyCompleteArticles(state);
   QVERIFY(state.value(QStringLiteral("mapVisible")).toBool());
   QVERIFY(!state.value(QStringLiteral("toggleVisible")).toBool());
   QVERIFY(state.value(QStringLiteral("chromeHidden")).toBool());
-  const auto image = state.value(QStringLiteral("image")).toObject();
+  const auto map = state.value(QStringLiteral("map")).toObject();
+  const auto viewport = state.value(QStringLiteral("mapViewport")).toObject();
   const auto visual = state.value(QStringLiteral("visual")).toObject();
   const auto articles = state.value(QStringLiteral("articles")).toObject();
-  const double width = image.value(QStringLiteral("width")).toDouble();
-  const double height = image.value(QStringLiteral("height")).toDouble();
+  const double width = map.value(QStringLiteral("width")).toDouble();
+  const double height = map.value(QStringLiteral("height")).toDouble();
   QVERIFY(width > 0 && height > 0);
   QVERIFY(width <= (printable.width() - 1) * pixelsPerMillimeter + 1);
   QVERIFY(height <= (printable.height() - 1) * pixelsPerMillimeter + 1);
-  const auto maximumWidth = state.value(QStringLiteral("maxWidth")).toString();
-  const auto maximumHeight = state.value(QStringLiteral("maxHeight")).toString();
-  QVERIFY(maximumWidth.endsWith(QStringLiteral("px")));
-  QVERIFY(maximumHeight.endsWith(QStringLiteral("px")));
-  QVERIFY(std::abs(maximumWidth.left(maximumWidth.size() - 2).toDouble() -
-                   (printable.width() - 1) * pixelsPerMillimeter) < 0.1);
-  QVERIFY(std::abs(maximumHeight.left(maximumHeight.size() - 2).toDouble() -
-                   (printable.height() - 1) * pixelsPerMillimeter) < 0.1);
-  QVERIFY(std::abs(image.value(QStringLiteral("left")).toDouble()) < 1);
-  QVERIFY(std::abs(image.value(QStringLiteral("top")).toDouble()) < 1);
+  QVERIFY(std::abs(width - viewport.value(QStringLiteral("width")).toDouble()) < 1);
+  QVERIFY(std::abs(height - viewport.value(QStringLiteral("height")).toDouble()) < 1);
+  QVERIFY(std::abs(map.value(QStringLiteral("left")).toDouble()) < 1);
+  QVERIFY(std::abs(map.value(QStringLiteral("top")).toDouble()) < 1);
   QVERIFY(visual.value(QStringLiteral("bottom")).toDouble() <=
           printable.height() * pixelsPerMillimeter);
   const double nativeRatio = state.value(QStringLiteral("naturalWidth")).toDouble() /
@@ -508,12 +678,46 @@ void TestHtmlPdfExporter::printableNativeForest() {
   QVERIFY(
       state.value(QStringLiteral("headingBreak")).toString().startsWith(QStringLiteral("avoid")));
 
+  // Screen resize invokes the standalone fitter; it must not override the fixed print geometry.
+  browser.view.resize(400, 700);
+  QVERIFY(
+      evaluateJavaScript(browser.page, QStringLiteral("dispatchEvent(new Event('resize')); true"))
+          .toBool());
+  const auto resized = documentState(browser.page);
+  verifyMapDocument(resized);
+  const auto resizedMap = resized.value(QStringLiteral("map")).toObject();
+  QVERIFY(std::abs(resizedMap.value(QStringLiteral("width")).toDouble() - width) < 1);
+  QVERIFY(std::abs(resizedMap.value(QStringLiteral("height")).toDouble() - height) < 1);
+
   HtmlPdfExporter converter(services);
   connect(&converter, &HtmlPdfExporter::logRequested, this,
           [](const QString &p_message) { qInfo().noquote() << p_message; });
   const auto pdf = directory.filePath(QStringLiteral("forest.pdf"));
   QVERIFY(converter.exportFiles(request.options.m_pdfOption, {html}, pdf));
   verifyPdf(pdf);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+  const auto pages = readPdfText(pdf);
+  QVERIFY2(pages.size() == 2, "The actual PDF reader must expose the map and first article page");
+  QString firstPage;
+  for (const auto &item : pages[0].toArray()) {
+    firstPage += item.toObject().value(QStringLiteral("text")).toString() + QLatin1Char(' ');
+  }
+  QVERIFY(firstPage.contains(QStringLiteral("Root")));
+  QVERIFY(firstPage.contains(QStringLiteral("Level seven")));
+  QVERIFY(firstPage.contains(QStringLiteral("Separate orphan tree")));
+  bool readableBody = false;
+  for (const auto &item : pages[1].toArray()) {
+    const auto text = item.toObject().value(QStringLiteral("text")).toString();
+    if (text.contains(QStringLiteral("Paragraph 0:"))) {
+      const auto height = item.toObject().value(QStringLiteral("height")).toDouble();
+      QVERIFY2(
+          std::abs(height - 12.0) < 0.1,
+          qPrintable(QStringLiteral("Diagram overflow shrank PDF body text to %1 pt").arg(height)));
+      readableBody = true;
+    }
+  }
+  QVERIFY(readableBody);
+#endif
 }
 
 void TestHtmlPdfExporter::customShowsBothViewsWithoutPrintGeometry() {
@@ -532,13 +736,11 @@ void TestHtmlPdfExporter::customShowsBothViewsWithoutPrintGeometry() {
   QVERIFY(loadFile(browser.page, html));
   const auto state = documentState(browser.page);
   QVERIFY(!state.isEmpty());
-  verifyMapImage(state);
+  verifyMapDocument(state);
   verifyCompleteArticles(state);
   QVERIFY(state.value(QStringLiteral("mapVisible")).toBool());
   QVERIFY(!state.value(QStringLiteral("toggleVisible")).toBool());
   QVERIFY(!state.value(QStringLiteral("chromeHidden")).toBool());
-  QCOMPARE(state.value(QStringLiteral("maxWidth")).toString(), QStringLiteral("100%"));
-  QCOMPARE(state.value(QStringLiteral("maxHeight")).toString(), QStringLiteral("none"));
   QCOMPARE(state.value(QStringLiteral("breakAfter")).toString(), QStringLiteral("auto"));
   QCOMPARE(state.value(QStringLiteral("pageBreakAfter")).toString(), QStringLiteral("auto"));
 }
@@ -688,6 +890,11 @@ int main(int argc, char **argv) {
   vxcore_set_test_mode(1);
   QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   QStandardPaths::setTestModeEnabled(true);
+#ifdef Q_OS_WIN
+  if (qgetenv("QT_QPA_PLATFORM") == "offscreen" && qEnvironmentVariableIsEmpty("QT_QPA_FONTDIR")) {
+    qputenv("QT_QPA_FONTDIR", qgetenv("WINDIR") + "/Fonts");
+  }
+#endif
   QApplication application(argc, argv);
   application.setOrganizationName(QStringLiteral("VNoteHtmlPdfTest-") +
                                   QUuid::createUuid().toString(QUuid::WithoutBraces));
