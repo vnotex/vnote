@@ -25,6 +25,7 @@
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
 #include <QWebEngineSettings>
+#include <QWebEngineView>
 #include <QXmlStreamReader>
 
 #include <memory>
@@ -153,7 +154,7 @@ bool containsForest(const QString &p_text, bool p_markdown = false) {
   return p_text.contains(QStringLiteral("Long note starts \u00e9\u6ce8\u91c8")) &&
          p_text.contains(QStringLiteral("Long note ends here")) &&
          p_text.contains(QStringLiteral("https://example.test/deep")) &&
-         p_text.contains(QStringLiteral("Across the forest"));
+         (!p_markdown || p_text.contains(QStringLiteral("Across the forest")));
 }
 
 QString htmlText(const QString &p_html) {
@@ -162,7 +163,8 @@ QString htmlText(const QString &p_html) {
   return document.toPlainText();
 }
 
-QVector<QImage> embeddedNodeImages(const QString &p_html) {
+QVector<QImage> embeddedNodeImages(
+    const QString &p_html, const QString &p_class = QStringLiteral("m3-node-image")) {
   QVector<QImage> images;
   QXmlStreamReader reader(p_html);
   while (!reader.atEnd()) {
@@ -174,7 +176,7 @@ QVector<QImage> embeddedNodeImages(const QString &p_html) {
     if (!attributes.value(QStringLiteral("class"))
              .toString()
              .split(QLatin1Char(' '))
-             .contains(QStringLiteral("m3-node-image"))) {
+             .contains(p_class)) {
       continue;
     }
     const auto source = attributes.value(QStringLiteral("src")).toString();
@@ -336,6 +338,9 @@ class HtmlPage {
 public:
   HtmlPage() : page(&profile) {
     page.settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessFileUrls, true);
+    view.setPage(&page);
+    view.resize(1200, 900);
+    view.show();
   }
 
   bool load(const QString &p_path) {
@@ -362,9 +367,13 @@ public:
                node.getBoundingClientRect().height > 0;
       };
       const images = Array.from(document.querySelectorAll('#mindmap .m3-node-image'));
+      const articleImages = Array.from(document.querySelectorAll('#articles .m3-article-image'));
       return {map: visible('#mindmap'), articles: visible('#articles'),
-              toggle: visible('#view-toggle'),
+              controls: visible('#map-controls'),
               image: images.length > 0 && images.every(image => image.complete && image.naturalWidth > 0),
+              articleImages: articleImages.length === images.length && articleImages.every(
+                image => image.complete && image.naturalWidth > 0 &&
+                         images.some(mapImage => mapImage.src === image.src)),
               topics: Array.from(document.querySelectorAll('#mindmap .m3-node .m3-topic'),
                                  topic => topic.textContent.replace(/\s+/g, ' ').trim()),
               treeEdges: document.querySelectorAll('.m3-connectors .m3-tree-edge').length,
@@ -377,6 +386,7 @@ public:
 
   QWebEngineProfile profile;
   QWebEnginePage page;
+  QWebEngineView view;
 };
 
 bool copyDirectory(const QString &p_source, const QString &p_destination) {
@@ -589,6 +599,7 @@ void TestMindMapExport::standaloneContainsBothImagesAndCompleteArticles() {
   const auto html = QString::fromUtf8(readBytes(output));
   const auto images = embeddedNodeImages(html);
   QCOMPARE(images.size(), 2);
+  QCOMPARE(embeddedNodeImages(html, QStringLiteral("m3-article-image")), images);
   for (const auto &image : images) {
     QCOMPARE(image.size(), QSize(48, 32));
   }
@@ -605,17 +616,10 @@ void TestMindMapExport::standaloneContainsBothImagesAndCompleteArticles() {
   QCOMPARE(state.value(QStringLiteral("crossLinks")).toInt(), 1);
   QVERIFY(state.value(QStringLiteral("map")).toBool());
   QVERIFY(state.value(QStringLiteral("image")).toBool());
-  QVERIFY(state.value(QStringLiteral("toggle")).toBool());
-  QVERIFY(!state.value(QStringLiteral("articles")).toBool());
-  QVERIFY(page.evaluate(QStringLiteral("document.getElementById('view-toggle').click(); true"))
-              .toBool());
-  state = page.presentation();
-  QVERIFY(!state.value(QStringLiteral("map")).toBool());
+  QVERIFY(state.value(QStringLiteral("controls")).toBool());
   QVERIFY(state.value(QStringLiteral("articles")).toBool());
+  QVERIFY(state.value(QStringLiteral("articleImages")).toBool());
   QVERIFY(containsForest(state.value(QStringLiteral("text")).toString()));
-  QVERIFY(page.evaluate(QStringLiteral("document.getElementById('view-toggle').click(); true"))
-              .toBool());
-  QVERIFY(page.presentation().value(QStringLiteral("map")).toBool());
 }
 
 void TestMindMapExport::batchRebasesSameRelativeImage() {
@@ -732,7 +736,7 @@ void TestMindMapExport::failedImagesSettleWithPlaceholderAndWarning() {
   QVERIFY(!missing.isEmpty());
   QVERIFY(loggedImageUrl(logs, QStringLiteral("missing.png")));
   const auto missingHtml = QString::fromUtf8(readBytes(missing));
-  QCOMPARE(imageStateCount(missingHtml, QStringLiteral("unavailable")), 1);
+  QCOMPARE(imageStateCount(missingHtml, QStringLiteral("unavailable")), 2);
   QCOMPARE(imageStateCount(missingHtml, QStringLiteral("loading")), 0);
   QVERIFY(embeddedNodeImages(missingHtml).isEmpty());
   logs.clear();
@@ -742,7 +746,7 @@ void TestMindMapExport::failedImagesSettleWithPlaceholderAndWarning() {
   QVERIFY(!invalid.isEmpty());
   QVERIFY(loggedImageUrl(logs, QStringLiteral("invalid.png")));
   const auto invalidHtml = QString::fromUtf8(readBytes(invalid));
-  QCOMPARE(imageStateCount(invalidHtml, QStringLiteral("unavailable")), 1);
+  QCOMPARE(imageStateCount(invalidHtml, QStringLiteral("unavailable")), 2);
   QCOMPARE(imageStateCount(invalidHtml, QStringLiteral("loading")), 0);
 
   // An asynchronous decode failure must also settle, rather than exporting a loading state.
@@ -759,7 +763,7 @@ void TestMindMapExport::failedImagesSettleWithPlaceholderAndWarning() {
   QVERIFY(server.received() && server.released());
   QVERIFY(loggedImageUrl(logs, server.url()));
   const auto remoteHtml = QString::fromUtf8(readBytes(remote));
-  QCOMPARE(imageStateCount(remoteHtml, QStringLiteral("unavailable")), 1);
+  QCOMPARE(imageStateCount(remoteHtml, QStringLiteral("unavailable")), 2);
   QCOMPARE(imageStateCount(remoteHtml, QStringLiteral("loading")), 0);
   const auto absent =
       exportSingle(exporter, option, info, simpleMap(QStringLiteral("Settled image")));
@@ -835,11 +839,11 @@ void TestMindMapExport::directConsumerRequests() {
   QVERIFY(state.value(QStringLiteral("map")).toBool());
   QVERIFY(state.value(QStringLiteral("articles")).toBool());
   QVERIFY(state.value(QStringLiteral("image")).toBool());
-  QVERIFY(!state.value(QStringLiteral("toggle")).toBool());
+  QVERIFY(!state.value(QStringLiteral("controls")).toBool());
+  QVERIFY(state.value(QStringLiteral("articleImages")).toBool());
   QVERIFY(containsForest(state.value(QStringLiteral("text")).toString()));
   const auto links = state.value(QStringLiteral("links")).toStringList();
   QVERIFY(links.contains(QStringLiteral("https://example.test/deep")));
-  QVERIFY(links.contains(QStringLiteral("#m3-node-6669667468")));
   QVERIFY(links.contains(QStringLiteral("#m3-node-6f727068616e2d6368696c64")));
 }
 
@@ -940,7 +944,8 @@ void TestMindMapExport::customCapturesRenderedInputs() {
     QVERIFY(state.value(QStringLiteral("map")).toBool());
     QVERIFY(state.value(QStringLiteral("image")).toBool());
     QVERIFY(state.value(QStringLiteral("articles")).toBool());
-    QVERIFY(!state.value(QStringLiteral("toggle")).toBool());
+    QVERIFY(!state.value(QStringLiteral("controls")).toBool());
+    QVERIFY(state.value(QStringLiteral("articleImages")).toBool());
     if (i == 0) {
       QVERIFY(containsForest(state.value(QStringLiteral("text")).toString()));
     } else {

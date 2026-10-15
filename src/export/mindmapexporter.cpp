@@ -181,7 +181,10 @@ bool MindMapExporter::renderHtml(const ExportInput &p_input, const ExportHtmlReq
       emit logRequested(tr("Timed out waiting for MindMap export images."));
       return false;
     }
-    auto html = m_editor->toHtml();
+    const auto mode = p_request.purpose == ExportHtmlPurpose::Standalone
+                          ? m3::qt::MindMapEditor::HtmlExportMode::Interactive
+                          : m3::qt::MindMapEditor::HtmlExportMode::Static;
+    auto html = m_editor->toHtml(mode);
     if (html.isEmpty() || m_failed) {
       emit logRequested(tr("Failed to render MindMap: %1").arg(m_editor->lastError()));
       return false;
@@ -210,19 +213,26 @@ bool MindMapExporter::adaptHtml(QString &p_html, const ExportHtmlRequest &p_requ
   }
   if (!p_html.contains(QStringLiteral("</head>")) ||
       !p_html.contains(QStringLiteral("<section id=\"visual-map\">")) ||
-      !p_html.contains(QStringLiteral("<section id=\"articles\" hidden=\"hidden\">"))) {
+      !p_html.contains(QStringLiteral("<section id=\"articles\">"))) {
     emit logRequested(tr("The native MindMap HTML structure is incompatible with export."));
     return false;
   }
   // Read only the native export's controlled geometry marker, before any node content.
   QSizeF naturalSize;
-  bool viewportFound = false;
+  bool viewerFound = false, viewportFound = false, spaceFound = false;
   QXmlStreamReader reader(p_html);
   while (!reader.atEnd()) {
     if (reader.readNext() != QXmlStreamReader::StartElement) {
       continue;
     }
     const auto id = reader.attributes().value(QStringLiteral("id"));
+    if (id == QStringLiteral("map-viewer")) {
+      viewerFound = reader.attributes().value(QStringLiteral("data-mode")) ==
+                    QStringLiteral("static");
+    }
+    if (id == QStringLiteral("map-space")) {
+      spaceFound = true;
+    }
     if (id == QStringLiteral("map-viewport")) {
       viewportFound = true;
     }
@@ -240,51 +250,65 @@ bool MindMapExporter::adaptHtml(QString &p_html, const ExportHtmlRequest &p_requ
     }
     break;
   }
-  if (!viewportFound || naturalSize.isEmpty()) {
+  if (!viewerFound || !viewportFound || !spaceFound || naturalSize.isEmpty()) {
     emit logRequested(tr("The native MindMap HTML geometry is incompatible with export."));
     return false;
   }
-  QString style = QStringLiteral("#view-toggle { display:none !important; }\n"
-                                 "#articles[hidden] { display:block !important; }\n");
-  if (p_request.purpose == ExportHtmlPurpose::Pdf) {
-    const auto layout = p_request.options.m_pdfOption.m_layout;
-    if (!layout) {
-      emit logRequested(tr("MindMap PDF export requires a page layout."));
-      return false;
-    }
-    const auto size = layout->paintRect(QPageLayout::Millimeter).size();
-    if (size.width() <= 1 || size.height() <= 1) {
-      emit logRequested(tr("MindMap PDF printable area is too small."));
-      return false;
-    }
-    constexpr qreal pixelsPerMillimeter = 96.0 / 25.4;
-    const auto scale =
-        qMin(qreal(1), qMin((size.width() - 1) * pixelsPerMillimeter / naturalSize.width(),
-                            (size.height() - 1) * pixelsPerMillimeter / naturalSize.height()));
-    // Layout zoom, unlike a paint-only transform, keeps Chromium's print shrink-to-fit from
-    // shrinking every page to the natural diagram width. The viewport alone reserves flow space.
-    // Important rules also prevent the standalone resize handler from undoing paper fitting.
-    style += QStringLiteral(
-                 "html, body { margin:0; padding:0; }\n"
-                 "main { margin:0; padding:0; max-width:none; }\n"
-                 "main > h1, #visual-map > h2, #visual-map > p { display:none; }\n"
-                 "#visual-map { margin:0; padding:0; page-break-after:always; break-after:page; }\n"
-                 "#map-viewport { position:relative !important; overflow:hidden !important; "
-                 "margin:0 !important; padding:0 !important; border:0 !important; "
-                 "width:%1px !important; height:%2px !important; max-width:none !important; }\n"
-                 "#mindmap { position:absolute !important; left:0 !important; top:0 !important; "
-                 "transform:none !important; -webkit-transform:none !important; "
-                 "zoom:%3 !important; }\n"
-                 "#articles, #articles ul, #articles li, #articles article, #articles p "
-                 "{ page-break-inside:auto; break-inside:auto; }\n"
-                 "#articles ul { margin-left:0; padding-left:0; padding-inline-start:0; "
-                 "list-style:none; }\n"
-                 "#articles h2, #articles h3 { page-break-after:avoid; break-after:avoid; }\n"
-                 "#articles p { orphans:2; widows:2; }\n")
-                 .arg(QString::number(naturalSize.width() * scale, 'g', 17),
-                      QString::number(naturalSize.height() * scale, 'g', 17),
-                      QString::number(scale, 'g', 17));
+  if (p_request.purpose != ExportHtmlPurpose::Pdf) {
+    return true;
   }
+  const auto layout = p_request.options.m_pdfOption.m_layout;
+  if (!layout) {
+    emit logRequested(tr("MindMap PDF export requires a page layout."));
+    return false;
+  }
+  const auto size = layout->paintRect(QPageLayout::Millimeter).size();
+  if (size.width() <= 1 || size.height() <= 1) {
+    emit logRequested(tr("MindMap PDF printable area is too small."));
+    return false;
+  }
+  constexpr qreal pixelsPerMillimeter = 96.0 / 25.4;
+  const auto scale =
+      qMin(qreal(1), qMin((size.width() - 1) * pixelsPerMillimeter / naturalSize.width(),
+                          (size.height() - 1) * pixelsPerMillimeter / naturalSize.height()));
+  // Only the absolute map uses layout zoom: an unscaled ancestor in flow would make Chromium
+  // shrink every article page. Pin all boxes so static width-fitting cannot undo paper fitting.
+  const auto style =
+      QStringLiteral(
+          "html, body { margin:0; padding:0; zoom:normal !important; }\n"
+          "main { margin:0; padding:0; max-width:none; zoom:normal !important; }\n"
+          "main > h1, #map-articles-separator { display:none !important; }\n"
+          "#visual-map { margin:0; padding:0; page-break-after:always; break-after:page; }\n"
+          "#map-viewer, #map-viewport, #map-space { position:relative !important; "
+          "overflow:hidden !important; margin:0 !important; padding:0 !important; "
+          "border:0 !important; min-width:0 !important; min-height:0 !important; "
+          "max-width:none !important; max-height:none !important; "
+          "left:0 !important; top:0 !important; transform:none !important; "
+          "-webkit-transform:none !important; zoom:normal !important; }\n"
+          "#map-viewer, #map-viewport { width:%1px !important; height:%2px !important; }\n"
+          "#map-space { width:100% !important; height:100% !important; }\n"
+          "#mindmap { position:absolute !important; left:0 !important; top:0 !important; "
+          "min-width:0 !important; min-height:0 !important; "
+          "max-width:none !important; max-height:none !important; "
+          "width:%4px !important; height:%5px !important; overflow:visible !important; "
+          "transform:none !important; -webkit-transform:none !important; "
+          "zoom:%3 !important; }\n"
+          "#articles { max-width:none; margin:0; padding:0; }\n"
+          "#articles, #articles ul, #articles li, #articles article, #articles p "
+          "{ page-break-inside:auto; break-inside:auto; }\n"
+          "#articles ul { margin-left:0; padding-left:0; padding-inline-start:0; "
+          "border:0 !important; list-style:none; }\n"
+          "#articles h3 { page-break-after:avoid; break-after:avoid; }\n"
+          "#articles p { orphans:2; widows:2; }\n"
+          "#articles figure { margin-left:0; margin-right:0; "
+          "page-break-inside:avoid; break-inside:avoid; }\n"
+          "#articles .m3-article-image { width:auto; height:auto; "
+          "max-width:100%; max-height:%6mm; object-fit:contain; }\n")
+          .arg(QString::number(naturalSize.width() * scale, 'g', 17),
+               QString::number(naturalSize.height() * scale, 'g', 17),
+               QString::number(scale, 'g', 17), QString::number(naturalSize.width(), 'g', 17),
+               QString::number(naturalSize.height(), 'g', 17),
+               QString::number(size.height() - 1, 'g', 17));
   p_html.insert(p_html.indexOf(QStringLiteral("</head>")),
                 QStringLiteral("<style id=\"vnote-export-layout\">\n") + style +
                     QStringLiteral("</style>\n"));

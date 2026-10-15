@@ -330,16 +330,23 @@ Native HTML uses an export-only, fully expanded editor, rebased before every loa
 for queued image requests to settle. Missing images retain explicit placeholders; cancellation,
 malformed input and the whole-export image deadline fail rather than snapshot incomplete work.
 The visual map is selectable HTML node text plus inline SVG connectors, not a whole-map PNG;
-only embedded node images are raster data. Standalone HTML keeps responsive fitting and the
-map/articles toggle. PDF fits the entire proportional map on page 1, then prints the complete
-articles from page 2; custom HTML exposes both views without print geometry.
+only supplied node images are raster data. Standalone HTML uses m3's Interactive mode: a scrollable
+100% map with zoom/reset/main-node controls and topic links into continuous articles below it.
+Articles render plain-text paragraphs, embedded images, URLs, icons/tag badges and directional
+inline cross-references, not metadata rows. Cached image pixels are reused without new I/O.
+Pdf and Custom explicitly request Static mode, with no controls or scrolling caps. PDF fits the
+entire proportional map on page 1 and prints all articles from page 2; Custom keeps width fitting
+without paper geometry. Neither route hides articles behind a toggle.
 
-For native PDF layout, read the trusted `#mindmap` `data-width`/`data-height` marker and reserve a
-scaled `#map-viewport`. Keep the map out of flow and use CSS **layout zoom**, overriding the normal
-fit script with `!important`. A paint-only transform, even inside a clipped absolute container,
-causes Chromium to shrink the entire printed document: the regression produced 8 pt article text
-instead of 12 pt. The Qt 6.9+ host test loads actual PDF bytes through the bundled reader and checks
-extractable map text plus article text size; DOM bounds and a valid PDF signature alone miss this.
+For native PDF layout, validate Static mode, the viewer/spacer structure and the trusted
+`#mindmap` `data-width`/`data-height` marker. Pin `#map-viewer`, `#map-viewport`, `#map-space` and the
+absolute map with `!important`: scaled flow bounds, no viewport caps/scroll offsets, no ancestor
+zoom or transforms. Apply CSS **layout zoom** only to the map. Keep the `#visual-map` page break,
+hide the shared title/separator, remove nested-list borders/indentation, and bound article images
+to the printable area. A paint-only transform can make Chromium shrink the entire document;
+the earlier regression produced 8 pt article text instead of 12 pt. The Qt 6.9+ host test reads
+every generated PDF page with the bundled reader and checks map-first/article-second ordering,
+complete notes, image geometry and actual 12 pt body text. DOM bounds/signatures alone miss this.
 
 `HtmlPdfExporter` owns final transport, not source rendering. Qt loads the rendered HTML by file
 URL (including >2 MiB documents), allows local sidecars and the existing unprotected remote-image
