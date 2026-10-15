@@ -123,7 +123,7 @@ QString templatePath = configMgr->getFileFromConfigFolder("web/markdown-viewer-t
 2. **Debounced persistence** — Changes to config objects auto-save via 500ms debounced timers.
 3. **Path resolution** — `getFileFromConfigFolder()` resolves relative paths against the app data directory.
 4. **Version upgrade** — `upgradeMainConfigOnVersionChange()` runs the config migration (`doVersionSpecificOverride` then stamping `c_version`) when the persisted version differs.
-5. **Bundled extra data** — `ensureExtraData(bool p_force)` installs `themes/`, `tasks/`, `syntax-highlighting/`, `web/`, `dicts/`, `templates/` and `docs/` from `vnote_extra.rcc`. It runs on every **primary-instance** launch, after `SingleInstanceGuard::tryRun()` succeeds, not just on a version change; a rejected secondary must never mutate resources used by the running primary. Installation is gated per folder by a stamp file (`FileUtils2::c_versionStampFileName`, `.vnote-extra-version`) that `FileUtils2::installVersionedDir` writes **only after that folder copied completely**. A partial copy therefore leaves the folder unstamped and is retried on the next launch instead of being remembered as done. Deliberately decoupled from the config version stamp above: coupling them would re-run `doVersionSpecificOverride` on every launch and pin the config version to the old value forever whenever a copy is permanently broken. Per-folder failures are aggregated in `extraDataCopyFailures()` and PULLED once by `NotificationRouter` at `MainWindowAfterStart` (ConfigMgr2 has no `ServiceLocator`, and the copy runs in `main()` long before the router exists). `web/css/user.css` is on a preserve list because Settings treats an existing regular file there as user-owned; an incompatible node is a copy failure and prevents the completion stamp. `templates/` has NO preserve list: the bundled `templates/title.md` (`# %no%` plus a trailing `@@` cursor mark, so a new note opens with a level-1 heading matching its base name and the caret on the blank line below) is overwritten on every version bump, so a user who wants a variant must save it under a different name; user-created templates are untouched because only bundled paths are written.
+5. **Bundled extra data** — `ensureExtraData(bool p_force)` installs `themes/`, `tasks/`, `syntax-highlighting/`, `web/`, `dicts/`, `templates/` and `docs/` from `vnote_extra.rcc`. It runs on every **primary-instance** launch, after `SingleInstanceGuard::tryRun()` succeeds (or the explicit testing bypass below), not just on a version change; a rejected secondary must never mutate resources used by the running primary. Installation is gated per folder by a stamp file (`FileUtils2::c_versionStampFileName`, `.vnote-extra-version`) that `FileUtils2::installVersionedDir` writes **only after that folder copied completely**. A partial copy therefore leaves the folder unstamped and is retried on the next launch instead of being remembered as done. Deliberately decoupled from the config version stamp above: coupling them would re-run `doVersionSpecificOverride` on every launch and pin the config version to the old value forever whenever a copy is permanently broken. Per-folder failures are aggregated in `extraDataCopyFailures()` and PULLED once by `NotificationRouter` at `MainWindowAfterStart` (ConfigMgr2 has no `ServiceLocator`, and the copy runs in `main()` long before the router exists). `web/css/user.css` is on a preserve list because Settings treats an existing regular file there as user-owned; an incompatible node is a copy failure and prevents the completion stamp. `templates/` has NO preserve list: the bundled `templates/title.md` (`# %no%` plus a trailing `@@` cursor mark, so a new note opens with a level-1 heading matching its base name and the caret on the blank line below) is overwritten on every version bump, so a user who wants a variant must save it under a different name; user-created templates are untouched because only bundled paths are written.
 
 Bundled help lives in `docs/en_US/` and `docs/zh_CN/`. After translators load, `main()` initializes
 `DocsUtils` with the effective locale and the installed `docs/` path. The Settings menu opens the
@@ -166,6 +166,26 @@ older primaries do not acknowledge requests from the new client.
 Regression coverage: `tests/core/test_singleinstanceguard.cpp`, using unique pipe names and
 lock paths plus real child senders (including delayed startup, fragmentation and overlapping
 connections). Never exercise tests against the production `vnote` pipe or lock.
+
+#### Agent / manual testing bypass
+
+`vnote --no-single-instance [paths...]` starts an independent process without acquiring the
+instance lock, listening for IPC, or forwarding files/show requests to another process.
+`--detached-view` can be combined with it; the files open in that process's detached window.
+Without the flag, the normal guard and fail-closed behavior are unchanged.
+
+**Testing only; not a sandbox.** The flag does not isolate config, session, resource installation,
+WebEngine storage, notebooks, or OS integration. Concurrent processes sharing those paths can
+clobber data. Use a separate disposable portable deployment with an existing `config/` directory
+next to its executable (VNote uses `config/app/` and `config/local/`) and separate scratch files
+or notebooks. Do not point an agent at a running user's profile or notebook.
+
+For automation, start each disposable copy with a fresh empty portable profile. Reusing a saved
+session also runs normal launch-on-login reconciliation and can change the user's Windows Run
+entry. Changing `TEMP`/`TMP` alone isolates neither config nor the fixed `vnote` IPC name; guard
+regression tests must keep using their unique server/lock overrides. The bypass is launch-scoped:
+in-app restart drops CLI arguments and the replacement uses the normal guard. Relaunch explicitly
+with the flag when another unguarded run is needed.
 
 ### Ctrl+Alt Shortcut Filtering
 

@@ -625,9 +625,14 @@ int main(int argc, char *argv[]) {
       break;
     }
 
-    // Guarding.
+    // Explicit testing bypass: do not acquire the lock or connect/listen for IPC.
     SingleInstanceGuard guard;
-    const auto guardResult = guard.tryRun();
+    const auto guardResult =
+        cmdOptions.m_noSingleInstance ? SingleInstanceGuard::TryRunResult::Primary : guard.tryRun();
+    if (cmdOptions.m_noSingleInstance) {
+      qWarning() << "Single-instance lock and IPC disabled for testing;"
+                    " use separate config and notebooks to avoid concurrent writes";
+    }
     if (guardResult != SingleInstanceGuard::TryRunResult::Primary) {
       if (guardResult == SingleInstanceGuard::TryRunResult::Secondary) {
         if (!cmdOptions.m_pathsToOpen.isEmpty()) {
@@ -653,7 +658,7 @@ int main(int argc, char *argv[]) {
       break;
     }
 
-    // The guard is already listening, while MainWindow2 does not exist yet.
+    // Unless bypassed for testing, the guard is listening before MainWindow2 exists.
     // Both the splash and ensureExtraData() process events, so retain any
     // requests arriving during startup and replay them once the final handlers
     // are connected below.
@@ -689,9 +694,8 @@ int main(int argc, char *argv[]) {
     splash->show();
     app.processEvents();
 
-    // Only the primary may install bundled data. Besides avoiding duplicate
-    // work, this prevents a rejected secondary launch from overwriting themes
-    // or web resources while the running primary is using them.
+    // Rejected secondary launches never install bundled data over a running primary.
+    // The testing bypass proceeds too, so it must use a separate config directory.
     configMgr.initAfterQtAppStarted();
 
     // Create ThemeService after bundled themes have been installed.
@@ -808,7 +812,7 @@ int main(int argc, char *argv[]) {
     qInfo() << "ActivityStatsService registered";
 
     // Reconcile the launch-on-login registration (config is the intent).
-    // Primary instance only: we are past SingleInstanceGuard here.
+    // Guarded primary or explicit testing bypass only.
     // Skipped when no session config was read: the default false would otherwise look like a
     // deliberate "off" and REMOVE a Run entry the user actually wants.
     if (configMgr.isSessionConfigLoaded() &&

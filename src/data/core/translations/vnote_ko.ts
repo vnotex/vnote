@@ -58,6 +58,11 @@
         <source>WebEngine with GPU disabled.</source>
         <translation>WebEngine GPU를 비활성화합니다.</translation>
     </message>
+    <message>
+        <location line="+7"/>
+        <source>Skip the single-instance lock and IPC (testing only). Use separate config and notebooks.</source>
+        <translation>단일 인스턴스 잠금과 IPC를 건너뜁니다(테스트 전용). 별도의 설정과 노트북을 사용하세요.</translation>
+    </message>
 </context>
 <context>
     <name>CommentColor</name>

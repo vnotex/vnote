@@ -29,6 +29,9 @@ public:
 
   // Whether to open the provided files in a detached view split.
   bool m_detachedView = false;
+
+  // Testing only: skip the instance lock and IPC, without isolating user data.
+  bool m_noSingleInstance = false;
 };
 
 #endif // COMMANDLINEOPTIONS_H

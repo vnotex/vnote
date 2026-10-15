@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Add testing-only `--no-single-instance` to skip the instance lock and IPC; config and notebooks are not isolated, so use a separate disposable portable profile and test data
 * Remove redundant text-editor and Markdown zoom controls from Settings; adjust zoom directly in the editor
 * Remember Markdown read zoom, shared text-editor zoom and mind-map fixed or Fit zoom in session state
 * Show the configured shortcut and tooltip on the mind-map context-menu Shortcuts Help action

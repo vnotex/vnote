@@ -59,6 +59,13 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
     parser.addOption(webDisableGpu);
   }
 
+  const QCommandLineOption noSingleInstanceOpt(
+      "no-single-instance",
+      QCoreApplication::translate("CommandLineOptions",
+                                  "Skip the single-instance lock and IPC (testing only). "
+                                  "Use separate config and notebooks."));
+  parser.addOption(noSingleInstanceOpt);
+
   if (!parser.parse(p_arguments)) {
     m_errorMsg = parser.errorText();
     return ParseResult::Error;
@@ -97,6 +104,10 @@ CommandLineOptions::ParseResult CommandLineOptions::parse(const QStringList &p_a
 
   if (parser.isSet(detachedViewOpt)) {
     m_detachedView = true;
+  }
+
+  if (parser.isSet(noSingleInstanceOpt)) {
+    m_noSingleInstance = true;
   }
 
   return ParseResult::Ok;

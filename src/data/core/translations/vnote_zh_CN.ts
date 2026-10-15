@@ -58,6 +58,11 @@
         <source>WebEngine with GPU disabled.</source>
         <translation>禁用 WebEngine GPU 加速。</translation>
     </message>
+    <message>
+        <location line="+7"/>
+        <source>Skip the single-instance lock and IPC (testing only). Use separate config and notebooks.</source>
+        <translation>跳过单实例锁和进程间通信（仅用于测试）。请使用独立的配置和笔记本。</translation>
+    </message>
 </context>
 <context>
     <name>CommentColor</name>

@@ -58,6 +58,11 @@
         <source>WebEngine with GPU disabled.</source>
         <translation>WebEngine の GPU を無効にします。</translation>
     </message>
+    <message>
+        <location line="+7"/>
+        <source>Skip the single-instance lock and IPC (testing only). Use separate config and notebooks.</source>
+        <translation>単一インスタンスのロックと IPC をスキップします（テスト専用）。別の設定とノートブックを使用してください。</translation>
+    </message>
 </context>
 <context>
     <name>CommentColor</name>
