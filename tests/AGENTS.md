@@ -228,34 +228,73 @@ add_custom_command(TARGET test_clipboard_image POST_BUILD
 
 **This is a verification trap**: when the loader dialog blocks the process, the OS reports the process as alive (it has a PID, is technically running), so naive checks like `Start-Process … -PassThru` + `Sleep` + `HasExited` return `$false` → you falsely conclude the binary started. The process is actually frozen in pre-WinMain limbo waiting for someone to click the dialog. `Stop-Process -Force` afterwards silently dismisses the dialog and the lie is preserved.
 
-**Correct smoke-test pattern (PowerShell):**
+### Agent GUI smoke testing (Windows)
+
+Use `--no-single-instance` to test a separate VNote process without closing the user's running
+instance. **It skips locking and IPC, not data isolation.** Never launch the agent's GUI smoke test
+against the normal profile or real notebooks. Create a fresh portable copy for each run; its
+existing `config/` folder redirects config, session and WebEngine data to that copy.
+
+Before using this recipe, check the OS Documents folder's `my_notebook` path. If it is missing or
+an empty directory, first-run setup can create/open a bundled notebook there, **outside the portable
+copy**; use a disposable OS account instead. Do not edit, empty, or delete the user's directory to
+satisfy the collision guard. Continue testing only the scratch file in the disposable copy.
+
+Run from the repository root after building `vnote`. Set `$build` to the build you just verified;
+the example derives the matching Qt runtime from its CMake cache, rather than mixing Qt versions.
+Run both blocks in the same persistent PowerShell terminal, keeping it open during GUI inspection
+and cleanup; avoid a one-shot wrapper that captures inherited process pipes.
 
 ```powershell
-# 1. Prepend Qt bin + VTextEdit dir to PATH so the loader resolves all DLLs.
-$env:PATH = "C:/Qt/6.9.3/msvc2022_64/bin;" +
-            "$PWD/build-debug/libs/vtextedit/src;" +
-            $env:PATH
+$ErrorActionPreference = "Stop"
+$build = "build-debug" # Replace with the existing build you just compiled
+$qtDir = (Select-String -Path "$build/CMakeCache.txt" -Pattern '^Qt[56]_DIR:PATH=' |
+          Where-Object { $_.Line -notmatch 'NOTFOUND$' } | Select-Object -First 1).Line
+if (-not $qtDir) { throw "No configured Qt directory in $build/CMakeCache.txt" }
+$qtBin = [IO.Path]::GetFullPath((Join-Path ($qtDir -split '=', 2)[1] "../../../bin"))
+$env:PATH = "$qtBin;" + (Resolve-Path "$build/libs/vtextedit/src").Path + ";" + $env:PATH
+$env:QT_QPA_PLATFORM_PLUGIN_PATH = Join-Path $qtBin "../plugins/platforms"
+$env:QTWEBENGINEPROCESS_PATH = Join-Path $qtBin "QtWebEngineProcess.exe"
 
-# 2. Launch vnote.exe.
-$proc = Start-Process -FilePath "build-debug/src/vnote.exe" -PassThru -WindowStyle Hidden
-Start-Sleep -Seconds 5
-
-# 3. Verify the process actually loaded VTextEdit.dll — NOT just HasExited.
-#    If the loader dialog blocked the process, $proc.Modules will throw or be empty.
-$loaded = $false
-try {
-  $proc.Refresh()
-  $loaded = ($proc.Modules | Where-Object { $_.ModuleName -ieq "VTextEdit.dll" }).Count -gt 0
-} catch {}
-if ($proc.HasExited) {
-  Write-Output "FAIL: vnote.exe exited with code $($proc.ExitCode) within 5s"
-} elseif (-not $loaded) {
-  Write-Output "FAIL: vnote.exe alive but VTextEdit.dll not loaded — likely a loader dialog"
-} else {
-  Write-Output "PASS: vnote.exe alive with VTextEdit.dll loaded after 5s"
+$smoke = Join-Path $build ("agent-smoke-" + [guid]::NewGuid().ToString("N"))
+New-Item -ItemType Directory -Path "$smoke/config" | Out-Null
+Copy-Item "$build/src/vnote.exe", "$build/src/vnote_extra.rcc", "$build/src/qt.conf" $smoke
+if (Test-Path "$build/src/translations") {
+  Copy-Item "$build/src/translations" "$smoke/translations" -Recurse
 }
-Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+Set-Content -Path "$smoke/smoke.txt" -Value "Disposable agent smoke-test note" -Encoding UTF8
+$proc = Start-Process -FilePath "$smoke/vnote.exe" -PassThru `
+  -ArgumentList @("--no-single-instance", "--log-stderr", "`"$smoke/smoke.txt`"") `
+  -RedirectStandardError "$smoke/stderr.log" `
+  -RedirectStandardOutput "$smoke/stdout.log"
+Start-Sleep -Seconds 5
+$proc.Refresh()
+if ($proc.HasExited) { throw "VNote exited with $($proc.ExitCode); inspect $smoke/stderr.log" }
+if (-not ($proc.Modules | Where-Object { $_.ModuleName -like "VTextEdit*.dll" })) {
+  throw "VTextEdit not loaded: check runtime DLLs, not just process liveness"
+}
+Write-Output "Inspect PID $($proc.Id): its own window must display smoke.txt and the note text"
 ```
+
+The runtime check is only a prerequisite: inspect the **actual window and requested file**, and
+exercise the feature under test. The main window title can remain `VNote`; do not require the file
+name in that title. Startup/file-open diagnostics are in `$smoke/stderr.log`. Add `--detached-view`
+when testing detached windows. Use only scratch notes/notebooks and no production sync credentials.
+
+Quit through VNote's UI (answer **No** if asked to minimize to the system tray), allow save/sync
+workers to drain, then clean up only this run's copy:
+
+```powershell
+$proc.WaitForExit()
+Remove-Item -LiteralPath $smoke -Recurse -Force
+```
+
+Do not reuse the generated profile for the next run: loading its saved session also performs
+normal Windows launch-on-login reconciliation. Do not enable launch-on-login in a disposable copy.
+In-app restart drops the flag and uses the normal guard; start another fresh copy explicitly instead.
+Changing `TEMP`/`TMP` does not isolate the fixed IPC name. For guard/forwarding tests use the unique
+server/lock overrides in `test_singleinstanceguard`, never the user's production pipe or lock.
+Behavior contract: [Agent / manual testing bypass](../src/core/AGENTS.md#agent--manual-testing-bypass).
 
 The same PATH prepend is required before running parent `test_*.exe` directly. `ctest --test-dir build-debug` inherits the caller's PATH, so set it once at the start of the session.
 
