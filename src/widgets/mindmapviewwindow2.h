@@ -6,6 +6,7 @@
 
 #include "viewwindow2.h"
 
+class QActionGroup;
 class QComboBox;
 class QShortcut;
 
@@ -62,8 +63,10 @@ protected:
 private:
   void setupUI();
   void setupToolBar();
+  void setupLayoutMenu(QToolBar *p_toolBar);
   void connectEditorSignals();
   void syncZoomControls();
+  void syncLayoutControls();
   void syncInsertionActions();
   void refreshInsertionShortcuts();
   void setupOutlineProvider();
@@ -76,6 +79,8 @@ private:
   // Owned by QObject.
   MindMapEditor *m_editor = nullptr;
   QMetaObject::Connection m_toolsPanelFocusConn;
+  QAction *m_layoutAction = nullptr;
+  QActionGroup *m_layoutActionGroup = nullptr;
   QAction *m_presentationAction = nullptr;
   PresentationToolBarEffect *m_presentationEffect = nullptr;
   QColor m_presentationBackground;

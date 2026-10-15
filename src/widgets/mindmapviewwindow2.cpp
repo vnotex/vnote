@@ -1,10 +1,12 @@
 #include "mindmapviewwindow2.h"
 
 #include <QAction>
+#include <QActionGroup>
 #include <QApplication>
 #include <QComboBox>
 #include <QCoreApplication>
 #include <QLineEdit>
+#include <QMenu>
 #include <QPainter>
 #include <QPalette>
 #include <QPointer>
@@ -229,6 +231,71 @@ void MindMapViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
   }
 }
 
+void MindMapViewWindow2::setupLayoutMenu(QToolBar *p_toolBar) {
+  using LayoutDirection = m3::qt::MindMapEditor::LayoutDirection;
+  const auto iconName = QStringLiteral("view_mode_editor.svg");
+  m_layoutAction = p_toolBar->addAction(
+      ViewWindowToolBarHelper2::generateIcon(getServices(), iconName), tr("Layout"));
+  m_layoutAction->setObjectName(QStringLiteral("mindMapLayoutAction"));
+  m_layoutAction->setProperty("iconName", iconName);
+  auto *menu = new QMenu(p_toolBar);
+  menu->setObjectName(QStringLiteral("mindMapLayoutMenu"));
+  m_layoutAction->setMenu(menu);
+  m_layoutActionGroup = new QActionGroup(menu);
+  m_layoutActionGroup->setExclusive(true);
+  const auto addMode = [this, menu](const QString &p_label, LayoutDirection p_direction) {
+    auto *action = menu->addAction(p_label);
+    action->setCheckable(true);
+    action->setData(static_cast<int>(p_direction));
+    m_layoutActionGroup->addAction(action);
+  };
+  addMode(tr("Balanced"), LayoutDirection::Balanced);
+  addMode(tr("Right"), LayoutDirection::Right);
+  addMode(tr("Left"), LayoutDirection::Left);
+  addMode(tr("Outline"), LayoutDirection::Outline);
+  connect(m_layoutActionGroup, &QActionGroup::triggered, this, [this](QAction *p_action) {
+    const auto direction = static_cast<LayoutDirection>(p_action->data().toInt());
+    if (!m_contentLoaded || !m_editor->isEnabled() || direction == m_editor->layoutDirection()) {
+      syncLayoutControls();
+      return;
+    }
+    const QPointer<MindMapViewWindow2> guard(this);
+    const auto generation = m_generation;
+    const bool committed = m_editor->commitActiveEdit();
+    if (!guard) {
+      return;
+    }
+    if (committed && generation == m_generation && m_contentLoaded && m_editor->isEnabled()) {
+      m_editor->setLayoutDirection(direction);
+    }
+    if (guard) {
+      syncLayoutControls();
+    }
+  });
+  connect(m_editor, &m3::qt::MindMapEditor::layoutDirectionChanged, this,
+          &MindMapViewWindow2::syncLayoutControls);
+  connect(menu, &QMenu::aboutToShow, this, &MindMapViewWindow2::syncLayoutControls);
+  if (auto *button = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(m_layoutAction))) {
+    button->setPopupMode(QToolButton::InstantPopup);
+    button->setProperty(PropertyDefs::c_toolButtonWithoutMenuIndicator, true);
+  }
+  syncLayoutControls();
+}
+
+void MindMapViewWindow2::syncLayoutControls() {
+  if (!m_layoutAction) {
+    return;
+  }
+  const bool available = m_contentLoaded && m_editor->isEnabled();
+  m_layoutAction->setEnabled(available);
+  m_layoutActionGroup->setEnabled(available);
+  const int direction = static_cast<int>(m_editor->layoutDirection());
+  for (auto *action : m_layoutActionGroup->actions()) {
+    // Let QActionGroup observe changed(); setChecked() does not emit triggered().
+    action->setChecked(action->data().toInt() == direction);
+  }
+}
+
 void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   p_toolBar->addSeparator();
   const auto addZoomAction = [this, p_toolBar](const QString &p_name, bool p_zoomIn) {
@@ -300,6 +367,7 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   });
   syncZoomControls();
 
+  setupLayoutMenu(p_toolBar);
   const auto iconName = QStringLiteral("presentation_editor.svg");
   m_presentationAction = p_toolBar->addAction(
       ViewWindowToolBarHelper2::generateIcon(getServices(), iconName), tr("Presentation Mode"));
@@ -371,6 +439,7 @@ void MindMapViewWindow2::syncEditorFromBuffer() {
   });
   m_contentLoaded = false;
   syncZoomControls();
+  syncLayoutControls();
   syncInsertionActions();
   m_lastEditorError.clear();
   clearOutline();
@@ -418,6 +487,7 @@ void MindMapViewWindow2::syncEditorFromBuffer() {
   m_lastKnownRevision = buffer.isValid() ? buffer.getRevision() : 0;
   m_propagateEditorToBuffer = propagate;
   syncZoomControls();
+  syncLayoutControls();
   syncInsertionActions();
   if (m_contentLoaded) {
     m_loadErrorBanner->hide();

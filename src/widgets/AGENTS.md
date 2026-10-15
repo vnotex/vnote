@@ -221,7 +221,7 @@ secondary actions in a three-dot **Menu** (`menu.svg`):
 | spacer | |
 | `addAdditionalRightToolBarActions()` | Markdown: Outline; PDF: sidebar, Outline, Find And Replace, Presentation Mode, page and zoom controls |
 | Find And Replace | Default position; PDF opts out because Find is beside Outline |
-| `addAdditionalViewToolBarActions()` | Text and Markdown: Presentation Mode; Mind Map: zoom controls, then Presentation Mode |
+| `addAdditionalViewToolBarActions()` | Text and Markdown: Presentation Mode; Mind Map: zoom controls, Layout, then Presentation Mode |
 | Menu | Readable Width and Print, when `isPrintSupported()` |
 
 `addAdditionalToolBarMenuAction()` lets PDF reuse its existing menu action; the
@@ -240,7 +240,7 @@ Text keeps **Find And Replace → Presentation Mode → Menu**. Markdown keeps
 **Outline → Find And Replace → Presentation Mode → Menu**. PDF keeps
 **Outline → Find And Replace → Presentation Mode** together before page/zoom controls.
 Mind Map adds Lucide Undo and Redo after the left common actions and keeps
-Outline → Find And Replace → Zoom Out → percentage combo → Zoom In → Presentation Mode → Menu.
+Outline → Find And Replace → Zoom Out → percentage combo → Zoom In → Layout → Presentation Mode → Menu.
 Zoom controls observe the native editor's `zoomChanged` signal and `isZoomFit()`
 state, including new/load reset, deferred explicit Fit, shortcuts and Ctrl+wheel.
 New/open/reload starts at 100%, centering the root after the tab's show/resize layout
@@ -262,6 +262,15 @@ borrows the editor's editing command actions; the editor retains shortcuts,
 inline-edit commits and history availability. Invalid content gates native mutations through read-only mode until
 a successful reload restores the buffer policy. Widget-hosted Settings and Dashboard
 retain their content-owned toolbars; locked-note placeholders have none.
+
+The mind-map **Layout** action owns a menu with m3's **Balanced**, **Right**, **Left** and
+**Outline** modes (Outline is the indented tree view). Keep it immediately before Presentation
+Mode and reachable through toolbar overflow. Its exclusive checks follow `layoutDirectionChanged`
+and the actual editor state after a rejected command; do not block QAction `changed` signals,
+which maintain QActionGroup's current member. Accept an active inline draft before switching,
+and reject application to a replacement buffer. Layout changes alone do not dirty the document,
+consume undo history or reset zoom/selection. Read-only maps remain switchable; unloaded or
+invalid content disables both the button and its menu actions. Layout stays editor-local.
 
 #### Mind-map resource insertion
 

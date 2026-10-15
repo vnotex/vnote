@@ -5372,6 +5372,26 @@
 <context>
     <name>vnotex::MindMapViewWindow2</name>
     <message>
+        <source>Layout</source>
+        <translation>레이아웃</translation>
+    </message>
+    <message>
+        <source>Balanced</source>
+        <translation>균형</translation>
+    </message>
+    <message>
+        <source>Right</source>
+        <translation>오른쪽</translation>
+    </message>
+    <message>
+        <source>Left</source>
+        <translation>왼쪽</translation>
+    </message>
+    <message>
+        <source>Outline</source>
+        <translation>개요</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+190"/>
         <source>Presentation Mode</source>
         <translation>프레젠테이션 모드</translation>
