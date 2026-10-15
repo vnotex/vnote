@@ -121,7 +121,6 @@ ViewArea2::~ViewArea2() {
   m_detachedWindows.clear();
   for (auto *dw : detached) {
     if (dw) {
-      dw->setReattaching(true);
       delete dw;
     }
   }
@@ -1343,7 +1342,6 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
     if (detached && detached->getViewSplit() &&
         detached->getViewSplit()->getViewWindowCount() == 0) {
       m_detachedWindows.removeAll(detached.data());
-      detached->setReattaching(true);
       m_controller->reattachDetachedWorkspace(workspaceId, QString(), {});
       detached->deleteLater();
     }
@@ -1492,7 +1490,7 @@ void ViewArea2::hostWorkspaceInDetachedWindow(const QString &p_workspaceId) {
 
   auto *split = dw->getViewSplit();
 
-  connect(dw, &DetachedWindow::reattachRequested, this, &ViewArea2::onReattachDetachedWindow);
+  connect(dw, &DetachedWindow::closeRequested, this, &ViewArea2::onCloseDetachedWindow);
 
   // Wire the minimal subset of split signals needed for a detached window:
   // tab close (routes through the controller) and current-tab tracking (updates
@@ -1518,7 +1516,6 @@ bool ViewArea2::moveViewWindowToDetached(ID p_windowId, const QString &p_srcWork
     for (auto *dw : m_detachedWindows) {
       if (dw->getWorkspaceId() == p_detachedWorkspaceId) {
         m_detachedWindows.removeAll(dw);
-        dw->setReattaching(true);
         dw->deleteLater();
         break;
       }
@@ -1536,8 +1533,40 @@ bool ViewArea2::moveViewWindowToDetached(ID p_windowId, const QString &p_srcWork
   return true;
 }
 
-void ViewArea2::onReattachDetachedWindow(DetachedWindow *p_window) {
-  reattachDetachedWindow(p_window);
+void ViewArea2::onCloseDetachedWindow(DetachedWindow *p_window) {
+  if (!p_window || !m_detachedWindows.contains(p_window)) {
+    return;
+  }
+  auto *split = p_window->getViewSplit();
+  if (!split) {
+    return;
+  }
+
+  QPointer<ViewArea2> area(this);
+  QPointer<DetachedWindow> window(p_window);
+  QVector<ID> windowIds;
+  windowIds.reserve(split->count());
+  for (int idx = 0; idx < split->count(); ++idx) {
+    if (auto *win = qobject_cast<ViewWindow2 *>(split->widget(idx))) {
+      windowIds.append(win->getViewWindowId());
+    }
+  }
+
+  // Prompts can run nested event loops: retain IDs, not hosted view pointers.
+  for (ID id : windowIds) {
+    if (!area || !window || !m_detachedWindows.contains(window.data())) {
+      return;
+    }
+    auto *win = windowForId(id);
+    auto *hostedSplit = window->getViewSplit();
+    if (!win || !hostedSplit || hostedSplit->indexOf(win) == -1) {
+      continue;
+    }
+    const bool closed = m_controller->closeViewWindow(id, /*p_force=*/false);
+    if (!area || !window || !closed) {
+      return;
+    }
+  }
 }
 
 void ViewArea2::reattachDetachedWindow(DetachedWindow *p_window) {
@@ -1561,7 +1590,6 @@ void ViewArea2::reattachDetachedWindow(DetachedWindow *p_window) {
   if (!target) {
     qWarning() << "ViewArea2::reattachDetachedWindow: no main split to reattach into; "
                   "keeping detached window open";
-    p_window->setReattaching(false);
     p_window->show();
     return;
   }
@@ -1582,7 +1610,6 @@ void ViewArea2::reattachDetachedWindow(DetachedWindow *p_window) {
   }
 
   m_detachedWindows.removeAll(p_window);
-  p_window->setReattaching(true);
 
   m_controller->reattachDetachedWorkspace(detWsId, target->getWorkspaceId(), bufferIds);
 
@@ -1595,7 +1622,6 @@ void ViewArea2::reattachDetachedWindow(DetachedWindow *p_window) {
 void ViewArea2::reattachAllDetachedWindows() {
   const auto detached = m_detachedWindows; // copy: reattach mutates m_detachedWindows
   for (auto *dw : detached) {
-    dw->setReattaching(true);
     reattachDetachedWindow(dw);
   }
 }

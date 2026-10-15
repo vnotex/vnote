@@ -3,6 +3,7 @@
 #include <QApplication>
 #include <QCloseEvent>
 #include <QHBoxLayout>
+#include <QPointer>
 #include <QSplitter>
 
 #include "viewsplit2.h"
@@ -37,8 +38,6 @@ ViewSplit2 *DetachedWindow::getViewSplit() const { return m_viewSplit; }
 
 const QString &DetachedWindow::getWorkspaceId() const { return m_workspaceId; }
 
-void DetachedWindow::setReattaching(bool p_reattaching) { m_reattaching = p_reattaching; }
-
 void DetachedWindow::setStayOnTop(bool p_enabled) {
   // This window uses the system title bar (no qwindowkit), so mutating the window
   // flags is safe. It may hide/recreate the native window, hence the re-show.
@@ -55,11 +54,16 @@ void DetachedWindow::setStayOnTop(bool p_enabled) {
 }
 
 void DetachedWindow::closeEvent(QCloseEvent *p_event) {
-  if (!m_reattaching) {
-    // Guard against re-entrancy: ViewArea2's handler moves the windows out and
-    // schedules this window for deletion synchronously.
-    m_reattaching = true;
-    emit reattachRequested(this);
+  // Only the owner may tear down the host; Cancel must not hide it.
+  p_event->ignore();
+  if (m_closeInProgress) {
+    return;
   }
-  QWidget::closeEvent(p_event);
+
+  m_closeInProgress = true;
+  QPointer<DetachedWindow> guard(this);
+  emit closeRequested(this);
+  if (guard) {
+    guard->m_closeInProgress = false;
+  }
 }

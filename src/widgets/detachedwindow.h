@@ -16,8 +16,8 @@ class ViewSplit2;
 //
 // DetachedWindow is a pure View: it performs no business logic. Workspace
 // creation/deletion and window transfer are orchestrated by ViewAreaController
-// and ViewArea2. On close it emits reattachRequested() so ViewArea2 can pull the
-// remaining windows back into the main area and tear down the workspace.
+// and ViewArea2. On close it emits closeRequested() so ViewArea2 can close the
+// hosted tabs through the normal cancellable close policy.
 class DetachedWindow : public QWidget {
   Q_OBJECT
 public:
@@ -30,15 +30,10 @@ public:
   // The detached vxcore workspace ID this window hosts.
   const QString &getWorkspaceId() const;
 
-  // When true, closeEvent will NOT emit reattachRequested(). Set by ViewArea2
-  // when it is the one driving the teardown (e.g. app-quit reattach), to avoid
-  // re-entrant reattach handling.
-  void setReattaching(bool p_reattaching);
-
 signals:
-  // Emitted from closeEvent when the user closes the window. ViewArea2 reattaches
-  // the remaining tab(s) into the main area and destroys the detached workspace.
-  void reattachRequested(DetachedWindow *p_window);
+  // The owner closes the hosted tabs and tears down the host after the last close.
+  // Cancellation leaves the remaining tabs visible in this window.
+  void closeRequested(DetachedWindow *p_window);
 
 protected:
   void closeEvent(QCloseEvent *p_event) override;
@@ -54,7 +49,7 @@ private:
 
   ViewSplit2 *m_viewSplit = nullptr;
 
-  bool m_reattaching = false;
+  bool m_closeInProgress = false;
 };
 
 } // namespace vnotex

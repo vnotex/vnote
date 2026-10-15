@@ -115,6 +115,22 @@ The split-pane editor area, designed around vxcore workspaces:
 - `ViewSplit2` — QTabWidget-based split pane; each instance maps 1:1 to a vxcore workspace
 - `ViewWindow2` — abstract base for file viewer windows; receives a `Buffer2` in its constructor
 
+#### Detached-window close
+
+Closing a detached title bar (including Alt+F4) closes its hosted tabs in tab order
+through `ViewAreaController::closeViewWindow(id, false)`, not by reattaching them.
+Save/Discard/Cancel, close hooks and buffer cleanup follow normal tab closure. The
+first cancellation stops the sequence: earlier tabs stay closed, while the cancelled
+and unprocessed tabs remain visible in the same detached window.
+
+`DetachedWindow` ignores the native close event and emits an owner-mediated
+`closeRequested`; its transient reentrancy guard resets after cancellation. Keep
+`QPointer` lifetime guards across modal prompts and snapshot IDs, not raw view pointers.
+Final-tab cleanup belongs to `ViewArea2::closeViewWindow`, including deferred encrypted
+view destruction; an empty host-close snapshot must not eagerly delete its workspace.
+Application quit remains separate: reattach all detached tabs before session save and
+the quit-specific buffer-close path.
+
 #### Image viewers
 
 `ImageViewWindow` is a read-only `ViewWindow2`: it decodes the first oriented frame directly

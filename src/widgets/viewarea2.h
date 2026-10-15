@@ -161,7 +161,7 @@ private slots:
   void onRemoveSplitRequested(ViewSplit2 *p_split);
   void onRemoveSplitAndWorkspaceRequested(ViewSplit2 *p_split);
   void onDetachViewWindowRequested(ViewSplit2 *p_split, ViewWindow2 *p_win);
-  void onReattachDetachedWindow(DetachedWindow *p_window);
+  void onCloseDetachedWindow(DetachedWindow *p_window);
 
 private:
   void appendReadyNavigationTargets();
@@ -178,8 +178,7 @@ private:
   ViewSplit2 *detachedSplitForWorkspace(const QString &p_workspaceId) const;
 
   // Move all windows from a detached window back into a main split and tear down
-  // the detached workspace. Safe to call whether triggered by the window's close
-  // event or by app-quit teardown (reattachAllDetachedWindows).
+  // the detached workspace for app-quit teardown (reattachAllDetachedWindows).
   void reattachDetachedWindow(DetachedWindow *p_window);
 
   // Reattach every open detached window (used on app quit so their buffers route
