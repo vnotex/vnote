@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Move Copy/Paste to the second section of mind-map node context menus, directly below node creation
 * Add Expand All and Collapse All to mind-map node context menus, recursively folding only that subtree, including in read-only maps
 * Add testing-only `--no-single-instance` to skip the instance lock and IPC; config and notebooks are not isolated, so use a separate disposable portable profile and test data
 * Remove redundant text-editor and Markdown zoom controls from Settings; adjust zoom directly in the editor
