@@ -18,6 +18,7 @@
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
+#include <core/sessionconfig.h>
 #include <widgets/widgetsfactory.h>
 
 #include "editorpage.h"
@@ -60,7 +61,8 @@ void MarkdownEditorPage::loadInternal() {
   m_autoSectionNumberInEditModeCheckBox->setChecked(
       markdownConfig.getAutoSectionNumberInEditModeEnabled());
 
-  m_zoomFactorSpinBox->setValue(markdownConfig.getZoomFactorInReadMode());
+  m_zoomFactorSpinBox->setValue(
+      m_services.get<ConfigMgr2>()->getSessionConfig().getMarkdownZoomFactorInReadMode());
 
   m_concealmentCheckBox->setChecked(markdownConfig.getConcealmentEnabled());
 
@@ -143,7 +145,8 @@ bool MarkdownEditorPage::saveInternal() {
   markdownConfig.setAutoSectionNumberInEditModeEnabled(
       m_autoSectionNumberInEditModeCheckBox->isChecked());
 
-  markdownConfig.setZoomFactorInReadMode(m_zoomFactorSpinBox->value());
+  m_services.get<ConfigMgr2>()->getSessionConfig().setMarkdownZoomFactorInReadMode(
+      m_zoomFactorSpinBox->value());
 
   markdownConfig.setConcealmentEnabled(m_concealmentCheckBox->isChecked());
 

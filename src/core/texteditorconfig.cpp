@@ -41,8 +41,6 @@ void TextEditorConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_highlightWhitespace = READBOOL(QStringLiteral("highlightWhitespace"));
 
-  m_zoomDelta = READINT(QStringLiteral("zoomDelta"));
-
   m_spellCheckEnabled = READBOOL(QStringLiteral("spellCheck"));
 
   m_lineSpacing = p_jobj.value(QStringLiteral("lineSpacing")).toDouble(1.0);
@@ -58,7 +56,6 @@ QJsonObject TextEditorConfig::toJson() const {
   obj[QStringLiteral("expandTab")] = m_expandTab;
   obj[QStringLiteral("tabStopWidth")] = m_tabStopWidth;
   obj[QStringLiteral("highlightWhitespace")] = m_highlightWhitespace;
-  obj[QStringLiteral("zoomDelta")] = m_zoomDelta;
   obj[QStringLiteral("spellCheck")] = m_spellCheckEnabled;
   obj[QStringLiteral("lineSpacing")] = m_lineSpacing;
   return obj;
@@ -216,10 +213,6 @@ void TextEditorConfig::setHighlightWhitespaceEnabled(bool p_enabled) {
 int TextEditorConfig::getTabStopWidth() const { return m_tabStopWidth; }
 
 void TextEditorConfig::setTabStopWidth(int p_width) { updateConfig(m_tabStopWidth, p_width, this); }
-
-int TextEditorConfig::getZoomDelta() const { return m_zoomDelta; }
-
-void TextEditorConfig::setZoomDelta(int p_delta) { updateConfig(m_zoomDelta, p_delta, this); }
 
 bool TextEditorConfig::isSpellCheckEnabled() const { return m_spellCheckEnabled; }
 

@@ -19,18 +19,13 @@ using namespace vnotex;
 
 ConfigMgr2::~ConfigMgr2() = default;
 
-void ConfigMgr2::updateMainConfig(const QJsonObject &p_jobj) {
-  Q_UNUSED(p_jobj);
-}
+void ConfigMgr2::updateMainConfig(const QJsonObject &p_jobj) { Q_UNUSED(p_jobj); }
 
-void ConfigMgr2::updateSessionConfig(const QJsonObject &p_jobj) {
-  Q_UNUSED(p_jobj);
-}
+void ConfigMgr2::updateSessionConfig(const QJsonObject &p_jobj) { Q_UNUSED(p_jobj); }
 
 void ConfigMgr2::doWriteMainConfig() {}
 
 void ConfigMgr2::doWriteSessionConfig() {}
-
 
 CoreConfig &ConfigMgr2::getCoreConfig() {
   static CoreConfig *s = nullptr;
@@ -42,6 +37,22 @@ EditorConfig &ConfigMgr2::getEditorConfig() {
   static EditorConfig *s = nullptr;
   Q_ASSERT_X(false, "stub", "ConfigMgr2::getEditorConfig() called in test - not expected");
   return *s; // unreachable
+}
+
+SessionConfig &ConfigMgr2::getSessionConfig() {
+  qFatal("ConfigMgr2::getSessionConfig() called in static-method test");
+  Q_UNREACHABLE();
+}
+
+// --- SessionConfig stubs ---
+
+int SessionConfig::getTextEditorZoomDelta() const {
+  qFatal("SessionConfig::getTextEditorZoomDelta() called in static-method test");
+  Q_UNREACHABLE();
+}
+
+void SessionConfig::setTextEditorZoomDelta(int) {
+  qFatal("SessionConfig::setTextEditorZoomDelta() called in static-method test");
 }
 
 // --- CoreConfig stub ---

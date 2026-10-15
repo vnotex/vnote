@@ -21,6 +21,7 @@
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
+#include <core/sessionconfig.h>
 #include <core/texteditorconfig.h>
 #include <gui/utils/imageutils.h>
 #include <utils/pathutils.h>
@@ -204,6 +205,16 @@ bool MarkdownEditorController::checkAndUpdateConfigRevision() {
   if (m_markdownEditorConfigRevision != editorConfig.getMarkdownEditorConfig().revision()) {
     changed = true;
     m_markdownEditorConfigRevision = editorConfig.getMarkdownEditorConfig().revision();
+  }
+
+  const auto &sessionConfig = configMgr->getSessionConfig();
+  if (m_textEditorZoomDelta != sessionConfig.getTextEditorZoomDelta()) {
+    changed = true;
+    m_textEditorZoomDelta = sessionConfig.getTextEditorZoomDelta();
+  }
+  if (m_markdownZoomFactorInReadMode != sessionConfig.getMarkdownZoomFactorInReadMode()) {
+    changed = true;
+    m_markdownZoomFactorInReadMode = sessionConfig.getMarkdownZoomFactorInReadMode();
   }
 
   return changed;
@@ -451,10 +462,8 @@ MarkdownEditorController::currentEditorConfig() const {
 
   auto *configMgr = m_services.get<ConfigMgr2>();
   const auto &coreConfig = configMgr->getCoreConfig();
-  const auto &editorConfig = configMgr->getEditorConfig();
-  const auto &mdConfig = editorConfig.getMarkdownEditorConfig();
 
-  snapshot.zoomDelta = mdConfig.getTextEditorConfig().getZoomDelta();
+  snapshot.zoomDelta = configMgr->getSessionConfig().getTextEditorZoomDelta();
   snapshot.shortcutLeaderKey = coreConfig.getShortcutLeaderKey();
 
   return snapshot;
@@ -555,15 +564,13 @@ bool MarkdownEditorController::insertImageAsBase64(QTextCursor &p_cursor, const 
 
 int MarkdownEditorController::persistZoomDelta(int p_delta) {
   auto *configMgr = m_services.get<ConfigMgr2>();
-  auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
-  mdConfig.getTextEditorConfig().setZoomDelta(p_delta);
+  configMgr->getSessionConfig().setTextEditorZoomDelta(p_delta);
   return p_delta;
 }
 
 qreal MarkdownEditorController::persistViewerZoomFactor(qreal p_factor) {
   auto *configMgr = m_services.get<ConfigMgr2>();
-  auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
-  mdConfig.setZoomFactorInReadMode(p_factor);
+  configMgr->getSessionConfig().setMarkdownZoomFactorInReadMode(p_factor);
   return p_factor;
 }
 

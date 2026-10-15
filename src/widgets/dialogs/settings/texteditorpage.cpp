@@ -10,6 +10,7 @@
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/hookmanager.h>
+#include <core/sessionconfig.h>
 #include <core/texteditorconfig.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
@@ -233,7 +234,8 @@ void TextEditorPage::loadInternal() {
 
   m_lineSpacingSpinBox->setValue(textConfig.getLineSpacing());
 
-  m_zoomDeltaSpinBox->setValue(textConfig.getZoomDelta());
+  m_zoomDeltaSpinBox->setValue(
+      m_services.get<ConfigMgr2>()->getSessionConfig().getTextEditorZoomDelta());
 
   m_spellCheckCheckBox->setChecked(textConfig.isSpellCheckEnabled());
 }
@@ -271,7 +273,8 @@ bool TextEditorPage::saveInternal() {
 
   textConfig.setLineSpacing(m_lineSpacingSpinBox->value());
 
-  textConfig.setZoomDelta(m_zoomDeltaSpinBox->value());
+  m_services.get<ConfigMgr2>()->getSessionConfig().setTextEditorZoomDelta(
+      m_zoomDeltaSpinBox->value());
 
   textConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
 

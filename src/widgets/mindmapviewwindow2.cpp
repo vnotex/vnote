@@ -23,6 +23,7 @@
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
+#include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
 
 #include "editors/mindmapeditor.h"
@@ -290,8 +291,13 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   });
   m_zoomComboAction = p_toolBar->addWidget(m_zoomComboBox);
   m_zoomInAction = addZoomAction(QStringLiteral("zoomIn"), true);
-  connect(m_editor, &m3::qt::MindMapEditor::zoomChanged, this,
-          &MindMapViewWindow2::syncZoomControls);
+  connect(m_editor, &m3::qt::MindMapEditor::zoomChanged, this, [this](qreal p_factor, bool p_fit) {
+    if (m_contentLoaded) {
+      getServices().get<ConfigMgr2>()->getSessionConfig().setMindMapZoomFactor(p_fit ? 0.0
+                                                                                     : p_factor);
+    }
+    syncZoomControls();
+  });
   syncZoomControls();
 
   const auto iconName = QStringLiteral("presentation_editor.svg");
@@ -385,6 +391,16 @@ void MindMapViewWindow2::syncEditorFromBuffer() {
       const bool loaded = m_editor->loadContent(content);
       if (!guard || generation != m_generation) {
         return;
+      }
+      if (loaded) {
+        // Restore before accepting zoom signals: loading resets the native camera to 100%.
+        const qreal factor =
+            getServices().get<ConfigMgr2>()->getSessionConfig().getMindMapZoomFactor();
+        if (factor == 0.0) {
+          m_editor->fitToContents();
+        } else {
+          m_editor->zoom(factor / m_editor->zoomFactor());
+        }
       }
       m_contentLoaded = loaded;
     } else {

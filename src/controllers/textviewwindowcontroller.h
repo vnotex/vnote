@@ -40,7 +40,7 @@ public:
 
   // ============ Config Revision Tracking ============
 
-  // Check if editor config has changed. Updates internal revision tracking.
+  // Check if editor config or session zoom has changed. Updates internal tracking.
   // Returns true if config changed since last check.
   bool checkAndUpdateConfigRevision();
 
@@ -63,10 +63,11 @@ public:
   // @p_syntaxTheme: editor highlight theme name (from ThemeService).
   // @p_scaleFactor: screen scale factor (from WidgetUtils).
   // @p_maxContentWidth: maximum content width in pixels (0 = disabled).
-  static QSharedPointer<vte::TextEditorConfig> buildTextEditorConfigFromContent(
-      const EditorConfig &p_editorConfig, const TextEditorConfig &p_config,
-      const QString &p_themeContent, const QString &p_syntaxTheme, qreal p_scaleFactor,
-      int p_maxContentWidth = 0);
+  static QSharedPointer<vte::TextEditorConfig>
+  buildTextEditorConfigFromContent(const EditorConfig &p_editorConfig,
+                                   const TextEditorConfig &p_config, const QString &p_themeContent,
+                                   const QString &p_syntaxTheme, qreal p_scaleFactor,
+                                   int p_maxContentWidth = 0);
 
   // Build vte::TextEditorParameters from VNote config.
   static QSharedPointer<vte::TextEditorParameters>
@@ -89,6 +90,7 @@ private:
   ServiceLocator &m_services;
   int m_editorConfigRevision = 0;
   int m_textEditorConfigRevision = 0;
+  int m_textEditorZoomDelta = 0;
 };
 
 } // namespace vnotex

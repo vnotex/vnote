@@ -72,7 +72,7 @@ public:
   // ============ Config Revision Tracking ============
 
   // Check if any editor-related config has changed (EditorConfig, TextEditorConfig,
-  // MarkdownEditorConfig). Updates internal revision tracking.
+  // MarkdownEditorConfig, session zoom). Updates internal revision and zoom tracking.
   // Returns true if any config changed since last check.
   bool checkAndUpdateConfigRevision();
 
@@ -170,6 +170,8 @@ private:
   int m_editorConfigRevision = 0;
   int m_textEditorConfigRevision = 0;
   int m_markdownEditorConfigRevision = 0;
+  int m_textEditorZoomDelta = 0;
+  qreal m_markdownZoomFactorInReadMode = 1.0;
 };
 
 } // namespace vnotex

@@ -120,6 +120,8 @@ SessionConfig::~SessionConfig() {}
 void SessionConfig::fromJson(const QJsonObject &p_jobj) {
   loadCore(p_jobj);
 
+  loadEditor(p_jobj);
+
   loadStateAndGeometry(p_jobj);
 
   loadExportOption(p_jobj);
@@ -205,6 +207,42 @@ QJsonObject SessionConfig::saveCore() const {
   return coreObj;
 }
 
+void SessionConfig::loadEditor(const QJsonObject &p_session) {
+  const auto editorObj = p_session.value(QStringLiteral("editor")).toObject();
+  m_markdownZoomFactorInReadMode =
+      editorObj.value(QStringLiteral("markdownZoomFactorInReadMode")).toDouble(1.0);
+  m_textEditorZoomDelta = editorObj.value(QStringLiteral("textEditorZoomDelta")).toInt(0);
+  m_mindMapZoomFactor = editorObj.value(QStringLiteral("mindMapZoomFactor")).toDouble(1.0);
+}
+
+QJsonObject SessionConfig::saveEditor() const {
+  QJsonObject editorObj;
+  editorObj[QStringLiteral("markdownZoomFactorInReadMode")] = m_markdownZoomFactorInReadMode;
+  editorObj[QStringLiteral("textEditorZoomDelta")] = m_textEditorZoomDelta;
+  editorObj[QStringLiteral("mindMapZoomFactor")] = m_mindMapZoomFactor;
+  return editorObj;
+}
+
+qreal SessionConfig::getMarkdownZoomFactorInReadMode() const {
+  return m_markdownZoomFactorInReadMode;
+}
+
+void SessionConfig::setMarkdownZoomFactorInReadMode(qreal p_factor) {
+  updateConfig(m_markdownZoomFactorInReadMode, p_factor, this);
+}
+
+int SessionConfig::getTextEditorZoomDelta() const { return m_textEditorZoomDelta; }
+
+void SessionConfig::setTextEditorZoomDelta(int p_delta) {
+  updateConfig(m_textEditorZoomDelta, p_delta, this);
+}
+
+qreal SessionConfig::getMindMapZoomFactor() const { return m_mindMapZoomFactor; }
+
+void SessionConfig::setMindMapZoomFactor(qreal p_factor) {
+  updateConfig(m_mindMapZoomFactor, p_factor, this);
+}
+
 const QString &SessionConfig::getNewNotebookDefaultRootFolderPath() const {
   return m_newNotebookDefaultRootFolderPath;
 }
@@ -244,6 +282,7 @@ void SessionConfig::update() { getMgr()->updateSessionConfig(toJson()); }
 QJsonObject SessionConfig::toJson() const {
   QJsonObject obj;
   obj[QStringLiteral("core")] = saveCore();
+  obj[QStringLiteral("editor")] = saveEditor();
   obj[QStringLiteral("stateGeometry")] = saveStateAndGeometry();
   obj[QStringLiteral("export")] = saveExportOption();
   obj[QStringLiteral("searchOption")] = m_searchOption.toJson();

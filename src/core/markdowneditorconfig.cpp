@@ -9,7 +9,6 @@ using namespace vnotex;
 
 #define READSTR(key) readString(p_jobj, (key))
 #define READBOOL(key) readBool(p_jobj, (key))
-#define READREAL(key) readReal(p_jobj, (key))
 #define READINT(key) readInt(p_jobj, (key))
 
 MarkdownEditorConfig::MarkdownEditorConfig(
@@ -51,7 +50,6 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_autoSectionNumberInEditModeEnabled = READBOOL(QStringLiteral("autoSectionNumberInEditMode"));
   m_concealmentEnabled = READBOOL(QStringLiteral("concealment"));
   m_constrainInplacePreviewWidthEnabled = READBOOL(QStringLiteral("constrainInplacePreviewWidth"));
-  m_zoomFactorInReadMode = READREAL(QStringLiteral("zoomFactorInReadMode"));
   m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetchImagesInParseAndPaste"));
 
   m_protectFromXss = READBOOL(QStringLiteral("protectFromXss"));
@@ -106,7 +104,6 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("autoSectionNumberInEditMode")] = m_autoSectionNumberInEditModeEnabled;
   obj[QStringLiteral("concealment")] = m_concealmentEnabled;
   obj[QStringLiteral("constrainInplacePreviewWidth")] = m_constrainInplacePreviewWidthEnabled;
-  obj[QStringLiteral("zoomFactorInReadMode")] = m_zoomFactorInReadMode;
   obj[QStringLiteral("fetchImagesInParseAndPaste")] = m_fetchImagesInParseAndPaste;
   obj[QStringLiteral("protectFromXss")] = m_protectFromXss;
   obj[QStringLiteral("htmlTag")] = m_htmlTagEnabled;
@@ -291,12 +288,6 @@ bool MarkdownEditorConfig::getConstrainInplacePreviewWidthEnabled() const {
 
 void MarkdownEditorConfig::setConstrainInplacePreviewWidthEnabled(bool p_enabled) {
   updateConfig(m_constrainInplacePreviewWidthEnabled, p_enabled, this);
-}
-
-qreal MarkdownEditorConfig::getZoomFactorInReadMode() const { return m_zoomFactorInReadMode; }
-
-void MarkdownEditorConfig::setZoomFactorInReadMode(qreal p_factor) {
-  updateConfig(m_zoomFactorInReadMode, p_factor, this);
 }
 
 bool MarkdownEditorConfig::getFetchImagesInParseAndPaste() const {

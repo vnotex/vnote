@@ -140,6 +140,15 @@ public:
   bool getStartOnSystemStartup() const;
   void setStartOnSystemStartup(bool p_enabled);
 
+  qreal getMarkdownZoomFactorInReadMode() const;
+  void setMarkdownZoomFactorInReadMode(qreal p_factor);
+
+  int getTextEditorZoomDelta() const;
+  void setTextEditorZoomDelta(int p_delta);
+
+  qreal getMindMapZoomFactor() const;
+  void setMindMapZoomFactor(qreal p_factor);
+
   const ExportOption &getExportOption() const;
   void setExportOption(const ExportOption &p_option);
 
@@ -199,6 +208,10 @@ private:
 
   QJsonObject saveCore() const;
 
+  void loadEditor(const QJsonObject &p_session);
+
+  QJsonObject saveEditor() const;
+
   void loadStateAndGeometry(const QJsonObject &p_session);
 
   QJsonObject saveStateAndGeometry() const;
@@ -238,6 +251,13 @@ private:
 
   // Whether to launch VNote on system startup (effected on Windows only).
   bool m_startOnSystemStartup = false;
+
+  qreal m_markdownZoomFactorInReadMode = 1.0;
+
+  int m_textEditorZoomDelta = 0;
+
+  // Zero selects Fit instead of a fixed zoom factor.
+  qreal m_mindMapZoomFactor = 1.0;
 
   ExportOption m_exportOption;
 

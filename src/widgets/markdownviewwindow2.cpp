@@ -51,6 +51,7 @@
 #include <core/services/htmltemplateservice.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/workspacecoreservice.h>
+#include <core/sessionconfig.h>
 #include <core/theme.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
@@ -720,9 +721,6 @@ void MarkdownViewWindow2::setupTextEditor() {
   // Apply config.
   updateEditorFromConfig();
 
-  // Honour a persisted zoom delta for the in-place previews.
-  m_previewHelper->editorZoomChanged();
-
   connectViewerToEditor();
 
   // External code block highlighting pipeline.
@@ -821,7 +819,7 @@ bool MarkdownViewWindow2::setupViewer() {
   auto *adapterObj = new MarkdownViewerAdapter(getServices(), this);
 
   auto bgColor = getServices().get<ThemeService>()->getBaseBackground();
-  auto zoomFactor = mdConfig.getZoomFactorInReadMode();
+  auto zoomFactor = configMgr->getSessionConfig().getMarkdownZoomFactorInReadMode();
 
   m_viewer = new MarkdownViewer(adapterObj, this, getServices(), bgColor, zoomFactor, this,
                                 m_protectedView ? m_protectedView->page.profile : nullptr);
@@ -2295,9 +2293,8 @@ void MarkdownViewWindow2::applyReadableWidth() {
 void MarkdownViewWindow2::updateEditorFromConfig() {
   Q_ASSERT(m_editor);
   auto snapshot = m_editorController->currentEditorConfig();
-  if (snapshot.zoomDelta != 0) {
-    m_editor->zoom(snapshot.zoomDelta);
-  }
+  m_editor->zoom(snapshot.zoomDelta);
+  m_previewHelper->editorZoomChanged();
   vte::Key leaderKey(snapshot.shortcutLeaderKey);
   m_editor->setLeaderKeyToSkip(leaderKey.m_key, leaderKey.m_modifiers);
 }
@@ -2347,7 +2344,7 @@ void MarkdownViewWindow2::updateWebViewerConfig() {
   }
   auto *configMgr = getServices().get<ConfigMgr2>();
   const auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
-  m_viewer->setZoomFactor(mdConfig.getZoomFactorInReadMode());
+  m_viewer->setZoomFactor(configMgr->getSessionConfig().getMarkdownZoomFactorInReadMode());
   m_viewer->page()->runJavaScript(
       QStringLiteral("if (window.vxcore) { window.vxcore.setHeadingFoldingEnabled(%1); }")
           .arg(mdConfig.getHeadingFoldingEnabled() ? QStringLiteral("true")

@@ -327,9 +327,7 @@ void TextViewWindow2::handleThemeChanged() {
 void TextViewWindow2::updateEditorFromConfig() {
   auto snapshot = m_controller->currentEditorConfig();
 
-  if (snapshot.zoomDelta != 0) {
-    m_editor->zoom(snapshot.zoomDelta);
-  }
+  m_editor->zoom(snapshot.zoomDelta);
 
   {
     vte::Key leaderKey(snapshot.shortcutLeaderKey);

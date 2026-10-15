@@ -97,9 +97,6 @@ public:
   bool getConstrainInplacePreviewWidthEnabled() const;
   void setConstrainInplacePreviewWidthEnabled(bool p_enabled);
 
-  qreal getZoomFactorInReadMode() const;
-  void setZoomFactorInReadMode(qreal p_factor);
-
   bool getFetchImagesInParseAndPaste() const;
   void setFetchImagesInParseAndPaste(bool p_enabled);
 
@@ -224,8 +221,6 @@ private:
 
   // Whether enable in-place preview width constraint.
   bool m_constrainInplacePreviewWidthEnabled = false;
-
-  qreal m_zoomFactorInReadMode = 1.0;
 
   // Whether fetch images to local in Parse To Markdown And Paste.
   bool m_fetchImagesInParseAndPaste = true;

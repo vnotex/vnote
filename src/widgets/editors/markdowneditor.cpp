@@ -52,7 +52,7 @@
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
-#include <core/texteditorconfig.h>
+#include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/imageutils.h>
 #include <imagehost/imagehostpath.h>
@@ -1879,9 +1879,7 @@ void MarkdownEditor::fetchImagesToLocalAndReplace(QString &p_text) {
 }
 
 void MarkdownEditor::updateFromConfig(bool p_initialized) {
-  if (m_config.getTextEditorConfig().getZoomDelta() != 0) {
-    zoom(m_config.getTextEditorConfig().getZoomDelta());
-  }
+  zoom(m_services.get<ConfigMgr2>()->getSessionConfig().getTextEditorZoomDelta());
 
   if (p_initialized) {
     getHighlighter()->updateHighlight();

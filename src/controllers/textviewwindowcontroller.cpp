@@ -12,6 +12,7 @@
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
+#include <core/sessionconfig.h>
 #include <core/texteditorconfig.h>
 
 using namespace vnotex;
@@ -33,6 +34,12 @@ bool TextViewWindowController::checkAndUpdateConfigRevision() {
   if (m_textEditorConfigRevision != editorConfig.getTextEditorConfig().revision()) {
     changed = true;
     m_textEditorConfigRevision = editorConfig.getTextEditorConfig().revision();
+  }
+
+  const auto &sessionConfig = configMgr->getSessionConfig();
+  if (m_textEditorZoomDelta != sessionConfig.getTextEditorZoomDelta()) {
+    changed = true;
+    m_textEditorZoomDelta = sessionConfig.getTextEditorZoomDelta();
   }
 
   return changed;
@@ -246,10 +253,8 @@ TextViewWindowController::currentEditorConfig() const {
 
   auto *configMgr = m_services.get<ConfigMgr2>();
   const auto &coreConfig = configMgr->getCoreConfig();
-  const auto &editorConfig = configMgr->getEditorConfig();
-  const auto &textEditorConfig = editorConfig.getTextEditorConfig();
 
-  snapshot.zoomDelta = textEditorConfig.getZoomDelta();
+  snapshot.zoomDelta = configMgr->getSessionConfig().getTextEditorZoomDelta();
   snapshot.shortcutLeaderKey = coreConfig.getShortcutLeaderKey();
 
   return snapshot;
@@ -277,7 +282,6 @@ TextViewWindowController::prepareBufferState(const Buffer2 &p_buffer) {
 
 int TextViewWindowController::persistZoomDelta(int p_delta) {
   auto *configMgr = m_services.get<ConfigMgr2>();
-  auto &textEditorConfig = configMgr->getEditorConfig().getTextEditorConfig();
-  textEditorConfig.setZoomDelta(p_delta);
+  configMgr->getSessionConfig().setTextEditorZoomDelta(p_delta);
   return p_delta;
 }

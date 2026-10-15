@@ -47,9 +47,6 @@ public:
   bool getHighlightWhitespaceEnabled() const;
   void setHighlightWhitespaceEnabled(bool p_enabled);
 
-  int getZoomDelta() const;
-  void setZoomDelta(int p_delta);
-
   bool isSpellCheckEnabled() const;
   void setSpellCheckEnabled(bool p_enabled);
 
@@ -86,8 +83,6 @@ private:
   int m_tabStopWidth = 4;
 
   bool m_highlightWhitespace = false;
-
-  int m_zoomDelta = 0;
 
   bool m_spellCheckEnabled = false;
 

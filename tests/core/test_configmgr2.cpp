@@ -49,6 +49,8 @@ private slots:
   void testUpdateMainConfig();
   void testUpdateSessionConfig();
   void testQuickNoteDetachedSettingPersistsWithoutOtherChanges();
+  void testEditorZoom_sessionPersistence_data();
+  void testEditorZoom_sessionPersistence();
   void testDebouncing();
 
   // Extra-data install / recovery.
@@ -259,6 +261,93 @@ void TestConfigMgr2::testQuickNoteDetachedSettingPersistsWithoutOtherChanges() {
   ConfigMgr2 reloadedAgain(m_configService);
   reloadedAgain.init();
   QVERIFY(!reloadedAgain.getSessionConfig().getQuickNoteSchemes().first().m_detachedView);
+}
+
+void TestConfigMgr2::testEditorZoom_sessionPersistence_data() {
+  QTest::addColumn<QJsonObject>("initialSession");
+  QTest::addColumn<double>("initialMindMapZoom");
+  QTest::newRow("absent-editor") << QJsonObject{{QStringLiteral("core"), QJsonObject()}} << 1.0;
+  QTest::newRow("absent-zoom-keys")
+      << QJsonObject{{QStringLiteral("editor"), QJsonObject()}} << 1.0;
+  QTest::newRow("explicit-fit") << QJsonObject{{QStringLiteral("editor"),
+                                                QJsonObject{
+                                                    {QStringLiteral("mindMapZoomFactor"), 0.0}}}}
+                                << 0.0;
+}
+
+void TestConfigMgr2::testEditorZoom_sessionPersistence() {
+  QFETCH(QJsonObject, initialSession);
+  QFETCH(double, initialMindMapZoom);
+  const auto savedMain =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto savedSession =
+      m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), savedMain);
+    m_configService->updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                        savedSession);
+  });
+  // A main-config write would expand this sparse document with defaults, exposing misrouting.
+  const QJsonObject mainBefore{
+      {QStringLiteral("metadata"),
+       QJsonObject{{QStringLiteral("version"), ConfigMgr2::getApplicationVersion()}}}};
+  QVERIFY(
+      m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), mainBefore)
+          .isOk());
+  QVERIFY(m_configService
+              ->updateConfigByName(DataLocation::Local, QStringLiteral("session"), initialSession)
+              .isOk());
+  {
+    ConfigMgr2 settings(m_configService);
+    settings.init();
+    const auto &session = settings.getSessionConfig();
+    QCOMPARE(session.getMarkdownZoomFactorInReadMode(), qreal(1.0));
+    QCOMPARE(session.getTextEditorZoomDelta(), 0);
+    QCOMPARE(session.getMindMapZoomFactor(), qreal(initialMindMapZoom));
+  }
+
+  struct ZoomState {
+    qreal m_markdown;
+    int m_text;
+    qreal m_mindMap;
+  };
+  const ZoomState states[] = {{1.25, 3, 1.5}, {0.75, -2, 0.0}, {1.0, 0, 1.0}};
+  for (const auto &state : states) {
+    {
+      ConfigMgr2 settings(m_configService);
+      settings.init();
+      auto &session = settings.getSessionConfig();
+      session.setMarkdownZoomFactorInReadMode(state.m_markdown);
+      session.setTextEditorZoomDelta(state.m_text);
+      session.setMindMapZoomFactor(state.m_mindMap);
+      // Destruction flushes the normal pending write without event-loop timing dependencies.
+    }
+    const QJsonObject expectedEditor{
+        {QStringLiteral("markdownZoomFactorInReadMode"), state.m_markdown},
+        {QStringLiteral("textEditorZoomDelta"), state.m_text},
+        {QStringLiteral("mindMapZoomFactor"), state.m_mindMap}};
+    QCOMPARE(m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"))
+                 .value(QStringLiteral("editor"))
+                 .toObject(),
+             expectedEditor);
+    QCOMPARE(m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex")),
+             mainBefore);
+
+    ConfigMgr2 restarted(m_configService);
+    restarted.init();
+    const auto &session = restarted.getSessionConfig();
+    QCOMPARE(session.getMarkdownZoomFactorInReadMode(), state.m_markdown);
+    QCOMPARE(session.getTextEditorZoomDelta(), state.m_text);
+    QCOMPARE(session.getMindMapZoomFactor(), state.m_mindMap);
+    const auto mainEditor =
+        restarted.getConfig().toJson().value(QStringLiteral("editor")).toObject();
+    QVERIFY(!mainEditor.value(QStringLiteral("markdown_editor"))
+                 .toObject()
+                 .contains(QStringLiteral("zoomFactorInReadMode")));
+    QVERIFY(!mainEditor.value(QStringLiteral("text_editor"))
+                 .toObject()
+                 .contains(QStringLiteral("zoomDelta")));
+  }
 }
 
 void TestConfigMgr2::testDebouncing() {
@@ -1267,9 +1356,6 @@ void TestConfigMgr2::testAbsentSectionKeepsTheWholeSectionDefault() {
 void TestConfigMgr2::testUserValueStillWinsOverTheDefault() {
   // The merge must not turn into "defaults always win": a persisted value, including a
   // non-default one nested inside the WebResource objects, has to survive.
-  MainConfig defaults(m_configMgr);
-  const QJsonObject defaultsJson = defaults.toJson();
-
   MainConfig source(m_configMgr);
   auto &sourceMd = source.getEditorConfig().getMarkdownEditorConfig();
   sourceMd.setAutoFoldPreviewedBlocksEnabled(false);
@@ -1283,12 +1369,6 @@ void TestConfigMgr2::testUserValueStillWinsOverTheDefault() {
   auto &reloadedMd = reloaded.getEditorConfig().getMarkdownEditorConfig();
   QCOMPARE(reloadedMd.getAutoFoldPreviewedBlocksEnabled(), false);
   QCOMPARE(reloadedMd.getAlignTableSourceEnabled(), true);
-
-  // And an untouched neighbour still reads as its default.
-  QCOMPARE(valueAt(loaded, {QStringLiteral("editor"), QStringLiteral("markdown_editor"),
-                            QStringLiteral("zoomFactorInReadMode")}),
-           valueAt(defaultsJson, {QStringLiteral("editor"), QStringLiteral("markdown_editor"),
-                                  QStringLiteral("zoomFactorInReadMode")}));
 }
 
 void TestConfigMgr2::testWebResourceMergesPerKeyButReplacesArrays() {
