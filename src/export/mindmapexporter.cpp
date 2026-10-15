@@ -181,10 +181,7 @@ bool MindMapExporter::renderHtml(const ExportInput &p_input, const ExportHtmlReq
       emit logRequested(tr("Timed out waiting for MindMap export images."));
       return false;
     }
-    const auto mode = p_request.purpose == ExportHtmlPurpose::Standalone
-                          ? m3::qt::MindMapEditor::HtmlExportMode::Interactive
-                          : m3::qt::MindMapEditor::HtmlExportMode::Static;
-    auto html = m_editor->toHtml(mode);
+    auto html = m_editor->toHtml();
     if (html.isEmpty() || m_failed) {
       emit logRequested(tr("Failed to render MindMap: %1").arg(m_editor->lastError()));
       return false;
@@ -219,23 +216,12 @@ bool MindMapExporter::adaptHtml(QString &p_html, const ExportHtmlRequest &p_requ
   }
   // Read only the native export's controlled geometry marker, before any node content.
   QSizeF naturalSize;
-  bool viewerFound = false, viewportFound = false, spaceFound = false;
   QXmlStreamReader reader(p_html);
   while (!reader.atEnd()) {
     if (reader.readNext() != QXmlStreamReader::StartElement) {
       continue;
     }
     const auto id = reader.attributes().value(QStringLiteral("id"));
-    if (id == QStringLiteral("map-viewer")) {
-      viewerFound = reader.attributes().value(QStringLiteral("data-mode")) ==
-                    QStringLiteral("static");
-    }
-    if (id == QStringLiteral("map-space")) {
-      spaceFound = true;
-    }
-    if (id == QStringLiteral("map-viewport")) {
-      viewportFound = true;
-    }
     if (id != QStringLiteral("mindmap")) {
       continue;
     }
@@ -250,7 +236,7 @@ bool MindMapExporter::adaptHtml(QString &p_html, const ExportHtmlRequest &p_requ
     }
     break;
   }
-  if (!viewerFound || !viewportFound || !spaceFound || naturalSize.isEmpty()) {
+  if (naturalSize.isEmpty()) {
     emit logRequested(tr("The native MindMap HTML geometry is incompatible with export."));
     return false;
   }
@@ -272,21 +258,21 @@ bool MindMapExporter::adaptHtml(QString &p_html, const ExportHtmlRequest &p_requ
       qMin(qreal(1), qMin((size.width() - 1) * pixelsPerMillimeter / naturalSize.width(),
                           (size.height() - 1) * pixelsPerMillimeter / naturalSize.height()));
   // Only the absolute map uses layout zoom: an unscaled ancestor in flow would make Chromium
-  // shrink every article page. Pin all boxes so static width-fitting cannot undo paper fitting.
+  // shrink every article page. The visual section alone reserves the scaled page-one footprint.
   const auto style =
       QStringLiteral(
-          "html, body { margin:0; padding:0; zoom:normal !important; }\n"
-          "main { margin:0; padding:0; max-width:none; zoom:normal !important; }\n"
+          "html, body, main { margin:0; padding:0; zoom:normal !important; "
+          "transform:none !important; -webkit-transform:none !important; }\n"
+          "main { max-width:none; }\n"
           "main > h1, #map-articles-separator { display:none !important; }\n"
-          "#visual-map { margin:0; padding:0; page-break-after:always; break-after:page; }\n"
-          "#map-viewer, #map-viewport, #map-space { position:relative !important; "
-          "overflow:hidden !important; margin:0 !important; padding:0 !important; "
-          "border:0 !important; min-width:0 !important; min-height:0 !important; "
+          "#visual-map { position:relative !important; overflow:hidden !important; "
+          "margin:0 !important; padding:0 !important; border:0 !important; "
+          "min-width:0 !important; min-height:0 !important; "
           "max-width:none !important; max-height:none !important; "
           "left:0 !important; top:0 !important; transform:none !important; "
-          "-webkit-transform:none !important; zoom:normal !important; }\n"
-          "#map-viewer, #map-viewport { width:%1px !important; height:%2px !important; }\n"
-          "#map-space { width:100% !important; height:100% !important; }\n"
+          "-webkit-transform:none !important; zoom:normal !important; "
+          "width:%1px !important; height:%2px !important; "
+          "page-break-after:always; break-after:page; }\n"
           "#mindmap { position:absolute !important; left:0 !important; top:0 !important; "
           "min-width:0 !important; min-height:0 !important; "
           "max-width:none !important; max-height:none !important; "
@@ -296,9 +282,10 @@ bool MindMapExporter::adaptHtml(QString &p_html, const ExportHtmlRequest &p_requ
           "#articles { max-width:none; margin:0; padding:0; }\n"
           "#articles, #articles ul, #articles li, #articles article, #articles p "
           "{ page-break-inside:auto; break-inside:auto; }\n"
-          "#articles ul { margin-left:0; padding-left:0; padding-inline-start:0; "
-          "border:0 !important; list-style:none; }\n"
-          "#articles h1, #articles h3 { page-break-after:avoid; break-after:avoid; }\n"
+          "#articles ul { margin:0; padding:0; border:0 !important; "
+          "list-style:disc outside; overflow:visible; }\n"
+          "#articles > ul { padding-left:1.25em; padding-inline-start:1.25em; }\n"
+          "#articles .m3-article-title { page-break-after:avoid; break-after:avoid; }\n"
           "#articles p { orphans:2; widows:2; }\n"
           "#articles figure { margin-left:0; margin-right:0; "
           "page-break-inside:avoid; break-inside:avoid; }\n"

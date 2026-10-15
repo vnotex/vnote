@@ -369,7 +369,6 @@ public:
       const images = Array.from(document.querySelectorAll('#mindmap .m3-node-image'));
       const articleImages = Array.from(document.querySelectorAll('#articles .m3-article-image'));
       return {map: visible('#mindmap'), articles: visible('#articles'),
-              controls: visible('#map-controls'),
               image: images.length > 0 && images.every(image => image.complete && image.naturalWidth > 0),
               articleImages: articleImages.length === images.length && articleImages.every(
                 image => image.complete && image.naturalWidth > 0 &&
@@ -616,7 +615,6 @@ void TestMindMapExport::standaloneContainsBothImagesAndCompleteArticles() {
   QCOMPARE(state.value(QStringLiteral("crossLinks")).toInt(), 1);
   QVERIFY(state.value(QStringLiteral("map")).toBool());
   QVERIFY(state.value(QStringLiteral("image")).toBool());
-  QVERIFY(state.value(QStringLiteral("controls")).toBool());
   QVERIFY(state.value(QStringLiteral("articles")).toBool());
   QVERIFY(state.value(QStringLiteral("articleImages")).toBool());
   QVERIFY(containsForest(state.value(QStringLiteral("text")).toString()));
@@ -839,7 +837,6 @@ void TestMindMapExport::directConsumerRequests() {
   QVERIFY(state.value(QStringLiteral("map")).toBool());
   QVERIFY(state.value(QStringLiteral("articles")).toBool());
   QVERIFY(state.value(QStringLiteral("image")).toBool());
-  QVERIFY(!state.value(QStringLiteral("controls")).toBool());
   QVERIFY(state.value(QStringLiteral("articleImages")).toBool());
   QVERIFY(containsForest(state.value(QStringLiteral("text")).toString()));
   const auto links = state.value(QStringLiteral("links")).toStringList();
@@ -944,7 +941,6 @@ void TestMindMapExport::customCapturesRenderedInputs() {
     QVERIFY(state.value(QStringLiteral("map")).toBool());
     QVERIFY(state.value(QStringLiteral("image")).toBool());
     QVERIFY(state.value(QStringLiteral("articles")).toBool());
-    QVERIFY(!state.value(QStringLiteral("controls")).toBool());
     QVERIFY(state.value(QStringLiteral("articleImages")).toBool());
     if (i == 0) {
       QVERIFY(containsForest(state.value(QStringLiteral("text")).toString()));

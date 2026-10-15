@@ -330,23 +330,27 @@ Native HTML uses an export-only, fully expanded editor, rebased before every loa
 for queued image requests to settle. Missing images retain explicit placeholders; cancellation,
 malformed input and the whole-export image deadline fail rather than snapshot incomplete work.
 The visual map is selectable HTML node text plus inline SVG connectors, not a whole-map PNG;
-only supplied node images are raster data. Standalone HTML uses m3's Interactive mode: a scrollable
-100% map with zoom/reset/main-node controls and topic links into continuous articles below it.
-Articles render plain-text paragraphs, embedded images, URLs, icons/tag badges and directional
-inline cross-references, not metadata rows. Cached image pixels are reused without new I/O.
-Pdf and Custom explicitly request Static mode, with no controls or scrolling caps. PDF fits the
-entire proportional map on page 1 and prints all articles from page 2; Custom keeps width fitting
-without paper geometry. Neither route hides articles behind a toggle.
+only supplied node images are raster data. Standalone and Custom HTML use the same native
+`toHtml()` document: a natural 100% map directly in normal flow, without width caps, nested scrolling,
+viewer controls or sizing JavaScript. Topic anchors navigate to the continuous articles below it.
+The requested m3 favicon is hosted on GitHub; map content, styles and supplied images are embedded.
 
-For native PDF layout, validate Static mode, the viewer/spacer structure and the trusted
-`#mindmap` `data-width`/`data-height` marker. Pin `#map-viewer`, `#map-viewport`, `#map-space` and the
-absolute map with `!important`: scaled flow bounds, no viewport caps/scroll offsets, no ancestor
-zoom or transforms. Apply CSS **layout zoom** only to the map. Keep the `#visual-map` page break,
-hide the shared title/separator, remove nested-list borders/indentation, and bound article images
-to the printable area. A paint-only transform can make Chromium shrink the entire document;
-the earlier regression produced 8 pt article text instead of 12 pt. The Qt 6.9+ host test reads
-every generated PDF page with the bundled reader and checks map-first/article-second ordering,
-complete notes, image geometry and actual 12 pt body text. DOM bounds/signatures alone miss this.
+Article depth restarts at 1 for every main/orphan root. H1–H6 are flat articles without list wrappers;
+deeper nodes are genuine nested list items. Node rows are title, icons, tags, URL with link icon,
+other-node links, then notes and figures, skipping absent values. Source text and cached pixels are
+preserved without extra resource I/O. PDF still fits the full map on page 1 and prints articles
+from page 2; Custom does not acquire paper fitting or forced breaks.
+
+For PDF layout, validate the native section markers and positive `#mindmap` dimensions. Reserve
+a scaled in-flow rectangle on `#visual-map` and make `#mindmap` absolute with natural dimensions;
+apply CSS **layout zoom** only to that map. Pin geometry/overflow with `!important` and reset
+html/body/main zoom and transforms. Keep the map page break and hide only the shared `main > h1`
+and separator. Article titles keep with next; deeper lists retain outside bullets with a single
+gutter rather than cumulative print indentation. Bound figures to the printable area and leave
+notes splittable. A paint-only transform or unscaled flow width can shrink every printed page;
+the regression produced 8pt rather than 12pt body text. The Qt 6.9+ host test reads every PDF page
+with the bundled reader and checks map-first/article-next ordering, complete notes and image
+geometry plus actual 12pt body. DOM bounds/signatures alone miss this.
 
 `HtmlPdfExporter` owns final transport, not source rendering. Qt loads the rendered HTML by file
 URL (including >2 MiB documents), allows local sidecars and the existing unprotected remote-image

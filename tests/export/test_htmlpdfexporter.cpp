@@ -145,6 +145,12 @@ ExportInput nativeInput(const QString &p_directory, bool p_tall = false) {
       node.insert(QStringLiteral("hyperLink"), QStringLiteral("javascript:alert('unsafe')"));
     }
     if (i == 7) {
+      node.insert(QStringLiteral("icons"), QJsonArray{QStringLiteral("flag")});
+      node.insert(QStringLiteral("tags"), QJsonArray{QStringLiteral("Deep research")});
+      node.insert(QStringLiteral("image"),
+                  QJsonObject{{QStringLiteral("url"), QStringLiteral("fixture.png")},
+                              {QStringLiteral("width"), 123},
+                              {QStringLiteral("height"), 67}});
       node.insert(QStringLiteral("note"), longNote());
       node.insert(QStringLiteral("hyperLink"),
                   QStringLiteral("https://example.invalid/deep?q=1&x=2"));
@@ -242,75 +248,13 @@ struct BrowserPage {
   QWebEngineView view;
 
   BrowserPage() {
+    page.settings()->setAttribute(QWebEngineSettings::JavascriptEnabled, true);
     page.settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessFileUrls, true);
     view.setPage(&page);
     view.resize(1200, 900);
     view.show();
   }
 };
-
-QJsonObject viewerState(QWebEnginePage &p_page) {
-  const auto result = evaluateJavaScript(p_page, QStringLiteral(R"JS((() => {
-    const viewer = document.getElementById('map-viewer');
-    const viewport = document.getElementById('map-viewport');
-    const space = document.getElementById('map-space');
-    const map = document.getElementById('mindmap');
-    const root = document.getElementById(viewer.dataset.mainNode).querySelector('.m3-topic');
-    const box = map.getBoundingClientRect(), frame = viewport.getBoundingClientRect();
-    const spacer = space.getBoundingClientRect(), main = root.getBoundingClientRect();
-    const scale = box.width / Number(map.dataset.width);
-    const left = frame.left + viewport.clientLeft, top = frame.top + viewport.clientTop;
-    const button = id => document.getElementById(id);
-    const controls = button('map-controls');
-    const overlay = controls ? controls.getBoundingClientRect() : null;
-    let ancestorsUnscaled = true;
-    for (let element = map.parentElement; element; element = element.parentElement) {
-      const style = getComputedStyle(element);
-      ancestorsUnscaled = ancestorsUnscaled && style.transform === 'none' &&
-        (style.zoom === 'normal' || Number(style.zoom) === 1);
-    }
-    return JSON.stringify({
-      scale:scale, centerX:(left + viewport.clientWidth / 2 - box.left) / scale,
-      centerY:(top + viewport.clientHeight / 2 - box.top) / scale,
-      insetX:box.left - spacer.left, insetY:box.top - spacer.top,
-      clientWidth:viewport.clientWidth, clientHeight:viewport.clientHeight,
-      scrollLeft:viewport.scrollLeft, scrollTop:viewport.scrollTop,
-      maxScrollLeft:viewport.scrollWidth - viewport.clientWidth,
-      maxScrollTop:viewport.scrollHeight - viewport.clientHeight,
-      spaceWidth:spacer.width, spaceHeight:spacer.height,
-      mapWidth:box.width, mapHeight:box.height,
-      rootX:(main.left + main.width / 2 - box.left) / scale,
-      rootY:(main.top + main.height / 2 - box.top) / scale,
-      rootVisible:main.left >= left - 1 && main.top >= top - 1 &&
-        main.right <= left + viewport.clientWidth + 1 &&
-        main.bottom <= top + viewport.clientHeight + 1,
-      controlsOverlay:!!overlay && overlay.left >= frame.left && overlay.right <= frame.right &&
-        overlay.top >= frame.top && overlay.bottom <= frame.bottom,
-      controlTop:overlay ? overlay.top - frame.top : 0,
-      controlWidth:overlay ? overlay.width : 0,
-      zoomText:button('map-zoom-level') ? button('map-zoom-level').textContent : '',
-      inDisabled:button('map-zoom-in') ? button('map-zoom-in').disabled : false,
-      outDisabled:button('map-zoom-out') ? button('map-zoom-out').disabled : false,
-      transform:getComputedStyle(map).transform, zoom:getComputedStyle(map).zoom,
-      ancestorsUnscaled:ancestorsUnscaled,
-      overflow:getComputedStyle(viewport).overflow,
-      noScroll:[viewer, viewport, space].every(element =>
-        element.scrollLeft === 0 && element.scrollTop === 0 &&
-        element.scrollWidth <= element.clientWidth + 1 &&
-        element.scrollHeight <= element.clientHeight + 1)
-    });
-  })())JS"));
-  return QJsonDocument::fromJson(result.toString().toUtf8()).object();
-}
-
-bool activateControl(QWebEnginePage &p_page, const QString &p_id, int p_count = 1) {
-  return evaluateJavaScript(p_page, QStringLiteral(R"JS((() => {
-    const button = document.getElementById('%1');
-    if (!button) return false;
-    for (let index = 0; index < %2; ++index) button.click();
-    return true;
-  })())JS").arg(p_id).arg(p_count)).toBool() && settleLayout(p_page);
-}
 
 bool clickElement(BrowserPage &p_browser, const QString &p_selector) {
   const auto selector = QString::fromUtf8(QJsonDocument(QJsonArray{p_selector})
@@ -334,49 +278,14 @@ bool clickElement(BrowserPage &p_browser, const QString &p_selector) {
   return settleLayout(p_browser.page);
 }
 
-void verifyCenterPreserved(const QJsonObject &p_before, const QJsonObject &p_after) {
-  const double scale = p_after.value(QStringLiteral("scale")).toDouble();
-  for (const auto &axis : {QStringLiteral("X"), QStringLiteral("Y")}) {
-    const bool horizontal = axis == QStringLiteral("X");
-    const auto extent = horizontal ? QStringLiteral("clientWidth") : QStringLiteral("clientHeight");
-    const auto offset = horizontal ? QStringLiteral("scrollLeft") : QStringLiteral("scrollTop");
-    const auto maximum = horizontal ? QStringLiteral("maxScrollLeft") : QStringLiteral("maxScrollTop");
-    const double desired = p_before.value(QStringLiteral("center") + axis).toDouble() * scale +
-                           p_after.value(QStringLiteral("inset") + axis).toDouble() -
-                           p_after.value(extent).toDouble() / 2;
-    const double expected = qBound(0.0, desired, p_after.value(maximum).toDouble());
-    QVERIFY2(std::abs(p_after.value(offset).toDouble() - expected) < 2,
-             qPrintable(QStringLiteral("Zoom/resize moved the map center on axis %1").arg(axis)));
-  }
-}
-
-void verifyStaticViewer(const QJsonObject &p_state, const QJsonObject &p_viewer) {
-  QCOMPARE(p_state.value(QStringLiteral("mode")).toString(), QStringLiteral("static"));
-  QVERIFY(!p_state.value(QStringLiteral("controlsExist")).toBool());
-  QVERIFY(p_viewer.value(QStringLiteral("noScroll")).toBool());
-  QVERIFY(p_viewer.value(QStringLiteral("ancestorsUnscaled")).toBool());
-  QCOMPARE(p_viewer.value(QStringLiteral("transform")).toString(), QStringLiteral("none"));
-  const double scale = p_viewer.value(QStringLiteral("scale")).toDouble();
-  QVERIFY(scale > 0 && scale <= 1.001);
-  const auto zoom = p_viewer.value(QStringLiteral("zoom")).toString();
-  QVERIFY(std::abs((zoom == QStringLiteral("normal") ? 1 : zoom.toDouble()) - scale) < 0.001);
-  QVERIFY(std::abs(p_viewer.value(QStringLiteral("mapWidth")).toDouble() -
-                   p_viewer.value(QStringLiteral("spaceWidth")).toDouble()) < 1);
-  QVERIFY(std::abs(p_viewer.value(QStringLiteral("mapHeight")).toDouble() -
-                   p_viewer.value(QStringLiteral("spaceHeight")).toDouble()) < 1);
-}
-
 QJsonObject documentState(QWebEnginePage &p_page) {
   const auto result = evaluateJavaScript(p_page, QStringLiteral(R"JS((() => {
     const visual = document.querySelector('#visual-map');
-    const viewer = document.querySelector('#map-viewer');
     const map = document.querySelector('#mindmap');
-    const viewport = document.querySelector('#map-viewport');
-    const space = document.querySelector('#map-space');
-    const controls = document.querySelector('#map-controls');
     const svg = map.querySelector('.m3-connectors');
     const image = map.querySelector('.m3-node-image');
     const articles = document.querySelector('#articles');
+    const main = document.querySelector('main');
     const visible = element => {
       if (!element) return false;
       const box = element.getBoundingClientRect();
@@ -389,28 +298,62 @@ QJsonObject documentState(QWebEnginePage &p_page) {
     };
     const inside = (inner, outer) => inner.left >= outer.left - 2 &&
       inner.top >= outer.top - 2 && inner.right <= outer.right + 2 && inner.bottom <= outer.bottom + 2;
+    const unscaled = element => {
+      const style = getComputedStyle(element);
+      return style.transform === 'none' && (style.zoom === 'normal' || Number(style.zoom) === 1);
+    };
+    const unclipped = element => {
+      const style = getComputedStyle(element);
+      return style.overflowX === 'visible' && style.overflowY === 'visible';
+    };
+    const ancestors = [];
+    for (let element = map.parentElement; element; element = element.parentElement) {
+      ancestors.push(element);
+    }
     const entries = Array.from(articles.querySelectorAll('article'));
-    const deep = entries.find(entry =>
-      entry.querySelector('.m3-article-topic').textContent === 'Deep café eight');
+    const deep = document.getElementById('m3-node-6e37');
     const note = deep.querySelector('.m3-article-note');
     const paragraphs = document.querySelector('#m3-node-6e34 .m3-article-note');
-    const figure = articles.querySelector('.m3-article-image');
+    const figures = Array.from(articles.querySelectorAll('.m3-article-image'));
     const nodes = Array.from(map.querySelectorAll('.m3-node'));
     const rootTopic = nodes[0].querySelector('.m3-topic');
     const styledNode = nodes.find(node => node.dataset.nodeId === 'n2');
     const styledTopic = styledNode.querySelector('.m3-topic');
     const topicStyle = getComputedStyle(styledTopic.firstElementChild || styledTopic);
-    const interactive = viewer.dataset.mode === 'interactive';
+    const lists = Array.from(articles.querySelectorAll('ul'));
+    const listItems = Array.from(articles.querySelectorAll('li'));
+    const rows = Array.from(deep.children);
+    const safeUrl = deep.querySelector('.m3-article-url');
+    const urlLink = safeUrl.querySelector('a');
+    const urlIcon = safeUrl.querySelector('.m3-article-url-icon');
+    const unsafeUrl = document.querySelector('#m3-node-6e34 .m3-article-url');
+    const measure = document.createElement('span');
+    measure.style.cssText = 'display:block;position:absolute;width:72ch;height:0;visibility:hidden';
+    articles.appendChild(measure);
+    const oldColumnWidth = measure.getBoundingClientRect().width;
+    measure.remove();
     return JSON.stringify({
-      mode:viewer.dataset.mode, mapVisible:visible(map), articlesVisible:visible(articles),
-      controlsExist:!!controls, controlsVisible:visible(controls),
-      controlsOutsideMap:!controls || (!map.contains(controls) && !viewport.contains(controls)),
+      scripts:document.scripts.length,
+      inlineHandlers:Array.from(document.querySelectorAll('*')).some(element =>
+        Array.from(element.attributes).some(attribute => /^on/i.test(attribute.name))),
+      directMap:map.parentElement === visual && visual.children.length === 1,
+      mapVisible:visible(map), articlesVisible:visible(articles),
       separatorVisible:visible(document.querySelector('#map-articles-separator')),
       decoded:image.complete && image.naturalWidth > 0,
       source:image.currentSrc, imageWidth:image.naturalWidth, imageHeight:image.naturalHeight,
       naturalWidth:Number(map.dataset.width), naturalHeight:Number(map.dataset.height),
-      map:rect(map), mapViewport:rect(viewport), mapSpace:rect(space),
-      visual:rect(visual), articles:rect(articles),
+      map:rect(map), visual:rect(visual), main:rect(main), articles:rect(articles),
+      viewportWidth:document.documentElement.clientWidth, viewportHeight:innerHeight,
+      documentWidth:document.scrollingElement.scrollWidth,
+      documentHeight:document.scrollingElement.scrollHeight, scrollX:scrollX, scrollY:scrollY,
+      oldColumnWidth:oldColumnWidth,
+      uncapped:[document.body, main, articles].every(element => getComputedStyle(element).maxWidth === 'none'),
+      naturalOverflow:[map, articles].concat(ancestors).every(unclipped),
+      ancestorsUnscaled:ancestors.every(unscaled), articlesUnscaled:unscaled(articles),
+      mapTransform:getComputedStyle(map).transform, mapZoom:getComputedStyle(map).zoom,
+      mapPosition:getComputedStyle(map).position, visualPosition:getComputedStyle(visual).position,
+      visualOverflow:getComputedStyle(visual).overflow,
+      bodyFont:parseFloat(getComputedStyle(document.body).fontSize),
       topics:nodes.map(node => node.querySelector('.m3-topic').innerText.replace(/\s+/g, ' ').trim()),
       nodeIds:nodes.map(node => node.dataset.nodeId), rootTopic:rect(rootTopic),
       topicUserSelect:getComputedStyle(rootTopic).userSelect,
@@ -427,9 +370,8 @@ QJsonObject documentState(QWebEnginePage &p_page) {
       treeEdges:svg.querySelectorAll('.m3-tree-edge').length,
       crossLinks:svg.querySelectorAll('.m3-cross-link').length,
       rasterSurfaces:map.querySelectorAll('canvas,foreignObject').length,
-      geometryFits:Array.from(map.querySelectorAll('.m3-node,.m3-link-label,path,polygon'))
-        .filter(visible).every(element => inside(rect(element), rect(map)) &&
-          inside(rect(element), rect(interactive ? space : viewport))),
+      geometryFits:[svg].concat(Array.from(map.querySelectorAll('.m3-node,.m3-link-label,path,polygon')))
+        .filter(visible).every(element => inside(rect(element), rect(map))),
       textFits:nodes.every(node => {
         const range = document.createRange(); range.selectNodeContents(node.querySelector('.m3-topic'));
         return inside(range.getBoundingClientRect(), rect(node));
@@ -443,32 +385,68 @@ QJsonObject documentState(QWebEnginePage &p_page) {
       headings:entries.map(entry => entry.querySelector('.m3-article-topic')
         .innerText.replace(/\s+/g, ' ').trim()),
       headingTags:entries.map(entry => {
-        const heading = entry.querySelector('.m3-article-topic').parentElement;
-        return {id:entry.id, tag:heading.tagName, fontSize:parseFloat(getComputedStyle(heading).fontSize)};
+        const heading = entry.querySelector('.m3-article-title');
+        let listDepth = 0;
+        for (let parent = entry.parentElement; parent !== articles; parent = parent.parentElement) {
+          if (parent.tagName === 'UL') ++listDepth;
+        }
+        return {id:entry.id, tag:heading.tagName, fontSize:parseFloat(getComputedStyle(heading).fontSize),
+          flat:entry.parentElement === articles, listDepth:listDepth,
+          titleOnly:heading.children.length === 1 && heading.firstElementChild.matches('.m3-article-topic') &&
+            heading.textContent === heading.firstElementChild.textContent};
       }),
       rootHeadingCount:articles.querySelectorAll('h1').length,
+      listStructure:lists.every(list =>
+        (list.parentElement === articles && list.previousElementSibling.matches('article') &&
+          list.previousElementSibling.querySelector('.m3-article-title').tagName === 'H6') ||
+        (list.parentElement.tagName === 'LI' && list.previousElementSibling.matches('article'))) &&
+        listItems.every(item => item.parentElement.tagName === 'UL' && item.firstElementChild.matches('article')),
+      listsUnclipped:lists.concat(listItems).every(unclipped),
+      listMarkers:listItems.map(item => {
+        const style = getComputedStyle(item), marker = getComputedStyle(item, '::marker');
+        const title = item.firstElementChild.querySelector('.m3-article-title');
+        return {display:style.display, type:style.listStyleType, position:style.listStylePosition,
+          markerFont:parseFloat(marker.fontSize), markerColor:marker.color,
+          gutter:rect(title).left - rect(articles).left, title:rect(title), item:rect(item),
+          clipped:!inside(rect(title), rect(articles)),
+          parentPadding:parseFloat(getComputedStyle(item.parentElement).paddingLeft)};
+      }),
       articleVisibility:entries.map(visible), text:articles.innerText,
       links:Array.from(articles.querySelectorAll('a'), link => ({href:link.getAttribute('href'),
         targetExists:!link.hash || !!document.getElementById(decodeURIComponent(link.hash.slice(1)))})),
       references:Array.from(articles.querySelectorAll('.m3-cross-reference'), link => ({
         href:link.getAttribute('href'), text:link.textContent, title:link.title,
         owner:link.closest('article').id,
-        inline:link.parentElement.classList.contains('m3-article-references') &&
-          link.parentElement.previousElementSibling.classList.contains('m3-article-topic')})),
+        ownRow:link.parentElement.matches('div.m3-article-references') &&
+          link.parentElement.parentElement === link.closest('article'),
+        inTitle:!!link.closest('.m3-article-title')})),
       tags:Array.from(articles.querySelectorAll('.m3-article-tag'), tag => ({text:tag.textContent,
         visible:visible(tag), rounded:parseFloat(getComputedStyle(tag).borderRadius) > 0})),
       icons:Array.from(articles.querySelectorAll('.m3-article-icon'), icon => ({text:icon.textContent,
-        visible:visible(icon), inHeading:!!icon.closest('h1,h3')})),
-      figure:{decoded:figure.complete && figure.naturalWidth > 0, source:figure.currentSrc,
-        naturalWidth:figure.naturalWidth, naturalHeight:figure.naturalHeight,
-        bounds:rect(figure), fits:inside(rect(figure), rect(articles)), visible:visible(figure)},
+        visible:visible(icon), inHeading:!!icon.closest('.m3-article-title,h1,h2,h3,h4,h5,h6'),
+        ownRow:icon.parentElement.matches('div.m3-article-icons') &&
+          icon.parentElement.parentElement === icon.closest('article')})),
+      rows:rows.map(row => ({classes:row.className, tag:row.tagName, bounds:rect(row), visible:visible(row)})),
+      emptyRows:articles.querySelectorAll('.m3-article-icons,.m3-article-tags,.m3-article-url,.m3-article-references').length &&
+        Array.from(articles.querySelectorAll('.m3-article-icons,.m3-article-tags,.m3-article-url,.m3-article-references'))
+          .some(row => !row.textContent.trim()),
+      sparseRows:document.querySelector('#m3-node-6e31').children.length,
+      safeUrl:{tag:safeUrl.tagName, href:urlLink.getAttribute('href'),
+        text:safeUrl.querySelector('.m3-article-url-text').textContent,
+        icon:urlIcon.textContent, decorative:urlIcon.getAttribute('aria-hidden') === 'true',
+        order:urlLink.children.length === 2 && urlLink.children[0] === urlIcon &&
+          urlLink.children[1].matches('.m3-article-url-text')},
+      unsafeUrl:{links:unsafeUrl.querySelectorAll('a').length,
+        icons:unsafeUrl.querySelectorAll('.m3-article-url-icon').length,
+        text:unsafeUrl.querySelector('.m3-article-url-text').textContent},
+      figures:figures.map(figure => ({decoded:figure.complete && figure.naturalWidth > 0, source:figure.currentSrc,
+        bounds:rect(figure), fits:inside(rect(figure), rect(articles)), visible:visible(figure)})),
       noteText:note.innerText, noteParagraphs:note.querySelectorAll('p').length,
       paragraphs:Array.from(paragraphs.querySelectorAll('p'), paragraph => paragraph.innerText),
       noteMarkup:paragraphs.querySelectorAll('b,script').length,
-      deepHeading:rect(deep.querySelector('h3')), rootHeading:rect(entries[0].querySelector('h1')),
       note:rect(note), noteBreak:getComputedStyle(note).breakInside,
       noteFont:parseFloat(getComputedStyle(note).fontSize),
-      headingBreak:getComputedStyle(deep.querySelector('h3')).breakAfter
+      headingBreak:getComputedStyle(deep.querySelector('.m3-article-title')).breakAfter
     });
   })())JS"));
   return QJsonDocument::fromJson(result.toString().toUtf8()).object();
@@ -483,19 +461,54 @@ void verifyCompleteArticles(const QJsonObject &p_state, bool p_tall = false) {
   QCOMPARE(p_state.value(QStringLiteral("rootHeadingCount")).toInt(), 2);
   const auto headingTags = p_state.value(QStringLiteral("headingTags")).toArray();
   QCOMPARE(headingTags.size(), headings.size());
-  const double rootFont = headingTags.first().toObject().value(QStringLiteral("fontSize")).toDouble();
+  const double bodyFont = p_state.value(QStringLiteral("bodyFont")).toDouble();
+  QVERIFY(bodyFont > 0);
   for (const auto &value : headingTags) {
     const auto heading = value.toObject();
     const auto id = heading.value(QStringLiteral("id")).toString();
-    const bool root = id == QStringLiteral("m3-node-6e30") ||
-                      id == QStringLiteral("m3-node-6e38");
+    const auto node = QString::fromUtf8(QByteArray::fromHex(id.mid(8).toLatin1()));
+    bool validIndex = false;
+    const int index = node.mid(1).toInt(&validIndex);
+    QVERIFY(validIndex && index >= 0 && index < topics(p_tall).size());
+    const int depth = index < 8 ? index + 1 : (index == 8 ? 1 : 2);
     QCOMPARE(heading.value(QStringLiteral("tag")).toString(),
-             root ? QStringLiteral("H1") : QStringLiteral("H3"));
+             depth <= 6 ? QStringLiteral("H%1").arg(depth) : QStringLiteral("P"));
+    QCOMPARE(heading.value(QStringLiteral("flat")).toBool(), depth <= 6);
+    QCOMPARE(heading.value(QStringLiteral("listDepth")).toInt(), qMax(0, depth - 6));
+    QVERIFY(heading.value(QStringLiteral("titleOnly")).toBool());
     const double fontSize = heading.value(QStringLiteral("fontSize")).toDouble();
-    if (root) {
-      QCOMPARE(fontSize, rootFont);
-    } else {
-      QVERIFY(fontSize < rootFont);
+    QVERIFY(fontSize >= bodyFont - 0.01);
+    if (depth <= 3) {
+      const double factor = depth == 1 ? 2.0 : (depth == 2 ? 1.5 : 1.17);
+      QVERIFY(std::abs(fontSize - bodyFont * factor) < 0.03);
+    }
+  }
+  QVERIFY(p_state.value(QStringLiteral("listStructure")).toBool());
+  QVERIFY(p_state.value(QStringLiteral("listsUnclipped")).toBool());
+  const auto markers = p_state.value(QStringLiteral("listMarkers")).toArray();
+  QCOMPARE(markers.size(), 2);
+  const auto articleBounds = p_state.value(QStringLiteral("articles")).toObject();
+  const double firstGutter = markers.first().toObject().value(QStringLiteral("gutter")).toDouble();
+  QVERIFY(firstGutter >= bodyFont && firstGutter <= bodyFont * 2);
+  for (int index = 0; index < markers.size(); ++index) {
+    const auto marker = markers[index].toObject();
+    QCOMPARE(marker.value(QStringLiteral("display")).toString(), QStringLiteral("list-item"));
+    QCOMPARE(marker.value(QStringLiteral("type")).toString(), QStringLiteral("disc"));
+    QCOMPARE(marker.value(QStringLiteral("position")).toString(), QStringLiteral("outside"));
+    QVERIFY(marker.value(QStringLiteral("markerFont")).toDouble() >= bodyFont - 0.01);
+    const auto color = marker.value(QStringLiteral("markerColor")).toString();
+    QVERIFY(!color.isEmpty() && color != QStringLiteral("transparent") &&
+            color != QStringLiteral("rgba(0, 0, 0, 0)"));
+    QVERIFY(!marker.value(QStringLiteral("clipped")).toBool());
+    QVERIFY(std::abs(marker.value(QStringLiteral("gutter")).toDouble() - firstGutter) < 1);
+    const auto title = marker.value(QStringLiteral("title")).toObject();
+    const auto item = marker.value(QStringLiteral("item")).toObject();
+    QVERIFY(std::abs(title.value(QStringLiteral("top")).toDouble() -
+                     item.value(QStringLiteral("top")).toDouble()) < 2);
+    QVERIFY(title.value(QStringLiteral("width")).toDouble() >=
+            articleBounds.value(QStringLiteral("width")).toDouble() - 4 * bodyFont);
+    if (index > 0) {
+      QVERIFY(marker.value(QStringLiteral("parentPadding")).toDouble() < 1);
     }
   }
   QVERIFY(p_state.value(QStringLiteral("articlesVisible")).toBool());
@@ -527,35 +540,83 @@ void verifyCompleteArticles(const QJsonObject &p_state, bool p_tall = false) {
   QCOMPARE(reference.value(QStringLiteral("owner")).toString(), QStringLiteral("m3-node-6e37"));
   QVERIFY(reference.value(QStringLiteral("text")).toString().contains(topics()[9]));
   QCOMPARE(reference.value(QStringLiteral("title")).toString(), QStringLiteral("Across the forest"));
-  QVERIFY(reference.value(QStringLiteral("inline")).toBool());
+  QVERIFY(reference.value(QStringLiteral("ownRow")).toBool());
+  QVERIFY(!reference.value(QStringLiteral("inTitle")).toBool());
   const auto tags = p_state.value(QStringLiteral("tags")).toArray();
-  QCOMPARE(tags.size(), 2);
-  for (const auto &value : tags) {
-    const auto tag = value.toObject();
-    QCOMPARE(tag.value(QStringLiteral("text")).toString(), QStringLiteral("Research <&>"));
+  QCOMPARE(tags.size(), 3);
+  for (int index = 0; index < tags.size(); ++index) {
+    const auto tag = tags[index].toObject();
+    QCOMPARE(tag.value(QStringLiteral("text")).toString(),
+             index < 2 ? QStringLiteral("Research <&>") : QStringLiteral("Deep research"));
     QVERIFY(tag.value(QStringLiteral("visible")).toBool());
     QVERIFY(tag.value(QStringLiteral("rounded")).toBool());
   }
   const auto icons = p_state.value(QStringLiteral("icons")).toArray();
-  QCOMPARE(icons.size(), 2);
+  QCOMPARE(icons.size(), 3);
   for (const auto &value : icons) {
     const auto icon = value.toObject();
     QVERIFY(!icon.value(QStringLiteral("text")).toString().isEmpty());
     QVERIFY(icon.value(QStringLiteral("visible")).toBool());
-    QVERIFY(icon.value(QStringLiteral("inHeading")).toBool());
+    QVERIFY(!icon.value(QStringLiteral("inHeading")).toBool());
+    QVERIFY(icon.value(QStringLiteral("ownRow")).toBool());
   }
-  const auto figure = p_state.value(QStringLiteral("figure")).toObject();
-  QVERIFY(figure.value(QStringLiteral("decoded")).toBool());
-  QVERIFY(figure.value(QStringLiteral("visible")).toBool());
-  QVERIFY(figure.value(QStringLiteral("fits")).toBool());
-  QCOMPARE(figure.value(QStringLiteral("source")).toString(), p_state.value(QStringLiteral("source")).toString());
-  const auto bounds = figure.value(QStringLiteral("bounds")).toObject();
-  const double ratio = bounds.value(QStringLiteral("width")).toDouble() /
-                       bounds.value(QStringLiteral("height")).toDouble();
-  QVERIFY(std::abs(ratio - 123.0 / 67.0) < 0.01);
+  const QStringList rowClasses{QStringLiteral("m3-article-title"), QStringLiteral("m3-article-icons"),
+                               QStringLiteral("m3-article-tags"), QStringLiteral("m3-article-url"),
+                               QStringLiteral("m3-article-references"), QStringLiteral("m3-article-note"),
+                               QStringLiteral("m3-article-figure")};
+  const QStringList rowTags{QStringLiteral("P"), QStringLiteral("DIV"), QStringLiteral("DIV"),
+                            QStringLiteral("P"), QStringLiteral("DIV"), QStringLiteral("DIV"),
+                            QStringLiteral("FIGURE")};
+  const auto rows = p_state.value(QStringLiteral("rows")).toArray();
+  QCOMPARE(rows.size(), rowClasses.size());
+  double previousBottom = rows.first().toObject().value(QStringLiteral("bounds"))
+                              .toObject().value(QStringLiteral("top")).toDouble();
+  for (int index = 0; index < rows.size(); ++index) {
+    const auto row = rows[index].toObject();
+    QCOMPARE(row.value(QStringLiteral("classes")).toString(), rowClasses[index]);
+    QCOMPARE(row.value(QStringLiteral("tag")).toString(), rowTags[index]);
+    QVERIFY(row.value(QStringLiteral("visible")).toBool());
+    const auto bounds = row.value(QStringLiteral("bounds")).toObject();
+    QVERIFY(bounds.value(QStringLiteral("top")).toDouble() >= previousBottom - 1);
+    previousBottom = bounds.value(QStringLiteral("bottom")).toDouble();
+  }
+  QVERIFY(!p_state.value(QStringLiteral("emptyRows")).toBool());
+  QCOMPARE(p_state.value(QStringLiteral("sparseRows")).toInt(), 1);
+  const auto safeUrl = p_state.value(QStringLiteral("safeUrl")).toObject();
+  QCOMPARE(safeUrl.value(QStringLiteral("tag")).toString(), QStringLiteral("P"));
+  QCOMPARE(safeUrl.value(QStringLiteral("href")).toString(),
+           QStringLiteral("https://example.invalid/deep?q=1&x=2"));
+  QCOMPARE(safeUrl.value(QStringLiteral("text")).toString(),
+           QStringLiteral("https://example.invalid/deep?q=1&x=2"));
+  QCOMPARE(safeUrl.value(QStringLiteral("icon")).toString(), QString(QChar(0x2197)));
+  QVERIFY(safeUrl.value(QStringLiteral("decorative")).toBool());
+  QVERIFY(safeUrl.value(QStringLiteral("order")).toBool());
+  const auto unsafeUrl = p_state.value(QStringLiteral("unsafeUrl")).toObject();
+  QCOMPARE(unsafeUrl.value(QStringLiteral("links")).toInt(), 0);
+  QCOMPARE(unsafeUrl.value(QStringLiteral("icons")).toInt(), 0);
+  QCOMPARE(unsafeUrl.value(QStringLiteral("text")).toString(), QStringLiteral("javascript:alert('unsafe')"));
+  const auto figures = p_state.value(QStringLiteral("figures")).toArray();
+  QCOMPARE(figures.size(), 2);
+  for (const auto &value : figures) {
+    const auto figure = value.toObject();
+    QVERIFY(figure.value(QStringLiteral("decoded")).toBool());
+    QVERIFY(figure.value(QStringLiteral("visible")).toBool());
+    QVERIFY(figure.value(QStringLiteral("fits")).toBool());
+    QCOMPARE(figure.value(QStringLiteral("source")).toString(), p_state.value(QStringLiteral("source")).toString());
+    const auto bounds = figure.value(QStringLiteral("bounds")).toObject();
+    const double ratio = bounds.value(QStringLiteral("width")).toDouble() /
+                         bounds.value(QStringLiteral("height")).toDouble();
+    QVERIFY(std::abs(ratio - 123.0 / 67.0) < 0.01);
+  }
 }
 
 void verifyMapDocument(const QJsonObject &p_state, bool p_tall = false) {
+  QCOMPARE(p_state.value(QStringLiteral("scripts")).toInt(), 0);
+  QVERIFY(!p_state.value(QStringLiteral("inlineHandlers")).toBool());
+  QVERIFY(p_state.value(QStringLiteral("directMap")).toBool());
+  QVERIFY(p_state.value(QStringLiteral("ancestorsUnscaled")).toBool());
+  QVERIFY(p_state.value(QStringLiteral("articlesUnscaled")).toBool());
+  QCOMPARE(p_state.value(QStringLiteral("mapTransform")).toString(), QStringLiteral("none"));
   const auto exportedTopics = p_state.value(QStringLiteral("topics")).toArray();
   QCOMPARE(exportedTopics.size(), topics(p_tall).size());
   for (const auto &topic : topics(p_tall)) {
@@ -571,7 +632,7 @@ void verifyMapDocument(const QJsonObject &p_state, bool p_tall = false) {
   QCOMPARE(p_state.value(QStringLiteral("rtlDirection")).toString(), QStringLiteral("rtl"));
   QVERIFY(p_state.value(QStringLiteral("topicAnchors")).toBool());
   QVERIFY2(p_state.value(QStringLiteral("geometryFits")).toBool(),
-           "All geometry must fit the map/spacer, and the viewport only in static mode");
+           "All SVG connectors and node bounds must remain inside the complete map");
   QVERIFY2(p_state.value(QStringLiteral("textFits")).toBool(),
            "Browser-rendered topic glyphs must remain inside their measured node boxes");
   const auto styled = p_state.value(QStringLiteral("styled")).toObject();
@@ -591,6 +652,60 @@ void verifyMapDocument(const QJsonObject &p_state, bool p_tall = false) {
   QCOMPARE(image.size(), QSize(123, 67));
   QCOMPARE(image.pixelColor(0, 0), QColor(241, 11, 211));
   QCOMPARE(image.pixelColor(61, 33), QColor(7, 223, 191));
+}
+
+void verifyNaturalDocument(const QJsonObject &p_state) {
+  QVERIFY(p_state.value(QStringLiteral("mapVisible")).toBool());
+  QVERIFY(p_state.value(QStringLiteral("articlesVisible")).toBool());
+  QVERIFY(p_state.value(QStringLiteral("uncapped")).toBool());
+  QVERIFY(p_state.value(QStringLiteral("naturalOverflow")).toBool());
+  QCOMPARE(p_state.value(QStringLiteral("mapPosition")).toString(), QStringLiteral("relative"));
+  const auto zoom = p_state.value(QStringLiteral("mapZoom")).toString();
+  QVERIFY(zoom == QStringLiteral("normal") || std::abs(zoom.toDouble() - 1) < 0.001);
+  const auto map = p_state.value(QStringLiteral("map")).toObject();
+  const auto visual = p_state.value(QStringLiteral("visual")).toObject();
+  const auto articles = p_state.value(QStringLiteral("articles")).toObject();
+  const auto main = p_state.value(QStringLiteral("main")).toObject();
+  const double width = map.value(QStringLiteral("width")).toDouble();
+  const double height = map.value(QStringLiteral("height")).toDouble();
+  QVERIFY(width > 0 && height > 0);
+  QVERIFY(std::abs(width - p_state.value(QStringLiteral("naturalWidth")).toDouble()) < 1);
+  QVERIFY(std::abs(height - p_state.value(QStringLiteral("naturalHeight")).toDouble()) < 1);
+  QVERIFY(visual.value(QStringLiteral("height")).toDouble() >= height - 1);
+  QVERIFY(articles.value(QStringLiteral("top")).toDouble() >=
+          visual.value(QStringLiteral("bottom")).toDouble());
+  QVERIFY(p_state.value(QStringLiteral("documentWidth")).toDouble() >=
+          map.value(QStringLiteral("right")).toDouble() + p_state.value(QStringLiteral("scrollX")).toDouble() - 1);
+  QVERIFY(p_state.value(QStringLiteral("documentHeight")).toDouble() >=
+          articles.value(QStringLiteral("bottom")).toDouble() + p_state.value(QStringLiteral("scrollY")).toDouble() - 1);
+  QVERIFY(std::abs(articles.value(QStringLiteral("width")).toDouble() -
+                   main.value(QStringLiteral("width")).toDouble()) < 1);
+  QVERIFY(p_state.value(QStringLiteral("viewportWidth")).toDouble() -
+              main.value(QStringLiteral("width")).toDouble() <=
+          4 * p_state.value(QStringLiteral("bodyFont")).toDouble());
+  QVERIFY(!p_state.value(QStringLiteral("chromeHidden")).toBool());
+  QVERIFY(p_state.value(QStringLiteral("separatorVisible")).toBool());
+  QCOMPARE(p_state.value(QStringLiteral("breakAfter")).toString(), QStringLiteral("auto"));
+  QCOMPARE(p_state.value(QStringLiteral("pageBreakAfter")).toString(), QStringLiteral("auto"));
+}
+
+void verifyPdfMapReservation(const QJsonObject &p_state) {
+  QCOMPARE(p_state.value(QStringLiteral("mapPosition")).toString(), QStringLiteral("absolute"));
+  QCOMPARE(p_state.value(QStringLiteral("visualPosition")).toString(), QStringLiteral("relative"));
+  QCOMPARE(p_state.value(QStringLiteral("visualOverflow")).toString(), QStringLiteral("hidden"));
+  const auto map = p_state.value(QStringLiteral("map")).toObject();
+  const auto visual = p_state.value(QStringLiteral("visual")).toObject();
+  const double scale = map.value(QStringLiteral("width")).toDouble() /
+                       p_state.value(QStringLiteral("naturalWidth")).toDouble();
+  QVERIFY(scale > 0 && scale <= 1.001);
+  const auto zoom = p_state.value(QStringLiteral("mapZoom")).toString();
+  QVERIFY(std::abs((zoom == QStringLiteral("normal") ? 1 : zoom.toDouble()) - scale) < 0.001);
+  for (const auto &edge : {QStringLiteral("left"), QStringLiteral("top"),
+                            QStringLiteral("width"), QStringLiteral("height")}) {
+    QVERIFY(std::abs(map.value(edge).toDouble() - visual.value(edge).toDouble()) < 1);
+  }
+  QCOMPARE(p_state.value(QStringLiteral("bodyFont")).toDouble(), 16.0);
+  QCOMPARE(p_state.value(QStringLiteral("noteFont")).toDouble(), 16.0);
 }
 
 void verifyPdf(const QString &p_path) {
@@ -792,65 +907,101 @@ try {
 class TestHtmlPdfExporter : public QObject {
   Q_OBJECT
 private slots:
-  void standaloneScrollableViewerAndReadableArticles_data();
-  void standaloneScrollableViewerAndReadableArticles();
+  void naturalSizeDocumentAndReadableArticles_data();
+  void naturalSizeDocumentAndReadableArticles();
   void printableNativeForest_data();
   void printableNativeForest();
-  void customShowsCompleteStaticDocument_data();
-  void customShowsCompleteStaticDocument();
   void largeHtmlAndLocalSidecarProducePdf();
   void invalidInputsLeaveNoOutput();
   void delayedImageSettlesBeforePdf();
   void cancellationDiscardsLateResponseAndConverterCanBeReused();
 };
 
-void TestHtmlPdfExporter::standaloneScrollableViewerAndReadableArticles_data() {
+void TestHtmlPdfExporter::naturalSizeDocumentAndReadableArticles_data() {
   QTest::addColumn<bool>("tall");
-  QTest::newRow("wide-map") << false;
-  QTest::newRow("tall-map") << true;
+  QTest::addColumn<bool>("custom");
+  QTest::newRow("standalone-wide") << false << false;
+  QTest::newRow("standalone-tall") << true << false;
+  QTest::newRow("custom-wide") << false << true;
+  QTest::newRow("custom-tall") << true << true;
 }
 
-void TestHtmlPdfExporter::standaloneScrollableViewerAndReadableArticles() {
+void TestHtmlPdfExporter::naturalSizeDocumentAndReadableArticles() {
   QFETCH(bool, tall);
+  QFETCH(bool, custom);
   QTemporaryDir directory;
   QVERIFY(directory.isValid());
   QVERIFY(writeFile(directory.filePath(QStringLiteral("fixture.png")), imageBytes()));
   ServiceLocator services;
   MindMapExporter renderer(services, nullptr, nullptr);
-  const auto html = directory.filePath(QStringLiteral("standalone.html"));
-  QVERIFY(renderer.renderHtml(nativeInput(directory.path(), tall), ExportHtmlRequest(), html));
+  ExportHtmlRequest request;
+  request.purpose = custom ? ExportHtmlPurpose::Custom : ExportHtmlPurpose::Standalone;
+  // Neither complete HTML presentation depends on printable paper geometry.
+  request.options.m_pdfOption.m_layout.clear();
+  const auto html = directory.filePath(QStringLiteral("natural.html"));
+  QVERIFY(renderer.renderHtml(nativeInput(directory.path(), tall), request, html));
 
   BrowserPage browser;
   QVERIFY(browser.profile.isOffTheRecord());
+  QVERIFY(browser.page.settings()->testAttribute(QWebEngineSettings::JavascriptEnabled));
   QVERIFY(loadFile(browser.page, html));
   auto state = documentState(browser.page);
   QVERIFY(!state.isEmpty());
-  QCOMPARE(state.value(QStringLiteral("mode")).toString(), QStringLiteral("interactive"));
-  QVERIFY(state.value(QStringLiteral("mapVisible")).toBool());
-  QVERIFY(state.value(QStringLiteral("controlsVisible")).toBool());
-  QVERIFY(state.value(QStringLiteral("controlsOutsideMap")).toBool());
-  QVERIFY(state.value(QStringLiteral("separatorVisible")).toBool());
-  QVERIFY(state.value(QStringLiteral("articles")).toObject().value(QStringLiteral("top")).toDouble() >=
-          state.value(QStringLiteral("visual")).toObject().value(QStringLiteral("bottom")).toDouble());
   verifyMapDocument(state, tall);
   verifyCompleteArticles(state, tall);
-  auto viewer = viewerState(browser.page);
-  QVERIFY(std::abs(viewer.value(QStringLiteral("scale")).toDouble() - 1) < 0.001);
-  QCOMPARE(viewer.value(QStringLiteral("zoomText")).toString(), QStringLiteral("100%"));
-  QCOMPARE(viewer.value(QStringLiteral("overflow")).toString(), QStringLiteral("auto"));
-  QVERIFY(viewer.value(QStringLiteral("clientHeight")).toDouble() <= 900 * 0.7 + 1);
-  QVERIFY(viewer.value(QStringLiteral("maxScrollLeft")).toDouble() > 100);
+  verifyNaturalDocument(state);
+  const double width = state.value(QStringLiteral("naturalWidth")).toDouble();
+  const double height = state.value(QStringLiteral("naturalHeight")).toDouble();
+  QVERIFY(width > state.value(QStringLiteral("viewportWidth")).toDouble() + 100);
   if (tall) {
-    QVERIFY(viewer.value(QStringLiteral("maxScrollTop")).toDouble() > 100);
+    QVERIFY(height > state.value(QStringLiteral("viewportHeight")).toDouble() + 100);
   }
-  QVERIFY(viewer.value(QStringLiteral("rootVisible")).toBool());
-  const auto rootTopic = state.value(QStringLiteral("rootTopic")).toObject();
-  const QPoint wordPoint(qRound(rootTopic.value(QStringLiteral("left")).toDouble() + 4),
-                         qRound(rootTopic.value(QStringLiteral("top")).toDouble() + 7));
-  QVERIFY2(evaluateJavaScript(browser.page,
-                              QStringLiteral("!!document.elementFromPoint(%1,%2).closest('.m3-topic')")
-                                  .arg(wordPoint.x()).arg(wordPoint.y())).toBool(),
-           "Connectors and overlay controls must not intercept node text pointer hits");
+
+  double smallArticleWidth = 0;
+  for (const auto &size : {QSize(640, 700), QSize(1800, 1000)}) {
+    browser.view.resize(size);
+    QTRY_COMPARE_WITH_TIMEOUT(evaluateJavaScript(browser.page, QStringLiteral("innerWidth")).toInt(),
+                              size.width(), 5000);
+    QVERIFY(settleLayout(browser.page));
+    state = documentState(browser.page);
+    QVERIFY(!state.isEmpty());
+    verifyMapDocument(state, tall);
+    verifyCompleteArticles(state, tall);
+    verifyNaturalDocument(state);
+    const auto map = state.value(QStringLiteral("map")).toObject();
+    QVERIFY(std::abs(map.value(QStringLiteral("width")).toDouble() - width) < 1);
+    QVERIFY(std::abs(map.value(QStringLiteral("height")).toDouble() - height) < 1);
+    const double articleWidth = state.value(QStringLiteral("articles")).toObject()
+                                    .value(QStringLiteral("width")).toDouble();
+    if (size.width() == 640) {
+      smallArticleWidth = articleWidth;
+    } else {
+      QVERIFY(articleWidth > smallArticleWidth + 1000);
+      QVERIFY(articleWidth > state.value(QStringLiteral("oldColumnWidth")).toDouble() + 500);
+    }
+  }
+
+  // The document itself exposes the complete map and the article tail, not an inner scroller.
+  browser.view.resize(640, 700);
+  QTRY_COMPARE_WITH_TIMEOUT(evaluateJavaScript(browser.page, QStringLiteral("innerWidth")).toInt(),
+                            640, 5000);
+  QVERIFY(evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
+    window.scrollTo(document.scrollingElement.scrollWidth, document.scrollingElement.scrollHeight);
+    return true;
+  })())JS")).toBool());
+  QVERIFY(settleLayout(browser.page));
+  state = documentState(browser.page);
+  QVERIFY(state.value(QStringLiteral("scrollX")).toDouble() > 100);
+  QVERIFY(state.value(QStringLiteral("scrollY")).toDouble() > height);
+  verifyNaturalDocument(state);
+
+  QVERIFY(evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
+    const topic = document.querySelector('#mindmap .m3-topic');
+    topic.scrollIntoView({block:'center', inline:'center'});
+    const box = topic.getBoundingClientRect();
+    const hit = document.elementFromPoint(box.left + 4, box.top + 7);
+    return hit && hit.closest('.m3-topic') === topic;
+  })())JS")).toBool());
   const auto selected = evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
     const range = document.createRange();
     range.selectNodeContents(document.querySelector('#mindmap .m3-topic'));
@@ -861,109 +1012,23 @@ void TestHtmlPdfExporter::standaloneScrollableViewerAndReadableArticles() {
   })())JS")).toString();
   QCOMPARE(selected.simplified(), topics().first().simplified());
 
-  // Work from the interior, rather than the initial root position at a clamped scroll edge.
-  QVERIFY(evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
-    const viewport = document.getElementById('map-viewport');
-    viewport.scrollLeft = (viewport.scrollWidth - viewport.clientWidth) / 2;
-    viewport.scrollTop = (viewport.scrollHeight - viewport.clientHeight) / 2;
-    return true;
-  })())JS")).toBool());
-  auto before = viewerState(browser.page);
-  QVERIFY(clickElement(browser, QStringLiteral("#map-zoom-in")));
-  QTRY_VERIFY_WITH_TIMEOUT(std::abs(viewerState(browser.page).value(QStringLiteral("scale"))
-                                       .toDouble() - 1.25) < 0.001, 5000);
-  viewer = viewerState(browser.page);
-  verifyCenterPreserved(before, viewer);
-  QVERIFY(viewer.value(QStringLiteral("controlsOverlay")).toBool());
-  QVERIFY(std::abs(viewer.value(QStringLiteral("controlTop")).toDouble() -
-                   before.value(QStringLiteral("controlTop")).toDouble()) < 1);
-  QVERIFY(std::abs(viewer.value(QStringLiteral("controlWidth")).toDouble() -
-                   before.value(QStringLiteral("controlWidth")).toDouble()) < 1);
-  QCOMPARE(viewer.value(QStringLiteral("zoomText")).toString(), QStringLiteral("125%"));
-  before = viewer;
-  QVERIFY(activateControl(browser.page, QStringLiteral("map-zoom-out")));
-  viewer = viewerState(browser.page);
-  QVERIFY(std::abs(viewer.value(QStringLiteral("scale")).toDouble() - 1) < 0.001);
-  verifyCenterPreserved(before, viewer);
-
-  QVERIFY(activateControl(browser.page, QStringLiteral("map-zoom-in"), 3));
-  before = viewerState(browser.page);
-  browser.view.resize(760, 720);
-  QTRY_VERIFY_WITH_TIMEOUT(viewerState(browser.page).value(QStringLiteral("clientWidth")).toDouble() <
-                              before.value(QStringLiteral("clientWidth")).toDouble(), 5000);
-  QVERIFY(evaluateJavaScript(browser.page,
-                             QStringLiteral("dispatchEvent(new Event('resize')); true")).toBool());
-  QVERIFY(settleLayout(browser.page));
-  viewer = viewerState(browser.page);
-  QVERIFY(std::abs(viewer.value(QStringLiteral("scale")).toDouble() -
-                   before.value(QStringLiteral("scale")).toDouble()) < 0.001);
-  verifyCenterPreserved(before, viewer);
-  before = viewer;
-  QVERIFY(activateControl(browser.page, QStringLiteral("map-reset")));
-  viewer = viewerState(browser.page);
-  QVERIFY(std::abs(viewer.value(QStringLiteral("scale")).toDouble() - 1) < 0.001);
-  QCOMPARE(viewer.value(QStringLiteral("zoomText")).toString(), QStringLiteral("100%"));
-  verifyCenterPreserved(before, viewer);
-
-  QVERIFY(activateControl(browser.page, QStringLiteral("map-zoom-out"), 40));
-  viewer = viewerState(browser.page);
-  QVERIFY(std::abs(viewer.value(QStringLiteral("scale")).toDouble() - 0.1) < 0.001);
-  QCOMPARE(viewer.value(QStringLiteral("zoomText")).toString(), QStringLiteral("10%"));
-  QVERIFY(viewer.value(QStringLiteral("outDisabled")).toBool());
-  QVERIFY(!viewer.value(QStringLiteral("inDisabled")).toBool());
-  QVERIFY(std::abs(viewer.value(QStringLiteral("insetX")).toDouble() -
-                   (viewer.value(QStringLiteral("clientWidth")).toDouble() -
-                    viewer.value(QStringLiteral("mapWidth")).toDouble()) / 2) < 1);
-  QVERIFY(std::abs(viewer.value(QStringLiteral("insetY")).toDouble() -
-                   (viewer.value(QStringLiteral("clientHeight")).toDouble() -
-                    viewer.value(QStringLiteral("mapHeight")).toDouble()) / 2) < 1);
-  QVERIFY(activateControl(browser.page, QStringLiteral("map-zoom-in"), 40));
-  viewer = viewerState(browser.page);
-  QVERIFY(std::abs(viewer.value(QStringLiteral("scale")).toDouble() - 4) < 0.001);
-  QCOMPARE(viewer.value(QStringLiteral("zoomText")).toString(), QStringLiteral("400%"));
-  QVERIFY(viewer.value(QStringLiteral("inDisabled")).toBool());
-  QVERIFY(!viewer.value(QStringLiteral("outDisabled")).toBool());
-  QVERIFY(activateControl(browser.page, QStringLiteral("map-zoom-out")));
-  viewer = viewerState(browser.page);
-  QVERIFY(std::abs(viewer.value(QStringLiteral("scale")).toDouble() - 3.2) < 0.001);
-  QVERIFY(!viewer.value(QStringLiteral("inDisabled")).toBool());
-
-  // Main Node moves only the map scroller and keeps the selected zoom and document anchor.
-  QVERIFY(activateControl(browser.page, QStringLiteral("map-reset")));
-  QVERIFY(activateControl(browser.page, QStringLiteral("map-zoom-in")));
-  QVERIFY(evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
-    const viewport = document.getElementById('map-viewport');
-    viewport.scrollLeft = viewport.scrollWidth; viewport.scrollTop = viewport.scrollHeight;
-    return true;
-  })())JS")).toBool());
-  before = viewerState(browser.page);
-  QVERIFY(!before.value(QStringLiteral("rootVisible")).toBool());
-  QVERIFY(activateControl(browser.page, QStringLiteral("map-main-node")));
-  viewer = viewerState(browser.page);
-  QVERIFY(viewer.value(QStringLiteral("rootVisible")).toBool());
-  QCOMPARE(viewer.value(QStringLiteral("scale")).toDouble(), before.value(QStringLiteral("scale")).toDouble());
-  before.insert(QStringLiteral("centerX"), viewer.value(QStringLiteral("rootX")));
-  before.insert(QStringLiteral("centerY"), viewer.value(QStringLiteral("rootY")));
-  verifyCenterPreserved(before, viewer);
-  QVERIFY(evaluateJavaScript(browser.page, QStringLiteral("location.hash === ''")).toBool());
-
-  // Real pointer input must follow the topic anchor and then the authored inline reference.
+  // Real pointer input follows the map topic, then the reference on its separate article row.
   QVERIFY(clickElement(browser, QStringLiteral("#mindmap [data-node-id='n7'] .m3-topic")));
   QTRY_COMPARE_WITH_TIMEOUT(evaluateJavaScript(browser.page, QStringLiteral("location.hash")).toString(),
                             QStringLiteral("#m3-node-6e37"), 5000);
   QVERIFY(evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
-    const heading = document.querySelector('#m3-node-6e37 .m3-article-topic').getBoundingClientRect();
-    return heading.top >= 0 && heading.bottom <= innerHeight;
+    const title = document.querySelector('#m3-node-6e37 .m3-article-title').getBoundingClientRect();
+    return title.top >= 0 && title.bottom <= innerHeight;
   })())JS")).toBool());
   QVERIFY(clickElement(browser, QStringLiteral("#m3-node-6e37 .m3-cross-reference")));
   QTRY_COMPARE_WITH_TIMEOUT(evaluateJavaScript(browser.page, QStringLiteral("location.hash")).toString(),
                             QStringLiteral("#m3-node-6e39"), 5000);
   QVERIFY(evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
-    const heading = document.querySelector('#m3-node-6e39 .m3-article-topic').getBoundingClientRect();
-    return heading.top >= 0 && heading.bottom <= innerHeight;
+    const title = document.querySelector('#m3-node-6e39 .m3-article-title').getBoundingClientRect();
+    return title.top >= 0 && title.bottom <= innerHeight;
   })())JS")).toBool());
   state = documentState(browser.page);
-  QVERIFY(state.value(QStringLiteral("mapVisible")).toBool());
+  verifyNaturalDocument(state);
   verifyCompleteArticles(state, tall);
 }
 
@@ -997,11 +1062,10 @@ void TestHtmlPdfExporter::printableNativeForest() {
   verifyMapDocument(state);
   verifyCompleteArticles(state);
   QVERIFY(state.value(QStringLiteral("mapVisible")).toBool());
-  verifyStaticViewer(state, viewerState(browser.page));
+  verifyPdfMapReservation(state);
   QVERIFY(!state.value(QStringLiteral("separatorVisible")).toBool());
   QVERIFY(state.value(QStringLiteral("chromeHidden")).toBool());
   const auto map = state.value(QStringLiteral("map")).toObject();
-  const auto viewport = state.value(QStringLiteral("mapViewport")).toObject();
   const auto visual = state.value(QStringLiteral("visual")).toObject();
   const auto articles = state.value(QStringLiteral("articles")).toObject();
   const double width = map.value(QStringLiteral("width")).toDouble();
@@ -1009,8 +1073,6 @@ void TestHtmlPdfExporter::printableNativeForest() {
   QVERIFY(width > 0 && height > 0);
   QVERIFY(width <= (printable.width() - 1) * pixelsPerMillimeter + 1);
   QVERIFY(height <= (printable.height() - 1) * pixelsPerMillimeter + 1);
-  QVERIFY(std::abs(width - viewport.value(QStringLiteral("width")).toDouble()) < 1);
-  QVERIFY(std::abs(height - viewport.value(QStringLiteral("height")).toDouble()) < 1);
   QVERIFY(std::abs(map.value(QStringLiteral("left")).toDouble()) < 1);
   QVERIFY(std::abs(map.value(QStringLiteral("top")).toDouble()) < 1);
   QVERIFY(visual.value(QStringLiteral("bottom")).toDouble() <=
@@ -1023,48 +1085,33 @@ void TestHtmlPdfExporter::printableNativeForest() {
                                             (printable.height() - 1) * pixelsPerMillimeter /
                                                 state.value(QStringLiteral("naturalHeight")).toDouble()));
   QVERIFY(std::abs(width / state.value(QStringLiteral("naturalWidth")).toDouble() - expectedScale) < 0.001);
-  const auto figure = state.value(QStringLiteral("figure")).toObject()
-                          .value(QStringLiteral("bounds")).toObject();
-  QVERIFY(figure.value(QStringLiteral("width")).toDouble() <= printable.width() * pixelsPerMillimeter);
-  QVERIFY(figure.value(QStringLiteral("height")).toDouble() <= printable.height() * pixelsPerMillimeter);
+  for (const auto &value : state.value(QStringLiteral("figures")).toArray()) {
+    const auto figure = value.toObject().value(QStringLiteral("bounds")).toObject();
+    QVERIFY(figure.value(QStringLiteral("width")).toDouble() <= printable.width() * pixelsPerMillimeter);
+    QVERIFY(figure.value(QStringLiteral("height")).toDouble() <= printable.height() * pixelsPerMillimeter);
+  }
   QVERIFY(articles.value(QStringLiteral("top")).toDouble() >=
           visual.value(QStringLiteral("bottom")).toDouble());
   QVERIFY(state.value(QStringLiteral("breakAfter")).toString() == QStringLiteral("page") ||
           state.value(QStringLiteral("pageBreakAfter")).toString() == QStringLiteral("always"));
-  const auto deep = state.value(QStringLiteral("deepHeading")).toObject();
-  const auto root = state.value(QStringLiteral("rootHeading")).toObject();
-  QVERIFY(std::abs(deep.value(QStringLiteral("left")).toDouble() -
-                   root.value(QStringLiteral("left")).toDouble()) < 1);
-  QVERIFY(deep.value(QStringLiteral("width")).toDouble() >
-          printable.width() * pixelsPerMillimeter * 0.9);
   QVERIFY(
       state.value(QStringLiteral("note")).toObject().value(QStringLiteral("height")).toDouble() >
       printable.height() * pixelsPerMillimeter);
   QCOMPARE(state.value(QStringLiteral("noteBreak")).toString(), QStringLiteral("auto"));
-  QVERIFY(state.value(QStringLiteral("noteFont")).toDouble() >= 12);
   QVERIFY(
       state.value(QStringLiteral("headingBreak")).toString().startsWith(QStringLiteral("avoid")));
 
-  // Static resize must not override paper geometry or apply a second layout zoom.
+  // Resizing cannot override paper geometry or introduce another layout zoom.
   browser.view.resize(400, 700);
-  QVERIFY(
-      evaluateJavaScript(browser.page, QStringLiteral("dispatchEvent(new Event('resize')); true"))
-          .toBool());
+  QTRY_COMPARE_WITH_TIMEOUT(evaluateJavaScript(browser.page, QStringLiteral("innerWidth")).toInt(),
+                            400, 5000);
   QVERIFY(settleLayout(browser.page));
   const auto resized = documentState(browser.page);
   verifyMapDocument(resized);
   const auto resizedMap = resized.value(QStringLiteral("map")).toObject();
   QVERIFY(std::abs(resizedMap.value(QStringLiteral("width")).toDouble() - width) < 1);
   QVERIFY(std::abs(resizedMap.value(QStringLiteral("height")).toDouble() - height) < 1);
-  verifyStaticViewer(resized, viewerState(browser.page));
-  QVERIFY(evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
-    for (const id of ['map-viewer', 'map-viewport', 'map-space']) {
-      const element = document.getElementById(id);
-      element.scrollLeft = 100; element.scrollTop = 100;
-      if (element.scrollLeft !== 0 || element.scrollTop !== 0) return false;
-    }
-    return true;
-  })())JS")).toBool());
+  verifyPdfMapReservation(resized);
 
   HtmlPdfExporter converter(services);
   connect(&converter, &HtmlPdfExporter::logRequested, this,
@@ -1139,62 +1186,6 @@ void TestHtmlPdfExporter::printableNativeForest() {
              qPrintable(QStringLiteral("Missing long-note paragraph %1").arg(index)));
   }
 #endif
-}
-
-void TestHtmlPdfExporter::customShowsCompleteStaticDocument_data() {
-  QTest::addColumn<bool>("tall");
-  QTest::newRow("wide-map") << false;
-  QTest::newRow("tall-map") << true;
-}
-
-void TestHtmlPdfExporter::customShowsCompleteStaticDocument() {
-  QFETCH(bool, tall);
-  QTemporaryDir directory;
-  QVERIFY(directory.isValid());
-  QVERIFY(writeFile(directory.filePath(QStringLiteral("fixture.png")), imageBytes()));
-  ServiceLocator services;
-  MindMapExporter renderer(services, nullptr, nullptr);
-  ExportHtmlRequest request;
-  request.purpose = ExportHtmlPurpose::Custom;
-  // Custom is not a paper-based format: it must work even without a page layout.
-  request.options.m_pdfOption.m_layout.clear();
-  const auto html = directory.filePath(QStringLiteral("custom.html"));
-  QVERIFY(renderer.renderHtml(nativeInput(directory.path(), tall), request, html));
-  BrowserPage browser;
-  browser.view.resize(1200, 400);
-  QVERIFY(loadFile(browser.page, html));
-  auto state = documentState(browser.page);
-  QVERIFY(!state.isEmpty());
-  verifyMapDocument(state, tall);
-  verifyCompleteArticles(state, tall);
-  auto viewer = viewerState(browser.page);
-  verifyStaticViewer(state, viewer);
-  QVERIFY(state.value(QStringLiteral("mapVisible")).toBool());
-  QVERIFY(!state.value(QStringLiteral("chromeHidden")).toBool());
-  QVERIFY(state.value(QStringLiteral("separatorVisible")).toBool());
-  QCOMPARE(state.value(QStringLiteral("breakAfter")).toString(), QStringLiteral("auto"));
-  QCOMPARE(state.value(QStringLiteral("pageBreakAfter")).toString(), QStringLiteral("auto"));
-  QVERIFY(state.value(QStringLiteral("articles")).toObject().value(QStringLiteral("top")).toDouble() >=
-          state.value(QStringLiteral("visual")).toObject().value(QStringLiteral("bottom")).toDouble());
-  if (tall) {
-    QVERIFY2(viewer.value(QStringLiteral("clientHeight")).toDouble() > 400 * 0.7,
-             "A static map must not inherit the interactive viewport height cap");
-  }
-  const double originalWidth = viewer.value(QStringLiteral("mapWidth")).toDouble();
-  browser.view.resize(640, 700);
-  QTRY_VERIFY_WITH_TIMEOUT(viewerState(browser.page).value(QStringLiteral("mapWidth")).toDouble() <
-                              originalWidth - 100, 5000);
-  QVERIFY(settleLayout(browser.page));
-  state = documentState(browser.page);
-  viewer = viewerState(browser.page);
-  verifyMapDocument(state, tall);
-  verifyCompleteArticles(state, tall);
-  verifyStaticViewer(state, viewer);
-  QVERIFY(viewer.value(QStringLiteral("mapWidth")).toDouble() <= 640);
-  const double ratio = state.value(QStringLiteral("naturalWidth")).toDouble() /
-                       state.value(QStringLiteral("naturalHeight")).toDouble();
-  QVERIFY(std::abs(viewer.value(QStringLiteral("mapWidth")).toDouble() /
-                       viewer.value(QStringLiteral("mapHeight")).toDouble() - ratio) < 0.01);
 }
 
 void TestHtmlPdfExporter::largeHtmlAndLocalSidecarProducePdf() {
