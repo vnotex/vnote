@@ -442,6 +442,11 @@ QJsonObject documentState(QWebEnginePage &p_page) {
       chromeHidden:!visible(document.querySelector('main > h1')),
       headings:entries.map(entry => entry.querySelector('.m3-article-topic')
         .innerText.replace(/\s+/g, ' ').trim()),
+      headingTags:entries.map(entry => {
+        const heading = entry.querySelector('.m3-article-topic').parentElement;
+        return {id:entry.id, tag:heading.tagName, fontSize:parseFloat(getComputedStyle(heading).fontSize)};
+      }),
+      rootHeadingCount:articles.querySelectorAll('h1').length,
       articleVisibility:entries.map(visible), text:articles.innerText,
       links:Array.from(articles.querySelectorAll('a'), link => ({href:link.getAttribute('href'),
         targetExists:!link.hash || !!document.getElementById(decodeURIComponent(link.hash.slice(1)))})),
@@ -453,14 +458,14 @@ QJsonObject documentState(QWebEnginePage &p_page) {
       tags:Array.from(articles.querySelectorAll('.m3-article-tag'), tag => ({text:tag.textContent,
         visible:visible(tag), rounded:parseFloat(getComputedStyle(tag).borderRadius) > 0})),
       icons:Array.from(articles.querySelectorAll('.m3-article-icon'), icon => ({text:icon.textContent,
-        visible:visible(icon), inHeading:!!icon.closest('h3')})),
+        visible:visible(icon), inHeading:!!icon.closest('h1,h3')})),
       figure:{decoded:figure.complete && figure.naturalWidth > 0, source:figure.currentSrc,
         naturalWidth:figure.naturalWidth, naturalHeight:figure.naturalHeight,
         bounds:rect(figure), fits:inside(rect(figure), rect(articles)), visible:visible(figure)},
       noteText:note.innerText, noteParagraphs:note.querySelectorAll('p').length,
       paragraphs:Array.from(paragraphs.querySelectorAll('p'), paragraph => paragraph.innerText),
       noteMarkup:paragraphs.querySelectorAll('b,script').length,
-      deepHeading:rect(deep.querySelector('h3')), rootHeading:rect(entries[0].querySelector('h3')),
+      deepHeading:rect(deep.querySelector('h3')), rootHeading:rect(entries[0].querySelector('h1')),
       note:rect(note), noteBreak:getComputedStyle(note).breakInside,
       noteFont:parseFloat(getComputedStyle(note).fontSize),
       headingBreak:getComputedStyle(deep.querySelector('h3')).breakAfter
@@ -474,6 +479,24 @@ void verifyCompleteArticles(const QJsonObject &p_state, bool p_tall = false) {
   QCOMPARE(headings.size(), topics(p_tall).size());
   for (const auto &topic : topics(p_tall)) {
     QVERIFY2(headings.contains(topic.simplified()), qPrintable(topic));
+  }
+  QCOMPARE(p_state.value(QStringLiteral("rootHeadingCount")).toInt(), 2);
+  const auto headingTags = p_state.value(QStringLiteral("headingTags")).toArray();
+  QCOMPARE(headingTags.size(), headings.size());
+  const double rootFont = headingTags.first().toObject().value(QStringLiteral("fontSize")).toDouble();
+  for (const auto &value : headingTags) {
+    const auto heading = value.toObject();
+    const auto id = heading.value(QStringLiteral("id")).toString();
+    const bool root = id == QStringLiteral("m3-node-6e30") ||
+                      id == QStringLiteral("m3-node-6e38");
+    QCOMPARE(heading.value(QStringLiteral("tag")).toString(),
+             root ? QStringLiteral("H1") : QStringLiteral("H3"));
+    const double fontSize = heading.value(QStringLiteral("fontSize")).toDouble();
+    if (root) {
+      QCOMPARE(fontSize, rootFont);
+    } else {
+      QVERIFY(fontSize < rootFont);
+    }
   }
   QVERIFY(p_state.value(QStringLiteral("articlesVisible")).toBool());
   for (const auto &visible : p_state.value(QStringLiteral("articleVisibility")).toArray()) {

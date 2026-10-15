@@ -298,7 +298,7 @@ bool MindMapExporter::adaptHtml(QString &p_html, const ExportHtmlRequest &p_requ
           "{ page-break-inside:auto; break-inside:auto; }\n"
           "#articles ul { margin-left:0; padding-left:0; padding-inline-start:0; "
           "border:0 !important; list-style:none; }\n"
-          "#articles h3 { page-break-after:avoid; break-after:avoid; }\n"
+          "#articles h1, #articles h3 { page-break-after:avoid; break-after:avoid; }\n"
           "#articles p { orphans:2; widows:2; }\n"
           "#articles figure { margin-left:0; margin-right:0; "
           "page-break-inside:avoid; break-inside:avoid; }\n"
