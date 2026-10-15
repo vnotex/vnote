@@ -2,7 +2,6 @@
 
 #include <QCheckBox>
 #include <QComboBox>
-#include <QDoubleSpinBox>
 #include <QFile>
 #include <QFileInfo>
 #include <QHBoxLayout>
@@ -18,7 +17,6 @@
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
-#include <core/sessionconfig.h>
 #include <widgets/widgetsfactory.h>
 
 #include "editorpage.h"
@@ -60,9 +58,6 @@ void MarkdownEditorPage::loadInternal() {
   m_autoSectionNumberCheckBox->setChecked(markdownConfig.getAutoSectionNumberEnabled());
   m_autoSectionNumberInEditModeCheckBox->setChecked(
       markdownConfig.getAutoSectionNumberInEditModeEnabled());
-
-  m_zoomFactorSpinBox->setValue(
-      m_services.get<ConfigMgr2>()->getSessionConfig().getMarkdownZoomFactorInReadMode());
 
   m_concealmentCheckBox->setChecked(markdownConfig.getConcealmentEnabled());
 
@@ -144,9 +139,6 @@ bool MarkdownEditorPage::saveInternal() {
   markdownConfig.setAutoSectionNumberEnabled(m_autoSectionNumberCheckBox->isChecked());
   markdownConfig.setAutoSectionNumberInEditModeEnabled(
       m_autoSectionNumberInEditModeCheckBox->isChecked());
-
-  m_services.get<ConfigMgr2>()->getSessionConfig().setMarkdownZoomFactorInReadMode(
-      m_zoomFactorSpinBox->value());
 
   markdownConfig.setConcealmentEnabled(m_concealmentCheckBox->isChecked());
 
@@ -271,22 +263,6 @@ void MarkdownEditorPage::setupReadGroup() {
         m_autoSectionNumberCheckBox, m_autoSectionNumberCheckBox->toolTip(), this));
     addSearchItem(label, m_autoSectionNumberCheckBox->toolTip(), m_autoSectionNumberCheckBox);
     connect(m_autoSectionNumberCheckBox, &QCheckBox::stateChanged, this,
-            &MarkdownEditorPage::pageIsChanged);
-  }
-
-  {
-    m_zoomFactorSpinBox = WidgetsFactory::createDoubleSpinBox(this);
-    m_zoomFactorSpinBox->setToolTip(tr("Zoom factor in read mode"));
-
-    m_zoomFactorSpinBox->setRange(0.1, 10);
-    m_zoomFactorSpinBox->setSingleStep(0.1);
-
-    const QString label(tr("Zoom factor"));
-    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
-        label, m_zoomFactorSpinBox->toolTip(), m_zoomFactorSpinBox, this));
-    addSearchItem(label, m_zoomFactorSpinBox->toolTip(), m_zoomFactorSpinBox);
-    connect(m_zoomFactorSpinBox, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
             &MarkdownEditorPage::pageIsChanged);
   }
 

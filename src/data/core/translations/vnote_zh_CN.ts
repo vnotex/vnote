@@ -4640,17 +4640,7 @@
         <translation>在阅读模式下自动为标题编号，已有编号的文档除外</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Zoom factor in read mode</source>
-        <translation>阅读模式缩放</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Zoom factor</source>
-        <translation>缩放</translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="+26"/>
         <source>HTML tag</source>
         <translation>HTML标签</translation>
     </message>
@@ -10271,17 +10261,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>行距</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Zoom delta of the basic font size</source>
-        <translation>基础字体的缩放大小</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Zoom delta</source>
-        <translation>缩放大小</translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="+26"/>
         <location line="+2"/>
         <source>Spell check</source>
         <translation>拼写检查</translation>

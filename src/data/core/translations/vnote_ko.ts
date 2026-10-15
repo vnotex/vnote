@@ -4645,17 +4645,7 @@
         <translation>문서에 이미 번호가 매겨져 있지 않으면 읽기 모드에서 제목에 자동으로 번호 매기기</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Zoom factor in read mode</source>
-        <translation>읽기 모드 확대/축소 배율</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Zoom factor</source>
-        <translation>확대/축소 배율</translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="+26"/>
         <source>HTML tag</source>
         <translation>HTML 태그</translation>
     </message>
@@ -10277,17 +10267,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>줄 간격</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Zoom delta of the basic font size</source>
-        <translation>기본 글꼴 크기에 대한 확대/축소 조정값</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Zoom delta</source>
-        <translation>확대/축소 조정값</translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="+26"/>
         <location line="+2"/>
         <source>Spell check</source>
         <translation>맞춤법 검사</translation>

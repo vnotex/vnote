@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Remove redundant text-editor and Markdown zoom controls from Settings; adjust zoom directly in the editor
 * Remember Markdown read zoom, shared text-editor zoom and mind-map fixed or Fit zoom in session state
 * Show the configured shortcut and tooltip on the mind-map context-menu Shortcuts Help action
 * Make mind-map emoji picker selection and hover highlights follow the theme, with an outline marking the keyboard target

@@ -10,7 +10,6 @@
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/hookmanager.h>
-#include <core/sessionconfig.h>
 #include <core/texteditorconfig.h>
 #include <utils/widgetutils.h>
 #include <widgets/widgetsfactory.h>
@@ -168,22 +167,6 @@ void TextEditorPage::setupUI() {
   }
 
   {
-    m_zoomDeltaSpinBox = WidgetsFactory::createSpinBox(this);
-    m_zoomDeltaSpinBox->setToolTip(tr("Zoom delta of the basic font size"));
-
-    m_zoomDeltaSpinBox->setRange(-20, 20);
-    m_zoomDeltaSpinBox->setSingleStep(1);
-
-    const QString label(tr("Zoom delta"));
-    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
-    cardLayout->addWidget(SettingsPageHelper::createSettingRow(label, m_zoomDeltaSpinBox->toolTip(),
-                                                               m_zoomDeltaSpinBox, this));
-    addSearchItem(label, m_zoomDeltaSpinBox->toolTip(), m_zoomDeltaSpinBox);
-    connect(m_zoomDeltaSpinBox, QOverload<int>::of(&QSpinBox::valueChanged), this,
-            &TextEditorPage::pageIsChanged);
-  }
-
-  {
     const QString label(tr("Spell check"));
     m_spellCheckCheckBox = WidgetsFactory::createCheckBox(label, this);
     m_spellCheckCheckBox->setToolTip(tr("Spell check"));
@@ -234,9 +217,6 @@ void TextEditorPage::loadInternal() {
 
   m_lineSpacingSpinBox->setValue(textConfig.getLineSpacing());
 
-  m_zoomDeltaSpinBox->setValue(
-      m_services.get<ConfigMgr2>()->getSessionConfig().getTextEditorZoomDelta());
-
   m_spellCheckCheckBox->setChecked(textConfig.isSpellCheckEnabled());
 }
 
@@ -272,9 +252,6 @@ bool TextEditorPage::saveInternal() {
   textConfig.setHighlightWhitespaceEnabled(m_highlightWhitespaceCheckBox->isChecked());
 
   textConfig.setLineSpacing(m_lineSpacingSpinBox->value());
-
-  m_services.get<ConfigMgr2>()->getSessionConfig().setTextEditorZoomDelta(
-      m_zoomDeltaSpinBox->value());
 
   textConfig.setSpellCheckEnabled(m_spellCheckCheckBox->isChecked());
 

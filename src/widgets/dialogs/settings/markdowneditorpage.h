@@ -4,7 +4,6 @@
 #include "settingspage.h"
 
 class QCheckBox;
-class QDoubleSpinBox;
 class QComboBox;
 class QLineEdit;
 
@@ -69,8 +68,6 @@ private:
   QCheckBox *m_codeBlockLineNumberCheckBox = nullptr;
 
   QCheckBox *m_codeBlockLineWrapCheckBox = nullptr;
-
-  QDoubleSpinBox *m_zoomFactorSpinBox = nullptr;
 
   QCheckBox *m_smartTableCheckBox = nullptr;
 

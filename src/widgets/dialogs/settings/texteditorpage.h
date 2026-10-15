@@ -44,8 +44,6 @@ private:
 
   QDoubleSpinBox *m_lineSpacingSpinBox = nullptr;
 
-  QSpinBox *m_zoomDeltaSpinBox = nullptr;
-
   QCheckBox *m_spellCheckCheckBox = nullptr;
 };
 } // namespace vnotex

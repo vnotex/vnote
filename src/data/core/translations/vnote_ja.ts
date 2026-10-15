@@ -4645,17 +4645,7 @@
         <translation>文書に番号が付いていない場合、読み取りモードで見出しに自動的に番号を付けます</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Zoom factor in read mode</source>
-        <translation>読み取りモードのズーム倍率</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Zoom factor</source>
-        <translation>ズーム倍率</translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="+26"/>
         <source>HTML tag</source>
         <translation>HTMLタグ</translation>
     </message>
@@ -10271,17 +10261,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>行間</translation>
     </message>
     <message>
-        <location line="+11"/>
-        <source>Zoom delta of the basic font size</source>
-        <translation>基本フォントサイズのズーム差</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Zoom delta</source>
-        <translation>ズーム差</translation>
-    </message>
-    <message>
-        <location line="+10"/>
+        <location line="+26"/>
         <location line="+2"/>
         <source>Spell check</source>
         <translation>スペルチェック</translation>
