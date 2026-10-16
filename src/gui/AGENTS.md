@@ -13,6 +13,25 @@
 | `NavigationModeService` | Keyboard navigation mode service |
 | `ToolTipService` | One scoped startup attempt to post a localized daily usage tip |
 
+## Qt application appearance
+
+On Qt 6.8+, `ThemeService` synchronizes `QStyleHints::colorScheme` on startup,
+switch and refresh, before `themeChanged`. Custom themes use the relative lightness
+of resolved `base#normal#bg` and `base#normal#fg`, not their names. QSS alone does not
+select the light/dark appearance of Qt's native standard context-menu icons.
+
+Themes with `backfill-system-palette` (including Native and renamed copies) clear
+the override **before** `ThemeUtils::backfillSystemPalette` samples Qt's palette.
+Keep the current theme alive during loading: resetting the Qt scheme can notify
+widgets synchronously. Only replace it after a successful load or fallback.
+Settings previews remain local QSS; they must not change application appearance.
+Older Qt versions retain their platform-selected scheme.
+
+`tests/gui/test_themeservice.cpp` covers appearance transitions, Native backfill,
+metadata-based system themes, and Windows standard-menu icon contrast in both
+Undo/Redo states. Run on the native Windows platform to exercise the icon provider;
+offscreen runs cannot verify it. Restore the system scheme between test slots.
+
 ## Native MindMap image transport
 
 `MindMapImageLoader` handles unprotected data/file/relative/HTTP(S) resources only. Preserve the

@@ -5,12 +5,15 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QListWidget>
+#include <QMenu>
 #include <QPainter>
+#include <QPlainTextEdit>
 #include <QScopedPointer>
 #include <QSet>
 #include <QStandardItemModel>
 #include <QStandardPaths>
 #include <QStringList>
+#include <QStyleHints>
 #include <QTemporaryDir>
 #include <QTreeWidget>
 #include <QVBoxLayout>
@@ -32,10 +35,10 @@ class TestThemeService : public QObject {
 
 private slots:
   void initTestCase();
-  void cleanupTestCase();
-  void testFetchWebStyleSheet_delegatesToCurrentTheme();
-  void testFetchTextEditorStyle_delegatesToCurrentTheme();
-  void testFetchWebStyleSheet_nullThemeReturnsEmpty();
+  void cleanup();
+  void qtAppearanceFollowsThemeChanges();
+  void systemPaletteAppearanceUsesMetadata();
+  void standardContextMenuIconsFollowThemeChanges();
 
   void getWebStyles_returnsOnlyWebCss();
   void getSyntaxStyles_returnsOnlyHighlightCss();
@@ -73,6 +76,7 @@ private slots:
 private:
   QString m_themeFolder;
   QTemporaryDir m_tmp;
+  QString m_originalStyleSheet;
 
   QString findPureTheme();
 
@@ -128,55 +132,157 @@ vnotex::ThemeServiceConfig TestThemeService::makeConfig() const {
 }
 
 void TestThemeService::initTestCase() {
+  m_originalStyleSheet = qApp->styleSheet();
   QVERIFY(m_tmp.isValid());
   m_themeFolder = findPureTheme();
   QVERIFY2(!m_themeFolder.isEmpty(), "pure theme fixture not found");
 }
 
-void TestThemeService::cleanupTestCase() {}
-
-void TestThemeService::testFetchWebStyleSheet_delegatesToCurrentTheme() {
-  vnotex::ThemeServiceConfig cfg;
-  cfg.themeName = QStringLiteral("pure");
-  cfg.locale = QStringLiteral("en_US");
-  cfg.appDataPath = appDataPathFromThemeFolder();
-
-  vnotex::ThemeService svc(cfg);
-  // Ensure m_currentTheme is loaded; switchTheme triggers load.
-  svc.switchTheme(QStringLiteral("pure"));
-
-  QString out = svc.fetchWebStyleSheet();
-  QVERIFY2(!out.isEmpty(), "expected non-empty CSS from pure theme");
+void TestThemeService::cleanup() {
+  qApp->setStyleSheet(m_originalStyleSheet);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+  // QTEST_MAIN starts with the system appearance; do not pin its effective mode.
+  QGuiApplication::styleHints()->unsetColorScheme();
+#endif
 }
 
-void TestThemeService::testFetchTextEditorStyle_delegatesToCurrentTheme() {
-  vnotex::ThemeServiceConfig cfg;
-  cfg.themeName = QStringLiteral("pure");
-  cfg.locale = QStringLiteral("en_US");
-  cfg.appDataPath = appDataPathFromThemeFolder();
+void TestThemeService::qtAppearanceFollowsThemeChanges() {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+  auto *hints = QGuiApplication::styleHints();
+  hints->setColorScheme(Qt::ColorScheme::Dark);
+  if (hints->colorScheme() != Qt::ColorScheme::Dark) {
+    QSKIP("Platform does not support overriding the color scheme");
+  }
+  hints->setColorScheme(Qt::ColorScheme::Light);
+  if (hints->colorScheme() != Qt::ColorScheme::Light) {
+    QSKIP("Platform does not support overriding the color scheme");
+  }
+  hints->unsetColorScheme();
+  const auto systemScheme = hints->colorScheme();
+  const auto systemPalette = qApp->palette();
 
-  vnotex::ThemeService svc(cfg);
-  svc.switchTheme(QStringLiteral("pure"));
+  auto config = makeConfig();
+  config.themeName = QStringLiteral("everforest-dark");
+  vnotex::ThemeService service(config);
+  QCOMPARE(hints->colorScheme(), Qt::ColorScheme::Dark);
+  qApp->setStyleSheet(service.fetchQtStyleSheet());
 
-  QString out = svc.fetchTextEditorStyle();
-  QVERIFY2(!out.isEmpty(), "expected non-empty JSON from pure text-editor.theme");
+  // Refresh also reapplies appearance (including theme-folder hot reload).
+  hints->setColorScheme(Qt::ColorScheme::Light);
+  service.refreshCurrentTheme();
+  QCOMPARE(hints->colorScheme(), Qt::ColorScheme::Dark);
+
+  service.switchTheme(QStringLiteral("pure"));
+  QCOMPARE(hints->colorScheme(), Qt::ColorScheme::Light);
+  qApp->setStyleSheet(service.fetchQtStyleSheet());
+  service.switchTheme(QStringLiteral("everforest-dark"));
+  qApp->setStyleSheet(service.fetchQtStyleSheet());
+  service.switchTheme(QStringLiteral("native"));
+  QCOMPARE(hints->colorScheme(), systemScheme);
+  // Check immediately: the backfill must not sample the previous Dark palette.
+  // ThemeUtils serializes system colors as RGB, without the native brush alpha.
+  QCOMPARE(QColor(service.paletteColor("base#normal#bg")).rgb(),
+           systemPalette.color(QPalette::Window).rgb());
+  QCOMPARE(QColor(service.paletteColor("base#normal#fg")).rgb(),
+           systemPalette.color(QPalette::WindowText).rgb());
+  QCOMPARE(QColor(service.paletteColor("base#icon#disabled#fg")).rgb(),
+           systemPalette.color(QPalette::Disabled, QPalette::Text).rgb());
+
+  service.switchTheme(QStringLiteral("everforest-dark"));
+  service.switchTheme(QStringLiteral("missing-theme-for-appearance-test"));
+  QCOMPARE(service.getCurrentTheme().name(), QStringLiteral("pure"));
+  QCOMPARE(hints->colorScheme(), Qt::ColorScheme::Light);
+#else
+  QSKIP("Qt color-scheme overrides require Qt 6.8");
+#endif
 }
 
-void TestThemeService::testFetchWebStyleSheet_nullThemeReturnsEmpty() {
-  // SKIP: ThemeService guarantees m_currentTheme is never null after construction.
-  //
-  // Rationale: ThemeService::loadAvailableThemes() throws (Exception::throwOne is
-  // [[noreturn]]) if no themes are found in the search path, so the constructor
-  // cannot complete without at least one valid theme. After loadCurrentTheme(),
-  // ThemeService falls back to the "pure" theme when the requested theme is not
-  // found (themeservice.cpp:95-99), so m_currentTheme is always non-null on a
-  // successfully constructed instance. There is no public API to force
-  // m_currentTheme to null without modifying production code, which the task
-  // explicitly forbids. The defensive `if (!m_currentTheme) return QString();`
-  // branches in fetch*() remain reachable only by future refactors and are
-  // tracked by code review rather than a unit test.
-  QSKIP("ThemeService::m_currentTheme is non-null by construction; null branch is unreachable "
-        "from public API. See slot comment for full rationale.");
+void TestThemeService::systemPaletteAppearanceUsesMetadata() {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+  auto *hints = QGuiApplication::styleHints();
+  hints->unsetColorScheme();
+  const auto systemScheme = hints->colorScheme();
+  const auto systemPalette = qApp->palette();
+  hints->setColorScheme(Qt::ColorScheme::Dark);
+  if (hints->colorScheme() != Qt::ColorScheme::Dark) {
+    QSKIP("Platform does not support overriding the color scheme");
+  }
+
+  QTemporaryDir custom;
+  QVERIFY(custom.isValid());
+  const auto folder = custom.filePath(QStringLiteral("themes/system-copy"));
+  QVERIFY(QDir().mkpath(folder));
+  QVERIFY(QFile::copy(bundledThemesDir() + QStringLiteral("/native/palette.json"),
+                      folder + QStringLiteral("/palette.json")));
+  auto config = makeConfig();
+  config.appDataPath = custom.path();
+  config.themeName = QStringLiteral("system-copy");
+  vnotex::ThemeService service(config);
+  QCOMPARE(hints->colorScheme(), systemScheme);
+  QCOMPARE(QColor(service.paletteColor("base#normal#bg")).rgb(),
+           systemPalette.color(QPalette::Window).rgb());
+  QCOMPARE(QColor(service.paletteColor("base#normal#fg")).rgb(),
+           systemPalette.color(QPalette::WindowText).rgb());
+#else
+  QSKIP("Qt color-scheme overrides require Qt 6.8");
+#endif
+}
+
+void TestThemeService::standardContextMenuIconsFollowThemeChanges() {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+  if (QGuiApplication::platformName() != QStringLiteral("windows") ||
+      !QIcon::themeName().isEmpty()) {
+    QSKIP("Exercises the native Windows standard-menu icon provider");
+  }
+  vnotex::ThemeService service(makeConfig());
+  QPlainTextEdit editor;
+  editor.insertPlainText(QStringLiteral("Undoable edit"));
+
+  for (const auto &name : {QStringLiteral("everforest-dark"), QStringLiteral("pure"),
+                           QStringLiteral("everforest-dark"), QStringLiteral("native")}) {
+    service.switchTheme(name);
+    qApp->setStyleSheet(service.fetchQtStyleSheet());
+    QCoreApplication::processEvents();
+    // Exercise both enabled Undo/disabled Redo and the reversed history state.
+    for (int state = 0; state < 2; ++state) {
+      QScopedPointer<QMenu> menu(editor.createStandardContextMenu());
+      menu->ensurePolished();
+      const QColor background = menu->palette().color(QPalette::Window);
+      for (auto *action : menu->actions()) {
+        if (action->objectName() != QStringLiteral("edit-undo") &&
+            action->objectName() != QStringLiteral("edit-redo")) {
+          continue;
+        }
+        const auto mode = action->isEnabled() ? QIcon::Normal : QIcon::Disabled;
+        const auto image = action->icon().pixmap(24, 24, mode).toImage();
+        QColor ink(Qt::transparent);
+        for (int y = 0; y < image.height(); ++y) {
+          for (int x = 0; x < image.width(); ++x) {
+            const auto pixel = image.pixelColor(x, y);
+            if (pixel.alpha() > ink.alpha()) {
+              ink = pixel;
+            }
+          }
+        }
+        QVERIFY2(ink.alpha() >= 200, "Standard action must have a visible icon");
+        const auto contrast = contrastRatio(ink, background);
+        QVERIFY2(contrast >= (action->isEnabled() ? 4.5 : 2.0),
+                 qPrintable(QStringLiteral("%1 %2 enabled=%3 icon=%4 background=%5 contrast=%6")
+                                .arg(name, action->objectName())
+                                .arg(action->isEnabled())
+                                .arg(ink.name(), background.name())
+                                .arg(contrast)));
+      }
+      if (state == 0) {
+        editor.undo();
+      } else {
+        editor.redo();
+      }
+    }
+  }
+#else
+  QSKIP("Qt color-scheme overrides require Qt 6.8");
+#endif
 }
 
 void TestThemeService::getWebStyles_returnsOnlyWebCss() {

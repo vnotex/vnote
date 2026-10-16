@@ -3,8 +3,12 @@
 #include <QCoreApplication>
 #include <QDebug>
 #include <QDir>
+#include <QGuiApplication>
 #include <QHash>
 #include <QRegularExpression>
+#include <QStyleHints>
+
+#include <utility>
 
 #include "core/exception.h"
 #include "core/hookevents.h"
@@ -86,20 +90,39 @@ void ThemeService::loadCurrentTheme(const QString &p_themeName) {
   emit themeAboutToChange(p_themeName);
   QCoreApplication::processEvents();
 
-  m_currentTheme.reset();
+  // Loading Native can synchronously notify widgets of a Qt palette change.
+  // Keep the current theme alive until the replacement has loaded successfully.
+  QScopedPointer<Theme> theme;
+  bool systemPalette = false;
   auto themeFolder = findThemeFolder(p_themeName);
   if (themeFolder.isNull()) {
     qWarning() << "failed to locate theme" << p_themeName;
   } else {
     qInfo() << "using theme" << p_themeName;
-    m_currentTheme.reset(loadTheme(themeFolder));
+    theme.reset(loadTheme(themeFolder, systemPalette));
   }
 
-  if (!m_currentTheme) {
+  if (!theme) {
     const QString defaultTheme("pure");
     qWarning() << "fall back to default theme" << defaultTheme;
-    m_currentTheme.reset(loadTheme(findThemeFolder(defaultTheme)));
+    theme.reset(loadTheme(findThemeFolder(defaultTheme), systemPalette));
   }
+  if (!theme) {
+    Exception::throwOne(Exception::Type::EssentialFileMissing,
+                        QStringLiteral("failed to load theme and default theme"));
+  }
+  m_currentTheme.swap(theme);
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+  if (!systemPalette) {
+    // QSS colors do not select the appearance of Qt's native standard icons.
+    const QColor background(paletteColor("base#normal#bg"));
+    const QColor foreground(paletteColor("base#normal#fg"));
+    QGuiApplication::styleHints()->setColorScheme(background.lightnessF() < foreground.lightnessF()
+                                                      ? Qt::ColorScheme::Dark
+                                                      : Qt::ColorScheme::Light);
+  }
+#endif
 
   IconUtils::setDefaultIconForeground(paletteColor("base#icon#fg"),
                                       paletteColor("base#icon#disabled#fg"));
@@ -112,14 +135,23 @@ void ThemeService::loadCurrentTheme(const QString &p_themeName) {
   }
 }
 
-Theme *ThemeService::loadTheme(const QString &p_themeFolder) {
+Theme *ThemeService::loadTheme(const QString &p_themeFolder, bool &p_systemPalette) {
+  p_systemPalette = false;
   if (p_themeFolder.isEmpty()) {
     qWarning("failed to load theme from empty folder");
     return nullptr;
   }
 
   try {
-    return Theme::fromFolder(p_themeFolder, ThemeUtils::backfillSystemPalette);
+    return Theme::fromFolder(p_themeFolder, [&p_systemPalette](QJsonObject p_palette) {
+      p_systemPalette = true;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
+      // Only system-derived themes invoke this callback. Reset before backfill,
+      // otherwise Native would inherit the previous custom theme's appearance.
+      QGuiApplication::styleHints()->unsetColorScheme();
+#endif
+      return ThemeUtils::backfillSystemPalette(std::move(p_palette));
+    });
   } catch (Exception &p_e) {
     qWarning("failed to load theme from folder %s (%s)", p_themeFolder.toStdString().c_str(),
              p_e.what());

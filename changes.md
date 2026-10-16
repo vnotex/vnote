@@ -2,6 +2,7 @@
 ## Unreleased
 * Preserve nonempty custom Markdown `<a>` IDs containing only ASCII letters, digits, underscores, and hyphens while XSS protection is enabled; no prefix is required
 * Show the notebook name instead of its ID in the export dialog's Current notebook source
+* Match Qt native context-menu icons to the selected light or dark theme, and restore system appearance for Native
 * Add Undo and Redo toolbar buttons to plain text and Markdown editors, matching the mind map editor
 * Require Qt 6; remove Qt 5.15 and Windows 7 builds, packaging and compatibility paths
 

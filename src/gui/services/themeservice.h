@@ -151,7 +151,7 @@ private:
 
   void loadCurrentTheme(const QString &p_themeName);
 
-  Theme *loadTheme(const QString &p_themeFolder);
+  Theme *loadTheme(const QString &p_themeFolder, bool &p_systemPalette);
 
   QString findThemeFolder(const QString &p_name) const;
 
