@@ -261,6 +261,8 @@ private:
   MarkdownEditor *m_editor = nullptr; // Lazily created.
   MarkdownViewer *m_viewer = nullptr; // Lazily created.
   WebViewer *m_debugViewer = nullptr; // Lazily created.
+  QAction *m_undoAction = nullptr;
+  QAction *m_redoAction = nullptr;
   QAction *m_debugAction = nullptr;
   QAction *m_presentationAction = nullptr;
   PresentationToolBarEffect *m_presentationEffect = nullptr;

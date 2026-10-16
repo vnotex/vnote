@@ -279,8 +279,12 @@ void MarkdownViewWindow2::setupToolBar() {
 
   addAction(toolBar, ViewWindowToolBarHelper2::EditRead);
   addLeftCommonToolBarActions(toolBar);
+  const auto [undo, redo] =
+      TextViewWindowHelper::addUndoRedoActions(toolBar, getServices(), this);
+  m_undoAction = undo;
+  m_redoAction = redo;
 
-  // Separator between word count and formatting actions (visible only in edit mode).
+  // Separator between history and formatting actions (visible only in edit mode).
   auto *typeSeparator = toolBar->addSeparator();
   typeSeparator->setVisible(false);
   connect(this, &ViewWindow2::modeChanged, this,
@@ -682,6 +686,8 @@ void MarkdownViewWindow2::setupTextEditor() {
 
   // Connect editor signals.
   connectEditorSignals();
+  TextViewWindowHelper::connectUndoRedoActions(this, m_editor->getTextEdit(), m_undoAction,
+                                             m_redoAction);
 
   // Bind the editor to the status bar columns.
   if (m_statusBinder && statusBar()) {

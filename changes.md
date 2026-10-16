@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Add Undo and Redo toolbar buttons to plain text and Markdown editors, matching the mind map editor
 * Require Qt 6; remove Qt 5.15 and Windows 7 builds, packaging and compatibility paths
 
 ## v4.10.0

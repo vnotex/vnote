@@ -108,6 +108,9 @@ void TextViewWindow2::setupToolBar() {
   addToolBar(toolBar);
 
   addLeftCommonToolBarActions(toolBar);
+  const auto [undo, redo] =
+      TextViewWindowHelper::addUndoRedoActions(toolBar, getServices(), this);
+  TextViewWindowHelper::connectUndoRedoActions(this, m_editor->getTextEdit(), undo, redo);
   addRightCommonToolBarActions(toolBar);
 }
 

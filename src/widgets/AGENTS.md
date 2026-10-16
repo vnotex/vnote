@@ -252,6 +252,12 @@ Use the `addAction(QMenu *, ...)` overload for menu actions: it preserves
 window-scoped shortcuts without creating temporary toolbar buttons. The toolbar
 overload owns the remaining direct controls. Theme refresh reaches both.
 
+Text and Markdown add Lucide Undo and Redo after the left common actions, matching Mind Map.
+They use the native text document history without adding shortcuts; unavailable history and
+read-only editors disable the buttons. Markdown hides them in Read mode and binds them once
+its editor is lazily created. History signals, mode changes and status changes refresh availability;
+connections use the editor as their context so protected-editor teardown disconnects them.
+
 Text keeps **Find And Replace → Presentation Mode → Menu**. Markdown keeps
 **Outline → Find And Replace → Presentation Mode → Menu**. PDF keeps
 **Outline → Find And Replace → Presentation Mode** together before page/zoom controls.

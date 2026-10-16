@@ -1,6 +1,7 @@
 #ifndef TEXTVIEWWINDOWHELPER_H
 #define TEXTVIEWWINDOWHELPER_H
 
+#include <QAction>
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -8,6 +9,10 @@
 #include <QSharedPointer>
 #include <QTextBlock>
 #include <QTextCursor>
+#include <QTextDocument>
+#include <QToolBar>
+
+#include <utility>
 
 #include <core/services/snippetcoreservice.h>
 #include <core/texteditorconfig.h>
@@ -32,6 +37,61 @@ class TextEditorConfig;
 class TextViewWindowHelper {
 public:
   TextViewWindowHelper() = delete;
+
+  static std::pair<QAction *, QAction *> addUndoRedoActions(QToolBar *p_toolBar,
+                                                           ServiceLocator &p_services,
+                                                           ViewWindow2 *p_window) {
+    auto *separator = p_toolBar->addSeparator();
+    const auto add = [&](const QString &p_text, const QString &p_icon) {
+      auto *action = p_toolBar->addAction(
+          ViewWindowToolBarHelper2::generateIcon(p_services, p_icon), p_text);
+      action->setProperty("iconName", p_icon);
+      action->setEnabled(false);
+      return action;
+    };
+    auto *undo = add(QObject::tr("Undo"), QStringLiteral("undo_editor.svg"));
+    auto *redo = add(QObject::tr("Redo"), QStringLiteral("redo_editor.svg"));
+    const auto updateVisibility = [p_window, separator, undo, redo]() {
+      const bool editing = p_window->getMode() == ViewWindowMode::Edit;
+      separator->setVisible(editing);
+      undo->setVisible(editing);
+      redo->setVisible(editing);
+    };
+    QObject::connect(p_window, &ViewWindow2::modeChanged, p_toolBar, updateVisibility);
+    updateVisibility();
+    return {undo, redo};
+  }
+
+  static void connectUndoRedoActions(ViewWindow2 *p_window, QTextEdit *p_editor,
+                                    QAction *p_undo, QAction *p_redo) {
+    const auto canEdit = [p_window, p_editor]() {
+      const auto &buffer = p_window->getBuffer();
+      return p_window->getMode() == ViewWindowMode::Edit && buffer.isValid() &&
+             !buffer.isReadOnly() && !p_editor->isReadOnly();
+    };
+    const auto update = [p_editor, p_undo, p_redo, canEdit]() {
+      const bool editable = canEdit();
+      p_undo->setEnabled(editable && p_editor->document()->isUndoAvailable());
+      p_redo->setEnabled(editable && p_editor->document()->isRedoAvailable());
+    };
+    QObject::connect(p_editor, &QTextEdit::undoAvailable, p_editor, update);
+    QObject::connect(p_editor, &QTextEdit::redoAvailable, p_editor, update);
+    QObject::connect(p_window, &ViewWindow2::modeChanged, p_editor, update);
+    QObject::connect(p_window, &ViewWindow2::statusChanged, p_editor, update);
+    // Leave keyboard shortcuts with the editor's input mode; use the same document history.
+    const auto bind = [p_window, p_editor, canEdit](QAction *p_action, auto p_command) {
+      QObject::connect(p_action, &QAction::triggered, p_editor,
+                       [p_window, p_editor, canEdit, p_command]() {
+                         if (canEdit() && p_window->isEnabled() && p_editor->isEnabled()) {
+                           (p_editor->*p_command)();
+                           p_editor->setFocus(Qt::OtherFocusReason);
+                         }
+                       });
+    };
+    bind(p_undo, &QTextEdit::undo);
+    bind(p_redo, &QTextEdit::redo);
+    update();
+  }
 
   template <typename _ViewWindow> static void connectEditor(_ViewWindow *p_win) {
     auto editor = p_win->m_editor;
