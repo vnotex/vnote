@@ -14,7 +14,7 @@ For more information, please visit [**VNote's Home Page**](https://docs.vnote.fu
 ## Description
 **VNote** is a Qt-based, free and open source note-taking application. It combines note management with an excellent editing experience across multiple document formats.
 
-VNote runs on **Linux**, **Windows**, and **macOS**.
+VNote runs on **Linux**, **Windows**, and **macOS**, and requires **Qt 6**. Qt 5.15 and Windows 7 are no longer supported.
 
 ### Supported formats
 **VNote is more than a Markdown editor — these formats are supported today:**
@@ -24,7 +24,7 @@ VNote runs on **Linux**, **Windows**, and **macOS**.
 * **Mind maps** (`.mmm`, `.emind`): create and edit mind maps with the native mind-map editor
 * **PDF** (`.pdf`): read PDF documents with the built-in viewer
 
-The built-in PDF viewer requires a **Qt 6.9+** build. Older builds, including the Windows 7 / Qt 5.15 package, open PDFs in the system default application.
+The built-in PDF viewer requires a **Qt 6.9+** build. Builds using earlier Qt 6 versions open PDFs in the system default application.
 
 ![Main](pics/main.webp)
 

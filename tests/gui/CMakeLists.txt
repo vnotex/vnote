@@ -201,7 +201,7 @@ target_include_directories(test_styleditemdelegate_height PRIVATE
 # vxpdf:// scheme handler: the MIME map and the document token registry. See the
 # header comment of the .cpp for what requestStarted() coverage would require
 # (a real QWebEngineUrlRequestJob, which has no public constructor).
-if(QT_DEFAULT_MAJOR_VERSION GREATER 5 AND Qt6_VERSION VERSION_GREATER_EQUAL 6.9.0)
+if(Qt6_VERSION VERSION_GREATER_EQUAL 6.9.0)
   find_package(Qt6 REQUIRED COMPONENTS WebEngineCore)
   add_qt_test(test_vxpdfschemehandler
     SOURCES

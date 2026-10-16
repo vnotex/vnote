@@ -59,11 +59,7 @@ QChar Utils::keyToChar(int p_key, bool p_lowerCase) {
 }
 
 QString Utils::pickAvailableFontFamily(const QStringList &p_families) {
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-  auto availableFonts = QFontDatabase().families();
-#else
   auto availableFonts = QFontDatabase::families();
-#endif
 
   for (const auto &f : p_families) {
     auto family = f.trimmed();

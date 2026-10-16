@@ -8,8 +8,7 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory = $true)][string]$Root,
-    [Parameter(Mandatory = $true)][ValidateSet('A', 'B')][string]$Generation,
-    [ValidateSet('win64', 'win64-windows7')][string]$Variant = 'win64'
+    [Parameter(Mandatory = $true)][ValidateSet('A', 'B')][string]$Generation
 )
 
 $ErrorActionPreference = 'Stop'
@@ -26,11 +25,9 @@ function Put {
         (New-Object System.Text.UTF8Encoding($false)))
 }
 
-$qtMajor = if ($Variant -eq 'win64') { '6' } else { '5' }
-
 # --- Files that NEVER change between A and B (must not enter the delta) -----
 Put 'platforms/qwindows.dll'                      'stable-platform-plugin'
-Put "Qt${qtMajor}Gui.dll"                         'stable-qt-gui'
+Put 'Qt6Gui.dll'                         'stable-qt-gui'
 Put 'styles/qwindowsvistastyle.dll'               'stable-style'
 Put 'imageformats/qjpeg.dll'                      'stable-imageformat'
 Put 'resources/qtwebengine_devtools_resources.pak' 'stable-devtools'
@@ -40,7 +37,7 @@ Put 'QtWebEngineProcess.exe'                      'stable-webengine-process'
 
 # --- Files that DO change between A and B ----------------------------------
 Put 'vnote.exe'                       "vnote-executable-generation-$Generation"
-Put "Qt${qtMajor}Core.dll"            "qt-core-generation-$Generation"
+Put 'Qt6Core.dll'            "qt-core-generation-$Generation"
 Put 'resources/icudtl.dat'            "icu-generation-$Generation"
 Put 'translations/vnote_zh_CN.qm'     "zh-translation-generation-$Generation"
 Put 'translations/vnote_ja.qm'        "ja-translation-generation-$Generation"
@@ -63,4 +60,4 @@ else {
 }
 
 $count = (Get-ChildItem -Recurse -File -LiteralPath $Root | Measure-Object).Count
-Write-Host "fixture $Generation ($Variant): $count files under $Root"
+Write-Host "fixture $Generation (win64): $count files under $Root"

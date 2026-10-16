@@ -819,7 +819,7 @@ void TestExportController::testEncryptedNoteExport() {
     fixture.bufferService->closeBuffer(note.id());
     fixture.notebookService->lockAllEncryption();
   });
-  const auto text = note.decode(vnotex::QByteArrayViewCompat(body));
+  const auto text = note.decode(QByteArrayView(body));
   TempDirFixture output;
   QVERIFY(output.isValid());
   const auto destination = output.filePath(name);

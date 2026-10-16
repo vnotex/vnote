@@ -10890,12 +10890,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>更新を確認できませんでした。</translation>
     </message>
     <message>
-        <location line="-14"/>
-        <source>TLS is unavailable: OpenSSL could not be loaded. libssl-1_1-x64.dll and libcrypto-1_1-x64.dll are expected next to vnote.exe.</source>
-        <translation>TLS を利用できません: OpenSSL を読み込めませんでした。libssl-1_1-x64.dll と libcrypto-1_1-x64.dll は vnote.exe と同じフォルダーに配置されている必要があります。</translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location line="-9"/>
         <source>TLS is unavailable: no working secure-socket backend was found.</source>
         <translation>TLS を利用できません: 利用可能なセキュアソケットのバックエンドが見つかりませんでした。</translation>
     </message>

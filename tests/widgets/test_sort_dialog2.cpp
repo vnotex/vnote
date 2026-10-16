@@ -96,9 +96,7 @@ SortDialog2::Entry entry(const QString &p_name, qint64 p_createdMs, qint64 p_mod
   return e;
 }
 
-// Simulate a user click on a header section. Emitting another object's signal
-// directly is not portable (signals are protected under Qt 5), so go through
-// the meta-object.
+// Simulate a header section click through the meta-object.
 void clickHeader(QTreeWidget *p_list, int p_column) {
   QMetaObject::invokeMethod(p_list->header(), "sectionClicked", Qt::DirectConnection,
                             Q_ARG(int, p_column));

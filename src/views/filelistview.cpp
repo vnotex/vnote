@@ -664,11 +664,7 @@ void FileListView::dropEvent(QDropEvent *p_event) {
       // Resolve the anchor index under the drop point. dropIndicatorPosition
       // is reported against indexAt(eventPos); use the same source-of-truth
       // here so the anchor and the indicator stay in lock-step.
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
       QModelIndex anchorIdx = indexAt(p_event->position().toPoint());
-#else
-      QModelIndex anchorIdx = indexAt(p_event->pos());
-#endif
       NodeIdentifier anchorId = nodeIdFromIndex(anchorIdx);
 
       QList<NodeIdentifier> newOrder = computeReorderedFileIds(draggedNodes, anchorId, pos);

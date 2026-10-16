@@ -54,9 +54,10 @@ Launch failures are interrupting Warning notifications in category `update`, key
 `update.install`, retaining the release-page fallback.
 
 Snapshot `CoreConfig::getUpdateSource()` on activation using the existing source converters;
-absent config normalizes to Gitee. Pass the immutable offered version and compile-time x64
-Qt variant, never a newly discovered release. Production launches require the running root
-`vnote.exe` and installed `updater/update-vnote.ps1`, `minisign.exe` and `LICENSE.minisign`;
+absent config normalizes to Gitee. Pass the immutable offered version, never a newly
+discovered release. The updater supports only the `win64` package; do not pass a variant
+selector. Production launches require the running root `vnote.exe` and installed
+`updater/update-vnote.ps1`, `minisign.exe` and `LICENSE.minisign`;
 never search the repository or PATH for missing helpers. Copy helpers into private temporary
 storage and transfer cleanup ownership only after successful detached launch. Use resolved
 system Windows PowerShell, individual arguments, a visible console, process-scoped execution

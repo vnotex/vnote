@@ -103,11 +103,7 @@ m3::qt::EditorConfig editorConfig(ServiceLocator &p_services, const Buffer2 &p_b
             QKeySequence::fromString(binding.toString(), QKeySequence::PortableText);
         bool valid = !sequence.isEmpty();
         for (int i = 0; valid && i < sequence.count(); ++i) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
           valid = sequence[i].key() != Qt::Key_unknown;
-#else
-          valid = (sequence[i] & ~Qt::KeyboardModifierMask) != Qt::Key_unknown;
-#endif
         }
         if (valid) {
           bindings.append(sequence);

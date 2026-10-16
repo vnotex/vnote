@@ -146,9 +146,8 @@ QNetworkRequest buildRequest(const QUrl &p_url, const QString &p_version,
     request.setRawHeader("Accept", "application/vnd.github+json, */*");
   }
   // Redirects are followed MANUALLY so every hop can be checked against the
-  // allowlist and against an HTTPS->HTTP downgrade. Qt 5 and Qt 6 differ in
-  // their DEFAULT policy (Qt 6 follows redirects out of the box), so the policy
-  // is set explicitly on EVERY request rather than relied upon.
+  // allowlist and against an HTTPS->HTTP downgrade. Override Qt 6's default
+  // redirect following explicitly on EVERY request.
   request.setAttribute(QNetworkRequest::RedirectPolicyAttribute,
                        QNetworkRequest::ManualRedirectPolicy);
   request.setAttribute(QNetworkRequest::CacheLoadControlAttribute, QNetworkRequest::AlwaysNetwork);

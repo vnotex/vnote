@@ -21,11 +21,7 @@ namespace {
 bool containsCtrlAlt(const QString &p_shortcut) {
   const QKeySequence keys(p_shortcut, QKeySequence::PortableText);
   for (int i = 0; i < keys.count(); ++i) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
     const auto modifiers = keys[i].keyboardModifiers();
-#else
-    const auto modifiers = Qt::KeyboardModifiers(keys[i] & Qt::KeyboardModifierMask);
-#endif
     if (modifiers.testFlag(Qt::ControlModifier) && modifiers.testFlag(Qt::AltModifier)) {
       return true;
     }

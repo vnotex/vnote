@@ -398,7 +398,6 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
       }
     }
   } bundle;
-  // Qt 5's QStringLiteral lambda in a local member initializer crashes MSVC 2019.
   bundle.file = QStringLiteral("app:vnote_extra.rcc");
   bundle.root = QStringLiteral("/vxnote-template-") + p_token;
   bundle.registered = QResource::registerResource(bundle.file, bundle.root);

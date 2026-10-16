@@ -13,24 +13,6 @@ using namespace vnotex;
 namespace {
 // Side of a painted handle square.
 constexpr int kHandleSquare = kStickerHandleThickness * 2;
-
-// Qt 6 deprecates QMouseEvent::pos()/globalPos(); the Qt 5.15 (win64-windows7)
-// variant has no position()/globalPosition(). Route both through one helper.
-QPoint eventPos(const QMouseEvent *p_event) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  return p_event->position().toPoint();
-#else
-  return p_event->pos();
-#endif
-}
-
-QPoint eventGlobalPos(const QMouseEvent *p_event) {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  return p_event->globalPosition().toPoint();
-#else
-  return p_event->globalPos();
-#endif
-}
 } // namespace
 
 StickerDragOverlay::StickerDragOverlay(QWidget *p_parent) : QWidget(p_parent) {
@@ -190,7 +172,7 @@ void StickerDragOverlay::mousePressEvent(QMouseEvent *p_event) {
     return;
   }
 
-  const QPoint pos = eventPos(p_event);
+  const QPoint pos = p_event->position().toPoint();
   const StickerDragZone zone = stickerZoneAt(size(), pos);
   if (zone == StickerDragZone::None) {
     return;
@@ -200,16 +182,16 @@ void StickerDragOverlay::mousePressEvent(QMouseEvent *p_event) {
   m_zone = zone;
   // Focus (not grabKeyboard) so Esc arrives; nothing has to be released later.
   setFocus(Qt::MouseFocusReason);
-  emit dragStarted(zone, eventGlobalPos(p_event));
+  emit dragStarted(zone, p_event->globalPosition().toPoint());
 }
 
 void StickerDragOverlay::mouseMoveEvent(QMouseEvent *p_event) {
   p_event->accept();
   if (!m_dragging) {
-    updateCursor(eventPos(p_event));
+    updateCursor(p_event->position().toPoint());
     return;
   }
-  emit dragMoved(eventGlobalPos(p_event));
+  emit dragMoved(p_event->globalPosition().toPoint());
 }
 
 void StickerDragOverlay::mouseReleaseEvent(QMouseEvent *p_event) {

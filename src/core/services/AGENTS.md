@@ -393,7 +393,7 @@ because `fetchToMemory()` blocks on a nested event loop.
 ### Redirects, the response cap and the host allowlist
 
 Redirects are followed MANUALLY (`QNetworkRequest::ManualRedirectPolicy` set on EVERY
-request, because Qt 5 and Qt 6 differ in their default) so each hop can be checked. At most
+request, overriding Qt 6's default redirect following) so each hop can be checked. At most
 `c_maxRedirects` hops, and there is no HTTPS -> HTTP downgrade path.
 
 `allowedHosts(Source)` is **source-scoped and disjoint**, so a client on one forge can never
@@ -620,8 +620,8 @@ new default. No migration is performed.
 
 The allowlists are **disjoint and source-scoped**: a client on one source must never follow
 a redirect to the other's hosts. Redirects are followed MANUALLY
-(`QNetworkRequest::ManualRedirectPolicy` set on EVERY request, because Qt 5 and Qt 6 differ
-in their default), at most `c_maxRedirects` hops, with no HTTPS→HTTP downgrade.
+(`QNetworkRequest::ManualRedirectPolicy` set on EVERY request, overriding Qt 6's default
+redirect following), at most `c_maxRedirects` hops, with no HTTPS→HTTP downgrade.
 
 ### Update check threading
 

@@ -2,7 +2,7 @@
 """Interactive Windows VNote Git-sync diagnostic (Python 3.8+, no packages).
 
 Run: python scripts/diagnose_git_sync.py
-Uses native WinHTTP, as VNote does on Windows with either Qt 5.15 or Qt 6.
+Uses native WinHTTP, as VNote does on Windows with Qt 6.
 Health checks cover runtime, proxy/TLS, HTTPS clock reference, credentials and disk.
 Only Git discovery GETs are sent: no clone, commit, push, or keychain access.
 No Windows settings are changed. Raw response headers and proxy values are not logged.
@@ -525,7 +525,7 @@ def main():
         report("FAIL: This diagnostic requires native Windows and Python 3.8 or newer.")
         return 1
     report("PASS: Windows/Python runtime supported by this diagnostic.")
-    report("VNote Git sync diagnostic: Windows WinHTTP, independent of Qt 5.15/Qt 6.")
+    report("VNote Git sync diagnostic: Windows WinHTTP, independent of Qt networking.")
     report("Windows:", sys.getwindowsversion(), "Python bits:", ct.sizeof(ct.c_void_p) * 8)
     report("Local time:", datetime.now().astimezone().isoformat())
     report("UTC time:", datetime.now(timezone.utc).isoformat())

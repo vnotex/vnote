@@ -10,19 +10,19 @@
          platform, commit, generatedAt and a recursive <path, size, sha256>
          listing of every file EXCEPT manifest.json itself.
 
-      2. VNote-<Version>-<Variant>.zip
+      2. VNote-<Version>-win64.zip
          The full package, DELETED AND REBUILT deterministically from
          <ExtractedDir> so the freshly written manifest.json is actually inside
          it. Re-zipping "over" an existing archive would leave the previous
          central directory in place.
 
-      3. VNote-<Version>-<Variant>.delta.zip            (optional)
+      3. VNote-<Version>-win64.delta.zip            (optional)
          Only the files that changed since the previous STABLE release, with
          install-root-relative entries and NO top-level directory. Skipped
          cleanly when the predecessor has no published manifest (e.g. the first
          release that ships this feature).
 
-      4. VNote-<Version>-<Variant>.manifest.json
+      4. VNote-<Version>-win64.manifest.json
          The RELEASE ASSET manifest: the same object as (1) plus `fullPackage`
          and, when built, `delta`.
 
@@ -37,9 +37,6 @@
 
 .PARAMETER Version
     Release version without a leading "v", e.g. "4.3.2".
-
-.PARAMETER Variant
-    "win64" (Qt6) or "win64-windows7" (Qt5).
 
 .PARAMETER Commit
     Full git SHA of the build.
@@ -68,10 +65,10 @@
 
 .PARAMETER MinisignSecretKey
     Path to the minisign secret key used to sign the release-asset manifest.
-    Produces `VNote-<ver>-<variant>.manifest.json.minisig`.
+    Produces `VNote-<ver>-win64.manifest.json.minisig`.
 
     The external Windows updater verifies the exact release-manifest bytes
-    with its bundled minisign before parsing them. Both Qt variants require a
+    with its bundled minisign before parsing them. Windows releases require a
     signature; ordinary in-process checks still ignore manifests and assets.
     See docs/update-signing.md.
 
@@ -85,12 +82,12 @@
 
 .EXAMPLE
     ./scripts/gen-update-package.ps1 -ExtractedDir build/VNote-4.3.2-win64 `
-        -Version 4.3.2 -Variant win64 -Commit $sha -Channel stable
+        -Version 4.3.2 -Commit $sha -Channel stable
 
 .EXAMPLE
     # Local end-to-end: delta from a manifest on disk, no GitHub involved.
     ./scripts/gen-update-package.ps1 -ExtractedDir C:\tmp\vnoteB `
-        -Version 4.3.2 -Variant win64 -Commit deadbeef -Channel stable `
+        -Version 4.3.2 -Commit deadbeef -Channel stable `
         -BaseManifestPath C:\tmp\out\VNote-4.3.1-win64.manifest.json
 #>
 
@@ -98,7 +95,6 @@
 param(
     [Parameter(Mandatory = $true)][string]$ExtractedDir,
     [Parameter(Mandatory = $true)][string]$Version,
-    [Parameter(Mandatory = $true)][ValidateSet('win64', 'win64-windows7')][string]$Variant,
     [Parameter(Mandatory = $true)][string]$Commit,
     [Parameter(Mandatory = $true)][ValidateSet('stable', 'continuous')][string]$Channel,
     [string]$OutputDir,
@@ -282,7 +278,7 @@ if (-not (Test-Path -LiteralPath $OutputDir)) {
 }
 $OutputDir = (Resolve-Path -LiteralPath $OutputDir).Path
 
-$packageName = "VNote-$Version-$Variant"
+$packageName = "VNote-$Version-win64"
 $topLevelName = Split-Path -Leaf $ExtractedDir
 
 Write-Host "gen-update-package: $packageName ($Channel) from '$ExtractedDir'"
@@ -296,7 +292,7 @@ $inPackageManifest = [ordered]@{
     product     = 'VNote'
     channel     = $Channel
     version     = $Version
-    variant     = $Variant
+    variant     = 'win64'
     platform    = 'windows-x64'
     commit      = $Commit
     generatedAt = (Get-Date).ToUniversalTime().ToString('yyyy-MM-ddTHH:mm:ssZ')
@@ -351,13 +347,11 @@ Assert-ZipContains -Paths $relZipPaths -Pattern 'vnote.exe' -What 'vnote.exe'
 Assert-ZipContains -Paths $relZipPaths -Pattern 'resources/*' -What 'the WebEngine resources directory'
 Assert-ZipContains -Paths $relZipPaths -Pattern 'translations/*.qm' -What 'the Qt translations'
 
-# Qt5/Qt6 exclusivity: a leaked DLL from the other major version produces an
-# install that cannot start.
+# Only Qt6 payloads can be published. Reject any leaked Qt5 DLLs.
 $hasQt5 = @($relZipPaths | Where-Object { $_ -match '(^|/)Qt5[^/]*\.dll$' }).Count -gt 0
 $hasQt6 = @($relZipPaths | Where-Object { $_ -match '(^|/)Qt6[^/]*\.dll$' }).Count -gt 0
-if ($hasQt5 -and $hasQt6) { throw "Package mixes Qt5 and Qt6 DLLs." }
-if ($Variant -eq 'win64' -and -not $hasQt6) { throw "win64 package has no Qt6 DLLs." }
-if ($Variant -eq 'win64-windows7' -and -not $hasQt5) { throw "win64-windows7 package has no Qt5 DLLs." }
+if ($hasQt5) { throw "Package contains unsupported Qt5 DLLs." }
+if (-not $hasQt6) { throw "win64 package has no Qt6 DLLs." }
 
 # WebEngine locales live beside the resources; without them the viewer renders
 # blank on non-English systems.
@@ -435,7 +429,7 @@ else {
     }
     else {
         Write-Host "  delta: previous stable release is $previous"
-        $baseManifestName = "VNote-$previous-$Variant.manifest.json"
+        $baseManifestName = "VNote-$previous-win64.manifest.json"
         $downloadedBaseManifest = Join-Path $OutputDir "base-$baseManifestName"
 
         & gh release download "v$previous" --pattern $baseManifestName --output $downloadedBaseManifest --clobber 2>$null
@@ -454,8 +448,8 @@ if ($base) {
     if ($base.version -ne $previous) {
         throw "Base manifest declares version '$($base.version)' but was resolved as $previous."
     }
-    if ($base.variant -ne $Variant) {
-        throw "Base manifest declares variant '$($base.variant)' but this build is $Variant."
+    if ($base.variant -ne 'win64') {
+        throw "Base manifest declares variant '$($base.variant)' but this build is win64."
     }
     if ([version]$previous -ge [version]$Version) {
         throw "Base manifest version '$previous' is not older than this build ($Version)."
@@ -571,7 +565,7 @@ else {
     # The trusted comment IS authenticated (it is covered by the global
     # signature), so it is a safe place to restate the identity a human would
     # want to confirm when auditing a release by hand.
-    $trustedComment = "VNote $Version $Variant $Channel commit $Commit"
+    $trustedComment = "VNote $Version win64 $Channel commit $Commit"
 
     # -W signs without prompting, which REQUIRES the key to have an empty
     # password.

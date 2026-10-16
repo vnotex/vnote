@@ -2,6 +2,7 @@
 #define BUFFER2_H
 
 #include <QByteArray>
+#include <QByteArrayView>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QString>
@@ -10,7 +11,6 @@
 #include <vxcore/vxcore_types.h>
 
 #include <core/nodeidentifier.h>
-#include <utils/qtcompat.h>
 
 namespace vnotex {
 
@@ -92,7 +92,7 @@ public:
   // Return a non-owning view over the buffer's raw content held by vxcore.
   // The view is only valid until the next buffer-mutating operation
   // (setContent, setContentRaw, save, reload, close).
-  QByteArrayViewCompat peekContentRaw(VxCoreError *p_error = nullptr) const;
+  QByteArrayView peekContentRaw(VxCoreError *p_error = nullptr) const;
 
   // Set buffer content from raw bytes.
   bool setContentRaw(const QByteArray &p_data);
@@ -109,7 +109,7 @@ public:
 
   // Decode raw bytes to text using this buffer's current encoding.
   // Falls back to UTF-8 when the codec is unknown.
-  QString decode(const QByteArrayViewCompat &p_raw) const;
+  QString decode(const QByteArrayView &p_raw) const;
 
   // ============ Buffer State ============
 

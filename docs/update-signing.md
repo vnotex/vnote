@@ -6,9 +6,9 @@
 > launch the deployed external PowerShell updater. Keep **Check Release** and the
 > existing manual-check dialog; do not restore the removed C++ installer.
 >
-> The external updater consumes signed **full packages only**. Both Windows
-> variants require a full ZIP, release manifest and minisign signature. Qt5 uses
-> `SkipDelta`; Qt6 may continue publishing deltas, which this updater ignores.
+> The external updater consumes signed **full packages only**. The Windows
+> `win64` package requires a full ZIP, release manifest and minisign signature.
+> CI may continue publishing deltas, which this updater ignores.
 
 A downloaded package that the external updater will **execute** cannot be
 authenticated by TLS plus a SHA-256 taken from the same origin: that proves only
@@ -27,14 +27,14 @@ produced and audited with a stock tool rather than something invented here.
 | Trusted public keys | Both literal keys below, embedded in the deployed script; no production override |
 | Signing | `scripts/gen-update-package.ps1`, `-MinisignSecretKey` |
 | CI wiring | `.github/workflows/ci-win.yml`, `MINISIGN_SECRET_KEY` secret |
-| Published asset | `VNote-<ver>-<variant>.manifest.json.minisig` |
+| Published asset | `VNote-<ver>-win64.manifest.json.minisig` |
 
 ## External updater contract
 
 - Snapshot the configured GitHub/Gitee source at action activation (Gitee is the
   normalization default) and fetch that source's **exact offered tag**, not its
   latest release. Require a numeric three-component stable version newer than the
-  running version and the matching x64 Qt variant. Select exact, unique ZIP,
+  running version and the Qt 6 x64 `win64` package. Select exact, unique ZIP,
   manifest and signature names; missing mirrored assets fail closed without a
   source fallback. Validate every HTTPS redirect against that source's disjoint
   host allowlist, retaining normal system certificate/proxy behavior.
@@ -42,7 +42,7 @@ produced and audited with a stock tool rather than something invented here.
   resolved from PATH. Preparation pins the archive, executable and upstream
   license by SHA-256 and performs no network fetch during configure or normal
   builds. The three updater files are non-optional package contents. Prepend the
-  installation root to the verifier process's PATH for the package's UCRT DLLs.
+  installation root to the verifier process's PATH for its bundled runtime DLLs.
   Minisign 0.11 uses narrow Windows file APIs: invoke it from the manifest's
   directory with relative file arguments, keeping Unicode ancestors in the
   working directory rather than argv. Release filenames remain ASCII. Signing
@@ -54,7 +54,7 @@ produced and audited with a stock tool rather than something invented here.
   key must verify both the manifest and trusted-comment signatures. Missing
   verifier/signature, unknown key or bad signature is fatal; no unsigned,
   TLS-only, hash-only or user-supplied-key production fallback is allowed.
-- Validate schema/identity/variant and `fullPackage`, then signed archive size
+- Validate schema/identity, fixed `variant: win64` and `fullPackage`, then signed archive size
   and SHA-256. Bound streaming downloads and validate paths and entry sets before
   extraction; reject traversal, aliases, reparse/symlink entries, undeclared
   files and any root `config` payload. Check extracted file sizes/hashes and the
@@ -159,7 +159,7 @@ CI would defeat its purpose entirely.
 >
 > The workflow now hard-fails a `[Release]` build when the key is missing, and
 > the error message names this cause. But the failure is far easier to avoid
-> than to debug: use a repository secret. Both Qt variants require signed
+> than to debug: use a repository secret. Windows releases require signed
 > manifests; an unsigned manifest is unusable by the external updater. Keep
 > secret files outside the workspace and sign with the already prepared pinned
 > minisign executable, never a second unpinned download.
@@ -234,7 +234,7 @@ The external script must enforce both checks before requesting shutdown.
 ## What is and is not signed
 
 The signature covers the **release-asset manifest** —
-`VNote-<ver>-<variant>.manifest.json` — over its exact bytes as served. Since
+`VNote-<ver>-win64.manifest.json` — over its exact bytes as served. Since
 that manifest contains the SHA-256 and size of the full package, optional delta
 archive, and every individual payload file, one signature transitively
 authenticates the bytes the external updater downloads or installs. This updater

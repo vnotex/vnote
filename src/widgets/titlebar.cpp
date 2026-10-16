@@ -124,7 +124,7 @@ void TitleBar::setupActionButtons(TitleBar::Actions p_actionFlags) {
   }
 }
 
-void TitleBar::enterEvent(EnterEventCompat *p_event) {
+void TitleBar::enterEvent(QEnterEvent *p_event) {
   QFrame::enterEvent(p_event);
   setActionButtonsVisible(true);
 }

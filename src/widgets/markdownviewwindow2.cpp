@@ -599,13 +599,8 @@ void MarkdownViewWindow2::handlePrint() {
 
   m_printer = PrintUtils::promptForPrint(m_viewer->hasSelection(), this);
   if (m_printer) {
-#if (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    m_viewer->page()->print(m_printer.data(), std::bind(&MarkdownViewWindow2::onPrintFinished, this,
-                                                        std::placeholders::_1));
-#else
     m_printer->setOutputFormat(QPrinter::PdfFormat);
     m_viewer->print(m_printer.get());
-#endif
   }
 }
 
@@ -933,9 +928,7 @@ bool MarkdownViewWindow2::setupViewer() {
           &MarkdownViewWindow2::onTaskListItemToggleRequested);
 
   // Print finished cleanup.
-#if (QT_VERSION >= QT_VERSION_CHECK(6, 0, 0))
   connect(m_viewer, &MarkdownViewer::printFinished, this, &MarkdownViewWindow2::onPrintFinished);
-#endif
 
   // Outline pipeline: viewer headings -> OutlineProvider.
   connect(adapterObj, &MarkdownViewerAdapter::headingsChanged, this, [this]() {
@@ -2056,7 +2049,7 @@ void MarkdownViewWindow2::removeSessionHeadingSectionNumbers() {
     VxCoreError error = VXCORE_OK;
     const auto raw = buffer.peekContentRaw(&error);
     const auto encoded = bufferService->encodeContent(buffer.id(), writerText);
-    if (error != VXCORE_OK || raw != QByteArrayViewCompat(encoded)) {
+    if (error != VXCORE_OK || raw != QByteArrayView(encoded)) {
       unavailable();
       return;
     }

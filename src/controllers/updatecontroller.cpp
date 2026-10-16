@@ -344,12 +344,6 @@ void UpdateController::startScriptUpdate(const UpdateInfo &p_info) {
   reportScriptUpdateFailure(p_info, tr("Automatic update requires an x64 Windows build of VNote."));
   return;
 #endif
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-  const QString variant = QStringLiteral("win64");
-#else
-  const QString variant = QStringLiteral("win64-windows7");
-#endif
-
   const bool injectedLauncher = static_cast<bool>(m_scriptLauncher);
   const QString requestedDir = injectedLauncher && !m_scriptInstallDir.isEmpty()
                                    ? m_scriptInstallDir
@@ -446,8 +440,6 @@ void UpdateController::startScriptUpdate(const UpdateInfo &p_info) {
       p_info.latestVersion,
       QStringLiteral("-CurrentVersion"),
       p_info.currentVersion,
-      QStringLiteral("-Variant"),
-      variant,
       QStringLiteral("-InstallDir"),
       QDir::toNativeSeparators(installDir),
       QStringLiteral("-ParentProcessId"),
@@ -727,18 +719,9 @@ void UpdateController::onFailed(const QString &p_message) {
 
   QString message = p_message;
   if (!QSslSocket::supportsSsl()) {
-    // Without this the user sees a raw Qt errorString() ("TLS initialization
-    // failed") with no way to act on it. The DLL names are Qt 5 / Windows
-    // specific; every other configuration gets the generic wording.
-#if defined(Q_OS_WIN) && (QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-    message += QLatin1Char('\n');
-    message += tr("TLS is unavailable: OpenSSL could not be loaded. "
-                  "libssl-1_1-x64.dll and libcrypto-1_1-x64.dll are expected "
-                  "next to vnote.exe.");
-#else
+    // Add an actionable explanation alongside the raw network error string.
     message += QLatin1Char('\n');
     message += tr("TLS is unavailable: no working secure-socket backend was found.");
-#endif
   }
 
   if (m_dialog) {

@@ -82,7 +82,7 @@ you that pdf.js renamed something.
 
 Why v6 needs Qt 6.9+: pdf.js's legacy build targets Chrome 125+ from v4 on, and
 the bundle is ESM-only. Qt WebEngine 6.9 ships Chromium 130 and 6.10 ships 134;
-Qt 6.8.0-6.8.6 ship Chromium 122 (too old) and Qt 5.15 ships Chromium 83. The
+Qt 6.8.0-6.8.6 ship Chromium 122 (too old). The
 built-in viewer is therefore compile-time gated to Qt >= 6.9; below it VNote
 hands PDFs to the system default reader.
 

@@ -1,4 +1,7 @@
 # Changes
+## Unreleased
+* Require Qt 6; remove Qt 5.15 and Windows 7 builds, packaging and compatibility paths
+
 ## v4.10.0
 A feature release with richer mind-map editing and exports, image viewing and self-contained encrypted notes on top of VNote 4.9.1:
 

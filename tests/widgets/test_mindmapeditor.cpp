@@ -1480,9 +1480,8 @@ void TestMindMapEditor::configuredShortcutsDriveRealCommands() {
 void TestMindMapEditor::livePreferencesPreserveDraftAndReadOnlyBuffer() {
   auto &editorSettings = m_config->getEditorConfig();
   const auto oldPattern = editorSettings.getSectionNumberPattern();
-  const auto restorePattern = qScopeGuard([&]() {
-    editorSettings.setSectionNumberPattern(oldPattern);
-  });
+  const auto restorePattern =
+      qScopeGuard([&]() { editorSettings.setSectionNumberPattern(oldPattern); });
   editorSettings.setSectionNumberPattern(QStringLiteral("1.1."));
   const QByteArray content = QByteArrayLiteral(R"({"schemaVersion":1,"rootId":"r","nodes":[
     {"id":"r","topic":"Root","children":["a","b"]},
@@ -1520,11 +1519,7 @@ void TestMindMapEditor::livePreferencesPreserveDraftAndReadOnlyBuffer() {
   const auto bufferRevision = buffer.getRevision();
   QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
   QSignalSpy readOnlyDirty(&readOnly, &MindMapEditor::contentsChanged);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   const auto families = QFontDatabase::families();
-#else
-  const auto families = QFontDatabase().families();
-#endif
   QVERIFY(!families.isEmpty());
   const auto family = families.first().section(QLatin1Char('['), 0, 0).trimmed();
   auto &settings = m_config->getEditorConfig().getMindMapEditorConfig();

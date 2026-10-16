@@ -1379,8 +1379,7 @@ QByteArray BufferService::encodeContent(const QString &p_bufferId, const QString
   return resolveCodec(it.value())->fromUnicode(text);
 }
 
-QString BufferService::decodeContent(const QString &p_bufferId,
-                                     const QByteArrayViewCompat &p_raw) const {
+QString BufferService::decodeContent(const QString &p_bufferId, const QByteArrayView &p_raw) const {
   auto it = m_bufferEncodings.constFind(p_bufferId);
   if (it == m_bufferEncodings.constEnd()) {
     return QString::fromUtf8(p_raw);
@@ -1720,12 +1719,11 @@ QByteArray BufferService::getContentRaw(const Buffer2 &p_buffer, VxCoreError *p_
   return result;
 }
 
-QByteArrayViewCompat BufferService::peekContentRaw(const Buffer2 &p_buffer,
-                                                   VxCoreError *p_error) const {
+QByteArrayView BufferService::peekContentRaw(const Buffer2 &p_buffer, VxCoreError *p_error) const {
   if (!p_buffer.isEncrypted()) {
     return BufferCoreService::peekContentRaw(p_buffer.m_bufferId, p_error);
   }
-  QByteArrayViewCompat result;
+  QByteArrayView result;
   const auto error = withProtectedBuffer(p_buffer, false, [&]() {
     // A borrowed view cannot outlive a concurrently mutating worker. Ordinary
     // callers keep their existing pointer path; protected callers retry when idle.
@@ -2166,8 +2164,8 @@ bool BufferService::removeObsoleteAttachments(const Buffer2 &p_buffer) {
     const auto notebookId = nodeId.notebookId.toUtf8();
     const auto filePath = nodeId.relativePath.toUtf8();
     char *outPath = nullptr;
-    const auto pathError = vxcore_node_get_attachments_folder(
-        m_context, notebookId.constData(), filePath.constData(), &outPath);
+    const auto pathError = vxcore_node_get_attachments_folder(m_context, notebookId.constData(),
+                                                              filePath.constData(), &outPath);
     const auto folder = cstrToQString(outPath);
     if (pathError != VXCORE_OK || folder.isEmpty()) {
       qWarning() << "removeObsoleteAttachments: cannot resolve attachment folder"
@@ -2188,8 +2186,8 @@ bool BufferService::removeObsoleteAttachments(const Buffer2 &p_buffer) {
       return false;
     }
     const auto json = QJsonDocument(attachments).toJson(QJsonDocument::Compact);
-    const auto error = vxcore_file_update_attachments(
-        m_context, notebookId.constData(), filePath.constData(), json.constData());
+    const auto error = vxcore_file_update_attachments(m_context, notebookId.constData(),
+                                                      filePath.constData(), json.constData());
     if (error != VXCORE_OK) {
       qWarning() << "removeObsoleteAttachments failed:"
                  << QString::fromUtf8(vxcore_error_message(error));

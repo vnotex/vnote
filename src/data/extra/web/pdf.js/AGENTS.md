@@ -21,7 +21,7 @@ default reader; this is not a regression and must not be "fixed" by patching a v
 | pdf.js module format (v4+) | **ESM only** — `build/pdf.mjs`, `build/pdf.worker.mjs`, `web/viewer.mjs` |
 
 Qt WebEngine → Chromium: **6.10 → 134**, **6.9 → 130**, 6.8.0-6.8.6 → 122 (too old),
-6.7 → 118, 5.15.2 → 83. So 6.9 is the first release series that clears the Chrome-125 floor
+6.7 → 118. So 6.9 is the first release series that clears the Chrome-125 floor
 across the whole 6.9.x/6.10.x range. (6.8.7 and 6.8.8 happen to ship Chromium 134 too, but the
 rest of 6.8.x does not; a `QT_VERSION_CHECK(6,8,7)` gate would be expressible and is
 deliberately not used — it buys nothing and adds a branch.)
@@ -29,7 +29,7 @@ deliberately not used — it buys nothing and adds a branch.)
 The ESM requirement is the second, independent reason: the pre-v4 integration built the page
 with `QWebEngineView::setHtml()`, which yields an opaque `data:` origin. A module fetched from
 such a page to a `file://` URL is cross-origin and Chromium blocks it. The fix is the
-`vxpdf://` scheme below, which needs `QWebEngineUrlScheme` — Qt 6 only.
+`vxpdf://` scheme below, registered with `QWebEngineUrlScheme`.
 
 ### Compile-time gates
 
@@ -252,7 +252,7 @@ reproducible post-processing step applied to the whole vendored tree.
 | [`src/widgets/editors/pdfvieweradapter.cpp`](../../../widgets/editors/pdfvieweradapter.cpp) | C++ side of the QWebChannel outline bridge |
 | [`tests/gui/test_vxpdfschemehandler.cpp`](../../../../tests/gui/test_vxpdfschemehandler.cpp) | MIME map + token registry gate (routing needs a real `QWebEngineUrlRequestJob`, which a test cannot construct) |
 | [`tests/utils/test_extra_qrc_coverage.cpp`](../../../../tests/utils/test_extra_qrc_coverage.cpp) | disk ↔ `extra.qrc` ↔ `locale/locale.json` three-way coverage gate |
-| [`.github/AGENTS.md`](../../../../.github/AGENTS.md) | The Windows 7 / Qt 5.15 packaging variant, which has no built-in PDF viewer |
+| [`.github/AGENTS.md`](../../../../.github/AGENTS.md) | Qt 6 packaging and deployment |
 
 ---
 

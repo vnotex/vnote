@@ -135,16 +135,14 @@ add_library(core_services STATIC ${SERVICES_SOURCES} ${SERVICES_HEADERS})
 # Network access goes through core_net, not VTextEdit.
 
 # Task::decodeText uses QTextCodec, which lives in Qt6::Core5Compat.
-if(QT_DEFAULT_MAJOR_VERSION GREATER 5 AND TARGET Qt6::Core5Compat)
-  target_link_libraries(core_services PUBLIC Qt6::Core5Compat)
-endif()
+target_link_libraries(core_services PUBLIC Qt6::Core5Compat)
 
 target_link_libraries(core_services
   PUBLIC
-    Qt${QT_DEFAULT_MAJOR_VERSION}::Core
-    Qt${QT_DEFAULT_MAJOR_VERSION}::Gui
-    Qt${QT_DEFAULT_MAJOR_VERSION}::Network
-    Qt${QT_DEFAULT_MAJOR_VERSION}::Concurrent
+    Qt6::Core
+    Qt6::Gui
+    Qt6::Network
+    Qt6::Concurrent
     vxcore
     # core_net must stay PUBLIC: githubprovider.h / giteeprovider.h expose
     # vnotex::NetworkReply in their signatures, so consumers need the type.
@@ -173,18 +171,10 @@ set_target_properties(core_services PROPERTIES
 # is found (system find_package OR FetchContent build).
 if(VNOTE_KEYCHAIN_AVAILABLE)
   target_compile_definitions(core_services PRIVATE VNOTE_KEYCHAIN_AVAILABLE)
-  if(QT_DEFAULT_MAJOR_VERSION GREATER 5)
-    if(TARGET Qt6Keychain::Qt6Keychain)
-      target_link_libraries(core_services PRIVATE Qt6Keychain::Qt6Keychain)
-    elseif(TARGET qt6keychain)
-      target_link_libraries(core_services PRIVATE qt6keychain)
-    endif()
-  else()
-    if(TARGET Qt5Keychain::Qt5Keychain)
-      target_link_libraries(core_services PRIVATE Qt5Keychain::Qt5Keychain)
-    elseif(TARGET qt5keychain)
-      target_link_libraries(core_services PRIVATE qt5keychain)
-    endif()
+  if(TARGET Qt6Keychain::Qt6Keychain)
+    target_link_libraries(core_services PRIVATE Qt6Keychain::Qt6Keychain)
+  elseif(TARGET qt6keychain)
+    target_link_libraries(core_services PRIVATE qt6keychain)
   endif()
   # FetchContent path: QtKeychain's CMakeLists.txt only sets INSTALL_INTERFACE
   # include directories, so consumers via add_subdirectory / FetchContent must

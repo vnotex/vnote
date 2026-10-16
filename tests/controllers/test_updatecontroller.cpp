@@ -107,7 +107,8 @@ int runScriptChild() {
   // This fixture intentionally has no ConfigMgr2. A child must receive the
   // normalized Gitee source, not an empty or unrecognized source.
   if (pipeName.isEmpty() || namedArgument(arguments, QStringLiteral("-Token")).isEmpty() ||
-      namedArgument(arguments, QStringLiteral("-Source")) != QLatin1String("gitee")) {
+      namedArgument(arguments, QStringLiteral("-Source")) != QLatin1String("gitee") ||
+      arguments.contains(QStringLiteral("-Variant"))) {
     return 2;
   }
 
@@ -527,6 +528,7 @@ void TestUpdateController::test_launchFailureKeepsReleaseFallbackAndAllowsRetry(
   m_failLaunch = true;
   triggerScriptAction(offer);
   QCOMPARE(m_launchCount, 1);
+  QVERIFY(!m_launchArguments.contains(QStringLiteral("-Variant")));
   QCOMPARE(m_scriptChildren.size(), 0);
   QCOMPARE(shutdown.count(), 0);
   QCOMPARE(added.count(), 1);

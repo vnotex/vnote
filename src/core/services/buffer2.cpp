@@ -117,12 +117,12 @@ QByteArray Buffer2::getContentRaw(VxCoreError *p_error) const {
   return m_bufferService->getContentRaw(*this, p_error);
 }
 
-QByteArrayViewCompat Buffer2::peekContentRaw(VxCoreError *p_error) const {
+QByteArrayView Buffer2::peekContentRaw(VxCoreError *p_error) const {
   if (p_error) {
     *p_error = VXCORE_ERR_INVALID_STATE;
   }
   if (!isValid()) {
-    return QByteArrayViewCompat{};
+    return QByteArrayView{};
   }
   return m_bufferService->peekContentRaw(*this, p_error);
 }
@@ -151,7 +151,7 @@ bool Buffer2::setEncoding(const QString &p_codecName) {
   return true;
 }
 
-QString Buffer2::decode(const QByteArrayViewCompat &p_raw) const {
+QString Buffer2::decode(const QByteArrayView &p_raw) const {
   if (!isValid()) {
     return QString::fromUtf8(p_raw);
   }

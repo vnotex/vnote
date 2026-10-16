@@ -108,11 +108,7 @@ void OutlineView::dragMoveEvent(QDragMoveEvent *p_event) {
   }
 
   QTreeView::dragMoveEvent(p_event);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   const QModelIndex target = indexAt(p_event->position().toPoint());
-#else
-  const QModelIndex target = indexAt(p_event->pos());
-#endif
   const auto position = target.isValid() ? dropIndicatorPosition() : OnViewport;
   if (!canAcceptDrop(target, position)) {
     p_event->ignore();
@@ -133,11 +129,7 @@ void OutlineView::dropEvent(QDropEvent *p_event) {
     return;
   }
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   const QModelIndex target = indexAt(p_event->position().toPoint());
-#else
-  const QModelIndex target = indexAt(p_event->pos());
-#endif
   const auto position = target.isValid() ? dropIndicatorPosition() : OnViewport;
   if (!canAcceptDrop(target, position)) {
     p_event->ignore();

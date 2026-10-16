@@ -11005,12 +11005,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>자동 업데이트를 사용할 수 없습니다. &apos;릴리스 확인&apos;을 사용하여 수동으로 업데이트하세요.</translation>
     </message>
     <message>
-        <location line="+52"/>
-        <source>TLS is unavailable: OpenSSL could not be loaded. libssl-1_1-x64.dll and libcrypto-1_1-x64.dll are expected next to vnote.exe.</source>
-        <translation>TLS를 사용할 수 없습니다. OpenSSL을 불러오지 못했습니다. libssl-1_1-x64.dll과 libcrypto-1_1-x64.dll이 vnote.exe와 같은 폴더에 있어야 합니다.</translation>
-    </message>
-    <message>
-        <location line="+5"/>
+        <location line="+57"/>
         <source>TLS is unavailable: no working secure-socket backend was found.</source>
         <translation>TLS를 사용할 수 없습니다. 정상 작동하는 보안 소켓 백엔드를 찾을 수 없습니다.</translation>
     </message>

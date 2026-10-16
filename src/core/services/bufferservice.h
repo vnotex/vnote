@@ -155,7 +155,7 @@ public:
 
   // Decode raw bytes to text using the buffer's current encoding.
   // Falls back to UTF-8 when the codec name is empty or unknown.
-  QString decodeContent(const QString &p_bufferId, const QByteArrayViewCompat &p_raw) const;
+  QString decodeContent(const QString &p_bufferId, const QByteArrayView &p_raw) const;
 
   // ============ Buffer Handle ============
 
@@ -226,8 +226,7 @@ public:
   // callers never learn (or need to care) WHY a buffer is read-only.
   bool isBufferReadOnly(const QString &p_bufferId) const override;
   using BufferCoreService::isModified;
-  QByteArrayViewCompat peekContentRaw(const Buffer2 &p_buffer,
-                                      VxCoreError *p_error = nullptr) const;
+  QByteArrayView peekContentRaw(const Buffer2 &p_buffer, VxCoreError *p_error = nullptr) const;
   bool setContent(const Buffer2 &p_buffer, const QString &p_contentJson);
   bool setContentRaw(const Buffer2 &p_buffer, const QByteArray &p_data);
   bool setContentRaw(const QString &p_bufferId, const QByteArray &p_data) override;

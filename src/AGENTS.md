@@ -7,9 +7,9 @@ to all source code regardless of module.
 The normative MVC rules table and the repo-wide build/style rules live in the root
 [AGENTS.md](../AGENTS.md).
 
-Packaging and CI rules — including `src/Packaging.cmake`, the Windows 7 / Qt 5.15 variant and
-the bundled OpenSSL gates — live in [.github/AGENTS.md](../.github/AGENTS.md). **An edit to
-`src/Packaging.cmake` does not auto-load that file; open it explicitly.**
+Packaging and CI rules — including `src/Packaging.cmake` and Qt 6 deployment — live in
+[.github/AGENTS.md](../.github/AGENTS.md). **An edit to `src/Packaging.cmake` does not
+auto-load that file; open it explicitly.**
 
 ---
 
@@ -224,43 +224,29 @@ QSharedPointer<Task> task;
 m_themeMgr = new ThemeMgr(this);  // 'this' takes ownership
 ```
 
-### Queued-Connection Metatype Names (Qt 5 resolves them by NAME)
+### Queued-Connection Metatypes on Qt 6
 
-A type used as a **queued-connection signal parameter** or in **`Q_ARG`** must be registered
-under the exact name moc recorded / `Q_ARG` stringified. For a type declared inside
-`namespace vnotex` and spelled **unqualified** in the signal, that is the UNQUALIFIED name —
-while `Q_DECLARE_METATYPE(vnotex::X)` registers `"vnotex::X"`.
+Queued calls need copyable argument types known to Qt's metatype system. Keep
+`Q_DECLARE_METATYPE` and the existing typed `qRegisterMetaType<T>()` registrations for
+custom values crossing threads. Qt 6's moc-generated signal metadata supplies parameter
+types directly; an unqualified signal spelling alone does **not** require an extra
+`qRegisterMetaType<T>("T")` alias.
 
-Qt 5's `queued_activate()` calls `queuedConnectionTypes()` on moc's parameter-name strings and
-does `QMetaType::type("X")`. If only the qualified alias exists the lookup returns 0, Qt prints
-`QObject::connect: Cannot queue arguments of type 'X'`, and **drops the call**. Qt 6 obtains the
-`QMetaType` via `QMetaMethod::parameterMetaType()` from moc's generated metatype data and never
-does the name lookup, so this defect is invisible on Qt 6 and fatal on the Qt 5 /
-`win64-windows7` variant.
+String-based APIs still need their exact runtime type names. In particular, the existing
+`QMetaObject::invokeMethod(worker, "method", Qt::QueuedConnection, Q_ARG(T, value))` form
+must resolve the spelling stringified by `Q_ARG`. If `Q_DECLARE_METATYPE(vnotex::T)`
+registers the qualified name but `Q_ARG` spells `T`, retain the unqualified alias as well.
 
-Fix shape: register the unqualified **alias** alongside the existing registration
-(`qRegisterMetaType<X>("X");`). Registering the same type under a second name is an alias, not
-a duplicate. Precedents: `qRegisterMetaType<BufferState>("BufferState")`
-(`src/widgets/viewwindow2.cpp:87`) and `qRegisterMetaType<NotificationMessage>("NotificationMessage")`
-(`src/core/services/notificationservice.cpp:8`).
+`ImageHostService` registers `"ImageHostWorkItem"` for its `doUpload`, `doRemove` and
+`doTestConfig` worker dispatches. Keep that registration; real worker delivery is
+covered by `tests/core/test_imagehostasync.cpp`.
+The typed `SearchWorker` result/error and `ImageHostWorker` completion connections need
+no extra unqualified aliases. Real queued search delivery is covered by
+`testSimpleSearchUnicodeReplacement` and `testSearchContentStreamingBatchUnion` in
+`tests/core/test_searchservice.cpp`.
 
-Known name-resolved queued sites:
-
-| Site | Required alias |
-|---|---|
-| `SearchWorker::finished`, `SearchWorker::batch` (`src/core/services/searchservice.cpp`) | `"SearchResult"` |
-| `SearchWorker::failed` (`src/core/services/searchservice.cpp`) | `"Error"` |
-| `Q_ARG(ImageHostWorkItem, ...)` (`src/core/services/imagehostservice.cpp`) | `"ImageHostWorkItem"` |
-| `ImageHostWorker::uploadCompleted`, `::removeCompleted` (`src/core/services/imagehostworker.h`) | `"ImageHostAsyncResult"` |
-
-Coverage: real queued search delivery in `testSimpleSearchUnicodeReplacement` and
-`testSearchContentStreamingBatchUnion` (`tests/core/test_searchservice.cpp`), plus
-`testQueuedMetatypeNamesAreRegistered` in `tests/core/test_imagehostservice.cpp`.
-
-**This is NOT a blanket requirement for every `Q_DECLARE_METATYPE(vnotex::X)`.** The required
-runtime name is whatever moc recorded or `Q_ARG` stringified: `UpdateService::checkFinished`
-spells its parameter `vnotex::UpdateInfo` explicitly (`src/core/services/updateservice.h`), and
-`NodeIdentifier` signals are GUI-thread-local and never queue. Do not sweep them in.
+Do not add aliases to every `Q_DECLARE_METATYPE` indiscriminately: inspect the actual
+string-based callers, if any, before adding or removing a named registration.
 
 ---
 
@@ -276,4 +262,4 @@ spells its parameter `vnotex::UpdateInfo` explicitly (`src/core/services/updates
 | Widgets | [widgets/AGENTS.md](widgets/AGENTS.md) | Widget conventions, ViewArea2 framework, styling |
 | GUI Services | [gui/AGENTS.md](gui/AGENTS.md) | Theme, ViewWindowFactory, GUI utilities |
 | Utilities | [utils/AGENTS.md](utils/AGENTS.md) | PathUtils, HtmlUtils, FileUtils2 |
-| CI & Packaging | [../.github/AGENTS.md](../.github/AGENTS.md) | `src/Packaging.cmake`, Windows 7 / Qt 5.15, OpenSSL |
+| CI & Packaging | [../.github/AGENTS.md](../.github/AGENTS.md) | `src/Packaging.cmake`, Qt 6 deployment |

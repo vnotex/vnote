@@ -163,7 +163,7 @@ It creates tag `vX.Y.Z` and uploads the platform artifacts.
 Release commits skip test compilation, registration checks, test runs and failure
 reruns on Linux, macOS and Windows; the test-only TSan job is skipped entirely.
 Packaging, signing and package-integrity checks still run. Normal pushes, pull
-requests and manual runs retain testing (Windows Qt 5 remains packaging-only).
+requests and manual runs retain testing.
 A green release run is not test-suite evidence; use a non-release run for that.
 
 - Commit message MUST start with `[Release]`, e.g. `[Release] VNote X.Y.Z`.
@@ -175,21 +175,20 @@ A green release run is not test-suite evidence; use a non-release run for that.
 ## 6. Once CI is green, assemble the draft release
 
 The `[Release]` commit makes CI create a **draft** GitHub release for tag `vX.Y.Z`.
-Wait until ALL platform jobs are green, then make sure the draft carries the five
+Wait until ALL platform jobs are green, then make sure the draft carries the four
 platform packages before publishing. The `ncipollo/release-action` step in each
-`ci-*.yml` uploads its own platform's asset directly, but confirm all five are
+`ci-*.yml` uploads its own platform's asset directly, but confirm all four are
 present (and if any job's upload was skipped/failed, download that job's build
 artifact and attach it manually).
 
-The five required platform packages (additional installers/update assets may also be present):
+The four required platform packages (additional installers/update assets may also be present):
 
 | Platform | Artifact file | Produced by |
 |----------|---------------|-------------|
 | Linux | `VNote-X.Y.Z-linux-x64.AppImage` | `ci-linux.yml` |
 | macOS 13+ (Qt 6.10.3) | `VNote-X.Y.Z-mac-universal.dmg` | `ci-macos.yml` (suffix `""`) |
 | macOS 12.1+ (Qt 6.9.3) | `VNote-X.Y.Z-mac-universal-macos12.dmg` | `ci-macos.yml` (suffix `-macos12`) |
-| Win64 (Qt 6) | `VNote-X.Y.Z-win64.zip` | `ci-win.yml` (suffix `""`) |
-| Windows 7 (Qt 5.15) | `VNote-X.Y.Z-win64-windows7.zip` | `ci-win.yml` (suffix `-windows7`) |
+| Win64 (Qt 6) | `VNote-X.Y.Z-win64.zip` | `ci-win.yml` |
 
 Both macOS packages are universal (`x86_64` + `arm64`) and built on
 `macos-latest`. The `-macos12` suffix describes the deployment target, not the
@@ -244,7 +243,7 @@ Drop the leading `## vX.Y.Z` line if you prefer the version to appear only as th
 release title; keep the bullet body either way. Verify with `gh release view vX.Y.Z`.
 
 `ncipollo/release-action` REPLACES the body and the name on every update unless
-told not to, and all five platform jobs target the same draft with
+told not to, and all four platform jobs target the same draft with
 `allowUpdates: true`. Before 4.4.2 that silently blanked the notes: whichever job
 finished last wiped them, `gh release view` then showed an empty body, and the
 Gitee mirror — which copies the GitHub body — fell back to the bare tag name. The
@@ -255,8 +254,8 @@ before re-typing the notes.
 
 ### Publish
 
-Only when the draft `vX.Y.Z` release shows all **5** platform packages (linux /
-macos / macos12 / win64 / windows7) AND its body matches the `changes.md` section
+Only when the draft `vX.Y.Z` release shows all **4** platform packages (linux /
+macos / macos12 / win64) AND its body matches the `changes.md` section
 do you publish it:
 
 ```pwsh
@@ -277,7 +276,7 @@ Expect at most two Gitee releases, the newest with `tag_name = vX.Y.Z`. If no ru
 appeared, re-drive it manually with `gh workflow run "Gitee Mirror" -f tag=vX.Y.Z`.
 
 The workflow does **not** upload binaries — Gitee's attachment endpoint runs at
-well under 50 KB/s from a GitHub-hosted runner. Download the 5 platform packages
+well under 50 KB/s from a GitHub-hosted runner. Download the 4 platform packages
 from the GitHub release and attach them to the Gitee release by hand:
 
 ```pwsh
@@ -300,7 +299,7 @@ with whatever was attached to them.)
 | Changelog | prepend `## vX.Y.Z` to `changes.md` |
 | Release trigger | commit on `master` with message starting `[Release]` |
 | Set description | `gh release edit vX.Y.Z --notes-file notes.md` (the `## vX.Y.Z` section of `changes.md`) |
-| Assemble release | wait for green CI, ensure draft `vX.Y.Z` has all 5 platform packages + changelog body, then `gh release edit vX.Y.Z --draft=false` |
+| Assemble release | wait for green CI, ensure draft `vX.Y.Z` has all 4 platform packages + changelog body, then `gh release edit vX.Y.Z --draft=false` |
 
 ## Release artifacts (must all be present before publishing)
 
@@ -308,4 +307,3 @@ with whatever was attached to them.)
 2. `VNote-X.Y.Z-mac-universal.dmg` (macOS 13+, Qt 6.10.3, universal)
 3. `VNote-X.Y.Z-mac-universal-macos12.dmg` (macOS 12.1+, Qt 6.9.3, universal)
 4. `VNote-X.Y.Z-win64.zip` (win64, Qt 6)
-5. `VNote-X.Y.Z-win64-windows7.zip` (windows7, Qt 5.15)

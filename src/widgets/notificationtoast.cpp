@@ -469,13 +469,7 @@ bool NotificationToast::eventFilter(QObject *p_watched, QEvent *p_event) {
   return QFrame::eventFilter(p_watched, p_event);
 }
 
-void NotificationToast::enterEvent(
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    QEnterEvent *p_event
-#else
-    QEvent *p_event
-#endif
-) {
+void NotificationToast::enterEvent(QEnterEvent *p_event) {
   // Pause auto-hide while hovered: the toast carries clickable buttons, and
   // yanking them away mid-reach would be worse than showing nothing.
   m_autoHideTimer->stop();

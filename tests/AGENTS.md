@@ -248,7 +248,7 @@ and cleanup; avoid a one-shot wrapper that captures inherited process pipes.
 ```powershell
 $ErrorActionPreference = "Stop"
 $build = "build-debug" # Replace with the existing build you just compiled
-$qtDir = (Select-String -Path "$build/CMakeCache.txt" -Pattern '^Qt[56]_DIR:PATH=' |
+$qtDir = (Select-String -Path "$build/CMakeCache.txt" -Pattern '^Qt6_DIR:PATH=' |
           Where-Object { $_.Line -notmatch 'NOTFOUND$' } | Select-Object -First 1).Line
 if (-not $qtDir) { throw "No configured Qt directory in $build/CMakeCache.txt" }
 $qtBin = [IO.Path]::GetFullPath((Join-Path ($qtDir -split '=', 2)[1] "../../../bin"))

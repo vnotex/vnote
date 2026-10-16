@@ -26,11 +26,7 @@
 #include <atomic>
 #include <utility>
 
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
 #include <QWebEngineDownloadRequest>
-#else
-#include <QWebEngineDownloadItem>
-#endif
 
 #include <core/services/buffer2.h>
 #include <core/services/htmltemplateservice.h>
@@ -443,13 +439,8 @@ WebEngineProfileService::createProtectedProfile(const Buffer2 &p_buffer, QObject
   settings->setAttribute(QWebEngineSettings::HyperlinkAuditingEnabled, false);
   settings->setAttribute(QWebEngineSettings::AllowRunningInsecureContent, false);
   settings->setUnknownUrlSchemePolicy(QWebEngineSettings::DisallowUnknownUrlSchemes);
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
   connect(profile, &QWebEngineProfile::downloadRequested, profile,
           [](QWebEngineDownloadRequest *p_download) { p_download->cancel(); });
-#else
-  connect(profile, &QWebEngineProfile::downloadRequested, profile,
-          [](QWebEngineDownloadItem *p_download) { p_download->cancel(); });
-#endif
   auto *handler = new ProtectedSchemeHandler(state, profile);
   profile->installUrlSchemeHandler(QByteArrayLiteral("vxnote"), handler);
   profile->setUrlRequestInterceptor(new ProtectedRequestInterceptor(state, profile));

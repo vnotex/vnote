@@ -122,7 +122,7 @@ if ($ChildMode -ne 'Run') {
         }
         $script:VNoteTrustedKeys = @($config.PublicKey)
         $code = Invoke-VNoteUpdate -Source $config.Source -Version '9.1.0' -CurrentVersion '9.0.0' `
-            -Variant $config.Variant -InstallDir $config.InstallDir -ParentProcessId $config.ParentProcessId `
+            -InstallDir $config.InstallDir -ParentProcessId $config.ParentProcessId `
             -PipeName $config.PipeName -Token $config.Token
         exit ([int]$code)
     }
@@ -314,18 +314,17 @@ function Copy-FixtureTree {
 }
 
 function New-FixtureInstall {
-    param([string]$Variant = 'win64', [switch]$Conflict)
+    param([switch]$Conflict)
     $directory = New-FixtureDirectory 'installed A'
     if ($Conflict) {
-        & (Join-Path $PSScriptRoot 'make-update-fixture.ps1') -Root $directory -Generation A -Variant $Variant
+        & (Join-Path $PSScriptRoot 'make-update-fixture.ps1') -Root $directory -Generation A
     }
     else {
-        Copy-FixtureTree $script:Packages[$Variant].Tree $directory
+        Copy-FixtureTree $script:Package.Tree $directory
         [IO.File]::Delete((Join-Path $directory 'manifest.json'))
     }
     [IO.File]::Copy($script:ExeA, (Join-Path $directory 'vnote.exe'), $true)
-    $qt = if ($Variant -eq 'win64') { 'Qt6Core.dll' } else { 'Qt5Core.dll' }
-    Write-FixtureText (Join-Path $directory $qt) 'generation A core'
+    Write-FixtureText (Join-Path $directory 'Qt6Core.dll') 'generation A core'
     Write-FixtureText (Join-Path $directory 'config/app/sentinel.bin') "portable app`0A"
     Write-FixtureText (Join-Path $directory 'config/local/sentinel.bin') "portable local`0A"
     Write-FixtureText (Join-Path $directory 'unowned file.bin') "unowned`0keep me"
@@ -355,17 +354,14 @@ function Publish-FixtureArtifacts {
 }
 
 function New-FixtureRelease {
-    param([string]$Source, $Urls = $script:PackageUrls, [string]$OnlyVariant = '')
+    param([string]$Source, $Urls = $script:PackageUrls)
     $assets = New-Object 'Collections.Generic.List[object]'
-    # Deliberately put misleading source/delta archives before either full ZIP.
+    # Deliberately put misleading source/delta archives before the full ZIP.
     $assets.Add(@{ name = 'source-code.zip'; browser_download_url = $script:BaseUrl + '/not-a-package.zip' })
     $assets.Add(@{ name = 'VNote-9.1.0-win64.delta.zip'; browser_download_url = $script:BaseUrl + '/not-a-package.zip' })
-    foreach ($variantName in @('win64-windows7', 'win64')) {
-        if ($OnlyVariant -and $OnlyVariant -ne $variantName) { continue }
-        foreach ($kind in @('Signature', 'Zip', 'Manifest')) {
-            $suffix = switch ($kind) { Zip { '.zip' } Manifest { '.manifest.json' } Signature { '.manifest.json.minisig' } }
-            $assets.Add(@{ name = "VNote-9.1.0-$variantName$suffix"; browser_download_url = $Urls[$variantName].$kind })
-        }
+    foreach ($kind in @('Signature', 'Zip', 'Manifest')) {
+        $suffix = switch ($kind) { Zip { '.zip' } Manifest { '.manifest.json' } Signature { '.manifest.json.minisig' } }
+        $assets.Add(@{ name = "VNote-9.1.0-win64$suffix"; browser_download_url = $Urls.$kind })
     }
     $release = @{ tag_name = 'v9.1.0'; prerelease = $false; assets = $assets.ToArray() }
     if ($Source -eq 'github') { $release.draft = $false }
@@ -386,14 +382,14 @@ function New-FixtureAttempt {
 }
 
 function Read-FixtureManifest {
-    param($Artifacts, [string]$Variant = 'win64', [string[]]$Keys = @($script:PublicKey))
+    param($Artifacts, [string[]]$Keys = @($script:PublicKey))
     return (Read-VerifiedVNoteManifest -Path $Artifacts.Manifest -SignaturePath $Artifacts.Signature `
-        -MinisignPath $MinisignPath -Version '9.1.0' -CurrentVersion '9.0.0' -Variant $Variant -TrustedKeys $Keys)
+        -MinisignPath $MinisignPath -Version '9.1.0' -CurrentVersion '9.0.0' -TrustedKeys $Keys)
 }
 
 function Expand-FixturePackage {
-    param($Artifacts, [string]$Variant = 'win64')
-    $manifest = Read-FixtureManifest $Artifacts $Variant
+    param($Artifacts)
+    $manifest = Read-FixtureManifest $Artifacts
     $stage = New-FixtureAttempt
     $destination = Join-Path $stage 'extracted'
     [IO.Directory]::CreateDirectory($destination) | Out-Null
@@ -402,15 +398,15 @@ function Expand-FixturePackage {
 }
 
 function Receive-FixturePackage {
-    param([string]$Source, [string]$Variant)
+    param([string]$Source)
     $stage = New-FixtureAttempt
     $release = Get-VNoteRelease -Source $Source -Version '9.1.0'
-    $assets = Select-VNoteReleaseAssets -Release $release -Version '9.1.0' -Variant $Variant
+    $assets = Select-VNoteReleaseAssets -Release $release -Version '9.1.0'
     $manifestPath = Join-Path $stage 'release.manifest.json'
     $signaturePath = $manifestPath + '.minisig'
     Receive-VNoteFile -Url $assets.Manifest -Destination $manifestPath -Source $Source -MaxBytes 16777216
     Receive-VNoteFile -Url $assets.Signature -Destination $signaturePath -Source $Source -MaxBytes 65536
-    $manifest = Read-FixtureManifest ([pscustomobject]@{ Manifest = $manifestPath; Signature = $signaturePath }) $Variant
+    $manifest = Read-FixtureManifest ([pscustomobject]@{ Manifest = $manifestPath; Signature = $signaturePath })
     Assert-Fixture ($manifest.fullPackage.asset -ceq $assets.ZipName) 'Selected a different full ZIP than the signed asset'
     $zipPath = Join-Path $stage $assets.ZipName
     Receive-VNoteFile -Url $assets.Zip -Destination $zipPath -Source $Source -MaxBytes $manifest.fullPackage.size
@@ -423,7 +419,7 @@ function Receive-FixturePackage {
 function Copy-FixtureArtifacts {
     param([string]$Name)
     $directory = New-FixtureDirectory $Name
-    $original = $script:Packages.win64
+    $original = $script:Package
     $result = @{}
     foreach ($kind in @('Zip', 'Manifest', 'Signature')) {
         $path = Join-Path $directory ([IO.Path]::GetFileName($original.$kind))
@@ -651,22 +647,19 @@ try {
     $exeB = Join-Path $compiledB 'vnote.exe'
     Add-Type -TypeDefinition ($fixtureProgram.Replace('__GENERATION__', 'A')) -OutputAssembly $script:ExeA -OutputType ConsoleApplication
     Add-Type -TypeDefinition ($fixtureProgram.Replace('__GENERATION__', 'B')) -OutputAssembly $exeB -OutputType ConsoleApplication
-    $script:Packages = @{}
-    foreach ($variantName in @('win64', 'win64-windows7')) {
-        $packageParent = New-FixtureDirectory ('package ' + $variantName)
-        $name = 'VNote-9.1.0-' + $variantName
-        $tree = Join-Path $packageParent $name
-        & (Join-Path $PSScriptRoot 'make-update-fixture.ps1') -Root $tree -Generation B -Variant $variantName
-        [IO.File]::Copy($exeB, (Join-Path $tree 'vnote.exe'), $true)
-        & (Join-Path $PSScriptRoot '../gen-update-package.ps1') -ExtractedDir $tree -Version '9.1.0' `
-            -Variant $variantName -Commit ('a' * 40) -Channel stable -OutputDir $packageParent `
-            -MinisignSecretKey $script:SecretKey -SkipDelta
-        $manifest = Join-Path $packageParent ($name + '.manifest.json')
-        $script:Packages[$variantName] = [pscustomobject]@{
-            Tree = $tree; Zip = (Join-Path $packageParent ($name + '.zip')); Manifest = $manifest; Signature = $manifest + '.minisig'
-        }
+    $packageParent = New-FixtureDirectory 'package win64'
+    $name = 'VNote-9.1.0-win64'
+    $tree = Join-Path $packageParent $name
+    & (Join-Path $PSScriptRoot 'make-update-fixture.ps1') -Root $tree -Generation B
+    [IO.File]::Copy($exeB, (Join-Path $tree 'vnote.exe'), $true)
+    & (Join-Path $PSScriptRoot '../gen-update-package.ps1') -ExtractedDir $tree -Version '9.1.0' `
+        -Commit ('a' * 40) -Channel stable -OutputDir $packageParent `
+        -MinisignSecretKey $script:SecretKey -SkipDelta
+    $manifest = Join-Path $packageParent ($name + '.manifest.json')
+    $script:Package = [pscustomobject]@{
+        Tree = $tree; Zip = (Join-Path $packageParent ($name + '.zip')); Manifest = $manifest; Signature = $manifest + '.minisig'
     }
-    $script:VNoteInstallRoot = $script:Packages.win64.Tree
+    $script:VNoteInstallRoot = $script:Package.Tree
     $httpReady = Join-Path $script:Root 'http ready.json'
     $httpLog = Join-Path $script:Root 'http requests.txt'
     Write-FixtureJson $script:RoutesPath @{}
@@ -680,22 +673,17 @@ try {
             Hosts = @('127.0.0.1'); HostSuffixes = @(); Accept = 'application/json'
         }
     }
-    $script:PackageUrls = @{}
-    foreach ($variantName in @('win64', 'win64-windows7')) {
-        $script:PackageUrls[$variantName] = Publish-FixtureArtifacts $script:Packages[$variantName] $variantName
-    }
+    $script:PackageUrls = Publish-FixtureArtifacts $script:Package 'win64'
     foreach ($sourceName in @('github', 'gitee')) { Publish-FixtureRelease $sourceName (New-FixtureRelease $sourceName) }
 
     foreach ($sourceName in @('github', 'gitee')) {
-        foreach ($variantName in @('win64', 'win64-windows7')) {
-            $prepared = Receive-FixturePackage $sourceName $variantName
-            $install = New-FixtureInstall $variantName
-            $before = Get-FixtureSnapshot $install
-            Assert-VNoteInstallReady -InstallDir $install -Manifest $prepared.Manifest -PackageDir $prepared.Directory -PreparingDownload
-            $backup = Install-VNotePackage -InstallDir $install -PackageDir $prepared.Directory -Manifest $prepared.Manifest
-            Assert-FixtureOverlay $install $backup $before $prepared.Manifest
-            Pass-Fixture "$sourceName-shaped shuffled API / $variantName signed overlay and complete backup"
-        }
+        $prepared = Receive-FixturePackage $sourceName
+        $install = New-FixtureInstall
+        $before = Get-FixtureSnapshot $install
+        Assert-VNoteInstallReady -InstallDir $install -Manifest $prepared.Manifest -PackageDir $prepared.Directory -PreparingDownload
+        $backup = Install-VNotePackage -InstallDir $install -PackageDir $prepared.Directory -Manifest $prepared.Manifest
+        Assert-FixtureOverlay $install $backup $before $prepared.Manifest
+        Pass-Fixture "$sourceName-shaped shuffled API / win64 signed overlay and complete backup"
     }
 
     # A shared *real* authenticated peer proves every preparation rejection below
@@ -712,13 +700,13 @@ try {
             duplicate { $release.assets += @($release.assets | Where-Object { $_.name -ceq 'VNote-9.1.0-win64.zip' }) }
             wrong-name { ($release.assets | Where-Object { $_.name -ceq 'VNote-9.1.0-win64.zip' }).name = 'VNote-9.2.0-win64.zip' }
             wrong-tag { $release.tag_name = 'v9.2.0' }
-            wrong-variant { $release = New-FixtureRelease github -OnlyVariant 'win64-windows7' }
+            wrong-variant { foreach ($asset in $release.assets) { $asset.name = $asset.name.Replace('-win64', '-win64-windows7') } }
             empty-url { ($release.assets | Where-Object { $_.name -ceq 'VNote-9.1.0-win64.zip' }).browser_download_url = '' }
             draft { $release.draft = $true }
             prerelease { $release.prerelease = $true }
         }
         Publish-FixtureRelease github $release
-        Expect-FixturePreparationFailure "API $fault refuses before READY" { Receive-FixturePackage github win64 }
+        Expect-FixturePreparationFailure "API $fault refuses before READY" { Receive-FixturePackage github }
     }
     Publish-FixtureRelease github (New-FixtureRelease github)
     $tampered = Copy-FixtureArtifacts 'one byte manifest tamper'
@@ -730,8 +718,17 @@ try {
     $comment = [IO.File]::ReadAllText($badComment.Signature)
     Write-FixtureText $badComment.Signature ([regex]::Replace($comment, '(?m)^trusted comment:.*', 'trusted comment: attacker changed this'))
     Expect-FixturePreparationFailure 'trusted-comment signature tamper' { Expand-FixturePackage $badComment }
-    Expect-FixturePreparationFailure 'untrusted signing key' { Read-FixtureManifest $script:Packages.win64 win64 @($wrongKey) }
-    Expect-FixturePreparationFailure 'signed variant mismatch' { Read-FixtureManifest $script:Packages.win64 'win64-windows7' }
+    Expect-FixturePreparationFailure 'untrusted signing key' { Read-FixtureManifest $script:Package -Keys @($wrongKey) }
+    $wrongVariant = Copy-FixtureArtifacts 'signed variant mismatch'
+    $manifest = Read-FixtureJson $wrongVariant.Manifest
+    $manifest.variant = 'win64-windows7'
+    Sign-FixtureManifest $wrongVariant $manifest
+    Expect-FixturePreparationFailure 'signed legacy variant rejected' { Read-FixtureManifest $wrongVariant }
+    $wrongQt = Copy-FixtureArtifacts 'signed Qt5 payload'
+    $manifest = Read-FixtureJson $wrongQt.Manifest
+    $manifest.files += @([pscustomobject]@{ path = 'Qt5Core.dll'; size = 1; sha256 = ('0' * 64) })
+    Sign-FixtureManifest $wrongQt $manifest
+    Expect-FixturePreparationFailure 'signed Qt5 DLL rejected' { Read-FixtureManifest $wrongQt }
     $hashMismatch = Copy-FixtureArtifacts 'zip hash mismatch'
     $bytes = [IO.File]::ReadAllBytes($hashMismatch.Zip)
     $bytes[20] = $bytes[20] -bxor 1
@@ -741,14 +738,14 @@ try {
     $stream = [IO.File]::OpenWrite($lengthMismatch.Zip)
     try { $stream.SetLength($stream.Length - 1) } finally { $stream.Dispose() }
     Expect-FixturePreparationFailure 'ZIP signed length mismatch' { Expand-FixturePackage $lengthMismatch }
-    Add-FixtureRoute '/truncated.zip' $script:Packages.win64.Zip -Truncate $true
+    Add-FixtureRoute '/truncated.zip' $script:Package.Zip -Truncate $true
     $truncatedPath = Join-Path (New-FixtureAttempt) 'truncated.zip'
     Expect-FixturePreparationFailure 'HTTP truncated stream' {
         Receive-VNoteFile -Url "$script:BaseUrl/truncated.zip" -Destination $truncatedPath -Source github `
-            -MaxBytes ([int64](Get-Item -LiteralPath $script:Packages.win64.Zip).Length)
+            -MaxBytes ([int64](Get-Item -LiteralPath $script:Package.Zip).Length)
     }
     Assert-Fixture (-not [IO.File]::Exists($truncatedPath)) 'Truncated download was retained'
-    Add-FixtureRoute '/unbounded.zip' $script:Packages.win64.Zip -OmitLength $true
+    Add-FixtureRoute '/unbounded.zip' $script:Package.Zip -OmitLength $true
     $overrunPath = Join-Path (New-FixtureAttempt) 'overrun.zip'
     Expect-FixturePreparationFailure 'HTTP streaming signed-size overrun' {
         Receive-VNoteFile -Url "$script:BaseUrl/unbounded.zip" -Destination $overrunPath -Source github -MaxBytes 64
@@ -791,9 +788,9 @@ try {
     finally { $zip.Dispose() }
     Sign-FixtureArchive $fileHash
     Expect-FixturePreparationFailure 'signed ZIP with wrong per-file hash' { Expand-FixturePackage $fileHash }
-    $valid = Expand-FixturePackage $script:Packages.win64
+    $valid = Expand-FixturePackage $script:Package
     Expect-FixturePreparationFailure 'extraction destination outside private stage' {
-        Expand-VerifiedVNotePackage -ArchivePath $script:Packages.win64.Zip -Destination $script:Outside -Manifest $valid.Manifest
+        Expand-VerifiedVNotePackage -ArchivePath $script:Package.Zip -Destination $script:Outside -Manifest $valid.Manifest
     }
     $conflictInstall = New-FixtureInstall -Conflict
     $conflictBefore = Get-FixtureSnapshot $conflictInstall
@@ -991,7 +988,7 @@ public static class VNoteMappedImageFixture {
         Assert-Fixture ($uri.AbsoluteUri -ceq $case[1]) 'Production source policy changed a signed URL'
     }
     Add-FixtureRoute '/redirect.zip' -Status 302 -Location '/signed.zip?token=a%2Fb&part=1'
-    Add-FixtureRoute '/signed.zip?token=a%2Fb&part=1' $script:Packages.win64.Zip
+    Add-FixtureRoute '/signed.zip?token=a%2Fb&part=1' $script:Package.Zip
     $redirected = Join-Path (New-FixtureAttempt) 'redirected.zip'
     Receive-VNoteFile -Url "$script:BaseUrl/redirect.zip" -Destination $redirected -Source github -MaxBytes $valid.Manifest.fullPackage.size
     Assert-Fixture ((Get-FileHash -LiteralPath $redirected).Hash -ieq $valid.Manifest.fullPackage.sha256) 'Relative signed-query redirect changed bytes'
@@ -1025,13 +1022,12 @@ public static class VNoteMappedImageFixture {
     Copy-FixtureTree $lifecycleInstall $stoppedExpected
     Write-FixtureText (Join-Path $stoppedExpected 'config/local/saved-on-close.bin') 'saved after ACCEPTED'
     $stoppedSnapshot = Get-FixtureSnapshot $stoppedExpected
-    $badUrls = @{} + $script:PackageUrls
-    $badUrls.win64 = Publish-FixtureArtifacts $tampered 'tampered-lifecycle'
+    $badUrls = Publish-FixtureArtifacts $tampered 'tampered-lifecycle'
     Publish-FixtureRelease github (New-FixtureRelease github $badUrls)
     $parent = Start-FixtureParent $lifecycleInstall 'accept' 0
     $attempt = @{
         Updater = $helperScript; BaseUrl = $script:BaseUrl; Port = $port; PublicKey = $script:PublicKey
-        Source = 'github'; Variant = 'win64'; InstallDir = $lifecycleInstall
+        Source = 'github'; InstallDir = $lifecycleInstall
         ParentProcessId = $parent.Child.Process.Id; PipeName = $parent.Pipe; Token = $parent.Token
     }
     $helper = Start-FixtureMode Update $attempt 'failed-real-updater'
