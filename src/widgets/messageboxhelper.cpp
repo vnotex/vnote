@@ -1,6 +1,8 @@
 #include "messageboxhelper.h"
 
+#include <QCoreApplication>
 #include <QObject>
+#include <QPushButton>
 #include <QTimer>
 
 using namespace vnotex;
@@ -72,6 +74,11 @@ int MessageBoxHelper::showMessageBox(QMessageBox::Icon p_icon, const QString &p_
   msgBox.setInformativeText(p_informationText);
   msgBox.setDetailedText(p_detailedText);
   msgBox.setDefaultButton(p_defaultButton);
+  if (p_buttons.testFlag(QMessageBox::YesToAll)) {
+    msgBox.button(QMessageBox::YesToAll)->setText(
+        QCoreApplication::translate("MessageBoxHelper", "Never Ask"));
+    msgBox.setEscapeButton(QMessageBox::No);
+  }
   if (!p_parent) {
     // Parentless prompts may originate from a global hotkey while the application is hidden.
     QTimer::singleShot(0, &msgBox, [&msgBox]() {
@@ -112,6 +119,14 @@ int MessageBoxHelper::questionYesNo(MessageBoxHelper::Type p_type, const QString
   int ret = showMessageBox(p_type, p_text, p_informationText, p_detailedText,
                            QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes, p_parent);
   return ret;
+}
+
+int MessageBoxHelper::questionYesNoNeverAsk(MessageBoxHelper::Type p_type, const QString &p_text,
+                                           const QString &p_informationText,
+                                           const QString &p_detailedText, QWidget *p_parent) {
+  return showMessageBox(p_type, p_text, p_informationText, p_detailedText,
+                        QMessageBox::Yes | QMessageBox::No | QMessageBox::YesToAll,
+                        QMessageBox::Yes, p_parent);
 }
 
 int MessageBoxHelper::questionYesNoCancel(MessageBoxHelper::Type p_type, const QString &p_text,

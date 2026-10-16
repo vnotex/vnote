@@ -22,6 +22,7 @@
 
 #include <controllers/mindmapviewwindowcontroller.h>
 #include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
@@ -155,12 +156,29 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
             const QPointer<MindMapEditor> guard(this);
             const auto generation = m_generation;
             const QUrl url(p_url);
-            const int answer = MessageBoxHelper::questionYesNo(
-                MessageBoxHelper::Warning,
-                tr("Are you sure to open link (%1)?").arg(url.toString()),
-                tr("Malicious link might do harm to your device."), QString(), window());
-            if (guard && generation == m_generation && m_contentLoaded && canUseBuffer() &&
-                answer == QMessageBox::Yes) {
+            const auto scheme = url.scheme();
+            const bool allowNeverAsk = scheme == QStringLiteral("http") ||
+                                       scheme == QStringLiteral("https") ||
+                                       scheme == QStringLiteral("ftp") ||
+                                       scheme == QStringLiteral("mailto");
+            const QPointer<ConfigMgr2> configMgr(m_services.get<ConfigMgr2>());
+            int answer = QMessageBox::Yes;
+            if (!allowNeverAsk || !configMgr ||
+                configMgr->getCoreConfig().isConfirmExternalLinksEnabled()) {
+              const auto question = allowNeverAsk ? MessageBoxHelper::questionYesNoNeverAsk
+                                                  : MessageBoxHelper::questionYesNo;
+              answer = question(MessageBoxHelper::Warning,
+                                tr("Are you sure to open link (%1)?").arg(url.toString()),
+                                tr("Malicious link might do harm to your device."), QString(),
+                                window());
+            }
+            if (!guard || generation != m_generation || !m_contentLoaded || !canUseBuffer()) {
+              return;
+            }
+            if (allowNeverAsk && answer == QMessageBox::YesToAll && configMgr) {
+              configMgr->getCoreConfig().setConfirmExternalLinksEnabled(false);
+            }
+            if (answer == QMessageBox::Yes || answer == QMessageBox::YesToAll) {
               m_controller->openConfirmedExternalLink(url);
             }
           });

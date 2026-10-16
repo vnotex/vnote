@@ -201,6 +201,17 @@ rewrite of the user's bindings. Turning the option on and restarting must
 restore them, including custom bindings. Setters persist the preference without
 changing the loaded masks or partially rebinding a running session.
 
+### External-link confirmation
+
+`CoreConfig` stores `core.confirmExternalLinks` in `vnotex.json`, default `true`.
+Markdown Read/Edit and mind-map HTTP/HTTPS/FTP/mailto links share this preference.
+The warning's **Never Ask** button (`QMessageBox::YesToAll`, YesRole) opens the
+current link and persists `false` through normal config debouncing. **Yes** opens
+only this link; **No**, Escape and window-close neither open nor change the setting.
+Local-file/program warnings and protected-note authorization remain independent.
+To restore confirmation, close VNote and set `core.confirmExternalLinks` to `true`
+in `vnotex.json`. Missing or non-boolean values also enable confirmation.
+
 ### Mind map editor preferences
 
 `EditorConfig::getMindMapEditorConfig()` owns `editor.mindMapEditor` in `vnotex.json`.

@@ -124,6 +124,9 @@ public:
   bool isToolTipsEnabled() const;
   void setToolTipsEnabled(bool p_enabled);
 
+  bool isConfirmExternalLinksEnabled() const;
+  void setConfirmExternalLinksEnabled(bool p_enabled);
+
   bool isRecycleBinAutoCleanupEnabled() const;
   void setRecycleBinAutoCleanupEnabled(bool p_enabled, qint64 p_nowUtcMs);
 
@@ -232,6 +235,8 @@ private:
   bool m_checkForUpdatesOnStartEnabled = true;
 
   bool m_toolTipsEnabled = true;
+
+  bool m_confirmExternalLinks = true;
 
   // Release source used by the update checker. Defaults live in C++; there is
   // no bundled vnotex.json entry for any of the update keys. Gitee is the

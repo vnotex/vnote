@@ -42,6 +42,7 @@
 #include <controllers/markdowneditorcontroller.h>
 #include <controllers/markdownviewwindowcontroller.h>
 #include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/logging.h>
 #include <core/markdowneditorconfig.h>
@@ -1325,10 +1326,21 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
   }
   if (scheme == QStringLiteral("http") || scheme == QStringLiteral("https") ||
       scheme == QStringLiteral("ftp") || scheme == QStringLiteral("mailto")) {
-    int ret = MessageBoxHelper::questionYesNo(
-        MessageBoxHelper::Warning, tr("Are you sure to open link (%1)?").arg(url.toString()),
-        tr("Malicious link might do harm to your device."), QString(), this);
-    if (ret == QMessageBox::Yes) {
+    const QPointer<ConfigMgr2> configMgr(getServices().get<ConfigMgr2>());
+    const QPointer<MarkdownViewWindow2> guard(this);
+    int ret = QMessageBox::Yes;
+    if (!configMgr || configMgr->getCoreConfig().isConfirmExternalLinksEnabled()) {
+      ret = MessageBoxHelper::questionYesNoNeverAsk(
+          MessageBoxHelper::Warning, tr("Are you sure to open link (%1)?").arg(url.toString()),
+          tr("Malicious link might do harm to your device."), QString(), this);
+    }
+    if (!guard) {
+      return;
+    }
+    if (ret == QMessageBox::YesToAll && configMgr) {
+      configMgr->getCoreConfig().setConfirmExternalLinksEnabled(false);
+    }
+    if (ret == QMessageBox::Yes || ret == QMessageBox::YesToAll) {
       QDesktopServices::openUrl(url);
     }
     return;

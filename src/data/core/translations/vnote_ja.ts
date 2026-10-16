@@ -147,6 +147,14 @@
     </message>
 </context>
 <context>
+    <name>MessageBoxHelper</name>
+    <message>
+        <location filename="../../../widgets/messageboxhelper.cpp" line="79"/>
+        <source>Never Ask</source>
+        <translation>今後確認しない</translation>
+    </message>
+</context>
+<context>
     <name>ProcessUtils</name>
     <message>
         <location filename="../../../utils/processutils.cpp" line="+140"/>

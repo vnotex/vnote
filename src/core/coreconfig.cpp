@@ -77,6 +77,8 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
 
   m_toolTipsEnabled = READBOOL(QStringLiteral("toolTipsEnabled"));
 
+  m_confirmExternalLinks = p_jobj.value(QStringLiteral("confirmExternalLinks")).toBool(true);
+
   m_updateSource = normalizeUpdateSource(READSTR(QStringLiteral("updateSource")));
 
   m_skippedUpdateVersion = READSTR(QStringLiteral("skippedUpdateVersion"));
@@ -132,6 +134,7 @@ QJsonObject CoreConfig::toJson() const {
   obj[QStringLiteral("docksTabbarIconSize")] = m_docksTabBarIconSize;
   obj[QStringLiteral("checkForUpdatesOnStart")] = m_checkForUpdatesOnStartEnabled;
   obj[QStringLiteral("toolTipsEnabled")] = m_toolTipsEnabled;
+  obj[QStringLiteral("confirmExternalLinks")] = m_confirmExternalLinks;
   obj[QStringLiteral("updateSource")] = m_updateSource;
   obj[QStringLiteral("skippedUpdateVersion")] = m_skippedUpdateVersion;
   // Decimal string: IConfig::readInt is 32-bit and QJsonValue::toInt() would
@@ -246,6 +249,12 @@ bool CoreConfig::isToolTipsEnabled() const { return m_toolTipsEnabled; }
 
 void CoreConfig::setToolTipsEnabled(bool p_enabled) {
   updateConfig(m_toolTipsEnabled, p_enabled, this);
+}
+
+bool CoreConfig::isConfirmExternalLinksEnabled() const { return m_confirmExternalLinks; }
+
+void CoreConfig::setConfirmExternalLinksEnabled(bool p_enabled) {
+  updateConfig(m_confirmExternalLinks, p_enabled, this);
 }
 
 bool CoreConfig::isRecycleBinAutoCleanupEnabled() const { return m_recycleBinAutoCleanupEnabled; }
