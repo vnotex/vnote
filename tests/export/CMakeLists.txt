@@ -46,9 +46,17 @@ foreach(_export_test test_mindmapexport test_htmlpdfexporter)
       $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:${_export_test}>
   )
   # Locate this Qt kit's renderer/resources, never an inherited deployed-app override.
+  if(APPLE)
+    # WebEngine needs Cocoa's native graphics context, not the offscreen plugin.
+    set(_export_test_platform cocoa)
+    set(_export_test_platform_plugin Qt6::QCocoaIntegrationPlugin)
+  else()
+    set(_export_test_platform offscreen)
+    set(_export_test_platform_plugin Qt6::QOffscreenIntegrationPlugin)
+  endif()
   set_property(TEST ${_export_test} PROPERTY ENVIRONMENT
-    "QT_QPA_PLATFORM=offscreen"
-    "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:Qt6::QOffscreenIntegrationPlugin>"
+    "QT_QPA_PLATFORM=${_export_test_platform}"
+    "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_export_test_platform_plugin}>"
     "QTWEBENGINEPROCESS_PATH="
     "QTWEBENGINE_RESOURCES_PATH="
     "QTWEBENGINE_LOCALES_PATH="
@@ -66,3 +74,5 @@ endforeach()
 unset(_native_export_sources)
 unset(_export_test)
 unset(_export_test_path)
+unset(_export_test_platform)
+unset(_export_test_platform_plugin)

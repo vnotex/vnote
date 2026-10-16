@@ -207,6 +207,15 @@ message box. Cocoa can deliver a click during `show()`, before `exec()` starts i
 loop: allow repeated clicks on an already-observed box even if that early click hid it.
 Do not stop on the first click or infer dialog readiness from `QThread::loopLevel()`.
 
+**Native export tests:** on macOS, `test_mindmapexport` and `test_htmlpdfexporter` use
+`cocoa` and the matching Qt kit's platform plugin, not `offscreen`, so their hidden
+WebEngine views have native graphics contexts. Keep deployed-app WebEngine overrides
+cleared and the non-macOS offscreen environment unchanged.
+
+PDF.js text-item boundaries are not word boundaries: ligatures can split a word across
+items. Reconstruct text by concatenating `item.str` and adding a newline only for
+`item.hasEOL`, as the bundled viewer does; do not insert spaces between every item.
+
 ### VTextEdit.dll runtime copy
 
 Tests that link `VTextEdit` (directly, or transitively via `core_configs`) load `VTextEdit.dll` at runtime. **`core_services` alone no longer pulls it in**, so a pure-core test that links only `core_services` + `vxcore` runs with no `VTextEdit.dll` anywhere near it. The build copies the DLL next to each subdirectory's test exes via a `POST_BUILD` step anchored on one test target per subdir (the canonical reference is `tests/utils/CMakeLists.txt:78-83`):

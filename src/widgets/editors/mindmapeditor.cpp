@@ -572,8 +572,8 @@ MindMapEditor::MimeSnapshot MindMapEditor::snapshotMimeData(const QMimeData *p_s
   }
   const auto html = p_source->html();
   if (!html.isEmpty() && HtmlUtils::hasOnlyImgTag(html)) {
-    // image-parser-allow: clipboard HTML only, matching Markdown's acquisition policy.
-    const QRegularExpression expression(QStringLiteral("<img ([^>]*)src=\"([^\"]+)\"([^>]*)>"));
+    const QRegularExpression expression(QStringLiteral(
+        "<img ([^>]*)src=\"([^\"]+)\"([^>]*)>")); // image-parser-allow: clipboard HTML only
     const auto match = expression.match(html);
     if (match.hasMatch()) {
       snapshot.htmlImage = match.captured(2);

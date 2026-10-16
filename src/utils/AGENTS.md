@@ -56,6 +56,14 @@ separators. `test_htmltemplateservice` executes the emitted JavaScript with the 
 Chinese/Japanese catalogs and checks snapshot lifetime and hostile-text round trips when
 Qt Qml is available.
 
+## Process commands
+
+The combined-command overloads of `ProcessUtils::start` and `startDetached` use
+`QProcess::startCommand`. `QProcess::start(QString)` treats the entire string as
+the executable name, not a command line.
+Keep quoted executables and arguments intact; these helpers do not invoke a shell.
+Callers with separate program/argument values use the existing argument-list overloads.
+
 ## Related Modules
 
 - [Core Services](../core/AGENTS.md) — Core services that use utilities

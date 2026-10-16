@@ -860,7 +860,8 @@ try {
       }
     }
     const viewport = page.getViewport({scale:1});
-    pages.push({items:content.items.map(item => ({text:item.str, height:item.height})),
+    pages.push({items:content.items.map(item => ({text:item.str, height:item.height,
+                                                hasEOL:item.hasEOL})),
                 images:images, width:viewport.width, height:viewport.height});
   }
   result.textContent = JSON.stringify(pages);
@@ -1137,7 +1138,11 @@ void TestHtmlPdfExporter::printableNativeForest() {
     for (const auto &item : page.value(QStringLiteral("items")).toArray()) {
       const auto entry = item.toObject();
       const auto line = entry.value(QStringLiteral("text")).toString();
-      text += line + QLatin1Char(' ');
+      // PDF.js may split within a word (for example, at a ligature).
+      text += line;
+      if (entry.value(QStringLiteral("hasEOL")).toBool()) {
+        text += QLatin1Char('\n');
+      }
       if (index > 0 && line.contains(QStringLiteral("Paragraph "))) {
         const double height = entry.value(QStringLiteral("height")).toDouble();
         QVERIFY2(std::abs(height - 12.0) < 0.1,

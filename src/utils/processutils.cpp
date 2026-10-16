@@ -125,7 +125,7 @@ ProcessUtils::State ProcessUtils::start(const QString &p_command,
                                         const std::function<void(const QString &)> &p_logger,
                                         const bool &p_askedToStop) {
   QProcess proc;
-  proc.start(p_command);
+  proc.startCommand(p_command);
   return handleProcess(&proc, p_logger, p_askedToStop);
 }
 
@@ -208,7 +208,7 @@ void ProcessUtils::startDetached(const QString &p_command) {
   auto process = new QProcess();
   QObject::connect(process, QOverload<int, QProcess::ExitStatus>::of(&QProcess::finished), process,
                    &QProcess::deleteLater);
-  process->start(p_command);
+  process->startCommand(p_command);
 }
 
 void ProcessUtils::startDetached(const QString &p_program, const QStringList &p_args) {
