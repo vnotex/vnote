@@ -406,6 +406,8 @@ private slots:
   void testNavigation_visibleRectangles();
   void testNavigation_staleSnapshots();
   void testNavigation_protectedDestinations();
+  void testCustomAnchors_data();
+  void testCustomAnchors();
   void testMathHeadings_linkTargets();
   void testCmarkMathTableDom_data();
   void testCmarkMathTableDom();
@@ -1775,6 +1777,103 @@ return {
   QVERIFY(result.value(QStringLiteral("pendingRejected")).toBool());
   QCOMPARE(result.value(QStringLiteral("hrefs")).toArray(),
            QJsonArray::fromStringList({"replacement.md"}));
+}
+
+void TestMarkdownViewerJs::testCustomAnchors_data() {
+  QTest::addColumn<QString>("html");
+  QTest::addColumn<QString>("expected");
+  QTest::addColumn<bool>("block");
+
+  struct Case {
+    const char *name;
+    const char *html;
+    const char *expected;
+  };
+  const Case cases[] = {
+      {"exported-id", "<a id=\"m3-node-726f6f74\">target</a>",
+       "<a id=\"m3-node-726f6f74\">target</a>"},
+      {"allowed-alphabet", "<a id=\"m3-node-Az_09-x\">target</a>",
+       "<a id=\"m3-node-Az_09-x\">target</a>"},
+      {"link-attributes",
+       "<a id=\"m3-node-x\" href=\"#m3-node-y\" title=\"Jump\" target=\"_self\" "
+       "onclick=\"alert(1)\">target</a>",
+       "<a id=\"m3-node-x\" href=\"#m3-node-y\" title=\"Jump\" target=\"_self\">target</a>"},
+      {"empty-suffix", "<a id=\"m3-node-\">target</a>", "<a>target</a>"},
+      {"wrong-prefix", "<a id=\"vx-content\">target</a>", "<a>target</a>"},
+      {"prefix-case", "<a id=\"M3-node-x\">target</a>", "<a>target</a>"},
+      {"double-quote", "<a id='m3-node-x\" onclick=\"alert(1)'>target</a>", "<a>target</a>"},
+      {"single-quote", "<a id=\"m3-node-x'y\">target</a>", "<a>target</a>"},
+      {"named-entity", "<a id='m3-node-x&quot; onclick=&quot;alert(1)'>target</a>",
+       "<a>target</a>"},
+      {"numeric-entity", "<a id='m3-node-x&#34; onclick=&#34;alert(1)'>target</a>",
+       "<a>target</a>"},
+      {"space", "<a id=\"m3-node-x y\">target</a>", "<a>target</a>"},
+      {"embedded-newline", "<a id=\"m3-node-x\ny\">target</a>", "<a>target</a>"},
+      {"tab", "<a id=\"m3-node-x\ty\">target</a>", "<a>target</a>"},
+      {"html-delimiter", "<a id=\"m3-node-x<y\">target</a>", "<a>target</a>"},
+      {"non-ascii", "<a id=\"m3-node-中文\">target</a>", "<a>target</a>"},
+      {"other-tag", "<span id=\"m3-node-x\">target</span>", "<span>target</span>"},
+      {"legacy-name", "<a name=\"m3-node-x\">target</a>", "<a>target</a>"},
+  };
+  for (const auto &entry : cases) {
+    for (bool block : {false, true}) {
+      const QByteArray row = QByteArray(entry.name) + (block ? "-block" : "-inline");
+      QTest::newRow(row.constData())
+          << QString::fromUtf8(entry.html) << QString::fromUtf8(entry.expected) << block;
+    }
+  }
+}
+
+void TestMarkdownViewerJs::testCustomAnchors() {
+  QFETCH(QString, html);
+  QFETCH(QString, expected);
+  QFETCH(bool, block);
+
+  if (block) {
+    html = QStringLiteral("<div>\n") + html + QStringLiteral("\n</div>\n");
+    expected = QStringLiteral("<div>\n") + expected + QStringLiteral("\n</div>\n");
+  }
+  QString source = QStringLiteral("(function() { try {\n");
+  QString err;
+  for (const auto *name : {"markdown-it.min.js", "xss.min.js", "markdown-it-xss.js"}) {
+    source += readFile(webDir() + QStringLiteral("/js/markdown-it/") + QLatin1String(name), &err) +
+              QLatin1Char('\n');
+    QVERIFY2(err.isEmpty(), qPrintable(err));
+  }
+  const QJsonObject fixture{{QStringLiteral("input"), html}, {QStringLiteral("block"), block}};
+  source += QStringLiteral(R"JS(
+var fixture = %1;
+var md = markdownit({html: true}).use(markdownItXSS);
+var html = fixture.block ? md.render(fixture.input) : md.renderInline(fixture.input);
+var container = document.createElement('div');
+container.innerHTML = html;
+return JSON.stringify({html: html, injectedHandler: !!container.querySelector('[onclick]')});
+} catch (error) { return JSON.stringify({error: String(error)}); }
+})()
+)JS")
+                .arg(QString::fromUtf8(QJsonDocument(fixture).toJson(QJsonDocument::Compact)));
+
+  // QJSEngine does not support the sanitizer's existing object-spread syntax.
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  QSignalSpy loaded(&page, &QWebEnginePage::loadFinished);
+  page.setHtml(QStringLiteral("<!doctype html><html><body></body></html>"));
+  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 10000);
+  QVERIFY(loaded.at(0).at(0).toBool());
+  QVariant result;
+  bool finished = false;
+  page.runJavaScript(source, [&result, &finished](const QVariant &p_result) {
+    result = p_result;
+    finished = true;
+  });
+  QTRY_VERIFY_WITH_TIMEOUT(finished, 10000);
+  const auto document = QJsonDocument::fromJson(result.toString().toUtf8());
+  QVERIFY2(document.isObject(), qPrintable(result.toString()));
+  const auto values = document.object();
+  QVERIFY2(!values.contains(QStringLiteral("error")),
+           qPrintable(values.value(QStringLiteral("error")).toString()));
+  QCOMPARE(values.value(QStringLiteral("html")).toString(), expected);
+  QVERIFY(!values.value(QStringLiteral("injectedHandler")).toBool());
 }
 
 void TestMarkdownViewerJs::testMathHeadings_linkTargets() {
