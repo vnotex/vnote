@@ -465,6 +465,8 @@ private slots:
   void markdownProjectsWholeForestAndCopiesImage();
   void markdownDoesNotCreateWidgets();
   void markdownRendersDocumentHierarchy();
+  void markdownLinksMatchHtmlDirection_data();
+  void markdownLinksMatchHtmlDirection();
   void unknownAndEmptyTypesUseRegisteredFallback();
   void snapshotsAreAuthoritative_data();
   void snapshotsAreAuthoritative();
@@ -505,7 +507,8 @@ void TestMindMapExport::markdownProjectsWholeForestAndCopiesImage() {
   QVERIFY2(containsForest(markdown, true), qPrintable(markdown));
   QVERIFY(QRegularExpression(QStringLiteral("(?m)^#{5} .*Fifth level")).match(markdown).hasMatch());
   QVERIFY(markdown.contains(QStringLiteral("id=\"m3-node-6669667468\"")));
-  QVERIFY(markdown.contains(QStringLiteral("](#m3-node-6669667468)")));
+  QVERIFY(markdown.contains(QStringLiteral("](#m3-node-6f727068616e2d6368696c64 ")));
+  QVERIFY(!markdown.contains(QStringLiteral("](#m3-node-6669667468")));
   const auto image =
       QRegularExpression(QStringLiteral("!\\[[^\\]]*\\]\\(<([^>]+)>\\)")).match(markdown);
   QVERIFY(image.hasMatch());
@@ -531,7 +534,8 @@ void TestMindMapExport::markdownRendersDocumentHierarchy() {
     }
     if (level == 1) {
       node.insert(QStringLiteral("icons"), QJsonArray{QStringLiteral("star"), QString()});
-      node.insert(QStringLiteral("tags"), QJsonArray{QStringLiteral("release"), QString()});
+      node.insert(QStringLiteral("tags"),
+                  QJsonArray{QStringLiteral("release"), QString(), QStringLiteral(" leading *tag*")});
       node.insert(QStringLiteral("image"), imageObject(QStringLiteral("image.png")));
     }
     if (level == 7) {
@@ -601,14 +605,131 @@ void TestMindMapExport::markdownRendersDocumentHierarchy() {
   QCOMPARE(blocks[QStringLiteral("Still deep")].blockFormat().indent(), eighth->format().indent());
   const auto text = document.toPlainText();
   QVERIFY(text.contains(QStringLiteral("star")));
-  QVERIFY(text.contains(QStringLiteral("release")));
-  QVERIFY(text.contains(QStringLiteral("Review dependency")));
+  QVERIFY(text.contains(QStringLiteral("#release")));
+  QVERIFY(text.contains(QStringLiteral("# leading *tag*")));
+  const auto tags = document.find(QStringLiteral("# leading *tag*"));
+  QCOMPARE(tags.blockFormat().headingLevel(), 0);
+  QVERIFY(!text.contains(QStringLiteral("Review dependency")));
   for (const auto &metadata : {QStringLiteral("private-link-id"), QStringLiteral("Image size:"),
                                QStringLiteral("Image URL:"), QStringLiteral("(empty)"),
                                QStringLiteral("Note:"), QStringLiteral("Icon:"),
                                QStringLiteral("Tag:")}) {
     QVERIFY2(!text.contains(metadata), qPrintable(text));
   }
+}
+
+void TestMindMapExport::markdownLinksMatchHtmlDirection_data() {
+  QTest::addColumn<bool>("directed");
+  QTest::addColumn<QJsonValue>("arrow");
+  QTest::addColumn<bool>("self");
+  QTest::addColumn<bool>("parallel");
+  QTest::addColumn<int>("rootLinks");
+  QTest::addColumn<int>("deepLinks");
+  QTest::newRow("forward") << true << QJsonValue() << false << false << 1 << 0;
+  QTest::newRow("backward") << true << QJsonValue("backward") << false << false << 0 << 1;
+  QTest::newRow("both") << true << QJsonValue("both") << false << false << 1 << 1;
+  QTest::newRow("undirected") << false << QJsonValue() << false << false << 1 << 1;
+  QTest::newRow("undirected-backward") << false << QJsonValue("backward") << false << false << 1 << 1;
+  QTest::newRow("opaque-style") << true << QJsonValue(42) << false << false << 1 << 0;
+  QTest::newRow("self-backward") << true << QJsonValue("backward") << true << false << 1 << 0;
+  QTest::newRow("self-both") << true << QJsonValue("both") << true << false << 1 << 0;
+  QTest::newRow("parallel-self") << false << QJsonValue() << true << true << 2 << 0;
+}
+
+void TestMindMapExport::markdownLinksMatchHtmlDirection() {
+  QFETCH(bool, directed);
+  QFETCH(QJsonValue, arrow);
+  QFETCH(bool, self);
+  QFETCH(bool, parallel);
+  QFETCH(int, rootLinks);
+  QFETCH(int, deepLinks);
+  const auto target = QStringLiteral("target\"<&");
+  const auto label = QStringLiteral("Relation \"quoted\" \\ &copy; <tag>\n\nnext");
+  const auto secondLabel = QStringLiteral("Another relationship");
+  const auto duplicate = QStringLiteral("Same [topic]");
+  QJsonArray nodes;
+  for (int level = 1; level <= 8; ++level) {
+    const auto id = level == 8 ? target : QString::number(level);
+    const auto topic = level == 1 || level == 8 ? duplicate : QStringLiteral("Depth %1").arg(level);
+    QJsonObject node{{QStringLiteral("id"), id}, {QStringLiteral("topic"), topic}};
+    if (level < 8) {
+      node.insert(QStringLiteral("children"),
+                  QJsonArray{level == 7 ? target : QString::number(level + 1)});
+    }
+    nodes.append(node);
+  }
+  QJsonObject link{{QStringLiteral("id"), QStringLiteral("link-a")},
+                   {QStringLiteral("source"), QStringLiteral("1")},
+                   {QStringLiteral("target"), self ? QStringLiteral("1") : target},
+                   {QStringLiteral("directed"), directed},
+                   {QStringLiteral("topic"), label},
+                   {QStringLiteral("style"), QJsonObject{{QStringLiteral("arrowDirection"), arrow}}}};
+  QJsonArray links{link};
+  if (parallel) {
+    link.insert(QStringLiteral("id"), QStringLiteral("link-b"));
+    link.insert(QStringLiteral("topic"), secondLabel);
+    links.append(link);
+  }
+  ExportInput input;
+  input.file.fileName = QStringLiteral("relations.emind");
+  input.content = QString::fromUtf8(QJsonDocument(QJsonObject{
+      {QStringLiteral("schemaVersion"), 1}, {QStringLiteral("rootId"), QStringLiteral("1")},
+      {QStringLiteral("nodes"), nodes}, {QStringLiteral("crossLinks"), links}}).toJson());
+  ServiceLocator services;
+  MindMapExporter renderer(services, nullptr, nullptr);
+  ExportMarkdown markdown;
+  QVERIFY(renderer.renderMarkdown(input, markdown));
+  // Use VNote's actual Markdown engine: QTextDocument does not decode entities in link titles.
+  const auto scriptPath = QFINDTESTDATA("../../src/data/extra/web/js/markdown-it/markdown-it.min.js");
+  QVERIFY(!scriptPath.isEmpty());
+  QTemporaryDir temporary;
+  QVERIFY(temporary.isValid());
+  const auto pagePath = temporary.filePath(QStringLiteral("document.html"));
+  QVERIFY(writeBytes(pagePath, QByteArrayLiteral("<!doctype html><meta charset=\"utf-8\"><script>") +
+                                   readBytes(scriptPath) + QByteArrayLiteral("</script><body></body>")));
+  HtmlPage page;
+  QVERIFY(page.load(pagePath));
+  const auto argument = QString::fromUtf8(QJsonDocument(QJsonArray{markdown.content}).toJson(QJsonDocument::Compact));
+  QVERIFY(page.evaluate(QStringLiteral("document.body.innerHTML = markdownit({html:true}).render(%1[0]); true")
+                            .arg(argument)).toBool());
+  const auto rendered = page.evaluate(QStringLiteral(R"JS((() => {
+    const anchors = Array.from(document.querySelectorAll('a[id]'));
+    return Array.from(document.querySelectorAll('a[href]'))
+      .filter(link => link.getAttribute('href').startsWith('#')).map(link => {
+      const owner = anchors.filter(anchor => anchor.compareDocumentPosition(link) &
+                                              Node.DOCUMENT_POSITION_FOLLOWING).pop();
+      const href = link.getAttribute('href');
+      const target = document.getElementById(href.slice(1));
+      link.click();
+      return {owner: owner.id, href, title: link.title, text: link.textContent,
+              inOwner: owner.closest('li') === link.closest('li'),
+              targetExists: !!target, navigated: location.hash === href};
+    });
+  })())JS")).toList();
+  QVector<QStringList> actual;
+  for (const auto &value : rendered) {
+    const auto reference = value.toMap();
+    QVERIFY(reference.value(QStringLiteral("inOwner")).toBool());
+    QVERIFY(reference.value(QStringLiteral("targetExists")).toBool());
+    QVERIFY(reference.value(QStringLiteral("navigated")).toBool());
+    QVERIFY(reference.value(QStringLiteral("text")).toString().contains(duplicate));
+    actual.append({reference.value(QStringLiteral("owner")).toString(),
+                   reference.value(QStringLiteral("href")).toString(),
+                   reference.value(QStringLiteral("title")).toString()});
+  }
+  const auto targetAnchor = QStringLiteral("#m3-node-") + QString::fromLatin1(target.toUtf8().toHex());
+  QVector<QStringList> expected;
+  for (int i = 0; i < rootLinks; ++i) {
+    expected.append({QStringLiteral("m3-node-31"), self ? QStringLiteral("#m3-node-31") : targetAnchor,
+                     i == 0 ? label : secondLabel});
+  }
+  if (deepLinks) {
+    expected.append({targetAnchor.mid(1), QStringLiteral("#m3-node-31"), label});
+  }
+  QCOMPARE(actual, expected);
+  const auto text = page.evaluate(QStringLiteral("document.body.textContent")).toString();
+  QVERIFY(!text.contains(QStringLiteral("Relation \"quoted\"")));
+  QVERIFY(!text.contains(QStringLiteral("Cross-links")));
 }
 
 void TestMindMapExport::markdownDoesNotCreateWidgets() {

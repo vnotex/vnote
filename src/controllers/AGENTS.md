@@ -329,7 +329,10 @@ MindMap Markdown is the m3 C API's readable document projection with `.md` namin
 media copied from that projection's resource base. The main topic is H1, levels 2–6 are
 H2–H6, and deeper nodes are nested lists; orphan roots restart at H1. Notes become literal
 text paragraphs, with images and meaningful links rather than labeled data fields, image
-dimensions or internal link IDs. It is not a lossless native round trip.
+dimensions or internal link IDs. Tags use `#tag` notation. Like HTML articles, cross-links
+appear beneath the originating topic and navigate directly to heading/list-item anchors;
+labels are tooltips, and backward/both/undirected navigation matches HTML. There is no
+relationship appendix. It is not a lossless native round trip.
 Native HTML uses an export-only, fully expanded editor, rebased before every load, and waits
 for queued image requests to settle. Missing images retain explicit placeholders; cancellation,
 malformed input and the whole-export image deadline fail rather than snapshot incomplete work.
