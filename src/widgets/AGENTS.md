@@ -126,8 +126,14 @@ longer positioned by their previous attachment.
 Message-only surfaces pass mouse input through; editor and corner controls remain interactive.
 Windows overlays need native stacking above late-created WebEngine children and input
 transparency on both QWidget and its native window, preserved across hide/show. Keep the
-background theme-painted and URLs plain text. Markdown Read hides an empty overlay; Edit
-retains its status controls. Regression coverage: `test_statusbar` and `test_statuswidget`.
+background theme-painted and URLs plain text. Every bundled `interface.qss` gives both
+status surfaces a 6px radius, palette-based border/fill, and padded messages; internal stack
+pages stay transparent without overriding the nested editor chips or corner controls.
+Windows derives the native mask from the QSS-painted surface, cached until size/style changes,
+so changing the QSS radius does not require a matching C++ value. Activate the content layout
+before sampling its geometry; an invalidated layout can temporarily report an empty rectangle.
+Markdown Read hides an empty overlay; Edit retains its status controls. Regression coverage:
+`test_statusbar` and `test_statuswidget`.
 
 #### Detached-window close
 

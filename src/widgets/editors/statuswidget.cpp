@@ -16,12 +16,14 @@ StatusWidget::StatusWidget(QWidget *p_parent) : QWidget(p_parent) {
   m_outerLayout->setSpacing(0);
 
   m_stackHost = new QWidget(this);
+  m_stackHost->setObjectName(QStringLiteral("StatusWidgetStack"));
   m_mainLayout = new QStackedLayout(m_stackHost);
   m_mainLayout->setContentsMargins(0, 0, 0, 0);
   m_mainLayout->setSpacing(0);
   m_outerLayout->addWidget(m_stackHost, 1);
 
   m_messageLabel = new QLabel(m_stackHost);
+  m_messageLabel->setObjectName(QStringLiteral("StatusWidgetMessage"));
   m_messageLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
   m_messageLabel->setTextFormat(Qt::PlainText);
   m_messageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);

@@ -366,6 +366,26 @@ QToolButton[NoMenuIndicator="true"]::menu-indicator {
     image: none;
 }
 
+/* Floating view-window status surfaces; match the rounded dock-title chrome. */
+vnotex--StatusBar, vnotex--StatusWidget {
+    color: @base#normal#fg;
+    background-color: @base#normal#bg;
+    border: 1px solid @base#normal#border;
+    border-radius: 6px;
+}
+
+/* Keep stack pages transparent without changing the nested status chips/controls. */
+vnotex--StatusBar > QWidget,
+vnotex--StatusWidget > QWidget#StatusWidgetStack,
+vnotex--StatusWidget QLabel#StatusWidgetMessage {
+    background-color: transparent;
+}
+
+vnotex--StatusBar > QLabel#StatusBarMessageLabel,
+vnotex--StatusWidget QLabel#StatusWidgetMessage {
+    padding: 4px 8px;
+}
+
 /* Status bar columns: rounded Material chips, keyed by StatusBar::buildColumn's
  * `StatusBarCol` index property. Only StatusBar-owned Label/Menu columns are
  * tagged; Widget mounts (Vi=0, encoding=6) and the spacer (2) are not.

@@ -10,6 +10,11 @@
 #include <QWindow>
 
 #ifdef Q_OS_WIN
+#include <QBitmap>
+#include <QImage>
+#include <QPainter>
+#include <QStyle>
+#include <QStyleOption>
 #include <qt_windows.h>
 #endif
 
@@ -56,6 +61,30 @@ protected:
     if (!m_window || !m_contentLayout || m_status->parentWidget() != m_window) {
       return false;
     }
+    const bool styleChanged = p_watched == m_status &&
+                              (p_event->type() == QEvent::StyleChange ||
+                               p_event->type() == QEvent::FontChange ||
+                               p_event->type() == QEvent::PaletteChange);
+#ifdef Q_OS_WIN
+    if (styleChanged) {
+      m_maskDirty = true;
+    }
+#endif
+    if (styleChanged || (p_watched == m_window && p_event->type() == QEvent::LayoutRequest)) {
+      // Event filters run before Qt polishes widgets and activates layouts. Use
+      // their final geometry rather than caching a temporarily empty content area.
+      if (p_watched == m_window) {
+        watchContent();
+      }
+      if (!m_styleUpdatePending) {
+        m_styleUpdatePending = true;
+        QTimer::singleShot(0, this, [this] {
+          m_styleUpdatePending = false;
+          reposition();
+        });
+      }
+      return false;
+    }
     switch (p_event->type()) {
     case QEvent::WinIdChange:
       // A late WebEngine subtree can be stacked above an already-visible status.
@@ -67,6 +96,7 @@ protected:
     case QEvent::LayoutRequest:
     case QEvent::StyleChange:
     case QEvent::FontChange:
+    case QEvent::PaletteChange:
       if (p_watched == m_window) {
         watchContent();
       }
@@ -87,18 +117,56 @@ private:
     }
   }
 
+#ifdef Q_OS_WIN
+  void updateMask() {
+    const QSize size = m_status->size();
+    if (m_styleUpdatePending || size.isEmpty() || (!m_maskDirty && m_maskSize == size)) {
+      return;
+    }
+    // Sample only the QSS surface, not the children. QSS owns the radius; the
+    // native child HWND must follow that shape to reveal WebEngine at its corners.
+    QImage background(size, QImage::Format_ARGB32_Premultiplied);
+    background.fill(Qt::transparent);
+    {
+      QStyleOption option;
+      option.initFrom(m_status);
+      QPainter painter(&background);
+      m_status->style()->drawPrimitive(QStyle::PE_Widget, &option, &painter, m_status);
+    }
+    const QRegion mask(QBitmap::fromImage(background.createAlphaMask(Qt::ThresholdAlphaDither)));
+    if (mask.isEmpty()) {
+      m_status->clearMask();
+    } else {
+      m_status->setMask(mask);
+    }
+    m_maskSize = size;
+    m_maskDirty = false;
+  }
+#endif
+
   void reposition() {
-    if (m_positioning || !m_window || !m_contentLayout ||
+    if (m_positioning || m_styleUpdatePending || !m_window || !m_contentLayout ||
         m_status->parentWidget() != m_window) {
       return;
     }
     QScopedValueRollback<bool> guard(m_positioning, true);
+    m_status->ensurePolished();
+    // A child size-hint change invalidates the content layout before LayoutRequest.
+    // Activate the owning layout before reading its geometry, not an empty cache.
+    if (auto *layout = m_window->layout()) {
+      layout->activate();
+    }
     const QRect area = m_contentLayout->geometry().intersected(m_window->contentsRect());
     const int height = qBound(0, m_status->sizeHint().height(), area.height());
     const QRect geometry(area.left(), area.bottom() + 1 - height, area.width(), height);
     if (m_status->geometry() != geometry) {
       m_status->setGeometry(geometry);
     }
+#ifdef Q_OS_WIN
+    if (!m_status->isHidden()) {
+      updateMask();
+    }
+#endif
     setInputTransparent(m_status, m_status->testAttribute(Qt::WA_TransparentForMouseEvents));
     m_status->raise();
 #ifdef Q_OS_WIN
@@ -113,6 +181,11 @@ private:
   QPointer<QLayout> m_contentLayout;
   QPointer<QWidget> m_window;
   bool m_positioning = false;
+  bool m_styleUpdatePending = false;
+#ifdef Q_OS_WIN
+  QSize m_maskSize;
+  bool m_maskDirty = true;
+#endif
 };
 } // namespace vnotex
 
