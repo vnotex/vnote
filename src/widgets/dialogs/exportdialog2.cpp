@@ -34,10 +34,12 @@
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <core/services/workspacecoreservice.h>
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
+#include <vxcore/notebook_json_keys.h>
 
 #include "../locationinputwithbrowsebutton.h"
 #include "../widgetsfactory.h"
@@ -111,7 +113,8 @@ private:
 using namespace vnotex;
 
 namespace {
-QString sourceText(ExportSource p_source, const ExportContext &p_context) {
+QString sourceText(ExportSource p_source, const ExportContext &p_context,
+                   ServiceLocator &p_services) {
   switch (p_source) {
   case ExportSource::CurrentBuffer:
     if (!p_context.bufferName.isEmpty()) {
@@ -133,7 +136,14 @@ QString sourceText(ExportSource p_source, const ExportContext &p_context) {
 
   case ExportSource::CurrentNotebook:
     if (!p_context.notebookId.isEmpty()) {
-      return ExportDialog2::tr("Current notebook (%1)").arg(p_context.notebookId);
+      if (auto *notebookService = p_services.get<NotebookCoreService>()) {
+        const auto notebookName = notebookService->getNotebookConfig(p_context.notebookId)
+                                      .value(QLatin1String(vxcore::kJsonKeyName))
+                                      .toString();
+        if (!notebookName.isEmpty()) {
+          return ExportDialog2::tr("Current notebook (%1)").arg(notebookName);
+        }
+      }
     }
     return ExportDialog2::tr("Current notebook");
   }
@@ -260,7 +270,7 @@ void ExportDialog2::setupUI() {
   for (int i = static_cast<int>(ExportSource::CurrentBuffer);
        i <= static_cast<int>(ExportSource::CurrentNotebook); ++i) {
     auto source = static_cast<ExportSource>(i);
-    m_sourceCombo->addItem(sourceText(source, m_context), i);
+    m_sourceCombo->addItem(sourceText(source, m_context, m_services), i);
     const int idx = m_sourceCombo->count() - 1;
 
     if (!sourceAvailable(source, m_context)) {
