@@ -325,8 +325,11 @@ failure policy and final conversion. Every HTML consumer (standalone, PDF or cus
 `ExportHtmlRequest` carrying its purpose; do not restore format-only source routing or infer
 native types from suffixes inside renderers/batch loops.
 
-MindMap Markdown is the m3 C API's complete readable forest projection with `.md` naming and
-media copied from that projection's resource base. It is not a lossless native round trip.
+MindMap Markdown is the m3 C API's readable document projection with `.md` naming and
+media copied from that projection's resource base. The main topic is H1, levels 2–6 are
+H2–H6, and deeper nodes are nested lists; orphan roots restart at H1. Notes become literal
+text paragraphs, with images and meaningful links rather than labeled data fields, image
+dimensions or internal link IDs. It is not a lossless native round trip.
 Native HTML uses an export-only, fully expanded editor, rebased before every load, and waits
 for queued image requests to settle. Missing images retain explicit placeholders; cancellation,
 malformed input and the whole-export image deadline fail rather than snapshot incomplete work.

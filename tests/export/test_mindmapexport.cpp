@@ -21,7 +21,10 @@
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
+#include <QTextBlock>
+#include <QTextCursor>
 #include <QTextDocument>
+#include <QTextList>
 #include <QTimer>
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
@@ -461,6 +464,7 @@ class TestMindMapExport : public QObject {
 private slots:
   void markdownProjectsWholeForestAndCopiesImage();
   void markdownDoesNotCreateWidgets();
+  void markdownRendersDocumentHierarchy();
   void unknownAndEmptyTypesUseRegisteredFallback();
   void snapshotsAreAuthoritative_data();
   void snapshotsAreAuthoritative();
@@ -513,6 +517,98 @@ void TestMindMapExport::markdownProjectsWholeForestAndCopiesImage() {
   QCOMPARE(readBytes(copiedPath), bytes);
   QVERIFY(!QImage(copiedPath).isNull());
   QCOMPARE(readBytes(path), json.toUtf8());
+}
+
+void TestMindMapExport::markdownRendersDocumentHierarchy() {
+  QTemporaryDir temporary;
+  QVERIFY(temporary.isValid());
+  QJsonArray nodes;
+  for (int level = 1; level <= 8; ++level) {
+    QJsonObject node{{QStringLiteral("id"), QString::number(level)},
+                     {QStringLiteral("topic"), QStringLiteral("Topic %1").arg(level)}};
+    if (level < 8) {
+      node.insert(QStringLiteral("children"), QJsonArray{QString::number(level + 1)});
+    }
+    if (level == 1) {
+      node.insert(QStringLiteral("icons"), QJsonArray{QStringLiteral("star"), QString()});
+      node.insert(QStringLiteral("tags"), QJsonArray{QStringLiteral("release"), QString()});
+      node.insert(QStringLiteral("image"), imageObject(QStringLiteral("image.png")));
+    }
+    if (level == 7) {
+      node.insert(QStringLiteral("note"),
+                  QStringLiteral("First line\r\nsecond line\r\n\r\n# Literal **text**\n"
+                                 "\n    Indented text"));
+    }
+    if (level == 8) {
+      node.insert(QStringLiteral("note"), QStringLiteral("Deep paragraph\n\nStill deep"));
+    }
+    nodes.append(node);
+  }
+  nodes.append(QJsonObject{{QStringLiteral("id"), QStringLiteral("orphan")},
+                           {QStringLiteral("topic"), QStringLiteral("Separate tree")}});
+  const QJsonObject link{{QStringLiteral("id"), QStringLiteral("private-link-id")},
+                         {QStringLiteral("source"), QStringLiteral("1")},
+                         {QStringLiteral("target"), QStringLiteral("8")},
+                         {QStringLiteral("directed"), true},
+                         {QStringLiteral("topic"), QStringLiteral("Review dependency")}};
+  const auto json = QString::fromUtf8(
+      QJsonDocument(QJsonObject{{QStringLiteral("schemaVersion"), 1},
+                                {QStringLiteral("rootId"), QStringLiteral("1")},
+                                {QStringLiteral("nodes"), nodes},
+                                {QStringLiteral("orphanIds"), QJsonArray{QStringLiteral("orphan")}},
+                                {QStringLiteral("crossLinks"), QJsonArray{link}}})
+          .toJson());
+  const auto path = temporary.filePath(QStringLiteral("source/document.emind"));
+  QVERIFY(writeBytes(path, json.toUtf8()));
+  QVERIFY(writeBytes(temporary.filePath(QStringLiteral("source/image.png")), imageBytes(c_localColor)));
+  ServiceLocator services;
+  Exporter exporter(services, nativeRegistry(services), nullptr);
+  const auto output = exportSingle(
+      exporter, options(temporary.filePath(QStringLiteral("out")), ExportFormat::Markdown),
+      source(path), json);
+  QVERIFY(!output.isEmpty());
+  QTextDocument document;
+  document.setMarkdown(QString::fromUtf8(readBytes(output)));
+  QVector<int> levels;
+  const QRegularExpression topic(QStringLiteral("^Topic [1-8]$"));
+  QMap<QString, QTextBlock> blocks;
+  for (auto block = document.begin(); block.isValid(); block = block.next()) {
+    blocks.insert(block.text(), block);
+    if (topic.match(block.text()).hasMatch()) {
+      levels.append(block.blockFormat().headingLevel());
+    }
+  }
+  QCOMPARE(levels, (QVector<int>{1, 2, 3, 4, 5, 6, 0, 0}));
+  QVERIFY(!blocks[QStringLiteral("Topic 6")].textList());
+  const auto *seventh = blocks[QStringLiteral("Topic 7")].textList();
+  const auto *eighth = blocks[QStringLiteral("Topic 8")].textList();
+  QVERIFY(seventh);
+  QVERIFY(eighth);
+  QVERIFY(eighth->format().indent() > seventh->format().indent());
+  QCOMPARE(blocks[QStringLiteral("Separate tree")].blockFormat().headingLevel(), 1);
+  QVERIFY(!blocks[QStringLiteral("Separate tree")].textList());
+  // Qt can import hard breaks as separate blocks; assert content and nesting, not that dialect.
+  for (const auto &line : {QStringLiteral("First line"), QStringLiteral("second line"),
+                           QStringLiteral("Indented text")}) {
+    const auto found = document.find(line);
+    QVERIFY(!found.isNull());
+    QCOMPARE(found.blockFormat().indent(), seventh->format().indent());
+  }
+  QVERIFY(blocks.contains(QStringLiteral("# Literal **text**")));
+  QCOMPARE(blocks[QStringLiteral("# Literal **text**")].blockFormat().indent(),
+           seventh->format().indent());
+  QCOMPARE(blocks[QStringLiteral("Deep paragraph")].blockFormat().indent(), eighth->format().indent());
+  QCOMPARE(blocks[QStringLiteral("Still deep")].blockFormat().indent(), eighth->format().indent());
+  const auto text = document.toPlainText();
+  QVERIFY(text.contains(QStringLiteral("star")));
+  QVERIFY(text.contains(QStringLiteral("release")));
+  QVERIFY(text.contains(QStringLiteral("Review dependency")));
+  for (const auto &metadata : {QStringLiteral("private-link-id"), QStringLiteral("Image size:"),
+                               QStringLiteral("Image URL:"), QStringLiteral("(empty)"),
+                               QStringLiteral("Note:"), QStringLiteral("Icon:"),
+                               QStringLiteral("Tag:")}) {
+    QVERIFY2(!text.contains(metadata), qPrintable(text));
+  }
 }
 
 void TestMindMapExport::markdownDoesNotCreateWidgets() {
