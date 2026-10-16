@@ -1,5 +1,7 @@
 #include "statusbar.h"
 
+#include "statusoverlay.h"
+
 #include <QActionGroup>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -35,6 +37,7 @@ StatusBar::StatusBar(const StatusBarDef &p_def, QWidget *p_parent) : QWidget(p_p
   m_messageLabel = new QLabel(this);
   m_messageLabel->setObjectName(QStringLiteral("StatusBarMessageLabel"));
   m_messageLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+  m_messageLabel->setTextFormat(Qt::PlainText);
   // A transient message may be an arbitrarily long URL. Its natural width must
   // not become the central pane's minimum width and take space from dock panes.
   m_messageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
@@ -292,6 +295,7 @@ void StatusBar::showMessage(const QString &p_msg, int p_milliseconds) {
   const bool wasVisible = isMessageVisible();
   m_messageLabel->setText(p_msg);
   m_stackLayout->setCurrentWidget(m_messageLabel);
+  StatusOverlay::setInputTransparent(this, true);
 
   if (p_milliseconds > 0) {
     m_messageTimer->start(p_milliseconds);
@@ -308,6 +312,7 @@ void StatusBar::clearMessage() {
   const bool wasVisible = isMessageVisible();
   m_messageLabel->clear();
   m_stackLayout->setCurrentWidget(m_columnsHost);
+  StatusOverlay::setInputTransparent(this, false);
 
   if (wasVisible) {
     emit messageVisibilityChanged(false);

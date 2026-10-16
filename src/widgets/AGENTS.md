@@ -115,6 +115,20 @@ The split-pane editor area, designed around vxcore workspaces:
 - `ViewSplit2` — QTabWidget-based split pane; each instance maps 1:1 to a vxcore workspace
 - `ViewWindow2` — abstract base for file viewer windows; receives a `Buffer2` in its constructor
 
+`ViewWindow2` mounts both `StatusBar` and shared `StatusWidget` through `StatusOverlay`,
+not through the bottom layout. Each strip floats over the bottom edge of its own content
+layout, above Find and other bottom widgets; showing, clearing or expiring a message must
+not resize the editor/WebEngine viewport. Persistent editor controls also float: the strip
+covers content rather than reserving a row. Geometry follows layout, resize and theme/font
+changes, including detached and fullscreen hosts; shared widgets reparented away are no
+longer positioned by their previous attachment.
+
+Message-only surfaces pass mouse input through; editor and corner controls remain interactive.
+Windows overlays need native stacking above late-created WebEngine children and input
+transparency on both QWidget and its native window, preserved across hide/show. Keep the
+background theme-painted and URLs plain text. Markdown Read hides an empty overlay; Edit
+retains its status controls. Regression coverage: `test_statusbar` and `test_statuswidget`.
+
 #### Detached-window close
 
 Closing a detached title bar (including Alt+F4) closes its hosted tabs in tab order

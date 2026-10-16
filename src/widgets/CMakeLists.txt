@@ -84,6 +84,7 @@ target_sources(vnote PRIVATE
     editors/statusbar.cpp editors/statusbar.h
     editors/editorstatusbarbinder.cpp editors/editorstatusbarbinder.h
     editors/statuswidget.cpp editors/statuswidget.h
+    editors/statusoverlay.h
     editors/texteditor.cpp editors/texteditor.h
     editors/webviewadapter.cpp editors/webviewadapter.h
     editreaddiscardaction.cpp editreaddiscardaction.h

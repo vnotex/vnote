@@ -1,5 +1,7 @@
 #include "statuswidget.h"
 
+#include "statusoverlay.h"
+
 #include <QDebug>
 #include <QHBoxLayout>
 #include <QLabel>
@@ -21,6 +23,8 @@ StatusWidget::StatusWidget(QWidget *p_parent) : QWidget(p_parent) {
 
   m_messageLabel = new QLabel(m_stackHost);
   m_messageLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+  m_messageLabel->setTextFormat(Qt::PlainText);
+  m_messageLabel->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
   m_mainLayout->addWidget(m_messageLabel);
 
   m_messageTimer = new QTimer(this);
@@ -40,6 +44,9 @@ void StatusWidget::setVisible(bool p_visible) {
 }
 
 void StatusWidget::updateVisibility() {
+  const bool hasControls = m_outerLayout->count() > 1 ||
+                           (m_editorWidget && m_mainLayout->currentWidget() == m_editorWidget.data());
+  StatusOverlay::setInputTransparent(this, !hasControls);
   // A shared widget may receive content before it is attached to its host.
   if (parentWidget() || isVisible()) {
     setVisible(true);

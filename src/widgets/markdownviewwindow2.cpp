@@ -220,11 +220,11 @@ void MarkdownViewWindow2::setupUI() {
       statusBar()->setColumnWidget(encodingIndex, ensureEncodingButton());
     }
 
-    // Read-mode auto-hide: collapse the bar unless a transient message is shown.
+    // Read-mode auto-hide: only show the floating bar for transient messages.
     if (statusBar()) {
       connect(statusBar(), &StatusBar::messageVisibilityChanged, this, [this](bool p_visible) {
         if (m_mode == ViewWindowMode::Read && statusBar()) {
-          statusBar()->setMaximumHeight(p_visible ? QWIDGETSIZE_MAX : 0);
+          statusBar()->setVisible(p_visible);
         }
       });
     }
@@ -1599,14 +1599,11 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     if (m_legacyImageBar) {
       m_legacyImageBar->hide();
     }
-    // Clear any in-flight message first: a mode change emits no
-    // messageVisibilityChanged(true), so an already-visible message would
-    // otherwise get stuck hidden with no way to reopen. Then collapse the bar;
-    // subsequent transient messages expand it via the messageVisibilityChanged
-    // handler wired in setupUI().
+    // Clear in-flight messages on mode changes, then hide the overlay until
+    // the next transient message. Neither showing nor hiding it resizes content.
     showMessage(QString());
     if (statusBar()) {
-      statusBar()->setMaximumHeight(0);
+      statusBar()->hide();
     }
     break;
 
@@ -1628,7 +1625,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     // URL) so we don't carry it into Edit's editor status surface.
     showMessage(QString());
     if (statusBar()) {
-      statusBar()->setMaximumHeight(QWIDGETSIZE_MAX);
+      statusBar()->show();
     }
     break;
 

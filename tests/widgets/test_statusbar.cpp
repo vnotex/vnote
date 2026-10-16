@@ -1,4 +1,8 @@
+#include <QHBoxLayout>
 #include <QLabel>
+#include <QPushButton>
+#include <QScopeGuard>
+#include <QVBoxLayout>
 #include <QLineEdit>
 #include <QMenu>
 #include <QSignalSpy>
@@ -8,6 +12,11 @@
 #include <algorithm>
 
 #include <widgets/editors/statusbar.h>
+#include <widgets/editors/statusoverlay.h>
+
+#ifdef Q_OS_WIN
+#include <qt_windows.h>
+#endif
 
 using namespace vnotex;
 
@@ -39,8 +48,9 @@ private slots:
   void testOnMenuTriggeredFires();
   void testShowMessageSwapsAndRestores();
   void testMessageVisibilitySignal();
-  void testLongMessageDoesNotChangeWidthHints();
   void testColumnIndexProperty();
+  void testOverlayPreservesContentGeometry();
+  void testNativeOverlayInputAndLateContent();
 
 private:
   // Find the Nth column child widget of type T in child/creation order. Columns
@@ -418,23 +428,6 @@ void TestStatusBar::testMessageVisibilitySignal() {
   QVERIFY(!bar.isMessageVisible());
 }
 
-void TestStatusBar::testLongMessageDoesNotChangeWidthHints() {
-  StatusBarDef def;
-  StatusBarColumn label;
-  label.type = StatusBarColumnType::Label;
-  label.text = QStringLiteral("Ready");
-  def << label;
-  StatusBar bar(def);
-
-  const int sizeHintWidth = bar.sizeHint().width();
-  const int minimumSizeHintWidth = bar.minimumSizeHint().width();
-
-  bar.showMessage(QStringLiteral("https://example.com/") + QString(4096, QLatin1Char('x')), 0);
-
-  QCOMPARE(bar.sizeHint().width(), sizeHintWidth);
-  QCOMPARE(bar.minimumSizeHint().width(), minimumSizeHintWidth);
-}
-
 void TestStatusBar::testColumnIndexProperty() {
   StatusBarDef def;
   StatusBarColumn label;
@@ -462,6 +455,130 @@ void TestStatusBar::testColumnIndexProperty() {
   }
   std::sort(indices.begin(), indices.end());
   QCOMPARE(indices, (QList<int>{0, 2}));
+}
+
+void TestStatusBar::testOverlayPreservesContentGeometry() {
+  QWidget window;
+  auto *layout = new QVBoxLayout(&window);
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(0);
+  auto *content = new QHBoxLayout;
+  layout->addLayout(content, 1);
+  auto *canvas = new QWidget(&window);
+  content->addWidget(canvas);
+  auto *footer = new QLabel(QStringLiteral("Find"), &window);
+  layout->addWidget(footer);
+  StatusBarColumn column;
+  column.text = QStringLiteral("Ready");
+  auto *bar = new StatusBar({column}, &window);
+  new StatusOverlay(bar, content);
+  window.resize(420, 260);
+  window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&window));
+  const QRect original = canvas->geometry();
+  const QRect footerRect = footer->geometry();
+
+  bar->hide();
+  QCoreApplication::processEvents();
+  QCOMPARE(canvas->geometry(), original);
+  bar->showMessage(QStringLiteral("https://example.com/") + QString(4096, QLatin1Char('x')), 0);
+  bar->show();
+  QCoreApplication::processEvents();
+  QCOMPARE(canvas->geometry(), original);
+  QCOMPARE(footer->geometry(), footerRect);
+  QCOMPARE(bar->geometry().bottom(), original.bottom());
+  QCOMPARE(window.childAt(bar->geometry().center()), canvas);
+  bar->showMessage(QStringLiteral("Saved"), 50);
+  QTRY_VERIFY(!bar->isMessageVisible());
+  QCOMPARE(canvas->geometry(), original);
+
+  window.resize(260, 190);
+  QTRY_COMPARE(bar->width(), canvas->width());
+  QCOMPARE(bar->geometry().bottom(), canvas->geometry().bottom());
+  const QRect resized = canvas->geometry();
+  QFont font = bar->font();
+  font.setPointSize(20);
+  bar->setFont(font);
+  QTRY_COMPARE(bar->height(), bar->sizeHint().height());
+  QCOMPARE(canvas->geometry(), resized);
+  QVERIFY(bar->geometry().bottom() < footer->geometry().top());
+
+  // Shared status widgets can outlive their original host attachment.
+  QWidget otherHost;
+  bar->setParent(&otherHost);
+  const QRect detached = bar->geometry();
+  window.resize(480, 320);
+  QCoreApplication::processEvents();
+  QCOMPARE(bar->geometry(), detached);
+}
+
+void TestStatusBar::testNativeOverlayInputAndLateContent() {
+#ifndef Q_OS_WIN
+  QSKIP("Windows native-child hit testing");
+#else
+  const bool previous = QCoreApplication::testAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+  QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+  const auto restore = qScopeGuard([&] {
+    QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings, previous);
+  });
+  QWidget window;
+  auto *layout = new QHBoxLayout(&window);
+  layout->setContentsMargins(0, 0, 0, 0);
+  auto *canvas = new QWidget(&window);
+  layout->addWidget(canvas);
+  int controlClicks = 0;
+  StatusBarColumn column;
+  column.type = StatusBarColumnType::Button;
+  column.text = QStringLiteral("Encoding");
+  column.onClicked = [&] { ++controlClicks; };
+  auto *bar = new StatusBar({column}, &window);
+  new StatusOverlay(bar, layout);
+  window.resize(400, 240);
+  window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&window));
+
+  // WebEngine's HWND appears after status construction in Markdown Read mode.
+  auto *native = new QPushButton(QStringLiteral("Content link"), canvas);
+  native->setAttribute(Qt::WA_NativeWindow);
+  native->setGeometry(canvas->rect());
+  native->show();
+  QSignalSpy contentClicks(native, &QPushButton::clicked);
+  QCoreApplication::processEvents();
+  auto *button = bar->findChild<QToolButton *>();
+  QVERIFY(button);
+  const QPoint covered = button->mapTo(&window, button->rect().center());
+  auto clickCovered = [&] {
+    const qreal ratio = window.devicePixelRatioF();
+    POINT point{qRound(covered.x() * ratio), qRound(covered.y() * ratio)};
+    HWND target = reinterpret_cast<HWND>(window.winId());
+    while (true) {
+      HWND child = ChildWindowFromPointEx(target, point,
+          CWP_SKIPINVISIBLE | CWP_SKIPDISABLED | CWP_SKIPTRANSPARENT);
+      if (!child || child == target) {
+        break;
+      }
+      MapWindowPoints(target, child, &point, 1);
+      target = child;
+    }
+    const auto position = MAKELPARAM(point.x, point.y);
+    PostMessage(target, WM_LBUTTONDOWN, MK_LBUTTON, position);
+    PostMessage(target, WM_LBUTTONUP, 0, position);
+  };
+  clickCovered();
+  QTRY_COMPARE(controlClicks, 1);
+  QCOMPARE(contentClicks.count(), 0);
+  bar->hide();
+  bar->showMessage(QStringLiteral("https://example.com/"), 0);
+  bar->show();
+  QCoreApplication::processEvents();
+  clickCovered();
+  QTRY_COMPARE(contentClicks.count(), 1);
+  QCOMPARE(controlClicks, 1);
+  bar->showMessage(QString());
+  clickCovered();
+  QTRY_COMPARE(controlClicks, 2);
+  QCOMPARE(contentClicks.count(), 1);
+#endif
 }
 
 } // namespace tests

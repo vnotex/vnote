@@ -54,7 +54,7 @@ class FindAndReplaceWidget2;
 //   [top widgets]      ← addTopWidget()
 //   [central widget]   ← setCentralWidget() (stretch=1)
 //   [bottom widgets]   ← addBottomWidget()
-//   [status widget]    ← setStatusWidget()
+// Status widgets float over the bottom of the central content, outside these slots.
 //
 // Usage:
 //   class MarkdownViewWindow2 : public ViewWindow2 {
@@ -428,15 +428,15 @@ signals:
   void viewFullScreenChanged(bool p_on);
 
 protected:
-  // Add a widget below the central widget (above status widget).
+  // Add a widget below the central widget.
   void addBottomWidget(QWidget *p_widget);
 
-  // Set the status widget at the bottom. Takes shared ownership.
+  // Float the status widget over the bottom of the content. Takes shared ownership.
   void setStatusWidget(const QSharedPointer<StatusWidget> &p_widget);
 
   // Register the column-based status bar for this window. Call once in a
   // subclass constructor. An empty def is a no-op (no bar created). A non-empty
-  // def creates a StatusBar and adds it to the bottom layout.
+  // def creates a StatusBar floating over the bottom of the content.
   void setStatusBarDef(const StatusBarDef &p_def);
 
   // Access the column-based status bar (nullptr if none registered).
@@ -692,7 +692,7 @@ private:
   // Managed by QObject.
   QVBoxLayout *m_topLayout = nullptr;
 
-  // Bottom layout: bottom widgets + status widget.
+  // Bottom layout: bottom widgets only; status overlays never reserve a row.
   // Managed by QObject.
   QVBoxLayout *m_bottomLayout = nullptr;
 

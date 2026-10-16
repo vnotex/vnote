@@ -4,6 +4,7 @@
 #include <QVBoxLayout>
 
 #include <widgets/editors/statuswidget.h>
+#include <widgets/editors/statusoverlay.h>
 
 using namespace vnotex;
 
@@ -20,7 +21,7 @@ struct StatusHost {
     canvas = new QWidget(&window);
     layout->addWidget(canvas, 1);
     status = new StatusWidget(&window);
-    layout->addWidget(status);
+    new StatusOverlay(status, layout);
     window.resize(400, 240);
     window.show();
     // ViewWindow2 explicitly shows the status widget after hosting it.
@@ -38,12 +39,13 @@ private slots:
     QVERIFY(!host.status->isVisible());
   }
 
-  void messageExpiryRestoresCanvasSpace() {
+  void messageExpiryKeepsCanvasGeometry() {
     StatusHost host;
     host.status->showMessage(QStringLiteral("One match found"), 200);
     QTRY_VERIFY(host.status->isVisible());
-    QTRY_VERIFY(host.canvas->height() < host.window.height());
-    QTRY_COMPARE_WITH_TIMEOUT(host.canvas->geometry(), host.window.rect(), 1000);
+    QCOMPARE(host.canvas->geometry(), host.window.rect());
+    QTRY_VERIFY_WITH_TIMEOUT(!host.status->isVisible(), 1000);
+    QCOMPARE(host.canvas->geometry(), host.window.rect());
     QVERIFY(!host.status->isVisible());
   }
 
@@ -67,7 +69,7 @@ private slots:
     QVERIFY(!editorStatus->isVisible());
     QTRY_VERIFY(editorStatus->isVisible());
     QVERIFY(host.status->isVisible());
-    QVERIFY(host.canvas->height() < host.window.height());
+    QCOMPARE(host.canvas->geometry(), host.window.rect());
   }
 
   void cornerStatusSurvivesClearing() {
@@ -78,9 +80,23 @@ private slots:
     host.status->showMessage(QStringLiteral("Saved"), 0);
     host.status->showMessage(QString());
     QVERIFY(host.status->isVisible() && corner->isVisible());
-    QTRY_VERIFY(host.canvas->height() < host.window.height());
+    QCOMPARE(host.canvas->geometry(), host.window.rect());
     host.status->hide();
     QTRY_COMPARE_WITH_TIMEOUT(host.canvas->geometry(), host.window.rect(), 1000);
+  }
+
+  void longMessageAndResizeKeepCanvasGeometry() {
+    StatusHost host;
+    host.status->showMessage(QStringLiteral("https://example.com/") +
+                                QString(4096, QLatin1Char('x')), 0);
+    QTRY_VERIFY(host.status->isVisible());
+    QCOMPARE(host.canvas->geometry(), host.window.rect());
+    host.window.resize(220, 180);
+    QTRY_COMPARE(host.status->geometry().bottom(), host.canvas->geometry().bottom());
+    QCOMPARE(host.status->width(), host.canvas->width());
+    QCOMPARE(host.canvas->geometry(), host.window.rect());
+    const QPoint covered = host.status->geometry().center();
+    QCOMPARE(host.window.childAt(covered), host.canvas);
   }
 
   void parentlessMessagesWaitForHosting() {

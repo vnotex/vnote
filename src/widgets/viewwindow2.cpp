@@ -44,6 +44,7 @@
 #include "commentprovider.h"
 #include "contentfullscreenhost.h"
 #include "editors/statusbar.h"
+#include "editors/statusoverlay.h"
 #include "editors/statuswidget.h"
 #include "editreaddiscardaction.h"
 #include "encodingbutton.h"
@@ -458,7 +459,7 @@ void ViewWindow2::addBottomWidget(QWidget *p_widget) { m_bottomLayout->addWidget
 
 void ViewWindow2::setStatusWidget(const QSharedPointer<StatusWidget> &p_widget) {
   m_statusWidget = p_widget;
-  m_bottomLayout->addWidget(p_widget.data());
+  new StatusOverlay(p_widget.data(), m_contentLayout);
   p_widget->show();
 
   // Host the encoding picker in the status bar's right corner for windows that
@@ -500,8 +501,7 @@ void ViewWindow2::setStatusBarDef(const StatusBarDef &p_def) {
   }
 
   m_statusBar = new StatusBar(p_def, this);
-  // Place below the existing status widget slot for deterministic ordering.
-  m_bottomLayout->addWidget(m_statusBar);
+  new StatusOverlay(m_statusBar, m_contentLayout);
   m_statusBar->show();
 }
 
