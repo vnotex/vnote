@@ -8,12 +8,11 @@ module.exports = function protect_xss(md, opts = {}) {
   opts.whiteList = {...window.filterXSS.getDefaultWhiteList(), ...opts.whiteList};
   // Do not escape value when it is a tag and attr in the whitelist.
   opts.safeAttrValue = (tag, name, value, cssFilter) => { return value; }
-  // Only m3 node anchors may bypass the default id restriction. Check every
-  // character before emitting an attribute: safeAttrValue does not escape it.
-  const anchorPrefix = 'm3-node-';
+  // Check every character before emitting an anchor id: safeAttrValue does
+  // not escape attribute values.
   opts.onIgnoreTagAttr = (tag, name, value) => {
-    if (tag === 'a' && name === 'id' && value.startsWith(anchorPrefix)
-        && value.length > anchorPrefix.length && !/[^A-Za-z0-9_-]/.test(value)) {
+    if (tag === 'a' && name === 'id' && value.length > 0
+        && !/[^A-Za-z0-9_-]/.test(value)) {
       return 'id="' + value + '"';
     }
   };

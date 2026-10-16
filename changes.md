@@ -1,6 +1,6 @@
 # Changes
 ## Unreleased
-* Preserve custom Markdown `<a>` IDs with the `m3-node-` prefix and a nonempty ASCII letter/digit/underscore/hyphen suffix while XSS protection is enabled
+* Preserve nonempty custom Markdown `<a>` IDs containing only ASCII letters, digits, underscores, and hyphens while XSS protection is enabled; no prefix is required
 * Show the notebook name instead of its ID in the export dialog's Current notebook source
 * Add Undo and Redo toolbar buttons to plain text and Markdown editors, matching the mind map editor
 * Require Qt 6; remove Qt 5.15 and Windows 7 builds, packaging and compatibility paths
