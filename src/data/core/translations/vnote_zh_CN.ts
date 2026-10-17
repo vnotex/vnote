@@ -6,7 +6,7 @@
     <message>
         <location filename="../../../commandlineoptions.cpp" line="+11"/>
         <source>A pleasant note-taking platform.</source>
-        <translation>一个舒适的笔记平台。</translation>
+        <translation>让笔记更轻松的平台。</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -36,7 +36,7 @@
     <message>
         <location line="+5"/>
         <source>Open files in a detached view split.</source>
-        <translation>在独立的视图分割中打开文件。</translation>
+        <translation>在独立的分屏中打开文件。</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -143,7 +143,7 @@
     <message>
         <location line="+2"/>
         <source>Malicious link might do harm to your device.</source>
-        <translation>可疑的链接可能会损坏设备。</translation>
+        <translation>恶意链接可能会对设备造成危害。</translation>
     </message>
 </context>
 <context>
@@ -916,7 +916,7 @@
     <message>
         <location line="+10"/>
         <source>Search in case sensitive.</source>
-        <translation>大小写敏感搜索。</translation>
+        <translation>区分大小写搜索。</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -926,7 +926,7 @@
     <message>
         <location line="+5"/>
         <source>Search whole word only.</source>
-        <translation>按完整词搜索。</translation>
+        <translation>仅搜索完整单词。</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -936,7 +936,7 @@
     <message>
         <location line="+6"/>
         <source>Do an OR combination of keywords.</source>
-        <translation>用或来组合关键词。</translation>
+        <translation>使用 OR 组合关键词。</translation>
     </message>
 </context>
 <context>
@@ -1290,7 +1290,7 @@
     <message>
         <location line="+17"/>
         <source>Portable Document Format</source>
-        <translation>便携文件格式</translation>
+        <translation>可移植文档格式</translation>
     </message>
     <message>
         <location line="+18"/>
@@ -1626,7 +1626,7 @@
     <message>
         <location line="+6"/>
         <source>Command timed out after 30 seconds</source>
-        <translation>命令在 30 秒后超时</translation>
+        <translation>命令运行 30 秒后超时</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -1815,7 +1815,7 @@
         <location line="+15"/>
         <location line="+8"/>
         <source>Line ending</source>
-        <translation>行结尾</translation>
+        <translation>换行符</translation>
     </message>
     <message>
         <location line="-22"/>
@@ -1830,12 +1830,12 @@
     <message>
         <location line="+15"/>
         <source>Follow platform</source>
-        <translation>跟随平台</translation>
+        <translation>使用系统换行符</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Follow file</source>
-        <translation>跟随文件</translation>
+        <translation>沿用文件设置</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -1895,12 +1895,12 @@
     <message>
         <location line="+6"/>
         <source>VNote uses [Hunspell](http://hunspell.github.io/) for spell check.</source>
-        <translation>VNote使用[Hunspell](http://hunspell.github.io/)进行拼写检查。</translation>
+        <translation>VNote 使用 [Hunspell](http://hunspell.github.io/) 进行拼写检查。</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Please download Hunspell&apos;s dictionaries, put them under (%1) and restart VNote.</source>
-        <translation>请下载Hunspell的词典，放置于(%1)并重启VNote。</translation>
+        <translation>请下载 Hunspell 的词典，将其放置在 (%1) 下，然后重启 VNote。</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -1920,7 +1920,7 @@
     <message>
         <location line="+17"/>
         <source>Maximum content width in pixels for readable width mode</source>
-        <translation>可读宽度模式下内容的最大宽度（像素）</translation>
+        <translation>易读宽度模式下内容的最大宽度（像素）</translation>
     </message>
     <message>
         <location line="-12"/>
@@ -2100,7 +2100,7 @@
     <message>
         <location line="+1"/>
         <source>HTML</source>
-        <translation>HTML网页</translation>
+        <translation>HTML</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -2115,7 +2115,7 @@
     <message>
         <location line="+10"/>
         <source>Select Export Output Directory</source>
-        <translation>选择导出输出目录</translation>
+        <translation>选择导出目录</translation>
     </message>
     <message>
         <location line="+49"/>
@@ -2180,7 +2180,7 @@
     <message>
         <location line="+4"/>
         <source>Use wkhtmltopdf (outline supported)</source>
-        <translation>使用wkhtmltopdf(支持大纲)</translation>
+        <translation>使用 wkhtmltopdf（支持大纲）</translation>
     </message>
     <message>
         <location line="-371"/>
@@ -2240,7 +2240,7 @@
     <message>
         <location line="+11"/>
         <source>Source</source>
-        <translation>源</translation>
+        <translation>来源</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -2363,7 +2363,7 @@
         <location line="-71"/>
         <location line="+72"/>
         <source>Export all source files into one file</source>
-        <translation>导出所有的源文件到一个文件中</translation>
+        <translation>将所有源文件导出为一个文件</translation>
     </message>
     <message>
         <location line="-26"/>
@@ -2415,13 +2415,13 @@
         <location line="+0"/>
         <location line="+40"/>
         <source>Scheme name:</source>
-        <translation>方案名字:</translation>
+        <translation>方案名称：</translation>
     </message>
     <message>
         <location line="-34"/>
         <location line="+41"/>
         <source>Name conflicts with existing scheme.</source>
-        <translation>名字和已有方案冲突。</translation>
+        <translation>名称与现有方案冲突。</translation>
     </message>
     <message>
         <location line="-14"/>
@@ -2547,7 +2547,7 @@
     <message>
         <location filename="../../../widgets/dialogs/settings/fileassociationpage.cpp" line="+33"/>
         <source>Built-In File Types</source>
-        <translation>内建文件类型</translation>
+        <translation>内置文件类型</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -2706,12 +2706,12 @@
     <message>
         <location line="+17"/>
         <source>&amp;Case sensitive</source>
-        <translation>大小写敏感(&amp;C)</translation>
+        <translation>区分大小写(&amp;C)</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>&amp;Whole word only</source>
-        <translation>匹配完整词(&amp;W)</translation>
+        <translation>仅匹配完整单词(&amp;W)</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -2764,7 +2764,7 @@
     <message>
         <location line="+8"/>
         <source>Search in case sensitive.</source>
-        <translation>大小写敏感搜索。</translation>
+        <translation>区分大小写搜索。</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -2786,7 +2786,7 @@
     <message>
         <location line="-29"/>
         <source>Wildcard pattern of files to search.</source>
-        <translation>需要搜索的文件的通配符模式。</translation>
+        <translation>要搜索的文件通配符模式。</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -3000,7 +3000,7 @@
     <message>
         <location line="+12"/>
         <source>OpenGL implementation used to render application</source>
-        <translation>用于渲染应用程序的OpenGL实现</translation>
+        <translation>用于渲染应用程序的 OpenGL 实现</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -3055,7 +3055,7 @@
     <message>
         <location line="+3"/>
         <source>Recover last session (like buffers) on start of VNote</source>
-        <translation>启动VNote时恢复上次会话（如缓冲区）</translation>
+        <translation>启动 VNote 时恢复上次会话（例如打开的缓冲区）</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -3065,7 +3065,7 @@
     <message>
         <location line="+2"/>
         <source>Check for updates on start of VNote</source>
-        <translation>VNote启动时检查更新</translation>
+        <translation>启动 VNote 时检查更新</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -3119,7 +3119,7 @@
     <message>
         <location line="+22"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
-        <translation>个人令牌/用户名/仓库名不能为空。</translation>
+        <translation>个人访问令牌、用户名和仓库名不能为空。</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -3189,7 +3189,7 @@
     <message>
         <location line="+21"/>
         <source>PersonalAccessToken/UserName/RepositoryName should not be empty.</source>
-        <translation>个人令牌/用户名/仓库名不能为空。</translation>
+        <translation>个人访问令牌、用户名和仓库名不能为空。</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -3205,7 +3205,7 @@
         <location line="+5"/>
         <location line="+63"/>
         <source>Invalid Gitee image host configuration.</source>
-        <translation>无效的码云图床配置。</translation>
+        <translation>无效的 Gitee 图床配置。</translation>
     </message>
     <message>
         <location line="-50"/>
@@ -3322,12 +3322,12 @@
     <message>
         <location line="+1"/>
         <source>Clear the input except the entry name</source>
-        <translation>清除输入但保留入口名字</translation>
+        <translation>清除输入但保留入口名称</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Select the entry name</source>
-        <translation>选择入口名字</translation>
+        <translation>选择入口名称</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -3476,7 +3476,7 @@
     <message>
         <location line="+4"/>
         <source>Copy output file (%1) to (%2).</source>
-        <translation>复制输出文件(%1)为(%2)。</translation>
+        <translation>将输出文件 (%1) 复制到 (%2)。</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -4061,7 +4061,7 @@
     <message>
         <location filename="../../../widgets/lineeditwithsnippet.cpp" line="+19"/>
         <source>Snippet is supported via &quot;%name%&quot;</source>
-        <translation>支持通过&quot;%名字%&quot;使用片段</translation>
+        <translation>支持通过“%name%”使用片段</translation>
     </message>
 </context>
 <context>
@@ -4342,7 +4342,7 @@
     <message>
         <location line="+3"/>
         <source>A pleasant note-taking platform, focusing on native experience, open source since 2016.</source>
-        <translation>一个令人愉悦的笔记平台，专注于原生体验，开发并开源于2016。</translation>
+        <translation>让笔记更轻松的平台，专注于原生体验，自 2016 年起开源。</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -4365,7 +4365,7 @@
     <message>
         <location filename="../../../controllers/managenotebookscontroller.cpp" line="+66"/>
         <source>Please specify a name for the notebook.</source>
-        <translation>请为笔记本指定一个名字。</translation>
+        <translation>请为笔记本指定名称。</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -4381,7 +4381,7 @@
     <message>
         <location line="+7"/>
         <source>Invalid line ending format.</source>
-        <translation>行结尾格式无效。</translation>
+        <translation>换行符格式无效。</translation>
     </message>
     <message>
         <location line="+40"/>
@@ -4424,7 +4424,7 @@
     <message>
         <location line="+1"/>
         <source>Notebook location: %1</source>
-        <translation>笔记本路径: %1</translation>
+        <translation>笔记本位置：%1</translation>
     </message>
 </context>
 <context>
@@ -4508,7 +4508,7 @@
     <message>
         <location line="+86"/>
         <source>For advanced paste, try the &quot;Rich Paste&quot; and &quot;Parse to Markdown and Paste&quot; on the editor&apos;s context menu</source>
-        <translation>更多高级粘贴，请尝试编辑器上下文菜单中的“多功能粘贴”和“解析为Markdown并粘贴”功能</translation>
+        <translation>如需更多粘贴选项，请尝试编辑器右键菜单中的“多功能粘贴”和“解析为 Markdown 并粘贴”</translation>
     </message>
     <message>
         <location line="+74"/>
@@ -4546,7 +4546,7 @@
         <location line="+47"/>
         <location line="+84"/>
         <source>Insert From Clipboard</source>
-        <translation>从剪切板插入</translation>
+        <translation>从剪贴板插入</translation>
     </message>
     <message>
         <location line="-129"/>
@@ -4563,7 +4563,7 @@
     <message>
         <location line="-307"/>
         <source>Insert From URL</source>
-        <translation>从URL插入</translation>
+        <translation>从 URL 插入</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -4620,13 +4620,13 @@
         <location line="+138"/>
         <source>Insert From Clipboard (%n items)</source>
         <translation>
-            <numerusform>从剪切板插入(%n项)</numerusform>
+            <numerusform>从剪贴板插入（%n 项）</numerusform>
         </translation>
     </message>
     <message>
         <location line="+68"/>
         <source>Insert Image From Clipboard</source>
-        <translation>从剪切板插入图片</translation>
+        <translation>从剪贴板插入图片</translation>
     </message>
     <message>
         <location line="+25"/>
@@ -4690,7 +4690,7 @@
     <message>
         <location line="+8"/>
         <source>Parse to Markdown and Paste</source>
-        <translation>解析为Markodwn并粘贴</translation>
+        <translation>解析为 Markdown 并粘贴</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -4823,7 +4823,7 @@
     <message>
         <location line="+2"/>
         <source>Allow HTML tags in source</source>
-        <translation>源文件中允许HTML标签</translation>
+        <translation>允许源文本中包含 HTML 标签</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -4838,12 +4838,12 @@
     <message>
         <location line="+10"/>
         <source>Linkify</source>
-        <translation>链接化</translation>
+        <translation>自动识别链接</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Convert URL-like text to links</source>
-        <translation>转换类URL的文本为链接</translation>
+        <translation>将类似 URL 的文本转换为链接</translation>
     </message>
     <message>
         <location line="+9"/>
@@ -4963,7 +4963,7 @@
     <message>
         <location line="+3"/>
         <source>Write an edited table sheet back as a column-aligned pipe table. Only affects tables you edit afterwards; existing source is never reformatted</source>
-        <translation>将编辑后的表格工作表写回为列对齐的管道表格。仅影响之后编辑的表格；现有源文本不会被重新格式化</translation>
+        <translation>将编辑后的表格写回为按列对齐、以竖线分隔的 Markdown 表格。仅影响之后编辑的表格，不会重新排版现有源文本</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -4973,17 +4973,17 @@
     <message>
         <location line="+3"/>
         <source>Fold the source of a block as soon as it gets an in-place preview. Requires text folding; turning it off does not unfold blocks that are already folded</source>
-        <translation>块获得原地预览后立即折叠其源文本。需要启用文本折叠；关闭此选项不会展开已折叠的块</translation>
+        <translation>生成原地预览后立即折叠该块的源文本。需要启用文本折叠；关闭此选项不会展开已折叠的块</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>Fetch images to local in Parse And Paste</source>
-        <translation>在解析并粘贴时，获取图片到本地</translation>
+        <translation>解析并粘贴时将图片保存到本地</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Fetch images to local in Parse To Markdown And Paste</source>
-        <translation>在解析为Markdown并粘贴时，获取图片到本地</translation>
+        <translation>解析为 Markdown 并粘贴时将图片保存到本地</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -5076,7 +5076,7 @@
     <message>
         <location line="+2"/>
         <source>Override MathJax script</source>
-        <translation>覆盖MathJax脚本</translation>
+        <translation>覆盖 MathJax 脚本</translation>
     </message>
     <message>
         <location line="-160"/>
@@ -5258,7 +5258,7 @@
         <location line="+80"/>
         <location line="+8"/>
         <source>Snippet insertion is not supported in read mode</source>
-        <translation>阅读模式下不支持插入代码片段</translation>
+        <translation>阅读模式下不支持插入片段</translation>
     </message>
     <message>
         <location line="+313"/>
@@ -5419,7 +5419,7 @@
     <message>
         <location line="+1"/>
         <source>Insert From Clipboard</source>
-        <translation>从剪切板插入</translation>
+        <translation>从剪贴板插入</translation>
     </message>
     <message>
         <location line="+20"/>
@@ -5430,7 +5430,7 @@
     <message>
         <location line="-20"/>
         <source>Insert From URL</source>
-        <translation>从URL插入</translation>
+        <translation>从 URL 插入</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -5860,7 +5860,7 @@
     <message>
         <location filename="../../../controllers/newfoldercontroller.cpp" line="+25"/>
         <source>Please specify a name for the folder.</source>
-        <translation>请为文件夹指定一个名字。</translation>
+        <translation>请为文件夹指定名称。</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -5870,12 +5870,12 @@
     <message>
         <location line="+14"/>
         <source>Name conflicts with existing folder.</source>
-        <translation>名字和已有文件夹冲突。</translation>
+        <translation>名称与现有文件夹冲突。</translation>
     </message>
     <message>
         <location line="+11"/>
         <source>Name conflicts with existing note.</source>
-        <translation>名字和已有笔记冲突。</translation>
+        <translation>名称与现有笔记冲突。</translation>
     </message>
     <message>
         <location line="+14"/>
@@ -5903,7 +5903,7 @@
     <message>
         <location filename="../../../widgets/dialogs/newfolderdialog2.cpp" line="+37"/>
         <source>Name</source>
-        <translation>名字</translation>
+        <translation>名称</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -5921,7 +5921,7 @@
     <message>
         <location line="+10"/>
         <source>Name</source>
-        <translation>名字</translation>
+        <translation>名称</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -5931,12 +5931,12 @@
     <message>
         <location line="+12"/>
         <source>Please specify a valid name for the image host.</source>
-        <translation>请为图床指定一个有效名字。</translation>
+        <translation>请为图床指定有效名称。</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Name conflicts with existing image host.</source>
-        <translation>名字和已有图床冲突。</translation>
+        <translation>名称与现有图床冲突。</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -5979,12 +5979,12 @@
     <message>
         <location line="+7"/>
         <source>Please specify a valid name for the note.</source>
-        <translation>请为笔记指定一个有效名字。</translation>
+        <translation>请为笔记指定有效名称。</translation>
     </message>
     <message>
         <location line="+14"/>
         <source>Name conflicts with existing note.</source>
-        <translation>名字和已有笔记冲突。</translation>
+        <translation>名称与现有笔记冲突。</translation>
     </message>
     <message>
         <location line="+14"/>
@@ -6062,7 +6062,7 @@
     <message>
         <location line="+10"/>
         <source>Name</source>
-        <translation>名字</translation>
+        <translation>名称</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -6105,7 +6105,7 @@
     <message>
         <location filename="../../../controllers/newnotebookcontroller.cpp" line="-168"/>
         <source>Please specify a name for the notebook.</source>
-        <translation>请为笔记本指定一个名字。</translation>
+        <translation>请为笔记本指定名称。</translation>
     </message>
     <message>
         <location line="+14"/>
@@ -6130,7 +6130,7 @@
     <message>
         <location line="+27"/>
         <source>Invalid line ending format.</source>
-        <translation>行结尾格式无效。</translation>
+        <translation>换行符格式无效。</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -6155,7 +6155,7 @@
     <message>
         <location line="+61"/>
         <source>Sync services not available; cannot bootstrap notebook.</source>
-        <translation>同步服务不可用；无法引导笔记本。</translation>
+        <translation>同步服务不可用；无法初始化笔记本同步。</translation>
     </message>
 </context>
 <context>
@@ -6229,17 +6229,17 @@
     <message>
         <location line="+6"/>
         <source>Please specify a name for the snippet.</source>
-        <translation>请为片段指定一个名字。</translation>
+        <translation>请指定片段名称。</translation>
     </message>
     <message>
         <location line="+8"/>
         <source>Name conflicts with existing snippet.</source>
-        <translation>名字和已有片段冲突。</translation>
+        <translation>名称与现有片段冲突。</translation>
     </message>
     <message>
         <location line="+21"/>
         <source>Failed to add snippet (%1).</source>
-        <translation>无法添加代码片段 (%1)。</translation>
+        <translation>无法添加片段（%1）。</translation>
     </message>
 </context>
 <context>
@@ -6257,7 +6257,7 @@
     <message>
         <location line="+9"/>
         <source>Name</source>
-        <translation>名字</translation>
+        <translation>名称</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -6328,7 +6328,7 @@
     <message>
         <location line="+14"/>
         <source>The source item kind no longer matches the clipboard entry.</source>
-        <translation>源项目的类型已与剪贴板条目不匹配。</translation>
+        <translation>源项目类型已不再与剪贴板条目匹配。</translation>
     </message>
     <message>
         <location line="+14"/>
@@ -6450,12 +6450,12 @@
     <message>
         <location filename="../../../widgets/dialogs/settings/notemanagementpage.cpp" line="+31"/>
         <source>Line ending used to write configuration files</source>
-        <translation>用于写配置文件的行结尾</translation>
+        <translation>用于写入配置文件的换行符</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Follow platform</source>
-        <translation>跟随平台</translation>
+        <translation>使用系统换行符</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -6475,7 +6475,7 @@
     <message>
         <location line="+2"/>
         <source>Line ending</source>
-        <translation>行结尾</translation>
+        <translation>换行符</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -6656,7 +6656,7 @@
     <message>
         <location line="+2"/>
         <source>Open Folder as &amp;Raw Notebook</source>
-        <translation>打开文件夹为原生笔记本(&amp;R)</translation>
+        <translation>将文件夹作为原生笔记本打开(&amp;R)</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -6671,12 +6671,12 @@
     <message>
         <location line="+7"/>
         <source>Notebooks View Order</source>
-        <translation>笔记本查看顺序</translation>
+        <translation>笔记本排序方式</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Notes View Order</source>
-        <translation>笔记查看顺序</translation>
+        <translation>笔记排序方式</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -6746,37 +6746,37 @@ This action is irreversible.</source>
     <message>
         <location line="+23"/>
         <source>View By Configuration</source>
-        <translation>按配置查看</translation>
+        <translation>按配置顺序排序</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>View By Name</source>
-        <translation>按名字查看</translation>
+        <translation>按名称排序</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>View By Name (Reversed)</source>
-        <translation>按名字倒序查看</translation>
+        <translation>按名称倒序排序</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>View By Created Time</source>
-        <translation>按创建时间查看</translation>
+        <translation>按创建时间排序</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>View By Created Time (Reversed)</source>
-        <translation>按创建时间倒序查看</translation>
+        <translation>按创建时间倒序排序</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>View By Modified Time</source>
-        <translation>按修改时间查看</translation>
+        <translation>按修改时间排序</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>View By Modified Time (Reversed)</source>
-        <translation>按修改时间倒序查看</translation>
+        <translation>按修改时间倒序排序</translation>
     </message>
     <message>
         <location line="+44"/>
@@ -7192,7 +7192,7 @@ GitHub 拒绝了已保存的个人访问令牌 (HTTP 401)。该令牌可能已�
     <message>
         <location line="+2"/>
         <source>Sync configured but incomplete</source>
-        <translation>已配置同步但尚未完成</translation>
+        <translation>同步配置尚未完成</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -7202,7 +7202,7 @@ GitHub 拒绝了已保存的个人访问令牌 (HTTP 401)。该令牌可能已�
     <message>
         <location line="+2"/>
         <source>Click to bootstrap sync for this notebook</source>
-        <translation>点击以为该笔记本引导同步</translation>
+        <translation>点击以初始化此笔记本的同步</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -7340,12 +7340,12 @@ Open the bundle location?</source>
     <message>
         <location line="+6"/>
         <source>Sort Folders</source>
-        <translation>排序文件夹</translation>
+        <translation>文件夹排序</translation>
     </message>
     <message>
         <location line="+12"/>
         <source>Sort Notes</source>
-        <translation>排序笔记</translation>
+        <translation>笔记排序</translation>
     </message>
 </context>
 <context>
@@ -7358,7 +7358,7 @@ Open the bundle location?</source>
     <message>
         <location line="+1"/>
         <source>Name</source>
-        <translation>名字</translation>
+        <translation>名称</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -7489,7 +7489,7 @@ Changing this setting does not move existing assets, attachments, or comments</s
     <message>
         <location line="+2"/>
         <source>Line ending</source>
-        <translation>行结尾</translation>
+        <translation>换行符</translation>
     </message>
     <message>
         <location line="+46"/>
@@ -7574,7 +7574,7 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
         <location line="+47"/>
         <location line="+182"/>
         <source>Open &amp;Location</source>
-        <translation>打开路径(&amp;L)</translation>
+        <translation>打开所在文件夹(&amp;L)</translation>
     </message>
     <message>
         <location line="-164"/>
@@ -8228,7 +8228,7 @@ Old URL: %1
 New URL: %2
 
 Continue?</source>
-        <translation>此操作将更改同步端点。当前工作文件会保留；确认后，本地同步状态将归档或重建。
+        <translation>此操作将更改同步端点。当前工作文件会保留；确认后，本地同步状态将停用或重建。
 旧 URL：%1
 新 URL：%2
 
@@ -8242,7 +8242,7 @@ Continue?</source>
     <message>
         <location line="+47"/>
         <source>Bootstrap</source>
-        <translation>引导</translation>
+        <translation>初始化</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -8541,7 +8541,7 @@ Continue?</source>
     <message>
         <location line="+40"/>
         <source>Local root folder must not already exist.</source>
-        <translation>本地根文件夹必须尚不存在。</translation>
+        <translation>请指定一个尚不存在的本地根文件夹。</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -8729,7 +8729,7 @@ Continue?</source>
     <message>
         <location line="-55"/>
         <source>Folder to download into (must not exist)</source>
-        <translation>下载目标文件夹（必须尚不存在）</translation>
+        <translation>下载到此文件夹（请指定尚不存在的文件夹）</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -8804,7 +8804,7 @@ Continue?</source>
     <message>
         <location line="+100"/>
         <source>Local root folder must not already exist.</source>
-        <translation>本地根文件夹必须尚不存在。</translation>
+        <translation>请指定一个尚不存在的本地根文件夹。</translation>
     </message>
     <message>
         <location line="-205"/>
@@ -9047,12 +9047,12 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+45"/>
         <source>Decrease Expansion Level</source>
-        <translation>减小扩展层级</translation>
+        <translation>降低展开级别</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>Increase Expansion Level</source>
-        <translation>增大扩展层级</translation>
+        <translation>提高展开级别</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -9067,7 +9067,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+15"/>
         <source>Expansion level: %1</source>
-        <translation>扩展层级: %1</translation>
+        <translation>展开级别：%1</translation>
     </message>
 </context>
 <context>
@@ -9297,7 +9297,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+5"/>
         <source>Empty to use current explored folder dynamically</source>
-        <translation>如为空则动态使用创建笔记时当前浏览文件夹</translation>
+        <translation>留空则动态使用当前浏览的文件夹</translation>
     </message>
     <message>
         <location line="-2"/>
@@ -9312,7 +9312,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+58"/>
         <source>Snippet variables are supported, e.g. journal/%yyyy%/%MM%</source>
-        <translation>支持代码片段变量，例如 journal/%yyyy%/%MM%</translation>
+        <translation>支持片段变量，例如 journal/%yyyy%/%MM%</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -9332,12 +9332,12 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+1"/>
         <source>Scheme name already exists! Try again:</source>
-        <translation>方案名字已存在！请重试:</translation>
+        <translation>方案名称已存在！请重试：</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Scheme name:</source>
-        <translation>方案名字:</translation>
+        <translation>方案名称：</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -9347,7 +9347,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+15"/>
         <source>Delete quick note scheme (%1)?</source>
-        <translation>删除快速笔记方案(%1)?</translation>
+        <translation>删除快速笔记方案（%1）？</translation>
     </message>
     <message>
         <location line="-204"/>
@@ -9506,7 +9506,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+10"/>
         <source>Case Sensitive</source>
-        <translation>大小写敏感</translation>
+        <translation>区分大小写</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -9547,12 +9547,12 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+18"/>
         <source>File pattern</source>
-        <translation>文件模式</translation>
+        <translation>文件名模式</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>File pattern (e.g., *.md)</source>
-        <translation>文件模式（例如 *.md）</translation>
+        <translation>文件名模式（例如 *.md）</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -9776,7 +9776,7 @@ The legacy notebook would be kept for data backup.</source>
         <location line="+14"/>
         <location line="+18"/>
         <source>Snippet service is not available.</source>
-        <translation>代码片段服务不可用。</translation>
+        <translation>片段服务不可用。</translation>
     </message>
 </context>
 <context>
@@ -9784,12 +9784,12 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location filename="../../../widgets/dialogs/snippetinfowidget2.cpp" line="+96"/>
         <source>A mark in the snippet content indicating the cursor position after the application</source>
-        <translation>一个用于在片段内容中指定应用片段后光标位置的标记</translation>
+        <translation>片段内容中用于指示应用片段后光标位置的标记</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>A mark in the snippet content that will be replaced with the selected text before the application</source>
-        <translation>一个用于在片段内容中指代应用片段前所选择文本的标记</translation>
+        <translation>片段内容中会在应用片段前替换为所选文本的标记</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -9799,12 +9799,12 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+9"/>
         <source>Nested snippet is supported, like `%time%` to embed the snippet `time`</source>
-        <translation>支持嵌套的片段，如`%time%`会内嵌片段`time`</translation>
+        <translation>支持嵌套片段，例如使用 `%time%` 嵌入 `time` 片段</translation>
     </message>
     <message>
         <location line="-43"/>
         <source>Name</source>
-        <translation>名字</translation>
+        <translation>名称</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -9858,7 +9858,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location filename="../../../widgets/snippetpanel2.cpp" line="+80"/>
         <source>Search snippets</source>
-        <translation>搜索代码片段</translation>
+        <translation>搜索片段</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -9868,7 +9868,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+6"/>
         <source>Open Snippet Folder</source>
-        <translation>打开代码片段文件夹</translation>
+        <translation>打开片段文件夹</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -9878,17 +9878,17 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+4"/>
         <source>Show Built-In Snippets</source>
-        <translation>显示内建片段</translation>
+        <translation>显示内置片段</translation>
     </message>
     <message>
         <location line="+51"/>
         <source>Delete Snippet</source>
-        <translation>删除代码片段</translation>
+        <translation>删除片段</translation>
     </message>
     <message>
         <location line="+1"/>
         <source>Delete snippet &quot;%1&quot;?</source>
-        <translation>删除代码片段 &quot;%1&quot;？</translation>
+        <translation>删除片段“%1”？</translation>
     </message>
     <message>
         <location line="+28"/>
@@ -9911,27 +9911,27 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location filename="../../../widgets/dialogs/snippetpropertiesdialog2.cpp" line="+50"/>
         <source>%1 Properties</source>
-        <translation>%1属性</translation>
+        <translation>%1 属性</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>Please specify a name for the snippet.</source>
-        <translation>请为片段指定一个名字。</translation>
+        <translation>请指定片段名称。</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>Name conflicts with existing snippet.</source>
-        <translation>名字和已有片段冲突。</translation>
+        <translation>名称与现有片段冲突。</translation>
     </message>
     <message>
         <location line="+23"/>
         <source>Failed to update snippet (%1).</source>
-        <translation>无法更新代码片段 (%1)。</translation>
+        <translation>无法更新片段（%1）。</translation>
     </message>
     <message>
         <location line="+13"/>
         <source>Failed to rename snippet from %1 to %2.</source>
-        <translation>无法将代码片段从 %1 重命名为 %2。</translation>
+        <translation>无法将片段从 %1 重命名为 %2。</translation>
     </message>
 </context>
 <context>
@@ -9977,7 +9977,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location filename="../../../widgets/dashboard/stickerdragoverlay.cpp" line="+44"/>
         <source>Sticker edit mode. Drag the centre to move or an edge to resize; arrow keys move, Shift with arrow keys resizes.</source>
-        <translation>贴纸编辑模式。拖动中心可移动，拖动边缘可调整大小；方向键可移动，Shift + 方向键可调整大小。</translation>
+        <translation>挂件编辑模式。拖动中部可移动挂件，拖动边缘可调整大小；按方向键可移动，按 Shift + 方向键可调整大小。</translation>
     </message>
     <message>
         <location line="+235"/>
@@ -10109,7 +10109,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+71"/>
         <source>The notebook IO gate is unavailable.</source>
-        <translation>笔记本IO访问控制不可用。</translation>
+        <translation>笔记本 I/O 访问控制不可用。</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -10286,7 +10286,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location line="+4"/>
         <source>Open Location</source>
-        <translation>打开路径</translation>
+        <translation>打开所在文件夹</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -10651,7 +10651,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+11"/>
         <source>Word wrap mode of editor</source>
-        <translation>编辑器词换行模式</translation>
+        <translation>编辑器的换行模式</translation>
     </message>
     <message>
         <location line="+8"/>
@@ -10661,17 +10661,17 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+10"/>
         <source>Expand Tab</source>
-        <translation>扩展制表符</translation>
+        <translation>用空格代替制表符</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Expand Tab into spaces</source>
-        <translation>扩展制表符为空格</translation>
+        <translation>将制表符转换为空格</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>Number of spaces to use where Tab is needed</source>
-        <translation>输入制表符时空格数量</translation>
+        <translation>一个制表符对应的空格数</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -10686,7 +10686,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+2"/>
         <source>Highlight Tab and trailing space</source>
-        <translation>高亮制表符和结尾空格</translation>
+        <translation>高亮显示制表符和行尾空格</translation>
     </message>
     <message>
         <location line="+11"/>
@@ -10739,7 +10739,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+10"/>
         <source>Open Location</source>
-        <translation>打开路径</translation>
+        <translation>打开所在文件夹</translation>
     </message>
     <message>
         <location line="-18"/>
@@ -10839,7 +10839,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+7"/>
         <source>Expand All</source>
-        <translation>扩展全部</translation>
+        <translation>全部展开</translation>
     </message>
     <message>
         <location line="+17"/>
@@ -10849,7 +10849,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+278"/>
         <source>Unknown entry: %1</source>
-        <translation>未知入口: %1</translation>
+        <translation>未知入口：%1</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -10872,7 +10872,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+25"/>
         <source>Invalid United Entry alias: %1</source>
-        <translation>无效的统一入口别名: %1</translation>
+        <translation>无效的统一入口别名：%1</translation>
     </message>
 </context>
 <context>
@@ -10890,7 +10890,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+36"/>
         <source>Check Release</source>
-        <translation>查看发布</translation>
+        <translation>查看发布页面</translation>
     </message>
     <message>
         <location line="+474"/>
@@ -11020,7 +11020,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+1"/>
         <source>Automatic update is unavailable. Use Check Release to update manually.</source>
-        <translation>自动更新不可用。请使用“查看发布”手动更新。</translation>
+        <translation>自动更新不可用。请通过“查看发布页面”手动更新。</translation>
     </message>
 </context>
 <context>
@@ -11135,12 +11135,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location filename="../../../widgets/dialogs/settings/vipage.cpp" line="+32"/>
         <source>Ctrl+C/X to copy/cut</source>
-        <translation>Ctrl+C/X进行复制/剪切</translation>
+        <translation>使用 Ctrl+C/X 复制/剪切</translation>
     </message>
     <message>
         <location line="+2"/>
         <source>Use Ctrl+C/X to copy/cut text</source>
-        <translation>使用Ctrl+C/X来复制/剪切文本</translation>
+        <translation>使用 Ctrl+C/X 复制/剪切文本</translation>
     </message>
     <message>
         <location line="-5"/>
@@ -11154,7 +11154,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location filename="../../../widgets/viewarea2.cpp" line="+875"/>
         <source>New Workspace</source>
-        <translation>新建工作空间</translation>
+        <translation>新建工作区</translation>
     </message>
     <message>
         <location line="+0"/>
@@ -11369,22 +11369,22 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+27"/>
         <source>No Window To Show</source>
-        <translation>没有可以展示的窗口</translation>
+        <translation>没有可显示的窗口</translation>
     </message>
     <message>
         <location line="+32"/>
         <source>Workspaces</source>
-        <translation>工作空间</translation>
+        <translation>工作区</translation>
     </message>
     <message>
         <location line="+18"/>
         <source>Workspace %1</source>
-        <translation>工作空间%1</translation>
+        <translation>工作区 %1</translation>
     </message>
     <message>
         <location line="+19"/>
         <source>New Workspace</source>
-        <translation>新建工作空间</translation>
+        <translation>新建工作区</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -11394,7 +11394,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+2"/>
         <source>Remove Workspace</source>
-        <translation>移除工作空间</translation>
+        <translation>移除工作区</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -11404,32 +11404,32 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+6"/>
         <source>Split</source>
-        <translation>拆分</translation>
+        <translation>分屏</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>Vertical Split</source>
-        <translation>竖直拆分</translation>
+        <translation>垂直分屏</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Horizontal Split</source>
-        <translation>水平拆分</translation>
+        <translation>水平分屏</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Maximize Split</source>
-        <translation>最大化拆分</translation>
+        <translation>最大化分屏</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Distribute Splits</source>
-        <translation>平均分配拆分</translation>
+        <translation>平均分配分屏</translation>
     </message>
     <message>
         <location line="+17"/>
         <source>Remove Split</source>
-        <translation>移除拆分</translation>
+        <translation>移除分屏</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -11479,7 +11479,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+7"/>
         <source>Open Location</source>
-        <translation>打开路径</translation>
+        <translation>打开所在文件夹</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -11489,22 +11489,22 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+12"/>
         <source>Move One Split Left</source>
-        <translation>向左移动一个拆分</translation>
+        <translation>移至左侧分屏</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Move One Split Right</source>
-        <translation>向右移动一个拆分</translation>
+        <translation>移至右侧分屏</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Move One Split Up</source>
-        <translation>向上移动一个拆分</translation>
+        <translation>移至上方分屏</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Move One Split Down</source>
-        <translation>向下移动一个拆分</translation>
+        <translation>移至下方分屏</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -11551,7 +11551,7 @@ This removes the file and any sub-tasks it contains: %2</source>
     <message>
         <location line="+15"/>
         <source>Name</source>
-        <translation>名字</translation>
+        <translation>名称</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -11566,12 +11566,12 @@ This removes the file and any sub-tasks it contains: %2</source>
         <location filename="../../../widgets/textviewwindowhelper.h" line="+328"/>
         <location line="+41"/>
         <source>Snippet (%1) not found</source>
-        <translation>无法找到片段(%1)</translation>
+        <translation>找不到片段（%1）</translation>
     </message>
     <message>
         <location line="-27"/>
         <source>Snippet applied: %1</source>
-        <translation>片段已应用: %1</translation>
+        <translation>已应用片段：%1</translation>
     </message>
     <message>
         <location line="+62"/>
@@ -11698,12 +11698,12 @@ Continue?</source>
         <location line="+260"/>
         <location line="+8"/>
         <source>Pattern not found: %1</source>
-        <translation>无法找到模式: %1</translation>
+        <translation>找不到模式：%1</translation>
     </message>
     <message>
         <location line="-6"/>
         <source>Match found: %1/%2</source>
-        <translation>找到匹配: %1/%2</translation>
+        <translation>找到匹配项：%1/%2</translation>
     </message>
     <message numerus="yes">
         <location line="+8"/>
@@ -11715,7 +11715,7 @@ Continue?</source>
     <message>
         <location line="+7"/>
         <source>Zoomed: %1%</source>
-        <translation>缩放: %1%</translation>
+        <translation>缩放：%1%</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -11860,7 +11860,7 @@ Continue?</source>
     <message>
         <location filename="../../../widgets/wordcountpanel.cpp" line="+11"/>
         <source>Selection Area</source>
-        <translation>选择区域</translation>
+        <translation>所选区域</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -11870,12 +11870,12 @@ Continue?</source>
     <message>
         <location line="+4"/>
         <source>Characters (no spaces)</source>
-        <translation>字(无空格)</translation>
+        <translation>字符数（不含空格）</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Characters (with spaces)</source>
-        <translation>字(有空格)</translation>
+        <translation>字符数（含空格）</translation>
     </message>
 </context>
 </TS>

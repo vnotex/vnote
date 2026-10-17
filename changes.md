@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Revise Simplified Chinese interface wording for more natural phrasing and consistent search, editor, snippet, workspace and split terminology
 * Preserve nonempty custom Markdown `<a>` IDs containing only ASCII letters, digits, underscores, and hyphens while XSS protection is enabled; no prefix is required
 * Show the notebook name instead of its ID in the export dialog's Current notebook source
 * Match Qt native context-menu icons to the selected light or dark theme, and restore system appearance for Native
