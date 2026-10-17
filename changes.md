@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Translate mind map Paste and all emoji picker categories in Simplified Chinese, Japanese and Korean
 * Revise Simplified Chinese interface wording for more natural phrasing and consistent search, editor, snippet, workspace and split terminology
 * Preserve nonempty custom Markdown `<a>` IDs containing only ASCII letters, digits, underscores, and hyphens while XSS protection is enabled; no prefix is required
 * Show the notebook name instead of its ID in the export dialog's Current notebook source
