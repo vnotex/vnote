@@ -31,6 +31,8 @@ class OutlineProvider;
 class PreviewHelper;
 class MarkdownEditorController;
 class MarkdownViewWindowController;
+class MarkdownWebJobController;
+class MarkdownWebJobHost;
 class ImageHostController;
 class EditorStatusBarBinder;
 class LegacyImageMigrationBar;
@@ -116,6 +118,9 @@ protected:
 
   void handlePrint() Q_DECL_OVERRIDE;
 
+  // Render an accepted print request, including a caller-supplied PDF printer.
+  void printDocument(const QSharedPointer<QPrinter> &p_printer);
+
   bool aboutToClose(bool p_force) Q_DECL_OVERRIDE;
 
   bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
@@ -143,7 +148,13 @@ private:
 
   bool setupViewer();
 
-  void connectViewerToEditor();
+  void initializeViewerPage();
+
+  void updateJobRenderContext();
+
+  void invalidateWebJobs();
+
+  void refreshEditorWebJobs();
 
   bool reloadProtectedViewer();
 
@@ -253,6 +264,8 @@ private:
   // Controllers (owned via QObject parent).
   MarkdownEditorController *m_editorController = nullptr;
   MarkdownViewWindowController *m_windowController = nullptr;
+  MarkdownWebJobController *m_webJobs = nullptr;
+  MarkdownWebJobHost *m_webJobHost = nullptr;
   ImageHostController *m_imageHostController = nullptr;
 
   // Widgets (managed by QObject/layout).
@@ -288,6 +301,8 @@ private:
   int m_viewerBufferRevision = 0;
   ViewWindowMode m_previousMode = ViewWindowMode::Invalid;
   bool m_viewerReady = false;
+  bool m_viewerPageInitialized = false;
+  bool m_printPending = false;
   quint64 m_editorImageRequest = 0;
   bool m_editorImageOpened = false;
   bool m_deferredPreviewUpdate = false;
@@ -302,10 +317,6 @@ private:
   bool m_presentationActive = false;
   bool m_preparingPresentation = false;
   quint64 m_presentationGeneration = 0;
-  QString m_viewerMathRenderer;
-  QString m_viewerMathJaxScript;
-  QString m_viewerPlantUmlFormat;
-  bool m_refreshMathPreviewsOnReady = false;
   QString m_pendingAnchor;
   MarkdownEditorConfig::EditViewMode m_editViewMode = MarkdownEditorConfig::EditViewMode::EditOnly;
 

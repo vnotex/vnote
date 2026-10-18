@@ -63,6 +63,7 @@
 #include <gui/services/viewwindowfactory.h>
 #include <gui/services/vxpdfschemehandler.h>
 #include <gui/services/webengineprofileservice.h>
+#include <gui/services/webviewservice.h>
 #include <gui/utils/widgetutils.h>
 #include <qwindow.h>
 #include <utils/autostartutils.h>
@@ -70,6 +71,7 @@
 #include <vtextedit/spellchecker.h>
 #include <vtextedit/vtexteditor.h>
 #include <vxcore/vxcore.h>
+#include <widgets/editors/markdownwebjobhost.h>
 #include <widgets/mainwindow2.h>
 #include <widgets/messageboxhelper.h>
 
@@ -714,6 +716,20 @@ int main(int argc, char *argv[]) {
                                               &configMgr, &htmlTemplateService);
     serviceLocator.registerService<WebEngineProfileService>(&webProfileService);
     qInfo() << "WebEngineProfileService registered";
+
+    // One lazy JS host for ordinary clients, destroyed before its borrowed profile.
+    WebViewService webViewService(serviceLocator, webProfileService.profile(),
+                                  MarkdownWebJobHost::createSharedRuntime(serviceLocator));
+    serviceLocator.registerService<WebViewService>(&webViewService);
+    QObject::connect(&themeService, &ThemeService::themeAboutToChange, &webViewService,
+                     &WebViewService::invalidate);
+    // Retire the shared runtime before ViewAreaController refreshes tabs at priority 10.
+    const auto webViewConfigHook = hookManager.addAction(
+        HookNames::ConfigEditorChanged,
+        [&webViewService](HookContext &, const QVariantMap &) { webViewService.invalidate(); }, 0);
+    QObject::connect(
+        &webViewService, &QObject::destroyed, &hookManager,
+        [&hookManager, webViewConfigHook]() { hookManager.removeAction(webViewConfigHook); });
 
     // Initialize syntax highlighting repository (must happen before any TextEditor is created).
     // Legacy equivalent: VNoteX::initThemeMgr() -> ThemeMgr::addSyntaxHighlightingSearchPaths().

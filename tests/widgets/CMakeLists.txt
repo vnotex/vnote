@@ -1,3 +1,5 @@
+find_package(Qt6 REQUIRED COMPONENTS WebChannel WebEngineWidgets PrintSupport Sql Core5Compat)
+
 add_qt_test(test_docksizememory
   SOURCES
     test_docksizememory.cpp
@@ -1295,11 +1297,8 @@ add_custom_command(TARGET test_editorstatusbarbinder POST_BUILD
     $<TARGET_FILE_DIR:test_editorstatusbarbinder>
 )
 
-# MarkdownViewerAdapter heading-anchor plumbing: the C++ request/response
-# bridge for the edit-mode "Copy Link" heading action. No web view is created;
-# the web side is simulated by listening for headingAnchorRequested and calling
-# the setHeadingAnchor slot. NOT GUILESS — MarkdownViewerAdapter pulls in
-# GuiUtils/QTextCharFormat, which need a QApplication.
+# Native preview geometry/zoom/canvas and reader heading-state regressions.
+# JS transport and heading resolution are covered by real WebEngine job tests.
 add_qt_test(test_markdownvieweradapter_anchor
   SOURCES
     test_markdownvieweradapter_anchor.cpp
@@ -1503,7 +1502,7 @@ if(TARGET Qt6::Qml)
   )
 
   # Many isolated browser pages share this deadline; per-step waits remain bounded.
-  set_property(TEST test_markdownviewer_js PROPERTY TIMEOUT 180)
+  set_property(TEST test_markdownviewer_js PROPERTY TIMEOUT 600)
 
   # Read-mode graph render pass: finishWork() exactly-once, the concurrency bound,
   # and GraphCache in-flight coalescing; Chromium covers PlantUML pagination.
@@ -1782,4 +1781,105 @@ add_custom_command(TARGET test_mindmapeditor POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:VTextEdit>
     $<TARGET_FILE_DIR:test_mindmapeditor>
+)
+
+# MathJax is optional in the app, but its shared-runtime isolation must be tested
+# against the real engine. Fetch only for tests; no test uses the network at runtime.
+include(FetchContent)
+FetchContent_Declare(vnote_mathjax_test
+  URL https://cdn.jsdelivr.net/npm/mathjax@3.2.2/es5/tex-svg.js
+  URL_HASH SHA256=d4295dc33744836935c1399feece5159577b34c5c8ffb9f1c6324cd82e03a882
+  DOWNLOAD_NO_EXTRACT TRUE
+)
+FetchContent_MakeAvailable(vnote_mathjax_test)
+add_qt_test(test_markdownwebjobs
+  SOURCES test_markdownwebjobs.cpp
+  LINKS markdown_web_job_test_support
+)
+add_dependencies(test_markdownwebjobs VX_EXTRA_RESOURCE)
+get_target_property(_markdown_job_resource_dir VX_EXTRA_RESOURCE BINARY_DIR)
+target_compile_definitions(test_markdownwebjobs PRIVATE
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+  VNOTE_TEST_MATHJAX_SCRIPT="${vnote_mathjax_test_SOURCE_DIR}/tex-svg.js"
+  VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
+)
+set_tests_properties(test_markdownwebjobs PROPERTIES TIMEOUT 300)
+set(_markdown_job_environment
+  "QT_QPA_PLATFORM=offscreen"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:Qt6::QOffscreenIntegrationPlugin>"
+  "QTWEBENGINEPROCESS_PATH="
+  "QTWEBENGINE_RESOURCES_PATH="
+  "QTWEBENGINE_LOCALES_PATH="
+  "QTWEBENGINE_CHROMIUM_FLAGS="
+)
+if(WIN32)
+  set(_markdown_job_path "$<TARGET_FILE_DIR:Qt6::Core>;$<TARGET_FILE_DIR:VTextEdit>;$ENV{PATH}")
+  string(REPLACE ";" "\;" _markdown_job_path "${_markdown_job_path}")
+  list(APPEND _markdown_job_environment "PATH=${_markdown_job_path}")
+endif()
+set_property(TEST test_markdownwebjobs PROPERTY ENVIRONMENT "${_markdown_job_environment}")
+add_custom_command(TARGET test_markdownwebjobs POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_markdownwebjobs>
+)
+
+# Exercise the real window and its presentation dependencies, not a mirrored
+# constructor or stubbed lifecycle. Reuse the app's source/link lists so this
+# end-to-end fixture follows additions without a second hand-maintained graph.
+get_target_property(_markdown_window_sources vnote SOURCES)
+get_target_property(_markdown_window_source_dir vnote SOURCE_DIR)
+set(_markdown_window_test_sources)
+foreach(_source IN LISTS _markdown_window_sources)
+  if(_source MATCHES "(^|/)main\\.cpp$" OR NOT _source MATCHES "\\.(cpp|c|h|qrc)$")
+    continue()
+  endif()
+  if(NOT IS_ABSOLUTE "${_source}")
+    set(_source "${_markdown_window_source_dir}/${_source}")
+  endif()
+  list(APPEND _markdown_window_test_sources "${_source}")
+  if(APPLE AND _source MATCHES "/application\\.cpp$")
+    set_source_files_properties("${_source}" PROPERTIES LANGUAGE OBJCXX)
+  endif()
+endforeach()
+get_target_property(_markdown_window_links vnote LINK_LIBRARIES)
+add_qt_test(test_markdownviewwindow_lazy
+  SOURCES test_markdownviewwindow_lazy.cpp ${_markdown_window_test_sources}
+  LINKS ${_markdown_window_links}
+)
+target_include_directories(test_markdownviewwindow_lazy PRIVATE
+  $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>
+)
+target_compile_definitions(test_markdownviewwindow_lazy PRIVATE
+  $<TARGET_PROPERTY:vnote,COMPILE_DEFINITIONS>
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+  VNOTE_TEST_MATHJAX_SCRIPT="${vnote_mathjax_test_SOURCE_DIR}/tex-svg.js"
+  VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
+)
+add_dependencies(test_markdownviewwindow_lazy VX_EXTRA_RESOURCE)
+set_tests_properties(test_markdownviewwindow_lazy PROPERTIES TIMEOUT 600)
+# Fullscreen promotion and real-window focus require the native platform backend.
+set(_markdown_window_platform offscreen)
+set(_markdown_window_plugin Qt6::QOffscreenIntegrationPlugin)
+if(WIN32)
+  set(_markdown_window_platform windows)
+  set(_markdown_window_plugin Qt6::QWindowsIntegrationPlugin)
+elseif(APPLE)
+  set(_markdown_window_platform cocoa)
+  set(_markdown_window_plugin Qt6::QCocoaIntegrationPlugin)
+endif()
+set_property(TEST test_markdownviewwindow_lazy PROPERTY ENVIRONMENT
+  "QT_QPA_PLATFORM=${_markdown_window_platform}"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_markdown_window_plugin}>"
+  "QTWEBENGINEPROCESS_PATH="
+  "QTWEBENGINE_RESOURCES_PATH="
+  "QTWEBENGINE_LOCALES_PATH="
+  "QTWEBENGINE_CHROMIUM_FLAGS="
+)
+if(WIN32)
+  set_property(TEST test_markdownviewwindow_lazy APPEND PROPERTY
+    ENVIRONMENT "PATH=${_markdown_job_path}")
+endif()
+add_custom_command(TARGET test_markdownviewwindow_lazy POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_markdownviewwindow_lazy>
 )

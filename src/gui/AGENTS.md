@@ -9,6 +9,7 @@
 | `ThemeService` | GUI-aware theme management — loading themes, applying stylesheets |
 | `ViewWindowFactory` | Registry pattern mapping file types to `ViewWindow2` creators; plugins register new viewers here. The built-in `"Pdf"` creator is **build-conditional**: it is registered only on **Qt 6.9+**, because the vendored pdf.js v6 bundle is ESM-only, needs Chromium 125+, and is served over the `vxpdf://` `QWebEngineUrlScheme` — see [`../data/extra/web/pdf.js/AGENTS.md`](../data/extra/web/pdf.js/AGENTS.md) |
 | `WebEngineProfileService` | Owns the shared named `QWebEngineProfile` **and** the `vxpdf://` scheme handler (`VxPdfSchemeHandler`), plus the PDF document token registry (`registerPdfDocument` / `unregisterPdfDocument`) |
+| `WebViewService` / `WebViewJobSession` | Generic asynchronous JS jobs on a lazy shared ordinary page or a caller-owned page; no Markdown dependency |
 | `MindMapImageLoader` | Scoped passive image transport shared by native editing and export; authorization stays with the controller |
 | `NavigationModeService` | Keyboard navigation mode service |
 | `ToolTipService` | One scoped startup attempt to post a localized daily usage tip |
@@ -85,6 +86,26 @@ for compatibility; do not change application identity or move caches to the App 
 `tests/gui/test_webengineprofileservice.cpp` guards construction-time directory isolation
 and persistent browser storage in its own Qt 6.9+ target with a CTest-owned runtime
 environment. Keep `test_vxpdfschemehandler` GUILESS; it must not initialize Chromium.
+
+## Shared JS execution
+
+`WebViewService` is registered once through `ServiceLocator`, after its borrowed profile and
+before the main window. It creates an ordinary hidden Qt WebEngine host only on the first job.
+The application supplies bootstrap code; the service has no Markdown, buffer or widget-module
+policy. Protected pages are consumer-owned and attach `WebViewJobSession` directly.
+
+A page has one QWebChannel and one JavaScript handshake. Register `vxJobs` on the reader's
+existing channel before loading; never replace its document bridge. Providers register named
+Promise-capable handlers through `webviewjobs.js`, then announce readiness. Loading HTML alone
+is not readiness. Transport IDs are strings and independent of editor-local block IDs.
+
+`cancel(id)` and `cancelOwner()` settle live callbacks once; destroyed owners receive none.
+Cancellation drops ownership but an active job retains its serial slot until JS cleanup finishes
+or the page is torn down. Reloads retire generations; `fail()` reports provider/bootstrap failure.
+Borrowed sessions never destroy the page/channel. Destroy owned pages before their profiles.
+
+Coverage: `tests/gui/test_webviewservice.cpp` runs real non-Markdown jobs without linking the
+Markdown implementation. Consumer policy: [controllers](../controllers/AGENTS.md#markdown-js-jobs).
 
 ## utils/
 

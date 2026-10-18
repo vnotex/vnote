@@ -525,7 +525,7 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx) {
   }
 }
 
-void PreviewHelper::handleGraphPreviewData(const MarkdownViewerAdapter::PreviewData &p_data) {
+void PreviewHelper::handleGraphPreviewData(const MarkdownWebJobController::PreviewData &p_data) {
   const bool perf = perfEnabled();
   const qint64 entryMs = perf ? perfNowMs() : 0;
 
@@ -761,7 +761,7 @@ void PreviewHelper::updateEditorInplacePreviewMathBlock() {
   }
 }
 
-void PreviewHelper::handleMathPreviewData(const MarkdownViewerAdapter::PreviewData &p_data) {
+void PreviewHelper::handleMathPreviewData(const MarkdownWebJobController::PreviewData &p_data) {
   if (p_data.m_timeStamp != m_mathBlockTimeStamp) {
     return;
   }

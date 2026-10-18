@@ -7,6 +7,7 @@ class MathRenderer extends VxWorker {
             && window.vxOptions.mathRenderer === 'mathjax' ? 'mathjax' : 'katex';
         this.initialization = null;
         this.rasterInitialization = null;
+        this.mathJaxPreviewScopes = null;
         this.katexId = 0;
         this.langs = ['mathjax'];
     }
@@ -172,6 +173,8 @@ class MathRenderer extends VxWorker {
         const wrapper = document.createElement('span');
         const style = window.getComputedStyle(this.vxcore.contentContainer);
         wrapper.style.display = 'inline-block';
+        // Preview geometry is intrinsic, even while a hidden editor is still narrow.
+        wrapper.style.width = 'max-content';
         wrapper.style.color = style.color;
         wrapper.style.font = style.font;
         wrapper.style.background = 'transparent';
@@ -247,8 +250,53 @@ class MathRenderer extends VxWorker {
         }).finally(() => host.remove());
     }
 
+    mathJaxPreviewContext(p_scope) {
+        const scoped = typeof p_scope === 'string' && p_scope.length > 0;
+        if (scoped && this.mathJaxPreviewScopes && this.mathJaxPreviewScopes.has(p_scope)) {
+            return this.mathJaxPreviewScopes.get(p_scope);
+        }
+
+        // texReset only resets equation tags, not declarations. Each editor
+        // generation owns its parser and conversion document; the reader's
+        // startup jax is never reset or used by an editor preview.
+        const startup = window.MathJax.startup;
+        const inputs = startup.getInputJax();
+        const input = inputs.find(jax => jax.name === 'TeX');
+        if (!input) {
+            throw new Error('MathJax TeX input unavailable');
+        }
+        const output = startup.getOutputJax();
+        const mathDocument = startup.handler.create(document,
+            Object.assign({}, window.MathJax.config.options, {
+                InputJax: inputs,
+                OutputJax: output
+            }));
+        const context = { input, output, document: mathDocument };
+        if (scoped) {
+            if (!this.mathJaxPreviewScopes) {
+                this.mathJaxPreviewScopes = new Map();
+            }
+            this.mathJaxPreviewScopes.set(p_scope, context);
+        }
+        return context;
+    }
+
+    releasePreviewScope(p_scope) {
+        if (this.mathJaxPreviewScopes) {
+            const context = this.mathJaxPreviewScopes.get(p_scope);
+            if (context) {
+                context.document.clear();
+                this.mathJaxPreviewScopes.delete(p_scope);
+                // MathJax's registry retains the latest parser's declaration maps.
+                // Replace those registry references with empty configured maps;
+                // live scopes and the reader retain their own map objects.
+                window.MathJax.startup.getInputJax();
+            }
+        }
+    }
+
     // Returns MathJax's SVG or an attached KaTeX wrapper owned by the preview caller.
-    renderText(p_container, p_text, p_callback) {
+    renderText(p_container, p_text, p_callback, p_scope = null) {
         if (window.vxOptions.protectedView) {
             p_callback(null);
             return;
@@ -260,9 +308,11 @@ class MathRenderer extends VxWorker {
                 return null;
             }
             if (this.renderer === 'mathjax') {
-                const options = window.MathJax.getMetricsFor(p_container, check.display);
-                window.MathJax.texReset();
-                return window.MathJax.tex2svg(check.text, options).firstElementChild;
+                const context = this.mathJaxPreviewContext(p_scope);
+                const options = context.output.getMetricsFor(p_container, check.display);
+                context.input.reset();
+                return context.document.convert(check.text,
+                    Object.assign({}, options, { format: context.input.name })).firstElementChild;
             }
             wrapper = this.createKatexWrapper();
             p_container.appendChild(wrapper);

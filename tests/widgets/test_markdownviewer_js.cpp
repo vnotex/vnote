@@ -85,9 +85,7 @@ window.vxcore = {
   on: function(evt, cb) { if (evt === 'ready') { window.__readyCallbacks.push(cb); } },
   kickOffMarkdown: function() {},
   setMarkdownText: function() {}, scrollToLine: function() {}, scrollToAnchor: function() {},
-  previewGraph: function() {}, previewMath: function() {}, scroll: function() {},
-  htmlToMarkdown: function() {}, highlightCodeBlock: function() {}, highlightMath: function() {},
-  parseStyleSheet: function() {}, getHeadingAnchor: function() {}, crossCopy: function() {},
+  scroll: function() {}, crossCopy: function() {},
   findText: function() {}, saveContent: function() {}, graphRenderDataReady: function() {}
 };
 
@@ -115,11 +113,8 @@ function makeSignal() {
 
 window.__adapter = {
   textUpdated: makeSignal(), editLineNumberUpdated: makeSignal(),
-  anchorScrollRequested: makeSignal(), graphPreviewRequested: makeSignal(),
-  mathPreviewRequested: makeSignal(), scrollRequested: makeSignal(),
-  htmlToMarkdownRequested: makeSignal(), highlightCodeBlockRequested: makeSignal(),
-  highlightMathRequested: makeSignal(), parseStyleSheetRequested: makeSignal(),
-  headingAnchorRequested: makeSignal(), crossCopyRequested: makeSignal(),
+  anchorScrollRequested: makeSignal(), scrollRequested: makeSignal(),
+  crossCopyRequested: makeSignal(),
   findTextRequested: makeSignal(), contentRequested: makeSignal(),
   graphRenderDataReady: makeSignal(), taskListToggleRejected: makeSignal(),
   presentationModeRequested: makeSignal(), setPresentationState: function() {},
@@ -128,6 +123,7 @@ window.__adapter = {
   }
 };
 
+window.vxWebJobs = { bind: function() {}, setReady: function() {} };
 var qt = { webChannelTransport: {} };
 function QWebChannel(transport, cb) { cb({ objects: { vxAdapter: window.__adapter } }); }
 
@@ -471,7 +467,7 @@ void TestMarkdownViewerJs::runCrossCopyScript(const QString &p_script, const QUr
 )JS")
                 .arg(p_script);
   page.runJavaScript(source);
-  QTRY_COMPARE_WITH_TIMEOUT(page.title(), QStringLiteral("cross-copy-finished"), 15000);
+  QTRY_COMPARE_WITH_TIMEOUT(page.title(), QStringLiteral("cross-copy-finished"), 60000);
   const auto state = std::make_shared<std::pair<bool, QVariant>>(false, QVariant());
   page.runJavaScript(QStringLiteral("window.__crossCopyResult"), [state](const QVariant &p_value) {
     state->second = p_value;

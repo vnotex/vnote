@@ -277,7 +277,7 @@ class Mermaid extends GraphRenderer {
         let graphSvg = null;
         try {
             const { svg } = await mermaid.render('vx-mermaid-graph-stand-alone-' + p_idx,
-                                                 p_text);
+                                                 p_text, p_container);
             graphSvg = svg;
         } catch (p_err) {
             console.error('failed to render Mermaid', p_err);

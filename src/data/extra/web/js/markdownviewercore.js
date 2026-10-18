@@ -25,8 +25,6 @@ class MarkdownViewerCore extends VXCore {
         this.navigationTargets = [];
         this.navigationLinkDestinations = new WeakMap();
 
-        this.turndown = null;
-
         // Dict mapping from {id, index} to callback for renderGraph().
         this.renderGraphCallbacks = {}
     }
@@ -43,8 +41,6 @@ class MarkdownViewerCore extends VXCore {
 
         this.nodeLineMapper = new NodeLineMapper(this, this.contentContainer);
         this.setHeadingFoldingEnabled(window.vxOptions.headingFoldingEnabled);
-
-        this.graphPreviewer = new GraphPreviewer(this, this.inplacePreviewContainer);
 
         this.crossCopyer = new CrossCopy(this);
 
@@ -349,40 +345,6 @@ class MarkdownViewerCore extends VXCore {
         window.vxMarkdownAdapter.setTopLineNumber(p_lineNumber);
     }
 
-    previewGraph(p_id, p_timeStamp, p_lang, p_text, p_scale = 1) {
-        if (this.graphPreviewer) {
-            this.graphPreviewer.previewGraph(p_id, p_timeStamp, p_lang, p_text, p_scale);
-        }
-    }
-
-    previewMath(p_id, p_timeStamp, p_text, p_scale = 1) {
-        if (this.graphPreviewer) {
-            this.graphPreviewer.previewMath(p_id, p_timeStamp, p_text, p_scale);
-        }
-    }
-
-    setGraphPreviewData(p_data) {
-        window.vxMarkdownAdapter.setGraphPreviewData(p_data.id,
-                                                     p_data.timeStamp,
-                                                     p_data.format,
-                                                     p_data.data,
-                                                     p_data.base64,
-                                                     p_data.needScale,
-                                                     p_data.logicalWidth || 0,
-                                                     p_data.logicalHeight || 0);
-    }
-
-    setMathPreviewData(p_data) {
-        window.vxMarkdownAdapter.setMathPreviewData(p_data.id,
-                                                    p_data.timeStamp,
-                                                    p_data.format,
-                                                    p_data.data,
-                                                    p_data.base64,
-                                                    p_data.needScale,
-                                                    p_data.logicalWidth || 0,
-                                                    p_data.logicalHeight || 0);
-    }
-
     setHeadings(p_headings, p_hasSectionNumber) {
         window.vxMarkdownAdapter.setHeadings(p_headings, p_hasSectionNumber);
     }
@@ -401,88 +363,6 @@ class MarkdownViewerCore extends VXCore {
 
     zoom(p_zoomIn) {
         window.vxMarkdownAdapter.zoom(p_zoomIn);
-    }
-
-    htmlToMarkdown(p_id, p_timeStamp, p_html) {
-        if (!this.turndown) {
-            this.turndown = new TurndownConverter(this);
-        }
-
-        let markdown = this.turndown.turndown(p_html);
-        window.vxMarkdownAdapter.setMarkdownFromHtml(p_id, p_timeStamp, markdown);
-    }
-
-    highlightCodeBlock(p_idx, p_timeStamp, p_text) {
-        let match = /^```[^\S\n]*(\S+)?\s*\n([\s\S]+)\n```\s*$/.exec(p_text);
-        if (!match || !match[1] || !match[2]) {
-            window.vxMarkdownAdapter.setCodeBlockHighlightHtml(p_idx, p_timeStamp, '');
-            return;
-        }
-
-        let lang = match[1];
-        let body = match[2];
-
-        if (Prism && Prism.languages[lang]) {
-             let html = Prism.highlight(body, Prism.languages[lang], lang);
-            window.vxMarkdownAdapter.setCodeBlockHighlightHtml(p_idx, p_timeStamp, html);
-        } else {
-            window.vxMarkdownAdapter.setCodeBlockHighlightHtml(p_idx, p_timeStamp, '');
-        }
-    }
-
-    highlightMath(p_idx, p_timeStamp, p_text) {
-        // Highlight the display math source line by line, so that no Prism token
-        // span ever crosses a newline. Prism's LaTeX grammar wraps whole
-        // dollar-delimited formulas and \begin{...}\end{...} environments in a
-        // single (multi-line) token; if we highlighted the whole block at once,
-        // such a span would be split into malformed fragments by the per-line
-        // HTML matcher on the C++ side. Highlighting each line on its own keeps
-        // every returned fragment self-contained at the cost of cross-line
-        // grammar context, which is acceptable for source-level highlighting.
-        if (!(Prism && Prism.languages.latex)) {
-            window.vxMarkdownAdapter.setMathHighlightHtml(p_idx, p_timeStamp, '');
-            return;
-        }
-
-        let htmlLines = p_text.split('\n').map(function(line) {
-            return Prism.highlight(line, Prism.languages.latex, 'latex');
-        });
-        window.vxMarkdownAdapter.setMathHighlightHtml(p_idx, p_timeStamp, htmlLines.join('\n'));
-    }
-
-    parseStyleSheet(p_id, p_styleSheet) {
-        let doc = document.implementation.createHTMLDocument('');
-        let styleEle = document.createElement('style');
-        styleEle.textContent = p_styleSheet;
-        doc.body.appendChild(styleEle);
-
-        let styles = [];
-        for (let i = 0; i < styleEle.sheet.cssRules.length; ++i) {
-            let rule = styleEle.sheet.cssRules[i];
-            if (rule.type != CSSRule.STYLE_RULE) {
-                continue;
-            }
-
-            styles.push({
-                selector: rule.selectorText,
-                color: rule.style.color,
-                backgroundColor: rule.style.backgroundColor,
-                fontWeight: rule.style.fontWeight,
-                fontStyle: rule.style.fontStyle
-            });
-        }
-
-        window.vxMarkdownAdapter.setStyleSheetStyles(p_id, styles);
-    }
-
-    // Resolve the anchor id of the heading at 0-based source line @p_lineNumber
-    // of @p_text via the MarkdownIt worker, which owns the live markdown-it
-    // instance.
-    getHeadingAnchor(p_id, p_text, p_lineNumber) {
-        let worker = this.getWorker('markdownit');
-        let result = worker ? worker.getHeadingAnchor(p_text, p_lineNumber)
-                            : { found: false, anchor: '' };
-        window.vxMarkdownAdapter.setHeadingAnchor(p_id, result.found, result.anchor);
     }
 
     setCrossCopyTargets(p_targets) {

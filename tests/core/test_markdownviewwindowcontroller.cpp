@@ -19,29 +19,8 @@ class TestMarkdownViewWindowController : public QObject {
 private slots:
   // ============ computeModeTransition ============
 
-  // Same mode -> all false (no-op).
-  void testModeTransition_sameModeSameRead();
-  void testModeTransition_sameModeSameEdit();
-
-  // Invalid->Read transitions.
-  void testModeTransition_invalidToRead_noViewer();
-  void testModeTransition_invalidToRead_noViewer_noSync();
-  void testModeTransition_invalidToRead_hasViewer();
-
-  // Invalid->Edit transitions.
-  void testModeTransition_invalidToEdit_noEditorNoViewer();
-  void testModeTransition_invalidToEdit_noEditorHasViewer();
-  void testModeTransition_invalidToEdit_noEditor_noSync();
-  void testModeTransition_invalidToEdit_hasEditor();
-
-  // Read->Edit transitions.
-  void testModeTransition_readToEdit_noEditor_noViewer();
-  void testModeTransition_readToEdit_noEditor_hasViewer();
-  void testModeTransition_readToEdit_hasEditor();
-
-  // Edit->Read transitions.
-  void testModeTransition_editToRead_hasViewer();
-  void testModeTransition_editToRead_noViewer();
+  void testModeTransition_data();
+  void testModeTransition();
 
   // ============ previewSyncIntervalMs ============
 
@@ -88,194 +67,93 @@ private:
 
 // ============ computeModeTransition ============
 
-// --- Same mode -> no-op ---
-
-void TestMarkdownViewWindowController::testModeTransition_sameModeSameRead() {
-  auto t = MarkdownViewWindowController::computeModeTransition(c_readMode, c_readMode, false, false,
-                                                               true);
-
-  QCOMPARE(t.needSetupEditor, false);
-  QCOMPARE(t.needSetupViewer, false);
-  QCOMPARE(t.syncEditorFromBuffer, false);
-  QCOMPARE(t.syncViewerFromBuffer, false);
-  QCOMPARE(t.syncPositionFromPrevMode, false);
-  QCOMPARE(t.restoreEditViewMode, false);
-  QCOMPARE(t.syncBufferToActiveView, false);
-  QCOMPARE(t.adoptInitialRevision, false);
+namespace {
+enum TransitionFlag {
+  SetupEditor = 1,
+  SetupViewer = 2,
+  SyncEditor = 4,
+  SyncViewer = 8,
+  SyncPosition = 16,
+  RestoreEditor = 32,
+  SyncActive = 64,
+  AdoptRevision = 128
+};
 }
 
-void TestMarkdownViewWindowController::testModeTransition_sameModeSameEdit() {
-  auto t =
-      MarkdownViewWindowController::computeModeTransition(c_editMode, c_editMode, true, true, true);
-
-  QCOMPARE(t.needSetupEditor, false);
-  QCOMPARE(t.needSetupViewer, false);
-  QCOMPARE(t.syncEditorFromBuffer, false);
-  QCOMPARE(t.syncViewerFromBuffer, false);
-  QCOMPARE(t.syncPositionFromPrevMode, false);
-  QCOMPARE(t.restoreEditViewMode, false);
-  QCOMPARE(t.syncBufferToActiveView, false);
-  QCOMPARE(t.adoptInitialRevision, false);
+void TestMarkdownViewWindowController::testModeTransition_data() {
+  QTest::addColumn<int>("current");
+  QTest::addColumn<int>("target");
+  QTest::addColumn<int>("editView");
+  QTest::addColumn<bool>("editor");
+  QTest::addColumn<bool>("viewer");
+  QTest::addColumn<bool>("sync");
+  QTest::addColumn<int>("expected");
+  using EditView = MarkdownEditorConfig::EditViewMode;
+  for (const int current : {c_invalidMode, c_readMode, c_editMode}) {
+    for (const int target : {c_invalidMode, c_readMode, c_editMode}) {
+      for (const auto editView : {EditView::EditOnly, EditView::EditPreview}) {
+        for (const bool editor : {false, true}) {
+          for (const bool viewer : {false, true}) {
+            for (const bool sync : {false, true}) {
+              int expected = 0;
+              if (current != target && target != c_invalidMode) {
+                const bool readerNeeded = target == c_readMode || editView == EditView::EditPreview;
+                if (readerNeeded && !viewer) {
+                  expected |= SetupViewer;
+                  if (sync)
+                    expected |= SyncViewer;
+                }
+                if (target == c_editMode) {
+                  expected |= editor ? RestoreEditor : SetupEditor;
+                  if (sync && !editor)
+                    expected |= SyncEditor;
+                }
+                if (sync) {
+                  expected |= SyncActive;
+                  if (current != c_invalidMode)
+                    expected |= SyncPosition;
+                  if (current == c_invalidMode && (expected & (SyncEditor | SyncViewer))) {
+                    expected |= AdoptRevision;
+                  }
+                }
+              }
+              const auto name = QStringLiteral("%1-%2-layout%3-editor%4-viewer%5-sync%6")
+                                    .arg(current)
+                                    .arg(target)
+                                    .arg(static_cast<int>(editView))
+                                    .arg(editor)
+                                    .arg(viewer)
+                                    .arg(sync)
+                                    .toLatin1();
+              QTest::newRow(name.constData()) << current << target << static_cast<int>(editView)
+                                              << editor << viewer << sync << expected;
+            }
+          }
+        }
+      }
+    }
+  }
 }
 
-// --- Invalid->Read ---
-
-void TestMarkdownViewWindowController::testModeTransition_invalidToRead_noViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_readMode, false,
-                                                               false, true);
-
-  QCOMPARE(t.needSetupViewer, true);
-  QCOMPARE(t.syncViewerFromBuffer, true);
-  QCOMPARE(t.syncBufferToActiveView, true);
-  // No previous valid mode, so no position sync.
-  QCOMPARE(t.syncPositionFromPrevMode, false);
-  QCOMPARE(t.needSetupEditor, false);
-  QCOMPARE(t.syncEditorFromBuffer, false);
-  QCOMPARE(t.restoreEditViewMode, false);
-  // Initial transition with a buffer read: adopt the post-load revision.
-  QCOMPARE(t.adoptInitialRevision, true);
-}
-
-void TestMarkdownViewWindowController::testModeTransition_invalidToRead_noViewer_noSync() {
-  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_readMode, false,
-                                                               false, false);
-
-  QCOMPARE(t.needSetupViewer, true);
-  // syncBuffer=false -> no content sync from buffer.
-  QCOMPARE(t.syncViewerFromBuffer, false);
-  QCOMPARE(t.syncBufferToActiveView, false);
-  QCOMPARE(t.syncPositionFromPrevMode, false);
-  // No buffer read happened, so nothing bumped the revision.
-  QCOMPARE(t.adoptInitialRevision, false);
-}
-
-void TestMarkdownViewWindowController::testModeTransition_invalidToRead_hasViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_readMode, false,
-                                                               true, true);
-
-  // Viewer already exists, no setup needed.
-  QCOMPARE(t.needSetupViewer, false);
-  QCOMPARE(t.syncViewerFromBuffer, false);
-  QCOMPARE(t.syncBufferToActiveView, true);
-  QCOMPARE(t.syncPositionFromPrevMode, false);
-}
-
-// --- Invalid->Edit ---
-
-void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_noEditorNoViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_editMode, false,
-                                                               false, true);
-
-  QCOMPARE(t.needSetupViewer, true);
-  QCOMPARE(t.needSetupEditor, true);
-  QCOMPARE(t.syncEditorFromBuffer, true);
-  QCOMPARE(t.syncBufferToActiveView, true);
-  // No previous valid mode.
-  QCOMPARE(t.syncPositionFromPrevMode, false);
-  QCOMPARE(t.restoreEditViewMode, false);
-  // Viewer is newly created -> sync its template so Read mode works later.
-  QCOMPARE(t.syncViewerFromBuffer, true);
-  QCOMPARE(t.adoptInitialRevision, true);
-}
-
-void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_noEditorHasViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_editMode, false,
-                                                               true, true);
-
-  // Viewer already exists -> no viewer setup.
-  QCOMPARE(t.needSetupViewer, false);
-  QCOMPARE(t.needSetupEditor, true);
-  QCOMPARE(t.syncEditorFromBuffer, true);
-  QCOMPARE(t.syncBufferToActiveView, true);
-  QCOMPARE(t.syncPositionFromPrevMode, false);
-}
-
-void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_noEditor_noSync() {
-  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_editMode, false,
-                                                               false, false);
-
-  QCOMPARE(t.needSetupViewer, true);
-  QCOMPARE(t.needSetupEditor, true);
-  // syncBuffer=false -> no content sync.
-  QCOMPARE(t.syncEditorFromBuffer, false);
-  QCOMPARE(t.syncBufferToActiveView, false);
-}
-
-void TestMarkdownViewWindowController::testModeTransition_invalidToEdit_hasEditor() {
-  auto t = MarkdownViewWindowController::computeModeTransition(c_invalidMode, c_editMode, true,
-                                                               false, true);
-
-  // Editor exists -> restore, not setup.
-  QCOMPARE(t.needSetupEditor, false);
-  QCOMPARE(t.restoreEditViewMode, true);
-  QCOMPARE(t.syncBufferToActiveView, true);
-  QCOMPARE(t.syncPositionFromPrevMode, false);
-}
-
-// --- Read->Edit ---
-
-void TestMarkdownViewWindowController::testModeTransition_readToEdit_noEditor_noViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(c_readMode, c_editMode, false, false,
-                                                               true);
-
-  QCOMPARE(t.needSetupViewer, true);
-  QCOMPARE(t.needSetupEditor, true);
-  QCOMPARE(t.syncEditorFromBuffer, true);
-  QCOMPARE(t.syncBufferToActiveView, true);
-  // Coming from Read -> sync position.
-  QCOMPARE(t.syncPositionFromPrevMode, true);
-  QCOMPARE(t.restoreEditViewMode, false);
-  // Viewer is newly created -> sync its template so Read mode works later.
-  QCOMPARE(t.syncViewerFromBuffer, true);
-  // Not the initial transition: a revision change here is a genuine external
-  // change and must stay detectable.
-  QCOMPARE(t.adoptInitialRevision, false);
-}
-
-void TestMarkdownViewWindowController::testModeTransition_readToEdit_noEditor_hasViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(c_readMode, c_editMode, false, true,
-                                                               true);
-
-  QCOMPARE(t.needSetupViewer, false);
-  QCOMPARE(t.needSetupEditor, true);
-  QCOMPARE(t.syncEditorFromBuffer, true);
-  QCOMPARE(t.syncPositionFromPrevMode, true);
-}
-
-void TestMarkdownViewWindowController::testModeTransition_readToEdit_hasEditor() {
-  auto t =
-      MarkdownViewWindowController::computeModeTransition(c_readMode, c_editMode, true, true, true);
-
-  QCOMPARE(t.needSetupEditor, false);
-  QCOMPARE(t.restoreEditViewMode, true);
-  QCOMPARE(t.syncPositionFromPrevMode, true);
-  QCOMPARE(t.syncBufferToActiveView, true);
-}
-
-// --- Edit->Read ---
-
-void TestMarkdownViewWindowController::testModeTransition_editToRead_hasViewer() {
-  auto t =
-      MarkdownViewWindowController::computeModeTransition(c_editMode, c_readMode, true, true, true);
-
-  QCOMPARE(t.needSetupViewer, false);
-  QCOMPARE(t.syncPositionFromPrevMode, true);
-  QCOMPARE(t.syncBufferToActiveView, true);
-  QCOMPARE(t.needSetupEditor, false);
-  QCOMPARE(t.restoreEditViewMode, false);
-}
-
-void TestMarkdownViewWindowController::testModeTransition_editToRead_noViewer() {
-  auto t = MarkdownViewWindowController::computeModeTransition(c_editMode, c_readMode, true, false,
-                                                               true);
-
-  QCOMPARE(t.needSetupViewer, true);
-  QCOMPARE(t.syncViewerFromBuffer, true);
-  QCOMPARE(t.syncPositionFromPrevMode, true);
-  QCOMPARE(t.syncBufferToActiveView, true);
-  // Not the initial transition: a revision change here is a genuine external
-  // change and must stay detectable.
-  QCOMPARE(t.adoptInitialRevision, false);
+void TestMarkdownViewWindowController::testModeTransition() {
+  QFETCH(int, current);
+  QFETCH(int, target);
+  QFETCH(int, editView);
+  QFETCH(bool, editor);
+  QFETCH(bool, viewer);
+  QFETCH(bool, sync);
+  QFETCH(int, expected);
+  const auto result = MarkdownViewWindowController::computeModeTransition(
+      current, target, static_cast<MarkdownEditorConfig::EditViewMode>(editView), editor, viewer,
+      sync);
+  QCOMPARE(result.needSetupEditor, bool(expected & SetupEditor));
+  QCOMPARE(result.needSetupViewer, bool(expected & SetupViewer));
+  QCOMPARE(result.syncEditorFromBuffer, bool(expected & SyncEditor));
+  QCOMPARE(result.syncViewerFromBuffer, bool(expected & SyncViewer));
+  QCOMPARE(result.syncPositionFromPrevMode, bool(expected & SyncPosition));
+  QCOMPARE(result.restoreEditViewMode, bool(expected & RestoreEditor));
+  QCOMPARE(result.syncBufferToActiveView, bool(expected & SyncActive));
+  QCOMPARE(result.adoptInitialRevision, bool(expected & AdoptRevision));
 }
 
 // ============ previewSyncIntervalMs ============

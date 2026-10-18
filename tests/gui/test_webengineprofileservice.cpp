@@ -9,12 +9,14 @@
 #include <QString>
 #include <QTemporaryDir>
 #include <QUuid>
+#include <QWebChannel>
 #include <QWebEnginePage>
 
 #include <QHostAddress>
 #include <QImage>
 #include <QJsonArray>
 #include <QJsonDocument>
+#include <QJsonObject>
 #include <QScopeGuard>
 #include <QTcpServer>
 #include <QWebEngineProfile>
@@ -33,6 +35,8 @@
 #include <utility>
 
 #include <gui/services/webengineprofileservice.h>
+#include <gui/services/webviewjobs.h>
+#include <widgets/editors/markdownvieweradapter.h>
 
 using namespace vnotex;
 
@@ -209,6 +213,13 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
   QVERIFY(protectedPage.profile);
   std::unique_ptr<QWebEngineProfile> profile(protectedPage.profile);
   QWebEnginePage page(profile.get());
+  QWebChannel channel;
+  MarkdownViewerAdapter adapter;
+  adapter.setProtectedView(true);
+  channel.registerObject(QStringLiteral("vxAdapter"), &adapter);
+  page.setWebChannel(&channel);
+  WebViewJobSession jobs(&page, &channel);
+  QSignalSpy rendered(&adapter, &MarkdownViewerAdapter::workFinished);
   // Revocation must precede page destruction, then profile destruction, buffer
   // close and finally context destruction, including on an assertion failure.
   const auto revoke = qScopeGuard([&]() { service.revokeProtectedProfile(profile.get()); });
@@ -216,29 +227,13 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
   auto html = templates.protectedMarkdownViewerTemplate(protectedPage.token, protectedPage.nonce,
                                                         themeName, darkTheme, resources);
   QVERIFY(!html.isEmpty());
-  // The generated options precede the first bundled script. Supply only the
-  // bridge notifications needed by the real viewer; no worker, font, loader or
-  // request policy is replaced. Deliberately conflict with the protected renderer.
+  // Deliberately conflict with the protected renderer. The actual document
+  // adapter and generic jobs share the page's single native/JS channel.
   const auto scriptsStart =
       html.indexOf(QStringLiteral("<script nonce=\"%1\" src=").arg(protectedPage.nonce));
   QVERIFY(scriptsStart >= 0);
   const auto bridge = QStringLiteral(R"JS(<script nonce="%1">
     window.vxOptions.mathRenderer = 'mathjax';
-    window.qt = { webChannelTransport: { send() {} } };
-    window.__renderCount = 0;
-    window.__mathPreviews = [];
-    window.vxMarkdownAdapter = {
-      setReady() {},
-      setWorkFinished() { ++window.__renderCount; },
-      setHeadings() {},
-      setCrossCopyTargets() {},
-      setCurrentHeadingAnchor() {},
-      setTopLineNumber() {},
-      setPresentationState() {},
-      setMathPreviewData(id, stamp, format, data, base64) {
-        window.__mathPreviews.push({ format, data, base64 });
-      }
-    };
   </script>
 )JS");
   html.insert(scriptsStart, bridge.arg(protectedPage.nonce));
@@ -247,16 +242,11 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
   page.load(protectedPage.url);
   QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 30000);
   QVERIFY(loaded.at(0).at(0).toBool());
-  QVERIFY(evaluateJavaScript(page, QStringLiteral("window.vxcore.initialized")).toBool());
+  QTRY_VERIFY_WITH_TIMEOUT(jobs.isReady() && adapter.isReady(), 10000);
 
-  const auto render = [&](const QString &p_text) {
-    const auto text =
-        QString::fromUtf8(QJsonDocument(QJsonArray{p_text}).toJson(QJsonDocument::Compact));
-    page.runJavaScript(QStringLiteral("window.vxcore.setMarkdownText(%1[0])").arg(text));
-  };
+  const auto render = [&](const QString &p_text) { adapter.setText(p_text); };
   render(note.decode(note.peekContentRaw()));
-  QTRY_COMPARE_WITH_TIMEOUT(
-      evaluateJavaScript(page, QStringLiteral("window.__renderCount")).toInt(), 1, 15000);
+  QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 15000);
   const auto initial = evaluateJavaScript(page, QStringLiteral(R"JS((() => {
     const root = document.getElementById('vx-content');
     const maths = Array.from(root.querySelectorAll('.katex'));
@@ -305,8 +295,7 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
   const QByteArray secondText("Updated $e^{i\\pi}+1=0$.\n");
   QVERIFY(note.setContentRaw(secondText));
   render(note.decode(note.peekContentRaw()));
-  QTRY_COMPARE_WITH_TIMEOUT(
-      evaluateJavaScript(page, QStringLiteral("window.__renderCount")).toInt(), 2, 10000);
+  QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 2, 10000);
   QVERIFY(evaluateJavaScript(page, QStringLiteral(R"JS((() => {
     const root = document.getElementById('vx-content');
     const formulas = root.querySelectorAll('annotation[encoding="application/x-tex"]');
@@ -324,8 +313,7 @@ $\includegraphics{https://protected.invalid/image.png}$
 
 $\htmlClass{protected-injected}{unsafe}$
 )MD"));
-  QTRY_COMPARE_WITH_TIMEOUT(
-      evaluateJavaScript(page, QStringLiteral("window.__renderCount")).toInt(), 3, 10000);
+  QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 3, 10000);
   QVERIFY(evaluateJavaScript(page, QStringLiteral(R"JS((() => {
     const root = document.getElementById('vx-content');
     return root.querySelectorAll('.katex').length === 3 &&
@@ -380,21 +368,49 @@ $\htmlClass{protected-injected}{unsafe}$
     const root = document.getElementById('vx-inplace-preview');
     let blocked = false;
     window.vxcore.getWorker('math').renderText(root, '$x^2$', node => { blocked = node === null; });
-    window.vxcore.previewMath(1, 1, '$x^2$');
-    window.vxcore.previewMath(2, 2, '$\\frac{a}{b}$');
     return blocked && !root.querySelector('.katex, svg');
   })())JS"))
               .toBool());
-  const auto previews = evaluateJavaScript(page, QStringLiteral("window.__mathPreviews")).toList();
-  QCOMPARE(previews.size(), 2);
-  const auto firstPreview = previews.at(0).toMap();
-  const auto secondPreview = previews.at(1).toMap();
+  const auto previews = std::make_shared<QVector<WebViewJobResult>>();
+  const auto completed = [previews](const WebViewJobResult &result) { previews->append(result); };
+  jobs.submit(QStringLiteral("markdown.previewMath"),
+              {{QStringLiteral("source"), QStringLiteral("$x^2$")}}, this, completed);
+  jobs.submit(QStringLiteral("markdown.previewMath"),
+              {{QStringLiteral("source"), QStringLiteral("$\\frac{a}{b}$")}}, this, completed);
+  jobs.submit(QStringLiteral("markdown.previewGraph"),
+              {{QStringLiteral("source"), QStringLiteral("@startuml\nA -> B\n@enduml")},
+               {QStringLiteral("language"), QStringLiteral("plantuml")}},
+              this, completed);
+  jobs.submit(QStringLiteral("markdown.previewGraph"),
+              {{QStringLiteral("source"), QStringLiteral("$x^2$")},
+               {QStringLiteral("language"), QStringLiteral("mathjax")}},
+              this, completed);
+  QTRY_COMPARE_WITH_TIMEOUT(previews->size(), 4, 10000);
+  QCOMPARE(previews->at(0).status, WebViewJobResult::Status::Success);
+  QCOMPARE(previews->at(1).status, WebViewJobResult::Status::Success);
+  const auto firstPreview = previews->at(0).value.toObject().toVariantMap();
+  const auto secondPreview = previews->at(1).value.toObject().toVariantMap();
   QCOMPARE(firstPreview.value(QStringLiteral("format")).toString(), QStringLiteral("png"));
   QVERIFY(firstPreview.value(QStringLiteral("base64")).toBool());
   const auto blockedImage =
       QByteArray::fromBase64(firstPreview.value(QStringLiteral("data")).toByteArray());
   QVERIFY(!QImage::fromData(blockedImage, "PNG").isNull());
   QCOMPARE(firstPreview.value(QStringLiteral("data")), secondPreview.value(QStringLiteral("data")));
+  for (int i = 2; i < previews->size(); ++i) {
+    QCOMPARE(previews->at(i).status, WebViewJobResult::Status::Success);
+    const auto result = previews->at(i).value.toObject();
+    QCOMPARE(result.value(QStringLiteral("format")).toString(), QStringLiteral("png"));
+    QVERIFY(!QImage::fromData(
+                 QByteArray::fromBase64(result.value(QStringLiteral("data")).toString().toLatin1()),
+                 "PNG")
+                 .isNull());
+  }
+  QCOMPARE(
+      evaluateJavaScript(
+          page, QStringLiteral("document.getElementById('vx-inplace-preview').childElementCount"))
+          .toInt(),
+      0);
+  QCOMPARE(externalConnections.count(), 0);
 
   // Theme changes need a fresh generation, never a republish under pending jobs.
   QVERIFY(!service.setProtectedDocument(profile.get(), html, resources));
@@ -408,6 +424,13 @@ $\htmlClass{protected-injected}{unsafe}$
   QVERIFY(replacement.profile);
   std::unique_ptr<QWebEngineProfile> replacementProfile(replacement.profile);
   QWebEnginePage replacementPage(replacementProfile.get());
+  QWebChannel replacementChannel;
+  MarkdownViewerAdapter replacementAdapter;
+  replacementAdapter.setProtectedView(true);
+  replacementChannel.registerObject(QStringLiteral("vxAdapter"), &replacementAdapter);
+  replacementPage.setWebChannel(&replacementChannel);
+  WebViewJobSession replacementJobs(&replacementPage, &replacementChannel);
+  QSignalSpy replacementRendered(&replacementAdapter, &MarkdownViewerAdapter::workFinished);
   const auto revokeReplacement =
       qScopeGuard([&]() { service.revokeProtectedProfile(replacementProfile.get()); });
   auto replacementHtml = templates.protectedMarkdownViewerTemplate(
@@ -422,10 +445,9 @@ $\htmlClass{protected-injected}{unsafe}$
   replacementPage.load(replacement.url);
   QTRY_COMPARE_WITH_TIMEOUT(replacementLoaded.count(), 1, 30000);
   QVERIFY(replacementLoaded.at(0).at(0).toBool());
-  replacementPage.runJavaScript(QStringLiteral("vxcore.setMarkdownText('Updated $x^2$')"));
-  QTRY_COMPARE_WITH_TIMEOUT(
-      evaluateJavaScript(replacementPage, QStringLiteral("window.__renderCount")).toInt(), 1,
-      15000);
+  QTRY_VERIFY_WITH_TIMEOUT(replacementJobs.isReady() && replacementAdapter.isReady(), 10000);
+  replacementAdapter.setText(QStringLiteral("Updated $x^2$"));
+  QTRY_COMPARE_WITH_TIMEOUT(replacementRendered.count(), 1, 15000);
   QCOMPARE(evaluateJavaScript(replacementPage,
                               QStringLiteral("getComputedStyle(document.body).backgroundColor"))
                .toString(),

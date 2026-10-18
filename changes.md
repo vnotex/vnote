@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Delay Markdown read viewers in edit-only mode; share editor JS work across tabs and prefer each tab's ready reader, with isolated protected-note and MathJax contexts
 * Allow the full Markdown viewer browser suite to finish on slower CI runners without changing per-step timeouts
 * Translate mind map Paste and all emoji picker categories in Simplified Chinese, Japanese and Korean
 * Revise Simplified Chinese interface wording for more natural phrasing and consistent search, editor, snippet, workspace and split terminology

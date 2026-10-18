@@ -78,6 +78,28 @@ The external process alone owns signed full-package authentication, preservation
 relaunch. Protected installations fail with manual-update guidance, not UAC/ACL changes.
 [../../docs/update-signing.md](../../docs/update-signing.md) owns that contract.
 
+## Markdown JS Jobs
+
+`MarkdownWebJobController` is a per-editor QObject receiving `ServiceLocator` and the buffer.
+It owns typed preview, code/math highlighting, stylesheet, HTML-to-Markdown and heading-anchor
+requests. Views only emit intents, provide geometry/session observations, and display results.
+The existing document models remain authoritative; the controller never constructs a QWidget.
+
+For each request, prefer the authorized current ready reader session. Otherwise ordinary notes
+use `WebViewService`; protected notes request a per-view isolated host through a signal. They
+must never fall through to the ordinary helper. In-flight work remains on its original endpoint.
+Generation cancellation rejects stale results; explicit actions receive failures, not empty success.
+
+MathJax preview parsers are isolated per editor scope, preserving that editor's declarations
+without mutating another editor or the reader. Cancel work before releasing scopes on live
+endpoints; the cleanup callback must not capture a destroyed controller. Announce readiness only
+when the effective endpoint/generation changes, so the view can replay renderer-dependent caches.
+
+`MarkdownViewWindowController::computeModeTransition` receives the desired EditViewMode:
+EditOnly never requests a missing reader; Read/EditPreview do. Global editor-config invalidation
+runs before per-window refresh. Coverage: `test_markdownwebjobcontroller` and
+`test_markdownviewwindowcontroller`; native lifecycle/rendering coverage lives under tests/widgets.
+
 ## Controller Inventory
 
 | Controller | Purpose |
@@ -98,6 +120,7 @@ relaunch. Protected installations fail with manual-update guidance, not UAC/ACL 
 | `AttachmentController` | Attachment management |
 | `MarkdownEditorController` | Markdown editing logic |
 | `MarkdownViewWindowController` | Markdown view window logic |
+| `MarkdownWebJobController` | Editor JS job routing, generations, typed results and protection policy |
 | `TextViewWindowController` | Plain text editing |
 | `PdfViewWindowController` | PDF viewing |
 | `MindMapViewWindowController` | Mind map viewing |

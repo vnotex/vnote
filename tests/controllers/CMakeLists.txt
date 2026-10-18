@@ -590,3 +590,61 @@ add_qt_test(test_notebooknodecontroller_tagtargets
     vxcore
   GUILESS
 )
+
+# Shared production implementation for native Markdown job integration tests.
+# Generic-only tests deliberately do not link this provider-specific support.
+add_library(markdown_web_job_test_support STATIC
+  ${CMAKE_SOURCE_DIR}/src/gui/services/webviewjobs.cpp
+  ${CMAKE_SOURCE_DIR}/src/gui/services/webviewservice.cpp
+  ${CMAKE_SOURCE_DIR}/src/gui/services/webengineprofileservice.cpp
+  ${CMAKE_SOURCE_DIR}/src/gui/services/vxpdfschemehandler.cpp
+  ${CMAKE_SOURCE_DIR}/src/widgets/outlineprovider.cpp
+  ${CMAKE_SOURCE_DIR}/src/controllers/markdownwebjobcontroller.cpp
+  ${CMAKE_SOURCE_DIR}/src/widgets/editors/markdownvieweradapter.cpp
+  ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
+  ${CMAKE_SOURCE_DIR}/src/widgets/editors/graphhelper.cpp
+  ${CMAKE_SOURCE_DIR}/src/widgets/editors/graphvizhelper.cpp
+  ${CMAKE_SOURCE_DIR}/src/widgets/editors/plantumlhelper.cpp
+  ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
+  ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
+  ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
+  ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
+  ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
+  ${CMAKE_SOURCE_DIR}/src/gui/utils/guiutils.cpp
+  ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
+  ${CMAKE_SOURCE_DIR}/src/utils/callbackpool.cpp
+  ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
+)
+target_include_directories(markdown_web_job_test_support PUBLIC
+  ${CMAKE_SOURCE_DIR}/src
+  ${CMAKE_SOURCE_DIR}/src/gui
+)
+target_link_libraries(markdown_web_job_test_support PUBLIC
+  Qt6::WebEngineWidgets Qt6::WebChannel Qt6::Svg core_configs core_services VTextEdit
+)
+add_qt_test(test_markdownwebjobcontroller
+  SOURCES test_markdownwebjobcontroller.cpp
+  LINKS markdown_web_job_test_support
+)
+target_compile_definitions(test_markdownwebjobcontroller PRIVATE
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+)
+set_tests_properties(test_markdownwebjobcontroller PROPERTIES TIMEOUT 180)
+add_custom_command(TARGET test_markdownwebjobcontroller POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_markdownwebjobcontroller>
+)
+set_property(TEST test_markdownwebjobcontroller PROPERTY ENVIRONMENT
+  "QT_QPA_PLATFORM=offscreen"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:Qt6::QOffscreenIntegrationPlugin>"
+  "QTWEBENGINEPROCESS_PATH="
+  "QTWEBENGINE_RESOURCES_PATH="
+  "QTWEBENGINE_LOCALES_PATH="
+  "QTWEBENGINE_CHROMIUM_FLAGS="
+)
+if(WIN32)
+  set(_markdown_jobs_path "$<TARGET_FILE_DIR:Qt6::Core>;$<TARGET_FILE_DIR:VTextEdit>;$ENV{PATH}")
+  string(REPLACE ";" "\;" _markdown_jobs_path "${_markdown_jobs_path}")
+  set_property(TEST test_markdownwebjobcontroller APPEND PROPERTY
+    ENVIRONMENT "PATH=${_markdown_jobs_path}")
+endif()

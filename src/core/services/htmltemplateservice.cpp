@@ -348,11 +348,15 @@ void HtmlTemplateService::updateMarkdownViewerTemplate(const MarkdownEditorConfi
 
   // Required viewer features, after configured dependencies even for older resource lists.
   const auto scriptPlaceholder = QStringLiteral("<!-- VX_SCRIPTS_PLACEHOLDER -->");
-  QString scripts = fillScriptTag(resolveConfigFile(QStringLiteral("web/js/sectionnumber.js")));
+  const auto jobBridge = fillScriptTag(resolveConfigFile(QStringLiteral("web/js/webviewjobs.js")));
+  QString scripts = fillScriptTag(resolveConfigFile(QStringLiteral("web/js/markdownwebjobs.js")));
+  scripts += fillScriptTag(resolveConfigFile(QStringLiteral("web/js/sectionnumber.js")));
   for (const auto &path : c_presentationScripts) {
     scripts += fillScriptTag(resolveConfigFile(path));
   }
-  m_markdownViewerTemplate.m_template.replace(scriptPlaceholder, scriptPlaceholder + scripts);
+  // The bridge exists before the viewer's channel handshake; handlers follow its workers.
+  m_markdownViewerTemplate.m_template.replace(scriptPlaceholder,
+                                              jobBridge + scriptPlaceholder + scripts);
   const auto stylePlaceholder = QStringLiteral("<!-- VX_STYLES_PLACEHOLDER -->");
   QString styles;
   for (const auto &path : c_presentationStyles) {
@@ -444,6 +448,7 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
   // Ordering follows the built-in Markdown viewer resource definition. This is
   // a fixed execution allowlist, intentionally independent of user config.
   QStringList scripts = {QStringLiteral("web/js/qwebchannel.js"),
+                         QStringLiteral("web/js/webviewjobs.js"),
                          QStringLiteral("web/js/eventemitter.js"),
                          QStringLiteral("web/js/vxcore.js"),
                          QStringLiteral("web/js/utils.js"),
@@ -490,7 +495,8 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
                          QStringLiteral("web/js/turndown/turndown-plugin-gfm.js"),
                          QStringLiteral("web/js/turndown.js"),
                          QStringLiteral("web/js/mark.js/mark.min.js"),
-                         QStringLiteral("web/js/markjs.js")};
+                         QStringLiteral("web/js/markjs.js"),
+                         QStringLiteral("web/js/markdownwebjobs.js")};
   scripts += c_presentationScripts;
   const QStringList lazyScripts = {QStringLiteral("web/js/prism/prism.min.js"),
                                    QStringLiteral("web/js/katex/katex.min.js"),

@@ -12,7 +12,7 @@
 namespace vnotex {
 class MarkdownViewerAdapter;
 class MarkdownViewWindowController;
-class PreviewHelper;
+class WebViewJobSession;
 class ServiceLocator;
 class ViewWindow2;
 
@@ -33,7 +33,7 @@ public:
 
   MarkdownViewerContextInfo populateContextInfo() const;
 
-  void setPreviewHelper(PreviewHelper *p_previewHelper);
+  WebViewJobSession *jobSession() const;
 
   void saveContent(const std::function<void(const QString &p_content)> &p_callback);
 
@@ -90,6 +90,7 @@ private:
 
   // Managed by QObject.
   MarkdownViewerAdapter *m_adapter = nullptr;
+  WebViewJobSession *m_jobSession = nullptr;
 
   // Nullable.
   const ViewWindow2 *m_viewWindow2 = nullptr;

@@ -1,3 +1,5 @@
+find_package(Qt6 REQUIRED COMPONENTS WebChannel WebEngineWidgets)
+
 add_qt_test(test_navigationmodeservice
   SOURCES
     test_navigationmodeservice.cpp
@@ -225,14 +227,8 @@ if(Qt6_VERSION VERSION_GREATER_EQUAL 6.9.0)
   add_qt_test(test_webengineprofileservice
     SOURCES
       test_webengineprofileservice.cpp
-      ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
-      ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
-      ${CMAKE_SOURCE_DIR}/src/gui/services/webengineprofileservice.cpp
-      ${CMAKE_SOURCE_DIR}/src/gui/services/vxpdfschemehandler.cpp
     LINKS
-      Qt6::WebEngineCore
-      Qt6::Svg
-      core_configs
+      markdown_web_job_test_support
   )
   target_include_directories(test_webengineprofileservice PRIVATE
     ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
@@ -269,4 +265,30 @@ if(Qt6_VERSION VERSION_GREATER_EQUAL 6.9.0)
     set_property(TEST test_webengineprofileservice APPEND PROPERTY ENVIRONMENT
       "LD_LIBRARY_PATH=$<TARGET_FILE_DIR:Qt6::Core>:$<TARGET_FILE_DIR:VTextEdit>:$ENV{LD_LIBRARY_PATH}")
   endif()
+endif()
+
+# Generic JS execution must remain independently testable without Markdown code.
+add_qt_test(test_webviewservice
+  SOURCES
+    test_webviewservice.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/webviewjobs.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/services/webviewservice.cpp
+  LINKS
+    Qt6::WebEngineWidgets
+    Qt6::WebChannel
+)
+target_compile_definitions(test_webviewservice PRIVATE VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src")
+set_tests_properties(test_webviewservice PROPERTIES TIMEOUT 180)
+set_property(TEST test_webviewservice PROPERTY ENVIRONMENT
+  "QT_QPA_PLATFORM=offscreen"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:Qt6::QOffscreenIntegrationPlugin>"
+  "QTWEBENGINEPROCESS_PATH="
+  "QTWEBENGINE_RESOURCES_PATH="
+  "QTWEBENGINE_LOCALES_PATH="
+  "QTWEBENGINE_CHROMIUM_FLAGS="
+)
+if(WIN32)
+  set(_web_jobs_path "$<TARGET_FILE_DIR:Qt6::Core>;$ENV{PATH}")
+  string(REPLACE ";" "\;" _web_jobs_path "${_web_jobs_path}")
+  set_property(TEST test_webviewservice APPEND PROPERTY ENVIRONMENT "PATH=${_web_jobs_path}")
 endif()

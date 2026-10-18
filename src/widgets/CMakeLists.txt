@@ -73,6 +73,7 @@ target_sources(vnote PRIVATE
     editors/markdowntablehelper.cpp editors/markdowntablehelper.h
     editors/markdownviewer.cpp editors/markdownviewer.h
     editors/markdownvieweradapter.cpp editors/markdownvieweradapter.h
+    editors/markdownwebjobhost.cpp editors/markdownwebjobhost.h
     editors/mindmapeditor.cpp editors/mindmapeditor.h
     editors/pdfviewer.cpp editors/pdfviewer.h
     editors/pdfvieweradapter.cpp editors/pdfvieweradapter.h

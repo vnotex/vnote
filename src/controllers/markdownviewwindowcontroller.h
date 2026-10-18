@@ -79,14 +79,17 @@ public:
   // Compute what operations are needed for a mode transition.
   // @p_currentMode: current ViewWindowMode as int (Read=0/Edit=1/Invalid=2).
   // @p_targetMode: target ViewWindowMode as int.
+  // @p_editViewMode: requested editor-only or editor/reader layout.
   // @p_hasEditor: whether the editor widget has been lazily created.
   // @p_hasViewer: whether the viewer widget has been lazily created.
   // @p_syncBuffer: whether to sync content from buffer (false during initial setup).
   //
   // Pure logic -- no side effects. Caller uses the returned struct to drive
   // widget creation and sync operations.
-  static ModeTransition computeModeTransition(int p_currentMode, int p_targetMode, bool p_hasEditor,
-                                              bool p_hasViewer, bool p_syncBuffer);
+  static ModeTransition computeModeTransition(int p_currentMode, int p_targetMode,
+                                              MarkdownEditorConfig::EditViewMode p_editViewMode,
+                                              bool p_hasEditor, bool p_hasViewer,
+                                              bool p_syncBuffer);
 
   // ============ Preview Config ============
 

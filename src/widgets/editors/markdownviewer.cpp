@@ -23,13 +23,13 @@
 #include "../webpage.h"
 #include "../widgetsfactory.h"
 #include "markdownvieweradapter.h"
-#include "previewhelper.h"
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <gui/services/webengineprofileservice.h>
+#include <gui/services/webviewjobs.h>
 #include <gui/utils/imageutils.h>
 #include <utils/clipboardutils.h>
 #include <utils/utils.h>
@@ -81,6 +81,11 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
   channel->registerObject(QStringLiteral("vxAdapter"), m_adapter);
 
   page()->setWebChannel(channel);
+  m_jobSession = new WebViewJobSession(page(), channel, this);
+  m_jobSession->setProperty("markdownJobProtected", m_protectedView);
+  if (m_viewWindow2) {
+    m_jobSession->setProperty("markdownJobBufferId", m_viewWindow2->getBuffer().id());
+  }
 
   connect(page(), &QWebEnginePage::loadStarted, this, &MarkdownViewer::invalidateNavigationTargets);
   connect(page(), &QWebEnginePage::loadStarted, this, [this]() {
@@ -138,6 +143,8 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
 
 MarkdownViewerAdapter *MarkdownViewer::adapter() const { return m_adapter; }
 
+WebViewJobSession *MarkdownViewer::jobSession() const { return m_jobSession; }
+
 void MarkdownViewer::setController(MarkdownViewWindowController *p_controller) {
   m_controller = p_controller;
 }
@@ -162,31 +169,6 @@ MarkdownViewerContextInfo MarkdownViewer::populateContextInfo() const {
     }
   }
   return info;
-}
-
-void MarkdownViewer::setPreviewHelper(PreviewHelper *p_previewHelper) {
-  connect(p_previewHelper, &PreviewHelper::graphPreviewRequested, this,
-          [this, p_previewHelper](quint64 p_id, TimeStamp p_timeStamp, const QString &p_lang,
-                                  const QString &p_text, qreal p_scale) {
-            if (m_adapter->isReady()) {
-              m_adapter->graphPreviewRequested(p_id, p_timeStamp, p_lang, p_text, p_scale);
-            } else {
-              p_previewHelper->handleGraphPreviewData(MarkdownViewerAdapter::PreviewData());
-            }
-          });
-  connect(p_previewHelper, &PreviewHelper::mathPreviewRequested, this,
-          [this, p_previewHelper](quint64 p_id, TimeStamp p_timeStamp, const QString &p_text,
-                                  qreal p_scale) {
-            if (m_adapter->isReady()) {
-              m_adapter->mathPreviewRequested(p_id, p_timeStamp, p_text, p_scale);
-            } else {
-              p_previewHelper->handleMathPreviewData(MarkdownViewerAdapter::PreviewData());
-            }
-          });
-  connect(m_adapter, &MarkdownViewerAdapter::graphPreviewDataReady, p_previewHelper,
-          &PreviewHelper::handleGraphPreviewData);
-  connect(m_adapter, &MarkdownViewerAdapter::mathPreviewDataReady, p_previewHelper,
-          &PreviewHelper::handleMathPreviewData);
 }
 
 void MarkdownViewer::invalidateNavigationTargets() { ++m_navigationGeneration; }

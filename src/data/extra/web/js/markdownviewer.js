@@ -53,6 +53,7 @@ new QWebChannel(qt.webChannelTransport,
         let adapter = p_channel.objects.vxAdapter;
         // Export the adapter globally.
         window.vxMarkdownAdapter = adapter;
+        window.vxWebJobs.bind(p_channel.objects.vxJobs);
 
         // Connect signals from CPP side.
         adapter.presentationModeRequested.connect(function(p_active, p_darkTheme) {
@@ -75,36 +76,8 @@ new QWebChannel(qt.webChannelTransport,
             window.vxcore.scrollToAnchor(p_anchor);
         });
 
-        adapter.graphPreviewRequested.connect(function(p_id, p_timeStamp, p_lang, p_text, p_scale = 1) {
-            window.vxcore.previewGraph(p_id, p_timeStamp, p_lang, p_text, p_scale);
-        });
-
-        adapter.mathPreviewRequested.connect(function(p_id, p_timeStamp, p_text, p_scale = 1) {
-            window.vxcore.previewMath(p_id, p_timeStamp, p_text, p_scale);
-        });
-
         adapter.scrollRequested.connect(function(p_up) {
             window.vxcore.scroll(p_up);
-        });
-
-        adapter.htmlToMarkdownRequested.connect(function(p_id, p_timeStamp, p_html) {
-            window.vxcore.htmlToMarkdown(p_id, p_timeStamp, p_html);
-        });
-
-        adapter.highlightCodeBlockRequested.connect(function(p_idx, p_timeStamp, p_text) {
-            window.vxcore.highlightCodeBlock(p_idx, p_timeStamp, p_text);
-        });
-
-        adapter.highlightMathRequested.connect(function(p_idx, p_timeStamp, p_text) {
-            window.vxcore.highlightMath(p_idx, p_timeStamp, p_text);
-        });
-
-        adapter.parseStyleSheetRequested.connect(function(p_id, p_styleSheet) {
-            window.vxcore.parseStyleSheet(p_id, p_styleSheet);
-        });
-
-        adapter.headingAnchorRequested.connect(function(p_id, p_text, p_lineNumber) {
-            window.vxcore.getHeadingAnchor(p_id, p_text, p_lineNumber);
         });
 
         adapter.crossCopyRequested.connect(function(p_id, p_timeStamp, p_target, p_baseUrl, p_html) {

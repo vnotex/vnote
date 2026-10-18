@@ -219,6 +219,25 @@ tab hide, theme/config reload and protected locking cancel stale requests before
 replacing the view. Render image rebinding must not discard an unopened request, and stale
 decode/acknowledgement callbacks must not publish it.
 
+#### Lazy Markdown reader and editor assistance
+
+Initial EditOnly creates no tab reader or full-note read render. `MarkdownWebJobHost` supplies
+an application-lifetime bootstrap for the shared ordinary runtime and owns only per-view
+protected fallback widgets. `MarkdownWebJobController` owns routing; PreviewHelper and the editor
+consume its typed results, never the document adapter's former assistance signals.
+
+Treat `m_viewer == nullptr` as normal in EditOnly. Read/EditPreview, View Image and Print prepare
+the reader explicitly; an image-only request loads an empty page rather than rerendering the note.
+A ready retained reader can assist a hidden EditOnly editor. Mode changes and theme refresh must
+preserve drafts, cursor and undo history. Replay preview caches when the effective renderer changes.
+Snapshot editor zoom/DPR/reference width for jobs; math rasters keep intrinsic formula geometry,
+including when an inactive tab has only provisional layout dimensions.
+
+Protected fallback profiles are per-view immutable generations, never transferred into readers.
+Beginning protected locking revokes jobs/resources immediately but keeps the native draft through
+the save barrier; successful close then destroys editor/cache state even without a reader.
+Coverage: `test_markdownwebjobs`, `test_markdownviewwindow_lazy` and protected-profile tests.
+
 #### Read-only session recovery
 
 `ViewArea2` saves each buffer's read-only state in workspace `bufferMetadata.readOnly`,

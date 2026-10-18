@@ -41,6 +41,7 @@
 #include <controllers/imagehostcontroller.h>
 #include <controllers/markdowneditorcontroller.h>
 #include <controllers/markdownviewwindowcontroller.h>
+#include <controllers/markdownwebjobcontroller.h>
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
@@ -57,6 +58,7 @@
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/services/webengineprofileservice.h>
+#include <gui/services/webviewjobs.h>
 #include <gui/utils/printutils.h>
 #include <gui/utils/widgetutils.h>
 #include <imagehost/iimagehostprovider.h>
@@ -73,6 +75,7 @@
 #include "editors/markdowneditor.h"
 #include "editors/markdownviewer.h"
 #include "editors/markdownvieweradapter.h"
+#include "editors/markdownwebjobhost.h"
 #include "editors/plantumlhelper.h"
 #include "editors/previewhelper.h"
 #include "editors/statusbar.h"
@@ -95,7 +98,6 @@ struct MarkdownViewWindow2::ProtectedView {
   WebEngineProfileService::ProtectedPage page;
   QByteArray highlightStyleSheet;
   bool documentPublished = false;
-  bool loaded = false;
   QList<int> splitterSizesOnReady;
 };
 
@@ -109,6 +111,28 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
   m_editorController = new MarkdownEditorController(p_services, this);
   m_windowController = new MarkdownViewWindowController(p_services, this);
   m_imageHostController = p_services.get<ImageHostController>();
+  m_webJobs = new MarkdownWebJobController(p_services, getBuffer(), this);
+  m_webJobHost = new MarkdownWebJobHost(p_services, getBuffer(), this);
+  connect(m_webJobs, &MarkdownWebJobController::protectedSessionRequested, m_webJobHost,
+          &MarkdownWebJobHost::ensureProtectedSession);
+  connect(m_webJobHost, &MarkdownWebJobHost::protectedSessionReady, m_webJobs,
+          &MarkdownWebJobController::setProtectedSession);
+  connect(m_webJobs, &MarkdownWebJobController::protectedSessionReleaseRequested, m_webJobHost,
+          &MarkdownWebJobHost::releaseProtectedSession);
+  connect(m_webJobs, &MarkdownWebJobController::ready, this, [this]() {
+    // Readiness identifies a newly usable endpoint/generation. Its math scope has
+    // no earlier declarations, so cached rasters must not skip ordered source replay.
+    if (m_previewHelper) {
+      m_previewHelper->invalidatePreviews();
+    }
+    refreshEditorWebJobs();
+  });
+  connect(m_webJobs, &MarkdownWebJobController::operationFailed, this,
+          [this](const QString &p_operation, quint64, quint64, const QString &) {
+            if (p_operation == QStringLiteral("markdown.htmlToMarkdown")) {
+              showMessage(tr("Unable to convert HTML to Markdown"));
+            }
+          });
 
   setupOutlineProvider();
   setupUI();
@@ -134,6 +158,8 @@ MarkdownViewWindow2::~MarkdownViewWindow2() {
   }
   delete m_debugViewer;
   m_debugViewer = nullptr;
+  m_webJobs->revoke();
+  m_webJobHost->releaseProtectedSession();
   releaseProtectedView();
   // Disconnect controller signals to prevent delivery to a destroyed widget.
   if (m_imageHostController) {
@@ -152,11 +178,18 @@ void MarkdownViewWindow2::releaseProtectedView() {
   if (m_viewer) {
     m_viewer->invalidateNavigationTargets();
   }
-  if (!m_protectedView) {
+  if (!getBuffer().isEncrypted()) {
     return;
   }
-  auto *profiles = getServices().get<WebEngineProfileService>();
-  profiles->revokeProtectedProfile(m_protectedView->page.profile);
+  m_webJobs->revoke();
+  m_webJobHost->releaseProtectedSession();
+  ++m_highlightStyleGeneration;
+  m_codeBlockStylesInitialized = false;
+  m_codeBlockStylesPending = false;
+  if (m_protectedView) {
+    getServices().get<WebEngineProfileService>()->revokeProtectedProfile(
+        m_protectedView->page.profile);
+  }
   if (m_syncPreviewTimer) {
     m_syncPreviewTimer->stop();
   }
@@ -179,8 +212,10 @@ void MarkdownViewWindow2::releaseProtectedView() {
   m_outlineProvider->setOutline(QSharedPointer<Outline>());
   delete m_viewer;
   m_viewer = nullptr;
-  delete m_protectedView->page.profile;
-  m_protectedView.reset();
+  if (m_protectedView) {
+    delete m_protectedView->page.profile;
+    m_protectedView.reset();
+  }
 }
 
 // ============ setupUI ============
@@ -598,15 +633,31 @@ void MarkdownViewWindow2::handlePrint() {
     showMessage(tr("Printing encrypted notes is not supported"));
     return;
   }
-  if (!m_viewer || !m_viewerReady) {
+  if (m_printPending || m_printer) {
     return;
   }
+  cancelEditorImageView(true);
+  printDocument(PrintUtils::promptForPrint(m_viewer && m_viewer->hasSelection(), this));
+}
 
-  m_printer = PrintUtils::promptForPrint(m_viewer->hasSelection(), this);
-  if (m_printer) {
-    m_printer->setOutputFormat(QPrinter::PdfFormat);
-    m_viewer->print(m_printer.get());
+void MarkdownViewWindow2::printDocument(const QSharedPointer<QPrinter> &p_printer) {
+  if (!p_printer || m_printPending || m_printer || getBuffer().isEncrypted()) {
+    return;
   }
+  setPresentationMode(false);
+  cancelEditorImageView(true);
+  m_printer = p_printer;
+  if (!isEnabled() || !getBuffer().isValid() || (!m_viewer && !setupViewer())) {
+    m_printer.reset();
+    return;
+  }
+  m_printPending = true;
+  if (!m_viewerPageInitialized) {
+    initializeViewerPage();
+  }
+  // Print the current draft, not the last debounce/save snapshot. The web work-finished
+  // acknowledgement below waits for document rendering, not merely page readiness.
+  adapter()->setText(getLatestContent());
 }
 
 bool MarkdownViewWindow2::aboutToClose(bool p_force) {
@@ -620,6 +671,8 @@ bool MarkdownViewWindow2::aboutToClose(bool p_force) {
     return false;
   }
 
+  m_webJobs->revoke();
+  m_webJobHost->releaseProtectedSession();
   if (getBuffer().isEncrypted()) {
     releaseProtectedView();
     return true;
@@ -655,7 +708,6 @@ bool MarkdownViewWindow2::aboutToClose(bool p_force) {
 
 void MarkdownViewWindow2::setupTextEditor() {
   Q_ASSERT(!m_editor);
-  Q_ASSERT(m_viewer); // Viewer must exist before editor (for preview pipeline).
 
   auto *configMgr = getServices().get<ConfigMgr2>();
   const auto &editorConfig = configMgr->getEditorConfig();
@@ -723,7 +775,14 @@ void MarkdownViewWindow2::setupTextEditor() {
   // Apply config.
   updateEditorFromConfig();
 
-  connectViewerToEditor();
+  connect(m_editor, &MarkdownEditor::htmlToMarkdownRequested, m_webJobs,
+          &MarkdownWebJobController::htmlToMarkdown);
+  connect(m_webJobs, &MarkdownWebJobController::htmlToMarkdownReady, m_editor,
+          &MarkdownEditor::handleHtmlToMarkdownData);
+  connect(m_webJobs, &MarkdownWebJobController::highlightCodeBlockReady, m_editor,
+          &MarkdownEditor::handleExternalCodeBlockHighlightData);
+  connect(m_webJobs, &MarkdownWebJobController::highlightMathReady, m_editor,
+          &MarkdownEditor::handleExternalMathHighlightData);
 
   // External code block highlighting pipeline.
   connect(m_editor, &MarkdownEditor::externalCodeBlockHighlightRequested, this,
@@ -745,8 +804,12 @@ void MarkdownViewWindow2::setupTextEditor() {
   // side, so the anchor matches the one read mode renders.
   m_editor->setHeadingLinkResolver([this](const QString &p_text, int p_line,
                                           std::function<void(bool, const QString &)> p_cb) {
-    adapter()->fetchHeadingAnchor(
-        p_text, p_line, [this, p_cb](const MarkdownViewerAdapter::HeadingAnchorResult &p_result) {
+    m_webJobs->fetchHeadingAnchor(
+        p_text, p_line,
+        [this, p_cb](const MarkdownWebJobController::HeadingAnchorResult &p_result) {
+          if (p_result.m_status != WebViewJobResult::Status::Success) {
+            showMessage(tr("Unable to resolve heading link"));
+          }
           if (!p_result.m_found) {
             p_cb(false, QString());
             return;
@@ -757,7 +820,7 @@ void MarkdownViewWindow2::setupTextEditor() {
   });
 
   applyReadableWidth();
-  ensureExternalHighlightStyles();
+  updateJobRenderContext();
 }
 
 bool MarkdownViewWindow2::setupViewer() {
@@ -767,9 +830,6 @@ bool MarkdownViewWindow2::setupViewer() {
   const auto &editorConfig = configMgr->getEditorConfig();
   const auto &mdConfig = editorConfig.getMarkdownEditorConfig();
 
-  m_viewerMathRenderer = mdConfig.getMathRenderer();
-  m_viewerMathJaxScript = mdConfig.getMathJaxScript();
-  m_viewerPlantUmlFormat = mdConfig.getPlantUmlFormat();
   m_editorController->checkAndUpdateConfigRevision();
 
   // Update HTML template via HtmlTemplateService.
@@ -834,11 +894,16 @@ bool MarkdownViewWindow2::setupViewer() {
   // in the QSplitter while WebEngine loads the HTML template.
   m_viewer->hide();
 
-  m_viewer->setPreviewHelper(m_previewHelper);
+  m_viewerPageInitialized = false;
+  m_viewerBufferRevision = -1;
+  m_webJobs->setPreferredSession(m_viewer->jobSession(), m_protectedView
+                                                             ? m_protectedView->highlightStyleSheet
+                                                             : QByteArray());
 
   if (m_protectedView) {
     auto *webPage = qobject_cast<WebPage *>(m_viewer->page());
     webPage->setProtectedDocumentUrl(m_protectedView->page.url);
+    webPage->setSensitiveContent(true);
     connect(adapterObj, &MarkdownViewerAdapter::protectedLinkRequested, this,
             &MarkdownViewWindow2::handleOpenFileRequest);
   }
@@ -883,15 +948,41 @@ bool MarkdownViewWindow2::setupViewer() {
   connect(m_viewer->page(), &QWebEnginePage::loadStarted, this, [this]() {
     const bool wasReady = m_viewerReady;
     m_viewerReady = false;
-    // A navigation can discard a pending stylesheet parse on the same adapter.
-    ++m_highlightStyleGeneration;
-    m_codeBlockStylesPending = false;
     // A requested Edit -> Read transition may still be loading its initial page.
     if (!m_preparingPresentation && (wasReady || m_presentationRequestSent)) {
       setPresentationMode(false);
     }
   });
+  connect(m_viewer->page(), &QWebEnginePage::renderProcessTerminated, this, [this]() {
+    m_viewerReady = false;
+    m_viewerPageInitialized = false;
+    setPresentationMode(false);
+    cancelEditorImageView(true);
+    if (m_mode == ViewWindowMode::Edit) {
+      setEditViewMode(MarkdownEditorConfig::EditViewMode::EditOnly);
+    }
+    showMessage(tr("Preview renderer stopped"));
+    if (m_printPending) {
+      m_printPending = false;
+      m_printer.reset();
+      showMessage(tr("Unable to prepare note for printing"));
+    }
+  });
   connect(m_viewer->page(), &QWebEnginePage::loadFinished, this, [this](bool p_ok) {
+    if (!p_ok) {
+      m_viewerReady = false;
+      m_viewerPageInitialized = false;
+      cancelEditorImageView(true);
+      if (m_mode == ViewWindowMode::Edit) {
+        setEditViewMode(MarkdownEditorConfig::EditViewMode::EditOnly);
+      }
+      showMessage(tr("Unable to load preview"));
+    }
+    if (!p_ok && m_printPending) {
+      m_printPending = false;
+      m_printer.reset();
+      showMessage(tr("Unable to prepare note for printing"));
+    }
     if (!p_ok && m_presentationRequested) {
       qWarning() << "Markdown presentation failed: viewer page did not load";
       setPresentationMode(false);
@@ -902,13 +993,6 @@ bool MarkdownViewWindow2::setupViewer() {
   // Viewer ready signal.
   connect(adapterObj, &MarkdownViewerAdapter::ready, this, [this]() {
     m_viewerReady = true;
-    ensureExternalHighlightStyles();
-    if (m_refreshMathPreviewsOnReady) {
-      m_refreshMathPreviewsOnReady = false;
-      if (m_editor) {
-        m_editor->refreshPreviewHighlight();
-      }
-    }
     applyReadableWidth();
     if (m_mode == ViewWindowMode::Edit && !m_editorImageRequest) {
       setEditViewMode(m_editViewMode);
@@ -924,6 +1008,14 @@ bool MarkdownViewWindow2::setupViewer() {
 
   // Deferred anchor scroll: drain pending anchor after rendering completes.
   connect(adapterObj, &MarkdownViewerAdapter::workFinished, this, [this]() {
+    if (m_printPending) {
+      m_printPending = false;
+      if (m_printer && isEnabled() && isVisible()) {
+        m_viewer->print(m_printer.get());
+      } else {
+        m_printer.reset();
+      }
+    }
     if (!m_pendingAnchor.isEmpty() && isReadMode() && adapter()) {
       adapter()->scrollToPosition(MarkdownViewerAdapter::Position(-1, m_pendingAnchor));
       m_pendingAnchor.clear();
@@ -969,23 +1061,41 @@ bool MarkdownViewWindow2::setupViewer() {
   // edit mode so the security prompt lives in one place.
   connect(m_viewer, &WebViewer::externalLinkRequested, this,
           [this](const QUrl &p_url) { handleOpenFileRequest(p_url.toString()); });
-  if (m_editor) {
-    connectViewerToEditor();
-  }
   return true;
 }
 
-void MarkdownViewWindow2::connectViewerToEditor() {
-  connect(adapter(), &MarkdownViewerAdapter::ready, m_editor->getHighlighter(),
-          &vte::MarkdownHighlighter::updateHighlight);
-  connect(m_editor, &MarkdownEditor::htmlToMarkdownRequested, adapter(),
-          &MarkdownViewerAdapter::htmlToMarkdownRequested);
-  connect(adapter(), &MarkdownViewerAdapter::htmlToMarkdownReady, m_editor,
-          &MarkdownEditor::handleHtmlToMarkdownData);
-  connect(adapter(), &MarkdownViewerAdapter::highlightCodeBlockReady, m_editor,
-          &MarkdownEditor::handleExternalCodeBlockHighlightData);
-  connect(adapter(), &MarkdownViewerAdapter::highlightMathReady, m_editor,
-          &MarkdownEditor::handleExternalMathHighlightData);
+void MarkdownViewWindow2::updateJobRenderContext() {
+  if (m_editor) {
+    auto *edit = m_editor->getTextEdit();
+    m_webJobs->setRenderContext(edit->devicePixelRatioF(), edit->viewport()->width());
+  }
+}
+
+void MarkdownViewWindow2::invalidateWebJobs() {
+  if (m_printPending) {
+    m_printPending = false;
+    m_printer.reset();
+  }
+  ++m_highlightStyleGeneration;
+  m_codeBlockStylesInitialized = false;
+  m_codeBlockStylesPending = false;
+  m_webJobs->setPreferredSession(nullptr);
+  m_webJobs->invalidate();
+  m_webJobHost->invalidate();
+  if (m_previewHelper) {
+    m_previewHelper->invalidatePreviews();
+  }
+  if (m_syncPreviewTimer) {
+    m_syncPreviewTimer->stop();
+  }
+}
+
+void MarkdownViewWindow2::refreshEditorWebJobs() {
+  if (m_editor && isEnabled()) {
+    updateJobRenderContext();
+    ensureExternalHighlightStyles();
+    m_editor->refreshPreviewHighlight();
+  }
 }
 
 bool MarkdownViewWindow2::reloadProtectedViewer() {
@@ -1009,7 +1119,7 @@ bool MarkdownViewWindow2::reloadProtectedViewer() {
     m_viewer = oldViewer;
     oldProtectedView.swap(m_protectedView);
     m_viewerReady = wasReady;
-    m_refreshMathPreviewsOnReady = false;
+    // The retained page belongs to the old renderer generation, not new assistance work.
     return false;
   }
   ++m_navigationGeneration;
@@ -1026,9 +1136,6 @@ bool MarkdownViewWindow2::reloadProtectedViewer() {
     m_viewer->setFocus();
   }
   syncViewerFromBuffer(false);
-  if (m_mode == ViewWindowMode::Edit && m_editor) {
-    adapter()->setText(m_editor->getText(), getEditLineNumber());
-  }
   restorePositionState(position);
   return true;
 }
@@ -1038,6 +1145,21 @@ bool MarkdownViewWindow2::reloadProtectedViewer() {
 void MarkdownViewWindow2::setupPreviewHelper() {
   Q_ASSERT(!m_previewHelper);
   m_previewHelper = new PreviewHelper(nullptr, this);
+  connect(m_previewHelper, &PreviewHelper::graphPreviewRequested, this,
+          [this](quint64 p_id, TimeStamp p_stamp, const QString &p_language,
+                 const QString &p_source, qreal p_scale) {
+            updateJobRenderContext();
+            m_webJobs->previewGraph(p_id, p_stamp, p_language, p_source, p_scale);
+          });
+  connect(m_previewHelper, &PreviewHelper::mathPreviewRequested, this,
+          [this](quint64 p_id, TimeStamp p_stamp, const QString &p_source, qreal p_scale) {
+            updateJobRenderContext();
+            m_webJobs->previewMath(p_id, p_stamp, p_source, p_scale);
+          });
+  connect(m_webJobs, &MarkdownWebJobController::graphPreviewDataReady, m_previewHelper,
+          &PreviewHelper::handleGraphPreviewData);
+  connect(m_webJobs, &MarkdownWebJobController::mathPreviewDataReady, m_previewHelper,
+          &PreviewHelper::handleMathPreviewData);
   if (getBuffer().isEncrypted()) {
     m_previewHelper->setProtectedView(true);
   }
@@ -1150,8 +1272,15 @@ QSharedPointer<Outline> MarkdownViewWindow2::headingsToOutline(const QVector<T> 
 
 void MarkdownViewWindow2::requestEditorImageView(const QString &p_url) {
   cancelEditorImageView();
-  if (m_mode != ViewWindowMode::Edit || !m_editor || !adapter() || !isEnabled() || !isVisible()) {
+  if (m_mode != ViewWindowMode::Edit || !m_editor || !isEnabled() || !isVisible()) {
     return;
+  }
+  if (!m_viewer && !setupViewer()) {
+    return;
+  }
+  if (!m_viewerPageInitialized) {
+    // An empty runtime is sufficient for a resolved image URL. Do not render the note.
+    initializeViewerPage();
   }
   // The source URL is already resolved. Do not rebuild the note merely to view it.
   if (m_syncPreviewTimer) {
@@ -1524,8 +1653,11 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   // so the buffer has the latest content for the viewer to read.
   if (m_mode == ViewWindowMode::Edit && m_editor && p_syncBuffer) {
     auto *bufferService = getServices().get<BufferService>();
-    if (bufferService) {
-      bufferService->syncNow(getBuffer().id());
+    if (bufferService && !bufferService->syncNow(getBuffer().id())) {
+      m_switchingMode = false;
+      updateEditSectionNumberOptions(true);
+      showMessage(tr("Unable to read the editor content"));
+      return;
     }
   }
 
@@ -1535,9 +1667,15 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   // Disable propagation during mode switch to avoid false dirty marking.
   m_propagateEditorToBuffer = false;
 
+  const auto desiredEditViewMode = m_editor ? m_editViewMode
+                                            : getServices()
+                                                  .get<ConfigMgr2>()
+                                                  ->getEditorConfig()
+                                                  .getMarkdownEditorConfig()
+                                                  .getEditViewMode();
   auto transition = MarkdownViewWindowController::computeModeTransition(
-      static_cast<int>(m_previousMode), static_cast<int>(m_mode), m_editor != nullptr,
-      m_viewer != nullptr, p_syncBuffer);
+      static_cast<int>(m_previousMode), static_cast<int>(m_mode), desiredEditViewMode,
+      m_editor != nullptr, m_viewer != nullptr, p_syncBuffer);
 
   // Diagnostics: the two preview pipelines (read-mode render and edit-mode
   // in-place preview) share one JS main thread, and their overlap is invisible
@@ -1551,30 +1689,20 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
                          << "syncViewerFromBuffer=" << transition.syncViewerFromBuffer
                          << "atMs=" << QDateTime::currentMSecsSinceEpoch();
 
-  // Lazy init: create viewer if needed.
-  if (transition.needSetupViewer) {
-    if (!setupViewer()) {
+  // An unavailable preview must not prevent editing the document.
+  bool previewUnavailable = false;
+  if (transition.needSetupViewer && !setupViewer()) {
+    if (m_mode == ViewWindowMode::Read) {
       m_mode = m_previousMode;
+      m_propagateEditorToBuffer = m_mode == ViewWindowMode::Edit && m_editor;
       m_switchingMode = false;
+      updateEditSectionNumberOptions(true);
       return;
     }
-
-    if (transition.needSetupEditor) {
-      // Going to Edit mode: briefly show the viewer so WebEngine can
-      // initialize with the correct DPI and rendering context. Without
-      // this, WebEngine loads very slowly in the background and the
-      // ready signal fires much later, causing a disruptive
-      // ensureCursorVisible() scroll when the deferred updateHighlight
-      // completes.  The viewer will be hidden by setEditViewMode()
-      // or explicitly below once the editor is shown.
-      // (Matches legacy MarkdownViewWindow behavior.)
-      m_viewer->show();
-    }
+    previewUnavailable = true;
+    transition.syncViewerFromBuffer = false;
   }
-
-  // Lazy init: create editor if needed.
   if (transition.needSetupEditor) {
-    // In Edit mode, we need the viewer for preview pipeline.
     setupTextEditor();
   }
 
@@ -1584,7 +1712,8 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   if (transition.syncEditorFromBuffer) {
     syncTextEditorFromBuffer(transition.syncPositionFromPrevMode);
   }
-  if (transition.syncViewerFromBuffer) {
+  if (transition.syncViewerFromBuffer ||
+      (p_syncBuffer && m_mode == ViewWindowMode::Read && m_viewer && !m_viewerPageInitialized)) {
     syncViewerFromBuffer(transition.syncPositionFromPrevMode);
   }
 
@@ -1625,14 +1754,8 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     if (m_legacyImageBar) {
       m_legacyImageBar->show();
     }
-    if (transition.restoreEditViewMode) {
-      setEditViewMode(m_editViewMode);
-    } else {
-      // First time entering edit: apply config view mode.
-      auto *configMgr = getServices().get<ConfigMgr2>();
-      const auto &mdConfig = configMgr->getEditorConfig().getMarkdownEditorConfig();
-      setEditViewMode(MarkdownViewWindowController::getEditViewMode(mdConfig));
-    }
+    setEditViewMode(previewUnavailable ? MarkdownEditorConfig::EditViewMode::EditOnly
+                                       : desiredEditViewMode);
     // Clear any transient message left over from Read mode (e.g. a hovered link
     // URL) so we don't carry it into Edit's editor status surface.
     showMessage(QString());
@@ -1681,6 +1804,9 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   }
 
   m_switchingMode = false;
+  if (previewUnavailable) {
+    showMessage(tr("Unable to open preview; the editor remains available"));
+  }
 
   // Enable editor-to-buffer propagation now that initial sync is done.
   // This must happen after all sync calls to avoid marking the buffer dirty
@@ -1765,7 +1891,25 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
   updateEditSectionNumberOptions(true);
 }
 
-// Path 2: Buffer -> Viewer.
+void MarkdownViewWindow2::initializeViewerPage() {
+  Q_ASSERT(m_viewer);
+  m_viewerReady = false;
+  m_viewerPageInitialized = true;
+  m_viewerBufferRevision = -1;
+  m_viewer->jobSession()->invalidate();
+  adapter()->reset();
+  m_webJobs->setPreferredSession(m_viewer->jobSession(), m_protectedView
+                                                             ? m_protectedView->highlightStyleSheet
+                                                             : QByteArray());
+  if (m_protectedView) {
+    m_viewer->load(m_protectedView->page.url);
+  } else {
+    const auto html = getServices().get<HtmlTemplateService>()->getMarkdownViewerTemplate();
+    m_viewer->setHtml(html, PathUtils::pathToUrl(getBuffer().resolvedPath()));
+  }
+}
+
+// Path 2: Buffer -> Viewer. A live editor remains authoritative during refresh.
 void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) {
   cancelEditorImageView();
   if (!m_preparingPresentation) {
@@ -1774,63 +1918,22 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
   if (!m_viewer) {
     return;
   }
-
   m_pendingAnchor.clear();
-
-  auto state = MarkdownEditorController::prepareBufferState(getBuffer());
-  // Diagnostics: entering Edit mode with no viewer still hands the WHOLE
-  // document to the viewer here, which starts the read-mode render pass (H0).
-  qCDebug(lcPerfPreview) << "syncViewerFromBuffer mode=" << static_cast<int>(m_mode)
-                         << "valid=" << state.valid << "chars=" << state.content.size()
-                         << "atMs=" << QDateTime::currentMSecsSinceEpoch();
-  if (m_protectedView) {
-    if (!state.valid) {
-      showMessage(tr("Unable to load protected note content"));
-      return;
-    }
-    if (!m_protectedView->loaded) {
-      m_viewerReady = false;
-      adapter()->reset();
-      m_protectedView->loaded = true;
-      m_viewer->load(m_protectedView->page.url);
-    }
-    adapter()->setText(state.revision, state.content,
-                       p_syncPositionFromEditMode ? getEditLineNumber() : -1);
-    m_viewerBufferRevision = state.revision;
+  const auto state = MarkdownEditorController::prepareBufferState(getBuffer());
+  if (m_protectedView && !state.valid) {
+    showMessage(tr("Unable to load protected note content"));
     return;
   }
-  if (state.valid) {
-    // Diagnostics: a reload here tears the page down. If the adapter is already
-    // ready, the page had finished loading and may be running a render pass that
-    // is about to be discarded silently -- the failure mode this line exists to
-    // make greppable. No suppression: reloading unconditionally is correct.
-    if (adapter()->isReady()) {
-      qCDebug(lcPerfPreview) << "syncViewerFromBuffer discarding a loaded page"
-                             << "viewerRevision=" << m_viewerBufferRevision
-                             << "revision=" << state.revision
-                             << "atMs=" << QDateTime::currentMSecsSinceEpoch();
-    }
-
-    int lineNumber = -1;
-    if (p_syncPositionFromEditMode) {
-      lineNumber = getEditLineNumber();
-    }
-
-    auto *htmlTemplateService = getServices().get<HtmlTemplateService>();
-    auto tmpl = htmlTemplateService->getMarkdownViewerTemplate();
-    auto baseUrl = PathUtils::pathToUrl(getBuffer().resolvedPath());
-
-    m_viewerReady = false;
-    adapter()->reset();
-    m_viewer->setHtml(tmpl, baseUrl);
-    adapter()->setText(state.revision, state.content, lineNumber);
-  } else {
-    m_viewerReady = false;
-    adapter()->reset();
-    m_viewer->setHtml(QString());
-    adapter()->setText(0, QString(), -1);
+  if (!m_viewerPageInitialized) {
+    initializeViewerPage();
   }
-  m_viewerBufferRevision = state.revision;
+  const bool useDraft = m_editor && m_mode == ViewWindowMode::Edit;
+  const auto content = useDraft ? m_editor->getText() : state.content;
+  const bool matchesBuffer = content == state.content;
+  const int revision = matchesBuffer ? state.revision : 0;
+  adapter()->setText(revision, content,
+                     p_syncPositionFromEditMode && m_editor ? m_editor->getTopLine() : -1);
+  m_viewerBufferRevision = matchesBuffer ? state.revision : -1;
 }
 
 // Path 4: Editor -> Viewer (debounced preview).
@@ -2116,25 +2219,7 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
   const auto &editorConfig = configMgr->getEditorConfig();
   const auto &mdConfig = editorConfig.getMarkdownEditorConfig();
 
-  const bool reloadMath = m_viewer && (m_viewerMathRenderer != mdConfig.getMathRenderer() ||
-                                       (mdConfig.getMathRenderer() == QStringLiteral("mathjax") &&
-                                        m_viewerMathJaxScript != mdConfig.getMathJaxScript()));
-  const bool reloadViewer = reloadMath || (m_viewer && !m_protectedView &&
-                                           m_viewerPlantUmlFormat != mdConfig.getPlantUmlFormat());
-  if (reloadViewer) {
-    // Retire previews when another render option also reloads the page.
-    if (m_syncPreviewTimer) {
-      m_syncPreviewTimer->stop();
-    }
-    if (m_previewHelper) {
-      m_previewHelper->invalidatePreviews();
-    }
-    m_viewerReady = false;
-    m_refreshMathPreviewsOnReady = true;
-  }
-  m_viewerMathRenderer = mdConfig.getMathRenderer();
-  m_viewerMathJaxScript = mdConfig.getMathJaxScript();
-  m_viewerPlantUmlFormat = mdConfig.getPlantUmlFormat();
+  invalidateWebJobs();
 
   updatePreviewHelperFromConfig(mdConfig);
 
@@ -2173,34 +2258,28 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
     updateEditorFromConfig();
   }
 
-  updateWebViewerConfig();
-  if (reloadViewer) {
-    syncViewerFromBuffer(m_mode == ViewWindowMode::Edit);
+  if (m_viewer) {
+    if (m_protectedView) {
+      reloadProtectedViewer();
+    } else {
+      m_viewerPageInitialized = false;
+      syncViewerFromBuffer(m_mode == ViewWindowMode::Edit);
+    }
+    updateWebViewerConfig();
   }
+  if (m_mode == ViewWindowMode::Edit && m_editor) {
+    setEditViewMode(mdConfig.getEditViewMode());
+  }
+  refreshEditorWebJobs();
   updateEditSectionNumberOptions(true);
 }
 
 void MarkdownViewWindow2::handleThemeChanged() {
   cancelEditorImageView();
-  ++m_highlightStyleGeneration;
-  m_codeBlockStylesInitialized = false;
-  m_codeBlockStylesPending = false;
+  invalidateWebJobs();
   setPresentationMode(false);
   updateEditSectionNumberOptions(false);
   ViewWindow2::handleThemeChanged(); // base: refreshes toolbar icons
-
-  // Cached preview rasters contain the old theme's colors. Retire them before
-  // applying editor styles, then request fresh previews when the new page is ready.
-  if (m_viewer) {
-    if (m_syncPreviewTimer) {
-      m_syncPreviewTimer->stop();
-    }
-    if (m_previewHelper) {
-      m_previewHelper->invalidatePreviews();
-    }
-    m_viewerReady = false;
-    m_refreshMathPreviewsOnReady = true;
-  }
 
   auto *configMgr = getServices().get<ConfigMgr2>();
   const auto &editorConfig = configMgr->getEditorConfig();
@@ -2250,6 +2329,7 @@ void MarkdownViewWindow2::handleThemeChanged() {
     if (m_protectedView) {
       reloadProtectedViewer();
     } else {
+      m_viewerPageInitialized = false;
       syncViewerFromBuffer(false);
     }
 
@@ -2261,6 +2341,7 @@ void MarkdownViewWindow2::handleThemeChanged() {
     m_debugViewer->page()->setBackgroundColor(themeService->getBaseBackground());
   }
 
+  refreshEditorWebJobs();
   updateEditSectionNumberOptions(true);
 }
 
@@ -2389,7 +2470,12 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
     // Always hide viewer in EditOnly mode. Even if the viewer is still
     // loading (m_viewerReady == false), hide it immediately to avoid a
     // visible blank pane in the QSplitter while the WebEngine initializes.
-    m_viewer->hide();
+    if (m_viewer) {
+      m_viewer->hide();
+    }
+    if (m_syncPreviewTimer) {
+      m_syncPreviewTimer->stop();
+    }
     if (modeChanged) {
       if (m_syncPreviewTimer) {
         disconnect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, m_syncPreviewTimer,
@@ -2401,12 +2487,21 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
     break;
 
   case MarkdownEditorConfig::EditViewMode::EditPreview:
+    if (!m_viewer && !setupViewer()) {
+      m_editViewMode = MarkdownEditorConfig::EditViewMode::EditOnly;
+      return;
+    }
+    if (!m_viewerPageInitialized) {
+      syncViewerFromBuffer(true);
+    }
     // Restore splitter handle for draggable split.
     if (m_splitter->count() > 1) {
       m_splitter->handle(1)->setVisible(true);
     }
     m_viewer->show();
-    WidgetUtils::distributeWidgetsOfSplitter(m_splitter);
+    if (modeChanged) {
+      WidgetUtils::distributeWidgetsOfSplitter(m_splitter);
+    }
     if (modeChanged) {
       if (!m_syncPreviewTimer) {
         m_syncPreviewTimer = new QTimer(this);
@@ -2718,6 +2813,10 @@ bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
   if (p_obj == this && (p_event->type() == QEvent::Hide || p_event->type() == QEvent::Close ||
                         (p_event->type() == QEvent::EnabledChange && !isEnabled()))) {
     cancelEditorImageView();
+    if (m_printPending) {
+      m_printPending = false;
+      m_printer.reset();
+    }
   }
   if (m_editorImageRequest &&
       (p_event->type() == QEvent::KeyPress || p_event->type() == QEvent::ShortcutOverride) &&
@@ -2773,59 +2872,32 @@ bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
 void MarkdownViewWindow2::handleExternalCodeBlockHighlightRequest(int p_idx, quint64 p_timeStamp,
                                                                   const QString &p_text) {
   ensureExternalHighlightStyles();
-  adapter()->highlightCodeBlock(p_idx, p_timeStamp, p_text);
+  m_webJobs->highlightCodeBlock(p_idx, p_timeStamp, p_text);
 }
 
 void MarkdownViewWindow2::handleExternalMathHighlightRequest(int p_idx, quint64 p_timeStamp,
                                                              const QString &p_text) {
   ensureExternalHighlightStyles();
-  adapter()->highlightMath(p_idx, p_timeStamp, p_text);
+  m_webJobs->highlightMath(p_idx, p_timeStamp, p_text);
 }
 
 void MarkdownViewWindow2::ensureExternalHighlightStyles() {
-  if (m_codeBlockStylesInitialized || m_codeBlockStylesPending) {
+  if (m_codeBlockStylesInitialized || m_codeBlockStylesPending || !isEnabled()) {
     return;
   }
-  if (!m_editor || !m_viewerReady || !adapter() || !adapter()->isReady()) {
+  if (!m_editor) {
     return;
   }
 
-  QString content;
-  if (getBuffer().isEncrypted()) {
-    // Only the template-owned bundled stylesheet may enter a protected renderer.
-    if (!m_protectedView) {
-      return;
-    }
-    content = QString::fromUtf8(m_protectedView->highlightStyleSheet);
-  } else {
-    auto *themeService = getServices().get<ThemeService>();
-    const auto file = themeService->getFile(Theme::File::HighlightStyleSheet);
-    if (file.isEmpty()) {
-      qWarning() << "no highlight style sheet specified for external code block highlight";
-      return;
-    }
-
-    Error err = FileUtils2::readTextFile(file, &content);
-    if (err) {
-      qWarning() << "failed to read highlight style sheet for external code block highlight" << file
-                 << err.what();
-      return;
-    }
-  }
-  if (content.isEmpty()) {
-    return;
-  }
   m_codeBlockStylesPending = true;
   const auto generation = ++m_highlightStyleGeneration;
-  const QPointer<MarkdownViewerAdapter> source(adapter());
-  source->fetchStylesFromStyleSheet(
-      content,
-      [this, generation, source](const QVector<MarkdownViewerAdapter::CssRuleStyle> *rules) {
+  m_webJobs->fetchHighlightStyles(
+      [this, generation](const QVector<MarkdownWebJobController::CssRuleStyle> *rules) {
         if (generation != m_highlightStyleGeneration) {
           return;
         }
         m_codeBlockStylesPending = false;
-        if (!source || source != adapter() || !rules || !m_editor) {
+        if (!rules || !m_editor) {
           return;
         }
         MarkdownEditor::ExternalCodeBlockHighlightStyles styles;
@@ -2862,7 +2934,7 @@ void MarkdownViewWindow2::ensureExternalHighlightStyles() {
 
 void MarkdownViewWindow2::onPrintFinished(bool p_succeeded) {
   m_printer.reset();
-  showMessage(p_succeeded ? tr("Printed to PDF") : tr("Failed to print to PDF"));
+  showMessage(p_succeeded ? tr("Printing completed") : tr("Failed to print"));
 }
 
 MarkdownViewerAdapter *MarkdownViewWindow2::adapter() const {

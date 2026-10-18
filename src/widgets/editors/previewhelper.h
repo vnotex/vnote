@@ -14,7 +14,7 @@
 #include <vtextedit/previewmgr.h>
 
 #include "graphpreviewdata.h"
-#include "markdownvieweradapter.h"
+#include <controllers/markdownwebjobcontroller.h>
 #include <core/global.h>
 
 class QTimer;
@@ -74,9 +74,9 @@ public slots:
 
   void mathBlocksUpdated(const QVector<vte::md::MathBlock> &p_mathBlocks);
 
-  void handleGraphPreviewData(const MarkdownViewerAdapter::PreviewData &p_data);
+  void handleGraphPreviewData(const MarkdownWebJobController::PreviewData &p_data);
 
-  void handleMathPreviewData(const MarkdownViewerAdapter::PreviewData &p_data);
+  void handleMathPreviewData(const MarkdownWebJobController::PreviewData &p_data);
 
 signals:
   // Request to preview graph.

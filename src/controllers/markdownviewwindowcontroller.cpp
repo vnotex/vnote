@@ -68,7 +68,8 @@ QMenu *MarkdownViewWindowController::createContextMenu(
 }
 
 MarkdownViewWindowController::ModeTransition MarkdownViewWindowController::computeModeTransition(
-    int p_currentMode, int p_targetMode, bool p_hasEditor, bool p_hasViewer, bool p_syncBuffer) {
+    int p_currentMode, int p_targetMode, MarkdownEditorConfig::EditViewMode p_editViewMode,
+    bool p_hasEditor, bool p_hasViewer, bool p_syncBuffer) {
   ModeTransition result;
 
   if (p_targetMode == p_currentMode) {
@@ -90,16 +91,11 @@ MarkdownViewWindowController::ModeTransition MarkdownViewWindowController::compu
       result.syncBufferToActiveView = true;
     }
   } else if (p_targetMode == editMode) {
+    if (!p_hasViewer && p_editViewMode == MarkdownEditorConfig::EditViewMode::EditPreview) {
+      result.needSetupViewer = true;
+      result.syncViewerFromBuffer = p_syncBuffer;
+    }
     if (!p_hasEditor) {
-      if (!p_hasViewer) {
-        result.needSetupViewer = true;
-        // Also sync viewer from buffer so its HTML template is loaded.
-        // Without this, switching to Read mode later would show a blank
-        // viewer because the WebEngine was never given the template.
-        if (p_syncBuffer) {
-          result.syncViewerFromBuffer = true;
-        }
-      }
       result.needSetupEditor = true;
       if (p_syncBuffer) {
         result.syncEditorFromBuffer = true;

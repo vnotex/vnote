@@ -1293,19 +1293,13 @@ window.completed = 0;
 window.onFinished = null;
 window.workers = {markdownit: {addLangsToSkipHighlight() {}}};
 window.previewResults = [];
-window.previewWaiters = new Map();
 window.vxcore = {
   contentContainer: document.getElementById('content'),
   on() {},
   registerWorker(worker) { workers[worker.name] = worker; worker.register(this); },
   getWorker(name) { return workers[name]; },
   finishWorker() { ++completed; if (onFinished) onFinished(); },
-  renderGraph() { throw new Error('Browser rendering must not dispatch a native process'); },
-  setGraphPreviewData(data) {
-    previewResults.push(data);
-    const waiter = previewWaiters.get(data.id);
-    if (waiter) { previewWaiters.delete(data.id); waiter(data); }
-  }
+  renderGraph() { throw new Error('Browser rendering must not dispatch a native process'); }
 };
 </script>)HTML");
   for (const auto *name : {"utils.js", "vxworker.js", "graphrenderer.js", "imageviewer.js",
@@ -1339,10 +1333,18 @@ try {
     onFinished = resolve;
     renderer.render(container, renderer.langs.map(lang => 'lang-' + lang), format);
   });
-  const preview = (id, lang, text = fixture) => new Promise(resolve => {
-    previewWaiters.set(id, resolve);
-    previewer.previewGraph(id, 1, lang, text);
-  });
+  const preview = async (id, lang, text = fixture) => {
+    try {
+      const data = await previewer.previewGraph(
+        {language:lang, source:text, zoom:1, devicePixelRatio:1, width:800},
+        {id:String(id), cancelled:false});
+      previewResults.push({id:String(id), success:true});
+      return data;
+    } catch (error) {
+      previewResults.push({id:String(id), success:false});
+      throw error;
+    }
+  };
   const previewGeometry = data => geometry(new DOMParser().parseFromString(data.data, 'image/svg+xml'));
   const reference = async engine => geometry(await new Viz().renderSVGElement(fixture, {engine}));
   const imageLoaded = image => new Promise((resolve, reject) => {
@@ -1387,16 +1389,17 @@ try {
     check(pair.every(p => p.format === 'svg'), 'Preview did not deliver SVG');
     check(same(previewGeometry(pair[0]), dot), 'dot preview has wrong layout');
     check(same(previewGeometry(pair[1]), circo), 'circo preview has wrong layout');
-    const unsupported = await preview(3, 'sfdp');
-    check(unsupported.data === '', 'Browser sfdp preview must be empty');
+    const unsupported = await Promise.allSettled([preview(3, 'sfdp')]);
+    check(unsupported[0].status === 'rejected', 'Browser sfdp preview must fail');
     const valid = await preview(4, 'circo');
     check(same(previewGeometry(valid), circo), 'sfdp poisoned subsequent preview');
-    check(same(previewResults.map(p => p.id).sort(), [1, 2, 3, 4]), 'Preview completion count');
+    check(same(previewResults.map(p => p.id).sort(), ['1', '2', '3', '4']), 'Preview completion count');
     result = {previews: previewResults.length};
   } else if (options.scenario === 'preview-recovery') {
-    const pair = await Promise.all([preview(1, 'dot', 'graph {'), preview(2, 'circo')]);
-    check(pair[0].data === '', 'Malformed preview must fail');
-    check(pair[1].format === 'svg' && same(previewGeometry(pair[1]), await reference('circo')),
+    const pair = await Promise.allSettled([preview(1, 'dot', 'graph {'), preview(2, 'circo')]);
+    check(pair[0].status === 'rejected', 'Malformed preview must fail');
+    check(pair[1].status === 'fulfilled' && pair[1].value.format === 'svg'
+          && same(previewGeometry(pair[1].value), await reference('circo')),
           'Malformed input poisoned the concurrently queued preview');
     check(previewResults.length === 2, 'Each queued preview must complete once');
     result = {previews: previewResults.length};

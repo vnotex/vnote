@@ -3,17 +3,12 @@
 
 #include "webviewadapter.h"
 
-#include <QHash>
 #include <QJsonArray>
 #include <QJsonObject>
-#include <QScopedPointer>
 #include <QSize>
 #include <QString>
-#include <QTextCharFormat>
 
 #include <core/global.h>
-
-class QTimer;
 
 namespace vnotex {
 class ServiceLocator;
@@ -36,26 +31,6 @@ public:
     QString m_anchor;
   };
 
-  struct PreviewData {
-    PreviewData() = default;
-
-    PreviewData(quint64 p_id, TimeStamp p_timeStamp, const QString &p_format,
-                const QByteArray &p_data, bool p_needScale, const QSize &p_logicalSize = QSize());
-
-    quint64 m_id = 0;
-
-    quint64 m_timeStamp = 0;
-
-    QString m_format;
-
-    QByteArray m_data;
-
-    bool m_needScale = false;
-
-    // Zoom-adjusted logical pixels; empty uses intrinsic image sizing.
-    QSize m_logicalSize;
-  };
-
   struct Heading {
     Heading() = default;
 
@@ -69,32 +44,6 @@ public:
 
     bool m_isPlaceholder = false;
 
-    QString m_anchor;
-  };
-
-  struct CssRuleStyle {
-    QTextCharFormat toTextCharFormat() const;
-
-    static CssRuleStyle fromJson(const QJsonObject &p_obj);
-
-    QString m_selector;
-
-    QString m_color;
-
-    QString m_backgroundColor;
-
-    QString m_fontWeight;
-
-    QString m_fontStyle;
-  };
-
-  // Result of resolving the anchor id of a heading at the web side.
-  struct HeadingAnchorResult {
-    // Whether a heading was found at the requested line.
-    bool m_found = false;
-
-    // The anchor id. May legitimately be empty for an empty heading, hence the
-    // explicit @m_found flag.
     QString m_anchor;
   };
 
@@ -143,21 +92,6 @@ public:
   // Should be called before WebViewer.setHtml().
   void reset();
 
-  void highlightCodeBlock(int p_idx, quint64 p_timeStamp, const QString &p_text);
-
-  void highlightMath(int p_idx, quint64 p_timeStamp, const QString &p_text);
-
-  // Parse style sheet and fetch the styles.
-  void
-  fetchStylesFromStyleSheet(const QString &p_styleSheet,
-                            const std::function<void(const QVector<CssRuleStyle> *)> &p_callback);
-
-  // Resolve the anchor id of the heading starting at 0-based source line
-  // @p_lineNumber of @p_text, using the web side markdown-it instance so that
-  // the anchor matches the rendered one exactly.
-  void fetchHeadingAnchor(const QString &p_text, int p_lineNumber,
-                          const std::function<void(const HeadingAnchorResult &)> &p_callback);
-
   // Tell the web side that the toggle of the task list item at 0-based source
   // line @p_lineNumber was rejected.
   void emitTaskListToggleRejected(int p_lineNumber);
@@ -178,16 +112,6 @@ public slots:
   // The line number at the top.
   void setTopLineNumber(int p_lineNumber);
 
-  // Web sets back the preview result.
-  void setGraphPreviewData(quint64 p_id, quint64 p_timeStamp, const QString &p_format,
-                           const QString &p_data, bool p_base64 = false, bool p_needScale = false,
-                           int p_logicalWidth = 0, int p_logicalHeight = 0);
-
-  // Web sets back the preview result.
-  void setMathPreviewData(quint64 p_id, quint64 p_timeStamp, const QString &p_format,
-                          const QString &p_data, bool p_base64 = false, bool p_needScale = false,
-                          int p_logicalWidth = 0, int p_logicalHeight = 0);
-
   // Set the headings.
   void setHeadings(const QJsonArray &p_headings, bool p_hasSectionNumber);
 
@@ -197,13 +121,6 @@ public slots:
   void setKeyPress(int p_key, bool p_ctrl, bool p_shift, bool p_meta);
 
   void zoom(bool p_zoomIn);
-
-  // Set back the result of htmlToMarkdown() call.
-  void setMarkdownFromHtml(quint64 p_id, quint64 p_timeStamp, const QString &p_text);
-
-  void setCodeBlockHighlightHtml(int p_idx, quint64 p_timeStamp, const QString &p_html);
-
-  void setMathHighlightHtml(int p_idx, quint64 p_timeStamp, const QString &p_html);
 
   void setCrossCopyTargets(const QJsonArray &p_targets);
 
@@ -217,10 +134,6 @@ public slots:
   // Call local CPP code to render graph.
   void renderGraph(quint64 p_id, quint64 p_index, const QString &p_format, const QString &p_lang,
                    const QString &p_text, int p_imageIndex);
-
-  void setStyleSheetStyles(quint64 p_id, const QJsonArray &p_styles);
-
-  void setHeadingAnchor(quint64 p_id, bool p_found, const QString &p_anchor);
 
   // Web side requests to toggle the task list item at 0-based source line
   // @p_lineNumber to @p_checked.
@@ -241,21 +154,9 @@ signals:
   // Current editor line number is updated.
   void editLineNumberUpdated(int p_lineNumber);
 
-  // Request to preview graph.
-  // @p_scale: the editor zoom ratio (without any DPI factor).
-  void graphPreviewRequested(quint64 p_id, quint64 p_timeStamp, const QString &p_lang,
-                             const QString &p_text, qreal p_scale);
-
-  // Request to preview math.
-  // @p_scale: the editor zoom ratio (without any DPI factor).
-  void mathPreviewRequested(quint64 p_id, quint64 p_timeStamp, const QString &p_text,
-                            qreal p_scale);
-
   void anchorScrollRequested(const QString &p_anchor);
 
   void scrollRequested(bool p_up);
-
-  void htmlToMarkdownRequested(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
 
   void crossCopyRequested(quint64 p_id, quint64 p_timeStamp, const QString &p_target,
                           const QString &p_baseUrl, const QString &p_html);
@@ -265,14 +166,6 @@ signals:
 
   void graphRenderDataReady(quint64 p_id, quint64 p_index, const QString &p_format,
                             const QString &p_data, bool p_success);
-
-  void highlightCodeBlockRequested(int p_idx, quint64 p_timeStamp, const QString &p_text);
-
-  void highlightMathRequested(int p_idx, quint64 p_timeStamp, const QString &p_text);
-
-  void parseStyleSheetRequested(quint64 p_id, const QString &p_styleSheet);
-
-  void headingAnchorRequested(quint64 p_id, const QString &p_text, int p_lineNumber);
 
   // The toggle of the task list item at 0-based source line @p_lineNumber was
   // rejected; the web side should restore the checkbox state.
@@ -285,10 +178,6 @@ signals:
   void imageViewStateChanged(quint64 p_id, bool p_opened);
   void imageViewCancelled(quint64 p_id);
 
-  void graphPreviewDataReady(const PreviewData &p_data);
-
-  void mathPreviewDataReady(const PreviewData &p_data);
-
   // All rendering work has finished.
   void workFinished();
 
@@ -300,18 +189,12 @@ signals:
 
   void zoomed(bool p_zoomIn);
 
-  void htmlToMarkdownReady(quint64 p_id, quint64 p_timeStamp, const QString &p_text);
-
   void crossCopyReady(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
 
   void contentReady(const QString &p_headContent, const QString &p_styleContent,
                     const QString &p_content, const QString &p_bodyClassList);
 
   void pdfRenderReady();
-
-  void highlightCodeBlockReady(int p_idx, quint64 p_timeStamp, const QString &p_html);
-
-  void highlightMathReady(int p_idx, quint64 p_timeStamp, const QString &p_html);
 
   // Web side requested to toggle a task list item.
   void taskListItemToggleRequested(int p_lineNumber, bool p_checked);
@@ -350,26 +233,6 @@ private:
   QStringList m_crossCopyTargets;
 
   ServiceLocator *m_services = nullptr; // Non-owning; set by ServiceLocator-aware constructor
-
-  // Diagnostics for the in-place preview bridge. Accumulated per generation and
-  // reported once on a 2s idle timer, never per result. See
-  // .kilo/plans/1788310000000-trace-edit-mode-preview-perf.md.
-  void perfNoteDecode(quint64 p_timeStamp, qint64 p_nsecs, int p_chars, int p_bytes);
-
-  void perfReportDecode();
-
-  struct PerfDecodeStats {
-    int m_count = 0;
-    qint64 m_nsecs = 0;
-    qint64 m_maxNsecs = 0;
-    qint64 m_chars = 0;
-    qint64 m_bytes = 0;
-  };
-
-  QTimer *m_perfDecodeTimer = nullptr;
-
-  // Generation timestamp -> decode statistics.
-  QHash<quint64, PerfDecodeStats> m_perfDecodeStats;
 };
 } // namespace vnotex
 
