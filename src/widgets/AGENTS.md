@@ -175,6 +175,9 @@ Use inherited focus/save/reload/close and BufferService, never per-keystroke buf
 or QFile saves. Retarget project/active identity and remove the obsolete overlay without
 reloading text. Theme changes go through the composite `setConfig()`, preserving source
 history and PDF zoom; authored PDF colors are not application palette colors.
+Set `TypstEditorConfig::m_pdfBackground` from `ThemeService::getBaseBackground()`, matching
+the PDF view's canvas in Edit and Read. The native pane paints that color directly:
+QSS can override widget palettes, so a `QPalette::Dark` override is not sufficient.
 
 Publish compiled heading metadata in order, including repeated/generated/imported/deep
 headings, with no producer-side gap fillers or Markdown parsing. The shared outline model

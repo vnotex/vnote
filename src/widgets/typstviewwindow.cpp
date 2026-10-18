@@ -259,6 +259,7 @@ QSharedPointer<vte::TypstEditorConfig> TypstViewWindow::buildEditorConfig() cons
       editorConfig, textEditorConfig, themeService->fetchTextEditorStyle(),
       themeService->getEditorHighlightTheme(), WidgetUtils::calculateScaleFactor(),
       getEditorMaxContentWidth());
+  config->m_pdfBackground = themeService->getBaseBackground();
   config->m_helperExecutable = QDir(QCoreApplication::applicationDirPath())
                                    .absoluteFilePath(QStringLiteral("vtextedit-typst"));
 #ifdef Q_OS_WIN
