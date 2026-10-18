@@ -24,6 +24,16 @@ its native Schannel TLS backend; Git sync uses WinHTTP. Do not bundle OpenSSL
 DLLs or a separate UCRT redistributable: supported Windows versions provide UCRT.
 Keep the MSVC runtime deployment and its fallback for newer toolsets, the flat
 package layout, and the SDK/stray-executable composition gates.
+
+Deploy with `--no-pdf`: the PDF reader uses pdf.js and PDF export uses WebEngine,
+not `Qt6Pdf.dll` or `imageformats/qpdf.dll`. Remove only the unused NMEA position
+plugin after deployment (including its debug variant); it needs SerialPort, and
+Qt 6.10.3 still deploys it with `--exclude-plugins`. Keep `Qt6Positioning.dll`,
+the other positioning plugins, and WebEngine's QML/Quick/OpenGL dependencies.
+Do not prune the dynamically loaded D3D/DXC compilers or the MSVC runtime set.
+The extracted-ZIP composition gate rejects Qt PDF, NMEA, and application-local
+UCRT/API-set DLLs recursively. Keep `qtpdf` in the CI SDK so this exclusion is
+verified even when that optional module is installed.
 ---
 
 ## Update artifacts
