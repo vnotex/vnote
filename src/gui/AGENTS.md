@@ -144,8 +144,10 @@ views that opt into alternating rows. Native stays on the system palette.
 Location List and Comments explicitly disable alternating rows; no application view
 currently enables them. `tests/gui/test_themeservice.cpp` deliberately opts in to
 verify theme colors and Native restoration independently of application row policy.
-Its background-only fixture is mouse-transparent with unfocusable views so native
-hover/focus animations cannot contaminate the baseline or restoration samples.
+Its background-only fixture parks the physical cursor outside the centered window
+before exposure and restores it after destruction; the views are unfocusable.
+Mouse transparency alone is insufficient: layout/scrollbar changes can derive
+hover directly from the global cursor position.
 
 ## Light-theme graph canvases
 

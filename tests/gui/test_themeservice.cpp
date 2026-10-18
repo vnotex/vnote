@@ -1,6 +1,7 @@
 #include <QtTest>
 
 #include <QColor>
+#include <QCursor>
 #include <QDir>
 #include <QFile>
 #include <QFileInfo>
@@ -9,7 +10,9 @@
 #include <QPainter>
 #include <QPalette>
 #include <QPlainTextEdit>
+#include <QScopeGuard>
 #include <QScopedPointer>
+#include <QScreen>
 #include <QSet>
 #include <QStandardItemModel>
 #include <QStandardPaths>
@@ -526,9 +529,9 @@ void TestThemeService::alternatingRowsFollowThemeChanges() {
   QPalette desktopPalette = qApp->palette();
   desktopPalette.setColor(QPalette::Base, Qt::white);
   desktopPalette.setColor(QPalette::AlternateBase, QColor(247, 247, 247));
+  const auto cursorPosition = QCursor::pos();
+  const auto restoreCursor = qScopeGuard([cursorPosition] { QCursor::setPos(cursorPosition); });
   QWidget host;
-  // The fixture measures row backgrounds, not native hover/focus animations.
-  host.setAttribute(Qt::WA_TransparentForMouseEvents);
   host.setPalette(desktopPalette);
   QVBoxLayout layout(&host);
   QTreeWidget tree;
@@ -545,6 +548,10 @@ void TestThemeService::alternatingRowsFollowThemeChanges() {
     list.addItem(QStringLiteral("Comment %1").arg(i));
   }
   host.resize(480, 400);
+  const auto available = host.screen()->availableGeometry();
+  host.move(available.center() - host.rect().center());
+  // Layout/scrollbar changes also derive hover from the physical cursor.
+  QCursor::setPos(available.topLeft());
   host.show();
   QVERIFY(QTest::qWaitForWindowExposed(&host));
   tree.setCurrentIndex(QModelIndex());
