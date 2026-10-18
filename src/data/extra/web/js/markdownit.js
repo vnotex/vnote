@@ -274,6 +274,7 @@ class MarkdownIt extends VxWorker {
     // @p_finishCbStr will be called after finishing loading new content nodes.
     // This could prevent Mermaid Gantt from negative width error.
     render(p_node, p_text, p_finishCbStr) {
+        this.vxcore.emit('markdownContentWillChange', p_node);
         if (window.vxOptions.protectedView) {
             this.vxcore.navigationLinkDestinations = new WeakMap();
         }

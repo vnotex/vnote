@@ -248,6 +248,8 @@ private slots:
   void immutableThemeGenerations();
   void macroIsolation_data();
   void macroIsolation();
+  void readerMathLifecycle_data();
+  void readerMathLifecycle();
   void sourceFailuresAndCancellationDrain();
 };
 
@@ -610,6 +612,100 @@ void TestMarkdownWebJobs::macroIsolation() {
     QCOMPARE(
         evaluate(runtime.page, QStringLiteral("MathJax.tex2mml('\\\\vxreadermacro')")).toString(),
         readerMacro);
+  }
+}
+
+void TestMarkdownWebJobs::readerMathLifecycle_data() {
+  QTest::addColumn<bool>("mathJax");
+  QTest::newRow("mathjax") << true;
+  QTest::newRow("katex") << false;
+}
+
+void TestMarkdownWebJobs::readerMathLifecycle() {
+  QFETCH(bool, mathJax);
+  const auto script = mathJax ? QUrl::fromLocalFile(QStringLiteral(VNOTE_TEST_MATHJAX_SCRIPT)).toString()
+                             : QString();
+  Runtime runtime(false, QColor(17, 85, 153), QUrl::fromLocalFile(webDir() + QLatin1Char('/')), script);
+  QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+  const auto text = QStringLiteral(
+      "# Math\n\nInline $a_1^2+b_1^2=c_1^2$ and $\\sqrt{2}$.\n\n"
+      "$$\n\\int_0^1 x\\,dx=\\frac{1}{2}\n$$\n\n"
+      "```mathjax\n$$\n\\sum_{n=1}^{5}n=15\n$$\n```\n");
+  const QStringList expectedSources{QStringLiteral("a_1^2+b_1^2=c_1^2"),
+                                    QStringLiteral("\\sqrt{2}"),
+                                    QStringLiteral("\\int_0^1 x\\,dx=\\frac{1}{2}"),
+                                    QStringLiteral("\\sum_{n=1}^{5}n=15")};
+  int passes = 0;
+  // Plain and empty replacements both retire the old document; subsequent math must still work.
+  for (const auto &replacement : {QStringLiteral("# Plain\n\nNo formulas"), QString()}) {
+    for (int repeat = 0; repeat < 3; ++repeat) {
+      runtime.adapter->setText(text);
+      ++passes;
+      QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), passes, 30000);
+      const auto result = evaluate(runtime.page, QStringLiteral(R"JS(
+JSON.stringify((() => {
+  const root = vxcore.contentContainer;
+  const doc = window.MathJax && MathJax.startup.document;
+  const items = doc ? Array.from(doc.math) : [];
+  return {
+    sources: doc ? items.map(item => item.math.trim())
+      : Array.from(root.querySelectorAll('annotation[encoding="application/x-tex"]'),
+                   node => node.textContent.trim()),
+    detached: items.filter(item => !item.typesetRoot.isConnected).length,
+    formulas: root.querySelectorAll('mjx-container, .katex').length,
+    errors: root.querySelectorAll('[data-mml-node="merror"], .katex-error').length
+  };
+})())
+)JS"));
+      const auto state = QJsonDocument::fromJson(result.toString().toUtf8()).object();
+      QCOMPARE(state.value(QStringLiteral("sources")).toArray().toVariantList(),
+               QJsonArray::fromStringList(expectedSources).toVariantList());
+      QCOMPARE(state.value(QStringLiteral("detached")).toInt(-1), 0);
+      QCOMPARE(state.value(QStringLiteral("formulas")).toInt(-1), 4);
+      QCOMPARE(state.value(QStringLiteral("errors")).toInt(-1), 0);
+      if (mathJax) {
+        // Select a real MathItem through its installed menu listener, not a fixture-held DOM ref.
+        QVERIFY(evaluate(runtime.page, QStringLiteral(R"JS(
+(() => {
+  document.querySelector('mjx-container').dispatchEvent(
+    new MouseEvent('contextmenu', {bubbles:true, cancelable:true, clientX:20, clientY:20}));
+  return !!MathJax.startup.document.menu.menu.mathItem;
+})()
+)JS")).toBool());
+      }
+    }
+    runtime.adapter->setText(replacement);
+    ++passes;
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), passes, 30000);
+    const auto cleared = evaluate(runtime.page, QStringLiteral(R"JS(
+JSON.stringify((() => {
+  const doc = window.MathJax && MathJax.startup.document;
+  if (!doc) return {formulas:document.querySelectorAll('#vx-content .katex').length};
+  const output = doc.outputJax;
+  const menu = doc.menu.menu;
+  const refs = [output.math && output.math.typesetRoot, output.container,
+                output.fontCache && output.fontCache.defs,
+                menu.mathItem && menu.mathItem.typesetRoot, menu.anchor, menu.store.active]
+    .concat(doc.options.elements || [], Object.values(menu.store.store));
+  return {
+    formulas:document.querySelectorAll('#vx-content mjx-container').length,
+    tracked:Array.from(doc.math).length,
+    menuItems:Object.keys(menu.store.store).length,
+    menuHandlers:Object.keys(menu.store.attrMap).length,
+    retained:refs.filter(node => node && !node.isConnected && node.parentNode).length,
+    selected:!!menu.mathItem
+  };
+})())
+)JS"));
+    const auto state = QJsonDocument::fromJson(cleared.toString().toUtf8()).object();
+    QCOMPARE(state.value(QStringLiteral("formulas")).toInt(-1), 0);
+    if (mathJax) {
+      QCOMPARE(state.value(QStringLiteral("tracked")).toInt(-1), 0);
+      QCOMPARE(state.value(QStringLiteral("menuItems")).toInt(-1), 0);
+      QCOMPARE(state.value(QStringLiteral("menuHandlers")).toInt(-1), 0);
+      QCOMPARE(state.value(QStringLiteral("retained")).toInt(-1), 0);
+      QVERIFY(!state.value(QStringLiteral("selected")).toBool(true));
+    }
   }
 }
 

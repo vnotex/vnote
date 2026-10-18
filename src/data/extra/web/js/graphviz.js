@@ -69,7 +69,8 @@ class Graphviz extends GraphRenderer {
                 ? this.viz.renderSVGElement(p_text, {engine: p_engine})
                 : this.viz.renderImageElement(p_text, {engine: p_engine});
         });
-        this.pendingRender = result.catch(() => this.recreateViz());
+        // Keep ordering and failure recovery, but do not retain the last rendered DOM subtree.
+        this.pendingRender = result.then(() => {}, () => { this.recreateViz(); });
         return result;
     }
 

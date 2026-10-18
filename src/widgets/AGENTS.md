@@ -645,6 +645,27 @@ prefetch of unused fonts. The native hidden-page regression in `test_markdownvie
 global readiness and an unrelated font pending while requiring math to wait for its own font and
 then finish reading, PNG preview and export.
 
+### Markdown renderer lifetime
+
+`MarkdownIt.render()` emits `markdownContentWillChange(container)` before replacing content,
+including plain-text, empty and protected renders. MathJax cleanup belongs at this boundary,
+not at `fullMarkdownRendered`: current formulas must retain their menus and accessibility state.
+`MathRenderer` clears the reader's MathItems while their old ancestors are still attached, then
+releases its last target/output references and local SVG font cache. It never initializes math
+just to clear content, touches editor preview scopes, or resets the reader's TeX declarations.
+KaTeX has no corresponding retained document; its rendering and font-readiness paths are unchanged.
+
+MathJax 3's context menu must be unposted only when posted. Clearing bindings alone retains its
+selection, anchor, store focus and bound-handler table; retire those references too. The small
+version-specific cleanup is isolated in `MathRenderer.clearReadingMath()` and covered with the
+real pinned MathJax engine in `test_markdownwebjobs`, including menu use before replacement.
+Cleanup failures are logged without stranding the Markdown worker's completion count.
+
+`Graphviz.pendingRender` is an ordering/recovery barrier, not a result cache. Its settled value
+must not retain an SVG/IMG or the detached section containing it; callers receive the separate
+result promise. Keep recovery before the next queued render. `test_graphrenderer_js` covers
+read/preview results and SVG/PNG failure recovery. Do not add unconditional post-render GC.
+
 ### Toolbar
 
 - `ToolbarHelper2` — main window toolbar construction

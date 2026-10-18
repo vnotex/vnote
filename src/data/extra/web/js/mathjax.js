@@ -6,6 +6,7 @@ class MathRenderer extends VxWorker {
         this.renderer = !window.vxOptions.protectedView
             && window.vxOptions.mathRenderer === 'mathjax' ? 'mathjax' : 'katex';
         this.initialization = null;
+        this.mathJaxReady = false;
         this.rasterInitialization = null;
         this.mathJaxPreviewScopes = null;
         this.katexId = 0;
@@ -30,10 +31,63 @@ class MathRenderer extends VxWorker {
     }
 
     registerInternal() {
+        this.vxcore.on('markdownContentWillChange', (p_node) => {
+            try {
+                this.clearReadingMath(p_node);
+            } catch (error) {
+                // A custom MathJax build must not strand the Markdown worker on cleanup failure.
+                console.error('failed to clear previous MathJax content', error);
+            }
+        });
         this.vxcore.on('basicMarkdownRendered', () => {
             this.render(this.vxcore.contentContainer, 'tex-to-render');
         });
         this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
+    }
+
+    clearReadingMath(p_node) {
+        if (this.renderer !== 'mathjax' || !this.mathJaxReady
+            || p_node !== this.vxcore.contentContainer) {
+            return;
+        }
+
+        // The startup document belongs to the reader; editor scopes own their own documents.
+        // Retire items while their ancestors still identify the content being replaced.
+        const mathDocument = window.MathJax.startup.document;
+        window.MathJax.typesetClear([p_node]);
+        const menu = mathDocument.menu;
+        if (menu) {
+            const widget = menu.menu;
+            if (widget && typeof widget.isPosted === 'function' && widget.isPosted()
+                && typeof widget.unpost === 'function') {
+                widget.unpost();
+            }
+            if (typeof menu.clear === 'function') {
+                menu.clear();
+            }
+            if (widget) {
+                widget.mathItem = null;
+                widget.anchor = null;
+                // MathJax 3's context-menu store removes listeners but retains their bound
+                // functions and the last focused formula. Its active setter cannot clear it.
+                if (widget.store) {
+                    widget.store._active = null;
+                    widget.store.attrMap = {};
+                }
+            }
+        }
+
+        // MathJax 3 retains the last targets and SVG even after typesetClear(). One such
+        // reference keeps its entire detached heading section alive. Preserve input-jax
+        // declarations, menu settings and live SVG defs; clearCache replaces only the cache.
+        mathDocument.options.elements = null;
+        const output = mathDocument.outputJax;
+        output.math = null;
+        output.container = null;
+        if (output.fontCache && output.options.fontCache === 'local'
+            && typeof output.fontCache.clearCache === 'function') {
+            output.fontCache.clearCache();
+        }
     }
 
     initialize() {
@@ -65,12 +119,15 @@ class MathRenderer extends VxWorker {
                                 return;
                             }
                             Promise.resolve(window.MathJax.startup.promise).then(() => {
-                                if (typeof window.MathJax.typesetPromise !== 'function'
+                                if (!window.MathJax.startup.document
+                                    || typeof window.MathJax.typesetPromise !== 'function'
+                                    || typeof window.MathJax.typesetClear !== 'function'
                                     || typeof window.MathJax.tex2svg !== 'function'
                                     || typeof window.MathJax.texReset !== 'function'
                                     || typeof window.MathJax.getMetricsFor !== 'function') {
                                     throw new Error('MathJax API unavailable');
                                 }
+                                this.mathJaxReady = true;
                             }).then(resolve, reject);
                         });
                     });

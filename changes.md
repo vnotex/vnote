@@ -2,6 +2,7 @@
 ## Unreleased
 * Add mind-map Print to the toolbar menu, fitting the current layout to one page with vector text, images, links and inline drafts
 * Print the rendered Markdown viewer in Read mode and the editor's current Markdown source in Edit mode, including editor selections and live-preview split layouts
+* Release obsolete MathJax formulas, menu references and Graphviz results when Markdown read content is replaced, without forcing garbage collection
 * Trim unused Qt PDF and NMEA positioning DLLs from Windows packages, and reject obsolete application-local UCRT files in package checks
 * Initialize export rendering and syntax styles from the current theme on the first dialog show in each app session, preserving later choices within that session
 * Add Export above Shortcuts Help in the mind map editor's empty-canvas context menu, using the current buffer and the existing export dialog

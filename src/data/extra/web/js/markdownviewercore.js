@@ -1,6 +1,7 @@
 /*
     Markdown events:
         - markdownTextUpdated(p_text)
+        - markdownContentWillChange(p_node)
         - basicMarkdownRendered()
         - fullMarkdownRendered()
 */

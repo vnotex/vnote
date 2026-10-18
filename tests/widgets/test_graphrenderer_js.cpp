@@ -1438,6 +1438,9 @@ try {
     }
     result = {format, completed};
   }
+  // The queue must retain ordering/recovery, not the last SVG/IMG and its detached ancestors.
+  check(!((await renderer.pendingRender) instanceof Node),
+        'Completed Graphviz queue retains a rendered DOM subtree');
   window.__graphResult = JSON.stringify(result);
 } catch (error) {
   window.__graphResult = JSON.stringify({error: String(error) + '\n' + error.stack});
