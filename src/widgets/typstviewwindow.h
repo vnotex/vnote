@@ -7,7 +7,6 @@
 
 #include <vtextedit/vtypsteditor.h>
 
-class QActionGroup;
 class QLabel;
 class QSpinBox;
 
@@ -82,7 +81,6 @@ private:
   bool isActiveFileHeading(const vte::TypstHeadingInfo &p_heading) const;
   void updateCurrentHeading();
   void setupPdfToolBar(QToolBar *p_toolBar);
-  void setupModeToolBar(QToolBar *p_toolBar);
   void updatePresentationActions();
   void updateFindBackend();
   void createEditor();
@@ -102,7 +100,6 @@ private:
   vte::VTextEditor *m_editor = nullptr;
   EditorStatusBarBinder *m_statusBinder = nullptr;
   InlineBanner *m_loadErrorBanner = nullptr;
-  int m_compileStatusColumn = -1;
   QSharedPointer<OutlineProvider> m_outlineProvider;
   // Index-aligned with the published outline, including repeated and imported headings.
   QVector<vte::TypstHeadingInfo> m_outlineHeadings;
@@ -111,20 +108,16 @@ private:
   PresentationToolBarEffect *m_presentationEffect = nullptr;
   QColor m_presentationBackground;
 
-  QAction *m_viewModeAction = nullptr;
-  QActionGroup *m_modeActions = nullptr;
+  QAction *m_livePreviewAction = nullptr;
+  QAction *m_inplacePreviewAction = nullptr;
   QVector<QAction *> m_pdfActions;
   QAction *m_previousPageAction = nullptr;
   QAction *m_nextPageAction = nullptr;
-  QAction *m_retryAction = nullptr;
-  QAction *m_showOutputAction = nullptr;
-  QAction *m_updatePreviewAction = nullptr;
   QSpinBox *m_pageSpinBox = nullptr;
   QLabel *m_pageCountLabel = nullptr;
   FindOptions m_sourceFindOptions = FindOption::FindNone;
   bool m_sourceFindOptionsSaved = false;
 
-  vte::VTypstEditor::Mode m_lastEditingMode = vte::VTypstEditor::Mode::SideBySidePreview;
   bool m_propagateEditorToBuffer = false;
   bool m_sourceAvailable = false;
 };

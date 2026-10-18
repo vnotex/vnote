@@ -1,7 +1,6 @@
 #include "typstviewwindow.h"
 
 #include <QAction>
-#include <QActionGroup>
 #include <QCoreApplication>
 #include <QDir>
 #include <QLabel>
@@ -76,7 +75,7 @@ TypstViewWindow::TypstViewWindow(ServiceLocator &p_services, const Buffer2 &p_bu
 
   setupOutlineProvider();
   setupUI();
-  // Neither the host's initial Read nor the native initial InPlacePreview is authoritative.
+  // Apply the requested host mode after creating the native editor.
   setMode(p_initialMode);
   syncModeFromEditor();
 }
@@ -86,10 +85,10 @@ TypstViewWindow::~TypstViewWindow() { setViewFullScreen(false); }
 void TypstViewWindow::setupUI() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
+  addAction(toolBar, ViewWindowToolBarHelper2::EditRead);
   addLeftCommonToolBarActions(toolBar);
   setupPdfToolBar(toolBar);
   addRightCommonToolBarActions(toolBar);
-  setupModeToolBar(toolBar);
   updatePresentationActions();
 
   m_loadErrorBanner = new InlineBanner(InlineBanner::Severity::Error, QString(), this);
@@ -102,12 +101,20 @@ void TypstViewWindow::setupUI() {
   encoding.type = StatusBarColumnType::Widget;
   const int encodingIndex = def.size();
   def << encoding;
-  StatusBarColumn compilation;
-  compilation.type = StatusBarColumnType::Label;
-  m_compileStatusColumn = def.size();
-  def << compilation;
   setStatusBarDef(def);
   statusBar()->setColumnWidget(encodingIndex, ensureEncodingButton());
+
+  // Read collapses editor status, but transient messages can still appear like Markdown.
+  connect(statusBar(), &StatusBar::messageVisibilityChanged, this, [this](bool p_visible) {
+    if (m_mode == ViewWindowMode::Read) {
+      statusBar()->setMaximumHeight(p_visible ? QWIDGETSIZE_MAX : 0);
+    }
+  });
+  connect(this, &ViewWindow2::modeChanged, this, [this]() {
+    showMessage(QString());
+    statusBar()->setMaximumHeight(m_mode == ViewWindowMode::Read ? 0 : QWIDGETSIZE_MAX);
+  });
+  statusBar()->setMaximumHeight(m_mode == ViewWindowMode::Read ? 0 : QWIDGETSIZE_MAX);
 
   syncEditorFromBuffer();
   m_propagateEditorToBuffer = true;
@@ -157,74 +164,6 @@ void TypstViewWindow::setupPdfToolBar(QToolBar *p_toolBar) {
   connect(fitPage, &QAction::triggered, this, [this]() { m_typstEditor->fitPdfPage(); });
 }
 
-void TypstViewWindow::setupModeToolBar(QToolBar *p_toolBar) {
-  const auto icon = QStringLiteral("view_mode_editor.svg");
-  m_viewModeAction = p_toolBar->addAction(
-      ViewWindowToolBarHelper2::generateIcon(getServices(), icon), tr("View Mode"));
-  m_viewModeAction->setProperty("iconName", icon);
-  m_viewModeAction->setObjectName(QStringLiteral("typstViewModeAction"));
-  auto *menu = new QMenu(p_toolBar);
-  m_viewModeAction->setMenu(menu);
-  m_modeActions = new QActionGroup(menu);
-  m_modeActions->setExclusive(true);
-  const auto addMode = [this, menu](const QString &p_text, const QString &p_name,
-                                    vte::VTypstEditor::Mode p_mode) {
-    auto *action = menu->addAction(p_text);
-    action->setObjectName(p_name);
-    action->setCheckable(true);
-    action->setData(static_cast<int>(p_mode));
-    m_modeActions->addAction(action);
-    connect(action, &QAction::triggered, this, [this, p_mode]() {
-      if (m_typstEditor) {
-        m_typstEditor->setMode(p_mode);
-      } else {
-        if (p_mode != vte::VTypstEditor::Mode::Read) {
-          m_lastEditingMode = p_mode;
-        }
-        setMode(p_mode == vte::VTypstEditor::Mode::Read ? ViewWindowMode::Read
-                                                        : ViewWindowMode::Edit);
-      }
-      updatePresentationActions();
-    });
-  };
-  addMode(tr("Side-by-Side Preview"), QStringLiteral("typstSideBySideAction"),
-          vte::VTypstEditor::Mode::SideBySidePreview);
-  addMode(tr("In-Place Preview"), QStringLiteral("typstInPlaceAction"),
-          vte::VTypstEditor::Mode::InPlacePreview);
-  addMode(tr("Read View"), QStringLiteral("typstReadAction"), vte::VTypstEditor::Mode::Read);
-  auto *button = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(m_viewModeAction));
-  button->setPopupMode(QToolButton::InstantPopup);
-  button->setProperty("NoMenuIndicator", true);
-
-  const auto &shortcuts = getServices().get<ConfigMgr2>()->getEditorConfig();
-  ViewWindowToolBarHelper2::addActionShortcut(
-      m_viewModeAction, shortcuts.getShortcut(EditorConfig::AlternateViewMode), this);
-  m_viewModeAction->setToolTip(tr("View Mode"));
-  connect(m_viewModeAction, &QAction::triggered, this, [this]() {
-    const auto mode =
-        m_typstEditor
-            ? m_typstEditor->mode()
-            : (m_mode == ViewWindowMode::Read ? vte::VTypstEditor::Mode::Read : m_lastEditingMode);
-    const auto next = mode == vte::VTypstEditor::Mode::SideBySidePreview
-                          ? vte::VTypstEditor::Mode::InPlacePreview
-                          : (mode == vte::VTypstEditor::Mode::InPlacePreview
-                                 ? vte::VTypstEditor::Mode::Read
-                                 : vte::VTypstEditor::Mode::SideBySidePreview);
-    for (auto *action : m_modeActions->actions()) {
-      if (action->data().toInt() == static_cast<int>(next)) {
-        action->trigger();
-        break;
-      }
-    }
-  });
-  auto *editRead = new QAction(tr("Toggle Read/Edit"), this);
-  ViewWindowToolBarHelper2::addActionShortcut(editRead,
-                                              shortcuts.getShortcut(EditorConfig::EditRead), this);
-  connect(editRead, &QAction::triggered, this, [this]() {
-    setMode(m_mode == ViewWindowMode::Read ? ViewWindowMode::Edit : ViewWindowMode::Read);
-  });
-}
-
 void TypstViewWindow::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
   auto *action = addAction(p_toolBar, ViewWindowToolBarHelper2::Outline);
   auto *button = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(action));
@@ -237,29 +176,36 @@ void TypstViewWindow::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
 
 void TypstViewWindow::addAdditionalMenuActions(QMenu *p_menu) {
   p_menu->addSeparator();
-  m_retryAction = p_menu->addAction(tr("Retry Compilation"));
-  connect(m_retryAction, &QAction::triggered, this,
-          [this]() { m_typstEditor->retryCompilation(); });
-  m_showOutputAction = p_menu->addAction(tr("Show Cursor in Output"));
-  connect(m_showOutputAction, &QAction::triggered, this,
-          [this]() { m_typstEditor->showOutputAtCursor(); });
-  m_updatePreviewAction = p_menu->addAction(tr("Update Preview"));
-  connect(m_updatePreviewAction, &QAction::triggered, this,
-          [this]() { m_typstEditor->publishPendingPdfUpdate(); });
+  m_livePreviewAction = addAction(p_menu, ViewWindowToolBarHelper2::ToggleLivePreview);
+  m_livePreviewAction->setChecked(true);
+  connect(m_livePreviewAction, &QAction::toggled, this, [this](bool p_enabled) {
+    if (m_typstEditor) {
+      m_typstEditor->setLivePreviewEnabled(p_enabled);
+    } else {
+      updatePresentationActions();
+    }
+  });
+  m_inplacePreviewAction = addAction(p_menu, ViewWindowToolBarHelper2::InplacePreview);
+  m_inplacePreviewAction->setChecked(true);
+  connect(m_inplacePreviewAction, &QAction::toggled, this, [this](bool p_enabled) {
+    if (m_typstEditor) {
+      m_typstEditor->setInplacePreviewEnabled(p_enabled);
+    }
+  });
 }
 
 void TypstViewWindow::updatePresentationActions() {
-  const auto mode = m_typstEditor ? m_typstEditor->mode()
-                                  : (m_mode == ViewWindowMode::Read ? vte::VTypstEditor::Mode::Read
-                                                                    : m_lastEditingMode);
-  const QSignalBlocker blocker(m_modeActions);
-  for (auto *action : m_modeActions->actions()) {
-    action->setChecked(action->data().toInt() == static_cast<int>(mode));
+  if (m_typstEditor) {
+    const QSignalBlocker liveBlocker(m_livePreviewAction);
+    const QSignalBlocker inplaceBlocker(m_inplacePreviewAction);
+    m_livePreviewAction->setChecked(m_typstEditor->isLivePreviewEnabled());
+    m_inplacePreviewAction->setChecked(m_typstEditor->isInplacePreviewEnabled());
   }
+  const bool pdfVisible = m_mode == ViewWindowMode::Read || m_livePreviewAction->isChecked();
   const int count = m_typstEditor ? m_typstEditor->pdfPageCount() : 0;
   const int page = m_typstEditor ? m_typstEditor->currentPdfPage() : -1;
   for (auto *action : m_pdfActions) {
-    action->setVisible(mode != vte::VTypstEditor::Mode::InPlacePreview);
+    action->setVisible(pdfVisible);
     action->setEnabled(count > 0);
   }
   m_previousPageAction->setEnabled(count > 0 && page > 0);
@@ -268,11 +214,6 @@ void TypstViewWindow::updatePresentationActions() {
   m_pageSpinBox->setRange(count > 0 ? 1 : 0, count);
   m_pageSpinBox->setValue(count > 0 ? page + 1 : 0);
   m_pageCountLabel->setText(QStringLiteral(" / %1").arg(count));
-  m_retryAction->setEnabled(m_typstEditor != nullptr);
-  m_showOutputAction->setEnabled(m_sourceAvailable && m_typstEditor &&
-                                 m_typstEditor->compileStatus() ==
-                                     vte::VTypstEditor::CompileStatus::Ready);
-  m_updatePreviewAction->setEnabled(m_typstEditor && m_typstEditor->hasPendingPdfUpdate());
 }
 
 void TypstViewWindow::updateFindBackend() {
@@ -344,13 +285,16 @@ void TypstViewWindow::createEditor() {
                                         this);
   m_editor = m_typstEditor->getTextEditor();
   m_typstEditor->setReadOnly(true);
+  m_typstEditor->setInplacePreviewEnabled(m_inplacePreviewAction->isChecked());
+  m_typstEditor->setLivePreviewEnabled(m_livePreviewAction->isChecked());
+  m_typstEditor->setMode(m_mode == ViewWindowMode::Read ? vte::VTypstEditor::Mode::Read
+                                                      : vte::VTypstEditor::Mode::Edit);
   setCentralWidget(m_typstEditor);
   connectEditorSignals();
   m_statusBinder->attach(m_editor, statusBar());
-  statusBar()->setColumnText(m_compileStatusColumn, m_typstEditor->compileMessage());
   updateEditorFromConfig();
-  // Also applies the requested host mode when recovering from an invalid initial identity.
-  setMode(m_mode);
+  // Synchronize the host even when the native mode already matches its requested mode.
+  syncModeFromEditor();
 }
 
 void TypstViewWindow::connectEditorSignals() {
@@ -366,12 +310,10 @@ void TypstViewWindow::connectEditorSignals() {
           &TypstViewWindow::refreshOutline);
   connect(m_typstEditor, &vte::VTypstEditor::modeChanged, this,
           [this](vte::VTypstEditor::Mode) { syncModeFromEditor(); });
-  connect(m_typstEditor, &vte::VTypstEditor::compileStatusChanged, this,
-          [this](vte::VTypstEditor::CompileStatus, const QString &p_message) {
-            statusBar()->setColumnText(m_compileStatusColumn, p_message);
-            emit statusChanged();
-            updatePresentationActions();
-          });
+  connect(m_typstEditor, &vte::VTypstEditor::livePreviewEnabledChanged, this,
+          &TypstViewWindow::updatePresentationActions);
+  connect(m_typstEditor, &vte::VTypstEditor::inplacePreviewEnabledChanged, this,
+          &TypstViewWindow::updatePresentationActions);
   connect(m_typstEditor, &vte::VTypstEditor::sourceLocationRequested, this,
           [this](const QString &p_file, int p_start, int p_end) {
             if (m_sourceAvailable && isEnabled()) {
@@ -385,8 +327,6 @@ void TypstViewWindow::connectEditorSignals() {
             }
           });
   connect(m_typstEditor, &vte::VTypstEditor::pdfNavigationChanged, this,
-          &TypstViewWindow::updatePresentationActions);
-  connect(m_typstEditor, &vte::VTypstEditor::pdfUpdateAvailableChanged, this,
           &TypstViewWindow::updatePresentationActions);
 }
 
@@ -497,7 +437,7 @@ void TypstViewWindow::setMode(ViewWindowMode p_mode) {
     return;
   }
   m_typstEditor->setMode(p_mode == ViewWindowMode::Read ? vte::VTypstEditor::Mode::Read
-                                                        : m_lastEditingMode);
+                                                      : vte::VTypstEditor::Mode::Edit);
 }
 
 void TypstViewWindow::syncModeFromEditor() {
@@ -505,9 +445,6 @@ void TypstViewWindow::syncModeFromEditor() {
     return;
   }
   const auto mode = m_typstEditor->mode();
-  if (mode != vte::VTypstEditor::Mode::Read) {
-    m_lastEditingMode = mode;
-  }
   m_mode = mode == vte::VTypstEditor::Mode::Read ? ViewWindowMode::Read : ViewWindowMode::Edit;
   setFocusProxy(m_mode == ViewWindowMode::Edit ? static_cast<QWidget *>(m_editor)
                                                : static_cast<QWidget *>(m_typstEditor));

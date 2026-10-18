@@ -143,12 +143,26 @@ Legacy nonempty registries gain Typst without stealing suffixes or changing save
 Registry-local `schemaVersion` preserves deliberate deletions after migration; the Qt
 wrapper and encryption allowlists remain unchanged.
 
-Ordinary opens default to Side-by-Side Preview. Explicit Quick Access Read/Edit and
-restored/last-closed modes remain authoritative; ordinary activation preserves the tab's
-presentation. The rightmost View Mode action owns its menu so all three presentations
-survive toolbar overflow. Read hides source, not the buffer's writer/save lifecycle.
-Find uses source in editing modes and native PDF search in Read; source-only options are
-saved/restored locally with `FindAndReplaceWidget2::setFindOptions()`.
+Ordinary opens default to Edit with both Live Preview and In-Place Preview enabled.
+Explicit Quick Access Read/Edit and restored/last-closed modes remain authoritative;
+ordinary activation preserves the tab's presentation. Use the common Markdown-style
+Read/Edit toolbar action, including Save-and-Read and Discard behavior. Its Edit-only
+Menu actions independently toggle Live Preview and In-Place Preview; either, both, or
+neither can be enabled. The native editor owns these runtime preferences and retains
+them across Read; only the existing host Read/Edit mode is persisted. Read always shows
+PDF-only, regardless of the stored Edit preferences, without replacing the buffer's
+writer/save lifecycle. The AlternateViewMode shortcut toggles Live Preview via the common
+action helper. Find uses source in Edit and native PDF search in Read; source-only options
+are saved/restored locally with `FindAndReplaceWidget2::setFindOptions()`.
+
+Like Markdown, the editor status bar collapses in Read and returns in Edit. Transient
+messages temporarily expand it in Read, then collapse it again on timeout.
+
+Compiler diagnostics stay in the native bottom panel, without a duplicate compile-message
+column in the host status bar. With Live Preview enabled, source caret movement reveals the
+mapped PDF location automatically; VNote exposes no separate manual navigation action.
+The main Menu has no manual compilation or publication commands. Source edits drive native
+compilation; pending PDF updates held by a selection publish when that selection is cleared.
 
 The canonical containing directory is the project boundary and the actual basename is
 the main/active file. Imports use saved files under that tree; only the current source is
