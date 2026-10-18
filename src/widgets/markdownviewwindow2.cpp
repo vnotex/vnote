@@ -637,17 +637,31 @@ void MarkdownViewWindow2::handlePrint() {
     return;
   }
   cancelEditorImageView(true);
-  printDocument(PrintUtils::promptForPrint(m_viewer && m_viewer->hasSelection(), this));
+  const bool hasSelection = m_mode == ViewWindowMode::Edit
+                                ? m_editor && m_editor->getTextEdit()->hasSelection()
+                                : m_viewer && m_viewer->hasSelection();
+  printDocument(PrintUtils::promptForPrint(hasSelection, this));
 }
 
 void MarkdownViewWindow2::printDocument(const QSharedPointer<QPrinter> &p_printer) {
-  if (!p_printer || m_printPending || m_printer || getBuffer().isEncrypted()) {
+  if (!p_printer || m_printPending || m_printer || getBuffer().isEncrypted() || !isEnabled() ||
+      !getBuffer().isValid()) {
     return;
   }
   setPresentationMode(false);
   cancelEditorImageView(true);
   m_printer = p_printer;
-  if (!isEnabled() || !getBuffer().isValid() || (!m_viewer && !setupViewer())) {
+  if (m_mode == ViewWindowMode::Edit) {
+    if (!m_editor) {
+      m_printer.reset();
+      return;
+    }
+    m_editor->getTextEdit()->print(m_printer.get());
+    const auto state = m_printer->printerState();
+    onPrintFinished(state != QPrinter::Error && state != QPrinter::Aborted);
+    return;
+  }
+  if (!m_viewer && !setupViewer()) {
     m_printer.reset();
     return;
   }

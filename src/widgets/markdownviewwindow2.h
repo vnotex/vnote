@@ -118,7 +118,7 @@ protected:
 
   void handlePrint() Q_DECL_OVERRIDE;
 
-  // Render an accepted print request, including a caller-supplied PDF printer.
+  // Print the current mode's document, including to a caller-supplied PDF printer.
   void printDocument(const QSharedPointer<QPrinter> &p_printer);
 
   bool aboutToClose(bool p_force) Q_DECL_OVERRIDE;

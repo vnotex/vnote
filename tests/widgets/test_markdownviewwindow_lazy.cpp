@@ -8,6 +8,8 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QMimeData>
+#include <QPdfDocument>
+#include <QPdfSelection>
 #include <QPointer>
 #include <QPrinter>
 #include <QScopeGuard>
@@ -131,7 +133,8 @@ private slots:
   void firstReaderUsesCurrentDraft();
   void themeAndOptionsPreserveEditor();
   void imagePopupCreatesOnlyRequestedSurface();
-  void printCreatesReaderForCurrentDraft();
+  void printUsesCurrentMode_data();
+  void printUsesCurrentMode();
   void presentationCreatesReader();
   void protectedLockWithoutReader();
 
@@ -591,39 +594,86 @@ void TestMarkdownViewWindowLazy::imagePopupCreatesOnlyRequestedSurface() {
   QCOMPARE(editor->getTextEdit()->document()->availableUndoSteps(), undo);
 }
 
-void TestMarkdownViewWindowLazy::printCreatesReaderForCurrentDraft() {
-  const auto buffer = openNote(QStringLiteral("print.md"), QByteArrayLiteral("# Saved print\n"));
+void TestMarkdownViewWindowLazy::printUsesCurrentMode_data() {
+  QTest::addColumn<bool>("read");
+  QTest::addColumn<bool>("preview");
+  QTest::addColumn<bool>("selection");
+  QTest::newRow("Read") << true << false << false;
+  QTest::newRow("EditOnly") << false << false << false;
+  QTest::newRow("EditPreview") << false << true << false;
+  QTest::newRow("EditOnlySelection") << false << false << true;
+  QTest::newRow("EditPreviewSelection") << false << true << true;
+}
+
+void TestMarkdownViewWindowLazy::printUsesCurrentMode() {
+  QFETCH(bool, read);
+  QFETCH(bool, preview);
+  QFETCH(bool, selection);
+  markdownConfig().setEditViewMode(preview ? MarkdownEditorConfig::EditPreview
+                                          : MarkdownEditorConfig::EditOnly);
+  const auto buffer = openNote(QStringLiteral("print.md"), QByteArrayLiteral("# Saved heading\n"));
   QVERIFY(buffer.isValid());
   Window window(m_services, buffer, nullptr, ViewWindowMode::Edit);
   showWindow(window);
   auto *editor = window.findChild<MarkdownEditor *>();
   QVERIFY(editor);
-  appendDraft(editor, QStringLiteral("\n# Unsaved print content\n"));
+  appendDraft(editor, QStringLiteral("\n**Unsaved draft**\n"));
+  if (read) {
+    window.setMode(ViewWindowMode::Read);
+  }
+  if (selection) {
+    auto cursor = editor->getTextEdit()->document()->find(QStringLiteral("**Unsaved draft**"));
+    QVERIFY(!cursor.isNull());
+    editor->getTextEdit()->setTextCursor(cursor);
+  }
   const auto source = editor->getText();
+  const auto cursor = editor->getTextEdit()->textCursor();
   const auto undo = editor->getTextEdit()->document()->availableUndoSteps();
-  const auto output = m_directory.filePath(QStringLiteral("lazy-print.pdf"));
+  const auto output = m_directory.filePath(QStringLiteral("print-%1.pdf").arg(
+      QString::fromLatin1(QTest::currentDataTag())));
   window.printDocument({});
-  QVERIFY(!window.findChild<MarkdownViewer *>());
+  QVERIFY(!QFileInfo::exists(output));
   auto printer = QSharedPointer<QPrinter>::create();
   printer->setOutputFormat(QPrinter::PdfFormat);
   printer->setOutputFileName(output);
-  window.printDocument(printer);
-  auto *viewer = window.findChild<MarkdownViewer *>();
-  QVERIFY(viewer);
-  QSignalSpy printed(viewer, &MarkdownViewer::printFinished);
-  QTRY_COMPARE_WITH_TIMEOUT(printed.count(), 1, 30000);
-  QVERIFY(printed.first().first().toBool());
-  QVERIFY(QFileInfo(output).size() > 0);
-  QFile pdf(output);
-  QVERIFY(pdf.open(QIODevice::ReadOnly));
-  QCOMPARE(pdf.read(5), QByteArrayLiteral("%PDF-"));
-  QVERIFY(evaluate(viewer->page(), QStringLiteral("document.body.innerText"))
-              .toString()
-              .contains(QStringLiteral("Unsaved print content")));
-  QCOMPARE(window.getMode(), ViewWindowMode::Edit);
-  QVERIFY(editor->isVisible() && viewer->isHidden());
+  if (selection) {
+    printer->setPrintRange(QPrinter::Selection);
+  }
+  if (read) {
+    auto *viewer = window.findChild<MarkdownViewer *>();
+    QVERIFY(viewer);
+    QSignalSpy printed(viewer, &MarkdownViewer::printFinished);
+    window.printDocument(printer);
+    QTRY_COMPARE_WITH_TIMEOUT(printed.count(), 1, 30000);
+    QVERIFY(printed.first().first().toBool());
+  } else {
+    window.printDocument(printer);
+    if (!preview) {
+      QVERIFY(!window.findChild<MarkdownViewer *>());
+    }
+  }
+  QPdfDocument pdf;
+  QCOMPARE(pdf.load(output), QPdfDocument::Error::None);
+  QString text;
+  if (read) {
+    // QWebEngineView::print rasterizes the page, so inspect its rendered text.
+    text = evaluate(window.findChild<MarkdownViewer *>()->page(),
+                    QStringLiteral("document.body.innerText")).toString();
+  } else {
+    for (int page = 0; page < pdf.pageCount(); ++page) {
+      text += pdf.getAllText(page).text();
+    }
+  }
+  QVERIFY2(text.contains(QStringLiteral("Unsaved draft")), qPrintable(text));
+  QCOMPARE(text.contains(QStringLiteral("Saved heading")), !selection);
+  QCOMPARE(text.contains(QStringLiteral("**Unsaved draft**")), !read);
+  QCOMPARE(text.contains(QStringLiteral("# Saved heading")), !read && !selection);
+  QCOMPARE(window.getMode(), read ? ViewWindowMode::Read : ViewWindowMode::Edit);
   QCOMPARE(editor->getText(), source);
   QCOMPARE(editor->getTextEdit()->document()->availableUndoSteps(), undo);
+  QCOMPARE(editor->getTextEdit()->textCursor().position(), cursor.position());
+  QCOMPARE(editor->getTextEdit()->textCursor().anchor(), cursor.anchor());
+  QVERIFY(window.isModified());
 }
 
 void TestMarkdownViewWindowLazy::presentationCreatesReader() {

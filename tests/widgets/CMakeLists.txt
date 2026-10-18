@@ -1842,9 +1842,10 @@ foreach(_source IN LISTS _markdown_window_sources)
   endif()
 endforeach()
 get_target_property(_markdown_window_links vnote LINK_LIBRARIES)
+find_package(Qt6 REQUIRED COMPONENTS Pdf)
 add_qt_test(test_markdownviewwindow_lazy
   SOURCES test_markdownviewwindow_lazy.cpp ${_markdown_window_test_sources}
-  LINKS ${_markdown_window_links}
+  LINKS ${_markdown_window_links} Qt6::Pdf
 )
 target_include_directories(test_markdownviewwindow_lazy PRIVATE
   $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>

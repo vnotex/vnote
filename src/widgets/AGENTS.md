@@ -226,8 +226,12 @@ an application-lifetime bootstrap for the shared ordinary runtime and owns only 
 protected fallback widgets. `MarkdownWebJobController` owns routing; PreviewHelper and the editor
 consume its typed results, never the document adapter's former assistance signals.
 
-Treat `m_viewer == nullptr` as normal in EditOnly. Read/EditPreview, View Image and Print prepare
-the reader explicitly; an image-only request loads an empty page rather than rerendering the note.
+Treat `m_viewer == nullptr` as normal in EditOnly. Read/EditPreview and View Image prepare the
+reader explicitly; an image-only request loads an empty page rather than rerendering the note.
+Print follows the window mode: Read prints the rendered web document asynchronously; EditOnly
+and EditPreview print the editor document synchronously, without creating a reader. The print
+dialog's Selection option follows the same target. Editor printing includes unsaved Markdown
+source, not widget chrome or interactive preview overlays; encrypted notes remain unprintable.
 A ready retained reader can assist a hidden EditOnly editor. Mode changes and theme refresh must
 preserve drafts, cursor and undo history. Replay preview caches when the effective renderer changes.
 Snapshot editor zoom/DPR/reference width for jobs; math rasters keep intrinsic formula geometry,
