@@ -4,6 +4,7 @@
 * Initialize export rendering and syntax styles from the current theme on the first dialog show in each app session, preserving later choices within that session
 * Add Export above Shortcuts Help in the mind map editor's empty-canvas context menu, using the current buffer and the existing export dialog
 * Fix note drag-and-drop reordering with external files visible, reject external reorder anchors, and preserve expanded folders after reordering
+* Use the theme text color for default mind-map node outlines and connecting lines so they remain readable in dark themes; preserve custom branch colors and selection highlights
 * Add Alt+M to focus the mind-map Image property, including Chinese, Japanese and Korean labels, while keeping Alt+I for Icons
 * Add a bundled `title.mmm` mind-map template that uses the note title as its central topic; select it by default for unconfigured template mappings while preserving existing choices
 * Delay Markdown read viewers in edit-only mode; share editor JS work across tabs and prefer each tab's ready reader, with isolated protected-note and MathJax contexts
