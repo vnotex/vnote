@@ -5,6 +5,7 @@
 #include <QDir>
 #include <QGuiApplication>
 #include <QHash>
+#include <QPalette>
 #include <QRegularExpression>
 #include <QStyleHints>
 
@@ -121,6 +122,13 @@ void ThemeService::loadCurrentTheme(const QString &p_themeName) {
     QGuiApplication::styleHints()->setColorScheme(background.lightnessF() < foreground.lightnessF()
                                                       ? Qt::ColorScheme::Dark
                                                       : Qt::ColorScheme::Light);
+    // Native font icons read the default palette, which some styles keep light.
+    QPalette qtPalette;
+    qtPalette.setResolveMask(0);
+    qtPalette.setColor(QPalette::Text, foreground);
+    qtPalette.setColor(QPalette::Disabled, QPalette::Text,
+                       QColor(paletteColor("base#disabled#fg")));
+    QGuiApplication::setPalette(qtPalette);
   }
 #endif
 
@@ -148,6 +156,9 @@ Theme *ThemeService::loadTheme(const QString &p_themeFolder, bool &p_systemPalet
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
       // Only system-derived themes invoke this callback. Reset before backfill,
       // otherwise Native would inherit the previous custom theme's appearance.
+      QPalette qtPalette;
+      qtPalette.setResolveMask(0);
+      QGuiApplication::setPalette(qtPalette);
       QGuiApplication::styleHints()->unsetColorScheme();
 #endif
       return ThemeUtils::backfillSystemPalette(std::move(p_palette));

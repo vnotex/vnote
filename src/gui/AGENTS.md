@@ -19,9 +19,14 @@ On Qt 6.8+, `ThemeService` synchronizes `QStyleHints::colorScheme` on startup,
 switch and refresh, before `themeChanged`. Custom themes use the relative lightness
 of resolved `base#normal#bg` and `base#normal#fg`, not their names. QSS alone does not
 select the light/dark appearance of Qt's native standard context-menu icons.
+Custom themes also set the default palette's `Text` roles from `base#normal#fg`
+and `base#disabled#fg`: Qt's native font icons read that palette, and some Windows
+styles retain light text roles even after a dark scheme request.
 
 Themes with `backfill-system-palette` (including Native and renamed copies) clear
-the override **before** `ThemeUtils::backfillSystemPalette` samples Qt's palette.
+the palette overrides (zero resolve mask), then the scheme override **before**
+`ThemeUtils::backfillSystemPalette` samples Qt's palette. Unrelated palette roles
+remain platform-owned; do not replace the native style or pin a system snapshot.
 Keep the current theme alive during loading: resetting the Qt scheme can notify
 widgets synchronously. Only replace it after a successful load or fallback.
 Settings previews remain local QSS; they must not change application appearance.
@@ -30,7 +35,7 @@ Older Qt versions retain their platform-selected scheme.
 `tests/gui/test_themeservice.cpp` covers appearance transitions, Native backfill,
 metadata-based system themes, and Windows standard-menu icon contrast in both
 Undo/Redo states. Run on the native Windows platform to exercise the icon provider;
-offscreen runs cannot verify it. Restore the system scheme between test slots.
+offscreen runs cannot verify it. Restore the system scheme and palette between test slots.
 
 ## Native MindMap image transport
 
@@ -139,6 +144,8 @@ views that opt into alternating rows. Native stays on the system palette.
 Location List and Comments explicitly disable alternating rows; no application view
 currently enables them. `tests/gui/test_themeservice.cpp` deliberately opts in to
 verify theme colors and Native restoration independently of application row policy.
+Its background-only fixture is mouse-transparent with unfocusable views so native
+hover/focus animations cannot contaminate the baseline or restoration samples.
 
 ## Light-theme graph canvases
 

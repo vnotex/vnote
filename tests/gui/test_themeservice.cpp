@@ -7,6 +7,7 @@
 #include <QListWidget>
 #include <QMenu>
 #include <QPainter>
+#include <QPalette>
 #include <QPlainTextEdit>
 #include <QScopedPointer>
 #include <QSet>
@@ -77,6 +78,7 @@ private:
   QString m_themeFolder;
   QTemporaryDir m_tmp;
   QString m_originalStyleSheet;
+  QPalette m_originalPalette;
 
   QString findPureTheme();
 
@@ -133,6 +135,7 @@ vnotex::ThemeServiceConfig TestThemeService::makeConfig() const {
 
 void TestThemeService::initTestCase() {
   m_originalStyleSheet = qApp->styleSheet();
+  m_originalPalette = qApp->palette();
   QVERIFY(m_tmp.isValid());
   m_themeFolder = findPureTheme();
   QVERIFY2(!m_themeFolder.isEmpty(), "pure theme fixture not found");
@@ -140,6 +143,7 @@ void TestThemeService::initTestCase() {
 
 void TestThemeService::cleanup() {
   qApp->setStyleSheet(m_originalStyleSheet);
+  qApp->setPalette(m_originalPalette);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
   // QTEST_MAIN starts with the system appearance; do not pin its effective mode.
   QGuiApplication::styleHints()->unsetColorScheme();
@@ -187,6 +191,10 @@ void TestThemeService::qtAppearanceFollowsThemeChanges() {
            systemPalette.color(QPalette::WindowText).rgb());
   QCOMPARE(QColor(service.paletteColor("base#icon#disabled#fg")).rgb(),
            systemPalette.color(QPalette::Disabled, QPalette::Text).rgb());
+  QCOMPARE(QPalette().color(QPalette::Active, QPalette::Text),
+           systemPalette.color(QPalette::Active, QPalette::Text));
+  QCOMPARE(QPalette().color(QPalette::Disabled, QPalette::Text),
+           systemPalette.color(QPalette::Disabled, QPalette::Text));
 
   service.switchTheme(QStringLiteral("everforest-dark"));
   service.switchTheme(QStringLiteral("missing-theme-for-appearance-test"));
@@ -234,6 +242,11 @@ void TestThemeService::standardContextMenuIconsFollowThemeChanges() {
       !QIcon::themeName().isEmpty()) {
     QSKIP("Exercises the native Windows standard-menu icon provider");
   }
+  // Model native styles that retain light text roles despite a dark color scheme.
+  QPalette lightPalette = qApp->palette();
+  lightPalette.setColor(QPalette::Text, Qt::black);
+  lightPalette.setColor(QPalette::Disabled, QPalette::Text, Qt::gray);
+  qApp->setPalette(lightPalette);
   vnotex::ThemeService service(makeConfig());
   QPlainTextEdit editor;
   editor.insertPlainText(QStringLiteral("Undoable edit"));
@@ -514,12 +527,16 @@ void TestThemeService::alternatingRowsFollowThemeChanges() {
   desktopPalette.setColor(QPalette::Base, Qt::white);
   desktopPalette.setColor(QPalette::AlternateBase, QColor(247, 247, 247));
   QWidget host;
+  // The fixture measures row backgrounds, not native hover/focus animations.
+  host.setAttribute(Qt::WA_TransparentForMouseEvents);
   host.setPalette(desktopPalette);
   QVBoxLayout layout(&host);
   QTreeWidget tree;
+  tree.setFocusPolicy(Qt::NoFocus);
   tree.setHeaderHidden(true);
   tree.setAlternatingRowColors(true);
   QListWidget list;
+  list.setFocusPolicy(Qt::NoFocus);
   list.setAlternatingRowColors(true);
   layout.addWidget(&tree);
   layout.addWidget(&list);
@@ -541,7 +558,6 @@ void TestThemeService::alternatingRowsFollowThemeChanges() {
   QColor nativeRows[2][2];
   for (int i = 0; i < 2; ++i) {
     auto *view = views[i];
-    QTest::mouseMove(view->viewport(), view->viewport()->rect().bottomRight());
     QCoreApplication::processEvents();
     const auto image = view->viewport()->grab().toImage();
     for (int row = 0; row < 2; ++row) {
@@ -567,8 +583,6 @@ void TestThemeService::alternatingRowsFollowThemeChanges() {
           native ? nativeRows[i][0] : QColor(svc.paletteColor("widgets#" + widget + "#bg"));
       const QColor alternate =
           native ? nativeRows[i][1] : QColor(svc.paletteColor("base#normal#bg"));
-      // Native styles also paint hover/focus; sample unselected, unhovered rows.
-      QTest::mouseMove(view->viewport(), view->viewport()->rect().bottomRight());
       QCoreApplication::processEvents();
       const auto image = view->viewport()->grab().toImage();
       for (int row = 0; row < 2; ++row) {
