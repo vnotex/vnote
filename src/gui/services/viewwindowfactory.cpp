@@ -7,6 +7,7 @@
 #include <widgets/markdownviewwindow2.h>
 #include <widgets/mindmapviewwindow2.h>
 #include <widgets/textviewwindow2.h>
+#include <widgets/typstviewwindow.h>
 
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
 #include <widgets/pdfviewwindow2.h>
@@ -28,6 +29,11 @@ void ViewWindowFactory::registerBuiltInCreators() {
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,
                      ViewWindowMode) -> ViewWindow2 * {
                     return new TextViewWindow2(p_services, p_buffer, p_parent);
+                  });
+  registerCreator("Typst",
+                  [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,
+                     ViewWindowMode p_mode) -> ViewWindow2 * {
+                    return new TypstViewWindow(p_services, p_buffer, p_parent, p_mode);
                   });
   registerCreator("Image",
                   [](ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent,

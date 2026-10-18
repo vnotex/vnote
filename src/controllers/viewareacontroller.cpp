@@ -903,6 +903,11 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
     }
   }
 
+  auto settings = p_settings;
+  if (fileType.compare(QLatin1String("Typst"), Qt::CaseInsensitive) == 0 && !settings.m_forceMode) {
+    settings.m_mode = ViewWindowMode::Edit;
+  }
+
   // External program dispatch: check if this file suffix has a configured external program.
   if (!p_buffer.isEncrypted()) {
     const QString suffix = QFileInfo(p_buffer.nodeId().relativePath).suffix().toLower();
@@ -950,7 +955,7 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
     return;
   }
 
-  const bool detached = p_settings.m_detachedView;
+  const bool detached = settings.m_detachedView;
 
   // System default fallback: if no built-in editor exists, open with system
   // default. Decided BEFORE creating any workspace so a detached open does not
@@ -1029,14 +1034,14 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
       setCurrentViewWindow(existingWindowId, p_buffer.id());
     }
     // Apply file open settings to the existing window (scroll + highlight).
-    m_view->applyFileOpenSettings(existingWindowId, p_settings);
+    m_view->applyFileOpenSettings(existingWindowId, settings);
     return;
   }
 
   // ViewArea2::openBuffer synchronously calls back into onViewWindowOpened; for
   // a detached open it passes targetWs as the detached workspace id so the
   // buffer registers there without disturbing the main window's current state.
-  m_view->openBuffer(p_buffer, fileType, targetWs, p_settings);
+  m_view->openBuffer(p_buffer, fileType, targetWs, settings);
 }
 
 QString ViewAreaController::ensureCliDetachedWorkspace() {
@@ -1553,6 +1558,7 @@ void ViewAreaController::openLastClosedFile() {
 
   FileOpenSettings settings;
   settings.m_mode = record.mode;
+  settings.m_forceMode = true;
   settings.m_lineNumber = record.cursorPosition;
   settings.m_focus = true;
 

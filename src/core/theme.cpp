@@ -236,7 +236,7 @@ QString Theme::fetchTextEditorStyle() const {
 }
 
 void Theme::translateStyleByPalette(const Palette &p_palette, QString &p_style) {
-  QRegularExpression refRe("(\\s|:|\")@(\\w+(?:#\\w+)*)");
+  QRegularExpression refRe("(\\s|:|\")@(\\w+(?:#\\w+)*)(?![\\w#:-])");
   const int prefixCapturedIdx = 1;
   const int refCapturedIdx = 2;
 

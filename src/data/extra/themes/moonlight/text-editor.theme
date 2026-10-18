@@ -81,6 +81,30 @@
             "background-color" : "@palette#bg_graph_canvas"
         }
     },
+    "typst-syntax-styles" : {
+        "comment" : "@markdown-syntax-styles:COMMENT",
+        "punctuation" : {},
+        "escape" : "@markdown-syntax-styles:HTML_ENTITY",
+        "strong" : "@markdown-syntax-styles:STRONG",
+        "emph" : "@markdown-syntax-styles:EMPH",
+        "link" : "@markdown-syntax-styles:LINK",
+        "raw" : "@markdown-syntax-styles:CODE",
+        "label" : "@markdown-syntax-styles:REFERENCE",
+        "ref" : "@markdown-syntax-styles:REFERENCE",
+        "heading" : "@markdown-syntax-styles:H1",
+        "listmarker" : "@markdown-syntax-styles:LIST_BULLET",
+        "listterm" : "@markdown-syntax-styles:LIST_BULLET",
+        "mathdelimiter" : "@markdown-syntax-styles:INLINEEQUATION",
+        "mathoperator" : "@markdown-syntax-styles:INLINEEQUATION",
+        "mathgroupingparens" : "@markdown-syntax-styles:INLINEEQUATION",
+        "keyword" : "@markdown-syntax-styles:HTML",
+        "operator" : {},
+        "number" : "@markdown-syntax-styles:CODE",
+        "string" : "@markdown-syntax-styles:CODE",
+        "function" : "@markdown-syntax-styles:NOTE",
+        "interpolated" : "@markdown-syntax-styles:HTML",
+        "error" : "@markdown-syntax-styles:HTML_ENTITY"
+    },
     "markdown-syntax-styles" : {
         "H1" : {
             "text-color" : "@palette#fg_heading",

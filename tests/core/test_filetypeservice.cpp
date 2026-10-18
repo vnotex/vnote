@@ -2,6 +2,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QScopeGuard>
+#include <QTemporaryDir>
 #include <QtTest>
 
 #include <core/services/filetypecoreservice.h>
@@ -38,17 +39,29 @@ private slots:
   void testGetFileTypeByNameUnknown();
   void testGetFileTypeByPath();
   void testFileTypeFields();
+  void testTypstRouting();
+  void testSavedTypstAssociations_data();
+  void testSavedTypstAssociations();
+  void testDeletedTypstAssociation();
   void testImageFallbackPrecedence();
   void testImageRegistryProjection();
   void testSavedImageAssociations_data();
   void testSavedImageAssociations();
 
 private:
+  QTemporaryDir m_tempDir;
+  QList<QPair<QByteArray, QByteArray>> m_tempEnvironment;
   VxCoreContextHandle m_context = nullptr;
   FileTypeCoreService *m_service = nullptr;
 };
 
 void TestFileTypeService::initTestCase() {
+  QVERIFY(m_tempDir.isValid());
+  const auto tempRoot = m_tempDir.path().toUtf8();
+  for (const char *name : {"TMPDIR", "TMP", "TEMP"}) {
+    m_tempEnvironment.append({QByteArray(name), qgetenv(name)});
+    QVERIFY(qputenv(name, tempRoot));
+  }
   vxcore_set_test_mode(1);
 
   VxCoreError err = vxcore_context_create(nullptr, &m_context);
@@ -67,6 +80,14 @@ void TestFileTypeService::cleanupTestCase() {
     vxcore_context_destroy(m_context);
     m_context = nullptr;
   }
+  for (const auto &entry : m_tempEnvironment) {
+    if (entry.second.isNull()) {
+      qunsetenv(entry.first.constData());
+    } else {
+      qputenv(entry.first.constData(), entry.second);
+    }
+  }
+  m_tempEnvironment.clear();
 }
 
 void TestFileTypeService::testConstructorWithNullContext() {
@@ -161,6 +182,212 @@ void TestFileTypeService::testFileTypeFields() {
   QVERIFY(!m_service->getFileTypeByName(QStringLiteral("PDF")).m_isSearchable);
   QVERIFY(m_service->getFileTypeByName(QStringLiteral("MindMap")).m_isSearchable);
   QVERIFY(!m_service->getFileTypeByName(QStringLiteral("Others")).m_isSearchable);
+}
+
+void TestFileTypeService::testTypstRouting() {
+  const auto beforeReads = rawFileTypes(m_context);
+  QVERIFY(!beforeReads.isEmpty());
+  const auto typst = m_service->getFileTypeByName(QStringLiteral("tYpSt"));
+  QCOMPARE(typst.m_typeName, QStringLiteral("Typst"));
+  QCOMPARE(typst.m_displayName, QStringLiteral("Typst"));
+  QCOMPARE(typst.m_defaultDisplayName, QStringLiteral("Typst"));
+  QCOMPARE(typst.m_suffixes, QStringList{QStringLiteral("typst")});
+  QCOMPARE(typst.preferredSuffix(), QStringLiteral("typst"));
+  QVERIFY(typst.m_isNewable);
+  QVERIFY(typst.m_isSearchable);
+
+  for (const auto &suffix : {QStringLiteral("typst"), QStringLiteral("TYPST")}) {
+    const auto bySuffix = m_service->getFileTypeBySuffix(suffix);
+    QCOMPARE(bySuffix.m_typeName, typst.m_typeName);
+    QVERIFY(bySuffix.m_isNewable);
+    QVERIFY(bySuffix.m_isSearchable);
+    QCOMPARE(m_service->getFileType(QStringLiteral("notes/论文 draft.") + suffix).m_typeName,
+             typst.m_typeName);
+  }
+  for (const auto &name :
+       {QStringLiteral("Typst"), QStringLiteral("typst"), QStringLiteral("TYPST")}) {
+    QCOMPARE(m_service->getFileTypeByName(name).m_typeName, typst.m_typeName);
+  }
+  QVERIFY(m_service->getFileTypeBySuffix(QStringLiteral("typ")).m_typeName != typst.m_typeName);
+  QVERIFY(m_service->getFileTypeBySuffix(QStringLiteral("TYP")).m_typeName != typst.m_typeName);
+  bool foundTypst = false;
+  for (const auto &type : m_service->getAllFileTypes()) {
+    if (type.m_typeName == typst.m_typeName) {
+      QVERIFY(!foundTypst);
+      foundTypst = true;
+      QCOMPARE(type.preferredSuffix(), QStringLiteral("typst"));
+      QVERIFY(type.m_isNewable);
+      QVERIFY(type.m_isSearchable);
+    }
+  }
+  QVERIFY(foundTypst);
+  QCOMPARE(m_service->getFileType(QStringLiteral("image.PNG")).m_typeName, QStringLiteral("Image"));
+  QCOMPARE(rawFileTypes(m_context), beforeReads);
+}
+
+void TestFileTypeService::testSavedTypstAssociations_data() {
+  QTest::addColumn<QString>("name");
+  QTest::addColumn<QStringList>("suffixes");
+  QTest::addColumn<QString>("displayName");
+  QTest::addColumn<bool>("newable");
+  QTest::addColumn<bool>("searchable");
+
+  QTest::newRow("builtin") << QStringLiteral("Typst") << QStringList{QStringLiteral("typst")}
+                           << QStringLiteral("Typst") << true << true;
+  QTest::newRow("custom-suffixes-before-image-fallback")
+      << QStringLiteral("tYpSt") << QStringList{QStringLiteral("typeset"), QStringLiteral("pNg")}
+      << QStringLiteral("My typesetting") << false << true;
+  QTest::newRow("empty-suffixes-and-disabled-flags")
+      << QStringLiteral("TyPsT") << QStringList() << QStringLiteral("No association") << false
+      << false;
+  QTest::newRow("explicit-search-exclusion")
+      << QStringLiteral("Typst") << QStringList{QStringLiteral("typst")}
+      << QStringLiteral("Private drafts") << true << false;
+}
+
+void TestFileTypeService::testSavedTypstAssociations() {
+  QFETCH(QString, name);
+  QFETCH(QStringList, suffixes);
+  QFETCH(QString, displayName);
+  QFETCH(bool, newable);
+  QFETCH(bool, searchable);
+
+  const auto original = rawFileTypes(m_context);
+  QVERIFY(!original.isEmpty());
+  const auto restore = qScopeGuard(
+      [&]() { QCOMPARE(vxcore_filetype_set(m_context, original.constData()), VXCORE_OK); });
+  const QJsonObject metadata{
+      {QStringLiteral("displayName_en_US"), QStringLiteral("Localized typesetting")},
+      {QStringLiteral("displayName_ja_JP"), QStringLiteral("組版ノート")},
+      {QStringLiteral("custom"), QJsonObject{{QStringLiteral("enabled"), false},
+                                             {QStringLiteral("order"), QJsonArray{3, 1, 2}}}}};
+  const QJsonObject savedTypst{{QStringLiteral("name"), name},
+                               {QStringLiteral("suffixes"), QJsonArray::fromStringList(suffixes)},
+                               {QStringLiteral("displayName"), displayName},
+                               {QStringLiteral("metadata"), metadata},
+                               {QStringLiteral("isNewable"), newable},
+                               {QStringLiteral("isSearchable"), searchable}};
+  QJsonArray savedRows;
+  const auto originalRows = QJsonDocument::fromJson(original).array();
+  for (const auto &value : originalRows) {
+    if (value.toObject()["name"].toString().compare(QLatin1String("Typst"), Qt::CaseInsensitive) ==
+        0) {
+      savedRows.append(savedTypst);
+    } else {
+      savedRows.append(value);
+    }
+  }
+  const auto json = QJsonDocument(savedRows).toJson(QJsonDocument::Compact);
+  QCOMPARE(vxcore_filetype_set(m_context, json.constData()), VXCORE_OK);
+  const auto beforeReads = rawFileTypes(m_context);
+
+  // Settings loads the actual wrapper rows and applies that list back to the registry.
+  const auto rows = m_service->getAllFileTypes();
+  bool foundTypst = false;
+  for (const auto &type : rows) {
+    if (type.m_typeName.compare(QLatin1String("Typst"), Qt::CaseInsensitive) == 0) {
+      QVERIFY(!foundTypst);
+      foundTypst = true;
+      QCOMPARE(type.m_typeName, name);
+      QCOMPARE(type.m_suffixes, suffixes);
+      QCOMPARE(type.m_defaultDisplayName, displayName);
+      QCOMPARE(type.m_displayName, metadata["displayName_en_US"].toString());
+      QCOMPARE(type.m_metadata, metadata);
+      QCOMPARE(type.m_isNewable, newable);
+      QCOMPARE(type.m_isSearchable, searchable);
+    }
+  }
+  QVERIFY(foundTypst);
+  QCOMPARE(rawFileTypes(m_context), beforeReads);
+  QVERIFY(m_service->setAllFileTypes(rows));
+  const auto saved = rawFileTypes(m_context);
+  QVERIFY(!saved.isEmpty());
+  QJsonArray persistedWithoutImage;
+  const auto persistedRows = QJsonDocument::fromJson(saved).array();
+  for (const auto &value : persistedRows) {
+    if (value.toObject()["name"].toString().compare(QLatin1String("Image"), Qt::CaseInsensitive) !=
+        0) {
+      persistedWithoutImage.append(value);
+    }
+  }
+  QCOMPARE(persistedWithoutImage, savedRows);
+
+  // A fresh backend context proves the save reached isolated config storage.
+  VxCoreContextHandle reloadedContext = nullptr;
+  QCOMPARE(vxcore_context_create(nullptr, &reloadedContext), VXCORE_OK);
+  QVERIFY(reloadedContext != nullptr);
+  const auto destroy = qScopeGuard([&]() { vxcore_context_destroy(reloadedContext); });
+  FileTypeCoreService reloaded(reloadedContext, QStringLiteral("en_US"));
+  QCOMPARE(rawFileTypes(reloadedContext), saved);
+  const auto typst = reloaded.getFileTypeByName(QStringLiteral("TYPST"));
+  QCOMPARE(typst.m_typeName, name);
+  QCOMPARE(typst.m_suffixes, suffixes);
+  QCOMPARE(typst.preferredSuffix(), suffixes.isEmpty() ? QString() : suffixes.first());
+  QCOMPARE(typst.m_defaultDisplayName, displayName);
+  QCOMPARE(typst.m_displayName, metadata["displayName_en_US"].toString());
+  QCOMPARE(typst.m_metadata, metadata);
+  QCOMPARE(typst.m_isNewable, newable);
+  QCOMPARE(typst.m_isSearchable, searchable);
+  for (const auto &suffix : suffixes) {
+    const auto bySuffix = reloaded.getFileTypeBySuffix(suffix.toUpper());
+    QCOMPARE(bySuffix.m_typeName, name);
+    QCOMPARE(bySuffix.m_suffixes, suffixes);
+    QCOMPARE(bySuffix.m_metadata, metadata);
+    QCOMPARE(bySuffix.m_isNewable, newable);
+    QCOMPARE(bySuffix.m_isSearchable, searchable);
+    QCOMPARE(reloaded.getFileType(QStringLiteral("notes/document.") + suffix.toUpper()).m_typeName,
+             name);
+  }
+  QCOMPARE(reloaded.getFileTypeBySuffix(QStringLiteral("typst")).m_typeName,
+           suffixes.contains(QStringLiteral("typst"), Qt::CaseInsensitive)
+               ? name
+               : QStringLiteral("Others"));
+  const auto image = reloaded.getFileTypeByName(QStringLiteral("Image"));
+  QVERIFY(!image.m_isNewable);
+  QVERIFY(!image.m_isSearchable);
+  QCOMPARE(reloaded.getFileType(QStringLiteral("image.PNG")).m_typeName,
+           suffixes.contains(QStringLiteral("png"), Qt::CaseInsensitive) ? name
+                                                                         : QStringLiteral("Image"));
+  QCOMPARE(reloaded.getFileType(QStringLiteral("image.JPG")).m_typeName, QStringLiteral("Image"));
+  FileTypeCoreService otherLocale(reloadedContext, QStringLiteral("ja_JP"));
+  QCOMPARE(otherLocale.getFileTypeByName(QStringLiteral("Typst")).m_displayName,
+           metadata["displayName_ja_JP"].toString());
+  QCOMPARE(rawFileTypes(reloadedContext), saved);
+  QVERIFY(reloaded.setAllFileTypes(reloaded.getAllFileTypes()));
+  QCOMPARE(rawFileTypes(reloadedContext), saved);
+}
+
+void TestFileTypeService::testDeletedTypstAssociation() {
+  const auto original = rawFileTypes(m_context);
+  QVERIFY(!original.isEmpty());
+  const auto restore = qScopeGuard(
+      [&]() { QCOMPARE(vxcore_filetype_set(m_context, original.constData()), VXCORE_OK); });
+  auto rows = m_service->getAllFileTypes();
+  bool removed = false;
+  for (auto it = rows.begin(); it != rows.end();) {
+    if (it->m_typeName.compare(QLatin1String("Typst"), Qt::CaseInsensitive) == 0) {
+      it = rows.erase(it);
+      removed = true;
+    } else {
+      ++it;
+    }
+  }
+  QVERIFY(removed);
+  QVERIFY(m_service->setAllFileTypes(rows));
+  const auto saved = rawFileTypes(m_context);
+  VxCoreContextHandle reloadedContext = nullptr;
+  QCOMPARE(vxcore_context_create(nullptr, &reloadedContext), VXCORE_OK);
+  QVERIFY(reloadedContext != nullptr);
+  const auto destroy = qScopeGuard([&]() { vxcore_context_destroy(reloadedContext); });
+  FileTypeCoreService reloaded(reloadedContext, QStringLiteral("en_US"));
+  QVERIFY(reloaded.getFileTypeByName(QStringLiteral("Typst")).m_typeName.isEmpty());
+  QCOMPARE(reloaded.getFileTypeBySuffix(QStringLiteral("TYPST")).m_typeName,
+           QStringLiteral("Others"));
+  for (const auto &type : reloaded.getAllFileTypes()) {
+    QVERIFY(type.m_typeName.compare(QLatin1String("Typst"), Qt::CaseInsensitive) != 0);
+  }
+  QCOMPARE(reloaded.getFileType(QStringLiteral("image.PNG")).m_typeName, QStringLiteral("Image"));
+  QCOMPARE(rawFileTypes(reloadedContext), saved);
 }
 
 void TestFileTypeService::testImageFallbackPrecedence() {

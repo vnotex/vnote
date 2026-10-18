@@ -67,6 +67,26 @@ add_executable(vnote WIN32 MACOSX_BUNDLE
 
 add_dependencies(vnote VX_EXTRA_RESOURCE)
 
+# Always refresh runtime dependencies, including builds that do not relink vnote.
+add_custom_target(vnote_typst_runtime)
+add_dependencies(vnote_typst_runtime vtextedit-typst)
+get_target_property(VX_TYPST_HELPER vtextedit-typst VTEXTEDIT_TYPST_HELPER)
+add_custom_command(TARGET vnote_typst_runtime
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:vnote>"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${VX_TYPST_HELPER}" "$<TARGET_FILE_DIR:vnote>"
+    VERBATIM
+)
+if(WIN32)
+    add_dependencies(vnote_typst_runtime VTextEdit)
+    add_custom_command(TARGET vnote_typst_runtime
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:VTextEdit>" "$<TARGET_FILE_DIR:vnote>"
+        VERBATIM
+    )
+endif()
+add_dependencies(vnote vnote_typst_runtime)
+
 if(APPLE)
     # application.cpp hosts the native NSServices provider ("Create Note in
     # VNote"), so it must be compiled as Objective-C++. All AppKit code inside

@@ -36,6 +36,7 @@ private slots:
   void testTranslateStyleByPalette_jsonQuotedValue();
   void testTranslateStyleByPalette_qssStillWorks();
   void testTranslateStyleByPalette_colonPrefixStillWorks();
+  void testTranslateStyleByPalette_preservesNamespacedReferences();
   void testFetchWebStyleSheet_resolvesTokens();
   void testFetchTextEditorStyle_resolvesTokensInJson();
   void testFetchWebStyleSheet_emptyPathReturnsEmpty();
@@ -109,6 +110,24 @@ void TestTheme::testTranslateStyleByPalette_colonPrefixStillWorks() {
   vnotex::Theme::translateStyleByPalette(palette, style);
 
   QCOMPARE(style, QStringLiteral("color:#222222;"));
+}
+
+void TestTheme::testTranslateStyleByPalette_preservesNamespacedReferences() {
+  QJsonObject palette;
+  palette["markdown"] = QStringLiteral("#abcdef");
+  palette["base"] = QJsonObject{{QStringLiteral("fg"), QStringLiteral("#222222")}};
+  palette["palette"] = QJsonObject{{QStringLiteral("accent"), QStringLiteral("#1976d2")}};
+
+  QString style = QStringLiteral("{\"heading\": \"@markdown-syntax-styles:H1\", "
+                                 "\"text-color\": \"@base#fg\", "
+                                 "\"background-color\": \"@palette#accent\", "
+                                 "\"color\": \"@markdown\"}");
+  vnotex::Theme::translateStyleByPalette(palette, style);
+
+  QCOMPARE(style, QStringLiteral("{\"heading\": \"@markdown-syntax-styles:H1\", "
+                                 "\"text-color\": \"#222222\", "
+                                 "\"background-color\": \"#1976d2\", "
+                                 "\"color\": \"#abcdef\"}"));
 }
 
 namespace {

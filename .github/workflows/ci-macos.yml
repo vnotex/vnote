@@ -19,6 +19,7 @@ env:
     VNOTE_VER: 4.10.0
     CMAKE_VER: 3.24.3
     VNOTE_TESTS: ${{ startsWith(github.event.head_commit.message, '[Release]') && 'OFF' || 'ON' }}
+    CARGO_BUILD_JOBS: 2
 
 jobs:
   build:
@@ -119,6 +120,26 @@ jobs:
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
+      - name: Cache Typst compiler dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ${{runner.workspace}}/build/typst-cargo
+          key: ${{runner.os}}-universal-typst-Rust-1.99.0-macos-${{matrix.config.deployment_target}}-${{hashFiles('libs/vtextedit/tools/typst-backend/Cargo.lock')}}
+
+      - name: Install pinned Typst build tools
+        env:
+          MACOSX_DEPLOYMENT_TARGET: ${{matrix.config.deployment_target}}
+        run: |
+          rustup toolchain install 1.99.0 --profile minimal
+          rustup target add --toolchain 1.99.0 x86_64-apple-darwin aarch64-apple-darwin
+          cargo +1.99.0 install cargo-about --locked --version 0.9.2 --features cli
+          # No target filter: offline attribution needs all locked target sources.
+          cargo +1.99.0 fetch --locked --manifest-path Cargo.toml
+        working-directory: ${{github.workspace}}/libs/vtextedit/tools/typst-backend
+
       - name: Configure Project
         run: |
           qmake -v
@@ -190,7 +211,7 @@ jobs:
         # native application runner from tests/helpers/test_helper.h.
         run: |
           set -e
-          cmake --build .
+          cmake --build . --target all test_typsteditor
           # Path-safety fixtures need a physical temp root, not macOS's /var alias.
           TMPDIR=$(cd "$TMPDIR" && pwd -P)
           export TMPDIR
@@ -206,6 +227,7 @@ jobs:
           # add it to DYLD_LIBRARY_PATH so Qt-side test exes resolve it at load.
           export DYLD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${DYLD_LIBRARY_PATH:-}"
           ctest --output-on-failure
+          ctest --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error
         working-directory: ${{runner.workspace}}/build
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
@@ -258,6 +280,10 @@ jobs:
           security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
 
+          echo "Codesigning the native Typst compiler"
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/MacOS/vtextedit-typst
+          codesign --verify --strict --verbose=2 ./src/VNote.app/Contents/MacOS/vtextedit-typst
+
           echo "Codesigning main app bundle"
           codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app
           codesign -v -vvv ./src/VNote.app
@@ -286,6 +312,105 @@ jobs:
           codesign -v -vvv "./$DMG_NAME"
 
         working-directory: ${{runner.workspace}}/build
+
+      - name: Verify packaged universal Typst runtime
+        working-directory: ${{runner.workspace}}/build
+        env:
+          TYPST_MIN_OS: ${{matrix.config.deployment_target}}
+          TYPST_QT_VERSION: ${{matrix.config.qt}}
+        run: |
+          # Read the signed, final DMG rather than any build-tree helper.
+          mountpoint="$RUNNER_TEMP/typst-package"
+          mkdir "$mountpoint"
+          hdiutil attach "VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg" -readonly -nobrowse -mountpoint "$mountpoint"
+          trap 'hdiutil detach "$mountpoint"' EXIT
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import platform
+          import re
+          import shlex
+          import subprocess
+          import sys
+          import tempfile
+
+          app = Path(os.environ['RUNNER_TEMP']) / 'typst-package/VNote.app/Contents'
+          helper = app / 'MacOS/vtextedit-typst'
+          binaries = [app / 'MacOS/VNote', app / 'Frameworks/libVTextEdit.dylib',
+                      app / 'Frameworks/QtPdf.framework/QtPdf', helper]
+          notices = app / 'Resources/licenses/typst'
+          qt = os.environ['TYPST_QT_VERSION']
+          required = binaries + [notices / name for name in (
+              'LICENSE.typst-dependencies', 'LICENSE.vtextedit-typst',
+              f'qtpdf-{qt}.spdx.json', f'qtwebengine-chromium-pdf-{qt}.spdx.json')]
+          for path in required:
+              if not path.is_file() or path.stat().st_size == 0:
+                  raise SystemExit(f'Packaged Typst runtime is missing a nonempty {path}')
+          if not os.access(helper, os.X_OK):
+              raise SystemExit(f'Packaged Typst helper is not executable: {helper}')
+          subprocess.run(['/usr/bin/codesign', '--verify', '--strict', '--verbose=2', str(helper)], check=True)
+
+          # No absolute SDK/build-tree dependencies or rpaths may escape into
+          # the application, editor, PDF framework or compiler helper.
+          allowed_paths = ('@rpath/', '@loader_path', '@executable_path', '/System/Library/', '/usr/lib/')
+          for binary in binaries:
+              arches = subprocess.check_output(['/usr/bin/lipo', '-archs', str(binary)], text=True).split()
+              if not {'x86_64', 'arm64'}.issubset(arches):
+                  raise SystemExit(f'{binary} is not universal: {arches}')
+              print(f'Universal binary: {binary}: {" ".join(arches)}', flush=True)
+              linked = subprocess.check_output(['/usr/bin/otool', '-arch', 'all', '-L', str(binary)], text=True)
+              commands = subprocess.check_output(['/usr/bin/otool', '-arch', 'all', '-l', str(binary)], text=True)
+              paths = re.findall(r'^\s+(.+?) \(compatibility version ', linked, re.MULTILINE)
+              for block in commands.split('\nLoad command '):
+                  if re.search(r'^\s*cmd LC_RPATH\s*$', block, re.MULTILINE):
+                      paths += re.findall(r'^\s*path (.+) \(offset \d+\)$', block, re.MULTILINE)
+              for path in paths:
+                  if not path.startswith(allowed_paths):
+                      raise SystemExit(f'Non-packaged dependency/rpath in {binary}: {path}')
+
+          def version(value):
+              parts = tuple(int(part) for part in value.split('.'))
+              return parts + (0,) * (3 - len(parts))
+
+          minimum_os = os.environ['TYPST_MIN_OS']
+          for arch in ('x86_64', 'arm64'):
+              commands = subprocess.check_output(['/usr/bin/otool', '-arch', arch, '-l', str(helper)], text=True)
+              minimums = []
+              for block in commands.split('\nLoad command '):
+                  if re.search(r'^\s*cmd LC_BUILD_VERSION\s*$', block, re.MULTILINE):
+                      minimums += re.findall(r'^\s*minos (\d+(?:\.\d+)*)\s*$', block, re.MULTILINE)
+              if len(minimums) != 1 or version(minimums[0]) > version(minimum_os):
+                  raise SystemExit(f'Typst {arch} LC_BUILD_VERSION minOS {minimums} exceeds or cannot prove {minimum_os}')
+              print(f'Typst {arch} minOS {minimums[0]} <= {minimum_os}', flush=True)
+
+          clean_env = {key: value for key, value in os.environ.items()
+                       if not key.upper().startswith(('CARGO', 'RUST', 'QT', 'QML', 'TYPST', 'VTEXTEDIT', 'LD_', 'DYLD'))
+                       and key not in ('CMAKE_PREFIX_PATH', 'LIBRARY_PATH', 'PYTHONPATH', 'PYTHONHOME')}
+          clean_env['PATH'] = '/usr/bin:/bin:/usr/sbin:/sbin'
+          smoke = Path(os.environ['GITHUB_WORKSPACE']) / 'scripts/e2e/smoke_typst_package.py'
+          subprocess.run([sys.executable, str(smoke), '--helper', str(helper)],
+                         cwd=app, env=clean_env, check=True)
+          host_arch = subprocess.check_output(['/usr/bin/uname', '-m'], text=True).strip()
+          with tempfile.TemporaryDirectory(prefix='vnote-typst-arch-') as directory:
+              for arch in ('x86_64', 'arm64'):
+                  probe = subprocess.run(['/usr/bin/arch', f'-{arch}', '/usr/bin/true'],
+                                         env=clean_env, capture_output=True, text=True, timeout=15)
+                  if probe.returncode != 0:
+                      if arch == host_arch:
+                          raise SystemExit(f'Native {arch} execution unavailable: {probe.stderr}')
+                      capability = 'Rosetta x86_64' if arch == 'x86_64' else 'arm64'
+                      print(f'::notice::{capability} execution unavailable on this runner; '
+                            f'that helper slice was inspected but not launched: {probe.stderr.strip()}', flush=True)
+                      continue
+                  wrapper = Path(directory) / f'typst-{arch}'
+                  wrapper.write_text(f'#!/bin/sh\nexec /usr/bin/arch -{arch} {shlex.quote(str(helper))} "$@"\n')
+                  wrapper.chmod(0o700)
+                  print(f'Compiling with packaged Typst {arch} slice', flush=True)
+                  subprocess.run([sys.executable, str(smoke), '--helper', str(wrapper)],
+                                 cwd=app, env=clean_env, check=True)
+          print(f'Compiler launches verified on runner macOS {platform.mac_ver()[0]}; '
+                'minimum-OS metadata does not prove launch on Monterey or another older OS.', flush=True)
+          PY
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session

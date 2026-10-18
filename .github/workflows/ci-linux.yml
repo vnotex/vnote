@@ -19,6 +19,7 @@ env:
     VNOTE_VER: 4.10.0
     CMAKE_VER: 3.24.3
     VNOTE_TESTS: ${{ startsWith(github.event.head_commit.message, '[Release]') && 'OFF' || 'ON' }}
+    CARGO_BUILD_JOBS: 2
 
 jobs:
   build-linux:
@@ -101,6 +102,23 @@ jobs:
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
+      - name: Cache Typst compiler dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ${{runner.workspace}}/build/typst-cargo
+          key: ${{runner.os}}-ubuntu-22.04-typst-Rust-1.99.0-${{hashFiles('libs/vtextedit/tools/typst-backend/Cargo.lock')}}
+
+      - name: Install pinned Typst build tools
+        run: |
+          rustup toolchain install 1.99.0 --profile minimal
+          cargo +1.99.0 install cargo-about --locked --version 0.9.2 --features cli
+          # No target filter: offline attribution needs all locked target sources.
+          cargo +1.99.0 fetch --locked --manifest-path Cargo.toml
+        working-directory: ${{github.workspace}}/libs/vtextedit/tools/typst-backend
+
       - name: Compile fcitxqt5
         run: |
           git clone https://github.com/fcitx/fcitx-qt5
@@ -166,7 +184,7 @@ jobs:
         # in the root CMakeLists.txt and is enabled above only for non-release runs.
         run: |
           set -e
-          cmake --build .
+          cmake --build . --target all test_typsteditor
           export QT_QPA_PLATFORM=offscreen
           # Force a UTF-8 locale so std::filesystem::path round-trips through
           # std::string preserve non-ASCII bytes. Without this, CJK filenames
@@ -187,6 +205,7 @@ jobs:
             exit 1
           fi
           bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --output-on-failure
+          bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error
         working-directory: ${{runner.workspace}}/build
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
@@ -228,6 +247,55 @@ jobs:
           popd
           mv VNote*.AppImage VNote-${{env.VNOTE_VER}}-linux-x64.AppImage
         working-directory: ${{runner.workspace}}/build
+
+      - name: Verify packaged Typst runtime
+        working-directory: ${{runner.workspace}}/build
+        run: |
+          # Inspect the final, repacked AppImage rather than the Cargo output or
+          # the pre-fix linuxdeploy staging directory.
+          mkdir "$RUNNER_TEMP/typst-package"
+          cd "$RUNNER_TEMP/typst-package"
+          "${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-linux-x64.AppImage" --appimage-extract
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          import subprocess
+          import sys
+
+          appdir = Path('squashfs-root').resolve()
+          helper = appdir / 'usr/bin/vtextedit-typst'
+          # linuxdeploy places extra executables in usr/bin, but install-owned
+          # notices retain the configured GNUInstallDirs prefix and data directory.
+          cache = {}
+          for line in Path('${{runner.workspace}}/build/CMakeCache.txt').read_text().splitlines():
+              if '=' in line and ':' in line.split('=', 1)[0]:
+                  key, value = line.split('=', 1)
+                  cache[key.split(':', 1)[0]] = value
+          prefix = cache.get('CMAKE_INSTALL_PREFIX')
+          datadir = cache.get('CMAKE_INSTALL_DATADIR') or cache.get('CMAKE_INSTALL_DATAROOTDIR')
+          if not prefix or not datadir:
+              raise SystemExit('Cannot determine the configured Typst notice install path')
+          data_path = Path(datadir) if Path(datadir).is_absolute() else Path(prefix) / datadir
+          notices = appdir / data_path.relative_to('/') / 'licenses/vnote/typst'
+          required = [helper, appdir / 'usr/lib/libQt6Pdf.so.6']
+          required += [notices / name for name in (
+              'LICENSE.typst-dependencies', 'LICENSE.vtextedit-typst',
+              'qtpdf-6.10.3.spdx.json', 'qtwebengine-chromium-pdf-6.10.3.spdx.json')]
+          for path in required:
+              if not path.is_file() or path.stat().st_size == 0:
+                  raise SystemExit(f'Packaged Typst runtime is missing a nonempty {path}')
+          if not os.access(helper, os.X_OK):
+              raise SystemExit(f'Packaged Typst helper is not executable: {helper}')
+
+          clean_env = {key: value for key, value in os.environ.items()
+                       if not key.upper().startswith(('CARGO', 'RUST', 'QT', 'QML', 'TYPST', 'VTEXTEDIT', 'LD_', 'DYLD'))
+                       and key not in ('CMAKE_PREFIX_PATH', 'LIBRARY_PATH', 'PYTHONPATH', 'PYTHONHOME')}
+          clean_env['PATH'] = '/usr/bin:/bin'
+          clean_env['LD_LIBRARY_PATH'] = str(appdir / 'usr/lib')
+          smoke = Path(os.environ['GITHUB_WORKSPACE']) / 'scripts/e2e/smoke_typst_package.py'
+          subprocess.run([sys.executable, str(smoke), '--helper', str(helper)],
+                         cwd=appdir, env=clean_env, check=True)
+          PY
 
       - name: Archive Artifacts
         uses: actions/upload-artifact@v4

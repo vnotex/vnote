@@ -24,6 +24,8 @@ add_subdirectory(QHotkey)
 # set(CMAKE_MSVC_RUNTIME_LIBRARY ... FORCE) (libs/vxcore/third_party/CMakeLists.txt)
 # ahead of vtextedit's configure, applying it to syntax-highlighting, katevi,
 # sonnet, hunspell and VTextEdit. Do not reorder.
+set(VTEXTEDIT_ENABLE_TYPST ON CACHE BOOL "Build the required native Typst editor" FORCE)
+set(VTEXTEDIT_BUILD_DEMOS OFF CACHE BOOL "Disable vtextedit demo applications" FORCE)
 add_subdirectory(vtextedit)
 
 # vxcore - VNote core library (notebook management, tags, search)

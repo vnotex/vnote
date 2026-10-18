@@ -17,6 +17,7 @@ on:
 
 env:
     VNOTE_VER: 4.10.0
+    CARGO_BUILD_JOBS: 2
 
 jobs:
   build:
@@ -77,6 +78,27 @@ jobs:
         run: mkdir build
         working-directory: ${{runner.workspace}}
 
+      - name: Cache Typst compiler dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            ${{runner.workspace}}/build/typst-cargo
+          key: ${{runner.os}}-typst-Rust-1.99.0-${{hashFiles('libs/vtextedit/tools/typst-backend/Cargo.lock')}}
+
+      - name: Install pinned Typst build tools
+        shell: cmd
+        env:
+          VS_CMD: ${{ matrix.config.vs_cmd }}
+        run: |
+          call "%VS_CMD%"
+          rustup toolchain install 1.99.0 --profile minimal || exit /b 1
+          cargo +1.99.0 install cargo-about --locked --version 0.9.2 --features cli || exit /b 1
+          REM Fetch every locked target dependency for offline deployment attribution.
+          cargo +1.99.0 fetch --locked --manifest-path Cargo.toml || exit /b 1
+        working-directory: ${{github.workspace}}/libs/vtextedit/tools/typst-backend
+
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
@@ -107,7 +129,7 @@ jobs:
           REM vtextedit tests belong to ALL even with VNOTE_BUILD_TESTS=OFF.
           REM pack builds all release dependencies without compiling tests.
           if "%VNOTE_TESTS%"=="ON" (
-            cmake --build . --target=all || exit /b 1
+            cmake --build . --target all test_typsteditor || exit /b 1
           )
           cmake --build . --target=pack || exit /b 1
           7z x VNote*.zip || exit /b 1
@@ -137,7 +159,8 @@ jobs:
           VS_CMD: ${{ matrix.config.vs_cmd }}
         run: |
           call "%VS_CMD%"
-          ctest -C Release --output-on-failure
+          ctest -C Release --output-on-failure || exit /b 1
+          ctest --test-dir libs/vtextedit -C Release -R "^test_typsteditor$" --output-on-failure --no-tests=error || exit /b 1
         working-directory: ${{runner.workspace}}/build
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
@@ -185,10 +208,10 @@ jobs:
 
           # cmark's CLI is installed by the vendored cmark and, with the flat
           # layout, lands in the package root. VNote links cmark as a library
-          # and never runs it. vnote.exe and QtWebEngineProcess.exe are the only
-          # executables the package root should carry; minisign lives in updater/.
+          # and never runs it. Only VNote, QtWebEngineProcess and the native Typst
+          # compiler belong at the root; minisign lives in updater/.
           $strayExe = @(Get-ChildItem -File -Filter '*.exe' $extracted |
-                        Where-Object { $_.Name -notin @('vnote.exe', 'QtWebEngineProcess.exe') })
+                        Where-Object { $_.Name -notin @('vnote.exe', 'QtWebEngineProcess.exe', 'vtextedit-typst.exe') })
           if ($strayExe) {
             Write-Error "Package ships unexpected executable(s): $($strayExe.Name -join ', ')"
             exit 1
@@ -416,6 +439,33 @@ jobs:
             exit 1
           }
           Write-Host "Qt6 zip composition OK"
+
+      - name: Verify packaged Typst runtime
+        shell: pwsh
+        working-directory: ${{runner.workspace}}/build
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $pkg = (Resolve-Path -LiteralPath "VNote-${{env.VNOTE_VER}}-win64").Path
+          foreach ($file in @('vtextedit-typst.exe', 'Qt6Pdf.dll', 'VTextEdit.dll', 'platforms/qwindows.dll',
+                              'licenses/typst/LICENSE.typst-dependencies', 'licenses/typst/LICENSE.vtextedit-typst',
+                              'licenses/typst/qtpdf-${{matrix.config.qt}}.spdx.json',
+                              'licenses/typst/qtwebengine-chromium-pdf-${{matrix.config.qt}}.spdx.json')) {
+            $path = Join-Path $pkg $file
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or (Get-Item -LiteralPath $path).Length -eq 0) {
+              throw "Packaged Typst runtime is missing a nonempty $path"
+            }
+          }
+
+          # Resolve Python first, then remove all developer runtime/search overrides.
+          $python = (Get-Command python -CommandType Application | Select-Object -First 1).Source
+          Get-ChildItem Env: | Where-Object {
+            $_.Name -match '^(CARGO|RUST|QT|QML|TYPST|VTEXTEDIT|DYLD|LD_)' -or
+            $_.Name -in @('CMAKE_PREFIX_PATH', 'LIBRARY_PATH', 'PYTHONPATH', 'PYTHONHOME')
+          } | ForEach-Object { Remove-Item "Env:$($_.Name)" }
+          $env:PATH = "$pkg;$env:SystemRoot\System32;$env:SystemRoot"
+          Set-Location -LiteralPath $pkg
+          & $python "$env:GITHUB_WORKSPACE/scripts/e2e/smoke_typst_package.py" --helper (Join-Path $pkg 'vtextedit-typst.exe')
+          if ($LASTEXITCODE -ne 0) { throw "Packaged Typst compiler smoke failed (exit $LASTEXITCODE)" }
 
       - name: Archive Artifacts
         uses: actions/upload-artifact@v4

@@ -648,3 +648,30 @@ if(WIN32)
   set_property(TEST test_markdownwebjobcontroller APPEND PROPERTY
     ENVIRONMENT "PATH=${_markdown_jobs_path}")
 endif()
+
+# Typst project/navigation policy against real isolated notebook and buffer services.
+# No native editor widget or external compiler/browser process is needed here.
+add_qt_test(test_typstviewwindowcontroller
+  SOURCES
+    test_typstviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/typstviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/textviewwindowcontroller.cpp
+  LINKS
+    core_configs
+    core_services
+    vxcore
+    VTextEdit
+    Qt6::Gui
+  GUILESS
+)
+target_include_directories(test_typstviewwindowcontroller PRIVATE
+  ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
+)
+if(WIN32)
+  # Building only this target must also produce a runnable isolated test directory.
+  add_custom_command(TARGET test_typstviewwindowcontroller POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:VTextEdit>
+      $<TARGET_FILE_DIR:test_typstviewwindowcontroller>
+  )
+endif()

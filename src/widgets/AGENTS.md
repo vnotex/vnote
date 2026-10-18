@@ -135,6 +135,40 @@ before sampling its geometry; an invalidated layout can temporarily report an em
 Markdown Read hides an empty overlay; Edit retains its status controls. Regression coverage:
 `test_statusbar` and `test_statuswidget`.
 
+#### Native Typst editor
+
+`TypstViewWindow` hosts one `vte::VTypstEditor` and borrows its `VTextEditor` for source
+helpers. `.typst` is a newable/searchable plaintext registry type; `.typ` is not claimed.
+Legacy nonempty registries gain Typst without stealing suffixes or changing saved rows.
+Registry-local `schemaVersion` preserves deliberate deletions after migration; the Qt
+wrapper and encryption allowlists remain unchanged.
+
+Ordinary opens default to Side-by-Side Preview. Explicit Quick Access Read/Edit and
+restored/last-closed modes remain authoritative; ordinary activation preserves the tab's
+presentation. The rightmost View Mode action owns its menu so all three presentations
+survive toolbar overflow. Read hides source, not the buffer's writer/save lifecycle.
+Find uses source in editing modes and native PDF search in Read; source-only options are
+saved/restored locally with `FindAndReplaceWidget2::setFindOptions()`.
+
+The canonical containing directory is the project boundary and the actual basename is
+the main/active file. Imports use saved files under that tree; only the current source is
+an unsaved overlay. Configure the absolute adjacent helper path before constructing the
+native widget, even if the helper is missing: an empty path would permit upstream PATH
+search. Downloads stay disabled. Unavailable compilation still permits source editing
+and saving; failed source reads instead disable mutations and reject save snapshots.
+
+Use inherited focus/save/reload/close and BufferService, never per-keystroke buffer writes
+or QFile saves. Retarget project/active identity and remove the obsolete overlay without
+reloading text. Theme changes go through the composite `setConfig()`, preserving source
+history and PDF zoom; authored PDF colors are not application palette colors.
+
+Publish compiled heading metadata in order, including repeated/generated/imported/deep
+headings, with no producer-side gap fillers or Markdown parsing. The shared outline model
+may display its own gap rows while preserving producer indices. Disable reorder and
+automatic section numbering. `TypstViewWindowController` owns canonical source containment
+and one-shot generation-bound external-link consent; the view owns guarded modal UI.
+Destroy the compiler widget only after close is accepted. Printing is not exposed.
+
 #### Detached-window close
 
 Closing a detached title bar (including Alt+F4) closes its hosted tabs in tab order

@@ -21,6 +21,7 @@ class NotificationButton2;
 class ServiceLocator;
 class UnitedEntry;
 class UnitedEntryMgr;
+struct FileOpenSettings;
 
 // Tool bar helper for MainWindow2.
 // Non-static design with dependency injection for testability.
@@ -95,7 +96,7 @@ private:
 
   void activateQuickAccess(const SessionConfig::QuickAccessItem &p_item);
 
-  void activateQuickAccessFilePath(const QString &p_file, ViewWindowMode p_mode);
+  void activateQuickAccessFilePath(const QString &p_file, const FileOpenSettings &p_settings);
 
   QToolBar *createToolBar(const QString &p_title, const QString &p_name);
 

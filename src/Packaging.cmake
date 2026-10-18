@@ -3,7 +3,8 @@ find_package(Qt6 REQUIRED COMPONENTS Core)
 
 get_target_property(QMAKE_EXECUTABLE Qt::qmake IMPORTED_LOCATION)
 get_filename_component(QT_BIN_DIR "${QMAKE_EXECUTABLE}" DIRECTORY)
-execute_process(COMMAND ${QMAKE_EXECUTABLE} -query QT_VERSION OUTPUT_VARIABLE QT_VERSION)
+execute_process(COMMAND ${QMAKE_EXECUTABLE} -query QT_VERSION
+    OUTPUT_VARIABLE QT_VERSION OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 set(QT_PLUGINS_DIR "${QT_BIN_DIR}/../plugins")
 cmake_path(NORMAL_PATH QT_PLUGINS_DIR OUTPUT_VARIABLE QT_PLUGINS_DIR)
@@ -15,6 +16,23 @@ find_program(LINUXDEPLOY_EXECUTABLE linuxdeploy linuxdeploy-x86_64.AppImage HINT
 find_program(MACDEPLOYQT_EXECUTABLE macdeployqt HINTS "${QT_BIN_DIR}")
 find_program(MACDEPLOYQTFIX_EXECUTABLE macdeployqtfix.py HINTS "${QT_BIN_DIR}")
 find_package(Python)
+
+get_filename_component(VX_TYPST_QT_PREFIX "${QT_BIN_DIR}/.." ABSOLUTE)
+set(VX_TYPST_NOTICES_DIR "${CMAKE_CURRENT_BINARY_DIR}/typst-notices")
+# Attribution is a deployment prerequisite, not a configure or application-startup operation.
+add_custom_target(prepare_typst_notices
+    COMMAND "${Python_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/package/prepare-typst-notices.py"
+        --manifest "${PROJECT_SOURCE_DIR}/libs/vtextedit/tools/typst-backend/Cargo.toml"
+        --qt-prefix "${VX_TYPST_QT_PREFIX}"
+        --qt-version "${QT_VERSION}"
+        --output-dir "${VX_TYPST_NOTICES_DIR}"
+    BYPRODUCTS "${VX_TYPST_NOTICES_DIR}/LICENSE.typst-dependencies"
+               "${VX_TYPST_NOTICES_DIR}/LICENSE.vtextedit-typst"
+               "${VX_TYPST_NOTICES_DIR}/qtpdf-${QT_VERSION}.spdx.json"
+               "${VX_TYPST_NOTICES_DIR}/qtwebengine-chromium-pdf-${QT_VERSION}.spdx.json"
+    COMMENT "Preparing Typst and Qt PDF runtime attribution"
+    VERBATIM
+)
 
 function(windeployqt target)
     # Bundle Library Files
@@ -49,7 +67,7 @@ function(windeployqt target)
             --no-compiler-runtime
             --translations zh_CN,ja,ko
             --dir "${CMAKE_CURRENT_BINARY_DIR}/winqt/"
-            $<TARGET_FILE:${target}>
+            "$<TARGET_FILE:${target}>" "$<TARGET_FILE:VTextEdit>"
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/generic/"
         # Keep winqt/styles/: it holds qwindows11style.dll, without which Qt 6
         # falls back to the legacy windowsvista style on Windows 11 (beveled
@@ -63,7 +81,7 @@ function(windeployqt target)
         DEPENDS vnote lrelease
     )
 
-    add_dependencies(deploy prepare_win_updater)
+    add_dependencies(deploy prepare_win_updater vnote_typst_runtime prepare_typst_notices)
     add_dependencies(pack deploy)
 
     install(DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/winqt/" DESTINATION "${CMAKE_INSTALL_BINDIR}" OPTIONAL)
@@ -73,6 +91,8 @@ function(windeployqt target)
         "${UPDATER_OUTPUT_DIR}/LICENSE.minisign"
         DESTINATION "${CMAKE_INSTALL_BINDIR}/updater"
     )
+    install(DIRECTORY "${VX_TYPST_NOTICES_DIR}/"
+        DESTINATION "${CMAKE_INSTALL_BINDIR}/licenses/typst")
 
     # Qt uses the native Schannel TLS backend; no OpenSSL DLLs are bundled.
 
@@ -159,7 +179,7 @@ add_custom_target(pack
                   COMMENT "Running CPACK. Please wait..."
                   DEPENDS vnote)
 # CPack installs the upstream CLI before Windows package pruning removes it.
-add_dependencies(pack lrelease cmark_exe)
+add_dependencies(pack lrelease cmark_exe vnote_typst_runtime prepare_typst_notices)
 
 set(CPACK_GENERATOR)
 
@@ -198,8 +218,11 @@ elseif(APPLE)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${VX_BUNDLE_CONTENTS_DIR}/Resources/translations
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
         ${VX_QM_FILES} ${VX_BUNDLE_CONTENTS_DIR}/Resources/translations
+        COMMAND ${CMAKE_COMMAND} -E make_directory ${VX_BUNDLE_CONTENTS_DIR}/Resources/licenses/typst
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${VX_TYPST_NOTICES_DIR}" ${VX_BUNDLE_CONTENTS_DIR}/Resources/licenses/typst
         COMMENT "Copying resources into bundle Contents ${VX_BUNDLE_CONTENTS_DIR}"
-        DEPENDS vnote lrelease
+        DEPENDS vnote lrelease vnote_typst_runtime prepare_typst_notices
     )
     add_dependencies(pack deploy)
 
@@ -213,6 +236,8 @@ elseif(APPLE)
         include(InstallRequiredSystemLibraries)
     endif()
 else()
+    install(DIRECTORY "${VX_TYPST_NOTICES_DIR}/"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/licenses/vnote/typst")
     message(STATUS "LinuxDeployExecutable: ${LINUXDEPLOY_EXECUTABLE}")
     if(LINUXDEPLOY_EXECUTABLE)
         message(STATUS "Package generation - Linux - AppImage")
@@ -220,7 +245,7 @@ else()
         list(APPEND CPACK_GENERATOR External)
         set(VX_APPIMAGE_DEST_DIR "${CPACK_PACKAGE_DIRECTORY}/_CPack_Packages/Linux/External/AppImage")
         set(VX_APPIMAGE_DESKTOP_FILE "${VX_APPIMAGE_DEST_DIR}${CMAKE_INSTALL_PREFIX}/share/applications/vnote.desktop")
-        configure_file(${CMAKE_CURRENT_LIST_DIR}/CPackLinuxDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+        configure_file(${CMAKE_CURRENT_LIST_DIR}/CPackLinuxDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake" @ONLY)
         set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
     endif()
 endif()

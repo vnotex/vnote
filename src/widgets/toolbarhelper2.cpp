@@ -662,12 +662,13 @@ void ToolBarHelper2::setMutationActionsEnabled(bool p_enabled) {
 }
 
 void ToolBarHelper2::activateQuickAccess(const SessionConfig::QuickAccessItem &p_item) {
+  FileOpenSettings settings;
+  settings.m_mode =
+      resolveOpenMode(p_item.m_openMode, m_services.get<ConfigMgr2>()->getCoreConfig());
+  settings.m_forceMode = p_item.m_openMode != QuickAccessOpenMode::Default;
+
   // UUID-first: try to open by UUID if available.
   if (!p_item.m_uuid.isEmpty()) {
-    const auto mode =
-        resolveOpenMode(p_item.m_openMode, m_services.get<ConfigMgr2>()->getCoreConfig());
-    FileOpenSettings settings;
-    settings.m_mode = mode;
     auto *bufferSvc = m_services.get<BufferService>();
     Buffer2 buf = bufferSvc->openBufferByNodeId(p_item.m_uuid, settings);
     if (buf.isValid()) {
@@ -677,12 +678,11 @@ void ToolBarHelper2::activateQuickAccess(const SessionConfig::QuickAccessItem &p
     qDebug() << "UUID resolution failed for" << p_item.m_uuid << ", falling back to path";
   }
 
-  const auto mode =
-      resolveOpenMode(p_item.m_openMode, m_services.get<ConfigMgr2>()->getCoreConfig());
-  activateQuickAccessFilePath(p_item.m_path, mode);
+  activateQuickAccessFilePath(p_item.m_path, settings);
 }
 
-void ToolBarHelper2::activateQuickAccessFilePath(const QString &p_file, ViewWindowMode p_mode) {
+void ToolBarHelper2::activateQuickAccessFilePath(const QString &p_file,
+                                                 const FileOpenSettings &p_settings) {
   auto *bufferSvc = m_services.get<BufferService>();
   if (!bufferSvc) {
     return;
@@ -690,7 +690,5 @@ void ToolBarHelper2::activateQuickAccessFilePath(const QString &p_file, ViewWind
 
   NodeIdentifier nodeId;
   nodeId.relativePath = p_file;
-  FileOpenSettings settings;
-  settings.m_mode = p_mode;
-  bufferSvc->openBuffer(nodeId, settings);
+  bufferSvc->openBuffer(nodeId, p_settings);
 }

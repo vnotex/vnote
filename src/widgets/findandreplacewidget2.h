@@ -35,6 +35,9 @@ public:
 
   void setOptionsEnabled(FindOptions p_options, bool p_enabled);
 
+  // Update local controls without changing the persisted Find defaults.
+  void setFindOptions(FindOptions p_options);
+
 signals:
   void findTextChanged(const QString &p_text, FindOptions p_options);
 
@@ -67,8 +70,6 @@ private slots:
 
 private:
   void setupUI();
-
-  void setFindOptions(FindOptions p_options);
 
   ServiceLocator &m_services;
 
