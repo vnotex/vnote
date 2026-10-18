@@ -35,10 +35,12 @@ public:
   ~ExportDialog2() override;
 
 protected:
+  void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
   void rejectedButtonClicked() Q_DECL_OVERRIDE;
 
 private:
   void setupUI();
+  void followTheme();
 
   void loadConfig();
   void saveConfig();

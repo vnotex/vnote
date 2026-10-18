@@ -255,6 +255,30 @@ ExportDialog2::ExportDialog2(ServiceLocator &p_services, const ExportContext &p_
 
 ExportDialog2::~ExportDialog2() = default;
 
+void ExportDialog2::showEvent(QShowEvent *p_event) {
+  // A new app session starts with the current theme, not the last run's export styles.
+  static bool s_themeInitialized = false;
+  if (!s_themeInitialized) {
+    s_themeInitialized = true;
+    followTheme();
+  }
+  ScrollDialog::showEvent(p_event);
+}
+
+void ExportDialog2::followTheme() {
+  auto *theme = m_services.get<ThemeService>();
+  const int renderingIdx =
+      m_renderingStyleCombo->findData(theme->getFile(Theme::File::WebStyleSheet));
+  const int syntaxIdx =
+      m_syntaxStyleCombo->findData(theme->getFile(Theme::File::HighlightStyleSheet));
+  if (renderingIdx >= 0) {
+    m_renderingStyleCombo->setCurrentIndex(renderingIdx);
+  }
+  if (syntaxIdx >= 0) {
+    m_syntaxStyleCombo->setCurrentIndex(syntaxIdx);
+  }
+}
+
 void ExportDialog2::setupUI() {
   auto *mainWidget = new QWidget(this);
   auto *mainLayout = new QVBoxLayout(mainWidget);
@@ -370,19 +394,7 @@ void ExportDialog2::setupUI() {
   followThemeButton->setToolTip(tr("Follow Theme"));
   followThemeButton->setAccessibleName(tr("Follow Theme"));
   commonLayout->addWidget(followThemeButton, 2, 4);
-  connect(followThemeButton, &QToolButton::clicked, this, [this]() {
-    auto *theme = m_services.get<ThemeService>();
-    const int renderingIdx =
-        m_renderingStyleCombo->findData(theme->getFile(Theme::File::WebStyleSheet));
-    const int syntaxIdx =
-        m_syntaxStyleCombo->findData(theme->getFile(Theme::File::HighlightStyleSheet));
-    if (renderingIdx >= 0) {
-      m_renderingStyleCombo->setCurrentIndex(renderingIdx);
-    }
-    if (syntaxIdx >= 0) {
-      m_syntaxStyleCombo->setCurrentIndex(syntaxIdx);
-    }
-  });
+  connect(followThemeButton, &QToolButton::clicked, this, &ExportDialog2::followTheme);
 
   // Row 3: Checkboxes.
   m_transparentBgCheck =

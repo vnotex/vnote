@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Initialize export rendering and syntax styles from the current theme on the first dialog show in each app session, preserving later choices within that session
 * Add Export above Shortcuts Help in the mind map editor's empty-canvas context menu, using the current buffer and the existing export dialog
 * Fix note drag-and-drop reordering with external files visible, reject external reorder anchors, and preserve expanded folders after reordering
 * Delay Markdown read viewers in edit-only mode; share editor JS work across tabs and prefer each tab's ready reader, with isolated protected-note and MathJax contexts
