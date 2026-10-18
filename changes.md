@@ -21,6 +21,7 @@
 * Match Qt native context-menu icons to the selected light or dark theme even when Windows retains a light palette, and restore system appearance for Native
 * Add Undo and Redo toolbar buttons to plain text and Markdown editors, matching the mind map editor
 * Require Qt 6; remove Qt 5.15 and Windows 7 builds, packaging and compatibility paths
+* Update vtextedit to upstream `af55346`, including theme-format and preview-layout fixes; optional Typst support remains disabled
 
 ## v4.10.0
 A feature release with richer mind-map editing and exports, image viewing and self-contained encrypted notes on top of VNote 4.9.1:
