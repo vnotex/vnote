@@ -1502,6 +1502,9 @@ if(TARGET Qt6::Qml)
     "QTWEBENGINE_CHROMIUM_FLAGS="
   )
 
+  # Many isolated browser pages share this deadline; per-step waits remain bounded.
+  set_property(TEST test_markdownviewer_js PROPERTY TIMEOUT 180)
+
   # Read-mode graph render pass: finishWork() exactly-once, the concurrency bound,
   # and GraphCache in-flight coalescing; Chromium covers PlantUML pagination.
   add_qt_test(test_graphrenderer_js

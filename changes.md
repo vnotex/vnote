@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Allow the full Markdown viewer browser suite to finish on slower CI runners without changing per-step timeouts
 * Translate mind map Paste and all emoji picker categories in Simplified Chinese, Japanese and Korean
 * Revise Simplified Chinese interface wording for more natural phrasing and consistent search, editor, snippet, workspace and split terminology
 * Preserve nonempty custom Markdown `<a>` IDs containing only ASCII letters, digits, underscores, and hyphens while XSS protection is enabled; no prefix is required
