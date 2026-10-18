@@ -143,12 +143,7 @@ void MindMapViewWindow2::connectEditorSignals() {
                             CoreConfig::Shortcut::Export));
             action->setEnabled(m_contentLoaded);
             connect(action, &QAction::triggered, this, &MindMapViewWindow2::exportRequested);
-            const auto actions = p_menu->actions();
-            auto *firstAction = actions.isEmpty() ? nullptr : actions.first();
-            p_menu->insertAction(firstAction, action);
-            if (firstAction) {
-              p_menu->insertSeparator(firstAction);
-            }
+            p_menu->insertAction(m_editor->commandAction(QStringLiteral("showHelp")), action);
           });
 }
 
