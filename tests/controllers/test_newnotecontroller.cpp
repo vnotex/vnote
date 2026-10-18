@@ -1,6 +1,8 @@
 #include <QtTest>
 
 #include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QJsonObject>
 
 #include <vxcore/notebook_json_keys.h>
@@ -40,6 +42,8 @@ private slots:
   void testCreateQuickNoteAbsoluteNotebookFolder();
   void testCreateQuickNoteMissingNotebook();
   void testBundledTitleTemplateYieldsHeadingAndCaretBelowIt();
+  void testBundledMindMapTitleTemplate_data();
+  void testBundledMindMapTitleTemplate();
 
 private:
   QString readNote(const NodeIdentifier &p_id) const;
@@ -406,6 +410,47 @@ void TestNewNoteController::testBundledTitleTemplateYieldsHeadingAndCaretBelowIt
   QCOMPARE(readNoteBytes(result.nodeId), QByteArray("# Foo\n\n"));
   // "# Foo\n\n" == 7 document positions, i.e. the start of the third line.
   QCOMPARE(result.cursorOffset, 7);
+}
+
+void TestNewNoteController::testBundledMindMapTitleTemplate_data() {
+  QTest::addColumn<QString>("name");
+  QTest::addColumn<QString>("title");
+  QTest::newRow("plain") << QStringLiteral("Project plan.mmm")
+                         << QStringLiteral("Project plan");
+  QTest::newRow("unicode-multiple-dots") << QStringLiteral("路线.规划.mmm")
+                                         << QStringLiteral("路线.规划");
+  QTest::newRow("literal-marks") << QStringLiteral("@@ $$ & 50%.mmm")
+                                 << QStringLiteral("@@ $$ & 50%");
+}
+
+void TestNewNoteController::testBundledMindMapTitleTemplate() {
+  QFETCH(QString, name);
+  QFETCH(QString, title);
+  const QString bundled = QFINDTESTDATA("../../src/data/extra/templates/title.mmm");
+  QVERIFY2(!bundled.isEmpty(), "bundled title.mmm not found");
+  QFile file(bundled);
+  QVERIFY(file.open(QIODevice::ReadOnly));
+
+  NewNoteController controller(m_services);
+  NewNoteInput input;
+  input.notebookId = m_notebookId;
+  input.name = name;
+  input.fileTypeName = QStringLiteral("MindMap");
+  input.templateContent = QString::fromUtf8(file.readAll());
+  const auto result = controller.createNote(input);
+  QVERIFY2(result.success, qPrintable(result.errorMessage));
+
+  QJsonParseError error;
+  const auto document = QJsonDocument::fromJson(readNoteBytes(result.nodeId), &error);
+  QCOMPARE(error.error, QJsonParseError::NoError);
+  QVERIFY(document.isObject());
+  const auto map = document.object();
+  const auto nodes = map.value(QStringLiteral("nodes")).toArray();
+  QCOMPARE(nodes.size(), 1);
+  const auto root = nodes.first().toObject();
+  QCOMPARE(root.value(QStringLiteral("id")), map.value(QStringLiteral("rootId")));
+  QCOMPARE(root.value(QStringLiteral("topic")).toString(), title);
+  QVERIFY(root.value(QStringLiteral("children")).toArray().isEmpty());
 }
 
 } // namespace tests

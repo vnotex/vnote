@@ -14,6 +14,7 @@ const QString c_newNoteDefaultTemplatesKey = QStringLiteral("newNoteDefaultTempl
 QJsonObject bundledNewNoteDefaultTemplates() {
   QJsonObject obj;
   obj[QStringLiteral("Markdown")] = QStringLiteral("title.md");
+  obj[QStringLiteral("MindMap")] = QStringLiteral("title.mmm");
   return obj;
 }
 } // namespace

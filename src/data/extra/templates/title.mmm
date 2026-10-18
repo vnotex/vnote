@@ -1,0 +1,11 @@
+{
+  "schemaVersion": 1,
+  "rootId": "root",
+  "nodes": [
+    {
+      "id": "root",
+      "topic": "%no%"
+    }
+  ],
+  "crossLinks": []
+}

@@ -151,12 +151,13 @@ void TestWidgetConfigSearch::testFolderShareDestinationMissingOrWrongType() {
 }
 
 // An absent key means "never configured", so the bundled mapping is seeded.
-// Markdown ships title.md; nothing else has a bundled template.
+// Markdown and mind maps ship title templates; other types have no default.
 void TestWidgetConfigSearch::testNewNoteDefaultTemplatesSeedsMarkdownOnFirstRun() {
   WidgetConfig wc(nullptr, nullptr);
   wc.fromJson(QJsonObject());
 
   QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Markdown")), QStringLiteral("title.md"));
+  QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("MindMap")), QStringLiteral("title.mmm"));
   QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Text")), QString());
   QCOMPARE(wc.getNewNoteDefaultTemplate(QString()), QString());
   QVERIFY(wc.toJson().contains(QStringLiteral("newNoteDefaultTemplates")));
@@ -169,7 +170,7 @@ void TestWidgetConfigSearch::testNewNoteDefaultTemplatesRoundTripAndPerTypeAcces
   // An empty type name is not a key and must be ignored rather than stored.
   wc1.setNewNoteDefaultTemplate(QString(), QStringLiteral("orphan.md"));
 
-  QCOMPARE(wc1.getNewNoteDefaultTemplates().size(), 2);
+  QVERIFY(!wc1.getNewNoteDefaultTemplates().contains(QString()));
 
   WidgetConfig wc2(nullptr, nullptr);
   wc2.fromJson(wc1.toJson());
@@ -187,16 +188,19 @@ void TestWidgetConfigSearch::testNewNoteDefaultTemplatesEmptyObjectIsRespected()
   WidgetConfig wc(nullptr, nullptr);
   wc.fromJson(json);
   QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Markdown")), QString());
+  QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("MindMap")), QString());
 
   // The same holds for an explicitly cleared per-type entry.
   QJsonObject cleared;
   QJsonObject mapping;
   mapping[QStringLiteral("Markdown")] = QString();
+  mapping[QStringLiteral("MindMap")] = QString();
   cleared[QStringLiteral("newNoteDefaultTemplates")] = mapping;
 
   WidgetConfig wcCleared(nullptr, nullptr);
   wcCleared.fromJson(cleared);
   QCOMPARE(wcCleared.getNewNoteDefaultTemplate(QStringLiteral("Markdown")), QString());
+  QCOMPARE(wcCleared.getNewNoteDefaultTemplate(QStringLiteral("MindMap")), QString());
 }
 
 void TestWidgetConfigSearch::testNewNoteDefaultTemplatesWrongTypeYieldsNoDefaults() {

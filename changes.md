@@ -4,6 +4,7 @@
 * Initialize export rendering and syntax styles from the current theme on the first dialog show in each app session, preserving later choices within that session
 * Add Export above Shortcuts Help in the mind map editor's empty-canvas context menu, using the current buffer and the existing export dialog
 * Fix note drag-and-drop reordering with external files visible, reject external reorder anchors, and preserve expanded folders after reordering
+* Add a bundled `title.mmm` mind-map template that uses the note title as its central topic; select it by default for unconfigured template mappings while preserving existing choices
 * Delay Markdown read viewers in edit-only mode; share editor JS work across tabs and prefer each tab's ready reader, with isolated protected-note and MathJax contexts
 * Allow the full Markdown viewer browser suite to finish on slower CI runners without changing per-step timeouts
 * Translate mind map Paste and all emoji picker categories in Simplified Chinese, Japanese and Korean
