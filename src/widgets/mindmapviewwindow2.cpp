@@ -146,16 +146,6 @@ void MindMapViewWindow2::connectEditorSignals() {
             action->setEnabled(m_contentLoaded);
             connect(action, &QAction::triggered, this, &MindMapViewWindow2::exportRequested);
             p_menu->insertAction(m_editor->commandAction(QStringLiteral("showHelp")), action);
-            auto *printAction = new QAction(
-                ViewWindowToolBarHelper2::generateIcon(getServices(),
-                                                       QStringLiteral("print_editor.svg")),
-                QObject::tr("Print"), p_menu);
-            WidgetUtils::addActionShortcutText(
-                printAction, getServices().get<ConfigMgr2>()->getEditorConfig().getShortcut(
-                                 EditorConfig::Shortcut::Print));
-            printAction->setEnabled(m_contentLoaded && isEnabled() && !getBuffer().isEncrypted());
-            connect(printAction, &QAction::triggered, this, &MindMapViewWindow2::handlePrint);
-            p_menu->insertAction(action, printAction);
           });
 }
 

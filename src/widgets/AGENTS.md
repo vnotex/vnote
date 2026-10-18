@@ -344,8 +344,7 @@ The stable tokens and fallback are documented in [core preferences](../core/AGEN
 
 #### Mind-map printing
 
-Print is available in the toolbar Menu and before Export in the empty-canvas context menu.
-The context menu displays the configured Print shortcut without registering another binding.
+Print is available in the toolbar Menu, not in the empty-canvas context menu.
 `MindMapViewWindow2` owns the print dialog/printer; m3's public `renderMap()` paints a detached,
 unselected scene. Fit the current visible map, including orphan trees and links, centered on one
 printable page without changing zoom, pan or folds. Printing uses the current palette and cached
