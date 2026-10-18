@@ -39,7 +39,6 @@ target_include_directories(test_textcursorpreserver PRIVATE
 )
 
 add_qt_test(test_themeservice
-  ARGS -o -,txt
   SOURCES
     test_themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
