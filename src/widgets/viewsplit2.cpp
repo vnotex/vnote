@@ -409,7 +409,19 @@ void ViewSplit2::closeTab(int p_idx) {
 }
 
 void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
-  int idx = addTab(p_win, effectiveTabIcon(p_win), p_win->getTitle());
+  const QString title = p_win->getTitle();
+  int idx = addTab(p_win, effectiveTabIcon(p_win), title);
+
+  // Keep the native close icon centered with 8 logical pixels of space on each side.
+  constexpr int c_closeButtonHorizontalPadding = 8;
+  for (auto side : {QTabBar::LeftSide, QTabBar::RightSide}) {
+    if (auto *button = tabBar()->tabButton(idx, side)) {
+      button->setFixedWidth(button->sizeHint().width() + 2 * c_closeButtonHorizontalPadding);
+    }
+  }
+  // QTabBar has no public layout invalidation; refresh using the resized button widths.
+  setTabText(idx, title);
+
   QString tooltip = p_win->getBuffer().resolvedPath();
   setTabToolTip(idx, tooltip.isEmpty() ? p_win->getTitle() : tooltip);
 
