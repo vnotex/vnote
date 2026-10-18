@@ -201,8 +201,11 @@ void NotebookNodeView::setController(NotebookNodeController *p_controller) {
                                 auto *proxy = qobject_cast<NotebookNodeProxyModel *>(model());
                                 auto *nodeModel = qobject_cast<NotebookNodeModel *>(
                                     proxy ? proxy->sourceModel() : model());
-                                if (nodeModel) {
+                                if (nodeModel &&
+                                    nodeModel->getNotebookId() == p_parentId.notebookId) {
+                                  const auto expandedFolders = getExpandedFolders();
                                   nodeModel->reloadNode(p_parentId);
+                                  replayExpandedFolders(expandedFolders);
                                 }
                               });
   }
@@ -724,9 +727,8 @@ void NotebookNodeView::dragMoveEvent(QDragMoveEvent *p_event) {
         // relative to a folder anchor (or vice versa) because the folder
         // section always sorts above the file section under folder-first.
         NodeInfo anchorInfo = nodeInfoFromIndex(idx);
-        if (!anchorInfo.isValid()) {
-          // No anchor (shouldn't happen for AboveItem/BelowItem with a
-          // valid indicator, but defensively reject).
+        if (!anchorInfo.isValid() || anchorInfo.isExternal) {
+          // External rows have no persisted order and cannot be anchors.
           p_event->setDropAction(Qt::IgnoreAction);
           p_event->ignore();
           setDropIndicatorShown(false);
@@ -872,7 +874,8 @@ void NotebookNodeView::dropEvent(QDropEvent *p_event) {
       }
       const bool draggedIsFolder = (draggedKind == 0);
       NodeInfo anchorInfo = nodeInfoFromIndex(idx);
-      if (!anchorInfo.isValid() || anchorInfo.isFolder != draggedIsFolder) {
+      if (!anchorInfo.isValid() || anchorInfo.isExternal ||
+          anchorInfo.isFolder != draggedIsFolder) {
         p_event->setDropAction(Qt::IgnoreAction);
         p_event->accept();
         return;
@@ -893,7 +896,7 @@ void NotebookNodeView::dropEvent(QDropEvent *p_event) {
       for (int i = 0; i < rowCount; ++i) {
         QModelIndex childIdx = model()->index(i, 0, parentIdx);
         NodeInfo childInfo = nodeInfoFromIndex(childIdx);
-        if (!childInfo.isValid()) {
+        if (!childInfo.isValid() || childInfo.isExternal) {
           continue;
         }
         if (childInfo.isFolder == draggedIsFolder) {

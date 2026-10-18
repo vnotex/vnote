@@ -30,10 +30,16 @@
 #include <QDragEnterEvent>
 #include <QDragMoveEvent>
 #include <QDropEvent>
+#include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
 #include <QMimeData>
 #include <QPoint>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QStringList>
+#include <QTemporaryDir>
 #include <QVector>
 #include <QtTest>
 
@@ -44,6 +50,9 @@
 #include <core/nodeidentifier.h>
 #include <core/nodeinfo.h>
 #include <core/servicelocator.h>
+#include <core/services/hookmanager.h>
+#include <core/services/notebookcoreservice.h>
+#include <core/services/notebookiogate.h>
 #include <models/notebooknodemodel.h>
 #include <models/notebooknodeproxymodel.h>
 #include <views/notebooknodeview.h>
@@ -256,6 +265,12 @@ private slots:
   // parent that isn't even in our model) → no reorder dispatched. Verifies
   // the dispatch gate uses the dragged node's parent, not the visible item.
   void T9g_crossViewSource_doesNotReorder();
+
+  void externalSiblingsExcludedFromReorder();
+  void externalAnchorRejectsReorder_data();
+  void externalAnchorRejectsReorder();
+  void successfulReorderPreservesExpansion_data();
+  void successfulReorderPreservesExpansion();
 
 private:
   // Helpers for event synthesis.
@@ -588,6 +603,154 @@ void TestNotebookNodeViewReorder::T9g_crossViewSource_doesNotReorder() {
   // the existing logic decides this is a "move into the file's parent"
   // case) or may be a no-op; we assert ONLY the reorder gate is closed.
   QCOMPARE(m_controller->reorderCallCount, 0);
+}
+
+void TestNotebookNodeViewReorder::externalSiblingsExcludedFromReorder() {
+  auto externalFolder = makeRootNode(QStringLiteral("external-folder"), true);
+  externalFolder.isExternal = true;
+  auto externalFile = makeRootNode(QStringLiteral("external.md"), false);
+  externalFile.isExternal = true;
+  const auto a = makeRootNode(QStringLiteral("a.md"), false);
+  const auto b = makeRootNode(QStringLiteral("b.md"), false);
+  const auto c = makeRootNode(QStringLiteral("c.md"), false);
+  m_source->setStubChildren({externalFolder, externalFile, a, b, c});
+  QScopedPointer<QMimeData> mime(makeNodeMimeData({c.id}));
+  enterDrag(mime.data());
+
+  const auto anchor = m_proxy->index(2, 0);
+  QCOMPARE(m_proxy->nodeIdFromIndex(anchor), a.id);
+  const QPoint pos = pointInsideRow(anchor, 0.05);
+  doDragMove(mime.data(), pos);
+  doDrop(mime.data(), pos);
+
+  QCOMPARE(m_controller->reorderCallCount, 1);
+  QCOMPARE(m_controller->moveCallCount, 0);
+  QVERIFY(m_controller->lastFolderIds.isEmpty());
+  QCOMPARE(m_controller->lastFileIds, (QList<vnotex::NodeIdentifier>{c.id, a.id, b.id}));
+}
+
+void TestNotebookNodeViewReorder::externalAnchorRejectsReorder_data() {
+  QTest::addColumn<bool>("below");
+  QTest::newRow("above") << false;
+  QTest::newRow("below") << true;
+}
+
+void TestNotebookNodeViewReorder::externalAnchorRejectsReorder() {
+  QFETCH(bool, below);
+  auto external = makeRootNode(QStringLiteral("external.md"), false);
+  external.isExternal = true;
+  const auto a = makeRootNode(QStringLiteral("a.md"), false);
+  const auto b = makeRootNode(QStringLiteral("b.md"), false);
+  m_source->setStubChildren({external, a, b});
+  QScopedPointer<QMimeData> mime(makeNodeMimeData({b.id}));
+  enterDrag(mime.data());
+  const QPoint pos = pointInsideRow(m_proxy->index(0, 0), below ? 0.95 : 0.05);
+  QDragMoveEvent move(pos, Qt::MoveAction, mime.data(), Qt::LeftButton, Qt::NoModifier);
+  m_view->dragMoveEvent(&move);
+  QVERIFY(!move.isAccepted());
+  QVERIFY(!m_view->showDropIndicator());
+  // Exercise the drop-time check even when the preceding move was refused.
+  doDrop(mime.data(), pos);
+  QCOMPARE(m_controller->reorderCallCount, 0);
+  QCOMPARE(m_controller->moveCallCount, 0);
+}
+
+void TestNotebookNodeViewReorder::successfulReorderPreservesExpansion_data() {
+  QTest::addColumn<QString>("parentPath");
+  QTest::newRow("root") << QString();
+  QTest::newRow("subfolder") << QStringLiteral("Open");
+}
+
+void TestNotebookNodeViewReorder::successfulReorderPreservesExpansion() {
+  QFETCH(QString, parentPath);
+  QTemporaryDir directory;
+  QVERIFY(directory.isValid());
+  vnotex::NotebookIoGate gate;
+  vnotex::HookManager hooks;
+  vnotex::NotebookCoreService service(m_ctx);
+  service.setNotebookIoGate(&gate);
+  service.setHookManager(&hooks);
+  vnotex::ServiceLocator services;
+  services.registerService<vnotex::NotebookCoreService>(&service);
+  const QString notebookPath = directory.filePath(QStringLiteral("notebook"));
+  const QString notebookId =
+      service.createNotebook(notebookPath, QStringLiteral("{\"name\":\"Expansion reorder\"}"),
+                             vnotex::NotebookType::Bundled);
+  QVERIFY(!notebookId.isEmpty());
+  const auto closeNotebook = qScopeGuard([&]() { service.closeNotebook(notebookId); });
+  for (const QString &path :
+       {QStringLiteral("Open"), QStringLiteral("Open/Nested"), QStringLiteral("Open/Nested/Deep"),
+        QStringLiteral("Closed"), QStringLiteral("Other")}) {
+    const int separator = path.lastIndexOf(QLatin1Char('/'));
+    QVERIFY(!service
+                 .createFolder(notebookId, separator < 0 ? QString() : path.left(separator),
+                               path.mid(separator + 1))
+                 .isEmpty());
+  }
+  for (const QString &folder :
+       {QStringLiteral("Open/Nested/Deep"), QStringLiteral("Closed"), QStringLiteral("Other")}) {
+    QVERIFY(!service.createFile(notebookId, folder, QStringLiteral("leaf.md")).isEmpty());
+  }
+  for (const QString &name :
+       {QStringLiteral("a.md"), QStringLiteral("b.md"), QStringLiteral("c.md")}) {
+    QVERIFY(!service.createFile(notebookId, parentPath, name).isEmpty());
+  }
+
+  // Use the real model/controller/service, not init()'s flat recording fixture.
+  vnotex::NotebookNodeModel source(services);
+  source.setNotebookId(notebookId);
+  vnotex::NotebookNodeProxyModel proxy;
+  proxy.setSourceModel(&source);
+  proxy.setViewOrder(vnotex::ViewOrder::OrderedByConfiguration);
+  proxy.sort(0);
+  vnotex::NotebookNodeController controller(services);
+  controller.setModel(&source);
+  TestableView view;
+  view.setModel(&proxy);
+  view.setController(&controller);
+  view.setAnimated(false);
+  view.resize(400, 600);
+  view.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&view));
+  auto indexFor = [&](const QString &p_path) {
+    return proxy.mapFromSource(source.indexFromNodeId({notebookId, p_path}));
+  };
+  const QStringList expanded{QStringLiteral("Open"), QStringLiteral("Open/Nested"),
+                             QStringLiteral("Open/Nested/Deep"), QStringLiteral("Other")};
+  for (const QString &path : expanded) {
+    const QModelIndex index = indexFor(path);
+    QVERIFY(index.isValid());
+    view.expand(index);
+    QVERIFY(view.isExpanded(index));
+  }
+  QVERIFY(!view.isExpanded(indexFor(QStringLiteral("Closed"))));
+  const auto before = view.getExpandedFolders();
+  const QString prefix = parentPath.isEmpty() ? QString() : parentPath + QLatin1Char('/');
+  QSignalSpy completed(&controller, &vnotex::NotebookNodeController::nodesReordered);
+  QSignalSpy errors(&controller, &vnotex::NotebookNodeController::errorOccurred);
+  controller.reorderNodes({notebookId, parentPath}, {},
+                          {{notebookId, prefix + QStringLiteral("c.md")},
+                           {notebookId, prefix + QStringLiteral("a.md")},
+                           {notebookId, prefix + QStringLiteral("b.md")}});
+  QVERIFY(completed.wait(5000));
+  QVERIFY(errors.isEmpty());
+
+  QFile metadata(notebookPath + QStringLiteral("/vx_notebook/contents/") + prefix +
+                 QStringLiteral("vx.json"));
+  QVERIFY(metadata.open(QIODevice::ReadOnly));
+  const auto files =
+      QJsonDocument::fromJson(metadata.readAll()).object().value(QStringLiteral("files")).toArray();
+  QStringList names;
+  for (const auto &file : files) {
+    names.append(file.toObject().value(QStringLiteral("name")).toString());
+  }
+  QCOMPARE(names,
+           (QStringList{QStringLiteral("c.md"), QStringLiteral("a.md"), QStringLiteral("b.md")}));
+  QCOMPARE(view.getExpandedFolders(), before);
+  for (const QString &path : expanded) {
+    QVERIFY(view.isExpanded(indexFor(path)));
+  }
+  QVERIFY(!view.isExpanded(indexFor(QStringLiteral("Closed"))));
 }
 
 } // namespace tests

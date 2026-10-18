@@ -262,9 +262,9 @@ QList<NodeIdentifier> FileListView::currentFileOrderInView() const {
   result.reserve(count);
   for (int i = 0; i < count; ++i) {
     QModelIndex idx = m->index(i, 0);
-    NodeIdentifier id = nodeIdFromIndex(idx);
-    if (id.isValid()) {
-      result.append(id);
+    const NodeInfo info = nodeInfoFromIndex(idx);
+    if (info.isValid() && !info.isExternal) {
+      result.append(info.id);
     }
   }
   return result;
@@ -541,7 +541,9 @@ void FileListView::dragMoveEvent(QDragMoveEvent *p_event) {
             const bool isAnchor =
                 (pos == QAbstractItemView::AboveItem || pos == QAbstractItemView::BelowItem);
 
-            if (sameView && isAnchor && isReorderAllowed()) {
+            const NodeInfo anchorInfo = nodeInfoFromIndex(indexAt(p_event->position().toPoint()));
+            if (sameView && isAnchor && isReorderAllowed() && anchorInfo.isValid() &&
+                !anchorInfo.isExternal && !anchorInfo.isFolder) {
               p_event->acceptProposedAction();
               setDropIndicatorShown(true);
               return;
@@ -665,9 +667,14 @@ void FileListView::dropEvent(QDropEvent *p_event) {
       // is reported against indexAt(eventPos); use the same source-of-truth
       // here so the anchor and the indicator stay in lock-step.
       QModelIndex anchorIdx = indexAt(p_event->position().toPoint());
-      NodeIdentifier anchorId = nodeIdFromIndex(anchorIdx);
+      const NodeInfo anchorInfo = nodeInfoFromIndex(anchorIdx);
+      if (!anchorInfo.isValid() || anchorInfo.isExternal || anchorInfo.isFolder) {
+        p_event->setDropAction(Qt::IgnoreAction);
+        p_event->accept();
+        return;
+      }
 
-      QList<NodeIdentifier> newOrder = computeReorderedFileIds(draggedNodes, anchorId, pos);
+      QList<NodeIdentifier> newOrder = computeReorderedFileIds(draggedNodes, anchorInfo.id, pos);
 
       // If the recomputed order is identical to the current order (e.g.,
       // dropping above the next sibling = no-op), short-circuit so the

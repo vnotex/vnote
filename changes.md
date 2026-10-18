@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Fix note drag-and-drop reordering with external files visible, reject external reorder anchors, and preserve expanded folders after reordering
 * Delay Markdown read viewers in edit-only mode; share editor JS work across tabs and prefer each tab's ready reader, with isolated protected-note and MathJax contexts
 * Allow the full Markdown viewer browser suite to finish on slower CI runners without changing per-step timeouts
 * Translate mind map Paste and all emoji picker categories in Simplified Chinese, Japanese and Korean

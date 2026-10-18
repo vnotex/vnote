@@ -346,6 +346,10 @@ private slots:
   void T10g_crossViewDrag_doesNotReorder();
   void T10h_crossViewDrag_preservesExistingMoveBehavior();
 
+  void externalSiblingsExcludedFromReorder();
+  void externalAnchorRejectsReorder_data();
+  void externalAnchorRejectsReorder();
+
 private:
   void seedThreeFilesUnderRoot();
 
@@ -673,6 +677,53 @@ void TestFileListViewReorder::T10h_crossViewDrag_preservesExistingMoveBehavior()
   QCOMPARE(g_lastMoveCall.count, 1);
   QCOMPARE(g_lastMoveCall.targetFolderId, rootId());
   QCOMPARE(g_lastMoveCall.nodeIds, QList<NodeIdentifier>{foreignFile});
+}
+
+void TestFileListViewReorder::externalSiblingsExcludedFromReorder() {
+  auto external = makeFile(s_nbId(), QStringLiteral("external.md"));
+  external.isExternal = true;
+  const auto a = makeFile(s_nbId(), QStringLiteral("a.md"));
+  const auto b = makeFile(s_nbId(), QStringLiteral("b.md"));
+  const auto c = makeFile(s_nbId(), QStringLiteral("c.md"));
+  m_source->setEntries({external, a, b, c});
+  const QRect anchor = m_view->visualRect(m_proxy->index(1, 0));
+  QVERIFY(anchor.isValid());
+  const QPointF pos(anchor.center().x(), anchor.top() + 1);
+  QScopedPointer<QMimeData> mime(makeNodeMime({c.id}));
+  simulateDragMove(m_view, mime.data(), pos);
+  simulateDrop(m_view, mime.data(), pos);
+
+  QCOMPARE(g_lastReorderCall.count, 1);
+  QCOMPARE(g_lastMoveCall.count, 0);
+  QVERIFY(g_lastReorderCall.orderedFolderIds.isEmpty());
+  QCOMPARE(g_lastReorderCall.orderedFileIds, (QList<NodeIdentifier>{c.id, a.id, b.id}));
+}
+
+void TestFileListViewReorder::externalAnchorRejectsReorder_data() {
+  QTest::addColumn<bool>("below");
+  QTest::newRow("above") << false;
+  QTest::newRow("below") << true;
+}
+
+void TestFileListViewReorder::externalAnchorRejectsReorder() {
+  QFETCH(bool, below);
+  auto external = makeFile(s_nbId(), QStringLiteral("external.md"));
+  external.isExternal = true;
+  const auto a = makeFile(s_nbId(), QStringLiteral("a.md"));
+  const auto b = makeFile(s_nbId(), QStringLiteral("b.md"));
+  m_source->setEntries({external, a, b});
+  const QRect anchor = m_view->visualRect(m_proxy->index(0, 0));
+  QVERIFY(anchor.isValid());
+  const QPoint pos(anchor.center().x(), below ? anchor.bottom() - 1 : anchor.top() + 1);
+  QScopedPointer<QMimeData> mime(makeNodeMime({b.id}));
+  QDragMoveEvent move(pos, Qt::MoveAction | Qt::CopyAction, mime.data(), Qt::LeftButton,
+                      Qt::NoModifier);
+  m_view->dragMoveEvent(&move);
+  QVERIFY(!move.isAccepted());
+  QVERIFY(!m_view->showDropIndicator());
+  simulateDrop(m_view, mime.data(), pos);
+  QCOMPARE(g_lastReorderCall.count, 0);
+  QCOMPARE(g_lastMoveCall.count, 0);
 }
 
 } // namespace tests
