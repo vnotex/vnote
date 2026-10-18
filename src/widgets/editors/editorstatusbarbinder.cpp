@@ -8,6 +8,13 @@
 
 using namespace vnotex;
 
+namespace {
+QString formatSyntaxText(vte::VTextEditor *p_editor) {
+  const auto syntax = p_editor->getSyntax();
+  return syntax == QStringLiteral("richmarkdown") ? QStringLiteral("MARKDOWN") : syntax.toUpper();
+}
+} // namespace
+
 EditorStatusBarBinder::EditorStatusBarBinder(QObject *p_parent) : QObject(p_parent) {}
 
 QString EditorStatusBarBinder::formatCursorText(vte::VTextEditor *p_editor) {
@@ -118,7 +125,7 @@ StatusBarDef EditorStatusBarBinder::buildDef(vte::VTextEditor *p_editor) {
 
   StatusBarColumn syntax;
   syntax.type = StatusBarColumnType::Label;
-  syntax.text = p_editor ? p_editor->getSyntax().toUpper() : QString();
+  syntax.text = p_editor ? formatSyntaxText(p_editor) : QString();
 
   StatusBarColumn mode;
   mode.type = StatusBarColumnType::Label;
@@ -160,7 +167,7 @@ void EditorStatusBarBinder::syncCursor() {
 
 void EditorStatusBarBinder::syncSyntax() {
   if (m_bar && m_editor) {
-    m_bar->setColumnText(ColSyntax, m_editor->getSyntax().toUpper());
+    m_bar->setColumnText(ColSyntax, formatSyntaxText(m_editor));
   }
 }
 

@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Show MARKDOWN instead of RICHMARKDOWN in the Markdown editor status widget
 * Give document-tab close icons more space from the tab edge while preserving native close behavior (#2775)
 * Add mind-map Print to the toolbar menu, fitting the current layout to one page with vector text, images, links and inline drafts
 * Print the rendered Markdown viewer in Read mode and the editor's current Markdown source in Edit mode, including editor selections and live-preview split layouts
