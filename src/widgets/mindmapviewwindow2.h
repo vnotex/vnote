@@ -9,6 +9,7 @@
 class QActionGroup;
 class QComboBox;
 class QShortcut;
+class QPrinter;
 
 namespace vnotex {
 
@@ -56,7 +57,9 @@ protected:
   void zoom(bool p_zoomIn) override;
   void resetZoom() override;
   QString selectedText() const override;
-  bool isPrintSupported() const override { return false; }
+  void handlePrint() override;
+  // Print the current map to an accepted printer, including caller-supplied PDF output.
+  void printDocument(const QSharedPointer<QPrinter> &p_printer);
   void addAdditionalRightToolBarActions(QToolBar *p_toolBar) override;
   void addAdditionalViewToolBarActions(QToolBar *p_toolBar) override;
 
@@ -99,6 +102,7 @@ private:
   quint64 m_generation = 0;
   bool m_propagateEditorToBuffer = true;
   bool m_contentLoaded = false;
+  bool m_printing = false;
 };
 
 } // namespace vnotex

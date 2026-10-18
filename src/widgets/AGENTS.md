@@ -342,6 +342,23 @@ that choice is already active. New/reopened editors use this default; existing m
 their local mode. Startup, API changes and rejected switches never overwrite the preference.
 The stable tokens and fallback are documented in [core preferences](../core/AGENTS.md#mind-map-editor-preferences).
 
+#### Mind-map printing
+
+Print is available in the toolbar Menu and before Export in the empty-canvas context menu.
+The context menu displays the configured Print shortcut without registering another binding.
+`MindMapViewWindow2` owns the print dialog/printer; m3's public `renderMap()` paints a detached,
+unselected scene. Fit the current visible map, including orphan trees and links, centered on one
+printable page without changing zoom, pan or folds. Printing uses the current palette and cached
+images (pending/unavailable resources retain their visible placeholders), not a viewport screenshot
+or the HTML export's node articles. Do not offer selection-only printing.
+
+Accept the current inline draft before painting, but do not save or reset history. Reject failed
+commits, cancelled printers, unloaded/invalid/disabled views and encrypted notes; read-only maps
+remain printable. Revalidate window lifetime and buffer generation across the dialog, draft commit
+and printer activation. Page ranges excluding page 1 produce no output; copies remain printer-owned.
+Coverage: `test_mindmapviewwindow_print` checks vector PDF text, images, layout/fold/camera invariants,
+drafts, replacement rejection and protected-note restrictions.
+
 #### Mind-map resource insertion
 
 `MindMapEditor` uses m3's MIME hooks, not canvas event filters. A single source updates

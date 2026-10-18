@@ -1884,3 +1884,30 @@ add_custom_command(TARGET test_markdownviewwindow_lazy POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_markdownviewwindow_lazy>
 )
+
+# Print the real mind-map window, checking vector PDF content and editor-state preservation.
+add_qt_test(test_mindmapviewwindow_print
+  SOURCES test_mindmapviewwindow_print.cpp ${_markdown_window_test_sources}
+  LINKS ${_markdown_window_links} Qt6::Pdf
+)
+target_include_directories(test_mindmapviewwindow_print PRIVATE
+  $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>
+)
+target_compile_definitions(test_mindmapviewwindow_print PRIVATE
+  $<TARGET_PROPERTY:vnote,COMPILE_DEFINITIONS>
+  VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
+)
+add_dependencies(test_mindmapviewwindow_print VX_EXTRA_RESOURCE)
+set_tests_properties(test_mindmapviewwindow_print PROPERTIES TIMEOUT 180)
+set_property(TEST test_mindmapviewwindow_print PROPERTY ENVIRONMENT
+  "QT_QPA_PLATFORM=${_markdown_window_platform}"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_markdown_window_plugin}>"
+)
+if(WIN32)
+  set_property(TEST test_mindmapviewwindow_print APPEND PROPERTY
+    ENVIRONMENT "PATH=${_markdown_job_path}")
+endif()
+add_custom_command(TARGET test_mindmapviewwindow_print POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_mindmapviewwindow_print>
+)

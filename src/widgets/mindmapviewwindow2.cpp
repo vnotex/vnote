@@ -10,6 +10,7 @@
 #include <QPainter>
 #include <QPalette>
 #include <QPointer>
+#include <QPrinter>
 #include <QScopeGuard>
 #include <QSignalBlocker>
 #include <QToolBar>
@@ -29,6 +30,7 @@
 #include <core/servicelocator.h>
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/printutils.h>
 #include <gui/utils/widgetutils.h>
 
 #include "editors/mindmapeditor.h"
@@ -144,6 +146,16 @@ void MindMapViewWindow2::connectEditorSignals() {
             action->setEnabled(m_contentLoaded);
             connect(action, &QAction::triggered, this, &MindMapViewWindow2::exportRequested);
             p_menu->insertAction(m_editor->commandAction(QStringLiteral("showHelp")), action);
+            auto *printAction = new QAction(
+                ViewWindowToolBarHelper2::generateIcon(getServices(),
+                                                       QStringLiteral("print_editor.svg")),
+                QObject::tr("Print"), p_menu);
+            WidgetUtils::addActionShortcutText(
+                printAction, getServices().get<ConfigMgr2>()->getEditorConfig().getShortcut(
+                                 EditorConfig::Shortcut::Print));
+            printAction->setEnabled(m_contentLoaded && isEnabled() && !getBuffer().isEncrypted());
+            connect(printAction, &QAction::triggered, this, &MindMapViewWindow2::handlePrint);
+            p_menu->insertAction(action, printAction);
           });
 }
 
@@ -540,6 +552,82 @@ void MindMapViewWindow2::syncEditorFromBuffer() {
     m_loadErrorBanner->setText(message);
     m_loadErrorBanner->show();
     showMessage(message);
+  }
+}
+
+void MindMapViewWindow2::handlePrint() {
+  if (getBuffer().isEncrypted()) {
+    showMessage(tr("Printing encrypted notes is not supported"));
+    return;
+  }
+  if (m_printing || !m_contentLoaded || !isEnabled() || !m_editor->isEnabled() ||
+      !getBuffer().isValid()) {
+    return;
+  }
+  const QPointer<MindMapViewWindow2> guard(this);
+  const auto generation = m_generation;
+  setViewFullScreen(false);
+  if (!guard) {
+    return;
+  }
+  const auto printer = PrintUtils::promptForPrint(false, this);
+  if (guard && generation == m_generation) {
+    printDocument(printer);
+  }
+}
+
+void MindMapViewWindow2::printDocument(const QSharedPointer<QPrinter> &p_printer) {
+  if (!p_printer || m_printing || !m_contentLoaded || !isEnabled() || !m_editor->isEnabled() ||
+      !getBuffer().isValid() || getBuffer().isEncrypted()) {
+    return;
+  }
+  if (p_printer->printRange() == QPrinter::PageRange && p_printer->fromPage() > 1) {
+    return;
+  }
+  const QPointer<MindMapViewWindow2> guard(this);
+  const auto generation = m_generation;
+  m_printing = true;
+  const auto clearPrinting = qScopeGuard([guard] {
+    if (guard) {
+      guard->m_printing = false;
+    }
+  });
+  const bool committed = m_editor->commitActiveEdit(true);
+  if (!guard) {
+    return;
+  }
+  if (!committed) {
+    showMessage(tr("Failed to print"));
+    return;
+  }
+  if (generation != m_generation || !m_contentLoaded || !isEnabled() ||
+      !m_editor->isEnabled() || !getBuffer().isValid() || getBuffer().isEncrypted()) {
+    return;
+  }
+  QPainter painter;
+  const bool started = painter.begin(p_printer.get());
+  // Native print drivers may present their own modal output dialog during begin().
+  if (!guard) {
+    p_printer->abort();
+    return;
+  }
+  if (!started) {
+    showMessage(tr("Failed to print"));
+    return;
+  }
+  if (generation != m_generation || !m_contentLoaded || !isEnabled() ||
+      !m_editor->isEnabled() || !getBuffer().isValid() || getBuffer().isEncrypted()) {
+    p_printer->abort();
+    return;
+  }
+  const bool rendered = m_editor->renderMap(
+      painter, QRectF(0, 0, p_printer->width(), p_printer->height()));
+  const bool finished = painter.end();
+  const auto state = p_printer->printerState();
+  if (guard) {
+    showMessage(rendered && finished && state != QPrinter::Error && state != QPrinter::Aborted
+                    ? tr("Printing completed")
+                    : tr("Failed to print"));
   }
 }
 
