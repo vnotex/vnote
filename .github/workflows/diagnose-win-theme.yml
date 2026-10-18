@@ -36,14 +36,20 @@ jobs:
           cmake -S . -B build-theme -GNinja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=cl -DCMAKE_CXX_COMPILER=cl -DVNOTE_BUILD_TESTS=ON || exit /b 1
           cmake --build build-theme --target test_themeservice || exit /b 1
 
-      - name: Run theme test with explicit QtTest output
-        shell: cmd
-        run: ctest --test-dir build-theme -C Release -R test_themeservice --output-on-failure --no-tests=error
+      - name: Capture theme test log and process exit code
+        shell: pwsh
+        working-directory: build-theme/tests/gui
+        run: |
+          & ./test_themeservice.exe -o "theme-test.txt,txt"
+          $testExit = $LASTEXITCODE
+          Write-Host ("Theme test exit: {0} (0x{1:X8})" -f $testExit, ($testExit -band 0xffffffffL))
+          if (Test-Path theme-test.txt) { Get-Content theme-test.txt }
+          exit $testExit
 
       - name: Preserve test diagnostics
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: windows-theme-diagnostics
-          path: build-theme/Testing/Temporary/LastTest.log
+          path: build-theme/tests/gui/theme-test.txt
           if-no-files-found: ignore
