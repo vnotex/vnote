@@ -23,11 +23,13 @@
 #include <QShortcut>
 
 #include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/widgetutils.h>
 
 #include "editors/mindmapeditor.h"
 #include "editors/statuswidget.h"
@@ -133,6 +135,21 @@ void MindMapViewWindow2::connectEditorSignals() {
           [this](const QString &, const QString &) { updateCurrentHeading(); });
   connect(m_editor, &MindMapEditor::insertionAvailabilityChanged, this,
           &MindMapViewWindow2::syncInsertionActions);
+  connect(m_editor, &m3::qt::MindMapEditor::backgroundContextMenuRequested, this,
+          [this](QMenu *p_menu) {
+            auto *action = new QAction(QObject::tr("E&xport"), p_menu);
+            WidgetUtils::addActionShortcutText(
+                action, getServices().get<ConfigMgr2>()->getCoreConfig().getShortcut(
+                            CoreConfig::Shortcut::Export));
+            action->setEnabled(m_contentLoaded);
+            connect(action, &QAction::triggered, this, &MindMapViewWindow2::exportRequested);
+            const auto actions = p_menu->actions();
+            auto *firstAction = actions.isEmpty() ? nullptr : actions.first();
+            p_menu->insertAction(firstAction, action);
+            if (firstAction) {
+              p_menu->insertSeparator(firstAction);
+            }
+          });
 }
 
 void MindMapViewWindow2::setupToolBar() {
