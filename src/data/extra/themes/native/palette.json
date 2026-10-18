@@ -22,6 +22,9 @@
             "border" : "@palette#active#dark",
             "bg" : "@palette#active#window"
         },
+        "disabled" : {
+            "fg" : "@palette#disabled#text"
+        },
         "content" : {
             "fg" : "@palette#active#text",
             "bg" : "@palette#active#base"
