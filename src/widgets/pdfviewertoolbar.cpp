@@ -143,7 +143,7 @@ void PdfViewerToolBar::install(QToolBar *p_toolBar, const IconProvider &p_icons,
   connect(m_zoomInAction, &QAction::triggered, this, [this]() { emit zoomStepRequested(true); });
 
   // 5. Build the menu contents now; the base's menu hook places its toolbar
-  //    entry after the page/zoom controls and appends the common actions.
+  //    entry after the page/zoom controls and adds the common actions.
   buildOverflowMenu(p_toolBar, p_icons);
 
   // Viewer commands stay disabled until the first accepted state.

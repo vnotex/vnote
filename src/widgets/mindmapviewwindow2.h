@@ -7,7 +7,6 @@
 #include "viewwindow2.h"
 
 class QActionGroup;
-class QComboBox;
 class QShortcut;
 class QPrinter;
 
@@ -16,6 +15,7 @@ namespace vnotex {
 class InlineBanner;
 class MindMapEditor;
 class PresentationToolBarEffect;
+class ZoomToolBar;
 
 // Single native editing surface; ViewWindow2 retains buffer/save/focus ownership.
 class MindMapViewWindow2 : public ViewWindow2 {
@@ -68,6 +68,8 @@ private:
   void setupToolBar();
   void setupLayoutMenu(QToolBar *p_toolBar);
   void connectEditorSignals();
+  qreal zoomChoice() const;
+  void applyZoom(qreal p_zoom);
   void syncZoomControls();
   void syncLayoutControls();
   void syncInsertionActions();
@@ -90,10 +92,7 @@ private:
   QAction *m_insertLinkAction = nullptr;
   QAction *m_insertImageAction = nullptr;
   QList<QShortcut *> m_insertionShortcuts;
-  QAction *m_zoomOutAction = nullptr;
-  QAction *m_zoomInAction = nullptr;
-  QAction *m_zoomComboAction = nullptr;
-  QComboBox *m_zoomComboBox = nullptr;
+  ZoomToolBar *m_zoomToolBar = nullptr;
   InlineBanner *m_loadErrorBanner = nullptr;
   QSharedPointer<OutlineProvider> m_outlineProvider;
   QStringList m_outlineNodeIds;

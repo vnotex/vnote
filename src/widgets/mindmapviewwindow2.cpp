@@ -3,9 +3,7 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QApplication>
-#include <QComboBox>
 #include <QCoreApplication>
-#include <QLineEdit>
 #include <QMenu>
 #include <QPainter>
 #include <QPalette>
@@ -16,7 +14,6 @@
 #include <QToolBar>
 #include <QToolButton>
 
-#include <cmath>
 #include <utility>
 
 #include <vxcore/vxcore.h>
@@ -41,6 +38,7 @@
 #include "presentationtoolbareffect.h"
 #include "propertydefs.h"
 #include "viewwindowtoolbarhelper2.h"
+#include "zoomtoolbar.h"
 
 using namespace vnotex;
 
@@ -54,8 +52,6 @@ MindMapViewWindow2::MindMapViewWindow2(ServiceLocator &p_services, const Buffer2
 
 MindMapViewWindow2::~MindMapViewWindow2() {
   disconnect(m_toolsPanelFocusConn);
-  // Focus loss during child teardown must not query the already-destroyed editor.
-  disconnect(m_zoomComboBox->lineEdit(), nullptr, this, nullptr);
   setViewFullScreen(false);
 }
 
@@ -341,77 +337,6 @@ void MindMapViewWindow2::syncLayoutControls() {
 }
 
 void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
-  p_toolBar->addSeparator();
-  const auto addZoomAction = [this, p_toolBar](const QString &p_name, bool p_zoomIn) {
-    const auto iconName =
-        p_zoomIn ? QStringLiteral("zoom_in_editor.svg") : QStringLiteral("zoom_out_editor.svg");
-    auto *action =
-        p_toolBar->addAction(ViewWindowToolBarHelper2::generateIcon(getServices(), iconName),
-                             m_editor->commandAction(p_name)->text());
-    action->setProperty("iconName", iconName);
-    connect(action, &QAction::triggered, this, [this, p_zoomIn]() { zoom(p_zoomIn); });
-    return action;
-  };
-  m_zoomOutAction = addZoomAction(QStringLiteral("zoomOut"), false);
-  m_zoomComboBox = new QComboBox(p_toolBar);
-  m_zoomComboBox->setObjectName(QStringLiteral("mindMapZoomCombo"));
-  // Accept arbitrary scales without adding extra choices to the popup.
-  m_zoomComboBox->setEditable(true);
-  m_zoomComboBox->setInsertPolicy(QComboBox::NoInsert);
-  m_zoomComboBox->setMinimumContentsLength(8);
-  m_zoomComboBox->setCompleter(nullptr);
-  m_zoomComboBox->lineEdit()->setProperty(PropertyDefs::c_embeddedLineEdit, true);
-  m_zoomComboBox->addItem(m_editor->commandAction(QStringLiteral("fit"))->text(), 0.0);
-  for (const int percent : {100, 125, 150, 200}) {
-    m_zoomComboBox->addItem(QStringLiteral("%1%").arg(percent), percent / 100.0);
-  }
-  connect(m_zoomComboBox, QOverload<int>::of(&QComboBox::activated), this, [this](int p_index) {
-    if (m_contentLoaded && p_index >= 0 && p_index < m_zoomComboBox->count()) {
-      const qreal factor = m_zoomComboBox->itemData(p_index).toDouble();
-      if (factor == 0.0) {
-        m_editor->fitToContents();
-      } else {
-        m_editor->zoom(factor / m_editor->zoomFactor());
-      }
-      syncZoomControls();
-    }
-  });
-  connect(m_zoomComboBox->lineEdit(), &QLineEdit::returnPressed, this, [this]() {
-    if (!m_contentLoaded) {
-      return;
-    }
-    QString text = m_zoomComboBox->currentText().trimmed();
-    if (text.compare(m_zoomComboBox->itemText(0), Qt::CaseInsensitive) == 0) {
-      m_editor->fitToContents();
-    } else {
-      if (text.endsWith(QLatin1Char('%'))) {
-        text.chop(1);
-      }
-      bool ok = false;
-      const double percent = text.trimmed().toDouble(&ok);
-      if (ok && std::isfinite(percent) && percent > 0.0) {
-        m_editor->zoom(percent / 100.0 / m_editor->zoomFactor());
-      }
-    }
-    syncZoomControls();
-  });
-  connect(m_zoomComboBox->lineEdit(), &QLineEdit::editingFinished, this, [this]() {
-    if (!m_zoomComboBox->lineEdit()->hasFocus()) {
-      syncZoomControls();
-    }
-  });
-  m_zoomComboAction = p_toolBar->addWidget(m_zoomComboBox);
-  m_zoomInAction = addZoomAction(QStringLiteral("zoomIn"), true);
-  connect(m_editor, &m3::qt::MindMapEditor::zoomChanged, this, [this](qreal p_factor, bool p_fit) {
-    if (m_contentLoaded) {
-      getServices().get<ConfigMgr2>()->getSessionConfig().setMindMapZoomFactor(p_fit ? 0.0
-                                                                                     : p_factor);
-    }
-    syncZoomControls();
-  });
-  syncZoomControls();
-
-  setupLayoutMenu(p_toolBar);
   const auto iconName = QStringLiteral("presentation_editor.svg");
   m_presentationAction = p_toolBar->addAction(
       ViewWindowToolBarHelper2::generateIcon(getServices(), iconName), tr("Presentation Mode"));
@@ -440,35 +365,46 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
       m_editor->collapseNodeProperties();
     }
   });
+
+  setupLayoutMenu(p_toolBar);
+  p_toolBar->addSeparator();
+  m_zoomToolBar = ViewWindowToolBarHelper2::addZoomToolBar(p_toolBar, getServices());
+  connect(m_zoomToolBar, &ZoomToolBar::zoomRequested, this, &MindMapViewWindow2::zoom);
+  connect(m_zoomToolBar, &ZoomToolBar::zoomSelected, this, [this](qreal p_zoom) {
+    if (m_contentLoaded) {
+      applyZoom(p_zoom);
+      syncZoomControls();
+    }
+  });
+  connect(m_editor, &m3::qt::MindMapEditor::zoomChanged, this, [this]() {
+    if (m_contentLoaded) {
+      getServices().get<ConfigMgr2>()->getSessionConfig().setMindMapZoomFactor(zoomChoice());
+    }
+    syncZoomControls();
+  });
+  syncZoomControls();
+}
+
+qreal MindMapViewWindow2::zoomChoice() const {
+  using ZoomMode = m3::qt::MindMapEditor::ZoomMode;
+  const auto mode = m_editor->zoomMode();
+  return mode == ZoomMode::Width ? -1.0
+         : mode == ZoomMode::Page ? 0.0 : m_editor->zoomFactor();
+}
+
+void MindMapViewWindow2::applyZoom(qreal p_zoom) {
+  if (p_zoom == -1.0) {
+    m_editor->fitToWidth();
+  } else if (p_zoom == 0.0) {
+    m_editor->fitToContents();
+  } else {
+    m_editor->zoom(p_zoom / m_editor->zoomFactor());
+  }
 }
 
 void MindMapViewWindow2::syncZoomControls() {
-  m_zoomOutAction->setEnabled(m_contentLoaded);
-  m_zoomComboAction->setEnabled(m_contentLoaded);
-  m_zoomComboBox->setEnabled(m_contentLoaded);
-  m_zoomInAction->setEnabled(m_contentLoaded);
-
-  const QSignalBlocker blocker(m_zoomComboBox);
-  if (m_editor->isZoomFit()) {
-    m_zoomComboBox->setCurrentIndex(0);
-    m_zoomComboBox->setEditText(m_zoomComboBox->itemText(0));
-    return;
-  }
-  const qreal factor = m_editor->zoomFactor();
-  int index = -1;
-  for (int i = 1; i < m_zoomComboBox->count(); ++i) {
-    if (qFuzzyCompare(m_zoomComboBox->itemData(i).toDouble(), factor)) {
-      index = i;
-      break;
-    }
-  }
-  m_zoomComboBox->setCurrentIndex(index);
-  // Ignore floating-point noise at whole percentages; otherwise truncate.
-  const qreal percent = factor * 100.0;
-  const int nearestPercent = qRound(percent);
-  const int displayPercent =
-      qFuzzyCompare(percent, qreal(nearestPercent)) ? nearestPercent : static_cast<int>(percent);
-  m_zoomComboBox->setEditText(QString::number(displayPercent) + QLatin1Char('%'));
+  m_zoomToolBar->setEnabled(m_contentLoaded);
+  m_zoomToolBar->setZoom(zoomChoice());
 }
 
 void MindMapViewWindow2::syncEditorFromBuffer() {
@@ -507,13 +443,7 @@ void MindMapViewWindow2::syncEditorFromBuffer() {
       }
       if (loaded) {
         // Restore before accepting zoom signals: loading resets the native camera to 100%.
-        const qreal factor =
-            getServices().get<ConfigMgr2>()->getSessionConfig().getMindMapZoomFactor();
-        if (factor == 0.0) {
-          m_editor->fitToContents();
-        } else {
-          m_editor->zoom(factor / m_editor->zoomFactor());
-        }
+        applyZoom(getServices().get<ConfigMgr2>()->getSessionConfig().getMindMapZoomFactor());
       }
       m_contentLoaded = loaded;
     } else {

@@ -329,14 +329,14 @@ secondary actions in a three-dot **Menu** (`menu.svg`):
 | Position | What |
 |---|---|
 | spacer | |
-| `addAdditionalRightToolBarActions()` | Markdown: Outline; PDF: sidebar, Outline, Find And Replace, Presentation Mode, page and zoom controls |
+| `addAdditionalRightToolBarActions()` | Markdown and Typst: Outline; PDF: sidebar, Outline, Find And Replace, Presentation Mode, page and zoom controls |
 | Find And Replace | Default position; PDF opts out because Find is beside Outline |
-| `addAdditionalViewToolBarActions()` | Text and Markdown: Presentation Mode; Mind Map: zoom controls, Layout, then Presentation Mode |
+| `addAdditionalViewToolBarActions()` | Text and Markdown: Presentation Mode; Typst: Presentation Mode, page and zoom controls; Mind Map: Presentation Mode, Layout, then zoom controls |
 | Menu | Readable Width and Print, when `isPrintSupported()` |
 
 `addAdditionalToolBarMenuAction()` lets PDF reuse its existing menu action; the
-base creates one otherwise. PDF's existing rotate/cursor/scroll/spread/properties
-entries precede a separator and Readable Width. Only viewer-owned entries are
+base creates one otherwise. Readable Width is first, followed by a separator and
+PDF's existing rotate/cursor/scroll/spread/properties entries. Only viewer-owned entries are
 readiness-gated: Menu and Readable Width remain available during loading/reloading.
 
 `addAdditionalMenuActions()` appends Markdown's Image Host, Live Preview,
@@ -356,32 +356,47 @@ Text keeps **Find And Replace → Presentation Mode → Menu**. Markdown keeps
 **Outline → Find And Replace → Presentation Mode → Menu**. PDF keeps
 **Outline → Find And Replace → Presentation Mode** together before page/zoom controls.
 Mind Map adds Lucide Undo and Redo after the left common actions and keeps
-Outline → Find And Replace → Zoom Out → percentage combo → Zoom In → Layout → Presentation Mode → Menu.
-Zoom controls observe the native editor's `zoomChanged` signal and `isZoomFit()`
-state, including new/load reset, deferred explicit Fit, shortcuts and Ctrl+wheel.
-New/open/reload starts at 100%, centering the root after the tab's show/resize layout
-settles. Attach the new window before returning to the event loop. Manual zoom cancels
-pending placement, and later resizes retain the current scale. The empty-canvas context
-menu orders Focus Main Node → Fit → 100% → Zoom In → Zoom Out.
-The dropdown contains only Fit, 100%, 125%, 150% and 200%. Click its arrow for presets;
-the text field accepts a percentage (for example `137.5` or `137.5%`) and Enter applies
-it, using the native manual-zoom limits of 10%–400%. The localized Fit label also works.
-Invalid input or leaving the field without Enter restores the actual zoom without
-applying the draft. Custom values never add preset rows. Opening/reloading a map shows
-100%; explicitly requesting a one-shot fit shows Fit, even when its scale matches a preset.
-Manual zoom/reset, including same-scale mode changes, displays only the integer part
-of the percentage (`83.3333%` becomes `83%`) without adding custom entries. This is display-only:
-native zoom and fractional input keep their precision, and floating-point noise at whole
-percentages must not lower the displayed value. Unloaded/invalid content disables
-the zoom controls; read-only maps remain zoomable. The native ViewWindow toolbar
+Outline → Find And Replace → Presentation Mode → Layout → Zoom Out → percentage combo → Zoom In → Menu.
+Typst keeps Outline → Find And Replace → Presentation Mode → page navigation →
+Zoom Out → percentage combo → Zoom In → Menu on the right of the common spacer, matching PDF.
+
+`ZoomToolBar` owns the shared Typst/mind-map controls: Fit Width, Fit Page, 100%, 125%,
+150% and 200%, plus fractional input such as `137.5` or `137.5%`. Localized fit labels
+also work. The native editors retain geometry and limits (manual mind-map zoom is
+10%–400%; Typst is 1%–6400%). Fit Width may overflow vertically; Fit Page fits the
+whole map or the current PDF page. Custom values never add preset rows.
+`ViewWindowToolBarHelper2::addZoomToolBar()` supplies themed icons; the pure control
+retains their `iconName` properties for runtime theme refresh.
+
+Enter is consumed once before QComboBox can deliver it twice. An unchanged field never
+reapplies its truncated display. Focus loss discards drafts before Qt can activate a
+matching preset. Display synchronization uses cached camera state, including during
+editor teardown. Manual display truncates fractional percentages, correcting floating-point
+noise at whole percentages; the native factor and session value keep full precision.
+Gate: `zoomToolbarPreservesFractionalInputAndDiscardsDrafts` in
+`tests/widgets/test_mindmapeditor.cpp`, using the real native camera and session config.
+
+The views observe native camera notifications, including context menus and Ctrl+wheel.
+`session.json` stores `editor.mindMapZoomFactor` and `editor.typstZoomFactor`: positive
+values are manual factors, zero is Fit Page, and -1 is Fit Width. Missing keys default
+to 100%; existing mind-map zero values retain their whole-map fit. Restore before
+accepting constructor/load notifications so defaults cannot overwrite remembered choices.
+Typst preview zoom is separate from the existing source-font zoom preference.
+
+Mind-map fits remain one-shot, including deferred hidden-window fits; manual zoom cancels
+pending placement and later resizes preserve scale. Its empty-canvas menu orders Focus
+Main Node → Fit Width → Fit Page → 100% → Zoom In → Zoom Out. Typst retains active fit
+through resize, publication and Read/Edit transitions. Its page/zoom controls are visible
+in Read or Live Preview and disabled before PDF publication. Invalid mind maps disable
+zoom; read-only maps remain zoomable. The native ViewWindow toolbar
 borrows the editor's editing command actions; the editor retains shortcuts,
 inline-edit commits and history availability. Invalid content gates native mutations through read-only mode until
 a successful reload restores the buffer policy. Widget-hosted Settings and Dashboard
 retain their content-owned toolbars; locked-note placeholders have none.
 
 The mind-map **Layout** action owns a menu with m3's **Balanced**, **Right**, **Left** and
-**Outline** modes (Outline is the indented tree view). Keep it immediately before Presentation
-Mode and reachable through toolbar overflow. Its exclusive checks follow `layoutDirectionChanged`
+**Outline** modes (Outline is the indented tree view). Keep it immediately after Presentation
+Mode, before zoom controls, and reachable through toolbar overflow. Its exclusive checks follow `layoutDirectionChanged`
 and the actual editor state after a rejected command; do not block QAction `changed` signals,
 which maintain QActionGroup's current member. Accept an active inline draft before switching,
 and reject application to a replacement buffer. Layout changes alone do not dirty the document,

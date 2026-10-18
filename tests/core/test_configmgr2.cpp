@@ -269,18 +269,24 @@ void TestConfigMgr2::testQuickNoteDetachedSettingPersistsWithoutOtherChanges() {
 void TestConfigMgr2::testEditorZoom_sessionPersistence_data() {
   QTest::addColumn<QJsonObject>("initialSession");
   QTest::addColumn<double>("initialMindMapZoom");
-  QTest::newRow("absent-editor") << QJsonObject{{QStringLiteral("core"), QJsonObject()}} << 1.0;
+  QTest::addColumn<double>("initialTypstZoom");
+  QTest::newRow("absent-editor")
+      << QJsonObject{{QStringLiteral("core"), QJsonObject()}} << 1.0 << 1.0;
   QTest::newRow("absent-zoom-keys")
-      << QJsonObject{{QStringLiteral("editor"), QJsonObject()}} << 1.0;
-  QTest::newRow("explicit-fit") << QJsonObject{{QStringLiteral("editor"),
-                                                QJsonObject{
-                                                    {QStringLiteral("mindMapZoomFactor"), 0.0}}}}
-                                << 0.0;
+      << QJsonObject{{QStringLiteral("editor"), QJsonObject()}} << 1.0 << 1.0;
+  QTest::newRow("legacy-mind-map-fit")
+      << QJsonObject{{QStringLiteral("editor"),
+                      QJsonObject{{QStringLiteral("mindMapZoomFactor"), 0.0}}}} << 0.0 << 1.0;
+  QTest::newRow("explicit-fit-width")
+      << QJsonObject{{QStringLiteral("editor"),
+                      QJsonObject{{QStringLiteral("mindMapZoomFactor"), -1.0},
+                                  {QStringLiteral("typstZoomFactor"), -1.0}}}} << -1.0 << -1.0;
 }
 
 void TestConfigMgr2::testEditorZoom_sessionPersistence() {
   QFETCH(QJsonObject, initialSession);
   QFETCH(double, initialMindMapZoom);
+  QFETCH(double, initialTypstZoom);
   const auto savedMain =
       m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
   const auto savedSession =
@@ -307,14 +313,17 @@ void TestConfigMgr2::testEditorZoom_sessionPersistence() {
     QCOMPARE(session.getMarkdownZoomFactorInReadMode(), qreal(1.0));
     QCOMPARE(session.getTextEditorZoomDelta(), 0);
     QCOMPARE(session.getMindMapZoomFactor(), qreal(initialMindMapZoom));
+    QCOMPARE(session.getTypstZoomFactor(), qreal(initialTypstZoom));
   }
 
   struct ZoomState {
     qreal m_markdown;
     int m_text;
     qreal m_mindMap;
+    qreal m_typst;
   };
-  const ZoomState states[] = {{1.25, 3, 1.5}, {0.75, -2, 0.0}, {1.0, 0, 1.0}};
+  const ZoomState states[] = {
+      {1.25, 3, 1.5, 1.375}, {0.75, -2, 0.0, -1.0}, {1.0, 0, -1.0, 0.0}, {1.0, 0, 1.0, 1.0}};
   for (const auto &state : states) {
     {
       ConfigMgr2 settings(m_configService);
@@ -323,12 +332,14 @@ void TestConfigMgr2::testEditorZoom_sessionPersistence() {
       session.setMarkdownZoomFactorInReadMode(state.m_markdown);
       session.setTextEditorZoomDelta(state.m_text);
       session.setMindMapZoomFactor(state.m_mindMap);
+      session.setTypstZoomFactor(state.m_typst);
       // Destruction flushes the normal pending write without event-loop timing dependencies.
     }
     const QJsonObject expectedEditor{
         {QStringLiteral("markdownZoomFactorInReadMode"), state.m_markdown},
         {QStringLiteral("textEditorZoomDelta"), state.m_text},
-        {QStringLiteral("mindMapZoomFactor"), state.m_mindMap}};
+        {QStringLiteral("mindMapZoomFactor"), state.m_mindMap},
+        {QStringLiteral("typstZoomFactor"), state.m_typst}};
     QCOMPARE(m_configService->getConfigByName(DataLocation::Local, QStringLiteral("session"))
                  .value(QStringLiteral("editor"))
                  .toObject(),
@@ -342,6 +353,7 @@ void TestConfigMgr2::testEditorZoom_sessionPersistence() {
     QCOMPARE(session.getMarkdownZoomFactorInReadMode(), state.m_markdown);
     QCOMPARE(session.getTextEditorZoomDelta(), state.m_text);
     QCOMPARE(session.getMindMapZoomFactor(), state.m_mindMap);
+    QCOMPARE(session.getTypstZoomFactor(), state.m_typst);
     const auto mainEditor =
         restarted.getConfig().toJson().value(QStringLiteral("editor")).toObject();
     QVERIFY(!mainEditor.value(QStringLiteral("markdown_editor"))

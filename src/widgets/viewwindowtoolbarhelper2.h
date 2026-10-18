@@ -13,6 +13,7 @@ class QString;
 namespace vnotex {
 
 class ServiceLocator;
+class ZoomToolBar;
 
 // New-architecture toolbar helper for ViewWindow2.
 // Uses DI (ServiceLocator) instead of legacy singletons.
@@ -94,6 +95,8 @@ public:
 
   // Add a spacer widget to push subsequent actions to the right.
   static void addSpacer(QToolBar *p_tb);
+
+  static ZoomToolBar *addZoomToolBar(QToolBar *p_tb, ServiceLocator &p_services);
 
   // Attach a keyboard shortcut to an action.
   // @p_parentAction: optional parent action (for actions in a submenu).

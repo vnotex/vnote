@@ -548,10 +548,12 @@ void ViewWindow2::addRightCommonToolBarActions(QToolBar *p_toolBar, bool p_addFi
   }
   auto *menu = menuAction->menu();
   Q_ASSERT(menu);
-  if (!menu->isEmpty()) {
-    menu->addSeparator();
+  auto *firstAction = menu->actions().value(0);
+  auto *readableWidthAction = addAction(menu, ViewWindowToolBarHelper2::ToggleLayoutMode);
+  if (firstAction) {
+    menu->insertAction(firstAction, readableWidthAction);
+    menu->insertSeparator(firstAction);
   }
-  addAction(menu, ViewWindowToolBarHelper2::ToggleLayoutMode);
   // Opt-out rather than opt-in, so existing windows are unaffected: a window
   // type that cannot print must say so instead of shipping a dead button (the
   // base handlePrint() is a no-op).

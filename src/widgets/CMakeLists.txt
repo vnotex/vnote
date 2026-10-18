@@ -160,4 +160,5 @@ target_sources(vnote PRIVATE
     widgetsfactory.cpp widgetsfactory.h
     wordcountpanel.cpp wordcountpanel.h
     wordcountpopup2.cpp wordcountpopup2.h
+    zoomtoolbar.cpp zoomtoolbar.h
 )

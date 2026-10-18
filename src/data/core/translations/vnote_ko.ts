@@ -11878,4 +11878,27 @@ Continue?</source>
         <translation>글자 수(공백 포함)</translation>
     </message>
 </context>
+<context>
+    <name>vnotex::ZoomToolBar</name>
+    <message>
+        <source>Zoom In</source>
+        <translation>확대</translation>
+    </message>
+    <message>
+        <source>Zoom Out</source>
+        <translation>축소</translation>
+    </message>
+    <message>
+        <source>Zoom</source>
+        <translation>확대/축소</translation>
+    </message>
+    <message>
+        <source>Fit Width</source>
+        <translation>너비에 맞추기</translation>
+    </message>
+    <message>
+        <source>Fit Page</source>
+        <translation>페이지에 맞추기</translation>
+    </message>
+</context>
 </TS>

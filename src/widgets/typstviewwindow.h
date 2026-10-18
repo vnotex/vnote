@@ -15,6 +15,7 @@ class EditorStatusBarBinder;
 class InlineBanner;
 class PresentationToolBarEffect;
 class TypstViewWindowController;
+class ZoomToolBar;
 
 class TypstViewWindow : public ViewWindow2 {
   Q_OBJECT
@@ -81,6 +82,7 @@ private:
   bool isActiveFileHeading(const vte::TypstHeadingInfo &p_heading) const;
   void updateCurrentHeading();
   void setupPdfToolBar(QToolBar *p_toolBar);
+  void applyPdfZoom(qreal p_zoom);
   void updatePresentationActions();
   void updateFindBackend();
   void createEditor();
@@ -111,6 +113,7 @@ private:
   QAction *m_livePreviewAction = nullptr;
   QAction *m_inplacePreviewAction = nullptr;
   QVector<QAction *> m_pdfActions;
+  ZoomToolBar *m_zoomToolBar = nullptr;
   QAction *m_previousPageAction = nullptr;
   QAction *m_nextPageAction = nullptr;
   QSpinBox *m_pageSpinBox = nullptr;

@@ -20,6 +20,7 @@
 #include "outlinepopup.h"
 #include "propertydefs.h"
 #include "tagpopup2.h"
+#include "zoomtoolbar.h"
 
 using namespace vnotex;
 
@@ -90,6 +91,11 @@ QIcon ViewWindowToolBarHelper2::generateIcon(ServiceLocator &p_services,
 
   auto iconFile = themeService->getIconFile(p_iconName);
   return IconUtils::fetchIcon(iconFile, colors);
+}
+
+ZoomToolBar *ViewWindowToolBarHelper2::addZoomToolBar(QToolBar *p_tb, ServiceLocator &p_services) {
+  return new ZoomToolBar(generateIcon(p_services, QStringLiteral("zoom_out_editor.svg")),
+                         generateIcon(p_services, QStringLiteral("zoom_in_editor.svg")), p_tb);
 }
 
 void ViewWindowToolBarHelper2::addSpacer(QToolBar *p_tb) {

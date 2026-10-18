@@ -28,6 +28,7 @@
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
+#include <core/sessionconfig.h>
 #include <core/texteditorconfig.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
@@ -44,6 +45,7 @@
 #include "propertydefs.h"
 #include "textviewwindowhelper.h"
 #include "viewwindowtoolbarhelper2.h"
+#include "zoomtoolbar.h"
 
 using namespace vnotex;
 
@@ -87,7 +89,6 @@ void TypstViewWindow::setupUI() {
   addToolBar(toolBar);
   addAction(toolBar, ViewWindowToolBarHelper2::EditRead);
   addLeftCommonToolBarActions(toolBar);
-  setupPdfToolBar(toolBar);
   addRightCommonToolBarActions(toolBar);
   updatePresentationActions();
 
@@ -152,16 +153,13 @@ void TypstViewWindow::setupPdfToolBar(QToolBar *p_toolBar) {
   connect(m_nextPageAction, &QAction::triggered, this,
           [this]() { m_typstEditor->goToPdfPage(m_typstEditor->currentPdfPage() + 1); });
   m_pdfActions.append(p_toolBar->addSeparator());
-  auto *zoomOut = addPdfAction(QStringLiteral("zoom_out_editor.svg"), tr("Zoom Out"));
-  connect(zoomOut, &QAction::triggered, this,
-          [this]() { m_typstEditor->setPdfZoom(m_typstEditor->pdfZoom() / 1.2); });
-  auto *zoomIn = addPdfAction(QStringLiteral("zoom_in_editor.svg"), tr("Zoom In"));
-  connect(zoomIn, &QAction::triggered, this,
-          [this]() { m_typstEditor->setPdfZoom(m_typstEditor->pdfZoom() * 1.2); });
-  auto *fitWidth = addPdfAction(QStringLiteral("expand.svg"), tr("Fit Width"));
-  connect(fitWidth, &QAction::triggered, this, [this]() { m_typstEditor->fitPdfWidth(); });
-  auto *fitPage = addPdfAction(QStringLiteral("fullscreen.svg"), tr("Fit Page"));
-  connect(fitPage, &QAction::triggered, this, [this]() { m_typstEditor->fitPdfPage(); });
+  m_zoomToolBar = ViewWindowToolBarHelper2::addZoomToolBar(p_toolBar, getServices());
+  connect(m_zoomToolBar, &ZoomToolBar::zoomRequested, this, [this](bool p_zoomIn) {
+    if (m_typstEditor && m_typstEditor->pdfPageCount() > 0) {
+      m_typstEditor->setPdfZoom(m_typstEditor->pdfZoom() * (p_zoomIn ? 1.2 : 1.0 / 1.2));
+    }
+  });
+  connect(m_zoomToolBar, &ZoomToolBar::zoomSelected, this, &TypstViewWindow::applyPdfZoom);
 }
 
 void TypstViewWindow::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
@@ -171,6 +169,19 @@ void TypstViewWindow::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
     if (auto *popup = qobject_cast<OutlinePopup *>(button->menu())) {
       popup->setOutlineProvider(m_outlineProvider);
     }
+  }
+}
+
+void TypstViewWindow::applyPdfZoom(qreal p_zoom) {
+  if (!m_typstEditor) {
+    return;
+  }
+  if (p_zoom == -1.0) {
+    m_typstEditor->fitPdfWidth();
+  } else if (p_zoom == 0.0) {
+    m_typstEditor->fitPdfPage();
+  } else {
+    m_typstEditor->setPdfZoom(p_zoom);
   }
 }
 
@@ -207,6 +218,14 @@ void TypstViewWindow::updatePresentationActions() {
   for (auto *action : m_pdfActions) {
     action->setVisible(pdfVisible);
     action->setEnabled(count > 0);
+  }
+  m_zoomToolBar->setVisible(pdfVisible);
+  m_zoomToolBar->setEnabled(count > 0);
+  if (m_typstEditor) {
+    using ZoomMode = vte::VTypstEditor::PdfZoomMode;
+    const auto mode = m_typstEditor->pdfZoomMode();
+    m_zoomToolBar->setZoom(mode == ZoomMode::Width ? -1.0
+                          : mode == ZoomMode::Page ? 0.0 : m_typstEditor->pdfZoom());
   }
   m_previousPageAction->setEnabled(count > 0 && page > 0);
   m_nextPageAction->setEnabled(count > 0 && page + 1 < count);
@@ -291,6 +310,8 @@ void TypstViewWindow::createEditor() {
   m_typstEditor->setMode(m_mode == ViewWindowMode::Read ? vte::VTypstEditor::Mode::Read
                                                       : vte::VTypstEditor::Mode::Edit);
   setCentralWidget(m_typstEditor);
+  // Restore before observing native zoom changes; constructor/resize defaults are not choices.
+  applyPdfZoom(getServices().get<ConfigMgr2>()->getSessionConfig().getTypstZoomFactor());
   connectEditorSignals();
   m_statusBinder->attach(m_editor, statusBar());
   updateEditorFromConfig();
@@ -329,6 +350,16 @@ void TypstViewWindow::connectEditorSignals() {
           });
   connect(m_typstEditor, &vte::VTypstEditor::pdfNavigationChanged, this,
           &TypstViewWindow::updatePresentationActions);
+  connect(m_typstEditor, &vte::VTypstEditor::pdfZoomChanged, this,
+          [this](qreal p_zoom, vte::VTypstEditor::PdfZoomMode p_mode) {
+            using ZoomMode = vte::VTypstEditor::PdfZoomMode;
+            const qreal choice = p_mode == ZoomMode::Width ? -1.0
+                                 : p_mode == ZoomMode::Page ? 0.0 : p_zoom;
+            if (m_sourceAvailable) {
+              getServices().get<ConfigMgr2>()->getSessionConfig().setTypstZoomFactor(choice);
+            }
+            m_zoomToolBar->setZoom(choice);
+          });
 }
 
 void TypstViewWindow::syncEditorFromBuffer() {
@@ -691,6 +722,7 @@ void TypstViewWindow::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
     m_presentationEffect->setActive(p_on);
     update();
   });
+  setupPdfToolBar(p_toolBar);
 }
 
 void TypstViewWindow::paintEvent(QPaintEvent *p_event) {

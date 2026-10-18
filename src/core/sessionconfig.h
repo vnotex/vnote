@@ -149,6 +149,9 @@ public:
   qreal getMindMapZoomFactor() const;
   void setMindMapZoomFactor(qreal p_factor);
 
+  qreal getTypstZoomFactor() const;
+  void setTypstZoomFactor(qreal p_factor);
+
   const ExportOption &getExportOption() const;
   void setExportOption(const ExportOption &p_option);
 
@@ -256,8 +259,9 @@ private:
 
   int m_textEditorZoomDelta = 0;
 
-  // Zero selects Fit instead of a fixed zoom factor.
+  // Zero selects Fit Page, -1 selects Fit Width; positive values are manual factors.
   qreal m_mindMapZoomFactor = 1.0;
+  qreal m_typstZoomFactor = 1.0;
 
   ExportOption m_exportOption;
 

@@ -11878,4 +11878,27 @@ Continue?</source>
         <translation>文字数 (空白を含む)</translation>
     </message>
 </context>
+<context>
+    <name>vnotex::ZoomToolBar</name>
+    <message>
+        <source>Zoom In</source>
+        <translation>拡大</translation>
+    </message>
+    <message>
+        <source>Zoom Out</source>
+        <translation>縮小</translation>
+    </message>
+    <message>
+        <source>Zoom</source>
+        <translation>ズーム</translation>
+    </message>
+    <message>
+        <source>Fit Width</source>
+        <translation>幅に合わせる</translation>
+    </message>
+    <message>
+        <source>Fit Page</source>
+        <translation>ページに合わせる</translation>
+    </message>
+</context>
 </TS>

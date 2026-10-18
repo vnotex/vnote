@@ -11878,4 +11878,27 @@ Continue?</source>
         <translation>字符数（含空格）</translation>
     </message>
 </context>
+<context>
+    <name>vnotex::ZoomToolBar</name>
+    <message>
+        <source>Zoom In</source>
+        <translation>放大</translation>
+    </message>
+    <message>
+        <source>Zoom Out</source>
+        <translation>缩小</translation>
+    </message>
+    <message>
+        <source>Zoom</source>
+        <translation>缩放</translation>
+    </message>
+    <message>
+        <source>Fit Width</source>
+        <translation>适应宽度</translation>
+    </message>
+    <message>
+        <source>Fit Page</source>
+        <translation>适应页面</translation>
+    </message>
+</context>
 </TS>

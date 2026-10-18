@@ -1734,6 +1734,7 @@ target_include_directories(test_commentpanel PRIVATE
 add_qt_test(test_mindmapeditor
   SOURCES
     test_mindmapeditor.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/zoomtoolbar.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/imageviewer.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/imageinsertdialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/linkinsertdialog.cpp

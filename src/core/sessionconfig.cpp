@@ -213,6 +213,7 @@ void SessionConfig::loadEditor(const QJsonObject &p_session) {
       editorObj.value(QStringLiteral("markdownZoomFactorInReadMode")).toDouble(1.0);
   m_textEditorZoomDelta = editorObj.value(QStringLiteral("textEditorZoomDelta")).toInt(0);
   m_mindMapZoomFactor = editorObj.value(QStringLiteral("mindMapZoomFactor")).toDouble(1.0);
+  m_typstZoomFactor = editorObj.value(QStringLiteral("typstZoomFactor")).toDouble(1.0);
 }
 
 QJsonObject SessionConfig::saveEditor() const {
@@ -220,6 +221,7 @@ QJsonObject SessionConfig::saveEditor() const {
   editorObj[QStringLiteral("markdownZoomFactorInReadMode")] = m_markdownZoomFactorInReadMode;
   editorObj[QStringLiteral("textEditorZoomDelta")] = m_textEditorZoomDelta;
   editorObj[QStringLiteral("mindMapZoomFactor")] = m_mindMapZoomFactor;
+  editorObj[QStringLiteral("typstZoomFactor")] = m_typstZoomFactor;
   return editorObj;
 }
 
@@ -241,6 +243,12 @@ qreal SessionConfig::getMindMapZoomFactor() const { return m_mindMapZoomFactor; 
 
 void SessionConfig::setMindMapZoomFactor(qreal p_factor) {
   updateConfig(m_mindMapZoomFactor, p_factor, this);
+}
+
+qreal SessionConfig::getTypstZoomFactor() const { return m_typstZoomFactor; }
+
+void SessionConfig::setTypstZoomFactor(qreal p_factor) {
+  updateConfig(m_typstZoomFactor, p_factor, this);
 }
 
 const QString &SessionConfig::getNewNotebookDefaultRootFolderPath() const {

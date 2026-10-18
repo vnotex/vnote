@@ -56,6 +56,7 @@
 #include <core/mainconfig.h>
 #include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
+#include <core/sessionconfig.h>
 #include <core/services/bufferservice.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/hookmanager.h>
@@ -68,6 +69,7 @@
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/editors/mindmapeditor.h>
 #include <widgets/imageviewer.h>
+#include <widgets/zoomtoolbar.h>
 
 #include <deque>
 #include <functional>
@@ -481,6 +483,7 @@ private slots:
   void autosaveKeepsInlineEditor();
   void readOnlyStillNavigates();
   void zoomStateTracksCanvasWithoutEditing();
+  void zoomToolbarPreservesFractionalInputAndDiscardsDrafts();
   void retargetRefreshesRelativeImagesWithoutReloading();
   void reloadAndRetargetCancelStaleHttpImages();
   void protectedImagesRefuseExternalAndRevokeOnLock();
@@ -1433,6 +1436,88 @@ void TestMindMapEditor::zoomStateTracksCanvasWithoutEditing() {
   QVERIFY(showEditor(editor));
   QVERIFY(editor.isZoomFit());
   QCOMPARE(editor.zoomFactor(), view->transform().m11());
+  QCOMPARE(editor.toJson(), committed);
+  QCOMPARE(buffer.getContentRaw(), content);
+  QVERIFY(dirty.isEmpty());
+}
+
+void TestMindMapEditor::zoomToolbarPreservesFractionalInputAndDiscardsDrafts() {
+  const auto content = fixture();
+  const auto buffer = openNote(QStringLiteral("zoom-input.mmm"), content, true);
+  QVERIFY(buffer.isValid());
+  auto &session = m_config->getSessionConfig();
+  const qreal savedZoom = session.getMindMapZoomFactor();
+  const auto restore = qScopeGuard([&]() { session.setMindMapZoomFactor(savedZoom); });
+  session.setMindMapZoomFactor(1.0);
+
+  QWidget host;
+  QVBoxLayout layout(&host);
+  MindMapEditor editor(*m_services, buffer, &host);
+  QVERIFY(editor.loadContent(content));
+  const auto committed = editor.toJson();
+  QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
+  QToolBar toolbar(&host);
+  ZoomToolBar controls(QIcon(), QIcon(), &toolbar);
+  layout.addWidget(&toolbar);
+  layout.addWidget(&editor);
+  connect(&controls, &ZoomToolBar::zoomSelected, &editor, [&](qreal p_zoom) {
+    if (p_zoom == -1.0) {
+      editor.fitToWidth();
+    } else if (p_zoom == 0.0) {
+      editor.fitToContents();
+    } else {
+      editor.zoom(p_zoom / editor.zoomFactor());
+    }
+  });
+  connect(&editor, &m3::qt::MindMapEditor::zoomChanged, &controls, [&]() {
+    using Mode = m3::qt::MindMapEditor::ZoomMode;
+    const qreal choice = editor.zoomMode() == Mode::Width ? -1.0
+                         : editor.zoomMode() == Mode::Page ? 0.0 : editor.zoomFactor();
+    session.setMindMapZoomFactor(choice);
+    controls.setZoom(choice);
+  });
+  host.resize(1000, 700);
+  host.show();
+  host.activateWindow();
+  QApplication::setActiveWindow(&host);
+  auto *combo = toolbar.findChild<QComboBox *>(QStringLiteral("zoomCombo"));
+  QVERIFY(combo);
+  auto *input = combo->lineEdit();
+  combo->setFocus();
+  QTRY_VERIFY(input->hasFocus());
+  input->selectAll();
+  QTest::keyClicks(input, "137.5%");
+  QTest::keyClick(input, Qt::Key_Return);
+  QCOMPARE(editor.zoomFactor(), qreal(1.375));
+  QCOMPARE(session.getMindMapZoomFactor(), qreal(1.375));
+  QCOMPARE(combo->currentText(), QStringLiteral("137%"));
+
+  // Repeated acceptance must not reapply the display-only truncated percentage.
+  QTest::keyClick(input, Qt::Key_Return);
+  QTest::keyClick(input, Qt::Key_Enter);
+  QCOMPARE(editor.zoomFactor(), qreal(1.375));
+  QCOMPARE(session.getMindMapZoomFactor(), qreal(1.375));
+  QCOMPARE(combo->currentText(), QStringLiteral("137%"));
+
+  input->selectAll();
+  QTest::keyClicks(input, "200%");
+  QCOMPARE(input->text(), QStringLiteral("200%"));
+  auto *canvas = editor.findChild<QGraphicsView *>();
+  QVERIFY(canvas);
+  canvas->setFocus();
+  QTRY_VERIFY(canvas->hasFocus() && !input->hasFocus());
+  QCOMPARE(editor.zoomFactor(), qreal(1.375));
+  QCOMPARE(session.getMindMapZoomFactor(), qreal(1.375));
+  QCOMPARE(combo->currentText(), QStringLiteral("137%"));
+
+  combo->setFocus();
+  QTRY_VERIFY(input->hasFocus());
+  input->selectAll();
+  QTest::keyClicks(input, "invalid");
+  QTest::keyClick(input, Qt::Key_Return);
+  QCOMPARE(editor.zoomFactor(), qreal(1.375));
+  QCOMPARE(session.getMindMapZoomFactor(), qreal(1.375));
+  QCOMPARE(combo->currentText(), QStringLiteral("137%"));
   QCOMPARE(editor.toJson(), committed);
   QCOMPARE(buffer.getContentRaw(), content);
   QVERIFY(dirty.isEmpty());
