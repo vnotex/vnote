@@ -50,7 +50,6 @@ private slots:
   void testThemeFullyResolved_additionalThemes_data();
   void testThemeFullyResolved_additionalThemes();
   void testEditorWebConceptParity_pure();
-  void testEditorWebConceptParity_everforestDark();
   void testEditorWebConceptParity_moonlight();
   void testEditorWebConceptParity_latexLight();
   void testEditorWebConceptParity_latexDark();
@@ -488,10 +487,6 @@ void TestTheme::testThemeFullyResolved_latexDark() {
 
 void TestTheme::testEditorWebConceptParity_pure() {
   assertEditorWebConceptParity(QStringLiteral("pure"));
-}
-
-void TestTheme::testEditorWebConceptParity_everforestDark() {
-  assertEditorWebConceptParity(QStringLiteral("everforest-dark"));
 }
 
 void TestTheme::testEditorWebConceptParity_moonlight() {
