@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Exclude white from automatic mind-map branch colors, preserving existing branch colors and manual white selection
 * Use Everforest red for all Markdown headings and green for inline code in edit and read modes, preserving code-block colors
 * Remove unused `editor-colors` sections from bundled syntax-highlighting themes; token colors and decorations are unchanged
 * Fix clipped KaTeX fractions in PDF/custom exports and align inline math images correctly in exports and cross-copy (#2776)
