@@ -14,7 +14,7 @@ For more information, please visit [**VNote's Home Page**](https://docs.vnote.fu
 ## Description
 **VNote** is a Qt-based, free and open source note-taking application. It combines note management with an excellent editing experience across multiple document formats.
 
-VNote runs on **Linux**, **Windows**, and **macOS**, and requires **Qt 6**. Qt 5.15 and Windows 7 are no longer supported.
+VNote runs on **Linux**, **Windows**, and **macOS**, and requires **Qt 6.9+**. Qt 5.15 and Windows 7 are no longer supported.
 
 ### Supported formats
 **VNote is more than a Markdown editor — these formats are supported today:**
@@ -23,8 +23,6 @@ VNote runs on **Linux**, **Windows**, and **macOS**, and requires **Qt 6**. Qt 5
 * **Plain text and source code** (`.txt`, `.log`, `.py`, `.cpp`, `.js`, `.json`, `.yaml`, and more): edit text notes, logs, code, and configuration files
 * **Mind maps** (`.mmm`, `.emind`): create and edit mind maps with the native mind-map editor
 * **PDF** (`.pdf`): read PDF documents with the built-in viewer
-
-The built-in PDF viewer requires a **Qt 6.9+** build. Builds using earlier Qt 6 versions open PDFs in the system default application.
 
 ![Main](pics/main.webp)
 
@@ -43,10 +41,10 @@ Thank [users who donated to VNote](https://github.com/vnotex/vnote/wiki/Donate-L
 
 ### Prerequisites
 
-* Git, CMake 3.20+, Ninja, Python 3, and a C++17 compiler
-* Qt 6 development packages, including Core5Compat, SVG, WebChannel, WebEngineWidgets,
-  PDF, LinguistTools, and matching Qt Gui private headers; Qt 6.9+ is needed for the
-  built-in PDF viewer
+* Git, CMake 3.21+, Ninja, Perl, Python 3, and a C++20-capable compiler
+  (the syntax indexer uses C++20; VNote uses C++17)
+* Qt 6.9+ development packages, including Core5Compat, SVG, WebChannel, WebEngineWidgets,
+  PDF, LinguistTools, and matching Qt Gui private headers
 * On Windows: Visual Studio's **Desktop development with C++** workload and Windows SDK,
   with a 64-bit MSVC Qt kit (the development setup uses Qt 6.10.3 MSVC2022 64bit)
 * [Rustup](https://rustup.rs/) and the Rust version pinned in

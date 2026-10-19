@@ -14,7 +14,7 @@
 ## 简介
 **VNote**是一个基于Qt的开源免费笔记应用，将笔记管理与出色的编辑体验相结合，支持多种文档格式。
 
-VNote支持**Linux**、**Windows**和**macOS**平台，需要**Qt 6**。不再支持Qt 5.15和Windows 7。
+VNote支持**Linux**、**Windows**和**macOS**平台，需要**Qt 6.9及以上版本**。不再支持Qt 5.15和Windows 7。
 
 ### 支持的格式
 **VNote不只是Markdown编辑器——以下格式现已支持：**
@@ -23,8 +23,6 @@ VNote支持**Linux**、**Windows**和**macOS**平台，需要**Qt 6**。不再�
 * **纯文本和源代码**（`.txt`、`.log`、`.py`、`.cpp`、`.js`、`.json`、`.yaml`等）：编辑文本笔记、日志、代码和配置文件
 * **思维导图**（`.mmm`、`.emind`）：使用原生思维导图编辑器创建和编辑导图
 * **PDF**（`.pdf`）：使用内置阅读器阅读PDF文档
-
-内置PDF阅读器需要基于**Qt 6.9及以上版本**的构建。使用较早Qt 6版本的构建会使用系统默认应用打开PDF。
 
 ![主界面](pics/main.webp)
 
@@ -44,9 +42,10 @@ VNote支持**Linux**、**Windows**和**macOS**平台，需要**Qt 6**。不再�
 
 ### 前置依赖
 
-* Git、CMake 3.20+、Ninja、Python 3 和支持 C++17 的编译器
-* Qt 6 开发包，包含 Core5Compat、SVG、WebChannel、WebEngineWidgets、PDF、LinguistTools，
-  以及版本匹配的 Qt Gui 私有头文件；内置 PDF 阅读器需要 Qt 6.9 及以上版本
+* Git、CMake 3.21+、Ninja、Perl、Python 3 和支持 C++20 的编译器
+  （语法索引生成器使用 C++20；VNote 使用 C++17）
+* Qt 6.9 及以上版本的开发包，包含 Core5Compat、SVG、WebChannel、WebEngineWidgets、PDF、
+  LinguistTools，以及版本匹配的 Qt Gui 私有头文件
 * Windows：Visual Studio 的“使用 C++ 的桌面开发”工作负载和 Windows SDK，
   搭配 64 位 MSVC Qt Kit（开发环境使用 Qt 6.10.3 MSVC2022 64bit）
 * [Rustup](https://rustup.rs/) 和

@@ -7,9 +7,10 @@ Module-specific detail lives in the child `AGENTS.md` that owns the code — see
 ## Prerequisites
 
 - **Git** (with Git Bash on Windows)
-- **CMake** 3.20+
-- **Qt** 6 (with QtWebEngine and Core5Compat)
-- **C++17** compatible compiler (MSVC, GCC, Clang)
+- **CMake** 3.21+
+- **Qt** 6.9+ (with QtWebEngine and Core5Compat)
+- **C++20-capable compiler** (MSVC, GCC, Clang) for the syntax indexer; VNote uses C++17
+- **Perl** and **Python 3** for syntax catalog generation
 - **clang-format** (optional, for automatic code formatting)
 
 ## Setup

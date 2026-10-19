@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.20)
+cmake_minimum_required (VERSION 3.21)
 
 set(CMAKE_OSX_DEPLOYMENT_TARGET "12.1" CACHE STRING "Minimum OS X deployment version")
 
@@ -31,7 +31,7 @@ if(DEFINED QT_DEFAULT_MAJOR_VERSION AND NOT QT_DEFAULT_MAJOR_VERSION STREQUAL "6
 endif()
 # Keep dependency subprojects on the same Qt major version.
 set(QT_DEFAULT_MAJOR_VERSION 6)
-find_package(Qt6 REQUIRED COMPONENTS Core)
+find_package(Qt6 6.9 REQUIRED COMPONENTS Core)
 
 # Windows packages install FLAT: the release ZIP's single top-level directory IS
 # the install root, with vnote.exe and every DLL directly beneath it. An extra
