@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Add a bundled `title.typst` template that uses the filename without its extension as the title; select it by default for unconfigured template mappings while preserving existing choices
 * Show MARKDOWN instead of RICHMARKDOWN in the Markdown editor status widget
 * Give document-tab close icons more space from the tab edge while preserving native close behavior (#2775)
 * Add mind-map Print to the toolbar menu, fitting the current layout to one page with vector text, images, links and inline drafts
@@ -21,7 +22,7 @@
 * Match Qt native context-menu icons to the selected light or dark theme even when Windows retains a light palette, and restore system appearance for Native
 * Add Undo and Redo toolbar buttons to plain text and Markdown editors, matching the mind map editor
 * Require Qt 6; remove Qt 5.15 and Windows 7 builds, packaging and compatibility paths
-* Update vtextedit to upstream `af55346`, including theme-format and preview-layout fixes; optional Typst support remains disabled
+* Update vtextedit to upstream `af55346`, including theme-format and preview-layout fixes
 
 ## v4.10.0
 A feature release with richer mind-map editing and exports, image viewing and self-contained encrypted notes on top of VNote 4.9.1:

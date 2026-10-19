@@ -15,6 +15,7 @@ QJsonObject bundledNewNoteDefaultTemplates() {
   QJsonObject obj;
   obj[QStringLiteral("Markdown")] = QStringLiteral("title.md");
   obj[QStringLiteral("MindMap")] = QStringLiteral("title.mmm");
+  obj[QStringLiteral("Typst")] = QStringLiteral("title.typst");
   return obj;
 }
 } // namespace

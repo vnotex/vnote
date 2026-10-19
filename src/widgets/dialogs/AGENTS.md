@@ -95,8 +95,9 @@ on success, so saved-token retrieval cannot be cancelled by dialog destruction.
    when its value is empty, so an explicit "None" survives the rest of the run.
 2. **Configured default** — `WidgetConfig::getNewNoteDefaultTemplate(fileTypeName)`, backed by
    the `newNoteDefaultTemplates` object in `vnotex.json` (a `{fileTypeName: templateName}` map).
-   VNote seeds `{"Markdown": "title.md"}` when the key is absent; a present object — including
-   an empty one — is the user's choice and is never re-seeded.
+   VNote seeds `{"Markdown": "title.md", "MindMap": "title.mmm", "Typst": "title.typst"}` when
+   the key is absent; a present object — including an empty one — is the user's choice and is
+   never re-seeded. The Typst template inserts the filename without its extension as a heading.
 
 If neither yields a template that still exists on disk (`NoteTemplateSelector::setCurrentTemplate`
 returns `false`), the selector falls back to "None" and a stale session entry is dropped so the

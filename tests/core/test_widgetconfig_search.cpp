@@ -151,13 +151,14 @@ void TestWidgetConfigSearch::testFolderShareDestinationMissingOrWrongType() {
 }
 
 // An absent key means "never configured", so the bundled mapping is seeded.
-// Markdown and mind maps ship title templates; other types have no default.
+// Markdown, mind maps and Typst ship title templates; other types have no default.
 void TestWidgetConfigSearch::testNewNoteDefaultTemplatesSeedsMarkdownOnFirstRun() {
   WidgetConfig wc(nullptr, nullptr);
   wc.fromJson(QJsonObject());
 
   QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Markdown")), QStringLiteral("title.md"));
   QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("MindMap")), QStringLiteral("title.mmm"));
+  QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Typst")), QStringLiteral("title.typst"));
   QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Text")), QString());
   QCOMPARE(wc.getNewNoteDefaultTemplate(QString()), QString());
   QVERIFY(wc.toJson().contains(QStringLiteral("newNoteDefaultTemplates")));
@@ -189,18 +190,21 @@ void TestWidgetConfigSearch::testNewNoteDefaultTemplatesEmptyObjectIsRespected()
   wc.fromJson(json);
   QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Markdown")), QString());
   QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("MindMap")), QString());
+  QCOMPARE(wc.getNewNoteDefaultTemplate(QStringLiteral("Typst")), QString());
 
   // The same holds for an explicitly cleared per-type entry.
   QJsonObject cleared;
   QJsonObject mapping;
   mapping[QStringLiteral("Markdown")] = QString();
   mapping[QStringLiteral("MindMap")] = QString();
+  mapping[QStringLiteral("Typst")] = QString();
   cleared[QStringLiteral("newNoteDefaultTemplates")] = mapping;
 
   WidgetConfig wcCleared(nullptr, nullptr);
   wcCleared.fromJson(cleared);
   QCOMPARE(wcCleared.getNewNoteDefaultTemplate(QStringLiteral("Markdown")), QString());
   QCOMPARE(wcCleared.getNewNoteDefaultTemplate(QStringLiteral("MindMap")), QString());
+  QCOMPARE(wcCleared.getNewNoteDefaultTemplate(QStringLiteral("Typst")), QString());
 }
 
 void TestWidgetConfigSearch::testNewNoteDefaultTemplatesWrongTypeYieldsNoDefaults() {
