@@ -1,7 +1,7 @@
 # Changes
 ## Unreleased
-* Update vtextedit to upstream `8da1299` with KSyntaxHighlighting 6.30 and native Markdown code-block highlighting by default
-* Require Qt 6.9+, CMake 3.21+, Perl, Python 3 and a C++20-capable compiler for the syntax indexer; VNote remains C++17
+* Update vtextedit to upstream `be21546` with KSyntaxHighlighting 6.30 and native Markdown code-block highlighting by default
+* Require Qt 6.9+, CMake 3.21+, Python 3 and a C++20-capable compiler for the syntax indexer; VNote remains C++17 and normal syntax builds no longer require Perl
 * Exclude White, Cloud, Gray, Slate, Midnight, Black and Mint from automatic mind-map branch colors, preserving existing branch colors and all manual color choices
 * Use Everforest red for all Markdown headings and green for inline code in edit and read modes, preserving code-block colors
 * Remove unused `editor-colors` sections from bundled syntax-highlighting themes; token colors and decorations are unchanged

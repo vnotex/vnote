@@ -41,7 +41,7 @@ Thank [users who donated to VNote](https://github.com/vnotex/vnote/wiki/Donate-L
 
 ### Prerequisites
 
-* Git, CMake 3.21+, Ninja, Perl, Python 3, and a C++20-capable compiler
+* Git, CMake 3.21+, Ninja, Python 3, and a C++20-capable compiler
   (the syntax indexer uses C++20; VNote uses C++17)
 * Qt 6.9+ development packages, including Core5Compat, SVG, WebChannel, WebEngineWidgets,
   PDF, LinguistTools, and matching Qt Gui private headers

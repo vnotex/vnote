@@ -10,7 +10,7 @@ Module-specific detail lives in the child `AGENTS.md` that owns the code — see
 - **CMake** 3.21+
 - **Qt** 6.9+ (with QtWebEngine and Core5Compat)
 - **C++20-capable compiler** (MSVC, GCC, Clang) for the syntax indexer; VNote uses C++17
-- **Perl** and **Python 3** for syntax catalog generation
+- **Python 3** for syntax catalog generation
 - **clang-format** (optional, for automatic code formatting)
 
 ## Setup

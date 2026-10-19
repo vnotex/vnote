@@ -42,7 +42,7 @@ VNote支持**Linux**、**Windows**和**macOS**平台，需要**Qt 6.9及以上�
 
 ### 前置依赖
 
-* Git、CMake 3.21+、Ninja、Perl、Python 3 和支持 C++20 的编译器
+* Git、CMake 3.21+、Ninja、Python 3 和支持 C++20 的编译器
   （语法索引生成器使用 C++20；VNote 使用 C++17）
 * Qt 6.9 及以上版本的开发包，包含 Core5Compat、SVG、WebChannel、WebEngineWidgets、PDF、
   LinguistTools，以及版本匹配的 Qt Gui 私有头文件
