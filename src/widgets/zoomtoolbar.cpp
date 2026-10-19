@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QComboBox>
 #include <QKeyEvent>
+#include <QKeySequence>
 #include <QLineEdit>
 #include <QSignalBlocker>
 #include <QToolBar>
@@ -53,6 +54,20 @@ ZoomToolBar::ZoomToolBar(const QIcon &p_zoomOutIcon, const QIcon &p_zoomInIcon, 
   m_comboAction = p_toolBar->addWidget(m_comboBox);
   m_zoomInAction = addZoomAction(true);
   refreshText();
+}
+
+void ZoomToolBar::setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut,
+                                  const QKeySequence &p_reset) {
+  const auto tip = [](const QString &p_label, const QKeySequence &p_key) {
+    return p_key.isEmpty()
+               ? p_label
+               : QStringLiteral("%1\t%2").arg(p_label, p_key.toString(QKeySequence::NativeText));
+  };
+  m_zoomInAction->setToolTip(tip(m_zoomInAction->text(), p_zoomIn));
+  m_zoomOutAction->setToolTip(tip(m_zoomOutAction->text(), p_zoomOut));
+  m_comboBox->setToolTip(p_reset.isEmpty()
+                            ? tr("Zoom")
+                            : tr("Zoom") + QLatin1Char('\n') + tip(tr("Reset Zoom"), p_reset));
 }
 
 bool ZoomToolBar::eventFilter(QObject *p_object, QEvent *p_event) {

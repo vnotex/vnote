@@ -9,6 +9,7 @@
 #include <QGraphicsView>
 #include <QImage>
 #include <QKeyEvent>
+#include <QKeySequence>
 #include <QLabel>
 #include <QMouseEvent>
 #include <QScrollBar>
@@ -147,6 +148,18 @@ ImageViewer::ImageViewer(ServiceLocator &p_services, QWidget *p_parent, Mode p_m
   installEventFilter(this);
   handleThemeChanged();
   setImage(QImage());
+}
+
+void ImageViewer::setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut,
+                                   const QKeySequence &p_reset) {
+  const auto tip = [](const QString &p_label, const QKeySequence &p_key) {
+    return p_key.isEmpty()
+               ? p_label
+               : QStringLiteral("%1\t%2").arg(p_label, p_key.toString(QKeySequence::NativeText));
+  };
+  m_zoomIn->setToolTip(tip(m_zoomIn->text(), p_zoomIn));
+  m_zoomOut->setToolTip(tip(m_zoomOut->text(), p_zoomOut));
+  m_reset->setToolTip(tip(m_reset->text(), p_reset));
 }
 
 void ImageViewer::setImage(const QImage &p_image) {

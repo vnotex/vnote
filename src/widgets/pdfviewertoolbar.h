@@ -14,6 +14,7 @@
 class QAction;
 class QActionGroup;
 class QComboBox;
+class QKeySequence;
 class QLabel;
 class QMenu;
 class QSpinBox;
@@ -60,6 +61,11 @@ public:
   // installOverflowAction() later places Menu after the page/zoom controls.
   void install(QToolBar *p_toolBar, const IconProvider &p_icons = {},
                const std::function<void()> &p_afterSidebar = {});
+
+  // Call after install(). Display only; empty sequences remove tips.
+  // The caller owns shortcut bindings; PDF reset selects Automatic zoom.
+  void setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut,
+                       const QKeySequence &p_reset);
 
   // Adds Presentation Mode to @p_toolBar and returns it.
   //

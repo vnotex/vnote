@@ -6,6 +6,7 @@
 class QAction;
 class QComboBox;
 class QIcon;
+class QKeySequence;
 class QToolBar;
 
 namespace vnotex {
@@ -20,6 +21,10 @@ public:
   void setZoom(qreal p_zoom);
   void setEnabled(bool p_enabled);
   void setVisible(bool p_visible);
+
+  // Display only; empty sequences remove tips. The caller owns shortcut bindings.
+  void setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut,
+                       const QKeySequence &p_reset);
 
 signals:
   void zoomRequested(bool p_zoomIn);

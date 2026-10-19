@@ -4,6 +4,7 @@
 #include <QDesktopServices>
 #include <QEvent>
 #include <QJsonArray>
+#include <QKeySequence>
 #include <QLayout>
 #include <QMenu>
 #include <QPainter>
@@ -210,6 +211,9 @@ void PdfViewWindow2::setupViewerToolBarActions(QToolBar *p_toolBar) {
             this);
         m_viewerToolBar->setPresentationMode(isViewFullScreen());
       });
+  m_viewerToolBar->setShortcutTips(QKeySequence(Qt::CTRL | Qt::Key_Equal),
+                                  QKeySequence(Qt::CTRL | Qt::Key_Minus),
+                                  QKeySequence(Qt::CTRL | Qt::Key_0));
 
   connect(m_viewerToolBar, &PdfViewerToolBar::pageRequested, this, [this](int p_page) {
     if (auto *a = adapter()) {

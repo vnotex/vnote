@@ -9,6 +9,7 @@ class QAction;
 class QGraphicsPixmapItem;
 class QGraphicsView;
 class QImage;
+class QKeySequence;
 class QLabel;
 class QToolBar;
 class QToolButton;
@@ -30,6 +31,10 @@ public:
   void scrollUp();
   void scrollDown();
   void handleThemeChanged();
+
+  // Display only; empty sequences remove tips. The caller owns shortcut bindings.
+  void setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut,
+                       const QKeySequence &p_reset);
 
 signals:
   void closeRequested();

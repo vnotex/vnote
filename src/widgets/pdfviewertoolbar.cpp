@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QActionGroup>
 #include <QComboBox>
+#include <QKeySequence>
 #include <QLabel>
 #include <QMenu>
 #include <QSignalBlocker>
@@ -148,6 +149,20 @@ void PdfViewerToolBar::install(QToolBar *p_toolBar, const IconProvider &p_icons,
 
   // Viewer commands stay disabled until the first accepted state.
   setControlsEnabled(false);
+}
+
+void PdfViewerToolBar::setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut,
+                                       const QKeySequence &p_reset) {
+  const auto tip = [](const QString &p_label, const QKeySequence &p_key) {
+    return p_key.isEmpty()
+               ? p_label
+               : QStringLiteral("%1\t%2").arg(p_label, p_key.toString(QKeySequence::NativeText));
+  };
+  m_zoomInAction->setToolTip(tip(m_zoomInAction->text(), p_zoomIn));
+  m_zoomOutAction->setToolTip(tip(m_zoomOutAction->text(), p_zoomOut));
+  m_zoomComboBox->setToolTip(p_reset.isEmpty()
+                                ? tr("Zoom")
+                                : tr("Zoom") + QLatin1Char('\n') + tip(tr("Automatic"), p_reset));
 }
 
 QMenu *PdfViewerToolBar::addModeSubmenu(const QString &p_title, const QList<QString> &p_labels,

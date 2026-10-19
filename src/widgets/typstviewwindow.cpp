@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QCoreApplication>
 #include <QDir>
+#include <QKeySequence>
 #include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
@@ -154,6 +155,13 @@ void TypstViewWindow::setupPdfToolBar(QToolBar *p_toolBar) {
           [this]() { m_typstEditor->goToPdfPage(m_typstEditor->currentPdfPage() + 1); });
   m_pdfActions.append(p_toolBar->addSeparator());
   m_zoomToolBar = ViewWindowToolBarHelper2::addZoomToolBar(p_toolBar, getServices());
+  connect(this, &ViewWindow2::modeChanged, m_zoomToolBar, [this]() {
+    // In Edit, these shortcuts change the source font, not the PDF camera.
+    const bool read = m_mode == ViewWindowMode::Read;
+    m_zoomToolBar->setShortcutTips(read ? QKeySequence(Qt::CTRL | Qt::Key_Equal) : QKeySequence(),
+                                  read ? QKeySequence(Qt::CTRL | Qt::Key_Minus) : QKeySequence(),
+                                  read ? QKeySequence(Qt::CTRL | Qt::Key_0) : QKeySequence());
+  });
   connect(m_zoomToolBar, &ZoomToolBar::zoomRequested, this, [this](bool p_zoomIn) {
     if (m_typstEditor && m_typstEditor->pdfPageCount() > 0) {
       m_typstEditor->setPdfZoom(m_typstEditor->pdfZoom() * (p_zoomIn ? 1.2 : 1.0 / 1.2));
