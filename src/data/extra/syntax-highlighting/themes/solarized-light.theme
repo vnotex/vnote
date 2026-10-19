@@ -141,35 +141,5 @@
             "text-color" : "#859900",
             "selected-text-color" : "#859900"
         }
-   },
-    "editor-colors": {
-        "background-color" : "#fdf6e3",
-        "code-folding" : "#6c71c4",
-        "bracket-matching" : "#eee8d5",
-        "current-line" : "#eee8d5",
-        "icon-border" : "#eee8d5",
-        "indentation-line" : "#eee8d5",
-        "line-numbers" : "#93a1a1",
-        "current-line-number" : "#93a1a1",
-        "mark-bookmark" : "#268bd2",
-        "mark-breakpoint-active" : "#dc322f",
-        "mark-breakpoint-reached" : "#b58900",
-        "mark-breakpoint-disabled" : "#d33682",
-        "mark-execution" : "#93a1a1",
-        "mark-warning" : "#cb4b16",
-        "mark-error" : "#dc322f",
-        "modified-lines" : "#cb4b16",
-        "replace-highlight" : "#859900",
-        "saved-lines" : "#2aa198",
-        "search-highlight" : "#b58900",
-        "selection" : "#073642",
-        "separator" : "#93a1a1",
-        "spell-checking" : "#dc322f",
-        "tab-marker" : "#93a1a1",
-        "template-background" : "#eee8d5",
-        "template-placeholder" : "#eee8d5",
-        "template-focused-placeholder" : "#eee8d5",
-        "template-read-only-placeholder" : "#eee8d5",
-        "word-wrap-marker" : "#93a1a1"
-    }
+   }
 }

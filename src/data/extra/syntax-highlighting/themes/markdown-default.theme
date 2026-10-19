@@ -140,35 +140,5 @@
             "text-color" : "#006e28",
             "selected-text-color" : "#006e28"
         }
-   },
-    "editor-colors": {
-        "background-color" : "#ffffff",
-        "code-folding" : "#94caef",
-        "bracket-matching" : "#ffff00",
-        "current-line" : "#f8f7f6",
-        "icon-border" : "#f0f0f0",
-        "indentation-line" : "#d2d2d2",
-        "line-numbers" : "#a0a0a0",
-        "current-line-number" : "#1e1e1e",
-        "mark-bookmark" : "#0000ff",
-        "mark-breakpoint-active" : "#ff0000",
-        "mark-breakpoint-reached" : "#ffff00",
-        "mark-breakpoint-disabled" : "#ff00ff",
-        "mark-execution" : "#a0a0a4",
-        "mark-warning" : "#00ff00",
-        "mark-error" : "#ff0000",
-        "modified-lines" : "#fdbc4b",
-        "replace-highlight" : "#00ff00",
-        "saved-lines" : "#2ecc71",
-        "search-highlight" : "#ffff00",
-        "selection" : "#94caef",
-        "separator" : "#898887",
-        "spell-checking" : "#bf0303",
-        "tab-marker" : "#d2d2d2",
-        "template-background" : "#d6d2d0",
-        "template-placeholder" : "#baf8ce",
-        "template-focused-placeholder" : "#76da98",
-        "template-read-only-placeholder" : "#f6e6e6",
-        "word-wrap-marker" : "#ededed"
-    }
+   }
 }
