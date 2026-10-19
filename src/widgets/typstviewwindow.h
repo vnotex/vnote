@@ -112,6 +112,7 @@ private:
 
   QAction *m_livePreviewAction = nullptr;
   QAction *m_inplacePreviewAction = nullptr;
+  QAction *m_themeStyleInPreviewAction = nullptr;
   QVector<QAction *> m_pdfActions;
   ZoomToolBar *m_zoomToolBar = nullptr;
   QAction *m_previousPageAction = nullptr;

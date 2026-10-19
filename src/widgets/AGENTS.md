@@ -174,9 +174,17 @@ and saving; failed source reads instead disable mutations and reject save snapsh
 Use inherited focus/save/reload/close and BufferService, never per-keystroke buffer writes
 or QFile saves. Retarget project/active identity and remove the obsolete overlay without
 reloading text. Theme changes go through the composite `setConfig()`, preserving source
-history and PDF zoom; authored PDF colors are not application palette colors.
+history and PDF zoom. The right-side toolbar Menu's **Theme Style in Preview** action is
+checkable in both Edit and Read. It defaults on per view, retains its choice through mode,
+theme and editor-config changes, and is not persisted or exposed in Settings. Other Typst
+views are independent. Pass the action's checked state to
+`TypstEditorConfig::m_enableThemeStyleInPreview` on every config refresh, and set
+`m_previewForeground` from `base#content#fg`. The native compiler applies page/text color
+defaults only for previews; explicit document styles win and exports remain unchanged.
 Set `TypstEditorConfig::m_pdfBackground` from `ThemeService::getBaseBackground()`, matching
-the PDF view's canvas in Edit and Read. The native pane paints that color directly:
+the PDF view's canvas in Edit and Read and the default page fill while theme styling is on.
+Turning the option off restores native Typst page/text defaults without changing the canvas.
+The native pane paints the canvas color directly:
 QSS can override widget palettes, so a `QPalette::Dark` override is not sufficient.
 
 Publish compiled heading metadata in order, including repeated/generated/imported/deep

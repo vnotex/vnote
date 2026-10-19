@@ -156,7 +156,7 @@ void TypstViewWindow::setupPdfToolBar(QToolBar *p_toolBar) {
   m_pdfActions.append(p_toolBar->addSeparator());
   m_zoomToolBar = ViewWindowToolBarHelper2::addZoomToolBar(p_toolBar, getServices());
   m_zoomToolBar->setShortcutTips(QKeySequence(Qt::CTRL | Qt::Key_Equal),
-                                QKeySequence(Qt::CTRL | Qt::Key_Minus));
+                                 QKeySequence(Qt::CTRL | Qt::Key_Minus));
   connect(m_zoomToolBar, &ZoomToolBar::zoomRequested, this, [this](bool p_zoomIn) {
     if (m_typstEditor && m_typstEditor->pdfPageCount() > 0) {
       m_typstEditor->setPdfZoom(m_typstEditor->pdfZoom() * (p_zoomIn ? 1.2 : 1.0 / 1.2));
@@ -206,6 +206,16 @@ void TypstViewWindow::addAdditionalMenuActions(QMenu *p_menu) {
       m_typstEditor->setInplacePreviewEnabled(p_enabled);
     }
   });
+
+  p_menu->setToolTipsVisible(true);
+  m_themeStyleInPreviewAction = p_menu->addAction(tr("Theme Style in Preview"));
+  m_themeStyleInPreviewAction->setCheckable(true);
+  m_themeStyleInPreviewAction->setChecked(true);
+  m_themeStyleInPreviewAction->setToolTip(
+      tr("Use theme colors for the default page background and text in Typst previews; "
+         "explicit document styles take precedence and exports are unchanged"));
+  connect(m_themeStyleInPreviewAction, &QAction::toggled, this,
+          &TypstViewWindow::applyEditorConfig);
 }
 
 void TypstViewWindow::updatePresentationActions() {
@@ -227,8 +237,9 @@ void TypstViewWindow::updatePresentationActions() {
   if (m_typstEditor) {
     using ZoomMode = vte::VTypstEditor::PdfZoomMode;
     const auto mode = m_typstEditor->pdfZoomMode();
-    m_zoomToolBar->setZoom(mode == ZoomMode::Width ? -1.0
-                          : mode == ZoomMode::Page ? 0.0 : m_typstEditor->pdfZoom());
+    m_zoomToolBar->setZoom(mode == ZoomMode::Width  ? -1.0
+                           : mode == ZoomMode::Page ? 0.0
+                                                    : m_typstEditor->pdfZoom());
   }
   m_previousPageAction->setEnabled(count > 0 && page > 0);
   m_nextPageAction->setEnabled(count > 0 && page + 1 < count);
@@ -282,6 +293,9 @@ QSharedPointer<vte::TypstEditorConfig> TypstViewWindow::buildEditorConfig() cons
       themeService->getEditorHighlightTheme(), WidgetUtils::calculateScaleFactor(),
       getEditorMaxContentWidth());
   config->m_pdfBackground = themeService->getBaseBackground();
+  config->m_previewForeground =
+      QColor(themeService->paletteColor(QStringLiteral("base#content#fg")));
+  config->m_enableThemeStyleInPreview = m_themeStyleInPreviewAction->isChecked();
   config->m_helperExecutable = QDir(QCoreApplication::applicationDirPath())
                                    .absoluteFilePath(QStringLiteral("vtextedit-typst"));
 #ifdef Q_OS_WIN
@@ -311,7 +325,7 @@ void TypstViewWindow::createEditor() {
   m_typstEditor->setInplacePreviewEnabled(m_inplacePreviewAction->isChecked());
   m_typstEditor->setLivePreviewEnabled(m_livePreviewAction->isChecked());
   m_typstEditor->setMode(m_mode == ViewWindowMode::Read ? vte::VTypstEditor::Mode::Read
-                                                      : vte::VTypstEditor::Mode::Edit);
+                                                        : vte::VTypstEditor::Mode::Edit);
   setCentralWidget(m_typstEditor);
   // Restore before observing native zoom changes; constructor/resize defaults are not choices.
   applyPdfZoom(getServices().get<ConfigMgr2>()->getSessionConfig().getTypstZoomFactor());
@@ -356,8 +370,9 @@ void TypstViewWindow::connectEditorSignals() {
   connect(m_typstEditor, &vte::VTypstEditor::pdfZoomChanged, this,
           [this](qreal p_zoom, vte::VTypstEditor::PdfZoomMode p_mode) {
             using ZoomMode = vte::VTypstEditor::PdfZoomMode;
-            const qreal choice = p_mode == ZoomMode::Width ? -1.0
-                                 : p_mode == ZoomMode::Page ? 0.0 : p_zoom;
+            const qreal choice = p_mode == ZoomMode::Width  ? -1.0
+                                 : p_mode == ZoomMode::Page ? 0.0
+                                                            : p_zoom;
             if (m_sourceAvailable) {
               getServices().get<ConfigMgr2>()->getSessionConfig().setTypstZoomFactor(choice);
             }
@@ -472,7 +487,7 @@ void TypstViewWindow::setMode(ViewWindowMode p_mode) {
     return;
   }
   m_typstEditor->setMode(p_mode == ViewWindowMode::Read ? vte::VTypstEditor::Mode::Read
-                                                      : vte::VTypstEditor::Mode::Edit);
+                                                        : vte::VTypstEditor::Mode::Edit);
 }
 
 void TypstViewWindow::syncModeFromEditor() {

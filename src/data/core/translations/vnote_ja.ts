@@ -1789,6 +1789,17 @@
     </message>
 </context>
 <context>
+    <name>vnotex::TypstViewWindow</name>
+    <message>
+        <source>Theme Style in Preview</source>
+        <translation>プレビューのテーマスタイル</translation>
+    </message>
+    <message>
+        <source>Use theme colors for the default page background and text in Typst previews; explicit document styles take precedence and exports are unchanged</source>
+        <translation>Typst プレビューの既定のページ背景とテキストにテーマの色を使用します。文書で明示したスタイルが優先され、エクスポートには影響しません</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::EditorPage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+84"/>
