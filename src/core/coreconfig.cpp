@@ -496,21 +496,21 @@ void CoreConfig::initDefaults() {
   aliases.append(makeAlias(QStringLiteral("n"),
                            QStringLiteral("Search for files by name in current notebook"),
                            QStringLiteral("find --scope notebook --object name")));
+  aliases.append(makeAlias(QStringLiteral("N"),
+                           QStringLiteral("Search for files by name in all notebooks"),
+                           QStringLiteral("find --scope all_notebook --object name")));
   aliases.append(makeAlias(QStringLiteral("g"),
                            QStringLiteral("Search for files by content in current notebook"),
                            QStringLiteral("find --scope notebook --object content")));
+  aliases.append(makeAlias(QStringLiteral("G"),
+                           QStringLiteral("Search for files by content in all notebooks"),
+                           QStringLiteral("find --scope all_notebook --object content")));
   aliases.append(makeAlias(QStringLiteral("b"),
                            QStringLiteral("Search for files by content in open buffers"),
                            QStringLiteral("find --scope buffer --object content")));
   aliases.append(makeAlias(QStringLiteral("f"),
                            QStringLiteral("Search for files by name in current folder"),
                            QStringLiteral("find --scope folder --object name")));
-  aliases.append(makeAlias(QStringLiteral("N"),
-                           QStringLiteral("Search for files by name in all notebooks"),
-                           QStringLiteral("find --scope all_notebook --object name")));
-  aliases.append(makeAlias(QStringLiteral("G"),
-                           QStringLiteral("Search for files by content in all notebooks"),
-                           QStringLiteral("find --scope all_notebook --object content")));
   aliases.append(makeAlias(QStringLiteral("t"),
                            QStringLiteral("Search for files by tag in current notebook"),
                            QStringLiteral("find --scope notebook --object tag")));

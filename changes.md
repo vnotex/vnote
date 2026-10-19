@@ -4,7 +4,7 @@
 * Remove unused `editor-colors` sections from bundled syntax-highlighting themes; token colors and decorations are unchanged
 * Fix clipped KaTeX fractions in PDF/custom exports and align inline math images correctly in exports and cross-copy (#2776)
 * Add builtin United Entry aliases `t` and `T` to search for files by tag in the current notebook and all notebooks, respectively
-* Add builtin United Entry aliases `N` (filenames) and `G` (contents) for all notebooks, distinct from current-notebook `n`/`g`
+* Add builtin United Entry aliases `N` (filenames) and `G` (contents) for all notebooks, listed immediately after current-notebook `n`/`g`, respectively
 * Add a bundled `title.typst` template that uses the filename without its extension as the title; select it by default for unconfigured template mappings while preserving existing choices
 * Show MARKDOWN instead of RICHMARKDOWN in the Markdown editor status widget
 * Give document-tab close icons more space from the tab edge while preserving native close behavior (#2775)
