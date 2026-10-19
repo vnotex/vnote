@@ -1,6 +1,7 @@
 # Changes
 ## Unreleased
 * Fix clipped KaTeX fractions in PDF/custom exports and align inline math images correctly in exports and cross-copy (#2776)
+* Add builtin United Entry aliases `t` and `T` to search for files by tag in the current notebook and all notebooks, respectively
 * Add builtin United Entry aliases `N` (filenames) and `G` (contents) for all notebooks, distinct from current-notebook `n`/`g`
 * Add a bundled `title.typst` template that uses the filename without its extension as the title; select it by default for unconfigured template mappings while preserving existing choices
 * Show MARKDOWN instead of RICHMARKDOWN in the Markdown editor status widget

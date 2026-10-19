@@ -511,5 +511,11 @@ void CoreConfig::initDefaults() {
   aliases.append(makeAlias(QStringLiteral("G"),
                            QStringLiteral("Search for files by content in all notebooks"),
                            QStringLiteral("find --scope all_notebook --object content")));
+  aliases.append(makeAlias(QStringLiteral("t"),
+                           QStringLiteral("Search for files by tag in current notebook"),
+                           QStringLiteral("find --scope notebook --object tag")));
+  aliases.append(makeAlias(QStringLiteral("T"),
+                           QStringLiteral("Search for files by tag in all notebooks"),
+                           QStringLiteral("find --scope all_notebook --object tag")));
   m_unitedEntryAlias = aliases;
 }
