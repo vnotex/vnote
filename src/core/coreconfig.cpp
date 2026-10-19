@@ -16,29 +16,6 @@ const int c_maxSearchMaxResults = 100000;
 const int c_defaultRecycleBinRetentionDays = 60;
 const int c_minRecycleBinRetentionDays = 1;
 const int c_maxRecycleBinRetentionDays = 3650;
-
-void addAllNotebookAliases(QJsonArray &p_aliases) {
-  auto addIfMissing = [&p_aliases](const QString &p_name, const QString &p_description,
-                                  const QString &p_value) {
-    for (const auto &alias : p_aliases) {
-      if (alias.toObject().value(QStringLiteral("name")).toString() == p_name) {
-        return;
-      }
-    }
-    QJsonObject alias;
-    alias[QStringLiteral("name")] = p_name;
-    alias[QStringLiteral("description")] = p_description;
-    alias[QStringLiteral("value")] = p_value;
-    p_aliases.append(alias);
-  };
-
-  addIfMissing(QStringLiteral("N"),
-               QStringLiteral("Search for files by name in all notebooks"),
-               QStringLiteral("find --scope all_notebook --object name"));
-  addIfMissing(QStringLiteral("G"),
-               QStringLiteral("Search for files by content in all notebooks"),
-               QStringLiteral("find --scope all_notebook --object content"));
-}
 } // namespace
 
 #define READSTR(key) readString(p_jobj, (key))
@@ -403,10 +380,6 @@ void CoreConfig::setLineEndingPolicy(LineEndingPolicy p_ending) {
 void CoreConfig::loadUnitedEntry(const QJsonObject &p_jobj) {
   const auto unitedObj = p_jobj.value(QStringLiteral("unitedEntry")).toObject();
   m_unitedEntryAlias = unitedObj.value(QStringLiteral("alias")).toArray();
-  // Upgrade saved alias lists without replacing custom aliases or an explicit opt-out.
-  if (!m_unitedEntryAlias.isEmpty()) {
-    addAllNotebookAliases(m_unitedEntryAlias);
-  }
 }
 
 QJsonObject CoreConfig::saveUnitedEntry() const {
@@ -532,6 +505,11 @@ void CoreConfig::initDefaults() {
   aliases.append(makeAlias(QStringLiteral("f"),
                            QStringLiteral("Search for files by name in current folder"),
                            QStringLiteral("find --scope folder --object name")));
-  addAllNotebookAliases(aliases);
+  aliases.append(makeAlias(QStringLiteral("N"),
+                           QStringLiteral("Search for files by name in all notebooks"),
+                           QStringLiteral("find --scope all_notebook --object name")));
+  aliases.append(makeAlias(QStringLiteral("G"),
+                           QStringLiteral("Search for files by content in all notebooks"),
+                           QStringLiteral("find --scope all_notebook --object content")));
   m_unitedEntryAlias = aliases;
 }
