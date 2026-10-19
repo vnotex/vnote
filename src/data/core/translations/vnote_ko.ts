@@ -4778,12 +4778,12 @@
         <translation>안 함</translation>
     </message>
     <message>
-        <source>Unload inactive preview after</source>
-        <translation>비활성 미리보기 해제 대기 시간</translation>
+        <source>Unload inactive web view after</source>
+        <translation>비활성 웹 뷰 해제 대기 시간</translation>
     </message>
     <message>
-        <source>Release preview memory after the tab has been hidden for this many minutes; returning reloads the current Markdown without losing unsaved text or undo history</source>
-        <translation>탭이 지정한 시간 동안 숨겨져 있으면 미리보기 메모리를 해제합니다. 탭으로 돌아오면 저장하지 않은 텍스트나 실행 취소 기록을 잃지 않고 현재 Markdown을 다시 불러옵니다</translation>
+        <source>Release web view memory after the tab has been hidden for this many minutes; returning reloads the current Markdown without losing unsaved text or undo history</source>
+        <translation>탭이 지정한 시간 동안 숨겨져 있으면 웹 뷰 메모리를 해제합니다. 탭으로 돌아오면 저장하지 않은 텍스트나 실행 취소 기록을 잃지 않고 현재 Markdown을 다시 불러옵니다</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+212"/>

@@ -4778,12 +4778,12 @@
         <translation>从不</translation>
     </message>
     <message>
-        <source>Unload inactive preview after</source>
-        <translation>闲置预览卸载等待时间</translation>
+        <source>Unload inactive web view after</source>
+        <translation>闲置网页视图卸载等待时间</translation>
     </message>
     <message>
-        <source>Release preview memory after the tab has been hidden for this many minutes; returning reloads the current Markdown without losing unsaved text or undo history</source>
-        <translation>标签页隐藏指定分钟数后释放预览内存；返回时重新加载当前 Markdown，不会丢失未保存的文本或撤销历史</translation>
+        <source>Release web view memory after the tab has been hidden for this many minutes; returning reloads the current Markdown without losing unsaved text or undo history</source>
+        <translation>标签页隐藏指定分钟数后释放网页视图内存；返回时重新加载当前 Markdown，不会丢失未保存的文本或撤销历史</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+218"/>

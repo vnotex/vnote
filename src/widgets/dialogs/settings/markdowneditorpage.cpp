@@ -350,10 +350,10 @@ void MarkdownEditorPage::setupReadGroup() {
     m_inactiveReaderTimeoutMinutesSpinBox->setSuffix(tr(" min"));
     m_inactiveReaderTimeoutMinutesSpinBox->setSpecialValueText(tr("Never"));
     m_inactiveReaderTimeoutMinutesSpinBox->setToolTip(
-        tr("Release preview memory after the tab has been hidden for this many minutes; "
+        tr("Release web view memory after the tab has been hidden for this many minutes; "
            "returning reloads the current Markdown without losing unsaved text or undo history"));
 
-    const QString label(tr("Unload inactive preview after"));
+    const QString label(tr("Unload inactive web view after"));
     cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
     cardLayout->addWidget(SettingsPageHelper::createSettingRow(
         label, m_inactiveReaderTimeoutMinutesSpinBox->toolTip(),

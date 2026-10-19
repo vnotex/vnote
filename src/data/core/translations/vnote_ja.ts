@@ -4778,12 +4778,12 @@
         <translation>しない</translation>
     </message>
     <message>
-        <source>Unload inactive preview after</source>
-        <translation>非アクティブなプレビューを解放するまでの時間</translation>
+        <source>Unload inactive web view after</source>
+        <translation>非アクティブなウェブビューを解放するまでの時間</translation>
     </message>
     <message>
-        <source>Release preview memory after the tab has been hidden for this many minutes; returning reloads the current Markdown without losing unsaved text or undo history</source>
-        <translation>タブが非表示になってから指定した分数が経過するとプレビューのメモリを解放します。タブに戻ると、未保存のテキストや元に戻す履歴を失わずに現在の Markdown を再読み込みします</translation>
+        <source>Release web view memory after the tab has been hidden for this many minutes; returning reloads the current Markdown without losing unsaved text or undo history</source>
+        <translation>タブが非表示になってから指定した分数が経過するとウェブビューのメモリを解放します。タブに戻ると、未保存のテキストや元に戻す履歴を失わずに現在の Markdown を再読み込みします</translation>
     </message>
     <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+212"/>
