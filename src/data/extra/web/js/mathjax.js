@@ -269,7 +269,7 @@ class MathRenderer extends VxWorker {
         host.style.cssText = 'position:fixed;left:-100000px;top:0;pointer-events:none';
         host.setAttribute('aria-hidden', 'true');
         let wrapper;
-        let verticalAlign = null;
+        let baselineOffset = null;
         const display = p_root.closest('.katex-display');
         return Promise.resolve().then(() => {
             wrapper = this.createKatexWrapper();
@@ -296,13 +296,14 @@ class MathRenderer extends VxWorker {
                 const marker = document.createElement('span');
                 marker.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0;vertical-align:baseline';
                 wrapper.appendChild(marker);
-                verticalAlign = marker.getBoundingClientRect().bottom
-                    - wrapper.getBoundingClientRect().bottom;
+                baselineOffset = marker.getBoundingClientRect().bottom
+                    - wrapper.getBoundingClientRect().top;
                 marker.remove();
             }
             return this.rasterizeHtml(wrapper, p_pixelRatio);
         }).then((raster) => {
-            raster.verticalAlign = verticalAlign;
+            // Scroll extent and rounding can make the raster taller than the wrapper box.
+            raster.verticalAlign = baselineOffset === null ? null : baselineOffset - raster.height;
             return raster;
         }).finally(() => host.remove());
     }
@@ -501,24 +502,16 @@ class MathRenderer extends VxWorker {
         const roots = container ? Array.from(container.querySelectorAll('.tex-to-render .katex')) : [];
         const scale = Math.max(2, window.devicePixelRatio || 1);
         return Promise.all(roots.filter((root) => !root.parentElement.closest('.katex')).map((root) => {
-            let verticalAlign = null;
-            return this.waitForMathFonts(root).then(() => {
-                if (!root.closest('.katex-display')) {
-                    const marker = document.createElement('span');
-                    marker.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0;vertical-align:baseline';
-                    root.parentNode.insertBefore(marker, root.nextSibling);
-                    verticalAlign = marker.getBoundingClientRect().bottom - root.getBoundingClientRect().bottom;
-                    marker.parentNode.removeChild(marker);
-                }
-                return this.rasterizeHtml(root, scale);
-            }).then((raster) => {
+            // Inline span bounds can exclude fraction glyphs. Reuse the padded
+            // snapshot already used by clipboard math.
+            return this.rasterizeKatex(root, scale).then((raster) => {
                 const image = document.createElement('img');
                 image.src = raster.dataUrl;
                 image.setAttribute('data-math-png', 'true');
                 image.style.width = raster.width + 'px';
                 image.style.height = raster.height + 'px';
-                if (verticalAlign !== null) {
-                    image.style.verticalAlign = verticalAlign + 'px';
+                if (raster.verticalAlign !== null) {
+                    image.style.verticalAlign = raster.verticalAlign + 'px';
                 }
                 if (root.parentNode) {
                     root.parentNode.replaceChild(image, root);

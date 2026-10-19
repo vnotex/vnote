@@ -410,6 +410,8 @@ private slots:
   void testMathRenderer_initializationFanout();
   void testMathRenderer_failedInitializationReleasesPass();
   void testMathRenderer_ignoresUnrelatedFontReadiness();
+  void testMathRenderer_exportImages_data();
+  void testMathRenderer_exportImages();
   void testInstall_loadBeforeChannel();
   void testInstall_channelBeforeLoad();
   void testInstall_onlyOnce();
@@ -2109,6 +2111,148 @@ return window.__cmarkMathTableResult;
            QStringLiteral("<code>$code$</code>"));
   if (sanitize) {
     QVERIFY(!values.value(QStringLiteral("mergedOnclick")).toBool());
+  }
+}
+
+void TestMarkdownViewerJs::testMathRenderer_exportImages_data() {
+  QTest::addColumn<qreal>("pixelRatio");
+  QTest::newRow("1x") << qreal(1);
+  QTest::newRow("3x") << qreal(3);
+}
+
+void TestMarkdownViewerJs::testMathRenderer_exportImages() {
+  QFETCH(qreal, pixelRatio);
+  const QJsonObject fixtures{
+      {QStringLiteral("pixelRatio"), pixelRatio},
+      {QStringLiteral("js"), QUrl::fromLocalFile(webDir() + QStringLiteral("/js")).toString()}};
+  QJsonObject result;
+  runCrossCopyScript(
+      QStringLiteral("const fixtures = %1;\n")
+              .arg(QString::fromUtf8(QJsonDocument(fixtures).toJson(QJsonDocument::Compact))) +
+          QStringLiteral(R"JS(
+window.vxOptions = {mathRenderer:'katex'};
+Object.defineProperty(window, 'devicePixelRatio', {value:fixtures.pixelRatio});
+document.body.innerHTML = '<div id="content" style="width:640px;font:16px/1.5 Arial;color:black">'
+  + '<p id="fraction">Before <eqn class="tex-to-render"></eqn> After</p>'
+  + '<section id="display"><eqn class="tex-to-render"></eqn></section>'
+  + '<p id="slash">Before <eqn class="tex-to-render"></eqn> After</p>'
+  + '<p id="nested">Before <eqn class="tex-to-render"></eqn> After</p></div>';
+window.vxcore = {
+  contentContainer:document.getElementById('content'),
+  registerWorker(worker) { window.mathWorker = worker; worker.vxcore = this; }
+};
+for (const file of ['vxworker.js', 'mathjax.js']) {
+  await new Promise(resolve => Utils.loadScript(fixtures.js + '/' + file, resolve));
+}
+await mathWorker.initialize();
+const formulas = [
+  {id:'fraction', text:String.raw`\frac{1}{2}`, display:false},
+  {id:'display', text:String.raw`\frac{5}{5}`, display:true},
+  {id:'slash', text:String.raw`1/2`, display:false},
+  {id:'nested', text:String.raw`\frac{1}{\frac{2}{3}}`, display:false}
+];
+for (const formula of formulas) {
+  mathWorker.renderKatex(document.querySelector('#' + formula.id + ' eqn'), formula, {});
+}
+await mathWorker.waitForMathFonts(vxcore.contentContainer);
+// A painted bar and an independent text baseline detect incorrect image offsets.
+const marker = document.createElement('span');
+marker.style.cssText = 'display:inline-block;width:0;height:0;padding:0;margin:0;vertical-align:baseline';
+document.querySelector('#fraction eqn').after(marker);
+const bar = document.querySelector('#fraction .frac-line');
+bar.style.borderColor = 'rgb(200,40,60)';
+const barRect = bar.getBoundingClientRect();
+const originalBarOffset = (barRect.top + barRect.bottom) / 2 - marker.getBoundingClientRect().bottom;
+await mathWorker.prepareForExport({rasterizeMath:false});
+const liveMath = formulas.map(({id}) => {
+  const host = document.getElementById(id);
+  return {katex:host.querySelectorAll('.katex').length,
+    mathml:host.querySelectorAll('.katex-mathml math').length,
+    images:host.querySelectorAll('img[data-math-png]').length};
+});
+await mathWorker.prepareForExport({rasterizeMath:true});
+const images = [];
+for (const {id} of formulas) {
+  const host = document.getElementById(id);
+  const image = host.querySelector('img[data-math-png]');
+  if (!image) { throw new Error('Missing exported KaTeX image: ' + id); }
+  // decode() can wait for a paint frame forever on a hidden WebEngine page.
+  await new Promise((resolve, reject) => {
+    SvgToImage.loadImage(image.src, {}, error => error ? reject(error) : resolve());
+  });
+}
+// Measure only after every replacement has decoded and the final layout has settled.
+for (const {id} of formulas) {
+  const host = document.getElementById(id);
+  const image = host.querySelector('img[data-math-png]');
+  const rect = image.getBoundingClientRect();
+  const hostRect = host.getBoundingClientRect();
+  images.push({id, src:image.src, count:host.querySelectorAll('img[data-math-png]').length,
+    fragments:host.querySelectorAll('.katex, .katex-mathml, math').length,
+    top:rect.top, height:rect.height, naturalHeight:image.naturalHeight,
+    centerOffset:(rect.left + rect.right - hostRect.left - hostRect.right) / 2});
+}
+return {liveMath, images, originalBarOffset, baseline:marker.getBoundingClientRect().bottom};
+)JS"),
+      QUrl::fromLocalFile(webDir() + QLatin1Char('/')), result);
+  const auto liveMath = result.value(QStringLiteral("liveMath")).toArray();
+  QCOMPARE(liveMath.size(), 4);
+  for (const auto &value : liveMath) {
+    const auto entry = value.toObject();
+    QCOMPARE(entry.value(QStringLiteral("katex")).toInt(), 1);
+    QCOMPARE(entry.value(QStringLiteral("mathml")).toInt(), 1);
+    QCOMPARE(entry.value(QStringLiteral("images")).toInt(), 0);
+  }
+  const auto images = result.value(QStringLiteral("images")).toArray();
+  QCOMPARE(images.size(), 4);
+  for (const auto &value : images) {
+    const auto entry = value.toObject();
+    const auto id = entry.value(QStringLiteral("id")).toString();
+    QCOMPARE(entry.value(QStringLiteral("count")).toInt(), 1);
+    QCOMPARE(entry.value(QStringLiteral("fragments")).toInt(), 0);
+    const auto data = entry.value(QStringLiteral("src")).toString();
+    QVERIFY(data.startsWith(QStringLiteral("data:image/png;base64,")));
+    const auto png =
+        QByteArray::fromBase64(data.mid(data.indexOf(QLatin1Char(',')) + 1).toLatin1());
+    const auto raster = QImage::fromData(png, "PNG");
+    QVERIFY2(!raster.isNull(), qPrintable(id));
+    QRect inkBounds;
+    QRect redBounds;
+    for (int y = 0; y < raster.height(); ++y) {
+      for (int x = 0; x < raster.width(); ++x) {
+        const auto color = raster.pixelColor(x, y);
+        if (color.alpha() > 32) {
+          inkBounds |= QRect(x, y, 1, 1);
+          if (color.red() > 150 && color.green() < 100 && color.blue() < 100) {
+            redBounds |= QRect(x, y, 1, 1);
+          }
+        }
+      }
+    }
+    QVERIFY2(inkBounds.isValid(), qPrintable(id));
+    QVERIFY2(inkBounds.left() > 0 && inkBounds.top() > 0 &&
+                 inkBounds.right() < raster.width() - 1 && inkBounds.bottom() < raster.height() - 1,
+             qPrintable(QStringLiteral("%1: ink [%2,%3..%4,%5] touches raster %6x%7")
+                            .arg(id)
+                            .arg(inkBounds.left())
+                            .arg(inkBounds.top())
+                            .arg(inkBounds.right())
+                            .arg(inkBounds.bottom())
+                            .arg(raster.width())
+                            .arg(raster.height())));
+    if (id == QStringLiteral("fraction")) {
+      QVERIFY(redBounds.isValid());
+      QCOMPARE(entry.value(QStringLiteral("naturalHeight")).toInt(), raster.height());
+      const auto barOffset = entry.value(QStringLiteral("top")).toDouble() +
+                             (redBounds.top() + redBounds.bottom() + 1) / 2.0 *
+                                 entry.value(QStringLiteral("height")).toDouble() /
+                                 raster.height() -
+                             result.value(QStringLiteral("baseline")).toDouble();
+      QVERIFY(qAbs(barOffset - result.value(QStringLiteral("originalBarOffset")).toDouble()) <=
+              1.5);
+    } else if (id == QStringLiteral("display")) {
+      QVERIFY(qAbs(entry.value(QStringLiteral("centerOffset")).toDouble()) <= 1.5);
+    }
   }
 }
 

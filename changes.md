@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Fix clipped KaTeX fractions in PDF/custom exports and align inline math images correctly in exports and cross-copy (#2776)
 * Add a bundled `title.typst` template that uses the filename without its extension as the title; select it by default for unconfigured template mappings while preserving existing choices
 * Show MARKDOWN instead of RICHMARKDOWN in the Markdown editor status widget
 * Give document-tab close icons more space from the tab edge while preserving native close behavior (#2775)
