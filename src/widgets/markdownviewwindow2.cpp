@@ -108,6 +108,11 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
     : ViewWindow2(p_services, p_buffer, p_parent) {
   // Start at Invalid so the first setMode() triggers full initialization.
   m_mode = ViewWindowMode::Invalid;
+  m_inactiveReaderTimer = new QTimer(this);
+  m_inactiveReaderTimer->setObjectName(QStringLiteral("inactiveReaderTimer"));
+  m_inactiveReaderTimer->setSingleShot(true);
+  connect(m_inactiveReaderTimer, &QTimer::timeout, this,
+          &MarkdownViewWindow2::unloadInactiveReader);
   m_editorController = new MarkdownEditorController(p_services, this);
   m_windowController = new MarkdownViewWindowController(p_services, this);
   m_imageHostController = p_services.get<ImageHostController>();
@@ -146,11 +151,14 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
   setupShortcuts();
 
   snapshotInitialImages();
+  QTimer::singleShot(0, this, [this]() { updateInactiveReaderTimer(); });
 }
 
 // ============ Destructor ============
 
 MarkdownViewWindow2::~MarkdownViewWindow2() {
+  m_readerLifecycleClosing = true;
+  m_inactiveReaderTimer->stop();
   cancelEditorImageView();
   setPresentationMode(false);
   if (m_viewer && m_debugViewer) {
@@ -181,6 +189,11 @@ void MarkdownViewWindow2::releaseProtectedView() {
   if (!getBuffer().isEncrypted()) {
     return;
   }
+  m_readerLifecycleClosing = true;
+  m_readerResourcesSuspended = true;
+  m_inactiveReaderTimer->stop();
+  m_inactiveReaderFileOpenSettings.reset();
+  m_restoreReaderStatePending = false;
   m_webJobs->revoke();
   m_webJobHost->releaseProtectedSession();
   ++m_highlightStyleGeneration;
@@ -210,8 +223,9 @@ void MarkdownViewWindow2::releaseProtectedView() {
   delete m_editor;
   m_editor = nullptr;
   m_outlineProvider->setOutline(QSharedPointer<Outline>());
-  delete m_viewer;
+  auto *oldViewer = m_viewer;
   m_viewer = nullptr;
+  delete oldViewer;
   if (m_protectedView) {
     delete m_protectedView->page.profile;
     m_protectedView.reset();
@@ -648,6 +662,9 @@ void MarkdownViewWindow2::printDocument(const QSharedPointer<QPrinter> &p_printe
       !getBuffer().isValid()) {
     return;
   }
+  if (m_readerResourcesSuspended && (!isVisible() || !resumeInactiveReader())) {
+    return;
+  }
   setPresentationMode(false);
   cancelEditorImageView(true);
   m_printer = p_printer;
@@ -685,6 +702,10 @@ bool MarkdownViewWindow2::aboutToClose(bool p_force) {
     return false;
   }
 
+  m_readerLifecycleClosing = true;
+  m_inactiveReaderTimer->stop();
+  m_inactiveReaderFileOpenSettings.reset();
+  m_restoreReaderStatePending = false;
   m_webJobs->revoke();
   m_webJobHost->releaseProtectedSession();
   if (getBuffer().isEncrypted()) {
@@ -839,6 +860,9 @@ void MarkdownViewWindow2::setupTextEditor() {
 
 bool MarkdownViewWindow2::setupViewer() {
   Q_ASSERT(!m_viewer);
+  if (m_readerResourcesSuspended || m_readerLifecycleClosing) {
+    return false;
+  }
 
   auto *configMgr = getServices().get<ConfigMgr2>();
   const auto &editorConfig = configMgr->getEditorConfig();
@@ -899,6 +923,7 @@ bool MarkdownViewWindow2::setupViewer() {
 
   m_viewer = new MarkdownViewer(adapterObj, this, getServices(), bgColor, zoomFactor, this,
                                 m_protectedView ? m_protectedView->page.profile : nullptr);
+  const QPointer<MarkdownViewer> viewer = m_viewer;
   m_viewer->setController(m_windowController);
   updateSectionNumberOptions();
 
@@ -959,7 +984,10 @@ bool MarkdownViewWindow2::setupViewer() {
       setPresentationMode(false);
     }
   });
-  connect(m_viewer->page(), &QWebEnginePage::loadStarted, this, [this]() {
+  connect(m_viewer->page(), &QWebEnginePage::loadStarted, this, [this, viewer]() {
+    if (m_readerResourcesSuspended || !m_viewer || !viewer || m_viewer != viewer) {
+      return;
+    }
     const bool wasReady = m_viewerReady;
     m_viewerReady = false;
     // A requested Edit -> Read transition may still be loading its initial page.
@@ -967,7 +995,10 @@ bool MarkdownViewWindow2::setupViewer() {
       setPresentationMode(false);
     }
   });
-  connect(m_viewer->page(), &QWebEnginePage::renderProcessTerminated, this, [this]() {
+  connect(m_viewer->page(), &QWebEnginePage::renderProcessTerminated, this, [this, viewer]() {
+    if (m_readerResourcesSuspended || !m_viewer || !viewer || m_viewer != viewer) {
+      return;
+    }
     m_viewerReady = false;
     m_viewerPageInitialized = false;
     setPresentationMode(false);
@@ -982,7 +1013,10 @@ bool MarkdownViewWindow2::setupViewer() {
       showMessage(tr("Unable to prepare note for printing"));
     }
   });
-  connect(m_viewer->page(), &QWebEnginePage::loadFinished, this, [this](bool p_ok) {
+  connect(m_viewer->page(), &QWebEnginePage::loadFinished, this, [this, viewer](bool p_ok) {
+    if (m_readerResourcesSuspended || !m_viewer || !viewer || m_viewer != viewer) {
+      return;
+    }
     if (!p_ok) {
       m_viewerReady = false;
       m_viewerPageInitialized = false;
@@ -1005,7 +1039,10 @@ bool MarkdownViewWindow2::setupViewer() {
   });
 
   // Viewer ready signal.
-  connect(adapterObj, &MarkdownViewerAdapter::ready, this, [this]() {
+  connect(adapterObj, &MarkdownViewerAdapter::ready, this, [this, viewer]() {
+    if (m_readerResourcesSuspended || !m_viewer || !viewer || m_viewer != viewer) {
+      return;
+    }
     m_viewerReady = true;
     applyReadableWidth();
     if (m_mode == ViewWindowMode::Edit && !m_editorImageRequest) {
@@ -1017,17 +1054,40 @@ bool MarkdownViewWindow2::setupViewer() {
       m_splitter->setSizes(m_protectedView->splitterSizesOnReady);
       m_protectedView->splitterSizesOnReady.clear();
     }
+    if (m_restoreReaderStatePending && !m_inactiveReaderState.m_splitterSizes.isEmpty()) {
+      m_splitter->setSizes(m_inactiveReaderState.m_splitterSizes);
+    }
     requestPresentationWhenReady();
   });
 
   // Deferred anchor scroll: drain pending anchor after rendering completes.
-  connect(adapterObj, &MarkdownViewerAdapter::workFinished, this, [this]() {
+  connect(adapterObj, &MarkdownViewerAdapter::workFinished, this, [this, viewer]() {
+    if (m_readerResourcesSuspended || !m_viewer || !viewer || m_viewer != viewer) {
+      return;
+    }
     if (m_printPending) {
       m_printPending = false;
       if (m_printer && isEnabled() && isVisible()) {
         m_viewer->print(m_printer.get());
       } else {
         m_printer.reset();
+      }
+    }
+    if (m_restoreReaderStatePending) {
+      m_restoreReaderStatePending = false;
+      auto settings = std::move(m_inactiveReaderFileOpenSettings);
+      m_inactiveReaderFileOpenSettings.reset();
+      const bool explicitPosition = settings &&
+          (!settings->m_anchor.isEmpty() || settings->m_lineNumber >= 0 ||
+           (settings->m_searchHighlight.m_isValid &&
+            settings->m_searchHighlight.m_currentMatchLine >= 0));
+      if (settings) {
+        applyFileOpenSettings(*settings);
+      }
+      if (!explicitPosition && m_pendingAnchor.isEmpty() &&
+          m_inactiveReaderState.m_topLineNumber >= 0) {
+        adapter()->scrollToPosition(
+            MarkdownViewerAdapter::Position(m_inactiveReaderState.m_topLineNumber, QString()));
       }
     }
     if (!m_pendingAnchor.isEmpty() && isReadMode() && adapter()) {
@@ -1044,14 +1104,20 @@ bool MarkdownViewWindow2::setupViewer() {
   connect(m_viewer, &MarkdownViewer::printFinished, this, &MarkdownViewWindow2::onPrintFinished);
 
   // Outline pipeline: viewer headings -> OutlineProvider.
-  connect(adapterObj, &MarkdownViewerAdapter::headingsChanged, this, [this]() {
+  connect(adapterObj, &MarkdownViewerAdapter::headingsChanged, this, [this, viewer]() {
+    if (m_readerResourcesSuspended || !m_viewer || !viewer || m_viewer != viewer) {
+      return;
+    }
     if (isReadMode()) {
       auto outline = headingsToOutline(adapter()->getHeadings());
       outline->m_hasSectionNumber = adapter()->getHeadingsHaveSectionNumber();
       m_outlineProvider->setOutline(outline);
     }
   });
-  connect(adapterObj, &MarkdownViewerAdapter::currentHeadingChanged, this, [this]() {
+  connect(adapterObj, &MarkdownViewerAdapter::currentHeadingChanged, this, [this, viewer]() {
+    if (m_readerResourcesSuspended || !m_viewer || !viewer || m_viewer != viewer) {
+      return;
+    }
     if (isReadMode()) {
       m_outlineProvider->setCurrentHeadingIndex(adapter()->getCurrentHeadingIndex());
     }
@@ -1085,7 +1151,116 @@ void MarkdownViewWindow2::updateJobRenderContext() {
   }
 }
 
-void MarkdownViewWindow2::invalidateWebJobs() {
+void MarkdownViewWindow2::updateInactiveReaderTimer(bool p_restart) {
+  const auto timeout = getServices().get<ConfigMgr2>()->getEditorConfig()
+                           .getMarkdownEditorConfig().getInactiveReaderTimeoutMinutes();
+  p_restart |= timeout != m_inactiveReaderTimeoutMinutes;
+  m_inactiveReaderTimeoutMinutes = timeout;
+  if (isVisible() || !isEnabled() || m_readerLifecycleClosing || m_readerResourcesSuspended ||
+      !getBuffer().isValid() || timeout <= 0) {
+    m_inactiveReaderTimer->stop();
+    return;
+  }
+  if (p_restart || !m_inactiveReaderTimer->isActive()) {
+    m_inactiveReaderTimer->start(timeout * 60 * 1000);
+  }
+}
+
+void MarkdownViewWindow2::unloadInactiveReader() {
+  if (isVisible() || !isEnabled() || m_readerLifecycleClosing || m_readerResourcesSuspended ||
+      !getBuffer().isValid() || m_inactiveReaderTimeoutMinutes <= 0) {
+    return;
+  }
+  if (m_printPending || m_printer || m_switchingMode) {
+    updateInactiveReaderTimer(true);
+    return;
+  }
+
+  // Block reentrant refresh before retiring any endpoint or native preview cache.
+  m_readerResourcesSuspended = true;
+  m_inactiveReaderTimer->stop();
+  if (m_syncPreviewTimer) {
+    m_syncPreviewTimer->stop();
+  }
+  cancelEditorImageView();
+  setPresentationMode(false);
+  setDebugVisible(false);
+  delete m_debugViewer;
+  m_debugViewer = nullptr;
+  if (m_viewer && !m_restoreReaderStatePending) {
+    m_inactiveReaderState.m_topLineNumber = adapter()->getTopLineNumber();
+    m_inactiveReaderState.m_zoomFactor = m_viewer->zoomFactor();
+    m_inactiveReaderState.m_splitterSizes = m_splitter->sizes();
+  }
+  m_viewerReady = false;
+  m_viewerPageInitialized = false;
+  m_viewerBufferRevision = -1;
+  ++m_navigationGeneration;
+  if (m_viewer) {
+    m_viewer->invalidateNavigationTargets();
+  }
+  invalidateWebJobs(true);
+  if (m_protectedView) {
+    getServices().get<WebEngineProfileService>()->revokeProtectedProfile(
+        m_protectedView->page.profile);
+  }
+  auto *oldViewer = m_viewer;
+  m_viewer = nullptr;
+  delete oldViewer;
+  if (m_protectedView) {
+    delete m_protectedView->page.profile;
+    m_protectedView.reset();
+  }
+  m_deferredPreviewUpdate = false;
+}
+
+bool MarkdownViewWindow2::resumeInactiveReader() {
+  if (!m_readerResourcesSuspended) {
+    return true;
+  }
+  if (m_readerLifecycleClosing || !isEnabled() || !isVisible() || !getBuffer().isValid() ||
+      (getBuffer().isEncrypted() && !getBuffer().acquireProtectedLease())) {
+    return false;
+  }
+  m_readerResourcesSuspended = false;
+  m_webJobs->setSuspended(false);
+  const bool needsReader = isReadMode() ||
+                          m_editViewMode == MarkdownEditorConfig::EditViewMode::EditPreview;
+  if (needsReader) {
+    m_restoreReaderStatePending = true;
+    const auto pendingAnchor = m_pendingAnchor;
+    if (isReadMode()) {
+      if (setupViewer()) {
+        m_viewer->setZoomFactor(m_inactiveReaderState.m_zoomFactor);
+        syncViewerFromBuffer(false);
+        m_viewer->show();
+      }
+    } else {
+      setEditViewMode(m_editViewMode);
+      if (m_viewer) {
+        m_viewer->setZoomFactor(m_inactiveReaderState.m_zoomFactor);
+      }
+    }
+    m_pendingAnchor = pendingAnchor;
+    if (!m_viewer) {
+      m_readerResourcesSuspended = true;
+      invalidateWebJobs(true);
+      return false;
+    }
+  } else {
+    // Native editing resumes without a document reader or a synthetic ready event.
+    m_restoreReaderStatePending = false;
+    if (m_inactiveReaderFileOpenSettings) {
+      const auto settings = std::move(*m_inactiveReaderFileOpenSettings);
+      m_inactiveReaderFileOpenSettings.reset();
+      applyFileOpenSettings(settings);
+    }
+  }
+  refreshEditorWebJobs();
+  return true;
+}
+
+void MarkdownViewWindow2::invalidateWebJobs(bool p_suspend) {
   if (m_printPending) {
     m_printPending = false;
     m_printer.reset();
@@ -1094,7 +1269,11 @@ void MarkdownViewWindow2::invalidateWebJobs() {
   m_codeBlockStylesInitialized = false;
   m_codeBlockStylesPending = false;
   m_webJobs->setPreferredSession(nullptr);
-  m_webJobs->invalidate();
+  if (p_suspend) {
+    m_webJobs->setSuspended(true);
+  } else {
+    m_webJobs->invalidate();
+  }
   m_webJobHost->invalidate();
   if (m_previewHelper) {
     m_previewHelper->invalidatePreviews();
@@ -1105,7 +1284,7 @@ void MarkdownViewWindow2::invalidateWebJobs() {
 }
 
 void MarkdownViewWindow2::refreshEditorWebJobs() {
-  if (m_editor && isEnabled()) {
+  if (m_editor && isEnabled() && !m_readerResourcesSuspended) {
     updateJobRenderContext();
     ensureExternalHighlightStyles();
     m_editor->refreshPreviewHighlight();
@@ -1115,6 +1294,9 @@ void MarkdownViewWindow2::refreshEditorWebJobs() {
 bool MarkdownViewWindow2::reloadProtectedViewer() {
   cancelEditorImageView();
   Q_ASSERT(m_viewer && m_protectedView);
+  if (m_readerResourcesSuspended) {
+    return false;
+  }
   const auto position = capturePositionState();
   const auto sizes = m_splitter->sizes();
   auto *oldViewer = m_viewer;
@@ -1287,6 +1469,9 @@ QSharedPointer<Outline> MarkdownViewWindow2::headingsToOutline(const QVector<T> 
 void MarkdownViewWindow2::requestEditorImageView(const QString &p_url) {
   cancelEditorImageView();
   if (m_mode != ViewWindowMode::Edit || !m_editor || !isEnabled() || !isVisible()) {
+    return;
+  }
+  if (!resumeInactiveReader()) {
     return;
   }
   if (!m_viewer && !setupViewer()) {
@@ -1637,6 +1822,9 @@ static void syncEditorPositionFromReadMode(MarkdownEditor *p_editor, int p_lineN
 void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffer) {
   cancelEditorImageView();
   if (p_mode == m_mode) {
+    if (isVisible() && m_readerResourcesSuspended) {
+      resumeInactiveReader();
+    }
     return;
   }
 
@@ -1705,7 +1893,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
 
   // An unavailable preview must not prevent editing the document.
   bool previewUnavailable = false;
-  if (transition.needSetupViewer && !setupViewer()) {
+  if (!m_readerResourcesSuspended && transition.needSetupViewer && !setupViewer()) {
     if (m_mode == ViewWindowMode::Read) {
       m_mode = m_previousMode;
       m_propagateEditorToBuffer = m_mode == ViewWindowMode::Edit && m_editor;
@@ -1744,12 +1932,16 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   // Show/hide widgets and set focus.
   switch (m_mode) {
   case ViewWindowMode::Read:
-    m_viewer->show();
-    m_viewer->setFocus();
+    if (m_viewer) {
+      m_viewer->show();
+      m_viewer->setFocus();
+    }
     if (m_editor) {
       m_editor->hide();
       // Hide splitter handle to avoid visible border in readable-width mode.
-      m_splitter->handle(1)->setVisible(false);
+      if (m_splitter->count() > 1) {
+        m_splitter->handle(1)->setVisible(false);
+      }
     }
     if (m_legacyImageBar) {
       m_legacyImageBar->hide();
@@ -1818,6 +2010,9 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
   }
 
   m_switchingMode = false;
+  if (isVisible() && m_readerResourcesSuspended) {
+    resumeInactiveReader();
+  }
   if (previewUnavailable) {
     showMessage(tr("Unable to open preview; the editor remains available"));
   }
@@ -1946,7 +2141,8 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
   const bool matchesBuffer = content == state.content;
   const int revision = matchesBuffer ? state.revision : 0;
   adapter()->setText(revision, content,
-                     p_syncPositionFromEditMode && m_editor ? m_editor->getTopLine() : -1);
+                     !m_restoreReaderStatePending && p_syncPositionFromEditMode && m_editor
+                         ? m_editor->getTopLine() : -1);
   m_viewerBufferRevision = matchesBuffer ? state.revision : -1;
 }
 
@@ -1963,11 +2159,12 @@ void MarkdownViewWindow2::syncEditorContentsToPreview() {
   // NOTE: Do NOT update m_viewerBufferRevision here.
   // This is visual preview sync only, not a buffer sync event.
   m_deferredPreviewUpdate = false;
-  adapter()->setText(m_editor->getText(), m_editor->getTopLine());
+  adapter()->setText(m_editor->getText(),
+                     m_restoreReaderStatePending ? -1 : m_editor->getTopLine());
 }
 
 void MarkdownViewWindow2::syncEditorPositionToPreview() {
-  if (!m_viewerReady || isReadMode() ||
+  if (m_restoreReaderStatePending || !m_viewerReady || isReadMode() ||
       m_editViewMode == MarkdownEditorConfig::EditViewMode::EditOnly) {
     return;
   }
@@ -2223,6 +2420,7 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
   updateSectionNumberOptions();
   // Always update layout mode (WidgetConfig changes don't affect editor config revision).
   ViewWindow2::handleEditorConfigChange();
+  updateInactiveReaderTimer();
 
   if (!m_editorController->checkAndUpdateConfigRevision()) {
     updateEditSectionNumberOptions(true);
@@ -2282,7 +2480,11 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
     updateWebViewerConfig();
   }
   if (m_mode == ViewWindowMode::Edit && m_editor) {
-    setEditViewMode(mdConfig.getEditViewMode());
+    if (m_readerResourcesSuspended) {
+      m_editViewMode = mdConfig.getEditViewMode();
+    } else {
+      setEditViewMode(mdConfig.getEditViewMode());
+    }
   }
   refreshEditorWebJobs();
   updateEditSectionNumberOptions(true);
@@ -2458,6 +2660,13 @@ void MarkdownViewWindow2::updateWebViewerConfig() {
 
 void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_mode) {
   Q_ASSERT(m_mode == ViewWindowMode::Edit);
+  if (m_readerResourcesSuspended) {
+    m_editViewMode = p_mode;
+    if (isVisible()) {
+      resumeInactiveReader();
+    }
+    return;
+  }
   if (m_editorImageRequest && p_mode == m_editViewMode) {
     return;
   }
@@ -2490,19 +2699,19 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
     if (m_syncPreviewTimer) {
       m_syncPreviewTimer->stop();
     }
-    if (modeChanged) {
-      if (m_syncPreviewTimer) {
-        disconnect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, m_syncPreviewTimer,
-                   QOverload<>::of(&QTimer::start));
-      }
-      disconnect(m_editor, &MarkdownEditor::topLineChanged, this,
-                 &MarkdownViewWindow2::syncEditorPositionToPreview);
+    if (m_syncPreviewTimer) {
+      disconnect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, m_syncPreviewTimer,
+                 QOverload<>::of(&QTimer::start));
     }
+    disconnect(m_editor, &MarkdownEditor::topLineChanged, this,
+               &MarkdownViewWindow2::syncEditorPositionToPreview);
     break;
 
   case MarkdownEditorConfig::EditViewMode::EditPreview:
     if (!m_viewer && !setupViewer()) {
-      m_editViewMode = MarkdownEditorConfig::EditViewMode::EditOnly;
+      if (!m_restoreReaderStatePending) {
+        m_editViewMode = MarkdownEditorConfig::EditViewMode::EditOnly;
+      }
       return;
     }
     if (!m_viewerPageInitialized) {
@@ -2516,19 +2725,17 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
     if (modeChanged) {
       WidgetUtils::distributeWidgetsOfSplitter(m_splitter);
     }
-    if (modeChanged) {
-      if (!m_syncPreviewTimer) {
-        m_syncPreviewTimer = new QTimer(this);
-        m_syncPreviewTimer->setSingleShot(true);
-        m_syncPreviewTimer->setInterval(MarkdownViewWindowController::previewSyncIntervalMs());
-        connect(m_syncPreviewTimer, &QTimer::timeout, this,
-                &MarkdownViewWindow2::syncEditorContentsToPreview);
-      }
-      connect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, m_syncPreviewTimer,
-              QOverload<>::of(&QTimer::start), Qt::UniqueConnection);
-      connect(m_editor, &MarkdownEditor::topLineChanged, this,
-              &MarkdownViewWindow2::syncEditorPositionToPreview, Qt::UniqueConnection);
+    if (!m_syncPreviewTimer) {
+      m_syncPreviewTimer = new QTimer(this);
+      m_syncPreviewTimer->setSingleShot(true);
+      m_syncPreviewTimer->setInterval(MarkdownViewWindowController::previewSyncIntervalMs());
+      connect(m_syncPreviewTimer, &QTimer::timeout, this,
+              &MarkdownViewWindow2::syncEditorContentsToPreview);
     }
+    connect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, m_syncPreviewTimer,
+            QOverload<>::of(&QTimer::start), Qt::UniqueConnection);
+    connect(m_editor, &MarkdownEditor::topLineChanged, this,
+            &MarkdownViewWindow2::syncEditorPositionToPreview, Qt::UniqueConnection);
     syncEditorContentsToPreview();
     break;
 
@@ -2543,7 +2750,14 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
 void MarkdownViewWindow2::handleFindTextChanged(const QString &p_text, FindOptions p_options) {
   if (isReadMode()) {
     if (p_options & FindOption::IncrementalSearch) {
-      adapter()->findText(QStringList(p_text), p_options);
+      if (isVisible() && m_readerResourcesSuspended) {
+        resumeInactiveReader();
+      }
+      if (auto *a = adapter()) {
+        a->findText(QStringList(p_text), p_options);
+      } else {
+        showMessage(tr("Unable to load preview"));
+      }
     }
   } else {
     TextViewWindowHelper::handleFindTextChanged(this, p_text, p_options);
@@ -2552,7 +2766,14 @@ void MarkdownViewWindow2::handleFindTextChanged(const QString &p_text, FindOptio
 
 void MarkdownViewWindow2::handleFindNext(const QStringList &p_texts, FindOptions p_options) {
   if (isReadMode()) {
-    adapter()->findText(p_texts, p_options);
+    if (isVisible() && m_readerResourcesSuspended) {
+      resumeInactiveReader();
+    }
+    if (auto *a = adapter()) {
+      a->findText(p_texts, p_options);
+    } else {
+      showMessage(tr("Unable to load preview"));
+    }
   } else {
     TextViewWindowHelper::handleFindNext(this, p_texts, p_options);
   }
@@ -2578,7 +2799,9 @@ void MarkdownViewWindow2::handleReplaceAll(const QString &p_text, FindOptions p_
 
 void MarkdownViewWindow2::handleFindAndReplaceWidgetClosed() {
   if (isReadMode()) {
-    adapter()->findText(QStringList(), FindOption::FindNone);
+    if (auto *a = adapter()) {
+      a->findText(QStringList(), FindOption::FindNone);
+    }
   } else {
     TextViewWindowHelper::clearSearchHighlights(this);
   }
@@ -2626,7 +2849,10 @@ void MarkdownViewWindow2::fetchWordCountInfo(
 
   switch (m_mode) {
   case ViewWindowMode::Read: {
-    Q_ASSERT(m_viewer);
+    if (!m_viewer) {
+      showMessage(tr("Unable to load preview"));
+      return;
+    }
     m_viewer->saveContent([p_callback](const QString &p_content) {
       auto info = WordCountPanel::calculateWordCount(p_content);
       p_callback(info);
@@ -2666,7 +2892,9 @@ void MarkdownViewWindow2::applySnippet() {
 
 void MarkdownViewWindow2::clearHighlights() {
   if (isReadMode()) {
-    adapter()->findText(QStringList(), FindOption::FindNone);
+    if (auto *a = adapter()) {
+      a->findText(QStringList(), FindOption::FindNone);
+    }
   } else {
     TextViewWindowHelper::clearSearchHighlights(this);
   }
@@ -2676,6 +2904,19 @@ void MarkdownViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settin
   if (p_settings.m_lineNumber < 0 && p_settings.m_anchor.isEmpty() &&
       p_settings.m_cursorOffset < 0 && !p_settings.m_searchHighlight.m_isValid) {
     return;
+  }
+
+  if ((isReadMode() && !m_viewer) || m_restoreReaderStatePending) {
+    m_inactiveReaderFileOpenSettings = p_settings;
+    if (isVisible() && m_readerResourcesSuspended) {
+      resumeInactiveReader();
+    }
+    return;
+  }
+  if (!p_settings.m_anchor.isEmpty() || p_settings.m_lineNumber >= 0 ||
+      (p_settings.m_searchHighlight.m_isValid &&
+       p_settings.m_searchHighlight.m_currentMatchLine >= 0)) {
+    m_pendingAnchor.clear();
   }
 
   // Place the caret at an explicit document position (e.g. a template "@@" mark).
@@ -2820,6 +3061,28 @@ void MarkdownViewWindow2::handleTypeAction(int p_action) {
 // ============ Helpers ============
 
 bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (p_obj == this) {
+    switch (p_event->type()) {
+    case QEvent::Show:
+      m_inactiveReaderTimer->stop();
+      resumeInactiveReader();
+      break;
+    case QEvent::Hide:
+      updateInactiveReaderTimer(true);
+      break;
+    case QEvent::EnabledChange:
+      if (isEnabled() && isVisible()) {
+        resumeInactiveReader();
+      }
+      updateInactiveReaderTimer();
+      break;
+    case QEvent::Close:
+      m_inactiveReaderTimer->stop();
+      break;
+    default:
+      break;
+    }
+  }
   if (p_obj == this && (p_event->type() == QEvent::Show ||
                         (p_event->type() == QEvent::EnabledChange && isEnabled()))) {
     resumeDeferredPreviewUpdate();
@@ -2896,7 +3159,8 @@ void MarkdownViewWindow2::handleExternalMathHighlightRequest(int p_idx, quint64 
 }
 
 void MarkdownViewWindow2::ensureExternalHighlightStyles() {
-  if (m_codeBlockStylesInitialized || m_codeBlockStylesPending || !isEnabled()) {
+  if (m_readerResourcesSuspended || m_codeBlockStylesInitialized || m_codeBlockStylesPending ||
+      !isEnabled()) {
     return;
   }
   if (!m_editor) {
@@ -2966,8 +3230,8 @@ int MarkdownViewWindow2::getEditLineNumber() const {
 }
 
 int MarkdownViewWindow2::getReadLineNumber() const {
-  if (m_previousMode == ViewWindowMode::Read && m_viewer) {
-    return adapter()->getTopLineNumber();
+  if (m_previousMode == ViewWindowMode::Read) {
+    return adapter() ? adapter()->getTopLineNumber() : m_inactiveReaderState.m_topLineNumber;
   }
   return -1;
 }
@@ -3502,11 +3766,10 @@ ViewWindow2::ViewPositionState MarkdownViewWindow2::capturePositionState() const
   }
 
   ViewPositionState s;
-  if (m_mode == ViewWindowMode::Read && m_viewer) {
+  if (m_mode == ViewWindowMode::Read) {
     // Read mode has no caret; only the top line is preserved.
-    if (auto *a = adapter()) {
-      s.m_topLineNumber = a->getTopLineNumber();
-    }
+    s.m_topLineNumber = adapter() ? adapter()->getTopLineNumber()
+                                 : m_inactiveReaderState.m_topLineNumber;
   }
   return s;
 }
@@ -3514,7 +3777,8 @@ ViewWindow2::ViewPositionState MarkdownViewWindow2::capturePositionState() const
 void MarkdownViewWindow2::restorePositionState(const ViewPositionState &p_state) {
   if (m_mode == ViewWindowMode::Edit && m_editor) {
     applyEditorPositionState(m_editor->getTextEdit(), p_state);
-  } else if (m_mode == ViewWindowMode::Read && m_viewer && p_state.m_topLineNumber >= 0) {
+  } else if (m_mode == ViewWindowMode::Read && p_state.m_topLineNumber >= 0) {
+    m_inactiveReaderState.m_topLineNumber = p_state.m_topLineNumber;
     if (auto *a = adapter()) {
       const int line =
           ScrollPreservationPolicy::computeRestoredReadModeLine(p_state.m_topLineNumber);

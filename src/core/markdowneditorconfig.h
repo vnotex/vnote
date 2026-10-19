@@ -120,6 +120,9 @@ public:
   bool getCodeBlockLineWrapEnabled() const;
   void setCodeBlockLineWrapEnabled(bool p_enabled);
 
+  int getInactiveReaderTimeoutMinutes() const;
+  void setInactiveReaderTimeoutMinutes(int p_minutes);
+
   bool getSmartTableEnabled() const;
   void setSmartTableEnabled(bool p_enabled);
 
@@ -245,6 +248,9 @@ private:
 
   // Whether wrap long lines in code blocks in read mode.
   bool m_codeBlockLineWrapEnabled = false;
+
+  // Hidden reader inactivity in minutes; zero disables unloading.
+  int m_inactiveReaderTimeoutMinutes = 5;
 
   bool m_smartTableEnabled = true;
 

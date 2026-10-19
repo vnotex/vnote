@@ -64,6 +64,7 @@ public:
                            const QByteArray &p_protectedHighlightCss = {});
   void setProtectedSession(WebViewJobSession *p_session, const QByteArray &p_highlightCss);
   void setRenderContext(qreal p_devicePixelRatio, qreal p_width);
+  void setSuspended(bool p_suspended);
   void invalidate();
   void revoke();
 
@@ -97,6 +98,7 @@ private:
   struct Request;
   using Completion = WebViewJobSession::Completion;
   bool contextIsCurrent() const;
+  bool acceptsWebWork() const;
   bool authorizeSession(WebViewJobSession *p_session);
   bool preferredIsCurrent() const;
   void observeSession(WebViewJobSession *p_session);
@@ -137,6 +139,7 @@ private:
   qreal m_width = 800.0;
   bool m_protectedRequested = false;
   bool m_protectedRetiring = false;
+  bool m_suspended = false;
   bool m_locked = false;
   bool m_revoked = false;
   bool m_destroying = false;

@@ -90,6 +90,14 @@ use `WebViewService`; protected notes request a per-view isolated host through a
 must never fall through to the ordinary helper. In-flight work remains on its original endpoint.
 Generation cancellation rejects stale results; explicit actions receive failures, not empty success.
 
+`setSuspended(true)` closes admission before invalidating once, cancels outstanding work and drops
+preferred/per-view protected endpoints. Requests and late readiness/session deliveries cannot
+allocate or bind a fallback while suspended; late protected sessions request release. Resuming only
+clears the suspension flag: it allocates nothing and never clears terminal lock/revoke state.
+Keep suspension out of `contextIsCurrent()` and close-hook authorization checks, so closing a
+same-buffer sibling cannot permanently revoke a dormant view. The shared ordinary runtime stays
+alive for other tabs.
+
 MathJax preview parsers are isolated per editor scope, preserving that editor's declarations
 without mutating another editor or the reader. Cancel work before releasing scopes on live
 endpoints; the cleanup callback must not capture a destroyed controller. Announce readiness only

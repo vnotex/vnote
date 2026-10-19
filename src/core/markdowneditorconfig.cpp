@@ -59,6 +59,8 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_indentFirstLineEnabled = READBOOL(QStringLiteral("indentFirstLine"));
   m_codeBlockLineNumberEnabled = READBOOL(QStringLiteral("codeBlockLineNumber"));
   m_codeBlockLineWrapEnabled = READBOOL(QStringLiteral("codeBlockLineWrap"));
+  m_inactiveReaderTimeoutMinutes =
+      qBound(0, READINT(QStringLiteral("inactiveReaderTimeoutMinutes")), 1440);
 
   m_smartTableEnabled = READBOOL(QStringLiteral("smartTable"));
   m_smartTableInterval = READINT(QStringLiteral("smartTableInterval"));
@@ -112,6 +114,7 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("indentFirstLine")] = m_indentFirstLineEnabled;
   obj[QStringLiteral("codeBlockLineNumber")] = m_codeBlockLineNumberEnabled;
   obj[QStringLiteral("codeBlockLineWrap")] = m_codeBlockLineWrapEnabled;
+  obj[QStringLiteral("inactiveReaderTimeoutMinutes")] = m_inactiveReaderTimeoutMinutes;
   obj[QStringLiteral("smartTable")] = m_smartTableEnabled;
   obj[QStringLiteral("smartTableInterval")] = m_smartTableInterval;
   obj[QStringLiteral("autoNumberOrderedLists")] = m_autoNumberOrderedListsEnabled;
@@ -338,6 +341,14 @@ bool MarkdownEditorConfig::getCodeBlockLineWrapEnabled() const {
 
 void MarkdownEditorConfig::setCodeBlockLineWrapEnabled(bool p_enabled) {
   updateConfig(m_codeBlockLineWrapEnabled, p_enabled, this);
+}
+
+int MarkdownEditorConfig::getInactiveReaderTimeoutMinutes() const {
+  return m_inactiveReaderTimeoutMinutes;
+}
+
+void MarkdownEditorConfig::setInactiveReaderTimeoutMinutes(int p_minutes) {
+  updateConfig(m_inactiveReaderTimeoutMinutes, qBound(0, p_minutes, 1440), this);
 }
 
 QString MarkdownEditorConfig::inplacePreviewSourceToString(InplacePreviewSource p_src) const {

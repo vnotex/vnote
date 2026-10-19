@@ -11,8 +11,11 @@
 #include <QSharedPointer>
 #include <QVector>
 
+#include <optional>
+
 #include <controllers/legacyimagemigrationcontroller.h>
 #include <core/markdowneditorconfig.h>
+#include <core/fileopensettings.h>
 
 #include "outlineprovider.h"
 
@@ -152,7 +155,13 @@ private:
 
   void updateJobRenderContext();
 
-  void invalidateWebJobs();
+  void invalidateWebJobs(bool p_suspend = false);
+
+  void updateInactiveReaderTimer(bool p_restart = false);
+
+  void unloadInactiveReader();
+
+  bool resumeInactiveReader();
 
   void refreshEditorWebJobs();
 
@@ -325,6 +334,18 @@ private:
   bool m_inplacePreviewEnabled = true;
 
   QTimer *m_syncPreviewTimer = nullptr;
+  QTimer *m_inactiveReaderTimer = nullptr;
+  int m_inactiveReaderTimeoutMinutes = -1;
+  bool m_readerResourcesSuspended = false;
+  bool m_readerLifecycleClosing = false;
+  struct InactiveReaderState {
+    int m_topLineNumber = -1;
+    qreal m_zoomFactor = 1.0;
+    QList<int> m_splitterSizes;
+  };
+  InactiveReaderState m_inactiveReaderState;
+  bool m_restoreReaderStatePending = false;
+  std::optional<FileOpenSettings> m_inactiveReaderFileOpenSettings;
   QSharedPointer<QPrinter> m_printer;
 
   // Outline provider: bridges heading changes from editor/viewer to OutlinePopup.

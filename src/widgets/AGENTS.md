@@ -277,16 +277,37 @@ an application-lifetime bootstrap for the shared ordinary runtime and owns only 
 protected fallback widgets. `MarkdownWebJobController` owns routing; PreviewHelper and the editor
 consume its typed results, never the document adapter's former assistance signals.
 
-Treat `m_viewer == nullptr` as normal in EditOnly. Read/EditPreview and View Image prepare the
-reader explicitly; an image-only request loads an empty page rather than rerendering the note.
+Treat `m_viewer == nullptr` as normal in EditOnly and in inactive/unavailable Read/EditPreview.
+Visible reader demand resumes suspended resources before preparing the reader; an image-only
+request loads an empty page rather than rerendering the note.
 Print follows the window mode: Read prints the rendered web document asynchronously; EditOnly
 and EditPreview print the editor document synchronously, without creating a reader. The print
 dialog's Selection option follows the same target. Editor printing includes unsaved Markdown
 source, not widget chrome or interactive preview overlays; encrypted notes remain unprintable.
-A ready retained reader can assist a hidden EditOnly editor. Mode changes and theme refresh must
-preserve drafts, cursor and undo history. Replay preview caches when the effective renderer changes.
+A retained reader can assist an EditOnly editor until hidden-window inactivity suspends its jobs.
+Mode changes and theme refresh must preserve drafts, cursor and undo history. Replay preview
+caches when the effective renderer changes.
 Snapshot editor zoom/DPR/reference width for jobs; math rasters keep intrinsic formula geometry,
 including when an inactive tab has only provisional layout dimensions.
+
+`editor.markdown_editor.inactiveReaderTimeoutMinutes` defaults to 5; 0 means Never and values
+normalize to 0..1440. The searchable Read setting applies live. A single-shot `inactiveReaderTimer`
+counts whole-window hidden time, not focus loss or preview-pane visibility. A changed timeout
+restarts the full interval; visible split/detached panes remain loaded. Printing/mode switches
+postpone eviction. Disabled or successfully closing windows stop their timer.
+
+Eviction suspends job admission before cancelling work, drops preview rasters/DevTools and deletes
+the reader, its adapter/channel/session, and any per-view protected profile/fallback. Shared ordinary
+WebEngine resources and the native editor/document/undo remain. Never retain HTML, plaintext or
+pixels as a new snapshot, save the buffer, or change native revision bookkeeping just to unload.
+
+Resume only while visible, enabled, authorized and not closing. Rebuild Read/EditPreview from current
+Markdown; EditOnly resumes assistance without a reader. Hidden theme/config/source/mode changes
+must not recreate web resources. Preserve source line, zoom and splitter ratio; restore panes after
+adapter readiness and source position after document rendering. Buffer the latest explicit open
+request during reconstruction and replay it before passive position restoration, including the
+production show-then-apply order. Missing-reader Find/word-count actions report unavailability;
+passive highlight clearing does nothing. Guard retired-page callbacks by suspension and identity.
 
 Protected fallback profiles are per-view immutable generations, never transferred into readers.
 Beginning protected locking revokes jobs/resources immediately but keeps the native draft through

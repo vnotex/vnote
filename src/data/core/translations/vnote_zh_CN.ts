@@ -4770,6 +4770,22 @@
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
+        <source> min</source>
+        <translation> 分钟</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>从不</translation>
+    </message>
+    <message>
+        <source>Unload inactive preview after</source>
+        <translation>闲置预览卸载等待时间</translation>
+    </message>
+    <message>
+        <source>Release preview memory after the tab has been hidden for this many minutes; returning reloads the current Markdown without losing unsaved text or undo history</source>
+        <translation>标签页隐藏指定分钟数后释放预览内存；返回时重新加载当前 Markdown，不会丢失未保存的文本或撤销历史</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+218"/>
         <source>Read</source>
         <translation>阅读</translation>

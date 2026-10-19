@@ -78,6 +78,7 @@ private slots:
 
   void testAlignTableSource_jsonRoundTripAndAbsentKeyDefault();
   void testHeadingFolding_defaultsMergeAndRoundTrip();
+  void testInactiveReaderTimeoutMinutes_roundTripAndNormalization();
   void testConcealment_defaultsMergeAndPersistedOptOut();
   void testAutoSectionNumber_defaultsMergeAndPersistedOptOut();
   void testEditSectionNumber_mergeAndIndependentPersistence();
@@ -775,6 +776,58 @@ void TestConfigMgr2::testHeadingFolding_defaultsMergeAndRoundTrip() {
   auto &reloadedMd = reloaded.getEditorConfig().getMarkdownEditorConfig();
   reloadedMd.fromJson(json);
   QCOMPARE(reloadedMd.getHeadingFoldingEnabled(), false);
+}
+
+void TestConfigMgr2::testInactiveReaderTimeoutMinutes_roundTripAndNormalization() {
+  const auto original =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  const QStringList path{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                         QStringLiteral("inactiveReaderTimeoutMinutes")};
+  MainConfig defaults(m_configMgr);
+  QCOMPARE(defaults.getEditorConfig().getMarkdownEditorConfig().getInactiveReaderTimeoutMinutes(),
+           5);
+  const auto defaultsJson = defaults.toJson();
+  QCOMPARE(valueAt(defaultsJson, path), QJsonValue(5));
+  const auto legacy = loadThroughMergePath(withoutKeyAt(defaultsJson, path));
+  QCOMPARE(valueAt(legacy, path), QJsonValue(5));
+
+  struct Case {
+    int m_input;
+    int m_expected;
+  };
+  const Case cases[]{{0, 0}, {12, 12}, {-1, 0}, {1441, 1440}};
+  for (const auto &testCase : cases) {
+    const QJsonObject onDisk{
+        {path[0], QJsonObject{{path[1], QJsonObject{{path[2], testCase.m_input}}}}}};
+    const auto loaded = loadThroughMergePath(onDisk);
+    QCOMPARE(valueAt(loaded, path), QJsonValue(testCase.m_expected));
+    {
+      ConfigMgr2 restarted(m_configService);
+      restarted.init();
+      QCOMPARE(restarted.getEditorConfig()
+                   .getMarkdownEditorConfig()
+                   .getInactiveReaderTimeoutMinutes(),
+               testCase.m_expected);
+    }
+
+    // Start from the default so the setter exercises the normal pending-write path.
+    QCOMPARE(valueAt(loadThroughMergePath(defaultsJson), path), QJsonValue(5));
+    {
+      ConfigMgr2 settings(m_configService);
+      settings.init();
+      auto &markdown = settings.getEditorConfig().getMarkdownEditorConfig();
+      markdown.setInactiveReaderTimeoutMinutes(testCase.m_input);
+      QCOMPARE(markdown.getInactiveReaderTimeoutMinutes(), testCase.m_expected);
+      // Destruction flushes the pending write, as at application shutdown.
+    }
+    const auto persisted =
+        m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+    QCOMPARE(valueAt(persisted, path), QJsonValue(testCase.m_expected));
+    QCOMPARE(valueAt(loadThroughMergePath(persisted), path), QJsonValue(testCase.m_expected));
+  }
 }
 
 void TestConfigMgr2::testConcealment_defaultsMergeAndPersistedOptOut() {

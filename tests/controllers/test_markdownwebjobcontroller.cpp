@@ -117,6 +117,17 @@ private slots:
   void constructionDoesNotCreateRuntime();
   void originalEndpointFinishesAfterReaderBecomesReady();
   void generationCancellationSettlesOnce();
+  void suspensionCancelsOnceAndResumes_data();
+  void suspensionCancelsOnceAndResumes();
+  void suspensionRejectsColdWork_data();
+  void suspensionRejectsColdWork();
+  void suspendedSharedReadinessDoesNotPublish();
+  void suspendedProtectedSessionIsReleased();
+  void suspendedSiblingCloseDoesNotRevoke_data();
+  void suspendedSiblingCloseDoesNotRevoke();
+  void suspensionDoesNotUndoRevocation_data();
+  void suspensionDoesNotUndoRevocation();
+  void suspensionDoesNotUnlockProtectedBuffer();
   void staleAutomaticGenerationCannotPublish();
   void ownerDestructionAndEndpointTeardown();
   void protectedSessionsAreWindowScoped();
@@ -326,6 +337,359 @@ void TestMarkdownWebJobController::generationCancellationSettlesOnce() {
   controller.revoke();
   QCOMPARE(results.size(), 1);
   QCOMPARE(failed.size(), 1);
+}
+
+void TestMarkdownWebJobController::suspensionCancelsOnceAndResumes_data() {
+  QTest::addColumn<bool>("protectedBuffer");
+  QTest::newRow("ordinary") << false;
+  QTest::newRow("protected") << true;
+}
+
+void TestMarkdownWebJobController::suspensionCancelsOnceAndResumes() {
+  QFETCH(bool, protectedBuffer);
+  const auto &buffer = protectedBuffer ? m_private : m_ordinary;
+  SharedRuntime shared(m_buffers.get(), &m_hooks);
+  Endpoint reader(buffer);
+  reader.ready();
+  MarkdownWebJobController controller(shared.services, buffer);
+  QSignalSpy ready(&controller, &MarkdownWebJobController::ready);
+  QSignalSpy release(&controller, &MarkdownWebJobController::protectedSessionReleaseRequested);
+  QSignalSpy requested(&controller, &MarkdownWebJobController::protectedSessionRequested);
+  QSignalSpy pasted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy highlighted(&controller, &MarkdownWebJobController::highlightCodeBlockReady);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
+  controller.setPreferredSession(&reader.session);
+  QCOMPARE(ready.size(), 1);
+  QList<Anchor> cancelled;
+  QList<Anchor> reentrant;
+  controller.fetchHeadingAnchor(QStringLiteral("# Pending"), 0, [&](const Anchor &p_result) {
+    cancelled.append(p_result);
+    // Cancellation callbacks must see the closed admission gate before invalidation returns.
+    controller.fetchHeadingAnchor(QStringLiteral("# Reentrant"), 0,
+                                  [&](const Anchor &p_nested) { reentrant.append(p_nested); });
+  });
+  QTRY_COMPARE(reader.requests.size(), 1);
+  controller.htmlToMarkdown(1, 9, QStringLiteral("<b>Pending paste</b>"));
+  controller.highlightCodeBlock(3, 10, QStringLiteral("```cpp\npending\n```"));
+  controller.setSuspended(true);
+  QCOMPARE(cancelled.size(), 1);
+  QCOMPARE(cancelled.first().m_status, Status::Cancelled);
+  QCOMPARE(reentrant.size(), 1);
+  QCOMPARE(reentrant.first().m_status, Status::Cancelled);
+  QCOMPARE(failed.size(), 1);
+  QCOMPARE(release.size(), 1);
+  controller.setSuspended(true);
+  QCOMPARE(release.size(), 1);
+  QCOMPARE(cancelled.size(), 1);
+  QCOMPARE(reentrant.size(), 1);
+  QCOMPARE(failed.size(), 1);
+
+  reader.complete(0, QStringLiteral("stale-heading"));
+  QTRY_COMPARE(reader.releasedScopes.size(), 1);
+  QCOMPARE(cancelled.size(), 1);
+  QCOMPARE(reentrant.size(), 1);
+  QCOMPARE(pasted.size(), 0);
+  QCOMPARE(highlighted.size(), 0);
+  QCOMPARE(failed.size(), 1);
+  QCOMPARE(reader.requests.size(), 1);
+  QCOMPARE(ready.size(), 1);
+  QCOMPARE(requested.size(), 0);
+  QCOMPARE(shared.created, 0);
+
+  controller.setSuspended(false);
+  controller.setSuspended(false);
+  QCoreApplication::processEvents();
+  QCOMPARE(ready.size(), 1);
+  QCOMPARE(requested.size(), 0);
+  QCOMPARE(shared.created, 0);
+  QCOMPARE(reader.requests.size(), 1);
+  Endpoint replacement(buffer);
+  replacement.ready();
+  controller.setPreferredSession(&replacement.session);
+  QCOMPARE(ready.size(), 2);
+  QList<Anchor> resumed;
+  controller.fetchHeadingAnchor(QStringLiteral("# Fresh"), 0,
+                                [&](const Anchor &p_result) { resumed.append(p_result); });
+  QTRY_COMPARE(replacement.requests.size(), 1);
+  replacement.complete(0, QStringLiteral("fresh-heading"));
+  QCOMPARE(resumed.size(), 1);
+  QCOMPARE(resumed.first().m_status, Status::Success);
+  QCOMPARE(resumed.first().m_anchor, QStringLiteral("fresh-heading"));
+  QCOMPARE(cancelled.size(), 1);
+  QCOMPARE(shared.created, 0);
+}
+
+void TestMarkdownWebJobController::suspensionRejectsColdWork_data() {
+  QTest::addColumn<bool>("protectedBuffer");
+  QTest::newRow("ordinary") << false;
+  QTest::newRow("protected") << true;
+}
+
+void TestMarkdownWebJobController::suspensionRejectsColdWork() {
+  QFETCH(bool, protectedBuffer);
+  const auto &buffer = protectedBuffer ? m_private : m_ordinary;
+  SharedRuntime shared(m_buffers.get(), &m_hooks);
+  std::unique_ptr<Endpoint> fallback;
+  MarkdownWebJobController controller(shared.services, buffer);
+  QSignalSpy requested(&controller, &MarkdownWebJobController::protectedSessionRequested);
+  QSignalSpy ready(&controller, &MarkdownWebJobController::ready);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
+  connect(&controller, &MarkdownWebJobController::protectedSessionRequested, &controller, [&]() {
+    fallback = std::make_unique<Endpoint>(buffer);
+    fallback->ready();
+    controller.setProtectedSession(&fallback->session, QByteArrayLiteral("bundled"));
+  });
+  controller.setSuspended(true);
+  QList<Anchor> results;
+  const auto done = [&](const Anchor &p_result) { results.append(p_result); };
+  controller.fetchHeadingAnchor(QStringLiteral("# Dormant"), 0, done);
+  QCOMPARE(results.size(), 1);
+  QCOMPARE(results.first().m_status, Status::Cancelled);
+  int styleCallbacks = 0;
+  controller.fetchHighlightStyles([&](const auto *p_styles) {
+    ++styleCallbacks;
+    QVERIFY(!p_styles);
+  });
+  controller.previewMath(1, 1, QStringLiteral("x^2"), 1);
+  controller.previewGraph(2, 1, QStringLiteral("mermaid"), QStringLiteral("graph TD; A-->B"), 1);
+  controller.highlightMath(3, 1, QStringLiteral("x^2"));
+  controller.highlightCodeBlock(4, 1, QStringLiteral("```cpp\nint x;\n```"));
+  controller.htmlToMarkdown(5, 1, QStringLiteral("<b>Dormant</b>"));
+  QCOMPARE(styleCallbacks, 1);
+  QCOMPARE(failed.size(), 1);
+  QCoreApplication::processEvents();
+  QCOMPARE(requested.size(), 0);
+  QCOMPARE(ready.size(), 0);
+  QCOMPARE(shared.created, 0);
+  QVERIFY(!fallback);
+
+  controller.setSuspended(false);
+  QCoreApplication::processEvents();
+  QCOMPARE(requested.size(), 0);
+  QCOMPARE(ready.size(), 0);
+  QCOMPARE(shared.created, 0);
+  QVERIFY(!fallback);
+  controller.fetchHeadingAnchor(QStringLiteral("# Awake"), 0, done);
+  if (protectedBuffer) {
+    QVERIFY(fallback);
+    QTRY_COMPARE(fallback->requests.size(), 1);
+    fallback->complete(0);
+  } else {
+    QTRY_COMPARE(shared.requests.size(), 1);
+    shared.complete(0);
+  }
+  QCOMPARE(results.size(), 2);
+  QCOMPARE(results.last().m_status, Status::Success);
+  QCOMPARE(requested.size(), protectedBuffer ? 1 : 0);
+  QCOMPARE(shared.created, protectedBuffer ? 0 : 1);
+  QCOMPARE(ready.size(), 1);
+}
+
+void TestMarkdownWebJobController::suspendedSharedReadinessDoesNotPublish() {
+  SharedRuntime shared(m_buffers.get(), &m_hooks, false);
+  MarkdownWebJobController controller(shared.services, m_ordinary);
+  QSignalSpy ready(&controller, &MarkdownWebJobController::ready);
+  QList<Anchor> results;
+  const auto done = [&](const Anchor &p_result) { results.append(p_result); };
+  controller.fetchHeadingAnchor(QStringLiteral("# Waiting for runtime"), 0, done);
+  QCOMPARE(shared.created, 1);
+  QVERIFY(shared.requests.isEmpty());
+  controller.setSuspended(true);
+  QCOMPARE(results.size(), 1);
+  QCOMPARE(results.first().m_status, Status::Cancelled);
+  shared.session->setReady(shared.session->generation());
+  QTRY_COMPARE(shared.releasedScopes.size(), 1);
+  QCOMPARE(ready.size(), 0);
+  QVERIFY(shared.requests.isEmpty());
+
+  // The application-wide runtime remains usable by another window while this one sleeps.
+  MarkdownWebJobController sibling(shared.services, m_ordinary);
+  QList<Anchor> siblingResults;
+  sibling.fetchHeadingAnchor(QStringLiteral("# Visible sibling"), 0,
+                             [&](const Anchor &p_result) { siblingResults.append(p_result); });
+  QTRY_COMPARE(shared.requests.size(), 1);
+  shared.complete(0);
+  QCOMPARE(siblingResults.size(), 1);
+  QCOMPARE(siblingResults.first().m_status, Status::Success);
+  QCOMPARE(ready.size(), 0);
+  controller.setSuspended(false);
+  QCOMPARE(ready.size(), 0);
+  QCOMPARE(shared.created, 1);
+  controller.fetchHeadingAnchor(QStringLiteral("# Awake"), 0, done);
+  QTRY_COMPARE(shared.requests.size(), 2);
+  shared.complete(1);
+  QCOMPARE(results.size(), 2);
+  QCOMPARE(results.last().m_status, Status::Success);
+  QCOMPARE(ready.size(), 1);
+  QCOMPARE(shared.created, 1);
+}
+
+void TestMarkdownWebJobController::suspendedProtectedSessionIsReleased() {
+  SharedRuntime shared(m_buffers.get(), &m_hooks);
+  std::unique_ptr<Endpoint> fallback;
+  bool lateAuthorized = false;
+  MarkdownWebJobController controller(shared.services, m_private);
+  QSignalSpy requested(&controller, &MarkdownWebJobController::protectedSessionRequested);
+  QSignalSpy release(&controller, &MarkdownWebJobController::protectedSessionReleaseRequested);
+  QSignalSpy ready(&controller, &MarkdownWebJobController::ready);
+  connect(&controller, &MarkdownWebJobController::protectedSessionReleaseRequested, &controller,
+          [&]() {
+            if (fallback) {
+              lateAuthorized = fallback->session.property("markdownJobController").isValid();
+              fallback.reset();
+            }
+          });
+  QList<Anchor> results;
+  const auto done = [&](const Anchor &p_result) { results.append(p_result); };
+  controller.fetchHeadingAnchor(QStringLiteral("# Waiting for protected host"), 0, done);
+  QCOMPARE(requested.size(), 1);
+  QVERIFY(results.isEmpty());
+  controller.setSuspended(true);
+  QCOMPARE(results.size(), 1);
+  QCOMPARE(results.first().m_status, Status::Cancelled);
+  QCOMPARE(release.size(), 1);
+
+  fallback = std::make_unique<Endpoint>(m_private);
+  fallback->ready();
+  const QPointer<WebViewJobSession> lateSession(&fallback->session);
+  controller.setProtectedSession(lateSession, QByteArrayLiteral("late bundled CSS"));
+  QCOMPARE(release.size(), 2);
+  QVERIFY(lateSession.isNull());
+  QVERIFY(!lateAuthorized);
+  QCOMPARE(ready.size(), 0);
+  QCOMPARE(results.size(), 1);
+  QCOMPARE(shared.created, 0);
+
+  controller.setSuspended(false);
+  QCOMPARE(requested.size(), 1);
+  QCOMPARE(ready.size(), 0);
+  QVERIFY(!fallback);
+  connect(&controller, &MarkdownWebJobController::protectedSessionRequested, &controller, [&]() {
+    fallback = std::make_unique<Endpoint>(m_private);
+    fallback->ready();
+    controller.setProtectedSession(&fallback->session, QByteArrayLiteral("fresh bundled CSS"));
+  });
+  controller.fetchHeadingAnchor(QStringLiteral("# Fresh protected host"), 0, done);
+  QCOMPARE(requested.size(), 2);
+  QVERIFY(fallback);
+  QTRY_COMPARE(fallback->requests.size(), 1);
+  fallback->complete(0);
+  QCOMPARE(results.size(), 2);
+  QCOMPARE(results.last().m_status, Status::Success);
+  QCOMPARE(ready.size(), 1);
+  QCOMPARE(shared.created, 0);
+}
+
+void TestMarkdownWebJobController::suspendedSiblingCloseDoesNotRevoke_data() {
+  QTest::addColumn<bool>("protectedBuffer");
+  QTest::newRow("ordinary") << false;
+  QTest::newRow("protected") << true;
+}
+
+void TestMarkdownWebJobController::suspendedSiblingCloseDoesNotRevoke() {
+  QFETCH(bool, protectedBuffer);
+  const auto &buffer = protectedBuffer ? m_private : m_ordinary;
+  SharedRuntime shared(m_buffers.get(), &m_hooks);
+  MarkdownWebJobController controller(shared.services, buffer);
+  auto sibling = std::make_unique<MarkdownWebJobController>(shared.services, buffer);
+  QSignalSpy release(&controller, &MarkdownWebJobController::protectedSessionReleaseRequested);
+  controller.setSuspended(true);
+  QCOMPARE(release.size(), 1);
+  sibling.reset();
+  ViewWindowCloseEvent event;
+  event.bufferId = buffer.id();
+  m_hooks.doAction(HookNames::ViewWindowAfterClose, event);
+  QCOMPARE(release.size(), 1);
+  controller.setSuspended(false);
+  QCOMPARE(shared.created, 0);
+  Endpoint replacement(buffer);
+  replacement.ready();
+  controller.setPreferredSession(&replacement.session);
+  QList<Anchor> results;
+  controller.fetchHeadingAnchor(QStringLiteral("# Remaining window"), 0,
+                                [&](const Anchor &p_result) { results.append(p_result); });
+  QTRY_COMPARE(replacement.requests.size(), 1);
+  replacement.complete(0);
+  QCOMPARE(results.size(), 1);
+  QCOMPARE(results.first().m_status, Status::Success);
+  QCOMPARE(shared.created, 0);
+}
+
+void TestMarkdownWebJobController::suspensionDoesNotUndoRevocation_data() {
+  QTest::addColumn<bool>("protectedBuffer");
+  QTest::newRow("ordinary") << false;
+  QTest::newRow("protected") << true;
+}
+
+void TestMarkdownWebJobController::suspensionDoesNotUndoRevocation() {
+  QFETCH(bool, protectedBuffer);
+  const auto &buffer = protectedBuffer ? m_private : m_ordinary;
+  SharedRuntime shared(m_buffers.get(), &m_hooks);
+  Endpoint reader(buffer);
+  reader.ready();
+  MarkdownWebJobController controller(shared.services, buffer);
+  QSignalSpy requested(&controller, &MarkdownWebJobController::protectedSessionRequested);
+  QSignalSpy ready(&controller, &MarkdownWebJobController::ready);
+  controller.setSuspended(true);
+  controller.revoke();
+  controller.setSuspended(false);
+  controller.setPreferredSession(&reader.session);
+  QList<Anchor> results;
+  controller.fetchHeadingAnchor(QStringLiteral("# Revoked"), 0,
+                                [&](const Anchor &p_result) { results.append(p_result); });
+  QCOMPARE(results.size(), 1);
+  QCOMPARE(results.first().m_status, Status::Cancelled);
+  QCoreApplication::processEvents();
+  QCOMPARE(ready.size(), 0);
+  QCOMPARE(requested.size(), 0);
+  QCOMPARE(shared.created, 0);
+  QVERIFY(reader.requests.isEmpty());
+}
+
+void TestMarkdownWebJobController::suspensionDoesNotUnlockProtectedBuffer() {
+  SharedRuntime shared(m_buffers.get(), &m_hooks);
+  std::unique_ptr<Endpoint> fallback;
+  MarkdownWebJobController controller(shared.services, m_private);
+  QSignalSpy requested(&controller, &MarkdownWebJobController::protectedSessionRequested);
+  QSignalSpy ready(&controller, &MarkdownWebJobController::ready);
+  connect(&controller, &MarkdownWebJobController::protectedSessionRequested, &controller, [&]() {
+    fallback = std::make_unique<Endpoint>(m_private);
+    fallback->ready();
+    controller.setProtectedSession(&fallback->session, QByteArrayLiteral("bundled"));
+  });
+  controller.setSuspended(true);
+  QVERIFY(m_buffers->beginProtectedLocking());
+  const auto restoreLock = qScopeGuard([&]() { m_buffers->cancelProtectedLocking(); });
+  controller.setSuspended(false);
+  QList<Anchor> results;
+  const auto done = [&](const Anchor &p_result) { results.append(p_result); };
+  controller.fetchHeadingAnchor(QStringLiteral("# Still locked"), 0, done);
+  QCOMPARE(results.size(), 1);
+  QCOMPARE(results.first().m_status, Status::Cancelled);
+  QCOMPARE(requested.size(), 0);
+  QCOMPARE(ready.size(), 0);
+  QCOMPARE(shared.created, 0);
+  QVERIFY(!fallback);
+
+  controller.setSuspended(true);
+  m_buffers->cancelProtectedLocking();
+  QCOMPARE(ready.size(), 0);
+  controller.fetchHeadingAnchor(QStringLiteral("# Still suspended"), 0, done);
+  QCOMPARE(results.size(), 2);
+  QCOMPARE(results.last().m_status, Status::Cancelled);
+  QCOMPARE(requested.size(), 0);
+  controller.setSuspended(false);
+  QCOMPARE(ready.size(), 0);
+  QVERIFY(!fallback);
+  controller.fetchHeadingAnchor(QStringLiteral("# Unlocked and awake"), 0, done);
+  QCOMPARE(requested.size(), 1);
+  QVERIFY(fallback);
+  QTRY_COMPARE(fallback->requests.size(), 1);
+  fallback->complete(0);
+  QCOMPARE(results.size(), 3);
+  QCOMPARE(results.last().m_status, Status::Success);
+  QCOMPARE(ready.size(), 1);
+  QCOMPARE(shared.created, 0);
 }
 
 void TestMarkdownWebJobController::staleAutomaticGenerationCannotPublish() {

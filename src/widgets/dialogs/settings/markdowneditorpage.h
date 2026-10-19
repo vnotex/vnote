@@ -6,6 +6,7 @@
 class QCheckBox;
 class QComboBox;
 class QLineEdit;
+class QSpinBox;
 
 namespace vnotex {
 class LocationInputWithBrowseButton;
@@ -68,6 +69,8 @@ private:
   QCheckBox *m_codeBlockLineNumberCheckBox = nullptr;
 
   QCheckBox *m_codeBlockLineWrapCheckBox = nullptr;
+
+  QSpinBox *m_inactiveReaderTimeoutMinutesSpinBox = nullptr;
 
   QCheckBox *m_smartTableCheckBox = nullptr;
 

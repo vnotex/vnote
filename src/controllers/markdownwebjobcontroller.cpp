@@ -124,6 +124,10 @@ bool MarkdownWebJobController::contextIsCurrent() const {
   return !m_buffer.isEncrypted() || bool(m_buffer.acquireProtectedLease());
 }
 
+bool MarkdownWebJobController::acceptsWebWork() const {
+  return !m_suspended && contextIsCurrent();
+}
+
 bool MarkdownWebJobController::authorizeSession(WebViewJobSession *p_session) {
   if (!p_session ||
       p_session->property("markdownJobProtected").toBool() != m_buffer.isEncrypted() ||
@@ -161,7 +165,7 @@ void MarkdownWebJobController::observeSession(WebViewJobSession *p_session) {
                       }
                     }));
   connect(p_session, &WebViewJobSession::readyChanged, this, [this, p_session](bool p_ready) {
-    if (p_ready && contextIsCurrent()) {
+    if (p_ready && acceptsWebWork()) {
       if (p_session == m_preferred) {
         releaseDrainedProtectedSession();
       }
@@ -184,7 +188,7 @@ void MarkdownWebJobController::observeSession(WebViewJobSession *p_session) {
 }
 
 void MarkdownWebJobController::notifyReadyEndpoint() {
-  if (!contextIsCurrent())
+  if (!acceptsWebWork())
     return;
   WebViewJobSession *endpoint = preferredIsCurrent() ? m_preferred.data()
                                 : m_buffer.isEncrypted()
@@ -222,6 +226,10 @@ void MarkdownWebJobController::setPreferredSession(WebViewJobSession *p_session,
 void MarkdownWebJobController::setProtectedSession(WebViewJobSession *p_session,
                                                    const QByteArray &p_highlightCss) {
   m_protectedRequested = false;
+  if (m_suspended) {
+    emit protectedSessionReleaseRequested();
+    return;
+  }
   if (!m_buffer.isEncrypted() || !contextIsCurrent() || !authorizeSession(p_session)) {
     const auto requests = m_requests.keys();
     for (auto id : requests) {
@@ -247,6 +255,17 @@ void MarkdownWebJobController::setProtectedSession(WebViewJobSession *p_session,
 void MarkdownWebJobController::setRenderContext(qreal p_devicePixelRatio, qreal p_width) {
   m_devicePixelRatio = qMax(qreal(0.1), p_devicePixelRatio);
   m_width = qMax(qreal(1), p_width);
+}
+
+void MarkdownWebJobController::setSuspended(bool p_suspended) {
+  if (m_suspended == p_suspended) {
+    return;
+  }
+  m_suspended = p_suspended;
+  if (m_suspended) {
+    setPreferredSession(nullptr);
+    invalidate();
+  }
 }
 
 WebViewJobSession *MarkdownWebJobController::selectSession() {
@@ -283,7 +302,7 @@ void MarkdownWebJobController::releaseDrainedProtectedSession() {
 void MarkdownWebJobController::submit(const QString &p_operation, QJsonObject p_arguments,
                                       Completion p_completion, const QString &p_automaticKey,
                                       quint64 p_timeStamp, bool p_styleSheet) {
-  if (!contextIsCurrent()) {
+  if (!acceptsWebWork()) {
     p_completion(cancelledResult());
     return;
   }
@@ -316,7 +335,7 @@ void MarkdownWebJobController::dispatch(quint64 p_request) {
   if (!request || request->session) {
     return;
   }
-  if (request->generation != m_generation || !contextIsCurrent()) {
+  if (request->generation != m_generation || !acceptsWebWork()) {
     finish(p_request, cancelledResult());
     return;
   }
@@ -451,7 +470,7 @@ void MarkdownWebJobController::onProtectedLockingChanged(bool p_locking) {
   m_locked = p_locking;
   if (p_locking) {
     invalidate();
-  } else if (contextIsCurrent()) {
+  } else if (acceptsWebWork()) {
     emit ready();
   }
 }

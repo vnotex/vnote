@@ -8,6 +8,8 @@
 #include <QFile>
 #include <QFileInfo>
 #include <QMimeData>
+#include <QLabel>
+#include <QHBoxLayout>
 #include <QPdfDocument>
 #include <QPdfSelection>
 #include <QPointer>
@@ -15,6 +17,7 @@
 #include <QScopeGuard>
 #include <QSplitter>
 #include <QTemporaryDir>
+#include <QTabWidget>
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QTextDocument>
@@ -24,6 +27,7 @@
 #include <QVBoxLayout>
 #include <QWebChannel>
 #include <QWebEngineView>
+#include <QWebEngineProfile>
 #include <QtConcurrent/QtConcurrentRun>
 
 #include <memory>
@@ -62,6 +66,9 @@ namespace {
 class Window : public MarkdownViewWindow2 {
 public:
   using MarkdownViewWindow2::aboutToClose;
+  using MarkdownViewWindow2::handleFindNext;
+  using MarkdownViewWindow2::handleFindAndReplaceWidgetClosed;
+  using ViewWindow2::fetchWordCountInfo;
   using MarkdownViewWindow2::printDocument;
   using MarkdownViewWindow2::MarkdownViewWindow2;
   using ViewWindow2::isViewFullScreen;
@@ -117,6 +124,35 @@ void appendDraft(MarkdownEditor *p_editor, const QString &p_text) {
   cursor.endEditBlock();
   edit->setTextCursor(cursor);
 }
+
+bool expireHiddenReader(Window &p_window) {
+  auto *timer = p_window.findChild<QTimer *>(QStringLiteral("inactiveReaderTimer"));
+  if (!timer || p_window.isVisible() || !timer->isActive()) {
+    return false;
+  }
+  QSignalSpy expired(timer, &QTimer::timeout);
+  timer->start(20);
+  return QTest::qWaitFor([&]() { return expired.count() == 1; }, 5000);
+}
+
+bool renderedHeading(MarkdownViewer *p_viewer, const QString &p_heading) {
+  return p_viewer && p_viewer->jobSession()->isReady() &&
+         evaluate(p_viewer->page(), QStringLiteral("document.body.innerText"))
+             .toString().contains(p_heading);
+}
+
+QByteArray longNote() {
+  QByteArray source;
+  for (int section = 0; section < 36; ++section) {
+    source += "# Section " + QByteArray::number(section) + "\n\n";
+    source += "- [ ] interactive task\n\n";
+    for (int line = 0; line < 12; ++line) {
+      source += "Paragraph " + QByteArray::number(section) + ":" + QByteArray::number(line) +
+                " with enough text to occupy the reading viewport.\n\n";
+    }
+  }
+  return source;
+}
 } // namespace
 
 class TestMarkdownViewWindowLazy : public QObject {
@@ -137,6 +173,16 @@ private slots:
   void printUsesCurrentMode();
   void presentationCreatesReader();
   void protectedLockWithoutReader();
+  void inactiveTabPreservesDraft_data();
+  void inactiveTabPreservesDraft();
+  void inactiveTimeoutLivePolicy();
+  void dormantModeChanges_data();
+  void dormantModeChanges();
+  void inactiveReadNavigation_data();
+  void inactiveReadNavigation();
+  void inactiveReadUnavailableActions();
+  void inactiveProtectedResources();
+  void printAfterReaderRestoration();
 
 private:
   Buffer2 openNote(const QString &p_name, const QByteArray &p_source);
@@ -754,6 +800,448 @@ void TestMarkdownViewWindowLazy::protectedLockWithoutReader() {
   QCOMPARE(webViewCount(), previousViews);
   QCoreApplication::processEvents();
   QCOMPARE(callbacks, 1);
+}
+
+void TestMarkdownViewWindowLazy::inactiveTabPreservesDraft_data() {
+  QTest::addColumn<bool>("preview");
+  QTest::newRow("Read") << false;
+  QTest::newRow("EditPreview") << true;
+}
+
+void TestMarkdownViewWindowLazy::inactiveTabPreservesDraft() {
+  QFETCH(bool, preview);
+  markdownConfig().setEditViewMode(preview ? MarkdownEditorConfig::EditPreview
+                                         : MarkdownEditorConfig::EditOnly);
+  const auto buffer = openNote(QStringLiteral("inactive-draft.md"),
+                               QByteArrayLiteral("# Saved heading\n"));
+  QVERIFY(buffer.isValid());
+  QTabWidget tabs;
+  Window window(m_services, buffer, &tabs, ViewWindowMode::Edit);
+  QWidget other;
+  tabs.addTab(&window, QStringLiteral("note"));
+  tabs.addTab(&other, QStringLiteral("other"));
+  tabs.resize(1100, 760);
+  tabs.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&tabs));
+  auto *editor = window.findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  tabs.activateWindow();
+  editor->getTextEdit()->setFocus();
+  QTRY_VERIFY(editor->getTextEdit()->hasFocus());
+  appendDraft(editor, QStringLiteral("\n# Unsaved inactive heading\n"));
+  if (!preview) {
+    window.setMode(ViewWindowMode::Read);
+  }
+  auto *textEdit = editor->getTextEdit();
+  auto selection = textEdit->document()->find(QStringLiteral("Unsaved inactive heading"));
+  QVERIFY(!selection.isNull());
+  textEdit->setTextCursor(selection);
+  const auto source = editor->getText();
+  const auto undo = textEdit->document()->availableUndoSteps();
+  QPointer<MarkdownViewer> retired = window.findChild<MarkdownViewer *>();
+  QVERIFY(retired);
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(retired, QStringLiteral("Unsaved inactive heading")),
+                           30000);
+  retired->setZoomFactor(1.25);
+  auto *splitter = qobject_cast<QSplitter *>(retired->parentWidget());
+  QVERIFY(splitter);
+  if (preview) {
+    splitter->setSizes({320, 740});
+  }
+  const auto sizes = splitter->sizes();
+  QPointer<QWebEnginePage> page = retired->page();
+  QPointer<MarkdownViewerAdapter> adapter = retired->adapter();
+  QPointer<WebViewJobSession> session = retired->jobSession();
+  auto *timer = window.findChild<QTimer *>(QStringLiteral("inactiveReaderTimer"));
+  QVERIFY(timer);
+  tabs.setCurrentWidget(&other);
+  QVERIFY(timer->isActive());
+  tabs.setCurrentWidget(&window);
+  QVERIFY(!timer->isActive());
+  QCOMPARE(window.findChild<MarkdownViewer *>(), retired.data());
+  tabs.setCurrentWidget(&other);
+  QVERIFY(expireHiddenReader(window));
+  QVERIFY(!retired && !page && !adapter && !session);
+  QCOMPARE(window.findChild<MarkdownEditor *>(), editor);
+  QCOMPARE(editor->getText(), source);
+  QCOMPARE(textEdit->document()->availableUndoSteps(), undo);
+  QCOMPARE(textEdit->textCursor().position(), selection.position());
+  QCOMPARE(textEdit->textCursor().anchor(), selection.anchor());
+  QVERIFY(window.isModified());
+  tabs.setCurrentWidget(&window);
+  auto *restored = window.findChild<MarkdownViewer *>();
+  QVERIFY(restored);
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(restored, QStringLiteral("Unsaved inactive heading")),
+                           30000);
+  QCOMPARE(restored->zoomFactor(), 1.25);
+  if (preview) {
+    QTRY_VERIFY(qAbs(splitter->sizes().at(0) - sizes.at(0)) <= 2);
+  }
+  QCOMPARE(editor->getText(), source);
+  QCOMPARE(textEdit->document()->availableUndoSteps(), undo);
+  QCOMPARE(textEdit->textCursor().position(), selection.position());
+  QCOMPARE(textEdit->textCursor().anchor(), selection.anchor());
+  if (!preview) {
+    window.setMode(ViewWindowMode::Edit);
+  }
+  textEdit->document()->undo();
+  QCOMPARE(editor->getText(), QStringLiteral("# Saved heading\n"));
+}
+
+void TestMarkdownViewWindowLazy::inactiveTimeoutLivePolicy() {
+  markdownConfig().setInactiveReaderTimeoutMinutes(0);
+  const auto buffer = openNote(QStringLiteral("inactive-policy.md"), QByteArrayLiteral("# Policy\n"));
+  QVERIFY(buffer.isValid());
+  QWidget shell;
+  QHBoxLayout layout(&shell);
+  Window first(m_services, buffer, &shell, ViewWindowMode::Read);
+  Window second(m_services, buffer, &shell, ViewWindowMode::Read);
+  layout.addWidget(&first);
+  layout.addWidget(&second);
+  shell.resize(1200, 720);
+  shell.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&shell));
+  QPointer<MarkdownViewer> reader = first.findChild<MarkdownViewer *>();
+  QPointer<MarkdownViewer> sibling = second.findChild<MarkdownViewer *>();
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(reader, QStringLiteral("Policy")), 30000);
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(sibling, QStringLiteral("Policy")), 30000);
+  auto *timer = first.findChild<QTimer *>(QStringLiteral("inactiveReaderTimer"));
+  auto *siblingTimer = second.findChild<QTimer *>(QStringLiteral("inactiveReaderTimer"));
+  QVERIFY(timer && siblingTimer);
+  first.hide();
+  QVERIFY(!timer->isActive());
+  QTest::qWait(60);
+  QVERIFY(reader);
+  markdownConfig().setInactiveReaderTimeoutMinutes(12);
+  first.handleEditorConfigChange();
+  second.handleEditorConfigChange();
+  QVERIFY(timer->isActive());
+  QCOMPARE(timer->interval(), 12 * 60 * 1000);
+  QVERIFY(!siblingTimer->isActive());
+  markdownConfig().setInactiveReaderTimeoutMinutes(1);
+  first.handleEditorConfigChange();
+  QCOMPARE(timer->interval(), 60 * 1000);
+  timer->start(5000);
+  first.handleEditorConfigChange();
+  QCOMPARE(timer->interval(), 5000);
+  QVERIFY(expireHiddenReader(first));
+  QVERIFY(!reader);
+  QVERIFY(sibling && second.isVisible());
+  markdownConfig().setInactiveReaderTimeoutMinutes(0);
+  first.handleEditorConfigChange();
+  QVERIFY(!timer->isActive());
+  QVERIFY(!first.findChild<MarkdownViewer *>());
+  // Showing while disabled cannot allocate; visible re-enable must resume.
+  first.setEnabled(false);
+  first.show();
+  QVERIFY(!first.findChild<MarkdownViewer *>());
+  first.setEnabled(true);
+  auto *restored = first.findChild<MarkdownViewer *>();
+  QVERIFY(restored);
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(restored, QStringLiteral("Policy")), 30000);
+  QVERIFY(sibling);
+  // Constructor-completion eligibility includes tabs that have never been shown.
+  markdownConfig().setInactiveReaderTimeoutMinutes(1);
+  Window neverShown(m_services, buffer, nullptr, ViewWindowMode::Read);
+  QPointer<MarkdownViewer> unshownReader = neverShown.findChild<MarkdownViewer *>();
+  QVERIFY(unshownReader);
+  auto *unshownTimer = neverShown.findChild<QTimer *>(QStringLiteral("inactiveReaderTimer"));
+  QVERIFY(unshownTimer);
+  QTRY_VERIFY(unshownTimer->isActive());
+  QVERIFY(expireHiddenReader(neverShown));
+  QVERIFY(!unshownReader);
+}
+
+void TestMarkdownViewWindowLazy::dormantModeChanges_data() {
+  QTest::addColumn<bool>("initialPreview");
+  QTest::addColumn<bool>("finalPreview");
+  QTest::newRow("EditOnly-to-EditPreview") << false << true;
+  QTest::newRow("EditPreview-to-EditOnly") << true << false;
+  QTest::newRow("EditOnly-assistance") << false << false;
+}
+
+void TestMarkdownViewWindowLazy::dormantModeChanges() {
+  QFETCH(bool, initialPreview);
+  QFETCH(bool, finalPreview);
+  markdownConfig().setEditViewMode(initialPreview ? MarkdownEditorConfig::EditPreview
+                                                : MarkdownEditorConfig::EditOnly);
+  const auto buffer = openNote(QStringLiteral("dormant-mode.md"), QByteArrayLiteral("# Modes\n"));
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer, nullptr, ViewWindowMode::Edit);
+  showWindow(window);
+  auto *editor = window.findChild<MarkdownEditor *>();
+  auto *jobs = window.findChild<MarkdownWebJobController *>();
+  QVERIFY(editor && jobs);
+  if (initialPreview) {
+    QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(window.findChild<MarkdownViewer *>(),
+                                             QStringLiteral("Modes")), 30000);
+  }
+  window.hide();
+  QVERIFY(expireHiddenReader(window));
+  QVERIFY(!window.findChild<MarkdownViewer *>());
+  markdownConfig().setEditViewMode(finalPreview ? MarkdownEditorConfig::EditPreview
+                                              : MarkdownEditorConfig::EditOnly);
+  markdownConfig().setLinkifyEnabled(true);
+  window.handleEditorConfigChange();
+  m_theme->switchTheme(QStringLiteral("vscode-dark"));
+  appendDraft(editor, QStringLiteral("\n# Changed while dormant\n\nhttps://example.org/dormant\n"));
+  QCoreApplication::processEvents();
+  QVERIFY(!window.findChild<MarkdownViewer *>());
+  QCOMPARE(window.findChild<MarkdownEditor *>(), editor);
+  showWindow(window);
+  if (finalPreview) {
+    auto *viewer = window.findChild<MarkdownViewer *>();
+    QVERIFY(viewer);
+    QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(viewer, QStringLiteral("Changed while dormant")),
+                             30000);
+    QTRY_VERIFY_WITH_TIMEOUT(evaluate(viewer->page(), QStringLiteral(
+        "!!document.querySelector('a[href=\"https://example.org/dormant\"]')")).toBool(), 10000);
+    appendDraft(editor, QStringLiteral("\n# Continuous live update\n"));
+    QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(viewer, QStringLiteral("Continuous live update")),
+                             30000);
+  } else {
+    QVERIFY(!window.findChild<MarkdownViewer *>());
+    QSignalSpy highlighted(jobs, &MarkdownWebJobController::highlightCodeBlockReady);
+    editor->externalCodeBlockHighlightRequested(
+        7, 19, QStringLiteral("```javascript\nconst resumed = 42;\n```"));
+    QTRY_VERIFY_WITH_TIMEOUT(!highlighted.isEmpty(), 30000);
+    QVERIFY(highlighted.last().at(2).toString().contains(QStringLiteral("token keyword")));
+    QImage math;
+    connect(jobs, &MarkdownWebJobController::mathPreviewDataReady, &window,
+            [&](const MarkdownWebJobController::PreviewData &p_data) {
+              if (p_data.m_id == 97) {
+                math = QImage::fromData(p_data.m_data);
+              }
+            });
+    jobs->previewMath(97, 20, QStringLiteral("$x^2 + y^2$"), 1.0);
+    QTRY_VERIFY_WITH_TIMEOUT(!math.isNull(), 30000);
+    QVERIFY(!window.findChild<MarkdownViewer *>());
+  }
+  QVERIFY(window.isModified());
+}
+
+void TestMarkdownViewWindowLazy::inactiveReadNavigation_data() {
+  QTest::addColumn<QString>("target");
+  QTest::addColumn<bool>("afterShow");
+  QTest::newRow("saved-position") << QStringLiteral("saved") << false;
+  QTest::newRow("anchor-before-show") << QStringLiteral("anchor") << false;
+  QTest::newRow("anchor-after-show") << QStringLiteral("anchor") << true;
+  QTest::newRow("line-before-show") << QStringLiteral("line") << false;
+  QTest::newRow("line-after-show") << QStringLiteral("line") << true;
+  QTest::newRow("search-before-show") << QStringLiteral("search") << false;
+  QTest::newRow("search-after-show") << QStringLiteral("search") << true;
+}
+
+void TestMarkdownViewWindowLazy::inactiveReadNavigation() {
+  QFETCH(QString, target);
+  QFETCH(bool, afterShow);
+  const auto buffer = openNote(QStringLiteral("inactive-navigation.md"), longNote());
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer, nullptr, ViewWindowMode::Read);
+  showWindow(window);
+  QPointer<MarkdownViewer> old = window.findChild<MarkdownViewer *>();
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(old, QStringLiteral("Section 35")), 30000);
+  old->setZoomFactor(1.25);
+  old->adapter()->scrollToPosition(MarkdownViewerAdapter::Position(10 * 28, QString()));
+  QTest::qWait(700);
+  const auto position = window.capturePositionState();
+  QVERIFY(position.m_topLineNumber > 0);
+  window.hide();
+  QVERIFY(expireHiddenReader(window));
+  QVERIFY(!old);
+  QCOMPARE(window.capturePositionState().m_topLineNumber, position.m_topLineNumber);
+  window.restorePositionState(position);
+  FileOpenSettings settings;
+  if (target == QStringLiteral("anchor")) {
+    settings.m_anchor = QStringLiteral("section-20");
+  } else if (target != QStringLiteral("saved")) {
+    settings.m_lineNumber = 20 * 28;
+    if (target == QStringLiteral("search")) {
+      settings.m_searchHighlight.m_isValid = true;
+      settings.m_searchHighlight.m_patterns = {QStringLiteral("Section 20")};
+      settings.m_searchHighlight.m_currentMatchLine = 20 * 28;
+    }
+  }
+  // Seed an older deferred anchor: the latest line/search request must supersede it.
+  if (target == QStringLiteral("line") || target == QStringLiteral("search")) {
+    FileOpenSettings older;
+    older.m_anchor = QStringLiteral("section-5");
+    window.applyFileOpenSettings(older);
+  }
+  if (!afterShow) {
+    window.applyFileOpenSettings(settings);
+  }
+  window.show();
+  if (afterShow) {
+    // ViewAreaController activates (shows) before applying explicit navigation.
+    window.applyFileOpenSettings(settings);
+  }
+  auto *viewer = window.findChild<MarkdownViewer *>();
+  QVERIFY(viewer);
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(viewer, QStringLiteral("Section 35")), 30000);
+  QCOMPARE(viewer->zoomFactor(), 1.25);
+  const auto expected = target == QStringLiteral("saved") ? 10 : 20;
+  const auto headingTop = QStringLiteral(
+      "Array.from(document.querySelectorAll('h1')).find(h => "
+      "h.textContent.includes('Section %1')).getBoundingClientRect().top").arg(expected);
+  QTRY_VERIFY_WITH_TIMEOUT(qAbs(evaluate(viewer->page(), headingTop).toDouble()) < 200, 10000);
+  // The JS source-line path is delayed; an older passive scroll must not win later.
+  QTest::qWait(700);
+  QVERIFY(qAbs(evaluate(viewer->page(), headingTop).toDouble()) < 200);
+  // Exercise a live reader action, not just DOM restoration.
+  evaluate(viewer->page(), QStringLiteral("document.querySelector('input[type=checkbox]').click()"));
+  QTRY_VERIFY_WITH_TIMEOUT(window.getLatestContent().contains(QStringLiteral("- [x] interactive task")),
+                           10000);
+}
+
+void TestMarkdownViewWindowLazy::inactiveReadUnavailableActions() {
+  const auto buffer = openNote(QStringLiteral("unavailable.md"), QByteArrayLiteral("# Unavailable\n"));
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer, nullptr, ViewWindowMode::Read);
+  showWindow(window);
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(window.findChild<MarkdownViewer *>(),
+                                           QStringLiteral("Unavailable")), 30000);
+  window.hide();
+  QVERIFY(expireHiddenReader(window));
+  window.clearHighlights();
+  window.handleFindAndReplaceWidgetClosed();
+  QVERIFY(!window.findChild<MarkdownViewer *>());
+  window.handleFindNext({QStringLiteral("Unavailable")}, FindNone);
+  bool counted = false;
+  window.fetchWordCountInfo([&](const WordCountInfo &) { counted = true; });
+  QVERIFY(!counted);
+  QVERIFY(!window.findChild<MarkdownViewer *>());
+  bool unavailable = false;
+  for (auto *label : window.findChildren<QLabel *>()) {
+    unavailable |= label->text().contains(QStringLiteral("Unable to load preview"));
+  }
+  QVERIFY(unavailable);
+  showWindow(window);
+  auto *viewer = window.findChild<MarkdownViewer *>();
+  QVERIFY(viewer);
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(viewer, QStringLiteral("Unavailable")), 30000);
+  window.fetchWordCountInfo([&](const WordCountInfo &p_info) {
+    counted = p_info.m_wordCount > 0;
+  });
+  QTRY_VERIFY_WITH_TIMEOUT(counted, 10000);
+}
+
+void TestMarkdownViewWindowLazy::inactiveProtectedResources() {
+  const auto buffer = openProtectedNote(QByteArrayLiteral("# Protected saved\n"));
+  QVERIFY(buffer.isValid() && buffer.isEncrypted());
+  Window window(m_services, buffer, nullptr, ViewWindowMode::Edit);
+  showWindow(window);
+  auto *editor = window.findChild<MarkdownEditor *>();
+  auto *jobs = window.findChild<MarkdownWebJobController *>();
+  auto *host = window.findChild<MarkdownWebJobHost *>();
+  QVERIFY(editor && jobs && host);
+  QPointer<WebViewJobSession> fallback;
+  QPointer<QWebEngineProfile> fallbackProfile;
+  int fallbackCreations = 0;
+  connect(host, &MarkdownWebJobHost::protectedSessionReady, &window,
+          [&](WebViewJobSession *p_session, const QByteArray &) {
+            ++fallbackCreations;
+            fallback = p_session;
+            if (p_session) {
+              auto *page = qobject_cast<QWebEnginePage *>(p_session->parent());
+              if (page) {
+                fallbackProfile = page->profile();
+              }
+            }
+          });
+  QSignalSpy highlighted(jobs, &MarkdownWebJobController::highlightCodeBlockReady);
+  editor->externalCodeBlockHighlightRequested(
+      8, 81, QStringLiteral("```javascript\nconst privateValue = 42;\n```"));
+  QTRY_VERIFY_WITH_TIMEOUT(!highlighted.isEmpty(), 30000);
+  QVERIFY(fallback && fallbackProfile);
+  appendDraft(editor, QStringLiteral("\n# Protected unsaved draft\n"));
+  const auto draft = editor->getText();
+  const auto undo = editor->getTextEdit()->document()->availableUndoSteps();
+  // First retire the EditOnly protected assistance runtime with no reader at all.
+  window.hide();
+  QVERIFY(expireHiddenReader(window));
+  QVERIFY(!fallback && !fallbackProfile);
+  QVERIFY(!window.findChild<MarkdownViewer *>());
+  const auto creations = fallbackCreations;
+  int cancelled = 0;
+  jobs->fetchHeadingAnchor(QStringLiteral("# Late protected work\n"), 0,
+      [&](const MarkdownWebJobController::HeadingAnchorResult &p_result) {
+        if (p_result.m_status == WebViewJobResult::Status::Cancelled) {
+          ++cancelled;
+        }
+      });
+  QCoreApplication::processEvents();
+  QCOMPARE(cancelled, 1);
+  QCOMPARE(fallbackCreations, creations);
+  markdownConfig().setEditViewMode(MarkdownEditorConfig::EditPreview);
+  window.handleEditorConfigChange();
+  QVERIFY(!window.findChild<MarkdownViewer *>());
+  showWindow(window);
+  QPointer<MarkdownViewer> reader = window.findChild<MarkdownViewer *>();
+  QVERIFY(reader);
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(reader, QStringLiteral("Protected unsaved draft")),
+                           30000);
+  QPointer<QWebEngineProfile> profile = reader->page()->profile();
+  QVERIFY(profile && profile->isOffTheRecord());
+  window.hide();
+  QVERIFY(expireHiddenReader(window));
+  QVERIFY(!reader && !profile && !fallback && !fallbackProfile);
+  QCOMPARE(window.findChild<MarkdownEditor *>(), editor);
+  QCOMPARE(editor->getText(), draft);
+  QCOMPARE(editor->getTextEdit()->document()->availableUndoSteps(), undo);
+  showWindow(window);
+  reader = window.findChild<MarkdownViewer *>();
+  QVERIFY(reader);
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(reader, QStringLiteral("Protected unsaved draft")),
+                           30000);
+  profile = reader->page()->profile();
+  QVERIFY(profile && profile->isOffTheRecord());
+  window.hide();
+  QVERIFY(expireHiddenReader(window));
+  QVERIFY(!reader && !profile);
+  QVERIFY(m_buffers->beginProtectedLocking());
+  showWindow(window);
+  QVERIFY(!window.findChild<MarkdownViewer *>());
+  // Lock retains the native writer through the normal save/close barrier.
+  QCOMPARE(window.findChild<MarkdownEditor *>(), editor);
+  QCOMPARE(editor->getText(), draft);
+  QVERIFY(window.aboutToClose(true));
+  QVERIFY(!window.findChild<MarkdownEditor *>());
+  QVERIFY(!window.findChild<PreviewHelper *>());
+  QVERIFY(!window.findChild<MarkdownViewer *>());
+  QVERIFY(!window.isEnabled());
+}
+
+void TestMarkdownViewWindowLazy::printAfterReaderRestoration() {
+  const auto buffer = openNote(QStringLiteral("restored-print.md"),
+                               QByteArrayLiteral("# Restored printable heading\n\nFresh body\n"));
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer, nullptr, ViewWindowMode::Read);
+  showWindow(window);
+  QTRY_VERIFY_WITH_TIMEOUT(renderedHeading(window.findChild<MarkdownViewer *>(),
+                                           QStringLiteral("Restored printable heading")), 30000);
+  window.hide();
+  QVERIFY(expireHiddenReader(window));
+  const auto output = m_directory.filePath(QStringLiteral("restored-print.pdf"));
+  auto printer = QSharedPointer<QPrinter>::create();
+  printer->setOutputFormat(QPrinter::PdfFormat);
+  printer->setOutputFileName(output);
+  window.printDocument(printer);
+  QVERIFY(!window.findChild<MarkdownViewer *>());
+  QVERIFY(!QFileInfo::exists(output));
+  window.show();
+  auto *viewer = window.findChild<MarkdownViewer *>();
+  QVERIFY(viewer);
+  QSignalSpy printed(viewer, &MarkdownViewer::printFinished);
+  // Printing immediately after Show must await fresh document workFinished.
+  window.printDocument(printer);
+  QTRY_COMPARE_WITH_TIMEOUT(printed.count(), 1, 30000);
+  QVERIFY(printed.first().first().toBool());
+  QPdfDocument pdf;
+  QCOMPARE(pdf.load(output), QPdfDocument::Error::None);
+  const auto text = evaluate(viewer->page(), QStringLiteral("document.body.innerText")).toString();
+  QVERIFY(text.contains(QStringLiteral("Restored printable heading")));
+  QVERIFY(text.contains(QStringLiteral("Fresh body")));
 }
 
 } // namespace tests

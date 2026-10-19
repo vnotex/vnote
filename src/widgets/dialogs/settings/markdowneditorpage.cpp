@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QPushButton>
+#include <QSpinBox>
 #include <QVBoxLayout>
 
 #include <core/configmgr2.h>
@@ -88,6 +89,8 @@ void MarkdownEditorPage::loadInternal() {
 
   m_codeBlockLineNumberCheckBox->setChecked(markdownConfig.getCodeBlockLineNumberEnabled());
   m_codeBlockLineWrapCheckBox->setChecked(markdownConfig.getCodeBlockLineWrapEnabled());
+  m_inactiveReaderTimeoutMinutesSpinBox->setValue(
+      markdownConfig.getInactiveReaderTimeoutMinutes());
 
   m_smartTableCheckBox->setChecked(markdownConfig.getSmartTableEnabled());
 
@@ -176,6 +179,8 @@ bool MarkdownEditorPage::saveInternal() {
 
   markdownConfig.setCodeBlockLineNumberEnabled(m_codeBlockLineNumberCheckBox->isChecked());
   markdownConfig.setCodeBlockLineWrapEnabled(m_codeBlockLineWrapCheckBox->isChecked());
+  markdownConfig.setInactiveReaderTimeoutMinutes(
+      m_inactiveReaderTimeoutMinutesSpinBox->value());
 
   markdownConfig.setSmartTableEnabled(m_smartTableCheckBox->isChecked());
 
@@ -334,6 +339,29 @@ void MarkdownEditorPage::setupReadGroup() {
     addSearchItem(label, m_codeBlockLineWrapCheckBox->toolTip(), m_codeBlockLineWrapCheckBox);
     connect(m_codeBlockLineWrapCheckBox, &QCheckBox::stateChanged, this,
             &MarkdownEditorPage::pageIsChanged);
+  }
+
+  {
+    m_inactiveReaderTimeoutMinutesSpinBox = WidgetsFactory::createSpinBox(this);
+    m_inactiveReaderTimeoutMinutesSpinBox->setObjectName(
+        QStringLiteral("inactiveReaderTimeoutMinutesSpinBox"));
+    m_inactiveReaderTimeoutMinutesSpinBox->setRange(0, 1440);
+    m_inactiveReaderTimeoutMinutesSpinBox->setSingleStep(1);
+    m_inactiveReaderTimeoutMinutesSpinBox->setSuffix(tr(" min"));
+    m_inactiveReaderTimeoutMinutesSpinBox->setSpecialValueText(tr("Never"));
+    m_inactiveReaderTimeoutMinutesSpinBox->setToolTip(
+        tr("Release preview memory after the tab has been hidden for this many minutes; "
+           "returning reloads the current Markdown without losing unsaved text or undo history"));
+
+    const QString label(tr("Unload inactive preview after"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createSettingRow(
+        label, m_inactiveReaderTimeoutMinutesSpinBox->toolTip(),
+        m_inactiveReaderTimeoutMinutesSpinBox, this));
+    addSearchItem(label, m_inactiveReaderTimeoutMinutesSpinBox->toolTip(),
+                  m_inactiveReaderTimeoutMinutesSpinBox);
+    connect(m_inactiveReaderTimeoutMinutesSpinBox, QOverload<int>::of(&QSpinBox::valueChanged),
+            this, &MarkdownEditorPage::pageIsChanged);
   }
 
   {
