@@ -9,6 +9,7 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
+    color: #E67E80;
     font-weight: bold;
     margin-top: 20px;
     margin-bottom: 10px;
@@ -21,32 +22,26 @@ p {
 }
 
 h1 {
-    color: #E67E80;
     font-size: 26px;
 }
 
 h2 {
-    color: #E69875;
     font-size: 24px;
 }
 
 h3 {
-    color: #DBBC7F;
     font-size: 22px;
 }
 
 h4 {
-    color: #A7C080;
     font-size: 20px;
 }
 
 h5 {
-    color: #7FBBB3;
     font-size: 19px;
 }
 
 h6 {
-    color: #D699B6;
     font-size: 18px;
 }
 

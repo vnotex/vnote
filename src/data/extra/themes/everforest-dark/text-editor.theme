@@ -113,27 +113,27 @@
             "font-size" : 17
         },
         "H2" : {
-            "text-color" : "#E69875",
+            "text-color" : "#E67E80",
             "bold" : true,
             "font-size" : 16
         },
         "H3" : {
-            "text-color" : "#DBBC7F",
+            "text-color" : "#E67E80",
             "bold" : true,
             "font-size" : 15
         },
         "H4" : {
-            "text-color" : "#A7C080",
+            "text-color" : "#E67E80",
             "bold" : true,
             "font-size" : 14
         },
         "H5" : {
-            "text-color" : "#7FBBB3",
+            "text-color" : "#E67E80",
             "bold" : true,
             "font-size" : 13
         },
         "H6" : {
-            "text-color" : "#D699B6",
+            "text-color" : "#E67E80",
             "bold" : true,
             "font-size" : 12
         },
