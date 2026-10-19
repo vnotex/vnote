@@ -23,9 +23,9 @@ UnitedEntryHelper::UserEntry UnitedEntryHelper::parseUserEntry(const QString &p_
 
   int idx = text.indexOf(QLatin1Char(' '));
   if (idx == -1) {
-    entry.m_name = text.toLower();
+    entry.m_name = text;
   } else {
-    entry.m_name = text.left(idx).toLower();
+    entry.m_name = text.left(idx);
     entry.m_args = text.mid(idx).trimmed();
   }
 

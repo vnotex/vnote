@@ -59,6 +59,9 @@ QList<QSharedPointer<IUnitedEntry>> UnitedEntryMgr::getEntries() const {
 QSharedPointer<IUnitedEntry> UnitedEntryMgr::findEntry(const QString &p_name) const {
   auto it = m_entries.find(p_name);
   if (it == m_entries.end()) {
+    it = m_entries.find(p_name.toLower());
+  }
+  if (it == m_entries.end()) {
     return nullptr;
   }
 
@@ -72,9 +75,14 @@ QString UnitedEntryMgr::resolveEntryName(const QList<QString> &p_names, const QS
   if (p_names.contains(p_name)) {
     return p_name; // exact match wins.
   }
+  // Preserve case-insensitive commands unless an exact-case alias takes precedence.
+  const auto lowerName = p_name.toLower();
+  if (p_names.contains(lowerName)) {
+    return lowerName;
+  }
   QString match;
   for (const auto &name : p_names) {
-    if (name.startsWith(p_name)) {
+    if (name.startsWith(lowerName)) {
       if (!match.isEmpty()) {
         return QString(); // ambiguous.
       }

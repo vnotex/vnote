@@ -22,14 +22,14 @@ public:
 
   QList<QSharedPointer<IUnitedEntry>> getEntries() const;
 
+  // Exact case first, then lowercase lookup (no prefix matching).
   QSharedPointer<IUnitedEntry> findEntry(const QString &p_name) const;
 
-  // Exact match wins; otherwise resolves a unique prefix; null if none or ambiguous.
+  // Exact case wins; otherwise resolves lowercase exact/unique prefix; null if ambiguous.
   QSharedPointer<IUnitedEntry> resolveEntry(const QString &p_name) const;
 
-  // Pure name resolver (exposed for unit tests): returns p_name if it is an exact
-  // element of p_names; else the single element that startsWith(p_name); else empty
-  // QString (no match OR ambiguous OR empty input).
+  // Pure name resolver: exact original name, then lowercase exact/unique prefix.
+  // Returns empty for no match, ambiguous prefix, or empty input.
   static QString resolveEntryName(const QList<QString> &p_names, const QString &p_name);
 
   bool isInitialized() const;

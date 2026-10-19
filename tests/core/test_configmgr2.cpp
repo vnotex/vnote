@@ -94,6 +94,8 @@ private slots:
   void testMindMapEditor_defaultLayoutUsesMainConfig();
   void testMindMapEditor_settersPersistAndClearStyleIndependently();
   void testMindMapEditor_shortcutFilteringPreservesRawOverrides();
+  void testUnitedEntryAliases_upgradeAndPreserveOverrides_data();
+  void testUnitedEntryAliases_upgradeAndPreserveOverrides();
 
   // Absent-key safety, which is provided by the defaults merge in ConfigMgr2::init().
   void testAbsentKeyKeepsTheCppDefaultForEveryField();
@@ -1355,6 +1357,67 @@ void TestConfigMgr2::testMindMapEditor_shortcutFilteringPreservesRawOverrides() 
       valueAt(m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex")), path)
           .toObject(),
       raw);
+}
+
+void TestConfigMgr2::testUnitedEntryAliases_upgradeAndPreserveOverrides_data() {
+  QTest::addColumn<bool>("customName");
+  QTest::addColumn<bool>("customContent");
+  QTest::addColumn<bool>("disabled");
+  QTest::newRow("old-alias-list") << false << false << false;
+  QTest::newRow("custom-N") << true << false << false;
+  QTest::newRow("custom-G") << false << true << false;
+  QTest::newRow("custom-both") << true << true << false;
+  QTest::newRow("empty-opt-out") << false << false << true;
+}
+
+void TestConfigMgr2::testUnitedEntryAliases_upgradeAndPreserveOverrides() {
+  QFETCH(bool, customName);
+  QFETCH(bool, customContent);
+  QFETCH(bool, disabled);
+  auto alias = [](const QString &p_name, const QString &p_value) {
+    return QJsonObject{{QStringLiteral("name"), p_name},
+                       {QStringLiteral("description"), QStringLiteral("User description")},
+                       {QStringLiteral("value"), p_value}};
+  };
+  QJsonArray saved;
+  if (!disabled) {
+    saved.append(alias(QStringLiteral("n"), QStringLiteral("find --scope notebook --object name")));
+    saved.append(alias(QStringLiteral("g"),
+                       QStringLiteral("find --scope notebook --object content")));
+    saved.append(alias(QStringLiteral("custom"), QStringLiteral("history")));
+    if (customName) {
+      saved.append(alias(QStringLiteral("N"), QStringLiteral("windows")));
+    }
+    if (customContent) {
+      saved.append(alias(QStringLiteral("G"), QStringLiteral("help")));
+    }
+  }
+  const QStringList path{QStringLiteral("core"), QStringLiteral("unitedEntry"),
+                         QStringLiteral("alias")};
+  const QJsonObject document{{QStringLiteral("core"),
+                             QJsonObject{{QStringLiteral("unitedEntry"),
+                                          QJsonObject{{QStringLiteral("alias"), saved}}}}}};
+  const auto loaded = loadThroughMergePath(document);
+  const auto aliases = valueAt(loaded, path).toArray();
+  QCOMPARE(aliases.size(), saved.size() + (disabled ? 0 : !customName + !customContent));
+  for (int i = 0; i < saved.size(); ++i) {
+    QCOMPARE(aliases[i], saved[i]);
+  }
+  if (!disabled) {
+    QHash<QString, QString> commands;
+    for (const auto &entry : aliases) {
+      const auto obj = entry.toObject();
+      commands.insert(obj.value(QStringLiteral("name")).toString(),
+                      obj.value(QStringLiteral("value")).toString());
+    }
+    QCOMPARE(commands.value(QStringLiteral("N")),
+             customName ? QStringLiteral("windows")
+                        : QStringLiteral("find --scope all_notebook --object name"));
+    QCOMPARE(commands.value(QStringLiteral("G")),
+             customContent ? QStringLiteral("help")
+                           : QStringLiteral("find --scope all_notebook --object content"));
+  }
+  QCOMPARE(valueAt(loadThroughMergePath(loaded), path).toArray(), aliases);
 }
 
 // ============ Absent-key safety (the defaults merge) ============

@@ -11,6 +11,7 @@ add_qt_test(test_findunitedentry
     ${CMAKE_SOURCE_DIR}/src/unitedentry/tasksunitedentry.h
     ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/unitedentrymgr.cpp
+    ${CMAKE_SOURCE_DIR}/src/unitedentry/unitedentryhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/unitedentry/historyunitedentry.h
     ${CMAKE_SOURCE_DIR}/src/unitedentry/windowsunitedentry.h
     stubs_findunitedentry.cpp

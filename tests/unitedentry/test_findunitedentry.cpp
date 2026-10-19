@@ -7,6 +7,7 @@
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <unitedentry/findunitedentry.h>
+#include <unitedentry/unitedentryhelper.h>
 #include <unitedentry/unitedentrymgr.h>
 
 using namespace vnotex;
@@ -43,6 +44,8 @@ private slots:
   void testResolveEntryNameEmptyList();
   void testResolveEntryNameSingletonEmptyInput();
   void testResolveEntryNameAliasParticipation();
+  void testParseAndResolveCase_data();
+  void testParseAndResolveCase();
 
 private:
   static void setupParser(QCommandLineParser &p_parser);
@@ -295,6 +298,36 @@ void TestFindUnitedEntry::testResolveEntryNameAliasParticipation() {
   const QList<QString> names{QStringLiteral("find"), QStringLiteral("history"),
                              QStringLiteral("jump")};
   QCOMPARE(UnitedEntryMgr::resolveEntryName(names, QStringLiteral("j")), QStringLiteral("jump"));
+}
+
+void TestFindUnitedEntry::testParseAndResolveCase_data() {
+  QTest::addColumn<QString>("input");
+  QTest::addColumn<QString>("expected");
+  QTest::newRow("all-names") << QStringLiteral("N") << QStringLiteral("N");
+  QTest::newRow("current-names") << QStringLiteral("n") << QStringLiteral("n");
+  QTest::newRow("all-content") << QStringLiteral("G") << QStringLiteral("G");
+  QTest::newRow("current-content") << QStringLiteral("g") << QStringLiteral("g");
+  QTest::newRow("uppercase-command") << QStringLiteral("HELP") << QStringLiteral("help");
+  QTest::newRow("uppercase-prefix") << QStringLiteral("FI") << QStringLiteral("find");
+  QTest::newRow("ambiguous-prefix") << QStringLiteral("H") << QString();
+  QTest::newRow("unknown") << QStringLiteral("Z") << QString();
+}
+
+void TestFindUnitedEntry::testParseAndResolveCase() {
+  QFETCH(QString, input);
+  QFETCH(QString, expected);
+  const QList<QString> names{QStringLiteral("find"), QStringLiteral("help"),
+                            QStringLiteral("history"), QStringLiteral("N"),
+                            QStringLiteral("n"), QStringLiteral("G"), QStringLiteral("g")};
+  const auto entry = UnitedEntryHelper::parseUserEntry(input + QStringLiteral(" MixedCase query "));
+  QCOMPARE(entry.m_name, input);
+  QCOMPARE(entry.m_args, QStringLiteral("MixedCase query"));
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, entry.m_name), expected);
+
+  const auto bareEntry = UnitedEntryHelper::parseUserEntry(QStringLiteral(" ") + input);
+  QCOMPARE(bareEntry.m_name, input);
+  QVERIFY(bareEntry.m_args.isEmpty());
+  QCOMPARE(UnitedEntryMgr::resolveEntryName(names, bareEntry.m_name), expected);
 }
 
 } // namespace tests

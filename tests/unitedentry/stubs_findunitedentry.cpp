@@ -73,21 +73,6 @@ QSharedPointer<QWidget> UnitedEntryAlias::currentPopupWidget() const { return {}
 
 bool UnitedEntryAlias::isAliasOf(const IUnitedEntry *) const { return false; }
 
-UnitedEntryHelper::UnitedEntryHelper(ThemeService *) {}
-
-UnitedEntryHelper::UserEntry UnitedEntryHelper::parseUserEntry(const QString &) { return {}; }
-
-const QIcon &UnitedEntryHelper::itemIcon(ItemType) const {
-  static QIcon s_icon;
-  return s_icon;
-}
-
-void UnitedEntryHelper::refreshIcons() {}
-
-UnitedEntryHelper::ItemType UnitedEntryHelper::locationTypeToItemType(LocationType) {
-  return UnitedEntryHelper::Other;
-}
-
 QString ThemeService::getIconFile(const QString &p_icon) const { return p_icon; }
 
 QString ThemeService::paletteColor(const QString &) const { return QString(); }
