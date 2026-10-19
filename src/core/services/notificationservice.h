@@ -30,7 +30,7 @@ public:
   enum class Severity { Info, Success, Warning, Error };
 
   // Controls only how long the auto-popup is shown, NOT memory retention.
-  enum class Duration { Short, Long, Persist };
+  enum class Duration { Short, Medium, Long, Persist };
 
   // How badly the producer needs to be seen. The producer states intent; the
   // widget layer owns placement (see src/widgets/AGENTS.md).

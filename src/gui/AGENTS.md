@@ -74,6 +74,8 @@ Keep the producer stack-scoped after the main-window startup hook. Its retained
 opt-out action captures only a `QPointer<ConfigMgr2>`; no producer or config-field
 reference may outlive that scope. `OK` dismisses only the current message;
 acknowledgement never disables future tips or resets the consumed day/index.
+The tip uses `Duration::Medium`: its toast auto-hides after 10 seconds. Hovering
+pauses auto-hide; leaving restarts the full 10-second budget.
 
 ## WebEngine profile storage
 

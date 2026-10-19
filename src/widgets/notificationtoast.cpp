@@ -26,6 +26,7 @@ namespace {
 
 // Toast auto-hide durations.
 constexpr int c_shortMs = 3000;
+constexpr int c_mediumMs = 10000;
 constexpr int c_longMs = 60000;
 
 // Persist means "stays in the LIST until dismissed", not "stays on screen
@@ -415,6 +416,9 @@ void NotificationToast::startAutoHideTimer(NotificationMessage::Duration p_durat
   switch (p_duration) {
   case NotificationMessage::Duration::Short:
     m_autoHideTimer->start(c_shortMs);
+    break;
+  case NotificationMessage::Duration::Medium:
+    m_autoHideTimer->start(c_mediumMs);
     break;
   case NotificationMessage::Duration::Long:
     m_autoHideTimer->start(c_longMs);

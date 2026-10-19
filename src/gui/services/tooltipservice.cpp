@@ -168,7 +168,7 @@ bool ToolTipService::showTipIfDue(const QDate &p_today) {
   message.m_title = tr("VNote Tip");
   message.m_text = std::move(text);
   message.m_severity = NotificationMessage::Severity::Info;
-  message.m_duration = NotificationMessage::Duration::Long;
+  message.m_duration = NotificationMessage::Duration::Medium;
   message.m_attention = NotificationMessage::Attention::Interrupt;
   message.m_category = QStringLiteral("tooltip");
   const QPointer<ConfigMgr2> guardedConfig(configMgr);
