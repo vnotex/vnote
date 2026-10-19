@@ -70,7 +70,6 @@ m3::qt::EditorConfig editorConfig(ServiceLocator &p_services, const Buffer2 &p_b
                      {"moveNode", &Shortcuts::moveNode},
                      {"moveUp", &Shortcuts::moveUp},
                      {"moveDown", &Shortcuts::moveDown},
-                     {"addLink", &Shortcuts::addLink},
                      {"selectParent", &Shortcuts::selectParent},
                      {"selectChild", &Shortcuts::selectChild},
                      {"previousSibling", &Shortcuts::previousSibling},
@@ -157,20 +156,19 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
             const auto generation = m_generation;
             const QUrl url(p_url);
             const auto scheme = url.scheme();
-            const bool allowNeverAsk = scheme == QStringLiteral("http") ||
-                                       scheme == QStringLiteral("https") ||
-                                       scheme == QStringLiteral("ftp") ||
-                                       scheme == QStringLiteral("mailto");
+            const bool allowNeverAsk =
+                scheme == QStringLiteral("http") || scheme == QStringLiteral("https") ||
+                scheme == QStringLiteral("ftp") || scheme == QStringLiteral("mailto");
             const QPointer<ConfigMgr2> configMgr(m_services.get<ConfigMgr2>());
             int answer = QMessageBox::Yes;
             if (!allowNeverAsk || !configMgr ||
                 configMgr->getCoreConfig().isConfirmExternalLinksEnabled()) {
               const auto question = allowNeverAsk ? MessageBoxHelper::questionYesNoNeverAsk
                                                   : MessageBoxHelper::questionYesNo;
-              answer = question(MessageBoxHelper::Warning,
-                                tr("Are you sure to open link (%1)?").arg(url.toString()),
-                                tr("Malicious link might do harm to your device."), QString(),
-                                window());
+              answer =
+                  question(MessageBoxHelper::Warning,
+                           tr("Are you sure to open link (%1)?").arg(url.toString()),
+                           tr("Malicious link might do harm to your device."), QString(), window());
             }
             if (!guard || generation != m_generation || !m_contentLoaded || !canUseBuffer()) {
               return;
