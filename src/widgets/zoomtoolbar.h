@@ -23,8 +23,7 @@ public:
   void setVisible(bool p_visible);
 
   // Display only; empty sequences remove tips. The caller owns shortcut bindings.
-  void setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut,
-                       const QKeySequence &p_reset);
+  void setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut);
 
 signals:
   void zoomRequested(bool p_zoomIn);

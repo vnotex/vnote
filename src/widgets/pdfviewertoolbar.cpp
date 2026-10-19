@@ -120,6 +120,7 @@ void PdfViewerToolBar::install(QToolBar *p_toolBar, const IconProvider &p_icons,
   connect(m_zoomOutAction, &QAction::triggered, this, [this]() { emit zoomStepRequested(false); });
 
   m_zoomComboBox = new QComboBox();
+  m_zoomComboBox->setToolTip(tr("Zoom"));
   m_zoomComboBox->addItem(tr("Automatic"), QStringLiteral("auto"));
   m_zoomComboBox->addItem(tr("Actual Size"), QStringLiteral("page-actual"));
   m_zoomComboBox->addItem(tr("Page Fit"), QStringLiteral("page-fit"));
@@ -151,8 +152,7 @@ void PdfViewerToolBar::install(QToolBar *p_toolBar, const IconProvider &p_icons,
   setControlsEnabled(false);
 }
 
-void PdfViewerToolBar::setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut,
-                                       const QKeySequence &p_reset) {
+void PdfViewerToolBar::setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut) {
   const auto tip = [](const QString &p_label, const QKeySequence &p_key) {
     return p_key.isEmpty()
                ? p_label
@@ -160,9 +160,6 @@ void PdfViewerToolBar::setShortcutTips(const QKeySequence &p_zoomIn, const QKeyS
   };
   m_zoomInAction->setToolTip(tip(m_zoomInAction->text(), p_zoomIn));
   m_zoomOutAction->setToolTip(tip(m_zoomOutAction->text(), p_zoomOut));
-  m_zoomComboBox->setToolTip(p_reset.isEmpty()
-                                ? tr("Zoom")
-                                : tr("Zoom") + QLatin1Char('\n') + tip(tr("Automatic"), p_reset));
 }
 
 QMenu *PdfViewerToolBar::addModeSubmenu(const QString &p_title, const QList<QString> &p_labels,

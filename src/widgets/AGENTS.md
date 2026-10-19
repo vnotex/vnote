@@ -389,14 +389,17 @@ whole map or the current PDF page. Custom values never add preset rows.
 `ViewWindowToolBarHelper2::addZoomToolBar()` supplies themed icons; the pure control
 retains their `iconName` properties for runtime theme refresh.
 
-`ZoomToolBar`, `PdfViewerToolBar` (after `install()`), and `ImageViewer` expose
-`setShortcutTips(zoomIn, zoomOut, reset)` with `QKeySequence` arguments. Tips use native
-key names; empty sequences remove them. This API only changes tooltips, never action
-labels, zoom state or shortcut registration. Mind Map supplies Ctrl+= / Ctrl+- / Ctrl+0.
-Typst supplies them only in Read: Edit-mode shortcuts change the source font, even when
-Live Preview keeps the PDF zoom controls visible. PDF supplies all three from its existing
-pdf.js bindings; Ctrl+0 selects **Automatic**, not Actual Size. Image tabs do not install
-zoom shortcuts, and image overlays suppress them, so both leave tips unset by default.
+`ZoomToolBar` and `PdfViewerToolBar` (after `install()`) expose
+`setShortcutTips(zoomIn, zoomOut)` with `QKeySequence` arguments. Tips use native key names;
+empty sequences remove them. This API only changes button tooltips, never action labels,
+zoom state or shortcut registration. Mind Map, Typst and PDF supply Ctrl+= / Ctrl+-.
+Typst uses the same unqualified hints in Read and Edit with Live Preview; disabling Live
+Preview in Edit still hides the controls. Existing keyboard behavior is unchanged: Typst
+Edit-mode shortcuts change the source font, while Read-mode shortcuts change the PDF zoom.
+Zoom dropdowns show only **Zoom**, with no Ctrl+0 hint because they are not reset buttons.
+`ImageViewer` retains `setShortcutTips(zoomIn, zoomOut, reset)` for its three actual buttons.
+Image tabs do not install zoom shortcuts, and image overlays suppress them, so both leave
+shortcut tips unset by default.
 
 Enter is consumed once before QComboBox can deliver it twice. An unchanged field never
 reapplies its truncated display. Focus loss discards drafts before Qt can activate a

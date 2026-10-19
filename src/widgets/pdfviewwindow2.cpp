@@ -212,8 +212,7 @@ void PdfViewWindow2::setupViewerToolBarActions(QToolBar *p_toolBar) {
         m_viewerToolBar->setPresentationMode(isViewFullScreen());
       });
   m_viewerToolBar->setShortcutTips(QKeySequence(Qt::CTRL | Qt::Key_Equal),
-                                  QKeySequence(Qt::CTRL | Qt::Key_Minus),
-                                  QKeySequence(Qt::CTRL | Qt::Key_0));
+                                  QKeySequence(Qt::CTRL | Qt::Key_Minus));
 
   connect(m_viewerToolBar, &PdfViewerToolBar::pageRequested, this, [this](int p_page) {
     if (auto *a = adapter()) {

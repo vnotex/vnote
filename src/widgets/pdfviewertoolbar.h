@@ -63,9 +63,8 @@ public:
                const std::function<void()> &p_afterSidebar = {});
 
   // Call after install(). Display only; empty sequences remove tips.
-  // The caller owns shortcut bindings; PDF reset selects Automatic zoom.
-  void setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut,
-                       const QKeySequence &p_reset);
+  // The caller owns shortcut bindings.
+  void setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut);
 
   // Adds Presentation Mode to @p_toolBar and returns it.
   //

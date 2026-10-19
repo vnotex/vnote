@@ -56,8 +56,7 @@ ZoomToolBar::ZoomToolBar(const QIcon &p_zoomOutIcon, const QIcon &p_zoomInIcon, 
   refreshText();
 }
 
-void ZoomToolBar::setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut,
-                                  const QKeySequence &p_reset) {
+void ZoomToolBar::setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut) {
   const auto tip = [](const QString &p_label, const QKeySequence &p_key) {
     return p_key.isEmpty()
                ? p_label
@@ -65,9 +64,6 @@ void ZoomToolBar::setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequen
   };
   m_zoomInAction->setToolTip(tip(m_zoomInAction->text(), p_zoomIn));
   m_zoomOutAction->setToolTip(tip(m_zoomOutAction->text(), p_zoomOut));
-  m_comboBox->setToolTip(p_reset.isEmpty()
-                            ? tr("Zoom")
-                            : tr("Zoom") + QLatin1Char('\n') + tip(tr("Reset Zoom"), p_reset));
 }
 
 bool ZoomToolBar::eventFilter(QObject *p_object, QEvent *p_event) {

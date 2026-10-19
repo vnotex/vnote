@@ -371,8 +371,7 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   p_toolBar->addSeparator();
   m_zoomToolBar = ViewWindowToolBarHelper2::addZoomToolBar(p_toolBar, getServices());
   m_zoomToolBar->setShortcutTips(QKeySequence(Qt::CTRL | Qt::Key_Equal),
-                                QKeySequence(Qt::CTRL | Qt::Key_Minus),
-                                QKeySequence(Qt::CTRL | Qt::Key_0));
+                                QKeySequence(Qt::CTRL | Qt::Key_Minus));
   connect(m_zoomToolBar, &ZoomToolBar::zoomRequested, this, &MindMapViewWindow2::zoom);
   connect(m_zoomToolBar, &ZoomToolBar::zoomSelected, this, [this](qreal p_zoom) {
     if (m_contentLoaded) {
