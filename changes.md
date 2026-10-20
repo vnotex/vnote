@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Match mind-map properties button/swatch borders and hover fills to the active theme, and replace the native sunken separator with a flat themed line
 * Use the same Typst preview context menu in Edit and Read modes
 * Navigate to the end of Typst headings from Outline without selecting the heading text
 * Update vtextedit to upstream `be21546` with KSyntaxHighlighting 6.30 and native Markdown code-block highlighting by default

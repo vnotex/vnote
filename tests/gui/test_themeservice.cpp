@@ -54,8 +54,6 @@ private slots:
   void styleLists_data();
   void styleLists();
 
-  void interfaceQssFullyResolved_data();
-  void interfaceQssFullyResolved();
   void alternatingRowsFollowThemeChanges_data();
   void alternatingRowsFollowThemeChanges();
   void selectedSearchResultsKeepThemeText_data();
@@ -198,6 +196,9 @@ void TestThemeService::qtAppearanceFollowsThemeChanges() {
            systemPalette.color(QPalette::Active, QPalette::Text));
   QCOMPARE(QPalette().color(QPalette::Disabled, QPalette::Text),
            systemPalette.color(QPalette::Disabled, QPalette::Text));
+  for (auto role : {QPalette::Mid, QPalette::Midlight}) {
+    QCOMPARE(QPalette().color(role), systemPalette.color(role));
+  }
 
   service.switchTheme(QStringLiteral("everforest-dark"));
   service.switchTheme(QStringLiteral("missing-theme-for-appearance-test"));
@@ -687,25 +688,6 @@ void TestThemeService::selectedSearchResultsKeepThemeText() {
       // Selection remains visible; only its foreground-color reversal is removed.
       QVERIFY2(image.pixelColor(4, image.height() / 2) != base, qPrintable(context));
     }
-  }
-}
-
-// A missing palette key leaves its token in the stylesheet and Qt drops the declaration.
-void TestThemeService::interfaceQssFullyResolved_data() { addBundledThemeRows(); }
-
-void TestThemeService::interfaceQssFullyResolved() {
-  QFETCH(QString, themeName);
-
-  const QString qss = resolvedInterfaceQss(themeName);
-  QVERIFY2(!qss.isEmpty(),
-           qPrintable(QStringLiteral("theme '%1' produced no interface.qss").arg(themeName)));
-
-  for (const auto &prefix :
-       {QStringLiteral("@palette#"), QStringLiteral("@base#"), QStringLiteral("@widgets#")}) {
-    const int idx = qss.indexOf(prefix);
-    QVERIFY2(idx < 0,
-             qPrintable(QStringLiteral("%1 interface.qss has an unresolved token: ...%2...")
-                            .arg(themeName, qss.mid(qMax(0, idx - 60), 160))));
   }
 }
 

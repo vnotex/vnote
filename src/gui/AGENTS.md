@@ -23,6 +23,9 @@ select the light/dark appearance of Qt's native standard context-menu icons.
 Custom themes also set the default palette's `Text` roles from `base#normal#fg`
 and `base#disabled#fg`: Qt's native font icons read that palette, and some Windows
 styles retain light text roles even after a dark scheme request.
+`Mid` uses `base#normal#border` and `Midlight` uses `base#hover#bg`: QSS
+`palette(...)` colors resolve from the application palette, not a widget's palette.
+These roles cover native mind-map properties borders, swatches and hover fills.
 
 Themes with `backfill-system-palette` (including Native and renamed copies) clear
 the palette overrides (zero resolve mask), then the scheme override **before**

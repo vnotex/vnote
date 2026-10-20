@@ -128,6 +128,9 @@ void ThemeService::loadCurrentTheme(const QString &p_themeName) {
     qtPalette.setColor(QPalette::Text, foreground);
     qtPalette.setColor(QPalette::Disabled, QPalette::Text,
                        QColor(paletteColor("base#disabled#fg")));
+    // QSS palette() colors come from the application palette, not the widget's.
+    qtPalette.setColor(QPalette::Mid, QColor(paletteColor("base#normal#border")));
+    qtPalette.setColor(QPalette::Midlight, QColor(paletteColor("base#hover#bg")));
     QGuiApplication::setPalette(qtPalette);
   }
 #endif
