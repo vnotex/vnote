@@ -151,7 +151,7 @@ ImageViewer::ImageViewer(ServiceLocator &p_services, QWidget *p_parent, Mode p_m
 }
 
 void ImageViewer::setShortcutTips(const QKeySequence &p_zoomIn, const QKeySequence &p_zoomOut,
-                                   const QKeySequence &p_reset) {
+                                  const QKeySequence &p_reset) {
   const auto tip = [](const QString &p_label, const QKeySequence &p_key) {
     return p_key.isEmpty()
                ? p_label
@@ -255,13 +255,17 @@ void ImageViewer::positionOverlay() {
   const auto size = m_view->viewport()->size();
   m_error->setGeometry(m_view->viewport()->rect());
   m_controls->adjustSize();
-  m_controls->move(qMax(0, size.width() - m_controls->width() - 12),
-                   qMax(0, size.height() - m_controls->height() - 12));
-  m_controls->raise();
   if (m_close) {
     m_close->move(qMax(0, width() - m_close->width() - 12), 12);
+    const auto closePosition = m_view->viewport()->mapFrom(this, m_close->pos());
+    m_controls->move(qMax(0, closePosition.x() - m_controls->width() - 4),
+                     qMax(0, closePosition.y() + (m_close->height() - m_controls->height()) / 2));
     m_close->raise();
+  } else {
+    m_controls->move(qMax(0, size.width() - m_controls->width() - 12),
+                     qMax(0, size.height() - m_controls->height() - 12));
   }
+  m_controls->raise();
 }
 
 void ImageViewer::cancelDrag() {

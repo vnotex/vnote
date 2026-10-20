@@ -305,8 +305,8 @@ Mind-map plain left double-click activates only decoded images, including in rea
 placeholders, resize handles and modified/group gestures never open the overlay. The m3 activation
 signal carries an implicitly shared pixel snapshot, not a resource URL: the host must not fetch
 or decode again. The overlay is a child covering the editor, never a separate window. It follows
-editor resizes and uses a 90%-opaque theme backdrop, a top-right Close button and the shared
-bottom-right camera controls. Escape, Close or a backdrop click dismiss it; image clicks and
+editor resizes and uses a 90%-opaque theme backdrop. Camera controls sit at the top right,
+immediately left of Close. Escape, Close or a backdrop click dismiss it; image clicks and
 pans do not. Explicit dismissal restores the previous focus. Tab stays within the controls;
 editing shortcuts and Ctrl+wheel never reach the covered map. Claim native QWindow keys as well
 as widget keys so the first Escape closes the image, not Presentation Mode.
@@ -322,7 +322,8 @@ Only fit mode refits on resize; manual mode preserves scale and the image-space 
 Camera changes never dirty the buffer and are not persisted. Overlay controls stay outside
 image transforms. Qt's optimized viewport scrolling also moves child widgets: the native
 view explicitly restores the toolbar position after scrolling. Keep its 32×32 hit targets,
-4px spacing, 12px bottom/right inset, and explicit theme-icon refresh.
+4px spacing (including the gap before Close), and explicit theme-icon refresh. Native overlays
+anchor Close 12px from the top/right; embedded image tabs retain the 12px bottom/right inset.
 
 The Markdown popup uses intrinsic dimensions and generation-scoped image handlers; close, replacement,
 and protected-SVG authorization callbacks cannot revive an obsolete image. Keep the existing
