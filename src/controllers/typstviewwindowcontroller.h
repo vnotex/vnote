@@ -25,12 +25,44 @@ public:
   void requestOpenLink(const QUrl &p_url);
   void openConfirmedExternalLink(const QUrl &p_url);
 
+  // Cancel insertion work independently of pending external-link consent.
+  void invalidateInsertionRequests();
+
+  // Images are stored as local files inside the current note-directory project.
+  // Acquisition validates bounded image bytes and normalizes unsupported native formats.
+  QByteArray readImageData(const QString &p_source, QString *p_error = nullptr);
+  QString insertImage(const QByteArray &p_data, const QString &p_name, QString *p_createdAsset,
+                      QString *p_error = nullptr);
+  // No-copy references return decoded project-relative paths and transfer no ownership.
+  QString imageReference(const QUrl &p_url, QString *p_error = nullptr) const;
+
+  // Hyperlinks, including attachments, may target existing files outside the project.
+  // These APIs never open links or request external-link consent.
+  QString linkDestination(const QString &p_source, bool p_relative,
+                          QString *p_error = nullptr) const;
+  bool canAttach(const QUrl &p_url) const;
+  QString insertAttachment(const QString &p_path, QString *p_createdAttachment,
+                           QString *p_error = nullptr);
+  bool readFileContent(const QUrl &p_url, QString *p_text, QString *p_error = nullptr) const;
+
+  // Error/output parameters are cleared on entry. On successful storage, created outputs
+  // contain backend identifiers owned by the caller until its insertion commits. A failed
+  // insertion rolls back its own resource and reports any cleanup failure explicitly.
+  // Serializers produce markup snippets with literal strings, not context-aware rewrites.
+  static QString imageMarkup(const QString &p_path, const QString &p_alt, int p_width,
+                             int p_height);
+  static QString linkMarkup(const QString &p_destination, const QString &p_text);
+
 signals:
   void errorOccurred(const QString &p_message);
   void externalLinkConfirmationRequested(const QUrl &p_url);
 
 private:
   bool bufferAvailable() const;
+  bool insertionAvailable() const;
+  bool insertionIsCurrent(quint64 p_generation, const QString &p_bufferId,
+                          const QString &p_resolvedPath) const;
+  static QString quoteString(const QString &p_text);
   NodeIdentifier resolveIndexedFile(const QString &p_absolutePath) const;
   void confirmExternalLink(const QUrl &p_url);
 
@@ -38,6 +70,8 @@ private:
   Buffer2 m_buffer;
   Project m_project;
   quint64 m_generation = 0;
+  quint64 m_insertionGeneration = 0;
+  QString m_insertionBufferPath;
   QUrl m_pendingExternalLink;
   quint64 m_pendingExternalGeneration = 0;
   bool m_externalConfirmationActive = false;

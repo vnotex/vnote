@@ -1,23 +1,36 @@
 #include "typstviewwindow.h"
 
 #include <QAction>
+#include <QApplication>
+#include <QClipboard>
 #include <QCoreApplication>
+#include <QDialog>
 #include <QDir>
+#include <QDragEnterEvent>
+#include <QDragMoveEvent>
+#include <QDropEvent>
+#include <QFileInfo>
 #include <QKeySequence>
 #include <QLabel>
 #include <QMenu>
 #include <QMessageBox>
+#include <QMimeData>
+#include <QMimeDatabase>
 #include <QPainter>
 #include <QPointer>
+#include <QRegularExpression>
+#include <QScopeGuard>
 #include <QScopedValueRollback>
 #include <QScrollBar>
 #include <QSignalBlocker>
 #include <QSpinBox>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 
+#include <algorithm>
 #include <stdexcept>
 
 #include <vtextedit/typsteditorconfig.h>
@@ -29,12 +42,18 @@
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
+#include <core/services/notebookcoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/texteditorconfig.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/widgetutils.h>
+#include <utils/htmlutils.h>
 
+#include "dialogs/imageinsertdialog.h"
+#include "dialogs/linkinsertdialog.h"
+#include "dialogs/selectdialog.h"
 #include "editors/editorstatusbarbinder.h"
 #include "encodingbutton.h"
 #include "findandreplacewidget2.h"
@@ -49,6 +68,797 @@
 #include "zoomtoolbar.h"
 
 using namespace vnotex;
+
+namespace {
+struct InsertionMime {
+  QList<QUrl> urls;
+  QString htmlImage;
+  bool generalHtml = false;
+  bool hasImageData = false;
+  QImage pixels;
+  QString text;
+};
+
+QString clipboardImageSource(const QMimeData *p_source) {
+  const auto html = p_source->html();
+  if (!html.isEmpty() && HtmlUtils::hasOnlyImgTag(html)) {
+    const QRegularExpression expression(QStringLiteral(
+        "<img ([^>]*)src=\"([^\"]+)\"([^>]*)>")); // image-parser-allow: clipboard HTML only
+    return expression.match(html).captured(2);
+  }
+  return {};
+}
+
+InsertionMime snapshotInsertionMime(const QMimeData *p_source) {
+  InsertionMime result;
+  if (!p_source) {
+    return result;
+  }
+  result.urls = p_source->urls();
+  result.text = p_source->text();
+  // File-manager URL lists outrank preview thumbnails and HTML representations.
+  if (result.urls.isEmpty()) {
+    result.htmlImage = clipboardImageSource(p_source);
+    result.generalHtml = p_source->hasHtml() && result.htmlImage.isEmpty();
+    result.hasImageData = p_source->hasImage();
+    if (result.hasImageData) {
+      result.pixels = qvariant_cast<QImage>(p_source->imageData());
+    }
+  }
+  return result;
+}
+
+QUrl insertionResourceUrl(const QString &p_text, const QString &p_root) {
+  const auto text = p_text.trimmed();
+  if (text.isEmpty() || text.contains(QChar::Null) || text.contains(QLatin1Char('\n')) ||
+      text.contains(QLatin1Char('\r')) || text.contains(QChar::ParagraphSeparator)) {
+    return {};
+  }
+  if (QFileInfo(text).isAbsolute()) {
+    return QUrl::fromLocalFile(text);
+  }
+  if (text.size() > 1 && text.at(1) == QLatin1Char(':')) {
+    return {};
+  }
+  if (QFileInfo(QDir(p_root).filePath(text)).isFile()) {
+    QUrl result;
+    result.setPath(text, QUrl::DecodedMode);
+    return result;
+  }
+  const QUrl url(text, QUrl::StrictMode);
+  if (!url.isValid()) {
+    return {};
+  }
+  const auto scheme = url.scheme();
+  if (url.isLocalFile() || scheme == QLatin1String("http") || scheme == QLatin1String("https") ||
+      scheme == QLatin1String("ftp") || scheme == QLatin1String("mailto") ||
+      text.startsWith(QLatin1String("data:image/"), Qt::CaseInsensitive)) {
+    return url;
+  }
+  if (scheme.isEmpty() && url.authority().isEmpty() &&
+      QFileInfo(QDir(p_root).filePath(url.path(QUrl::FullyDecoded))).isFile()) {
+    return url;
+  }
+  return {};
+}
+
+QString insertionLocalFile(const QUrl &p_url, const QString &p_root) {
+  if (!p_url.isValid() || (!p_url.isLocalFile() && !p_url.scheme().isEmpty()) ||
+      !p_url.authority().isEmpty()) {
+    return {};
+  }
+  const auto path = p_url.isLocalFile() ? p_url.toLocalFile() : p_url.path(QUrl::FullyDecoded);
+  if (path.isEmpty() || path.contains(QChar::Null)) {
+    return {};
+  }
+  const QFileInfo file(QDir(p_root).absoluteFilePath(path));
+  return file.isFile() ? file.absoluteFilePath() : QString();
+}
+
+bool insertionImageHint(const QUrl &p_url) {
+  if (p_url.toString().startsWith(QLatin1String("data:image/"), Qt::CaseInsensitive)) {
+    return true;
+  }
+  const auto scheme = p_url.scheme();
+  if (!scheme.isEmpty() && !p_url.isLocalFile() && scheme != QLatin1String("http") &&
+      scheme != QLatin1String("https")) {
+    return false;
+  }
+  const auto suffix = QFileInfo(p_url.path()).suffix().toLower();
+  return suffix == QLatin1String("png") || suffix == QLatin1String("jpg") ||
+         suffix == QLatin1String("jpeg") || suffix == QLatin1String("gif") ||
+         suffix == QLatin1String("webp") || suffix == QLatin1String("svg") ||
+         suffix == QLatin1String("bmp") || suffix == QLatin1String("xpm");
+}
+
+QString insertionLinkText(const QUrl &p_url, const QString &p_root) {
+  const auto local = insertionLocalFile(p_url, p_root);
+  return local.isEmpty() ? p_url.toString(QUrl::FullyEncoded) : QFileInfo(local).fileName();
+}
+
+bool insertionPixelsAllowed(const QImage &p_image) {
+  return !p_image.isNull() && p_image.width() <= 8192 && p_image.height() <= 8192 &&
+         qint64(p_image.width()) * p_image.height() <= 16 * 1024 * 1024;
+}
+
+void disposeRetiredEditor(const QPointer<vte::VTypstEditor> &p_editor) {
+  if (!p_editor) {
+    return;
+  }
+  const auto owns = [&p_editor](QWidget *p_widget) {
+    return p_widget && (p_widget == p_editor || p_editor->isAncestorOf(p_widget));
+  };
+  // Native context-menu paste can still be unwinding QMenu::exec. Never destroy
+  // that menu's source while an owned popup/modal is running its nested loop.
+  if (owns(QApplication::activePopupWidget()) || owns(QApplication::activeModalWidget())) {
+    QTimer::singleShot(0, p_editor, [p_editor] { disposeRetiredEditor(p_editor); });
+  } else {
+    p_editor->deleteLater();
+  }
+}
+} // namespace
+
+// A source insertion owns only its new resources. Native document history owns the edit;
+// resources deliberately survive Undo/Redo once the edit has committed.
+struct TypstViewWindow::Insertion {
+  struct Resource {
+    QString identifier;
+    QString folder;
+    bool attachment = false;
+  };
+
+  QPointer<TypstViewWindow> view;
+  QPointer<vte::VTypstEditor> retiredEditor;
+  QPointer<QTextDocument> document;
+  QPointer<QObject> serviceLifetime;
+  QPointer<NotebookCoreService> notebooks;
+  BufferService *buffers = nullptr;
+  Buffer2 buffer;
+  QString path;
+  QTextCursor target;
+  int revision = -1;
+  int position = -1;
+  int anchor = -1;
+  quint64 serial = 0;
+  QVector<Resource> resources;
+  QString text;
+  bool acquiring = true;
+  bool committed = false;
+
+  Insertion(TypstViewWindow *p_view, const QTextCursor &p_target) : view(p_view), target(p_target) {
+    if (!view || !view->canInsert() || view->m_insertion || target.isNull()) {
+      return;
+    }
+    auto *edit = view->m_editor->getTextEdit();
+    if (target.document() != edit->document()) {
+      return;
+    }
+    buffers = view->getServices().get<BufferService>();
+    serviceLifetime = buffers->asQObject();
+    notebooks = view->getServices().get<NotebookCoreService>();
+    buffer = buffers->getBufferHandle(view->getBuffer().id());
+    path = buffer.resolvedPath();
+    document = edit->document();
+    revision = document->revision();
+    const auto cursor = edit->textCursor();
+    position = cursor.position();
+    anchor = cursor.anchor();
+    view->invalidateInsertion();
+    if (!view) {
+      return;
+    }
+    serial = view->m_insertionSerial;
+    view->m_insertion = this;
+    view->syncInsertionActions();
+  }
+
+  ~Insertion() {
+    acquiring = false;
+    if (!committed) {
+      for (auto it = resources.crbegin(); it != resources.crend(); ++it) {
+        bool removed = false;
+        if (serviceLifetime) {
+          const auto live = buffers->getBufferHandle(buffer.id());
+          bool same = live.isValid() && !live.getBuffer().isEmpty() &&
+                      live.nodeId() == buffer.nodeId() && live.resolvedPath() == path;
+          if (same && !buffer.nodeId().notebookId.isEmpty()) {
+            // Buffer2's folder getters create directories. This query does not.
+            const auto folder = notebooks
+                                    ? notebooks->getAttachmentsFolder(buffer.nodeId().notebookId,
+                                                                      buffer.nodeId().relativePath)
+                                    : QString();
+            same = !folder.isEmpty() && QDir::cleanPath(folder) == it->folder;
+          }
+          if (same) {
+            removed = it->attachment ? buffer.deleteAttachment(it->identifier)
+                                     : buffer.deleteAsset(it->identifier);
+          }
+        }
+        if (!removed) {
+          const auto error =
+              TypstViewWindow::tr("Unable to clean up an uncommitted Typst resource");
+          qWarning() << error << it->identifier;
+          if (view) {
+            view->showMessage(error);
+          }
+        }
+      }
+    }
+    if (view && view->m_insertion == this) {
+      view->m_insertion = nullptr;
+      view->syncInsertionActions();
+    }
+    // The modal/network loop has returned. Native key/context-menu callbacks must
+    // finish before deleting the editor whose synchronous MIME signal called us.
+    disposeRetiredEditor(retiredEditor);
+  }
+
+  bool current() const {
+    if (!view || !document || !serviceLifetime || view->m_insertion != this ||
+        serial != view->m_insertionSerial || !view->canInsert() ||
+        view->getBuffer().id() != buffer.id()) {
+      return false;
+    }
+    const auto live = buffers->getBufferHandle(buffer.id());
+    if (!live.isValid() || live.getBuffer().isEmpty() || live.nodeId() != buffer.nodeId() ||
+        live.resolvedPath() != path) {
+      return false;
+    }
+    const auto *edit = view->m_editor->getTextEdit();
+    const auto cursor = edit->textCursor();
+    return edit->document() == document && document->revision() == revision &&
+           cursor.position() == position && cursor.anchor() == anchor;
+  }
+
+  void track(const QString &p_identifier, const QString &p_absolutePath, bool p_attachment) {
+    if (!p_identifier.isEmpty()) {
+      resources.append(
+          {p_identifier, QDir::cleanPath(QFileInfo(p_absolutePath).absolutePath()), p_attachment});
+    }
+  }
+
+  int exec(QDialog *p_dialog) {
+    if (!current()) {
+      return QDialog::Rejected;
+    }
+    const QPointer<QDialog> dialog(p_dialog);
+    const auto owner = view;
+    const auto token = serial;
+    view->m_insertionDialog = dialog;
+    QObject::connect(dialog, &QDialog::finished, dialog, [owner, token](int p_result) {
+      if (p_result == QDialog::Rejected && owner && owner->m_insertionSerial == token) {
+        owner->invalidateInsertion();
+      }
+    });
+    const int result = dialog->exec();
+    if (view && view->m_insertionDialog == dialog) {
+      view->m_insertionDialog.clear();
+    }
+    return dialog && current() ? result : QDialog::Rejected;
+  }
+
+  bool prepareImage(const QString &p_source, const QImage &p_pixels, const QString &p_alt);
+  bool prepareLink(const QString &p_source, const QString &p_label, bool p_relative);
+
+  InsertionResult commit() {
+    if (!current() || text.isEmpty()) {
+      return InsertionResult::Cancelled;
+    }
+    acquiring = false;
+    view->m_editor->enterInsertModeIfApplicable();
+    if (!view || !document) {
+      return InsertionResult::Cancelled;
+    }
+    target.beginEditBlock();
+    target.insertText(text);
+    if (!document) {
+      return InsertionResult::Cancelled;
+    }
+    committed = true;
+    target.endEditBlock();
+    if (view && document) {
+      auto *edit = view->m_editor->getTextEdit();
+      edit->setTextCursor(target);
+      edit->ensureCursorVisible();
+      edit->setFocus();
+    }
+    return InsertionResult::Inserted;
+  }
+};
+
+bool TypstViewWindow::Insertion::prepareImage(const QString &p_source, const QImage &p_pixels,
+                                              const QString &p_alt) {
+  if (!current()) {
+    return false;
+  }
+  if (!p_pixels.isNull() && !insertionPixelsAllowed(p_pixels)) {
+    view->showMessage(TypstViewWindow::tr("Image dimensions exceed the supported limit"));
+    return false;
+  }
+  QPointer<ImageInsertDialog> dialog(
+      new ImageInsertDialog(TypstViewWindow::tr("Insert Image"), QString(), p_alt, QString(),
+                            view->getServices().get<ConfigMgr2>(), true, view));
+  const auto cleanup = qScopeGuard([dialog] { delete dialog.data(); });
+  dialog->setTypstMode();
+  QObject::connect(dialog, &ImageInsertDialog::imageSourceRequested, dialog,
+                   [this, dialog](const QString &p_emittedSource) {
+                     if (!dialog || !current()) {
+                       return;
+                     }
+                     const QString source(p_emittedSource);
+                     const auto sourceRevision = dialog->getImageSourceRevision();
+                     const auto token = serial;
+                     if (source != dialog->getImagePath()) {
+                       return;
+                     }
+                     QString error;
+                     const auto bytes = view->m_controller->readImageData(source, &error);
+                     if (!dialog || !current() || serial != token ||
+                         dialog->getImageSourceRevision() != sourceRevision ||
+                         dialog->getImagePath() != source) {
+                       return;
+                     }
+                     dialog->setSourceImageData(bytes);
+                     if (!error.isEmpty() && current()) {
+                       view->showMessage(error);
+                     }
+                   });
+  view->m_insertionDialog = dialog;
+  if (!p_pixels.isNull()) {
+    dialog->setImage(p_pixels);
+    dialog->setImageSource(ImageInsertDialog::ImageData);
+  } else if (!p_source.isEmpty()) {
+    dialog->setImagePath(p_source);
+  }
+  if (!dialog || exec(dialog) != QDialog::Accepted || !current()) {
+    return false;
+  }
+  if (!insertionPixelsAllowed(dialog->getImage())) {
+    view->showMessage(TypstViewWindow::tr("Image dimensions exceed the supported limit"));
+    return false;
+  }
+  const auto bytes = dialog->getImageData();
+  const auto alt = dialog->getImageAltText();
+  const int width = dialog->getImageWidth();
+  const int height = dialog->getImageHeight();
+  const auto root = view->m_controller->getProject().root;
+  const auto hint =
+      QFileInfo(dialog->getImagePath().isEmpty() ? p_source : dialog->getImagePath()).baseName();
+  QString created;
+  QString error;
+  const auto reference = view->m_controller->insertImage(bytes, hint, &created, &error);
+  track(created, QDir(root).filePath(reference), false);
+  if (!current()) {
+    return false;
+  }
+  if (reference.isEmpty()) {
+    view->showMessage(error);
+    return false;
+  }
+  text = TypstViewWindowController::imageMarkup(reference, alt, width, height);
+  return true;
+}
+
+bool TypstViewWindow::Insertion::prepareLink(const QString &p_source, const QString &p_label,
+                                             bool p_relative) {
+  if (!current()) {
+    return false;
+  }
+  QPointer<LinkInsertDialog> dialog(
+      new LinkInsertDialog(TypstViewWindow::tr("Insert Link"), p_label, p_source, true, view));
+  const auto cleanup = qScopeGuard([dialog] { delete dialog.data(); });
+  if (exec(dialog) != QDialog::Accepted || !dialog || !current()) {
+    return false;
+  }
+  QString error;
+  const auto destination =
+      view->m_controller->linkDestination(dialog->getLinkUrl(), p_relative, &error);
+  if (destination.isEmpty()) {
+    view->showMessage(error);
+    return false;
+  }
+  text = TypstViewWindowController::linkMarkup(destination, dialog->getLinkText());
+  return true;
+}
+
+TypstViewWindow::InsertionResult TypstViewWindow::insertFromMimeData(const QMimeData *p_source,
+                                                                     InsertionOrigin p_origin,
+                                                                     const QTextCursor &p_target) {
+  const auto snapshot = snapshotInsertionMime(p_source);
+  const auto root = m_controller->getProject().root;
+  auto urls = snapshot.urls;
+  const bool htmlImage = urls.isEmpty() && !snapshot.htmlImage.isEmpty();
+  const bool pixels = urls.isEmpty() && !snapshot.pixels.isNull();
+  if (htmlImage) {
+    urls.append(QUrl(snapshot.htmlImage));
+  } else if (!pixels && urls.isEmpty()) {
+    if (snapshot.hasImageData) {
+      showMessage(tr("Unable to read the clipboard image"));
+      return InsertionResult::Cancelled;
+    }
+    if (snapshot.generalHtml) {
+      return InsertionResult::NotHandled;
+    }
+    const auto url = insertionResourceUrl(snapshot.text, root);
+    if (url.isEmpty()) {
+      return InsertionResult::NotHandled;
+    }
+    urls.append(url);
+  }
+  if (urls.isEmpty() && !pixels) {
+    return InsertionResult::NotHandled;
+  }
+  Insertion operation(this, p_target);
+  if (!operation.current()) {
+    return InsertionResult::Cancelled;
+  }
+  const bool batch = urls.size() > 1;
+  InsertionKind kind = InsertionKind::Image;
+  const bool directImage =
+      (pixels && !htmlImage && snapshot.text.isEmpty()) || (htmlImage && !pixels);
+  if (!directImage) {
+    auto *theme = getServices().get<ThemeService>();
+    QPointer<SelectDialog> dialog(new SelectDialog(
+        p_origin == InsertionOrigin::Drop ? tr("Insert From Drop") : tr("Insert From Clipboard"),
+        theme->paletteColor(QStringLiteral("widgets#quickselector#item_icon#fg")),
+        theme->paletteColor(QStringLiteral("widgets#quickselector#item_icon#border")), this));
+    const auto cleanup = qScopeGuard([dialog] { delete dialog.data(); });
+    const auto add = [dialog](const QString &p_label, InsertionKind p_kind) {
+      dialog->addSelection(p_label, static_cast<int>(p_kind));
+    };
+    const bool allImages =
+        !urls.isEmpty() && std::all_of(urls.cbegin(), urls.cend(), insertionImageHint);
+    bool allReferences = allImages;
+    bool allLocal = !urls.isEmpty();
+    bool allAttachments = !urls.isEmpty();
+    bool allLinks = !urls.isEmpty();
+    for (const auto &url : urls) {
+      const auto local = insertionLocalFile(url, root);
+      allReferences = allReferences && !m_controller->imageReference(url).isEmpty();
+      allLocal = allLocal && !local.isEmpty();
+      allAttachments =
+          allAttachments && !local.isEmpty() && m_controller->canAttach(QUrl::fromLocalFile(local));
+      allLinks = allLinks &&
+                 !m_controller->linkDestination(url.toString(QUrl::FullyEncoded), false).isEmpty();
+    }
+    if (htmlImage && pixels) {
+      add(tr("Insert From URL"), InsertionKind::ImageFromUrl);
+      add(tr("Insert From Image Data"), InsertionKind::ImageFromData);
+      if (!snapshot.text.isEmpty()) {
+        add(tr("Insert As Text"), InsertionKind::Text);
+      }
+    } else if (pixels) {
+      add(tr("Insert As Image"), InsertionKind::Image);
+      add(tr("Insert As Text"), InsertionKind::Text);
+    } else {
+      if (!allImages && !allLinks) {
+        showMessage(tr("The selected resource cannot be inserted"));
+        return InsertionResult::Cancelled;
+      }
+      if (allImages) {
+        add(tr("Insert As Image"), InsertionKind::Image);
+        if (allReferences) {
+          add(tr("Insert As Relative Image Link"), InsertionKind::RelativeImage);
+        }
+      }
+      if (allLinks) {
+        add(tr("Insert As Link"), InsertionKind::Link);
+      }
+      if (allLocal) {
+        add(tr("Insert As Relative Link"), InsertionKind::RelativeLink);
+      }
+      if (allAttachments) {
+        add(tr("Attach And Insert Link"), InsertionKind::Attachment);
+      }
+      add(tr("Insert As Text"), InsertionKind::Text);
+      if (!batch && allLocal &&
+          QMimeDatabase()
+              .mimeTypeForFile(insertionLocalFile(urls.first(), root))
+              .inherits(QStringLiteral("text/plain"))) {
+        add(tr("Insert File Content"), InsertionKind::FileContent);
+      }
+    }
+    if (operation.exec(dialog) != QDialog::Accepted || !dialog || !operation.current()) {
+      return InsertionResult::Cancelled;
+    }
+    kind = static_cast<InsertionKind>(dialog->getSelection());
+  }
+  if (!operation.current()) {
+    return InsertionResult::Cancelled;
+  }
+  if (kind == InsertionKind::Text) {
+    if (!batch && !snapshot.text.isEmpty()) {
+      operation.text = snapshot.text;
+    } else {
+      QStringList lines;
+      for (const auto &url : urls) {
+        lines.append(url.toString(QUrl::FullyEncoded));
+      }
+      operation.text = lines.join(QLatin1Char('\n'));
+    }
+  } else if (kind == InsertionKind::FileContent) {
+    QString error;
+    if (!m_controller->readFileContent(urls.first(), &operation.text, &error)) {
+      showMessage(error);
+      return InsertionResult::Cancelled;
+    }
+  } else if (kind == InsertionKind::Image || kind == InsertionKind::ImageFromUrl ||
+             kind == InsertionKind::ImageFromData) {
+    if (!batch) {
+      const bool usePixels = pixels && kind != InsertionKind::ImageFromUrl;
+      const auto source = htmlImage        ? snapshot.htmlImage
+                          : urls.isEmpty() ? QString()
+                                           : urls.first().toString(QUrl::FullyEncoded);
+      if (!operation.prepareImage(source, usePixels ? snapshot.pixels : QImage(), QString())) {
+        return InsertionResult::Cancelled;
+      }
+    } else {
+      QVector<QByteArray> images;
+      images.reserve(urls.size());
+      QString error;
+      for (const auto &url : urls) {
+        images.append(m_controller->readImageData(url.toString(QUrl::FullyEncoded), &error));
+        if (!operation.current()) {
+          return InsertionResult::Cancelled;
+        }
+        if (images.constLast().isEmpty()) {
+          showMessage(error);
+          return InsertionResult::Cancelled;
+        }
+      }
+      QStringList snippets;
+      for (qsizetype index = 0; index < images.size(); ++index) {
+        QString created;
+        const auto reference = m_controller->insertImage(
+            images.at(index), QFileInfo(urls.at(index).path()).baseName(), &created, &error);
+        operation.track(created, QDir(root).filePath(reference), false);
+        if (!operation.current()) {
+          return InsertionResult::Cancelled;
+        }
+        if (reference.isEmpty()) {
+          showMessage(error);
+          return InsertionResult::Cancelled;
+        }
+        snippets.append(TypstViewWindowController::imageMarkup(reference, QString(), 0, 0));
+      }
+      operation.text = snippets.join(QStringLiteral("\n\n"));
+    }
+  } else if (kind == InsertionKind::Link || kind == InsertionKind::RelativeLink) {
+    const bool relative = kind == InsertionKind::RelativeLink;
+    if (!batch) {
+      if (!operation.prepareLink(urls.first().toString(QUrl::FullyEncoded),
+                                 insertionLinkText(urls.first(), root), relative)) {
+        return InsertionResult::Cancelled;
+      }
+    } else {
+      QStringList snippets;
+      for (const auto &url : urls) {
+        QString error;
+        const auto destination =
+            m_controller->linkDestination(url.toString(QUrl::FullyEncoded), relative, &error);
+        if (destination.isEmpty()) {
+          showMessage(error);
+          return InsertionResult::Cancelled;
+        }
+        snippets.append(
+            TypstViewWindowController::linkMarkup(destination, insertionLinkText(url, root)));
+      }
+      operation.text = snippets.join(QStringLiteral("\n\n"));
+    }
+  } else if (kind == InsertionKind::RelativeImage) {
+    QStringList snippets;
+    for (const auto &url : urls) {
+      QString error;
+      const auto reference = m_controller->imageReference(url, &error);
+      if (reference.isEmpty()) {
+        showMessage(error);
+        return InsertionResult::Cancelled;
+      }
+      snippets.append(TypstViewWindowController::imageMarkup(reference, QString(), 0, 0));
+    }
+    operation.text = snippets.join(QStringLiteral("\n\n"));
+  } else if (kind == InsertionKind::Attachment) {
+    QStringList sources;
+    for (const auto &url : urls) {
+      const auto local = insertionLocalFile(url, root);
+      if (local.isEmpty() || !m_controller->canAttach(QUrl::fromLocalFile(local))) {
+        showMessage(tr("The selected file cannot be attached to this note"));
+        return InsertionResult::Cancelled;
+      }
+      sources.append(local);
+    }
+    QStringList snippets;
+    for (const auto &source : sources) {
+      QString created;
+      QString error;
+      const auto destination = m_controller->insertAttachment(source, &created, &error);
+      const QUrl url(destination);
+      operation.track(created,
+                      url.isLocalFile() ? url.toLocalFile()
+                                        : QDir(root).filePath(url.path(QUrl::FullyDecoded)),
+                      true);
+      if (!operation.current()) {
+        return InsertionResult::Cancelled;
+      }
+      if (destination.isEmpty()) {
+        showMessage(error);
+        return InsertionResult::Cancelled;
+      }
+      snippets.append(
+          TypstViewWindowController::linkMarkup(destination, QFileInfo(source).fileName()));
+    }
+    operation.text = snippets.join(QStringLiteral("\n\n"));
+  } else {
+    return InsertionResult::Cancelled;
+  }
+  return operation.commit();
+}
+
+bool TypstViewWindow::eventFilter(QObject *p_watched, QEvent *p_event) {
+  if (!m_editor || p_watched != m_editor->getTextEdit()->viewport() ||
+      (p_event->type() != QEvent::DragEnter && p_event->type() != QEvent::DragMove &&
+       p_event->type() != QEvent::Drop)) {
+    return ViewWindow2::eventFilter(p_watched, p_event);
+  }
+  auto *drop = static_cast<QDropEvent *>(p_event);
+  for (auto *source = drop->source(); source; source = source->parent()) {
+    if (source == m_editor || source == m_editor->getTextEdit()) {
+      if (p_event->type() == QEvent::Drop) {
+        // QTextEdit's native move subsequently enters its virtual MIME insertion hook.
+        // Preserve that path even when the selected source text looks like a URL.
+        m_nativeSourceDrop = true;
+        QTimer::singleShot(0, this, [this] { m_nativeSourceDrop = false; });
+      }
+      return ViewWindow2::eventFilter(p_watched, p_event);
+    }
+  }
+  const auto *mime = drop->mimeData();
+  const bool resource =
+      mime && (mime->hasUrls() || mime->hasImage() ||
+               (mime->hasHtml() && !clipboardImageSource(mime).isEmpty()) ||
+               (!mime->hasHtml() && mime->hasText() &&
+                !insertionResourceUrl(mime->text(), m_controller->getProject().root).isEmpty()));
+  if (!resource) {
+    return ViewWindow2::eventFilter(p_watched, p_event);
+  }
+  if (!canInsert() || m_insertion || !(drop->possibleActions() & Qt::CopyAction) ||
+      !m_editor->getTextEdit()->viewport()->rect().contains(drop->position().toPoint())) {
+    drop->ignore();
+    return true;
+  }
+  if (p_event->type() != QEvent::Drop) {
+    drop->setDropAction(Qt::CopyAction);
+    drop->accept();
+    return true;
+  }
+  auto target = m_editor->getTextEdit()->cursorForPosition(drop->position().toPoint());
+  target.clearSelection();
+  const auto result = insertFromMimeData(mime, InsertionOrigin::Drop, target);
+  if (result == InsertionResult::Inserted) {
+    drop->setDropAction(Qt::CopyAction);
+    drop->accept();
+  } else {
+    drop->ignore();
+  }
+  return true;
+}
+
+void TypstViewWindow::handleTypeAction(int p_action) {
+  if (p_action == TypeImage) {
+    typeImage();
+  } else if (p_action == TypeLink) {
+    typeLink();
+  }
+}
+
+void TypstViewWindow::typeImage() {
+  if (!canInsert() || m_insertion) {
+    return;
+  }
+  const auto *mime = QApplication::clipboard()->mimeData();
+  const QImage pixels =
+      mime && mime->hasImage() ? qvariant_cast<QImage>(mime->imageData()) : QImage();
+  QString source;
+  if (mime && pixels.isNull()) {
+    const auto urls = mime->urls();
+    if (urls.size() == 1) {
+      source = urls.first().toString(QUrl::FullyEncoded);
+    } else if (urls.isEmpty()) {
+      source = insertionResourceUrl(mime->text(), m_controller->getProject().root)
+                   .toString(QUrl::FullyEncoded);
+    }
+  }
+  const auto cursor = m_editor->getTextEdit()->textCursor();
+  const auto alt = cursor.selectedText();
+  Insertion operation(this, cursor);
+  if (operation.prepareImage(source, pixels, alt)) {
+    operation.commit();
+  }
+}
+
+void TypstViewWindow::typeLink() {
+  if (!canInsert() || m_insertion) {
+    return;
+  }
+  const auto cursor = m_editor->getTextEdit()->textCursor();
+  auto label = cursor.selectedText();
+  if (label.contains(QLatin1Char('\n')) || label.contains(QLatin1Char('\r')) ||
+      label.contains(QChar::ParagraphSeparator)) {
+    label.clear();
+  }
+  const auto root = m_controller->getProject().root;
+  auto source = insertionResourceUrl(label, root).toString(QUrl::FullyEncoded);
+  if (!source.isEmpty()) {
+    label.clear();
+  } else {
+    const auto snapshot = snapshotInsertionMime(QApplication::clipboard()->mimeData());
+    if (snapshot.urls.size() == 1) {
+      source = snapshot.urls.first().toString(QUrl::FullyEncoded);
+    } else if (snapshot.urls.isEmpty()) {
+      source = insertionResourceUrl(snapshot.text, root).toString(QUrl::FullyEncoded);
+    }
+  }
+  Insertion operation(this, cursor);
+  if (operation.prepareLink(source, label, false)) {
+    operation.commit();
+  }
+}
+
+void TypstViewWindow::pastePlainText() {
+  if (!canInsert() || m_insertion) {
+    return;
+  }
+  const auto text = QApplication::clipboard()->text();
+  if (text.isEmpty()) {
+    return;
+  }
+  Insertion operation(this, m_editor->getTextEdit()->textCursor());
+  operation.text = text;
+  operation.commit();
+}
+
+bool TypstViewWindow::canInsert() const {
+  if (!isEnabled() || !m_sourceAvailable || !m_editor || !m_editor->isEnabled() ||
+      m_controller->getProject().root.isEmpty() || m_mode != ViewWindowMode::Edit ||
+      m_editor->isReadOnly() || !m_editor->getTextEdit()->isEnabled() ||
+      m_editor->getTextEdit()->isReadOnly()) {
+    return false;
+  }
+  const auto buffer = getServices().get<BufferService>()->getBufferHandle(getBuffer().id());
+  return buffer.isValid() && !buffer.isEncrypted() && !buffer.isReadOnly() &&
+         !buffer.getBuffer().isEmpty();
+}
+
+void TypstViewWindow::invalidateInsertion() {
+  ++m_insertionSerial;
+  m_controller->invalidateInsertionRequests();
+  const auto dialog = m_insertionDialog;
+  m_insertionDialog.clear();
+  if (dialog) {
+    dialog->reject();
+  }
+}
+
+void TypstViewWindow::syncInsertionActions() {
+  const bool available = canInsert() && !m_insertion;
+  for (auto *action : {m_insertImageAction, m_insertLinkAction, m_plainPasteAction}) {
+    if (action) {
+      action->setVisible(m_mode == ViewWindowMode::Edit);
+      action->setEnabled(available);
+    }
+  }
+}
+
+void TypstViewWindow::changeEvent(QEvent *p_event) {
+  const QPointer<TypstViewWindow> guard(this);
+  ViewWindow2::changeEvent(p_event);
+  if (guard && p_event->type() == QEvent::EnabledChange) {
+    invalidateInsertion();
+    if (guard) {
+      syncInsertionActions();
+    }
+  }
+}
 
 TypstViewWindow::TypstViewWindow(ServiceLocator &p_services, const Buffer2 &p_buffer,
                                  QWidget *p_parent, ViewWindowMode p_initialMode)
@@ -85,13 +895,44 @@ TypstViewWindow::TypstViewWindow(ServiceLocator &p_services, const Buffer2 &p_bu
   syncModeFromEditor();
 }
 
-TypstViewWindow::~TypstViewWindow() { setViewFullScreen(false); }
+TypstViewWindow::~TypstViewWindow() {
+  invalidateInsertion();
+  setViewFullScreen(false);
+  if (m_insertion && m_typstEditor) {
+    auto *edit = m_editor->getTextEdit();
+    for (auto *sender : {static_cast<QObject *>(m_typstEditor), static_cast<QObject *>(m_editor),
+                         static_cast<QObject *>(edit), static_cast<QObject *>(edit->document()),
+                         static_cast<QObject *>(edit->viewport())}) {
+      QObject::disconnect(sender, nullptr, this, nullptr);
+    }
+    edit->viewport()->removeEventFilter(this);
+    m_insertion->retiredEditor = m_typstEditor;
+    const auto retired = m_insertion->retiredEditor;
+    if (auto *popup = QApplication::activePopupWidget(); popup && retired->isAncestorOf(popup)) {
+      popup->close();
+    }
+    retired->hide();
+    retired->setParent(nullptr);
+    // Do not post DeferredDelete from this nested acquisition loop. The stack
+    // operation schedules disposal only once it has returned to native dispatch.
+  }
+}
 
 void TypstViewWindow::setupUI() {
   auto *toolBar = createToolBar(this);
   addToolBar(toolBar);
   addAction(toolBar, ViewWindowToolBarHelper2::EditRead);
   addLeftCommonToolBarActions(toolBar);
+  m_insertImageAction = addAction(toolBar, ViewWindowToolBarHelper2::TypeImage);
+  m_insertLinkAction = addAction(toolBar, ViewWindowToolBarHelper2::TypeLink);
+  m_plainPasteAction = new QAction(tr("Paste as Plain Text"), this);
+  m_plainPasteAction->setObjectName(QStringLiteral("typstPastePlainText"));
+  ViewWindowToolBarHelper2::addActionShortcut(
+      m_plainPasteAction,
+      getServices().get<ConfigMgr2>()->getEditorConfig().getShortcut(
+          EditorConfig::Shortcut::AltPaste),
+      this);
+  connect(m_plainPasteAction, &QAction::triggered, this, &TypstViewWindow::pastePlainText);
   addRightCommonToolBarActions(toolBar);
   updatePresentationActions();
 
@@ -123,6 +964,7 @@ void TypstViewWindow::setupUI() {
   syncEditorFromBuffer();
   m_propagateEditorToBuffer = true;
   setupShortcuts();
+  syncInsertionActions();
 }
 
 void TypstViewWindow::setupPdfToolBar(QToolBar *p_toolBar) {
@@ -339,6 +1181,60 @@ void TypstViewWindow::createEditor() {
 }
 
 void TypstViewWindow::connectEditorSignals() {
+  auto *source = m_editor->getTextEdit();
+  source->viewport()->installEventFilter(this);
+  // The native editor's earlier slot has already built its standard/spellcheck menu.
+  connect(source, &vte::VTextEdit::contextMenuEventRequested, this,
+          [this](QContextMenuEvent *, bool *, QScopedPointer<QMenu> *p_menu) {
+            if (!p_menu || p_menu->isNull()) {
+              return;
+            }
+            syncInsertionActions();
+            (*p_menu)->addSeparator();
+            (*p_menu)->addAction(m_insertImageAction);
+            (*p_menu)->addAction(m_insertLinkAction);
+            (*p_menu)->addAction(m_plainPasteAction);
+          });
+  connect(source, &vte::VTextEdit::canInsertFromMimeDataRequested, this,
+          [this](const QMimeData *p_source, bool *p_handled, bool *p_allowed) {
+            *p_handled = true;
+            *p_allowed = canInsert() && !m_insertion && p_source &&
+                         (p_source->hasUrls() || p_source->hasImage() || p_source->hasHtml() ||
+                          p_source->hasText());
+          });
+  connect(source, &vte::VTextEdit::insertFromMimeDataRequested, this,
+          [this](const QMimeData *p_source, bool *p_handled) {
+            if (m_nativeSourceDrop) {
+              m_nativeSourceDrop = false;
+              *p_handled = false;
+              return;
+            }
+            if (!canInsert() || m_insertion) {
+              *p_handled = true;
+              return;
+            }
+            const auto target = m_editor->getTextEdit()->textCursor();
+            const auto result = insertFromMimeData(p_source, InsertionOrigin::Clipboard, target);
+            *p_handled = result != InsertionResult::NotHandled;
+          });
+  const auto invalidateWhileAcquiring = [this]() {
+    if (m_insertion && m_insertion->acquiring) {
+      invalidateInsertion();
+    }
+  };
+  connect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, this,
+          invalidateWhileAcquiring);
+  connect(m_editor->getTextEdit(), &QTextEdit::cursorPositionChanged, this,
+          invalidateWhileAcquiring);
+  connect(m_editor->getTextEdit(), &QTextEdit::selectionChanged, this, invalidateWhileAcquiring);
+  connect(source->document(), &QTextDocument::contentsChanged, this, [this] {
+    // VTextEdit emits its filtered text-change signal before this slot. Rehighlighting
+    // also advances the Qt document revision, but must not retire an unchanged source.
+    if (m_insertion && m_insertion->acquiring && m_insertion->serial == m_insertionSerial) {
+      m_insertion->revision = m_editor->getTextEdit()->document()->revision();
+    }
+  });
+  connect(this, &ViewWindow2::statusChanged, this, &TypstViewWindow::syncInsertionActions);
   connect(m_editor, &vte::VTextEditor::focusIn, this, [this]() { emit focused(this); });
   connect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, this, [this]() {
     if (m_propagateEditorToBuffer && m_sourceAvailable) {
@@ -405,6 +1301,11 @@ void TypstViewWindow::bindBufferResources() {
 }
 
 void TypstViewWindow::syncEditorFromBuffer() {
+  const QPointer<TypstViewWindow> insertionGuard(this);
+  invalidateInsertion();
+  if (!insertionGuard) {
+    return;
+  }
   const QScopedValueRollback<bool> guard(m_propagateEditorToBuffer, false);
   QString error;
   if (!m_controller->setBuffer(getBuffer(), &error)) {
@@ -441,6 +1342,11 @@ void TypstViewWindow::syncEditorFromBuffer() {
 }
 
 void TypstViewWindow::showSourceError(const QString &p_error) {
+  const QPointer<TypstViewWindow> insertionGuard(this);
+  invalidateInsertion();
+  if (!insertionGuard) {
+    return;
+  }
   // Keep any previous draft and its history, but never expose it as a valid save snapshot.
   m_sourceAvailable = false;
   if (m_typstEditor) {
@@ -465,6 +1371,11 @@ void TypstViewWindow::applyProjectIdentity() {
 }
 
 void TypstViewWindow::handleNodeRetargeted(const NodeIdentifier &p_newNodeId) {
+  const QPointer<TypstViewWindow> insertionGuard(this);
+  invalidateInsertion();
+  if (!insertionGuard) {
+    return;
+  }
   ViewWindow2::handleNodeRetargeted(p_newNodeId);
   const QScopedValueRollback<bool> guard(m_propagateEditorToBuffer, false);
   QString error;
@@ -484,9 +1395,14 @@ bool TypstViewWindow::aboutToClose(bool p_force) {
   const QPointer<TypstViewWindow> guard(this);
   const QPointer<TypstViewWindowController> controller(m_controller);
   const auto generation = getBufferGeneration();
+  invalidateInsertion();
+  if (!guard) {
+    return false;
+  }
   const bool accepted = ViewWindow2::aboutToClose(p_force);
   if (accepted && guard && guard->getBufferGeneration() == generation && controller) {
     controller->setBuffer(Buffer2{});
+    syncInsertionActions();
   }
   return accepted;
 }
@@ -505,6 +1421,13 @@ void TypstViewWindow::setModified(bool p_modified) {
 }
 
 void TypstViewWindow::setMode(ViewWindowMode p_mode) {
+  const QPointer<TypstViewWindow> insertionGuard(this);
+  if (p_mode != ViewWindowMode::Edit) {
+    invalidateInsertion();
+    if (!insertionGuard) {
+      return;
+    }
+  }
   if (!m_typstEditor) {
     if (m_mode != p_mode) {
       m_mode = p_mode;
@@ -512,6 +1435,7 @@ void TypstViewWindow::setMode(ViewWindowMode p_mode) {
     }
     updatePresentationActions();
     updateFindBackend();
+    syncInsertionActions();
     return;
   }
   m_typstEditor->setMode(p_mode == ViewWindowMode::Read ? vte::VTypstEditor::Mode::Read
@@ -523,6 +1447,13 @@ void TypstViewWindow::syncModeFromEditor() {
     return;
   }
   const auto mode = m_typstEditor->mode();
+  if (mode != vte::VTypstEditor::Mode::Edit) {
+    const QPointer<TypstViewWindow> insertionGuard(this);
+    invalidateInsertion();
+    if (!insertionGuard) {
+      return;
+    }
+  }
   m_mode = mode == vte::VTypstEditor::Mode::Read ? ViewWindowMode::Read : ViewWindowMode::Edit;
   setFocusProxy(m_mode == ViewWindowMode::Edit ? static_cast<QWidget *>(m_editor)
                                                : static_cast<QWidget *>(m_typstEditor));
@@ -535,6 +1466,7 @@ void TypstViewWindow::syncModeFromEditor() {
   }
   updatePresentationActions();
   updateFindBackend();
+  syncInsertionActions();
 }
 
 void TypstViewWindow::revealSource() {

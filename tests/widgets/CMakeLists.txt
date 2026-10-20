@@ -1954,3 +1954,35 @@ add_custom_command(TARGET test_viewarea_tab_reuse POST_BUILD
     "${_tab_reuse_typst_helper}" $<TARGET_FILE_DIR:test_viewarea_tab_reuse>
   VERBATIM
 )
+
+# Exercise the host insertion transaction on the real native source/PDF surfaces.
+add_qt_test(test_typstviewwindow_insertion
+  SOURCES test_typstviewwindow_insertion.cpp ${_markdown_window_test_sources}
+  LINKS ${_markdown_window_links} Qt6::Pdf
+  ARGS -nocrashhandler
+)
+target_include_directories(test_typstviewwindow_insertion PRIVATE
+  $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>
+)
+target_compile_definitions(test_typstviewwindow_insertion PRIVATE
+  $<TARGET_PROPERTY:vnote,COMPILE_DEFINITIONS>
+  VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
+)
+add_dependencies(test_typstviewwindow_insertion VX_EXTRA_RESOURCE vtextedit-typst)
+get_target_property(_typst_insertion_helper vtextedit-typst VTEXTEDIT_TYPST_HELPER)
+add_custom_command(TARGET test_typstviewwindow_insertion POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_typstviewwindow_insertion>
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${_typst_insertion_helper}" $<TARGET_FILE_DIR:test_typstviewwindow_insertion>
+)
+set_tests_properties(test_typstviewwindow_insertion PROPERTIES TIMEOUT 240)
+set_property(TEST test_typstviewwindow_insertion PROPERTY ENVIRONMENT
+  "QT_QPA_PLATFORM=${_markdown_window_platform}"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_markdown_window_plugin}>"
+  "QT_PLUGIN_PATH=$<TARGET_FILE_DIR:${_markdown_window_plugin}>/.."
+)
+if(WIN32)
+  set_property(TEST test_typstviewwindow_insertion APPEND PROPERTY
+    ENVIRONMENT "PATH=${_markdown_job_path}")
+endif()

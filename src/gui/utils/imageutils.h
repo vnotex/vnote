@@ -9,6 +9,9 @@ class ImageUtils {
 public:
   ImageUtils() = delete;
 
+  static bool readImageFile(const QString &p_path, QByteArray &p_data);
+  static bool decodeImageUrl(const QString &p_url, QByteArray &p_data);
+
   // Decode bounded passive image bytes only; SVG is validated then rasterized.
   // Output is cleared on failure and never contains an executable SVG document.
   static bool protectedImageData(const QByteArray &p_input, QByteArray &p_output,

@@ -105,7 +105,7 @@ void MindMapViewWindowController::requestImage(const QString &p_url, quint64 p_r
   QByteArray bytes;
   bool loaded = false;
   if (p_url.startsWith(QStringLiteral("data:image/"), Qt::CaseInsensitive)) {
-    loaded = MindMapImageLoader::decodeImageUrl(p_url, bytes);
+    loaded = ImageUtils::decodeImageUrl(p_url, bytes);
   } else {
     const QUrl source(p_url, QUrl::StrictMode);
     // Only the authenticated buffer's contained resource reader may access
@@ -146,12 +146,12 @@ QByteArray MindMapViewWindowController::readImageData(const QString &p_source, Q
   QByteArray bytes;
   bool loaded = false;
   if (p_source.startsWith(QStringLiteral("data:image/"), Qt::CaseInsensitive)) {
-    loaded = MindMapImageLoader::decodeImageUrl(p_source, bytes);
+    loaded = ImageUtils::decodeImageUrl(p_source, bytes);
   } else {
     const auto source = QFileInfo(p_source).isAbsolute() ? QUrl::fromLocalFile(p_source)
                                                          : QUrl(p_source, QUrl::StrictMode);
     if (source.isValid() && source.isLocalFile()) {
-      loaded = MindMapImageLoader::readImageFile(source.toLocalFile(), bytes);
+      loaded = ImageUtils::readImageFile(source.toLocalFile(), bytes);
     } else if (source.isValid() && (source.scheme() == QStringLiteral("http") ||
                                     source.scheme() == QStringLiteral("https"))) {
       auto reply = NetworkAccess::request(source);

@@ -1,6 +1,8 @@
 #include "imageutils.h"
 
 #include <QBuffer>
+#include <QFile>
+#include <QFileInfo>
 #include <QHash>
 #include <QImageReader>
 #include <QMimeDatabase>
@@ -10,11 +12,14 @@
 #include <QSvgRenderer>
 #include <QXmlStreamReader>
 
+#include <utility>
+
 #include <utils/fileutils2.h>
 
 using namespace vnotex;
 
 namespace {
+constexpr qint64 c_imageByteLimit = 32 * 1024 * 1024;
 constexpr int c_protectedImageByteLimit = 32 * 1024 * 1024;
 constexpr int c_protectedImageDimensionLimit = 8192;
 constexpr qint64 c_protectedImagePixelLimit = 16 * 1024 * 1024;
@@ -116,6 +121,59 @@ bool passiveSvg(const QByteArray &p_data) {
   return rootSeen && !xml.hasError() && depth == 0;
 }
 } // namespace
+
+bool ImageUtils::readImageFile(const QString &p_path, QByteArray &p_data) {
+  const QFileInfo info(p_path);
+  if (!info.isAbsolute() || !info.isFile() || info.size() > c_imageByteLimit) {
+    return false;
+  }
+  QFile input(p_path);
+  if (!input.open(QIODevice::ReadOnly) || input.size() > c_imageByteLimit) {
+    return false;
+  }
+  p_data = input.read(qMin(input.size(), c_imageByteLimit));
+  return input.error() == QFileDevice::NoError && input.atEnd();
+}
+
+bool ImageUtils::decodeImageUrl(const QString &p_url, QByteArray &p_data) {
+  const auto comma = p_url.indexOf(QLatin1Char(','));
+  if (comma < 0 || comma > 256) {
+    return false;
+  }
+  auto header = p_url.left(comma).toLower();
+  const bool base64 = header.endsWith(QStringLiteral(";base64"));
+  if (base64) {
+    header.chop(7);
+  }
+  if (!header.startsWith(QStringLiteral("data:image/")) || header.contains(QLatin1Char(';')) ||
+      header.size() <= 11) {
+    return false;
+  }
+  // Bound encoded input before allocating the percent-decoded/base64 payload.
+  const qint64 payloadLimit = base64 ? ((c_imageByteLimit + 2) / 3) * 4 : c_imageByteLimit;
+  if (p_url.size() - comma - 1 > payloadLimit * 3) {
+    return false;
+  }
+  auto encoded = p_url.mid(comma + 1).toUtf8();
+  auto payload = QByteArray::fromPercentEncoding(encoded);
+  encoded.fill('\0');
+  if (payload.size() > payloadLimit) {
+    payload.fill('\0');
+    return false;
+  }
+  if (base64) {
+    auto decoded = QByteArray::fromBase64Encoding(payload, QByteArray::AbortOnBase64DecodingErrors);
+    payload.fill('\0');
+    if (!decoded || decoded.decoded.size() > c_imageByteLimit) {
+      decoded.decoded.fill('\0');
+      return false;
+    }
+    p_data = std::move(decoded.decoded);
+  } else {
+    p_data = std::move(payload);
+  }
+  return true;
+}
 
 bool ImageUtils::protectedImageData(const QByteArray &p_input, QByteArray &p_output,
                                     QByteArray &p_mime) {

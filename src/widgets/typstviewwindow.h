@@ -4,10 +4,14 @@
 #include "viewwindow2.h"
 
 #include <QColor>
+#include <QPointer>
 
 #include <vtextedit/vtypsteditor.h>
 
+class QDialog;
 class QLabel;
+class QMimeData;
+class QTextCursor;
 class QSpinBox;
 
 namespace vnotex {
@@ -59,9 +63,12 @@ protected slots:
 
 protected:
   void addAdditionalMenuActions(QMenu *p_menu) override;
+  void handleTypeAction(int p_action) override;
   void addAdditionalRightToolBarActions(QToolBar *p_toolBar) override;
   void addAdditionalViewToolBarActions(QToolBar *p_toolBar) override;
   void paintEvent(QPaintEvent *p_event) override;
+  void changeEvent(QEvent *p_event) override;
+  bool eventFilter(QObject *p_watched, QEvent *p_event) override;
   void syncEditorFromBuffer() override;
   void releaseBufferResources() override;
   void bindBufferResources() override;
@@ -77,6 +84,30 @@ protected:
   fetchWordCountInfo(const std::function<void(const WordCountInfo &)> &p_callback) const override;
 
 private:
+  enum class InsertionOrigin { Clipboard, Drop };
+  enum class InsertionResult { NotHandled, Cancelled, Inserted };
+  enum class InsertionKind {
+    Image,
+    ImageFromUrl,
+    ImageFromData,
+    RelativeImage,
+    Link,
+    RelativeLink,
+    Attachment,
+    Text,
+    FileContent
+  };
+  struct Insertion;
+
+  InsertionResult insertFromMimeData(const QMimeData *p_source, InsertionOrigin p_origin,
+                                     const QTextCursor &p_target);
+  void typeImage();
+  void typeLink();
+  void pastePlainText();
+  bool canInsert() const;
+  void invalidateInsertion();
+  void syncInsertionActions();
+
   void setupUI();
   void setupOutlineProvider();
   void refreshOutline(const QVector<vte::TypstHeadingInfo> &p_headings);
@@ -124,6 +155,15 @@ private:
   QLabel *m_pageCountLabel = nullptr;
   FindOptions m_sourceFindOptions = FindOption::FindNone;
   bool m_sourceFindOptionsSaved = false;
+
+  // Stack-owned operation; dialogs and callbacks may invalidate it, never replace it.
+  Insertion *m_insertion = nullptr;
+  quint64 m_insertionSerial = 0;
+  bool m_nativeSourceDrop = false;
+  QPointer<QDialog> m_insertionDialog;
+  QAction *m_insertImageAction = nullptr;
+  QAction *m_insertLinkAction = nullptr;
+  QAction *m_plainPasteAction = nullptr;
 
   bool m_propagateEditorToBuffer = false;
   bool m_sourceAvailable = false;

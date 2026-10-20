@@ -31,9 +31,8 @@ public:
 
   QString getImageAltText() const;
 
-  // Optional size, in pixels. 0 means "not specified", which is what keeps an
-  // ordinary insert a Markdown link: any nonzero value makes the caller emit an
-  // HTML `<img>` instead.
+  // Optional size, in pixels. 0 means "not specified". Markdown emits HTML for
+  // explicit sizes; the Typst host converts pixels at 96 dpi to points.
   int getImageWidth() const;
 
   int getImageHeight() const;
@@ -50,13 +49,14 @@ public:
   const QImage &getImage() const;
   void setImage(const QImage &p_image);
 
-  // Retains the original source bytes; mind-map/encrypted previews first validate passive data.
+  // Retains the original source bytes; mind-map/Typst/encrypted previews validate passive data.
   // The dialog owns its QByteArray value; callers may release their input after this call.
   void setSourceImageData(const QByteArray &p_data);
 
   // Original source bytes, or the configured JPEG/PNG for a clipboard QImage saved as a file.
   // JPEG composites alpha onto white; PNG preserves it.
-  // Base64 keeps lossless PNG and alpha. Never staged on disk.
+  // Base64 keeps lossless PNG and alpha, except Typst always uses image files. Never staged on
+  // disk.
   QByteArray getImageData() const;
 
   // Encrypted notes default to Base64 and only preview validated passive bytes.
@@ -67,10 +67,19 @@ public:
   // Call before supplying a source. Hides title/alt controls; mind map images always support size.
   void setMindMapMode();
 
+  // Call before supplying a source. Keeps alt/size, hides title/storage choices,
+  // and delegates every path to the host without interpreting project-relative input.
+  void setTypstMode();
+
 signals:
   // Synchronous mind-map-only acquisition. Capture getImageSourceRevision() and the URL,
   // then recheck both and the host operation before replying with setSourceImageData().
   void imageDataUrlRequested(const QString &p_url);
+
+  // Synchronous Typst acquisition, serialized while the callback pumps events.
+  // Recheck source revision, exact source and host operation before supplying bytes.
+  // Finishing the dialog retires pending requests and refuses later source updates.
+  void imageSourceRequested(const QString &p_source);
 
 protected:
   void showEvent(QShowEvent *p_event) Q_DECL_OVERRIDE;
@@ -93,6 +102,10 @@ private:
   bool m_browserEnabled = true;
   bool m_encryptedNote = false;
   bool m_mindMapMode = false;
+  bool m_typstMode = false;
+  bool m_typstSourceRequestActive = false;
+  bool m_typstSourceRequestPending = false;
+  bool m_typstSourceRequestsFinished = false;
 
   quint64 m_imageSourceRevision = 0;
 
@@ -116,6 +129,8 @@ private:
   QLineEdit *m_imageWidthEdit = nullptr;
 
   QLineEdit *m_imageHeightEdit = nullptr;
+
+  QLabel *m_insertLabel = nullptr;
 
   QRadioButton *m_imageFileRadio = nullptr;
   QRadioButton *m_base64Radio = nullptr;

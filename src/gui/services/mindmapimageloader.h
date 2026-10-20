@@ -24,8 +24,6 @@ public:
   void requestImage(const QString &p_url, quint64 p_requestId, const QString &p_resourceBasePath);
   void cancel();
 
-  static bool readImageFile(const QString &p_path, QByteArray &p_data);
-  static bool decodeImageUrl(const QString &p_url, QByteArray &p_data);
   static QImage decodeImage(QByteArray &p_data);
 
 signals:

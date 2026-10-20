@@ -1787,17 +1787,31 @@ QString BufferService::insertAsset(const Buffer2 &p_buffer, const QString &p_sou
 
 QString BufferService::insertAssetRaw(const Buffer2 &p_buffer, const QString &p_assetName,
                                       const QByteArray &p_data) {
-  if (p_buffer.isReadOnly()) {
+  const auto buffer = getBufferHandle(p_buffer.m_bufferId);
+  if (!buffer.isValid() || buffer.isReadOnly()) {
     return QString();
   }
-  return BufferCoreService::insertAssetRaw(p_buffer.m_bufferId, p_assetName, p_data);
+  const auto nodeId = buffer.nodeId();
+  NotebookIoGate::ScopedTryLock lock(*m_ioGate, nodeId.notebookId, 0);
+  if (!lock.isLocked()) {
+    qWarning() << "insertAssetRaw: notebook is busy";
+    return QString();
+  }
+  return BufferCoreService::insertAssetRaw(buffer.id(), p_assetName, p_data);
 }
 
 bool BufferService::deleteAsset(const Buffer2 &p_buffer, const QString &p_relativePath) {
-  if (p_buffer.isReadOnly()) {
+  const auto buffer = getBufferHandle(p_buffer.m_bufferId);
+  if (!buffer.isValid() || buffer.isReadOnly()) {
     return false;
   }
-  return BufferCoreService::deleteAsset(p_buffer.m_bufferId, p_relativePath);
+  const auto nodeId = buffer.nodeId();
+  NotebookIoGate::ScopedTryLock lock(*m_ioGate, nodeId.notebookId, 0);
+  if (!lock.isLocked()) {
+    qWarning() << "deleteAsset: notebook is busy";
+    return false;
+  }
+  return BufferCoreService::deleteAsset(buffer.id(), p_relativePath);
 }
 
 QJsonArray BufferService::listAttachments(const Buffer2 &p_buffer) const {
@@ -2086,23 +2100,44 @@ bool BufferService::checkSingleExternalChange(const QString &p_bufferId) {
 }
 
 QString BufferService::insertAttachment(const Buffer2 &p_buffer, const QString &p_sourcePath) {
-  if (p_buffer.isReadOnly()) {
+  const auto bufferId = p_buffer.m_bufferId;
+  const auto buffer = getBufferHandle(bufferId);
+  if (!buffer.isValid() || buffer.isReadOnly()) {
     return QString();
   }
-  const QString &p_bufferId = p_buffer.m_bufferId;
+  const auto nodeId = buffer.nodeId();
+  const QPointer<QObject> self(this);
   AttachmentAddEvent event;
-  event.bufferId = p_bufferId;
+  event.bufferId = bufferId;
   event.sourcePath = p_sourcePath;
   if (m_hookMgr->doAction(HookNames::AttachmentBeforeAdd, event)) {
     return QString(); // Cancelled by plugin.
   }
 
-  const auto filename = BufferCoreService::insertAttachment(p_bufferId, p_sourcePath);
+  if (!self) {
+    return QString();
+  }
+  const auto current = getBufferHandle(bufferId);
+  if (!current.isValid() || current.isReadOnly() || current.nodeId() != nodeId) {
+    qWarning() << "insertAttachment failed: buffer changed during hook" << bufferId;
+    return QString();
+  }
+  QString filename;
+  {
+    NotebookIoGate::ScopedTryLock lock(*m_ioGate, nodeId.notebookId, 0);
+    if (!lock.isLocked()) {
+      qWarning() << "insertAttachment: notebook is busy";
+      return QString();
+    }
+    filename = BufferCoreService::insertAttachment(bufferId, event.sourcePath);
+  }
 
   if (!filename.isEmpty()) {
     event.filename = filename;
     m_hookMgr->doAction(HookNames::AttachmentAfterAdd, event);
-    emit attachmentChanged(p_bufferId);
+    if (self) {
+      emit attachmentChanged(bufferId);
+    }
   }
 
   return filename;
@@ -2199,22 +2234,43 @@ bool BufferService::removeObsoleteAttachments(const Buffer2 &p_buffer) {
 }
 
 bool BufferService::deleteAttachment(const Buffer2 &p_buffer, const QString &p_filename) {
-  const QString &p_bufferId = p_buffer.m_bufferId;
-  if (p_buffer.isReadOnly()) {
+  const auto bufferId = p_buffer.m_bufferId;
+  const auto buffer = getBufferHandle(bufferId);
+  if (!buffer.isValid() || buffer.isReadOnly()) {
     return false;
   }
+  const auto nodeId = buffer.nodeId();
+  const QPointer<QObject> self(this);
   AttachmentDeleteEvent event;
-  event.bufferId = p_bufferId;
+  event.bufferId = bufferId;
   event.filename = p_filename;
   if (m_hookMgr->doAction(HookNames::AttachmentBeforeDelete, event)) {
     return false; // Cancelled by plugin.
   }
 
-  const bool ok = BufferCoreService::deleteAttachment(p_bufferId, p_filename);
+  if (!self) {
+    return false;
+  }
+  const auto current = getBufferHandle(bufferId);
+  if (!current.isValid() || current.isReadOnly() || current.nodeId() != nodeId) {
+    qWarning() << "deleteAttachment failed: buffer changed during hook" << bufferId;
+    return false;
+  }
+  bool ok;
+  {
+    NotebookIoGate::ScopedTryLock lock(*m_ioGate, nodeId.notebookId, 0);
+    if (!lock.isLocked()) {
+      qWarning() << "deleteAttachment: notebook is busy";
+      return false;
+    }
+    ok = BufferCoreService::deleteAttachment(bufferId, event.filename);
+  }
 
   if (ok) {
     m_hookMgr->doAction(HookNames::AttachmentAfterDelete, event);
-    emit attachmentChanged(p_bufferId);
+    if (self) {
+      emit attachmentChanged(bufferId);
+    }
   }
 
   return ok;

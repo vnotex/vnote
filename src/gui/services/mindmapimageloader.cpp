@@ -1,8 +1,6 @@
 #include "mindmapimageloader.h"
 
 #include <QDir>
-#include <QFile>
-#include <QFileInfo>
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 #include <QNetworkRequest>
@@ -45,59 +43,6 @@ void MindMapImageLoader::cancel() {
   }
 }
 
-bool MindMapImageLoader::readImageFile(const QString &p_path, QByteArray &p_data) {
-  const QFileInfo info(p_path);
-  if (!info.isAbsolute() || !info.isFile() || info.size() > c_imageByteLimit) {
-    return false;
-  }
-  QFile input(p_path);
-  if (!input.open(QIODevice::ReadOnly) || input.size() > c_imageByteLimit) {
-    return false;
-  }
-  p_data = input.read(qMin(input.size(), c_imageByteLimit));
-  return input.error() == QFileDevice::NoError && input.atEnd();
-}
-
-bool MindMapImageLoader::decodeImageUrl(const QString &p_url, QByteArray &p_data) {
-  const auto comma = p_url.indexOf(QLatin1Char(','));
-  if (comma < 0 || comma > 256) {
-    return false;
-  }
-  auto header = p_url.left(comma).toLower();
-  const bool base64 = header.endsWith(QStringLiteral(";base64"));
-  if (base64) {
-    header.chop(7);
-  }
-  if (!header.startsWith(QStringLiteral("data:image/")) || header.contains(QLatin1Char(';')) ||
-      header.size() <= 11) {
-    return false;
-  }
-  // Bound encoded input before allocating the percent-decoded/base64 payload.
-  const qint64 payloadLimit = base64 ? ((c_imageByteLimit + 2) / 3) * 4 : c_imageByteLimit;
-  if (p_url.size() - comma - 1 > payloadLimit * 3) {
-    return false;
-  }
-  auto encoded = p_url.mid(comma + 1).toUtf8();
-  auto payload = QByteArray::fromPercentEncoding(encoded);
-  encoded.fill('\0');
-  if (payload.size() > payloadLimit) {
-    payload.fill('\0');
-    return false;
-  }
-  if (base64) {
-    auto decoded = QByteArray::fromBase64Encoding(payload, QByteArray::AbortOnBase64DecodingErrors);
-    payload.fill('\0');
-    if (!decoded || decoded.decoded.size() > c_imageByteLimit) {
-      decoded.decoded.fill('\0');
-      return false;
-    }
-    p_data = std::move(decoded.decoded);
-  } else {
-    p_data = std::move(payload);
-  }
-  return true;
-}
-
 QImage MindMapImageLoader::decodeImage(QByteArray &p_data) {
   QByteArray sanitized;
   QByteArray mime;
@@ -114,7 +59,7 @@ void MindMapImageLoader::requestImage(const QString &p_url, quint64 p_requestId,
   QByteArray bytes;
   bool loaded = false;
   if (p_url.startsWith(QStringLiteral("data:image/"), Qt::CaseInsensitive)) {
-    loaded = decodeImageUrl(p_url, bytes);
+    loaded = ImageUtils::decodeImageUrl(p_url, bytes);
   } else {
     const QUrl source(p_url, QUrl::StrictMode);
     if (source.isValid()) {
@@ -123,9 +68,9 @@ void MindMapImageLoader::requestImage(const QString &p_url, quint64 p_requestId,
         return;
       }
       if (source.isLocalFile()) {
-        loaded = readImageFile(source.toLocalFile(), bytes);
+        loaded = ImageUtils::readImageFile(source.toLocalFile(), bytes);
       } else if (relativeResourceUrl(source) && !p_resourceBasePath.isEmpty()) {
-        loaded = readImageFile(
+        loaded = ImageUtils::readImageFile(
             QDir(p_resourceBasePath).absoluteFilePath(source.path(QUrl::FullyDecoded)), bytes);
       }
     }

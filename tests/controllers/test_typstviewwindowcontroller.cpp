@@ -1,16 +1,25 @@
 #include <QtTest>
 
+#include <QBuffer>
 #include <QDesktopServices>
 #include <QDir>
+#include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <QImage>
+#include <QJsonDocument>
 #include <QPointer>
 #include <QProcess>
 #include <QScopeGuard>
+#include <QSemaphore>
 #include <QSignalSpy>
 #include <QStandardPaths>
+#include <QTcpServer>
+#include <QTcpSocket>
+#include <QTemporaryDir>
 #include <QUrl>
 
+#include <functional>
 #include <memory>
 #include <thread>
 
@@ -25,6 +34,7 @@
 #include <core/services/notebookiogate.h>
 #include <core/services/syncworkqueuemanager.h>
 #include <temp_dir_fixture.h>
+#include <vxcore/notebook_json_keys.h>
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
@@ -41,6 +51,110 @@ bool writeFile(const QString &p_path, const QByteArray &p_content) {
   return file.open(QIODevice::WriteOnly | QIODevice::Truncate) &&
          file.write(p_content) == p_content.size();
 }
+
+QByteArray fileBytes(const QString &p_path) {
+  QFile file(p_path);
+  return file.open(QIODevice::ReadOnly) ? file.readAll() : QByteArray();
+}
+
+QByteArray imageBytes(const char *p_format = "PNG", const QSize &p_size = QSize(12, 8)) {
+  QImage image(p_size, QImage::Format_RGB32);
+  image.fill(QColor(28, 164, 92));
+  QByteArray bytes;
+  QBuffer output(&bytes);
+  if (!output.open(QIODevice::WriteOnly) || !image.save(&output, p_format)) {
+    return {};
+  }
+  return bytes;
+}
+
+QByteArray svgBytes() {
+  return QByteArrayLiteral("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"8\">"
+                           "<rect width=\"12\" height=\"8\" fill=\"#1ca45c\"/></svg>");
+}
+
+QStringList filesBelow(const QString &p_root) {
+  QStringList files;
+  QDirIterator it(p_root, QDir::Files | QDir::Hidden, QDirIterator::Subdirectories);
+  while (it.hasNext()) {
+    files.append(QDir(p_root).relativeFilePath(it.next()));
+  }
+  files.sort();
+  return files;
+}
+
+// The UI-thread gate rejection must be tested against a different owning thread.
+// RAII releases the barrier even when a QVERIFY returns from its caller early.
+class HeldNotebookGate {
+public:
+  HeldNotebookGate(NotebookIoGate &p_gate, const QString &p_id)
+      : m_worker([this, &p_gate, p_id]() {
+          NotebookIoGate::ScopedLock lock(p_gate, p_id);
+          m_acquired.release();
+          m_release.acquire();
+        }) {
+    m_acquired.acquire();
+  }
+  ~HeldNotebookGate() {
+    m_release.release();
+    m_worker.join();
+  }
+
+private:
+  QSemaphore m_acquired;
+  QSemaphore m_release;
+  std::thread m_worker;
+};
+
+bool gateAvailableFromWorker(NotebookIoGate &p_gate, const QString &p_id) {
+  bool acquired = false;
+  std::thread worker([&]() {
+    NotebookIoGate::ScopedTryLock lock(p_gate, p_id, 0);
+    acquired = lock.isLocked();
+  });
+  worker.join();
+  return acquired;
+}
+
+// Reply only after a complete real HTTP request. The callback runs while
+// NetworkAccess's nested event loop is active, without timing sleeps or mocks.
+class ResourceImageServer : public QObject {
+public:
+  ResourceImageServer() {
+    connect(&server, &QTcpServer::newConnection, this, [this]() {
+      while (auto *socket = server.nextPendingConnection()) {
+        connect(socket, &QTcpSocket::readyRead, this,
+                [this, socket, request = QByteArray(), replied = false]() mutable {
+                  request += socket->readAll();
+                  if (replied || !request.contains("\r\n\r\n")) {
+                    return;
+                  }
+                  replied = true;
+                  ++requests;
+                  if (beforeReply) {
+                    beforeReply();
+                  }
+                  socket->write(QByteArrayLiteral("HTTP/1.1 ") + QByteArray::number(status) +
+                                QByteArrayLiteral(
+                                    " Response\r\nContent-Type: image/png\r\nContent-Length: ") +
+                                QByteArray::number(body.size()) +
+                                QByteArrayLiteral("\r\nConnection: close\r\n\r\n"));
+                  socket->write(body);
+                  socket->disconnectFromHost();
+                });
+      }
+    });
+  }
+  bool listen() { return server.listen(QHostAddress::LocalHost, 0); }
+  QString url() const {
+    return QStringLiteral("http://127.0.0.1:%1/image.png").arg(server.serverPort());
+  }
+  QTcpServer server;
+  QByteArray body;
+  int status = 200;
+  int requests = 0;
+  std::function<void()> beforeReply;
+};
 
 // Intercept even the rejected schemes exercised below: a policy regression must not
 // launch a browser, file association, or other system process.
@@ -98,6 +212,36 @@ private slots:
   void removedLocalFileCannotBeConfirmed();
   void destructionDuringConfirmation();
   void destructionDuringSourceOpen();
+  void imageStorage_data();
+  void imageStorage();
+  void imageNormalization_data();
+  void imageNormalization();
+  void invalidImageBytes_data();
+  void invalidImageBytes();
+  void imageFolderContainment_data();
+  void imageFolderContainment();
+  void imageFolderJunctionEscape();
+  void noCopyImageReferences();
+  void resourceSourceRejection_data();
+  void resourceSourceRejection();
+  void resourceLinksAndOpenPolicy();
+  void crossDriveRelativeLink();
+  void emptyAndVerbatimTextFiles();
+  void attachmentCollisionAndMetadata();
+  void outsideProjectAttachmentLink();
+  void attachmentEligibilityDoesNotCreateFolders();
+  void resourceGate_data();
+  void resourceGate();
+  void attachmentBeforeHook_data();
+  void attachmentBeforeHook();
+  void attachmentAfterHook_data();
+  void attachmentAfterHook();
+  void failedRollbackReportsRetainedResource();
+  void unavailableResourceBuffer_data();
+  void unavailableResourceBuffer();
+  void insertionInvalidationPreservesConsent();
+  void networkImageAcquisition_data();
+  void networkImageAcquisition();
 
 private:
   void clearOpenObservations();
@@ -824,7 +968,957 @@ void TestTypstViewWindowController::destructionDuringSourceOpen() {
                    false);
 }
 
+void TestTypstViewWindowController::imageStorage_data() {
+  QTest::addColumn<QString>("backend");
+  QTest::newRow("bundled") << QStringLiteral("bundled");
+  QTest::newRow("raw") << QStringLiteral("raw");
+  QTest::newRow("external") << QStringLiteral("external");
+  QTest::newRow("external-hidden-no-suffix") << QStringLiteral(".hidden");
+  QTest::newRow("external-hidden-typst") << QStringLiteral(".hidden.typst");
+  QTest::newRow("external-multiple-suffixes") << QStringLiteral("note.foo.typst");
+}
+
+void TestTypstViewWindowController::imageStorage() {
+  QFETCH(QString, backend);
+  auto buffer = m_mainBuffer;
+  if (backend != QLatin1String("bundled")) {
+    const auto root = m_tempDir->createDir(backend);
+    const auto noteName = backend.contains(QLatin1Char('.')) ? backend : mainName();
+    const auto path = QDir(root).filePath(noteName);
+    QVERIFY(writeFile(path, importedContent()));
+    QString notebook;
+    if (backend == QLatin1String("raw")) {
+      notebook = m_notebooks->createNotebook(root, QStringLiteral("{\"name\":\"Raw\"}"),
+                                             NotebookType::Raw);
+      QVERIFY(!notebook.isEmpty());
+    }
+    buffer = m_buffers->openBuffer({notebook, notebook.isEmpty() ? path : mainName()});
+    QVERIFY(buffer.isValid());
+    QVERIFY(!buffer.isAttachmentSupported());
+    QVERIFY(m_controller->setBuffer(buffer));
+  }
+  const auto root = m_controller->getProject().root;
+  const auto bytes = imageBytes();
+  QVERIFY(!bytes.isEmpty());
+  const auto sourceName = QStringLiteral("图 # 25%.png");
+  const auto source = QDir(root).filePath(sourceName);
+  QVERIFY(writeFile(source, bytes));
+  const auto originalContent = buffer.getContentRaw();
+  const auto sourceUrl = QUrl::fromLocalFile(source);
+  if (backend != QLatin1String("bundled")) {
+    QVERIFY(!m_controller->canAttach(sourceUrl));
+    QString created = QStringLiteral("stale");
+    QString error;
+    QVERIFY(m_controller->insertAttachment(source, &created, &error).isEmpty());
+    QVERIFY(created.isEmpty());
+    QVERIFY(!error.isEmpty());
+  }
+  const QStringList sources = {source, sourceName, sourceUrl.toString(QUrl::FullyEncoded),
+                               QStringLiteral("data:image/png;base64,") +
+                                   QString::fromLatin1(bytes.toBase64())};
+  QStringList createdPaths;
+  for (const auto &input : sources) {
+    QString error = QStringLiteral("old error");
+    QCOMPARE(m_controller->readImageData(input, &error), bytes);
+    QVERIFY(error.isEmpty());
+    QString created = QStringLiteral("old asset");
+    const auto relative =
+        m_controller->insertImage(bytes, QStringLiteral("wrong.bmp"), &created, &error);
+    QVERIFY2(!relative.isEmpty(), qPrintable(error));
+    QVERIFY(error.isEmpty());
+    QVERIFY(!created.isEmpty());
+    QVERIFY(!QDir::isAbsolutePath(relative));
+    QVERIFY(!relative.startsWith(QStringLiteral("../")));
+    QVERIFY(relative.endsWith(QStringLiteral(".png"), Qt::CaseInsensitive));
+    const auto saved = QDir(root).filePath(relative);
+    QVERIFY(QFileInfo(saved).isFile());
+    QCOMPARE(QFileInfo(saved).absolutePath(), QDir(buffer.getAssetsFolder()).absolutePath());
+    QCOMPARE(fileBytes(saved), bytes);
+    QCOMPARE(QImage(saved).pixelColor(2, 2), QColor(28, 164, 92));
+    QVERIFY(!createdPaths.contains(relative));
+    createdPaths.append(relative);
+    QVERIFY(buffer.deleteAsset(created));
+    QVERIFY(!QFileInfo::exists(saved));
+    QCOMPARE(fileBytes(source), bytes);
+  }
+  QCOMPARE(buffer.getContentRaw(), originalContent);
+}
+
+void TestTypstViewWindowController::imageNormalization_data() {
+  QTest::addColumn<QByteArray>("format");
+  QTest::newRow("bmp") << QByteArrayLiteral("BMP");
+  QTest::newRow("xpm") << QByteArrayLiteral("XPM");
+  QTest::newRow("svg") << QByteArrayLiteral("SVG");
+}
+
+void TestTypstViewWindowController::imageNormalization() {
+  QFETCH(QByteArray, format);
+  const auto bytes = format == "SVG" ? svgBytes() : imageBytes(format.constData());
+  QVERIFY(!bytes.isEmpty());
+  const auto source =
+      QDir(m_notebookPath)
+          .filePath(QStringLiteral("source.") + QString::fromLatin1(format.toLower()));
+  QVERIFY(writeFile(source, bytes));
+  QString error;
+  const auto acquired = m_controller->readImageData(source, &error);
+  QVERIFY2(!acquired.isEmpty(), qPrintable(error));
+  QVERIFY(acquired.startsWith(QByteArray::fromHex("89504e470d0a1a0a")));
+  QString created;
+  const auto relative =
+      m_controller->insertImage(bytes, QStringLiteral("misleading.jpg"), &created, &error);
+  QVERIFY2(!relative.isEmpty(), qPrintable(error));
+  QVERIFY(relative.endsWith(QStringLiteral(".png"), Qt::CaseInsensitive));
+  const auto saved = QDir(m_notebookPath).filePath(relative);
+  const auto stored = fileBytes(saved);
+  QVERIFY(stored.startsWith(QByteArray::fromHex("89504e470d0a1a0a")));
+  QCOMPARE(QImage::fromData(stored).size(), QSize(12, 8));
+  QCOMPARE(QImage::fromData(stored).pixelColor(2, 2), QColor(28, 164, 92));
+  QCOMPARE(fileBytes(source), bytes);
+  QVERIFY(m_mainBuffer.deleteAsset(created));
+}
+
+void TestTypstViewWindowController::invalidImageBytes_data() {
+  QTest::addColumn<QString>("kind");
+  for (const auto *kind : {"empty", "invalid", "truncated", "oversized", "dimension", "pixels",
+                           "active-svg", "broken-data-url"}) {
+    QTest::newRow(kind) << QString::fromLatin1(kind);
+  }
+}
+
+void TestTypstViewWindowController::invalidImageBytes() {
+  QFETCH(QString, kind);
+  QByteArray bytes;
+  if (kind == QLatin1String("invalid")) {
+    bytes = QByteArrayLiteral("not an image");
+  } else if (kind == QLatin1String("truncated")) {
+    bytes = imageBytes().left(32);
+  } else if (kind == QLatin1String("oversized")) {
+    bytes = imageBytes();
+    bytes.append(QByteArray(32 * 1024 * 1024 + 1 - bytes.size(), 'x'));
+  } else if (kind == QLatin1String("dimension")) {
+    bytes = imageBytes("PNG", QSize(8193, 1));
+    QVERIFY(!bytes.isEmpty());
+  } else if (kind == QLatin1String("pixels")) {
+    bytes = imageBytes("PNG", QSize(4097, 4096));
+    QVERIFY(!bytes.isEmpty());
+  } else if (kind == QLatin1String("active-svg")) {
+    bytes = QByteArrayLiteral("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"8\">"
+                              "<script>alert(1)</script></svg>");
+  }
+  const auto source = QDir(m_notebookPath).filePath(QStringLiteral("rejected.png"));
+  QVERIFY(writeFile(source, bytes));
+  const auto before = filesBelow(m_notebookPath);
+  QString error = QStringLiteral("old");
+  QString created = QStringLiteral("old");
+  QVERIFY(m_controller->insertImage(bytes, QStringLiteral("bad.png"), &created, &error).isEmpty());
+  QVERIFY(created.isEmpty());
+  QVERIFY(!error.isEmpty());
+  const auto input = kind == QLatin1String("broken-data-url")
+                         ? QStringLiteral("data:image/png;base64,%%%not-base64!")
+                         : source;
+  error.clear();
+  QVERIFY(m_controller->readImageData(input, &error).isEmpty());
+  QVERIFY(!error.isEmpty());
+  QVERIFY(m_controller->imageReference(QUrl::fromLocalFile(source), &error).isEmpty());
+  QVERIFY(!error.isEmpty());
+  QCOMPARE(filesBelow(m_notebookPath), before);
+  QCOMPARE(fileBytes(source), bytes);
+}
+
+void TestTypstViewWindowController::imageFolderContainment_data() {
+  QTest::addColumn<QString>("kind");
+  QTest::newRow("absolute-outside") << QStringLiteral("absolute");
+  QTest::newRow("parent-outside") << QStringLiteral("parent");
+  QTest::newRow("uncreated-contained-ancestors") << QStringLiteral("contained");
+}
+
+void TestTypstViewWindowController::imageFolderContainment() {
+  QFETCH(QString, kind);
+  const auto outside = m_tempDir->createDir(QStringLiteral("outside-images"));
+  const auto sentinel = QDir(outside).filePath(QStringLiteral("keep.png"));
+  const auto bytes = imageBytes();
+  QVERIFY(writeFile(sentinel, bytes));
+  auto config = m_notebooks->getNotebookConfig(m_notebookId);
+  const auto folder = kind == QLatin1String("contained")
+                          ? QDir(m_notebookPath).filePath(QStringLiteral("new/nested/images"))
+                          : QDir(outside).filePath(QStringLiteral("new-branch"));
+  config[QLatin1String(vxcore::kJsonKeyAssetsFolder)] =
+      kind == QLatin1String("absolute")
+          ? folder
+          : (kind == QLatin1String("parent") ? QStringLiteral("../outside-images/new-branch")
+                                             : QStringLiteral("new/nested/images"));
+  QVERIFY(m_notebooks->updateNotebookConfig(
+      m_notebookId, QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact))));
+  QVERIFY(!QFileInfo::exists(folder));
+  const auto before = filesBelow(outside);
+  QString created = QStringLiteral("stale");
+  QString error;
+  const auto relative =
+      m_controller->insertImage(bytes, QStringLiteral("new.png"), &created, &error);
+  if (kind == QLatin1String("contained")) {
+    QVERIFY2(!relative.isEmpty(), qPrintable(error));
+    QVERIFY(relative.startsWith(QStringLiteral("new/nested/images/")));
+    QCOMPARE(fileBytes(QDir(m_notebookPath).filePath(relative)), bytes);
+    QVERIFY(m_mainBuffer.deleteAsset(created));
+  } else {
+    QVERIFY(relative.isEmpty());
+    QVERIFY(created.isEmpty());
+    QCOMPARE(error, QStringLiteral("The image folder is outside the Typst project; choose an image "
+                                   "folder inside the note directory"));
+    QVERIFY(!QFileInfo::exists(folder));
+  }
+  QCOMPARE(filesBelow(outside), before);
+  QCOMPARE(fileBytes(sentinel), bytes);
+  QCOMPARE(m_controller->getProject().root, QDir(m_notebookPath).canonicalPath());
+}
+
+void TestTypstViewWindowController::imageFolderJunctionEscape() {
+  const auto outside = m_tempDir->createDir(QStringLiteral("outside-images"));
+  const auto link = QDir(m_notebookPath).filePath(QStringLiteral("image-escape"));
+  const auto removeLink = qScopeGuard([&]() {
+#ifdef Q_OS_WIN
+    QDir().rmdir(link);
+#else
+    QFile::remove(link);
+#endif
+  });
+#ifdef Q_OS_WIN
+  QProcess process;
+  process.start(QStringLiteral("cmd.exe"),
+                {QStringLiteral("/c"), QStringLiteral("mklink"), QStringLiteral("/J"),
+                 QDir::toNativeSeparators(link), QDir::toNativeSeparators(outside)});
+  QVERIFY(process.waitForFinished(10000));
+  if (process.exitCode() != 0) {
+    QSKIP("Directory junction creation is not permitted on this test filesystem");
+  }
+  QVERIFY(QFileInfo(link).isJunction());
+#else
+  if (!QFile::link(outside, link)) {
+    QSKIP("Directory symlink creation is not permitted on this test filesystem");
+  }
+#endif
+  const auto bytes = imageBytes();
+  const auto sentinel = QDir(outside).filePath(QStringLiteral("keep.png"));
+  QVERIFY(writeFile(sentinel, bytes));
+  auto config = m_notebooks->getNotebookConfig(m_notebookId);
+  config[QLatin1String(vxcore::kJsonKeyAssetsFolder)] = QStringLiteral("image-escape/uncreated");
+  QVERIFY(m_notebooks->updateNotebookConfig(
+      m_notebookId, QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact))));
+  const auto before = filesBelow(outside);
+  QString error;
+  QString created = QStringLiteral("stale");
+  QVERIFY(m_controller->insertImage(bytes, QStringLiteral("new.png"), &created, &error).isEmpty());
+  QVERIFY(created.isEmpty());
+  QVERIFY(!error.isEmpty());
+  QVERIFY(m_controller
+              ->imageReference(QUrl::fromLocalFile(QDir(link).filePath(QStringLiteral("keep.png"))),
+                               &error)
+              .isEmpty());
+  QCOMPARE(filesBelow(outside), before);
+  QCOMPARE(fileBytes(sentinel), bytes);
+  QVERIFY(!QFileInfo::exists(QDir(outside).filePath(QStringLiteral("uncreated"))));
+  QCOMPARE(m_controller->getProject().root, QDir(m_notebookPath).canonicalPath());
+}
+
+void TestTypstViewWindowController::noCopyImageReferences() {
+  const auto bytes = imageBytes();
+  const auto name = QStringLiteral("图 # 25%.png");
+  const auto path = QDir(m_notebookPath).filePath(name);
+  QVERIFY(writeFile(path, bytes));
+  const auto svgPath = QDir(m_notebookPath).filePath(QStringLiteral("native.svg"));
+  QVERIFY(writeFile(svgPath, svgBytes()));
+  const auto bmpPath = QDir(m_notebookPath).filePath(QStringLiteral("unsupported.bmp"));
+  QVERIFY(writeFile(bmpPath, imageBytes("BMP")));
+  const auto xpmPath = QDir(m_notebookPath).filePath(QStringLiteral("unsupported.xpm"));
+  QVERIFY(writeFile(xpmPath, imageBytes("XPM")));
+  const auto outside = m_tempDir->filePath(QStringLiteral("outside.png"));
+  QVERIFY(writeFile(outside, bytes));
+  const auto before = filesBelow(m_notebookPath);
+  QString error = QStringLiteral("old");
+  QCOMPARE(m_controller->imageReference(QUrl::fromLocalFile(path), &error), name);
+  QVERIFY(error.isEmpty());
+  QUrl relative;
+  relative.setPath(name);
+  QCOMPARE(m_controller->imageReference(relative, &error), name);
+  QCOMPARE(m_controller->imageReference(QUrl::fromLocalFile(svgPath), &error),
+           QStringLiteral("native.svg"));
+  const QList<QUrl> rejected = {
+      QUrl::fromLocalFile(bmpPath), QUrl::fromLocalFile(xpmPath), QUrl::fromLocalFile(outside),
+      QUrl(QStringLiteral("https://example.invalid/image.png")),
+      QUrl(QStringLiteral("data:image/png;base64,") + QString::fromLatin1(bytes.toBase64()))};
+  for (const auto &url : rejected) {
+    QVERIFY(m_controller->imageReference(url, &error).isEmpty());
+    QVERIFY(!error.isEmpty());
+  }
+  QCOMPARE(filesBelow(m_notebookPath), before);
+  QCOMPARE(fileBytes(path), bytes);
+  QCOMPARE(fileBytes(svgPath), svgBytes());
+  QCOMPARE(fileBytes(outside), bytes);
+  const auto assets = m_notebooks->getAttachmentsFolder(m_notebookId, mainName());
+  QVERIFY(!assets.isEmpty());
+  QVERIFY(!QFileInfo::exists(assets));
+  // Rejection as a no-copy reference must not prohibit an explicit import.
+  QCOMPARE(m_controller->readImageData(outside, &error), bytes);
+  QString created;
+  const auto imported =
+      m_controller->insertImage(bytes, QStringLiteral("outside.png"), &created, &error);
+  QVERIFY2(!imported.isEmpty(), qPrintable(error));
+  QCOMPARE(fileBytes(QDir(m_notebookPath).filePath(imported)), bytes);
+  QVERIFY(m_mainBuffer.deleteAsset(created));
+  QCOMPARE(fileBytes(outside), bytes);
+}
+
+void TestTypstViewWindowController::resourceSourceRejection_data() {
+  QTest::addColumn<QString>("source");
+  QTest::newRow("empty") << QString();
+  QTest::newRow("drive-relative") << QStringLiteral("C:image.png");
+  QTest::newRow("file-drive-relative") << QStringLiteral("file:C:image.png");
+  QTest::newRow("nul") << (QStringLiteral("image") + QChar(0) + QStringLiteral(".png"));
+  QTest::newRow("encoded-nul") << QStringLiteral("file:///image%00.png");
+  QTest::newRow("unsupported-scheme") << QStringLiteral("smb://server/image.png");
+  QTest::newRow("javascript") << QStringLiteral("javascript:alert(1)");
+  QTest::newRow("qrc") << QStringLiteral("qrc:/image.png");
+  QTest::newRow("missing") << QStringLiteral("missing.png");
+  QTest::newRow("directory") << QStringLiteral("chapters");
+  QTest::newRow("invalid-uri") << QStringLiteral("http://[invalid");
+}
+
+void TestTypstViewWindowController::resourceSourceRejection() {
+  QFETCH(QString, source);
+  const auto before = filesBelow(m_notebookPath);
+  QString error;
+  QVERIFY(m_controller->readImageData(source, &error).isEmpty());
+  QVERIFY(!error.isEmpty());
+  error.clear();
+  QVERIFY(m_controller->linkDestination(source, false, &error).isEmpty());
+  QVERIFY(!error.isEmpty());
+  error.clear();
+  QVERIFY(m_controller->linkDestination(source, true, &error).isEmpty());
+  QVERIFY(!error.isEmpty());
+  QCOMPARE(filesBelow(m_notebookPath), before);
+  QVERIFY(m_urlSink.opened.isEmpty());
+}
+
+void TestTypstViewWindowController::resourceLinksAndOpenPolicy() {
+  const auto name = QStringLiteral("file # 25%.txt");
+  const auto path = QDir(m_notebookPath).filePath(name);
+  const auto content = QByteArrayLiteral("existing link target\n");
+  QVERIFY(!m_notebooks->createFile(m_notebookId, QString(), name).isEmpty());
+  QVERIFY(writeFile(path, content));
+  QString error = QStringLiteral("old");
+  const auto absolute = m_controller->linkDestination(path, false, &error);
+  QVERIFY2(!absolute.isEmpty(), qPrintable(error));
+  QVERIFY(error.isEmpty());
+  QCOMPARE(QUrl(absolute).toLocalFile(), path);
+  QVERIFY(QUrl(absolute).fragment().isEmpty());
+  QVERIFY(absolute.contains(QStringLiteral("%23")));
+  QVERIFY(absolute.contains(QStringLiteral("%25")));
+  const auto relative = m_controller->linkDestination(name, false, &error);
+  QVERIFY2(!relative.isEmpty(), qPrintable(error));
+  QVERIFY(QUrl(relative).isRelative());
+  QCOMPARE(QUrl(relative).path(), name);
+  QCOMPARE(m_controller->linkDestination(path, true, &error), relative);
+  QVERIFY(!relative.startsWith(QStringLiteral("./")));
+
+  auto uri = QUrl::fromLocalFile(path);
+  uri.setQuery(QStringLiteral("q=图 # 25%"), QUrl::DecodedMode);
+  uri.setFragment(QStringLiteral("section # 25%"), QUrl::DecodedMode);
+  const auto destination =
+      m_controller->linkDestination(uri.toString(QUrl::FullyEncoded), true, &error);
+  QVERIFY2(!destination.isEmpty(), qPrintable(error));
+  QCOMPARE(QUrl(destination).path(), name);
+  QCOMPARE(QUrl(destination).query(QUrl::FullyDecoded), uri.query(QUrl::FullyDecoded));
+  QCOMPARE(QUrl(destination).fragment(QUrl::FullyDecoded), uri.fragment(QUrl::FullyDecoded));
+  QVERIFY(m_urlSink.opened.isEmpty());
+  QSignalSpy confirmations(m_controller.get(),
+                           &TypstViewWindowController::externalLinkConfirmationRequested);
+  clearOpenObservations();
+  m_controller->requestOpenLink(QUrl(destination));
+  QVERIFY(confirmations.isEmpty());
+  QCOMPARE(m_afterOpen.size(), 1);
+  QCOMPARE(m_openedBuffers.constFirst().nodeId().relativePath, name);
+  QCOMPARE(QFileInfo(m_openedBuffers.constFirst().resolvedPath()).canonicalFilePath(),
+           QFileInfo(path).canonicalFilePath());
+  QCOMPARE(m_afterOpen.constFirst().anchor, uri.fragment(QUrl::FullyDecoded));
+  QVERIFY(m_urlSink.opened.isEmpty());
+
+  const auto outside = m_tempDir->filePath(QStringLiteral("outside # 25%.txt"));
+  QVERIFY(writeFile(outside, content));
+  const auto outsideLink = m_controller->linkDestination(outside, true, &error);
+  QVERIFY2(!outsideLink.isEmpty(), qPrintable(error));
+  QVERIFY(QUrl(outsideLink).isRelative());
+  QCOMPARE(QDir::cleanPath(QDir(m_notebookPath).filePath(QUrl(outsideLink).path())),
+           QDir::cleanPath(outside));
+  m_controller->requestOpenLink(QUrl(outsideLink));
+  QCOMPARE(confirmations.size(), 1);
+  const auto outsideRequest = confirmations.constLast().constFirst().toUrl();
+  QCOMPARE(QFileInfo(outsideRequest.toLocalFile()).canonicalFilePath(),
+           QFileInfo(outside).canonicalFilePath());
+  m_controller->openConfirmedExternalLink(outsideRequest);
+  QCOMPARE(m_urlSink.opened, QList<QUrl>{outsideRequest});
+
+  for (const auto *source : {"https://example.invalid/a%20b?q=1#part", "http://example.invalid/",
+                             "ftp://example.invalid/file", "mailto:typst@example.invalid"}) {
+    const auto input = QString::fromLatin1(source);
+    QCOMPARE(m_controller->linkDestination(input, false, &error), input);
+    QVERIFY(error.isEmpty());
+  }
+  QVERIFY(
+      m_controller->linkDestination(QStringLiteral("https://example.invalid/?q=%00"), false, &error)
+          .isEmpty());
+  QVERIFY(
+      m_controller->linkDestination(QStringLiteral("https://example.invalid/#%00"), false, &error)
+          .isEmpty());
+  QCOMPARE(fileBytes(path), content);
+  QCOMPARE(fileBytes(outside), content);
+}
+
+void TestTypstViewWindowController::emptyAndVerbatimTextFiles() {
+  const auto empty = QDir(m_notebookPath).filePath(QStringLiteral("empty.txt"));
+  const auto path = QDir(m_notebookPath).filePath(QStringLiteral("source.txt"));
+  const auto content = QStringLiteral("#let name = \"图\"\n[] #strong(\"literal\")\n");
+  QVERIFY(writeFile(empty, {}));
+  QVERIFY(writeFile(path, content.toUtf8()));
+  QString text = QStringLiteral("old text");
+  QString error = QStringLiteral("old error");
+  QVERIFY(m_controller->readFileContent(QUrl::fromLocalFile(empty), &text, &error));
+  QVERIFY(text.isEmpty());
+  QVERIFY(error.isEmpty());
+  QVERIFY(m_controller->readFileContent(QUrl(QStringLiteral("source.txt")), &text, &error));
+  QCOMPARE(text, content);
+  QVERIFY(error.isEmpty());
+  const auto image = QDir(m_notebookPath).filePath(QStringLiteral("not-text.png"));
+  QVERIFY(writeFile(image, imageBytes()));
+  const QList<QUrl> rejected = {QUrl::fromLocalFile(image), QUrl(QStringLiteral("missing.txt")),
+                                QUrl(QStringLiteral("chapters")),
+                                QUrl(QStringLiteral("https://example.invalid/file.txt"))};
+  for (const auto &url : rejected) {
+    text = QStringLiteral("stale");
+    error.clear();
+    QVERIFY(!m_controller->readFileContent(url, &text, &error));
+    QVERIFY(text.isEmpty());
+    QVERIFY(!error.isEmpty());
+  }
+  QCOMPARE(fileBytes(path), content.toUtf8());
+  QVERIFY(QFileInfo(empty).isFile());
+  QCOMPARE(QFileInfo(empty).size(), 0);
+}
+
+void TestTypstViewWindowController::attachmentCollisionAndMetadata() {
+  const auto firstDir = m_tempDir->createDir(QStringLiteral("first"));
+  const auto secondDir = m_tempDir->createDir(QStringLiteral("second"));
+  const auto basename = QStringLiteral("same # 25%.txt");
+  const auto first = QDir(firstDir).filePath(basename);
+  const auto second = QDir(secondDir).filePath(basename);
+  const auto firstBytes = QByteArrayLiteral("first preexisting attachment\n");
+  const auto secondBytes = QByteArrayLiteral("second imported attachment\n");
+  QVERIFY(writeFile(first, firstBytes));
+  QVERIFY(writeFile(second, secondBytes));
+  const auto original = m_mainBuffer.insertAttachment(first);
+  QVERIFY(!original.isEmpty());
+  const auto folder = m_mainBuffer.getAttachmentsFolder();
+  const auto originalPath = QDir(folder).filePath(original);
+  QVERIFY(m_controller->canAttach(QUrl::fromLocalFile(second)));
+  QVERIFY(!m_controller->canAttach(QUrl::fromLocalFile(originalPath)));
+  QVERIFY(!m_controller->canAttach(QUrl::fromLocalFile(secondDir)));
+  QVERIFY(!m_controller->canAttach(QUrl(QStringLiteral("https://example.invalid/file.txt"))));
+  const auto before = m_mainBuffer.listAttachments();
+  QVERIFY(before.contains(original));
+  QString created = QStringLiteral("old");
+  QString error = QStringLiteral("old");
+  const auto link = m_controller->insertAttachment(second, &created, &error);
+  QVERIFY2(!link.isEmpty(), qPrintable(error));
+  QVERIFY(error.isEmpty());
+  QVERIFY(!created.isEmpty());
+  QVERIFY(created != original);
+  const auto actualPath = QDir(folder).filePath(created);
+  QCOMPARE(QFileInfo(QDir(m_notebookPath).filePath(QUrl(link).path())).canonicalFilePath(),
+           QFileInfo(actualPath).canonicalFilePath());
+  QCOMPARE(fileBytes(actualPath), secondBytes);
+  QCOMPARE(fileBytes(originalPath), firstBytes);
+  QCOMPARE(fileBytes(second), secondBytes);
+  const auto after = m_mainBuffer.listAttachments();
+  QCOMPARE(after.size(), before.size() + 1);
+  QVERIFY(after.contains(original));
+  QVERIFY(after.contains(created));
+  QVERIFY(m_mainBuffer.deleteAttachment(created));
+  QVERIFY(!QFileInfo::exists(actualPath));
+  QCOMPARE(m_mainBuffer.listAttachments(), before);
+  QCOMPARE(fileBytes(originalPath), firstBytes);
+}
+
+void TestTypstViewWindowController::outsideProjectAttachmentLink() {
+  const auto outside = m_tempDir->createDir(QStringLiteral("outside-attachments"));
+  auto config = m_notebooks->getNotebookConfig(m_notebookId);
+  config[QLatin1String(vxcore::kJsonKeyAssetsFolder)] = outside;
+  QVERIFY(m_notebooks->updateNotebookConfig(
+      m_notebookId, QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact))));
+  const auto source = m_tempDir->filePath(QStringLiteral("attach.txt"));
+  const auto bytes = QByteArrayLiteral("attachment outside compiler sandbox\n");
+  QVERIFY(writeFile(source, bytes));
+  QVERIFY(m_controller->canAttach(QUrl::fromLocalFile(source)));
+  QString created;
+  QString error;
+  const auto link = m_controller->insertAttachment(source, &created, &error);
+  QVERIFY2(!link.isEmpty(), qPrintable(error));
+  QVERIFY(!created.isEmpty());
+  const auto actual = QDir(m_mainBuffer.getAttachmentsFolder()).filePath(created);
+  QVERIFY(QDir(outside).relativeFilePath(actual).startsWith(QStringLiteral("../")) == false);
+  QCOMPARE(fileBytes(actual), bytes);
+  QVERIFY(m_mainBuffer.listAttachments().contains(created));
+  QCOMPARE(QFileInfo(QDir(m_notebookPath).filePath(QUrl(link).path())).canonicalFilePath(),
+           QFileInfo(actual).canonicalFilePath());
+  QSignalSpy confirmations(m_controller.get(),
+                           &TypstViewWindowController::externalLinkConfirmationRequested);
+  m_controller->requestOpenLink(QUrl(link));
+  QCOMPARE(confirmations.size(), 1);
+  QCOMPARE(
+      QFileInfo(confirmations.constFirst().constFirst().toUrl().toLocalFile()).canonicalFilePath(),
+      QFileInfo(actual).canonicalFilePath());
+  QCOMPARE(m_controller->getProject().root, QDir(m_notebookPath).canonicalPath());
+  QVERIFY(m_mainBuffer.deleteAttachment(created));
+  QCOMPARE(fileBytes(source), bytes);
+}
+
+void TestTypstViewWindowController::resourceGate_data() {
+  QTest::addColumn<bool>("external");
+  QTest::newRow("notebook-assets-and-attachments") << false;
+  QTest::newRow("external-assets-empty-gate-key") << true;
+}
+
+void TestTypstViewWindowController::resourceGate() {
+  QFETCH(bool, external);
+  auto buffer = m_mainBuffer;
+  if (external) {
+    const auto root = m_tempDir->createDir(QStringLiteral("external"));
+    const auto path = QDir(root).filePath(mainName());
+    QVERIFY(writeFile(path, importedContent()));
+    buffer = m_buffers->openBuffer({QString(), path});
+    QVERIFY(buffer.isValid());
+    QVERIFY(m_controller->setBuffer(buffer));
+  }
+  const auto root = m_controller->getProject().root;
+  const auto bytes = imageBytes();
+  QString asset;
+  QString error;
+  const auto assetPath =
+      m_controller->insertImage(bytes, QStringLiteral("existing.png"), &asset, &error);
+  QVERIFY2(!assetPath.isEmpty(), qPrintable(error));
+  const auto source = m_tempDir->filePath(QStringLiteral("source.txt"));
+  const auto text = QByteArrayLiteral("existing attachment\n");
+  QVERIFY(writeFile(source, text));
+  QString attachment;
+  if (!external) {
+    QVERIFY(!m_controller->insertAttachment(source, &attachment, &error).isEmpty());
+  }
+  const auto before = filesBelow(buffer.getAssetsFolder());
+  const auto metadata = buffer.listAttachments();
+  {
+    HeldNotebookGate lock(*m_gate, buffer.nodeId().notebookId);
+    QString created = QStringLiteral("stale");
+    QVERIFY(m_controller->insertImage(bytes, QStringLiteral("blocked.png"), &created, &error)
+                .isEmpty());
+    QVERIFY(created.isEmpty());
+    QVERIFY(!error.isEmpty());
+    QVERIFY(buffer.insertAssetRaw(QStringLiteral("raw-blocked.png"), bytes).isEmpty());
+    QVERIFY(!buffer.deleteAsset(asset));
+    if (!external) {
+      created = QStringLiteral("stale");
+      error.clear();
+      QVERIFY(m_controller->insertAttachment(source, &created, &error).isEmpty());
+      QVERIFY(created.isEmpty());
+      QVERIFY(!error.isEmpty());
+      QVERIFY(buffer.insertAttachment(source).isEmpty());
+      QVERIFY(!buffer.deleteAttachment(attachment));
+      QCOMPARE(fileBytes(QDir(buffer.getAttachmentsFolder()).filePath(attachment)), text);
+    }
+    QCOMPARE(filesBelow(buffer.getAssetsFolder()), before);
+    QCOMPARE(buffer.listAttachments(), metadata);
+    QCOMPARE(fileBytes(QDir(root).filePath(assetPath)), bytes);
+  }
+  QString created;
+  const auto later =
+      m_controller->insertImage(bytes, QStringLiteral("allowed.png"), &created, &error);
+  QVERIFY2(!later.isEmpty(), qPrintable(error));
+  QCOMPARE(fileBytes(QDir(root).filePath(later)), bytes);
+  QVERIFY(buffer.deleteAsset(created));
+  QVERIFY(buffer.deleteAsset(asset));
+  if (!external) {
+    QVERIFY(!m_controller->insertAttachment(source, &created, &error).isEmpty());
+    QCOMPARE(fileBytes(QDir(buffer.getAttachmentsFolder()).filePath(created)), text);
+    QVERIFY(buffer.deleteAttachment(created));
+    QVERIFY(buffer.deleteAttachment(attachment));
+    QVERIFY(buffer.listAttachments().isEmpty());
+  }
+}
+
+void TestTypstViewWindowController::attachmentBeforeHook_data() {
+  QTest::addColumn<QString>("change");
+  for (const auto *change : {"cancel", "close", "retarget", "revoke"}) {
+    QTest::newRow(change) << QString::fromLatin1(change);
+  }
+}
+
+void TestTypstViewWindowController::attachmentBeforeHook() {
+  QFETCH(QString, change);
+  const auto source = m_tempDir->filePath(QStringLiteral("blocked.txt"));
+  const auto bytes = QByteArrayLiteral("must never be copied\n");
+  QVERIFY(writeFile(source, bytes));
+  const auto oldFolder = m_notebooks->getAttachmentsFolder(m_notebookId, mainName());
+  QVERIFY(!oldFolder.isEmpty());
+  const auto oldBuffer = m_mainBuffer;
+  const auto oldMetadata = oldBuffer.listAttachments();
+  const auto oldFiles = filesBelow(oldFolder);
+  bool fired = false;
+  bool gateFree = false;
+  bool changed = false;
+  const auto hook = m_hooks->addAction<AttachmentAddEvent>(
+      HookNames::AttachmentBeforeAdd, [&](HookContext &context, const AttachmentAddEvent &) {
+        fired = true;
+        gateFree = gateAvailableFromWorker(*m_gate, m_notebookId);
+        if (change == QLatin1String("cancel")) {
+          context.cancel();
+          changed = true;
+        } else if (change == QLatin1String("retarget")) {
+          changed =
+              m_notebooks->renameFile(m_notebookId, mainName(), QStringLiteral("retargeted.typst"));
+        } else if (change == QLatin1String("revoke")) {
+          const auto readOnly = m_buffers->getBufferHandle(oldBuffer.id(), true);
+          changed = readOnly.isValid() && readOnly.isReadOnly();
+        } else {
+          changed = m_buffers->closeBuffer(oldBuffer.id());
+        }
+      });
+  const auto removeHook = qScopeGuard([&]() { m_hooks->removeAction(hook); });
+  QString created = QStringLiteral("stale");
+  QString error;
+  QVERIFY(m_controller->insertAttachment(source, &created, &error).isEmpty());
+  QVERIFY(fired);
+  QVERIFY(gateFree);
+  QVERIFY(changed);
+  QVERIFY(created.isEmpty());
+  QVERIFY(!error.isEmpty());
+  QCOMPARE(filesBelow(oldFolder), oldFiles);
+  if (oldBuffer.isValid()) {
+    QCOMPARE(oldBuffer.listAttachments(), oldMetadata);
+  }
+  QCOMPARE(fileBytes(source), bytes);
+}
+
+void TestTypstViewWindowController::attachmentAfterHook_data() {
+  QTest::addColumn<QString>("change");
+  QTest::newRow("invalidate") << QStringLiteral("invalidate");
+  QTest::newRow("replace-buffer") << QStringLiteral("replace");
+  QTest::newRow("destroy-controller") << QStringLiteral("destroy");
+}
+
+void TestTypstViewWindowController::attachmentAfterHook() {
+  QFETCH(QString, change);
+  const auto first = m_tempDir->filePath(QStringLiteral("keep.txt"));
+  const auto second = m_tempDir->filePath(QStringLiteral("rollback.txt"));
+  QVERIFY(writeFile(first, QByteArrayLiteral("keep original")));
+  QVERIFY(writeFile(second, QByteArrayLiteral("rollback only this copy")));
+  const auto original = m_mainBuffer.insertAttachment(first);
+  QVERIFY(!original.isEmpty());
+  const auto folder = m_mainBuffer.getAttachmentsFolder();
+  const auto before = filesBelow(folder);
+  const auto metadata = m_mainBuffer.listAttachments();
+  const auto replacement = m_buffers->openBuffer({m_notebookId, importedPath()});
+  QVERIFY(replacement.isValid());
+  bool fired = false;
+  bool gateFree = false;
+  bool changed = true;
+  QString added;
+  bool deleteBeforeOutsideGate = false;
+  bool deleteAfterOutsideGate = false;
+  const auto beforeDelete = m_hooks->addAction<AttachmentDeleteEvent>(
+      HookNames::AttachmentBeforeDelete, [&](HookContext &, const AttachmentDeleteEvent &event) {
+        deleteBeforeOutsideGate =
+            event.filename == added && gateAvailableFromWorker(*m_gate, m_notebookId);
+      });
+  const auto afterDelete = m_hooks->addAction<AttachmentDeleteEvent>(
+      HookNames::AttachmentAfterDelete, [&](HookContext &, const AttachmentDeleteEvent &event) {
+        deleteAfterOutsideGate =
+            event.filename == added && gateAvailableFromWorker(*m_gate, m_notebookId);
+      });
+  const auto removeDeletionHooks = qScopeGuard([&]() {
+    m_hooks->removeAction(beforeDelete);
+    m_hooks->removeAction(afterDelete);
+  });
+  const auto hook = m_hooks->addAction<AttachmentAddEvent>(
+      HookNames::AttachmentAfterAdd, [&](HookContext &, const AttachmentAddEvent &event) {
+        fired = true;
+        added = event.filename;
+        gateFree = gateAvailableFromWorker(*m_gate, m_notebookId);
+        if (change == QLatin1String("invalidate")) {
+          m_controller->invalidateInsertionRequests();
+        } else if (change == QLatin1String("replace")) {
+          changed = m_controller->setBuffer(replacement);
+        } else {
+          m_controller.reset();
+        }
+      });
+  const auto removeHook = qScopeGuard([&]() { m_hooks->removeAction(hook); });
+  QPointer<TypstViewWindowController> guard(m_controller.get());
+  QString created = QStringLiteral("stale");
+  QString error;
+  QVERIFY(m_controller->insertAttachment(second, &created, &error).isEmpty());
+  QVERIFY(fired);
+  QVERIFY(gateFree);
+  QVERIFY(changed);
+  QVERIFY(deleteBeforeOutsideGate);
+  QVERIFY(deleteAfterOutsideGate);
+  QVERIFY(!added.isEmpty());
+  QVERIFY(created.isEmpty());
+  QVERIFY(!error.isEmpty());
+  QCOMPARE(guard.isNull(), change == QLatin1String("destroy"));
+  QVERIFY(!QFileInfo::exists(QDir(folder).filePath(added)));
+  QCOMPARE(filesBelow(folder), before);
+  QCOMPARE(m_mainBuffer.listAttachments(), metadata);
+  QCOMPARE(fileBytes(QDir(folder).filePath(original)), QByteArrayLiteral("keep original"));
+  QCOMPARE(fileBytes(second), QByteArrayLiteral("rollback only this copy"));
+  QVERIFY(replacement.listAttachments().isEmpty());
+}
+
+void TestTypstViewWindowController::unavailableResourceBuffer_data() {
+  QTest::addColumn<QString>("kind");
+  QTest::newRow("read-only") << QStringLiteral("read-only");
+  QTest::newRow("closed") << QStringLiteral("closed");
+  QTest::newRow("invalid") << QStringLiteral("invalid");
+}
+
+void TestTypstViewWindowController::unavailableResourceBuffer() {
+  QFETCH(QString, kind);
+  const auto bytes = imageBytes();
+  const auto source = QDir(m_notebookPath).filePath(QStringLiteral("source.png"));
+  const auto text = QDir(m_notebookPath).filePath(QStringLiteral("text.txt"));
+  QVERIFY(writeFile(source, bytes));
+  QVERIFY(writeFile(text, QByteArrayLiteral("source text")));
+  if (kind == QLatin1String("invalid")) {
+    QVERIFY(!m_controller->setBuffer(Buffer2()));
+  } else {
+    QVERIFY(m_buffers->closeBuffer(m_mainBuffer.id()));
+    if (kind == QLatin1String("read-only")) {
+      FileOpenSettings settings;
+      settings.m_readOnly = true;
+      const auto buffer = m_buffers->openBuffer({m_notebookId, mainName()}, settings);
+      QVERIFY(buffer.isValid());
+      QVERIFY(buffer.isReadOnly());
+      QVERIFY(m_controller->setBuffer(buffer));
+    }
+  }
+  const auto before = filesBelow(m_notebookPath);
+  QString error;
+  QString created = QStringLiteral("stale");
+  QVERIFY(m_controller->readImageData(source, &error).isEmpty());
+  QVERIFY(!error.isEmpty());
+  error.clear();
+  QVERIFY(
+      m_controller->insertImage(bytes, QStringLiteral("blocked.png"), &created, &error).isEmpty());
+  QVERIFY(created.isEmpty());
+  QVERIFY(!error.isEmpty());
+  QVERIFY(!m_controller->canAttach(QUrl::fromLocalFile(text)));
+  created = QStringLiteral("stale");
+  error.clear();
+  QVERIFY(m_controller->insertAttachment(text, &created, &error).isEmpty());
+  QVERIFY(created.isEmpty());
+  QVERIFY(!error.isEmpty());
+  QString content = QStringLiteral("stale");
+  error.clear();
+  QVERIFY(!m_controller->readFileContent(QUrl::fromLocalFile(text), &content, &error));
+  QVERIFY(content.isEmpty());
+  QVERIFY(!error.isEmpty());
+  QCOMPARE(filesBelow(m_notebookPath), before);
+  QCOMPARE(fileBytes(source), bytes);
+  QCOMPARE(fileBytes(text), QByteArrayLiteral("source text"));
+}
+
+void TestTypstViewWindowController::insertionInvalidationPreservesConsent() {
+  const QUrl url(QStringLiteral("https://example.invalid/pending-consent"));
+  QSignalSpy confirmations(m_controller.get(),
+                           &TypstViewWindowController::externalLinkConfirmationRequested);
+  m_controller->requestOpenLink(url);
+  QCOMPARE(confirmations.size(), 1);
+  m_controller->invalidateInsertionRequests();
+  m_controller->invalidateInsertionRequests();
+  QVERIFY(m_urlSink.opened.isEmpty());
+  m_controller->openConfirmedExternalLink(url);
+  QCOMPARE(m_urlSink.opened, QList<QUrl>{url});
+  m_controller->openConfirmedExternalLink(url);
+  QCOMPARE(m_urlSink.opened.size(), 1);
+  QString created;
+  QString error;
+  const auto bytes = imageBytes();
+  const auto relative =
+      m_controller->insertImage(bytes, QStringLiteral("after-cancel.png"), &created, &error);
+  QVERIFY2(!relative.isEmpty(), qPrintable(error));
+  QCOMPARE(fileBytes(QDir(m_notebookPath).filePath(relative)), bytes);
+  QVERIFY(m_mainBuffer.deleteAsset(created));
+}
+
+void TestTypstViewWindowController::networkImageAcquisition_data() {
+  QTest::addColumn<QString>("change");
+  for (const auto *change : {"success", "http-error", "oversized", "invalid-image", "invalidate",
+                             "same-buffer", "replace", "close", "destroy"}) {
+    QTest::newRow(change) << QString::fromLatin1(change);
+  }
+}
+
+void TestTypstViewWindowController::networkImageAcquisition() {
+  QFETCH(QString, change);
+  ResourceImageServer server;
+  QVERIFY(server.listen());
+  const auto bytes = imageBytes();
+  server.body = bytes;
+  if (change == QLatin1String("http-error")) {
+    server.status = 404;
+  } else if (change == QLatin1String("oversized")) {
+    server.body.append(QByteArray(32 * 1024 * 1024 + 1 - server.body.size(), 'x'));
+  } else if (change == QLatin1String("invalid-image")) {
+    server.body = QByteArrayLiteral("not an image");
+  }
+  const auto replacement = m_buffers->openBuffer({m_notebookId, importedPath()});
+  QVERIFY(replacement.isValid());
+  bool callbackSucceeded = true;
+  server.beforeReply = [&]() {
+    if (change == QLatin1String("invalidate")) {
+      m_controller->invalidateInsertionRequests();
+    } else if (change == QLatin1String("same-buffer")) {
+      callbackSucceeded = m_controller->setBuffer(m_mainBuffer);
+    } else if (change == QLatin1String("replace")) {
+      callbackSucceeded = m_controller->setBuffer(replacement);
+    } else if (change == QLatin1String("close")) {
+      callbackSucceeded = m_buffers->closeBuffer(m_mainBuffer.id());
+    } else if (change == QLatin1String("destroy")) {
+      m_controller.reset();
+    }
+  };
+  const auto before = filesBelow(m_notebookPath);
+  QPointer<TypstViewWindowController> guard(m_controller.get());
+  QString error = QStringLiteral("old error");
+  const auto acquired = m_controller->readImageData(server.url(), &error);
+  QCOMPARE(server.requests, 1);
+  QVERIFY(callbackSucceeded);
+  QCOMPARE(guard.isNull(), change == QLatin1String("destroy"));
+  // Acquisition alone is never an implicit asset write, even on success.
+  QCOMPARE(filesBelow(m_notebookPath), before);
+  if (change == QLatin1String("success")) {
+    QVERIFY(error.isEmpty());
+    QCOMPARE(acquired, bytes);
+    QString created;
+    const auto relative =
+        m_controller->insertImage(acquired, QStringLiteral("download.png"), &created, &error);
+    QVERIFY2(!relative.isEmpty(), qPrintable(error));
+    QVERIFY(!relative.contains(QStringLiteral("http")));
+    QCOMPARE(fileBytes(QDir(m_notebookPath).filePath(relative)), bytes);
+    QCOMPARE(server.requests, 1);
+    QVERIFY(m_mainBuffer.deleteAsset(created));
+  } else {
+    QVERIFY(acquired.isEmpty());
+    QVERIFY(!error.isEmpty());
+  }
+}
+
+void TestTypstViewWindowController::attachmentEligibilityDoesNotCreateFolders() {
+  const auto prefix = QDir(m_notebookPath).filePath(QStringLiteral("chooser-only/nested"));
+  auto config = m_notebooks->getNotebookConfig(m_notebookId);
+  config[QLatin1String(vxcore::kJsonKeyAssetsFolder)] = QStringLiteral("chooser-only/nested");
+  QVERIFY(m_notebooks->updateNotebookConfig(
+      m_notebookId, QString::fromUtf8(QJsonDocument(config).toJson(QJsonDocument::Compact))));
+  const auto folder = m_notebooks->getAttachmentsFolder(m_notebookId, mainName());
+  QVERIFY(!folder.isEmpty());
+  const auto source = m_tempDir->filePath(QStringLiteral("eligible.txt"));
+  const auto bytes = QByteArrayLiteral("eligibility must not copy or create folders");
+  QVERIFY(writeFile(source, bytes));
+  QVERIFY(!QFileInfo::exists(prefix));
+  QVERIFY(m_controller->canAttach(QUrl::fromLocalFile(source)));
+  QVERIFY(!m_controller->canAttach(QUrl(QStringLiteral("eligible.txt"))));
+  QVERIFY(!m_controller->canAttach(
+      QUrl::fromLocalFile(m_tempDir->filePath(QStringLiteral("missing.txt")))));
+  QVERIFY(!m_controller->canAttach(QUrl::fromLocalFile(m_notebookPath)));
+  QVERIFY(!QFileInfo::exists(prefix));
+  QVERIFY(!QFileInfo::exists(folder));
+  QCOMPARE(fileBytes(source), bytes);
+  QVERIFY(m_mainBuffer.listAttachments().isEmpty());
+}
+
+void TestTypstViewWindowController::crossDriveRelativeLink() {
+#ifdef Q_OS_WIN
+  const auto currentDrive = QFileInfo(m_notebookPath).absoluteFilePath().left(2);
+  for (const auto &drive : QDir::drives()) {
+    const auto root = drive.absoluteFilePath();
+    if (root.left(2).compare(currentDrive, Qt::CaseInsensitive) == 0) {
+      continue;
+    }
+    QTemporaryDir temporary(QDir(root).filePath(QStringLiteral("vnote-typst-link-XXXXXX")));
+    if (!temporary.isValid()) {
+      continue;
+    }
+    const auto path = QDir(temporary.path()).filePath(QStringLiteral("other # 25%.txt"));
+    const auto bytes = QByteArrayLiteral("cross-drive link target");
+    QVERIFY(writeFile(path, bytes));
+    auto uri = QUrl::fromLocalFile(path);
+    uri.setQuery(QStringLiteral("q=25%"), QUrl::DecodedMode);
+    uri.setFragment(QStringLiteral("part # 1"), QUrl::DecodedMode);
+    QString error;
+    const auto destination =
+        m_controller->linkDestination(uri.toString(QUrl::FullyEncoded), true, &error);
+    QVERIFY2(!destination.isEmpty(), qPrintable(error));
+    const QUrl result(destination);
+    QVERIFY(result.isLocalFile());
+    QVERIFY(!result.isRelative());
+    QCOMPARE(QFileInfo(result.toLocalFile()).canonicalFilePath(),
+             QFileInfo(path).canonicalFilePath());
+    QCOMPARE(result.query(QUrl::FullyDecoded), uri.query(QUrl::FullyDecoded));
+    QCOMPARE(result.fragment(QUrl::FullyDecoded), uri.fragment(QUrl::FullyDecoded));
+    QCOMPARE(fileBytes(path), bytes);
+    return;
+  }
+  QSKIP("No second writable Windows drive is available for a real cross-drive target");
+#else
+  QSKIP("Cross-drive file URI fallback is Windows-specific; encoded URI semantics run on all "
+        "platforms");
+#endif
+}
+
+void TestTypstViewWindowController::failedRollbackReportsRetainedResource() {
+  const auto originalSource = m_tempDir->filePath(QStringLiteral("keep.txt"));
+  const auto source = m_tempDir->filePath(QStringLiteral("uncommitted.txt"));
+  QVERIFY(writeFile(originalSource, QByteArrayLiteral("untouched original")));
+  QVERIFY(writeFile(source, QByteArrayLiteral("retained because deletion was vetoed")));
+  const auto original = m_mainBuffer.insertAttachment(originalSource);
+  QVERIFY(!original.isEmpty());
+  const auto folder = m_mainBuffer.getAttachmentsFolder();
+  QString added;
+  const auto afterAdd = m_hooks->addAction<AttachmentAddEvent>(
+      HookNames::AttachmentAfterAdd, [&](HookContext &, const AttachmentAddEvent &event) {
+        added = event.filename;
+        m_controller->invalidateInsertionRequests();
+      });
+  const auto beforeDelete = m_hooks->addAction<AttachmentDeleteEvent>(
+      HookNames::AttachmentBeforeDelete,
+      [&](HookContext &context, const AttachmentDeleteEvent &event) {
+        if (event.filename == added) {
+          context.cancel();
+        }
+      });
+  const auto removeHooks = qScopeGuard([&]() {
+    m_hooks->removeAction(afterAdd);
+    m_hooks->removeAction(beforeDelete);
+  });
+  QString created = QStringLiteral("stale");
+  QString error;
+  QVERIFY(m_controller->insertAttachment(source, &created, &error).isEmpty());
+  QVERIFY(created.isEmpty());
+  QVERIFY(!added.isEmpty());
+  QVERIFY(error.contains(QStringLiteral("Unable to clean up an uncommitted Typst resource")));
+  QCOMPARE(fileBytes(QDir(folder).filePath(added)), fileBytes(source));
+  QVERIFY(m_mainBuffer.listAttachments().contains(added));
+  QCOMPARE(fileBytes(QDir(folder).filePath(original)), QByteArrayLiteral("untouched original"));
+  QVERIFY(m_mainBuffer.listAttachments().contains(original));
+}
+
 } // namespace tests
 
-QTEST_GUILESS_MAIN(tests::TestTypstViewWindowController)
+QTEST_MAIN(tests::TestTypstViewWindowController)
 #include "test_typstviewwindowcontroller.moc"

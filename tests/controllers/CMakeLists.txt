@@ -656,18 +656,39 @@ add_qt_test(test_typstviewwindowcontroller
     test_typstviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/typstviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/textviewwindowcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp
   LINKS
     core_configs
     core_services
     vxcore
     VTextEdit
     Qt6::Gui
-  GUILESS
+    Qt6::Svg
+  ARGS -nocrashhandler
 )
 target_include_directories(test_typstviewwindowcontroller PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
 )
+# SVG image validation needs a GUI application and the native platform plugins.
+set(_typst_controller_platform offscreen)
+set(_typst_controller_plugin Qt6::QOffscreenIntegrationPlugin)
 if(WIN32)
+  set(_typst_controller_platform windows)
+  set(_typst_controller_plugin Qt6::QWindowsIntegrationPlugin)
+elseif(APPLE)
+  set(_typst_controller_platform cocoa)
+  set(_typst_controller_plugin Qt6::QCocoaIntegrationPlugin)
+endif()
+set_property(TEST test_typstviewwindowcontroller PROPERTY ENVIRONMENT
+  "QT_QPA_PLATFORM=${_typst_controller_platform}"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_typst_controller_plugin}>"
+  "QT_PLUGIN_PATH=$<TARGET_FILE_DIR:${_typst_controller_plugin}>/.."
+)
+if(WIN32)
+  set(_typst_controller_path "$<TARGET_FILE_DIR:Qt6::Core>;$<TARGET_FILE_DIR:VTextEdit>;$ENV{PATH}")
+  string(REPLACE ";" "\;" _typst_controller_path "${_typst_controller_path}")
+  set_property(TEST test_typstviewwindowcontroller APPEND PROPERTY
+    ENVIRONMENT "PATH=${_typst_controller_path}")
   # Building only this target must also produce a runnable isolated test directory.
   add_custom_command(TARGET test_typstviewwindowcontroller POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different
