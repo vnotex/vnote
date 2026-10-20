@@ -6,6 +6,8 @@
 #include <QColor>
 #include <QPointer>
 
+#include <memory>
+
 #include <vtextedit/vtypsteditor.h>
 
 class QDialog;
@@ -16,6 +18,7 @@ class QSpinBox;
 
 namespace vnotex {
 class EditorStatusBarBinder;
+class ImageViewer;
 class InlineBanner;
 class PresentationToolBarEffect;
 class TypstViewWindowController;
@@ -68,6 +71,7 @@ protected:
   void addAdditionalViewToolBarActions(QToolBar *p_toolBar) override;
   void paintEvent(QPaintEvent *p_event) override;
   void changeEvent(QEvent *p_event) override;
+  void hideEvent(QHideEvent *p_event) override;
   bool eventFilter(QObject *p_watched, QEvent *p_event) override;
   void syncEditorFromBuffer() override;
   void releaseBufferResources() override;
@@ -97,7 +101,24 @@ private:
     Text,
     FileContent
   };
+  struct NativeInteraction;
+  std::shared_ptr<NativeInteraction> retainNativeInteraction();
   struct Insertion;
+  enum class ImageResourceAction { View, Copy };
+
+  bool canViewResources() const;
+  bool resourceContextCurrent(const vte::TypstResourceContext &p_context, quint64 p_generation,
+                              bool p_forEdit = false) const;
+  void trackContextMenu(QMenu *p_menu);
+  void addResourceContextActions(const vte::TypstResourceContext &p_context, QMenu *p_menu);
+  void requestContextImage(const vte::TypstResourceContext &p_context, ImageResourceAction p_action,
+                           quint64 p_generation);
+  void handleContextImageData(quint64 p_request, const QByteArray &p_data, const QString &p_mime,
+                              const QString &p_error);
+  void resizeContextImage(const vte::TypstResourceContext &p_context, quint64 p_generation);
+  void invalidateContextResources(bool p_closeImage = true);
+  void showImageViewer(const QImage &p_image);
+  void closeImageViewer(bool p_restoreFocus = false);
 
   InsertionResult insertFromMimeData(const QMimeData *p_source, InsertionOrigin p_origin,
                                      const QTextCursor &p_target);
@@ -155,6 +176,21 @@ private:
   QLabel *m_pageCountLabel = nullptr;
   FindOptions m_sourceFindOptions = FindOption::FindNone;
   bool m_sourceFindOptionsSaved = false;
+
+  // Menus/callbacks share this lazy state; idle reuse avoids per-command allocation.
+  std::shared_ptr<NativeInteraction> m_nativeInteraction;
+  QPointer<QMenu> m_contextMenu;
+  QPointer<QDialog> m_resizeImageDialog;
+  QPointer<ImageViewer> m_imageOverlay;
+  QPointer<QWidget> m_imageOriginalFocus;
+  quint64 m_resourceGeneration = 0;
+  quint64 m_nextImageRequest = 0;
+  quint64 m_pendingImageRequest = 0;
+  quint64 m_pendingImageGeneration = 0;
+  vte::TypstResourceContext m_pendingImageContext;
+  ImageResourceAction m_pendingImageAction = ImageResourceAction::View;
+  QString m_pendingImageBufferId;
+  QString m_pendingImageBufferPath;
 
   // Stack-owned operation; dialogs and callbacks may invalidate it, never replace it.
   Insertion *m_insertion = nullptr;

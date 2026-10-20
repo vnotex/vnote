@@ -3,6 +3,7 @@
 
 #include "textviewwindowcontroller.h"
 
+#include <QImage>
 #include <QUrl>
 
 #include <core/services/buffer2.h>
@@ -24,6 +25,11 @@ public:
   void requestOpenSource(const QString &p_file, int p_start, int p_end);
   void requestOpenLink(const QUrl &p_url);
   void openConfirmedExternalLink(const QUrl &p_url);
+
+  // Read-only context actions decode the compiler's captured bytes, never a live-file
+  // replacement. File addresses are resolved separately and stay inside the project.
+  QImage decodeImageForViewing(const QByteArray &p_data, QString *p_error = nullptr) const;
+  QString imageResourcePath(const QString &p_projectPath, QString *p_error = nullptr) const;
 
   // Cancel insertion work independently of pending external-link consent.
   void invalidateInsertionRequests();
@@ -59,6 +65,7 @@ signals:
 
 private:
   bool bufferAvailable() const;
+  bool resourceAvailable() const;
   bool insertionAvailable() const;
   bool insertionIsCurrent(quint64 p_generation, const QString &p_bufferId,
                           const QString &p_resolvedPath) const;

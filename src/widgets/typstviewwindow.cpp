@@ -10,6 +10,7 @@
 #include <QDragMoveEvent>
 #include <QDropEvent>
 #include <QFileInfo>
+#include <QHideEvent>
 #include <QKeySequence>
 #include <QLabel>
 #include <QMenu>
@@ -31,6 +32,7 @@
 #include <QToolButton>
 
 #include <algorithm>
+#include <memory>
 #include <stdexcept>
 
 #include <vtextedit/typsteditorconfig.h>
@@ -48,15 +50,19 @@
 #include <core/texteditorconfig.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/imageutils.h>
 #include <gui/utils/widgetutils.h>
+#include <utils/clipboardutils.h>
 #include <utils/htmlutils.h>
 
 #include "dialogs/imageinsertdialog.h"
+#include "dialogs/imagesizedialog.h"
 #include "dialogs/linkinsertdialog.h"
 #include "dialogs/selectdialog.h"
 #include "editors/editorstatusbarbinder.h"
 #include "encodingbutton.h"
 #include "findandreplacewidget2.h"
+#include "imageviewer.h"
 #include "inlinebanner.h"
 #include "messageboxhelper.h"
 #include "outlinepopup.h"
@@ -198,6 +204,20 @@ void disposeRetiredEditor(const QPointer<vte::VTypstEditor> &p_editor) {
 }
 } // namespace
 
+// Native menus and their callbacks can outlive their host in nested event loops.
+// Only the outermost interaction may retire the whole composite editor.
+struct TypstViewWindow::NativeInteraction {
+  QPointer<vte::VTypstEditor> retiredEditor;
+  ~NativeInteraction() { disposeRetiredEditor(retiredEditor); }
+};
+
+std::shared_ptr<TypstViewWindow::NativeInteraction> TypstViewWindow::retainNativeInteraction() {
+  if (!m_nativeInteraction) {
+    m_nativeInteraction = std::make_shared<NativeInteraction>();
+  }
+  return m_nativeInteraction;
+}
+
 // A source insertion owns only its new resources. Native document history owns the edit;
 // resources deliberately survive Undo/Redo once the edit has committed.
 struct TypstViewWindow::Insertion {
@@ -207,8 +227,8 @@ struct TypstViewWindow::Insertion {
     bool attachment = false;
   };
 
+  std::shared_ptr<NativeInteraction> interaction;
   QPointer<TypstViewWindow> view;
-  QPointer<vte::VTypstEditor> retiredEditor;
   QPointer<QTextDocument> document;
   QPointer<QObject> serviceLifetime;
   QPointer<NotebookCoreService> notebooks;
@@ -225,7 +245,9 @@ struct TypstViewWindow::Insertion {
   bool acquiring = true;
   bool committed = false;
 
-  Insertion(TypstViewWindow *p_view, const QTextCursor &p_target) : view(p_view), target(p_target) {
+  Insertion(TypstViewWindow *p_view, const QTextCursor &p_target)
+      : interaction(p_view ? p_view->retainNativeInteraction() : nullptr), view(p_view),
+        target(p_target) {
     if (!view || !view->canInsert() || view->m_insertion || target.isNull()) {
       return;
     }
@@ -288,9 +310,6 @@ struct TypstViewWindow::Insertion {
       view->m_insertion = nullptr;
       view->syncInsertionActions();
     }
-    // The modal/network loop has returned. Native key/context-menu callbacks must
-    // finish before deleting the editor whose synchronous MIME signal called us.
-    disposeRetiredEditor(retiredEditor);
   }
 
   bool current() const {
@@ -695,6 +714,9 @@ TypstViewWindow::InsertionResult TypstViewWindow::insertFromMimeData(const QMime
 }
 
 bool TypstViewWindow::eventFilter(QObject *p_watched, QEvent *p_event) {
+  if (p_watched == m_typstEditor && p_event->type() == QEvent::Resize && m_imageOverlay) {
+    m_imageOverlay->setGeometry(m_typstEditor->rect());
+  }
   if (!m_editor || p_watched != m_editor->getTextEdit()->viewport() ||
       (p_event->type() != QEvent::DragEnter && p_event->type() != QEvent::DragMove &&
        p_event->type() != QEvent::Drop)) {
@@ -817,8 +839,286 @@ void TypstViewWindow::pastePlainText() {
   operation.commit();
 }
 
+bool TypstViewWindow::canViewResources() const {
+  if (!isVisible() || !isEnabled() || !m_sourceAvailable || !m_typstEditor ||
+      !m_typstEditor->isVisible() || !m_typstEditor->isEnabled() ||
+      m_controller->getProject().root.isEmpty()) {
+    return false;
+  }
+  const auto live = getServices().get<BufferService>()->getBufferHandle(getBuffer().id());
+  return live.isValid() && !live.isEncrypted() && !live.getBuffer().isEmpty() &&
+         live.nodeId() == getBuffer().nodeId() && live.resolvedPath() == getBuffer().resolvedPath();
+}
+
+bool TypstViewWindow::resourceContextCurrent(const vte::TypstResourceContext &p_context,
+                                             quint64 p_generation, bool p_forEdit) const {
+  return p_generation == m_resourceGeneration && canViewResources() &&
+         (!p_forEdit || canInsert()) && m_typstEditor->isResourceContextValid(p_context, p_forEdit);
+}
+
+void TypstViewWindow::trackContextMenu(QMenu *p_menu) {
+  if (!p_menu || m_contextMenu == p_menu) {
+    return;
+  }
+  m_contextMenu = p_menu;
+  // Keep the native editor alive until the menu owner has left QMenu::exec,
+  // including when the view disappears while the menu is idle.
+  const auto interaction = retainNativeInteraction();
+  connect(p_menu, &QObject::destroyed, [interaction] {});
+}
+
+void TypstViewWindow::addResourceContextActions(const vte::TypstResourceContext &p_context,
+                                                QMenu *p_menu) {
+  trackContextMenu(p_menu);
+  if (!p_menu) {
+    return;
+  }
+  const auto context = p_context;
+  const auto generation = m_resourceGeneration;
+  const QPointer<TypstViewWindow> owner(this);
+  const auto first = p_menu->actions().value(0);
+  const bool available = resourceContextCurrent(context, generation);
+  const auto add = [p_menu, first, available](const QString &p_text, const char *p_name,
+                                              auto p_callback) {
+    auto *action = new QAction(p_text, p_menu);
+    action->setObjectName(QLatin1String(p_name));
+    action->setEnabled(available);
+    QObject::connect(action, &QAction::triggered, p_menu, std::move(p_callback));
+    p_menu->insertAction(first, action);
+  };
+  if (context.m_imageId) {
+    add(tr("&View Image"), "typstViewImage", [owner, context, generation] {
+      if (owner) {
+        owner->requestContextImage(context, ImageResourceAction::View, generation);
+      }
+    });
+    add(tr("Copy Ima&ge"), "typstCopyImage", [owner, context, generation] {
+      if (owner) {
+        owner->requestContextImage(context, ImageResourceAction::Copy, generation);
+      }
+    });
+    if (!context.m_imagePath.isEmpty() && !context.m_imagePath.startsWith(QLatin1Char('@'))) {
+      add(tr("Copy Image Address"), "typstCopyImageAddress", [owner, context, generation] {
+        if (!owner || !owner->resourceContextCurrent(context, generation)) {
+          return;
+        }
+        const auto interaction = owner->retainNativeInteraction();
+        QString error;
+        const auto path = owner->m_controller->imageResourcePath(context.m_imagePath, &error);
+        if (!owner || !owner->resourceContextCurrent(context, generation)) {
+          return;
+        }
+        if (path.isEmpty()) {
+          owner->showMessage(error);
+          return;
+        }
+        ClipboardUtils::setLinkToClipboard(QUrl::fromLocalFile(path).toString(QUrl::FullyEncoded));
+      });
+    }
+    if (context.m_imageResizable && resourceContextCurrent(context, generation, true)) {
+      add(tr("Resize Image"), "typstResizeImage", [owner, context, generation] {
+        if (owner) {
+          owner->resizeContextImage(context, generation);
+        }
+      });
+    }
+    p_menu->insertSeparator(first);
+  }
+  if (context.m_linkIndex >= 0 && (context.m_linkNavigable || !context.m_linkUrl.isEmpty())) {
+    if (context.m_linkNavigable) {
+      add(tr("Open Link"), "typstOpenLink", [owner, context, generation] {
+        if (!owner || !owner->resourceContextCurrent(context, generation)) {
+          return;
+        }
+        const auto interaction = owner->retainNativeInteraction();
+        owner->m_typstEditor->openContextLink(context);
+      });
+    }
+    if (!context.m_linkUrl.isEmpty()) {
+      add(tr("Copy Link"), "typstCopyLink", [owner, context, generation] {
+        if (!owner || !owner->resourceContextCurrent(context, generation)) {
+          return;
+        }
+        const auto interaction = owner->retainNativeInteraction();
+        ClipboardUtils::setLinkToClipboard(context.m_linkUrl.toString(QUrl::FullyEncoded));
+      });
+    }
+    p_menu->insertSeparator(first);
+  }
+}
+
+void TypstViewWindow::requestContextImage(const vte::TypstResourceContext &p_context,
+                                          ImageResourceAction p_action, quint64 p_generation) {
+  if (!p_context.m_imageId || !resourceContextCurrent(p_context, p_generation)) {
+    return;
+  }
+  const auto interaction = retainNativeInteraction();
+  m_pendingImageRequest = ++m_nextImageRequest;
+  m_pendingImageGeneration = p_generation;
+  m_pendingImageContext = p_context;
+  m_pendingImageAction = p_action;
+  m_pendingImageBufferId = getBuffer().id();
+  m_pendingImageBufferPath = getBuffer().resolvedPath();
+  m_typstEditor->requestImageData(p_context, m_pendingImageRequest);
+}
+
+void TypstViewWindow::handleContextImageData(quint64 p_request, const QByteArray &p_data,
+                                             const QString &p_mime, const QString &p_error) {
+  if (!m_pendingImageRequest || p_request != m_pendingImageRequest) {
+    return;
+  }
+  const auto context = m_pendingImageContext;
+  const auto generation = m_pendingImageGeneration;
+  const auto action = m_pendingImageAction;
+  m_pendingImageRequest = 0;
+  if (!resourceContextCurrent(context, generation) || getBuffer().id() != m_pendingImageBufferId ||
+      getBuffer().resolvedPath() != m_pendingImageBufferPath) {
+    return;
+  }
+  const auto interaction = retainNativeInteraction();
+  if (!p_error.isEmpty()) {
+    showMessage(p_error);
+    return;
+  }
+  QString error;
+  const auto image = m_controller->decodeImageForViewing(p_data, &error);
+  if (image.isNull()) {
+    showMessage(error);
+    return;
+  }
+  if (action == ImageResourceAction::View) {
+    showImageViewer(image);
+    return;
+  }
+  if (p_mime == QLatin1String("image/gif")) {
+    // Match Markdown's lossless local GIF clipboard route only while the live
+    // file still equals the captured image. Never point at a replacement file.
+    const auto path = m_controller->imageResourcePath(context.m_imagePath);
+    QByteArray current;
+    if (!path.isEmpty() && ImageUtils::readImageFile(path, current) && current == p_data) {
+      ClipboardUtils::setLocalFileToClipboard(QApplication::clipboard(), path);
+    } else {
+      auto *mime = new QMimeData;
+      mime->setData(QStringLiteral("image/gif"), p_data);
+      mime->setImageData(image);
+      ClipboardUtils::setMimeDataToClipboard(QApplication::clipboard(), mime);
+    }
+  } else {
+    ClipboardUtils::setImageToClipboard(QApplication::clipboard(), image);
+  }
+  // Clipboard helpers may pump events; never access this view after their return.
+}
+
+void TypstViewWindow::resizeContextImage(const vte::TypstResourceContext &p_context,
+                                         quint64 p_generation) {
+  if (!p_context.m_imageResizable || m_insertion ||
+      !resourceContextCurrent(p_context, p_generation, true)) {
+    return;
+  }
+  const auto context = p_context;
+  const QPointer<TypstViewWindow> owner(this);
+  Insertion operation(this, m_editor->getTextEdit()->textCursor());
+  if (!operation.current()) {
+    return;
+  }
+  QPointer<ImageSizeDialog> dialog(new ImageSizeDialog(
+      tr("Resize Image"), context.m_width, context.m_height, context.m_imageSize, this));
+  const auto cleanup = qScopeGuard([owner, dialog] {
+    if (owner && owner->m_resizeImageDialog == dialog) {
+      owner->m_resizeImageDialog.clear();
+    }
+    delete dialog.data();
+  });
+  m_resizeImageDialog = dialog;
+  if (operation.exec(dialog) != QDialog::Accepted || !owner || !dialog || !operation.current() ||
+      !resourceContextCurrent(context, p_generation, true)) {
+    return;
+  }
+  const int width = dialog->getImageWidth();
+  const int height = dialog->getImageHeight();
+  m_resizeImageDialog.clear();
+  if (width == context.m_width && height == context.m_height) {
+    return;
+  }
+  operation.acquiring = false;
+  operation.committed = m_typstEditor->resizeImage(context, width, height);
+  if (owner && !operation.committed) {
+    showMessage(tr("The image source changed or cannot be resized safely"));
+  }
+}
+
+void TypstViewWindow::invalidateContextResources(bool p_closeImage) {
+  ++m_resourceGeneration;
+  m_pendingImageRequest = 0;
+  const auto menu = m_contextMenu;
+  m_contextMenu.clear();
+  const auto dialog = m_resizeImageDialog;
+  m_resizeImageDialog.clear();
+  const QPointer<TypstViewWindow> owner(this);
+  if (menu) {
+    menu->close();
+  }
+  if (dialog) {
+    dialog->reject();
+  }
+  if (owner && p_closeImage) {
+    closeImageViewer();
+  }
+}
+
+void TypstViewWindow::showImageViewer(const QImage &p_image) {
+  if (p_image.isNull() || !canViewResources()) {
+    return;
+  }
+  const QPointer<TypstViewWindow> owner(this);
+  if (!m_imageOverlay) {
+    m_imageOriginalFocus = QApplication::focusWidget();
+    m_imageOverlay = new ImageViewer(getServices(), m_typstEditor, ImageViewer::Mode::Overlay);
+    m_imageOverlay->setObjectName(QStringLiteral("typstImageViewer"));
+    connect(m_imageOverlay, &ImageViewer::closeRequested, this, [this] { closeImageViewer(true); });
+  }
+  const auto overlay = m_imageOverlay;
+  overlay->setGeometry(m_typstEditor->rect());
+  overlay->setImage(p_image);
+  overlay->show();
+  if (owner && overlay) {
+    overlay->raise();
+    overlay->setFocus(Qt::OtherFocusReason);
+    syncInsertionActions();
+  }
+}
+
+void TypstViewWindow::closeImageViewer(bool p_restoreFocus) {
+  const QPointer<TypstViewWindow> owner(this);
+  const auto overlay = m_imageOverlay;
+  const auto focus = m_imageOriginalFocus;
+  m_imageOverlay.clear();
+  m_imageOriginalFocus.clear();
+  delete overlay.data();
+  if (!owner) {
+    return;
+  }
+  syncInsertionActions();
+  if (p_restoreFocus && canViewResources()) {
+    if (focus && focus->isVisible() && focus->isEnabled() &&
+        (focus == this || isAncestorOf(focus))) {
+      focus->setFocus(Qt::OtherFocusReason);
+    } else {
+      m_typstEditor->setFocus(Qt::OtherFocusReason);
+    }
+  }
+}
+
+void TypstViewWindow::hideEvent(QHideEvent *p_event) {
+  const QPointer<TypstViewWindow> owner(this);
+  invalidateContextResources();
+  if (owner) {
+    ViewWindow2::hideEvent(p_event);
+  }
+}
+
 bool TypstViewWindow::canInsert() const {
-  if (!isEnabled() || !m_sourceAvailable || !m_editor || !m_editor->isEnabled() ||
+  if (m_imageOverlay || !isEnabled() || !m_sourceAvailable || !m_editor || !m_editor->isEnabled() ||
       m_controller->getProject().root.isEmpty() || m_mode != ViewWindowMode::Edit ||
       m_editor->isReadOnly() || !m_editor->getTextEdit()->isEnabled() ||
       m_editor->getTextEdit()->isReadOnly()) {
@@ -853,6 +1153,10 @@ void TypstViewWindow::changeEvent(QEvent *p_event) {
   const QPointer<TypstViewWindow> guard(this);
   ViewWindow2::changeEvent(p_event);
   if (guard && p_event->type() == QEvent::EnabledChange) {
+    invalidateContextResources();
+    if (!guard) {
+      return;
+    }
     invalidateInsertion();
     if (guard) {
       syncInsertionActions();
@@ -896,9 +1200,11 @@ TypstViewWindow::TypstViewWindow(ServiceLocator &p_services, const Buffer2 &p_bu
 }
 
 TypstViewWindow::~TypstViewWindow() {
+  invalidateContextResources();
   invalidateInsertion();
   setViewFullScreen(false);
-  if (m_insertion && m_typstEditor) {
+  if (m_nativeInteraction && m_nativeInteraction.use_count() > 1 && m_typstEditor) {
+    const auto interaction = m_nativeInteraction;
     auto *edit = m_editor->getTextEdit();
     for (auto *sender : {static_cast<QObject *>(m_typstEditor), static_cast<QObject *>(m_editor),
                          static_cast<QObject *>(edit), static_cast<QObject *>(edit->document()),
@@ -906,15 +1212,16 @@ TypstViewWindow::~TypstViewWindow() {
       QObject::disconnect(sender, nullptr, this, nullptr);
     }
     edit->viewport()->removeEventFilter(this);
-    m_insertion->retiredEditor = m_typstEditor;
-    const auto retired = m_insertion->retiredEditor;
+    m_typstEditor->removeEventFilter(this);
+    interaction->retiredEditor = m_typstEditor;
+    const auto retired = interaction->retiredEditor;
     if (auto *popup = QApplication::activePopupWidget(); popup && retired->isAncestorOf(popup)) {
       popup->close();
     }
     retired->hide();
     retired->setParent(nullptr);
-    // Do not post DeferredDelete from this nested acquisition loop. The stack
-    // operation schedules disposal only once it has returned to native dispatch.
+    // Do not post DeferredDelete from a nested menu/acquisition loop. The outer
+    // interaction schedules disposal once its native menu/callback has unwound.
   }
 }
 
@@ -1184,12 +1491,25 @@ void TypstViewWindow::createEditor() {
 void TypstViewWindow::connectEditorSignals() {
   auto *source = m_editor->getTextEdit();
   source->viewport()->installEventFilter(this);
+  m_typstEditor->installEventFilter(this);
+  connect(m_typstEditor, &vte::VTypstEditor::resourceContextMenuRequested, this,
+          &TypstViewWindow::addResourceContextActions);
+  connect(m_typstEditor, &vte::VTypstEditor::imageActivated, this,
+          [this](const vte::TypstResourceContext &p_context) {
+            requestContextImage(p_context, ImageResourceAction::View, m_resourceGeneration);
+          });
+  connect(m_typstEditor, &vte::VTypstEditor::imageDataReady, this,
+          &TypstViewWindow::handleContextImageData);
+  connect(m_typstEditor, &vte::VTypstEditor::resourceContextsInvalidated, this,
+          [this] { invalidateContextResources(false); });
+  connect(source, &vte::VTextEdit::contentsChanged, this, [this] { invalidateContextResources(); });
   // The native editor's earlier slot has already built its standard/spellcheck menu.
   connect(source, &vte::VTextEdit::contextMenuEventRequested, this,
           [this](QContextMenuEvent *, bool *, QScopedPointer<QMenu> *p_menu) {
             if (!p_menu || p_menu->isNull()) {
               return;
             }
+            trackContextMenu(p_menu->data());
             syncInsertionActions();
             (*p_menu)->addSeparator();
             (*p_menu)->addAction(m_insertImageAction);
@@ -1255,12 +1575,14 @@ void TypstViewWindow::connectEditorSignals() {
   connect(m_typstEditor, &vte::VTypstEditor::sourceLocationRequested, this,
           [this](const QString &p_file, int p_start, int p_end) {
             if (m_sourceAvailable && isEnabled()) {
+              const auto interaction = retainNativeInteraction();
               m_controller->requestOpenSource(p_file, p_start, p_end);
             }
           });
   connect(m_typstEditor, &vte::VTypstEditor::externalLinkRequested, this,
           [this](const QUrl &p_url) {
             if (m_sourceAvailable && isEnabled()) {
+              const auto interaction = retainNativeInteraction();
               m_controller->requestOpenLink(p_url);
             }
           });
@@ -1303,6 +1625,10 @@ void TypstViewWindow::bindBufferResources() {
 
 void TypstViewWindow::syncEditorFromBuffer() {
   const QPointer<TypstViewWindow> insertionGuard(this);
+  invalidateContextResources();
+  if (!insertionGuard) {
+    return;
+  }
   invalidateInsertion();
   if (!insertionGuard) {
     return;
@@ -1344,6 +1670,10 @@ void TypstViewWindow::syncEditorFromBuffer() {
 
 void TypstViewWindow::showSourceError(const QString &p_error) {
   const QPointer<TypstViewWindow> insertionGuard(this);
+  invalidateContextResources();
+  if (!insertionGuard) {
+    return;
+  }
   invalidateInsertion();
   if (!insertionGuard) {
     return;
@@ -1373,6 +1703,10 @@ void TypstViewWindow::applyProjectIdentity() {
 
 void TypstViewWindow::handleNodeRetargeted(const NodeIdentifier &p_newNodeId) {
   const QPointer<TypstViewWindow> insertionGuard(this);
+  invalidateContextResources();
+  if (!insertionGuard) {
+    return;
+  }
   invalidateInsertion();
   if (!insertionGuard) {
     return;
@@ -1396,6 +1730,10 @@ bool TypstViewWindow::aboutToClose(bool p_force) {
   const QPointer<TypstViewWindow> guard(this);
   const QPointer<TypstViewWindowController> controller(m_controller);
   const auto generation = getBufferGeneration();
+  invalidateContextResources();
+  if (!guard) {
+    return false;
+  }
   invalidateInsertion();
   if (!guard) {
     return false;
@@ -1423,6 +1761,12 @@ void TypstViewWindow::setModified(bool p_modified) {
 
 void TypstViewWindow::setMode(ViewWindowMode p_mode) {
   const QPointer<TypstViewWindow> insertionGuard(this);
+  if (p_mode != m_mode) {
+    invalidateContextResources();
+    if (!insertionGuard) {
+      return;
+    }
+  }
   if (p_mode != ViewWindowMode::Edit) {
     invalidateInsertion();
     if (!insertionGuard) {
@@ -1448,6 +1792,15 @@ void TypstViewWindow::syncModeFromEditor() {
     return;
   }
   const auto mode = m_typstEditor->mode();
+  const auto hostMode =
+      mode == vte::VTypstEditor::Mode::Read ? ViewWindowMode::Read : ViewWindowMode::Edit;
+  if (hostMode != m_mode) {
+    const QPointer<TypstViewWindow> owner(this);
+    invalidateContextResources();
+    if (!owner) {
+      return;
+    }
+  }
   if (mode != vte::VTypstEditor::Mode::Edit) {
     const QPointer<TypstViewWindow> insertionGuard(this);
     invalidateInsertion();
@@ -1661,6 +2014,9 @@ void TypstViewWindow::handleEditorConfigChange() {
 
 void TypstViewWindow::handleThemeChanged() {
   ViewWindow2::handleThemeChanged();
+  if (m_imageOverlay) {
+    m_imageOverlay->handleThemeChanged();
+  }
   if (isViewFullScreen()) {
     m_presentationBackground =
         QColor(getServices().get<ThemeService>()->paletteColor(QStringLiteral("base#content#bg")));

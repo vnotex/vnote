@@ -246,6 +246,29 @@ program associations and unsupported-type fallback; the Typst controller must no
 files directly or fall back to the desktop after a cancelled/failed buffer open. HTTP(S), FTP and
 mailto links retain generation-bound external-link confirmation.
 
+Source, in-place cards, and the PDF preview augment their native menus with **View Image**,
+**Copy Image**, project-backed **Copy Image Address**, and safe writable-source **Resize Image**.
+Links offer **Open Link** and URI **Copy Link**; internal page destinations have no fabricated
+URI. The native compiler owns resource identity, evaluated ranges and resize plans; never
+parse Typst with host regexes or use a page crop as the original image. Resize preserves other
+arguments/comments and commits one native Undo step. Viewing/copying also works in Read and
+read-only notes, without source edits, asset writes, or network acquisition.
+
+The shared `ImageViewer::Mode::Overlay` covers the composite editor and supports fit, zoom,
+pan, Escape, Close, and backdrop dismissal. Plain preview-image double-click opens it; linked
+images retain link navigation. Restore focus only on explicit dismissal, preserve the source
+and PDF camera, and disable insertion while viewing. Decode bounded retained image bytes
+through the controller. A GIF clipboard file reference is allowed only if its current bytes
+still match the captured image; otherwise retain encoded GIF MIME alongside decoded pixels.
+
+Source/lifecycle changes revoke menus, pending image replies and overlays. Captured native
+contexts plus host generation and buffer identity must remain valid through modal/asynchronous
+callbacks. `NativeInteraction` is the sole owner of deferred composite retirement, shared by
+insertion and resource menus/actions: never delete the borrowed source editor independently.
+Keep menus parented to the native editor for logical focus, and defer retired-composite deletion
+until owned menus/modals and callbacks have unwound. Native GUI coverage lives in
+`test_typstviewwindow_insertion` (`resource*`) and `test_typsteditor`.
+
 #### Detached-window close
 
 Closing a detached title bar (including Alt+F4) closes its hosted tabs in tab order

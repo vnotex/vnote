@@ -475,15 +475,72 @@ void TypstViewWindowController::openConfirmedExternalLink(const QUrl &p_url) {
 
 void TypstViewWindowController::invalidateInsertionRequests() { ++m_insertionGeneration; }
 
-bool TypstViewWindowController::insertionAvailable() const {
+bool TypstViewWindowController::resourceAvailable() const {
   if (!bufferAvailable() || m_insertionBufferPath.isEmpty()) {
     return false;
   }
   // Buffer2 copies retain their original nodeId. Consult the live record as well,
   // so a backend retarget cannot authorize work through an old handle.
   const auto current = m_services.get<BufferService>()->getBufferHandle(m_buffer.id());
-  return current.isValid() && !current.isEncrypted() && !current.isReadOnly() &&
-         current.nodeId() == m_buffer.nodeId() && current.resolvedPath() == m_insertionBufferPath;
+  return current.isValid() && !current.isEncrypted() && current.nodeId() == m_buffer.nodeId() &&
+         current.resolvedPath() == m_insertionBufferPath;
+}
+
+bool TypstViewWindowController::insertionAvailable() const {
+  return resourceAvailable() && !m_buffer.isReadOnly();
+}
+
+QImage TypstViewWindowController::decodeImageForViewing(const QByteArray &p_data,
+                                                        QString *p_error) const {
+  if (p_error) {
+    p_error->clear();
+  }
+  const auto fail = [p_error](const QString &p_message) {
+    if (p_error) {
+      *p_error = p_message;
+    }
+    return QImage();
+  };
+  if (!resourceAvailable()) {
+    return fail(tr("The note is not available for image viewing"));
+  }
+  QByteArray validated;
+  QByteArray mime;
+  if (!ImageUtils::protectedImageData(p_data, validated, mime)) {
+    return fail(tr("Unable to view image: unsupported, invalid or larger than 32 MiB"));
+  }
+  QBuffer input(&validated);
+  input.open(QIODevice::ReadOnly);
+  QImageReader reader(&input);
+  reader.setDecideFormatFromContent(true);
+  reader.setAutoTransform(true);
+  const auto image = reader.read();
+  if (image.isNull()) {
+    return fail(tr("Unable to decode the image"));
+  }
+  return image;
+}
+
+QString TypstViewWindowController::imageResourcePath(const QString &p_projectPath,
+                                                     QString *p_error) const {
+  if (p_error) {
+    p_error->clear();
+  }
+  const auto fail = [p_error](const QString &p_message) {
+    if (p_error) {
+      *p_error = p_message;
+    }
+    return QString();
+  };
+  if (!resourceAvailable() || !isProjectPath(p_projectPath)) {
+    return fail(tr("This image has no available local project file"));
+  }
+  const QFileInfo file(QDir(m_project.root).filePath(p_projectPath));
+  const auto canonical = resolvedFileSystemPath(file.absoluteFilePath());
+  if (!file.isFile() || !pathInside(m_project.root, canonical)) {
+    return fail(tr("The image file is unavailable or outside the Typst project"));
+  }
+  return canonical;
 }
 
 bool TypstViewWindowController::insertionIsCurrent(quint64 p_generation, const QString &p_bufferId,

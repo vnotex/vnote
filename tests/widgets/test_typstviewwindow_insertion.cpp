@@ -22,6 +22,8 @@
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFormLayout>
+#include <QGraphicsPixmapItem>
+#include <QGraphicsView>
 #include <QImageReader>
 #include <QLineEdit>
 #include <QListWidget>
@@ -34,6 +36,7 @@
 #include <QRadioButton>
 #include <QRegularExpression>
 #include <QScopeGuard>
+#include <QScrollBar>
 #include <QStandardPaths>
 #include <QTcpServer>
 #include <QTcpSocket>
@@ -42,6 +45,7 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
+#include <QWheelEvent>
 
 #include <controllers/typstviewwindowcontroller.h>
 #include <core/configmgr2.h>
@@ -62,8 +66,10 @@
 #include <vtextedit/vtexteditor.h>
 #include <vxcore/vxcore.h>
 #include <widgets/dialogs/imageinsertdialog.h>
+#include <widgets/dialogs/imagesizedialog.h>
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/selectdialog.h>
+#include <widgets/imageviewer.h>
 #include <widgets/typstviewwindow.h>
 
 #include <functional>
@@ -455,6 +461,118 @@ DropResult drop(vte::VTextEdit *edit, const QMimeData *mime, const QPoint &point
   result.action = event.dropAction();
   return result;
 }
+
+struct ResourceMenuResult {
+  bool opened = false;
+  bool clicked = false;
+  bool captured = false;
+  QStringList actions;
+  QStringList enabled;
+  int standardActions = 0;
+};
+
+// Drive the existing native menu via the real source/card/PDF context event.
+// Never emit a resource signal or manufacture compiler metadata in an app test.
+ResourceMenuResult resourceMenu(QWidget *surface, const QPoint &point,
+                                const QString &actionName = {},
+                                const std::function<void(QMenu *)> &inspect = {},
+                                const QString &capture = {}) {
+  ResourceMenuResult result;
+  QTimer deadline;
+  deadline.setSingleShot(true);
+  QObject::connect(&deadline, &QTimer::timeout, &deadline, [&] {
+    qWarning() << "Resource context menu did not complete" << actionName;
+    // A malformed popup must fail the assertions, not strand the test in exec().
+    // This is cleanup only: normal driving still requires activePopupWidget().
+    for (auto *widget : QApplication::topLevelWidgets()) {
+      if (auto *menu = qobject_cast<QMenu *>(widget)) {
+        menu->close();
+      }
+    }
+    if (auto *dialog = qobject_cast<QDialog *>(QApplication::activeModalWidget())) {
+      dialog->reject();
+    }
+  });
+  deadline.start(8000);
+  QTimer timer;
+  timer.setInterval(10);
+  QObject::connect(&timer, &QTimer::timeout, &timer, [&] {
+    QPointer<QMenu> menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+    if (!menu || result.opened) {
+      return;
+    }
+    result.opened = true;
+    timer.stop();
+    QAction *chosen = nullptr;
+    for (auto *action : menu->actions()) {
+      if (action->isSeparator()) {
+        continue;
+      }
+      result.actions.append(action->objectName());
+      if (action->isEnabled()) {
+        result.enabled.append(action->objectName());
+      }
+      if (action->objectName() == actionName && action->isEnabled()) {
+        chosen = action;
+      }
+      if (!action->objectName().startsWith(QLatin1String("typst"))) {
+        ++result.standardActions;
+      }
+    }
+    if (!capture.isEmpty()) {
+      result.captured =
+          menu->grab().save(QDir(QCoreApplication::applicationDirPath()).filePath(capture));
+    }
+    if (inspect) {
+      inspect(menu);
+    }
+    if (!menu) {
+      return;
+    }
+    if (chosen && menu->isVisible()) {
+      QObject::connect(chosen, &QAction::triggered, &timer, [&] { result.clicked = true; });
+      QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier,
+                        menu->actionGeometry(chosen).center());
+    } else {
+      menu->close();
+    }
+  });
+  timer.start();
+  QContextMenuEvent event(QContextMenuEvent::Mouse, point, surface->mapToGlobal(point));
+  QApplication::sendEvent(surface, &event);
+  return result;
+}
+
+QPoint colorPoint(QWidget *surface, const QColor &color = c_green) {
+  const auto capture = surface->grab().toImage();
+  QRect bounds;
+  for (int y = 0; y < capture.height(); y += 2) {
+    for (int x = 0; x < capture.width(); x += 2) {
+      const auto actual = capture.pixelColor(x, y);
+      if (qAbs(actual.red() - color.red()) <= 5 && qAbs(actual.green() - color.green()) <= 5 &&
+          qAbs(actual.blue() - color.blue()) <= 5) {
+        bounds = bounds.united(QRect(x, y, 1, 1));
+      }
+    }
+  }
+  return bounds.isEmpty() ? QPoint(-1, -1)
+                          : (QPointF(bounds.center()) / capture.devicePixelRatio()).toPoint();
+}
+
+QPoint linkPoint(QWidget *viewport) {
+  for (int y = 4; y < viewport->height(); y += 4) {
+    for (int x = 4; x < viewport->width(); x += 4) {
+      const QPoint point(x, y);
+      QMouseEvent move(QEvent::MouseMove, point, viewport->mapToGlobal(point), Qt::NoButton,
+                       Qt::NoButton, Qt::NoModifier);
+      QApplication::sendEvent(viewport, &move);
+      if (viewport->cursor().shape() == Qt::PointingHandCursor) {
+        return point;
+      }
+    }
+  }
+  return QPoint(-1, -1);
+}
 } // namespace
 
 class TestTypstViewWindowInsertion : public QObject {
@@ -494,6 +612,26 @@ private slots:
   void cancelledClosePreservesDraft();
   void missingCompilerKeepsInsertion();
   void internalTextDrag();
+  void resourceImageMenus_data();
+  void resourceImageMenus();
+  void resourceLinkMenus_data();
+  void resourceLinkMenus();
+  void resourceRemoteConsent();
+  void resourceUnrelatedSource_data();
+  void resourceUnrelatedSource();
+  void resourceResize_data();
+  void resourceResize();
+  void resourceResizeUnavailable_data();
+  void resourceResizeUnavailable();
+  void resourceSnapshotBytes_data();
+  void resourceSnapshotBytes();
+  void resourceOverlayCamera();
+  void resourceOverlayRetirement_data();
+  void resourceOverlayRetirement();
+  void resourcePendingRetirement_data();
+  void resourcePendingRetirement();
+  void resourceModalDestruction_data();
+  void resourceModalDestruction();
 
 private:
   Buffer2 openNote(const QString &name = QStringLiteral("main.typst"),
@@ -508,6 +646,10 @@ private:
   QString root() const;
   QString assetFolder() const;
   QString attachmentFolder() const;
+  QPair<QWidget *, QPoint> resourceTarget(const QString &surface,
+                                          const QString &needle = QStringLiteral("resource.png"));
+  ImageViewer *overlay() const;
+  bool retireResource(const QString &change);
 
   VxCoreContextHandle m_context = nullptr;
   std::unique_ptr<QTemporaryDir> m_directory;
@@ -765,6 +907,842 @@ void TestTypstViewWindowInsertion::verifyUndo(const QString &inserted) {
   QCOMPARE(m_edit->toPlainText(), c_baseline);
   QTest::keySequence(m_edit, QKeySequence::Redo);
   QCOMPARE(m_edit->toPlainText(), inserted);
+}
+
+QPair<QWidget *, QPoint> TestTypstViewWindowInsertion::resourceTarget(const QString &surface,
+                                                                      const QString &needle) {
+  if (surface == QLatin1String("source")) {
+    auto cursor = m_edit->document()->find(needle);
+    if (cursor.isNull()) {
+      return {nullptr, {}};
+    }
+    cursor.setPosition(cursor.selectionStart() + int(qMin(qsizetype(2), needle.size())));
+    m_edit->setTextCursor(cursor);
+    m_edit->ensureCursorVisible();
+    m_edit->setFocus();
+    return {m_edit->viewport(), m_edit->cursorRect(cursor).center()};
+  }
+  QWidget *target = nullptr;
+  QPoint point(-1, -1);
+  const bool found = QTest::qWaitFor(
+      [&] {
+        if (surface == QLatin1String("inplace")) {
+          for (auto *card : m_editor->findChildren<QWidget *>(QStringLiteral("typstPreviewCard"))) {
+            if (card->isVisible() && (point = colorPoint(card)).x() >= 0) {
+              target = card;
+              return true;
+            }
+          }
+        } else if (auto *pane = qobject_cast<QAbstractScrollArea *>(m_pdf.data())) {
+          target = pane->viewport();
+          point = colorPoint(target);
+          return point.x() >= 0;
+        }
+        return false;
+      },
+      5000);
+  return found ? qMakePair(target, point) : qMakePair(static_cast<QWidget *>(nullptr), point);
+}
+
+ImageViewer *TestTypstViewWindowInsertion::overlay() const {
+  return m_window ? m_window->findChild<ImageViewer *>(QStringLiteral("typstImageViewer"))
+                  : nullptr;
+}
+
+void TestTypstViewWindowInsertion::resourceImageMenus_data() {
+  QTest::addColumn<QString>("surface");
+  QTest::addColumn<QString>("wrapper");
+  QTest::addColumn<bool>("readOnly");
+  QTest::newRow("source-image") << QStringLiteral("source") << QString() << false;
+  QTest::newRow("pdf-edit-image") << QStringLiteral("pdf") << QString() << false;
+  QTest::newRow("pdf-read-image") << QStringLiteral("read") << QString() << false;
+  QTest::newRow("pdf-readonly-image") << QStringLiteral("pdf") << QString() << true;
+  QTest::newRow("inplace-image") << QStringLiteral("inplace") << QString() << false;
+  QTest::newRow("inplace-figure-image")
+      << QStringLiteral("inplace") << QStringLiteral("figure") << false;
+  QTest::newRow("inplace-table-image")
+      << QStringLiteral("inplace") << QStringLiteral("table") << false;
+  QTest::newRow("inplace-linked-image")
+      << QStringLiteral("inplace") << QStringLiteral("link") << false;
+  QTest::newRow("pdf-linked-image") << QStringLiteral("pdf") << QStringLiteral("link") << false;
+}
+
+void TestTypstViewWindowInsertion::resourceImageMenus() {
+  QFETCH(QString, surface);
+  QFETCH(QString, wrapper);
+  QFETCH(bool, readOnly);
+  const auto path = m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("resource.png"));
+  QVERIFY(writeBytes(path, png()));
+  QString expression = QStringLiteral("image(\"resource.png\", width: 72pt)");
+  if (wrapper == QLatin1String("figure")) {
+    expression = QStringLiteral("figure(%1, caption: [Nested figure])").arg(expression);
+  } else if (wrapper == QLatin1String("table")) {
+    expression = QStringLiteral("table(columns: 1, [%1])").arg('#' + expression);
+  } else if (wrapper == QLatin1String("link")) {
+    expression =
+        QStringLiteral("link(\"https://example.invalid/linked-image\", %1)").arg(expression);
+  }
+  const auto source = QStringLiteral("#set page(width: 280pt, height: 180pt, margin: 18pt)\n#") +
+                      expression + QStringLiteral("\n\nUnrelated text\n");
+  show(openNote(QStringLiteral("main.typst"), source, readOnly));
+  const auto beforeFiles = filesBelow(root());
+  if (surface == QLatin1String("read")) {
+    m_window->setMode(ViewWindowMode::Read);
+  } else if (surface == QLatin1String("inplace")) {
+    m_editor->setInplacePreviewEnabled(true);
+  }
+  QVERIFY(ready());
+  const auto target = resourceTarget(surface);
+  QVERIFY2(target.first, qPrintable(surface));
+  const auto undoSteps = m_edit->document()->availableUndoSteps();
+  const auto revision = m_edit->document()->revision();
+  const auto dirty = m_window->isModified();
+  const auto zoom = m_editor->pdfZoom();
+  const auto page = m_editor->currentPdfPage();
+  const auto capture = surface == QLatin1String("source")
+                           ? QStringLiteral("typst-resource-source-menu.png")
+                       : surface == QLatin1String("pdf") && wrapper.isEmpty()
+                           ? QStringLiteral("typst-resource-preview-menu.png")
+                           : QString();
+  auto menu = resourceMenu(target.first, target.second, QStringLiteral("typstCopyImageAddress"), {},
+                           capture);
+  QVERIFY(menu.opened);
+  QVERIFY(menu.clicked);
+  QVERIFY(menu.enabled.contains(QStringLiteral("typstViewImage")));
+  QVERIFY(menu.enabled.contains(QStringLiteral("typstCopyImage")));
+  QCOMPARE(menu.enabled.contains(QStringLiteral("typstResizeImage")),
+           !readOnly && surface != QLatin1String("read"));
+  if (!capture.isEmpty()) {
+    QVERIFY(menu.captured);
+  }
+  if (surface != QLatin1String("inplace")) {
+    QVERIFY(menu.standardActions >= 2);
+  }
+  QCOMPARE(QFileInfo(QUrl(QApplication::clipboard()->text()).toLocalFile()).canonicalFilePath(),
+           QFileInfo(path).canonicalFilePath());
+  if (wrapper == QLatin1String("link")) {
+    QVERIFY(menu.enabled.contains(QStringLiteral("typstOpenLink")));
+    QVERIFY(menu.enabled.contains(QStringLiteral("typstCopyLink")));
+    menu = resourceMenu(target.first, target.second, QStringLiteral("typstCopyLink"));
+    QVERIFY(menu.clicked);
+    QCOMPARE(QApplication::clipboard()->text(),
+             QStringLiteral("https://example.invalid/linked-image"));
+  }
+  QApplication::clipboard()->clear();
+  menu = resourceMenu(target.first, target.second, QStringLiteral("typstCopyImage"));
+  QVERIFY(menu.clicked);
+  QVERIFY(QTest::qWaitFor(
+      [&] { return containsColor(QApplication::clipboard()->image(), c_green); }, 5000));
+  QCOMPARE(QApplication::clipboard()->image().size(), QSize(96, 48));
+  menu = resourceMenu(target.first, target.second, QStringLiteral("typstViewImage"));
+  QVERIFY(menu.clicked);
+  QVERIFY(QTest::qWaitFor([&] { return overlay() && overlay()->isVisible(); }, 5000));
+  QVERIFY(
+      QTest::qWaitFor([&] { return containsColor(overlay()->grab().toImage(), c_green); }, 5000));
+  QVERIFY(!overlay()->isWindow());
+  QCOMPARE(overlay()->parentWidget(), m_editor.data());
+  QCOMPARE(overlay()->geometry(), m_editor->rect());
+  QVERIFY(!insertionAction(m_window.get(), true)->isEnabled());
+  if (surface == QLatin1String("source")) {
+    QVERIFY(m_window->grab().save(QDir(QCoreApplication::applicationDirPath())
+                                      .filePath(QStringLiteral("typst-resource-overlay.png"))));
+  }
+  QTest::keyClick(overlay(), Qt::Key_Escape);
+  QVERIFY(QTest::qWaitFor([&] { return !overlay() || !overlay()->isVisible(); }, 1000));
+  if (surface == QLatin1String("inplace") && wrapper.isEmpty()) {
+    QTest::mouseDClick(target.first, Qt::LeftButton, Qt::NoModifier, target.second);
+    QVERIFY(QTest::qWaitFor([&] { return overlay() && overlay()->isVisible(); }, 5000));
+    QVERIFY(containsColor(overlay()->grab().toImage(), c_green));
+    QTest::keyClick(overlay(), Qt::Key_Escape);
+  }
+  QCOMPARE(m_edit->toPlainText(), source);
+  QCOMPARE(m_edit->document()->revision(), revision);
+  QCOMPARE(m_edit->document()->availableUndoSteps(), undoSteps);
+  QCOMPARE(m_window->isModified(), dirty);
+  QCOMPARE(m_editor->pdfZoom(), zoom);
+  QCOMPARE(m_editor->currentPdfPage(), page);
+  QCOMPARE(filesBelow(root()), beforeFiles);
+  QCOMPARE(readBytes(path), png());
+}
+
+void TestTypstViewWindowInsertion::resourceLinkMenus_data() {
+  QTest::addColumn<QString>("surface");
+  QTest::addColumn<bool>("dynamic");
+  QTest::newRow("source-literal") << QStringLiteral("source") << false;
+  QTest::newRow("source-evaluated") << QStringLiteral("source") << true;
+  QTest::newRow("pdf-edit") << QStringLiteral("pdf") << false;
+  QTest::newRow("pdf-read") << QStringLiteral("read") << false;
+}
+
+void TestTypstViewWindowInsertion::resourceLinkMenus() {
+  QFETCH(QString, surface);
+  QFETCH(bool, dynamic);
+  const auto name = QStringLiteral("target # 25%.txt");
+  QVERIFY(!m_notebooks->createFile(m_notebookId, QString(), name).isEmpty());
+  const auto path = m_notebooks->buildAbsolutePath(m_notebookId, name);
+  const auto bytes = QByteArrayLiteral("Real context-menu file target\n");
+  QVERIFY(writeBytes(path, bytes));
+  QUrl url;
+  url.setPath(name, QUrl::DecodedMode);
+  url.setFragment(QStringLiteral("section # 25%"), QUrl::DecodedMode);
+  const auto destination = url.toString(QUrl::FullyEncoded);
+  const auto expression =
+      dynamic ? QStringLiteral("#let dest = \"%1\"\n#link(dest, \"Open literal label\")")
+                    .arg(destination)
+              : TypstViewWindowController::linkMarkup(destination,
+                                                      QStringLiteral("Open literal label"));
+  const auto source =
+      QStringLiteral("#set page(width: 280pt, height: 140pt, margin: 18pt)\n") + expression;
+  show(openNote(QStringLiteral("main.typst"), source));
+  if (surface == QLatin1String("read")) {
+    m_window->setMode(ViewWindowMode::Read);
+  }
+  QVERIFY(ready());
+  QPair<QWidget *, QPoint> target;
+  if (surface == QLatin1String("source")) {
+    target = resourceTarget(surface, QStringLiteral("Open literal label"));
+  } else {
+    auto *pane = qobject_cast<QAbstractScrollArea *>(m_pdf.data());
+    QVERIFY(pane);
+    target = {pane->viewport(), linkPoint(pane->viewport())};
+  }
+  QVERIFY(target.first);
+  QVERIFY(target.second.x() >= 0);
+  PreviewUrlSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("file"), &desktop, "open");
+  const auto restore =
+      qScopeGuard([] { QDesktopServices::unsetUrlHandler(QStringLiteral("file")); });
+  QList<FileOpenEvent> opened;
+  const auto hook = m_hooks->addAction<FileOpenEvent>(
+      HookNames::FileAfterOpen,
+      [&](HookContext &, const FileOpenEvent &event) { opened.append(event); });
+  const auto remove = qScopeGuard([&] { m_hooks->removeAction(hook); });
+  bool prompted = false;
+  DialogDriver dialogs;
+  dialogs.otherDialog = [&](QDialog *dialog) {
+    prompted = true;
+    dialog->reject();
+    return true;
+  };
+  auto menu = resourceMenu(target.first, target.second, QStringLiteral("typstCopyLink"));
+  QVERIFY(menu.clicked);
+  QCOMPARE(QApplication::clipboard()->text(), destination);
+  QVERIFY(opened.isEmpty());
+  QVERIFY(desktop.opened.isEmpty());
+  menu = resourceMenu(target.first, target.second, QStringLiteral("typstOpenLink"));
+  QVERIFY(menu.clicked);
+  QCOMPARE(opened.size(), 1);
+  QCOMPARE(opened.first().anchor, url.fragment(QUrl::FullyDecoded));
+  const auto buffer = m_buffers->getBufferHandle(opened.first().bufferId);
+  QVERIFY(buffer.isValid());
+  QCOMPARE(QFileInfo(buffer.resolvedPath()).canonicalFilePath(),
+           QFileInfo(path).canonicalFilePath());
+  QCOMPARE(buffer.getContentRaw(), bytes);
+  QVERIFY(!prompted);
+  QVERIFY(desktop.opened.isEmpty());
+  QCOMPARE(m_edit->toPlainText(), source);
+  QVERIFY(!m_window->isModified());
+}
+
+void TestTypstViewWindowInsertion::resourceRemoteConsent() {
+  const auto destination = QStringLiteral("https://example.invalid/a%20b?q=1#part");
+  show(openNote(QStringLiteral("main.typst"),
+                TypstViewWindowController::linkMarkup(destination, "Remote")));
+  QVERIFY(ready());
+  const auto target = resourceTarget(QStringLiteral("source"), QStringLiteral("Remote"));
+  QVERIFY(target.first);
+  PreviewUrlSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("https"), &desktop, "open");
+  const auto restore =
+      qScopeGuard([] { QDesktopServices::unsetUrlHandler(QStringLiteral("https")); });
+  QVERIFY(resourceMenu(target.first, target.second, QStringLiteral("typstCopyLink")).clicked);
+  QCOMPARE(QApplication::clipboard()->text(), destination);
+  QVERIFY(desktop.opened.isEmpty());
+  for (bool accept : {false, true}) {
+    bool prompted = false;
+    DialogDriver dialogs;
+    dialogs.otherDialog = [&](QDialog *dialog) {
+      auto *question = qobject_cast<QMessageBox *>(dialog);
+      if (!question) {
+        return false;
+      }
+      prompted = true;
+      auto *button = question->button(accept ? QMessageBox::Yes : QMessageBox::No);
+      if (!button) {
+        dialogs.fail(dialog, QStringLiteral("Missing external consent button"));
+      } else {
+        QTest::mouseClick(button, Qt::LeftButton);
+      }
+      return true;
+    };
+    QVERIFY(resourceMenu(target.first, target.second, QStringLiteral("typstOpenLink")).clicked);
+    QVERIFY2(dialogs.error.isEmpty(), qPrintable(dialogs.error));
+    QVERIFY(prompted);
+    QCOMPARE(desktop.opened.size(), accept ? 1 : 0);
+  }
+  QCOMPARE(desktop.opened.first(), QUrl(destination));
+}
+
+void TestTypstViewWindowInsertion::resourceUnrelatedSource_data() {
+  QTest::addColumn<QString>("needle");
+  QTest::newRow("comment") << QStringLiteral("comment.png");
+  QTest::newRow("raw-example") << QStringLiteral("example.png");
+  QTest::newRow("ordinary-text") << QStringLiteral("ordinary text");
+}
+
+void TestTypstViewWindowInsertion::resourceUnrelatedSource() {
+  QFETCH(QString, needle);
+  const auto source = QStringLiteral("// #image(\"comment.png\")\n"
+                                     "`#image(\"example.png\")`\n\nordinary text\n");
+  show(openNote(QStringLiteral("main.typst"), source));
+  QVERIFY(ready());
+  auto selected = m_edit->document()->find(needle);
+  QVERIFY(!selected.isNull());
+  m_edit->setTextCursor(selected);
+  m_edit->ensureCursorVisible();
+  const auto undoSteps = m_edit->document()->availableUndoSteps();
+  auto at = selected;
+  at.setPosition(selected.selectionStart() + 2);
+  const auto menu = resourceMenu(m_edit->viewport(), m_edit->cursorRect(at).center());
+  QVERIFY(menu.opened);
+  QVERIFY(menu.standardActions >= 2);
+  for (const auto *name : {"typstViewImage", "typstCopyImage", "typstCopyImageAddress",
+                           "typstResizeImage", "typstOpenLink", "typstCopyLink"}) {
+    QVERIFY(!menu.actions.contains(QString::fromLatin1(name)));
+  }
+  QCOMPARE(m_edit->textCursor().selectionStart(), selected.selectionStart());
+  QCOMPARE(m_edit->textCursor().selectionEnd(), selected.selectionEnd());
+  QCOMPARE(m_edit->toPlainText(), source);
+  QCOMPARE(m_edit->document()->availableUndoSteps(), undoSteps);
+}
+
+void TestTypstViewWindowInsertion::resourceResize_data() {
+  QTest::addColumn<QString>("change");
+  QTest::newRow("replace-exact-values") << QStringLiteral("replace");
+  QTest::newRow("clear-keeps-comments") << QStringLiteral("clear");
+  QTest::newRow("unchanged-no-undo-entry") << QStringLiteral("unchanged");
+  QTest::newRow("append-missing-values") << QStringLiteral("append");
+}
+
+void TestTypstViewWindowInsertion::resourceResize() {
+  QFETCH(QString, change);
+  const auto path = m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("resource.png"));
+  QVERIFY(writeBytes(path, png()));
+  const auto dimensions = change == QLatin1String("append")
+                              ? QString()
+                              : QStringLiteral("width: /* width comment */ 48pt, height: 24pt, ");
+  const auto source = QStringLiteral("#set page(width: 280pt, height: 180pt, margin: 18pt)\n"
+                                     "#image(\"resource.png\", alt: \"a ] \\\"quote\\\" \\\\ "
+                                     "label\", %1fit: \"contain\",) // after\n"
+                                     "\nUnchanged paragraph\n")
+                          .arg(dimensions);
+  show(openNote(QStringLiteral("main.typst"), source));
+  const auto before = filesBelow(root());
+  QVERIFY(ready());
+  const auto target = resourceTarget(QStringLiteral("source"));
+  QVERIFY(target.first);
+  const auto undoSteps = m_edit->document()->availableUndoSteps();
+  bool sized = false;
+  DialogDriver driver;
+  driver.otherDialog = [&](QDialog *dialog) {
+    auto *size = qobject_cast<ImageSizeDialog *>(dialog);
+    if (!size || sized) {
+      return false;
+    }
+    sized = true;
+    auto *width = size->findChild<QLineEdit *>(QStringLiteral("imageSizeWidthEdit"));
+    auto *height = size->findChild<QLineEdit *>(QStringLiteral("imageSizeHeightEdit"));
+    if (!width || !height || !okButton(size)) {
+      driver.fail(dialog, QStringLiteral("Image size controls are unavailable"));
+      return true;
+    }
+    if (change != QLatin1String("append") && (width->text() != "64" || height->text() != "32")) {
+      driver.fail(dialog,
+                  QStringLiteral("Authored Typst points were not converted to dialog pixels"));
+      return true;
+    }
+    if (change != QLatin1String("unchanged")) {
+      replaceField(width, change == QLatin1String("clear") ? QString() : QStringLiteral("96"));
+      replaceField(height, change == QLatin1String("clear") ? QString() : QStringLiteral("48"));
+    }
+    QTest::mouseClick(okButton(size), Qt::LeftButton);
+    return true;
+  };
+  const auto menu = resourceMenu(target.first, target.second, QStringLiteral("typstResizeImage"));
+  QVERIFY(menu.clicked);
+  QVERIFY(sized);
+  QVERIFY2(driver.error.isEmpty(), qPrintable(driver.error));
+  const auto resized = m_edit->toPlainText();
+  if (change == QLatin1String("unchanged")) {
+    QCOMPARE(resized, source);
+    QCOMPARE(m_edit->document()->availableUndoSteps(), undoSteps);
+    QVERIFY(!m_window->isModified());
+  } else {
+    if (change == QLatin1String("clear")) {
+      auto expected = source;
+      expected.replace(QStringLiteral("48pt"), QStringLiteral("auto"));
+      expected.replace(QStringLiteral("24pt"), QStringLiteral("auto"));
+      QCOMPARE(resized, expected);
+    } else {
+      // Validate point values independently of incidental decimal spelling.
+      const QRegularExpression width(
+          QStringLiteral(R"(width: (?:/\* width comment \*/ )?([0-9.]+)pt)"));
+      const QRegularExpression height(QStringLiteral(R"(height: ([0-9.]+)pt)"));
+      const auto imageSource = resized.mid(resized.indexOf(QStringLiteral("#image")));
+      const auto widthMatch = width.match(imageSource);
+      const auto heightMatch = height.match(imageSource);
+      QVERIFY(widthMatch.hasMatch() && heightMatch.hasMatch());
+      QCOMPARE(widthMatch.captured(1).toDouble(), 72.0);
+      QCOMPARE(heightMatch.captured(1).toDouble(), 36.0);
+      auto restored = resized;
+      if (change == QLatin1String("replace")) {
+        const auto offset = resized.indexOf(QStringLiteral("#image"));
+        restored.replace(offset + heightMatch.capturedStart(1), heightMatch.capturedLength(1),
+                         "24");
+        restored.replace(offset + widthMatch.capturedStart(1), widthMatch.capturedLength(1), "48");
+        QCOMPARE(restored, source);
+      } else {
+        QVERIFY(resized.contains(QStringLiteral("fit: \"contain\"")));
+        QVERIFY(resized.endsWith(QStringLiteral(" // after\n\nUnchanged paragraph\n")));
+      }
+    }
+    QVERIFY(ready());
+    QVERIFY(QTest::qWaitFor([&] { return containsColor(m_pdf->grab().toImage(), c_green); }, 5000));
+    m_edit->setFocus();
+    QTest::keySequence(m_edit, QKeySequence::Undo);
+    QCOMPARE(m_edit->toPlainText(), source);
+    QCOMPARE(m_edit->document()->availableUndoSteps(), undoSteps);
+    QTest::keySequence(m_edit, QKeySequence::Redo);
+    QCOMPARE(m_edit->toPlainText(), resized);
+    QVERIFY(ready());
+  }
+  QCOMPARE(filesBelow(root()), before);
+  QCOMPARE(readBytes(path), png());
+}
+
+void TestTypstViewWindowInsertion::resourceResizeUnavailable_data() {
+  QTest::addColumn<QString>("reason");
+  for (const auto *reason :
+       {"read", "readonly", "stale", "imported", "relative", "computed", "alias"}) {
+    QTest::newRow(reason) << QString::fromLatin1(reason);
+  }
+}
+
+void TestTypstViewWindowInsertion::resourceResizeUnavailable() {
+  QFETCH(QString, reason);
+  const auto path = m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("resource.png"));
+  QVERIFY(writeBytes(path, png()));
+  QString expression = QStringLiteral("#image(\"resource.png\", width: 72pt)");
+  if (reason == QLatin1String("relative")) {
+    expression = QStringLiteral("#image(\"resource.png\", width: 50%)");
+  } else if (reason == QLatin1String("computed")) {
+    expression = QStringLiteral("#let extent = 72pt\n#image(\"resource.png\", width: extent)");
+  } else if (reason == QLatin1String("alias")) {
+    expression = QStringLiteral("#let picture = image\n#picture(\"resource.png\", width: 72pt)");
+  } else if (reason == QLatin1String("imported")) {
+    QVERIFY(writeBytes(m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("part.typst")),
+                       expression.toUtf8()));
+    expression = QStringLiteral("#include \"part.typst\"");
+  }
+  const auto source =
+      QStringLiteral("#set page(width: 280pt, height: 180pt, margin: 18pt)\n") + expression;
+  show(openNote(QStringLiteral("main.typst"), source, reason == QLatin1String("readonly")));
+  if (reason == QLatin1String("read")) {
+    m_window->setMode(ViewWindowMode::Read);
+  }
+  QVERIFY(ready());
+  const auto target = resourceTarget(QStringLiteral("pdf"));
+  QVERIFY(target.first);
+  if (reason == QLatin1String("stale")) {
+    QTextCursor end(m_edit->document());
+    end.movePosition(QTextCursor::End);
+    end.insertText(QStringLiteral("\n// new generation\n"));
+  }
+  const auto baseline = m_edit->toPlainText();
+  const auto undo = m_edit->document()->availableUndoSteps();
+  const auto menu = resourceMenu(target.first, target.second);
+  QVERIFY(menu.opened);
+  QVERIFY(menu.enabled.contains(QStringLiteral("typstViewImage")));
+  QVERIFY(!menu.enabled.contains(QStringLiteral("typstResizeImage")));
+  QCOMPARE(m_edit->toPlainText(), baseline);
+  QCOMPARE(m_edit->document()->availableUndoSteps(), undo);
+  QCOMPARE(readBytes(path), png());
+}
+
+void TestTypstViewWindowInsertion::resourceSnapshotBytes_data() {
+  QTest::addColumn<bool>("gif");
+  QTest::newRow("retained-png") << false;
+  QTest::newRow("retained-gif-mime-not-replaced-file") << true;
+}
+
+void TestTypstViewWindowInsertion::resourceSnapshotBytes() {
+  QFETCH(bool, gif);
+  const auto original = gif ? QByteArray::fromHex("474946383961010001008000001ca45cd2253421f9040000"
+                                                  "0000002c00000000010001000002024401003b")
+                            : png();
+  QVERIFY(!QImage::fromData(original).isNull());
+  QCOMPARE(QImage::fromData(original).pixelColor(0, 0), c_green);
+  const auto name = gif ? QStringLiteral("resource.gif") : QStringLiteral("resource.png");
+  const auto path = m_notebooks->buildAbsolutePath(m_notebookId, name);
+  QVERIFY(writeBytes(path, original));
+  const auto source =
+      QStringLiteral("#set page(width: 280pt, height: 180pt, margin: 18pt)\n"
+                     "#image(\"%1\", width: 72pt, height: 36pt)\n\nSnapshot selection\n")
+          .arg(name);
+  show(openNote(QStringLiteral("main.typst"), source));
+  QVERIFY(ready());
+  const auto target = resourceTarget(QStringLiteral("pdf"));
+  QVERIFY(target.first);
+  if (gif) {
+    QVERIFY(resourceMenu(target.first, target.second, QStringLiteral("typstCopyImage")).clicked);
+    QVERIFY(QTest::qWaitFor(
+        [&] {
+          const auto *mime = QApplication::clipboard()->mimeData();
+          return mime->hasUrls() || mime->hasFormat(QStringLiteral("image/gif"));
+        },
+        5000));
+    const auto *mime = QApplication::clipboard()->mimeData();
+    if (mime->hasUrls()) {
+      QCOMPARE(readBytes(mime->urls().first().toLocalFile()), original);
+    } else {
+      QCOMPARE(mime->data(QStringLiteral("image/gif")), original);
+    }
+  }
+  // Hold the real displayed PDF selection while replacing the source asset.
+  // The context request must use that snapshot, never the new file's pixels.
+  m_pdf->setFocus();
+  QTest::keySequence(m_pdf, QKeySequence::SelectAll);
+  QVERIFY(
+      m_pdf->property("selectedText").toString().contains(QStringLiteral("Snapshot selection")));
+  const auto replacement = gif ? QByteArray::fromHex("47494638396101000100800000d225341ca45c21f9040"
+                                                     "0000000002c00000000010001000002024401003b")
+                               : png(c_red);
+  QVERIFY(writeBytes(path, replacement));
+  QVERIFY(QTest::qWaitFor(
+      [&] {
+        return m_editor->hasPendingPdfUpdate() &&
+               m_editor->compileStatus() == vte::VTypstEditor::CompileStatus::Ready;
+      },
+      12000));
+  QApplication::clipboard()->clear();
+  QVERIFY(resourceMenu(target.first, target.second, QStringLiteral("typstCopyImage")).clicked);
+  QVERIFY(QTest::qWaitFor([&] { return !QApplication::clipboard()->image().isNull(); }, 5000));
+  QCOMPARE(QApplication::clipboard()->image().pixelColor(0, 0), c_green);
+  if (gif) {
+    const auto *mime = QApplication::clipboard()->mimeData();
+    QCOMPARE(mime->data(QStringLiteral("image/gif")), original);
+    QVERIFY(!mime->urls().contains(QUrl::fromLocalFile(path)));
+  } else {
+    QVERIFY(resourceMenu(target.first, target.second, QStringLiteral("typstViewImage")).clicked);
+    QVERIFY(QTest::qWaitFor([&] { return overlay() && overlay()->isVisible(); }, 5000));
+    QVERIFY(containsColor(overlay()->grab().toImage(), c_green));
+    QVERIFY(!containsColor(overlay()->grab().toImage(), c_red));
+    QTest::keyClick(overlay(), Qt::Key_Escape);
+  }
+  QCOMPARE(readBytes(path), replacement);
+  QCOMPARE(m_edit->toPlainText(), source);
+  QVERIFY(!m_window->isModified());
+}
+
+void TestTypstViewWindowInsertion::resourceOverlayCamera() {
+  const auto path = m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("resource.png"));
+  QVERIFY(writeBytes(path, png()));
+  const auto source = QStringLiteral("#image(\"resource.png\", width: 72pt)\n\nUntouched source\n");
+  show(openNote(QStringLiteral("main.typst"), source));
+  QVERIFY(ready());
+  m_editor->setPdfZoom(1.1);
+  const auto target = resourceTarget(QStringLiteral("source"));
+  QVERIFY(target.first);
+  const auto cursor = m_edit->textCursor();
+  const auto undoSteps = m_edit->document()->availableUndoSteps();
+  const auto zoom = m_editor->pdfZoom();
+  const auto page = m_editor->currentPdfPage();
+  const auto initialMenu =
+      resourceMenu(target.first, target.second, QStringLiteral("typstViewImage"));
+  QVERIFY2(initialMenu.clicked,
+           qPrintable(QStringLiteral("initial: opened=%1 actions=%2 enabled=%3")
+                          .arg(initialMenu.opened)
+                          .arg(initialMenu.actions.join(QLatin1Char(',')))
+                          .arg(initialMenu.enabled.join(QLatin1Char(',')))));
+  QVERIFY(QTest::qWaitFor([&] { return overlay() && overlay()->isVisible(); }, 5000));
+  auto *viewer = overlay();
+  auto *camera = viewer->findChild<QGraphicsView *>();
+  auto *zoomIn = viewer->findChild<QToolButton *>(QStringLiteral("imageZoomIn"));
+  auto *reset = viewer->findChild<QToolButton *>(QStringLiteral("imageReset"));
+  auto *close = viewer->findChild<QToolButton *>(QStringLiteral("imageClose"));
+  QVERIFY(camera && zoomIn && reset && close);
+  QVERIFY(QTest::qWaitFor([&] { return containsColor(viewer->grab().toImage(), c_green); }, 5000));
+  QCOMPARE(camera->transform().m11(), 1.0); // Fit never enlarges a small original.
+  QTest::mouseClick(zoomIn, Qt::LeftButton);
+  QCOMPARE(camera->transform().m11(), 1.25);
+  m_window->resize(980, 680);
+  QCoreApplication::processEvents();
+  QCOMPARE(viewer->geometry(), m_editor->rect());
+  QCOMPARE(camera->transform().m11(), 1.25);
+  QString alternate;
+  for (const auto &theme : m_theme->getAllThemes()) {
+    if (theme.m_name != QLatin1String("pure")) {
+      alternate = theme.m_name;
+      break;
+    }
+  }
+  QVERIFY(!alternate.isEmpty());
+  m_theme->switchTheme(alternate);
+  QCoreApplication::processEvents();
+  QCOMPARE(overlay(), viewer);
+  QVERIFY(viewer->isVisible());
+  QCOMPARE(camera->transform().m11(), 1.25);
+  QVERIFY(!zoomIn->icon().isNull());
+  for (int i = 0; i < 10; ++i) {
+    QTest::mouseClick(zoomIn, Qt::LeftButton);
+  }
+  QVERIFY(camera->horizontalScrollBar()->maximum() > 0);
+  const auto center = camera->viewport()->rect().center();
+  const auto oldCenter = camera->mapToScene(center);
+  QTest::mousePress(camera->viewport(), Qt::LeftButton, Qt::NoModifier, center);
+  QMouseEvent drag(QEvent::MouseMove, center + QPoint(70, 20),
+                   camera->viewport()->mapToGlobal(center + QPoint(70, 20)), Qt::NoButton,
+                   Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(camera->viewport(), &drag);
+  QTest::mouseRelease(camera->viewport(), Qt::LeftButton, Qt::NoModifier, center + QPoint(70, 20));
+  QVERIFY(camera->mapToScene(center) != oldCenter);
+  QCOMPARE(overlay(), viewer);
+  QTest::mouseClick(reset, Qt::LeftButton);
+  QCOMPARE(camera->transform().m11(), 1.0);
+  camera->setFocus();
+  QApplication::clipboard()->setText(QStringLiteral("must not paste into source"));
+  QTest::keyClicks(camera->viewport(), "must not enter source");
+  QTest::keySequence(camera->viewport(), QKeySequence::Undo);
+  QTest::keySequence(camera->viewport(), QKeySequence::Paste);
+  QTest::keyClick(camera->viewport(), Qt::Key_Tab);
+  QVERIFY(viewer->isAncestorOf(QApplication::focusWidget()) ||
+          QApplication::focusWidget() == viewer);
+  QWheelEvent wheel(center, camera->viewport()->mapToGlobal(center), QPoint(), QPoint(0, 120),
+                    Qt::NoButton, Qt::ControlModifier, Qt::NoScrollPhase, false);
+  QApplication::sendEvent(camera->viewport(), &wheel);
+  QCOMPARE(m_edit->toPlainText(), source);
+  QCOMPARE(m_edit->document()->availableUndoSteps(), undoSteps);
+  QVERIFY(!m_window->isModified());
+  QCOMPARE(m_editor->pdfZoom(), zoom);
+  QCOMPARE(m_editor->currentPdfPage(), page);
+  QTest::mouseClick(close, Qt::LeftButton);
+  QVERIFY(QTest::qWaitFor([&] { return !overlay() || !overlay()->isVisible(); }, 1000));
+  QCOMPARE(QApplication::focusWidget(), m_edit.data());
+  QCOMPARE(m_edit->textCursor().position(), cursor.position());
+  for (const auto *dismiss : {"escape", "backdrop"}) {
+    QVERIFY(QTest::qWaitFor(
+        [&] { return m_editor->compileStatus() == vte::VTypstEditor::CompileStatus::Ready; },
+        12000));
+    const auto reopened = resourceTarget(QStringLiteral("source"));
+    QVERIFY(reopened.first);
+    const auto menu =
+        resourceMenu(reopened.first, reopened.second, QStringLiteral("typstViewImage"));
+    QVERIFY2(menu.clicked, qPrintable(QStringLiteral("%1: opened=%2 actions=%3 enabled=%4")
+                                          .arg(QLatin1String(dismiss))
+                                          .arg(menu.opened)
+                                          .arg(menu.actions.join(QLatin1Char(',')))
+                                          .arg(menu.enabled.join(QLatin1Char(',')))));
+    QVERIFY(QTest::qWaitFor([&] { return overlay() && overlay()->isVisible(); }, 5000));
+    if (QLatin1String(dismiss) == QLatin1String("escape")) {
+      QTest::keyClick(overlay(), Qt::Key_Escape);
+    } else {
+      auto *view = overlay()->findChild<QGraphicsView *>();
+      QVERIFY(view);
+      QTest::mouseClick(view->viewport(), Qt::LeftButton, Qt::NoModifier, QPoint(8, 8));
+    }
+    QVERIFY(QTest::qWaitFor([&] { return !overlay() || !overlay()->isVisible(); }, 1000));
+    QCOMPARE(QApplication::focusWidget(), m_edit.data());
+  }
+  // Plain preview double-click is another real activation route, not a menu alias.
+  // The custom-camera preservation checks above are complete; reveal the image.
+  m_editor->fitPdfPage();
+  const auto preview = resourceTarget(QStringLiteral("pdf"));
+  QVERIFY(preview.first);
+  QTest::mouseDClick(preview.first, Qt::LeftButton, Qt::NoModifier, preview.second);
+  QVERIFY(QTest::qWaitFor([&] { return overlay() && overlay()->isVisible(); }, 5000));
+  QVERIFY(containsColor(overlay()->grab().toImage(), c_green));
+  QTest::keyClick(overlay(), Qt::Key_Escape);
+  QCOMPARE(m_edit->toPlainText(), source);
+  QCOMPARE(readBytes(path), png());
+  QVERIFY(!m_window->isModified());
+}
+
+bool TestTypstViewWindowInsertion::retireResource(const QString &change) {
+  if (change == QLatin1String("edit")) {
+    QTextCursor end(m_edit->document());
+    end.movePosition(QTextCursor::End);
+    end.insertText(QStringLiteral("\n// concurrent edit\n"));
+  } else if (change == QLatin1String("reload")) {
+    return m_window->reload();
+  } else if (change == QLatin1String("retarget")) {
+    const auto node = m_window->getBuffer().nodeId();
+    const auto name = QStringLiteral("renamed.typst");
+    if (!m_notebooks->renameFile(node.notebookId, node.relativePath, name)) {
+      return false;
+    }
+    m_window->onNodeRenamed({node.notebookId, name});
+  } else if (change == QLatin1String("hide")) {
+    m_window->hide();
+  } else if (change == QLatin1String("disable")) {
+    m_window->setEnabled(false);
+  } else if (change == QLatin1String("read")) {
+    m_window->setMode(ViewWindowMode::Read);
+  } else if (change == QLatin1String("close")) {
+    return m_window->aboutToClose(true);
+  } else if (change == QLatin1String("destroy")) {
+    m_window.reset();
+  } else {
+    return false;
+  }
+  return true;
+}
+
+void TestTypstViewWindowInsertion::resourceOverlayRetirement_data() {
+  QTest::addColumn<QString>("change");
+  for (const auto *change :
+       {"edit", "reload", "retarget", "hide", "disable", "read", "close", "destroy"}) {
+    QTest::newRow(change) << QString::fromLatin1(change);
+  }
+}
+
+void TestTypstViewWindowInsertion::resourceOverlayRetirement() {
+  QFETCH(QString, change);
+  const auto path = m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("resource.png"));
+  QVERIFY(writeBytes(path, png()));
+  const auto source = QStringLiteral("#image(\"resource.png\")\n");
+  show(openNote(QStringLiteral("main.typst"), source));
+  QVERIFY(ready());
+  const auto target = resourceTarget(QStringLiteral("source"));
+  QVERIFY(target.first);
+  QVERIFY(resourceMenu(target.first, target.second, QStringLiteral("typstViewImage")).clicked);
+  QVERIFY(QTest::qWaitFor([&] { return overlay() && overlay()->isVisible(); }, 5000));
+  const QPointer<ImageViewer> image(overlay());
+  QVERIFY(retireResource(change));
+  QVERIFY(!image || !image->isVisible());
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(!overlay() || !overlay()->isVisible());
+  if (m_window) {
+    QCOMPARE(m_edit->toPlainText(),
+             source + (change == QLatin1String("edit") ? QStringLiteral("\n// concurrent edit\n")
+                                                       : QString()));
+  }
+  QCOMPARE(readBytes(path), png());
+}
+
+void TestTypstViewWindowInsertion::resourcePendingRetirement_data() {
+  QTest::addColumn<QString>("change");
+  QTest::addColumn<bool>("copy");
+  for (const auto *change :
+       {"edit", "reload", "retarget", "hide", "disable", "read", "close", "destroy"}) {
+    for (bool copy : {false, true}) {
+      const auto row = QByteArray(change) + (copy ? "-copy" : "-view");
+      QTest::newRow(row.constData()) << QString::fromLatin1(change) << copy;
+    }
+  }
+}
+
+void TestTypstViewWindowInsertion::resourcePendingRetirement() {
+  QFETCH(QString, change);
+  QFETCH(bool, copy);
+  const auto path = m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("resource.png"));
+  QVERIFY(writeBytes(path, png()));
+  const auto source = QStringLiteral("#image(\"resource.png\")\n");
+  show(openNote(QStringLiteral("main.typst"), source));
+  QVERIFY(ready());
+  const auto target = resourceTarget(QStringLiteral("source"));
+  QVERIFY(target.first);
+  QSignalSpy completed(m_editor, &vte::VTypstEditor::imageDataReady);
+  bool retired = false;
+  bool changed = false;
+  QObject callbackLifetime;
+  QApplication::clipboard()->setText(QStringLiteral("unchanged while image callback is pending"));
+  const auto menu = resourceMenu(
+      target.first, target.second,
+      copy ? QStringLiteral("typstCopyImage") : QStringLiteral("typstViewImage"), [&](QMenu *) {
+        // Queue retirement before the native action requests its asynchronous bytes.
+        // The real helper reply still runs; no imageDataReady signal is fabricated.
+        QTimer::singleShot(0, &callbackLifetime, [&] {
+          changed = retireResource(change);
+          retired = true;
+        });
+      });
+  QVERIFY(menu.clicked);
+  QVERIFY(QTest::qWaitFor([&] { return retired; }, 2000));
+  QVERIFY(changed);
+  QVERIFY(QTest::qWaitFor([&] { return !completed.isEmpty() || !m_editor; }, 5000));
+  QVERIFY(!overlay() || !overlay()->isVisible());
+  QCOMPARE(QApplication::clipboard()->text(),
+           QStringLiteral("unchanged while image callback is pending"));
+  if (m_window) {
+    QCOMPARE(m_edit->toPlainText(),
+             source + (change == QLatin1String("edit") ? QStringLiteral("\n// concurrent edit\n")
+                                                       : QString()));
+  }
+  QCOMPARE(readBytes(path), png());
+}
+
+void TestTypstViewWindowInsertion::resourceModalDestruction_data() {
+  QTest::addColumn<QString>("stage");
+  QTest::newRow("destroy-idle-native-menu") << QStringLiteral("menu");
+  QTest::newRow("destroy-native-resize-modal") << QStringLiteral("resize");
+  QTest::newRow("edit-during-resize-modal") << QStringLiteral("stale");
+  QTest::newRow("readonly-during-resize-modal") << QStringLiteral("readonly");
+}
+
+void TestTypstViewWindowInsertion::resourceModalDestruction() {
+  QFETCH(QString, stage);
+  const auto path = m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("resource.png"));
+  QVERIFY(writeBytes(path, png()));
+  const auto source = QStringLiteral("#image(\"resource.png\", width: 48pt)\n");
+  show(openNote(QStringLiteral("main.typst"), source));
+  QVERIFY(ready());
+  const auto target = resourceTarget(QStringLiteral("source"));
+  QVERIFY(target.first);
+  if (stage == QLatin1String("menu")) {
+    const auto menu =
+        resourceMenu(target.first, target.second, {}, [&](QMenu *) { m_window.reset(); });
+    QVERIFY(menu.opened);
+  } else {
+    bool resized = false;
+    DialogDriver driver;
+    driver.otherDialog = [&](QDialog *dialog) {
+      QPointer<ImageSizeDialog> size = qobject_cast<ImageSizeDialog *>(dialog);
+      if (!size || resized) {
+        return false;
+      }
+      resized = true;
+      auto *width = size->findChild<QLineEdit *>(QStringLiteral("imageSizeWidthEdit"));
+      if (!width) {
+        driver.fail(dialog, QStringLiteral("Missing resize field"));
+        return true;
+      }
+      replaceField(width, QStringLiteral("96"));
+      if (stage == QLatin1String("resize")) {
+        m_window.reset();
+      } else if (stage == QLatin1String("stale")) {
+        retireResource(QStringLiteral("edit"));
+      } else {
+        m_editor->setReadOnly(true);
+      }
+      if (size && size->isVisible() && okButton(size)) {
+        QTest::mouseClick(okButton(size), Qt::LeftButton);
+      }
+      return true;
+    };
+    QVERIFY(resourceMenu(target.first, target.second, QStringLiteral("typstResizeImage")).clicked);
+    QVERIFY(resized);
+    QVERIFY2(driver.error.isEmpty(), qPrintable(driver.error));
+  }
+  if (stage == QLatin1String("menu") || stage == QLatin1String("resize")) {
+    QVERIFY(!m_window);
+    QVERIFY(QTest::qWaitFor([&] { return !m_editor; }, 2000));
+  } else {
+    QCOMPARE(m_edit->toPlainText(),
+             source + (stage == QLatin1String("stale") ? QStringLiteral("\n// concurrent edit\n")
+                                                       : QString()));
+  }
+  QVERIFY(!overlay());
+  QCOMPARE(readBytes(path), png());
 }
 
 void TestTypstViewWindowInsertion::nativePaste_data() {
@@ -2029,8 +3007,21 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   connect(&safety, &QTimer::timeout, this, [] { QDrag::cancel(); });
   safety.start(4000);
 #ifdef Q_OS_WIN
-  const auto globalStart = m_edit->viewport()->mapToGlobal(start);
-  const auto globalEnd = m_edit->viewport()->mapToGlobal(end);
+  const auto window = reinterpret_cast<HWND>(m_window->winId());
+  SetForegroundWindow(window);
+  if (!QTest::qWaitFor([&] { return GetForegroundWindow() == window; }, 1000)) {
+    QSKIP("Windows denied foreground input to the native drag fixture");
+  }
+  const auto scale = m_window->devicePixelRatioF();
+  const auto nativePoint = [&](const QPoint &point) {
+    const auto local = m_edit->viewport()->mapTo(m_window.get(), point);
+    POINT native = {qRound(local.x() * scale), qRound(local.y() * scale)};
+    ClientToScreen(window, &native);
+    return QPoint(native.x, native.y);
+  };
+  // Qt screen coordinates are logical; SetCursorPos consumes native pixels.
+  const auto globalStart = nativePoint(start);
+  const auto globalEnd = nativePoint(end);
   const auto moveMouse = [](const QPoint &point) { SetCursorPos(point.x(), point.y()); };
   const auto button = [](DWORD flags) {
     INPUT event = {};
@@ -2041,8 +3032,9 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   const auto release = qScopeGuard([&] { button(MOUSEEVENTF_LEFTUP); });
   moveMouse(globalStart);
   QVERIFY(button(MOUSEEVENTF_LEFTDOWN));
-  QTimer::singleShot(
-      80, this, [=] { moveMouse(globalStart + QPoint(QApplication::startDragDistance() + 8, 0)); });
+  QTimer::singleShot(80, this, [=] {
+    moveMouse(globalStart + QPoint(qRound((QApplication::startDragDistance() + 8) * scale), 0));
+  });
   QTimer::singleShot(160, this, [=] { moveMouse(globalEnd); });
   QTimer::singleShot(280, this, [&] { released = button(MOUSEEVENTF_LEFTUP); });
 #else

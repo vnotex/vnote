@@ -243,6 +243,14 @@ private slots:
   void insertionInvalidationPreservesConsent();
   void networkImageAcquisition_data();
   void networkImageAcquisition();
+  void viewingImages_data();
+  void viewingImages();
+  void rejectedViewingImages_data();
+  void rejectedViewingImages();
+  void viewingImageOrientation();
+  void viewingResourcePaths();
+  void revokedViewingBuffer_data();
+  void revokedViewingBuffer();
 
 private:
   void clearOpenObservations();
@@ -515,6 +523,10 @@ void TestTypstViewWindowController::encryptedBufferIsRejected() {
   QVERIFY(!error.isEmpty());
   QVERIFY(m_controller->getProject().root.isEmpty());
   QVERIFY(m_controller->getProject().mainFile.isEmpty());
+  QVERIFY(m_controller->decodeImageForViewing(imageBytes(), &error).isNull());
+  QVERIFY(!error.isEmpty());
+  QVERIFY(m_controller->imageResourcePath(QStringLiteral("secret.png"), &error).isEmpty());
+  QVERIFY(!error.isEmpty());
 }
 
 void TestTypstViewWindowController::indexedSource_data() {
@@ -1242,6 +1254,9 @@ void TestTypstViewWindowController::imageFolderJunctionEscape() {
               ->imageReference(QUrl::fromLocalFile(QDir(link).filePath(QStringLiteral("keep.png"))),
                                &error)
               .isEmpty());
+  QVERIFY(
+      m_controller->imageResourcePath(QStringLiteral("image-escape/keep.png"), &error).isEmpty());
+  QVERIFY(!error.isEmpty());
   QCOMPARE(filesBelow(outside), before);
   QCOMPARE(fileBytes(sentinel), bytes);
   QVERIFY(!QFileInfo::exists(QDir(outside).filePath(QStringLiteral("uncreated"))));
@@ -1947,6 +1962,190 @@ void TestTypstViewWindowController::failedRollbackReportsRetainedResource() {
   QVERIFY(m_mainBuffer.listAttachments().contains(added));
   QCOMPARE(fileBytes(QDir(folder).filePath(original)), QByteArrayLiteral("untouched original"));
   QVERIFY(m_mainBuffer.listAttachments().contains(original));
+}
+
+void TestTypstViewWindowController::viewingImages_data() {
+  QTest::addColumn<bool>("readOnly");
+  QTest::addColumn<QByteArray>("format");
+  for (bool readOnly : {false, true}) {
+    for (const auto *format : {"PNG", "JPEG", "SVG"}) {
+      const auto row = QByteArray(readOnly ? "readonly-" : "writable-") + format;
+      QTest::newRow(row.constData()) << readOnly << QByteArray(format);
+    }
+  }
+}
+
+void TestTypstViewWindowController::viewingImages() {
+  QFETCH(bool, readOnly);
+  QFETCH(QByteArray, format);
+  if (readOnly) {
+    QVERIFY(m_buffers->closeBuffer(m_mainBuffer.id()));
+    FileOpenSettings settings;
+    settings.m_readOnly = true;
+    m_mainBuffer = m_buffers->openBuffer({m_notebookId, mainName()}, settings);
+    QVERIFY(m_mainBuffer.isReadOnly());
+    QVERIFY(m_controller->setBuffer(m_mainBuffer));
+  }
+  const auto bytes = format == "SVG" ? svgBytes() : imageBytes(format.constData());
+  QVERIFY(!bytes.isEmpty());
+  const auto name = QStringLiteral("图 # 25%.") + QString::fromLatin1(format.toLower());
+  const auto path = QDir(m_notebookPath).filePath(name);
+  QVERIFY(writeFile(path, bytes));
+  const auto before = filesBelow(m_notebookPath);
+  const auto content = m_mainBuffer.getContentRaw();
+  QString error = QStringLiteral("stale error");
+  const auto image = m_controller->decodeImageForViewing(bytes, &error);
+  QVERIFY2(!image.isNull(), qPrintable(error));
+  QVERIFY(error.isEmpty());
+  QCOMPARE(image.size(), QSize(12, 8));
+  const auto color = image.pixelColor(4, 4);
+  QVERIFY(qAbs(color.red() - 28) < 5);
+  QVERIFY(qAbs(color.green() - 164) < 5);
+  QVERIFY(qAbs(color.blue() - 92) < 5);
+  QCOMPARE(m_controller->imageResourcePath(name, &error), QFileInfo(path).canonicalFilePath());
+  QVERIFY(error.isEmpty());
+  if (readOnly) {
+    QString created;
+    QVERIFY(m_controller->insertImage(bytes, name, &created, &error).isEmpty());
+    QVERIFY(!error.isEmpty());
+    QVERIFY(created.isEmpty());
+  }
+  QCOMPARE(filesBelow(m_notebookPath), before);
+  QCOMPARE(fileBytes(path), bytes);
+  QCOMPARE(m_mainBuffer.getContentRaw(), content);
+  QVERIFY(m_urlSink.opened.isEmpty());
+}
+
+void TestTypstViewWindowController::rejectedViewingImages_data() {
+  QTest::addColumn<QString>("kind");
+  for (const auto *kind : {"empty", "garbage", "truncated", "bytes", "dimension", "pixels",
+                           "active-svg", "external-svg"}) {
+    QTest::newRow(kind) << QString::fromLatin1(kind);
+  }
+}
+
+void TestTypstViewWindowController::rejectedViewingImages() {
+  QFETCH(QString, kind);
+  ResourceImageServer server;
+  QVERIFY(server.listen());
+  server.body = imageBytes();
+  QByteArray bytes;
+  if (kind == QLatin1String("garbage")) {
+    bytes = QByteArrayLiteral("not an image");
+  } else if (kind == QLatin1String("truncated")) {
+    bytes = imageBytes().left(32);
+  } else if (kind == QLatin1String("bytes")) {
+    bytes = imageBytes();
+    bytes.append(QByteArray(32 * 1024 * 1024 + 1 - bytes.size(), 'x'));
+  } else if (kind == QLatin1String("dimension")) {
+    bytes = imageBytes("PNG", QSize(8193, 1));
+  } else if (kind == QLatin1String("pixels")) {
+    bytes = imageBytes("PNG", QSize(4097, 4096));
+  } else if (kind == QLatin1String("active-svg")) {
+    bytes = QByteArrayLiteral("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"8\">"
+                              "<script>alert(1)</script></svg>");
+  } else if (kind == QLatin1String("external-svg")) {
+    bytes = QStringLiteral("<svg xmlns=\"http://www.w3.org/2000/svg\" width=\"12\" height=\"8\">"
+                           "<image href=\"%1\" width=\"12\" height=\"8\"/></svg>")
+                .arg(server.url())
+                .toUtf8();
+  }
+  const auto before = filesBelow(m_notebookPath);
+  QString error;
+  QVERIFY(m_controller->decodeImageForViewing(bytes, &error).isNull());
+  QVERIFY(!error.isEmpty());
+  QCoreApplication::processEvents();
+  QCOMPARE(server.requests, 0);
+  QCOMPARE(filesBelow(m_notebookPath), before);
+  QVERIFY(m_urlSink.opened.isEmpty());
+}
+
+void TestTypstViewWindowController::viewingImageOrientation() {
+  // A real JPEG APP1/Exif IFD with Orientation=6 (90 degrees clockwise).
+  // Distinct halves prove auto-transform affects pixels, not only dimensions.
+  QImage original(40, 20, QImage::Format_RGB32);
+  original.fill(Qt::red);
+  for (int y = 0; y < original.height(); ++y) {
+    for (int x = 20; x < original.width(); ++x) {
+      original.setPixelColor(x, y, Qt::blue);
+    }
+  }
+  QByteArray bytes;
+  QBuffer output(&bytes);
+  QVERIFY(output.open(QIODevice::WriteOnly));
+  QVERIFY(original.save(&output, "JPEG", 100));
+  const auto exif = QByteArray::fromHex(
+      "ffe1002245786966000049492a0008000000010012010300010000000600000000000000");
+  bytes.insert(2, exif);
+  QString error;
+  const auto decoded = m_controller->decodeImageForViewing(bytes, &error);
+  QVERIFY2(!decoded.isNull(), qPrintable(error));
+  QVERIFY(error.isEmpty());
+  QCOMPARE(decoded.size(), QSize(20, 40));
+  QVERIFY(decoded.pixelColor(10, 5).red() > 240);
+  QVERIFY(decoded.pixelColor(10, 35).blue() > 240);
+}
+
+void TestTypstViewWindowController::viewingResourcePaths() {
+  const auto bytes = imageBytes();
+  const auto name = QStringLiteral("chapters/图 # 25%.png");
+  const auto path = QDir(m_notebookPath).filePath(name);
+  const auto outside = m_tempDir->filePath(QStringLiteral("outside.png"));
+  QVERIFY(writeFile(path, bytes));
+  QVERIFY(writeFile(outside, bytes));
+  const auto before = filesBelow(m_tempDir->path());
+  QString error = QStringLiteral("stale");
+  QCOMPARE(m_controller->imageResourcePath(name, &error), QFileInfo(path).canonicalFilePath());
+  QVERIFY(error.isEmpty());
+  const QStringList rejected = {QString(),
+                                QStringLiteral("missing/new.png"),
+                                QStringLiteral("chapters"),
+                                QStringLiteral("../outside.png"),
+                                outside,
+                                QUrl::fromLocalFile(path).toString(),
+                                QStringLiteral("@preview/example:0.1.0/image.png"),
+                                QStringLiteral("https://example.invalid/a.png"),
+                                QStringLiteral("data:image/png;base64,") +
+                                    QString::fromLatin1(bytes.toBase64()),
+                                QStringLiteral("chapters/图%20%23%2025%25.png"),
+                                QStringLiteral("chapters/a") + QChar(0) + ".png"};
+  for (const auto &input : rejected) {
+    error.clear();
+    QVERIFY2(m_controller->imageResourcePath(input, &error).isEmpty(), qPrintable(input));
+    QVERIFY2(!error.isEmpty(), qPrintable(input));
+  }
+  QCOMPARE(filesBelow(m_tempDir->path()), before);
+  QCOMPARE(fileBytes(path), bytes);
+  QCOMPARE(fileBytes(outside), bytes);
+  QVERIFY(!QFileInfo::exists(QDir(m_notebookPath).filePath(QStringLiteral("missing"))));
+  QVERIFY(m_urlSink.opened.isEmpty());
+}
+
+void TestTypstViewWindowController::revokedViewingBuffer_data() {
+  QTest::addColumn<bool>("closeBuffer");
+  QTest::newRow("closed-live-buffer") << true;
+  QTest::newRow("replaced-with-invalid-buffer") << false;
+}
+
+void TestTypstViewWindowController::revokedViewingBuffer() {
+  QFETCH(bool, closeBuffer);
+  const auto bytes = imageBytes();
+  const auto path = QDir(m_notebookPath).filePath(QStringLiteral("view.png"));
+  QVERIFY(writeFile(path, bytes));
+  if (closeBuffer) {
+    QVERIFY(m_buffers->closeBuffer(m_mainBuffer.id()));
+  } else {
+    QVERIFY(!m_controller->setBuffer(Buffer2()));
+  }
+  const auto before = filesBelow(m_notebookPath);
+  QString error;
+  QVERIFY(m_controller->decodeImageForViewing(bytes, &error).isNull());
+  QVERIFY(!error.isEmpty());
+  error.clear();
+  QVERIFY(m_controller->imageResourcePath(QStringLiteral("view.png"), &error).isEmpty());
+  QVERIFY(!error.isEmpty());
+  QCOMPARE(filesBelow(m_notebookPath), before);
+  QCOMPARE(fileBytes(path), bytes);
 }
 
 } // namespace tests
