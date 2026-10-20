@@ -21,6 +21,7 @@ public:
 
   // Functions to be called from web side.
 public slots:
+  // False retires pending commands and callbacks, even when already not ready.
   void setReady(bool p_ready);
 
   void setFindText(const QStringList &p_texts, int p_totalMatches, int p_currentMatchIndex);
@@ -43,6 +44,8 @@ protected:
 
   quint64 addCallback(const CallbackPool::Callback &p_callback);
 
+  quint64 getResetGeneration() const { return m_resetGeneration; }
+
 private:
   struct FindOption {
     QJsonObject toJson() const;
@@ -58,6 +61,9 @@ private:
 
   // Whether web side is ready.
   bool m_ready = false;
+
+  // Advances on every reset, including resets while a page is still loading.
+  quint64 m_resetGeneration = 0;
 
   // Pending actions for the editor once it is ready.
   QVector<std::function<void()>> m_pendingActions;

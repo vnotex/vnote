@@ -181,6 +181,9 @@ public:
   ViewWindowMode getDefaultOpenMode() const;
   void setDefaultOpenMode(ViewWindowMode p_mode);
 
+  bool getAlwaysOpenNotesInNewTabs() const;
+  void setAlwaysOpenNotesInNewTabs(bool p_enabled);
+
 private:
   friend class MainConfig;
 
@@ -268,6 +271,8 @@ private:
   QJsonArray m_unitedEntryAlias;
 
   ViewWindowMode m_defaultOpenMode = ViewWindowMode::Read;
+
+  bool m_alwaysOpenNotesInNewTabs = true;
 
   static QStringList s_availableLocales;
 };

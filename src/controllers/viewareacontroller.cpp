@@ -10,6 +10,7 @@
 #include <QFileInfo>
 #include <QFutureWatcher>
 #include <QGuiApplication>
+#include <QPointer>
 #include <QRegularExpression>
 #include <QScopeGuard>
 #include <QScopedValueRollback>
@@ -24,6 +25,7 @@
 
 #include <controllers/workspacewrapper.h>
 #include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/fileopensettings.h>
 #include <core/hookcontext.h>
@@ -690,6 +692,7 @@ VxCoreError ViewAreaController::applyNoteConversion(
   }
   if (state.windowIds.isEmpty()) {
     settings.m_focus = true;
+    settings.m_alwaysNewWindow = true;
     openBuffer(reopened, settings);
     if (m_view->findWindowIdsByNode(reopened.nodeId(), false).isEmpty()) {
       return fail(VXCORE_ERR_INVALID_STATE,
@@ -880,6 +883,7 @@ ViewAreaController::~ViewAreaController() {
 void ViewAreaController::setView(ViewAreaView *p_view) { m_view = p_view; }
 
 void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings) {
+  const QPointer<ViewAreaController> guard(this);
   QString fileType;
   if (p_buffer.isEncrypted()) {
     const QString editor = p_buffer.editorType();
@@ -948,7 +952,12 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   event.bufferId = p_buffer.id();
   event.nodeId = p_buffer.nodeId().relativePath;
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
-  if (wsSvc && wsSvc->fireViewWindowBeforeOpen(event)) {
+  const bool openVetoed = wsSvc && wsSvc->fireViewWindowBeforeOpen(event);
+  if (!guard) {
+    return;
+  }
+  if (openVetoed || !p_buffer.isValid() || p_buffer.getBuffer().isEmpty()) {
+    closeUnownedOpenBuffer(p_buffer.id());
     return;
   }
   if (!m_view) {
@@ -1038,10 +1047,245 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
     return;
   }
 
-  // ViewArea2::openBuffer synchronously calls back into onViewWindowOpened; for
-  // a detached open it passes targetWs as the detached workspace id so the
-  // buffer registers there without disturbing the main window's current state.
-  m_view->openBuffer(p_buffer, fileType, targetWs, settings);
+  const QString incomingId = p_buffer.id();
+  if (m_replacementCandidates.contains(targetWs, incomingId)) {
+    // A modal/hook reentry must not create a second view of the candidate
+    // between workspace admission and the retained window's identity switch.
+    return;
+  }
+  const auto openNewWindow = [&]() {
+    // The view calls onViewWindowOpened synchronously on successful creation.
+    m_view->openBuffer(p_buffer, fileType, targetWs, settings);
+    if (guard && m_view->findWindowIdByBufferId(targetWs, incomingId) == InvalidViewWindowId) {
+      closeUnownedOpenBuffer(incomingId);
+    }
+  };
+  const auto *configMgr = m_services.get<ConfigMgr2>();
+  if (settings.m_alwaysNewWindow || !configMgr ||
+      configMgr->getCoreConfig().getAlwaysOpenNotesInNewTabs() || detached || !settings.m_focus ||
+      !m_shouldPropagateToCore || !wsSvc) {
+    openNewWindow();
+    return;
+  }
+
+  ID oldWindowId = InvalidViewWindowId;
+  QString oldBufferId;
+  m_view->getCurrentWindowInfoForWorkspace(targetWs, oldWindowId, oldBufferId);
+  auto *bufferSvc = m_services.get<BufferService>();
+  const auto oldBuffer =
+      bufferSvc && !oldBufferId.isEmpty() ? bufferSvc->getBufferHandle(oldBufferId) : Buffer2();
+  // Settings and non-lone Home tabs are never replacement candidates. The view
+  // alone owns its existing lone-Home retirement after successful creation.
+  if (oldWindowId == InvalidViewWindowId || !oldBuffer.isValid() ||
+      oldBuffer.nodeId().isVirtual()) {
+    openNewWindow();
+    return;
+  }
+  if (m_transitioningWindows.contains(oldWindowId)) {
+    closeUnownedOpenBuffer(incomingId);
+    return;
+  }
+  m_transitioningWindows.insert(oldWindowId);
+  const auto transitionGuard = qScopeGuard([guard, oldWindowId]() {
+    if (guard) {
+      guard->m_transitioningWindows.remove(oldWindowId);
+    }
+  });
+  const auto oldWindowIsCurrent = [&]() {
+    return guard && m_view && m_view->findWindowIdByBufferId(targetWs, oldBufferId) == oldWindowId;
+  };
+
+  const QJsonObject oldWorkspace = wsSvc->getWorkspace(targetWs);
+  QStringList oldOrder;
+  const auto oldBufferIds = oldWorkspace.value(QStringLiteral("bufferIds")).toArray();
+  for (const auto &id : oldBufferIds) {
+    oldOrder.append(id.toString());
+  }
+  const QString oldCurrentBuffer =
+      oldWorkspace.value(QStringLiteral("currentBufferId")).toString(oldBufferId);
+
+  if (!m_view->canReuseViewWindow(oldWindowId, fileType)) {
+    // Creating a different viewer must succeed before the old tab sees any
+    // close hook or Save/Discard/Cancel prompt. Cancellation keeps both tabs.
+    openNewWindow();
+    if (!guard || m_view->findWindowIdByBufferId(targetWs, incomingId) == InvalidViewWindowId ||
+        !oldWindowIsCurrent()) {
+      return;
+    }
+    // closeViewWindow takes over the exact-ID guard before firing its hook.
+    m_transitioningWindows.remove(oldWindowId);
+    closeViewWindow(oldWindowId, false);
+    return;
+  }
+
+  ViewWindowCloseEvent closeEvent;
+  closeEvent.windowId = oldWindowId;
+  closeEvent.bufferId = oldBufferId;
+  closeEvent.force = false;
+  const bool vetoed = wsSvc->fireViewWindowBeforeClose(closeEvent);
+  if (!guard) {
+    return;
+  }
+  if (vetoed || !oldWindowIsCurrent() || !p_buffer.isValid() || p_buffer.getBuffer().isEmpty() ||
+      !m_view->canReuseViewWindow(oldWindowId, fileType)) {
+    closeUnownedOpenBuffer(incomingId);
+    return;
+  }
+  // A hook may have opened the requested buffer itself. Preserve deduplication
+  // without touching the captured outgoing tab in that case.
+  existingWindowId = m_view->findWindowIdByBufferId(targetWs, incomingId);
+  if (existingWindowId != InvalidViewWindowId) {
+    m_view->setCurrentBuffer(targetWs, incomingId, true);
+    m_view->applyFileOpenSettings(existingWindowId, settings);
+    return;
+  }
+
+  const bool addedMembership = !wsSvc->getWorkspace(targetWs)
+                                    .value(QStringLiteral("bufferIds"))
+                                    .toArray()
+                                    .contains(incomingId);
+  if (addedMembership && !wsSvc->addBuffer(targetWs, incomingId)) {
+    closeUnownedOpenBuffer(incomingId);
+    return;
+  }
+  m_replacementCandidates.insert(targetWs, incomingId);
+  const auto candidateGuard = qScopeGuard([guard, targetWs, incomingId]() {
+    if (guard) {
+      guard->m_replacementCandidates.remove(targetWs, incomingId);
+    }
+  });
+
+  ClosedTabRecord closedTab;
+  bool replaced = false;
+  {
+    // Qt focus and modal callbacks may run while the retained window has its
+    // new buffer but vxcore still owns both. Defer controller notifications,
+    // not editor mode signals needed by the concrete resource bind.
+    const bool wasReplacing = m_replacingBuffer;
+    const bool wereSignalsBlocked = blockSignals(true);
+    m_replacingBuffer = true;
+    const auto publicationGuard = qScopeGuard([guard, wasReplacing, wereSignalsBlocked]() {
+      if (guard) {
+        guard->m_replacingBuffer = wasReplacing;
+        guard->blockSignals(wereSignalsBlocked);
+      }
+    });
+    replaced = m_view->replaceViewWindowBuffer(oldWindowId, p_buffer, settings, &closedTab);
+    if (!guard) {
+      return;
+    }
+    if (!replaced) {
+      // A nested open can have acquired the candidate while the prompt ran.
+      // Remove only this attempt's membership, never another live view's.
+      if (addedMembership &&
+          m_view->findWindowIdByBufferId(targetWs, incomingId) == InvalidViewWindowId) {
+        wsSvc->removeBuffer(targetWs, incomingId);
+      }
+      if (oldWindowIsCurrent()) {
+        wsSvc->setBufferOrder(targetWs, oldOrder);
+        wsSvc->setCurrentBuffer(targetWs, oldCurrentBuffer);
+        m_view->setCurrentBuffer(targetWs, oldBufferId, false);
+        if (!guard) {
+          return;
+        }
+        if (m_currentWorkspaceId == targetWs) {
+          m_currentWindowId = oldWindowId;
+        }
+      }
+      closeUnownedOpenBuffer(incomingId);
+    } else {
+      // Keep the workspace nonempty throughout the switch and leave sibling
+      // views' buffers/resources alive. This is not a terminal window close.
+      wsSvc->removeBuffer(targetWs, oldBufferId);
+      bufferSvc->forgetBufferIfClosed(oldBufferId);
+      oldOrder.removeAll(incomingId);
+      const auto oldIndex = oldOrder.indexOf(oldBufferId);
+      if (oldIndex >= 0) {
+        oldOrder[oldIndex] = incomingId;
+      } else {
+        oldOrder.append(incomingId);
+      }
+      wsSvc->setBufferOrder(targetWs, oldOrder);
+      wsSvc->setCurrentBuffer(targetWs, incomingId);
+      if (m_lockedWindows) {
+        m_lockedWindows->remove(oldWindowId);
+      }
+      if (p_buffer.isEncrypted()) {
+        if (!m_protectedWindows) {
+          m_protectedWindows.reset(new QSet<ID>);
+        }
+        m_protectedWindows->insert(oldWindowId);
+      } else if (m_protectedWindows) {
+        m_protectedWindows->remove(oldWindowId);
+      }
+      if (closedTab.nodeId.isValid()) {
+        if (m_closedTabStack.size() >= c_maxClosedTabRecords) {
+          m_closedTabStack.removeFirst();
+        }
+        m_closedTabStack.append(closedTab);
+      }
+      m_view->setCurrentBuffer(targetWs, incomingId, false);
+      if (!guard) {
+        return;
+      }
+      if (m_currentWorkspaceId == targetWs) {
+        m_currentWindowId = oldWindowId;
+      }
+    }
+  }
+  if (!replaced) {
+    emit windowsChanged();
+    if (guard) {
+      emit currentViewWindowChanged();
+    }
+    return;
+  }
+
+  wsSvc->fireViewWindowAfterClose(closeEvent);
+  if (!guard) {
+    return;
+  }
+  wsSvc->fireViewWindowAfterOpen(event);
+  if (!guard) {
+    return;
+  }
+  // Hooks may focus another tab/split; the captured ID still identifies the
+  // replaced tab. Publish even when that ID did not change.
+  if (m_view->findWindowIdByBufferId(targetWs, incomingId) == oldWindowId) {
+    setCurrentViewSplit(targetWs, false);
+    if (!guard) {
+      return;
+    }
+    m_view->setCurrentBuffer(targetWs, incomingId, true);
+    if (!guard) {
+      return;
+    }
+    if (m_currentWorkspaceId == targetWs) {
+      m_currentWindowId = oldWindowId;
+    }
+  }
+  emit windowsChanged();
+  if (guard) {
+    emit currentViewWindowChanged();
+  }
+}
+
+void ViewAreaController::closeUnownedOpenBuffer(const QString &p_bufferId) {
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  auto *bufferSvc = m_services.get<BufferService>();
+  if (p_bufferId.isEmpty() || !wsSvc || !bufferSvc) {
+    return;
+  }
+  const auto workspaces = wsSvc->listWorkspaces();
+  for (const auto &workspace : workspaces) {
+    if (workspace.toObject().value(QStringLiteral("bufferIds")).toArray().contains(p_bufferId)) {
+      return;
+    }
+  }
+  if (!bufferSvc->forgetBufferIfClosed(p_bufferId) && !bufferSvc->closeBuffer(p_bufferId)) {
+    qWarning() << "ViewAreaController: unable to close unowned buffer after failed open:"
+               << p_bufferId;
+  }
 }
 
 QString ViewAreaController::ensureCliDetachedWorkspace() {
@@ -1218,22 +1462,38 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
     }
   }
   const bool detached = !p_detachedWorkspaceId.isEmpty();
-  const QString registerWs = detached ? p_detachedWorkspaceId : m_currentWorkspaceId;
-
-  auto *wsSvc = m_services.get<WorkspaceCoreService>();
-  if (m_shouldPropagateToCore) {
-    if (wsSvc && !registerWs.isEmpty()) {
-      wsSvc->addBuffer(registerWs, p_buffer.id());
+  QString registerWs = detached ? p_detachedWorkspaceId : m_currentWorkspaceId;
+  if (!detached && m_view &&
+      m_view->findWindowIdByBufferId(registerWs, p_buffer.id()) != p_windowId) {
+    // Factory/setup callbacks may have changed focus since openBuffer captured
+    // its destination. Register in the actual owning split, not the new focus.
+    for (auto it = m_workspaces.cbegin(); it != m_workspaces.cend(); ++it) {
+      if (m_view->findWindowIdByBufferId(it.key(), p_buffer.id()) == p_windowId) {
+        registerWs = it.key();
+        break;
+      }
     }
   }
-  // Only track the current window during normal operation, not during session
-  // restore. During restore, every opened buffer would overwrite m_currentWindowId,
-  // leaving it pointing to the last-opened buffer instead of the intended current
-  // one. The singleShot(0) in ViewArea2 re-syncs from ground-truth UI state after
-  // all deferred Qt signals have settled. For a detached open, do NOT retarget
-  // the main window's current window either.
-  if (m_shouldPropagateToCore && !detached) {
-    m_currentWindowId = p_windowId;
+
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  const bool membershipReady =
+      !m_shouldPropagateToCore || !wsSvc ||
+      (!registerWs.isEmpty() && wsSvc->addBuffer(registerWs, p_buffer.id()));
+  // addTab can publish the first current tab before its workspace membership
+  // exists. Reconcile the actual selected tab after admission, even if its
+  // window ID is unchanged. Background opens must not select the new tab;
+  // restore keeps its persisted current buffer until all tabs are rebuilt.
+  if (m_shouldPropagateToCore && membershipReady) {
+    if (!detached && m_view && registerWs == m_currentWorkspaceId) {
+      ID currentId = InvalidViewWindowId;
+      QString currentBufferId;
+      m_view->getCurrentWindowInfoForWorkspace(registerWs, currentId, currentBufferId);
+      if (currentId == p_windowId) {
+        setCurrentViewWindow(currentId, currentBufferId);
+      }
+    } else if (detached && p_settings.m_focus && wsSvc) {
+      wsSvc->setCurrentBuffer(registerWs, p_buffer.id());
+    }
   }
 
   if (wsSvc) {
@@ -1243,10 +1503,8 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
     wsSvc->fireViewWindowAfterOpen(ha);
   }
 
-  if (p_settings.m_focus && !detached) {
-    if (m_view) {
-      m_view->setCurrentViewSplit(m_currentWorkspaceId, true);
-    }
+  if (membershipReady && p_settings.m_focus && !detached) {
+    setCurrentViewSplit(registerWs, true);
   }
   emit windowsChanged();
   emit currentViewWindowChanged();
@@ -1375,17 +1633,47 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
 }
 
 bool ViewAreaController::closeViewWindow(ID p_windowId, bool p_force) {
-  if (p_windowId == InvalidViewWindowId) {
+  if (p_windowId == InvalidViewWindowId || !m_view || m_transitioningWindows.contains(p_windowId)) {
     return false;
   }
+  const QPointer<ViewAreaController> guard(this);
+  m_transitioningWindows.insert(p_windowId);
+  const auto transitionGuard = qScopeGuard([guard, p_windowId]() {
+    if (guard) {
+      guard->m_transitioningWindows.remove(p_windowId);
+    }
+  });
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  QString workspaceId;
+  QString bufferId;
+  if (wsSvc) {
+    const auto workspaces = wsSvc->listWorkspaces();
+    for (const auto &workspace : workspaces) {
+      const auto config = workspace.toObject();
+      const auto wsId = config.value(QStringLiteral("id")).toString();
+      const auto ids = config.value(QStringLiteral("bufferIds")).toArray();
+      for (const auto &id : ids) {
+        if (m_view->findWindowIdByBufferId(wsId, id.toString()) == p_windowId) {
+          workspaceId = wsId;
+          bufferId = id.toString();
+          break;
+        }
+      }
+      if (!workspaceId.isEmpty()) {
+        break;
+      }
+    }
+  }
   ViewWindowCloseEvent event;
   event.windowId = p_windowId;
+  event.bufferId = bufferId;
   event.force = p_force;
   if (wsSvc && wsSvc->fireViewWindowBeforeClose(event)) {
     return false;
   }
-  if (!m_view) {
+  if (!guard || !m_view ||
+      (!workspaceId.isEmpty() &&
+       m_view->findWindowIdByBufferId(workspaceId, bufferId) != p_windowId)) {
     return false;
   }
   return m_view->closeViewWindow(p_windowId, p_force);
@@ -1557,6 +1845,7 @@ void ViewAreaController::openLastClosedFile() {
   }
 
   FileOpenSettings settings;
+  settings.m_alwaysNewWindow = true;
   settings.m_mode = record.mode;
   settings.m_forceMode = true;
   settings.m_lineNumber = record.cursorPosition;
@@ -1626,6 +1915,7 @@ void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction 
       if (buf.isValid()) {
         m_currentWorkspaceId = newWsId;
         FileOpenSettings settings;
+        settings.m_alwaysNewWindow = true;
         settings.m_focus = true;
         openBuffer(buf, settings);
       }
@@ -1649,6 +1939,14 @@ bool ViewAreaController::removeViewSplit(const QString &p_workspaceId, bool p_ke
   int totalSplitCount = m_view ? m_view->getViewSplitCount() : 0;
   if (p_workspaceId.isEmpty() || totalSplitCount <= 1) {
     return false;
+  }
+  if (m_view && !m_transitioningWindows.isEmpty()) {
+    const auto windows = m_view->getViewWindowIdsForWorkspace(p_workspaceId);
+    for (const ID id : windows) {
+      if (m_transitioningWindows.contains(id)) {
+        return false;
+      }
+    }
   }
 
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
@@ -1744,7 +2042,7 @@ void ViewAreaController::moveViewWindowOneSplit(const QString &p_srcWorkspaceId,
                                                 const QString &p_dstWorkspaceId,
                                                 const QString &p_bufferId) {
   if (p_srcWorkspaceId.isEmpty() || p_windowId == InvalidViewWindowId ||
-      p_dstWorkspaceId.isEmpty()) {
+      p_dstWorkspaceId.isEmpty() || m_transitioningWindows.contains(p_windowId)) {
     return;
   }
 
@@ -1818,7 +2116,8 @@ bool ViewAreaController::transferBufferRegistration(const QString &p_srcWorkspac
 
 bool ViewAreaController::detachViewWindow(const QString &p_srcWorkspaceId, ID p_windowId,
                                           const QString &p_bufferId) {
-  if (p_srcWorkspaceId.isEmpty() || p_windowId == InvalidViewWindowId || !m_view) {
+  if (p_srcWorkspaceId.isEmpty() || p_windowId == InvalidViewWindowId || !m_view ||
+      m_transitioningWindows.contains(p_windowId)) {
     return false;
   }
 
@@ -2131,6 +2430,18 @@ void ViewAreaController::setCurrentViewSplit(const QString &p_workspaceId, bool 
 }
 
 void ViewAreaController::setCurrentViewWindow(ID p_windowId, const QString &p_bufferId) {
+  if (m_replacingBuffer && m_transitioningWindows.contains(p_windowId)) {
+    return;
+  }
+  // The first addTab notification may precede workspace admission, and buffer
+  // replacement deliberately retains the window ID. Keep core identity in
+  // sync even when no new current-window notification is needed.
+  if (m_shouldPropagateToCore && !p_bufferId.isEmpty() && !m_currentWorkspaceId.isEmpty()) {
+    auto *wsSvc = m_services.get<WorkspaceCoreService>();
+    if (wsSvc) {
+      wsSvc->setCurrentBuffer(m_currentWorkspaceId, p_bufferId);
+    }
+  }
   if (m_currentWindowId == p_windowId) {
     return;
   }
@@ -2153,14 +2464,6 @@ void ViewAreaController::setCurrentViewWindow(ID p_windowId, const QString &p_bu
       if (buffer.isValid())
         buffers->openBuffer(buffer.nodeId());
     });
-  }
-
-  // Update vxcore's current buffer tracking for the active workspace.
-  if (m_shouldPropagateToCore && !p_bufferId.isEmpty() && !m_currentWorkspaceId.isEmpty()) {
-    auto *wsSvc = m_services.get<WorkspaceCoreService>();
-    if (wsSvc) {
-      wsSvc->setCurrentBuffer(m_currentWorkspaceId, p_bufferId);
-    }
   }
 
   emit currentViewWindowChanged();
@@ -2380,6 +2683,14 @@ void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
   }
   if (p_currentWorkspaceId == p_targetWorkspaceId) {
     return;
+  }
+  if (m_view && !m_transitioningWindows.isEmpty()) {
+    const auto windows = m_view->getViewWindowIdsForWorkspace(p_currentWorkspaceId);
+    for (const ID id : windows) {
+      if (m_transitioningWindows.contains(id)) {
+        return;
+      }
+    }
   }
 
   // A workspace can only be shown in one ViewSplit at a time.
@@ -2691,6 +3002,7 @@ bool ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
 
   if (buf.isEncrypted() && buf.editorType().isEmpty()) {
     FileOpenSettings settings;
+    settings.m_alwaysNewWindow = true;
     settings.m_focus = p_focus;
     settings.m_mode = p_mode;
     settings.m_lineNumber = p_lineNumber;
@@ -2734,6 +3046,7 @@ bool ViewAreaController::openRestoredBuffer(BufferService *p_bufferSvc,
                        << "mode:" << static_cast<int>(p_mode) << "lineNumber:" << p_lineNumber;
 
   FileOpenSettings settings;
+  settings.m_alwaysNewWindow = true;
   settings.m_focus = p_focus;
   settings.m_mode = p_mode;
   settings.m_lineNumber = p_lineNumber;

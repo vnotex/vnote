@@ -80,7 +80,7 @@ struct FileOpenSettings {
   // Anchor (e.g. heading slug) to scroll to after opening the file.
   QString m_anchor;
 
-  // Whether always open a new window for file.
+  // True bypasses replacing another note; false follows the new-tab preference.
   bool m_alwaysNewWindow = false;
 
   // Whether to open the file in a detached view split (top-level DetachedWindow

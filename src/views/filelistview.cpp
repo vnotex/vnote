@@ -327,7 +327,7 @@ void FileListView::mousePressEvent(QMouseEvent *p_event) {
     if (idx.isValid()) {
       NodeInfo nodeInfo = nodeInfoFromIndex(idx);
       if (nodeInfo.isValid() && !nodeInfo.isFolder && m_controller) {
-        m_controller->openNode(nodeInfo.id);
+        m_controller->openNode(nodeInfo.id, p_event->modifiers().testFlag(Qt::ControlModifier));
       }
     }
   }
@@ -344,7 +344,7 @@ void FileListView::mouseDoubleClickEvent(QMouseEvent *p_event) {
   if (nodeInfo.isValid()) {
     // For files, activate (open)
     if (!nodeInfo.isFolder && m_controller) {
-      m_controller->openNode(nodeInfo.id);
+      m_controller->openNode(nodeInfo.id, p_event->modifiers().testFlag(Qt::ControlModifier));
       p_event->accept();
       return;
     }
@@ -357,9 +357,13 @@ void FileListView::keyPressEvent(QKeyEvent *p_event) {
   switch (p_event->key()) {
   case Qt::Key_Return:
   case Qt::Key_Enter: {
+    // Enter commits inline renaming, including when Ctrl is held.
+    if (state() == QAbstractItemView::EditingState) {
+      break;
+    }
     NodeInfo nodeInfo = nodeInfoFromIndex(currentIndex());
     if (nodeInfo.isValid() && !nodeInfo.isFolder && m_controller) {
-      m_controller->openNode(nodeInfo.id);
+      m_controller->openNode(nodeInfo.id, p_event->modifiers().testFlag(Qt::ControlModifier));
       p_event->accept();
       return;
     }

@@ -63,6 +63,8 @@ class FindAndReplaceWidget2;
 //   };
 class ViewWindow2 : public QFrame {
   Q_OBJECT
+  friend class ViewArea2;
+
 public:
   // Constructor receives ServiceLocator for dependency injection and Buffer2 as the file handle.
   // @p_services: ServiceLocator to access application services (DI).
@@ -83,6 +85,11 @@ public:
 
   // Get the node identifier (notebook + relative path) for this window's file.
   const NodeIdentifier &getNodeId() const;
+
+  const QString &getFileType() const { return m_fileType; }
+  void setFileType(const QString &p_fileType) { m_fileType = p_fileType; }
+  virtual bool supportsBufferReplacement() const { return false; }
+  bool replaceBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings);
 
   // Public accessor for the current selection (used by task context to resolve
   // ${selectedText}). Delegates to the protected virtual selectedText().
@@ -339,6 +346,10 @@ protected slots:
   virtual void handleFindAndReplaceWidgetOpened();
 
 protected:
+  virtual void releaseBufferResources() {}
+  virtual void bindBufferResources() {}
+  quint64 getBufferGeneration() const { return m_bufferGeneration; }
+
   // Defined INLINE on purpose: several tests link a hand-written stub of
   // viewwindow2.cpp rather than compiling it, so an out-of-line default would
   // make every one of them fail to link on an unresolved symbol.
@@ -683,6 +694,9 @@ private:
   ViewPositionState m_contentReplacementPosition;
 
   Buffer2 m_buffer;
+  QString m_fileType;
+  bool m_bufferReplacementInProgress = false;
+  quint64 m_bufferGeneration = 0;
 
   // Main vertical layout: [topLayout] [centralWidget (stretch)] [bottomLayout]
   // Managed by QObject.

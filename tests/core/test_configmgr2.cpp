@@ -80,6 +80,7 @@ private slots:
   void testHeadingFolding_defaultsMergeAndRoundTrip();
   void testInactiveReaderTimeoutMinutes_roundTripAndNormalization();
   void testConcealment_defaultsMergeAndPersistedOptOut();
+  void testAlwaysOpenNotesInNewTabs_defaultsMergeAndPersistedOptOut();
   void testAutoSectionNumber_defaultsMergeAndPersistedOptOut();
   void testEditSectionNumber_mergeAndIndependentPersistence();
   void testSectionNumberPattern_mergeNormalizationAndPersistence_data();
@@ -271,17 +272,19 @@ void TestConfigMgr2::testEditorZoom_sessionPersistence_data() {
   QTest::addColumn<QJsonObject>("initialSession");
   QTest::addColumn<double>("initialMindMapZoom");
   QTest::addColumn<double>("initialTypstZoom");
-  QTest::newRow("absent-editor")
-      << QJsonObject{{QStringLiteral("core"), QJsonObject()}} << 1.0 << 1.0;
+  QTest::newRow("absent-editor") << QJsonObject{{QStringLiteral("core"), QJsonObject()}} << 1.0
+                                 << 1.0;
   QTest::newRow("absent-zoom-keys")
       << QJsonObject{{QStringLiteral("editor"), QJsonObject()}} << 1.0 << 1.0;
   QTest::newRow("legacy-mind-map-fit")
       << QJsonObject{{QStringLiteral("editor"),
-                      QJsonObject{{QStringLiteral("mindMapZoomFactor"), 0.0}}}} << 0.0 << 1.0;
+                      QJsonObject{{QStringLiteral("mindMapZoomFactor"), 0.0}}}}
+      << 0.0 << 1.0;
   QTest::newRow("explicit-fit-width")
       << QJsonObject{{QStringLiteral("editor"),
                       QJsonObject{{QStringLiteral("mindMapZoomFactor"), -1.0},
-                                  {QStringLiteral("typstZoomFactor"), -1.0}}}} << -1.0 << -1.0;
+                                  {QStringLiteral("typstZoomFactor"), -1.0}}}}
+      << -1.0 << -1.0;
 }
 
 void TestConfigMgr2::testEditorZoom_sessionPersistence() {
@@ -807,10 +810,9 @@ void TestConfigMgr2::testInactiveReaderTimeoutMinutes_roundTripAndNormalization(
     {
       ConfigMgr2 restarted(m_configService);
       restarted.init();
-      QCOMPARE(restarted.getEditorConfig()
-                   .getMarkdownEditorConfig()
-                   .getInactiveReaderTimeoutMinutes(),
-               testCase.m_expected);
+      QCOMPARE(
+          restarted.getEditorConfig().getMarkdownEditorConfig().getInactiveReaderTimeoutMinutes(),
+          testCase.m_expected);
     }
 
     // Start from the default so the setter exercises the normal pending-write path.
@@ -851,6 +853,37 @@ void TestConfigMgr2::testConcealment_defaultsMergeAndPersistedOptOut() {
   ConfigMgr2 restarted(m_configService);
   restarted.init();
   QVERIFY(!restarted.getEditorConfig().getMarkdownEditorConfig().getConcealmentEnabled());
+}
+
+void TestConfigMgr2::testAlwaysOpenNotesInNewTabs_defaultsMergeAndPersistedOptOut() {
+  const auto original =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  const QStringList path{QStringLiteral("core"), QStringLiteral("alwaysOpenNotesInNewTabs")};
+  MainConfig defaults(m_configMgr);
+  QCOMPARE(valueAt(loadThroughMergePath(withoutKeyAt(defaults.toJson(), path)), path),
+           QJsonValue(true));
+  for (const auto &invalid :
+       {QJsonValue(QJsonValue::Null), QJsonValue(0), QJsonValue(QStringLiteral("false"))}) {
+    QCOMPARE(valueAt(loadThroughMergePath(QJsonObject{{path[0], QJsonObject{{path[1], invalid}}}}),
+                     path),
+             QJsonValue(true));
+  }
+  {
+    ConfigMgr2 settings(m_configService);
+    settings.init();
+    QVERIFY(settings.getCoreConfig().getAlwaysOpenNotesInNewTabs());
+    settings.getCoreConfig().setAlwaysOpenNotesInNewTabs(false);
+  }
+  const auto persisted =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  QCOMPARE(valueAt(persisted, path), QJsonValue(false));
+  QCOMPARE(valueAt(loadThroughMergePath(persisted), path), QJsonValue(false));
+  ConfigMgr2 restarted(m_configService);
+  restarted.init();
+  QVERIFY(!restarted.getCoreConfig().getAlwaysOpenNotesInNewTabs());
 }
 
 void TestConfigMgr2::testAutoSectionNumber_defaultsMergeAndPersistedOptOut() {

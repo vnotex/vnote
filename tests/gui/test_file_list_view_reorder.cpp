@@ -105,7 +105,7 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
 }
 void NotebookNodeController::newNote(const NodeIdentifier &) {}
 void NotebookNodeController::newFolder(const NodeIdentifier &) {}
-void NotebookNodeController::openNode(const NodeIdentifier &) {}
+void NotebookNodeController::openNode(const NodeIdentifier &, bool) {}
 void NotebookNodeController::openNodeWithDefaultApp(const NodeIdentifier &) {}
 void NotebookNodeController::deleteNodes(const QList<NodeIdentifier> &) {}
 void NotebookNodeController::removeNodesFromNotebook(const QList<NodeIdentifier> &) {}
@@ -143,7 +143,7 @@ void NotebookNodeController::reloadNode(const NodeIdentifier &) {}
 void NotebookNodeController::reloadAll() {}
 void NotebookNodeController::pinNodeToQuickAccess(const NodeIdentifier &) {}
 void NotebookNodeController::manageNodeTags(const NodeIdentifier &) {}
-void NotebookNodeController::openNodes(const QList<NodeIdentifier> &, bool) {}
+void NotebookNodeController::openNodes(const QList<NodeIdentifier> &, bool, bool) {}
 void NotebookNodeController::openNodesWithCommand(const QList<NodeIdentifier> &, const QString &) {}
 void NotebookNodeController::duplicateNodes(const QList<NodeIdentifier> &) {}
 void NotebookNodeController::copyNodePaths(const QList<NodeIdentifier> &) {}

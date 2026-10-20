@@ -141,7 +141,12 @@ void MindMapViewWindow2::connectEditorSignals() {
                 action, getServices().get<ConfigMgr2>()->getCoreConfig().getShortcut(
                             CoreConfig::Shortcut::Export));
             action->setEnabled(m_contentLoaded);
-            connect(action, &QAction::triggered, this, &MindMapViewWindow2::exportRequested);
+            const auto generation = m_generation;
+            connect(action, &QAction::triggered, this, [this, generation]() {
+              if (generation == m_generation && m_contentLoaded) {
+                emit exportRequested();
+              }
+            });
             p_menu->insertAction(m_editor->commandAction(QStringLiteral("showHelp")), action);
           });
 }
@@ -203,6 +208,13 @@ void MindMapViewWindow2::setupToolBar() {
 
 void MindMapViewWindow2::syncInsertionActions() {
   const bool available = m_contentLoaded && m_editor->canInsert();
+  // The Tools panel may be reparented outside the disabled editor.
+  if (auto *panel = m_editor->nodePropertiesPanel()) {
+    panel->setEnabled(m_contentLoaded && m_editor->isEnabled());
+    if (panel->parentWidget() != m_editor) {
+      panel->setVisible(m_contentLoaded);
+    }
+  }
   if (m_insertLinkAction) {
     m_insertLinkAction->setEnabled(available);
     m_insertImageAction->setEnabled(available);
@@ -371,7 +383,7 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
   p_toolBar->addSeparator();
   m_zoomToolBar = ViewWindowToolBarHelper2::addZoomToolBar(p_toolBar, getServices());
   m_zoomToolBar->setShortcutTips(QKeySequence(Qt::CTRL | Qt::Key_Equal),
-                                QKeySequence(Qt::CTRL | Qt::Key_Minus));
+                                 QKeySequence(Qt::CTRL | Qt::Key_Minus));
   connect(m_zoomToolBar, &ZoomToolBar::zoomRequested, this, &MindMapViewWindow2::zoom);
   connect(m_zoomToolBar, &ZoomToolBar::zoomSelected, this, [this](qreal p_zoom) {
     if (m_contentLoaded) {
@@ -391,8 +403,7 @@ void MindMapViewWindow2::addAdditionalViewToolBarActions(QToolBar *p_toolBar) {
 qreal MindMapViewWindow2::zoomChoice() const {
   using ZoomMode = m3::qt::MindMapEditor::ZoomMode;
   const auto mode = m_editor->zoomMode();
-  return mode == ZoomMode::Width ? -1.0
-         : mode == ZoomMode::Page ? 0.0 : m_editor->zoomFactor();
+  return mode == ZoomMode::Width ? -1.0 : mode == ZoomMode::Page ? 0.0 : m_editor->zoomFactor();
 }
 
 void MindMapViewWindow2::applyZoom(qreal p_zoom) {
@@ -408,6 +419,35 @@ void MindMapViewWindow2::applyZoom(qreal p_zoom) {
 void MindMapViewWindow2::syncZoomControls() {
   m_zoomToolBar->setEnabled(m_contentLoaded);
   m_zoomToolBar->setZoom(zoomChoice());
+}
+
+void MindMapViewWindow2::releaseBufferResources() {
+  ++m_generation;
+  m_propagateEditorToBuffer = false;
+  m_contentLoaded = false;
+  const QPointer<MindMapViewWindow2> guard(this);
+  // Revoke insertion dialogs, image overlays, image requests and link consent
+  // while the base still owns the outgoing identity. No native widget is rebuilt.
+  m_editor->setBuffer(Buffer2());
+  if (!guard) {
+    return;
+  }
+  m_editor->clearFind();
+  if (!guard) {
+    return;
+  }
+  syncZoomControls();
+  syncLayoutControls();
+  syncInsertionActions();
+  clearOutline();
+}
+
+void MindMapViewWindow2::bindBufferResources() {
+  m_lastEditorError.clear();
+  m_loadErrorBanner->hide();
+  m_propagateEditorToBuffer = true;
+  // syncEditorFromBuffer() binds the incoming buffer and unconditionally loads
+  // its native document, resetting history, selection, search and camera.
 }
 
 void MindMapViewWindow2::syncEditorFromBuffer() {
@@ -516,21 +556,21 @@ void MindMapViewWindow2::printDocument(const QSharedPointer<QPrinter> &p_printer
     }
   });
   const bool committed = m_editor->commitActiveEdit(true);
-  if (!guard) {
+  if (!guard || generation != m_generation) {
     return;
   }
   if (!committed) {
     showMessage(tr("Failed to print"));
     return;
   }
-  if (generation != m_generation || !m_contentLoaded || !isEnabled() ||
-      !m_editor->isEnabled() || !getBuffer().isValid() || getBuffer().isEncrypted()) {
+  if (generation != m_generation || !m_contentLoaded || !isEnabled() || !m_editor->isEnabled() ||
+      !getBuffer().isValid() || getBuffer().isEncrypted()) {
     return;
   }
   QPainter painter;
   const bool started = painter.begin(p_printer.get());
   // Native print drivers may present their own modal output dialog during begin().
-  if (!guard) {
+  if (!guard || generation != m_generation) {
     p_printer->abort();
     return;
   }
@@ -538,16 +578,16 @@ void MindMapViewWindow2::printDocument(const QSharedPointer<QPrinter> &p_printer
     showMessage(tr("Failed to print"));
     return;
   }
-  if (generation != m_generation || !m_contentLoaded || !isEnabled() ||
-      !m_editor->isEnabled() || !getBuffer().isValid() || getBuffer().isEncrypted()) {
+  if (generation != m_generation || !m_contentLoaded || !isEnabled() || !m_editor->isEnabled() ||
+      !getBuffer().isValid() || getBuffer().isEncrypted()) {
     p_printer->abort();
     return;
   }
-  const bool rendered = m_editor->renderMap(
-      painter, QRectF(0, 0, p_printer->width(), p_printer->height()));
+  const bool rendered =
+      m_editor->renderMap(painter, QRectF(0, 0, p_printer->width(), p_printer->height()));
   const bool finished = painter.end();
   const auto state = p_printer->printerState();
-  if (guard) {
+  if (guard && generation == m_generation) {
     showMessage(rendered && finished && state != QPrinter::Error && state != QPrinter::Aborted
                     ? tr("Printing completed")
                     : tr("Failed to print"));
@@ -679,8 +719,9 @@ void MindMapViewWindow2::clearOutline() {
   m_outlineNodeIds.clear();
   m_outlineIndexes.clear();
   const QPointer<MindMapViewWindow2> guard(this);
+  const auto generation = m_generation;
   m_outlineProvider->setCurrentHeadingIndex(-1);
-  if (guard) {
+  if (guard && generation == m_generation) {
     m_outlineProvider->setOutline(QSharedPointer<Outline>::create());
   }
 }

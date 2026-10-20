@@ -605,9 +605,9 @@ void NotebookNodeController::newFolder(const NodeIdentifier &p_parentId) {
   emit newFolderRequested(parentId);
 }
 
-void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId) {
+void NotebookNodeController::openNode(const NodeIdentifier &p_nodeId, bool p_alwaysNewWindow) {
   // Delegate to list version (single source of truth for open logic).
-  openNodes({p_nodeId});
+  openNodes({p_nodeId}, false, p_alwaysNewWindow);
 }
 
 void NotebookNodeController::openNodeWithDefaultApp(const NodeIdentifier &p_nodeId) {
@@ -1723,7 +1723,8 @@ void NotebookNodeController::handleImportFolder(const NodeIdentifier &p_targetFo
 
 // Multi-node Open: opens each non-folder node in order. Folders are silently skipped
 // (the first non-folder note opened becomes the focused tab via downstream BufferMgr behavior).
-void NotebookNodeController::openNodes(const QList<NodeIdentifier> &p_ids, bool p_detached) {
+void NotebookNodeController::openNodes(const QList<NodeIdentifier> &p_ids, bool p_detached,
+                                       bool p_alwaysNewWindow) {
   int skipped = 0;
   auto *configMgr = m_services.get<ConfigMgr2>();
   auto *notebookService = m_services.get<NotebookCoreService>();
@@ -1779,6 +1780,7 @@ void NotebookNodeController::openNodes(const QList<NodeIdentifier> &p_ids, bool 
       settings.m_mode = configMgr->getCoreConfig().getDefaultOpenMode();
     }
     settings.m_detachedView = p_detached;
+    settings.m_alwaysNewWindow = p_alwaysNewWindow || p_detached || p_ids.size() > 1;
     emit nodeActivated(id, settings);
   }
 

@@ -29,6 +29,8 @@ private:
 
   QComboBox *m_defaultOpenModeComboBox = nullptr;
 
+  QCheckBox *m_alwaysOpenNotesInNewTabsCheckBox = nullptr;
+
   QSpinBox *m_searchMaxResultsSpinBox = nullptr;
 
   QCheckBox *m_recycleBinAutoCleanupCheckBox = nullptr;

@@ -1,17 +1,23 @@
 #include "pdfviewwindow2.h"
 
+#include <stdexcept>
+
 #include <QActionGroup>
 #include <QDesktopServices>
 #include <QEvent>
+#include <QEventLoop>
 #include <QJsonArray>
 #include <QKeySequence>
 #include <QLayout>
 #include <QMenu>
 #include <QPainter>
+#include <QPointer>
 #include <QSignalBlocker>
 #include <QToolBar>
 #include <QToolButton>
 #include <QUrl>
+#include <QWebChannel>
+#include <QWebEngineLoadingInfo>
 #include <QWebEnginePage>
 
 #include <controllers/commentcontroller.h>
@@ -92,6 +98,7 @@ PdfViewWindow2::PdfViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buff
 }
 
 PdfViewWindow2::~PdfViewWindow2() {
+  m_readerFlushLease.reset();
   // The confirmed-exit connection still needs the adapter and saved view state.
   setPresentationMode(false);
   // The debounce timer would otherwise drop the user's last edit when the tab
@@ -212,7 +219,7 @@ void PdfViewWindow2::setupViewerToolBarActions(QToolBar *p_toolBar) {
         m_viewerToolBar->setPresentationMode(isViewFullScreen());
       });
   m_viewerToolBar->setShortcutTips(QKeySequence(Qt::CTRL | Qt::Key_Equal),
-                                  QKeySequence(Qt::CTRL | Qt::Key_Minus));
+                                   QKeySequence(Qt::CTRL | Qt::Key_Minus));
 
   connect(m_viewerToolBar, &PdfViewerToolBar::pageRequested, this, [this](int p_page) {
     if (auto *a = adapter()) {
@@ -518,6 +525,9 @@ void PdfViewWindow2::setupComments() {
   // persisted as the highlight tool's colour and the two pickers cannot
   // disagree.
   connect(m_viewer, &PdfViewer::highlightSelectionRequested, this, [this](const QString &p_color) {
+    if (m_documentResetPending || m_contextMenuGeneration != getBufferGeneration()) {
+      return;
+    }
     auto *configMgr = getServices().get<ConfigMgr2>();
     if (!configMgr) {
       return;
@@ -539,6 +549,7 @@ void PdfViewWindow2::setupComments() {
 
   const auto &buffer = getBuffer();
   m_commentController->setActiveFile(buffer.isValid() ? buffer.nodeId() : NodeIdentifier());
+  registerReaderFlushParticipant();
 
   // The web side can leave a tool by itself (Esc, or the one-shot Text tool
   // completing), so the toolbar follows the adapter rather than assuming its
@@ -553,12 +564,94 @@ void PdfViewWindow2::setupComments() {
   syncToolBarState();
 }
 
+void PdfViewWindow2::registerReaderFlushParticipant() {
+  m_readerFlushLease.reset();
+  auto *comments = getServices().get<CommentService>();
+  const auto &buffer = getBuffer();
+  if (!comments || !buffer.isValid() || buffer.nodeId().isVirtual()) {
+    return;
+  }
+  m_readerFlushLease = comments->registerFlushParticipant(
+      buffer.nodeId(), [guard = QPointer<PdfViewWindow2>(this)]() {
+        // CommentService treats a failed participant as a failed checkpoint.
+        if (guard && !guard->flushPendingReaderComments()) {
+          throw std::runtime_error("PDF comment draft could not be read");
+        }
+      });
+}
+
+bool PdfViewWindow2::flushPendingReaderComments() {
+  if (m_documentResetPending) {
+    // The incoming document is not exposed to JavaScript yet; only the dock
+    // can have edits, and its controller is already a flush participant.
+    return true;
+  }
+  if (!m_viewer || !m_commentController) {
+    return false;
+  }
+
+  // Free-text typing has a JS debounce as well as the controller's save timer.
+  // Snapshot its last streamed body before the durable checkpoint, not during
+  // pagehide after that checkpoint. Apply the returned body synchronously so
+  // correctness does not depend on WebChannel/JavaScript callback ordering.
+  QEventLoop loop;
+  QTimer timeout;
+  timeout.setSingleShot(true);
+  connect(&timeout, &QTimer::timeout, &loop, &QEventLoop::quit);
+  connect(this, &QObject::destroyed, &loop, &QEventLoop::quit);
+  const QPointer<PdfViewWindow2> guard(this);
+  const QPointer<QEventLoop> loopGuard(&loop);
+  const auto generation = getBufferGeneration();
+  const auto node = getBuffer().nodeId();
+  bool completed = false;
+  bool succeeded = false;
+  timeout.start(1000);
+  m_viewer->page()->runJavaScript(
+      QStringLiteral(R"JS((function() {
+        const core = window.vxcore;
+        if (!core || !core.editingCommentId) return {};
+        if (core.currentFreeTextEditText() === null) return null;
+        core.flushFreeTextDraft();
+        return typeof core.editingFlushedText === 'string'
+          ? { id: core.editingCommentId, text: core.editingFlushedText } : {};
+      })())JS"),
+      [guard, loopGuard, generation, node, &completed, &succeeded](const QVariant &p_result) {
+        // The callback can outlive the bounded wait or the window itself.
+        if (!loopGuard) {
+          return;
+        }
+        completed = true;
+        if (guard && guard->getBufferGeneration() == generation &&
+            guard->getBuffer().nodeId() == node && p_result.canConvert<QVariantMap>()) {
+          const auto draft = p_result.toMap();
+          const auto id = draft.value(QStringLiteral("id"));
+          const auto text = draft.value(QStringLiteral("text"));
+          if (draft.isEmpty() ||
+              (id.typeId() == QMetaType::QString && text.typeId() == QMetaType::QString)) {
+            if (!draft.isEmpty()) {
+              guard->adapter()->requestSetCommentText(id.toString(), text.toString());
+            }
+            if (guard) {
+              guard->m_commentController->flushPendingSave();
+              succeeded = true;
+            }
+          }
+        }
+        loopGuard->quit();
+      });
+  if (!completed) {
+    loop.exec(QEventLoop::ExcludeUserInputEvents);
+  }
+  return succeeded;
+}
+
 void PdfViewWindow2::handleNodeRetargeted(const NodeIdentifier &p_newNodeId) {
   // Without this the controller keeps saving to the pre-rename path: the sidecar
   // visible under the new name would silently stop receiving edits.
   if (m_commentController) {
     m_commentController->retargetActiveFile(p_newNodeId);
   }
+  m_readerFlushLease.retarget(p_newNodeId, 0);
 }
 
 void PdfViewWindow2::publishCommentsToViewer() {
@@ -676,7 +769,8 @@ QString PdfViewWindow2::getLatestContent() const { return QString(); }
 
 void PdfViewWindow2::setMode(ViewWindowMode p_mode) {
   Q_UNUSED(p_mode);
-  Q_ASSERT(false);
+  // File-open settings may request Edit; PDFs always remain read-only.
+  m_mode = ViewWindowMode::Read;
 }
 
 void PdfViewWindow2::handleEditorConfigChange() {
@@ -728,7 +822,88 @@ void PdfViewWindow2::handleThemeChanged() {
 
 void PdfViewWindow2::setModified(bool p_modified) { Q_UNUSED(p_modified); }
 
+void PdfViewWindow2::releaseBufferResources() {
+  setPresentationMode(false);
+  m_presentationFitTimer.stop();
+  m_presentationFitOnEntry = false;
+  m_prePresentationZoom.clear();
+  m_prePresentationScrollMode = 0;
+
+  m_documentResetPending = true;
+  disconnect(m_documentResetConnection);
+  if (m_viewer) {
+    m_viewer->hide();
+    for (auto *menu : findChildren<QMenu *>()) {
+      menu->close();
+    }
+    auto *channel = m_viewer->page()->webChannel();
+    m_viewer->page()->setWebChannel(nullptr);
+    delete channel;
+    m_viewer->stop();
+  }
+  revokeDocumentToken();
+  if (auto *a = adapter()) {
+    a->resetForNewDocument();
+  }
+
+  // The base has already obtained the outgoing file's durable checkpoint.
+  // Detach the controller before any new identity can reach the retained page.
+  m_readerFlushLease.reset();
+  if (m_commentController) {
+    m_commentController->setActiveFile(NodeIdentifier());
+  }
+  if (m_commentBanner) {
+    m_commentBanner->hide();
+  }
+  setAuthoringEnabled(false);
+  syncToolBarState();
+}
+
+void PdfViewWindow2::bindBufferResources() {
+  if (m_commentController) {
+    const auto &buffer = getBuffer();
+    m_commentController->setActiveFile(buffer.isValid() ? buffer.nodeId() : NodeIdentifier());
+  }
+  registerReaderFlushParticipant();
+  if (!m_viewer) {
+    return;
+  }
+
+  // Merely setting not-ready cannot reject a late QWebChannel call from A:
+  // the same adapter now represents B. Keep the channel disconnected until an
+  // inert document has replaced A, including its selection and JS callbacks.
+  // The native viewer, page and toolbar all survive this navigation.
+  const auto generation = getBufferGeneration();
+  const auto resetUrl = QUrl::fromEncoded(
+      QByteArrayLiteral("data:text/html,") +
+      QUrl::toPercentEncoding(QStringLiteral("<!--vnote-pdf-%1-->").arg(generation)));
+  m_documentResetConnection =
+      connect(m_viewer->page(), &QWebEnginePage::loadingChanged, this,
+              [this, generation, resetUrl](const QWebEngineLoadingInfo &p_info) {
+                if (generation != getBufferGeneration() || p_info.url() != resetUrl ||
+                    p_info.status() == QWebEngineLoadingInfo::LoadStartedStatus) {
+                  return;
+                }
+                disconnect(m_documentResetConnection);
+                if (p_info.status() != QWebEngineLoadingInfo::LoadSucceededStatus) {
+                  showMessage(tr("Unable to load PDF document"));
+                  return;
+                }
+                auto *channel = new QWebChannel(m_viewer);
+                channel->registerObject(QStringLiteral("vxAdapter"), adapter());
+                m_viewer->page()->setWebChannel(channel);
+                m_documentResetPending = false;
+                syncEditorFromBuffer();
+                m_viewer->show();
+              });
+  m_viewer->load(resetUrl);
+}
+
 void PdfViewWindow2::syncEditorFromBuffer() {
+  if (m_documentResetPending) {
+    return;
+  }
+
   // Every path below reloads (or blanks) the page. The adapter outlives the web
   // page and WebViewAdapter::setReady() early-returns when already ready, so
   // without this the previous document's headings would linger until the new
@@ -882,6 +1057,10 @@ void PdfViewWindow2::setPresentationMode(bool p_on) {
 }
 
 bool PdfViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (p_obj == m_viewer && p_event->type() == QEvent::ContextMenu) {
+    m_contextMenuGeneration = getBufferGeneration();
+  }
+
   // Watch the viewport, not only the outer window: Find and banners resize it too.
   if (p_obj == m_viewer && p_event->type() == QEvent::Resize && isViewFullScreen() &&
       !m_presentationFitTimer.isActive()) {

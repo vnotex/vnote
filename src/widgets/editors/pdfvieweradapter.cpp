@@ -105,6 +105,18 @@ PdfViewerAdapter::PdfViewerAdapter(QObject *p_parent) : WebViewAdapter(p_parent)
   // has to be published. Without this, a set produced while a reload was in
   // flight would be silently dropped.
   connect(this, &WebViewAdapter::ready, this, [this]() {
+    const auto generation = m_documentGeneration;
+    QVector<std::function<void()>> actions;
+    actions.swap(m_pendingDocumentActions);
+    for (const auto &action : actions) {
+      if (generation != m_documentGeneration || !isReady()) {
+        return;
+      }
+      action();
+    }
+    if (generation != m_documentGeneration || !isReady()) {
+      return;
+    }
     if (m_commentsPublishPending) {
       m_commentsPublishPending = false;
       emit commentsUpdated(m_comments);
@@ -141,7 +153,7 @@ void PdfViewerAdapter::setUrl(const QString &p_url) {
   if (isReady()) {
     emit urlUpdated(p_url);
   } else {
-    pendAction(std::bind(&PdfViewerAdapter::setUrl, this, p_url));
+    m_pendingDocumentActions.append(std::bind(&PdfViewerAdapter::setUrl, this, p_url));
   }
 }
 
@@ -190,8 +202,8 @@ void PdfViewerAdapter::scrollToOutlineItem(int p_idx) {
   if (isReady()) {
     emit outlineItemScrollRequested(destIndex);
   } else {
-    // pendAction() Q_ASSERTs !m_ready, so the branch is required.
-    pendAction([this, destIndex]() { emit outlineItemScrollRequested(destIndex); });
+    m_pendingDocumentActions.append(
+        [this, destIndex]() { emit outlineItemScrollRequested(destIndex); });
   }
 }
 
@@ -239,7 +251,7 @@ void PdfViewerAdapter::scrollToComment(const QString &p_id) {
   if (isReady()) {
     emit commentScrollRequested(p_id);
   } else {
-    pendAction([this, p_id]() { emit commentScrollRequested(p_id); });
+    m_pendingDocumentActions.append([this, p_id]() { emit commentScrollRequested(p_id); });
   }
 }
 
@@ -477,6 +489,28 @@ void PdfViewerAdapter::clearViewerState() {
     m_replayPending = true;
   }
   emit viewerStateChanged();
+}
+
+void PdfViewerAdapter::resetForNewDocument() {
+  ++m_documentGeneration;
+  m_pendingDocumentActions.clear();
+  clearFind();
+  setReady(false);
+
+  m_replayValid = false;
+  m_replayPending = false;
+  m_replayPage = 0;
+  m_replayZoom.clear();
+  m_replayRotation = 0;
+  m_replayScrollMode = 0;
+  m_replaySpreadMode = 0;
+  m_replayCursorTool = 0;
+  m_tool = Tool::None;
+  m_commentsEditable = false;
+
+  clearOutline();
+  clearComments();
+  clearViewerState();
 }
 
 void PdfViewerAdapter::setViewerState(const QJsonObject &p_state) {
@@ -723,5 +757,16 @@ void PdfViewerAdapter::showDocumentProperties() {
 void PdfViewerAdapter::clearFind() {
   if (isReady()) {
     emit findCleared();
+  }
+}
+
+void PdfViewerAdapter::findText(const QStringList &p_texts, FindOptions p_options,
+                                int p_currentMatchLine) {
+  if (isReady()) {
+    WebViewAdapter::findText(p_texts, p_options, p_currentMatchLine);
+  } else {
+    m_pendingDocumentActions.append([this, p_texts, p_options, p_currentMatchLine]() {
+      WebViewAdapter::findText(p_texts, p_options, p_currentMatchLine);
+    });
   }
 }

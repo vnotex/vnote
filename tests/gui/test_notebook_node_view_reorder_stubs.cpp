@@ -38,7 +38,7 @@ void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &, const Node
 
 // View-referenced methods the test never invokes (Ctrl-drag copy path,
 // double-click activation, single-click activation, URL drop import).
-void NotebookNodeController::openNode(const NodeIdentifier &) {}
+void NotebookNodeController::openNode(const NodeIdentifier &, bool) {}
 void NotebookNodeController::copyNodes(const QList<NodeIdentifier> &) {}
 void NotebookNodeController::pasteNodes(const NodeIdentifier &) {}
 bool NotebookNodeController::isSingleClickActivationEnabled() const { return false; }

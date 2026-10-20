@@ -113,7 +113,7 @@ The split-pane editor area, designed around vxcore workspaces:
 
 - `ViewArea2` — QSplitter tree managing split panes (pure view, no business logic)
 - `ViewSplit2` — QTabWidget-based split pane; each instance maps 1:1 to a vxcore workspace
-- `ViewWindow2` — abstract base for file viewer windows; receives a `Buffer2` in its constructor
+- `ViewWindow2` — abstract base for file viewer windows; receives an initial `Buffer2` and owns guarded same-type rebinding
 
 `ViewWindow2` mounts both `StatusBar` and shared `StatusWidget` through `StatusOverlay`,
 not through the bottom layout. Each strip floats over the bottom edge of its own content
@@ -134,6 +134,51 @@ so changing the QSS radius does not require a matching C++ value. Activate the c
 before sampling its geometry; an invalidated layout can temporarily report an empty rectangle.
 Markdown Read hides an empty overlay; Edit retains its status controls. Regression coverage:
 `test_statusbar` and `test_statuswidget`.
+
+#### Note tab reuse
+
+Settings → Note Management → **Always open notes in new tabs** persists
+`core.alwaysOpenNotesInNewTabs`, default `true` (also for missing/non-boolean values).
+Apply affects the next open. With it off, ordinary focused opens replace the current
+file tab; `FileOpenSettings::m_alwaysNewWindow` and Ctrl on existing explorer activation
+gestures bypass replacement. Ctrl does not turn selection-only clicks into activation.
+Multi-note opens, restore, reopen-last-closed, split clones and detached/background opens
+retain separate-tab behavior. An already-open target still deduplicates within its workspace.
+Settings and other virtual content are never replacement candidates; lone-Home retirement
+remains owned by the existing successful-open path.
+
+`ViewWindowFactory` stamps the normalized creator key. Reuse requires that exact key and
+`supportsBufferReplacement()`; Text and Others are distinct even though their class matches.
+The controller owns add-before-remove workspace membership, exact-ID reentrancy guards,
+rollback, closed-tab history and consistent current-buffer publication. Unowned candidates
+must be closed through BufferService after checking all visible, hidden and detached owners.
+A retained window ID does not imply an unchanged buffer: explicitly refresh current providers.
+
+`ViewWindow2::replaceBuffer()` obtains a durable CommentService checkpoint and uses qualified
+base Save/Discard/Cancel confirmation before releasing outgoing resources. Refusal leaves the
+old document/history attached and never falls through to another open strategy. Different-type
+opens create successfully before closing the old tab; cancellation then leaves both tabs.
+Never reload or clear a shared outgoing buffer merely to discard this view.
+
+Release runs against the old buffer; bind runs after assigning the new handle into the stable
+base member and advancing its generation. Reset document history (including load-time formatting
+commands), selection, find and caret even for equal text/revision. Preserve native editors,
+ordinary readers, tool/status widgets and user zoom/layout preferences. Late navigation, preview,
+image and print callbacks must validate document generation, not just the retained QObject.
+Incoming load failure hides/blanks unavailable content and rejects snapshots; it must never save
+the outgoing document under the new identity.
+
+Protected Markdown reader pages/profiles are authorization-bound: retire page before profile
+when either identity is protected, without terminally destroying the retained native editor.
+Web adapter reset clears pending actions/callbacks even while already not-ready. PDF replacement
+flushes JS-debounced comment drafts before the durable gate, uses `setActiveFile()` for comments,
+and clears document replay through `resetForNewDocument()`; theme reload still replays that PDF's
+own camera. Typst uses native `resetForNewDocument()` and calls `finishDocumentReset()` only
+after installing the validated incoming project and source; its compiler process survives.
+
+Coverage: `test_viewarea_tab_reuse` uses production services, windows, real explorer gestures,
+dialogs and separate test-mode session contexts; `test_configmgr2` covers preference persistence
+and `test_pdfvieweradapter_viewer` covers new-document versus same-document replay.
 
 #### Native Typst editor
 

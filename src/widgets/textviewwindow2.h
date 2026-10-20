@@ -31,6 +31,8 @@ public:
 
   bool isEncodingSupported() const Q_DECL_OVERRIDE { return true; }
 
+  bool supportsBufferReplacement() const override { return true; }
+
   void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
   int getCursorPosition() const Q_DECL_OVERRIDE;
@@ -121,6 +123,7 @@ private:
 
   // Whether to propagate editor state changes to the buffer.
   bool m_propagateEditorToBuffer = false;
+  bool m_sourceAvailable = false;
 };
 } // namespace vnotex
 

@@ -33,7 +33,7 @@ QMenu *NotebookNodeController::createExternalNodeContextMenu(const NodeIdentifie
 }
 void NotebookNodeController::newNote(const NodeIdentifier &) {}
 void NotebookNodeController::newFolder(const NodeIdentifier &) {}
-void NotebookNodeController::openNode(const NodeIdentifier &) {}
+void NotebookNodeController::openNode(const NodeIdentifier &, bool) {}
 void NotebookNodeController::openNodeWithDefaultApp(const NodeIdentifier &) {}
 void NotebookNodeController::deleteNodes(const QList<NodeIdentifier> &) {}
 void NotebookNodeController::removeNodesFromNotebook(const QList<NodeIdentifier> &) {}

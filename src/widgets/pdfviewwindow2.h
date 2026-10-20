@@ -11,6 +11,7 @@
 #include <QTimer>
 
 #include <core/pdfviewerconfig.h>
+#include <core/services/commentservice.h>
 
 class QActionGroup;
 class QToolButton;
@@ -58,6 +59,8 @@ public:
   // If any of those three stops holding, this must go back to true.
   bool isSaveSupported() const Q_DECL_OVERRIDE { return false; }
 
+  bool supportsBufferReplacement() const Q_DECL_OVERRIDE { return true; }
+
 public slots:
   void handleEditorConfigChange() Q_DECL_OVERRIDE;
 
@@ -80,6 +83,10 @@ protected:
   bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
+
+  void releaseBufferResources() Q_DECL_OVERRIDE;
+
+  void bindBufferResources() Q_DECL_OVERRIDE;
 
   void handleNodeRetargeted(const NodeIdentifier &p_newNodeId) Q_DECL_OVERRIDE;
 
@@ -107,6 +114,10 @@ private:
   void setupOutlineProvider();
 
   void setupComments();
+
+  void registerReaderFlushParticipant();
+
+  bool flushPendingReaderComments();
 
   void setupAnnotationToolBarActions(QToolBar *p_toolBar);
 
@@ -195,6 +206,14 @@ private:
   // document. Replaced on every (re)load and revoked in the destructor.
   QString m_documentToken;
 
+  // The retained page must finish discarding the old document before a new
+  // WebChannel can expose the incoming note's comment controller to JavaScript.
+  bool m_documentResetPending = false;
+
+  QMetaObject::Connection m_documentResetConnection;
+
+  quint64 m_contextMenuGeneration = 0;
+
   QSharedPointer<OutlineProvider> m_outlineProvider;
 
   QSharedPointer<CommentProvider> m_commentProvider;
@@ -213,6 +232,8 @@ private:
 
   // Managed by QObject parent (this).
   CommentController *m_commentController = nullptr;
+
+  CommentService::FlushParticipantLease m_readerFlushLease;
 
   // Lazily created on the first comment-store failure; managed by QObject.
   InlineBanner *m_commentBanner = nullptr;

@@ -24,6 +24,7 @@ public:
   explicit MindMapViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
                               QWidget *p_parent = nullptr);
   ~MindMapViewWindow2() override;
+  bool supportsBufferReplacement() const override { return true; }
 
   QString getLatestContent() const override;
   QSharedPointer<OutlineProvider> getOutlineProvider() const override;
@@ -51,6 +52,8 @@ protected slots:
 
 protected:
   void paintEvent(QPaintEvent *p_event) override;
+  void releaseBufferResources() override;
+  void bindBufferResources() override;
   void syncEditorFromBuffer() override;
   void scrollUp() override;
   void scrollDown() override;

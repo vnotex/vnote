@@ -91,5 +91,9 @@ ViewWindow2 *ViewWindowFactory::create(const QString &p_fileType, ServiceLocator
     qWarning() << "ViewWindowFactory: no creator for file type" << p_fileType;
     return nullptr;
   }
-  return it.value()(p_services, p_buffer, p_parent, p_mode);
+  auto *window = it.value()(p_services, p_buffer, p_parent, p_mode);
+  if (window) {
+    window->setFileType(p_fileType.toLower());
+  }
+  return window;
 }

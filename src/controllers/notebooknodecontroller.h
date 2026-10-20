@@ -58,7 +58,7 @@ public:
   // Node operations using NodeIdentifier
   void newNote(const NodeIdentifier &p_parentId);
   void newFolder(const NodeIdentifier &p_parentId);
-  void openNode(const NodeIdentifier &p_nodeId);
+  void openNode(const NodeIdentifier &p_nodeId, bool p_alwaysNewWindow = false);
   void openNodeWithDefaultApp(const NodeIdentifier &p_nodeId);
   void deleteNodes(const QList<NodeIdentifier> &p_nodeIds);
   void removeNodesFromNotebook(const QList<NodeIdentifier> &p_nodeIds);
@@ -123,7 +123,8 @@ public:
   // p_detached: open the node(s) in a detached top-level window instead of the
   // main window's current split. All nodes opened from ONE synchronous call
   // land as tabs in the SAME detached window.
-  void openNodes(const QList<NodeIdentifier> &p_ids, bool p_detached = false);
+  void openNodes(const QList<NodeIdentifier> &p_ids, bool p_detached = false,
+                 bool p_alwaysNewWindow = false);
   void openNodesWithCommand(const QList<NodeIdentifier> &p_ids, const QString &p_commandTemplate);
   void duplicateNodes(const QList<NodeIdentifier> &p_ids);
   void copyNodePaths(const QList<NodeIdentifier> &p_ids);

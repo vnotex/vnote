@@ -60,6 +60,23 @@ void NoteManagementPage::setupUI() {
   }
 
   {
+    const QString label(tr("Always open notes in new tabs"));
+    m_alwaysOpenNotesInNewTabsCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_alwaysOpenNotesInNewTabsCheckBox->setObjectName(
+        QStringLiteral("AlwaysOpenNotesInNewTabsCheckBox"));
+    m_alwaysOpenNotesInNewTabsCheckBox->setToolTip(
+        tr("Reuse the current tab when disabled; hold Ctrl when activating a note "
+           "to open it in a new tab"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_alwaysOpenNotesInNewTabsCheckBox, m_alwaysOpenNotesInNewTabsCheckBox->toolTip(), this));
+    addSearchItem(label, m_alwaysOpenNotesInNewTabsCheckBox->toolTip(),
+                  m_alwaysOpenNotesInNewTabsCheckBox);
+    connect(m_alwaysOpenNotesInNewTabsCheckBox, &QCheckBox::toggled, this,
+            &NoteManagementPage::pageIsChanged);
+  }
+
+  {
     m_searchMaxResultsSpinBox = WidgetsFactory::createSpinBox(this);
     m_searchMaxResultsSpinBox->setObjectName(QStringLiteral("SearchMaxResultsSpinBox"));
     m_searchMaxResultsSpinBox->setRange(1, 100000);
@@ -136,6 +153,8 @@ void NoteManagementPage::loadInternal() {
     m_defaultOpenModeComboBox->setCurrentIndex(idx);
   }
 
+  m_alwaysOpenNotesInNewTabsCheckBox->setChecked(coreConfig.getAlwaysOpenNotesInNewTabs());
+
   m_searchMaxResultsSpinBox->setValue(coreConfig.getSearchMaxResults());
 
   m_recycleBinAutoCleanupCheckBox->setChecked(coreConfig.isRecycleBinAutoCleanupEnabled());
@@ -155,6 +174,8 @@ bool NoteManagementPage::saveInternal() {
     auto mode = m_defaultOpenModeComboBox->currentData().toInt();
     coreConfig.setDefaultOpenMode(static_cast<ViewWindowMode>(mode));
   }
+
+  coreConfig.setAlwaysOpenNotesInNewTabs(m_alwaysOpenNotesInNewTabsCheckBox->isChecked());
 
   coreConfig.setSearchMaxResults(m_searchMaxResultsSpinBox->value());
 

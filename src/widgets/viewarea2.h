@@ -106,6 +106,10 @@ public:
   void distributeViewSplits() override;
   void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType, const QString &p_workspaceId,
                   const FileOpenSettings &p_settings) override;
+  bool canReuseViewWindow(ID p_windowId, const QString &p_fileType) const override;
+  bool replaceViewWindowBuffer(ID p_windowId, const Buffer2 &p_buffer,
+                               const FileOpenSettings &p_settings,
+                               ClosedTabRecord *p_closedTab) override;
   void openWidgetContent(IViewWindowContent *p_content, const Buffer2 &p_buffer,
                          const QString &p_workspaceId) override;
   bool closeViewWindow(ID p_windowId, bool p_force) override;
@@ -232,12 +236,14 @@ private:
   QVector<DetachedWindow *> m_detachedWindows;
   struct NavigationItem {
     QPointer<ViewWindow2> m_window;
+    quint64 m_bufferGeneration = 0;
     NavigationTarget m_target;
     bool m_content = false;
   };
   struct NavigationRequest {
     QPointer<ViewSplit2> m_split;
     QPointer<ViewWindow2> m_window;
+    quint64 m_bufferGeneration = 0;
     ViewWindowMode m_mode = ViewWindowMode::Invalid;
     QVector<NavigationTarget> m_targets;
     bool m_completed = false;

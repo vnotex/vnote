@@ -3,11 +3,14 @@
 #include <QAction>
 #include <QMessageBox>
 #include <QPainter>
+#include <QPointer>
 #include <QPrinter>
 #include <QScrollBar>
 #include <QSignalBlocker>
+#include <QTextDocument>
 #include <QToolBar>
 
+#include <stdexcept>
 #include <vtextedit/vtextedit.h>
 
 #include <controllers/textviewwindowcontroller.h>
@@ -108,8 +111,7 @@ void TextViewWindow2::setupToolBar() {
   addToolBar(toolBar);
 
   addLeftCommonToolBarActions(toolBar);
-  const auto [undo, redo] =
-      TextViewWindowHelper::addUndoRedoActions(toolBar, getServices(), this);
+  const auto [undo, redo] = TextViewWindowHelper::addUndoRedoActions(toolBar, getServices(), this);
   TextViewWindowHelper::connectUndoRedoActions(this, m_editor->getTextEdit(), undo, redo);
   addRightCommonToolBarActions(toolBar);
 }
@@ -161,8 +163,10 @@ void TextViewWindow2::handlePrint() {
                              tr("Printing encrypted notes is not supported."));
     return;
   }
+  const QPointer<TextViewWindow2> guard(this);
+  const auto generation = getBufferGeneration();
   auto printer = PrintUtils::promptForPrint(m_editor->getTextEdit()->hasSelection(), this);
-  if (printer) {
+  if (guard && generation == getBufferGeneration() && printer) {
     m_editor->getTextEdit()->print(printer.data());
   }
 }
@@ -188,8 +192,11 @@ void TextViewWindow2::syncEditorFromBuffer() {
   const bool old = m_propagateEditorToBuffer;
   m_propagateEditorToBuffer = false;
 
-  auto state = TextViewWindowController::prepareBufferState(getBuffer());
-  if (state.valid) {
+  auto state = getBuffer().getBuffer().isEmpty()
+                   ? TextViewWindowController::BufferState()
+                   : TextViewWindowController::prepareBufferState(getBuffer());
+  m_sourceAvailable = state.valid;
+  if (m_sourceAvailable) {
     m_editor->setSyntax(state.syntaxSuffix);
     m_editor->setReadOnly(state.readOnly);
     m_editor->setText(state.content);
@@ -200,6 +207,8 @@ void TextViewWindow2::syncEditorFromBuffer() {
     m_editor->setText(QString());
     m_editor->setModified(false);
   }
+  // Loading also applies paragraph formatting; it is not a user undo operation.
+  m_editor->getTextEdit()->document()->clearUndoRedoStacks();
 
   m_lastKnownRevision = state.revision;
   m_propagateEditorToBuffer = old;
@@ -222,6 +231,9 @@ void TextViewWindow2::applyReadableWidth() {
 }
 
 QString TextViewWindow2::getLatestContent() const {
+  if (!m_sourceAvailable) {
+    throw std::runtime_error("The note source is unavailable");
+  }
   if (m_editor) {
     return m_editor->getText();
   }
@@ -232,7 +244,7 @@ void TextViewWindow2::setModified(bool p_modified) { m_editor->setModified(p_mod
 
 void TextViewWindow2::setMode(ViewWindowMode p_mode) {
   Q_UNUSED(p_mode);
-  Q_ASSERT(false);
+  m_mode = ViewWindowMode::Edit;
 }
 
 int TextViewWindow2::getCursorPosition() const {

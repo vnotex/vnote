@@ -156,6 +156,7 @@ QToolBar *ToolBarHelper2::setupFileToolBar(QToolBar *p_toolBar) {
       if (bufferSvc) {
         FileOpenSettings settings;
         settings.m_mode = m_services.get<ConfigMgr2>()->getCoreConfig().getDefaultOpenMode();
+        settings.m_alwaysNewWindow = files.size() > 1;
         for (const auto &file : files) {
           NodeIdentifier nodeId;
           nodeId.relativePath = file;

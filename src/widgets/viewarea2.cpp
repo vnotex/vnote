@@ -8,6 +8,7 @@
 #include <QLabel>
 #include <QPointer>
 #include <QPushButton>
+#include <QScopeGuard>
 #include <QSet>
 #include <QShortcut>
 #include <QSignalBlocker>
@@ -146,11 +147,9 @@ void ViewArea2::setupController() {
             // currentChanged posted by addTab during restore) have settled.
             m_controller->setShouldPropagateToCore(true);
             qCDebug(lcWorkspace) << "ViewArea2: propagation to core re-enabled";
-            // Re-sync current window from ground-truth UI state.
-            // During restore, onViewWindowOpened() did NOT update m_currentWindowId
-            // (propagation was disabled), so m_currentWindowId is still
-            // InvalidViewWindowId — setCurrentViewWindow's early-return won't fire,
-            // and the correct provider is propagated to the outline viewer.
+            // Re-sync current identity from the selected UI tab after restore.
+            // Core reconciliation also runs when deferred selection signals
+            // have already established the same controller window ID.
             ViewWindow2 *currentWin = nullptr;
             auto *currentSplit = getCurrentViewSplit();
             if (!currentSplit && !m_splits.isEmpty()) {
@@ -578,6 +577,7 @@ void ViewArea2::showNavigation() {
       NavigationRequest request;
       request.m_split = split;
       request.m_window = window;
+      request.m_bufferGeneration = window->getBufferGeneration();
       request.m_mode = window->getMode();
       m_navigationRequests.append(std::move(request));
     }
@@ -599,6 +599,7 @@ void ViewArea2::showNavigation() {
       }
       if (request.m_window && request.m_split && request.m_window->isVisible() &&
           request.m_split->isVisible() && request.m_window->getMode() == request.m_mode &&
+          request.m_window->getBufferGeneration() == request.m_bufferGeneration &&
           self->getAllViewSplits().contains(request.m_split) &&
           request.m_split->getCurrentViewWindow() == request.m_window) {
         request.m_targets = std::move(p_targets);
@@ -629,6 +630,7 @@ QVector<void *> ViewArea2::getVisibleNavigationItems() {
       }
       NavigationItem item;
       item.m_window = tab.m_viewWindow;
+      item.m_bufferGeneration = tab.m_viewWindow->getBufferGeneration();
       item.m_target.m_widget = split;
       item.m_target.m_rect = QRect(tab.m_topLeft, QSize(1, 1));
       m_navigationItems.append(std::move(item));
@@ -644,6 +646,7 @@ void ViewArea2::appendReadyNavigationTargets() {
     auto request = std::move(m_navigationRequests[m_nextNavigationRequest++]);
     if (!request.m_window || !request.m_split || !request.m_window->isVisible() ||
         !request.m_split->isVisible() || request.m_window->getMode() != request.m_mode ||
+        request.m_window->getBufferGeneration() != request.m_bufferGeneration ||
         !getAllViewSplits().contains(request.m_split) ||
         request.m_split->getCurrentViewWindow() != request.m_window) {
       continue;
@@ -661,6 +664,7 @@ void ViewArea2::appendReadyNavigationTargets() {
       }
       NavigationItem item;
       item.m_window = request.m_window;
+      item.m_bufferGeneration = request.m_bufferGeneration;
       item.m_target = std::move(target);
       item.m_content = true;
       m_navigationItems.append(std::move(item));
@@ -687,12 +691,13 @@ void ViewArea2::handleTargetHit(void *p_item) {
   // Selection exits NavigationModeService only after this call returns. Copy
   // before any focus/callback can clear the pointer-backed item storage.
   const auto item = *static_cast<NavigationItem *>(p_item);
-  if (!item.m_window) {
+  if (!item.m_window || item.m_window->getBufferGeneration() != item.m_bufferGeneration) {
     return;
   }
   if (item.m_content) {
     QTimer::singleShot(0, this, [this, item]() {
       if (!isVisible() || !item.m_window || !item.m_window->isVisible() ||
+          item.m_window->getBufferGeneration() != item.m_bufferGeneration ||
           !item.m_target.m_widget || !item.m_target.m_widget->isVisible() ||
           !item.m_target.m_activate) {
         return;
@@ -1091,19 +1096,42 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
     emit viewWindowCreationFailed(p_fileType, p_buffer.nodeId().relativePath);
     return;
   }
-  ViewWindow2 *win =
-      locked
-          ? static_cast<ViewWindow2 *>(new LockedNoteView(m_services, p_buffer, p_settings, split))
-          : factory->create(p_fileType, m_services, p_buffer, split, p_settings.m_mode);
-  if (!win) {
-    qWarning() << "ViewArea2: failed creating view window for type" << p_fileType;
-    emit viewWindowCreationFailed(p_fileType, p_buffer.nodeId().relativePath);
-    return;
+  const QPointer<ViewWindow2> previousWindow(split->getCurrentViewWindow());
+  const QPointer<QWidget> previousFocus(QApplication::focusWidget());
+  const auto restoreBackgroundFocus = qScopeGuard([previousFocus, &p_settings]() {
+    if (!p_settings.m_focus && previousFocus && QApplication::focusWidget() != previousFocus) {
+      previousFocus->setFocus(Qt::OtherFocusReason);
+    }
+  });
+  QPointer<ViewWindow2> win;
+  ID id = ViewAreaController::InvalidViewWindowId;
+  {
+    // Constructors and addViewWindow can focus/show the new editor before
+    // registration. A background open must not publish that transient focus
+    // as the main area's current tab or workspace.
+    QSignalBlocker constructionSignals(split);
+    if (p_settings.m_focus || p_settings.m_detachedView) {
+      constructionSignals.unblock();
+    }
+    win = locked ? static_cast<ViewWindow2 *>(
+                       new LockedNoteView(m_services, p_buffer, p_settings, split))
+                 : factory->create(p_fileType, m_services, p_buffer, split, p_settings.m_mode);
+    if (!win) {
+      qWarning() << "ViewArea2: failed creating view window for type" << p_fileType;
+      emit viewWindowCreationFailed(p_fileType, p_buffer.nodeId().relativePath);
+      return;
+    }
+    id = m_nextWindowId++;
+    m_windows[id] = win;
+    win->setViewWindowId(id);
+    split->addViewWindow(win);
+    // addViewWindow explicitly shows even a non-current tab. Preserve the
+    // previous selection and keep the background editor hidden.
+    if (!p_settings.m_focus && previousWindow && split->indexOf(previousWindow) >= 0) {
+      split->setCurrentViewWindow(previousWindow);
+    }
+    win->setVisible(split->getCurrentViewWindow() == win);
   }
-  ID id = m_nextWindowId++;
-  m_windows[id] = win;
-  win->setViewWindowId(id);
-  split->addViewWindow(win);
   connect(win, &ViewWindow2::closeRequested, this,
           [this, id]() { m_controller->closeViewWindow(id, true); });
   connect(win, &ViewWindow2::exportRequested, this, [this, win]() { emit exportRequested(win); });
@@ -1113,9 +1141,11 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   m_controller->onViewWindowOpened(id, p_buffer, p_settings,
                                    p_settings.m_detachedView ? p_workspaceId : QString());
 
-  // QTabWidget::addTab does not make the new tab current (except the first).
-  // When focus is requested (e.g., restoring the current buffer), explicitly
-  // select the new tab.
+  if (!win) {
+    return;
+  }
+  // Select a focused open after registration and its after-open hook, as for
+  // ordinary tab creation. The first tab was reconciled after membership add.
   if (p_settings.m_focus) {
     split->setCurrentViewWindow(win);
   }
@@ -1132,6 +1162,67 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   }
 
   updateScreenVisibility();
+}
+
+bool ViewArea2::canReuseViewWindow(ID p_windowId, const QString &p_fileType) const {
+  const auto *window = windowForId(p_windowId);
+  return window && window->supportsBufferReplacement() &&
+         window->getFileType() == p_fileType.toLower();
+}
+
+bool ViewArea2::replaceViewWindowBuffer(ID p_windowId, const Buffer2 &p_buffer,
+                                        const FileOpenSettings &p_settings,
+                                        ClosedTabRecord *p_closedTab) {
+  const QPointer<ViewWindow2> window(windowForId(p_windowId));
+  if (!window || !window->supportsBufferReplacement() || window->getNodeId().isVirtual()) {
+    return false;
+  }
+  QPointer<ViewSplit2> owner;
+  for (auto *split : m_splits) {
+    if (split->indexOf(window) >= 0) {
+      owner = split;
+      break;
+    }
+  }
+  if (!owner) {
+    for (auto *detached : m_detachedWindows) {
+      auto *split = detached->getViewSplit();
+      if (split && split->indexOf(window) >= 0) {
+        owner = split;
+        break;
+      }
+    }
+  }
+  if (!owner) {
+    return false;
+  }
+  const ClosedTabRecord record{window->getNodeId(), window->getMode(), window->getCursorPosition()};
+  clearNavigation();
+  // Preserve internal mode/action updates, but do not publish split focus/current
+  // changes while the controller still owns both workspace memberships.
+  const bool wasBlocked = owner->blockSignals(true);
+  const auto unblock = qScopeGuard([owner, wasBlocked]() {
+    if (owner) {
+      owner->blockSignals(wasBlocked);
+    }
+  });
+  const bool replaced = window->replaceBuffer(p_buffer, p_settings);
+  if (!replaced || !window) {
+    return false;
+  }
+  if (p_closedTab) {
+    *p_closedTab = record;
+  }
+  const auto generation = window->getBufferGeneration();
+  QTimer::singleShot(0, this, [window, generation]() {
+    if (window && window->getBufferGeneration() == generation) {
+      emit window->nameChanged();
+      if (window && window->getBufferGeneration() == generation) {
+        emit window->statusChanged();
+      }
+    }
+  });
+  return true;
 }
 
 void ViewArea2::openWidgetContent(IViewWindowContent *p_content, const Buffer2 &p_buffer,

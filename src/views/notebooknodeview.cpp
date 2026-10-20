@@ -196,18 +196,18 @@ void NotebookNodeView::setController(NotebookNodeController *p_controller) {
     // notebooknodecontroller.cpp:792, :1116, etc.). For reorder the controller
     // does NOT touch the model itself (it only emits nodesReordered after the
     // worker thread finishes), so the view owns the refresh hook here.
-    m_reorderedConn = connect(m_controller, &NotebookNodeController::nodesReordered, this,
-                              [this](const NodeIdentifier &p_parentId) {
-                                auto *proxy = qobject_cast<NotebookNodeProxyModel *>(model());
-                                auto *nodeModel = qobject_cast<NotebookNodeModel *>(
-                                    proxy ? proxy->sourceModel() : model());
-                                if (nodeModel &&
-                                    nodeModel->getNotebookId() == p_parentId.notebookId) {
-                                  const auto expandedFolders = getExpandedFolders();
-                                  nodeModel->reloadNode(p_parentId);
-                                  replayExpandedFolders(expandedFolders);
-                                }
-                              });
+    m_reorderedConn =
+        connect(m_controller, &NotebookNodeController::nodesReordered, this,
+                [this](const NodeIdentifier &p_parentId) {
+                  auto *proxy = qobject_cast<NotebookNodeProxyModel *>(model());
+                  auto *nodeModel =
+                      qobject_cast<NotebookNodeModel *>(proxy ? proxy->sourceModel() : model());
+                  if (nodeModel && nodeModel->getNotebookId() == p_parentId.notebookId) {
+                    const auto expandedFolders = getExpandedFolders();
+                    nodeModel->reloadNode(p_parentId);
+                    replayExpandedFolders(expandedFolders);
+                  }
+                });
   }
 }
 
@@ -479,7 +479,7 @@ void NotebookNodeView::mousePressEvent(QMouseEvent *p_event) {
     if (idx.isValid()) {
       NodeInfo nodeInfo = nodeInfoFromIndex(idx);
       if (nodeInfo.isValid() && !nodeInfo.isFolder) {
-        m_controller->openNode(nodeInfo.id);
+        m_controller->openNode(nodeInfo.id, p_event->modifiers().testFlag(Qt::ControlModifier));
       }
     }
   }
@@ -497,7 +497,7 @@ void NotebookNodeView::mouseDoubleClickEvent(QMouseEvent *p_event) {
     // For containers, toggle expand/collapse (default behavior)
     // For content nodes, activate
     if (!nodeInfo.isFolder) {
-      m_controller->openNode(nodeInfo.id);
+      m_controller->openNode(nodeInfo.id, p_event->modifiers().testFlag(Qt::ControlModifier));
       p_event->accept();
       return;
     }
@@ -517,7 +517,7 @@ void NotebookNodeView::keyPressEvent(QKeyEvent *p_event) {
     }
     NodeInfo nodeInfo = nodeInfoFromIndex(currentIndex());
     if (nodeInfo.isValid() && !nodeInfo.isFolder) {
-      m_controller->openNode(nodeInfo.id);
+      m_controller->openNode(nodeInfo.id, p_event->modifiers().testFlag(Qt::ControlModifier));
       p_event->accept();
       return;
     }

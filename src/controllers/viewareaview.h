@@ -16,6 +16,7 @@ namespace vnotex {
 
 class Buffer2;
 class IViewWindowContent;
+struct ClosedTabRecord;
 
 // Display info for a single view window living in a visible split.
 // Used by the controller to enumerate visible windows for the "windows"
@@ -46,6 +47,10 @@ public:
   // Buffer/window management
   virtual void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
                           const QString &p_workspaceId, const FileOpenSettings &p_settings) = 0;
+  virtual bool canReuseViewWindow(ID p_windowId, const QString &p_fileType) const = 0;
+  virtual bool replaceViewWindowBuffer(ID p_windowId, const Buffer2 &p_buffer,
+                                       const FileOpenSettings &p_settings,
+                                       ClosedTabRecord *p_closedTab) = 0;
 
   // Open a widget-based content (not file-backed) as a tab.
   // The view layer creates WidgetViewWindow2 internally.

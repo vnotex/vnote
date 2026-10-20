@@ -1912,3 +1912,45 @@ add_custom_command(TARGET test_mindmapviewwindow_print POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_if_different
     $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_mindmapviewwindow_print>
 )
+
+# Real FileAfterOpen/workspace policy and retained native/WebEngine documents.
+add_qt_test(test_viewarea_tab_reuse
+  SOURCES test_viewarea_tab_reuse.cpp ${_markdown_window_test_sources}
+  LINKS ${_markdown_window_links} Qt6::Pdf
+)
+target_include_directories(test_viewarea_tab_reuse PRIVATE
+  $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>
+)
+target_compile_definitions(test_viewarea_tab_reuse PRIVATE
+  $<TARGET_PROPERTY:vnote,COMPILE_DEFINITIONS>
+  VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+  VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
+)
+add_dependencies(test_viewarea_tab_reuse VX_EXTRA_RESOURCE vnote_typst_runtime)
+set_tests_properties(test_viewarea_tab_reuse PROPERTIES TIMEOUT 600)
+set(_tab_reuse_platform "${_markdown_window_platform}")
+set(_tab_reuse_plugin "${_markdown_window_plugin}")
+if(UNIX AND NOT APPLE)
+  set(_tab_reuse_platform xcb)
+  set(_tab_reuse_plugin Qt6::QXcbIntegrationPlugin)
+endif()
+set_property(TEST test_viewarea_tab_reuse PROPERTY ENVIRONMENT
+  "QT_QPA_PLATFORM=${_tab_reuse_platform}"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_tab_reuse_plugin}>"
+  "QTWEBENGINEPROCESS_PATH="
+  "QTWEBENGINE_RESOURCES_PATH="
+  "QTWEBENGINE_LOCALES_PATH="
+  "QTWEBENGINE_CHROMIUM_FLAGS="
+)
+if(WIN32)
+  set_property(TEST test_viewarea_tab_reuse APPEND PROPERTY
+    ENVIRONMENT "PATH=${_markdown_job_path}")
+endif()
+get_target_property(_tab_reuse_typst_helper vtextedit-typst VTEXTEDIT_TYPST_HELPER)
+add_custom_command(TARGET test_viewarea_tab_reuse POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_viewarea_tab_reuse>
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    "${_tab_reuse_typst_helper}" $<TARGET_FILE_DIR:test_viewarea_tab_reuse>
+  VERBATIM
+)

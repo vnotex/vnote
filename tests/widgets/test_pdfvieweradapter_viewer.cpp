@@ -57,6 +57,8 @@ private slots:
   void aStateWithNoDocumentIsNotAccepted();
 
   void aFreshAdapterHasNoReplayValue();
+  void aNewDocumentDoesNotInheritReplay_data();
+  void aNewDocumentDoesNotInheritReplay();
   void aPageReachedByScrollingIsReplayed();
   void theReplayBeatsTheReplacementDocumentsOwnDefaults();
   void aStateArrivingBeforeReadinessStillReplays();
@@ -268,6 +270,145 @@ void TestPdfViewerAdapterViewer::aFreshAdapterHasNoReplayValue() {
   adapter.setViewerState(goodState(1, 10));
   QCOMPARE(pageSpy.count(), 0);
   QCOMPARE(zoomSpy.count(), 0);
+}
+
+void TestPdfViewerAdapterViewer::aNewDocumentDoesNotInheritReplay_data() {
+  QTest::addColumn<bool>("resetWhileNotReady");
+  QTest::addColumn<bool>("stateBeforeReady");
+  QTest::newRow("ready-state-first") << false << true;
+  QTest::newRow("ready-channel-first") << false << false;
+  QTest::newRow("loading-state-first") << true << true;
+  QTest::newRow("loading-channel-first") << true << false;
+}
+
+void TestPdfViewerAdapterViewer::aNewDocumentDoesNotInheritReplay() {
+  QFETCH(bool, resetWhileNotReady);
+  QFETCH(bool, stateBeforeReady);
+  PdfViewerAdapter adapter;
+  adapter.setReady(true);
+
+  auto documentA = goodState(7, 20);
+  documentA.insert(QStringLiteral("scale"), 1.5);
+  documentA.insert(QStringLiteral("scaleValue"), QStringLiteral("1.5"));
+  documentA.insert(QStringLiteral("rotation"), 90);
+  documentA.insert(QStringLiteral("scrollMode"), 3);
+  documentA.insert(QStringLiteral("spreadMode"), 2);
+  documentA.insert(QStringLiteral("cursorTool"), 1);
+  documentA.insert(QStringLiteral("sidebarOpen"), true);
+  adapter.setViewerState(documentA);
+  adapter.setDocumentPageCount(20);
+  adapter.setOutline(QJsonArray{QJsonObject{{QStringLiteral("name"), QStringLiteral("A")},
+                                            {QStringLiteral("level"), 1},
+                                            {QStringLiteral("index"), 4}}});
+  adapter.setToolOptions(PdfViewerAdapter::Tool::Ink,
+                         QJsonObject{{QStringLiteral("color"), QStringLiteral("blue")},
+                                     {QStringLiteral("width"), 3.5}});
+  const auto toolOptions = adapter.getToolOptions(PdfViewerAdapter::Tool::Ink);
+  adapter.setTool(PdfViewerAdapter::Tool::Ink);
+  adapter.setCommentsEditable(true);
+  adapter.setComments(QJsonArray{QJsonObject{{QStringLiteral("id"), QStringLiteral("A-comment")}}});
+
+  if (resetWhileNotReady) {
+    // Replace while A's theme reload is still waiting for its WebChannel.
+    adapter.clearViewerState();
+    adapter.setReady(false);
+    adapter.scrollToOutlineItem(0);
+    adapter.scrollToComment(QStringLiteral("A-comment"));
+    adapter.findText(QStringList{QStringLiteral("A-only")}, vnotex::FindOptions());
+  }
+
+  QSignalSpy pages(&adapter, &PdfViewerAdapter::pageRequested);
+  QSignalSpy zooms(&adapter, &PdfViewerAdapter::zoomRequested);
+  QSignalSpy rotations(&adapter, &PdfViewerAdapter::rotationRequested);
+  QSignalSpy scrolls(&adapter, &PdfViewerAdapter::scrollModeRequested);
+  QSignalSpy spreads(&adapter, &PdfViewerAdapter::spreadModeRequested);
+  QSignalSpy cursors(&adapter, &PdfViewerAdapter::cursorToolRequested);
+  QSignalSpy outlines(&adapter, &PdfViewerAdapter::outlineItemScrollRequested);
+  QSignalSpy commentScrolls(&adapter, &PdfViewerAdapter::commentScrollRequested);
+  QSignalSpy finds(&adapter, &PdfViewerAdapter::findTextRequested);
+  QSignalSpy comments(&adapter, &PdfViewerAdapter::commentsUpdated);
+  QSignalSpy tools(&adapter, &PdfViewerAdapter::toolChanged);
+
+  adapter.resetForNewDocument();
+  QVERIFY(!adapter.isReady());
+  QVERIFY(!adapter.isViewerReplayPending());
+  QVERIFY(!adapter.getViewerState().m_valid);
+  QCOMPARE(adapter.getViewerState().m_page, 0);
+  QCOMPARE(adapter.getViewerState().m_pageCount, 0);
+  QCOMPARE(adapter.getViewerState().m_scaleValue, QStringLiteral("auto"));
+  QCOMPARE(adapter.getViewerState().m_rotation, 0);
+  QCOMPARE(adapter.getViewerState().m_scrollMode, 0);
+  QCOMPARE(adapter.getViewerState().m_spreadMode, 0);
+  QCOMPARE(adapter.getViewerState().m_cursorTool, 0);
+  QVERIFY(!adapter.getViewerState().m_sidebarOpen);
+  QVERIFY(adapter.getOutlineHeadings().isEmpty());
+  QVERIFY(adapter.getComments().isEmpty());
+  QCOMPARE(adapter.getDocumentPageCount(), 0);
+  QCOMPARE(adapter.getTool(), PdfViewerAdapter::Tool::None);
+  QVERIFY(!adapter.areCommentsEditable());
+  QCOMPARE(adapter.getToolOptions(PdfViewerAdapter::Tool::Ink), toolOptions);
+
+  // The production window follows the new-document reset with its ordinary
+  // reload sequence. That must not re-arm ANY of A's replay values.
+  adapter.clearOutline();
+  adapter.clearComments();
+  adapter.clearViewerState();
+  adapter.clearFind();
+  adapter.setReady(false);
+  QVERIFY(!adapter.isViewerReplayPending());
+  const QJsonArray documentBComments{
+      QJsonObject{{QStringLiteral("id"), QStringLiteral("B-comment")}}};
+  adapter.setComments(documentBComments);
+  adapter.setCommentsEditable(true);
+  if (stateBeforeReady) {
+    adapter.setViewerState(goodState(1, 6));
+    adapter.setReady(true);
+  } else {
+    adapter.setReady(true);
+    adapter.setViewerState(goodState(1, 6));
+  }
+
+  // Observe the actual commands delivered to the consumer, not just the flag:
+  // no old camera, navigation, search, tool or comment payload reaches B.
+  QCOMPARE(pages.count(), 0);
+  QCOMPARE(zooms.count(), 0);
+  QCOMPARE(rotations.count(), 0);
+  QCOMPARE(scrolls.count(), 0);
+  QCOMPARE(spreads.count(), 0);
+  QCOMPARE(cursors.count(), 0);
+  QCOMPARE(outlines.count(), 0);
+  QCOMPARE(commentScrolls.count(), 0);
+  QCOMPARE(finds.count(), 0);
+  QCOMPARE(comments.count(), 1);
+  QCOMPARE(qvariant_cast<QJsonArray>(comments.at(0).at(0)), documentBComments);
+  QCOMPARE(tools.count(), 1);
+  QCOMPARE(tools.at(0).at(0).toString(), QStringLiteral("none"));
+  QCOMPARE(adapter.getViewerState().m_page, 1);
+
+  // B still owns ordinary replay: a subsequent theme reload restores B, not A.
+  auto documentB = goodState(3, 6);
+  documentB.insert(QStringLiteral("scale"), 1.25);
+  documentB.insert(QStringLiteral("scaleValue"), QStringLiteral("1.25"));
+  documentB.insert(QStringLiteral("rotation"), 270);
+  documentB.insert(QStringLiteral("scrollMode"), 2);
+  documentB.insert(QStringLiteral("spreadMode"), 1);
+  adapter.setViewerState(documentB);
+  adapter.clearViewerState();
+  adapter.setReady(false);
+  adapter.setReady(true);
+  adapter.setViewerState(goodState(1, 6));
+  QCOMPARE(pages.count(), 1);
+  QCOMPARE(pages.at(0).at(0).toInt(), 3);
+  QCOMPARE(zooms.count(), 1);
+  QCOMPARE(zooms.at(0).at(0).toString(), QStringLiteral("1.25"));
+  QCOMPARE(rotations.count(), 1);
+  QCOMPARE(rotations.at(0).at(0).toInt(), 270);
+  QCOMPARE(scrolls.count(), 1);
+  QCOMPARE(scrolls.at(0).at(0).toInt(), 2);
+  QCOMPARE(spreads.count(), 1);
+  QCOMPARE(spreads.at(0).at(0).toInt(), 1);
+  QCOMPARE(cursors.count(), 1);
+  QCOMPARE(cursors.at(0).at(0).toInt(), 0);
 }
 
 // The replay is refreshed by every ACCEPTED state push, NOT only by a toolbar

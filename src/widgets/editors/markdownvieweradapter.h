@@ -89,7 +89,7 @@ public:
   quint64 requestImageView(const QString &p_url, const QSizeF &p_viewportHint = QSizeF());
   void cancelImageView();
 
-  // Should be called before WebViewer.setHtml().
+  // Retire document commands and graph callbacks before WebViewer.setHtml().
   void reset();
 
   // Tell the web side that the toggle of the task list item at 0-based source

@@ -126,7 +126,7 @@ link to. Do not copy the table here.
 | `ViewAreaController` is the orchestrator | Handles open/close/split/move logic, fires hooks, uses WorkspaceCoreService |
 | `ViewArea2` is a pure view | Owns QSplitter tree + ViewSplit2 instances, no business logic |
 | `ViewSplit2` maps 1:1 to vxcore workspace | Each tab widget pane corresponds to one `WorkspaceCoreService` workspace |
-| `ViewWindow2` receives `Buffer2` in constructor | Not attach/detach pattern; one window = one buffer for its lifetime |
+| `ViewWindow2` receives an initial `Buffer2` in its constructor | Opt-in same-type windows can rebind through the guarded replacement lifecycle while retaining their ID/resources; queued work must check buffer generation. See [tab reuse](widgets/AGENTS.md#note-tab-reuse). |
 | `ViewWindowFactory` maps file types to creators | Registry pattern; plugins register creators for new file types |
 | Splitter orientation follows Vim convention | Left/Right split → `Qt::Horizontal`, Up/Down split → `Qt::Vertical` |
 | Session layout stored as JSON in `SessionConfig` | Recursive splitter tree + workspace IDs for full layout persistence |

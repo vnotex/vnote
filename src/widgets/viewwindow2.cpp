@@ -7,6 +7,7 @@
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QKeyEvent>
+#include <QLineEdit>
 #include <QMenu>
 #include <QMessageBox>
 #include <QPainter>
@@ -14,9 +15,12 @@
 #include <QPolygonF>
 #include <QPushButton>
 #include <QResizeEvent>
+#include <QScopeGuard>
 #include <QScrollBar>
 #include <QShortcut>
+#include <QSignalBlocker>
 #include <QTextEdit>
+#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -29,6 +33,7 @@
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <core/services/commentservice.h>
 #include <core/widgetconfig.h>
 
 #include <gui/services/themeservice.h>
@@ -173,6 +178,117 @@ Buffer2 &ViewWindow2::getBuffer() { return m_buffer; }
 
 const NodeIdentifier &ViewWindow2::getNodeId() const { return m_buffer.nodeId(); }
 
+bool ViewWindow2::replaceBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings) {
+  if (m_bufferReplacementInProgress || !supportsBufferReplacement() || !m_buffer.isValid() ||
+      m_buffer.nodeId().isVirtual() || !p_buffer.isValid() || p_buffer.nodeId().isVirtual() ||
+      p_buffer.id() == m_buffer.id()) {
+    return false;
+  }
+  QPointer<ViewWindow2> guard(this);
+  auto *buffers = m_services.get<BufferService>();
+  const QString oldId = m_buffer.id();
+  const NodeIdentifier oldNode = m_buffer.nodeId();
+  const auto identityIsCurrent = [&]() {
+    return guard && guard->m_buffer.id() == oldId && guard->m_buffer.nodeId() == oldNode &&
+           !guard->m_noteConversionFrozen && !guard->m_contentReplacementFrozen && buffers &&
+           !buffers->isProtectedLocking() && !buffers->isContentReplacementActive(p_buffer.id());
+  };
+  const auto validTransition = [&]() {
+    return identityIsCurrent() && !p_buffer.getBuffer().isEmpty() &&
+           (!guard->m_buffer.isEncrypted() || guard->m_buffer.acquireProtectedLease()) &&
+           (!p_buffer.isEncrypted() || p_buffer.acquireProtectedLease());
+  };
+  if (!validTransition()) {
+    return false;
+  }
+  m_bufferReplacementInProgress = true;
+  const auto finish = qScopeGuard([guard]() {
+    if (guard) {
+      guard->m_bufferReplacementInProgress = false;
+    }
+  });
+
+  auto *comments = m_services.get<CommentService>();
+  CommentService::FlushCheckpoint checkpoint;
+  if (comments) {
+    const auto result =
+        comments->flushAndWaitForIdle(oldNode.notebookId, oldNode.relativePath, false, 5000,
+                                      [&]() { return !identityIsCurrent(); });
+    if (!guard) {
+      return false;
+    }
+    checkpoint = result.m_checkpoint;
+    if (result.m_status != CommentService::FlushResult::Status::Succeeded ||
+        !comments->isFlushCheckpointCurrent(checkpoint)) {
+      showMessage(tr("Unable to open another note: comments could not be saved"));
+      return false;
+    }
+  }
+  if (!validTransition() || !ViewWindow2::aboutToClose(false) || !guard) {
+    return false;
+  }
+  if (!validTransition() || (comments && !comments->isFlushCheckpointCurrent(checkpoint))) {
+    buffers->registerActiveWriter(oldId, reinterpret_cast<quintptr>(this),
+                                  [this]() { return getLatestContent(); });
+    return false;
+  }
+
+  hideFindAndReplaceWidget();
+  clearHighlights();
+  if (m_findAndReplace) {
+    for (auto *edit : m_findAndReplace->findChildren<QLineEdit *>()) {
+      const QSignalBlocker blocker(edit);
+      edit->clear();
+    }
+    for (auto *timer : m_findAndReplace->findChildren<QTimer *>()) {
+      timer->stop();
+    }
+  }
+  if (m_attachmentPopup) {
+    m_attachmentPopup->close();
+  }
+  releaseBufferResources();
+  if (!guard) {
+    return false;
+  }
+  ++m_bufferGeneration;
+  m_buffer = p_buffer;
+  m_editorDirty = false;
+  m_lastKnownRevision = m_buffer.getRevision();
+  m_externalChangeDismissed = false;
+  m_dismissedState = BufferState::Normal;
+  m_dismissedMtime = {};
+  m_readOnlyWarningCooldown.invalidate();
+  m_findInfo = {};
+  showMessage(QString());
+  bindBufferResources();
+  syncEditorFromBuffer();
+  setMode(m_fileType == QStringLiteral("typst") && !p_settings.m_forceMode ? ViewWindowMode::Edit
+                                                                           : p_settings.m_mode);
+  applyFileOpenSettings(p_settings);
+  if (m_encodingButton) {
+    m_encodingButton->setCurrentEncoding(m_buffer.encoding());
+  }
+  if (m_attachmentPopup) {
+    m_attachmentPopup->setBuffer(&m_buffer);
+  }
+  if (m_attachmentAction) {
+    m_attachmentAction->setEnabled(m_buffer.isAttachmentSupported() &&
+                                   (!m_buffer.isReadOnly() || m_buffer.isEncrypted()));
+    m_attachmentAction->setToolTip(m_buffer.isReadOnly() && !m_buffer.isEncrypted()
+                                       ? tr("Read-only \u2014 cannot edit")
+                                       : m_attachmentAction->text());
+    updateAttachmentIcon();
+  }
+  if (m_saveAction) {
+    m_saveAction->setToolTip(m_buffer.isReadOnly() ? tr("Read-only \u2014 cannot edit")
+                                                   : m_saveAction->text());
+  }
+  buffers->registerActiveWriter(m_buffer.id(), reinterpret_cast<quintptr>(this),
+                                [this]() { return getLatestContent(); });
+  return true;
+}
+
 // ============ Rename Support ============
 
 void ViewWindow2::onNodeRenamed(const NodeIdentifier &p_newNodeId) {
@@ -316,6 +432,8 @@ bool ViewWindow2::aboutToClose(bool p_force) {
   if (m_noteConversionFrozen || m_contentReplacementFrozen) {
     return false;
   }
+  QPointer<ViewWindow2> guard(this);
+  const QString closingId = m_buffer.id();
   // Restore normal window state before opening the Save/Discard dialog.
   setViewFullScreen(false);
 
@@ -324,6 +442,9 @@ bool ViewWindow2::aboutToClose(bool p_force) {
     int ret = MessageBoxHelper::questionSaveDiscardCancel(
         MessageBoxHelper::Question, tr("Do you want to save changes to \"%1\"?").arg(getName()),
         tr("Your changes will be lost if you don't save them."), QString(), this);
+    if (!guard || m_buffer.id() != closingId) {
+      return false;
+    }
 
     if (ret == QMessageBox::Cancel) {
       return false;
@@ -334,7 +455,13 @@ bool ViewWindow2::aboutToClose(bool p_force) {
       static const int c_maxRetries = 3;
       for (int attempt = 0; attempt < c_maxRetries; ++attempt) {
         if (save()) {
+          if (!guard || m_buffer.id() != closingId) {
+            return false;
+          }
           break;
+        }
+        if (!guard || m_buffer.id() != closingId) {
+          return false;
         }
 
         // Save failed. Show retry dialog with proper buttons.
@@ -350,6 +477,9 @@ bool ViewWindow2::aboutToClose(bool p_force) {
         msgBox.setDefaultButton((attempt < c_maxRetries - 1) ? QMessageBox::Retry
                                                              : QMessageBox::Cancel);
         int failRet = msgBox.exec();
+        if (!guard || m_buffer.id() != closingId) {
+          return false;
+        }
 
         if (failRet == QMessageBox::Cancel) {
           return false;
@@ -464,7 +594,7 @@ void ViewWindow2::setStatusWidget(const QSharedPointer<StatusWidget> &p_widget) 
 
   // Host the encoding picker in the status bar's right corner for windows that
   // opt in. Created here (not in the toolbar) so it lives beside the editor's
-  // status indicators. One window = one buffer, so a single creation suffices.
+  // status indicators. Replacement refreshes the retained picker for its new buffer.
   if (isEncodingSupported()) {
     p_widget->addCornerWidget(ensureEncodingButton());
   }
@@ -813,7 +943,7 @@ ServiceLocator &ViewWindow2::getServices() const { return m_services; }
 // ============ Auto-Save Integration ============
 
 void ViewWindow2::onEditorContentsChanged() {
-  if (m_contentReplacementFrozen)
+  if (m_contentReplacementFrozen || m_bufferReplacementInProgress)
     return;
   if (!m_buffer.isValid()) {
     return;
@@ -932,7 +1062,7 @@ void ViewWindow2::reinterpretWithEncoding(const QString &p_codecName) {
 }
 
 void ViewWindow2::onFocusGained() {
-  if (m_noteConversionFrozen || m_contentReplacementFrozen) {
+  if (m_noteConversionFrozen || m_contentReplacementFrozen || m_bufferReplacementInProgress) {
     return;
   }
   if (!m_buffer.isValid()) {
@@ -961,7 +1091,7 @@ void ViewWindow2::onFocusGained() {
 }
 
 void ViewWindow2::onFocusLost() {
-  if (m_noteConversionFrozen || m_contentReplacementFrozen) {
+  if (m_noteConversionFrozen || m_contentReplacementFrozen || m_bufferReplacementInProgress) {
     return;
   }
   if (!m_buffer.isValid()) {
@@ -1254,7 +1384,15 @@ void ViewWindow2::handleExternalChange(BufferState p_state) {
       // invocation so the current stack — including msgBox's destructor and
       // all callers up through BufferService::checkSingleExternalChange —
       // can unwind cleanly before the window is destroyed.
-      QMetaObject::invokeMethod(this, [this]() { emit closeRequested(); }, Qt::QueuedConnection);
+      const auto generation = m_bufferGeneration;
+      QMetaObject::invokeMethod(
+          this,
+          [this, generation]() {
+            if (generation == m_bufferGeneration) {
+              emit closeRequested();
+            }
+          },
+          Qt::QueuedConnection);
     } else {
       // Cancel — for file-missing, store null QDateTime as dismiss token.
       m_externalChangeDismissed = true;

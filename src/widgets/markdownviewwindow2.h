@@ -14,8 +14,8 @@
 #include <optional>
 
 #include <controllers/legacyimagemigrationcontroller.h>
-#include <core/markdowneditorconfig.h>
 #include <core/fileopensettings.h>
+#include <core/markdowneditorconfig.h>
 
 #include "outlineprovider.h"
 
@@ -61,6 +61,8 @@ public:
   QString getLatestContent() const Q_DECL_OVERRIDE;
 
   bool isEncodingSupported() const Q_DECL_OVERRIDE { return true; }
+
+  bool supportsBufferReplacement() const override { return true; }
 
   void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
@@ -119,6 +121,10 @@ protected:
 
   void syncEditorFromBuffer() Q_DECL_OVERRIDE;
 
+  void releaseBufferResources() override;
+
+  void bindBufferResources() override;
+
   void handlePrint() Q_DECL_OVERRIDE;
 
   // Print the current mode's document, including to a caller-supplied PDF printer.
@@ -150,6 +156,10 @@ private:
   void setupTextEditor();
 
   bool setupViewer();
+
+  void connectViewerSignals();
+
+  void retireReader();
 
   void initializeViewerPage();
 
@@ -244,6 +254,8 @@ private:
 
   void clearObsoleteImages();
 
+  void finalizeBufferImages();
+
   // Whether @p_url points at an image host rather than a notebook asset.
   static bool isRemoteImageUrl(const QString &p_url);
 
@@ -251,7 +263,7 @@ private:
   bool isClearObsoleteImageAtImageHostEnabled() const;
 
   // Legacy (vx_images / _v_images) image migration. Runs at most once per
-  // window; the originals are removed once, at close, by the finalize gate.
+  // bound document; originals are removed by the accepted-close/replacement gate.
   void scheduleLegacyImageCheck();
 
   void runLegacyImageCheck();
@@ -300,6 +312,9 @@ private:
 
   // State.
   bool m_propagateEditorToBuffer = false;
+  bool m_rebindingBuffer = false;
+  bool m_resetTextEditorForNewBuffer = false;
+  bool m_sourceAvailable = true;
   bool m_editSectionNumberEnabled = false;
   QString m_editSectionNumberPattern = QStringLiteral("1.1.");
   bool m_editDetectHeading1ForSectionNumber = true;
@@ -312,6 +327,7 @@ private:
   bool m_viewerReady = false;
   bool m_viewerPageInitialized = false;
   bool m_printPending = false;
+  quint64 m_printBufferGeneration = 0;
   quint64 m_editorImageRequest = 0;
   bool m_editorImageOpened = false;
   bool m_deferredPreviewUpdate = false;
@@ -365,8 +381,8 @@ private:
   QSet<QString> m_initialImages;  // Present when the buffer was opened.
   QSet<QString> m_insertedImages; // Inserted during this session.
 
-  // Legacy image migration state. The check runs at most once per window; the
-  // rewrites are consumed by the close-time finalize.
+  // Legacy image migration state. The check runs at most once per bound document;
+  // rewrites are consumed by accepted close or replacement.
   bool m_legacyImageCheckDone = false;
   // Managed by QObject/layout.
   LegacyImageMigrationBar *m_legacyImageBar = nullptr;

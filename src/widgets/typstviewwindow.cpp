@@ -60,6 +60,7 @@ TypstViewWindow::TypstViewWindow(ServiceLocator &p_services, const Buffer2 &p_bu
           [this](const QUrl &p_url) {
             const QPointer<TypstViewWindow> guard(this);
             const QPointer<TypstViewWindowController> controller(m_controller);
+            const auto generation = getBufferGeneration();
             if (!m_sourceAvailable || !isEnabled()) {
               controller->openConfirmedExternalLink(QUrl());
               return;
@@ -70,7 +71,8 @@ TypstViewWindow::TypstViewWindow(ServiceLocator &p_services, const Buffer2 &p_bu
                 tr("Are you sure to open link (%1)?").arg(url.toString()),
                 tr("Malicious link might do harm to your device."), QString(), window());
             if (controller) {
-              const bool accepted = guard && guard->m_sourceAvailable && guard->isEnabled() &&
+              const bool accepted = guard && guard->getBufferGeneration() == generation &&
+                                    guard->m_sourceAvailable && guard->isEnabled() &&
                                     answer == QMessageBox::Yes;
               controller->openConfirmedExternalLink(accepted ? url : QUrl());
             }
@@ -226,8 +228,8 @@ void TypstViewWindow::updatePresentationActions() {
     m_inplacePreviewAction->setChecked(m_typstEditor->isInplacePreviewEnabled());
   }
   const bool pdfVisible = m_mode == ViewWindowMode::Read || m_livePreviewAction->isChecked();
-  const int count = m_typstEditor ? m_typstEditor->pdfPageCount() : 0;
-  const int page = m_typstEditor ? m_typstEditor->currentPdfPage() : -1;
+  const int count = m_sourceAvailable && m_typstEditor ? m_typstEditor->pdfPageCount() : 0;
+  const int page = count > 0 ? m_typstEditor->currentPdfPage() : -1;
   for (auto *action : m_pdfActions) {
     action->setVisible(pdfVisible);
     action->setEnabled(count > 0);
@@ -380,6 +382,28 @@ void TypstViewWindow::connectEditorSignals() {
           });
 }
 
+void TypstViewWindow::releaseBufferResources() {
+  const QScopedValueRollback<bool> guard(m_propagateEditorToBuffer, false);
+  m_sourceAvailable = false;
+  // Invalidate controller-owned navigation and any consent still on a modal stack.
+  m_controller->setBuffer(Buffer2{});
+  clearOutline();
+  if (m_typstEditor) {
+    m_typstEditor->hide();
+    m_typstEditor->setReadOnly(true);
+    TextViewWindowHelper::clearSearchHighlights(this);
+    m_typstEditor->resetForNewDocument();
+  }
+}
+
+void TypstViewWindow::bindBufferResources() {
+  m_loadErrorBanner->hide();
+  // syncEditorFromBuffer validates the new controller/project identity before reading
+  // source or showing the retained widget. Failed loads leave it hidden and unsaveable.
+  setFindAndReplaceReplaceEnabled(false);
+  updatePresentationActions();
+}
+
 void TypstViewWindow::syncEditorFromBuffer() {
   const QScopedValueRollback<bool> guard(m_propagateEditorToBuffer, false);
   QString error;
@@ -406,6 +430,9 @@ void TypstViewWindow::syncEditorFromBuffer() {
   m_editor->setModified(getBuffer().isModified());
   m_lastKnownRevision = getBuffer().getRevision();
   m_sourceAvailable = true;
+  // Identity setters and setText must not admit an empty old-project compilation.
+  m_typstEditor->finishDocumentReset();
+  m_typstEditor->show();
   m_loadErrorBanner->hide();
   setFindAndReplaceReplaceEnabled(m_mode == ViewWindowMode::Edit && !getBuffer().isReadOnly());
   emit statusChanged();
@@ -456,8 +483,9 @@ void TypstViewWindow::handleNodeRetargeted(const NodeIdentifier &p_newNodeId) {
 bool TypstViewWindow::aboutToClose(bool p_force) {
   const QPointer<TypstViewWindow> guard(this);
   const QPointer<TypstViewWindowController> controller(m_controller);
+  const auto generation = getBufferGeneration();
   const bool accepted = ViewWindow2::aboutToClose(p_force);
-  if (accepted && guard && controller) {
+  if (accepted && guard && guard->getBufferGeneration() == generation && controller) {
     controller->setBuffer(Buffer2{});
   }
   return accepted;
@@ -595,9 +623,10 @@ void TypstViewWindow::navigateToHeading(int p_index) {
 
   const QPointer<TypstViewWindow> guard(this);
   const auto outline = m_outlineProvider->getOutline();
-  const auto isCurrent = [&guard, &outline]() {
-    return guard && guard->m_sourceAvailable && guard->isEnabled() &&
-           guard->m_outlineProvider->getOutline() == outline;
+  const auto generation = getBufferGeneration();
+  const auto isCurrent = [&guard, &outline, generation]() {
+    return guard && guard->getBufferGeneration() == generation && guard->m_sourceAvailable &&
+           guard->isEnabled() && guard->m_outlineProvider->getOutline() == outline;
   };
   revealSource();
   if (!isCurrent() || !isActiveFileHeading(target)) {
@@ -859,7 +888,12 @@ void TypstViewWindow::fetchWordCountInfo(
 
 void TypstViewWindow::applySnippet(const QString &p_name) {
   if (m_sourceAvailable && !getBuffer().isReadOnly() && isEnabled()) {
+    const QPointer<TypstViewWindow> guard(this);
+    const auto generation = getBufferGeneration();
     revealSource();
+    if (!guard || guard->getBufferGeneration() != generation || !m_sourceAvailable) {
+      return;
+    }
     TextViewWindowHelper::applySnippetByName2(this, p_name);
   }
 }
@@ -868,40 +902,61 @@ void TypstViewWindow::applySnippet() {
   if (!m_sourceAvailable || getBuffer().isReadOnly() || !isEnabled()) {
     return;
   }
+  const QPointer<TypstViewWindow> guard(this);
+  const auto generation = getBufferGeneration();
   revealSource();
+  if (!guard || guard->getBufferGeneration() != generation || !m_sourceAvailable) {
+    return;
+  }
   if (!m_editor->getTextEdit()->hasSelection() &&
       TextViewWindowHelper::detectSnippetSymbol2(this).found) {
     TextViewWindowHelper::applySnippetPrompt2(this);
     return;
   }
-  const QPointer<TypstViewWindow> guard(this);
   const QString name = TextViewWindowHelper::promptForSnippet2(this);
-  if (guard && !name.isEmpty()) {
+  if (guard && guard->getBufferGeneration() == generation && !name.isEmpty()) {
     guard->applySnippet(name);
   }
 }
 
 void TypstViewWindow::applyFileOpenSettings(const FileOpenSettings &p_settings) {
+  const QPointer<TypstViewWindow> guard(this);
+  const auto generation = getBufferGeneration();
+  const auto isCurrent = [&guard, generation]() {
+    return guard && guard->getBufferGeneration() == generation && guard->m_sourceAvailable;
+  };
   if (p_settings.m_forceMode) {
     setMode(p_settings.m_mode);
   }
-  if (!m_sourceAvailable) {
+  if (!isCurrent()) {
     return;
   }
   if (p_settings.m_cursorOffset >= 0 || p_settings.m_searchHighlight.m_isValid) {
     revealSource();
   }
+  if (!isCurrent()) {
+    return;
+  }
   if (p_settings.m_lineNumber >= 0) {
     m_editor->scrollToLine(p_settings.m_lineNumber, true);
   }
+  if (!isCurrent()) {
+    return;
+  }
   if (p_settings.m_cursorOffset >= 0) {
     WidgetUtils::applyCursorOffset(m_editor->getTextEdit(), p_settings.m_cursorOffset);
+  }
+  if (!isCurrent()) {
+    return;
   }
   if (p_settings.m_searchHighlight.m_isValid) {
     const auto result = m_editor->findText(
         p_settings.m_searchHighlight.m_patterns,
         TextViewWindowHelper::toEditorFindFlags(p_settings.m_searchHighlight.m_options), 0, -1,
         p_settings.m_searchHighlight.m_currentMatchLine);
+    if (!isCurrent()) {
+      return;
+    }
     showFindResult(p_settings.m_searchHighlight.m_patterns, result.m_totalMatches,
                    result.m_currentMatchIndex);
   }

@@ -2,6 +2,7 @@
 
 #include <QDateTime>
 #include <QMap>
+#include <QPointer>
 #include <QUrl>
 
 #include <utility>
@@ -92,8 +93,13 @@ void MarkdownViewerAdapter::setText(int p_revision, const QString &p_text, int p
     qCDebug(lcPerfPreview) << "adapter setText dispatched revision=" << p_revision
                            << "chars=" << p_text.size()
                            << "atMs=" << QDateTime::currentMSecsSinceEpoch();
+    const auto generation = getResetGeneration();
+    const QPointer<MarkdownViewerAdapter> guard(this);
     m_revision = p_revision;
     emit textUpdated(p_text);
+    if (!guard || guard->getResetGeneration() != generation) {
+      return;
+    }
     scrollToPosition(Position(p_lineNumber, ""));
   } else {
     qCDebug(lcPerfPreview) << "adapter setText queued revision=" << p_revision
@@ -346,17 +352,26 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QSt
   // by services passed through PreviewHelper pipeline in a future migration.
   // For now, both legacy and new-architecture paths use the singleton directly.
   const auto graphvizEngine = GraphvizHelper::getEngineForLanguage(p_lang);
+  const auto generation = getResetGeneration();
   if (p_lang == QStringLiteral("puml")) {
     PlantUmlHelper::getInst().process(
         p_id, p_index, p_format, p_text, this,
-        [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data,
-               bool success) { emit graphRenderDataReady(id, timeStamp, format, data, success); },
+        [this, generation](quint64 id, TimeStamp timeStamp, const QString &format,
+                           const QString &data, bool success) {
+          if (generation == getResetGeneration()) {
+            emit graphRenderDataReady(id, timeStamp, format, data, success);
+          }
+        },
         p_imageIndex);
   } else if (!graphvizEngine.isEmpty()) {
     GraphvizHelper::getInst().process(
         p_id, p_index, p_format, p_text, this,
-        [this](quint64 id, TimeStamp timeStamp, const QString &format, const QString &data,
-               bool success) { emit graphRenderDataReady(id, timeStamp, format, data, success); },
+        [this, generation](quint64 id, TimeStamp timeStamp, const QString &format,
+                           const QString &data, bool success) {
+          if (generation == getResetGeneration()) {
+            emit graphRenderDataReady(id, timeStamp, format, data, success);
+          }
+        },
         0, graphvizEngine);
   } else {
     qWarning() << "MarkdownViewerAdapter::renderGraph unhandled lang=" << p_lang << "id=" << p_id

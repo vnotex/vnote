@@ -185,6 +185,10 @@ public:
   // back to page 7 at 150%, not to page 1.
   void clearViewerState();
 
+  // Unlike a same-document/theme reload, a different note starts at PDF.js's
+  // defaults. Retains user tool options, but retires all document state/intents.
+  void resetForNewDocument();
+
   // Whether a replay is armed and still waiting for the replacement document.
   // Exposed for the gate; production code never branches on it.
   bool isViewerReplayPending() const;
@@ -227,6 +231,9 @@ public:
 
   // Drop the find highlight. One-shot: a find session belongs to a live page.
   void clearFind();
+
+  // Keep deferred searches with this document, not the base adapter's queue.
+  void findText(const QStringList &p_texts, FindOptions p_options, int p_currentMatchLine = -1);
 
   // Functions to be called from web side.
 public slots:
@@ -396,6 +403,10 @@ private:
   // ---- Viewer controls ----
 
   ViewerState m_viewerState;
+
+  quint64 m_documentGeneration = 0;
+
+  QVector<std::function<void()>> m_pendingDocumentActions;
 
   // The values to re-apply after a reload. Refreshed by EVERY accepted state
   // push, not only by toolbar requests: a page reached by scrolling, by an

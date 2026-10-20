@@ -118,6 +118,8 @@ void CoreConfig::fromJson(const QJsonObject &p_jobj) {
     auto mode = READSTR(QStringLiteral("defaultOpenMode"));
     m_defaultOpenMode = stringToViewWindowMode(mode);
   }
+  m_alwaysOpenNotesInNewTabs =
+      p_jobj.value(QStringLiteral("alwaysOpenNotesInNewTabs")).toBool(true);
 
   loadUnitedEntry(p_jobj);
 }
@@ -149,6 +151,7 @@ QJsonObject CoreConfig::toJson() const {
   obj[QStringLiteral("lineEnding")] = lineEndingPolicyToString(m_lineEnding);
   obj[QStringLiteral("unitedEntry")] = saveUnitedEntry();
   obj[QStringLiteral("defaultOpenMode")] = viewWindowModeToString(m_defaultOpenMode);
+  obj[QStringLiteral("alwaysOpenNotesInNewTabs")] = m_alwaysOpenNotesInNewTabs;
   return obj;
 }
 
@@ -398,6 +401,12 @@ ViewWindowMode CoreConfig::getDefaultOpenMode() const { return m_defaultOpenMode
 
 void CoreConfig::setDefaultOpenMode(ViewWindowMode p_mode) {
   updateConfig(m_defaultOpenMode, p_mode, this);
+}
+
+bool CoreConfig::getAlwaysOpenNotesInNewTabs() const { return m_alwaysOpenNotesInNewTabs; }
+
+void CoreConfig::setAlwaysOpenNotesInNewTabs(bool p_enabled) {
+  updateConfig(m_alwaysOpenNotesInNewTabs, p_enabled, this);
 }
 
 ViewWindowMode CoreConfig::stringToViewWindowMode(const QString &p_mode) {

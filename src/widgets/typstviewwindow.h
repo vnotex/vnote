@@ -29,6 +29,7 @@ public:
   QString getLatestContent() const override;
   QSharedPointer<OutlineProvider> getOutlineProvider() const override;
   bool isEncodingSupported() const override { return true; }
+  bool supportsBufferReplacement() const override { return true; }
   void setMode(ViewWindowMode p_mode) override;
   int getCursorPosition() const override;
   int getScrollPosition() const override;
@@ -62,6 +63,8 @@ protected:
   void addAdditionalViewToolBarActions(QToolBar *p_toolBar) override;
   void paintEvent(QPaintEvent *p_event) override;
   void syncEditorFromBuffer() override;
+  void releaseBufferResources() override;
+  void bindBufferResources() override;
   void applyReadableWidth() override;
   bool isPrintSupported() const override { return false; }
   void scrollUp() override;

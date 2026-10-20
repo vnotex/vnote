@@ -1,6 +1,10 @@
 #include "webviewadapter.h"
 
-#include <utils/utils.h>
+#include <QJsonObject>
+#include <QPointer>
+#include <QTimer>
+
+#include <utility>
 
 using namespace vnotex;
 
@@ -16,20 +20,28 @@ QJsonObject WebViewAdapter::FindOption::toJson() const {
 WebViewAdapter::WebViewAdapter(QObject *p_parent) : QObject(p_parent) {}
 
 void WebViewAdapter::setReady(bool p_ready) {
-  if (m_ready == p_ready) {
+  if (!p_ready) {
+    m_ready = false;
+    ++m_resetGeneration;
+    m_pendingActions.clear();
+    m_callbackPool.clear();
+    return;
+  }
+  if (m_ready) {
     return;
   }
 
-  m_ready = p_ready;
-  if (m_ready) {
-    for (auto &act : m_pendingActions) {
-      act();
+  m_ready = true;
+  const auto generation = m_resetGeneration;
+  const QPointer<WebViewAdapter> guard(this);
+  const auto actions = std::exchange(m_pendingActions, {});
+  for (const auto &act : actions) {
+    act();
+    if (!guard || guard->getResetGeneration() != generation) {
+      return;
     }
-    m_pendingActions.clear();
-    emit ready();
-  } else {
-    m_pendingActions.clear();
   }
+  emit ready();
 }
 
 void WebViewAdapter::pendAction(const std::function<void()> &p_func) {
@@ -66,10 +78,15 @@ void WebViewAdapter::findText(const QStringList &p_texts, FindOptions p_options,
   if (isReady()) {
     emit findTextRequested(p_texts, opts.toJson(), p_currentMatchLine);
   } else {
-    pendAction([this, p_texts, opts, p_currentMatchLine]() {
-      // FIXME: highlights will be clear once the page is ready. Add a delay here.
-      Utils::sleepWait(1000);
-      emit findTextRequested(p_texts, opts.toJson(), p_currentMatchLine);
+    const auto generation = getResetGeneration();
+    pendAction([this, generation, p_texts, opts, p_currentMatchLine]() {
+      // Let page initialization finish clearing highlights without a nested event loop.
+      QTimer::singleShot(1000, this, [this, generation, p_texts, opts, p_currentMatchLine]() {
+        if (generation != getResetGeneration() || !isReady()) {
+          return;
+        }
+        emit findTextRequested(p_texts, opts.toJson(), p_currentMatchLine);
+      });
     });
   }
 }

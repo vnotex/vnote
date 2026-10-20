@@ -574,6 +574,7 @@ void MainWindow2::doOpenFiles(const QStringList &p_paths, bool p_detached) {
 
     FileOpenSettings settings;
     settings.m_detachedView = p_detached;
+    settings.m_alwaysNewWindow = p_detached || p_paths.size() > 1;
     qInfo() << "MainWindow2::doOpenFiles: opening external file:" << absolutePath;
     bufferSvc->openBuffer(nodeId, settings);
   }

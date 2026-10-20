@@ -107,9 +107,9 @@ public:
   // ============ Open/Close ============
 
   // Open a buffer in the current workspace (split).
-  // Resolves file type via FileTypeCoreService, fires before-hook,
-  // ensures a current workspace exists, then calls m_view->openBuffer()
-  // for the view to create the ViewWindow2 via factory.
+  // Resolves type, hooks, workspace routing, and duplicate activation before
+  // applying the new-tab preference. Reuses compatible resources or creates
+  // a different viewer before attempting to close the captured outgoing tab.
   void openBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings = FileOpenSettings());
 
   // Open a widget-based content (e.g., Settings) as a tab in the view area.
@@ -126,7 +126,9 @@ public:
   //   detached (--detached-view) workspace; register it there and do NOT retarget
   //   the main window's current window/split. When empty, normal behavior using
   //   the current workspace.
-  // Fires the after-open hook and updates current window/workspace tracking.
+  // Registers membership before reconciling the selected tab; background opens
+  // retain the current window, and restore leaves persisted current state intact.
+  // Fires the after-open hook and publishes the updated windows.
   void onViewWindowOpened(ID p_windowId, const Buffer2 &p_buffer,
                           const FileOpenSettings &p_settings,
                           const QString &p_detachedWorkspaceId = QString());
@@ -272,6 +274,7 @@ public:
   void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus);
 
   // Called by the view when the active tab changes within a split.
+  // Reconciles core current-buffer state even when the window ID is unchanged.
   // @p_bufferId: buffer ID of the newly active window (to update vxcore current buffer).
   void setCurrentViewWindow(ID p_windowId, const QString &p_bufferId = QString());
 
@@ -348,6 +351,9 @@ private:
   bool transferBufferRegistration(const QString &p_srcWorkspaceId, const QString &p_dstWorkspaceId,
                                   const QString &p_bufferId);
 
+  // Dispose a failed open only when no visible, hidden, or detached workspace owns it.
+  void closeUnownedOpenBuffer(const QString &p_bufferId);
+
   // Emit currentViewWindowChanged if the active window has changed.
   void checkCurrentViewWindowChange(const QString &p_workspaceId);
 
@@ -401,6 +407,13 @@ private:
   ViewAreaView *m_view = nullptr;
   ID m_currentWindowId = InvalidViewWindowId;
   QString m_currentWorkspaceId;
+
+  // A hook/modal loop must not close, move, or recursively replace the captured tab.
+  QSet<ID> m_transitioningWindows;
+  // Workspace/candidate pairs already owned by an in-flight replacement.
+  QMultiMap<QString, QString> m_replacementCandidates;
+  // Current-window publication is deferred until replacement membership is consistent.
+  bool m_replacingBuffer = false;
 
   // Whether view area operations should propagate state changes to vxcore.
   // false during session restore (rebuilding UI from vxcore state).

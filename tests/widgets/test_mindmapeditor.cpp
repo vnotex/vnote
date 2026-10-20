@@ -56,13 +56,13 @@
 #include <core/mainconfig.h>
 #include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
-#include <core/sessionconfig.h>
 #include <core/services/bufferservice.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
 #include <core/services/syncworkqueuemanager.h>
+#include <core/sessionconfig.h>
 #include <vxcore/vxcore.h>
 #include <widgets/dialogs/imageinsertdialog.h>
 #include <widgets/dialogs/linkinsertdialog.h>
@@ -1471,8 +1471,9 @@ void TestMindMapEditor::zoomToolbarPreservesFractionalInputAndDiscardsDrafts() {
   });
   connect(&editor, &m3::qt::MindMapEditor::zoomChanged, &controls, [&]() {
     using Mode = m3::qt::MindMapEditor::ZoomMode;
-    const qreal choice = editor.zoomMode() == Mode::Width ? -1.0
-                         : editor.zoomMode() == Mode::Page ? 0.0 : editor.zoomFactor();
+    const qreal choice = editor.zoomMode() == Mode::Width  ? -1.0
+                         : editor.zoomMode() == Mode::Page ? 0.0
+                                                           : editor.zoomFactor();
     session.setMindMapZoomFactor(choice);
     controls.setZoom(choice);
   });
@@ -1533,6 +1534,7 @@ void TestMindMapEditor::configuredShortcutsDriveRealCommands() {
       {QStringLiteral("shortcuts"),
        QJsonObject{{QStringLiteral("addChild"),
                     QJsonArray{QStringLiteral("Ctrl+J"), 7, QStringLiteral("not a key")}},
+                   {QStringLiteral("nextSibling"), QJsonArray{}},
                    {QStringLiteral("toggleBold"), QJsonArray{}}}}});
   auto buffer = openNote(QStringLiteral("configured.emind"), fixture());
   QVERIFY(buffer.isValid());

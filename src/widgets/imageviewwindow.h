@@ -16,6 +16,7 @@ public:
   QString getLatestContent() const override;
   void setMode(ViewWindowMode p_mode) override;
   bool isSaveSupported() const override { return false; }
+  bool supportsBufferReplacement() const override { return true; }
   void handleThemeChanged() override;
 
 protected:
