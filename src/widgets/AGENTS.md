@@ -520,7 +520,11 @@ Mode, before zoom controls, and reachable through toolbar overflow. Its exclusiv
 and the actual editor state after a rejected command; do not block QAction `changed` signals,
 which maintain QActionGroup's current member. Accept an active inline draft before switching,
 and reject application to a replacement buffer. Layout changes alone do not dirty the document,
-consume undo history or reset zoom/selection. Read-only maps remain switchable; unloaded or
+consume undo history or reset zoom/selection. An actual change centers the first selected node,
+or the main node when the selection is empty or link-only; group/link selection is retained.
+Successful menu choices return keyboard focus to the native canvas. Native API calls retain
+caller-owned focus and inline drafts; unchanged or rejected layouts do not recenter.
+Read-only maps remain switchable; unloaded or
 invalid content disables both the button and its menu actions. The button uses Lucide's
 `layout_dashboard_editor.svg`. An explicit successful menu choice also updates
 `editor.mindMapEditor.defaultLayoutDirection` in `vnotex.json`, not `session.json`, even when

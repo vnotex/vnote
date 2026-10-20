@@ -4,6 +4,7 @@
 #include <QActionGroup>
 #include <QApplication>
 #include <QCoreApplication>
+#include <QGraphicsView>
 #include <QKeySequence>
 #include <QMenu>
 #include <QPainter>
@@ -323,6 +324,12 @@ void MindMapViewWindow2::setupLayoutMenu(QToolBar *p_toolBar) {
     }
     if (guard) {
       syncLayoutControls();
+      if (applied && generation == m_generation && m_contentLoaded && m_editor->isEnabled() &&
+          m_editor->layoutDirection() == direction) {
+        if (auto *view = m_editor->findChild<QGraphicsView *>()) {
+          view->setFocus(Qt::OtherFocusReason);
+        }
+      }
     }
   });
   connect(m_editor, &m3::qt::MindMapEditor::layoutDirectionChanged, this,
