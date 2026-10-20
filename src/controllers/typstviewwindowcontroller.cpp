@@ -423,10 +423,11 @@ void TypstViewWindowController::requestOpenLink(const QUrl &p_url) {
     return;
   }
 
-  const auto node = resolveIndexedFile(canonicalPath);
+  auto node = resolveIndexedFile(canonicalPath);
   if (!node.isValid()) {
-    confirmExternalLink(QUrl::fromLocalFile(canonicalPath));
-    return;
+    // Unindexed files use the normal external-buffer identity, not an OS launch.
+    // ViewAreaController retains ownership of editor selection and file associations.
+    node.relativePath = canonicalPath;
   }
   FileOpenSettings settings;
   settings.m_anchor = p_url.fragment(QUrl::FullyDecoded);
@@ -461,11 +462,7 @@ void TypstViewWindowController::openConfirmedExternalLink(const QUrl &p_url) {
   if (pending.isEmpty() || pending != p_url || generation != m_generation || !bufferAvailable()) {
     return;
   }
-  if (!p_url.isValid() || containsNull(p_url) ||
-      (!externalSchemeAllowed(p_url) &&
-       (!p_url.isLocalFile() || !p_url.authority().isEmpty() ||
-        !isLocalLinkPath(p_url.toLocalFile()) || !QFileInfo(p_url.toLocalFile()).isAbsolute() ||
-        !QFileInfo(p_url.toLocalFile()).isFile()))) {
+  if (!p_url.isValid() || containsNull(p_url) || !externalSchemeAllowed(p_url)) {
     emit errorOccurred(tr("This link is not allowed for this note"));
     return;
   }

@@ -12,6 +12,7 @@
 #include <QBuffer>
 #include <QClipboard>
 #include <QContextMenuEvent>
+#include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QDirIterator>
 #include <QDrag>
@@ -27,6 +28,7 @@
 #include <QMenu>
 #include <QMessageBox>
 #include <QMimeData>
+#include <QMouseEvent>
 #include <QPointer>
 #include <QPushButton>
 #include <QRadioButton>
@@ -41,6 +43,7 @@
 #include <QToolBar>
 #include <QToolButton>
 
+#include <controllers/typstviewwindowcontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/hookevents.h>
@@ -69,6 +72,14 @@
 using namespace vnotex;
 
 namespace tests {
+class PreviewUrlSink : public QObject {
+  Q_OBJECT
+public:
+  QList<QUrl> opened;
+public slots:
+  void open(const QUrl &p_url) { opened.append(p_url); }
+};
+
 namespace {
 // These are chooser item IDs, not translated UI text or persisted settings.
 enum Choice {
@@ -462,6 +473,8 @@ private slots:
   void selectionModes_data();
   void selectionModes();
   void nativeActionsAndLiteralPreview();
+  void previewFileLinks_data();
+  void previewFileLinks();
   void unavailableInsertion_data();
   void unavailableInsertion();
   void batchTransaction_data();
@@ -1083,6 +1096,96 @@ void TestTypstViewWindowInsertion::selectionModes() {
   const bool requested = mode == ImageUrl || input == QLatin1String("html-only-image");
   QCOMPARE(server.paths.size(), requested ? 1 : 0);
   QCOMPARE(readBytes(imagePath), png());
+}
+
+void TestTypstViewWindowInsertion::previewFileLinks_data() {
+  QTest::addColumn<QString>("targetKind");
+  QTest::addColumn<bool>("readMode");
+  for (const char *kind : {"indexed", "unindexed", "outside-project"}) {
+    for (bool readMode : {false, true}) {
+      const auto row = QByteArray(kind) + (readMode ? "-read" : "-edit");
+      QTest::newRow(row.constData()) << QString::fromLatin1(kind) << readMode;
+    }
+  }
+}
+
+void TestTypstViewWindowInsertion::previewFileLinks() {
+  QFETCH(QString, targetKind);
+  QFETCH(bool, readMode);
+  const auto name = QStringLiteral("target # 25%.txt");
+  const auto content = QByteArrayLiteral("Opened from the real Typst preview\n");
+  const auto target = targetKind == QLatin1String("outside-project")
+                          ? m_directory->filePath(name)
+                          : m_notebooks->buildAbsolutePath(m_notebookId, name);
+  if (targetKind == QLatin1String("indexed")) {
+    QVERIFY(!m_notebooks->createFile(m_notebookId, QString(), name).isEmpty());
+  }
+  QVERIFY(writeBytes(target, content));
+  const auto canonical = QFileInfo(target).canonicalFilePath();
+  const auto anchor = QStringLiteral("section # 25%");
+  auto url = QUrl::fromLocalFile(canonical);
+  url.setFragment(anchor, QUrl::DecodedMode);
+  const auto source = QStringLiteral("#set page(width: 260pt, height: 120pt, margin: 18pt)\n") +
+                      TypstViewWindowController::linkMarkup(url.toString(QUrl::FullyEncoded),
+                                                            QStringLiteral("Open local file"));
+  show(openNote(QStringLiteral("main.typst"), source));
+  if (readMode) {
+    m_window->setMode(ViewWindowMode::Read);
+  }
+  QVERIFY(ready());
+  QCoreApplication::processEvents();
+  auto *pane = qobject_cast<QAbstractScrollArea *>(m_pdf.data());
+  QVERIFY(pane);
+  auto *viewport = pane->viewport();
+
+  PreviewUrlSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("file"), &desktop, "open");
+  const auto restoreDesktop =
+      qScopeGuard([] { QDesktopServices::unsetUrlHandler(QStringLiteral("file")); });
+  QList<FileOpenEvent> opened;
+  const int hook = m_hooks->addAction<FileOpenEvent>(
+      HookNames::FileAfterOpen,
+      [&](HookContext &, const FileOpenEvent &p_event) { opened.append(p_event); });
+  const auto removeHook = qScopeGuard([&] { m_hooks->removeAction(hook); });
+  bool externalPrompt = false;
+  DialogDriver dialogs;
+  dialogs.otherDialog = [&](QDialog *p_dialog) {
+    externalPrompt = true;
+    p_dialog->reject();
+    return true;
+  };
+
+  // Discover the rendered annotation through actual viewport hover handling,
+  // without private compiler geometry or an invented externalLinkRequested signal.
+  QPoint linkPoint(-1, -1);
+  for (int y = 4; y < viewport->height() && linkPoint.x() < 0; y += 4) {
+    for (int x = 4; x < viewport->width(); x += 4) {
+      const QPoint point(x, y);
+      QMouseEvent move(QEvent::MouseMove, point, viewport->mapToGlobal(point), Qt::NoButton,
+                       Qt::NoButton, Qt::NoModifier);
+      QApplication::sendEvent(viewport, &move);
+      if (viewport->cursor().shape() == Qt::PointingHandCursor) {
+        linkPoint = point;
+        break;
+      }
+    }
+  }
+  QVERIFY2(linkPoint.x() >= 0, "The compiled file-URL annotation has no visible link hit region");
+  QTest::mouseClick(viewport, Qt::LeftButton, Qt::NoModifier, linkPoint);
+  QVERIFY(!externalPrompt);
+  QVERIFY(desktop.opened.isEmpty());
+  QCOMPARE(opened.size(), 1);
+  QCOMPARE(opened.constFirst().anchor, anchor);
+  const auto buffer = m_buffers->getBufferHandle(opened.constFirst().bufferId);
+  QVERIFY(buffer.isValid());
+  QCOMPARE(QFileInfo(buffer.resolvedPath()).canonicalFilePath(), canonical);
+  QCOMPARE(buffer.getContentRaw(), content);
+  QCOMPARE(m_edit->toPlainText(), source);
+  if (!readMode && targetKind == QLatin1String("outside-project")) {
+    QTest::qWait(150);
+    QVERIFY(m_window->grab().save(QDir(QCoreApplication::applicationDirPath())
+                                      .filePath(QStringLiteral("typst-local-link-toolbar.png"))));
+  }
 }
 
 void TestTypstViewWindowInsertion::nativeActionsAndLiteralPreview() {

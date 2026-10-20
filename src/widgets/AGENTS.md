@@ -239,6 +239,13 @@ automatic section numbering. `TypstViewWindowController` owns canonical source c
 and one-shot generation-bound external-link consent; the view owns guarded modal UI.
 Destroy the compiler widget only after close is accepted. Printing is not exposed.
 
+The Typst toolbar separates its common buttons from **Link**, then **Image**. Preview local-file
+links use `BufferService::openBuffer()` for both indexed notes and unindexed/standalone files,
+preserving the decoded fragment. `ViewAreaController` owns editor selection, configured external
+program associations and unsupported-type fallback; the Typst controller must not launch local
+files directly or fall back to the desktop after a cancelled/failed buffer open. HTTP(S), FTP and
+mailto links retain generation-bound external-link confirmation.
+
 #### Detached-window close
 
 Closing a detached title bar (including Alt+F4) closes its hosted tabs in tab order

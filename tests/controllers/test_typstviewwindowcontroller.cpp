@@ -200,6 +200,8 @@ private slots:
   void indexedLink();
   void unindexedLink_data();
   void unindexedLink();
+  void localLinkOpenHooks_data();
+  void localLinkOpenHooks();
   void rejectedLink_data();
   void rejectedLink();
   void externalSchemesRequireOneShotConsent_data();
@@ -209,7 +211,6 @@ private slots:
   void staleConfirmation_data();
   void staleConfirmation();
   void nestedSameUrlAfterRetargetCannotReuseConsent();
-  void removedLocalFileCannotBeConfirmed();
   void destructionDuringConfirmation();
   void destructionDuringSourceOpen();
   void imageStorage_data();
@@ -726,35 +727,80 @@ void TestTypstViewWindowController::unindexedLink_data() {
 void TestTypstViewWindowController::unindexedLink() {
   QFETCH(bool, insideNotebook);
   QFETCH(bool, absolute);
-  const auto path = insideNotebook
-                        ? QDir(m_notebookPath).filePath(QStringLiteral("unindexed file.txt"))
-                        : m_tempDir->filePath(QStringLiteral("outside file.txt"));
-  QVERIFY(writeFile(path, QByteArrayLiteral("Local link target\n")));
+  const auto name = QStringLiteral("unindexed # 25%.txt");
+  const auto path =
+      insideNotebook ? QDir(m_notebookPath).filePath(name) : m_tempDir->filePath(name);
+  const auto content = QByteArrayLiteral("Local link target\n");
+  QVERIFY(writeFile(path, content));
   if (insideNotebook) {
     QVERIFY(!m_notebooks->resolvePathToNotebook(path).isEmpty());
-    QVERIFY(m_notebooks->getFileInfo(m_notebookId, QStringLiteral("unindexed file.txt")).isEmpty());
+    QVERIFY(m_notebooks->getFileInfo(m_notebookId, name).isEmpty());
   } else {
     QVERIFY(m_notebooks->resolvePathToNotebook(path).isEmpty());
   }
-  const auto url =
-      absolute ? QUrl::fromLocalFile(path) : QUrl(QDir(m_notebookPath).relativeFilePath(path));
-  const auto expected = QUrl::fromLocalFile(QFileInfo(path).canonicalFilePath());
+  QUrl url;
+  if (absolute) {
+    url = QUrl::fromLocalFile(path);
+  } else {
+    url.setPath(QDir(m_notebookPath).relativeFilePath(path), QUrl::DecodedMode);
+  }
+  const auto anchor = QStringLiteral("章节 # 25%");
+  url.setFragment(anchor, QUrl::DecodedMode);
+  const auto canonical = QFileInfo(path).canonicalFilePath();
   QSignalSpy errors(m_controller.get(), &TypstViewWindowController::errorOccurred);
   QSignalSpy confirmations(m_controller.get(),
                            &TypstViewWindowController::externalLinkConfirmationRequested);
-  const auto bufferCount = m_buffers->listBuffers().size();
   m_controller->requestOpenLink(url);
-  QCOMPARE(confirmations.size(), 1);
-  QCOMPARE(confirmations.constFirst().constFirst().toUrl(), expected);
-  QVERIFY(m_urlSink.opened.isEmpty());
-  QVERIFY(m_beforeOpen.isEmpty());
-  QVERIFY(m_afterOpen.isEmpty());
-  QCOMPARE(m_buffers->listBuffers().size(), bufferCount);
-  m_controller->openConfirmedExternalLink(expected);
-  QCOMPARE(m_urlSink.opened, QList<QUrl>{expected});
-  m_controller->openConfirmedExternalLink(expected);
-  QCOMPARE(m_urlSink.opened.size(), 1);
+  QCOMPARE(m_beforeOpen.size(), 1);
+  QCOMPARE(m_afterOpen.size(), 1);
+  QCOMPARE(m_beforeOpen.constFirst().notebookId, QString());
+  QCOMPARE(m_beforeOpen.constFirst().filePath, canonical);
+  QCOMPARE(m_afterOpen.constFirst().anchor, anchor);
+  QCOMPARE(QFileInfo(m_openedBuffers.constFirst().resolvedPath()).canonicalFilePath(), canonical);
+  QCOMPARE(m_openedBuffers.constFirst().getContentRaw(), content);
+  QVERIFY(confirmations.isEmpty());
   QVERIFY(errors.isEmpty());
+  m_controller->openConfirmedExternalLink(url);
+  QVERIFY(m_urlSink.opened.isEmpty());
+}
+
+void TestTypstViewWindowController::localLinkOpenHooks_data() {
+  QTest::addColumn<bool>("cancel");
+  QTest::newRow("cancelled-open-never-launches-desktop") << true;
+  QTest::newRow("controller-destroyed-during-open") << false;
+}
+
+void TestTypstViewWindowController::localLinkOpenHooks() {
+  QFETCH(bool, cancel);
+  const auto path = m_tempDir->filePath(QStringLiteral("hook target.txt"));
+  const auto content = QByteArrayLiteral("Hook-aware local link\n");
+  QVERIFY(writeFile(path, content));
+  const auto canonical = QFileInfo(path).canonicalFilePath();
+  const auto url = QUrl::fromLocalFile(path);
+  QSignalSpy confirmations(m_controller.get(),
+                           &TypstViewWindowController::externalLinkConfirmationRequested);
+  const QPointer<TypstViewWindowController> guard(m_controller.get());
+  m_hooks->addAction<FileOpenEvent>(HookNames::FileBeforeOpen,
+                                    [this, cancel](HookContext &ctx, const FileOpenEvent &) {
+                                      if (cancel) {
+                                        ctx.cancel();
+                                      } else {
+                                        m_controller.reset();
+                                      }
+                                    });
+  m_controller->requestOpenLink(url);
+  QCOMPARE(m_beforeOpen.size(), 1);
+  QCOMPARE(m_beforeOpen.constFirst().filePath, canonical);
+  if (cancel) {
+    QVERIFY(guard);
+    QVERIFY(m_afterOpen.isEmpty());
+  } else {
+    QVERIFY(!guard);
+    QCOMPARE(m_afterOpen.size(), 1);
+    QCOMPARE(m_openedBuffers.constFirst().getContentRaw(), content);
+  }
+  QVERIFY(confirmations.isEmpty());
+  QVERIFY(m_urlSink.opened.isEmpty());
 }
 
 void TestTypstViewWindowController::rejectedLink_data() {
@@ -928,24 +974,6 @@ void TestTypstViewWindowController::nestedSameUrlAfterRetargetCannotReuseConsent
   QCOMPARE(confirmations.size(), 2);
   m_controller->openConfirmedExternalLink(url);
   QCOMPARE(m_urlSink.opened, QList<QUrl>{url});
-}
-
-void TestTypstViewWindowController::removedLocalFileCannotBeConfirmed() {
-  const auto path = m_tempDir->filePath(QStringLiteral("removed.txt"));
-  QVERIFY(writeFile(path, QByteArrayLiteral("Remove after consent request")));
-  const auto url = QUrl::fromLocalFile(QFileInfo(path).canonicalFilePath());
-  QSignalSpy errors(m_controller.get(), &TypstViewWindowController::errorOccurred);
-  QSignalSpy confirmations(m_controller.get(),
-                           &TypstViewWindowController::externalLinkConfirmationRequested);
-  m_controller->requestOpenLink(url);
-  QCOMPARE(confirmations.size(), 1);
-  QVERIFY(QFile::remove(path));
-  m_controller->openConfirmedExternalLink(url);
-  QCOMPARE(errors.size(), 1);
-  QVERIFY(m_urlSink.opened.isEmpty());
-  QVERIFY(writeFile(path, QByteArrayLiteral("Recreated target")));
-  m_controller->openConfirmedExternalLink(url);
-  QVERIFY(m_urlSink.opened.isEmpty());
 }
 
 void TestTypstViewWindowController::destructionDuringConfirmation() {
@@ -1349,13 +1377,14 @@ void TestTypstViewWindowController::resourceLinksAndOpenPolicy() {
   QVERIFY(QUrl(outsideLink).isRelative());
   QCOMPARE(QDir::cleanPath(QDir(m_notebookPath).filePath(QUrl(outsideLink).path())),
            QDir::cleanPath(outside));
+  clearOpenObservations();
   m_controller->requestOpenLink(QUrl(outsideLink));
-  QCOMPARE(confirmations.size(), 1);
-  const auto outsideRequest = confirmations.constLast().constFirst().toUrl();
-  QCOMPARE(QFileInfo(outsideRequest.toLocalFile()).canonicalFilePath(),
-           QFileInfo(outside).canonicalFilePath());
-  m_controller->openConfirmedExternalLink(outsideRequest);
-  QCOMPARE(m_urlSink.opened, QList<QUrl>{outsideRequest});
+  QVERIFY(confirmations.isEmpty());
+  QCOMPARE(m_afterOpen.size(), 1);
+  QCOMPARE(m_beforeOpen.constFirst().notebookId, QString());
+  QCOMPARE(m_beforeOpen.constFirst().filePath, QFileInfo(outside).canonicalFilePath());
+  QCOMPARE(m_openedBuffers.constFirst().getContentRaw(), content);
+  QVERIFY(m_urlSink.opened.isEmpty());
 
   for (const auto *source : {"https://example.invalid/a%20b?q=1#part", "http://example.invalid/",
                              "ftp://example.invalid/file", "mailto:typst@example.invalid"}) {
@@ -1471,10 +1500,12 @@ void TestTypstViewWindowController::outsideProjectAttachmentLink() {
   QSignalSpy confirmations(m_controller.get(),
                            &TypstViewWindowController::externalLinkConfirmationRequested);
   m_controller->requestOpenLink(QUrl(link));
-  QCOMPARE(confirmations.size(), 1);
-  QCOMPARE(
-      QFileInfo(confirmations.constFirst().constFirst().toUrl().toLocalFile()).canonicalFilePath(),
-      QFileInfo(actual).canonicalFilePath());
+  QVERIFY(confirmations.isEmpty());
+  QCOMPARE(m_afterOpen.size(), 1);
+  QCOMPARE(QFileInfo(m_openedBuffers.constFirst().resolvedPath()).canonicalFilePath(),
+           QFileInfo(actual).canonicalFilePath());
+  QCOMPARE(m_openedBuffers.constFirst().getContentRaw(), bytes);
+  QVERIFY(m_urlSink.opened.isEmpty());
   QCOMPARE(m_controller->getProject().root, QDir(m_notebookPath).canonicalPath());
   QVERIFY(m_mainBuffer.deleteAttachment(created));
   QCOMPARE(fileBytes(source), bytes);

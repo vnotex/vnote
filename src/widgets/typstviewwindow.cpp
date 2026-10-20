@@ -923,8 +923,9 @@ void TypstViewWindow::setupUI() {
   addToolBar(toolBar);
   addAction(toolBar, ViewWindowToolBarHelper2::EditRead);
   addLeftCommonToolBarActions(toolBar);
-  m_insertImageAction = addAction(toolBar, ViewWindowToolBarHelper2::TypeImage);
+  toolBar->addSeparator();
   m_insertLinkAction = addAction(toolBar, ViewWindowToolBarHelper2::TypeLink);
+  m_insertImageAction = addAction(toolBar, ViewWindowToolBarHelper2::TypeImage);
   m_plainPasteAction = new QAction(tr("Paste as Plain Text"), this);
   m_plainPasteAction->setObjectName(QStringLiteral("typstPastePlainText"));
   ViewWindowToolBarHelper2::addActionShortcut(
