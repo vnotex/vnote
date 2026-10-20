@@ -581,7 +581,11 @@ void TypstViewWindow::navigateToHeading(int p_index) {
   // Both mode changes and opening another buffer can synchronously invalidate the outline.
   const auto target = m_outlineHeadings.at(p_index);
   if (target.m_file != m_typstEditor->activeFile()) {
-    m_controller->requestOpenSource(target.m_file, target.m_startPos, target.m_endPos);
+    if (target.m_startPos < 0 || target.m_endPos < target.m_startPos) {
+      showMessage(tr("Unable to open the Typst source location"));
+      return;
+    }
+    m_controller->requestOpenSource(target.m_file, target.m_endPos, target.m_endPos);
     return;
   }
   if (!isActiveFileHeading(target)) {
@@ -601,8 +605,7 @@ void TypstViewWindow::navigateToHeading(int p_index) {
   }
   auto *textEdit = m_editor->getTextEdit();
   QTextCursor cursor(textEdit->document());
-  cursor.setPosition(target.m_startPos);
-  cursor.setPosition(target.m_endPos, QTextCursor::KeepAnchor);
+  cursor.setPosition(target.m_endPos);
   textEdit->setTextCursor(cursor);
   if (!isCurrent()) {
     return;

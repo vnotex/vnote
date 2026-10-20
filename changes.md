@@ -1,5 +1,7 @@
 # Changes
 ## Unreleased
+* Use the same Typst preview context menu in Edit and Read modes
+* Navigate to the end of Typst headings from Outline without selecting the heading text
 * Update vtextedit to upstream `be21546` with KSyntaxHighlighting 6.30 and native Markdown code-block highlighting by default
 * Require Qt 6.9+, CMake 3.21+, Python 3 and a C++20-capable compiler for the syntax indexer; VNote remains C++17 and normal syntax builds no longer require Perl
 * Exclude White, Cloud, Gray, Slate, Midnight, Black and Mint from automatic mind-map branch colors, preserving existing branch colors and all manual color choices
