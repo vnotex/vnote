@@ -208,6 +208,11 @@ bool ViewWindow2::replaceBuffer(const Buffer2 &p_buffer, const FileOpenSettings 
     }
   });
 
+  prepareBufferReplacement();
+  if (!validTransition()) {
+    return false;
+  }
+
   auto *comments = m_services.get<CommentService>();
   CommentService::FlushCheckpoint checkpoint;
   if (comments) {

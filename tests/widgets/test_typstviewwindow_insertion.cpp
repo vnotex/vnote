@@ -32,11 +32,13 @@
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPointer>
+#include <QProcess>
 #include <QPushButton>
 #include <QRadioButton>
 #include <QRegularExpression>
 #include <QScopeGuard>
 #include <QScrollBar>
+#include <QSignalBlocker>
 #include <QStandardPaths>
 #include <QTcpServer>
 #include <QTcpSocket>
@@ -632,6 +634,8 @@ private slots:
   void resourcePendingRetirement();
   void resourceModalDestruction_data();
   void resourceModalDestruction();
+  void resourceBufferReplacement_data();
+  void resourceBufferReplacement();
 
 private:
   Buffer2 openNote(const QString &name = QStringLiteral("main.typst"),
@@ -1681,6 +1685,118 @@ void TestTypstViewWindowInsertion::resourcePendingRetirement() {
   QCOMPARE(readBytes(path), png());
 }
 
+void TestTypstViewWindowInsertion::resourceBufferReplacement_data() {
+  QTest::addColumn<QString>("stage");
+  for (const auto *stage :
+       {"overlay", "pending-copy", "pending-view", "cancel-copy", "cancel-view"}) {
+    QTest::newRow(stage) << QString::fromLatin1(stage);
+  }
+}
+
+void TestTypstViewWindowInsertion::resourceBufferReplacement() {
+  QFETCH(QString, stage);
+  const bool pending = stage != QLatin1String("overlay");
+  const bool copy = stage.endsWith(QLatin1String("copy"));
+  const bool cancel = stage.startsWith(QLatin1String("cancel"));
+  const auto source = QStringLiteral("#image(\"resource.png\", width: 72pt)\n");
+  const auto draft = source + QStringLiteral("\n// unsaved outgoing draft\n");
+  const auto oldPath = m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("resource.png"));
+  QVERIFY(writeBytes(oldPath, png()));
+  const auto oldBuffer = openNote(QStringLiteral("main.typst"), source);
+  QVERIFY(
+      !m_notebooks->createFolder(m_notebookId, QString(), QStringLiteral("incoming")).isEmpty());
+  QVERIFY(!m_notebooks
+               ->createFile(m_notebookId, QStringLiteral("incoming"), QStringLiteral("next.typst"))
+               .isEmpty());
+  const auto incomingPath =
+      m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("incoming/next.typst"));
+  QVERIFY(writeBytes(incomingPath, draft.toUtf8()));
+  QVERIFY(writeBytes(
+      m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("incoming/resource.png")),
+      png(c_red)));
+  FileOpenSettings settings;
+  settings.m_forceMode = true;
+  settings.m_mode = ViewWindowMode::Edit;
+  const auto incoming =
+      m_buffers->openBuffer({m_notebookId, QStringLiteral("incoming/next.typst")}, settings);
+  QVERIFY(incoming.isValid());
+  show(oldBuffer);
+  QTextCursor edit(m_edit->document());
+  edit.movePosition(QTextCursor::End);
+  edit.insertText(draft.mid(source.size()));
+  QVERIFY(m_window->isModified());
+  QVERIFY(ready());
+  const auto native = m_editor;
+  const auto document = m_edit->document();
+  auto *process = m_editor->findChild<QProcess *>();
+  QVERIFY(process);
+  const auto pid = process->processId();
+  QSignalSpy completed(m_editor, &vte::VTypstEditor::imageDataReady);
+  std::unique_ptr<QSignalBlocker> blockedReply;
+  if (pending) {
+    blockedReply = std::make_unique<QSignalBlocker>(process);
+  }
+  QApplication::clipboard()->setText(QStringLiteral("replacement must not copy outgoing pixels"));
+  const auto target = resourceTarget(QStringLiteral("source"));
+  QVERIFY(target.first);
+  QVERIFY(resourceMenu(target.first, target.second,
+                       copy ? QStringLiteral("typstCopyImage") : QStringLiteral("typstViewImage"))
+              .clicked);
+  if (!pending) {
+    QVERIFY(QTest::qWaitFor([&] { return overlay() && overlay()->isVisible(); }, 5000));
+  }
+  bool prompted = false;
+  bool retiredBeforeConfirmation = false;
+  DialogDriver decisions;
+  decisions.otherDialog = [&](QDialog *dialog) {
+    auto *question = qobject_cast<QMessageBox *>(dialog);
+    if (!question) {
+      return false;
+    }
+    if (prompted) {
+      return true;
+    }
+    prompted = true;
+    if (pending) {
+      blockedReply.reset();
+      QMetaObject::invokeMethod(process, "readyReadStandardOutput", Qt::DirectConnection);
+      if (!QTest::qWaitFor([&] { return !completed.isEmpty(); }, 5000)) {
+        decisions.fail(dialog,
+                       QStringLiteral("Image reply did not drain during replacement confirmation"));
+        return true;
+      }
+    }
+    retiredBeforeConfirmation =
+        !overlay() && QApplication::clipboard()->text() ==
+                          QStringLiteral("replacement must not copy outgoing pixels");
+    auto *button = question->button(cancel ? QMessageBox::Cancel : QMessageBox::Discard);
+    if (!button) {
+      decisions.fail(dialog, QStringLiteral("Missing replacement confirmation button"));
+    } else {
+      QTest::mouseClick(button, Qt::LeftButton);
+    }
+    return true;
+  };
+  QCOMPARE(m_window->replaceBuffer(incoming, settings), !cancel);
+  QVERIFY2(decisions.error.isEmpty(), qPrintable(decisions.error));
+  QVERIFY(prompted);
+  QVERIFY(retiredBeforeConfirmation);
+  QCOMPARE(m_window->getBuffer().id(), cancel ? oldBuffer.id() : incoming.id());
+  QCOMPARE(m_editor, native);
+  QCOMPARE(m_edit->document(), document);
+  QCOMPARE(process->processId(), pid);
+  QCOMPARE(m_edit->toPlainText(), draft);
+  QCOMPARE(readBytes(oldBuffer.resolvedPath()), source.toUtf8());
+  QCOMPARE(readBytes(incomingPath), draft.toUtf8());
+  QVERIFY(!overlay());
+  QVERIFY(ready());
+  const auto current = resourceTarget(QStringLiteral("source"));
+  QVERIFY(current.first);
+  QVERIFY(resourceMenu(current.first, current.second, QStringLiteral("typstCopyImage")).clicked);
+  QVERIFY(QTest::qWaitFor([&] { return !QApplication::clipboard()->image().isNull(); }, 5000));
+  QCOMPARE(QApplication::clipboard()->image().pixelColor(0, 0), cancel ? c_green : c_red);
+}
+
 void TestTypstViewWindowInsertion::resourceModalDestruction_data() {
   QTest::addColumn<QString>("stage");
   QTest::newRow("destroy-idle-native-menu") << QStringLiteral("menu");
@@ -2668,13 +2784,16 @@ void TestTypstViewWindowInsertion::delayedFromRetirement() {
 void TestTypstViewWindowInsertion::staleAcquisition_data() {
   QTest::addColumn<QString>("change");
   for (const char *change : {"revision", "cursor", "reload", "retarget", "disable", "read", "close",
-                             "destroy", "destroy-context"}) {
+                             "destroy", "destroy-context", "replace"}) {
     QTest::newRow(change) << QString::fromLatin1(change);
   }
 }
 void TestTypstViewWindowInsertion::staleAcquisition() {
   QFETCH(QString, change);
   const auto buffer = openNote();
+  const auto replacement = change == QLatin1String("replace")
+                               ? openNote(QStringLiteral("replacement.typst"))
+                               : Buffer2{};
   show(buffer);
   select();
   const auto folder = assetFolder();
@@ -2703,6 +2822,11 @@ void TestTypstViewWindowInsertion::staleAcquisition() {
       if (changed) {
         m_window->onNodeRenamed({m_notebookId, name});
       }
+    } else if (change == QLatin1String("replace")) {
+      FileOpenSettings settings;
+      settings.m_forceMode = true;
+      settings.m_mode = ViewWindowMode::Edit;
+      changed = m_window->replaceBuffer(replacement, settings);
     } else if (change == QLatin1String("disable")) {
       m_window->setEnabled(false);
     } else if (change == QLatin1String("read")) {
@@ -2756,6 +2880,10 @@ void TestTypstViewWindowInsertion::staleAcquisition() {
   QCOMPARE(server.paths.size(), 1);
   QCOMPARE(filesBelow(folder), before);
   if (m_window) {
+    if (change == QLatin1String("replace")) {
+      QCOMPARE(m_window->getBuffer().id(), replacement.id());
+      QCOMPARE(readBytes(buffer.resolvedPath()), c_baseline.toUtf8());
+    }
     QCOMPARE(m_edit->toPlainText(), expected);
     QVERIFY(imagePaths().isEmpty());
     QVERIFY(!m_window->findChild<ImageInsertDialog *>());

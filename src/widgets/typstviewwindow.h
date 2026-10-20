@@ -74,6 +74,7 @@ protected:
   void hideEvent(QHideEvent *p_event) override;
   bool eventFilter(QObject *p_watched, QEvent *p_event) override;
   void syncEditorFromBuffer() override;
+  void prepareBufferReplacement() override;
   void releaseBufferResources() override;
   void bindBufferResources() override;
   void applyReadableWidth() override;

@@ -154,8 +154,11 @@ rollback, closed-tab history and consistent current-buffer publication. Unowned 
 must be closed through BufferService after checking all visible, hidden and detached owners.
 A retained window ID does not imply an unchanged buffer: explicitly refresh current providers.
 
-`ViewWindow2::replaceBuffer()` obtains a durable CommentService checkpoint and uses qualified
-base Save/Discard/Cancel confirmation before releasing outgoing resources. Refusal leaves the
+`ViewWindow2::replaceBuffer()` calls `prepareBufferReplacement()` before comment flushing or
+Save/Discard/Cancel can pump events. Typst revokes pending insertion/image actions and closes its
+image overlay here, even if replacement is later cancelled; the outgoing draft/history remain intact.
+It then obtains a durable CommentService checkpoint and uses qualified base confirmation before
+releasing outgoing resources. Refusal leaves the
 old document/history attached and never falls through to another open strategy. Different-type
 opens create successfully before closing the old tab; cancellation then leaves both tabs.
 Never reload or clear a shared outgoing buffer merely to discard this view.

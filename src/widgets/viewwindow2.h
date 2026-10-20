@@ -346,6 +346,8 @@ protected slots:
   virtual void handleFindAndReplaceWidgetOpened();
 
 protected:
+  // Revoke document-bound operations before replacement confirmation can pump events.
+  virtual void prepareBufferReplacement() {}
   virtual void releaseBufferResources() {}
   virtual void bindBufferResources() {}
   quint64 getBufferGeneration() const { return m_bufferGeneration; }

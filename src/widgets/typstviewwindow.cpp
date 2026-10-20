@@ -1601,7 +1601,20 @@ void TypstViewWindow::connectEditorSignals() {
           });
 }
 
+void TypstViewWindow::prepareBufferReplacement() {
+  const QPointer<TypstViewWindow> guard(this);
+  invalidateContextResources();
+  if (guard) {
+    invalidateInsertion();
+  }
+}
+
 void TypstViewWindow::releaseBufferResources() {
+  const QPointer<TypstViewWindow> alive(this);
+  prepareBufferReplacement();
+  if (!alive) {
+    return;
+  }
   const QScopedValueRollback<bool> guard(m_propagateEditorToBuffer, false);
   m_sourceAvailable = false;
   // Invalidate controller-owned navigation and any consent still on a modal stack.
