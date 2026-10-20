@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Soften mind-map tag outlines to a fixed 40% text-color blend over their background, consistently in the editor and exported maps
 * Match mind-map properties button/swatch borders and hover fills to the active theme, and replace the native sunken separator with a flat themed line
 * Use the same Typst preview context menu in Edit and Read modes
 * Navigate to the end of Typst headings from Outline without selecting the heading text
