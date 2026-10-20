@@ -107,7 +107,7 @@
     <message>
         <location line="+3"/>
         <source>(highlight)</source>
-        <translation>(강조 표시)</translation>
+        <translation>(강조)</translation>
     </message>
     <message>
         <location line="+2"/>
@@ -257,7 +257,7 @@
     <message>
         <location line="+56"/>
         <source>&quot;%1&quot; and &quot;%2&quot; in %3 would collide in this notebook, whose filesystem does not distinguish letter case.</source>
-        <translation>%3에 있는 &quot;%1&quot;과(와) &quot;%2&quot;은(는) 이 노트북의 파일 시스템이 대소문자를 구분하지 않아 충돌합니다.</translation>
+        <translation>%3에 있는 &quot;%1&quot;과(와) &quot;%2&quot;은(는) 이 노트북의 파일 시스템이 대소문자를 구분하지 않아 충돌하게 됩니다.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -403,12 +403,12 @@
     <message>
         <location line="-145"/>
         <source>Could not find a free name for &quot;%1&quot; in the destination.</source>
-        <translation>대상 위치에서 &quot;%1&quot;에 사용할 중복되지 않는 이름을 찾지 못했습니다.</translation>
+        <translation>대상 위치에서 &quot;%1&quot;에 사용할 수 있는 이름을 찾지 못했습니다.</translation>
     </message>
     <message>
         <location line="+15"/>
         <source>Cannot create a staging folder inside the notebook.</source>
-        <translation>노트북 안에 임시 준비 폴더를 만들 수 없습니다.</translation>
+        <translation>노트북 안에 준비 폴더를 만들 수 없습니다.</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -442,7 +442,7 @@
     <message>
         <location line="+6"/>
         <source>Injected attach failure.</source>
-        <translation>의도적으로 발생시킨 연결 오류입니다.</translation>
+        <translation>의도적으로 발생시킨 폴더 추가 오류입니다.</translation>
     </message>
     <message>
         <location line="+14"/>
@@ -452,47 +452,47 @@
     <message>
         <location filename="../../../core/services/foldermetadatavalidator.cpp" line="-78"/>
         <source>A file record in vx.json is not an object.</source>
-        <translation>vx.json의 파일 레코드가 객체가 아닙니다.</translation>
+        <translation>vx.json의 파일 항목이 JSON 객체가 아닙니다.</translation>
     </message>
     <message>
         <location line="+6"/>
         <source>A file record is missing a valid &quot;id&quot;.</source>
-        <translation>파일 레코드에 유효한 &quot;id&quot;가 없습니다.</translation>
+        <translation>파일 항목에 유효한 &quot;id&quot;가 없습니다.</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>A file record is missing a valid &quot;name&quot;.</source>
-        <translation>파일 레코드에 유효한 &quot;name&quot;이 없습니다.</translation>
+        <translation>파일 항목에 유효한 &quot;name&quot;이 없습니다.</translation>
     </message>
     <message>
         <location line="+7"/>
         <source>File record &quot;%1&quot; has non-numeric timestamps.</source>
-        <translation>파일 레코드 &quot;%1&quot;에 숫자가 아닌 타임스탬프가 있습니다.</translation>
+        <translation>파일 항목 &quot;%1&quot;에 숫자가 아닌 타임스탬프가 있습니다.</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>File record &quot;%1&quot; has a non-object &quot;metadata&quot;.</source>
-        <translation>파일 레코드 &quot;%1&quot;의 &quot;metadata&quot;가 객체가 아닙니다.</translation>
+        <translation>파일 항목 &quot;%1&quot;의 &quot;metadata&quot; 값이 JSON 객체가 아닙니다.</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>File record &quot;%1&quot; has a non-array &quot;tags&quot;.</source>
-        <translation>파일 레코드 &quot;%1&quot;의 &quot;tags&quot;가 배열이 아닙니다.</translation>
+        <translation>파일 항목 &quot;%1&quot;의 &quot;tags&quot; 값이 배열이 아닙니다.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>File record &quot;%1&quot; has a non-string tag entry.</source>
-        <translation>파일 레코드 &quot;%1&quot;에 문자열이 아닌 태그 항목이 있습니다.</translation>
+        <translation>파일 항목 &quot;%1&quot;에 문자열이 아닌 태그 항목이 있습니다.</translation>
     </message>
     <message>
         <location line="+9"/>
         <source>File record &quot;%1&quot; has a non-array &quot;attachments&quot;.</source>
-        <translation>파일 레코드 &quot;%1&quot;의 &quot;attachments&quot;가 배열이 아닙니다.</translation>
+        <translation>파일 항목 &quot;%1&quot;의 &quot;attachments&quot; 값이 배열이 아닙니다.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>File record &quot;%1&quot; has a non-string attachment entry.</source>
-        <translation>파일 레코드 &quot;%1&quot;에 문자열이 아닌 첨부 파일 항목이 있습니다.</translation>
+        <translation>파일 항목 &quot;%1&quot;에 문자열이 아닌 첨부 파일 항목이 있습니다.</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -533,17 +533,17 @@
     <message>
         <location line="+4"/>
         <source>Folder metadata has a non-object &quot;metadata&quot;: %1</source>
-        <translation>폴더 메타데이터의 &quot;metadata&quot;가 객체가 아닙니다: %1</translation>
+        <translation>폴더 메타데이터의 &quot;metadata&quot; 값이 JSON 객체가 아닙니다: %1</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Folder metadata has a non-array &quot;files&quot;: %1</source>
-        <translation>폴더 메타데이터의 &quot;files&quot;가 배열이 아닙니다: %1</translation>
+        <translation>폴더 메타데이터의 &quot;files&quot; 값이 배열이 아닙니다: %1</translation>
     </message>
     <message>
         <location line="+4"/>
         <source>Folder metadata has a non-array &quot;folders&quot;: %1</source>
-        <translation>폴더 메타데이터의 &quot;folders&quot;가 배열이 아닙니다: %1</translation>
+        <translation>폴더 메타데이터의 &quot;folders&quot; 값이 배열이 아닙니다: %1</translation>
     </message>
     <message>
         <location line="+21"/>
@@ -610,7 +610,7 @@
     <message>
         <location line="+29"/>
         <source>&quot;%1&quot; and &quot;%2&quot; in %3 would collide on the destination filesystem, which does not distinguish letter case.</source>
-        <translation>%3에 있는 &quot;%1&quot;과(와) &quot;%2&quot;은(는) 대상 파일 시스템이 대소문자를 구분하지 않아 충돌합니다.</translation>
+        <translation>%3에 있는 &quot;%1&quot;과(와) &quot;%2&quot;은(는) 대상 파일 시스템이 대소문자를 구분하지 않아 충돌하게 됩니다.</translation>
     </message>
     <message>
         <location line="+182"/>
@@ -632,12 +632,12 @@
     <message>
         <location line="+7"/>
         <source>The encrypted notebook key envelope could not be read.</source>
-        <translation>암호화된 노트북 키 패키지를 읽지 못했습니다.</translation>
+        <translation>노트북 암호화 키 파일을 읽지 못했습니다.</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>The encrypted notebook key envelope is damaged.</source>
-        <translation>암호화된 노트북 키 패키지가 손상되었습니다.</translation>
+        <translation>노트북 암호화 키 파일이 손상되었습니다.</translation>
     </message>
     <message>
         <location line="+13"/>
@@ -667,7 +667,7 @@
     <message>
         <location line="+7"/>
         <source>The notebook key envelope changed while sharing.</source>
-        <translation>공유하는 동안 노트북 키 패키지가 변경되었습니다.</translation>
+        <translation>공유하는 동안 노트북 암호화 키 파일이 변경되었습니다.</translation>
     </message>
     <message>
         <location line="+10"/>
@@ -857,7 +857,7 @@
     <message>
         <location line="+13"/>
         <source>Toggle In-Place Preview</source>
-        <translation>제자리 미리보기 전환</translation>
+        <translation>본문 내 미리 보기 전환</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -906,27 +906,27 @@
     <message>
         <location filename="../../../search/searchtoken.cpp" line="+150"/>
         <source>Full-text search.</source>
-        <translation>전체 텍스트를 검색합니다.</translation>
+        <translation>전체 텍스트 검색.</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Keywords to search for.</source>
-        <translation>검색할 키워드입니다.</translation>
+        <translation>검색할 키워드</translation>
     </message>
     <message>
         <location line="+10"/>
         <source>Search in case sensitive.</source>
-        <translation>대소문자를 구분하여 검색합니다.</translation>
+        <translation>대소문자 구분</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Search by regular expression.</source>
-        <translation>정규 표현식으로 검색합니다.</translation>
+        <translation>정규 표현식으로 검색</translation>
     </message>
     <message>
         <location line="+5"/>
         <source>Search whole word only.</source>
-        <translation>단어 단위로만 검색합니다.</translation>
+        <translation>단어 단위 검색</translation>
     </message>
     <message>
         <location line="+5"/>
@@ -936,7 +936,7 @@
     <message>
         <location line="+6"/>
         <source>Do an OR combination of keywords.</source>
-        <translation>키워드를 OR 조건으로 조합합니다.</translation>
+        <translation>키워드를 OR 조건으로 검색합니다.</translation>
     </message>
 </context>
 <context>
@@ -944,7 +944,7 @@
     <message>
         <location filename="../../../core/services/syncsettings.cpp" line="+107"/>
         <source>Unsupported sync backend.</source>
-        <translation>지원하지 않는 동기화 백엔드입니다.</translation>
+        <translation>지원하지 않는 동기화 방식입니다.</translation>
     </message>
     <message>
         <location line="+3"/>
@@ -969,7 +969,7 @@
     <message>
         <location line="+9"/>
         <source>Credentials do not match the selected sync backend.</source>
-        <translation>인증 정보가 선택한 동기화 백엔드와 일치하지 않습니다.</translation>
+        <translation>인증 정보가 선택한 동기화 방식과 일치하지 않습니다.</translation>
     </message>
     <message>
         <location line="+6"/>
@@ -1093,7 +1093,7 @@
     <message>
         <location line="+52"/>
         <source>Back to today</source>
-        <translation>오늘로 돌아가기</translation>
+        <translation>오늘로</translation>
     </message>
     <message>
         <location line="+16"/>
@@ -1290,7 +1290,7 @@
     <message>
         <location line="+17"/>
         <source>Portable Document Format</source>
-        <translation>휴대용 문서 형식</translation>
+        <translation>포터블 문서 형식</translation>
     </message>
     <message>
         <location line="+18"/>
@@ -4759,7 +4759,7 @@
     <message>
         <location line="+253"/>
         <source>Copy In-Place Preview</source>
-        <translation>제자리 미리 보기 복사</translation>
+        <translation>본문 내 미리 보기 복사</translation>
     </message>
     <message>
         <location line="+50"/>
@@ -4940,17 +4940,17 @@
     <message>
         <location line="+12"/>
         <source>Constrain in-place preview width</source>
-        <translation>제자리 미리 보기 너비 제한</translation>
+        <translation>본문 내 미리 보기 너비 제한</translation>
     </message>
     <message>
         <location line="+3"/>
         <source>Constrain in-place preview width to the window</source>
-        <translation>제자리 미리 보기 너비를 창 너비로 제한</translation>
+        <translation>본문 내 미리 보기 너비를 창 너비로 제한</translation>
     </message>
     <message>
         <location line="+16"/>
         <source>In-place preview sources</source>
-        <translation>제자리 미리 보기 대상</translation>
+        <translation>본문 내 미리 보기 대상</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -5005,7 +5005,7 @@
     <message>
         <location line="+3"/>
         <source>Fold the source of a block as soon as it gets an in-place preview. Requires text folding; turning it off does not unfold blocks that are already folded</source>
-        <translation>블록의 제자리 미리 보기가 표시되면 즉시 해당 소스를 접습니다. 텍스트 접기 기능이 필요하며 이 옵션을 꺼도 이미 접힌 블록은 펼쳐지지 않습니다</translation>
+        <translation>블록의 본문 내 미리 보기가 표시되면 즉시 해당 소스를 접습니다. 텍스트 접기 기능이 필요하며 이 옵션을 꺼도 이미 접힌 블록은 펼쳐지지 않습니다</translation>
     </message>
     <message>
         <location line="+12"/>
@@ -6167,7 +6167,7 @@
     <message>
         <location line="+4"/>
         <source>Unsupported or inconsistent sync backend.</source>
-        <translation>지원되지 않거나 일관되지 않은 동기화 백엔드입니다.</translation>
+        <translation>지원되지 않거나 일관되지 않은 동기화 방식입니다.</translation>
     </message>
     <message>
         <location line="+29"/>
@@ -7964,7 +7964,7 @@ Description: %4</source>
     <message>
         <location line="-33"/>
         <source>Unsupported sync backend.</source>
-        <translation>지원하지 않는 동기화 백엔드입니다.</translation>
+        <translation>지원하지 않는 동기화 방식입니다.</translation>
     </message>
     <message>
         <location line="+24"/>
@@ -7980,7 +7980,7 @@ Description: %4</source>
     <message>
         <location line="-195"/>
         <source>Unsupported sync backend. Disable it before choosing another method.</source>
-        <translation>지원하지 않는 동기화 백엔드입니다. 다른 방식을 선택하기 전에 비활성화하세요.</translation>
+        <translation>지원하지 않는 동기화 방식입니다. 다른 방식을 선택하기 전에 비활성화하세요.</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -8020,7 +8020,7 @@ Description: %4</source>
     <message>
         <location line="+16"/>
         <source>Saved credentials do not match the selected backend. Supply new credentials.</source>
-        <translation>저장된 인증 정보가 선택한 백엔드와 일치하지 않습니다. 새 인증 정보를 입력하세요.</translation>
+        <translation>저장된 인증 정보가 선택한 동기화 방식과 일치하지 않습니다. 새 인증 정보를 입력하세요.</translation>
     </message>
     <message>
         <location line="+23"/>
@@ -8126,7 +8126,7 @@ Description: %4</source>
     <message>
         <location line="+1"/>
         <source>Disable sync before switching the active backend</source>
-        <translation>사용 중인 백엔드를 전환하기 전에 동기화를 비활성화하세요</translation>
+        <translation>사용 중인 동기화 방식을 전환하기 전에 동기화를 비활성화하세요</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -8356,7 +8356,7 @@ Leave blank to keep the existing token</source>
     <message>
         <location line="+1"/>
         <source>Unsupported sync backend.</source>
-        <translation>지원하지 않는 동기화 백엔드입니다.</translation>
+        <translation>지원하지 않는 동기화 방식입니다.</translation>
     </message>
     <message>
         <location line="+15"/>
@@ -9102,7 +9102,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location filename="../../../widgets/pdfannotationtoolbar.cpp" line="+58"/>
         <source>Highlight</source>
-        <translation>강조 표시</translation>
+        <translation>강조</translation>
     </message>
     <message>
         <location line="+14"/>
@@ -9135,7 +9135,7 @@ The legacy notebook would be kept for data backup.</source>
     <message>
         <location filename="../../../widgets/editors/pdfviewer.cpp" line="+73"/>
         <source>Highlight</source>
-        <translation>강조 표시</translation>
+        <translation>강조</translation>
     </message>
 </context>
 <context>
