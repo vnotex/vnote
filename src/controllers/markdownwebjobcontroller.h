@@ -49,13 +49,6 @@ public:
     QString m_fontStyle;
   };
 
-  struct HeadingAnchorResult {
-    bool m_found = false;
-    QString m_anchor;
-    WebViewJobResult::Status m_status = WebViewJobResult::Status::Error;
-    QString m_error;
-  };
-
   MarkdownWebJobController(ServiceLocator &p_services, const Buffer2 &p_buffer,
                            QObject *p_parent = nullptr);
   ~MarkdownWebJobController() override;
@@ -74,8 +67,6 @@ public:
   void highlightCodeBlock(int p_idx, quint64 p_timeStamp, const QString &p_text);
   void highlightMath(int p_idx, quint64 p_timeStamp, const QString &p_text);
   void htmlToMarkdown(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
-  void fetchHeadingAnchor(const QString &p_text, int p_lineNumber,
-                          std::function<void(const HeadingAnchorResult &)> p_callback);
   void fetchHighlightStyles(std::function<void(const QVector<CssRuleStyle> *)> p_callback);
 
 signals:

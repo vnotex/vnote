@@ -28,9 +28,6 @@ QString MarkdownWebGlobalOptions::toJavascriptObject() const {
          QStringLiteral("headingFoldingEnabled: %1,\n")
              .arg(Utils::boolToString(m_headingFoldingEnabled)) +
          QStringLiteral("protectFromXss: %1,\n").arg(Utils::boolToString(m_protectFromXss)) +
-         QStringLiteral("htmlTagEnabled: %1,\n").arg(Utils::boolToString(m_htmlTagEnabled)) +
-         QStringLiteral("autoBreakEnabled: %1,\n").arg(Utils::boolToString(m_autoBreakEnabled)) +
-         QStringLiteral("linkifyEnabled: %1,\n").arg(Utils::boolToString(m_linkifyEnabled)) +
          QStringLiteral("indentFirstLineEnabled: %1,\n")
              .arg(Utils::boolToString(m_indentFirstLineEnabled)) +
          QStringLiteral("codeBlockLineNumberEnabled: %1,\n")

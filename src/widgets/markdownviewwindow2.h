@@ -25,6 +25,10 @@ class QPrinter;
 class QAction;
 class QMenu;
 
+namespace vte {
+class MarkdownDocument;
+}
+
 namespace vnotex {
 class MarkdownEditor;
 class MarkdownViewer;
@@ -35,6 +39,8 @@ class PreviewHelper;
 class MarkdownEditorController;
 class MarkdownViewWindowController;
 class MarkdownWebJobController;
+class MarkdownRenderController;
+struct MarkdownHtmlOptions;
 class MarkdownWebJobHost;
 class ImageHostController;
 class EditorStatusBarBinder;
@@ -106,6 +112,8 @@ protected slots:
 
   void handleFindAndReplaceWidgetOpened() Q_DECL_OVERRIDE;
 
+  void onNativeProtectedLockingChanged(bool p_locking);
+
 protected:
   QStringList getAttachmentScanExcludedPaths() const override;
 
@@ -162,6 +170,14 @@ private:
   void retireReader();
 
   void initializeViewerPage();
+
+  MarkdownHtmlOptions nativeRenderOptions() const;
+  void updateNativeDocumentRetention();
+  void invalidateNativeRender(bool p_suspend = false);
+  void requestNativeRender(const QString &p_text, int p_lineNumber = -1);
+  void requestEditorNativeRender(int p_lineNumber = -1);
+  void renderNativeDocument(const QSharedPointer<const vte::MarkdownDocument> &p_document);
+  bool nativeRenderSourceIsCurrent() const;
 
   void updateJobRenderContext();
 
@@ -233,13 +249,10 @@ private:
 
   MarkdownViewerAdapter *adapter() const;
 
-  void handleExternalCodeBlockHighlightRequest(int p_idx, quint64 p_timeStamp,
-                                               const QString &p_text);
-
   void handleExternalMathHighlightRequest(int p_idx, quint64 p_timeStamp, const QString &p_text);
 
-  // Fetch the Prism .token styles from the theme's highlight style sheet once and
-  // push them to the editor. Shared by the code block and math highlight paths.
+  // Fetch the Prism .token styles for external math highlighting. Fenced code
+  // is highlighted natively by the editor's KSyntax backend.
   void ensureExternalHighlightStyles();
 
   void onPrintFinished(bool p_succeeded);
@@ -280,12 +293,13 @@ private:
 
   // Apply a task list checkbox toggle requested from the preview.
   // @p_lineNumber: 0-based source line of the task list item.
-  void onTaskListItemToggleRequested(int p_lineNumber, bool p_checked);
+  void onTaskListItemToggleRequested(const QString &p_generation, int p_lineNumber, bool p_checked);
 
   // Controllers (owned via QObject parent).
   MarkdownEditorController *m_editorController = nullptr;
   MarkdownViewWindowController *m_windowController = nullptr;
   MarkdownWebJobController *m_webJobs = nullptr;
+  MarkdownRenderController *m_nativeRender = nullptr;
   MarkdownWebJobHost *m_webJobHost = nullptr;
   ImageHostController *m_imageHostController = nullptr;
 
@@ -315,6 +329,15 @@ private:
   bool m_rebindingBuffer = false;
   bool m_resetTextEditorForNewBuffer = false;
   bool m_sourceAvailable = true;
+  QString m_nativeRenderToken;
+  quint64 m_renderBufferGeneration = 0;
+  quint64 m_renderEditorGeneration = 0;
+  int m_renderBufferRevision = -1;
+  int m_nativeRenderLineNumber = -1;
+  bool m_renderUsesEditor = false;
+  bool m_waitingNativeDocument = false;
+  bool m_nativeLocking = false;
+  bool m_applyingTaskToggle = false;
   bool m_editSectionNumberEnabled = false;
   QString m_editSectionNumberPattern = QStringLiteral("1.1.");
   bool m_editDetectHeading1ForSectionNumber = true;

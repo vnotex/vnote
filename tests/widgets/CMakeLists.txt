@@ -1479,13 +1479,20 @@ if(TARGET Qt6::Qml)
   add_qt_test(test_markdownviewer_js
     SOURCES
       test_markdownviewer_js.cpp
+      ${CMAKE_SOURCE_DIR}/src/utils/markdownhtmlrenderer.cpp
+      ${CMAKE_SOURCE_DIR}/src/utils/headingslugger.cpp
     LINKS
       # Guarding on the target does NOT link QJSEngine; this does.
       Qt6::Qml
       # Exercise production Unicode slug generation in the viewer's actual engine.
       Qt6::WebEngineCore
+      VTextEdit
       cmark
     GUILESS
+  )
+  add_custom_command(TARGET test_markdownviewer_js POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_markdownviewer_js>
   )
   target_compile_definitions(test_markdownviewer_js PRIVATE
     VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
@@ -1509,6 +1516,8 @@ if(TARGET Qt6::Qml)
   add_qt_test(test_graphrenderer_js
     SOURCES
       test_graphrenderer_js.cpp
+      ${CMAKE_SOURCE_DIR}/src/utils/markdownhtmlrenderer.cpp
+      ${CMAKE_SOURCE_DIR}/src/utils/headingslugger.cpp
       ${CMAKE_SOURCE_DIR}/src/widgets/editors/graphhelper.cpp
       ${CMAKE_SOURCE_DIR}/src/widgets/editors/graphvizhelper.cpp
       ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp

@@ -6,6 +6,7 @@
 #include <QImage>
 #include <QJsonArray>
 #include <QScopeGuard>
+#include <QSet>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QWebChannel>
@@ -29,9 +30,6 @@ using namespace vnotex;
 
 namespace tests {
 namespace {
-using Status = WebViewJobResult::Status;
-using Anchor = MarkdownWebJobController::HeadingAnchorResult;
-
 // Drive the actual session scheduler/owner lifetimes through its public bridge slots.
 // No fake controller policy and no payload-echo handler is involved.
 struct Endpoint {
@@ -58,11 +56,8 @@ struct Endpoint {
     session.setProperty("markdownJobBufferId", p_buffer.id());
   }
   void ready() { session.setReady(session.generation()); }
-  void complete(int p_index, const QString &p_anchor = QStringLiteral("resolved-heading"),
-                bool p_found = true) {
-    session.complete(
-        requests.at(p_index).at(0).toString(), true,
-        QJsonObject{{QStringLiteral("found"), p_found}, {QStringLiteral("anchor"), p_anchor}}, {});
+  void complete(int p_index, const QString &p_markdown = QStringLiteral("**Converted**")) {
+    session.complete(requests.at(p_index).at(0).toString(), true, p_markdown, {});
   }
 };
 
@@ -99,10 +94,8 @@ struct SharedRuntime {
     services.registerService(p_hooks);
     services.registerService(&service);
   }
-  void complete(int p_index, const QString &p_anchor = QStringLiteral("shared-heading")) {
-    session->complete(
-        requests.at(p_index), true,
-        QJsonObject{{QStringLiteral("found"), true}, {QStringLiteral("anchor"), p_anchor}}, {});
+  void complete(int p_index, const QString &p_markdown = QStringLiteral("**Converted**")) {
+    session->complete(requests.at(p_index), true, p_markdown, {});
   }
 };
 } // namespace
@@ -134,8 +127,8 @@ private slots:
   void protectedLockCancelsBeforeReaderExistsAndCanResume();
   void protectedFailureNeverUsesOrdinaryService();
   void protectedStylesUseSelectedBundledBytes();
-  void invalidBufferAndNegativeHeading();
-  void missingAndEmptyHeadingAreDifferentFromFailure();
+  void invalidBufferRejectsWork();
+  void emptyConversionIsDifferentFromFailure();
   void bufferCloseRejectsLateCompletion();
   void collidingLocalIdsRemainOwnerScoped();
   void previewScopesAreStableAndGenerationBound();
@@ -261,22 +254,31 @@ void TestMarkdownWebJobController::endpointPolicy() {
     controller.setPreferredSession(&reader.session);
   if (readerState == 3)
     controller.invalidate();
-  QList<Anchor> results;
-  controller.fetchHeadingAnchor(QStringLiteral("# Heading"), 0,
-                                [&](const Anchor &p_result) { results.append(p_result); });
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
+  controller.htmlToMarkdown(17, 23, QStringLiteral("<strong>Converted</strong>"));
   if (preferred) {
     QTRY_COMPARE(reader.requests.size(), 1);
+    QCOMPARE(reader.requests.first().at(1).toString(), QStringLiteral("markdown.htmlToMarkdown"));
+    QCOMPARE(
+        reader.requests.first().at(2).toJsonObject().value(QStringLiteral("source")).toString(),
+        QStringLiteral("<strong>Converted</strong>"));
     reader.complete(0);
   } else if (protectedBuffer) {
     QTRY_COMPARE(fallback.requests.size(), 1);
+    QCOMPARE(fallback.requests.first().at(1).toString(), QStringLiteral("markdown.htmlToMarkdown"));
     fallback.complete(0);
   } else {
     QTRY_COMPARE(shared.requests.size(), 1);
+    QCOMPARE(shared.arguments.first().value(QStringLiteral("source")).toString(),
+             QStringLiteral("<strong>Converted</strong>"));
     shared.complete(0);
   }
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Success);
-  QVERIFY(results.first().m_found);
+  QCOMPARE(converted.size(), 1);
+  QCOMPARE(converted.first().at(0).toULongLong(), quint64(17));
+  QCOMPARE(converted.first().at(1).toULongLong(), quint64(23));
+  QCOMPARE(converted.first().at(2).toString(), QStringLiteral("**Converted**"));
+  QVERIFY(failed.isEmpty());
   QCOMPARE(reader.requests.size(), preferred ? 1 : 0);
   QCOMPARE(shared.created, !protectedBuffer && !preferred ? 1 : 0);
   QCOMPARE(protectedRequests, protectedBuffer && !preferred ? 1 : 0);
@@ -297,45 +299,46 @@ void TestMarkdownWebJobController::originalEndpointFinishesAfterReaderBecomesRea
   Endpoint reader(m_ordinary);
   MarkdownWebJobController controller(shared.services, m_ordinary);
   controller.setPreferredSession(&reader.session);
-  QList<Anchor> first;
-  QList<Anchor> second;
-  controller.fetchHeadingAnchor(QStringLiteral("# First"), 0,
-                                [&](const Anchor &p_result) { first.append(p_result); });
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  controller.htmlToMarkdown(1, 10, QStringLiteral("<strong>First</strong>"));
   QTRY_COMPARE(shared.requests.size(), 1);
   reader.ready();
-  controller.fetchHeadingAnchor(QStringLiteral("# Second"), 0,
-                                [&](const Anchor &p_result) { second.append(p_result); });
+  controller.htmlToMarkdown(2, 20, QStringLiteral("<em>Second</em>"));
   QTRY_COMPARE(reader.requests.size(), 1);
-  reader.complete(0, QStringLiteral("second"));
-  QVERIFY(first.isEmpty());
-  shared.complete(0, QStringLiteral("first"));
-  QCOMPARE(first.size(), 1);
-  QCOMPARE(first.first().m_anchor, QStringLiteral("first"));
-  QCOMPARE(second.size(), 1);
-  QCOMPARE(second.first().m_anchor, QStringLiteral("second"));
+  reader.complete(0, QStringLiteral("*Second*"));
+  QCOMPARE(converted.size(), 1);
+  QCOMPARE(converted.first().at(0).toULongLong(), quint64(2));
+  QCOMPARE(converted.first().at(1).toULongLong(), quint64(20));
+  QCOMPARE(converted.first().at(2).toString(), QStringLiteral("*Second*"));
+  shared.complete(0, QStringLiteral("**First**"));
+  QCOMPARE(converted.size(), 2);
+  QCOMPARE(converted.last().at(0).toULongLong(), quint64(1));
+  QCOMPARE(converted.last().at(1).toULongLong(), quint64(10));
+  QCOMPARE(converted.last().at(2).toString(), QStringLiteral("**First**"));
   QCOMPARE(shared.requests.size(), 1);
 }
 
 void TestMarkdownWebJobController::generationCancellationSettlesOnce() {
   SharedRuntime shared(m_buffers.get(), &m_hooks, false);
   MarkdownWebJobController controller(shared.services, m_ordinary);
-  QList<Anchor> results;
   QSignalSpy pasteReady(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy highlighted(&controller, &MarkdownWebJobController::highlightCodeBlockReady);
   QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
-  controller.fetchHeadingAnchor(QStringLiteral("# Pending"), 0,
-                                [&](const Anchor &p_result) { results.append(p_result); });
   controller.htmlToMarkdown(1, 9, QStringLiteral("<b>Paste</b>"));
+  controller.highlightCodeBlock(2, 9, QStringLiteral("```cpp\nint pending;\n```"));
   QVERIFY(shared.requests.isEmpty());
   controller.invalidate();
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Cancelled);
   QCOMPARE(failed.size(), 1);
+  QCOMPARE(failed.first().at(0).toString(), QStringLiteral("markdown.htmlToMarkdown"));
+  QCOMPARE(failed.first().at(1).toULongLong(), quint64(1));
+  QCOMPARE(failed.first().at(2).toULongLong(), quint64(9));
+  QVERIFY(!failed.first().at(3).toString().isEmpty());
   QCOMPARE(pasteReady.size(), 0);
+  QCOMPARE(highlighted.size(), 0);
   shared.session->setReady(shared.session->generation());
   QCoreApplication::processEvents();
   QVERIFY(shared.requests.isEmpty());
   controller.revoke();
-  QCOMPARE(results.size(), 1);
   QCOMPARE(failed.size(), 1);
 }
 
@@ -360,37 +363,36 @@ void TestMarkdownWebJobController::suspensionCancelsOnceAndResumes() {
   QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
   controller.setPreferredSession(&reader.session);
   QCOMPARE(ready.size(), 1);
-  QList<Anchor> cancelled;
-  QList<Anchor> reentrant;
-  controller.fetchHeadingAnchor(QStringLiteral("# Pending"), 0, [&](const Anchor &p_result) {
-    cancelled.append(p_result);
-    // Cancellation callbacks must see the closed admission gate before invalidation returns.
-    controller.fetchHeadingAnchor(QStringLiteral("# Reentrant"), 0,
-                                  [&](const Anchor &p_nested) { reentrant.append(p_nested); });
-  });
+  connect(&controller, &MarkdownWebJobController::operationFailed, &controller,
+          [&](const QString &p_operation, quint64 p_id, quint64, const QString &) {
+            if (p_operation == QStringLiteral("markdown.htmlToMarkdown") && p_id == 1) {
+              // Failure delivery must observe the already closed admission gate.
+              controller.htmlToMarkdown(2, 10, QStringLiteral("<em>Reentrant</em>"));
+            }
+          });
+  controller.htmlToMarkdown(1, 9, QStringLiteral("<strong>Pending</strong>"));
   QTRY_COMPARE(reader.requests.size(), 1);
-  controller.htmlToMarkdown(1, 9, QStringLiteral("<b>Pending paste</b>"));
-  controller.highlightCodeBlock(3, 10, QStringLiteral("```cpp\npending\n```"));
+  controller.htmlToMarkdown(3, 10, QStringLiteral("<b>Queued paste</b>"));
+  controller.highlightCodeBlock(4, 10, QStringLiteral("```cpp\npending\n```"));
   controller.setSuspended(true);
-  QCOMPARE(cancelled.size(), 1);
-  QCOMPARE(cancelled.first().m_status, Status::Cancelled);
-  QCOMPARE(reentrant.size(), 1);
-  QCOMPARE(reentrant.first().m_status, Status::Cancelled);
-  QCOMPARE(failed.size(), 1);
+  QCOMPARE(failed.size(), 3);
+  QSet<quint64> failedIds;
+  for (const auto &failure : failed) {
+    QCOMPARE(failure.at(0).toString(), QStringLiteral("markdown.htmlToMarkdown"));
+    QVERIFY(!failure.at(3).toString().isEmpty());
+    failedIds.insert(failure.at(1).toULongLong());
+  }
+  QCOMPARE(failedIds, (QSet<quint64>{1, 2, 3}));
   QCOMPARE(release.size(), 1);
   controller.setSuspended(true);
   QCOMPARE(release.size(), 1);
-  QCOMPARE(cancelled.size(), 1);
-  QCOMPARE(reentrant.size(), 1);
-  QCOMPARE(failed.size(), 1);
+  QCOMPARE(failed.size(), 3);
 
-  reader.complete(0, QStringLiteral("stale-heading"));
+  reader.complete(0, QStringLiteral("**Stale**"));
   QTRY_COMPARE(reader.releasedScopes.size(), 1);
-  QCOMPARE(cancelled.size(), 1);
-  QCOMPARE(reentrant.size(), 1);
   QCOMPARE(pasted.size(), 0);
   QCOMPARE(highlighted.size(), 0);
-  QCOMPARE(failed.size(), 1);
+  QCOMPARE(failed.size(), 3);
   QCOMPARE(reader.requests.size(), 1);
   QCOMPARE(ready.size(), 1);
   QCOMPARE(requested.size(), 0);
@@ -407,15 +409,14 @@ void TestMarkdownWebJobController::suspensionCancelsOnceAndResumes() {
   replacement.ready();
   controller.setPreferredSession(&replacement.session);
   QCOMPARE(ready.size(), 2);
-  QList<Anchor> resumed;
-  controller.fetchHeadingAnchor(QStringLiteral("# Fresh"), 0,
-                                [&](const Anchor &p_result) { resumed.append(p_result); });
+  controller.htmlToMarkdown(5, 11, QStringLiteral("<em>Fresh</em>"));
   QTRY_COMPARE(replacement.requests.size(), 1);
-  replacement.complete(0, QStringLiteral("fresh-heading"));
-  QCOMPARE(resumed.size(), 1);
-  QCOMPARE(resumed.first().m_status, Status::Success);
-  QCOMPARE(resumed.first().m_anchor, QStringLiteral("fresh-heading"));
-  QCOMPARE(cancelled.size(), 1);
+  replacement.complete(0, QStringLiteral("*Fresh*"));
+  QCOMPARE(pasted.size(), 1);
+  QCOMPARE(pasted.first().at(0).toULongLong(), quint64(5));
+  QCOMPARE(pasted.first().at(1).toULongLong(), quint64(11));
+  QCOMPARE(pasted.first().at(2).toString(), QStringLiteral("*Fresh*"));
+  QCOMPARE(failed.size(), 3);
   QCOMPARE(shared.created, 0);
 }
 
@@ -433,6 +434,7 @@ void TestMarkdownWebJobController::suspensionRejectsColdWork() {
   MarkdownWebJobController controller(shared.services, buffer);
   QSignalSpy requested(&controller, &MarkdownWebJobController::protectedSessionRequested);
   QSignalSpy ready(&controller, &MarkdownWebJobController::ready);
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
   QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
   connect(&controller, &MarkdownWebJobController::protectedSessionRequested, &controller, [&]() {
     fallback = std::make_unique<Endpoint>(buffer);
@@ -440,11 +442,6 @@ void TestMarkdownWebJobController::suspensionRejectsColdWork() {
     controller.setProtectedSession(&fallback->session, QByteArrayLiteral("bundled"));
   });
   controller.setSuspended(true);
-  QList<Anchor> results;
-  const auto done = [&](const Anchor &p_result) { results.append(p_result); };
-  controller.fetchHeadingAnchor(QStringLiteral("# Dormant"), 0, done);
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Cancelled);
   int styleCallbacks = 0;
   controller.fetchHighlightStyles([&](const auto *p_styles) {
     ++styleCallbacks;
@@ -457,6 +454,10 @@ void TestMarkdownWebJobController::suspensionRejectsColdWork() {
   controller.htmlToMarkdown(5, 1, QStringLiteral("<b>Dormant</b>"));
   QCOMPARE(styleCallbacks, 1);
   QCOMPARE(failed.size(), 1);
+  QCOMPARE(failed.first().at(0).toString(), QStringLiteral("markdown.htmlToMarkdown"));
+  QCOMPARE(failed.first().at(1).toULongLong(), quint64(5));
+  QVERIFY(!failed.first().at(3).toString().isEmpty());
+  QVERIFY(converted.isEmpty());
   QCoreApplication::processEvents();
   QCOMPARE(requested.size(), 0);
   QCOMPARE(ready.size(), 0);
@@ -469,7 +470,7 @@ void TestMarkdownWebJobController::suspensionRejectsColdWork() {
   QCOMPARE(ready.size(), 0);
   QCOMPARE(shared.created, 0);
   QVERIFY(!fallback);
-  controller.fetchHeadingAnchor(QStringLiteral("# Awake"), 0, done);
+  controller.htmlToMarkdown(6, 2, QStringLiteral("<strong>Converted</strong>"));
   if (protectedBuffer) {
     QVERIFY(fallback);
     QTRY_COMPARE(fallback->requests.size(), 1);
@@ -478,8 +479,10 @@ void TestMarkdownWebJobController::suspensionRejectsColdWork() {
     QTRY_COMPARE(shared.requests.size(), 1);
     shared.complete(0);
   }
-  QCOMPARE(results.size(), 2);
-  QCOMPARE(results.last().m_status, Status::Success);
+  QCOMPARE(converted.size(), 1);
+  QCOMPARE(converted.first().at(0).toULongLong(), quint64(6));
+  QCOMPARE(converted.first().at(2).toString(), QStringLiteral("**Converted**"));
+  QCOMPARE(failed.size(), 1);
   QCOMPARE(requested.size(), protectedBuffer ? 1 : 0);
   QCOMPARE(shared.created, protectedBuffer ? 0 : 1);
   QCOMPARE(ready.size(), 1);
@@ -489,14 +492,15 @@ void TestMarkdownWebJobController::suspendedSharedReadinessDoesNotPublish() {
   SharedRuntime shared(m_buffers.get(), &m_hooks, false);
   MarkdownWebJobController controller(shared.services, m_ordinary);
   QSignalSpy ready(&controller, &MarkdownWebJobController::ready);
-  QList<Anchor> results;
-  const auto done = [&](const Anchor &p_result) { results.append(p_result); };
-  controller.fetchHeadingAnchor(QStringLiteral("# Waiting for runtime"), 0, done);
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
+  controller.htmlToMarkdown(1, 1, QStringLiteral("<b>Waiting for runtime</b>"));
   QCOMPARE(shared.created, 1);
   QVERIFY(shared.requests.isEmpty());
   controller.setSuspended(true);
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Cancelled);
+  QCOMPARE(failed.size(), 1);
+  QVERIFY(!failed.first().at(3).toString().isEmpty());
+  QVERIFY(converted.isEmpty());
   shared.session->setReady(shared.session->generation());
   QTRY_COMPARE(shared.releasedScopes.size(), 1);
   QCOMPARE(ready.size(), 0);
@@ -504,22 +508,24 @@ void TestMarkdownWebJobController::suspendedSharedReadinessDoesNotPublish() {
 
   // The application-wide runtime remains usable by another window while this one sleeps.
   MarkdownWebJobController sibling(shared.services, m_ordinary);
-  QList<Anchor> siblingResults;
-  sibling.fetchHeadingAnchor(QStringLiteral("# Visible sibling"), 0,
-                             [&](const Anchor &p_result) { siblingResults.append(p_result); });
+  QSignalSpy siblingConverted(&sibling, &MarkdownWebJobController::htmlToMarkdownReady);
+  sibling.htmlToMarkdown(1, 1, QStringLiteral("<b>Visible sibling</b>"));
   QTRY_COMPARE(shared.requests.size(), 1);
-  shared.complete(0);
-  QCOMPARE(siblingResults.size(), 1);
-  QCOMPARE(siblingResults.first().m_status, Status::Success);
+  shared.complete(0, QStringLiteral("**Visible sibling**"));
+  QCOMPARE(siblingConverted.size(), 1);
+  QCOMPARE(siblingConverted.first().at(2).toString(), QStringLiteral("**Visible sibling**"));
+  QVERIFY(converted.isEmpty());
   QCOMPARE(ready.size(), 0);
   controller.setSuspended(false);
   QCOMPARE(ready.size(), 0);
   QCOMPARE(shared.created, 1);
-  controller.fetchHeadingAnchor(QStringLiteral("# Awake"), 0, done);
+  controller.htmlToMarkdown(2, 2, QStringLiteral("<b>Awake</b>"));
   QTRY_COMPARE(shared.requests.size(), 2);
-  shared.complete(1);
-  QCOMPARE(results.size(), 2);
-  QCOMPARE(results.last().m_status, Status::Success);
+  shared.complete(1, QStringLiteral("**Awake**"));
+  QCOMPARE(converted.size(), 1);
+  QCOMPARE(converted.first().at(0).toULongLong(), quint64(2));
+  QCOMPARE(converted.first().at(2).toString(), QStringLiteral("**Awake**"));
+  QCOMPARE(failed.size(), 1);
   QCOMPARE(ready.size(), 1);
   QCOMPARE(shared.created, 1);
 }
@@ -527,26 +533,25 @@ void TestMarkdownWebJobController::suspendedSharedReadinessDoesNotPublish() {
 void TestMarkdownWebJobController::suspendedProtectedSessionIsReleased() {
   SharedRuntime shared(m_buffers.get(), &m_hooks);
   std::unique_ptr<Endpoint> fallback;
-  bool lateAuthorized = false;
   MarkdownWebJobController controller(shared.services, m_private);
   QSignalSpy requested(&controller, &MarkdownWebJobController::protectedSessionRequested);
   QSignalSpy release(&controller, &MarkdownWebJobController::protectedSessionReleaseRequested);
   QSignalSpy ready(&controller, &MarkdownWebJobController::ready);
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
   connect(&controller, &MarkdownWebJobController::protectedSessionReleaseRequested, &controller,
           [&]() {
             if (fallback) {
-              lateAuthorized = fallback->session.property("markdownJobController").isValid();
               fallback.reset();
             }
           });
-  QList<Anchor> results;
-  const auto done = [&](const Anchor &p_result) { results.append(p_result); };
-  controller.fetchHeadingAnchor(QStringLiteral("# Waiting for protected host"), 0, done);
+  controller.htmlToMarkdown(1, 1, QStringLiteral("<b>Waiting for protected host</b>"));
   QCOMPARE(requested.size(), 1);
-  QVERIFY(results.isEmpty());
+  QVERIFY(converted.isEmpty());
+  QVERIFY(failed.isEmpty());
   controller.setSuspended(true);
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Cancelled);
+  QCOMPARE(failed.size(), 1);
+  QVERIFY(!failed.first().at(3).toString().isEmpty());
   QCOMPARE(release.size(), 1);
 
   fallback = std::make_unique<Endpoint>(m_private);
@@ -555,9 +560,9 @@ void TestMarkdownWebJobController::suspendedProtectedSessionIsReleased() {
   controller.setProtectedSession(lateSession, QByteArrayLiteral("late bundled CSS"));
   QCOMPARE(release.size(), 2);
   QVERIFY(lateSession.isNull());
-  QVERIFY(!lateAuthorized);
   QCOMPARE(ready.size(), 0);
-  QCOMPARE(results.size(), 1);
+  QCOMPARE(failed.size(), 1);
+  QVERIFY(converted.isEmpty());
   QCOMPARE(shared.created, 0);
 
   controller.setSuspended(false);
@@ -569,13 +574,15 @@ void TestMarkdownWebJobController::suspendedProtectedSessionIsReleased() {
     fallback->ready();
     controller.setProtectedSession(&fallback->session, QByteArrayLiteral("fresh bundled CSS"));
   });
-  controller.fetchHeadingAnchor(QStringLiteral("# Fresh protected host"), 0, done);
+  controller.htmlToMarkdown(2, 2, QStringLiteral("<strong>Converted</strong>"));
   QCOMPARE(requested.size(), 2);
   QVERIFY(fallback);
   QTRY_COMPARE(fallback->requests.size(), 1);
   fallback->complete(0);
-  QCOMPARE(results.size(), 2);
-  QCOMPARE(results.last().m_status, Status::Success);
+  QCOMPARE(converted.size(), 1);
+  QCOMPARE(converted.first().at(0).toULongLong(), quint64(2));
+  QCOMPARE(converted.first().at(2).toString(), QStringLiteral("**Converted**"));
+  QCOMPARE(failed.size(), 1);
   QCOMPARE(ready.size(), 1);
   QCOMPARE(shared.created, 0);
 }
@@ -605,13 +612,14 @@ void TestMarkdownWebJobController::suspendedSiblingCloseDoesNotRevoke() {
   Endpoint replacement(buffer);
   replacement.ready();
   controller.setPreferredSession(&replacement.session);
-  QList<Anchor> results;
-  controller.fetchHeadingAnchor(QStringLiteral("# Remaining window"), 0,
-                                [&](const Anchor &p_result) { results.append(p_result); });
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
+  controller.htmlToMarkdown(1, 1, QStringLiteral("<b>Remaining window</b>"));
   QTRY_COMPARE(replacement.requests.size(), 1);
-  replacement.complete(0);
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Success);
+  replacement.complete(0, QStringLiteral("**Remaining window**"));
+  QCOMPARE(converted.size(), 1);
+  QCOMPARE(converted.first().at(2).toString(), QStringLiteral("**Remaining window**"));
+  QVERIFY(failed.isEmpty());
   QCOMPARE(shared.created, 0);
 }
 
@@ -630,15 +638,16 @@ void TestMarkdownWebJobController::suspensionDoesNotUndoRevocation() {
   MarkdownWebJobController controller(shared.services, buffer);
   QSignalSpy requested(&controller, &MarkdownWebJobController::protectedSessionRequested);
   QSignalSpy ready(&controller, &MarkdownWebJobController::ready);
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
   controller.setSuspended(true);
   controller.revoke();
   controller.setSuspended(false);
   controller.setPreferredSession(&reader.session);
-  QList<Anchor> results;
-  controller.fetchHeadingAnchor(QStringLiteral("# Revoked"), 0,
-                                [&](const Anchor &p_result) { results.append(p_result); });
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Cancelled);
+  controller.htmlToMarkdown(1, 1, QStringLiteral("<b>Revoked</b>"));
+  QCOMPARE(failed.size(), 1);
+  QVERIFY(!failed.first().at(3).toString().isEmpty());
+  QVERIFY(converted.isEmpty());
   QCoreApplication::processEvents();
   QCOMPARE(ready.size(), 0);
   QCOMPARE(requested.size(), 0);
@@ -652,6 +661,8 @@ void TestMarkdownWebJobController::suspensionDoesNotUnlockProtectedBuffer() {
   MarkdownWebJobController controller(shared.services, m_private);
   QSignalSpy requested(&controller, &MarkdownWebJobController::protectedSessionRequested);
   QSignalSpy ready(&controller, &MarkdownWebJobController::ready);
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
   connect(&controller, &MarkdownWebJobController::protectedSessionRequested, &controller, [&]() {
     fallback = std::make_unique<Endpoint>(m_private);
     fallback->ready();
@@ -661,11 +672,10 @@ void TestMarkdownWebJobController::suspensionDoesNotUnlockProtectedBuffer() {
   QVERIFY(m_buffers->beginProtectedLocking());
   const auto restoreLock = qScopeGuard([&]() { m_buffers->cancelProtectedLocking(); });
   controller.setSuspended(false);
-  QList<Anchor> results;
-  const auto done = [&](const Anchor &p_result) { results.append(p_result); };
-  controller.fetchHeadingAnchor(QStringLiteral("# Still locked"), 0, done);
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Cancelled);
+  controller.htmlToMarkdown(1, 1, QStringLiteral("<b>Still locked</b>"));
+  QCOMPARE(failed.size(), 1);
+  QCOMPARE(failed.first().at(1).toULongLong(), quint64(1));
+  QVERIFY(converted.isEmpty());
   QCOMPARE(requested.size(), 0);
   QCOMPARE(ready.size(), 0);
   QCOMPARE(shared.created, 0);
@@ -674,20 +684,23 @@ void TestMarkdownWebJobController::suspensionDoesNotUnlockProtectedBuffer() {
   controller.setSuspended(true);
   m_buffers->cancelProtectedLocking();
   QCOMPARE(ready.size(), 0);
-  controller.fetchHeadingAnchor(QStringLiteral("# Still suspended"), 0, done);
-  QCOMPARE(results.size(), 2);
-  QCOMPARE(results.last().m_status, Status::Cancelled);
+  controller.htmlToMarkdown(2, 2, QStringLiteral("<b>Still suspended</b>"));
+  QCOMPARE(failed.size(), 2);
+  QCOMPARE(failed.last().at(1).toULongLong(), quint64(2));
+  QVERIFY(converted.isEmpty());
   QCOMPARE(requested.size(), 0);
   controller.setSuspended(false);
   QCOMPARE(ready.size(), 0);
   QVERIFY(!fallback);
-  controller.fetchHeadingAnchor(QStringLiteral("# Unlocked and awake"), 0, done);
+  controller.htmlToMarkdown(3, 3, QStringLiteral("<b>Unlocked and awake</b>"));
   QCOMPARE(requested.size(), 1);
   QVERIFY(fallback);
   QTRY_COMPARE(fallback->requests.size(), 1);
-  fallback->complete(0);
-  QCOMPARE(results.size(), 3);
-  QCOMPARE(results.last().m_status, Status::Success);
+  fallback->complete(0, QStringLiteral("**Unlocked and awake**"));
+  QCOMPARE(converted.size(), 1);
+  QCOMPARE(converted.first().at(0).toULongLong(), quint64(3));
+  QCOMPARE(converted.first().at(2).toString(), QStringLiteral("**Unlocked and awake**"));
+  QCOMPARE(failed.size(), 2);
   QCOMPARE(ready.size(), 1);
   QCOMPARE(shared.created, 0);
 }
@@ -718,24 +731,26 @@ void TestMarkdownWebJobController::ownerDestructionAndEndpointTeardown() {
   SharedRuntime shared(m_buffers.get(), &m_hooks);
   int callbacks = 0;
   auto owner = std::make_unique<MarkdownWebJobController>(shared.services, m_ordinary);
-  owner->fetchHeadingAnchor(QStringLiteral("# Gone"), 0, [&](const Anchor &) { ++callbacks; });
+  connect(owner.get(), &MarkdownWebJobController::htmlToMarkdownReady, this,
+          [&]() { ++callbacks; });
+  connect(owner.get(), &MarkdownWebJobController::operationFailed, this, [&]() { ++callbacks; });
+  owner->htmlToMarkdown(1, 1, QStringLiteral("<b>Gone</b>"));
   QTRY_COMPARE(shared.requests.size(), 1);
   const auto oldId = shared.requests.first();
   owner.reset();
-  shared.session->complete(oldId, true,
-                           QJsonObject{{QStringLiteral("found"), true},
-                                       {QStringLiteral("anchor"), QStringLiteral("late")}},
-                           {});
+  shared.session->complete(oldId, true, QStringLiteral("**Late**"), {});
   QCOMPARE(callbacks, 0);
 
   MarkdownWebJobController live(shared.services, m_ordinary);
-  QList<Anchor> results;
-  live.fetchHeadingAnchor(QStringLiteral("# Retired"), 0,
-                          [&](const Anchor &p_result) { results.append(p_result); });
+  QSignalSpy converted(&live, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&live, &MarkdownWebJobController::operationFailed);
+  live.htmlToMarkdown(2, 2, QStringLiteral("<b>Retired</b>"));
   QTRY_COMPARE(shared.requests.size(), 2);
   shared.service.invalidate();
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Cancelled);
+  QCOMPARE(failed.size(), 1);
+  QCOMPARE(failed.first().at(1).toULongLong(), quint64(2));
+  QVERIFY(!failed.first().at(3).toString().isEmpty());
+  QVERIFY(converted.isEmpty());
 }
 
 void TestMarkdownWebJobController::protectedSessionsAreWindowScoped() {
@@ -751,33 +766,33 @@ void TestMarkdownWebJobController::protectedSessionsAreWindowScoped() {
   second.setProtectedSession(&secondFallback.session, QByteArrayLiteral("bundled second"));
   // A second window must not borrow the first window's protected session, even for the same note.
   second.setPreferredSession(&firstFallback.session);
-  QList<Anchor> firstResults;
-  QList<Anchor> secondResults;
-  first.fetchHeadingAnchor(QStringLiteral("# First private"), 0,
-                           [&](const Anchor &p_result) { firstResults.append(p_result); });
-  second.fetchHeadingAnchor(QStringLiteral("# Second private"), 0,
-                            [&](const Anchor &p_result) { secondResults.append(p_result); });
+  QSignalSpy firstConverted(&first, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy secondConverted(&second, &MarkdownWebJobController::htmlToMarkdownReady);
+  first.htmlToMarkdown(1, 1, QStringLiteral("<b>First private</b>"));
+  second.htmlToMarkdown(1, 1, QStringLiteral("<b>Second private</b>"));
   QTRY_COMPARE(firstFallback.requests.size(), 1);
   QTRY_COMPARE(secondFallback.requests.size(), 1);
   QSignalSpy release(&first, &MarkdownWebJobController::protectedSessionReleaseRequested);
   reader.ready();
   first.setPreferredSession(&reader.session);
   QCOMPARE(release.size(), 0);
-  firstFallback.complete(0);
+  firstFallback.complete(0, QStringLiteral("**First private**"));
   QTRY_COMPARE(release.size(), 1);
-  QCOMPARE(firstResults.size(), 1);
-  secondFallback.complete(0);
-  QCOMPARE(secondResults.size(), 1);
+  QCOMPARE(firstConverted.size(), 1);
+  QCOMPARE(firstConverted.first().at(2).toString(), QStringLiteral("**First private**"));
+  QVERIFY(secondConverted.isEmpty());
+  secondFallback.complete(0, QStringLiteral("**Second private**"));
+  QCOMPARE(secondConverted.size(), 1);
+  QCOMPARE(secondConverted.first().at(2).toString(), QStringLiteral("**Second private**"));
   first.revoke();
-  second.fetchHeadingAnchor(QStringLiteral("# Still private"), 0,
-                            [&](const Anchor &p_result) { secondResults.append(p_result); });
+  second.htmlToMarkdown(2, 2, QStringLiteral("<b>Still private</b>"));
   QTRY_COMPARE(secondFallback.requests.size(), 2);
-  secondFallback.complete(1);
-  QCOMPARE(secondResults.size(), 2);
-  QCOMPARE(secondResults.last().m_status, Status::Success);
+  secondFallback.complete(1, QStringLiteral("**Still private**"));
+  QCOMPARE(secondConverted.size(), 2);
+  QCOMPARE(secondConverted.last().at(0).toULongLong(), quint64(2));
+  QCOMPARE(secondConverted.last().at(2).toString(), QStringLiteral("**Still private**"));
+  QCOMPARE(firstConverted.size(), 1);
   QCOMPARE(shared.created, 0);
-  QVERIFY(firstFallback.page.profile() != reader.page.profile());
-  QVERIFY(firstFallback.page.profile() != secondFallback.page.profile());
 }
 
 void TestMarkdownWebJobController::protectedLockCancelsBeforeReaderExistsAndCanResume() {
@@ -789,25 +804,28 @@ void TestMarkdownWebJobController::protectedLockCancelsBeforeReaderExistsAndCanR
     controller.setProtectedSession(&fallback.session, QByteArrayLiteral("bundled"));
   });
   QSignalSpy release(&controller, &MarkdownWebJobController::protectedSessionReleaseRequested);
-  QList<Anchor> results;
-  controller.fetchHeadingAnchor(QStringLiteral("# Secret"), 0,
-                                [&](const Anchor &p_result) { results.append(p_result); });
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
+  controller.htmlToMarkdown(1, 1, QStringLiteral("<b>Secret</b>"));
   QTRY_COMPARE(fallback.requests.size(), 1);
   QVERIFY(m_buffers->beginProtectedLocking());
   const auto restoreLock = qScopeGuard([&]() { m_buffers->cancelProtectedLocking(); });
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Cancelled);
+  QCOMPARE(failed.size(), 1);
+  QCOMPARE(failed.first().at(1).toULongLong(), quint64(1));
+  QVERIFY(!failed.first().at(3).toString().isEmpty());
   QCOMPARE(release.size(), 1);
   QVERIFY(m_buffers->protectedBufferOperationsIdle(m_private.id()));
-  fallback.complete(0);
-  QCOMPARE(results.size(), 1);
+  fallback.complete(0, QStringLiteral("**Secret**"));
+  QCOMPARE(failed.size(), 1);
+  QVERIFY(converted.isEmpty());
   m_buffers->cancelProtectedLocking();
-  controller.fetchHeadingAnchor(QStringLiteral("# Resumed"), 0,
-                                [&](const Anchor &p_result) { results.append(p_result); });
+  controller.htmlToMarkdown(2, 2, QStringLiteral("<b>Resumed</b>"));
   QTRY_COMPARE(fallback.requests.size(), 2);
-  fallback.complete(1);
-  QCOMPARE(results.size(), 2);
-  QCOMPARE(results.last().m_status, Status::Success);
+  fallback.complete(1, QStringLiteral("**Resumed**"));
+  QCOMPARE(converted.size(), 1);
+  QCOMPARE(converted.first().at(0).toULongLong(), quint64(2));
+  QCOMPARE(converted.first().at(2).toString(), QStringLiteral("**Resumed**"));
+  QCOMPARE(failed.size(), 1);
   QCOMPARE(shared.created, 0);
 }
 
@@ -816,12 +834,14 @@ void TestMarkdownWebJobController::protectedFailureNeverUsesOrdinaryService() {
   MarkdownWebJobController controller(shared.services, m_private);
   connect(&controller, &MarkdownWebJobController::protectedSessionRequested, &controller,
           [&]() { controller.setProtectedSession(nullptr, {}); });
-  QList<Anchor> results;
-  controller.fetchHeadingAnchor(QStringLiteral("# Must stay private"), 0,
-                                [&](const Anchor &p_result) { results.append(p_result); });
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Error);
-  QVERIFY(!results.first().m_error.isEmpty());
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
+  controller.htmlToMarkdown(1, 1, QStringLiteral("<b>Must stay private</b>"));
+  QCOMPARE(failed.size(), 1);
+  QCOMPARE(failed.first().at(0).toString(), QStringLiteral("markdown.htmlToMarkdown"));
+  QCOMPARE(failed.first().at(1).toULongLong(), quint64(1));
+  QVERIFY(!failed.first().at(3).toString().isEmpty());
+  QVERIFY(converted.isEmpty());
   QCOMPARE(shared.created, 0);
 }
 
@@ -856,54 +876,46 @@ void TestMarkdownWebJobController::protectedStylesUseSelectedBundledBytes() {
   QCOMPARE(shared.created, 0);
 }
 
-void TestMarkdownWebJobController::invalidBufferAndNegativeHeading() {
+void TestMarkdownWebJobController::invalidBufferRejectsWork() {
   SharedRuntime shared(m_buffers.get(), &m_hooks);
   const Buffer2 invalid;
   MarkdownWebJobController rejected(shared.services, invalid);
-  Anchor result;
-  rejected.fetchHeadingAnchor(QStringLiteral("# Invalid"), 0,
-                              [&](const Anchor &p_result) { result = p_result; });
-  QCOMPARE(result.m_status, Status::Cancelled);
+  QSignalSpy converted(&rejected, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&rejected, &MarkdownWebJobController::operationFailed);
+  rejected.htmlToMarkdown(1, 1, QStringLiteral("<b>Invalid</b>"));
+  QCOMPARE(failed.size(), 1);
+  QCOMPARE(failed.first().at(0).toString(), QStringLiteral("markdown.htmlToMarkdown"));
+  QVERIFY(!failed.first().at(3).toString().isEmpty());
+  QVERIFY(converted.isEmpty());
   QCOMPARE(shared.created, 0);
-
-  Endpoint reader(m_ordinary);
-  reader.ready();
-  MarkdownWebJobController controller(shared.services, m_ordinary);
-  controller.setPreferredSession(&reader.session);
-  controller.fetchHeadingAnchor(QStringLiteral("# Heading"), -1,
-                                [&](const Anchor &p_result) { result = p_result; });
-  QTRY_COMPARE(reader.requests.size(), 1);
-  reader.complete(0, {}, false);
-  QCOMPARE(result.m_status, Status::Success);
-  QVERIFY(!result.m_found);
 }
 
-void TestMarkdownWebJobController::missingAndEmptyHeadingAreDifferentFromFailure() {
+void TestMarkdownWebJobController::emptyConversionIsDifferentFromFailure() {
   SharedRuntime shared(m_buffers.get(), &m_hooks);
   Endpoint reader(m_ordinary);
   reader.ready();
   MarkdownWebJobController controller(shared.services, m_ordinary);
   controller.setPreferredSession(&reader.session);
-  QList<Anchor> results;
-  const auto done = [&](const Anchor &p_result) { results.append(p_result); };
-  controller.fetchHeadingAnchor(QStringLiteral("# "), 0, done);
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
+  controller.htmlToMarkdown(1, 9, QStringLiteral("<p></p>"));
   QTRY_COMPARE(reader.requests.size(), 1);
-  reader.complete(0, {}, true);
-  QCOMPARE(results.last().m_status, Status::Success);
-  QVERIFY(results.last().m_found);
-  QVERIFY(results.last().m_anchor.isEmpty());
-  controller.fetchHeadingAnchor(QStringLiteral("not a heading"), 0, done);
+  reader.complete(0, QStringLiteral(""));
+  QCOMPARE(converted.size(), 1);
+  QCOMPARE(converted.first().at(0).toULongLong(), quint64(1));
+  QVERIFY(converted.first().at(2).toString().isEmpty());
+  QVERIFY(failed.isEmpty());
+
+  controller.htmlToMarkdown(2, 10, QStringLiteral("<p>Failure</p>"));
   QTRY_COMPARE(reader.requests.size(), 2);
-  reader.complete(1, {}, false);
-  QCOMPARE(results.last().m_status, Status::Success);
-  QVERIFY(!results.last().m_found);
-  controller.fetchHeadingAnchor(QStringLiteral("# Failure"), 0, done);
-  QTRY_COMPARE(reader.requests.size(), 3);
-  reader.session.complete(reader.requests.at(2).at(0).toString(), false, {},
-                          QStringLiteral("Parser unavailable"));
-  QCOMPARE(results.size(), 3);
-  QCOMPARE(results.last().m_status, Status::Error);
-  QVERIFY(!results.last().m_error.isEmpty());
+  reader.session.complete(reader.requests.at(1).at(0).toString(), false, {},
+                          QStringLiteral("Conversion unavailable"));
+  QCOMPARE(converted.size(), 1);
+  QCOMPARE(failed.size(), 1);
+  QCOMPARE(failed.first().at(0).toString(), QStringLiteral("markdown.htmlToMarkdown"));
+  QCOMPARE(failed.first().at(1).toULongLong(), quint64(2));
+  QCOMPARE(failed.first().at(2).toULongLong(), quint64(10));
+  QCOMPARE(failed.first().at(3).toString(), QStringLiteral("Conversion unavailable"));
 }
 
 void TestMarkdownWebJobController::bufferCloseRejectsLateCompletion() {
@@ -911,18 +923,19 @@ void TestMarkdownWebJobController::bufferCloseRejectsLateCompletion() {
   auto buffer = m_buffers->openVirtualBuffer(QStringLiteral("vx://web-job-lifetime"));
   QVERIFY(buffer.isValid());
   MarkdownWebJobController controller(shared.services, buffer);
-  QList<Anchor> results;
-  controller.fetchHeadingAnchor(QStringLiteral("# Closing"), 0,
-                                [&](const Anchor &p_result) { results.append(p_result); });
+  QSignalSpy converted(&controller, &MarkdownWebJobController::htmlToMarkdownReady);
+  QSignalSpy failed(&controller, &MarkdownWebJobController::operationFailed);
+  controller.htmlToMarkdown(1, 1, QStringLiteral("<b>Closing</b>"));
   QTRY_COMPARE(shared.requests.size(), 1);
   QVERIFY(m_buffers->closeBuffer(buffer.id()));
   ViewWindowCloseEvent event;
   event.bufferId = buffer.id();
   m_hooks.doAction(HookNames::ViewWindowAfterClose, event);
-  QCOMPARE(results.size(), 1);
-  QCOMPARE(results.first().m_status, Status::Cancelled);
-  shared.complete(0);
-  QCOMPARE(results.size(), 1);
+  QCOMPARE(failed.size(), 1);
+  QVERIFY(!failed.first().at(3).toString().isEmpty());
+  shared.complete(0, QStringLiteral("**Closing**"));
+  QCOMPARE(failed.size(), 1);
+  QVERIFY(converted.isEmpty());
 }
 
 void TestMarkdownWebJobController::collidingLocalIdsRemainOwnerScoped() {
@@ -1010,7 +1023,6 @@ void TestMarkdownWebJobController::previewScopesAreStableAndGenerationBound() {
   QTRY_COMPARE(shared.requests.size(), 1);
   const auto firstScope = shared.arguments.at(0).value(QStringLiteral("scope")).toString();
   QVERIFY(!firstScope.isEmpty());
-  QVERIFY(first.children().isEmpty()); // Cancellation uses transport IDs, not per-job QObjects.
   shared.session->complete(shared.requests.at(0), true, image, {});
   first.previewGraph(2, 8, QStringLiteral("mermaid"), QStringLiteral("graph TD; A-->B"), 2);
   QTRY_COMPARE(shared.requests.size(), 2);
@@ -1046,7 +1058,6 @@ void TestMarkdownWebJobController::scopeCleanupSurvivesOwnerAndDrainsActiveWork(
   controller->previewMath(1, 4, QStringLiteral("pending scoped formula"), 1);
   QTRY_COMPARE(shared.requests.size(), 1);
   const auto scope = shared.arguments.first().value(QStringLiteral("scope")).toString();
-  QVERIFY(controller->children().isEmpty());
   controller.reset();
   QCoreApplication::processEvents();
   QVERIFY(shared.releasedScopes.isEmpty());
@@ -1112,7 +1123,6 @@ void TestMarkdownWebJobController::individualCancellationPreservesOtherBlocks() 
   QTRY_COMPARE(shared.requests.size(), 1);
   controller.highlightCodeBlock(2, 9, QStringLiteral("```cpp\nsecond\n```"));
   controller.highlightCodeBlock(1, 10, QStringLiteral("```cpp\nnew first\n```"));
-  QVERIFY(controller.children().isEmpty());
   shared.session->complete(shared.requests.at(0), true, QStringLiteral("cancelled old first"), {});
   QCOMPARE(highlighted.size(), 0);
   QTRY_COMPARE(shared.requests.size(), 2);

@@ -7,7 +7,7 @@
 //
 //   1. GraphRenderer calls finishWork() EXACTLY ONCE per pass, on every exit path.
 //      This is a liveness requirement, not tidiness: MarkdownViewerCore queues
-//      every incoming markdown update while numOfOngoingWorkers > 0, so a pass
+//      every incoming native document while numOfOngoingWorkers > 0, so a pass
 //      that never calls finishWork() deadlocks the viewer for the rest of the
 //      session, and one that calls it twice corrupts the counter the same way.
 //
@@ -17,9 +17,9 @@
 //      of a diagram are dispatched before any of them completes.
 //
 // Follows the QJSEngine seam of test_markdownviewer_js.cpp: the REAL
-// src/data/extra/web/js/{lrucache,graphcache,graphrenderer}.js are read from disk
-// and evaluated unmodified; only their collaborators (VxWorker, Utils, document,
-// setTimeout) are stubbed.
+// src/data/extra/web/js/{vxworker,lrucache,graphcache,graphrenderer}.js are read
+// from disk and evaluated unmodified; only host APIs and external responses
+// are controlled by the harness.
 
 #include <QDir>
 #include <QFile>
@@ -41,6 +41,7 @@
 #include <QXmlStreamReader>
 #include <QtTest>
 
+#include <utils/markdownhtmlrenderer.h>
 #include <widgets/editors/graphvizhelper.h>
 
 namespace tests {
@@ -115,10 +116,14 @@ window.__runTimers = function() {
 };
 
 window.__finishWorkCalls = 0;
-class VxWorker {
-  constructor() { this.name = ''; this.vxcore = null; this.id = 1; }
-  finishWork() { ++window.__finishWorkCalls; }
-}
+window.__nextGeneration = 0;
+window.__beginPass = function(renderer) {
+  renderer.vxcore = {
+    documentGeneration: 'graph-' + (++window.__nextGeneration),
+    finishWorker: function(name, generation) { ++window.__finishWorkCalls; }
+  };
+  renderer.beginWork(renderer.vxcore.documentGeneration);
+};
 
 class Utils {
   static parentFolder(p_path) { return '/web/js'; }
@@ -133,7 +138,6 @@ window.__scriptLoads = [];
 
 // A class declaration is lexically scoped to the script that contains it, so it
 // is NOT visible to a later evaluate(). Publish the collaborators explicitly.
-window.VxWorker = VxWorker;
 window.Utils = Utils;
 )JS";
 
@@ -162,13 +166,14 @@ class TestRenderer extends GraphRenderer {
   }
 
   renderOne(p_node, p_idx) {
+    const generation = this.passGeneration;
     ++this.renderCount;
     ++this.inFlight;
     if (this.inFlight > this.maxInFlight) { this.maxInFlight = this.inFlight; }
 
     if (this.mode === 'sync') {
       --this.inFlight;
-      this.finishRenderingOne();
+      this.finishRenderingOne(generation, p_idx);
       return true;
     }
     if (this.mode === 'throw') {
@@ -181,7 +186,7 @@ class TestRenderer extends GraphRenderer {
     }
 
 
-    this.completers.push(() => { --this.inFlight; this.finishRenderingOne(); });
+    this.completers.push(() => { --this.inFlight; this.finishRenderingOne(generation, p_idx); });
     return true;
   }
 
@@ -263,6 +268,7 @@ window.__startFailingInitPass = function(p_count) {
   r.numOfRenderedNodes = 0;
   window.__r = r;
 
+  window.__beginPass(r);
   r.doRender();
   return r;
 };
@@ -284,6 +290,7 @@ window.__queueFailingInitializations = function(p_count) {
   r.failureCount = 0;
   window.__r = r;
   r.nodesToRender = [{idx: 0}];
+  window.__beginPass(r);
   r.doRender();
   for (var i = 0; i < p_count; ++i) {
     r.initialize(function() {}, function() { ++r.failureCount; });
@@ -316,6 +323,7 @@ window.__startNoScriptFailingInitPass = function() {
   var r = new NoScriptFailingInitRenderer();
   r.nodesToRender = [{idx: 0}];
   window.__r = r;
+  window.__beginPass(r);
   r.doRender();
   return r;
 };
@@ -355,6 +363,7 @@ window.__startPass = function(p_count, p_limit, p_mode) {
   r.numOfRenderedNodes = 0;
   window.__r = r;
 
+  window.__beginPass(r);
   r.doRender();
   return r;
 };
@@ -439,6 +448,7 @@ private slots:
   void testPass_resetWhileLiveIsReported();
   void testPass_frozenWhileHiddenResumesWhenShown();
   void testPass_surplusCompletionDoesNotFinishTwice();
+  void testPass_duplicateAndStaleCompletionsPreserveDebt();
 
   // The bound itself.
   void testConcurrency_neverExceedsTheLimit();
@@ -514,6 +524,7 @@ void TestGraphRendererJs::setupRenderer(QJSEngine &p_engine) {
   auto res = p_engine.evaluate(QString::fromUtf8(c_prelude));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
 
+  evalFile(p_engine, QStringLiteral("vxworker.js"), QStringLiteral("VxWorker"));
   evalFile(p_engine, QStringLiteral("lrucache.js"), QStringLiteral("LruCache"));
   evalFile(p_engine, QStringLiteral("graphcache.js"), QStringLiteral("GraphCache"));
   evalFile(p_engine, QStringLiteral("graphrenderer.js"), QStringLiteral("GraphRenderer"));
@@ -628,7 +639,7 @@ void TestGraphRendererJs::testPass_resetWhileLiveIsReported() {
 
   // reset() runs from the basicMarkdownRendered handler at the start of the next
   // round. Reaching it with a live pass means the serialisation invariant in
-  // MarkdownViewerCore.setMarkdownText() was violated; clearing the state here is
+  // MarkdownViewerCore.setRenderedHtml() was violated; clearing the state here is
   // exactly what would otherwise hide that, so it must be reported.
   run(engine, QStringLiteral("window.__startPass(5, 0, 'async')"));
   QCOMPARE(intOf(engine, QStringLiteral("window.__errors.length")), 0);
@@ -689,8 +700,30 @@ void TestGraphRendererJs::testPass_surplusCompletionDoesNotFinishTwice() {
 
   // A renderer that reports one node twice must not decrement
   // numOfOngoingWorkers a second time.
-  run(engine, QStringLiteral("window.__r.finishRenderingOne();"
-                             "window.__r.finishRenderingOne();"));
+  run(engine, QStringLiteral("window.__r.finishRenderingOne('graph-1', 0);"
+                             "window.__r.finishRenderingOne('graph-1', 1);"));
+  QCOMPARE(intOf(engine, QStringLiteral("window.__finishWorkCalls")), 1);
+}
+
+void TestGraphRendererJs::testPass_duplicateAndStaleCompletionsPreserveDebt() {
+  QJSEngine engine;
+  setupRenderer(engine);
+  run(engine, QStringLiteral("window.__startPass(2, 0, 'async'); "
+                             "window.__firstGeneration = __r.passGeneration; "
+                             "__r.completeOne(); "
+                             "__r.finishRenderingOne(__firstGeneration, 0);"));
+  QCOMPARE(intOf(engine, QStringLiteral("window.__finishWorkCalls")), 0);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.numOfRenderedNodes")), 1);
+  run(engine, QStringLiteral("window.__late = __r.completers[0]; __r.reset(); "
+                             "__r.completers = []; __r.inFlight = 0; "
+                             "__r.nodesToRender = [{idx: 0}, {idx: 1}]; "
+                             "window.__beginPass(__r); __r.doRender(); "
+                             "__late(); __r.finishRenderingOne(__firstGeneration, 0);"));
+  QCOMPARE(intOf(engine, QStringLiteral("window.__finishWorkCalls")), 0);
+  QCOMPARE(intOf(engine, QStringLiteral("window.__r.numOfRenderedNodes")), 0);
+  run(engine, QStringLiteral("window.__r.completeOne();"));
+  QCOMPARE(intOf(engine, QStringLiteral("window.__finishWorkCalls")), 0);
+  run(engine, QStringLiteral("window.__r.completeOne();"));
   QCOMPARE(intOf(engine, QStringLiteral("window.__finishWorkCalls")), 1);
 }
 
@@ -1041,34 +1074,43 @@ try {
 let completed = 0;
 let onFinished = null;
 let renderer;
-let basicMarkdownRendered;
-const codeNodes = [];
-const markdownit = {
-  addLangsToSkipHighlight() {},
-  getCodeNodes() { return codeNodes; }
-};
+const workers = {};
+const handlers = {};
 window.vxcore = {
-  registerWorker(worker) { renderer = worker; },
-  on(event, callback) {
-    if (event === 'basicMarkdownRendered') basicMarkdownRendered = callback;
+  contentContainer: document.body,
+  documentGeneration: 'plantuml-1',
+  registerWorker(worker) {
+    workers[worker.name] = worker; worker.register(this);
+    if (worker.name === 'plantuml') renderer = worker;
   },
-  getWorker(name) { return name === 'markdownit' ? markdownit : null; },
-  finishWorker() { ++completed; if (onFinished) onFinished(); }
+  on(event, callback) { (handlers[event] = handlers[event] || []).push(callback); },
+  emit(event, ...args) { (handlers[event] || []).forEach(callback => callback(...args)); },
+  setBasicMarkdownRendered(generation) { this.emit('basicMarkdownRendered', generation); },
+  getWorker(name) { return workers[name]; },
+  finishWorker(name) {
+    if (name === 'plantuml') { ++completed; if (onFinished) onFinished(); }
+  }
 };
 )JS");
   for (const auto *name : {"utils.js", "lrucache.js", "vxworker.js", "graphrenderer.js",
-                           "imageviewer.js", "plantuml.js"}) {
+                           "imageviewer.js", "documentrenderer.js", "plantuml.js"}) {
     QFile file(webJsDir() + QLatin1Char('/') + QLatin1String(name));
     QVERIFY(file.open(QIODevice::ReadOnly));
     source += QString::fromUtf8(file.readAll()) + QLatin1Char('\n');
   }
-  const QJsonObject options{{QStringLiteral("scenario"), scenario}};
-  source += QStringLiteral("const scenario = %1.scenario;\n")
+  auto markdown = QStringLiteral("```plantuml\nsource\n```\n");
+  if (scenario.endsWith(QStringLiteral("-failure"))) {
+    markdown += QStringLiteral("\n```plantuml\nNEIGHBOR\n```\n");
+  }
+  const auto rendered = vnotex::MarkdownHtmlRenderer::render(markdown.toUtf8(), {});
+  QVERIFY2(rendered.error.isEmpty(), qPrintable(rendered.error));
+  const QJsonObject options{{QStringLiteral("scenario"), scenario},
+                            {QStringLiteral("html"), rendered.html}};
+  source += QStringLiteral("const fixture = %1; const scenario = fixture.scenario;\n")
                 .arg(QString::fromUtf8(QJsonDocument(options).toJson(QJsonDocument::Compact)));
   source += QStringLiteral(R"JS(
-renderer.register(window.vxcore);
 renderer.initialized = true;
-renderer.getPlantUMLOnlineUrl = (server, format, text, index) => format + '/' + index + '/' + text;
+renderer.getPlantUMLOnlineUrl = (server, format, text, index) => format + '/' + index + '/' + text.trim();
 const svg = (text) => '<svg xmlns="http://www.w3.org/2000/svg"'
   + (scenario === 'untyped' ? '' : ' data-diagram-type="'
     + (scenario === 'class' ? 'CLASS' : 'SEQUENCE') + '"')
@@ -1142,17 +1184,13 @@ if (scenario === 'preview' || scenario === 'protected' || scenario === 'raster-p
       height: canvas.height, first: pixel(1, 1), second: pixel(2, 2)});
   }
 } else {
-  const node = document.createElement('code'); node.textContent = 'source';
-  document.body.appendChild(node);
+  let node;
   await new Promise(resolve => {
     onFinished = resolve;
-    codeNodes.push(node);
-    if (scenario.endsWith('-failure')) {
-      const neighbor = document.createElement('code'); neighbor.textContent = 'NEIGHBOR';
-      document.body.appendChild(neighbor);
-      codeNodes.push(neighbor);
-    }
-    basicMarkdownRendered();
+    renderer.beginWork(vxcore.documentGeneration);
+    workers.document.beginWork(vxcore.documentGeneration);
+    workers.document.render(document.body, fixture.html, vxcore.documentGeneration);
+    node = document.querySelector('code');
   });
   await new Promise(resolve => setTimeout(resolve, 0));
   const images = await Promise.all(Array.from(
@@ -1174,7 +1212,7 @@ if (scenario === 'preview' || scenario === 'protected' || scenario === 'raster-p
     pages: document.querySelectorAll('.vx-plantuml-page').length,
     labels: Array.from(document.querySelectorAll('.vx-plantuml-page text'), n => n.textContent),
     incomplete: !!document.querySelector('[role=alert]') || (node.isConnected && !!node.title),
-    sourcePreserved: node.isConnected && node.textContent === 'source',
+    sourcePreserved: node.isConnected && node.textContent.trim() === 'source',
     sideEffects: window.__plantSideEffect || 0});
 }
 } catch(error) { window.__plantResult = JSON.stringify({error: String(error) + '\n' + error.stack}); }
@@ -1291,24 +1329,53 @@ void TestGraphRendererJs::testGraphvizEngines() {
 window.vxOptions = {protectedView: false, webGraphviz: true};
 window.completed = 0;
 window.onFinished = null;
-window.workers = {markdownit: {addLangsToSkipHighlight() {}}};
+window.workers = {};
+window.handlers = {};
+window.nextGeneration = 0;
 window.previewResults = [];
 window.vxcore = {
   contentContainer: document.getElementById('content'),
-  on() {},
+  on(event, callback) { (handlers[event] = handlers[event] || []).push(callback); },
+  emit(event, ...args) { (handlers[event] || []).forEach(callback => callback(...args)); },
+  setBasicMarkdownRendered(generation) { this.emit('basicMarkdownRendered', generation); },
   registerWorker(worker) { workers[worker.name] = worker; worker.register(this); },
   getWorker(name) { return workers[name]; },
-  finishWorker() { ++completed; if (onFinished) onFinished(); },
+  finishWorker(name) {
+    if (name === 'graphviz') { ++completed; if (onFinished) onFinished(); }
+  },
   renderGraph() { throw new Error('Browser rendering must not dispatch a native process'); }
 };
 </script>)HTML");
   for (const auto *name : {"utils.js", "vxworker.js", "graphrenderer.js", "imageviewer.js",
-                           "graphpreviewer.js", "markdown-it/markdown-it.min.js", "graphviz.js"}) {
+                           "graphpreviewer.js", "documentrenderer.js", "graphviz.js"}) {
     QVERIFY(QFile::exists(webJsDir() + QLatin1Char('/') + QLatin1String(name)));
     html += QStringLiteral("<script src=\"%1\"></script>").arg(QLatin1String(name));
   }
+  const auto graph = QString::fromLatin1(c_graphvizSource);
+  const auto fence = [](const QString &language, const QString &text) {
+    return QStringLiteral("```") + language + QLatin1Char('\n') + text + QStringLiteral("\n```\n");
+  };
+  QMap<QString, QString> markdown;
+  for (const auto *language : {"dot", "graphviz", "neato", "twopi", "circo", "fdp", "patchwork",
+                               "osage", "sfdp", "unknown-graph-engine"}) {
+    markdown[QStringLiteral("mixed")] += fence(QLatin1String(language), graph) + QLatin1Char('\n');
+  }
+  markdown[QStringLiteral("dot")] = fence(QStringLiteral("dot"), graph);
+  markdown[QStringLiteral("circo")] = fence(QStringLiteral("circo"), graph);
+  auto overrideGraph = graph;
+  overrideGraph.replace(QStringLiteral("graph G {"), QStringLiteral("graph G { layout=circo;"));
+  markdown[QStringLiteral("override")] = fence(QStringLiteral("dot"), overrideGraph);
+  markdown[QStringLiteral("invalid")] = fence(QStringLiteral("circo"), QStringLiteral("graph {")) +
+                                        QLatin1Char('\n') + fence(QStringLiteral("circo"), graph);
+  QJsonObject documents;
+  for (auto it = markdown.cbegin(); it != markdown.cend(); ++it) {
+    const auto rendered = vnotex::MarkdownHtmlRenderer::render(it.value().toUtf8(), {});
+    QVERIFY2(rendered.error.isEmpty(), qPrintable(rendered.error));
+    documents.insert(it.key(), rendered.html);
+  }
   const QJsonObject options{{QStringLiteral("scenario"), scenario},
-                            {QStringLiteral("source"), QString::fromLatin1(c_graphvizSource)}};
+                            {QStringLiteral("source"), graph},
+                            {QStringLiteral("documents"), documents}};
   html += QStringLiteral("<script>const options = %1;\n")
               .arg(QString::fromUtf8(QJsonDocument(options).toJson(QJsonDocument::Compact)));
   html += QStringLiteral(R"JS(
@@ -1326,12 +1393,14 @@ try {
   }).sort((a, b) => a[0].localeCompare(b[0])));
   const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
   const labels = svg => Array.from(svg.querySelectorAll('g.node title'), n => n.textContent).sort();
-  const fence = (lang, text = fixture) => '```' + lang + '\n' + text + '\n```';
-  const render = (markdown, format = 'svg') => new Promise(resolve => {
-    renderer.reset();
-    container.innerHTML = markdownit({langPrefix: 'lang-'}).render(markdown);
+  const render = (document, format = 'svg') => new Promise(resolve => {
+    check(Object.prototype.hasOwnProperty.call(options.documents, document), 'Unknown native fixture');
+    vxcore.documentGeneration = 'graphviz-' + (++nextGeneration);
+    vxOptions.transformSvgToPngEnabled = format === 'png';
+    renderer.beginWork(vxcore.documentGeneration);
+    workers.document.beginWork(vxcore.documentGeneration);
     onFinished = resolve;
-    renderer.render(container, renderer.langs.map(lang => 'lang-' + lang), format);
+    workers.document.render(container, options.documents[document], vxcore.documentGeneration);
   });
   const preview = async (id, lang, text = fixture) => {
     try {
@@ -1354,8 +1423,7 @@ try {
   });
   let result = {};
   if (options.scenario === 'mixed') {
-    const languages = ['dot', 'graphviz', 'neato', 'twopi', 'circo', 'fdp', 'patchwork', 'osage'];
-    await render(languages.concat(['sfdp', 'unknown-graph-engine']).map(lang => fence(lang)).join('\n\n'));
+    await render('mixed');
     const diagrams = Array.from(container.querySelectorAll('svg'));
     check(diagrams.length === 8, 'All seven browser engines and graphviz alias must render');
     check(diagrams.every(svg => same(labels(svg), ['a', 'b', 'c', 'd', 'e'])), 'Missing named nodes');
@@ -1366,18 +1434,19 @@ try {
     check(same(geometry(diagrams[1]), dot), 'graphviz alias is not dot');
     check(same(geometry(diagrams[4]), circo), 'circo fence geometry differs from circo reference');
     const retained = Array.from(container.querySelectorAll('code'));
-    check(same(retained.map(n => n.className), ['lang-sfdp', 'lang-unknown-graph-engine']),
+    check(same(retained.map(n => Array.from(n.classList).find(name => name.startsWith('lang-'))),
+               ['lang-sfdp', 'lang-unknown-graph-engine']),
           'Unsupported languages must remain source');
     check(retained.every(n => n.textContent.trim() === fixture.trim()), 'Source was rewritten');
     check(completed === 1 && !renderer.passActive, 'Mixed pass did not finish exactly once');
     // Same body, only the fence changes, then changes back.
     for (const engine of ['dot', 'circo', 'dot']) {
-      await render(fence(engine));
+      await render(engine);
       check(same(geometry(container.querySelector('svg')), engine === 'dot' ? dot : circo),
             'Engine-only fence edit retained the previous layout');
     }
     // DOT's graph-level layout attribute keeps its own precedence.
-    await render(fence('dot', fixture.replace('graph G {', 'graph G { layout=circo;')));
+    await render('override');
     check(same(geometry(container.querySelector('svg')), circo), 'DOT layout precedence changed');
     result = {diagrams: diagrams.length, completed};
   } else if (options.scenario === 'preview') {
@@ -1405,7 +1474,7 @@ try {
     result = {previews: previewResults.length};
   } else {
     const format = options.scenario === 'png-recovery' ? 'png' : 'svg';
-    await render(fence('circo', 'graph {') + '\n\n' + fence('circo'), format);
+    await render('invalid', format);
     check(completed === 1 && !renderer.passActive, 'Malformed input stalled or doubled completion');
     const retained = Array.from(container.querySelectorAll('code'));
     check(retained.length === 1 && retained[0].textContent.trim() === 'graph {',

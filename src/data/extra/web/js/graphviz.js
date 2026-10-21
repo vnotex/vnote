@@ -28,7 +28,7 @@ class Graphviz extends GraphRenderer {
             this.renderCodeNodes(window.vxOptions.transformSvgToPngEnabled ? 'png' : 'svg');
         });
 
-        this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
+        this.vxcore.getWorker('document').addLangsToSkipHighlight(this.langs);
         this.useWeb = window.vxOptions.protectedView || window.vxOptions.webGraphviz;
         if (!this.useWeb) {
             this.extraScripts = [];
@@ -108,17 +108,18 @@ class Graphviz extends GraphRenderer {
         if (this.useWeb) {
             this.renderOnline(p_node, p_idx);
         } else {
-            this.renderLocal(p_node);
+            this.renderLocal(p_node, p_idx);
         }
     }
 
     renderOnline(p_node, p_idx) {
+        const generation = this.passGeneration;
         const engine = this.getEngineForNode(p_node);
         if (engine === null || engine === 'sfdp') {
             if (engine === 'sfdp') {
                 this.reportProblem('Graphviz engine sfdp requires local Graphviz');
             }
-            this.finishRenderingOne();
+            this.finishRenderingOne(generation, p_idx);
             return true;
         }
         console.assert(this.viz);
@@ -126,8 +127,12 @@ class Graphviz extends GraphRenderer {
             let graphviz = p_graphviz;
             let node = p_renderNode;
             return function(p_element) {
+                if (!graphviz.passActive || generation !== graphviz.passGeneration
+                    || !graphviz.pendingNodes.has(p_idx)) {
+                    return;
+                }
                 if (window.vxOptions.protectedView) {
-                    MarkdownIt.sanitizeProtectedSvg(p_element);
+                    DocumentRenderer.sanitizeProtectedSvg(p_element);
                 }
                 if (node) {
                     let wrapperDiv = document.createElement('div');
@@ -144,7 +149,7 @@ class Graphviz extends GraphRenderer {
                         window.vxImageViewer.setupIMGToView(p_element);
                     }
                 }
-                graphviz.finishRenderingOne();
+                graphviz.finishRenderingOne(generation, p_idx);
             };
         };
 
@@ -152,22 +157,27 @@ class Graphviz extends GraphRenderer {
             .then(func(this, p_node))
             .catch((p_err) => {
                 console.error('failed to render Graphviz', p_err);
-                this.finishRenderingOne();
+                this.finishRenderingOne(generation, p_idx);
             });
 
         return true;
     }
 
-    renderLocal(p_node) {
+    renderLocal(p_node, p_idx) {
+        const generation = this.passGeneration;
         const engine = this.getEngineForNode(p_node);
         if (engine === null) {
-            this.finishRenderingOne();
+            this.finishRenderingOne(generation, p_idx);
             return;
         }
         let func = function(p_graphviz, p_renderNode) {
             let graphviz = p_graphviz;
             let node = p_renderNode;
             return function(format, data) {
+                if (!graphviz.passActive || generation !== graphviz.passGeneration
+                    || !graphviz.pendingNodes.has(p_idx)) {
+                    return;
+                }
                 if (node && data.length > 0) {
                     let obj = null;
                     if (format == 'svg') {
@@ -189,7 +199,7 @@ class Graphviz extends GraphRenderer {
 
                     Utils.replaceNodeWithPreCheck(p_node, obj);
                 }
-                graphviz.finishRenderingOne();
+                graphviz.finishRenderingOne(generation, p_idx);
             };
         };
 
@@ -224,7 +234,7 @@ class Graphviz extends GraphRenderer {
             this.renderWithViz(p_text, p_engine, 'svg')
                 .then((node) => {
                     if (window.vxOptions.protectedView) {
-                        MarkdownIt.sanitizeProtectedSvg(node);
+                        DocumentRenderer.sanitizeProtectedSvg(node);
                     }
                     p_callback(node);
                 })

@@ -62,6 +62,7 @@
 #include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
 #include <utils/imagedestinationrewriter.h>
+#include <utils/markdownhtmlrenderer.h>
 #include <utils/pathutils.h>
 #include <utils/urlutils.h>
 #include <utils/webutils.h>
@@ -1466,25 +1467,23 @@ int MarkdownEditor::getCurrentHeadingIndex() const {
 
 void MarkdownEditor::updateHeadings(const QVector<vte::md::HeadingInfo> &p_headings,
                                     bool p_hasSectionNumber) {
-  m_headingSlugger.reset();
+  const auto nativeHeadings = MarkdownHtmlRenderer::buildHeadings(p_headings);
 
   QVector<Heading> headings;
   headings.reserve(p_headings.size());
 
-  // The title and the anchor text are both derived from the cmark AST, so the
-  // outline shows (an approximation of) what the reader sees and the anchor
-  // agrees with the preview for CommonMark constructs. Preview-only markdown-it
-  // plugins are invisible to cmark; see md::HeadingInfo for the limits.
-  // A setext heading legitimately spans two blocks; findBlock() on the start
-  // position yields the title line, which is the one to scroll to.
+  // The shared native builder assigns duplicate IDs in final render order,
+  // including headings relocated into footnotes. Outline positions stay source-ordered.
+  // A setext heading's start position identifies its title line.
   auto doc = document();
-  for (auto const &elem : p_headings) {
+  for (int i = 0; i < p_headings.size(); ++i) {
+    const auto &elem = p_headings[i];
     auto block = doc->findBlock(elem.m_startPos);
     if (!block.isValid()) {
       continue;
     }
 
-    QString anchor = m_headingSlugger.slug(elem.m_anchorText);
+    const auto &anchor = nativeHeadings[i].anchor;
     headings.append(Heading(elem.m_title, elem.m_level, block.blockNumber(), anchor,
                             elem.m_startPos, elem.m_endPos));
   }

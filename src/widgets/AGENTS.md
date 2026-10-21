@@ -362,6 +362,49 @@ tab hide, theme/config reload and protected locking cancel stale requests before
 replacing the view. Render image rebinding must not discard an unopened request, and stale
 decode/acknowledgement callbacks must not publish it.
 
+#### Native Markdown HTML handoff
+
+Reader, EditPreview and WebEngine export use native cmark HTML, not a JavaScript Markdown
+parser. Read captures buffer source without constructing an editor. EditPreview uses the live
+draft's canonical UTF-8 snapshot and exact-current immutable editor tree when available; join
+an already scheduled full parse, otherwise parse directly without editor projections.
+
+`MarkdownViewerAdapter::setRenderedHtml()` publishes a fragment plus an opaque producer token
+into the existing page shell. `DocumentRenderer` sanitizes and installs it, discovers code nodes,
+and starts the existing Prism/math/diagram workers. Keep ordinary XSS policy and protected
+inert-DOM/resource restrictions: native HTML is not trusted HTML. Emoji shortcodes stay literal;
+existing cmark syntax, including wikilinks, is enabled in reader and export.
+Protected notes retain the established fixed profile: HTML/linkify on, soft newlines unless the
+source requests a hard break. Ordinary HTML/linkify/auto-break preferences do not override it;
+the protected editor snapshot and reader use the same effective grammar.
+
+Enhancement rounds are serialized; only the latest pending fragment survives, including empty
+HTML. Completion, task clicks, protected image replies and DOM extraction are generation-scoped.
+Task writes additionally verify the authoritative source revision. Superseded or unready DOM
+extraction returns unavailable, never a successful empty document. Eviction drops retained
+native snapshots and cancels admission without changing source, undo or save state.
+
+Retained buffer replacement keeps the same bounded native controller and its reference to the
+stable base buffer member. Suspend/invalidate before releasing the old document; install the
+incoming source/profile/mode, clear rebinding, then resume admission and explicitly render
+Read/EditPreview. EditOnly does not request HTML. Native source/results and delayed actions also
+check the base buffer generation, including identical-text replacements. Adapter resets always
+retire pending HTML actions; reset epochs suppress stale side effects without stranding the
+latest reentrant fragment. Guard external signal delivery with object lifetime checks.
+Use loadingChanged status to distinguish failed navigation from an intentionally stopped old
+load: an outgoing stop must not clear incoming page state or force it into EditOnly.
+
+Source fenced-code highlighting uses native KSyntax, not the web code-highlighter backend;
+web math highlighting and graph/math previews remain separate assistance jobs. After accepted
+close, config/theme/mode notifications must not access deleted helpers or reopen admission.
+The export page must inject the mandatory job bridge before configured scripts and its providers
+after the workers, matching the reader even when persisted resource lists omit those scripts.
+
+AST reuse removes render-side parsing, not DOM/layout or enhancement work. HTML bridge payloads
+can exceed the Markdown input. Measure first paint and full completion separately; conversion
+microbenchmarks are not end-to-end speedups. Existing image-maintenance scans and synchronous
+editor layout/projection work are outside the native HTML job and can still dominate latency.
+
 #### Lazy Markdown reader and editor assistance
 
 Initial EditOnly creates no tab reader or full-note read render. `MarkdownWebJobHost` supplies
@@ -842,7 +885,7 @@ then finish reading, PNG preview and export.
 
 ### Markdown renderer lifetime
 
-`MarkdownIt.render()` emits `markdownContentWillChange(container)` before replacing content,
+`DocumentRenderer.render()` emits `markdownContentWillChange(container)` before replacing content,
 including plain-text, empty and protected renders. MathJax cleanup belongs at this boundary,
 not at `fullMarkdownRendered`: current formulas must retain their menus and accessibility state.
 `MathRenderer` clears the reader's MathItems while their old ancestors are still attached, then

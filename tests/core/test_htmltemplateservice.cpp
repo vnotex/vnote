@@ -1,12 +1,16 @@
 #include <QtTest>
 
+#include <QDir>
+#include <QFileInfo>
 #include <QRegularExpression>
+#include <QScopeGuard>
 #include <QString>
+#include <QTemporaryDir>
 #include <QTemporaryFile>
+#include <QUrl>
 
 #ifdef VNOTE_TEST_WEB_TRANSLATIONS
 #include <QJSEngine>
-#include <QScopeGuard>
 #include <QTranslator>
 #include <utils/webutils.h>
 #endif
@@ -30,6 +34,8 @@ private slots:
   void testFillPdfResources_emitsSameOriginVxPdfUrls();
   void testFillPdfResources_moduleTypeOnlyForMjs();
   void testFillPdfResources_skipsDisabledAndGlobal();
+  void testProtectedTemplate_bundledAllowlist();
+  void testProtectedTemplate_invalidIdentityAndMissingBundleFailClosed();
 
 #ifdef VNOTE_TEST_WEB_TRANSLATIONS
   void testMarkdownWebGlobalOptions_headingFoldingBoolean();
@@ -246,6 +252,101 @@ void TestHtmlTemplateService::testFillPdfResources_skipsDisabledAndGlobal() {
   QVERIFY(tmpl.contains(QStringLiteral("web/on.mjs")));
   QVERIFY(!tmpl.contains(QStringLiteral("web/off.mjs")));
   QVERIFY(!tmpl.contains(QStringLiteral("web/global.css")));
+}
+
+void TestHtmlTemplateService::testProtectedTemplate_bundledAllowlist() {
+  const QFileInfo bundle(QStringLiteral(VNOTE_TEST_EXTRA_RCC));
+  QVERIFY2(bundle.isFile(), qPrintable(bundle.absoluteFilePath()));
+  const auto oldPaths = QDir::searchPaths(QStringLiteral("app"));
+  const auto restorePaths =
+      qScopeGuard([&]() { QDir::setSearchPaths(QStringLiteral("app"), oldPaths); });
+  QDir::setSearchPaths(QStringLiteral("app"), {bundle.absolutePath()});
+  vnotex::HtmlTemplateService service(nullptr);
+  const auto token = QStringLiteral("0123456789abcdef0123456789abcdef");
+  const auto nonce = QStringLiteral("fedcba9876543210fedcba9876543210");
+  QHash<QString, QByteArray> resources;
+  const auto html = service.protectedMarkdownViewerTemplate(token, nonce, QStringLiteral("pure"),
+                                                            false, resources);
+  QVERIFY(!html.isEmpty());
+  QVERIFY(!resources.isEmpty());
+  const auto policy = vnotex::HtmlTemplateService::protectedContentSecurityPolicy(nonce);
+  QVERIFY(html.contains(policy.toHtmlEscaped()));
+  for (const auto *directive : {"default-src 'none'", "connect-src 'none'", "frame-src 'none'",
+                                "object-src 'none'", "base-uri 'none'", "form-action 'none'"}) {
+    QVERIFY2(policy.contains(QLatin1String(directive)), directive);
+  }
+  QVERIFY(policy.contains(QStringLiteral("script-src 'nonce-%1'").arg(nonce)));
+  QVERIFY(!policy.contains(QStringLiteral("unsafe-eval")));
+  static const QRegularExpression resourceTag(
+      QStringLiteral("<(?:script|link)\\b[^>]*(?:src|href)=\"([^\"]+)\"[^>]*>"));
+  auto tags = resourceTag.globalMatch(html);
+  int count = 0;
+  while (tags.hasNext()) {
+    const auto match = tags.next();
+    const QUrl url(match.captured(1));
+    QCOMPARE(url.scheme(), QStringLiteral("vxnote"));
+    QCOMPARE(url.host(), token);
+    QVERIFY(url.query().isEmpty());
+    QVERIFY(url.fragment().isEmpty());
+    QVERIFY2(resources.contains(url.path()), qPrintable(url.toString()));
+    QVERIFY2(!resources.value(url.path()).isEmpty(), qPrintable(url.toString()));
+    if (match.captured(0).startsWith(QStringLiteral("<script"))) {
+      QVERIFY(match.captured(0).contains(QStringLiteral("nonce=\"%1\"").arg(nonce)));
+    }
+    ++count;
+  }
+  QVERIFY(count > 0);
+  static const QRegularExpression scriptTag(QStringLiteral("<script\\b[^>]*>"));
+  auto scripts = scriptTag.globalMatch(html);
+  while (scripts.hasNext()) {
+    QVERIFY(scripts.next().captured(0).contains(QStringLiteral("nonce=\"%1\"").arg(nonce)));
+  }
+  for (auto it = resources.cbegin(); it != resources.cend(); ++it) {
+    QVERIFY(it.key().startsWith(QStringLiteral("/app/")));
+    QVERIFY(!it.key().contains(QStringLiteral("..")));
+    QVERIFY(!it.value().isEmpty());
+  }
+  QVERIFY(!resources.contains(QStringLiteral("/app/user.css")));
+  QVERIFY(!resources.contains(QStringLiteral("/files/private.md")));
+  // A custom or traversal-like theme name cannot widen the shipped execution allowlist.
+  QHash<QString, QByteArray> customResources;
+  const auto custom = service.protectedMarkdownViewerTemplate(
+      token, nonce, QStringLiteral("../../user-template"), false, customResources);
+  QCOMPARE(custom, html);
+  QCOMPARE(customResources, resources);
+}
+
+void TestHtmlTemplateService::testProtectedTemplate_invalidIdentityAndMissingBundleFailClosed() {
+  vnotex::HtmlTemplateService service(nullptr);
+  const auto valid = QStringLiteral("0123456789abcdef0123456789abcdef");
+  QHash<QString, QByteArray> resources;
+  for (const auto &identity :
+       {QString(), QStringLiteral("../private"), valid + QStringLiteral("\" injected=\"yes")}) {
+    resources.insert(QStringLiteral("/app/old.js"), QByteArray("old"));
+    QVERIFY(service
+                .protectedMarkdownViewerTemplate(identity, valid, QStringLiteral("pure"), false,
+                                                 resources)
+                .isEmpty());
+    QVERIFY(resources.isEmpty());
+    resources.insert(QStringLiteral("/app/old.js"), QByteArray("old"));
+    QVERIFY(service
+                .protectedMarkdownViewerTemplate(valid, identity, QStringLiteral("pure"), false,
+                                                 resources)
+                .isEmpty());
+    QVERIFY(resources.isEmpty());
+  }
+  QTemporaryDir emptyDirectory;
+  QVERIFY(emptyDirectory.isValid());
+  const auto oldPaths = QDir::searchPaths(QStringLiteral("app"));
+  const auto restorePaths =
+      qScopeGuard([&]() { QDir::setSearchPaths(QStringLiteral("app"), oldPaths); });
+  QDir::setSearchPaths(QStringLiteral("app"), {emptyDirectory.path()});
+  resources.insert(QStringLiteral("/app/old.js"), QByteArray("old"));
+  QVERIFY(
+      service
+          .protectedMarkdownViewerTemplate(valid, valid, QStringLiteral("pure"), false, resources)
+          .isEmpty());
+  QVERIFY(resources.isEmpty());
 }
 
 #ifdef VNOTE_TEST_WEB_TRANSLATIONS

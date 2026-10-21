@@ -1,0 +1,374 @@
+{
+  "cases": [
+    {
+      "name": "footnote_heading_render_order",
+      "source": "[^a]: # Same\n\n# Same\n\nUse[^a]\n",
+      "contains": [
+        "id=\"same\"",
+        "id=\"same-1\""
+      ],
+      "headings": [
+        {
+          "line": 0,
+          "anchor": "same-1"
+        },
+        {
+          "line": 2,
+          "anchor": "same"
+        }
+      ],
+      "excludes": []
+    },
+    {
+      "name": "inline_extensions",
+      "source": "H~2~O x^2^ ~~gone~~ ==bright== and **strong**.\n",
+      "contains": [
+        "H<sub>2</sub>O",
+        "x<sup>2</sup>",
+        "<s>gone</s>",
+        "<mark>bright</mark>",
+        "<strong>strong</strong>"
+      ],
+      "excludes": []
+    },
+    {
+      "name": "tasks",
+      "source": "- [x] done\n- [ ] open\n  - [X] nested\n",
+      "contains": [
+        "contains-task-list",
+        "task-list-item-checkbox",
+        "data-source-line=\"0\"",
+        "data-source-line=\"2\"",
+        "checked"
+      ],
+      "excludes": [
+        "[X] nested",
+        "[x] done"
+      ]
+    },
+    {
+      "name": "alerts",
+      "source": "::: alert-info\n**Notice**\n:::\n",
+      "contains": [
+        "vx-alert alert-info",
+        "role=\"alert\"",
+        "<strong>Notice</strong>"
+      ],
+      "excludes": [
+        "::: alert-info"
+      ]
+    },
+    {
+      "name": "heading_collision",
+      "source": "# a\n# a\n# a-1\n# a\n\n[TOC]\n",
+      "contains": [
+        "id=\"a-1-1\"",
+        "vx-table-of-contents",
+        "href=\"#a-2\""
+      ],
+      "excludes": [],
+      "headings": [
+        {
+          "line": 0,
+          "anchor": "a"
+        },
+        {
+          "line": 1,
+          "anchor": "a-1"
+        },
+        {
+          "line": 2,
+          "anchor": "a-1-1"
+        },
+        {
+          "line": 3,
+          "anchor": "a-2"
+        }
+      ]
+    },
+    {
+      "name": "math_headings",
+      "source": "# Energy $E=mc^2$\n# $x$\n# H~2~O and x^2^\n",
+      "contains": [
+        "tex-to-render",
+        "id=\"energy-emc2\"",
+        "id=\"h2o-and-x2\""
+      ],
+      "excludes": [],
+      "headings": [
+        {
+          "line": 0,
+          "anchor": "energy-emc2"
+        },
+        {
+          "line": 1,
+          "anchor": "x"
+        },
+        {
+          "line": 2,
+          "anchor": "h2o-and-x2"
+        }
+      ]
+    },
+    {
+      "name": "raw_math",
+      "source": "Inline \\(x+y\\).\n\n\\[x^2\\]\n",
+      "contains": [
+        "Inline (x+y).",
+        "[x^2]"
+      ],
+      "excludes": [
+        "tex-to-render"
+      ]
+    },
+    {
+      "name": "tagged_math",
+      "source": "$$\nx^2\n$$ (eq-1)\n",
+      "contains": [
+        "class=\"eqno\"",
+        "tex-to-render",
+        "(eq-1)"
+      ],
+      "excludes": []
+    },
+    {
+      "name": "edge_less_table",
+      "source": "Left | Right\n--- | ---:\n**x** | $y$\n",
+      "contains": [
+        "<table",
+        "<strong>x</strong>",
+        "tex-to-render",
+        "text-align:"
+      ],
+      "excludes": [
+        "Left | Right"
+      ]
+    },
+    {
+      "name": "sized_figure",
+      "source": "![caption](picture.png =50%x25%)\n",
+      "contains": [
+        "<figure",
+        "width=\"50%\"",
+        "height=\"25%\"",
+        "<figcaption>caption</figcaption>"
+      ],
+      "excludes": []
+    },
+    {
+      "name": "footnotes",
+      "source": "First[^x], again[^x], inline^[body].\n\n[^x]: note\n",
+      "contains": [
+        "href=\"#fn1\"",
+        "id=\"fnref1:1\"",
+        "[1:1]",
+        "href=\"#fnref1:1\"",
+        "id=\"fn2\""
+      ],
+      "excludes": [
+        "[^x]"
+      ]
+    },
+    {
+      "name": "linkify",
+      "source": "Visit https://example.org/a_(b). Email me@example.org, www.example.org!\n",
+      "contains": [
+        "href=\"https://example.org/a_(b)\"",
+        "href=\"mailto:me@example.org\"",
+        "href=\"http://www.example.org\""
+      ],
+      "excludes": [
+        "href=\"https://example.org/a_(b).\""
+      ]
+    },
+    {
+      "name": "unicode_linkify",
+      "source": "https://例子.测试/path and https://example.org/é\n",
+      "contains": [
+        "href=\"https://xn--fsqu00a.xn--0zwm56d/path\"",
+        "href=\"https://example.org/%C3%A9\"",
+        "https://例子.测试/path"
+      ],
+      "excludes": []
+    },
+    {
+      "name": "escape_extensions",
+      "source": "`H~2~O $x$` and \\~not-sub\\~\n",
+      "contains": [
+        "<code>H~2~O $x$</code>",
+        "~not-sub~"
+      ],
+      "excludes": [
+        "<sub>",
+        "tex-to-render"
+      ]
+    },
+    {
+      "name": "emoji_literal",
+      "source": ":smile: 🙂\n",
+      "contains": [
+        ":smile:",
+        "🙂"
+      ],
+      "excludes": [
+        "emoji_smile",
+        "😄"
+      ]
+    },
+    {
+      "name": "html_disabled",
+      "source": "<b>**bold**</b>\n",
+      "options": {
+        "htmlEnabled": false
+      },
+      "contains": [
+        "&lt;b&gt;",
+        "<strong>bold</strong>",
+        "&lt;/b&gt;"
+      ],
+      "excludes": [
+        "<b>"
+      ]
+    },
+    {
+      "name": "line_breaks",
+      "source": "first\nsecond\n",
+      "options": {
+        "autoBreaks": true
+      },
+      "contains": [
+        "first<br",
+        "second"
+      ],
+      "excludes": []
+    },
+    {
+      "name": "native_wikilinks",
+      "source": "[[notes/target.md|Label]]\n\n# [[notes/target.md|Heading]]\n",
+      "contains": [
+        "class=\"wikilink\"",
+        "href=\"notes/target.md\"",
+        ">Label</a>"
+      ],
+      "headings": [
+        {
+          "line": 2,
+          "anchor": "heading"
+        }
+      ],
+      "excludes": []
+    },
+    {
+      "name": "native_and_standard_url_policy",
+      "source": "[[javascript:alert(1)|wiki]] [link](javascript:alert(1))\n\n[local](file:///tmp/note.md)\n",
+      "contains": [
+        "wiki",
+        "link",
+        "href=\"file:///tmp/note.md\""
+      ],
+      "excludes": [
+        "href=\"javascript:"
+      ]
+    },
+    {
+      "name": "frontmatter_disclosure",
+      "source": "---\ntitle: Example\n---\n\n# Body\n",
+      "contains": [
+        "vx-frontmatter",
+        "title: Example",
+        "id=\"body\""
+      ],
+      "headings": [
+        {
+          "line": 4,
+          "anchor": "body"
+        }
+      ],
+      "excludes": []
+    },
+    {
+      "name": "raw_math_environment",
+      "source": "\\begin{align}\nx&=y\\\\\nz&=w\n\\end{align}\n",
+      "contains": [
+        "tex-to-render",
+        "\\begin{align}",
+        "x&amp;=y",
+        "\\end{align}"
+      ],
+      "excludes": []
+    },
+    {
+      "name": "code_language_and_line",
+      "source": "Before\n\n```mermaid\ngraph TD; A-->B;\n```\n",
+      "contains": [
+        "lang-mermaid",
+        "data-source-line=\"2\"",
+        "A--&gt;B;"
+      ],
+      "excludes": []
+    },
+    {
+      "name": "linkify_disabled",
+      "source": "https://example.org and me@example.org\n",
+      "options": {
+        "linkify": false
+      },
+      "contains": [
+        "https://example.org",
+        "me@example.org"
+      ],
+      "excludes": [
+        "<a "
+      ]
+    },
+    {
+      "name": "linkify_existing_links",
+      "source": "[https://example.org](target.md) [[target.md|www.example.org]]\n",
+      "contains": [
+        "href=\"target.md\""
+      ],
+      "excludes": [
+        "href=\"https://example.org\"",
+        "href=\"http://www.example.org\""
+      ]
+    },
+    {
+      "name": "inline_display_math",
+      "source": "Inline $$x^2$$ in a paragraph.\n",
+      "contains": [
+        "tex-to-render",
+        "$$x^2$$",
+        "in a paragraph."
+      ],
+      "excludes": []
+    },
+    {
+      "name": "empty_document",
+      "source": "",
+      "contains": [],
+      "excludes": [
+        "<p",
+        "<h",
+        "<code"
+      ],
+      "headings": []
+    },
+    {
+      "name": "many_formulas_keep_trailing_content",
+      "source": "$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n$$\nx^2\n$$\n\n# Tail survives\n",
+      "contains": [
+        "id=\"tail-survives\""
+      ],
+      "excludes": [],
+      "counts": {
+        "tex-to-render": 101
+      },
+      "headings": [
+        {
+          "line": 404,
+          "anchor": "tail-survives"
+        }
+      ]
+    }
+  ]
+}

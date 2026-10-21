@@ -7,6 +7,8 @@
 #include <QDir>
 #include <QPainter>
 #include <QPixmap>
+#include <QPointer>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QStandardPaths>
 #include <QString>
@@ -45,7 +47,379 @@ private slots:
   void localGraphPreviewCanvas();
   void graphPreviewCanvasChangesWithTheme();
   void numberingStatusTracksDocumentReplacement();
+  void htmlAfterRepeatedUnreadyReset_data();
+  void htmlAfterRepeatedUnreadyReset();
+  void emptyHtmlReplacesVisibleDocument();
+  void reentrantHtmlPublication_data();
+  void reentrantHtmlPublication();
+  void pageResetDuringHtmlSuppressesOldScroll();
+  void deletionDuringHtml_data();
+  void deletionDuringHtml();
+  void deletionDuringScroll();
+  void deletionDuringContentCancellation_data();
+  void deletionDuringContentCancellation();
+  void deletionDuringImageCancellation_data();
+  void deletionDuringImageCancellation();
+  void resetCancellationKeepsIncomingHtml();
+  void taskTogglesRequireCurrentGeneration();
+  void graphCallbacksFollowDocumentLifetime_data();
+  void graphCallbacksFollowDocumentLifetime();
+  void contentExtractionRequiresCurrentFinishedGeneration();
 };
+
+void TestMarkdownViewerAdapterAnchor::htmlAfterRepeatedUnreadyReset_data() {
+  QTest::addColumn<QString>("html");
+  QTest::newRow("nonempty") << QStringLiteral("<p>Incoming</p>");
+  QTest::newRow("empty") << QStringLiteral("");
+}
+
+void TestMarkdownViewerAdapterAnchor::htmlAfterRepeatedUnreadyReset() {
+  QFETCH(QString, html);
+  MarkdownViewerAdapter adapter;
+  QSignalSpy published(&adapter, &MarkdownViewerAdapter::htmlUpdated);
+  QSignalSpy scrolled(&adapter, &MarkdownViewerAdapter::editLineNumberUpdated);
+  adapter.setRenderedHtml(QStringLiteral("retired-a"), QStringLiteral("<p>A</p>"), 1);
+  adapter.reset();
+  adapter.setRenderedHtml(QStringLiteral("retired-b"), QStringLiteral("<p>B</p>"), 2);
+  adapter.reset();
+  adapter.reset();
+  adapter.setRenderedHtml(QStringLiteral("superseded"), QStringLiteral("<p>Superseded</p>"), 3);
+  adapter.setRenderedHtml(QStringLiteral("incoming"), html, 7);
+  QCOMPARE(published.size(), 0);
+  adapter.setReady(true);
+  QCOMPARE(published.size(), 1);
+  QCOMPARE(published.first().at(0).toString(), html);
+  QCOMPARE(published.first().at(1).toString(), QStringLiteral("incoming"));
+  QCOMPARE(scrolled.size(), 1);
+  QCOMPARE(scrolled.first().at(0).toInt(), 7);
+  adapter.setWorkFinished(QStringLiteral("retired-b"));
+  QVERIFY(!adapter.isDocumentReady());
+  adapter.setWorkFinished(QStringLiteral("incoming"));
+  QVERIFY(adapter.isDocumentReady());
+  QCoreApplication::sendPostedEvents(&adapter, QEvent::MetaCall);
+  QCOMPARE(published.size(), 1);
+}
+
+void TestMarkdownViewerAdapterAnchor::emptyHtmlReplacesVisibleDocument() {
+  MarkdownViewerAdapter adapter;
+  adapter.setReady(true);
+  QSignalSpy published(&adapter, &MarkdownViewerAdapter::htmlUpdated);
+  QSignalSpy completed(&adapter, &MarkdownViewerAdapter::contentReady);
+  adapter.setRenderedHtml(QStringLiteral("visible"), QStringLiteral("<p>Visible</p>"));
+  adapter.setWorkFinished(QStringLiteral("visible"));
+  QVERIFY(adapter.isDocumentReady());
+  adapter.setRenderedHtml(QStringLiteral("empty"), QStringLiteral(""));
+  QCOMPARE(published.size(), 2);
+  QVERIFY(published.last().at(0).toString().isEmpty());
+  QCOMPARE(published.last().at(1).toString(), QStringLiteral("empty"));
+  QVERIFY(!adapter.isDocumentReady());
+  adapter.setWorkFinished(QStringLiteral("empty"));
+  QVERIFY(adapter.isDocumentReady());
+  adapter.saveContent();
+  adapter.setSavedContent(QStringLiteral("empty"), {}, {}, QStringLiteral(""), {});
+  QCOMPARE(completed.size(), 1);
+  QVERIFY(completed.first().at(2).toString().isEmpty());
+  QVERIFY(!completed.first().at(2).toString().isNull());
+}
+
+void TestMarkdownViewerAdapterAnchor::reentrantHtmlPublication_data() {
+  QTest::addColumn<bool>("resetPage");
+  QTest::addColumn<bool>("readyDuringSignal");
+  QTest::addColumn<QString>("html");
+  QTest::newRow("replace-nonempty") << false << true << QStringLiteral("<p>Incoming</p>");
+  QTest::newRow("replace-empty") << false << true << QStringLiteral("");
+  QTest::newRow("reset-ready-nonempty") << true << true << QStringLiteral("<p>Incoming</p>");
+  QTest::newRow("reset-ready-empty") << true << true << QStringLiteral("");
+  QTest::newRow("reset-unready-nonempty") << true << false << QStringLiteral("<p>Incoming</p>");
+  QTest::newRow("reset-unready-empty") << true << false << QStringLiteral("");
+}
+
+void TestMarkdownViewerAdapterAnchor::reentrantHtmlPublication() {
+  QFETCH(bool, resetPage);
+  QFETCH(bool, readyDuringSignal);
+  QFETCH(QString, html);
+  MarkdownViewerAdapter adapter;
+  adapter.setReady(true);
+  bool inOutgoingReceiver = false;
+  bool nestedPublication = false;
+  connect(&adapter, &MarkdownViewerAdapter::htmlUpdated, this,
+          [&](const QString &, const QString &p_generation) {
+            if (p_generation != QStringLiteral("outgoing")) {
+              nestedPublication = inOutgoingReceiver;
+              return;
+            }
+            inOutgoingReceiver = true;
+            if (resetPage) {
+              adapter.reset();
+            }
+            adapter.setRenderedHtml(QStringLiteral("intermediate"), QStringLiteral("<p>Old</p>"),
+                                    13);
+            adapter.setRenderedHtml(QStringLiteral("incoming"), html, 29);
+            if (resetPage && readyDuringSignal) {
+              adapter.setReady(true);
+            }
+            QCoreApplication::sendPostedEvents(&adapter, QEvent::MetaCall);
+            inOutgoingReceiver = false;
+          });
+  // A later receiver must see the old fragment before the new one, never vice versa.
+  QSignalSpy published(&adapter, &MarkdownViewerAdapter::htmlUpdated);
+  QSignalSpy scrolled(&adapter, &MarkdownViewerAdapter::editLineNumberUpdated);
+  adapter.setRenderedHtml(QStringLiteral("outgoing"), QStringLiteral("<p>Outgoing</p>"), 5);
+  QVERIFY(!nestedPublication);
+  QCOMPARE(published.size(), 1);
+  QCOMPARE(published.first().at(1).toString(), QStringLiteral("outgoing"));
+  QCOMPARE(scrolled.size(), 0);
+  if (resetPage && !readyDuringSignal) {
+    adapter.setReady(true);
+  }
+  QCoreApplication::sendPostedEvents(&adapter, QEvent::MetaCall);
+  QVERIFY(!nestedPublication);
+  QCOMPARE(published.size(), 2);
+  QCOMPARE(published.last().at(0).toString(), html);
+  QCOMPARE(published.last().at(1).toString(), QStringLiteral("incoming"));
+  QCOMPARE(scrolled.size(), 1);
+  QCOMPARE(scrolled.first().at(0).toInt(), 29);
+  QCOMPARE(adapter.getTopLineNumber(), 29);
+  adapter.setWorkFinished(QStringLiteral("outgoing"));
+  QVERIFY(!adapter.isDocumentReady());
+  adapter.setWorkFinished(QStringLiteral("incoming"));
+  QVERIFY(adapter.isDocumentReady());
+  QCoreApplication::sendPostedEvents(&adapter, QEvent::MetaCall);
+  QCOMPARE(published.size(), 2);
+}
+
+void TestMarkdownViewerAdapterAnchor::pageResetDuringHtmlSuppressesOldScroll() {
+  MarkdownViewerAdapter adapter;
+  adapter.setReady(true);
+  QSignalSpy scrolled(&adapter, &MarkdownViewerAdapter::editLineNumberUpdated);
+  connect(&adapter, &MarkdownViewerAdapter::htmlUpdated, this, [&]() {
+    // Retire the page epoch without changing the native token.
+    adapter.setReady(false);
+    adapter.setReady(true);
+  });
+  adapter.setRenderedHtml(QStringLiteral("native"), QStringLiteral("<p>Native</p>"), 11);
+  QCOMPARE(scrolled.size(), 0);
+  QCOMPARE(adapter.getTopLineNumber(), -1);
+}
+
+void TestMarkdownViewerAdapterAnchor::deletionDuringHtml_data() {
+  QTest::addColumn<bool>("initiallyReady");
+  QTest::newRow("immediate") << true;
+  QTest::newRow("readiness-action") << false;
+}
+
+void TestMarkdownViewerAdapterAnchor::deletionDuringHtml() {
+  QFETCH(bool, initiallyReady);
+  QObject owner;
+  QPointer<MarkdownViewerAdapter> adapter = new MarkdownViewerAdapter(&owner);
+  adapter->setReady(initiallyReady);
+  QSignalSpy published(adapter, &MarkdownViewerAdapter::htmlUpdated);
+  connect(adapter, &MarkdownViewerAdapter::htmlUpdated, this, [&]() {
+    adapter->setRenderedHtml(QStringLiteral("queued"), QStringLiteral("<p>Queued</p>"));
+    delete adapter.data();
+  });
+  adapter->setRenderedHtml(QStringLiteral("outgoing"), QStringLiteral("<p>Outgoing</p>"), 9);
+  if (!initiallyReady) {
+    adapter->setReady(true);
+  }
+  QVERIFY(adapter.isNull());
+  QCOMPARE(published.size(), 1);
+}
+
+void TestMarkdownViewerAdapterAnchor::deletionDuringScroll() {
+  QObject owner;
+  QPointer<MarkdownViewerAdapter> adapter = new MarkdownViewerAdapter(&owner);
+  adapter->setReady(true);
+  connect(adapter, &MarkdownViewerAdapter::editLineNumberUpdated, this,
+          [&]() { delete adapter.data(); });
+  adapter->setRenderedHtml(QStringLiteral("outgoing"), QStringLiteral("<p>Outgoing</p>"), 9);
+  QVERIFY(adapter.isNull());
+}
+
+void TestMarkdownViewerAdapterAnchor::deletionDuringContentCancellation_data() {
+  QTest::addColumn<bool>("resetPage");
+  QTest::newRow("replacement") << false;
+  QTest::newRow("reset") << true;
+}
+
+void TestMarkdownViewerAdapterAnchor::deletionDuringContentCancellation() {
+  QFETCH(bool, resetPage);
+  QObject owner;
+  QPointer<MarkdownViewerAdapter> adapter = new MarkdownViewerAdapter(&owner);
+  adapter->setReady(true);
+  adapter->setRenderedHtml(QStringLiteral("outgoing"), QStringLiteral("<p>Outgoing</p>"));
+  adapter->setWorkFinished(QStringLiteral("outgoing"));
+  adapter->saveContent();
+  connect(adapter, &MarkdownViewerAdapter::contentReady, this, [&]() { delete adapter.data(); });
+  if (resetPage) {
+    adapter->reset();
+  } else {
+    adapter->setRenderedHtml(QStringLiteral("incoming"), QStringLiteral("<p>Incoming</p>"));
+  }
+  QVERIFY(adapter.isNull());
+}
+
+void TestMarkdownViewerAdapterAnchor::deletionDuringImageCancellation_data() {
+  QTest::addColumn<int>("operation");
+  QTest::newRow("cancel") << 0;
+  QTest::newRow("reset") << 1;
+  QTest::newRow("replace-image") << 2;
+}
+
+void TestMarkdownViewerAdapterAnchor::deletionDuringImageCancellation() {
+  QFETCH(int, operation);
+  QObject owner;
+  QPointer<MarkdownViewerAdapter> adapter = new MarkdownViewerAdapter(&owner);
+  adapter->setReady(true);
+  QVERIFY(adapter->requestImageView(QStringLiteral("old.png")) != 0);
+  connect(adapter, &MarkdownViewerAdapter::imageViewCancelRequested, this,
+          [&]() { delete adapter.data(); });
+  if (operation == 0) {
+    adapter->cancelImageView();
+  } else if (operation == 1) {
+    adapter->reset();
+  } else {
+    QCOMPARE(adapter->requestImageView(QStringLiteral("new.png")), quint64(0));
+  }
+  QVERIFY(adapter.isNull());
+}
+
+void TestMarkdownViewerAdapterAnchor::resetCancellationKeepsIncomingHtml() {
+  MarkdownViewerAdapter adapter;
+  adapter.setReady(true);
+  adapter.setRenderedHtml(QStringLiteral("outgoing"), QStringLiteral("<p>Outgoing</p>"));
+  adapter.setWorkFinished(QStringLiteral("outgoing"));
+  adapter.saveContent();
+  QSignalSpy published(&adapter, &MarkdownViewerAdapter::htmlUpdated);
+  connect(&adapter, &MarkdownViewerAdapter::contentReady, this, [&]() {
+    adapter.setRenderedHtml(QStringLiteral("incoming"), QStringLiteral("<p>Incoming</p>"), 19);
+    adapter.setReady(true);
+  });
+  adapter.reset();
+  QCOMPARE(published.size(), 1);
+  QCOMPARE(published.first().at(0).toString(), QStringLiteral("<p>Incoming</p>"));
+  QCOMPARE(published.first().at(1).toString(), QStringLiteral("incoming"));
+  QCOMPARE(adapter.getTopLineNumber(), 19);
+  adapter.setWorkFinished(QStringLiteral("incoming"));
+  QVERIFY(adapter.isDocumentReady());
+}
+
+void TestMarkdownViewerAdapterAnchor::taskTogglesRequireCurrentGeneration() {
+  MarkdownViewerAdapter adapter;
+  adapter.setReady(true);
+  QSignalSpy requested(&adapter, &MarkdownViewerAdapter::taskListItemToggleRequested);
+  QSignalSpy rejected(&adapter, &MarkdownViewerAdapter::taskListToggleRejected);
+  adapter.setRenderedHtml(QStringLiteral("retired"), QStringLiteral("<p>Retired</p>"));
+  adapter.setRenderedHtml(QStringLiteral("current"), QStringLiteral("<p>Current</p>"));
+  adapter.toggleTaskListItem(QStringLiteral("retired"), 4, true);
+  adapter.toggleTaskListItem(QString(), 4, true);
+  adapter.toggleTaskListItem(QStringLiteral("current"), -1, true);
+  QCOMPARE(requested.size(), 0);
+  QCOMPARE(rejected.size(), 3);
+  QCOMPARE(rejected.first().at(0).toString(), QStringLiteral("retired"));
+  QCOMPARE(rejected.first().at(1).toInt(), 4);
+  adapter.toggleTaskListItem(QStringLiteral("current"), 4, true);
+  QCOMPARE(requested.size(), 1);
+  QCOMPARE(requested.first().at(0).toString(), QStringLiteral("current"));
+  QCOMPARE(requested.first().at(1).toInt(), 4);
+  QCOMPARE(requested.first().at(2).toBool(), true);
+  adapter.reset();
+  adapter.toggleTaskListItem(QStringLiteral("current"), 4, false);
+  QCOMPARE(requested.size(), 1);
+  QCOMPARE(rejected.size(), 4);
+  adapter.setRenderedHtml(QStringLiteral("incoming"), QStringLiteral("<p>Incoming</p>"));
+  adapter.setReady(true);
+  adapter.toggleTaskListItem(QStringLiteral("incoming"), 7, false);
+  QCOMPARE(requested.size(), 2);
+  QCOMPARE(requested.last().at(0).toString(), QStringLiteral("incoming"));
+  QCOMPARE(requested.last().at(1).toInt(), 7);
+  QCOMPARE(requested.last().at(2).toBool(), false);
+}
+
+void TestMarkdownViewerAdapterAnchor::graphCallbacksFollowDocumentLifetime_data() {
+  QTest::addColumn<QString>("retirement");
+  QTest::newRow("native-token") << QStringLiteral("token");
+  QTest::newRow("reset-epoch") << QStringLiteral("reset");
+  QTest::newRow("deleted-adapter") << QStringLiteral("delete");
+}
+
+void TestMarkdownViewerAdapterAnchor::graphCallbacksFollowDocumentLifetime() {
+  QFETCH(QString, retirement);
+  const auto dot = QStandardPaths::findExecutable(QStringLiteral("dot"));
+  if (dot.isEmpty()) {
+    QSKIP("Local Graphviz requires dot on PATH");
+  }
+  auto &helper = GraphvizHelper::getInst();
+  const auto restoreHelper = qScopeGuard([&]() { helper.update(QString()); });
+  helper.update(dot);
+  QObject owner;
+  QPointer<MarkdownViewerAdapter> adapter = new MarkdownViewerAdapter(&owner);
+  adapter->setReady(true);
+  adapter->setRenderedHtml(QStringLiteral("outgoing"), QStringLiteral("<p>Outgoing</p>"));
+  QSignalSpy outgoing(adapter, &MarkdownViewerAdapter::graphRenderDataReady);
+  adapter->renderGraph(1, 3, QStringLiteral("svg"), QStringLiteral("graphviz"),
+                       QStringLiteral("digraph Retired { A -> B; }"), 0);
+  QCOMPARE(outgoing.size(), 0);
+  if (retirement == QStringLiteral("delete")) {
+    delete adapter.data();
+    adapter = new MarkdownViewerAdapter(&owner);
+  } else if (retirement == QStringLiteral("reset")) {
+    adapter->reset();
+  }
+  // Keep the token equal for the reset row so only the page epoch can retire it.
+  adapter->setRenderedHtml(retirement == QStringLiteral("reset") ? QStringLiteral("outgoing")
+                                                                 : QStringLiteral("incoming"),
+                           QStringLiteral("<p>Incoming</p>"));
+  adapter->setReady(true);
+  QSignalSpy incoming(adapter, &MarkdownViewerAdapter::graphRenderDataReady);
+  adapter->renderGraph(2, 5, QStringLiteral("svg"), QStringLiteral("graphviz"),
+                       QStringLiteral("digraph Current { B -> C; }"), 0);
+  // The helper is FIFO: this real success proves the retired callback has drained.
+  QTRY_COMPARE_WITH_TIMEOUT(incoming.size(), 1, 10000);
+  QCOMPARE(incoming.first().at(0).toULongLong(), quint64(2));
+  QCOMPARE(incoming.first().at(1).toULongLong(), quint64(5));
+  QCOMPARE(incoming.first().at(2).toString(), QStringLiteral("svg"));
+  QVERIFY(incoming.first().at(3).toString().contains(QStringLiteral("<svg")));
+  QVERIFY(incoming.first().at(4).toBool());
+  QCOMPARE(outgoing.size(), retirement == QStringLiteral("delete") ? 0 : 1);
+}
+
+void TestMarkdownViewerAdapterAnchor::contentExtractionRequiresCurrentFinishedGeneration() {
+  MarkdownViewerAdapter adapter;
+  QSignalSpy requested(&adapter, &MarkdownViewerAdapter::contentRequested);
+  QSignalSpy completed(&adapter, &MarkdownViewerAdapter::contentReady);
+  adapter.setRenderedHtml(QStringLiteral("retired"), QStringLiteral("<p>Retired</p>"));
+  adapter.reset();
+  adapter.setRenderedHtml(QStringLiteral("empty"), QStringLiteral(""));
+  adapter.setReady(true);
+  QVERIFY(!adapter.isDocumentReady());
+  adapter.setWorkFinished(QStringLiteral("retired"));
+  QVERIFY(!adapter.isDocumentReady());
+  adapter.saveContent();
+  QCOMPARE(requested.size(), 0);
+  QCOMPARE(completed.size(), 1);
+  QVERIFY(completed.first().at(2).toString().isNull());
+
+  adapter.setWorkFinished(QStringLiteral("empty"));
+  QVERIFY(adapter.isDocumentReady());
+  adapter.saveContent();
+  QCOMPARE(requested.size(), 1);
+  adapter.setRenderedHtml(QStringLiteral("current"), QStringLiteral("<p>Current</p>"));
+  QCOMPARE(completed.size(), 2);
+  QVERIFY(completed.last().at(2).toString().isNull());
+  adapter.setSavedContent(QStringLiteral("empty"), {}, {}, QStringLiteral("retired result"), {});
+  QCOMPARE(completed.size(), 2);
+  adapter.setWorkFinished(QStringLiteral("empty"));
+  QVERIFY(!adapter.isDocumentReady());
+
+  adapter.setWorkFinished(QStringLiteral("current"));
+  QVERIFY(adapter.isDocumentReady());
+  adapter.saveContent();
+  QCOMPARE(requested.size(), 2);
+  adapter.setSavedContent(QStringLiteral("current"), {}, {}, QStringLiteral("<p>Current</p>"), {});
+  QCOMPARE(completed.size(), 3);
+  QVERIFY(!completed.last().at(2).toString().isNull());
+}
 
 void TestMarkdownViewerAdapterAnchor::previewResultsKeepHighResolutionAtLogicalSize() {
   for (auto source : {vte::PreviewData::Source::CodeBlock, vte::PreviewData::Source::MathBlock}) {

@@ -34,7 +34,7 @@ class PlantUml extends GraphRenderer {
                     || window.vxOptions.plantUmlFormat === 'png' ? 'png' : 'svg');
         });
 
-        this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
+        this.vxcore.getWorker('document').addLangsToSkipHighlight(this.langs);
 
         this.useWeb = window.vxOptions.webPlantUml;
         if (!this.useWeb) {
@@ -84,7 +84,7 @@ class PlantUml extends GraphRenderer {
     // Interface 2.
     renderCodeNodes(p_format) {
         if (window.vxOptions.protectedView) {
-            for (const node of this.vxcore.getWorker('markdownit').getCodeNodes(this.langs)) {
+            for (const node of this.vxcore.getWorker('document').getCodeNodes(this.langs)) {
                 node.textContent = '[PlantUML blocked in protected notes: no bundled renderer]';
             }
             this.finishWork();
@@ -125,7 +125,7 @@ class PlantUml extends GraphRenderer {
             }
         } finally {
             if (isCurrent()) {
-                this.finishRenderingOne();
+                this.finishRenderingOne(generation, p_idx);
             }
         }
     }

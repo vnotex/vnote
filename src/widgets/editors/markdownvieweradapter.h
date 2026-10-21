@@ -56,11 +56,12 @@ public:
 
   void setProtectedView(bool p_protected);
 
-  // @p_lineNumber: the line number needed to sync, -1 for invalid.
-  void setText(int p_revision, const QString &p_text, int p_lineNumber);
-
-  // @p_lineNumber: the line number needed to sync, -1 for invalid.
-  void setText(const QString &p_text, int p_lineNumber = -1);
+  // Native render token; independent of buffer and editor revisions.
+  void setRenderedHtml(QString p_generation, const QString &p_html, int p_lineNumber = -1);
+  const QString &documentGeneration() const { return m_generation; }
+  bool isDocumentReady() const {
+    return isReady() && !m_generation.isEmpty() && m_finishedGeneration == m_generation;
+  }
 
   void scrollToPosition(const Position &p_pos);
 
@@ -94,7 +95,7 @@ public:
 
   // Tell the web side that the toggle of the task list item at 0-based source
   // line @p_lineNumber was rejected.
-  void emitTaskListToggleRejected(int p_lineNumber);
+  void emitTaskListToggleRejected(const QString &p_generation, int p_lineNumber);
 
   // Functions to be called from web side.
 public slots:
@@ -103,7 +104,7 @@ public slots:
 
   void activateProtectedLink(const QString &p_url);
 
-  void setWorkFinished();
+  void setWorkFinished(const QString &p_generation);
 
   void setPresentationState(bool p_active, const QString &p_error);
 
@@ -126,8 +127,9 @@ public slots:
 
   void setCrossCopyResult(quint64 p_id, quint64 p_timeStamp, const QString &p_html);
 
-  void setSavedContent(const QString &p_headContent, const QString &p_styleContent,
-                       const QString &p_content, const QString &p_bodyClassList);
+  void setSavedContent(const QString &p_generation, const QString &p_headContent,
+                       const QString &p_styleContent, const QString &p_content,
+                       const QString &p_bodyClassList);
 
   void onPdfRenderReady();
 
@@ -137,7 +139,7 @@ public slots:
 
   // Web side requests to toggle the task list item at 0-based source line
   // @p_lineNumber to @p_checked.
-  void toggleTaskListItem(int p_lineNumber, bool p_checked);
+  void toggleTaskListItem(const QString &p_generation, int p_lineNumber, bool p_checked);
 
   // Signals to be connected at web side.
 signals:
@@ -148,8 +150,8 @@ signals:
   void imageViewRequested(quint64 p_id, const QString &p_url, qreal p_width, qreal p_height);
   void imageViewCancelRequested(quint64 p_id);
 
-  // Current Markdown text is updated.
-  void textUpdated(const QString &p_text);
+  // A native HTML fragment is ready for the current page.
+  void htmlUpdated(const QString &p_html, const QString &p_generation);
 
   // Current editor line number is updated.
   void editLineNumberUpdated(int p_lineNumber);
@@ -162,14 +164,14 @@ signals:
                           const QString &p_baseUrl, const QString &p_html);
 
   // Request to get the whole HTML content.
-  void contentRequested();
+  void contentRequested(const QString &p_generation);
 
   void graphRenderDataReady(quint64 p_id, quint64 p_index, const QString &p_format,
                             const QString &p_data, bool p_success);
 
   // The toggle of the task list item at 0-based source line @p_lineNumber was
   // rejected; the web side should restore the checkbox state.
-  void taskListToggleRejected(int p_lineNumber);
+  void taskListToggleRejected(const QString &p_generation, int p_lineNumber);
 
   // Signals to be connected at cpp side.
 signals:
@@ -197,11 +199,13 @@ signals:
   void pdfRenderReady();
 
   // Web side requested to toggle a task list item.
-  void taskListItemToggleRequested(int p_lineNumber, bool p_checked);
+  void taskListItemToggleRequested(const QString &p_generation, int p_lineNumber, bool p_checked);
 
   void protectedLinkRequested(const QString &p_url);
 
 private:
+  void dispatchHtml(QString p_generation);
+
   void scrollToLine(int p_lineNumber);
 
   void scrollToAnchor(const QString &p_anchor);
@@ -213,7 +217,15 @@ private:
   quint64 m_imageViewRequest = 0;
   QString m_pendingImageViewUrl;
 
-  int m_revision = 0;
+  QString m_generation;
+  QString m_finishedGeneration;
+  QString m_pendingHtml;
+  int m_pendingLineNumber = -1;
+  bool m_contentRequested = false;
+  bool m_htmlActionPending = false;
+  bool m_hasPendingHtml = false;
+  // Owned by dispatchHtml(), including across reentrant document resets.
+  bool m_dispatchingHtml = false;
 
   // Source line number of the top element node at web side.
   int m_topLineNumber = -1;

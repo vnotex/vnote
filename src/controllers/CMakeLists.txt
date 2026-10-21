@@ -27,6 +27,7 @@ target_sources(vnote PRIVATE
     mindmapviewwindowcontroller.cpp mindmapviewwindowcontroller.h
     markdowneditorcontroller.cpp markdowneditorcontroller.h
     markdownwebjobcontroller.cpp markdownwebjobcontroller.h
+    markdownrendercontroller.cpp markdownrendercontroller.h
     markdownviewwindowcontroller.cpp markdownviewwindowcontroller.h
     outlinecontroller.cpp outlinecontroller.h
     attachmentcontroller.cpp attachmentcontroller.h

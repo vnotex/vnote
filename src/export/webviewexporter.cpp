@@ -5,14 +5,17 @@
 #include "exportstyleresolver.h"
 #include "wkhtmltopdfhtmlpatch.h"
 
+#include <QCoreApplication>
 #include <QDir>
 #include <QElapsedTimer>
 #include <QFile>
 #include <QFileInfo>
+#include <QFutureWatcher>
 #include <QRegularExpression>
 #include <QScopedPointer>
 #include <QWebEnginePage>
 #include <QWidget>
+#include <QtConcurrent>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/exception.h>
@@ -25,6 +28,7 @@
 #include <gui/utils/themeutils.h>
 #include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
+#include <utils/markdownhtmlrenderer.h>
 #include <utils/pathutils.h>
 #include <utils/utils.h>
 #include <utils/webutils.h>
@@ -202,9 +206,6 @@ QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
   opts.m_imageAlignCenterEnabled = p_config.getImageAlignCenterEnabled();
   opts.m_headingFoldingEnabled = p_paras.m_headingFoldingEnabled;
   opts.m_protectFromXss = p_config.getProtectFromXss();
-  opts.m_htmlTagEnabled = p_config.getHtmlTagEnabled();
-  opts.m_autoBreakEnabled = p_config.getAutoBreakEnabled();
-  opts.m_linkifyEnabled = p_config.getLinkifyEnabled();
   opts.m_indentFirstLineEnabled = p_config.getIndentFirstLineEnabled();
   opts.m_codeBlockLineNumberEnabled = p_config.getCodeBlockLineNumberEnabled();
   opts.m_transparentBackgroundEnabled = p_paras.m_transparentBackgroundEnabled;
@@ -216,6 +217,15 @@ QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
   opts.m_removeCodeToolBarEnabled = p_paras.m_removeCodeToolBarEnabled;
   fillGlobalOptions(htmlTemplate, opts);
 
+  // Match the reader's mandatory job bootstrap: the channel handshake needs the bridge
+  // before configured scripts run, and providers need the configured workers afterward.
+  const auto placeholder = QStringLiteral("<!-- VX_SCRIPTS_PLACEHOLDER -->");
+  htmlTemplate.replace(
+      placeholder,
+      fillScriptTag(resolveConfigFile(p_configMgr, QStringLiteral("web/js/webviewjobs.js"))) +
+          placeholder +
+          fillScriptTag(
+              resolveConfigFile(p_configMgr, QStringLiteral("web/js/markdownwebjobs.js"))));
   fillResources(htmlTemplate, viewerResource, p_configMgr);
   return htmlTemplate;
 }
@@ -291,6 +301,11 @@ WebViewExporter::WebViewExporter(ServiceLocator &p_services, QWidget *p_widgetPa
 WebViewExporter::~WebViewExporter() { clear(); }
 
 void WebViewExporter::clear() {
+  if (m_nativeCancelled) {
+    m_nativeCancelled->store(true, std::memory_order_release);
+    m_nativeCancelled.reset();
+  }
+  ++m_nativeGeneration;
   m_askedToStop = false;
 
   delete m_viewer;
@@ -341,8 +356,45 @@ bool WebViewExporter::renderHtml(const ExportInput &p_input, const ExportHtmlReq
       p_request.purpose == ExportHtmlPurpose::Pdf && option.m_pdfOption.m_addTableOfContents &&
       !option.m_pdfOption.m_useWkhtmltopdf &&
       file.fileTypeName.compare(QStringLiteral("Markdown"), Qt::CaseInsensitive) == 0;
-  m_viewer->adapter()->setText(addToc ? QStringLiteral("[TOC]\n\n") + p_input.content
-                                      : p_input.content);
+  const auto &markdownConfig =
+      m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
+  MarkdownHtmlOptions nativeOptions;
+  nativeOptions.htmlEnabled = markdownConfig.getHtmlTagEnabled();
+  nativeOptions.autoBreaks = markdownConfig.getAutoBreakEnabled();
+  nativeOptions.linkify = markdownConfig.getLinkifyEnabled();
+  const QString source = addToc ? QStringLiteral("[TOC]\n\n") + p_input.content : p_input.content;
+  const auto generation = m_nativeGeneration;
+  const auto cancelled = std::make_shared<std::atomic_bool>(false);
+  m_nativeCancelled = cancelled;
+  const QPointer<WebViewExporter> self(this);
+  const QPointer<MarkdownViewer> viewer(m_viewer);
+  // The watcher owns completion even if the export/view is destroyed during parsing.
+  auto *watcher = new QFutureWatcher<MarkdownHtmlResult>(QCoreApplication::instance());
+  connect(watcher, &QFutureWatcher<MarkdownHtmlResult>::finished, watcher,
+          [watcher, self, viewer, generation, cancelled]() {
+            const auto result = watcher->future().takeResult();
+            watcher->deleteLater();
+            if (!self || !viewer || self->m_viewer != viewer ||
+                self->m_nativeGeneration != generation || self->m_askedToStop ||
+                cancelled->load(std::memory_order_acquire)) {
+              return;
+            }
+            if (!result.error.isEmpty()) {
+              self->m_webViewStates |= WebViewState::Failed;
+              emit self->logRequested(tr("Failed to render Markdown for export."));
+              return;
+            }
+            viewer->adapter()->setRenderedHtml(QStringLiteral("export-%1").arg(generation),
+                                               result.html);
+          });
+  watcher->setFuture(QtConcurrent::run([source, nativeOptions, cancelled]() {
+    if (cancelled->load(std::memory_order_acquire)) {
+      MarkdownHtmlResult result;
+      result.error = QStringLiteral("Export cancelled");
+      return result;
+    }
+    return MarkdownHtmlRenderer::render(source.toUtf8(), nativeOptions);
+  }));
 
   QElapsedTimer timer;
   timer.start();
@@ -368,7 +420,12 @@ bool WebViewExporter::renderHtml(const ExportInput &p_input, const ExportHtmlReq
   return success;
 }
 
-void WebViewExporter::stop() { m_askedToStop = true; }
+void WebViewExporter::stop() {
+  m_askedToStop = true;
+  if (m_nativeCancelled) {
+    m_nativeCancelled->store(true, std::memory_order_release);
+  }
+}
 
 bool WebViewExporter::isWebViewReady() const {
   return m_webViewStates == (WebViewState::LoadFinished | WebViewState::WorkFinished);
@@ -390,7 +447,7 @@ bool WebViewExporter::doExportHtml(const ExportHtmlOption &p_htmlOption,
             // Maybe unnecessary. Just to avoid duplicated signal connections.
             disconnect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this, 0);
 
-            if (m_askedToStop) {
+            if (m_askedToStop || p_content.isNull()) {
               state = ExportState::Failed;
               return;
             }

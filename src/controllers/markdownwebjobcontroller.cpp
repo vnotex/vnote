@@ -581,30 +581,6 @@ void MarkdownWebJobController::htmlToMarkdown(quint64 p_id, quint64 p_timeStamp,
          });
 }
 
-void MarkdownWebJobController::fetchHeadingAnchor(
-    const QString &p_text, int p_lineNumber,
-    std::function<void(const HeadingAnchorResult &)> p_callback) {
-  submit(QStringLiteral("markdown.headingAnchor"),
-         {{QStringLiteral("source"), p_text}, {QStringLiteral("lineNumber"), p_lineNumber}},
-         [callback = std::move(p_callback)](const WebViewJobResult &p_result) {
-           HeadingAnchorResult result;
-           result.m_status = p_result.status;
-           result.m_error = p_result.error;
-           if (p_result.status == WebViewJobResult::Status::Success) {
-             const auto object = p_result.value.toObject();
-             if (!object.value(QStringLiteral("found")).isBool() ||
-                 !object.value(QStringLiteral("anchor")).isString()) {
-               result.m_status = WebViewJobResult::Status::Error;
-               result.m_error = QStringLiteral("Invalid Markdown heading result");
-             } else {
-               result.m_found = object.value(QStringLiteral("found")).toBool();
-               result.m_anchor = object.value(QStringLiteral("anchor")).toString();
-             }
-           }
-           callback(result);
-         });
-}
-
 void MarkdownWebJobController::fetchHighlightStyles(
     std::function<void(const QVector<CssRuleStyle> *)> p_callback) {
   submit(

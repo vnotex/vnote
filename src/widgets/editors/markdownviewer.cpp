@@ -108,7 +108,7 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindo
   });
   connect(page(), &QWebEnginePage::renderProcessTerminated, m_adapter,
           &MarkdownViewerAdapter::cancelImageView);
-  connect(m_adapter, &MarkdownViewerAdapter::textUpdated, this,
+  connect(m_adapter, &MarkdownViewerAdapter::htmlUpdated, this,
           &MarkdownViewer::invalidateNavigationTargets);
 
   connect(QApplication::clipboard(), &QClipboard::changed, this,
@@ -649,8 +649,31 @@ void MarkdownViewer::crossCopy(const QString &p_target, const QString &p_baseUrl
 }
 
 void MarkdownViewer::saveContent(const std::function<void(const QString &p_content)> &p_callback) {
-  page()->runJavaScript("document.getElementById('vx-content').textContent",
-                        [p_callback](const QVariant &v) { p_callback(v.toString()); });
+  if (!m_adapter->isDocumentReady()) {
+    p_callback(QString());
+    return;
+  }
+  const auto generation = m_adapter->documentGeneration();
+  const QPointer<MarkdownViewer> self(this);
+  page()->runJavaScript(QStringLiteral(R"JS((() => {
+    const core = window.vxcore;
+    if (!core || !core.initialized || !core.contentContainer || core.numOfOngoingWorkers > 0
+        || core.pendingData.document !== null) return null;
+    return { generation: core.documentGeneration, text: core.contentContainer.textContent };
+  })())JS"),
+                        [self, generation, p_callback](const QVariant &p_value) {
+                          const auto result = p_value.toMap();
+                          if (!self || !self->m_adapter->isDocumentReady() ||
+                              self->m_adapter->documentGeneration() != generation ||
+                              result.value(QStringLiteral("generation")).toString() != generation ||
+                              result.value(QStringLiteral("text")).metaType().id() !=
+                                  QMetaType::QString) {
+                            p_callback(QString());
+                            return;
+                          }
+                          const auto text = result.value(QStringLiteral("text")).toString();
+                          p_callback(text.isNull() ? QStringLiteral("") : text);
+                        });
 }
 
 EditorConfig &MarkdownViewer::getEditorConfig() const {

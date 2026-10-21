@@ -29,12 +29,15 @@
 #include <QToolButton>
 #include <QUrl>
 #include <QUuid>
+#include <QWebEngineLoadingInfo>
 #include <QWebEngineProfile>
 #include <QWindow>
 
 #include <algorithm>
 #include <stdexcept>
 
+#include <vtextedit/markdowndocument.h>
+#include <vtextedit/markdowneditorconfig.h>
 #include <vtextedit/markdownhighlighter.h>
 #include <vtextedit/markdownutils.h>
 #include <vtextedit/previewmgr.h>
@@ -43,6 +46,7 @@
 
 #include <controllers/imagehostcontroller.h>
 #include <controllers/markdowneditorcontroller.h>
+#include <controllers/markdownrendercontroller.h>
 #include <controllers/markdownviewwindowcontroller.h>
 #include <controllers/markdownwebjobcontroller.h>
 #include <core/configmgr2.h>
@@ -120,6 +124,29 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
   m_windowController = new MarkdownViewWindowController(p_services, this);
   m_imageHostController = p_services.get<ImageHostController>();
   m_webJobs = new MarkdownWebJobController(p_services, getBuffer(), this);
+  m_nativeRender = new MarkdownRenderController(p_services, getBuffer(), this);
+  connect(m_nativeRender, &MarkdownRenderController::rendered, this,
+          [this](const QString &p_token, const MarkdownHtmlResult &p_result) {
+            if (!m_viewer || m_readerResourcesSuspended || m_readerLifecycleClosing ||
+                m_nativeLocking || p_token != m_nativeRenderToken ||
+                !m_nativeRender->isCurrent(p_token) || !nativeRenderSourceIsCurrent()) {
+              return;
+            }
+            if (!p_result.error.isEmpty()) {
+              showMessage(tr("Unable to render Markdown"));
+              if (m_printPending) {
+                m_printPending = false;
+                m_printer.reset();
+              }
+              return;
+            }
+            adapter()->setRenderedHtml(p_token, p_result.html, m_nativeRenderLineNumber);
+          });
+  if (auto *buffers = p_services.get<BufferService>()) {
+    m_nativeLocking = getBuffer().isEncrypted() && buffers->isProtectedLocking();
+    connect(buffers->asQObject(), SIGNAL(protectedLockingChanged(bool)), this,
+            SLOT(onNativeProtectedLockingChanged(bool)), Qt::DirectConnection);
+  }
   m_webJobHost = new MarkdownWebJobHost(p_services, getBuffer(), this);
   connect(m_webJobs, &MarkdownWebJobController::protectedSessionRequested, m_webJobHost,
           &MarkdownWebJobHost::ensureProtectedSession);
@@ -162,6 +189,8 @@ MarkdownViewWindow2::MarkdownViewWindow2(ServiceLocator &p_services, const Buffe
 MarkdownViewWindow2::~MarkdownViewWindow2() {
   m_readerLifecycleClosing = true;
   m_inactiveReaderTimer->stop();
+  invalidateNativeRender(true);
+  m_nativeRender->revoke();
   cancelEditorImageView();
   setPresentationMode(false);
   if (m_viewer && m_debugViewer) {
@@ -198,6 +227,8 @@ void MarkdownViewWindow2::releaseProtectedView() {
   m_inactiveReaderFileOpenSettings.reset();
   m_restoreReaderStatePending = false;
   m_webJobs->revoke();
+  invalidateNativeRender(true);
+  m_nativeRender->revoke();
   m_webJobHost->releaseProtectedSession();
   ++m_highlightStyleGeneration;
   m_codeBlockStylesInitialized = false;
@@ -249,6 +280,7 @@ void MarkdownViewWindow2::retireReader() {
 
 void MarkdownViewWindow2::releaseBufferResources() {
   m_rebindingBuffer = true;
+  invalidateNativeRender(true);
   m_readerResourcesSuspended = true;
   m_switchingMode = false;
   m_propagateEditorToBuffer = false;
@@ -333,11 +365,14 @@ void MarkdownViewWindow2::bindBufferResources() {
     m_editor->setImageHostController(getBuffer().isEncrypted() ? nullptr : m_imageHostController);
   }
   m_resetTextEditorForNewBuffer = true;
+  const auto *buffers = getServices().get<BufferService>();
+  m_nativeLocking = getBuffer().isEncrypted() && buffers && buffers->isProtectedLocking();
+  updateNativeDocumentRetention();
   m_readerResourcesSuspended = false;
   if (m_viewer) {
     connectViewerSignals();
   }
-  // Web jobs remain suspended until source, reader identity and mode are installed.
+  // Native and web jobs remain suspended until source, reader identity and mode are installed.
 }
 
 // ============ setupUI ============
@@ -813,7 +848,11 @@ void MarkdownViewWindow2::printDocument(const QSharedPointer<QPrinter> &p_printe
   }
   // Print the current draft, not the last debounce/save snapshot. The web work-finished
   // acknowledgement below waits for document rendering, not merely page readiness.
-  adapter()->setText(getLatestContent());
+  if (m_editor) {
+    requestEditorNativeRender();
+  } else {
+    requestNativeRender(getLatestContent());
+  }
 }
 
 bool MarkdownViewWindow2::aboutToClose(bool p_force) {
@@ -830,6 +869,8 @@ bool MarkdownViewWindow2::aboutToClose(bool p_force) {
   m_inactiveReaderTimer->stop();
   m_inactiveReaderFileOpenSettings.reset();
   m_restoreReaderStatePending = false;
+  invalidateNativeRender(true);
+  m_nativeRender->revoke();
   m_webJobs->revoke();
   m_webJobHost->releaseProtectedSession();
   if (getBuffer().isEncrypted()) {
@@ -882,11 +923,13 @@ void MarkdownViewWindow2::setupTextEditor() {
           ? widgetConfig.getReadableWidthMaxPx()
           : 0;
 
-  // Create editor using ServiceLocator constructor.
+  // Create editor with the same grammar used by native reading/export.
+  auto documentConfig = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
+      editorConfig, mdConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth);
+  documentConfig->m_documentParseOptions =
+      MarkdownHtmlRenderer::parseOptions(nativeRenderOptions());
   m_editor = new MarkdownEditor(
-      getServices(), mdConfig,
-      MarkdownEditorController::buildMarkdownEditorConfigFromContent(
-          editorConfig, mdConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth),
+      getServices(), mdConfig, documentConfig,
       MarkdownEditorController::buildMarkdownEditorParameters(editorConfig, mdConfig), this);
   updateEditSectionNumberOptions(false);
 
@@ -930,19 +973,27 @@ void MarkdownViewWindow2::setupTextEditor() {
 
   // Apply config.
   updateEditorFromConfig();
+  updateNativeDocumentRetention();
+  connect(m_editor->getHighlighter(), &vte::MarkdownHighlighter::documentReady, this,
+          [this](quint64 p_generation, const vte::MarkdownDocumentPtr &p_document) {
+            if (m_waitingNativeDocument && p_generation == m_renderEditorGeneration &&
+                nativeRenderSourceIsCurrent() && !m_readerResourcesSuspended &&
+                !m_readerLifecycleClosing && !m_nativeLocking) {
+              m_waitingNativeDocument = false;
+              if (p_document) {
+                renderNativeDocument(p_document);
+              } else {
+                showMessage(tr("Unable to parse Markdown"));
+              }
+            }
+          });
 
   connect(m_editor, &MarkdownEditor::htmlToMarkdownRequested, m_webJobs,
           &MarkdownWebJobController::htmlToMarkdown);
   connect(m_webJobs, &MarkdownWebJobController::htmlToMarkdownReady, m_editor,
           &MarkdownEditor::handleHtmlToMarkdownData);
-  connect(m_webJobs, &MarkdownWebJobController::highlightCodeBlockReady, m_editor,
-          &MarkdownEditor::handleExternalCodeBlockHighlightData);
   connect(m_webJobs, &MarkdownWebJobController::highlightMathReady, m_editor,
           &MarkdownEditor::handleExternalMathHighlightData);
-
-  // External code block highlighting pipeline.
-  connect(m_editor, &MarkdownEditor::externalCodeBlockHighlightRequested, this,
-          &MarkdownViewWindow2::handleExternalCodeBlockHighlightRequest);
 
   // External display math ($$...$$) source highlighting pipeline.
   connect(m_editor, &MarkdownEditor::externalMathHighlightRequested, this,
@@ -958,31 +1009,34 @@ void MarkdownViewWindow2::setupTextEditor() {
     }
   });
 
-  // Resolve heading anchors for the edit-mode "Copy Link" action via the web
-  // side, so the anchor matches the one read mode renders.
-  m_editor->setHeadingLinkResolver(
-      [this](const QString &p_text, int p_line, std::function<void(bool, const QString &)> p_cb) {
-        const auto generation = getBufferGeneration();
-        const QPointer<MarkdownViewWindow2> guard(this);
-        m_webJobs->fetchHeadingAnchor(
-            p_text, p_line,
-            [this, guard, generation,
-             p_cb](const MarkdownWebJobController::HeadingAnchorResult &p_result) {
-              if (!guard || generation != getBufferGeneration() || m_rebindingBuffer) {
-                p_cb(false, QString());
-                return;
-              }
-              if (p_result.m_status != WebViewJobResult::Status::Success) {
-                showMessage(tr("Unable to resolve heading link"));
-              }
-              if (!p_result.m_found) {
-                p_cb(false, QString());
-                return;
-              }
-              p_cb(true, MarkdownEditorController::composeHeadingLink(getBuffer().resolvedPath(),
-                                                                      p_result.m_anchor));
-            });
-      });
+  // Heading links use the same native ID table as reading, without starting WebEngine.
+  m_editor->setHeadingLinkResolver([this](const QString &p_text, int p_line,
+                                          std::function<void(bool, const QString &)> p_cb) {
+    if (m_rebindingBuffer || !m_sourceAvailable || m_readerLifecycleClosing || m_nativeLocking) {
+      p_cb(false, QString());
+      return;
+    }
+    const QPointer<MarkdownViewWindow2> self(this);
+    const auto generation = getBufferGeneration();
+    const auto document = m_editor->getHighlighter()->currentDocument();
+    const auto source = p_text.toUtf8();
+    m_nativeRender->fetchHeadingAnchor(
+        source, p_line, nativeRenderOptions(), document,
+        [self, generation, p_cb](const MarkdownRenderController::HeadingAnchorResult &p_result) {
+          if (!self || generation != self->getBufferGeneration() || self->m_rebindingBuffer ||
+              !self->m_sourceAvailable || !p_result.found || !p_result.error.isEmpty() ||
+              p_result.cancelled) {
+            if (self && generation == self->getBufferGeneration() && !self->m_rebindingBuffer &&
+                !p_result.cancelled && !p_result.error.isEmpty()) {
+              self->showMessage(tr("Unable to resolve heading link"));
+            }
+            p_cb(false, QString());
+            return;
+          }
+          p_cb(true, MarkdownEditorController::composeHeadingLink(self->getBuffer().resolvedPath(),
+                                                                  p_result.anchor));
+        });
+  });
 
   applyReadableWidth();
   updateJobRenderContext();
@@ -1157,7 +1211,7 @@ void MarkdownViewWindow2::connectViewerSignals() {
               handlePresentationStateChanged(p_active, p_error);
             }
           });
-  connect(adapterObj, &MarkdownViewerAdapter::textUpdated, this, [this, current]() {
+  connect(adapterObj, &MarkdownViewerAdapter::htmlUpdated, this, [this, current]() {
     if (current() && m_presentationRequestSent) {
       setPresentationMode(false);
     }
@@ -1191,30 +1245,31 @@ void MarkdownViewWindow2::connectViewerSignals() {
       showMessage(tr("Unable to prepare note for printing"));
     }
   });
-  connect(m_viewer->page(), &QWebEnginePage::loadFinished, this, [this, current](bool p_ok) {
-    if (!current()) {
-      return;
-    }
-    if (!p_ok) {
-      m_viewerReady = false;
-      m_viewerPageInitialized = false;
-      cancelEditorImageView(true);
-      if (m_mode == ViewWindowMode::Edit) {
-        setEditViewMode(MarkdownEditorConfig::EditViewMode::EditOnly);
-      }
-      showMessage(tr("Unable to load preview"));
-    }
-    if (!p_ok && m_printPending) {
-      m_printPending = false;
-      m_printer.reset();
-      showMessage(tr("Unable to prepare note for printing"));
-    }
-    if (!p_ok && m_presentationRequested) {
-      qWarning() << "Markdown presentation failed: viewer page did not load";
-      setPresentationMode(false);
-      showMessage(tr("Unable to start presentation"));
-    }
-  });
+  connect(m_viewer->page(), &QWebEnginePage::loadingChanged, this,
+          [this, current](const QWebEngineLoadingInfo &p_info) {
+            // Replacing a still-loading document stops the outgoing navigation.
+            // Its late stop is not a failure of the incoming page.
+            if (!current() || p_info.status() != QWebEngineLoadingInfo::LoadFailedStatus) {
+              return;
+            }
+            m_viewerReady = false;
+            m_viewerPageInitialized = false;
+            cancelEditorImageView(true);
+            if (m_mode == ViewWindowMode::Edit) {
+              setEditViewMode(MarkdownEditorConfig::EditViewMode::EditOnly);
+            }
+            showMessage(tr("Unable to load preview"));
+            if (m_printPending) {
+              m_printPending = false;
+              m_printer.reset();
+              showMessage(tr("Unable to prepare note for printing"));
+            }
+            if (m_presentationRequested) {
+              qWarning() << "Markdown presentation failed: viewer page did not load";
+              setPresentationMode(false);
+              showMessage(tr("Unable to start presentation"));
+            }
+          });
 
   // Viewer ready signal.
   connect(adapterObj, &MarkdownViewerAdapter::ready, this, [this, current]() {
@@ -1243,7 +1298,9 @@ void MarkdownViewWindow2::connectViewerSignals() {
 
   // Deferred anchor scroll: drain pending anchor after rendering completes.
   connect(adapterObj, &MarkdownViewerAdapter::workFinished, this, [this, current]() {
-    if (!current() || !m_viewerReady) {
+    if (!current() || !m_viewerReady || !adapter()->isDocumentReady() ||
+        !m_nativeRender->isCurrent(adapter()->documentGeneration()) ||
+        !nativeRenderSourceIsCurrent()) {
       return;
     }
     if (m_printPending) {
@@ -1280,9 +1337,9 @@ void MarkdownViewWindow2::connectViewerSignals() {
 
   // Task list checkbox toggle from the preview.
   connect(adapterObj, &MarkdownViewerAdapter::taskListItemToggleRequested, this,
-          [this, current](int p_line, bool p_checked) {
-            if (current() && m_viewerReady && m_sourceAvailable) {
-              onTaskListItemToggleRequested(p_line, p_checked);
+          [this, current](const QString &p_token, int p_line, bool p_checked) {
+            if (current() && m_viewerReady && m_sourceAvailable && !m_rebindingBuffer) {
+              onTaskListItemToggleRequested(p_token, p_line, p_checked);
             }
           });
 
@@ -1404,6 +1461,8 @@ bool MarkdownViewWindow2::resumeInactiveReader() {
   }
   m_readerResourcesSuspended = false;
   m_webJobs->setSuspended(false);
+  m_nativeRender->setSuspended(false);
+  updateNativeDocumentRetention();
   const bool needsReader =
       isReadMode() || m_editViewMode == MarkdownEditorConfig::EditViewMode::EditPreview;
   if (needsReader) {
@@ -1441,6 +1500,7 @@ bool MarkdownViewWindow2::resumeInactiveReader() {
 }
 
 void MarkdownViewWindow2::invalidateWebJobs(bool p_suspend) {
+  invalidateNativeRender(p_suspend);
   if (m_printPending) {
     m_printPending = false;
     m_printer.reset();
@@ -1768,6 +1828,10 @@ void MarkdownViewWindow2::connectEditorSignals() {
 
   // Content change -> auto-save dirty flag.
   connect(m_editor->getTextEdit(), &vte::VTextEdit::contentsChanged, this, [this]() {
+    if (!m_applyingTaskToggle && m_renderUsesEditor &&
+        m_editor->getHighlighter()->documentGeneration() != m_renderEditorGeneration) {
+      invalidateNativeRender();
+    }
     if (m_propagateEditorToBuffer && m_sourceAvailable && !m_rebindingBuffer) {
       onEditorContentsChanged();
     }
@@ -1944,6 +2008,12 @@ void MarkdownViewWindow2::setMode(ViewWindowMode p_mode) {
   }
   m_rebindingBuffer = false;
   if (m_sourceAvailable) {
+    m_nativeRender->setSuspended(false);
+    updateNativeDocumentRetention();
+    // Earlier mode setup installed the page but could not admit work while rebinding.
+    if (isReadMode() || m_editViewMode == MarkdownEditorConfig::EditViewMode::EditPreview) {
+      syncViewerFromBuffer(false);
+    }
     if (m_editor) {
       m_editor->setInplacePreviewEnabled(m_inplacePreviewEnabled);
     }
@@ -2042,6 +2112,9 @@ static void syncEditorPositionFromReadMode(MarkdownEditor *p_editor, int p_lineN
 }
 
 void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuffer) {
+  if (m_readerLifecycleClosing) {
+    return;
+  }
   const QPointer<MarkdownViewWindow2> guard(this);
   const auto generation = getBufferGeneration();
   cancelEditorImageView();
@@ -2216,7 +2289,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
         auto state = MarkdownEditorController::prepareBufferState(getBuffer());
         if (state.valid) {
           int lineNumber = transition.syncPositionFromPrevMode ? getEditLineNumber() : -1;
-          adapter()->setText(state.revision, state.content, lineNumber);
+          requestNativeRender(state.content, lineNumber);
           m_viewerBufferRevision = state.revision;
         }
       } else if (m_viewer && transition.syncPositionFromPrevMode) {
@@ -2345,6 +2418,7 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
 
 void MarkdownViewWindow2::initializeViewerPage() {
   Q_ASSERT(m_viewer);
+  invalidateNativeRender();
   m_viewerReady = false;
   m_viewerPageInitialized = true;
   m_viewerBufferRevision = -1;
@@ -2363,6 +2437,139 @@ void MarkdownViewWindow2::initializeViewerPage() {
   }
 }
 
+MarkdownHtmlOptions MarkdownViewWindow2::nativeRenderOptions() const {
+  MarkdownHtmlOptions options;
+  if (getBuffer().isEncrypted()) {
+    // Preserve the protected template's fixed grammar, including soft newlines,
+    // independently of ordinary preferences and the native renderer's defaults.
+    options.htmlEnabled = true;
+    options.autoBreaks = false;
+    options.linkify = true;
+  } else {
+    const auto &config =
+        getServices().get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
+    options.htmlEnabled = config.getHtmlTagEnabled();
+    options.autoBreaks = config.getAutoBreakEnabled();
+    options.linkify = config.getLinkifyEnabled();
+  }
+  return options;
+}
+
+void MarkdownViewWindow2::updateNativeDocumentRetention() {
+  if (!m_editor) {
+    return;
+  }
+  auto *highlighter = m_editor->getHighlighter();
+  highlighter->setDocumentParseOptions(MarkdownHtmlRenderer::parseOptions(nativeRenderOptions()));
+  const bool needed = m_viewer && m_sourceAvailable && !m_rebindingBuffer &&
+                      !m_readerResourcesSuspended && !m_readerLifecycleClosing &&
+                      !m_nativeLocking &&
+                      (isReadMode() || m_printPending ||
+                       m_editViewMode == MarkdownEditorConfig::EditViewMode::EditPreview);
+  highlighter->setDocumentRetentionEnabled(needed);
+}
+
+void MarkdownViewWindow2::invalidateNativeRender(bool p_suspend) {
+  m_waitingNativeDocument = false;
+  m_nativeRenderToken.clear();
+  m_renderBufferGeneration = 0;
+  m_renderEditorGeneration = 0;
+  m_renderBufferRevision = -1;
+  m_nativeRenderLineNumber = -1;
+  m_renderUsesEditor = false;
+  if (m_nativeRender) {
+    if (p_suspend) {
+      m_nativeRender->setSuspended(true);
+    } else {
+      m_nativeRender->invalidate();
+    }
+  }
+  if (p_suspend && m_editor) {
+    m_editor->getHighlighter()->setDocumentRetentionEnabled(false);
+  }
+}
+
+bool MarkdownViewWindow2::nativeRenderSourceIsCurrent() const {
+  if (m_rebindingBuffer || !m_sourceAvailable || !getBuffer().isValid() ||
+      m_renderBufferGeneration != getBufferGeneration()) {
+    return false;
+  }
+  if (m_renderUsesEditor) {
+    return m_editor && m_editor->getHighlighter()->documentGeneration() == m_renderEditorGeneration;
+  }
+  return getBuffer().getRevision() == m_renderBufferRevision;
+}
+
+void MarkdownViewWindow2::requestNativeRender(const QString &p_text, int p_lineNumber) {
+  if (!m_viewer || m_rebindingBuffer || !m_sourceAvailable || m_readerResourcesSuspended ||
+      m_readerLifecycleClosing || m_nativeLocking) {
+    return;
+  }
+  if (m_editor && p_text == m_editor->getText()) {
+    requestEditorNativeRender(p_lineNumber);
+    return;
+  }
+  m_waitingNativeDocument = false;
+  m_nativeRenderLineNumber = p_lineNumber;
+  m_renderBufferGeneration = getBufferGeneration();
+  m_renderBufferRevision = getBuffer().getRevision();
+  m_renderUsesEditor = false;
+  m_nativeRenderToken = m_nativeRender->render(p_text.toUtf8(), nativeRenderOptions());
+}
+
+void MarkdownViewWindow2::requestEditorNativeRender(int p_lineNumber) {
+  if (!m_editor || !m_viewer || m_rebindingBuffer || !m_sourceAvailable ||
+      m_readerResourcesSuspended || m_readerLifecycleClosing || m_nativeLocking) {
+    return;
+  }
+  m_waitingNativeDocument = false;
+  m_nativeRenderLineNumber = p_lineNumber;
+  m_renderBufferGeneration = getBufferGeneration();
+  m_renderBufferRevision = getBuffer().getRevision();
+  m_renderUsesEditor = true;
+  auto *highlighter = m_editor->getHighlighter();
+  highlighter->setDocumentParseOptions(MarkdownHtmlRenderer::parseOptions(nativeRenderOptions()));
+  highlighter->setDocumentRetentionEnabled(true);
+  m_renderEditorGeneration = highlighter->documentGeneration();
+  const auto document = highlighter->currentDocument();
+  if (document) {
+    // The full parse already owns canonical UTF-8; do not serialize the editor again.
+    renderNativeDocument(document);
+  } else if (highlighter->hasCurrentDocumentParse()) {
+    m_nativeRender->invalidate();
+    m_nativeRenderToken.clear();
+    m_waitingNativeDocument = true;
+    highlighter->requestDocument();
+  } else {
+    // Metadata may already be current while EditOnly discarded the tree. Parse
+    // only for rendering, rather than redoing editor projections/highlighting.
+    m_nativeRenderToken = m_nativeRender->render(
+        m_editor->getTextEdit()->document()->toPlainText().toUtf8(), nativeRenderOptions());
+  }
+}
+
+void MarkdownViewWindow2::renderNativeDocument(
+    const QSharedPointer<const vte::MarkdownDocument> &p_document) {
+  if (!p_document || !nativeRenderSourceIsCurrent() || !m_viewer || m_readerResourcesSuspended ||
+      m_readerLifecycleClosing || m_nativeLocking) {
+    return;
+  }
+  m_nativeRenderToken =
+      m_nativeRender->render(p_document->source(), nativeRenderOptions(), p_document);
+}
+
+void MarkdownViewWindow2::onNativeProtectedLockingChanged(bool p_locking) {
+  if (!getBuffer().isEncrypted() || m_readerLifecycleClosing) {
+    return;
+  }
+  m_nativeLocking = p_locking;
+  invalidateNativeRender();
+  updateNativeDocumentRetention();
+  if (!p_locking && isEnabled() && !m_readerResourcesSuspended && m_viewer) {
+    syncViewerFromBuffer(false);
+  }
+}
+
 // Path 2: Buffer -> Viewer. A live editor remains authoritative during refresh.
 void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) {
   cancelEditorImageView();
@@ -2377,6 +2584,7 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
                                        : MarkdownEditorController::BufferState();
   if (!state.valid) {
     m_sourceAvailable = false;
+    invalidateNativeRender(true);
     m_viewerReady = false;
     m_viewerPageInitialized = false;
     adapter()->reset();
@@ -2390,11 +2598,14 @@ void MarkdownViewWindow2::syncViewerFromBuffer(bool p_syncPositionFromEditMode) 
   const bool useDraft = m_editor && m_mode == ViewWindowMode::Edit;
   const auto content = useDraft ? m_editor->getText() : state.content;
   const bool matchesBuffer = content == state.content;
-  const int revision = matchesBuffer ? state.revision : 0;
-  adapter()->setText(revision, content,
-                     !m_restoreReaderStatePending && p_syncPositionFromEditMode && m_editor
-                         ? m_editor->getTopLine()
-                         : -1);
+  const int line = !m_restoreReaderStatePending && p_syncPositionFromEditMode && m_editor
+                       ? m_editor->getTopLine()
+                       : -1;
+  if (useDraft) {
+    requestEditorNativeRender(line);
+  } else {
+    requestNativeRender(content, line);
+  }
   m_viewerBufferRevision = matchesBuffer ? state.revision : -1;
 }
 
@@ -2411,8 +2622,7 @@ void MarkdownViewWindow2::syncEditorContentsToPreview() {
   // NOTE: Do NOT update m_viewerBufferRevision here.
   // This is visual preview sync only, not a buffer sync event.
   m_deferredPreviewUpdate = false;
-  adapter()->setText(m_editor->getText(),
-                     m_restoreReaderStatePending ? -1 : m_editor->getTopLine());
+  requestEditorNativeRender(m_restoreReaderStatePending ? -1 : m_editor->getTopLine());
 }
 
 void MarkdownViewWindow2::syncEditorPositionToPreview() {
@@ -2431,6 +2641,9 @@ void MarkdownViewWindow2::syncEditorFromBuffer() {
   getBuffer().peekContentRaw(&error);
   m_sourceAvailable = error == VXCORE_OK && !getBuffer().getBuffer().isEmpty();
   syncTextEditorFromBuffer(false);
+  if (m_sourceAvailable && !m_rebindingBuffer && !m_readerResourcesSuspended) {
+    m_nativeRender->setSuspended(false);
+  }
   if (m_sourceAvailable && !m_rebindingBuffer && !m_readerResourcesSuspended && !m_viewer &&
       (isReadMode() || m_editViewMode == MarkdownEditorConfig::EditViewMode::EditPreview)) {
     setupViewer();
@@ -2687,11 +2900,16 @@ void MarkdownViewWindow2::removeSessionHeadingSectionNumbers() {
   const int revision = buffer.getRevision();
   m_textEditorBufferRevision = revision;
   m_lastKnownRevision = revision;
-  adapter()->setText(revision, text, adapter()->getTopLineNumber());
+  requestEditorNativeRender(adapter()->getTopLineNumber());
   m_viewerBufferRevision = revision;
 }
 
 void MarkdownViewWindow2::handleEditorConfigChange() {
+  // Accepted close has retired the editor and helper, even while this window
+  // remains alive for queued application-wide configuration notifications.
+  if (m_readerLifecycleClosing) {
+    return;
+  }
   cancelEditorImageView();
   setPresentationMode(false);
   updateEditSectionNumberOptions(false);
@@ -2736,6 +2954,8 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
     auto config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
         editorConfig, mdConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth);
 
+    config->m_documentParseOptions = MarkdownHtmlRenderer::parseOptions(nativeRenderOptions());
+
     // Guard: config application (e.g. applyLineSpacing) modifies block formats,
     // which fires contentsChanged. Suppress propagation so this is not treated
     // as a user edit.
@@ -2769,6 +2989,9 @@ void MarkdownViewWindow2::handleEditorConfigChange() {
 }
 
 void MarkdownViewWindow2::handleThemeChanged() {
+  if (m_readerLifecycleClosing) {
+    return;
+  }
   cancelEditorImageView();
   invalidateWebJobs();
   setPresentationMode(false);
@@ -2794,6 +3017,8 @@ void MarkdownViewWindow2::handleThemeChanged() {
 
     auto config = MarkdownEditorController::buildMarkdownEditorConfigFromContent(
         editorConfig, mdConfig, themeContent, syntaxTheme, scaleFactor, maxContentWidth);
+
+    config->m_documentParseOptions = MarkdownHtmlRenderer::parseOptions(nativeRenderOptions());
 
     // Propagation guard: prevent setConfig from triggering false "modified" state.
     const bool old = m_propagateEditorToBuffer;
@@ -2990,6 +3215,8 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
     }
     disconnect(m_editor, &MarkdownEditor::topLineChanged, this,
                &MarkdownViewWindow2::syncEditorPositionToPreview);
+    invalidateNativeRender();
+    updateNativeDocumentRetention();
     break;
 
   case MarkdownEditorConfig::EditViewMode::EditPreview:
@@ -3021,6 +3248,7 @@ void MarkdownViewWindow2::setEditViewMode(MarkdownEditorConfig::EditViewMode p_m
             QOverload<>::of(&QTimer::start), Qt::UniqueConnection);
     connect(m_editor, &MarkdownEditor::topLineChanged, this,
             &MarkdownViewWindow2::syncEditorPositionToPreview, Qt::UniqueConnection);
+    updateNativeDocumentRetention();
     syncEditorContentsToPreview();
     break;
 
@@ -3138,18 +3366,27 @@ void MarkdownViewWindow2::fetchWordCountInfo(
 
   switch (m_mode) {
   case ViewWindowMode::Read: {
-    if (!m_viewer) {
+    if (!m_viewer || !adapter()->isDocumentReady() ||
+        !m_nativeRender->isCurrent(adapter()->documentGeneration()) ||
+        !nativeRenderSourceIsCurrent()) {
       showMessage(tr("Unable to load preview"));
       return;
     }
-    const QPointer<const MarkdownViewWindow2> guard(this);
-    const auto generation = getBufferGeneration();
-    m_viewer->saveContent([guard, generation, p_callback](const QString &p_content) {
-      if (!guard || generation != guard->getBufferGeneration() || guard->m_rebindingBuffer) {
+    const QPointer<const MarkdownViewWindow2> self(this);
+    const auto bufferGeneration = getBufferGeneration();
+    const auto generation = adapter()->documentGeneration();
+    m_viewer->saveContent([self, bufferGeneration, generation,
+                           p_callback](const QString &p_content) {
+      if (!self || bufferGeneration != self->getBufferGeneration() || self->m_rebindingBuffer) {
         return;
       }
-      auto info = WordCountPanel::calculateWordCount(p_content);
-      p_callback(info);
+      if (p_content.isNull() || !self->m_viewer ||
+          self->adapter()->documentGeneration() != generation ||
+          !self->m_nativeRender->isCurrent(generation) || !self->nativeRenderSourceIsCurrent()) {
+        self->showMessage(tr("Unable to load preview"));
+        return;
+      }
+      p_callback(WordCountPanel::calculateWordCount(p_content));
     });
     break;
   }
@@ -3441,12 +3678,6 @@ bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
   }
 
   return ViewWindow2::eventFilter(p_obj, p_event);
-}
-
-void MarkdownViewWindow2::handleExternalCodeBlockHighlightRequest(int p_idx, quint64 p_timeStamp,
-                                                                  const QString &p_text) {
-  ensureExternalHighlightStyles();
-  m_webJobs->highlightCodeBlock(p_idx, p_timeStamp, p_text);
 }
 
 void MarkdownViewWindow2::handleExternalMathHighlightRequest(int p_idx, quint64 p_timeStamp,
@@ -3922,21 +4153,25 @@ void MarkdownViewWindow2::applyLegacyImageMigration() {
   showMessage(tr("Migrated %n image(s) to the assets folder.", "", distinctDestinations.size()));
 }
 
-void MarkdownViewWindow2::onTaskListItemToggleRequested(int p_lineNumber, bool p_checked) {
-  const auto reject = [this, p_lineNumber](const QString &p_msg) {
+void MarkdownViewWindow2::onTaskListItemToggleRequested(const QString &p_generation,
+                                                        int p_lineNumber, bool p_checked) {
+  const auto reject = [this, p_generation, p_lineNumber](const QString &p_msg) {
     if (adapter()) {
-      adapter()->emitTaskListToggleRejected(p_lineNumber);
+      adapter()->emitTaskListToggleRejected(p_generation, p_lineNumber);
     }
     if (!p_msg.isEmpty()) {
       showMessage(p_msg);
     }
   };
 
-  if (p_lineNumber < 0 || !m_sourceAvailable || m_rebindingBuffer) {
+  if (p_lineNumber < 0 || !m_sourceAvailable || m_rebindingBuffer ||
+      p_generation != m_nativeRenderToken || !m_nativeRender->isCurrent(p_generation) ||
+      !nativeRenderSourceIsCurrent()) {
     reject(QString());
     return;
   }
 
+  const QScopedValueRollback<bool> applyingToggle(m_applyingTaskToggle, true);
   auto &buffer = getBuffer();
   if (!buffer.isValid()) {
     reject(QString());
@@ -4024,6 +4259,10 @@ void MarkdownViewWindow2::onTaskListItemToggleRequested(int p_lineNumber, bool p
   // revision, so every sync cache must be advanced to it or the next focus /
   // mode change forces a reload (destroying undo history).
   const int rev = buffer.getRevision();
+  m_renderBufferRevision = rev;
+  if (m_renderUsesEditor && m_editor) {
+    m_renderEditorGeneration = m_editor->getHighlighter()->documentGeneration();
+  }
   m_viewerBufferRevision = rev;
   m_lastKnownRevision = rev;
   if (m_editor) {

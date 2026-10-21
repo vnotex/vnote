@@ -49,6 +49,8 @@ class Mermaid extends GraphRenderer {
     // Render @p_node as Mermaid graph.
     // Return true on success.
     async renderOne(p_node, p_idx) {
+        const generation = this.passGeneration;
+        const isCurrent = () => this.passActive && this.passGeneration === generation;
         const src = p_node.textContent;
         let graphSvg = null;
         try {
@@ -57,6 +59,9 @@ class Mermaid extends GraphRenderer {
                 return svg;
             });
         } catch (p_err) {
+            if (!isCurrent()) {
+                return false;
+            }
             console.error('failed to render Mermaid', p_err);
             // Clean the container element, or Mermaid won't render the graph with
             // the same id. Only the node that actually invoked mermaid.render()
@@ -68,12 +73,15 @@ class Mermaid extends GraphRenderer {
                 parentNode.outerHTML = '';
                 delete graphNode.parentElement;
             }
-            this.finishRenderingOne();
+            this.finishRenderingOne(generation, p_idx);
             return false;
         }
 
+        if (!isCurrent()) {
+            return false;
+        }
         if (!graphSvg) {
-            this.finishRenderingOne();
+            this.finishRenderingOne(generation, p_idx);
             return false;
         }
 
@@ -91,13 +99,13 @@ class Mermaid extends GraphRenderer {
             // would resolve both against the first copy.
             graphDiv.innerHTML = graphSvg;
             if (window.vxOptions.protectedView) {
-                MarkdownIt.sanitizeProtectedSvg(graphDiv.firstElementChild);
+                DocumentRenderer.sanitizeProtectedSvg(graphDiv.firstElementChild);
             }
             Utils.renamespaceSvgIds(graphDiv, '-vx' + p_idx);
             window.vxImageViewer.setupSVGToView(graphDiv.children[0], true);
         } catch (p_err) {
             console.error('incorrect graph SVG definition', p_err);
-            this.finishRenderingOne();
+            this.finishRenderingOne(generation, p_idx);
             return false;
         }
 
@@ -105,7 +113,7 @@ class Mermaid extends GraphRenderer {
 
         Utils.replaceNodeWithPreCheck(p_node, graphDiv);
 
-        this.finishRenderingOne();
+        this.finishRenderingOne(generation, p_idx);
         return true;
     }
 
@@ -300,7 +308,7 @@ class Mermaid extends GraphRenderer {
         try {
             graphDiv.innerHTML = graphSvg;
             if (window.vxOptions.protectedView) {
-                MarkdownIt.sanitizeProtectedSvg(graphDiv.firstElementChild);
+                DocumentRenderer.sanitizeProtectedSvg(graphDiv.firstElementChild);
             }
         } catch (p_err) {
             console.error('incorrect graph SVG definition', p_err);

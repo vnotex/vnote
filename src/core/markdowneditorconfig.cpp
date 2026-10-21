@@ -7,6 +7,54 @@
 
 using namespace vnotex;
 
+namespace {
+void migrateDocumentResources(WebResource &p_resource) {
+  // Replace only shipped parser paths. Custom scripts/styles, ordering and
+  // disabled resource groups continue to belong to the user.
+  static const QStringList legacyScripts = {
+      QStringLiteral("web/js/markdown-it/markdown-it.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-container.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-emoji.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-footnote.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-front-matter.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-imsize.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-sub.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-sup.min.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-task-lists.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-texmath.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-inject-linenumbers.js"),
+      QStringLiteral("web/js/markdown-it/markdownItAnchor.umd.js"),
+      QStringLiteral("web/js/markdown-it/markdownItTocDoneRight.umd.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-implicit-figure.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-mark.min.js"),
+      QStringLiteral("web/js/markdownit.js"),
+      QStringLiteral("web/js/markdown-it/markdown-it-xss.js"),
+      QStringLiteral("web/js/markdown-it/xss.min.js")};
+  for (auto &resource : p_resource.m_resources) {
+    if (resource.m_name == QStringLiteral("markdown_it")) {
+      resource.m_name = QStringLiteral("document");
+    }
+    QStringList scripts;
+    for (const auto &script : resource.m_scripts) {
+      if (script == QStringLiteral("web/js/markdownit.js")) {
+        scripts << QStringLiteral("web/js/xss.min.js")
+                << QStringLiteral("web/js/documentrenderer.js");
+      } else if (script == QStringLiteral("web/js/markdown-it/xss.min.js")) {
+        scripts.append(QStringLiteral("web/js/xss.min.js"));
+      } else if (!legacyScripts.contains(script)) {
+        scripts.append(script);
+      }
+    }
+    resource.m_scripts = scripts;
+    for (auto &style : resource.m_styles) {
+      if (style == QStringLiteral("web/css/markdownit.css")) {
+        style = QStringLiteral("web/css/markdowndocument.css");
+      }
+    }
+  }
+}
+} // namespace
+
 #define READSTR(key) readString(p_jobj, (key))
 #define READBOOL(key) readBool(p_jobj, (key))
 #define READINT(key) readInt(p_jobj, (key))
@@ -155,6 +203,7 @@ const TextEditorConfig &MarkdownEditorConfig::getTextEditorConfig() const {
 void MarkdownEditorConfig::loadViewerResource(const QJsonObject &p_jobj) {
   const QString name(QStringLiteral("viewerResource"));
   m_viewerResource.init(p_jobj.value(name).toObject());
+  migrateDocumentResources(m_viewerResource);
 }
 
 QJsonObject MarkdownEditorConfig::saveViewerResource() const { return m_viewerResource.toJson(); }
@@ -162,6 +211,7 @@ QJsonObject MarkdownEditorConfig::saveViewerResource() const { return m_viewerRe
 void MarkdownEditorConfig::loadExportResource(const QJsonObject &p_jobj) {
   const QString name(QStringLiteral("exportResource"));
   m_exportResource.init(p_jobj.value(name).toObject());
+  migrateDocumentResources(m_exportResource);
 }
 
 QJsonObject MarkdownEditorConfig::saveExportResource() const { return m_exportResource.toJson(); }
@@ -519,29 +569,14 @@ WebResource MarkdownEditorConfig::defaultViewerResource() {
     res.m_resources.append(r);
   }
 
-  // markdown_it
+  // document
   {
     WebResource::Resource r;
-    r.m_name = QStringLiteral("markdown_it");
+    r.m_name = QStringLiteral("document");
     r.m_enabled = true;
-    r.m_scripts =
-        QStringList{QStringLiteral("web/js/markdown-it/markdown-it.min.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-container.min.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-emoji.min.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-footnote.min.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-front-matter.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-imsize.min.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-sub.min.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-sup.min.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-task-lists.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-texmath.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-inject-linenumbers.js"),
-                    QStringLiteral("web/js/markdown-it/markdownItAnchor.umd.js"),
-                    QStringLiteral("web/js/markdown-it/markdownItTocDoneRight.umd.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-implicit-figure.js"),
-                    QStringLiteral("web/js/markdown-it/markdown-it-mark.min.js"),
-                    QStringLiteral("web/js/markdownit.js")};
-    r.m_styles = QStringList{QStringLiteral("web/css/markdownit.css")};
+    r.m_scripts = QStringList{QStringLiteral("web/js/xss.min.js"),
+                              QStringLiteral("web/js/documentrenderer.js")};
+    r.m_styles = QStringList{QStringLiteral("web/css/markdowndocument.css")};
     res.m_resources.append(r);
   }
 

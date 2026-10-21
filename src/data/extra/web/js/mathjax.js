@@ -42,7 +42,7 @@ class MathRenderer extends VxWorker {
         this.vxcore.on('basicMarkdownRendered', () => {
             this.render(this.vxcore.contentContainer, 'tex-to-render');
         });
-        this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
+        this.vxcore.getWorker('document').addLangsToSkipHighlight(this.langs);
     }
 
     clearReadingMath(p_node) {
@@ -180,14 +180,21 @@ class MathRenderer extends VxWorker {
 
     // A reading pass owes one completion, independent of any simultaneous previews.
     render(p_node, p_className) {
+        const generation = this.workGeneration;
         return Promise.resolve().then(() => {
-            const extraNodes = this.vxcore.getWorker('markdownit').getCodeNodes(this.langs);
+            if (!this.isCurrentWork(generation)) {
+                return;
+            }
+            const extraNodes = this.vxcore.getWorker('document').getCodeNodes(this.langs);
             this.transformExtraNodes(p_node, p_className, extraNodes);
             const nodes = Array.from(p_node.getElementsByClassName(p_className));
             if (!nodes.length) {
                 return;
             }
             return this.initialize().then(() => {
+                if (!this.isCurrentWork(generation)) {
+                    return;
+                }
                 if (this.renderer === 'mathjax') {
                     window.MathJax.texReset();
                     return window.MathJax.typesetPromise(nodes);
@@ -207,7 +214,7 @@ class MathRenderer extends VxWorker {
             });
         }).catch((error) => {
             console.error('failed to render math', this.renderer, error);
-        }).then(() => this.finishWork());
+        }).then(() => this.finishWork(generation));
     }
 
     renderKatex(p_node, p_check, p_macros) {

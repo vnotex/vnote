@@ -21,8 +21,20 @@ class VxWorker {
         console.warning('RegisterInternal of VxWorker subclass is not implemented', this.name);
     }
 
-    finishWork() {
-        console.log('worker finished', this.name);
-        this.vxcore.finishWorker(this.name);
+    beginWork(p_generation) {
+        this.workGeneration = p_generation;
+    }
+
+    isCurrentWork(p_generation) {
+        return p_generation === this.workGeneration
+            && p_generation === this.vxcore.documentGeneration;
+    }
+
+    finishWork(p_generation = this.workGeneration) {
+        if (!this.isCurrentWork(p_generation)) {
+            return;
+        }
+        this.workGeneration = null;
+        this.vxcore.finishWorker(this.name, p_generation);
     }
 }

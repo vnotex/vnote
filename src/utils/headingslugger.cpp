@@ -9,10 +9,16 @@ using namespace vnotex;
 HeadingSlugger::HeadingSlugger() {}
 
 QString HeadingSlugger::slug(const QString &p_heading) {
-  QString base = slugify(p_heading);
-  int &count = m_occurrences[base];
-  QString result = count == 0 ? base : base + QStringLiteral("-") + QString::number(count);
-  ++count;
+  const QString base = slugify(p_heading);
+  QString result = base;
+  auto occurrence = m_occurrences.find(base);
+  if (occurrence != m_occurrences.end()) {
+    do {
+      result = base + QLatin1Char('-') + QString::number(occurrence.value()++);
+    } while (m_occurrences.contains(result));
+  }
+  // Generated suffixes reserve IDs too: a, a, a-1 must not produce duplicate a-1.
+  m_occurrences.insert(result, 1);
   return result;
 }
 

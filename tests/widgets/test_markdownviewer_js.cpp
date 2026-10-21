@@ -30,11 +30,10 @@
 #include <QWebEngineProfile>
 #include <QtTest>
 
-#include <cmark.h>
-#include <cstdlib>
 #include <memory>
 #include <utility>
 
+#include <utils/markdownhtmlrenderer.h>
 #include <utils/sectionnumberutils.h>
 
 namespace tests {
@@ -84,7 +83,8 @@ window.vxcore = {
   contentContainer: %1 ? window.__container : null,
   on: function(evt, cb) { if (evt === 'ready') { window.__readyCallbacks.push(cb); } },
   kickOffMarkdown: function() {},
-  setMarkdownText: function() {}, scrollToLine: function() {}, scrollToAnchor: function() {},
+  documentGeneration: 'document-1',
+  setRenderedHtml: function() {}, scrollToLine: function() {}, scrollToAnchor: function() {},
   scroll: function() {}, crossCopy: function() {},
   findText: function() {}, saveContent: function() {}, graphRenderDataReady: function() {}
 };
@@ -112,14 +112,14 @@ function makeSignal() {
 }
 
 window.__adapter = {
-  textUpdated: makeSignal(), editLineNumberUpdated: makeSignal(),
+  htmlUpdated: makeSignal(), editLineNumberUpdated: makeSignal(),
   anchorScrollRequested: makeSignal(), scrollRequested: makeSignal(),
   crossCopyRequested: makeSignal(),
   findTextRequested: makeSignal(), contentRequested: makeSignal(),
   graphRenderDataReady: makeSignal(), taskListToggleRejected: makeSignal(),
   presentationModeRequested: makeSignal(), setPresentationState: function() {},
-  toggleTaskListItem: function(line, checked) {
-    window.__toggleCalls.push({ line: line, checked: checked });
+  toggleTaskListItem: function(generation, line, checked) {
+    window.__toggleCalls.push({ generation: generation, line: line, checked: checked });
   }
 };
 
@@ -418,6 +418,8 @@ private slots:
   void testClick_forwardsLineAndState();
   void testClick_noSourceLineReverts();
   void testReject_revertsCheckbox();
+  void testTaskList_nativeSourceMapping();
+  void testDocument_latestPendingAndCompletion();
   void testHeadingFolding_enabledAndDisabledDecoration();
   void testHeadingFolding_hierarchyBoundaries();
   void testHeadingFolding_buttonOnlyAndNestedState();
@@ -438,6 +440,9 @@ private:
   void setupPresentationPage(QWebEnginePage &p_page);
   void setPresentationActive(QWebEnginePage &p_page, bool p_active, bool p_darkTheme = true);
   void setupNavigationPage(QWebEnginePage &p_page, bool p_protected = false);
+  void renderNavigationDocument(QWebEnginePage &p_page, const QString &p_markdown,
+                                const QString &p_generation, bool p_wait = true);
+  void waitForDocument(QWebEnginePage &p_page, const QString &p_generation);
   void evaluateNavigation(QWebEnginePage &p_page, const QString &p_script, QJsonObject &p_result);
 };
 
@@ -874,35 +879,6 @@ void TestMarkdownViewerJs::setupSectionNumber(QJSEngine &p_engine) {
   res = p_engine.evaluate(QStringLiteral(R"JS(
 var __sectionNumber = vxcore.getWorker('sectionnumber');
 var __container, __sectionHeadings;
-var __optionHandlers = [], __publications = [], __finishSnapshots = [], __trace = [];
-window.vxMarkdownAdapter = {
-  sectionNumberOptions: { enabled: false, pattern: '1.1.', detectHeading1ForSectionNumber: true },
-  sectionNumberOptionsChanged: {
-    connect: function(callback) { __optionHandlers.push(callback); },
-    emit: function() { __optionHandlers.slice().forEach(function(callback) { callback(); }); }
-  },
-  setHeadings: function(headings, hasSectionNumber) {
-    this.headings = headings;
-    this.hasSectionNumber = hasSectionNumber;
-    __publications.push({ names: headings.map(function(heading) { return heading.name; }),
-                          hasSectionNumber: hasSectionNumber });
-    __trace.push('headings');
-  },
-  setWorkFinished: function() {
-    __finishSnapshots.push({
-      names: (this.headings || []).map(function(heading) { return heading.name; }),
-      hasSectionNumber: this.hasSectionNumber
-    });
-    __trace.push('finished');
-  },
-  setCurrentHeadingAnchor: function() {},
-  setTopLineNumber: function() {}
-};
-function __setSectionOptions(enabled, pattern, detectHeading1ForSectionNumber) {
-  vxMarkdownAdapter.sectionNumberOptions = { enabled: enabled, pattern: pattern,
-                                            detectHeading1ForSectionNumber: detectHeading1ForSectionNumber };
-  vxMarkdownAdapter.sectionNumberOptionsChanged.emit();
-}
 function __makeSectionFixture(rows) {
   document.body = new Element('body');
   __container = add(document.body, 'div', 'vx-content');
@@ -961,6 +937,8 @@ var vxcore = {
   finishWorker: function() { ++passes; }
 };
 function startRequests() {
+  vxcore.documentGeneration = 'math-1';
+  worker.beginWork(vxcore.documentGeneration);
   worker.render(container, 'tex-to-render');
   worker.renderText(container, '$x$', function(node) { results.push({ id: 1, node: node }); });
   worker.renderText(container, '$y$', function(node) { results.push({ id: 2, node: node }); });
@@ -1017,42 +995,26 @@ void TestMarkdownViewerJs::setupNavigationPage(QWebEnginePage &p_page, bool p_pr
   QVERIFY(loaded.at(0).at(0).toBool());
 
   QString error;
-  QString script = QStringLiteral("window.vxOptions = {htmlTagEnabled:true, protectedView:%1};\n")
+  QString script = QStringLiteral("window.vxOptions = {protectedView:%1};\n")
                        .arg(p_protected ? QStringLiteral("true") : QStringLiteral("false"));
-  for (const auto *name : {"eventemitter.js",
-                           "vxcore.js",
-                           "vxworker.js",
-                           "utils.js",
-                           "markdownviewercore.js",
-                           "markdown-it/markdown-it.min.js",
-                           "markdown-it/markdown-it-container.min.js",
-                           "markdown-it/markdown-it-emoji.min.js",
-                           "markdown-it/markdown-it-footnote.min.js",
-                           "markdown-it/markdown-it-front-matter.js",
-                           "markdown-it/markdown-it-imsize.min.js",
-                           "markdown-it/markdown-it-sub.min.js",
-                           "markdown-it/markdown-it-sup.min.js",
-                           "markdown-it/markdown-it-task-lists.js",
-                           "markdown-it/markdown-it-texmath.js",
-                           "markdown-it/markdown-it-inject-linenumbers.js",
-                           "markdown-it/markdownItAnchor.umd.js",
-                           "markdown-it/markdownItTocDoneRight.umd.js",
-                           "markdown-it/markdown-it-implicit-figure.js",
-                           "markdown-it/markdown-it-mark.min.js",
-                           "markdownit.js"}) {
+  for (const auto *name :
+       {"eventemitter.js", "vxcore.js", "vxworker.js", "utils.js", "markdownviewercore.js",
+        "imageviewer.js", "xss.min.js", "documentrenderer.js"}) {
     script += readFile(webDir() + QStringLiteral("/js/") + QLatin1String(name), &error) +
               QLatin1Char('\n');
     QVERIFY2(error.isEmpty(), qPrintable(error));
   }
   // Scripts are installed after load, so select the container without unrelated preview workers.
   script += QStringLiteral(R"JS(
+window.Utils = Utils;
 window.vxcore.contentContainer = document.getElementById('vx-content');
 window.vxcore.initialized = true;
+window.__completedGenerations = [];
 window.__protectedLinks = [];
 window.__anchors = [];
 window.vxcore.nodeLineMapper = {scrollToAnchor: function(anchor) { __anchors.push(anchor); }};
 window.vxMarkdownAdapter = {
-  setWorkFinished: function() {},
+  setWorkFinished: function(generation) { __completedGenerations.push(generation); },
   activateProtectedLink: function(href) { __protectedLinks.push(href); },
   protectedImageUrl: function(src, callback) { window.__finishImage = callback; }
 };
@@ -1061,6 +1023,45 @@ return {ready: true};
   QJsonObject result;
   evaluateNavigation(p_page, script, result);
   QVERIFY(result.value(QStringLiteral("ready")).toBool());
+}
+
+void TestMarkdownViewerJs::renderNavigationDocument(QWebEnginePage &p_page,
+                                                    const QString &p_markdown,
+                                                    const QString &p_generation, bool p_wait) {
+  const auto rendered = vnotex::MarkdownHtmlRenderer::render(p_markdown.toUtf8(), {});
+  QVERIFY2(rendered.error.isEmpty(), qPrintable(rendered.error));
+  const QJsonObject payload{{QStringLiteral("html"), rendered.html},
+                            {QStringLiteral("generation"), p_generation}};
+  QJsonObject result;
+  evaluateNavigation(
+      p_page,
+      QStringLiteral("const payload = %1; "
+                     "vxcore.setRenderedHtml(payload.html, payload.generation); "
+                     "return {submitted: true};")
+          .arg(QString::fromUtf8(QJsonDocument(payload).toJson(QJsonDocument::Compact))),
+      result);
+  if (p_wait) {
+    waitForDocument(p_page, p_generation);
+  }
+}
+
+void TestMarkdownViewerJs::waitForDocument(QWebEnginePage &p_page, const QString &p_generation) {
+  QJsonObject result;
+  const auto finished = [&]() {
+    evaluateNavigation(p_page, QStringLiteral(R"JS(
+return {generation: vxcore.documentGeneration, finished: vxcore.numOfOngoingWorkers === 0 &&
+  vxcore.pendingData.document === null, completions: __completedGenerations};
+)JS"),
+                       result);
+    return result.value(QStringLiteral("generation")).toString() == p_generation &&
+           result.value(QStringLiteral("finished")).toBool();
+  };
+  QTRY_VERIFY_WITH_TIMEOUT(finished(), 10000);
+  int completions = 0;
+  for (const auto &value : result.value(QStringLiteral("completions")).toArray()) {
+    completions += value.toString() == p_generation;
+  }
+  QCOMPARE(completions, 1);
 }
 
 void TestMarkdownViewerJs::setupPresentationPage(QWebEnginePage &p_page) {
@@ -1073,12 +1074,11 @@ window.vxMarkdownAdapter.setPresentationState = function(active, error) {
   __presentationReports.push({active, error});
 };
 window.vxMarkdownAdapter.setKeyPress = function(key) { __nativeKeys.push(key); };
-window.vxMarkdownAdapter.setSavedContent = function(head, styles, html, classes) {
-  window.__savedPresentationContent = {styles, html, classes};
+window.vxMarkdownAdapter.setSavedContent = function(generation, head, styles, html, classes) {
+  window.__savedPresentationContent = {generation, styles, html, classes};
 };
 window.vxMarkdownAdapter.onPdfRenderReady = function() { window.__exportReady = true; };
 window.vxI18n = {tr: function(key) { return key; }};
-window.vxImageViewer = {isViewingImage: function() { return false; }, setupForAllImages: function() {}};
 )JS");
   for (const auto *name : {"nodelinemapper.js", "easyaccess.js", "vxworker.js",
                            "codeblockactions.js", "reveal/reveal.js", "presentation.js"}) {
@@ -1236,8 +1236,15 @@ __folding.refresh();
 for (const button of content.querySelectorAll('.vx-heading-fold-toggle')) {
   __folding.setExpanded(button, document.getElementById(button.getAttribute('aria-controls')), false);
 }
-vxcore.numOfOngoingWorkers = 1;
-vxcore.emit('basicMarkdownRendered');
+// This fixture already contains enhanced math/diagram DOM. Admit only its
+// remaining code-actions pass, with the same token and debt as the live core.
+const generation = 'presentation-grouping';
+const codeActions = vxcore.getWorker('codeblockactions');
+vxcore.documentGeneration = generation;
+vxcore.ongoingWorkers = new Set([codeActions.name]);
+vxcore.numOfOngoingWorkers = vxcore.ongoingWorkers.size;
+codeActions.beginWork(generation);
+vxcore.emit('basicMarkdownRendered', generation);
 window.__protected = document.getElementById('protected');
 vxcore.navigationLinkDestinations.set(__protected, 'private.md#destination');
 window.__originalNodes = Array.from(content.querySelectorAll('*'));
@@ -1255,6 +1262,7 @@ window.scrollTo(0, __readerY);
 return {prepared: true};
 )JS"),
                      result);
+  waitForDocument(page, QStringLiteral("presentation-grouping"));
 
   // Repetition catches destruction leaks and stale placeholder/section restoration state.
   for (int pass = 0; pass < 2; ++pass) {
@@ -1415,9 +1423,10 @@ void TestMarkdownViewerJs::testPresentation_cancellationRenderAndExport() {
   QWebEngineProfile profile;
   QWebEnginePage page(&profile);
   setupPresentationPage(page);
+  renderNavigationDocument(page, QStringLiteral("## Only\n\nBody"),
+                           QStringLiteral("presentation-1"));
   QJsonObject result;
   evaluateNavigation(page, QStringLiteral(R"JS(
-vxcore.contentContainer.innerHTML = '<h2 id="only">Only</h2><p>Body</p>';
 window.__originalHtml = vxcore.contentContainer.outerHTML;
 vxPresentation.setActive(true, true);
 vxPresentation.setActive(false);
@@ -1460,19 +1469,21 @@ return {failedClosed: report.active === false && report.error.length > 0 &&
   QVERIFY(result.value(QStringLiteral("failedClosed")).toBool());
 
   evaluateNavigation(page, QStringLiteral(R"JS(
-vxcore.numOfOngoingWorkers = 1;
+// Reinstall the native-produced fragment with a new producer token; the real
+// protected document installation must finish before presentation can begin.
+vxcore.setRenderedHtml(vxcore.contentContainer.innerHTML, 'presentation-deferred');
 vxPresentation.setActive(true, true);
 const deferred = vxPresentation.isActive() === false;
-vxcore.finishWorker('held');
 return {deferred};
 )JS"),
                      result);
   QVERIFY(result.value(QStringLiteral("deferred")).toBool());
   setPresentationActive(page, true);
   evaluateNavigation(page, QStringLiteral(R"JS(
-vxcore.saveContent();
+vxcore.saveContent(vxcore.documentGeneration);
 return {restored: vxcore.contentContainer.outerHTML === __originalHtml,
   html: __savedPresentationContent.html === __originalHtml,
+  generation: __savedPresentationContent.generation === vxcore.documentGeneration,
   noPresentationStyles: !__savedPresentationContent.styles.includes('--r-main-font') &&
     __savedPresentationContent.styles.includes('vx-presentation') === false,
   noPresentationClasses: !__savedPresentationContent.classes.includes('vx-presentation'),
@@ -1480,8 +1491,8 @@ return {restored: vxcore.contentContainer.outerHTML === __originalHtml,
   inactive: !vxPresentation.isActive()};
 )JS"),
                      result);
-  for (const auto *key : {"restored", "html", "noPresentationStyles", "noPresentationClasses",
-                          "stylesRestored", "inactive"}) {
+  for (const auto *key : {"restored", "html", "generation", "noPresentationStyles",
+                          "noPresentationClasses", "stylesRestored", "inactive"}) {
     QVERIFY2(result.value(QLatin1String(key)).toBool(), key);
   }
   setPresentationActive(page, true);
@@ -1492,8 +1503,9 @@ return {restoredBeforeExport: !vxPresentation.isActive() && vxcore.contentContai
                      result);
   QVERIFY(result.value(QStringLiteral("restoredBeforeExport")).toBool());
   setPresentationActive(page, true);
+  renderNavigationDocument(page, QStringLiteral("## Replacement"), QStringLiteral("presentation-2"),
+                           false);
   evaluateNavigation(page, QStringLiteral(R"JS(
-vxcore.setMarkdownText('## Replacement');
 return {restoredBeforeRender: !vxPresentation.isActive() && !document.getElementById('vx-presentation'),
   noPlaceholders: !vxcore.contentContainer.innerHTML.includes('vx-presentation')};
 )JS"),
@@ -1606,9 +1618,10 @@ void TestMarkdownViewerJs::testNavigation_staleSnapshots() {
   QWebEngineProfile profile;
   QWebEnginePage page(&profile);
   setupNavigationPage(page);
+  renderNavigationDocument(page, QStringLiteral("[Original](sibling.md#first) [Second](#second)"),
+                           QStringLiteral("navigation-1"));
   QJsonObject result;
   evaluateNavigation(page, QStringLiteral(R"JS(
-vxcore.setMarkdownText('[Original](sibling.md#first) [Second](#second)');
 let snapshot = vxcore.getNavigationTargets();
 const initial = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index);
 const first = document.querySelector('#vx-content a');
@@ -1631,22 +1644,8 @@ const removedRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapsh
 snapshot = vxcore.getNavigationTargets();
 document.querySelector('#vx-content a').style.visibility = 'hidden';
 const hiddenRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index) === null;
-vxcore.setMarkdownText('[Fresh](replacement.md#target)');
-snapshot = vxcore.getNavigationTargets();
-document.querySelector('base').href = 'file:///another/current.md';
-const baseChangedRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index) === null;
-document.querySelector('base').href = 'file:///navigation/current.md';
-snapshot = vxcore.getNavigationTargets();
-vxcore.setMarkdownText('[Newest](newest.md)');
-const rerenderRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index) === null;
-const fresh = vxcore.getNavigationTargets();
-const freshDestination = vxcore.resolveNavigationTarget(fresh.snapshot, fresh.targets[0].index);
-return { initial, changedHrefRejected, supersededRejected, actualScroll, scrolledRejected,
-         replacementRejected, removedRejected, hiddenRejected, baseChangedRejected,
-         rerenderRejected, freshDestination,
-         invalidIndexRejected: vxcore.resolveNavigationTarget(fresh.snapshot, -1) === null
-           && vxcore.resolveNavigationTarget(fresh.snapshot, 0.5) === null
-           && vxcore.resolveNavigationTarget(fresh.snapshot, fresh.targets.length) === null };
+return {initial, changedHrefRejected, supersededRejected, actualScroll, scrolledRejected,
+        replacementRejected, removedRejected, hiddenRejected};
 )JS"),
                      result);
   QCOMPARE(
@@ -1654,10 +1653,35 @@ return { initial, changedHrefRejected, supersededRejected, actualScroll, scrolle
       QStringLiteral("file:///navigation/sibling.md#first"));
   QCOMPARE(result.value(QStringLiteral("actualScroll")).toDouble(), 10.0);
   for (const auto *key : {"changedHrefRejected", "supersededRejected", "scrolledRejected",
-                          "replacementRejected", "removedRejected", "hiddenRejected",
-                          "baseChangedRejected", "rerenderRejected", "invalidIndexRejected"}) {
+                          "replacementRejected", "removedRejected", "hiddenRejected"}) {
     QVERIFY2(result.value(QLatin1String(key)).toBool(), key);
   }
+  renderNavigationDocument(page, QStringLiteral("[Fresh](replacement.md#target)"),
+                           QStringLiteral("navigation-2"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+let snapshot = vxcore.getNavigationTargets();
+document.querySelector('base').href = 'file:///another/current.md';
+const baseChangedRejected = vxcore.resolveNavigationTarget(snapshot.snapshot, snapshot.targets[0].index) === null;
+document.querySelector('base').href = 'file:///navigation/current.md';
+window.__oldNavigationSnapshot = vxcore.getNavigationTargets();
+return {baseChangedRejected};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("baseChangedRejected")).toBool());
+  renderNavigationDocument(page, QStringLiteral("[Newest](newest.md)"),
+                           QStringLiteral("navigation-3"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const old = __oldNavigationSnapshot;
+const fresh = vxcore.getNavigationTargets();
+return {rerenderRejected: vxcore.resolveNavigationTarget(old.snapshot, old.targets[0].index) === null,
+  freshDestination: vxcore.resolveNavigationTarget(fresh.snapshot, fresh.targets[0].index),
+  invalidIndexRejected: vxcore.resolveNavigationTarget(fresh.snapshot, -1) === null
+    && vxcore.resolveNavigationTarget(fresh.snapshot, 0.5) === null
+    && vxcore.resolveNavigationTarget(fresh.snapshot, fresh.targets.length) === null};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("rerenderRejected")).toBool());
+  QVERIFY(result.value(QStringLiteral("invalidIndexRejected")).toBool());
   QCOMPARE(result.value(QStringLiteral("freshDestination"))
                .toObject()
                .value(QStringLiteral("href"))
@@ -1670,18 +1694,16 @@ void TestMarkdownViewerJs::testNavigation_protectedDestinations() {
   QWebEnginePage page(&profile);
   setupNavigationPage(page, true);
   QJsonObject result;
-  evaluateNavigation(page, QStringLiteral(R"JS(
-vxcore.setMarkdownText(`[Fragment](#target%20name) [Relative](sibling.md#target)
+  renderNavigationDocument(
+      page, QStringLiteral(R"MD([Fragment](#target%20name) [Relative](sibling.md#target)
 [HTTP](http://example.com/path) [HTTPS](https://example.com/path)
 <a href="javascript:alert(1)">Javascript</a>
 <a href="data:text/html,blocked">Data</a>
 <a href="file:///private/note.md">File</a>
 <a href="//example.com/path">Network path</a>
 <a href="/absolute.md">Absolute</a>
-<a href="mailto:user@example.com">Mail</a>`);
-return {started: true};
-)JS"),
-                     result);
+<a href="mailto:user@example.com">Mail</a>)MD"),
+      QStringLiteral("protected-1"));
   evaluateNavigation(page, QStringLiteral(R"JS(
 const snapshot = vxcore.getNavigationTargets();
 window.__protectedSnapshot = snapshot;
@@ -1725,11 +1747,8 @@ return {destinations, relativeDomHref, syntheticCancelled, syntheticTrust,
   QCOMPARE(result.value(QStringLiteral("anchorActivations")).toArray(), QJsonArray());
   QVERIFY(result.value(QStringLiteral("tamperedRejected")).toBool());
 
-  evaluateNavigation(page, QStringLiteral(R"JS(
-vxcore.setMarkdownText('[New document](new.md)');
-return {started: true};
-)JS"),
-                     result);
+  renderNavigationDocument(page, QStringLiteral("[New document](new.md)"),
+                           QStringLiteral("protected-2"));
   evaluateNavigation(page, QStringLiteral(R"JS(
 // Even if an old sanitized element is reattached, its original href belongs to the old document.
 vxcore.contentContainer.appendChild(__savedProtectedLink);
@@ -1745,16 +1764,26 @@ return {
   QVERIFY(result.value(QStringLiteral("oldRejected")).toBool());
   QCOMPARE(result.value(QStringLiteral("hrefs")).toArray(), QJsonArray::fromStringList({"new.md"}));
 
+  // Hold the actual protected renderer's image transport while a newer document arrives.
+  renderNavigationDocument(
+      page, QStringLiteral("[Pending](pending.md) ![Held](data:image/png;base64,AAAA)"),
+      QStringLiteral("protected-3"), false);
   evaluateNavigation(page, QStringLiteral(R"JS(
-// Hold the actual protected renderer's image transport, then replace text while it is busy.
-vxcore.setMarkdownText('[Pending](pending.md) ![Held](data:image/png;base64,AAAA)');
 const rendering = vxcore.getNavigationTargets();
 const oldRejected = vxcore.resolveNavigationTarget(__beforePendingSnapshot.snapshot,
   __beforePendingSnapshot.targets[0].index) === null;
-vxcore.setMarkdownText('[Replacement](replacement.md)');
+window.__renderingSnapshot = {oldRejected, targets: rendering.targets};
+return {held: typeof __finishImage === 'function'};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("held")).toBool());
+  renderNavigationDocument(page, QStringLiteral("[Replacement](replacement.md)"),
+                           QStringLiteral("protected-4"), false);
+  evaluateNavigation(page, QStringLiteral(R"JS(
 const pending = vxcore.getNavigationTargets();
 window.__pendingSnapshot = pending;
-const result = {oldRejected, renderingTargets: rendering.targets, pendingTargets: pending.targets,
+const result = {oldRejected: __renderingSnapshot.oldRejected,
+                renderingTargets: __renderingSnapshot.targets, pendingTargets: pending.targets,
                 transportHeld: typeof __finishImage === 'function'};
 __finishImage('');
 return result;
@@ -1764,6 +1793,7 @@ return result;
   QVERIFY(result.value(QStringLiteral("transportHeld")).toBool());
   QCOMPARE(result.value(QStringLiteral("renderingTargets")).toArray(), QJsonArray());
   QCOMPARE(result.value(QStringLiteral("pendingTargets")).toArray(), QJsonArray());
+  waitForDocument(page, QStringLiteral("protected-4"));
   evaluateNavigation(page, QStringLiteral(R"JS(
 const snapshot = vxcore.getNavigationTargets();
 return {
@@ -1779,176 +1809,126 @@ return {
 
 void TestMarkdownViewerJs::testCustomAnchors_data() {
   QTest::addColumn<QString>("html");
-  QTest::addColumn<QString>("expected");
+  QTest::addColumn<QString>("expectedAnchor");
   QTest::addColumn<bool>("block");
-
   struct Case {
     const char *name;
     const char *html;
-    const char *expected;
+    const char *anchor;
   };
   const Case cases[] = {
-      {"exported-id", "<a id=\"m3-node-726f6f74\">target</a>",
-       "<a id=\"m3-node-726f6f74\">target</a>"},
-      {"allowed-alphabet", "<a id=\"Az_09-x\">target</a>", "<a id=\"Az_09-x\">target</a>"},
+      {"exported-id", "<a id=\"m3-node-726f6f74\">target</a>", "m3-node-726f6f74"},
+      {"allowed-alphabet", "<a id=\"Az_09-x\">target</a>", "Az_09-x"},
       {"link-attributes",
        "<a id=\"m3-node-x\" href=\"#m3-node-y\" title=\"Jump\" target=\"_self\" "
        "onclick=\"alert(1)\">target</a>",
-       "<a id=\"m3-node-x\" href=\"#m3-node-y\" title=\"Jump\" target=\"_self\">target</a>"},
-      {"former-prefix-only", "<a id=\"m3-node-\">target</a>", "<a id=\"m3-node-\">target</a>"},
-      {"empty-id", "<a id=\"\">target</a>", "<a>target</a>"},
-      {"application-name", "<a id=\"vx-content\">target</a>", "<a id=\"vx-content\">target</a>"},
-      {"single-digit", "<a id=\"9\">target</a>", "<a id=\"9\">target</a>"},
-      {"double-quote", "<a id='anchor\" onclick=\"alert(1)'>target</a>", "<a>target</a>"},
-      {"single-quote", "<a id=\"anchor'y\">target</a>", "<a>target</a>"},
-      {"named-entity", "<a id='anchor&quot; onclick=&quot;alert(1)'>target</a>", "<a>target</a>"},
-      {"numeric-entity", "<a id='anchor&#34; onclick=&#34;alert(1)'>target</a>", "<a>target</a>"},
-      {"space", "<a id=\"anchor y\">target</a>", "<a>target</a>"},
-      {"embedded-newline", "<a id=\"anchor\ny\">target</a>", "<a>target</a>"},
-      {"tab", "<a id=\"anchor\ty\">target</a>", "<a>target</a>"},
-      {"html-delimiter", "<a id=\"anchor<y\">target</a>", "<a>target</a>"},
-      {"non-ascii", "<a id=\"中文\">target</a>", "<a>target</a>"},
-      {"other-tag", "<span id=\"anchor\">target</span>", "<span>target</span>"},
-      {"legacy-name", "<a name=\"anchor\">target</a>", "<a>target</a>"},
-  };
+       "m3-node-x"},
+      {"former-prefix-only", "<a id=\"m3-node-\">target</a>", "m3-node-"},
+      {"empty-id", "<a id=\"\">target</a>", ""},
+      {"application-name", "<a id=\"vx-content\">target</a>", ""},
+      {"single-digit", "<a id=\"9\">target</a>", "9"},
+      {"double-quote", "<a id='anchor\" onclick=\"alert(1)'>target</a>", ""},
+      {"single-quote", "<a id=\"anchor'y\">target</a>", ""},
+      {"named-entity", "<a id='anchor&quot; onclick=&quot;alert(1)'>target</a>", ""},
+      {"numeric-entity", "<a id='anchor&#34; onclick=&#34;alert(1)'>target</a>", ""},
+      {"space", "<a id=\"anchor y\">target</a>", ""},
+      {"embedded-newline", "<a id=\"anchor\ny\">target</a>", ""},
+      {"tab", "<a id=\"anchor\ty\">target</a>", ""},
+      {"html-delimiter", "<a id=\"anchor<y\">target</a>", ""},
+      {"non-ascii", "<a id=\"中文\">target</a>", "中文"},
+      {"other-tag", "<span id=\"anchor\">target</span>", ""},
+      {"legacy-name", "<a name=\"anchor\">target</a>", ""},
+      {"javascript-link", "<a href=\"javascript:alert(1)\" onclick=\"alert(1)\">target</a>", ""},
+      {"data-link", "<a href=\"data:text/html,injected\">target</a>", ""}};
   for (const auto &entry : cases) {
     for (bool block : {false, true}) {
       const QByteArray row = QByteArray(entry.name) + (block ? "-block" : "-inline");
       QTest::newRow(row.constData())
-          << QString::fromUtf8(entry.html) << QString::fromUtf8(entry.expected) << block;
+          << QString::fromUtf8(entry.html) << QString::fromUtf8(entry.anchor) << block;
     }
   }
 }
 
 void TestMarkdownViewerJs::testCustomAnchors() {
   QFETCH(QString, html);
-  QFETCH(QString, expected);
+  QFETCH(QString, expectedAnchor);
   QFETCH(bool, block);
-
+  const bool linkAttributes = html.contains(QStringLiteral("#m3-node-y"));
   if (block) {
     html = QStringLiteral("<div>\n") + html + QStringLiteral("\n</div>\n");
-    expected = QStringLiteral("<div>\n") + expected + QStringLiteral("\n</div>\n");
   }
-  QString source = QStringLiteral("(function() { try {\n");
-  QString err;
-  for (const auto *name : {"markdown-it.min.js", "xss.min.js", "markdown-it-xss.js"}) {
-    source += readFile(webDir() + QStringLiteral("/js/markdown-it/") + QLatin1String(name), &err) +
-              QLatin1Char('\n');
-    QVERIFY2(err.isEmpty(), qPrintable(err));
-  }
-  const QJsonObject fixture{{QStringLiteral("input"), html}, {QStringLiteral("block"), block}};
-  source += QStringLiteral(R"JS(
-var fixture = %1;
-var md = markdownit({html: true}).use(markdownItXSS);
-var html = fixture.block ? md.render(fixture.input) : md.renderInline(fixture.input);
-var container = document.createElement('div');
-container.innerHTML = html;
-return JSON.stringify({html: html, injectedHandler: !!container.querySelector('[onclick]')});
-} catch (error) { return JSON.stringify({error: String(error)}); }
-})()
-)JS")
-                .arg(QString::fromUtf8(QJsonDocument(fixture).toJson(QJsonDocument::Compact)));
-
-  // QJSEngine does not support the sanitizer's existing object-spread syntax.
   QWebEngineProfile profile;
   QWebEnginePage page(&profile);
-  QSignalSpy loaded(&page, &QWebEnginePage::loadFinished);
-  page.setHtml(QStringLiteral("<!doctype html><html><body></body></html>"));
-  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 10000);
-  QVERIFY(loaded.at(0).at(0).toBool());
-  QVariant result;
-  bool finished = false;
-  page.runJavaScript(source, [&result, &finished](const QVariant &p_result) {
-    result = p_result;
-    finished = true;
-  });
-  QTRY_VERIFY_WITH_TIMEOUT(finished, 10000);
-  const auto document = QJsonDocument::fromJson(result.toString().toUtf8());
-  QVERIFY2(document.isObject(), qPrintable(result.toString()));
-  const auto values = document.object();
-  QVERIFY2(!values.contains(QStringLiteral("error")),
-           qPrintable(values.value(QStringLiteral("error")).toString()));
-  QCOMPARE(values.value(QStringLiteral("html")).toString(), expected);
-  QVERIFY(!values.value(QStringLiteral("injectedHandler")).toBool());
+  setupNavigationPage(page);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral("vxOptions.protectFromXss = true; return {};"), result);
+  renderNavigationDocument(page, html, QStringLiteral("anchors-1"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const target = vxcore.contentContainer.querySelector('a, span');
+return {text: target.textContent, id: target.id, href: target.getAttribute('href'),
+  title: target.title, target: target.getAttribute('target'),
+  elements: vxcore.contentContainer.querySelectorAll('a, span').length,
+  injectedHandler: !!vxcore.contentContainer.querySelector('[onclick], script, img'),
+  activeHref: Array.from(vxcore.contentContainer.querySelectorAll('[href]')).some(node =>
+    /^(javascript|vbscript|data):/i.test(node.getAttribute('href')))};
+)JS"),
+                     result);
+  QCOMPARE(result.value(QStringLiteral("text")).toString(), QStringLiteral("target"));
+  QCOMPARE(result.value(QStringLiteral("elements")).toInt(), 1);
+  QVERIFY(!result.value(QStringLiteral("injectedHandler")).toBool());
+  QVERIFY(!result.value(QStringLiteral("activeHref")).toBool());
+  if (!expectedAnchor.isEmpty()) {
+    QCOMPARE(result.value(QStringLiteral("id")).toString(), expectedAnchor);
+  }
+  if (linkAttributes) {
+    QCOMPARE(result.value(QStringLiteral("href")).toString(), QStringLiteral("#m3-node-y"));
+    QCOMPARE(result.value(QStringLiteral("title")).toString(), QStringLiteral("Jump"));
+    QCOMPARE(result.value(QStringLiteral("target")).toString(), QStringLiteral("_self"));
+  }
 }
 
 void TestMarkdownViewerJs::testMathHeadings_linkTargets() {
-  QString err;
-  QString source = QStringLiteral(R"JS(
-(function() {
-try {
-window.vxOptions = {};
-var worker;
-window.vxcore = { registerWorker: function(value) { worker = value; } };
-)JS");
-  for (const auto *name :
-       {"vxworker.js", "utils.js", "markdown-it/markdown-it.min.js",
-        "markdown-it/markdown-it-container.min.js", "markdown-it/markdown-it-emoji.min.js",
-        "markdown-it/markdown-it-footnote.min.js", "markdown-it/markdown-it-front-matter.js",
-        "markdown-it/markdown-it-imsize.min.js", "markdown-it/markdown-it-sub.min.js",
-        "markdown-it/markdown-it-sup.min.js", "markdown-it/markdown-it-task-lists.js",
-        "markdown-it/markdown-it-texmath.js", "markdown-it/markdown-it-inject-linenumbers.js",
-        "markdown-it/markdownItAnchor.umd.js", "markdown-it/markdownItTocDoneRight.umd.js",
-        "markdown-it/markdown-it-implicit-figure.js", "markdown-it/markdown-it-mark.min.js",
-        "markdownit.js"}) {
-    source +=
-        readFile(webDir() + QStringLiteral("/js/") + QLatin1String(name), &err) + QLatin1Char('\n');
-    QVERIFY2(err.isEmpty(), qPrintable(err));
-  }
-
-  source += QStringLiteral(R"JS(
-var text = ['[toc]', '', '```cpp', 'struct CacheEntry {};', '```', '',
-            '## 1. $a*b=c$', '', '## 2. $a*b=c$', '', '## $a*b=c$', '', '## Sum $$a+b$$', '',
-            '## Plain `code` and **bold** [link][ref]', '', '[ref]: https://example.com'].join('\n');
-document.body.innerHTML = worker.mdit.render(text);
-var copiedAnchors = [6, 8, 10, 12, 14].map(function(line) {
-  var result = worker.getHeadingAnchor(text, line);
-  if (!result.found) { throw new Error('heading not found at line ' + line); }
-  return result.anchor;
-});
-function targets(selector) {
-  return Array.from(document.querySelectorAll(selector), function(link) {
-    return link.getAttribute('href').substring(1);
-  });
-}
-return JSON.stringify({
-  renderedIds: Array.from(document.querySelectorAll('h2'), function(node) { return node.id; }),
-  tocTargets: targets('nav a'),
-  permalinkTargets: targets('.vx-header-anchor'),
-  copiedAnchors: copiedAnchors,
-  inlineMath: document.querySelector('h2 eq').textContent,
-  displayMath: document.querySelector('h2 eqn').textContent
-});
-} catch (error) { return JSON.stringify({ error: String(error) + '\n' + error.stack }); }
-})()
-)JS");
-  // Use the viewer's JavaScript engine: QJSEngine does not implement the Unicode
-  // property escapes used by generateHeaderId. No renderer or network is needed.
-  QVariant result;
-  bool finished = false;
-  QWebEngineProfile profile;
-  QWebEnginePage page(&profile);
-  QSignalSpy loaded(&page, &QWebEnginePage::loadFinished);
-  page.setHtml(QStringLiteral("<!doctype html><html><body></body></html>"));
-  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 10000);
-  QVERIFY(loaded.at(0).at(0).toBool());
-  page.runJavaScript(source, [&result, &finished](const QVariant &p_result) {
-    result = p_result;
-    finished = true;
-  });
-  QTRY_VERIFY_WITH_TIMEOUT(finished, 10000);
-  const auto document = QJsonDocument::fromJson(result.toString().toUtf8());
-  QVERIFY2(document.isObject(), qPrintable(result.toString()));
-  const auto values = document.object();
-  QVERIFY2(!values.contains(QStringLiteral("error")),
-           qPrintable(values.value(QStringLiteral("error")).toString()));
+  const auto markdown =
+      QStringLiteral("[toc]\n\n```cpp\nstruct CacheEntry {};\n```\n\n"
+                     "## 1. $a*b=c$\n\n## 2. $a*b=c$\n\n## $a*b=c$\n\n## Sum $$a+b$$\n\n"
+                     "## Plain `code` and **bold** [link][ref]\n\n[ref]: https://example.com");
+  const auto headings = vnotex::MarkdownHtmlRenderer::render(markdown.toUtf8(), {}, {}, false);
+  QVERIFY2(headings.error.isEmpty(), qPrintable(headings.error));
   const auto expected =
       QJsonArray::fromStringList({"abc", "abc-1", "abc-2", "sum-ab", "plain-code-and-bold-link"});
-  for (const auto *name : {"renderedIds", "tocTargets", "permalinkTargets", "copiedAnchors"}) {
-    QCOMPARE(values.value(QLatin1String(name)).toArray(), expected);
+  QJsonArray copiedAnchors;
+  const QList<int> lines{6, 8, 10, 12, 14};
+  QCOMPARE(headings.headings.size(), lines.size());
+  for (int index = 0; index < lines.size(); ++index) {
+    QCOMPARE(headings.headings[index].line, lines[index]);
+    copiedAnchors.append(headings.headings[index].anchor);
   }
-  QCOMPARE(values.value(QStringLiteral("inlineMath")).toString(), QStringLiteral("$a*b=c$"));
-  QCOMPARE(values.value(QStringLiteral("displayMath")).toString(), QStringLiteral("$$a+b$$"));
+  QCOMPARE(copiedAnchors, expected);
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupNavigationPage(page);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral("vxOptions.protectFromXss = true; return {};"), result);
+  renderNavigationDocument(page, markdown, QStringLiteral("math-headings"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+function targets(selector) {
+  return Array.from(vxcore.contentContainer.querySelectorAll(selector), link => link.getAttribute('href').substring(1));
+}
+return {
+  renderedIds: Array.from(vxcore.contentContainer.querySelectorAll('h2'), node => node.id),
+  tocTargets: targets('nav a'), permalinkTargets: targets('.vx-header-anchor'),
+  inlineMath: vxcore.contentContainer.querySelector('h2 eq').textContent,
+  displayMath: vxcore.contentContainer.querySelector('h2 eqn').textContent,
+  sourceLines: Array.from(vxcore.contentContainer.querySelectorAll('h2'), node => Number(node.dataset.sourceLine))
+};
+)JS"),
+                     result);
+  for (const auto *name : {"renderedIds", "tocTargets", "permalinkTargets"}) {
+    QCOMPARE(result.value(QLatin1String(name)).toArray(), expected);
+  }
+  QCOMPARE(result.value(QStringLiteral("sourceLines")).toArray(), QJsonArray({6, 8, 10, 12, 14}));
+  QCOMPARE(result.value(QStringLiteral("inlineMath")).toString(), QStringLiteral("$a*b=c$"));
+  QCOMPARE(result.value(QStringLiteral("displayMath")).toString(), QStringLiteral("$$a+b$$"));
 }
 
 void TestMarkdownViewerJs::testCmarkMathTableDom_data() {
@@ -1959,26 +1939,13 @@ void TestMarkdownViewerJs::testCmarkMathTableDom_data() {
 
 void TestMarkdownViewerJs::testCmarkMathTableDom() {
   QFETCH(bool, sanitize);
-
-  struct Formula {
-    QByteArray markdown;
-    int options;
-  };
-  const Formula formulas[] = {
-      {"$p_1$", CMARK_OPT_DEFAULT},
-      {"$a\\$b$", CMARK_OPT_DEFAULT},
-      {"$\\text{</eq><img>}$", CMARK_OPT_DEFAULT},
-      {"$$\np_1\n$$", CMARK_OPT_DEFAULT},
-      {"$$\np_1\n$$", CMARK_OPT_SOURCEPOS},
-  };
+  const QByteArray formulas[] = {"$p_1$", "$a\\$b$", "$\\text{</eq><img>}$", "$$\np_1\n$$",
+                                 "$$\np_2\n$$"};
   QStringList fragments;
   for (const auto &formula : formulas) {
-    const std::unique_ptr<char, decltype(&std::free)> html(
-        cmark_markdown_to_html(formula.markdown.constData(),
-                               static_cast<size_t>(formula.markdown.size()), formula.options),
-        &std::free);
-    QVERIFY2(html != nullptr, "cmark_markdown_to_html failed");
-    fragments.append(QString::fromUtf8(html.get()));
+    const auto rendered = vnotex::MarkdownHtmlRenderer::render(formula, {});
+    QVERIFY2(rendered.error.isEmpty(), qPrintable(rendered.error));
+    fragments.append(rendered.html);
   }
   const auto tableHtml =
       QStringLiteral("<table><tbody><tr><td colspan=\"2\"><!--vte-md:$p_1$-->%1</td></tr>"
@@ -1986,132 +1953,58 @@ void TestMarkdownViewerJs::testCmarkMathTableDom() {
                      "<tr><td>%4</td><td>%5</td></tr>"
                      "<tr><td>$literal$</td><td><code>$code$</code></td></tr></tbody></table>")
           .arg(fragments[0], fragments[1], fragments[2], fragments[3], fragments[4]);
-  const QJsonObject fixture{{QStringLiteral("sanitize"), sanitize},
-                            {QStringLiteral("html"), tableHtml}};
-  QString err;
-  QString source =
-      QStringLiteral(R"JS(
-(function() {
-try {
-var fixture = %1;
-window.vxOptions = {
-  htmlTagEnabled: true, protectFromXss: fixture.sanitize, protectedView: false
-};
-var worker;
-window.vxcore = { registerWorker: function(value) { worker = value; } };
-)JS")
-          .arg(QString::fromUtf8(QJsonDocument(fixture).toJson(QJsonDocument::Compact)));
-  for (const auto *name :
-       {"vxworker.js", "utils.js", "markdown-it/markdown-it.min.js",
-        "markdown-it/markdown-it-container.min.js", "markdown-it/markdown-it-emoji.min.js",
-        "markdown-it/markdown-it-footnote.min.js", "markdown-it/markdown-it-front-matter.js",
-        "markdown-it/markdown-it-imsize.min.js", "markdown-it/markdown-it-sub.min.js",
-        "markdown-it/markdown-it-sup.min.js", "markdown-it/markdown-it-task-lists.js",
-        "markdown-it/markdown-it-texmath.js", "markdown-it/markdown-it-inject-linenumbers.js",
-        "markdown-it/markdownItAnchor.umd.js", "markdown-it/markdownItTocDoneRight.umd.js",
-        "markdown-it/markdown-it-implicit-figure.js", "markdown-it/markdown-it-mark.min.js",
-        "markdown-it/xss.min.js", "markdown-it/markdown-it-xss.js"}) {
-    source +=
-        readFile(webDir() + QStringLiteral("/js/") + QLatin1String(name), &err) + QLatin1Char('\n');
-    QVERIFY2(err.isEmpty(), qPrintable(err));
-  }
-  // The real XSS scripts are already loaded; bypass only their asynchronous transport.
-  source += QStringLiteral("\nUtils.loadScripts = function(urls, callback) { callback(); };\n");
-  source += readFile(webDir() + QStringLiteral("/js/markdownit.js"), &err) + QLatin1Char('\n');
-  QVERIFY2(err.isEmpty(), qPrintable(err));
-  source += QStringLiteral(R"JS(
-var input = document.createElement('template');
-input.innerHTML = fixture.html;
-if (fixture.sanitize) {
-  input.content.querySelector('eq.tex-to-render').setAttribute('onclick', 'void 0');
-}
-document.body.innerHTML = worker.mdit.render(input.innerHTML);
-var table = document.querySelector('table');
-var merged = table.rows[0].cells[0];
-var mergedMath = merged.querySelector('eq.tex-to-render');
-var escapedDollarMath = table.rows[1].cells[0].querySelector('eq.tex-to-render');
-var tagMath = table.rows[1].cells[1].querySelector('eq.tex-to-render');
-var blockMath = table.rows[2].cells[0].querySelector('section > eqn.tex-to-render');
-var sourceposMath = table.rows[2].cells[1].querySelector('section > eqn.tex-to-render');
-window.__cmarkMathTableResult = JSON.stringify({
-  tableCount: document.querySelectorAll('table').length,
-  rowCellCounts: Array.from(table.rows, function(row) { return row.cells.length; }),
-  colSpan: merged.colSpan,
-  mergedText: mergedMath.textContent,
-  mergedClass: mergedMath.getAttribute('class'),
-  mergedOnclick: mergedMath.hasAttribute('onclick'),
-  escapedDollarText: escapedDollarMath.textContent,
-  tagText: tagMath.textContent,
-  tagNodeTypes: Array.from(tagMath.childNodes, function(node) { return node.nodeType; }),
-  imageCount: document.querySelectorAll('img').length,
-  inlineCount: document.querySelectorAll('eq').length,
-  displayCount: document.querySelectorAll('eqn').length,
-  markedMathCount: document.querySelectorAll('.tex-to-render').length,
-  blockText: blockMath.textContent,
-  sourceposText: sourceposMath.textContent,
-  sourcepos: sourceposMath.getAttribute('data-sourcepos'),
-  literalHtml: table.rows[3].cells[0].innerHTML,
-  codeHtml: table.rows[3].cells[1].innerHTML
-});
-} catch (error) {
-  window.__cmarkMathTableResult = JSON.stringify({ error: String(error) + '\n' + error.stack });
-}
-})();
-)JS");
-
-  // A real script element supplies document.currentScript during worker construction.
-  const QJsonObject scriptData{{QStringLiteral("source"), source}};
-  const auto execute =
-      QStringLiteral(R"JS(
-(function() {
-var script = document.createElement('script');
-script.textContent = %1.source;
-document.head.appendChild(script);
-script.remove();
-return window.__cmarkMathTableResult;
-})()
-)JS")
-          .arg(QString::fromUtf8(QJsonDocument(scriptData).toJson(QJsonDocument::Compact)));
-  QVariant result;
-  bool finished = false;
   QWebEngineProfile profile;
   QWebEnginePage page(&profile);
-  QSignalSpy loaded(&page, &QWebEnginePage::loadFinished);
-  page.setHtml(QStringLiteral("<!doctype html><html><body></body></html>"));
-  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 10000);
-  QVERIFY(loaded.at(0).at(0).toBool());
-  page.runJavaScript(execute, [&result, &finished](const QVariant &p_result) {
-    result = p_result;
-    finished = true;
-  });
-  QTRY_VERIFY_WITH_TIMEOUT(finished, 10000);
-  const auto document = QJsonDocument::fromJson(result.toString().toUtf8());
-  QVERIFY2(document.isObject(), qPrintable(result.toString()));
-  const auto values = document.object();
-  QVERIFY2(!values.contains(QStringLiteral("error")),
-           qPrintable(values.value(QStringLiteral("error")).toString()));
-  QCOMPARE(values.value(QStringLiteral("tableCount")).toInt(), 1);
-  QCOMPARE(values.value(QStringLiteral("rowCellCounts")).toArray(), QJsonArray({1, 2, 2, 2}));
-  QCOMPARE(values.value(QStringLiteral("colSpan")).toInt(), 2);
-  QCOMPARE(values.value(QStringLiteral("mergedText")).toString(), QStringLiteral("$p_1$"));
-  QCOMPARE(values.value(QStringLiteral("mergedClass")).toString(), QStringLiteral("tex-to-render"));
-  QCOMPARE(values.value(QStringLiteral("escapedDollarText")).toString(), QStringLiteral("$a\\$b$"));
-  QCOMPARE(values.value(QStringLiteral("tagText")).toString(),
+  setupNavigationPage(page);
+  QJsonObject result;
+  evaluateNavigation(page,
+                     QStringLiteral("vxOptions.protectFromXss = %1; return {};")
+                         .arg(sanitize ? QStringLiteral("true") : QStringLiteral("false")),
+                     result);
+  // The editor's table HTML passes through the same native producer and DOM installer as a note.
+  renderNavigationDocument(page, tableHtml, QStringLiteral("math-table"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const table = vxcore.contentContainer.querySelector('table');
+const merged = table.rows[0].cells[0];
+const mergedMath = merged.querySelector('eq.tex-to-render');
+const escapedDollarMath = table.rows[1].cells[0].querySelector('eq.tex-to-render');
+const tagMath = table.rows[1].cells[1].querySelector('eq.tex-to-render');
+return {
+  tableCount: vxcore.contentContainer.querySelectorAll('table').length,
+  rowCellCounts: Array.from(table.rows, row => row.cells.length), colSpan: merged.colSpan,
+  mergedText: mergedMath.textContent, escapedDollarText: escapedDollarMath.textContent,
+  tagText: tagMath.textContent, tagNodeTypes: Array.from(tagMath.childNodes, node => node.nodeType),
+  imageCount: table.querySelectorAll('img').length, inlineCount: table.querySelectorAll('eq').length,
+  displayCount: table.querySelectorAll('eqn').length, markedMathCount: table.querySelectorAll('.tex-to-render').length,
+  blockText: table.rows[2].cells[0].querySelector('section > eqn.tex-to-render').textContent,
+  secondBlockText: table.rows[2].cells[1].querySelector('section > eqn.tex-to-render').textContent,
+  literalText: table.rows[3].cells[0].textContent, codeText: table.rows[3].cells[1].querySelector('code').textContent
+};
+)JS"),
+                     result);
+  QCOMPARE(result.value(QStringLiteral("tableCount")).toInt(), 1);
+  QCOMPARE(result.value(QStringLiteral("rowCellCounts")).toArray(), QJsonArray({1, 2, 2, 2}));
+  QCOMPARE(result.value(QStringLiteral("colSpan")).toInt(), 2);
+  QCOMPARE(result.value(QStringLiteral("mergedText")).toString(), QStringLiteral("$p_1$"));
+  QCOMPARE(result.value(QStringLiteral("escapedDollarText")).toString(), QStringLiteral("$a\\$b$"));
+  QCOMPARE(result.value(QStringLiteral("tagText")).toString(),
            QStringLiteral("$\\text{</eq><img>}$"));
-  QCOMPARE(values.value(QStringLiteral("tagNodeTypes")).toArray(), QJsonArray({3}));
-  QCOMPARE(values.value(QStringLiteral("imageCount")).toInt(), 0);
-  QCOMPARE(values.value(QStringLiteral("inlineCount")).toInt(), 3);
-  QCOMPARE(values.value(QStringLiteral("displayCount")).toInt(), 2);
-  QCOMPARE(values.value(QStringLiteral("markedMathCount")).toInt(), 5);
-  QCOMPARE(values.value(QStringLiteral("blockText")).toString(), QStringLiteral("$$p_1\n$$"));
-  QCOMPARE(values.value(QStringLiteral("sourceposText")).toString(), QStringLiteral("$$p_1\n$$"));
-  QCOMPARE(values.value(QStringLiteral("sourcepos")).toString(), QStringLiteral("1:1-3:2"));
-  QCOMPARE(values.value(QStringLiteral("literalHtml")).toString(), QStringLiteral("$literal$"));
-  QCOMPARE(values.value(QStringLiteral("codeHtml")).toString(),
-           QStringLiteral("<code>$code$</code>"));
-  if (sanitize) {
-    QVERIFY(!values.value(QStringLiteral("mergedOnclick")).toBool());
+  QCOMPARE(result.value(QStringLiteral("tagNodeTypes")).toArray(), QJsonArray({3}));
+  QCOMPARE(result.value(QStringLiteral("imageCount")).toInt(), 0);
+  QCOMPARE(result.value(QStringLiteral("inlineCount")).toInt(), 3);
+  QCOMPARE(result.value(QStringLiteral("displayCount")).toInt(), 2);
+  QCOMPARE(result.value(QStringLiteral("markedMathCount")).toInt(), 5);
+  const QStringList blockTexts{result.value(QStringLiteral("blockText")).toString(),
+                               result.value(QStringLiteral("secondBlockText")).toString()};
+  for (int index = 0; index < blockTexts.size(); ++index) {
+    const auto &text = blockTexts[index];
+    // Display guards and TeX content are consumed by the math renderer; whitespace
+    // immediately inside the guards is not part of the formula's visible meaning.
+    QVERIFY(text.startsWith(QStringLiteral("$$")) && text.endsWith(QStringLiteral("$$")));
+    QCOMPARE(text.mid(2, text.size() - 4).trimmed(), QStringLiteral("p_%1").arg(index + 1));
   }
+  QCOMPARE(result.value(QStringLiteral("literalText")).toString(), QStringLiteral("$literal$"));
+  QCOMPARE(result.value(QStringLiteral("codeText")).toString(), QStringLiteral("$code$"));
 }
 
 void TestMarkdownViewerJs::testMathRenderer_exportImages_data() {
@@ -2299,7 +2192,9 @@ void TestMarkdownViewerJs::testMathRenderer_failedInitializationReleasesPass() {
     QCOMPARE(engine.evaluate(QStringLiteral("reading.textContent")).toString(),
              QStringLiteral("$a+b$"));
 
-    engine.evaluate(QStringLiteral("worker.render(container, 'tex-to-render');"));
+    engine.evaluate(QStringLiteral("vxcore.documentGeneration = 'math-2'; "
+                                   "worker.beginWork(vxcore.documentGeneration); "
+                                   "worker.render(container, 'tex-to-render');"));
     QTRY_COMPARE(engine.evaluate(QStringLiteral("passes")).toInt(), 2);
     QCOMPARE(engine.evaluate(QStringLiteral("results.length")).toInt(), 2);
     QCOMPARE(engine.evaluate(QStringLiteral("scripts.length")).toInt(), 1);
@@ -2357,6 +2252,8 @@ window.vxcore = {
     const equation = document.createElement('eq');
     equation.className = 'tex-to-render'; equation.textContent = '$x^2$';
     vxcore.contentContainer.appendChild(equation);
+    vxcore.documentGeneration = 'math-fonts';
+    mathWorker.beginWork(vxcore.documentGeneration);
     mathWorker.render(vxcore.contentContainer, 'tex-to-render');
     new Promise(resolve => mathWorker.renderText(document.getElementById('preview'), '$x^2$', resolve))
       .then(node => mathWorker.rasterizeHtml(node, 1))
@@ -2454,6 +2351,8 @@ void TestMarkdownViewerJs::testClick_forwardsLineAndState() {
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
 
   QCOMPARE(engine.evaluate(QStringLiteral("window.__toggleCalls.length")).toInt(), 1);
+  QCOMPARE(engine.evaluate(QStringLiteral("window.__toggleCalls[0].generation")).toString(),
+           QStringLiteral("document-1"));
   QCOMPARE(engine.evaluate(QStringLiteral("window.__toggleCalls[0].line")).toInt(), 7);
   QCOMPARE(engine.evaluate(QStringLiteral("window.__toggleCalls[0].checked")).toBool(), true);
 }
@@ -2474,12 +2373,149 @@ void TestMarkdownViewerJs::testReject_revertsCheckbox() {
   QJSEngine engine;
   setup(engine, true);
 
-  auto res = engine.evaluate(QStringLiteral("window.__adapter.taskListToggleRejected.emit(3)"));
+  auto res = engine.evaluate(
+      QStringLiteral("window.__adapter.taskListToggleRejected.emit('document-1', 3)"));
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
 
   QCOMPARE(engine.evaluate(QStringLiteral("window.__reverted.length")).toInt(), 1);
   QCOMPARE(engine.evaluate(QStringLiteral("window.__reverted[0]")).toString(),
            QStringLiteral("[data-source-line=\"3\"] input.task-list-item-checkbox"));
+  res = engine.evaluate(
+      QStringLiteral("window.vxcore.documentGeneration = 'document-2'; "
+                     "window.__adapter.taskListToggleRejected.emit('document-1', 3);"));
+  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  QCOMPARE(engine.evaluate(QStringLiteral("window.__reverted.length")).toInt(), 1);
+}
+
+void TestMarkdownViewerJs::testTaskList_nativeSourceMapping() {
+  for (bool protectedView : {false, true}) {
+    QWebEngineProfile profile;
+    QWebEnginePage page(&profile);
+    setupNavigationPage(page, protectedView);
+    QString error;
+    QString script = QStringLiteral(R"JS(
+function signal() {
+  const callbacks = [];
+  return {connect(callback) { callbacks.push(callback); }, emit(...args) { callbacks.forEach(callback => callback(...args)); }};
+}
+for (const name of ['htmlUpdated', 'editLineNumberUpdated', 'anchorScrollRequested',
+  'scrollRequested', 'crossCopyRequested', 'findTextRequested', 'contentRequested',
+  'graphRenderDataReady', 'taskListToggleRejected', 'presentationModeRequested']) {
+  vxMarkdownAdapter[name] = signal();
+}
+window.__taskToggles = [];
+vxMarkdownAdapter.toggleTaskListItem = (generation, line, checked) => __taskToggles.push({generation, line, checked});
+vxMarkdownAdapter.setReady = function() {};
+window.vxWebJobs = {bind() {}, setReady() {}};
+var qt = {webChannelTransport: {}};
+function QWebChannel(transport, callback) { callback({objects: {vxAdapter: vxMarkdownAdapter}}); }
+vxOptions.protectFromXss = true;
+vxcore.getWorker('document').addLangsToSkipHighlight(['mermaid']);
+)JS");
+    script += readFile(webDir() + QStringLiteral("/js/markdownviewer.js"), &error);
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+    QJsonObject result;
+    evaluateNavigation(page, script + QStringLiteral("\nreturn {};"), result);
+    renderNavigationDocument(
+        page,
+        QStringLiteral("- [ ] Parent\n  - [X] Nested\n- [x] Done\n\n```mermaid\nflowchart "
+                       "LR\n```\n\n```cpp\nint x;\n```"),
+        QStringLiteral("tasks-1"));
+    evaluateNavigation(page, QStringLiteral(R"JS(
+const boxes = Array.from(vxcore.contentContainer.querySelectorAll('input.task-list-item-checkbox'));
+const initial = boxes.map(box => box.checked);
+const lines = boxes.map(box => Number(box.closest('[data-source-line]').dataset.sourceLine));
+boxes.forEach(box => box.click());
+const documentWorker = vxcore.getWorker('document');
+return {initial, lines, toggles: __taskToggles, enabled: boxes.every(box => !box.disabled),
+  diagrams: documentWorker.getCodeNodes(['mermaid']).map(node => node.textContent.trim()),
+  ordinaryCode: documentWorker.getCodeNodes().map(node => node.textContent.trim()),
+  codeLines: Array.from(vxcore.contentContainer.querySelectorAll('pre > code'), node =>
+    Number(node.closest('[data-source-line]').dataset.sourceLine))};
+)JS"),
+                       result);
+    QCOMPARE(result.value(QStringLiteral("initial")).toArray(), QJsonArray({false, true, true}));
+    QCOMPARE(result.value(QStringLiteral("lines")).toArray(), QJsonArray({0, 1, 2}));
+    QVERIFY(result.value(QStringLiteral("enabled")).toBool());
+    const auto toggles = result.value(QStringLiteral("toggles")).toArray();
+    QCOMPARE(toggles.size(), 3);
+    for (int index = 0; index < toggles.size(); ++index) {
+      const auto toggle = toggles[index].toObject();
+      QCOMPARE(toggle.value(QStringLiteral("generation")).toString(), QStringLiteral("tasks-1"));
+      QCOMPARE(toggle.value(QStringLiteral("line")).toInt(), index);
+      QCOMPARE(toggle.value(QStringLiteral("checked")).toBool(), index == 0);
+    }
+    QCOMPARE(result.value(QStringLiteral("diagrams")).toArray(),
+             QJsonArray::fromStringList({"flowchart LR"}));
+    QCOMPARE(result.value(QStringLiteral("ordinaryCode")).toArray(),
+             QJsonArray::fromStringList({"int x;"}));
+    QCOMPARE(result.value(QStringLiteral("codeLines")).toArray(), QJsonArray({4, 8}));
+    renderNavigationDocument(page, QStringLiteral("- [ ] Replacement"), QStringLiteral("tasks-2"));
+    evaluateNavigation(page, QStringLiteral(R"JS(
+const box = vxcore.contentContainer.querySelector('input');
+box.click();
+vxMarkdownAdapter.taskListToggleRejected.emit('tasks-1', 0);
+const staleUnchanged = box.checked;
+vxMarkdownAdapter.taskListToggleRejected.emit('tasks-2', 0);
+return {staleUnchanged, currentReverted: !box.checked, toggle: __taskToggles[3],
+  diagrams: vxcore.getWorker('document').getCodeNodes(['mermaid']).length};
+)JS"),
+                       result);
+    QVERIFY(result.value(QStringLiteral("staleUnchanged")).toBool());
+    QVERIFY(result.value(QStringLiteral("currentReverted")).toBool());
+    QCOMPARE(result.value(QStringLiteral("toggle"))
+                 .toObject()
+                 .value(QStringLiteral("generation"))
+                 .toString(),
+             QStringLiteral("tasks-2"));
+    QCOMPARE(result.value(QStringLiteral("diagrams")).toInt(), 0);
+  }
+}
+
+void TestMarkdownViewerJs::testDocument_latestPendingAndCompletion() {
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupNavigationPage(page, true);
+  renderNavigationDocument(page,
+                           QStringLiteral("[Held](held.md) ![Image](data:image/png;base64,AAAA)"),
+                           QStringLiteral("held"), false);
+  renderNavigationDocument(page, QStringLiteral("[Discarded](discarded.md)"),
+                           QStringLiteral("discarded"), false);
+  renderNavigationDocument(page, QString(), QStringLiteral("empty"), false);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral(R"JS(
+window.__oldImageCallback = __finishImage;
+const result = {completed: __completedGenerations.slice(), targets: vxcore.getNavigationTargets().targets};
+__oldImageCallback('');
+return result;
+)JS"),
+                     result);
+  QCOMPARE(result.value(QStringLiteral("completed")).toArray(), QJsonArray());
+  QCOMPARE(result.value(QStringLiteral("targets")).toArray(), QJsonArray());
+  waitForDocument(page, QStringLiteral("empty"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+return {empty: vxcore.contentContainer.childNodes.length === 0, completed: __completedGenerations};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("empty")).toBool());
+  QCOMPARE(result.value(QStringLiteral("completed")).toArray(),
+           QJsonArray::fromStringList({"held", "empty"}));
+  renderNavigationDocument(page, QStringLiteral("[Current](current.md)"),
+                           QStringLiteral("current"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+__oldImageCallback('data:image/png;base64,AAAA');
+vxcore.finishWorker('document', 'held');
+vxcore.finishWorker('document', 'current');
+const snapshot = vxcore.getNavigationTargets();
+return {completed: __completedGenerations, images: vxcore.contentContainer.querySelectorAll('img').length,
+  destinations: snapshot.targets.map(target => vxcore.resolveNavigationTarget(snapshot.snapshot, target.index).href)};
+)JS"),
+                     result);
+  QCOMPARE(result.value(QStringLiteral("completed")).toArray(),
+           QJsonArray::fromStringList({"held", "empty", "current"}));
+  QCOMPARE(result.value(QStringLiteral("images")).toInt(), 0);
+  QCOMPARE(result.value(QStringLiteral("destinations")).toArray(),
+           QJsonArray::fromStringList({"current.md"}));
 }
 
 void TestMarkdownViewerJs::testHeadingFolding_enabledAndDisabledDecoration() {
@@ -2930,54 +2966,70 @@ link.click();
 }
 
 void TestMarkdownViewerJs::testSectionNumber_renderLifecycleAndFolding() {
-  QJSEngine engine;
-  setupSectionNumber(engine);
-  auto res = engine.evaluate(QStringLiteral(R"JS(
-// The retained property changes before the worker can subscribe on its first render.
-__setSectionOptions(true, '1.1)', true);
-__makeSectionFixture([[1, 'Title'], [2, 'Alpha'], [3, 'Detail'], [2, 'Beta']]);
-__sectionHeadings[1].textContent = '';
-var inlineLink = add(__sectionHeadings[1], 'a', '', 'Alpha');
-inlineLink.setAttribute('href', '#heading-2');
-vxcore.nodeLineMapper = new __NodeLineMapper(vxcore, __container);
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupNavigationPage(page);
+  QString error;
+  QString script;
+  for (const auto *name : {"vxworker.js", "sectionnumber.js", "nodelinemapper.js"}) {
+    script += readFile(webDir() + QStringLiteral("/js/") + QLatin1String(name), &error) +
+              QLatin1Char('\n');
+    QVERIFY2(error.isEmpty(), qPrintable(error));
+  }
+  script += QStringLiteral(R"JS(
+window.__sectionPublications = [];
+window.__sectionFinishes = [];
+window.__optionCallbacks = [];
+vxMarkdownAdapter.sectionNumberOptions = {enabled: true, pattern: '1.1)', detectHeading1ForSectionNumber: true};
+vxMarkdownAdapter.sectionNumberOptionsChanged = {connect(callback) { __optionCallbacks.push(callback); }};
+vxMarkdownAdapter.setHeadings = function(headings, hasSectionNumber) {
+  this.headings = headings; this.hasSectionNumber = hasSectionNumber;
+  __sectionPublications.push(headings.map(heading => heading.name));
+};
+vxMarkdownAdapter.setCurrentHeadingAnchor = function() {};
+vxMarkdownAdapter.setTopLineNumber = function() {};
+const completed = vxMarkdownAdapter.setWorkFinished;
+vxMarkdownAdapter.setWorkFinished = function(generation) {
+  completed(generation);
+  __sectionFinishes.push({generation, names: this.headings.map(heading => heading.name),
+    numbered: this.hasSectionNumber});
+};
+window.__setSectionOptions = function(enabled, pattern, detectHeading1ForSectionNumber) {
+  vxMarkdownAdapter.sectionNumberOptions = {enabled, pattern, detectHeading1ForSectionNumber};
+  __optionCallbacks.forEach(callback => callback());
+};
+vxcore.nodeLineMapper = new NodeLineMapper(vxcore, vxcore.contentContainer);
 vxcore.setHeadingFoldingEnabled(true);
-// Supply rendered child nodes at the renderer boundary; dispatch, worker accounting,
-// folding, heading extraction and the outgoing adapter bridge remain production code.
-vxcore.on('markdownTextUpdated', function() { vxcore.setBasicMarkdownRendered(); });
-vxcore.on('basicMarkdownRendered', function() { __trace.push('basic-listeners-done'); });
-__trace = [];
-vxcore.setMarkdownText('first fixture');
-__trace.push('render-return');
-var synchronousTrace = __trace.join('|');
-)JS"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString()));
-  QCOMPARE(engine.evaluate(QStringLiteral("synchronousTrace")).toString(),
-           QStringLiteral("headings|basic-listeners-done|render-return"));
-  QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 1);
-  QCOMPARE(engine.evaluate(QStringLiteral("__trace.join('|')")).toString(),
-           QStringLiteral("headings|basic-listeners-done|render-return|finished"));
-  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[0].names")).toVariant().toStringList(),
-           (QStringList{"Title", "1) Alpha", "1.1) Detail", "2) Beta"}));
-  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[0].hasSectionNumber")).toBool(), true);
-  QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
-  QCOMPARE(engine.evaluate(QStringLiteral("__optionHandlers.length")).toInt(), 1);
-  QCOMPARE(engine
-               .evaluate(QStringLiteral(
-                   "vxMarkdownAdapter.headings.map(function(heading) { return heading.anchor; })"))
-               .toVariant()
-               .toStringList(),
-           (QStringList{"heading-0", "heading-1", "heading-2", "heading-3"}));
-
-  res = engine.evaluate(QStringLiteral(R"JS(
-__buttonFor(__sectionHeadings[1]).click();
-var foldedBeforeNavigation = __contentFor(__sectionHeadings[1]).hidden;
-vxcore.scrollToAnchor('heading-2');
-)JS"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString()));
-  QVERIFY(engine.evaluate(QStringLiteral("foldedBeforeNavigation")).toBool());
-  QVERIFY(!engine.evaluate(QStringLiteral("__contentFor(__sectionHeadings[1]).hidden")).toBool());
-  QVERIFY(engine.evaluate(QStringLiteral("__sectionHeadings[2]._scrolledIntoView")).toBool());
-
+return {ready: true};
+)JS");
+  QJsonObject result;
+  evaluateNavigation(page, script, result);
+  const auto markdown =
+      QStringLiteral("# Title\n\n## [Alpha](#detail)\n\n### Detail\n\nBody\n\n## Beta");
+  renderNavigationDocument(page, markdown, QStringLiteral("sections-1"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+window.__inlineLink = document.querySelector('#alpha a:not(.vx-header-anchor)');
+const button = document.querySelector('#alpha .vx-heading-fold-toggle');
+button.click();
+const folded = document.getElementById(button.getAttribute('aria-controls')).hidden;
+vxcore.scrollToAnchor('detail');
+return {finished: __sectionFinishes[0], anchors: vxMarkdownAdapter.headings.map(heading => heading.anchor),
+  folded, expanded: !document.getElementById(button.getAttribute('aria-controls')).hidden,
+  sourceLines: Array.from(vxcore.contentContainer.querySelectorAll('h1,h2,h3'), node => Number(node.dataset.sourceLine))};
+)JS"),
+                     result);
+  QCOMPARE(
+      result.value(QStringLiteral("finished")).toObject().value(QStringLiteral("names")).toArray(),
+      QJsonArray::fromStringList({"Title", "1) Alpha", "1.1) Detail", "2) Beta"}));
+  QVERIFY(result.value(QStringLiteral("finished"))
+              .toObject()
+              .value(QStringLiteral("numbered"))
+              .toBool());
+  QCOMPARE(result.value(QStringLiteral("anchors")).toArray(),
+           QJsonArray::fromStringList({"title", "alpha", "detail", "beta"}));
+  QCOMPARE(result.value(QStringLiteral("sourceLines")).toArray(), QJsonArray({0, 2, 4, 8}));
+  QVERIFY(result.value(QStringLiteral("folded")).toBool());
+  QVERIFY(result.value(QStringLiteral("expanded")).toBool());
   struct Transition {
     bool enabled;
     QString pattern;
@@ -2994,161 +3046,100 @@ vxcore.scrollToAnchor('heading-2');
        {"1. Title", "1.1. Alpha", "1.1.1. Detail", "1.2. Beta"}},
       {true, QStringLiteral("1.1."), true, {"Title", "1. Alpha", "1.1. Detail", "2. Beta"}}};
   for (const auto &transition : transitions) {
-    engine.globalObject().setProperty(QStringLiteral("nextEnabled"), transition.enabled);
-    engine.globalObject().setProperty(QStringLiteral("nextPattern"), transition.pattern);
-    engine.globalObject().setProperty(QStringLiteral("nextDetectHeading1"),
-                                      transition.detectHeading1);
-    res = engine.evaluate(QStringLiteral(
-        "__trace = []; __setSectionOptions(nextEnabled, nextPattern, nextDetectHeading1);"));
-    QVERIFY2(!res.isError(), qPrintable(res.toString()));
-    QCOMPARE(engine.evaluate(QStringLiteral("__sectionNames()")).toVariant().toStringList(),
-             transition.names);
-    QCOMPARE(engine
-                 .evaluate(QStringLiteral(
-                     "vxMarkdownAdapter.headings.map(function(heading) { return heading.name; })"))
-                 .toVariant()
-                 .toStringList(),
-             transition.names);
-    QCOMPARE(engine.evaluate(QStringLiteral("vxMarkdownAdapter.hasSectionNumber")).toBool(),
-             transition.enabled);
-    QCOMPARE(engine.evaluate(QStringLiteral("__trace.join('|')")).toString(),
-             QStringLiteral("headings"));
-    QCOMPARE(engine
-                 .evaluate(QStringLiteral(
-                     "__container.querySelectorAll('button.vx-heading-fold-toggle').length"))
-                 .toInt(),
-             4);
-    QCOMPARE(engine
-                 .evaluate(QStringLiteral(
-                     "__container.querySelectorAll('span.vx-section-number').length"))
-                 .toInt(),
+    const QJsonObject options{{QStringLiteral("enabled"), transition.enabled},
+                              {QStringLiteral("pattern"), transition.pattern},
+                              {QStringLiteral("detectHeading1"), transition.detectHeading1}};
+    evaluateNavigation(
+        page,
+        QStringLiteral(R"JS(
+const options = %1;
+const publications = __sectionPublications.length;
+__setSectionOptions(options.enabled, options.pattern, options.detectHeading1);
+return {names: vxMarkdownAdapter.headings.map(heading => heading.name), numbered: vxMarkdownAdapter.hasSectionNumber,
+  publications: __sectionPublications.length - publications, finishes: __sectionFinishes.length,
+  buttons: vxcore.contentContainer.querySelectorAll('.vx-heading-fold-toggle').length,
+  numbers: vxcore.contentContainer.querySelectorAll('.vx-section-number').length,
+  anchors: vxMarkdownAdapter.headings.map(heading => heading.anchor),
+  linkPreserved: __inlineLink === document.querySelector('#alpha a:not(.vx-header-anchor)') && __inlineLink.getAttribute('href') === '#detail'};
+)JS")
+            .arg(QString::fromUtf8(QJsonDocument(options).toJson(QJsonDocument::Compact))),
+        result);
+    QCOMPARE(result.value(QStringLiteral("names")).toArray(),
+             QJsonArray::fromStringList(transition.names));
+    QCOMPARE(result.value(QStringLiteral("numbered")).toBool(), transition.enabled);
+    QCOMPARE(result.value(QStringLiteral("publications")).toInt(), 1);
+    QCOMPARE(result.value(QStringLiteral("finishes")).toInt(), 1);
+    QCOMPARE(result.value(QStringLiteral("buttons")).toInt(), 4);
+    QCOMPARE(result.value(QStringLiteral("numbers")).toInt(),
              transition.enabled ? (transition.detectHeading1 ? 3 : 4) : 0);
-    QCOMPARE(engine
-                 .evaluate(QStringLiteral(
-                     "__sectionHeadings.map(function(heading) { return heading.id; })"))
-                 .toVariant()
-                 .toStringList(),
-             (QStringList{"heading-0", "heading-1", "heading-2", "heading-3"}));
-    QVERIFY(
-        engine.evaluate(QStringLiteral("inlineLink.parentNode === __sectionHeadings[1]")).toBool());
-    QCOMPARE(engine.evaluate(QStringLiteral("inlineLink.getAttribute('href')")).toString(),
-             QStringLiteral("#heading-2"));
-    QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 1);
-    QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
+    QCOMPARE(result.value(QStringLiteral("anchors")).toArray(),
+             QJsonArray::fromStringList({"title", "alpha", "detail", "beta"}));
+    QVERIFY(result.value(QStringLiteral("linkPreserved")).toBool());
   }
-
-  const QStringList dottedNames{"Title", "1. Alpha", "1.1. Detail", "2. Beta"};
-  for (const bool foldingEnabled : {false, true}) {
-    engine.globalObject().setProperty(QStringLiteral("nextFolding"), foldingEnabled);
-    res = engine.evaluate(QStringLiteral("vxcore.setHeadingFoldingEnabled(nextFolding);"));
-    QVERIFY2(!res.isError(), qPrintable(res.toString()));
-    QCOMPARE(engine
-                 .evaluate(QStringLiteral(
-                     "vxMarkdownAdapter.headings.map(function(heading) { return heading.name; })"))
-                 .toVariant()
-                 .toStringList(),
-             dottedNames);
-    QCOMPARE(engine.evaluate(QStringLiteral("vxMarkdownAdapter.hasSectionNumber")).toBool(), true);
-    QCOMPARE(engine
-                 .evaluate(QStringLiteral(
-                     "__container.querySelectorAll('button.vx-heading-fold-toggle').length"))
-                 .toInt(),
-             foldingEnabled ? 4 : 0);
+  for (bool enabled : {false, true}) {
+    evaluateNavigation(page,
+                       QStringLiteral(R"JS(
+vxcore.setHeadingFoldingEnabled(%1);
+return {names: vxMarkdownAdapter.headings.map(heading => heading.name),
+  buttons: vxcore.contentContainer.querySelectorAll('.vx-heading-fold-toggle').length};
+)JS")
+                           .arg(enabled ? QStringLiteral("true") : QStringLiteral("false")),
+                       result);
+    QCOMPARE(result.value(QStringLiteral("names")).toArray(),
+             QJsonArray::fromStringList({"Title", "1. Alpha", "1.1. Detail", "2. Beta"}));
+    QCOMPARE(result.value(QStringLiteral("buttons")).toInt(), enabled ? 4 : 0);
   }
-
   for (int round = 2; round <= 3; ++round) {
-    res = engine.evaluate(QStringLiteral(R"JS(
-__trace = [];
-vxcore.setMarkdownText('same rendered fixture');
-__trace.push('render-return');
-synchronousTrace = __trace.join('|');
-)JS"));
-    QVERIFY2(!res.isError(), qPrintable(res.toString()));
-    QCOMPARE(engine.evaluate(QStringLiteral("synchronousTrace")).toString(),
-             QStringLiteral("headings|basic-listeners-done|render-return"));
-    QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), round);
-    QCOMPARE(engine.evaluate(QStringLiteral("__trace.join('|')")).toString(),
-             QStringLiteral("headings|basic-listeners-done|render-return|finished"));
-    QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[%1].names").arg(round - 1))
-                 .toVariant()
-                 .toStringList(),
-             dottedNames);
-    QCOMPARE(
-        engine.evaluate(QStringLiteral("__finishSnapshots[%1].hasSectionNumber").arg(round - 1))
-            .toBool(),
-        true);
-    QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
-    QCOMPARE(engine.evaluate(QStringLiteral("__optionHandlers.length")).toInt(), 1);
+    renderNavigationDocument(page, markdown, QStringLiteral("sections-%1").arg(round));
+    evaluateNavigation(page, QStringLiteral(R"JS(
+return {finished: __sectionFinishes[__sectionFinishes.length - 1],
+  buttons: vxcore.contentContainer.querySelectorAll('.vx-heading-fold-toggle').length};
+)JS"),
+                       result);
+    QCOMPARE(result.value(QStringLiteral("finished"))
+                 .toObject()
+                 .value(QStringLiteral("names"))
+                 .toArray(),
+             QJsonArray::fromStringList({"Title", "1. Alpha", "1.1. Detail", "2. Beta"}));
+    QCOMPARE(result.value(QStringLiteral("buttons")).toInt(), 4);
   }
-
-  // A later option update must still publish exactly once and never finish a render unit.
-  res = engine.evaluate(QStringLiteral("__trace = []; __setSectionOptions(false, '1.1.', true);"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString()));
-  QCOMPARE(engine.evaluate(QStringLiteral("__trace.join('|')")).toString(),
-           QStringLiteral("headings"));
-  QCOMPARE(engine
-               .evaluate(QStringLiteral(
-                   "vxMarkdownAdapter.headings.map(function(heading) { return heading.name; })"))
-               .toVariant()
-               .toStringList(),
-           (QStringList{"Title", "Alpha", "Detail", "Beta"}));
-  QCOMPARE(engine.evaluate(QStringLiteral("vxMarkdownAdapter.hasSectionNumber")).toBool(), false);
-  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 3);
-
-  res = engine.evaluate(QStringLiteral("vxcore.setMarkdownText('disabled existing fixture');"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString()));
-  QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 4);
-  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[3].names")).toVariant().toStringList(),
-           (QStringList{"Title", "Alpha", "Detail", "Beta"}));
-  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[3].hasSectionNumber")).toBool(),
-           false);
-  QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
-
-  res = engine.evaluate(QStringLiteral(R"JS(
-__container.textContent = '';
-__sectionHeadings = [add(__container, 'h1', 'new-title', 'Replacement title')];
-__setSectionOptions(true, '1.1.', true);
-vxcore.setMarkdownText('title-only replacement');
-)JS"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString()));
-  QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 5);
-  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[4].names")).toVariant().toStringList(),
-           (QStringList{"Replacement title"}));
-  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[4].hasSectionNumber")).toBool(),
-           false);
-  QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
-
-  res = engine.evaluate(QStringLiteral(R"JS(
-__container.textContent = '';
-__sectionHeadings = [add(__container, 'h1', 'numbered-title', 'Replacement title')];
-__setSectionOptions(true, '1.1.', false);
-vxcore.setMarkdownText('numbered title-only replacement');
-)JS"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString()));
-  QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 6);
-  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[5].names")).toVariant().toStringList(),
-           (QStringList{"1. Replacement title"}));
-  QVERIFY(engine.evaluate(QStringLiteral("__finishSnapshots[5].hasSectionNumber")).toBool());
+  evaluateNavigation(page, QStringLiteral("__setSectionOptions(false, '1.1.', true); return {};"),
+                     result);
+  renderNavigationDocument(page, markdown, QStringLiteral("sections-4"));
+  evaluateNavigation(page, QStringLiteral("return __sectionFinishes[3];"), result);
+  QCOMPARE(result.value(QStringLiteral("names")).toArray(),
+           QJsonArray::fromStringList({"Title", "Alpha", "Detail", "Beta"}));
+  QVERIFY(!result.value(QStringLiteral("numbered")).toBool());
+  for (bool detectTitle : {true, false}) {
+    evaluateNavigation(page,
+                       QStringLiteral("__setSectionOptions(true, '1.1.', %1); return {};")
+                           .arg(detectTitle ? QStringLiteral("true") : QStringLiteral("false")),
+                       result);
+    renderNavigationDocument(page, QStringLiteral("# Replacement title"),
+                             detectTitle ? QStringLiteral("sections-5")
+                                         : QStringLiteral("sections-6"));
+    evaluateNavigation(
+        page, QStringLiteral("return __sectionFinishes[__sectionFinishes.length - 1];"), result);
+    QCOMPARE(result.value(QStringLiteral("names")).toArray(),
+             QJsonArray::fromStringList({detectTitle ? QStringLiteral("Replacement title")
+                                                     : QStringLiteral("1. Replacement title")}));
+    QCOMPARE(result.value(QStringLiteral("numbered")).toBool(), !detectTitle);
+  }
+  renderNavigationDocument(page, QString(), QStringLiteral("sections-7"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+return {finished: __sectionFinishes[6], completions: __sectionFinishes.length,
+  empty: vxcore.contentContainer.childNodes.length === 0};
+)JS"),
+                     result);
   QCOMPARE(
-      engine
-          .evaluate(QStringLiteral("__container.querySelectorAll('span.vx-section-number').length"))
-          .toInt(),
-      1);
-  QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
-
-  res = engine.evaluate(QStringLiteral(R"JS(
-__container.textContent = '';
-__sectionHeadings = [];
-vxcore.setMarkdownText('empty replacement');
-)JS"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString()));
-  QTRY_COMPARE(engine.evaluate(QStringLiteral("__finishSnapshots.length")).toInt(), 7);
-  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[6].names")).toVariant().toStringList(),
-           QStringList());
-  QCOMPARE(engine.evaluate(QStringLiteral("__finishSnapshots[6].hasSectionNumber")).toBool(),
-           false);
-  QCOMPARE(engine.evaluate(QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0);
-  QCOMPARE(engine.evaluate(QStringLiteral("__optionHandlers.length")).toInt(), 1);
+      result.value(QStringLiteral("finished")).toObject().value(QStringLiteral("names")).toArray(),
+      QJsonArray());
+  QVERIFY(!result.value(QStringLiteral("finished"))
+               .toObject()
+               .value(QStringLiteral("numbered"))
+               .toBool());
+  QCOMPARE(result.value(QStringLiteral("completions")).toInt(), 7);
+  QVERIFY(result.value(QStringLiteral("empty")).toBool());
 }
 
 } // namespace tests

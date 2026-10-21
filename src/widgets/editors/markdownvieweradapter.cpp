@@ -79,39 +79,75 @@ void MarkdownViewerAdapter::activateProtectedLink(const QString &p_url) {
   }
 }
 
-void MarkdownViewerAdapter::setText(int p_revision, const QString &p_text, int p_lineNumber) {
-  if (p_revision == m_revision && p_revision != 0) {
-    // Only sync line number position.
-    scrollToPosition(Position(p_lineNumber, ""));
+void MarkdownViewerAdapter::setRenderedHtml(QString p_generation, const QString &p_html,
+                                            int p_lineNumber) {
+  if (p_generation.isEmpty()) {
     return;
   }
-
-  if (isReady()) {
-    // Diagnostics: this is where the read-mode render pass actually starts. A
-    // queued setText does not start it - the pending action only runs when the
-    // viewer signals ready - so the caller's timestamp is not the pass start.
-    qCDebug(lcPerfPreview) << "adapter setText dispatched revision=" << p_revision
-                           << "chars=" << p_text.size()
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch();
-    const auto generation = getResetGeneration();
+  if (p_generation == m_generation) {
+    scrollToPosition(Position(p_lineNumber, QString()));
+    return;
+  }
+  const bool cancelContent = std::exchange(m_contentRequested, false);
+  m_generation = p_generation;
+  m_finishedGeneration.clear();
+  m_pendingHtml = p_html;
+  m_pendingLineNumber = p_lineNumber;
+  m_hasPendingHtml = true;
+  if (cancelContent) {
+    const auto resetGeneration = getResetGeneration();
     const QPointer<MarkdownViewerAdapter> guard(this);
-    m_revision = p_revision;
-    emit textUpdated(p_text);
-    if (!guard || guard->getResetGeneration() != generation) {
+    emit contentReady(QString(), QString(), QString(), QString());
+    if (!guard || guard->getResetGeneration() != resetGeneration) {
       return;
     }
-    scrollToPosition(Position(p_lineNumber, ""));
-  } else {
-    qCDebug(lcPerfPreview) << "adapter setText queued revision=" << p_revision
-                           << "chars=" << p_text.size()
-                           << "atMs=" << QDateTime::currentMSecsSinceEpoch();
-    pendAction(std::bind(QOverload<int, const QString &, int>::of(&MarkdownViewerAdapter::setText),
-                         this, p_revision, p_text, p_lineNumber));
+  }
+  if (p_generation != m_generation) {
+    return;
+  }
+  if (isReady() && !m_dispatchingHtml) {
+    dispatchHtml(p_generation);
+  } else if (!isReady() && !m_htmlActionPending) {
+    // Bound readiness work to one action; only the latest fragment owns plaintext.
+    m_htmlActionPending = true;
+    pendAction([this]() {
+      m_htmlActionPending = false;
+      dispatchHtml(m_generation);
+    });
   }
 }
 
-void MarkdownViewerAdapter::setText(const QString &p_text, int p_lineNumber) {
-  setText(0, p_text, p_lineNumber);
+void MarkdownViewerAdapter::dispatchHtml(QString p_generation) {
+  if (p_generation.isEmpty() || p_generation != m_generation || !isReady() || !m_hasPendingHtml ||
+      m_dispatchingHtml) {
+    return;
+  }
+  const auto html = std::exchange(m_pendingHtml, QString());
+  const auto line = std::exchange(m_pendingLineNumber, -1);
+  m_hasPendingHtml = false;
+  m_dispatchingHtml = true;
+  const auto resetGeneration = getResetGeneration();
+  const QPointer<MarkdownViewerAdapter> guard(this);
+  qCDebug(lcPerfPreview) << "adapter HTML dispatched generation=" << p_generation
+                         << "chars=" << html.size()
+                         << "atMs=" << QDateTime::currentMSecsSinceEpoch();
+  emit htmlUpdated(html, p_generation);
+  if (!guard) {
+    return;
+  }
+  if (guard->getResetGeneration() == resetGeneration && p_generation == m_generation) {
+    scrollToPosition(Position(line, QString()));
+  }
+  if (!guard) {
+    return;
+  }
+  // Reset must not admit nested HTML while this signal is still being delivered.
+  // Even after a reset, drain any fresh fragment queued by its receivers.
+  m_dispatchingHtml = false;
+  if (m_hasPendingHtml && isReady()) {
+    const auto next = m_generation;
+    QMetaObject::invokeMethod(this, [this, next]() { dispatchHtml(next); }, Qt::QueuedConnection);
+  }
 }
 
 void MarkdownViewerAdapter::scrollToLine(int p_lineNumber) {
@@ -265,7 +301,14 @@ void MarkdownViewerAdapter::setCrossCopyResult(quint64 p_id, quint64 p_timeStamp
   emit crossCopyReady(p_id, p_timeStamp, p_html);
 }
 
-void MarkdownViewerAdapter::setWorkFinished() { emit workFinished(); }
+void MarkdownViewerAdapter::setWorkFinished(const QString &p_generation) {
+  if (p_generation.isEmpty() || p_generation != m_generation ||
+      p_generation == m_finishedGeneration) {
+    return;
+  }
+  m_finishedGeneration = p_generation;
+  emit workFinished();
+}
 
 void MarkdownViewerAdapter::setPresentationMode(bool p_active, bool p_darkTheme) {
   emit presentationModeRequested(p_active, p_darkTheme);
@@ -277,7 +320,12 @@ void MarkdownViewerAdapter::setPresentationState(bool p_active, const QString &p
 
 quint64 MarkdownViewerAdapter::requestImageView(const QString &p_url,
                                                 const QSizeF &p_viewportHint) {
+  const auto resetGeneration = getResetGeneration();
+  const QPointer<MarkdownViewerAdapter> guard(this);
   cancelImageView();
+  if (!guard || guard->getResetGeneration() != resetGeneration) {
+    return 0;
+  }
   const auto id = ++m_imageViewSequence;
   m_imageViewRequest = id;
   m_pendingImageViewUrl = p_url;
@@ -301,8 +349,11 @@ void MarkdownViewerAdapter::cancelImageView() {
   m_imageViewRequest = 0;
   m_pendingImageViewUrl.clear();
   if (id) {
+    const QPointer<MarkdownViewerAdapter> guard(this);
     emit imageViewCancelRequested(id);
-    emit imageViewCancelled(id);
+    if (guard) {
+      emit imageViewCancelled(id);
+    }
   }
 }
 
@@ -317,23 +368,50 @@ void MarkdownViewerAdapter::setImageViewState(quint64 p_id, bool p_opened) {
   emit imageViewStateChanged(p_id, p_opened);
 }
 
-void MarkdownViewerAdapter::saveContent() { emit contentRequested(); }
+void MarkdownViewerAdapter::saveContent() {
+  if (!isDocumentReady()) {
+    emit contentReady(QString(), QString(), QString(), QString());
+    return;
+  }
+  m_contentRequested = true;
+  const auto generation = m_generation;
+  emit contentRequested(generation);
+}
 
-void MarkdownViewerAdapter::setSavedContent(const QString &p_headContent,
+void MarkdownViewerAdapter::setSavedContent(const QString &p_generation,
+                                            const QString &p_headContent,
                                             const QString &p_styleContent, const QString &p_content,
                                             const QString &p_bodyClassList) {
+  if (!m_contentRequested || p_generation != m_generation) {
+    return;
+  }
+  m_contentRequested = false;
   emit contentReady(p_headContent, p_styleContent, p_content, p_bodyClassList);
 }
 
 void MarkdownViewerAdapter::reset() {
-  cancelImageView();
-  m_revision = 0;
-  setReady(false);
+  const bool cancelContent = std::exchange(m_contentRequested, false);
+  m_generation.clear();
+  m_finishedGeneration.clear();
+  m_pendingHtml.clear();
+  m_pendingLineNumber = -1;
+  m_hasPendingHtml = false;
+  // Base reset clears pending actions even if the page was already unready.
+  m_htmlActionPending = false;
   m_topLineNumber = -1;
   m_headings.clear();
   m_headingsHaveSectionNumber = false;
   m_currentHeadingIndex = -1;
   m_crossCopyTargets.clear();
+  setReady(false);
+
+  // Finish retiring state before cancellation receivers can publish a new document.
+  const auto resetGeneration = getResetGeneration();
+  const QPointer<MarkdownViewerAdapter> guard(this);
+  cancelImageView();
+  if (cancelContent && guard && guard->getResetGeneration() == resetGeneration) {
+    emit contentReady(QString(), QString(), QString(), QString());
+  }
 }
 
 void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QString &p_format,
@@ -352,24 +430,28 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QSt
   // by services passed through PreviewHelper pipeline in a future migration.
   // For now, both legacy and new-architecture paths use the singleton directly.
   const auto graphvizEngine = GraphvizHelper::getEngineForLanguage(p_lang);
-  const auto generation = getResetGeneration();
+  const auto resetGeneration = getResetGeneration();
+  const auto generation = m_generation;
+  const QPointer<MarkdownViewerAdapter> guard(this);
   if (p_lang == QStringLiteral("puml")) {
     PlantUmlHelper::getInst().process(
         p_id, p_index, p_format, p_text, this,
-        [this, generation](quint64 id, TimeStamp timeStamp, const QString &format,
-                           const QString &data, bool success) {
-          if (generation == getResetGeneration()) {
-            emit graphRenderDataReady(id, timeStamp, format, data, success);
+        [guard, resetGeneration, generation](quint64 id, TimeStamp timeStamp, const QString &format,
+                                             const QString &data, bool success) {
+          if (guard && guard->getResetGeneration() == resetGeneration &&
+              guard->m_generation == generation) {
+            emit guard->graphRenderDataReady(id, timeStamp, format, data, success);
           }
         },
         p_imageIndex);
   } else if (!graphvizEngine.isEmpty()) {
     GraphvizHelper::getInst().process(
         p_id, p_index, p_format, p_text, this,
-        [this, generation](quint64 id, TimeStamp timeStamp, const QString &format,
-                           const QString &data, bool success) {
-          if (generation == getResetGeneration()) {
-            emit graphRenderDataReady(id, timeStamp, format, data, success);
+        [guard, resetGeneration, generation](quint64 id, TimeStamp timeStamp, const QString &format,
+                                             const QString &data, bool success) {
+          if (guard && guard->getResetGeneration() == resetGeneration &&
+              guard->m_generation == generation) {
+            emit guard->graphRenderDataReady(id, timeStamp, format, data, success);
           }
         },
         0, graphvizEngine);
@@ -382,14 +464,16 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QSt
 
 void MarkdownViewerAdapter::onPdfRenderReady() { emit pdfRenderReady(); }
 
-void MarkdownViewerAdapter::toggleTaskListItem(int p_lineNumber, bool p_checked) {
-  if (p_lineNumber < 0) {
+void MarkdownViewerAdapter::toggleTaskListItem(const QString &p_generation, int p_lineNumber,
+                                               bool p_checked) {
+  if (p_lineNumber < 0 || p_generation.isEmpty() || p_generation != m_generation) {
+    emitTaskListToggleRejected(p_generation, p_lineNumber);
     return;
   }
-
-  emit taskListItemToggleRequested(p_lineNumber, p_checked);
+  emit taskListItemToggleRequested(p_generation, p_lineNumber, p_checked);
 }
 
-void MarkdownViewerAdapter::emitTaskListToggleRejected(int p_lineNumber) {
-  emit taskListToggleRejected(p_lineNumber);
+void MarkdownViewerAdapter::emitTaskListToggleRejected(const QString &p_generation,
+                                                       int p_lineNumber) {
+  emit taskListToggleRejected(p_generation, p_lineNumber);
 }

@@ -36,6 +36,7 @@
 
 #include <gui/services/webengineprofileservice.h>
 #include <gui/services/webviewjobs.h>
+#include <utils/markdownhtmlrenderer.h>
 #include <widgets/editors/markdownvieweradapter.h>
 
 using namespace vnotex;
@@ -244,8 +245,19 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
   QVERIFY(loaded.at(0).at(0).toBool());
   QTRY_VERIFY_WITH_TIMEOUT(jobs.isReady() && adapter.isReady(), 10000);
 
-  const auto render = [&](const QString &p_text) { adapter.setText(p_text); };
-  render(note.decode(note.peekContentRaw()));
+  quint64 renderGeneration = 0;
+  MarkdownHtmlOptions renderOptions;
+  renderOptions.autoBreaks = false;
+  const auto render = [&](MarkdownViewerAdapter &p_adapter, const QString &p_text) {
+    const auto result = MarkdownHtmlRenderer::render(p_text.toUtf8(), renderOptions);
+    if (result.error.isEmpty()) {
+      p_adapter.setRenderedHtml(QStringLiteral("protected-math-%1").arg(++renderGeneration),
+                                result.html);
+    }
+    return result.error;
+  };
+  auto renderError = render(adapter, note.decode(note.peekContentRaw()));
+  QVERIFY2(renderError.isEmpty(), qPrintable(renderError));
   QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 15000);
   const auto initial = evaluateJavaScript(page, QStringLiteral(R"JS((() => {
     const root = document.getElementById('vx-content');
@@ -294,7 +306,8 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
   // another math pass or leaving already-typeset content behind.
   const QByteArray secondText("Updated $e^{i\\pi}+1=0$.\n");
   QVERIFY(note.setContentRaw(secondText));
-  render(note.decode(note.peekContentRaw()));
+  renderError = render(adapter, note.decode(note.peekContentRaw()));
+  QVERIFY2(renderError.isEmpty(), qPrintable(renderError));
   QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 2, 10000);
   QVERIFY(evaluateJavaScript(page, QStringLiteral(R"JS((() => {
     const root = document.getElementById('vx-content');
@@ -307,12 +320,13 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
 
   // These commands would create active DOM with trust:true, after Markdown's
   // sanitizer has finished. Exercise the shipped KaTeX trust boundary itself.
-  render(QStringLiteral(R"MD($\href{https://protected.invalid/link}{unsafe}$
+  renderError = render(adapter, QStringLiteral(R"MD($\href{https://protected.invalid/link}{unsafe}$
 
 $\includegraphics{https://protected.invalid/image.png}$
 
 $\htmlClass{protected-injected}{unsafe}$
 )MD"));
+  QVERIFY2(renderError.isEmpty(), qPrintable(renderError));
   QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 3, 10000);
   QVERIFY(evaluateJavaScript(page, QStringLiteral(R"JS((() => {
     const root = document.getElementById('vx-content');
@@ -446,7 +460,8 @@ $\htmlClass{protected-injected}{unsafe}$
   QTRY_COMPARE_WITH_TIMEOUT(replacementLoaded.count(), 1, 30000);
   QVERIFY(replacementLoaded.at(0).at(0).toBool());
   QTRY_VERIFY_WITH_TIMEOUT(replacementJobs.isReady() && replacementAdapter.isReady(), 10000);
-  replacementAdapter.setText(QStringLiteral("Updated $x^2$"));
+  renderError = render(replacementAdapter, QStringLiteral("Updated $x^2$"));
+  QVERIFY2(renderError.isEmpty(), qPrintable(renderError));
   QTRY_COMPARE_WITH_TIMEOUT(replacementRendered.count(), 1, 15000);
   QCOMPARE(evaluateJavaScript(replacementPage,
                               QStringLiteral("getComputedStyle(document.body).backgroundColor"))

@@ -30,12 +30,6 @@ struct MarkdownWebGlobalOptions {
 
   bool m_protectFromXss = false;
 
-  bool m_htmlTagEnabled = true;
-
-  bool m_autoBreakEnabled = false;
-
-  bool m_linkifyEnabled = true;
-
   bool m_indentFirstLineEnabled = false;
 
   bool m_codeBlockLineNumberEnabled = true;

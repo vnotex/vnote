@@ -591,6 +591,20 @@ add_qt_test(test_notebooknodecontroller_tagtargets
   GUILESS
 )
 
+add_qt_test(test_markdownrendercontroller
+  SOURCES
+    test_markdownrendercontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/markdownrendercontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/markdownhtmlrenderer.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/headingslugger.cpp
+  LINKS Qt6::Concurrent core_services VTextEdit vxcore
+  GUILESS
+)
+add_custom_command(TARGET test_markdownrendercontroller POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_markdownrendercontroller>
+)
+
 # Shared production implementation for native Markdown job integration tests.
 # Generic-only tests deliberately do not link this provider-specific support.
 add_library(markdown_web_job_test_support STATIC
@@ -600,6 +614,8 @@ add_library(markdown_web_job_test_support STATIC
   ${CMAKE_SOURCE_DIR}/src/gui/services/vxpdfschemehandler.cpp
   ${CMAKE_SOURCE_DIR}/src/widgets/outlineprovider.cpp
   ${CMAKE_SOURCE_DIR}/src/controllers/markdownwebjobcontroller.cpp
+  ${CMAKE_SOURCE_DIR}/src/utils/markdownhtmlrenderer.cpp
+  ${CMAKE_SOURCE_DIR}/src/utils/headingslugger.cpp
   ${CMAKE_SOURCE_DIR}/src/widgets/editors/markdownvieweradapter.cpp
   ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp
   ${CMAKE_SOURCE_DIR}/src/widgets/editors/graphhelper.cpp

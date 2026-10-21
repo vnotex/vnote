@@ -1,6 +1,6 @@
 /*
     Markdown events:
-        - markdownTextUpdated(p_text)
+        - renderedHtmlUpdated(p_html, p_generation)
         - markdownContentWillChange(p_node)
         - basicMarkdownRendered()
         - fullMarkdownRendered()
@@ -13,9 +13,13 @@ class MarkdownViewerCore extends VXCore {
         this.workers = new Map();
 
         this.numOfOngoingWorkers = 0;
+        this.documentGeneration = null;
+        this.ongoingWorkers = new Set();
+        this.finishingRound = false;
+        this.exportInProgress = false;
 
         this.pendingData = {
-            text: null,
+            document: null,
             lineNumber: -1,
             anchor: null
         }
@@ -93,18 +97,42 @@ class MarkdownViewerCore extends VXCore {
         p_worker.register(this);
     }
 
-    finishWorker(p_name) {
-        --this.numOfOngoingWorkers;
-        if (this.numOfOngoingWorkers == 0) {
-            // Signal out anyway.
+    finishWorker(p_name, p_generation) {
+        if (p_generation !== this.documentGeneration || !this.ongoingWorkers.delete(p_name)) {
+            return;
+        }
+        this.numOfOngoingWorkers = this.ongoingWorkers.size;
+        if (this.numOfOngoingWorkers !== 0) {
+            return;
+        }
+        // Keep replacement out of this worker's completion stack, including
+        // reentrant bridge/event listeners and explicitly empty pending HTML.
+        this.finishingRound = true;
+        try {
             this.emit('fullMarkdownRendered');
-            window.vxMarkdownAdapter.setWorkFinished();
+            window.vxMarkdownAdapter.setWorkFinished(p_generation);
+        } finally {
+            Promise.resolve().then(() => {
+                this.finishingRound = false;
+                this.startPendingDocument();
+            });
+        }
+    }
 
-            // Check pending work.
-            if (this.pendingData.text) {
-                this.setMarkdownText(this.pendingData.text);
-            } else if (this.pendingData.lineNumber > -1) {
+    startPendingDocument() {
+        if (this.numOfOngoingWorkers > 0 || this.finishingRound || this.exportInProgress) {
+            return;
+        }
+        if (this.pendingData.document !== null) {
+            const pending = this.pendingData.document;
+            this.pendingData.document = null;
+            this.setRenderedHtml(pending.html, pending.generation);
+        } else {
+            if (this.pendingData.lineNumber > -1) {
                 this.scrollToLine(this.pendingData.lineNumber);
+            }
+            if (this.pendingData.anchor) {
+                this.scrollToAnchor(this.pendingData.anchor);
             }
         }
     }
@@ -126,6 +154,12 @@ class MarkdownViewerCore extends VXCore {
         if (window.vxPresentation) {
             window.vxPresentation.setActive(false);
         }
+        if (this.exportInProgress || this.numOfOngoingWorkers > 0
+            || this.pendingData.document !== null || this.documentGeneration === null) {
+            return;
+        }
+        const generation = this.documentGeneration;
+        this.exportInProgress = true;
         let options = p_options || {};
         let tasks = [];
         this.workers.forEach(function (p_worker) {
@@ -145,8 +179,12 @@ class MarkdownViewerCore extends VXCore {
             }
         });
 
-        Promise.all(tasks).then(function () {
-            window.vxMarkdownAdapter.onPdfRenderReady();
+        Promise.all(tasks).then(() => {
+            this.exportInProgress = false;
+            if (this.documentGeneration === generation && this.pendingData.document === null) {
+                window.vxMarkdownAdapter.onPdfRenderReady();
+            }
+            this.startPendingDocument();
         });
     }
 
@@ -161,22 +199,30 @@ class MarkdownViewerCore extends VXCore {
         window.vxMarkdownAdapter.setReady(true);
     }
 
-    setMarkdownText(p_text) {
+    setRenderedHtml(p_html, p_generation) {
+        // The producer token is opaque. Never derive document identity from a
+        // source revision, an editor generation or a JavaScript counter.
+        if (typeof p_generation !== 'string' || !p_generation
+            || p_generation === this.documentGeneration) {
+            return;
+        }
         if (window.vxPresentation) {
             window.vxPresentation.setActive(false);
         }
         ++this.navigationSnapshot;
         this.navigationTargets = [];
-        if (this.numOfOngoingWorkers > 0) {
-            this.pendingData.text = p_text;
-            console.info('wait for last render finish with remaing workers',
-                         this.numOfOngoingWorkers);
-        } else {
-            this.numOfOngoingWorkers = this.workers.size;
-            this.pendingData.text = null;
-            console.log('start new round with ' + this.numOfOngoingWorkers + ' workers');
-            this.emit('markdownTextUpdated', p_text);
+        if (this.numOfOngoingWorkers > 0 || this.finishingRound || this.exportInProgress) {
+            this.pendingData.document = { html: p_html, generation: p_generation };
+            return;
         }
+        this.documentGeneration = p_generation;
+        this.pendingData.document = null;
+        this.ongoingWorkers = new Set(this.workers.keys());
+        this.numOfOngoingWorkers = this.ongoingWorkers.size;
+        for (const worker of this.workers.values()) {
+            worker.beginWork(p_generation);
+        }
+        this.emit('renderedHtmlUpdated', p_html, p_generation);
     }
 
     // CSS client coordinates, shared by snapshot collection and activation revalidation.
@@ -237,7 +283,7 @@ class MarkdownViewerCore extends VXCore {
         this.navigationTargets = [];
         const result = { snapshot: this.navigationSnapshot, targets: [] };
         if (!this.initialized || !this.contentContainer || this.numOfOngoingWorkers > 0
-            || this.pendingData.text !== null) {
+            || this.pendingData.document !== null) {
             return result;
         }
         for (const element of this.contentContainer.querySelectorAll('a[href]')) {
@@ -265,7 +311,7 @@ class MarkdownViewerCore extends VXCore {
 
     resolveNavigationTarget(p_snapshot, p_index) {
         if (p_snapshot !== this.navigationSnapshot || !Number.isInteger(p_index) || p_index < 0
-            || !this.initialized || this.numOfOngoingWorkers > 0 || this.pendingData.text !== null) {
+            || !this.initialized || this.numOfOngoingWorkers > 0 || this.pendingData.document !== null) {
             return null;
         }
         const target = this.navigationTargets[p_index];
@@ -319,8 +365,10 @@ class MarkdownViewerCore extends VXCore {
         }
     }
 
-    setBasicMarkdownRendered() {
-        this.emit('basicMarkdownRendered');
+    setBasicMarkdownRendered(p_generation) {
+        if (p_generation === this.documentGeneration && this.ongoingWorkers.has('document')) {
+            this.emit('basicMarkdownRendered', p_generation);
+        }
     }
 
     muteScroll() {
@@ -386,14 +434,14 @@ class MarkdownViewerCore extends VXCore {
         window.vxMarkdownAdapter.setFindText(p_texts, p_totalMatches, p_currentMatchIndex);
     }
 
-    saveContent() {
+    saveContent(p_generation) {
+        if (p_generation !== this.documentGeneration || !this.initialized
+            || this.numOfOngoingWorkers > 0 || this.pendingData.document !== null
+            || this.exportInProgress) {
+            return;
+        }
         if (window.vxPresentation) {
             window.vxPresentation.setActive(false);
-        }
-        if (!this.initialized) {
-            console.warn('saveContent() called before initialization');
-            window.vxMarkdownAdapter.setSavedContent('', '', '');
-            return;
         }
         // fetchStyleContent() serializes even media="not all" stylesheets. Keep presentation
         // assets out of reader exports, then synchronously put their links back in place.
@@ -403,7 +451,7 @@ class MarkdownViewerCore extends VXCore {
             link.replaceWith(placeholder);
         }
         try {
-            window.vxMarkdownAdapter.setSavedContent("",
+            window.vxMarkdownAdapter.setSavedContent(p_generation, "",
                                                      Utils.fetchStyleContent(),
                                                      this.contentContainer.outerHTML,
                                                      document.body.classList.value);

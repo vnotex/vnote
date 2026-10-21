@@ -25,6 +25,7 @@
 #include <core/servicelocator.h>
 #include <gui/services/webviewjobs.h>
 #include <gui/services/webviewservice.h>
+#include <utils/markdownhtmlrenderer.h>
 #include <utils/webutils.h>
 #include <widgets/editors/markdownvieweradapter.h>
 
@@ -56,22 +57,8 @@ const QStringList &scripts() {
                                     QStringLiteral("easyaccess.js"),
                                     QStringLiteral("crosscopy.js"),
                                     QStringLiteral("markdownviewer.js"),
-                                    QStringLiteral("markdown-it/markdown-it.min.js"),
-                                    QStringLiteral("markdown-it/markdown-it-container.min.js"),
-                                    QStringLiteral("markdown-it/markdown-it-emoji.min.js"),
-                                    QStringLiteral("markdown-it/markdown-it-footnote.min.js"),
-                                    QStringLiteral("markdown-it/markdown-it-front-matter.js"),
-                                    QStringLiteral("markdown-it/markdown-it-imsize.min.js"),
-                                    QStringLiteral("markdown-it/markdown-it-sub.min.js"),
-                                    QStringLiteral("markdown-it/markdown-it-sup.min.js"),
-                                    QStringLiteral("markdown-it/markdown-it-task-lists.js"),
-                                    QStringLiteral("markdown-it/markdown-it-texmath.js"),
-                                    QStringLiteral("markdown-it/markdown-it-inject-linenumbers.js"),
-                                    QStringLiteral("markdown-it/markdownItAnchor.umd.js"),
-                                    QStringLiteral("markdown-it/markdownItTocDoneRight.umd.js"),
-                                    QStringLiteral("markdown-it/markdown-it-implicit-figure.js"),
-                                    QStringLiteral("markdown-it/markdown-it-mark.min.js"),
-                                    QStringLiteral("markdownit.js"),
+                                    QStringLiteral("xss.min.js"),
+                                    QStringLiteral("documentrenderer.js"),
                                     QStringLiteral("prism.js"),
                                     QStringLiteral("codeblockactions.js"),
                                     QStringLiteral("mermaid.js"),
@@ -97,8 +84,7 @@ QString runtimeHtml(const QColor &p_color, const QString &p_mathJaxScript) {
     return QString();
   }
   auto html = QString::fromUtf8(file.readAll());
-  const QJsonObject options{{QStringLiteral("htmlTagEnabled"), true},
-                            {QStringLiteral("webGraphviz"), true},
+  const QJsonObject options{{QStringLiteral("webGraphviz"), true},
                             {QStringLiteral("mathRenderer"), p_mathJaxScript.isEmpty()
                                                                  ? QStringLiteral("katex")
                                                                  : QStringLiteral("mathjax")},
@@ -200,6 +186,7 @@ struct Runtime {
   QPointer<QWebEnginePage> page;
   QPointer<MarkdownViewerAdapter> adapter;
   WebViewJobSession *session = nullptr;
+  quint64 generation = 0;
 
   explicit Runtime(bool p_shared, const QColor &p_color = QColor(17, 85, 153),
                    const QUrl &p_base = QUrl::fromLocalFile(webDir() + QLatin1Char('/')),
@@ -227,6 +214,14 @@ struct Runtime {
       bootstrap(readerPage, channel);
       reader->show();
     }
+  }
+
+  MarkdownHtmlResult renderDocument(const QString &p_source) {
+    const auto result = MarkdownHtmlRenderer::render(p_source.toUtf8(), MarkdownHtmlOptions{});
+    if (result.error.isEmpty()) {
+      adapter->setRenderedHtml(QString::number(++generation), result.html);
+    }
+    return result;
   }
 };
 
@@ -292,26 +287,13 @@ void TestMarkdownWebJobs::allOperations() {
              source(QStringLiteral(".token.keyword {color:#115599;background-color:#eef1f4;"
                                    "font-weight:bold;font-style:italic;}")),
              &ownerA);
-  const QString headings =
-      QStringLiteral("# Repeat\n\n# Repeat\n\n## \n\n```\n# Not a heading\n```\n");
-  auto anchorArgs = source(headings);
-  anchorArgs.insert(QStringLiteral("lineNumber"), 2);
-  const auto anchor =
-      submit(runtime.session, QStringLiteral("markdown.headingAnchor"), anchorArgs, &ownerB);
-  anchorArgs.insert(QStringLiteral("lineNumber"), 4);
-  const auto emptyAnchor =
-      submit(runtime.session, QStringLiteral("markdown.headingAnchor"), anchorArgs, &ownerA);
-  anchorArgs.insert(QStringLiteral("lineNumber"), 7);
-  const auto missingAnchor =
-      submit(runtime.session, QStringLiteral("markdown.headingAnchor"), anchorArgs, &ownerB);
   const auto graph =
       submit(runtime.session, QStringLiteral("markdown.previewGraph"),
              preview(QStringLiteral("graph TD\n A[Alpha] --> B[Beta]"), QStringLiteral("mermaid")),
              &ownerA);
   const auto math = submit(runtime.session, QStringLiteral("markdown.previewMath"),
                            preview(QStringLiteral("$\\frac{a^2+1}{\\sqrt{b}}$")), &ownerB);
-  for (const auto &job :
-       {htmlA, htmlB, code, mathSource, styles, anchor, emptyAnchor, missingAnchor, graph, math}) {
+  for (const auto &job : {htmlA, htmlB, code, mathSource, styles, graph, math}) {
     QTRY_VERIFY_WITH_TIMEOUT(job->finished, 30000);
     QCOMPARE(job->result.status, WebViewJobResult::Status::Success);
   }
@@ -335,13 +317,6 @@ void TestMarkdownWebJobs::allOperations() {
            QStringLiteral("rgb(238, 241, 244)"));
   QCOMPARE(rule.value(QStringLiteral("fontWeight")).toString(), QStringLiteral("bold"));
   QCOMPARE(rule.value(QStringLiteral("fontStyle")).toString(), QStringLiteral("italic"));
-  QVERIFY(anchor->result.value.toObject().value(QStringLiteral("found")).toBool());
-  QCOMPARE(anchor->result.value.toObject().value(QStringLiteral("anchor")).toString(),
-           QStringLiteral("repeat-1"));
-  QVERIFY(emptyAnchor->result.value.toObject().value(QStringLiteral("found")).toBool());
-  QCOMPARE(emptyAnchor->result.value.toObject().value(QStringLiteral("anchor")).toString(),
-           QString());
-  QVERIFY(!missingAnchor->result.value.toObject().value(QStringLiteral("found")).toBool());
   QVERIFY(inkPixels(image(graph->result.value)) > 100);
   QVERIFY(inkPixels(image(math->result.value), QColor(17, 85, 153)) > 30);
   QCOMPARE(rendered.count(), 0);
@@ -350,25 +325,49 @@ void TestMarkdownWebJobs::allOperations() {
   QCOMPARE(evaluate(runtime.page, QStringLiteral("document.baseURI")).toUrl(),
            QUrl::fromLocalFile(base.path() + QLatin1Char('/')));
 
-  // Jobs did not replace the original channel or its document RPCs. Read current
-  // content, then resolve an unrelated heading without changing this live DOM.
-  runtime.adapter->setText(QStringLiteral("# Reader\n\n- [ ] action\n\nA visible paragraph.\n"));
-  QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 15000);
-  const auto before =
-      evaluate(runtime.page, QStringLiteral("vxcore.contentContainer.innerHTML")).toString();
-  QVERIFY(before.contains(QStringLiteral("Reader")));
+  // Helper jobs must leave the native document bridge intact. Publish real native
+  // HTML and exercise its task, code and graph markers through the shipped workers.
+  const auto document = runtime.renderDocument(
+      QStringLiteral("# Reader\n\n- [ ] action\n\nA visible paragraph.\n\n"
+                     "```javascript\nconst answer = 42;\n```\n\n"
+                     "```mermaid\ngraph TD\n A[Reader] --> B[Rendered]\n```\n"));
+  QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
+  QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+  QCOMPARE(document.headings.size(), 1);
+  QCOMPARE(evaluate(runtime.page, QStringLiteral("document.querySelector('#vx-content h1').id"))
+               .toString(),
+           document.headings.first().anchor);
+  QVERIFY(evaluate(runtime.page,
+                   QStringLiteral("!!document.querySelector('#vx-content code .token.keyword')"))
+              .toBool());
+  QVERIFY(evaluate(runtime.page,
+                   QStringLiteral("!!document.querySelector('#vx-content .vx-mermaid-graph svg')"))
+              .toBool());
+  const auto generation = runtime.adapter->documentGeneration();
+  QCOMPARE(evaluate(runtime.page, QStringLiteral("vxcore.documentGeneration")).toString(),
+           generation);
   QSignalSpy toggled(runtime.adapter, &MarkdownViewerAdapter::taskListItemToggleRequested);
   evaluate(runtime.page,
            QStringLiteral("document.querySelector('.task-list-item-checkbox').click()"));
   QTRY_COMPARE_WITH_TIMEOUT(toggled.count(), 1, 10000);
-  QCOMPARE(toggled.at(0).at(0).toInt(), 2);
-  anchorArgs.insert(QStringLiteral("lineNumber"), 2);
+  QCOMPARE(toggled.at(0).at(0).toString(), generation);
+  QCOMPARE(toggled.at(0).at(1).toInt(), 2);
+  QVERIFY(toggled.at(0).at(2).toBool());
+
+  // A separate conversion must produce its own result without replacing or rerendering
+  // the live reader document, even when the reader session executes the helper job.
+  const auto before =
+      evaluate(runtime.page, QStringLiteral("vxcore.contentContainer.innerHTML")).toString();
   const auto other =
-      submit(runtime.session, QStringLiteral("markdown.headingAnchor"), anchorArgs, &ownerA);
+      submit(runtime.session, QStringLiteral("markdown.htmlToMarkdown"),
+             source(QStringLiteral("<h2>Unrelated</h2><p><em>Helper</em></p>")), &ownerA);
   QTRY_VERIFY_WITH_TIMEOUT(other->finished, 10000);
   QCOMPARE(other->result.status, WebViewJobResult::Status::Success);
+  QCOMPARE(other->result.value.toString(), QStringLiteral("## Unrelated\n\n*Helper*"));
   QCOMPARE(evaluate(runtime.page, QStringLiteral("vxcore.contentContainer.innerHTML")).toString(),
            before);
+  QCOMPARE(evaluate(runtime.page, QStringLiteral("vxcore.documentGeneration")).toString(),
+           generation);
   QCOMPARE(rendered.count(), 1);
 }
 
@@ -530,7 +529,9 @@ void TestMarkdownWebJobs::macroIsolation() {
   QString readerMacro;
   if (mathJax) {
     QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
-    runtime.adapter->setText(QStringLiteral("$\\newcommand{\\vxreadermacro}{R}\\vxreadermacro$"));
+    const auto document =
+        runtime.renderDocument(QStringLiteral("$\\newcommand{\\vxreadermacro}{R}\\vxreadermacro$"));
+    QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
     QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
     readerMacro =
         evaluate(runtime.page, QStringLiteral("MathJax.tex2mml('\\\\vxreadermacro')")).toString();
@@ -602,7 +603,8 @@ void TestMarkdownWebJobs::macroIsolation() {
            image(mathJax ? survivingDefinition->result.value : before->result.value));
   if (mathJax) {
     QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
-    runtime.adapter->setText(QStringLiteral("$\\vxreadermacro$"));
+    const auto document = runtime.renderDocument(QStringLiteral("$\\vxreadermacro$"));
+    QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
     QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
     QVERIFY(evaluate(
                 runtime.page,
@@ -639,7 +641,8 @@ void TestMarkdownWebJobs::readerMathLifecycle() {
   // Plain and empty replacements both retire the old document; subsequent math must still work.
   for (const auto &replacement : {QStringLiteral("# Plain\n\nNo formulas"), QString()}) {
     for (int repeat = 0; repeat < 3; ++repeat) {
-      runtime.adapter->setText(text);
+      const auto document = runtime.renderDocument(text);
+      QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
       ++passes;
       QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), passes, 30000);
       const auto result = evaluate(runtime.page, QStringLiteral(R"JS(
@@ -674,7 +677,8 @@ JSON.stringify((() => {
 )JS")).toBool());
       }
     }
-    runtime.adapter->setText(replacement);
+    const auto document = runtime.renderDocument(replacement);
+    QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
     ++passes;
     QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), passes, 30000);
     const auto cleared = evaluate(runtime.page, QStringLiteral(R"JS(
@@ -699,6 +703,17 @@ JSON.stringify((() => {
 )JS"));
     const auto state = QJsonDocument::fromJson(cleared.toString().toUtf8()).object();
     QCOMPARE(state.value(QStringLiteral("formulas")).toInt(-1), 0);
+    const auto readerText =
+        evaluate(runtime.page, QStringLiteral("vxcore.contentContainer.textContent")).toString();
+    if (replacement.isEmpty()) {
+      QVERIFY(readerText.isEmpty());
+      QCOMPARE(evaluate(runtime.page, QStringLiteral("vxcore.contentContainer.childElementCount"))
+                   .toInt(),
+               0);
+    } else {
+      QVERIFY(readerText.contains(QStringLiteral("No formulas")));
+      QVERIFY(!readerText.contains(QStringLiteral("Inline")));
+    }
     if (mathJax) {
       QCOMPARE(state.value(QStringLiteral("tracked")).toInt(-1), 0);
       QCOMPARE(state.value(QStringLiteral("menuItems")).toInt(-1), 0);

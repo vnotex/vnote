@@ -61,15 +61,6 @@
         return turndown.turndown(args.source);
     });
 
-    jobs.registerHandler('markdown.headingAnchor', (args) => {
-        const worker = core().getWorker('markdownit');
-        if (!worker) {
-            throw new Error('Markdown parser unavailable');
-        }
-        // Parse in the worker's isolated heading state, never render a document.
-        return worker.getHeadingAnchor(args.source, args.lineNumber);
-    });
-
     // Internal lifecycle operation, serialized after any cancelled render drains.
     jobs.registerHandler('markdown.releaseScope', (args) => {
         core().getWorker('math').releasePreviewScope(args.scope);

@@ -9,7 +9,7 @@
             this.generation = 0;
             this.session = null;
             window.vxcore.on('fullMarkdownRendered', () => {
-                // Let the renderer remove its load guard and dispatch any pending render first.
+                // Let document completion listeners and pending HTML delivery settle first.
                 Promise.resolve().then(() => this.start());
             });
             window.addEventListener('pagehide', () => this.setActive(false));
@@ -49,7 +49,7 @@
         start() {
             const core = window.vxcore;
             if (!this.requested || this.session || !core.initialized
-                || core.numOfOngoingWorkers > 0 || core.pendingData.text !== null) {
+                || core.numOfOngoingWorkers > 0 || core.pendingData.document !== null) {
                 return;
             }
             const session = {

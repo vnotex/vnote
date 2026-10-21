@@ -35,6 +35,7 @@ public:
 
   WebViewJobSession *jobSession() const;
 
+  // A null string reports an unavailable or superseded DOM snapshot.
   void saveContent(const std::function<void(const QString &p_content)> &p_callback);
 
   // Asynchronous GUI-thread snapshot; superseded or unavailable requests deliver empty.

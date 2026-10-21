@@ -12,7 +12,6 @@
 #include <core/editorconfig.h>
 #include <core/global.h>
 #include <imagehost/imagehosttypes.h>
-#include <utils/headingslugger.h>
 #include <widgets/navigationmode.h>
 
 class QMimeData;
@@ -76,7 +75,7 @@ public:
 
   // Resolves the final clipboard link for the heading on 0-based line
   // @lineNumber of @text. Installed by MarkdownViewWindow2, which owns both
-  // the buffer path and the viewer adapter. The completion callback is invoked
+  // the buffer path and the native render controller. The completion callback is invoked
   // with ok == false when the heading could not be resolved.
   using HeadingLinkResolver =
       std::function<void(const QString & /*text*/, int /*lineNumber*/,
@@ -338,8 +337,6 @@ private:
 
   QVector<Heading> m_headings;
   bool m_headingsHaveSectionNumber = false;
-
-  HeadingSlugger m_headingSlugger;
 
   // TimeStamp used as sequence number to interact with Web side.
   TimeStamp m_timeStamp = 0;

@@ -37,10 +37,14 @@ function handleTaskListClick(p_event) {
         return;
     }
 
-    window.vxMarkdownAdapter.toggleTaskListItem(lineNumber, target.checked);
+    window.vxMarkdownAdapter.toggleTaskListItem(window.vxcore.documentGeneration,
+                                               lineNumber, target.checked);
 }
 
-function revertTaskListItem(p_lineNumber) {
+function revertTaskListItem(p_generation, p_lineNumber) {
+    if (p_generation !== window.vxcore.documentGeneration) {
+        return;
+    }
     let selector = '[data-source-line="' + p_lineNumber + '"] input.task-list-item-checkbox';
     let checkbox = document.querySelector(selector);
     if (checkbox) {
@@ -64,8 +68,8 @@ new QWebChannel(qt.webChannelTransport,
             }
         });
 
-        adapter.textUpdated.connect(function(p_text) {
-            window.vxcore.setMarkdownText(p_text);
+        adapter.htmlUpdated.connect(function(p_html, p_generation) {
+            window.vxcore.setRenderedHtml(p_html, p_generation);
         });
 
         adapter.editLineNumberUpdated.connect(function(p_lineNumber) {
@@ -88,16 +92,16 @@ new QWebChannel(qt.webChannelTransport,
             window.vxcore.findText(p_texts, p_options, p_currentMatchLine);
         });
 
-        adapter.contentRequested.connect(function() {
-            window.vxcore.saveContent();
+        adapter.contentRequested.connect(function(p_generation) {
+            window.vxcore.saveContent(p_generation);
         });
 
         adapter.graphRenderDataReady.connect(function(p_id, p_index, p_format, p_data, p_success) {
             window.vxcore.graphRenderDataReady(p_id, p_index, p_format, p_data, p_success);
         });
 
-        adapter.taskListToggleRejected.connect(function(p_lineNumber) {
-            revertTaskListItem(p_lineNumber);
+        adapter.taskListToggleRejected.connect(function(p_generation, p_lineNumber) {
+            revertTaskListItem(p_generation, p_lineNumber);
         });
 
         installImageViewHandler();

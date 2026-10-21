@@ -336,9 +336,6 @@ void HtmlTemplateService::updateMarkdownViewerTemplate(const MarkdownEditorConfi
     opts.m_imageAlignCenterEnabled = p_config.getImageAlignCenterEnabled();
     opts.m_headingFoldingEnabled = p_config.getHeadingFoldingEnabled();
     opts.m_protectFromXss = p_config.getProtectFromXss();
-    opts.m_htmlTagEnabled = p_config.getHtmlTagEnabled();
-    opts.m_autoBreakEnabled = p_config.getAutoBreakEnabled();
-    opts.m_linkifyEnabled = p_config.getLinkifyEnabled();
     opts.m_indentFirstLineEnabled = p_config.getIndentFirstLineEnabled();
     opts.m_codeBlockLineNumberEnabled = p_config.getCodeBlockLineNumberEnabled();
     opts.m_codeBlockLineWrapEnabled = p_config.getCodeBlockLineWrapEnabled();
@@ -465,22 +462,8 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
                          QStringLiteral("web/js/easyaccess.js"),
                          QStringLiteral("web/js/crosscopy.js"),
                          QStringLiteral("web/js/markdownviewer.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it.min.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-container.min.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-emoji.min.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-footnote.min.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-front-matter.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-imsize.min.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-sub.min.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-sup.min.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-task-lists.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-texmath.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-inject-linenumbers.js"),
-                         QStringLiteral("web/js/markdown-it/markdownItAnchor.umd.js"),
-                         QStringLiteral("web/js/markdown-it/markdownItTocDoneRight.umd.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-implicit-figure.js"),
-                         QStringLiteral("web/js/markdown-it/markdown-it-mark.min.js"),
-                         QStringLiteral("web/js/markdownit.js"),
+                         QStringLiteral("web/js/xss.min.js"),
+                         QStringLiteral("web/js/documentrenderer.js"),
                          QStringLiteral("web/js/prism.js"),
                          QStringLiteral("web/js/codeblockactions.js"),
                          QStringLiteral("web/js/mermaid.js"),
@@ -505,10 +488,12 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
                                    QStringLiteral("web/js/wavedrom/wavedrom.min.js"),
                                    QStringLiteral("web/js/viz.js/viz.js"),
                                    QStringLiteral("web/js/viz.js/full.render.js")};
-  QStringList styles = {
-      QStringLiteral("web/css/globalstyles.css"),   webStylePath,
-      themePath + QStringLiteral("/highlight.css"), QStringLiteral("web/css/imageviewer.css"),
-      QStringLiteral("web/css/markdownit.css"),     QStringLiteral("web/css/codeblockactions.css")};
+  QStringList styles = {QStringLiteral("web/css/globalstyles.css"),
+                        webStylePath,
+                        themePath + QStringLiteral("/highlight.css"),
+                        QStringLiteral("web/css/imageviewer.css"),
+                        QStringLiteral("web/css/markdowndocument.css"),
+                        QStringLiteral("web/css/codeblockactions.css")};
   styles += c_presentationStyles;
   styles.append(QStringLiteral("web/js/katex/katex.min.css"));
   QHash<QString, QByteArray> resources;

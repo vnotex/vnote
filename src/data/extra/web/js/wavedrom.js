@@ -27,6 +27,7 @@ class WaveDromRenderer extends GraphRenderer {
     // Render @p_node as WaveDrom graph.
     // Return true on success.
     renderOne(p_node, p_idx) {
+        const generation = this.passGeneration;
         // Create a div container.
         let graphDiv = document.createElement('div');
         graphDiv.id = 'vx-wavedrom-graph-' + p_idx;
@@ -43,16 +44,16 @@ class WaveDromRenderer extends GraphRenderer {
                                         : eval('(' + p_node.textContent + ')'),
                                     'vx-wavedrom-graph-');
             if (window.vxOptions.protectedView) {
-                MarkdownIt.sanitizeProtectedSvg(graphDiv.firstElementChild);
+                DocumentRenderer.sanitizeProtectedSvg(graphDiv.firstElementChild);
             }
             window.vxImageViewer.setupSVGToView(graphDiv.children[0], true);
         } catch (p_err) {
             console.error('failed to RenderWaveForm() for WaveDrom', p_err);
-            this.finishRenderingOne();
+            this.finishRenderingOne(generation, p_idx);
             return false;
         }
 
-        this.finishRenderingOne();
+        this.finishRenderingOne(generation, p_idx);
         return true;
     }
 
@@ -91,7 +92,7 @@ class WaveDromRenderer extends GraphRenderer {
         }
 
         if (window.vxOptions.protectedView) {
-            MarkdownIt.sanitizeProtectedSvg(graphDiv.firstElementChild);
+            DocumentRenderer.sanitizeProtectedSvg(graphDiv.firstElementChild);
         }
         return graphDiv;
     }

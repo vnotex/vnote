@@ -54,6 +54,22 @@ add_qt_test(test_headingslug
   GUILESS
 )
 
+add_qt_test(test_markdownhtmlrenderer
+  SOURCES
+    test_markdownhtmlrenderer.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/markdownhtmlrenderer.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/headingslugger.cpp
+  LINKS VTextEdit
+  GUILESS
+)
+target_compile_definitions(test_markdownhtmlrenderer PRIVATE
+  VNOTE_TEST_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data"
+)
+add_custom_command(TARGET test_markdownhtmlrenderer POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy_if_different
+    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_markdownhtmlrenderer>
+)
+
 add_qt_test(test_stringutils
   SOURCES
     test_stringutils.cpp
@@ -214,22 +230,6 @@ add_qt_test(test_image_parser_drift
   GUILESS
 )
 target_compile_definitions(test_image_parser_drift PRIVATE
-  VNOTE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
-)
-
-# Grep-gate regression test: the vendored markdown-it-texmath block rule must
-# push its token with nesting 0. Upstream pushes 1 without a closing token, so
-# every math block permanently inflates state.level and markdown-it's block
-# tokenizer silently truncates the document at options.maxNesting (default 100)
-# -- a note with 101 formulas lost everything after the 100th. Also gates the
-# explicit `maxNesting: 500` in markdownit.js. See
-# tests/utils/test_texmath_nesting_drift.cpp.
-add_qt_test(test_texmath_nesting_drift
-  SOURCES
-    test_texmath_nesting_drift.cpp
-  GUILESS
-)
-target_compile_definitions(test_texmath_nesting_drift PRIVATE
   VNOTE_SOURCE_DIR="${CMAKE_SOURCE_DIR}"
 )
 

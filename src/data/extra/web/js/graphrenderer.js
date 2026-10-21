@@ -40,7 +40,8 @@ class GraphRenderer extends VxWorker {
 
         // Read-mode pass state; see renderNodes().
         this.passActive = false;
-        this.passGeneration = 0;
+        this.passGeneration = null;
+        this.pendingNodes = new Set();
         this.nextNodeIndex = 0;
         this.pendingInBatch = 0;
         this.inDispatch = false;
@@ -188,7 +189,7 @@ class GraphRenderer extends VxWorker {
     reset() {
         // reset() is called from the basicMarkdownRendered handler, i.e. at the
         // start of the next round. If a pass is still live at that point the
-        // serialisation invariant in MarkdownViewerCore.setMarkdownText() has been
+        // serialisation invariant in MarkdownViewerCore.setRenderedHtml() has been
         // violated; say so here, because clearing the state below is what would
         // otherwise hide it from the check in renderNodes().
         if (this.passActive) {
@@ -207,7 +208,8 @@ class GraphRenderer extends VxWorker {
         this.passActive = false;
         // Retires every callback still outstanding from the previous pass, so a
         // late completion cannot be counted against the new one.
-        ++this.passGeneration;
+        this.passGeneration = null;
+        this.pendingNodes.clear();
         this.stopPassWatchdog();
         this.nextNodeIndex = 0;
         this.pendingInBatch = 0;
@@ -221,7 +223,7 @@ class GraphRenderer extends VxWorker {
             this.renderCodeNodes();
         });
 
-        this.vxcore.getWorker('markdownit').addLangsToSkipHighlight(this.langs);
+        this.vxcore.getWorker('document').addLangsToSkipHighlight(this.langs);
     }
 
     // Return ture if we could continue.
@@ -336,9 +338,9 @@ class GraphRenderer extends VxWorker {
     }
 
     // Interface 2.
-    // Get code nodes from markdownIt directly.
+    // Get code nodes from the document worker.
     renderCodeNodes() {
-        this.nodesToRender = this.vxcore.getWorker('markdownit').getCodeNodes(this.langs);
+        this.nodesToRender = this.vxcore.getWorker('document').getCodeNodes(this.langs);
         this.numOfRenderedNodes = 0;
         this.doRender();
     }
@@ -352,7 +354,11 @@ class GraphRenderer extends VxWorker {
         // From here until renderNodes() runs, this renderer owes exactly one
         // finishWork() that no pass state is yet tracking. See abandonPendingPass().
         this.initPendingForPass = true;
+        const generation = this.workGeneration;
         const startPass = () => {
+            if (!this.isCurrentWork(generation)) {
+                return;
+            }
             try {
                 this.renderNodes();
                 this.initPendingForPass = false;
@@ -369,7 +375,7 @@ class GraphRenderer extends VxWorker {
     }
 
     renderNodes() {
-        // The serialisation invariant in MarkdownViewerCore.setMarkdownText() means a
+        // The serialisation invariant in MarkdownViewerCore.setRenderedHtml() means a
         // second pass cannot start while this one is live. Assert it rather than
         // building per-pass context objects for a case the architecture prevents - if
         // this ever fires, that is the signal to build the heavier machinery.
@@ -388,7 +394,7 @@ class GraphRenderer extends VxWorker {
         this.completionMs = [];
 
         this.passActive = true;
-        ++this.passGeneration;
+        this.passGeneration = this.workGeneration;
         this.nextNodeIndex = 0;
         this.pendingInBatch = 0;
         this.nextBatchScheduled = false;
@@ -434,8 +440,10 @@ class GraphRenderer extends VxWorker {
             ++this.pendingInBatch;
             ++launched;
             const generation = this.passGeneration;
+            const index = this.graphIdx++;
+            this.pendingNodes.add(index);
             try {
-                const outcome = this.renderOne(nodeToRender, this.graphIdx++);
+                const outcome = this.renderOne(nodeToRender, index);
 
                 // CONTRACT: renderOne() either calls finishRenderingOne() (however
                 // it ends), or it fails. An async renderOne() reports failure by
@@ -450,15 +458,13 @@ class GraphRenderer extends VxWorker {
                 if (outcome && typeof outcome.then === 'function') {
                     outcome.then(undefined, (p_err) => {
                         this.reportProblem('failed to render graph node', this.name, p_err);
-                        if (this.passGeneration === generation) {
-                            this.finishRenderingOne();
-                        }
+                        this.finishRenderingOne(generation, index);
                     });
                 }
             } catch (p_err) {
                 // A synchronously throwing renderOne(), same reasoning.
                 this.reportProblem('failed to render graph node', this.name, p_err);
-                this.finishRenderingOne();
+                this.finishRenderingOne(generation, index);
             }
         }
         this.inDispatch = false;
@@ -501,7 +507,11 @@ class GraphRenderer extends VxWorker {
 
         // Collapses the N completions of one window into a single continuation.
         this.nextBatchScheduled = true;
+        const generation = this.passGeneration;
         setTimeout(() => {
+            if (!this.passActive || generation !== this.passGeneration) {
+                return;
+            }
             this.nextBatchScheduled = false;
             this.dispatchBatch();
         }, 0);
@@ -566,20 +576,12 @@ class GraphRenderer extends VxWorker {
     }
 
     // Called when finishing rendering one node.
-    finishRenderingOne() {
-        // A pass can only ever see as many completions as it has DISPATCHED.
-        // Subclasses call this directly with no generation of their own (the
-        // rejection arm in dispatchBatch() is the only site that can check
-        // one), so a callback left over from a retired pass - an outstanding
-        // `await mermaid.render`, an in-flight PlantUml round trip - would
-        // otherwise be counted against the live pass. Because completePass()
-        // fires on `>= nodesToRender.length`, that inflated count would end the
-        // pass early, clear nodesToRender, and silently drop every node not yet
-        // dispatched while still reporting the pass as finished. Enforcing
-        // numOfRenderedNodes <= nextNodeIndex makes that impossible: the pass
-        // can now only complete once everything really was dispatched.
-        if (this.numOfRenderedNodes >= this.nextNodeIndex) {
-            this.reportProblem('graph render completion from a retired pass', this.name);
+    finishRenderingOne(p_generation, p_index) {
+        // Each dispatched node owes one completion for the producer's token.
+        // Duplicate callbacks and late promise rejections cannot consume another
+        // node's debt, nor count towards a newer document's pass.
+        if (!this.passActive || p_generation !== this.passGeneration
+            || !this.pendingNodes.delete(p_index)) {
             return;
         }
 
@@ -636,6 +638,6 @@ class GraphRenderer extends VxWorker {
         this.numOfRenderedNodes = 0;
         this.nextNodeIndex = 0;
         this.pendingInBatch = 0;
-        this.finishWork();
+        this.finishWork(this.passGeneration);
     }
 }

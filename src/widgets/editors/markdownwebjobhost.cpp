@@ -36,7 +36,8 @@ void validateRuntimeOnLoad(QWebEnginePage *p_page, WebViewJobSession *p_session)
         const auto generation = p_session->generation();
         p_page->runJavaScript(
             QStringLiteral("Boolean(window.vxMarkdownJobsRegistered && window.vxcore && "
-                           "window.vxcore.initialized && window.vxWebJobs)"),
+                           "window.vxcore.initialized && window.vxcore.getWorker('document') && "
+                           "window.vxWebJobs)"),
             [session, generation](const QVariant &p_available) {
               if (session && session->generation() == generation && !p_available.toBool()) {
                 session->fail(QStringLiteral("Markdown job runtime failed to initialize"));

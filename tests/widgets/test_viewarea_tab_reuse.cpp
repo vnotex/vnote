@@ -35,6 +35,7 @@
 #include <QtConcurrent/QtConcurrentRun>
 
 #include <controllers/commentcontroller.h>
+#include <controllers/markdownrendercontroller.h>
 #include <controllers/markdownwebjobcontroller.h>
 #include <controllers/notebooknodecontroller.h>
 #include <controllers/viewareacontroller.h>
@@ -68,6 +69,7 @@
 #include <models/notebooknodemodel.h>
 #include <views/filelistview.h>
 #include <views/notebooknodeview.h>
+#include <vtextedit/markdownhighlighter.h>
 #include <vtextedit/previewdata.h>
 #include <vtextedit/vtextedit.h>
 #include <vtextedit/vtypsteditor.h>
@@ -107,10 +109,25 @@ QVariant evaluate(QWebEnginePage *p_page, const QString &p_script) {
 }
 
 bool rendered(MarkdownViewer *p_viewer, const QString &p_text) {
-  return p_viewer && p_viewer->jobSession()->isReady() &&
+  return p_viewer && p_viewer->jobSession()->isReady() && p_viewer->adapter()->isDocumentReady() &&
+         !p_viewer->adapter()->documentGeneration().isEmpty() &&
          evaluate(p_viewer->page(), QStringLiteral("document.body.innerText"))
              .toString()
              .contains(p_text);
+}
+
+bool waitForCurrentRender(MarkdownViewer *p_viewer, MarkdownRenderController *p_native,
+                          const QString &p_text) {
+  const QPointer<MarkdownViewer> viewer(p_viewer);
+  const QPointer<MarkdownRenderController> native(p_native);
+  // rendered() pumps events. QTRY's repeated post-success evaluations can observe
+  // a newer in-flight generation and report a false timeout for this predicate.
+  return QTest::qWaitFor(
+      [&]() {
+        return viewer && native && rendered(viewer, p_text) &&
+               native->isCurrent(viewer->adapter()->documentGeneration());
+      },
+      30000);
 }
 
 QByteArray readBytes(const QString &p_path) {
@@ -539,7 +556,9 @@ void TestViewAreaTabReuse::markdownResourcesAndSaveIdentity() {
   QVERIFY(window);
   auto *editor = window->findChild<MarkdownEditor *>();
   auto *viewer = window->findChild<MarkdownViewer *>();
-  QVERIFY(editor && viewer);
+  auto *native = window->findChild<MarkdownRenderController *>();
+  QVERIFY(editor && viewer && native);
+  QSignalSpy nativeHtml(native, &MarkdownRenderController::rendered);
   QTRY_VERIFY_WITH_TIMEOUT(rendered(viewer, QStringLiteral("Alpha")), 30000);
   QTRY_COMPARE_WITH_TIMEOUT(
       evaluate(viewer->page(), QStringLiteral("document.querySelector('img')?.naturalWidth"))
@@ -580,6 +599,9 @@ void TestViewAreaTabReuse::markdownResourcesAndSaveIdentity() {
   QVERIFY(attachmentList);
   QCOMPARE(attachmentList->model()->rowCount(), 1);
   QVERIFY(attachments->isVisible());
+  QVERIFY(waitForCurrentRender(viewer, native, QStringLiteral("Alpha")));
+  const auto alphaToken = viewer->adapter()->documentGeneration();
+  const auto alphaEditorGeneration = editor->getHighlighter()->documentGeneration();
   QSignalSpy published(f->controller(), &ViewAreaController::currentViewWindowChanged);
   QSignalSpy names(window, &ViewWindow2::nameChanged);
   QSignalSpy statuses(window, &ViewWindow2::statusChanged);
@@ -620,7 +642,19 @@ void TestViewAreaTabReuse::markdownResourcesAndSaveIdentity() {
   QCOMPARE(window->getName(), QStringLiteral("b.md"));
   QTRY_VERIFY(f->area->getCurrentViewSplit()->tabText(index).contains(QStringLiteral("b.md")));
   const auto heading = equalSource ? QStringLiteral("Alpha") : QStringLiteral("Beta");
-  QTRY_VERIFY_WITH_TIMEOUT(rendered(viewer, heading), 30000);
+  QVERIFY(waitForCurrentRender(viewer, native, heading));
+  const auto betaToken = viewer->adapter()->documentGeneration();
+  QVERIFY(betaToken != alphaToken);
+  QVERIFY(editor->getHighlighter()->documentGeneration() != alphaEditorGeneration);
+  QCOMPARE(window->findChild<MarkdownRenderController *>(), native);
+  QCOMPARE(window->findChildren<MarkdownRenderController *>().size(), 1);
+  QCOMPARE(viewer->jobSession()->property("markdownJobBufferId").toString(), b.id());
+  QVERIFY(!viewer->jobSession()->property("markdownJobProtected").toBool());
+  QVERIFY(!nativeHtml.isEmpty());
+  QCOMPARE(nativeHtml.last().at(0).toString(), betaToken);
+  const auto betaResult = qvariant_cast<MarkdownHtmlResult>(nativeHtml.last().at(1));
+  QVERIFY(betaResult.error.isEmpty() && !betaResult.html.isEmpty() && betaResult.document);
+  QCOMPARE(betaResult.document->source(), sourceB);
   QTRY_COMPARE_WITH_TIMEOUT(
       evaluate(page, QStringLiteral("document.querySelector('img')?.naturalWidth")).toInt(), 31,
       10000);
@@ -632,6 +666,30 @@ void TestViewAreaTabReuse::markdownResourcesAndSaveIdentity() {
   QVERIFY(window->save());
   QTRY_VERIFY(readBytes(f->absolute(QStringLiteral("b/b.md"))).contains("Saved B only"));
   QCOMPARE(readBytes(f->absolute(QStringLiteral("a/a.md"))), sourceA);
+  QTRY_VERIFY_WITH_TIMEOUT(!f->buffers->isSaveQueueBusy(b.id()) && !window->isModified(), 10000);
+
+  // Return to A through the same retained window/editor/page, even for identical source.
+  const auto reopenedA = f->open(QStringLiteral("a/a.md"));
+  QVERIFY(reopenedA.isValid());
+  QCOMPARE(f->current(), window);
+  QCOMPARE(window->findChild<MarkdownEditor *>(), editor);
+  QCOMPARE(window->findChild<MarkdownViewer *>(), viewer);
+  QCOMPARE(window->findChild<MarkdownRenderController *>(), native);
+  QCOMPARE(viewer->page(), page);
+  QVERIFY(waitForCurrentRender(viewer, native, QStringLiteral("Alpha")));
+  const auto returnedToken = viewer->adapter()->documentGeneration();
+  QVERIFY(returnedToken != alphaToken && returnedToken != betaToken);
+  QCOMPARE(nativeHtml.last().at(0).toString(), returnedToken);
+  const auto returnedResult = qvariant_cast<MarkdownHtmlResult>(nativeHtml.last().at(1));
+  QVERIFY(returnedResult.error.isEmpty() && !returnedResult.html.isEmpty() &&
+          returnedResult.document);
+  QCOMPARE(returnedResult.document->source(), sourceA);
+  QCOMPARE(viewer->jobSession()->property("markdownJobBufferId").toString(), reopenedA.id());
+  QCOMPARE(editor->getText(), QString::fromUtf8(sourceA));
+  QVERIFY(!editor->getTextEdit()->document()->isUndoAvailable());
+  QTRY_COMPARE_WITH_TIMEOUT(
+      evaluate(page, QStringLiteral("document.querySelector('img')?.naturalWidth")).toInt(), 17,
+      10000);
 }
 
 void TestViewAreaTabReuse::nativeTextAndMindMap() {
@@ -938,12 +996,20 @@ void TestViewAreaTabReuse::dirtyReplacement() {
     QCOMPARE(f->order(), oldOrder);
     QCOMPARE(f->coreCurrent(), a.id());
     QCOMPARE(f->buffers->listBuffers().size(), 1);
+    auto *reader = window->findChild<MarkdownViewer *>();
+    auto *native = window->findChild<MarkdownRenderController *>();
+    QVERIFY(reader && native);
+    QVERIFY(waitForCurrentRender(reader, native, QStringLiteral("Unsaved alpha draft")));
   } else {
     QCOMPARE(window->getBuffer().id(), b.id());
     QCOMPARE(editor->getText(), QStringLiteral("# Beta\n"));
     QCOMPARE(f->order(), QStringList({b.id()}));
     QCOMPARE(f->coreCurrent(), b.id());
     QVERIFY(!editor->getTextEdit()->document()->isUndoAvailable());
+    auto *reader = window->findChild<MarkdownViewer *>();
+    auto *native = window->findChild<MarkdownRenderController *>();
+    QVERIFY(reader && native);
+    QVERIFY(waitForCurrentRender(reader, native, QStringLiteral("Beta")));
     appendDraft(editor->getTextEdit(), QStringLiteral("Saved beta only\n"));
     QVERIFY(window->save());
   }
@@ -1354,7 +1420,8 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   auto *window = f->current();
   auto *editor = window->findChild<MarkdownEditor *>();
   QPointer<MarkdownViewer> ordinary = window->findChild<MarkdownViewer *>();
-  QVERIFY(editor && ordinary);
+  auto *native = window->findChild<MarkdownRenderController *>();
+  QVERIFY(editor && ordinary && native);
   const auto nativeImage = [editor](QString *name = nullptr) -> QImage {
     for (auto block = editor->getTextEdit()->document()->begin(); block.isValid();
          block = block.next()) {
@@ -1375,6 +1442,8 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
     return {};
   };
   QTRY_VERIFY_WITH_TIMEOUT(rendered(ordinary, QStringLiteral("Ordinary")), 30000);
+  const auto ordinaryToken = ordinary->adapter()->documentGeneration();
+  QVERIFY(native->isCurrent(ordinaryToken));
   const auto tabId = window->getViewWindowId();
   const auto a = f->openProtected(protectedA);
   QVERIFY(a.isValid() && a.isEncrypted());
@@ -1384,6 +1453,11 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   QPointer<MarkdownViewer> privateReader = window->findChild<MarkdownViewer *>();
   QVERIFY(privateReader);
   QTRY_VERIFY_WITH_TIMEOUT(rendered(privateReader, QStringLiteral("Protected alpha")), 30000);
+  const auto alphaToken = privateReader->adapter()->documentGeneration();
+  QVERIFY(alphaToken != ordinaryToken && native->isCurrent(alphaToken));
+  QCOMPARE(window->findChild<MarkdownRenderController *>(), native);
+  QCOMPARE(privateReader->jobSession()->property("markdownJobBufferId").toString(), a.id());
+  QVERIFY(privateReader->jobSession()->property("markdownJobProtected").toBool());
   QTRY_VERIFY_WITH_TIMEOUT(!nativeImage().isNull(), 10000);
   QString oldImageName;
   QCOMPARE(nativeImage(&oldImageName).pixelColor(0, 0), QColor(Qt::red));
@@ -1415,7 +1489,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   QVERIFY(jobs);
   struct AnchorCompletion {
     int count = 0;
-    WebViewJobResult::Status status = WebViewJobResult::Status::Error;
+    bool cancelled = false;
   };
   const auto anchorCompletion = std::make_shared<AnchorCompletion>();
   int staleMath = 0;
@@ -1442,11 +1516,11 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
       dialog->setImage(QImage::fromData(alphaImage));
       dialog->setInsertAsBase64(true);
       // Real pending reader work and a real user image insertion cross the rebind.
-      jobs->fetchHeadingAnchor(
-          QString::fromUtf8(alphaSource), 0,
-          [anchorCompletion](const MarkdownWebJobController::HeadingAnchorResult &result) {
+      native->fetchHeadingAnchor(
+          alphaSource, 0, {}, editor->getHighlighter()->currentDocument(),
+          [anchorCompletion](const MarkdownRenderController::HeadingAnchorResult &result) {
             ++anchorCompletion->count;
-            anchorCompletion->status = result.m_status;
+            anchorCompletion->cancelled = result.cancelled;
           });
       jobs->previewMath(901, 902, QStringLiteral("$x^2+y^2$"), 1.0);
       FileOpenSettings navigation;
@@ -1478,11 +1552,17 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
               oldEndpoint.isNull());
   QCOMPARE(destroyed, QStringList({QStringLiteral("page"), QStringLiteral("profile")}));
   QTRY_COMPARE(anchorCompletion->count, 1);
-  QCOMPARE(anchorCompletion->status, WebViewJobResult::Status::Cancelled);
+  QVERIFY(anchorCompletion->cancelled);
   auto *newReader = window->findChild<MarkdownViewer *>();
   QVERIFY(newReader);
   QVERIFY(newReader->page()->url() != oldUrl);
   QTRY_VERIFY_WITH_TIMEOUT(rendered(newReader, QStringLiteral("Protected beta")), 30000);
+  const auto betaToken = newReader->adapter()->documentGeneration();
+  QVERIFY(betaToken != alphaToken && native->isCurrent(betaToken));
+  QCOMPARE(window->findChild<MarkdownRenderController *>(), native);
+  QCOMPARE(window->findChildren<MarkdownRenderController *>().size(), 1);
+  QCOMPARE(newReader->jobSession()->property("markdownJobBufferId").toString(), b.id());
+  QVERIFY(newReader->jobSession()->property("markdownJobProtected").toBool());
   QCOMPARE(staleMath, 0);
   QCOMPARE(editor->getText(), QString::fromUtf8(betaSource));
   QVERIFY(!editor->findImageFromDocumentResourceMgr(oldImageName));
@@ -1509,6 +1589,12 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   QVERIFY(publicReader);
   QCOMPARE(publicReader->page()->profile(), f->profiles->profile());
   QTRY_VERIFY_WITH_TIMEOUT(rendered(publicReader, QStringLiteral("Public end")), 30000);
+  const auto publicToken = publicReader->adapter()->documentGeneration();
+  QVERIFY(publicToken != betaToken && native->isCurrent(publicToken));
+  QCOMPARE(window->findChild<MarkdownRenderController *>(), native);
+  QCOMPARE(publicReader->jobSession()->property("markdownJobBufferId").toString(),
+           window->getBuffer().id());
+  QVERIFY(!publicReader->jobSession()->property("markdownJobProtected").toBool());
   QTRY_VERIFY_WITH_TIMEOUT(!nativeImage().isNull(), 10000);
   QCOMPARE(nativeImage().pixelColor(0, 0), QColor(Qt::yellow));
   QCOMPARE(sibling->getLatestContent(), QString::fromUtf8(alphaSource));

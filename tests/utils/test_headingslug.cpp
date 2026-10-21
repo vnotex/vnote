@@ -103,11 +103,13 @@ void TestHeadingSlug::testReset() {
   // Generate a slug to populate state.
   slugger.slug(QStringLiteral("Test"));
   slugger.slug(QStringLiteral("Test"));
+  QCOMPARE(slugger.slug(QStringLiteral("Test-1")), QStringLiteral("test-1-1"));
 
   // After reset, dedup counter should restart.
   slugger.reset();
   QCOMPARE(slugger.slug(QStringLiteral("Test")), QStringLiteral("test"));
-  QCOMPARE(slugger.slug(QStringLiteral("Test")), QStringLiteral("test-1"));
+  QCOMPARE(slugger.slug(QStringLiteral("Test-1")), QStringLiteral("test-1"));
+  QCOMPARE(slugger.slug(QStringLiteral("Test")), QStringLiteral("test-2"));
 }
 
 } // namespace tests

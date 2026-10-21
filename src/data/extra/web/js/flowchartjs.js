@@ -18,17 +18,18 @@ class FlowchartJs extends GraphRenderer {
     // Render @p_node as Flowchart.js graph.
     // Return true on success.
     renderOne(p_node, p_idx) {
+        const generation = this.passGeneration;
         let graph = null;
         try {
             graph = flowchart.parse(p_node.textContent);
         } catch (p_err) {
             console.error('failed to render Flowchart.js', p_err);
-            this.finishRenderingOne();
+            this.finishRenderingOne(generation, p_idx);
             return false;
         }
 
         if (!graph) {
-            this.finishRenderingOne();
+            this.finishRenderingOne(generation, p_idx);
             return false;
         }
 
@@ -51,17 +52,17 @@ class FlowchartJs extends GraphRenderer {
         try {
             graph.drawSVG(graphDiv.id);
             if (window.vxOptions.protectedView) {
-                MarkdownIt.sanitizeProtectedSvg(graphDiv.firstElementChild);
+                DocumentRenderer.sanitizeProtectedSvg(graphDiv.firstElementChild);
             }
             window.vxImageViewer.setupSVGToView(graphDiv.children[0], true);
         } catch (p_err) {
             console.error('failed to draw Flowchart.js SVG', p_err);
             parentNode.replaceChild(childNode, graphDiv);
-            this.finishRenderingOne();
+            this.finishRenderingOne(generation, p_idx);
             return false;
         }
 
-        this.finishRenderingOne();
+        this.finishRenderingOne(generation, p_idx);
         return true;
     }
 
@@ -100,7 +101,7 @@ class FlowchartJs extends GraphRenderer {
 
         this.fixStandAloneGraph(graphDiv.firstElementChild);
         if (window.vxOptions.protectedView) {
-            MarkdownIt.sanitizeProtectedSvg(graphDiv.firstElementChild);
+            DocumentRenderer.sanitizeProtectedSvg(graphDiv.firstElementChild);
         }
 
         p_callback(graphDiv);

@@ -30,9 +30,9 @@ class PrismRenderer extends VxWorker {
 
         this.initialized = true;
 
-        let markdownIt = this.vxcore.getWorker('markdownit');
+        let documentRenderer = this.vxcore.getWorker('document');
         Prism.plugins.filterHighlightAll.add((p_env) => {
-            return !markdownIt.langsToSkipHighlight.has(p_env.language);
+            return !documentRenderer.langsToSkipHighlight.has(p_env.language);
         });
 
         /*
@@ -54,11 +54,11 @@ class PrismRenderer extends VxWorker {
     }
 
     // Interface 2.
-    // Get code nodes from markdownIt directly.
+    // Get code nodes from the document worker.
     renderCodeNodes(p_node) {
         this.initialize();
 
-        let codeNodes = this.vxcore.getWorker('markdownit').getCodeNodes(null);
+        let codeNodes = this.vxcore.getWorker('document').getCodeNodes(null);
         this.doRender(p_node, codeNodes);
     }
 

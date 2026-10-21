@@ -29,6 +29,8 @@ set(_native_export_sources
   ${CMAKE_SOURCE_DIR}/src/utils/contentmediautils.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/imagedestinationrewriter.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/htmlutils.cpp
+  ${CMAKE_SOURCE_DIR}/src/utils/markdownhtmlrenderer.cpp
+  ${CMAKE_SOURCE_DIR}/src/utils/headingslugger.cpp
   ${CMAKE_SOURCE_DIR}/src/core/buffer/filetypehelper.cpp
   ${CMAKE_SOURCE_DIR}/src/gui/services/mindmapimageloader.cpp
   ${CMAKE_SOURCE_DIR}/src/gui/utils/imageutils.cpp

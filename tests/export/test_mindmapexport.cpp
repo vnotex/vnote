@@ -42,6 +42,7 @@
 #include <export/exporter.h>
 #include <export/exportrendererfactory.h>
 #include <export/mindmapexporter.h>
+#include <utils/markdownhtmlrenderer.h>
 #include <vxcore/vxcore.h>
 
 using namespace vnotex;
@@ -679,23 +680,21 @@ void TestMindMapExport::markdownLinksMatchHtmlDirection() {
   MindMapExporter renderer(services, nullptr, nullptr);
   ExportMarkdown markdown;
   QVERIFY(renderer.renderMarkdown(input, markdown));
-  // Use VNote's actual Markdown engine: QTextDocument does not decode entities in link titles.
-  const auto scriptPath = QFINDTESTDATA("../../src/data/extra/web/js/markdown-it/markdown-it.min.js");
-  QVERIFY(!scriptPath.isEmpty());
+  // Render through VNote's native producer, then inspect actual browser link semantics.
+  const auto native = MarkdownHtmlRenderer::render(markdown.content.toUtf8(), {});
+  QVERIFY2(native.error.isEmpty(), qPrintable(native.error));
   QTemporaryDir temporary;
   QVERIFY(temporary.isValid());
   const auto pagePath = temporary.filePath(QStringLiteral("document.html"));
-  QVERIFY(writeBytes(pagePath, QByteArrayLiteral("<!doctype html><meta charset=\"utf-8\"><script>") +
-                                   readBytes(scriptPath) + QByteArrayLiteral("</script><body></body>")));
+  QVERIFY(writeBytes(pagePath, QByteArrayLiteral("<!doctype html><meta charset=\"utf-8\"><body>") +
+                                   native.html.toUtf8() + QByteArrayLiteral("</body>")));
   HtmlPage page;
   QVERIFY(page.load(pagePath));
-  const auto argument = QString::fromUtf8(QJsonDocument(QJsonArray{markdown.content}).toJson(QJsonDocument::Compact));
-  QVERIFY(page.evaluate(QStringLiteral("document.body.innerHTML = markdownit({html:true}).render(%1[0]); true")
-                            .arg(argument)).toBool());
   const auto rendered = page.evaluate(QStringLiteral(R"JS((() => {
     const anchors = Array.from(document.querySelectorAll('a[id]'));
     return Array.from(document.querySelectorAll('a[href]'))
-      .filter(link => link.getAttribute('href').startsWith('#')).map(link => {
+      .filter(link => !link.classList.contains('vx-header-anchor') &&
+                      link.getAttribute('href').startsWith('#')).map(link => {
       const owner = anchors.filter(anchor => anchor.compareDocumentPosition(link) &
                                               Node.DOCUMENT_POSITION_FOLLOWING).pop();
       const href = link.getAttribute('href');
@@ -705,7 +704,8 @@ void TestMindMapExport::markdownLinksMatchHtmlDirection() {
               inOwner: owner.closest('li') === link.closest('li'),
               targetExists: !!target, navigated: location.hash === href};
     });
-  })())JS")).toList();
+  })())JS"))
+                            .toList();
   QVector<QStringList> actual;
   for (const auto &value : rendered) {
     const auto reference = value.toMap();

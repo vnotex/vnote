@@ -78,11 +78,28 @@ The external process alone owns signed full-package authentication, preservation
 relaunch. Protected installations fail with manual-update guidance, not UAC/ACL changes.
 [../../docs/update-signing.md](../../docs/update-signing.md) owns that contract.
 
+## Native Markdown rendering
+
+`MarkdownRenderController` owns native reader and heading-anchor jobs. It uses the shared
+QtConcurrent pool with one running and one latest-pending preview per view; explicit heading
+requests complete exactly once. Workers capture immutable source/options/documents, never
+buffers, widgets or services. GUI-thread admission and delivery both enforce authorization.
+
+`MarkdownHtmlRenderer` uses the same cmark viewer profile for direct Read, editor snapshots,
+heading links and WebEngine export. Reuse requires identical source bytes and parse options;
+soft-break output options do not invalidate the tree. Heading IDs are allocated in rendered
+order, including relocated footnotes, while the cmark decoration table remains source-ordered.
+
+Invalidate on source/profile/page changes and suspend before reader eviction. Protected revoke
+closes admission and suppresses delivery immediately; running parses release their inputs on
+completion and drain asynchronously before final clearance. Never block the GUI waiting for
+cmark or reset a finished QFutureWatcher to a default future to release its result.
+
 ## Markdown JS Jobs
 
 `MarkdownWebJobController` is a per-editor QObject receiving `ServiceLocator` and the buffer.
-It owns typed preview, code/math highlighting, stylesheet, HTML-to-Markdown and heading-anchor
-requests. Views only emit intents, provide geometry/session observations, and display results.
+It owns typed preview, code/math highlighting, stylesheet and HTML-to-Markdown
+requests. Heading anchors use the native controller without requiring WebEngine. Views only emit intents, provide geometry/session observations, and display results.
 The existing document models remain authoritative; the controller never constructs a QWidget.
 
 For each request, prefer the authorized current ready reader session. Otherwise ordinary notes

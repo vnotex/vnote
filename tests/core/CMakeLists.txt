@@ -609,6 +609,11 @@ add_qt_test(test_htmltemplateservice
     core_configs
   GUILESS
 )
+add_dependencies(test_htmltemplateservice VX_EXTRA_RESOURCE)
+get_target_property(_template_resource_dir VX_EXTRA_RESOURCE BINARY_DIR)
+target_compile_definitions(test_htmltemplateservice PRIVATE
+  VNOTE_TEST_EXTRA_RCC="${_template_resource_dir}/vnote_extra.rcc"
+)
 if(TARGET Qt6::Qml)
   target_link_libraries(test_htmltemplateservice PRIVATE Qt6::Qml)
   target_compile_definitions(test_htmltemplateservice PRIVATE

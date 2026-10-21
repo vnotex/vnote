@@ -60,7 +60,7 @@ class ImageViewer {
         const request = this.pendingNativeRequest;
         const core = window.vxcore;
         if (!request || !core.initialized || core.numOfOngoingWorkers !== 0
-            || !core.pendingData || core.pendingData.text !== null) {
+            || !core.pendingData || core.pendingData.document !== null) {
             return;
         }
         this.pendingNativeRequest = null;

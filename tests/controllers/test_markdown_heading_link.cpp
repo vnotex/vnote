@@ -7,10 +7,10 @@
 //     that decides whether the clicked block is an ATX heading worth offering a
 //     "Copy Link" action for.
 //   * MarkdownEditorController::composeHeadingLink - composition of the final
-//     absolute file:// link from the note path and the web-resolved anchor.
+//     absolute file:// link from the note path and the native-resolved anchor.
 //
-// The anchor itself is computed on the web side (markdownit.js getHeadingAnchor)
-// and therefore cannot be unit-tested here; see the plan's manual parity matrix.
+// Native anchor semantics and async lifetime are covered by
+// test_markdownhtmlrenderer and test_markdownrendercontroller.
 
 #include <QtTest>
 
@@ -130,8 +130,7 @@ void TestMarkdownHeadingLink::gateIndentedHeading() {
 }
 
 void TestMarkdownHeadingLink::gateAcceptsAtxClosingSequence() {
-  // The gate accepts it; the trailing '##' is stripped on the web side, which
-  // is exactly why the anchor is resolved there rather than in C++.
+  // The native parser strips the closing sequence before generating the anchor.
   QVERIFY(MarkdownEditorController::isLinkableHeadingLine(QStringLiteral("## Foo ##")));
 }
 

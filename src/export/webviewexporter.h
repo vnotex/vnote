@@ -3,6 +3,9 @@
 
 #include "exportrenderer.h"
 
+#include <atomic>
+#include <memory>
+
 class QWidget;
 
 namespace vnotex {
@@ -85,6 +88,8 @@ private:
   QSize pageLayoutSize(const QPageLayout &p_layout) const;
 
   bool m_askedToStop = false;
+  quint64 m_nativeGeneration = 0;
+  std::shared_ptr<std::atomic_bool> m_nativeCancelled;
 
   bool m_exportOngoing = false;
 

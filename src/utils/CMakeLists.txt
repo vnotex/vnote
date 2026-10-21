@@ -9,6 +9,7 @@ target_sources(vnote PRIVATE
     docsutils.cpp docsutils.h
     fileutils2.cpp fileutils2.h
     headingslugger.cpp headingslugger.h
+    markdownhtmlrenderer.cpp markdownhtmlrenderer.h
     htmlutils.cpp htmlutils.h
     notebookpathhelpers.cpp notebookpathhelpers.h
     pathutils.cpp pathutils.h

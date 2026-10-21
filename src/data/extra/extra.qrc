@@ -9,7 +9,7 @@
         <file>web/markdown-export-template.html</file>
         <file>web/css/user.css</file>
         <file>web/css/globalstyles.css</file>
-        <file>web/css/markdownit.css</file>
+        <file>web/css/markdowndocument.css</file>
         <file>web/css/imageviewer.css</file>
         <file>web/css/outline.css</file>
         <file>web/css/exportglobalstyles.css</file>
@@ -32,24 +32,8 @@
         <file>web/js/easyaccess.js</file>
         <file>web/js/crosscopy.js</file>
         <file>web/js/outline.js</file>
-        <file>web/js/markdown-it/markdown-it-container.min.js</file>
-        <file>web/js/markdown-it/markdown-it-emoji.min.js</file>
-        <file>web/js/markdown-it/markdown-it-footnote.min.js</file>
-        <file>web/js/markdown-it/markdown-it-front-matter.js</file>
-        <file>web/js/markdown-it/markdownItAnchor.umd.js</file>
-        <file>web/js/markdown-it/markdownItTocDoneRight.umd.js</file>
-        <file>web/js/markdown-it/markdown-it-imsize.min.js</file>
-        <file>web/js/markdown-it/markdown-it-sub.min.js</file>
-        <file>web/js/markdown-it/markdown-it-sup.min.js</file>
-        <file>web/js/markdown-it/markdown-it-task-lists.js</file>
-        <file>web/js/markdown-it/markdown-it-texmath.js</file>
-        <file>web/js/markdown-it/markdown-it-mark.min.js</file>
-        <file>web/js/markdown-it/markdown-it-inject-linenumbers.js</file>
-        <file>web/js/markdown-it/xss.min.js</file>
-        <file>web/js/markdown-it/markdown-it-xss.js</file>
-        <file>web/js/markdown-it/markdown-it-implicit-figure.js</file>
-        <file>web/js/markdown-it/markdown-it.min.js</file>
-        <file>web/js/markdownit.js</file>
+        <file>web/js/xss.min.js</file>
+        <file>web/js/documentrenderer.js</file>
         <file>web/js/mermaid/mermaid.min.js</file>
         <file>web/js/mermaid.js</file>
         <file>web/js/flowchart.js/flowchart.min.js</file>

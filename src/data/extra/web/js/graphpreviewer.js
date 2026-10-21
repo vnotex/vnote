@@ -403,7 +403,7 @@ class GraphPreviewer {
             this.perfNoteRasterStart('webjobs', p_request.id);
         }
         if (window.vxOptions.protectedView) {
-            MarkdownIt.sanitizeProtectedSvg(p_svgNode);
+            DocumentRenderer.sanitizeProtectedSvg(p_svgNode);
             const viewBox = p_svgNode.viewBox.baseVal;
             const width = p_svgNode.width.baseVal.value || viewBox.width;
             const height = p_svgNode.height.baseVal.value
