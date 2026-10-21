@@ -309,6 +309,7 @@ void NotificationToast::render(const NotificationMessage &p_msg) {
   while (m_actionLayout->count() > 0) {
     QLayoutItem *item = m_actionLayout->takeAt(0);
     if (auto *w = item->widget()) {
+      w->hide();
       w->deleteLater();
     }
     delete item;
@@ -358,9 +359,9 @@ void NotificationToast::render(const NotificationMessage &p_msg) {
       }
     });
     m_actionLayout->addWidget(btn);
+    btn->show();
   }
 
-  adjustSize();
   reposition();
 }
 
@@ -448,9 +449,31 @@ void NotificationToast::reposition() {
     area = QRect(m_anchor->mapTo(parent, QPoint(0, 0)), m_anchor->size());
   }
 
-  const QSize hint = sizeHint().boundedTo(QSize(c_maxWidth, area.height()));
-  resize(hint);
-  move(area.right() - hint.width() - c_margin, area.bottom() - hint.height() - c_margin);
+  ensurePolished();
+  const QSize hint = sizeHint();
+  const int toastWidth = qMin(hint.width(), qMin(c_maxWidth, qMax(1, area.width() - 2 * c_margin)));
+  // A width cap can add text lines. Measure their height at the final width,
+  // after polishing the newly created action buttons, not at sizeHint's width.
+  const int contentHeight = m_mainLayout->hasHeightForWidth()
+                                ? m_mainLayout->totalHeightForWidth(toastWidth)
+                                : hint.height();
+  const QSize targetSize(toastWidth, qMin(contentHeight, area.height()));
+  if (size() != targetSize) {
+    resize(targetSize);
+  }
+  const QPoint targetPosition(area.right() - width() - c_margin,
+                              area.bottom() - height() - c_margin);
+  if (pos() != targetPosition) {
+    move(targetPosition);
+  }
+}
+
+bool NotificationToast::event(QEvent *p_event) {
+  const bool handled = QFrame::event(p_event);
+  if (p_event->type() == QEvent::LayoutRequest && isVisible() && m_shownId != 0) {
+    reposition();
+  }
+  return handled;
 }
 
 bool NotificationToast::eventFilter(QObject *p_watched, QEvent *p_event) {

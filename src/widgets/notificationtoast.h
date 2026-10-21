@@ -74,6 +74,7 @@ signals:
   void popupRequested();
 
 protected:
+  bool event(QEvent *p_event) override;
   void enterEvent(QEnterEvent *p_event) override;
   void leaveEvent(QEvent *p_event) override;
   void mouseReleaseEvent(QMouseEvent *p_event) override;

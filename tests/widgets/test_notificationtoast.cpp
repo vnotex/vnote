@@ -40,6 +40,7 @@ private slots:
   void cleanup();
 
   void test_showsOnInterruptAdded();
+  void test_wrappedOfferFitsAfterLayoutChanges();
   void test_lateNativeChildDoesNotCoverToast();
   void test_closeControlUsesThemedIconAndHidesOnlyTheToast();
   void test_ignoresPassiveAdded();
@@ -135,6 +136,74 @@ void TestNotificationToast::test_showsOnInterruptAdded() {
 
   QVERIFY(toastShown());
   QCOMPARE(m_toast->shownId(), id);
+}
+
+void TestNotificationToast::test_wrappedOfferFitsAfterLayoutChanges() {
+  const auto styleSheet = m_themeService->fetchQtStyleSheet();
+  m_host->setStyleSheet(styleSheet + QStringLiteral("\nQWidget { font-size: 20px; }"));
+  m_host->show();
+  QVERIFY(QTest::qWaitForWindowExposed(m_host));
+
+  auto message = interrupt(
+      QStringLiteral("VNote 4.11.0 已发布。“立即更新”将下载更新，然后关闭并重新打开 VNote"));
+  message.m_title = QStringLiteral("有可用更新");
+  message.m_actions = {{QStringLiteral("查看发布"), [] {}, false},
+                       {QStringLiteral("立即更新"), [] {}, false}};
+  const auto id = m_notifications->notify(message);
+  QCoreApplication::processEvents();
+
+  const auto verifyContentFits = [&] {
+    QVERIFY(m_toast->isVisible());
+    QVERIFY(m_toast->width() <= 420);
+    QVERIFY(m_host->rect().contains(m_toast->geometry()));
+    QLabel *body = nullptr;
+    for (auto *label : m_toast->findChildren<QLabel *>()) {
+      if (label->wordWrap()) {
+        body = label;
+        break;
+      }
+    }
+    QVERIFY(body);
+    QVERIFY(body->heightForWidth(body->width()) > body->fontMetrics().height());
+    QVERIFY2(body->height() >= body->heightForWidth(body->width()),
+             "wrapped notification text is clipped at the final toast width");
+    QVERIFY(m_toast->rect().contains(body->geometry()));
+    for (auto *button : m_toast->findChildren<QPushButton *>()) {
+      if (!button->isVisible()) {
+        continue;
+      }
+      QVERIFY2(button->height() >= button->sizeHint().height(),
+               "notification action is shorter than its styled label and padding");
+      QVERIFY(button->width() >= button->sizeHint().width());
+      QVERIFY(button->geometry().top() > body->geometry().bottom());
+      QVERIFY(m_toast->rect().contains(button->geometry()));
+    }
+  };
+  verifyContentFits();
+  const auto bottomRight = m_toast->geometry().bottomRight();
+
+  // A visible refresh creates new buttons before their deferred show/polish events.
+  message.m_text += QStringLiteral("。更新前请保存正在编辑的笔记");
+  QVERIFY(m_notifications->update(id, message));
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QCoreApplication::processEvents();
+  verifyContentFits();
+  QCOMPARE(m_toast->geometry().bottomRight(), bottomRight);
+
+  // Font changes arrive independently of a new notification.
+  m_host->setStyleSheet(styleSheet + QStringLiteral("\nQWidget { font-size: 24px; }"));
+  QCoreApplication::processEvents();
+  verifyContentFits();
+  QCOMPARE(m_toast->geometry().bottomRight(), bottomRight);
+
+  m_host->resize(390, 700);
+  QCoreApplication::processEvents();
+  verifyContentFits();
+  const auto narrowWidth = m_toast->width();
+  m_host->resize(800, 700);
+  QCoreApplication::processEvents();
+  verifyContentFits();
+  QVERIFY(m_toast->width() > narrowWidth);
 }
 
 void TestNotificationToast::test_lateNativeChildDoesNotCoverToast() {
