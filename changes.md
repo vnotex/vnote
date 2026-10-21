@@ -1,41 +1,44 @@
 # Changes
-## Unreleased
-* Fix near-black PDF viewer margins in dark themes by explicitly matching the active theme background, including after theme changes
-* Soften mind-map tag outlines to a fixed 40% text-color blend over their background, consistently in the editor and exported maps
-* Match mind-map properties button/swatch borders and hover fills to the active theme, and replace the native sunken separator with a flat themed line
-* Use the same Typst preview context menu in Edit and Read modes
-* Navigate to the end of Typst headings from Outline without selecting the heading text
-* Update vtextedit to upstream `be21546` with KSyntaxHighlighting 6.30 and native Markdown code-block highlighting by default
-* Require Qt 6.9+, CMake 3.21+, Python 3 and a C++20-capable compiler for the syntax indexer; VNote remains C++17 and normal syntax builds no longer require Perl
-* Exclude White, Cloud, Gray, Slate, Midnight, Black and Mint from automatic mind-map branch colors, preserving existing branch colors and all manual color choices
-* Use Everforest red for all Markdown headings and green for inline code in edit and read modes, preserving code-block colors
-* Remove unused `editor-colors` sections from bundled syntax-highlighting themes; token colors and decorations are unchanged
-* Fix clipped KaTeX fractions in PDF/custom exports and align inline math images correctly in exports and cross-copy (#2776)
-* Add builtin United Entry aliases `t` and `T` to search for files by tag in the current notebook and all notebooks, respectively
-* Add builtin United Entry aliases `N` (filenames) and `G` (contents) for all notebooks, listed immediately after current-notebook `n`/`g`, respectively
-* Add a bundled `title.typst` template that uses the filename without its extension as the title; select it by default for unconfigured template mappings while preserving existing choices
-* Show MARKDOWN instead of RICHMARKDOWN in the Markdown editor status widget
-* Give document-tab close icons more space from the tab edge while preserving native close behavior (#2775)
-* Add mind-map Print to the toolbar menu, fitting the current layout to one page with vector text, images, links and inline drafts
-* Print the rendered Markdown viewer in Read mode and the editor's current Markdown source in Edit mode, including editor selections and live-preview split layouts
-* Release obsolete MathJax formulas, menu references and Graphviz results when Markdown read content is replaced, without forcing garbage collection
-* Trim unused Qt PDF and NMEA positioning DLLs from Windows packages, and reject obsolete application-local UCRT files in package checks
-* Initialize export rendering and syntax styles from the current theme on the first dialog show in each app session, preserving later choices within that session
-* Add Export above Shortcuts Help in the mind map editor's empty-canvas context menu, using the current buffer and the existing export dialog
-* Fix note drag-and-drop reordering with external files visible, reject external reorder anchors, and preserve expanded folders after reordering
-* Use softer theme-derived mind-map outlines and connecting lines, blending foreground with the canvas while retaining contrast; preserve custom branch colors and selection highlights
-* Add Alt+M to focus the mind-map Image property, including Chinese, Japanese and Korean labels, while keeping Alt+I for Icons
-* Add a bundled `title.mmm` mind-map template that uses the note title as its central topic; select it by default for unconfigured template mappings while preserving existing choices
-* Delay Markdown read viewers in edit-only mode; share editor JS work across tabs and prefer each tab's ready reader, with isolated protected-note and MathJax contexts
-* Allow the full Markdown viewer browser suite to finish on slower CI runners without changing per-step timeouts
-* Translate mind map Paste and all emoji picker categories in Simplified Chinese, Japanese and Korean
-* Revise Simplified Chinese interface wording for more natural phrasing and consistent search, editor, snippet, workspace and split terminology
-* Preserve nonempty custom Markdown `<a>` IDs containing only ASCII letters, digits, underscores, and hyphens while XSS protection is enabled; no prefix is required
-* Show the notebook name instead of its ID in the export dialog's Current notebook source
-* Match Qt native context-menu icons to the selected light or dark theme even when Windows retains a light palette, and restore system appearance for Native
-* Add Undo and Redo toolbar buttons to plain text and Markdown editors, matching the mind map editor
-* Require Qt 6; remove Qt 5.15 and Windows 7 builds, packaging and compatibility paths
-* Update vtextedit to upstream `af55346`, including theme-format and preview-layout fixes
+## v4.11.0
+A feature release with native Typst editing, reusable note tabs and refined mind-map tools on top of VNote 4.10.0:
+
+* **Typst**
+    * Create and edit `.typst` notes with a bundled native compiler, live PDF preview, in-place previews and compiler diagnostics; switch to PDF-only Read mode without losing the source editing session
+    * Toggle Live Preview and In-Place Preview independently, search source in Edit mode and PDF text in Read mode, and use page navigation, presentation and shared zoom controls
+    * Follow the active theme in the preview, with a per-view Theme Style in Preview toggle; explicit document styles take precedence and exports retain their original styling
+    * Insert images, links, attachments and file contents from dialogs, the clipboard and drag-and-drop, keeping local image resources inside the note's Typst project
+    * View, copy and safely resize images from source, in-place previews and PDF context menus; open image overlays with zoom and pan, and route local-file links through VNote
+    * Navigate compiled headings from Outline without selecting their text, use consistent preview menus in Edit and Read modes, and restore the session cursor without jumping to the end
+    * Add a default `title.typst` template using the filename without its extension, while preserving existing template choices
+* **Tabs and performance**
+    * Add an Always open notes in new tabs setting; disable it to reuse the current tab, or hold Ctrl when activating a note to open a new tab
+    * Retain compatible editors, preview resources and zoom/layout preferences across note replacement, with save/comment confirmation and isolation of document history and pending operations
+    * Release hidden Markdown web views after a configurable timeout, defaulting to five minutes; returning reloads the current preview without losing unsaved text or Undo history
+    * Delay Markdown readers in edit-only mode, share editor JavaScript work across tabs with protected-note isolation, and release obsolete MathJax, menu and Graphviz content when readers change
+* **Mind maps**
+    * Refine balanced layouts with clockwise ordering, add Ctrl+H/J/K/L navigation, show branch-facing expand/collapse controls on hover, and restore canvas keyboard focus after layout changes
+    * Use softer theme-derived connectors, outlines and tag borders in the editor and exports; match properties controls and separators to the active theme
+    * Exclude neutral colors and Mint from automatic branch colors while preserving existing branch colors and manual choices
+    * Add a default `title.mmm` template using the note title as the central topic, while preserving existing template choices
+    * Add Alt+M for the Image property while keeping Alt+I for Icons, align property heading styles, and remove the redundant add-link shortcut and dialog
+* **Printing and export**
+    * Print mind maps from the toolbar menu, fitting the current layout onto one page with vector text, images, links and inline drafts; open Export directly from the empty-canvas context menu
+    * Print the rendered Markdown document in Read mode and current source in Edit mode, including selections and live-preview split layouts
+    * Produce readable document-style mind-map Markdown exports and align node links with their HTML articles
+    * Fix clipped KaTeX fractions in PDF/custom exports and inline math alignment in exports and cross-copy (#2776)
+    * Initialize export rendering and syntax styles from the current theme on the first dialog show of each session, retain later choices, and show the notebook name in Current notebook exports
+* **Search, themes and interface**
+    * Add United Entry aliases `t`/`T` for tag searches in the current/all notebooks, and `N`/`G` for filename/content searches across all notebooks; group aliases by scope
+    * Add Undo and Redo toolbar buttons to text and Markdown editors, show MARKDOWN in the editor status widget, and give document-tab close icons more space (#2775)
+    * Float and round editor status surfaces, move image overlay controls beside Close, and shorten tip notifications to ten seconds
+    * Fix note drag-and-drop reordering with external files visible and preserve expanded folders
+    * Match PDF margins and native context-menu icons to the active theme; restore Native palette behavior and use Everforest red for headings and green for inline code
+    * Preserve safe custom Markdown anchor IDs without requiring a prefix, and remember Never Ask for external-link warnings while retaining local-file and protected-note safeguards (#2773)
+* **Compatibility and builds**
+    * Require Qt 6.9+ and remove Qt 5.15 and Windows 7 support; bundle the native Typst runtime and its license notices, and trim unused Windows NMEA dependencies while rejecting obsolete application-local UCRT files
+    * Update syntax highlighting to KSyntaxHighlighting 6.30 with native Markdown code-block highlighting by default, including Typst syntax support and theme/preview fixes; remove unused editor-color sections without changing token styles
+    * Require CMake 3.21+, Python 3 and a C++20-capable compiler for the syntax indexer; VNote remains C++17 and normal syntax builds no longer require Perl
+* **Translations**: Simplified Chinese (zh_CN), Japanese (ja) and Korean (ko) catalogs updated, including Typst, tab reuse, mind-map Paste and emoji categories; refine Chinese and Korean interface wording
 
 ## v4.10.0
 A feature release with richer mind-map editing and exports, image viewing and self-contained encrypted notes on top of VNote 4.9.1:

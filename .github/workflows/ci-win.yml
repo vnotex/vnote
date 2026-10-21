@@ -16,7 +16,7 @@ on:
         default: false
 
 env:
-    VNOTE_VER: 4.10.0
+    VNOTE_VER: 4.11.0
     CARGO_BUILD_JOBS: 2
 
 jobs:

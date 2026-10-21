@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.21)
 set(CMAKE_OSX_DEPLOYMENT_TARGET "12.1" CACHE STRING "Minimum OS X deployment version")
 
 project(VNote
-    VERSION 4.10.0
+    VERSION 4.11.0
     DESCRIPTION "A pleasant note-taking platform"
     HOMEPAGE_URL "https://app.vnote.fun"
     LANGUAGES C CXX)
