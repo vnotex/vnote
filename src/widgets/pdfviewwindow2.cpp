@@ -56,6 +56,13 @@ QSharedPointer<Outline> outlineFromHeadings(const QVector<PdfViewerAdapter::Head
   return outline;
 }
 
+QString pdfThemeCss(const ThemeService &p_themeService) {
+  // Chromium can paint its dark canvas behind a transparent body.
+  return p_themeService.commentHighlightCssVariables() +
+         QStringLiteral("\nbody { background-color: %1; }\n")
+             .arg(p_themeService.getBaseBackground().name(QColor::HexRgb));
+}
+
 } // namespace
 
 PdfViewWindow2::PdfViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer,
@@ -705,7 +712,7 @@ void PdfViewWindow2::setupViewer() {
   // plain content — HtmlTemplateService must stay free of GUI dependencies.
   auto *tmplService = getServices().get<HtmlTemplateService>();
   tmplService->updatePdfViewerTemplate(pdfViewerConfig,
-                                       themeService->commentHighlightCssVariables(),
+                                       pdfThemeCss(*themeService),
                                        themeService->fetchWebStyleSheet());
 
   auto *pdfAdapter = new PdfViewerAdapter(nullptr);
@@ -785,7 +792,7 @@ void PdfViewWindow2::handleEditorConfigChange() {
     auto *themeService = getServices().get<ThemeService>();
     auto *tmplService = getServices().get<HtmlTemplateService>();
     tmplService->updatePdfViewerTemplate(pdfViewerConfig,
-                                         themeService->commentHighlightCssVariables(),
+                                         pdfThemeCss(*themeService),
                                          themeService->fetchWebStyleSheet());
   }
 }
@@ -804,7 +811,7 @@ void PdfViewWindow2::handleThemeChanged() {
   auto *themeService = getServices().get<ThemeService>();
   auto *tmplService = getServices().get<HtmlTemplateService>();
   tmplService->updatePdfViewerTemplate(pdfViewerConfig,
-                                       themeService->commentHighlightCssVariables(),
+                                       pdfThemeCss(*themeService),
                                        themeService->fetchWebStyleSheet(), /*p_force=*/true);
 
   // Update WebEngine page background color.

@@ -39,13 +39,12 @@ public:
   // ============ PDF Viewer Template ============
 
   // Update PDF viewer template when config or theme CSS changes (or when forced).
-  // @p_commentColorsCss: a `:root { --vx-comment-*: ... }` block of RESOLVED
-  //   colors from ThemeService::commentHighlightCssVariables(). Passed in as
-  //   plain content, keeping this service free of GUI dependencies exactly as
-  //   updateMarkdownViewerTemplate does with the web stylesheet.
+  // @p_themeCss: resolved PDF background and comment color rules from the view.
+  //   Passed as plain content to keep this service free of GUI dependencies.
+  //   Part of the cache key, including background-only theme changes.
   // @p_webStyleContent: resolved theme web CSS, used only for standalone global
   //   ::-webkit-scrollbar* rules, never Markdown page styles. Part of the cache key.
-  void updatePdfViewerTemplate(const PdfViewerConfig &p_config, const QString &p_commentColorsCss,
+  void updatePdfViewerTemplate(const PdfViewerConfig &p_config, const QString &p_themeCss,
                                const QString &p_webStyleContent, bool p_force = false);
 
   // Get the cached PDF viewer template HTML.
@@ -131,7 +130,7 @@ private:
   static void fillThemeStyles(QString &p_template, const QString &p_webStyleSheetFile,
                               const QString &p_highlightStyleSheetFile);
 
-  void generatePdfViewerTemplate(const PdfViewerConfig &p_config, const QString &p_commentColorsCss,
+  void generatePdfViewerTemplate(const PdfViewerConfig &p_config, const QString &p_themeCss,
                                  const QString &p_webStyleContent, Template &p_template) const;
 
   ConfigMgr2 *m_configMgr = nullptr;
@@ -139,9 +138,8 @@ private:
   Template m_pdfViewerTemplate;
 
   // Part of the PDF template's cache key: a theme switch changes the resolved
-  // comment colors or scrollbars without changing the config revision, and the template must
-  // be regenerated for it.
-  QString m_pdfViewerCommentColorsCss;
+  // background, comment colors or scrollbars without changing the config revision.
+  QString m_pdfViewerThemeCss;
   QString m_pdfViewerWebStyleContent;
 
   Template m_markdownViewerTemplate;

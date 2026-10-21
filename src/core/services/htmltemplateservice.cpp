@@ -246,18 +246,18 @@ void HtmlTemplateService::fillResourcesByContent(QString &p_template,
 // ============ PDF Viewer Template ============
 
 void HtmlTemplateService::updatePdfViewerTemplate(const PdfViewerConfig &p_config,
-                                                  const QString &p_commentColorsCss,
+                                                  const QString &p_themeCss,
                                                   const QString &p_webStyleContent, bool p_force) {
   if (!p_force && p_config.revision() == m_pdfViewerTemplate.m_revision &&
-      p_commentColorsCss == m_pdfViewerCommentColorsCss &&
+      p_themeCss == m_pdfViewerThemeCss &&
       p_webStyleContent == m_pdfViewerWebStyleContent) {
     return;
   }
 
   m_pdfViewerTemplate.m_revision = p_config.revision();
-  m_pdfViewerCommentColorsCss = p_commentColorsCss;
+  m_pdfViewerThemeCss = p_themeCss;
   m_pdfViewerWebStyleContent = p_webStyleContent;
-  generatePdfViewerTemplate(p_config, p_commentColorsCss, p_webStyleContent, m_pdfViewerTemplate);
+  generatePdfViewerTemplate(p_config, p_themeCss, p_webStyleContent, m_pdfViewerTemplate);
 }
 
 const QString &HtmlTemplateService::getPdfViewerTemplate() const {
@@ -269,7 +269,7 @@ const QString &HtmlTemplateService::getPdfViewerTemplatePath() const {
 }
 
 void HtmlTemplateService::generatePdfViewerTemplate(const PdfViewerConfig &p_config,
-                                                    const QString &p_commentColorsCss,
+                                                    const QString &p_themeCss,
                                                     const QString &p_webStyleContent,
                                                     Template &p_template) const {
   const auto &viewerResource = p_config.getViewerResource();
@@ -282,7 +282,7 @@ void HtmlTemplateService::generatePdfViewerTemplate(const PdfViewerConfig &p_con
   }
 
   const auto themeStyles =
-      p_commentColorsCss + QLatin1Char('\n') + pdfScrollBarStyles(p_webStyleContent);
+      p_themeCss + QLatin1Char('\n') + pdfScrollBarStyles(p_webStyleContent);
   if (!themeStyles.trimmed().isEmpty()) {
     // Same defensive guard fillThemeStylesWithContent uses: content that closes
     // the style element would let a palette value inject markup.

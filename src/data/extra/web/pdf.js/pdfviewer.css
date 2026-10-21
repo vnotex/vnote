@@ -1,8 +1,6 @@
-/* Let the theme-colored QWebEnginePage show through the unused space.
- * PdfViewWindow2 refreshes that background when the theme changes;
- * PDF pages and their canvases keep their own colors. */
+/* PdfViewWindow2 injects an opaque theme background for the body.
+ * Transparency exposes Chromium's dark canvas instead of the native background. */
 body {
-    background-color: transparent;
     /* Let the theme's WebKit scrollbar rules win over pdf.js's dark-mode colors. */
     scrollbar-color: auto;
 }

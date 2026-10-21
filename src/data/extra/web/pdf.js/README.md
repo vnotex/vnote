@@ -15,10 +15,13 @@ across an upgrade:
   `<link>`/`<script>` tags — the `<link rel="resource" ... locale/locale.json>`
   is KEPT)
 
-`pdfviewer.css` keeps the body transparent so unused page margins and gaps show
-the theme-colored `QWebEnginePage` background supplied by `PdfViewWindow2`. Its
-existing theme-change handler refreshes that color; PDF page and canvas colors
-remain unchanged. Keep the native background opaque.
+`PdfViewWindow2` injects an opaque `body` background from
+`ThemeService::getBaseBackground()` through the template's resolved theme CSS.
+Do not rely on transparency: pdf.js enables `color-scheme: light dark`, so
+Chromium can paint a near-black canvas instead of the native page background.
+The resolved background participates in `HtmlTemplateService`'s CSS cache key
+and is regenerated on theme changes. Keep the native `QWebEnginePage` background
+opaque too; PDF page and canvas colors remain unchanged.
 
 PDF scrollbars reuse the active theme's Markdown read-mode rules: `PdfViewWindow2`
 passes the palette-resolved `web.css` to `HtmlTemplateService`, which extracts only
