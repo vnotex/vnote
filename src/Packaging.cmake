@@ -61,8 +61,6 @@ function(windeployqt target)
             env PATH="${QT_BIN_DIR}" "${WINDEPLOYQT_EXECUTABLE}"
             ${WINDEPLOYQT_ARGS}
             --no-quick-import
-            # PDF viewing/export uses pdf.js and WebEngine, not the Qt PDF image plugin.
-            --no-pdf
             --no-opengl-sw
             --no-compiler-runtime
             --translations zh_CN,ja,ko
@@ -73,8 +71,11 @@ function(windeployqt target)
         # falls back to the legacy windowsvista style on Windows 11 (beveled
         # QFrame::StyledPanel borders instead of the modern rounded panels).
         COMMAND "${CMAKE_COMMAND}" -E remove_directory "${CMAKE_CURRENT_BINARY_DIR}/winqt/qmltooling/"
+        # Typst needs Qt6Pdf, but not the PDF image-format plugin.
         # Unused NMEA backend needs SerialPort; Qt 6.10.3 ignores --exclude-plugins here.
         COMMAND "${CMAKE_COMMAND}" -E rm -f
+            "${CMAKE_CURRENT_BINARY_DIR}/winqt/imageformats/qpdf.dll"
+            "${CMAKE_CURRENT_BINARY_DIR}/winqt/imageformats/qpdfd.dll"
             "${CMAKE_CURRENT_BINARY_DIR}/winqt/position/qtposition_nmea.dll"
             "${CMAKE_CURRENT_BINARY_DIR}/winqt/position/qtposition_nmead.dll"
         COMMENT "Deploying Qt..."

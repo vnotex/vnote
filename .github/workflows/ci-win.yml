@@ -427,10 +427,11 @@ jobs:
 
           $qt5 = Get-ChildItem -Recurse $extracted -Filter "Qt5*.dll" -ErrorAction SilentlyContinue
           if ($qt5) { Write-Error "Qt5 DLLs leaked into Qt6 build: $($qt5 -join ', ')"; exit 1 }
-          # PDF viewing/export uses WebEngine; NMEA is unused. Windows supplies UCRT.
+          # Typst requires Qt6Pdf, but the PDF image plugin and NMEA are unused.
+          # Windows supplies UCRT.
           $unusedRuntime = @(Get-ChildItem -LiteralPath $extracted -Recurse -File |
             Where-Object {
-              $_.Name -like 'Qt6Pdf*.dll' -or $_.Name -like 'api-ms-win-*.dll' -or
+              $_.Name -like 'api-ms-win-*.dll' -or
               $_.Name -in @('qpdf.dll', 'qpdfd.dll', 'qtposition_nmea.dll',
                            'qtposition_nmead.dll', 'ucrtbase.dll', 'ucrtbased.dll')
             })

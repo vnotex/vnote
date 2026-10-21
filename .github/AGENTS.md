@@ -45,8 +45,10 @@ Notices ship in Windows `licenses/typst`, Linux `share/licenses/vnote/typst`, an
 Windows deployment scans both vnote and VTextEdit for Qt6Pdf. Linux scans the installed
 helper as a second linuxdeploy executable and checks install/deploy exit codes. Universal
 macOS helpers build both Rust triples with the job's deployment target, then lipo once;
-sign the helper before deep bundle signing. Inspect both slices' minimum-OS metadata and
-reject build-tree dependencies. Metadata from a newer runner is not a Monterey launch test.
+sign the helper before deep bundle signing. Resolve the packaged VTextEdit filename from
+VNote's linked dependency, not an unversioned dylib name; rpath cleanup and final DMG checks
+must inspect that same library. Remove only rpaths outside the final DMG path allowlist.
+Inspect both slices' minimum-OS metadata and reject build-tree dependencies. Metadata from a newer runner is not a Monterey launch test.
 Run `scripts/e2e/smoke_typst_package.py --helper <extracted-helper>` against final package
 contents without developer Cargo/Qt/Typst overrides; it must compile real output, not just
 find a source file or executable.
@@ -59,15 +61,15 @@ DLLs or a separate UCRT redistributable: supported Windows versions provide UCRT
 Keep the MSVC runtime deployment and its fallback for newer toolsets, the flat
 package layout, and the SDK/stray-executable composition gates.
 
-Deploy with `--no-pdf`: the PDF reader uses pdf.js and PDF export uses WebEngine,
-not `Qt6Pdf.dll` or `imageformats/qpdf.dll`. Remove only the unused NMEA position
-plugin after deployment (including its debug variant); it needs SerialPort, and
-Qt 6.10.3 still deploys it with `--exclude-plugins`. Keep `Qt6Positioning.dll`,
-the other positioning plugins, and WebEngine's QML/Quick/OpenGL dependencies.
+Deploy both VNote and VTextEdit without `--no-pdf`: Typst requires `Qt6Pdf.dll`.
+Prune only the unused `imageformats/qpdf.dll` plugin and NMEA position plugin after
+deployment (including their debug variants); NMEA needs SerialPort, and Qt 6.10.3
+still deploys it with `--exclude-plugins`. Keep `Qt6Positioning.dll`, the other
+positioning plugins, and WebEngine's QML/Quick/OpenGL dependencies.
 Do not prune the dynamically loaded D3D/DXC compilers or the MSVC runtime set.
-The extracted-ZIP composition gate rejects Qt PDF, NMEA, and application-local
-UCRT/API-set DLLs recursively. Keep `qtpdf` in the CI SDK so this exclusion is
-verified even when that optional module is installed.
+The extracted-ZIP composition gate rejects PDF image plugins, NMEA, and application-local
+UCRT/API-set DLLs recursively; the Typst gate requires a nonempty `Qt6Pdf.dll`.
+Keep `qtpdf` in the CI SDK for the required runtime and its attribution.
 ---
 
 ## Update artifacts

@@ -162,25 +162,37 @@ jobs:
           # Fix Qt frameworks
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
 
-          # Only delete rpaths that exist to avoid errors
-          for rpath in $(otool -l ./src/VNote.app/Contents/MacOS/VNote | awk '/LC_RPATH/ {getline; getline; print $2}' | grep 'vnote'); do
-            echo "Checking rpath: $rpath"
-            if otool -l ./src/VNote.app/Contents/MacOS/VNote | grep -q "$rpath"; then
-              echo "Deleting rpath: $rpath"
-              install_name_tool -delete_rpath "$rpath" ./src/VNote.app/Contents/MacOS/VNote
-            else
-              echo "Rpath not found: $rpath"
-            fi
-          done
-          for rpath in $(otool -l ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib | awk '/LC_RPATH/ {getline; getline; print $2}' | grep 'vnote'); do
-            echo "Checking rpath: $rpath"
-            if otool -l ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib | grep -q "$rpath"; then
-              echo "Deleting rpath: $rpath"
-              install_name_tool -delete_rpath "$rpath" ./src/VNote.app/Contents/Frameworks/libVTextEdit.dylib
-            else
-              echo "Rpath not found: $rpath"
-            fi
-          done
+          # Resolve the deployed ABI filename and inspect both universal slices.
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          import subprocess
+
+          app = Path('src/VNote.app/Contents')
+          executable = app / 'MacOS/VNote'
+          linked = subprocess.check_output(['/usr/bin/otool', '-arch', 'all', '-L', str(executable)], text=True)
+          editor_names = set(re.findall(r'^\s+\S*/(libVTextEdit(?:\.\d+)*\.dylib) \(compatibility version ',
+                                        linked, re.MULTILINE))
+          if len(editor_names) != 1:
+              raise SystemExit(f'Expected one linked VTextEdit library, found {sorted(editor_names)}')
+          frameworks = (app / 'Frameworks').resolve(strict=True)
+          editor = (frameworks / editor_names.pop()).resolve(strict=True)
+          if not editor.is_file() or editor.parent != frameworks:
+              raise SystemExit(f'VTextEdit library is not a packaged Frameworks file: {editor}')
+
+          # Use the same path policy as the final signed-DMG inspection.
+          allowed_paths = ('@rpath/', '@loader_path', '@executable_path', '/System/Library/', '/usr/lib/')
+          for binary in (executable, editor):
+              commands = subprocess.check_output(['/usr/bin/otool', '-arch', 'all', '-l', str(binary)], text=True)
+              rpaths = set()
+              for block in commands.split('\nLoad command '):
+                  if re.search(r'^\s*cmd LC_RPATH\s*$', block, re.MULTILINE):
+                      rpaths.update(re.findall(r'^\s*path (.+) \(offset \d+\)$', block, re.MULTILINE))
+              for rpath in sorted(rpaths):
+                  if not rpath.startswith(allowed_paths):
+                      print(f'Removing non-packaged rpath from {binary}: {rpath}', flush=True)
+                      subprocess.run(['/usr/bin/install_name_tool', '-delete_rpath', rpath, str(binary)], check=True)
+          PY
 
           # Run macdeployqtfix again to ensure all dependencies are properly fixed
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
@@ -336,8 +348,17 @@ jobs:
 
           app = Path(os.environ['RUNNER_TEMP']) / 'typst-package/VNote.app/Contents'
           helper = app / 'MacOS/vtextedit-typst'
-          binaries = [app / 'MacOS/VNote', app / 'Frameworks/libVTextEdit.dylib',
-                      app / 'Frameworks/QtPdf.framework/QtPdf', helper]
+          executable = app / 'MacOS/VNote'
+          linked = subprocess.check_output(['/usr/bin/otool', '-arch', 'all', '-L', str(executable)], text=True)
+          editor_names = set(re.findall(r'^\s+\S*/(libVTextEdit(?:\.\d+)*\.dylib) \(compatibility version ',
+                                        linked, re.MULTILINE))
+          if len(editor_names) != 1:
+              raise SystemExit(f'Expected one linked VTextEdit library, found {sorted(editor_names)}')
+          frameworks = (app / 'Frameworks').resolve(strict=True)
+          editor = (frameworks / editor_names.pop()).resolve(strict=True)
+          if not editor.is_file() or editor.parent != frameworks:
+              raise SystemExit(f'VTextEdit library is not a packaged Frameworks file: {editor}')
+          binaries = [executable, editor, app / 'Frameworks/QtPdf.framework/QtPdf', helper]
           notices = app / 'Resources/licenses/typst'
           qt = os.environ['TYPST_QT_VERSION']
           required = binaries + [notices / name for name in (
