@@ -9,6 +9,7 @@
 #include <QHBoxLayout>
 #include <QMenu>
 #include <QMouseEvent>
+#include <QPointer>
 #include <QResizeEvent>
 #include <QShortcut>
 #include <QTabBar>
@@ -409,6 +410,13 @@ void ViewSplit2::closeTab(int p_idx) {
 }
 
 void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
+  const QPointer<ViewSplit2> guard(this);
+  const QPointer<ViewWindow2> window(p_win);
+  p_win->setDetached(m_detached);
+  if (!guard || !window) {
+    return;
+  }
+
   const QString title = p_win->getTitle();
   int idx = addTab(p_win, effectiveTabIcon(p_win), title);
 

@@ -5,6 +5,8 @@
 #include <QDockWidget>
 #include <QFile>
 #include <QFileInfo>
+#include <QGraphicsScene>
+#include <QGraphicsTextItem>
 #include <QGraphicsView>
 #include <QJsonArray>
 #include <QJsonDocument>
@@ -36,9 +38,11 @@
 #include <core/services/syncworkqueuemanager.h>
 #include <gui/services/themeservice.h>
 #include <vxcore/vxcore.h>
+#include <widgets/detachedwindow.h>
 #include <widgets/editors/mindmapeditor.h>
 #include <widgets/mindmapviewwindow2.h>
 #include <widgets/toolspanelhost.h>
+#include <widgets/viewsplit2.h>
 
 #include <limits>
 #include <memory>
@@ -161,6 +165,8 @@ private slots:
   void renderFailurePreservesState();
   void livePropertiesHostHandoff_data();
   void livePropertiesHostHandoff();
+  void detachedPropertiesPanel_data();
+  void detachedPropertiesPanel();
 
 private:
   Buffer2 openNote(const QString &p_name, const QByteArray &p_content, bool p_readOnly = false);
@@ -459,6 +465,137 @@ void TestMindMapViewWindowPrint::livePropertiesHostHandoff() {
   QVERIFY(writerText.contains(propertiesFocus ? url->text()
                                               : QStringLiteral("Uncommitted placement draft")));
   QVERIFY(editor->canUndo());
+  host->setPanel(nullptr, nullptr);
+}
+
+void TestMindMapViewWindowPrint::detachedPropertiesPanel_data() {
+  QTest::addColumn<bool>("directDetachedOpen");
+  QTest::addColumn<bool>("separate");
+  QTest::newRow("detach-separated") << false << true;
+  QTest::newRow("detach-embedded") << false << false;
+  QTest::newRow("open-detached-separated") << true << true;
+  QTest::newRow("open-detached-embedded") << true << false;
+}
+
+void TestMindMapViewWindowPrint::detachedPropertiesPanel() {
+  QFETCH(bool, directDetachedOpen);
+  QFETCH(bool, separate);
+  auto &config = m_config->getEditorConfig().getMindMapEditorConfig();
+  config.setSeparateNodePropertiesPanel(separate);
+  const auto buffer = openNote(QStringLiteral("detached.emind"), fixture());
+  QVERIFY(buffer.isValid());
+  QMainWindow shell;
+  auto *mainSplit = new ViewSplit2(m_services, QStringLiteral("main"), &shell);
+  shell.setCentralWidget(mainSplit);
+  DetachedWindow detached(m_services, QStringLiteral("detached"));
+  auto *detachedSplit = detached.getViewSplit();
+  auto *dock = new QDockWidget(&shell);
+  auto *host = new ToolsPanelHost(m_services, dock);
+  dock->setWidget(host);
+  shell.addDockWidget(Qt::RightDockWidgetArea, dock);
+  auto *window = new Window(m_services, buffer);
+  auto *editor = window->findChild<MindMapEditor *>();
+  QVERIFY(editor);
+  QPointer<QWidget> panel = editor->findChild<QWidget *>(QStringLiteral("nodePropertiesPanel"));
+  QVERIFY(panel);
+  auto *toggle = panel->findChild<QToolButton *>(QStringLiteral("nodePropertiesToggle"));
+  auto *scroll = panel->findChild<QScrollArea *>();
+  auto *url = panel->findChild<QLineEdit *>(QStringLiteral("nodeUrl"));
+  QVERIFY(toggle && scroll && url);
+  const auto bindPanel = [&]() {
+    auto *current = mainSplit->getCurrentViewWindow();
+    host->setPanel(current, current ? current->getToolsPanel() : nullptr);
+    dock->setVisible(host->getPanel() != nullptr);
+  };
+  connect(mainSplit, &ViewSplit2::currentViewWindowChanged, host, bindPanel);
+  connect(window, &ViewWindow2::toolsPanelAboutToChange, host, [&]() {
+    if (host->getPanel() == panel) {
+      host->setPanel(nullptr, nullptr);
+    }
+  });
+  connect(window, &ViewWindow2::toolsPanelChanged, host, bindPanel);
+  shell.resize(1300, 900);
+  shell.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&shell));
+  if (directDetachedOpen) {
+    detachedSplit->addViewWindow(window);
+  } else {
+    mainSplit->addViewWindow(window);
+    bindPanel();
+    QCOMPARE(editor->nodePropertiesPanel(), separate ? panel.data() : nullptr);
+  }
+  QVERIFY(editor->selectNode(QStringLiteral("r")));
+  QVERIFY(editor->setExpanded(QStringLiteral("a"), false));
+  editor->zoom(1.375 / editor->zoomFactor());
+  url->setText(QStringLiteral("https://example.test/detached"));
+  const auto foldedChildVisible = [&]() {
+    for (auto *item : editor->findChild<QGraphicsView *>()->scene()->items()) {
+      auto *text = qgraphicsitem_cast<QGraphicsTextItem *>(item);
+      if (text && text->isVisible() &&
+          text->toPlainText().contains(QStringLiteral("FoldedPrintToken"))) {
+        return true;
+      }
+    }
+    return false;
+  };
+  const auto source = editor->toJson();
+  const auto selection = editor->selectedNodeIds();
+  const bool undo = editor->canUndo();
+  QVERIFY(undo);
+  if (!directDetachedOpen) {
+    mainSplit->takeViewWindow(window);
+    detachedSplit->addViewWindow(window);
+  }
+  detached.resize(1000, 850);
+  detached.show();
+  detached.activateWindow();
+  QApplication::setActiveWindow(&detached);
+  QVERIFY(QTest::qWaitForWindowExposed(&detached));
+  QVERIFY(window->isDetached());
+  QVERIFY(!window->IsToolsPanelSupported() && !editor->nodePropertiesPanel());
+  QVERIFY(!host->getPanel());
+  QCOMPARE(config.getSeparateNodePropertiesPanel(), separate);
+  QCOMPARE(panel->parentWidget(), editor);
+  QTRY_VERIFY(toggle->isVisible());
+  toggle->setChecked(true);
+  QVERIFY(scroll->isVisible());
+  QCOMPARE(editor->toJson(), source);
+  QCOMPARE(editor->selectedNodeIds(), selection);
+  QCOMPARE(editor->zoomFactor(), 1.375);
+  QVERIFY(!foldedChildVisible());
+  QCOMPARE(editor->canUndo(), undo);
+  QPointer<QPlainTextEdit> draft = beginDraft(*editor);
+  QVERIFY(draft);
+  draft->setPlainText(QStringLiteral("Detached settings draft"));
+  // Reattachment must use the new preference, not a detach-time snapshot.
+  const bool separateOnReturn = !separate;
+  for (bool preference : {false, true, separateOnReturn}) {
+    config.setSeparateNodePropertiesPanel(preference);
+    window->handleEditorConfigChange();
+    QVERIFY(window->isDetached() && !window->IsToolsPanelSupported());
+    QVERIFY(!editor->nodePropertiesPanel() && !host->getPanel());
+    QCOMPARE(panel->parentWidget(), editor);
+    QVERIFY(draft && draft->isVisible() && editor->hasPendingEdit());
+    QCOMPARE(draft->toPlainText(), QStringLiteral("Detached settings draft"));
+    QCOMPARE(editor->toJson(), source);
+    QCOMPARE(config.getSeparateNodePropertiesPanel(), preference);
+  }
+  QTest::keyClick(draft, Qt::Key_Escape);
+  QVERIFY(!editor->hasPendingEdit());
+  detachedSplit->takeViewWindow(window);
+  mainSplit->addViewWindow(window);
+  bindPanel();
+  QVERIFY(!window->isDetached());
+  QCOMPARE(window->findChild<MindMapEditor *>(), editor);
+  QCOMPARE(editor->nodePropertiesPanel(), separateOnReturn ? panel.data() : nullptr);
+  QCOMPARE(host->getPanel(), separateOnReturn ? panel.data() : nullptr);
+  QCOMPARE(panel->parentWidget(), separateOnReturn ? static_cast<QWidget *>(host) : editor);
+  QCOMPARE(url->text(), QStringLiteral("https://example.test/detached"));
+  QCOMPARE(editor->toJson(), source);
+  QCOMPARE(editor->selectedNodeIds(), selection);
+  QCOMPARE(editor->zoomFactor(), 1.375);
+  QCOMPARE(editor->canUndo(), undo);
+  QVERIFY(!foldedChildVisible());
   host->setPanel(nullptr, nullptr);
 }
 

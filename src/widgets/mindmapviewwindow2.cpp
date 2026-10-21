@@ -96,6 +96,15 @@ void MindMapViewWindow2::connectEditorSignals() {
           &ViewWindow2::toolsPanelAboutToChange);
   connect(m_editor, &m3::qt::MindMapEditor::nodePropertiesPanelChanged, this,
           &ViewWindow2::toolsPanelChanged);
+  connect(
+      this, &ViewWindow2::detachedChanged, this,
+      [this](bool p_detached) {
+        const auto &config =
+            getServices().get<ConfigMgr2>()->getEditorConfig().getMindMapEditorConfig();
+        m_editor->setSeparateNodePropertiesPanel(!p_detached &&
+                                                 config.getSeparateNodePropertiesPanel());
+      },
+      Qt::DirectConnection);
   m_toolsPanelFocusConn =
       connect(qApp, &QApplication::focusChanged, this, [this](QWidget *p_old, QWidget *p_now) {
         auto *panel = m_editor->nodePropertiesPanel();
@@ -629,7 +638,7 @@ void MindMapViewWindow2::handleEditorConfigChange() {
   const QPointer<MindMapViewWindow2> guard(this);
   ViewWindow2::handleEditorConfigChange();
   if (guard && m_editor) {
-    m_editor->applyConfig();
+    m_editor->applyConfig(!isDetached());
   }
   if (guard) {
     refreshInsertionShortcuts();

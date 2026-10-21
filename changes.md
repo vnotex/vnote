@@ -1,6 +1,7 @@
 # Changes
 ## Unreleased
 * Apply mind-map node-properties panel placement live, preserving the map, edits and embedded expansion state without reopening the editor
+* Keep node properties inside detached mind-map editors, including after settings changes, without changing the main-window preference
 * Render Markdown natively with cmark in Read, live preview and WebEngine export; reuse current editor parse trees and keep JavaScript for sanitization, highlighting, math and diagrams
 * Preserve the combined native/viewer Markdown features, including wikilinks, tasks, alerts and TOC; remove emoji shortcode and emoticon expansion while preserving authored Unicode emoji
 

@@ -221,8 +221,10 @@ independent global preferences, not theme or document style. Malformed values re
 Behavior defaults are `undoLimit: 100` (0 unlimited), `confirmSubtreeDeletion: true`,
 `autoRandomBranchColor: true`, `autoSectionNumbering: true`, and `separateNodePropertiesPanel: true`; negative undo limits
 normalize to 0. Settings Apply persists properties-panel placement and updates all open maps
-through the existing coalesced editor-config hook. The same panel moves between the editor
-and Tools dock without reloading the map; reopening is not required.
+through the existing coalesced editor-config hook. Main-area maps move the same panel between
+the editor and Tools dock without reloading. Detached maps override placement to embedded,
+including on Apply; this per-view override never changes the stored preference. Reattachment
+restores the current preference, without reopening the editor.
 
 `defaultLayoutDirection` is a stable string: `balanced` (default), `right`, `left`, or
 `outline`. Known values are case-insensitive; missing, non-string and unknown values fall

@@ -26,7 +26,8 @@ public:
   // Commits the active draft; throws std::runtime_error rather than returning stale content.
   QString contentForSave();
   void setBuffer(const Buffer2 &p_buffer);
-  void applyConfig();
+  // Detached hosts have no Tools dock, regardless of the global placement preference.
+  void applyConfig(bool p_allowSeparatePropertiesPanel = true);
   void setModified(bool p_modified);
   bool isModified() const;
   bool canInsert() const;

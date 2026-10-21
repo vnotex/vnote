@@ -115,6 +115,16 @@ public:
   // Set the view area window ID. Called by ViewArea2 when the window is registered.
   void setViewWindowId(ID p_id);
 
+  // Set by the destination split before attaching; parentless parking keeps this policy.
+  void setDetached(bool p_detached) {
+    if (m_detached != p_detached) {
+      m_detached = p_detached;
+      emit detachedChanged(p_detached);
+    }
+  }
+
+  bool isDetached() const { return m_detached; }
+
   // Get the display icon for the tab (e.g., file type icon).
   virtual QIcon getIcon() const;
 
@@ -310,6 +320,9 @@ public slots:
   void reinterpretWithEncoding(const QString &p_codecName);
 
 signals:
+  // The destination split's hosting policy is ready before the view is shown.
+  void detachedChanged(bool p_detached);
+
   // Synchronous handoff: release the host binding before the panel or capability changes.
   // The old panel accessor remains valid while this signal is emitted.
   void toolsPanelAboutToChange();
@@ -772,6 +785,8 @@ private:
 
   // Last find info for findNextOnLastFind().
   FindInfo m_findInfo;
+
+  bool m_detached = false;
 
   // Per-window AutoReload flag — automatically reload on external change without dialog.
   bool m_autoReload = false;

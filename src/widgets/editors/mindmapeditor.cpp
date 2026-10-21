@@ -275,7 +275,7 @@ void MindMapEditor::resizeEvent(QResizeEvent *p_event) {
   }
 }
 
-void MindMapEditor::applyConfig() {
+void MindMapEditor::applyConfig(bool p_allowSeparatePropertiesPanel) {
   if (m_imageOverlay) {
     m_imageOverlay->handleThemeChanged();
   }
@@ -288,7 +288,8 @@ void MindMapEditor::applyConfig() {
   setConfirmSubtreeDeletion(settings.getConfirmSubtreeDeletion());
   setAutoRandomBranchColor(settings.getAutoRandomBranchColor());
   const bool numbering = settings.getAutoSectionNumbering();
-  const bool separateProperties = settings.getSeparateNodePropertiesPanel();
+  const bool separateProperties =
+      p_allowSeparatePropertiesPanel && settings.getSeparateNodePropertiesPanel();
   const auto pattern = manager->getEditorConfig().getSectionNumberPattern();
   const QPointer<MindMapEditor> guard(this);
   setUndoLimit(settings.getUndoLimit());
