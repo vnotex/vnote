@@ -20,6 +20,7 @@ VNote runs on **Linux**, **Windows**, and **macOS**, and requires **Qt 6.9+**. Q
 **VNote is more than a Markdown editor — these formats are supported today:**
 
 * **Markdown** (`.md`, `.mkd`, `.rmd`, `.markdown`): write, edit, and preview Markdown notes
+* **Typst** (`.typst`): write and edit typeset documents with the native Typst editor and live PDF preview
 * **Plain text and source code** (`.txt`, `.log`, `.py`, `.cpp`, `.js`, `.json`, `.yaml`, and more): edit text notes, logs, code, and configuration files
 * **Mind maps** (`.mmm`, `.emind`): create and edit mind maps with the native mind-map editor
 * **PDF** (`.pdf`): read PDF documents with the built-in viewer

@@ -20,6 +20,7 @@ VNote支持**Linux**、**Windows**和**macOS**平台，需要**Qt 6.9及以上�
 **VNote不只是Markdown编辑器——以下格式现已支持：**
 
 * **Markdown**（`.md`、`.mkd`、`.rmd`、`.markdown`）：编写、编辑和预览Markdown笔记
+* **Typst**（`.typst`）：使用原生Typst编辑器编写和编辑排版文档，并实时预览PDF
 * **纯文本和源代码**（`.txt`、`.log`、`.py`、`.cpp`、`.js`、`.json`、`.yaml`等）：编辑文本笔记、日志、代码和配置文件
 * **思维导图**（`.mmm`、`.emind`）：使用原生思维导图编辑器创建和编辑导图
 * **PDF**（`.pdf`）：使用内置阅读器阅读PDF文档
