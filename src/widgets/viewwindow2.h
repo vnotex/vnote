@@ -134,7 +134,7 @@ public:
   // Per-file comments for the dock. Null by default.
   virtual QSharedPointer<CommentProvider> getCommentProvider() const;
 
-  // Sampled on active-window changes, like Comments; no live capability notifications.
+  // Sampled on active-window changes and after toolsPanelChanged().
   virtual bool IsToolsPanelSupported() const { return false; }
   virtual QString getToolsPanelTitle() const { return tr("Tools"); }
 
@@ -310,6 +310,13 @@ public slots:
   void reinterpretWithEncoding(const QString &p_codecName);
 
 signals:
+  // Synchronous handoff: release the host binding before the panel or capability changes.
+  // The old panel accessor remains valid while this signal is emitted.
+  void toolsPanelAboutToChange();
+
+  // The new tools capability and panel are ready for the current host to acquire.
+  void toolsPanelChanged();
+
   // Emitted when this window gains keyboard focus.
   void focused(ViewWindow2 *p_win);
 

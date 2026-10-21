@@ -220,8 +220,9 @@ and `font-size` (integer points, 0–256; 0 inherits the interface font). These 
 independent global preferences, not theme or document style. Malformed values retain defaults.
 Behavior defaults are `undoLimit: 100` (0 unlimited), `confirmSubtreeDeletion: true`,
 `autoRandomBranchColor: true`, `autoSectionNumbering: true`, and `separateNodePropertiesPanel: true`; negative undo limits
-normalize to 0. The properties-panel placement is sampled when a mind map editor is created.
-Settings Apply persists it, but existing maps retain their placement until closed and reopened.
+normalize to 0. Settings Apply persists properties-panel placement and updates all open maps
+through the existing coalesced editor-config hook. The same panel moves between the editor
+and Tools dock without reloading the map; reopening is not required.
 
 `defaultLayoutDirection` is a stable string: `balanced` (default), `right`, `left`, or
 `outline`. Known values are case-insensitive; missing, non-string and unknown values fall

@@ -494,7 +494,8 @@ private slots:
   void configuredShortcutsDriveRealCommands();
   void livePreferencesPreserveDraftAndReadOnlyBuffer();
   void separatedPropertiesRespectAdapterPolicy();
-  void propertyPlacementAppliesToNewEditors();
+  void propertyPlacementAppliesLive_data();
+  void propertyPlacementAppliesLive();
   void nodeClipboardRoundTrip();
   void clipboardImageRoundTrip_data();
   void clipboardImageRoundTrip();
@@ -1738,36 +1739,117 @@ void TestMindMapEditor::separatedPropertiesRespectAdapterPolicy() {
   QVERIFY(editor->isModified());
 }
 
-void TestMindMapEditor::propertyPlacementAppliesToNewEditors() {
-  auto &config = m_config->getEditorConfig().getMindMapEditorConfig();
-  config.setSeparateNodePropertiesPanel(true);
-  auto buffer = openNote(QStringLiteral("placement.mmm"), fixture());
-  QVERIFY(buffer.isValid());
-  MindMapEditor separated(*m_services, buffer);
-  QVERIFY(separated.loadContent(buffer.getContentRaw()));
-  auto *panel = separated.nodePropertiesPanel();
-  QVERIFY(panel);
-  config.setSeparateNodePropertiesPanel(false);
-  separated.applyConfig();
-  QCOMPARE(separated.nodePropertiesPanel(), panel);
+void TestMindMapEditor::propertyPlacementAppliesLive_data() {
+  QTest::addColumn<bool>("initiallySeparated");
+  QTest::addColumn<bool>("readOnlyHidden");
+  QTest::newRow("embedded-visible") << false << false;
+  QTest::newRow("separated-visible") << true << false;
+  QTest::newRow("embedded-readonly-hidden") << false << true;
+  QTest::newRow("separated-readonly-hidden") << true << true;
+}
 
-  MindMapEditor embedded(*m_services, buffer);
-  QVERIFY(embedded.loadContent(buffer.getContentRaw()));
-  QVERIFY(!embedded.nodePropertiesPanel());
-  QVERIFY(showEditor(embedded));
-  auto *toggle = embedded.findChild<QToolButton *>(QStringLiteral("nodePropertiesToggle"));
-  auto *card = embedded.findChild<QWidget *>(QStringLiteral("nodePropertiesPanel"));
-  auto *scroll = card ? card->findChild<QScrollArea *>() : nullptr;
-  QVERIFY(toggle && card && scroll);
-  QVERIFY(toggle->isVisible() && !toggle->isChecked() && scroll->isHidden());
-  toggle->click();
-  QVERIFY(scroll->isVisible());
-  config.setSeparateNodePropertiesPanel(true);
-  embedded.applyConfig();
-  QVERIFY(!embedded.nodePropertiesPanel());
-  QVERIFY(scroll->isVisible());
-  MindMapEditor separatedAgain(*m_services, buffer);
-  QVERIFY(separatedAgain.nodePropertiesPanel());
+void TestMindMapEditor::propertyPlacementAppliesLive() {
+  QFETCH(bool, initiallySeparated);
+  QFETCH(bool, readOnlyHidden);
+  auto &config = m_config->getEditorConfig().getMindMapEditorConfig();
+  config.setSeparateNodePropertiesPanel(initiallySeparated);
+  auto buffer = openNote(QStringLiteral("placement.mmm"), fixture(), readOnlyHidden);
+  QVERIFY(buffer.isValid());
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  if (readOnlyHidden) {
+    editor.hide();
+  } else {
+    QVERIFY(showEditor(editor));
+  }
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  QVERIFY(editor.setExpanded(QStringLiteral("a"), false));
+  editor.zoom(1.375 / editor.zoomFactor());
+  auto *view = editor.findChild<QGraphicsView *>();
+  QPointer<QWidget> panel = editor.findChild<QWidget *>(QStringLiteral("nodePropertiesPanel"));
+  QVERIFY(view && panel);
+  auto *toggle = panel->findChild<QToolButton *>(QStringLiteral("nodePropertiesToggle"));
+  auto *scroll = panel->findChild<QScrollArea *>();
+  auto *url = panel->findChild<QLineEdit *>(QStringLiteral("nodeUrl"));
+  QVERIFY(toggle && scroll && url);
+  const bool embeddedExpanded = !initiallySeparated && !readOnlyHidden;
+  if (embeddedExpanded) {
+    toggle->click();
+  }
+  if (!readOnlyHidden) {
+    url->setText(QStringLiteral("https://example.test/retained"));
+    QVERIFY(editor.renameNode(QStringLiteral("r"), QStringLiteral("First edit")));
+    QVERIFY(editor.renameNode(QStringLiteral("r"), QStringLiteral("Second edit")));
+    QVERIFY(editor.undo());
+    QVERIFY(editor.canUndo() && editor.canRedo());
+  }
+  const auto source = editor.toJson();
+  const auto selection = editor.selectedNodeIds();
+  const auto urlText = url->text();
+  const auto camera = view->viewportTransform();
+  const auto revision = buffer.getRevision();
+  const bool modified = editor.isModified();
+  const bool undo = editor.canUndo();
+  const bool redo = editor.canRedo();
+  const auto visibleTopics = [view]() {
+    QStringList topics;
+    for (auto *item : view->scene()->items()) {
+      auto *text = qgraphicsitem_cast<QGraphicsTextItem *>(item);
+      if (text && text->isVisible()) {
+        topics.append(text->toPlainText());
+      }
+    }
+    topics.sort();
+    return topics;
+  };
+  const auto topics = visibleTopics();
+  QVERIFY(topics.filter(QStringLiteral("Hidden descendant")).isEmpty());
+  QSignalSpy about(&editor, &MindMapEditor::nodePropertiesPanelAboutToChange);
+  QSignalSpy changed(&editor, &MindMapEditor::nodePropertiesPanelChanged);
+  QSignalSpy documentChanged(&editor, &MindMapEditor::documentChanged);
+  QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
+  for (bool separated : {!initiallySeparated, initiallySeparated}) {
+    config.setSeparateNodePropertiesPanel(separated);
+    editor.applyConfig();
+    QCOMPARE(about.count(), changed.count());
+    QCOMPARE(changed.count(), separated == initiallySeparated ? 2 : 1);
+    QVERIFY(panel);
+    QCOMPARE(editor.nodePropertiesPanel(), separated ? panel.data() : nullptr);
+    QCOMPARE(panel->parentWidget(), &editor);
+    QCOMPARE(toggle->isHidden(), separated);
+    QCOMPARE(toggle->isChecked(), separated || embeddedExpanded);
+    QCOMPARE(scroll->isHidden(), !separated && !embeddedExpanded);
+    QCOMPARE(url->text(), urlText);
+    QCOMPARE(editor.toJson(), source);
+    QCOMPARE(editor.selectedNodeIds(), selection);
+    QCOMPARE(editor.zoomFactor(), 1.375);
+    QCOMPARE(view->viewportTransform(), camera);
+    QCOMPARE(visibleTopics(), topics);
+    QCOMPARE(editor.isModified(), modified);
+    QCOMPARE(editor.canUndo(), undo);
+    QCOMPARE(editor.canRedo(), redo);
+    QCOMPARE(editor.isReadOnly(), readOnlyHidden);
+    if (readOnlyHidden) {
+      QVERIFY(editor.isHidden() && url->isReadOnly());
+      QTest::keyClicks(url, "blocked");
+      QCOMPARE(url->text(), urlText);
+      QCOMPARE(editor.toJson(), source);
+    }
+    const int transitions = changed.count();
+    editor.applyConfig();
+    QCOMPARE(about.count(), transitions);
+    QCOMPARE(changed.count(), transitions);
+  }
+  QVERIFY(documentChanged.isEmpty() && dirty.isEmpty());
+  QCOMPARE(buffer.getRevision(), revision);
+  QCOMPARE(buffer.getContentRaw(), fixture());
+  if (!readOnlyHidden) {
+    QVERIFY(editor.redo());
+    QCOMPARE(node(editor, QStringLiteral("r")).value(QStringLiteral("topic")).toString(),
+             QStringLiteral("Second edit"));
+    QVERIFY(editor.undo());
+    QCOMPARE(editor.toJson(), source);
+  }
 }
 
 void TestMindMapEditor::nodeClipboardRoundTrip() {

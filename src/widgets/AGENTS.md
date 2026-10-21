@@ -769,10 +769,14 @@ Configuration persistence remains owned by `ConfigMgr2`; this action only opens 
 
 **Separate node properties panel** defaults on in Settings → Editor → Mind Map Editor.
 Each editor owns exactly one properties widget: either hosted by Tools with no canvas toggle,
-or embedded as a collapsed card with its expand/collapse toggle. Placement changes apply to
-newly opened/reopened maps, not live editors. `MindMapViewWindow2` exposes the existing m3
-`nodePropertiesPanel()` in separated mode; it must never create a duplicate or reparent a
-panel already borrowed by `ToolsPanelHost`. m3 gates external edits by editor enabled/read-only
+or embedded as an initially collapsed card with its expand/collapse toggle. Settings Apply
+relocates that same widget live through the coalesced editor-config hook, including hidden maps.
+Returning embedded restores the card's expansion preference; documents and inline drafts are
+not reloaded or committed. `MindMapViewWindow2` bridges m3's placement handoff to
+`ViewWindow2::toolsPanelAboutToChange()` / `toolsPanelChanged()`. Only the current view is
+subscribed by `MainWindow2`: release `ToolsPanelHost` synchronously before native reparenting,
+then refresh the dock after the new accessor is ready. Background maps must not release or
+steal the current dock. Never duplicate the panel. m3 gates external edits by editor enabled/read-only
 policy and destroys the surviving panel before its controller/view, regardless of visual parent.
 For focus transitions outside the ViewWindow subtree, Mind Map reuses the base writer/revision
 hooks so editing Tools before focusing the canvas still saves correctly. Canvas transitions keep
@@ -785,7 +789,7 @@ main/orphan roots and restarts below each root; it changes labels, not saved top
 `editor.mindMapEditor` and uses `EditorPage::notifyEditorConfigChange()`'s existing one-second
 coalesced hook; editing controls alone changes nothing, and Reset reloads saved values.
 The hook reaches all registered maps, including hidden/detached windows. The wrapper's
-`applyConfig()` updates live policy and style without reloading documents or shortcuts.
+`applyConfig()` updates live policy, placement and style without reloading documents or shortcut overrides.
 Preserve inline drafts, selection, zoom, dirty state and per-node pixel-size overrides.
 Theme changes still supply the host font/palette; explicit map defaults survive them.
 Shortcuts are JSON-only, loaded on restart. Zoom remains ViewWindow-owned, and resource bases

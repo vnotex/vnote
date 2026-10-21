@@ -288,6 +288,7 @@ void MindMapEditor::applyConfig() {
   setConfirmSubtreeDeletion(settings.getConfirmSubtreeDeletion());
   setAutoRandomBranchColor(settings.getAutoRandomBranchColor());
   const bool numbering = settings.getAutoSectionNumbering();
+  const bool separateProperties = settings.getSeparateNodePropertiesPanel();
   const auto pattern = manager->getEditorConfig().getSectionNumberPattern();
   const QPointer<MindMapEditor> guard(this);
   setUndoLimit(settings.getUndoLimit());
@@ -296,6 +297,9 @@ void MindMapEditor::applyConfig() {
   }
   if (guard) {
     setSectionNumbering(numbering, pattern);
+  }
+  if (guard) {
+    setSeparateNodePropertiesPanel(separateProperties);
   }
 }
 

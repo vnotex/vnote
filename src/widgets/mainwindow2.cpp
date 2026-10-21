@@ -216,6 +216,8 @@ MainWindow2::MainWindow2(ServiceLocator &p_serviceLocator, QWidget *p_parent)
 MainWindow2::~MainWindow2() {
   // Release borrowed content before the helper member and view children are destroyed.
   disconnect(m_toolsWindowDestroyedConn);
+  disconnect(m_toolsPanelAboutToChangeConn);
+  disconnect(m_toolsPanelChangedConn);
   if (m_toolsPanelHost) {
     disconnect(m_toolsPanelHost, nullptr, this, nullptr);
     m_toolsPanelHost->setPanel(nullptr, nullptr);
@@ -937,12 +939,25 @@ void MainWindow2::setupToolsPanel() {
 
 void MainWindow2::updateToolsDock() {
   disconnect(m_toolsWindowDestroyedConn);
+  disconnect(m_toolsPanelAboutToChangeConn);
+  disconnect(m_toolsPanelChangedConn);
   QPointer<ViewWindow2> win = m_viewArea->getCurrentViewWindow();
   if (win) {
     // Same-ID recreation can suppress current-window changes, even for unsupported views.
     // Resolve the replacement only after the old window's destruction has unwound.
     m_toolsWindowDestroyedConn = connect(win, &QObject::destroyed, this,
                                          &MainWindow2::updateToolsDock, Qt::QueuedConnection);
+    m_toolsPanelAboutToChangeConn = connect(
+        win, &ViewWindow2::toolsPanelAboutToChange, this,
+        [this, win]() {
+          // Release synchronously, without querying the still-valid outgoing capability.
+          if (win && win == m_viewArea->getCurrentViewWindow() && m_toolsPanelHost) {
+            m_toolsPanelHost->setPanel(nullptr, nullptr);
+          }
+        },
+        Qt::DirectConnection);
+    m_toolsPanelChangedConn =
+        connect(win, &ViewWindow2::toolsPanelChanged, this, &MainWindow2::updateToolsDock);
   }
   QPointer<ToolsPanelHost> host = m_toolsPanelHost;
   if (!host) {

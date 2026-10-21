@@ -2,19 +2,25 @@
 
 #include <QBuffer>
 #include <QDir>
+#include <QDockWidget>
 #include <QFile>
 #include <QFileInfo>
 #include <QGraphicsView>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QLineEdit>
+#include <QMainWindow>
 #include <QPainter>
 #include <QPdfDocument>
 #include <QPdfSelection>
 #include <QPlainTextEdit>
+#include <QPointer>
 #include <QPrinter>
+#include <QScrollArea>
 #include <QScrollBar>
 #include <QTemporaryDir>
+#include <QToolButton>
 #include <QtConcurrent/QtConcurrentRun>
 
 #include <core/configmgr2.h>
@@ -32,6 +38,7 @@
 #include <vxcore/vxcore.h>
 #include <widgets/editors/mindmapeditor.h>
 #include <widgets/mindmapviewwindow2.h>
+#include <widgets/toolspanelhost.h>
 
 #include <limits>
 #include <memory>
@@ -152,6 +159,8 @@ private slots:
   void rejectsUnavailableDocuments();
   void respectsSinglePageRange();
   void renderFailurePreservesState();
+  void livePropertiesHostHandoff_data();
+  void livePropertiesHostHandoff();
 
 private:
   Buffer2 openNote(const QString &p_name, const QByteArray &p_content, bool p_readOnly = false);
@@ -281,6 +290,176 @@ Buffer2 TestMindMapViewWindowPrint::openProtectedNote() {
                                    : error;
                       }).result();
   return result == VXCORE_OK ? m_buffers->openBufferByNodeId(noteId) : Buffer2();
+}
+
+void TestMindMapViewWindowPrint::livePropertiesHostHandoff_data() {
+  QTest::addColumn<bool>("initiallySeparated");
+  QTest::addColumn<bool>("propertiesFocus");
+  QTest::newRow("embedded-properties-focus") << false << true;
+  QTest::newRow("separated-properties-focus") << true << true;
+  QTest::newRow("embedded-inline-draft") << false << false;
+  QTest::newRow("separated-inline-draft") << true << false;
+}
+
+void TestMindMapViewWindowPrint::livePropertiesHostHandoff() {
+  QFETCH(bool, initiallySeparated);
+  QFETCH(bool, propertiesFocus);
+  auto &config = m_config->getEditorConfig().getMindMapEditorConfig();
+  config.setSeparateNodePropertiesPanel(initiallySeparated);
+  const auto buffer = openNote(QStringLiteral("live-properties.emind"), fixture());
+  QVERIFY(buffer.isValid());
+  QMainWindow shell;
+  Window window(m_services, buffer, &shell);
+  shell.setCentralWidget(&window);
+  auto *dock = new QDockWidget(&shell);
+  auto *host = new ToolsPanelHost(m_services, dock);
+  dock->setWidget(host);
+  shell.addDockWidget(Qt::RightDockWidgetArea, dock);
+  auto *editor = window.findChild<MindMapEditor *>();
+  QVERIFY(editor);
+  QPointer<QWidget> panel = editor->findChild<QWidget *>(QStringLiteral("nodePropertiesPanel"));
+  QVERIFY(panel);
+  auto *toggle = panel->findChild<QToolButton *>(QStringLiteral("nodePropertiesToggle"));
+  auto *scroll = panel->findChild<QScrollArea *>();
+  auto *url = panel->findChild<QLineEdit *>(QStringLiteral("nodeUrl"));
+  QVERIFY(toggle && scroll && url);
+  const auto bindPanel = [&]() {
+    host->setPanel(&window, window.IsToolsPanelSupported() ? window.getToolsPanel() : nullptr);
+  };
+  bindPanel();
+  shell.resize(1300, 900);
+  shell.show();
+  shell.activateWindow();
+  QApplication::setActiveWindow(&shell);
+  QVERIFY(QTest::qWaitForWindowExposed(&shell));
+  auto *view = editor->findChild<QGraphicsView *>();
+  QVERIFY(view);
+  view->setFocus();
+  QTRY_VERIFY(view->hasFocus());
+  QVERIFY(editor->selectNode(QStringLiteral("r")));
+  QVERIFY(editor->setExpanded(QStringLiteral("a"), false));
+  QVERIFY(editor->setLayoutDirection(m3::qt::MindMapEditor::LayoutDirection::Left));
+  editor->zoom(1.375 / editor->zoomFactor());
+  url->setText(QStringLiteral("https://example.test/live-properties"));
+  QVERIFY(editor->renameNode(QStringLiteral("r"), QStringLiteral("History one")));
+  QVERIFY(editor->renameNode(QStringLiteral("r"), QStringLiteral("History two")));
+  QVERIFY(editor->undo());
+  QVERIFY(editor->canUndo() && editor->canRedo());
+
+  QPointer<QPlainTextEdit> draft;
+  QTextCursor draftCursor;
+  if (!propertiesFocus) {
+    draft = beginDraft(*editor);
+    QVERIFY(draft);
+    draft->setPlainText(QStringLiteral("Uncommitted placement draft"));
+    draftCursor = draft->textCursor();
+    draftCursor.setPosition(4);
+    draftCursor.setPosition(12, QTextCursor::KeepAnchor);
+    draft->setTextCursor(draftCursor);
+    QVERIFY(editor->hasPendingEdit());
+  }
+  bool separated = initiallySeparated;
+  QStringList handoff;
+  QSignalSpy about(&window, &ViewWindow2::toolsPanelAboutToChange);
+  QSignalSpy changed(&window, &ViewWindow2::toolsPanelChanged);
+  connect(&window, &ViewWindow2::toolsPanelAboutToChange, host, [&]() {
+    handoff.append(QStringLiteral("release"));
+    QCOMPARE(editor->nodePropertiesPanel(), separated ? panel.data() : nullptr);
+    QCOMPARE(host->getPanel(), separated ? panel.data() : nullptr);
+    host->setPanel(nullptr, nullptr);
+    QVERIFY(!host->getPanel());
+  });
+  connect(&window, &ViewWindow2::toolsPanelChanged, host, [&]() {
+    handoff.append(QStringLiteral("acquire"));
+    QCOMPARE(editor->nodePropertiesPanel(), separated ? nullptr : panel.data());
+    bindPanel();
+  });
+  QSignalSpy documentChanged(editor, &MindMapEditor::documentChanged);
+  QSignalSpy dirty(editor, &MindMapEditor::contentsChanged);
+  for (int transition = 0; transition < 2; ++transition) {
+    if (propertiesFocus) {
+      if (!separated && !toggle->isChecked()) {
+        toggle->click();
+      }
+      scroll->ensureWidgetVisible(url);
+      url->setFocus();
+      QTRY_VERIFY(url->hasFocus());
+    }
+    const auto source = editor->toJson();
+    const auto selection = editor->selectedNodeIds();
+    const auto fieldText = url->text();
+    const auto revision = buffer.getRevision();
+    const auto direction = editor->layoutDirection();
+    const bool undo = editor->canUndo();
+    const bool redo = editor->canRedo();
+    const bool modified = editor->isModified();
+    documentChanged.clear();
+    dirty.clear();
+    config.setSeparateNodePropertiesPanel(!separated);
+    window.handleEditorConfigChange();
+    separated = !separated;
+    QCOMPARE(about.count(), transition + 1);
+    QCOMPARE(changed.count(), transition + 1);
+    QCOMPARE(handoff, QStringList({QStringLiteral("release"), QStringLiteral("acquire")}));
+    handoff.clear();
+    QVERIFY(panel);
+    QCOMPARE(window.findChild<MindMapEditor *>(), editor);
+    QCOMPARE(editor->nodePropertiesPanel(), separated ? panel.data() : nullptr);
+    QCOMPARE(host->getPanel(), separated ? panel.data() : nullptr);
+    QCOMPARE(panel->parentWidget(), separated ? static_cast<QWidget *>(host) : editor);
+    if (separated) {
+      // Repeated acquisition must not steal an already-hosted panel back into the view.
+      QCOMPARE(window.getToolsPanel(), panel.data());
+      QCOMPARE(panel->parentWidget(), host);
+      QVERIFY(scroll->isVisible() && toggle->isHidden());
+    }
+    QCOMPARE(url->text(), fieldText);
+    QCOMPARE(editor->toJson(), source);
+    QCOMPARE(editor->selectedNodeIds(), selection);
+    QCOMPARE(editor->layoutDirection(), direction);
+    QCOMPARE(editor->zoomFactor(), 1.375);
+    QCOMPARE(editor->canUndo(), undo);
+    QCOMPARE(editor->canRedo(), redo);
+    QCOMPARE(editor->isModified(), modified);
+    QVERIFY(documentChanged.isEmpty() && dirty.isEmpty());
+    window.handleEditorConfigChange();
+    QCOMPARE(about.count(), transition + 1);
+    QCOMPARE(changed.count(), transition + 1);
+    QVERIFY(handoff.isEmpty());
+    if (propertiesFocus) {
+      // Reparenting may drop the caret; the existing writer must remain usable without
+      // refocusing or reloading the view, and controls must still edit the same node.
+      QString writerText;
+      QVERIFY(m_buffers->captureActiveWriterContent(buffer.id(), &writerText));
+      QCOMPARE(QJsonDocument::fromJson(writerText.toUtf8()), QJsonDocument::fromJson(source));
+      if (!separated && !toggle->isChecked()) {
+        toggle->click();
+      }
+      scroll->ensureWidgetVisible(url);
+      url->setFocus();
+      QTRY_VERIFY(url->hasFocus());
+      url->end(false);
+      QTest::keyClicks(url, "/moved");
+      QCOMPARE(QJsonDocument::fromJson(editor->nodeJson(QStringLiteral("r")))
+                   .object()
+                   .value(QStringLiteral("hyperLink"))
+                   .toString(),
+               fieldText + QStringLiteral("/moved"));
+    } else {
+      QVERIFY(draft && draft->isVisible() && draft->hasFocus());
+      QVERIFY(editor->hasPendingEdit());
+      QCOMPARE(draft->toPlainText(), QStringLiteral("Uncommitted placement draft"));
+      QCOMPARE(draft->textCursor().position(), draftCursor.position());
+      QCOMPARE(draft->textCursor().anchor(), draftCursor.anchor());
+      QCOMPARE(buffer.getRevision(), revision);
+    }
+  }
+  QString writerText;
+  QVERIFY(m_buffers->captureActiveWriterContent(buffer.id(), &writerText));
+  QVERIFY(writerText.contains(propertiesFocus ? url->text()
+                                              : QStringLiteral("Uncommitted placement draft")));
+  QVERIFY(editor->canUndo());
+  host->setPanel(nullptr, nullptr);
 }
 
 void TestMindMapViewWindowPrint::printsLayoutWithoutCameraOrSelection_data() {

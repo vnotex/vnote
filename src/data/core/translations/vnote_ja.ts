@@ -5675,8 +5675,8 @@
     </message>
     <message>
         <location line="+5"/>
-        <source>Show node properties in the Tools dock instead of the editor (reopen editor to apply)</source>
-        <translation>エディター内ではなくツールドックにノードのプロパティを表示します（エディターを開き直すと適用されます）</translation>
+        <source>Show node properties in the Tools dock instead of the editor</source>
+        <translation>エディター内ではなくツールドックにノードのプロパティを表示します</translation>
     </message>
     <message>
         <location line="+10"/>

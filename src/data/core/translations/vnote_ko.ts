@@ -5670,8 +5670,8 @@
     </message>
     <message>
         <location line="+5"/>
-        <source>Show node properties in the Tools dock instead of the editor (reopen editor to apply)</source>
-        <translation>편집기 대신 도구 도크에 노드 속성 표시 (적용하려면 편집기를 다시 여세요)</translation>
+        <source>Show node properties in the Tools dock instead of the editor</source>
+        <translation>편집기 대신 도구 도크에 노드 속성 표시</translation>
     </message>
     <message>
         <location line="+10"/>

@@ -92,6 +92,10 @@ void MindMapViewWindow2::setupUI() {
 }
 
 void MindMapViewWindow2::connectEditorSignals() {
+  connect(m_editor, &m3::qt::MindMapEditor::nodePropertiesPanelAboutToChange, this,
+          &ViewWindow2::toolsPanelAboutToChange);
+  connect(m_editor, &m3::qt::MindMapEditor::nodePropertiesPanelChanged, this,
+          &ViewWindow2::toolsPanelChanged);
   m_toolsPanelFocusConn =
       connect(qApp, &QApplication::focusChanged, this, [this](QWidget *p_old, QWidget *p_now) {
         auto *panel = m_editor->nodePropertiesPanel();

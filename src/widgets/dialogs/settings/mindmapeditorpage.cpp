@@ -117,8 +117,7 @@ void MindMapEditorPage::setupUI() {
     m_separateNodePropertiesPanel->setObjectName(
         QStringLiteral("mindMapSeparateNodePropertiesPanel"));
     m_separateNodePropertiesPanel->setToolTip(
-        tr("Show node properties in the Tools dock instead of the editor "
-           "(reopen editor to apply)"));
+        tr("Show node properties in the Tools dock instead of the editor"));
     behavior->addWidget(SettingsPageHelper::createSeparator(this));
     behavior->addWidget(SettingsPageHelper::createCheckBoxRow(
         m_separateNodePropertiesPanel, m_separateNodePropertiesPanel->toolTip(), this));

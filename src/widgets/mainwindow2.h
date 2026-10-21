@@ -341,6 +341,8 @@ private:
 
   QPointer<ToolsPanelHost> m_toolsPanelHost;
   QMetaObject::Connection m_toolsWindowDestroyedConn;
+  QMetaObject::Connection m_toolsPanelAboutToChangeConn;
+  QMetaObject::Connection m_toolsPanelChangedConn;
 
   // TagExplorer2 dock widget.
   TagExplorer2 *m_tagExplorer = nullptr;

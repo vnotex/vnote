@@ -5675,8 +5675,8 @@
     </message>
     <message>
         <location line="+5"/>
-        <source>Show node properties in the Tools dock instead of the editor (reopen editor to apply)</source>
-        <translation>在工具停靠面板中显示节点属性，而不是在编辑器中显示（重新打开编辑器后生效）</translation>
+        <source>Show node properties in the Tools dock instead of the editor</source>
+        <translation>在工具停靠面板中显示节点属性，而不是在编辑器中显示</translation>
     </message>
     <message>
         <location line="+10"/>
