@@ -1621,6 +1621,14 @@ bool ViewArea2::moveViewWindowToDetached(ID p_windowId, const QString &p_srcWork
   // The source split may now be empty (e.g. detaching its only tab); refresh so
   // the Home dashboard is opened if the main area became empty.
   updateScreenVisibility();
+
+  // Let source cleanup, Home creation and the tab context menu finish before taking focus.
+  QTimer::singleShot(0, dstSplit, [dstSplit]() {
+    auto *window = dstSplit->window();
+    window->raise();
+    window->activateWindow();
+    dstSplit->focus();
+  });
   return true;
 }
 
