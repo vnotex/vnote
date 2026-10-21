@@ -150,6 +150,7 @@ private:
   void revealSource();
   void applyProjectIdentity();
   void showSourceError(const QString &p_error);
+  void finalizeBufferImages();
   int getEditorMaxContentWidth() const;
 
   TypstViewWindowController *m_controller = nullptr;

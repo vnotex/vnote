@@ -38,6 +38,7 @@
 #include <QRegularExpression>
 #include <QScopeGuard>
 #include <QScrollBar>
+#include <QSemaphore>
 #include <QSignalBlocker>
 #include <QStandardPaths>
 #include <QTcpServer>
@@ -62,7 +63,9 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
 #include <core/services/syncworkqueuemanager.h>
+#include <core/services/workspacecoreservice.h>
 #include <gui/services/themeservice.h>
+#include <vtextedit/typstcompiler.h>
 #include <vtextedit/typsteditorconfig.h>
 #include <vtextedit/vtextedit.h>
 #include <vtextedit/vtexteditor.h>
@@ -76,6 +79,7 @@
 
 #include <functional>
 #include <memory>
+#include <thread>
 
 using namespace vnotex;
 
@@ -116,6 +120,43 @@ public:
                                                                reinterpret_cast<quintptr>(this));
   }
 };
+
+// A UI-thread deletion must fail promptly when another thread owns the gate.
+class HeldNotebookGate {
+public:
+  HeldNotebookGate(NotebookIoGate &p_gate, const QString &p_id)
+      : m_worker([this, &p_gate, p_id]() {
+          NotebookIoGate::ScopedLock lock(p_gate, p_id);
+          m_acquired.release();
+          m_release.acquire();
+        }) {
+    m_acquired.acquire();
+  }
+  ~HeldNotebookGate() {
+    m_release.release();
+    m_worker.join();
+  }
+
+private:
+  QSemaphore m_acquired;
+  QSemaphore m_release;
+  std::thread m_worker;
+};
+
+struct CleanupImages {
+  Buffer2 buffer;
+  QString oldPath;
+  QString livePath;
+  QString unrelatedPath;
+  QString oldCall;
+  QString liveCall;
+};
+
+void replaceSource(vte::VTextEdit *edit, const QString &source) {
+  QTextCursor cursor(edit->document());
+  cursor.select(QTextCursor::Document);
+  cursor.insertText(source);
+}
 
 bool writeBytes(const QString &path, const QByteArray &bytes) {
   QFile file(path);
@@ -636,8 +677,26 @@ private slots:
   void resourceModalDestruction();
   void resourceBufferReplacement_data();
   void resourceBufferReplacement();
+  void obsoleteInitialImageOnSavedClose_data();
+  void obsoleteInitialImageOnSavedClose();
+  void obsoleteInsertedImageOnClose_data();
+  void obsoleteInsertedImageOnClose();
+  void obsoleteImagesRespectCloseDecision_data();
+  void obsoleteImagesRespectCloseDecision();
+  void obsoleteImagesOnReplacement();
+  void obsoleteImagesRespectOtherViews();
+  void obsoleteImagesKeepUncertainReferences_data();
+  void obsoleteImagesKeepUncertainReferences();
+  void obsoleteImagesRejectUnsafePaths_data();
+  void obsoleteImagesRejectUnsafePaths();
+  void obsoleteImagesKeepBindingBoundaries_data();
+  void obsoleteImagesKeepBindingBoundaries();
+  void imageReferenceScanUsesNativeParser();
 
 private:
+  CleanupImages openCleanupNote(const QString &location = QStringLiteral("root"),
+                                bool readOnly = false,
+                                const QString &oldName = QStringLiteral("old.png"));
   Buffer2 openNote(const QString &name = QStringLiteral("main.typst"),
                    const QString &text = c_baseline, bool readOnly = false);
   void show(const Buffer2 &buffer);
@@ -3184,6 +3243,662 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   QTest::keySequence(m_edit, QKeySequence::Redo);
   QCOMPARE(m_edit->toPlainText(), expected);
   QVERIFY(ready());
+}
+
+CleanupImages TestTypstViewWindowInsertion::openCleanupNote(const QString &location, bool readOnly,
+                                                            const QString &oldName) {
+  CleanupImages result;
+  const QString name = QStringLiteral("cleanup.typst");
+  NodeIdentifier node;
+  QString sourcePath;
+  QString folder;
+  if (location == QLatin1String("standalone")) {
+    sourcePath = m_directory->filePath(name);
+    node = {QString(), sourcePath};
+    folder = m_directory->filePath(QStringLiteral("cleanup_assets"));
+    if (!writeBytes(sourcePath, {})) {
+      return {};
+    }
+  } else {
+    QString parent;
+    if (location == QLatin1String("subfolder")) {
+      parent = QStringLiteral("chapters");
+      if (m_notebooks->createFolder(m_notebookId, QString(), parent).isEmpty()) {
+        return {};
+      }
+    }
+    if (m_notebooks->createFile(m_notebookId, parent, name).isEmpty()) {
+      return {};
+    }
+    node = {m_notebookId, parent.isEmpty() ? name : parent + QLatin1Char('/') + name};
+    sourcePath = m_notebooks->buildAbsolutePath(node.notebookId, node.relativePath);
+    // Folder resolution needs a real source file, including notebook-root notes.
+    folder = m_notebooks->getAttachmentsFolder(node.notebookId, node.relativePath);
+  }
+  if (folder.isEmpty() || !QDir().mkpath(folder)) {
+    return {};
+  }
+  result.oldPath = QDir(folder).filePath(oldName);
+  result.livePath = QDir(folder).filePath(QStringLiteral("live.png"));
+  result.unrelatedPath = QDir(folder).filePath(QStringLiteral("unrelated.png"));
+  const QDir project(QFileInfo(sourcePath).absolutePath());
+  result.oldCall = QStringLiteral("#image(\"%1\")\n").arg(project.relativeFilePath(result.oldPath));
+  result.liveCall =
+      QStringLiteral("#image(\"%1\")\n").arg(project.relativeFilePath(result.livePath));
+  if (!writeBytes(result.oldPath, png(c_red)) || !writeBytes(result.livePath, png()) ||
+      !writeBytes(result.unrelatedPath, png()) ||
+      !writeBytes(sourcePath, (result.oldCall + result.liveCall).toUtf8())) {
+    return {};
+  }
+  FileOpenSettings settings;
+  settings.m_readOnly = readOnly;
+  result.buffer = m_buffers->openBuffer(node, settings);
+  return result;
+}
+
+void TestTypstViewWindowInsertion::obsoleteInitialImageOnSavedClose_data() {
+  QTest::addColumn<QString>("location");
+  QTest::newRow("notebook-root") << QStringLiteral("root");
+  QTest::newRow("notebook-subfolder") << QStringLiteral("subfolder");
+  QTest::newRow("standalone") << QStringLiteral("standalone");
+}
+
+void TestTypstViewWindowInsertion::obsoleteInitialImageOnSavedClose() {
+  QFETCH(QString, location);
+  const auto images = openCleanupNote(location);
+  QVERIFY(images.buffer.isValid());
+  QCOMPARE(images.buffer.nodeId().notebookId.isEmpty(), location == QLatin1String("standalone"));
+  show(images.buffer);
+  const QDir artifacts(QCoreApplication::applicationDirPath());
+  if (location == QLatin1String("root")) {
+    QVERIFY(ready());
+    QVERIFY(QTest::qWaitFor(
+        [&] {
+          const auto preview = m_pdf->grab().toImage();
+          return containsColor(preview, c_red) && containsColor(preview, c_green);
+        },
+        5000));
+    QVERIFY(m_window->grab().save(
+        artifacts.filePath(QStringLiteral("typst-cleanup-window-before.png"))));
+    QVERIFY(
+        m_pdf->grab().save(artifacts.filePath(QStringLiteral("typst-cleanup-preview-before.png"))));
+  }
+  m_editor->setLivePreviewEnabled(false);
+  m_editor->setInplacePreviewEnabled(false);
+  select(images.oldCall.trimmed());
+  m_edit->textCursor().removeSelectedText();
+  QVERIFY(m_window->save());
+  QCOMPARE(readBytes(images.oldPath), png(c_red));
+  QVERIFY(!readBytes(images.buffer.resolvedPath()).contains("old.png"));
+  QVERIFY(m_window->aboutToClose(false));
+  QVERIFY(!QFileInfo::exists(images.oldPath));
+  QCOMPARE(readBytes(images.livePath), png());
+  QCOMPARE(readBytes(images.unrelatedPath), png());
+  if (location == QLatin1String("root")) {
+    const auto node = images.buffer.nodeId();
+    m_window.reset();
+    QVERIFY(m_buffers->closeBuffer(images.buffer.id()));
+    show(m_buffers->openBuffer(node));
+    QVERIFY(ready());
+    QVERIFY(QTest::qWaitFor(
+        [&] {
+          const auto preview = m_pdf->grab().toImage();
+          return containsColor(preview, c_green) && !containsColor(preview, c_red);
+        },
+        5000));
+    QVERIFY(m_window->grab().save(
+        artifacts.filePath(QStringLiteral("typst-cleanup-window-reopened.png"))));
+    QVERIFY(m_pdf->grab().save(
+        artifacts.filePath(QStringLiteral("typst-cleanup-preview-reopened.png"))));
+    qInfo().noquote() << "Native cleanup window/PDF artifacts:" << artifacts.absolutePath();
+    QVERIFY(m_window->aboutToClose(false));
+    QCOMPARE(readBytes(images.livePath), png());
+  }
+}
+
+void TestTypstViewWindowInsertion::obsoleteInsertedImageOnClose_data() {
+  QTest::addColumn<bool>("redo");
+  QTest::newRow("undo-preview-off") << false;
+  QTest::newRow("redo-preview-off") << true;
+}
+
+void TestTypstViewWindowInsertion::obsoleteInsertedImageOnClose() {
+  QFETCH(bool, redo);
+  show(openNote());
+  m_editor->setLivePreviewEnabled(false);
+  m_editor->setInplacePreviewEnabled(false);
+  select();
+  QApplication::clipboard()->setImage(pixels());
+  DialogDriver insertion;
+  paste();
+  insertion.stop();
+  QVERIFY2(insertion.error.isEmpty(), qPrintable(insertion.error));
+  QCOMPARE(insertion.images, 1);
+  QCOMPARE(imagePaths().size(), 1);
+  const auto path = imagePaths().first();
+  const auto inserted = m_edit->toPlainText();
+  QCOMPARE(readBytes(path), png());
+  QTest::keySequence(m_edit, QKeySequence::Undo);
+  QCOMPARE(m_edit->toPlainText(), c_baseline);
+  QCOMPARE(readBytes(path), png());
+  if (redo) {
+    QTest::keySequence(m_edit, QKeySequence::Redo);
+    QCOMPARE(m_edit->toPlainText(), inserted);
+  }
+  QVERIFY(m_window->save());
+  QCOMPARE(readBytes(path), png());
+  QVERIFY(m_window->aboutToClose(false));
+  QCOMPARE(QFileInfo::exists(path), redo);
+  if (redo) {
+    QCOMPARE(readBytes(path), png());
+  }
+}
+
+void TestTypstViewWindowInsertion::obsoleteImagesRespectCloseDecision_data() {
+  QTest::addColumn<QString>("decision");
+  for (const char *decision : {"cancel", "save", "discard-synced", "discard-inserted", "force"}) {
+    QTest::newRow(decision) << QString::fromLatin1(decision);
+  }
+}
+
+void TestTypstViewWindowInsertion::obsoleteImagesRespectCloseDecision() {
+  QFETCH(QString, decision);
+  const auto images = openCleanupNote();
+  QVERIFY(images.buffer.isValid());
+  show(images.buffer);
+  m_editor->setLivePreviewEnabled(false);
+  m_editor->setInplacePreviewEnabled(false);
+  const auto saved = readBytes(images.buffer.resolvedPath());
+  QString insertedPath;
+  if (decision == QLatin1String("discard-inserted")) {
+    QTextCursor end(m_edit->document());
+    end.movePosition(QTextCursor::End);
+    m_edit->setTextCursor(end);
+    QApplication::clipboard()->setImage(pixels());
+    DialogDriver insertion;
+    paste();
+    insertion.stop();
+    QVERIFY2(insertion.error.isEmpty(), qPrintable(insertion.error));
+    QCOMPARE(imagePaths().size(), 3);
+    insertedPath = imagePaths().last();
+    QTest::keySequence(m_edit, QKeySequence::Undo);
+    QCOMPARE(m_edit->toPlainText(), QString::fromUtf8(saved));
+    QCOMPARE(readBytes(insertedPath), png());
+    end = QTextCursor(m_edit->document());
+    end.movePosition(QTextCursor::End);
+    end.insertText(QStringLiteral("\nUnsaved draft\n"));
+  } else {
+    select(images.oldCall.trimmed());
+    m_edit->textCursor().removeSelectedText();
+  }
+  const auto draft = m_edit->toPlainText();
+  QVERIFY(m_window->isModified());
+  if (decision == QLatin1String("discard-synced") ||
+      decision == QLatin1String("discard-inserted")) {
+    QVERIFY(m_buffers->syncNow(images.buffer.id()));
+    QCOMPARE(images.buffer.decode(images.buffer.getContentRaw()), draft);
+    QCOMPARE(readBytes(images.buffer.resolvedPath()), saved);
+  }
+  bool prompted = false;
+  DialogDriver close;
+  close.otherDialog = [&](QDialog *dialog) {
+    auto *question = qobject_cast<QMessageBox *>(dialog);
+    if (!question) {
+      return false;
+    }
+    prompted = true;
+    const auto answer = decision == QLatin1String("cancel") ? QMessageBox::Cancel
+                        : decision == QLatin1String("save") ? QMessageBox::Save
+                                                            : QMessageBox::Discard;
+    auto *button = question->button(answer);
+    if (!button) {
+      close.fail(dialog, QStringLiteral("Missing close decision button"));
+    } else {
+      QTest::mouseClick(button, Qt::LeftButton);
+    }
+    return true;
+  };
+  const bool accepted = m_window->aboutToClose(decision == QLatin1String("force"));
+  close.stop();
+  QVERIFY2(close.error.isEmpty(), qPrintable(close.error));
+  QCOMPARE(accepted, decision != QLatin1String("cancel"));
+  QCOMPARE(prompted, decision != QLatin1String("force"));
+  QCOMPARE(QFileInfo::exists(images.oldPath), decision != QLatin1String("save"));
+  QCOMPARE(readBytes(images.livePath), png());
+  QCOMPARE(readBytes(images.unrelatedPath), png());
+  if (decision == QLatin1String("save")) {
+    QCOMPARE(readBytes(images.buffer.resolvedPath()), draft.toUtf8());
+  } else {
+    QCOMPARE(readBytes(images.buffer.resolvedPath()), saved);
+  }
+  if (decision == QLatin1String("cancel")) {
+    QCOMPARE(m_edit->toPlainText(), draft);
+    QVERIFY(m_window->isModified());
+    QVERIFY(QFileInfo::exists(images.oldPath));
+    QVERIFY(m_window->grab().save(QDir(QCoreApplication::applicationDirPath())
+                                      .filePath(QStringLiteral("typst-cleanup-cancelled.png"))));
+  } else if (decision == QLatin1String("discard-inserted")) {
+    QVERIFY(!QFileInfo::exists(insertedPath));
+  } else if (decision == QLatin1String("force")) {
+    QCOMPARE(images.buffer.decode(images.buffer.getContentRaw()), draft);
+  }
+}
+
+void TestTypstViewWindowInsertion::obsoleteImagesOnReplacement() {
+  const auto outgoing = openNote();
+  QVERIFY(outgoing.isValid());
+  show(outgoing);
+  m_editor->setLivePreviewEnabled(false);
+  m_editor->setInplacePreviewEnabled(false);
+  select();
+  QApplication::clipboard()->setImage(pixels(c_red));
+  DialogDriver insertion;
+  paste();
+  insertion.stop();
+  QVERIFY2(insertion.error.isEmpty(), qPrintable(insertion.error));
+  QCOMPARE(imagePaths().size(), 1);
+  const auto oldPath = imagePaths().first();
+  QTest::keySequence(m_edit, QKeySequence::Undo);
+  QCOMPARE(m_edit->toPlainText(), c_baseline);
+  QCOMPARE(readBytes(oldPath), png(c_red));
+  QTextCursor end(m_edit->document());
+  end.movePosition(QTextCursor::End);
+  end.insertText(QStringLiteral("Unsaved outgoing draft\n"));
+  const auto draft = m_edit->toPlainText();
+
+  QVERIFY(
+      !m_notebooks->createFolder(m_notebookId, QString(), QStringLiteral("incoming")).isEmpty());
+  QVERIFY(!m_notebooks
+               ->createFile(m_notebookId, QStringLiteral("incoming"), QStringLiteral("next.typst"))
+               .isEmpty());
+  const NodeIdentifier incomingNode{m_notebookId, QStringLiteral("incoming/next.typst")};
+  const auto incomingSource =
+      m_notebooks->buildAbsolutePath(m_notebookId, incomingNode.relativePath);
+  const auto incomingFolder =
+      m_notebooks->getAttachmentsFolder(m_notebookId, incomingNode.relativePath);
+  QVERIFY(!incomingFolder.isEmpty());
+  QVERIFY(QDir().mkpath(incomingFolder));
+  const auto livePath = QDir(incomingFolder).filePath(QStringLiteral("incoming-live.png"));
+  const auto unownedPath = QDir(incomingFolder).filePath(QFileInfo(oldPath).fileName());
+  QVERIFY(writeBytes(livePath, png()));
+  QVERIFY(writeBytes(unownedPath, png(c_red)));
+  const auto source =
+      QStringLiteral("#image(\"%1\")\n")
+          .arg(QDir(QFileInfo(incomingSource).absolutePath()).relativeFilePath(livePath));
+  QVERIFY(writeBytes(incomingSource, source.toUtf8()));
+  FileOpenSettings settings;
+  settings.m_forceMode = true;
+  settings.m_mode = ViewWindowMode::Edit;
+  const auto incoming = m_buffers->openBuffer(incomingNode, settings);
+  QVERIFY(incoming.isValid());
+  const auto native = m_editor;
+  int prompts = 0;
+  auto answer = QMessageBox::Cancel;
+  DialogDriver replacement;
+  replacement.otherDialog = [&](QDialog *dialog) {
+    auto *question = qobject_cast<QMessageBox *>(dialog);
+    if (!question) {
+      return false;
+    }
+    ++prompts;
+    if (auto *button = question->button(answer)) {
+      QTest::mouseClick(button, Qt::LeftButton);
+    } else {
+      replacement.fail(dialog, QStringLiteral("Missing replacement decision button"));
+    }
+    return true;
+  };
+  QVERIFY(!m_window->replaceBuffer(incoming, settings));
+  QCOMPARE(prompts, 1);
+  QCOMPARE(m_window->getBuffer().id(), outgoing.id());
+  QCOMPARE(m_edit->toPlainText(), draft);
+  QCOMPARE(readBytes(oldPath), png(c_red));
+  QCOMPARE(readBytes(livePath), png());
+  QCOMPARE(readBytes(unownedPath), png(c_red));
+  answer = QMessageBox::Discard;
+  QVERIFY(m_window->replaceBuffer(incoming, settings));
+  replacement.stop();
+  QVERIFY2(replacement.error.isEmpty(), qPrintable(replacement.error));
+  QCOMPARE(prompts, 2);
+  QCOMPARE(m_editor, native);
+  QCOMPARE(m_window->getBuffer().id(), incoming.id());
+  QCOMPARE(m_edit->toPlainText(), source);
+  QVERIFY(!QFileInfo::exists(oldPath));
+  QCOMPARE(readBytes(outgoing.resolvedPath()), c_baseline.toUtf8());
+  QCOMPARE(readBytes(livePath), png());
+  QCOMPARE(readBytes(unownedPath), png(c_red));
+  // Closing the retained native view must use only the incoming document's ledger.
+  QVERIFY(m_window->aboutToClose(false));
+  QCOMPARE(readBytes(livePath), png());
+  QCOMPARE(readBytes(unownedPath), png(c_red));
+}
+
+void TestTypstViewWindowInsertion::obsoleteImagesRespectOtherViews() {
+  WorkspaceCoreService workspaces(m_context);
+  m_services->registerService(&workspaces);
+  std::unique_ptr<Window> second;
+  const auto retireViews = qScopeGuard([&] {
+    m_window.reset();
+    second.reset();
+    m_services->registerService<WorkspaceCoreService>(nullptr);
+  });
+  const auto images = openCleanupNote();
+  QVERIFY(images.buffer.isValid());
+  const auto firstWorkspace = workspaces.createWorkspace(QStringLiteral("first"));
+  const auto secondWorkspace = workspaces.createWorkspace(QStringLiteral("second"));
+  QVERIFY(!firstWorkspace.isEmpty());
+  QVERIFY(!secondWorkspace.isEmpty());
+  QVERIFY(workspaces.addBuffer(firstWorkspace, images.buffer.id()));
+  QVERIFY(workspaces.addBuffer(secondWorkspace, images.buffer.id()));
+  const auto separatePath =
+      m_notebooks->buildAbsolutePath(m_notebookId, QStringLiteral("separate.png"));
+  QVERIFY(writeBytes(separatePath, png(c_red)));
+  const auto separate =
+      openNote(QStringLiteral("separate.typst"), QStringLiteral("#image(\"separate.png\")\n"));
+  QVERIFY(separate.isValid());
+  show(images.buffer);
+  m_editor->setLivePreviewEnabled(false);
+  second = std::make_unique<Window>(*m_services, images.buffer);
+  second->resize(1100, 760);
+  second->show();
+  auto *secondEditor = second->findChild<vte::VTypstEditor *>();
+  QVERIFY(secondEditor);
+  secondEditor->setLivePreviewEnabled(false);
+  secondEditor->setInplacePreviewEnabled(false);
+  auto *secondEdit = secondEditor->getTextEditor()->getTextEdit();
+  QVERIFY(secondEdit);
+  QCOMPARE(secondEdit->toPlainText(), images.oldCall + images.liveCall);
+  QCOMPARE(m_edit->toPlainText(), secondEdit->toPlainText());
+  // Seed both real views before either changes; neither may authorize the first close.
+  replaceSource(m_edit, images.liveCall);
+  replaceSource(secondEdit, images.liveCall);
+  QVERIFY(m_window->save());
+  QVERIFY(second->save());
+  QCOMPARE(readBytes(images.buffer.resolvedPath()), images.liveCall.toUtf8());
+  QVERIFY(m_window->aboutToClose(false));
+  QCOMPARE(readBytes(images.oldPath), png(c_red));
+  QCOMPARE(readBytes(images.livePath), png());
+  QCOMPARE(readBytes(separatePath), png(c_red));
+  QVERIFY(workspaces.removeBuffer(firstWorkspace, images.buffer.id()));
+  QVERIFY(second->aboutToClose(false));
+  QVERIFY(!QFileInfo::exists(images.oldPath));
+  QCOMPARE(readBytes(images.livePath), png());
+  QCOMPARE(readBytes(images.unrelatedPath), png());
+  QCOMPARE(readBytes(separatePath), png(c_red));
+}
+
+void TestTypstViewWindowInsertion::obsoleteImagesKeepUncertainReferences_data() {
+  QTest::addColumn<QString>("source");
+  QTest::addColumn<bool>("keep");
+  QTest::addColumn<bool>("unicodeName");
+  QTest::newRow("live-direct") << QStringLiteral("#image(\"%PATH%\")\n") << true << false;
+  QTest::newRow("escaped-unicode-and-quote")
+      << QStringLiteral("#image(\"%PATH%\", alt: \"a \\\"quote\\\"\")\n") << true << true;
+  QTest::newRow("unevaluated-branch")
+      << QStringLiteral("#if false { image(\"%PATH%\") }\n") << true << false;
+  QTest::newRow("variable-argument")
+      << QStringLiteral("#let path = \"%PATH%\"\n#image(path)\n") << true << false;
+  QTest::newRow("concatenated-argument")
+      << QStringLiteral("#image(\"unrelated\" + \".png\")\n") << true << false;
+  QTest::newRow("image-alias") << QStringLiteral("#let f = image\n") << true << false;
+  QTest::newRow("standard-library-lookup")
+      << QStringLiteral("#std.at(\"image\")\n") << true << false;
+  QTest::newRow("field-access") << QStringLiteral("#let item = (value: 1)\n#item.value\n") << true
+                                << false;
+  QTest::newRow("import") << QStringLiteral("#import \"other.typ\": *\n") << true << false;
+  QTest::newRow("include") << QStringLiteral("#include \"other.typ\"\n") << true << false;
+  QTest::newRow("malformed") << QStringLiteral("#let broken = (\n") << true << false;
+  QTest::newRow("filename-comment")
+      << QStringLiteral("// keep old.png for later\n") << true << false;
+  QTest::newRow("filename-link") << QStringLiteral("#link(\"%PATH%\")[download]\n") << true
+                                 << false;
+  QTest::newRow("filename-string")
+      << QStringLiteral("#let label = \"remember old.png\"\n") << true << false;
+  QTest::newRow("complete-empty-source") << QString() << false << false;
+}
+
+void TestTypstViewWindowInsertion::obsoleteImagesKeepUncertainReferences() {
+  QFETCH(QString, source);
+  QFETCH(bool, keep);
+  QFETCH(bool, unicodeName);
+  const auto images =
+      openCleanupNote(QStringLiteral("root"), false,
+                      unicodeName ? QStringLiteral("old-\u56fe%.png") : QStringLiteral("old.png"));
+  QVERIFY(images.buffer.isValid());
+  show(images.buffer);
+  m_editor->setLivePreviewEnabled(false);
+  m_editor->setInplacePreviewEnabled(false);
+  auto path = QDir(root()).relativeFilePath(images.oldPath);
+  if (unicodeName) {
+    path.replace(QStringLiteral("\u56fe"), QStringLiteral("\\u{56fe}"));
+  }
+  source.replace(QStringLiteral("%PATH%"), path);
+  if (keep) {
+    source += images.liveCall;
+  }
+  replaceSource(m_edit, source);
+  QVERIFY(m_window->save());
+  QCOMPARE(readBytes(images.buffer.resolvedPath()), source.toUtf8());
+  QCOMPARE(readBytes(images.oldPath), png(c_red));
+  QVERIFY(m_window->aboutToClose(false));
+  QCOMPARE(QFileInfo::exists(images.oldPath), keep);
+  QCOMPARE(QFileInfo::exists(images.livePath), keep);
+  QCOMPARE(readBytes(images.unrelatedPath), png());
+}
+
+void TestTypstViewWindowInsertion::obsoleteImagesRejectUnsafePaths_data() {
+  QTest::addColumn<QString>("kind");
+  for (const char *kind : {"absolute", "parent-relative", "root-leading", "remote", "data",
+                           "package", "junction-escape", "read-only", "missing-source",
+                           "failed-source-read", "held-notebook-gate", "missing-helper"}) {
+    QTest::newRow(kind) << QString::fromLatin1(kind);
+  }
+}
+
+void TestTypstViewWindowInsertion::obsoleteImagesRejectUnsafePaths() {
+  QFETCH(QString, kind);
+  auto images = openCleanupNote(QStringLiteral("root"), kind == QLatin1String("read-only"));
+  QVERIFY(images.buffer.isValid());
+  const auto sourcePath = images.buffer.resolvedPath();
+  const QDir project(QFileInfo(sourcePath).absolutePath());
+  QString target = images.oldPath;
+  auto reference = project.relativeFilePath(target);
+  QString link;
+  bool sourceIsDirectory = false;
+  const auto restorePaths = qScopeGuard([&] {
+    if (sourceIsDirectory) {
+      QDir().rmdir(sourcePath);
+    }
+    if (!link.isEmpty()) {
+#ifdef Q_OS_WIN
+      QDir().rmdir(link);
+#else
+      QFile::remove(link);
+#endif
+    }
+  });
+  if (kind == QLatin1String("absolute")) {
+    reference = QDir::fromNativeSeparators(target);
+  } else if (kind == QLatin1String("root-leading")) {
+    reference.prepend(QLatin1Char('/'));
+  } else if (kind == QLatin1String("remote")) {
+    reference.prepend(QStringLiteral("https://example.invalid/"));
+  } else if (kind == QLatin1String("data")) {
+    reference =
+        QStringLiteral("data:image/png;base64,") + QString::fromLatin1(png(c_red).toBase64());
+  } else if (kind == QLatin1String("package")) {
+    reference.prepend(QStringLiteral("@preview/fixture:0.1.0/"));
+  } else if (kind == QLatin1String("parent-relative") || kind == QLatin1String("junction-escape")) {
+    const auto outside = m_directory->filePath(QStringLiteral("outside"));
+    QVERIFY(QDir().mkpath(outside));
+    target = QDir(outside).filePath(QStringLiteral("old.png"));
+    QVERIFY(writeBytes(target, png(c_red)));
+    reference = project.relativeFilePath(target);
+    QVERIFY(reference.startsWith(QStringLiteral("../")));
+    if (kind == QLatin1String("junction-escape")) {
+      link = QDir(QFileInfo(images.oldPath).absolutePath()).filePath(QStringLiteral("escape"));
+#ifdef Q_OS_WIN
+      QProcess process;
+      process.start(QStringLiteral("cmd.exe"),
+                    {QStringLiteral("/c"), QStringLiteral("mklink"), QStringLiteral("/J"),
+                     QDir::toNativeSeparators(link), QDir::toNativeSeparators(outside)});
+      QVERIFY2(process.waitForFinished(10000), qPrintable(process.errorString()));
+      QCOMPARE(process.exitStatus(), QProcess::NormalExit);
+      QVERIFY2(process.exitCode() == 0, process.readAllStandardError().constData());
+      QVERIFY(QFileInfo(link).isJunction());
+#else
+      QVERIFY2(QFile::link(outside, link), "Cannot create the required directory symlink fixture");
+      QVERIFY(QFileInfo(link).isSymbolicLink());
+#endif
+      const auto traversed = QDir(link).filePath(QStringLiteral("old.png"));
+      QCOMPARE(readBytes(traversed), png(c_red));
+      reference = project.relativeFilePath(traversed);
+    }
+  }
+  if (kind != QLatin1String("read-only")) {
+    images.oldCall = QStringLiteral("#image(\"%1\")\n").arg(reference);
+    QVERIFY(writeBytes(sourcePath, (images.oldCall + images.liveCall).toUtf8()));
+    QVERIFY(images.buffer.reload());
+  }
+  show(images.buffer);
+  m_editor->setLivePreviewEnabled(false);
+  m_editor->setInplacePreviewEnabled(false);
+  if (kind == QLatin1String("read-only")) {
+    QVERIFY(images.buffer.isReadOnly());
+    QVERIFY(m_edit->isReadOnly());
+    // A real external source change/reload must not authorize read-only asset writes.
+    QVERIFY(writeBytes(sourcePath, images.liveCall.toUtf8()));
+    QVERIFY(m_window->reload());
+    QCOMPARE(m_edit->toPlainText(), images.liveCall);
+  } else {
+    replaceSource(m_edit, images.liveCall);
+    QVERIFY(m_window->save());
+  }
+  QCOMPARE(readBytes(target), png(c_red));
+  std::unique_ptr<HeldNotebookGate> heldGate;
+  if (kind == QLatin1String("missing-source") || kind == QLatin1String("failed-source-read")) {
+    QVERIFY(QFile::remove(sourcePath));
+    if (kind == QLatin1String("failed-source-read")) {
+      QVERIFY(QDir().mkpath(sourcePath));
+      sourceIsDirectory = true;
+    }
+  } else if (kind == QLatin1String("held-notebook-gate")) {
+    heldGate = std::make_unique<HeldNotebookGate>(*m_gate, m_notebookId);
+  } else if (kind == QLatin1String("missing-helper")) {
+    auto config = QSharedPointer<vte::TypstEditorConfig>::create(m_editor->getConfig());
+    config->m_helperExecutable = m_directory->filePath(QStringLiteral("missing-cleanup-helper"));
+    m_editor->setConfig(config);
+  }
+  QVERIFY(m_window->aboutToClose(false));
+  QCOMPARE(readBytes(target), png(c_red));
+  QCOMPARE(readBytes(images.livePath), png());
+  QCOMPARE(readBytes(images.unrelatedPath), png());
+}
+
+void TestTypstViewWindowInsertion::obsoleteImagesKeepBindingBoundaries_data() {
+  QTest::addColumn<QString>("change");
+  QTest::newRow("reload-same-document") << QStringLiteral("reload");
+  QTest::newRow("retarget-another-directory") << QStringLiteral("retarget");
+  QTest::newRow("failed-source-load") << QStringLiteral("failed-load");
+}
+
+void TestTypstViewWindowInsertion::obsoleteImagesKeepBindingBoundaries() {
+  QFETCH(QString, change);
+  const auto buffer = openNote();
+  QVERIFY(buffer.isValid());
+  show(buffer);
+  m_editor->setLivePreviewEnabled(false);
+  m_editor->setInplacePreviewEnabled(false);
+  select();
+  QApplication::clipboard()->setImage(pixels());
+  DialogDriver insertion;
+  paste();
+  insertion.stop();
+  QVERIFY2(insertion.error.isEmpty(), qPrintable(insertion.error));
+  QCOMPARE(imagePaths().size(), 1);
+  const auto oldPath = imagePaths().first();
+  QTest::keySequence(m_edit, QKeySequence::Undo);
+  QCOMPARE(m_edit->toPlainText(), c_baseline);
+  QVERIFY(m_window->save());
+  QCOMPARE(readBytes(oldPath), png());
+  if (change == QLatin1String("reload")) {
+    QVERIFY(m_window->reload());
+    QCOMPARE(m_edit->toPlainText(), c_baseline);
+    QCOMPARE(readBytes(oldPath), png());
+    QVERIFY(m_window->aboutToClose(false));
+    QVERIFY(!QFileInfo::exists(oldPath));
+  } else if (change == QLatin1String("retarget")) {
+    const auto directory = QStringLiteral("retargeted");
+    QVERIFY(!m_notebooks->createFolder(m_notebookId, QString(), directory).isEmpty());
+    const auto originalNode = buffer.nodeId();
+    QVERIFY(m_notebooks->moveFile(m_notebookId, originalNode.relativePath, directory));
+    const auto oldBytesAfterMove = readBytes(oldPath);
+    const auto *document = m_edit->document();
+    const NodeIdentifier movedNode{m_notebookId,
+                                   directory + QLatin1Char('/') +
+                                       QFileInfo(originalNode.relativePath).fileName()};
+    m_window->onNodeRenamed(movedNode);
+    QCOMPARE(m_window->getNodeId(), movedNode);
+    QCOMPARE(m_edit->document(), document);
+    QCOMPARE(m_edit->toPlainText(), c_baseline);
+    const auto folder = assetFolder();
+    QVERIFY(!folder.isEmpty());
+    QVERIFY(QDir().mkpath(folder));
+    const auto twin = QDir(folder).filePath(QFileInfo(oldPath).fileName());
+    QVERIFY(QDir::cleanPath(twin) != QDir::cleanPath(oldPath));
+    QVERIFY(writeBytes(twin, png(c_red)));
+    QVERIFY(m_window->aboutToClose(false));
+    QCOMPARE(readBytes(twin), png(c_red));
+    QCOMPARE(readBytes(oldPath), oldBytesAfterMove);
+  } else {
+    QVERIFY(m_buffers->closeBuffer(buffer.id()));
+    m_window->syncEditorFromBuffer();
+    QVERIFY(m_edit->isReadOnly());
+    QVERIFY(m_window->aboutToClose(true));
+    QCOMPARE(readBytes(oldPath), png());
+  }
+}
+
+void TestTypstViewWindowInsertion::imageReferenceScanUsesNativeParser() {
+  show(openNote());
+  m_editor->setLivePreviewEnabled(false);
+  m_editor->setInplacePreviewEnabled(false);
+  const auto helper = m_editor->getConfig().m_helperExecutable;
+  QVERIFY(QFileInfo(helper).isAbsolute());
+  QVERIFY(QFileInfo(helper).isFile());
+  const QString escaped =
+      QStringLiteral("#if false { image(\"assets/old\\\"\\u{56fe}%.png\") }\n"
+                     "#image(\"assets/live.png\")\n#image(\"assets/live.png\")\n");
+  const QString raw = QStringLiteral("// #image(\"comment.png\")\n"
+                                     "```typ\n#image(\"raw.png\")\n```\n#text(\"kept.png\")\n");
+  const QString alias = QStringLiteral("#let load = image\n#load(\"assets/live.png\")\n");
+  QString error = QStringLiteral("stale error");
+  const auto scans =
+      vte::TypstCompiler::collectImageReferences({escaped, raw, alias}, helper, &error);
+  QVERIFY2(error.isEmpty(), qPrintable(error));
+  QCOMPARE(scans.size(), 3);
+  QVERIFY(scans[0].m_complete);
+  const QStringList decoded{QStringLiteral("assets/old\"\u56fe%.png"),
+                            QStringLiteral("assets/live.png")};
+  QCOMPARE(scans[0].m_images, decoded);
+  QCOMPARE(scans[0].m_strings, decoded);
+  QVERIFY(scans[1].m_complete);
+  QVERIFY(scans[1].m_images.isEmpty());
+  QCOMPARE(scans[1].m_strings, QStringList{QStringLiteral("kept.png")});
+  QVERIFY(!scans[2].m_complete);
+  QVERIFY(scans[2].m_images.isEmpty());
+  QCOMPARE(scans[2].m_strings, QStringList{QStringLiteral("assets/live.png")});
+  const auto empty = vte::TypstCompiler::collectImageReferences({QString()}, helper, &error);
+  QVERIFY2(error.isEmpty(), qPrintable(error));
+  QCOMPARE(empty.size(), 1);
+  QVERIFY(empty[0].m_complete);
+  QVERIFY(empty[0].m_images.isEmpty());
+  QVERIFY(empty[0].m_strings.isEmpty());
+  const auto missing = vte::TypstCompiler::collectImageReferences(
+      {QString()}, m_directory->filePath(QStringLiteral("nonexistent-explicit-helper")), &error);
+  QVERIFY(missing.isEmpty());
+  QVERIFY(!error.isEmpty());
+  QVERIFY(m_window->aboutToClose(false));
 }
 
 } // namespace tests

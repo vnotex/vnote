@@ -374,6 +374,15 @@ struct TypstViewWindow::Insertion {
       return InsertionResult::Cancelled;
     }
     committed = true;
+    if (view && view->m_controller && view->m_insertion == this &&
+        view->m_insertionSerial == serial && view->getBuffer().id() == buffer.id() &&
+        view->getBuffer().nodeId() == buffer.nodeId() && view->getBuffer().resolvedPath() == path) {
+      for (const auto &resource : std::as_const(resources)) {
+        if (!resource.attachment) {
+          view->m_controller->trackInsertedImage(resource.identifier);
+        }
+      }
+    }
     target.endEditBlock();
     if (view && document) {
       auto *edit = view->m_editor->getTextEdit();
@@ -1615,6 +1624,7 @@ void TypstViewWindow::releaseBufferResources() {
   if (!alive) {
     return;
   }
+  finalizeBufferImages();
   const QScopedValueRollback<bool> guard(m_propagateEditorToBuffer, false);
   m_sourceAvailable = false;
   // Invalidate controller-owned navigation and any consent still on a modal stack.
@@ -1662,6 +1672,7 @@ void TypstViewWindow::syncEditorFromBuffer() {
   }
 
   const QString text = getBuffer().decode(content);
+  m_controller->snapshotInitialImages(text);
   if (!m_typstEditor) {
     createEditor();
   }
@@ -1733,6 +1744,9 @@ void TypstViewWindow::handleNodeRetargeted(const NodeIdentifier &p_newNodeId) {
   }
   if (m_typstEditor) {
     // Identity only: setText() here would destroy an unsaved draft and its undo history.
+    if (m_sourceAvailable && m_editor) {
+      m_controller->snapshotInitialImages(m_editor->getText());
+    }
     applyProjectIdentity();
     m_typstEditor->setReadOnly(!m_sourceAvailable || getBuffer().isReadOnly());
   }
@@ -1753,10 +1767,17 @@ bool TypstViewWindow::aboutToClose(bool p_force) {
   }
   const bool accepted = ViewWindow2::aboutToClose(p_force);
   if (accepted && guard && guard->getBufferGeneration() == generation && controller) {
+    finalizeBufferImages();
     controller->setBuffer(Buffer2{});
     syncInsertionActions();
   }
   return accepted;
+}
+
+void TypstViewWindow::finalizeBufferImages() {
+  if (m_sourceAvailable && m_typstEditor && m_controller) {
+    m_controller->clearObsoleteImages(m_typstEditor->getConfig().m_helperExecutable);
+  }
 }
 
 QString TypstViewWindow::getLatestContent() const {

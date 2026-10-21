@@ -3,10 +3,12 @@
 #include <QBuffer>
 #include <QDesktopServices>
 #include <QDir>
+#include <QFile>
 #include <QFileInfo>
 #include <QImageReader>
 #include <QMimeDatabase>
 #include <QPointer>
+#include <QScopeGuard>
 #include <QStringView>
 #include <QVarLengthArray>
 
@@ -14,10 +16,12 @@
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/services/workspacecoreservice.h>
 #include <gui/utils/imageutils.h>
 #include <net/networkutils.h>
 #include <utility>
 #include <utils/fileutils2.h>
+#include <vtextedit/typstcompiler.h>
 #include <vxcore/notebook_json_keys.h>
 
 #ifdef Q_OS_WIN
@@ -287,6 +291,13 @@ TypstViewWindowController::TypstViewWindowController(ServiceLocator &p_services,
     : TextViewWindowController(p_services, p_parent), m_services(p_services) {}
 
 bool TypstViewWindowController::setBuffer(const Buffer2 &p_buffer, QString *p_error) {
+  const auto previousRoot = m_project.root;
+  if (p_buffer.id() != m_buffer.id() || p_buffer.nodeId() != m_buffer.nodeId() ||
+      p_buffer.resolvedPath() != m_insertionBufferPath) {
+    m_initialImageSource.clear();
+    m_initialImagesSnapshotted = false;
+    m_insertedImages.clear();
+  }
   ++m_generation;
   invalidateInsertionRequests();
   m_insertionBufferPath.clear();
@@ -298,7 +309,10 @@ bool TypstViewWindowController::setBuffer(const Buffer2 &p_buffer, QString *p_er
     p_error->clear();
   }
 
-  const auto fail = [p_error](const QString &p_message) {
+  const auto fail = [this, p_error](const QString &p_message) {
+    m_initialImageSource.clear();
+    m_initialImagesSnapshotted = false;
+    m_insertedImages.clear();
     if (p_error) {
       *p_error = p_message;
     }
@@ -324,6 +338,11 @@ bool TypstViewWindowController::setBuffer(const Buffer2 &p_buffer, QString *p_er
     return fail(tr("The Typst project directory is unavailable"));
   }
 
+  if (previousRoot != root) {
+    m_initialImageSource.clear();
+    m_initialImagesSnapshotted = false;
+    m_insertedImages.clear();
+  }
   m_buffer = p_buffer;
   m_project.root = root;
   m_project.mainFile = name;
@@ -333,6 +352,203 @@ bool TypstViewWindowController::setBuffer(const Buffer2 &p_buffer, QString *p_er
 
 const TypstViewWindowController::Project &TypstViewWindowController::getProject() const {
   return m_project;
+}
+
+void TypstViewWindowController::snapshotInitialImages(const QString &p_source) {
+  if (!m_initialImagesSnapshotted && resourceAvailable()) {
+    m_initialImageSource = p_source;
+    m_initialImagesSnapshotted = true;
+  }
+}
+
+void TypstViewWindowController::trackInsertedImage(const QString &p_assetIdentifier) {
+  if (!p_assetIdentifier.isEmpty() && insertionAvailable()) {
+    m_insertedImages.insert(p_assetIdentifier);
+  }
+}
+
+void TypstViewWindowController::clearObsoleteImages(const QString &p_helperExecutable) {
+  const auto retire = qScopeGuard([this] {
+    m_initialImageSource.clear();
+    m_initialImagesSnapshotted = false;
+    m_insertedImages.clear();
+  });
+  const auto skip = [](const QString &p_reason) {
+    qWarning() << "TypstViewWindowController: skipped obsolete-image cleanup:" << p_reason;
+  };
+  if (!resourceAvailable() || !m_initialImagesSnapshotted || m_buffer.isReadOnly()) {
+    return;
+  }
+  auto *buffers = m_services.get<BufferService>();
+  auto buffer = m_buffer;
+  const auto path = m_insertionBufferPath;
+  const auto projectRoot = m_project.root;
+  const auto generation = m_generation;
+  const auto current = [&] {
+    return generation == m_generation && resourceAvailable() && !m_buffer.isReadOnly() &&
+           m_buffer.id() == buffer.id() && m_buffer.nodeId() == buffer.nodeId() &&
+           m_insertionBufferPath == path && !buffers->isSaveQueueBusy(buffer.id()) &&
+           resolvedFileSystemPath(QFileInfo(path).absolutePath()) == projectRoot;
+  };
+  if (!current()) {
+    skip(QStringLiteral("The source binding changed or a save is in progress"));
+    return;
+  }
+  // Match Markdown's workspace-membership ownership, including its optional-service case.
+  if (auto *workspaces = m_services.get<WorkspaceCoreService>()) {
+    int owners = 0;
+    for (const auto &workspace : workspaces->listWorkspaces()) {
+      const auto ids = workspace.toObject().value(QStringLiteral("bufferIds")).toArray();
+      for (const auto &id : ids) {
+        if (id.toString() == buffer.id() && ++owners > 1) {
+          return;
+        }
+      }
+    }
+  }
+  if (m_insertedImages.isEmpty() && !m_initialImageSource.contains(QLatin1String("image"))) {
+    return;
+  }
+  VxCoreError readError = VXCORE_OK;
+  const auto content = buffer.getContentRaw(&readError);
+  if (readError != VXCORE_OK) {
+    skip(QStringLiteral("Unable to read the current source"));
+    return;
+  }
+  const auto readSaved = [&path](QByteArray &p_bytes) {
+    QFile file(path);
+    if (!QFileInfo(file).isFile() || !file.open(QIODevice::ReadOnly)) {
+      return false;
+    }
+    p_bytes = file.readAll();
+    return file.error() == QFileDevice::NoError;
+  };
+  QByteArray savedBytes;
+  if (!readSaved(savedBytes)) {
+    skip(QStringLiteral("Unable to read the saved source"));
+    return;
+  }
+  const auto finalSource = buffer.decode(content);
+  const auto savedSource = buffer.decode(savedBytes);
+  if (finalSource.contains(QChar::Null) || savedSource.contains(QChar::Null)) {
+    skip(QStringLiteral("The source contains a NUL"));
+    return;
+  }
+  QString error;
+  const auto scans = vte::TypstCompiler::collectImageReferences(
+      {m_initialImageSource, finalSource, savedSource}, p_helperExecutable, &error);
+  if (scans.size() != 3 || !scans.at(1).m_complete || !scans.at(2).m_complete) {
+    skip(error.isEmpty() ? QStringLiteral("Current or saved image references are uncertain")
+                         : error);
+    return;
+  }
+#ifdef Q_OS_WIN
+  constexpr auto c_pathCase = Qt::CaseInsensitive;
+#else
+  constexpr auto c_pathCase = Qt::CaseSensitive;
+#endif
+  const auto identity = [](const QString &p_canonical) {
+#ifdef Q_OS_WIN
+    return p_canonical.toCaseFolded();
+#else
+    return p_canonical;
+#endif
+  };
+  struct Candidate {
+    QString identifier;
+    QString path;
+    QString canonical;
+    QString filename;
+  };
+  QHash<QString, Candidate> candidates;
+  const auto admit = [&](const QString &p_identifier, const QString &p_path) {
+    if (p_identifier.isEmpty() || p_identifier.contains(QChar::Null) ||
+        !containedImageFolder(projectRoot, QFileInfo(p_path).absolutePath())) {
+      return;
+    }
+    const QFileInfo file(p_path);
+    const auto canonical = resolvedFileSystemPath(p_path);
+    if (!file.isFile() || !pathInside(projectRoot, canonical) ||
+        !containedImageFolder(projectRoot, QFileInfo(canonical).absolutePath())) {
+      return;
+    }
+    const auto key = identity(canonical);
+    if (!candidates.contains(key)) {
+      candidates.insert(key, {p_identifier, p_path, canonical, file.fileName()});
+    }
+  };
+  // Prefer the original backend identifier if the same file was also in opening source.
+  const auto folder = resourceFolder(m_services, buffer);
+  if (containedImageFolder(projectRoot, folder)) {
+    for (const auto &id : std::as_const(m_insertedImages)) {
+      if (!id.contains(QChar::Null)) {
+        admit(id, QDir::isAbsolutePath(id) ? id : QDir(folder).filePath(QFileInfo(id).fileName()));
+      }
+    }
+  }
+  for (const auto &literal : scans.at(0).m_images) {
+    if (!isProjectPath(literal) || imageResourcePath(literal).isEmpty()) {
+      continue;
+    }
+    const auto &node = buffer.nodeId();
+    const auto id = node.notebookId.isEmpty() || node.parentPath().isEmpty()
+                        ? literal
+                        : QDir::cleanPath(node.parentPath() + QLatin1Char('/') + literal);
+    if (isProjectPath(id)) {
+      admit(id, QDir(projectRoot).filePath(literal));
+    }
+  }
+  QSet<QString> liveImages;
+  for (int idx = 1; idx < 3; ++idx) {
+    for (const auto &literal : scans.at(idx).m_images) {
+      const auto canonical = imageResourcePath(literal);
+      if (!canonical.isEmpty()) {
+        liveImages.insert(identity(canonical));
+      }
+    }
+  }
+  const auto mentions = [&](const Candidate &p_candidate) {
+    if (finalSource.contains(p_candidate.filename, c_pathCase) ||
+        savedSource.contains(p_candidate.filename, c_pathCase)) {
+      return true;
+    }
+    for (int idx = 1; idx < 3; ++idx) {
+      for (const auto &literal : scans.at(idx).m_strings) {
+        if (literal.contains(p_candidate.filename, c_pathCase)) {
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  // Discard leaves the draft in core memory. Forced close may also sync without saving.
+  // Neither permits reclaiming an image still mentioned by the separately scanned disk bytes.
+  QByteArray savedAgain;
+  if (!current() || !readSaved(savedAgain) || savedAgain != savedBytes) {
+    skip(QStringLiteral("The source changed during image reference scanning"));
+    return;
+  }
+  for (auto it = candidates.cbegin(); it != candidates.cend(); ++it) {
+    const auto &candidate = it.value();
+    if (liveImages.contains(it.key()) || mentions(candidate)) {
+      continue;
+    }
+    if (!current()) {
+      skip(QStringLiteral("The source binding changed or a save is in progress"));
+      return;
+    }
+    const QFileInfo file(candidate.path);
+    if (!file.isFile() ||
+        resolvedFileSystemPath(candidate.path).compare(candidate.canonical, c_pathCase) != 0 ||
+        !containedImageFolder(projectRoot, file.absolutePath()) ||
+        !containedImageFolder(projectRoot, QFileInfo(candidate.canonical).absolutePath())) {
+      continue;
+    }
+    // BufferService owns the nonrecursive notebook IO gate; never hold an outer gate.
+    if (!buffer.deleteAsset(candidate.identifier)) {
+      qWarning() << "TypstViewWindowController: failed to delete obsolete image:" << candidate.path;
+    }
+  }
 }
 
 bool TypstViewWindowController::bufferAvailable() const {

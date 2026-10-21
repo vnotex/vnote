@@ -4,6 +4,7 @@
 #include "textviewwindowcontroller.h"
 
 #include <QImage>
+#include <QSet>
 #include <QUrl>
 
 #include <core/services/buffer2.h>
@@ -22,6 +23,14 @@ public:
 
   bool setBuffer(const Buffer2 &p_buffer, QString *p_error = nullptr);
   const Project &getProject() const;
+
+  // Per-binding ownership: only opening literal references and committed image inserts.
+  // Finalization belongs to accepted final-view close/replacement, never save or Undo.
+  // Both current and saved source must prove absence; uncertainty retains every asset.
+  void snapshotInitialImages(const QString &p_source);
+  void trackInsertedImage(const QString &p_assetIdentifier);
+  void clearObsoleteImages(const QString &p_helperExecutable);
+
   void requestOpenSource(const QString &p_file, int p_start, int p_end);
   void requestOpenLink(const QUrl &p_url);
   void openConfirmedExternalLink(const QUrl &p_url);
@@ -76,6 +85,9 @@ private:
   ServiceLocator &m_services;
   Buffer2 m_buffer;
   Project m_project;
+  QString m_initialImageSource;
+  bool m_initialImagesSnapshotted = false;
+  QSet<QString> m_insertedImages;
   quint64 m_generation = 0;
   quint64 m_insertionGeneration = 0;
   QString m_insertionBufferPath;
