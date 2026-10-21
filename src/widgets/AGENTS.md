@@ -203,6 +203,11 @@ writer/save lifecycle. The AlternateViewMode shortcut toggles Live Preview via t
 action helper. Find uses source in Edit and native PDF search in Read; source-only options
 are saved/restored locally with `FindAndReplaceWidget2::setFindOptions()`.
 
+Session restoration uses the shared source-line cursor metadata and `FileOpenSettings`, like
+Markdown. Native preview layout must keep that restored caret visible; fresh opens start at
+the top, not at an anchor retained from the empty document. Do not add host scroll timers.
+`test_viewarea_tab_reuse::typstSessionPosition` covers a new session context with either tab policy.
+
 Like Markdown, the editor status bar collapses in Read and returns in Edit. Transient
 messages temporarily expand it in Read, then collapse it again on timeout.
 

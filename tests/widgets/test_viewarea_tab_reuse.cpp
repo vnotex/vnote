@@ -454,6 +454,8 @@ private slots:
   void markdownResourcesAndSaveIdentity();
   void nativeTextAndMindMap();
   void typstCompilerAndUnavailableSource();
+  void typstSessionPosition_data();
+  void typstSessionPosition();
   void imageAndPdfDocuments();
   void dirtyReplacement_data();
   void dirtyReplacement();
@@ -710,6 +712,64 @@ void TestViewAreaTabReuse::nativeTextAndMindMap() {
   QVERIFY(!map->canInsert());
   QVERIFY(!map->isEnabled() || !map->isVisible());
   QCOMPARE(readBytes(f->absolute(QStringLiteral("bad.emind"))), QByteArray("{ broken map"));
+}
+
+void TestViewAreaTabReuse::typstSessionPosition_data() {
+  QTest::addColumn<bool>("reuse");
+  QTest::newRow("new-tabs") << false;
+  QTest::newRow("reuse-tabs") << true;
+}
+
+void TestViewAreaTabReuse::typstSessionPosition() {
+  QFETCH(bool, reuse);
+  if (reuse)
+    f->reuse();
+  QByteArray source("#set page(width: 320pt, height: 440pt, margin: 20pt)\n");
+  for (int line = 0; line < 120; ++line)
+    source += "Line " + QByteArray::number(line) + ": restore this source. $x^2$\n\n";
+  QVERIFY(f->create(QStringLiteral("position.typst"), source));
+  QVERIFY(f->open(QStringLiteral("position.typst")).isValid());
+  auto *typst = f->current()->findChild<vte::VTypstEditor *>();
+  QVERIFY(typst);
+  auto *edit = typst->getTextEditor()->getTextEdit();
+  QTRY_COMPARE_WITH_TIMEOUT(typst->compileStatus(), vte::VTypstEditor::CompileStatus::Ready, 60000);
+  QTRY_VERIFY_WITH_TIMEOUT(typst->pdfPageCount() > 1, 60000);
+  QTest::qWait(500);
+  QCOMPARE(edit->textCursor().position(), 0);
+  QVERIFY(edit->viewport()->rect().intersects(edit->cursorRect()));
+
+  // Exercise the source surface, then persist through the real session shutdown path.
+  edit->setFocus();
+  for (int line = 0; line < 80; ++line)
+    QTest::keyClick(edit, Qt::Key_Down);
+  const int savedLine = edit->textCursor().blockNumber();
+  QVERIFY(savedLine > 0 && savedLine < edit->document()->blockCount() - 1);
+  const auto layout = f->area->saveLayout();
+  const auto notebook = f->notebook;
+  f->config->updateMainConfig(f->config->getConfig().toJson());
+  f->area->saveSession();
+  QCOMPARE(vxcore_prepare_shutdown(f->context), VXCORE_OK);
+  f.reset();
+  f = std::make_unique<Fixture>(directory->path());
+  QVERIFY2(f->initialize(notebook), qPrintable(f->error));
+  f->area->loadLayoutFromSession(layout);
+  f->area->restoreSession();
+  QVERIFY(f->current());
+  QCOMPARE(f->current()->getNodeId().relativePath, QStringLiteral("position.typst"));
+  QCOMPARE(f->current()->getMode(), ViewWindowMode::Edit);
+  typst = f->current()->findChild<vte::VTypstEditor *>();
+  QVERIFY(typst);
+  edit = typst->getTextEditor()->getTextEdit();
+  QTRY_COMPARE_WITH_TIMEOUT(typst->compileStatus(), vte::VTypstEditor::CompileStatus::Ready, 60000);
+  QTRY_VERIFY_WITH_TIMEOUT(typst->pdfPageCount() > 1, 60000);
+  QTest::qWait(500);
+  QCOMPARE(edit->textCursor().blockNumber(), savedLine);
+  QVERIFY2(edit->viewport()->rect().contains(edit->cursorRect()),
+           qPrintable(QStringLiteral("savedLine=%1 cursorY=%2 viewportHeight=%3")
+                          .arg(savedLine)
+                          .arg(edit->cursorRect().y())
+                          .arg(edit->viewport()->height())));
+  QCOMPARE(edit->toPlainText(), QString::fromUtf8(source));
 }
 
 void TestViewAreaTabReuse::typstCompilerAndUnavailableSource() {
