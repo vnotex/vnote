@@ -1746,6 +1746,7 @@ add_qt_test(test_mindmapeditor
     ${CMAKE_SOURCE_DIR}/src/widgets/zoomtoolbar.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/imageviewer.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/imageinsertdialog.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/imagesizedialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/linkinsertdialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/selectdialog.cpp
@@ -1766,6 +1767,7 @@ add_qt_test(test_mindmapeditor
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/htmlutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/clipboardutils.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/mindmapeditor.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/mindmapviewwindowcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/mindmapimageloader.cpp

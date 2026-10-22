@@ -12,6 +12,7 @@ class QJsonObject;
 #include <core/services/buffer2.h>
 
 namespace vnotex {
+class ImageSizeDialog;
 class ImageViewer;
 class MindMapViewWindowController;
 class ServiceLocator;
@@ -81,6 +82,8 @@ private:
   void applyInsertion(Insertion &p_insertion, const QJsonArray &p_records);
   bool canUseBuffer() const;
   bool canEdit() const;
+  void populateImageContextMenu(const QString &p_nodeId, QMenu *p_menu);
+  void invalidateImageContext();
   void showImage(const QImage &p_image);
   void closeImageViewer(bool p_restoreFocus = false);
   void markModified();
@@ -93,6 +96,8 @@ private:
   quint64 m_generation = 0;
   quint64 m_insertionSerial = 0;
   QPointer<QDialog> m_insertionDialog;
+  QPointer<QMenu> m_imageContextMenu;
+  QPointer<ImageSizeDialog> m_imageSizeDialog;
   QPointer<ImageViewer> m_imageOverlay;
   QPointer<QWidget> m_imageOriginalFocus;
   QString m_loadError;

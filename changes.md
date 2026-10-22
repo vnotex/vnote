@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Add mind-map image context actions to view, copy, copy the source address and resize with undo support
 * Disable mind-map image tooltips so hovering images never exposes their URLs or base64 data
 * Activate detached windows and focus their editors after detaching a tab
 * Apply mind-map node-properties panel placement live, preserving the map, edits and embedded expansion state without reopening the editor

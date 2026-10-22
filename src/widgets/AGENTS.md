@@ -324,6 +324,17 @@ Viewing never changes map history, content or zoom; protected revocation destroy
 pixels synchronously before cache refresh. Overlay transparency overrides only its own surfaces,
 not toolbars or native image tabs, and follows live theme changes.
 
+Mind-map image right-clicks use m3's borrowed `nodeImageContextMenuRequested` menu, not
+canvas event filters. **View Image** and **Copy Image** consume `cachedImage()` pixels without
+refetching; **Copy Image Address** copies the exact authored source, including relative paths
+and data URIs. Pending/unavailable images disable pixel actions but retain address copying
+and writable size editing. **Resize Image** uses the shared `ImageSizeDialog` and one native
+undoable image-metadata update; empty dimensions restore automatic sizing. Read-only maps
+retain view/copy actions. Bind actions to the clicked node and generation, never later selection.
+Menus and resize dialogs revoke on content/read-only changes and overlay lifecycle teardown;
+callbacks must not retain decoded protected images or use the editor after clipboard helpers
+that can pump events. Coverage: `test_mindmapeditor` and m3's `images` case.
+
 Native tabs and the mind-map/Markdown popups share centered, non-upscaling Fit/Reset,
 1.25× zoom steps, manual bounds `[min(0.05, fit), 16]`, and bounded left-button panning.
 Only fit mode refits on resize; manual mode preserves scale and the image-space center.

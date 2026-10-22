@@ -1,7 +1,9 @@
 #include "mindmapeditor.h"
 
+#include <QAction>
 #include <QApplication>
 #include <QClipboard>
+#include <QCoreApplication>
 #include <QDialog>
 #include <QDir>
 #include <QEvent>
@@ -10,6 +12,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMenu>
 #include <QMimeData>
 #include <QMimeDatabase>
 #include <QPointer>
@@ -28,10 +31,12 @@
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <gui/services/themeservice.h>
+#include <utils/clipboardutils.h>
 #include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
 #include <utils/pathutils.h>
 #include <widgets/dialogs/imageinsertdialog.h>
+#include <widgets/dialogs/imagesizedialog.h>
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/imageviewer.h>
@@ -133,6 +138,8 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
           &MindMapEditor::statusMessageRequested);
   connect(this, &m3::qt::MindMapEditor::errorOccurred, this,
           &MindMapEditor::statusMessageRequested);
+  connect(this, &m3::qt::MindMapEditor::documentChanged, this,
+          &MindMapEditor::invalidateImageContext);
   connect(this, &m3::qt::MindMapEditor::documentChanged, this, &MindMapEditor::markModified);
   connect(this, &m3::qt::MindMapEditor::pendingEditChanged, this, [this](bool p_pending) {
     if (p_pending) {
@@ -141,6 +148,8 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
   });
   connect(this, &m3::qt::MindMapEditor::nodeImageActivated, this,
           [this](const QString &, const QImage &p_image) { showImage(p_image); });
+  connect(this, &m3::qt::MindMapEditor::nodeImageContextMenuRequested, this,
+          &MindMapEditor::populateImageContextMenu);
   connect(this, &m3::qt::MindMapEditor::nodeLinkActivated, this,
           [this](const QString &, const QString &p_url) {
             if (m_contentLoaded && canUseBuffer()) {
@@ -189,6 +198,10 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
           [this](const QString &, const QString &) { emit insertionAvailabilityChanged(); });
   connect(this, &m3::qt::MindMapEditor::readOnlyChanged, this, [this](bool) {
     const QPointer<MindMapEditor> guard(this);
+    invalidateImageContext();
+    if (!guard) {
+      return;
+    }
     invalidateInsertion();
     if (guard) {
       emit insertionAvailabilityChanged();
@@ -220,6 +233,124 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
 
 MindMapEditor::~MindMapEditor() { closeImageViewer(); }
 
+void MindMapEditor::populateImageContextMenu(const QString &p_nodeId, QMenu *p_menu) {
+  const QPointer<MindMapEditor> guard(this);
+  const QPointer<QMenu> menu(p_menu);
+  const auto generation = m_generation;
+  const QString nodeId(p_nodeId);
+  const auto record = nodeJson(nodeId);
+  invalidateImageContext();
+  if (!guard || !menu || generation != m_generation || record.isEmpty() || !m_contentLoaded ||
+      m_loading || !isVisible() || !isEnabled() || !canUseBuffer() ||
+      m_buffer.getBuffer().isEmpty() || nodeJson(nodeId) != record) {
+    return;
+  }
+  const auto image =
+      QJsonDocument::fromJson(record).object().value(QStringLiteral("image")).toObject();
+  const auto url = image.value(QStringLiteral("url")).toString();
+  if (url.isEmpty()) {
+    return;
+  }
+  m_imageContextMenu = menu;
+  menu->setObjectName(QStringLiteral("mindMapImageContextMenu"));
+  // Selection may move while a menu/dialog is open; only the clicked record is authoritative.
+  const auto current = [guard, menu, generation, nodeId, record] {
+    return guard && menu && guard->m_imageContextMenu == menu &&
+           generation == guard->m_generation && guard->m_contentLoaded && !guard->m_loading &&
+           guard->isVisible() && guard->isEnabled() && guard->canUseBuffer() &&
+           !guard->m_buffer.getBuffer().isEmpty() && guard->nodeJson(nodeId) == record;
+  };
+  const auto addAction = [menu](const char *p_text, const char *p_name) {
+    auto *action = menu->addAction(QCoreApplication::translate("vnotex::MarkdownEditor", p_text));
+    action->setObjectName(QLatin1String(p_name));
+    return action;
+  };
+  const bool available = !cachedImage(url).isNull();
+  auto *view = addAction("&View Image", "viewImage");
+  view->setEnabled(available);
+  connect(view, &QAction::triggered, this, [guard, current, url] {
+    if (current()) {
+      const auto pixels = guard->cachedImage(url);
+      guard->showImage(pixels);
+    }
+  });
+  auto *copy = addAction("Copy Ima&ge", "copyImage");
+  copy->setEnabled(available);
+  connect(copy, &QAction::triggered, this, [guard, current, url] {
+    if (!current()) {
+      return;
+    }
+    const auto pixels = guard->cachedImage(url);
+    if (!pixels.isNull()) {
+      // The helper can pump events and delete the host. Keep pixels local and call it last.
+      ClipboardUtils::setImageToClipboard(QApplication::clipboard(), pixels);
+    }
+  });
+  auto *address = addAction("Copy Image Address", "copyImageAddress");
+  connect(address, &QAction::triggered, this, [current, url] {
+    if (current()) {
+      ClipboardUtils::setTextToClipboard(url);
+    }
+  });
+  auto *resize = addAction("Resize Image", "resizeImage");
+  resize->setEnabled(canEdit());
+  connect(resize, &QAction::triggered, this, [guard, current, nodeId, image, url] {
+    if (!current() || !guard->canEdit()) {
+      return;
+    }
+    const auto dimension = [](const QJsonValue &p_value) {
+      // Imported dimensions are doubles; clamp before converting to the six-digit UI.
+      return int(qBound(0.0, p_value.toDouble(), 999999.0));
+    };
+    QPointer<ImageSizeDialog> dialog(new ImageSizeDialog(
+        QCoreApplication::translate("vnotex::MarkdownEditor", "Resize Image"),
+        dimension(image.value(QStringLiteral("width"))),
+        dimension(image.value(QStringLiteral("height"))), guard->cachedImage(url).size(), guard));
+    const auto cleanup = qScopeGuard([dialog] { delete dialog.data(); });
+    if (!dialog || !current() || !guard->canEdit()) {
+      return;
+    }
+    guard->m_imageSizeDialog = dialog;
+    const auto result = dialog->exec();
+    if (!guard) {
+      return;
+    }
+    if (guard->m_imageSizeDialog == dialog) {
+      guard->m_imageSizeDialog.clear();
+    }
+    if (!dialog || result != QDialog::Accepted || !current() || !guard->canEdit()) {
+      return;
+    }
+    auto resized = image;
+    resized.insert(QStringLiteral("width"), dialog->getImageWidth());
+    resized.insert(QStringLiteral("height"), dialog->getImageHeight());
+    guard->updateNode(nodeId, QJsonDocument(QJsonObject{{QStringLiteral("image"), resized}})
+                                  .toJson(QJsonDocument::Compact));
+  });
+}
+
+void MindMapEditor::invalidateImageContext() {
+  const auto menu = m_imageContextMenu;
+  const auto dialog = m_imageSizeDialog;
+  m_imageContextMenu.clear();
+  m_imageSizeDialog.clear();
+  if (menu) {
+    const auto actions = menu->actions();
+    for (auto *action : actions) {
+      if (!menu) {
+        break;
+      }
+      action->setEnabled(false);
+    }
+    if (menu) {
+      menu->close();
+    }
+  }
+  if (dialog) {
+    dialog->reject();
+  }
+}
+
 void MindMapEditor::showImage(const QImage &p_image) {
   if (p_image.isNull() || !m_contentLoaded || m_loading || !isEnabled() || !isVisible() ||
       !canUseBuffer()) {
@@ -244,6 +375,10 @@ void MindMapEditor::showImage(const QImage &p_image) {
 
 void MindMapEditor::closeImageViewer(bool p_restoreFocus) {
   const QPointer<MindMapEditor> guard(this);
+  invalidateImageContext();
+  if (!guard) {
+    return;
+  }
   const auto overlay = m_imageOverlay;
   const auto focus = m_imageOriginalFocus;
   m_imageOverlay.clear();

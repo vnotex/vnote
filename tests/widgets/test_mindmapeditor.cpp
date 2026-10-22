@@ -65,6 +65,7 @@
 #include <core/sessionconfig.h>
 #include <vxcore/vxcore.h>
 #include <widgets/dialogs/imageinsertdialog.h>
+#include <widgets/dialogs/imagesizedialog.h>
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/editors/mindmapeditor.h>
@@ -223,6 +224,37 @@ ImageViewer *openImagePopup(MindMapEditor &p_editor, QGraphicsView *p_view, cons
   QTest::mouseDClick(p_view->viewport(), Qt::LeftButton, Qt::NoModifier, point);
   QTest::mouseRelease(p_view->viewport(), Qt::LeftButton, Qt::NoModifier, point);
   return p_editor.findChild<ImageViewer *>(QStringLiteral("mindMapImageViewer"));
+}
+
+bool withImageMenu(QGraphicsView *p_view, const QPoint &p_point,
+                   const std::function<void(QMenu *)> &p_action) {
+  if (!p_view->viewport()->rect().contains(p_point)) {
+    return false;
+  }
+  bool found = false;
+  QTimer timer;
+  QElapsedTimer elapsed;
+  elapsed.start();
+  QObject::connect(&timer, &QTimer::timeout, &timer, [&] {
+    QPointer<QMenu> menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
+    if (menu) {
+      timer.stop();
+      found = menu->objectName() == QStringLiteral("mindMapImageContextMenu");
+      if (found) {
+        p_action(menu);
+      }
+      if (menu) {
+        menu->close();
+      }
+    } else if (elapsed.elapsed() > 10000) {
+      timer.stop();
+    }
+  });
+  timer.start(0);
+  QContextMenuEvent event(QContextMenuEvent::Mouse, p_point,
+                          p_view->viewport()->mapToGlobal(p_point));
+  QCoreApplication::sendEvent(p_view->viewport(), &event);
+  return found;
 }
 
 // An actual loopback HTTP peer with explicit response barriers. No real network,
@@ -489,6 +521,14 @@ private slots:
   void protectedImagesRefuseExternalAndRevokeOnLock();
   void imagePopupPreservesDocument_data();
   void imagePopupPreservesDocument();
+  void imageMenuReadActions_data();
+  void imageMenuReadActions();
+  void imageMenuResize_data();
+  void imageMenuResize();
+  void imageMenuUnavailable_data();
+  void imageMenuUnavailable();
+  void imageMenuInvalidation_data();
+  void imageMenuInvalidation();
   void imagePopupInvalidation_data();
   void imagePopupInvalidation();
   void configuredShortcutsDriveRealCommands();
@@ -1303,6 +1343,352 @@ void TestMindMapEditor::imagePopupPreservesDocument() {
   QVERIFY(!editor.hasPendingEdit());
   QVERIFY(dirty.isEmpty());
   QCOMPARE(buffer.getContentRaw(), content);
+}
+
+void TestMindMapEditor::imageMenuReadActions_data() {
+  QTest::addColumn<bool>("relative");
+  QTest::addColumn<bool>("protectedNote");
+  QTest::addColumn<bool>("readOnly");
+  QTest::newRow("base64") << false << false << false;
+  QTest::newRow("relative-read-only") << true << false << true;
+  QTest::newRow("protected-base64") << false << true << false;
+  QTest::newRow("protected-relative") << true << true << false;
+}
+
+void TestMindMapEditor::imageMenuReadActions() {
+  QFETCH(bool, relative);
+  QFETCH(bool, protectedNote);
+  QFETCH(bool, readOnly);
+  const QColor color(231, 37, 53);
+  const auto bytes = imageBytes(color);
+  const auto url = relative ? QStringLiteral("./image%20one.png") : dataUrl(bytes);
+  const auto content = fixture(url);
+  const auto buffer = protectedNote ? openProtectedNote(content)
+                                    : openNote(QStringLiteral("image-menu.mmm"), content, readOnly);
+  QVERIFY(buffer.isValid());
+  const auto path = QDir(buffer.getResourceBasePath()).filePath(QStringLiteral("image one.png"));
+  if (relative) {
+    QVERIFY(writeFile(path, bytes));
+  }
+  MindMapEditor editor(*m_services, buffer);
+  QSignalSpy requests(&editor, &m3::qt::MindMapEditor::imageRequested);
+  QVERIFY(editor.loadContent(content));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QTRY_VERIFY(rendersColor(editor, color));
+  if (relative) {
+    QVERIFY(QFile::remove(path));
+  }
+  if (!readOnly) {
+    QVERIFY(editor.renameNode(QStringLiteral("a"), QStringLiteral("Existing undo entry")));
+    editor.setModified(false);
+  }
+  const auto baseline = editor.toJson();
+  const auto camera = view->transform();
+  const bool undoAvailable = editor.canUndo();
+  const auto requestCount = requests.count();
+  QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
+  for (const auto *name : {"viewImage", "copyImage", "copyImageAddress"}) {
+    QVERIFY(editor.selectNode(QStringLiteral("a")));
+    QVERIFY(withImageMenu(view, imagePoint(view, color), [&](QMenu *p_menu) {
+      auto *action = p_menu->findChild<QAction *>(QLatin1String(name));
+      auto *resize = p_menu->findChild<QAction *>(QStringLiteral("resizeImage"));
+      QVERIFY(action && action->isEnabled() && resize);
+      QCOMPARE(resize->isEnabled(), !readOnly);
+      // Even a selection change after opening must not retarget the image operation.
+      QVERIFY(editor.selectNode(QStringLiteral("a")));
+      p_menu->hide();
+      action->trigger();
+    }));
+    if (QLatin1String(name) == QLatin1String("viewImage")) {
+      QPointer<ImageViewer> popup =
+          editor.findChild<ImageViewer *>(QStringLiteral("mindMapImageViewer"));
+      QVERIFY(popup && popup->isVisible() && !popup->isWindow());
+      auto *imageView = popup->findChild<QGraphicsView *>();
+      QVERIFY(imageView);
+      auto *item = dynamic_cast<QGraphicsPixmapItem *>(imageView->scene()->items().first());
+      QVERIFY(item);
+      QCOMPARE(item->pixmap().size(), QSize(120, 60));
+      QCOMPARE(item->pixmap().toImage().pixelColor(60, 30), color);
+      QTest::keyClick(imageView, Qt::Key_Escape);
+      QVERIFY(popup.isNull());
+    } else if (QLatin1String(name) == QLatin1String("copyImage")) {
+      const auto copied = QApplication::clipboard()->image();
+      QCOMPARE(copied.size(), QSize(120, 60));
+      QCOMPARE(copied.pixelColor(60, 30), color);
+    } else {
+      QCOMPARE(QApplication::clipboard()->text(), url);
+    }
+  }
+  QCOMPARE(editor.toJson(), baseline);
+  QCOMPARE(view->transform(), camera);
+  QCOMPARE(editor.canUndo(), undoAvailable);
+  QCOMPARE(requests.count(), requestCount);
+  QVERIFY(!editor.isModified());
+  QVERIFY(dirty.isEmpty());
+  QCOMPARE(buffer.getContentRaw(), content);
+}
+
+void TestMindMapEditor::imageMenuResize_data() {
+  QTest::addColumn<double>("width");
+  QTest::addColumn<double>("height");
+  QTest::addColumn<QString>("newWidth");
+  QTest::addColumn<QString>("newHeight");
+  QTest::addColumn<bool>("accept");
+  QTest::newRow("set") << 0.0 << 0.0 << QStringLiteral("75") << QStringLiteral("40") << true;
+  QTest::newRow("clear") << 120.0 << 60.0 << QString() << QString() << true;
+  QTest::newRow("cancel") << 120.0 << 60.0 << QStringLiteral("75") << QStringLiteral("40") << false;
+  QTest::newRow("imported-large") << 1e100 << 1e100 << QStringLiteral("75") << QStringLiteral("40")
+                                  << true;
+  QTest::newRow("imported-fractional")
+      << 12.75 << 6.25 << QStringLiteral("75") << QStringLiteral("40") << true;
+}
+
+void TestMindMapEditor::imageMenuResize() {
+  QFETCH(double, width);
+  QFETCH(double, height);
+  QFETCH(QString, newWidth);
+  QFETCH(QString, newHeight);
+  QFETCH(bool, accept);
+  const QColor color(231, 37, 53);
+  auto document = QJsonDocument::fromJson(fixture(dataUrl(imageBytes(color)))).object();
+  auto nodes = document.value(QStringLiteral("nodes")).toArray();
+  auto root = nodes[0].toObject();
+  auto image = root.value(QStringLiteral("image")).toObject();
+  image.insert(QStringLiteral("width"), width);
+  image.insert(QStringLiteral("height"), height);
+  root.insert(QStringLiteral("image"), image);
+  nodes[0] = root;
+  document.insert(QStringLiteral("nodes"), nodes);
+  const auto content = QJsonDocument(document).toJson(QJsonDocument::Compact);
+  const auto buffer = openNote(QStringLiteral("image-size.mmm"), content);
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(content));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QTRY_VERIFY(rendersColor(editor, color));
+  editor.fitToContents();
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  const auto baseline = editor.toJson();
+  auto expected = node(editor, QStringLiteral("r"));
+  const auto child = node(editor, QStringLiteral("a"));
+  QSignalSpy dirty(&editor, &MindMapEditor::contentsChanged);
+  bool initialSizeMatches = false;
+  InsertionDialogs dialogs({[&](QDialog *p_dialog) {
+    auto *dialog = qobject_cast<ImageSizeDialog *>(p_dialog);
+    if (!dialog) {
+      return false;
+    }
+    initialSizeMatches = dialog->getImageWidth() == int(qMin(width, 999999.0)) &&
+                         dialog->getImageHeight() == int(qMin(height, 999999.0));
+    dialog->findChild<QLineEdit *>(QStringLiteral("imageSizeWidthEdit"))->setText(newWidth);
+    dialog->findChild<QLineEdit *>(QStringLiteral("imageSizeHeightEdit"))->setText(newHeight);
+    editor.selectNode(QStringLiteral("a"));
+    QTest::mouseClick(dialog->findChild<QDialogButtonBox *>()->button(
+                          accept ? QDialogButtonBox::Ok : QDialogButtonBox::Cancel),
+                      Qt::LeftButton);
+    return true;
+  }});
+  QVERIFY(withImageMenu(view, imagePoint(view, color), [&](QMenu *p_menu) {
+    auto *resize = p_menu->findChild<QAction *>(QStringLiteral("resizeImage"));
+    QVERIFY(resize && resize->isEnabled());
+    p_menu->hide();
+    resize->trigger();
+  }));
+  QVERIFY(dialogs.complete());
+  QVERIFY(initialSizeMatches);
+  QCOMPARE(node(editor, QStringLiteral("a")), child);
+  if (accept) {
+    image = expected.value(QStringLiteral("image")).toObject();
+    image.insert(QStringLiteral("width"), newWidth.toInt());
+    image.insert(QStringLiteral("height"), newHeight.toInt());
+    expected.insert(QStringLiteral("image"), image);
+    QCOMPARE(node(editor, QStringLiteral("r")), expected);
+    QCOMPARE(dirty.count(), 1);
+    QVERIFY(editor.undo());
+    QCOMPARE(editor.toJson(), baseline);
+    QVERIFY(!editor.canUndo());
+    QVERIFY(editor.redo());
+    QCOMPARE(node(editor, QStringLiteral("r")), expected);
+  } else {
+    QCOMPARE(editor.toJson(), baseline);
+    QVERIFY(dirty.isEmpty());
+    QVERIFY(!editor.canUndo());
+  }
+  QCOMPARE(buffer.getContentRaw(), content);
+}
+
+void TestMindMapEditor::imageMenuUnavailable_data() {
+  QTest::addColumn<bool>("failed");
+  QTest::newRow("pending") << false;
+  QTest::newRow("missing") << true;
+}
+
+void TestMindMapEditor::imageMenuUnavailable() {
+  QFETCH(bool, failed);
+  ImageServer server;
+  QVERIFY(server.isListening());
+  const QColor color(231, 37, 53);
+  const auto buffer =
+      openNote(QStringLiteral("placeholder.mmm"), fixture(dataUrl(imageBytes(color))));
+  MindMapEditor editor(*m_services, buffer);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  auto *view = showEditor(editor);
+  QVERIFY(view);
+  QTRY_VERIFY(rendersColor(editor, color));
+  const auto point = imagePoint(view, color);
+  auto image = QJsonObject{{QStringLiteral("url"), server.url()},
+                           {QStringLiteral("width"), 120},
+                           {QStringLiteral("height"), 60}};
+  QSignalSpy deliveries(editor.findChild<MindMapViewWindowController *>(),
+                        &MindMapViewWindowController::imageReady);
+  QVERIFY(editor.updateNode(QStringLiteral("r"),
+                            QJsonDocument(QJsonObject{{QStringLiteral("image"), image}}).toJson()));
+  QTRY_COMPARE(server.requestCount(), 1);
+  if (failed) {
+    QVERIFY(server.reply(0, {}, 404));
+    QTRY_COMPARE(deliveries.count(), 1);
+  }
+  const auto baseline = editor.toJson();
+  QVERIFY(withImageMenu(view, point, [&](QMenu *p_menu) {
+    auto *viewImage = p_menu->findChild<QAction *>(QStringLiteral("viewImage"));
+    auto *copyImage = p_menu->findChild<QAction *>(QStringLiteral("copyImage"));
+    auto *address = p_menu->findChild<QAction *>(QStringLiteral("copyImageAddress"));
+    auto *resize = p_menu->findChild<QAction *>(QStringLiteral("resizeImage"));
+    QVERIFY(viewImage && copyImage && address && resize);
+    QVERIFY(!viewImage->isEnabled() && !copyImage->isEnabled());
+    QVERIFY(address->isEnabled() && resize->isEnabled());
+    address->trigger();
+    QCOMPARE(QApplication::clipboard()->text(), server.url());
+    InsertionDialogs dialogs({[](QDialog *p_dialog) {
+      auto *dialog = qobject_cast<ImageSizeDialog *>(p_dialog);
+      if (!dialog) {
+        return false;
+      }
+      dialog->findChild<QLineEdit *>(QStringLiteral("imageSizeWidthEdit"))
+          ->setText(QStringLiteral("80"));
+      dialog->accept();
+      return true;
+    }});
+    p_menu->hide();
+    resize->trigger();
+    QVERIFY(dialogs.complete());
+  }));
+  image.insert(QStringLiteral("width"), 80);
+  QCOMPARE(node(editor, QStringLiteral("r")).value(QStringLiteral("image")).toObject(), image);
+  QVERIFY(editor.undo());
+  QCOMPARE(editor.toJson(), baseline);
+  QCOMPARE(server.requestCount(), 1);
+}
+
+void TestMindMapEditor::imageMenuInvalidation_data() {
+  QTest::addColumn<QString>("transition");
+  QTest::addColumn<bool>("modal");
+  for (const auto *name :
+       {"reload", "retarget", "node-edit", "read-only", "hide", "disable", "lock", "delete"}) {
+    for (const bool modal : {false, true}) {
+      const auto row = QByteArray(name) + (modal ? "-dialog" : "-menu");
+      QTest::newRow(row.constData()) << QString::fromLatin1(name) << modal;
+    }
+  }
+}
+
+void TestMindMapEditor::imageMenuInvalidation() {
+  QFETCH(QString, transition);
+  QFETCH(bool, modal);
+  const QColor color(231, 37, 53);
+  const auto content = fixture(dataUrl(imageBytes(color)));
+  const auto buffer = transition == QLatin1String("lock")
+                          ? openProtectedNote(content)
+                          : openNote(QStringLiteral("stale-image.mmm"), content);
+  QVERIFY(buffer.isValid());
+  const auto replacement = openNote(QStringLiteral("replacement.mmm"), content);
+  QVERIFY(replacement.isValid());
+  auto editor = std::make_unique<MindMapEditor>(*m_services, buffer);
+  QVERIFY(editor->loadContent(content));
+  auto *view = showEditor(*editor);
+  QVERIFY(view);
+  QTRY_VERIFY(rendersColor(*editor, color));
+  const auto point = imagePoint(view, color);
+  QByteArray expected;
+  bool changed = false;
+  const auto invalidate = [&] {
+    if (transition == QLatin1String("reload")) {
+      changed = editor->loadContent(content);
+    } else if (transition == QLatin1String("retarget")) {
+      editor->setBuffer(replacement);
+      changed = editor->loadContent(content);
+    } else if (transition == QLatin1String("node-edit")) {
+      changed = editor->renameNode(QStringLiteral("r"), QStringLiteral("Changed target"));
+    } else if (transition == QLatin1String("read-only")) {
+      editor->setReadOnly(true);
+      changed = editor->isReadOnly();
+      editor->setReadOnly(false);
+    } else if (transition == QLatin1String("hide")) {
+      editor->hide();
+      changed = !editor->isVisible();
+    } else if (transition == QLatin1String("disable")) {
+      editor->setEnabled(false);
+      changed = !editor->isEnabled();
+    } else if (transition == QLatin1String("lock")) {
+      changed = m_buffers->beginProtectedLocking();
+    } else {
+      editor.reset();
+      changed = true;
+    }
+    if (editor) {
+      expected = editor->toJson();
+    }
+  };
+  QApplication::clipboard()->setText(QStringLiteral("unchanged clipboard"));
+  bool rejected = false;
+  QVERIFY(withImageMenu(view, point, [&](QMenu *p_menu) {
+    const QPointer<QMenu> menu(p_menu);
+    if (modal) {
+      auto *resize = menu->findChild<QAction *>(QStringLiteral("resizeImage"));
+      QVERIFY(resize && resize->isEnabled());
+      InsertionDialogs dialogs({[&](QDialog *p_dialog) {
+        QPointer<ImageSizeDialog> dialog = qobject_cast<ImageSizeDialog *>(p_dialog);
+        if (!dialog) {
+          return false;
+        }
+        dialog->findChild<QLineEdit *>(QStringLiteral("imageSizeWidthEdit"))
+            ->setText(QStringLiteral("77"));
+        invalidate();
+        rejected = !dialog || (!dialog->isVisible() && dialog->result() == QDialog::Rejected);
+        if (dialog) {
+          // A late acceptance cannot revive a revoked operation.
+          dialog->accept();
+        }
+        return true;
+      }});
+      menu->hide();
+      resize->trigger();
+      QVERIFY(dialogs.complete());
+    } else {
+      invalidate();
+      rejected = !menu || !menu->isVisible();
+      if (menu) {
+        for (auto *action : menu->actions()) {
+          QVERIFY(!action->isEnabled());
+          if (action->objectName() != QLatin1String("resizeImage")) {
+            // Exercise the captured guard even if a queued signal bypasses QAction's gate.
+            QVERIFY(QMetaObject::invokeMethod(action, "triggered", Qt::DirectConnection,
+                                              Q_ARG(bool, false)));
+          }
+        }
+      }
+    }
+  }));
+  QVERIFY(changed);
+  QVERIFY(rejected);
+  QCOMPARE(QApplication::clipboard()->text(), QStringLiteral("unchanged clipboard"));
+  if (editor) {
+    QCOMPARE(editor->toJson(), expected);
+    QVERIFY(!editor->findChild<ImageViewer *>(QStringLiteral("mindMapImageViewer")));
+    QVERIFY(!editor->findChild<ImageSizeDialog *>());
+  }
+  QCOMPARE(buffer.getContentRaw(), transition == QLatin1String("lock") ? QByteArray() : content);
 }
 
 void TestMindMapEditor::imagePopupInvalidation_data() {
