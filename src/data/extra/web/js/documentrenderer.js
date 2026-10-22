@@ -88,7 +88,8 @@ class DocumentRenderer extends VxWorker {
         });
     }
 
-    sanitizeHtml(p_html) {
+    sanitizeFragment(p_html) {
+        const urlAttributes = ['href', 'src', 'cite', 'poster'];
         if (!this.xssFilter) {
             const whiteList = Object.assign({}, window.filterXSS.getDefaultWhiteList(), {
                 details: ['open'], summary: [], figure: [], figcaption: [],
@@ -107,23 +108,42 @@ class DocumentRenderer extends VxWorker {
             this.xssFilter = new window.filterXSS.FilterXSS({
                 whiteList,
                 safeAttrValue: (tag, name, value, cssFilter) => {
-                    if (name === 'href' || name === 'src') {
-                        const url = window.filterXSS.friendlyAttrValue(value).trim();
-                        // Preserve native relative/file/custom-protocol links, not
-                        // only the library's narrow HTTP-oriented URL allowlist.
-                        // Attribute escaping and active-scheme rejection still apply.
-                        if (/^(?:javascript|vbscript|data):/i.test(url)
-                            && !(tag === 'img' && name === 'src'
-                                && /^data:image\/(?:gif|png|jpeg|webp|svg\+xml)[;,]/i.test(url))) {
-                            return '';
-                        }
-                        return window.filterXSS.escapeAttrValue(url);
+                    if (urlAttributes.includes(name)) {
+                        // Preserve authored URLs until the inert HTML parser decodes
+                        // their attributes. This intermediate HTML is never installed.
+                        return window.filterXSS.escapeAttrValue(value);
                     }
                     return window.filterXSS.safeAttrValue(tag, name, value, cssFilter);
                 }
             });
         }
-        return this.xssFilter.process(p_html);
+        const template = document.createElement('template');
+        template.innerHTML = this.xssFilter.process(p_html);
+        for (const node of template.content.querySelectorAll('[href], [src], [cite], [poster]')) {
+            for (const name of urlAttributes) {
+                if (!node.hasAttribute(name)) {
+                    continue;
+                }
+                let url;
+                try {
+                    // Match browser entity decoding and URL control-character handling,
+                    // including java&Tab;script:. Never resolve relative links in place.
+                    url = new URL(node.getAttribute(name), document.baseURI);
+                } catch (_) {
+                    node.removeAttribute(name);
+                    continue;
+                }
+                if (url.protocol === 'javascript:' || url.protocol === 'vbscript:'
+                    || (url.protocol === 'data:'
+                        && !(node.tagName === 'IMG' && name === 'src'
+                            && /^data:image\/(?:gif|png|jpeg|webp|svg\+xml)[;,]/i.test(url.href)))) {
+                    node.removeAttribute(name);
+                }
+            }
+        }
+        // Connect exactly the nodes checked above; serializing and reparsing could
+        // change the interpretation at the security boundary.
+        return template.content;
     }
 
     render(p_node, p_html, p_generation) {
@@ -135,7 +155,11 @@ class DocumentRenderer extends VxWorker {
             this.vxcore.navigationLinkDestinations = new WeakMap();
             return this.renderProtected(p_node, p_html, p_generation);
         }
-        p_node.innerHTML = window.vxOptions.protectFromXss ? this.sanitizeHtml(p_html) : p_html;
+        if (window.vxOptions.protectFromXss) {
+            p_node.replaceChildren(this.sanitizeFragment(p_html));
+        } else {
+            p_node.innerHTML = p_html;
+        }
         this.documentInstalled(p_node, p_generation);
     }
 

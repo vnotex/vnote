@@ -404,6 +404,9 @@ private slots:
   void testNavigation_protectedDestinations();
   void testCustomAnchors_data();
   void testCustomAnchors();
+  void testSanitizedUrls_data();
+  void testSanitizedUrls();
+  void testSanitizedUrls_activation();
   void testMathHeadings_linkTargets();
   void testCmarkMathTableDom_data();
   void testCmarkMathTableDom();
@@ -1807,6 +1810,138 @@ return {
            QJsonArray::fromStringList({"replacement.md"}));
 }
 
+void TestMarkdownViewerJs::testSanitizedUrls_data() {
+  QTest::addColumn<QString>("tag");
+  QTest::addColumn<QString>("attribute");
+  QTest::addColumn<QString>("url");
+  QTest::addColumn<QString>("expected");
+  const auto blocked = [](const char *name, const char *tag, const char *attribute,
+                          const char *url) {
+    QTest::newRow(name) << QString::fromLatin1(tag) << QString::fromLatin1(attribute)
+                        << QString::fromUtf8(url) << QString();
+  };
+  const auto allowed = [](const char *name, const char *url, const char *expected) {
+    QTest::newRow(name) << QStringLiteral("a") << QStringLiteral("href") << QString::fromUtf8(url)
+                        << QString::fromUtf8(expected);
+  };
+  blocked("plain-script", "a", "href", "javascript:void(window.__urlProbe=42)");
+  blocked("named-tab", "a", "href", "java&Tab;script:void(window.__urlProbe=42)");
+  blocked("named-newline", "area", "href", "java&NewLine;script:void(0)");
+  blocked("named-colon", "audio", "src", "javascript&colon;void(0)");
+  blocked("numeric-tab", "img", "src", "java&#9;script:void(0)");
+  blocked("hex-newline", "video", "src", "java&#x0a;script:void(0)");
+  blocked("encoded-cr", "video", "poster", "java&#13;script:void(0)");
+  blocked("leading-controls", "blockquote", "cite", "&#1;&#32;JaVaScRiPt:void(0)");
+  blocked("vbscript", "a", "href", "vb&Tab;script:MsgBox(1)");
+  blocked("data-link", "a", "href", "d&Tab;ata:text/html,probe");
+  blocked("data-html-image", "img", "src", "data:text/html,probe");
+  blocked("data-not-image", "img", "src", "data:image/png-not-a-mime,probe");
+  blocked("data-image-link", "a", "href", "data:image/png;base64,AA==");
+  blocked("data-poster", "video", "poster", "data:image/png;base64,AA==");
+  blocked("invalid-url", "a", "href", "http://[invalid");
+  allowed("relative-query", "sibling.md?a=1&amp;b=2#part", "sibling.md?a=1&b=2#part");
+  allowed("heading", "#part", "#part");
+  allowed("file", "file:///navigation/sibling.md", "file:///navigation/sibling.md");
+  allowed("https", "https://example.invalid/a?x=1&amp;y=2", "https://example.invalid/a?x=1&y=2");
+  allowed("http", "http://example.invalid/", "http://example.invalid/");
+  allowed("mail", "mailto:user@example.invalid", "mailto:user@example.invalid");
+  allowed("custom", "vnote-test:note/123", "vnote-test:note/123");
+  allowed("double-encoded", "java&amp;Tab;script:literal", "java&Tab;script:literal");
+  allowed("quote", "notes/a&quot;b.md", "notes/a\"b.md");
+  allowed("empty", "", "");
+  const auto gif = QStringLiteral("data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAE"
+                                  "AAAAALAAAAAABAAEAAAIBRAA7");
+  QTest::newRow("embedded-raster") << QStringLiteral("img") << QStringLiteral("src") << gif << gif;
+  const auto svg = QStringLiteral("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'"
+                                  " width='1' height='1'%3E%3C/svg%3E");
+  QTest::newRow("embedded-svg") << QStringLiteral("img") << QStringLiteral("src") << svg << svg;
+}
+
+void TestMarkdownViewerJs::testSanitizedUrls() {
+  QFETCH(QString, tag);
+  QFETCH(QString, attribute);
+  QFETCH(QString, url);
+  QFETCH(QString, expected);
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupNavigationPage(page);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral("vxOptions.protectFromXss = true; return {};"), result);
+  const auto html =
+      QStringLiteral("<%1 id=\"url-probe\" %2=\"%3\"></%1>\n").arg(tag, attribute, url);
+  renderNavigationDocument(page, html, QStringLiteral("url-1"));
+  const auto check = QStringLiteral(R"JS(
+const node = vxcore.contentContainer.querySelector('#url-probe');
+const attribute = '%1';
+const value = node.getAttribute(attribute);
+return {present: node.hasAttribute(attribute), value,
+  protocol: value === null ? null : new URL(value, document.baseURI).protocol};
+)JS")
+                         .arg(attribute);
+  evaluateNavigation(page, check, result);
+  QVERIFY2(result.value(QStringLiteral("present")).toBool() == !expected.isNull(),
+           QJsonDocument(result).toJson(QJsonDocument::Compact).constData());
+  if (!expected.isNull()) {
+    QCOMPARE(result.value(QStringLiteral("value")).toString(), expected);
+  } else {
+    QVERIFY(result.value(QStringLiteral("protocol")).isNull());
+  }
+}
+
+void TestMarkdownViewerJs::testSanitizedUrls_activation() {
+  // A positive control proves this real engine executes the same authored URL when
+  // protection is off. void keeps successful script execution from replacing the page.
+  const auto source = QStringLiteral(
+      "<a id=\"url-probe\" href=\"java&Tab;script:void(window.__urlProbe=42)\">Probe</a>");
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupNavigationPage(page);
+  QJsonObject result;
+  renderNavigationDocument(page, source, QStringLiteral("url-control"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+window.__urlProbe = 0;
+vxcore.contentContainer.querySelector('#url-probe').click();
+return {};
+)JS"),
+                     result);
+  const auto executed = [&]() {
+    evaluateNavigation(page, QStringLiteral("return {marker: window.__urlProbe};"), result);
+    return result.value(QStringLiteral("marker")).toInt() == 42;
+  };
+  QTRY_VERIFY_WITH_TIMEOUT(executed(), 10000);
+  evaluateNavigation(page, QStringLiteral("vxOptions.protectFromXss = true; return {};"), result);
+  renderNavigationDocument(page, source, QStringLiteral("url-protected"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+window.__urlProbe = 0;
+window.__urlClickSettled = false;
+const node = vxcore.contentContainer.querySelector('#url-probe');
+node.click();
+setTimeout(() => { window.__urlClickSettled = true; }, 100);
+return {hasHref: node.hasAttribute('href')};
+)JS"),
+                     result);
+  QVERIFY(!result.value(QStringLiteral("hasHref")).toBool());
+  const auto settled = [&]() {
+    evaluateNavigation(
+        page,
+        QStringLiteral("return {settled: window.__urlClickSettled, marker: window.__urlProbe};"),
+        result);
+    return result.value(QStringLiteral("settled")).toBool();
+  };
+  QTRY_VERIFY_WITH_TIMEOUT(settled(), 10000);
+  QCOMPARE(result.value(QStringLiteral("marker")).toInt(), 0);
+
+  QWebEnginePage protectedPage(&profile);
+  setupNavigationPage(protectedPage, true);
+  renderNavigationDocument(protectedPage, source, QStringLiteral("url-encrypted"));
+  evaluateNavigation(
+      protectedPage,
+      QStringLiteral("return {hasHref: "
+                     "vxcore.contentContainer.querySelector('#url-probe').hasAttribute('href')};"),
+      result);
+  QVERIFY(!result.value(QStringLiteral("hasHref")).toBool());
+}
+
 void TestMarkdownViewerJs::testCustomAnchors_data() {
   QTest::addColumn<QString>("html");
   QTest::addColumn<QString>("expectedAnchor");
@@ -1870,7 +2005,8 @@ return {text: target.textContent, id: target.id, href: target.getAttribute('href
   elements: vxcore.contentContainer.querySelectorAll('a, span').length,
   injectedHandler: !!vxcore.contentContainer.querySelector('[onclick], script, img'),
   activeHref: Array.from(vxcore.contentContainer.querySelectorAll('[href]')).some(node =>
-    /^(javascript|vbscript|data):/i.test(node.getAttribute('href')))};
+    ['javascript:', 'vbscript:', 'data:'].includes(
+      new URL(node.getAttribute('href'), document.baseURI).protocol))};
 )JS"),
                      result);
   QCOMPARE(result.value(QStringLiteral("text")).toString(), QStringLiteral("target"));

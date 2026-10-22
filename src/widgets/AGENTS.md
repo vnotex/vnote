@@ -389,6 +389,16 @@ Protected notes retain the established fixed profile: HTML/linkify on, soft newl
 source requests a hard break. Ordinary HTML/linkify/auto-break preferences do not override it;
 the protected editor snapshot and reader use the same effective grammar.
 
+With ordinary XSS protection enabled, js-xss filters tags, attributes and CSS before
+`DocumentRenderer::sanitizeFragment()` parses its output into an inert template. Validate
+browser-decoded `href`, `src`, `cite` and `poster` with the browser URL parser; remove invalid
+or active URLs before connecting the fragment. Only `img[src]` accepts the existing passive
+image data types. Keep allowed relative/file/custom URLs as authored, not resolved absolute
+URLs. Install the checked nodes directly: never validate raw entity spellings or serialize
+and reparse between validation and installation. The intermediate js-xss string is not safe
+for live insertion. This is XSS protection, not a ban on ordinary remote images or CSS URLs.
+Qt WebEngine URL/activation regressions live in `tests/widgets/test_markdownviewer_js.cpp`.
+
 Enhancement rounds are serialized; only the latest pending fragment survives, including empty
 HTML. Completion, task clicks, protected image replies and DOM extraction are generation-scoped.
 Task writes additionally verify the authoritative source revision. Superseded or unready DOM
