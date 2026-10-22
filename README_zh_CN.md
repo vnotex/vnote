@@ -94,8 +94,8 @@ rustup toolchain install 1.99.0 --profile minimal
 (cd libs/vtextedit/tools/typst-backend && cargo --version && rustc --version)
 ```
 
-CMake 会构建锁定的 Rust 依赖，并将 `vtextedit-typst` 复制到 VNote 可执行文件旁。
-无需单独安装 `typst` CLI 或 Tinymist。首次构建需要联网下载依赖。
+CMake 会将锁定的 Rust 依赖构建为 `vtextedit_typst` 共享库，由 VTextEdit 链接并随
+VNote 一起部署。无需单独安装 `typst` CLI 或 Tinymist。首次构建需要联网下载依赖。
 
 ### Qt Creator
 
@@ -112,12 +112,15 @@ CMake 会构建锁定的 Rust 依赖，并将 `vtextedit-typst` 复制到 VNote 
    Initial Configuration 用于新的构建目录；已有配置的目录还需要修改当前 CMake 配置。
 4. 如需 VNote 测试，在 Debug 配置中添加 `-DVNOTE_BUILD_TESTS:BOOL=ON`。
    配置完成后构建 **vnote** 和 **lrelease** 目标，运行/调试目标选择 **vnote**。
-   Typst 辅助程序是构建依赖，不是单独的运行目标。
+   Typst 共享库是构建依赖，不是单独的运行目标。
 5. 在 VNote 中打开 `.typst` 笔记，确认预览正常渲染。
-   也可在仓库根目录直接验证 Windows 辅助程序：
+   也可在仓库根目录直接验证 Windows 共享库：
    ```powershell
-   python scripts/e2e/smoke_typst_package.py --helper build-typst-release/src/vtextedit-typst.exe
+   python scripts/e2e/smoke_typst_package.py --library build-typst-release/src/vtextedit_typst.dll
    ```
+
+Typst 在 VNote 进程内的固定数量后台线程上运行。超时会丢弃结果，但不能强制终止原生调用；
+退出时会等待活动调用返回。启动时必须能加载共享库，原生编译器崩溃也可能影响 VNote。
 
 `--no-single-instance` 可启动第二个 VNote 进程，但只跳过锁和 IPC，**不会隔离用户数据**。
 使用临时配置和笔记测试时，请遵循[隔离 GUI 冒烟测试步骤](tests/AGENTS.md#agent-gui-smoke-testing-windows)。

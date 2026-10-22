@@ -78,6 +78,17 @@ The external process alone owns signed full-package authentication, preservation
 relaunch. Protected installations fail with manual-update guidance, not UAC/ACL changes.
 [../../docs/update-signing.md](../../docs/update-signing.md) owns that contract.
 
+## Native Typst runtime and image cleanup
+
+`TypstViewWindowController::clearObsoleteImages()` borrows the application-owned
+`vte::TypstRuntime` from ServiceLocator. The accepted-close/rebinding path scans initial,
+current and saved source before detaching the buffer. Parsing runs on the separate scanner
+lane; the caller waits at most ten seconds without pumping GUI events. Missing/stopped/busy
+runtime, timeout, failed or incomplete scans never authorize deletion. Retain ownership,
+save-queue/read-only guards and the saved-byte equality recheck immediately before deletion.
+The runtime outlives all windows and controllers; workers capture source data, not Buffer2
+or controller pointers. Native compilation timeout does not force-stop its thread.
+
 ## Native Markdown rendering
 
 `MarkdownRenderController` owns native reader and heading-anchor jobs. It uses the shared

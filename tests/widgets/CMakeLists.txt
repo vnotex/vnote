@@ -55,17 +55,11 @@ target_include_directories(test_imagesizeedits PRIVATE
   ${CMAKE_SOURCE_DIR}/src
 )
 
-add_custom_command(TARGET test_imagelinklookup POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_imagelinklookup>
-)
-
 # InlineBanner: reusable pure-view notification strip (no services, no vxcore,
 # no VTextEdit). NOT GUILESS — QFrame/QPushButton need a QApplication. Compiles
 # propertydefs.cpp for the BannerSeverity constant and widgetutils.cpp for the
 # unpolish/polish helper; widgetutils.cpp includes <vtextedit/vtextedit.h>, so
-# VTextEdit is linked and the DLL copy below is required.
+# VTextEdit is linked and the shared Windows runtime staging below is required.
 add_qt_test(test_inlinebanner
   SOURCES
     test_inlinebanner.cpp
@@ -80,12 +74,6 @@ add_qt_test(test_inlinebanner
 )
 target_include_directories(test_inlinebanner PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
-)
-
-add_custom_command(TARGET test_inlinebanner POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_inlinebanner>
 )
 
 # LegacyImageMigrationBar: the View wiring of the legacy-image prompt (three
@@ -107,12 +95,6 @@ add_qt_test(test_legacyimagemigrationbar
 )
 target_include_directories(test_legacyimagemigrationbar PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
-)
-
-add_custom_command(TARGET test_legacyimagemigrationbar POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_legacyimagemigrationbar>
 )
 
 add_qt_test(test_snippet_apply
@@ -159,26 +141,6 @@ add_qt_test(test_notebookexplorer2_state
     Qt6::Widgets
 )
 
-# Copy VTextEdit DLL next to test executable so CTest can find it at runtime.
-add_custom_command(TARGET test_snippet_apply POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_snippet_apply>
-)
-
-# Copy VTextEdit DLL next to the new test executables so CTest can find it at runtime.
-add_custom_command(TARGET test_notebooknodeview_state POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebooknodeview_state>
-)
-
-add_custom_command(TARGET test_notebookexplorer2_state POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebookexplorer2_state>
-)
-
 add_qt_test(test_node_explorer_reload_expansion
   SOURCES
     test_node_explorer_reload_expansion.cpp
@@ -220,12 +182,6 @@ add_qt_test(test_node_explorer_reload_expansion
 )
 target_include_directories(test_node_explorer_reload_expansion PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
-)
-
-add_custom_command(TARGET test_node_explorer_reload_expansion POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_node_explorer_reload_expansion>
 )
 
 add_qt_test(test_explorer_selection_after_save
@@ -273,12 +229,6 @@ target_include_directories(test_explorer_selection_after_save PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
 
-add_custom_command(TARGET test_explorer_selection_after_save POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_explorer_selection_after_save>
-)
-
 add_qt_test(test_settings_slug
   SOURCES
     test_settings_slug.cpp
@@ -304,12 +254,6 @@ add_qt_test(test_settings_slug
 
 target_include_directories(test_settings_slug PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
-)
-
-add_custom_command(TARGET test_settings_slug POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_settings_slug>
 )
 
 # Persistence regressions on two REAL settings pages (test_settings_slug above
@@ -359,12 +303,6 @@ target_include_directories(test_settings_persistence PRIVATE
 # that does the same.
 set_tests_properties(test_settings_persistence PROPERTIES RUN_SERIAL TRUE)
 
-add_custom_command(TARGET test_settings_persistence POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_settings_persistence>
-)
-
 add_qt_test(test_settings_navigation
   SOURCES
     test_settings_navigation.cpp
@@ -378,12 +316,6 @@ add_qt_test(test_settings_navigation
 
 target_include_directories(test_settings_navigation PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
-)
-
-add_custom_command(TARGET test_settings_navigation POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_settings_navigation>
 )
 
 # T17: SyncService lifecycle (NotebookBeforeClose hook + bounded shutdown).
@@ -436,12 +368,6 @@ target_include_directories(test_syncservice_lifecycle PRIVATE
 )
 target_compile_definitions(test_syncservice_lifecycle PRIVATE VNOTE_TESTING)
 
-add_custom_command(TARGET test_syncservice_lifecycle POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_syncservice_lifecycle>
-)
-
 # W3.T2: NotebookSyncInfoDialog2 routing tests (Bug G dialog fix).
 # NOT GUILESS — needs QApplication for QDialog widget construction. Compiles
 # the full dialog source + its base classes + WidgetsFactory + WidgetUtils
@@ -477,12 +403,6 @@ target_include_directories(test_notebooksyncinfodialog2 PRIVATE
 )
 target_compile_definitions(test_notebooksyncinfodialog2 PRIVATE VNOTE_TESTING)
 
-add_custom_command(TARGET test_notebooksyncinfodialog2 POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebooksyncinfodialog2>
-)
-
 # Tasks 2.1 (B1) + 2.2 (B2): wire confirmUrlChangeRequested + error signals
 # from NotebookSyncInfoController to NotebookSyncInfoDialog2. Same source
 # layout as test_notebooksyncinfodialog2 (the full dialog source + base
@@ -513,12 +433,6 @@ target_include_directories(test_notebooksyncinfodialog2_url_change PRIVATE
 )
 target_compile_definitions(test_notebooksyncinfodialog2_url_change PRIVATE VNOTE_TESTING)
 
-add_custom_command(TARGET test_notebooksyncinfodialog2_url_change POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebooksyncinfodialog2_url_change>
-)
-
 add_qt_test(test_notebooksyncinfodialog2_error
   SOURCES
     test_notebooksyncinfodialog2_error.cpp
@@ -545,12 +459,6 @@ target_include_directories(test_notebooksyncinfodialog2_error PRIVATE
 )
 target_compile_definitions(test_notebooksyncinfodialog2_error PRIVATE VNOTE_TESTING)
 
-add_custom_command(TARGET test_notebooksyncinfodialog2_error POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebooksyncinfodialog2_error>
-)
-
 # W4.T1: NotebookExplorer2 sync state classifier tests (S2/S4 partial detection).
 # Tests the extended partialSyncConfig classifier that now detects:
 #   - S2: syncEnabled && syncReady but PAT missing
@@ -564,12 +472,6 @@ add_qt_test(test_notebook_explorer_sync_state
     vxcore
     VTextEdit
     Qt6::Widgets
-)
-
-add_custom_command(TARGET test_notebook_explorer_sync_state POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebook_explorer_sync_state>
 )
 
 add_qt_test(test_notebookexplorer2_fs_suppression
@@ -593,12 +495,6 @@ add_qt_test(test_notebookexplorer2_multiselect
     vxcore
     VTextEdit
     Qt6::Widgets
-)
-
-add_custom_command(TARGET test_notebookexplorer2_multiselect POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebookexplorer2_multiselect>
 )
 
 # ImportFolderDialog2 two-mode UI test (import-shared-folder-bundle).
@@ -639,12 +535,6 @@ target_include_directories(test_import_folder_dialog2 PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
 target_compile_definitions(test_import_folder_dialog2 PRIVATE VNOTE_TESTING)
-
-add_custom_command(TARGET test_import_folder_dialog2 POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_import_folder_dialog2>
-)
 
 # T24 (open-notebook-remote-readonly): OpenNotebookDialog2 two-mode UI test.
 # NOT GUILESS — needs QApplication for QDialog widget construction, QStackedWidget
@@ -700,12 +590,6 @@ target_include_directories(test_open_notebook_dialog2 PRIVATE
 )
 target_compile_definitions(test_open_notebook_dialog2 PRIVATE VNOTE_TESTING)
 
-add_custom_command(TARGET test_open_notebook_dialog2 POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_open_notebook_dialog2>
-)
-
 # openurl-followups Item 2: OpenNotebookDialog2 mid-clone Cancel test.
 # Same compile shape as test_open_notebook_dialog2 (dialog source + base
 # classes + locationinputwithbrowsebutton + opennotebookcontroller). Drives
@@ -755,12 +639,6 @@ set_tests_properties(test_open_notebook_dialog2_cancel PROPERTIES
   TIMEOUT 180
 )
 
-add_custom_command(TARGET test_open_notebook_dialog2_cancel POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_open_notebook_dialog2_cancel>
-)
-
 # T3: ViewWindow2::reload() (commit 94c53d36) + ViewSplit2 Reload menu (commit bf44c324).
 # NOT GUILESS — needs QApplication for QMessageBox automation in dirty-buffer
 # subtests (Save / Discard / Cancel branches).
@@ -788,12 +666,6 @@ target_include_directories(test_viewsplit2_reload_menu PRIVATE
 )
 target_compile_definitions(test_viewsplit2_reload_menu PRIVATE VNOTE_TESTING)
 
-add_custom_command(TARGET test_viewsplit2_reload_menu POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_viewsplit2_reload_menu>
-)
-
 # T27: ViewWindow2 disables Save/Insert actions on read-only buffer.
 # Same stub-injection pattern as test_viewsplit2_reload_menu — viewwindow2.cpp
 # is not compiled inline to avoid pulling in ~12 widget transitive deps.
@@ -812,12 +684,6 @@ add_qt_test(test_view_window2_readonly_toolbar
 )
 target_include_directories(test_view_window2_readonly_toolbar PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
-)
-
-add_custom_command(TARGET test_view_window2_readonly_toolbar POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_view_window2_readonly_toolbar>
 )
 
 # T28: ViewWindow2 modal warning on read-only save attempts, with cooldown.
@@ -839,12 +705,6 @@ add_qt_test(test_view_window2_readonly_save_warning
 )
 target_include_directories(test_view_window2_readonly_save_warning PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
-)
-
-add_custom_command(TARGET test_view_window2_readonly_save_warning POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_view_window2_readonly_save_warning>
 )
 
 # T26 (open-notebook-remote-readonly): Lock-icon badge for read-only
@@ -882,12 +742,6 @@ add_qt_test(test_notebook_selector2_readonly_badge
 )
 target_include_directories(test_notebook_selector2_readonly_badge PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
-)
-
-add_custom_command(TARGET test_notebook_selector2_readonly_badge POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebook_selector2_readonly_badge>
 )
 
 # T4 (notebook-explorer-drag-reorder): SortDialog2 — pure-UI reorder dialog
@@ -964,12 +818,6 @@ target_include_directories(test_notebook_explorer2_sort PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
 
-add_custom_command(TARGET test_notebook_explorer2_sort POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebook_explorer2_sort>
-)
-
 # T12 (notebook-explorer-drag-reorder): TwoColumnsNodeExplorer sort wiring
 # mirror of test_notebook_explorer2_sort, but for the two-pane explorer.
 # Compiles TwoColumnsNodeExplorer + the notebook node explorer family inline
@@ -1023,12 +871,6 @@ target_include_directories(test_two_columns_node_explorer_sort PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
 
-add_custom_command(TARGET test_two_columns_node_explorer_sort POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_two_columns_node_explorer_sort>
-)
-
 # T29 follow-up (open-notebook-remote-readonly): read-only banner visibility
 # in NotebookSyncInfoDialog2. Mirrors the source layout of
 # test_notebooksyncinfodialog2 — the dialog cpp + its base widgets are
@@ -1061,12 +903,6 @@ target_include_directories(test_notebook_sync_info_dialog2_readonly PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
 target_compile_definitions(test_notebook_sync_info_dialog2_readonly PRIVATE VNOTE_TESTING)
-
-add_custom_command(TARGET test_notebook_sync_info_dialog2_readonly POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_notebook_sync_info_dialog2_readonly>
-)
 
 # HistorySticker dashboard sticker test. NOT GUILESS — constructs a real
 # QListView + FileNodeDelegate (needs QApplication). Compiles the sticker +
@@ -1111,12 +947,6 @@ target_include_directories(test_historysticker PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
 
-add_custom_command(TARGET test_historysticker POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_historysticker>
-)
-
 # ActivitySticker dashboard sticker test. NOT GUILESS — constructs real
 # QWidgets (needs QApplication). Compiles the full built-in sticker source set
 # because stickerfactory.cpp references every built-in sticker (calendar /
@@ -1157,12 +987,6 @@ target_include_directories(test_activitysticker PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
 
-add_custom_command(TARGET test_activitysticker POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_activitysticker>
-)
-
 # GUI test for GreetingSticker. NOT GUILESS (QLabel needs QApplication). Pulls in
 # the full sticker source set because stickerfactory.cpp references every
 # built-in sticker (calendar/history/greeting) and their transitive deps.
@@ -1200,12 +1024,6 @@ add_qt_test(test_greetingsticker
 )
 target_include_directories(test_greetingsticker PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
-)
-
-add_custom_command(TARGET test_greetingsticker POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_greetingsticker>
 )
 
 
@@ -1291,12 +1109,6 @@ add_qt_test(test_editorstatusbarbinder
     VTextEdit
 )
 
-add_custom_command(TARGET test_editorstatusbarbinder POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_editorstatusbarbinder>
-)
-
 # Native preview geometry/zoom/canvas and reader heading-state regressions.
 # JS transport and heading resolution are covered by real WebEngine job tests.
 add_qt_test(test_markdownvieweradapter_anchor
@@ -1325,12 +1137,6 @@ add_qt_test(test_markdownvieweradapter_anchor
     core_services
     vxcore
 )
-add_custom_command(TARGET test_markdownvieweradapter_anchor POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_markdownvieweradapter_anchor>
-)
-
 # NotificationToast - the transient surface for Attention::Interrupt messages.
 # NOT GUILESS: constructs a real QFrame with child buttons and drives mouse
 # events, so it needs a QApplication. The attention->surface routing lives
@@ -1538,6 +1344,14 @@ if(TARGET Qt6::Qml)
   )
   get_property(_graph_js_environment TEST test_markdownviewer_js PROPERTY ENVIRONMENT)
   set_property(TEST test_graphrenderer_js PROPERTY ENVIRONMENT "${_graph_js_environment}")
+  if(WIN32)
+    # Append after the Qt-only environment copy so each PATH remains one list entry.
+    set(_viewer_runtime_path "$<TARGET_FILE_DIR:Qt6::Core>;$<TARGET_FILE_DIR:VTextEdit>;$<TARGET_FILE_DIR:VTextEditTypst>;$ENV{PATH}")
+    string(REPLACE ";" "\;" _viewer_runtime_path "${_viewer_runtime_path}")
+    foreach(_viewer_test test_markdownviewer_js test_graphrenderer_js)
+      set_property(TEST ${_viewer_test} APPEND PROPERTY ENVIRONMENT "PATH=${_viewer_runtime_path}")
+    endforeach()
+  endif()
   # Each isolated browser page compiles the real asm.js renderer in a Debug runtime.
   set_property(TEST test_graphrenderer_js PROPERTY TIMEOUT 180)
 endif()
@@ -1788,13 +1602,6 @@ target_include_directories(test_mindmapeditor PRIVATE
   ${CMAKE_SOURCE_DIR}/src/gui
 )
 
-# Required even when this is the only widget target built.
-add_custom_command(TARGET test_mindmapeditor POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit>
-    $<TARGET_FILE_DIR:test_mindmapeditor>
-)
-
 # MathJax is optional in the app, but its shared-runtime isolation must be tested
 # against the real engine. Fetch only for tests; no test uses the network at runtime.
 include(FetchContent)
@@ -1830,11 +1637,6 @@ if(WIN32)
   list(APPEND _markdown_job_environment "PATH=${_markdown_job_path}")
 endif()
 set_property(TEST test_markdownwebjobs PROPERTY ENVIRONMENT "${_markdown_job_environment}")
-add_custom_command(TARGET test_markdownwebjobs POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_markdownwebjobs>
-)
-
 # Exercise the real window and its presentation dependencies, not a mirrored
 # constructor or stubbed lifecycle. Reuse the app's source/link lists so this
 # end-to-end fixture follows additions without a second hand-maintained graph.
@@ -1892,11 +1694,6 @@ if(WIN32)
   set_property(TEST test_markdownviewwindow_lazy APPEND PROPERTY
     ENVIRONMENT "PATH=${_markdown_job_path}")
 endif()
-add_custom_command(TARGET test_markdownviewwindow_lazy POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_markdownviewwindow_lazy>
-)
-
 # Print the real mind-map window, checking vector PDF content and editor-state preservation.
 add_qt_test(test_mindmapviewwindow_print
   SOURCES test_mindmapviewwindow_print.cpp ${_markdown_window_test_sources}
@@ -1919,11 +1716,6 @@ if(WIN32)
   set_property(TEST test_mindmapviewwindow_print APPEND PROPERTY
     ENVIRONMENT "PATH=${_markdown_job_path}")
 endif()
-add_custom_command(TARGET test_mindmapviewwindow_print POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_mindmapviewwindow_print>
-)
-
 # Real FileAfterOpen/workspace policy and retained native/WebEngine documents.
 add_qt_test(test_viewarea_tab_reuse
   SOURCES test_viewarea_tab_reuse.cpp ${_markdown_window_test_sources}
@@ -1937,7 +1729,7 @@ target_compile_definitions(test_viewarea_tab_reuse PRIVATE
   VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
   VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
 )
-add_dependencies(test_viewarea_tab_reuse VX_EXTRA_RESOURCE vnote_typst_runtime)
+add_dependencies(test_viewarea_tab_reuse VX_EXTRA_RESOURCE)
 set_tests_properties(test_viewarea_tab_reuse PROPERTIES TIMEOUT 600)
 set(_tab_reuse_platform "${_markdown_window_platform}")
 set(_tab_reuse_plugin "${_markdown_window_plugin}")
@@ -1957,14 +1749,6 @@ if(WIN32)
   set_property(TEST test_viewarea_tab_reuse APPEND PROPERTY
     ENVIRONMENT "PATH=${_markdown_job_path}")
 endif()
-get_target_property(_tab_reuse_typst_helper vtextedit-typst VTEXTEDIT_TYPST_HELPER)
-add_custom_command(TARGET test_viewarea_tab_reuse POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_viewarea_tab_reuse>
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "${_tab_reuse_typst_helper}" $<TARGET_FILE_DIR:test_viewarea_tab_reuse>
-  VERBATIM
-)
 
 # Exercise the host insertion transaction on the real native source/PDF surfaces.
 add_qt_test(test_typstviewwindow_insertion
@@ -1979,14 +1763,7 @@ target_compile_definitions(test_typstviewwindow_insertion PRIVATE
   $<TARGET_PROPERTY:vnote,COMPILE_DEFINITIONS>
   VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
 )
-add_dependencies(test_typstviewwindow_insertion VX_EXTRA_RESOURCE vtextedit-typst)
-get_target_property(_typst_insertion_helper vtextedit-typst VTEXTEDIT_TYPST_HELPER)
-add_custom_command(TARGET test_typstviewwindow_insertion POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    $<TARGET_FILE:VTextEdit> $<TARGET_FILE_DIR:test_typstviewwindow_insertion>
-  COMMAND ${CMAKE_COMMAND} -E copy_if_different
-    "${_typst_insertion_helper}" $<TARGET_FILE_DIR:test_typstviewwindow_insertion>
-)
+add_dependencies(test_typstviewwindow_insertion VX_EXTRA_RESOURCE)
 set_tests_properties(test_typstviewwindow_insertion PROPERTIES TIMEOUT 240)
 set_property(TEST test_typstviewwindow_insertion PROPERTY ENVIRONMENT
   "QT_QPA_PLATFORM=${_markdown_window_platform}"
@@ -1996,4 +1773,24 @@ set_property(TEST test_typstviewwindow_insertion PROPERTY ENVIRONMENT
 if(WIN32)
   set_property(TEST test_typstviewwindow_insertion APPEND PROPERTY
     ENVIRONMENT "PATH=${_markdown_job_path}")
+endif()
+
+if(WIN32)
+  # Every widget executable uses this directory. Serialize the two DLL copies,
+  # and refresh them even when building one already-linked test target.
+  get_property(_widget_targets DIRECTORY PROPERTY BUILDSYSTEM_TARGETS)
+  add_custom_target(vnote_widget_runtime
+    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:test_typstviewwindow_insertion>"
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      "$<TARGET_FILE:VTextEdit>" "$<TARGET_FILE:VTextEditTypst>"
+      "$<TARGET_FILE_DIR:test_typstviewwindow_insertion>"
+    DEPENDS VTextEdit VTextEditTypst
+    VERBATIM
+  )
+  foreach(_target IN LISTS _widget_targets)
+    get_target_property(_type ${_target} TYPE)
+    if(_type STREQUAL "EXECUTABLE")
+      add_dependencies(${_target} vnote_widget_runtime)
+    endif()
+  endforeach()
 endif()

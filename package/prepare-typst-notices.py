@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Prepare required Typst runtime notices at deployment, never at configure/runtime.
 
-Usage: python package/prepare-typst-notices.py --manifest <helper/Cargo.toml>
+Usage: python package/prepare-typst-notices.py --manifest <backend/Cargo.toml>
        --qt-prefix <SDK-prefix> --qt-version <version> --output-dir <directory>
 
 Build prerequisites (provision separately, with network access):
   cargo +1.99.0 install cargo-about --locked --version 0.9.2 --features cli
-  cargo +1.99.0 fetch --locked --manifest-path <helper/Cargo.toml>
-The fetch must run from the helper directory and include non-host dependencies.
+  cargo +1.99.0 fetch --locked --manifest-path <backend/Cargo.toml>
+The fetch must run from the backend directory and include non-host dependencies.
 
 Outputs: LICENSE.typst-dependencies, LICENSE.vtextedit-typst,
 qtpdf-<version>.spdx.json, qtwebengine-chromium-pdf-<version>.spdx.json.
@@ -162,7 +162,7 @@ def render_dependencies(about, metadata):
     def emit(text):
         output.write(text.encode("utf-8"))
 
-    emit("Typst helper dependency notices\n")
+    emit("Typst library dependency notices\n")
     emit("Generated with cargo-about 0.9.2 using locked, offline dependencies.\n")
     emit("Includes the shipped Windows, Linux and both macOS architectures.\n\n")
     emit("CRATE INVENTORY\n===============\n\n")
@@ -230,13 +230,13 @@ def main():
         if not re.fullmatch(r"[0-9]+\.[0-9]+\.[0-9]+", args.qt_version):
             raise ValueError("--qt-version must be the exact SDK version (major.minor.patch)")
         manifest = args.manifest.resolve(strict=True)
-        file_bytes(manifest, "helper Cargo manifest")
-        file_bytes(manifest.with_name("Cargo.lock"), "helper Cargo.lock")
+        file_bytes(manifest, "backend Cargo manifest")
+        file_bytes(manifest.with_name("Cargo.lock"), "backend Cargo.lock")
         config = Path(__file__).resolve().with_name("typst-about.toml")
         file_bytes(config, "checked-in cargo-about configuration")
         outputs = qt_attributions(args.qt_prefix.resolve(), args.qt_version)
         outputs["LICENSE.vtextedit-typst"] = file_bytes(
-            manifest.parents[2] / "COPYING.LESSER", "vtextedit helper LGPL license"
+            manifest.parents[2] / "COPYING.LESSER", "vtextedit Typst library LGPL license"
         )
 
         version = run(CARGO + ["about", "--version"], manifest.parent).strip()

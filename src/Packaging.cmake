@@ -212,6 +212,69 @@ elseif(APPLE)
     # wired into the target through MACOSX_BUNDLE_INFO_PLIST (see
     # src/CMakeLists.txt), so the built bundle and the packaged bundle always
     # carry the same plist (including the NSServices declaration).
+    # macOS packages the build bundle rather than install(TARGETS). Deploy the
+    # required native dependency before Qt scans the bundle, then repair and
+    # inspect actual linked names (including VTextEdit's versioned ABI filename).
+    set(_vx_typst_bundle_script [=[
+function(run_checked)
+    execute_process(COMMAND ${ARGV} RESULT_VARIABLE result)
+    if(NOT result STREQUAL "0")
+        message(FATAL_ERROR "Bundle deployment failed (${result}): ${ARGV}")
+    endif()
+endfunction()
+set(app "$<TARGET_BUNDLE_DIR:vnote>")
+set(executable "$<TARGET_FILE:vnote>")
+set(frameworks "${app}/Contents/Frameworks")
+set(editor "${frameworks}/$<TARGET_SONAME_FILE_NAME:VTextEdit>")
+set(native "${frameworks}/$<TARGET_FILE_NAME:VTextEditTypst>")
+file(MAKE_DIRECTORY "${frameworks}")
+run_checked("@CMAKE_COMMAND@" -E copy_if_different "$<TARGET_FILE:VTextEdit>" "${editor}")
+run_checked("@CMAKE_COMMAND@" -E copy_if_different "$<TARGET_FILE:VTextEditTypst>" "${native}")
+run_checked(/usr/bin/install_name_tool -id "@rpath/$<TARGET_SONAME_FILE_NAME:VTextEdit>" "${editor}")
+run_checked(/usr/bin/install_name_tool -id "@rpath/$<TARGET_FILE_NAME:VTextEditTypst>" "${native}")
+foreach(binary IN ITEMS "${executable}" "${editor}")
+    execute_process(COMMAND /usr/bin/otool -arch all -L "${binary}"
+        OUTPUT_VARIABLE linked RESULT_VARIABLE result)
+    if(NOT result STREQUAL "0")
+        message(FATAL_ERROR "Cannot inspect bundle dependency: ${binary}")
+    endif()
+    string(REPLACE "\n" ";" lines "${linked}")
+    foreach(line IN LISTS lines)
+        if(line MATCHES "^[ \t]+([^ \t]+/(libVTextEdit(\\.[0-9]+)*\\.dylib|libvtextedit_typst\\.1\\.dylib))[ \t]+\\(")
+            set(old_name "${CMAKE_MATCH_1}")
+            set(new_name "@rpath/${CMAKE_MATCH_2}")
+            if(NOT old_name STREQUAL new_name)
+                run_checked(/usr/bin/install_name_tool -change "${old_name}" "${new_name}" "${binary}")
+            endif()
+        endif()
+    endforeach()
+endforeach()
+run_checked("@MACDEPLOYQT_EXECUTABLE@" "${app}" -always-overwrite -verbose=1)
+foreach(binary IN ITEMS "${executable}" "${editor}" "${native}")
+    execute_process(COMMAND /usr/bin/otool -arch all -l "${binary}"
+        OUTPUT_VARIABLE commands RESULT_VARIABLE result)
+    if(NOT result STREQUAL "0")
+        message(FATAL_ERROR "Cannot inspect bundle rpaths: ${binary}")
+    endif()
+    string(REGEX MATCHALL "path [^\n]+ \\(offset [0-9]+\\)" rpaths "${commands}")
+    list(REMOVE_DUPLICATES rpaths)
+    foreach(entry IN LISTS rpaths)
+        string(REGEX REPLACE "^path (.+) \\(offset [0-9]+\\)$" "\\1" rpath "${entry}")
+        if(NOT rpath MATCHES "^(@rpath/|@loader_path|@executable_path|/System/Library/|/usr/lib/)")
+            run_checked(/usr/bin/install_name_tool -delete_rpath "${rpath}" "${binary}")
+        endif()
+    endforeach()
+    run_checked(/usr/bin/otool -arch all -L "${binary}")
+endforeach()
+execute_process(COMMAND /usr/bin/otool -arch all -L "${editor}"
+    OUTPUT_VARIABLE linked RESULT_VARIABLE result)
+if(NOT result STREQUAL "0" OR NOT linked MATCHES "@rpath/libvtextedit_typst\\.1\\.dylib")
+    message(FATAL_ERROR "Packaged VTextEdit does not link the bundled Typst ABI: ${linked}")
+endif()
+]=])
+    string(CONFIGURE "${_vx_typst_bundle_script}" _vx_typst_bundle_script @ONLY)
+    file(GENERATE OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/typst-bundle-$<CONFIG>.cmake"
+        CONTENT "${_vx_typst_bundle_script}")
     set(VX_BUNDLE_CONTENTS_DIR $<TARGET_FILE_DIR:vnote>/..)
     add_custom_target(deploy
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -222,7 +285,8 @@ elseif(APPLE)
         COMMAND ${CMAKE_COMMAND} -E make_directory ${VX_BUNDLE_CONTENTS_DIR}/Resources/licenses/typst
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${VX_TYPST_NOTICES_DIR}" ${VX_BUNDLE_CONTENTS_DIR}/Resources/licenses/typst
-        COMMENT "Copying resources into bundle Contents ${VX_BUNDLE_CONTENTS_DIR}"
+        COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/typst-bundle-$<CONFIG>.cmake"
+        COMMENT "Deploying resources and native libraries into ${VX_BUNDLE_CONTENTS_DIR}"
         DEPENDS vnote lrelease vnote_typst_runtime prepare_typst_notices
     )
     add_dependencies(pack deploy)

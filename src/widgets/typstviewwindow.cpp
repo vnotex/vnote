@@ -36,6 +36,7 @@
 #include <stdexcept>
 
 #include <vtextedit/typsteditorconfig.h>
+#include <vtextedit/typstruntime.h>
 #include <vtextedit/vtextedit.h>
 #include <vtextedit/vtexteditor.h>
 #include <vxcore/vxcore.h>
@@ -1457,11 +1458,7 @@ QSharedPointer<vte::TypstEditorConfig> TypstViewWindow::buildEditorConfig() cons
   config->m_previewForeground =
       QColor(themeService->paletteColor(QStringLiteral("base#content#fg")));
   config->m_enableThemeStyleInPreview = m_themeStyleInPreviewAction->isChecked();
-  config->m_helperExecutable = QDir(QCoreApplication::applicationDirPath())
-                                   .absoluteFilePath(QStringLiteral("vtextedit-typst"));
-#ifdef Q_OS_WIN
-  config->m_helperExecutable += QStringLiteral(".exe");
-#endif
+  config->m_runtime = getServices().get<vte::TypstRuntime>();
   config->m_allowDownloads = false;
   if (m_typstEditor) {
     config->m_initialZoom = m_typstEditor->pdfZoom();
@@ -1776,7 +1773,7 @@ bool TypstViewWindow::aboutToClose(bool p_force) {
 
 void TypstViewWindow::finalizeBufferImages() {
   if (m_sourceAvailable && m_typstEditor && m_controller) {
-    m_controller->clearObsoleteImages(m_typstEditor->getConfig().m_helperExecutable);
+    m_controller->clearObsoleteImages();
   }
 }
 

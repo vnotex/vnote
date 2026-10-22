@@ -22,6 +22,7 @@
 #include <utility>
 #include <utils/fileutils2.h>
 #include <vtextedit/typstcompiler.h>
+#include <vtextedit/typstruntime.h>
 #include <vxcore/notebook_json_keys.h>
 
 #ifdef Q_OS_WIN
@@ -367,7 +368,7 @@ void TypstViewWindowController::trackInsertedImage(const QString &p_assetIdentif
   }
 }
 
-void TypstViewWindowController::clearObsoleteImages(const QString &p_helperExecutable) {
+void TypstViewWindowController::clearObsoleteImages() {
   const auto retire = qScopeGuard([this] {
     m_initialImageSource.clear();
     m_initialImagesSnapshotted = false;
@@ -435,8 +436,9 @@ void TypstViewWindowController::clearObsoleteImages(const QString &p_helperExecu
     return;
   }
   QString error;
-  const auto scans = vte::TypstCompiler::collectImageReferences(
-      {m_initialImageSource, finalSource, savedSource}, p_helperExecutable, &error);
+  const auto scans =
+      vte::TypstCompiler::collectImageReferences({m_initialImageSource, finalSource, savedSource},
+                                                 m_services.get<vte::TypstRuntime>(), &error);
   if (scans.size() != 3 || !scans.at(1).m_complete || !scans.at(2).m_complete) {
     skip(error.isEmpty() ? QStringLiteral("Current or saved image references are uncertain")
                          : error);

@@ -182,7 +182,8 @@ jobs:
 
           # Use the same path policy as the final signed-DMG inspection.
           allowed_paths = ('@rpath/', '@loader_path', '@executable_path', '/System/Library/', '/usr/lib/')
-          for binary in (executable, editor):
+          library = frameworks / 'libvtextedit_typst.1.dylib'
+          for binary in (executable, editor, library):
               commands = subprocess.check_output(['/usr/bin/otool', '-arch', 'all', '-l', str(binary)], text=True)
               rpaths = set()
               for block in commands.split('\nLoad command '):
@@ -292,9 +293,9 @@ jobs:
           security import certificate.p12 -k build.keychain -P "$MACOS_CERTIFICATE_PWD" -T /usr/bin/codesign
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$MACOS_CI_KEYCHAIN_PWD" build.keychain
 
-          echo "Codesigning the native Typst compiler"
-          codesign --force -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app/Contents/MacOS/vtextedit-typst
-          codesign --verify --strict --verbose=2 ./src/VNote.app/Contents/MacOS/vtextedit-typst
+          echo "Codesigning the native Typst library"
+          codesign --force -s "$MACOS_CERTIFICATE_NAME" --options runtime ./src/VNote.app/Contents/Frameworks/libvtextedit_typst.1.dylib
+          codesign --verify --strict --verbose=2 ./src/VNote.app/Contents/Frameworks/libvtextedit_typst.1.dylib
 
           echo "Codesigning main app bundle"
           codesign --force --deep -s "$MACOS_CERTIFICATE_NAME" --entitlements ${{github.workspace}}/package/entitlements.xml --options runtime ./src/VNote.app
@@ -331,7 +332,7 @@ jobs:
           TYPST_MIN_OS: ${{matrix.config.deployment_target}}
           TYPST_QT_VERSION: ${{matrix.config.qt}}
         run: |
-          # Read the signed, final DMG rather than any build-tree helper.
+          # Read the signed, final DMG rather than a build-tree library.
           mountpoint="$RUNNER_TEMP/typst-package"
           mkdir "$mountpoint"
           hdiutil attach "VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg" -readonly -nobrowse -mountpoint "$mountpoint"
@@ -341,13 +342,12 @@ jobs:
           from pathlib import Path
           import platform
           import re
-          import shlex
           import subprocess
           import sys
           import tempfile
 
           app = Path(os.environ['RUNNER_TEMP']) / 'typst-package/VNote.app/Contents'
-          helper = app / 'MacOS/vtextedit-typst'
+          library = app / 'Frameworks/libvtextedit_typst.1.dylib'
           executable = app / 'MacOS/VNote'
           linked = subprocess.check_output(['/usr/bin/otool', '-arch', 'all', '-L', str(executable)], text=True)
           editor_names = set(re.findall(r'^\s+\S*/(libVTextEdit(?:\.\d+)*\.dylib) \(compatibility version ',
@@ -358,7 +358,7 @@ jobs:
           editor = (frameworks / editor_names.pop()).resolve(strict=True)
           if not editor.is_file() or editor.parent != frameworks:
               raise SystemExit(f'VTextEdit library is not a packaged Frameworks file: {editor}')
-          binaries = [executable, editor, app / 'Frameworks/QtPdf.framework/QtPdf', helper]
+          binaries = [executable, editor, app / 'Frameworks/QtPdf.framework/QtPdf', library]
           notices = app / 'Resources/licenses/typst'
           qt = os.environ['TYPST_QT_VERSION']
           required = binaries + [notices / name for name in (
@@ -367,12 +367,15 @@ jobs:
           for path in required:
               if not path.is_file() or path.stat().st_size == 0:
                   raise SystemExit(f'Packaged Typst runtime is missing a nonempty {path}')
-          if not os.access(helper, os.X_OK):
-              raise SystemExit(f'Packaged Typst helper is not executable: {helper}')
-          subprocess.run(['/usr/bin/codesign', '--verify', '--strict', '--verbose=2', str(helper)], check=True)
+          if list(app.rglob('vtextedit-typst')):
+              raise SystemExit('Obsolete Typst executable leaked into the DMG')
+          subprocess.run(['/usr/bin/codesign', '--verify', '--strict', '--verbose=2', str(library)], check=True)
+          editor_linked = subprocess.check_output(['/usr/bin/otool', '-arch', 'all', '-L', str(editor)], text=True)
+          if '@rpath/libvtextedit_typst.1.dylib' not in editor_linked:
+              raise SystemExit('Packaged VTextEdit does not link the bundled native Typst ABI')
 
           # No absolute SDK/build-tree dependencies or rpaths may escape into
-          # the application, editor, PDF framework or compiler helper.
+          # the application, editor, PDF framework or native compiler library.
           allowed_paths = ('@rpath/', '@loader_path', '@executable_path', '/System/Library/', '/usr/lib/')
           for binary in binaries:
               arches = subprocess.check_output(['/usr/bin/lipo', '-archs', str(binary)], text=True).split()
@@ -395,7 +398,10 @@ jobs:
 
           minimum_os = os.environ['TYPST_MIN_OS']
           for arch in ('x86_64', 'arm64'):
-              commands = subprocess.check_output(['/usr/bin/otool', '-arch', arch, '-l', str(helper)], text=True)
+              install_id = subprocess.check_output(['/usr/bin/otool', '-arch', arch, '-D', str(library)], text=True)
+              if install_id.splitlines()[-1].strip() != '@rpath/libvtextedit_typst.1.dylib':
+                  raise SystemExit(f'Invalid Typst {arch} install ID: {install_id}')
+              commands = subprocess.check_output(['/usr/bin/otool', '-arch', arch, '-l', str(library)], text=True)
               minimums = []
               for block in commands.split('\nLoad command '):
                   if re.search(r'^\s*cmd LC_BUILD_VERSION\s*$', block, re.MULTILINE):
@@ -409,27 +415,31 @@ jobs:
                        and key not in ('CMAKE_PREFIX_PATH', 'LIBRARY_PATH', 'PYTHONPATH', 'PYTHONHOME')}
           clean_env['PATH'] = '/usr/bin:/bin:/usr/sbin:/sbin'
           smoke = Path(os.environ['GITHUB_WORKSPACE']) / 'scripts/e2e/smoke_typst_package.py'
-          subprocess.run([sys.executable, str(smoke), '--helper', str(helper)],
+          subprocess.run([sys.executable, str(smoke), '--library', str(library)],
                          cwd=app, env=clean_env, check=True)
           host_arch = subprocess.check_output(['/usr/bin/uname', '-m'], text=True).strip()
           with tempfile.TemporaryDirectory(prefix='vnote-typst-arch-') as directory:
               for arch in ('x86_64', 'arm64'):
-                  probe = subprocess.run(['/usr/bin/arch', f'-{arch}', '/usr/bin/true'],
+                  # A universal system Python loads the selected dylib slice through
+                  # ctypes. Never wrap or execute a product Typst helper.
+                  probe = subprocess.run(['/usr/bin/arch', f'-{arch}', '/usr/bin/python3', '-c',
+                                          f'import platform; assert platform.machine() == {arch!r}'],
                                          env=clean_env, capture_output=True, text=True, timeout=15)
                   if probe.returncode != 0:
                       if arch == host_arch:
-                          raise SystemExit(f'Native {arch} execution unavailable: {probe.stderr}')
-                      capability = 'Rosetta x86_64' if arch == 'x86_64' else 'arm64'
-                      print(f'::notice::{capability} execution unavailable on this runner; '
-                            f'that helper slice was inspected but not launched: {probe.stderr.strip()}', flush=True)
+                          raise SystemExit(f'Native {arch} Python execution unavailable: {probe.stderr}')
+                      print(f'::notice::{arch} Python execution unavailable on this runner; '
+                            f'that library slice was inspected but not loaded: {probe.stderr.strip()}', flush=True)
                       continue
-                  wrapper = Path(directory) / f'typst-{arch}'
-                  wrapper.write_text(f'#!/bin/sh\nexec /usr/bin/arch -{arch} {shlex.quote(str(helper))} "$@"\n')
-                  wrapper.chmod(0o700)
-                  print(f'Compiling with packaged Typst {arch} slice', flush=True)
-                  subprocess.run([sys.executable, str(smoke), '--helper', str(wrapper)],
-                                 cwd=app, env=clean_env, check=True)
-          print(f'Compiler launches verified on runner macOS {platform.mac_ver()[0]}; '
+                  print(f'Compiling with packaged Typst {arch} library slice', flush=True)
+                  subprocess.run(['/usr/bin/arch', f'-{arch}', '/usr/bin/python3', str(smoke),
+                                  '--library', str(library)], cwd=app, env=clean_env, check=True)
+                  launch_env = dict(clean_env, HOME=directory, CFFIXED_USER_HOME=directory,
+                                    XDG_CONFIG_HOME=directory, XDG_DATA_HOME=directory,
+                                    XDG_CACHE_HOME=directory)
+                  subprocess.run(['/usr/bin/arch', f'-{arch}', str(executable), '--help'],
+                                 cwd=directory, env=launch_env, check=True, timeout=30)
+          print(f'Library and consumer launches verified on runner macOS {platform.mac_ver()[0]}; '
                 'minimum-OS metadata does not prove launch on Monterey or another older OS.', flush=True)
           PY
 

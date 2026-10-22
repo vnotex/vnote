@@ -208,10 +208,10 @@ jobs:
 
           # cmark's CLI is installed by the vendored cmark and, with the flat
           # layout, lands in the package root. VNote links cmark as a library
-          # and never runs it. Only VNote, QtWebEngineProcess and the native Typst
-          # compiler belong at the root; minisign lives in updater/.
+          # and never runs it. Only VNote and QtWebEngineProcess belong at the
+          # root; minisign lives in updater/. Typst is a required DLL.
           $strayExe = @(Get-ChildItem -File -Filter '*.exe' $extracted |
-                        Where-Object { $_.Name -notin @('vnote.exe', 'QtWebEngineProcess.exe', 'vtextedit-typst.exe') })
+                        Where-Object { $_.Name -notin @('vnote.exe', 'QtWebEngineProcess.exe') })
           if ($strayExe) {
             Write-Error "Package ships unexpected executable(s): $($strayExe.Name -join ', ')"
             exit 1
@@ -447,7 +447,7 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           $pkg = (Resolve-Path -LiteralPath "VNote-${{env.VNOTE_VER}}-win64").Path
-          foreach ($file in @('vtextedit-typst.exe', 'Qt6Pdf.dll', 'VTextEdit.dll', 'platforms/qwindows.dll',
+          foreach ($file in @('vtextedit_typst.dll', 'Qt6Pdf.dll', 'VTextEdit.dll', 'platforms/qwindows.dll',
                               'licenses/typst/LICENSE.typst-dependencies', 'licenses/typst/LICENSE.vtextedit-typst',
                               'licenses/typst/qtpdf-${{matrix.config.qt}}.spdx.json',
                               'licenses/typst/qtwebengine-chromium-pdf-${{matrix.config.qt}}.spdx.json')) {
@@ -455,6 +455,16 @@ jobs:
             if (-not (Test-Path -LiteralPath $path -PathType Leaf) -or (Get-Item -LiteralPath $path).Length -eq 0) {
               throw "Packaged Typst runtime is missing a nonempty $path"
             }
+          }
+
+          $dumpbin = & "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe" -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -find 'VC\Tools\MSVC\**\bin\Hostx64\x64\dumpbin.exe' | Select-Object -First 1
+          if (-not $dumpbin) { throw 'Could not locate MSVC dumpbin' }
+          $imports = & $dumpbin /DEPENDENTS (Join-Path $pkg 'VTextEdit.dll')
+          if ($LASTEXITCODE -ne 0 -or ($imports -join "`n") -notmatch '(?i)vtextedit_typst\.dll') {
+            throw 'Packaged VTextEdit does not import the native Typst DLL'
+          }
+          if (Get-ChildItem $pkg -Recurse -File -Filter 'vtextedit-typst.exe') {
+            throw 'Obsolete Typst executable leaked into the package'
           }
 
           # Resolve Python first, then remove all developer runtime/search overrides.
@@ -465,8 +475,21 @@ jobs:
           } | ForEach-Object { Remove-Item "Env:$($_.Name)" }
           $env:PATH = "$pkg;$env:SystemRoot\System32;$env:SystemRoot"
           Set-Location -LiteralPath $pkg
-          & $python "$env:GITHUB_WORKSPACE/scripts/e2e/smoke_typst_package.py" --helper (Join-Path $pkg 'vtextedit-typst.exe')
-          if ($LASTEXITCODE -ne 0) { throw "Packaged Typst compiler smoke failed (exit $LASTEXITCODE)" }
+          & $python "$env:GITHUB_WORKSPACE/scripts/e2e/smoke_typst_package.py" --library (Join-Path $pkg 'vtextedit_typst.dll')
+          if ($LASTEXITCODE -ne 0) { throw "Packaged Typst library smoke failed (exit $LASTEXITCODE)" }
+          # Launch the actual C++ consumer too: ctypes alone cannot prove its import closure.
+          $work = Join-Path $env:RUNNER_TEMP 'vnote-package-launch'
+          New-Item -ItemType Directory -Force $work | Out-Null
+          $env:APPDATA = $work
+          $env:LOCALAPPDATA = $work
+          $env:HOME = $work
+          $process = Start-Process -FilePath (Join-Path $pkg 'vnote.exe') -ArgumentList '--help' -WorkingDirectory $work -PassThru -RedirectStandardOutput "$work/stdout.log" -RedirectStandardError "$work/stderr.log"
+          if (-not $process.WaitForExit(30000)) {
+            $process.Kill()
+            throw 'Packaged VNote loader smoke timed out'
+          }
+          Get-Content "$work/stdout.log", "$work/stderr.log"
+          if ($process.ExitCode -ne 0) { throw "Packaged VNote cannot launch (exit $($process.ExitCode))" }
 
       - name: Archive Artifacts
         uses: actions/upload-artifact@v4

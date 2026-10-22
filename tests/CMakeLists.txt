@@ -74,6 +74,13 @@ function(add_qt_test NAME)
     TIMEOUT 60
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
   )
+  if(WIN32 AND TARGET VTextEditTypst)
+    # Direct VTextEdit linkage also needs the native backend, even in non-Typst tests.
+    # Lookup paths do not add a library dependency to pure-core test targets.
+    set(_test_runtime_path "$<TARGET_FILE_DIR:Qt6::Core>;$<TARGET_FILE_DIR:VTextEdit>;$<TARGET_FILE_DIR:VTextEditTypst>;$ENV{PATH}")
+    string(REPLACE ";" "\;" _test_runtime_path "${_test_runtime_path}")
+    set_property(TEST ${NAME} APPEND PROPERTY ENVIRONMENT "PATH=${_test_runtime_path}")
+  endif()
 endfunction()
 
 # Tests are never shipped; they run only on the CI runner's native arch. The

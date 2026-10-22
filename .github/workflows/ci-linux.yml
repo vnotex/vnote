@@ -259,13 +259,15 @@ jobs:
           python3 - <<'PY'
           import os
           from pathlib import Path
+          import re
           import subprocess
           import sys
+          import tempfile
 
           appdir = Path('squashfs-root').resolve()
-          helper = appdir / 'usr/bin/vtextedit-typst'
-          # linuxdeploy places extra executables in usr/bin, but install-owned
-          # notices retain the configured GNUInstallDirs prefix and data directory.
+          library = appdir / 'usr/lib/libvtextedit_typst.so.1'
+          executable = appdir / 'usr/bin/vnote'
+          # Install-owned notices retain the configured GNUInstallDirs layout.
           cache = {}
           for line in Path('${{runner.workspace}}/build/CMakeCache.txt').read_text().splitlines():
               if '=' in line and ':' in line.split('=', 1)[0]:
@@ -277,15 +279,15 @@ jobs:
               raise SystemExit('Cannot determine the configured Typst notice install path')
           data_path = Path(datadir) if Path(datadir).is_absolute() else Path(prefix) / datadir
           notices = appdir / data_path.relative_to('/') / 'licenses/vnote/typst'
-          required = [helper, appdir / 'usr/lib/libQt6Pdf.so.6']
+          required = [library, executable, appdir / 'usr/lib/libQt6Pdf.so.6']
           required += [notices / name for name in (
               'LICENSE.typst-dependencies', 'LICENSE.vtextedit-typst',
               'qtpdf-6.10.3.spdx.json', 'qtwebengine-chromium-pdf-6.10.3.spdx.json')]
           for path in required:
               if not path.is_file() or path.stat().st_size == 0:
                   raise SystemExit(f'Packaged Typst runtime is missing a nonempty {path}')
-          if not os.access(helper, os.X_OK):
-              raise SystemExit(f'Packaged Typst helper is not executable: {helper}')
+          if list(appdir.rglob('vtextedit-typst')):
+              raise SystemExit('Obsolete Typst executable leaked into the AppImage')
 
           clean_env = {key: value for key, value in os.environ.items()
                        if not key.upper().startswith(('CARGO', 'RUST', 'QT', 'QML', 'TYPST', 'VTEXTEDIT', 'LD_', 'DYLD'))
@@ -293,8 +295,38 @@ jobs:
           clean_env['PATH'] = '/usr/bin:/bin'
           clean_env['LD_LIBRARY_PATH'] = str(appdir / 'usr/lib')
           smoke = Path(os.environ['GITHUB_WORKSPACE']) / 'scripts/e2e/smoke_typst_package.py'
-          subprocess.run([sys.executable, str(smoke), '--helper', str(helper)],
+          native_dynamic = subprocess.check_output(['readelf', '-d', str(library)], text=True)
+          if not re.search(r'\(SONAME\).*\[libvtextedit_typst\.so\.1\]', native_dynamic):
+              raise SystemExit('Packaged Typst library has no canonical ABI 1 SONAME')
+          editors = {path.resolve() for path in (appdir / 'usr/lib').glob('libVTextEdit.so*')}
+          if len(editors) != 1:
+              raise SystemExit(f'Expected one packaged VTextEdit library: {editors}')
+          editor = editors.pop()
+          editor_dynamic = subprocess.check_output(['readelf', '-d', str(editor)], text=True)
+          if not re.search(r'\(NEEDED\).*\[libvtextedit_typst\.so\.1\]', editor_dynamic):
+              raise SystemExit('Packaged VTextEdit does not link the native Typst ABI')
+          for binary in (executable, editor, library):
+              dynamic = subprocess.check_output(['readelf', '-d', str(binary)], text=True)
+              for paths in re.findall(r'\((?:RPATH|RUNPATH)\).*\[([^]]*)\]', dynamic):
+                  if any(not path.startswith('$ORIGIN') for path in paths.split(':') if path):
+                      raise SystemExit(f'Nonrelocatable runtime search path in {binary}: {paths}')
+              linked = subprocess.check_output(['ldd', str(binary)], env=clean_env, text=True)
+              print(f'{binary}:\n{linked}', flush=True)
+              if 'not found' in linked:
+                  raise SystemExit(f'Packaged dependency cannot load: {binary}')
+              for name, resolved in re.findall(r'(\S+) => (\S+)', linked):
+                  if name.startswith(('libQt', 'libVTextEdit', 'libvtextedit_typst')) and not Path(resolved).resolve().is_relative_to(appdir):
+                      raise SystemExit(f'Packaged dependency escapes AppDir: {name} => {resolved}')
+          subprocess.run([sys.executable, str(smoke), '--library', str(library)],
                          cwd=appdir, env=clean_env, check=True)
+          # Exercise the packaged Qt/C++ loader closure as well as the raw C ABI.
+          with tempfile.TemporaryDirectory(prefix='vnote-package-launch-') as directory:
+              launch_env = dict(clean_env, HOME=directory, XDG_CONFIG_HOME=directory,
+                                XDG_DATA_HOME=directory, XDG_CACHE_HOME=directory,
+                                QT_QPA_PLATFORM='offscreen', QT_PLUGIN_PATH=str(appdir / 'usr/plugins'))
+              subprocess.run([str(appdir / 'AppRun'), '--help'], cwd=directory,
+                             env=launch_env, check=True, timeout=30)
+
           PY
 
       - name: Archive Artifacts

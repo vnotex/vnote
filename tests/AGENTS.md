@@ -229,11 +229,21 @@ add_custom_command(TARGET test_clipboard_image POST_BUILD
 )
 ```
 
+With Typst enabled, `VTextEdit.dll` directly depends on `vtextedit_typst.dll`. The common
+`add_qt_test()` supplies Windows CTest lookup paths for Qt, VTextEdit and the native backend
+without linking pure-core tests to them. Tests replacing ENVIRONMENT must restore PATH
+afterward; append it separately to each test instead of copying an escaped PATH list.
+
 **When adding tests to a NEW subdirectory under `tests/` whose targets link `VTextEdit`**, that subdir's `CMakeLists.txt` MUST include this `POST_BUILD` block anchored on any one such test target. Without it, `ctest` reports the test as failed with exit code `0xc0000135` (Windows "DLL not found") and the test binary never reaches its `main()`. One copy per subdir is enough; `copy_if_different` makes incremental rebuilds free.
 
 ### Running execs that depend on VTextEdit.dll (CRITICAL — avoid false-positive smoke tests)
 
-`build-debug/src/vnote.exe` and the widget/editor-level `build-debug/tests/<category>/test_*.exe` execs link against `VTextEdit.dll` (built into `build-debug/libs/vtextedit/src/`) plus the Qt 6 runtime DLLs. Pure-core tests that link only `core_services` + `vxcore` do NOT (see [`../src/core/services/AGENTS.md`](../src/core/services/AGENTS.md#core_services-is-qt-widgets-free-and-vtextedit-free-contract)). Neither DLL set is automatically copied next to `vnote.exe` in this development build (only test-exec dirs get VTextEdit.dll copied via CMake target propagation). Launching `vnote.exe` without setting PATH first causes the Windows loader to pop a "VTextEdit.dll was not found" modal dialog BEFORE the process reaches `WinMain`.
+`build-debug/src/vnote.exe` and widget/editor tests load `VTextEdit.dll` and its native
+`vtextedit_typst.dll` dependency, plus the matching Qt 6 runtime. The editor/runtime DLLs
+are staged in `build-debug/bin` and beside VNote; Typst test targets also refresh their
+local copies. Pure-core tests linked only to `core_services` + `vxcore` remain independent
+of VTextEdit. Direct test launches and disposable app copies still need the configured
+Qt/runtime lookup paths. A missing DLL can show a loader modal before `WinMain`.
 
 **This is a verification trap**: when the loader dialog blocks the process, the OS reports the process as alive (it has a PID, is technically running), so naive checks like `Start-Process … -PassThru` + `Sleep` + `HasExited` return `$false` → you falsely conclude the binary started. The process is actually frozen in pre-WinMain limbo waiting for someone to click the dialog. `Stop-Process -Force` afterwards silently dismisses the dialog and the lie is preserved.
 
@@ -261,7 +271,7 @@ $qtDir = (Select-String -Path "$build/CMakeCache.txt" -Pattern '^Qt6_DIR:PATH=' 
           Where-Object { $_.Line -notmatch 'NOTFOUND$' } | Select-Object -First 1).Line
 if (-not $qtDir) { throw "No configured Qt directory in $build/CMakeCache.txt" }
 $qtBin = [IO.Path]::GetFullPath((Join-Path ($qtDir -split '=', 2)[1] "../../../bin"))
-$env:PATH = "$qtBin;" + (Resolve-Path "$build/libs/vtextedit/src").Path + ";" + $env:PATH
+$env:PATH = "$qtBin;" + (Resolve-Path "$build/bin").Path + ";" + $env:PATH
 $env:QT_QPA_PLATFORM_PLUGIN_PATH = Join-Path $qtBin "../plugins/platforms"
 $env:QTWEBENGINEPROCESS_PATH = Join-Path $qtBin "QtWebEngineProcess.exe"
 
@@ -279,8 +289,10 @@ $proc = Start-Process -FilePath "$smoke/vnote.exe" -PassThru `
 Start-Sleep -Seconds 5
 $proc.Refresh()
 if ($proc.HasExited) { throw "VNote exited with $($proc.ExitCode); inspect $smoke/stderr.log" }
-if (-not ($proc.Modules | Where-Object { $_.ModuleName -like "VTextEdit*.dll" })) {
-  throw "VTextEdit not loaded: check runtime DLLs, not just process liveness"
+foreach ($module in @("VTextEdit.dll", "vtextedit_typst.dll")) {
+  if (-not ($proc.Modules | Where-Object { $_.ModuleName -ieq $module })) {
+    throw "$module not loaded: check runtime DLLs, not just process liveness"
+  }
 }
 Write-Output "Inspect PID $($proc.Id): its own window must display smoke.txt and the note text"
 ```

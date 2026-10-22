@@ -39,12 +39,12 @@
 #include <QScopeGuard>
 #include <QScrollBar>
 #include <QSemaphore>
-#include <QSignalBlocker>
 #include <QStandardPaths>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QTemporaryDir>
 #include <QTextCursor>
+#include <QThread>
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
@@ -67,6 +67,7 @@
 #include <gui/services/themeservice.h>
 #include <vtextedit/typstcompiler.h>
 #include <vtextedit/typsteditorconfig.h>
+#include <vtextedit/typstruntime.h>
 #include <vtextedit/vtextedit.h>
 #include <vtextedit/vtexteditor.h>
 #include <vxcore/vxcore.h>
@@ -93,6 +94,47 @@ public slots:
 };
 
 namespace {
+// Hold actual runtime workers at a queue boundary without replacing native work.
+// Shared state survives early test returns until each queued lambda has retired.
+class RuntimeLaneGate {
+public:
+  explicit RuntimeLaneGate(vte::TypstRuntime &p_runtime, bool p_scanner = false)
+      : state(std::make_shared<State>()), expected(p_scanner ? 1 : 2) {
+    const QStringList names = p_scanner ? QStringList{QStringLiteral("typst-scanner")}
+                                        : QStringList{QStringLiteral("typst-compile-0"),
+                                                      QStringLiteral("typst-compile-1")};
+    for (const auto &name : names) {
+      auto *thread = p_runtime.findChild<QThread *>(name);
+      auto *worker = thread ? thread->property("worker").value<QObject *>() : nullptr;
+      if (worker && QMetaObject::invokeMethod(
+                        worker,
+                        [held = state] {
+                          held->entered.release();
+                          held->resume.acquire();
+                        },
+                        Qt::QueuedConnection))
+        ++scheduled;
+    }
+  }
+  ~RuntimeLaneGate() { release(); }
+  bool entered() { return scheduled == expected && state->entered.tryAcquire(expected, 10000); }
+  void release() {
+    if (scheduled) {
+      state->resume.release(scheduled);
+      scheduled = 0;
+    }
+  }
+
+private:
+  struct State {
+    QSemaphore entered;
+    QSemaphore resume;
+  };
+  const std::shared_ptr<State> state;
+  const int expected;
+  int scheduled = 0;
+};
+
 // These are chooser item IDs, not translated UI text or persisted settings.
 enum Choice {
   Image = 0,
@@ -521,12 +563,18 @@ ResourceMenuResult resourceMenu(QWidget *surface, const QPoint &point,
                                 const std::function<void(QMenu *)> &inspect = {},
                                 const QString &capture = {}) {
   ResourceMenuResult result;
+  vte::VTypstEditor *editor = nullptr;
+  for (auto *widget = surface; widget && !editor; widget = widget->parentWidget()) {
+    editor = qobject_cast<vte::VTypstEditor *>(widget);
+  }
+  if (!editor) {
+    return result;
+  }
+  QObject lifetime;
   QTimer deadline;
   deadline.setSingleShot(true);
   QObject::connect(&deadline, &QTimer::timeout, &deadline, [&] {
     qWarning() << "Resource context menu did not complete" << actionName;
-    // A malformed popup must fail the assertions, not strand the test in exec().
-    // This is cleanup only: normal driving still requires activePopupWidget().
     for (auto *widget : QApplication::topLevelWidgets()) {
       if (auto *menu = qobject_cast<QMenu *>(widget)) {
         menu->close();
@@ -537,52 +585,56 @@ ResourceMenuResult resourceMenu(QWidget *surface, const QPoint &point,
     }
   });
   deadline.start(8000);
-  QTimer timer;
-  timer.setInterval(10);
-  QObject::connect(&timer, &QTimer::timeout, &timer, [&] {
-    QPointer<QMenu> menu = qobject_cast<QMenu *>(QApplication::activePopupWidget());
-    if (!menu || result.opened) {
-      return;
-    }
-    result.opened = true;
-    timer.stop();
-    QAction *chosen = nullptr;
-    for (auto *action : menu->actions()) {
-      if (action->isSeparator()) {
-        continue;
-      }
-      result.actions.append(action->objectName());
-      if (action->isEnabled()) {
-        result.enabled.append(action->objectName());
-      }
-      if (action->objectName() == actionName && action->isEnabled()) {
-        chosen = action;
-      }
-      if (!action->objectName().startsWith(QLatin1String("typst"))) {
-        ++result.standardActions;
-      }
-    }
-    if (!capture.isEmpty()) {
-      result.captured =
-          menu->grab().save(QDir(QCoreApplication::applicationDirPath()).filePath(capture));
-    }
-    if (inspect) {
-      inspect(menu);
-    }
-    if (!menu) {
-      return;
-    }
-    if (chosen && menu->isVisible()) {
-      QObject::connect(chosen, &QAction::triggered, &timer, [&] { result.clicked = true; });
-      QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier,
-                        menu->actionGeometry(chosen).center());
-    } else {
-      menu->close();
-    }
-  });
-  timer.start();
+  // Observe the actual published menu, like the native editor tests. A polling
+  // timer and QTest's default mouse delay let queued retirement run before the
+  // action was clicked, rather than while its native image request was pending.
+  const auto connection =
+      QObject::connect(editor, &vte::VTypstEditor::resourceContextMenuRequested, &lifetime,
+                       [&](const vte::TypstResourceContext &, QMenu *popup) {
+                         QTimer::singleShot(0, &lifetime, [&, menu = QPointer<QMenu>(popup)] {
+                           if (!menu || !menu->isVisible() || result.opened) {
+                             return;
+                           }
+                           result.opened = true;
+                           QAction *chosen = nullptr;
+                           for (auto *action : menu->actions()) {
+                             if (action->isSeparator()) {
+                               continue;
+                             }
+                             result.actions.append(action->objectName());
+                             if (action->isEnabled()) {
+                               result.enabled.append(action->objectName());
+                             }
+                             if (action->objectName() == actionName && action->isEnabled()) {
+                               chosen = action;
+                             }
+                             if (!action->objectName().startsWith(QLatin1String("typst"))) {
+                               ++result.standardActions;
+                             }
+                           }
+                           if (!capture.isEmpty()) {
+                             result.captured = menu->grab().save(
+                                 QDir(QCoreApplication::applicationDirPath()).filePath(capture));
+                           }
+                           if (inspect) {
+                             inspect(menu);
+                           }
+                           if (!menu) {
+                             return;
+                           }
+                           if (chosen && menu->isVisible()) {
+                             QObject::connect(chosen, &QAction::triggered, &lifetime,
+                                              [&] { result.clicked = true; });
+                             QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier,
+                                               menu->actionGeometry(chosen).center(), 0);
+                           } else {
+                             menu->close();
+                           }
+                         });
+                       });
   QContextMenuEvent event(QContextMenuEvent::Mouse, point, surface->mapToGlobal(point));
   QApplication::sendEvent(surface, &event);
+  QObject::disconnect(connection);
   return result;
 }
 
@@ -653,7 +705,8 @@ private slots:
   void normalizedImageCompilation_data();
   void normalizedImageCompilation();
   void cancelledClosePreservesDraft();
-  void missingCompilerKeepsInsertion();
+  void unavailableRuntimeKeepsInsertion_data();
+  void unavailableRuntimeKeepsInsertion();
   void internalTextDrag();
   void resourceImageMenus_data();
   void resourceImageMenus();
@@ -723,6 +776,7 @@ private:
   QStringList m_libraryPaths;
   std::unique_ptr<QMimeData> m_clipboard;
   QJsonObject m_originalConfig;
+  std::unique_ptr<vte::TypstRuntime> m_runtime;
   std::unique_ptr<ServiceLocator> m_services;
   std::unique_ptr<ConfigCoreService> m_configCore;
   std::unique_ptr<ConfigMgr2> m_config;
@@ -816,7 +870,10 @@ void TestTypstViewWindowInsertion::init() {
   theme.locale = QStringLiteral("en_US");
   theme.appDataPath = m_installedAppDataPath;
   m_theme = std::make_unique<ThemeService>(theme);
+  m_runtime = std::make_unique<vte::TypstRuntime>();
+  QVERIFY(m_runtime->isAvailable());
   m_services = std::make_unique<ServiceLocator>();
+  m_services->registerService(m_runtime.get());
   m_services->registerService(m_configCore.get());
   m_services->registerService(m_config.get());
   m_services->registerService(m_hooks.get());
@@ -838,6 +895,7 @@ void TestTypstViewWindowInsertion::cleanup() {
     m_config->updateMainConfig(m_originalConfig);
   }
   m_services.reset();
+  m_runtime.reset();
   m_theme.reset();
   if (m_buffers) {
     m_buffers->cancelProtectedLocking();
@@ -1723,7 +1781,7 @@ void TestTypstViewWindowInsertion::resourcePendingRetirement() {
       target.first, target.second,
       copy ? QStringLiteral("typstCopyImage") : QStringLiteral("typstViewImage"), [&](QMenu *) {
         // Queue retirement before the native action requests its asynchronous bytes.
-        // The real helper reply still runs; no imageDataReady signal is fabricated.
+        // The real native reply still runs; no imageDataReady signal is fabricated.
         QTimer::singleShot(0, &callbackLifetime, [&] {
           changed = retireResource(change);
           retired = true;
@@ -1787,13 +1845,11 @@ void TestTypstViewWindowInsertion::resourceBufferReplacement() {
   QVERIFY(ready());
   const auto native = m_editor;
   const auto document = m_edit->document();
-  auto *process = m_editor->findChild<QProcess *>();
-  QVERIFY(process);
-  const auto pid = process->processId();
   QSignalSpy completed(m_editor, &vte::VTypstEditor::imageDataReady);
-  std::unique_ptr<QSignalBlocker> blockedReply;
+  std::unique_ptr<RuntimeLaneGate> blockedReply;
   if (pending) {
-    blockedReply = std::make_unique<QSignalBlocker>(process);
+    blockedReply = std::make_unique<RuntimeLaneGate>(*m_runtime);
+    QVERIFY(blockedReply->entered());
   }
   QApplication::clipboard()->setText(QStringLiteral("replacement must not copy outgoing pixels"));
   const auto target = resourceTarget(QStringLiteral("source"));
@@ -1818,7 +1874,6 @@ void TestTypstViewWindowInsertion::resourceBufferReplacement() {
     prompted = true;
     if (pending) {
       blockedReply.reset();
-      QMetaObject::invokeMethod(process, "readyReadStandardOutput", Qt::DirectConnection);
       if (!QTest::qWaitFor([&] { return !completed.isEmpty(); }, 5000)) {
         decisions.fail(dialog,
                        QStringLiteral("Image reply did not drain during replacement confirmation"));
@@ -1843,7 +1898,7 @@ void TestTypstViewWindowInsertion::resourceBufferReplacement() {
   QCOMPARE(m_window->getBuffer().id(), cancel ? oldBuffer.id() : incoming.id());
   QCOMPARE(m_editor, native);
   QCOMPARE(m_edit->document(), document);
-  QCOMPARE(process->processId(), pid);
+  QCOMPARE(m_editor->getConfig().m_runtime, m_runtime.get());
   QCOMPARE(m_edit->toPlainText(), draft);
   QCOMPARE(readBytes(oldBuffer.resolvedPath()), source.toUtf8());
   QCOMPARE(readBytes(incomingPath), draft.toUtf8());
@@ -3128,10 +3183,21 @@ void TestTypstViewWindowInsertion::cancelledClosePreservesDraft() {
   QVERIFY(m_edit->toPlainText().contains(QStringLiteral("Unsaved draft")));
 }
 
-void TestTypstViewWindowInsertion::missingCompilerKeepsInsertion() {
+void TestTypstViewWindowInsertion::unavailableRuntimeKeepsInsertion_data() {
+  QTest::addColumn<bool>("stopped");
+  QTest::newRow("missing-runtime") << false;
+  QTest::newRow("stopped-runtime") << true;
+}
+
+void TestTypstViewWindowInsertion::unavailableRuntimeKeepsInsertion() {
+  QFETCH(bool, stopped);
   show(openNote());
   auto config = QSharedPointer<vte::TypstEditorConfig>::create(m_editor->getConfig());
-  config->m_helperExecutable = m_directory->filePath(QStringLiteral("missing-typst-helper"));
+  if (stopped) {
+    m_runtime->shutdown();
+  } else {
+    config->m_runtime = nullptr;
+  }
   m_editor->setConfig(config);
   select();
   QApplication::clipboard()->setImage(pixels());
@@ -3688,9 +3754,10 @@ void TestTypstViewWindowInsertion::obsoleteImagesKeepUncertainReferences() {
 
 void TestTypstViewWindowInsertion::obsoleteImagesRejectUnsafePaths_data() {
   QTest::addColumn<QString>("kind");
-  for (const char *kind : {"absolute", "parent-relative", "root-leading", "remote", "data",
-                           "package", "junction-escape", "read-only", "missing-source",
-                           "failed-source-read", "held-notebook-gate", "missing-helper"}) {
+  for (const char *kind :
+       {"absolute", "parent-relative", "root-leading", "remote", "data", "package",
+        "junction-escape", "read-only", "missing-source", "failed-source-read",
+        "held-notebook-gate", "missing-runtime", "stopped-runtime", "scanner-timeout"}) {
     QTest::newRow(kind) << QString::fromLatin1(kind);
   }
 }
@@ -3776,6 +3843,7 @@ void TestTypstViewWindowInsertion::obsoleteImagesRejectUnsafePaths() {
   }
   QCOMPARE(readBytes(target), png(c_red));
   std::unique_ptr<HeldNotebookGate> heldGate;
+  std::unique_ptr<RuntimeLaneGate> heldScanner;
   if (kind == QLatin1String("missing-source") || kind == QLatin1String("failed-source-read")) {
     QVERIFY(QFile::remove(sourcePath));
     if (kind == QLatin1String("failed-source-read")) {
@@ -3784,10 +3852,13 @@ void TestTypstViewWindowInsertion::obsoleteImagesRejectUnsafePaths() {
     }
   } else if (kind == QLatin1String("held-notebook-gate")) {
     heldGate = std::make_unique<HeldNotebookGate>(*m_gate, m_notebookId);
-  } else if (kind == QLatin1String("missing-helper")) {
-    auto config = QSharedPointer<vte::TypstEditorConfig>::create(m_editor->getConfig());
-    config->m_helperExecutable = m_directory->filePath(QStringLiteral("missing-cleanup-helper"));
-    m_editor->setConfig(config);
+  } else if (kind == QLatin1String("missing-runtime")) {
+    m_services->registerService<vte::TypstRuntime>(nullptr);
+  } else if (kind == QLatin1String("stopped-runtime")) {
+    m_runtime->shutdown();
+  } else if (kind == QLatin1String("scanner-timeout")) {
+    heldScanner = std::make_unique<RuntimeLaneGate>(*m_runtime, true);
+    QVERIFY(heldScanner->entered());
   }
   QVERIFY(m_window->aboutToClose(false));
   QCOMPARE(readBytes(target), png(c_red));
@@ -3863,9 +3934,9 @@ void TestTypstViewWindowInsertion::imageReferenceScanUsesNativeParser() {
   show(openNote());
   m_editor->setLivePreviewEnabled(false);
   m_editor->setInplacePreviewEnabled(false);
-  const auto helper = m_editor->getConfig().m_helperExecutable;
-  QVERIFY(QFileInfo(helper).isAbsolute());
-  QVERIFY(QFileInfo(helper).isFile());
+  auto *runtime = m_services->get<vte::TypstRuntime>();
+  QCOMPARE(m_editor->getConfig().m_runtime, runtime);
+  QVERIFY(runtime && runtime->isAvailable());
   const QString escaped =
       QStringLiteral("#if false { image(\"assets/old\\\"\\u{56fe}%.png\") }\n"
                      "#image(\"assets/live.png\")\n#image(\"assets/live.png\")\n");
@@ -3874,7 +3945,7 @@ void TestTypstViewWindowInsertion::imageReferenceScanUsesNativeParser() {
   const QString alias = QStringLiteral("#let load = image\n#load(\"assets/live.png\")\n");
   QString error = QStringLiteral("stale error");
   const auto scans =
-      vte::TypstCompiler::collectImageReferences({escaped, raw, alias}, helper, &error);
+      vte::TypstCompiler::collectImageReferences({escaped, raw, alias}, runtime, &error);
   QVERIFY2(error.isEmpty(), qPrintable(error));
   QCOMPARE(scans.size(), 3);
   QVERIFY(scans[0].m_complete);
@@ -3888,14 +3959,13 @@ void TestTypstViewWindowInsertion::imageReferenceScanUsesNativeParser() {
   QVERIFY(!scans[2].m_complete);
   QVERIFY(scans[2].m_images.isEmpty());
   QCOMPARE(scans[2].m_strings, QStringList{QStringLiteral("assets/live.png")});
-  const auto empty = vte::TypstCompiler::collectImageReferences({QString()}, helper, &error);
+  const auto empty = vte::TypstCompiler::collectImageReferences({QString()}, runtime, &error);
   QVERIFY2(error.isEmpty(), qPrintable(error));
   QCOMPARE(empty.size(), 1);
   QVERIFY(empty[0].m_complete);
   QVERIFY(empty[0].m_images.isEmpty());
   QVERIFY(empty[0].m_strings.isEmpty());
-  const auto missing = vte::TypstCompiler::collectImageReferences(
-      {QString()}, m_directory->filePath(QStringLiteral("nonexistent-explicit-helper")), &error);
+  const auto missing = vte::TypstCompiler::collectImageReferences({QString()}, nullptr, &error);
   QVERIFY(missing.isEmpty());
   QVERIFY(!error.isEmpty());
   QVERIFY(m_window->aboutToClose(false));

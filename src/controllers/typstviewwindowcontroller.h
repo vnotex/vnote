@@ -29,7 +29,7 @@ public:
   // Both current and saved source must prove absence; uncertainty retains every asset.
   void snapshotInitialImages(const QString &p_source);
   void trackInsertedImage(const QString &p_assetIdentifier);
-  void clearObsoleteImages(const QString &p_helperExecutable);
+  void clearObsoleteImages();
 
   void requestOpenSource(const QString &p_file, int p_start, int p_end);
   void requestOpenLink(const QUrl &p_url);

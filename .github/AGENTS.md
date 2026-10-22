@@ -19,21 +19,21 @@ all-target build or weaken the install/pruning checks to hide a missing executab
 
 ### Native Typst runtime and attribution
 
-VNote requires the pinned Rust 1.99.0/Typst 0.15.1 helper and Qt PDF. Embedding forces
+VNote requires the pinned Rust 1.99.0/Typst 0.15.1 shared library and Qt PDF. Embedding forces
 `VTEXTEDIT_ENABLE_TYPST=ON` and `VTEXTEDIT_BUILD_DEMOS=OFF`; do not ship upstream demos.
-`vnote_typst_runtime` always refreshes the adjacent helper (and VTextEdit.dll on Windows),
+`vnote_typst_runtime` always refreshes the native runtime (and VTextEdit.dll on Windows),
 even without relinking VNote. Both `pack` and direct `deploy` depend on this target and
 `prepare_typst_notices`, retaining the existing cmark/lrelease prerequisites.
 
 Provision `cargo +1.99.0 install cargo-about --locked --version 0.9.2 --features cli` and
-fetch the helper's complete locked dependency graph before offline deployment. The `cli`
+fetch the backend's complete locked dependency graph before offline deployment. The `cli`
 feature is required: installing this release without it produces no executable. Keep
 `CARGO_BUILD_JOBS=2` and OS/Rust/lockfile-specific Cargo caches; Apple keys also include
 the deployment target. Non-release native editor tests run from `build/libs/vtextedit`
 with `--no-tests=error`, not just the parent's CTest root.
 
 `package/prepare-typst-notices.py` uses `package/typst-about.toml` to generate full Rust
-license texts, including verbatim typst-assets/font notices and the helper LGPL text.
+license texts, including verbatim typst-assets/font notices and the backend LGPL text.
 Matching `sbom/qtpdf-<version>.spdx.json` and
 `sbom/qtwebengine-chromium-pdf-<version>.spdx.json` are required SDK attribution inputs.
 Qt 6.9.3 provides both when qtpdf and qtwebengine are installed; the Chromium PDF inventory
@@ -42,16 +42,22 @@ Generation is deployment-only, with no dependency installation at configure or r
 Notices ship in Windows `licenses/typst`, Linux `share/licenses/vnote/typst`, and macOS
 `Contents/Resources/licenses/typst`.
 
-Windows deployment scans both vnote and VTextEdit for Qt6Pdf. Linux scans the installed
-helper as a second linuxdeploy executable and checks install/deploy exit codes. Universal
-macOS helpers build both Rust triples with the job's deployment target, then lipo once;
-sign the helper before deep bundle signing. Resolve the packaged VTextEdit filename from
+Windows deployment scans both vnote and VTextEdit for Qt6Pdf and keeps
+`vtextedit_typst.dll` in the flat runtime directory, never the pruned lib/bin directories.
+Linux scans the installed `libvtextedit_typst.so.1` as a linuxdeploy library and checks
+install/deploy exit codes. Universal macOS libraries build both Rust triples with the job's
+deployment target, then lipo once. Stage `libvtextedit_typst.1.dylib` explicitly in
+`Contents/Frameworks` through vnote_typst_runtime/deploy, fix load paths and sign before
+deep bundle signing; ordinary install() does not assemble the VNote app. Resolve the
+packaged VTextEdit filename from
 VNote's linked dependency, not an unversioned dylib name; rpath cleanup and final DMG checks
 must inspect that same library. Remove only rpaths outside the final DMG path allowlist.
 Inspect both slices' minimum-OS metadata and reject build-tree dependencies. Metadata from a newer runner is not a Monterey launch test.
-Run `scripts/e2e/smoke_typst_package.py --helper <extracted-helper>` against final package
-contents without developer Cargo/Qt/Typst overrides; it must compile real output, not just
-find a source file or executable.
+Run `scripts/e2e/smoke_typst_package.py --library <extracted-library>` against final package
+contents without developer Cargo/Qt/Typst overrides. It calls C ABI 1 in a supervised
+Python test worker and verifies real PDF/heading output and reply lifetime after session
+destruction. Also launch the packaged consumer and inspect native dependency closure;
+ctypes alone does not prove VTextEdit/VNote linkage. Reject the old Typst executable.
 
 ## Windows runtime (Qt 6)
 
@@ -97,7 +103,8 @@ Signing uses this prepared verifier, not a second unpinned download.
 
 Install `update-vnote.ps1`, `minisign.exe` and `LICENSE.minisign` under `updater/`, all
 non-optional; retain the existing libsodium notices. Keep the root executable allowlist at
-`vnote.exe`, `QtWebEngineProcess.exe`, and `vtextedit-typst.exe`. The extracted-package gate must
+`vnote.exe` and `QtWebEngineProcess.exe`. Require `vtextedit_typst.dll` separately.
+The extracted-package gate must
 assert all three helper files and run the **packaged** `updater/minisign.exe -v`,
 prepending that package root to the subprocess PATH for its runtime DLLs. Retain
 all Qt 6 package-composition checks; verifier presence alone is not runtime proof.

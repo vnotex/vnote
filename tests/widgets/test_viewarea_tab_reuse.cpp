@@ -1,5 +1,7 @@
 #include <QtTest>
 
+#include <vtextedit/typstruntime.h>
+
 #include <QAction>
 #include <QApplication>
 #include <QBuffer>
@@ -22,7 +24,6 @@
 #include <QPdfWriter>
 #include <QPlainTextEdit>
 #include <QPointer>
-#include <QProcess>
 #include <QPushButton>
 #include <QScopeGuard>
 #include <QTabBar>
@@ -71,6 +72,7 @@
 #include <views/notebooknodeview.h>
 #include <vtextedit/markdownhighlighter.h>
 #include <vtextedit/previewdata.h>
+#include <vtextedit/typsteditorconfig.h>
 #include <vtextedit/vtextedit.h>
 #include <vtextedit/vtypsteditor.h>
 #include <vxcore/vxcore.h>
@@ -228,6 +230,7 @@ private:
 
 struct Fixture {
   VxCoreContextHandle context = nullptr;
+  vte::TypstRuntime runtime;
   ServiceLocator services;
   QString root;
   QString notebook;
@@ -310,6 +313,7 @@ struct Fixture {
     templates = std::make_unique<HtmlTemplateService>(config.get());
     profiles = std::make_unique<WebEngineProfileService>(root + QStringLiteral("/p"), config.get(),
                                                          templates.get());
+    services.registerService(&runtime);
     services.registerService(configCore.get());
     services.registerService(config.get());
     services.registerService(hooks.get());
@@ -359,6 +363,7 @@ struct Fixture {
       area.reset();
       QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     }
+    runtime.shutdown();
     web.reset();
     profiles.reset();
     comments.reset();
@@ -842,16 +847,14 @@ void TestViewAreaTabReuse::typstCompilerAndUnavailableSource() {
   QVERIFY(source);
   typst->setLivePreviewEnabled(true);
   QTRY_COMPARE_WITH_TIMEOUT(typst->compileStatus(), vte::VTypstEditor::CompileStatus::Ready, 60000);
-  auto *compiler = typst->findChild<QProcess *>();
-  QVERIFY(compiler);
-  const auto pid = compiler->processId();
-  QVERIFY(pid != 0);
+  QCOMPARE(typst->getConfig().m_runtime, &f->runtime);
+  QVERIFY(f->runtime.isAvailable());
   QVERIFY(f->open(QStringLiteral("b.typst")).isValid());
   QCOMPARE(f->current(), window);
   QCOMPARE(window->findChild<vte::VTypstEditor *>(), typst);
   QCOMPARE(typst->getTextEditor(), source);
-  QCOMPARE(typst->findChild<QProcess *>(), compiler);
-  QCOMPARE(compiler->processId(), pid);
+  QCOMPARE(typst->getConfig().m_runtime, &f->runtime);
+  QVERIFY(f->runtime.isAvailable());
   QVERIFY(typst->isLivePreviewEnabled());
   QCOMPARE(source->getText(), QStringLiteral("= Typst beta\nBeta body\n"));
   QVERIFY(!source->getTextEdit()->document()->isUndoAvailable());

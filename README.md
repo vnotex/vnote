@@ -92,9 +92,9 @@ rustup toolchain install 1.99.0 --profile minimal
 (cd libs/vtextedit/tools/typst-backend && cargo --version && rustc --version)
 ```
 
-CMake builds the locked Rust dependencies and copies `vtextedit-typst` beside VNote.
-A separate `typst` CLI or Tinymist installation is not required. The first build needs
-network access to fetch dependencies.
+CMake builds the locked Rust dependencies into the `vtextedit_typst` shared library,
+linked by VTextEdit and bundled with VNote. No separate `typst` CLI or Tinymist
+installation is required. The first build needs network access to fetch dependencies.
 
 ### Qt Creator
 
@@ -113,12 +113,16 @@ network access to fetch dependencies.
    an already configured directory needs its current CMake configuration updated too.
 4. Add `-DVNOTE_BUILD_TESTS:BOOL=ON` to the Debug profile if you want the VNote tests.
    Configure, then build the **vnote** and **lrelease** targets; select **vnote** to run/debug.
-   The Typst helper is a build dependency, not a separate run target.
+   The Typst shared library is a build dependency, not a separate run target.
 5. Open a `.typst` note in VNote and check that its preview renders. To smoke-test
-   the Windows helper directly from the repository root:
+   the Windows library directly from the repository root:
    ```powershell
-   python scripts/e2e/smoke_typst_package.py --helper build-typst-release/src/vtextedit-typst.exe
+   python scripts/e2e/smoke_typst_package.py --library build-typst-release/src/vtextedit_typst.dll
    ```
+
+Typst runs on bounded background threads inside VNote. Timeouts discard results but
+cannot forcibly stop native calls; shutdown waits for active calls to return. The
+shared library is required at startup, and native compiler faults can affect VNote.
 
 For a second VNote process, `--no-single-instance` skips locking/IPC but **does not isolate
 user data**. Follow the [isolated GUI smoke recipe](tests/AGENTS.md#agent-gui-smoke-testing-windows)

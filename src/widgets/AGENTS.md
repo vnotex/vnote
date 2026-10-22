@@ -177,7 +177,7 @@ Web adapter reset clears pending actions/callbacks even while already not-ready.
 flushes JS-debounced comment drafts before the durable gate, uses `setActiveFile()` for comments,
 and clears document replay through `resetForNewDocument()`; theme reload still replays that PDF's
 own camera. Typst uses native `resetForNewDocument()` and calls `finishDocumentReset()` only
-after installing the validated incoming project and source; its compiler process survives.
+after installing the validated incoming project and source; its native compiler session survives.
 
 Coverage: `test_viewarea_tab_reuse` uses production services, windows, real explorer gestures,
 dialogs and separate test-mode session contexts; `test_configmgr2` covers preference persistence
@@ -219,10 +219,12 @@ compilation; pending PDF updates held by a selection publish when that selection
 
 The canonical containing directory is the project boundary and the actual basename is
 the main/active file. Imports use saved files under that tree; only the current source is
-an unsaved overlay. Configure the absolute adjacent helper path before constructing the
-native widget, even if the helper is missing: an empty path would permit upstream PATH
-search. Downloads stay disabled. Unavailable compilation still permits source editing
-and saving; failed source reads instead disable mutations and reject save snapshots.
+an unsaved overlay. Set `TypstEditorConfig::m_runtime` from the application-owned
+`vte::TypstRuntime` in ServiceLocator before constructing the native widget. The runtime
+outlives the windows and drains after accepted-close image scans. No executable lookup or
+fallback remains; the shared library is a required loader dependency. Downloads stay disabled.
+Missing/stopped runtime still permits source editing and saving; failed source reads instead
+disable mutations and reject save snapshots.
 
 Use inherited focus/save/reload/close and BufferService, never per-keystroke buffer writes
 or QFile saves. Retarget project/active identity and remove the obsolete overlay without

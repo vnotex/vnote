@@ -8,9 +8,9 @@ execute_process(
 if(NOT _typst_install_result STREQUAL "0")
     message(FATAL_ERROR "AppDir installation failed: ${_typst_install_result}")
 endif()
-set(_typst_installed_helper "@VX_APPIMAGE_DEST_DIR@@CMAKE_INSTALL_PREFIX@/@CMAKE_INSTALL_BINDIR@/vtextedit-typst")
-if(NOT EXISTS "${_typst_installed_helper}")
-    message(FATAL_ERROR "AppDir is missing the installed Typst helper: ${_typst_installed_helper}")
+set(_typst_installed_library "@VX_APPIMAGE_DEST_DIR@@CMAKE_INSTALL_FULL_LIBDIR@/libvtextedit_typst.so.1")
+if(NOT EXISTS "${_typst_installed_library}")
+    message(FATAL_ERROR "AppDir is missing the installed Typst library: ${_typst_installed_library}")
 endif()
 
 execute_process(
@@ -18,7 +18,7 @@ execute_process(
         "LD_LIBRARY_PATH=/usr/local/lib64:$ENV{LD_LIBRARY_PATH}"
         "@LINUXDEPLOY_EXECUTABLE@" --plugin=qt --output=appimage
         "--appdir=@VX_APPIMAGE_DEST_DIR@"
-        -e "@CMAKE_CURRENT_BINARY_DIR@/vnote" -e "${_typst_installed_helper}"
+        -e "@CMAKE_CURRENT_BINARY_DIR@/vnote" -l "${_typst_installed_library}"
         -d "@VX_APPIMAGE_DESKTOP_FILE@"
         -i "@CMAKE_CURRENT_LIST_DIR@/data/core/logo/64x64/vnote.png"
         -l "@QT_PLUGINS_DIR@/platformthemes/libqgtk3.so"
@@ -29,8 +29,8 @@ execute_process(
 if(NOT _typst_linuxdeploy_result STREQUAL "0")
     message(FATAL_ERROR "linuxdeploy failed: ${_typst_linuxdeploy_result}")
 endif()
-file(GLOB_RECURSE _typst_packaged_helpers "@VX_APPIMAGE_DEST_DIR@/vtextedit-typst")
+file(GLOB_RECURSE _typst_packaged_libraries "@VX_APPIMAGE_DEST_DIR@/libvtextedit_typst.so.1")
 file(GLOB_RECURSE _typst_qt_pdf "@VX_APPIMAGE_DEST_DIR@/libQt6Pdf.so*")
-if(NOT _typst_packaged_helpers OR NOT _typst_qt_pdf)
-    message(FATAL_ERROR "AppDir is missing the Typst helper or Qt6Pdf runtime")
+if(NOT _typst_packaged_libraries OR NOT _typst_qt_pdf)
+    message(FATAL_ERROR "AppDir is missing the Typst library or Qt6Pdf runtime")
 endif()

@@ -69,21 +69,30 @@ add_dependencies(vnote VX_EXTRA_RESOURCE)
 
 # Always refresh runtime dependencies, including builds that do not relink vnote.
 add_custom_target(vnote_typst_runtime)
-add_dependencies(vnote_typst_runtime vtextedit-typst)
-get_target_property(VX_TYPST_HELPER vtextedit-typst VTEXTEDIT_TYPST_HELPER)
-add_custom_command(TARGET vnote_typst_runtime
-    COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:vnote>"
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${VX_TYPST_HELPER}" "$<TARGET_FILE_DIR:vnote>"
-    VERBATIM
-)
+add_dependencies(vnote_typst_runtime VTextEditTypst VTextEdit)
 if(WIN32)
-    add_dependencies(vnote_typst_runtime VTextEdit)
+    # VNote's package is flat: the required DLL must never land in pruned lib/bin.
     add_custom_command(TARGET vnote_typst_runtime
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:vnote>"
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:VTextEdit>" "$<TARGET_FILE_DIR:vnote>"
+            "$<TARGET_FILE:VTextEdit>" "$<TARGET_FILE:VTextEditTypst>"
+            "$<TARGET_FILE_DIR:vnote>"
         VERBATIM
     )
+elseif(APPLE)
+    # macOS packages the build bundle directly, not the ordinary install tree.
+    add_custom_command(TARGET vnote_typst_runtime
+        COMMAND ${CMAKE_COMMAND} -E make_directory "$<TARGET_FILE_DIR:vnote>/../Frameworks"
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:VTextEditTypst>" "$<TARGET_FILE_DIR:vnote>/../Frameworks"
+        VERBATIM
+    )
+    set_property(TARGET vnote APPEND PROPERTY BUILD_RPATH "@executable_path/../Frameworks")
+    set_property(TARGET vnote APPEND PROPERTY INSTALL_RPATH "@executable_path/../Frameworks")
+elseif(UNIX)
+    file(RELATIVE_PATH VX_RUNTIME_LIBDIR "${CMAKE_INSTALL_FULL_BINDIR}" "${CMAKE_INSTALL_FULL_LIBDIR}")
+    set_property(TARGET vnote APPEND PROPERTY INSTALL_RPATH "$ORIGIN/${VX_RUNTIME_LIBDIR}")
+    set_property(TARGET vnote PROPERTY BUILD_RPATH_USE_ORIGIN TRUE)
 endif()
 add_dependencies(vnote vnote_typst_runtime)
 
