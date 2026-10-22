@@ -4773,6 +4773,14 @@
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
+        <source>Protect Markdown from XSS</source>
+        <translation>防止 Markdown 中的 XSS 攻击</translation>
+    </message>
+    <message>
+        <source>Block unsafe HTML and URLs in Markdown views and exports. Disable only for trusted notes; protected notes always remain filtered</source>
+        <translation>过滤 Markdown 视图和导出内容中的不安全 HTML 与 URL。仅在笔记可信时禁用；受保护笔记始终保持过滤</translation>
+    </message>
+    <message>
         <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+350"/>
         <source> min</source>
         <translation> 分钟</translation>

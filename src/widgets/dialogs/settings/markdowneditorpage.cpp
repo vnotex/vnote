@@ -31,6 +31,10 @@
 
 using namespace vnotex;
 
+namespace {
+constexpr auto c_protectMarkdownFromXssCheckBox = "protectMarkdownFromXssCheckBox";
+}
+
 MarkdownEditorPage::MarkdownEditorPage(ServiceLocator &p_services, QWidget *p_parent)
     : SettingsPage(p_services, p_parent) {
   setupUI();
@@ -81,6 +85,8 @@ void MarkdownEditorPage::loadInternal() {
 
   m_htmlTagCheckBox->setChecked(markdownConfig.getHtmlTagEnabled());
 
+  m_protectMarkdownFromXssCheckBox->setChecked(markdownConfig.getProtectFromXss());
+
   m_autoBreakCheckBox->setChecked(markdownConfig.getAutoBreakEnabled());
 
   m_linkifyCheckBox->setChecked(markdownConfig.getLinkifyEnabled());
@@ -89,8 +95,7 @@ void MarkdownEditorPage::loadInternal() {
 
   m_codeBlockLineNumberCheckBox->setChecked(markdownConfig.getCodeBlockLineNumberEnabled());
   m_codeBlockLineWrapCheckBox->setChecked(markdownConfig.getCodeBlockLineWrapEnabled());
-  m_inactiveReaderTimeoutMinutesSpinBox->setValue(
-      markdownConfig.getInactiveReaderTimeoutMinutes());
+  m_inactiveReaderTimeoutMinutesSpinBox->setValue(markdownConfig.getInactiveReaderTimeoutMinutes());
 
   m_smartTableCheckBox->setChecked(markdownConfig.getSmartTableEnabled());
 
@@ -171,6 +176,8 @@ bool MarkdownEditorPage::saveInternal() {
 
   markdownConfig.setHtmlTagEnabled(m_htmlTagCheckBox->isChecked());
 
+  markdownConfig.setProtectFromXss(m_protectMarkdownFromXssCheckBox->isChecked());
+
   markdownConfig.setAutoBreakEnabled(m_autoBreakCheckBox->isChecked());
 
   markdownConfig.setLinkifyEnabled(m_linkifyCheckBox->isChecked());
@@ -179,8 +186,7 @@ bool MarkdownEditorPage::saveInternal() {
 
   markdownConfig.setCodeBlockLineNumberEnabled(m_codeBlockLineNumberCheckBox->isChecked());
   markdownConfig.setCodeBlockLineWrapEnabled(m_codeBlockLineWrapCheckBox->isChecked());
-  markdownConfig.setInactiveReaderTimeoutMinutes(
-      m_inactiveReaderTimeoutMinutesSpinBox->value());
+  markdownConfig.setInactiveReaderTimeoutMinutes(m_inactiveReaderTimeoutMinutesSpinBox->value());
 
   markdownConfig.setSmartTableEnabled(m_smartTableCheckBox->isChecked());
 
@@ -280,6 +286,23 @@ void MarkdownEditorPage::setupReadGroup() {
         m_htmlTagCheckBox, m_htmlTagCheckBox->toolTip(), this));
     addSearchItem(label, m_htmlTagCheckBox->toolTip(), m_htmlTagCheckBox);
     connect(m_htmlTagCheckBox, &QCheckBox::stateChanged, this, &MarkdownEditorPage::pageIsChanged);
+  }
+
+  {
+    const QString label(tr("Protect Markdown from XSS"));
+    m_protectMarkdownFromXssCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_protectMarkdownFromXssCheckBox->setObjectName(
+        QLatin1String(c_protectMarkdownFromXssCheckBox));
+    m_protectMarkdownFromXssCheckBox->setToolTip(
+        tr("Block unsafe HTML and URLs in Markdown views and exports. Disable only for trusted "
+           "notes; protected notes always remain filtered"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_protectMarkdownFromXssCheckBox, m_protectMarkdownFromXssCheckBox->toolTip(), this));
+    addSearchItem(label, m_protectMarkdownFromXssCheckBox->toolTip(),
+                  m_protectMarkdownFromXssCheckBox);
+    connect(m_protectMarkdownFromXssCheckBox, &QCheckBox::stateChanged, this,
+            &MarkdownEditorPage::pageIsChanged);
   }
 
   {

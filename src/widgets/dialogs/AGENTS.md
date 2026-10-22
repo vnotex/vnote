@@ -51,6 +51,14 @@ Pattern:
 
 Use this pattern when the dialog has both keystroke-driven validation (noisy) and discrete-action validation (e.g., folder selection). Do NOT use it when every validation message is equally actionable — the regular `setInformationText` flow is simpler.
 
+## Markdown XSS Protection
+
+Settings → Markdown Editor → Read exposes **Protect Markdown from XSS**, backed by the
+existing `editor.markdown_editor.protectFromXss` flag (default `true`). Apply uses the normal
+editor-configuration notification; Reset discards unsaved checkbox changes. The setting
+guards filtering in ordinary Markdown views and exports, not protected notes, which
+always retain their separate filtering. Disabling it is only appropriate for trusted notes.
+
 ## Markdown List Settings
 
 Settings → Markdown Editor → Edit exposes **Automatically renumber ordered lists**.

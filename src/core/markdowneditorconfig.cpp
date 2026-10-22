@@ -353,6 +353,10 @@ void MarkdownEditorConfig::setFetchImagesInParseAndPaste(bool p_enabled) {
 
 bool MarkdownEditorConfig::getProtectFromXss() const { return m_protectFromXss; }
 
+void MarkdownEditorConfig::setProtectFromXss(bool p_enabled) {
+  updateConfig(m_protectFromXss, p_enabled, this);
+}
+
 bool MarkdownEditorConfig::getHtmlTagEnabled() const { return m_htmlTagEnabled; }
 
 void MarkdownEditorConfig::setHtmlTagEnabled(bool p_enabled) {

@@ -60,6 +60,8 @@ private:
 
   QCheckBox *m_htmlTagCheckBox = nullptr;
 
+  QCheckBox *m_protectMarkdownFromXssCheckBox = nullptr;
+
   QCheckBox *m_autoBreakCheckBox = nullptr;
 
   QCheckBox *m_linkifyCheckBox = nullptr;

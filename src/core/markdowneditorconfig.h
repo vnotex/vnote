@@ -101,6 +101,7 @@ public:
   void setFetchImagesInParseAndPaste(bool p_enabled);
 
   bool getProtectFromXss() const;
+  void setProtectFromXss(bool p_enabled);
 
   bool getHtmlTagEnabled() const;
   void setHtmlTagEnabled(bool p_enabled);
