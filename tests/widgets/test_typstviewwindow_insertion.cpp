@@ -13,8 +13,6 @@
 #undef check
 #undef require
 #include <array>
-#include <atomic>
-#include <chrono>
 #endif
 
 #include <QAbstractScrollArea>
@@ -89,6 +87,8 @@
 #include <widgets/imageviewer.h>
 #include <widgets/typstviewwindow.h>
 
+#include <atomic>
+#include <chrono>
 #include <functional>
 #include <memory>
 #include <thread>
@@ -3307,14 +3307,36 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
     event.mi.dwFlags = flags;
     return SendInput(1, &event, sizeof(event)) == 1;
   };
-  const auto release = qScopeGuard([&] { button(MOUSEEVENTF_LEFTUP); });
-  moveMouse(globalStart);
-  QVERIFY(button(MOUSEEVENTF_LEFTDOWN));
-  QTimer::singleShot(80, this, [=] {
-    moveMouse(globalStart + QPoint(qRound((QApplication::startDragDistance() + 8) * scale), 0));
-  });
-  QTimer::singleShot(160, this, [=] { moveMouse(globalEnd); });
-  QTimer::singleShot(280, this, [&] { released = button(MOUSEEVENTF_LEFTUP); });
+  POINT previousPointer;
+  QVERIFY(GetCursorPos(&previousPointer));
+  const auto threshold =
+      globalStart + QPoint(qRound((QApplication::startDragDistance() + 8) * scale), 0);
+  std::atomic<bool> releasePosted{false};
+  bool moved = false;
+  {
+    const auto restoreInput = qScopeGuard([&] {
+      button(MOUSEEVENTF_LEFTUP);
+      moveMouse(QPoint(previousPointer.x, previousPointer.y));
+    });
+    moveMouse(globalStart);
+    QVERIFY(button(MOUSEEVENTF_LEFTDOWN));
+    // OLE's native drag loop need not dispatch Qt timers. Always release input
+    // from a joined worker; it uses only precomputed coordinates and Win32 APIs.
+    std::thread input([=, &releasePosted] {
+      const auto started = std::chrono::steady_clock::now();
+      std::this_thread::sleep_until(started + std::chrono::milliseconds(80));
+      moveMouse(threshold);
+      std::this_thread::sleep_until(started + std::chrono::milliseconds(160));
+      moveMouse(globalEnd);
+      std::this_thread::sleep_until(started + std::chrono::milliseconds(280));
+      releasePosted.store(button(MOUSEEVENTF_LEFTUP));
+    });
+    const auto joinInput = qScopeGuard([&] { input.join(); });
+    moved = QTest::qWaitFor(
+        [&] { return releasePosted.load() && m_edit->toPlainText() == expected; }, 4500);
+  }
+  QVERIFY2(moved, "Windows did not complete the native text drag");
+  released = releasePosted.load();
 #elif defined(Q_OS_MACOS)
   QVERIFY2(QTest::qWaitForWindowActive(m_window.get(), 1000),
            "Cocoa did not activate the native drag fixture");

@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Fix CI test focus and native drag delivery, retain Windows assertion output and allow cold builds to finish
 * Fix CI build scheduling, WiX package staging and native-platform GUI test execution
 * Keep the PDF WebChannel transport alive across note replacement to avoid renderer double-bind crashes
 * Settle cancelled Markdown heading requests once, wait for the current rendered document before presentation, and keep PDF tab replacement independent of pdf.js history

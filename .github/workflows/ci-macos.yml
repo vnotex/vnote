@@ -26,7 +26,8 @@ jobs:
   build:
     environment: Mac-code-sign
     name: ${{ matrix.config.name }}
-    timeout-minutes: 120
+    # Cold universal packaging plus native test builds exceed two hours.
+    timeout-minutes: 180
 
     strategy:
       fail-fast: false

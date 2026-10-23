@@ -1760,7 +1760,7 @@ endif()
 add_qt_test(test_typstviewwindow_insertion
   SOURCES test_typstviewwindow_insertion.cpp ${_markdown_window_test_sources}
   LINKS ${_markdown_window_links} Qt6::Pdf
-  ARGS -nocrashhandler
+  ARGS -nocrashhandler -o -,txt
 )
 if(APPLE)
   set_source_files_properties(test_typstviewwindow_insertion.cpp PROPERTIES LANGUAGE OBJCXX)
@@ -1777,9 +1777,9 @@ target_compile_definitions(test_typstviewwindow_insertion PRIVATE
 add_dependencies(test_typstviewwindow_insertion VX_EXTRA_RESOURCE)
 set_tests_properties(test_typstviewwindow_insertion PROPERTIES TIMEOUT 240)
 set_property(TEST test_typstviewwindow_insertion PROPERTY ENVIRONMENT
-  "QT_QPA_PLATFORM=${_markdown_window_platform}"
-  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_markdown_window_plugin}>"
-  "QT_PLUGIN_PATH=$<TARGET_FILE_DIR:${_markdown_window_plugin}>/.."
+  "QT_QPA_PLATFORM=${_tab_reuse_platform}"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_tab_reuse_plugin}>"
+  "QT_PLUGIN_PATH=$<TARGET_FILE_DIR:${_tab_reuse_plugin}>/.."
 )
 if(WIN32)
   set_property(TEST test_typstviewwindow_insertion APPEND PROPERTY

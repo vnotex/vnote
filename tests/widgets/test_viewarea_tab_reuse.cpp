@@ -989,6 +989,9 @@ void TestViewAreaTabReuse::dirtyReplacement() {
   auto *window = f->current();
   auto *editor = window->findChild<MarkdownEditor *>();
   QVERIFY(editor);
+  // Real typing follows focus, which registers the outgoing buffer's active writer.
+  editor->getTextEdit()->setFocus();
+  QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("\nUnsaved alpha draft\n"));
   QVERIFY(window->isModified());
   const auto draft = editor->getText();

@@ -18,6 +18,9 @@ two-job limit. Diagnostic reruns require the test step itself to have failed:
 `ctest --rerun-failed` without failure history can run the entire suite after an
 unrelated packaging failure.
 
+Windows and macOS allow 180 minutes for cold builds, the full native test suites and
+package gates. Keep the individual CTest deadlines; the job budget is not a test timeout.
+
 ## Release packaging dependencies
 
 `pack` must build `cmark_exe` before CPack runs: upstream cmark installs its CLI

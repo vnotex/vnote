@@ -220,8 +220,13 @@ use one `QTest::qWaitFor` and recheck the generation after observation, rather t
 Typst context-menu fixtures select Paste by Qt's `edit-paste` action ID and retire
 resources after action admission, not from a timer that can fire during Cocoa's menu
 flash. Empty clipboard MIME data is nullable. Native drag fixtures must release input
-without depending on GUI timers; Cocoa uses retained app-local NSEvents and a joined
-worker, restoring the cursor and preventing late input from reaching the next case.
+without depending on GUI timers: Windows OLE and Cocoa tracking loops can starve them.
+Use joined native-input workers, restoring the cursor and preventing late input from
+reaching the next case; Cocoa retains app-local NSEvents rather than global HID input.
+Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Select `-o -,txt`
+explicitly when disabling QtTest's crash handler so Windows CI retains assertion output.
+Before inserting a tab-replacement draft programmatically, focus the editor and wait
+for focus delivery: that registers the outgoing active writer used by Save.
 
 PDF.js text-item boundaries are not word boundaries: ligatures can split a word across
 items. Reconstruct text by concatenating `item.str` and adding a newline only for
