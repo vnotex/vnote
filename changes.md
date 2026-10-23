@@ -1,5 +1,8 @@
 # Changes
 ## Unreleased
+* Fix CI build scheduling, WiX package staging and native-platform GUI test execution
+* Keep the PDF WebChannel transport alive across note replacement to avoid renderer double-bind crashes
+* Settle cancelled Markdown heading requests once, wait for the current rendered document before presentation, and keep PDF tab replacement independent of pdf.js history
 * Add a searchable Protect Markdown from XSS checkbox to Settings → Markdown Editor → Read, preserving mandatory filtering for protected notes
 * Fix raw-HTML URL sanitizer bypasses in Markdown reading, live preview and export by validating browser-decoded URLs before installing content
 * Add mind-map image context actions to view, copy, copy the source address and resize with undo support

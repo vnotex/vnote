@@ -20,6 +20,7 @@ env:
     CMAKE_VER: 3.24.3
     VNOTE_TESTS: ${{ startsWith(github.event.head_commit.message, '[Release]') && 'OFF' || 'ON' }}
     CARGO_BUILD_JOBS: 2
+    CMAKE_BUILD_PARALLEL_LEVEL: 2
 
 jobs:
   build:
@@ -214,6 +215,7 @@ jobs:
           xargs security list-keychains -d user -s "$keychain" < "$RUNNER_TEMP/vnote-test-keychains"
 
       - name: Build and Run Tests
+        id: tests
         if: env.VNOTE_TESTS == 'ON'
         # Build the test executables (tests/CMakeLists.txt narrows them to the
         # host arch on macOS, so this links arm64-only against the universal
@@ -247,7 +249,7 @@ jobs:
         # On failure of the previous step, re-run only the failing tests with
         # --extra-verbose so Qt Test's PASS/FAIL lines + assertion details
         # land in the CI log. Diagnostic only; never gates the workflow.
-        if: failure() && env.VNOTE_TESTS == 'ON'
+        if: failure() && steps.tests.outcome == 'failure'
         run: |
           # Path-safety fixtures need a physical temp root, not macOS's /var alias.
           TMPDIR=$(cd "$TMPDIR" && pwd -P)

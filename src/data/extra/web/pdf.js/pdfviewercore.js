@@ -918,6 +918,9 @@ class PdfViewerCore extends VXCore {
         //   _initializeOptions() overwrites the value above with the -1 default.
         p_options.set('disablePreferences', true);
         p_options.set('sidebarViewOnLoad', 0);
+        // VNote owns document replay; pdf.js fingerprint history must not restore
+        // another file's page/rotation over a newly bound document.
+        p_options.set('viewOnLoad', 1);
     }
 
     // Convert a single client-space point into PDF page space.

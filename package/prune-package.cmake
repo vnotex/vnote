@@ -57,6 +57,12 @@ if(NOT _vx_stage OR NOT EXISTS "${_vx_stage}")
       "CPACK_TEMPORARY_INSTALL_DIRECTORY='${CPACK_TEMPORARY_INSTALL_DIRECTORY}')")
 endif()
 
+# WiX stages unassigned install rules in its Unspecified component directory.
+if(CPACK_GENERATOR STREQUAL "WIX" AND NOT EXISTS "${_vx_stage}/vnote.exe"
+    AND EXISTS "${_vx_stage}/Unspecified/vnote.exe")
+  set(_vx_stage "${_vx_stage}/Unspecified")
+endif()
+
 # Refuse to delete anything unless this really is a VNote install root. Without
 # this guard a renamed CPack variable would silently prune the wrong tree.
 if(NOT EXISTS "${_vx_stage}/vnote.exe")

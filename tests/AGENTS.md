@@ -207,10 +207,21 @@ message box. Cocoa can deliver a click during `show()`, before `exec()` starts i
 loop: allow repeated clicks on an already-observed box even if that early click hid it.
 Do not stop on the first click or infer dialog readiness from `QThread::loopLevel()`.
 
-**Native export tests:** on macOS, `test_mindmapexport` and `test_htmlpdfexporter` use
-`cocoa` and the matching Qt kit's platform plugin, not `offscreen`, so their hidden
-WebEngine views have native graphics contexts. Keep deployed-app WebEngine overrides
-cleared and the non-macOS offscreen environment unchanged.
+**Native WebEngine raster tests:** on macOS, `test_mindmapexport`, `test_htmlpdfexporter`,
+`test_markdownwebjobs` and `test_webviewservice` use `cocoa` and the matching Qt kit's
+platform plugin, not `offscreen`, so hidden views have native graphics contexts.
+Keep deployed-app WebEngine overrides cleared and non-macOS environments unchanged.
+
+Native Markdown render waits observe the adapter's completed document generation and
+actual DOM, not the independent web-job handshake. JavaScript observations pump events;
+use one `QTest::qWaitFor` and recheck the generation after observation, rather than a
+`QTRY` predicate that can become false again during its post-success evaluation.
+
+Typst context-menu fixtures select Paste by Qt's `edit-paste` action ID and retire
+resources after action admission, not from a timer that can fire during Cocoa's menu
+flash. Empty clipboard MIME data is nullable. Native drag fixtures must release input
+without depending on GUI timers; Cocoa uses retained app-local NSEvents and a joined
+worker, restoring the cursor and preventing late input from reaching the next case.
 
 PDF.js text-item boundaries are not word boundaries: ligatures can split a word across
 items. Reconstruct text by concatenating `item.str` and adding a newline only for

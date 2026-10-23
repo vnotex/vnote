@@ -20,6 +20,7 @@ env:
     CMAKE_VER: 3.24.3
     VNOTE_TESTS: ${{ startsWith(github.event.head_commit.message, '[Release]') && 'OFF' || 'ON' }}
     CARGO_BUILD_JOBS: 2
+    CMAKE_BUILD_PARALLEL_LEVEL: 2
 
 jobs:
   build-linux:
@@ -174,9 +175,10 @@ jobs:
       - name: Install Test Dependencies
         if: env.VNOTE_TESTS == 'ON'
         run: |
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dbus gnome-keyring libglib2.0-bin libsecret-tools openssl
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dbus gnome-keyring libglib2.0-bin libsecret-tools openssl xvfb xauth
 
       - name: Build and Run Tests
+        id: tests
         if: env.VNOTE_TESTS == 'ON'
         # Build remaining targets (Qt-side tests + vxcore tests; --target pack
         # above only built the AppImage target) then run them headlessly via
@@ -212,7 +214,7 @@ jobs:
         # On failure of the previous step, re-run only the failing tests with
         # --extra-verbose so Qt Test's PASS/FAIL lines + assertion details
         # land in the CI log. Diagnostic only; never gates the workflow.
-        if: failure() && env.VNOTE_TESTS == 'ON'
+        if: failure() && steps.tests.outcome == 'failure'
         run: |
           export QT_QPA_PLATFORM=offscreen
           export LC_ALL=C.UTF-8

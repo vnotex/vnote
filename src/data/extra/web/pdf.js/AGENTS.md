@@ -110,6 +110,13 @@ Chromium applies **strict** MIME checking to module scripts: an empty or generic
 `application/wasm`, SVG/PNG/GIF, the fonts, and `application/octet-stream` for `.bcmap` /
 `.pfb` / `.icc`.
 
+### Viewer history ownership
+
+`PdfViewerAdapter` owns page/zoom/rotation replay within a document; rebinding to a
+new document clears it. Keep `viewOnLoad=1` (`ViewOnLoad.INITIAL`) in the VNote-owned
+`applyViewerOptions()` so pdf.js fingerprint history cannot restore another file's
+state. `disablePreferences` alone does not disable that separate history store.
+
 ### Token lifetime
 
 `PdfViewWindow2` owns exactly one token at a time. `syncEditorFromBuffer()` uses
@@ -117,6 +124,11 @@ Chromium applies **strict** MIME checking to module scripts: an empty or generic
 the previous token — so a theme reload (which force-regenerates the template and re-syncs)
 never leaves a window pointing at a revoked document, and the registry cannot grow for the
 process lifetime. The destructor revokes whatever is left.
+
+PDF rebinding retains the viewer's QWebChannel transport. Deregister `vxAdapter`
+before changing note identity, then re-register it only after the generation-guarded
+inert navigation has discarded the old JavaScript document. Detaching and recreating
+the page transport during a switch can double-bind Chromium's WebChannel receiver.
 
 ### Navigation policy
 

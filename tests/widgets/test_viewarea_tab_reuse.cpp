@@ -111,11 +111,18 @@ QVariant evaluate(QWebEnginePage *p_page, const QString &p_script) {
 }
 
 bool rendered(MarkdownViewer *p_viewer, const QString &p_text) {
-  return p_viewer && p_viewer->jobSession()->isReady() && p_viewer->adapter()->isDocumentReady() &&
-         !p_viewer->adapter()->documentGeneration().isEmpty() &&
-         evaluate(p_viewer->page(), QStringLiteral("document.body.innerText"))
-             .toString()
-             .contains(p_text);
+  const QPointer<MarkdownViewer> viewer(p_viewer);
+  if (!viewer || !viewer->adapter()->isDocumentReady())
+    return false;
+  const auto generation = viewer->adapter()->documentGeneration();
+  const auto text = evaluate(viewer->page(), QStringLiteral("document.body.innerText")).toString();
+  return viewer && viewer->adapter()->isDocumentReady() &&
+         viewer->adapter()->documentGeneration() == generation && text.contains(p_text);
+}
+
+bool waitForRender(MarkdownViewer *p_viewer, const QString &p_text) {
+  const QPointer<MarkdownViewer> viewer(p_viewer);
+  return QTest::qWaitFor([&] { return rendered(viewer, p_text); }, 30000);
 }
 
 bool waitForCurrentRender(MarkdownViewer *p_viewer, MarkdownRenderController *p_native,
@@ -564,7 +571,7 @@ void TestViewAreaTabReuse::markdownResourcesAndSaveIdentity() {
   auto *native = window->findChild<MarkdownRenderController *>();
   QVERIFY(editor && viewer && native);
   QSignalSpy nativeHtml(native, &MarkdownRenderController::rendered);
-  QTRY_VERIFY_WITH_TIMEOUT(rendered(viewer, QStringLiteral("Alpha")), 30000);
+  QVERIFY(waitForRender(viewer, QStringLiteral("Alpha")));
   QTRY_COMPARE_WITH_TIMEOUT(
       evaluate(viewer->page(), QStringLiteral("document.querySelector('img')?.naturalWidth"))
           .toInt(),
@@ -1351,7 +1358,7 @@ void TestViewAreaTabReuse::restoreOrderedWorkspacesAndLockedNote() {
   QVERIFY(!f->current()->findChild<QPushButton *>(QStringLiteral("unlockProtectedNote")));
   auto *reader = f->current()->findChild<MarkdownViewer *>();
   QVERIFY(reader);
-  QTRY_VERIFY_WITH_TIMEOUT(rendered(reader, QStringLiteral("Secret")), 30000);
+  QVERIFY(waitForRender(reader, QStringLiteral("Secret")));
 }
 
 void TestViewAreaTabReuse::reopenSplitAndBatches() {
@@ -1444,7 +1451,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
     }
     return {};
   };
-  QTRY_VERIFY_WITH_TIMEOUT(rendered(ordinary, QStringLiteral("Ordinary")), 30000);
+  QVERIFY(waitForRender(ordinary, QStringLiteral("Ordinary")));
   const auto ordinaryToken = ordinary->adapter()->documentGeneration();
   QVERIFY(native->isCurrent(ordinaryToken));
   const auto tabId = window->getViewWindowId();
@@ -1455,7 +1462,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   QTRY_VERIFY(ordinary.isNull());
   QPointer<MarkdownViewer> privateReader = window->findChild<MarkdownViewer *>();
   QVERIFY(privateReader);
-  QTRY_VERIFY_WITH_TIMEOUT(rendered(privateReader, QStringLiteral("Protected alpha")), 30000);
+  QVERIFY(waitForRender(privateReader, QStringLiteral("Protected alpha")));
   const auto alphaToken = privateReader->adapter()->documentGeneration();
   QVERIFY(alphaToken != ordinaryToken && native->isCurrent(alphaToken));
   QCOMPARE(window->findChild<MarkdownRenderController *>(), native);
@@ -1486,7 +1493,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   QVERIFY(sibling != window);
   auto *siblingReader = sibling->findChild<MarkdownViewer *>();
   QVERIFY(siblingReader);
-  QTRY_VERIFY_WITH_TIMEOUT(rendered(siblingReader, QStringLiteral("Protected alpha")), 30000);
+  QVERIFY(waitForRender(siblingReader, QStringLiteral("Protected alpha")));
   f->controller()->focusWindow(first, a.id());
   auto *jobs = window->findChild<MarkdownWebJobController *>();
   QVERIFY(jobs);
@@ -1559,7 +1566,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   auto *newReader = window->findChild<MarkdownViewer *>();
   QVERIFY(newReader);
   QVERIFY(newReader->page()->url() != oldUrl);
-  QTRY_VERIFY_WITH_TIMEOUT(rendered(newReader, QStringLiteral("Protected beta")), 30000);
+  QVERIFY(waitForRender(newReader, QStringLiteral("Protected beta")));
   const auto betaToken = newReader->adapter()->documentGeneration();
   QVERIFY(betaToken != alphaToken && native->isCurrent(betaToken));
   QCOMPARE(window->findChild<MarkdownRenderController *>(), native);
@@ -1591,7 +1598,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   auto *publicReader = window->findChild<MarkdownViewer *>();
   QVERIFY(publicReader);
   QCOMPARE(publicReader->page()->profile(), f->profiles->profile());
-  QTRY_VERIFY_WITH_TIMEOUT(rendered(publicReader, QStringLiteral("Public end")), 30000);
+  QVERIFY(waitForRender(publicReader, QStringLiteral("Public end")));
   const auto publicToken = publicReader->adapter()->documentGeneration();
   QVERIFY(publicToken != betaToken && native->isCurrent(publicToken));
   QCOMPARE(window->findChild<MarkdownRenderController *>(), native);

@@ -701,8 +701,11 @@ application filter and focus tracking. Gates: `test_contentfullscreenhost` and
 #### Markdown slides
 
 Markdown Presentation Mode switches Edit to Read through normal buffer synchronization, then
-waits for rendering and reveal.js readiness before confirming native fullscreen. F9 toggles;
-Escape exits. Rendering, page reload, mode/theme changes and export tear the deck down first.
+waits for the current native-render generation's document completion before requesting the deck.
+Bridge readiness alone is insufficient: initial HTML delivery cancels an earlier deck request.
+Both page readiness and validated document completion wake a pending request; reveal.js readiness
+then confirms native fullscreen. F9 toggles; Escape exits. Rendering, page reload, mode/theme
+changes and export tear the deck down first.
 `presentation.js` moves rendered nodes reversibly; it never reparses or rewrites note source.
 A sole leading H1 opens a title slide with its introductory content. H2 and H3 start slides;
 H3 slides repeat their nearest preceding H2 in a fixed header above the scrollable body.

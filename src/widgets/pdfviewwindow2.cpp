@@ -844,8 +844,8 @@ void PdfViewWindow2::releaseBufferResources() {
       menu->close();
     }
     auto *channel = m_viewer->page()->webChannel();
-    m_viewer->page()->setWebChannel(nullptr);
-    delete channel;
+    // Keep the page's transport bound once; only retire the document's object.
+    channel->deregisterObject(adapter());
     m_viewer->stop();
   }
   revokeDocumentToken();
@@ -877,9 +877,9 @@ void PdfViewWindow2::bindBufferResources() {
   }
 
   // Merely setting not-ready cannot reject a late QWebChannel call from A:
-  // the same adapter now represents B. Keep the channel disconnected until an
-  // inert document has replaced A, including its selection and JS callbacks.
-  // The native viewer, page and toolbar all survive this navigation.
+  // the same adapter now represents B. Keep it deregistered until an inert
+  // document has replaced A, including its selection and JS callbacks.
+  // The viewer, page, channel transport and toolbar all survive this navigation.
   const auto generation = getBufferGeneration();
   const auto resetUrl = QUrl::fromEncoded(
       QByteArrayLiteral("data:text/html,") +
@@ -896,9 +896,8 @@ void PdfViewWindow2::bindBufferResources() {
                   showMessage(tr("Unable to load PDF document"));
                   return;
                 }
-                auto *channel = new QWebChannel(m_viewer);
+                auto *channel = m_viewer->page()->webChannel();
                 channel->registerObject(QStringLiteral("vxAdapter"), adapter());
-                m_viewer->page()->setWebChannel(channel);
                 m_documentResetPending = false;
                 syncEditorFromBuffer();
                 m_viewer->show();
@@ -919,7 +918,7 @@ void PdfViewWindow2::syncEditorFromBuffer() {
   //
   // setReady(false) is the page-generation handshake: the replacement page's
   // setReady(true) would otherwise be a no-op and nothing queued would ever be
-  // republished onto the new QWebChannel.
+  // republished to the replacement page through the retained QWebChannel.
   if (auto *pdfAdapter = adapter()) {
     pdfAdapter->clearOutline();
     pdfAdapter->clearComments();
@@ -970,7 +969,7 @@ void PdfViewWindow2::syncEditorFromBuffer() {
   }
 
   // Re-latch the current set onto the (not-yet-ready) replacement page. The
-  // adapter publishes it exactly once when the new QWebChannel comes up.
+  // adapter publishes it exactly once when the replacement page becomes ready.
   publishCommentsToViewer();
 }
 

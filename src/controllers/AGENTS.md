@@ -93,7 +93,9 @@ or controller pointers. Native compilation timeout does not force-stop its threa
 
 `MarkdownRenderController` owns native reader and heading-anchor jobs. It uses the shared
 QtConcurrent pool with one running and one latest-pending preview per view; explicit heading
-requests complete exactly once. Workers capture immutable source/options/documents, never
+requests complete exactly once. Cancellation explicitly exchanges the active callback
+with an empty function: moving a `std::function` alone does not guarantee an empty
+source on every standard library. Workers capture immutable source/options/documents, never
 buffers, widgets or services. GUI-thread admission and delivery both enforce authorization.
 
 `MarkdownHtmlRenderer` uses the same cmark viewer profile for direct Read, editor snapshots,

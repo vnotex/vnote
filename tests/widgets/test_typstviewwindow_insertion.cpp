@@ -7,11 +7,22 @@
 #include <windows.h>
 #endif
 
+#ifdef Q_OS_MACOS
+#include <AppKit/AppKit.h>
+#include <CoreGraphics/CoreGraphics.h>
+#undef check
+#undef require
+#include <array>
+#include <atomic>
+#include <chrono>
+#endif
+
 #include <QAbstractScrollArea>
 #include <QAction>
 #include <QBuffer>
 #include <QClipboard>
 #include <QContextMenuEvent>
+#include <QCursor>
 #include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QDirIterator>
@@ -1519,10 +1530,11 @@ void TestTypstViewWindowInsertion::resourceSnapshotBytes() {
     QVERIFY(QTest::qWaitFor(
         [&] {
           const auto *mime = QApplication::clipboard()->mimeData();
-          return mime->hasUrls() || mime->hasFormat(QStringLiteral("image/gif"));
+          return mime && (mime->hasUrls() || mime->hasFormat(QStringLiteral("image/gif")));
         },
         5000));
     const auto *mime = QApplication::clipboard()->mimeData();
+    QVERIFY(mime);
     if (mime->hasUrls()) {
       QCOMPARE(readBytes(mime->urls().first().toLocalFile()), original);
     } else {
@@ -1551,6 +1563,7 @@ void TestTypstViewWindowInsertion::resourceSnapshotBytes() {
   QCOMPARE(QApplication::clipboard()->image().pixelColor(0, 0), c_green);
   if (gif) {
     const auto *mime = QApplication::clipboard()->mimeData();
+    QVERIFY(mime);
     QCOMPARE(mime->data(QStringLiteral("image/gif")), original);
     QVERIFY(!mime->urls().contains(QUrl::fromLocalFile(path)));
   } else {
@@ -1775,22 +1788,34 @@ void TestTypstViewWindowInsertion::resourcePendingRetirement() {
   QSignalSpy completed(m_editor, &vte::VTypstEditor::imageDataReady);
   bool retired = false;
   bool changed = false;
+  bool pendingAtRetirement = false;
   QObject callbackLifetime;
   QApplication::clipboard()->setText(QStringLiteral("unchanged while image callback is pending"));
-  const auto menu = resourceMenu(
-      target.first, target.second,
-      copy ? QStringLiteral("typstCopyImage") : QStringLiteral("typstViewImage"), [&](QMenu *) {
-        // Queue retirement before the native action requests its asynchronous bytes.
-        // The real native reply still runs; no imageDataReady signal is fabricated.
-        QTimer::singleShot(0, &callbackLifetime, [&] {
+  const auto actionName =
+      copy ? QStringLiteral("typstCopyImage") : QStringLiteral("typstViewImage");
+  const auto menu = resourceMenu(target.first, target.second, actionName, [&](QMenu *popup) {
+    for (auto *action : popup->actions()) {
+      if (action->objectName() == actionName) {
+        // Run after the host's triggered slot admits the request, but before its
+        // asynchronous completion. Cocoa flashes the menu in a nested event loop
+        // before activation, so a timer queued before the click retires too early.
+        connect(action, &QAction::triggered, &callbackLifetime, [&] {
+          pendingAtRetirement = completed.isEmpty();
           changed = retireResource(change);
           retired = true;
         });
-      });
+        break;
+      }
+    }
+  });
   QVERIFY(menu.clicked);
   QVERIFY(QTest::qWaitFor([&] { return retired; }, 2000));
   QVERIFY(changed);
+  QVERIFY(pendingAtRetirement);
   QVERIFY(QTest::qWaitFor([&] { return !completed.isEmpty() || !m_editor; }, 5000));
+  if (m_editor) {
+    QCOMPARE(completed.size(), 1);
+  }
   QVERIFY(!overlay() || !overlay()->isVisible());
   QCOMPARE(QApplication::clipboard()->text(),
            QStringLiteral("unchanged while image callback is pending"));
@@ -2965,10 +2990,8 @@ void TestTypstViewWindowInsertion::staleAcquisition() {
       if (!menu) {
         return;
       }
-      const auto pasteKey = QKeySequence(QKeySequence::Paste).toString(QKeySequence::NativeText);
       for (auto *action : menu->actions()) {
-        if (action->shortcut() == QKeySequence(QKeySequence::Paste) ||
-            action->text().section(QLatin1Char('\t'), 1) == pasteKey) {
+        if (action->objectName() == QLatin1String("edit-paste") && action->isEnabled()) {
           menuDriver.stop();
           invoked = true;
           QTest::mouseClick(menu, Qt::LeftButton, Qt::NoModifier,
@@ -3255,10 +3278,12 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   DialogDriver driver;
   driver.cancelChooser = true;
   bool released = false;
+#ifndef Q_OS_MACOS
   QTimer safety;
   safety.setSingleShot(true);
   connect(&safety, &QTimer::timeout, this, [] { QDrag::cancel(); });
   safety.start(4000);
+#endif
 #ifdef Q_OS_WIN
   const auto window = reinterpret_cast<HWND>(m_window->winId());
   SetForegroundWindow(window);
@@ -3290,8 +3315,111 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   });
   QTimer::singleShot(160, this, [=] { moveMouse(globalEnd); });
   QTimer::singleShot(280, this, [&] { released = button(MOUSEEVENTF_LEFTUP); });
+#elif defined(Q_OS_MACOS)
+  QVERIFY2(QTest::qWaitForWindowActive(m_window.get(), 1000),
+           "Cocoa did not activate the native drag fixture");
+  auto *nativeView = reinterpret_cast<NSView *>(m_window->winId());
+  NSWindow *nativeWindow = [nativeView window];
+  QVERIFY2(nativeWindow && [nativeWindow isVisible], "Cocoa drag fixture has no visible window");
+  const std::array<QPoint, 4> positions = {
+      start, start + QPoint(QApplication::startDragDistance() + 8, 0), end, end};
+  const std::array<int, 4> delays = {0, 80, 160, 280};
+  const std::array<NSEventType, 4> types = {NSEventTypeLeftMouseDown, NSEventTypeLeftMouseDragged,
+                                            NSEventTypeLeftMouseDragged, NSEventTypeLeftMouseUp};
+  std::array<CGPoint, 4> pointerPositions;
+  std::array<NSEvent *, 6> events = {};
+  const auto releaseEvents = qScopeGuard([&] {
+    for (auto *event : events) {
+      [event release];
+    }
+  });
+  const auto timestamp = [[NSProcessInfo processInfo] systemUptime];
+  for (size_t i = 0; i < positions.size(); ++i) {
+    const auto local = m_edit->viewport()->mapTo(m_window.get(), positions[i]);
+    const auto bounds = [nativeView bounds];
+    const auto point = NSMakePoint(NSMinX(bounds) + local.x(), [nativeView isFlipped]
+                                                                   ? NSMinY(bounds) + local.y()
+                                                                   : NSMaxY(bounds) - local.y());
+    const auto windowPoint = [nativeView convertPoint:point toView:nil];
+    events[i] = [[NSEvent mouseEventWithType:types[i]
+                                    location:windowPoint
+                               modifierFlags:0
+                                   timestamp:timestamp + delays[i] / 1000.0
+                                windowNumber:[nativeWindow windowNumber]
+                                     context:nil
+                                 eventNumber:static_cast<NSInteger>(i + 1)
+                                  clickCount:1
+                                    pressure:i == 3 ? 0.0 : 1.0] retain];
+    // Qt's Cocoa cursor uses logical global points directly for Quartz. Do not
+    // multiply by devicePixelRatio, even on Retina or mixed-scale displays.
+    const auto global = m_edit->viewport()->mapToGlobal(positions[i]);
+    pointerPositions[i] = CGPointMake(global.x(), global.y());
+  }
+  for (size_t i = 4; i < events.size(); ++i) {
+    events[i] = [[NSEvent keyEventWithType:i == 4 ? NSEventTypeKeyDown : NSEventTypeKeyUp
+                                  location:NSZeroPoint
+                             modifierFlags:0
+                                 timestamp:timestamp + 4.0
+                              windowNumber:[nativeWindow windowNumber]
+                                   context:nil
+                                characters:@"\033"
+               charactersIgnoringModifiers:@"\033"
+                                 isARepeat:NO
+                                   keyCode:53] retain];
+  }
+  for (auto *event : events) {
+    QVERIFY2(event, "Cocoa could not create a native drag event");
+  }
+  const auto previousPointer = QCursor::pos();
+  CGError restoreError = kCGErrorSuccess;
+  std::atomic<CGError> pointerError{kCGErrorSuccess};
+  std::atomic<bool> releasePosted{false};
+  std::atomic<bool> stopped{false};
+  QSemaphore stop;
+  bool moved = false;
+  {
+    // AppKit's tracking loop need not dispatch Qt timers. Its own event queue
+    // accepts background posts without Accessibility access or global HID input.
+    // Warp too: native dragging also samples the window-server pointer position.
+    NSApplication *application = NSApp;
+    std::thread input([application, events, pointerPositions, delays, &pointerError, &releasePosted,
+                       &stopped, &stop] {
+      @autoreleasepool {
+        const auto started = std::chrono::steady_clock::now();
+        for (size_t i = 0; i < pointerPositions.size(); ++i) {
+          std::this_thread::sleep_until(started + std::chrono::milliseconds(delays[i]));
+          const auto error = CGWarpMouseCursorPosition(pointerPositions[i]);
+          if (error != kCGErrorSuccess) {
+            pointerError.store(error);
+          }
+          [application postEvent:events[i] atStart:NO];
+        }
+        releasePosted.store(true);
+        // QDrag::cancel() has no Cocoa implementation. Keep the original four-
+        // second safety deadline, but wake immediately when the move completes.
+        if (!stop.tryAcquire(1, 3720) && !stopped.load()) {
+          [application postEvent:events[4] atStart:NO];
+          [application postEvent:events[5] atStart:NO];
+        }
+      }
+    });
+    const auto joinInput = qScopeGuard([&] {
+      stopped.store(true);
+      stop.release();
+      input.join();
+      restoreError =
+          CGWarpMouseCursorPosition(CGPointMake(previousPointer.x(), previousPointer.y()));
+    });
+    moved = QTest::qWaitFor(
+        [&] { return releasePosted.load() && m_edit->toPlainText() == expected; }, 4500);
+  }
+  QVERIFY2(pointerError.load() == kCGErrorSuccess,
+           "Cocoa could not position the native drag pointer");
+  QVERIFY2(restoreError == kCGErrorSuccess, "Cocoa could not restore the pointer after dragging");
+  QVERIFY2(moved, "Cocoa did not complete the app-local native text drag");
+  released = releasePosted.load();
 #else
-  // Native cocoa/xcb Qt drag loops still process the queued release.
+  // The xcb Qt drag loop processes the queued release.
   QTimer::singleShot(160, this, [&] {
     QTest::mouseMove(m_edit->viewport(), end);
     QTest::mouseRelease(m_edit->viewport(), Qt::LeftButton, Qt::NoModifier, end);
@@ -3301,7 +3429,9 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   QTest::mouseMove(m_edit->viewport(), start + QPoint(QApplication::startDragDistance() + 8, 0));
 #endif
   QVERIFY(QTest::qWaitFor([&] { return released && m_edit->toPlainText() == expected; }, 4500));
+#ifndef Q_OS_MACOS
   safety.stop();
+#endif
   QCOMPARE(driver.choosers + driver.images + driver.links, 0);
   QCOMPARE(filesBelow(assetFolder()), before);
   QTest::keySequence(m_edit, QKeySequence::Undo);

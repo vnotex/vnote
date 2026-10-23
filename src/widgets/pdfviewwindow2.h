@@ -206,8 +206,8 @@ private:
   // document. Replaced on every (re)load and revoked in the destructor.
   QString m_documentToken;
 
-  // The retained page must finish discarding the old document before a new
-  // WebChannel can expose the incoming note's comment controller to JavaScript.
+  // The retained page must discard the old document before its channel can
+  // re-register the adapter exposing the incoming note's comment controller.
   bool m_documentResetPending = false;
 
   QMetaObject::Connection m_documentResetConnection;

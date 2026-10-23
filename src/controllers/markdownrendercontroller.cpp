@@ -319,8 +319,9 @@ void MarkdownRenderController::invalidate() {
   std::deque<HeadingCompletion> completions;
   if (m_headingActive) {
     m_headingActive->cancelled->store(true, std::memory_order_relaxed);
+    // A moved-from std::function is not guaranteed to be empty (notably on libc++).
     if (m_headingActive->completion)
-      completions.push_back(std::move(m_headingActive->completion));
+      completions.push_back(std::exchange(m_headingActive->completion, {}));
   }
   for (auto &request : m_headingsPending)
     completions.push_back(std::move(request->completion));

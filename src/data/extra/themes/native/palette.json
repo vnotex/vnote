@@ -33,6 +33,9 @@
             "fg" : "@palette#active#highlighted_text",
             "bg" : "@palette#active#highlight"
         },
+        "hover" : {
+            "bg" : "@palette#active#alternate_base"
+        },
         "error" : {
             "fg" : "#b71c1c"
         },

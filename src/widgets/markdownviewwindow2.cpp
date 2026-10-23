@@ -635,7 +635,10 @@ void MarkdownViewWindow2::setPresentationMode(bool p_on) {
 
 void MarkdownViewWindow2::requestPresentationWhenReady() {
   if (!m_presentationRequested || m_presentationRequestSent || m_preparingPresentation ||
-      m_switchingMode || !isReadMode() || !m_viewerReady || !adapter() || !adapter()->isReady()) {
+      m_switchingMode || !isReadMode() || !m_viewerReady || !adapter() ||
+      !adapter()->isDocumentReady() ||
+      !m_nativeRender->isCurrent(adapter()->documentGeneration()) ||
+      !nativeRenderSourceIsCurrent()) {
     return;
   }
   m_presentationRequestSent = true;
@@ -1303,6 +1306,7 @@ void MarkdownViewWindow2::connectViewerSignals() {
         !nativeRenderSourceIsCurrent()) {
       return;
     }
+    requestPresentationWhenReady();
     if (m_printPending) {
       m_printPending = false;
       if (m_printer && m_printBufferGeneration == getBufferGeneration() && isEnabled() &&

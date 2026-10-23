@@ -10,6 +10,14 @@ See also: [../AGENTS.md](../AGENTS.md) (repo-wide rules, submodule push discipli
 
 ---
 
+## Build execution
+
+Linux and macOS set `CMAKE_BUILD_PARALLEL_LEVEL=2` for both packaging and test
+builds; Make otherwise builds these large targets serially. Keep Cargo's separate
+two-job limit. Diagnostic reruns require the test step itself to have failed:
+`ctest --rerun-failed` without failure history can run the entire suite after an
+unrelated packaging failure.
+
 ## Release packaging dependencies
 
 `pack` must build `cmark_exe` before CPack runs: upstream cmark installs its CLI
@@ -65,7 +73,9 @@ Windows packages use Qt 6 only and publish the `win64` artifact family. Qt uses
 its native Schannel TLS backend; Git sync uses WinHTTP. Do not bundle OpenSSL
 DLLs or a separate UCRT redistributable: supported Windows versions provide UCRT.
 Keep the MSVC runtime deployment and its fallback for newer toolsets, the flat
-package layout, and the SDK/stray-executable composition gates.
+package layout, and the SDK/stray-executable composition gates. WiX stages the
+application under `Unspecified/`; pruning resolves that component root before
+checking for `vnote.exe`. ZIP staging remains flat.
 
 Deploy both VNote and VTextEdit without `--no-pdf`: Typst requires `Qt6Pdf.dll`.
 Prune only the unused `imageformats/qpdf.dll` plugin and NMEA position plugin after
@@ -112,10 +122,12 @@ all Qt 6 package-composition checks; verifier presence alone is not runtime proo
 ## Linux test runtime
 
 `ci-linux.yml` installs test-only runtime dependencies after packaging and runs
-both the suite and failure diagnostics through `scripts/run-linux-tests.sh`.
+both the suite and failure diagnostics through `.github/scripts/run-linux-tests.sh`.
 The wrapper creates a private D-Bus session and unlocked GNOME keyring, verifies
 Secret Service with a write/read/delete probe, then tears down the daemon and
-private XDG directories. Keep the credential tests on a real vault; headers from
+private XDG directories. CTest runs under Xvfb so tests selecting the native xcb
+backend have a display; install `xvfb` and `xauth` with the test dependencies.
+Keep the credential tests on a real vault; headers from
 `libsecret-1-dev` alone do not provide one.
 
 TLS fixtures use Ubuntu's `/usr/bin/openssl` explicitly, not a PATH executable

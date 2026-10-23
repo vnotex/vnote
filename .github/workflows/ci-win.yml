@@ -152,6 +152,7 @@ jobs:
         working-directory: ${{runner.workspace}}/build
 
       - name: Build and Run Tests
+        id: tests
         # Tests were built when VNOTE_BUILD_TESTS=ON; release commits skip them.
         if: ${{ !startsWith(github.event.head_commit.message, '[Release]') }}
         shell: cmd
@@ -170,7 +171,7 @@ jobs:
         # (-nocrashhandler in CMakeLists) silences the default Qt Test stdout
         # path; --output-on-failure alone often shows nothing useful. This
         # step never gates the workflow (|| exit 0) - it's pure diagnostics.
-        if: ${{ failure() && !startsWith(github.event.head_commit.message, '[Release]') }}
+        if: failure() && steps.tests.outcome == 'failure'
         shell: cmd
         env:
           VS_CMD: ${{ matrix.config.vs_cmd }}

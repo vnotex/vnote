@@ -33,5 +33,6 @@ printf %s vnote-ci-probe | timeout 15s secret-tool store \
 test "$(timeout 15s secret-tool lookup application vnote-ci-probe)" = vnote-ci-probe
 timeout 15s secret-tool clear application vnote-ci-probe
 
-ctest "$@"
+# Native xcb widget tests need a display even when other tests use offscreen.
+xvfb-run -a ctest "$@"
 TEST_SESSION

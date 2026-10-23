@@ -279,9 +279,17 @@ add_qt_test(test_webviewservice
 )
 target_compile_definitions(test_webviewservice PRIVATE VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src")
 set_tests_properties(test_webviewservice PROPERTIES TIMEOUT 180)
+if(APPLE)
+  # Raster jobs need Cocoa's native graphics context, not the offscreen plugin.
+  set(_web_jobs_platform cocoa)
+  set(_web_jobs_platform_plugin Qt6::QCocoaIntegrationPlugin)
+else()
+  set(_web_jobs_platform offscreen)
+  set(_web_jobs_platform_plugin Qt6::QOffscreenIntegrationPlugin)
+endif()
 set_property(TEST test_webviewservice PROPERTY ENVIRONMENT
-  "QT_QPA_PLATFORM=offscreen"
-  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:Qt6::QOffscreenIntegrationPlugin>"
+  "QT_QPA_PLATFORM=${_web_jobs_platform}"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_web_jobs_platform_plugin}>"
   "QTWEBENGINEPROCESS_PATH="
   "QTWEBENGINE_RESOURCES_PATH="
   "QTWEBENGINE_LOCALES_PATH="
@@ -292,3 +300,5 @@ if(WIN32)
   string(REPLACE ";" "\;" _web_jobs_path "${_web_jobs_path}")
   set_property(TEST test_webviewservice APPEND PROPERTY ENVIRONMENT "PATH=${_web_jobs_path}")
 endif()
+unset(_web_jobs_platform)
+unset(_web_jobs_platform_plugin)

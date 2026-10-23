@@ -1623,9 +1623,15 @@ target_compile_definitions(test_markdownwebjobs PRIVATE
   VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
 )
 set_tests_properties(test_markdownwebjobs PROPERTIES TIMEOUT 300)
+set(_markdown_job_platform offscreen)
+set(_markdown_job_plugin Qt6::QOffscreenIntegrationPlugin)
+if(APPLE)
+  set(_markdown_job_platform cocoa)
+  set(_markdown_job_plugin Qt6::QCocoaIntegrationPlugin)
+endif()
 set(_markdown_job_environment
-  "QT_QPA_PLATFORM=offscreen"
-  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:Qt6::QOffscreenIntegrationPlugin>"
+  "QT_QPA_PLATFORM=${_markdown_job_platform}"
+  "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_markdown_job_plugin}>"
   "QTWEBENGINEPROCESS_PATH="
   "QTWEBENGINE_RESOURCES_PATH="
   "QTWEBENGINE_LOCALES_PATH="
@@ -1756,6 +1762,11 @@ add_qt_test(test_typstviewwindow_insertion
   LINKS ${_markdown_window_links} Qt6::Pdf
   ARGS -nocrashhandler
 )
+if(APPLE)
+  set_source_files_properties(test_typstviewwindow_insertion.cpp PROPERTIES LANGUAGE OBJCXX)
+  target_link_libraries(test_typstviewwindow_insertion PRIVATE
+    "-framework AppKit" "-framework CoreGraphics")
+endif()
 target_include_directories(test_typstviewwindow_insertion PRIVATE
   $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>
 )
