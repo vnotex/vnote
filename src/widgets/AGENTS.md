@@ -235,12 +235,20 @@ theme and editor-config changes, and is not persisted or exposed in Settings. Ot
 views are independent. Pass the action's checked state to
 `TypstEditorConfig::m_enableThemeStyleInPreview` on every config refresh, and set
 `m_previewForeground` from `base#content#fg`. The native compiler applies page/text color
-defaults only for previews; explicit document styles win and exports remain unchanged.
+defaults only for previews; explicit document styles win and export colors remain unchanged.
 Set `TypstEditorConfig::m_pdfBackground` from `ThemeService::getBaseBackground()`, matching
 the PDF view's canvas in Edit and Read and the default page fill while theme styling is on.
-Turning the option off restores native Typst page/text defaults without changing the canvas.
+Turning the option off restores native Typst page/text colors without changing the canvas.
 The native pane paints the canvas color directly:
 QSS can override widget palettes, so a `QPalette::Dark` override is not sufficient.
+
+The resolved `text-editor.theme` also supports `typst-editor-styles.Text`. Native code merges
+it over the source editor's base Text style without mutating shared themes. Its explicit
+`font-family` list and positive integer `font-size` (points) also supply default typography
+for PDF/in-place previews and native compiler exports; authored document styles win.
+Omitted font properties preserve native Typst output defaults. Source zoom and **Theme Style
+in Preview** affect neither these font defaults nor exported typography. See
+[`vtextedit`'s font contract](../../libs/vtextedit/AGENTS.md#typst-text-theme-defaults).
 
 Publish compiled heading metadata in order, including repeated/generated/imported/deep
 headings, with no producer-side gap fillers or Markdown parsing. The shared outline model
