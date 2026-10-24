@@ -38,6 +38,7 @@
 #include <QListWidget>
 #include <QMenu>
 #include <QMessageBox>
+#include <QMetaMethod>
 #include <QMimeData>
 #include <QMouseEvent>
 #include <QPointer>
@@ -4181,5 +4182,57 @@ void TestTypstViewWindowInsertion::imageReferenceScanUsesNativeParser() {
 
 } // namespace tests
 
-QTEST_MAIN(tests::TestTypstViewWindowInsertion)
+// QApplication borrows argv; build and retain grouped argument storage before its setup.
+// clang-format off
+QTEST_MAIN_WRAPPER(
+    tests::TestTypstViewWindowInsertion,
+    const auto group = qgetenv("VNOTE_TYPST_TEST_GROUP");
+    QList<QByteArray> names;
+    QList<char *> arguments;
+    if (!group.isEmpty()) {
+      if (group != "insertion" && group != "cleanup" && group != "resources") {
+        qCritical() << "Unknown Typst test group:" << group;
+        return 1;
+      }
+      const auto &meta = tests::TestTypstViewWindowInsertion::staticMetaObject;
+      names.reserve(meta.methodCount() - meta.methodOffset());
+      for (int index = meta.methodOffset(); index < meta.methodCount(); ++index) {
+        const auto method = meta.method(index);
+        if (method.methodType() != QMetaMethod::Slot || method.access() != QMetaMethod::Private ||
+            method.parameterCount() != 0 || method.returnType() != QMetaType::Void) {
+          continue;
+        }
+        const auto name = method.name();
+        if (name.isEmpty() || name.endsWith("_data") || name == "initTestCase" ||
+            name == "cleanupTestCase" || name == "init" || name == "cleanup") {
+          continue;
+        }
+        const char *testGroup = "insertion";
+        if (name.startsWith("obsolete") || name == "imageReferenceScanUsesNativeParser") {
+          testGroup = "cleanup";
+        } else if (name.startsWith("resource")) {
+          testGroup = "resources";
+        }
+        if (group == testGroup) {
+          names.append(name);
+        }
+      }
+      if (names.isEmpty()) {
+        qCritical() << "No Typst tests in group:" << group;
+        return 1;
+      }
+      arguments.reserve(argc + names.size() + 1);
+      for (int index = 0; index < argc; ++index) {
+        arguments.append(argv[index]);
+      }
+      for (auto &name : names) {
+        arguments.append(name.data());
+      }
+      argc = static_cast<int>(arguments.size());
+      arguments.append(nullptr);
+      argv = arguments.data();
+    }
+    QTEST_MAIN_SETUP()
+)
+// clang-format on
 #include "test_typstviewwindow_insertion.moc"

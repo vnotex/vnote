@@ -224,9 +224,12 @@ without depending on GUI timers: Windows OLE and Cocoa tracking loops can starve
 Use joined native-input workers, restoring the cursor and preventing late input from
 reaching the next case; Cocoa retains app-local NSEvents rather than global HID input.
 Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Keep the normal
-QtTest crash handler. `test_typstviewwindow_insertion` writes both plaintext stdout and
-`test_typstviewwindow_insertion.xml` (JUnit) in its CTest working directory. Windows CI
-preserves the original file before diagnostic reruns, since hosted stdout can omit assertions.
+QtTest crash handler. Build the host Typst module's `test_typstviewwindow_insertion` executable
+once, then select `^test_typstviewwindow_(insertion|cleanup|resources)$` in CTest. These serial
+groups share the executable and each retain a 240-second deadline. With `VNOTE_TYPST_TEST_GROUP`
+unset, a direct executable launch still runs every case. Each group writes plaintext stdout and
+its own `test_typstviewwindow_<group>.xml` JUnit file in the CTest working directory. Windows CI
+preserves all original reports before diagnostic reruns, since hosted stdout can omit assertions.
 Set Qt's active window explicitly at focus-sensitive fixture operations; `activateWindow()`
 alone depends on a window manager under Xvfb. After dismissing a modal dialog, wait for
 window activation and editor focus before sending shortcuts. Settle native exposure and

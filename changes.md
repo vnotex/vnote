@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Run native Typst host tests in serial fixed-budget groups and anchor raster-test navigation to the observed source cursor
 * Keep Linux failure diagnostics scoped to the failed parent or native-editor suite instead of rerunning a passing suite
 * Keep Markdown presentation requests alive when native reader focus arrives after the Edit-to-Read buffer sync
 * Discard late outgoing PDF camera state before binding a replacement note; establish active-window and editor-focus preconditions in native CI fixtures
