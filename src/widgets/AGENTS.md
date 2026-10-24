@@ -175,8 +175,10 @@ Protected Markdown reader pages/profiles are authorization-bound: retire page be
 when either identity is protected, without terminally destroying the retained native editor.
 Web adapter reset clears pending actions/callbacks even while already not-ready. PDF replacement
 flushes JS-debounced comment drafts before the durable gate, uses `setActiveFile()` for comments,
-and clears document replay through `resetForNewDocument()`; theme reload still replays that PDF's
-own camera. Typst uses native `resetForNewDocument()` and calls `finishDocumentReset()` only
+and clears document replay through `resetForNewDocument()` both on release and after the inert
+navigation succeeds, immediately before re-registering the adapter. The second reset discards
+outgoing WebChannel calls that recaptured replay during retirement; theme reload still replays
+that PDF's own camera. Typst uses native `resetForNewDocument()` and calls `finishDocumentReset()` only
 after installing the validated incoming project and source; its native compiler session survives.
 
 Coverage: `test_viewarea_tab_reuse` uses production services, windows, real explorer gestures,

@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Discard late outgoing PDF camera state before binding a replacement note; establish active-window and editor-focus preconditions in native CI fixtures
 * Prevent task command injection from filenames, selected text and other variable values: shell commands/options must be static, variable values belong in literal `args`, and values are no longer recursively expanded; migrate the bundled Git commit task and report guidance for custom tasks (argument-bearing shell tasks require Bash or PowerShell, otherwise use `type: process`)
 * Fix CI test focus and native drag delivery, retain Windows assertion output and allow cold builds to finish
 * Fix CI build scheduling, WiX package staging and native-platform GUI test execution

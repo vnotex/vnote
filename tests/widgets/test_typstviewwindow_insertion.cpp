@@ -2464,7 +2464,12 @@ void TestTypstViewWindowInsertion::nativeActionsAndLiteralPreview() {
     driver.destination = QStringLiteral("https://example.invalid/literal");
     const auto shortcut = m_config->getEditorConfig().getShortcut(EditorConfig::TypeLink);
     QVERIFY(!shortcut.isEmpty());
+    // Closing the modal image dialog restores native activation asynchronously.
+    m_window->activateWindow();
+    QApplication::setActiveWindow(m_window.get());
+    QVERIFY(QTest::qWaitForWindowActive(m_window.get()));
     m_edit->setFocus();
+    QTRY_VERIFY(m_edit->hasFocus());
     QTest::keySequence(m_edit, QKeySequence(shortcut));
     QVERIFY2(driver.error.isEmpty(), qPrintable(driver.error));
     QCOMPARE(driver.links, 1);
@@ -3264,6 +3269,11 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   const auto url = QStringLiteral("https://example.invalid/move");
   const auto baseline = QStringLiteral("Before\n\n") + url + QStringLiteral("\n\nAfter\n");
   show(openNote(QStringLiteral("main.typst"), baseline));
+  // Settle the native window before measuring the source and drop positions.
+  QVERIFY(QTest::qWaitForWindowExposed(m_window.get()));
+  QVERIFY(QTest::qWaitForWindowActive(m_window.get()));
+  m_edit->setFocus();
+  QTRY_VERIFY(m_edit->hasFocus());
   select(url);
   const auto before = filesBelow(assetFolder());
   auto startCursor = m_edit->textCursor();

@@ -223,10 +223,13 @@ flash. Empty clipboard MIME data is nullable. Native drag fixtures must release 
 without depending on GUI timers: Windows OLE and Cocoa tracking loops can starve them.
 Use joined native-input workers, restoring the cursor and preventing late input from
 reaching the next case; Cocoa retains app-local NSEvents rather than global HID input.
-Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Select `-o -,txt`
-explicitly when disabling QtTest's crash handler so Windows CI retains assertion output.
-Before inserting a tab-replacement draft programmatically, focus the editor and wait
-for focus delivery: that registers the outgoing active writer used by Save.
+Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Keep the default
+QtTest reporter and crash handler, matching the other native widget suites.
+Set Qt's active window explicitly at focus-sensitive fixture operations; `activateWindow()`
+alone depends on a window manager under Xvfb. After dismissing a modal dialog, wait for
+window activation and editor focus before sending shortcuts. Settle native exposure and
+activation before measuring drag coordinates. Before inserting tab-replacement or presentation
+drafts programmatically, wait for editor focus: that registers the active writer used by Save.
 
 PDF.js text-item boundaries are not word boundaries: ligatures can split a word across
 items. Reconstruct text by concatenating `item.str` and adding a newline only for

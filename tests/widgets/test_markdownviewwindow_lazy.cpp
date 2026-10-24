@@ -809,6 +809,11 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
   QVERIFY(QTest::qWaitForWindowExposed(&shell));
   auto *editor = window.findChild<MarkdownEditor *>();
   QVERIFY(editor);
+  // Presentation flushes the draft through the focus-registered active writer.
+  shell.activateWindow();
+  QApplication::setActiveWindow(&shell);
+  editor->getTextEdit()->setFocus();
+  QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor, QStringLiteral("\nUnsaved slide text\n"));
   QAction *presentation = nullptr;
   for (auto *action : window.findChildren<QAction *>()) {
@@ -827,6 +832,7 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
   auto *viewer = window.findChild<MarkdownViewer *>();
   QVERIFY(viewer);
   QSignalSpy requests(viewer->adapter(), &MarkdownViewerAdapter::presentationModeRequested);
+  QSignalSpy states(viewer->adapter(), &MarkdownViewerAdapter::presentationStateChanged);
   if (pool) {
     // Exercise real bridge readiness while the initial native HTML is still queued.
     QTRY_VERIFY_WITH_TIMEOUT(viewer->adapter()->isReady(), 30000);
@@ -836,7 +842,21 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
     QCOMPARE(requests.size(), 0);
     pool->unblock();
   }
-  QTRY_VERIFY_WITH_TIMEOUT(window.isViewFullScreen(), 30000);
+  const bool entered = QTest::qWaitFor([&] { return window.isViewFullScreen(); }, 30000);
+  if (!entered) {
+    qWarning() << "Presentation requests/states:" << requests << states
+               << "adapter ready/document ready:" << viewer->adapter()->isReady()
+               << viewer->adapter()->isDocumentReady()
+               << "native fullscreen:" << window.isFullScreen() << "web state:"
+               << evaluate(viewer->page(),
+                           QStringLiteral(
+                               "JSON.stringify({requested: vxPresentation.requested,"
+                               "active: vxPresentation.isActive(),"
+                               "ready: vxPresentation.session && vxPresentation.session.ready,"
+                               "workers: vxcore.numOfOngoingWorkers,"
+                               "pending: vxcore.pendingData.document !== null})"));
+  }
+  QVERIFY(entered);
   QVERIFY(presentation->isChecked());
   if (delayNativeRender) {
     QCOMPARE(requests.size(), 1);
