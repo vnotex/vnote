@@ -70,6 +70,35 @@ Python test worker and verifies real PDF/heading output and reply lifetime after
 destruction. Also launch the packaged consumer and inspect native dependency closure;
 ctypes alone does not prove VTextEdit/VNote linkage. Reject the old Typst executable.
 
+## macOS runtime composition
+
+Run `package/prune-macos-package.cmake` with `VNOTE_APP_DIR` after each deployment
+pass and after the last CI framework fixup, **before signing**. CPack's external
+macOS packager rewrites the build bundle; Windows install-staging pruning does not
+apply. Use `VERIFY_ONLY=ON` on the mounted signed DMG; it must never mutate it.
+
+Remove `PlugIns/imageformats/libqpdf.dylib`, `PlugIns/position/libqtposition_nmea.dylib`
+(and their `_debug` variants), `PlugIns/sqldrivers`, `QtSql.framework`, and
+`QtSerialPort.framework`. VNote and its widget tests must not require QtSql; vxcore
+uses native SQLite instead. Keep qtserialport in the CI SDK so macdeployqt can scan
+the NMEA plugin before pruning. SQL-driver Homebrew libraries/workarounds are not needed.
+Keep QtPdf for Typst, QtPositioning and other positioning plugins, TLS backends,
+QML/Quick/WebEngine, DevTools, universal slices and attribution files.
+
+Only `en-US.pak`, `zh-CN.pak`, `ja.pak`, and `ko.pak` ship in
+`Contents/Frameworks/QtWebEngineCore.framework/Versions/A/Resources/qtwebengine_locales`.
+Missing/empty retained packs or another locale directory fail packaging. Do not
+prune sibling WebEngine resource paks, ICU data, snapshots or the process helper.
+Qt's resource fallback supplies English for unsupported locales without changing
+VNote's application locale or date/number formatting.
+
+The final-DMG gate rejects load commands to the removed frameworks in **all**
+Mach-O files. `scripts/e2e/smoke_webengine_package.py` compiles a disposable native
+probe against the SDK but runs against the signed package: separate processes for
+each supported locale plus German/British-English fallback, actual DOM rendering,
+and mapped framework/locale paths in both browser and helper. It must not resolve
+runtime resources from the SDK or ship its probe in the app.
+
 ## Windows runtime (Qt 6)
 
 Windows packages use Qt 6 only and publish the `win64` artifact family. Qt uses

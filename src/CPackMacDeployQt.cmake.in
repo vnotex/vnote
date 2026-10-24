@@ -1,6 +1,17 @@
-execute_process(COMMAND "optool" strip -t ${CMAKE_CURRENT_BINARY_DIR}/VNote.app
-    WORKING_DIRECTORY ${CPACK_PACKAGE_DIRECTORY}
+execute_process(COMMAND "optool" strip -t "@CMAKE_CURRENT_BINARY_DIR@/VNote.app"
+    WORKING_DIRECTORY "@CPACK_PACKAGE_DIRECTORY@"
 )
-execute_process(COMMAND "${MACDEPLOYQT_EXECUTABLE}" ${CMAKE_CURRENT_BINARY_DIR}/VNote.app -always-overwrite -verbose=1
-    WORKING_DIRECTORY ${CPACK_PACKAGE_DIRECTORY}
+execute_process(COMMAND "@MACDEPLOYQT_EXECUTABLE@" "@CMAKE_CURRENT_BINARY_DIR@/VNote.app" -always-overwrite -verbose=1
+    WORKING_DIRECTORY "@CPACK_PACKAGE_DIRECTORY@"
+    RESULT_VARIABLE _vx_deploy_result
 )
+if(NOT _vx_deploy_result STREQUAL "0")
+    message(FATAL_ERROR "macdeployqt failed: ${_vx_deploy_result}")
+endif()
+execute_process(COMMAND "@CMAKE_COMMAND@" "-DVNOTE_APP_DIR=@CMAKE_CURRENT_BINARY_DIR@/VNote.app"
+    -P "@PROJECT_SOURCE_DIR@/package/prune-macos-package.cmake"
+    RESULT_VARIABLE _vx_prune_result
+)
+if(NOT _vx_prune_result STREQUAL "0")
+    message(FATAL_ERROR "macOS package pruning failed: ${_vx_prune_result}")
+endif()

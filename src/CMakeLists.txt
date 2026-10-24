@@ -7,7 +7,7 @@ set(CMAKE_INCLUDE_CURRENT_DIR ON)
 # submodules' include(GNUInstallDirs) has already cached "bin" by the time this
 # file is processed, so a set() at this point is silently ignored.
 
-find_package(Qt6 REQUIRED COMPONENTS Concurrent Core Core5Compat Gui Network PrintSupport Sql Svg Widgets WebChannel WebEngineWidgets LinguistTools)
+find_package(Qt6 REQUIRED COMPONENTS Concurrent Core Core5Compat Gui Network PrintSupport Svg Widgets WebChannel WebEngineWidgets LinguistTools)
 
 qt_standard_project_setup()
 
@@ -155,7 +155,6 @@ target_link_libraries(vnote PRIVATE
     Qt::Gui
     Qt::Network
     Qt::PrintSupport
-    Qt::Sql
     Qt::Svg
     Qt::WebChannel
     Qt::WebEngineWidgets

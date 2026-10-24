@@ -286,6 +286,8 @@ endif()
         COMMAND ${CMAKE_COMMAND} -E copy_directory
         "${VX_TYPST_NOTICES_DIR}" ${VX_BUNDLE_CONTENTS_DIR}/Resources/licenses/typst
         COMMAND ${CMAKE_COMMAND} -P "${CMAKE_CURRENT_BINARY_DIR}/typst-bundle-$<CONFIG>.cmake"
+        COMMAND ${CMAKE_COMMAND} "-DVNOTE_APP_DIR=$<TARGET_BUNDLE_DIR:vnote>"
+            -P "${PROJECT_SOURCE_DIR}/package/prune-macos-package.cmake"
         COMMENT "Deploying resources and native libraries into ${VX_BUNDLE_CONTENTS_DIR}"
         DEPENDS vnote lrelease vnote_typst_runtime prepare_typst_notices
     )
@@ -296,7 +298,7 @@ endif()
         message(STATUS "Package generation - MacOS - DMG")
 
         list(APPEND CPACK_GENERATOR External)
-        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CPackMacDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
+        configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CPackMacDeployQt.cmake.in "${CMAKE_BINARY_DIR}/CPackExternal.cmake" @ONLY)
         set(CPACK_EXTERNAL_PACKAGE_SCRIPT "${CMAKE_BINARY_DIR}/CPackExternal.cmake")
         include(InstallRequiredSystemLibraries)
     endif()

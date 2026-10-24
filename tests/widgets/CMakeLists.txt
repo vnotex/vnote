@@ -1,4 +1,4 @@
-find_package(Qt6 REQUIRED COMPONENTS WebChannel WebEngineWidgets PrintSupport Sql Core5Compat)
+find_package(Qt6 REQUIRED COMPONENTS WebChannel WebEngineWidgets PrintSupport Core5Compat)
 
 add_qt_test(test_docksizememory
   SOURCES

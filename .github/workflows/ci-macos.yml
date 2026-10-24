@@ -67,14 +67,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          brew install tree libiodbc libpq
-
-      - name: Fix SQL
-        run: |
-          sudo mkdir -p /usr/local/opt/libiodbc/lib
-          sudo ln -s /opt/homebrew/opt/libiodbc/lib/libiodbc.2.dylib /usr/local/opt/libiodbc/lib/libiodbc.2.dylib
-          sudo mkdir -p /Applications/Postgres.app/Contents/Versions/14/lib
-          sudo ln -s /opt/homebrew/Cellar/libpq/16.3/lib/libpq.5.dylib /Applications/Postgres.app/Contents/Versions/14/lib/libpq.5.dylib
+          brew install tree
 
       - name: Install a fresh CMake
         run: |
@@ -153,11 +146,6 @@ jobs:
 
       - name: Build Project
         run: |
-          # Keep only required SQL drivers
-          rm ${{env.Qt6_DIR}}/plugins/sqldrivers/libqsqlmimer.dylib
-          rm ${{env.Qt6_DIR}}/plugins/sqldrivers/libqsqlodbc.dylib
-          rm ${{env.Qt6_DIR}}/plugins/sqldrivers/libqsqlpsql.dylib
-
           # Build the project
           cmake --build . --target pack
 
@@ -199,6 +187,9 @@ jobs:
 
           # Run macdeployqtfix again to ensure all dependencies are properly fixed
           python3 ${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py ./src/VNote.app/Contents/MacOS/VNote ${{env.Qt6_DIR}}/../..
+
+          # Deployment can restore SDK plugins/locales; prune before signing.
+          cmake -DVNOTE_APP_DIR="$PWD/src/VNote.app" -P "${GITHUB_WORKSPACE}/package/prune-macos-package.cmake"
         working-directory: ${{runner.workspace}}/build
 
       - name: Prepare Test Keychain
@@ -340,6 +331,7 @@ jobs:
           mkdir "$mountpoint"
           hdiutil attach "VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg" -readonly -nobrowse -mountpoint "$mountpoint"
           trap 'hdiutil detach "$mountpoint"' EXIT
+          cmake -DVNOTE_APP_DIR="$mountpoint/VNote.app" -DVERIFY_ONLY=ON -P "${GITHUB_WORKSPACE}/package/prune-macos-package.cmake"
           python3 - <<'PY'
           import os
           from pathlib import Path
@@ -350,6 +342,19 @@ jobs:
           import tempfile
 
           app = Path(os.environ['RUNNER_TEMP']) / 'typst-package/VNote.app/Contents'
+          # Check every real Mach-O, including dynamically loaded plugins/helpers.
+          # Never delete a framework to mask an accidentally restored link dependency.
+          macho_magic = {b'\xcf\xfa\xed\xfe', b'\xfe\xed\xfa\xcf',
+                         b'\xca\xfe\xba\xbe', b'\xca\xfe\xba\xbf'}
+          for binary in app.rglob('*'):
+              if binary.is_symlink() or not binary.is_file():
+                  continue
+              with binary.open('rb') as stream:
+                  if stream.read(4) not in macho_magic:
+                      continue
+              linked = subprocess.check_output(['/usr/bin/otool', '-arch', 'all', '-L', str(binary)], text=True)
+              if re.search(r'/Qt(?:Sql|SerialPort)\.framework/', linked):
+                  raise SystemExit(f'Pruned Qt framework is still linked by {binary}: {linked}')
           library = app / 'Frameworks/libvtextedit_typst.1.dylib'
           executable = app / 'MacOS/VNote'
           linked = subprocess.check_output(['/usr/bin/otool', '-arch', 'all', '-L', str(executable)], text=True)
@@ -445,6 +450,8 @@ jobs:
           print(f'Library and consumer launches verified on runner macOS {platform.mac_ver()[0]}; '
                 'minimum-OS metadata does not prove launch on Monterey or another older OS.', flush=True)
           PY
+          python3 "${GITHUB_WORKSPACE}/scripts/e2e/smoke_webengine_package.py" \
+            --app "$mountpoint/VNote.app" --qt-prefix "$(qmake -query QT_INSTALL_PREFIX)"
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
