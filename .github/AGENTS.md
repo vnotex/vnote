@@ -159,6 +159,8 @@ The wrapper creates a private D-Bus session and unlocked GNOME keyring, verifies
 Secret Service with a write/read/delete probe, then tears down the daemon and
 private XDG directories. CTest runs under Xvfb so tests selecting the native xcb
 backend have a display; install `xvfb` and `xauth` with the test dependencies.
+The child `test_typsteditor` suite must select `QT_QPA_PLATFORM=xcb` explicitly:
+its native layout/raster scenarios must not inherit the parent's offscreen default.
 Keep the credential tests on a real vault; headers from
 `libsecret-1-dev` alone do not provide one.
 

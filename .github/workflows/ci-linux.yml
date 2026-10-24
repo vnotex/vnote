@@ -181,8 +181,8 @@ jobs:
         id: tests
         if: env.VNOTE_TESTS == 'ON'
         # Build remaining targets (Qt-side tests + vxcore tests; --target pack
-        # above only built the AppImage target) then run them headlessly via
-        # the Qt offscreen platform plugin. VNOTE_BUILD_TESTS defaults to OFF
+        # above only built the AppImage target). Parent tests select their backend;
+        # native Typst layout tests use xcb under Xvfb. VNOTE_BUILD_TESTS defaults to OFF
         # in the root CMakeLists.txt and is enabled above only for non-release runs.
         run: |
           set -e
@@ -207,7 +207,7 @@ jobs:
             exit 1
           fi
           bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --output-on-failure
-          bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error
+          QT_QPA_PLATFORM=xcb bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error
         working-directory: ${{runner.workspace}}/build
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
