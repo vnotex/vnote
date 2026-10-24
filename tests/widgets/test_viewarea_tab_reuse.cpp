@@ -356,6 +356,7 @@ struct Fixture {
     area->resize(1050, 760);
     area->show();
     area->activateWindow();
+    QApplication::setActiveWindow(area.get());
     if (p_existingNotebook.isEmpty()) {
       controller()->openVxUrl(QUrl(QStringLiteral("vx://home")));
       QCoreApplication::processEvents();
@@ -949,21 +950,38 @@ void TestViewAreaTabReuse::imageAndPdfDocuments() {
   // Zoom and rotation can reposition the document; choose A's replay page last.
   adapter->gotoPage(3);
   QTRY_COMPARE(adapter->getViewerState().m_page, 3);
+  const auto outgoing = adapter->getViewerState();
+  const QJsonObject lateState{{QStringLiteral("page"), outgoing.m_page},
+                              {QStringLiteral("pageCount"), outgoing.m_pageCount},
+                              {QStringLiteral("scale"), outgoing.m_scale},
+                              {QStringLiteral("scaleValue"), outgoing.m_scaleValue},
+                              {QStringLiteral("rotation"), outgoing.m_rotation},
+                              {QStringLiteral("scrollMode"), outgoing.m_scrollMode},
+                              {QStringLiteral("spreadMode"), outgoing.m_spreadMode},
+                              {QStringLiteral("cursorTool"), outgoing.m_cursorTool},
+                              {QStringLiteral("sidebarOpen"), outgoing.m_sidebarOpen}};
   QVERIFY(f->open(QStringLiteral("b.pdf")).isValid());
+  QVERIFY(pdf->isHidden());
+  QVERIFY(!adapter->isReady());
+  // An outgoing WebChannel invocation may already be queued during the inert navigation.
+  adapter->setViewerState(lateState);
   QCOMPARE(f->current(), window);
   QCOMPARE(window->findChild<PdfViewer *>(), pdf);
   QCOMPARE(pdf->page(), page);
   QCOMPARE(pdf->adapter(), adapter);
+  QVERIFY(QTest::qWaitFor(
+      [&] {
+        return pdf->isVisible() && evaluate(page, QStringLiteral("document.body.innerText"))
+                                       .toString()
+                                       .contains(QStringLiteral("PDF beta"));
+      },
+      15000));
   QTRY_VERIFY_WITH_TIMEOUT(adapter->getViewerState().m_valid, 30000);
   QTRY_COMPARE_WITH_TIMEOUT(adapter->getDocumentPageCount(), 3, 30000);
   QTRY_COMPARE_WITH_TIMEOUT(adapter->getViewerState().m_pageCount, 3, 30000);
   QCOMPARE(adapter->getViewerState().m_page, 1);
   QCOMPARE(adapter->getViewerState().m_rotation, 0);
   QVERIFY(!adapter->isViewerReplayPending());
-  QTRY_VERIFY_WITH_TIMEOUT(evaluate(page, QStringLiteral("document.body.innerText"))
-                               .toString()
-                               .contains(QStringLiteral("PDF beta")),
-                           15000);
   adapter->gotoPage(2);
   QTRY_COMPARE(adapter->getViewerState().m_page, 2);
   f->theme->switchTheme(QStringLiteral("vscode-dark"));
@@ -990,6 +1008,8 @@ void TestViewAreaTabReuse::dirtyReplacement() {
   auto *editor = window->findChild<MarkdownEditor *>();
   QVERIFY(editor);
   // Real typing follows focus, which registers the outgoing buffer's active writer.
+  f->area->activateWindow();
+  QApplication::setActiveWindow(f->area.get());
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("\nUnsaved alpha draft\n"));

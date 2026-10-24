@@ -1760,7 +1760,6 @@ endif()
 add_qt_test(test_typstviewwindow_insertion
   SOURCES test_typstviewwindow_insertion.cpp ${_markdown_window_test_sources}
   LINKS ${_markdown_window_links} Qt6::Pdf
-  ARGS -nocrashhandler -o -,txt
 )
 if(APPLE)
   set_source_files_properties(test_typstviewwindow_insertion.cpp PROPERTIES LANGUAGE OBJCXX)
