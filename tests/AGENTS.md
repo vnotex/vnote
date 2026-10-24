@@ -223,8 +223,10 @@ flash. Empty clipboard MIME data is nullable. Native drag fixtures must release 
 without depending on GUI timers: Windows OLE and Cocoa tracking loops can starve them.
 Use joined native-input workers, restoring the cursor and preventing late input from
 reaching the next case; Cocoa retains app-local NSEvents rather than global HID input.
-Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Keep the default
-QtTest reporter and crash handler, matching the other native widget suites.
+Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Keep the normal
+QtTest crash handler. `test_typstviewwindow_insertion` writes both plaintext stdout and
+`test_typstviewwindow_insertion.xml` (JUnit) in its CTest working directory. Windows CI
+preserves the original file before diagnostic reruns, since hosted stdout can omit assertions.
 Set Qt's active window explicitly at focus-sensitive fixture operations; `activateWindow()`
 alone depends on a window manager under Xvfb. After dismissing a modal dialog, wait for
 window activation and editor focus before sending shortcuts. Settle native exposure and

@@ -165,10 +165,18 @@ jobs:
           ctest --test-dir libs/vtextedit -C Release -R "^test_typsteditor$" --output-on-failure --no-tests=error || exit /b 1
         working-directory: ${{runner.workspace}}/build
 
+      - name: Preserve native Typst failure report
+        if: always() && steps.tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-typst-test-report
+          path: ${{runner.workspace}}/build/tests/widgets/test_typstviewwindow_insertion.xml
+          if-no-files-found: warn
+
       - name: Re-run failed tests with extra-verbose output (debug aid)
         # On failure of the previous step, re-run only the failing tests with
         # --extra-verbose so Qt Test's PASS/FAIL lines + assertion details
-        # land in the CI log using the default QtTest reporter and crash handler.
+        # land in the CI log; Typst also preserves its JUnit report above.
         # This step never gates the workflow (|| exit 0) - it's pure diagnostics.
         if: failure() && steps.tests.outcome == 'failure'
         shell: cmd

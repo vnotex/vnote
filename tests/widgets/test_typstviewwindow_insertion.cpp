@@ -3348,6 +3348,32 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   QVERIFY2(moved, "Windows did not complete the native text drag");
   released = releasePosted.load();
 #elif defined(Q_OS_MACOS)
+  struct DragEvents : QObject {
+    int presses = 0, moves = 0, releases = 0, enters = 0, drops = 0;
+    bool eventFilter(QObject *, QEvent *p_event) override {
+      switch (p_event->type()) {
+      case QEvent::MouseButtonPress:
+        ++presses;
+        break;
+      case QEvent::MouseMove:
+        ++moves;
+        break;
+      case QEvent::MouseButtonRelease:
+        ++releases;
+        break;
+      case QEvent::DragEnter:
+        ++enters;
+        break;
+      case QEvent::Drop:
+        ++drops;
+        break;
+      default:
+        break;
+      }
+      return false;
+    }
+  } delivered;
+  m_edit->viewport()->installEventFilter(&delivered);
   QVERIFY2(QTest::qWaitForWindowActive(m_window.get(), 1000),
            "Cocoa did not activate the native drag fixture");
   auto *nativeView = reinterpret_cast<NSView *>(m_window->winId());
@@ -3448,6 +3474,16 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   QVERIFY2(pointerError.load() == kCGErrorSuccess,
            "Cocoa could not position the native drag pointer");
   QVERIFY2(restoreError == kCGErrorSuccess, "Cocoa could not restore the pointer after dragging");
+  if (!moved) {
+    qWarning() << "Cocoa drag release posted:" << releasePosted.load()
+               << "text changed:" << (m_edit->toPlainText() != baseline)
+               << "actual/expected:" << m_edit->toPlainText() << expected
+               << "selection:" << m_edit->textCursor().selectedText()
+               << "source/drop positions:" << start << end
+               << "press/move/release/enter/drop events:" << delivered.presses << delivered.moves
+               << delivered.releases << delivered.enters << delivered.drops
+               << "dialog counts:" << driver.choosers << driver.images << driver.links;
+  }
   QVERIFY2(moved, "Cocoa did not complete the app-local native text drag");
   released = releasePosted.load();
 #else

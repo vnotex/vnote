@@ -2162,6 +2162,8 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
       showMessage(tr("Unable to read the editor content"));
       return;
     }
+    // A delayed reader focus gain must not mistake our own sync for an external edit.
+    m_lastKnownRevision = getBuffer().getRevision();
   }
 
   m_previousMode = m_mode;

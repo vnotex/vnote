@@ -115,6 +115,11 @@ The split-pane editor area, designed around vxcore workspaces:
 - `ViewSplit2` — QTabWidget-based split pane; each instance maps 1:1 to a vxcore workspace
 - `ViewWindow2` — abstract base for file viewer windows; receives an initial `Buffer2` and owns guarded same-type rebinding
 
+Markdown Edit-to-Read transitions must adopt the revision from their successful `syncNow()`
+before exposing/focusing the reader. A delayed native focus gain otherwise misclassifies that
+own write as an external edit and cancels a pending presentation. Real foreign revisions still
+refresh through `onFocusGained()`. `presentationCreatesReader` covers the delayed-focus ordering.
+
 `ViewWindow2` mounts both `StatusBar` and shared `StatusWidget` through `StatusOverlay`,
 not through the bottom layout. Each strip floats over the bottom edge of its own content
 layout, above Find and other bottom widgets; showing, clearing or expiring a message must

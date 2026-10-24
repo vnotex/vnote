@@ -78,6 +78,7 @@ public:
   using MarkdownViewWindow2::printDocument;
   using ViewWindow2::fetchWordCountInfo;
   using ViewWindow2::isViewFullScreen;
+  using ViewWindow2::onFocusGained;
   ~Window() override {
     getServices().get<BufferService>()->unregisterActiveWriter(getBuffer().id(),
                                                                reinterpret_cast<quintptr>(this));
@@ -832,7 +833,9 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
   auto *viewer = window.findChild<MarkdownViewer *>();
   QVERIFY(viewer);
   QSignalSpy requests(viewer->adapter(), &MarkdownViewerAdapter::presentationModeRequested);
-  QSignalSpy states(viewer->adapter(), &MarkdownViewerAdapter::presentationStateChanged);
+  // Cocoa can deliver the reader's focus gain after the mode-switch call has returned,
+  // without a preceding dirty focus loss to acknowledge our own buffer sync.
+  window.onFocusGained();
   if (pool) {
     // Exercise real bridge readiness while the initial native HTML is still queued.
     QTRY_VERIFY_WITH_TIMEOUT(viewer->adapter()->isReady(), 30000);
@@ -842,21 +845,7 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
     QCOMPARE(requests.size(), 0);
     pool->unblock();
   }
-  const bool entered = QTest::qWaitFor([&] { return window.isViewFullScreen(); }, 30000);
-  if (!entered) {
-    qWarning() << "Presentation requests/states:" << requests << states
-               << "adapter ready/document ready:" << viewer->adapter()->isReady()
-               << viewer->adapter()->isDocumentReady()
-               << "native fullscreen:" << window.isFullScreen() << "web state:"
-               << evaluate(viewer->page(),
-                           QStringLiteral(
-                               "JSON.stringify({requested: vxPresentation.requested,"
-                               "active: vxPresentation.isActive(),"
-                               "ready: vxPresentation.session && vxPresentation.session.ready,"
-                               "workers: vxcore.numOfOngoingWorkers,"
-                               "pending: vxcore.pendingData.document !== null})"));
-  }
-  QVERIFY(entered);
+  QTRY_VERIFY_WITH_TIMEOUT(window.isViewFullScreen(), 30000);
   QVERIFY(presentation->isChecked());
   if (delayNativeRender) {
     QCOMPARE(requests.size(), 1);
