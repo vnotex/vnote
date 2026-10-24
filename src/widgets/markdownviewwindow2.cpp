@@ -593,6 +593,10 @@ void MarkdownViewWindow2::setPresentationMode(bool p_on) {
         !isViewFullScreen()) {
       return;
     }
+    qCDebug(lcPerfPreview) << "presentation-cancel requested/sent/active" << m_presentationRequested
+                           << m_presentationRequestSent << m_presentationActive
+                           << "revision known/current" << m_lastKnownRevision
+                           << (getBuffer().isValid() ? getBuffer().getRevision() : -1);
     const bool cancelWeb = m_presentationRequestSent;
     m_presentationRequested = false;
     m_presentationRequestSent = false;
@@ -639,6 +643,22 @@ void MarkdownViewWindow2::requestPresentationWhenReady() {
       !adapter()->isDocumentReady() ||
       !m_nativeRender->isCurrent(adapter()->documentGeneration()) ||
       !nativeRenderSourceIsCurrent()) {
+    if (m_presentationRequested) {
+      qCDebug(lcPerfPreview) << "presentation-readiness sent/preparing/switching/read/viewerReady"
+                             << m_presentationRequestSent << m_preparingPresentation
+                             << m_switchingMode << isReadMode() << m_viewerReady
+                             << "document/native/source current"
+                             << (adapter() && adapter()->isDocumentReady())
+                             << (adapter() && m_nativeRender &&
+                                 m_nativeRender->isCurrent(adapter()->documentGeneration()))
+                             << nativeRenderSourceIsCurrent()
+                             << "buffer generation captured/current" << m_renderBufferGeneration
+                             << getBufferGeneration() << "usesEditor" << m_renderUsesEditor
+                             << "editor generation captured/current" << m_renderEditorGeneration
+                             << (m_editor ? m_editor->getHighlighter()->documentGeneration() : 0)
+                             << "buffer revision captured/current" << m_renderBufferRevision
+                             << (getBuffer().isValid() ? getBuffer().getRevision() : -1);
+    }
     return;
   }
   m_presentationRequestSent = true;

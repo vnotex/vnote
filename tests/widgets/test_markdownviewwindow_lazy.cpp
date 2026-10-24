@@ -824,6 +824,7 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
     }
   }
   QVERIFY(presentation);
+  QSignalSpy fullscreen(&window, &ViewWindow2::viewFullScreenChanged);
   std::unique_ptr<PoolBlocker> pool;
   if (delayNativeRender) {
     pool = std::make_unique<PoolBlocker>();
@@ -833,6 +834,7 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
   auto *viewer = window.findChild<MarkdownViewer *>();
   QVERIFY(viewer);
   QSignalSpy requests(viewer->adapter(), &MarkdownViewerAdapter::presentationModeRequested);
+  QSignalSpy states(viewer->adapter(), &MarkdownViewerAdapter::presentationStateChanged);
   // Cocoa can deliver the reader's focus gain after the mode-switch call has returned,
   // without a preceding dirty focus loss to acknowledge our own buffer sync.
   window.onFocusGained();
@@ -845,7 +847,23 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
     QCOMPARE(requests.size(), 0);
     pool->unblock();
   }
-  QTRY_VERIFY_WITH_TIMEOUT(window.isViewFullScreen(), 30000);
+  const bool entered = QTest::qWaitFor([&] { return window.isViewFullScreen(); }, 30000);
+  QString failureDetails;
+  if (!entered) {
+    QDebug(&failureDetails)
+        << "fullscreen transitions:" << fullscreen << "post-trigger requests/states:" << requests
+        << states << "adapter ready/document ready:" << viewer->adapter()->isReady()
+        << viewer->adapter()->isDocumentReady() << "native fullscreen:" << window.isFullScreen()
+        << "viewer visible:" << viewer->isVisible() << "mode:" << static_cast<int>(window.getMode())
+        << "web state:"
+        << evaluate(viewer->page(),
+                    QStringLiteral("JSON.stringify({requested: vxPresentation.requested,"
+                                   "active: vxPresentation.isActive(),"
+                                   "ready: vxPresentation.session && vxPresentation.session.ready,"
+                                   "workers: vxcore.numOfOngoingWorkers,pending: "
+                                   "vxcore.pendingData.document !== null})"));
+  }
+  QVERIFY2(entered, qPrintable(failureDetails));
   QVERIFY(presentation->isChecked());
   if (delayNativeRender) {
     QCOMPARE(requests.size(), 1);

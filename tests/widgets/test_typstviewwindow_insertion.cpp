@@ -3345,7 +3345,15 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
     moved = QTest::qWaitFor(
         [&] { return releasePosted.load() && m_edit->toPlainText() == expected; }, 4500);
   }
-  QVERIFY2(moved, "Windows did not complete the native text drag");
+  QString failureDetails;
+  if (!moved) {
+    QDebug(&failureDetails) << "Windows drag release posted:" << releasePosted.load()
+                            << "actual/expected:" << m_edit->toPlainText() << expected
+                            << "selection:" << m_edit->textCursor().selectedText()
+                            << "source/drop positions:" << start << end
+                            << "dialog counts:" << driver.choosers << driver.images << driver.links;
+  }
+  QVERIFY2(moved, qPrintable(failureDetails));
   released = releasePosted.load();
 #elif defined(Q_OS_MACOS)
   struct DragEvents : QObject {
@@ -3474,17 +3482,19 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   QVERIFY2(pointerError.load() == kCGErrorSuccess,
            "Cocoa could not position the native drag pointer");
   QVERIFY2(restoreError == kCGErrorSuccess, "Cocoa could not restore the pointer after dragging");
+  QString failureDetails;
   if (!moved) {
-    qWarning() << "Cocoa drag release posted:" << releasePosted.load()
-               << "text changed:" << (m_edit->toPlainText() != baseline)
-               << "actual/expected:" << m_edit->toPlainText() << expected
-               << "selection:" << m_edit->textCursor().selectedText()
-               << "source/drop positions:" << start << end
-               << "press/move/release/enter/drop events:" << delivered.presses << delivered.moves
-               << delivered.releases << delivered.enters << delivered.drops
-               << "dialog counts:" << driver.choosers << driver.images << driver.links;
+    QDebug(&failureDetails) << "Cocoa drag release posted:" << releasePosted.load()
+                            << "text changed:" << (m_edit->toPlainText() != baseline)
+                            << "actual/expected:" << m_edit->toPlainText() << expected
+                            << "selection:" << m_edit->textCursor().selectedText()
+                            << "source/drop positions:" << start << end
+                            << "press/move/release/enter/drop events:" << delivered.presses
+                            << delivered.moves << delivered.releases << delivered.enters
+                            << delivered.drops << "dialog counts:" << driver.choosers
+                            << driver.images << driver.links;
   }
-  QVERIFY2(moved, "Cocoa did not complete the app-local native text drag");
+  QVERIFY2(moved, qPrintable(failureDetails));
   released = releasePosted.load();
 #else
   // The xcb Qt drag loop processes the queued release.
