@@ -220,7 +220,12 @@ jobs:
           export LC_ALL=C.UTF-8
           export LANG=C.UTF-8
           export LD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${LD_LIBRARY_PATH:-}"
-          bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --rerun-failed --extra-verbose || true
+          if [ -s Testing/Temporary/LastTestsFailed.log ]; then
+            bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --rerun-failed --extra-verbose || true
+          fi
+          if [ -s libs/vtextedit/Testing/Temporary/LastTestsFailed.log ]; then
+            QT_QPA_PLATFORM=xcb bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit --rerun-failed --extra-verbose --no-tests=error || true
+          fi
         working-directory: ${{runner.workspace}}/build
 
       - name: Fix Package

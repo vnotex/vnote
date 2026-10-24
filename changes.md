@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Keep Linux failure diagnostics scoped to the failed parent or native-editor suite instead of rerunning a passing suite
 * Keep Markdown presentation requests alive when native reader focus arrives after the Edit-to-Read buffer sync
 * Discard late outgoing PDF camera state before binding a replacement note; establish active-window and editor-focus preconditions in native CI fixtures
 * Prevent task command injection from filenames, selected text and other variable values: shell commands/options must be static, variable values belong in literal `args`, and values are no longer recursively expanded; migrate the bundled Git commit task and report guidance for custom tasks (argument-bearing shell tasks require Bash or PowerShell, otherwise use `type: process`)

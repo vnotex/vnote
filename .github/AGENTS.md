@@ -14,9 +14,10 @@ See also: [../AGENTS.md](../AGENTS.md) (repo-wide rules, submodule push discipli
 
 Linux and macOS set `CMAKE_BUILD_PARALLEL_LEVEL=2` for both packaging and test
 builds; Make otherwise builds these large targets serially. Keep Cargo's separate
-two-job limit. Diagnostic reruns require the test step itself to have failed:
-`ctest --rerun-failed` without failure history can run the entire suite after an
-unrelated packaging failure.
+two-job limit. Diagnostic reruns require the test step itself to have failed and a
+nonempty `Testing/Temporary/LastTestsFailed.log` in that suite's build tree. Parent
+and native-editor histories are independent: `ctest --rerun-failed` without its own
+failure history can rerun a passing suite after an unrelated failure.
 
 Windows and macOS allow 180 minutes for cold builds, the full native test suites and
 package gates. Keep the individual CTest deadlines; the job budget is not a test timeout.
