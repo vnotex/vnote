@@ -223,6 +223,10 @@ flash. Empty clipboard MIME data is nullable. Native drag fixtures must release 
 without depending on GUI timers: Windows OLE and Cocoa tracking loops can starve them.
 Use joined native-input workers, restoring the cursor and preventing late input from
 reaching the next case; Cocoa retains app-local NSEvents rather than global HID input.
+Windows drag motion uses non-coalesced `SendInput` records in normalized virtual-desktop
+coordinates. Press, drag entry and destination delivery share one bounded deadline; the worker
+attempts button release even if an acknowledgement never arrives. `SetCursorPos` only restores
+the saved pointer.
 Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Keep the normal
 QtTest crash handler. Build the host Typst module's `test_typstviewwindow_insertion` executable
 once, then select `^test_typstviewwindow_(insertion|cleanup|resources)$` in CTest. These serial

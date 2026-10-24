@@ -21,6 +21,7 @@
 #include <QClipboard>
 #include <QContextMenuEvent>
 #include <QCursor>
+#include <QDeadlineTimer>
 #include <QDesktopServices>
 #include <QDialogButtonBox>
 #include <QDirIterator>
@@ -3308,10 +3309,51 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
     ClientToScreen(window, &native);
     return QPoint(native.x, native.y);
   };
-  // Qt screen coordinates are logical; SetCursorPos consumes native pixels.
+  struct DragProgress : QObject {
+    QSemaphore pressed, entered, arrived;
+    QPoint start, end, lastPress{-1, -1}, lastMove{-1, -1};
+    bool eventFilter(QObject *, QEvent *p_event) override {
+      if (p_event->type() == QEvent::MouseButtonPress) {
+        auto *mouse = static_cast<QMouseEvent *>(p_event);
+        lastPress = mouse->position().toPoint();
+        if (mouse->button() == Qt::LeftButton && (lastPress - start).manhattanLength() <= 2) {
+          pressed.release();
+        }
+      } else if (p_event->type() == QEvent::DragEnter) {
+        entered.release();
+      } else if (p_event->type() == QEvent::DragMove) {
+        lastMove = static_cast<QDragMoveEvent *>(p_event)->position().toPoint();
+        if ((lastMove - end).manhattanLength() <= 2) {
+          arrived.release();
+        }
+      }
+      return false;
+    }
+  } progress;
+  progress.start = start;
+  progress.end = end;
+  m_edit->viewport()->installEventFilter(&progress);
+  // Convert Qt logical points to native pixels, then to SendInput's virtual-desktop range.
   const auto globalStart = nativePoint(start);
   const auto globalEnd = nativePoint(end);
-  const auto moveMouse = [](const QPoint &point) { SetCursorPos(point.x(), point.y()); };
+  const QRect virtualDesktop(
+      GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN),
+      GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN));
+  QVERIFY(virtualDesktop.width() > 0 && virtualDesktop.height() > 0);
+  const auto motion = [&](const QPoint &point) {
+    INPUT event = {};
+    event.type = INPUT_MOUSE;
+    event.mi.dx = MulDiv(point.x() - virtualDesktop.x(), 65536, virtualDesktop.width());
+    event.mi.dy = MulDiv(point.y() - virtualDesktop.y(), 65536, virtualDesktop.height());
+    event.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK |
+                       MOUSEEVENTF_MOVE_NOCOALESCE;
+    return event;
+  };
+  auto pressInput = motion(globalStart);
+  pressInput.mi.dwFlags |= MOUSEEVENTF_LEFTDOWN;
+  auto thresholdInput =
+      motion(globalStart + QPoint(qRound((QApplication::startDragDistance() + 8) * scale), 0));
+  auto destinationInput = motion(globalEnd);
   const auto button = [](DWORD flags) {
     INPUT event = {};
     event.type = INPUT_MOUSE;
@@ -3320,35 +3362,45 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   };
   POINT previousPointer;
   QVERIFY(GetCursorPos(&previousPointer));
-  const auto threshold =
-      globalStart + QPoint(qRound((QApplication::startDragDistance() + 8) * scale), 0);
-  std::atomic<bool> releasePosted{false};
+  std::atomic<bool> releasePosted{false}, sequenceComplete{false};
+  bool pressAcknowledged = false, enterAcknowledged = false, destinationAcknowledged = false;
   bool moved = false;
   {
     const auto restoreInput = qScopeGuard([&] {
       button(MOUSEEVENTF_LEFTUP);
-      moveMouse(QPoint(previousPointer.x, previousPointer.y));
+      SetCursorPos(previousPointer.x, previousPointer.y);
     });
-    moveMouse(globalStart);
-    QVERIFY(button(MOUSEEVENTF_LEFTDOWN));
-    // OLE's native drag loop need not dispatch Qt timers. Always release input
-    // from a joined worker; it uses only precomputed coordinates and Win32 APIs.
-    std::thread input([=, &releasePosted] {
-      const auto started = std::chrono::steady_clock::now();
-      std::this_thread::sleep_until(started + std::chrono::milliseconds(80));
-      moveMouse(threshold);
-      std::this_thread::sleep_until(started + std::chrono::milliseconds(160));
-      moveMouse(globalEnd);
-      std::this_thread::sleep_until(started + std::chrono::milliseconds(280));
+    const QDeadlineTimer deadline(qMax(0, safety.remainingTime() - 250));
+    QVERIFY(SendInput(1, &pressInput, sizeof(INPUT)) == 1);
+    // Observe one real gesture rather than racing OLE with fixed sleeps. The worker
+    // always attempts release on that bounded deadline, even if an ack is absent.
+    std::thread input([&] {
+      pressAcknowledged = progress.pressed.tryAcquire(1, deadline);
+      if (pressAcknowledged && SendInput(1, &thresholdInput, sizeof(INPUT)) == 1) {
+        enterAcknowledged = progress.entered.tryAcquire(1, deadline);
+      }
+      const bool destinationSent = SendInput(1, &destinationInput, sizeof(INPUT)) == 1;
+      if (enterAcknowledged && destinationSent) {
+        destinationAcknowledged = progress.arrived.tryAcquire(1, deadline);
+      }
+      sequenceComplete.store(pressAcknowledged && enterAcknowledged && destinationAcknowledged);
       releasePosted.store(button(MOUSEEVENTF_LEFTUP));
     });
     const auto joinInput = qScopeGuard([&] { input.join(); });
     moved = QTest::qWaitFor(
-        [&] { return releasePosted.load() && m_edit->toPlainText() == expected; }, 4500);
+        [&] {
+          return releasePosted.load() && sequenceComplete.load() &&
+                 m_edit->toPlainText() == expected;
+        },
+        4500);
   }
   QString failureDetails;
   if (!moved) {
     QDebug(&failureDetails) << "Windows drag release posted:" << releasePosted.load()
+                            << "press/enter/destination ack:" << pressAcknowledged
+                            << enterAcknowledged << destinationAcknowledged
+                            << "observed press/move:" << progress.lastPress << progress.lastMove
+                            << "DPR/desktop:" << scale << virtualDesktop
                             << "actual/expected:" << m_edit->toPlainText() << expected
                             << "selection:" << m_edit->textCursor().selectedText()
                             << "source/drop positions:" << start << end

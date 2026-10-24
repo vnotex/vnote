@@ -593,10 +593,6 @@ void MarkdownViewWindow2::setPresentationMode(bool p_on) {
         !isViewFullScreen()) {
       return;
     }
-    qCDebug(lcPerfPreview) << "presentation-cancel requested/sent/active" << m_presentationRequested
-                           << m_presentationRequestSent << m_presentationActive
-                           << "revision known/current" << m_lastKnownRevision
-                           << (getBuffer().isValid() ? getBuffer().getRevision() : -1);
     const bool cancelWeb = m_presentationRequestSent;
     m_presentationRequested = false;
     m_presentationRequestSent = false;
@@ -620,10 +616,17 @@ void MarkdownViewWindow2::setPresentationMode(bool p_on) {
   ++m_presentationGeneration;
   // The fullscreen host owns Escape once promoted; cover the pending page/deck too.
   qApp->installEventFilter(this);
-  {
-    const QScopedValueRollback<bool> preparing(m_preparingPresentation, true);
-    // The normal Edit -> Read path syncs unsaved source through BufferService::syncNow().
-    setMode(ViewWindowMode::Read);
+  const QPointer<MarkdownViewWindow2> guard(this);
+  m_preparingPresentation = true;
+  // The normal Edit -> Read path syncs unsaved source through BufferService::syncNow().
+  setMode(ViewWindowMode::Read);
+  if (!guard) {
+    return;
+  }
+  m_preparingPresentation = false;
+  if (!isVisible() || !isEnabled()) {
+    setPresentationMode(false);
+    return;
   }
   if (!m_presentationRequested) {
     return;
@@ -643,22 +646,6 @@ void MarkdownViewWindow2::requestPresentationWhenReady() {
       !adapter()->isDocumentReady() ||
       !m_nativeRender->isCurrent(adapter()->documentGeneration()) ||
       !nativeRenderSourceIsCurrent()) {
-    if (m_presentationRequested) {
-      qCDebug(lcPerfPreview) << "presentation-readiness sent/preparing/switching/read/viewerReady"
-                             << m_presentationRequestSent << m_preparingPresentation
-                             << m_switchingMode << isReadMode() << m_viewerReady
-                             << "document/native/source current"
-                             << (adapter() && adapter()->isDocumentReady())
-                             << (adapter() && m_nativeRender &&
-                                 m_nativeRender->isCurrent(adapter()->documentGeneration()))
-                             << nativeRenderSourceIsCurrent()
-                             << "buffer generation captured/current" << m_renderBufferGeneration
-                             << getBufferGeneration() << "usesEditor" << m_renderUsesEditor
-                             << "editor generation captured/current" << m_renderEditorGeneration
-                             << (m_editor ? m_editor->getHighlighter()->documentGeneration() : 0)
-                             << "buffer revision captured/current" << m_renderBufferRevision
-                             << (getBuffer().isValid() ? getBuffer().getRevision() : -1);
-    }
     return;
   }
   m_presentationRequestSent = true;
@@ -3674,9 +3661,12 @@ bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
     }
   }
   if (m_presentationRequested && !m_presentationActive) {
-    if (p_obj == this && ((p_event->type() == QEvent::Hide && !p_event->spontaneous()) ||
-                          p_event->type() == QEvent::Close ||
-                          (p_event->type() == QEvent::EnabledChange && !isEnabled()))) {
+    // A first WebEngine view may rebuild its native ancestor, transiently hiding this
+    // widget during preparation. setPresentationMode() still cancels a settled hidden view.
+    if (p_obj == this &&
+        ((p_event->type() == QEvent::Hide && !p_event->spontaneous() && !m_preparingPresentation) ||
+         p_event->type() == QEvent::Close ||
+         (p_event->type() == QEvent::EnabledChange && !isEnabled()))) {
       setPresentationMode(false);
     } else if ((p_event->type() == QEvent::KeyPress ||
                 p_event->type() == QEvent::ShortcutOverride) &&

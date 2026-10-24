@@ -119,6 +119,11 @@ Markdown Edit-to-Read transitions must adopt the revision from their successful 
 before exposing/focusing the reader. A delayed native focus gain otherwise misclassifies that
 own write as an external edit and cancels a pending presentation. Real foreign revisions still
 refresh through `onFocusGained()`. `presentationCreatesReader` covers the delayed-focus ordering.
+First-reader creation can rebuild a native ancestor and transiently hide the view. Ignore those
+Hide notifications only while preparing presentation, then validate the settled visibility and
+enabled state before sending a request. A genuinely hidden view must not start presentation when
+shown later; Close, Escape and disabling still cancel immediately. Preparation may pump events,
+so its state restoration must be guarded by the view's lifetime.
 
 `ViewWindow2` mounts both `StatusBar` and shared `StatusWidget` through `StatusOverlay`,
 not through the bottom layout. Each strip floats over the bottom edge of its own content
