@@ -53,6 +53,49 @@ installation; loading is not deferred until the dock becomes visible.
 Coverage: `tests/core/test_taskservice.cpp` (late installation, cached empty results,
 explicit reload, and notebook/context changes).
 
+## Task command/data boundary
+
+Shell tasks keep `command` and `options.shell` **static**. `Task::setupProcess()` rejects
+recognized VNote variables there before evaluating cwd, inputs or args, and reports migration
+instructions in the Console. `getCommand()` remains an evaluation helper; shell launch must
+use the original command, never that helper's result.
+
+Put variable-derived values in `args`, one literal argument per array element. Do not add
+shell quotes around an args value. For example, migrate `"command": "echo ${bufferName}"` to:
+
+```json
+{"version":"0.1.3","type":"shell","command":"echo","args":["${bufferName}"]}
+```
+
+- Bash runs the static command with appended `"$@"`; data travels in QProcess argv after the
+  `-c` script and its argv0 marker. It never becomes script source.
+- PowerShell/pwsh appends string-cast environment references. Values travel in the child-only
+  `VNOTE_TASK_ARGUMENT_<index>` variables, overriding collisions without dropping inherited
+  or configured environment entries. The command must end with the invocation receiving
+  these args. For compound Windows commands, use a static function and invoke it at the end;
+  the bundled Git Commit task demonstrates this.
+- `cmd` and unknown shells support only static commands with empty `args`. For arguments,
+  select Bash/PowerShell or use `"type":"process"`, with an executable in `command` and
+  literal `args`. Shell argument transport rejects NUL, which process argv/environment
+  cannot represent. PowerShell's native-executable argument marshaling remains shell/version
+  dependent; use process tasks when exact native argv is required.
+- Pipelines and other intentionally authored shell code remain supported. Arguments append
+  to the end of the command; they cannot be interpolated into its middle. Shell options are
+  authored interpreter flags, not another dynamic-code entry point. Native shell variables
+  that are not VNote variables remain unchanged (PowerShell environment access can use
+  `$env:NAME` rather than VNote's `${env:NAME}` syntax).
+- `TaskVariableMgr::evaluate()` scans only the authored template. A filename, selection,
+  prompt response, environment value or shell output containing `${shell:...}` is literal
+  data, never recursively expanded. Explicit task-authored variables still evaluate; input
+  descriptions/defaults are separately authored templates. Custom tasks relying on recursive
+  expansion must put those variables directly in the task template instead.
+
+This is not a sandbox or notebook trust mechanism. Run only trusted task definitions.
+Explicit shell execution, `eval`, `Invoke-Expression`, and passing data as an interpreter's
+script are still execution chosen by the task author. Do not turn literal args back into code.
+Regression coverage: `tests/core/test_taskservice.cpp` executes real shells and a native
+process, checks exact argument boundaries, preserves cwd/env, and rejects dynamic shell code.
+
 ## NotificationService
 
 `NotificationService` (`notificationservice.{h,cpp}`) is an in-memory notification store: a `QObject` that is deliberately **Qt-Widgets-free** (only `<QObject>`, `<QDateTime>`, `<QHash>`, `<QVector>`, `std::function`) so it stays in `src/core/services`. It holds a `QVector<NotificationMessage>`, assigns a monotonic `quint64` id + timestamp in `notify()`, and emits `messageAdded` / `messageUpdated` / `messageDismissed` / `messageRemoved` / `messagesCleared`. All presentation (severity→icon mapping, toast, popup, badge) lives in the widget layer (`NotificationToast` / `NotificationButton2` / `NotificationPopup2`, see `src/widgets/AGENTS.md` § Notification System).

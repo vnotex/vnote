@@ -10508,6 +10508,10 @@ Notebook: %3</source>
 <context>
     <name>vnotex::Task</name>
     <message>
+        <source>Task (%1) cannot run: shell commands and shell options must not contain VNote variables. Move variables to args and use Bash or PowerShell, or use a process task.</source>
+        <translation>작업 (%1)을 실행할 수 없습니다. 셸 명령과 셸 옵션에는 VNote 변수를 포함할 수 없습니다. 변수를 args로 옮기고 Bash 또는 PowerShell을 사용하거나 process 작업을 사용하세요.</translation>
+    </message>
+    <message>
         <location filename="../../../core/services/task.cpp" line="+403"/>
         <source>[Task (%1) started]
 </source>

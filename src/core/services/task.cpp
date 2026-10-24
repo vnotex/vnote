@@ -303,7 +303,7 @@ QStringList Task::getOptionsShellArgs() {
   if (m_dto.options.shell.args.isEmpty()) {
     return ShellExecution::defaultShellArguments(m_dto.options.shell.executable);
   } else {
-    return variableMgr().evaluate(this, m_dto.options.shell.args);
+    return m_dto.options.shell.args;
   }
 }
 
@@ -363,7 +363,27 @@ Task::Task(const QString &p_locale, const QString &p_file, TaskService *p_taskSe
 QProcess *Task::setupProcess() {
   setCancelled(false);
 
-  auto command = getCommand();
+  const auto &type = getType();
+  const auto shellError = [this]() {
+    emit outputRequested(
+        tr("Task (%1) cannot run: shell commands and shell options must not contain VNote "
+           "variables. Move variables to args and use Bash or PowerShell, or use a process task.")
+            .arg(getLabel()) +
+        QLatin1Char('\n'));
+  };
+  if (type == "shell") {
+    bool dynamicCode = variableMgr().containsVariable(m_dto.command) ||
+                       variableMgr().containsVariable(m_dto.options.shell.executable);
+    for (const auto &arg : m_dto.options.shell.args) {
+      dynamicCode = dynamicCode || variableMgr().containsVariable(arg);
+    }
+    if (dynamicCode) {
+      shellError();
+      return nullptr;
+    }
+  }
+
+  const auto command = type == "shell" ? m_dto.command : getCommand();
   if (command.isEmpty()) {
     return nullptr;
   }
@@ -383,12 +403,14 @@ QProcess *Task::setupProcess() {
   }
 
   const auto args = getArgs();
-  const auto &type = getType();
 
   if (type == "shell") {
-    ShellExecution::setupProcess(process, command, args, getOptionsShellExecutable(),
-                                 getOptionsShellArgs());
-  } else if (getType() == "process") {
+    if (!ShellExecution::setupProcess(process, command, args, getOptionsShellExecutable(),
+                                      getOptionsShellArgs())) {
+      shellError();
+      return nullptr;
+    }
+  } else if (type == "process") {
     process->setProgram(command);
     process->setArguments(args);
   }

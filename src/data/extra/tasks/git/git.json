@@ -32,9 +32,10 @@
             },
             "icon": "commit.svg",
             "windows" :{
-                "command": "git add -A -- . ; if ($?) { git commit --message=\"${input:msg}\" }"
+                "command": "function Invoke-VNoteCommit { git add -A -- . ; if ($?) { git commit --message $args[0] } }; Invoke-VNoteCommit"
             },
-            "command": "git add -A -- . && git commit --message=\"${input:msg}\"",
+            "command": "git add -A -- . && git commit --message",
+            "args": ["${input:msg}"],
             "inputs": [
                 {
                     "id": "msg",

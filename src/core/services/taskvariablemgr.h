@@ -36,6 +36,9 @@ public:
 
   void init();
 
+  // Match task variables in authored templates, without evaluating their values.
+  bool containsVariable(const QString &p_text) const;
+
   QString evaluate(Task *p_task, const QString &p_text) const;
 
   QStringList evaluate(Task *p_task, const QStringList &p_texts) const;

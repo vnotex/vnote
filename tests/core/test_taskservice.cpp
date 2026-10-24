@@ -2,7 +2,12 @@
 
 #include <QDir>
 #include <QFile>
+#include <QJsonArray>
+#include <QJsonDocument>
+#include <QJsonObject>
+#include <QProcess>
 #include <QScopeGuard>
+#include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTextStream>
 
@@ -31,6 +36,7 @@ public:
   QString selectedText() const override { return m_selectedText; }
   QString promptString(const QString &, const QString &, const QString &p_default, bool,
                        bool &p_cancelled) const override {
+    ++m_promptCount;
     p_cancelled = m_promptCancel;
     if (m_promptCancel) {
       return QString();
@@ -45,6 +51,7 @@ public:
   QString m_selectedText;
   QString m_promptResult;
   bool m_promptCancel = false;
+  mutable int m_promptCount = 0;
 };
 
 class TestTaskService : public QObject {
@@ -69,6 +76,12 @@ private slots:
   void testInputPromptResolves();
   void testInputPromptCancels();
   void testNullContextResolvesEmpty();
+  void testShellArguments_data();
+  void testShellArguments();
+  void testShellPreflight_data();
+  void testShellPreflight();
+  void testVariableValuesNotReexpanded();
+  void testProcessArguments();
 
 private:
   // Writes a task JSON file with @p_body into @p_dir and returns its path.
@@ -556,6 +569,227 @@ void TestTaskService::testNullContextResolvesEmpty() {
   QVERIFY(inputTask->isCancelled());
 }
 
+// Use Git Bash on Windows, never the System32 WSL launcher.
+static QString bashExecutable() {
+#ifdef Q_OS_WIN
+  const auto git = QStandardPaths::findExecutable(QStringLiteral("git"));
+  const auto bash = QFileInfo(git).dir().filePath(QStringLiteral("../bin/bash.exe"));
+  return QFileInfo(bash).isExecutable() ? QDir::cleanPath(bash) : QString();
+#else
+  return QStandardPaths::findExecutable(QStringLiteral("bash"));
+#endif
+}
+
+void TestTaskService::testShellArguments_data() {
+  QTest::addColumn<QString>("shell");
+  QTest::addColumn<bool>("powershell");
+  QTest::addColumn<bool>("configuredEnv");
+  for (bool configured : {false, true}) {
+    const auto suffix = configured ? "-configured-env" : "-inherited-env";
+    QTest::newRow(qPrintable(QStringLiteral("bash") + suffix))
+        << bashExecutable() << false << configured;
+#ifdef Q_OS_WIN
+    QTest::newRow(qPrintable(QStringLiteral("powershell") + suffix))
+        << QStandardPaths::findExecutable(QStringLiteral("powershell")) << true << configured;
+#endif
+    QTest::newRow(qPrintable(QStringLiteral("pwsh") + suffix))
+        << QStandardPaths::findExecutable(QStringLiteral("pwsh")) << true << configured;
+  }
+}
+
+void TestTaskService::testShellArguments() {
+  QFETCH(QString, shell);
+  QFETCH(bool, powershell);
+  QFETCH(bool, configuredEnv);
+  if (shell.isEmpty()) {
+    QSKIP("Requested shell is not installed");
+  }
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  MockTaskContext context;
+  context.m_bufferPath = tmp.filePath(QStringLiteral("report$(echo>VNOTE_TASKS_RCE_PROOF).md"));
+  context.m_selectedText =
+      QStringLiteral("'\"; & | $(echo>VNOTE_TASKS_RCE_PROOF) `echo>VNOTE_TASKS_RCE_PROOF`\\\n"
+                     "${shell:echo>VNOTE_TASKS_RCE_PROOF} ${bufferName} %PATH% !PATH!\t");
+  context.m_promptResult = QStringLiteral("quoted 'input' $(echo>VNOTE_TASKS_RCE_PROOF)");
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, &context);
+  service.init();
+
+  // Shell builtins serialize argument boundaries without a second native-argv parser.
+  const auto command =
+      powershell
+          ? QStringLiteral("function Write-VNoteArgs { "
+                           "[IO.File]::WriteAllBytes((Join-Path (Get-Location) 'argv.bin'), "
+                           "[Text.Encoding]::UTF8.GetBytes(($args -join [char]0) + [char]0)); "
+                           "[IO.File]::WriteAllText((Join-Path (Get-Location) 'env.txt'), "
+                           "$env:VNOTE_TEST_ENV); "
+                           "if (!$env:PATH) { exit 9 } }; Write-VNoteArgs")
+          : QStringLiteral(
+                "vnote_args() { printf '%s\\0' \"$@\" > argv.bin; "
+                "printf '%s' \"$VNOTE_TEST_ENV\" > env.txt; test -n \"$PATH\"; }; vnote_args");
+  const QByteArray envName("VNOTE_TEST_ENV");
+  const auto oldEnv = qgetenv(envName.constData());
+  const bool hadEnv = qEnvironmentVariableIsSet(envName.constData());
+  qputenv(envName.constData(), "inherited");
+  auto restoreEnv = qScopeGuard([&]() {
+    if (hadEnv) {
+      qputenv(envName.constData(), oldEnv);
+    } else {
+      qunsetenv(envName.constData());
+    }
+  });
+  QJsonObject options{{"cwd", tmp.path()}, {"shell", QJsonObject{{"executable", shell}}}};
+  if (configuredEnv) {
+    options.insert("env", QJsonObject{{"VNOTE_TEST_ENV", "configured"},
+                                      {"VNOTE_TASK_ARGUMENT_0", "must be overwritten"}});
+  }
+  const QJsonObject obj{
+      {"version", "0.1.3"},
+      {"command", command},
+      {"args", QJsonArray{"${bufferName}", "prefix=${selectedText}:suffix", "", "${input:msg}"}},
+      {"inputs", QJsonArray{QJsonObject{{"id", "msg"}, {"type", "promptString"}}}},
+      {"options", options}};
+  auto task = Task::fromFile(writeTask(tmp.path(), QStringLiteral("task.json"),
+                                       QString::fromUtf8(QJsonDocument(obj).toJson())),
+                             QStringLiteral("en_US"), &service);
+  QVERIFY(task);
+  auto *process = task->runStarted();
+  QVERIFY(process);
+  QVERIFY2(process->waitForFinished(20000), qPrintable(process->errorString()));
+  QCOMPARE(process->exitStatus(), QProcess::NormalExit);
+  QCOMPARE(process->exitCode(), 0);
+  QFile argvFile(tmp.filePath(QStringLiteral("argv.bin")));
+  QVERIFY(argvFile.open(QIODevice::ReadOnly));
+  QByteArray expected;
+  for (const auto &arg :
+       QStringList{QFileInfo(context.m_bufferPath).fileName(),
+                   "prefix=" + context.m_selectedText + ":suffix", "", context.m_promptResult}) {
+    expected += arg.toUtf8();
+    expected += '\0';
+  }
+  QCOMPARE(argvFile.readAll(), expected);
+  QVERIFY(!QFile::exists(tmp.filePath(QStringLiteral("VNOTE_TASKS_RCE_PROOF"))));
+  QFile envFile(tmp.filePath(QStringLiteral("env.txt")));
+  QVERIFY(envFile.open(QIODevice::ReadOnly));
+  QCOMPARE(envFile.readAll(), configuredEnv ? QByteArray("configured") : QByteArray("inherited"));
+}
+
+void TestTaskService::testShellPreflight_data() {
+  QTest::addColumn<QString>("field");
+  QTest::newRow("command") << QStringLiteral("command");
+  QTest::newRow("shell-args") << QStringLiteral("args");
+  QTest::newRow("shell-executable") << QStringLiteral("executable");
+  QTest::newRow("cmd-with-args") << QStringLiteral("cmd");
+  QTest::newRow("unknown-shell-with-args") << QStringLiteral("unknown");
+  QTest::newRow("nul-argument") << QStringLiteral("nul");
+}
+
+void TestTaskService::testShellPreflight() {
+  QFETCH(QString, field);
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  MockTaskContext context;
+  context.m_selectedText = QStringLiteral("${shell:echo>VNOTE_TASKS_RCE_PROOF}");
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, &context);
+  service.init();
+  QJsonObject shell;
+  QJsonObject obj{
+      {"version", "0.1.3"},
+      {"command", "echo"},
+      {"args", QJsonArray{"${selectedText}"}},
+      {"inputs", QJsonArray{QJsonObject{{"id", "location"}, {"type", "promptString"}}}}};
+  if (field == "command") {
+    obj.insert("command", "echo ${selectedText}");
+  } else if (field == "args") {
+    shell.insert("args", QJsonArray{"${selectedText}"});
+  } else if (field == "executable") {
+    shell.insert("executable", "${selectedText}");
+  } else if (field == "nul") {
+    context.m_selectedText = QString(QChar::Null);
+  } else {
+    shell.insert("executable", field == "cmd" ? "cmd.exe" : "unsupported-shell");
+  }
+  QJsonObject options{{"cwd", tmp.path()}, {"shell", shell}};
+  if (field == "command" || field == "args" || field == "executable") {
+    // Rejection must precede cwd evaluation, so invalid tasks never prompt.
+    context.m_promptResult = tmp.path();
+    options.insert("cwd", "${input:location}");
+  }
+  obj.insert("options", options);
+  auto task = Task::fromFile(writeTask(tmp.path(), QStringLiteral("task.json"),
+                                       QString::fromUtf8(QJsonDocument(obj).toJson())),
+                             QStringLiteral("en_US"), &service);
+  QVERIFY(task);
+  QSignalSpy output(task.data(), &Task::outputRequested);
+  QVERIFY(!task->runStarted());
+  QCOMPARE(output.count(), 1);
+  QCOMPARE(context.m_promptCount, 0);
+  QVERIFY(!QFile::exists(tmp.filePath(QStringLiteral("VNOTE_TASKS_RCE_PROOF"))));
+}
+
+void TestTaskService::testVariableValuesNotReexpanded() {
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  MockTaskContext context;
+  context.m_selectedText = QStringLiteral("${shell:echo>VNOTE_TASKS_RCE_PROOF}");
+  context.m_promptResult = QStringLiteral("${selectedText}");
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, &context);
+  service.init();
+  const QJsonObject obj{
+      {"version", "0.1.3"},
+      {"command", "echo"},
+      {"args", QJsonArray{"${selectedText}", "${input:msg}"}},
+      {"inputs", QJsonArray{QJsonObject{{"id", "msg"}, {"type", "promptString"}}}},
+      {"options", QJsonObject{{"cwd", tmp.path()}}}};
+  auto task = Task::fromFile(writeTask(tmp.path(), QStringLiteral("task.json"),
+                                       QString::fromUtf8(QJsonDocument(obj).toJson())),
+                             QStringLiteral("en_US"), &service);
+  QVERIFY(task);
+  const auto args = task->getArgs();
+  QCOMPARE(args.at(0), context.m_selectedText);
+  QCOMPARE(args.at(1), context.m_promptResult);
+  QVERIFY(!QFile::exists(tmp.filePath(QStringLiteral("VNOTE_TASKS_RCE_PROOF"))));
+
+  // Only an authored shell variable may invoke its callback. Keep this boundary
+  // deterministic, independent of shell startup vs the shell variable's 1s timeout.
+  TaskVariableMgr variables(&service);
+  variables.init();
+  int executions = 0;
+  variables.overrideVariable("shell", [&executions](Task *, const QString &) {
+    ++executions;
+    return QStringLiteral("executed");
+  });
+  QCOMPARE(variables.evaluate(task.data(), QStringLiteral("${selectedText}/${shell:explicit}")),
+           context.m_selectedText + QStringLiteral("/executed"));
+  QCOMPARE(executions, 1);
+}
+
+void TestTaskService::testProcessArguments() {
+  QTemporaryDir tmp;
+  QVERIFY(tmp.isValid());
+  MockTaskContext context;
+  context.m_selectedText = QStringLiteral("quotes '\" $(echo>VNOTE_TASKS_RCE_PROOF)\n");
+  TaskService service(m_configMgr, m_notebookService, m_snippetService, &context);
+  service.init();
+  const QJsonObject obj{{"version", "0.1.3"},
+                        {"type", "process"},
+                        {"command", "${exeFile}"},
+                        {"args", QJsonArray{"--task-argv", "${selectedText}", ""}},
+                        {"options", QJsonObject{{"cwd", tmp.path()}}}};
+  auto task = Task::fromFile(writeTask(tmp.path(), QStringLiteral("task.json"),
+                                       QString::fromUtf8(QJsonDocument(obj).toJson())),
+                             QStringLiteral("en_US"), &service);
+  QVERIFY(task);
+  auto *process = task->runStarted();
+  QVERIFY(process);
+  QVERIFY2(process->waitForFinished(20000), qPrintable(process->errorString()));
+  QCOMPARE(process->exitCode(), 0);
+  QFile argvFile(tmp.filePath(QStringLiteral("argv.bin")));
+  QVERIFY(argvFile.open(QIODevice::ReadOnly));
+  QCOMPARE(argvFile.readAll(), context.m_selectedText.toUtf8() + QByteArray(2, '\0'));
+  QVERIFY(!QFile::exists(tmp.filePath(QStringLiteral("VNOTE_TASKS_RCE_PROOF"))));
+}
+
 } // namespace tests
 
 int main(int argc, char **argv) {
@@ -570,6 +804,18 @@ int main(int argc, char **argv) {
   qputenv("TMP", path);
   qputenv("TEMP", path);
   QCoreApplication app(argc, argv);
+  if (app.arguments().value(1) == QStringLiteral("--task-argv")) {
+    QFile output(QStringLiteral("argv.bin"));
+    if (!output.open(QIODevice::WriteOnly)) {
+      return 1;
+    }
+    QByteArray bytes;
+    for (const auto &arg : app.arguments().mid(2)) {
+      bytes += arg.toUtf8();
+      bytes += '\0';
+    }
+    return output.write(bytes) == bytes.size() ? 0 : 1;
+  }
   tests::TestTaskService test;
   return QTest::qExec(&test, argc, argv);
 }

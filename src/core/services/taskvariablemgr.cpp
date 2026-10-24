@@ -332,7 +332,10 @@ void TaskVariableMgr::initShellVariables() {
   addVariable("shell", [this](Task *task, const QString &val) {
     QProcess process;
     process.setWorkingDirectory(task->getOptionsCwd());
-    ShellExecution::setupProcess(&process, val);
+    if (!ShellExecution::setupProcess(&process, val)) {
+      task->setCancelled(true);
+      return QString();
+    }
     process.start();
     const int timeout = 1000;
     if (!process.waitForStarted(timeout) || !process.waitForFinished(timeout)) {
@@ -350,43 +353,37 @@ void TaskVariableMgr::addVariable(const QString &p_name, const TaskVariable::Fun
   m_variables.insert(p_name, TaskVariable(p_name, p_func));
 }
 
-QString TaskVariableMgr::evaluate(Task *p_task, const QString &p_text) const {
-  QString content(p_text);
-
-  int maxTimesAtSamePos = 100;
-
-  QRegularExpression regExp(c_variableSymbolRegExp);
-  int pos = 0;
-  while (pos < content.size()) {
-    QRegularExpressionMatch match;
-    int idx = content.indexOf(regExp, pos, &match);
-    if (idx == -1) {
-      break;
+bool TaskVariableMgr::containsVariable(const QString &p_text) const {
+  static const QRegularExpression regExp(c_variableSymbolRegExp);
+  auto matches = regExp.globalMatch(p_text);
+  while (matches.hasNext()) {
+    if (findVariable(matches.next().captured(1).trimmed())) {
+      return true;
     }
+  }
+  return false;
+}
 
-    const auto varName = match.captured(1).trimmed();
-    const auto varValue = match.captured(2).trimmed();
-    auto var = findVariable(varName);
+QString TaskVariableMgr::evaluate(Task *p_task, const QString &p_text) const {
+  static const QRegularExpression regExp(c_variableSymbolRegExp);
+  auto matches = regExp.globalMatch(p_text);
+  QString content;
+  qsizetype pos = 0;
+  while (matches.hasNext()) {
+    const auto match = matches.next();
+    const auto *var = findVariable(match.captured(1).trimmed());
     if (!var) {
-      // Skip it.
-      pos = idx + match.capturedLength(0);
       continue;
     }
-
-    const auto afterText = var->evaluate(p_task, varValue);
-    content.replace(idx, match.capturedLength(0), afterText);
-
-    // @afterText may still contains variable symbol.
-    if (pos == idx) {
-      if (--maxTimesAtSamePos == 0) {
-        break;
-      }
-    } else {
-      maxTimesAtSamePos = 100;
-    }
-    pos = idx;
+    content += QStringView(p_text).mid(pos, match.capturedStart() - pos);
+    content += var->evaluate(p_task, match.captured(2).trimmed());
+    pos = match.capturedEnd();
   }
-
+  if (pos == 0) {
+    return p_text;
+  }
+  // Only scan the authored template. Values (including ${shell:...}) are data.
+  content += QStringView(p_text).mid(pos);
   return content;
 }
 
