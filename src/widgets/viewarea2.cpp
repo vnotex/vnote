@@ -1110,7 +1110,8 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
     // registration. A background open must not publish that transient focus
     // as the main area's current tab or workspace.
     QSignalBlocker constructionSignals(split);
-    if (p_settings.m_focus || p_settings.m_detachedView) {
+    if (p_settings.m_detachedView ||
+        (p_settings.m_focus && p_workspaceId == m_controller->getCurrentWorkspaceId())) {
       constructionSignals.unblock();
     }
     win = locked ? static_cast<ViewWindow2 *>(
@@ -1135,11 +1136,7 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   connect(win, &ViewWindow2::closeRequested, this,
           [this, id]() { m_controller->closeViewWindow(id, true); });
   connect(win, &ViewWindow2::exportRequested, this, [this, win]() { emit exportRequested(win); });
-  // For a detached open (--detached-view CLI flag or the explorer's "Open as
-  // Detached"), pass the target workspace so the
-  // controller registers the buffer there without touching main-window state.
-  m_controller->onViewWindowOpened(id, p_buffer, p_settings,
-                                   p_settings.m_detachedView ? p_workspaceId : QString());
+  m_controller->onViewWindowOpened(id, p_buffer, p_settings, p_workspaceId);
 
   if (!win) {
     return;
@@ -1147,7 +1144,7 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   // Select a focused open after registration and its after-open hook, as for
   // ordinary tab creation. The first tab was reconciled after membership add.
   if (p_settings.m_focus) {
-    split->setCurrentViewWindow(win);
+    setCurrentBuffer(p_workspaceId, p_buffer.id(), true);
   }
 
   // Apply file open settings (scroll to line, search highlight).
@@ -1246,7 +1243,7 @@ void ViewArea2::openWidgetContent(IViewWindowContent *p_content, const Buffer2 &
   // Use default FileOpenSettings for notification.
   FileOpenSettings settings;
   settings.m_focus = true;
-  m_controller->onViewWindowOpened(id, p_buffer, settings);
+  m_controller->onViewWindowOpened(id, p_buffer, settings, p_workspaceId);
   split->setCurrentViewWindow(win);
 
   updateScreenVisibility();
@@ -1898,6 +1895,7 @@ void ViewArea2::updateSplitWorkspaceId(const QString &p_oldWorkspaceId,
 void ViewArea2::setCurrentBuffer(const QString &p_workspaceId, const QString &p_bufferId,
                                  bool p_focus) {
   auto *split = splitForWorkspace(p_workspaceId);
+  const bool detached = !split;
   if (!split) {
     // Detached splits live outside m_splits; resolve them so a --detached-view
     // duplicate open can activate the existing tab in its DetachedWindow.
@@ -1923,6 +1921,14 @@ void ViewArea2::setCurrentBuffer(const QString &p_workspaceId, const QString &p_
           << "ViewArea2::setCurrentBuffer: after setCurrentViewWindow, currentWidget:"
           << split->currentWidget();
       if (p_focus) {
+        if (detached) {
+          auto *host = split->window();
+          if (host->isMinimized()) {
+            host->showNormal();
+          }
+          host->raise();
+          host->activateWindow();
+        }
         split->focus();
       }
       return;

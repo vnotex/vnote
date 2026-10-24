@@ -93,6 +93,7 @@ struct FileOpenEvent {
   // Open in a detached view split (--detached-view CLI flag, or the notebook
   // explorer's "Open as Detached" menu entry).
   bool detachedView = false;
+  QString targetWorkspaceId; // Existing hosted workspace; overrides detachedView when nonempty.
   QStringList searchPatterns;      // keyword patterns for highlight (empty = no highlight)
   int searchOptions = 0;           // FindOptions serialized as int
   int searchCurrentMatchLine = -1; // line for current-match bias

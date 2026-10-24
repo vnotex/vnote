@@ -77,6 +77,7 @@
 #include <vtextedit/vtypsteditor.h>
 #include <vxcore/vxcore.h>
 #include <widgets/attachmentpopup2.h>
+#include <widgets/detachedwindow.h>
 #include <widgets/dialogs/imageinsertdialog.h>
 #include <widgets/editors/markdowneditor.h>
 #include <widgets/editors/markdownviewer.h>
@@ -495,6 +496,11 @@ private slots:
   void explorerGestures();
   void restoreOrderedWorkspacesAndLockedNote();
   void reopenSplitAndBatches();
+  void explicitDetachedWorkspace();
+  void explicitMainWorkspace();
+  void unavailableTargetWorkspace_data();
+  void unavailableTargetWorkspace();
+  void targetWorkspaceWithReentrantOpen();
   void protectedResourcesAndLateWork();
   void pdfCommentDurability_data();
   void pdfCommentDurability();
@@ -1410,6 +1416,226 @@ void TestViewAreaTabReuse::reopenSplitAndBatches() {
   }
   detachedNotes.sort();
   QCOMPARE(detachedNotes, QStringList({QStringLiteral("b.md"), QStringLiteral("c.md")}));
+}
+
+void TestViewAreaTabReuse::explicitDetachedWorkspace() {
+  f->reuse();
+  for (const auto &name : {QStringLiteral("main.txt"), QStringLiteral("one.txt"),
+                           QStringLiteral("two.txt"), QStringLiteral("next.txt")})
+    QVERIFY(f->create(name, name.toUtf8()));
+  const auto mainBuffer = f->open(QStringLiteral("main.txt"));
+  const auto main = f->workspace();
+  auto *mainWindow = f->current();
+  QStringList created;
+  const int hook = f->hooks->addAction<ViewSplitCreateEvent>(
+      HookNames::ViewSplitAfterCreate,
+      [&](HookContext &, const ViewSplitCreateEvent &event) { created.append(event.newWorkspaceId); });
+  const auto removeHook = qScopeGuard([&] { f->hooks->removeAction(hook); });
+  FileOpenSettings settings;
+  settings.m_mode = ViewWindowMode::Edit;
+  settings.m_detachedView = true;
+  const auto one = f->buffers->openBuffer(f->node(QStringLiteral("one.txt")), settings);
+  f->controller()->resetCliDetachedBatch();
+  const auto two = f->buffers->openBuffer(f->node(QStringLiteral("two.txt")), settings);
+  QCOMPARE(created.size(), 2);
+  const auto first = created[0];
+  const auto second = created[1];
+  ViewSplit2 *targetSplit = nullptr;
+  for (auto *widget : QApplication::topLevelWidgets()) {
+    auto *host = qobject_cast<DetachedWindow *>(widget);
+    if (host && host->getWorkspaceId() == first)
+      targetSplit = host->getViewSplit();
+  }
+  QVERIFY(targetSplit);
+  f->controller()->resetCliDetachedBatch();
+
+  settings.m_targetWorkspaceId = first;
+  settings.m_detachedView = false;
+  // Exercise settings serialization and the real FileOpenEvent hook transport.
+  settings = FileOpenSettings::fromVariantMap(settings.toVariantMap());
+  const auto next = f->buffers->openBuffer(f->node(QStringLiteral("next.txt")), settings);
+  QVERIFY(next.isValid());
+  QCOMPARE(f->order(first), QStringList({one.id(), next.id()}));
+  QCOMPARE(f->order(second), QStringList({two.id()}));
+  QCOMPARE(f->coreCurrent(first), next.id());
+  const auto nextWindow = f->area->findWindowIdByBufferId(first, next.id());
+  QVERIFY(nextWindow != ViewAreaController::InvalidViewWindowId);
+
+  settings.m_focus = false;
+  f->buffers->openBuffer(one.nodeId(), settings);
+  QCOMPARE(targetSplit->getCurrentViewWindow()->getBuffer().id(), next.id());
+  QCOMPARE(f->coreCurrent(first), next.id());
+  // An existing buffer in a different workspace still gets a view in the target.
+  f->buffers->openBuffer(two.nodeId(), settings);
+  QCOMPARE(f->order(first), QStringList({one.id(), next.id(), two.id()}));
+  QCOMPARE(targetSplit->getCurrentViewWindow()->getBuffer().id(), next.id());
+  QCOMPARE(f->coreCurrent(first), next.id());
+
+  settings.m_focus = true;
+  settings.m_detachedView = true;
+  f->buffers->openBuffer(one.nodeId(), settings);
+  QCOMPARE(targetSplit->getCurrentViewWindow()->getBuffer().id(), one.id());
+  QCOMPARE(f->coreCurrent(first), one.id());
+  QCOMPARE(f->area->findWindowIdByBufferId(first, next.id()), nextWindow);
+  QCOMPARE(f->order(first), QStringList({one.id(), next.id(), two.id()}));
+  QCOMPARE(created.size(), 2);
+  QCOMPARE(f->workspace(), main);
+  QCOMPARE(f->current(), mainWindow);
+  QCOMPARE(f->order(main), QStringList({mainBuffer.id()}));
+  QCOMPARE(f->coreCurrent(main), mainBuffer.id());
+}
+
+void TestViewAreaTabReuse::explicitMainWorkspace() {
+  f->reuse();
+  for (const auto &name : {QStringLiteral("a.txt"), QStringLiteral("b.txt"),
+                           QStringLiteral("c.txt"), QStringLiteral("d.txt")})
+    QVERIFY(f->create(name, name.toUtf8()));
+  const auto a = f->open(QStringLiteral("a.txt"));
+  const auto first = f->workspace();
+  f->controller()->splitViewSplit(first, Direction::Right, false);
+  const auto second = f->workspace();
+  QVERIFY(second != first);
+  const auto b = f->open(QStringLiteral("b.txt"));
+  f->controller()->focusWindow(first, a.id());
+  auto *original = f->current();
+
+  FileOpenSettings settings;
+  settings.m_mode = ViewWindowMode::Edit;
+  settings.m_targetWorkspaceId = second;
+  settings.m_detachedView = true; // Explicit main destination wins.
+  settings.m_focus = false;
+  const auto c = f->buffers->openBuffer(f->node(QStringLiteral("c.txt")), settings);
+  QCOMPARE(f->workspace(), first);
+  QCOMPARE(f->current(), original);
+  QCOMPARE(f->coreCurrent(first), a.id());
+  QCOMPARE(f->order(second), QStringList({b.id(), c.id()}));
+  QCOMPARE(f->coreCurrent(second), b.id());
+  QCOMPARE(f->area->getCurrentBufferIdForWorkspace(second), b.id());
+  f->buffers->openBuffer(c.nodeId(), settings);
+  QCOMPARE(f->current(), original);
+  QCOMPARE(f->area->getCurrentBufferIdForWorkspace(second), b.id());
+
+  settings.m_focus = true;
+  f->buffers->openBuffer(c.nodeId(), settings);
+  QCOMPARE(f->workspace(), second);
+  QCOMPARE(f->current()->getBuffer().id(), c.id());
+  QCOMPARE(f->coreCurrent(second), c.id());
+  const auto reusedId = f->current()->getViewWindowId();
+  f->controller()->focusWindow(first, a.id());
+  const auto d = f->buffers->openBuffer(f->node(QStringLiteral("d.txt")), settings);
+  QCOMPARE(f->workspace(), second);
+  QCOMPARE(f->current()->getViewWindowId(), reusedId);
+  QCOMPARE(f->current()->getBuffer().id(), d.id());
+  QCOMPARE(f->order(second), QStringList({b.id(), d.id()}));
+  QCOMPARE(f->order(first), QStringList({a.id()}));
+  QCOMPARE(f->coreCurrent(first), a.id());
+  QCOMPARE(f->workspaces->listWorkspaces().size(), 2);
+}
+
+void TestViewAreaTabReuse::unavailableTargetWorkspace_data() {
+  QTest::addColumn<QString>("kind");
+  QTest::newRow("missing") << QStringLiteral("missing");
+  QTest::newRow("hidden") << QStringLiteral("hidden");
+  QTest::newRow("closed") << QStringLiteral("closed");
+  QTest::newRow("closed-by-open-hook") << QStringLiteral("hook");
+}
+
+void TestViewAreaTabReuse::unavailableTargetWorkspace() {
+  QFETCH(QString, kind);
+  QVERIFY(f->create(QStringLiteral("a.txt"), "Owned main note\n"));
+  QVERIFY(f->create(QStringLiteral("b.txt"), "Detached seed\n"));
+  QVERIFY(f->create(QStringLiteral("c.txt"), "Rejected candidate\n"));
+  const auto a = f->open(QStringLiteral("a.txt"));
+  QString target = QStringLiteral("missing-workspace");
+  ID detachedWindow = ViewAreaController::InvalidViewWindowId;
+  int closeHook = -1;
+  const auto removeHook = qScopeGuard([&] {
+    if (closeHook >= 0)
+      f->hooks->removeAction(closeHook);
+  });
+  if (kind == QLatin1String("hidden")) {
+    target = f->workspace();
+    f->controller()->newWorkspace(target, QStringLiteral("Visible"));
+    f->open(QStringLiteral("a.txt"));
+  } else if (kind != QLatin1String("missing")) {
+    const int created = f->hooks->addAction<ViewSplitCreateEvent>(
+        HookNames::ViewSplitAfterCreate,
+        [&](HookContext &, const ViewSplitCreateEvent &event) { target = event.newWorkspaceId; });
+    FileOpenSettings detached;
+    detached.m_detachedView = true;
+    const auto b = f->buffers->openBuffer(f->node(QStringLiteral("b.txt")), detached);
+    f->hooks->removeAction(created);
+    detachedWindow = f->area->findWindowIdByBufferId(target, b.id());
+    QVERIFY(detachedWindow != ViewAreaController::InvalidViewWindowId);
+    if (kind == QLatin1String("closed")) {
+      QVERIFY(f->controller()->closeViewWindow(detachedWindow, true));
+    } else {
+      closeHook = f->hooks->addAction<ViewWindowOpenEvent>(
+          HookNames::ViewWindowBeforeOpen, [&](HookContext &, const ViewWindowOpenEvent &) {
+            f->controller()->closeViewWindow(detachedWindow, true);
+          });
+    }
+  }
+  const auto main = f->workspace();
+  const auto current = f->current();
+  FileOpenSettings settings;
+  settings.m_targetWorkspaceId = target;
+  settings.m_detachedView = true; // No detached fallback on invalid explicit ID.
+  f->buffers->openBuffer(f->node(QStringLiteral("c.txt")), settings);
+  if (closeHook >= 0) {
+    f->hooks->removeAction(closeHook);
+    closeHook = -1;
+  }
+  // Rejection must clean an unowned candidate, but keep a buffer owned elsewhere.
+  f->buffers->openBuffer(a.nodeId(), settings);
+  QCOMPARE(f->buffers->listBuffers().size(), 1);
+  QVERIFY(f->buffers->getBufferHandle(a.id()).isValid());
+  QCOMPARE(f->workspace(), main);
+  QCOMPARE(f->current(), current);
+  QCOMPARE(f->order(main), QStringList({a.id()}));
+  QCOMPARE(f->coreCurrent(main), a.id());
+  QCOMPARE(f->area->getViewWindowIdsForWorkspace(target).size(), 0);
+  QCOMPARE(f->workspaces->listWorkspaces().size(), kind == QLatin1String("hidden") ? 2 : 1);
+}
+
+void TestViewAreaTabReuse::targetWorkspaceWithReentrantOpen() {
+  for (const auto &name : {QStringLiteral("a.txt"), QStringLiteral("b.txt"),
+                           QStringLiteral("outer.txt")})
+    QVERIFY(f->create(name, name.toUtf8()));
+  const auto a = f->open(QStringLiteral("a.txt"));
+  const auto first = f->workspace();
+  f->controller()->splitViewSplit(first, Direction::Right, false);
+  const auto second = f->workspace();
+  const auto b = f->open(QStringLiteral("b.txt"));
+  f->controller()->focusWindow(first, a.id());
+  QTRY_VERIFY(f->current()->isAncestorOf(QApplication::focusWidget()));
+  bool nested = false;
+  QString nestedWorkspace;
+  const int hook = f->hooks->addAction<ViewWindowOpenEvent>(
+      HookNames::ViewWindowAfterOpen, [&](HookContext &, const ViewWindowOpenEvent &) {
+        if (nested)
+          return;
+        nested = true;
+        FileOpenSettings inner;
+        inner.m_targetWorkspaceId = second;
+        f->controller()->openBuffer(b, inner);
+        nestedWorkspace = f->workspace();
+      });
+  const auto removeHook = qScopeGuard([&] { f->hooks->removeAction(hook); });
+  FileOpenSettings outer;
+  outer.m_targetWorkspaceId = second;
+  outer.m_focus = false;
+  const auto buffer = f->buffers->openBuffer(f->node(QStringLiteral("outer.txt")), outer);
+  QVERIFY(nested);
+  QCOMPARE(nestedWorkspace, second);
+  QCOMPARE(f->order(second), QStringList({b.id(), buffer.id()}));
+  QCOMPARE(f->order(first), QStringList({a.id()}));
+  QCOMPARE(f->workspace(), first);
+  QCOMPARE(f->current()->getBuffer().id(), a.id());
+  QCOMPARE(f->coreCurrent(first), a.id());
+  QCOMPARE(f->coreCurrent(second), b.id());
+  QVERIFY(f->area->findWindowIdByBufferId(second, buffer.id()) !=
+          ViewAreaController::InvalidViewWindowId);
 }
 
 void TestViewAreaTabReuse::protectedResourcesAndLateWork() {

@@ -106,7 +106,7 @@ public:
 
   // ============ Open/Close ============
 
-  // Open a buffer in the current workspace (split).
+  // Open a buffer in the requested hosted workspace, or use default split routing.
   // Resolves type, hooks, workspace routing, and duplicate activation before
   // applying the new-tab preference. Reuses compatible resources or creates
   // a different viewer before attempting to close the captured outgoing tab.
@@ -122,16 +122,14 @@ public:
   // Called by the view after it has successfully created a ViewWindow2
   // in response to m_view->openBuffer().
   // @p_windowId: the ID the view assigned to the new window.
-  // @p_detachedWorkspaceId: when non-empty, the buffer was opened into a
-  //   detached (--detached-view) workspace; register it there and do NOT retarget
-  //   the main window's current window/split. When empty, normal behavior using
-  //   the current workspace.
+  // @p_workspaceId: actual owning workspace, captured by the view. Detached opens
+  //   register there without retargeting the main window's current window/split.
   // Registers membership before reconciling the selected tab; background opens
   // retain the current window, and restore leaves persisted current state intact.
   // Fires the after-open hook and publishes the updated windows.
   void onViewWindowOpened(ID p_windowId, const Buffer2 &p_buffer,
                           const FileOpenSettings &p_settings,
-                          const QString &p_detachedWorkspaceId = QString());
+                          const QString &p_workspaceId);
 
   // Called by the view after a window was successfully destroyed.
   // Updates tracking state, records closed tab for reopen, and emits windowsChanged.

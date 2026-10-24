@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Allow file-open settings to target an existing main or detached split by workspace ID, preserving background selection and rejecting unavailable destinations without rerouting
 * Prevent task command injection from filenames, selected text and other variable values: shell commands/options must be static, variable values belong in literal `args`, and values are no longer recursively expanded; migrate the bundled Git commit task and report guidance for custom tasks (argument-bearing shell tasks require Bash or PowerShell, otherwise use `type: process`)
 * Fix CI test focus and native drag delivery, retain Windows assertion output and allow cold builds to finish
 * Refresh bundled KSyntaxHighlighting 6.30.0 resources: 464 syntax definitions (including generated Jinja grammars) and 31 upstream highlighting themes; use Catppuccin Latte as the default light syntax theme and keep upstream dark fallbacks while retaining UI theme-specific highlighting overrides

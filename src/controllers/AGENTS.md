@@ -8,6 +8,38 @@ See [MVC Rules](../../AGENTS.md#mvc-rules-must-follow) — Key rule for controll
 
 See [MVC Example](../AGENTS.md#mvc-example-notebook-node-operations) for the Controller → View → Model flow.
 
+## Explicit file-open destinations
+
+`FileOpenSettings::m_targetWorkspaceId` names an existing hosted workspace GUID,
+including `DetachedWindow::getWorkspaceId()` / `ViewSplit2::getWorkspaceId()`.
+The field travels through `FileOpenEvent` and QVariant maps as `targetWorkspaceId`.
+It is a per-open option, not a persisted setting or CLI argument.
+
+```cpp
+FileOpenSettings settings;
+settings.m_targetWorkspaceId = targetWorkspaceId;
+bufferService->openBuffer(nodeId, settings);
+```
+
+A nonempty target takes precedence over `m_detachedView`. Empty preserves current
+main-workspace / per-batch detached routing. Missing, closed or hidden targets are
+rejected without opening elsewhere or creating a replacement workspace; cleanup
+closes only unowned candidate buffers. Configured external applications and
+unsupported-type system dispatch retain their existing precedence: this option
+routes built-in note views, not external programs. `BufferService::openBuffer()`
+returns a buffer handle, not an acknowledgement that a destination view was created.
+
+Detached destinations retain separate tabs and deduplicate within that workspace,
+without changing the main split/current buffer. Main destinations follow the normal
+new-tab preference. `m_focus=false` preserves selection for both new and duplicate
+opens; focused opens select the destination tab and activate its detached host.
+`onViewWindowOpened` always receives the actual workspace ID from the view; never
+infer ownership from current focus or a request's `detachedView` flag.
+
+Coverage: `tests/widgets/test_viewarea_tab_reuse.cpp` exercises real services and
+windows, destination precedence, batch boundaries, duplicates, background opens,
+main-tab reuse, unavailable targets, ownership cleanup and reentrant opens.
+
 ## Multi-Target Actions with Dialogs (Batch Pattern)
 
 When adding a multi-target action that requires user input via a dialog, the MVC layers have distinct responsibilities:
