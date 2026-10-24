@@ -249,6 +249,9 @@ for PDF/in-place previews and native compiler exports; authored document styles 
 Omitted font properties preserve native Typst output defaults. Source zoom and **Theme Style
 in Preview** affect neither these font defaults nor exported typography. See
 [`vtextedit`'s font contract](../../libs/vtextedit/AGENTS.md#typst-text-theme-defaults).
+Bundled VNote themes set these two font properties to match their own
+`markdown-editor-styles.Text`; keep the defaults aligned when updating a bundled theme.
+These are initial values, not a live reference: custom Typst font overrides remain independent.
 
 Publish compiled heading metadata in order, including repeated/generated/imported/deep
 headings, with no producer-side gap fillers or Markdown parsing. The shared outline model

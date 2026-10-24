@@ -81,6 +81,12 @@
             "selected-background-color" : "@base#content#selection#bg"
         }
     },
+    "typst-editor-styles" : {
+        "Text" : {
+            "font-family" : "Latin Modern Roman, CMU Serif, Times New Roman, Times, Noto Serif CJK SC, Source Han Serif SC, Songti SC, STSong, 宋体, SimSun, Georgia, Serif",
+            "font-size" : 13
+        }
+    },
     "typst-syntax-styles" : {
         "comment" : "@markdown-syntax-styles:COMMENT",
         "punctuation" : {},

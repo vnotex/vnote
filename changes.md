@@ -2,7 +2,7 @@
 ## Unreleased
 * Prevent task command injection from filenames, selected text and other variable values: shell commands/options must be static, variable values belong in literal `args`, and values are no longer recursively expanded; migrate the bundled Git commit task and report guidance for custom tasks (argument-bearing shell tasks require Bash or PowerShell, otherwise use `type: process`)
 * Fix CI test focus and native drag delivery, retain Windows assertion output and allow cold builds to finish
-* Support `typst-editor-styles.Text` theme overrides for Typst source editing and default preview/export fonts, with authored document styles taking precedence
+* Support `typst-editor-styles.Text` theme overrides for Typst source editing and default preview/export fonts; bundled themes match their Markdown editor fonts, with authored document styles taking precedence
 * Fix CI build scheduling, WiX package staging and native-platform GUI test execution
 * Keep the PDF WebChannel transport alive across note replacement to avoid renderer double-bind crashes
 * Settle cancelled Markdown heading requests once, wait for the current rendered document before presentation, and keep PDF tab replacement independent of pdf.js history
