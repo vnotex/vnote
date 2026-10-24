@@ -796,7 +796,7 @@
         <file>templates/title.typst</file>
         <!-- KSyntaxHighlighting 6.30.0: libs/vtextedit/libs/syntax-highlighting
              3e0d1682c1f609976e21f5a07f88cceb90840193; includes generated Jinja grammars.
-             Upstream themes omit unused editor-colors; VNote-specific themes are preserved. -->
+             Upstream themes omit unused editor-colors. -->
         <file>syntax-highlighting/LICENSES/BSD-2-Clause.txt</file>
         <file>syntax-highlighting/LICENSES/BSD-3-Clause.txt</file>
         <file>syntax-highlighting/LICENSES/CC0-1.0.txt</file>
@@ -1288,8 +1288,6 @@
         <file>syntax-highlighting/themes/gruvbox-dark.theme</file>
         <file>syntax-highlighting/themes/gruvbox-light.theme</file>
         <file>syntax-highlighting/themes/homunculus.theme</file>
-        <file>syntax-highlighting/themes/markdown-breeze-dark.theme</file>
-        <file>syntax-highlighting/themes/markdown-default.theme</file>
         <file>syntax-highlighting/themes/monokai.theme</file>
         <file>syntax-highlighting/themes/nord.theme</file>
         <file>syntax-highlighting/themes/oblivion.theme</file>
@@ -1301,7 +1299,6 @@
         <file>syntax-highlighting/themes/tokyo-night-storm.theme</file>
         <file>syntax-highlighting/themes/tokyo-night.theme</file>
         <file>syntax-highlighting/themes/vim-dark.theme</file>
-        <file>syntax-highlighting/themes/vscode-dark.theme</file>
         <file>syntax-highlighting/themes/vscodium-dark.theme</file>
         <file>themes/vscode-dark/arrow_dropdown.svg</file>
         <file>themes/vscode-dark/arrow_dropdown_disabled.svg</file>

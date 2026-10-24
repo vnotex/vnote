@@ -34,9 +34,10 @@ The syntax-highlighting bundle follows `libs/vtextedit/libs/syntax-highlighting`
 `3e0d1682c1f609976e21f5a07f88cceb90840193`: all checked-in syntax XMLs plus Jinja
 outputs generated with the base-language list and generator in `data/CMakeLists.txt`.
 Upstream themes retain metadata, token styles and custom styles; only unused
-`editor-colors` are omitted. VNote's `markdown-default.theme`,
-`markdown-breeze-dark.theme` and `vscode-dark.theme` remain unchanged. The upstream
-license texts ship in `vnote_extra.rcc` alongside these resources.
+`editor-colors` are omitted. Bundled palettes use upstream `Default`, `Breeze Dark`
+and `VSCodium Dark` as fallback names; UI theme-local highlighting files still take
+precedence. The upstream license texts ship in `vnote_extra.rcc` alongside these
+resources.
 
 Icon provenance below was established by comparing SVG path data against upstream, not
 by assuming from file names. Where that failed, the file says so — see
