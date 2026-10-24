@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="q" version="3" kateversion="2.3" section="Scripts" extensions="*.q" license="LGPLv2+" author="James Schmitz (james.schmitz@gmail.com)">
+<!DOCTYPE language>
+<language name="q" version="4" kateversion="5.0" section="Scripts" extensions="*.q" license="LGPLv2+" author="James Schmitz (james.schmitz@gmail.com)">
 <highlighting>
     <list name="DotQ">
       <item>.Q.addmonths</item>
@@ -203,8 +203,8 @@
   <general>
     <comments>
       <comment name="singleLine" start="/" />
-      <comment name="multiLine" start="/" end="\" />
     </comments>
     <keywords casesensitive="1" weakDeliminator="." additionalDeliminator="`#'@$&quot;" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

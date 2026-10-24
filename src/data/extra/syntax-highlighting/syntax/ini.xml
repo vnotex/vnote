@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="INI Files" section="Configuration" extensions="*.ini;*.pls;*.kcfgc" mimetype="" version="5" kateversion="2.4" author="Jan Janssen (medhefgo@web.de)" license="LGPL">
+<!DOCTYPE language>
+<language name="INI Files" section="Configuration" extensions="*.ini;*.INI;*.cfg;*.pls;*.kcfgc;.gitattributes*;.gitconfig*;.gitmodules*;.editorconfig*" mimetype="" version="14" kateversion="5.0" author="Jan Janssen (medhefgo@web.de)" license="LGPL" priority="1">
 
 <highlighting>
 <list name="keywords">
@@ -34,45 +34,55 @@
 
 <contexts>
  <context name="ini" attribute="Normal Text" lineEndContext="#stay">
-  <RangeDetect attribute="Section" context="#stay" char="["  char1="]" beginRegion="Section" endRegion="Section" />
+  <RangeDetect attribute="Section" context="#stay" char="[" char1="]" beginRegion="Section" endRegion="Section" />
   <DetectChar attribute="Assignment" context="Value" char="=" />
-  <DetectChar char=";" attribute="Comment" context="Comment" firstNonSpace="true" />
-  <DetectChar char="#" attribute="Comment" context="Comment" firstNonSpace="true" />
+  <AnyChar String=";#" attribute="Comment" context="Comment" firstNonSpace="true" />
+  <DetectIdentifier />
+  <DetectSpaces />
  </context>
 
- <context name="Value" attribute="Value" lineEndContext="#pop" >
+ <context name="Value" attribute="Value" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!NormalValue">
+  <RegExpr context="#pop!SpecialValue" String="\s*((-?(\d+(\.\d*)?|\.d+)(e\d+)?|On|Off|Defaults?|Localhost|Null|True|False|Yes|No|Normal)\s*$|~?(E_ALL|E_ERROR|E_WARNING|E_PARSE|E_NOTICE|E_STRICT|E_CORE_ERROR|E_CORE_WARNING|E_COMPILE_ERROR|E_COMPILE_WARNING|E_USER_ERROR|E_USER_WARNING|E_USER_NOTICE)\b)" lookAhead="1" insensitive="1"/>
+ </context>
+
+ <context name="SpecialValue" attribute="Value" lineEndContext="#pop">
   <Float attribute="Float" />
   <Int attribute="Int" />
-  <keyword attribute="Keyword" String="keywords" />
+  <keyword attribute="Keyword" String="keywords"/>
+  <DetectChar attribute="Int" char="-" />
+  <DetectSpaces />
+ </context>
+
+ <context name="NormalValue" attribute="Value" lineEndContext="#pop">
  </context>
 
  <context name="Comment" attribute="Comment" lineEndContext="#pop">
   <DetectSpaces />
-  <IncludeRules context="##Alerts" />
+  <IncludeRules context="##Comments" />
   <DetectIdentifier />
  </context>
 </contexts>
 
 
 <itemDatas>
- <itemData name="Normal Text" defStyleNum="dsDataType" />
- <itemData name="Section" defStyleNum="dsKeyword" />
- <itemData name="Comment" defStyleNum="dsComment" />
- <itemData name="Assignment" defStyleNum="dsOthers" />
- <itemData name="Value" defStyleNum="dsString" />
- <itemData name="Float" defStyleNum="dsFloat" />
- <itemData name="Int" defStyleNum="dsDecVal" />
- <itemData name="Keyword" defStyleNum="dsKeyword" />
+ <itemData name="Normal Text" defStyleNum="dsDataType" spellChecking="false"/>
+ <itemData name="Section" defStyleNum="dsKeyword" spellChecking="false"/>
+ <itemData name="Comment" defStyleNum="dsComment"/>
+ <itemData name="Assignment" defStyleNum="dsOthers" spellChecking="false"/>
+ <itemData name="Value" defStyleNum="dsString" spellChecking="false"/>
+ <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+ <itemData name="Int" defStyleNum="dsDecVal" spellChecking="false"/>
+ <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
 </itemDatas>
 </highlighting>
 
 
 <general>
  <comments>
-  <comment name="singleLine" start="#" />
   <comment name="singleLine" start=";" />
  </comments>
  <keywords casesensitive="0" />
 </general>
 
 </language>
+<!-- kate: replace-tabs on; indent-width 1; -->

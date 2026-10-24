@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+  <!ENTITY identifier "[^\s(){}\[\]/\&quot;#;=]+">
+  <!ENTITY decimalDigits "[0-9](?:[0-9_]*[0-9_])?">
+]>
+<!--
+    SPDX-License-Identifier: MIT
+
+    KDL 2.0 specification: https://kdl.dev/spec/
+-->
+<language name="KDL" section="Markup" version="1" kateversion="5.79"
+          extensions="*.kdl" mimetype="text/x-kdl" license="MIT">
+  <highlighting>
+    <contexts>
+      <context name="Document" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="Node Start"/>
+      </context>
+
+      <context name="Children" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Operator" context="#pop" char="}" endRegion="Children"/>
+        <IncludeRules context="Node Start"/>
+      </context>
+
+      <context name="Node Start" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <Detect2Chars attribute="Comment" context="Line Comment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="*" beginRegion="Comment"/>
+        <Detect2Chars attribute="Comment" char="/" char1="-"/>
+        <DetectChar attribute="Type Annotation" context="Node Annotation" char="("/>
+        <RegExpr attribute="Node" context="Node" String="&identifier;"/>
+        <RegExpr attribute="Node" context="Node Raw Multiline String" String="(#+)&quot;&quot;&quot;" beginRegion="Multiline String"/>
+        <RegExpr attribute="Node" context="Node Raw String" String="(#+)&quot;"/>
+        <StringDetect attribute="Node" context="Node Multiline String" String="&quot;&quot;&quot;" beginRegion="Multiline String"/>
+        <DetectChar attribute="Node" context="Node String" char="&quot;"/>
+        <DetectChar attribute="Operator" char=";"/>
+      </context>
+
+      <context name="Node" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <Detect2Chars attribute="Comment" context="Node End Comment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="*" beginRegion="Comment"/>
+        <Detect2Chars attribute="Comment" char="/" char1="-"/>
+        <RegExpr attribute="Operator" context="Continued Node" String="\\(?=\s*(?://.*)?$)"/>
+        <DetectChar attribute="Operator" context="#pop" char=";"/>
+        <DetectChar context="#pop" char="}" lookAhead="true"/>
+        <DetectChar attribute="Operator" context="Children" char="{" beginRegion="Children"/>
+
+        <DetectChar attribute="Type Annotation" context="Type Annotation" char="("/>
+        <RegExpr attribute="Property" String="(?:&identifier;|&quot;(?:\\(?:[&quot;\\bfnrst]|u\{[0-9A-Fa-f]{1,6}\})|[^&quot;\\])*&quot;)(?=\s*=)"/>
+        <DetectChar attribute="Operator" char="="/>
+        <IncludeRules context="Value"/>
+      </context>
+
+      <context name="Continued Node" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <Detect2Chars attribute="Comment" context="Continued Comment" char="/" char1="/"/>
+      </context>
+
+      <context name="Value" attribute="Normal Text" lineEndContext="#stay">
+        <!-- KDL 1 spellings remain useful in documents consumed with version fallback. -->
+        <RegExpr attribute="Constant" String="(?:#(?:true|false|null|inf|-inf|nan)|\b(?:true|false|null))\b"/>
+        <RegExpr attribute="Float" String="[+-]?&decimalDigits;(?:\.&decimalDigits;(?:[eE][+-]?&decimalDigits;)?|[eE][+-]?&decimalDigits;)(?=$|[\s;{}])"/>
+        <RegExpr attribute="Base-N Integer" String="[+-]?0(?:[xX][0-9A-Fa-f][0-9A-Fa-f_]*|[oO][0-7][0-7_]*|[bB][01][01_]*)(?=$|[\s;{}])"/>
+        <RegExpr attribute="Decimal" String="[+-]?&decimalDigits;(?=$|[\s;{}])"/>
+        <RegExpr attribute="Raw String" context="Raw Multiline String" String="(#+)&quot;&quot;&quot;" beginRegion="Multiline String"/>
+        <RegExpr attribute="Raw String" context="Raw String" String="(#+)&quot;"/>
+        <StringDetect attribute="String" context="Multiline String" String="&quot;&quot;&quot;" beginRegion="Multiline String"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <RegExpr attribute="String" String="&identifier;"/>
+      </context>
+
+      <context name="Node Annotation" attribute="Type Annotation" lineEndContext="#stay">
+        <DetectChar attribute="Type Annotation" context="#pop" char=")"/>
+      </context>
+      <context name="Type Annotation" attribute="Type Annotation" lineEndContext="#stay">
+        <DetectChar attribute="Type Annotation" context="#pop" char=")"/>
+      </context>
+
+      <context name="String" attribute="String" lineEndContext="#pop">
+        <RegExpr attribute="Special Character" context="Escaped String Newline" String="\\[\t ]*$"/>
+        <RegExpr attribute="Special Character" String="\\(?:[&quot;\\bfnrst]|u\{[0-9A-Fa-f]{1,6}\})"/>
+        <RegExpr attribute="Error" String="\\(?:u\{[^}]*\}|.)?"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context name="Escaped String Newline" attribute="String" lineEndContext="#pop"/>
+      <context name="Multiline String" attribute="String" lineEndContext="#stay">
+        <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;" endRegion="Multiline String"/>
+        <RegExpr attribute="Special Character" String="\\(?:[&quot;\\bfnrst]|u\{[0-9A-Fa-f]{1,6}\})"/>
+        <RegExpr attribute="Error" String="\\(?:u\{[^}]*\}|.)?"/>
+      </context>
+      <context name="Raw String" attribute="Raw String" lineEndContext="#pop" dynamic="true">
+        <StringDetect attribute="Raw String" context="#pop" String="&quot;%1" dynamic="true"/>
+      </context>
+      <context name="Raw Multiline String" attribute="Raw String" lineEndContext="#stay" dynamic="true">
+        <StringDetect attribute="Raw String" context="#pop" String="&quot;&quot;&quot;%1" dynamic="true" endRegion="Multiline String"/>
+      </context>
+
+      <context name="Node String" attribute="Node" lineEndContext="#pop!Node">
+        <RegExpr attribute="Special Character" context="Node Escaped String Newline" String="\\[\t ]*$"/>
+        <RegExpr attribute="Special Character" String="\\(?:[&quot;\\bfnrst]|u\{[0-9A-Fa-f]{1,6}\})"/>
+        <DetectChar attribute="Node" context="#pop!Node" char="&quot;"/>
+      </context>
+      <context name="Node Escaped String Newline" attribute="Node" lineEndContext="#pop"/>
+      <context name="Node Multiline String" attribute="Node" lineEndContext="#stay">
+        <StringDetect attribute="Node" context="#pop!Node" String="&quot;&quot;&quot;" endRegion="Multiline String"/>
+        <RegExpr attribute="Special Character" String="\\(?:[&quot;\\bfnrst]|u\{[0-9A-Fa-f]{1,6}\})"/>
+      </context>
+      <context name="Node Raw String" attribute="Node" lineEndContext="#pop!Node" dynamic="true">
+        <StringDetect attribute="Node" context="#pop!Node" String="&quot;%1" dynamic="true"/>
+      </context>
+      <context name="Node Raw Multiline String" attribute="Node" lineEndContext="#stay" dynamic="true">
+        <StringDetect attribute="Node" context="#pop!Node" String="&quot;&quot;&quot;%1" dynamic="true" endRegion="Multiline String"/>
+      </context>
+
+      <context name="Line Comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context name="Node End Comment" attribute="Comment" lineEndContext="#pop#pop">
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context name="Continued Comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context name="Block Comment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="*" beginRegion="Comment"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Node" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Property" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Type Annotation" defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Raw String" defStyleNum="dsVerbatimString"/>
+      <itemData name="Special Character" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Constant" defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Base-N Integer" defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Operator" defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" position="afterwhitespace"/>
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+    </comments>
+  </general>
+</language>

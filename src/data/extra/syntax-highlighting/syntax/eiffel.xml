@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
 Eiffel syntax highlighting for Kate and Kwrite editors
 
@@ -10,7 +10,7 @@ Change log:
 
 Author of version 1.02: Sebastian Vuorinen
 -->
-<language name="Eiffel" version="2" kateversion="5.0" section="Sources" extensions="*.e" mimetype="text/x-eiffel-src" author="Sebastian Vuorinen" license="">
+<language name="Eiffel" version="5" kateversion="5.0" section="Sources" extensions="*.e" mimetype="text/x-eiffel-src" author="Sebastian Vuorinen" license="">
 	<highlighting>
 		<list name="keywords">
 			<item>agent</item>
@@ -81,12 +81,14 @@ Author of version 1.02: Sebastian Vuorinen
 
 		<contexts>
 			<context name = "Normal" attribute = "Normal Text" lineEndContext="#stay">
+				<DetectSpaces attribute = "Normal Text" />
 				<keyword attribute = "Keyword" String = "keywords" context="#stay" />
 				<keyword attribute = "Predefined entities" String = "predefined-entities" context="#stay" />
 				<keyword attribute = "Assertions" String = "assertions" context="#stay" />
+				<DetectIdentifier attribute = "Normal Text" />
 
-				<Int attribute = "Decimal" context="#stay" />
 				<Float attribute = "Float" context="#stay" />
+				<Int attribute = "Decimal" context="#stay" />
 				<HlCChar attribute = "Char" context="#stay" />
 				<DetectChar attribute = "String" char = "&quot;" context="Quoted String" />
 
@@ -97,7 +99,11 @@ Author of version 1.02: Sebastian Vuorinen
 				<DetectChar attribute = "String" char = "&quot;" context="#pop" />
 			</context>
 
-			<context name = "Documentation" attribute="Comment" lineEndContext="#pop" />
+			<context name = "Documentation" attribute="Comment" lineEndContext="#pop">
+				<DetectSpaces />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier />
+			</context>
 		</contexts>
 
 		<itemDatas>
@@ -118,8 +124,9 @@ Author of version 1.02: Sebastian Vuorinen
 
 	<general>
 		<comments>
-			<comment name="singleLine" start="--" />
+			<comment name="singleLine" start="--" position="afterwhitespace" />
 		</comments>
 		<keywords casesensitive="1" />
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

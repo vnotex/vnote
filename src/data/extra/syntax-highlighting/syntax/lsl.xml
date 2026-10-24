@@ -2,16 +2,16 @@
 <!-- Linden Scripting Language used in SecondLife and OpenMetaverse -->
 
 <!-- following entities are taken from the original lexer (indra.l) -->
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
   <!ENTITY N "[0-9]">
   <!ENTITY L "[a-zA-Z_]">
   <!ENTITY H "[a-fA-F0-9]">
   <!ENTITY E "[Ee][+-]?&N;+">
-  <!ENTITY FS "(f|F)">
+  <!ENTITY FS "[fF]">
 ]>
 <!-- versioning is based on the slviewer source code version from which strings were extracted, then a point version for this file -->
-<language name="LSL" section="Scripts" version="3" kateversion="2.5" extensions="*.lsl" mimetype="text/x-lsl" author="Rafał Rzepecki" license="LGPLv3">
+<language name="LSL" section="Scripts" version="7" kateversion="5.0" extensions="*.lsl" mimetype="text/x-lsl" author="Rafał Rzepecki" license="LGPLv3">
   <highlighting>
     <!-- types, keyword, events, constants and symbols are from indra.l -->
     <list name="types">
@@ -979,15 +979,6 @@
 
       <item>llSHA1String</item>
     </list>
-
-    <!-- for added convenience -->
-    <list name="attention">
-      <item>FIXME</item>
-      <item>TODO</item>
-      <item>BUG</item>
-      <item>HACK</item>
-      <item>XXX</item>
-    </list>
     <contexts>
       <context name="Default" attribute="Normal Text" lineEndContext="#stay">
         <!-- all regexps here are based on indra.l -->
@@ -996,14 +987,12 @@
         <keyword attribute="Keyword" String="keywords"/>
         <keyword attribute="Event" String="events"/>
         <RegExpr attribute="Hex" String="0[xX]&H;+"/>
-        <RegExpr attribute="Decimal" String="&N;+"/>
         <keyword attribute="Constant" String="constants"/>
         <keyword attribute="Library Function" String="stdlib"/>
         <RegExpr attribute="Function" String="&L;(&L;|&N;)*(?=\s*\()"/>
         <RegExpr attribute="Identifier" String="&L;(&L;|&N;)*"/>
-        <RegExpr attribute="Float" String="&N;+&E;"/>
-        <RegExpr attribute="Float" String="&N;*\.&N;+(&E;)?&FS;?"/>
-        <RegExpr attribute="Float" String="&N;+\.&N;*(&E;)?&FS;?"/>
+        <RegExpr attribute="Float" String="&N;++(\.&N;*+(&E;)?|&E;+)&FS;?|\.&N;+(&E;)?&FS;?"/>
+        <RegExpr attribute="Decimal" String="&N;+"/>
         <RegExpr attribute="String" String="&L;?\&quot;(\\.|[^\\&quot;])*\&quot;"/>
         <keyword attribute="Symbol" String="symbols"/>
         <DetectChar char="." attribute="Symbol"/>
@@ -1017,7 +1006,8 @@
         <DetectChar char="]" attribute="Symbol" endRegion="list"/>
       </context>
       <context name="Comment" attribute="Comment" lineEndContext="#pop">
-        <keyword attribute="Alert" String="attention"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
     <itemDatas>
@@ -1032,11 +1022,10 @@
       <itemData name="Identifier" defStyleNum="dsNormal"/>
       <itemData name="Float" defStyleNum="dsFloat"/>
       <itemData name="String" defStyleNum="dsString"/>
-      <itemData name="Symbol" defStyleNum="dsNormal"/>
+      <itemData name="Symbol" defStyleNum="dsOperator"/>
       <itemData name="Brace" defStyleNum="dsNormal"/>
       <itemData name="Library Function" defStyleNum="dsFunction" bold="1"/>
       <itemData name="Function" defStyleNum="dsFunction"/>
-      <itemData name="Alert" defStyleNum="dsAlert"/>
     </itemDatas>
   </highlighting>
   <general>

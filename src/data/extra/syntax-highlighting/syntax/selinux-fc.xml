@@ -1,37 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 	<!-- Identifier with M4 Arg. or variables -->
-	<!ENTITY charIden         "(\$[@#]|[\w\-\$\*\{\}&#037;])">
-	<!ENTITY simpleIdentifier "(\$[@#]|[a-zA-Z\$&#037;])&charIden;*">
-	<!ENTITY identifier       "&simpleIdentifier;(\.?&charIden;)*">
-	<!ENTITY startIdentifier  "(\b[a-zA-Z]|\$[@#]|[\$&#037;])&charIden;*(\.?&charIden;)*">
-	<!ENTITY mlsLevel         "&identifier;(\s*:\s*&identifier;(\s*,\s*&identifier;)*)?">
+	<!ENTITY charIden         "(?:\$[@#]|[\w\-\$\*\{\}&#037;])">
+	<!ENTITY simpleIdentifier "(?:\$[@#]|[a-zA-Z\$&#037;])&charIden;*">
+	<!ENTITY identifier       "&simpleIdentifier;(?:\.?&charIden;)*">
+	<!ENTITY startIdentifier  "(?:\b[a-zA-Z]|\$[@#]|[\$&#037;])&charIden;*(?:\.?&charIden;)*">
+	<!ENTITY mlsLevel         "&identifier;(?:\s*\:\s*&identifier;(?:\s*,\s*&identifier;)*)?">
 ]>
 
 <!--
-  SELinux File Contexts Syntax Highlighting Definition for Kate
-  ==========================================================================================
+   SELinux File Contexts Syntax Highlighting Definition
+  ===========================================================================
+
    This file is part of the KDE's KSyntaxHighlighting framework.
 
-   Copyright (c) 2018-2019 Nibaldo González S. (nibgonz@gmail.com)
+   SPDX-FileCopyrightText: 2018-2020 Nibaldo González S. <nibgonz@gmail.com>
 
-   Permission is hereby granted, free of charge, to any person obtaining a copy of this
-   software and associated documentation files (the "Software"), to deal in the Software
-   without restriction, including without limitation the rights to use, copy, modify, merge,
-   publish, distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the following conditions:
+   SPDX-License-Identifier: MIT
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-   PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-   COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
-   AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-   WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  ==========================================================================================
+  ===========================================================================
 
   SELinux policy files with definitions of file contexts:
     - Labeling Policy Files: *.fc
@@ -42,6 +30,8 @@
     - Policy Build Files: initial_sid_contexts, genfs_contexts, fs_use
 
   Change log:
+   * Version 7 [30-Sep-2020]: Use include-keywods and other minor changes.
+   * Version 5 [03-Oct-2019]: Replace unnecessary WordDetect rules.
    * Version 4 [02-Apr-2019]: Remove one indentation.
    * Version 3 [09-Sep-2018]:
       - Update itemData's style for the new Solarized color schemes.
@@ -53,8 +43,8 @@
 -->
 
 <language name="SELinux File Contexts"
-          version="4"
-          kateversion="5.0"
+          version="9"
+          kateversion="5.53"
           section="Other"
           extensions="*.fc;file_contexts;file_contexts_*;file_contexts.local;file_contexts.homedirs;file_contexts.template;homedir_template;property_contexts;service_contexts;hwservice_contexts;initial_sid_contexts;genfs_contexts;fs_use"
           priority="3"
@@ -64,12 +54,19 @@
 
 <highlighting>
 
+	<list name="statements_fc">
+		<include>statements_fc##SELinux Policy</include>
+	</list>
+	<list name="refpolicy_keywords">
+		<include>refpolicy_keywords##SELinux Policy</include>
+	</list>
+
 	<contexts>
 
 		<context name="_normal" attribute="Normal Text" lineEndContext="#stay">
 			<IncludeRules context="_m4_preprocessor##SELinux Policy"/>
 			<IncludeRules context="_find_comments##SELinux Policy"/>
-			<RegExpr context="#stay" attribute="File Type" String="(\s|^)\-[bcdpls\-](?=\s|$)"/>
+			<RegExpr context="#stay" attribute="File Type" String="(?:\s|^)\-[bcdpls\-](?=\s|$)"/>
 
 			<DetectChar context="_path_content" attribute="Path" char="/"/>
 			<DetectChar context="_quoted" attribute="Text Quoted" char="&quot;"/>
@@ -81,15 +78,15 @@
 			<IncludeRules context="_m4_quotes##SELinux Policy"/>
 
 			<!-- File Contexts:  user:role:type:s0:c0 -->
-			<RegExpr context="_fc_user" attribute="User" String="&startIdentifier;(?=(\s*:\s*&identifier;){2}(\s*:\s*&mlsLevel;(\s*\-\s*&mlsLevel;)?)?\b)"/>
-			<WordDetect context="#stay" attribute="Other Keywords" String="&lt;&lt;none&gt;&gt;"/>
+			<RegExpr context="_fc_user" attribute="User" String="&startIdentifier;(?=(?:\s*\:\s*&identifier;){2}(?:\s*\:\s*&mlsLevel;(?:\s*\-\s*&mlsLevel;)?)?\b)"/>
+			<StringDetect context="#stay" attribute="Other Keywords" String="&lt;&lt;none&gt;&gt;"/>
 
 			<!-- Java-Language-Style Package Name & other Names, for SE Android (this avoid highlighting keywords) -->
-			<RegExpr context="#stay" attribute="Path" String="\.?[a-zA-Z]\w*((\.|::)\w+)+(?=[^\(]|$)" firstNonSpace="true"/>
+			<RegExpr context="#stay" attribute="Path" String="\.?[a-zA-Z]\w*(?:(?:\.|::)\w+)+(?=[^\(]|$)" firstNonSpace="true"/>
 
 			<!-- Functions -->
 			<DetectChar context="_parentheses_content" attribute="Normal Text" char="(" beginRegion="ParenthesesBlock"/>
-			<IncludeRules context="_refpolicy_keywords_fc##SELinux Policy"/>
+			<keyword context="#stay" attribute="Refpolicy Keywords" String="refpolicy_keywords"/>
 			<IncludeRules context="_m4_builtin_keywords##SELinux Policy"/>
 			<RegExpr context="#stay" attribute="Function" String="\b[a-zA-Z][\w\-]*(?=\()"/>
 
@@ -110,8 +107,8 @@
 			<AnyChar context="#stay" attribute="Symbol" String=",;~[]"/>
 
 			<!-- Highlight only the statements that contain definition of file contexts -->
-			<IncludeRules context="_statements_file_contexts##SELinux Policy"/>
-			<RegExpr context="#stay" String="[a-zA-Z](\.?[\w\-]+)*"/>
+			<keyword context="#stay" attribute="Statements" String="statements_fc"/>
+			<RegExpr context="#stay" String="[a-zA-Z](?:\.?[\w\-]+)*"/>
 			<HlCHex context="#pop" attribute="Number"/>
 			<Int context="#pop" attribute="Number"/>
 		</context>
@@ -119,7 +116,7 @@
 		<context name="_parentheses_content" attribute="Normal Text" lineEndContext="#stay">
 			<DetectChar context="#pop" attribute="Normal Text" char=")" endRegion="ParenthesesBlock"/>
 			<!-- File Contexts:  (user:role:type,s0) -->
-			<RegExpr context="_gen_context_fc_user" attribute="User" String="&startIdentifier;(\s*:\s*&identifier;){2}(\s*,\s*&identifier;)*\b" lookAhead="true"/>
+			<RegExpr context="_gen_context_fc_user" attribute="User" String="&startIdentifier;(?:\s*\:\s*&identifier;){2}(?:\s*,\s*&identifier;)*\b" lookAhead="true"/>
 			<IncludeRules context="_normal"/>
 		</context>
 
@@ -220,8 +217,7 @@
 		</context>
 
 		<context name="_after_fc" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-			<RegExpr context="#stay" attribute="Normal Text" String="\s*:\s*\w*"/>
-			<RegExpr context="#stay" attribute="Normal Text" String="[:\.\w]+"/>
+			<RegExpr context="#stay" attribute="Normal Text" String="\s*:\s*\w*|[:\.\w]+"/>
 		</context>
 
 		<!-- Within function "gen_context" (highlight variables and M4 args.) -->
@@ -275,15 +271,17 @@
 		<itemData name="Variable"    defStyleNum="dsVariable" spellChecking="false"/>
 		<itemData name="File Type"   defStyleNum="dsKeyword"  spellChecking="false"/>
 
-		<itemData name="User"             defStyleNum="dsPreprocessor"   spellChecking="false"/>
-		<itemData name="Role"             defStyleNum="dsInformation"    spellChecking="false"/>
-		<itemData name="Type Enforcement" defStyleNum="dsAttribute"      spellChecking="false"/>
-		<itemData name="MLS/MCS Level"    defStyleNum="dsVerbatimString" spellChecking="false"/>
+		<itemData name="User"             defStyleNum="dsPreprocessor"   bold="0" italic="0" underline="0" spellChecking="false"/>
+		<itemData name="Role"             defStyleNum="dsInformation"    bold="0" italic="0" underline="0" spellChecking="false"/>
+		<itemData name="Type Enforcement" defStyleNum="dsAttribute"      bold="0" italic="0" underline="0" spellChecking="false"/>
+		<itemData name="MLS/MCS Level"    defStyleNum="dsVerbatimString" bold="0" italic="0" underline="0" spellChecking="false"/>
 
 		<itemData name="Other Keywords"   defStyleNum="dsNormal"   italic="1" spellChecking="false"/>
+		<itemData name="Statements"       defStyleNum="dsKeyword"  bold="1" spellChecking="false"/>
+		<itemData name="Refpolicy Keywords" defStyleNum="dsNormal" bold="1" spellChecking="false"/>
 		<itemData name="Function"         defStyleNum="dsNormal"   bold="1" spellChecking="false"/>
 		<itemData name="Symbol"           defStyleNum="dsOperator" spellChecking="false"/>
-		<itemData name="Number"           defStyleNum="dsComment"  italic="0" underline="0" spellChecking="false"/>
+		<itemData name="Number"           defStyleNum="dsComment"  bold="0" italic="0" underline="0" spellChecking="false"/>
 		<itemData name="Text Quoted Open" defStyleNum="dsString"   underline="1" spellChecking="false"/>
 	</itemDatas>
 

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 	<!ENTITY qname    "[A-Za-z_:][\w.:_-]*">
 	<!ENTITY entref  "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&qname;);">
@@ -16,8 +16,8 @@
    - Namespace rules
 -->
 
-<language version="3"
-          kateversion="2.4"
+<language version="6"
+          kateversion="5.0"
           name="RELAX NG"
           section="Markup"
           extensions="*.rng;*.RNG"
@@ -68,7 +68,7 @@
 
       <context name="tagname" attribute="Tag" lineEndContext="#stay">
          <keyword attribute="RELAX NG Tag" context="attributes" String="relaxngnames" />
-         <RegExpr attribute="Attribute" context="attributes" String="\s*" />
+         <DetectSpaces attribute="Attribute" context="attributes" />
          <DetectChar attribute="Tag" context="#pop" char="&gt;" />
       </context>
 
@@ -93,7 +93,7 @@
         <DetectSpaces/>
         <StringDetect attribute="Comment" context="#pop"  String="--&gt;" endRegion="comment"/>
         <RegExpr attribute="Error" context="#stay" String="-(-(?!-&gt;))+"/>
-        <IncludeRules context="##Alerts"/>
+        <IncludeRules context="##Comments"/>
         <DetectIdentifier/>
       </context>
     </contexts>
@@ -112,8 +112,9 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+      <comment name="multiLine" start="&lt;!--" end="--&gt;" region="comment" />
     </comments>
     <keywords casesensitive="0" weakDeliminator="-:" additionalDeliminator="&quot;{}"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; indent-width 2; -->

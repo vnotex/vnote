@@ -1,0 +1,360 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+<!ENTITY listbullet "[\+\-]">
+<!ENTITY checkbox "\[[ \-X]\](?=\s)">
+<!-- links. -->
+<!ENTITY startlink "(?:(?:https?|ftp)\://|(?:file|docview|mailto|mhe|rmail|bbdb|irc|info)\:)">
+<!ENTITY link "&startlink;[^&quot;&gt;\s]+">
+<!-- link in normal text.
+     Using the implicitlink entity in markdown.xml for now.
+     Actual doc: https://orgmode.org/guide/Hyperlinks.html -->
+<!ENTITY implicitlink "\b&startlink;[^&quot;&gt;\s`\)]*[^\s!&quot;&apos;`\(\)\*,\.:;&lt;&gt;\?~\]\}\\](?=[[:punct:]]*(?:[\s\]]|$))">
+<!-- org-emphasis-alist -->
+<!ENTITY contentregex_ast "(?:(?:[^\*\s\\]|\\.)(?:[^\\]|\\.)*)?(?:[^\*\s\\]|\\\S)">
+<!ENTITY contentregex_und "(?:(?:[^_\s\\]|\\.)(?:[^\\]|\\.)*)?(?:[^_\s\\]|\\\S)">
+<!ENTITY contentregex_itl "(?:(?:[^/\s\\]|\\.)(?:[^\\]|\\.)*)?(?:[^/\s\\]|\\\S)">
+<!ENTITY contentregex_stk "(?:(?:[^+\s\\]|\\.)(?:[^\\]|\\.)*)?(?:[^+\s\\]|\\\S)">
+<!ENTITY contentregex_cod "(?:(?:[^~\s\\]|\\.)(?:[^\\]|\\.)*)?(?:[^~\s\\]|\\\S)">
+<!ENTITY contentregex_vbt "(?:(?:[^=\s\\]|\\.)(?:[^\\]|\\.)*)?(?:[^=\s\\]|\\\S)">
+<!ENTITY contentregex_mco "(?:(?:[^\{\}\s\\]|\\.)(?:[^\\]|\\.)*)?(?:[^\{\}\s\\]|\\\S)">
+<!ENTITY bold_regex "\*{1}(?:&contentregex_ast;\*{1})">
+<!ENTITY underline_regex "\b_{1}(?:&contentregex_und;_{1})">
+<!ENTITY italic_regex "[/]{1}(?:&contentregex_itl;[/]{1})">
+<!ENTITY strike_regex "\+{1}(?:&contentregex_stk;\+{1})">
+<!ENTITY inlinecode_regex "\~{1}(?:&contentregex_cod;\~{1})">
+<!ENTITY verbatim_regex "\={1}(?:&contentregex_vbt;\={1})">
+<!ENTITY macroreplacement_regex "\{{3}(?:&contentregex_mco;\}{3})">
+<!-- [[plain-link]] -->
+<!ENTITY link_plain_regex "\[\[(?:[^\[\]]+)\]\]">
+<!-- [[link][description]] -->
+<!ENTITY link_desc_regex "\[\[(?:[^\[\]]+)\]\[(?:[^\[\]]+)\]\]">
+]>
+
+<!-- org syntax spec: https://orgmode.org/worg/dev/org-syntax.html -->
+<!-- syntax highlight: https://docs.kde.org/stable5/en/kate/katepart/highlight.html -->
+<language name="Org Mode" version="9" kateversion="6.22" section="Markup" extensions="*.org" priority="15" author="Gary Wang" license="MIT">
+  <highlighting>
+    <list name="org-todo-keywords-todo">
+      <item>TODO</item>
+      <item>NEXT</item>
+    </list>
+    <list name="org-todo-keywords-doing">
+      <item>DOING</item>
+    </list>
+    <list name="org-todo-keywords-waiting">
+      <item>WAITING</item>
+    </list>
+    <list name="org-todo-keywords-canceled">
+      <item>CANCELED</item>
+      <item>CANCELLED</item>
+    </list>
+    <list name="org-todo-keywords-done">
+      <item>DONE</item>
+    </list>
+    <contexts>
+      <context name="Normal Text" attribute="Normal Text" lineEndContext="#stay">
+        <StringDetect String=":PROPERTIES:" attribute="Block" context="property-block" beginRegion="PropertiesBlock" lookAhead="true"/>
+        <DetectChar context="find-header" char="*" column="0" lookAhead="true"/>
+        <RegExpr attribute="List" context="list" String="^(\s*)&listbullet;(\s+)" column="0"/>
+        <RegExpr attribute="Number List" context="numlist" String="^(\s*)\d+(?:\.|\))(\s+)" column="0"/>
+        <RegExpr attribute="Comment" String="^(\s*)# .*" column="0"/>
+        <StringDetect attribute="Block" context="find-src-block" String="#+BEGIN_SRC" beginRegion="RegionBlock" column="0"/>
+        <RegExpr attribute="Block" context="find-block" String="^#\+BEGIN(_\w+|:).*" beginRegion="RegionBlock" column="0"/>
+        <RegExpr attribute="Babel" String="^(\s*)#\+[A-Z]+(?:\[[A-Z]+\])?:.*" column="0"/>
+        <DetectChar context="find-bold-normal" char="*" lookAhead="true"/>
+        <DetectChar context="find-underline-normal" char="_" lookAhead="true"/>
+        <DetectChar context="find-italic-normal" char="/" lookAhead="true"/>
+        <DetectChar context="find-strike-normal" char="+" lookAhead="true"/>
+        <DetectChar context="find-inlinecode-normal" char="~" lookAhead="true"/>
+        <DetectChar context="find-verbatim-normal" char="=" lookAhead="true"/>
+        <DetectChar context="find-link-normal" char="[" lookAhead="true"/>
+        <StringDetect context="find-macro-replacement" String="{{{" lookAhead="true"/>
+        <RegExpr attribute="Normal Text: Link" String="&implicitlink;"/>
+      </context>
+      <context name="find-header" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr context="parse-header" String="^(?:\*){1,}\s+(?:([A-Z]+)\s+){0,1}(?:(\[#(?:[A-Z\d]+)\])\s+){0,1}(.*)\s*(\[[\d/%]+\]){0,1}\s*$" column="0" lookAhead="true" beginRegion="ItemBlock" endRegion="ItemBlock"/>
+      </context>
+      <context name="property-block" attribute="Block" lineEndContext="#stay">
+        <StringDetect String=":END:" attribute="Block" context="#pop" endRegion="PropertiesBlock" lookAhead="false"/>
+      </context>
+      <context name="parse-header" attribute="Heading" lineEndContext="#pop">
+        <RegExpr attribute="Heading" String="(?:\*){1,}\s+" lookAhead="false"/>
+        <keyword String="org-todo-keywords-todo" attribute="Keyword Todo" context="#stay" />
+        <keyword String="org-todo-keywords-done" attribute="Keyword Done" context="#stay" />
+        <keyword String="org-todo-keywords-doing" attribute="Keyword Doing" context="#stay" />
+        <keyword String="org-todo-keywords-waiting" attribute="Keyword Waiting" context="#stay" />
+        <keyword String="org-todo-keywords-canceled" attribute="Keyword Canceled" context="#stay" />
+        <RegExpr attribute="Cookie: Priority" String="\[#(?:[A-Z\d]+)\]" lookAhead="false"/>
+        <RegExpr attribute="Cookie: Statistics" String="\[[\d/%]+\]" lookAhead="false"/>
+      </context>
+      <context name="list" attribute="List: Normal Text" lineEndContext="#stay">
+        <RegExpr context="#pop" String="^\s*\S" column="0" lookAhead="true"/>
+        <RegExpr attribute="List: Checkbox" String="\s*&checkbox;"/>
+      </context>
+      <context name="numlist" attribute="List: Normal Text" lineEndContext="#stay">
+        <RegExpr context="#pop" String="^\s*\S" column="0" lookAhead="true"/>
+        <RegExpr attribute="List: Checkbox" String="\s*&checkbox;"/>
+      </context>
+      <context name="find-block" attribute="Block" lineEndContext="#stay">
+        <StringDetect context="#pop" attribute="Block" String="#+END%1" dynamic="true" endRegion="RegionBlock" column="0"/>
+      </context>
+      <!-- Source Code Syntax Highlighting Blocks -->
+      <context name="find-src-block" attribute="Block" lineEndContext="#pop">
+        <RegExpr attribute="Block" context="#pop!bash-code" String="\s*(?:bash(?:rc|_profile|_login|_logout)?|shell|sh|profile|PKGBUILD|APKBUILD|ebuild|eclass|nix)" insensitive="true"/>
+        <RegExpr attribute="Block" context="#pop!zsh-code" String="\s*(?:zsh)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!cpp-code" String="\s*(?:[ch]pp|[ch]\+\+|[ch]xx|h?cc|hh|cuh?|ino|pde|moc)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!csharp-code" String="\s*(?:cs|csharp|c\#)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!cmake-code" String="\s*(?:cmake|CMakeLists(?:\.txt)?)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!css-code" String="\s*css" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!c-code" String="\s*[ch]" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!doxygen-code" String="\s*doxygen" insensitive="true" beginRegion="code-block"/> <!-- Block comment of Doxygen -->
+        <RegExpr attribute="Block" context="#pop!email-code" String="\s*(?:email|emlx?|mbo?x)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!go-code" String="\s*go(?:lang)?" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!hamlet-code" String="\s*[wxs]?hamlet" insensitive="true" beginRegion="code-block"/> <!-- Included in the Haskell definition -->
+        <RegExpr attribute="Block" context="#pop!haskell-code" String="\s*(?:haskell|c?hs|hs\-boot)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!html-code" String="\s*(?:[sx]?html?|inc|tmpl|tpl)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!java-code" String="\s*(?:java|bsh)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!javascript-code" String="\s*(?:javascript|m?js|es6|kwinscript|julius)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!jsx-code" String="\s*(?:jsx|tsx|(?:java|type)script\-react)" insensitive="true" beginRegion="code-block"/> <!-- Included in the HTML definition. Also apply for TSX. -->
+        <RegExpr attribute="Block" context="#pop!json-code" String="\s*(?:json5?|gltf)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!yaml-code" String="\s*(?:ya?ml)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!matlab-code" String="\s*matlab" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!markdown-code" String="\s*(?:markdown|m?md)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!mustache-code" String="\s*(?:handlebars|hbs|mustache|mst|ractive|hogan|hulk)" insensitive="true" beginRegion="code-block"/> <!-- Included in the HTML definition -->
+        <RegExpr attribute="Block" context="#pop!perl-code" String="\s*(?:perl|p[lm]|pod|psgi|vcl)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!php-code" String="\s*(?:php[3457t]?|wml|phtml?|aw|ctp)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!python-code" String="\s*(?:python[23]?|py[23w]?|[rc]py|sconstruct|gypi?)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!qml-code" String="\s*qml(?:types)?" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!r-code" String="\s*(?:r|rprofile|rscript).?\n" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!raku-code" String="\s*(?:raku(?:mod|doc|test)?|perl6|p[lm]?6|pod6|nqp)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!rest-code" String="\s*(?:rst|rest|restructuredtext)" insensitive="true" beginRegion="code-block"/> <!-- Included in the CMake definition -->
+        <RegExpr attribute="Block" context="#pop!rust-code" String="\s*(?:rust|rs)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!ruby-code" String="\s*(?:ruby|rbx?|rjs|rake|f?cgi|gemspec|irbrc|ru|prawn|Appraisals|(?:Rake|Cap|Chef|Gem|Guard|Hobo|Vagrant||Rant|Berks|Thor|Puppet)file|rxml)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!rhtml-code" String="\s*(?:xml\.|js\.)?erb" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!mysql-code" String="\s*(?:mysql|sql|ddl)" insensitive="true" beginRegion="code-block"/> <!-- Included in the PHP definition -->
+        <RegExpr attribute="Block" context="#pop!nim-code" String="\s*(?:nims?)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!typescript-code" String="\s*(?:typescript|ts)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!xml-code" String="\s*(?:xml|xsd|xspf|tld|jsp|c?pt|dtml|rss|opml|svg|daml|rdf|ui|kcfg|qrc|wsdl|scxml|xbel|dae|sch|brd|docbook)" insensitive="true" beginRegion="code-block"/>
+        <RegExpr attribute="Block" context="#pop!odin-code" String="\s*(?:odin)" insensitive="true" beginRegion="code-block"/>
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+      </context>
+      <context name="find-bold-normal" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Bold Text" context="#pop" minimal="true" String="&bold_regex;"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="*"/>
+      </context>
+      <context name="find-underline-normal" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Underline Text" context="#pop" minimal="true" String="&underline_regex;"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="_"/>
+      </context>
+      <context name="find-italic-normal" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Italic Text" context="#pop" minimal="true" String="&italic_regex;"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="/"/>
+      </context>
+      <context name="find-strike-normal" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Strikethrough Text" context="#pop" minimal="true" String="&strike_regex;"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="+"/>
+      </context>
+      <context name="find-verbatim-normal" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Verbatim" context="#pop" minimal="true" String="&verbatim_regex;"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="~"/>
+      </context>
+      <context name="find-link-normal" attribute="Link" lineEndContext="#pop">
+        <RegExpr attribute="Plain Link" context="#pop" minimal="true" String="&link_plain_regex;"/>
+        <!-- FIXME: currently, link and description are using the same style -->
+        <RegExpr attribute="Link" context="#pop" minimal="true" String="&link_desc_regex;"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="]"/>
+      </context>
+      <context name="find-macro-replacement" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Macro" context="#pop" minimal="true" String="&macroreplacement_regex;"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="}"/>
+      </context>
+      <context name="find-inlinecode-normal" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Code" context="#pop" minimal="true" String="&inlinecode_regex;"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="~"/>
+      </context>
+
+      <!-- Source Code Syntax Highlighting -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="bash-code" fallthroughContext="Command##Bash">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Bash" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="zsh-code" fallthroughContext="Command##Zsh">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Zsh" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="cmake-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##CMake" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="c-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##C" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="cpp-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##C++" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="csharp-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##C#" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="css-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##CSS" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="doxygen-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="BlockComment##Doxygen" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="email-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Email" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="go-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Go" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="hamlet-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Hamlet" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="haskell-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Haskell" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="html-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##HTML" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="java-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Java" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="javascript-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="Normal##JavaScript" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="jsx-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="Normal##JavaScript React (JSX)" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="json-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##JSON" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="yaml-code" fallthroughContext="Lvl0Text##YAML">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##YAML" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="markdown-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="Normal Text##Markdown"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="matlab-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Matlab" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="mustache-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Mustache/Handlebars (HTML)" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="perl-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Perl" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="php-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="phpsource##PHP/PHP" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="python-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Python" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="qml-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="Normal##QML" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="r-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##R Script" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="raku-code" fallthroughContext="term##Raku">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="base##Raku" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="rest-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##reStructuredText" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="ruby-code" fallthroughContext="Expr##Ruby">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="Ruby##Ruby" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="rhtml-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Ruby/Rails/RHTML" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="rust-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Rust" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="mysql-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##SQL (MySQL)" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="nim-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Nim" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="typescript-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="Normal##TypeScript" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="xml-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##XML" includeAttrib="true"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="odin-code">
+        <StringDetect context="#pop" attribute="Block" String="#+END_SRC" endRegion="RegionBlock" column="0"/>
+        <IncludeRules context="##Odin" includeAttrib="true"/>
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Normal Text: Link" defStyleNum="dsNormal" underline="true" spellChecking="false"/>
+      <itemData name="Bold Text" defStyleNum="dsNormal" bold="true"/>
+      <itemData name="Underline Text" defStyleNum="dsNormal" underline="true"/>
+      <itemData name="Italic Text" defStyleNum="dsNormal" italic="true"/>
+      <itemData name="Strikethrough Text" defStyleNum="dsNormal" strikeOut="true"/>
+      <itemData name="Keyword Done" defStyleNum="dsInformation" spellChecking="false"/>
+      <itemData name="Keyword Todo" defStyleNum="dsAlert" spellChecking="false"/>
+      <itemData name="Keyword Doing" defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Keyword Waiting" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Keyword Canceled" defStyleNum="dsError" spellChecking="false"/>
+      <itemData name="Cookie: Priority" defStyleNum="dsInformation" spellChecking="false"/>
+      <itemData name="Cookie: Statistics" defStyleNum="dsInformation" spellChecking="false"/>
+      <itemData name="Heading" defStyleNum="dsFunction"/>
+      <itemData name="List" defStyleNum="dsSpecialString" bold="1" spellChecking="false"/>
+      <itemData name="List: Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="List: Checkbox" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Number List" defStyleNum="dsSpecialString" spellChecking="false"/>
+      <itemData name="Plain Link" defStyleNum="dsOthers" underline="true" spellChecking="false"/>
+      <itemData name="Link" defStyleNum="dsOthers" underline="true" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Macro" defStyleNum="dsPreprocessor"/>
+      <itemData name="Babel" defStyleNum="dsPreprocessor"/>
+      <itemData name="Verbatim" defStyleNum="dsExtension" spellChecking="false"/>
+      <itemData name="Code" defStyleNum="dsInformation" spellChecking="false"/>
+      <itemData name="Block" defStyleNum="dsInformation"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <!-- Kate will add a space after the char so it's just a "#" here -->
+      <comment name="singleLine" start="#"/>
+    </comments>
+  </general>
+</language>
+<!-- kate: replace-tabs on; indent-width 2; tab-width 2; -->

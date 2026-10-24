@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="YARA" section="Other" version="5" kateversion="5.53" indenter="cstyle" extensions="*.yar;*.yara" license="MIT">
+  <highlighting>
+    <list name="keywords">
+      <item>all</item>
+      <item>and</item>
+      <item>any</item>
+      <item>ascii</item>
+      <item>at</item>
+      <item>base64</item>
+      <item>base64wide</item>
+      <item>condition</item>
+      <item>contains</item>
+      <item>endswith</item>
+      <item>entrypoint</item> <!-- being deprecated-->
+      <item>filesize</item>
+      <item>for</item>
+      <item>fullword</item>
+      <item>global</item>
+      <item>icontains</item>
+      <item>iendswith</item>
+      <item>iequals</item>
+      <item>import</item>
+      <item>in</item>
+      <item>include</item>
+      <item>int8</item>
+      <item>int16</item>
+      <item>int32</item>
+      <item>int8be</item>
+      <item>int16be</item>
+      <item>int32be</item>
+      <item>istartswith</item>
+      <item>matches</item>
+      <item>meta</item>
+      <item>nocase</item>
+      <item>none</item>
+      <item>not</item>
+      <item>or</item>
+      <item>of</item>
+      <item>private</item>
+      <item>rule</item>
+      <item>startswith</item>
+      <item>strings</item>
+      <item>them</item>
+      <item>uint8</item>
+      <item>uint16</item>
+      <item>uint32</item>
+      <item>uint8be</item>
+      <item>uint16be</item>
+      <item>uint32be</item>
+      <item>wide</item>
+      <item>xor</item>
+    </list>
+    
+    <list name="boolean">
+        <item>false</item>
+        <item>true</item>
+    </list>
+    
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Boolean" String="boolean" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <!--<IncludeRules context="##Doxygen" />-->
+        <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="Multiline Comment" char="/" char1="*" beginRegion="Comment"/>
+        <RegExpr attribute="Identifier" context="#pop" String="\$\w*" />
+        <RegExpr attribute="Rule" context="#stay" String="(?&lt;=rule\s)\s*[_a-zA-Z]\w{0,127}" />
+        <RegExpr attribute="Hex String" context="#stay" String="(?&lt;=[\]{\(|\)])[\s]*?(?:[\dA-Fa-f?]{2}[\s]*?)+(?=[\(|\)}\[])" />
+        <!-- Regular Expressions, obtained from javascript.xml -->
+        <RegExpr attribute="Start Regular Expression" context="(regex caret first check)##JavaScript" String="/(?=(?:[^/\\\[]|\\.|\[(?:[^\]\\]|\\.)+\])+/(?:[gimsuy]+(?!\s*[\w$])|(?![/\*])|(?=/\*)))" />
+        <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="block1"/>
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="block1"/>
+        <Float attribute="Float" context="#stay"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
+      </context>
+      
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#pop"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Multiline Comment">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments"/>
+      </context>
+    </contexts>
+    
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Rule"         defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Boolean"      defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Identifier"   defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Hex"          defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Hex String"   defStyleNum="dsSpecialString" spellChecking="false"/>
+      <itemData name="Float"        defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="String Char"  defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Symbol"       defStyleNum="dsNormal"/>
+      <itemData name="Start Regular Expression" defStyleNum="dsSpecialString" spellChecking="false" />
+    </itemDatas>
+  </highlighting>
+  
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" position="afterwhitespace" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
+    </comments>
+  </general>
+  
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

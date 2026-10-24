@@ -1,0 +1,1067 @@
+{
+    "custom-styles": {
+        "Alerts": {
+            "Region Marker": {
+                "selected-text-color": "#6db8c7",
+                "text-color": "#6db8c7"
+            }
+        },
+        "Apache Configuration": {
+            "Directives": {
+                "bold": false
+            }
+        },
+        "Bash": {
+            "Path": {
+                "selected-text-color": "#f1fa8c",
+                "text-color": "#f1fa8c"
+            },
+            "Redirection": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Variable": {
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            }
+        },
+        "C": {
+            "Prep. Lib": {
+                "selected-text-color": "#f1fa8c",
+                "text-color": "#f1fa8c"
+            }
+        },
+        "C++": {
+            "Qt Macros": {
+                "bold": false,
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            }
+        },
+        "CMake": {
+            "Builtin Variable": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            }
+        },
+        "CSS": {
+            "Color": {
+                "bold": false
+            },
+            "Property": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Selector Class": {
+                "italic": true
+            },
+            "Selector Id": {
+                "bold": false,
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Selector Pseudo": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Selector Tag": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Unit": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            }
+        },
+        "D": {
+            "Attribute": {
+                "bold": false
+            },
+            "Declarator": {
+                "bold": false
+            },
+            "Deprecated": {
+                "bold": false
+            },
+            "Expression": {
+                "bold": false
+            },
+            "Module": {
+                "bold": false
+            },
+            "Property": {
+                "bold": false
+            },
+            "Template": {
+                "bold": false
+            }
+        },
+        "Diff": {
+            "Added line": {
+                "selected-text-color": "#5fde38",
+                "text-color": "#50fa7b"
+            },
+            "Changed line (new)": {
+                "background-color": "#50fa7b",
+                "selected-text-color": "#5fde38",
+                "text-color": "#50fa7b"
+            },
+            "Changed line (old)": {
+                "selected-text-color": "#e66eb4",
+                "text-color": "#ff79c6"
+            },
+            "Removed line": {
+                "selected-text-color": "#e66eb4",
+                "text-color": "#ff79c6"
+            }
+        },
+        "Doxygen": {
+            "Custom Tags": {
+                "selected-text-color": "#d465a7",
+                "text-color": "#d465a7"
+            },
+            "Description": {
+                "selected-text-color": "#c58e53",
+                "text-color": "#c58e53"
+            },
+            "Entities": {
+                "bold": false
+            },
+            "HTML Tag": {
+                "bold": false,
+                "selected-text-color": "#d465a7",
+                "text-color": "#d465a7"
+            },
+            "Region": {
+                "selected-text-color": "#6db8c7",
+                "text-color": "#6db8c7"
+            },
+            "Tags": {
+                "bold": false,
+                "selected-text-color": "#d465a7",
+                "text-color": "#d465a7"
+            },
+            "Word": {
+                "bold": false,
+                "selected-text-color": "#c58e53",
+                "text-color": "#c58e53"
+            }
+        },
+        "GNU Assembler": {
+            "Label": {
+                "underline": true
+            }
+        },
+        "Go": {
+            "Builtin Function": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            }
+        },
+        "HTML": {
+            "Doctype": {
+                "bold": false,
+                "italic": false,
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            }
+        },
+        "ISO C++": {
+            "Prep. Lib": {
+                "selected-text-color": "#f1fa8c",
+                "text-color": "#f1fa8c"
+            },
+            "Standard Suffix": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "UDL Numeric Suffix": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "UDL String Suffix": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            }
+        },
+        "Intel x86 (NASM)": {
+            "Label": {
+                "underline": true
+            },
+            "Registers": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            }
+        },
+        "JSON": {
+            "Style_Keyword": {
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            },
+            "Style_String_Key": {
+                "italic": false
+            }
+        },
+        "JavaScript": {
+            "Built-in Objects": {
+                "italic": true
+            },
+            "Function (Built-in)": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Object Member": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            }
+        },
+        "JavaScript React (JSX)": {
+            "Attribute": {
+                "italic": true
+            },
+            "Component Tag": {
+                "bold": false,
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            }
+        },
+        "Makefile": {
+            "Operator": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Prereq": {
+                "italic": false,
+                "selected-text-color": "#f1fa8c",
+                "text-color": "#f1fa8c"
+            },
+            "Target": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Variable": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            }
+        },
+        "Markdown": {
+            "Blockquote: Link": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Email": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Emphasis Text": {
+                "selected-text-color": "#f1fa8c",
+                "text-color": "#f1fa8c"
+            },
+            "Header H1": {
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            },
+            "Header H2": {
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            },
+            "Header H3": {
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            },
+            "Header H4": {
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            },
+            "Header H5": {
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            },
+            "Header H6": {
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            },
+            "Inline Image": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Inline Image: Link": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Link": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "List: Emphasis Text": {
+                "selected-text-color": "#f1fa8c",
+                "text-color": "#f1fa8c"
+            },
+            "List: Link": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "List: Strong Text": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Normal Text: Link": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Reference Image": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Reference-Link": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Reference-Link Name": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6",
+                "underline": false
+            },
+            "Reference-Link Target": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Reference-Link Target: Link": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Reference-Link: Link": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Strong Text": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            }
+        },
+        "Modelines": {
+            "Variable": {
+                "selected-text-color": "#c58e53",
+                "text-color": "#c58e53"
+            }
+        },
+        "PHP/PHP": {
+            "Backslash Code": {
+                "bold": false,
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Control Structures": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Library Constant": {
+                "bold": false,
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            },
+            "Special Variable": {
+                "bold": false,
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            },
+            "Variable": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            }
+        },
+        "Pascal": {
+            "ISO/Delphi Extended": {
+                "text-color": "#ff79c6"
+            }
+        },
+        "Odin": {
+            "Context Variable": {
+                "italic": true,
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            }
+        },
+        "Python": {
+            "Builtin Function": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Special Variable": {
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            }
+        },
+        "QMake": {
+            "Backslash Code": {
+                "bold": false
+            },
+            "Predefined Variable": {
+                "bold": false,
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            }
+        },
+        "Ruby": {
+            "Access Control": {
+                "bold": false,
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Default globals": {
+                "bold": false
+            },
+            "Definition": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Global Constant": {
+                "bold": false,
+                "italic": true,
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Kernel methods": {
+                "bold": false,
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Message": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Module mixin methods": {
+                "bold": false
+            },
+            "Pseudo variable": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            }
+        },
+        "Rust": {
+            "Attribute": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "CConstant": {
+                "bold": false
+            },
+            "CType": {
+                "italic": true,
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Constant": {
+                "bold": false
+            },
+            "Definition": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Lifetime": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Macro": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Scope": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "Self": {
+                "italic": true,
+                "selected-text-color": "#bd93f9",
+                "text-color": "#bd93f9"
+            },
+            "Trait": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            }
+        },
+        "SPDX-Comments": {
+            "SPDX Deprecated License": {
+                "selected-text-color": "#d465a7",
+                "text-color": "#d465a7"
+            },
+            "SPDX Deprecated License Exception": {
+                "selected-text-color": "#d465a7",
+                "text-color": "#d465a7"
+            },
+            "SPDX License": {
+                "selected-text-color": "#d465a7",
+                "text-color": "#d465a7"
+            },
+            "SPDX License Exception": {
+                "selected-text-color": "#d465a7",
+                "text-color": "#d465a7"
+            },
+            "SPDX Tag": {
+                "selected-text-color": "#d465a7",
+                "text-color": "#d465a7"
+            },
+            "SPDX Value": {
+                "selected-text-color": "#d465a7",
+                "text-color": "#d465a7"
+            }
+        },
+        "TypeScript": {
+            "Built-in Objects": {
+                "italic": true
+            },
+            "Function (Built-in)": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Object Member": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            }
+        },
+        "TypeScript React (TSX)": {
+            "Attribute": {
+                "italic": true
+            },
+            "Component Tag": {
+                "bold": false,
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            }
+        },
+        "YAML": {
+            "Attribute": {
+                "selected-text-color": "#f1fa8c",
+                "text-color": "#f1fa8c"
+            },
+            "Key": {
+                "bold": false,
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "List": {
+                "selected-text-color": "#f1fa8c",
+                "text-color": "#f1fa8c"
+            }
+        },
+        "CSV": {
+            "Column 1": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 2": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 3": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 4": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Column 5": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "Column 6": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 7": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 8": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 9": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b",
+                "italic": false
+            },
+            "Column 1 Separator": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 2 Separator": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 3 Separator": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 4 Separator": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Column 5 Separator": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "Column 6 Separator": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 7 Separator": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 8 Separator": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 9 Separator": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b",
+                "italic": false
+            }
+        },
+        "TSV": {
+            "Column 1": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 2": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 3": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 4": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Column 5": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "Column 6": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 7": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 8": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 9": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b",
+                "italic": false
+            },
+            "Column 1 Separator": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 2 Separator": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 3 Separator": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 4 Separator": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Column 5 Separator": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "Column 6 Separator": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 7 Separator": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 8 Separator": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 9 Separator": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b",
+                "italic": false
+            }
+        },
+        "CSV (semicolon)": {
+            "Column 1": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 2": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 3": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 4": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Column 5": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "Column 6": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 7": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 8": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 9": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b",
+                "italic": false
+            },
+            "Column 1 Separator": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 2 Separator": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 3 Separator": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 4 Separator": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Column 5 Separator": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "Column 6 Separator": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 7 Separator": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 8 Separator": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 9 Separator": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b",
+                "italic": false
+            }
+        },
+        "CSV (whitespace)": {
+            "Column 1": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 2": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 3": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 4": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Column 5": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "Column 6": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 7": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 8": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 9": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b",
+                "italic": false
+            },
+            "Column 1 Separator": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 2 Separator": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 3 Separator": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 4 Separator": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Column 5 Separator": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "Column 6 Separator": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 7 Separator": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 8 Separator": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 9 Separator": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b",
+                "italic": false
+            }
+        },
+        "CSV (pipe)": {
+            "Column 1": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 2": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 3": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 4": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Column 5": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "Column 6": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 7": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 8": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 9": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b",
+                "italic": false
+            },
+            "Column 1 Separator": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 2 Separator": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 3 Separator": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 4 Separator": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b"
+            },
+            "Column 5 Separator": {
+                "selected-text-color": "#f8f8f2",
+                "text-color": "#f8f8f2"
+            },
+            "Column 6 Separator": {
+                "selected-text-color": "#ff79c6",
+                "text-color": "#ff79c6"
+            },
+            "Column 7 Separator": {
+                "selected-text-color": "#8be9fd",
+                "text-color": "#8be9fd"
+            },
+            "Column 8 Separator": {
+                "selected-text-color": "#ffb86c",
+                "text-color": "#ffb86c"
+            },
+            "Column 9 Separator": {
+                "selected-text-color": "#50fa7b",
+                "text-color": "#50fa7b",
+                "italic": false
+            }
+        }
+    },
+    "metadata": {
+        "copyright": [
+            "SPDX-FileCopyrightText: 2016 Dracula Theme",
+            "SPDX-FileCopyrightText: 2020 Christoph Cullmann <cullmann@kde.org>"
+        ],
+        "license": "SPDX-License-Identifier: MIT",
+        "name": "Dracula",
+        "revision": 11
+    },
+    "text-styles": {
+        "Alert": {
+            "bold": true,
+            "selected-text-color": "#ff5555",
+            "text-color": "#ff5555"
+        },
+        "Annotation": {
+            "selected-text-color": "#ff79c6",
+            "text-color": "#ff79c6"
+        },
+        "Attribute": {
+            "selected-text-color": "#ff79c6",
+            "text-color": "#ff79c6"
+        },
+        "BaseN": {
+            "selected-text-color": "#bd93f9",
+            "text-color": "#bd93f9"
+        },
+        "BuiltIn": {
+            "selected-text-color": "#8be9fd",
+            "text-color": "#8be9fd"
+        },
+        "Char": {
+            "selected-text-color": "#f1fa8c",
+            "text-color": "#f1fa8c"
+        },
+        "Comment": {
+            "selected-text-color": "#6272a4",
+            "text-color": "#6272a4"
+        },
+        "CommentVar": {
+            "selected-text-color": "#8be9fd",
+            "text-color": "#8be9fd"
+        },
+        "Constant": {
+            "bold": true,
+            "selected-text-color": "#bd93f9",
+            "text-color": "#bd93f9"
+        },
+        "ControlFlow": {
+            "selected-text-color": "#ff79c6",
+            "text-color": "#ff79c6"
+        },
+        "DataType": {
+            "italic": true,
+            "selected-text-color": "#8be9fd",
+            "text-color": "#8be9fd"
+        },
+        "DecVal": {
+            "selected-text-color": "#bd93f9",
+            "text-color": "#bd93f9"
+        },
+        "Documentation": {
+            "selected-text-color": "#ffb86c",
+            "text-color": "#ffb86c"
+        },
+        "Error": {
+            "selected-text-color": "#ff5555",
+            "text-color": "#ff5555",
+            "underline": true
+        },
+        "Extension": {
+            "selected-text-color": "#8be9fd",
+            "text-color": "#8be9fd"
+        },
+        "Float": {
+            "selected-text-color": "#bd93f9",
+            "text-color": "#bd93f9"
+        },
+        "Function": {
+            "selected-text-color": "#50fa7b",
+            "text-color": "#50fa7b"
+        },
+        "Import": {
+            "selected-text-color": "#ff79c6",
+            "text-color": "#ff79c6"
+        },
+        "Information": {
+            "selected-text-color": "#f1fa8c",
+            "text-color": "#f1fa8c"
+        },
+        "Keyword": {
+            "selected-text-color": "#ff79c6",
+            "text-color": "#ff79c6"
+        },
+        "Normal": {
+            "selected-text-color": "#f8f8f2",
+            "text-color": "#f8f8f2"
+        },
+        "Operator": {
+            "selected-text-color": "#f8f8f2",
+            "text-color": "#f8f8f2"
+        },
+        "Others": {
+            "selected-text-color": "#50fa7b",
+            "text-color": "#50fa7b"
+        },
+        "Preprocessor": {
+            "selected-text-color": "#ff79c6",
+            "text-color": "#ff79c6"
+        },
+        "RegionMarker": {
+            "selected-text-color": "#8be9fd",
+            "text-color": "#8be9fd"
+        },
+        "SpecialChar": {
+            "selected-text-color": "#ff79c6",
+            "text-color": "#ff79c6"
+        },
+        "SpecialString": {
+            "selected-text-color": "#f1fa8c",
+            "text-color": "#f1fa8c"
+        },
+        "String": {
+            "selected-text-color": "#f1fa8c",
+            "text-color": "#f1fa8c"
+        },
+        "Variable": {
+            "selected-text-color": "#8be9fd",
+            "text-color": "#8be9fd"
+        },
+        "VerbatimString": {
+            "selected-text-color": "#d7e60a",
+            "text-color": "#d7e60a"
+        },
+        "Warning": {
+            "selected-text-color": "#ff5555",
+            "text-color": "#ff5555"
+        }
+    }
+}

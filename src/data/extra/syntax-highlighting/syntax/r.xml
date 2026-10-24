@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- Kate 2.5 (KDE 3.5) highlighting module for R
 	based on an earlier version by E.L. Willighagen. Code folding code by Ben Goodrich
 	version 2.0: (c) 2006 Thomas Friedrichsmeier, Arne Henningsen, and the RKWard Team
@@ -8,7 +8,7 @@
 	R      : http://www.r-project.org/
 	RKWard : http://rkward.kde.org/
 	-->
-<language version="8" kateversion="5.0" name="R Script" section="Scientific" extensions="*.R;*.r;*.S;*.s;*.q" mimetype="" license="GPLv2">
+<language version="14" kateversion="5.0" name="R Script" section="Scientific" extensions="*.R;*.r;*.S;*.s;*.q" mimetype="" license="GPLv2">
 <highlighting>
 
 	<list name="controls">
@@ -41,8 +41,7 @@
 		<context attribute="Normal Text" lineEndContext="#stay" name="level0">
 			<IncludeRules context="CommonRules"/>
 
-			<DetectChar attribute="Error" context="#stay" char="}" />
-			<DetectChar attribute="Error" context="#stay" char=")"/>
+			<AnyChar attribute="Error" context="#stay" String="})"/>
 		</context>
 
 		<context attribute="Normal Text" lineEndContext="#stay" name="ctx0">
@@ -56,7 +55,7 @@
 			<LineContinue attribute="Operator" context="#stay"/>
 			<DetectChar attribute="Symbol" context="#pop" char=")"/>
 
-			<RegExpr attribute="Identifier" context="#stay" String="[a-zA-Z_\.][0-9a-zA-Z_\.]*[\s]*[:]?=(?=([^=]|$))"/>
+			<RegExpr attribute="Identifier" context="#stay" String="[a-zA-Z_\.][0-9a-zA-Z_\.]*[\s]*[:]?=(?=[^=]|$)"/>
 
 			<IncludeRules context="CommonRules"/>
 			<DetectChar attribute="Error" context="#stay" char="}" />
@@ -79,74 +78,97 @@
 
 		<context attribute="Normal Text" lineEndContext="#stay" name="operator_rhs" fallthrough="true" fallthroughContext="#pop">
 			<!-- While there is nothing of interest, stay in the context -->
-			<Detect2Chars attribute="Headline" context="Headline" char="#" char1="#"/>
-			<DetectChar attribute="Comment" context="Comment" char="#"/>
-			<DetectChar attribute="String" context="#stay" char=" "/>
+			<DetectSpaces />
+			<IncludeRules context="FindComments"/>
 			<!-- Operators other than +, -, and ! directly after another operator are an error. -->
-			<RegExpr attribute="Error" context="#stay" String="(\*|/|&lt;|&gt;|\!=|=|\||&amp;|:|\^|@|\$|~)"/>
+			<Detect2Chars attribute="Error" context="#stay" char="!" char1="="/>
+			<AnyChar attribute="Error" context="#stay" String="*/&lt;&gt;=|&amp;:^@$~"/>
 		</context>
 
+		<context attribute="Numeric Suffix" lineEndContext="#pop" name="NumericSuffix" fallthrough="true" fallthroughContext="#pop">
+			<AnyChar attribute="Numeric Suffix" context="#pop" String="Li"/>
+		</context>
+
+		<context attribute="Normal Text" lineEndContext="#stay" name="FindComments">
+			<Detect2Chars attribute="Headline" context="Headline" char="#" char1="#"/>
+			<DetectChar attribute="Comment" context="Comment" char="#"/>
+		</context>
 		<context attribute="Headline" lineEndContext="#pop" name="Headline">
-			<IncludeRules context="##Alerts" />
+			<DetectSpaces />
+			<IncludeRules context="##Comments" />
 		</context>
 		<context attribute="Comment" lineEndContext="#pop" name="Comment">
-			<IncludeRules context="##Alerts" />
+			<DetectSpaces />
+			<IncludeRules context="##Comments" />
 		</context>
 
 		<!-- This context is not really used, but contains the common rules -->
 		<context name="CommonRules" lineEndContext="#stay" attribute="Normal Text" >
+			<DetectSpaces />
+			<IncludeRules context="FindComments"/>
 			<DetectChar attribute="String" context="string" char="&quot;"/>
 			<DetectChar attribute="String" context="string2" char="'"/>
 			<DetectChar attribute="String" context="backquotedsymbol" char="`"/>
 			<keyword attribute="Control Structure" context="#stay" String="controls"/>
 			<keyword attribute="Reserved Words" context="#stay" String="words"/>
 			<Float attribute="Float" context="#stay"/>
-			<Int attribute="Int" context="#stay"/>
-			<RegExpr attribute="Keyword" context="#stay" String="[a-zA-Z_]+[a-zA-Z_\.0-9]*(?=[\s]*[(])"/>
-			<RegExpr attribute="Keyword" context="#stay" String="\.[a-zA-Z_\.]+[a-zA-Z_\.0-9]*(?=[\s]*[(])"/>
+			<Int attribute="Int" context="NumericSuffix"/>
+			<RegExpr attribute="Keyword" context="#stay" String="[a-zA-Z_]+[a-zA-Z_\.0-9]*(?=[\s]*[(])|\.[a-zA-Z_\.]+[a-zA-Z_\.0-9]*(?=[\s]*[(])"/>
 			<DetectChar attribute="Symbol" context="parenthesis" char="("/>
-			<Detect2Chars attribute="Headline" context="Headline" char="#" char1="#"/>
-			<DetectChar attribute="Comment" context="Comment" char="#"/>
 
 			<!-- For (assignment) operators, enter a new context operator_rhs to check what follows (generally, that should not be another op) -->
-			<RegExpr attribute="Assign" context="operator_rhs" String="[&lt;]{1,2}\-"/>
-			<RegExpr attribute="Assign" context="operator_rhs" String="\-[&gt;]{1,2}"/>
-			<RegExpr attribute="Assign" context="operator_rhs" String="=(?!=)"/>
-			<RegExpr attribute="Operator" context="operator_rhs" String="(\+|\-|\*{1,2}|/|&lt;=?|&gt;=?|={1,2}|\!=?|\|{1,2}|&amp;{1,2}|:{1,3}|\^|@|\$|~)"/>
-			<RegExpr attribute="Operator" context="operator_rhs" String="%[^%]*%"/>
+			<StringDetect attribute="Assign" context="operator_rhs" String="&lt;&lt;-"/>
+			<Detect2Chars attribute="Assign" context="operator_rhs" char="&lt;" char1="-"/>
+			<StringDetect attribute="Assign" context="operator_rhs" String="-&gt;&gt;"/>
+			<Detect2Chars attribute="Assign" context="operator_rhs" char="-" char1="&gt;"/>
+			<RegExpr attribute="Assign" context="operator_rhs" String="=(?!(=|&gt;))"/>
+			<Detect2Chars attribute="Operator" context="operator_rhs" char="*" char1="*"/>
+			<Detect2Chars attribute="Operator" context="operator_rhs" char="&lt;" char1="="/>
+			<Detect2Chars attribute="Operator" context="operator_rhs" char="&gt;" char1="="/>
+			<Detect2Chars attribute="Operator" context="operator_rhs" char="=" char1="="/>
+			<Detect2Chars attribute="Operator" context="operator_rhs" char="=" char1="&gt;"/>
+			<Detect2Chars attribute="Operator" context="operator_rhs" char="!" char1="="/>
+			<Detect2Chars attribute="Operator" context="operator_rhs" char="|" char1="&gt;"/>
+			<Detect2Chars attribute="Operator" context="operator_rhs" char="|" char1="|"/>
+			<Detect2Chars attribute="Operator" context="operator_rhs" char="&amp;" char1="&amp;"/>
+			<StringDetect attribute="Operator" context="operator_rhs" String=":::"/>
+			<Detect2Chars attribute="Operator" context="operator_rhs" char=":" char1=":"/>
+			<Detect2Chars attribute="Operator" context="operator_rhs" char=":" char1="="/>
+			<AnyChar attribute="Operator" context="operator_rhs" String="+-*/&lt;&gt;=!|&amp;:^@$~"/>
+			<RangeDetect attribute="Operator" context="operator_rhs" char="%" char1="%"/>
 
 			<DetectChar attribute="Symbol" context="ctx0" char="{" beginRegion="Brace1" />
 
 			<!-- This is needed only to assist variable based indentation -->
-			<DetectChar attribute="Symbol" context="#stay" char="[" />
-			<DetectChar attribute="Symbol" context="#stay" char="]" />
+			<AnyChar attribute="Symbol" context="#stay" String="[]" />
 		</context>
 	</contexts>
 
 	<itemDatas>
-		<!-- KDE default colors: http://accessibility.kde.org/oxygen.php?color=white -->
-		<itemData name="Normal Text" defStyleNum="dsNormal"/>
-		<itemData name="Symbol" defStyleNum="dsNormal"/>
-		<itemData name="Keyword" defStyleNum="dsKeyword"/>
-		<itemData name="Identifier" defStyleNum="dsDataType"/>
+		<itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+		<itemData name="Symbol" defStyleNum="dsNormal" spellChecking="false"/>
+		<itemData name="Keyword" defStyleNum="dsFunction" spellChecking="false"/>
+		<itemData name="Identifier" defStyleNum="dsAttribute" spellChecking="false"/>
 		<itemData name="String" defStyleNum="dsString"/>
-		<itemData name="Headline" defStyleNum="dsComment" color="#b00000" selColor="#b00000" bold="1" italic="0"/> <!-- KDE default color: text 5 -->
+		<itemData name="Headline" defStyleNum="dsDocumentation" bold="1"/>
 		<itemData name="Comment" defStyleNum="dsComment"/>
-		<itemData name="Assign" defStyleNum="dsNormal" color="#336366" selColor="#ccc099" bold="1" italic="0"/> <!-- KDE default color: text 7 -->
-		<itemData name="Control Structure" defStyleNum="dsControlFlow"/>
-		<itemData name="Reserved Words" defStyleNum="dsOthers"/>
-		<itemData name="Error" defStyleNum="dsError"/>
-		<itemData name="Operator" defStyleNum="dsOperator"/>
-		<itemData name="String Char"  defStyleNum="dsChar"/>
-		<itemData name="Float" defStyleNum="dsFloat"/>
-		<itemData name="Int" defStyleNum="dsDecVal"/>
+		<itemData name="Assign" defStyleNum="dsOthers" bold="1" italic="0" spellChecking="false"/>
+		<itemData name="Control Structure" defStyleNum="dsControlFlow" spellChecking="false"/>
+		<itemData name="Reserved Words" defStyleNum="dsConstant" spellChecking="false"/>
+		<itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+		<itemData name="Operator" defStyleNum="dsSpecialChar" spellChecking="false"/>
+		<itemData name="String Char"  defStyleNum="dsSpecialChar" spellChecking="false"/>
+		<itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+		<itemData name="Int" defStyleNum="dsDecVal" spellChecking="false"/>
+		<itemData name="Numeric Suffix" defStyleNum="dsDataType" spellChecking="false"/>
 	</itemDatas>
 </highlighting>
 
 <general>
 	<comments>
-		<comment name="singleLine" start="#" end=""/>
+		<comment name="singleLine" start="#"/>
 	</comments>
 	<keywords casesensitive="true" weakDeliminator="." additionalDeliminator="$"/>
 </general>
 </language>
+<!-- kate: replace-tabs off; -->

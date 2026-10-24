@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="QMake" section="Other" extensions="*.pro;*.pri;*.prf;" mimetype="" priority="2" version="5" kateversion="3.4" author="Milian Wolff (mail@milianw.de), Kevin Funk (kevin.funk@kdab.com)" license="MIT">
+<!DOCTYPE language>
+<language name="QMake" section="Other" extensions="*.pro;*.pri;*.prf;" mimetype="" priority="2" version="8" kateversion="5.0" author="Milian Wolff (mail@milianw.de), Kevin Funk (kevin.funk@kdab.com)" license="MIT">
 
 <highlighting>
   <list name="variables">
@@ -614,10 +614,7 @@
       <keyword attribute="System" String="systems" />
       <keyword attribute="Keyword" String="keywords" />
       <DetectChar char="#" attribute="Comment" context="Comment" />
-      <RegExpr attribute="Variable" context="#stay" String="\$\$?[a-zA-Z0-9_]+" />
-      <RegExpr attribute="Variable" context="#stay" String="\$\$\{[^\}]*\}" />
-      <RegExpr attribute="Variable" context="#stay" String="\$\$\[[^\]]*\]" />
-      <RegExpr attribute="Variable" context="#stay" String="\$\$\([^\)]*\)" />
+      <RegExpr attribute="Variable" context="#stay" String="\$\$?[a-zA-Z0-9_]+|\$\$\{[^\}]*\}|\$\$\[[^\]]*\]|\$\$\([^\)]*\)" />
       <Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="\" />
       <Detect2Chars attribute="Backslash Code" context="#stay" char="\" char1="&quot;" />
       <DetectChar char="&quot;" attribute="String" context="String" />
@@ -630,7 +627,7 @@
     </context>
     <context name="Comment" attribute="Comment" lineEndContext="#pop">
       <DetectSpaces />
-      <IncludeRules context="##Alerts" />
+      <IncludeRules context="##Comments" />
       <DetectIdentifier />
     </context>
   </contexts>
@@ -656,4 +653,4 @@
 </general>
 
 </language>
-<!-- kate: indent-width 2; -->
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,0 +1,318 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!-- author ik Iztok Kobal (iztok.kobal@siol.net) -->
+<!-- followed CM3 documentation (http://www.elegosoft.com/cm3/doc/reference/index.html , chapter Syntax) -->
+<!-- 03.03.2005 ik mailed version 1.00 to Dominik Haumann <dhdev@gmx.de> of kate team -->
+<!-- 04.03.2005 ik mailed version 1.01 with fixed/implemented nested comments to Dominik -->
+<!-- known bug: notation Regexp( [0-9]*\. ) should be not interpreted as neither Integer neither Real -->
+<!-- known bug: notation Regexp ( "  \" " ) is not properly interpreted -->
+<language name="Modula-3" version="4" kateversion="5.0" section="Sources" extensions="*.m3;*.i3;*.ig;*.mg;" mimetype="text/x-modula-3" license="LGPL">
+  <highlighting>
+    <list name="keywords">
+<!--      <item>AND</item> -->
+      <item>ANY</item>
+      <item>ARRAY</item>
+      <item>AS</item>
+      <item>BEGIN</item>
+      <item>BITS</item>
+      <item>BRANDED</item>
+      <item>BY</item>
+      <item>CASE</item>
+      <item>CONST</item>
+<!--      <item>DIV</item> -->
+      <item>DO</item>
+      <item>ELSE</item>
+      <item>ELSIF</item>
+      <item>END</item>
+      <item>EVAL</item>
+      <item>EXCEPT</item>
+      <item>EXCEPTION</item>
+      <item>EXIT</item>
+      <item>EXPORTS</item>
+      <item>FINALLY</item>
+      <item>FOR</item>
+      <item>FROM</item>
+      <item>GENERIC</item>
+      <item>IF</item>
+      <item>IMPORT</item>
+<!--      <item>IN</item> -->
+      <item>INTERFACE</item>
+      <item>LOCK</item>
+      <item>LOOP</item>
+      <item>METHODS</item>
+<!--      <item>MOD</item> -->
+      <item>MODULE</item>
+<!--      <item>NOT</item> -->
+      <item>OBJECT</item>
+      <item>OF</item>
+<!--      <item>OR</item> -->
+      <item>OVERRIDES</item>
+      <item>PROCEDURE</item>
+      <item>RAISE</item>
+      <item>RAISES</item>
+      <item>READONLY</item>
+      <item>RECORD</item>
+      <item>REF</item>
+      <item>REPEAT</item>
+      <item>RETURN</item>
+      <item>REVEAL</item>
+      <item>ROOT</item>
+      <item>SET</item>
+      <item>THEN</item>
+      <item>TO</item>
+      <item>TRY</item>
+      <item>TYPE</item>
+      <item>TYPECASE</item>
+      <item>UNSAFE</item>
+      <item>UNTIL</item>
+      <item>UNTRACED</item>
+      <item>VALUE</item>
+      <item>VAR</item>
+      <item>WHILE</item>
+      <item>WITH</item>
+    </list>
+    <list name="operators">
+      <item>AND</item>
+      <item>DIV</item>
+      <item>IN</item>
+      <item>MOD</item>
+      <item>NOT</item>
+      <item>OR</item>
+      <item>+</item>
+      <item>&lt;</item>
+      <item>#</item>
+      <item>=</item>
+      <item>;</item>
+      <item>..</item>
+      <item>:</item>
+      <item>-</item>
+      <item>&gt;</item>
+      <item>{</item>
+      <item>}</item>
+      <item>|</item>
+      <item>:=</item>
+      <item>&lt;:</item>
+      <item>*</item>
+      <item>&lt;=</item>
+      <item>(</item>
+      <item>)</item>
+      <item>^</item>
+      <item>,</item>
+      <item>=&gt;</item>
+      <item>/</item>
+      <item>&gt;=</item>
+      <item>[</item>
+      <item>]</item>
+      <item>.</item>
+      <item>&amp;</item>
+    </list>
+    <list name="types">
+      <item>ADDRESS</item>
+      <item>BOOLEAN</item>
+      <item>CARDINAL</item>
+      <item>CHAR</item>
+      <item>EXTENDED</item>
+      <item>INTEGER</item>
+      <item>LONGREAL</item>
+      <item>MUTEX</item>
+      <item>NULL</item>
+      <item>REAL</item>
+      <item>REFANY</item>
+      <item>T</item>
+      <item>TEXT</item>
+    </list>
+    <list name="constants">
+      <item>FALSE</item>
+      <item>NIL</item>
+      <item>TRUE</item>
+    </list>
+    <list name="pervasives">
+      <item>ABS</item>
+      <item>ADR</item>
+      <item>ADRSIZE</item>
+      <item>BITSIZE</item>
+      <item>BYTESIZE</item>
+      <item>CEILING</item>
+      <item>DEC</item>
+      <item>DISPOSE</item>
+      <item>FIRST</item>
+      <item>FLOAT</item>
+      <item>FLOOR</item>
+      <item>INC</item>
+      <item>ISTYPE</item>
+      <item>LAST</item>
+      <item>LOOPHOLE</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>NARROW</item>
+      <item>NEW</item>
+      <item>NUMBER</item>
+      <item>ORD</item>
+      <item>ROUND</item>
+      <item>SUBARRAY</item>
+      <item>TRUNC</item>
+      <item>TYPECODE</item>
+      <item>VAL</item>
+    </list>
+    <list name="stdlibs">
+      <item>Text</item>
+      <item>Text.Length</item>
+      <item>Text.Empty</item>
+      <item>Text.Equal</item>
+      <item>Text.Compare</item>
+      <item>Text.Cat</item>
+      <item>Text.Sub</item>
+      <item>Text.Hash</item>
+      <item>Text.HasWideChar</item>
+      <item>Text.GetChar</item>
+      <item>Text.GetWideChar</item>
+      <item>Text.SetChars</item>
+      <item>Text.SetWideChars</item>
+      <item>Text.FromChars</item>
+      <item>Text.FromWideChars</item>
+      <item>Text.FindChar</item>
+      <item>Text.FindWideChar</item>
+      <item>Text.FindCharR</item>
+      <item>Text.FindWideCharR</item>
+      <item>Fmt</item>
+      <item>Fmt.Bool</item>
+      <item>Fmt.Char</item>
+      <item>Fmt.Int</item>
+      <item>Fmt.Unsigned</item>
+      <item>Fmt.Real</item>
+      <item>Fmt.LongReal</item>
+      <item>Fmt.Extended</item>
+      <item>Fmt.Pad</item>
+      <item>Fmt.F</item>
+      <item>Fmt.FN</item>
+      <item>Scan</item>
+      <item>Scan.Bool</item>
+      <item>Scan.Int</item>
+      <item>Scan.Unsigned</item>
+      <item>Scan.Real</item>
+      <item>Scan.LongReal</item>
+      <item>Scan.Extended</item>
+      <item>IO</item>
+      <item>IO.Put</item>
+      <item>IO.PutChar</item>
+      <item>IO.PutWideChar</item>
+      <item>IO.PutInt</item>
+      <item>IO.PutReal</item>
+      <item>IO.EOF</item>
+      <item>IO.GetLine</item>
+      <item>IO.GetChar</item>
+      <item>IO.GetWideChar</item>
+      <item>IO.GetInt</item>
+      <item>IO.GetReal</item>
+      <item>IO.OpenRead</item>
+      <item>IO.OpenWrite</item>
+      <item>Rd</item>
+      <item>Rd.GetChar</item>
+      <item>Rd.GetWideChar</item>
+      <item>Rd.EOF</item>
+      <item>Rd.UnGetChar</item>
+      <item>Rd.CharsReady</item>
+      <item>Rd.GetSub</item>
+      <item>Rd.GetWideSub</item>
+      <item>Rd.GetSubLine</item>
+      <item>Rd.GetWideSubLine</item>
+      <item>Rd.GetText</item>
+      <item>Rd.GetWideText</item>
+      <item>Rd.GetLine</item>
+      <item>Rd.GetWideLine</item>
+      <item>Rd.Seek</item>
+      <item>Rd.Close</item>
+      <item>Rd.Index</item>
+      <item>Rd.Length</item>
+      <item>Rd.Intermittend</item>
+      <item>Rd.Seekable</item>
+      <item>Rd.Closed</item>
+      <item>Wr</item>
+      <item>Wr.PutChar</item>
+      <item>Wr.PutWideChar</item>
+      <item>Wr.PutText</item>
+      <item>Wr.PutWideText</item>
+      <item>Wr.PutString</item>
+      <item>Wr.PutWideString</item>
+      <item>Wr.Seek</item>
+      <item>Wr.Flush</item>
+      <item>Wr.Close</item>
+      <item>Wr.Length</item>
+      <item>Wr.Index</item>
+      <item>Wr.Seekable</item>
+      <item>Wr.Closed</item>
+      <item>Wr.Buffered</item>
+      <item>Lex</item>
+      <item>Lex.Scan</item>
+      <item>Lex.Skip</item>
+      <item>Lex.Match</item>
+      <item>Lex.Bool</item>
+      <item>Lex.Int</item>
+      <item>Lex.Unsigned</item>
+      <item>Lex.Real</item>
+      <item>Lex.LongReal</item>
+      <item>Lex.Extended</item>
+      <item>Params</item>
+      <item>Params.Count</item>
+      <item>Params.Get</item>
+      <item>Env</item>
+      <item>Env.Count</item>
+      <item>Env.Get</item>
+      <item>Env.GetNth</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <RegExpr attribute="Keyword" context="#stay" String="PROCEDURE[\s].*\(" beginRegion="Proc"/>
+        <RegExpr attribute="Keyword" context="#stay" String="END\s*[A-Za-z][A-Za-z0-9_]*\;" endRegion="Proc"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(RECORD|OBJECT|TRY|WHILE|FOR|REPEAT|LOOP|IF|CASE|WITH)\b" beginRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(END;|END)\b" endRegion="Block"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Operator" context="#stay" String="operators"/>
+        <keyword attribute="Type" context="#stay" String="types"/>
+        <keyword attribute="Constant" context="#stay" String="constants"/>
+        <keyword attribute="Pervasive" context="#stay" String="pervasives"/>
+        <keyword attribute="StdLib" context="#stay" String="stdlibs"/>
+        <RegExpr attribute="Real" context="#stay" String="\b[\+|\-]{0,1}[0-9]{1,}\.[0-9]{1,}([E|e|D|d|X|x][\+|\-]{0,1}[0-9]{1,}){0,1}\b"/>
+        <RegExpr attribute="Integer" context="#stay" String="\b([\+|\-]{0,1}[0-9]{1,}|([2-9]|1[0-6])\_[0-9A-Fa-f]{1,})\b"/>
+        <DetectChar attribute="String" context="String1" char="&quot;"/>
+        <RegExpr attribute="Char" context="#stay" String="\'(.|\\[ntrf\\'&quot;]|\\[0-7]{3})\'"/>
+        <Detect2Chars attribute="Pragma" context="Prep1" char="&lt;" char1="*"/>
+        <Detect2Chars attribute="Comment" context="Comment2" char="(" char1="*" beginRegion="Comment"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String1">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment2">
+        <Detect2Chars attribute="Comment" context="Comment2" char="(" char1="*" beginRegion="Comment"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")" endRegion="Comment"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context attribute="Pragma" lineEndContext="#stay" name="Prep1">
+        <Detect2Chars attribute="Pragma" context="#pop" char="*" char1="&gt;"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Operator" defStyleNum="dsKeyword"/>
+      <itemData name="Type" defStyleNum="dsDataType"/>
+      <itemData name="Integer" defStyleNum="dsBaseN"/>
+      <itemData name="Real" defStyleNum="dsFloat"/>
+      <itemData name="Constant" defStyleNum="dsDecVal"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Char" defStyleNum="dsChar"/>
+      <itemData name="Pervasive" defStyleNum="dsFunction"/>
+      <itemData name="StdLib" defStyleNum="dsFunction"/>
+      <itemData name="Comment" defStyleNum="dsComment" bold="0" italic="1"/>
+      <itemData name="Pragma" defStyleNum="dsOthers" bold="0" italic="1"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" weakDeliminator="."/>
+    <comments>
+      <comment name="multiLine" start="(*" end="*)" region="Comment"/>
+    </comments>
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

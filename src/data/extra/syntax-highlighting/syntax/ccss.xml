@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
   <!-- http://www.w3.org/TR/CSS21/syndata.html#tokenization -->
   <!ENTITY nmstart "[_a-zA-Z]|(\\[0-9a-fA-F]{1,6})|(\\[^\n\r\f0-9a-fA-F])">
   <!ENTITY nmchar  "[_a-zA-Z0-9-]|(\\[0-9a-fA-F]{1,6})|(\\[^\n\r\f0-9a-fA-F])">
 ]>
 
-<language name="CleanCSS" version="3" kateversion="3.4" section="Markup" extensions="*.ccss" author="Massimiliano Torromeo" license="BSD">
+<language name="CleanCSS" version="8" kateversion="5.0" section="Markup" extensions="*.ccss" author="Massimiliano Torromeo" license="BSD">
 
 <highlighting>
 	<list name="properties">
@@ -58,13 +58,7 @@
 		<item>empty-cells</item>
 		<item>float</item>
 		<item>font</item>
-		<item>font-family</item>
-		<item>font-size</item>
 		<item>font-size-adjust</item>
-		<item>font-stretch</item>
-		<item>font-style</item>
-		<item>font-variant</item>
-		<item>font-weight</item>
 		<item>height</item>
 		<item>left</item>
 		<item>letter-spacing</item>
@@ -121,7 +115,6 @@
 		<item>text-decoration</item>
 		<item>text-decoration-color</item>
 		<item>text-indent</item>
-		<item>text-shadow</item>
 		<item>text-transform</item>
 		<item>top</item>
 		<item>unicode-bidi</item>
@@ -538,7 +531,7 @@
 		<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
 			<Detect2Chars attribute="Comment" char="/" char1="/" context="Comment" />
 			<RegExpr attribute="Normal Text" String=".*\S.*:\s*$" context="Selector" lookAhead="true" />
-			<RegExpr attribute="Normal Text" String=".*\S.*:.*\S.*$" context="RuleSet" lookAhead="true" />
+			<RegExpr attribute="Normal Text" String=".*\S.*:.*\S" context="RuleSet" lookAhead="true" minimal="true" />
 			<RegExpr attribute="Property" String="[a-z\-]+-&gt;\s*$" context="#stay" />
 			<RegExpr attribute="Error" context="#stay" String="\S" />
 			<!--<keyword attribute="Property" context="Rule" String="properties" />
@@ -548,7 +541,9 @@
 			<!--<keyword attribute="Value" context="PropParen" String="paren" />-->
 		</context>
 
-		<context name="Comment" attribute="Comment" lineEndContext="#pop" />
+		<context name="Comment" attribute="Comment" lineEndContext="#pop">
+			<IncludeRules context="##Comments" />
+		</context>
 
 		<context name="Selector" attribute="Normal Text" lineEndContext="#pop">
 			<DetectChar attribute="Selector Attr" context="SelAttr" char="[" />
@@ -596,15 +591,12 @@
 		<context name="PropParen2" attribute="Normal Text" lineEndContext="#pop">
 			<IncludeRules context="Rule2" />
 			<DetectChar attribute="Value" context="#pop#pop" char=")" />
-			<IncludeRules context="FindValues" />
-			<IncludeRules context="FindStrings" />
 		</context>
 
-	<context attribute="Normal Text" lineEndContext="#stay" name="FindValues">
-		<RegExpr attribute="Value" context="#stay" String="[-+]?[0-9.]+(em|ex|px|in|cm|mm|pt|pc|deg|rad|grad|ms|s|Hz|kHz)\b" />
-		<RegExpr attribute="Value" context="#stay" String="[-+]?[0-9.]+[%]?" />
-		<RegExpr attribute="Normal Text" context="#stay" String="[\w\-]+" />
-	</context>
+		<context attribute="Normal Text" lineEndContext="#stay" name="FindValues">
+			<RegExpr attribute="Value" context="#stay" String="[-+]?[0-9.]+((em|ex|px|in|cm|mm|pt|pc|deg|rad|grad|ms|s|Hz|kHz)\b|%?)" />
+			<RegExpr attribute="Normal Text" context="#stay" String="[\w\-]+" />
+		</context>
 
 		<context name="FindStrings" attribute="Normal Text" lineEndContext="#pop">
 			<DetectChar attribute="String" context="StringDQ" char="&quot;" />
@@ -648,8 +640,8 @@
 	<folding indentationsensitive="1" />
 	<keywords casesensitive="0" weakDeliminator="-%"/>
 	<comments>
-		<comment name="singleLine" start="#" position="afterwhitespace"/>
 		<comment name="singleLine" start="//" position="afterwhitespace"/>
 	</comments>
 </general>
 </language>
+<!-- kate: replace-tabs off; -->

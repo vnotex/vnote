@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Kate syntax highlighting for the Objective Caml 'Ocamlllex' -->
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 <!-- Regular expresion constants: -->
 <!ENTITY LOWER  "a-z\300-\326\330-\337">         <!-- Lowercase Latin-1 letters. -->
@@ -14,8 +14,8 @@
           section="Sources"
           extensions="*.mly"
           mimetype=""
-          version="3"
-          kateversion="2.4"
+          version="7"
+          kateversion="6.22"
           priority="10"
           author="Glyn Webster (glynwebster@orcon.net.nz) and Vincent Hugot (vincent.hugot@gmail.com)"
           license="LGPL" >
@@ -134,6 +134,8 @@
       <context name="Comment" lineEndContext="#stay" attribute="Comment">
         <Detect2Chars char="*" char1="/" context="#pop"    attribute="Comment" endRegion="comment" />
         <Detect2Chars char="/" char1="*" context="Comment" attribute="Comment" beginRegion="comment" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
 
     </contexts>
@@ -153,7 +155,7 @@
   <general>
     <keywords casesensitive="true" weakDeliminator="%" />
     <comments>
-      <comment name="multiLine" start="(*" end="*)" />
+      <comment name="multiLine" start="/*" end="*/" region="comment" />
     </comments>
   </general>
 </language>

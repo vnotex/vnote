@@ -1,0 +1,731 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+  <!ENTITY timestamp "[0-9]{2}:[0-9]{2}(:[0-9]{2})?[.][0-9]{3}">
+  <!ENTITY entity "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9]{1,30});">
+  <!ENTITY classname "[.][-\w]*">
+  <!ENTITY tagerr "\w+|\s+|[^-&lt;&amp;]|--&gt;|--">
+
+  <!ENTITY poplvl1 "#pop#pop#pop">
+  <!ENTITY poplvl2 "&poplvl1;&poplvl1;">
+  <!ENTITY poplvl3 "&poplvl2;&poplvl1;">
+]>
+<language name="Web Video Text Tracks"
+          alternativeNames="WebVTT"
+          version="1"
+          kateversion="5.79"
+          section="Other"
+          extensions="*.vtt"
+          mimetype="text/vtt"
+          author="Jonathan Poelen (jonathan.poelen@gmail.com)"
+          license="MIT">
+
+<highlighting>
+
+<!--
+Format:
+- https://developer.mozilla.org/en-US/docs/Web/API/WebVTT_API/Web_Video_Text_Tracks_Format
+
+Validator:
+- https://w3c.github.io/webvtt.js/parser.html
+
+```abnf
+
+WebVTT = Header nl
+         *(*(Note nl) *(Style nl))
+         *(*(Note nl) Cue nl)
+         *(Note nl)
+Header = 'WEBVTT' [' ' (any - (nl / arrow))]
+
+Cue = [CueIdentifier nl] CueTimings CueSettings nl CuePayload
+
+CueIdentifier = +(any - (nl / arrow))
+
+CueTimings = Timestamp +' ' arrow +' ' Timestamp
+Timestamp = mm ':' ss '.' ttt
+            | hh ':' mm ':' ss '.' ttt
+hh = digit +digit
+mm = ( '0' / '1' / '2' / '3' / '4' / '5' ) digit  # 00-59
+ss = ( '0' / '1' / '2' / '3' / '4' / '5' ) digit  # 00-59
+ttt = 3(digit)
+
+CueSettings = *(
+  +' ' (
+    ( 'vertical:' ('rl' / 'lr') )
+  / ( 'line:' (percent / ['-' / '+'] +digit) [',' ('start' / 'center' / 'end')] )
+  / ( 'position:' percent [',' ('line-left' / 'center' / 'line-right')] )
+  / ( 'size:' percent )
+  / ( 'align:' ( 'start' / 'center' / 'end' / 'left' / 'right' ) )
+  )
+)
+
+CuePayload = +(
+  (any - (nl / arrow / '&' / '<'))
+/ Entity
+/ Tags
+/ (nl CuePayload)  # payload cannot contain (nl nl)
+)
+Entity = '&' +alpha ';'
+Tags = '<' Timestamp '>'
+     / ('<i' *('.' ClassName) '>' CuePayload '</i>')
+     / ('<b' *('.' ClassName) '>' CuePayload '</b>')
+     / ('<u' *('.' ClassName) '>' CuePayload '</u>')
+     / ('<c' *('.' ClassName) '>' CuePayload '</c>')
+     / ('<ruby' *('.' ClassName) '>' CuePayload '</ruby>')
+     / ('<v' *('.' ClassName) +' ' Annotation '>' CuePayload ['</v>'])
+     / ('<lang' *('.' ClassName) +' ' Annotation '>' CuePayload '</lang>')
+ClassName = (alpha / '_') +(alnum / '_' / '-')
+Annotation = +(any - '>')
+
+Note = 'NOTE' CuePayload
+
+Style = 'STYLE' *(' ' / tab) *(nl CSS)
+CSS = <CSS without two consecutive newlines>  # rule starts with '::cue'
+
+nl = newline
+arrow = '-' '->'
+digit = '0' / '1' / '2' / '3' / '4' / '5' / '6' / '7' / '8' / '9'  # 0-9
+percent = '0%' / *'0' ( '100' / 1*2(digit) )  # 0-100%
+
+```
+-->
+
+  <contexts>
+
+<context name="Normal" attribute="Normal Text">
+  <WordDetect String="NOTE" context="Note" attribute="NOTE"/>
+  <WordDetect String="STYLE" context="Style" attribute="STYLE"/>
+  <WordDetect String="WEBVTT" context="Header" attribute="Header"/>
+
+	<!-- line with '-' '->' is a CueTimings -->
+	<RegExpr String=".*?-->" context="CueTimings" lookAhead="1"/>
+	<RegExpr String=".*" attribute="Cue Identifier"/>
+</context>
+
+
+<!-- Cue @{ -->
+
+<context name="CueTimings" attribute="Error" lineEndContext="CuePayload" fallthroughContext="CueSettings">
+  <DetectSpaces attribute="Normal Text"/>
+  <StringDetect String="-->" attribute="Timestamp Separator"/>
+  <RegExpr String="&timestamp;" attribute="Timestamp"/>
+  <RegExpr String="[:.0-9]+" attribute="Error" />
+</context>
+
+<context name="CueSettings" attribute="Error" lineEndContext="#pop!CuePayload">
+  <DetectChar char=":" context="CueSettingValue" attribute="Setting Value Separator"/>
+  <DetectIdentifier attribute="Setting"/>
+</context>
+<context name="CueSettingValue" attribute="Normal Text" lineEndContext="#pop#pop!CuePayload" fallthroughContext="#pop">
+  <DetectSpaces context="#pop" attribute="Normal Text"/>
+  <Int attribute="Setting Value Number"/>
+  <DetectChar char="%" attribute="Setting Value Percent Symbol"/>
+  <DetectChar char="," attribute="Setting Value List Separator"/>
+  <WordDetect String="-" attribute="Setting Value Number" additionalDeliminator="0123456789" weakDeliminator="-"/>
+  <DetectChar char="-" attribute="Setting Value"/>
+  <DetectIdentifier attribute="Setting Value"/>
+</context>
+
+<!-- @} Cue -->
+
+
+<!-- @{ CuePayload -->
+
+<context name="FindCuePayloadText" attribute="Normal Text">
+  <RegExpr String="([^&amp;&lt;-]+?|--(?!>)|-(?!-))+"/>
+</context>
+
+<context name="CuePayload" attribute="Normal Text" lineEmptyContext="#pop#pop">
+  <DetectChar char="&lt;" context="Tag" lookAhead="1"/>
+  <DetectChar char="&amp;" context="Entity" lookAhead="1"/>
+  <StringDetect String="-->" attribute="Error"/>
+  <IncludeRules context="FindCuePayloadText"/>
+</context>
+
+<context name="Tag" attribute="Normal Text">
+  <WordDetect String="&lt;v" context="AnnotatedTag" attribute="Format Tag"/>
+  <StringDetect String="&lt;/v>" context="#pop" attribute="Format Tag"/>
+  <WordDetect String="&lt;i" context="ItalicTag" attribute="Format Tag: Italic"/>
+  <WordDetect String="&lt;b" context="BoldTag" attribute="Format Tag: Bold"/>
+  <WordDetect String="&lt;u" context="UnderlineTag" attribute="Format Tag: Underline"/>
+  <WordDetect String="&lt;c" context="RegularTag" attribute="Format Tag"/>
+  <StringDetect String="&lt;/c>" context="#pop" attribute="Format Tag"/>
+  <WordDetect String="&lt;lang" context="AnnotatedTag" attribute="Format Tag"/>
+  <StringDetect String="&lt;/lang>" context="#pop" attribute="Format Tag"/>
+  <WordDetect String="&lt;ruby" context="RegularTag" attribute="Format Tag"/>
+  <StringDetect String="&lt;/ruby>" context="#pop" attribute="Format Tag"/>
+  <WordDetect String="&lt;rt" context="RegularTag" attribute="Format Tag"/>
+  <StringDetect String="&lt;/rt>" context="#pop" attribute="Format Tag"/>
+  <RegExpr String="&lt;&timestamp;&gt;" context="#pop" attribute="Timestamp Tag"/>
+  <DetectChar char="&lt;" context="#pop" attribute="Error"/>
+</context>
+
+<context name="Entity" attribute="Normal Text">
+  <RegExpr String="&entity;" context="#pop" attribute="Entity"/>
+  <DetectChar char="&amp;" context="#pop" attribute="Error"/>
+</context>
+
+<context name="FindClass" attribute="Normal Text">
+  <RegExpr String="&classname;" attribute="Class"/>
+</context>
+
+<context name="AnnotatedTag" attribute="Annotation Tag" lineEmptyContext="#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag"/>
+</context>
+
+<context name="RegularTag" attribute="Normal Text" lineEmptyContext="#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag"/>
+</context>
+
+<!-- @} CuePayload -->
+
+
+<!-- @{ CuePayload Format -->
+
+<context name="BoldTag" attribute="Bold" lineEmptyContext="#pop#pop#pop#pop" lineEndContext="Bold_CuePayload" fallthroughContext="Bold_CuePayload">
+  <IncludeRules context="FindClass"/>
+  <DetectChar char="&gt;" context="Bold_CuePayload" attribute="Format Tag: Bold"/>
+  <RegExpr String="&tagerr;" context="Bold_CuePayload" attribute="Error - Bold"/>
+</context>
+
+<context name="ItalicTag" attribute="Italic" lineEmptyContext="#pop#pop#pop#pop" lineEndContext="Italic_CuePayload" fallthroughContext="Italic_CuePayload">
+  <IncludeRules context="FindClass"/>
+  <DetectChar char="&gt;" context="Italic_CuePayload" attribute="Format Tag: Italic"/>
+  <RegExpr String="&tagerr;" context="Italic_CuePayload" attribute="Error - Italic"/>
+</context>
+
+<context name="UnderlineTag" attribute="Underline" lineEmptyContext="#pop#pop#pop#pop" lineEndContext="Underline_CuePayload" fallthroughContext="Underline_CuePayload">
+  <IncludeRules context="FindClass"/>
+  <DetectChar char="&gt;" context="Underline_CuePayload" attribute="Format Tag: Underline"/>
+  <RegExpr String="&tagerr;" context="Underline_CuePayload" attribute="Error - Underline"/>
+</context>
+
+<context name="Bold_ItalicTag" attribute="Bold-Italic" lineEmptyContext="&poplvl1;#pop#pop#pop#pop" lineEndContext="Bold_Italic_CuePayload" fallthroughContext="Bold_Italic_CuePayload">
+  <IncludeRules context="Bold_FindClass"/>
+  <DetectChar char="&gt;" context="Bold_Italic_CuePayload" attribute="Format Tag: Bold-Italic"/>
+  <RegExpr String="&tagerr;" context="Bold_Italic_CuePayload" attribute="Error - Bold-Italic"/>
+</context>
+
+<context name="Bold_UnderlineTag" attribute="Bold-Underline" lineEmptyContext="&poplvl1;#pop#pop#pop#pop" lineEndContext="Bold_Underline_CuePayload" fallthroughContext="Bold_Underline_CuePayload">
+  <IncludeRules context="Bold_FindClass"/>
+  <DetectChar char="&gt;" context="Bold_Underline_CuePayload" attribute="Format Tag: Bold-Underline"/>
+  <RegExpr String="&tagerr;" context="Bold_Underline_CuePayload" attribute="Error - Bold-Underline"/>
+</context>
+
+<context name="Italic_UnderlineTag" attribute="Italic-Underline" lineEmptyContext="&poplvl1;#pop#pop#pop#pop" lineEndContext="Italic_Underline_CuePayload" fallthroughContext="Italic_Underline_CuePayload">
+  <IncludeRules context="Italic_FindClass"/>
+  <DetectChar char="&gt;" context="Italic_Underline_CuePayload" attribute="Format Tag: Italic-Underline"/>
+  <RegExpr String="&tagerr;" context="Italic_Underline_CuePayload" attribute="Error - Italic-Underline"/>
+</context>
+
+<context name="Bold_Italic_UnderlineTag" attribute="Bold-Underline" lineEmptyContext="&poplvl2;#pop#pop#pop#pop" lineEndContext="Bold_Italic_Underline_CuePayload" fallthroughContext="Bold_Italic_Underline_CuePayload">
+  <IncludeRules context="Bold_Italic_FindClass"/>
+  <DetectChar char="&gt;" context="Bold_Italic_Underline_CuePayload" attribute="Format Tag: Bold-Italic-Underline"/>
+  <RegExpr String="&tagerr;" context="Bold_Italic_Underline_CuePayload" attribute="Error - Bold-Italic-Underline"/>
+</context>
+
+<!-- @} CuePayload Format -->
+
+
+<!-- @{ Bold_CuePayload -->
+
+<context name="Bold_CuePayload" attribute="Bold" lineEmptyContext="&poplvl1;#pop#pop">
+  <DetectChar char="&lt;" context="Bold_Tag" lookAhead="1"/>
+  <DetectChar char="&amp;" context="Bold_Entity" lookAhead="1"/>
+  <StringDetect String="-->" attribute="Error - Bold"/>
+  <IncludeRules context="FindCuePayloadText"/>
+</context>
+
+<context name="Bold_Tag" attribute="Bold">
+  <StringDetect String="&lt;/b>" context="&poplvl1;#pop" attribute="Format Tag: Bold"/>
+  <WordDetect String="&lt;v" context="Bold_AnnotatedTag" attribute="Format Tag: Bold"/>
+  <StringDetect String="&lt;/v>" context="Bold_AnnotatedTag" attribute="Format Tag: Bold"/>
+  <WordDetect String="&lt;i" context="Bold_ItalicTag" attribute="Format Tag: Bold-Italic"/>
+  <WordDetect String="&lt;u" context="Bold_UnderlineTag" attribute="Format Tag: Bold-Underline"/>
+  <WordDetect String="&lt;c" context="Bold_RegularTag" attribute="Format Tag: Bold"/>
+  <StringDetect String="&lt;/c>" context="#pop" attribute="Format Tag: Bold"/>
+  <WordDetect String="&lt;lang" context="Bold_AnnotatedTag" attribute="Format Tag: Bold"/>
+  <StringDetect String="&lt;/lang>" context="#pop" attribute="Format Tag: Bold"/>
+  <WordDetect String="&lt;ruby" context="Bold_RegularTag" attribute="Format Tag: Bold"/>
+  <StringDetect String="&lt;/ruby>" context="#pop" attribute="Format Tag: Bold"/>
+  <WordDetect String="&lt;rt" context="Bold_RegularTag" attribute="Format Tag: Bold"/>
+  <StringDetect String="&lt;/rt>" context="#pop" attribute="Format Tag: Bold"/>
+  <RegExpr String="&lt;&timestamp;&gt;" context="#pop" attribute="Timestamp Tag - Bold"/>
+  <DetectChar char="&lt;" context="#pop" attribute="Error - Bold"/>
+</context>
+
+<context name="Bold_Entity" attribute="Bold">
+  <RegExpr String="&entity;" context="#pop" attribute="Entity - Bold"/>
+  <DetectChar char="&amp;" context="#pop" attribute="Error - Bold"/>
+</context>
+
+<context name="Bold_FindClass" attribute="Bold">
+  <RegExpr String="&classname;" attribute="Class - Bold"/>
+</context>
+
+<context name="Bold_AnnotatedTag" attribute="Annotation Tag - Bold" lineEmptyContext="&poplvl1;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Bold_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Bold"/>
+</context>
+
+<context name="Bold_RegularTag" attribute="Bold" lineEmptyContext="&poplvl1;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Bold_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Bold"/>
+</context>
+
+<!-- @} Bold_CuePayload -->
+
+<!-- @{ Italic_CuePayload -->
+
+<context name="Italic_CuePayload" attribute="Italic" lineEmptyContext="&poplvl1;#pop#pop">
+  <DetectChar char="&lt;" context="Italic_Tag" lookAhead="1"/>
+  <DetectChar char="&amp;" context="Italic_Entity" lookAhead="1"/>
+  <StringDetect String="-->" attribute="Error - Italic"/>
+  <IncludeRules context="FindCuePayloadText"/>
+</context>
+
+<context name="Italic_Tag" attribute="Italic">
+  <StringDetect String="&lt;/i>" context="&poplvl1;#pop" attribute="Format Tag: Italic"/>
+  <WordDetect String="&lt;v" context="Italic_AnnotatedTag" attribute="Format Tag: Italic"/>
+  <StringDetect String="&lt;/v>" context="Italic_AnnotatedTag" attribute="Format Tag: Italic"/>
+  <WordDetect String="&lt;b" context="Bold_ItalicTag" attribute="Format Tag: Bold-Italic"/>
+  <WordDetect String="&lt;u" context="Italic_UnderlineTag" attribute="Format Tag: Italic-Underline"/>
+  <WordDetect String="&lt;c" context="Italic_RegularTag" attribute="Format Tag: Italic"/>
+  <StringDetect String="&lt;/c>" context="#pop" attribute="Format Tag: Italic"/>
+  <WordDetect String="&lt;lang" context="Italic_AnnotatedTag" attribute="Format Tag: Italic"/>
+  <StringDetect String="&lt;/lang>" context="#pop" attribute="Format Tag: Italic"/>
+  <WordDetect String="&lt;ruby" context="Italic_RegularTag" attribute="Format Tag: Italic"/>
+  <StringDetect String="&lt;/ruby>" context="#pop" attribute="Format Tag: Italic"/>
+  <WordDetect String="&lt;rt" context="Italic_RegularTag" attribute="Format Tag: Italic"/>
+  <StringDetect String="&lt;/rt>" context="#pop" attribute="Format Tag: Italic"/>
+  <RegExpr String="&lt;&timestamp;&gt;" context="#pop" attribute="Timestamp Tag - Italic"/>
+  <DetectChar char="&lt;" context="#pop" attribute="Error - Italic"/>
+</context>
+
+<context name="Italic_Entity" attribute="Italic">
+  <RegExpr String="&entity;" context="#pop" attribute="Entity - Italic"/>
+  <DetectChar char="&amp;" context="#pop" attribute="Error - Italic"/>
+</context>
+
+<context name="Italic_FindClass" attribute="Italic">
+  <RegExpr String="&classname;" attribute="Class - Italic"/>
+</context>
+
+<context name="Italic_AnnotatedTag" attribute="Annotation Tag - Italic" lineEmptyContext="&poplvl1;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Italic_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Italic"/>
+</context>
+
+<context name="Italic_RegularTag" attribute="Italic" lineEmptyContext="&poplvl1;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Italic_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Italic"/>
+</context>
+
+<!-- @} Italic_CuePayload -->
+
+<!-- @{ Underline_CuePayload -->
+
+<context name="Underline_CuePayload" attribute="Underline" lineEmptyContext="&poplvl1;#pop#pop">
+  <DetectChar char="&lt;" context="Underline_Tag" lookAhead="1"/>
+  <DetectChar char="&amp;" context="Underline_Entity" lookAhead="1"/>
+  <StringDetect String="-->" attribute="Error - Underline"/>
+  <IncludeRules context="FindCuePayloadText"/>
+</context>
+
+<context name="Underline_Tag" attribute="Underline">
+  <StringDetect String="&lt;/u>" context="&poplvl1;#pop" attribute="Format Tag: Underline"/>
+  <WordDetect String="&lt;v" context="Underline_AnnotatedTag" attribute="Format Tag: Underline"/>
+  <StringDetect String="&lt;/v>" context="Underline_AnnotatedTag" attribute="Format Tag: Underline"/>
+  <WordDetect String="&lt;i" context="Italic_UnderlineTag" attribute="Format Tag: Italic-Underline"/>
+  <WordDetect String="&lt;b" context="Bold_UnderlineTag" attribute="Format Tag: Bold-Underline"/>
+  <WordDetect String="&lt;c" context="Underline_RegularTag" attribute="Format Tag: Underline"/>
+  <StringDetect String="&lt;/c>" context="#pop" attribute="Format Tag: Underline"/>
+  <WordDetect String="&lt;lang" context="Underline_AnnotatedTag" attribute="Format Tag: Underline"/>
+  <StringDetect String="&lt;/lang>" context="#pop" attribute="Format Tag: Underline"/>
+  <WordDetect String="&lt;ruby" context="Underline_RegularTag" attribute="Format Tag: Underline"/>
+  <StringDetect String="&lt;/ruby>" context="#pop" attribute="Format Tag: Underline"/>
+  <WordDetect String="&lt;rt" context="Underline_RegularTag" attribute="Format Tag: Underline"/>
+  <StringDetect String="&lt;/rt>" context="#pop" attribute="Format Tag: Underline"/>
+  <RegExpr String="&lt;&timestamp;&gt;" context="#pop" attribute="Timestamp Tag - Underline"/>
+  <DetectChar char="&lt;" context="#pop" attribute="Error - Underline"/>
+</context>
+
+<context name="Underline_Entity" attribute="Underline">
+  <RegExpr String="&entity;" context="#pop" attribute="Entity - Underline"/>
+  <DetectChar char="&amp;" context="#pop" attribute="Error - Underline"/>
+</context>
+
+<context name="Underline_FindClass" attribute="Underline">
+  <RegExpr String="&classname;" attribute="Class - Underline"/>
+</context>
+
+<context name="Underline_AnnotatedTag" attribute="Annotation Tag - Underline" lineEmptyContext="&poplvl1;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Underline_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Underline"/>
+</context>
+
+<context name="Underline_RegularTag" attribute="Underline" lineEmptyContext="&poplvl1;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Underline_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Underline"/>
+</context>
+
+<!-- @} Underline_CuePayload -->
+
+<!-- @{ Bold_Italic_CuePayload -->
+
+<context name="Bold_Italic_CuePayload" attribute="Bold-Italic" lineEmptyContext="&poplvl2;#pop#pop">
+  <DetectChar char="&lt;" context="Bold_Italic_Tag" lookAhead="1"/>
+  <DetectChar char="&amp;" context="Bold_Italic_Entity" lookAhead="1"/>
+  <StringDetect String="-->" attribute="Error - Bold-Italic"/>
+  <IncludeRules context="FindCuePayloadText"/>
+</context>
+
+<context name="Bold_Italic_Tag" attribute="Bold-Italic">
+  <StringDetect String="&lt;/b>" context="&poplvl1;#pop" attribute="Format Tag: Bold-Italic"/>
+  <StringDetect String="&lt;/i>" context="&poplvl1;#pop" attribute="Format Tag: Bold-Italic"/>
+  <WordDetect String="&lt;v" context="Bold_Italic_AnnotatedTag" attribute="Format Tag: Bold-Italic"/>
+  <StringDetect String="&lt;/v>" context="Bold_Italic_AnnotatedTag" attribute="Format Tag: Bold-Italic"/>
+  <WordDetect String="&lt;u" context="Bold_Italic_UnderlineTag" attribute="Format Tag: Bold-Italic-Underline"/>
+  <WordDetect String="&lt;c" context="Bold_Italic_RegularTag" attribute="Format Tag: Bold-Italic"/>
+  <StringDetect String="&lt;/c>" context="#pop" attribute="Format Tag: Bold-Italic"/>
+  <WordDetect String="&lt;lang" context="Bold_Italic_AnnotatedTag" attribute="Format Tag: Bold-Italic"/>
+  <StringDetect String="&lt;/lang>" context="#pop" attribute="Format Tag: Bold-Italic"/>
+  <WordDetect String="&lt;ruby" context="Bold_Italic_RegularTag" attribute="Format Tag: Bold-Italic"/>
+  <StringDetect String="&lt;/ruby>" context="#pop" attribute="Format Tag: Bold-Italic"/>
+  <WordDetect String="&lt;rt" context="Bold_Italic_RegularTag" attribute="Format Tag: Bold-Italic"/>
+  <StringDetect String="&lt;/rt>" context="#pop" attribute="Format Tag: Bold-Italic"/>
+  <RegExpr String="&lt;&timestamp;&gt;" context="#pop" attribute="Timestamp Tag - Bold-Italic"/>
+  <DetectChar char="&lt;" context="#pop" attribute="Error - Bold-Italic"/>
+</context>
+
+<context name="Bold_Italic_Entity" attribute="Bold-Italic">
+  <RegExpr String="&entity;" context="#pop" attribute="Entity - Bold-Italic"/>
+  <DetectChar char="&amp;" context="#pop" attribute="Error - Bold-Italic"/>
+</context>
+
+<context name="Bold_Italic_FindClass" attribute="Bold-Italic">
+  <RegExpr String="&classname;" attribute="Class - Bold-Italic"/>
+</context>
+
+<context name="Bold_Italic_AnnotatedTag" attribute="Annotation Tag - Bold-Italic" lineEmptyContext="&poplvl2;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Bold_Italic_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Bold-Italic"/>
+</context>
+
+<context name="Bold_Italic_RegularTag" attribute="Bold-Italic" lineEmptyContext="&poplvl2;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Bold_Italic_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Bold-Italic"/>
+</context>
+
+<!-- @} Bold_Italic_CuePayload -->
+
+<!-- @{ Bold_Underline_CuePayload -->
+
+<context name="Bold_Underline_CuePayload" attribute="Bold-Underline" lineEmptyContext="&poplvl3;#pop#pop">
+  <DetectChar char="&lt;" context="Bold_Underline_Tag" lookAhead="1"/>
+  <DetectChar char="&amp;" context="Bold_Underline_Entity" lookAhead="1"/>
+  <StringDetect String="-->" attribute="Error - Bold-Underline"/>
+  <IncludeRules context="FindCuePayloadText"/>
+</context>
+
+<context name="Bold_Underline_Tag" attribute="Bold-Underline">
+  <StringDetect String="&lt;/b>" context="&poplvl1;#pop" attribute="Format Tag: Bold-Underline"/>
+  <StringDetect String="&lt;/u>" context="&poplvl1;#pop" attribute="Format Tag: Bold-Underline"/>
+  <WordDetect String="&lt;v" context="Bold_Underline_AnnotatedTag" attribute="Format Tag: Bold-Underline"/>
+  <StringDetect String="&lt;/v>" context="Bold_Underline_AnnotatedTag" attribute="Format Tag: Bold-Underline"/>
+  <WordDetect String="&lt;i" context="Bold_Italic_UnderlineTag" attribute="Format Tag: Bold-Italic-Underline"/>
+  <WordDetect String="&lt;c" context="Bold_Underline_RegularTag" attribute="Format Tag: Bold-Underline"/>
+  <StringDetect String="&lt;/c>" context="#pop" attribute="Format Tag: Bold-Underline"/>
+  <WordDetect String="&lt;lang" context="Bold_Underline_AnnotatedTag" attribute="Format Tag: Bold-Underline"/>
+  <StringDetect String="&lt;/lang>" context="#pop" attribute="Format Tag: Bold-Underline"/>
+  <WordDetect String="&lt;ruby" context="Bold_Underline_RegularTag" attribute="Format Tag: Bold-Underline"/>
+  <StringDetect String="&lt;/ruby>" context="#pop" attribute="Format Tag: Bold-Underline"/>
+  <WordDetect String="&lt;rt" context="Bold_Underline_RegularTag" attribute="Format Tag: Bold-Underline"/>
+  <StringDetect String="&lt;/rt>" context="#pop" attribute="Format Tag: Bold-Underline"/>
+  <RegExpr String="&lt;&timestamp;&gt;" context="#pop" attribute="Timestamp Tag - Bold-Underline"/>
+  <DetectChar char="&lt;" context="#pop" attribute="Error - Bold-Underline"/>
+</context>
+
+<context name="Bold_Underline_Entity" attribute="Bold-Underline">
+  <RegExpr String="&entity;" context="#pop" attribute="Entity - Bold-Underline"/>
+  <DetectChar char="&amp;" context="#pop" attribute="Error - Bold-Underline"/>
+</context>
+
+<context name="Bold_Underline_FindClass" attribute="Bold-Underline">
+  <RegExpr String="&classname;" attribute="Class - Bold-Underline"/>
+</context>
+
+<context name="Bold_Underline_AnnotatedTag" attribute="Annotation Tag - Bold-Underline" lineEmptyContext="&poplvl3;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Bold_Underline_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Bold-Underline"/>
+</context>
+
+<context name="Bold_Underline_RegularTag" attribute="Bold-Underline" lineEmptyContext="&poplvl3;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Bold_Underline_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Bold-Underline"/>
+</context>
+
+<!-- @} Bold_Underline_CuePayload -->
+
+<!-- @{ Italic_Underline_CuePayload -->
+
+<context name="Italic_Underline_CuePayload" attribute="Italic-Underline" lineEmptyContext="&poplvl2;#pop#pop">
+  <DetectChar char="&lt;" context="Italic_Underline_Tag" lookAhead="1"/>
+  <DetectChar char="&amp;" context="Italic_Underline_Entity" lookAhead="1"/>
+  <StringDetect String="-->" attribute="Error - Italic-Underline"/>
+  <IncludeRules context="FindCuePayloadText"/>
+</context>
+
+<context name="Italic_Underline_Tag" attribute="Italic-Underline">
+  <StringDetect String="&lt;/i>" context="&poplvl1;#pop" attribute="Format Tag: Italic-Underline"/>
+  <StringDetect String="&lt;/u>" context="&poplvl1;#pop" attribute="Format Tag: Italic-Underline"/>
+  <WordDetect String="&lt;v" context="Italic_Underline_AnnotatedTag" attribute="Format Tag: Italic-Underline"/>
+  <StringDetect String="&lt;/v>" context="Italic_Underline_AnnotatedTag" attribute="Format Tag: Italic-Underline"/>
+  <WordDetect String="&lt;b" context="Bold_Italic_UnderlineTag" attribute="Format Tag: Bold-Italic-Underline"/>
+  <WordDetect String="&lt;c" context="Italic_Underline_RegularTag" attribute="Format Tag: Italic-Underline"/>
+  <StringDetect String="&lt;/c>" context="#pop" attribute="Format Tag: Italic-Underline"/>
+  <WordDetect String="&lt;lang" context="Italic_Underline_AnnotatedTag" attribute="Format Tag: Italic-Underline"/>
+  <StringDetect String="&lt;/lang>" context="#pop" attribute="Format Tag: Italic-Underline"/>
+  <WordDetect String="&lt;ruby" context="Italic_Underline_RegularTag" attribute="Format Tag: Italic-Underline"/>
+  <StringDetect String="&lt;/ruby>" context="#pop" attribute="Format Tag: Italic-Underline"/>
+  <WordDetect String="&lt;rt" context="Italic_Underline_RegularTag" attribute="Format Tag: Italic-Underline"/>
+  <StringDetect String="&lt;/rt>" context="#pop" attribute="Format Tag: Italic-Underline"/>
+  <RegExpr String="&lt;&timestamp;&gt;" context="#pop" attribute="Timestamp Tag - Italic-Underline"/>
+  <DetectChar char="&lt;" context="#pop" attribute="Error - Italic-Underline"/>
+</context>
+
+<context name="Italic_Underline_Entity" attribute="Italic-Underline">
+  <RegExpr String="&entity;" context="#pop" attribute="Entity - Italic-Underline"/>
+  <DetectChar char="&amp;" context="#pop" attribute="Error - Italic-Underline"/>
+</context>
+
+<context name="Italic_Underline_FindClass" attribute="Italic-Underline">
+  <RegExpr String="&classname;" attribute="Class - Italic-Underline"/>
+</context>
+
+<context name="Italic_Underline_AnnotatedTag" attribute="Annotation Tag - Italic-Underline" lineEmptyContext="&poplvl2;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Italic_Underline_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Italic-Underline"/>
+</context>
+
+<context name="Italic_Underline_RegularTag" attribute="Italic-Underline" lineEmptyContext="&poplvl2;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Italic_Underline_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Italic-Underline"/>
+</context>
+
+<!-- @} Italic_Underline_CuePayload -->
+
+<!-- @{ Bold_Italic_Underline_CuePayload -->
+
+<context name="Bold_Italic_Underline_CuePayload" attribute="Bold-Italic-Underline" lineEmptyContext="&poplvl3;#pop#pop">
+  <DetectChar char="&lt;" context="Bold_Italic_Underline_Tag" lookAhead="1"/>
+  <DetectChar char="&amp;" context="Bold_Italic_Underline_Entity" lookAhead="1"/>
+  <StringDetect String="-->" attribute="Error - Bold-Italic-Underline"/>
+  <IncludeRules context="FindCuePayloadText"/>
+</context>
+
+<context name="Bold_Italic_Underline_Tag" attribute="Bold-Italic-Underline">
+  <StringDetect String="&lt;/b>" context="&poplvl1;#pop" attribute="Format Tag: Bold-Italic-Underline"/>
+  <StringDetect String="&lt;/i>" context="&poplvl1;#pop" attribute="Format Tag: Bold-Italic-Underline"/>
+  <StringDetect String="&lt;/u>" context="&poplvl1;#pop" attribute="Format Tag: Bold-Italic-Underline"/>
+  <WordDetect String="&lt;v" context="Bold_Italic_Underline_AnnotatedTag" attribute="Format Tag: Bold-Italic-Underline"/>
+  <StringDetect String="&lt;/v>" context="Bold_Italic_Underline_AnnotatedTag" attribute="Format Tag: Bold-Italic-Underline"/>
+  <WordDetect String="&lt;c" context="Bold_Italic_Underline_RegularTag" attribute="Format Tag: Bold-Italic-Underline"/>
+  <StringDetect String="&lt;/c>" context="#pop" attribute="Format Tag: Bold-Italic-Underline"/>
+  <WordDetect String="&lt;lang" context="Bold_Italic_Underline_AnnotatedTag" attribute="Format Tag: Bold-Italic-Underline"/>
+  <StringDetect String="&lt;/lang>" context="#pop" attribute="Format Tag: Bold-Italic-Underline"/>
+  <WordDetect String="&lt;ruby" context="Bold_Italic_Underline_RegularTag" attribute="Format Tag: Bold-Italic-Underline"/>
+  <StringDetect String="&lt;/ruby>" context="#pop" attribute="Format Tag: Bold-Italic-Underline"/>
+  <WordDetect String="&lt;rt" context="Bold_Italic_Underline_RegularTag" attribute="Format Tag: Bold-Italic-Underline"/>
+  <StringDetect String="&lt;/rt>" context="#pop" attribute="Format Tag: Bold-Italic-Underline"/>
+  <RegExpr String="&lt;&timestamp;&gt;" context="#pop" attribute="Timestamp Tag - Bold-Italic-Underline"/>
+  <DetectChar char="&lt;" context="#pop" attribute="Error - Bold-Italic-Underline"/>
+</context>
+
+<context name="Bold_Italic_Underline_Entity" attribute="Bold-Italic-Underline">
+  <RegExpr String="&entity;" context="#pop" attribute="Entity - Bold-Italic-Underline"/>
+  <DetectChar char="&amp;" context="#pop" attribute="Error - Bold-Italic-Underline"/>
+</context>
+
+<context name="Bold_Italic_Underline_FindClass" attribute="Bold-Italic-Underline">
+  <RegExpr String="&classname;" attribute="Class - Bold-Italic-Underline"/>
+</context>
+
+<context name="Bold_Italic_Underline_AnnotatedTag" attribute="Annotation Tag - Bold-Italic-Underline" lineEmptyContext="&poplvl3;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Bold_Italic_Underline_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Bold-Italic-Underline"/>
+</context>
+
+<context name="Bold_Italic_Underline_RegularTag" attribute="Bold-Italic-Underline" lineEmptyContext="&poplvl3;#pop#pop#pop#pop" lineEndContext="#pop#pop">
+  <IncludeRules context="Bold_Italic_Underline_FindClass"/>
+  <DetectChar char="&gt;" context="#pop#pop" attribute="Format Tag: Bold-Italic-Underline"/>
+</context>
+
+<!-- @} Bold_Italic_Underline_CuePayload -->
+
+
+<!-- @{ Note -->
+
+<context name="Note" attribute="NOTE Text" lineEmptyContext="#pop">
+  <DetectSpaces />
+  <IncludeRules context="##Comments" />
+  <DetectIdentifier />
+  <DetectChar char="&amp;" context="NoteEntity" lookAhead="1"/>
+  <DetectChar char="&lt;" attribute="NOTE - Error"/>
+  <StringDetect String="-->" attribute="NOTE - Error"/>
+</context>
+
+<context name="NoteEntity" attribute="Normal Text">
+  <RegExpr String="&entity;" context="#pop" attribute="NOTE - Entity"/>
+  <DetectChar char="&amp;" context="#pop" attribute="NOTE - Error"/>
+</context>
+
+<!-- @} Note -->
+
+
+<!-- @{ Header -->
+<context name="Header" attribute="Header Text" lineEndContext="#pop">
+</context>
+<!-- @} Header -->
+
+
+<!-- @{ Style -->
+
+<context name="Style" attribute="Normal Text" lineEmptyContext="#pop">
+  <DetectSpaces/>
+  <DetectChar attribute="CSS Block Symbol" context="RuleSet" char="{" beginRegion="ruleset"/>
+  <IncludeRules context="FindComment"/>
+  <IncludeRules context="FindSelector##CSS"/>
+</context>
+
+<context name="RuleSet" attribute="Normal Text" lineEmptyContext="#pop" fallthroughContext="Rule">
+  <DetectSpaces/>
+  <DetectChar attribute="CSS Block Symbol" context="#pop" char="}" endRegion="ruleset"/>
+  <DetectChar attribute="CSS Block Symbol" context="RuleSet" char="{" beginRegion="ruleset"/>
+  <IncludeRules context="FindComment"/>
+  <AnyChar context="Selector" String=".#:,[*>+~|&amp;" lookAhead="1"/>
+</context>
+
+<context name="Rule" attribute="Normal Text" lineEmptyContext="#pop#pop">
+  <AnyChar context="#pop!Selector" String=".#,[*>+~|&amp;@{}" lookAhead="1"/>
+  <IncludeRules context="FindComment"/>
+  <IncludeRules context="Rule##CSS"/>
+</context>
+
+<context name="Selector" attribute="Normal Text" lineEmptyContext="#pop#pop">
+  <DetectChar attribute="CSS Block Symbol" context="#pop!RuleSet" char="{" beginRegion="ruleset"/>
+  <DetectChar attribute="CSS Block Symbol" context="#pop#pop" char="}" endRegion="ruleset"/>
+  <IncludeRules context="FindComment"/>
+  <IncludeRules context="Selector##CSS"/>
+</context>
+
+<context name="FindComment" attribute="Normal Text" lineEmptyContext="#pop">
+  <Detect2Chars attribute="CSS Comment" context="Comment" char="/" char1="*" beginRegion="comment"/>
+</context>
+<context name="Comment" attribute="CSS Comment" lineEmptyContext="#pop#pop">
+  <DetectSpaces/>
+  <Detect2Chars attribute="CSS Comment" context="#pop#pop" char="*" char1="/" endRegion="comment"/>
+  <IncludeRules context="##Alerts" />
+  <IncludeRules context="##SPDX-Comments" />
+  <DetectIdentifier/>
+</context>
+
+<!-- @} Style -->
+
+  </contexts>
+
+  <itemDatas>
+    <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="1"/>
+    <itemData name="Header"       defStyleNum="dsComment" spellChecking="0" bold="1"/>
+    <itemData name="Header Text"  defStyleNum="dsComment" spellChecking="1"/>
+
+    <itemData name="NOTE"       defStyleNum="dsComment" spellChecking="0" bold="1"/>
+    <itemData name="NOTE Text"  defStyleNum="dsComment" spellChecking="1"/>
+    <itemData name="NOTE - Error" defStyleNum="dsError" spellChecking="0"/>
+    <itemData name="NOTE - Entity" defStyleNum="dsComment" spellChecking="0" bold="1"/>
+
+    <itemData name="STYLE"            defStyleNum="dsKeyword" spellChecking="0"/>
+    <itemData name="CSS Comment"      defStyleNum="dsComment" spellChecking="1"/>
+    <itemData name="CSS Block Symbol" defStyleNum="dsNormal" spellChecking="0"/>
+
+    <itemData name="Cue Identifier"       defStyleNum="dsSpecialString" spellChecking="1"/>
+
+    <itemData name="Timestamp"            defStyleNum="dsPreprocessor" spellChecking="0"/>
+    <itemData name="Timestamp Separator"  defStyleNum="dsPreprocessor" spellChecking="0"/>
+
+    <itemData name="Setting"                      defStyleNum="dsAnnotation" spellChecking="0"/>
+    <itemData name="Setting Value Separator"      defStyleNum="dsAnnotation" spellChecking="0"/>
+    <itemData name="Setting Value"                defStyleNum="dsAnnotation" spellChecking="0"/>
+    <itemData name="Setting Value Number"         defStyleNum="dsAnnotation" spellChecking="0"/>
+    <itemData name="Setting Value Percent Symbol" defStyleNum="dsAnnotation" spellChecking="0"/>
+    <itemData name="Setting Value List Separator" defStyleNum="dsAnnotation" spellChecking="0"/>
+
+    <itemData name="Entity" defStyleNum="dsDecVal" spellChecking="0"/>
+    <itemData name="Entity - Bold" defStyleNum="dsDecVal" spellChecking="0" bold="1"/>
+    <itemData name="Entity - Italic" defStyleNum="dsDecVal" spellChecking="0" italic="1"/>
+    <itemData name="Entity - Underline" defStyleNum="dsDecVal" spellChecking="0" underline="1"/>
+    <itemData name="Entity - Bold-Italic" defStyleNum="dsDecVal" spellChecking="0" bold="1" italic="1"/>
+    <itemData name="Entity - Bold-Underline" defStyleNum="dsDecVal" spellChecking="0" bold="1" underline="1"/>
+    <itemData name="Entity - Italic-Underline" defStyleNum="dsDecVal" spellChecking="0" italic="1" underline="1"/>
+    <itemData name="Entity - Bold-Italic-Underline" defStyleNum="dsDecVal" spellChecking="0" bold="1" italic="1" underline="1"/>
+
+    <itemData name="Class" defStyleNum="dsFunction" spellChecking="0"/>
+    <itemData name="Class - Bold" defStyleNum="dsFunction" spellChecking="0" bold="1"/>
+    <itemData name="Class - Italic" defStyleNum="dsFunction" spellChecking="0" italic="1"/>
+    <itemData name="Class - Underline" defStyleNum="dsFunction" spellChecking="0" underline="1"/>
+    <itemData name="Class - Bold-Italic" defStyleNum="dsFunction" spellChecking="0" bold="1" italic="1"/>
+    <itemData name="Class - Bold-Underline" defStyleNum="dsFunction" spellChecking="0" bold="1" underline="1"/>
+    <itemData name="Class - Italic-Underline" defStyleNum="dsFunction" spellChecking="0" italic="1" underline="1"/>
+    <itemData name="Class - Bold-Italic-Underline" defStyleNum="dsFunction" spellChecking="0" bold="1" italic="1" underline="1"/>
+
+    <itemData name="Annotation Tag" defStyleNum="dsVerbatimString" spellChecking="0"/>
+    <itemData name="Annotation Tag - Bold" defStyleNum="dsVerbatimString" spellChecking="0" bold="1"/>
+    <itemData name="Annotation Tag - Italic" defStyleNum="dsVerbatimString" spellChecking="0" italic="1"/>
+    <itemData name="Annotation Tag - Underline" defStyleNum="dsVerbatimString" spellChecking="0" underline="1"/>
+    <itemData name="Annotation Tag - Bold-Italic" defStyleNum="dsVerbatimString" spellChecking="0" bold="1" italic="1"/>
+    <itemData name="Annotation Tag - Bold-Underline" defStyleNum="dsVerbatimString" spellChecking="0" bold="1" underline="1"/>
+    <itemData name="Annotation Tag - Italic-Underline" defStyleNum="dsVerbatimString" spellChecking="0" italic="1" underline="1"/>
+    <itemData name="Annotation Tag - Bold-Italic-Underline" defStyleNum="dsVerbatimString" spellChecking="0" bold="1" italic="1" underline="1"/>
+
+    <itemData name="Timestamp Tag" defStyleNum="dsDecVal" spellChecking="0"/>
+    <itemData name="Timestamp Tag - Bold" defStyleNum="dsDecVal" spellChecking="0" bold="1"/>
+    <itemData name="Timestamp Tag - Italic" defStyleNum="dsDecVal" spellChecking="0" italic="1"/>
+    <itemData name="Timestamp Tag - Underline" defStyleNum="dsDecVal" spellChecking="0" underline="1"/>
+    <itemData name="Timestamp Tag - Bold-Italic" defStyleNum="dsDecVal" spellChecking="0" bold="1" italic="1"/>
+    <itemData name="Timestamp Tag - Bold-Underline" defStyleNum="dsDecVal" spellChecking="0" bold="1" underline="1"/>
+    <itemData name="Timestamp Tag - Italic-Underline" defStyleNum="dsDecVal" spellChecking="0" italic="1" underline="1"/>
+    <itemData name="Timestamp Tag - Bold-Italic-Underline" defStyleNum="dsDecVal" spellChecking="0" bold="1" italic="1" underline="1"/>
+
+    <itemData name="Format Tag" defStyleNum="dsVariable" spellChecking="0"/>
+    <itemData name="Format Tag: Bold" defStyleNum="dsVariable" spellChecking="0" bold="1"/>
+    <itemData name="Format Tag: Italic" defStyleNum="dsVariable" spellChecking="0" italic="1"/>
+    <itemData name="Format Tag: Underline" defStyleNum="dsVariable" spellChecking="0" underline="1"/>
+    <itemData name="Format Tag: Bold-Italic" defStyleNum="dsVariable" spellChecking="0" bold="1" italic="1"/>
+    <itemData name="Format Tag: Bold-Underline" defStyleNum="dsVariable" spellChecking="0" bold="1" underline="1"/>
+    <itemData name="Format Tag: Italic-Underline" defStyleNum="dsVariable" spellChecking="0" italic="1" underline="1"/>
+    <itemData name="Format Tag: Bold-Italic-Underline" defStyleNum="dsVariable" spellChecking="0" bold="1" italic="1" underline="1"/>
+
+    <itemData name="Bold" defStyleNum="dsNormal" bold="1"/>
+    <itemData name="Italic" defStyleNum="dsNormal" italic="1"/>
+    <itemData name="Underline" defStyleNum="dsNormal" underline="1"/>
+    <itemData name="Bold-Italic" defStyleNum="dsNormal" bold="1" italic="1"/>
+    <itemData name="Bold-Underline" defStyleNum="dsNormal" bold="1" underline="1"/>
+    <itemData name="Italic-Underline" defStyleNum="dsNormal" italic="1" underline="1"/>
+    <itemData name="Bold-Italic-Underline" defStyleNum="dsNormal" bold="1" italic="1" underline="1"/>
+
+    <itemData name="Error" defStyleNum="dsError" spellChecking="0"/>
+    <itemData name="Error - Bold" defStyleNum="dsError" spellChecking="0" bold="1"/>
+    <itemData name="Error - Italic" defStyleNum="dsError" spellChecking="0" italic="1"/>
+    <itemData name="Error - Underline" defStyleNum="dsError" spellChecking="0" underline="1"/>
+    <itemData name="Error - Bold-Italic" defStyleNum="dsError" spellChecking="0" bold="1" italic="1"/>
+    <itemData name="Error - Bold-Underline" defStyleNum="dsError" spellChecking="0" bold="1" underline="1"/>
+    <itemData name="Error - Italic-Underline" defStyleNum="dsError" spellChecking="0" italic="1" underline="1"/>
+    <itemData name="Error - Bold-Italic-Underline" defStyleNum="dsError" spellChecking="0" bold="1" italic="1" underline="1"/>
+  </itemDatas>
+
+</highlighting>
+
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

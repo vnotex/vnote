@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
         This is an attempt to write a quick and dirty syntax file for Cubescript.
         This will only document a subset of available keywords and internal commands, partly due to the various forks and the little overlap they have.
@@ -7,7 +7,7 @@
 
         List values which are current ignored by the keyword identifier are commented.
 -->
-<language name="CubeScript" section="Scripts" version="2" kateversion="5.0" extensions="*.cfg" mimetype="" casesensitive="true" author="Kevin Meyer" license="zlib/libpng" indenter="normal">
+<language name="CubeScript" section="Scripts" version="5" kateversion="5.0" extensions="*.cfg" mimetype="" casesensitive="true" author="Kevin Meyer" license="zlib/libpng" indenter="normal">
   <highlighting>
     <!--
         There are far more commands than these, these are just guaranteed to be in all forks.
@@ -318,8 +318,7 @@
 
     <contexts>
       <context name="Normal" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="Error" context="#stay" char="]"/>
-        <DetectChar attribute="Error" context="#stay" char=")"/>
+        <AnyChar attribute="Error" context="#stay" String="])"/>
         <IncludeRules context="__Basic" />
       </context>
 
@@ -351,15 +350,14 @@
       </context>
 
       <context name="Comment" attribute="Comment" lineEndContext="#pop">
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
 
       <context name="__Lookup" attribute="Lookup" lineEndContext="#pop">
         <DetectChar attribute="String" context="String" char="&quot;" />
         <DetectChar attribute="LookupBrackets" context="LookupEncBlock" char="[" />
         <DetectChar attribute="LookupBrackets" context="LookupEncBrackets" char="(" />
-        <RegExpr attribute="Error" context="#stay" String="[^\$\s]+\$[^\[\]\(\)\s]*" />
-        <RegExpr attribute="Error" context="#stay" String="\S+(?![\s\[\(])[^\$@](?=[\[\(])" />
+        <RegExpr attribute="Error" context="#stay" String="[^\$\s]+\$[^\[\]\(\)\s]*|\S+(?![\s\[\(])[^\$@](?=[\[\(])" />
         <RegExpr attribute="Key" context="#stay" String="[@\$]*arg[0-9]+" />
       </context>
 

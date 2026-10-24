@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
     <!ENTITY ident "([^\t $&quot;\\]+|\$(?!\()|\\.)+">
 ]>
+<!--
+  Documentation:
+  https://www.bfgroup.xyz/b2/manual/release/index.html
+-->
+
 <!--
 Copyright (C) 2006 Mildred <silkensedai@online.fr>.
 
@@ -24,7 +29,7 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 IN THE SOFTWARE.
 -->
-<language name="Jam" version="5" kateversion="5.0" section="Other" extensions="Jam*;*.jam" mimetype="text/x-jam;text/x-Jamfile;text/x-Jamrules;text/x-Jambase" author="Mildred (silkensedai@online.fr)" license="MIT">
+<language name="Jam" version="13" kateversion="5.79" section="Other" extensions="Jam*;*.jam" mimetype="text/x-jam;text/x-Jamfile;text/x-Jamrules;text/x-Jambase" author="Mildred (silkensedai@online.fr)" license="MIT">
   <!--
   Changelog
     0.2
@@ -235,6 +240,13 @@ IN THE SOFTWARE.
         <RegExpr attribute="Rule" context="Rule" String="([^\t ][^\t ]+|[^{}\t ])"/>
       </context>
 
+      <context attribute="Normal" lineEndContext="#stay" name="FindBlank">
+        <DetectSpaces attribute="Normal"/>
+        <Detect2Chars attribute="CommentTitle" context="CommentTitle" char="#" char1="#"/>
+        <Detect2Chars attribute="Comment" context="CommentBlock" char="#" char1="|"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+      </context>
+
       <!-- General instructions -->
 
       <context attribute="Normal" lineEndContext="#stay" name="Rule">
@@ -252,7 +264,7 @@ IN THE SOFTWARE.
         <keyword attribute="Feature" context="#stay" String="features"/>
       </context>
 
-      <context attribute="Normal" lineEndContext="#pop" name="Feature" fallthrough="true" fallthroughContext="#pop">
+      <context attribute="Normal" lineEndContext="#pop" name="Feature" fallthroughContext="#pop">
         <AnyChar attribute="Error" context="#pop" String="&#9; " />
         <DetectChar attribute="Feature" context="#pop!Property" char=">"/>
         <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
@@ -260,7 +272,7 @@ IN THE SOFTWARE.
         <RegExpr attribute="Feature" context="#stay" String="([^\t $>&quot;#\\]+|\$(?!\()|\\.)+"/>
       </context>
 
-      <context attribute="Normal" lineEndContext="#pop" name="Property" fallthrough="true" fallthroughContext="#pop">
+      <context attribute="Normal" lineEndContext="#pop" name="Property" fallthroughContext="#pop">
         <AnyChar attribute="Normal" context="#pop" String="&#9; " />
         <Detect2Chars attribute="FeatureOperator" context="#pop" char="&amp;" char1="&amp;"/>
         <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
@@ -269,16 +281,16 @@ IN THE SOFTWARE.
         <RegExpr attribute="Normal" context="#stay" String="([^\t $:&amp;&quot;:/,#\\]+|\$(?!\()|&amp;(?!&amp;)|[:/,](?!&lt;)|\\.)+"/>
       </context>
 
-      <context attribute="Normal" lineEndContext="#pop" name="PropertyFeature" fallthrough="true" fallthroughContext="#pop">
+      <context attribute="Normal" lineEndContext="#pop" name="PropertyFeature" fallthroughContext="#pop">
         <DetectChar attribute="Feature" context="#pop!Feature" char="&lt;"/>
       </context>
 
-      <context attribute="Normal" lineEndContext="#stay" name="OnPreStment" fallthrough="true" fallthroughContext="#pop">
+      <context attribute="Normal" lineEndContext="#stay" name="OnPreStment" fallthroughContext="#pop">
         <DetectSpaces/>
         <keyword attribute="Keyword" context="OnTargetPreStment" String="onTarget"/>
       </context>
 
-      <context attribute="Normal" lineEndContext="#stay" name="OnTargetPreStment" fallthrough="true" fallthroughContext="#pop">
+      <context attribute="Normal" lineEndContext="#stay" name="OnTargetPreStment" fallthroughContext="#pop">
         <IncludeRules context="Preprocess"/>
         <WordDetect attribute="Operator" context="#stay" String=":"/>
         <WordDetect attribute="Operator" context="#pop#pop" String=";"/>
@@ -298,9 +310,7 @@ IN THE SOFTWARE.
       </context>
 
       <context attribute="Normal" lineEndContext="#stay" name="ClassStatement2">
-        <DetectSpaces attribute="Normal"/>
-        <Detect2Chars attribute="CommentTitle" context="CommentTitle" char="#" char1="#"/>
-        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <IncludeRules context="FindBlank"/>
         <WordDetect attribute="Operator" context="#pop" String="}" endRegion="block"/>
         <keyword attribute="Keyword" context="MethodDefinition" String="keywordRule"/>
         <RegExpr attribute="Error" context="#stay" String="&ident;"/>
@@ -350,12 +360,12 @@ IN THE SOFTWARE.
 
       <!-- Sub statements -->
 
-      <context attribute="Normal" lineEndContext="#stay" name="SubStatement" fallthrough="true" fallthroughContext="SubRule">
+      <context attribute="Normal" lineEndContext="#stay" name="SubStatement" fallthroughContext="SubRule">
         <DetectSpaces/>
         <Detect2Chars attribute="Keyword" context="OnSubStatement" char="o" char1="n"/>
       </context>
 
-      <context attribute="Normal" lineEndContext="#stay" name="OnSubStatement" fallthrough="true" fallthroughContext="OnSubStatement2">
+      <context attribute="Normal" lineEndContext="#stay" name="OnSubStatement" fallthroughContext="OnSubStatement2">
         <DetectSpaces/>
         <keyword attribute="Keyword" context="#pop!SubRule" String="onTarget"/>
       </context>
@@ -368,7 +378,7 @@ IN THE SOFTWARE.
         <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
       </context>
 
-      <context attribute="Normal" lineEndContext="#stay" name="SubRule" fallthrough="true" fallthroughContext="#pop!SubRuleParam">
+      <context attribute="Normal" lineEndContext="#stay" name="SubRule" fallthroughContext="#pop!SubRuleParam">
         <DetectSpaces/>
         <RegExpr attribute="Rule" context="#pop!SubRuleParam" String="&ident;"/>
       </context>
@@ -378,6 +388,7 @@ IN THE SOFTWARE.
         <WordDetect attribute="Operator" context="#stay" String=":"/>
         <WordDetect attribute="Operator" context="#pop#pop" String="]"/>
         <RegExpr attribute="Feature" context="Property" String="&lt;[^\t >]+>"/>
+        <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
         <!-- auto-completion only -->
         <keyword attribute="Feature" context="#stay" String="features"/>
       </context>
@@ -390,7 +401,6 @@ IN THE SOFTWARE.
         <keyword attribute="actionAttribute" context="#stay" String="actionAttribute"/>
         <WordDetect attribute="Operator" context="ActionBody" String="{" beginRegion="block"/>
         <RegExpr attribute="Action" context="ActionDefinitionFull" String="&ident;"/>
-        <DetectSpaces attribute="Normal"/>
       </context>
 
       <context attribute="Error" lineEndContext="#stay" name="ActionDefinitionFull">
@@ -405,9 +415,7 @@ IN THE SOFTWARE.
         <RegExpr attribute="Varname" context="#stay" String="&ident;"/>
       </context>
 
-      <context attribute="ActionText" lineEndContext="#stay" name="ActionBody">
-        <DetectChar attribute="Comment" context="Comment" char="#"/>
-        <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
+      <context attribute="Normal" lineEndContext="#stay" name="ActionBody" fallthroughContext="Command##Bash">
         <WordDetect attribute="Operator" context="#pop#pop" String="}" endRegion="block"/>
         <IncludeRules context="##Bash"/>
       </context>
@@ -429,7 +437,7 @@ IN THE SOFTWARE.
 
       <!-- for, while, if, switch -->
 
-      <context attribute="Normal" lineEndContext="#stay" name="ForStatement" fallthrough="true" fallthroughContext="#pop!ForStatement2">
+      <context attribute="Normal" lineEndContext="#stay" name="ForStatement" fallthroughContext="#pop!ForStatement2">
         <DetectSpaces/>
         <keyword attribute="Keyword" context="#pop!ForStatement2" String="keywordLocal"/>
       </context>
@@ -458,24 +466,19 @@ IN THE SOFTWARE.
 
       <context attribute="Normal" lineEndContext="#stay" name="SwitchStatement">
         <IncludeRules context="Preprocess"/>
-        <DetectChar attribute="Comment" context="Comment" char="#"/>
         <WordDetect attribute="Operator" context="#pop!SwitchStatement2" String="{" beginRegion="block"/>
         <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
       </context>
 
       <context attribute="Normal" lineEndContext="#stay" name="SwitchStatement2">
-        <DetectSpaces attribute="Normal"/>
-        <Detect2Chars attribute="CommentTitle" context="CommentTitle" char="#" char1="#"/>
-        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <IncludeRules context="FindBlank"/>
         <WordDetect attribute="Operator" context="#pop" String="}" endRegion="block"/>
         <keyword attribute="Operator" context="CaseCond" String="keywordCase"/>
         <RegExpr attribute="Error" context="#stay" String="&ident;"/>
       </context>
 
       <context attribute="Normal" lineEndContext="#stay" name="CaseCond">
-        <DetectSpaces attribute="Normal"/>
-        <Detect2Chars attribute="CommentTitle" context="CommentTitle" char="#" char1="#"/>
-        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <IncludeRules context="FindBlank"/>
         <WordDetect attribute="Operator" context="#pop!CaseStatement" String=":"/>
         <WordDetect attribute="Error" context="#pop" String=";"/>
         <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
@@ -497,7 +500,7 @@ IN THE SOFTWARE.
         <WordDetect attribute="Operator" context="#pop" String=";"/>
       </context>
 
-      <context attribute="Normal" lineEndContext="#stay" name="LocalInit" fallthrough="true" fallthroughContext="#pop">
+      <context attribute="Normal" lineEndContext="#stay" name="LocalInit" fallthroughContext="#pop">
         <DetectSpaces attribute="Normal"/>
         <DetectChar attribute="Operator" context="Assignment2" char="="/>
         <WordDetect attribute="Operator" context="#pop" String=";"/>
@@ -506,9 +509,7 @@ IN THE SOFTWARE.
       <!-- Variables, Strings, Comments -->
 
       <context attribute="Normal" lineEndContext="#stay" name="Preprocess">
-        <DetectSpaces attribute="Normal"/>
-        <Detect2Chars attribute="CommentTitle" context="CommentTitle" char="#" char1="#"/>
-        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <IncludeRules context="FindBlank"/>
         <Detect2Chars attribute="VariableDelimiter" context="Variable" char="$" char1="("/>
         <DetectChar attribute="String" context="String" char="&quot;"/>
         <WordDetect attribute="Operator" context="SubStatement" String="["/>
@@ -533,8 +534,13 @@ IN THE SOFTWARE.
 
       <context attribute="Comment" lineEndContext="#pop" name="Comment">
         <DetectSpaces/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
         <DetectIdentifier/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="CommentBlock">
+        <Detect2Chars attribute="Comment" context="#pop" char="|" char1="#"/>
+        <IncludeRules context="Comment"/>
       </context>
 
       <context attribute="CommentTitle" lineEndContext="#pop" name="CommentTitle">
@@ -556,7 +562,6 @@ IN THE SOFTWARE.
     <itemDatas>
       <!-- action definition (shell script) -->
       <itemData name="actionAttribute" defStyleNum="dsAttribute"/>
-      <itemData name="ActionText" defStyleNum="dsNormal"/>
       <!-- rule / action call -->
       <itemData name="Rule" defStyleNum="dsFunction"/>
       <itemData name="Action" defStyleNum="dsNormal"/>
@@ -583,7 +588,7 @@ IN THE SOFTWARE.
     <comments>
       <comment name="singleLine" start="#"/>
     </comments>
-    <keywords weakDeliminator=":;{}()[].!+,-&lt;=&gt;%&amp;/?^|~\*," additionalDeliminator=" 	"/>
+    <keywords weakDeliminator=":;{}()[].!+,-&lt;=&gt;%&amp;/?^|~\*,"/>
   </general>
 </language>
 <!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

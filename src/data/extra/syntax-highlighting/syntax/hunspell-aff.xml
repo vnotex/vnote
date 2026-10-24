@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd" >
+<!DOCTYPE language >
 <!--
 License: LGPL version 2.1, or version 3 or later versions approved by the membership of KDE e.V.; or any other license appoved by the memembership of KDE e.V.
 -->
-<language name="Hunspell Affix File" section="Other" extensions="*.aff" priority="-9" version="2" kateversion="2.4" author="Lukas Sommer" license="LGPLv2.1+KDE e.V.">
+<language name="Hunspell Affix File" section="Other" extensions="*.aff" priority="-9" version="4" kateversion="5.0" author="Lukas Sommer" license="LGPLv2.1+KDE e.V.">
 
 <highlighting>
 
@@ -205,7 +205,7 @@ License: LGPL version 2.1, or version 3 or later versions approved by the member
 	
 	<context name="context_comment" attribute="Comment" lineEndContext="#pop">
 		<DetectSpaces />
-		<IncludeRules context="##Alerts" />
+		<IncludeRules context="##Comments" />
 		<DetectIdentifier />
 	</context>
 
@@ -237,3 +237,4 @@ License: LGPL version 2.1, or version 3 or later versions approved by the member
 </general>
 
 </language>
+<!-- kate: replace-tabs off; -->

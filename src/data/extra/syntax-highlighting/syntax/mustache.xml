@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 	<!ENTITY name          "[A-Za-z_:][\w.:_-]*">
-	<!ENTITY attributeName "(\s|^)[A-Za-z_:\*#\(\[][\)\]\w\.:_-]*">
-	<!ENTITY entref        "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
-	<!ENTITY tag           "&lt;\s*(&name;|&gt;)">
+	<!ENTITY attributeName "(?:\s|^)[A-Za-z_:\*#\(\[][\)\]\w\.:_-]*">
+	<!ENTITY entref        "&amp;(?:#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
+	<!ENTITY tag           "&lt;\s*(?:&name;|&gt;)">
 	<!-- Handlebars identifier -->
-	<!ENTITY identifier    "([a-zA-Z_$:\?]|[^[:ascii:]])([\w$:\?\-]|[^[:ascii:]])*">
+	<!ENTITY identifier    "(?:[a-zA-Z_$:\?]|[^[:ascii:]])(?:[\w$:\?\-]|[^[:ascii:]])*">
 ]>
 
 <!--
@@ -36,12 +36,14 @@
     (via IncludeRules) in the HTML highlighter.
 
     Change log:
+     * v5 [2020-08-15]: Use Handlebars comment en the <comments> group.
+     * v3 [2019-10-03]: Minor fixes.
      * v2 [2019-02-24]: Also highlight template files (HTML).
                         Improve support for Handlebars.
      * v1 [2019-02-10]: Initial version
 -->
 
-<language name="Mustache/Handlebars (HTML)" version="2" kateversion="5.0"
+<language name="Mustache/Handlebars (HTML)" version="10" kateversion="5.79"
           section="Markup" priority="1" mimetype=""
           extensions="*.mustache;*.handlebars;*.hbs;*.ractive;*.hogan;*.hulk;*.html.mst;*.html.mu;*.html.rac"
           author="Nibaldo González (nibgonz@gmail.com), based on the HTML highlighter by Wilbert Berendsen (wilbert@kde.nl)"
@@ -52,8 +54,8 @@
 	<contexts>
 
 		<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
-			<RegExpr context="CSS" attribute="Element Tag" String="&lt;style\b" insensitive="true" beginRegion="style" />
-			<RegExpr context="JS" attribute="Element Tag" String="&lt;script\b" insensitive="true" beginRegion="script" />
+			<WordDetect context="CSS" attribute="Element Tag" String="&lt;style" insensitive="true" beginRegion="style" />
+			<WordDetect context="JS" attribute="Element Tag" String="&lt;script" insensitive="true" beginRegion="script" />
 			<IncludeRules context="Base" />
 		</context>
 
@@ -62,7 +64,7 @@
 			<IncludeRules context="MustacheVariables" />
 
 			<StringDetect context="CDATA" attribute="CDATA" String="&lt;![CDATA[" beginRegion="cdata" />
-			<RegExpr context="Doctype" attribute="Doctype" String="&lt;!DOCTYPE\s+" insensitive="true" beginRegion="doctype"  />
+			<WordDetect context="Doctype" attribute="Doctype" String="&lt;!DOCTYPE" insensitive="true" beginRegion="doctype" />
 			<IncludeRules context="FindPI" />
 
 			<IncludeRules context="FindTags" />
@@ -83,23 +85,23 @@
 			<RegExpr context="#pop!MustacheRawBlockContent" attribute="Mustache Block" String="\{{4}[^/].*\}{4}" minimal="true" beginRegion="HandlebarsRawBlock" />
 			<!-- Sections -->
 			<!-- For helpers (not included because it's redundant):
-			       Start: \{\{~?#?\s*(?=(if|unless|with|link\-to|each(\-in)?)\b)
-			       End:   \{\{~?/\s*(?=(if|unless|with|link\-to|each(\-in)?)\b)  -->
-			<RegExpr context="#pop!MustacheVariableBlock" attribute="Mustache Block" String="\{\{~?\s*else(\s+(if|unless|with|link\-to|each(\-in)?))?\b" />
+			       Start: \{\{~?#?\s*(?=(?:if|unless|with|link\-to|each(?:\-in)?)\b)
+			       End:   \{\{~?/\s*(?=(?:if|unless|with|link\-to|each(?:\-in)?)\b)  -->
+			<RegExpr context="#pop!MustacheVariableBlock" attribute="Mustache Block" String="\{\{~?\s*else(?:\s+(?:if|unless|with|link\-to|each(?:\-in)?))?\b" />
 			<RegExpr context="#pop!MustacheVariableBlock" attribute="Mustache Block" String="\{\{~?[#\^][&gt;\*]?\s*&identifier;\b" beginRegion="MustacheBlock" />
 			<RegExpr context="#pop" attribute="Mustache Block" String="\{\{~?/\s*&identifier;\s*\}\}" endRegion="MustacheBlock" />
 			<RegExpr context="#pop!MustacheVariableBlockEndFolding" attribute="Mustache Block" String="\{\{~?/\s*&identifier;\b" />
 			<RegExpr context="#pop!MustacheVariableBlock" attribute="Mustache Block" String="\{\{~?[#\^/]" />
 			<!-- Comments -->
-			<StringDetect context="#pop!MustacheBlockComment" attribute="Comment" String="{{!--" beginRegion="MustacheBlockComment" /> <!-- Handlebars -->
+			<StringDetect context="#pop!HandlebarsInlineComment" attribute="Comment" String="{{!--" beginRegion="HandlebarsInlineComment" /> <!-- Handlebars -->
 			<StringDetect context="#pop!MustacheInlineComment" attribute="Comment" String="{{!" beginRegion="MustacheInlineComment" />
 			<!-- Variables -->
 			<StringDetect context="#pop!MustachePartial" attribute="Mustache Variable" String="{{&lt;" />
 			<StringDetect context="#pop!MustachePartial" attribute="Mustache Variable" String="{{&gt;" />
 			<StringDetect context="#pop!MustacheMarkerSet" attribute="Mustache Variable" String="{{=" />
 			<StringDetect context="#pop!MustacheVariable" attribute="Mustache Variable" String="{{$" />
-			<RegExpr context="#pop!MustacheVariableUnescape" attribute="Mustache Variable Unescape" String="\{\{\{\s*(log|link)\b" />
-			<RegExpr context="#pop!MustacheVariable" attribute="Mustache Variable" String="\{\{\s*(log|link)\b" />
+			<RegExpr context="#pop!MustacheVariableUnescape" attribute="Mustache Variable Unescape" String="\{\{\{\s*(?:log|link)\b" />
+			<RegExpr context="#pop!MustacheVariable" attribute="Mustache Variable" String="\{\{\s*(?:log|link)\b" />
 
 			<StringDetect context="#pop!MustacheVariableUnescape" attribute="Mustache Variable Unescape" String="{{{" />
 			<Detect2Chars context="#pop!MustacheVariable" attribute="Mustache Variable" char="{" char1="{" />
@@ -151,22 +153,24 @@
 			<LineContinue context="#stay" attribute="Escape" />
 			<HlCStringChar context="#stay" attribute="Escape" />
 		</context>
-		<context name="MustacheSymbolValue" attribute="Mustache Inside" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+		<context name="MustacheSymbolValue" attribute="Mustache Inside" lineEndContext="#pop" fallthroughContext="#pop">
 			<DetectChar context="#pop!MustacheValue" attribute="Symbol" char="=" />
 			<DetectSpaces />
 		</context>
-		<context name="MustacheValue" attribute="Mustache Inside" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+		<context name="MustacheValue" attribute="Mustache Inside" lineEndContext="#pop" fallthroughContext="#pop">
 			<DetectSpaces />
 			<RegExpr context="#pop" attribute="Number" String="\d+(?=[\s\}\)\]]|$)" />
 		</context>
 
-		<context name="MustacheBlockComment" attribute="Comment" lineEndContext="#stay">
-			<StringDetect context="#pop" attribute="Comment" String="--}}" endRegion="MustacheBlockComment" />
-			<IncludeRules context="##Alerts" />
+		<context name="HandlebarsInlineComment" attribute="Comment" lineEndContext="#stay">
+			<StringDetect context="#pop" attribute="Comment" String="--}}" endRegion="HandlebarsInlineComment" />
+			<DetectSpaces />
+			<IncludeRules context="##Comments" />
 		</context>
 		<context name="MustacheInlineComment" attribute="Comment" lineEndContext="#stay">
 			<Detect2Chars context="#pop" attribute="Comment" char="}" char1="}" endRegion="MustacheInlineComment" />
-			<IncludeRules context="##Alerts" />
+			<DetectSpaces />
+			<IncludeRules context="##Comments" />
 		</context>
 
 		<!-- Tags -->
@@ -214,24 +218,24 @@
 			<WordDetect context="ElementTagEnd" attribute="Element Tag" String="&lt;/header" insensitive="true" endRegion="header" />
 			<WordDetect context="ElementTagEnd" attribute="Element Tag" String="&lt;/main" insensitive="true" endRegion="main" />
 			<WordDetect context="ElementTagEnd" attribute="Element Tag" String="&lt;/nav" insensitive="true" endRegion="nav" />
-			<WordDetect context="ElementTagEnd" attribute="Element Tag" String="&lt;/sectiond" insensitive="true" endRegion="section" />
+			<WordDetect context="ElementTagEnd" attribute="Element Tag" String="&lt;/section" insensitive="true" endRegion="section" />
 
 			<RegExpr context="#stay" attribute="Element Tag" String="&lt;/\s*&gt;" />
 			<RegExpr context="ElementTagEnd" attribute="Element Tag" String="&lt;/\s*&name;" />
 		</context>
-		<context name="ElementTagEnd" attribute="Normal Text" lineEndContext="#stay">
+		<context name="ElementTagEnd" attribute="Error" lineEndContext="#stay">
 			<DetectChar context="#pop" attribute="Element Tag" char="&gt;" />
+			<DetectSpaces attribute="Normal Text"/>
 			<IncludeRules context="MustacheVariables" />
-			<RegExpr context="#stay" attribute="Error" String="\S" />
 		</context>
 
 		<!-- Inside the tag -->
-		<context name="ElementTag" attribute="Normal Text" lineEndContext="#stay">
+		<context name="ElementTag" attribute="Error" lineEndContext="#stay">
 			<Detect2Chars context="#pop" attribute="Element Tag" char="/" char1="&gt;" />
 			<DetectChar context="#pop" attribute="Element Tag" char="&gt;" />
 			<IncludeRules context="MustacheVariables" />
 			<IncludeRules context="FindAttributes" />
-			<RegExpr context="#stay" attribute="Error" String="\S" />
+			<DetectSpaces attribute="Normal Text"/>
 		</context>
 		<context name="FindAttributes" attribute="Normal Text" lineEndContext="#stay">
 			<RegExpr context="#stay" attribute="Attribute" String="&attributeName;" />
@@ -239,7 +243,7 @@
 			<DetectChar context="Value" attribute="Symbol" char="=" />
 		</context>
 
-		<context name="Value" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!ValueNQ">
+		<context name="Value" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!ValueNQ">
 			<DetectChar context="#pop!ValueDQ" attribute="Value" char="&quot;" />
 			<DetectChar context="#pop!ValueSQ" attribute="Value" char="&apos;" />
 			<RegExpr context="#pop" attribute="Number" String="\d+(?=\s|/?&gt;|$)" />
@@ -255,11 +259,10 @@
 			<IncludeRules context="MustacheVariables" />
 			<IncludeRules context="FindEntityRefs" />
 		</context>
-		<context name="ValueNQ" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+		<context name="ValueNQ" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
 			<IncludeRules context="MustacheVariables" />
 			<IncludeRules context="FindEntityRefs" />
-			<RegExpr context="#stay" attribute="Value" String="/(?!&gt;)" />
-			<RegExpr context="#stay" attribute="Value" String="[^/&gt;&lt;&quot;&apos;\s]" />
+			<RegExpr context="#stay" attribute="Value" String="/(?!&gt;)|[^/&gt;&lt;&quot;&apos;\s]" />
 		</context>
 
 		<!-- HTML -->
@@ -271,9 +274,8 @@
 		<context name="Comment" attribute="Comment" lineEndContext="#stay">
 			<DetectSpaces/>
 			<StringDetect context="#pop" attribute="Comment" String="--&gt;" endRegion="Comment" />
-			<RegExpr context="#stay" attribute="Error" String="-(-(?!-&gt;))+" />
 			<IncludeRules context="MustacheVariables" />
-			<IncludeRules context="##Alerts" />
+			<IncludeRules context="##Comments" />
 		</context>
 
 		<context name="FindPEntityRefs" attribute="Normal Text" lineEndContext="#stay">
@@ -283,7 +285,7 @@
 		</context>
 
 		<context name="FindDTDRules" attribute="Normal Text" lineEndContext="#stay">
-			<RegExpr context="Doctype Markupdecl" attribute="Doctype" String="&lt;!(ELEMENT|ENTITY|ATTLIST|NOTATION)\b" />
+			<RegExpr context="Doctype Markupdecl" attribute="Doctype" String="&lt;!(?:ELEMENT|ENTITY|ATTLIST|NOTATION)\b" />
 		</context>
 		<context name="FindPI" attribute="Normal Text" lineEndContext="#stay">
 			<RegExpr context="PI" attribute="Processing Instruction" String="&lt;\?[\w:-]*" beginRegion="pi" />
@@ -292,7 +294,6 @@
 		<context name="CDATA" attribute="Normal Text" lineEndContext="#stay">
 			<IncludeRules context="MustacheVariables" />
 			<StringDetect context="#pop" attribute="CDATA" String="]]&gt;" endRegion="cdata" />
-			<StringDetect context="#stay" attribute="EntityRef" String="]]&amp;gt;" />
 		</context>
 
 		<context name="PI" attribute="Normal Text" lineEndContext="#stay">
@@ -332,15 +333,15 @@
 
 		<!-- CSS -->
 
-		<context name="CSS" attribute="Normal Text" lineEndContext="#stay">
+		<context name="CSS" attribute="Error" lineEndContext="#stay">
 			<Detect2Chars context="#pop" attribute="Element Tag" char="/" char1="&gt;" endRegion="style" />
 			<DetectChar context="#pop!CSSContent" attribute="Element Tag" char="&gt;" />
 			<IncludeRules context="MustacheVariables" />
 			<IncludeRules context="FindAttributes" />
-			<RegExpr context="#stay" attribute="Error" String="\S" />
+			<DetectSpaces attribute="Normal Text"/>
 		</context>
 		<context name="CSSContent" attribute="Normal Text" lineEndContext="#stay">
-			<RegExpr context="#pop!ElementTagEnd" attribute="Element Tag" String="&lt;/style\b" insensitive="true" endRegion="style" />
+			<WordDetect context="#pop!ElementTagEnd" attribute="Element Tag" String="&lt;/style" insensitive="true" endRegion="style" />
 			<IncludeRules context="MustacheVariables" />
 
 			<DetectChar context="CSS-RuleSet" attribute="Normal Text" char="{" beginRegion="ruleset" />
@@ -349,10 +350,22 @@
 		</context>
 
 		<!-- Overwrite some rules of 'css.xml' to add Mustache variables -->
-		<context name="CSS-RuleSet" attribute="Normal Text" lineEndContext="#stay">
-			<DetectChar context="#pop" attribute="Normal Text" char="}" endRegion="ruleset" />
+		<context name="CSS-RuleSet" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="CSS-Rule">
 			<IncludeRules context="MustacheVariables" />
-			<IncludeRules context="RuleSet##CSS" />
+			<DetectChar context="CSS-RuleSet" attribute="Normal Text" char="{" beginRegion="ruleset" />
+			<DetectChar context="#pop" attribute="Normal Text" char="}" endRegion="ruleset" />
+         <AnyChar context="CSS-Selector" String=".#:,[*>+~|&amp;" lookAhead="1" />
+		</context>
+		<context name="CSS-Selector" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="MustacheVariables" />
+			<DetectChar context="#pop!CSS-RuleSet" attribute="Normal Text" char="{" beginRegion="ruleset" />
+			<DetectChar attribute="Normal Text" context="#pop#pop" char="}" endRegion="ruleset"/>
+			<IncludeRules context="Selector##CSS" />
+		</context>
+		<context name="CSS-Rule" attribute="Normal Text" lineEndContext="#stay">
+			<IncludeRules context="MustacheVariables" />
+			<AnyChar context="#pop!CSS-Selector" String=".#,[*>+~|&amp;@{}" lookAhead="1"/>
+			<IncludeRules context="Rule##CSS" />
 		</context>
 		<context name="CSS-SelectorAttr" attribute="CSS: Selector Attribute" lineEndContext="#stay">
 			<DetectChar context="#pop" attribute="CSS: Selector Attribute" char="]" />
@@ -362,23 +375,25 @@
 
 		<!-- JavaScript -->
 
-		<context name="JS" attribute="Normal Text" lineEndContext="#stay">
+		<context name="JS" attribute="Error" lineEndContext="#stay">
 			<DetectChar context="#pop!JSContent" attribute="Element Tag" char="&gt;" />
 			<Detect2Chars context="#pop" attribute="Element Tag" char="/" char1="&gt;" endRegion="script" />
 			<IncludeRules context="MustacheVariables" />
 			<IncludeRules context="FindAttributes" />
-			<RegExpr attribute="Error" context="#stay" String="\S" />
+			<DetectSpaces attribute="Normal Text"/>
 		</context>
 
 		<context name="JSContent" attribute="Normal Text" lineEndContext="#stay">
-			<RegExpr context="#pop!ElementTagEnd" attribute="Element Tag" String="&lt;/script\b" insensitive="true" endRegion="script" />
+			<WordDetect context="#pop!ElementTagEnd" attribute="Element Tag" String="&lt;/script" insensitive="true" endRegion="script" />
 			<RegExpr context="JSCommentClose" attribute="Comment" String="//(?=.*&lt;/script\b)" insensitive="true" />
 			<IncludeRules context="MustacheVariables" />
 			<IncludeRules context="OverwriteJavaScript" />
 			<IncludeRules context="Normal##JavaScript" includeAttrib="true"/>
 		</context>
 		<context name="JSCommentClose" attribute="Comment" lineEndContext="#pop">
-			<RegExpr context="#pop#pop!ElementTagEnd" attribute="Element Tag" String="&lt;/script\b" insensitive="true" endRegion="script" />
+			<WordDetect context="#pop#pop!ElementTagEnd" attribute="Element Tag" String="&lt;/script" insensitive="true" endRegion="script" />
+			<DetectSpaces />
+			<IncludeRules context="##Comments" />
 		</context>
 
 		<!-- Overwrite some rules of 'javascript.xml' to add Mustache variables -->
@@ -462,7 +477,7 @@
 
 <general>
 	<comments>
-		<comment name="multiLine" start="{{!" end="}}" />
+		<comment name="multiLine" start="{{!--" end="--}}" region="HandlebarsInlineComment" />
 	</comments>
 </general>
 

@@ -1,0 +1,352 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+
+<!--
+Improvements:
+
+- fixed typo: "lamba" is now "lambda"
+- added bind, func, typed, untyped, on, off
+- added multiline strings
+- added multiline comments (with stacking!)
+- added support for hex, binary, and octal numbers
+- added support for numerical literal suffixes (e.g. 'f64)
+- added triple-quote strings, raw strings and regex strings
+- made escape sequences in strings work slightly better (still needs work)
+- changed pragma syntax highlighting to dsAttribute instead of dsDataType
+- doc comments
+- TODO/BUG/FIXME/HACK/XXXX/NOTE comments
+
+-->
+
+<language
+	name="Nim"
+	version="4"
+	kateversion="5.53"
+	section="Sources"
+	extensions="*.nim;*.nims;*.nimble"
+	mimetype="text/x-nim"
+	indenter="python"
+	author="github.com/juancarlospaco"
+	license="WTFPL">
+
+	<highlighting>
+		<list name="keywords">
+			<item>const</item>
+			<item>export</item>
+			<item>import</item>
+			<item>include</item>
+			<item>lambda</item>
+			<item>let</item>
+			<item>var</item>
+		</list>
+
+		<list name="controls">
+			<item>assert</item> <!-- system -->
+			<item>asm</item>
+			<item>atomic</item>
+			<item>block</item>
+			<item>break</item>
+			<item>case</item>
+			<item>cast</item>
+			<item>compiles</item> <!-- system -->
+			<item>continue</item>
+			<item>declared</item> <!-- system -->
+			<item>declaredinscope</item> <!-- system -->
+			<item>defined</item> <!-- system -->
+			<item>discard</item>
+			<item>do</item>
+			<item>echo</item> <!-- system -->
+			<item>elif</item>
+			<item>else</item>
+			<item>end</item>
+			<item>except</item>
+			<item>finally</item>
+			<item>for</item>
+			<item>from</item>
+			<item>if</item>
+			<item>mixin</item>
+			<item>bind</item>
+			<item>new</item> <!-- system -->
+			<item>raise</item>
+			<item>return</item>
+			<item>sizeof</item> <!-- system -->
+			<item>try</item>
+			<item>when</item>
+			<item>while</item>
+			<item>quit</item> <!-- system -->
+			<item>using</item>
+			<item>yield</item>
+		</list>
+
+		<list name="operators">
+			<item>addr</item>
+			<item>and</item>
+			<item>as</item>
+			<item>div</item>
+			<item>in</item>
+			<item>is</item>
+			<item>isnot</item>
+			<item>mod</item>
+			<item>not</item>
+			<item>notin</item>
+			<item>of</item>
+			<item>or</item>
+			<item>shl</item>
+			<item>shr</item>
+			<item>xor</item>
+		</list>
+
+		<list name="types">
+			<item>array</item>
+			<item>bool</item>
+			<item>byte</item>
+			<item>cchar</item>
+			<item>cdouble</item>
+			<item>char</item>
+			<item>cfloat</item>
+			<item>cint</item>
+			<item>clong</item>
+			<item>cshort</item>
+			<item>cstring</item>
+			<item>cuint</item>
+			<item>distinct</item>
+			<item>expr</item>
+			<item>float</item>
+			<item>float32</item>
+			<item>float64</item>
+			<item>generic</item>
+			<item>int</item>
+			<item>int8</item>
+			<item>int16</item>
+			<item>int32</item>
+			<item>int64</item>
+			<item>interface</item>
+			<item>openarray</item>
+			<item>pointer</item>
+			<item>set</item>
+			<item>seq</item>
+			<item>stmt</item>
+			<item>string</item>
+			<item>tuple</item>
+			<item>typedesc</item>
+			<item>uint</item>
+			<item>uint8</item>
+			<item>uint16</item>
+			<item>uint32</item>
+			<item>uint64</item>
+			<item>varargs</item>
+			<item>void</item>
+			<item>untyped</item>
+			<item>typed</item>
+		</list>
+
+		<list name="attrs">
+			<item>out</item>
+			<item>ptr</item>
+			<item>ref</item>
+			<item>shared</item>
+			<item>static</item>
+		</list>
+
+		<list name="consts">
+			<item>false</item>
+			<item>inf</item>
+			<item>nil</item>
+			<item>true</item>
+			<item>on</item>
+			<item>off</item>
+		</list>
+
+		<list name="others">
+			<item>result</item>
+		</list>
+
+		<list name="proctar">
+			<item>converter</item>
+			<item>iterator</item>
+			<item>macro</item>
+			<item>method</item>
+			<item>proc</item>
+			<item>func</item>
+			<item>template</item>
+		</list>
+
+		<list name="typetar">
+			<item>type</item>
+			<item>concept</item>
+			<item>object</item>
+			<item>enum</item>
+		</list>
+
+		<contexts>
+			<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+				<DetectSpaces/>
+				<keyword context="#stay" attribute="Keywords" String="keywords"/>
+				<keyword context="#stay" attribute="Controls" String="controls"/>
+				<keyword context="#stay" attribute="Operators" String="operators"/>
+				<keyword context="#stay" attribute="Types"    String="types"/>
+				<keyword context="#stay" attribute="Attrs"    String="attrs"/>
+				<keyword context="#stay" attribute="Others"   String="others"/>
+				<keyword context="#stay" attribute="Constants" String="consts"/>
+
+				<keyword context="Start-Proctar" attribute="Keywords" String="proctar"/>
+				<keyword context="Start-Typetar" attribute="Keywords" String="typetar"/>
+
+				<StringDetect context="DocComment2" attribute="DocComment" String="##[" beginRegion="DocComment"/>
+				<Detect2Chars context="DocComment1" attribute="DocComment" char="#" char1="#"/>
+				<Detect2Chars context="Comment2" attribute="Comment" char="#" char1="[" beginRegion="Comment"/>
+				<DetectChar context="Comment1" attribute="Comment" char="#"/>
+
+				<StringDetect context="tripleq-string" attribute="String" String="&quot;&quot;&quot;" beginRegion="String"/>
+				<DetectChar   context="string"         attribute="String" char="&quot;" beginRegion="String"/>
+				<StringDetect context="re-string"      attribute="String" String="re&quot;" beginRegion="String"/>
+				<Detect2Chars context="raw-string"     attribute="String" char="r" char1="&quot;" beginRegion="String"/>
+
+				<RegExpr context="#stay" attribute="Hex"    String="0[xX][0-9A-Fa-f][0-9A-Fa-f_]*(?:'(?:(?:[ui](?:8|16|32|64))|(?:f(?:32|64|128))|[ufd]))?"/>
+				<RegExpr context="#stay" attribute="Octal"  String="0o[0-7][0-7_]*(?:'(?:(?:[ui](?:8|16|32|64))|(?:f(?:32|64|128))|[ufd]))?"/>
+				<RegExpr context="#stay" attribute="Binary" String="0[bB][01][01_]*(?:'(?:(?:[ui](?:8|16|32|64))|(?:f(?:32|64|128))|[ufd]))?"/>
+				<RegExpr context="#stay" attribute="Decimal" String="\b\d+(?=\.\.)"/>
+				<Float   context="#stay" attribute="Float"/>
+				<Int     context="#stay" attribute="Decimal"/>
+
+				<RegExpr context="#stay" attribute="Types"  String="\b_*[A-Z](?:\w|\._*[A-Z])*\b"/>
+				<RegExpr context="#stay" attribute="Funcs"  String="\b\w+\b\s*(?=(?:\[.*\]\w*)?(?:\(|(?:[ ](?![,+\-*/=!^&amp;&lt;&gt;|?]|and|as|div|in|is|isnot|mod|notin|of|or|shl|shr|xor))))|\b\w+(?=&quot;)"/>
+
+				<DetectIdentifier/>
+
+				<Detect2Chars context="Pragmatar" attribute="Pragmas" char="{" char1="."/>
+				<RegExpr context="Proptar" attribute="Brackets" String="\.(?!\d)"/>
+				<RegExpr context="#stay" attribute="Float" String="\.(?=\d)"/>
+
+				<AnyChar context="#stay" attribute="Brackets" String="()[]{},:;"/>
+				<AnyChar context="#stay" attribute="Symbols"  String="+-*/=!@$%^&amp;&lt;&gt;|?"/>
+				<HlCChar context="#stay" attribute="Char"/>
+			</context>
+
+			<context name="stringescape" attribute="String" lineEndContext="#stay">
+				<RegExpr attribute="String Char" String="\\[&quot;abfnrtv\\]" context="#stay"/>
+			</context>
+
+			<context name="string" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="stringescape"/>
+				<DetectChar context="#pop" attribute="String" char="&quot;" endRegion="String"/>
+			</context>
+			<context name="tripleq-string" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect context="#pop" attribute="String" String="&quot;&quot;&quot;" endRegion="String"/>
+			</context>
+			<context name="raw-string" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<Detect2Chars context="#stay" attribute="String Char" char="&quot;" char1="&quot;"/>
+				<DetectChar context="#pop" attribute="String" char="&quot;" endRegion="String"/>
+			</context>
+			<context name="re-string" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectChar context="#pop" attribute="String" char="&quot;" endRegion="String"/>
+				<DetectChar context="#stay" attribute="String" char="/"/> <!-- Avoid closing string by JavaScript -->
+				<IncludeRules context="Regular Expression##JavaScript"/>
+			</context>
+
+			<context name="Comment1" attribute="Comment" lineEndContext="#pop">
+				<LineContinue attribute="Comment" context="#stay"/>
+				<IncludeRules context="##Comments"/>
+			</context>
+
+			<context name="DocComment1" attribute="DocComment" lineEndContext="#pop">
+				<LineContinue attribute="DocComment" context="#stay"/>
+			</context>
+
+			<context name="DocComment2" attribute="DocComment" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<LineContinue attribute="DocComment" context="#stay"/>
+				<StringDetect attribute="DocComment" context="DocComment2" String="##[" beginRegion="DocComment"/>
+				<StringDetect attribute="DocComment" context="#pop" String="]##" endRegion="DocComment"/>
+			</context>
+
+			<context name="Comment2" attribute="Comment" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<LineContinue attribute="Comment" context="#stay"/>
+				<Detect2Chars attribute="Comment" context="Comment2" char="#" char1="[" beginRegion="Comment"/>
+				<Detect2Chars attribute="Comment" context="#pop" char="]" char1="#" endRegion="Comment"/>
+				<IncludeRules context="##Comments"/>
+			</context>
+
+			<context name="Start-Typetar" attribute="TypeDefs" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!Typetar">
+				<DetectSpaces context="#stay" attribute="Normal Text"/>
+			</context>
+			<context name="Typetar" attribute="TypeDefs" lineEndContext="#pop">
+				<DetectChar context="#stay" attribute="Brackets" char="."/>
+				<DetectChar context="#pop" char="#" lookAhead="true"/>
+				<DetectSpaces context="#pop" attribute="Normal Text"/>
+				<AnyChar context="#pop" attribute="Brackets" String="()[]{},:;"/>
+				<AnyChar context="#pop" attribute="Symbols"  String="+-*/=!@$%^&amp;&lt;&gt;"/>
+				<keyword context="#pop" attribute="Operators" String="operators"/>
+			</context>
+
+			<context name="Start-Proctar" attribute="TypeDefs" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!Proctar">
+				<DetectSpaces context="#stay" attribute="Normal Text"/>
+			</context>
+			<context name="Proctar" attribute="ProcDefs" lineEndContext="#pop">
+				<DetectChar context="QuoteProctar" attribute="ProcDefs" char="`"/>
+				<DetectChar context="#stay" attribute="Brackets" char="."/>
+				<DetectChar context="#pop" char="#" lookAhead="true"/>
+				<DetectSpaces context="#pop" attribute="Normal Text"/>
+				<AnyChar context="#pop" attribute="Brackets" String="()[]{},:;"/>
+				<AnyChar context="#pop" attribute="Symbols"  String="+-*/=!@$%^&amp;&lt;&gt;"/>
+			</context>
+
+			<context name="QuoteProctar" attribute="ProcDefs" lineEndContext="#pop">
+				<DetectChar context="#pop" attribute="ProcDefs" char="`"/>
+			</context>
+
+			<context name="Pragmatar" attribute="Pragmas" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<Detect2Chars context="#pop" attribute="Pragmas" char="." char1="}"/>
+			</context>
+
+			<context name="Proptar" attribute="Props" lineEndContext="#pop">
+				<keyword context="#pop" attribute="Types" String="types"/>
+				<RegExpr context="#pop" attribute="Types" String="_*[A-Z]\w*"/>
+				<RegExpr context="#pop" attribute="Funcs" String="_*[a-z]\w*(?=\()"/>
+				<RegExpr context="#pop" attribute="Props" String="_*[a-z]\w*"/>
+				<RegExpr context="#pop" attribute="Brackets" String="\.+"/>
+			</context>
+		</contexts>
+
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal"    spellChecking="false"/>
+			<itemData name="Keywords"    defStyleNum="dsKeyword"   spellChecking="false"/>
+			<itemData name="Controls"    defStyleNum="dsControlFlow" spellChecking="false"/>
+			<itemData name="Pragmas"     defStyleNum="dsAttribute" spellChecking="false"/>
+			<itemData name="Types"       defStyleNum="dsAttribute" spellChecking="false"/>
+			<itemData name="Props"       defStyleNum="dsAttribute" spellChecking="false"/>
+			<itemData name="Funcs"       defStyleNum="dsFunction"  spellChecking="false"/>
+			<itemData name="Attrs"       defStyleNum="dsDataType"  spellChecking="false"/>
+			<itemData name="Others"      defStyleNum="dsOthers"    spellChecking="false"/>
+			<itemData name="Operators"   defStyleNum="dsComment"   spellChecking="false" bold="true" italic="false"/>
+			<itemData name="Constants"   defStyleNum="dsConstant"  spellChecking="false" bold="true"/>
+
+			<itemData name="TypeDefs"    defStyleNum="dsDataType" spellChecking="false" bold="true"/>
+			<itemData name="ProcDefs"    defStyleNum="dsString"   spellChecking="false" bold="true"/>
+
+			<itemData name="Brackets"    defStyleNum="dsKeyword"  spellChecking="false"/>
+			<itemData name="Symbols"     defStyleNum="dsComment"  spellChecking="false" italic="false"/>
+
+			<itemData name="Decimal"     defStyleNum="dsDecVal"   spellChecking="false"/>
+			<itemData name="Hex"         defStyleNum="dsBaseN"    spellChecking="false"/>
+			<itemData name="Binary"      defStyleNum="dsBaseN"    spellChecking="false"/>
+			<itemData name="Octal"       defStyleNum="dsBaseN"    spellChecking="false"/>
+			<itemData name="Float"       defStyleNum="dsFloat"    spellChecking="false"/>
+			<itemData name="Char"        defStyleNum="dsChar"     spellChecking="false"/>
+			<itemData name="String"      defStyleNum="dsString"   spellChecking="false"/>
+			<itemData name="String Char" defStyleNum="dsSpecialChar" spellChecking="false"/>
+			<itemData name="Comment"     defStyleNum="dsComment" />
+			<itemData name="DocComment"  defStyleNum="dsDocumentation" spellChecking="true"/>
+		</itemDatas>
+	</highlighting>
+
+	<general>
+		<comments>
+			<comment name="singleLine" start="#" position="afterwhitespace"/>
+			<comment name="multiLine" start="#[" end="]#" region="Comment"/>
+		</comments>
+		<folding indentationsensitive="true"/>
+		<keywords casesensitive="0"/>
+	</general>
+
+</language>
+<!-- kate: replace-tabs off; -->

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- FIXME: Find a way to prevent ranges (e.g. [1..] or [0..99]) from matching as floats. -pp -->
-<language name="Pike" version="2" kateversion="2.4" section="Scripts" extensions="*.pike" mimetype="application/x-pike;text/x-pike" casesensitive="1" author="Paul Pogonyshev" license="">
+<language name="Pike" version="4" kateversion="5.0" section="Scripts" extensions="*.pike" mimetype="application/x-pike;text/x-pike" casesensitive="1" author="Paul Pogonyshev" license="">
   <highlighting>
     <list name="keywords">
       <item>break</item>
@@ -66,24 +66,26 @@
 	<LineContinue attribute="String" context="#stay"/>
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="Line Comment">
-	<RegExpr attribute="Note" context="#stay" String="(FIXME|TODO|NOT(IC)?E):?"/>
+	<DetectSpaces />
+	<IncludeRules context="##Comments"/>
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Block Comment">
+	<DetectSpaces />
 	<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-	<RegExpr attribute="Note" context="#stay" String="(FIXME|TODO|NOT(IC)?E):?"/>
+	<IncludeRules context="##Comments"/>
       </context>
       <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
 	<RangeDetect attribute="Preprocessor Lib" context="#stay" char="&quot;" char1="&quot;"/>
 	<RangeDetect attribute="Preprocessor Lib" context="#stay" char="&lt;" char1="&gt;"/>
 	<Detect2Chars attribute="Comment" context="Line Comment" char="/" char1="/"/>
-	<Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="*"/>
+	<Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="*" beginRegion="Comment"/>
 	<LineContinue attribute="Preprocessor" context="#stay"/>
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Outscoped">
-	<RegExpr attribute="Note" context="#stay" String="(FIXME|TODO|NOT(IC)?E):?"/>
 	<Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="*" beginRegion="Comment"/>
 	<RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="Outscoped" firstNonSpace="true"/>
 	<RegExpr attribute="Preprocessor" context="#pop" String="#\s*(endif|elif|else)" endRegion="Outscoped" firstNonSpace="true"/>
+	<IncludeRules context="##Comments" />
       </context>         
       <context attribute="Comment" lineEndContext="#stay" name="Outscoped intern">
 	<Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="*" beginRegion="Comment"/>
@@ -105,16 +107,14 @@
       <itemData name="String"		defStyleNum="dsString"/>
       <itemData name="String Char"	defStyleNum="dsChar"/>
       <itemData name="Comment"		defStyleNum="dsComment"/>
-      <itemData name="Note"		defStyleNum="dsAlert"/>
       <itemData name="Preprocessor"	defStyleNum="dsOthers"/>
       <itemData name="Preprocessor Lib" defStyleNum="dsString"/>
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="#!"/>
       <comment name="singleLine" start="//"/>
-      <comment name="multiLine" start="/*" end="*/"/>
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
     </comments>
     <keywords casesensitive="1"/>
   </general>

@@ -1,14 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Gnuplot" version="4" kateversion="5.0" section="Scientific" extensions="*.gnuplot;*.gp;*.gplt;*.plt" casesensitive="1" >
+<!DOCTYPE language>
+<language name="Gnuplot" version="10" kateversion="5.79" section="Scientific" extensions="*.gnuplot;*.gp;*.gplt;*.plt" casesensitive="1" >
   <highlighting>
-    <list name="set_no_keywords">
+    <list name="set_keywords">
+      <!-- no keyword -->
       <item>noarrow</item>
       <item>noborder</item>
       <item>noclabel</item>
       <item>noclip</item>
       <item>nocontour</item>
       <item>nodgrid3d</item>
+      <item>noenhanced</item>
       <item>nogrid</item>
       <item>nohidden3d</item>
       <item>nokey</item>
@@ -45,19 +47,13 @@
       <item>nozeroaxis</item>
       <item>nozmtics</item>
       <item>noztics</item>
-    </list>
 
-    <list name="set_simple_keywords">
-      <item>grid</item>
-      <item>parametric</item>
-    </list>
-
-    <list name="showkeywords">
       <item>angles</item>
       <item>arrow</item>
       <item>bar</item>
       <item>border</item>
       <item>boxwidth</item>
+      <item>clabel</item>
       <item>clip</item>
       <item>cntrparam</item>
       <item>data</item>
@@ -67,6 +63,7 @@
       <item>format</item>
       <item>function</item>
       <item>functions</item>
+      <item>grid</item>
       <item>hidden3d</item>
       <item>isosamples</item>
       <item>label</item>
@@ -83,6 +80,7 @@
       <item>parametric</item>
       <item>pointsize</item>
       <item>polar</item>
+      <item>rrange</item>
       <item>samples</item>
       <item>size</item>
       <item>surface</item>
@@ -91,58 +89,57 @@
       <item>ticslevel</item>
       <item>timefmt</item>
       <item>timestamp</item>
+      <item>title</item>
+      <item>trange</item>
+      <item>urange</item>
       <item>variables</item>
       <item>version</item>
       <item>view</item>
+      <item>vrange</item>
       <item>x2data</item>
       <item>x2dtics</item>
       <item>x2label</item>
       <item>x2mtics</item>
+      <item>x2range</item>
       <item>x2tics</item>
       <item>x2zeroaxis</item>
       <item>xdata</item>
       <item>xdtics</item>
+      <item>xlabel</item>
       <item>xmtics</item>
+      <item>xrange</item>
       <item>xtics</item>
       <item>xzeroaxis</item>
       <item>y2data</item>
       <item>y2dtics</item>
+      <item>y2label</item>
       <item>y2mtics</item>
+      <item>y2range</item>
       <item>y2tics</item>
       <item>y2zeroaxis</item>
       <item>ydata</item>
       <item>ydtics</item>
+      <item>ylabel</item>
       <item>ymtics</item>
+      <item>yrange</item>
       <item>ytics</item>
       <item>yzeroaxis</item>
       <item>zdata</item>
       <item>zdtics</item>
       <item>zero</item>
       <item>zeroaxis</item>
-      <item>zmtics</item>
-      <item>ztics</item>
-    </list>
-
-    <list name="set_label_keywords">
-      <item>clabel</item>
-      <item>title</item>
-      <item>xlabel</item>
-      <item>x2label</item>
-      <item>ylabel</item>
-      <item>y2label</item>
       <item>zlabel</item>
-    </list>
-
-    <list name="set_range_keywords">
-      <item>rrange</item>
-      <item>trange</item>
-      <item>urange</item>
-      <item>vrange</item>
-      <item>x2range</item>
-      <item>xrange</item>
-      <item>y2range</item>
-      <item>yrange</item>
+      <item>zmtics</item>
       <item>zrange</item>
+      <item>ztics</item>
+
+      <item>from</item>
+      <item>at</item>
+      <item>to</item>
+      <item>enhanced</item>
+      <item>font</item>
+      <item>offset</item>
+      <item>tc</item>
     </list>
 
     <list name="set_contour_keywords">
@@ -160,8 +157,13 @@
       <item>below</item>
       <item>Left</item>
       <item>Right</item>
+      <item>nobox</item>
       <item>noreverse</item>
       <item>reverse</item>
+      <item>samplen</item>
+      <item>spacing</item>
+      <item>title</item>
+      <item>with</item>
     </list>
 
     <list name="set_scale_keywords">
@@ -216,6 +218,7 @@
       <item>tek40xx</item>
       <item>tek410x</item>
       <item>texdraw</item>
+      <item>tpic</item>
       <item>uniplex</item>
       <item>unixplot</item>
       <item>vttek</item>
@@ -255,6 +258,7 @@
     <list name="set_terminal_png_keywords">
       <item>transparent</item>
       <item>notransparent</item>
+      <include>set_terminal_pbm_keywords</include>
     </list>
 
     <list name="set_terminal_pbm_keywords">
@@ -358,533 +362,787 @@
       <item>x2y2</item>
     </list>
 
-    <list name="splot_style_keywords">
-      <item>lines</item>
-      <item>l</item>
-      <item>points</item>
-      <item>p</item>
-      <item>linespoints</item>
-      <item>linesp</item>
-      <item>impulses</item>
-      <item>i</item>
-      <item>dots</item>
+    <list name="plot_style_keywords">
+      <!-- plot style -->
+      <item>arrows</item>
+      <item>boxerrorbars</item>
+      <item>boxes</item>
+      <item>boxplot</item>
+      <item>boxxyerror</item>
+      <item>boxxyerrorbars</item>
+      <item>candlesticks</item>
+      <item>circles</item>
       <item>d</item>
-      <item>steps</item>
+      <item>dots</item>
+      <item>ellipses</item>
+      <item>errorbars</item>
+      <item>filledcurves</item>
+      <item>fillsteps</item>
+      <item>financebars</item>
       <item>fsteps</item>
       <item>histeps</item>
-    </list>
-
-    <list name="plot_style_keywords">
-      <item>errorbars</item>
-      <item>xerrorbars</item>
-      <item>yerrorbars</item>
-      <item>xyerrorbars</item>
-      <item>boxes</item>
-      <item>boxerrorbars</item>
-      <item>boxxyerrorbars</item>
-      <item>financebars</item>
-      <item>candlesticks</item>
+      <item>histograms rgbalpha</item>
+      <item>image</item>
+      <item>i</item>
+      <item>impulses</item>
+      <item>isosurface</item>
+      <item>labels</item>
+      <item>l</item>
+      <item>lines</item>
+      <item>lp</item>
+      <item>linesp</item>
+      <item>linespoints</item>
+      <item>parallelaxes</item>
+      <item>pm3d</item>
+      <item>p</item>
+      <item>points</item>
+      <item>polygons</item>
+      <item>rgbimage</item>
+      <item>steps</item>
+      <item>surface</item>
+      <item>table</item>
       <item>vector</item>
+      <item>vectors</item>
+      <item>xerrorbar</item>
+      <item>xerrorbars</item>
+      <item>xerrorlines</item>
+      <item>xyerrorbars</item>
+      <item>xyerrorlines</item>
+      <item>yerrorbar</item>
+      <item>yerrorbars</item>
+      <item>yerrorlines</item>
+      <item>zerrorfill</item>
+
+      <item>as</item>
+      <item>fc</item>
+      <item>ft</item>
+
+      <include>plot_astyle_keywords</include>
     </list>
 
     <list name="plot_astyle_keywords">
-      <item>linestyle</item>
+      <item>lc</item>
+      <item>linecolor</item>
       <item>ls</item>
-      <item>linetype</item>
+      <item>linestyle</item>
       <item>lt</item>
-      <item>linewidth</item>
+      <item>linetype</item>
       <item>lw</item>
-      <item>pointtype</item>
+      <item>linewidth</item>
       <item>pt</item>
-      <item>pointsize</item>
+      <item>pointtype</item>
       <item>ps</item>
+      <item>pointsize</item>
     </list>
 
-    <list name="simple_commands">
-      <item>replot</item>
-      <item>exit</item>
-      <item>quit</item>
+    <list name="commands">
+      <item>call</item>
+      <item>cd</item>
       <item>clear</item>
+      <item>do</item>
+      <item>eval</item>
+      <item>fit</item>
+      <item>help</item>
+      <item>hist</item>
+      <item>history</item>
+      <item>import</item>
+      <item>load</item>
+      <item>lower</item>
+      <item>pause</item>
+      <item>plot</item>
+      <item>print</item>
+      <item>printerr</item>
+      <item>pwd</item>
+      <item>raise</item>
+      <item>refresh</item>
+      <item>replot</item>
+      <item>reread</item>
       <item>reset</item>
+      <item>save</item>
+      <item>set</item>
+      <item>shell</item>
+      <item>show</item>
+      <item>splot</item>
+      <item>stats</item>
+      <item>system</item>
+      <item>test</item>
+      <item>toggle</item>
+      <item>undefine</item>
+      <item>unset</item>
+      <item>vclear</item>
+      <item>vfill</item>
+    </list>
+
+    <list name="set_unset_options">
+      <item>angles</item>
+      <item>arrow</item>
+      <item>border</item>
+      <item>boxwidth</item>
+      <item>clip</item>
+      <item>cntrlabel</item>
+      <item>cntrparam</item>
+      <item>color</item>
+      <item>colorbox</item>
+      <item>colorsequence</item>
+      <item>contour</item>
+      <item>dashtype</item>
+      <item>linetype</item>
+      <item>datafile</item>
+      <item>decimal</item>
+      <item>decimalsign</item>
+      <item>dgrid3d</item>
+      <item>dummy</item>
+      <item>encoding</item>
+      <item>bars</item>
+      <item>errorbars</item>
+      <item>fit</item>
+      <item>fontpath</item>
+      <item>format</item>
+      <item>grid</item>
+      <item>hidden3d</item>
+      <item>history</item>
+      <item>isosamples</item>
+      <item>samples</item>
+      <item>jitter</item>
+      <item>key</item>
+      <item>label</item>
+      <item>link</item>
+      <item>linecolor</item>
+      <item>linestyle</item>
+      <item>linewidth</item>
+      <item>loadpath</item>
+      <item>locale</item>
+      <item>logscale</item>
+      <item>mapping</item>
+      <item>lmargin</item>
+      <item>rmargin</item>
+      <item>tmargin</item>
+      <item>bmargin</item>
+      <item>margins</item>
+      <item>micro</item>
+      <item>minus</item>
+      <item>minussign</item>
+      <item>mono</item>
+      <item>monochrome</item>
+      <item>mouse</item>
+      <item>multiplot</item>
+      <item>nonlinear</item>
+      <item>object</item>
+      <item>offsets</item>
+      <item>origin</item>
+      <item>output</item>
+      <item>parametric</item>
+      <item>raxis</item>
+      <item>paxis</item>
+      <item>pm3d</item>
+      <item>palette</item>
+      <item>pointintervalbox</item>
+      <item>pointsize</item>
+      <item>polar</item>
+      <item>print</item>
+      <item>psdir</item>
+      <item>size</item>
+      <item>style</item>
+      <item>surface</item>
+      <item>table</item>
+      <item>term</item>
+      <item>terminal</item>
+      <item>termoption</item>
+      <item>theta</item>
+      <item>tics</item>
+      <item>timestamp</item>
+      <item>timefmt</item>
+      <item>title</item>
+      <item>view</item>
+      <item>xyplane</item>
+      <item>zero</item>
+      <item>xtics</item>
+      <item>x2tics</item>
+      <item>ytics</item>
+      <item>y2tics</item>
+      <item>ztics</item>
+      <item>cbtics</item>
+      <item>rtics</item>
+      <item>ttics</item>
+      <item>mxtics</item>
+      <item>mx2tics</item>
+      <item>mytics</item>
+      <item>my2tics</item>
+      <item>mztics</item>
+      <item>mcbtics</item>
+      <item>mrtics</item>
+      <item>mttics</item>
+      <item>noxtics</item>
+      <item>nox2tics</item>
+      <item>noytics</item>
+      <item>noy2tics</item>
+      <item>noztics</item>
+      <item>nocbtics</item>
+      <item>nortics</item>
+      <item>nottics</item>
+      <item>nomxtics</item>
+      <item>nomx2tics</item>
+      <item>nomytics</item>
+      <item>nomy2tics</item>
+      <item>nomztics</item>
+      <item>nomcbtics</item>
+      <item>nomrtics</item>
+      <item>nomttics</item>
+      <item>xdata</item>
+      <item>x2data</item>
+      <item>ydata</item>
+      <item>y2data</item>
+      <item>zdata</item>
+      <item>cbdata</item>
+      <item>xlabel</item>
+      <item>x2label</item>
+      <item>ylabel</item>
+      <item>y2label</item>
+      <item>zlabel</item>
+      <item>cblabel</item>
+      <item>rlabel</item>
+      <item>xdtics</item>
+      <item>x2dtics</item>
+      <item>ydtics</item>
+      <item>y2dtics</item>
+      <item>zdtics</item>
+      <item>cbdtics</item>
+      <item>xmtics</item>
+      <item>x2mtics</item>
+      <item>ymtics</item>
+      <item>y2mtics</item>
+      <item>zmtics</item>
+      <item>cbmtics</item>
+      <item>xrange</item>
+      <item>x2range</item>
+      <item>yrange</item>
+      <item>y2range</item>
+      <item>zrange</item>
+      <item>cbrange</item>
+      <item>rrange</item>
+      <item>trange</item>
+      <item>urange</item>
+      <item>vrange</item>
+      <item>zeroaxis</item>
+      <item>xzeroaxis</item>
+      <item>x2zeroaxis</item>
+      <item>yzeroaxis</item>
+      <item>y2zeroaxis</item>
+      <item>zzeroaxis</item>
+    </list>
+
+    <list name="set_unset_deprecated_options">
+      <item>clabel</item>
+      <item>data</item>
+      <item>function</item>
+      <item>historysize</item>
+      <item>macros</item>
+      <item>ticslevel</item>
+      <item>ticscale</item>
+      <item>style</item>
+    </list>
+
+    <list name="set_pm3d_deprecated_options">
+      <item>hidden3d</item>
+      <item>map</item>
+      <item>transparent</item>
+      <item>solid</item>
+      <include>set_unset_deprecated_options</include>
+    </list>
+
+    <list name="reset_options">
+      <item>bind</item>
+      <item>error</item>
+      <item>errorstate</item>
+      <item>session</item>
+    </list>
+
+    <list name="stats_options">
+      <item>matrix</item>
+      <item>name</item>
+      <item>nooutput</item>
+      <item>output</item>
+      <item>using</item>
+    </list>
+
+    <list name="control_flow">
+      <item>break</item>
+      <item>continue</item>
+      <item>exit</item>
+      <item>else</item>
+      <item>if</item>
+      <item>quit</item>
+      <item>while</item>
     </list>
 
     <contexts>
       <context attribute="Normal Text" name="default" lineEndContext="#stay">
-        <RegExpr attribute="Keyword" context="#stay" String="^#!\/.*" />
-        <StringDetect attribute="Keyword" context="show" String="show" />
-        <StringDetect attribute="Keyword" context="set" String="set" />
-        <StringDetect attribute="Keyword" context="plot" String="plot" />
-        <StringDetect attribute="Keyword" context="splot" String="splot" />
-        <StringDetect attribute="Keyword" context="pause" String="pause"/>
-        <keyword attribute="Keyword" context="#stay" String="simple_commands"/>
-        <StringDetect attribute="Keyword" context="pause_1" String="load"/>
-        <StringDetect attribute="Keyword" context="save" String="save"/>
-        <RegExpr attribute="Comment" context="comment" String="#" />
+        <WordDetect attribute="Keyword" context="plot" String="plot"/>
+        <WordDetect attribute="Keyword" context="plot" String="splot"/>
+        <WordDetect attribute="Keyword" context="set" String="set"/>
+        <WordDetect attribute="Keyword" context="unset" String="unset"/>
+        <WordDetect attribute="Keyword" context="show" String="show"/>
+        <WordDetect attribute="Keyword" context="reset" String="reset"/>
+        <WordDetect attribute="Keyword" context="stats" String="stats"/>
+        <keyword attribute="Keyword" context="Command" String="commands"/>
+        <keyword attribute="Control Flow" context="control_flow" String="control_flow"/>
+
+        <DetectChar attribute="Comment" context="comment" char="#"/>
+        <DetectChar attribute="Variable" context="datablock" char="$"/>
+        <DetectChar attribute="Keyword" context="BashOneLine##Bash" char="!"/>
+        <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="block"/>
+        <WordDetect attribute="Keyword" context="array" String="array"/>
+        <DetectSpaces attribute="Normal Text"/>
+        <RegExpr attribute="Function Declaration" context="FunctionDecl" String="\b[A-Za-z_]\w*(?=\s*\()"/>
+        <DetectIdentifier attribute="Variable Declaration" context="VariableDecl"/>
       </context>
 
-      <context attribute="Normal Text" name="pause" lineEndContext="#pop">
-        <Int attribute="Decimal" context="pause_1" />
-        <Detect2Chars attribute="Decimal" context="pause_1" char="-" char1="1" />
-      </context>
-      <context attribute="Normal Text" name="pause_1" lineEndContext="#pop">
-        <DetectChar attribute="Data Type" context="label_string1" char="'"/>
-        <DetectChar attribute="Data Type" context="label_string2" char="&quot;"/>
+      <context attribute="Normal Text" name="Command" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <IncludeRules context="FindExpression"/>
+        <DetectIdentifier attribute="Normal Text"/>
       </context>
 
-      <context attribute="Normal Text" name="save" lineEndContext="default">
-        <StringDetect attribute="Function" context="save1" String="functions"/>
-        <StringDetect attribute="Function" context="save1" String="var"/>
-        <StringDetect attribute="Function" context="save1" String="variables"/>
-        <StringDetect attribute="Function" context="save1" String="set"/>
-        <DetectChar attribute="Data Type" context="label_string1" char="'"/>
-        <DetectChar attribute="Data Type" context="label_string2" char="&quot;"/>
+      <context attribute="Normal Text" name="stats" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <IncludeRules context="FindExpression"/>
+        <keyword attribute="Option" context="#stay" String="stats_options"/>
+        <DetectIdentifier attribute="Normal Text"/>
       </context>
 
-      <context attribute="Normal Text" name="save1" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="label_string1" char="'"/>
-        <DetectChar attribute="Data Type" context="label_string2" char="&quot;"/>
+      <context attribute="Normal Text" name="control_flow" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <!-- assume else if -->
+        <WordDetect attribute="Control Flow" context="#stay" String="if"/>
+        <DetectChar attribute="Symbol" context="#pop!Command" char="{" beginRegion="block"/>
+        <DetectChar attribute="Symbol" context="condition" char="("/>
+      </context>
+      <context attribute="Normal Text" name="condition" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Symbol" context="#pop" char=")"/>
+        <DetectChar attribute="Symbol" context="condition" char="("/>
+        <IncludeRules context="FindExpression"/>
+        <DetectIdentifier attribute="Variable"/>
       </context>
 
-      <context attribute="Normal Text" name="show" lineEndContext="default">
-        <RegExpr attribute="Function" context="default" String="\b(data|function) style\b"/>
-        <keyword attribute="Function" context="default" String="showkeywords" />
-        <keyword attribute="Function" context="default" String="set_label_keywords" />
-        <keyword attribute="Function" context="default" String="set_simple_keywords" />
-        <keyword attribute="Function" context="default" String="set_range_keywords" />
-        <StringDetect attribute="Function" context="default" String="contour" />
-        <StringDetect attribute="Function" context="default" String="terminal" />
-        <StringDetect attribute="Function" context="default" String="term" />
-        <StringDetect attribute="Function" context="default" String="all" />
-        <StringDetect attribute="Function" context="default" String="autoscale" />
-        <StringDetect attribute="Function" context="default" String="logscale" />
-        <StringDetect attribute="Function" context="default" String="key" />
+      <context attribute="Normal Text" name="reset" lineEndContext="#pop" fallthroughContext="#pop!InvalidWord">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Comment" context="#pop!comment" char="#"/>
+        <keyword attribute="Keyword" context="#pop!InvalidWord" String="reset_options"/>
       </context>
 
-      <context attribute="Normal Text" name="set" lineEndContext="default">
-        <RegExpr attribute="Function" context="set_2" String="\b(data|function) style\b"/>
-        <keyword attribute="Function" context="set_2" String="showkeywords" />
-        <keyword attribute="Function" context="set_label" String="set_label_keywords" />
-        <keyword attribute="Function" context="set_range" String="set_range_keywords" />
-        <keyword attribute="Function" context="default" String="set_simple_keywords" />
-        <keyword attribute="Function" context="default" String="set_no_keywords" />
-        <keyword attribute="Function" context="set_autoscale" String="set_scale_keywords" />
-        <StringDetect attribute="Function" context="set_contour" String="contour" />
-        <StringDetect attribute="Function" context="set_terminal" String="terminal" />
-        <StringDetect attribute="Function" context="set_terminal" String="term" />
-        <StringDetect attribute="Function" context="set_logscale" String="logscale" />
-        <StringDetect attribute="Function" context="set_key" String="key" />
+      <context attribute="FloatFunc" name="plot" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <WordDetect attribute="Option" context="plot_axes" String="a"/>
+        <WordDetect attribute="Option" context="plot_axes" String="axes"/>
+        <WordDetect attribute="Option" context="plot_with" String="w"/>
+        <WordDetect attribute="Option" context="plot_with" String="with"/>
+        <WordDetect attribute="Option" context="#stay" String="t"/>
+        <WordDetect attribute="Option" context="#stay" String="title"/>
+        <WordDetect attribute="Option" context="#stay" String="index"/>
+        <WordDetect attribute="Option" context="#stay" String="u"/>
+        <WordDetect attribute="Option" context="#stay" String="using"/>
+        <WordDetect attribute="Option" context="plot_smooth" String="s"/>
+        <WordDetect attribute="Option" context="plot_smooth" String="smooth"/>
+        <WordDetect attribute="Option" context="#stay" String="notitle"/>
+        <keyword attribute="Option" context="#stay" String="plot_astyle_keywords"/>
+        <IncludeRules context="FindExpression"/>
+        <DetectIdentifier attribute="Normal Text"/>
+      </context>
+      <context attribute="Normal Text" name="plot_with" lineEndContext="#pop"  fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="plot_style_keywords"/>
+      </context>
+      <context attribute="Normal Text" name="plot_axes" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#pop" String="plot_axes_keywords"/>
+      </context>
+      <context attribute="Normal Text" name="plot_smooth" lineEndContext="#pop"  fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#pop" String="plot_smooth_keywords"/>
       </context>
 
-      <context attribute="Data Type" name="set_2" lineEndContext="default" />
-
-      <context attribute="Normal Text" name="set_label" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="label_string1" char="'"/>
-        <DetectChar attribute="Data Type" context="label_string2" char="&quot;"/>
-      </context>
-      <context attribute="Data Type" name="label_string1" lineEndContext="#stay">
-        <DetectChar attribute="Data Type" context="default" char="'"/>
-      </context>
-      <context attribute="Data Type" name="label_string2" lineEndContext="#stay">
-        <DetectChar attribute="Data Type" context="default" char="&quot;"/>
+      <context attribute="Normal Text" name="show" lineEndContext="#pop" fallthroughContext="#pop!InvalidWord">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Option" context="#pop!InvalidWord" String="set_unset_options"/>
+        <keyword attribute="Option" context="#pop!InvalidWord" String="set_scale_keywords"/>
+        <keyword attribute="Deprecated Option" context="#pop!InvalidWord" String="set_unset_deprecated_options"/>
+        <DetectIdentifier attribute="Normal Text" context="#pop!InvalidWord"/>
       </context>
 
-      <context attribute="Normal Text" name="set_range" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="set_range_1" char="["/>
-      </context>
-      <context attribute="Data Type" name="set_range_1" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="default" char="]"/>
-      </context>
-
-      <context attribute="Normal Text" name="set_key" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_key_keywords" />
-        <StringDetect attribute="Function" context="set_key_1" String="samplen" />
-        <StringDetect attribute="Function" context="set_key_2" String="spacing" />
-        <StringDetect attribute="Function" context="set_key_3" String="with" />
-        <StringDetect attribute="Function" context="set_key_4" String="title" />
-        <StringDetect attribute="Function" context="default" String="nobox" />
-        <StringDetect attribute="Function" context="set_key_5" String="box" />
-      </context>
-      <context attribute="Normal Text" name="set_key_1" lineEndContext="default">
-        <Int attribute="Data Type" context="set_key_11" />
-        <Float attribute="Data Type" context="set_key_11" />
-      </context>
-      <context attribute="Normal Text" name="set_key_11" lineEndContext="default">
-        <StringDetect attribute="Function" context="set_key_2" String="spacing" />
-        <StringDetect attribute="Function" context="set_key_3" String="with" />
-        <StringDetect attribute="Function" context="set_key_4" String="title" />
-        <StringDetect attribute="Function" context="default" String="nobox" />
-        <StringDetect attribute="Function" context="set_key_5" String="box" />
-      </context>
-      <context attribute="Normal Text" name="set_key_2" lineEndContext="default">
-        <Int attribute="Data Type" context="set_key_21" />
-        <Float attribute="Data Type" context="set_key_21" />
-      </context>
-      <context attribute="Normal Text" name="set_key_21" lineEndContext="default">
-        <StringDetect attribute="Function" context="set_key_3" String="with" />
-        <StringDetect attribute="Function" context="set_key_4" String="title" />
-        <StringDetect attribute="Function" context="default" String="nobox" />
-        <StringDetect attribute="Function" context="set_key_5" String="box" />
-      </context>
-      <context attribute="Normal Text" name="set_key_3" lineEndContext="default">
-        <Int attribute="Data Type" context="set_key_31" />
-        <Float attribute="Data Type" context="set_key_31" />
-      </context>
-      <context attribute="Normal Text" name="set_key_31" lineEndContext="default">
-        <StringDetect attribute="Function" context="set_key_4" String="title" />
-        <StringDetect attribute="Function" context="default" String="nobox" />
-        <StringDetect attribute="Function" context="set_key_5" String="box" />
-      </context>
-      <context attribute="Normal Text" name="set_key_4" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="set_key_41" char="&quot;"/>
-      </context>
-      <context attribute="Data Type" name="set_key_41" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="set_key_42" char="&quot;"/>
-      </context>
-      <context attribute="Data Type" name="set_key_42" lineEndContext="default">
-        <StringDetect attribute="Function" context="default" String="nobox" />
-        <StringDetect attribute="Function" context="set_key_5" String="box" />
-      </context>
-      <context attribute="Normal Text" name="set_key_5" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="plot_astyle_keywords" />
-        <Int attribute="Data Type" context="#stay" />
+      <context attribute="Normal Text" name="unset" lineEndContext="#pop" fallthroughContext="#pop!Command">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Option" context="#pop!Command" String="set_unset_options"/>
+        <keyword attribute="Deprecated Option" context="#pop!Command" String="set_unset_deprecated_options"/>
+        <DetectIdentifier attribute="Normal Text" context="#pop!Command"/>
       </context>
 
-      <context attribute="Normal Text" name="set_contour" lineEndContext="default">
-        <keyword attribute="Data Type" context="default" String="set_contour_keywords" />
+      <context attribute="Normal Text" name="set" lineEndContext="#pop" fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <WordDetect attribute="Option" context="#pop!set_pm3d" String="pm3d"/>
+        <WordDetect attribute="Option" context="#pop!set_contour" String="contour"/>
+        <WordDetect attribute="Option" context="#pop!set_terminal" String="terminal"/>
+        <WordDetect attribute="Option" context="#pop!set_logscale" String="logscale"/>
+        <WordDetect attribute="Option" context="#pop!set_terminal" String="term"/>
+        <WordDetect attribute="Option" context="#pop!set_key" String="key"/>
+        <keyword attribute="Option" context="#pop!set_2" String="set_unset_options"/>
+        <keyword attribute="Option" context="#pop!set_2" String="set_keywords"/>
+        <keyword attribute="Option" context="#pop!set_autoscale" String="set_scale_keywords"/>
+        <keyword attribute="Deprecated Option" context="#pop!set_2" String="set_unset_deprecated_options"/>
+        <DetectIdentifier attribute="Normal Text" context="#pop!set_2"/>
+      </context>
+      <context attribute="Normal Text" name="set_2" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <IncludeRules context="FindExpression"/>
+        <keyword attribute="Option" context="#stay" String="set_keywords"/>
+        <DetectIdentifier attribute="Normal Text"/>
+      </context>
+      <context attribute="Normal Text" name="set_pm3d" lineEndContext="#pop" fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <WordDetect attribute="Option" context="#pop!set_contour" String="contour"/>
+        <keyword attribute="Option" context="#pop!set_2" String="set_unset_options"/>
+        <keyword attribute="Option" context="#pop!set_autoscale" String="set_scale_keywords"/>
+        <keyword attribute="Deprecated Option" context="#pop!set_2" String="set_pm3d_deprecated_options"/>
       </context>
 
-      <context attribute="Normal Text" name="set_autoscale" lineEndContext="default">
+      <context attribute="Normal Text" name="set_contour" lineEndContext="#pop" fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#pop!set_2" String="set_contour_keywords"/>
+      </context>
+
+      <context attribute="Normal Text" name="set_autoscale" lineEndContext="#pop" fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
         <keyword attribute="Data Type" context="set_autoscale_1" String="set_scale_axes_keywords"/>
       </context>
-      <context attribute="Normal Text" name="set_autoscale_1" lineEndContext="default">
-        <StringDetect attribute="Data Type" context="default" String="min" />
-        <StringDetect attribute="Data Type" context="default" String="max" />
+      <context attribute="Normal Text" name="set_autoscale_1" lineEndContext="#pop#pop" fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <WordDetect attribute="Data Type" context="#pop!set_2" String="min"/>
+        <WordDetect attribute="Data Type" context="#pop!set_2" String="max"/>
       </context>
 
-      <context attribute="Normal Text" name="set_logscale" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_scale_axes_keywords"/>
-        <Int attribute="Data Type" context="default" />
-        <Float attribute="Data Type" context="default" />
+      <context attribute="Normal Text" name="set_terminal" lineEndContext="#pop" fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#pop!set_2" String="set_terminal_keywords"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_ps" String="postscript"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_ps" String="post"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_latex" String="latex"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_latex" String="emtex"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_pstex" String="pslatex"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_pstex" String="pstex"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_png" String="png"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_pbm" String="pbm"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_tgif" String="tgif"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_fig" String="fig"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_corel" String="corel"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_hpgl" String="hpgl"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_pcl5" String="pcl5"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_hpdj" String="hpdj"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_hpdj" String="hpljii"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_hp500c" String="hp500c"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_hppj" String="hppj"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_imagen" String="imagen"/>
+        <WordDetect attribute="Data Type" context="#pop!set_terminal_tkcanvas" String="tkcanvas"/>
       </context>
 
-      <context attribute="Normal Text" name="set_terminal" lineEndContext="default">
-        <keyword attribute="Data Type" context="default" String="set_terminal_keywords" />
-        <StringDetect attribute="Data Type" context="set_terminal_ps" String="postscript" />
-        <StringDetect attribute="Data Type" context="set_terminal_ps" String="post" />
-        <StringDetect attribute="Data Type" context="set_terminal_latex" String="latex" />
-        <StringDetect attribute="Data Type" context="set_terminal_latex" String="emtex" />
-        <StringDetect attribute="Data Type" context="set_terminal_pstex" String="pslatex" />
-        <StringDetect attribute="Data Type" context="set_terminal_pstex" String="pstex" />
-        <StringDetect attribute="Data Type" context="set_terminal_tpic" String="tpic" />
-        <StringDetect attribute="Data Type" context="set_terminal_png" String="png" />
-        <StringDetect attribute="Data Type" context="set_terminal_pbm" String="pbm" />
-        <StringDetect attribute="Data Type" context="set_terminal_tgif" String="tgif" />
-        <StringDetect attribute="Data Type" context="set_terminal_fig" String="fig" />
-        <StringDetect attribute="Data Type" context="set_terminal_corel" String="corel" />
-        <StringDetect attribute="Data Type" context="set_terminal_hpgl" String="hpgl" />
-        <StringDetect attribute="Data Type" context="set_terminal_pcl5" String="pcl5" />
-        <StringDetect attribute="Data Type" context="set_terminal_hpdj" String="hpdj" />
-        <StringDetect attribute="Data Type" context="set_terminal_hpdj" String="hpljii" />
-        <StringDetect attribute="Data Type" context="set_terminal_hp500c" String="hp500c" />
-        <StringDetect attribute="Data Type" context="set_terminal_hppj" String="hppj" />
-        <StringDetect attribute="Data Type" context="set_terminal_imagen" String="imagen" />
-        <StringDetect attribute="Data Type" context="set_terminal_tkcanvas" String="tkcanvas" />
+      <context attribute="Normal Text" name="set_terminal_ps" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_ps_keywords"/>
+        <Int attribute="Decimal" context="#pop!set_2"/>
+        <DetectChar attribute="String" context="#stay" char="&quot;"/>
       </context>
-
-      <context attribute="Normal Text" name="set_terminal_ps" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_ps_keywords" />
-        <Int attribute="Decimal" context="default" />
-        <DetectChar attribute="Data Type" context="set_terminal_ps_font" char="&quot;"/>
+      <context attribute="Normal Text" name="set_terminal_latex" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_latex_keywords"/>
+        <Int attribute="Decimal" context="#pop!set_2"/>
       </context>
-      <context attribute="Data Type" name="set_terminal_ps_font" lineEndContext="#stay">
-        <DetectChar attribute="Data Type" context="#pop" char="&quot;"/>
+      <context attribute="Normal Text" name="set_terminal_png" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_png_keywords"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_latex" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_latex_keywords" />
-        <Int attribute="Decimal" context="default" />
+      <context attribute="Normal Text" name="set_terminal_pbm" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_pbm_keywords"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_png" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_png_keywords" />
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_pbm_keywords" />
+      <context attribute="Normal Text" name="set_terminal_pstex" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_pstex_keywords"/>
+        <Int attribute="Decimal" context="#pop!set_2"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_pbm" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_pbm_keywords" />
+      <context attribute="Normal Text" name="set_terminal_tgif" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_tgif_keywords"/>
+        <Int attribute="Decimal" context="#pop!set_2"/>
+        <DetectChar attribute="String" context="#stay" char="&quot;"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_pstex" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_pstex_keywords" />
-        <Int attribute="Decimal" context="default" />
+      <context attribute="Normal Text" name="set_terminal_fig" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_fig_keywords"/>
+        <Int attribute="Decimal" context="#stay"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_tgif" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_tgif_keywords" />
-        <Int attribute="Decimal" context="default" />
-        <DetectChar attribute="Data Type" context="set_terminal_ps_font" char="&quot;"/>
+      <context attribute="Normal Text" name="set_terminal_corel" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_corel_keywords"/>
+        <Float attribute="Decimal" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
+        <DetectChar attribute="String" context="#stay" char="&quot;"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_tpic" lineEndContext="default">
-        <Int attribute="Decimal" context="#stay" />
-        <Float attribute="Decimal" context="#stay" />
+      <context attribute="Normal Text" name="set_terminal_hpgl" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <WordDetect  attribute="Data Type" context="#pop!set_2" String="eject"/>
+        <Int attribute="Decimal" context="#stay"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_fig" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_fig_keywords" />
-        <Int attribute="Decimal" context="#stay" />
+      <context attribute="Normal Text" name="set_terminal_pcl5" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_pcl5_keywords"/>
+        <Int attribute="Decimal" context="#stay"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_corel" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_corel_keywords" />
-        <Int attribute="Decimal" context="#stay" />
-        <Float attribute="Decimal" context="#stay" />
-        <DetectChar attribute="Data Type" context="set_terminal_ps_font" char="&quot;"/>
+      <context attribute="Normal Text" name="set_terminal_hpdj" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_hpdj_keywords"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_hpgl" lineEndContext="default">
-        <StringDetect  attribute="Data Type" context="default" String="eject" />
-        <Int attribute="Decimal" context="#stay" />
+      <context attribute="Normal Text" name="set_terminal_hp500c" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_hpdj_keywords"/>
+        <WordDetect attribute="Data Type" context="#stay" String="color"/>
+        <WordDetect attribute="Data Type" context="#stay" String="compression"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_pcl5" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_pcl5_keywords" />
-        <Int attribute="Decimal" context="#stay" />
+      <context attribute="Normal Text" name="set_terminal_hppj" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#pop!set_2" String="set_terminal_hppj_keywords"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_hpdj" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_hpdj_keywords" />
-      </context>
-      <context attribute="Normal Text" name="set_terminal_hp500c" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_hpdj_keywords" />
-        <StringDetect  attribute="Data Type" context="#stay" String="color" />
-        <StringDetect  attribute="Data Type" context="#stay" String="compression" />
-      </context>
-      <context attribute="Normal Text" name="set_terminal_hppj" lineEndContext="default">
-        <keyword attribute="Data Type" context="default" String="set_terminal_hppj_keywords" />
-      </context>
-      <context attribute="Normal Text" name="set_terminal_imagen" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="set_terminal_imagen_keywords" />
-        <Int attribute="Decimal" context="#stay" />
+      <context attribute="Normal Text" name="set_terminal_imagen" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_terminal_imagen_keywords"/>
+        <Int attribute="Decimal" context="#stay"/>
         <DetectChar attribute="Decimal" context="#stay" char="["/>
-        <DetectChar attribute="Decimal" context="default" char="]"/>
+        <DetectChar attribute="Decimal" context="#pop!set_2" char="]"/>
       </context>
-      <context attribute="Normal Text" name="set_terminal_tkcanvas" lineEndContext="default">
-        <StringDetect  attribute="Data Type" context="#stay" String="perltk" />
-        <StringDetect  attribute="Data Type" context="#stay" String="interactive" />
+      <context attribute="Normal Text" name="set_terminal_tkcanvas" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <WordDetect  attribute="Data Type" context="#stay" String="perltk"/>
+        <WordDetect  attribute="Data Type" context="#stay" String="interactive"/>
       </context>
 
-      <context attribute="FloatFunc" name="plot" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="plot_range" char="["/>
-        <DetectChar attribute="String" context="plot_string1" char="'"/>
-        <DetectChar attribute="String" context="plot_string2" char="&quot;"/>
-        <StringDetect attribute="Function" context="plot_axes" String="axes"/>
-        <StringDetect attribute="Function" context="plot_axes" String=" a "/>
-        <StringDetect attribute="Function" context="plot_title" String="title"/>
-        <StringDetect attribute="Function" context="plot_title" String=" t "/>
-        <StringDetect attribute="Function" context="plot_label_end" String="notitle"/>
-        <StringDetect attribute="Function" context="plot_with" String="with"/>
-        <StringDetect attribute="Function" context="plot_with" String=" w \"/>
+      <context attribute="Normal Text" name="set_logscale" lineEndContext="#pop"  fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_scale_axes_keywords"/>
+        <Float attribute="Data Type" context="#pop!set_2"/>
+        <Int attribute="Data Type" context="#pop!set_2"/>
+      </context>
+
+      <context attribute="Normal Text" name="set_key" lineEndContext="#pop" fallthroughContext="#pop!set_2">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="set_key_keywords"/>
+        <keyword attribute="Data Type" context="#stay" String="set_unset_options"/>
+        <WordDetect attribute="Data Type" context="#pop!set_key_box" String="box"/>
+      </context>
+      <context attribute="Normal Text" name="set_key_box" lineEndContext="#pop"  fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="plot_astyle_keywords"/>
+        <Int attribute="Data Type" context="#stay"/>
+      </context>
+
+      <context attribute="Normal Text" name="InvalidWord" lineEndContext="#pop" fallthroughContext="#pop!Error">
+        <DetectSpaces attribute="Normal Text"/>
+      </context>
+      <context attribute="Error" name="Error" lineEndContext="#pop">
+      </context>
+
+      <context attribute="Normal Text" name="FunctionDecl" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Symbol" context="#pop!FunctionParameters" char="("/>
+      </context>
+      <context attribute="Normal Text" name="FunctionParameters" lineEndContext="#pop" fallthroughContext="#pop!FunctionBody">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectIdentifier attribute="Variable Declaration"/>
+        <DetectChar attribute="Symbol" context="#stay" char=","/>
+        <DetectChar attribute="Symbol" context="#pop!FunctionStartBody" char=")"/>
+      </context>
+      <context attribute="Normal Text" name="FunctionStartBody" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Operator" context="#pop!FunctionBody" char="="/>
+      </context>
+      <context attribute="Normal Text" name="FunctionBody" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <IncludeRules context="FindExpression"/>
+        <DetectIdentifier attribute="Variable"/>
+      </context>
+
+      <context attribute="Normal Text" name="array" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectIdentifier attribute="Variable Declaration" context="#pop!VariableDecl"/>
+      </context>
+
+      <context attribute="Normal Text" name="VariableDecl" lineEndContext="#pop" fallthroughContext="#pop!Command">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Data Type" context="BracketExpression" char="["/>
+        <DetectChar attribute="Operator" context="#pop!FunctionBody" char="="/>
+      </context>
+
+      <context attribute="Normal Text" name="FindExpression" lineEndContext="#pop">
+        <IncludeRules context="FindNumber"/>
+        <AnyChar attribute="Operator" context="#stay" String="&amp;|&lt;&gt;^=!+-~*/%."/>
         <DetectChar attribute="Keyword" context="#stay" char=","/>
+        <DetectChar attribute="Data Type" context="#stay" char=":"/>
+        <DetectChar attribute="Data Type" context="BracketExpression" char="["/>
+        <DetectChar attribute="Error" context="#stay" char="]"/>
+        <DetectChar attribute="Comment" context="#pop!comment" char="#"/>
+        <IncludeRules context="FindString"/>
+        <IncludeRules context="FindInterpolatedString"/>
+        <IncludeRules context="FindSpecialVariable"/>
+        <LineContinue attribute="Symbol"/>
+        <AnyChar attribute="Symbol" context="#stay" String="?()"/>
+        <WordDetect attribute="Control Flow" context="For" String="for"/>
+        <WordDetect attribute="Operator" context="#stay" String="eq"/>
+        <WordDetect attribute="Operator" context="#stay" String="ne"/>
+        <DetectChar attribute="Symbol" context="#pop" char="{" beginRegion="block"/>
+        <DetectChar attribute="Symbol" context="#pop" char="}" endRegion="block"/>
+        <DetectChar attribute="Symbol" context="#pop" char=";"/>
+        <IncludeRules context="FindBuiltinVariable"/>
+        <IncludeRules context="FindFunctionCall"/>
       </context>
-      <context attribute="Data Type" name="plot_range" lineEndContext="default">
+      <context attribute="Normal Text" name="BracketExpression" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
         <DetectChar attribute="Data Type" context="#pop" char="]"/>
+        <AnyChar attribute="Error" context="#stay" String="{};"/>
+        <IncludeRules context="FindExpression"/>
+        <DetectIdentifier attribute="Variable"/>
       </context>
 
-      <context attribute="String" name="plot_string1" lineEndContext="default">
-        <DetectChar attribute="String" context="plot_string_end" char="'"/>
+      <context attribute="Normal Text" name="For" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Data Type" context="#pop!ForVar" char="["/>
+        <LineContinue attribute="Symbol"/>
       </context>
-      <context attribute="String" name="plot_string2" lineEndContext="default">
-        <DetectChar attribute="String" context="plot_string_end" char="&quot;"/>
+      <context attribute="Normal Text" name="ForVar" lineEndContext="#pop" fallthroughContext="#pop!BracketExpression">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectIdentifier attribute="Variable Declaration" context="#pop!ForIn"/>
+        <LineContinue attribute="Symbol"/>
       </context>
-      <context attribute="String" name="plot_string_end" lineEndContext="default">
-        <StringDetect attribute="Function" context="plot_index" String="index"/>
-        <StringDetect attribute="Function" context="plot_using" String="using"/>
-        <StringDetect attribute="Function" context="plot_using" String=" u "/>
-        <StringDetect attribute="Function" context="plot_smooth" String="smooth"/>
-        <StringDetect attribute="Function" context="plot_smooth" String=" s "/>
-        <StringDetect attribute="Function" context="plot_axes" String="axes"/>
-        <StringDetect attribute="Function" context="plot_axes" String=" a "/>
-        <StringDetect attribute="Function" context="plot_title" String="title"/>
-        <StringDetect attribute="Function" context="plot_title" String=" t "/>
-        <StringDetect attribute="Function" context="plot_label_end" String="notitle"/>
-        <StringDetect attribute="Function" context="plot_with" String="with"/>
-        <StringDetect attribute="Function" context="plot_with" String=" w "/>
-        <DetectChar attribute="Keyword" context="plot" char=","/>
+      <context attribute="Normal Text" name="ForIn" lineEndContext="#pop" fallthroughContext="#pop!BracketExpression">
+        <DetectSpaces attribute="Normal Text"/>
+        <WordDetect attribute="Data Type" context="#pop!BracketExpression" String="in"/>
+        <LineContinue attribute="Symbol"/>
       </context>
 
-      <context attribute="Normal Text" name="plot_using" lineEndContext="default">
-        <Int attribute="Data Type" context="#stay" />
-        <DetectChar attribute="Data Type" context="#stay" char=":"/>
-        <StringDetect attribute="Function" context="plot_index" String="index"/>
-        <StringDetect attribute="Function" context="plot_smooth" String="smooth"/>
-        <StringDetect attribute="Function" context="plot_smooth" String=" s "/>
-        <StringDetect attribute="Function" context="plot_axes" String="axes"/>
-        <StringDetect attribute="Function" context="plot_axes" String=" a "/>
-        <StringDetect attribute="Function" context="plot_title" String="title"/>
-        <StringDetect attribute="Function" context="plot_title" String=" t "/>
-        <StringDetect attribute="Function" context="plot_label_end" String="notitle"/>
-        <StringDetect attribute="Function" context="plot_with" String="with"/>
-        <StringDetect attribute="Function" context="plot_with" String=" w "/>
-        <DetectChar attribute="Keyword" context="plot" char=","/>
+      <context attribute="Normal Text" name="datablock" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectIdentifier attribute="Variable" context="#pop!StartDataBlock"/>
+      </context>
+      <context attribute="Normal Text" name="StartDataBlock" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <Detect2Chars attribute="Symbol" char="&lt;" char1="&lt;" context="#pop!DataBlockTag"/>
+      </context>
+      <context attribute="Normal Text" name="DataBlockTag" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <RegExpr attribute="Heredoc" context="DataBlock" String="([A-Za-z_]\w*)"/>
+      </context>
+      <context attribute="Normal Text" name="DataBlock" lineEndContext="#stay">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Comment" context="comment" char="#"/>
+        <DetectChar attribute="String" context="DoubleQuotedString" char="&quot;"/>
+        <IncludeRules context="FindNumber"/>
+        <RegExpr attribute="Heredoc" context="#pop#pop" String="^%1\s*$" dynamic="1" column="0"/>
+        <DetectIdentifier attribute="Normal Text"/>
       </context>
 
-      <context attribute="Normal Text" name="plot_index" lineEndContext="default">
-        <Int attribute="Data Type" context="#stay" />
-        <DetectChar attribute="Data Type" context="#stay" char=":"/>
-        <StringDetect attribute="Function" context="plot_using" String="using"/>
-        <StringDetect attribute="Function" context="plot_smooth" String="smooth"/>
-        <StringDetect attribute="Function" context="plot_smooth" String=" s "/>
-        <StringDetect attribute="Function" context="plot_axes" String="axes"/>
-        <StringDetect attribute="Function" context="plot_axes" String=" a "/>
-        <StringDetect attribute="Function" context="plot_title" String="title"/>
-        <StringDetect attribute="Function" context="plot_title" String=" t "/>
-        <StringDetect attribute="Function" context="plot_label_end" String="notitle"/>
-        <StringDetect attribute="Function" context="plot_with" String="with"/>
-        <StringDetect attribute="Function" context="plot_with" String=" w "/>
-        <DetectChar attribute="Keyword" context="plot" char=","/>
+      <context attribute="String" name="DoubleQuotedString" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <DetectChar context="EscapedChar" char="\" lookAhead="1"/>
+        <IncludeRules context="FindInterpolatedString"/>
+        <RegExpr attribute="String" context="#stay" String="[^&quot;\\`]+"/>
+      </context>
+      <context attribute="Normal Text" name="EscapedChar" lineEndContext="#pop">
+        <LineContinue attribute="Symbol" context="#pop"/>
+        <RegExpr attribute="Escaped Char" context="#pop" String="\\U\+[0-9a-fA-F]{4,5}|\\[^U]|"/>
+        <RegExpr attribute="Error" context="#pop" String="\\U(\+[0-9a-fA-F]{0,3})?"/>
       </context>
 
-      <context attribute="Normal Text" name="plot_smooth" lineEndContext="default">
-        <keyword attribute="Data Type" context="plot_smooth_end" String="plot_smooth_keywords" />
-      </context>
-      <context attribute="Normal Text" name="plot_smooth_end" lineEndContext="default">
-        <StringDetect attribute="Function" context="plot_axes" String="axes"/>
-        <StringDetect attribute="Function" context="plot_axes" String=" a "/>
-        <StringDetect attribute="Function" context="plot_title" String="title"/>
-        <StringDetect attribute="Function" context="plot_title" String=" t "/>
-        <StringDetect attribute="Function" context="plot_label_end" String="notitle"/>
-        <StringDetect attribute="Function" context="plot_with" String="with"/>
-        <StringDetect attribute="Function" context="plot_with" String=" w "/>
-        <DetectChar attribute="Keyword" context="plot" char=","/>
+      <context attribute="String" name="SimpleQuotedString" lineEndContext="#pop">
+        <DetectChar attribute="String" context="#pop" char="'"/>
+        <LineContinue attribute="Symbol" context="#stay"/>
+        <RegExpr attribute="String" context="#stay" String="[^']+"/>
       </context>
 
-      <context attribute="Normal Text" name="plot_axes" lineEndContext="default">
-        <keyword attribute="Data Type" context="plot_axes_end" String="plot_axes_keywords" />
-      </context>
-      <context attribute="Normal Text" name="plot_axes_end" lineEndContext="default">
-        <StringDetect attribute="Function" context="plot_title" String="title"/>
-        <StringDetect attribute="Function" context="plot_title" String=" t "/>
-        <StringDetect attribute="Function" context="plot_label_end" String="notitle"/>
-        <StringDetect attribute="Function" context="plot_with" String="with"/>
-        <StringDetect attribute="Function" context="plot_with" String=" w "/>
-        <DetectChar attribute="Keyword" context="plot" char=","/>
+      <context attribute="String" name="FindString" lineEndContext="#pop">
+        <DetectChar attribute="String" context="DoubleQuotedString" char="&quot;"/>
+        <DetectChar attribute="String" context="SimpleQuotedString" char="'"/>
       </context>
 
-      <context attribute="Normal Text" name="plot_title" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="plot_label_string1" char="'"/>
-        <DetectChar attribute="Data Type" context="plot_label_string2" char="&quot;"/>
+      <context attribute="Decimal" name="FindNumber" lineEndContext="#pop">
+        <Float attribute="Decimal" context="DecimalSuffix"/>
+        <Int attribute="Decimal" context="DecimalSuffix"/>
       </context>
-      <context attribute="Data Type" name="plot_label_string1" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="plot_label_end" char="'"/>
-      </context>
-      <context attribute="Data Type" name="plot_label_string2" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="plot_label_end" char="&quot;"/>
-      </context>
-      <context attribute="Normal Text" name="plot_label_end" lineEndContext="default">
-        <StringDetect attribute="Function" context="plot_with" String="with"/>
-        <StringDetect attribute="Function" context="plot_with" String=" w "/>
-        <DetectChar attribute="Keyword" context="plot" char=","/>
+      <context attribute="Decimal" name="DecimalSuffix" lineEndContext="#pop" fallthroughContext="#pop">
+        <Detect2Chars attribute="Unit" context="#pop" char="i" char1="n"/>
+        <Detect2Chars attribute="Unit" context="#pop" char="c" char1="m"/>
+        <Detect2Chars attribute="Unit" context="#pop" char="p" char1="t"/>
       </context>
 
-      <context attribute="Normal Text" name="plot_with" lineEndContext="default">
-        <keyword attribute="Data Type" context="plot_with_1" String="plot_style_keywords" />
-        <keyword attribute="Data Type" context="plot_with_1" String="splot_style_keywords" />
+      <context attribute="Normal Text" name="FindInterpolatedString" lineEndContext="#pop">
+        <IncludeRules context="FindOneLineBackq##Bash"/>
       </context>
 
-      <context attribute="Normal Text" name="plot_with_1" lineEndContext="default">
-        <keyword attribute="Data Type" context="#stay" String="plot_astyle_keywords" />
-        <Int attribute="Data Type" context="#stay" />
-        <DetectChar attribute="Keyword" context="plot" char=","/>
+      <context attribute="Normal Text" name="FindSpecialVariable" lineEndContext="#pop">
+        <DetectChar attribute="Macro" context="macro" char="@"/>
+        <DetectChar attribute="Variable" context="variable" char="$"/>
+      </context>
+      <context attribute="Macro" name="macro" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectIdentifier attribute="Macro" context="#pop"/>
+      </context>
+      <context attribute="Macro" name="variable" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectIdentifier attribute="Variable" context="#pop"/>
+        <Int attribute="Variable" context="#pop"/>
       </context>
 
-      <context attribute="FloatFunc" name="splot" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="plot_range" char="["/>
-        <DetectChar attribute="String" context="splot_string1" char="'"/>
-        <DetectChar attribute="String" context="splot_string2" char="&quot;"/>
+      <context attribute="Normal Text" name="FindBuiltinVariable" lineEndContext="#pop">
+        <RegExpr attribute="Variable" context="#stay" String="\b(ARG[0-9C]|GPFUN_\w*|FIT_\w*|STATS_\w*|GPVAL_\w*|MOUSE_\w*|pi|NaN)\b"/>
       </context>
 
-      <context attribute="String" name="splot_string1" lineEndContext="default">
-        <DetectChar attribute="String" context="splot_string_end" char="'"/>
-      </context>
-      <context attribute="String" name="splot_string2" lineEndContext="default">
-        <DetectChar attribute="String" context="splot_string_end" char="&quot;"/>
-      </context>
-      <context attribute="String" name="splot_string_end" lineEndContext="default">
-        <StringDetect attribute="Function" context="#stay" String="binary"/>
-        <StringDetect attribute="Function" context="#stay" String="matrix"/>
-        <StringDetect attribute="Function" context="splot_index" String="index"/>
-        <StringDetect attribute="Function" context="splot_using" String="using"/>
-        <StringDetect attribute="Function" context="splot_title" String="title"/>
-        <StringDetect attribute="Function" context="splot_title" String=" t "/>
-        <StringDetect attribute="Function" context="splot_title_end" String="notitle"/>
-        <StringDetect attribute="Function" context="splot_with" String="with"/>
-        <StringDetect attribute="Function" context="splot_with" String=" w "/>
-        <DetectChar attribute="Keyword" context="splot" char=","/>
+      <context attribute="Normal Text" name="FindFunctionCall" lineEndContext="#pop">
+        <RegExpr attribute="Function" context="#stay" String="\b[A-Za-z_]\w*(?=\s*\()|\bsum(?=\s*\[)"/>
       </context>
 
-      <context attribute="Normal Text" name="splot_using" lineEndContext="default">
-        <Int attribute="Data Type" context="#stay" />
-        <DetectChar attribute="Data Type" context="#stay" char=":"/>
-        <StringDetect attribute="Function" context="splot_index" String="index"/>
-        <StringDetect attribute="Function" context="splot_title" String="title"/>
-        <StringDetect attribute="Function" context="splot_title" String=" t "/>
-        <StringDetect attribute="Function" context="splot_title_end" String="notitle"/>
-        <StringDetect attribute="Function" context="splot_with" String="with"/>
-        <StringDetect attribute="Function" context="splot_with" String=" w "/>
-        <DetectChar attribute="Keyword" context="splot" char=","/>
+      <context attribute="Comment" name="comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
       </context>
-
-      <context attribute="Normal Text" name="splot_index" lineEndContext="default">
-        <Int attribute="Data Type" context="#stay" />
-        <DetectChar attribute="Data Type" context="#stay" char=":"/>
-        <StringDetect attribute="Function" context="splot_using" String="using"/>
-        <StringDetect attribute="Function" context="splot_title" String="title"/>
-        <StringDetect attribute="Function" context="splot_title" String=" t "/>
-        <StringDetect attribute="Function" context="splot_title_end" String="notitle"/>
-        <StringDetect attribute="Function" context="splot_with" String="with"/>
-        <StringDetect attribute="Function" context="splot_with" String=" w "/>
-        <DetectChar attribute="Keyword" context="splot" char=","/>
-      </context>
-
-      <context attribute="Normal Text" name="splot_title" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="splot_label_string1" char="'"/>
-        <DetectChar attribute="Data Type" context="splot_label_string2" char="&quot;"/>
-      </context>
-      <context attribute="Data Type" name="splot_label_string1" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="splot_title_end" char="'"/>
-      </context>
-      <context attribute="Data Type" name="splot_label_string2" lineEndContext="default">
-        <DetectChar attribute="Data Type" context="splot_title_end" char="&quot;"/>
-      </context>
-      <context attribute="Normal Text" name="splot_title_end" lineEndContext="default">
-        <StringDetect attribute="Function" context="splot_with" String="with"/>
-        <StringDetect attribute="Function" context="splot_with" String=" w "/>
-        <DetectChar attribute="Keyword" context="splot" char=","/>
-      </context>
-
-      <context attribute="Normal Text" name="splot_with" lineEndContext="default">
-        <keyword attribute="Data Type" context="splot_with_1" String="splot_style_keywords" />
-      </context>
-
-      <context attribute="Normal Text" name="splot_with_1" lineEndContext="default">
-        <Int attribute="Data Type" context="#stay" />
-        <DetectChar attribute="Keyword" context="splot" char=","/>
-      </context>
-
-      <context attribute="Comment" name="comment" lineEndContext="#pop" />
 
     </contexts>
 
     <itemDatas>
-      <itemData name="Normal Text"               defStyleNum="dsNormal" />
-      <itemData name="Keyword"                   defStyleNum="dsKeyword" />
-      <itemData name="Function"                  defStyleNum="dsFunction" />
-      <itemData name="Data Type"                 defStyleNum="dsDataType" />
-      <itemData name="String"                    defStyleNum="dsBaseN" />
-      <itemData name="Decimal"                   defStyleNum="dsDecVal" />
-      <itemData name="FloatFunc"                 defStyleNum="dsFloat" />
-      <itemData name="Comment"                   defStyleNum="dsComment" />
+      <itemData name="Normal Text"          defStyleNum="dsNormal"/>
+      <itemData name="Keyword"              defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Function"             defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Function Declaration" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Data Type"            defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="String"               defStyleNum="dsBaseN"/>
+      <itemData name="Decimal"              defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="FloatFunc"            defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Comment"              defStyleNum="dsComment"/>
+      <itemData name="Macro"                defStyleNum="dsPreprocessor" spellChecking="false"/>
+      <itemData name="Variable"             defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Variable Declaration" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Control Flow"         defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Symbol"               defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Operator"             defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Option"               defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Deprecated Option"    defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Unit"                 defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="Error"                defStyleNum="dsError" spellChecking="false"/>
+      <itemData name="Escaped Char"         defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Heredoc"              defStyleNum="dsSpecialString" spellChecking="false"/>
     </itemDatas>
 
   </highlighting>
 
   <general>
     <comments>
-      <comment name="singleLine" start="#" />
+      <comment name="singleLine" start="#"/>
     </comments>
-    <keywords casesensitive="1" />
+    <keywords casesensitive="1"/>
   </general>
 
 </language>
 
-<!-- kate: replace-tabs: on; tab-width: 4; indent-width: 2; -->
+<!-- kate: replace-tabs on; tab-width 4; indent-width 2; -->

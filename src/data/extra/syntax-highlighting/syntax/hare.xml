@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+  <!ENTITY symbols ":!&#37;&amp;()+,-/.*&lt;=&gt;?[]|~^;">
+]>
+<language name="Hare" section="Sources"
+          version="2" kateversion="5.79"
+          indenter="cstyle"
+          extensions="*.ha"
+          priority="1"
+          author="Akseli Lahtinen (akselmo@akselmo.dev)"
+          license="MIT">
+
+  <highlighting>
+    <list name="controlflow">
+      <item>break</item>
+      <item>case</item>
+      <item>continue</item>
+      <item>else</item>
+      <item>for</item>
+      <item>if</item>
+      <item>return</item>
+      <item>switch</item>
+      <item>yield</item>
+    </list>
+
+    <list name="keywords">
+      <item>abort</item>
+      <item>align</item>
+      <item>alloc</item>
+      <item>append</item>
+      <item>as</item>
+      <item>assert</item>
+      <item>def</item>
+      <item>defer</item>
+      <item>delete</item>
+      <item>enum</item>
+      <item>export</item>
+      <item>false</item>
+      <item>free</item>
+      <item>insert</item>
+      <item>is</item>
+      <item>len</item>
+      <item>match</item>
+      <item>null</item>
+      <item>offset</item>
+      <item>true</item>
+      <item>vaarg</item>
+      <item>vaend</item>
+      <item>valist</item>
+      <item>vastart</item>
+    </list>
+
+    <list name="types">
+      <item>u16</item>
+      <item>u32</item>
+      <item>u64</item>
+      <item>u8</item>
+      <item>uint</item>
+      <item>uintptr</item>
+      <item>i16</item>
+      <item>i32</item>
+      <item>i64</item>
+      <item>i8</item>
+      <item>int</item>
+      <item>f32</item>
+      <item>f64</item>
+      <item>size</item>
+      <item>rune</item>
+      <item>union</item>
+      <item>type</item>
+      <item>void</item>
+      <item>done</item>
+      <item>str</item>
+      <item>bool</item>
+      <item>struct</item>
+      <item>static</item>
+    </list>
+
+    <list name="builtins">
+      <item>let</item>
+      <item>const</item>
+      <item>nullable</item>
+    </list>
+
+    <list name="function">
+      <item>fn</item>
+    </list>
+
+    <list name="import">
+      <item>use</item>
+    </list>
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+        <Detect2Chars attribute="Comment" char="/" char1="/" context="Comment"/>
+        <AnyChar attribute="String" context="String" String="&quot;&apos;"/>
+        <keyword attribute="Control Flow" context="#stay" String="controlflow" />
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Data Type" context="#stay" String="types" />
+        <keyword attribute="Built In" context="#stay" String="builtins" />
+        <RegExpr attribute="Attribute" context="#stay" String="@\w+"/>
+        <keyword attribute="Keyword" context="Function" String="function"/>
+
+        <RegExpr attribute="Float" context="#stay" String="(\b[0-9]+\\.[0-9]+([eE][+-]?[0-9]+)?(f32|f64)?\b)|(\b[0-9]+([eE][+-]?[0-9]+)?(f32|f64)\b)" />
+        <RegExpr attribute="Decimal" context="#stay" String="\b[0-9]+([eE][+-]?[0-9]+)?(i|u|z|i8|i16|i32|i64|u8|u16|u32|u64)?\b" />
+        <RegExpr attribute="BaseN" context="#stay" String="\b(0x[0-9a-fA-F]+|0o[0-7]+|0b[01]+)(i|u|z|i8|i16|i32|i64|u8|u16|u32|u64)?\b" />
+        <AnyChar attribute="Operator" context="#stay" String="&symbols;" />
+        <DetectChar attribute="Operator" context="#stay" char="{" beginRegion="Brace1" />
+        <DetectChar attribute="Operator" context="#stay" char="}" endRegion="Brace1" />
+        <keyword attribute="Use" context="#stay" String="import"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments" />
+      </context>
+
+
+      <context name="String" attribute="String" lineEndContext="#stay">
+          <AnyChar attribute="String" context="#pop" String="&quot;&apos;"/>
+      </context>
+
+      <context name="Function" attribute="Function" lineEndContext="#pop">
+        <RegExpr attribute="Function" context="#stay" String="\s\w{1,}"/>
+        <DetectChar attribute="Function" context="#pop" lookAhead="true" char="\"/>
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Data Type"    defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Built In"       defStyleNum="dsBuiltIn"/>
+      <itemData name="Attribute"       defStyleNum="dsAttribute"/>
+      <itemData name="Function"       defStyleNum="dsFunction"/>
+      <itemData name="Operator"       defStyleNum="dsOperator"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Decimal" defStyleNum="dsDecVal"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="BaseN" defStyleNum="dsBaseN"/>
+      <itemData name="Use" defStyleNum="dsImport"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" position="afterwhitespace" />
+    </comments>
+  </general>
+</language>

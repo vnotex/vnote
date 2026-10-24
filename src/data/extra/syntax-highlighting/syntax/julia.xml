@@ -27,32 +27,46 @@
   Author: Timothy E. Holy, Washington University in St. Louis
 -->
 
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
-  <!ENTITY int "[0-9]([0-9_]*[0-9])?">
-  <!ENTITY hex "[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?">
+  <!ENTITY int "[0-9]+(_[0-9]+)*">
+  <!ENTITY hex "[0-9a-fA-F]+(_[0-9a-fA-F]+)*">
+  <!ENTITY function_disallowed_chars "\s.,(){}\[\];:&#37;'&quot;&amp;$=/?\|^#@">
+  <!ENTITY function_disallowed_first_char "0-9!&function_disallowed_chars;">
+  <!ENTITY function_begin_boundary "(?:(?&lt;=[&function_disallowed_chars;!]|^)(?=[^&function_disallowed_first_char;]))">
 ]>
 
-<language name="Julia" section="Sources" version="7" kateversion="5.0" extensions="*.jl" casesensitive="1" priority="5" license="MIT">
+<language name="Julia" alternativeNames="JL" style="julia" indenter="julia" section="Sources" version="16" kateversion="5.62" extensions="*.jl" casesensitive="1" priority="5" license="MIT">
 
   <highlighting>
-    <list name="block_begin">
+    <list name="cflow_begin">
+      <item>for</item>
+      <item>while</item>
+      <item>if</item>
       <item>begin</item>
       <item>do</item>
-      <item>for</item>
-      <item>function</item>
-      <item>if</item>
-      <item>let</item>
-      <item>quote</item>
       <item>try</item>
-      <item>type</item>
-      <item>while</item>
     </list>
-    <list name="block_eb">
-      <item>catch</item>
-      <item>finally</item>
+    <list name="cflow_eb">
       <item>else</item>
       <item>elseif</item>
+      <item>catch</item>
+      <item>finally</item>
+    </list>
+    <list name="cflow">
+      <item>break</item>
+      <item>return</item>
+      <item>continue</item>
+    </list>
+    <list name="block_begin">
+      <item>function</item>
+      <item>let</item>
+      <item>quote</item>
+      <item>type</item>
+      <item>struct</item>
+      <item>module</item>
+      <item>baremodule</item>
+      <item>macro</item>
     </list>
     <list name="block_end">
       <item>end</item>
@@ -60,29 +74,23 @@
     <list name="keywords">
       <item>abstract</item>
       <item>bitstype</item>
-      <item>break</item>
-      <item>ccall</item>
       <item>const</item>
-      <item>continue</item>
       <item>export</item>
       <item>global</item>
-      <item>import</item>
       <item>in</item>
       <item>local</item>
       <item>macro</item>
       <item>module</item>
-      <item>return</item>
-      <item>typealias</item>
-      <item>importall</item>
-      <item>baremodule</item>
-      <item>using</item>
       <item>where</item>
       <item>new</item>
-      <item>in</item>
       <item>struct</item>
       <item>ans</item>
       <!-- C Interface -->
       <item>ccall</item>
+    </list>
+    <list name="import_keywords">
+      <item>import</item>
+      <item>using</item>
     </list>
     <list name="types">
       <item>AbstractArray</item>
@@ -104,8 +112,6 @@
       <item>Exception</item>
       <item>Expr</item>
       <item>Float</item>
-      <item>Float32</item>
-      <item>Float64</item>
       <item>Function</item>
       <item>ObjectIdDict</item>
       <item>Int</item>
@@ -122,7 +128,6 @@
       <item>None</item>
       <item>NTuple</item>
       <item>Number</item>
-      <item>Ptr</item>
       <item>Range</item>
       <item>Range1</item>
       <item>Ranges</item>
@@ -372,20 +377,18 @@
       <item>stdout</item>
       <item>stderr</item>
       <item>stdin</item>
-      <item>open</item>
-      <item>read</item>
-      <item>write</item>
-      <item>create</item>
-      <item>truncate</item>
-      <item>append</item>
       <item>ENDIAN_BOM</item>
       <!-- Numbers -->
       <item>im</item>
       <item>pi</item>
+      <item>&#960;</item>
       <item>e</item>
+      <item>&#8495;</item>
       <item>catalan</item>
       <item>eulergamma</item>
+      <item>&#611;</item>
       <item>golden</item>
+      <item>&#966;</item>
       <item>Inf</item>
       <item>Inf64</item>
       <item>Inf32</item>
@@ -415,7 +418,6 @@
       <item>InsertionSort</item>
       <item>MergeSort</item>
       <item>QuickSort</item>
-      <item>InsertionSort</item>
       <!-- Libc -->
       <item>MS_ASYNC</item>
       <item>MS_INVALIDATE</item>
@@ -432,7 +434,6 @@
       <item>Meta</item>
       <item>StackTraces</item>
       <item>Sys</item>
-      <item>Libc</item>
       <item>Docs</item>
       <item>Threads</item>
       <item>Iterators</item>
@@ -441,46 +442,78 @@
       <item>Math</item>
       <item>Unicode</item>
       <item>Sort</item>
+      <item>Artifacts</item>
       <item>Base64</item>
+      <item>CRC32c</item>
       <item>Dates</item>
+      <item>DelimitedFiles</item>
+      <item>Distributed</item>
+      <item>Downloads</item>
+      <item>FileWatching</item>
+      <item>Future</item>
+      <item>InteractiveUtils</item>
+      <item>LibGit2</item>
+      <item>Libc</item>
+      <item>Libdl</item>
+      <item>LinearAlgebra</item>
+      <item>Logging</item>
       <item>Mmap</item>
+      <item>Pkg</item>
+      <item>Printf</item>
+      <item>Profile</item>
+      <item>REPL</item>
       <item>Random</item>
+      <item>SHA</item>
+      <item>Serialization</item>
       <item>SharedArrays</item>
       <item>Sockets</item>
       <item>SparseArrays</item>
+      <item>Statistics</item>
+      <item>SuiteSparse</item>
+      <item>TOML</item>
+      <item>Test</item>
+      <item>UUIDs</item>
       <item>CoreLogging</item>
     </list>
     <contexts>
 
       <context name="_normal" attribute="Normal Text" lineEndContext="#stay">
-
         <DetectSpaces />
 
         <!-- Blocks -->
         <keyword context="#stay" attribute="Keyword" String="block_begin"
                  beginRegion="block" />
-        <keyword context="#stay" attribute="Keyword" String="block_eb"
-                 endRegion="block" beginRegion="block" />
-        <keyword context="#stay" attribute="Keyword" String="block_end"
-                 endRegion="block" />
-        <StringDetect String="#BEGIN" context="region_marker" attribute="FoldingComment" beginRegion="user_region" />
-        <StringDetect String="#END" context="region_marker" attribute="FoldingComment" endRegion="user_region" />
+        <keyword context="controlflow-block" attribute="Control Flow" String="cflow_begin"
+                 beginRegion="block" />
+        <keyword context="#stay" attribute="Control Flow" String="cflow"/>
+        <WordDetect context="#stay" attribute="Keyword" String="end"
+                    endRegion="block" />
 
-        <!-- Keywords, types, and comments -->
-        <RegExpr context="#stay" attribute="Keyword" String="\b(abstract|primitive)\s+type\b" />
-        <RegExpr context="#stay" attribute="Keyword" String="\bmutable\s+struct\b" />
+        <IncludeRules context="coderoot"/>
+      </context>
+
+      <context name="subsetting" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces attribute="Normal Text"/>
+        <WordDetect context="#stay" attribute="Keyword" String="end"/>
+        <IncludeRules context="coderoot"/>
+        <DetectChar attribute="Normal Text" context="#pop" char="]"/>
+      </context>
+
+      <context name="coderoot" attribute="Normal Text" lineEndContext="#stay">
+        <!-- functions have to be before built-in types to properly match constructors -->
+        <RegExpr context="#stay" attribute="Function" String="&function_begin_boundary;[^&function_disallowed_first_char;][^&function_disallowed_chars;]*!?(?=\.?\()" />
+        <RegExpr context="parametric-constructor" attribute="Function" String="&function_begin_boundary;[^&function_disallowed_first_char;][^&function_disallowed_chars;]*(?=\{.+\}.?\()" />
+
+        <IncludeRules context="comment-rules"/>
+
+        <!-- Keywords, types -->
+        <RegExpr context="#stay" attribute="Keyword" String="\b(abstract|primitive)\s+type\b|\bmutable\s+struct\b" beginRegion="block"/>
         <keyword context="#stay" attribute="Keyword" String="keywords" />
+        <keyword context="import" attribute="Import" String="import_keywords" />
         <keyword context="#stay" attribute="Data Type" String="types" />
         <keyword context="#stay" attribute="Boolean" String="booleans" />
         <keyword context="#stay" attribute="Constant" String="constants" />
         <keyword context="#stay" attribute="Module" String="modules" />
-        <Detect2Chars char="#" char1="=" context="block-comment" attribute="Comment" beginRegion="block-comment"/>
-        <DetectChar char="#" context="1-comment" attribute="Comment"/>
-
-        <!-- Lists and arrays -->
-        <!-- <DetectChar char="(" context="nested" beginRegion="nested" attribute="Delimiter" />
-        <DetectChar char="[" context="squared" beginRegion="squared" attribute="Delimiter" />
-        <DetectChar char="{" context="curly" beginRegion="curly" attribute="Delimiter" /> -->
 
         <!-- Strings -->
         <StringDetect attribute="String" context="Block-String" String="&quot;&quot;&quot;" beginRegion="block-string"/>
@@ -504,59 +537,32 @@
         <StringDetect attribute="Command String" context="Block-Backtick-String" String="```" beginRegion="block-string"/>
         <DetectChar attribute="Command String" context="Backtick-String" char="`"/>
 
-        <!-- Multi-character operators -->
-        <StringDetect context="#stay" attribute="Operator" String="..."/>
-        <Detect2Chars context="#stay" attribute="Operator" char=":" char1=":"/>
-        <StringDetect context="#stay" attribute="Operator" String="&gt;&gt;&gt;="/>
-        <StringDetect context="#stay" attribute="Operator" String="&gt;&gt;="/>
-        <StringDetect context="#stay" attribute="Operator" String="&lt;&lt;="/>
-        <StringDetect context="#stay" attribute="Operator" String="&gt;&gt;&gt;"/>
-        <Detect2Chars context="#stay" attribute="Operator" char="&gt;" char1="&gt;"/>
-        <Detect2Chars context="#stay" attribute="Operator" char="&lt;" char1="&lt;"/>
-        <Detect2Chars context="#stay" attribute="Operator" char="=" char1="="/>
-        <Detect2Chars context="#stay" attribute="Operator" char="!" char1="="/>
-        <Detect2Chars context="#stay" attribute="Operator" char="&lt;" char1="="/>
-        <Detect2Chars context="#stay" attribute="Operator" char="&gt;" char1="="/>
-        <Detect2Chars context="#stay" attribute="Operator" char="&amp;" char1="&amp;"/>
-        <Detect2Chars context="#stay" attribute="Operator" char="|" char1="|"/>
-        <Detect2Chars context="#stay" attribute="Operator" char="." char1="*"/>
-        <Detect2Chars context="#stay" attribute="Operator" char="." char1="^"/>
-        <Detect2Chars context="#stay" attribute="Operator" char="." char1="/"/>
-        <Detect2Chars context="#stay" attribute="Operator" char="." char1="'"/>
-        <Detect2Chars context="#stay" attribute="Operator" char="+" char1="="/>
-        <Detect2Chars context="#stay" attribute="Operator" char="-" char1="="/>
-        <Detect2Chars context="#stay" attribute="Operator" char="*" char1="="/>
-        <Detect2Chars context="#stay" attribute="Operator" char="/" char1="="/>
-        <Detect2Chars context="#stay" attribute="Operator" char="&amp;" char1="="/>
-        <Detect2Chars context="#stay" attribute="Operator" char="|" char1="="/>
-        <Detect2Chars context="#stay" attribute="Operator" char="$" char1="="/>
+        <!-- Subsetting. This is needed because the `end` keyword has a special meaning in subsetting operations and should not be used for folding -->
+        <DetectChar attribute="Normal Text" context="subsetting" char="["/>
 
-        <!-- Look-ahead for adjoint ' after variable, number literal, closing braces and .' -->
-        <RegExpr context="_adjoint" attribute="Variable" String="[a-zA-Z]\w*(?=')" />
-        <RegExpr context="_adjoint" attribute="Float" String="(&int;(\.&int;)?|\.&int;)([eEfF][+-]?\d+)?(im)?(?=')" />
-        <RegExpr context="_adjoint" attribute="Delimiter" String="[\)\]}](?=')" />
-        <RegExpr context="_adjoint" attribute="Operator" String="\.'(?=')" />
+        <Detect2Chars context="type-annotation" attribute="Operator" char=":" char1=":"/>
+
+        <!-- subtype operator -->
+        <Detect2Chars context="type-annotation" attribute="Operator" char="&lt;" char1=":"/>
+
+        <!-- Character operators
+        this was generated semi-automatically using operators in https://github.com/JuliaLang/julia/blob/master/src/julia-parser.scm -->
+        <RegExpr context="#stay" attribute="Operator" String="\.\.\.?|[:$]=?|\.?(?:&gt;&gt;&gt;=|&lt;--&gt;|//=|&lt;&lt;=|&gt;&gt;=|--&gt;|&lt;--|===|!==|&gt;&gt;&gt;|[-+*/\\^÷%|&amp;⊻]=|=&gt;|&amp;&amp;|\|\|?|&gt;=|&lt;=|==|!=|&lt;\||\|&gt;|\+\+|//|&lt;&lt;|&gt;&gt;|&lt;:|&gt;:|[\Q=≔⩴≕~←→↔↚↛↞↠↢↣↦↤↮⇎⇍⇏⇐⇒⇔⇴⇶⇷⇸⇹⇺⇻⇼⇽⇾⇿⟵⟶⟷⟹⟺⟻⟼⟽⟾⟿⤀⤁⤂⤃⤄⤅⤆⤇⤌⤍⤎⤏⤐⤑⤔⤕⤖⤗⤘⤝⤞⤟⤠⥄⥅⥆⥇⥈⥊⥋⥎⥐⥒⥓⥖⥗⥚⥛⥞⥟⥢⥤⥦⥧⥨⥩⥪⥫⥬⥭⥰⧴⬱⬰⬲⬳⬴⬵⬶⬷⬸⬹⬺⬻⬼⬽⬾⬿⭀⭁⭂⭃⭄⭇⭈⭉⭊⭋⭌￩￫⇜⇝↜↝↩↪↫↬↼↽⇀⇁⇄⇆⇇⇉⇋⇌⇚⇛⇠⇢↷↶↺↻&gt;&lt;≥≤≡≠≢∈∉∋∌⊆⊈⊂⊄⊊∝∊∍∥∦∷∺∻∽∾≁≃≂≄≅≆≇≈≉≊≋≌≍≎≐≑≒≓≖≗≘≙≚≛≜≝≞≟≣≦≧≨≩≪≫≬≭≮≯≰≱≲≳≴≵≶≷≸≹≺≻≼≽≾≿⊀⊁⊃⊅⊇⊉⊋⊏⊐⊑⊒⊜⊩⊬⊮⊰⊱⊲⊳⊴⊵⊶⊷⋍⋐⋑⋕⋖⋗⋘⋙⋚⋛⋜⋝⋞⋟⋠⋡⋢⋣⋤⋥⋦⋧⋨⋩⋪⋫⋬⋭⋲⋳⋴⋵⋶⋷⋸⋹⋺⋻⋼⋽⋾⋿⟈⟉⟒⦷⧀⧁⧡⧣⧤⧥⩦⩧⩪⩫⩬⩭⩮⩯⩰⩱⩲⩳⩵⩶⩷⩸⩹⩺⩻⩼⩽⩾⩿⪀⪁⪂⪃⪄⪅⪆⪇⪈⪉⪊⪋⪌⪍⪎⪏⪐⪑⪒⪓⪔⪕⪖⪗⪘⪙⪚⪛⪜⪝⪞⪟⪠⪡⪢⪣⪤⪥⪦⪧⪨⪩⪪⪫⪬⪭⪮⪯⪰⪱⪲⪳⪴⪵⪶⪷⪸⪹⪺⪻⪼⪽⪾⪿⫀⫁⫂⫃⫄⫅⫆⫇⫈⫉⫊⫋⫌⫍⫎⫏⫐⫑⫒⫓⫔⫕⫖⫗⫘⫙⫷⫸⫹⫺⊢⊣⟂⫪⫫…⁝⋮⋱⋰⋯+-−¦|⊕⊖⊞⊟∪∨⊔±∓∔∸≏⊎⊻⊽⋎⋓⧺⧻⨈⨢⨣⨤⨥⨦⨧⨨⨩⨪⨫⨬⨭⨮⨹⨺⩁⩂⩅⩊⩌⩏⩐⩒⩔⩖⩗⩛⩝⩡⩢⩣*/⌿÷%&amp;··⋅∘×\∩∧⊗⊘⊙⊚⊛⊠⊡⊓∗∙∤⅋≀⊼⋄⋆⋇⋉⋊⋋⋌⋏⋒⟑⦸⦼⦾⦿⧶⧷⨇⨰⨱⨲⨳⨴⨵⨶⨷⨸⨻⨼⨽⩀⩃⩄⩋⩍⩎⩑⩓⩕⩘⩚⩜⩞⩟⩠⫛⊍▷⨝⟕⟖⟗⨟^↑↓⇵⟰⟱⤈⤉⤊⤋⤒⤓⥉⥌⥍⥏⥑⥔⥕⥘⥙⥜⥝⥠⥡⥣⥥⥮⥯￪￬\E])" />
+
+        <!-- Identifiers, numbers -->
+        <!-- We can't use HlCHex, Int, and Float because we need to allow the "im" at the end of complex numbers -->
+        <DetectIdentifier context="_adjoint" attribute="Variable" />
+        <RegExpr context="_adjoint" attribute="Float" String="0x(&hex;\.?|(&hex;)?\.&hex;)[pP][+-]?[0-9]+(im)?"/>
+        <RegExpr context="_adjoint" attribute="Hex" String="0x&hex;(im)?" />
+        <RegExpr context="_adjoint" attribute="Octal" String="0o[0-7]+(_[0-7]+)*(im)?" />
+        <RegExpr context="_adjoint" attribute="Binary" String="0b[01]+(_[01]+)*(im)?" />
+        <RegExpr context="_adjoint" attribute="Float" String="(&int;(\.&int;)?|\.&int;)([eEfF][+-]?\d+)?(im)?" />
 
         <!-- If ' is not the adjoint operator, it starts a character or an unterminated char -->
         <RegExpr context="#stay" attribute="Char" String="'[^']*(''[^']*)*'(?=[^']|$)" />
         <RegExpr context="#stay" attribute="Incomplete Char" String="'[^']*(''[^']*)*" />
 
         <RegExpr context="#stay" attribute="Macro" String="@[a-zA-Z_]\w*" />
-        <RegExpr context="#stay" attribute="Function" String="\b[A-Za-z_]\w*(?=\!?\()" />
-
-        <!-- Identifiers, numbers and braces -->
-        <!-- We can't use HlCHex, Int, and Float because we need to allow the "im" at the end of complex numbers -->
-        <DetectIdentifier context="#stay" attribute="Variable" />
-        <RegExpr context="#stay" attribute="Float" String="0x(&hex;\.?|(&hex;)?\.&hex;)[pP][+-]?\d+(im)?"/>
-        <RegExpr context="#stay" attribute="Hex" String="0x&hex;(im)?" />
-        <RegExpr context="#stay" attribute="Octal" String="0o[0-7]([0-7_]*[0-7])?(im)?" />
-        <RegExpr context="#stay" attribute="Binary" String="0b[01]([01_]*[01])?(im)?" />
-        <RegExpr context="#stay" attribute="Float" String="(&int;(\.&int;)?|\.&int;)([eEfF][+-]?\d+)?(im)?" />
-        <AnyChar context="#stay" attribute="Delimiter" String="()[]{}"/>
-
-        <!-- Single-character operators -->
-        <AnyChar context="#stay" attribute="Operator" String="*+-/\&amp;|&lt;&gt;~$!^=,;:@"/>
-
       </context>
 
       <!-- Context for user block (#BEGIN...#END) -->
@@ -564,20 +570,9 @@
         <IncludeRules context="1-comment" />
       </context>
 
-      <!-- Contexts entered after beginning a list or array -->
-<!--      <context name="nested" attribute="Normal Text" lineEndContext="#stay">
-        <DetectChar char=")" context="#pop" endRegion="nested" attribute="Delimiter" />
-      </context>
-      <context name="squared" attribute="Normal Text" lineEndContext="#stay">
-        <DetectChar char="]" context="#pop" endRegion="squared" attribute="Delimiter" />
-      </context>
-      <context name="curly" attribute="Normal Text" lineEndContext="#stay">
-        <DetectChar char="}" context="#pop" endRegion="curly" attribute="Delimiter" />
-      </context>-->
-
-      <!-- Context entered after encountering an ' adjoint operator -->
-      <context name="_adjoint" attribute="Operator" lineEndContext="#pop">
-        <RegExpr context="#pop" attribute="Operator" String="'+" />
+      <!-- Context entered after encountering an identifier or a number -->
+      <context name="_adjoint" attribute="Operator" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectChar attribute="Operator" char="'" />
       </context>
 
       <!-- Context entered after encountering an " (string) -->
@@ -585,19 +580,20 @@
         <DetectSpaces />
         <LineContinue attribute="String" context="#stay"/>
         <HlCStringChar attribute="String Char" context="#stay"/>
+        <IncludeRules context="string-interpolation-rules"/>
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
       <context attribute="String" lineEndContext="#stay" name="Block-String">
         <DetectSpaces />
         <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;" endRegion="block-string"/>
+        <IncludeRules context="string-interpolation-rules"/>
         <HlCStringChar attribute="String Char" context="#stay"/>
       </context>
       <!-- Raw String -->
       <context attribute="String" lineEndContext="#pop" name="Raw-String">
         <DetectSpaces />
         <LineContinue attribute="String" context="#stay"/>
-        <RegExpr attribute="String Char" context="#stay" String="(\\\\)*\\&quot;"/>
-        <RegExpr attribute="String Char" context="#stay" String="(\\\\)+(?=&quot;)"/>
+        <RegExpr attribute="String Char" context="#stay" String="(\\\\)*\\&quot;|(\\\\)+(?=&quot;)"/>
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
       <context attribute="String" lineEndContext="#stay" name="Raw-Block-String">
@@ -651,20 +647,89 @@
         <AnyChar attribute="String Char" context="#stay" String="?+*." />
       </context>
 
+      <context name="string-interpolation-rules" lineEndContext="#stay" attribute="String">
+        <Detect2Chars context="#stay" attribute="String" char="\" char1="$"/>
+        <RegExpr context="string-interpolation" attribute="String Char" String="\$(?:\S)" lookAhead="true"/>
+      </context>
+      <context name="string-interpolation" lineEndContext="#stay" attribute="String">
+        <DetectChar attribute="String Char" char="$"/>
+        <DetectIdentifier attribute="Variable" context="#pop"/>
+        <DetectChar char="(" context="string-interpolation-extended" attribute="Normal Text"/>
+      </context>
+      <context name="string-interpolation-extended" lineEndContext="#stay" attribute="Normal Text">
+        <IncludeRules context="_normal"/>
+        <DetectChar char="(" context="string-interpolation-internal" attribute="Normal Text"/>
+        <DetectChar char=")" context="#pop#pop" attribute="Normal Text"/>
+      </context>
+      <context name="string-interpolation-internal" lineEndContext="#stay" attribute="Normal Text">
+        <IncludeRules context="_normal"/>
+        <DetectChar char="(" context="string-interpolation-internal" attribute="Normal Text"/>
+        <DetectChar char=")" context="#pop" attribute="Normal Text"/>
+      </context>
+
       <!-- 1-line comment: #pop@EOL  -->
       <context name="1-comment" lineEndContext="#pop" attribute="Comment">
-        <DetectSpaces />
-        <IncludeRules context="##Alerts" />
-        <IncludeRules context="##Modelines" />
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
       </context>
 
       <context name="block-comment" lineEndContext="#stay" attribute="Comment">
-        <DetectSpaces />
         <Detect2Chars char="=" char1="#" context="#pop" attribute="Comment" endRegion="block-comment"/>
-        <IncludeRules context="##Alerts" />
-        <IncludeRules context="##Modelines" />
+        <IncludeRules context="1-comment" />
+      </context>
+      <context name="controlflow-block" lineEndContext="#stay" attribute="Normal Text">
+        <keyword context="#stay" attribute="Control Flow" String="cflow_eb" endRegion="block" beginRegion="block" />
+        <WordDetect context="#pop" attribute="Control Flow" String="end" endRegion="block" />
+        <IncludeRules context="_normal" />
+      </context>
+      <context name="parametric-type" lineEndContext="#stay" attribute="Data Type">
+        <DetectChar char="{" context="parametric-type" attribute="Data Type"/>
+        <DetectChar char="}" context="#pop" attribute="Data Type"/>
+      </context>
+      <context name="parametric-constructor" lineEndContext="#stay" attribute="Data Type">
+        <DetectChar char="{" context="parametric-type" attribute="Data Type"/>
+        <AnyChar String=",;()=:&gt;&lt;&amp;%*?[]^" attribute="Normal Text" context="#pop"/>
       </context>
 
+      <!-- we have to allow spaces before the type, but switch to the parent context after the type -->
+      <context name="type-annotation-internal" lineEndContext="#pop#pop" attribute="Data Type">
+        <DetectChar char="{" context="parametric-type" attribute="Data Type"/>
+        <AnyChar String=",;()=:&gt;&lt;&amp;%*?[]^}" context="#pop#pop" attribute="Normal Text"/>
+        <DetectSpaces context="#pop#pop"/>
+      </context>
+      <context name="type-annotation" lineEndContext="#pop" attribute="Data Type">
+        <DetectIdentifier context="type-annotation-internal" attribute="Data Type"/>
+      </context>
+
+      <!-- rules for comments, to be used by other contexts -->
+      <context name="comment-rules" lineEndContext="#pop" attribute="Comment">
+        <StringDetect String="#BEGIN" context="region_marker" attribute="FoldingComment" beginRegion="user_region" />
+        <StringDetect String="#END" context="region_marker" attribute="FoldingComment" endRegion="user_region" />
+        <Detect2Chars char="#" char1="=" context="block-comment" attribute="Comment" beginRegion="block-comment"/>
+        <DetectChar char="#" context="1-comment" attribute="Comment"/>
+      </context>
+
+      <!-- context for imports -->
+      <context name="import" lineEndContext="#stay" lineEmptyContext="#stay" attribute="Normal Text">
+        <DetectSpaces attribute="Normal Text"/>
+        <IncludeRules context="comment-rules"/>
+        <RegExpr attribute="Module" context="import_list" String="[^:,\s]+"/>
+      </context>
+      <context name="import_list" lineEndContext="#pop#pop" attribute="Normal Text">
+        <DetectSpaces attribute="Normal Text"/>
+        <IncludeRules context="comment-rules"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=","/>
+        <DetectChar attribute="Normal Text" context="#pop!import_vars" char=":"/>
+      </context>
+      <context name="import_vars" lineEndContext="#stay" lineEmptyContext="#stay" attribute="Normal Text">
+        <DetectSpaces attribute="Normal Text"/>
+        <IncludeRules context="comment-rules"/>
+        <!-- we don't know if these are types, variables, or functions,
+        so no highlighting here -->
+        <RegExpr attribute="Normal Text" context="#stay" String="[^:,\s]+\s*(?=,)"/>
+        <RegExpr attribute="Normal Text" context="#pop#pop" String="[^:,\s]+\s*(?![,:])"/>
+      </context>
     </contexts>
 
     <itemDatas>
@@ -675,18 +740,19 @@
       <itemData name="Hex" defStyleNum="dsBaseN" />
       <itemData name="Octal" defStyleNum="dsBaseN" />
       <itemData name="Binary" defStyleNum="dsBaseN" />
-      <itemData name="Delimiter" defStyleNum="dsNormal" />
       <itemData name="String" defStyleNum="dsString"/>
       <itemData name="String Char" defStyleNum="dsSpecialChar"/>
       <itemData name="Char" defStyleNum="dsChar"/>
       <itemData name="Incomplete Char" defStyleNum="dsChar"/>
       <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Import" defStyleNum="dsImport"/>
+      <itemData name="Control Flow" defStyleNum="dsControlFlow" />
       <itemData name="Data Type" defStyleNum="dsDataType"/>
       <itemData name="Constant" defStyleNum="dsConstant"/>
-      <itemData name="Boolean" defStyleNum="dsExtension"/>
+      <itemData name="Boolean" defStyleNum="dsConstant"/>
       <itemData name="Macro" defStyleNum="dsPreprocessor"/>
       <itemData name="Module" defStyleNum="dsBuiltIn"/>
-      <itemData name="Function" defStyleNum="dsNormal"/>
+      <itemData name="Function" defStyleNum="dsFunction"/>
       <itemData name="Command String" defStyleNum="dsSpecialString"/>
       <itemData name="Comment" defStyleNum="dsComment"/>
       <itemData name="FoldingComment" defStyleNum="dsRegionMarker" />
@@ -697,7 +763,7 @@
   <general>
     <comments>
       <comment name="singleLine" start="#" />
-      <comment name="multiLine" start="#=" end="=#" />
+      <comment name="multiLine" start="#=" end="=#" region="block-comment" />
     </comments>
     <keywords casesensitive="1" weakDeliminator=""/>
   </general>

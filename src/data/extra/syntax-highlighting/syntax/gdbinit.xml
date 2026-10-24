@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
 <language name="GDB Init" section="Other"
-          version="2" kateversion="3.4"
+          version="3" kateversion="5.0"
           extensions="*.gdbinit"
           mimetype=""
           author="Milian Wolff (mail@milianw.de)" license="LGPL">
@@ -18,7 +18,12 @@
     <itemData name="Normal" defStyleNum="dsNormal" spellChecking="false" />
   </itemDatas>
 </highlighting>
+<general>
+  <comments>
+    <comment name="singleLine" start="#" />
+  </comments>
+</general>
 
 </language>
 
-<!-- kate: replace-tabs: on; tab-width: 4; indent-width: 4; -->
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

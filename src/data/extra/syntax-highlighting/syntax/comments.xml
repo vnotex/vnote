@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language
+    version="1"
+    kateversion="5.0"
+    name="Comments"
+    section="Other"
+    extensions=""
+    mimetype=""
+    author="Alex Turbov (i.zaufi@gmail.com)"
+    license="MIT"
+    hidden="true"
+  >
+  <highlighting>
+    <contexts>
+      <context name="Normal" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Modelines" />
+        <IncludeRules context="##SPDX-Comments" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Comment" defStyleNum="dsComment" />
+    </itemDatas>
+  </highlighting>
+</language>
+<!-- kate: indent-width 2; -->

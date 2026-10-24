@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language
+  name="Java Module"
+  version="3"
+  kateversion="5.79"
+  section="Sources"
+  extensions="module-info.java;module-info.jav"
+  priority="1"
+  mimetype=""
+  license="MIT"
+  author="Jonathan Poelen (jonathan.poelen@gmail.com)">
+<highlighting>
+
+  <!-- https://docs.oracle.com/javase/specs/jls/se20/html/jls-7.html -->
+
+  <list name="keywords">
+    <item>exports</item>
+    <item>module</item>
+    <item>open</item>
+    <item>opens</item>
+    <item>provides</item>
+    <item>requires</item>
+    <item>to</item>
+    <item>transitive</item>
+    <item>uses</item>
+    <item>with</item>
+  </list>
+
+  <contexts>
+    <context attribute="Keyword" lineEndContext="#stay" name="Normal">
+      <keyword attribute="Keyword" context="#stay" String="keywords"/>
+      <IncludeRules context="##Java" includeAttrib="1"/>
+    </context>
+  </contexts>
+
+  <itemDatas>
+    <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+  </itemDatas>
+</highlighting>
+
+<general>
+  <comments>
+    <comment name="singleLine" start="//" position="afterwhitespace"/>
+    <comment name="multiLine" start="/*" end="*/" />
+  </comments>
+  <keywords casesensitive="1" />
+</general>
+
+</language>
+<!-- kate: indent-width 2; tab-width 2; -->

@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
-    <!ENTITY wordsep "([][,?;()]|\.$|\.?\s)">     <!-- things that end a TagWord -->
+    <!ENTITY wordsep "(?:[][,?;()]|\.$|\.?\s|$)">   <!-- things that end a TagWord -->
+    <!ENTITY sl_word ".*?(?=&wordsep;)">
+    <!ENTITY ml_word ".*?(?=&wordsep;|\*/)">
 ]>
 <language name="Doxygen"
-          version="6"
+          version="15"
           kateversion="5.0"
           section="Markup"
           extensions="*.dox;*.doxygen"
@@ -42,10 +44,6 @@
       <item>\endrtfonly</item>       <item>@endrtfonly</item>
       <item>\endsecreflist</item>    <item>@endsecreflist</item>
       <item>\endxmlonly</item>       <item>@endxmlonly</item>
-      <item>\f[</item>               <item>@f[</item>
-      <item>\f]</item>               <item>@f]</item>
-      <item>\f$</item>               <item>@f$</item>
-      <!-- TODO Add @f{environment}{ and @f} -->
       <item>\hideinitializer</item>  <item>@hideinitializer</item>
       <item>\htmlonly</item>         <item>@htmlonly</item>
       <!-- TODO @internal is a candidate to be handled separately, cuz may introduce folding region -->
@@ -84,21 +82,6 @@
       <item>\test</item>             <item>@test</item>
       <item>\version</item>          <item>@version</item>
       <item>\xmlonly</item>          <item>@xmlonly</item>
-      <!-- TODO Introduce separate context for @~ ? -->
-      <item>\#</item>                <item>@#</item>
-      <item>\$</item>                <item>@$</item>
-      <item>\%</item>                <item>@%</item>
-      <item>\&amp;</item>            <item>@&amp;</item>
-      <item>\&gt;</item>             <item>@&gt;</item>
-      <item>\&lt;</item>             <item>@&lt;</item>
-      <item>\&quot;</item>           <item>@&quot;</item>
-      <item>\::</item>               <item>@::</item>
-      <item>\@</item>                <item>@@</item>
-      <item>\\</item>                <item>@\</item>
-      <item>\~</item>                <item>@~</item>
-      <item>\.</item>                <item>@.</item>
-      <item>\--</item>               <item>@--</item>
-      <item>\---</item>              <item>@---</item>
     </list>
 
     <list name="TagWord">
@@ -202,6 +185,12 @@
       <item>\var</item>              <item>@var</item>
       <item>\vhdlflow</item>         <item>@vhdlflow</item>
     </list>
+    <list name="TagEnd">
+      <item>\endcode</item>          <item>@endcode</item>
+      <item>\endverbatim</item>      <item>@endverbatim</item>
+      <item>\endmsc</item>           <item>@endmsc</item>
+      <item>\enddot</item>           <item>@enddot</item>
+    </list>
     <list name="Note">
       <item>\note</item>             <item>@note</item>
     </list>
@@ -231,8 +220,8 @@
       TODO Not all commands are handled properly nowadays :( Need few more contexts...
     -->
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
-        <RegExpr attribute="Comment" context="LineComment" String="//(!|(/(?=[^/]|$)))&lt;?" />
-        <RegExpr attribute="Comment" context="BlockComment" String="/\*(\*[^*/]|!|[*!]&lt;|\*$)" beginRegion="BlockComment" />
+        <RegExpr attribute="Comment" context="LineComment" String="//(?:!|(?:/(?=[^/]|$)))&lt;?" />
+        <RegExpr attribute="Comment" context="BlockComment" String="/\*(?:\*[^*/]|!|[*!]&lt;|\*$)" beginRegion="BlockComment" />
         <RegExpr attribute="Region" context="#stay" String="//\s*@\{\s*$" beginRegion="MemberGroup" />
         <RegExpr attribute="Region" context="#stay" String="//\s*@\}\s*$"   endRegion="MemberGroup" />
         <RegExpr attribute="Region" context="#stay" String="/\*\s*@\{\s*\*/" beginRegion="MemberGroup" />
@@ -241,39 +230,20 @@
       <context attribute="Comment" lineEndContext="#pop" name="LineComment">
         <LineContinue attribute="Comment" context="#stay" />
         <DetectSpaces />
-        <IncludeRules context="##Alerts" />
-        <IncludeRules context="SL_DetectEnv" />
-        <keyword attribute="Tags" context="#stay" String="TagOnly" />
-        <keyword attribute="Tags" context="SL_TagWord" String="TagWord" />
-        <keyword attribute="Tags" context="SL_TagParam" String="TagParam" />
-        <keyword attribute="Tags" context="SL_TagWordWord" String="TagWordWord" />
-        <keyword attribute="Tags" context="SL_TagString" String="TagString" />
-        <keyword attribute="Tags" context="SL_TagWordString" String="TagWordString" />
-        <RegExpr attribute="Custom Tags" context="#stay" String="[@\\][^@\\ \t]+" />
+        <IncludeRules context="##Comments" />
         <DetectIdentifier />
-        <StringDetect attribute="HTML Comment" context="SL_htmlcomment" String="&lt;!--" />
-        <Detect2Chars attribute="Comment" context="#stay" char="&lt;" char1="&lt;" />
-        <RegExpr attribute="HTML Tag" context="SL_htmltag" String="&lt;\/?[-\w0-9._:@]+" />
+        <AnyChar attribute="Comment" context="SL_StartTag" String="\@" lookAhead="true" />
+        <DetectChar attribute="Comment" context="SL_StartHTMLTag" char="&lt;" lookAhead="true" />
+        <DetectChar attribute="Comment" context="Entities" char="&amp;" lookAhead="true" />
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="BlockComment">
         <DetectSpaces />
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment" />
-        <IncludeRules context="##Alerts" />
-        <Detect2Chars attribute="Region" context="#stay" char="@" char1="{" beginRegion="Group" />
-        <Detect2Chars attribute="Region" context="#stay" char="@" char1="}" endRegion="Group" />
-        <IncludeRules context="SL_DetectEnv" />
-        <keyword attribute="Tags" context="#stay" String="TagOnly" />
-        <keyword attribute="Tags" context="ML_TagWord" String="TagWord" />
-        <keyword attribute="Tags" context="ML_TagParam" String="TagParam" />
-        <keyword attribute="Tags" context="ML_TagWordWord" String="TagWordWord" />
-        <keyword attribute="Tags" context="ML_TagString" String="TagString" />
-        <keyword attribute="Tags" context="ML_TagWordString" String="TagWordString" />
-        <RegExpr attribute="Custom Tags" context="#stay" String="[@\\]([^@\\ \t\*]|\*(?!/))+" />
+        <IncludeRules context="##Comments" />
         <DetectIdentifier />
-        <RegExpr attribute="Tags" context="#stay" String="\\(&lt;|&gt;)" />
-        <Detect2Chars attribute="Comment" context="#stay" char="&lt;" char1="&lt;" />
-        <RegExpr attribute="HTML Tag" context="ML_htmltag" String="&lt;\/?[-\w0-9._:@]+" />
-        <StringDetect attribute="HTML Comment" context="ML_htmlcomment" String="&lt;!--" />
+        <AnyChar attribute="Comment" context="ML_StartTag" String="\@" lookAhead="true" />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment" />
+        <DetectChar attribute="Comment" context="ML_StartHTMLTag" char="&lt;" lookAhead="true" />
+        <DetectChar attribute="Comment" context="Entities" char="&amp;" lookAhead="true" />
       </context>
 
       <!-- NOTE: all contexts beginning with ML_ are for multiline comments
@@ -284,123 +254,254 @@
                  much more complex and very hard to understand! (But use IncludeRules where the rules don't
                  refer to another SL_*/ML_* context, to help maintainability.)
       -->
+      <context attribute="Comment" lineEndContext="#pop" name="ML_StartTag">
+        <keyword attribute="Tags" context="#pop!ML_TagWord" String="TagWord" />
+        <keyword attribute="Tags" context="#pop!ML_TagParam" String="TagParam" />
+        <keyword attribute="Tags" context="#pop!ML_TagWordWord" String="TagWordWord" />
+        <keyword attribute="Tags" context="#pop!ML_TagString" String="TagString" />
+        <keyword attribute="Tags" context="#pop!ML_TagWordString" String="TagWordString" />
+        <WordDetect attribute="Tags" context="#pop!ML_Code" String="\code" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!ML_Code" String="@code" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!ML_Verbatim" String="\verbatim" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!ML_Verbatim" String="@verbatim" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!ML_Formula" String="\f[" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!ML_Formula" String="@f[" beginRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop!ML_FormulaShort" String="\f$" beginRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop!ML_FormulaShort" String="@f$" beginRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop!ML_FormulaEnv" String="\f{" beginRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop!ML_FormulaEnv" String="@f{" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!ML_Msc" String="\msc" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!ML_Msc" String="@msc" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!ML_Dot" String="\dot" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!ML_Dot" String="@dot" beginRegion="VerbatimBlock" />
+        <IncludeRules context="Inc_OtherTag" />
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="ML_StartHTMLTag">
+        <Detect2Chars attribute="Comment" context="#pop" char="&lt;" char1="&lt;" />
+        <RegExpr attribute="HTML Tag" context="#pop!ML_htmltag" String="&lt;\/?[-\w0-9._:@]+" />
+        <StringDetect attribute="HTML Comment" context="#pop!ML_htmlcomment" String="&lt;!--" />
+        <DetectChar attribute="Comment" context="#pop" char="&lt;" />
+      </context>
+
       <!-- tag contexts -->
       <context attribute="Comment" lineEndContext="#pop" name="ML_TagWord">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" lookAhead="true" />
-        <IncludeRules context="SL_TagWord" />
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/" endRegion="BlockComment" />
+        <keyword attribute="Tags" context="#pop!ML_TagWord" String="TagWord" />
+        <IncludeRules context="ML_Inc_Word" />
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="ML_TagParam">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" lookAhead="true" />
         <DetectSpaces />
-        <StringDetect attribute="Tags" context="ML_Tag2ndWord" String="[in]" />
-        <StringDetect attribute="Tags" context="ML_Tag2ndWord" String="[out]" />
-        <StringDetect attribute="Tags" context="ML_Tag2ndWord" String="[in,out]" />
-        <RegExpr attribute="Word" context="#pop" String="\S(?=&wordsep;)" />
-        <RegExpr attribute="Word" context="#stay" String="\S" />
+        <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/" endRegion="BlockComment" />
+        <StringDetect attribute="Tags" context="#pop!ML_TagWord" String="[in]" />
+        <StringDetect attribute="Tags" context="#pop!ML_TagWord" String="[out]" />
+        <StringDetect attribute="Tags" context="#pop!ML_TagWord" String="[in,out]" />
+        <IncludeRules context="ML_Inc_Word" />
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="ML_TagWordWord">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" lookAhead="true" />
         <DetectSpaces />
-        <RegExpr attribute="Word" context="ML_Tag2ndWord" String="\S(?=&wordsep;)" />
-        <RegExpr attribute="Word" context="#stay" String="\S" />
-      </context>
-      <!-- TODO for kate 2.x, convert references to "#pop!ML_TagWord" -->
-      <context attribute="Comment" lineEndContext="#pop#pop" name="ML_Tag2ndWord">
-        <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/" lookAhead="true" />
-        <IncludeRules context="SL_Tag2ndWord" />
+        <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/" endRegion="BlockComment" />
+        <RegExpr attribute="Word" context="#pop!ML_TagWord" String="&ml_word;" />
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="ML_TagString">
         <DetectSpaces />
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" lookAhead="true" />
+        <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/" endRegion="BlockComment" />
         <StringDetect attribute="HTML Comment" context="ML_htmlcomment" String="&lt;!--" />
         <Detect2Chars attribute="Comment" context="#stay" char="&lt;" char1="&lt;" />
         <RegExpr attribute="HTML Tag" context="ML_htmltag" String="&lt;\/?[-\w0-9._:@]+" />
-        <RegExpr attribute="Description" context="#stay" String="." />
+        <RegExpr attribute="Description" context="#stay" String="[&lt;*]?[^&lt;*\s]+" />
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="ML_TagWordString">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" lookAhead="true" />
-        <IncludeRules context="SL_TagWordString" />
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/" endRegion="BlockComment" />
+        <IncludeRules context="ML_Inc_Word" />
       </context>
+
+      <context name="ML_Inc_Word" attribute="Word" lineEndContext="#pop">
+        <RegExpr attribute="Word" context="#pop" String="&ml_word;" />
+      </context>
+
 
       <!-- html contexts -->
       <context name="ML_htmltag" attribute="Identifier" lineEndContext="#stay">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" lookAhead="true" />
+        <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/" endRegion="BlockComment" />
         <Detect2Chars attribute="HTML Tag" context="#pop" char="/" char1="&gt;" />
         <DetectChar attribute="HTML Tag" context="#pop" char="&gt;" />
-        <RegExpr attribute="Identifier" context="ML_identifiers" String="\s*=\s*" />
+        <DetectSpaces />
+        <DetectChar attribute="Identifier" context="ML_identifiers" char="=" />
       </context>
       <context name="ML_htmlcomment" attribute="HTML Comment" lineEndContext="#stay">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" lookAhead="true" />
-        <IncludeRules context="##Alerts" />
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/" endRegion="BlockComment" />
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier />
         <StringDetect attribute="HTML Comment" context="#pop" String="--&gt;" />
       </context>
       <context name="ML_identifiers" attribute="Identifier" lineEndContext="#stay">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" lookAhead="true" />
-        <RegExpr attribute="Identifier" context="#pop" String="\s*#?[a-zA-Z0-9]*" />
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop#pop#pop" char="*" char1="/" endRegion="BlockComment" />
         <DetectChar attribute="Types" context="ML_types1" char="'" />
         <DetectChar attribute="Types" context="ML_types2" char="&quot;" />
       </context>
       <context name="ML_types1" attribute="Types" lineEndContext="#stay">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" lookAhead="true" />
+        <Detect2Chars attribute="Comment" context="#pop#pop#pop#pop" char="*" char1="/" endRegion="BlockComment" />
         <DetectChar attribute="Types" context="#pop#pop" char="'" />
       </context>
       <context name="ML_types2" attribute="Types" lineEndContext="#stay">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" lookAhead="true" />
+        <Detect2Chars attribute="Comment" context="#pop#pop#pop#pop" char="*" char1="/" endRegion="BlockComment" />
         <DetectChar attribute="Types" context="#pop#pop" char="&quot;" />
       </context>
 
+      <context name="ML_FindNextLine" attribute="Comment" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop!ML_End_BlockComment" char="*" char1="/" endRegion="VerbatimBlock" lookAhead="1"/>
+        <Detect2Chars attribute="Comment" context="ML_VerbatimPrefix" char="*" char1="*" lookAhead="true" />
+        <DetectChar attribute="Comment" context="#pop" char="*" />
+      </context>
+      <context name="ML_VerbatimPrefix" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop" char="*" />
+      </context>
+
+      <context name="ML_End_BlockComment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Error" context="#pop#pop#pop" char="*" char1="/" endRegion="BlockComment"/>
+      </context>
+
+      <context name="ML_Code" attribute="Code" lineEndContext="ML_FindNextLine">
+        <Detect2Chars attribute="Comment" context="ML_End_BlockComment" char="*" char1="/" endRegion="VerbatimBlock" lookAhead="1"/>
+        <WordDetect attribute="Tags" context="#pop" String="\endcode" endRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop" String="@endcode" endRegion="VerbatimBlock" />
+      </context>
+
+      <context name="ML_Verbatim" attribute="Verbatim" lineEndContext="ML_FindNextLine">
+        <Detect2Chars attribute="Comment" context="ML_End_BlockComment" char="*" char1="/" endRegion="VerbatimBlock" lookAhead="1"/>
+        <WordDetect attribute="Tags" context="#pop" String="\endverbatim" endRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop" String="@endverbatim" endRegion="VerbatimBlock" />
+      </context>
+
+      <context name="ML_Formula" attribute="Formulas" lineEndContext="ML_FindNextLine">
+        <Detect2Chars attribute="Comment" context="ML_End_BlockComment" char="*" char1="/" endRegion="VerbatimBlock" lookAhead="1"/>
+        <StringDetect attribute="Tags" context="#pop" String="\f]" endRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop" String="@f]" endRegion="VerbatimBlock" />
+        <!-- TODO: How to force LaTeX math context here?? -->
+        <!-- <IncludeRules context="##LaTeX" /> -->
+      </context>
+
+      <context name="ML_FormulaShort" attribute="Formulas" lineEndContext="ML_FindNextLine">
+        <Detect2Chars attribute="Comment" context="ML_End_BlockComment" char="*" char1="/" endRegion="VerbatimBlock" lookAhead="1"/>
+        <StringDetect attribute="Tags" context="#pop" String="\f$" endRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop" String="@f$" endRegion="VerbatimBlock" />
+        <!-- TODO: How to force LaTeX math context here?? -->
+        <!-- <IncludeRules context="##LaTeX" /> -->
+      </context>
+
+      <context name="ML_FormulaEnv" attribute="Word" lineEndContext="ML_FindNextLine">
+        <DetectChar attribute="Tags" context="#pop!ML_FormulaEnvStart" char="}" />
+        <Detect2Chars attribute="Comment" context="ML_End_BlockComment" char="*" char1="/" endRegion="VerbatimBlock" lookAhead="1"/>
+      </context>
+
+      <context name="ML_FormulaEnvStart" attribute="Formulas" lineEndContext="ML_FindNextLine" fallthrough="true" fallthroughContext="#pop!ML_FormulaEnvFormula">
+        <DetectSpaces attribute="Comment" />
+        <DetectChar attribute="Tags" context="#pop!ML_FormulaEnvFormula" char="{" />
+        <Detect2Chars attribute="Comment" context="ML_End_BlockComment" char="*" char1="/" endRegion="VerbatimBlock" lookAhead="1"/>
+      </context>
+
+      <context name="ML_FormulaEnvFormula" attribute="Formulas" lineEndContext="ML_FindNextLine">
+        <Detect2Chars attribute="Comment" context="ML_End_BlockComment" char="*" char1="/" endRegion="VerbatimBlock" lookAhead="1"/>
+        <StringDetect attribute="Tags" context="#pop" String="\f}" endRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop" String="@f}" endRegion="VerbatimBlock" />
+        <!-- TODO: How to force LaTeX math context here?? -->
+        <!-- <IncludeRules context="##LaTeX" /> -->
+      </context>
+
+      <context name="ML_Msc" attribute="Message Sequence Chart" lineEndContext="ML_FindNextLine">
+        <Detect2Chars attribute="Comment" context="ML_End_BlockComment" char="*" char1="/" endRegion="VerbatimBlock" lookAhead="1"/>
+        <WordDetect attribute="Tags" context="#pop" String="\endmsc" endRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop" String="@endmsc" endRegion="VerbatimBlock" />
+      </context>
+
+      <context name="ML_Dot" attribute="Dot Graph" lineEndContext="ML_FindNextLine">
+        <Detect2Chars attribute="Comment" context="ML_End_BlockComment" char="*" char1="/" endRegion="VerbatimBlock" lookAhead="1"/>
+        <WordDetect attribute="Tags" context="#pop" String="\enddot" endRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop" String="@enddot" endRegion="VerbatimBlock" />
+      </context>
+
       <!-- NOTE: all contexts beginning with SL_ are for singleline comments -->
+      <context attribute="Comment" lineEndContext="#pop" name="SL_StartTag">
+        <keyword attribute="Tags" context="#pop!SL_TagWord" String="TagWord" />
+        <keyword attribute="Tags" context="#pop!SL_TagParam" String="TagParam" />
+        <keyword attribute="Tags" context="#pop!SL_TagWordWord" String="TagWordWord" />
+        <keyword attribute="Tags" context="#pop!SL_TagString" String="TagString" />
+        <keyword attribute="Tags" context="#pop!SL_TagWordString" String="TagWordString" />
+        <WordDetect attribute="Tags" context="#pop!SL_Code" String="\code" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!SL_Code" String="@code" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!SL_Verbatim" String="\verbatim" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!SL_Verbatim" String="@verbatim" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!SL_Formula" String="\f[" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!SL_Formula" String="@f[" beginRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop!SL_FormulaShort" String="\f$" beginRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop!SL_FormulaShort" String="@f$" beginRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop!SL_FormulaEnv" String="\f{" beginRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop!SL_FormulaEnv" String="@f{" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!SL_Msc" String="\msc" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!SL_Msc" String="@msc" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!SL_Dot" String="\dot" beginRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop!SL_Dot" String="@dot" beginRegion="VerbatimBlock" />
+        <IncludeRules context="Inc_OtherTag" />
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="SL_StartHTMLTag">
+        <Detect2Chars attribute="Comment" context="#pop" char="&lt;" char1="&lt;" />
+        <RegExpr attribute="HTML Tag" context="#pop!SL_htmltag" String="&lt;\/?[-\w0-9._:@]+" />
+        <StringDetect attribute="HTML Comment" context="#pop!SL_htmlcomment" String="&lt;!--" />
+        <DetectChar attribute="Comment" context="#pop" char="&lt;" />
+      </context>
+
       <!-- tag contexts -->
       <context attribute="Comment" lineEndContext="#pop" name="SL_TagWord">
         <DetectSpaces />
-        <keyword attribute="Tags" context="#pop" String="TagWord" lookAhead="true" />
-        <RegExpr attribute="Word" context="#pop" String="\S(?=&wordsep;)" />
-        <RegExpr attribute="Word" context="#stay" String="\S" />
+        <keyword attribute="Tags" context="#pop!SL_TagWord" String="TagWord" />
+        <IncludeRules context="SL_Inc_Word" />
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="SL_TagParam">
         <DetectSpaces />
-        <StringDetect attribute="Tags" context="SL_Tag2ndWord" String="[in]" />
-        <StringDetect attribute="Tags" context="SL_Tag2ndWord" String="[out]" />
-        <StringDetect attribute="Tags" context="SL_Tag2ndWord" String="[in,out]" />
-        <RegExpr attribute="Word" context="#pop" String="\S(?=&wordsep;)" />
-        <RegExpr attribute="Word" context="#stay" String="\S" />
+        <StringDetect attribute="Tags" context="#pop!SL_TagWord" String="[in]" />
+        <StringDetect attribute="Tags" context="#pop!SL_TagWord" String="[out]" />
+        <StringDetect attribute="Tags" context="#pop!SL_TagWord" String="[in,out]" />
+        <IncludeRules context="SL_Inc_Word" />
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="SL_TagWordWord">
         <DetectSpaces />
-        <RegExpr attribute="Word" context="SL_Tag2ndWord" String="\S(?=&wordsep;)" />
-        <RegExpr attribute="Word" context="#stay" String="\S" />
-      </context>
-      <!-- TODO for kate 2.x, convert references to "#pop!SL_TagWord" -->
-      <context attribute="Comment" lineEndContext="#pop#pop" name="SL_Tag2ndWord">
-        <DetectSpaces />
-        <RegExpr attribute="Word" context="#pop#pop" String="\S(?=&wordsep;)" />
-        <RegExpr attribute="Word" context="#stay" String="\S" />
+        <RegExpr attribute="Word" context="#pop!SL_TagWord" String="&sl_word;" />
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="SL_TagString">
         <DetectSpaces />
         <StringDetect attribute="HTML Comment" context="SL_htmlcomment" String="&lt;!--" />
         <Detect2Chars attribute="Comment" context="#stay" char="&lt;" char1="&lt;" />
         <RegExpr attribute="HTML Tag" context="SL_htmltag" String="&lt;\/?[-\w0-9._:@]+" />
-        <RegExpr attribute="Description" context="#stay" String="." />
+        <RegExpr attribute="Description" context="#stay" String="&lt;?[^&lt;\s]+" />
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="SL_TagWordString">
         <DetectSpaces />
-        <RegExpr attribute="Word" context="#pop" String="\S(?=&wordsep;)" />
-        <RegExpr attribute="Word" context="#stay" String="\S" />
+        <IncludeRules context="SL_Inc_Word" />
+      </context>
+      <context name="SL_Inc_Word" attribute="Word" lineEndContext="#pop">
+        <RegExpr attribute="Word" context="#pop" String="&sl_word;" />
       </context>
 
       <!-- html contexts -->
       <context name="SL_htmltag" attribute="Identifier" lineEndContext="#pop">
         <Detect2Chars attribute="HTML Tag" context="#pop" char="/" char1="&gt;" />
         <DetectChar attribute="HTML Tag" context="#pop" char="&gt;" />
-        <RegExpr attribute="Identifier" context="SL_identifiers" String="\s*=\s*" />
+        <DetectSpaces />
+        <DetectChar attribute="Identifier" context="SL_identifiers" char="=" />
       </context>
       <context name="SL_htmlcomment" attribute="HTML Comment" lineEndContext="#pop">
-        <IncludeRules context="##Alerts" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier />
         <StringDetect attribute="HTML Comment" context="#pop" String="--&gt;" />
       </context>
       <context name="SL_identifiers" attribute="Identifier" lineEndContext="#pop">
-        <RegExpr attribute="Identifier" context="#pop" String="\s*#?[a-zA-Z0-9]*" />
+        <DetectSpaces />
         <DetectChar attribute="Types" context="SL_types1" char="'" />
         <DetectChar attribute="Types" context="SL_types2" char="&quot;" />
       </context>
@@ -411,55 +512,93 @@
         <DetectChar attribute="Types" context="#pop#pop" char="&quot;" />
       </context>
 
-      <context attribute="Comment" name="SL_DetectEnv" lineEndContext="#pop">
-        <RegExpr attribute="Tags" context="Code" String="[@\\]code\b" beginRegion="Code" />
-        <RegExpr attribute="Tags" context="Verbatim" String="[@\\]verbatim\b" beginRegion="Verbatim" />
-        <RegExpr attribute="Tags" context="Formula" String="[@\\]f\[" beginRegion="Formula" />
-        <RegExpr attribute="Tags" context="Msc" String="[@\\]msc\b" beginRegion="Msc" />
-        <RegExpr attribute="Tags" context="Dot" String="[@\\]dot\b" beginRegion="Dot" />
-        <keyword attribute="Note" context="#stay" String="Note" />
-        <keyword attribute="Warning" context="#stay" String="Warning" />
-        <keyword attribute="Attention" context="#stay" String="Attention" />
-        <keyword attribute="Todo" context="#stay" String="Todo" />
-        <RegExpr attribute="Entities" context="#stay" String="&amp;[A-Za-z]+&#59;" />
+      <context name="SL_FindNextLine" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop">
+        <DetectSpaces />
+        <StringDetect attribute="Comment" context="#pop" String="///" />
+        <StringDetect attribute="Comment" context="#pop" String="//!" />
+        <RegExpr attribute="Comment" context="#pop#pop#pop" String="." lookAhead="true" endRegion="VerbatimBlock" />
       </context>
 
-      <context attribute="Comment" name="SL_DetectComment" lineEndContext="#pop">
-        <Detect2Chars attribute="Comment" context="#pop#pop" char="*" char1="/" endRegion="BlockComment" />
-        <DetectChar attribute="Comment" context="#stay" char="*" />
-        <StringDetect attribute="Comment" context="#stay" String="///" />
+      <context name="SL_Code" attribute="Code" lineEndContext="SL_FindNextLine">
+        <WordDetect attribute="Tags" context="#pop" String="\endcode" endRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop" String="@endcode" endRegion="VerbatimBlock" />
       </context>
 
-      <context attribute="Code" lineEndContext="#stay" name="Code">
-        <IncludeRules context="SL_DetectComment" />
-        <RegExpr attribute="Tags" context="#pop" String="[@\\]endcode\b" endRegion="Code" />
+      <context name="SL_Verbatim" attribute="Verbatim" lineEndContext="SL_FindNextLine">
+        <WordDetect attribute="Tags" context="#pop" String="\endverbatim" endRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop" String="@endverbatim" endRegion="VerbatimBlock" />
       </context>
 
-      <context attribute="Verbatim" lineEndContext="#stay" name="Verbatim">
-        <IncludeRules context="SL_DetectComment" />
-        <RegExpr attribute="Tags" context="#pop" String="[@\\]endverbatim\b" endRegion="Verbatim" />
-      </context>
-
-      <context attribute="Formulas" lineEndContext="#stay" name="Formula">
-        <IncludeRules context="SL_DetectComment" />
-        <RegExpr attribute="Tags" context="#pop" String="[@\\]f\]" endRegion="Formula" />
+      <context name="SL_Formula" attribute="Formulas" lineEndContext="SL_FindNextLine">
+        <StringDetect attribute="Tags" context="#pop" String="\f]" endRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop" String="@f]" endRegion="VerbatimBlock" />
         <!-- TODO: How to force LaTeX math context here?? -->
         <!-- <IncludeRules context="##LaTeX" /> -->
       </context>
 
-      <context attribute="Message Sequence Chart" lineEndContext="#stay" name="Msc">
-        <IncludeRules context="SL_DetectComment" />
-        <RegExpr attribute="Tags" context="#pop" String="[@\\]endmsc\b" endRegion="Msc" />
+      <context name="SL_FormulaShort" attribute="Formulas" lineEndContext="SL_FindNextLine">
+        <StringDetect attribute="Tags" context="#pop" String="\f$" endRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop" String="@f$" endRegion="VerbatimBlock" />
+        <!-- TODO: How to force LaTeX math context here?? -->
+        <!-- <IncludeRules context="##LaTeX" /> -->
       </context>
 
-      <context attribute="Dot Graph" lineEndContext="#stay" name="Dot">
-        <IncludeRules context="SL_DetectComment" />
-        <RegExpr attribute="Tags" context="#pop" String="[@\\]enddot\b" endRegion="Dot" />
+      <context name="SL_FormulaEnv" attribute="Word" lineEndContext="SL_FindNextLine">
+        <DetectChar attribute="Tags" context="#pop!SL_FormulaEnvStart" char="}" />
+      </context>
+
+      <context name="SL_FormulaEnvStart" attribute="Formulas" lineEndContext="SL_FindNextLine" fallthrough="true" fallthroughContext="#pop!SL_FormulaEnvFormula">
+        <DetectSpaces attribute="Comment" />
+        <DetectChar attribute="Tags" context="#pop!SL_FormulaEnvFormula" char="{" />
+      </context>
+
+      <context name="SL_FormulaEnvFormula" attribute="Formulas" lineEndContext="SL_FindNextLine">
+        <StringDetect attribute="Tags" context="#pop" String="\f}" endRegion="VerbatimBlock" />
+        <StringDetect attribute="Tags" context="#pop" String="@f}" endRegion="VerbatimBlock" />
+        <!-- TODO: How to force LaTeX math context here?? -->
+        <!-- <IncludeRules context="##LaTeX" /> -->
+      </context>
+
+      <context name="SL_Msc" attribute="Message Sequence Chart" lineEndContext="SL_FindNextLine">
+        <WordDetect attribute="Tags" context="#pop" String="\endmsc" endRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop" String="@endmsc" endRegion="VerbatimBlock" />
+      </context>
+
+      <context name="SL_Dot" attribute="Dot Graph" lineEndContext="SL_FindNextLine">
+        <WordDetect attribute="Tags" context="#pop" String="\enddot" endRegion="VerbatimBlock" />
+        <WordDetect attribute="Tags" context="#pop" String="@enddot" endRegion="VerbatimBlock" />
+      </context>
+
+      <context name="Entities" attribute="Word" lineEndContext="#stay">
+        <RegExpr attribute="Entities" context="#pop" String="&amp;[A-Za-z]+&#59;" />
+        <DetectChar attribute="Comment" context="#pop" char="&amp;" />
+      </context>
+
+      <context name="Inc_OtherTag" attribute="Comment" lineEndContext="#pop">
+        <keyword attribute="Note" context="#pop" String="Note" />
+        <keyword attribute="Warning" context="#pop" String="Warning" />
+        <keyword attribute="Attention" context="#pop" String="Attention" />
+        <keyword attribute="Todo" context="#pop" String="Todo" />
+        <keyword attribute="Tags" context="#pop" String="TagOnly" />
+        <Detect2Chars attribute="Region" context="#pop" char="@" char1="{" beginRegion="Group" />
+        <Detect2Chars attribute="Region" context="#pop" char="@" char1="}" endRegion="Group" />
+        <Detect2Chars attribute="Tags" context="#pop!LanguageId" char="\" char1="~" />
+        <Detect2Chars attribute="Tags" context="#pop!LanguageId" char="@" char1="~" />
+        <keyword attribute="Error" context="#pop" String="TagEnd" />
+        <RegExpr attribute="Error" context="#pop" String="[@\\]f[]}]" />
+        <RegExpr attribute="Escape sequence" context="#pop" String="[@\\](?:[#$%&amp;&lt;&gt;&quot;@\\.~=|]|::|---?)" />
+        <RegExpr attribute="Custom Tags" context="#pop" String="[@\\](?:[^@\\ \t\*]|\*(?!/))+" />
+        <AnyChar attribute="Comment" context="#pop" String="\@" />
+      </context>
+
+      <context name="LanguageId" attribute="Word" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectIdentifier />
       </context>
 
   </contexts>
     <itemDatas>
       <itemData name="Normal Text"  defStyleNum="dsNormal" />
+      <itemData name="Escape sequence" defStyleNum="dsSpecialChar" />
       <itemData name="Tags"         defStyleNum="dsAnnotation" bold="1" />
       <itemData name="Custom Tags"  defStyleNum="dsAnnotation" />
       <itemData name="Word"         defStyleNum="dsCommentVar" bold="1" italic="0" />
@@ -480,10 +619,11 @@
       <itemData name="Warning"      defStyleNum="dsWarning" bold="1" italic="0" />
       <itemData name="Attention"    defStyleNum="dsAnnotation" bold="1" italic="0" />
       <itemData name="Todo"         defStyleNum="dsAnnotation" bold="1" italic="0" />
+      <itemData name="Error"        defStyleNum="dsError" />
     </itemDatas>
   </highlighting>
   <general>
-    <keywords casesensitive="1" weakDeliminator="\$~" />
+    <keywords casesensitive="1" weakDeliminator="\$" />
   </general>
 </language>
 <!-- kate: indent-width 2; -->

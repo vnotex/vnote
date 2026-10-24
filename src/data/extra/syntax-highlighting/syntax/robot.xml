@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="Robot"
+          version="3"
+          kateversion="5.79"
+          section="Scripts"
+          extensions="*.robot"
+          indenter="python"
+          author="Akseli Lahtinen (akselmo@akselmo.dev)"
+          license="MIT">
+    <highlighting>
+        <list name="SettingSectionSettings">
+            <item>Library</item>
+            <item>Resource</item>
+            <item>Variables</item>
+            <item>Metadata</item>
+            <item>Suite Setup</item>
+            <item>Suite Teardown</item>
+            <item>Test Tags</item>
+            <item>Force Tags</item>
+            <item>Keyword Tags</item>
+            <item>Test Setup</item>
+            <item>Test Teardown</item>
+            <item>Test Template</item>
+            <item>Test Timeout</item>
+            <item>Task Setup</item>
+            <item>Default Tags</item>
+            <item>Task Teardown</item>
+            <item>Task Template</item>
+            <item>Task Timeout</item>
+<!--
+    Documentation will go to its own regexp since its a comment
+-->
+        </list>
+
+        <list name="KeywordSectionSettings">
+            <item>Tags</item>
+            <item>Setup</item>
+            <item>Teardown</item>
+            <item>Template</item>
+            <item>Arguments</item>
+            <item>Return</item>
+            <item>Timeout</item>
+<!--
+    Documentation will go to its own regexp since its a comment
+-->
+        </list>
+
+        <list name="ControlOperators">
+            <item>IF</item>
+            <item>ELSE</item>
+            <item>END</item>
+            <item>RETURN</item>
+            <item>WHILE</item>
+            <item>FOR</item>
+            <item>BREAK</item>
+            <item>CONTINUE</item>
+            <item>TRY</item>
+            <item>EXCEPT</item>
+            <item>FINALLY</item>
+            <item>IN</item>
+            <item>ENUMERATE</item>
+            <item>RANGE</item>
+            <item>ZIP</item>
+        </list>
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+                <StringDetect firstNonSpace="1" attribute="Setting" context="Multi-Line Comment" String="Documentation" beginRegion="RegionComment"/>
+                <RegExpr attribute="Section" context="Settings Section" String="\*{3}\s{0,1}Settings\s{0,1}\*{3}"/>
+                <RegExpr attribute="Section" context="#stay" String="\*{3}\s{0,1}Variables\s{0,1}\*{3}"/>
+                <RegExpr attribute="Section" context="Test Cases Section" String="\*{3}\s{0,1}Test Cases\s{0,1}\*{3}"/>
+                <RegExpr attribute="Section" context="Keywords Section" String="\*{3}\s{0,1}Keywords\s{0,1}\*{3}"/>
+                <RegExpr attribute="Section" context="Tasks Section" String="\*{3}\s{0,1}Tasks\s{0,1}\*{3}"/>
+                <RegExpr attribute="Section" context="Comments Section" String="\*{3}\s{0,1}Comments\s{0,1}\*{3}"/>
+                <DetectChar attribute="Comment" char="#" context="Comment"/>
+                <AnyChar attribute="Symbol" context="#stay" String="[]=().|"/>
+                <RegExpr attribute="Symbol" context="KeywordSettings" String="\s{2,}\["/>
+                <RegExpr attribute="Variable" context="#pop" String="[\$@&#38;]\{\w*\}"/>
+                <RegExpr attribute="Variable" context="#stay" String="[\$@&#38;]\w*" />
+                <RegExpr attribute="Setting" context="#stay" String=".*BuiltIn\." />
+                <AnyChar attribute="String" context="String" String="&quot;&apos;" />
+                <keyword attribute="Control Flow" context="#pop" String="ControlOperators"/>
+            </context>
+
+
+            <context name="Comments Section" attribute="Comment" lineEndContext="#stay">
+                <DetectChar column="0" attribute="Section" context="#pop" char="*" lookAhead="true"/>
+            </context>
+
+            <context name="Comment" attribute="Comment" lineEndContext="#pop">
+                <IncludeRules context="##Comments" />
+            </context>
+
+            <context name="Multi-Line Comment" attribute="Comment" lineEndContext="#stay">
+                <RegExpr column="0" attribute="Comment" context="#pop" lookAhead="true" String="^\s{0,}[^\.]" endRegion="RegionComment"/>
+            </context>
+
+            <context name="Indented Multi-Line Comment" attribute="Comment" lineEndContext="#stay">
+                <AnyChar String="[]" attribute="Symbol" context="#stay" />
+                <RegExpr column="0" attribute="Comment" context="#stay" String="^\s{0,}[\.]{3}"/>
+                <RegExpr column="0" attribute="Comment" context="#pop" lookAhead="true" String="^\s{0,}[^\.]"/>
+            </context>
+
+            <context name="Settings Section" attribute="Normal Text" lineEndContext="#stay">
+                <StringDetect attribute="Setting" context="Multi-Line Comment" String="Documentation" beginRegion="RegionComment"/>
+                <IncludeRules context="SettingsValues" />
+                <DetectChar column="0" attribute="Section" context="#pop" char="*" lookAhead="true"/>
+                <DetectChar attribute="Comment" char="#" context="Comment"/>
+                <AnyChar attribute="Symbol" context="#stay" String="[]=().|"/>
+                <RegExpr attribute="Variable" context="#stay" String="[\$@&#38;]\{\w*\}"/>
+                <RegExpr attribute="Setting" context="#stay" String=".*BuiltIn\." />
+                <AnyChar attribute="String" context="String" String="&quot;&apos;" />
+            </context>
+
+            <context name="Test Cases Section" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar column="0" attribute="Section" context="#pop" char="*" lookAhead="true"/>
+                <RegExpr column="0" attribute="Test Case" context="Test Case With Variable" String="^[\w]" />
+                <IncludeRules context="Codeblock" />
+            </context>
+
+            <context name="Tasks Section" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar column="0" attribute="Section" context="#pop" char="*" lookAhead="true"/>
+                <RegExpr column="0" attribute="Task" context="Task With Variable" String="^[\w]" />
+                <IncludeRules context="Codeblock" />
+            </context>
+
+            <context name="Keywords Section" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar column="0" attribute="Section" context="#pop" char="*" lookAhead="true"/>
+                <RegExpr column="0" attribute="Keyword" context="Keyword With Variable" String="^[\w]" />
+                <IncludeRules context="Codeblock" />
+            </context>
+
+            <context name="SettingsValues" attribute="Setting" lineEndContext="#pop">
+                <RegExpr column="0" attribute="Setting" String="^(Library|Resource|Variables|Metadata|Suite Setup|Suite Teardown|Test Tags|Force Tags|Keyword Tags|Test Setup|Test Teardown|Test Template|Test Timeout|Task Setup|Default Tags|Task Teardown|Task Template|Task Timeout) {0,}" context="#stay"/>
+            </context>
+
+            <context name="KeywordSettings" attribute="Normal Text" lineEndContext="#pop">
+                <DetectChar char="[" attribute="Symbol" context="#stay" />
+                <RegExpr attribute="Variable" context="#stay" String="[\$@&#38;]\{{0,1}\w*\}{0,1}"/>
+                <RegExpr attribute="Symbol" context="StringAfterKeywordSettings" String="\]\s[^\$]([\w ]*)$" lookAhead="true"/>
+                <keyword attribute="Setting" context="#stay" String="KeywordSectionSettings"/>
+                <StringDetect attribute="Setting" context="Indented Multi-Line Comment" String="Documentation" insensitive="true"/>
+                <DetectChar char="]" attribute="Symbol" context="#pop" />
+            </context>
+
+            <context name="Codeblock" attribute="Normal Text" lineEndContext="#stay">
+                <keyword attribute="Control Flow" context="#stay" String="ControlOperators" />
+                <DetectChar attribute="Comment" char="#" context="Comment"/>
+                <AnyChar attribute="Symbol" context="#stay" String="[]=()."/>
+                <RegExpr attribute="Symbol" context="KeywordSettings" String="\s{2,}\["/>
+                <RegExpr attribute="Variable" context="#stay" String="[\$@&#38;]\{{0,1}\w*\}{0,1}"/>
+                <AnyChar attribute="String" context="String" String="&quot;&apos;" />
+            </context>
+
+            <context name="StringAfterKeywordSettings" attribute="Symbol" lineEndContext="#stay">
+                <StringDetect context="#stay" attribute="String" String="%1" dynamic="true"/>
+                <RegExpr column="0" attribute="String" context="#stay" String="^\s{0,}[\.]{3}.*$"/>
+                <RegExpr column="0" attribute="String" context="#pop" lookAhead="true" String="^\s{0,}[^\.]"/>
+            </context>
+
+            <context name="String" attribute="String" lineEndContext="#pop">
+                <AnyChar attribute="String" context="#pop" String="&quot;&apos;"/>
+            </context>
+
+            <context name="Test Case With Variable" attribute="Test Case" lineEndContext="#pop">
+                <RangeDetect char="$" char1="}" attribute="Variable" context="#stay" />
+            </context>
+
+            <context name="Keyword With Variable" attribute="Keyword" lineEndContext="#pop">
+                <RangeDetect char="$" char1="}" attribute="Variable" context="#stay" />
+            </context>
+
+            <context name="Task With Variable" attribute="Task" lineEndContext="#pop">
+                <RangeDetect char="$" char1="}" attribute="Variable" context="#stay" />
+            </context>
+
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" />
+            <itemData name="Setting" defStyleNum="dsBuiltIn" />
+            <itemData name="Test Case" defStyleNum="dsFunction" />
+            <itemData name="Keyword" defStyleNum="dsKeyword" />
+            <itemData name="Task" defStyleNum="dsExtension" />
+            <itemData name="String" defStyleNum="dsString" />
+            <itemData name="Section" defStyleNum="dsSpecialString" />
+            <itemData name="Variable" defStyleNum="dsVariable" />
+            <itemData name="Control Flow" defStyleNum="dsControlFlow" />
+            <itemData name="Comment" defStyleNum="dsComment" />
+            <itemData name="Symbol" defStyleNum="dsOperator" />
+        </itemDatas>
+    </highlighting>
+
+    <general>
+        <comments>
+            <comment name="singleLine" start="#"/>
+        </comments>
+        <keywords casesensitive="1"/>
+        <folding indentationsensitive="1"/>
+    </general>
+</language>

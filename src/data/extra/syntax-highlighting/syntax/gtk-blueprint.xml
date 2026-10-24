@@ -1,0 +1,631 @@
+<?xml version="1.0"?>
+<!--SPDX-FileCopyrightText: 2025 Zoey Ahmed <zoethetransrat@gmail.org>
+
+	SPDX-License-Identifier: MIT-->
+<language name="GTK Blueprint" version="1" style="gtkblueprint" kateversion="5.0" section="Markup" priority="5" extensions="*.blp" casesensitive="1" author="Zoey Ahmed" license="MIT" indenter="cstyle">
+  <highlighting>
+    <list name="GtkWidgets">
+      <item>Gtk</item>
+      <item>AboutDialog</item>
+      <item>AccessibleHyperlink</item>
+      <item>ActionBar</item>
+      <item>ActivateAction</item>
+      <item>Adjustment</item>
+      <item>AlertDialog</item>
+      <item>AlternativeTrigger</item>
+      <item>AnyFilter</item>
+      <item>AppChooserButton</item>
+      <item>AppChooserDialog</item>
+      <item>AppChooserWidget</item>
+      <item>Application</item>
+      <item>ApplicationWindow</item>
+      <item>AspectFrame</item>
+      <item>Assistant</item>
+      <item>AssistantPage</item>
+      <item>ATContext</item>
+      <item>BinLayout</item>
+      <item>BookmarkList</item>
+      <item>BoolFilter</item>
+      <item>Box</item>
+      <item>BoxLayout</item>
+      <item>Builder</item>
+      <item>BuilderCScope</item>
+      <item>BuilderListItemFactory</item>
+      <item>Button</item>
+      <item>Calendar</item>
+      <item>CallbackAction</item>
+      <item>CClosureExpression</item>
+      <item>CellArea</item>
+      <item>CellAreaBox</item>
+      <item>CellAreaContext</item>
+      <item>CellRenderer</item>
+      <item>CellRendererAccel</item>
+      <item>CellRendererCombo</item>
+      <item>CellRendererPixbuf</item>
+      <item>CellRendererProgress</item>
+      <item>CellRendererSpin</item>
+      <item>CellRendererSpinner</item>
+      <item>CellRendererText</item>
+      <item>CellRendererToggle</item>
+      <item>CellView</item>
+      <item>CenterBox</item>
+      <item>CenterLayout</item>
+      <item>CheckButton</item>
+      <item>ClosureExpression</item>
+      <item>ColorButton</item>
+      <item>ColorChooserDialog</item>
+      <item>ColorChooserWidget</item>
+      <item>ColorDialog</item>
+      <item>ColorDialogButton</item>
+      <item>ColumnView</item>
+      <item>ColumnViewCell</item>
+      <item>ColumnViewColumn</item>
+      <item>ColumnViewRow</item>
+      <item>ColumnViewSorter</item>
+      <item>ComboBox</item>
+      <item>ComboBoxText</item>
+      <item>ConstantExpression</item>
+      <item>Constraint</item>
+      <item>ConstraintGuide</item>
+      <item>ConstraintLayout</item>
+      <item>ConstraintLayoutChild</item>
+      <item>CssProvider</item>
+      <item>CustomFilter</item>
+      <item>CustomLayout</item>
+      <item>CustomSorter</item>
+      <item>Dialog</item>
+      <item>DirectoryList</item>
+      <item>DragIcon</item>
+      <item>DragSource</item>
+      <item>DrawingArea</item>
+      <item>DropControllerMotion</item>
+      <item>DropDown</item>
+      <item>DropTarget</item>
+      <item>DropTargetAsync</item>
+      <item>EditableLabel</item>
+      <item>EmojiChooser</item>
+      <item>Entry</item>
+      <item>EntryBuffer</item>
+      <item>EntryCompletion</item>
+      <item>EventController</item>
+      <item>EventControllerFocus</item>
+      <item>EventControllerKey</item>
+      <item>EventControllerLegacy</item>
+      <item>EventControllerMotion</item>
+      <item>EventControllerScroll</item>
+      <item>EveryFilter</item>
+      <item>Expander</item>
+      <item>Expression</item>
+      <item>FileChooserDialog</item>
+      <item>FileChooserNative</item>
+      <item>FileChooserWidget</item>
+      <item>FileDialog</item>
+      <item>FileFilter</item>
+      <item>FileLauncher</item>
+      <item>Filter</item>
+      <item>FilterListModel</item>
+      <item>Fixed</item>
+      <item>FixedLayout</item>
+      <item>FixedLayoutChild</item>
+      <item>FlattenListModel</item>
+      <item>FlowBox</item>
+      <item>FlowBoxChild</item>
+      <item>FontButton</item>
+      <item>FontChooserDialog</item>
+      <item>FontChooserWidget</item>
+      <item>FontDialog</item>
+      <item>FontDialogButton</item>
+      <item>Frame</item>
+      <item>Gesture</item>
+      <item>GestureClick</item>
+      <item>GestureDrag</item>
+      <item>GestureLongPress</item>
+      <item>GesturePan</item>
+      <item>GestureRotate</item>
+      <item>GestureSingle</item>
+      <item>GestureStylus</item>
+      <item>GestureSwipe</item>
+      <item>GestureZoom</item>
+      <item>GLArea</item>
+      <item>GraphicsOffload</item>
+      <item>Grid</item>
+      <item>GridLayout</item>
+      <item>GridLayoutChild</item>
+      <item>GridView</item>
+      <item>HeaderBar</item>
+      <item>IconPaintable</item>
+      <item>IconTheme</item>
+      <item>IconView</item>
+      <item>Image</item>
+      <item>IMContext</item>
+      <item>IMContextSimple</item>
+      <item>IMMulticontext</item>
+      <item>InfoBar</item>
+      <item>Inscription</item>
+      <item>KeyvalTrigger</item>
+      <item>Label</item>
+      <item>LayoutChild</item>
+      <item>LayoutManager</item>
+      <item>LevelBar</item>
+      <item>LinkButton</item>
+      <item>ListBase</item>
+      <item>ListBox</item>
+      <item>ListBoxRow</item>
+      <item>ListHeader</item>
+      <item>ListItem</item>
+      <item>ListItemFactory</item>
+      <item>ListStore</item>
+      <item>ListView</item>
+      <item>LockButton</item>
+      <item>MapListModel</item>
+      <item>MediaControls</item>
+      <item>MediaFile</item>
+      <item>MediaStream</item>
+      <item>MenuButton</item>
+      <item>MessageDialog</item>
+      <item>MnemonicAction</item>
+      <item>MnemonicTrigger</item>
+      <item>MountOperation</item>
+      <item>MultiFilter</item>
+      <item>MultiSelection</item>
+      <item>MultiSorter</item>
+      <item>NamedAction</item>
+      <item>NativeDialog</item>
+      <item>NeverTrigger</item>
+      <item>NoSelection</item>
+      <item>Notebook</item>
+      <item>NotebookPage</item>
+      <item>NothingAction</item>
+      <item>NumericSorter</item>
+      <item>ObjectExpression</item>
+      <item>Overlay</item>
+      <item>OverlayLayout</item>
+      <item>OverlayLayoutChild</item>
+      <item>PadController</item>
+      <item>PageSetup</item>
+      <item>PageSetupUnixDialog</item>
+      <item>Paned</item>
+      <item>ParamSpecExpression</item>
+      <item>PasswordEntry</item>
+      <item>PasswordEntryBuffer</item>
+      <item>Picture</item>
+      <item>Popover</item>
+      <item>PopoverMenu</item>
+      <item>PopoverMenuBar</item>
+      <item>PrintContext</item>
+      <item>PrintDialog</item>
+      <item>Printer</item>
+      <item>PrintJob</item>
+      <item>PrintOperation</item>
+      <item>PrintSettings</item>
+      <item>PrintUnixDialog</item>
+      <item>ProgressBar</item>
+      <item>PropertyExpression</item>
+      <item>Range</item>
+      <item>RecentManager</item>
+      <item>Revealer</item>
+      <item>Scale</item>
+      <item>ScaleButton</item>
+      <item>Scrollbar</item>
+      <item>ScrolledWindow</item>
+      <item>SearchBar</item>
+      <item>SearchEntry</item>
+      <item>SelectionFilterModel</item>
+      <item>Separator</item>
+      <item>Settings</item>
+      <item>Shortcut</item>
+      <item>ShortcutAction</item>
+      <item>ShortcutController</item>
+      <item>ShortcutLabel</item>
+      <item>ShortcutsGroup</item>
+      <item>ShortcutsSection</item>
+      <item>ShortcutsShortcut</item>
+      <item>ShortcutsWindow</item>
+      <item>ShortcutTrigger</item>
+      <item>SignalAction</item>
+      <item>SignalListItemFactory</item>
+      <item>SingleSelection</item>
+      <item>SizeGroup</item>
+      <item>SliceListModel</item>
+      <item>Snapshot</item>
+      <item>Sorter</item>
+      <item>SortListModel</item>
+      <item>SpinButton</item>
+      <item>Spinner</item>
+      <item>Stack</item>
+      <item>StackPage</item>
+      <item>StackSidebar</item>
+      <item>StackSwitcher</item>
+      <item>Statusbar</item>
+      <item>StringFilter</item>
+      <item>StringList</item>
+      <item>StringObject</item>
+      <item>StringSorter</item>
+      <item>StyleContext</item>
+      <item>Svg</item>
+      <item>Switch</item>
+      <item>Text</item>
+      <item>TextBuffer</item>
+      <item>TextChildAnchor</item>
+      <item>TextMark</item>
+      <item>TextTag</item>
+      <item>TextTagTable</item>
+      <item>TextView</item>
+      <item>ToggleButton</item>
+      <item>Tooltip</item>
+      <item>TreeExpander</item>
+      <item>TreeListModel</item>
+      <item>TreeListRow</item>
+      <item>TreeListRowSorter</item>
+      <item>TreeModelFilter</item>
+      <item>TreeModelSort</item>
+      <item>TreeSelection</item>
+      <item>TreeStore</item>
+      <item>TreeView</item>
+      <item>TreeViewColumn</item>
+      <item>UriLauncher</item>
+      <item>Video</item>
+      <item>Viewport</item>
+      <item>VolumeButton</item>
+      <item>Widget</item>
+      <item>WidgetPaintable</item>
+      <item>Window</item>
+      <item>WindowControls</item>
+      <item>WindowGroup</item>
+      <item>WindowHandle</item>
+    </list>
+    <list name="LibadwaitaWidgets">
+      <item>Adw</item>
+      <item>AboutDialog</item>
+      <item>AboutWindow</item>
+      <item>ActionRow</item>
+      <item>AlertDialog</item>
+      <item>Animation</item>
+      <item>AnimationTarget</item>
+      <item>Application</item>
+      <item>ApplicationWindow</item>
+      <item>Avatar</item>
+      <item>Banner</item>
+      <item>Bin</item>
+      <item>BottomSheet</item>
+      <item>Breakpoint</item>
+      <item>BreakpointBin</item>
+      <item>ButtonContent</item>
+      <item>ButtonRow</item>
+      <item>CallbackAnimationTarget</item>
+      <item>Carousel</item>
+      <item>CarouselIndicatorDots</item>
+      <item>CarouselIndicatorLines</item>
+      <item>Clamp</item>
+      <item>ClampLayout</item>
+      <item>ClampScrollable</item>
+      <item>ComboRow</item>
+      <item>Dialog</item>
+      <item>EntryRow</item>
+      <item>EnumListItem</item>
+      <item>EnumListModel</item>
+      <item>ExpanderRow</item>
+      <item>Flap</item>
+      <item>HeaderBar</item>
+      <item>InlineViewSwitcher</item>
+      <item>Layout</item>
+      <item>LayoutSlot</item>
+      <item>Leaflet</item>
+      <item>LeafletPage</item>
+      <item>MessageDialog</item>
+      <item>MultiLayoutView</item>
+      <item>NavigationPage</item>
+      <item>NavigationSplitView</item>
+      <item>NavigationView</item>
+      <item>OverlaySplitView</item>
+      <item>PasswordEntryRow</item>
+      <item>PreferencesDialog</item>
+      <item>PreferencesGroup</item>
+      <item>PreferencesPage</item>
+      <item>PreferencesRow</item>
+      <item>PreferencesWindow</item>
+      <item>PropertyAnimationTarget</item>
+      <item>ShortcutLabel</item>
+      <item>ShortcutsDialog</item>
+      <item>ShortcutsItem</item>
+      <item>ShortcutsSection</item>
+      <item>Sidebar</item>
+      <item>SidebarItem</item>
+      <item>SidebarSection</item>
+      <item>Spinner</item>
+      <item>SpinnerPaintable</item>
+      <item>SpinRow</item>
+      <item>SplitButton</item>
+      <item>SpringAnimation</item>
+      <item>Squeezer</item>
+      <item>SqueezerPage</item>
+      <item>StatusPage</item>
+      <item>StyleManager</item>
+      <item>SwipeTracker</item>
+      <item>SwitchRow</item>
+      <item>TabBar</item>
+      <item>TabButton</item>
+      <item>TabOverview</item>
+      <item>TabPage</item>
+      <item>TabView</item>
+      <item>TimedAnimation</item>
+      <item>Toast</item>
+      <item>ToastOverlay</item>
+      <item>Toggle</item>
+      <item>ToggleGroup</item>
+      <item>ToolbarView</item>
+      <item>ViewStack</item>
+      <item>ViewStackPage</item>
+      <item>ViewStackPages</item>
+      <item>ViewSwitcher</item>
+      <item>ViewSwitcherBar</item>
+      <item>ViewSwitcherSidebar</item>
+      <item>ViewSwitcherTitle</item>
+      <item>Window</item>
+      <item>WindowTitle</item>
+      <item>WrapBox</item>
+      <item>WrapLayout</item>
+    </list>
+    <list name="GlibWidgets">
+      <item>Gio</item>
+      <item>DesktopAppInfo</item>
+      <item>FDMessage</item>
+      <item>InputStream</item>
+      <item>MountMonitor</item>
+      <item>OutputStream</item>
+      <item>AppInfoMonitor</item>
+      <item>AppLaunchContext</item>
+      <item>Application</item>
+      <item>ApplicationCommandLine</item>
+      <item>BufferedInputStream</item>
+      <item>BufferedOutputStream</item>
+      <item>BytesIcon</item>
+      <item>Cancellable</item>
+      <item>CharsetConverter</item>
+      <item>ConverterInputStream</item>
+      <item>ConverterOutputStream</item>
+      <item>Credentials</item>
+      <item>DataInputStream</item>
+      <item>DataOutputStream</item>
+      <item>DBusActionGroup</item>
+      <item>DBusAuthObserver</item>
+      <item>DBusConnection</item>
+      <item>DBusInterfaceSkeleton</item>
+      <item>DBusMenuModel</item>
+      <item>DBusMessage</item>
+      <item>DBusMethodInvocation</item>
+      <item>DBusObjectManagerClient</item>
+      <item>DBusObjectManagerServer</item>
+      <item>DBusObjectProxy</item>
+      <item>DBusObjectSkeleton</item>
+      <item>DBusProxy</item>
+      <item>DBusServer</item>
+      <item>DebugControllerDBus</item>
+      <item>Emblem</item>
+      <item>EmblemedIcon</item>
+      <item>FileEnumerator</item>
+      <item>FileIcon</item>
+      <item>FileInfo</item>
+      <item>FileInputStream</item>
+      <item>FileIOStream</item>
+      <item>FileMonitor</item>
+      <item>FilenameCompleter</item>
+      <item>FileOutputStream</item>
+      <item>FilterInputStream</item>
+      <item>FilterOutputStream</item>
+      <item>InetAddress</item>
+      <item>InetAddressMask</item>
+      <item>InetSocketAddress</item>
+      <item>InputStream</item>
+      <item>IOModule</item>
+      <item>IOStream</item>
+      <item>ListStore</item>
+      <item>MemoryInputStream</item>
+      <item>MemoryOutputStream</item>
+      <item>Menu</item>
+      <item>MenuAttributeIter</item>
+      <item>MenuItem</item>
+      <item>MenuLinkIter</item>
+      <item>MenuModel</item>
+      <item>MountOperation</item>
+      <item>NativeSocketAddress</item>
+      <item>NativeVolumeMonitor</item>
+      <item>NetworkAddress</item>
+      <item>NetworkService</item>
+      <item>Notification</item>
+      <item>OutputStream</item>
+      <item>Permission</item>
+      <item>PropertyAction</item>
+      <item>ProxyAddress</item>
+      <item>ProxyAddressEnumerator</item>
+      <item>Resolver</item>
+      <item>Settings</item>
+      <item>SettingsBackend</item>
+      <item>SimpleAction</item>
+      <item>SimpleActionGroup</item>
+      <item>SimpleAsyncResult</item>
+      <item>SimpleIOStream</item>
+      <item>SimplePermission</item>
+      <item>SimpleProxyResolver</item>
+      <item>Socket</item>
+      <item>SocketAddress</item>
+      <item>SocketAddressEnumerator</item>
+      <item>SocketClient</item>
+      <item>SocketConnection</item>
+      <item>SocketControlMessage</item>
+      <item>SocketListener</item>
+      <item>SocketService</item>
+      <item>Subprocess</item>
+      <item>SubprocessLauncher</item>
+      <item>Task</item>
+      <item>TcpConnection</item>
+      <item>TcpWrapperConnection</item>
+      <item>TestDBus</item>
+      <item>ThemedIcon</item>
+      <item>ThreadedResolver</item>
+      <item>ThreadedSocketService</item>
+      <item>TlsCertificate</item>
+      <item>TlsConnection</item>
+      <item>TlsDatabase</item>
+      <item>TlsInteraction</item>
+      <item>TlsPassword</item>
+      <item>UnixConnection</item>
+      <item>UnixCredentialsMessage</item>
+      <item>UnixFDList</item>
+      <item>UnixSocketAddress</item>
+      <item>Vfs</item>
+      <item>VolumeMonitor</item>
+      <item>ZlibCompressor</item>
+      <item>ZlibDecompressor</item>
+    </list>
+    <list name="LibshumateWidgets">
+      <item>Shumate</item>
+      <item>Compass</item>
+      <item>Coordinate</item>
+      <item>DataSource</item>
+      <item>DataSourceRequest</item>
+      <item>FileCache</item>
+      <item>Layer</item>
+      <item>License</item>
+      <item>Map</item>
+      <item>MapLayer</item>
+      <item>MapSource</item>
+      <item>MapSourceRegistry</item>
+      <item>Marker</item>
+      <item>MarkerLayer</item>
+      <item>PathLayer</item>
+      <item>Point</item>
+      <item>RasterRenderer</item>
+      <item>Scale</item>
+      <item>SimpleMap</item>
+      <item>SymbolEvent</item>
+      <item>Tile</item>
+      <item>TileDownloader</item>
+      <item>VectorReader</item>
+      <item>VectorReaderIter</item>
+      <item>VectorRenderer</item>
+      <item>VectorSprite</item>
+      <item>VectorSpriteSheet</item>
+      <item>Viewport</item>
+    </list>
+    <list name="LibmanetteWidgets">
+      <item>Libmanette</item>
+      <item>Device</item>
+      <item>Monitor</item>
+    </list>
+    <list name="using">
+      <item>using</item>
+      <item>template</item>
+      <item>menu</item>
+      <item>section</item>
+      <item>item</item>
+      <item>styles</item>
+    </list>
+    <list name="binds">
+      <item>bind</item>
+    </list>
+    <list name="bindflags">
+      <item>swapped</item>
+      <item>inverted</item>
+      <item>as</item>
+      <item>typeof</item>
+      <item>bidirectional</item>
+      <item>not-swapped</item>
+      <item>no-sync-create</item>
+    </list>
+    <list name="orientation">
+      <item>top</item>
+      <item>bottom</item>
+      <item>start</item>
+      <item>end</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <keyword String="LibmanetteWidgets" attribute="Widgets" context="#pop!Properties"/>
+        <keyword String="LibshumateWidgets" attribute="Widgets" context="#pop!Properties"/>
+        <keyword String="GlibWidgets" attribute="Widgets" context="#pop!Properties"/>
+        <keyword String="LibadwaitaWidgets" attribute="Widgets" context="#pop!Properties"/>
+        <keyword String="GtkWidgets" attribute="Widgets" context="#pop!Properties"/>
+        <keyword String="orientation" attribute="Orientation" context="#pop"/>
+        <keyword String="using" attribute="Imports" context="#pop!Properties"/>
+        <keyword String="binds" attribute="BindingFlags" context="#pop"/>
+        <keyword String="bindflags" attribute="BindingFlags" context="#pop!Normal"/>
+        <Detect2Chars attribute="Comments" char="/" char1="/" context="#pop!Comments"/>
+        <!--  Detect custom widgets + callbacks. -->
+        <DetectChar char="$" attribute="Widgets" context="#pop!Properties"/>
+        <!--	Detect Floats/Ints e.t.c in import versions or as part of a gint property.-->
+        <RegExpr attribute="Float" String="([0-9][_0-9]*(\.[0-9]([_0-9])*)e[\+\-]?[0-9][_0-9]*)|([0-9][_0-9]*\.?e[\+\-]?[0-9][_0-9]*)|(([0-9]([_0-9])*)?\.[0-9][_0-9]*)" context="#stay"/>
+        <RegExpr attribute="Int" String="\d[_\d]*" context="#stay"/>
+        <!-- 	Detect widget names and properties -->
+        <RegExpr attribute="Value" String="[a-z][-a-zA-Z0-9_.]+s*:" context="#pop!Properties"/>
+        <RegExpr attribute="Widget Name" String="[a-z][-a-zA-Z0-9_.]+s*" context="#pop!Properties"/>
+        <!-- 	Strings -->
+        <IncludeRules context="StringVariants"/>
+        <DetectChar attribute="Widgets" context="#stay" char="{" beginRegion="Brace1"/>
+        <DetectChar attribute="Widgets" context="#stay" char="}" endRegion="Brace1"/>
+      </context>
+      <!-- Comments 	-->
+      <context name="Comments" attribute="Comments" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+      </context>
+      <!--	Properties of Widgets e.g
+				halign: center
+				collapsed: true
+			-->
+      <context name="Properties" attribute="Widgets" lineEndContext="#pop" fallthroughContext="#pop" fallthrough="1">
+        <DetectSpaces attribute="Properties"/>
+        <keyword String="binds" attribute="BindingFlags" context="#pop!Normal"/>
+        <keyword String="bindflags" attribute="BindingFlags" context="#pop!Normal"/>
+        <RegExpr attribute="Closure" String="[_a-z][-a-zA-Z0-9_.]+s*" context="#pop!Normal"/>
+        <RegExpr attribute="Widgets" String="[A-Z][-a-zA-Z0-9_.]+s*" context="#pop!Normal"/>
+        <AnyChar attribute="Normal Text" String=";:{" context="#pop!Normal"/>
+      </context>
+      <!-- Strings -->
+      <context name="StringVariants" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="String" char="'" context="Single A-string"/>
+        <DetectChar attribute="String" char="&quot;" context="#pop!Single Q-string"/>
+      </context>
+      <!-- Single-quoted A-strings -->
+      <context name="Single A-string" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="String" char="'" context="#pop!CheckForString"/>
+      </context>
+      <!-- Single-quoted Q-strings -->
+      <context name="Single Q-string" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="String" char="&quot;" context="#pop!CheckForString"/>
+      </context>
+      <context name="CheckForString" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <LineContinue attribute="Normal Text" context="#pop!CheckForStringNext"/>
+      </context>
+      <context name="CheckForStringNext" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <LineContinue attribute="Normal Text" context="#pop!CheckForStringNext"/>
+        <IncludeRules context="StringVariants"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Comments" defStyleNum="dsComment"/>
+      <itemData name="Imports" defStyleNum="dsImport" spellChecking="false"/>
+      <itemData name="BindingFlags" defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Widgets" defStyleNum="dsAnnotation" spellChecking="false"/>
+      <itemData name="Widget Name" defStyleNum="dsPreprocessor" spellChecking="false"/>
+      <itemData name="Float" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Int" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Properties" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Orientation" defStyleNum="dsAnnotation" spellChecking="false"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Value" defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Closure" defStyleNum="dsFunction" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" position="afterwhitespace"/>
+    </comments>
+    <keywords weakDeliminator="-"/>
+    <folding indentationsensitive="0"/>
+  </general>
+</language>
+<!-- kate: indent-width 2; tab-width 2; -->

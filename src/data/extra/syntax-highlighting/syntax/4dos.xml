@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 	<!ENTITY label		"[a-zA-Z_][a-zA-Z_0-9]*">				<!-- so sehen Labels aus -->
-	<!ENTITY varname	"([a-z_]\w*|[0-9]*[&amp;])">			<!-- valid character in a variable name -->
+	<!ENTITY varname	"(?:[a-z_]\w*|[0-9]*[&amp;])">			<!-- valid character in a variable name -->
 	<!ENTITY pathpart	"[^&#34;&#42;&#61;/:&lt;&gt;?\\[\]\|]">	<!-- valid character in a file name -->
-	<!ENTITY tasten		"((Strg|Alt|Shift)-)?([a-z0-9]|F[1-9]|F1[0-2]|Esc|Bksp|Tab|Enter|Up|Down|Left|Right|PgUp|PgDn|Home|End|Ins|Del)">
+	<!ENTITY tasten		"(?:(?:Strg|Alt|Shift)-)?(?:[a-z0-9]|F[1-9]|F1[0-2]|Esc|Bksp|Tab|Enter|Up|Down|Left|Right|PgUp|PgDn|Home|End|Ins|Del)">
 ]>
-<language name="4DOS BatchToMemory" kateversion="5.0" version="5" section="Scripts" extensions="*.btm" casesensitive="0" indenter="cstyle" author="Stefan Huebner (st0ff@npl.de)" license="LGPL">
+<language name="4DOS BatchToMemory" kateversion="5.0" version="10" section="Scripts" extensions="*.btm" casesensitive="0" indenter="cstyle" author="Stefan Huebner (st0ff@npl.de)" license="LGPL">
 <!--DONE:
 	- comments are there
 	- substitutions are there
@@ -355,8 +355,8 @@
 				<keyword attribute="Keyword" context="conditionLeft" String="IfCommand"/>
 				<keyword attribute="Keyword" context="cmdIff" String="IffCommand"/>
 				<!-- find all "echo"-variations -->
-				<RegExpr attribute="Keyword" String="[@]?echo\s+(on|off)(?=\s*($|\%\+|\)|\]))" insensitive="true"/>
-				<RegExpr attribute="Keyword" context="cmdEcho" String="\becho[s]?(err)?[\.]?" insensitive="true"/>
+				<RegExpr attribute="Keyword" String="[@]?echo\s+(?:on|off)(?=\s*($|\%\+|\)|\]))" insensitive="true"/>
+				<RegExpr attribute="Keyword" context="cmdEcho" String="\becho[s]?(?:err)?[\.]?" insensitive="true"/>
 				<!-- special treatment for Text and EndText -->
 				<keyword attribute="Keyword" context="cmdText" String="TextCommand" insensitive="true" beginRegion="true"/>
 				<!-- Set und Unset-Befehle -->
@@ -390,8 +390,8 @@
 
 	<!-- find jumps, labels and subroutine calls -->
 			<context name="findSpaghetti" attribute="Normal" lineEndContext="#stay">
-				<RegExpr attribute="Label" context="foundLabel" String="^:&label;" beginRegion="true" insensitive="true"/>
-				<RegExpr attribute="Label" context="foundSpagetti" String="(goto|gosub)\s+&label;" insensitive="true"/>
+				<RegExpr attribute="Label" context="foundLabel" String="^:&label;" beginRegion="true" insensitive="true" column="0"/>
+				<RegExpr attribute="Label" context="foundSpagetti" String="(?:goto|gosub)\s+&label;" insensitive="true"/>
 				<WordDetect attribute="Label" String="return" insensitive="true" endRegion="true"/>
 			</context>
 
@@ -403,7 +403,7 @@
 	<!-- findVariables just finds variable substitutions WITHOUT variable functions!!!-->
 			<context name="findVariables" attribute="Normal" lineEndContext="#stay">
 				<Detect2Chars attribute="VariableBold" context="substitutionIndirect" char="%" char1="["/>
-				<RegExpr attribute="Variable" String="%(([a-z_][a-z_0-9]*%?)|[0-9]+&amp;?|&amp;|\?+|_\?|#)" insensitive="true"/>
+				<RegExpr attribute="Variable" String="%(?:[a-z_][a-z_0-9]*%?|[0-9]+&amp;?|&amp;|\?+|_\?|#)" insensitive="true"/>
 			</context>
 
 	<!-- findNumbers finds Numbers and variableSubstitutions that may well be numbers-->
@@ -451,7 +451,7 @@
 
 	<!-- Entry Point for finding conditions -->
 			<context name="findCondition" attribute="Normal" lineEndContext="#stay">
-				<RegExpr attribute="Error" context="conditionLeft" String="(not\s+)*(((dir)?exist|isdir|defined|is(alias|function|label|internal)|errorlevel)|(.+((\s*(==|!=)\s*)|(\s+(eq|ne|gt|ge|lt|le|eqc)\s+)).+))" lookAhead="true" insensitive="true"/>
+				<RegExpr attribute="Error" context="conditionLeft" String="(?:not\s+)*(?:(?:(?:dir)?exist|isdir|defined|is(?:alias|function|label|internal)|errorlevel)|(?:.+(?:(?:\s*(==|!=)\s*)|(?:\s+(?:eq|ne|gt|ge|lt|le|eqc)\s+)).))" lookAhead="true" insensitive="true" minimal="true"/>
 			</context>
 
 	<!-- find redirections -->
@@ -484,7 +484,7 @@ Here we start with functional contexts.  These actually do something more than j
 			<context name="substitutionFound" attribute="Error" lineEndContext="#pop">
 				<Detect2Chars attribute="Function" context="#pop!substitutionFindFunction" char="%" char1="@"/>
 				<Detect2Chars attribute="VariableBold" context="#pop!substitutionIndirect" char="%" char1="["/>
-				<RegExpr attribute="Variable" context="#pop" String="%((([a-z_][a-z_0-9]*)%?)|[0-9]+&amp;?|&amp;|\?+|_\?|#)" insensitive="true"/>
+				<RegExpr attribute="Variable" context="#pop" String="%(?:[a-z_][a-z_0-9]*%?|[0-9]+&amp;?|&amp;|\?+|_\?|#)" insensitive="true"/>
 				<!-- in @EVAL there is the modulo-operator %% - we'll have to filter it out!
 					 TODO: give eval a special handler and remove the following rule. -->
 				<Detect2Chars attribute="Operator" context="#pop" char="%" char1="%"/>
@@ -536,6 +536,7 @@ Here we start with functional contexts.  These actually do something more than j
 
 	<!-- stuff inside comments ... (a comment always runs until EOL) -->
 			<context name="foundComment" attribute="Comment" lineEndContext="#pop">
+				<IncludeRules context="##Comments"/>
 				<keyword attribute="Alert" String="HighlightInsideComment"/>
 			</context>
 
@@ -563,7 +564,7 @@ Here we start with functional contexts.  These actually do something more than j
 				<RegExpr attribute="Normal" context="conditionNot" String="\bnot\b" lookAhead="true" insensitive="true"/>
 				<keyword attribute="Label" context="#pop!conditionVarname" String="TestStatusVarname"/>
 				<!-- the end of a filename comes with any non-quoted space - so we need to eat up the first space after exist etc.-->
-				<RegExpr attribute="Label" context="#pop!conditionFileTest" String="((dir)?exist|isdir)\s+" insensitive="true"/>
+				<RegExpr attribute="Label" context="#pop!conditionFileTest" String="(?:(?:dir)?exist|isdir)\s+" insensitive="true"/>
 				<keyword attribute="Label" context="#pop!conditionErrorlevel" String="TestErrorlevel"/>
 				<DetectSpaces/>
 			</context>
@@ -592,13 +593,13 @@ Here we start with functional contexts.  These actually do something more than j
 			</context>
 
 			<context name="conditionEnd" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-				<RegExpr attribute="Operator" context="#pop!conditionLeft" String="\.(and|(x)?or)\." insensitive="true"/>
+				<RegExpr attribute="Operator" context="#pop!conditionLeft" String="\.(?:and|x?or)\." insensitive="true"/>
 				<!--DetectSpaces/-->
 			</context>
 
 			<context name="conditionLeftStandard" attribute="Normal" lineEndContext="#pop">
 				<!--DetectSpaces/-->
-				<RegExpr attribute="Operator" context="#pop!conditionLeftEval" String="\s*(==|!=|eq|ne|gt|ge|lt|le)\s*" lookAhead="true" insensitive="true"/>
+				<RegExpr attribute="Operator" context="#pop!conditionLeftEval" String="\s*(?:==|!=|eq|ne|gt|ge|lt|le)" lookAhead="true" insensitive="true"/>
 				<IncludeRules context="findStrings"/>
 			</context>
 
@@ -617,7 +618,7 @@ Here we start with functional contexts.  These actually do something more than j
 				<IncludeRules context="findCondition"/>
 				<DetectSpaces/>
 				<!-- TODO: replace with WordDetect as soon as WordDetect works right-->
-				<RegExpr attribute="Keyword" context="#pop!cmdIffThen" beginRegion="true" String="\bthen\b\s*($|%\+)" insensitive="true"/>
+				<RegExpr attribute="Keyword" context="#pop!cmdIffThen" beginRegion="true" String="\bthen\b\s*(?:$|%\+)" insensitive="true"/>
 				<!-- should the above regex not match, there is an error... -->
 				<StringDetect attribute="Keyword" context="Error" String="then" insensitive="true"/>
 			</context>
@@ -634,7 +635,7 @@ Here we start with functional contexts.  These actually do something more than j
 				<IncludeRules context="findCondition"/>
 				<DetectSpaces/>
 				<!-- TODO: replace with WordDetect as soon as WordDetect works right-->
-				<RegExpr attribute="Keyword" context="#pop" String="\bthen\b\s*($|%\+)" insensitive="true"/>
+				<RegExpr attribute="Keyword" context="#pop" String="\bthen\b\s*(?:$|%\+)" insensitive="true"/>
 				<!-- should the above regex not match, there is an error... -->
 				<StringDetect attribute="Keyword" context="Error" String="then" insensitive="true"/>
 			</context>
@@ -643,7 +644,7 @@ Here we start with functional contexts.  These actually do something more than j
 			<context name="cmdEcho" attribute="String" lineEndContext="#pop">
 				<IncludeRules context="findStrings"/>
 				<IncludeRules context="findRedirection"/>
-				<RegExpr attribute="Normal" context="#pop" String="\s*($|\%\+|\)|\])" lookAhead="true"/>
+				<RegExpr attribute="Normal" context="#pop" String="\s*(?:$|\%\+|\)|\])" lookAhead="true"/>
 			</context>
 
 	<!-- Redirection: kann ja auch mehrfach auftreten -->
@@ -670,7 +671,7 @@ Here we start with functional contexts.  These actually do something more than j
 			</context>
 
 			<context name="cmdEndText" attribute="String" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="#pop" String="^\s*endtext\s*$" insensitive="true"/>
+				<RegExpr attribute="Keyword" context="#pop" String="^\s*endtext\s*$" insensitive="true" column="0"/>
 	<!--	As we are pretty 31337, we also highlight ANSI-Escapes in Textblocks.
 			We're just not 1337 enough to also provide a syntactic checking for
 			those sequences...-->
@@ -699,20 +700,20 @@ Here we start with functional contexts.  These actually do something more than j
 			<context name="cmdInput" attribute="String" lineEndContext="#pop"
 					 fallthroughContext="#pop!inputMessage" fallthrough="true">
 				<IncludeRules context="input"/>
-				<RegExpr attribute="Option" String="/([en]|l[0-9]+)\s" insensitive="true"/>
+				<RegExpr attribute="Option" String="/(?:[en]|l[0-9]+)\s" insensitive="true"/>
 			</context>
 
 			<context name="cmdInkey" attribute="String" lineEndContext="#pop"
 					 fallthroughContext="#pop!inputMessage" fallthrough="true">
-				<RegExpr attribute="Option" context="inputKeysDP" String="/k:" insensitive="true"/>
-				<RegExpr attribute="Option" context="inputKeysAZ" String="/k\&quot;" insensitive="true"/>
+				<StringDetect attribute="Option" context="inputKeysDP" String="/k:" insensitive="true"/>
+				<StringDetect attribute="Option" context="inputKeysAZ" String="/k&quot;" insensitive="true"/>
 				<StringDetect attribute="Error" String="/k" insensitive="true"/>
 				<StringDetect attribute="Option" String="/m" insensitive="true"/>
 				<IncludeRules context="input"/>
 			</context>
 
 			<context name="input" attribute="Error" lineEndContext="#stay">
-				<RegExpr attribute="Option" String="/([cdpx]|[w][0-9]+)\s" insensitive="true"/>
+				<RegExpr attribute="Option" String="/(?:[cdpx]|[w][0-9]+)\s" insensitive="true"/>
 				<DetectSpaces attribute="Normal" context="#stay"/>
 			</context>
 
@@ -745,9 +746,9 @@ Here we start with functional contexts.  These actually do something more than j
 			<context name="cmdDo" attribute="Error" lineEndContext="Error">
 				<!-- do n | forever-->
 				<RegExpr attribute="Label" context="#pop!insideDo" String="\s*forever(?=\s*$)" insensitive="true"/>
-				<RegExpr attribute="Variable" context="#pop!fixedDo" String="\s*(%|[0-9]+)" lookAhead="true"/>
+				<RegExpr attribute="Variable" context="#pop!fixedDo" String="\s*[%0-9]" lookAhead="true"/>
 				<!-- WHILE | UNTIL -->
-				<RegExpr attribute="Label" context="#pop!conditionalDo" String="\s*(while|until)" insensitive="true"/>
+				<RegExpr attribute="Label" context="#pop!conditionalDo" String="\s*(?:while|until)" insensitive="true"/>
 				<!-- varname = start TO end [BY n] | varname in blubberkram -->
 				<RegExpr attribute="Variable" context="#pop!countedDo" String="\s*&varname;" insensitive="true"/>
 			</context>
@@ -850,18 +851,18 @@ Here we start with functional contexts.  These actually do something more than j
 			</context>
 
 			<context name="cmdTakeColors" attribute="String" lineEndContext="#pop">
-				<RegExpr attribute="Operator" context="#pop!ColorHaveBrightFG" String="\bbri(ght)?\b" insensitive="true"/>
-				<RegExpr attribute="Operator" context="#pop!ColorHaveBlinkFG" String="\bbli(nk)?\b" insensitive="true"/>
+				<RegExpr attribute="Operator" context="#pop!ColorHaveBrightFG" String="\bbri(?:ght)?\b" insensitive="true"/>
+				<RegExpr attribute="Operator" context="#pop!ColorHaveBlinkFG" String="\bbli(?:nk)?\b" insensitive="true"/>
 				<IncludeRules context="ColorHaveBlinkFG"/>
 			</context>
 
 			<context name="ColorHaveBrightFG" attribute="String" lineEndContext="Error">
-				<RegExpr attribute="Operator" context="#pop!ColorHaveBlinkFG" String="\bbli(nk)?\b" insensitive="true"/>
+				<RegExpr attribute="Operator" context="#pop!ColorHaveBlinkFG" String="\bbli(?:nk)?\b" insensitive="true"/>
 				<IncludeRules context="ColorHaveBlinkFG"/>
 			</context>
 
 			<context name="ColorHaveBlinkFG" attribute="String" lineEndContext="Error">
-				<RegExpr attribute="Option" context="#pop!ColorHaveFG" insensitive="true" String="\b(Bla(ck)?|Blue?|Gre(en)?|Red|Mag(enta)?|Cyan?|Yel(low)?|Whi(te)?)\b"/>
+				<RegExpr attribute="Option" context="#pop!ColorHaveFG" insensitive="true" String="\b(?:Bla(?:ck)?|Blue?|Gre(?:en)?|Red|Mag(?:enta)?|Cyan?|Yel(?:low)?|Whi(?:te)?)\b"/>
 				<DetectSpaces/>
 			</context>
 
@@ -870,17 +871,17 @@ Here we start with functional contexts.  These actually do something more than j
 			</context>
 
 			<context name="ColorBG" attribute="String" lineEndContext="Error">
-				<RegExpr attribute="Operator" insensitive="true" String="\bbri(ght)?\b"/>
-				<RegExpr attribute="Option" context="#pop!ColorHaveBG" insensitive="true" String="\b(Bla(ck)?|Blue?|Gre(en)?|Red|Mag(enta)?|Cyan?|Yel(low)?|Whi(te)?)\b"/>
+				<RegExpr attribute="Operator" insensitive="true" String="\bbri(?:ght)?\b"/>
+				<RegExpr attribute="Option" context="#pop!ColorHaveBG" insensitive="true" String="\b(?:Bla(?:ck)?|Blue?|Gre(?:en)?|Red|Mag(?:enta)?|Cyan?|Yel(?:low)?|Whi(?:te)?)\b"/>
 			</context>
 
 			<context name="ColorHaveBG" attribute="String" lineEndContext="#pop">
-				<RegExpr attribute="Operator" context="#pop!ColorNeedBordercol" insensitive="true" String="\bBOR(der)?\b"/>
+				<RegExpr attribute="Operator" context="#pop!ColorNeedBordercol" insensitive="true" String="\bBOR(?:der)?\b"/>
 				<IncludeRules context="popNeedEndOfCommand"/>
 			</context>
 
 			<context name="ColorNeedBordercol" attribute="String" lineEndContext="Error">
-				<RegExpr attribute="Option" context="#pop!popNeedEndOfCommand" insensitive="true" String="\s*(Bla(ck)?|Blue?|Gre(en)?|Red|Mag(enta)?|Cyan?|Yel(low)?|Whi(te)?)\b"/>
+				<RegExpr attribute="Option" context="#pop!popNeedEndOfCommand" insensitive="true" String="\s*(?:Bla(?:ck)?|Blue?|Gre(?:en)?|Red|Mag(?:enta)?|Cyan?|Yel(?:low)?|Whi(?:te)?)\b"/>
 			</context>
 
 			<context name="cmdDraw" attribute="String" lineEndContext="#pop">
@@ -917,8 +918,8 @@ Here we start with functional contexts.  These actually do something more than j
 	<general>
 		<comments>
 			<comment name="singleLine" start="rem "/>
-			<comment name="singleLine" start="::"/>
 		</comments>
 		<keywords casesensitive="0" additionalDeliminator="@"/>
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

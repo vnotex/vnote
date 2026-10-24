@@ -1,43 +1,268 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language [
+  <!ENTITY scale "([fpnumckgt]|mil|meg)">
+  <!ENTITY units "(Hz?|sec|Amp|[sAvCF]|dB|DRV[FZ])">
+]>
 
-<language name="Spice" section="Hardware" version="4" kateversion="5.0" extensions="*.sp;*.hsp" mimetype="text/spice" author="Steven Robson (s.a.robson@sms.ed.ac.uk) and Anders Lund" license="LGPL">
+<language name="Spice" section="Hardware" version="7" kateversion="5.62" extensions="*.sp;*.hsp;*.cir" mimetype="text/spice" author="Steven Robson (s.a.robson@sms.ed.ac.uk) and Anders Lund" license="LGPL">
     <highlighting>
+
+        <list name="A-devices model">
+            <item>and</item>
+            <item>buf</item>
+            <item>counter</item>
+            <item>dflop</item>
+            <item>inv</item>
+            <item>modulator</item>
+            <item>xor</item>
+            <item>or</item>
+            <item>ota</item>
+            <item>phasedet</item>
+            <item>samplehold</item>
+            <item>schmitbuf</item>
+            <item>schmitinv</item>
+            <item>schmitt</item>
+            <item>srflop</item>
+            <item>varistor</item>
+        </list>
+
+        <list name="directives">
+            <item>.nodealias</item>
+            <item>.nodeset</item>
+            <item>.meas</item>
+            <item>.options</item>
+            <item>.option</item>
+            <item>.opts</item>
+            <item>.opt</item>
+            <item>.ic</item>
+            <item>.step</item>
+            <item>.lib</item>
+            <item>.include</item>
+            <item>.inc</item>
+            <item>.backanno</item>
+            <item>.savebias</item>
+            <item>.save</item>
+            <item>.loadbias</item>
+            <item>.load</item>
+            <item>.global</item>
+            <item>.temp</item>
+            <item>.ferret</item>
+            <item>.wave</item>
+            <item>.mach</item>
+            <item>.machine</item>
+            <item>.endmach</item>
+            <item>.endmachine</item>
+        </list>
+
+        <list name="state-machine">
+            <item>.state</item>
+            <item>.rule</item>
+            <item>.output</item>
+        </list>
+
+        <list name="simulation commands">
+            <item>.ac</item>
+            <item>.dc</item>
+            <item>.disto</item>
+            <item>.endl</item>
+            <item>.four</item>
+            <item>.global</item>
+            <item>.net</item>
+            <item>.noise</item>
+            <item>.op</item>
+            <item>.option</item>
+            <item>.plot</item>
+            <item>.print</item>
+            <item>.pz</item>
+            <item>.sens</item>
+            <item>.temp</item>
+            <item>.tf</item>
+            <item>.tran</item>
+        </list>
+
+        <list name="subckt model">
+            <item>.ends</item>
+            <item>.subckt</item>
+            <item>.model</item>
+        </list>
+
+        <list name="commands">
+            <item>.include</item>
+            <item>.lib</item>
+            <item>.param</item>
+            <item>.probe</item>
+            <item>.nodeset</item>
+            <item>.ic</item>
+            <item>.end</item>
+        </list>
+
+        <list name="functions">
+            <item>abs</item>
+            <item>ac</item>
+            <item>acos</item>
+            <item>asin</item>
+            <item>atan</item>
+            <item>cos</item>
+            <item>cosh</item>
+            <item>db</item>
+            <item>dc</item>
+            <item>dec</item>
+            <item>exp</item>
+            <item>int</item>
+            <item>lin</item>
+            <item>log</item>
+            <item>log10</item>
+            <item>lv</item>
+            <item>lx</item>
+            <item>max</item>
+            <item>min</item>
+            <item>oct</item>
+            <item>pow</item>
+            <item>pulse</item>
+            <item>pwl</item>
+            <item>pwr</item>
+            <item>sffm</item>
+            <item>sgn</item>
+            <item>sign</item>
+            <item>sin</item>
+            <item>sinh</item>
+            <item>sqrt</item>
+            <item>tan</item>
+            <item>tanh</item>
+        </list>
 
         <contexts>
 
-            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
-                <RegExpr attribute="Keyword" context="#stay" String="\B\.\w+" />
-                <Int attribute="Number" context="#stay"/>
-                <Float attribute="Number" context="#stay"/>
-                <AnyChar attribute="Comment" String="$*" context="Commentar 1" />
-                <DetectChar attribute="String" context="String" char="&quot;"/>
-                <DetectChar attribute="String" context="TickString" char="'"/>
+            <!--
+            Note:
+
+            SpiceComment := ^ '*' text
+            PSpice Comments := ';' text
+            Pnspice Comments := '$ ' text
+            -->
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal" fallthroughContext="Command">
+                <keyword context="Function" String="functions" lookAhead="1"/>
+                <AnyChar context="Source" String="VIEFGHSviefghs" lookAhead="1"/>
+                <AnyChar context="Passives" String="RCLKYTrclkyt" lookAhead="1"/>
+                <AnyChar context="Actives" String="DQMJXdqmjx" lookAhead="1"/>
+                <AnyChar attribute="Comment" context="Commentar 1" String="$*#;"/>
+                <keyword attribute="Directive" context="Command" String="directives"/>
+                <keyword attribute="State Machine" context="Command" String="state-machine"/>
+                <keyword attribute="Simulation Command" context="Command" String="simulation commands"/>
+                <keyword attribute="Keyword" context="Command" String="commands"/>
+                <keyword attribute="Preprocessor" context="subckt" String="subckt model"/>
+                <DetectChar attribute="Normal Text" context="Command" char="+"/>
+                <DetectIdentifier attribute="Normal Text" context="Command"/>
+                <RegExpr attribute="Unknown Command" context="Command" String="[.]\w+|"/>
             </context>
 
-            <context attribute="Comment" lineEndContext="#pop" name="Commentar 1"/>
+            <context attribute="Normal Text" lineEndContext="#pop" name="Function">
+                <RegExpr attribute="Function" context="#pop!Command" String="\w+(?=\s*\()|"/>
+                <AnyChar context="#pop!Source" String="VIEFGHSviefghs" lookAhead="1"/>
+                <AnyChar context="#pop!Passives" String="RCLKYTrclkyt" lookAhead="1"/>
+                <AnyChar context="#pop!Actives" String="DQMJXdqmjx" lookAhead="1"/>
+                <DetectIdentifier attribute="Unknown Command" context="#pop!Command"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#pop" name="findLiteral">
+                <AnyChar attribute="Symbol Operator" String="&gt;&lt;&amp;+-*^/=!~|"/>
+                <AnyChar attribute="Symbol" String="(){}[],"/>
+                <RegExpr attribute="Number" context="Unit" String="(\b[0-9]+\.[0-9]*|\.?\b[0-9]+)([eE][-+]?[0-9]+)?(?![a-zA-Z_]+[0-9])"/>
+                <DetectChar attribute="String" context="String" char="&quot;"/>
+                <DetectChar attribute="String" context="TickString" char="'"/>
+                <DetectChar attribute="Comment" context="#pop!Commentar 1" char=";"/>
+                <Detect2Chars attribute="Comment" context="#pop!Commentar 1" char="$" char1=" "/>
+            </context>
+            <context attribute="Normal Text" lineEndContext="#pop" name="findOther">
+                <RegExpr attribute="Variable" context="Variable" String="\b[^\s&gt;&lt;&amp;(){}[];,=/+\-*\^~!]+\s*(?==(?!=))"/>
+                <keyword attribute="Function" String="functions"/>
+                <keyword attribute="A-device" String="A-devices model"/>
+                <DetectIdentifier attribute="Normal Text"/>
+            </context>
+
+            <context attribute="Source" lineEndContext="#pop" name="Source" fallthroughContext="#pop!Command">
+                <DetectIdentifier attribute="Source" context="#pop!Command"/>
+            </context>
+            <context attribute="Passives" lineEndContext="#pop" name="Passives">
+                <DetectIdentifier attribute="Passives" context="#pop!Command"/>
+            </context>
+            <context attribute="Actives" lineEndContext="#pop" name="Actives">
+                <DetectIdentifier attribute="Actives" context="#pop!Command"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="checkContinuation" name="Command">
+                <DetectSpaces attribute="Normal Text"/>
+                <IncludeRules context="findLiteral"/>
+                <IncludeRules context="findOther"/>
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="checkContinuation" fallthroughContext="#pop#pop">
+                <DetectChar attribute="Normal Text" context="#pop" char="+"/>
+            </context>
+            <context attribute="Normal Text" lineEndContext="#pop" name="Variable">
+                <DetectSpaces attribute="Normal Text"/>
+                <DetectChar attribute="Variable Separator" context="#pop" char="="/>
+            </context>
+
+            <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+                <DetectSpaces/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier/>
+            </context>
 
             <context attribute="String" lineEndContext="#pop" name="String">
-                <LineContinue attribute="String" context="#stay"/>
-                <HlCStringChar attribute="String Char" context="#stay"/>
+                <LineContinue attribute="String"/>
+                <HlCStringChar attribute="String Char"/>
                 <DetectChar attribute="String" context="#pop" char="&quot;"/>
             </context>
 
             <context attribute="String" lineEndContext="#pop" name="TickString">
-                <LineContinue attribute="String" context="#stay"/>
-                <HlCStringChar attribute="String Char" context="#stay"/>
+                <LineContinue attribute="String"/>
+                <HlCStringChar attribute="String Char"/>
                 <DetectChar attribute="String" context="#pop" char="'"/>
+            </context>
+
+            <context attribute="Unit" lineEndContext="#pop" name="Unit" fallthroughContext="#pop">
+                <RegExpr attribute="Unit" context="#pop" String="(&scale;&units;?|&units;)\b" insensitive="1"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="checkContinuation" name="subckt" fallthroughContext="subcktParams">
+                <DetectSpaces attribute="Normal Text"/>
+                <RegExpr attribute="Subckt Note" context="#pop!subcktParams" String="(?!params:\s)[^\s{}(),;'=]+|" insensitive="1"/>
+            </context>
+            <context attribute="Normal Text" lineEndContext="checkContinuation" name="subcktParams">
+                <DetectSpaces attribute="Normal Text"/>
+                <IncludeRules context="findLiteral"/>
+                <WordDetect attribute="Subckt Params" String="params:" insensitive="1"/>
+                <IncludeRules context="findOther"/>
             </context>
 
         </contexts>
 
         <itemDatas>
-                <itemData name="Normal Text"  defStyleNum="dsNormal"/>
-                <itemData name="Keyword"      defStyleNum="dsKeyword"/>
-                <itemData name="String"       defStyleNum="dsString"/>
-                <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
-                <itemData name="Comment"      defStyleNum="dsComment"/>
-                <itemData name="Number"       defStyleNum="dsDecVal"/>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="0"/>
+            <itemData name="State Machine" defStyleNum="dsKeyword" spellChecking="0" italic="1"/>
+            <itemData name="Simulation Command" defStyleNum="dsKeyword" spellChecking="0"/>
+            <itemData name="Unknown Command" defStyleNum="dsSpecialString" spellChecking="0"/>
+            <itemData name="Preprocessor" defStyleNum="dsPreprocessor" spellChecking="0" bold="1"/>
+            <itemData name="Directive" defStyleNum="dsOperator" spellChecking="0"/>
+            <itemData name="Source" defStyleNum="dsAttribute" spellChecking="0"/>
+            <itemData name="Actives" defStyleNum="dsAttribute" spellChecking="0"/>
+            <itemData name="Passives" defStyleNum="dsAttribute" spellChecking="0"/>
+            <itemData name="Subckt Note" defStyleNum="dsAnnotation" spellChecking="0"/>
+            <itemData name="String" defStyleNum="dsString"/>
+            <itemData name="String Char" defStyleNum="dsSpecialChar"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+            <itemData name="Number" defStyleNum="dsDecVal" spellChecking="0"/>
+            <itemData name="Unit" defStyleNum="dsDataType" spellChecking="0"/>
+            <itemData name="Symbol Operator" defStyleNum="dsOperator" spellChecking="0"/>
+            <itemData name="Symbol" defStyleNum="dsNormal" spellChecking="0"/>
+            <itemData name="Function" defStyleNum="dsFunction" spellChecking="0"/>
+            <itemData name="A-device" defStyleNum="dsOthers" spellChecking="0"/>
+            <itemData name="Subckt Params" defStyleNum="dsConstant" spellChecking="0"/>
+            <itemData name="Variable" defStyleNum="dsVariable" spellChecking="0"/>
+            <itemData name="Variable Separator" defStyleNum="dsOperator" spellChecking="0"/>
         </itemDatas>
 
     </highlighting>
@@ -46,6 +271,7 @@
         <comments>
             <comment name="singleLine" start="*" />
         </comments>
-        <keywords casesensitive="1" weakDeliminator="."/>
+        <keywords casesensitive="0" weakDeliminator="."/>
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

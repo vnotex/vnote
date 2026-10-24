@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE  language SYSTEM "language.dtd">
-<language name="ASP" version="4" kateversion="5.0" section="Markup" extensions="*.asp;" mimetype="text/x-asp-src;text/x-asp-src" author="Antonio Salazar (savedfastcool@gmail.com)" license="LGPL">
+<!DOCTYPE  language>
+<language name="ASP" version="9" kateversion="5.44" section="Markup" extensions="*.asp;" mimetype="text/x-asp-src;text/x-asp-src" author="Antonio Salazar (savedfastcool@gmail.com)" license="LGPL">
     <highlighting>
         <list name="control structures">
             <item>select</item>
@@ -231,19 +231,21 @@
         </list>
             <contexts>
             <context name="nosource" attribute="Normal Text" lineEndContext="#stay">
-                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <IncludeRules context="find-aspsource" />
                 <RegExpr attribute="HTML Tag" context="aspsource" String="&lt;\s*script\s*language=&quot;VBScript&quot;[^&gt;]*&gt;" insensitive="true" />
-                <RegExpr attribute="HTML Tag" context="scripts" String="&lt;\s*script(\s|&gt;)" insensitive="true" />
+                <RegExpr attribute="HTML Tag" context="scripts" String="&lt;\s*script(?:\s|&gt;|$)" insensitive="true" />
                 <RegExpr attribute="HTML Tag" context="htmltag" String="&lt;\s*\/?\s*[a-zA-Z_:][a-zA-Z0-9._:-]*" />
-                <StringDetect attribute="HTML Comment" context="htmlcomment" String="&lt;!--" />
+                <StringDetect attribute="HTML Comment" context="htmlcomment" String="&lt;!--" beginRegion="HTMLComment" />
             </context>
 
+            <context name="find-aspsource" attribute="Normal Text" lineEndContext="#stay">
+                <Detect2Chars attribute="ASP Source" context="aspsource" char="&lt;" char1="%" beginRegion="ASPSource" />
+            </context>
             <context name="aspsource" attribute="ASP Text" lineEndContext="#stay">
-                <StringDetect attribute="Keyword" context="#pop" String="%&gt;" />
+                <Detect2Chars attribute="ASP Source" context="#pop" char="%" char1="&gt;" endRegion="ASPSource" />
                 <RegExpr attribute="HTML Tag" context="#pop" String="&lt;\s*\/\s*script\s*&gt;" insensitive="true" />
                 <DetectChar attribute="Comment" context="asp_onelinecomment" char="'" />
                 <DetectChar attribute="String" context="doublequotestring" char="&quot;" />
-                <DetectChar attribute="String" context="singlequotestring" char="&#39;" />
                 <DetectChar attribute="Keyword" context="#stay" char="&amp;" />
                 <RegExpr attribute="String" context="#stay" String="[0123456789]*\.\.\.[0123456789]*" />
                 <HlCOct attribute="Octal" context="#stay" />
@@ -252,48 +254,50 @@
                 <Int attribute="Decimal" context="#stay" />
                 <AnyChar attribute="Other" context="#stay" String=";()}{:,[]" />
 
-                <RegExpr attribute="Control Structures" context="#stay" String="\belseif\b" insensitive="true" beginRegion="iffi1" endRegion="iffi1"/>
-                <RegExpr attribute="Control Structures" context="#stay" String="\belse\b" insensitive="true" beginRegion="iffi1" endRegion="iffi1"/>
-                <RegExpr attribute="Control Structures" context="#stay" String="\bif\b" insensitive="true" beginRegion="iffi1"/>
-                <RegExpr attribute="Control Structures" context="#stay" String="\bend if\b" insensitive="true" endRegion="iffi1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="elseif" insensitive="true" beginRegion="iffi1" endRegion="iffi1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="else" insensitive="true" beginRegion="iffi1" endRegion="iffi1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="if" insensitive="true" beginRegion="iffi1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="end if" insensitive="true" endRegion="iffi1"/>
 
-                <RegExpr attribute="Keyword" context="#stay" String="\bexit function\b" insensitive="true" />
-                <RegExpr attribute="Keyword" context="#stay" String="\bfunction\b" insensitive="true" beginRegion="funendfun1"/>
-                <RegExpr attribute="Keyword" context="#stay" String="\bend function\b" insensitive="true" endRegion="funendfun1"/>
+                <WordDetect attribute="Keyword" context="#stay" String="exit function" insensitive="true" />
+                <WordDetect attribute="Keyword" context="#stay" String="function" insensitive="true" beginRegion="funendfun1"/>
+                <WordDetect attribute="Keyword" context="#stay" String="end function" insensitive="true" endRegion="funendfun1"/>
 
-                <RegExpr attribute="Keyword" context="#stay" String="\bexit sub\b" insensitive="true" />
-                <RegExpr attribute="Keyword" context="#stay" String="\bsub\b" insensitive="true" beginRegion="subendsub1"/>
-                <RegExpr attribute="Keyword" context="#stay" String="\bend sub\b" insensitive="true" endRegion="subendsub1"/>
+                <WordDetect attribute="Keyword" context="#stay" String="exit sub" insensitive="true" />
+                <WordDetect attribute="Keyword" context="#stay" String="sub" insensitive="true" beginRegion="subendsub1"/>
+                <WordDetect attribute="Keyword" context="#stay" String="end sub" insensitive="true" endRegion="subendsub1"/>
 
-                <RegExpr attribute="Keyword" context="#stay" String="\bclass\b" insensitive="true" beginRegion="classendclass1"/>
-                <RegExpr attribute="Keyword" context="#stay" String="\bend class\b" insensitive="true" endRegion="classendclass1"/>
+                <WordDetect attribute="Keyword" context="#stay" String="class" insensitive="true" beginRegion="classendclass1"/>
+                <WordDetect attribute="Keyword" context="#stay" String="end class" insensitive="true" endRegion="classendclass1"/>
 
-                <RegExpr attribute="Control Structures" context="#stay" String="\bexit do\b" insensitive="true" />
-                <RegExpr attribute="Control Structures" context="#stay" String="\bdo(\s+(while))?\b" insensitive="true" beginRegion="doloop1"/>
-                <RegExpr attribute="Control Structures" context="#stay" String="\bloop\b" insensitive="true" endRegion="doloop1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="exit do" insensitive="true" />
+                <RegExpr attribute="Control Structures" context="#stay" String="\bdo(?:\s+while)?\b" insensitive="true" beginRegion="doloop1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="loop" insensitive="true" endRegion="doloop1"/>
 
-                <RegExpr attribute="Control Structures" context="#stay" String="\bexit while\b" insensitive="true" />
-                <RegExpr attribute="Control Structures" context="#stay" String="\bwhile\b" insensitive="true" beginRegion="whilewend1"/>
-                <RegExpr attribute="Control Structures" context="#stay" String="\bwend\b" insensitive="true" endRegion="whilewend1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="exit while" insensitive="true" />
+                <WordDetect attribute="Control Structures" context="#stay" String="while" insensitive="true" beginRegion="whilewend1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="wend" insensitive="true" endRegion="whilewend1"/>
 
-                <RegExpr attribute="Control Structures" context="#stay" String="\bexit for\b" insensitive="true" />
-                <RegExpr attribute="Control Structures" context="#stay" String="\bfor\b" insensitive="true" beginRegion="fornext1"/>
-                <RegExpr attribute="Control Structures" context="#stay" String="\bnext\b" insensitive="true" endRegion="fornext1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="exit for" insensitive="true" />
+                <WordDetect attribute="Control Structures" context="#stay" String="for" insensitive="true" beginRegion="fornext1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="next" insensitive="true" endRegion="fornext1"/>
 
-                <RegExpr attribute="Control Structures" context="#stay" String="\bselect case\b" insensitive="true" beginRegion="selcase1"/>
-                <RegExpr attribute="Control Structures" context="#stay" String="\bend select\b" insensitive="true" endRegion="selcase1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="select case" insensitive="true" beginRegion="selcase1"/>
+                <WordDetect attribute="Control Structures" context="#stay" String="end select" insensitive="true" endRegion="selcase1"/>
 
                 <keyword attribute="Keyword" context="#stay" String="keywords" />
                 <keyword attribute="Control Structures" context="#stay" String="control structures" />
                 <keyword attribute="Function" context="#stay" String="functions" />
             </context>
             <context name="asp_onelinecomment" attribute="Comment" lineEndContext="#pop">
-                <StringDetect attribute="Keyword" context="#pop#pop" String="%&gt;" />
+                <DetectSpaces />
+                <Detect2Chars context="#pop" char="%" char1="&gt;" lookAhead="true" />
+                <IncludeRules context="##Comments" />
             </context>
             <context name="doublequotestring" attribute="String" lineEndContext="#stay">
+                <DetectSpaces />
                 <Detect2Chars attribute="Escape Code" context="#stay" char="&quot;" char1="&quot;" />
-                <RegExpr attribute="Escape Code" context="#stay" String="\\[0-7]{1,3}" />
-                <RegExpr attribute="Escape Code" context="#stay" String="\\x[0-9A-Fa-f]{1,2}" />
+                <RegExpr attribute="Escape Code" context="#stay" String="\\[0-7]{1,3}|\\x[0-9A-Fa-f]{1,2}" />
                 <DetectChar attribute="String" context="#pop" char="&quot;" />
             </context>
             <context name="singlequotestring" attribute="String" lineEndContext="#stay">
@@ -301,43 +305,43 @@
                 <DetectChar attribute="String" context="#pop" char="'" />
             </context>
             <context name="htmltag" attribute="Identifier" lineEndContext="#stay">
+                <DetectSpaces />
                 <Detect2Chars attribute="HTML Tag" context="#pop" char="/" char1="&gt;" />
                 <DetectChar attribute="HTML Tag" context="#pop" char="&gt;"/>
-                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
-                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
-                <RegExpr attribute="Identifier" context="identifiers" String="\s*=\s*"/>
+                <IncludeRules context="find-aspsource" />
+                <DetectChar attribute="Identifier" context="identifiers" char="="/>
             </context>
             <context name="htmlcomment" attribute="HTML Comment" lineEndContext="#stay">
-                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
-                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
-                <StringDetect attribute="HTML Comment" context="#pop" String="--&gt;" />
-                <RegExpr attribute="Normal Text" context="identifiers" String="\s*=\s*"/>
+                <DetectSpaces />
+                <IncludeRules context="find-aspsource" />
+                <StringDetect attribute="HTML Comment" context="#pop" String="--&gt;" endRegion="HTMLComment" />
+                <DetectChar attribute="Normal Text" context="identifiers" char="="/>
+                <IncludeRules context="##Comments" />
             </context>
             <context name="identifiers" attribute="Identifier" lineEndContext="#stay">
+                <DetectSpaces />
                 <RegExpr attribute="String" context="#pop" String="\s*#?[a-zA-Z0-9]*" />
                 <DetectChar attribute="Types" context="types1" char="'" />
                 <DetectChar attribute="Types" context="types2" char="&quot;" />
             </context>
 
             <context name="types1" attribute="Types" lineEndContext="#stay">
-                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
-                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <IncludeRules context="find-aspsource" />
                 <DetectChar attribute="Types" context="#pop#pop" char="'" />
             </context>
 
             <context name="types2" attribute="Types" lineEndContext="#stay">
-                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
-                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%" />
+                <IncludeRules context="find-aspsource" />
                 <DetectChar attribute="Types" context="#pop#pop" char="&quot;" />
             </context>
 
             <context name="scripts" attribute="Normal Text" lineEndContext="#stay">
                 <Detect2Chars attribute="Comment" context="scripts_onelinecomment" char="/" char1="/" />
-                <Detect2Chars attribute="Comment" context="twolinecomment" char="/" char1="*" />
+                <Detect2Chars attribute="Comment" context="twolinecomment" char="/" char1="*" beginRegion="ScriptComment" />
                 <keyword attribute="Control Structures" context="#stay" String="control structures" />
                 <keyword attribute="Keyword" context="#stay" String="keywords" />
                 <keyword attribute="Function" context="#stay" String="functions" />
-                <StringDetect attribute="Keyword" context="aspsource" String="&lt;%"/>
+                <IncludeRules context="find-aspsource" />
                 <RegExpr attribute="HTML Tag" context="#pop" String="&lt;\s*\/\s*script\s*&gt;" insensitive="true" />
 
                 <DetectChar attribute="String" context="doublequotestring" char="&quot;" />
@@ -351,39 +355,44 @@
                 <AnyChar attribute="Other" context="#stay" String=";()}{:,[]" />
             </context>
             <context name="scripts_onelinecomment" attribute="Comment" lineEndContext="#pop">
+                <DetectSpaces />
                 <RegExpr attribute="HTML Tag" context="#pop#pop" String="&lt;\s*\/\s*script\s*&gt;" insensitive="true" />
+                <IncludeRules context="##Comments" />
             </context>
             <context name="twolinecomment" attribute="Comment" lineEndContext="#stay">
-                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment" />
+                <DetectSpaces />
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="ScriptComment" />
+                <IncludeRules context="##Comments" />
             </context>
 
         </contexts>
         <itemDatas>
             <itemData name="Normal Text" defStyleNum="dsNormal" />
-            <itemData name="ASP Text" defStyleNum="dsNormal" />
-            <itemData name="Keyword" defStyleNum="dsKeyword" />
-            <itemData name="Function" defStyleNum="dsFunction" />
-            <itemData name="Decimal" defStyleNum="dsDecVal" />
-            <itemData name="Octal" defStyleNum="dsBaseN" />
-            <itemData name="Hex" defStyleNum="dsBaseN" />
-            <itemData name="Float" defStyleNum="dsFloat" />
+            <itemData name="ASP Text" defStyleNum="dsNormal" spellChecking="false" />
+            <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false" />
+            <itemData name="Function" defStyleNum="dsFunction" spellChecking="false" />
+            <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false" />
+            <itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false" />
+            <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false" />
+            <itemData name="Float" defStyleNum="dsFloat" spellChecking="false" />
             <itemData name="String" defStyleNum="dsString" />
             <itemData name="Comment" defStyleNum="dsComment" />
-            <itemData name="Control Structures" defStyleNum="dsControlFlow" bold="0" />
-            <itemData name="Escape Code" defStyleNum="dsKeyword" color="#0F0F8F" selColor="#ffffff" bold="1" italic="0" />
-            <itemData name="Other" defStyleNum="dsOthers" />
+            <itemData name="Control Structures" defStyleNum="dsControlFlow" spellChecking="false" />
+            <itemData name="Escape Code" defStyleNum="dsSpecialChar" spellChecking="false" />
+            <itemData name="Other" defStyleNum="dsOthers" spellChecking="false" />
+            <itemData name="ASP Source" defStyleNum="dsDataType" bold="1" spellChecking="false" />
 
-            <itemData name="HTML Tag" defStyleNum="dsKeyword" color="#0F0000" selColor="#ffffff" bold="1" italic="0" />
+            <itemData name="HTML Tag" defStyleNum="dsKeyword" spellChecking="false" />
             <itemData name="HTML Comment" defStyleNum="dsComment" />
-            <itemData name="Identifier" defStyleNum="dsOthers" />
-            <itemData name="Types" defStyleNum="dsDataType" />
+            <itemData name="Identifier" defStyleNum="dsOthers" spellChecking="false" />
+            <itemData name="Types" defStyleNum="dsString" />
         </itemDatas>
     </highlighting>
     <general>
         <comments>
             <comment name="singleLine" start="'" />
-            <comment name="multiLine" start="/*" end="*/" />
         </comments>
         <keywords casesensitive="0" weakDeliminator=""/>
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

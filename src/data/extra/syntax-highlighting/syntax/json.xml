@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
  ***************************************************************************
  ** Writing a Kate Highlighting XML File
  ** http://kate-editor.org/article/writing_a_kate_highlighting_xml_file
  **
  ** Introducing JSON
- ** http://www.json.org/
+ ** https://www.json.org/
  **
  ** The application/json Media Type for JavaScript Object Notation (JSON)
  ** http://tools.ietf.org/html/rfc4627
+ ** https://www.json.org/json-en.html
  ***************************************************************************
 -->
-<language name="JSON" section="Markup" version="3" kateversion="2.4" extensions="*.json;.kateproject;.arcconfig;*.gltf" mimetype="application/json" author="Sebastian Pipping (sebastian@pipping.org)" license="GPL">
+<language name="JSON" section="Markup" version="10" kateversion="2.4" extensions="*.json;*.jsonl;*.ndjson;.kateproject;.arcconfig;*.geojson;*.gltf;*.theme;*.cast" mimetype="application/json;application/x-ndjson;application/geo+json" author="Sebastian Pipping (sebastian@pipping.org)" license="GPL">
   <highlighting>
     <list name="Constants">
       <item>null</item>
@@ -20,63 +21,69 @@
       <item>false</item>
     </list>
 
+    <!--
+      Comments with JSONC are used by generate-jsonc.pl
+      which generates a jsonc.xml which supports .json and .jsonc
+      with priority="1"
+    -->
+
     <contexts>
       <context name="Normal" lineEndContext="#stay" attribute="Style_Error">
+        <DetectChar char="&quot;"  context="String_Value" attribute="Style_String_Value" />
         <DetectChar char="{"       context="Pair" beginRegion="Region_Object" attribute="Style_Seperator_Pair" />
         <DetectChar char="["       context="Array" beginRegion="Region_Array" attribute="Style_Seperator_Array" />
 
         <DetectSpaces context="#stay" attribute="Style_Normal" />
+        <!-- JSONC -->
+
+        <keyword String="Constants" context="#stay" attribute="Style_Keyword" />
+
+        <RegExpr String="-?\b((0\b|[1-9][0-9]*)\.[0-9]+(?:[eE][+-]?[0-9]+)?)" context="#stay" attribute="Style_Float" />
+        <RegExpr String="-?\b(0\b|[1-9][0-9]*(?:[eE][+-]?[0-9]+)?)" context="#stay" attribute="Style_Decimal" />
       </context>
 
       <context name="Pair" lineEndContext="#stay" attribute="Style_Error">
         <DetectChar char="&quot;"  context="String_Key" attribute="Style_String_Key" />
         <DetectChar char=":"       context="Value" attribute="Style_Seperator_Pair" />
         <DetectChar char="}"       context="#pop" endRegion="Region_Object" attribute="Style_Seperator_Pair" />
-        <DetectChar char=","       context="#stay" attribute="Style_Seperator_Pair" />
 
         <DetectSpaces context="#stay" attribute="Style_Normal" />
+        <!-- JSONC -->
       </context>
 
       <context name="String_Key" lineEndContext="#stay" attribute="Style_String_Key">
         <DetectChar char="&quot;"  context="#pop" attribute="Style_String_Key" />
-        <RegExpr String="\\(?:[&quot;\\/bfnrt]|u[0-9a-fA-f]{4})" context="#stay" insensitive="false" minimal="false" attribute="Style_String_Key_Char" />
+        <DetectChar char="\"       context="String_Key_Char" lookAhead="1"/>
+      </context>
+
+      <context name="String_Key_Char" lineEndContext="#stay" attribute="Style_Normal">
+        <RegExpr String="\\(?:[&quot;\\/bfnrt]|u[0-9a-fA-f]{4})" context="#pop" attribute="Style_String_Key_Char" />
+        <RegExpr String="\\(u[0-9a-fA-f]+|.)?" context="#pop" attribute="Style_Error" />
       </context>
 
       <context name="Value" lineEndContext="#stay" attribute="Style_Error" >
-        <DetectChar char="&quot;"  context="String_Value" attribute="Style_String_Value" />
-        <DetectChar char="{"       context="Pair" beginRegion="Region_Object" attribute="Style_Seperator_Pair" />
-        <DetectChar char="["       context="Array" beginRegion="Region_Array" attribute="Style_Seperator_Array" />
-        <DetectChar char="}"       context="#pop" lookAhead="true" />
-        <DetectChar char=","       context="#pop" lookAhead="true" />
-
-        <DetectSpaces context="#stay" attribute="Style_Normal" />
-
-        <keyword String="Constants" context="#stay" attribute="Style_Keyword" />
-
-        <RegExpr String="-?(?:[0-9]|[1-9][0-9]+)\.[0-9]+(?:[eE][+-]?[0-9]+)?" context="#stay" insensitive="false" minimal="false" attribute="Style_Float" />
-        <RegExpr String="-?(?:[0-9]|[1-9][0-9]+)(?:[eE][+-]?[0-9]+)?" context="#stay" insensitive="false" minimal="false" attribute="Style_Decimal" />
+        <DetectChar char="," context="#pop" attribute="Style_Seperator_Pair" />
+        <DetectChar char="}" context="#pop#pop" attribute="Style_Seperator_Pair" endRegion="Region_Object"/>
+        <IncludeRules context="Normal"/>
       </context>
 
       <context name="String_Value" lineEndContext="#stay" attribute="Style_String_Value">
         <DetectChar char="&quot;"  context="#pop" attribute="Style_String_Value" />
-        <RegExpr String="\\(?:[&quot;\\/bfnrt]|u[0-9a-fA-f]{4})" context="#stay" insensitive="false" minimal="false" attribute="Style_String_Value_Char" />
+        <DetectChar char="\"       context="String_Key_Value" lookAhead="1" />
+      </context>
+
+      <context name="String_Key_Value" lineEndContext="#stay" attribute="Style_Normal">
+        <RegExpr String="\\(?:[&quot;\\/bfnrt]|u[0-9a-fA-f]{4})" context="#pop"  attribute="Style_String_Value_Char" />
+        <RegExpr String="\\(u[0-9a-fA-f]+|.)?" context="#pop" attribute="Style_Error" />
       </context>
 
       <context name="Array" lineEndContext="#stay" attribute="Style_Error">
         <DetectChar char=","       context="#stay" attribute="Style_Seperator_Array" />
         <DetectChar char="]"       context="#pop" endRegion="Region_Array" attribute="Style_Seperator_Array" />
 
-        <DetectChar char="{"       context="Pair" beginRegion="Region_Object" attribute="Style_Seperator_Pair" />
-        <DetectChar char="["       context="Array" beginRegion="Region_Array" attribute="Style_Seperator_Array" />
-        <DetectChar char="&quot;"  context="String_Value" attribute="Style_String_Value" />
-
-        <DetectSpaces context="#stay" attribute="Style_Normal" />
-
-        <keyword String="Constants" context="#stay" attribute="Style_Keyword" />
-
-        <RegExpr String="-?(?:[0-9]|[1-9][0-9]+)\.[0-9]+(?:[eE][+-]?[0-9]+)?" context="#stay" insensitive="false" minimal="false" attribute="Style_Float" />
-        <RegExpr String="-?(?:[0-9]|[1-9][0-9]+)(?:[eE][+-]?[0-9]+)?" context="#stay" insensitive="false" minimal="false" attribute="Style_Decimal" />
+        <IncludeRules context="Normal"/>
       </context>
+
     </contexts>
 
     <itemDatas>
@@ -101,4 +108,3 @@
 <!--
 // kate: space-indent on; indent-width 2; replace-tabs on;
 -->
-

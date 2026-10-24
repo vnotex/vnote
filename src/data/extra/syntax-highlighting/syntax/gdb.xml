@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
 <language name="GDB" section="Other"
-          version="2" kateversion="3.4"
+          version="6" kateversion="5.0"
           extensions="*.gdb"
           mimetype=""
           author="Milian Wolff (mail@milianw.de)" license="LGPL">
@@ -10,6 +10,7 @@
 <highlighting>
   <list name="commands">
     <item>break</item>
+    <item>rbreak</item>
     <item>run</item>
     <item>continue</item>
     <item>backtrace</item>
@@ -27,6 +28,7 @@
     <item>condition</item>
     <item>command</item>
     <item>set</item>
+    <item>watch</item>
     <item>awatch</item>
     <item>thread</item>
     <item>list</item>
@@ -69,6 +71,8 @@
       <DetectChar char="#" context="comment" />
     </context>
     <context name="comment" attribute="Comment" lineEndContext="#pop">
+      <DetectSpaces />
+      <IncludeRules context="##Comments" />
     </context>
     <context name="python" attribute="Normal" lineEndContext="#stay">
       <WordDetect String="end" context="#pop" attribute="Command" />
@@ -82,7 +86,12 @@
     <itemData name="Comment" defStyleNum="dsComment" spellChecking="false" />
   </itemDatas>
 </highlighting>
-
+<general>
+  <keywords weakDeliminator="-" />
+  <comments>
+    <comment name="singleLine" start="#" />
+  </comments>
+</general>
 </language>
 
-<!-- kate: replace-tabs: on; tab-width: 4; indent-width: 4; -->
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

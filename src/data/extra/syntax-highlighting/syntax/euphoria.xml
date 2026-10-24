@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
 
   This file is part of KDE's kate project.
@@ -29,7 +29,7 @@
 
 <!-- Store this in /usr/share/apps/katepart/syntax -->
 
-<language name="Euphoria" version="6" kateversion="5.0" section="Scripts" extensions="*.e;*.ex;*.exw;*.exu" mimetype="text/x-euphoria" author="Irv Mullins (irvm@ellijay.com)" license="LGPLv2+">
+<language name="Euphoria" version="7" kateversion="5.0" section="Scripts" extensions="*.e;*.ex;*.exw;*.exu" mimetype="text/x-euphoria" author="Irv Mullins (irvm@ellijay.com)" license="LGPLv2+">
   <highlighting>
     <list name="keywords">
       <item>abort</item>
@@ -234,7 +234,6 @@
       <item>g_list</item>
       <item>g_list_to_sequence</item>
       <item>deallocate_strings</item>
-      <item>draw_line</item>
       <item>hbox</item>
       <item>hbuttonbox</item>
       <item>hpaned</item>
@@ -351,8 +350,7 @@
       </context>
 
       <context attribute="Comment" lineEndContext="#pop" name="Comment">
-        <IncludeRules context="##Alerts" />
-        <IncludeRules context="##Modelines" />
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
 

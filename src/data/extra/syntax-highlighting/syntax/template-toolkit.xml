@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
           [
           <!ENTITY var1    "\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*">
           <!ENTITY varwithbraces "\$\{[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*\}">
@@ -16,7 +16,7 @@
     Changelog :)
     0.02 Added highliting for interpolated variables
         -->
-<language version="5" kateversion="5.0"
+<language version="10" kateversion="5.0"
           author="Красимир Беров (k.berov@gmail.com)" license="Artistic"
           name="TT2" section="Markup" extensions="*.tt*;" casesensitive="true">
 <highlighting>
@@ -87,7 +87,6 @@
         <item>sort</item>
         <item>nsort</item>
         <item>import</item>
-        <item>defined</item>
         <item>exists</item>
         <item>item</item>
         <!-- List Virtual Methods -->
@@ -125,9 +124,7 @@
         <item>url</item>
         <item>indent</item>
         <item>truncate</item>
-        <item>repeat</item>
         <item>remove</item>
-        <item>replace</item>
         <item>redirect</item>
         <item>eval</item>
         <item>evaltt</item>
@@ -185,10 +182,9 @@
             <Detect2Chars attribute="Keyword" context="tt2source" char="[" char1="%" />
             <RegExpr attribute="HTML Tag" context="scripts" String="&lt;\s*script(\s|&gt;)" insensitive="true" />
             <RegExpr attribute="HTML Tag" context="htmltag" String="&lt;\s*\/?\s*[a-zA-Z_:][a-zA-Z0-9._:-]*" />
-            <StringDetect attribute="HTML Comment" context="htmlcomment" String="&lt;!--" />
+            <StringDetect attribute="HTML Comment" context="htmlcomment" String="&lt;!--" beginRegion="HTMLComment"/>
             <!-- Interpolated variables -->
-            <RegExpr attribute="Variable" context="#stay" String="&var1;" />
-            <RegExpr attribute="Variable" context="#stay" String="&varwithbraces;" />
+            <RegExpr attribute="Variable" context="#stay" String="&var1;|&varwithbraces;" />
         </context>
         
         <context name="tt2source" attribute="TT2 Text" lineEndContext="#stay">
@@ -206,27 +202,27 @@
             <Int attribute="Decimal" context="#stay" />
             <AnyChar attribute="Other" context="#stay" String=";()}{:,[]" />
 
-            <WordDetect attribute="Control Structures" context="#stay" String="ELSIF" insensitive="false" beginRegion="iffi1" endRegion="iffi1"/>
-            <WordDetect attribute="Control Structures" context="#stay" String="ELSE" insensitive="false" beginRegion="iffi1" endRegion="iffi1"/>
-            <WordDetect attribute="Control Structures" context="#stay" String="IF" insensitive="false" beginRegion="iffi1"/>
-            <WordDetect attribute="Control Structures" context="#stay" String="END" insensitive="false" endRegion="iffi1"/>
+            <WordDetect attribute="Control Structures" context="#stay" String="ELSIF" insensitive="false" beginRegion="control" endRegion="control"/>
+            <WordDetect attribute="Control Structures" context="#stay" String="ELSE" insensitive="false" beginRegion="control" endRegion="control"/>
+            <WordDetect attribute="Control Structures" context="#stay" String="IF" insensitive="false" beginRegion="control"/>
+            <WordDetect attribute="Control Structures" context="#stay" String="END" insensitive="false" endRegion="control"/>
 
-            <WordDetect attribute="Control Structures" context="#stay" String="FOREACH" insensitive="false" beginRegion="foreachblock"/>
-            <WordDetect attribute="Control Structures" context="#stay" String="END" insensitive="false" endRegion="foreachblock"/>
+            <WordDetect attribute="Control Structures" context="#stay" String="FOREACH" insensitive="false" beginRegion="control"/>
 
             <keyword attribute="Keyword" context="#stay" String="keywords" />
             <keyword attribute="Control Structures" context="#stay" String="control structures" />
         </context>
         <context name="tt2_onelinecomment" attribute="Comment" lineEndContext="#pop">
+            <DetectSpaces />
             <Detect2Chars attribute="Keyword" context="#pop#pop" char="%" char1="]" />
+            <IncludeRules context="##Comments" />
         </context>
         <context name="doublequotestring" attribute="String" lineEndContext="#stay">
             <Detect2Chars attribute="Escape Code" context="#stay" char="&quot;" char1="&quot;" />
             <RegExpr attribute="Escape Code" context="#stay" String="\\([0-7]{1,3}|x[0-9A-Fa-f]{1,2})" />
             <DetectChar attribute="String" context="#pop" char="&quot;" />
             <!-- Interpolated variables -->
-            <RegExpr attribute="Variable" context="#stay" String="&var1;" />
-            <RegExpr attribute="Variable" context="#stay" String="&varwithbraces;" />
+            <RegExpr attribute="Variable" context="#stay" String="&var1;|&varwithbraces;" />
         </context>
         <context name="singlequotestring" attribute="String" lineEndContext="#stay">
             <Detect2Chars attribute="Escape Code" context="#stay" char="'" char1="'"/>
@@ -241,8 +237,10 @@
         </context>
         <context name="htmlcomment" attribute="HTML Comment" lineEndContext="#stay">
             <Detect2Chars attribute="Keyword" context="tt2source" char="[" char1="%" />
-            <StringDetect attribute="HTML Comment" context="#pop" String="--&gt;" />
+            <StringDetect attribute="HTML Comment" context="#pop" String="--&gt;" endRegion="HTMLComment" />
             <RegExpr attribute="Normal Text" context="identifiers" String="\s*=\s*"/>
+            <DetectSpaces />
+            <IncludeRules context="##Comments" />
         </context>
         <context name="identifiers" attribute="Identifier" lineEndContext="#stay">
             <RegExpr attribute="String" context="#pop" String="\s*#?[a-zA-Z0-9]*" />
@@ -262,11 +260,11 @@
         
         <context name="scripts" attribute="Normal Text" lineEndContext="#stay">
             <Detect2Chars attribute="Comment" context="scripts_onelinecomment" char="/" char1="/" />
-            <Detect2Chars attribute="Comment" context="twolinecomment" char="/" char1="*" />
+            <Detect2Chars attribute="Comment" context="twolinecomment" char="/" char1="*" beginRegion="Comment" />
             <keyword attribute="Control Structures" context="#stay" String="control structures" />
             <keyword attribute="Keyword" context="#stay" String="keywords" />
             <keyword attribute="Function" context="#stay" String="functions" />
-            <StringDetect attribute="Keyword" context="tt2source" String="[%"/>
+            <Detect2Chars attribute="Keyword" context="tt2source" char="[" char1="%"/>
             <RegExpr attribute="HTML Tag" context="#pop" String="&lt;\s*\/\s*script\s*&gt;" insensitive="true" />
             
             <DetectChar attribute="String" context="doublequotestring" char="&quot;" />
@@ -280,10 +278,14 @@
             <AnyChar attribute="Other" context="#stay" String=";()}{:,[]" />
         </context>
         <context name="scripts_onelinecomment" attribute="Comment" lineEndContext="#pop">
+            <DetectSpaces />
             <RegExpr attribute="HTML Tag" context="#pop#pop" String="&lt;\s*\/\s*script\s*&gt;" insensitive="true" />
+            <IncludeRules context="##Comments" />
         </context>
         <context name="twolinecomment" attribute="Comment" lineEndContext="#stay">
+            <DetectSpaces />
             <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment" />
+            <IncludeRules context="##Comments" />
         </context>
         
     </contexts>
@@ -312,10 +314,10 @@
 </highlighting>
 <general>
     <comments>
-        <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+        <comment name="multiLine" start="&lt;!--" end="--&gt;" region="HTMLComment" />
         <comment name="singleLine" start="#" />
-        <comment name="multiLine" start="[%#" end="%]"/>
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

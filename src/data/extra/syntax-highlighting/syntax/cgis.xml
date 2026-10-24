@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="CGiS" version="5" kateversion="5.0" section="Sources" extensions="*.cgis" mimetype="">
+<!DOCTYPE language>
+<language name="CGiS" version="9" kateversion="5.0" section="Sources" extensions="*.cgis" mimetype="">
   <highlighting>
     <list name="keywords">
       <item>1D</item>
@@ -75,8 +75,6 @@
       </context>
 
       <context attribute="Normal Text" lineEndContext="#stay" name="Common">
-        <StringDetect attribute="Region Marker" context="Region Marker" String="//BEGIN" beginRegion="Region1" firstNonSpace="true" />
-        <StringDetect attribute="Region Marker" context="Region Marker" String="//END" endRegion="Region1" firstNonSpace="true" />
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
         <keyword attribute="Data Type" context="#stay" String="types"/>
         <DetectIdentifier />
@@ -86,9 +84,16 @@
         <HlCOct attribute="Octal" context="#stay"/>
         <HlCHex attribute="Hex" context="#stay"/>
         <Int attribute="Decimal" context="#stay"/>
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="/" lookAhead="true"/>
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="*" lookAhead="true" />
+      </context>
+
+      <context name="MatchComment" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <StringDetect attribute="Region Marker" context="#pop!Region Marker" String="//BEGIN" beginRegion="Region1" firstNonSpace="true" />
+        <StringDetect attribute="Region Marker" context="#pop!Region Marker" String="//END" endRegion="Region1" firstNonSpace="true" />
         <IncludeRules context="##Doxygen" />
-        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+        <Detect2Chars attribute="Comment" context="#pop!Commentar 1" char="/" char1="/" />
+        <Detect2Chars attribute="Comment" context="#pop!Commentar 2" char="/" char1="*" beginRegion="Comment" />
       </context>
 
       <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
@@ -103,11 +108,11 @@
 
       <context attribute="Region Marker" lineEndContext="#pop" name="Region Marker" />
       <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
     <itemDatas>
@@ -119,7 +124,7 @@
       <itemData name="Hex"          defStyleNum="dsBaseN"/>
       <itemData name="Float"        defStyleNum="dsFloat"/>
       <itemData name="Comment"      defStyleNum="dsComment"/>
-      <itemData name="Symbol"       defStyleNum="dsNormal"/>
+      <itemData name="Symbol"       defStyleNum="dsOperator"/>
       <itemData name="Region Marker" defStyleNum="dsRegionMarker" />
       <itemData name="Hint"         defStyleNum="dsOthers"/>
     </itemDatas>
@@ -127,8 +132,9 @@
   <general>
     <comments>
       <comment name="singleLine" start="//" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

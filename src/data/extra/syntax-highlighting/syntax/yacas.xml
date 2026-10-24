@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="yacas" version="3" kateversion="2.2" section="Scientific" extensions="*.ys" mimetype="text/x-yacassrc">
+<!DOCTYPE language>
+<language name="yacas" version="5" kateversion="5.0" section="Scientific" extensions="*.ys" mimetype="text/x-yacassrc">
   <highlighting>
     <list name="keywords">
       <item>And</item>
@@ -192,7 +192,7 @@
       <context name="default" attribute="Normal Text" lineEndContext="#stay">
         <DetectChar attribute="String" context="string" char="&quot;"/>
         <Detect2Chars attribute="Comment" context="linecomment" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="multilinecomment" char="/" char1="*"/>
+        <Detect2Chars attribute="Comment" context="multilinecomment" char="/" char1="*" beginRegion="Comment"/>
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
         <AnyChar attribute="Parens" context="#stay" String="{[(" beginRegion="brace"/>
         <AnyChar attribute="Parens" context="#stay" String="}])" endRegion="brace"/>
@@ -206,11 +206,13 @@
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
       <context name="linecomment" attribute="Comment" lineEndContext="#pop">
-        <RegExpr attribute="Highlight" context="#stay" String="(FIXME|TODO)" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
       <context name="multilinecomment" attribute="Comment" lineEndContext="#stay">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
-        <RegExpr attribute="Highlight" context="#stay" String="(FIXME|TODO)" />
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
     <itemDatas>
@@ -222,13 +224,12 @@
       <itemData name="Comment"  defStyleNum="dsComment"/>
       <itemData name="Symbol"  defStyleNum="dsOthers"/>
       <itemData name="Parens"  defStyleNum="dsNormal"/>
-      <itemData name="Highlight"  defStyleNum="dsAlert"/>
     </itemDatas>
   </highlighting>
   <general>
     <comments>
       <comment name="singleLine" start="//" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
     </comments>
     <keywords casesensitive="1" weakDeliminator="=`"/>
   </general>

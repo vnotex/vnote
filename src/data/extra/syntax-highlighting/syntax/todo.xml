@@ -1,0 +1,468 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY date "\d{4}-\d{2}-\d{2}(?=\s|$)">
+  <!ENTITY tab "&#009;">
+]>
+<!-- http://todotxt.org/ -->
+<language
+  name="Todo.txt" section="Other"
+  version="2" kateversion="5.62"
+  extensions="todo.txt"
+  author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT"
+>
+<highlighting>
+  <contexts>
+    <context name="Normal" attribute="Normal" lineEndContext="#stay" fallthroughContext="CompletionDate">
+      <Detect2Chars attribute="Done" context="Done" char="x" char1=" "/>
+      <Detect2Chars attribute="Done" context="Done" char="x" char1="&tab;"/>
+      <DetectChar attribute="Normal" context="Priority" char="(" lookAhead="1"/>
+    </context>
+
+    <context name="Priority" attribute="Normal" lineEndContext="#pop" fallthroughContext="#pop!CompletionDate">
+      <StringDetect attribute="Priority A" context="#pop!(A)CompletionDate" String="(A)"/>
+      <StringDetect attribute="Priority B" context="#pop!(B)CompletionDate" String="(B)"/>
+      <StringDetect attribute="Priority C" context="#pop!(C)CompletionDate" String="(C)"/>
+      <StringDetect attribute="Priority D" context="#pop!(D)CompletionDate" String="(D)"/>
+      <StringDetect attribute="Priority E" context="#pop!(E)CompletionDate" String="(E)"/>
+      <StringDetect attribute="Priority F" context="#pop!(F)CompletionDate" String="(F)"/>
+      <StringDetect attribute="Priority G" context="#pop!(G)CompletionDate" String="(G)"/>
+      <StringDetect attribute="Priority H" context="#pop!(H)CompletionDate" String="(H)"/>
+      <StringDetect attribute="Priority I" context="#pop!(I)CompletionDate" String="(I)"/>
+      <StringDetect attribute="Priority J" context="#pop!(J)CompletionDate" String="(J)"/>
+      <StringDetect attribute="Priority K" context="#pop!(K)CompletionDate" String="(K)"/>
+      <StringDetect attribute="Priority L" context="#pop!(L)CompletionDate" String="(L)"/>
+      <StringDetect attribute="Priority M" context="#pop!(M)CompletionDate" String="(M)"/>
+      <StringDetect attribute="Priority N" context="#pop!(N)CompletionDate" String="(N)"/>
+      <StringDetect attribute="Priority O" context="#pop!(O)CompletionDate" String="(O)"/>
+      <StringDetect attribute="Priority P" context="#pop!(P)CompletionDate" String="(P)"/>
+      <StringDetect attribute="Priority Q" context="#pop!(Q)CompletionDate" String="(Q)"/>
+      <StringDetect attribute="Priority R" context="#pop!(R)CompletionDate" String="(R)"/>
+      <StringDetect attribute="Priority S" context="#pop!(S)CompletionDate" String="(S)"/>
+      <StringDetect attribute="Priority T" context="#pop!(T)CompletionDate" String="(T)"/>
+      <StringDetect attribute="Priority U" context="#pop!(U)CompletionDate" String="(U)"/>
+      <StringDetect attribute="Priority V" context="#pop!(V)CompletionDate" String="(V)"/>
+      <StringDetect attribute="Priority W" context="#pop!(W)CompletionDate" String="(W)"/>
+      <StringDetect attribute="Priority X" context="#pop!(X)CompletionDate" String="(X)"/>
+      <StringDetect attribute="Priority Y" context="#pop!(Y)CompletionDate" String="(Y)"/>
+      <StringDetect attribute="Priority Z" context="#pop!(Z)CompletionDate" String="(Z)"/>
+    </context>
+
+    <context name="Done" attribute="Done" lineEndContext="#pop">
+    </context>
+
+    <context name="CompletionDate" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!Description">
+      <DetectSpaces attribute="Normal" context="#pop!Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+
+    <context name="CreationDate" attribute="Normal" lineEndContext="#pop#pop" fallthroughContext="#pop">
+      <RegExpr attribute="Creation Date" context="#pop" String="\G\s+&date;"/>
+    </context>
+
+    <context name="Description" attribute="Normal" lineEndContext="#pop">
+      <DetectSpaces attribute="Normal"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Normal"/>
+    </context>
+
+    <context name="_Tag" attribute="Normal" lineEndContext="#pop">
+      <DetectChar attribute="Project Tag" context="ProjectTag" char="+" lookAhead="1"/>
+      <DetectChar attribute="Context Tag" context="ContextTag" char="@" lookAhead="1"/>
+      <RegExpr attribute="Metadata Key" context="MetadataValue" String="(?&lt;=\s)[^\s:]++:(?=[^\s:]++(?!:))"/>
+    </context>
+
+    <context name="ProjectTag" attribute="Project Tag" lineEndContext="#pop#pop" fallthroughContext="#pop">
+      <RegExpr attribute="Project Tag" context="#pop" String="(?&lt;=\s)\+[^\s]+"/>
+      <DetectChar context="#pop" char="+"/>
+    </context>
+
+    <context name="ContextTag" attribute="Context Tag" lineEndContext="#pop#pop" fallthroughContext="#pop">
+      <RegExpr attribute="Context Tag" context="#pop" String="(?&lt;=\s)@[^\s]+"/>
+      <DetectChar context="#pop" char="@"/>
+    </context>
+
+    <context name="MetadataValue" attribute="Metadata Value" lineEndContext="#pop#pop">
+      <RegExpr attribute="Metadata Value" context="#pop" String="\G[^\s:]+"/>
+    </context>
+
+    <context name="_CompletionDate" attribute="Completion Date" lineEndContext="#pop">
+      <RegExpr attribute="Completion Date" context="CreationDate" String="\G&date;"/>
+    </context>
+
+    <context name="(A)CompletionDate" attribute="Priority A" lineEndContext="#pop" fallthroughContext="#pop!(A)Description">
+      <DetectSpaces attribute="Priority A" context="#pop!(A)CompletionDate2"/>
+    </context>
+    <context name="(A)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(A)Description">
+      <DetectSpaces attribute="Priority A" context="#pop!(A)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(A)Description" attribute="Priority A" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority A"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority A"/>
+    </context>
+
+    <context name="(B)CompletionDate" attribute="Priority B" lineEndContext="#pop" fallthroughContext="#pop!(B)Description">
+      <DetectSpaces attribute="Priority B" context="#pop!(B)CompletionDate2"/>
+    </context>
+    <context name="(B)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(B)Description">
+      <DetectSpaces attribute="Priority B" context="#pop!(B)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(B)Description" attribute="Priority B" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority B"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority B"/>
+    </context>
+
+    <context name="(C)CompletionDate" attribute="Priority C" lineEndContext="#pop" fallthroughContext="#pop!(C)Description">
+      <DetectSpaces attribute="Priority C" context="#pop!(C)CompletionDate2"/>
+    </context>
+    <context name="(C)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(C)Description">
+      <DetectSpaces attribute="Priority C" context="#pop!(C)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(C)Description" attribute="Priority C" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority C"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority C"/>
+    </context>
+
+    <context name="(D)CompletionDate" attribute="Priority D" lineEndContext="#pop" fallthroughContext="#pop!(D)Description">
+      <DetectSpaces attribute="Priority D" context="#pop!(D)CompletionDate2"/>
+    </context>
+    <context name="(D)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(D)Description">
+      <DetectSpaces attribute="Priority D" context="#pop!(D)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(D)Description" attribute="Priority D" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority D"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority D"/>
+    </context>
+
+    <context name="(E)CompletionDate" attribute="Priority E" lineEndContext="#pop" fallthroughContext="#pop!(E)Description">
+      <DetectSpaces attribute="Priority E" context="#pop!(E)CompletionDate2"/>
+    </context>
+    <context name="(E)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(E)Description">
+      <DetectSpaces attribute="Priority E" context="#pop!(E)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(E)Description" attribute="Priority E" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority E"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority E"/>
+    </context>
+
+    <context name="(F)CompletionDate" attribute="Priority F" lineEndContext="#pop" fallthroughContext="#pop!(F)Description">
+      <DetectSpaces attribute="Priority F" context="#pop!(F)CompletionDate2"/>
+    </context>
+    <context name="(F)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(F)Description">
+      <DetectSpaces attribute="Priority F" context="#pop!(F)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(F)Description" attribute="Priority F" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority F"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority F"/>
+    </context>
+
+    <context name="(G)CompletionDate" attribute="Priority G" lineEndContext="#pop" fallthroughContext="#pop!(G)Description">
+      <DetectSpaces attribute="Priority G" context="#pop!(G)CompletionDate2"/>
+    </context>
+    <context name="(G)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(G)Description">
+      <DetectSpaces attribute="Priority G" context="#pop!(G)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(G)Description" attribute="Priority G" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority G"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority G"/>
+    </context>
+
+    <context name="(H)CompletionDate" attribute="Priority H" lineEndContext="#pop" fallthroughContext="#pop!(H)Description">
+      <DetectSpaces attribute="Priority H" context="#pop!(H)CompletionDate2"/>
+    </context>
+    <context name="(H)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(H)Description">
+      <DetectSpaces attribute="Priority H" context="#pop!(H)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(H)Description" attribute="Priority H" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority H"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority H"/>
+    </context>
+
+    <context name="(I)CompletionDate" attribute="Priority I" lineEndContext="#pop" fallthroughContext="#pop!(I)Description">
+      <DetectSpaces attribute="Priority I" context="#pop!(I)CompletionDate2"/>
+    </context>
+    <context name="(I)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(I)Description">
+      <DetectSpaces attribute="Priority I" context="#pop!(I)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(I)Description" attribute="Priority I" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority I"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority I"/>
+    </context>
+
+    <context name="(J)CompletionDate" attribute="Priority J" lineEndContext="#pop" fallthroughContext="#pop!(J)Description">
+      <DetectSpaces attribute="Priority J" context="#pop!(J)CompletionDate2"/>
+    </context>
+    <context name="(J)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(J)Description">
+      <DetectSpaces attribute="Priority J" context="#pop!(J)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(J)Description" attribute="Priority J" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority J"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority J"/>
+    </context>
+
+    <context name="(K)CompletionDate" attribute="Priority K" lineEndContext="#pop" fallthroughContext="#pop!(K)Description">
+      <DetectSpaces attribute="Priority K" context="#pop!(K)CompletionDate2"/>
+    </context>
+    <context name="(K)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(K)Description">
+      <DetectSpaces attribute="Priority K" context="#pop!(K)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(K)Description" attribute="Priority K" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority K"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority K"/>
+    </context>
+
+    <context name="(L)CompletionDate" attribute="Priority L" lineEndContext="#pop" fallthroughContext="#pop!(L)Description">
+      <DetectSpaces attribute="Priority L" context="#pop!(L)CompletionDate2"/>
+    </context>
+    <context name="(L)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(L)Description">
+      <DetectSpaces attribute="Priority L" context="#pop!(L)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(L)Description" attribute="Priority L" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority L"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority L"/>
+    </context>
+
+    <context name="(M)CompletionDate" attribute="Priority M" lineEndContext="#pop" fallthroughContext="#pop!(M)Description">
+      <DetectSpaces attribute="Priority M" context="#pop!(M)CompletionDate2"/>
+    </context>
+    <context name="(M)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(M)Description">
+      <DetectSpaces attribute="Priority M" context="#pop!(M)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(M)Description" attribute="Priority M" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority M"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority M"/>
+    </context>
+
+    <context name="(N)CompletionDate" attribute="Priority N" lineEndContext="#pop" fallthroughContext="#pop!(N)Description">
+      <DetectSpaces attribute="Priority N" context="#pop!(N)CompletionDate2"/>
+    </context>
+    <context name="(N)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(N)Description">
+      <DetectSpaces attribute="Priority N" context="#pop!(N)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(N)Description" attribute="Priority N" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority N"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority N"/>
+    </context>
+
+    <context name="(O)CompletionDate" attribute="Priority O" lineEndContext="#pop" fallthroughContext="#pop!(O)Description">
+      <DetectSpaces attribute="Priority O" context="#pop!(O)CompletionDate2"/>
+    </context>
+    <context name="(O)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(O)Description">
+      <DetectSpaces attribute="Priority O" context="#pop!(O)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(O)Description" attribute="Priority O" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority O"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority O"/>
+    </context>
+
+    <context name="(P)CompletionDate" attribute="Priority P" lineEndContext="#pop" fallthroughContext="#pop!(P)Description">
+      <DetectSpaces attribute="Priority P" context="#pop!(P)CompletionDate2"/>
+    </context>
+    <context name="(P)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(P)Description">
+      <DetectSpaces attribute="Priority P" context="#pop!(P)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(P)Description" attribute="Priority P" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority P"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority P"/>
+    </context>
+
+    <context name="(Q)CompletionDate" attribute="Priority Q" lineEndContext="#pop" fallthroughContext="#pop!(Q)Description">
+      <DetectSpaces attribute="Priority Q" context="#pop!(Q)CompletionDate2"/>
+    </context>
+    <context name="(Q)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(Q)Description">
+      <DetectSpaces attribute="Priority Q" context="#pop!(Q)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(Q)Description" attribute="Priority Q" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority Q"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority Q"/>
+    </context>
+
+    <context name="(R)CompletionDate" attribute="Priority R" lineEndContext="#pop" fallthroughContext="#pop!(R)Description">
+      <DetectSpaces attribute="Priority R" context="#pop!(R)CompletionDate2"/>
+    </context>
+    <context name="(R)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(R)Description">
+      <DetectSpaces attribute="Priority R" context="#pop!(R)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(R)Description" attribute="Priority R" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority R"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority R"/>
+    </context>
+
+    <context name="(S)CompletionDate" attribute="Priority S" lineEndContext="#pop" fallthroughContext="#pop!(S)Description">
+      <DetectSpaces attribute="Priority S" context="#pop!(S)CompletionDate2"/>
+    </context>
+    <context name="(S)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(S)Description">
+      <DetectSpaces attribute="Priority S" context="#pop!(S)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(S)Description" attribute="Priority S" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority S"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority S"/>
+    </context>
+
+    <context name="(T)CompletionDate" attribute="Priority T" lineEndContext="#pop" fallthroughContext="#pop!(T)Description">
+      <DetectSpaces attribute="Priority T" context="#pop!(T)CompletionDate2"/>
+    </context>
+    <context name="(T)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(T)Description">
+      <DetectSpaces attribute="Priority T" context="#pop!(T)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(T)Description" attribute="Priority T" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority T"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority T"/>
+    </context>
+
+    <context name="(U)CompletionDate" attribute="Priority U" lineEndContext="#pop" fallthroughContext="#pop!(U)Description">
+      <DetectSpaces attribute="Priority U" context="#pop!(U)CompletionDate2"/>
+    </context>
+    <context name="(U)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(U)Description">
+      <DetectSpaces attribute="Priority U" context="#pop!(U)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(U)Description" attribute="Priority U" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority U"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority U"/>
+    </context>
+
+    <context name="(V)CompletionDate" attribute="Priority V" lineEndContext="#pop" fallthroughContext="#pop!(V)Description">
+      <DetectSpaces attribute="Priority V" context="#pop!(V)CompletionDate2"/>
+    </context>
+    <context name="(V)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(V)Description">
+      <DetectSpaces attribute="Priority V" context="#pop!(V)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(V)Description" attribute="Priority V" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority V"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority V"/>
+    </context>
+
+    <context name="(W)CompletionDate" attribute="Priority W" lineEndContext="#pop" fallthroughContext="#pop!(W)Description">
+      <DetectSpaces attribute="Priority W" context="#pop!(W)CompletionDate2"/>
+    </context>
+    <context name="(W)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(W)Description">
+      <DetectSpaces attribute="Priority W" context="#pop!(W)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(W)Description" attribute="Priority W" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority W"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority W"/>
+    </context>
+
+    <context name="(X)CompletionDate" attribute="Priority X" lineEndContext="#pop" fallthroughContext="#pop!(X)Description">
+      <DetectSpaces attribute="Priority X" context="#pop!(X)CompletionDate2"/>
+    </context>
+    <context name="(X)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(X)Description">
+      <DetectSpaces attribute="Priority X" context="#pop!(X)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(X)Description" attribute="Priority X" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority X"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority X"/>
+    </context>
+
+    <context name="(Y)CompletionDate" attribute="Priority Y" lineEndContext="#pop" fallthroughContext="#pop!(Y)Description">
+      <DetectSpaces attribute="Priority Y" context="#pop!(Y)CompletionDate2"/>
+    </context>
+    <context name="(Y)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(Y)Description">
+      <DetectSpaces attribute="Priority Y" context="#pop!(Y)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(Y)Description" attribute="Priority Y" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority Y"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority Y"/>
+    </context>
+
+    <context name="(Z)CompletionDate" attribute="Priority Z" lineEndContext="#pop" fallthroughContext="#pop!(Z)Description">
+      <DetectSpaces attribute="Priority Z" context="#pop!(Z)CompletionDate2"/>
+    </context>
+    <context name="(Z)CompletionDate2" attribute="Completion Date" lineEndContext="#pop" fallthroughContext="#pop!(Z)Description">
+      <DetectSpaces attribute="Priority Z" context="#pop!(Z)Description"/>
+      <IncludeRules context="_CompletionDate"/>
+    </context>
+    <context name="(Z)Description" attribute="Priority Z" lineEndContext="#pop">
+      <DetectSpaces attribute="Priority Z"/>
+      <IncludeRules context="_Tag"/>
+      <DetectIdentifier attribute="Priority Z"/>
+    </context>
+  </contexts>
+
+  <itemDatas>
+    <itemData name="Normal" defStyleNum="dsNormal"/>
+    <itemData name="Done" defStyleNum="dsAnnotation" spellChecking="0"/>
+    <itemData name="Completion Date" defStyleNum="dsBuiltIn" spellChecking="0"/>
+    <itemData name="Creation Date" defStyleNum="dsPreprocessor" spellChecking="0"/>
+    <itemData name="Project Tag" defStyleNum="dsAttribute" spellChecking="0"/>
+    <itemData name="Context Tag" defStyleNum="dsExtension" spellChecking="0"/>
+    <itemData name="Metadata Key" defStyleNum="dsVariable" spellChecking="0"/>
+    <itemData name="Metadata Value" defStyleNum="dsString" spellChecking="0"/>
+    <itemData name="Priority A" defStyleNum="dsAlert"/>
+    <itemData name="Priority B" defStyleNum="dsWarning"/>
+    <itemData name="Priority C" defStyleNum="dsInformation"/>
+    <itemData name="Priority D" defStyleNum="dsOthers"/>
+    <itemData name="Priority E" defStyleNum="dsOthers"/>
+    <itemData name="Priority F" defStyleNum="dsOthers"/>
+    <itemData name="Priority G" defStyleNum="dsOthers"/>
+    <itemData name="Priority H" defStyleNum="dsOthers"/>
+    <itemData name="Priority I" defStyleNum="dsOthers"/>
+    <itemData name="Priority J" defStyleNum="dsOthers"/>
+    <itemData name="Priority K" defStyleNum="dsOthers"/>
+    <itemData name="Priority L" defStyleNum="dsOthers"/>
+    <itemData name="Priority M" defStyleNum="dsOthers"/>
+    <itemData name="Priority N" defStyleNum="dsOthers"/>
+    <itemData name="Priority O" defStyleNum="dsOthers"/>
+    <itemData name="Priority P" defStyleNum="dsOthers"/>
+    <itemData name="Priority Q" defStyleNum="dsOthers"/>
+    <itemData name="Priority R" defStyleNum="dsOthers"/>
+    <itemData name="Priority S" defStyleNum="dsOthers"/>
+    <itemData name="Priority T" defStyleNum="dsOthers"/>
+    <itemData name="Priority U" defStyleNum="dsOthers"/>
+    <itemData name="Priority V" defStyleNum="dsOthers"/>
+    <itemData name="Priority W" defStyleNum="dsOthers"/>
+    <itemData name="Priority X" defStyleNum="dsOthers"/>
+    <itemData name="Priority Y" defStyleNum="dsOthers"/>
+    <itemData name="Priority Z" defStyleNum="dsOthers"/>
+  </itemDatas>
+</highlighting>
+</language>

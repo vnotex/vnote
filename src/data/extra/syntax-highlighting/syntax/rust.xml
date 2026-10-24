@@ -26,14 +26,21 @@
     IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
     DEALINGS IN THE SOFTWARE.
 -->
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
-	<!ENTITY rustIdent "([a-zA-Z_]|[^[:ascii:]])(\w|[^[:ascii:]])*">
-	<!ENTITY rustIntSuf "([iu](8|16|32|64|128|size)?)?">
-	<!ENTITY commonEscape "([trn0&apos;&quot;\\]|x[0-9a-fA-F]{2})">
-	<!ENTITY unicodeEscape "u\{([0-9a-fA-F]_*){1,6}\}">
+	<!ENTITY rustIdent "(?:[a-zA-Z_]|[^[:ascii:]])(?:\w|[^[:ascii:]])*">
+	<!ENTITY rustIntSuf "(?:[iu](?:8|16|32|64|128|size)?)?">
+	<!ENTITY commonEscape "(?:[trn0&apos;&quot;\\]|x[0-9a-fA-F]{2})">
+	<!ENTITY unicodeEscape "u\{(?:[0-9a-fA-F]_*){1,6}\}">
+
+	<!ENTITY hexadecimal_octal_binary "\b0(?:x[0-9a-fA-F_]+|o[0-7_]+|b[01_]+)&rustIntSuf;\b">
+	<!ENTITY float_decimal "\b[0-9][0-9_]*(?:(?:\.[0-9][0-9_]*)?(?:[eE][\+\-]?[0-9_]+)?(?:f32|f64)?|&rustIntSuf;)\b">
+
+	<!ENTITY scope1 "&rustIdent;::">
+	<!ENTITY scope2 "::(?=[^\s\:])"> <!-- Points after keyword or group { } -->
+
 ]>
-<language name="Rust" version="7" kateversion="5.0" section="Sources" extensions="*.rs" mimetype="text/rust" priority="15" license="MIT" author="The Rust Project Developers">
+<language name="Rust" alternativeNames="RS" version="16" kateversion="5.0" section="Sources" extensions="*.rs" mimetype="text/rust" indenter="cstyle" priority="16" license="MIT" author="The Rust Project Developers">
 <highlighting>
 	<list name="fn">
 		<item>fn</item>
@@ -49,25 +56,18 @@
 		<item>await</item>
 		<item>become</item>
 		<item>box</item>
-		<item>break</item>
 		<item>const</item>
-		<item>continue</item>
 		<item>crate</item>
 		<item>default</item>
 		<item>do</item>
 		<item>dyn</item>
-		<item>else</item>
 		<item>enum</item>
 		<item>extern</item>
 		<item>final</item>
-		<item>for</item>
-		<item>if</item>
 		<item>impl</item>
 		<item>in</item>
 		<item>let</item>
-		<item>loop</item>
 		<item>macro</item>
-		<item>match</item>
 		<item>mod</item>
 		<item>move</item>
 		<item>mut</item>
@@ -78,7 +78,6 @@
 		<item>pub</item>
 		<item>pure</item>
 		<item>ref</item>
-		<item>return</item>
 		<item>sizeof</item>
 		<item>static</item>
 		<item>struct</item>
@@ -92,10 +91,20 @@
 		<item>use</item>
 		<item>virtual</item>
 		<item>where</item>
-		<item>while</item>
 		<item>yield</item>
 		<!-- Also (these keywords are in other lists):
 		     type, Self, self. -->
+	</list>
+	<list name="controlflow">
+		<item>break</item>
+		<item>continue</item>
+		<item>else</item>
+		<item>for</item>
+		<item>if</item>
+		<item>loop</item>
+		<item>match</item>
+		<item>return</item>
+		<item>while</item>
 	</list>
 	<list name="traits">
 		<!-- Core Traits -->
@@ -364,35 +373,32 @@
 			<keyword String="fn" attribute="Keyword" context="Function"/>
 			<keyword String="type" attribute="Keyword" context="Type"/>
 			<keyword String="self" attribute="Self" context="#stay"/>
+			<RegExpr String="&scope1;|&scope2;" attribute="Scope"/>
 			<keyword String="keywords" attribute="Keyword" context="#stay"/>
+			<keyword String="controlflow" attribute="Control Flow" context="#stay"/>
 			<keyword String="types" attribute="Type" context="#stay"/>
 			<keyword String="ctypes" attribute="CType" context="#stay"/>
 			<keyword String="constants" attribute="Constant" context="#stay"/>
 			<keyword String="cconstants" attribute="CConstant" context="#stay"/>
 			<keyword String="traits" attribute="Trait" context="#stay"/>
 			<IncludeRules context="FindComments"/>
-			<!-- Hexadecimal, Octal & Binary -->
-			<RegExpr String="\b0(x[0-9a-fA-F_]+|o[0-7_]+|b[01_]+)&rustIntSuf;\b" attribute="Number" context="#stay"/>
-			<!-- Float & Decimal -->
-			<RegExpr String="\b[0-9][0-9_]*((\.[0-9][0-9_]*)?([eE][\+\-]?[0-9_]+)?(f32|f64)?|&rustIntSuf;)\b" attribute="Number" context="#stay"/>
+			<RegExpr String="&hexadecimal_octal_binary;|&float_decimal;" attribute="Number" context="#stay"/>
 			<!-- Invalid number -->
-			<RegExpr String="\b0(b[01_]*[^01_]|o[0-7_]*[^0-7_]|x[0-9a-fA-F_]*[^0-9a-fA-F_])\w*&rustIntSuf;\b" attribute="Error" context="#stay"/>
+			<RegExpr String="\b0(?:b[01_]*[^01_]|o[0-7_]*[^0-7_]|x[0-9a-fA-F_]*[^0-9a-fA-F_])\w*&rustIntSuf;\b" attribute="Error" context="#stay"/>
 			<Detect2Chars char="#" char1="[" attribute="Attribute" context="Attribute" beginRegion="Attribute"/>
 			<StringDetect String="#![" attribute="Attribute" context="Attribute" beginRegion="Attribute"/>
-			<RegExpr String="&rustIdent;::" attribute="Scope"/>
-			<RegExpr String="::(?=[^\s\:])" attribute="Scope"/> <!-- Points after keyword or group { } -->
 			<RegExpr String="&rustIdent;!" attribute="Macro"/>
 			<RegExpr String="&apos;&rustIdent;(?!&apos;)" attribute="Lifetime"/>
 			<DetectChar char="{" attribute="Symbol" context="#stay" beginRegion="Brace" />
 			<DetectChar char="}" attribute="Symbol" context="#stay" endRegion="Brace" />
 			<!-- Raw Strings -->
-			<RegExpr String="b?r(#*)&quot;" attribute="String" context="RawString" dynamic="true"/>
+			<RegExpr String="b?r(#*)&quot;" attribute="String" context="RawString"/>
 			<!-- Byte Strings -->
 			<Detect2Chars char="b" char1="&quot;" attribute="String" context="ByteString"/>
 			<!-- Strings -->
 			<DetectChar char="&quot;" attribute="String" context="String"/>
 			<!-- Byte -->
-			<RegExpr String="b&apos;(?=([^&apos;\\]|\\&commonEscape;)&apos;)" attribute="Character" context="Character"/>
+			<RegExpr String="b&apos;(?=(?:[^&apos;\\]|\\&commonEscape;)&apos;)" attribute="Character" context="Character"/>
 			<!-- Character -->
 			<DetectChar char="&apos;" attribute="Character" context="Character"/>
 			<DetectChar char="[" attribute="Normal Text" context="#stay" beginRegion="Bracket" />
@@ -408,15 +414,12 @@
 		</context>
 		<context attribute="Definition" lineEndContext="#stay" name="Function">
 			<DetectSpaces/>
-			<DetectChar char="(" attribute="Normal Text" context="#pop" lookAhead="true"/>
-			<DetectChar char="&lt;" attribute="Normal Text" context="#pop" lookAhead="true"/>
+			<AnyChar String="(&lt;" attribute="Normal Text" context="#pop" lookAhead="true"/>
 			<IncludeRules context="FindComments"/>
 		</context>
 		<context attribute="Definition" lineEndContext="#stay" name="Type">
 			<DetectSpaces/>
-			<DetectChar char="=" attribute="Normal Text" context="#pop" lookAhead="true"/>
-			<DetectChar char="&lt;" attribute="Normal Text" context="#pop" lookAhead="true"/>
-			<DetectChar char=";" attribute="Normal Text" context="#pop" lookAhead="true"/>
+			<AnyChar String="=&lt;;" attribute="Normal Text" context="#pop" lookAhead="true"/>
 			<IncludeRules context="FindComments"/>
 		</context>
 		<!-- Rustc allows strings to extend over multiple lines, and the
@@ -429,14 +432,14 @@
 			<DetectChar char="\" attribute="CharEscape" context="CharEscape"/>
 			<DetectChar attribute="String" context="#pop" char="&quot;"/>
 		</context>
-		<context attribute="String" lineEndContext="#stay" name="RawString" dynamic="true">
-			<RegExpr String="&quot;%1" attribute="String" context="#pop" dynamic="true"/>
+		<context attribute="String" lineEndContext="#stay" name="RawString">
+			<StringDetect String="&quot;%1" attribute="String" context="#pop" dynamic="true"/>
 		</context>
 		<context attribute="Character" lineEndContext="#pop" name="Character" fallthrough="true" fallthroughContext="#pop">
 			<RegExpr String="[^&apos;\\](?=&apos;)" attribute="Character" context="#stay"/>
-			<RegExpr String="\\(&unicodeEscape;|&commonEscape;)(?=&apos;)" attribute="CharEscape" context="#stay"/>
+			<RegExpr String="\\(?:&unicodeEscape;|&commonEscape;)(?=&apos;)" attribute="CharEscape" context="#stay"/>
 			<DetectChar attribute="Character" context="#pop" char="&apos;"/>
-			<RegExpr String="(\\.|[^&apos;\\])[^&apos;]*(?=&apos;([\d\s!&quot;#&#036;&#037;&amp;&#039;\(\)\*\+,\-\./:;&lt;\=&gt;\?@\[\\\]\^&#096;\{\|\}~[:cntrl:]]|$))" attribute="Error" context="#stay"/>
+			<RegExpr String="(?:\\.|[^&apos;\\])[^&apos;]*(?=&apos;(?:[\d\s!&quot;#&#036;&#037;&amp;&#039;\(\)\*\+,\-\./:;&lt;\=&gt;\?@\[\\\]\^&#096;\{\|\}~[:cntrl:]]|$))" attribute="Error" context="#stay"/>
 		</context>
 		<context attribute="CharEscape" lineEndContext="#pop" name="CharEscape">
 			<RegExpr String="&commonEscape;" attribute="CharEscape" context="#pop"/>
@@ -451,44 +454,44 @@
 			<Detect2Chars char="/" char1="*" attribute="Comment" context="Commentar 2" beginRegion="Comment"/>
 		</context>
 		<context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
-			<IncludeRules context="##Alerts" />
-			<IncludeRules context="##Modelines" />
+			<DetectSpaces/>
+			<IncludeRules context="##Comments" />
 		</context>
 		<context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
 			<DetectSpaces/>
 			<Detect2Chars char="/" char1="*" attribute="Comment" context="Commentar 2" beginRegion="Comment"/>
 			<Detect2Chars char="*" char1="/" attribute="Comment" context="#pop" endRegion="Comment"/>
-			<IncludeRules context="##Alerts" />
-			<IncludeRules context="##Modelines" />
+			<IncludeRules context="##Comments" />
 		</context>
 	</contexts>
 	<itemDatas>
-		<itemData name="Normal Text"  defStyleNum="dsNormal"/>
+		<itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="0"/>
 		<itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="0"/>
+		<itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="0"/>
 		<itemData name="Self"         defStyleNum="dsKeyword" spellChecking="0"/>
 		<itemData name="Type"         defStyleNum="dsDataType" spellChecking="0"/>
 		<itemData name="Trait"        defStyleNum="dsBuiltIn" spellChecking="0"/>
 		<itemData name="CType"        defStyleNum="dsDataType" spellChecking="0"/>
 		<itemData name="Constant"     defStyleNum="dsConstant" spellChecking="0"/>
 		<itemData name="CConstant"    defStyleNum="dsConstant" spellChecking="0"/>
-		<itemData name="Definition"   defStyleNum="dsNormal"/>
+		<itemData name="Definition"   defStyleNum="dsNormal" spellChecking="0"/>
 		<itemData name="Comment"      defStyleNum="dsComment"/>
-		<itemData name="Scope"        defStyleNum="dsPreprocessor"/>
-		<itemData name="Number"       defStyleNum="dsDecVal"/>
+		<itemData name="Scope"        defStyleNum="dsPreprocessor" spellChecking="0"/>
+		<itemData name="Number"       defStyleNum="dsDecVal" spellChecking="0"/>
 		<itemData name="String"       defStyleNum="dsString"/>
-		<itemData name="CharEscape"   defStyleNum="dsSpecialChar"/>
-		<itemData name="Character"    defStyleNum="dsChar"/>
-		<itemData name="Macro"        defStyleNum="dsPreprocessor"/>
-		<itemData name="Symbol"       defStyleNum="dsOperator"/>
-		<itemData name="Attribute"    defStyleNum="dsAttribute"/>
+		<itemData name="CharEscape"   defStyleNum="dsSpecialChar" spellChecking="0"/>
+		<itemData name="Character"    defStyleNum="dsChar" spellChecking="0"/>
+		<itemData name="Macro"        defStyleNum="dsPreprocessor" spellChecking="0"/>
+		<itemData name="Symbol"       defStyleNum="dsOperator" spellChecking="0"/>
+		<itemData name="Attribute"    defStyleNum="dsAttribute" spellChecking="0"/>
 		<itemData name="Lifetime"     defStyleNum="dsOthers" spellChecking="0"/>
 		<itemData name="Raw Identifier" defStyleNum="dsAnnotation" spellChecking="0"/>
-		<itemData name="Error"        defStyleNum="dsError"/>
+		<itemData name="Error"        defStyleNum="dsError" spellChecking="0"/>
 	</itemDatas>
 </highlighting>
 <general>
 	<comments>
-		<comment name="singleLine" start="//" />
+		<comment name="singleLine" start="//" position="afterwhitespace" />
 		<comment name="multiLine" start="/*" end="*/" region="Comment"/>
 	</comments>
 	<keywords casesensitive="1" />

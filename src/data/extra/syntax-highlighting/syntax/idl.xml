@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="IDL" version="3" kateversion="2.4" section="Sources" extensions="*.idl" mimetype="text/x-idl-src">
+<!DOCTYPE language>
+<language name="IDL" version="7" kateversion="5.0" section="Sources" extensions="*.idl" mimetype="text/x-idl-src">
   <highlighting>
     <list name="keywords">
       <item>any</item>
@@ -52,12 +52,19 @@
         <HlCHex attribute="Hex" context="#stay"/>
         <HlCChar attribute="Char" context="#stay"/>
         <DetectChar attribute="String" context="String" char="&quot;"/>
-        <IncludeRules context="##Doxygen" />
-        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*"/>
+        <IncludeRules context="FindComments" />
         <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;=&gt;?[]^{|}~"/>
         <StringDetect attribute="Comment" context="Some Context3" String="#if 0" insensitive="false"/>
         <DetectChar attribute="Preprocessor" context="Preprocessor" char="#" column="0"/>
+      </context>
+      <context name="FindComments" attribute="Normal Text" lineEndContext="#pop">
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="/" lookAhead="true"/>
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="*" lookAhead="true" />
+      </context>
+      <context name="MatchComment" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="#pop!Commentar 1" char="/" char1="/" />
+        <Detect2Chars attribute="Comment" context="#pop!Commentar 2" char="/" char1="*" beginRegion="Comment" />
       </context>
       <context attribute="String" lineEndContext="#stay" name="String">
         <LineContinue attribute="String" context="Some Context"/>
@@ -65,27 +72,26 @@
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
-        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
-        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
         <LineContinue attribute="Preprocessor" context="Some Context2"/>
         <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
         <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
-        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Commentar/Preprocessor" char="/" char1="*"/>
-      </context>
-      <context attribute="Comment" lineEndContext="#stay" name="Commentar/Preprocessor">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+        <IncludeRules context="FindComments" />
       </context>
       <context attribute="Normal Text" lineEndContext="#pop" name="Some Context"/>
       <context attribute="Normal Text" lineEndContext="#pop" name="Some Context2"/>
       <context attribute="Normal Text" lineEndContext="#stay" name="Some Context3">
-          <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
-          <StringDetect attribute="Comment" context="#pop" String="#endif" column="0"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+        <StringDetect attribute="Comment" context="#pop" String="#endif" column="0"/>
       </context>
     </contexts>
     <itemDatas>
@@ -98,17 +104,17 @@
       <itemData name="String"  defStyleNum="dsString"/>
       <itemData name="String Char"  defStyleNum="dsChar"/>
       <itemData name="Comment"  defStyleNum="dsComment"/>
-      <itemData name="Symbol"  defStyleNum="dsNormal"/>
+      <itemData name="Symbol"  defStyleNum="dsOperator"/>
       <itemData name="Preprocessor"  defStyleNum="dsOthers"/>
-      <itemData name="Prep. Lib"  defStyleNum="dsOthers"/> <!--,Qt::darkYellow,Qt::yellow,false,false)); -->
-      <itemData name="Alert"        defStyleNum="dsAlert" />
+      <itemData name="Prep. Lib"  defStyleNum="dsOthers"/>
     </itemDatas>
   </highlighting>
   <general>
     <comments>
       <comment name="singleLine" start="//" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

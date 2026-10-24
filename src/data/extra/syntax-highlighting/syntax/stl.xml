@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <language name="STL" version="2" kateversion="5.0" section="3D" extensions="*.stl" mimetype="application/sla" author="Volker Krause (vkrause@kde.org)" license="LGPLv2+">
     <highlighting>
         <list name="keywords">
@@ -29,3 +29,4 @@
         </itemDatas>
     </highlighting>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

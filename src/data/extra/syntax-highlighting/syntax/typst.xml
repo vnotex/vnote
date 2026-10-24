@@ -1,0 +1,329 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+    <!ENTITY float "(\.?[0-9]+|[0-9]+\.[0-9]*)">
+
+    <!ENTITY ident0 "[a-zA-Z_]">
+    <!ENTITY identn "[a-zA-Z0-9_\-]">
+    <!ENTITY ident "&ident0;&identn;*">
+    <!ENTITY boundl "(?&lt;!&ident0;)">
+    <!ENTITY boundr "(?!&identn;)">
+    <!ENTITY fmtbdl "(?&lt;=\W|^)">
+    <!ENTITY fmtbdr "(?=\W|$)">
+]>
+
+<!--
+    SPDX-FileCopyrightText: 2024 Katalin Rebhan <me@dblsaiko.net>
+
+    SPDX-License-Identifier: MIT
+-->
+
+<language
+    name="Typst"
+    version="1"
+    kateversion="5.79"
+    section="Markup"
+    extensions="*.typ"
+    casesensitive="1"
+    author="Katalin Rebhan &lt;me@dblsaiko.net&gt;"
+    license="MIT"
+    priority="1"
+>
+    <highlighting>
+        <list name="bool">
+            <item>true</item>
+            <item>false</item>
+        </list>
+        <contexts>
+            <context name="Markup" attribute="Normal Text" lineEndContext="#stay">
+                <IncludeRules context="Comment Rules" />
+                <RegExpr String="&fmtbdl;\*" attribute="Strong" context="Strong" />
+                <RegExpr String="&fmtbdl;_" attribute="Emphasis" context="Emphasis" />
+                <RegExpr String="```(`*)" attribute="Raw Text" context="Big Raw Text" />
+                <DetectChar char="`" attribute="Raw Text" context="Raw Text" />
+                <RegExpr String="^\s*=+.*" column="0" attribute="Heading" />
+                <RegExpr String="^\s*[-+]" column="0" attribute="List" />
+                <RegExpr String="\\(u\{[0-9A-Za-z]+\}|.?)" attribute="Special Char" />
+                <RegExpr String="https?://[0-9A-Za-z-._~:/?#\[\]@!\$&amp;'\(\)\*\+,;%=]+" attribute="URL Literal" />
+                <DetectChar char="$" attribute="Math" context="Math" beginRegion="Math" />
+                <DetectChar char="#" attribute="Code Keyword" context="Code" />
+                <RegExpr String="&lt;&ident;&gt;" attribute="Label" />
+                <RegExpr String="@&ident;" attribute="Label Reference" />
+                <!--
+                    Keep track of nested [] so we don't prematurely pop:
+
+                        #[ text containing [] ]
+                -->
+                <DetectChar char="[" context="Markup Inner []" />
+            </context>
+            <context name="Strong" attribute="Strong">
+                <RegExpr String="\*&fmtbdr;" attribute="Strong" context="#pop" />
+                <IncludeRules context="Markup" />
+            </context>
+            <context name="Emphasis" attribute="Emphasis">
+                <RegExpr String="_&fmtbdr;" attribute="Emphasis" context="#pop" />
+                <IncludeRules context="Markup" />
+            </context>
+            <context name="Raw Text" attribute="Raw Text">
+                <DetectChar char="`" attribute="Raw Text" context="#pop" />
+            </context>
+            <context name="Big Raw Text" attribute="Raw Text">
+                <StringDetect String="```%1" dynamic="true" attribute="Raw Text" context="#pop" />
+            </context>
+
+            <context name="Markup Block" attribute="Normal Text">
+                <DetectChar char="]" attribute="Operator" context="#pop" endRegion="Markup Block" />
+                <IncludeRules context="Markup" />
+            </context>
+            <context name="Markup Inner []" attribute="Normal Text">
+                <DetectChar char="]" context="#pop" />
+                <IncludeRules context="Markup" />
+            </context>
+            <context name="Markup Block Call" attribute="Normal Text">
+                <DetectChar char="]" attribute="Operator" context="#pop!Continued Expression" endRegion="Markup Block" />
+                <IncludeRules context="Markup Block" />
+            </context>
+
+            <context name="Code" attribute="Code" lineEndContext="#pop!Line Error" fallthroughContext="#pop!Line Error">
+                <!--
+                    Start of #-expression inside of a markup context. Needs
+                    special handling because we need to automatically return to
+                    the markup context at the end of the expression.
+                -->
+                <!-- Keep this synced with Nested Code below! -->
+                <DetectSpaces />
+                <IncludeRules context="Comment Rules" />
+                <WordDetect String="none" attribute="Builtin" context="#pop!Continued Expression" />
+                <WordDetect String="auto" attribute="Builtin" context="#pop!Continued Expression" />
+                <keyword String="bool" attribute="Builtin" context="#pop!Continued Expression" />
+                <RegExpr String="&float;(fr|em|pt|mm|cm|in|%)" attribute="Float" context="#pop!Continued Expression" />
+                <Float attribute="Float" context="#pop!Continued Expression" />
+                <Int attribute="Int" context="#pop!Continued Expression" />
+                <DetectChar char="&quot;" attribute="String" context="#pop!String" />
+                <RegExpr String="```(`*)" attribute="Raw Text" context="#pop!Big Raw Text" />
+                <DetectChar char="`" attribute="Raw Text" context="#pop!Raw Text" />
+                <DetectChar char="$" attribute="Math" context="#pop!Math" beginRegion="Math" />
+                <RegExpr String="&lt;&ident;&gt;" attribute="Label" context="Continued Expression" />
+                <DetectChar char="(" attribute="Operator" context="#pop!Parentheses" beginRegion="Parentheses" />
+                <DetectChar char="[" attribute="Operator" context="#pop!Markup Block" beginRegion="Markup Block" />
+                <DetectChar char="{" attribute="Operator" context="#pop!Code Block" beginRegion="Code Block" />
+                <Detect2Chars char="!" char1="=" attribute="Operator" />
+                <Detect2Chars char="&gt;" char1="=" attribute="Operator" />
+                <Detect2Chars char="&lt;" char1="=" attribute="Operator" />
+                <Detect2Chars char="+" char1="=" attribute="Operator" />
+                <Detect2Chars char="-" char1="=" attribute="Operator" />
+                <Detect2Chars char="=" char1="=" attribute="Operator" />
+                <AnyChar String="!&gt;&lt;+-=" attribute="Operator" />
+                <WordDetect String="in" attribute="Operator" />
+                <WordDetect String="import" attribute="Import" context="#pop!Import" />
+                <WordDetect String="show" attribute="Code Keyword" context="#pop!Show" />
+                <WordDetect String="set" attribute="Code Keyword" context="#pop!Set" />
+                <WordDetect String="let" attribute="Code Keyword" context="#pop!Let" />
+                <WordDetect String="if" attribute="Control Flow" context="#pop!If" />
+                <WordDetect String="else" attribute="Control Flow" />
+                <WordDetect String="while" attribute="Control Flow" context="#pop!While" />
+                <WordDetect String="for" attribute="Control Flow" context="#pop!For" />
+                <WordDetect String="break" attribute="Control Flow" />
+                <WordDetect String="continue" attribute="Control Flow" />
+                <WordDetect String="return" attribute="Control Flow" />
+                <RegExpr String="&boundl;&ident;&boundr;" context="#pop!Continued Expression" />
+            </context>
+            <context name="Nested Code" attribute="Code">
+                <!-- Keep this synced with Code above! -->
+                <DetectSpaces />
+                <IncludeRules context="Comment Rules" />
+                <WordDetect String="none" attribute="Builtin" context="Continued Expression" />
+                <WordDetect String="auto" attribute="Builtin" context="Continued Expression" />
+                <keyword String="bool" attribute="Builtin" context="Continued Expression" />
+                <RegExpr String="&float;(fr|em|pt|mm|cm|in|%)" attribute="Float" context="Continued Expression" />
+                <Float attribute="Float" context="Continued Expression" />
+                <Int attribute="Int" context="Continued Expression" />
+                <DetectChar char="&quot;" attribute="String" context="String" />
+                <RegExpr String="```(`*)" attribute="Raw Text" context="Big Raw Text" />
+                <DetectChar char="`" attribute="Raw Text" context="Raw Text" />
+                <DetectChar char="$" attribute="Math" context="Math" beginRegion="Math" />
+                <RegExpr String="&lt;&ident;&gt;" attribute="Label" context="Continued Expression" />
+                <DetectChar char="(" attribute="Operator" context="Parentheses" beginRegion="Parentheses" />
+                <DetectChar char="[" attribute="Operator" context="Markup Block" beginRegion="Markup Block" />
+                <DetectChar char="{" attribute="Operator" context="Code Block" beginRegion="Code Block" />
+                <Detect2Chars char="!" char1="=" attribute="Operator" />
+                <Detect2Chars char="&gt;" char1="=" attribute="Operator" />
+                <Detect2Chars char="&lt;" char1="=" attribute="Operator" />
+                <Detect2Chars char="+" char1="=" attribute="Operator" />
+                <Detect2Chars char="-" char1="=" attribute="Operator" />
+                <Detect2Chars char="=" char1="=" attribute="Operator" />
+                <AnyChar String="!&gt;&lt;+-=" attribute="Operator" />
+                <WordDetect String="in" attribute="Operator" />
+                <WordDetect String="import" attribute="Import" context="Import" />
+                <WordDetect String="show" attribute="Code Keyword" context="Show" />
+                <WordDetect String="set" attribute="Code Keyword" context="Set" />
+                <WordDetect String="let" attribute="Code Keyword" context="Let" />
+                <WordDetect String="if" attribute="Control Flow" context="If" />
+                <WordDetect String="else" attribute="Control Flow" />
+                <WordDetect String="while" attribute="Control Flow" context="While" />
+                <WordDetect String="for" attribute="Control Flow" context="For" />
+                <WordDetect String="break" attribute="Control Flow" />
+                <WordDetect String="continue" attribute="Control Flow" />
+                <WordDetect String="return" attribute="Control Flow" />
+                <RegExpr String="&boundl;&ident;&boundr;" context="Continued Expression" />
+            </context>
+
+            <context name="Code Block" attribute="Code">
+                <DetectChar char="}" attribute="Operator" context="#pop" endRegion="Code Block" />
+                <IncludeRules context="Nested Code" />
+            </context>
+
+            <context name="Continued Expression" attribute="Code" lineEndContext="#pop" fallthroughContext="#pop">
+                <DetectChar char="(" attribute="Operator" context="#pop!Function Call" />
+                <DetectChar char="[" attribute="Operator" context="#pop!Markup Block Call" beginRegion="Markup Block" />
+                <DetectChar char="." attribute="Operator" context="Value Access" />
+            </context>
+
+            <context name="Value Access" attribute="Code" lineEndContext="#pop" fallthroughContext="#pop!Line Error">
+                <RegExpr String="&boundl;&ident;&boundr;" context="#pop!Continued Expression" />
+            </context>
+
+            <context name="Parentheses" attribute="Code">
+                <DetectChar char=")" attribute="Operator" context="#pop!Continued Expression" endRegion="Parentheses" />
+                <DetectChar char="," attribute="Operator" />
+                <IncludeRules context="Nested Code" />
+            </context>
+            <context name="Function Call" attribute="Code">
+                <DetectChar char=":" attribute="Operator" context="Function Call - Parameter" />
+                <IncludeRules context="Parentheses" />
+            </context>
+            <context name="Function Call - Parameter" attribute="Code">
+                <DetectChar char="," attribute="Operator" context="#pop" />
+                <IncludeRules context="Code" />
+            </context>
+
+            <context name="Import" attribute="Code" lineEndContext="#pop" fallthroughContext="#pop">
+                <DetectChar char=":" attribute="Operator" context="#pop!Import 1" />
+                <IncludeRules context="Nested Code" />
+            </context>
+            <context name="Import 1" attribute="Code" fallthroughContext="#pop!Line Error">
+                <DetectSpaces />
+                <DetectChar char="*" attribute="Operator" context="#pop" />
+                <RegExpr String="&boundl;&ident;&boundr;" context="#pop!Import 2" />
+            </context>
+            <context name="Import 2" attribute="Code" lineEndContext="#pop" fallthroughContext="#pop">
+                <DetectSpaces />
+                <DetectChar char="," attribute="Operator" context="#pop!Import 1" />
+            </context>
+
+            <context name="Show" attribute="Code">
+                <DetectSpaces />
+                <DetectChar char=":" attribute="Operator" context="#pop!Code" />
+                <IncludeRules context="Nested Code" />
+            </context>
+
+            <context name="Set" attribute="Code" lineEndContext="#pop!Line Error" fallthroughContext="#pop!Line Error">
+                <DetectSpaces />
+                <RegExpr String="&boundl;&ident;&boundr;" attribute="Element" context="#pop!Set 1" />
+            </context>
+            <context name="Set 1" attribute="Code">
+                <DetectSpaces />
+                <DetectChar char="(" attribute="Operator" context="#pop!Function Call" />
+            </context>
+
+            <context name="Let" attribute="Code" fallthroughContext="#pop!Line Error">
+                <DetectSpaces />
+                <RegExpr String="&boundl;&ident;&boundr;" attribute="Element" context="#pop!Let 1" />
+            </context>
+            <context name="Let 1" attribute="Code">
+                <DetectChar char="(" attribute="Operator" context="#pop!Let 2" />
+                <IncludeRules context="Let 3" />
+            </context>
+            <context name="Let 2" attribute="Code">
+                <DetectChar char=")" attribute="Operator" context="#pop!Let 3" />
+                <IncludeRules context="Function Call" />
+            </context>
+            <context name="Let 3" attribute="Code">
+                <DetectSpaces />
+                <DetectChar char="=" attribute="Operator" context="#pop!Code" />
+            </context>
+
+            <context name="If" attribute="Code">
+                <DetectChar char="{" attribute="Operator" context="#pop!Code Block" beginRegion="Code Block" />
+                <DetectChar char="[" attribute="Operator" context="#pop!Markup Block" beginRegion="Markup Block" />
+                <IncludeRules context="Nested Code" />
+            </context>
+
+            <context name="While" attribute="Code">
+                <DetectChar char="{" attribute="Operator" context="#pop!Code Block" beginRegion="Code Block" />
+                <DetectChar char="[" attribute="Operator" context="#pop!Markup Block" beginRegion="Markup Block" />
+                <IncludeRules context="Nested Code" />
+            </context>
+
+            <context name="For" attribute="Code">
+                <DetectChar char="{" attribute="Operator" context="#pop!Code Block" beginRegion="Code Block" />
+                <DetectChar char="[" attribute="Operator" context="#pop!Markup Block" beginRegion="Markup Block" />
+                <WordDetect String="in" attribute="Control Flow" />
+                <IncludeRules context="Nested Code" />
+            </context>
+
+            <context name="String" attribute="String">
+                <RegExpr String="\\." attribute="Special Char" />
+                <DetectChar char="&quot;" attribute="String" context="#pop!Continued Expression" />
+            </context>
+
+
+            <context name="Math" attribute="Math">
+                <DetectChar char="$" attribute="Math" context="#pop" endRegion="Math" />
+                <DetectChar char="#" attribute="Code Keyword" context="Code" />
+            </context>
+
+
+            <context name="Line Error" attribute="Error" lineEndContext="#pop" />
+
+
+            <context name="Comment Rules" attribute="Normal Text" lineEndContext="#stay">
+                <Detect2Chars char="/" char1="/" attribute="Comment" context="Comment" />
+                <Detect2Chars char="/" char1="*" attribute="Comment" context="Multi-Line Comment" beginRegion="Comment" />
+            </context>
+            <context name="Comment" attribute="Comment" lineEndContext="#pop">
+                <DetectSpaces attribute="Comment"/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier attribute="Comment" context="#stay" />
+            </context>
+            <context name="Multi-Line Comment" attribute="Comment" lineEndContext="#stay">
+                <Detect2Chars char="*" char1="/" attribute="Comment" context="#pop" endRegion="Comment" />
+                <IncludeRules context="Comment" />
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Comment" defStyleNum="dsComment" />
+            <itemData name="Error" defStyleNum="dsError" />
+
+            <itemData name="Normal Text" defStyleNum="dsNormal" />
+            <itemData name="Heading" defStyleNum="dsFunction" bold="true" />
+            <itemData name="List" defStyleNum="dsNormal" bold="true" />
+            <itemData name="Strong" defStyleNum="dsNormal" bold="true" />
+            <itemData name="Emphasis" defStyleNum="dsNormal" italic="true" />
+            <itemData name="Raw Text" defStyleNum="dsSpecialString" />
+            <itemData name="URL Literal" defStyleNum="dsSpecialString" />
+
+            <itemData name="Code" defStyleNum="dsNormal" />
+            <itemData name="Code Keyword" defStyleNum="dsKeyword" />
+            <itemData name="Builtin" defStyleNum="dsBuiltIn" />
+            <itemData name="Int" defStyleNum="dsDecVal" />
+            <itemData name="Float" defStyleNum="dsFloat" />
+            <itemData name="String" defStyleNum="dsString" />
+            <itemData name="Special Char" defStyleNum="dsSpecialChar" />
+            <itemData name="Label" defStyleNum="dsVariable" />
+            <itemData name="Label Reference" defStyleNum="dsVariable" />
+            <itemData name="Operator" defStyleNum="dsOperator" />
+            <itemData name="Element" defStyleNum="dsVariable" />
+            <itemData name="Control Flow" defStyleNum="dsControlFlow" />
+            <itemData name="Import" defStyleNum="dsImport" />
+
+            <itemData name="Math" defStyleNum="dsSpecialString" />
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="//" />
+            <comment name="multiLine" start="/*" end="*/" region="Comment" />
+        </comments>
+        <keywords casesensitive="1" weakDeliminator="-" additionalDeliminator="#" />
+    </general>
+</language>

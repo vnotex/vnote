@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="4GL" version="4" kateversion="5.0" section="Database" extensions="*.4gl;*.4GL;*.err" mimetype="text/x-4glsrc;text/x-4glerr" author="Andrej Falout (andrej@falout.org)" license="LGPL">
+<!DOCTYPE language>
+<language name="4GL" version="9" kateversion="5.0" section="Database" extensions="*.4gl;*.4GL;*.err" mimetype="text/x-4glsrc;text/x-4glerr" author="Andrej Falout (andrej@falout.org)" license="LGPL">
   <highlighting>
     <list name="keywords">
       <item>at</item>
@@ -243,10 +243,6 @@
 
       <item>fgl_lastkey</item>
       <item>formhandler</item>
-
-      <item>fgl_lastkey()</item>
-
-
     </list>
     <list name="types">
       <item>char</item>
@@ -268,33 +264,18 @@
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text 1">
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
         <keyword attribute="Data Type" context="#stay" String="types"/>
-        <Float attribute="Float" context="Float Suffixes"/>
+        <Float attribute="Float" context="#stay"/>
         <HlCOct attribute="Octal" context="#stay"/>
         <HlCHex attribute="Hex" context="#stay"/>
-        <Int attribute="Decimal" context="Int Suffixes"/>
+        <Int attribute="Decimal" context="#stay"/>
         <HlCChar attribute="Char" context="#stay"/>
         <DetectChar attribute="String" context="String" char="&quot;"/>
         <DetectChar attribute="Comment" context="Comment 1" char="#"/>
-        <DetectChar attribute="Comment" context="Comment 2" char="{"/>
+        <DetectChar attribute="Comment" context="Comment 2" char="{" beginRegion="BlockComment"/>
         <Detect2Chars attribute="Comment" context="Comment 1" char="-" char1="-"/>
 <!--        <Detect2Chars attribute="Comment" context="Comment 1" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Comment 2" char="/" char1="*"/>//-->
+        <Detect2Chars attribute="Comment" context="Comment 2" char="/" char1="*" beginRegion="BlockComment"/>//-->
         <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;=&gt;?[]^|~"/>
-         <StringDetect attribute="Preprocessor" context="Comment 4" String="#if 0" insensitive="false"/>
-        <RegExpr attribute="Preprocessor" context="Preprocessor" String="#"/>
-      </context>
-      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-          <AnyChar String="fF" attribute="Float" context="#pop"/>
-      </context>
-      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-          <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
       </context>
       <context attribute="String" lineEndContext="#pop" name="String">
         <LineContinue attribute="String" context="#stay"/>
@@ -302,35 +283,14 @@
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="Comment 1">
-        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Comment 2">
-        <DetectChar attribute="Comment" context="#pop" char="}"/>
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
-        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
-      </context>
-      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
-        <LineContinue attribute="Preprocessor" context="#stay"/>
-        <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
-        <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
-        <DetectChar attribute="Comment" context="Comment 1" char="#"/>
-        <DetectChar attribute="Comment" context="Comment 2" char="{"/>
-        <Detect2Chars attribute="Comment" context="Comment 1" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Comment 3" char="/" char1="*"/>
-      </context>
-      <context attribute="Comment" lineEndContext="#stay" name="Comment 3">
-        <DetectChar attribute="Comment" context="#pop" char="}"/>
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
-      </context>
-      <context attribute="Comment" lineEndContext="#stay" name="Comment 4">
-          <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
-          <RegExpr attribute="Comment" context="Comment 5" String="#if" />
-          <RegExpr attribute="Preprocessor" context="#pop" String="#endif" />
-          <RegExpr attribute="Preprocessor" context="#pop" String="#else" />
-      </context>
-      <context attribute="Comment" lineEndContext="#stay" name="Comment 5">
-          <RegExpr attribute="Comment" context="Comment 5" String="#if" />
-          <RegExpr attribute="Comment" context="#pop" String="#endif" />
+        <DetectChar attribute="Comment" context="#pop" char="}" endRegion="BlockComment"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
     </contexts>
     <itemDatas>
@@ -345,19 +305,14 @@
       <itemData name="String"  defStyleNum="dsString"/>
       <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
       <itemData name="Comment"  defStyleNum="dsComment"/>
-      <itemData name="Symbol"  defStyleNum="dsNormal"/>
-      <itemData name="Preprocessor"  defStyleNum="dsPreprocessor"/>
-      <itemData name="Prep. Lib"  defStyleNum="dsImport"/>
-      <itemData name="Alert"        defStyleNum="dsAlert"/>
+      <itemData name="Symbol"  defStyleNum="dsOperator"/>
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment name="multiLine" start="{" end="}" />
+      <comment name="multiLine" start="{" end="}" region="BlockComment" />
     </comments>
     <keywords casesensitive="0" />
   </general>
 </language>
-
-
-
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

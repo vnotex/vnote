@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Wavefront OBJ" version="2" kateversion="5.0" section="3D" extensions="*.obj" mimetype="" author="Volker Krause (vkrause@kde.org)" license="LGPLv2+">
+<!DOCTYPE language>
+<language name="Wavefront OBJ" version="4" kateversion="5.0" section="3D" extensions="*.obj" mimetype="" author="Volker Krause (vkrause@kde.org)" license="LGPLv2+">
     <highlighting>
         <list name="keywords">
             <item>v</item>
@@ -50,7 +50,8 @@
                 <DetectChar attribute="Comment" context="Comment" char="#"/>
             </context>
             <context name="Comment" attribute="Comment" lineEndContext="#pop">
-                <IncludeRules context="##Alerts"/>
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
             </context>
         </contexts>
         <itemDatas>
@@ -67,3 +68,4 @@
         </comments>
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

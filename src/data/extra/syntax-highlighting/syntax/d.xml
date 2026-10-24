@@ -1,5 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language [
+  <!ENTITY hexfloat "0[xX][\da-fA-F_]*(?:\.[\da-fA-F_]*)?[pP][-+]?\d[\d_]*[fFL]?i?">
+  <!-- Float starting with a dot is matched in main context -->
+  <!-- All floats except integers -->
+  <!-- RegExpr is branched rather than using look aheads for efficiency at the expense of extra length -->
+  <!ENTITY float "\d[_\d]*(?:\.(?!\.)[_\d]*(?:[eE][-+]?\d[_\d]*)?[fFL]?i?|[eE][-+]?\d[_\d]*[fFL]?i?|[fF]i?|[fFL]?i)">
+]>
 <!--
   ========================================================================
 
@@ -99,7 +105,7 @@
    ========================================================================
 -->
 
-<language name="D" version="5" kateversion="5.0" section="Sources" extensions="*.d;*.D;*.di;*.DI;" mimetype="text/x-dsrc" casesensitive="true" author="Diggory Hardy (diggory.hardy@gmail.com), Aziz Köksal (aziz.koeksal@gmail.com), Jari-Matti Mäkelä (jmjm@iki.fi), Simon J Mackenzie (project.katedxml@smackoz.fastmail.fm)" license="LGPL">
+<language name="D" version="13" kateversion="5.0" section="Sources" extensions="*.d;*.D;*.di;*.DI;" mimetype="text/x-dsrc" casesensitive="true" author="Diggory Hardy (diggory.hardy@gmail.com), Aziz Köksal (aziz.koeksal@gmail.com), Jari-Matti Mäkelä (jmjm@iki.fi), Simon J Mackenzie (project.katedxml@smackoz.fastmail.fm)" license="LGPL">
   <highlighting>
     <!-- User-defined keywords (add identifiers you'd like highlighted here) -->
     <list name="userkeywords">
@@ -402,7 +408,7 @@
         <Detect2Chars attribute="Normal Text"   char="." char1="."/>
         
         <!-- Float starting with a dot -->
-        <RegExpr attribute="Float" context="#stay" String="\.\d[\d_]*([eE][-+]?\d[\d_]*)?[fFL]?i?"/>
+        <RegExpr attribute="Float" context="#stay" String="\.\d[\d_]*(?:[eE][-+]?\d[\d_]*)?[fFL]?i?"/>
         
         <!-- Try to match various built-in properties -->
         <DetectChar char="." attribute="Normal Text" context="Properties"/>
@@ -431,12 +437,10 @@
           
           <!-- detect whether scope, in, out, etc. are used as attributes or statements (etc.) -->
           <!-- rules cannot match across newlines unfortunately -->
-          <RegExpr String="in\s*(?=\{)"    attribute="Statement"       context="#stay"     />
-          <RegExpr String="out\s*(?=(\(([a-zA-Z_][\w_]*)?\)\s*)?\{)" attribute="Statement" context="#stay" />
+          <RegExpr String="in\s*(?=\{)|out\s*(?=(\(([a-zA-Z_][\w_]*)?\)\s*)?\{)" attribute="Statement" context="#stay" />
           <RegExpr String="scope\s*(?=\()" attribute="Statement"       context="Scope"     />
           <RegExpr String="import\s*(?=\()" attribute="Expression"     context="#stay"     />
-          <RegExpr String="function\s*(?=\()" attribute="Declarator"   context="#stay"     />
-          <RegExpr String="delegate\s*(?=\()" attribute="Declarator"   context="#stay"     />
+          <RegExpr String="(function|delegate)\s*(?=\()" attribute="Declarator"   context="#stay"     />
           
           <keyword String="statements"      attribute="Statement"      context="#stay"     />
           <keyword String="attributes"      attribute="Attribute"      context="#stay"     />
@@ -476,27 +480,23 @@
       <context name="NumberLiteral" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
         <!-- Float literals -->
         <!-- Floats must be matched before Binary|Octal|Hex|DecInteger -->
-        <RegExpr attribute="Float" context="#pop" String="0[xX][\da-fA-F_]*(\.[\da-fA-F_]*)?[pP][-+]?\d[\d_]*[fFL]?i?"/>
-        <!-- Float starting with a dot is matched in main context -->
-        <!-- All floats except integers -->
-        <!-- RegExpr is branched rather than using look aheads for efficiency at the expense of extra length -->
-        <RegExpr attribute="Float" context="#pop" String="\d[_\d]*(\.(?!\.)[_\d]*([eE][-+]?\d[_\d]*)?[fFL]?i?|[eE][-+]?\d[_\d]*[fFL]?i?|[fF]i?|[fFL]?i)"/>
+        <RegExpr attribute="Float" context="#pop" String="&hexfloat;|&float;"/>
         
         <!-- Binary|Octal|Hex|DecInteger -->
         <!-- Common, optional suffix: (L[uU]?|[uU]L?)? -->
-        <RegExpr attribute="Binary"  context="#pop" String="0[bB]_*[01][01_]*(L[uU]?|[uU]L?)?"/>
+        <RegExpr attribute="Binary"  context="#pop" String="0[bB]_*[01][01_]*(?:L[uU]?|[uU]L?)?"/>
         <!-- Octal must be matched before DecInteger -->
-        <RegExpr attribute="Octal"   context="#pop" String="0[0-7_]+(L[uU]?|[uU]L?)?"/>
-        <RegExpr attribute="Hex"     context="#pop" String="0[xX]_*[\da-fA-F][\da-fA-F_]*(L[uU]?|[uU]L?)?"/>
+        <RegExpr attribute="Octal"   context="#pop" String="0[0-7_]+(?:L[uU]?|[uU]L?)?"/>
+        <RegExpr attribute="Hex"     context="#pop" String="0[xX]_*[\da-fA-F][\da-fA-F_]*(?:L[uU]?|[uU]L?)?"/>
         <!-- Decimal integers must be matched last -->
-        <RegExpr attribute="Integer" context="#pop" String="\d+[\d_]*(L[uU]?|[uU]L?)?"/>
+        <RegExpr attribute="Integer" context="#pop" String="\d+[\d_]*(?:L[uU]?|[uU]L?)?"/>
       </context>
 
       <context name="LinePragma" attribute="Pragma" lineEndContext="#pop">
         <DetectSpaces/>
         <!-- Match an Integer -->
-        <RegExpr attribute="Integer" context="#stay" String="((0([0-7_]+|[bB]_*[01][01_]*|[xX]_*[\da-fA-F][\da-fA-F_]*))|\d+[\d_]*)(L[uU]?|[uU]L?)?"/>
-        <RegExpr attribute="String" context="#stay" String="&quot;[^&quot;]*&quot;"/>
+        <RegExpr attribute="Integer" context="#stay" String="(?:(?:0(?:[0-7_]+|[bB]_*[01][01_]*|[xX]_*[\da-fA-F][\da-fA-F_]*))|\d+[\d_]*)(?:L[uU]?|[uU]L?)?"/>
+        <RangeDetect attribute="String" context="#stay" char="&quot;" char1="&quot;"/>
         <keyword attribute="SpecialTokens"  context="#stay"      String="specialtokens"/>
         <IncludeRules context="CommentRules" />
         <RegExpr attribute="Error" context="#pop" String=".+"/>
@@ -563,7 +563,7 @@
       <context name="VersionSpec" attribute="Normal Text" lineEndContext="#stay">
         <DetectSpaces/>
         <DetectIdentifier attribute="Normal Text" context="#stay"/>
-        <RegExpr attribute="Integer" context="#stay" String="\d+[\d_]*(L[uU]?|[uU]L?)?"/>
+        <RegExpr attribute="Integer" context="#stay" String="\d+[\d_]*(?:L[uU]?|[uU]L?)?"/>
         <DetectChar char=";" attribute="Normal Text" context="#pop#pop"/>
         <RegExpr String="." attribute="Error" context="#pop#pop"/>
       </context>
@@ -571,7 +571,7 @@
         <DetectSpaces/>
         <keyword    attribute="Version Type" context="#stay" String="vtypes"/>
         <DetectIdentifier attribute="Normal Text" context="#stay"/>
-        <RegExpr attribute="Integer" context="#stay" String="\d+[\d_]*(L[uU]?|[uU]L?)?"/>
+        <RegExpr attribute="Integer" context="#stay" String="\d+[\d_]*(?:L[uU]?|[uU]L?)?"/>
         <IncludeRules context="CommentRules" />
         <!-- Fall-through rules, highlighting errors: -->
         <DetectChar char=")" attribute="Normal Text" context="#pop#pop"/>
@@ -646,7 +646,7 @@
         <!-- \t \n \r etc. -->
         <HlCStringChar attribute="EscapeSequence" context="CharLiteralClosing"/>
         <!-- \u 4HexDigits | \U 8HexDigits | HTMLEntity -->
-        <RegExpr attribute="EscapeSequence" context="CharLiteralClosing" String="\\(u[\da-fA-F]{4}|U[\da-fA-F]{8}|&amp;[a-zA-Z]\w+;)"/>
+        <RegExpr attribute="EscapeSequence" context="CharLiteralClosing" String="\\(?:u[\da-fA-F]{4}|U[\da-fA-F]{8}|&amp;[a-zA-Z]\w+;)"/>
         <!-- Invalid escape sequences -->
         <RegExpr attribute="Error" context="CharLiteralClosing" String="\\."/>
         <!-- Any character -->
@@ -675,8 +675,8 @@
       <!-- delimited strings -->
       <!-- q"IDENTIFIER...IDENTIFIER" -->
       <context name="DelimStrHeredoc" attribute="Delimited String Content" lineEndContext="#stay">
-        <RegExpr attribute="Delimited String Delimiter" context="#pop" String="^%1&quot;" dynamic="true" />
-        <RegExpr attribute="Error" context="#pop" String="^%1" dynamic="true" />
+        <StringDetect attribute="Delimited String Delimiter" context="#pop" String="%1&quot;" dynamic="true" column="0" />
+        <StringDetect attribute="Error" context="#pop" String="%1" dynamic="true" column="0" />
       </context>
       <!-- q"[...]" -->
       <context name="DelimStrBracket" attribute="Delimited String Content" lineEndContext="#stay">
@@ -720,8 +720,8 @@
       </context>
       <!-- q"*...*" -->
       <context name="DelimStrSimple" attribute="Delimited String Content" lineEndContext="#stay">
-        <RegExpr attribute="Delimited String Delimiter" context="#pop" String="%1&quot;" dynamic="true" />
-        <RegExpr attribute="Error" context="#pop" String="%1" dynamic="true" />
+        <StringDetect attribute="Delimited String Delimiter" context="#pop" String="%1&quot;" dynamic="true" />
+        <StringDetect attribute="Error" context="#pop" String="%1" dynamic="true" />
       </context>
 
       <!-- Comments -->
@@ -736,18 +736,18 @@
       </context>
       <context name="CommentLine" attribute="Comment" lineEndContext="#pop">
         <DetectSpaces />
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
       <context name="CommentBlock" attribute="Comment" lineEndContext="#stay">
         <DetectSpaces />
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="CommentBlock"/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
       <context name="CommentNested" attribute="Comment" lineEndContext="#stay">
         <DetectSpaces />
-       <Detect2Chars attribute="Comment" context="CommentNested" char="/" char1="+" beginRegion="CommentNested"/>
-       <Detect2Chars attribute="Comment" context="#pop" char="+" char1="/" endRegion="CommentNested"/>
-       <IncludeRules context="##Alerts" />
+        <Detect2Chars attribute="Comment" context="CommentNested" char="/" char1="+" beginRegion="CommentNested"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="+" char1="/" endRegion="CommentNested"/>
+        <IncludeRules context="##Comments" />
       </context>
       
       
@@ -762,8 +762,8 @@
         <DetectSpaces />
         <DetectIdentifier attribute="Ddoc"/>
         <Detect2Chars attribute="Macros" context="DdocMacro" char="$" char1="(" />
-        <RegExpr attribute="DdocSection" context="#stay" String="[\w_]+:($|\s)" />
-        <IncludeRules context="##Alerts" />
+        <RegExpr attribute="DdocSection" context="#stay" String="[\w_]+:(?:$|\s)" />
+        <IncludeRules context="##Comments" />
       </context>
       
       <context name="DdocBlock" attribute="Ddoc" lineEndContext="#stay">
@@ -773,14 +773,14 @@
         <DetectChar attribute="Comment" context="#stay" char="*" firstNonSpace="true" />
         
         <Detect2Chars attribute="Macros" context="DdocMacro" char="$" char1="(" />
-        <RegExpr attribute="DdocSection" context="#stay" String="[\w_]+:($|\s)" />
-        <IncludeRules context="##Alerts" />
+        <RegExpr attribute="DdocSection" context="#stay" String="[\w_]+:(?:$|\s)" />
+        <IncludeRules context="##Comments" />
         
         <!-- Avoid matching this; do it this way since (^|\s)-* always matches .- and \s-* never
              matches .- (spaces have already been matched); however -*($|\s) matches just fine.
              Also can't use \b since - is not a word character. -->
         <RegExpr attribute="Ddoc" context="#stay" String="[^-]-{3,}" />
-        <RegExpr attribute="Comment" context="DdocBlockCode" String="-{3,}($|\s)" />
+        <RegExpr attribute="Comment" context="DdocBlockCode" String="-{3,}(?:$|\s)" />
       </context>
       
       <context name="DdocNested" attribute="Ddoc" lineEndContext="#stay">
@@ -792,12 +792,12 @@
         <DetectChar attribute="Comment" context="#stay" char="+" firstNonSpace="true" />
         
         <Detect2Chars attribute="Macros" context="DdocMacro" char="$" char1="(" />
-        <RegExpr attribute="DdocSection" context="#stay" String="[\w_]+:($|\s)" />
-        <IncludeRules context="##Alerts" />
+        <RegExpr attribute="DdocSection" context="#stay" String="[\w_]+:(?:$|\s)" />
+        <IncludeRules context="##Comments" />
         
         <!-- As above. -->
         <RegExpr attribute="Ddoc" context="#stay" String="[^-]-{3,}" />
-        <RegExpr attribute="Comment" context="DdocNestedCode" String="-{3,}($|\s)" />
+        <RegExpr attribute="Comment" context="DdocNestedCode" String="-{3,}(?:$|\s)" />
       </context>
       
       <context name="DdocNested2" attribute="Ddoc" lineEndContext="#stay">
@@ -844,7 +844,7 @@
         <DetectChar attribute="Comment" context="#stay" char="*" firstNonSpace="true" />
         <!-- As above. -->
         <RegExpr attribute="DdocCode" context="#stay" String="[^-]-{3,}" />
-        <RegExpr attribute="Comment" context="#pop" String="-{3,}($|\s)" />
+        <RegExpr attribute="Comment" context="#pop" String="-{3,}(?:$|\s)" />
         <IncludeRules context="##D" />
       </context>
       <context name="DdocNestedCode" attribute="DdocCode" lineEndContext="#stay">
@@ -854,24 +854,24 @@
         <DetectChar attribute="Comment" context="#stay" char="+" firstNonSpace="true" />
         <!-- As above. -->
         <RegExpr attribute="DdocCode" context="#stay" String="[^-]-{3,}" />
-        <RegExpr attribute="Comment" context="#pop" String="-{3,}($|\s)" />
+        <RegExpr attribute="Comment" context="#pop" String="-{3,}(?:$|\s)" />
         <IncludeRules context="##D" />
       </context>
     </contexts>
     <itemDatas>
       <itemData name="Normal Text"    defStyleNum="dsNormal"/>
-      <itemData name="Symbol"         defStyleNum="dsNormal"/>
+      <itemData name="Symbol"         defStyleNum="dsOperator"/>
       
       <!-- keywords -->
       <itemData name="Statement"      defStyleNum="dsKeyword"/>
-      <itemData name="Expression"     defStyleNum="dsKeyword"  color="#000080"/>
-      <itemData name="Declarator"     defStyleNum="dsKeyword"  color="#800000"/>
-      <itemData name="Template"       defStyleNum="dsKeyword"  color="#008000"/>
+      <itemData name="Expression"     defStyleNum="dsAttribute"  bold="1"/> <!-- #000080 -->
+      <itemData name="Declarator"     defStyleNum="dsWarning"    bold="1"/> <!-- #800000 -->
+      <itemData name="Template"       defStyleNum="dsOthers"     bold="1"/> <!-- #008000 -->
       
-      <itemData name="Attribute"      defStyleNum="dsKeyword"  color="#800080"/>
-      <itemData name="Deprecated"     defStyleNum="dsKeyword"  color="#800080" strikeOut="true"/>
+      <itemData name="Attribute"      defStyleNum="dsFunction"   bold="1"/> <!-- #800080 -->
+      <itemData name="Deprecated"     defStyleNum="dsFunction"   bold="1" strikeOut="true"/> <!-- #800080 -->
       
-      <itemData name="Property"       defStyleNum="dsDataType" color="#000080"/>
+      <itemData name="Property"       defStyleNum="dsDataType"   bold="1"/> <!-- #000080 -->
       
       <itemData name="Type"           defStyleNum="dsDataType"/>
       <itemData name="LibrarySymbols" defStyleNum="dsBuiltIn" italic="1"/>
@@ -879,20 +879,20 @@
       <itemData name="UserKeywords"   defStyleNum="dsDataType" italic="1"/>
 
       <!-- module, import -->
-      <itemData name="Module"         defStyleNum="dsKeyword"  color="#008000"/>
-      <itemData name="Module Name"    defStyleNum="dsNormal"   color="#008000"/>
+      <itemData name="Module"         defStyleNum="dsPreprocessor" bold="1"/> <!-- #008000 -->
+      <itemData name="Module Name"    defStyleNum="dsImport"/> <!-- #008000 -->
 
       <!-- pragma, special tokens -->
-      <itemData name="SpecialTokens"  defStyleNum="dsNormal"   color="#00aa00"/>
-      <itemData name="Pragma"         defStyleNum="dsKeyword"  color="#00aa00"/>
+      <itemData name="SpecialTokens"  defStyleNum="dsOthers"   bold="1"/> <!-- #00aa00 -->
+      <itemData name="Pragma"         defStyleNum="dsOthers"   bold="1"/> <!-- #00aa00 -->
 
       <!-- version, extern -->
-      <itemData name="Version"        defStyleNum="dsKeyword"  color="#808000"/>
-      <itemData name="Version Type"   defStyleNum="dsNormal"   bold="1"/>
-      <itemData name="Linkage"        defStyleNum="dsKeyword"  color="#808000"/>
-      <itemData name="Linkage Type"   defStyleNum="dsNormal"   bold="1"/>
+      <itemData name="Version"        defStyleNum="dsDecVal"/> <!-- #808000 -->
+      <itemData name="Version Type"   defStyleNum="dsNormal"      bold="1"/>
+      <itemData name="Linkage"        defStyleNum="dsInformation" bold="1"/> <!-- #808000 -->
+      <itemData name="Linkage Type"   defStyleNum="dsNormal"      bold="1"/>
 
-      <itemData name="Tests"        defStyleNum="dsKeyword"    color="#ff00ff"/>
+      <itemData name="Tests"        defStyleNum="dsFunction"      bold="1"/> <!-- #ff00ff -->
 
       <itemData name="Comment"        defStyleNum="dsComment"/>
       <itemData name="Region Marker"  defStyleNum="dsRegionMarker" />
@@ -917,18 +917,19 @@
       <itemData name="Delimited String Delimiter" defStyleNum="dsKeyword"/>
       
       <!-- Ddoc specific -->
-      <itemData name="Macros"      defStyleNum="dsOthers" color="#bf5fbf" selColor="#ffffff" bold="1" italic="0" />
-      <itemData name="Macro Text"  defStyleNum="dsNormal" color="#bf7fff" selColor="#ffffff" bold="0" italic="0" />
-      <itemData name="Ddoc"        defStyleNum="dsComment" color="#7f7fff" />
-      <itemData name="DdocSection" defStyleNum="dsKeyword" color="#7f7fff" bold="1" />
+      <itemData name="Macros"      defStyleNum="dsSpecialChar" bold="1" italic="0" /> <!-- #bf5fbf -->
+      <itemData name="Macro Text"  defStyleNum="dsAttribute" bold="0" italic="0" /> <!-- #bf7fff -->
+      <itemData name="Ddoc"        defStyleNum="dsDocumentation" /> <!-- #7f7fff -->
+      <itemData name="DdocSection" defStyleNum="dsAnnotation" bold="1" /> <!-- #7f7fff -->
       <itemData name="DdocCode"    defStyleNum="dsNormal" italic="1" />
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="//"/>
+      <comment name="singleLine" start="//" position="afterwhitespace"/>
       <comment name="multiLine"  start="/+" end="+/" region="CommentNested"/>
     </comments>
     <keywords casesensitive="true"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

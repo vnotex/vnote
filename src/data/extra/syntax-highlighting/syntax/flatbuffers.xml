@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-
+<!DOCTYPE language>
+<!-- https://flatbuffers.dev/grammar/ -->
 <language name="FlatBuffers" section="Sources"
-    version="1" kateversion="5.0"
+    version="4" kateversion="5.0"
     indenter="cstyle"
     extensions="*.fbs"
     priority="5"
@@ -49,6 +49,9 @@
         <list name="integers">
             <item>true</item>
             <item>false</item>
+            <item>nan</item>
+            <item>inf</item>
+            <item>infinity</item>
         </list>
         <list name="attributes">
             <item>deprecated</item>
@@ -69,27 +72,58 @@
         </list>
         <contexts>
             <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <DetectSpaces/>
+                <AnyChar attribute="Symbol" String="=:"/>
+                <AnyChar attribute="Separator Symbol" String=",;"/>
+                <AnyChar String=".0123456789" context="Number" lookAhead="true"/>
+                <DetectChar attribute="Block Symbol" char="{" beginRegion="Brace1"/>
+                <DetectChar attribute="Block Symbol" char="}" endRegion="Brace1"/>
+                <DetectChar attribute="String" context="String" char="&quot;"/>
+                <Detect2Chars attribute="Comment" context="Comment1" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="Comment2" char="/" char1="*" beginRegion="Comment"/>
                 <keyword attribute="Keyword" context="#stay" String="keywords"/>
                 <keyword attribute="Keyword" context="#stay" String="attributes"/>
                 <keyword attribute="Data Type" context="#stay" String="types"/>
                 <keyword attribute="Integer Constants" context="#stay" String="integers"/>
-                <DetectChar attribute="String" context="String" char="&quot;"/>
-                <Float attribute="Float" context="#stay"/>
-                <Int attribute="Decimal" context="#stay"/>
-                <Detect2Chars attribute="Comment" context="Comment1" char="/" char1="/"/>
-                <Detect2Chars attribute="Comment" context="Comment2" char="/" char1="*" beginRegion="Comment"/>
-            </context>
-            <context attribute="Comment" lineEndContext="#pop" name="Comment1">
-                <LineContinue attribute="Comment" context="#stay"/>
+                <DetectIdentifier/>
             </context>
 
+
+            <context attribute="Normal Text" lineEndContext="#pop" name="Number">
+                <Float attribute="Float" context="#pop"/>
+                <!-- hex float -->
+                <RegExpr attribute="Float" context="#pop" String="0[xX]([.][[:xdigit:]]+|[[:xdigit:]]+([.][[:xdigit:]]*)?)([pP][-+]?[[:digit:]]+)"/>
+                <HlCHex attribute="Decimal"/>
+                <Int attribute="Decimal" context="#pop"/>
+                <DetectChar attribute="Normal Text" context="#pop" char="."/>
+            </context>
+
+
+            <!-- https://flatbuffers.dev/schema/#json-parsing -->
             <context attribute="String" lineEndContext="#pop" name="String">
-                <LineContinue attribute="String" context="#stay"/>
+                <DetectChar context="EscapeString" char="\" lookAhead="1"/>
                 <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+
+            <context attribute="String Char" lineEndContext="#pop" name="EscapeString">
+                <RegExpr attribute="String Char" context="#pop"
+                         String="\\([ntrbf&quot;\\/]|[xX][0-9a-fA-F]{2}|u[0-9a-fA-F]{4})"/>
+                <RegExpr attribute="Error" context="#pop"
+                         String="\\([xX][0-9a-fA-F]?|u[0-9a-fA-F]*)?"/>
+            </context>
+
+
+            <context attribute="Comment" lineEndContext="#pop" name="Comment1">
+                <DetectSpaces/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier/>
             </context>
 
             <context attribute="Comment" lineEndContext="#stay" name="Comment2">
                 <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+                <DetectSpaces/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier/>
             </context>
 
         </contexts>
@@ -99,16 +133,22 @@
             <itemData name="Data Type"    defStyleNum="dsDataType" spellChecking="false"/>
             <itemData name="Comment"      defStyleNum="dsComment"/>
             <itemData name="String"       defStyleNum="dsString"/>
+            <itemData name="String Char"  defStyleNum="dsChar" spellChecking="false"/>
             <itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false"/>
             <itemData name="Float"        defStyleNum="dsFloat" spellChecking="false"/>
             <itemData name="Integer Constants" defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Symbol"       defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Block Symbol" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Separator Symbol" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Error"        defStyleNum="dsError" spellChecking="false"/>
         </itemDatas>
     </highlighting>
     <general>
         <comments>
-            <comment name="singleLine" start="//" />
-            <comment name="multiLine" start="/*" end="*/" />
+            <comment name="singleLine" start="//"/>
+            <comment name="multiLine" start="/*" end="*/" region="Comment"/>
         </comments>
-        <keywords casesensitive="1" />
+        <keywords casesensitive="1"/>
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

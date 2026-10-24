@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
 <!--
 	** Cg Syntax Rules **
@@ -20,7 +20,7 @@
 	* Added FACE sementic for the new fp40 profile
 -->
 
-<language name="Cg" section="Sources" extensions="*.cg;*.cgfx" mimetype="text/x-cgsrc" version="5" kateversion="5.0" author="Florian Schanda (florian.schanda@schanda.de)" license="LGPL">
+<language name="Cg" section="Sources" extensions="*.cg;*.cgfx" mimetype="text/x-cgsrc" version="10" kateversion="5.0" author="Florian Schanda (florian.schanda@schanda.de)" license="LGPL">
 	<highlighting>
 		<list name="binding">
 			<item>POSITION</item>
@@ -209,18 +209,13 @@
 				<DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
 				<DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
 				
-				<RegExpr String="float[1234](x[1234])?" attribute="Data Type" context="#stay" />
-				<RegExpr String="half[1234](x[1234])?" attribute="Data Type" context="#stay" />
-				<RegExpr String="fixed[1234](x[1234])?" attribute="Data Type" context="#stay" />
-				<RegExpr String="bool[1234](x[1234])?" attribute="Data Type" context="#stay" />
-				<RegExpr String="int[1234](x[1234])?" attribute="Data Type" context="#stay" />
+				<RegExpr String="(float|half|fixed|bool|int)[1234](x[1234])?" attribute="Data Type" context="#stay" />
 				<keyword String="types" attribute="Data Type" context="#stay" />
 				<keyword String="stdstruct" attribute="Data Type" context="#stay" />
 				
-				<RegExpr String="[0123456789]*[.][0123456789]+f" attribute="Float" context="#stay" />
-				<RegExpr String="[0123456789]*[.][0123456789]+h" attribute="Half" context="#stay" />
-				<RegExpr String="[0123456789]*[.][0123456789]+x" attribute="Fixed" context="#stay" />
-				<RegExpr String="[0123456789]*[.][0123456789]+" attribute="Float" context="#stay" />
+				<RegExpr String="[0123456789]*+[.][0123456789]++h" attribute="Half" context="#stay" />
+				<RegExpr String="[0123456789]*+[.][0123456789]++x" attribute="Fixed" context="#stay" />
+				<RegExpr String="[0123456789]*+[.][0123456789]++f?" attribute="Float" context="#stay" />
 				<Int attribute="Decimal" context="#stay" />
 				
 				<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
@@ -230,20 +225,20 @@
 				
 				<RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*[(])" />
 			
-				<RegExpr attribute="Swizzle" context="#stay" String="[.]{1,1}[rgbaxyzw]+(?=[\s/*-+&lt;&gt;])" />
+				<RegExpr attribute="Swizzle" context="#stay" String="[.][rgbaxyzw]+(?=[\s/*-+&lt;&gt;])" />
 				
-				<RegExpr attribute="Symbol" context="Member" String="[.]{1,1}" />
-				<AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^&#59;"/>
+				<DetectChar attribute="Symbol" context="Member" char="." />
+				<AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/*&lt;=&gt;?[]|~^&#59;"/>
 			</context>
 			<context name="Member" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
 				<RegExpr attribute="Function" context="#pop" String="\b[_\w][_\w\d]*(?=[\s]*)" />
 			</context>
 			<context name="Commentar 1" attribute="Comment" lineEndContext="#pop">
-				<keyword attribute="Alert" context="#stay" String="attention" />
+				<IncludeRules context="##Comments" />
 			</context>
 			<context name="Commentar 2" attribute="Comment" lineEndContext="#stay">
 				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-				<keyword attribute="Alert" context="#stay" String="attention" />
+				<IncludeRules context="##Comments" />
 			</context>
 	        </contexts>
 		<itemDatas>
@@ -257,7 +252,7 @@
 			<itemData name="Float"        defStyleNum="dsFloat"/>
 			<itemData name="Half"         defStyleNum="dsFloat"/>
 			<itemData name="Fixed"        defStyleNum="dsFloat"/>
-			<itemData name="Symbol"       defStyleNum="dsNormal"/>
+			<itemData name="Symbol"       defStyleNum="dsOperator"/>
 			<itemData name="Swizzle"      defStyleNum="dsNormal" bold="1"/>
 			<itemData name="Comment"      defStyleNum="dsComment"/>
 			<itemData name="Alert"        defStyleNum="dsAlert" />
@@ -266,8 +261,9 @@
 	<general>
 		<comments>
 			<comment name="singleLine" start="//" />
-			<comment name="multiLine" start="/*" end="*/" />
+			<comment name="multiLine" start="/*" end="*/" region="Comment" />
 		</comments>
 		<keywords casesensitive="1" />
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

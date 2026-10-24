@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="ACPI DSL" section="Sources"
+          version="1" kateversion="5.62"
+          extensions="*.dsl" mimetype=""
+          author="Fabian Vogt (fabian@ritter-vogt.de)"
+          license="BSD-3-Clause">
+<highlighting>
+	<contexts>
+		<context name="default" attribute="Normal" lineEndContext="#stay">
+			<IncludeRules context="SkipComments"/>
+			<!--  Switch to ACPI ASL when encountering DefinitionBlock -->
+			<StringDetect String="DefinitionBlock" attribute="Normal" context="StartTerm##ACPI Source Language" lookAhead="true"/>
+		</context>
+
+		<context name="SkipComments" attribute="Comment" lineEndContext="#stay">
+			<DetectSpaces/>
+			<Detect2Chars attribute="Comment" context="LineComment" char="/" char1="/"/>
+			<Detect2Chars attribute="Comment" context="MultilineComment" char="/" char1="*" beginRegion="Comment"/>
+		</context>
+
+		<context name="LineComment" attribute="Comment" lineEndContext="#pop" fallthroughContext="#stay">
+		</context>
+
+		<context name="MultilineComment" attribute="Comment" lineEndContext="#stay">
+			<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+		</context>
+	</contexts>
+	<itemDatas>
+		<itemData name="Normal" defStyleNum="dsNormal" spellChecking="false" />
+		<itemData name="Comment" defStyleNum="dsComment"/>
+	</itemDatas>
+</highlighting>
+<general>
+	<comments>
+		<comment name="singleLine" start="//"/>
+		<comment name="multiLine" start="/*" end="*/" region="Comment"/>
+	</comments>
+</general>
+</language>

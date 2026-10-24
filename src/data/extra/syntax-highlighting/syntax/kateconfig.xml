@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="Kate Config"
+          version="1"
+          kateversion="5.53"
+          section="Configuration"
+          extensions=".kateconfig"
+          mimetype=""
+          author="Jonathan Poelen (jonathan.poelen@gmail.com)"
+          license="MIT">
+<!--
+  https://docs.kde.org/stable5/en/kate/katepart/config-variables.html
+-->
+<highlighting>
+  <list name="Modelines">
+    <include>ModelineStartKeyword##Modelines</include>
+  </list>
+
+  <list name="Extended Options">
+    <item>kate-wildcard</item>
+    <item>kate-mimetype</item>
+  </list>
+
+  <list name="Config">
+    <include>Booleans##Modelines</include>
+    <include>Integrals##Modelines</include>
+    <include>Strings##Modelines</include>
+    <include>RemoveSpaces##Modelines</include>
+  </list>
+
+  <list name="Values">
+    <include>True##Modelines</include>
+    <include>False##Modelines</include>
+    <include>RemoveSpacesOptions##Modelines</include>
+  </list>
+
+  <contexts>
+    <context name="Normal" attribute="Normal" lineEndContext="#stay">
+      <DetectSpaces/>
+      <IncludeRules context="##Modelines"/>
+      <keyword String="Extended Options" context="ExtendedOption" attribute="Extended Option"/>
+    </context>
+
+    <context name="ExtendedOption" attribute="Filter" lineEndContext="#stay">
+      <DetectChar char=")" attribute="Extended Option" context="ExtendedOptionEnd"/>
+      <DetectChar char="(" attribute="Extended Option"/>
+      <DetectChar char=";" attribute="Filter Separator"/>
+      <AnyChar String="*?" attribute="Wildcard"/>
+    </context>
+    <context name="ExtendedOptionEnd" attribute="Normal" lineEndContext="#stay">
+      <DetectChar char=":" context="#pop#pop!Modeline##Modelines" attribute="Extended Option"/>
+      <RegExpr String="." context="#pop#pop" attribute="Error"/>
+    </context>
+
+  </contexts>
+
+  <itemDatas>
+    <itemData name="Normal" defStyleNum="dsNormal" spellChecking="true"/>
+    <itemData name="Extended Option" defStyleNum="dsAnnotation" spellChecking="false" />
+    <itemData name="Filter" defStyleNum="dsVerbatimString" spellChecking="false" />
+    <itemData name="Filter Separator" defStyleNum="dsOperator" spellChecking="false" />
+    <itemData name="Wildcard" defStyleNum="dsSpecialChar" spellChecking="false" />
+    <itemData name="Error" defStyleNum="dsError" spellChecking="false" />
+  </itemDatas>
+
+</highlighting>
+
+<general>
+  <keywords casesensitive="1" weakDeliminator=":-" />
+</general>
+
+</language>
+<!-- kate: indent-width 2; -->

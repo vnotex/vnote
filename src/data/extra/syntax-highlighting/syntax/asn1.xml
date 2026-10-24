@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
         You'll find the "Writing a Kate Highlighting XML File HOWTO" at http://kate.kde.org/doc/hlhowto.php
         This is a template for the XML format used for syntax highlight descriptions
@@ -13,12 +13,10 @@
 
         You'll find the "Writing a Kate Highlighting XML File HOWTO" at http://kate.kde.org/doc/hlhowto.php
 -->
-<language name="ASN.1" section="Markup" version="3" kateversion="2.3" extensions="*.asn;*.asn1" mimetype="" author="Philippe Rigault" license="GPL">
+<language name="ASN.1" section="Markup" version="6" kateversion="5.0" extensions="*.asn;*.asn1" mimetype="" author="Philippe Rigault" license="GPL">
   <highlighting>
     <list name="keywords">
       <item>DEFINITIONS</item>
-      <item>BEGIN</item>
-      <item>END</item>
       <item>EXPORTS</item>
       <item>IMPORTS</item>
       <item>FROM</item>
@@ -29,6 +27,11 @@
       <item>OPTIONAL</item>
       <item>FALSE</item>
       <item>TRUE</item>
+      <item>AUTOMATIC</item>
+      <item>CLASS</item>
+      <item>WITH</item>
+      <item>SIZE</item>
+      <item>TAGS</item>
     </list>
     <list name="types">
       <item>BOOLEAN</item>
@@ -42,28 +45,69 @@
       <item>SET</item>
       <item>CHOICE</item>
       <item>OF</item>
-      <item>VisibleString</item>
+      <item>UNION</item>
       <item>StringStore</item>
+      <item>GeneralString</item>
+      <item>IA5String</item>
+      <item>ISO64String</item>
+      <item>NumericString</item>
+      <item>PrintableString</item>
+      <item>T61String</item>
+      <item>TeletexString</item>
+      <item>UniversalString</item>
+      <item>UTF8String</item>
+      <item>VideotexString</item>
+      <item>VisibleString</item>
+      <item>DATE</item>
+      <item>DATE-TIME</item>
+      <item>DURATION</item>
+      <item>GeneralizedTime</item>
+      <item>UTCTime</item>
     </list>
     
     <contexts>
       <context name="Normal Text" attribute="Normal Text" lineEndContext="#stay">
         <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <StringDetect attribute="Keyword" context="#stay" String="BEGIN" beginRegion="Block"/>
+        <StringDetect attribute="Keyword" context="#stay" String="END" endRegion="Block"/>
         <keyword attribute="Data Type" context="#stay" String="types" />
-        <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>      
+        <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>
+        <Detect2Chars attribute="Comment" context="Multiline Comment" char="/" char1="*" beginRegion="Comment"/>
+        <DetectChar attribute="Normal Text" context="#stay" char="{" beginRegion="BraceBlock"/>
+        <DetectChar attribute="Normal Text" context="#stay" char="}" endRegion="BraceBlock"/>
+
+        <Int attribute="Decimal" context="#stay"/>
+        <DetectChar attribute="String" context="ctxString" char="&quot;"/>
       </context>
       
       <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <IncludeRules context="##Comments" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Multiline Comment">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#stay" name="ctxString">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
     </contexts>
     
     <itemDatas>
-      <itemData name="Normal Text" defStyleNum="dsNormal"/>
-      <itemData name="Keyword"     defStyleNum="dsKeyword"/>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword"     defStyleNum="dsKeyword" spellChecking="false"/>
       <itemData name="Comment"     defStyleNum="dsComment"/>
-      <itemData name="Data Type"   defStyleNum="dsDataType"/>
+      <itemData name="Data Type"   defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Decimal"     defStyleNum="dsDecVal"/>
+      <itemData name="String"      defStyleNum="dsString"/>
     </itemDatas>
   </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="--"/>
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+    </comments>
+  </general>
 </language>
 <!--
 // kate: space-indent on; indent-width 2; replace-tabs on;

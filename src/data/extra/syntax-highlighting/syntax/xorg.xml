@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="x.org Configuration" section="Configuration" extensions="xorg.conf" mimetype="" version="2" kateversion="2.4" author="Jan Janssen (medhefgo@web.de)" license="LGPL">
+<!DOCTYPE language>
+<language name="x.org Configuration" section="Configuration" extensions="xorg.conf" mimetype="" version="4" kateversion="5.0" author="Jan Janssen (medhefgo@web.de)" license="LGPL">
 
 <highlighting>
 <contexts>
@@ -35,7 +35,7 @@
 
  <context name="Comment" attribute="Comment" lineEndContext="#pop">
   <DetectSpaces />
-  <IncludeRules context="##Alerts" />
+  <IncludeRules context="##Comments" />
   <DetectIdentifier />
  </context>
 </contexts>
@@ -63,3 +63,4 @@
 </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 1; indent-width 1; -->

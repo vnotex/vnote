@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
   Copyright 2008 Diggory Hardy
   
@@ -25,7 +25,7 @@
  * Boston, MA  02110-1301, USA.                                       *
  **********************************************************************
  -->
-<language name="mergetag text" version="2" kateversion="2.4" section="Configuration" author="Diggory Hardy (diggory.hardy@gmail.com)" license="LGPLv2+" extensions="*.mtt;">
+<language name="mergetag text" version="5" kateversion="5.0" section="Configuration" author="Diggory Hardy (diggory.hardy@gmail.com)" license="LGPLv2+" extensions="*.mtt;">
   <highlighting>
     <contexts>
       <context name="Normal" attribute="Error" lineEndContext="#stay">
@@ -43,6 +43,8 @@
       <context name="SecComment" attribute="Comment" lineEndContext="#stay">
         <DetectChar attribute="Comment Brackets" context="#pop" char="}" endRegion="SecComment" />
         <DetectChar attribute="Comment Brackets" context="SecComment" char="{" beginRegion="SecID" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
       
       <context name="TagType" attribute="Type" lineEndContext="#stay">
@@ -68,10 +70,7 @@
         <IncludeRules context="TagErrors" />
       </context>
       <context name="TagErrors" attribute="Normal Text" lineEndContext="#stay">
-        <DetectChar attribute="Error" context="#stay" char="&lt;" />
-        <DetectChar attribute="Error" context="#stay" char="|" />
-        <DetectChar attribute="Error" context="#stay" char="=" />
-        <DetectChar attribute="Error" context="#stay" char="&gt;" />
+        <AnyChar attribute="Error" context="#stay" String="&lt;|=&gt;" />
       </context>
       
       <context name="TagCommentType" attribute="Comment" lineEndContext="#stay">
@@ -143,3 +142,4 @@
     <keywords casesensitive="true" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

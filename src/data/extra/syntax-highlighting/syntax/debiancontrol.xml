@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Debian Control" version="1" kateversion="5.0" section="Other" extensions="control" mimetype="">
+<!DOCTYPE language>
+<language name="Debian Control" version="4" kateversion="5.0" section="Other" extensions="control" mimetype="">
     <highlighting>
         <contexts>
             <context attribute="Normal Text" lineEndContext="#stay" name="INIT">
@@ -17,7 +17,7 @@
                 <StringDetect attribute="Keyword" context="DependencyField" String="Build-Conflicts:"/>
                 <StringDetect attribute="Keyword" context="DependencyField" String="Build-Conflicts-Indep:"/>
                 <StringDetect attribute="Keyword" context="DependencyField" String="Breaks:"/>
-                <RegExpr attribute="Keyword" context="Field" minimal="true" String="[^ ]*:" column="0"/>
+                <RegExpr attribute="Keyword" context="Field" minimal="true" String="^[^ ]*:" column="0"/>
                 <DetectChar attribute="Value" context="Field" char=" " column="0"/>
             </context>
 
@@ -33,16 +33,14 @@
             <context attribute="Value" lineEndContext="#pop" name="DependencyField">
                 <RegExpr attribute="Email" context="#stay" String="&lt;.*@.*&gt;" minimal="true"/>
                 <Detect2Chars attribute="Keyword" context="Variable" char="$" char1="{"/>
-                <RegExpr attribute="Keyword" context="#stay" String="[,\|]"/>
-                <DetectChar attribute="Keyword" context="Constrain" char="("/>
-                <DetectChar attribute="Keyword" context="Constrain" char="["/>
+                <AnyChar attribute="Keyword" context="#stay" String=",|"/>
+                <AnyChar attribute="Keyword" context="Constrain" String="(["/>
             </context>
 
             <context attribute="Version" lineEndContext="#stay" name="Constrain">
                 <Detect2Chars attribute="Keyword" context="Variable" char="$" char1="{"/>
-                <RegExpr attribute="Keyword" context="#stay" String="[!&lt;=&gt;]"/>
-                <DetectChar attribute="Keyword" context="#pop" char=")"/>
-                <DetectChar attribute="Keyword" context="#pop" char="]"/>
+                <AnyChar attribute="Keyword" context="#stay" String="!&lt;=&gt;"/>
+                <AnyChar attribute="Keyword" context="#pop" String=")]"/>
             </context>
         </contexts>
 
@@ -57,9 +55,7 @@
     </highlighting>
 
     <general>
-        <comments>
-            <comment name="singleLine" start="#"/>
-        </comments>
         <keywords casesensitive="1" />
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

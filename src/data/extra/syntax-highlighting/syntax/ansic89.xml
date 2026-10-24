@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <language name="ANSI C89" section="Sources"
-          version="5" kateversion="5.0"
+          version="8" kateversion="5.0"
           indenter="cstyle"
           extensions="*.c;*.C;*.h"
           mimetype="text/x-csrc;text/x-c++src;text/x-chdr"
@@ -68,13 +68,11 @@
       </context>
       <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
           <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
           <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
           <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
           <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
           <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+          <AnyChar attribute="Decimal" context="#pop" String="ULul"/>
       </context>
       <context attribute="String" lineEndContext="#pop" name="String">
         <LineContinue attribute="String" context="#stay"/>
@@ -83,24 +81,20 @@
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="comment">
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="blockcomment"/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
         <LineContinue attribute="Preprocessor" context="#stay"/>
-        <RegExpr attribute="Preprocessor" context="Define" String="define.*((?=\\))"/>
-        <RegExpr attribute="Preprocessor" context="#stay" String="define.*"/>
+        <RegExpr attribute="Preprocessor" context="#stay" String="define(?:[^\\]++|\\.)++"/>
         <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
         <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
         <Detect2Chars attribute="Comment" context="comment" char="/" char1="*" beginRegion="blockcomment"/>
       </context>
-      <context attribute="Preprocessor" lineEndContext="#pop" name="Define">
-        <LineContinue attribute="Preprocessor" context="#stay"/>
-      </context>
       <context attribute="Comment" lineEndContext="#stay" name="Outscoped" >
         <Detect2Chars attribute="Comment" context="comment" char="/" char1="*" beginRegion="Comment"/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
         <RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="Outscoped" firstNonSpace="true" />
-        <RegExpr attribute="Preprocessor" context="#pop" String="#\s*(endif|else|elif)" endRegion="Outscoped" firstNonSpace="true" />
+        <RegExpr attribute="Preprocessor" context="#pop" String="#\s*(?:endif|else|elif)" endRegion="Outscoped" firstNonSpace="true" />
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Outscoped intern">
         <Detect2Chars attribute="Comment" context="comment" char="/" char1="*" beginRegion="Comment"/>
@@ -120,15 +114,16 @@
       <itemData name="String"       defStyleNum="dsString"/>
       <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
       <itemData name="Comment"      defStyleNum="dsComment"/>
-      <itemData name="Symbol"       defStyleNum="dsNormal"/>
+      <itemData name="Symbol"       defStyleNum="dsOperator"/>
       <itemData name="Preprocessor" defStyleNum="dsPreprocessor"/>
       <itemData name="Prep. Lib"    defStyleNum="dsImport"/>
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="blockcomment" />
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

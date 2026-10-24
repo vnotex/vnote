@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
 <!--
 =============================================================================
@@ -16,7 +16,7 @@ License:     Artistic
 -->
 
 
-<language name="LPC" version="2" kateversion="2.4" section="Sources" extensions="*.c;*.h;*.inc;*.o" author="Andreas Klauer (Andreas.Klauer@metamorpher.de)" license="Artistic" >
+<language name="LPC" version="4" kateversion="5.0" section="Sources" extensions="*.c;*.h;*.inc;*.o" author="Andreas Klauer (Andreas.Klauer@metamorpher.de)" license="Artistic" >
 
   <highlighting>
 
@@ -63,15 +63,6 @@ License:     Artistic
       <item>publish</item>
       <item>nolog</item>
     </list>
-    <list name="attention">
-      <item>FIXME</item>
-      <item>HACK</item>
-      <item>NOTE</item>
-      <item>NOTICE</item>
-      <item>TODO</item>
-      <item>WARNING</item>
-      <item>###</item>
-    </list>
 
     <!-- Parsing Rules: -->
     <contexts>
@@ -100,11 +91,13 @@ License:     Artistic
       </context>
       <context name="Comment1" attribute="Single-Line comments" lineEndContext="#pop">
         <LineContinue attribute="Single-Line comments" context="#stay" />
-        <keyword attribute="Alert" context="#stay" String="attention" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
       <context name="Comment2" attribute="Multi-Line comments" lineEndContext="#stay">
         <Detect2Chars attribute="Multi-Line comments" context="#pop" char="*" char1="/" endRegion="blockComment" />
-        <keyword attribute="Alert" context="#stay" String="attention" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
       <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop">
         <LineContinue attribute="Preprocessor" context="#stay" />
@@ -134,7 +127,6 @@ License:     Artistic
       <itemData name="Default" defStyleNum="dsNormal" />
       <itemData name="Single-Line comments" defStyleNum="dsComment" />
       <itemData name="Multi-Line comments" defStyleNum="dsComment" />
-      <itemData name="Alert" defStyleNum="dsAlert" />
       <itemData name="Modifier" defStyleNum="dsDataType" />
       <itemData name="Datatype" defStyleNum="dsDataType" />
       <itemData name="Keywords" defStyleNum="dsKeyword" />
@@ -157,7 +149,7 @@ License:     Artistic
   <general>
     <comments>
       <comment name="singleLine" start="//"  />
-      <comment name="multiLine" start="/*" end="*/"  />
+      <comment name="multiLine" start="/*" end="*/" region="blockComment"  />
     </comments>
     <keywords casesensitive="1"  />
   </general>

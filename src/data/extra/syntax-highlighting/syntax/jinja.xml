@@ -1,0 +1,298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!-- Base Jinja syntax for embedding into other grammars by the jinjize script. -->
+<!-- Also serves as a standalone grammar for pure Jinja macro definiton files. -->
+<language name="Jinja" version="1" kateversion="5.62" section="Other" license="MIT"
+          extensions="*.jinja;*.jinja2;*.j2" mimetype="text/jinja"
+          priority="-99" author="zoltan.gera@qt.io">
+  <highlighting>
+    <list name="jinja_operators">
+      <item>and</item>
+      <item>in</item>
+      <item>not</item>
+      <item>or</item>
+    </list>
+    <list name="jinja_ctrlflows">
+      <item>break</item>
+      <item>continue</item>
+      <item>else</item>
+      <item>elif</item>
+      <item>endfor</item>
+      <item>endif</item>
+      <item>for</item>
+      <item>if</item>
+      <item>recursive</item>
+    </list>
+    <list name="jinja_keywords">
+      <item>autoescape</item>
+      <item>block</item>
+      <item>call</item>
+      <item>debug</item>
+      <item>do</item>
+      <item>endautoescape</item>
+      <item>endblock</item>
+      <item>endcall</item>
+      <item>endfilter</item>
+      <item>endmacro</item>
+      <item>endraw</item>
+      <item>endset</item>
+      <item>endtrans</item>
+      <item>endwith</item>
+      <item>extends</item>
+      <item>filter</item>
+      <item>macro</item>
+      <item>notrimmed</item>
+      <item>pluralize</item>
+      <item>raw</item>
+      <item>required</item>
+      <item>scoped</item>
+      <item>set</item>
+      <item>trans</item>
+      <item>trimmed</item>
+      <item>with</item>
+    </list>
+    <list name="jinja_imports">
+      <item>as</item>
+      <item>context</item>
+      <item>from</item>
+      <item>include</item>
+      <item>ignore</item>
+      <item>import</item>
+      <item>missing</item>
+      <item>with</item>
+      <item>without</item>
+    </list>
+    <list name="jinja_constants">
+      <item>false</item>
+      <item>none</item>
+      <item>true</item>
+      <item>False</item>
+      <item>None</item>
+      <item>True</item>
+    </list>
+    <list name="jinja_globals">
+      <item>caller</item>
+      <item>cycler</item>
+      <item>dict</item>
+      <item>joiner</item>
+      <item>kwargs</item>
+      <item>lipsum</item>
+      <item>loop</item>
+      <item>namespace</item>
+      <item>range</item>
+      <item>self</item>
+      <item>super</item>
+      <item>varargs</item>
+    </list>
+    <list name="jinja_builtin_filters">
+      <item>abs</item>
+      <item>attr</item>
+      <item>batch</item>
+      <item>capitalize</item>
+      <item>center</item>
+      <item>default</item>
+      <item>dictsort</item>
+      <item>escape</item>
+      <item>filesizeformat</item>
+      <item>first</item>
+      <item>float</item>
+      <item>forceescape</item>
+      <item>format</item>
+      <item>groupby</item>
+      <item>indent</item>
+      <item>int</item>
+      <item>items</item>
+      <item>join</item>
+      <item>last</item>
+      <item>length</item>
+      <item>list</item>
+      <item>lower</item>
+      <item>map</item>
+      <item>max</item>
+      <item>min</item>
+      <item>pprint</item>
+      <item>random</item>
+      <item>reject</item>
+      <item>rejectattr</item>
+      <item>replace</item>
+      <item>reverse</item>
+      <item>round</item>
+      <item>safe</item>
+      <item>select</item>
+      <item>selectattr</item>
+      <item>slice</item>
+      <item>sort</item>
+      <item>string</item>
+      <item>striptags</item>
+      <item>sum</item>
+      <item>title</item>
+      <item>tojson</item>
+      <item>trim</item>
+      <item>truncate</item>
+      <item>unique</item>
+      <item>upper</item>
+      <item>urlencode</item>
+      <item>urlize</item>
+      <item>wordcount</item>
+      <item>wordwrap</item>
+      <item>xmlattr</item>
+    </list>
+    <list name="jinja_builtin_tests">
+      <item>boolean</item>
+      <item>callable</item>
+      <item>defined</item>
+      <item>divisibleby</item>
+      <item>eq</item>
+      <item>escaped</item>
+      <item>even</item>
+      <item>false</item>
+      <item>filter</item>
+      <item>float</item>
+      <item>ge</item>
+      <item>gt</item>
+      <item>in</item>
+      <item>integer</item>
+      <item>iterable</item>
+      <item>le</item>
+      <item>lower</item>
+      <item>lt</item>
+      <item>mapping</item>
+      <item>ne</item>
+      <item>none</item>
+      <item>number</item>
+      <item>odd</item>
+      <item>sameas</item>
+      <item>sequence</item>
+      <item>string</item>
+      <item>test</item>
+      <item>true</item>
+      <item>undefined</item>
+      <item>upper</item>
+    </list>
+    <contexts>
+      <context name="jinja_boot" attribute="jinja_normal" lineEndContext="#stay">
+        <Detect2Chars context="jinja_statement_boot" attribute="jinja_delimiter" beginRegion="jinjaStatement" char="{" char1="%" />
+        <Detect2Chars context="jinja_expression_boot" attribute="jinja_delimiter" beginRegion="jinjaExpression" char="{" char1="{" />
+        <Detect2Chars context="jinja_comment_boot" attribute="jinja_delimiter" beginRegion="jinjaComment" char="{" char1="#" />
+      </context>
+      <context name="jinja_statement_boot" attribute="jinja_normal" fallthroughContext="#pop!jinja_statement_1st">
+        <AnyChar context="#pop!jinja_statement_1st" attribute="jinja_delimiter" String="-+" />
+      </context>
+      <context name="jinja_expression_boot" attribute="jinja_normal" fallthroughContext="#pop!jinja_expression">
+        <AnyChar context="#pop!jinja_expression" attribute="jinja_delimiter" String="-+" />
+      </context>
+      <context name="jinja_comment_boot" attribute="jinja_normal" fallthroughContext="#pop!jinja_comment">
+        <AnyChar context="#pop!jinja_comment" attribute="jinja_delimiter" String="-+" />
+      </context>
+      <context name="jinja_statement_1st" attribute="jinja_code" lineEndContext="#stay" fallthroughContext="#pop!jinja_statement">
+        <DetectSpaces context="#stay" attribute="jinja_code" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_ctrlflow" beginRegion="jinjaFor" String="for" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_ctrlflow" endRegion="jinjaFor" String="endfor" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_ctrlflow" beginRegion="jinjaIf" String="if" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_ctrlflow" endRegion="jinjaIf" String="endif" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" beginRegion="jinjaAutoescape" String="autoescape" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" endRegion="jinjaAutoescape" String="endautoescape" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" beginRegion="jinjaBlock" String="block" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" endRegion="jinjaBlock" String="endblock" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" beginRegion="jinjaCall" String="call" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" endRegion="jinjaCall" String="endcall" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" beginRegion="jinjaFilter" String="filter" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" endRegion="jinjaFilter" String="endfilter" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" beginRegion="jinjaMacro" String="macro" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" endRegion="jinjaMacro" String="endmacro" />
+        <!-- TODO: Use multi-stacking to avoid Jinja highlighting inside the raw region. -->
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" beginRegion="jinjaRaw" String="raw" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" endRegion="jinjaRaw" String="endraw" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" beginRegion="jinjaTrans" String="trans" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" endRegion="jinjaTrans" String="endtrans" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" beginRegion="jinjaWith" String="with" />
+        <WordDetect context="#pop!jinja_statement" attribute="jinja_keyword" endRegion="jinjaWith" String="endwith" />
+      </context>
+      <context name="jinja_statement" attribute="jinja_code" lineEndContext="#pop!jinja_statement_1st">
+        <DetectSpaces context="#stay" attribute="jinja_code" />
+        <StringDetect context="#pop" attribute="jinja_delimiter" endRegion="jinjaStatement" String="-%}" />
+        <StringDetect context="#pop" attribute="jinja_delimiter" endRegion="jinjaStatement" String="+%}" />
+        <Detect2Chars context="#pop" attribute="jinja_delimiter" endRegion="jinjaStatement" char="%" char1="}" />
+        <IncludeRules context="jinja_source" />
+      </context>
+      <context name="jinja_expression" attribute="jinja_code" lineEndContext="#stay">
+        <DetectSpaces context="#stay" attribute="jinja_code" />
+        <StringDetect context="#pop" attribute="jinja_delimiter" endRegion="jinjaExpression" String="-}}" />
+        <StringDetect context="#pop" attribute="jinja_delimiter" endRegion="jinjaExpression" String="+}}" />
+        <Detect2Chars context="#pop" attribute="jinja_delimiter" endRegion="jinjaExpression" char="}" char1="}" />
+        <IncludeRules context="jinja_source" />
+      </context>
+      <context name="jinja_comment" attribute="jinja_comment" lineEndContext="#stay">
+        <DetectSpaces context="#stay" attribute="jinja_comment" />
+        <StringDetect context="#pop" attribute="jinja_delimiter" endRegion="jinjaComment" String="-#}" />
+        <StringDetect context="#pop" attribute="jinja_delimiter" endRegion="jinjaComment" String="+#}" />
+        <Detect2Chars context="#pop" attribute="jinja_delimiter" endRegion="jinjaComment" char="#" char1="}" />
+      </context>
+      <context name="jinja_source" attribute="jinja_code" lineEndContext="#stay">
+        <HlCHex context="#stay" attribute="jinja_basen" />
+        <HlCOct context="#stay" attribute="jinja_basen" />
+        <Float context="#stay" attribute="jinja_float" />
+        <Int context="#stay" attribute="jinja_decimal" />
+        <DetectChar context="jinja_string1" attribute="jinja_string" char="'" />
+        <DetectChar context="jinja_string2" attribute="jinja_string" char="&quot;" />
+        <AnyChar context="#stay" attribute="jinja_operator" String=".[]{}()+-*/%&lt;&gt;=!~" />
+        <DetectChar context="jinja_filter" attribute="jinja_operator" char="|" />
+        <WordDetect context="jinja_test" attribute="jinja_operator" String="is" />
+        <keyword context="#stay" attribute="jinja_operator" String="jinja_operators" />
+        <keyword context="#stay" attribute="jinja_ctrlflow" String="jinja_ctrlflows" />
+        <keyword context="#stay" attribute="jinja_keyword" String="jinja_keywords" />
+        <keyword context="#stay" attribute="jinja_import" String="jinja_imports" />
+        <keyword context="#stay" attribute="jinja_constant" String="jinja_constants" />
+        <keyword context="#stay" attribute="jinja_builtin" String="jinja_globals" />
+        <RegExpr context="#stay" attribute="jinja_function" String="[a-zA-Z_][a-zA-Z0-9_]*(?=\()" />
+      </context>
+      <context name="jinja_string1" attribute="jinja_string" lineEndContext="#stay">
+        <DetectChar context="#pop" attribute="jinja_string" char="'"/>
+        <IncludeRules context="jinja_string_common"/>
+      </context>
+      <context name="jinja_string2" attribute="jinja_string" lineEndContext="#stay">
+        <DetectChar context="#pop" attribute="jinja_string" char="&quot;"/>
+        <IncludeRules context="jinja_string_common"/>
+      </context>
+      <context name="jinja_string_common" attribute="jinja_string" lineEndContext="#stay">
+        <DetectSpaces context="#stay" attribute="jinja_string" />
+        <HlCStringChar context="#stay" attribute="jinja_escape" />
+        <RegExpr context="#stay" attribute="jinja_escape" String="\\[uU][0-9a-fA-F]{4,8}" />
+      </context>
+      <context name="jinja_filter" attribute="jinja_code" lineEndContext="#stay" fallthroughContext="#pop">
+        <DetectSpaces context="#stay" attribute="jinja_code" />
+        <keyword context="#pop" attribute="jinja_builtin" String="jinja_builtin_filters" />
+        <DetectIdentifier context="#pop" attribute="jinja_function" />
+      </context>
+      <context name="jinja_test" attribute="jinja_code" lineEndContext="#stay" fallthroughContext="#pop">
+        <DetectSpaces context="#stay" attribute="jinja_code" />
+        <WordDetect context="#stay" attribute="jinja_operator" String="not" />
+        <keyword context="#pop" attribute="jinja_builtin" String="jinja_builtin_tests" />
+        <DetectIdentifier context="#pop" attribute="jinja_function" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="jinja_normal" defStyleNum="dsNormal" spellChecking="false" />
+      <itemData name="jinja_delimiter" defStyleNum="dsRegionMarker" bold="true" spellChecking="false" />
+      <itemData name="jinja_code" defStyleNum="dsNormal" spellChecking="false" />
+      <itemData name="jinja_comment" defStyleNum="dsComment" spellChecking="true" />
+      <itemData name="jinja_basen" defStyleNum="dsBaseN" spellChecking="false" />
+      <itemData name="jinja_float" defStyleNum="dsFloat" spellChecking="false" />
+      <itemData name="jinja_decimal" defStyleNum="dsDecVal" spellChecking="false" />
+      <itemData name="jinja_string" defStyleNum="dsString" spellChecking="true" />
+      <itemData name="jinja_escape" defStyleNum="dsSpecialChar" spellChecking="false" />
+      <itemData name="jinja_operator" defStyleNum="dsOperator" spellChecking="false" />
+      <itemData name="jinja_ctrlflow" defStyleNum="dsControlFlow" spellChecking="false" />
+      <itemData name="jinja_keyword" defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="jinja_import" defStyleNum="dsImport" spellChecking="false" />
+      <itemData name="jinja_constant" defStyleNum="dsConstant" spellChecking="false" />
+      <itemData name="jinja_builtin" defStyleNum="dsBuiltIn" spellChecking="false" />
+      <itemData name="jinja_function" defStyleNum="dsFunction" spellChecking="false" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" />
+  </general>
+</language>
+
+<!-- kate: tab-width 2; replace-tabs on; indent-width 2; -->

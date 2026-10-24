@@ -1,67 +1,122 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<!-- Dockerfile syntaxfile v1.0 by James Turnbull <james@lovedthanlost.net> -->
-<language name="Dockerfile" section="Other" version="7" kateversion="3.4" extensions="Dockerfile" author="James Turnbull (james@lovedthanlost.net)" license="MIT">
+<!DOCTYPE language>
+<!--
+    This file is part of KDE's kate project.
+
+    SPDX-FileCopyrightText: James Turnbull <james@lovedthanlost.net>
+    SPDX-FileCopyrightText: 2020-2021 Alex Turbov <i.zaufi@gmail.com>
+
+    SPDX-License-Identifier: MIT
+ -->
+<language
+    name="Dockerfile"
+    section="Other"
+    version="11"
+    kateversion="5.79"
+    extensions="Dockerfile;Containerfile"
+    author="James Turnbull (james@lovedthanlost.net)"
+    license="MIT"
+  >
   <highlighting>
-    <list name="keywords">
-      <item>ADD</item>
-      <item>ARG</item>
-      <item>CMD</item>
-      <item>COPY</item>
-      <item>ENTRYPOINT</item>
-      <item>ENV</item>
+    <list name="keywords-trivial">
+      <item>AS</item>
       <item>EXPOSE</item>
-      <item>FROM</item>
-      <item>HEALTHCHECK</item>
-      <item>LABEL</item>
       <item>MAINTAINER</item>
       <item>ONBUILD</item>
-      <item>RUN</item>
-      <item>SHELL</item>
       <item>STOPSIGNAL</item>
       <item>USER</item>
-      <item>VOLUME</item>
       <item>WORKDIR</item>
+      <item>VOLUME</item>
+      <item>SHELL</item>
     </list>
-
+    <list name="keywords-options">
+      <item>ADD</item>
+      <item>COPY</item>
+      <item>FROM</item>
+      <item>HEALTHCHECK</item>
+    </list>
+    <list name="keywords-key-value">
+      <item>ARG</item>
+      <item>ENV</item>
+      <item>LABEL</item>
+    </list>
+    <list name="keywords-shell-form">
+      <item>CMD</item>
+      <item>ENTRYPOINT</item>
+    </list>
+    <list name="keywords-shell-form-with-options">
+      <item>RUN</item>
+    </list>
     <contexts>
-      <context name="normal" attribute="Normal" lineEndContext="#stay">
-        <DetectSpaces/>
-        <DetectChar attribute="Comment" context="Comment" char="#"/>
-        <keyword attribute="Keyword"  context="#stay" String="keywords"/>
-        <DetectIdentifier/>
-        <DetectChar attribute="String" context="string&quot;" char="&quot;"/>
-        <DetectChar attribute="String" context="string'" char="'"/>
+      <context name="normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces />
+        <DetectChar attribute="Comment" context="Comment" char="#" />
+        <keyword attribute="Keyword" context="#stay" String="keywords-trivial" />
+        <keyword attribute="Keyword" context="Maybe Option" String="keywords-options" />
+        <keyword attribute="Keyword" context="#stay" String="keywords-key-value" />
+        <keyword attribute="Keyword" context="Maybe Shell Form" String="keywords-shell-form" />
+        <keyword attribute="Keyword" context="Maybe Option for Shell Form" String="keywords-shell-form-with-options" />
+        <DetectIdentifier />
+        <DetectChar attribute="String" context="string&quot;" char="&quot;" />
+        <DetectChar attribute="String" context="string'" char="'" />
+        <LineContinue attribute="Operator" context="#stay" />
+      </context>
+
+      <context name="Maybe Option" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces />
+        <Detect2Chars attribute="Option" context="KwOption" char="-" char1="-"/>
+        <LineContinue attribute="Normal Text" context="#stay" />
+      </context>
+
+      <context name="Maybe Shell Form" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="BashOneLine##Bash">
+        <DetectSpaces />
+        <DetectChar attribute="Normal Text" context="#pop" char="[" lookAhead="true" />
+        <LineContinue attribute="Operator" context="#stay" />
+      </context>
+
+      <context name="Maybe Option for Shell Form" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="BashOneLine##Bash">
+        <DetectSpaces />
+        <DetectChar attribute="Normal Text" context="#pop" char="[" lookAhead="true" />
+        <Detect2Chars attribute="Option" context="KwOption" char="-" char1="-"/>
+        <LineContinue attribute="Operator" context="#stay" />
+      </context>
+
+      <context attribute="Option" lineEndContext="#pop#pop" name="KwOption" fallthroughContext="#pop">
+        <RegExpr attribute="Option" context="#pop" String="[a-z\-]+(=[^\s]+)?"/>
       </context>
 
       <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <RegExpr attribute="Directive" context="#stay" String="(syntax|escape)=[^\s]+"/>
         <LineContinue attribute="Comment" context="#stay" />
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
 
       <context name="string&quot;" attribute="String" lineEndContext="#pop">
-        <LineContinue attribute="Operator" context="#stay"/>
-        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <LineContinue attribute="Operator" context="#stay" />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
       </context>
 
       <context name="string'" attribute="String" lineEndContext="#pop">
-        <LineContinue attribute="String" context="#stay"/>
-        <DetectChar attribute="String" context="#pop" char="'"/>
+        <LineContinue attribute="String" context="#stay" />
+        <DetectChar attribute="String" context="#pop" char="'" />
       </context>
 
     </contexts>
     <itemDatas>
-      <itemData name="Normal"  defStyleNum="dsNormal"  spellChecking="0"/>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0" />
       <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="Directive" defStyleNum="dsCommentVar" />
       <itemData name="Operator" defStyleNum="dsOperator" />
-      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="0"/>
-      <itemData name="String"  defStyleNum="dsString"  spellChecking="0"/>
+      <itemData name="Option" defStyleNum="dsOperator" />
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="0" />
+      <itemData name="String"  defStyleNum="dsString" spellChecking="0" />
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment name = "singleLine" start = "#"/>
+      <comment name = "singleLine" start = "#" />
     </comments>
   </general>
 </language>
+
 <!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

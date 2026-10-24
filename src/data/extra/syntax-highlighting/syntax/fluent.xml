@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+  <!-- In EBNF: Identifier ::= [a-zA-Z] [a-zA-Z0-9_-]*-->
+  <!ENTITY identifier "[a-zA-Z0-9_-]">
+  <!ENTITY number "-?\d+(?:\.\d+)?">
+  <!ENTITY variant_key "\[(?:&identifier;+|(?:&number;))\]">
+  <!ENTITY hex "[0-9a-fA-F]">
+]>
+<language name="Fluent" version="1" kateversion="5.0" section="Markup" extensions="*.ftl" mimetype="text/x-fluent-translation" author="Fabian Wunsch (fabian@uriah.heep.sax.de)" license="MIT" priority="-1">
+  <highlighting>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <StringDetect String="###" context="FileComment" column="0"/>
+        <Detect2Chars char="#" char1="#" context="StandaloneComment" column="0"/>
+        <DetectChar char="#" context="MessageComment" column="0"/>
+        <RegExpr String="^(&identifier;+)" context="Identifier" column="0"/>
+        <DetectSpaces/>
+      </context>
+
+      <context name="Identifier" attribute="Identifier" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!Error">
+        <RegExpr String="\s*=\s*" context="MultiLineText" attribute="Normal Text"/>
+      </context>
+
+      <context name="AttributeIdentifier" attribute="Identifier" lineEndContext="#pop">
+        <RegExpr String="\s*=\s*" context="#pop#pop!MultiLineText" attribute="Normal Text"/>
+        <DetectChar char=" " context="#pop#pop!Error"/>
+      </context>
+
+      <context name="Error" attribute="Error" lineEndContext="#pop">
+      </context>
+
+      <context name="MessageComment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments"/>
+      </context>
+
+      <context name="StandaloneComment" attribute="DocumentationComment" lineEndContext="#pop">
+        <IncludeRules context="MessageComment"/>
+      </context>
+
+      <context name="FileComment" attribute="DocumentationComment" lineEndContext="#pop">
+        <IncludeRules context="MessageComment"/>
+      </context>
+
+      <context name="SingleLineText" attribute="Text" lineEndContext="#pop">
+        <DetectIdentifier/>
+        <DetectChar char="{" context="Placeable"/>
+      </context>
+
+      <context name="MultiLineText" attribute="Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <RegExpr String="^[^ ]" context="#pop#pop" column="0" lookAhead="true"/>
+        <RegExpr String="(?&lt;=[ ])(?:\.&identifier;)" context="AttributeIdentifier" lookAhead="true"/>
+        <IncludeRules context="SingleLineText"/>
+      </context>
+
+      <context name="Expression" lineEndContext="#pop" attribute="Normal Text">
+        <DetectChar char="&quot;" context="Quoted"/>
+        <RegExpr String="&number;" attribute="Number"/>
+        <RegExpr String="(?:&identifier;+\s*\()" context="Function"/>
+        <RegExpr String="(?:\$&identifier;+)" attribute="Variable"/>
+        <RegExpr String="(?:&identifier;+(?:\.&identifier;+)?)"/>
+        <DetectChar char="{" context="Placeable"/>
+      </context>
+
+      <context name="Placeable" attribute="Placeable" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!Error">
+        <DetectSpaces/>
+        <DetectChar char="}" context="#pop" attribute="Placeable"/>
+        <RegExpr String="(?:\*&variant_key;)" context="SingleLineText" attribute="DefaultIdentifier"/>
+        <RegExpr String="(?:&variant_key;)" context="SingleLineText" attribute="Identifier"/>
+        <Detect2Chars char="-" char1="&gt;"/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Function" attribute="Function" lineEndContext="#pop!Error" fallthrough="true" fallthroughContext="#pop!Error">
+        <DetectSpaces/>
+        <DetectChar char=")" context="#pop" attribute="Function"/>
+        <RegExpr String="(?:&identifier;+\s*:\s*)"/>
+        <DetectChar char=","/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Quoted" attribute="Quoted" lineEndContext="#pop!Error">
+        <DetectIdentifier/>
+        <RegExpr String="\\(?:&quot;|\\|u&hex;{4}|U&hex;{6})"/>
+        <DetectChar char="\" context="#pop!Error"/>
+        <DetectChar char="&quot;" context="#pop" attribute="Quoted"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+      <itemData name="Identifier" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="DefaultIdentifier" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Text" defStyleNum="dsString" spellChecking="true"/>
+      <itemData name="Function" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Placeable" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment" spellChecking="true"/>
+      <itemData name="DocumentationComment" defStyleNum="dsDocumentation" spellChecking="true"/>
+      <itemData name="Quoted" defStyleNum="dsString" spellChecking="true"/>
+      <itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Number" defStyleNum="dsDecVal" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+    <folding indentationsensitive="true"/>
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Kate syntax highlighting for F# based on the OCAML syntax by Glyn Webster (glyn@wave.co.nz). -->
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 <!-- Regular expresion constants: -->
 <!ENTITY LETTER "A-Za-z\300-\326\330-\366\370-\377">                <!-- Latin-1 letters. -->
@@ -9,7 +9,7 @@
 <!ENTITY ESC    "(\\[ntbr'&quot;\\]|\\[0-9]{3}|\\x[0-9A-Fa-f]{2})"> <!-- OCaml character code escapes. -->
 <!ENTITY DEC    "[0-9][0-9_]*">                                     <!-- Decimal digits with underscores. -->
 ]>
-<language name="FSharp" version="5" kateversion="5.0" section="Sources" extensions="*.fs;*.fsi;*.fsx" mimetype="" priority="10" author="Bas Bossink (bas.bossink@gmail.com)" license="LGPL">
+<language name="FSharp" version="10" kateversion="5.0" section="Sources" extensions="*.fs;*.fsi;*.fsx" mimetype="" priority="10" author="Bas Bossink (bas.bossink@gmail.com)" license="LGPL">
 
   <highlighting>
     <list name="keywords">
@@ -190,19 +190,23 @@
         <RegExpr attribute="Decimal" context="#stay" String="-?&DEC;" />
       </context>
 
-      <context attribute="Comment" lineEndContext="#pop" name="Singleline Comment"/>
+      <context attribute="Comment" lineEndContext="#pop" name="Singleline Comment">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+      </context>
       <context attribute="Comment" lineEndContext="#stay" name="Multiline Comment">
         <!-- Support for nested comments -->
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")" endRegion="comment" />
         <Detect2Chars attribute="Comment" context="Multiline Comment" char="(" char1="*" beginRegion="comment" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
 
       <context attribute="String" lineEndContext="#stay" name="String Constant">
         <DetectChar attribute="String" context="#pop" char="&quot;" />
-        <RegExpr attribute="Escaped characters" context="#stay" String="&ESC;" />
         <!-- An underscore at the end of a line in a string indicates  -->
         <!-- that the string will continue on the next line.           -->
-        <RegExpr attribute="Escaped characters" context="#stay" String="\\$" />
+        <RegExpr attribute="Escaped characters" context="#stay" String="&ESC;|\\$" />
       </context>
 
       <context attribute="Normal Text" lineEndContext="#stay" name="Block">
@@ -234,7 +238,7 @@
       <context attribute="Normal Text" lineEndContext="#stay" name="ModuleEnv2">
         <RegExpr attribute="Module" context="#stay" String="&MIDENT;"/>
         <DetectSpaces attribute="Normal Text" context="#stay"/>
-        <StringDetect attribute="Keyword" context="#pop" String="."/>
+        <DetectChar attribute="Keyword" context="#pop" char="."/>
       </context>
 
       <!-- Camlp4 Quotations. These are source code literals used by the Campl4 preprocessor.           -->
@@ -243,15 +247,14 @@
         <Detect2Chars attribute="Camlp4 Quotation" context="#pop" char="&gt;" char1="&gt;" />
         <Detect2Chars attribute="Camlp4 Quotation" context="Camlp4 Quotation Constant" char="&lt;" char1="&lt;" />
         <RegExpr attribute="Camlp4 Quotation" context="Camlp4 Quotation Constant" String="&lt;:&IDENT;&lt;" />
-        <RegExpr attribute="Escaped characters" context="#stay" String="\\(\\|&gt;&gt;|&lt;&lt;)" />
-        <RegExpr attribute="Escaped characters" context="#stay" String="\\&lt;:&IDENT;&lt;" />
+        <RegExpr attribute="Escaped characters" context="#stay" String="\\(\\|&gt;&gt;|&lt;&lt;|&lt;:&IDENT;&lt;)" />
       </context>
     </contexts>
 
     <itemDatas>
       <itemData name="Normal Text" defStyleNum="dsNormal"/>
       <itemData name="Identifier" defStyleNum="dsNormal"/>
-      <itemData name="Symbol" defStyleNum="dsNormal"/>
+      <itemData name="Symbol" defStyleNum="dsOperator"/>
       <itemData name="Keyword"  defStyleNum="dsKeyword"/>
       <itemData name="Core Data Type"  defStyleNum="dsDataType"/>
       <itemData name="Decimal"  defStyleNum="dsDecVal"/>
@@ -275,8 +278,7 @@
     <keywords casesensitive="1" />
     <comments>
       <comment name="singleLine" start="//" />
-      <comment name="singleLine" start="///" />
-      <comment name="multiLine" start="(*" end="*)" />
+      <comment name="multiLine" start="(*" end="*)" region="comment" />
     </comments>
   </general>
 </language>

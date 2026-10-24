@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="k" version="3" kateversion="3.4" section="Scripts" extensions="*.k" license="LGPLv2+" author="James Schmitz (james.schmitz@gmail.com)">
+<!DOCTYPE language [
+  <!ENTITY kDateTime1 "(?:\d{4}\.\d\dm|\d{4}\.\d\d\.\d\d(?:|[DT](?:\d*|\d\d:\d\d|\d\d:\d\d:\d\d|\d\d:\d\d:\d\d\.\d*)))">
+  <!ENTITY kDateTime2 "\d+D(?:\d*|\d\d:\d\d|\d\d:\d\d:\d\d|\d\d:\d\d:\d\d\.\d*)">
+  <!ENTITY kDateTime3 "(?:\d+t|\d\d:\d*|\d\d:\d\d:\d\d(?:|\.\d+))">
+
+  <!ENTITY kNumber1 "[-]?(?:0(?:n|Ne|ne|Nf|nf)|(?:[\d]+\.[\d]*|\.?[\d]+)e[-]?\d+|(?:[\d]+\.[\d]*[ef]?|\.[\d]+[ef]?|[\d]+[ef]))">
+  <!ENTITY kNumber2 "[-]?(?:0N[hj]?|[\d]+[ijh]?)">
+]>
+<language name="k" version="7" kateversion="5.0" section="Scripts" extensions="*.k" license="LGPLv2+" author="James Schmitz (james.schmitz@gmail.com)">
 <highlighting>
     <list name="flowcontrol" >
       <item>while</item>
@@ -339,20 +346,11 @@
       <item>.q.xprev</item>
       <item>.q.xrank</item>
     </list>
-    <list name="todos" >
-      <item>TODO</item>
-      <item>FIXME</item>
-      <item>FIX</item>
-      <item>HACK</item>
-      <item>XXX</item>
-      <item>NOTE</item>
-      <item>GOTCHA</item>
-    </list>
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
-        <RegExpr attribute="kSystemCommand" String="^\\[^\s].*$" context="#stay" />
+        <RegExpr attribute="kSystemCommand" String="^\\[^\s].*" context="#stay" column="0" />
         <DetectChar attribute="String" context="string" char="&quot;" />
-        <RegExpr attribute="kSeparators" String="[{|(|[|\]|)|}]" context="#stay" />
+        <AnyChar attribute="kSeparators" String="{([|])}" context="#stay" />
         <RegExpr attribute="kHSym" String="`:[\w/:.]*" context="#stay" />
         <RegExpr attribute="kSymbol" String="(`[a-zA-Z\d.][\w:.]*|`|\d[a-zA-Z\d:.]*s)" context="#stay" />
         <keyword attribute="FlowControl" context="#stay" String="flowcontrol" />
@@ -364,41 +362,37 @@
         <keyword attribute="Dotofunctions" context="#stay" String="Doto" />
         <keyword attribute="Dotqfunctions" context="#stay" String="Dotq" />
         <RegExpr attribute="kIdentifier" String="(?:[a-zA-Z][\w.]*|\.[a-zA-Z][\w.]*)" context="#stay" />
-        <RegExpr attribute="kBool" String="[0|1]+b" context="#stay" />
+        <RegExpr attribute="kBool" String="[01]+b" context="#stay" />
         <RegExpr attribute="kByte" String="0x[0-9a-fA-F]*" context="#stay" />
         <RegExpr attribute="kGuid" String="[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}" context="#stay" />
-        <RegExpr attribute="kDateTime" String="(?:\d{4}\.\d\dm|\d{4}\.\d\d\.\d\d(?:|[D|T](?:\d*|\d\d:\d\d|\d\d:\d\d:\d\d|\d\d:\d\d:\d\d\.\d*)))" context="#stay" />
-        <RegExpr attribute="kDateTime" String="\d+D(?:\d*|\d\d:\d\d|\d\d:\d\d:\d\d|\d\d:\d\d:\d\d\.\d*)" context="#stay" />
-        <RegExpr attribute="kDateTime" String="(?:\d+t|\d\d:\d*|\d\d:\d\d:\d\d(?:|\.\d+))" context="#stay" />
-        <RegExpr attribute="kNumber" String="[-]?(?:0(?:n|Ne|ne|Nf|nf)|(?:[\d]+\.[\d]*|\.?[\d]+)e[-]?\d+|(?:[\d]+\.[\d]*[ef]?|\.[\d]+[ef]?|[\d]+[ef]))" context="#stay" />
-        <RegExpr attribute="kNumber" String="[-]?(?:0N[hj]?|[\d]+[i|j|h]?)" context="#stay" />
+        <RegExpr attribute="kDateTime" String="&kDateTime1;|&kDateTime2;|&kDateTime3;" context="#stay" />
+        <RegExpr attribute="kNumber" String="&kNumber1;|&kNumber2;" context="#stay" />
         <Detect2Chars attribute="Comment" context="comment" char=" " char1="/" />
-        <Detect2Chars attribute="Comment" context="comment" char=")" char1="/" />
-        <Detect2Chars attribute="Comment" context="comment" char="}" char1="/" />
-        <Detect2Chars attribute="Comment" context="comment" char="]" char1="/" />
-        <RegExpr String="^\\[\s]*$" attribute="CommentToEOF" context="commentToEOF" />
-        <RegExpr String="^/[\s]*$" attribute="MultiLineComment" context="multicomment" beginRegion="Comment" />
+        <RegExpr String="^\\[\s]*$" attribute="CommentToEOF" context="commentToEOF" column="0" />
+        <RegExpr String="^/[\s]*$" attribute="MultiLineComment" context="multicomment" beginRegion="Comment" column="0" />
         <DetectChar attribute="Comment" context="comment" char="/" firstNonSpace="true" /> 
       </context>
       <context attribute="String" lineEndContext="#stay" name="string" >
         <DetectChar attribute="String" context="#pop" char="&quot;" />
       </context>
       <context name="comment" attribute="Comment" lineEndContext="#pop" >
-        <keyword attribute="Todos" context="#stay" String="todos" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
       <context name="multicomment" attribute="MultiLineComment" lineEndContext="#stay" >
-        <keyword attribute="Todos" context="#stay" String="todos" />
-        <RegExpr String="^\\[\s]*$" attribute="MultiLineComment" context="#pop" endRegion="Comment" />
+        <RegExpr String="^\\[\s]*$" attribute="MultiLineComment" context="#pop" endRegion="Comment" column="0" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
       <context name="commentToEOF" attribute="CommentToEOF" lineEndContext="#stay" >
-        <keyword attribute="Todos" context="#stay" String="todos" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
     <itemDatas>
       <itemData name="Normal Text" spellChecking="false" defStyleNum="dsNormal" />
       <itemData name="kSystemCommand" spellChecking="false" defStyleNum="dsOthers" />
       <itemData name="kSeparators" defStyleNum="dsNormal" />
-      <itemData name="Todos" defStyleNum="dsComment" />
       <itemData name="kSymbol" spellChecking="false" defStyleNum="dsOthers" />
       <itemData name="kHSym" spellChecking="false" defStyleNum="dsOthers" />
       <itemData name="FlowControl" defStyleNum="dsKeyword" />
@@ -423,8 +417,8 @@
   <general>
     <comments>
       <comment name="singleLine" start="/" />
-      <comment name="multiLine" start="/" end="\" region="Comment" />
     </comments>
     <keywords casesensitive="1" weakDeliminator="." additionalDeliminator="`#'@$&quot;" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

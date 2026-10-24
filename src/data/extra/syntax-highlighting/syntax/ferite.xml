@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="ferite" version="4" kateversion="5.0" section="Scripts" extensions="*.fe;*.feh" mimetype="text/x-ferite-src">
+<!DOCTYPE language>
+<language name="ferite" version="7" kateversion="5.0" section="Scripts" extensions="*.fe;*.feh" mimetype="text/x-ferite-src">
   <highlighting>
     <list name="keywords">
       <item>break</item>
@@ -44,7 +44,7 @@
         <HlCChar attribute="Char" context="#stay"/>
         <DetectChar attribute="String" context="String" char="&quot;"/>
         <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Multiline Comment" char="/" char1="*"/>
+        <Detect2Chars attribute="Comment" context="Multiline Comment" char="/" char1="*" beginRegion="BlockComment"/>
         <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;=&gt;?[]^{|}~"/>
         <StringDetect attribute="Comment" context="Undeffed" String="#if 0" insensitive="false"/>
         <DetectChar attribute="Preprocessor" context="Preprocessor" char="#" column="0"/>
@@ -54,13 +54,11 @@
       </context>
       <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
           <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
           <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
           <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
           <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
           <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+          <AnyChar attribute="Decimal" context="#pop" String="ULul"/>
       </context>
       <context attribute="String" lineEndContext="#pop" name="String">
         <LineContinue attribute="String" context="#stay"/>
@@ -68,25 +66,30 @@
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="Comment">
-        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Multiline Comment">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
-        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
       <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
         <LineContinue attribute="Preprocessor" context="#stay"/>
         <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
         <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
         <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Multiline Comment 2" char="/" char1="*"/>
+        <Detect2Chars attribute="Comment" context="Multiline Comment 2" char="/" char1="*" beginRegion="BlockComment"/>
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Multiline Comment 2">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Undeffed">
-          <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
-          <StringDetect attribute="Comment" context="#pop" String="#endif" column="0"/>
+        <StringDetect attribute="Comment" context="#pop" String="#endif" column="0"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
     </contexts>
     <itemDatas>
@@ -101,17 +104,17 @@
       <itemData name="String"  defStyleNum="dsString"/>
       <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
       <itemData name="Comment"  defStyleNum="dsComment"/>
-      <itemData name="Symbol"  defStyleNum="dsNormal"/>
+      <itemData name="Symbol"  defStyleNum="dsOperator"/>
       <itemData name="Preprocessor"  defStyleNum="dsPreprocessor"/>
       <itemData name="Prep. Lib"  defStyleNum="dsImport"/>
-      <itemData name="Alert"        defStyleNum="dsAlert" />
     </itemDatas>
   </highlighting>
   <general>
     <comments>
       <comment name="singleLine" start="//" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="BlockComment" />
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

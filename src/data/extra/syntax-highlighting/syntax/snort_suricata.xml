@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="Snort/Suricata" section="Other" version="4" kateversion="5.0" extensions="*.rules;*.snort;*.suricata" license="MIT">
+  <highlighting>
+    <list name="action">
+        <item>activate</item>
+        <item>alert</item>
+        <item>drop</item>
+        <item>dynamic</item>
+        <item>log</item>
+        <item>pass</item>
+        <item>reject</item>
+        <item>sdrop</item>
+    </list>
+    
+    <list name="header">
+        <item>$EXTERNAL_NET</item>
+        <item>$HOME_NET</item>
+        <item>$HTTP_PORTS</item>
+        <item>any</item>
+        <item>dcerpc</item>
+        <item>dnp3</item>
+        <item>dns</item>
+        <item>enip</item>
+        <item>ftp</item>
+        <item>http</item>
+        <item>icmp</item>
+        <item>imap</item>
+        <item>ip</item>
+        <item>modbus</item>
+        <item>msn</item>
+        <item>nfs</item>
+        <item>ntp</item>
+        <item>smb</item>
+        <item>smtp</item>
+        <item>ssh</item>
+        <item>tcp</item>
+        <item>tls</item>
+        <item>udp</item>
+    </list>
+    
+    <list name="options">
+        <item>ack</item>
+        <item>app-layer-event</item>
+        <item>app-layer-protocol</item>
+        <item>appid</item>
+        <item>asn1</item>
+        <item>base64_data</item>
+        <item>base64_decode</item>
+        <item>byte_extract</item>
+        <item>byte_jump</item>
+        <item>byte_test</item>
+        <item>classtype</item>
+        <item>content</item>
+        <item>dce_iface</item>
+        <item>dce_opnum</item>
+        <item>dce_stub_data</item>
+        <item>decode-event</item>
+        <item>depth</item>
+        <item>detection_filter</item>
+        <item>distance</item>
+        <item>dns_query</item>
+        <item>dsize</item>
+        <item>engine-event</item>
+        <item>fast_pattern</item>
+        <item>file_data</item>
+        <item>fileext</item>
+        <item>filemagic</item>
+        <item>filemd5</item>
+        <item>filename</item>
+        <item>filesize</item>
+        <item>filestore</item>
+        <item>flags</item>
+        <item>flow</item>
+        <item>flowbits</item>
+        <item>flowint</item>
+        <item>flowvar</item>
+        <item>__flowvar__postmatch__</item>
+        <item>fragbits</item>
+        <item>fragoffset</item>
+        <item>ftpbounce</item>
+        <item>geoip</item>
+        <item>gid</item>
+        <item>hostbits</item>
+        <item>http_client_body</item>
+        <item>http_cookie</item>
+        <item>http_header</item>
+        <item>http_host</item>
+        <item>http_method</item>
+        <item>http_raw_header</item>
+        <item>http_raw_host</item>
+        <item>http_raw_uri</item>
+        <item>http_server_body</item>
+        <item>http_stat_code</item>
+        <item>http_stat_msg</item>
+        <item>http_uri</item>
+        <item>http_user_agent</item>
+        <item>icmp_id</item>
+        <item>icmp_seq</item>
+        <item>icmpv4-csum</item>
+        <item>icmpv6-csum</item>
+        <item>icode</item>
+        <item>id</item>
+        <item>ip_proto</item>
+        <item>ipopts</item>
+        <item>iprep</item>
+        <item>ipv4-csum</item>
+        <item>isdataat</item>
+        <item>itype</item>
+        <item>l3_proto</item>
+        <item>lua</item>
+        <item>metadata</item>
+        <item>modbus</item>
+        <item>msg</item>
+        <item>name</item>
+        <item>nfq_set_mark</item>
+        <item>noalert</item>
+        <item>nocase</item>
+        <item>offset</item>
+        <item>pcre</item>
+        <item>pkt_data</item>
+        <item>pktvar</item>
+        <item>priority</item>
+        <item>rawbytes</item>
+        <item>reference</item>
+        <item>replace</item>
+        <item>rev</item>
+        <item>rpc</item>
+        <item>sameip</item>
+        <item>seq</item>
+        <item>sid</item>
+
+        <item>ssl_state</item>
+        <item>ssl_version</item>
+        <item>stream-event</item>
+        <item>stream_size</item>
+        <item>tag</item>
+        <item>tcpv4-csum</item>
+        <item>tcpv6-csum</item>
+        <item>template</item>
+        <item>threshold</item>
+        <item>tls_sni</item>
+        <item>tos</item>
+        <item>ttl</item>
+        <item>udpv4-csum</item>
+        <item>udpv6-csum</item>
+        <item>uricontent</item>
+        <item>urilen</item>
+        <item>window</item>
+        <item>within</item>
+        <item>xbits</item>
+    </list>
+    
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <WordDetect attribute="Options Keyword" context="#stay" String="tls.fingerprint"/>
+        <WordDetect attribute="Options Keyword" context="#stay" String="tls.issuerdn"/>
+        <WordDetect attribute="Options Keyword" context="#stay" String="tls.store"/>
+        <WordDetect attribute="Options Keyword" context="#stay" String="tls.subject"/>
+        <WordDetect attribute="Options Keyword" context="#stay" String="tls.version"/>
+        <WordDetect attribute="Options Keyword" context="#stay" String="ssh.protoversion"/>
+        <WordDetect attribute="Options Keyword" context="#stay" String="ssh.softwareversion"/>
+        <keyword attribute="Action" context="#stay" String="action"/>
+        <keyword attribute="Header Keyword" context="#stay" String="header"/>
+        <keyword attribute="Options Keyword" context="#stay" String="options"/>
+        <Int attribute="Decimal" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <DetectChar attribute="String" context="String2" char="&#8221;"/>
+        <DetectChar attribute="Comment" char="#" context="Comment"/>
+      </context>
+      
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#pop"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String2">
+        <LineContinue attribute="String" context="#pop"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <Detect2Chars attribute="String Char" context="#stay" char="\" char1="&#8221;"/>
+        <DetectChar attribute="String" context="#pop" char="&#8221;"/>
+      </context>
+      
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+      </context>
+    </contexts>
+    
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Action" defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Header Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Options Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="String Char"  defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  
+  <general>
+    <keywords weakDeliminator="-$"/>
+    <comments>
+      <comment name="singleLine" start="#" />
+    </comments>
+  </general>
+  
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

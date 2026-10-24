@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="GLSL" section="3D" extensions="*.glsl;*.vert;*.vs;*.frag;*.fs;*.geom;*.gs;*.tcs;*.tes" mimetype="text/x-glslsrc" version="4" kateversion="5.0" author="Oliver Richers (o.richers@tu-bs.de)" license="LGPL">
+<!DOCTYPE language>
+<language name="GLSL" section="3D" extensions="*.glsl;*.vert;*.vs;*.frag;*.fs;*.geom;*.gs;*.tcs;*.tes" mimetype="text/x-glslsrc" version="12" kateversion="5.0" author="Oliver Richers (o.richers@tu-bs.de)" license="LGPL" indenter="cstyle">
+	<!--
+		Based on GLSLangSpec.4.60.pdf
+		https://www.khronos.org/registry/OpenGL/specs/gl/
+	-->
 	<highlighting>
 		<list name="keywords">
 			<item>break</item>
@@ -26,86 +30,204 @@
 			<item>invariant</item>
 		</list>
 		<list name="types">
-			<item>float</item>
-			<item>int</item>
-			<item>void</item>
 			<item>bool</item>
+			<item>int</item>
+			<item>uint</item>
+			<item>float</item>
+			<item>double</item>
+			<item>void</item>
 
 			<item>mat2</item>
 			<item>mat3</item>
 			<item>mat4</item>
-			
-			<item>vec2</item>
-			<item>vec3</item>
-			<item>vec4</item>
-			<item>ivec2</item>
-			<item>ivec3</item>
-			<item>ivec4</item>
+			<item>mat2x2</item>
+			<item>mat2x3</item>
+			<item>mat2x4</item>
+			<item>mat3x2</item>
+			<item>mat3x3</item>
+			<item>mat3x4</item>
+			<item>mat4x2</item>
+			<item>mat4x3</item>
+			<item>mat4x4</item>
+
+			<item>dmat2</item>
+			<item>dmat3</item>
+			<item>dmat4</item>
+			<item>dmat2x2</item>
+			<item>dmat2x3</item>
+			<item>dmat2x4</item>
+			<item>dmat3x2</item>
+			<item>dmat3x3</item>
+			<item>dmat3x4</item>
+			<item>dmat4x2</item>
+			<item>dmat4x3</item>
+			<item>dmat4x4</item>
+
 			<item>bvec2</item>
 			<item>bvec3</item>
 			<item>bvec4</item>
-			
-			<item>sampler1D</item>
-			<item>sampler2D</item>
-			<item>sampler3D</item>
-			<item>samplerCube</item>
-			<item>sampler2DRect</item>
-			<item>sampler1DArray</item>
-			<item>sampler2DArray</item>
-			<item>samplerCubeArray</item>
-			<item>samplerBuffer</item>
-			<item>sampler2DMS</item>
-			<item>sampler2DMSArray</item>
+			<item>dvec2</item>
+			<item>dvec3</item>
+			<item>dvec4</item>
+			<item>ivec2</item>
+			<item>ivec3</item>
+			<item>ivec4</item>
+			<item>uvec2</item>
+			<item>uvec3</item>
+			<item>uvec4</item>
+			<item>vec2</item>
+			<item>vec3</item>
+			<item>vec4</item>
 
+			<item>sampler1D</item>
+			<item>texture1D</item>
+			<item>image1D</item>
 			<item>sampler1DShadow</item>
-			<item>sampler2DShadow</item>
-			<item>samplerCubeShadow</item>
-			<item>sampler2DRectShadow</item>
+
+			<item>sampler1DArray</item>
+			<item>texture1DArray</item>
+			<item>image1DArray</item>
 			<item>sampler1DArrayShadow</item>
+
+			<item>sampler2D</item>
+			<item>texture2D</item>
+			<item>image2D</item>
+			<item>sampler2DShadow</item>
+
+			<item>sampler2DArray</item>
+			<item>texture2DArray</item>
+			<item>image2DArray</item>
 			<item>sampler2DArrayShadow</item>
+
+			<item>sampler2DMS</item>
+			<item>texture2DMS</item>
+			<item>image2DMS</item>
+			<item>sampler2DMSArray</item>
+			<item>texture2DMSArray</item>
+			<item>image2DMSArray</item>
+			<item>sampler2DRect</item>
+			<item>texture2DRect</item>
+			<item>image2DRect</item>
+
+			<item>sampler2DRectShadow</item>
+			<item>sampler3D</item>
+			<item>texture3D</item>
+			<item>image3D</item>
+			<item>samplerCube</item>
+			<item>textureCube</item>
+			<item>imageCube</item>
+			<item>samplerCubeShadow</item>
+
+			<item>samplerCubeArray</item>
+			<item>textureCubeArray</item>
+			<item>imageCubeArray</item>
 			<item>samplerCubeArrayShadow</item>
 
-			<item>isampler1D</item>
-			<item>isampler2D</item>
-			<item>isampler3D</item>
-			<item>isamplerCube</item>
-			<item>isampler2DRect</item>
-			<item>isampler1DArray</item>
-			<item>isampler2DArray</item>
-			<item>isamplerCubeArray</item>
-			<item>isamplerBuffer</item>
-			<item>isampler2DMS</item>
-			<item>isampler2DMSArray</item>
+			<item>samplerBuffer</item>
+			<item>textureBuffer</item>
+			<item>imageBuffer</item>
+			<item>subpassInput</item>
+			<item>subpassInputMS</item>
 
-			<item>isampler1DShadow</item>
-			<item>isampler2DShadow</item>
-			<item>isamplerCubeShadow</item>
-			<item>isampler2DRectShadow</item>
-			<item>isampler1DArrayShadow</item>
-			<item>isampler2DArrayShadow</item>
-			<item>isamplerCubeArrayShadow</item>
+			<item>isampler1D</item>
+			<item>itexture1D</item>
+			<item>iimage1D</item>
+
+			<item>isampler1DArray</item>
+			<item>itexture1DArray</item>
+			<item>iimage1DArray</item>
+
+			<item>isampler2D</item>
+			<item>itexture2D</item>
+			<item>iimage2D</item>
+
+			<item>isampler2DArray</item>
+			<item>itexture2DArray</item>
+			<item>iimage2DArray</item>
+
+			<item>isampler2DMS</item>
+			<item>itexture2DMS</item>
+			<item>iimage2DMS</item>
+
+			<item>isampler2DMSArray</item>
+			<item>itexture2DMSArray</item>
+			<item>iimage2DMSArray</item>
+
+			<item>isampler2DRect</item>
+			<item>itexture2DRect</item>
+			<item>iimage2DRect</item>
+
+			<item>isampler3D</item>
+			<item>itexture3D</item>
+			<item>iimage3D</item>
+
+			<item>isamplerCube</item>
+			<item>itextureCube</item>
+			<item>iimageCube</item>
+
+			<item>isamplerCubeArray</item>
+			<item>itextureCubeArray</item>
+			<item>iimageCubeArray</item>
+
+			<item>isamplerBuffer</item>
+			<item>itextureBuffer</item>
+			<item>iimageBuffer</item>
+
+			<item>isubpassInput</item>
+			<item>isubpassInputMS</item>
 
 			<item>usampler1D</item>
-			<item>usampler2D</item>
-			<item>usampler3D</item>
-			<item>usamplerCube</item>
-			<item>usampler2DRect</item>
-			<item>usampler1DArray</item>
-			<item>usampler2DArray</item>
-			<item>usamplerCubeArray</item>
-			<item>usamplerBuffer</item>
-			<item>usampler2DMS</item>
-			<item>usampler2DMSArray</item>
+			<item>utexture1D</item>
+			<item>uimage1D</item>
 
-			<item>usampler1DShadow</item>
-			<item>usampler2DShadow</item>
-			<item>usamplerCubeShadow</item>
-			<item>usampler2DRectShadow</item>
-			<item>usampler1DArrayShadow</item>
-			<item>usampler2DArrayShadow</item>
-			<item>usamplerCubeArrayShadow</item>
+			<item>usampler1DArray</item>
+			<item>utexture1DArray</item>
+			<item>uimage1DArray</item>
+
+			<item>usampler2D</item>
+			<item>utexture2D</item>
+			<item>uimage2D</item>
+
+			<item>usampler2DArray</item>
+			<item>utexture2DArray</item>
+			<item>uimage2DArray</item>
+
+			<item>usampler2DMS</item>
+			<item>utexture2DMS</item>
+			<item>uimage2DMS</item>
+
+			<item>usampler2DMSArray</item>
+			<item>utexture2DMSArray</item>
+			<item>uimage2DMSArray</item>
+
+			<item>usampler2DRect</item>
+			<item>utexture2DRect</item>
+			<item>uimage2DRect</item>
+
+			<item>usampler3D</item>
+			<item>utexture3D</item>
+			<item>uimage3D</item>
+
+			<item>usamplerCube</item>
+			<item>utextureCube</item>
+			<item>uimageCube</item>
+
+			<item>usamplerCubeArray</item>
+			<item>utextureCubeArray</item>
+			<item>uimageCubeArray</item>
+
+			<item>usamplerBuffer</item>
+			<item>utextureBuffer</item>
+			<item>uimageBuffer</item>
 
 			<item>atomic_uint</item>
+
+			<item>usubpassInput</item>
+			<item>usubpassInputMS</item>
+
+			<item>sampler</item>
+
+			<item>samplerShadow</item>
 		</list>
 		<list name="typequal">
 			<item>attribute</item>
@@ -116,10 +238,21 @@
 			<item>out</item>
 			<item>inout</item>
 
+			<item>patch</item>
+
+			<!-- precision qualifiers -->
+			<item>lowp</item>
+			<item>mediump</item>
+			<item>highp</item>
+			<item>precise</item>
+			<item>precision</item>
+
 			<!-- interpolation qualifiers -->
 			<item>flat</item>
 			<item>noperspective</item>
 			<item>smooth</item>
+			<item>centroid</item>
+			<item>sample</item>
 
 			<!-- layout qualifiers -->
 			<item>location</item>
@@ -159,7 +292,6 @@
 
 			<!-- tesselation -->
 			<item>isolines</item>
-			<item>triangles</item>
 			<item>quads</item>
 			<item>point_mode</item>
 			<item>equal_spacing</item>
@@ -176,11 +308,6 @@
 			<item>readonly</item>
 			<item>writeonly</item>
 		</list>
-		<list name="attention">
-			<item>FIXME</item>
-			<item>TODO</item>
-			<item>BUG</item>
-		</list>
 		<list name="stdlib">
 			<!-- see also: https://www.opengl.org/sdk/docs/man4/ -->
 			<item>abs</item>
@@ -194,12 +321,21 @@
 			<item>asinh</item>
 			<item>atan</item>
 			<item>atanh</item>
-			<item>atomicAdd</item>
-			<item>atomicAnd</item>
 			<item>atomicCompSwap</item>
 			<item>atomicCounter</item>
+			<item>atomicCounterAdd</item>
+			<item>atomicCounterAnd</item>
+			<item>atomicCounterCompSwap</item>
 			<item>atomicCounterDecrement</item>
+			<item>atomicCounterExchange</item>
 			<item>atomicCounterIncrement</item>
+			<item>atomicCounterMax</item>
+			<item>atomicCounterMin</item>
+			<item>atomicCounterOr</item>
+			<item>atomicCounterSubtract</item>
+			<item>atomicCounterXor</item>
+			<item>atomicAdd</item>
+			<item>atomicAnd</item>
 			<item>atomicExchange</item>
 			<item>atomicMax</item>
 			<item>atomicMin</item>
@@ -1054,7 +1190,6 @@
 			<item>gl_MultiTexCoord0</item>
 			<item>gl_MultiTexCoord1</item>
 			<item>gl_MultiTexCoord2</item>
-			<item>gl_MultiTexCoord2</item>
 			<item>gl_MultiTexCoord3</item>
 			<item>gl_MultiTexCoord4</item>
 			<item>gl_MultiTexCoord5</item>
@@ -1080,18 +1215,85 @@
 			<item>gl_out</item>
 
 			<!-- Built-in Constants -->
+			<item>gl_MaxAtomicCounterBindings</item>
+			<item>gl_MaxAtomicCounterBufferSize</item>
+			<item>gl_MaxClipDistances</item>
+			<item>gl_MaxCombinedAtomicCounterBuffers</item>
+			<item>gl_MaxCombinedAtomicCounters</item>
+			<item>gl_MaxCombinedClipAndCullDistances</item>
+			<item>gl_MaxCombinedImageUniforms</item>
+			<item>gl_MaxCombinedImageUnitsAndFragmentOutputs</item>
+			<item>gl_MaxCombinedShaderOutputResources</item>
+			<item>gl_MaxCombinedTextureImageUnits</item>
+			<item>gl_MaxComputeAtomicCounterBuffers</item>
+			<item>gl_MaxComputeAtomicCounters</item>
+			<item>gl_MaxComputeImageUniforms</item>
+			<item>gl_MaxComputeTextureImageUnits</item>
+			<item>gl_MaxComputeUniformComponents</item>
+			<item>gl_MaxComputeWorkGroupCount</item>
+			<item>gl_MaxComputeWorkGroupSize</item>
+			<item>gl_MaxCullDistances</item>
+			<item>gl_MaxDrawBuffers</item>
+			<item>gl_MaxFragmentAtomicCounterBuffers</item>
+			<item>gl_MaxFragmentAtomicCounters</item>
+			<item>gl_MaxFragmentImageUniforms</item>
+			<item>gl_MaxFragmentInputComponents</item>
+			<item>gl_MaxFragmentUniformComponents</item>
+			<item>gl_MaxFragmentUniformVectors</item>
+			<item>gl_MaxGeometryAtomicCounterBuffers</item>
+			<item>gl_MaxGeometryAtomicCounters</item>
+			<item>gl_MaxGeometryImageUniforms</item>
+			<item>gl_MaxGeometryInputComponents</item>
+			<item>gl_MaxGeometryOutputComponents</item>
+			<item>gl_MaxGeometryOutputVertices</item>
+			<item>gl_MaxGeometryTextureImageUnits</item>
+			<item>gl_MaxGeometryTotalOutputComponents</item>
+			<item>gl_MaxGeometryUniformComponents</item>
+			<item>gl_MaxImageSamples</item>
+			<item>gl_MaxImageUnits</item>
+			<item>gl_MaxInputAttachments</item>
 			<item>gl_MaxLights</item>
-			<item>gl_MaxClipPlanes</item>
+			<item>gl_MaxProgramTexelOffset</item>
+			<item>gl_MaxSamples</item>
+			<item>gl_MaxTessControlAtomicCounterBuffers</item>
+			<item>gl_MaxTessControlAtomicCounters</item>
+			<item>gl_MaxTessControlImageUniforms</item>
+			<item>gl_MaxTessControlInputComponents</item>
+			<item>gl_MaxTessControlOutputComponents</item>
+			<item>gl_MaxTessControlTextureImageUnits</item>
+			<item>gl_MaxTessControlTotalOutputComponents</item>
+			<item>gl_MaxTessControlUniformComponents</item>
+			<item>gl_MaxTessEvaluationAtomicCounterBuffers</item>
+			<item>gl_MaxTessEvaluationAtomicCounters</item>
+			<item>gl_MaxTessEvaluationImageUniforms</item>
+			<item>gl_MaxTessEvaluationInputComponents</item>
+			<item>gl_MaxTessEvaluationOutputComponents</item>
+			<item>gl_MaxTessEvaluationTextureImageUnits</item>
+			<item>gl_MaxTessEvaluationUniformComponents</item>
+			<item>gl_MaxTessGenLevel</item>
+			<item>gl_MaxTessPatchComponents</item>
+			<item>gl_MaxTextureImageUnits</item>
+			<item>gl_MaxTransformFeedbackBuffers</item>
+			<item>gl_MaxTransformFeedbackInterleavedComponents</item>
+			<item>gl_MaxVaryingComponents</item>
+			<item>gl_MaxVaryingVectors</item>
+			<item>gl_MaxVertexAtomicCounterBuffers</item>
+			<item>gl_MaxVertexAtomicCounters</item>
+			<item>gl_MaxVertexAttribs</item>
+			<item>gl_MaxVertexAttributes</item>
+			<item>gl_MaxVertexImageUniforms</item>
+			<item>gl_MaxVertexOutputComponents</item>
+			<item>gl_MaxVertexTextureImageUnits</item>
+			<item>gl_MaxVertexUniformComponents</item>
+			<item>gl_MaxVertexUniformVectors</item>
+			<item>gl_MaxViewports</item>
+			<item>gl_MinProgramTexelOffset</item>
+
+			<!-- Compatibility Profile Built-In Constants -->
 			<item>gl_MaxTextureUnits</item>
 			<item>gl_MaxTextureCoords</item>
-			<item>gl_MaxVertexAttributes</item>
-			<item>gl_MaxVertexUniformComponents</item>
+			<item>gl_MaxClipPlanes</item>
 			<item>gl_MaxVaryingFloats</item>
-			<item>gl_MaxVertexTextureImageUnits</item>
-			<item>gl_MaxCombinedTextureImageUnits</item>
-			<item>gl_MaxTextureImageUnits</item>
-			<item>gl_MaxFragmentUniformComponents</item>
-			<item>gl_MaxDrawBuffers</item>
 
 			<!-- Built-in Uniform State -->
 			<item>gl_ModelViewMatrix</item>
@@ -1149,8 +1351,6 @@
 			<item>gl_BackSecondaryColor</item>
 			<item>gl_TexCoord</item>
 			<item>gl_FogFragCoord</item>
-			<item>gl_Color</item>
-			<item>gl_SecondaryColor</item>
 		</list>
 		<contexts>
 			<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
@@ -1159,36 +1359,38 @@
 				<keyword attribute="Type Qualifier" String="typequal" context="#stay" />
 				<keyword attribute="StdFunction" String="stdlib" context="#stay" />
 				<keyword attribute="StdVariable" String="stdvar" context="#stay" />
-				
+
 				<Float attribute="Float" context="#stay" />
 				<HlCOct attribute="Octal" context="#stay"/>
 				<HlCHex attribute="Hex" context="#stay"/>
 				<Int attribute="Decimal" context="#stay" />
-				
+
 				<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
 				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
 				<DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
 				<DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
-				
+
 				<DetectChar attribute="Preprocessor" context="Preprocessor" char="#" firstNonSpace="true"/>
 				<RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*[(])" />
-				
-				<RegExpr attribute="Symbol" context="Member" String="[.]{1,1}" />
-				<AnyChar attribute="Symbol" context="#stay" String=".+-/*%&lt;&gt;[]()^|&amp;~=!:;,?&#59;" />
+
+				<DetectChar attribute="Symbol" context="Member" char="." />
+				<AnyChar attribute="Symbol" context="#stay" String="+-/*%&lt;&gt;[]()^|&amp;~=!:;,?&#59;" />
 			</context>
 			<context name="Member" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
 				<RegExpr attribute="Function" context="#pop" String="\b[_\w][_\w\d]*(?=[\s]*)" />
 			</context>
 			<context name="Commentar 1" attribute="Comment" lineEndContext="#pop">
-				<keyword attribute="Alert" context="#stay" String="attention" />
+				<DetectSpaces />
+				<IncludeRules context="##Comments" />
 			</context>
 			<context name="Commentar 2" attribute="Comment" lineEndContext="#stay">
 				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-				<keyword attribute="Alert" context="#stay" String="attention" />
+				<DetectSpaces />
+				<IncludeRules context="##Comments" />
 			</context>
 			<context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop">
 			</context>
-	        </contexts>
+		</contexts>
 		<itemDatas>
 			<itemData name="Normal Text"    defStyleNum="dsNormal"/>
 			<itemData name="Keyword"        defStyleNum="dsKeyword"/>
@@ -1201,17 +1403,17 @@
 			<itemData name="Octal"          defStyleNum="dsBaseN"/>
 			<itemData name="Hex"            defStyleNum="dsBaseN"/>
 			<itemData name="Float"          defStyleNum="dsFloat"/>
-			<itemData name="Symbol"         defStyleNum="dsNormal"/>
+			<itemData name="Symbol"         defStyleNum="dsOperator"/>
 			<itemData name="Preprocessor"   defStyleNum="dsPreprocessor"/>
 			<itemData name="Comment"        defStyleNum="dsComment"/>
-			<itemData name="Alert"          defStyleNum="dsAlert" />
 		</itemDatas>
 	</highlighting>
 	<general>
 		<comments>
 			<comment name="singleLine" start="//" />
-			<comment name="multiLine" start="/*" end="*/" />
+			<comment name="multiLine" start="/*" end="*/" region="Comment" />
 		</comments>
 		<keywords casesensitive="1" />
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

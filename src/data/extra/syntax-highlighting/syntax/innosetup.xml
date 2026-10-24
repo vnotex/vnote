@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+    <!ENTITY issDirective "[A-Za-z0-9]+\s*=">
+    <!ENTITY issParam "[A-Za-z0-9]+:">
+    <!ENTITY issConst "{[^{]*}">
+]>
+<language name="InnoSetup" section="Other" version="3" kateversion="5.0"
+          extensions="*.iss" author="Michael Hansen" license="MIT">
+  <highlighting>
+    <list name="flags">
+      <item>32bit</item>
+      <item>64bit</item>
+      <item>HKA</item>
+      <item>HKCC</item>
+      <item>HKCR</item>
+      <item>HKCU</item>
+      <item>HKLM</item>
+      <item>HKU</item>
+      <item>admins</item>
+      <item>allowunsafefiles</item>
+      <item>alwaysoverwrite</item>
+      <item>alwaysskipifsameorolder</item>
+      <item>authusers</item>
+      <item>binary</item>
+      <item>checkablealone</item>
+      <item>checkedonce</item>
+      <item>closeonexit</item>
+      <item>comparetimestamp</item>
+      <item>confirmoverwrite</item>
+      <item>createallsubdirs</item>
+      <item>createkeyifdoesntexist</item>
+      <item>createonlyiffileexists</item>
+      <item>createvalueifdoesntexist</item>
+      <item>creatorowner</item>
+      <item>deleteafterinstall</item>
+      <item>deletekey</item>
+      <item>deletevalue</item>
+      <item>dirifempty</item>
+      <item>disablenouninstallwarning</item>
+      <item>dontcloseonexit</item>
+      <item>dontcopy</item>
+      <item>dontcreatekey</item>
+      <item>dontinheritcheck</item>
+      <item>dontverifychecksum</item>
+      <item>dword</item>
+      <item>everyone</item>
+      <item>excludefromshowinnewinstall</item>
+      <item>exclusive</item>
+      <item>external</item>
+      <item>expandsz</item>
+      <item>files</item>
+      <item>filesandordirs</item>
+      <item>fixed</item>
+      <item>foldershortcut</item>
+      <item>fontisnttruetype</item>
+      <item>full</item>
+      <item>gacinstall</item>
+      <item>guests</item>
+      <item>hidden</item>
+      <item>hidewizard</item>
+      <item>ignoreversion</item>
+      <item>iscustom</item>
+      <item>isreadme</item>
+      <item>modify</item>
+      <item>networkservice</item>
+      <item>nocompression</item>
+      <item>noencryption</item>
+      <item>noerror</item>
+      <item>none</item>
+      <item>noregerror</item>
+      <item>normal</item>
+      <item>notcontentindexed</item>
+      <item>nowait</item>
+      <item>onlyifdestfileexists</item>
+      <item>onlyifdoesntexist</item>
+      <item>overwritereadonly</item>
+      <item>postinstall</item>
+      <item>preservestringtype</item>
+      <item>preventpinning</item>
+      <item>promptifolder</item>
+      <item>qword</item>
+      <item>readexec</item>
+      <item>readonly</item>
+      <item>recursesubdirs</item>
+      <item>regserver</item>
+      <item>regtypelib</item>
+      <item>replacesameversion</item>
+      <item>restart</item>
+      <item>restartreplace</item>
+      <item>runascurrentuser</item>
+      <item>runasoriginaluser</item>
+      <item>runhidden</item>
+      <item>runmaximized</item>
+      <item>runminimized</item>
+      <item>service</item>
+      <item>setnfscompression</item>
+      <item>sharedfile</item>
+      <item>shellexec</item>
+      <item>sign</item>
+      <item>signonce</item>
+      <item>skipifdoesntexist</item>
+      <item>skipifnotsilent</item>
+      <item>skipifsilent</item>
+      <item>skipifsourcedoesntexist</item>
+      <item>solidbreak</item>
+      <item>sortfilesbyextension</item>
+      <item>sortfilesbyname</item>
+      <item>string</item>
+      <item>system</item>
+      <item>touch</item>
+      <item>unchecked</item>
+      <item>uninsalwaysuninstall</item>
+      <item>uninsclearvalue</item>
+      <item>uninsdeleteentry</item>
+      <item>uninsdeletekey</item>
+      <item>uninsdeletekeyifempty</item>
+      <item>uninsdeletesection</item>
+      <item>uninsdeletesectionifempty</item>
+      <item>uninsdeletevalue</item>
+      <item>uninsneveruninstall</item>
+      <item>uninsnosharedfileprompt</item>
+      <item>uninsremovereadonly</item>
+      <item>uninsrestartdelete</item>
+      <item>unsetntfscompression</item>
+      <item>useapppaths</item>
+      <item>users</item>
+      <item>waituntilidle</item>
+      <item>waituntilterminated</item>
+    </list>
+
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <!-- Start out with no section-specific rules -->
+        <IncludeRules context="Section Rules"/>
+      </context>
+
+      <context name="Section Rules" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Comment" char=";" context="Comment" firstNonSpace="true"/>
+        <DetectChar attribute="Preprocessor" char="#" context="Preprocessor" firstNonSpace="true"/>
+        <StringDetect attribute="Section" String="[setup]" context="Setup Section" firstNonSpace="true"
+                      insensitive="true" beginRegion="Section" endRegion="Section"/>
+        <StringDetect attribute="Section" String="[langoptions]" context="Setup Section" firstNonSpace="true"
+                      insensitive="true" beginRegion="Section" endRegion="Section"/>
+        <StringDetect attribute="Section" String="[code]" context="Code Section" firstNonSpace="true"
+                      insensitive="true" beginRegion="Section" endRegion="Section"/>
+        <RangeDetect attribute="Section" char="[" char1="]" context="Other Section" firstNonSpace="true"
+                     beginRegion="Section" endRegion="Section"/>
+      </context>
+
+      <context name="Setup Section" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="Section Rules"/>
+        <RegExpr attribute="Parameter" String="&issDirective;" context="Value"/>
+      </context>
+
+      <context name="Code Section" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="Section Rules"/>
+        <IncludeRules context="##Pascal"/>
+      </context>
+
+      <context name="Other Section" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="Section Rules"/>
+        <RegExpr attribute="Parameter" String="&issParam;" context="PropValue"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier />
+      </context>
+
+      <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop">
+        <DetectChar attribute="String" char="&quot;" context="String"/>
+      </context>
+
+      <context name="PropValue" attribute="Value" lineEndContext="#pop">
+        <IncludeRules context="Value"/>
+        <DetectChar attribute="Operator" char=";" context="#pop"/>
+        <keyword attribute="Flag" String="flags" />
+      </context>
+
+      <context name="Value" attribute="Value" lineEndContext="#pop">
+        <DetectChar attribute="String" char="&quot;" context="String"/>
+        <Detect2Chars attribute="Escape" char="{" char1="{" context="#stay"/>
+        <RegExpr attribute="Constant" String="&issConst;" context="#stay"/>
+      </context>
+
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <Detect2Chars attribute="Escape" char="&quot;" char1="&quot;" context="#stay"/>
+        <Detect2Chars attribute="Escape" char="{" char1="{" context="#stay"/>
+        <DetectChar attribute="String" char="&quot;" context="#pop"/>
+        <RegExpr attribute="Constant" String="&issConst;" context="#stay"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Preprocessor" defStyleNum="dsPreprocessor" spellChecking="false"/>
+      <itemData name="Section" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Value" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Constant" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Parameter" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Flag" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Operator" defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Escape" defStyleNum="dsChar"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="singleLine" start=";"/>
+    </comments>
+  </general>
+</language>

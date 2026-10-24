@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="FreeBASIC" version="4" kateversion="5.0" section="Sources" extensions="*.bas;*.bi;*.BAS;*.BI" mimetype="text/x-freebasic" author="Chris Neugebauer (chrisjrn@gmail.com)" license="GPL">
+<!DOCTYPE language>
+<language name="FreeBASIC" version="6" kateversion="5.0" section="Sources" extensions="*.bas;*.bi;*.BAS;*.BI" mimetype="text/x-freebasic" author="Chris Neugebauer (chrisjrn@gmail.com)" license="GPL">
   <highlighting>
     <list name="preproc">
     
@@ -20,8 +20,6 @@
     </list>
     
     <list name="keywords">
-      <item>Declare</item>
-      
       <item>Open</item>
       
       <item>For</item>
@@ -109,7 +107,6 @@
       <item>ADC</item>
       <item>ADD</item>
       <item>ALLOCATE</item>
-      <item>AND</item>
       <item>AND</item>
       <item>ARPL</item>
       <item>ASC</item>
@@ -219,7 +216,6 @@
       <item>INSD</item>
       <item>INSTR</item>
       <item>INT</item>
-      <item>INT</item>
       <item>INTO</item>
       <item>INVD</item>
       <item>INVLPG</item>
@@ -282,7 +278,6 @@
       <item>LLDT</item>
       <item>LMSW</item>
       <item>LOC</item>
-      <item>LOCK</item>
       <item>LOCK</item>
       <item>LODS</item>
       <item>LODSB</item>
@@ -498,8 +493,7 @@
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
 
-        <RegExpr attribute="Keyword" context="#stay" String="\b(exit (function|sub|for|do|while|type|select))([\s]|$)" insensitive="true" />
-        <RegExpr attribute="Keyword" context="#stay" String="\b(declare (function|sub))([\s]|$)" insensitive="true" />
+        <RegExpr attribute="Keyword" context="#stay" String="\b(exit (function|sub|for|do|while|type|select)|declare (function|sub))([\s]|$)" insensitive="true" />
 
         <RegExpr attribute="Keyword" context="#stay" String="\b(while)([\s]|$)" insensitive="true" beginRegion="WhileRegion"/>
         <RegExpr attribute="Keyword" context="#stay" String="\b(wend)([\s]|$)" insensitive="true" endRegion="WhileRegion"/>
@@ -525,8 +519,7 @@
         <RegExpr attribute="Keyword" context="#stay" String="\b(end type)([\s]|$)" insensitive="true" endRegion="StructureRegion"/>
 
         <RegExpr attribute="Keyword" context="#stay" String="\b(if)([\s]|$)" insensitive="true" beginRegion="IfRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\b(then )[a-zA-Z_\x7f-\xff]." insensitive="true" endRegion="IfRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\b(end if)([\s]|$)" insensitive="true" endRegion="IfRegion"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(then )[a-zA-Z_\x7f-\xff].|\b(end if)([\s]|$)" insensitive="true" endRegion="IfRegion"/>
 
 
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
@@ -538,16 +531,15 @@
         <Float attribute="Number" context="#stay"/>
         <Int attribute="Number" context="#stay"/>
         <DetectChar attribute="String" context="String" char="&quot;" />
-        <RegExpr attribute="Region Marker" context="#stay" String="^\s*;+\s*BEGIN.*$" beginRegion="marker"/>
-        <RegExpr attribute="Region Marker" context="#stay" String="^\s*;+\s*END.*$" endRegion="marker"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="^\s*;+\s*BEGIN.*$" beginRegion="marker" column="0"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="^\s*;+\s*END.*$" endRegion="marker" column="0"/>
         <DetectChar attribute="Comment" context="Comment1" char="'"/>
       </context>
       <context attribute="String" lineEndContext="#pop" name="String">
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="Comment1">
-        <IncludeRules context="##Alerts" />
-        <IncludeRules context="##Modelines" />
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
     <itemDatas>

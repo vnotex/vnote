@@ -1,5 +1,69 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language>
+<!DOCTYPE language
+[
+	<!ENTITY digitPart "[0-9](?:_?[0-9])*">
+	<!ENTITY beforeDigit "(?&lt;![\.\w[:^ascii:]])">
+	<!ENTITY beforePointFloat "(?&lt;![\w[:^ascii:]])">
+
+	<!-- Python 2 style. Syntax:
+		1. start character '%'
+		2. [optional] Mapping key, e.g. '(foo)'
+		3. [optional] Conversion flags, one of '#0- +'
+		4. [optional] Minimum width, integer or '*'
+		5. [optional] Precision, '.' followed by integer or '*'
+		6. [optional] Length modifier, one of 'hlL'
+		7. conversion type, one of 'crsdiouxXeEfFgG%'
+		[Special cases: %prog and %default - see http://docs.python.org/library/optparse.html]
+	-->
+	<!ENTITY strsubstitution_py2 "&#37;(?:(?:\([a-zA-Z0-9_]+\))?[#0\- +]?(?:[1-9][0-9]*|\*)?(?:\.(?:[1-9][0-9]*|\*))?[hlL]?[crsdiouxXeEfFgG&#37;]|prog|default)">
+	<!--
+	(Based on 3.14)
+	http://docs.python.org/3/library/string.html#format-string-syntax:
+
+		replacement_field: "{" [field_name] ["!" conversion] [":" format_spec] "}"
+		field_name:        arg_name ("." attribute_name | "[" element_index "]")*
+		arg_name:          [identifier | digit+]
+		attribute_name:    identifier
+		element_index:     digit+ | index_string
+		index_string:      <any source character except "]"> +
+		conversion:        "r" | "s" | "a"
+		format_spec:       format-spec:format_spec
+
+	https://docs.python.org/3/library/string.html#format-specification-mini-language
+
+		format_spec:             [options][width_and_precision][type]
+		options:                 [[fill]align][sign]["z"]["#"]["0"]
+		fill:                    <any character>
+		align:                   "<" | ">" | "=" | "^"
+		sign:                    "+" | "-" | " "
+		width_and_precision:     [width_with_grouping][precision_with_grouping]
+		width_with_grouping:     [width][grouping]
+		precision_with_grouping: "." [precision][grouping]
+		width:                   digit+
+		precision:               digit+
+		grouping:                "," | "_"
+		type:                    "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g"
+		                       | "G" | "n" | "o" | "s" | "x" | "X" | "%"
+
+		Note: precision_with_grouping should be
+			"." precision [grouping] | "." grouping
+			https://github.com/python/cpython/issues/134449
+	-->
+	<!ENTITY format_spec "(?:![rsa])?(?::(?:[^}]?[&lt;&gt;=^])?[ +-]?z?#?0?[0-9]*[,_]?(?:\.[0-9]+[,_]?|\.[,_])?[bcdeEfFgGnosxX&#37;]?)?">
+	<!ENTITY strsubstitution_py3 "\{(?:(?:[a-zA-Z0-9_]+|[0-9]+)(?:\.[a-zA-Z0-9_]+|\[[^ \]]+\])*)?&format_spec;?\}">
+
+	<!ENTITY rawString "(?:ru|u?r|)(?:'(?:[^']++|\\')*+'|&quot;(?:[^&quot;]++|\\&quot;)*+&quot;)">
+	<!ENTITY formatString "(?:r?f|fr?)(?:'(?:[^'{]++|\\'|\{\{|\{[^}]++\})*+'|&quot;(?:[^&quot;]++|\\&quot;|\{\{|\{[^}]*+\})*+&quot;)">
+	<!ENTITY string "&rawString;|&formatString;">
+
+	<!ENTITY escapedHex "\\x[0-9A-Fa-f]{2}">
+	<!ENTITY escapedHexUni "&escapedHex;|\\u[0-9A-Fa-f]{4}|\\U[0-9A-Fa-f]{8}|\\N\{[a-zA-Z0-9\- ]+\}">
+
+	<!ENTITY fStringSimpleParam "(?:[\w(), ]*|'[^']*'|&quot;[^&quot;]*&quot;)*">
+	<!ENTITY fStringSimpleIdent "(?:[_[:alpha:]]\w*&format_spec;)">
+	<!ENTITY fStringSimple "(?:\{[-+]?(&fStringSimpleIdent;(\.&fStringSimpleIdent;?|\(&fStringSimpleParam;\)|\[&fStringSimpleParam;\]|[-+*/&#37;@|&amp;^ ])*+)?\})">
+	<!ENTITY regFStringRangeN "(?:&fStringSimple;|[0-9]+)">
+]>
 <!-- Python syntax highlightning v0.9 by Per Wigren -->
 <!-- Python syntax highlighting v1.9 by Michael Bueker (improved keyword differentiation) -->
 <!-- Python syntax highlighting v1.97 by Paul Giannaros -->
@@ -14,12 +78,19 @@
 <!-- v2.07 add support for %prog and co, see bug 142832 -->
 <!-- v2.08 add missing overloaders, new Python 3 statements, builtins, and keywords -->
 <!-- v2.29 recognize escape sequenzes correctly -->
-<language name="Python" version="9" style="python" indenter="python" kateversion="5.0" section="Scripts" extensions="*.py;*.pyw;SConstruct;SConscript" mimetype="application/x-python;text/x-python;text/x-python3" casesensitive="1" author="Michael Bueker" license="">
+<language name="Python" alternativeNames="Py" version="33" style="python" indenter="python" kateversion="5.0" section="Scripts" extensions="*.py;*.pyw;*.pyi;SConstruct;SConscript;*.FCMacro;*.sage" mimetype="application/x-python;text/x-python;text/x-python3" casesensitive="1" author="Michael Bueker" license="">
 	<highlighting>
 		<list name="import">
 			<item>import</item>
 			<item>from</item>
 			<item>as</item>
+			<!--
+				"lazy from" and "lazy import" are added here for autocompletion.
+				The actual handling is in context="kw_lazy"
+				so that we won't need to add space as a weakDeliminator.
+			-->
+			<item>lazy from</item> <!-- 3.15 -->
+			<item>lazy import</item> <!-- 3.15 -->
 		</list>
 		<list name="defs">
 			<item>class</item>
@@ -52,19 +123,34 @@
 			<item>try</item>
 			<item>while</item>
 			<item>with</item>
-			<item>yield</item>
 			<item>async</item>
 			<item>await</item>
 		</list>
+		<list name="flow_yield">
+			<item>yield</item>
+			<!--
+				"yield from" added here as a keyword for autocompletion. The actual handling
+				is in context="kw_yield" so that we won't need to add space as a weakDeliminator.
+			-->
+			<item>yield from</item>
+		</list>
+		<list name="patternmatching">
+			<item>match</item>
+			<item>case</item>
+		</list>
 		<list name="builtinfuncs">
+			<!-- https://docs.python.org/3.11/library/functions.html#built-in-funcs -->
 			<item>__import__</item>
 			<item>abs</item>
+			<item>aiter</item>
 			<item>all</item>
+			<item>anext</item>
 			<item>any</item>
 			<item>apply</item>
 			<item>ascii</item>
 			<item>basestring</item>
 			<item>bin</item>
+			<item>breakpoint</item>
 			<item>bool</item>
 			<item>buffer</item>
 			<item>bytearray</item>
@@ -88,6 +174,7 @@
 			<item>filter</item>
 			<item>float</item>
 			<item>format</item>
+			<item>frozendict</item>
 			<item>frozenset</item>
 			<item>getattr</item>
 			<item>globals</item>
@@ -148,16 +235,22 @@
 			<item>False</item>
 			<item>NotImplemented</item>
 			<item>Ellipsis</item>
+			<item>__all__</item>
+			<item>__class__</item>
 			<item>__debug__</item>
 			<item>__file__</item>
 			<item>__name__</item>
+			<item>__qualname__</item>
+			<item>__slots__</item>
 		</list>
+		<!-- Qt extension (PySide) -->
 		<list name="bindings">
 			<item>SIGNAL</item>
 			<item>SLOT</item>
 			<item>connect</item>
 		</list>
 		<list name="overloaders">
+			<!-- https://docs.python.org/3.10/reference/datamodel.html#special-method-names -->
 			<item>__new__</item>
 			<item>__init__</item>
 			<item>__del__</item>
@@ -172,6 +265,7 @@
 			<item>__cmp__</item>
 			<item>__rcmp__</item>
 			<item>__hash__</item>
+			<item>__bool__</item>
 			<item>__nonzero__</item>
 			<item>__unicode__</item>
 			<item>__getattr__</item>
@@ -183,9 +277,11 @@
 			<item>__delete__</item>
 			<item>__call__</item>
 			<item>__len__</item>
+			<item>__length_hint__</item>
 			<item>__getitem__</item>
 			<item>__setitem__</item>
 			<item>__delitem__</item>
+			<item>__missing__</item>
 			<item>__iter__</item>
 			<item>__reversed__</item>
 			<item>__contains__</item>
@@ -195,6 +291,7 @@
 			<item>__add__</item>
 			<item>__sub__</item>
 			<item>__mul__</item>
+			<item>__matmul__</item>
 			<item>__floordiv__</item>
 			<item>__mod__</item>
 			<item>__divmod__</item>
@@ -209,6 +306,7 @@
 			<item>__radd__</item>
 			<item>__rsub__</item>
 			<item>__rmul__</item>
+			<item>__rmatmul__</item>
 			<item>__rdiv__</item>
 			<item>__rtruediv__</item>
 			<item>__rfloordiv__</item>
@@ -223,6 +321,7 @@
 			<item>__iadd__</item>
 			<item>__isub__</item>
 			<item>__imul__</item>
+			<item>__imatmul__</item>
 			<item>__idiv__</item>
 			<item>__itruediv__</item>
 			<item>__ifloordiv__</item>
@@ -244,9 +343,16 @@
 			<item>__oct__</item>
 			<item>__hex__</item>
 			<item>__index__</item>
+			<item>__round__</item>
+			<item>__trunc__</item>
+			<item>__floor__</item>
+			<item>__ceil__</item>
 			<item>__coerce__</item>
 			<item>__enter__</item>
 			<item>__exit__</item>
+			<item>__match_args__</item>
+			<item>__buffer__</item>
+			<item>__release_buffer__</item>
 			<item>__bytes__</item>
 			<item>__format__</item>
 			<item>__next__</item>
@@ -256,12 +362,19 @@
 			<item>__anext__</item>
 			<item>__aenter__</item>
 			<item>__aexit__</item>
+			<item>__slots__</item>
+			<item>__init_subclass__</item>
+			<item>__set_name__</item>
+			<item>__prepare__</item>
+			<item>__instancecheck__</item>
+			<item>__subclasscheck__</item>
+			<item>__class_getitem__</item>
 		</list>
 		<list name="exceptions">
 			<!--
 				Exceptions list resources used:
 				- http://docs.python.org/2.7/library/exceptions.html#exception-hierarchy
-				- http://docs.python.org/3.4/library/exceptions.html#exception-hierarchy
+				- http://docs.python.org/3.10/library/exceptions.html#exception-hierarchy
 			-->
 			<item>ArithmeticError</item>
 			<item>AssertionError</item>
@@ -279,6 +392,7 @@
 			<item>DeprecationWarning</item>
 			<item>EnvironmentError</item>
 			<item>EOFError</item>
+			<item>EncodingWarning</item>
 			<item>Exception</item>
 			<item>FileExistsError</item>
 			<item>FileNotFoundError</item>
@@ -296,6 +410,7 @@
 			<item>KeyError</item>
 			<item>LookupError</item>
 			<item>MemoryError</item>
+			<item>ModuleNotFoundError</item>
 			<item>NameError</item>
 			<item>NotADirectoryError</item>
 			<item>NotImplementedError</item>
@@ -304,11 +419,13 @@
 			<item>PendingDeprecationWarning</item>
 			<item>PermissionError</item>
 			<item>ProcessLookupError</item>
+			<item>RecursionError</item>
 			<item>ReferenceError</item>
 			<item>ResourceWarning</item>
 			<item>RuntimeError</item>
 			<item>RuntimeWarning</item>
 			<item>StandardError</item>
+			<item>StopAsyncIteration</item>
 			<item>StopIteration</item>
 			<item>SyntaxError</item>
 			<item>SyntaxWarning</item>
@@ -331,92 +448,232 @@
 		</list>
 		<contexts>
 			<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
-				<keyword attribute="Import" String="import" context="#stay"/>
-				<keyword attribute="Definition Keyword" String="defs" context="#stay"/>
-				<keyword attribute="Operator Keyword" String="operators" context="#stay"/>
-				<keyword attribute="Flow Control Keyword" String="flow" context="#stay"/>
-				<keyword attribute="Builtin Function" String="builtinfuncs" context="#stay"/>
-				<keyword attribute="Special Variable" String="specialvars" context="#stay"/>
-				<keyword attribute="Extensions" String="bindings" context="#stay"/>
-				<keyword attribute="Exceptions" String="exceptions" context="#stay"/>
-				<keyword attribute="Overloaders" String="overloaders" context="#stay"/>
-				<RegExpr attribute="Normal Text" String="[a-zA-Z_][a-zA-Z_0-9]{2,}" context="#stay"/>
+				<DetectSpaces attribute="Normal Text"/>
 
-				<RegExpr attribute="Complex" String=" ((([0-9]*\.[0-9]+|[0-9]+\.)|([0-9]+|([0-9]*\.[0-9]+|[0-9]+\.))[eE](\+|-)?[0-9]+)|[0-9]+)[jJ]" context="#stay"/>
-				<Float attribute="Float" context="#stay" />
-				<HlCHex attribute="Hex" context="#stay"/>
-				<HlCOct attribute="Octal" context="#stay"/>
-				<Int attribute="Int" context="Int Suffixes"/>
-
-				<RegExpr attribute="Int" String=" ([0-9]+_)+[0-9]+" context="#stay"/>
-				<RegExpr attribute="Float" String=" ([0-9]+_)+[0-9]+\.[0-9]+" context="#stay"/>
-				<RegExpr attribute="Hex" String=" [0-9]x([A-F0-9]+_)+[A-F0-9]+" context="#stay"/>
-
-				<DetectChar attribute="Normal Text" char="{" context="Dictionary" beginRegion="Dictionary"/>
-				<DetectChar attribute="Normal Text" char="[" context="List" beginRegion="List"/>
 				<DetectChar attribute="Normal Text" char="(" context="Tuple" beginRegion="Tuple"/>
-
-				<IncludeRules context="CommentVariants" />
+				<DetectChar attribute="Normal Text" char="[" context="List" beginRegion="List"/>
+				<DetectChar attribute="Normal Text" char="{" context="Dictionary" beginRegion="Dictionary"/>
 
 				<DetectChar attribute="Comment" char="#" context="Hash comment"/>
 
+				<keyword attribute="Special Variable" String="specialvars" context="#stay"/>
+				<keyword attribute="Flow Control Keyword" String="flow" context="#stay"/>
+				<keyword attribute="Operator Keyword" String="operators" context="#stay"/>
+				<keyword attribute="Builtin Function" String="builtinfuncs" context="#stay"/>
+				<keyword attribute="Definition Keyword" String="defs" context="#stay"/>
+				<keyword attribute="Flow Control Keyword" String="flow_yield" context="kw_yield"/>
+				<keyword attribute="Flow Control Keyword" String="patternmatching" context="Pattern Matching" lookAhead="1" firstNonSpace="1"/>
+				<keyword attribute="Import" String="import" context="#stay"/>
+				<keyword attribute="Exceptions" String="exceptions" context="#stay"/>
+				<keyword attribute="Overloaders" String="overloaders" context="#stay"/>
+				<keyword attribute="Extensions" String="bindings" context="#stay"/>
+
+				<WordDetect String="lazy" context="kw_lazy" lookAhead="1"/>
+
+				<IncludeRules context="Number" />
+				<IncludeRules context="CommentVariants" />
 				<IncludeRules context="StringVariants" />
 
-				<RegExpr attribute="Decorator" String="@[_a-zA-Z][\._a-zA-Z0-9]*" firstNonSpace="true"/>
-				<AnyChar attribute="Operator" String="+*/%\|=;\!&lt;&gt;!^&amp;~-@" context="#stay"/>
-			</context>
+				<DetectIdentifier attribute="Normal Text"/>
 
-			<context name="Int Suffixes" attribute="Int" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-				<StringDetect attribute="Int" context="#pop" String="L" insensitive="true"/>
-			</context>
+				<RegExpr attribute="Decorator" String="@[_a-zA-Z[:^ascii:]][\._a-zA-Z0-9[:^ascii:]]*" firstNonSpace="true"/>
+				<Detect2Chars attribute="Operator" char=":" char1="=" context="#stay"/>
+				<AnyChar attribute="Operator" String="+*/%|=;&lt;&gt;!^&amp;~-@" context="#stay"/>
 
-			<context name="#CheckForString" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-				<DetectSpaces/>
-				<LineContinue attribute="Normal Text" context="CheckForStringNext"/>
-			</context>
+				<LineContinue attribute="Operator" context="MultiLineExpr"/>
 
-			<context name="CheckForStringNext" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-				<DetectSpaces/>
-				<LineContinue attribute="Normal Text" context="CheckForStringNext"/>
+				<Int attribute="Error"/>
+			</context>
+			<!-- a string at the beginning of lines is a comment, MultiLineExpr prevents this -->
+			<context name="MultiLineExpr" attribute="Normal Text" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+				<DetectSpaces attribute="Normal Text"/>
 				<IncludeRules context="StringVariants"/>
 			</context>
 
-			<context name="StringVariants" attribute="Normal Text" lineEndContext="#stay">
-				<DetectSpaces/>
-
-				<RegExpr attribute="String" String="u?'''"                insensitive="true" context="Triple A-string" beginRegion="Triple A-region"/>
-				<RegExpr attribute="String" String="u?&quot;&quot;&quot;" insensitive="true" context="Triple Q-string" beginRegion="Triple Q-region"/>
-				<RegExpr attribute="String" String="u?'"                  insensitive="true" context="Single A-string"/>
-				<RegExpr attribute="String" String="u?&quot;"             insensitive="true" context="Single Q-string"/>
-
-				<RegExpr attribute="Raw String" String="(u?r|ru)'''"                insensitive="true" context="Raw Triple A-string" beginRegion="Triple A-region"/>
-				<RegExpr attribute="Raw String" String="(u?r|ru)&quot;&quot;&quot;" insensitive="true" context="Raw Triple Q-string" beginRegion="Triple Q-region"/>
-				<RegExpr attribute="Raw String" String="(u?r|ru)'"                  insensitive="true" context="Raw A-string"/>
-				<RegExpr attribute="Raw String" String="(u?r|ru)&quot;"             insensitive="true" context="Raw Q-string"/>
-
-				<StringDetect attribute="F-String" String="f'''"                insensitive="true" context="Triple A-F-String" beginRegion="Triple A-region"/>
-				<StringDetect attribute="F-String" String="f&quot;&quot;&quot;" insensitive="true" context="Triple Q-F-String" beginRegion="Triple Q-region"/>
-				<StringDetect attribute="F-String" String="f'"                  insensitive="true" context="Single A-F-String"/>
-				<StringDetect attribute="F-String" String="f&quot;"             insensitive="true" context="Single Q-F-String"/>
-
-				<RegExpr attribute="Raw F-String" String="(fr|rf)'''"                insensitive="true" context="Raw Triple A-F-String" beginRegion="Triple A-region"/>
-				<RegExpr attribute="Raw F-String" String="(fr|rf)&quot;&quot;&quot;" insensitive="true" context="Raw Triple Q-F-String" beginRegion="Triple Q-region"/>
-				<RegExpr attribute="Raw F-String" String="(fr|rf)'"                  insensitive="true" context="Raw A-F-String"/>
-				<RegExpr attribute="Raw F-String" String="(fr|rf)&quot;"             insensitive="true" context="Raw Q-F-String"/>
+			<!-- https://docs.python.org/2/reference/lexical_analysis.html#integer-and-long-integer-literals -->
+			<!-- https://docs.python.org/3/reference/lexical_analysis.html#integer-literals -->
+			<context name="Number" attribute="Normal Text" lineEndContext="#pop">
+				<!-- fast path -->
+				<RegExpr String="&beforeDigit;[0-9]|&beforePointFloat;\.[0-9]" context="AssumeNumber" lookAhead="1"/>
+			</context>
+			<context name="AssumeNumber" attribute="Normal Text" lineEndContext="#pop">
+				<!-- Complex: 1j ; 1.1j ; 1.j ; .1j ; 1e3j ; 1.1e3j ; 1.e3j ; .1e3j -->
+				<RegExpr attribute="Complex" String="(?:&digitPart;(?:\.(?:&digitPart;)?)?|&beforePointFloat;\.&digitPart;)(?:[eE][\+\-]?&digitPart;)?[jJ]" context="CheckSuffixError"/>
+				<!-- Hexadecimal: 0xA1, Binary: 0b01, Octal: 0o71 -->
+				<RegExpr attribute="Hex" String="0[xX](?:_?[0-9a-fA-F])+" context="CheckSuffixError"/>
+				<RegExpr attribute="Binary" String="0[bB](?:_?[01])+" context="CheckSuffixError"/>
+				<RegExpr attribute="Octal" String="0[oO](?:_?[0-7])+" context="CheckSuffixError"/>
+				<!-- Float: 1.1 ; 1. ; .1 ; 1e3 ; 1.1e3 ; 1.e3 ; .1e3 -->
+				<RegExpr attribute="Float" String="(?:&digitPart;(?:\.(?:&digitPart;)?)?|\.&digitPart;)[eE][\+\-]?&digitPart;|&digitPart;\.(?:&digitPart;)?|\.&digitPart;" context="CheckSuffixError"/>
+				<!-- Decimal: 123 ; 000 -->
+				<!-- l and L are python2 suffixes -->
+				<RegExpr attribute="Int" String="(?:[1-9](?:_?[0-9])*|0(?:_?0)*)[lL]?" context="CheckSuffixError"/>
+			</context>
+			<context name="CheckSuffixError" attribute="Normal Text" lineEndContext="#pop#pop" fallthrough="1" fallthroughContext="#pop#pop">
+				<RegExpr attribute="Error" String="\w+" context="#pop#pop"/>
 			</context>
 
+			<!-- yield from expr
+			           ~~~~ Flow Control Keyword no Import
+			-->
+			<context name="kw_yield" attribute="Flow Control Keyword" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+				<DetectSpaces attribute="Normal Text" context="#stay"/>
+				<WordDetect attribute="Flow Control Keyword" context="#pop" String="from"/>
+			</context>
+
+			<!-- lazy from ... import ...
+			     ~~~~~~~~~ Import
+					 lazy import ...
+			     ~~~~~~~~~~~ Import
+					 lazy = 2
+			     ~~~~ Normal Text
+			-->
+			<context name="kw_lazy" attribute="Import" lineEndContext="#pop">
+				<RegExpr String="lazy\s+(import|from)\b" attribute="Import" context="#pop"/>
+				<DetectIdentifier attribute="Normal Text" context="#pop"/>
+			</context>
+
+			<context name="Pattern Matching" attribute="Flow Control Keyword" lineEndContext="#pop">
+				<!--
+					Python 3.10: https://docs.python.org/3.10/reference/compound_stmts.html#the-match-statement
+					( 'match' | 'case' ) expression ':'
+					exclude:
+					( 'match' | 'case' ) ( 'if' | 'for' | '.' | ':' | '=' | ',' | ']' | ')' ) ...
+				-->
+				<RegExpr attribute="Flow Control Keyword" String="\w++(?=\s+(?!(?:if|for)\b)[\w'&quot;~]|\s*+(?![.:=\]),]|(?:if|for)\b)((?:&string;|[^#;(){}]|\(\)|\((?1)\)|\{\}|\{(\s*+(?:(?:&string;|[a-zA-Z0-9.]++)\s*+:\s*+(?:&string;|[^#;(){},]|\(\)|\((?1)\)|\{\}|\{(?2)\})++,?)*+)\})+?):)|" context="#pop"/>
+				<DetectIdentifier attribute="Normal Text" context="#pop"/>
+			</context>
+
+			<!-- https://docs.python.org/2/reference/lexical_analysis.html#string-literals -->
+			<!-- https://docs.python.org/3/reference/lexical_analysis.html#string-and-bytes-literals -->
+			<context name="StringVariants" attribute="Normal Text" lineEndContext="#stay">
+				<!-- fast path -->
+				<RegExpr String="(?:u|r|b|f|t|ur|fr|rf|br|rb|tr|rt)?['&quot;]" insensitive="true" context="AssumeStringVariants" lookAhead="1"/>
+			</context>
+			<context name="AssumeStringVariants" attribute="Normal Text" lineEndContext="#stay">
+				<StringDetect attribute="String Deliminator" String="'''"                context="#pop!Triple A-string" beginRegion="Triple A-region"/>
+				<StringDetect attribute="String Deliminator" String="&quot;&quot;&quot;" context="#pop!Triple Q-string" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="String Deliminator" String="'"                  context="#pop!Single A-string"/>
+				<StringDetect attribute="String Deliminator" String="&quot;"             context="#pop!Single Q-string"/>
+
+				<StringDetect attribute="F-String Deliminator" String="f'''"                insensitive="true" context="#pop!Triple A-F-String" beginRegion="Triple A-region"/>
+				<StringDetect attribute="F-String Deliminator" String="f&quot;&quot;&quot;" insensitive="true" context="#pop!Triple Q-F-String" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="F-String Deliminator" String="f'"                  insensitive="true" context="#pop!Single A-F-String"/>
+				<StringDetect attribute="F-String Deliminator" String="f&quot;"             insensitive="true" context="#pop!Single Q-F-String"/>
+
+				<!-- lower r for regex -->
+				<StringDetect attribute="Raw String Deliminator" String="r'''"                context="#pop!Raw Triple A-Regex" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw String Deliminator" String="r&quot;&quot;&quot;" context="#pop!Raw Triple Q-Regex" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw String Deliminator" String="r'"                  context="#pop!Raw A-Regex"/>
+				<StringDetect attribute="Raw String Deliminator" String="r&quot;"             context="#pop!Raw Q-Regex"/>
+
+				<!-- upper r for string -->
+				<StringDetect attribute="Raw String Deliminator" String="R'''"                context="#pop!Raw Triple A-string" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw String Deliminator" String="R&quot;&quot;&quot;" context="#pop!Raw Triple Q-string" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw String Deliminator" String="R'"                  context="#pop!Raw A-string"/>
+				<StringDetect attribute="Raw String Deliminator" String="R&quot;"             context="#pop!Raw Q-string"/>
+
+				<StringDetect attribute="B-String Deliminator" String="b'''"                insensitive="true" context="#pop!Triple A-B-String" beginRegion="Triple A-region"/>
+				<StringDetect attribute="B-String Deliminator" String="b&quot;&quot;&quot;" insensitive="true" context="#pop!Triple Q-B-String" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="B-String Deliminator" String="b'"                  insensitive="true" context="#pop!Single A-B-String"/>
+				<StringDetect attribute="B-String Deliminator" String="b&quot;"             insensitive="true" context="#pop!Single Q-B-String"/>
+
+				<!-- lower r and f for regex -->
+				<StringDetect attribute="Raw F-String Deliminator" String="fr'''"                context="#pop!Raw Triple A-F-Regex" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="rf'''"                context="#pop!Raw Triple A-F-Regex" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="fr&quot;&quot;&quot;" context="#pop!Raw Triple Q-F-Regex" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="rf&quot;&quot;&quot;" context="#pop!Raw Triple Q-F-Regex" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="fr'"                  context="#pop!Raw A-F-Regex"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="rf'"                  context="#pop!Raw A-F-Regex"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="fr&quot;"             context="#pop!Raw Q-F-Regex"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="rf&quot;"             context="#pop!Raw Q-F-Regex"/>
+
+				<!-- upper r or f for string -->
+				<StringDetect attribute="Raw F-String Deliminator" String="fr'''"                insensitive="true" context="#pop!Raw Triple A-F-String" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="rf'''"                insensitive="true" context="#pop!Raw Triple A-F-String" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="fr&quot;&quot;&quot;" insensitive="true" context="#pop!Raw Triple Q-F-String" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="rf&quot;&quot;&quot;" insensitive="true" context="#pop!Raw Triple Q-F-String" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="fr'"                  insensitive="true" context="#pop!Raw A-F-String"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="rf'"                  insensitive="true" context="#pop!Raw A-F-String"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="fr&quot;"             insensitive="true" context="#pop!Raw Q-F-String"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="rf&quot;"             insensitive="true" context="#pop!Raw Q-F-String"/>
+
+				<!-- lower r and b for regex -->
+				<StringDetect attribute="Raw B-String Deliminator" String="br'''"                context="#pop!Raw Triple A-B-Regex" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="rb'''"                context="#pop!Raw Triple A-B-Regex" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="br&quot;&quot;&quot;" context="#pop!Raw Triple Q-B-Regex" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="rb&quot;&quot;&quot;" context="#pop!Raw Triple Q-B-Regex" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="br'"                  context="#pop!Raw A-B-Regex"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="rb'"                  context="#pop!Raw A-B-Regex"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="br&quot;"             context="#pop!Raw Q-B-Regex"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="rb&quot;"             context="#pop!Raw Q-B-Regex"/>
+
+				<!-- upper r or b for string -->
+				<StringDetect attribute="Raw B-String Deliminator" String="br'''"                insensitive="true" context="#pop!Raw Triple A-B-String" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="rb'''"                insensitive="true" context="#pop!Raw Triple A-B-String" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="br&quot;&quot;&quot;" insensitive="true" context="#pop!Raw Triple Q-B-String" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="rb&quot;&quot;&quot;" insensitive="true" context="#pop!Raw Triple Q-B-String" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="br'"                  insensitive="true" context="#pop!Raw A-B-String"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="rb'"                  insensitive="true" context="#pop!Raw A-B-String"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="br&quot;"             insensitive="true" context="#pop!Raw Q-B-String"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="rb&quot;"             insensitive="true" context="#pop!Raw Q-B-String"/>
+
+				<!-- Python 3.14 string template -->
+
+				<!-- t -->
+				<StringDetect attribute="T-String Deliminator" String="t'''"                insensitive="1" context="#pop!Triple A-T-String" beginRegion="Triple A-region"/>
+				<StringDetect attribute="T-String Deliminator" String="t&quot;&quot;&quot;" insensitive="1" context="#pop!Triple Q-T-String" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="T-String Deliminator" String="t'"                  insensitive="1" context="#pop!Single A-T-String"/>
+				<StringDetect attribute="T-String Deliminator" String="t&quot;"             insensitive="1" context="#pop!Single Q-T-String"/>
+
+				<!-- rt / tr -->
+				<StringDetect attribute="Raw T-String Deliminator" String="tr'''" insensitive="1"                context="#pop!Raw Triple A-T-String" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw T-String Deliminator" String="rt'''" insensitive="1"                context="#pop!Raw Triple A-T-String" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw T-String Deliminator" String="tr&quot;&quot;&quot;" insensitive="1" context="#pop!Raw Triple Q-T-String" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw T-String Deliminator" String="rt&quot;&quot;&quot;" insensitive="1" context="#pop!Raw Triple Q-T-String" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw T-String Deliminator" String="tr'" insensitive="1"                  context="#pop!Raw A-T-String"/>
+				<StringDetect attribute="Raw T-String Deliminator" String="rt'" insensitive="1"                  context="#pop!Raw A-T-String"/>
+				<StringDetect attribute="Raw T-String Deliminator" String="tr&quot;" insensitive="1"             context="#pop!Raw Q-T-String"/>
+				<StringDetect attribute="Raw T-String Deliminator" String="rt&quot;" insensitive="1"             context="#pop!Raw Q-T-String"/>
+
+				<!-- Python 2 compatibility (unicode prefix) -->
+
+				<StringDetect attribute="String Deliminator" String="u'''"                     insensitive="true" context="#pop!Triple A-string" beginRegion="Triple A-region"/>
+				<StringDetect attribute="String Deliminator" String="u&quot;&quot;&quot;"      insensitive="true" context="#pop!Triple Q-string" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="String Deliminator" String="u'"                       insensitive="true" context="#pop!Single A-string"/>
+				<StringDetect attribute="String Deliminator" String="u&quot;"                  insensitive="true" context="#pop!Single Q-string"/>
+
+				<StringDetect attribute="Raw String Deliminator" String="ur'''"                insensitive="true" context="#pop!Raw Triple A-string" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Raw String Deliminator" String="ur&quot;&quot;&quot;" insensitive="true" context="#pop!Raw Triple Q-string" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw String Deliminator" String="ur'"                  insensitive="true" context="#pop!Raw A-string"/>
+				<StringDetect attribute="Raw String Deliminator" String="ur&quot;"             insensitive="true" context="#pop!Raw Q-string"/>
+			</context>
+
+			<!-- https://docs.python.org/2/reference/lexical_analysis.html#string-literals -->
+			<!-- https://docs.python.org/3/reference/lexical_analysis.html#string-and-bytes-literals -->
 			<context name="CommentVariants" attribute="Normal Text" lineEndContext="#stay">
-				<DetectSpaces/>
+				<!-- fast path -->
+				<RegExpr String="(?:u|r|ur)?['&quot;]" insensitive="true" firstNonSpace="true" context="AssumeCommentVariants" lookAhead="1"/>
+			</context>
+			<context name="AssumeCommentVariants" attribute="Normal Text" lineEndContext="#stay">
+				<StringDetect attribute="Comment" String="'''"                 insensitive="true" context="#pop!Triple A-comment" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Comment" String="&quot;&quot;&quot;"  insensitive="true" context="#pop!Triple Q-comment" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Comment" String="'"                   insensitive="true" context="#pop!Single A-comment"/>
+				<StringDetect attribute="Comment" String="&quot;"              insensitive="true" context="#pop!Single Q-comment"/>
+				<StringDetect attribute="Comment" String="r'''"                insensitive="true" context="#pop!Triple A-comment" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Comment" String="r&quot;&quot;&quot;" insensitive="true" context="#pop!Triple Q-comment" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Comment" String="r'"                  insensitive="true" context="#pop!Single A-comment"/>
+				<StringDetect attribute="Comment" String="r&quot;"             insensitive="true" context="#pop!Single Q-comment"/>
 
-				<RegExpr attribute="Comment" String="u?'''"                insensitive="true" firstNonSpace="true" context="Triple A-comment" beginRegion="Triple A-region"/>
-				<RegExpr attribute="Comment" String="u?&quot;&quot;&quot;" insensitive="true" firstNonSpace="true" context="Triple Q-comment" beginRegion="Triple Q-region"/>
-				<RegExpr attribute="Comment" String="u?'"                  insensitive="true" firstNonSpace="true" context="Single A-comment"/>
-				<RegExpr attribute="Comment" String="u?&quot;"             insensitive="true" firstNonSpace="true" context="Single Q-comment"/>
-
-				<RegExpr attribute="Comment" String="(u?r|ru)'''"                insensitive="true" firstNonSpace="true" context="Triple A-comment" beginRegion="Triple A-region"/>
-				<RegExpr attribute="Comment" String="(u?r|ru)&quot;&quot;&quot;" insensitive="true" firstNonSpace="true" context="Triple Q-comment" beginRegion="Triple Q-region"/>
-				<RegExpr attribute="Comment" String="(u?r|ru)'"                  insensitive="true" firstNonSpace="true" context="Single A-comment"/>
-				<RegExpr attribute="Comment" String="(u?r|ru)&quot;"             insensitive="true" firstNonSpace="true" context="Single Q-comment"/>
+				<!-- Python 2 compatibility (unicode prefix) -->
+				<StringDetect attribute="Comment" String="u'''"                 insensitive="true" context="#pop!Triple A-comment" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Comment" String="u&quot;&quot;&quot;"  insensitive="true" context="#pop!Triple Q-comment" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Comment" String="u'"                   insensitive="true" context="#pop!Single A-comment"/>
+				<StringDetect attribute="Comment" String="u&quot;"              insensitive="true" context="#pop!Single Q-comment"/>
+				<StringDetect attribute="Comment" String="ur'''"                insensitive="true" context="#pop!Triple A-comment" beginRegion="Triple A-region"/>
+				<StringDetect attribute="Comment" String="ur&quot;&quot;&quot;" insensitive="true" context="#pop!Triple Q-comment" beginRegion="Triple Q-region"/>
+				<StringDetect attribute="Comment" String="ur'"                  insensitive="true" context="#pop!Single A-comment"/>
+				<StringDetect attribute="Comment" String="ur&quot;"             insensitive="true" context="#pop!Single Q-comment"/>
 			</context>
 
 			<context name="Dictionary" attribute="Normal Text" lineEndContext="#stay" noIndentationBasedFolding="true">
@@ -440,69 +697,57 @@
 				<IncludeRules context="Normal" />
 			</context>
 
+			<context name="UnfinishedStringError" attribute="Error" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<!-- A single string/comment reached the end of the line without a \ line escape -->
+				<!-- We set the following line (or part of it) to the "Error" attribute so that this error is easier to spot -->
+				<RegExpr attribute="Error" String="^(\s{4,}|[^[\]()&quot;']{4,}([&quot;'].*)?)" context="#pop" column="0"/>
+			</context>
+
 			<!-- Comments -->
 
 			<context name="Hash comment" attribute="Comment" lineEndContext="#pop">
-				<IncludeRules context="##Alerts" />
-				<IncludeRules context="##Modelines" />
+				<DetectSpaces />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier/>
 			</context>
 
 			<context name="Triple A-comment" attribute="Comment" lineEndContext="#stay" noIndentationBasedFolding="true">
-				<IncludeRules context="stringescape"/>
+				<DetectSpaces/>
 				<StringDetect attribute="Comment" String="'''" context="#pop" endRegion="Triple A-region"/>
-				<IncludeRules context="##Alerts" />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier/>
+				<IncludeRules context="stringescape"/>
 			</context>
 
 			<context name="Triple Q-comment" attribute="Comment" lineEndContext="#stay" noIndentationBasedFolding="true">
-				<IncludeRules context="stringescape"/>
+				<DetectSpaces/>
 				<StringDetect attribute="Comment" String="&quot;&quot;&quot;" context="#pop" endRegion="Triple Q-region"/>
-				<IncludeRules context="##Alerts" />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier/>
+				<IncludeRules context="stringescape"/>
 			</context>
 
-			<context name="Single A-comment" attribute="Comment" lineEndContext="#stay">
-				<IncludeRules context="stringescape"/>
+			<context name="Single A-comment" attribute="Comment" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces/>
 				<DetectChar attribute="Comment" char="'" context="#pop"/>
-				<IncludeRules context="##Alerts" />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier/>
+				<IncludeRules context="stringescape"/>
 			</context>
 
-			<context name="Single Q-comment" attribute="Comment" lineEndContext="#stay">
-				<IncludeRules context="stringescape"/>
+			<context name="Single Q-comment" attribute="Comment" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces/>
 				<DetectChar attribute="Comment" char="&quot;" context="#pop"/>
-				<IncludeRules context="##Alerts" />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier/>
+				<IncludeRules context="stringescape"/>
 			</context>
 
 			<!-- Strings -->
 
 			<!-- format characters -->
 			<context name="stringformat" attribute="String Substitution" lineEndContext="#stay">
-				<!-- Python 2 style. Syntax:
-				     1. start character '%'
-				     2. [optional] Mapping key, e.g. '(foo)'
-				     3. [optional] Conversion flags, one of '#0- +'
-				     4. [optional] Minimum width, integer or '*'
-				     5. [optional] Precision, '.' followed by integer or '*'
-				     6. [optional] Length modifier, one of 'hlL'
-				     7. conversion type, one of 'crsdiouxXeEfFgG%'
-				     [Special cases: %prog and %default - see http://docs.python.org/library/optparse.html]
-				-->
-				<RegExpr attribute="String Substitution" String="%((\([a-zA-Z0-9_]+\))?[#0\- +]?([1-9][0-9]*|\*)?(\.([1-9][0-9]*|\*))?[hlL]?[crsdiouxXeEfFgG%]|prog|default)" context="#stay"/>
-				<!-- http://docs.python.org/2/library/string.html#format-string-syntax:
-				     replacement_field ::=  "{" [field_name] ["!" conversion] [":" format_spec] "}"
-				     field_name        ::=  arg_name ("." attribute_name | "[" element_index "]")*
-				     arg_name          ::=  [identifier | integer]
-				     attribute_name    ::=  identifier
-				     element_index     ::=  integer | index_string
-				     index_string      ::=  <any source character except "]"> +
-				     conversion        ::=  "r" | "s"
-				     format_spec       ::=  [[fill]align][sign][#][0][width][,][.precision][type]
-				     fill              ::=  <any character>
-				     align             ::=  "<" | ">" | "=" | "^"
-				     sign              ::=  "+" | "-" | " "
-				     width             ::=  integer
-				     precision         ::=  integer
-				     type              ::=  "b" | "c" | "d" | "e" | "E" | "f" | "F" | "g" | "G" | "n" | "o" | "s" | "x" | "X" | "%"
-				-->
-				<RegExpr attribute="String Substitution" String="\{(([a-zA-Z0-9_]+|[0-9]+)(\.[a-zA-Z0-9_]+|\[[^ \]]+\])*)?(![rs])?(:([^}]?[&lt;&gt;=^])?[ +-]?#?0?[0-9]*(\.[0-9]+)?[bcdeEfFgGnosxX%]?)?\}" context="#stay"/>
+				<RegExpr attribute="String Substitution" String="&strsubstitution_py2;|&strsubstitution_py3;" context="#stay"/>
 				<Detect2Chars attribute="String Substitution" char="{" char1="{" context="#stay" />
 				<Detect2Chars attribute="String Substitution" char="}" char1="}" context="#stay" />
 			</context>
@@ -510,24 +755,37 @@
 			<!-- escape characters -->
 			<context name="stringescape" attribute="String Char" lineEndContext="#stay">
 				<!-- As this highlighting style is for both, Python 2 and 3,
+				we do not know if a normal string is “unicode” or not. So we -->
+				<DetectChar char="\" lookAhead="1" context="stringescape2"/>
+			</context>
+			<context name="stringescape2" attribute="String Char" lineEndContext="#pop">
+				<RegExpr attribute="String Char" String="\\[\\'&quot;abfnrtv]|\\[0-7]{1,3}|&escapedHexUni;" context="#pop"/>
+				<LineContinue attribute="Operator" context="#pop"/>
+				<RegExpr attribute="Error" String="." context="#pop"/>
+			</context>
+
+			<!-- escape characters -->
+			<context name="bytesescape" attribute="String Char" lineEndContext="#stay">
+				<!-- As this highlighting style is for both, Python 2 and 3,
 				we do not know if a normal string is “unicode” or not. So we
 				-->
-				<RegExpr attribute="String Char" String="\\[\\'&quot;abfnrtv]" context="#stay"/>
-				<RegExpr attribute="String Char" String="\\[0-7]{1,3}" context="#stay"/>
-				<RegExpr attribute="String Char" String="\\x[0-9A-Fa-f]{2}" context="#stay"/>
-				<RegExpr attribute="String Char" String="\\u[0-9A-Fa-f]{4}" context="#stay"/>
-				<RegExpr attribute="String Char" String="\\U[0-9A-Fa-f]{8}" context="#stay"/>
-				<RegExpr attribute="String Char" String="\\N\{[a-zA-Z0-9\- ]+\}" context="#stay"/>
+				<DetectChar char="\" lookAhead="1" context="bytesescape2"/>
+			</context>
+			<context name="bytesescape2" attribute="String Char" lineEndContext="#pop">
+				<RegExpr attribute="String Char" String="\\[\\'&quot;abfnrtv]|\\[0-7]{1,3}|&escapedHex;" context="#pop"/>
+				<LineContinue attribute="Operator" context="#pop"/>
+				<RegExpr attribute="Error" String="." context="#pop"/>
 			</context>
 
 			<!-- f-literals -->
 			<context name="stringinterpolation" attribute="F-String" lineEndContext="#stay">
 				<Detect2Chars attribute="String Char" char="{" char1="{" context="#stay"/>
 				<DetectChar attribute="String Substitution" char="{" context="String Interpolation"/>
+				<Detect2Chars attribute="String Char" char="}" char1="}" context="#stay"/>
+				<DetectChar attribute="Error" char="}" context="#stay"/>
 			</context>
 			<context name="String Interpolation" attribute="String Substitution" lineEndContext="#stay">
-				<DetectChar attribute="Error" char="\" context="#pop"/>
-				<RegExpr attribute="String Substitution" String="(![rs])?(:([^}]?[&lt;&gt;=^])?[ +-]?#?0?[0-9]*(\.[0-9]+)?[bcdeEfFgGnosxX%]?)?\}" context="#pop"/>
+				<RegExpr attribute="String Substitution" String="&format_spec;\}" context="#pop"/>
 				<IncludeRules context="Normal"/> <!-- TODO: create expression context instead -->
 			</context>
 
@@ -542,107 +800,1565 @@
 			Adding byte literals wouldn’t make the current 2⁴ into 2⁵ contexts, as there are no byte f-literals
 			-->
 
-
 			<!-- Triple-quoted A-strings -->
 			<context name="Triple A-string" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="String"/>
+				<DetectIdentifier attribute="String"/>
 				<IncludeRules context="stringescape"/>
 				<IncludeRules context="stringformat"/>
-				<StringDetect attribute="String" String="'''" context="#pop#CheckForString" endRegion="Triple A-region"/>
+				<StringDetect attribute="String Deliminator" String="'''" context="#pop" endRegion="Triple A-region"/>
 			</context>
 
 			<context name="Raw Triple A-string" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
-				<HlCStringChar attribute="Raw String" context="#stay"/>
+				<DetectSpaces attribute="Raw String"/>
+				<DetectIdentifier attribute="Raw String"/>
+				<Detect2Chars attribute="Raw String" char="\" char1="'"/>
+				<Detect2Chars attribute="Raw String" char="\" char1="\"/>
 				<IncludeRules context="stringformat"/>
-				<StringDetect attribute="Raw String" String="'''" context="#pop#CheckForString" endRegion="Triple A-region"/>
+				<StringDetect attribute="Raw String Deliminator" String="'''" context="#pop" endRegion="Triple A-region"/>
 			</context>
 
 			<context name="Triple A-F-String" attribute="F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="F-String"/>
+				<DetectIdentifier attribute="F-String"/>
 				<IncludeRules context="stringescape"/>
 				<IncludeRules context="stringinterpolation"/>
-				<StringDetect attribute="F-String" String="'''" context="#pop#CheckForString" endRegion="Triple A-region"/>
+				<StringDetect attribute="F-String Deliminator" String="'''" context="#pop" endRegion="Triple A-region"/>
 			</context>
 
 			<context name="Raw Triple A-F-String" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
-				<HlCStringChar attribute="Raw F-String" context="#stay"/>
+				<DetectSpaces attribute="Raw F-String"/>
+				<DetectIdentifier attribute="Raw F-String"/>
+				<Detect2Chars attribute="Raw F-String" char="\" char1="'"/>
+				<Detect2Chars attribute="Raw F-String" char="\" char1="\"/>
 				<IncludeRules context="stringinterpolation"/>
-				<StringDetect attribute="Raw F-String" String="'''" context="#pop#CheckForString" endRegion="Triple A-region"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="'''" context="#pop" endRegion="Triple A-region"/>
+			</context>
+
+			<context name="Triple A-T-String" attribute="T-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="T-String"/>
+				<DetectIdentifier attribute="T-String"/>
+				<IncludeRules context="stringescape"/>
+				<IncludeRules context="stringinterpolation"/>
+				<StringDetect attribute="T-String Deliminator" String="'''" context="#pop" endRegion="Triple A-region"/>
+			</context>
+
+			<context name="Raw Triple A-T-String" attribute="Raw T-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="Raw T-String"/>
+				<DetectIdentifier attribute="Raw T-String"/>
+				<Detect2Chars attribute="Raw T-String" char="\" char1="'"/>
+				<Detect2Chars attribute="Raw T-String" char="\" char1="\"/>
+				<IncludeRules context="stringinterpolation"/>
+				<StringDetect attribute="Raw T-String Deliminator" String="'''" context="#pop" endRegion="Triple A-region"/>
+			</context>
+
+			<context name="Triple A-B-String" attribute="B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<RegExpr attribute="B-String" String="([\x20-\x26\x28-\x5B\x5D-\x7E]++|'(?!''))++"/>
+				<IncludeRules context="bytesescape"/>
+				<StringDetect attribute="B-String Deliminator" String="'''" context="#pop" endRegion="Triple A-region"/>
+				<RegExpr attribute="Error" String="."/>
+			</context>
+
+			<context name="Raw Triple A-B-String" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<RegExpr attribute="Raw B-String" String="([\x20-\x26\x28-\x5B\x5D-\x7E]++|\\.?|'(?!''))++"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="'''" context="#pop" endRegion="Triple A-region"/>
+				<RegExpr attribute="Error" String="."/>
 			</context>
 
 			<!-- Triple-quoted Q-strings -->
 			<context name="Triple Q-string" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="String"/>
+				<DetectIdentifier attribute="String"/>
 				<IncludeRules context="stringescape"/>
 				<IncludeRules context="stringformat"/>
-				<StringDetect attribute="String" String="&quot;&quot;&quot;" context="#pop#CheckForString" endRegion="Triple Q-region"/>
+				<StringDetect attribute="String Deliminator" String="&quot;&quot;&quot;" context="#pop" endRegion="Triple Q-region"/>
 			</context>
 
 			<context name="Raw Triple Q-string" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
-				<HlCStringChar attribute="Raw String" context="#stay"/>
+				<DetectSpaces attribute="Raw String"/>
+				<DetectIdentifier attribute="Raw String"/>
+				<Detect2Chars attribute="Raw String" char="\" char1="&quot;"/>
+				<Detect2Chars attribute="Raw String" char="\" char1="\"/>
 				<IncludeRules context="stringformat"/>
-				<StringDetect attribute="Raw String" String="&quot;&quot;&quot;" context="#pop#CheckForString" endRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw String Deliminator" String="&quot;&quot;&quot;" context="#pop" endRegion="Triple Q-region"/>
 			</context>
 
 			<context name="Triple Q-F-String" attribute="F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="F-String"/>
+				<DetectIdentifier attribute="F-String"/>
 				<IncludeRules context="stringescape"/>
 				<IncludeRules context="stringinterpolation"/>
-				<StringDetect attribute="F-String" String="&quot;&quot;&quot;" context="#pop#CheckForString" endRegion="Triple Q-region"/>
+				<StringDetect attribute="F-String Deliminator" String="&quot;&quot;&quot;" context="#pop" endRegion="Triple Q-region"/>
 			</context>
 
 			<context name="Raw Triple Q-F-String" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
-				<HlCStringChar attribute="Raw F-String" context="#stay"/>
+				<DetectSpaces attribute="Raw F-String"/>
+				<DetectIdentifier attribute="Raw F-String"/>
+				<Detect2Chars attribute="Raw F-String" char="\" char1="&quot;"/>
+				<Detect2Chars attribute="Raw F-String" char="\" char1="\"/>
 				<IncludeRules context="stringinterpolation"/>
-				<StringDetect attribute="Raw F-String" String="&quot;&quot;&quot;" context="#pop#CheckForString" endRegion="Triple Q-region"/>
+				<StringDetect attribute="Raw F-String Deliminator" String="&quot;&quot;&quot;" context="#pop" endRegion="Triple Q-region"/>
+			</context>
+
+			<context name="Triple Q-T-String" attribute="T-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="T-String"/>
+				<DetectIdentifier attribute="T-String"/>
+				<IncludeRules context="stringescape"/>
+				<IncludeRules context="stringinterpolation"/>
+				<StringDetect attribute="T-String Deliminator" String="&quot;&quot;&quot;" context="#pop" endRegion="Triple Q-region"/>
+			</context>
+
+			<context name="Raw Triple Q-T-String" attribute="Raw T-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="Raw T-String"/>
+				<DetectIdentifier attribute="Raw T-String"/>
+				<Detect2Chars attribute="Raw T-String" char="\" char1="&quot;"/>
+				<Detect2Chars attribute="Raw T-String" char="\" char1="\"/>
+				<IncludeRules context="stringinterpolation"/>
+				<StringDetect attribute="Raw T-String Deliminator" String="&quot;&quot;&quot;" context="#pop" endRegion="Triple Q-region"/>
+			</context>
+
+			<context name="Triple Q-B-String" attribute="B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<RegExpr attribute="B-String" String="([\x20\x21\x23-\x5B\x5D-\x7E]++|&quot;(?!&quot;&quot;))++"/>
+				<IncludeRules context="bytesescape"/>
+				<StringDetect attribute="B-String Deliminator" String="&quot;&quot;&quot;" context="#pop" endRegion="Triple Q-region"/>
+				<RegExpr attribute="Error" String="."/>
+			</context>
+
+			<context name="Raw Triple Q-B-String" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<RegExpr attribute="Raw B-String" String="([\x20\x21\x23-\x5B\x5D-\x7E]++|\\.?|&quot;(?!&quot;&quot;))++"/>
+				<StringDetect attribute="Raw B-String Deliminator" String="&quot;&quot;&quot;" context="#pop" endRegion="Triple Q-region"/>
+				<RegExpr attribute="Error" String="."/>
 			</context>
 
 
 			<!-- Single-quoted A-strings -->
-			<context name="Single A-string" attribute="String" lineEndContext="#stay">
+			<context name="Single A-string" attribute="String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="String"/>
+				<DetectIdentifier attribute="String"/>
 				<IncludeRules context="stringescape"/>
 				<IncludeRules context="stringformat"/>
-				<DetectChar attribute="String" char="'" context="#pop#CheckForString"/>
+				<DetectChar attribute="String Deliminator" char="'" context="#pop"/>
 			</context>
 
-			<context name="Raw A-string" attribute="Raw String" lineEndContext="#stay">
-				<HlCStringChar attribute="Raw String" context="#stay"/>
+			<context name="Raw A-string" attribute="Raw String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="Raw String"/>
+				<DetectIdentifier attribute="Raw String"/>
+				<Detect2Chars attribute="Raw String" char="\" char1="'"/>
+				<Detect2Chars attribute="Raw String" char="\" char1="\"/>
 				<IncludeRules context="stringformat"/>
-				<DetectChar attribute="Raw String" char="'" context="#pop#CheckForString"/>
+				<DetectChar attribute="Raw String Deliminator" char="'" context="#pop"/>
+				<LineContinue attribute="Raw String" context="#stay"/>
 			</context>
 
-			<context name="Single A-F-String" attribute="F-String" lineEndContext="#stay">
+			<context name="Single A-F-String" attribute="F-String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="F-String"/>
+				<DetectIdentifier attribute="F-String"/>
 				<IncludeRules context="stringescape"/>
 				<IncludeRules context="stringinterpolation"/>
-				<DetectChar attribute="F-String" char="'" context="#pop#CheckForString"/>
+				<DetectChar attribute="F-String Deliminator" char="'" context="#pop"/>
 			</context>
 
-			<context name="Raw A-F-String" attribute="Raw F-String" lineEndContext="#stay">
-				<HlCStringChar attribute="Raw F-String" context="#stay"/>
+			<context name="Raw A-F-String" attribute="Raw F-String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="Raw F-String"/>
+				<DetectIdentifier attribute="Raw F-String"/>
+				<Detect2Chars attribute="Raw F-String" char="\" char1="'"/>
+				<Detect2Chars attribute="Raw F-String" char="\" char1="\"/>
 				<IncludeRules context="stringinterpolation"/>
-				<DetectChar attribute="Raw F-String" char="'" context="#pop#CheckForString"/>
+				<DetectChar attribute="Raw F-String Deliminator" char="'" context="#pop"/>
+				<LineContinue attribute="Raw F-String" context="#stay"/>
+			</context>
+
+			<context name="Single A-T-String" attribute="T-String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="T-String"/>
+				<DetectIdentifier attribute="T-String"/>
+				<IncludeRules context="stringescape"/>
+				<IncludeRules context="stringinterpolation"/>
+				<DetectChar attribute="T-String Deliminator" char="'" context="#pop"/>
+			</context>
+
+			<context name="Raw A-T-String" attribute="Raw T-String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="Raw T-String"/>
+				<DetectIdentifier attribute="Raw T-String"/>
+				<Detect2Chars attribute="Raw T-String" char="\" char1="'"/>
+				<Detect2Chars attribute="Raw T-String" char="\" char1="\"/>
+				<IncludeRules context="stringinterpolation"/>
+				<DetectChar attribute="Raw T-String Deliminator" char="'" context="#pop"/>
+				<LineContinue attribute="Raw T-String" context="#stay"/>
+			</context>
+
+			<context name="Single A-B-String" attribute="B-String" lineEndContext="#pop!UnfinishedStringError">
+				<RegExpr attribute="B-String" String="[\x20-\x26\x28-\x5B\x5D-\x7E]++"/>
+				<IncludeRules context="bytesescape"/>
+				<DetectChar attribute="B-String Deliminator" char="'" context="#pop"/>
+				<RegExpr attribute="Error" String="."/>
+			</context>
+
+			<context name="Raw A-B-String" attribute="Raw B-String" lineEndContext="#pop!UnfinishedStringError">
+				<RegExpr attribute="Raw B-String" String="([\x20-\x26\x28-\x5B\x5D-\x7E]++|\\.)++"/>
+				<DetectChar attribute="Raw B-String Deliminator" char="'" context="#pop"/>
+				<LineContinue attribute="Raw B-String" context="#stay"/>
+				<RegExpr attribute="Error" String="."/>
 			</context>
 
 			<!-- Single-quoted Q-strings -->
-			<context name="Single Q-string" attribute="String" lineEndContext="#stay">
+			<context name="Single Q-string" attribute="String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="String"/>
+				<DetectIdentifier attribute="String"/>
 				<IncludeRules context="stringescape"/>
 				<IncludeRules context="stringformat"/>
-				<DetectChar attribute="String" char="&quot;" context="#pop#CheckForString"/>
+				<DetectChar attribute="String Deliminator" char="&quot;" context="#pop"/>
 			</context>
 
-			<context name="Raw Q-string" attribute="Raw String" lineEndContext="#stay">
-				<HlCStringChar attribute="Raw String" context="#stay"/>
+			<context name="Raw Q-string" attribute="Raw String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="Raw String"/>
+				<DetectIdentifier attribute="Raw String"/>
+				<Detect2Chars attribute="Raw String" char="\" char1="&quot;"/>
+				<Detect2Chars attribute="Raw String" char="\" char1="\"/>
 				<IncludeRules context="stringformat"/>
-				<DetectChar attribute="Raw String" char="&quot;" context="#pop#CheckForString"/>
+				<DetectChar attribute="Raw String Deliminator" char="&quot;" context="#pop"/>
+				<LineContinue attribute="Raw String" context="#stay"/>
 			</context>
 
-			<context name="Single Q-F-String" attribute="F-String" lineEndContext="#stay">
+			<context name="Single Q-F-String" attribute="F-String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="F-String"/>
+				<DetectIdentifier attribute="F-String"/>
 				<IncludeRules context="stringescape"/>
 				<IncludeRules context="stringinterpolation"/>
-				<DetectChar attribute="F-String" char="&quot;" context="#pop#CheckForString"/>
+				<DetectChar attribute="F-String Deliminator" char="&quot;" context="#pop"/>
 			</context>
 
-			<context name="Raw Q-F-String" attribute="Raw F-String" lineEndContext="#stay">
-				<HlCStringChar attribute="Raw F-String" context="#stay"/>
+			<context name="Raw Q-F-String" attribute="Raw F-String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="Raw F-String"/>
+				<DetectIdentifier attribute="Raw F-String"/>
+				<Detect2Chars attribute="Raw F-String" char="\" char1="&quot;"/>
+				<Detect2Chars attribute="Raw F-String" char="\" char1="\"/>
 				<IncludeRules context="stringinterpolation"/>
-				<DetectChar attribute="Raw F-String" char="&quot;" context="#pop#CheckForString"/>
+				<DetectChar attribute="Raw F-String Deliminator" char="&quot;" context="#pop"/>
+				<LineContinue attribute="Raw F-String" context="#stay"/>
 			</context>
+
+			<context name="Single Q-T-String" attribute="T-String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="T-String"/>
+				<DetectIdentifier attribute="T-String"/>
+				<IncludeRules context="stringescape"/>
+				<IncludeRules context="stringinterpolation"/>
+				<DetectChar attribute="T-String Deliminator" char="&quot;" context="#pop"/>
+			</context>
+
+			<context name="Raw Q-T-String" attribute="Raw T-String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="Raw T-String"/>
+				<DetectIdentifier attribute="Raw T-String"/>
+				<Detect2Chars attribute="Raw T-String" char="\" char1="&quot;"/>
+				<Detect2Chars attribute="Raw T-String" char="\" char1="\"/>
+				<IncludeRules context="stringinterpolation"/>
+				<DetectChar attribute="Raw T-String Deliminator" char="&quot;" context="#pop"/>
+				<LineContinue attribute="Raw T-String" context="#stay"/>
+			</context>
+
+			<context name="Single Q-B-String" attribute="B-String" lineEndContext="#pop!UnfinishedStringError">
+				<RegExpr attribute="B-String" String="[\x20\x21\x23-\x5B\x5D-\x7E]++"/>
+				<IncludeRules context="bytesescape"/>
+				<DetectChar attribute="B-String Deliminator" char="&quot;" context="#pop"/>
+				<RegExpr attribute="Error" String="."/>
+			</context>
+
+			<context name="Raw Q-B-String" attribute="Raw B-String" lineEndContext="#pop!UnfinishedStringError">
+				<RegExpr attribute="Raw B-String" String="([\x20\x21\x23-\x5B\x5D-\x7E]++|\\.)++"/>
+				<DetectChar attribute="Raw B-String Deliminator" char="&quot;" context="#pop"/>
+				<LineContinue attribute="Raw B-String" context="#stay"/>
+				<RegExpr attribute="Error" String="."/>
+			</context>
+
+			<!-- Regex -->
+
+			<!--
+
+			doctest: NOTE|XXX|HACK|FIXME|BUG|TODO
+			que dit la doc ?
+
+			-->
+
+			<!-- Regex r'...' -->
+
+			<context name="Raw A-Regex" attribute="Raw String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="Raw String"/>
+				<DetectIdentifier attribute="Raw String"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw A-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw A-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw A-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw A-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw A-Regex Capture"/>
+				<StringDetect String="'" attribute="Raw String Deliminator" context="#pop"/>
+				<IncludeRules context="RegexStringCommon"/>
+			</context>
+
+			<context name="Raw A-Regex Parent" attribute="Regex Set" lineEndContext="#pop">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw A-Regex NonCapture"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw A-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw A-Regex ParentComment"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw A-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01])*(-[imsxafLuw]+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw A-Regex ParentOptions"/>
+				<IncludeRules context="RegexParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw A-Regex ParentError"/>
+			</context>
+
+			<context name="Raw A-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw A-Regex Parenthesis"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw A-Regex ParentCond"/>
+			</context>
+			<context name="Raw A-Regex ParentCond" attribute="Raw String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw A-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw A-Regex Parenthesis"/>
+				<RegExpr String="\b[_[:alpha:]]\w+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw A-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw A-Regex ParentError" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw A-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw A-Regex NamedCapture" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([_[:alpha:]]\w*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw A-Regex Capture"/>
+			</context>
+
+			<context name="Raw A-Regex LookaroundInCond" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw A-Regex Parenthesis"/>
+				<IncludeRules context="Raw A-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-Regex Parenthesis" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop"/>
+				<IncludeRules context="Raw A-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-Regex Capture" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop"/>
+				<IncludeRules context="Raw A-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-Regex NonCapture" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop"/>
+				<IncludeRules context="Raw A-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-Regex ParentInside" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="'" lookAhead="1" context="#pop"/>
+				<IncludeRules context="Raw A-Regex"/>
+			</context>
+
+			<context name="Raw A-Regex ParentComment" attribute="Comment" lineEndContext="#pop">
+				<IncludeRules context="RegexCommentCommon"/>
+				<StringDetect String="'" lookAhead="1" context="#pop#pop"/>
+			</context>
+
+			<context name="Raw A-Regex Set" attribute="Regex Set" lineEndContext="#pop">
+				<IncludeRules context="RegexSetCommon"/>
+				<StringDetect String="'" lookAhead="1" context="#pop"/>
+			</context>
+
+
+			<!-- Regex r"..." -->
+
+			<context name="Raw Q-Regex" attribute="Raw String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="Raw String"/>
+				<DetectIdentifier attribute="Raw String"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw Q-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw Q-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw Q-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw Q-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw Q-Regex Capture"/>
+				<StringDetect String="&quot;" attribute="Raw String Deliminator" context="#pop"/>
+				<IncludeRules context="RegexStringCommon"/>
+			</context>
+
+			<context name="Raw Q-Regex Parent" attribute="Regex Set" lineEndContext="#pop">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw Q-Regex NonCapture"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw Q-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw Q-Regex ParentComment"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw Q-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01])*(-[imsxafLuw]+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw Q-Regex ParentOptions"/>
+				<IncludeRules context="RegexParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw Q-Regex ParentError"/>
+			</context>
+
+			<context name="Raw Q-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Q-Regex Parenthesis"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw Q-Regex ParentCond"/>
+			</context>
+			<context name="Raw Q-Regex ParentCond" attribute="Raw String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw Q-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Q-Regex Parenthesis"/>
+				<RegExpr String="\b[_[:alpha:]]\w+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: lookaround in conditional pattern: (?(?!...)a|b) etc -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Q-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw Q-Regex ParentError" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw Q-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw Q-Regex NamedCapture" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([_[:alpha:]]\w*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Q-Regex Capture"/>
+			</context>
+
+			<context name="Raw Q-Regex LookaroundInCond" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw Q-Regex Parenthesis"/>
+				<IncludeRules context="Raw Q-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-Regex Parenthesis" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop"/>
+				<IncludeRules context="Raw Q-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-Regex Capture" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop"/>
+				<IncludeRules context="Raw Q-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-Regex NonCapture" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop"/>
+				<IncludeRules context="Raw Q-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-Regex ParentInside" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="&quot;" lookAhead="1" context="#pop"/>
+				<IncludeRules context="Raw Q-Regex"/>
+			</context>
+
+			<context name="Raw Q-Regex ParentComment" attribute="Comment" lineEndContext="#pop">
+				<IncludeRules context="RegexCommentCommon"/>
+				<StringDetect String="&quot;" lookAhead="1" context="#pop#pop"/>
+			</context>
+
+			<context name="Raw Q-Regex Set" attribute="Regex Set" lineEndContext="#pop">
+				<IncludeRules context="RegexSetCommon"/>
+				<StringDetect String="&quot;" lookAhead="1" context="#pop"/>
+			</context>
+
+
+			<!-- Regex r'''...''' -->
+
+			<context name="Raw Triple A-Regex" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="Raw String"/>
+				<DetectIdentifier attribute="Raw String"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw Triple A-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw Triple A-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw Triple A-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw Triple A-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw Triple A-Regex Capture" beginRegion="RegParent"/>
+				<StringDetect String="#" attribute="Comment" context="Raw Triple A-Regex Comment"/>
+				<StringDetect String="'''" attribute="Raw String Deliminator" context="#pop" endRegion="Triple A-region"/>
+				<IncludeRules context="RegexStringCommon"/>
+			</context>
+
+			<context name="Raw Triple A-Regex Comment" attribute="Comment" lineEndContext="#pop">
+				<StringDetect String="'''" lookAhead="1" context="#pop"/>
+				<LineContinue attribute="Operator"/>
+				<RegExpr String="([^'\\]++|\\.|'(?!''))++" attribute="Comment"/>
+			</context>
+
+			<context name="Raw Triple A-Regex Parent" attribute="Regex Set" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw Triple A-Regex NonCapture" beginRegion="RegParent"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw Triple A-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw Triple A-Regex ParentComment" beginRegion="RegParent"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw Triple A-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01])*(-[imsxafLuw]+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw Triple A-Regex ParentOptions" beginRegion="RegParent"/>
+				<IncludeRules context="RegexParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw Triple A-Regex ParentError" beginRegion="RegParent"/>
+			</context>
+
+			<context name="Raw Triple A-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#stay" noIndentationBasedFolding="true">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple A-Regex Parenthesis"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw Triple A-Regex ParentCond" beginRegion="RegParent"/>
+			</context>
+			<context name="Raw Triple A-Regex ParentCond" attribute="Raw String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw Triple A-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple A-Regex Parenthesis" endRegion="RegParent"/>
+				<RegExpr String="\b[_[:alpha:]]\w+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple A-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw Triple A-Regex ParentError" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw Triple A-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw Triple A-Regex NamedCapture" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing" beginRegion="RegParent"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([_[:alpha:]]\w*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple A-Regex Capture"/>
+			</context>
+
+			<context name="Raw Triple A-Regex LookaroundInCond" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw Triple A-Regex Parenthesis" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-Regex Parenthesis" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-Regex Capture" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-Regex NonCapture" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-Regex ParentInside" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String="'''" lookAhead="1" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-Regex"/>
+			</context>
+
+			<context name="Raw Triple A-Regex ParentComment" attribute="Comment" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="RegexTripleCommentCommon"/>
+				<StringDetect String="'''" lookAhead="1" context="#pop#pop" endRegion="RegParent"/>
+			</context>
+
+			<context name="Raw Triple A-Regex Set" attribute="Regex Set" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="RegexSetCommon"/>
+				<StringDetect String="'''" lookAhead="1" context="#pop"/>
+			</context>
+
+
+			<!-- Regex r"""...""" -->
+
+			<context name="Raw Triple Q-Regex" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="Raw String"/>
+				<DetectIdentifier attribute="Raw String"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw Triple Q-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw Triple Q-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw Triple Q-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw Triple Q-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw Triple Q-Regex Capture" beginRegion="RegParent"/>
+				<StringDetect String="#" attribute="Comment" context="Raw Triple Q-Regex Comment"/>
+				<StringDetect String="&quot;&quot;&quot;" attribute="Raw String Deliminator" context="#pop" endRegion="Triple Q-region"/>
+				<IncludeRules context="RegexStringCommon"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex Comment" attribute="Comment" lineEndContext="#pop">
+				<StringDetect String="&quot;&quot;&quot;" lookAhead="1" context="#pop"/>
+				<LineContinue attribute="Operator"/>
+				<RegExpr String="([^&quot;\\]++|\\.|&quot;(?!&quot;&quot;))++" attribute="Comment"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex Parent" attribute="Regex Set" lineEndContext="#pop">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw Triple Q-Regex NonCapture" beginRegion="RegParent"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw Triple Q-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw Triple Q-Regex ParentComment" beginRegion="RegParent"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw Triple Q-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01])*(-[imsxafLuw]+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw Triple Q-Regex ParentOptions" beginRegion="RegParent"/>
+				<IncludeRules context="RegexParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw Triple Q-Regex ParentError" beginRegion="RegParent"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple Q-Regex Parenthesis"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw Triple Q-Regex ParentCond" beginRegion="RegParent"/>
+			</context>
+			<context name="Raw Triple Q-Regex ParentCond" attribute="Raw String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw Triple Q-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple Q-Regex Parenthesis" endRegion="RegParent"/>
+				<RegExpr String="\b[_[:alpha:]]\w+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple Q-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex ParentError" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw Triple Q-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex NamedCapture" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing" beginRegion="RegParent"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([_[:alpha:]]\w*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple Q-Regex Capture"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex LookaroundInCond" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw Triple Q-Regex Parenthesis" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex Parenthesis" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex Capture" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex NonCapture" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex ParentInside" attribute="Raw String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String="&quot;&quot;&quot;" lookAhead="1" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-Regex"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex ParentComment" attribute="Comment" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="RegexTripleCommentCommon"/>
+				<StringDetect String="&quot;&quot;&quot;" lookAhead="1" context="#pop#pop" endRegion="RegParent"/>
+			</context>
+
+			<context name="Raw Triple Q-Regex Set" attribute="Regex Set" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="RegexSetCommon"/>
+				<StringDetect String="&quot;&quot;&quot;" lookAhead="1" context="#pop"/>
+			</context>
+
+
+			<!-- Regex rb'...' -->
+
+			<context name="Raw A-B-Regex" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<RegExpr attribute="Raw B-String" String="[ -#%&amp;,\-/->@-Z\]_-z~]++"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw A-B-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw A-B-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw A-B-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw A-B-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw A-B-Regex Capture"/>
+				<StringDetect String="'" attribute="Raw B-String Deliminator" context="#pop"/>
+				<IncludeRules context="RegexBStringCommon"/>
+			</context>
+
+			<context name="Raw A-B-Regex Parent" attribute="Regex Set" lineEndContext="#pop">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw A-B-Regex NonCapture"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw A-B-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw A-Regex ParentComment"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw A-B-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01])*(-[imsxafLuw]+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw A-B-Regex ParentOptions"/>
+				<IncludeRules context="RegexParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw A-B-Regex ParentError"/>
+			</context>
+
+			<context name="Raw A-B-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw A-B-Regex Parenthesis"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw A-B-Regex ParentCond"/>
+			</context>
+			<context name="Raw A-B-Regex ParentCond" attribute="Raw B-String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw A-B-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw A-B-Regex Parenthesis"/>
+				<RegExpr String="\b[_a-zA-Z][_a-zA-Z0-9]+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw A-B-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw A-B-Regex ParentError" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw A-B-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw A-B-Regex NamedCapture" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([__a-zA-Z][_a-zA-Z0-9]*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw A-B-Regex Capture"/>
+			</context>
+
+			<context name="Raw A-B-Regex LookaroundInCond" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw A-B-Regex Parenthesis"/>
+				<IncludeRules context="Raw A-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-B-Regex Parenthesis" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop"/>
+				<IncludeRules context="Raw A-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-B-Regex Capture" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop"/>
+				<IncludeRules context="Raw A-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-B-Regex NonCapture" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop"/>
+				<IncludeRules context="Raw A-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-B-Regex ParentInside" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="'" lookAhead="1" context="#pop"/>
+				<IncludeRules context="Raw A-B-Regex"/>
+			</context>
+
+			<context name="Raw A-B-Regex Set" attribute="Regex Set" lineEndContext="#pop">
+				<RegExpr attribute="Regex Set" String="[ -&amp;(-Z^-~]++"/>
+				<IncludeRules context="RegexBStringSetCommon"/>
+				<StringDetect String="'" lookAhead="1" context="#pop"/>
+				<RegExpr attribute="Error" String="."/>
+			</context>
+
+
+			<!-- Regex rb"..." -->
+
+			<context name="Raw Q-B-Regex" attribute="Raw B-String" lineEndContext="#pop!UnfinishedStringError">
+				<RegExpr attribute="Raw B-String" String="[ !#%-',\-/->@-Z\]_-z~]++"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw Q-B-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw Q-B-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw Q-B-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw Q-B-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw Q-B-Regex Capture"/>
+				<StringDetect String="&quot;" attribute="Raw B-String Deliminator" context="#pop"/>
+				<IncludeRules context="RegexBStringCommon"/>
+			</context>
+
+			<context name="Raw Q-B-Regex Parent" attribute="Regex Set" lineEndContext="#pop">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw Q-B-Regex NonCapture"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw Q-B-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw Q-Regex ParentComment"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw Q-B-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01])*(-[imsxafLuw]+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw Q-B-Regex ParentOptions"/>
+				<IncludeRules context="RegexParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw Q-B-Regex ParentError"/>
+			</context>
+
+			<context name="Raw Q-B-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Q-B-Regex Parenthesis"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw Q-B-Regex ParentCond"/>
+			</context>
+			<context name="Raw Q-B-Regex ParentCond" attribute="Raw B-String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw Q-B-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Q-B-Regex Parenthesis"/>
+				<RegExpr String="\b[_a-zA-Z][_a-zA-Z0-9]+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Q-B-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw Q-B-Regex ParentError" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw Q-B-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw Q-B-Regex NamedCapture" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([__a-zA-Z][_a-zA-Z0-9]*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Q-B-Regex Capture"/>
+			</context>
+
+			<context name="Raw Q-B-Regex LookaroundInCond" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw Q-B-Regex Parenthesis"/>
+				<IncludeRules context="Raw Q-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-B-Regex Parenthesis" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop"/>
+				<IncludeRules context="Raw Q-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-B-Regex Capture" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop"/>
+				<IncludeRules context="Raw Q-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-B-Regex NonCapture" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop"/>
+				<IncludeRules context="Raw Q-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-B-Regex ParentInside" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="&quot;" lookAhead="1" context="#pop"/>
+				<IncludeRules context="Raw Q-B-Regex"/>
+			</context>
+
+			<context name="Raw Q-B-Regex Set" attribute="Regex Set" lineEndContext="#pop">
+				<RegExpr attribute="Regex Set" String="[ !#-Z^-~]++"/>
+				<IncludeRules context="RegexBStringSetCommon"/>
+				<StringDetect String="&quot;" lookAhead="1" context="#pop"/>
+				<RegExpr attribute="Error" String="."/>
+			</context>
+
+
+			<!-- Regex rb'''...''' -->
+
+			<context name="Raw Triple A-B-Regex" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<RegExpr attribute="Raw B-String" String="([ !&quot;%&amp;,\-/->@-Z\]_-z~]++|'(?!''))++"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw Triple A-B-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw Triple A-B-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw Triple A-B-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw Triple A-B-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw Triple A-B-Regex Capture" beginRegion="RegParent"/>
+				<StringDetect String="#" attribute="Comment" context="Raw Triple A-B-Regex Comment"/>
+				<StringDetect String="'''" attribute="Raw B-String Deliminator" context="#pop" endRegion="Triple A-region"/>
+				<IncludeRules context="RegexBStringCommon"/>
+			</context>
+
+			<context name="Raw Triple A-B-Regex Comment" attribute="Comment" lineEndContext="#pop">
+				<StringDetect String="'''" lookAhead="1" context="#pop"/>
+				<LineContinue attribute="Operator"/>
+				<RegExpr String="([ -&amp;(-\[\]-~]++|\\.|'(?!''))++" attribute="Comment"/>
+			</context>
+
+			<context name="Raw Triple A-B-Regex Parent" attribute="Regex Set" lineEndContext="#pop">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw Triple A-B-Regex NonCapture" beginRegion="RegParent"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw Triple A-B-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw Triple A-Regex ParentComment" beginRegion="RegParent"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw Triple A-B-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01])*(-[imsxafLuw]+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw Triple A-B-Regex ParentOptions" beginRegion="RegParent"/>
+				<IncludeRules context="RegexParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw Triple A-B-Regex ParentError" beginRegion="RegParent"/>
+			</context>
+
+			<context name="Raw Triple A-B-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple A-B-Regex Parenthesis"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw Triple A-B-Regex ParentCond" beginRegion="RegParent"/>
+			</context>
+			<context name="Raw Triple A-B-Regex ParentCond" attribute="Raw B-String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw Triple A-B-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple A-B-Regex Parenthesis" endRegion="RegParent"/>
+				<RegExpr String="\b[_a-zA-Z][_a-zA-Z0-9]+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple A-B-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw Triple A-B-Regex ParentError" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw Triple A-B-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw Triple A-B-Regex NamedCapture" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing" beginRegion="RegParent"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([__a-zA-Z][_a-zA-Z0-9]*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple A-B-Regex Capture"/>
+			</context>
+
+			<context name="Raw Triple A-B-Regex LookaroundInCond" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw Triple A-B-Regex Parenthesis" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-B-Regex Parenthesis" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-B-Regex Capture" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-B-Regex NonCapture" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-B-Regex ParentInside" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String="'''" lookAhead="1" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-B-Regex"/>
+			</context>
+
+			<context name="Raw Triple A-B-Regex Set" attribute="Regex Set" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<RegExpr attribute="Regex Set" String="([ -&amp;(-Z^-~]++|'(?!''))++"/>
+				<IncludeRules context="RegexBStringSetCommon"/>
+				<StringDetect String="'''" lookAhead="1" context="#pop"/>
+				<RegExpr attribute="Error" String="."/>
+			</context>
+
+
+			<!-- Regex rb"""...""" -->
+
+			<context name="Raw Triple Q-B-Regex" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<RegExpr attribute="Raw B-String" String="([ !%-',\-/->@-Z\]_-z~]++|&quot;(?!&quot;&quot;))++"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw Triple Q-B-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw Triple Q-B-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw Triple Q-B-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw Triple Q-B-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw Triple Q-B-Regex Capture" beginRegion="RegParent"/>
+				<StringDetect String="#" attribute="Comment" context="Raw Triple Q-B-Regex Comment"/>
+				<StringDetect String="&quot;&quot;&quot;" attribute="Raw B-String Deliminator" context="#pop" endRegion="Triple Q-region"/>
+				<IncludeRules context="RegexBStringCommon"/>
+			</context>
+
+			<context name="Raw Triple Q-B-Regex Comment" attribute="Comment" lineEndContext="#pop">
+				<StringDetect String="&quot;&quot;&quot;" lookAhead="1" context="#pop"/>
+				<LineContinue attribute="Operator"/>
+				<RegExpr String="([ !#-\[\]-~]++|\\.|&quot;(?!&quot;&quot;))++" attribute="Comment"/>
+			</context>
+
+			<context name="Raw Triple Q-B-Regex Parent" attribute="Regex Set" lineEndContext="#pop">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw Triple Q-B-Regex NonCapture" beginRegion="RegParent"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw Triple Q-B-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw Triple Q-Regex ParentComment" beginRegion="RegParent"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw Triple Q-B-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01])*(-[imsxafLuw]+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw Triple Q-B-Regex ParentOptions" beginRegion="RegParent"/>
+				<IncludeRules context="RegexParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw Triple Q-B-Regex ParentError" beginRegion="RegParent"/>
+			</context>
+
+			<context name="Raw Triple Q-B-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple Q-B-Regex Parenthesis"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw Triple Q-B-Regex ParentCond" beginRegion="RegParent"/>
+			</context>
+			<context name="Raw Triple Q-B-Regex ParentCond" attribute="Raw B-String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw Triple Q-B-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple Q-B-Regex Parenthesis" endRegion="RegParent"/>
+				<RegExpr String="\b[_a-zA-Z][_a-zA-Z0-9]+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple Q-B-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw Triple Q-B-Regex ParentError" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw Triple Q-B-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw Triple Q-B-Regex NamedCapture" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing" beginRegion="RegParent"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([__a-zA-Z][_a-zA-Z0-9]*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple Q-B-Regex Capture"/>
+			</context>
+
+			<context name="Raw Triple Q-B-Regex LookaroundInCond" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw Triple Q-B-Regex Parenthesis" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-B-Regex Parenthesis" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-B-Regex Capture" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-B-Regex NonCapture" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-B-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-B-Regex ParentInside" attribute="Raw B-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String="&quot;&quot;&quot;" lookAhead="1" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-B-Regex"/>
+			</context>
+
+			<context name="Raw Triple Q-B-Regex Set" attribute="Regex Set" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<RegExpr attribute="Regex Set" String="([ !#-Z^-~]++|&quot;(?!&quot;&quot;))++"/>
+				<IncludeRules context="RegexBStringSetCommon"/>
+				<StringDetect String="&quot;&quot;&quot;" lookAhead="1" context="#pop"/>
+				<RegExpr attribute="Error" String="."/>
+			</context>
+
+
+			<!-- Regex rf'...' -->
+
+			<context name="Raw A-F-Regex" attribute="Raw F-String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="Raw F-String"/>
+				<DetectIdentifier attribute="Raw F-String"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw A-F-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw A-F-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw A-F-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw A-F-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw A-F-Regex Capture"/>
+				<StringDetect String="'" attribute="Raw F-String Deliminator" context="#pop"/>
+				<IncludeRules context="RegexFStringCommon"/>
+			</context>
+
+			<context name="Raw A-F-Regex Parent" attribute="Regex Set" lineEndContext="#pop">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw A-F-Regex NonCapture"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw A-F-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw A-F-Regex ParentComment"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw A-F-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01]|&fStringSimple;)*(-([imsxafLuw]|&fStringSimple;)+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw A-F-Regex ParentOptions"/>
+				<IncludeRules context="RegexFStringParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw A-F-Regex ParentError"/>
+			</context>
+
+			<context name="Raw A-F-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw A-F-Regex Parenthesis"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw A-F-Regex ParentCond"/>
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+			</context>
+			<context name="Raw A-F-Regex ParentCond" attribute="Raw F-String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw A-F-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw A-F-Regex Parenthesis"/>
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+				<RegExpr String="\b[_[:alpha:]]\w+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw A-F-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw A-F-Regex ParentError" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw A-F-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw A-F-Regex NamedCapture" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([_[:alpha:]]\w*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw A-F-Regex Capture"/>
+			</context>
+
+			<context name="Raw A-F-Regex LookaroundInCond" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw A-F-Regex Parenthesis"/>
+				<IncludeRules context="Raw A-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-F-Regex Parenthesis" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop"/>
+				<IncludeRules context="Raw A-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-F-Regex Capture" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop"/>
+				<IncludeRules context="Raw A-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-F-Regex NonCapture" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop"/>
+				<IncludeRules context="Raw A-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw A-F-Regex ParentInside" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="'" lookAhead="1" context="#pop"/>
+				<IncludeRules context="Raw A-F-Regex"/>
+			</context>
+
+			<context name="Raw A-F-Regex ParentComment" attribute="Comment" lineEndContext="#pop">
+				<IncludeRules context="RegexCommentCommon"/>
+				<IncludeRules context="RegexFString"/>
+				<StringDetect String="'" lookAhead="1" context="#pop#pop"/>
+			</context>
+
+			<context name="Raw A-F-Regex Set" attribute="Regex Set" lineEndContext="#pop">
+				<IncludeRules context="RegexFStringSetCommon"/>
+				<IncludeRules context="RegexFString"/>
+				<StringDetect String="'" lookAhead="1" context="#pop"/>
+			</context>
+
+
+			<!-- Regex rf"..." -->
+
+			<context name="Raw Q-F-Regex" attribute="Raw F-String" lineEndContext="#pop!UnfinishedStringError">
+				<DetectSpaces attribute="Raw F-String"/>
+				<DetectIdentifier attribute="Raw F-String"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw Q-F-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw Q-F-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw Q-F-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw Q-F-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw Q-F-Regex Capture"/>
+				<StringDetect String="&quot;" attribute="Raw F-String Deliminator" context="#pop"/>
+				<IncludeRules context="RegexFStringCommon"/>
+			</context>
+
+			<context name="Raw Q-F-Regex Parent" attribute="Regex Set" lineEndContext="#pop">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw Q-F-Regex NonCapture"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw Q-F-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw Q-F-Regex ParentComment"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw Q-F-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01]|&fStringSimple;)*(-([imsxafLuw]|&fStringSimple;)+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw Q-F-Regex ParentOptions"/>
+				<IncludeRules context="RegexFStringParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw Q-F-Regex ParentError"/>
+			</context>
+
+			<context name="Raw Q-F-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Q-F-Regex Parenthesis"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw Q-F-Regex ParentCond"/>
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+			</context>
+			<context name="Raw Q-F-Regex ParentCond" attribute="Raw F-String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw Q-F-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Q-F-Regex Parenthesis"/>
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+				<RegExpr String="\b[_[:alpha:]]\w+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: lookaround in conditional pattern: (?(?!...)a|b) etc -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Q-F-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw Q-F-Regex ParentError" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw Q-F-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw Q-F-Regex NamedCapture" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([_[:alpha:]]\w*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Q-F-Regex Capture"/>
+			</context>
+
+			<context name="Raw Q-F-Regex LookaroundInCond" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw Q-F-Regex Parenthesis"/>
+				<IncludeRules context="Raw Q-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-F-Regex Parenthesis" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop"/>
+				<IncludeRules context="Raw Q-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-F-Regex Capture" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop"/>
+				<IncludeRules context="Raw Q-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-F-Regex NonCapture" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop"/>
+				<IncludeRules context="Raw Q-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Q-F-Regex ParentInside" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="&quot;" lookAhead="1" context="#pop"/>
+				<IncludeRules context="Raw Q-F-Regex"/>
+			</context>
+
+			<context name="Raw Q-F-Regex ParentComment" attribute="Comment" lineEndContext="#pop">
+				<IncludeRules context="RegexCommentCommon"/>
+				<IncludeRules context="RegexFString"/>
+				<StringDetect String="&quot;" lookAhead="1" context="#pop#pop"/>
+			</context>
+
+			<context name="Raw Q-F-Regex Set" attribute="Regex Set" lineEndContext="#pop">
+				<IncludeRules context="RegexFStringSetCommon"/>
+				<IncludeRules context="RegexFString"/>
+				<StringDetect String="&quot;" lookAhead="1" context="#pop"/>
+			</context>
+
+
+			<!-- Regex rf'''...''' -->
+
+			<context name="Raw Triple A-F-Regex" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="Raw F-String"/>
+				<DetectIdentifier attribute="Raw F-String"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw Triple A-F-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw Triple A-F-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw Triple A-F-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw Triple A-F-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw Triple A-F-Regex Capture" beginRegion="RegParent"/>
+				<StringDetect String="#" attribute="Comment" context="Raw Triple A-F-Regex Comment"/>
+				<StringDetect String="'''" attribute="Raw F-String Deliminator" context="#pop" endRegion="Triple A-region"/>
+				<IncludeRules context="RegexFStringCommon"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex Comment" attribute="Comment" lineEndContext="#pop">
+				<StringDetect String="'''" lookAhead="1" context="#pop"/>
+				<LineContinue attribute="Operator"/>
+				<IncludeRules context="RegexFString"/>
+				<RegExpr String="([^'\\{}]++|\\.|'(?!''))++" attribute="Comment"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex Parent" attribute="Regex Set" lineEndContext="#pop">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw Triple A-F-Regex NonCapture" beginRegion="RegParent"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw Triple A-F-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw Triple A-F-Regex ParentComment" beginRegion="RegParent"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw Triple A-F-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01]|&fStringSimple;)*(-([imsxafLuw]|&fStringSimple;)+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw Triple A-F-Regex ParentOptions" beginRegion="RegParent"/>
+				<IncludeRules context="RegexFStringParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw Triple A-F-Regex ParentError" beginRegion="RegParent"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple A-F-Regex Parenthesis"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw Triple A-F-Regex ParentCond" beginRegion="RegParent"/>
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+			</context>
+			<context name="Raw Triple A-F-Regex ParentCond" attribute="Raw F-String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw Triple A-F-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple A-F-Regex Parenthesis" endRegion="RegParent"/>
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+				<RegExpr String="\b[_[:alpha:]]\w+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple A-F-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex ParentError" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw Triple A-F-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex NamedCapture" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing" beginRegion="RegParent"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([_[:alpha:]]\w*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple A-F-Regex Capture"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex LookaroundInCond" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw Triple A-F-Regex Parenthesis" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex Parenthesis" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex Capture" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex NonCapture" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex ParentInside" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String="'''" lookAhead="1" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple A-F-Regex"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex ParentComment" attribute="Comment" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="RegexTripleCommentCommon"/>
+				<IncludeRules context="RegexFString"/>
+				<StringDetect String="'''" lookAhead="1" context="#pop#pop" endRegion="RegParent"/>
+			</context>
+
+			<context name="Raw Triple A-F-Regex Set" attribute="Regex Set" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="RegexFStringSetCommon"/>
+				<IncludeRules context="RegexFString"/>
+				<StringDetect String="'''" lookAhead="1" context="#pop"/>
+			</context>
+
+
+			<!-- Regex rf"""...""" -->
+
+			<context name="Raw Triple Q-F-Regex" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces attribute="Raw F-String"/>
+				<DetectIdentifier attribute="Raw F-String"/>
+				<StringDetect String="[^]" attribute="Regex Set" context="Raw Triple Q-F-Regex Set"/>
+				<StringDetect String="[]" attribute="Regex Set" context="Raw Triple Q-F-Regex Set"/>
+				<StringDetect String="[" attribute="Regex Set" context="Raw Triple Q-F-Regex Set"/>
+				<StringDetect String="(?" lookAhead="1" context="Raw Triple Q-F-Regex Parent"/>
+				<StringDetect String="(" attribute="Regex Capturing" context="Raw Triple Q-F-Regex Capture" beginRegion="RegParent"/>
+				<StringDetect String="#" attribute="Comment" context="Raw Triple Q-F-Regex Comment"/>
+				<StringDetect String="&quot;&quot;&quot;" attribute="Raw F-String Deliminator" context="#pop" endRegion="Triple Q-region"/>
+				<IncludeRules context="RegexFStringCommon"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex Comment" attribute="Comment" lineEndContext="#pop">
+				<StringDetect String="&quot;&quot;&quot;" lookAhead="1" context="#pop"/>
+				<LineContinue attribute="Operator"/>
+				<IncludeRules context="RegexFString"/>
+				<RegExpr String="([^&quot;\\{}]++|\\.|&quot;(?!&quot;&quot;))++" attribute="Comment"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex Parent" attribute="Regex Set" lineEndContext="#pop">
+				<StringDetect String="(?:" attribute="Regex Non-Capturing" context="#pop!Raw Triple Q-F-Regex NonCapture" beginRegion="RegParent"/>
+				<StringDetect String="(?P&lt;" lookAhead="1" context="Raw Triple Q-F-Regex NamedCapture"/>
+				<StringDetect String="(?#" attribute="Comment" context="Raw Triple Q-F-Regex ParentComment" beginRegion="RegParent"/>
+				<!-- regex package support: (?<...>) for (?P<...>) -->
+				<StringDetect String="(?&lt;" lookAhead="1" context="Raw Triple Q-F-Regex NamedCapture"/>
+				<!-- regex package support:
+					(?b), (?e), (?p), (?r), (?V0), (?V1), (?f), (?w) (?-a), (?-f), (?-L), (?-u), (?-w)
+					(?|...) -->
+				<RegExpr String="\((?=\?(([aiLmsuxfwbepr]+|V[01]|&fStringSimple;)*(-([imsxafLuw]|&fStringSimple;)+)?:|[=>!|]|&lt;[=!]|\())" attribute="Regex Parenthesis" context="Raw Triple Q-F-Regex ParentOptions" beginRegion="RegParent"/>
+				<IncludeRules context="RegexFStringParentCommon"/>
+				<StringDetect String="(" attribute="Regex Parenthesis" context="Raw Triple Q-F-Regex ParentError" beginRegion="RegParent"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex ParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop#pop!Raw Triple Q-F-Regex Parenthesis">
+			  <!-- regex package support: | -->
+				<AnyChar String=":=>!|" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple Q-F-Regex Parenthesis"/>
+				<AnyChar String="&lt;?" attribute="Regex Parenthesis Options"/>
+				<StringDetect String="(" attribute="Regex Parenthesis Options" context="Raw Triple Q-F-Regex ParentCond" beginRegion="RegParent"/>
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+			</context>
+			<context name="Raw Triple Q-F-Regex ParentCond" attribute="Raw F-String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop#pop#pop!Raw Triple Q-F-Regex Parenthesis">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple Q-F-Regex Parenthesis" endRegion="RegParent"/>
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+				<RegExpr String="\b[_[:alpha:]]\w+|\b[0-9]{1,2}" attribute="Regex Backreference"/>
+			  <!-- regex package support: -->
+				<RegExpr String="\?&lt;?[=!]" attribute="Regex Parenthesis Options" context="#pop#pop#pop!Raw Triple Q-F-Regex LookaroundInCond"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex ParentError" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="?" attribute="Error" context="#pop#pop!Raw Triple Q-F-Regex Parenthesis"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex NamedCapture" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="(" attribute="Regex Capturing" beginRegion="RegParent"/>
+				<!-- regex package support: P is optional -->
+				<RegExpr String="\?P?&lt;(([_[:alpha:]]\w*)?>)?" attribute="Regex Parenthesis Options" context="#pop#pop!Raw Triple Q-F-Regex Capture"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex LookaroundInCond" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop!Raw Triple Q-F-Regex Parenthesis" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex Parenthesis" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Parenthesis" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex Capture" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex NonCapture" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String=")" attribute="Regex Non-Capturing" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-F-Regex ParentInside"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex ParentInside" attribute="Raw F-String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<StringDetect String="&quot;&quot;&quot;" lookAhead="1" context="#pop" endRegion="RegParent"/>
+				<IncludeRules context="Raw Triple Q-F-Regex"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex ParentComment" attribute="Comment" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="RegexTripleCommentCommon"/>
+				<IncludeRules context="RegexFString"/>
+				<StringDetect String="&quot;&quot;&quot;" lookAhead="1" context="#pop#pop" endRegion="RegParent"/>
+			</context>
+
+			<context name="Raw Triple Q-F-Regex Set" attribute="Regex Set" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="RegexFStringSetCommon"/>
+				<IncludeRules context="RegexFString"/>
+				<StringDetect String="&quot;&quot;&quot;" lookAhead="1" context="#pop"/>
+			</context>
+
+
+			<!-- Regex common context -->
+
+			<context name="RegexFString" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="{{" attribute="String Char"/>
+				<StringDetect String="}}" attribute="String Char"/>
+				<StringDetect String="{"  attribute="String Substitution" context="String Interpolation"/>
+				<StringDetect String="}"  attribute="Error"/>
+			</context>
+
+			<context name="RegexFStringParentCommon" attribute="Raw F-String" lineEndContext="#pop">
+				<!-- regex package support: (?R) (?0) -->
+				<RegExpr String="\(\?([R0](?=\))|(?=([aiLmsuxfwbepr]+|V[01]|&fStringSimple;)*\)))" attribute="Regex Parenthesis Options" context="RegexFStringParentOptions"/>
+				<!-- regex package support: (?P=1), (?1), (?P>name), (?P&name) -->
+				<RegExpr String="\(\?P[=>&amp;]" attribute="Regex Backreference" context="RegexFStringParentBackRef"/>
+			</context>
+			<context name="RegexFStringParentOptions" attribute="Regex Parenthesis Options" lineEndContext="#pop#pop">
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+				<StringDetect String=")" attribute="Regex Parenthesis Options" context="#pop#pop"/>
+			</context>
+			<context name="RegexFStringParentBackRef" attribute="Regex Backreference" lineEndContext="#pop#pop" fallthrough="1" fallthroughContext="#pop#pop">
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+				<StringDetect String=")" attribute="Regex Backreference" context="#pop#pop"/>
+				<DetectIdentifier attribute="Regex Backreference"/>
+				<Int attribute="Regex Backreference"/>
+			</context>
+
+			<context name="RegexFStringCommon" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="\" lookAhead="1" context="RegexFStringEscape"/>
+				<IncludeRules context="RegexCommonSymbol"/>
+				<RegExpr String="\{\{(,&regFStringRangeN;?|&regFStringRangeN;(,&regFStringRangeN;?)?)\}\}" lookAhead="1" context="RegexFStringCommonRange"/>
+				<IncludeRules context="RegexFString"/>
+			</context>
+			<context name="RegexFStringCommonRange" attribute="Regex Quantifier" lineEndContext="#pop">
+				<StringDetect String="{{" attribute="String Char"/>
+				<StringDetect String="}}" attribute="String Char" context="#pop"/>
+				<StringDetect String="{"  attribute="String Substitution" context="String Interpolation"/>
+			</context>
+
+			<context name="RegexFStringSetCommon" attribute="Raw F-String" lineEndContext="#pop">
+				<StringDetect String="]" attribute="Regex Set" context="#pop"/>
+				<StringDetect String="\" lookAhead="1" context="RegexFStringSetEscape"/>
+				<!-- regex package support: character classes [:...:] -->
+				<StringDetect String="[" lookAhead="1" context="RegexSetCharClass"/>
+			</context>
+
+			<context name="RegexFStringSetEscape" attribute="Raw F-String" lineEndContext="#pop">
+				<IncludeRules context="RegexFStringEscapeCommon"/>
+				<StringDetect String="\b" attribute="String Char" context="#pop"/>
+				<LineContinue attribute="String Char" context="#pop"/>
+				<RegExpr String="." attribute="Error" context="#pop"/>
+			</context>
+
+			<context name="RegexFStringEscape" attribute="Raw F-String" lineEndContext="#pop">
+				<IncludeRules context="RegexFStringEscapeCommon"/>
+				<IncludeRules context="RegexEscapeCommonBegin"/>
+				<RegExpr String="\\g&lt;(?=&fStringSimple;>)" attribute="Regex Backreference" context="RegexFStringEscapeG"/>
+				<IncludeRules context="RegexEscapeCommonEnd"/>
+			</context>
+			<context name="RegexFStringEscapeG" attribute="Regex Backreference" lineEndContext="#pop#pop">
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+				<StringDetect String=">" attribute="Regex Backreference" context="#pop#pop"/>
+			</context>
+
+			<!-- contains no \b -->
+			<context name="RegexFStringEscapeCommon" attribute="Raw F-String" lineEndContext="#pop">
+				<IncludeRules context="RegexEscapeSpecialCommon"/>
+				<!-- regex package support: \p{value} \P{value} \p{property=value} \P{property=value} -->
+				<RegExpr String="\\[[:^alnum:]afnrtv]|\\[0-7]{1,3}|&escapedHexUni;|\\[pP]{{\^?[a-zA-Z0-9_]+([:=][a-zA-Z0-9_]*)?}}|\\({{|}})|\\[xuUpPN]?(?={([^{]|$))" attribute="String Char" context="#pop"/>
+				<RegExpr String="\\[pP]{{\^?(?=(&fStringSimple;|[a-zA-Z0-9_]++)[:=]?(([a-zA-Z0-9_]*|&fStringSimple;)?)}})|\\N{{(?=&fStringSimple;}})" attribute="String Char" context="RegexFStringEscapeP"/>
+				<RegExpr String="\\L&lt;(?=&fStringSimple;>)" attribute="Regex Special" context="RegexFStringEscapeL"/>
+			</context>
+			<context name="RegexFStringEscapeP" attribute="String Char" lineEndContext="#pop#pop">
+				<StringDetect String="}}" attribute="String Char" context="#pop#pop"/>
+				<StringDetect String="{"  attribute="String Substitution" context="String Interpolation"/>
+			</context>
+			<context name="RegexFStringEscapeL" attribute="Regex Special" lineEndContext="#pop#pop">
+				<StringDetect String="{" attribute="String Substitution" context="String Interpolation"/>
+				<StringDetect String=">" attribute="Regex Special" context="#pop#pop"/>
+			</context>
+
+
+			<context name="RegexBStringCommon" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="\" lookAhead="1" context="RegexBStringEscape"/>
+				<IncludeRules context="RegexCommonSymbol"/>
+				<IncludeRules context="RegexCommonRangeQuantifier"/>
+				<AnyChar String="{}" attribute="Raw B-String"/>
+				<RegExpr attribute="Error" String="."/>
+			</context>
+
+			<context name="RegexBStringSetCommon" attribute="Raw B-String" lineEndContext="#pop">
+				<StringDetect String="]" attribute="Regex Set" context="#pop"/>
+				<StringDetect String="\" lookAhead="1" context="RegexBStringSetEscape"/>
+				<!-- regex package support: character classes [:...:] -->
+				<StringDetect String="[" lookAhead="1" context="RegexSetCharClass"/>
+			</context>
+
+			<context name="RegexBStringSetEscape" attribute="Raw B-String" lineEndContext="#pop">
+				<IncludeRules context="RegexBStringEscapeCommon"/>
+				<StringDetect String="\b" attribute="String Char" context="#pop"/>
+				<LineContinue attribute="String Char" context="#pop"/>
+				<RegExpr String="." attribute="Error" context="#pop"/>
+			</context>
+
+			<context name="RegexBStringEscape" attribute="Raw B-String" lineEndContext="#pop">
+				<IncludeRules context="RegexBStringEscapeCommon"/>
+				<IncludeRules context="RegexEscapeCommonBegin"/>
+				<IncludeRules context="RegexEscapeCommonEnd"/>
+			</context>
+
+			<!-- contains no \b -->
+			<context name="RegexBStringEscapeCommon" attribute="Raw B-String" lineEndContext="#pop">
+				<IncludeRules context="RegexEscapeSpecialCommon"/>
+				<RegExpr String="\\[[:^alnum:]afnrtv]|\\[0-7]{1,3}|&escapedHex;" attribute="String Char" context="#pop"/>
+			</context>
+
+
+			<context name="RegexStringCommon" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="\" lookAhead="1" context="RegexEscape"/>
+				<IncludeRules context="RegexCommonSymbol"/>
+				<IncludeRules context="RegexCommonRangeQuantifier"/>
+			</context>
+
+			<context name="RegexCommonSymbol" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="|" attribute="Regex Alternation"/>
+				<StringDetect String=")" attribute="Error"/>
+				<AnyChar String="*+?" attribute="Regex Quantifier"/>
+				<AnyChar String="^$." attribute="Regex Special"/>
+			</context>
+			<context name="RegexCommonRangeQuantifier" attribute="Raw String" lineEndContext="#pop">
+				<RegExpr String="\{(,[0-9]*|[0-9]+(,[0-9]*)?)\}" attribute="Regex Quantifier"/>
+			</context>
+
+			<context name="RegexCommentCommon" attribute="Comment" lineEndContext="#pop">
+				<DetectSpaces attribute="Comment"/>
+				<DetectIdentifier attribute="Comment"/>
+				<StringDetect String=")" attribute="Comment" context="#pop#pop"/>
+				<StringDetect String="\)" attribute="Comment"/>
+				<StringDetect String="\\" attribute="Comment"/>
+				<StringDetect String="\'" attribute="Comment"/>
+				<StringDetect String="\&quot;" attribute="Comment"/>
+			</context>
+
+			<context name="RegexTripleCommentCommon" attribute="Comment" lineEndContext="#pop">
+				<DetectSpaces attribute="Comment"/>
+				<DetectIdentifier attribute="Comment"/>
+				<StringDetect String=")" attribute="Comment" context="#pop#pop" endRegion="RegParent"/>
+				<StringDetect String="\)" attribute="Comment"/>
+				<StringDetect String="\\" attribute="Comment"/>
+				<StringDetect String="\'" attribute="Comment"/>
+				<StringDetect String="\&quot;" attribute="Comment"/>
+			</context>
+
+			<context name="RegexParentCommon" attribute="Raw String" lineEndContext="#pop">
+				<!-- regex package support: (?R) (?0) -->
+				<RegExpr String="\(\?(([aiLmsuxfwbepr]+|V[01])*|[R0])\)" attribute="Regex Parenthesis Options" context="#pop"/>
+				<!-- regex package support: (?P=1), (?1), (?P>name), (?P&name) -->
+				<RegExpr String="\(\?(P=([_[:alpha:]]\w*|[0-9]{1,2})?|[0-9]{1,2}|P[>&amp;]([_[:alpha:]]\w*)?)\)?" attribute="Regex Backreference" context="#pop"/>
+			</context>
+
+			<context name="RegexSetCommon" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="]" attribute="Regex Set" context="#pop"/>
+				<StringDetect String="\" lookAhead="1" context="RegexSetEscape"/>
+				<!-- regex package support: character classes [:...:] -->
+				<StringDetect String="[" lookAhead="1" context="RegexSetCharClass"/>
+			</context>
+
+			<context name="RegexSetCharClass" attribute="Raw String" lineEndContext="#pop">
+				<RegExpr String="\[:\^?[a-zA-Z_]*:\]" attribute="Regex Character Class" context="#pop"/>
+				<StringDetect String="[" attribute="Regex Set" context="#pop"/>
+			</context>
+
+			<context name="RegexSetEscape" attribute="Raw String" lineEndContext="#pop">
+				<IncludeRules context="RegexStringEscapeCommon"/>
+				<StringDetect String="\b" attribute="String Char" context="#pop"/>
+				<LineContinue attribute="String Char" context="#pop"/>
+				<RegExpr String="." attribute="Error" context="#pop"/>
+			</context>
+
+			<context name="RegexEscape" attribute="Raw String" lineEndContext="#pop">
+				<IncludeRules context="RegexStringEscapeCommon"/>
+				<IncludeRules context="RegexEscapeCommonBegin"/>
+				<IncludeRules context="RegexEscapeCommonEnd"/>
+			</context>
+
+			<context name="RegexEscapeCommonBegin" attribute="Raw String" lineEndContext="#pop">
+				<RegExpr String="\\[0-9]{1,2}|\\g&lt;([0-9]{1,2}|[_[:alpha:]]\w*)>" attribute="Regex Backreference" context="#pop"/>
+			</context>
+			<context name="RegexEscapeCommonEnd" attribute="Raw String" lineEndContext="#pop">
+				<StringDetect String="\b" attribute="Regex Special" context="#pop"/>
+				<LineContinue attribute="String Char" context="#pop"/>
+				<RegExpr String="." attribute="Error" context="#pop"/>
+			</context>
+
+			<!-- contains no \b -->
+			<context name="RegexStringEscapeCommon" attribute="Raw String" lineEndContext="#pop">
+				<IncludeRules context="RegexEscapeSpecialCommon"/>
+				<!-- regex package support: \p{value} \P{value} \p{property=value} \P{property=value} -->
+				<RegExpr String="\\[[:^alnum:]afnrtv]|\\[0-7]{1,3}|&escapedHexUni;|\\[pP]\{\^?[a-zA-Z0-9_]+([:=][a-zA-Z0-9_]*)?\}" attribute="String Char" context="#pop"/>
+			</context>
+			<context name="RegexEscapeSpecialCommon" attribute="Raw String" lineEndContext="#pop">
+				<!-- regex package support: \K \m \M \G \X \L<name> -->
+				<RegExpr String="\\[ABdDsSwWzZKmMGX]|\\L&lt;([_[:alpha:]]\w*)?>" attribute="Regex Special" context="#pop"/>
+			</context>
+
 		</contexts>
 
 		<itemDatas>
@@ -661,16 +2377,48 @@
 			<itemData name="Int" defStyleNum="dsDecVal" spellChecking="false"/>
 			<itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
 			<itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false"/>
+			<itemData name="Binary" defStyleNum="dsBaseN" spellChecking="false"/>
 			<itemData name="Complex" defStyleNum="dsOthers" spellChecking="false"/>
 			<itemData name="Comment" defStyleNum="dsComment"/>
+
+			<!-- String -->
+			<itemData name="String Deliminator" defStyleNum="dsString" spellChecking="false"/>
 			<itemData name="String" defStyleNum="dsString"/>
+			<itemData name="Raw String Deliminator" defStyleNum="dsVerbatimString" spellChecking="false"/>
 			<itemData name="Raw String" defStyleNum="dsVerbatimString"/>
+			<!-- f-string -->
+			<itemData name="F-String Deliminator" defStyleNum="dsSpecialString" spellChecking="false"/>
 			<itemData name="F-String" defStyleNum="dsSpecialString"/>
+			<itemData name="Raw F-String Deliminator" defStyleNum="dsVerbatimString" spellChecking="false"/>
 			<itemData name="Raw F-String" defStyleNum="dsVerbatimString"/>
+			<!-- b-string -->
+			<itemData name="B-String Deliminator" defStyleNum="dsString" spellChecking="false"/>
+			<itemData name="B-String" defStyleNum="dsString" spellChecking="false"/>
+			<itemData name="Raw B-String Deliminator" defStyleNum="dsVerbatimString" spellChecking="false"/>
+			<itemData name="Raw B-String" defStyleNum="dsVerbatimString" spellChecking="false"/>
+			<!-- t-string -->
+			<itemData name="T-String Deliminator" defStyleNum="dsSpecialString" spellChecking="false"/>
+			<itemData name="T-String" defStyleNum="dsSpecialString"/>
+			<itemData name="Raw T-String Deliminator" defStyleNum="dsVerbatimString" spellChecking="false"/>
+			<itemData name="Raw T-String" defStyleNum="dsVerbatimString"/>
+
+			<!-- Char -->
 			<itemData name="String Char" defStyleNum="dsChar" spellChecking="false"/>
 			<itemData name="String Substitution" defStyleNum="dsSpecialChar" spellChecking="false"/>
+			<!-- Other -->
 			<itemData name="Decorator" defStyleNum="dsAttribute" spellChecking="false"/>
 			<itemData name="Error" defStyleNum="dsError"/>
+			<!-- Regex -->
+			<itemData name="Regex Alternation" defStyleNum="dsControlFlow" spellChecking="false"/>
+			<itemData name="Regex Set" defStyleNum="dsPreprocessor" spellChecking="false"/>
+			<itemData name="Regex Character Class" defStyleNum="dsExtension" spellChecking="false" bold="0"/>
+			<itemData name="Regex Capturing" defStyleNum="dsKeyword" spellChecking="false"/>
+			<itemData name="Regex Non-Capturing" defStyleNum="dsNormal" spellChecking="false"/>
+			<itemData name="Regex Parenthesis" defStyleNum="dsExtension" spellChecking="false"/>
+			<itemData name="Regex Parenthesis Options" defStyleNum="dsFunction" spellChecking="false"/>
+			<itemData name="Regex Special" defStyleNum="dsDecVal" spellChecking="false"/>
+			<itemData name="Regex Quantifier" defStyleNum="dsOperator" spellChecking="false"/>
+			<itemData name="Regex Backreference" defStyleNum="dsVariable" spellChecking="false"/>
 		</itemDatas>
 	</highlighting>
 	<general>
@@ -685,4 +2433,4 @@
 	</general>
 </language>
 
-<!-- kate: space-indent off; indent-width 4; -->
+<!-- kate: space-indent off; indent-width 2; -->

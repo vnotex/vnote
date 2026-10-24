@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
 <language name="GDB Backtrace" section="Other"
-          version="2" kateversion="3.4"
+          version="3" kateversion="3.4"
           extensions="*.kcrash;*.crash;*.bt"
           mimetype=""
           author="Milian Wolff (mail@milianw.de)" license="LGPL">
@@ -21,7 +21,7 @@
     </context>
     <context name="stackframe" attribute="Normal" lineEndContext="#stay">
       <RegExpr attribute="Normal" context="identifier"  String="((?:[^ ]|&lt;.+&gt;)+::)?([^ :]+)\s*\(" lookAhead="true" />
-      <StringDetect attribute="Normal" String="at" context="file" />
+      <Detect2Chars attribute="Normal" char="a" char1="t" context="file" />
       <StringDetect attribute="Normal" String="from" context="file" />
       <IncludeRules context="oneliners" />
     </context>
@@ -50,4 +50,4 @@
 
 </language>
 
-<!-- kate: replace-tabs: on; tab-width: 4; indent-width: 4; -->
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

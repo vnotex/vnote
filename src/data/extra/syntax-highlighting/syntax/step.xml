@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="STEP" version="1" kateversion="5.0" section="3D" extensions="*.stp;*.step;*.ifc" mimetype="model/step" author="Volker Krause (vkrause@kde.org)" license="MIT">
+    <highlighting>
+        <list name="header">
+            <item>FILE_DESCRIPTION</item>
+            <item>FILE_NAME</item>
+            <item>FILE_SCHEMA</item>
+            <item>FILE_POPULATION</item>
+            <item>SECTION_LANGUAGE</item>
+            <item>SECTION_CONTEXT</item>
+        </list>
+        <contexts>
+            <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+                <StringDetect attribute="Preamble" context="#stay" String="ISO-10303-21;" beginRegion="Top"/>
+                <StringDetect attribute="Preamble" context="#stay" String="END-ISO-10303-21;" endRegion="Top"/>
+                <StringDetect attribute="Keyword" context="Header" String="HEADER;" beginRegion="Header"/>
+                <StringDetect attribute="Keyword" context="Data" String="DATA;" beginRegion="Data"/>
+                <Detect2Chars attribute="Comment" context="Comment" char="/" char1="*"/>
+            </context>
+            <context name="Comment" attribute="Comment" lineEndContext="#stay">
+                <IncludeRules context="##Comments"/>
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+            </context>
+            <context name="String" attribute="String" lineEndContext="#stay">
+                <LineContinue attribute="String" context="#stay"/>
+                <Detect2Chars attribute="String Encoded" context="#stay" char="'" char1="'"/>
+                <DetectChar attribute="String" context="#pop" char="'"/>
+                <StringDetect attribute="String Encoded" context="EncodedString" String="\X2\"/>
+                <StringDetect attribute="String Encoded" context="EncodedString" String="\X4\"/>
+            </context>
+            <context name="EncodedString" attribute="String Encoded" lineEndContext="#stay">
+                <StringDetect attribute="String Encoded" context="#pop" String="\X0\"/>
+            </context>
+            <context name="Header" attribute="Normal Text" lineEndContext="#stay">
+                <StringDetect attribute="Keyword" context="#pop" String="ENDSEC;" endRegion="Header"/>
+                <keyword attribute="Header" context="#stay" String="header"/>
+                <Float attribute="Float" context="#stay"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <DetectChar attribute="String" context="String" char="'"/>
+                <Detect2Chars attribute="Comment" context="Comment" char="/" char1="*"/>
+            </context>
+            <context name="Data" attribute="Normal Text" lineEndContext="#stay">
+                <StringDetect attribute="Keyword" context="#pop" String="ENDSEC;" endRegion="Data"/>
+                <Float attribute="Float" context="#stay"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <AnyChar attribute="Operator" String='$*'/>
+                <DetectChar attribute="String" context="String" char="'"/>
+                <Detect2Chars attribute="Comment" context="Comment" char="/" char1="*"/>
+                <RegExpr String="#\d+" attribute="Instance"/>
+                <RegExpr String="\.[A-Z][A-Z\d]*\." attribute="Enum"/>
+                <RegExpr String='"[0-3][0-9A-F]+"' attribute="Binary"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text"    defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Comment"        defStyleNum="dsComment"/>
+            <itemData name="Keyword"        defStyleNum="dsKeyword"/>
+            <itemData name="Decimal"        defStyleNum="dsDecVal"/>
+            <itemData name="Float"          defStyleNum="dsFloat"/>
+            <itemData name="Binary"         defStyleNum="dsBaseN"/>
+            <itemData name="String"         defStyleNum="dsString"/>
+            <itemData name="String Encoded" defStyleNum="dsSpecialChar" spellChecking="false"/>
+            <itemData name="Instance"       defStyleNum="dsVariable" spellChecking="false"/>
+            <itemData name="Enum"           defStyleNum="dsConstant" spellChecking="false"/>
+            <itemData name="Operator"       defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Preamble"       defStyleNum="dsPreprocessor" spellChecking="false"/>
+            <itemData name="Header"         defStyleNum="dsBuiltIn" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+</language>

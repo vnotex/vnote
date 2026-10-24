@@ -1,0 +1,948 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    SPDX-FileCopyrightText: 2024 Stefan Staeglich <sstaeglich@kdemail.net>
+
+    SPDX-License-Identifier: LGPL-2.1-or-later
+-->
+<language name="opsi-script" version="2" kateversion="5.0" section="Scripts" extensions="*.opsiinc;*.opsiscript" author="Stefan Staeglich (sstaeglich@kdemail.net)" license="LGPL">
+    <highlighting>
+        <list name="control structures">
+            <item>else</item>
+            <item>elseif</item>
+            <item>for</item>
+            <item>do</item>
+        </list>
+        <list name="operators">
+            <item>and</item>
+            <item>not</item>
+            <item>or</item>
+            <item>in</item>
+        </list>
+        <list name="primary section import">
+            <item>importLib</item>
+            <item>Sub</item>
+        </list>
+        <list name="primary section keywords">
+            <item>DefStringList</item>
+            <item>DefVar</item>
+            <item>set</item>
+        </list>
+        <list name="primary section builtin">
+            <!--             opsi-script control -->
+            <item>encoding</item>
+            <item>SetLogLevel</item>
+            <item>ExitOnError</item>
+            <item>ScriptErrorMessages</item>
+            <item>FatalOnSyntaxError</item>
+            <item>FatalOnRuntimeError</item>
+            <item>AutoActivityDisplay</item>
+            <item>CheckTargetPath</item>
+            <item>forceLogInAppendMode</item>
+            <item>Message</item>
+            <item>ShowMessageFile</item>
+            <item>ShowBitMap</item>
+            <item>comment</item>
+            <item>LogError</item>
+            <item>LogWarning</item>
+            <item>includelog</item>
+            <item>SetConfidential</item>
+            <item>asConfidential</item>
+            <item>Pause</item>
+            <item>Stop</item>
+            <item>include_insert</item>
+            <item>include_append</item>
+            <item>NormalizeWinst</item>
+            <item>IconizeWinst</item>
+            <item>MaximizeWinst</item>
+            <item>RestoreWinst</item>
+            <item>SetSkinDirectory</item>
+            <item>runningInWanMode</item>
+            <item>reloadProductList</item>
+            <!--             String functions -->
+            <item>GetOS</item>
+            <item>getLinuxDistroType</item>
+            <item>GetMsVersionInfo</item>
+            <item>GetMsVersionName</item>
+            <item>GetSystemType</item>
+            <item>getOSArchitecture</item>
+            <item>getRegistryValue</item>
+            <item>GetRegistrystringvalue</item>
+            <item>GetRegistryStringValue32</item>
+            <item>GetRegistryStringValue64</item>
+            <item>GetRegistryStringValueSysNative</item>
+            <item>GetValueFromInifile</item>
+            <item>GetProductProperty</item>
+            <item>GetConfidentialProductProperty</item>
+            <item>trim</item>
+            <item>lower</item>
+            <item>upper</item>
+            <item>unquote</item>
+            <item>unquote2</item>
+            <item>stringReplace</item>
+            <item>strLength</item>
+            <item>strPos</item>
+            <item>strPart</item>
+            <item>getValue</item>
+            <item>getValueBySeparator</item>
+            <item>setValueByKey</item>
+            <item>getValueFromFile</item>
+            <item>getValueFromFileBySeparator</item>
+            <item>getLastExitCode</item>
+            <item>DemandLicenseKey</item>
+            <item>FreeLicense</item>
+            <item>GetUserSID</item>
+            <item>GetLoggedInUser</item>
+            <item>GetUsercontext</item>
+            <item>GetScriptMode</item>
+            <item>saveVersionToProfile</item>
+            <item>readVersionFromProfile</item>
+            <item>scriptWasExecutedBefore</item>
+            <item>GetHostsName</item>
+            <item>GetHostsAddr</item>
+            <item>ExtractFilePath</item>
+            <item>calculate</item>
+            <item>DecStrToHexStr</item>
+            <item>HexStrToDecStr</item>
+            <item>base64EncodeStr</item>
+            <item>base64DecodeStr</item>
+            <item>convert2Jsonstr</item>
+            <item>RandomStr</item>
+            <item>RandomStrWithParameters</item>
+            <item>RandomIntStr</item>
+            <item>CompareDotSeparatedStrings</item>
+            <item>CompareDotSeparatedNumbers</item>
+            <item>EnvVar</item>
+            <item>ParamStr</item>
+            <item>getDiffTimeSec</item>
+            <item>SidToName</item>
+            <item>GetMyIpByTarget</item>
+            <item>GetIpByName</item>
+            <item>reencodestr</item>
+            <item>strLoadTextFile</item>
+            <item>strLoadTextFileWithEncoding</item>
+            <item>GetShortWinPathName</item>
+            <item>stringinput</item>
+            <item>which</item>
+            <item>replaceOpsiConstants</item>
+            <item>ReadTOMLFile</item>
+            <item>GetTOMLAsString</item>
+            <item>GetTOMLTableAsString</item>
+            <item>GetValueFromTOML</item>
+            <item>ModifyTOML</item>
+            <item>DeleteTableFromTOML</item>
+            <item>ConvertTOMLtoJSON</item>
+            <!--             String list functions -->
+            <item>splitString</item>
+            <item>splitStringOnWhiteSpace</item>
+            <item>loadTextFile</item>
+            <item>loadUnicodeTextFile</item>
+            <item>loadTextFileWithEncoding</item>
+            <item>composeString</item>
+            <item>takeString</item>
+            <item>setStringInListAtIndex</item>
+            <item>takeFirstStringContaining</item>
+            <item>getOutStreamFromSection</item>
+            <item>shellCall</item>
+            <item>getReturnListFromSection</item>
+            <item>getListContaining</item>
+            <item>getListContainingList</item>
+            <item>count</item>
+            <item>emptylist</item>
+            <item>GetProcessList</item>
+            <item>getProductPropertyList</item>
+            <item>getRegistryKeyList32</item>
+            <item>getRegistryKeyList64</item>
+            <item>getRegistryKeyListSysnative</item>
+            <item>getRegistryKeyList</item>
+            <item>getRegistryVarList32</item>
+            <item>getRegistryVarList64</item>
+            <item>getRegistryVarListSysnative</item>
+            <item>getRegistryVarList</item>
+            <item>getProfilesDirList</item>
+            <item>listFiles</item>
+            <item>GetLocaleInfoMap</item>
+            <item>GetMSVersionMap</item>
+            <item>getLinuxVersionMap</item>
+            <item>getFileInfoMap</item>
+            <item>getProductMap</item>
+            <item>getRegistryVarMap32</item>
+            <item>getRegistryVarMap64</item>
+            <item>getRegistryVarMapSysnative</item>
+            <item>getRegistryVarMap</item>
+            <item>getHWBiosInfoMap</item>
+            <item>editmap</item>
+            <item>createStringList</item>
+            <item>reverse</item>
+            <item>getSectionNames</item>
+            <item>retrieveSection</item>
+            <item>getSubList</item>
+            <item>getSubListByMatch</item>
+            <item>getSubListByContaining</item>
+            <item>getSubListByKey</item>
+            <item>getKeyList</item>
+            <item>addtolist</item>
+            <item>addListToList</item>
+            <item>reencodestrlist</item>
+            <item>removeFromListByContaining</item>
+            <item>removeFromListByMatch</item>
+            <item>LoadTOMLFile</item>
+            <item>GetTOMLAsStringList</item>
+            <item>GetTOMLKeys</item>
+            <item>GetTOMLTableNames</item>
+            <item>GetTOMLTable</item>
+            <!--             Boolean operators and functions -->
+            <item>FileExists</item>
+            <item>FileExists32</item>
+            <item>FileExists64</item>
+            <item>FileExistsSysNative</item>
+            <item>DirectoryExists</item>
+            <item>FileOrFolderExists</item>
+            <item>fileIsSymlink</item>
+            <item>LineExistsIn</item>
+            <item>LineBeginning_ExistsIn</item>
+            <item>LineContaining_ExistsIn</item>
+            <item>HasMinimumSpace</item>
+            <item>opsiLicenseManagementEnabled</item>
+            <item>runningAsAdmin</item>
+            <item>isLoginScript</item>
+            <item>contains</item>
+            <item>isNumber</item>
+            <item>runningOnUefi</item>
+            <item>runningInPE</item>
+            <item>runningInWAnMode</item>
+            <item>isDriveReady</item>
+            <item>runningWithGui</item>
+            <item>saveTextFile</item>
+            <item>saveTextFileWithEncoding</item>
+            <item>saveUnicodeTextFile</item>
+            <item>RegKeyExists</item>
+            <item>RegVarExists</item>
+            <item>isPingReachable</item>
+            <item>isValidFQDN</item>
+            <item>fileHasBom</item>
+            <item>SaveToTOMLFile</item>
+            <item>ConvertTOMLfileToJSONfile</item>
+            <item>Killtask</item>
+            <item>requiredOpsiscriptVersion</item>
+            <item>requiredWinstVersion</item>
+            <item>UpdateEnvironment</item>
+            <!--         Flow control -->
+            <item>isFatalError</item>
+            <item>isSuccess</item>
+            <item>isSuspended</item>
+            <item>noUpdateScript</item>
+            <item>ExitWindows</item>
+            <item>Reboot</item>
+            <item>ImmediateReboot</item>
+            <item>ImmediateLogout</item>
+            <item>ShutdownWanted</item>
+            <item>RebootWanted</item>
+            <item>sleepSeconds</item>
+            <item>ChangeDirectory</item>
+        </list>
+        <list name="files section builtin">
+            <item>copy</item>
+            <item>del</item>
+            <item>delete</item>
+            <item>SourcePath</item>
+            <item>CheckTargetPath</item>
+            <item>chmod</item>
+            <item>hardlink</item>
+            <item>symlink</item>
+            <item>rename</item>
+            <item>move</item>
+            <item>zipfile</item>
+            <item>unzipfile</item>
+        </list>
+        <list name="ldapsearch section builtin">
+            <item>targethost</item>
+            <item>targetport</item>
+            <item>user</item>
+            <item>password</item>
+            <item>dn</item>
+            <item>typesonly</item>
+            <item>filter</item>
+            <item>attributes</item>
+        </list>
+        <list name="linkfolder section builtin">
+            <item>delete_element</item>
+            <item>delete_subfolder</item>
+            <item>set_basefolder</item>
+            <item>set_subfolder</item>
+        </list>
+        <list name="linkfolder section set_link builtin">
+            <item>name</item>
+            <item>target</item>
+            <item>parameters</item>
+            <item>working_dir</item>
+            <item>icon_file</item>
+            <item>icon_index</item>
+            <item>shortcut</item>
+        </list>
+        <list name="patches section builtin">
+            <item>add</item>
+            <item>addnew</item>
+            <item>change</item>
+            <item>del</item>
+            <item>delsec</item>
+            <item>replace</item>
+            <item>set</item>
+        </list>
+        <list name="patchhosts section builtin">
+            <item>setAddr</item>
+            <item>setName</item>
+            <item>setAlias</item>
+            <item>delAlias</item>
+            <item>delHost</item>
+            <item>setComment</item>
+        </list>
+        <list name="patchtextfile section builtin">
+            <item>Set_Mozilla_Pref</item>
+            <item>Set_Netscape_User_Pref</item>
+            <item>AddStringListElement_To_Mozilla_Pref</item>
+            <item>AddStringListElement_To_Netscape_User_Pref</item>
+            <item>FindLine</item>
+            <item>FindLine_StartingWith</item>
+            <item>FindLine_Containing</item>
+            <item>GoToTop</item>
+            <item>AdvanceLine</item>
+            <item>GoToBottom</item>
+            <item>DeleteTheLine</item>
+            <item>AddLine</item>
+            <item>InsertLine</item>
+            <item>AppendLine</item>
+            <item>Append_File</item>
+            <item>Subtract_File</item>
+            <item>SaveToFile</item>
+            <item>Sorted</item>
+            <item>setKeyValueSeparator</item>
+            <item>setValueByKey</item>
+            <item>searchAndReplace</item>
+        </list>
+        <list name="registry section builtin">
+            <item>OpenKey</item>
+            <item>Set</item>
+            <item>Add</item>
+            <item>Supp</item>
+            <item>GetMultiSZFromFile</item>
+            <item>SaveValueToFile</item>
+            <item>DeleteVar</item>
+            <item>DeleteKey</item>
+            <item>ReconstructFrom</item>
+            <item>Flushkey</item>
+            <item>openKey</item>
+            <item>set</item>
+            <item>add</item>
+            <item>supp</item>
+        </list>
+        <list name="shellbatch section keywords">
+            <item>break</item>
+            <item>case</item>
+            <item>continue</item>
+            <item>do</item>
+            <item>done</item>
+            <item>elif</item>
+            <item>else</item>
+            <item>esac</item>
+            <item>fi</item>
+            <item>for</item>
+            <item>function</item>
+            <item>if</item>
+            <item>in</item>
+            <item>return</item>
+            <item>select</item>
+            <item>then</item>
+            <item>until</item>
+            <item>while</item>
+        </list>
+        <list name="shellbatch section builtin">
+            <item>.</item>
+            <item>:</item>
+            <item>source</item>
+            <item>alias</item>
+            <item>bg</item>
+            <item>bind</item>
+            <item>builtin</item>
+            <item>cd</item>
+            <item>caller</item>
+            <item>command</item>
+            <item>compgen</item>
+            <item>complete</item>
+            <item>coproc</item>
+            <item>dirs</item>
+            <item>disown</item>
+            <item>echo</item>
+            <item>enable</item>
+            <item>eval</item>
+            <item>exec</item>
+            <item>exit</item>
+            <item>fc</item>
+            <item>fg</item>
+            <item>hash</item>
+            <item>help</item>
+            <item>history</item>
+            <item>jobs</item>
+            <item>kill</item>
+            <item>logout</item>
+            <item>popd</item>
+            <item>printf</item>
+            <item>pushd</item>
+            <item>pwd</item>
+            <item>set</item>
+            <item>shift</item>
+            <item>shopt</item>
+            <item>suspend</item>
+            <item>test</item>
+            <item>time</item>
+            <item>times</item>
+            <item>trap</item>
+            <item>type</item>
+            <item>ulimit</item>
+            <item>umask</item>
+            <item>unalias</item>
+            <item>wait</item>
+        </list>
+        <list name="shellbatch section builtin_vars">
+            <item>export</item>
+            <item>declare</item>
+            <item>getopts</item>
+            <item>let</item>
+            <item>local</item>
+            <item>read</item>
+            <item>readonly</item>
+            <item>typeset</item>
+            <item>unset</item>
+        </list>
+        <list name="shellbatch section unixcommands">
+            <!-- /bin -->
+            <item>arch</item>
+            <item>awk</item>
+            <item>b2sum</item>
+            <item>base32</item>
+            <item>base64</item>
+            <item>bash</item>
+            <item>bunzip2</item>
+            <item>bzcat</item>
+            <item>bzcmp</item>
+            <item>bzdiff</item>
+            <item>bzegrep</item>
+            <item>bzfgrep</item>
+            <item>bzgrep</item>
+            <item>bzip2</item>
+            <item>bzip2recover</item>
+            <item>bzless</item>
+            <item>bzmore</item>
+            <item>cat</item>
+            <item>chattr</item>
+            <item>chcon</item>
+            <item>chgrp</item>
+            <item>chmod</item>
+            <item>chown</item>
+            <item>chvt</item>
+            <item>cksum</item>
+            <item>cp</item>
+            <item>crontab</item>
+            <item>csplit</item>
+            <item>date</item>
+            <item>dd</item>
+            <item>deallocvt</item>
+            <item>df</item>
+            <item>dir</item>
+            <item>dircolors</item>
+            <item>dmesg</item>
+            <item>dnsdomainname</item>
+            <item>domainname</item>
+            <item>du</item>
+            <item>dumpkeys</item>
+            <item>ed</item>
+            <item>egrep</item>
+            <item>expand</item>
+            <item>false</item>
+            <item>fgconsole</item>
+            <item>fgrep</item>
+            <item>fold</item>
+            <item>fuser</item>
+            <item>gawk</item>
+            <item>getkeycodes</item>
+            <item>gocr</item>
+            <item>grep</item>
+            <item>groff</item>
+            <item>groups</item>
+            <item>gunzip</item>
+            <item>gzexe</item>
+            <item>gzip</item>
+            <item>hostid</item>
+            <item>hostname</item>
+            <item>iconv</item>
+            <item>igawk</item>
+            <item>install</item>
+            <item>kbd_mode</item>
+            <item>kbdrate</item>
+            <item>killall</item>
+            <item>last</item>
+            <item>lastb</item>
+            <item>link</item>
+            <item>ln</item>
+            <item>loadkeys</item>
+            <item>loadunimap</item>
+            <item>login</item>
+            <item>ls</item>
+            <item>lsattr</item>
+            <item>lsmod</item>
+            <item>lsmod.old</item>
+            <item>lzcat</item>
+            <item>lzcmp</item>
+            <item>lzdiff</item>
+            <item>lzegrep</item>
+            <item>lzfgrep</item>
+            <item>lzgrep</item>
+            <item>lzless</item>
+            <item>lzma</item>
+            <item>lzmainfo</item>
+            <item>lzmore</item>
+            <item>mapscrn</item>
+            <item>md5sum</item>
+            <item>mesg</item>
+            <item>mkdir</item>
+            <item>mkfifo</item>
+            <item>mknod</item>
+            <item>mktemp</item>
+            <item>more</item>
+            <item>mount</item>
+            <item>mv</item>
+            <item>nano</item>
+            <item>netstat</item>
+            <item>nisdomainname</item>
+            <item>nproc</item>
+            <item>nroff</item>
+            <item>numfmt</item>
+            <item>openvt</item>
+            <item>paste</item>
+            <item>pathchk</item>
+            <item>pgawk</item>
+            <item>pidof</item>
+            <item>ping</item>
+            <item>pinky</item>
+            <item>printenv</item>
+            <item>ps</item>
+            <item>pstree</item>
+            <item>ptx</item>
+            <item>rbash</item>
+            <item>readlink</item>
+            <item>realpath</item>
+            <item>red</item>
+            <item>resizecons</item>
+            <item>rm</item>
+            <item>rmdir</item>
+            <item>run-parts</item>
+            <item>runcon</item>
+            <item>sash</item>
+            <item>sed</item>
+            <item>setfont</item>
+            <item>setkeycodes</item>
+            <item>setleds</item>
+            <item>setmetamode</item>
+            <item>setserial</item>
+            <item>sh</item>
+            <item>sha1sum</item>
+            <item>sha224sum</item>
+            <item>sha256sum</item>
+            <item>sha384sum</item>
+            <item>sha512sum</item>
+            <item>showkey</item>
+            <item>shred</item>
+            <item>shuf</item>
+            <item>sleep</item>
+            <item>ssed</item>
+            <item>stat</item>
+            <item>stdbuf</item>
+            <item>stty</item>
+            <item>su</item>
+            <item>sync</item>
+            <item>tar</item>
+            <item>tempfile</item>
+            <item>timeout</item>
+            <item>touch</item>
+            <item>tput</item>
+            <item>troff</item>
+            <item>true</item>
+            <item>truncate</item>
+            <item>tty</item>
+            <item>umount</item>
+            <item>uname</item>
+            <item>unexpand</item>
+            <item>unicode_start</item>
+            <item>unicode_stop</item>
+            <item>unlink</item>
+            <item>unlzma</item>
+            <item>unxz</item>
+            <item>utmpdump</item>
+            <item>uuidgen</item>
+            <item>vdir</item>
+            <item>vi</item>
+            <item>wall</item>
+            <item>wc</item>
+            <item>xz</item>
+            <item>xzcat</item>
+            <item>ypdomainname</item>
+            <item>zcat</item>
+            <item>zcmp</item>
+            <item>zdiff</item>
+            <item>zegrep</item>
+            <item>zfgrep</item>
+            <item>zforce</item>
+            <item>zgrep</item>
+            <item>zless</item>
+            <item>zmore</item>
+            <item>znew</item>
+            <item>zsh</item>
+            <!-- some from /usr/bin -->
+            <item>aclocal</item>
+            <item>aconnect</item>
+            <item>aplay</item>
+            <item>apm</item>
+            <item>apmsleep</item>
+            <item>apropos</item>
+            <item>ar</item>
+            <item>arecord</item>
+            <item>as</item>
+            <item>as86</item>
+            <item>autoconf</item>
+            <item>autoheader</item>
+            <item>automake</item>
+            <item>basename</item>
+            <item>bc</item>
+            <item>bison</item>
+            <item>c++</item>
+            <item>cal</item>
+            <item>cc</item>
+            <item>cdda2wav</item>
+            <item>cdparanoia</item>
+            <item>cdrdao</item>
+            <item>cd-read</item>
+            <item>cdrecord</item>
+            <item>chfn</item>
+            <item>chroot</item>
+            <item>chsh</item>
+            <item>clear</item>
+            <item>cmp</item>
+            <item>co</item>
+            <item>col</item>
+            <item>comm</item>
+            <item>cpio</item>
+            <item>cpp</item>
+            <item>cut</item>
+            <item>dc</item>
+            <item>diff</item>
+            <item>diff3</item>
+            <item>directomatic</item>
+            <item>dirname</item>
+            <item>env</item>
+            <item>expr</item>
+            <item>fbset</item>
+            <item>file</item>
+            <item>find</item>
+            <item>flex</item>
+            <item>flex++</item>
+            <item>fmt</item>
+            <item>free</item>
+            <item>ftp</item>
+            <item>funzip</item>
+            <item>g++</item>
+            <item>gc</item>
+            <item>gcc</item>
+            <item>clang</item>
+            <item>clang++</item>
+            <item>valgrind</item>
+            <item>xdg-open</item>
+            <item>cmake</item>
+            <item>qmake</item>
+            <item>svn</item>
+            <item>git</item>
+            <item>rsync</item>
+            <item>gdb</item>
+            <item>getent</item>
+            <item>getopt</item>
+            <item>gettext</item>
+            <item>gettextize</item>
+            <item>gimp</item>
+            <item>gimp-remote</item>
+            <item>gimptool</item>
+            <item>gmake</item>
+            <item>gs</item>
+            <item>head</item>
+            <item>hexdump</item>
+            <item>id</item>
+            <item>join</item>
+            <item>ld</item>
+            <item>ld86</item>
+            <item>ldd</item>
+            <item>less</item>
+            <item>lex</item>
+            <item>locate</item>
+            <item>lockfile</item>
+            <item>logname</item>
+            <item>lp</item>
+            <item>lpr</item>
+            <item>lynx</item>
+            <item>m4</item>
+            <item>make</item>
+            <item>man</item>
+            <item>msgfmt</item>
+            <item>namei</item>
+            <item>nasm</item>
+            <item>nawk</item>
+            <item>nice</item>
+            <item>nl</item>
+            <item>nm</item>
+            <item>nm86</item>
+            <item>nmap</item>
+            <item>nohup</item>
+            <item>nop</item>
+            <item>od</item>
+            <item>passwd</item>
+            <item>patch</item>
+            <item>pcregrep</item>
+            <item>pcretest</item>
+            <item>perl</item>
+            <item>perror</item>
+            <item>pr</item>
+            <item>procmail</item>
+            <item>prune</item>
+            <item>ps2ascii</item>
+            <item>ps2epsi</item>
+            <item>ps2frag</item>
+            <item>ps2pdf</item>
+            <item>ps2ps</item>
+            <item>psbook</item>
+            <item>psmerge</item>
+            <item>psnup</item>
+            <item>psresize</item>
+            <item>psselect</item>
+            <item>pstops</item>
+            <item>rcs</item>
+            <item>rev</item>
+            <item>scp</item>
+            <item>seq</item>
+            <item>setterm</item>
+            <item>size</item>
+            <item>size86</item>
+            <item>skill</item>
+            <item>slogin</item>
+            <item>snice</item>
+            <item>sort</item>
+            <item>sox</item>
+            <item>split</item>
+            <item>ssh</item>
+            <item>ssh-add</item>
+            <item>ssh-agent</item>
+            <item>ssh-keygen</item>
+            <item>ssh-keyscan</item>
+            <item>strings</item>
+            <item>strip</item>
+            <item>sudo</item>
+            <item>suidperl</item>
+            <item>sum</item>
+            <item>tac</item>
+            <item>tail</item>
+            <item>tee</item>
+            <item>tr</item>
+            <item>tsort</item>
+            <item>uniq</item>
+            <item>unzip</item>
+            <item>updatedb</item>
+            <item>updmap</item>
+            <item>uptime</item>
+            <item>users</item>
+            <item>vmstat</item>
+            <item>w</item>
+            <item>wget</item>
+            <item>whatis</item>
+            <item>whereis</item>
+            <item>which</item>
+            <item>who</item>
+            <item>whoami</item>
+            <item>write</item>
+            <item>xargs</item>
+            <item>yacc</item>
+            <item>yes</item>
+            <item>zip</item>
+            <item>zsoelim</item>
+            <!-- others -->
+            <item>dcop</item>
+            <item>kdialog</item>
+            <item>kfile</item>
+            <item>xhost</item>
+            <item>xmodmap</item>
+            <item>xset</item>
+        </list>
+        <list name="xml2 section builtin">
+            <item>strictMode</item>
+            <item>openNode</item>
+            <item>SetAttribute</item>
+            <item>AddAttribute</item>
+            <item>DeleteAttribute</item>
+            <item>addNewNode</item>
+            <item>setNodeText</item>
+            <item>DeleteNode</item>
+            <item>gotoParentNode</item>
+            <item>rootNodeOnCreate</item>
+        </list>
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#pop" name="Normal Text">
+                <AnyChar attribute="Operator" String="+=&lt;&gt;" context="#stay"/>
+                <DetectChar attribute="String" context="StringDoubleQuotes" char="&quot;"/>
+                <DetectChar attribute="String" context="StringSingleQuotes" char="'"/>
+                <RegExpr attribute="Variable" context="#stay" String="(\$[a-zA-Z0-9_-]+\$|\%[a-zA-Z0-9_-]+\%)"/>
+                <RegExpr attribute="Comment" context="#stay" String="[;#][^\n]*"/>
+                <RegExpr attribute="Control Structures" String="(?i)^\s*DefFunc\b" context="Func" beginRegion="func"/>
+                <RegExpr attribute="Section" context="Actions" String="(?i)^\s*\[(Actions|Sub_[A-Za-z0-9_]+)\]\s*$" beginRegion="section" endRegion="section"/>
+                <RegExpr attribute="Section" context="Files" String="(?i)^\s*\[Files_[A-Za-z0-9_]+\]\s*$" beginRegion="section" endRegion="section"/>
+                <RegExpr attribute="Section" context="LdapSearch" String="(?i)^\s*\[ldapsearch_[A-Za-z0-9_]+\]\s*$" beginRegion="section" endRegion="section"/>
+                <RegExpr attribute="Section" context="LinkFolder" String="(?i)^\s*\[LinkFolder_[A-Za-z0-9_]+\]\s*$" beginRegion="section" endRegion="section"/>
+                <RegExpr attribute="Section" context="Patches" String="(?i)^\s*\[Patches_[A-Za-z0-9_]+\]\s*$" beginRegion="section" endRegion="section"/>
+                <RegExpr attribute="Section" context="PatchHosts" String="(?i)^\s*\[PatchHosts_[A-Za-z0-9_]+\]\s*$" beginRegion="section" endRegion="section"/>
+                <RegExpr attribute="Section" context="PatchTextFile" String="(?i)^\s*\[PatchTextFile_[A-Za-z0-9_]+\]\s*$" beginRegion="section" endRegion="section"/>
+                <RegExpr attribute="Section" context="Registry" String="(?i)^\s*\[Registry_[A-Za-z0-9_]+\]\s*$" beginRegion="section" endRegion="section"/>
+                <RegExpr attribute="Section" context="ShellBatch" String="(?i)^\s*\[(ShellBatch|ShellInAnIcon|DosBatch|DosInAnIcon)_[A-Za-z0-9_]+\]\s*$$" beginRegion="section" endRegion="section"/>
+                <RegExpr attribute="Section" context="XML2" String="(?i)^\s*\[XML2_[A-Za-z0-9_]+\]\s*$" beginRegion="section" endRegion="section"/>
+                <Detect2Chars attribute="Section" context="OtherSection" char="[" char1="]" beginRegion="section" endRegion="section"/>
+            </context>
+            <context name="StringDoubleQuotes" attribute="String" lineEndContext="#pop">
+                <RegExpr attribute="Variable" context="#stay" String="\%[a-zA-Z0-9_-]+\%"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+            <context name="StringSingleQuotes" attribute="String" lineEndContext="#pop">
+                <RegExpr attribute="Variable" context="#stay" String="\%[a-zA-Z0-9_-]+\%"/>
+                <DetectChar attribute="String" context="#pop" char="'"/>
+            </context>
+            <context name="StringDoubleQuotes Secondary" attribute="String" lineEndContext="#pop">
+                <RegExpr attribute="Variable" context="#stay" String="\$[a-zA-Z0-9_-]+\$"/>
+                <IncludeRules context="StringDoubleQuotes"/>
+            </context>
+            <context name="StringSingleQuotes Secondary" attribute="String" lineEndContext="#pop">
+                <RegExpr attribute="Variable" context="#stay" String="\$[a-zA-Z0-9_-]+\$"/>
+                <IncludeRules context="StringSingleQuotes"/>
+            </context>
+            <context name="StringDoubleQuotes Shell" attribute="String" lineEndContext="#stay">
+                <IncludeRules context="StringDoubleQuotes Secondary"/>
+            </context>
+            <context name="StringSingleQuotes Shell" attribute="String" lineEndContext="#stay">
+                <IncludeRules context="StringSingleQuotes Secondary"/>
+            </context>
+            <context name="Func" attribute="Normal Text" lineEndContext="#stay">
+                <RegExpr attribute="Control Structures" String="(?i)^\s*EndFunc\b" context="#pop" endRegion="func"/>
+                <IncludeRules context="Actions"/>
+            </context>
+            <context name="If" attribute="Normal Text" lineEndContext="#stay">
+                <StringDetect attribute="Control Structures" String="endif" context="#pop" endRegion="if"/>
+                <IncludeRules context="Actions"/>
+            </context>
+            <context name="Switch" attribute="Normal Text" lineEndContext="#stay">
+                <RegExpr attribute="Control Structures" context="Case" String="(?i)^\s*(Case|DefaultCase)\b" beginRegion="Case"/>
+                <RegExpr attribute="Control Structures" String="(?i)^\s*EndSwitch\b" context="#pop" endRegion="Switch"/>
+                <IncludeRules context="Actions"/>
+            </context>
+            <context name="Case" attribute="Normal Text" lineEndContext="#stay">
+                <RegExpr attribute="Control Structures" String="(?i)^\s*EndCase\b" context="#pop" endRegion="Case"/>
+                <IncludeRules context="Switch"/>
+            </context>
+            <context name="OtherSection" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="String" context="StringDoubleQuotes Secondary" char="&quot;"/>
+                <DetectChar attribute="String" context="StringSingleQuotes Secondary" char="'"/>
+                <IncludeRules context="Normal Text"/>
+            </context>
+            <context name="Actions" attribute="Normal Text" lineEndContext="#stay">
+                <keyword attribute="Control Structures" context="#stay" String="control structures"/>
+                <StringDetect attribute="Control Structures" String="if" context="If" beginRegion="if"/>
+                <RegExpr attribute="Control Structures" String="(?i)^\s*Switch\b" context="Switch" beginRegion="Switch"/>
+                <keyword attribute="Import" context="#stay" String="primary section import"/>
+                <keyword attribute="Keyword" context="#stay" String="primary section keywords"/>
+                <keyword attribute="Builtin Function" context="#stay" String="primary section builtin"/>
+                <keyword attribute="Operator" context="#stay" String="operators"/>
+                <IncludeRules context="Normal Text"/>
+                <RegExpr attribute="Function" context="#stay" String="(?i)\s*(Sub|Files|LdapSearch|LinkFolder|Patches|PatchHosts|PatchTextFile|Registry|ShellBatch|ShellInAnIcon|DosBatch|DosInAnicon|ExecWith|XML2)_[A-Za-z0-9_]+\b\s*"/>
+            </context>
+            <context name="Files" attribute="Normal Text" lineEndContext="#stay">
+                <keyword attribute="Builtin Function" context="#stay" String="files section builtin"/>
+                <IncludeRules context="Normal Text"/>
+            </context>
+            <context name="LdapSearch" attribute="Normal Text" lineEndContext="#stay">
+                <keyword attribute="Builtin Function" context="#stay" String="ldapsearch section builtin"/>
+                <IncludeRules context="Normal Text"/>
+            </context>
+            <context name="LinkFolder" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="String" context="StringDoubleQuotes Secondary" char="&quot;"/>
+                <DetectChar attribute="String" context="StringSingleQuotes Secondary" char="'"/>
+                <keyword attribute="Builtin Function" context="#stay" String="linkfolder section builtin"/>
+                <StringDetect attribute="Control Structures" String="set_link" context="Set_link" beginRegion="set_link"/>
+                <IncludeRules context="Normal Text"/>
+            </context>
+            <context name="Set_link" attribute="Normal Text" lineEndContext="#stay">
+                <keyword attribute="Builtin Function" context="#stay" String="linkfolder section set_link builtin"/>
+                <StringDetect attribute="Control Structures" String="end_link" context="#pop" endRegion="set_link"/>
+            </context>
+            <context name="PatchHosts" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="String" context="StringDoubleQuotes Secondary" char="&quot;"/>
+                <DetectChar attribute="String" context="StringSingleQuotes Secondary" char="'"/>
+                <keyword attribute="Builtin Function" context="#stay" String="patchhosts section builtin"/>
+                <IncludeRules context="Normal Text"/>
+            </context>
+            <context name="Patches" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="String" context="StringDoubleQuotes Secondary" char="&quot;"/>
+                <DetectChar attribute="String" context="StringSingleQuotes Secondary" char="'"/>
+                <keyword attribute="Builtin Function" context="#stay" String="patches section builtin"/>
+                <IncludeRules context="Normal Text"/>
+            </context>
+            <context name="PatchTextFile" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="String" context="StringDoubleQuotes Secondary" char="&quot;"/>
+                <DetectChar attribute="String" context="StringSingleQuotes Secondary" char="'"/>
+                <keyword attribute="Builtin Function" context="#stay" String="patchtextfile section builtin"/>
+                <IncludeRules context="Normal Text"/>
+            </context>
+            <context name="Registry" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="String" context="StringDoubleQuotes Secondary" char="&quot;"/>
+                <DetectChar attribute="String" context="StringSingleQuotes Secondary" char="'"/>
+                <keyword attribute="Builtin Function" context="#stay" String="registry section builtin"/>
+                <IncludeRules context="Normal Text"/>
+            </context>
+            <context name="ShellBatch" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="String" context="StringDoubleQuotes Shell" char="&quot;"/>
+                <DetectChar attribute="String" context="StringSingleQuotes Shell" char="'"/>
+                <DetectChar attribute="Operator" char=";"/>
+                <RegExpr attribute="Comment" String="#[^\n]*"/>
+                <RegExpr attribute="Variable" String="\$[\?\w]+"/>
+                <keyword attribute="Keyword" context="#stay" String="shellbatch section keywords"/>
+                <keyword attribute="Builtin Function" context="#stay" String="shellbatch section builtin"/>
+                <keyword attribute="Builtin Function" context="#stay" String="shellbatch section builtin_vars"/>
+                <keyword attribute="Function" context="#stay" String="shellbatch section unixcommands"/>
+                <IncludeRules context="Normal Text"/>
+            </context>
+            <context name="XML2" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar attribute="String" context="StringDoubleQuotes Secondary" char="&quot;"/>
+                <DetectChar attribute="String" context="StringSingleQuotes Secondary" char="'"/>
+                <keyword attribute="Builtin Function" context="#stay" String="xml2 section builtin"/>
+                <IncludeRules context="Normal Text"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Builtin Function" defStyleNum="dsBuiltIn" spellChecking="false"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Function" defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Operator" defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Import" defStyleNum="dsImport" spellChecking="false"/>
+            <itemData name="String" defStyleNum="dsString" spellChecking="false"/>
+            <itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
+            <itemData name="Control Structures" defStyleNum="dsControlFlow" spellChecking="false"/>
+            <itemData name="Section" defStyleNum="dsDataType" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start=";"/>
+        </comments>
+        <keywords casesensitive="0"/>
+    </general>
+</language>

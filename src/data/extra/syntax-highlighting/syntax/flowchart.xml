@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY node "[A-Za-z_][A-Za-z0-9_.]*(?:-[A-Za-z0-9_.]+)*">
+]>
+<!-- Flowchart.js: https://github.com/adrai/flowchart.js#node-syntax -->
+<language name="Flowchart" alternativeNames="flow" version="1" kateversion="5.79" section="Scientific" extensions="*.flow;*.flowchart" license="MIT">
+  <highlighting>
+    <list name="Node Types">
+      <item>start</item>
+      <item>end</item>
+      <item>operation</item>
+      <item>inputoutput</item>
+      <item>input</item>
+      <item>output</item>
+      <item>subroutine</item>
+      <item>condition</item>
+      <item>parallel</item>
+    </list>
+    <list name="Branch Specifiers">
+      <item>yes</item>
+      <item>no</item>
+      <item>true</item>
+      <item>false</item>
+      <item>path1</item>
+      <item>path2</item>
+      <item>path3</item>
+      <item>left</item>
+      <item>right</item>
+      <item>top</item>
+      <item>bottom</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <RegExpr String="&node;(?=\s*=>)" firstNonSpace="true" attribute="Node" context="Declaration"/>
+        <RegExpr String="&node;(?=\s*(?:\([^)]*\)\s*)?(?:->|@>))" firstNonSpace="true" attribute="Node" context="Connection"/>
+      </context>
+      <context name="Declaration" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <StringDetect String="=>" attribute="Operator" context="#pop!Node Type"/>
+      </context>
+      <context name="Node Type" attribute="Normal Text" lineEndContext="#pop!Label">
+        <DetectSpaces/>
+        <keyword String="Node Types" attribute="Type"/>
+        <StringDetect String=":>" attribute="Operator" context="#pop!Link"/>
+        <DetectChar char=":" attribute="Operator" context="#pop!Label"/>
+        <DetectChar char="|" attribute="Operator" context="#pop!State"/>
+      </context>
+      <!-- Labels may span lines; only a new declaration or edge starts DSL again. -->
+      <context name="Label" attribute="Label" lineEndContext="#stay">
+        <IncludeRules context="Statement Boundary"/>
+        <StringDetect String=":>" attribute="Operator" context="#pop!Link"/>
+        <DetectChar char="|" attribute="Operator" context="#pop!State"/>
+      </context>
+      <context name="Statement Boundary" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr String="&node;\s*(?:=>|(?:\([^)]*\)\s*)?(?:->|@>))" firstNonSpace="true" lookAhead="true" context="#pop"/>
+      </context>
+      <context name="State" attribute="State" lineEndContext="#pop!Label">
+        <StringDetect String=":>" attribute="Operator" context="#pop!Link"/>
+      </context>
+      <!-- A URL owns the rest of its line, including punctuation and // sequences. -->
+      <context name="Link" attribute="Link" lineEndContext="#pop!Label"/>
+      <context name="Connection" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <StringDetect String="->" attribute="Operator"/>
+        <StringDetect String="@>" attribute="Operator"/>
+        <RegExpr String="&node;" attribute="Node"/>
+        <DetectChar char="(" attribute="Operator" context="Parameters"/>
+      </context>
+      <context name="Parameters" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar char=")" attribute="Operator" context="#pop"/>
+        <DetectChar char="," attribute="Operator"/>
+        <keyword String="Branch Specifiers" attribute="Branch"/>
+        <DetectChar char="@" attribute="Operator" context="Branch Label"/>
+        <!-- Style edges contain JSON; its strings shield embedded DSL punctuation. -->
+        <DetectChar char="{" attribute="Operator" context="Pair##JSON"/>
+      </context>
+      <context name="Branch Label" attribute="Label" lineEndContext="#pop">
+        <AnyChar String=",)" lookAhead="true" context="#pop"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Node" defStyleNum="dsVariable"/>
+      <itemData name="Type" defStyleNum="dsDataType"/>
+      <itemData name="Operator" defStyleNum="dsOperator"/>
+      <itemData name="Branch" defStyleNum="dsKeyword"/>
+      <itemData name="Label" defStyleNum="dsString"/>
+      <itemData name="State" defStyleNum="dsAttribute"/>
+      <itemData name="Link" defStyleNum="dsString"/>
+    </itemDatas>
+  </highlighting>
+</language>

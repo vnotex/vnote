@@ -1,67 +1,180 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language
+[
+	<!ENTITY space " ">
+	<!ENTITY end "(?=\s*$)">
+	<!ENTITY content "(?:\S(?:.*\S)?)?">
+	<!ENTITY headerKey "^[a-zA-Z0-9][\w\-\s]*\:(?=\s)">
+
+	<!-- Link (obtained from markdown.xml) -->
+	<!ENTITY startLink "(?:https?|ftp|news|telnet|gopher|wais)\://">
+	<!ENTITY implicitLink "\b&startLink;[^&quot;&gt;\s`\)]*[^\s!&quot;&apos;`\(\)\*,\.:;&lt;&gt;\?~\]\}\\](?=[[:punct:]]*(?:[\s\)]|$))">
+	<!ENTITY link "\b&startLink;[^&quot;&gt;\]\s`\)]*[^\s!&quot;&apos;`\(\)\*,\.:;&lt;&gt;\?~\]\}\\](?=[[:punct:]]*(?:[\s\)\]]|$))">
+	<!-- Email (source: http://emailregex.com) -->
+	<!ENTITY email "(?:(?:[^&lt;&gt;\(\)\[\]\\\.,;:\s@&quot;]+(?:\.[^&lt;&gt;\(\)\[\]\\\.,;:\s@&quot;]+)*)|(?:&quot;[^&quot;]+&quot;))@(?:(?:\[\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}])|(?:(?:[a-zA-Z\-\d]+\.)+[a-zA-Z]{2,}))\b">
+
+	<!ENTITY title1 "(\={1,5})[^=](?:.*[^=])?\1">
+	<!ENTITY title2 "(\+{1,5})[^\+](?:.*[^\+])?\1">
+]>
+
 <!-- Created by Juliano Dorneles dos Santos <juliano_dorneles@yahoo.com.br> -->
 <!-- Fixed for 3.2 Helio Chissini de Castro <helio@kde.org> -->
 <!-- Extended and adapted (v1.20) by Eric Forgeot < http://esclinux.tk > -->
-<language name="txt2tags" extensions="*.t2t" section="Markup" mimetype="text/txt2tags" version="4" kateversion="3.0" casesensitive="1">
+<language name="txt2tags" extensions="*.t2t" section="Markup" mimetype="text/txt2tags" version="9" kateversion="5.0" casesensitive="1">
 <highlighting>
 
 <contexts>
-	<context name="Context" attribute="Normal" lineEndContext="#stay">
-		<RegExpr attribute="Date" context="Context" String="%%date(\(.*\))?"/>
-		<RegExpr attribute="Comment" context="Context" String="%.*"/>
-		<RegExpr attribute="BoldItalic" context="Context" String="\*\*//(.*)//\*\*" minimal="true"/>
-		<RegExpr attribute="BoldItalic" context="Context" String="//\*\*(.*)\*\*//" minimal="true" />
-		<RegExpr attribute="Bold" context="Context" String="\*\*.*\*\*" minimal="true"/>
-		<RegExpr attribute="Italic" context="Context" String="//.*//" minimal="true"/>
-		<RegExpr attribute="Underline" context="Context" String="__.*__" minimal="true"/>
-		<RegExpr attribute="Strikeout" context="Context" String="--.*--" minimal="true"/>
-		<RegExpr attribute="Monospaced" context="Context" String="``.*``" minimal="true"/>
-		<RegExpr attribute="Verbatim Line" context="Context" String="``` .*"/>
-		<RegExpr attribute="Title" context="Context" String=" *=[^=].*[^=]=(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
-		<RegExpr attribute="Title" context="Context" String=" *==[^=].*[^=]==(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
-		<RegExpr attribute="Title" context="Context" String=" *===[^=].*[^=]===(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
-		<RegExpr attribute="Title" context="Context" String=" *====[^=].*[^=]====(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
-		<RegExpr attribute="Title" context="Context" String=" *=====[^=].*[^=]=====(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
-		<RegExpr attribute="Title" context="Context" String=" *\+[^=].*[^=]\+(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
-		<RegExpr attribute="Title" context="Context" String=" *\+\+[^=].*[^=]\+\+(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
-		<RegExpr attribute="Title" context="Context" String=" *\+\+\+[^=].*[^=]\+\+\+(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
-		<RegExpr attribute="Title" context="Context" String=" *\+\+\+\+[^=].*[^=]\+\+\+\+(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
-		<RegExpr attribute="Title" context="Context" String=" *\+\+\+\+\+[^=].*[^=]\+\+\+\+\+(\[.*\])?\s*$" column="0" beginRegion="Header" endRegion="Header"/>
-		<RangeDetect attribute="Link" char="[" char1="]"/>
-		<RegExpr attribute="Tabel" context="Context" String=" *\|\| .*" column="0"/>
-		<RegExpr attribute="Tabel" context="Context" String=" *\| .*" column="0"/>
-		<RegExpr attribute="DefList" context="Context" String=" *\: .*" column="0"/>
-		<RegExpr attribute="List" context="Context" String=" *\- .*" column="0"/>
-		<RegExpr attribute="NumList" context="Context" String=" *\+ .*" column="0"/>
-		<RegExpr attribute="Quote" context="Context" String="\t.*"/>
-		<RegExpr attribute="Bar" context="Context" String="\s*([_=-]{20,})\s*$"/>
-		<RegExpr attribute="EOF" context="Context" String="$$" column="0" beginRegion="Header" endRegion="Header"/>
+
+	<!-- Start Document: find header -->
+	<context name="StartDocument" attribute="Normal" lineEndContext="Normal" lineEmptyContext="Normal" fallthrough="true" fallthroughContext="Normal">
+		<RegExpr attribute="Header Title" context="HeaderValue1" String="^&headerKey;" column="0"/>
 	</context>
+	<context name="HeaderValue1" attribute="Header Value" lineEndContext="#pop!HeaderKey2" lineEmptyContext="#pop!Normal" />
+	<context name="HeaderKey2" attribute="Normal" lineEndContext="#stay" lineEmptyContext="#pop!Normal" fallthrough="true" fallthroughContext="#pop!Normal">
+		<RegExpr attribute="Header Title" context="#pop!HeaderValue2" String="^&headerKey;" column="0"/>
+		<RegExpr context="#pop!Normal" String="^." column="0" lookAhead="true"/>
+	</context>
+	<context name="HeaderValue2" attribute="Header Value" lineEndContext="#pop!HeaderKey3" lineEmptyContext="#pop!Normal" />
+	<context name="HeaderKey3" attribute="Normal" lineEndContext="#stay" lineEmptyContext="#pop!Normal" fallthrough="true" fallthroughContext="#pop!Normal">
+		<RegExpr attribute="Header Title" context="#pop!HeaderValue3" String="&headerKey;" column="0"/>
+		<RegExpr context="#pop!Normal" String="^." column="0" lookAhead="true"/>
+	</context>
+	<context name="HeaderValue3" attribute="Header Value" lineEndContext="#pop!Normal" lineEmptyContext="#pop!Normal" />
+
+	<!-- Normal Document -->
+	<context name="Normal" attribute="Normal" lineEndContext="#stay">
+		<RegExpr attribute="Verbatim Block" context="VerbatimBlock" String="^```&end;" column="0" beginRegion="VerbatimBlock"/>
+		<RegExpr attribute="Raw Block" context="RawBlock" String="^&quot;&quot;&quot;&end;" column="0" beginRegion="RawBlock"/>
+		<RegExpr attribute="Tagged Block" context="TagBlock" String="^'''&end;" column="0" beginRegion="TagBlock"/>
+		<StringDetect attribute="Verbatim Line" context="VerbatimLine" String="```&space;" column="0"/>
+		<StringDetect attribute="Raw Line" context="RawLine" String="&quot;&quot;&quot;&space;" column="0"/>
+		<StringDetect attribute="Tagged Line" context="TagLine" String="'''&space;" column="0"/>
+
+		<RegExpr attribute="Bar" context="#stay" String="^\s*[_\=\-]{20,}&end;" column="0"/>
+		<RegExpr attribute="Title" context="#stay" String="^\s*(?|&title1;|&title2;)(?:\[.*\])?&end;" column="0" beginRegion="Header" endRegion="Header"/>
+		<RegExpr attribute="Tabel" context="Tabel" String="^&space;*\|[\|/_]?&space;" column="0"/>
+		<RegExpr attribute="DefList" context="ListLine" String="^&space;*\:&space;" column="0"/>
+		<RegExpr attribute="List" context="ListLine" String="^&space;*\-{1,3}&space;" column="0"/>
+		<RegExpr attribute="NumList" context="ListLine" String="^&space;*\+{1,3}&space;" column="0"/>
+		<DetectChar attribute="Quote" context="Quote" char="&#9;" column="0"/>
+		<LineContinue attribute="EOF" context="#stay" char="$" column="0" beginRegion="Header" endRegion="Header"/>
+
+		<IncludeRules context="Default"/>
+		<DetectChar attribute="Comment" context="FindComments" char="%" column="0" lookAhead="true"/>
+
+		<RegExpr attribute="Link (Normal)" String="&implicitLink;|&email;"/>
+	</context>
+	<context name="Default" attribute="Normal" lineEndContext="#stay">
+		<StringDetect attribute="Interpolated String" context="InterpolatedString" String="%%date"/>
+		<StringDetect attribute="Interpolated String" context="InterpolatedString" String="%%mtime"/>
+		<StringDetect attribute="Interpolated String" context="InterpolatedString" String="%%infile"/>
+		<StringDetect attribute="Interpolated String" context="InterpolatedString" String="%%outfile"/>
+		<StringDetect attribute="Interpolated String" context="#stay" String="%%toc"/>
+		<RegExpr attribute="BoldItalic" context="#stay" String="\*\*//&content;//\*\*|//\*\*&content;\*\*//" minimal="true" />
+		<RegExpr attribute="Bold" context="#stay" String="\*\*&content;\*\*" minimal="true"/>
+		<RegExpr attribute="Italic" context="#stay" String="//&content;//" minimal="true"/>
+		<RegExpr attribute="Underline" context="#stay" String="__&content;__" minimal="true"/>
+		<RegExpr attribute="Strikeout" context="#stay" String="--&content;--" minimal="true"/>
+		<RegExpr attribute="Monospaced" context="#stay" String="``&content;``" minimal="true"/>
+		<RangeDetect attribute="Link" context="Link" char="[" char1="]" lookAhead="true"/>
+	</context>
+
+	<context name="FindComments" attribute="Comment" lineEndContext="#pop">
+		<RegExpr attribute="Constant Character" context="#pop!ConstantChar" String="^%!\s*(?:target|encoding|style|options|include|includeconf|preproc|postproc|guicolors)\s*(?:\(\w*\)\s*)?\:" column="0"/>
+		<RegExpr attribute="Comment" context="#pop!CommentBlock" String="^%%%&end;" column="0" beginRegion="CommentBlock"/>
+		<DetectChar attribute="Comment" context="#pop!CommentLine" char="%" column="0"/>
+	</context>
+	<context name="CommentLine" attribute="Comment" lineEndContext="#pop">
+		<DetectSpaces />
+		<IncludeRules context="##Comments"/>
+	</context>
+	<context name="CommentBlock" attribute="Comment" lineEndContext="#stay">
+		<RegExpr attribute="Comment" context="#pop" String="^%%%&end;" column="0" endRegion="CommentBlock"/>
+		<DetectSpaces />
+		<IncludeRules context="##Comments"/>
+	</context>
+	<context name="ConstantChar" attribute="Comment" lineEndContext="#pop" />
+
+	<context name="ListLine" attribute="List Content" lineEndContext="#pop">
+		<IncludeRules context="Default"/>
+		<RegExpr attribute="Link (List Content)" String="&implicitLink;|&email;"/>
+	</context>
+	<context name="Tabel" attribute="Tabel" lineEndContext="#pop">
+		<RegExpr attribute="Link (Tabel)" String="&implicitLink;|&email;"/>
+	</context>
+	<context name="Quote" attribute="Quote" lineEndContext="#pop">
+		<RegExpr attribute="Link (Quote)" String="&implicitLink;|&email;"/>
+	</context>
+	<context name="Link" attribute="Link" lineEndContext="#pop">
+		<DetectChar attribute="Link" context="#pop!LinkContent" char="["/>
+	</context>
+	<context name="LinkContent" attribute="Link" lineEndContext="#pop">
+		<DetectChar attribute="Link" context="#pop" char="]"/>
+		<RegExpr attribute="Link" context="LinkContent" String="\[(?=[^\s\[\]]*\])"/>
+		<RegExpr attribute="Link URL" String="&link;|&email;"/>
+	</context>
+
+	<context name="InterpolatedString" attribute="Interpolated String" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+		<RangeDetect attribute="Interpolated String" context="#pop" char="(" char1=")"/>
+	</context>
+	<context name="VerbatimBlock" attribute="Verbatim Block" lineEndContext="#stay">
+		<RegExpr attribute="Verbatim Block" context="#pop" String="^```&end;" column="0" endRegion="VerbatimBlock"/>
+	</context>
+	<context name="RawBlock" attribute="Raw Block" lineEndContext="#stay">
+		<RegExpr attribute="Raw Block" context="#pop" String="^&quot;&quot;&quot;&end;" column="0" endRegion="RawBlock"/>
+	</context>
+	<context name="TagBlock" attribute="Tagged Block" lineEndContext="#stay">
+		<RegExpr attribute="Tagged Block" context="#pop" String="^'''&end;" column="0" endRegion="TagBlock"/>
+	</context>
+	<context name="VerbatimLine" attribute="Verbatim Line" lineEndContext="#pop" />
+	<context name="RawLine" attribute="Raw Line" lineEndContext="#pop" />
+	<context name="TagLine" attribute="Tagged Line" lineEndContext="#pop" />
+
 </contexts>
 
 <itemDatas>
 	<itemData name="Normal" defStyleNum="dsNormal" />
-	<itemData name="Date" defStyleNum="dsNormal" color="#FF0000" italic="1" />
-	<itemData name="Comment" defStyleNum="dsNormal" color="#666666" italic="1" />
+	<itemData name="Comment" defStyleNum="dsComment" />
+	<itemData name="Interpolated String" defStyleNum="dsVariable" spellChecking="false" />
+	<itemData name="Constant Character" defStyleNum="dsPreprocessor" spellChecking="false" />
 	<itemData name="BoldItalic" defStyleNum="dsNormal" bold="1" italic="1" />
-	<itemData name="Bold" defStyleNum="dsNormal" color="#445675" bold="1" />
-	<itemData name="Italic" defStyleNum="dsNormal" color="#653A39" italic="1" />
-	<itemData name="Underline" defStyleNum="dsNormal" color="#386742" underline="1" />
-	<itemData name="Strikeout" defStyleNum="dsNormal" color="#644A9B" strikeOut="1" />
-	<itemData name="Monospaced" defStyleNum="dsNormal" color="#006600" />
-	<itemData name="Verbatim Line" defStyleNum="dsNormal" color="#006600" />
-	<itemData name="Title" defStyleNum="dsNormal" color="#990000" />
-	<itemData name="Link" defStyleNum="dsNormal" color="#0930DE" />
-	<itemData name="Tabel" defStyleNum="dsNormal" color="#FF0000" />
-	<itemData name="DefList" defStyleNum="dsNormal" color="#E300EE" />
-	<itemData name="List" defStyleNum="dsNormal" color="#E300EE" />
-	<itemData name="NumList" defStyleNum="dsNormal" color="#E300EE" />
-	<itemData name="Quote" defStyleNum="dsNormal" color="brown" />
-	<itemData name="Bar" defStyleNum="dsNormal" color="#C0C0C0" />
-	<itemData name="EOF" defStyleNum="dsOthers" />
+	<itemData name="Bold" defStyleNum="dsNormal" bold="1" />
+	<itemData name="Italic" defStyleNum="dsNormal" italic="1" />
+	<itemData name="Underline" defStyleNum="dsNormal" underline="1" />
+	<itemData name="Strikeout" defStyleNum="dsNormal" strikeOut="1" />
+	<itemData name="Monospaced" defStyleNum="dsInformation" />
+	<itemData name="Verbatim Line" defStyleNum="dsInformation" />
+	<itemData name="Verbatim Block" defStyleNum="dsInformation" />
+	<itemData name="Raw Line" defStyleNum="dsVerbatimString" />
+	<itemData name="Raw Block" defStyleNum="dsVerbatimString" />
+	<itemData name="Tagged Line" defStyleNum="dsVerbatimString" />
+	<itemData name="Tagged Block" defStyleNum="dsVerbatimString" />
+	<itemData name="Title" defStyleNum="dsFunction" bold="1" />
+	<itemData name="Link" defStyleNum="dsOthers" />
+	<itemData name="Tabel" defStyleNum="dsString" />
+	<itemData name="DefList" defStyleNum="dsSpecialString" bold="1" spellChecking="false" />
+	<itemData name="List" defStyleNum="dsSpecialString" bold="1" spellChecking="false" />
+	<itemData name="NumList" defStyleNum="dsSpecialString" bold="1" spellChecking="false" />
+	<itemData name="List Content" defStyleNum="dsNormal" />
+	<itemData name="Quote" defStyleNum="dsAttribute" />
+	<itemData name="Bar" defStyleNum="dsKeyword" spellChecking="false" />
+	<itemData name="EOF" defStyleNum="dsSpecialChar" spellChecking="false" />
+	<itemData name="Link (Normal)" defStyleNum="dsNormal" underline="true" spellChecking="false" />
+	<itemData name="Link (List Content)" defStyleNum="dsNormal" underline="true" spellChecking="false" />
+	<itemData name="Link (Tabel)" defStyleNum="dsString" underline="true" spellChecking="false" />
+	<itemData name="Link (Quote)" defStyleNum="dsAttribute" underline="true" spellChecking="false" />
+	<itemData name="Link URL" defStyleNum="dsOthers" underline="true" spellChecking="false" />
+	<itemData name="Header Title" defStyleNum="dsAnnotation" />
+	<itemData name="Header Value" defStyleNum="dsComment" />
 </itemDatas>
 
 </highlighting>
 
+<general>
+	<comments>
+		<comment name="singleLine" start="%"/>
+	</comments>
+</general>
+
 </language>
+<!-- kate: replace-tabs off; -->

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- Pig syntax highlighting v3.0, Copyright © 2012 Johannes Schwenk, johannes.schwenk@adition.com -->
-<language name="Pig" version="8" kateversion="3.4" section="Scripts" extensions="*.pig" mimetype="application/x-pig;text/x-pig" casesensitive="0" author="Johannes Schwenk, johannes.schwenk@adition.com" license="GPL">
+<language name="Pig" version="10" kateversion="5.0" section="Scripts" extensions="*.pig" mimetype="application/x-pig;text/x-pig" casesensitive="0" author="Johannes Schwenk, johannes.schwenk@adition.com" license="GPL">
 	<highlighting>
 		<list name="keywords">
 			<item>load</item>
@@ -124,7 +124,7 @@
 				<keyword attribute="Type" String="types" context="#stay"/>
 				<keyword attribute="Grunt" String="grunts" context="#stay"/>
 				<keyword attribute="Function" String="functions" context="#stay"/>
-				<RegExpr attribute="Statement" String="[%](declare|default)" context="#stay"/>
+				<RegExpr attribute="Statement" String="%(?:declare|default)" context="#stay"/>
 				<Float attribute="Float" context="#stay" />
 				<HlCHex attribute="Hex" context="#stay"/>
 				<HlCOct attribute="Octal" context="#stay"/>
@@ -137,7 +137,7 @@
 			</context>
 
             <context name="Int Suffixes" attribute="Int" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-					<StringDetect attribute="Int" String="L" insensitive="true" context="#pop"/>
+					<AnyChar attribute="Int" String="Ll" context="#pop"/>
             </context>
 
 			<context name="Parameter variable" attribute="Normal Text" lineEndContext="#pop">
@@ -160,14 +160,14 @@
 			<context name="Dash comment" attribute="Comment" lineEndContext="#pop">
 				<LineContinue attribute="Comment" context="#stay"/>
 				<DetectSpaces />
-				<IncludeRules context="##Alerts" />
+				<IncludeRules context="##Comments" />
 				<DetectIdentifier />
 			</context>
 			
 			<context name="Multiline comment" attribute="Comment" lineEndContext="#stay">
 				<DetectSpaces />
 				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-				<IncludeRules context="##Alerts" />
+				<IncludeRules context="##Comments" />
 				<DetectIdentifier />
 			</context>
 
@@ -203,3 +203,4 @@
 		<keywords casesensitive="0" />
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

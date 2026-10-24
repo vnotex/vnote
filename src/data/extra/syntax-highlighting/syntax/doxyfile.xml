@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
     This file is part of the KDE KSyntaxHighlighting framework.
 
@@ -27,7 +27,7 @@
           section="Configuration"
           extensions="Doxyfile;Doxyfile.*"
           mimetype=""
-          version="2"
+          version="6"
           kateversion="5.0"
           author="Ernst Maurer (ernst.maurer@gmail.com)"
           license="MIT">
@@ -60,28 +60,36 @@
             <item>COMPACT_RTF</item>
             <item>CPP_CLI_SUPPORT</item>
             <item>CREATE_SUBDIRS</item>
+            <item>CREATE_SUBDIRS_LEVEL</item>
             <item>DIAFILE_DIRS</item>
             <item>DIA_PATH</item>
             <item>DIRECTORY_GRAPH</item>
+            <item>DIR_GRAPH_MAX_DEPTH</item>
             <item>DISABLE_INDEX</item>
             <item>DISTRIBUTE_GROUP_DOC</item>
             <item>DOCBOOK_OUTPUT</item>
             <item>DOCBOOK_PROGRAMLISTING</item>
             <item>DOCSET_BUNDLE_ID</item>
             <item>DOCSET_FEEDNAME</item>
+            <item>DOCSET_FEEDURL</item>
             <item>DOCSET_PUBLISHER_ID</item>
             <item>DOCSET_PUBLISHER_NAME</item>
             <item>DOTFILE_DIRS</item>
             <item>DOT_CLEANUP</item>
+            <item>DOT_COMMON_ATTR</item>
+            <item>DOT_EDGE_ATTR</item>
             <item>DOT_FONTNAME</item>
             <item>DOT_FONTPATH</item>
             <item>DOT_FONTSIZE</item>
             <item>DOT_GRAPH_MAX_NODES</item>
             <item>DOT_IMAGE_FORMAT</item>
             <item>DOT_MULTI_TARGETS</item>
+            <item>DOT_NODE_ATTR</item>
             <item>DOT_NUM_THREADS</item>
             <item>DOT_PATH</item>
             <item>DOT_TRANSPARENT</item>
+            <item>DOT_UML_DETAILS</item>
+            <item>DOT_WRAP_THRESHOLD</item>
             <item>DOXYFILE_ENCODING</item>
             <item>ECLIPSE_DOC_ID</item>
             <item>ENABLED_SECTIONS</item>
@@ -107,6 +115,7 @@
             <item>EXTRACT_LOCAL_METHODS</item>
             <item>EXTRACT_PACKAGE</item>
             <item>EXTRACT_PRIVATE</item>
+            <item>EXTRACT_PRIV_VIRTUAL</item>
             <item>EXTRACT_STATIC</item>
             <item>EXTRA_PACKAGES</item>
             <item>EXTRA_SEARCH_MAPPINGS</item>
@@ -118,8 +127,11 @@
             <item>FILTER_SOURCE_PATTERNS</item>
             <item>FORCE_LOCAL_INCLUDES</item>
             <item>FORMULA_FONTSIZE</item>
+            <item>FORMULA_MACROFILE</item>
             <item>FORMULA_TRANSPARENT</item>
+            <item>FORTRAN_COMMENT_AFTER</item>
             <item>FULL_PATH_NAMES</item>
+            <item>FULL_SIDEBAR</item>
             <item>GENERATE_AUTOGEN_DEF</item>
             <item>GENERATE_BUGLIST</item>
             <item>GENERATE_CHI</item>
@@ -135,6 +147,7 @@
             <item>GENERATE_PERLMOD</item>
             <item>GENERATE_QHP</item>
             <item>GENERATE_RTF</item>
+            <item>GENERATE_SQLITE3</item>
             <item>GENERATE_TAGFILE</item>
             <item>GENERATE_TESTLIST</item>
             <item>GENERATE_TODOLIST</item>
@@ -152,17 +165,23 @@
             <item>HIDE_UNDOC_CLASSES</item>
             <item>HIDE_UNDOC_MEMBERS</item>
             <item>HIDE_UNDOC_RELATIONS</item>
+            <item>HTML_CODE_FOLDING</item>
+            <item>HTML_COLORSTYLE</item>
             <item>HTML_COLORSTYLE_GAMMA</item>
             <item>HTML_COLORSTYLE_HUE</item>
             <item>HTML_COLORSTYLE_SAT</item>
+            <item>HTML_COPY_CLIPBOARD</item>
+            <item>HTML_DYNAMIC_MENUS</item>
             <item>HTML_DYNAMIC_SECTIONS</item>
             <item>HTML_EXTRA_FILES</item>
             <item>HTML_EXTRA_STYLESHEET</item>
             <item>HTML_FILE_EXTENSION</item>
             <item>HTML_FOOTER</item>
+            <item>HTML_FORMULA_FORMAT</item>
             <item>HTML_HEADER</item>
             <item>HTML_INDEX_NUM_ENTRIES</item>
             <item>HTML_OUTPUT</item>
+            <item>HTML_PROJECT_COOKIE</item>
             <item>HTML_STYLESHEET</item>
             <item>HTML_TIMESTAMP</item>
             <item>IDL_PROPERTY_SUPPORT</item>
@@ -180,18 +199,22 @@
             <item>INLINE_SOURCES</item>
             <item>INPUT</item>
             <item>INPUT_ENCODING</item>
+            <item>INPUT_FILE_ENCODING</item>
             <item>INPUT_FILTER</item>
             <item>INTERACTIVE_SVG</item>
             <item>INTERNAL_DOCS</item>
             <item>JAVADOC_AUTOBRIEF</item>
+            <item>JAVADOC_BANNER</item>
             <item>LATEX_BATCHMODE</item>
             <item>LATEX_BIB_STYLE</item>
             <item>LATEX_CMD_NAME</item>
+            <item>LATEX_EMOJI_DIRECTORY</item>
             <item>LATEX_EXTRA_FILES</item>
             <item>LATEX_EXTRA_STYLESHEET</item>
             <item>LATEX_FOOTER</item>
             <item>LATEX_HEADER</item>
             <item>LATEX_HIDE_INDICES</item>
+            <item>LATEX_MAKEINDEX_CMD</item>
             <item>LATEX_OUTPUT</item>
             <item>LATEX_SOURCE_CODE</item>
             <item>LATEX_TIMESTAMP</item>
@@ -203,19 +226,25 @@
             <item>MAN_LINKS</item>
             <item>MAN_OUTPUT</item>
             <item>MAN_SUBDIR</item>
+            <item>MARKDOWN_ID_STYLE</item>
             <item>MARKDOWN_SUPPORT</item>
             <item>MATHJAX_CODEFILE</item>
             <item>MATHJAX_EXTENSIONS</item>
             <item>MATHJAX_FORMAT</item>
             <item>MATHJAX_RELPATH</item>
+            <item>MATHJAX_VERSION</item>
             <item>MAX_DOT_GRAPH_DEPTH</item>
             <item>MAX_INITIALIZER_LINES</item>
             <item>MSCFILE_DIRS</item>
             <item>MSCGEN_PATH</item>
+            <item>MSCGEN_TOOL</item>
             <item>MULTILINE_CPP_IS_BRIEF</item>
+            <item>NUM_PROC_THREADS</item>
+            <item>OBFUSCATE_EMAILS</item>
             <item>OPTIMIZE_FOR_FORTRAN</item>
             <item>OPTIMIZE_OUTPUT_FOR_C</item>
             <item>OPTIMIZE_OUTPUT_JAVA</item>
+            <item>OPTIMIZE_OUTPUT_SLICE</item>
             <item>OPTIMIZE_OUTPUT_VHDL</item>
             <item>OUTPUT_DIRECTORY</item>
             <item>OUTPUT_LANGUAGE</item>
@@ -225,13 +254,16 @@
             <item>PERLMOD_MAKEVAR_PREFIX</item>
             <item>PERLMOD_PRETTY</item>
             <item>PERL_PATH</item>
+            <item>PLANTUML_CFG_FILE</item>
             <item>PLANTUML_INCLUDE_PATH</item>
             <item>PLANTUML_JAR_PATH</item>
             <item>PREDEFINED</item>
             <item>PROJECT_BRIEF</item>
+            <item>PROJECT_ICON</item>
             <item>PROJECT_LOGO</item>
             <item>PROJECT_NAME</item>
             <item>PROJECT_NUMBER</item>
+            <item>PYTHON_DOCSTRING</item>
             <item>QCH_FILE</item>
             <item>QHG_LOCATION</item>
             <item>QHP_CUST_FILTER_ATTRS</item>
@@ -246,6 +278,7 @@
             <item>REFERENCES_LINK_SOURCE</item>
             <item>REFERENCES_RELATION</item>
             <item>REPEAT_BRIEF</item>
+            <item>RESOLVE_UNNAMED_PARAMS</item>
             <item>RTF_EXTENSIONS_FILE</item>
             <item>RTF_HYPERLINKS</item>
             <item>RTF_OUTPUT</item>
@@ -260,10 +293,12 @@
             <item>SHORT_NAMES</item>
             <item>SHOW_FILES</item>
             <item>SHOW_GROUPED_MEMB_INC</item>
+            <item>SHOW_HEADERFILE</item>
             <item>SHOW_INCLUDE_FILES</item>
             <item>SHOW_NAMESPACES</item>
             <item>SHOW_USED_FILES</item>
             <item>SIP_SUPPORT</item>
+            <item>SITEMAP_URL</item>
             <item>SKIP_FUNCTION_MACROS</item>
             <item>SORT_BRIEF_DOCS</item>
             <item>SORT_BY_SCOPE_NAME</item>
@@ -272,6 +307,7 @@
             <item>SORT_MEMBER_DOCS</item>
             <item>SOURCE_BROWSER</item>
             <item>SOURCE_TOOLTIPS</item>
+            <item>SQLITE3_RECREATE_DB</item>
             <item>STRICT_PROTO_MATCHING</item>
             <item>STRIP_CODE_COMMENTS</item>
             <item>STRIP_FROM_INC_PATH</item>
@@ -281,7 +317,9 @@
             <item>TAGFILES</item>
             <item>TCL_SUBST</item>
             <item>TEMPLATE_RELATIONS</item>
+            <item>TIMESTAMP</item>
             <item>TOC_EXPAND</item>
+            <item>TOC_INCLUDE_HEADINGS</item>
             <item>TREEVIEW_WIDTH</item>
             <item>TYPEDEF_HIDES_STRUCT</item>
             <item>UML_LIMIT_NUM_FIELDS</item>
@@ -295,9 +333,13 @@
             <item>WARN_AS_ERROR</item>
             <item>WARN_FORMAT</item>
             <item>WARN_IF_DOC_ERROR</item>
+            <item>WARN_IF_INCOMPLETE_DOC</item>
             <item>WARN_IF_UNDOCUMENTED</item>
+            <item>WARN_IF_UNDOC_ENUM_VAL</item>
+            <item>WARN_LINE_FORMAT</item>
             <item>WARN_LOGFILE</item>
             <item>WARN_NO_PARAMDOC</item>
+            <item>XML_NS_MEMB_FILE_SCOPE</item>
             <item>XML_OUTPUT</item>
             <item>XML_PROGRAMLISTING</item>
         </list>
@@ -319,6 +361,7 @@
                 <LineContinue />
             </context>
             <context name="Comment" attribute="Comment" lineEndContext="#pop">
+                <IncludeRules context="##Comments" />
                 <keyword attribute="KeywordInComment" String="keywords" context="#stay"/>
                 <DetectSpaces />
                 <DetectIdentifier />
@@ -332,7 +375,7 @@
             <itemData name="Assignment" defStyleNum="dsOperator" spellChecking="0" />
             <itemData name="ValueYes" defStyleNum="dsOthers" spellChecking="0" />
             <itemData name="ValueNo" defStyleNum="dsString" spellChecking="0" />
-            <itemData name="UntypedValue" defStyleNum="dsString" spellChecking="0" />
+            <itemData name="UntypedValue" defStyleNum="dsDataType" spellChecking="0" />
             <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="0" />
             <itemData name="KeywordInComment" defStyleNum="dsCommentVar" spellChecking="0" />
             <itemData name="Parameter" defStyleNum="dsOthers" spellChecking="0" />
@@ -342,9 +385,9 @@
     <general>
         <comments>
             <comment name="singleLine" start="#" />
-            <comment name="singleLine" start=";" />
         </comments>
         <keywords casesensitive="0" />
     </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

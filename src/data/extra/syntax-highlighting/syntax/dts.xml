@@ -1,0 +1,203 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    SPDX-FileCopyrightText: 2025 Artur Weber <knuxify@gmail.com>
+
+    SPDX-License-Identifier: MIT
+-->
+<!DOCTYPE language
+[
+    <!ENTITY int "(?:[0-9](?:'?[0-9]++)*+)">
+    <!ENTITY hex_int "(?:[0-9A-Fa-f](?:'?[0-9A-Fa-f]++)*+)">
+    <!ENTITY operator "([+\-*/&#37;&amp;|~!&gt;&lt;]|&lt;&lt;|&gt;&gt;|&amp;&amp;|&#124;&#124;|&lt;=|&gt;=|==|!=|\?:)">
+
+    <!-- Label name, node name, property name regexes -->
+    <!ENTITY label_chars "0-9a-zA-Z_">
+    <!ENTITY label "(?:[&label_chars;]*+)">
+    <!ENTITY node "(?:(/?(?:[0-9a-zA-Z,._+-]*+)(@&hex_int;)?)*+)">
+    <!ENTITY property "(?:[0-9a-zA-Z,._+?#-]*+)">
+
+    <!-- C-like constant/macro name regex -->
+    <!ENTITY constant_chars "0-9a-zA-Z_">
+    <!ENTITY constant "(?:[&constant_chars;]*+)">
+
+    <!-- DT tags (excluding /bits/, which is handled separately) -->
+    <!ENTITY tag "(dts-v1|delete-node|delete-property|include|memreserve)">
+
+    <!-- C-like preprocessor directives (#if, #include etc.) -->
+    <!ENTITY preprocessor "(include|if|ifdef|ifndef|elif|else|endif|define|undef)">
+]>
+<language name="Devicetree Source (DTS)" section="Other"
+          version="2" kateversion="5.79" author="Artur Weber" license="MIT"
+          indenter="cstyle"
+          extensions="*.dts;*.dtsi">
+  <highlighting>
+    <contexts>
+      <context name="Normal Text" attribute="Normal Text" lineEndContext="#pop">
+        <!-- Comments -->
+        <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/" />
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*" beginRegion="MultiLineComment"/>
+
+        <!-- A node is contained within braces ("{ ... };") -->
+        <DetectChar attribute="NodeBracket" context="#stay" char="{" beginRegion="Node" />
+        <DetectChar attribute="NodeBracket" context="#stay" char="}" endRegion="Node" />
+        <!-- ";" signifies the end of a node -->
+        <DetectChar attribute="Symbol" context="#stay" char=";" />
+
+        <!-- Tags -->
+        <RegExpr attribute="Tag" context="Tag" String="/&tag;" />
+
+        <!-- References (for refs in node names) -->
+        <DetectChar attribute="Reference" context="Reference" char="&amp;" />
+
+        <!-- C-style preprocessor directives -->
+        <RegExpr attribute="Preprocessor" context="Preprocessor" String="#&preprocessor;" />
+
+        <!-- Node labels -->
+        <RegExpr attribute="NodeName" context="NodeName" String="(&label;:[ \t]*)*&node;([ \t]*)?{" firstNonSpace="true" lookAhead="true" />
+
+        <!-- Properties -->
+        <RegExpr attribute="Property" context="Property" String="&property;" />
+
+        <DetectSpaces />
+      </context>
+
+      <!-- Node label/name -->
+      <context name="NodeName" attribute="NodeName" lineEndContext="#pop">
+        <DetectSpaces />
+        <RegExpr attribute="NodeLabel" context="#stay" String="&label;:" />
+        <RegExpr attribute="NodeNameAddress" context="#stay" String="@&hex_int;" />
+        <DetectChar attribute="Symbol" context="#pop" char="{" lookAhead="true" />
+      </context>
+
+      <!-- C-style preprocessor statements -->
+      <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop">
+        <DetectSpaces />
+        <LineContinue attribute="Symbol"/>
+      </context>
+
+      <!-- Comments (C-style; matches both /* ... */ and // ...) -->
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier />
+      </context>
+
+      <context name="MultiLineComment" attribute="Comment" lineEndContext="#stay" >
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="MultiLineComment" />
+      </context>
+
+      <!-- Tag context -->
+      <context name="Tag" attribute="Tag" lineEndContext="#pop">
+        <DetectSpaces />
+
+        <!-- For tags with parameters (/delete-node/ &node, etc.), switch to Value after trailing slash -->
+        <DetectChar attribute="Tag" context="Value" char="/" />
+
+        <!-- Like property assignments, tags end with a ";" character -->
+        <DetectChar attribute="Symbol" context="#pop" char=";" />
+      </context>
+
+      <!-- Property name context -->
+      <context name="Property" attribute="Property" lineEndContext="#stay">
+        <!-- "=" signifies a property assignment and ends the context -->
+        <DetectChar attribute="Assignment" context="#pop!Value" char="=" />
+
+        <!-- Boolean properties have no assignment and instead end directly with a ";" marker -->
+        <DetectChar attribute="Symbol" context="#pop" char=";" />
+      </context>
+
+      <!-- Value contexts -->
+      <context name="Value" attribute="Normal Text" lineEndContext="#stay">
+        <!-- <> brackets around values -->
+        <AnyChar attribute="ValueBrackets" context="#stay" String="&gt;&lt;" />
+
+        <!-- References -->
+        <DetectChar attribute="Reference" context="Reference" char="&amp;" />
+
+        <!-- Value types -->
+        <RegExpr attribute="HexInteger" context="#stay" String="0x&hex_int;" />
+        <RegExpr attribute="Integer" context="#stay" String="&int;" />
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <RegExpr attribute="Constant" context="Constant" String="&constant;" />
+
+        <!-- /bits/ tag -->
+        <StringDetect attribute="Tag" context="#stay" String="/bits/" />
+
+        <!-- Operators -->
+        <RegExpr attribute="Operator" context="#stay" String="&operator;" />
+
+        <!-- ";" signifies the end of a property assignment -->
+        <DetectChar attribute="Symbol" context="#pop" char=";" />
+      </context>
+
+      <!-- Value type contexts -->
+      <context name="Reference" attribute="Reference" lineEndContext="#pop" >
+        <!-- References can point to a label or a full node path between {} brackets.
+             Any character not valid for a reference ends the reference. -->
+        <RegExpr attribute="Reference" context="#pop" String="[^&label_chars;/}]" lookAhead="true" />
+      </context>
+
+      <context name="Constant" attribute="Constant" lineEndContext="#pop" >
+        <!-- Handle constants with parameters -->
+        <DetectChar attribute="Constant" context="#pop!ConstantParamValue" char="(" />
+
+        <!-- Any character not valid for a constant ends the constant -->
+        <RegExpr attribute="Constant" context="#pop" String="[^&constant_chars;]" lookAhead="true" />
+      </context>
+
+      <context name="ConstantParamValue" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="Value" />
+        <!-- ")" signifies the end of a macro parameter -->
+        <DetectChar attribute="Constant" context="#pop" char=")" />
+      </context>
+
+      <context name="String" attribute="String" lineEndContext="#stay" >
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="Operator" defStyleNum="dsOperator" spellChecking="false" />
+      <itemData name="Symbol" defStyleNum="dsOperator" spellChecking="false" />
+
+      <!-- Node label/name colors: NodeLabel for the label, NodeName for the name, NodeNameAddress for the address after @ -->
+      <itemData name="NodeLabel" defStyleNum="dsKeyword" bold="true" spellChecking="false" />
+      <itemData name="NodeName" defStyleNum="dsNormal" spellChecking="false" />
+      <itemData name="NodeNameAddress" defStyleNum="dsInformation" italic="true" spellChecking="false" />
+      <itemData name="NodeBracket" defStyleNum="dsOperator" spellChecking="false" />
+
+      <!-- DT tags and C-style preprocessor directives -->
+      <itemData name="Tag" defStyleNum="dsPreprocessor" spellChecking="false" />
+      <itemData name="Preprocessor" defStyleNum="dsPreprocessor" spellChecking="false"/>
+      <itemData name="Constant" defStyleNum="dsNormal" spellChecking="false" />
+
+      <!-- Property name and assignment operator -->
+      <itemData name="Property" defStyleNum="dsAttribute" spellChecking="false" />
+      <itemData name="Assignment" defStyleNum="dsChar" spellChecking="false" />
+
+      <!-- <> brackets around values -->
+      <itemData name="ValueBrackets" defStyleNum="dsOperator" spellChecking="false" />
+
+      <!-- Value types -->
+      <itemData name="Integer" defStyleNum="dsDecVal" spellChecking="false" />
+      <itemData name="HexInteger" defStyleNum="dsBaseN" spellChecking="false" />
+      <itemData name="String" defStyleNum="dsString" spellChecking="false" />
+      <itemData name="Reference" defStyleNum="dsVariable" bold="true" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" position="afterwhitespace" />
+      <comment name="multiLine" start="/*" end="*/" region="MultiLineComment" />
+    </comments>
+    <keywords casesensitive="1" additionalDeliminator="#'&quot;" />
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->
+

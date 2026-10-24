@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="ABAP" version="2" kateversion="2.3" section="Sources" extensions="*.abap;*.ABAP" mimetype="text/x-abap-src" priority="5" author="Marcos Antonio Alvarez Costales (busgosin@hotmail.com)" license="GPL">
+<!DOCTYPE language>
+<language name="ABAP" version="8" kateversion="5.0" section="Sources" extensions="*.abap;*.ABAP" mimetype="text/x-abap-src" priority="5" author="Marcos Antonio Alvarez Costales (busgosin@hotmail.com)" license="GPL">
   <highlighting>
 
     <list name="keywords">
@@ -107,7 +107,6 @@
       <item>LIKE</item>
       <item>LINE</item>
       <item>LINE-COUNT</item>
-      <item>LINES</item>
       <item>LINES</item>
       <item>LINE-SIZE</item>
       <item>LIST-PROCESSING</item>
@@ -254,13 +253,12 @@
     <contexts>
 	    <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
 		    <keyword attribute="Keyword" context="#stay" String="keywords"/>
-		    <DetectChar attribute="Comment" context="Comment" char="&quot;"/>
-		    <DetectChar attribute="Comment" context="Comment" char="*"/>
+		    <AnyChar attribute="Comment" context="Comment" String="&quot;*"/>
 		    <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;:=&gt;[]^~"/>
 	    </context>
 	    <context attribute="Comment" lineEndContext="#pop" name="Comment">
-		       <DetectChar attribute="Comment" context="#pop" char="&quot;"/>
-		       <DetectChar attribute="Comment" context="#pop" char="*"/>
+		       <AnyChar attribute="Comment" context="#pop" String="&quot;*"/>
+		       <IncludeRules context="##Comments"/>
 	    </context>
     </contexts>
     
@@ -268,16 +266,14 @@
 	    <itemData name="Normal Text" 	defStyleNum="dsNormal"/>
 	    <itemData name="Keyword"  		defStyleNum="dsKeyword"/>
 	    <itemData name="Comment"  		defStyleNum="dsComment"/>
-	    <itemData name="Symbol"  		defStyleNum="dsNormal"/>
+	    <itemData name="Symbol"  		defStyleNum="dsOperator"/>
     </itemDatas>
 
   </highlighting>
   
   <general>
     <comments>
-      <comment name="singleLine" start="&quot;" />
       <comment name="singleLine" start="*" />
-      <comment name="multiLine" start="*" />
     </comments>
     <keywords casesensitive="0" />
   </general>

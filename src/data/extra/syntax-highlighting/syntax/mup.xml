@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Music Publisher" version="3" kateversion="2.4" section="Other" extensions="*.mup;*.not" mimetype="text/x-mup;audio/x-mup;application/x-mup;audio/x-notes" casesensitive="1" author="Wilbert Berendsen (wilbert@kde.nl)" license="LGPL">
+<!DOCTYPE language>
+<language name="Music Publisher" version="9" kateversion="5.0" section="Other" extensions="*.mup;*.not" mimetype="text/x-mup;audio/x-mup;application/x-mup;audio/x-notes" casesensitive="1" author="Wilbert Berendsen (wilbert@kde.nl)" license="LGPL">
 
   <highlighting>
 
     <list name="mupcontexts">
       <item>score</item>
-      <item>music</item>
       <item>header</item>
       <item>header2</item>
       <item>footer</item>
@@ -288,7 +287,6 @@
       <item>Idieresis</item>
       <item>i:</item>
       <item>idieresis</item>
-      <item>i:</item>
       <item>Igrave</item>
       <item>I`</item>
       <item>igrave</item>
@@ -558,7 +556,6 @@
       <item>phrase</item>
       <item>pedal</item>
       <item>roll</item>
-      <item>to</item>
 
       <item>down</item>
       <item>up</item>
@@ -581,12 +578,11 @@
         <keyword attribute="Context" context="#stay" String="mupcontexts" />
 	<RegExpr attribute="Lyrics" context="#stay" String="\blyrics\b" />
 	<RegExpr attribute="Barline" context="Barline" String="\b((dashed|dotted)\s+)?(bar|endbar|dblbar|invisbar|repeatstart|repeatboth|repeatend|restart)\b" />
-	<RegExpr attribute="Newscore" context="#stay" String="\bnew(score|page)\b" />
-	<RegExpr attribute="Newscore" context="#stay" String="\bmultirest\s+[0-9]+\b" />
+	<RegExpr attribute="Newscore" context="#stay" String="\bnew(score|page)\b|\bmultirest\s+[0-9]+\b" />
 	<RegExpr attribute="Unset Command" context="Unset" String="\bunset\b" />
-        <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
+	<Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
 	<DetectChar attribute="String" context="String" char="&quot;"/>
-	<RegExpr attribute="Special Char" context="#stay" String="\\$" />
+	<LineContinue attribute="Special Char" context="#stay" />
 	<keyword attribute="Print Command" context="Print Command" String="mupprintcommands" />
 	<keyword attribute="Print Command" context="Print Command" String="mupfontnames" />
 	<keyword attribute="Print Command" context="Print Command" String="mupfontstyles" />
@@ -603,8 +599,7 @@
 	<RegExpr attribute="Note" context="Note"
 	String="(\(\s*)?((1/4|1/2|1|2|4|8|16|32|64|128|256)\.*\s*)?((\(\s*)?([a-grs]|us)(?!bm)([0-9'?\sxn]|[+-]+|[&amp;#]{1,2}|\(\s*[&amp;#]{1,2}\s*\)|\(\s*[xn]\s*\)|\(\s*[0-9]\s*\))*\)?\s*)*\s*(?=[;~=&quot;&lt;A-Z@^]|\b(bm|es?bm|dashed|dotted|tie|slur|alt|hs|ifn?def|else|elseif|endif|with|above)\b)" />
 	<RegExpr attribute="Normal Text" context="Note" String=";\s*(?=[~=&lt;]|\b(bm|es?bm|dashed|dotted|tie|slur|alt|hs|ifn?def|else|elseif|endif)\b)" />
-	<RegExpr attribute="Note" context="#stay" String="(1/4|1/2|1|2|4|8|16|32|64|128|256)?mu?[rs]+\s*(?=;)" />
-	<RegExpr attribute="Note" context="#stay" String="m\s*rpt\s*(?=;)" />
+	<RegExpr attribute="Note" context="#stay" String="(1/4|1/2|1|2|4|8|16|32|64|128|256)?mu?[rs]+\s*(?=;)|m\s*rpt\s*(?=;)" />
 	<RegExpr attribute="Location" context="#stay" String="=([a-z]|_[a-z][a-z_0-9]*)\b" />
 	<RegExpr attribute="Location" context="Location" String="([a-z]|_[a-z][a-z_0-9]*)\.[xynews]\b" />
 	<RegExpr attribute="Location Probably" context="#stay" String="([a-z]|_[a-z][a-z_0-9]*)\.(?=[A-Z])" />
@@ -619,21 +614,19 @@
       <context attribute="Parameter" lineEndContext="#pop" name="Parameter"
 		fallthrough="true" fallthroughContext="#pop">
 	<DetectChar attribute="Normal Text" context="Value" char="=" />
-	<RegExpr attribute="Parameter" context="#stay" String="\s+" />
+	<DetectSpaces attribute="Parameter" context="#stay" />
       </context>
 
 
       <context attribute="Value" lineEndContext="#pop" name="Value"
 		fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces attribute="Normal Text" context="#stay" />
 	<DetectChar attribute="Normal Text" context="#pop" char=";" />
-	<RegExpr attribute="Normal Text" context="#stay" String="[\s,&amp;()-]+" />
+	<AnyChar attribute="Normal Text" context="#stay" String=",&amp;()-" />
 	<keyword attribute="Value" context="#stay" String="mupvalues" />
 	<keyword attribute="Value" context="#pop" String="mupfontnames" />
 	<keyword attribute="Value" context="#pop" String="mupfontstyles" />
-	<RegExpr attribute="Value" context="#stay" String="\b[1-9][0-9]*/(1|2|4|8|16|32|64|128)n?\b" />
-	<RegExpr attribute="Value" context="#stay" String="\b[a-g][#&amp;]?'?([0-9]\b)?" />
-	<RegExpr attribute="Value" context="#stay" String="[0-7][#&amp;]" />
-	<RegExpr attribute="Value" context="#stay" String="r\b" />
+	<RegExpr attribute="Value" context="#stay" String="\b[1-9][0-9]*/(1|2|4|8|16|32|64|128)n?\b|\b[a-g][#&amp;]?'?([0-9]\b)?|[0-7][#&amp;]|r\b" />
 	<Float attribute="Value" context="#stay" />
 	<Int attribute="Value" context="#stay" />
 	<DetectChar attribute="String" context="String" char="&quot;"/>
@@ -644,8 +637,9 @@
 
       <context attribute="Parameter" lineEndContext="#pop" name="Unset"
 		fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces attribute="Normal Text" context="#stay" />
+	<DetectChar attribute="Normal Text" context="#stay" char="," />
 	<keyword attribute="Parameter" context="#stay" String="mupparameters" />
-	<RegExpr attribute="Normal Text" context="#stay" String="[\s,]+" />
 	<RegExpr attribute="Error" context="#pop" String="\w+" />
       </context>
 
@@ -662,12 +656,8 @@
       <context attribute="Barline" lineEndContext="#pop" name="Barline"
 		fallthrough="true" fallthroughContext="#pop">
 	<DetectSpaces />
-	<RegExpr attribute="Barline" context="#stay" String="\b(ending|endending|hidechanges)\b" />
 	<RegExpr attribute="Barline" context="Bar Rehearsal" String="\breh(earsal)?\b" />
-	<RegExpr attribute="Barline" context="#stay" String="\bmnum\s*=\s*[0-9]+" />
-	<RegExpr attribute="Barline" context="#stay" String="\bnum\s*=\s*[0-9]+" />
-	<RegExpr attribute="Barline" context="#stay" String="\blet\s*=\s*(&quot;[A-Z]{1,2}&quot;)?" />
-	<RegExpr attribute="Barline" context="#stay" String="\bpad\s+[0-9]+" />
+	<RegExpr attribute="Barline" context="#stay" String="\b(ending|endending|hidechanges)\b|\bmnum\s*=\s*[0-9]+|\bnum\s*=\s*[0-9]+|\blet\s*=\s*(&quot;[A-Z]{1,2}&quot;)?|\bpad\s+[0-9]+" />
 	<RegExpr attribute="Location" context="#stay" String="=([a-z]|_[a-z][a-z_0-9]*)\b" />
 	<IncludeRules context="Macro" />
       </context>
@@ -675,7 +665,7 @@
 
       <context attribute="Barline" lineEndContext="#pop" name="Bar Rehearsal"
 		fallthrough="true" fallthroughContext="#pop">
-	<RegExpr attribute="Print Command" context="#stay" String="\s+" />
+	<DetectSpaces attribute="Print Command" context="#stay" />
 	<keyword attribute="Print Command" context="Print Command" String="mupfontnames" />
 	<keyword attribute="Print Command" context="Print Command" String="mupfontstyles" />
 	<RegExpr attribute="Barline" context="#pop" String="\b(let|mnum|num)\b" />
@@ -685,12 +675,7 @@
 
       <context attribute="Note" lineEndContext="#pop" name="Note"
 		fallthrough="true" fallthroughContext="#pop">
-	<RegExpr attribute="Note Attribute" context="#stay" String="(\bdashed\s+|\bdotted\s+)?(&lt;(/n|\\n|n/|n\\|[a-g]([+-]*|[0-7]))?&gt;|tie|slur|[~])" />
-	<RegExpr attribute="Note Attribute" context="#stay" String="^(/|[a-g]([+-]*|[0-7]))" />
-	<RegExpr attribute="Note Attribute" context="#stay" String="\bbm\b(\s+with\s+staff\s+(below|above)\b)?" />
-	<RegExpr attribute="Note Attribute" context="#stay" String="\bes?bm\b" />
-	<RegExpr attribute="Note Attribute" context="#stay" String="\balt\s+[1-9]\b" />
-	<RegExpr attribute="Note Attribute" context="#stay" String="\bhs\s+" />
+	<RegExpr attribute="Note Attribute" context="#stay" String="(\bdashed\s+|\bdotted\s+)?(&lt;(/n|\\n|n/|n\\|[a-g]([+-]*|[0-7]))?&gt;|tie|slur|[~])|^(?:/|[a-g](?:[+-]*|[0-7]))|\bbm(?:\s+with\s+staff\s+(?:below|above))?\b|\bes?bm\b|\balt\s+[1-9]\b|\bhs\s+" />
 	<DetectChar attribute="String" context="String" char="&quot;"/>
 	<IncludeRules context="Macro" />
       </context>
@@ -698,10 +683,10 @@
 
       <context attribute="Note Attribute" lineEndContext="#pop" name="Bracket"
 		fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces attribute="Normal Text" context="#stay" />
 	<DetectChar attribute="Special Char" context="#pop" char="]" />
-	<RegExpr attribute="Normal Text" context="#stay" String="[\s;,]+" />
-	<RegExpr attribute="Note Attribute" context="#stay" String="\b(grace|xnote|cue|diam|up|down)\b" />
-	<RegExpr attribute="Note Attribute" context="#stay" String="\b(slash|len|pad|ho|dist)\s*[0-9.+-]*" />
+	<AnyChar attribute="Normal Text" context="#stay" String=";," />
+	<RegExpr attribute="Note Attribute" context="#stay" String="\b(grace|xnote|cue|diam|up|down)\b|\b(slash|len|pad|ho|dist)\s*[0-9.+-]*" />
 	<RegExpr attribute="Note Attribute" context="Bracket With" String="\bwith\s*(?=[A-Z&quot;^&gt;.-])" />
 	<RegExpr attribute="Note Attribute" context="Bracket Hs" String="\bhs\s*(?=[A-Z&quot;])" />
 	<RegExpr attribute="Location" context="#stay" String="=([a-z]|_[a-z][a-z_0-9]*)\b" />
@@ -712,9 +697,10 @@
 
       <context attribute="Note Attribute" lineEndContext="#pop" name="Bracket With"
 		fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces attribute="Normal Text" context="#stay" />
 	<DetectChar attribute="String" context="String" char="&quot;" />
-	<RegExpr attribute="Note Attribute" context="#stay" String="[&gt;.^-]+" />
-	<RegExpr attribute="Normal Text" context="#stay" String="[\s,]+" />
+	<AnyChar attribute="Note Attribute" context="#stay" String="&gt;.^-" />
+	<DetectChar attribute="Normal Text" context="#stay" char="," />
 	<IncludeRules context="Macro" />
       </context>
 
@@ -740,7 +726,8 @@
 
       <context attribute="Normal Text" lineEndContext="#pop" name="Location"
 		fallthrough="true" fallthroughContext="#pop">
-	<RegExpr attribute="Normal Text" context="#stay" String="[\s+-]+" />
+	<DetectSpaces attribute="Normal Text" context="#stay" />
+	<AnyChar attribute="Normal Text" context="#stay" String="+-" />
 	<Float attribute="Normal Text" context="#stay" />
 	<RegExpr attribute="Location" context="#stay" String="\btime\b" />
 	<IncludeRules context="Macro" />
@@ -754,19 +741,19 @@
 
 
       <context attribute="Comment" lineEndContext="#pop" name="Comment">
-	<IncludeRules context="##Alerts" />
+	<DetectSpaces />
+	<IncludeRules context="##Comments" />
       </context>
 
 
       <context attribute="String" lineEndContext="#stay" name="String">
 	<DetectChar attribute="String" context="#pop" char="&quot;" />
         <RegExpr attribute="String Special" context="#stay" String="[\\][][{}%#&quot;nb|^:,\\/ ]" />
-        <StringDetect attribute="String Special" context="Special Char" String="\(" />
+        <Detect2Chars attribute="String Special" context="Special Char" char="\" char1="(" />
 	<StringDetect attribute="String Special" context="Font Name" String="\f(" />
 	<StringDetect attribute="String Special" context="Font Size" String="\s(" />
 	<RegExpr attribute="String Special" context="#stay" String="\\v\(-?[0-9]{1,3}\)" />
-	<RegExpr attribute="String Lyrics" context="#stay" String="[~&lt;&gt;|^]" />
-	<RegExpr attribute="String Lyrics" context="#stay" String="[-+]?[0-9]+\|" />
+	<RegExpr attribute="String Lyrics" context="#stay" String="[~&lt;&gt;|^]|[-+]?[0-9]+\|" />
       </context>
 
 
@@ -775,13 +762,7 @@
         <DetectChar attribute="String Special" context="#pop" char=")" />
 	<keyword attribute="String Special" context="#stay" String="mupspecialchars" />
 	<keyword attribute="String Special" context="#stay" String="mupmusicchars" />
-	<RegExpr attribute="String Special" context="#stay" String="[AaEeOo]['`:^~](?=\))" />
-	<RegExpr attribute="String Special" context="#stay" String="[IiUu]['`:^](?=\))" />
-	<RegExpr attribute="String Special" context="#stay" String="[Nn]~(?=\))" />
-	<RegExpr attribute="String Special" context="#stay" String="[Yy]:(?=\))" />
-	<RegExpr attribute="String Special" context="#stay" String="[LlOo]/(?=\))" />
-	<RegExpr attribute="String Special" context="#stay" String="[Cc],(?=\))" />
-	<RegExpr attribute="String Special" context="#stay" String="(&gt;&gt;|&lt;&lt;|``|'')(?=\))" />
+	<RegExpr attribute="String Special" context="#stay" String="[AaEeOo]['`:^~](?=\))|[IiUu]['`:^](?=\))|[Nn]~(?=\))|[Yy]:(?=\))|[LlOo]/(?=\))|[Cc],(?=\))|(&gt;&gt;|&lt;&lt;|``|'')(?=\))" />
 	<RegExpr attribute="String Error" context="#stay" String="[^)&quot;]+" />
       </context>
 
@@ -798,7 +779,7 @@
 
       <context attribute="String Special" lineEndContext="#stay" name="Font Style"
 		fallthrough="true" fallthroughContext="#pop">
-        <RegExpr attribute="String Special" context="#stay" String="\s+" />
+        <DetectSpaces attribute="String Special" context="#stay" />
 	<keyword attribute="String Special" context="#stay" String="mupfontstyles" />
 	<RegExpr attribute="String Error" context="#stay" String="[^ )&quot;]+" />
       </context>
@@ -807,8 +788,7 @@
       <context attribute="String Special" lineEndContext="#stay" name="Font Size"
 		fallthrough="true" fallthroughContext="#pop">
         <DetectChar attribute="String Special" context="#pop" char=")" />
-	<RegExpr attribute="String Special" context="#stay" String="[-+]?[0-9]+(?=\))" />
-	<RegExpr attribute="String Special" context="#stay" String="(PV|previous)(?=\))" />
+	<RegExpr attribute="String Special" context="#stay" String="[-+]?[0-9]+(?=\))|(PV|previous)(?=\))" />
 	<RegExpr attribute="String Error" context="#stay" String="[^ )&quot;]+" />
       </context>
 

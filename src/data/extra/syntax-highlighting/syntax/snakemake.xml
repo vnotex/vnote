@@ -1,0 +1,484 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!--
+    SPDX-FileCopyrightText: 2025 Thomas Bigot <thomas.bigot@pasteur.fr>
+
+    SPDX-License-Identifier: MIT
+-->
+
+<!--
+    Syntax highlighting for Snakemake, a Python-based workflow management system.
+
+    This definition handles the unique hybrid nature of Snakemake files, which combine
+    Python code with a domain-specific language for defining workflows.
+
+    HIGHLIGHTING MECHANISM:
+
+    The highlighter works by defining multiple nested contexts that capture Snakemake's structure:
+
+    1. TopLevel context - Serves as the entry point, recognizing:
+       - Rule declarations (rule/checkpoint/use rule)
+       - Snakemake top-level keywords (workflow, include, etc.)
+       - Python control structures
+
+    2. Rule handling:
+       - SmkRuleHeader/SmkRuleBody - Process rule declarations and their content
+       - SmkDirective - Handles rule directives like input, output, shell, etc.
+       - SmkRunBlock - Special handling for Python code in run: blocks
+
+    3. String processing:
+       - Different contexts for various string types (single/double quotes, triple quotes)
+       - Special handling for f-strings with interpolation
+       - Detection of Snakemake wildcards {wildcards.name} and placeholders
+
+    4. Error detection:
+       - Validates proper structure of rule declarations
+       - Catches malformed directives and blocks
+       - Ensures proper syntax for Snakemake-specific constructs
+
+    LIMITATIONS:
+    The Python support is deliberately simplified, focusing on the most common constructs used
+    in Snakemake workflows rather than supporting all Python language features. Complex Python
+    expressions may not be highlighted with complete accuracy, as the emphasis is on correctly
+    handling Snakemake-specific syntax and structure.
+
+    References:
+    - https://snakemake.readthedocs.io/
+
+-->
+
+
+<language name="Snakemake" version="1" style="snakemake" kateversion="5.62" section="Scripts" extensions="*.smk;Snakefile" mimetype="application/x-snakemake;text/x-snakemake" casesensitive="1" author="Thomas Bigot" license="MIT" indenter="python">
+    <highlighting>
+        <list name="PyLiterals">
+            <item>True</item>
+            <item>False</item>
+            <item>None</item>
+        </list>
+        <!-- snakemake top-level keywords followed by a colon -->
+        <list name="SmkBlockColonOnly">
+            <item>async</item>
+            <item>checkpoint</item>
+            <item>conda</item>
+            <item>container</item>
+            <item>containerized</item> <!-- Global containerized execution mode (kept for legacy workflows) -->
+            <item>configfile</item>
+            <item>envvars</item> <!-- Expose env vars to commands/scripts -->
+            <item>include</item>
+            <item>localrules</item>
+            <item>moduleinclude</item> <!-- Legacy; superseded by module/use rule -->
+            <item>report</item> <!-- Global HTML report declaration -->
+            <item>ruleorder</item>
+            <item>workdir</item>
+            <item>wildcard_constraints</item> <!-- Also usable per rule -->
+            <item>workflow</item> <!-- Python object (e.g. workflow.cores); not a directive, but appears at top level -->
+        </list>
+        <!-- snakemake top-level keywords that need names after them  -->
+        <list name="SmkBlockNameColon">
+            <item>module</item> <!-- Module declaration block -->
+            <item>subworkflow</item> <!-- Deprecated/removed since v8; kept to open old Snakefiles -->
+        </list>
+        <!-- snakemake rule directives -->
+        <list name="SmkDirective">
+            <item>benchmark</item>
+            <item>cache</item>
+            <item>container</item> <!-- Per-rule image -->
+            <item>containerized</item> <!-- Per-rule containerization (legacy compatibility) -->
+            <item>conda</item>
+            <item>cwl</item> <!-- Execute a CWL tool/workflow -->
+            <item>default_target</item> <!-- Mark default target(s) for the rule -->
+            <item>envmodules</item> <!-- Environment modules integration -->
+            <item>group</item>
+            <item>handover</item> <!-- Workflow handover/integration hook -->
+            <item>input</item>
+            <item>localrule</item> <!-- Mark rule as local -->
+            <item>log</item>
+            <item>message</item>
+            <item>name</item>
+            <item>notebook</item>
+            <item>output</item>
+            <item>params</item>
+            <item>priority</item>
+            <item>resources</item>
+            <item>run</item>
+            <item>script</item>
+            <item>shadow</item>
+            <item>shell</item>
+            <item>singularity</item> <!-- Legacy; prefer container + -sdm apptainer -->
+            <item>threads</item>
+            <item>version</item> <!-- Removed since v8; kept to highlight older code -->
+            <item>wildcard_constraints</item>
+            <item>wrapper</item>
+        </list>
+        <!-- python keywords -->
+        <list name="PyKeywordAll">
+            <item>async</item>
+            <item>return</item>
+            <item>import</item>
+            <item>from</item>
+            <item>for</item>
+            <item>if</item>
+            <item>else</item>
+            <item>in</item>
+            <item>pass</item>
+            <item>break</item>
+            <item>continue</item>
+            <item>and</item>
+            <item>or</item>
+            <item>not</item>
+            <item>is</item>
+            <item>lambda</item>
+            <item>as</item>
+            <item>assert</item>
+            <item>yield</item>
+            <item>raise</item>
+            <item>del</item>
+            <item>global</item>
+            <item>nonlocal</item>
+            <item>await</item>
+        </list>
+        <!--  python block openers that require an expression after them  -->
+        <list name="PyBlockExprColon">
+            <item>if</item>
+            <item>elif</item>
+            <item>for</item>
+            <item>while</item>
+            <item>with</item>
+            <item>except</item>
+            <item>def</item>
+            <item>class</item>
+            <item>async</item>
+            <item>match</item>
+            <item>case</item>
+        </list>
+        <!--  python block openers followed by a colon  -->
+        <list name="PyBlockColonOnly">
+            <item>else</item>
+            <item>try</item>
+            <item>finally</item>
+        </list>
+        <contexts>
+            <!-- Base context -->
+            <context name="TopLevel" attribute="Normal Text" lineEndContext="#stay">
+                <!-- catching block openers `word:` and switching to contexts -->
+                <RegExpr attribute="Block Opener" String="\b(?:rule|checkpoint)\b" context="SmkRuleHeader"/>
+                <RegExpr attribute="Block Opener" String="\buse rule\b" context="SmkUseRuleHeader"/>
+                <RegExpr attribute="Block Opener" String="\bmodule\b" context="SmkModuleHeader"/>
+                <RegExpr attribute="Block Opener" String="\bsubworkflow\b" context="SmkSubworkflowHeader"/>
+                <keyword attribute="Block Opener" String="SmkBlockColonOnly" firstNonSpace="true" context="SmkWaitColon"/>
+                <keyword attribute="Block Opener" String="SmkBlockNameColon" firstNonSpace="true" context="SmkWaitNameThenColon"/>
+                <keyword attribute="Block Opener" String="PyBlockColonOnly" firstNonSpace="true" context="PyWaitColon"/>
+                <keyword attribute="Block Opener" String="PyBlockExprColon" firstNonSpace="true" context="PyWaitExprThenColon"/>
+                <!-- a block opener (`word:`) not catched before is not allowed -->
+                <RegExpr String="[a-zA-Z_][a-zA-Z0-9_]*:" attribute="Error" firstNonSpace="true"/>
+                <!-- Python is possible at top-level -->
+                <IncludeRules context="PyInline"/>
+            </context>
+            <!--  rule :  -->
+            <context name="SmkRuleHeader" attribute="Normal Text" lineEndContext="#stay">
+                <!--   must be followed by the rule name  -->
+                <DetectIdentifier attribute="Rule Name"/>
+                <DetectSpaces/>
+                <DetectChar char=":" attribute="Normal Text" context="#pop!SmkRuleBody"/>
+                <RegExpr String="\S.*" attribute="Error" context="#pop!ErrorBadBlock"/>
+            </context>
+            <!--  use rule <rulename> as <alias> with:  -->
+            <context name="SmkUseRuleHeader" attribute="Normal Text" lineEndContext="#stay">
+                <WordDetect String="as" attribute="RuleHeaderKeyword" />
+                <WordDetect String="with" attribute="RuleHeaderKeyword" />
+                <RegExpr attribute="Rule Name" String="[A-Za-z_]\w*(?!\s*:)" />
+                <DetectSpaces/>
+                <DetectChar char=":" attribute="Normal Text" context="#pop!SmkRuleBody"/>
+            </context>
+            <context name="SmkModuleHeader" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces/>
+                <DetectIdentifier attribute="Rule Name"/>
+                <DetectChar char=":" attribute="Normal Text" context="#pop!SmkModuleBody"/>
+            </context>
+            <context name="SmkSubworkflowHeader" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces/>
+                <DetectIdentifier attribute="Rule Name"/>
+                <DetectChar char=":" attribute="Normal Text" context="#pop!SmkSubworkflowBody"/>
+            </context>
+            <context name="SmkModuleBody" attribute="Normal Text" lineEndContext="#stay">
+                <RegExpr String="^\S" column="0" lookAhead="true" context="#pop"/>
+                <DetectChar attribute="Comment" char="#" context="CommentLine"/>
+                <DetectSpaces/>
+                <RegExpr attribute="SmkDirective" String="\b(?:snakefile|config|replace_rule|skip_rule|skip_keyword)\b" context="SmkDirectiveBody"/>
+                <RegExpr String="[A-Za-z_]\w*\s*:" attribute="Error" context="SmkDirectiveBody"/>
+                <RegExpr String="[A-Za-z_]\w*\s*" attribute="Error" context="ErrorBadBlock"/>
+            </context>
+            <context name="SmkSubworkflowBody" attribute="Normal Text" lineEndContext="#stay">
+                <RegExpr String="^\S" column="0" lookAhead="true" context="#pop"/>
+                <DetectChar attribute="Comment" char="#" context="CommentLine"/>
+                <DetectSpaces/>
+                <RegExpr attribute="SmkDirective" String="\b(?:snakefile|workdir|configfile)\b" context="SmkDirectiveBody"/>
+                <RegExpr String="[A-Za-z_]\w*\s*:" attribute="Error" context="SmkDirectiveBody"/>
+                <RegExpr String="[A-Za-z_]\w*\s*" attribute="Error" context="ErrorBadBlock"/>
+            </context>
+            <context name="SmkWaitColon" attribute="Normal Text" lineEndContext="#pop">
+                <DetectSpaces/>
+                <DetectChar attribute="Normal Text" char=":" context="#pop"/>
+                <RegExpr String="\S.*" attribute="Error" context="#pop!ErrorBadBlock"/>
+            </context>
+            <context name="PyWaitColon" attribute="Normal Text" lineEndContext="#pop">
+                <DetectSpaces/>
+                <DetectChar attribute="Normal Text" char=":" context="#pop!ErrorBadBlock"/>
+                <RegExpr String="\S.*" attribute="Error" context="#pop!ErrorBadBlock"/>
+            </context>
+            <context name="SmkWaitNameThenColon" attribute="Normal Text" lineEndContext="#pop">
+                <DetectSpaces/>
+                <DetectIdentifier attribute="Rule Name" />
+                <DetectChar attribute="Normal Text" char=":" context="#pop!ErrorBadBlock"/>
+                <RegExpr String="\S.*" attribute="Error" context="#pop!ErrorBadBlock"/>
+            </context>
+            <context name="PyWaitExprThenColon" attribute="Normal Text" lineEndContext="#pop">
+                <DetectSpaces/>
+                <DetectChar attribute="Normal Text" char=":" context="#pop!ErrorBadBlock"/>
+                <IncludeRules context="PyInline" />
+                <RegExpr String="\S.*" attribute="Error" context="#pop!ErrorBadBlock"/>
+            </context>
+            <context name="ErrorBadBlock" attribute="Error" lineEndContext="#pop">
+                <DetectSpaces attribute="Normal Text"/>
+                <DetectChar char="#" lookAhead="true" context="#pop"/>
+            </context>
+            <context name="PyCommonOperators" attribute="Operator">
+                <!-- 3 chars -->
+                <StringDetect String="&lt;&lt;=" attribute="Operator"/>
+                <StringDetect String="&gt;&gt;=" attribute="Operator"/>
+                <StringDetect String="**="     attribute="Operator"/>
+                <StringDetect String="//="     attribute="Operator"/>
+
+                <!-- 2 chars -->
+                <Detect2Chars char=":"  char1="=" attribute="Operator"/>   <!-- := walrus -->
+                <Detect2Chars char="-"  char1="&gt;" attribute="Operator"/> <!-- -> annotations -->
+                <Detect2Chars char="&lt;" char1="=" attribute="Operator"/> <!-- <= -->
+                <Detect2Chars char="&gt;" char1="=" attribute="Operator"/> <!-- >= -->
+                <Detect2Chars char="="  char1="=" attribute="Operator"/>   <!-- == -->
+                <Detect2Chars char="!"  char1="=" attribute="Operator"/>   <!-- != -->
+                <Detect2Chars char="&lt;" char1="&lt;" attribute="Operator"/> <!-- << -->
+                <Detect2Chars char="&gt;" char1="&gt;" attribute="Operator"/> <!-- >> -->
+                <Detect2Chars char="*"  char1="*" attribute="Operator"/>   <!-- ** -->
+                <Detect2Chars char="/"  char1="/" attribute="Operator"/>   <!-- // -->
+                <Detect2Chars char="+"  char1="=" attribute="Operator"/>   <!-- += -->
+                <Detect2Chars char="-"  char1="=" attribute="Operator"/>   <!-- -= -->
+                <Detect2Chars char="*"  char1="=" attribute="Operator"/>   <!-- *= -->
+                <Detect2Chars char="/"  char1="=" attribute="Operator"/>   <!-- /= -->
+                <Detect2Chars char="%"  char1="=" attribute="Operator"/>   <!-- %= -->
+                <Detect2Chars char="&amp;" char1="=" attribute="Operator"/> <!-- &= -->
+                <Detect2Chars char="|"  char1="=" attribute="Operator"/>   <!-- |= -->
+                <Detect2Chars char="^"  char1="=" attribute="Operator"/>   <!-- ^= -->
+                <Detect2Chars char="@"  char1="=" attribute="Operator"/>   <!-- @= -->
+
+                <!-- 1 char -->
+                <AnyChar String="+-*/%&amp;|^~&lt;&gt;=@" />
+            </context>
+            <!-- Python inline expressions -->
+            <context name="PyInline" attribute="Normal Text" lineEndContext="#pop">
+                <IncludeRules context="PyCommonOperators"/>
+                <AnyChar String="()[]{},.:" attribute="Operator"/>
+                <IncludeRules context="StringVariantsStart"/>
+                <keyword attribute="Python Keyword" String="PyKeywordAll"/>
+                <keyword String="PyLiterals" attribute="Constant"/>
+                <RegExpr attribute="Python Function" String="\b[A-Za-z_]\w*(?=\s*\()"/>
+                <DetectIdentifier attribute="Variable"/>
+                <Float attribute="Number"/>
+                <Int attribute="Number"/>
+                <DetectChar attribute="Comment" char="#" context="CommentLine"/>
+            </context>
+            <context name="SmkRuleBody" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#pop" fallthroughContext="#pop">
+                <RegExpr String="^\S" column="0" lookAhead="true" context="#pop"/>
+                <DetectSpaces/>
+                <StringDetect attribute="Documentation" firstNonSpace="true"
+                              String="&quot;&quot;&quot;" context="RuleDocDq"/>
+                <StringDetect attribute="Documentation" firstNonSpace="true"
+                              String="'''" context="RuleDocSq"/>
+                <DetectChar attribute="Comment" char="#" context="CommentLine"/>
+                <StringDetect attribute="SmkDirective" String="run:" context="SmkRunBlock"/>
+                <keyword attribute="SmkDirective" String="SmkDirective" context="SmkWaitColonAfterDirective" firstNonSpace="true"/>
+                <keyword attribute="SmkDirective" String="PyBlockColonOnly" context="#pop" lookAhead="true" firstNonSpace="true"/>
+                <keyword attribute="SmkDirective" String="PyBlockExprColon" context="#pop" lookAhead="true" firstNonSpace="true"/>
+                <!--  wrong `keyword:` is not allowed, but prentending to go to Directive body not to break the flow  -->
+                <RegExpr String="[A-Za-z_]\w*\s*:" attribute="Error" context="SmkDirectiveBody"/>
+                <!-- any other text should be considered as error and we should stay in RuleBody -->
+                <RegExpr String="[A-Za-z_]\w*\s*" attribute="Error" context="ErrorBadBlock"/>
+            </context>
+            <context name="RuleDocDq" attribute="Documentation" lineEndContext="#stay">
+                <StringDetect attribute="Documentation" String="&quot;&quot;&quot;" context="#pop"/>
+            </context>
+            <context name="RuleDocSq" attribute="Documentation" lineEndContext="#stay">
+                <StringDetect attribute="Documentation" String="'''" context="#pop"/>
+            </context>
+            <context name="SmkWaitColonAfterDirective" attribute="Normal Text" lineEndContext="#pop">
+                <DetectSpaces/>
+                <DetectChar attribute="Normal Text" char=":" context="#pop!SmkDirectiveBody"/>
+                <RegExpr String="\S.*" attribute="Error" context="#pop!ErrorBadBlock"/>
+            </context>
+            <context name="SmkDirectiveBody" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#pop" fallthroughContext="#pop">
+                <RegExpr String="^\S" column="0" lookAhead="true" context="#pop"/>
+                <RegExpr attribute="RuleHeaderKeyword" String="(?:rule|checkpoint|use rule)\b" firstNonSpace="true" lookAhead="true" context="#pop#pop"/>
+                <RegExpr attribute="SmkDirective" String="[A-Za-z_]\w*\s*:"  lookAhead="true" context="#pop" firstNonSpace="true"/>
+                <DetectSpaces/>
+                <DetectChar attribute="Comment" char="#" context="CommentLine"/>
+                <!-- Python -->
+                <IncludeRules context="PyInline"/>
+            </context>
+            <context name="SmkRunBlock" attribute="Normal Text" lineEmptyContext="#pop" fallthroughContext="#pop">
+                <RegExpr String="^\S" column="0" lookAhead="true" context="#pop"/>
+                <!--  do not exit if python keyword     -->
+                <keyword attribute="Python Keyword" String="PyBlockColonOnly"/>
+                <keyword attribute="Python Keyword" String="PyBlockExprColon"/>
+                <!--  but exit if other `word:`     -->
+                <RegExpr attribute="RuleHeaderKeyword" String="(?:rule|checkpoint|use rule)\b" firstNonSpace="true" lookAhead="true" context="#pop#pop"/>
+                <RegExpr attribute="SmkDirective" String="[A-Za-z_]\w*\s*:"  lookAhead="true" context="#pop" firstNonSpace="true"/>
+                <DetectSpaces/>
+                <IncludeRules context="PyInline"/>
+            </context>
+            <context name="StringEscapes" attribute="EscapeCharacter" lineEndContext="#stay">
+                <!-- Escapes Python (spécifiques) + fallback, fusionnés pour satisfaire le validateur -->
+                <RegExpr attribute="EscapeCharacter" String="\\(?:[abfnrtv\\&quot;']|x[0-9A-Fa-f]{2}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|N\{[^}]+\}|\r?\n|.)"/>
+            </context>
+            <context name="FStringInterpolation" attribute="Normal Text">
+                <RegExpr attribute="SmkPlaceholder"
+                         String="\{\{(?:params|input|output|resources|wildcards|config|threads|workflow|log|group|rule)(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\[[^{}\[\]]+\])*\}\}"/>
+                <!-- Escaped {{wildcards}}  -->
+                <RegExpr attribute="SmkWildcard" String="\{\{[A-Za-z_][A-Za-z0-9_]*(?:,[^{}]+)?\}\}"/>
+                <!-- Double brackets {{ / }}  -->
+                <Detect2Chars char="{" char1="{" attribute="Escape"/>
+                <Detect2Chars char="}" char1="}" attribute="Escape"/>
+                <DetectChar char="{" attribute="FStringDelimiter" context="FStringExpr"/>
+            </context>
+            <context name="FStringExpr" attribute="FStringExpr" lineEndContext="#stay">
+                <DetectChar char="}" attribute="FStringDelimiter" context="#pop"/>
+                <IncludeRules context="PyInline"/>
+            </context>
+            <context name="StringInterpolation" attribute="Normal Text">
+                <RegExpr attribute="SmkPlaceholder"
+                         String="\{(?:params|input|output|resources|wildcards|config|threads|workflow|log|group|rule)(?:\.[A-Za-z_][A-Za-z0-9_]*)*(?:\[[^{}\[\]]+\])*\}"/>
+                <RegExpr attribute="SmkWildcard" String="\{[A-Za-z_][A-Za-z0-9_]*(?:,[^{}]+)?\}" />
+            </context>
+            <!-- String variants handling -->
+            <context name="StringVariantsStart" attribute="String" lineEndContext="#stay">
+                <!-- f-strings -->
+                <StringDetect attribute="String" String="f&quot;&quot;&quot;" context="FTripleDoubleQuoteString"/>
+                <StringDetect attribute="String" String="f'''"                context="FTripleSingleQuoteString"/>
+                <Detect2Chars attribute="String" char="f" char1="&quot;"      context="FDoubleQuoteString"/>
+                <Detect2Chars attribute="String" char="f" char1="'"           context="FSingleQuoteString"/>
+
+                <!-- r strings -->
+                <StringDetect attribute="String" String="r&quot;&quot;&quot;" context="RTripleDoubleQuoteString"/>
+                <StringDetect attribute="String" String="r'''"                context="RTripleSingleQuoteString"/>
+                <Detect2Chars attribute="String" char="r" char1="&quot;"      context="RDoubleQuoteString"/>
+                <Detect2Chars attribute="String" char="r" char1="'"           context="RSingleQuoteString"/>
+
+                <!-- non-f strings -->
+                <StringDetect attribute="String" String="&quot;&quot;&quot;"   context="TripleDoubleQuoteString"/>
+                <StringDetect attribute="String" String="'''"                  context="TripleSingleQuoteString"/>
+                <DetectChar   attribute="String" char="&quot;"                 context="DoubleQuoteString"/>
+                <DetectChar   attribute="String" char="'"                      context="SingleQuoteString"/>
+            </context>
+
+            <!-- F Multi-line strings -->
+            <context name="FTripleSingleQuoteString" attribute="String" lineEndContext="#stay">
+                <IncludeRules context="StringEscapes"/>
+                <IncludeRules context="FStringInterpolation"/>
+                <StringDetect attribute="String" String="'''" context="#pop"/>
+            </context>
+            <context name="FTripleDoubleQuoteString" attribute="String" lineEndContext="#stay">
+                <IncludeRules context="StringEscapes"/>
+                <IncludeRules context="FStringInterpolation"/>
+                <StringDetect attribute="String" String="&quot;&quot;&quot;" context="#pop"/>
+            </context>
+            <!-- F Single-line strings -->
+            <context name="FSingleQuoteString" attribute="String" lineEndContext="#pop">
+                <IncludeRules context="StringEscapes"/>
+                <IncludeRules context="FStringInterpolation"/>
+                <DetectChar attribute="String" char="'" context="#pop"/>
+            </context>
+            <context name="FDoubleQuoteString" attribute="String" lineEndContext="#pop">
+                <IncludeRules context="StringEscapes"/>
+                <IncludeRules context="FStringInterpolation"/>
+                <DetectChar attribute="String" char="&quot;" context="#pop"/>
+            </context>
+
+            <!-- R (raw) strings will be passed to snakemake that will proceed placeholder replacement  -->
+
+            <!-- R Multi-line strings -->
+            <context name="RTripleSingleQuoteString" attribute="String" lineEndContext="#stay">
+                <IncludeRules context="StringInterpolation"/>
+                <StringDetect attribute="String" String="'''" context="#pop"/>
+            </context>
+            <context name="RTripleDoubleQuoteString" attribute="String" lineEndContext="#stay">
+                <IncludeRules context="StringInterpolation"/>
+                <StringDetect attribute="String" String="&quot;&quot;&quot;" context="#pop"/>
+            </context>
+            <!-- R Single-line strings -->
+            <context name="RSingleQuoteString" attribute="String" lineEndContext="#pop">
+                <IncludeRules context="StringInterpolation"/>
+                <DetectChar attribute="String" char="'" context="#pop"/>
+            </context>
+            <context name="RDoubleQuoteString" attribute="String" lineEndContext="#pop">
+                <IncludeRules context="StringInterpolation"/>
+                <DetectChar attribute="String" char="&quot;" context="#pop"/>
+            </context>
+
+
+
+            <!-- Multi-line strings -->
+            <context name="TripleSingleQuoteString" attribute="String" lineEndContext="#stay">
+                <IncludeRules context="StringEscapes"/>
+                <IncludeRules context="StringInterpolation"/>
+                <StringDetect attribute="String" String="'''" context="#pop"/>
+            </context>
+            <context name="TripleDoubleQuoteString" attribute="String" lineEndContext="#stay">
+                <IncludeRules context="StringEscapes"/>
+                <IncludeRules context="StringInterpolation"/>
+                <StringDetect attribute="String" String="&quot;&quot;&quot;" context="#pop"/>
+            </context>
+            <!-- Single-line strings -->
+            <context name="SingleQuoteString" attribute="String" lineEndContext="#pop">
+                <IncludeRules context="StringEscapes"/>
+                <IncludeRules context="StringInterpolation"/>
+                <DetectChar attribute="String" char="'" context="#pop"/>
+            </context>
+            <context name="DoubleQuoteString" attribute="String" lineEndContext="#pop">
+                <IncludeRules context="StringEscapes"/>
+                <IncludeRules context="StringInterpolation"/>
+                <DetectChar attribute="String" char="&quot;" context="#pop"/>
+            </context>
+            <!-- Comments context -->
+            <context name="CommentLine" attribute="Comment" lineEndContext="#pop">
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Block Opener" defStyleNum="dsControlFlow" spellChecking="false"/>
+            <itemData name="RuleHeaderKeyword" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="SmkDirective" defStyleNum="dsBuiltIn" spellChecking="false"/>
+            <itemData name="Python Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Constant" defStyleNum="dsConstant" spellChecking="false"/>
+            <itemData name="Rule Name" defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
+            <itemData name="Number" defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+            <itemData name="String" defStyleNum="dsString"/>
+            <itemData name="EscapeCharacter" defStyleNum="dsChar" spellChecking="false"/>
+            <itemData name="SmkWildcard"         defStyleNum="dsPreprocessor"/>
+            <itemData name="SmkPlaceholder"        defStyleNum="dsExtension"/>
+            <itemData name="FStringDelimiter"   defStyleNum="dsSpecialChar"/>
+            <itemData name="FStringExpr"            defStyleNum="dsExtension"/>
+            <itemData name="Escape"           defStyleNum="dsSpecialChar"/>
+            <itemData name="Python Function" defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Operator" defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+            <itemData name="Documentation" defStyleNum="dsDocumentation"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <folding indentationsensitive="1"/>
+        <comments>
+            <comment name="singleLine" start="#" position="afterwhitespace"/>
+        </comments>
+        <keywords casesensitive="1" additionalDeliminator="#'"/>
+    </general>
+</language>

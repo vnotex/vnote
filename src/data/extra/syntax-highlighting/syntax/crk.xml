@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Crack" version="4" kateversion="5.0" section="Sources" extensions="*.crk" mimetype="">
+<!DOCTYPE language>
+<language name="Crack" version="10" kateversion="5.0" section="Sources" extensions="*.crk" mimetype="">
   <highlighting>
     <list name="keywords">
       <item>break</item>
@@ -43,41 +43,25 @@
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
-        <StringDetect attribute="Keyword" context="Package" String="import" />
+        <WordDetect attribute="Keyword" context="Package" String="import" />
         <keyword attribute="Data Type" context="#stay" String="types" />
-        <Float attribute="Float" context="Float Suffixes"/>
+        <Float attribute="Float" context="#stay"/>
         <HlCOct attribute="Octal" context="#stay"/>
         <HlCHex attribute="Hex" context="#stay"/>
-        <Int attribute="Decimal" context="Int Suffixes"/>
+        <Int attribute="Decimal" context="#stay"/>
         <DetectChar attribute="String" context="Single quoted String" char="'"/>
         <DetectChar attribute="String" context="String" char="&quot;"/>
         <DetectChar attribute="String" context="Backtick String" char="`"/>
         <Detect2Chars attribute="Char" context="Char" char="b" char1="'" />
-        <IncludeRules context="##Doxygen" />
         <DetectChar attribute="Comment" context="Commentar 1" char="#" />
-        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Commentar 3" char="/" char1="*"/>
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="/" lookAhead="true"/>
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="*" lookAhead="true" />
         <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="block1"/>
         <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="block1"/>
         <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^&#59;"/>
         <RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*[(])" />
-        <RegExpr attribute="Symbol" context="Member" String="[.]{1,1}" />
         <RegExpr attribute="Annotation" context="#stay" String="@\w+" />
-      </context>
-
-      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-          <AnyChar String="fF" attribute="Float" context="#pop"/>
-      </context>
-
-      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-          <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+        <DetectIdentifier attribute="Normal Text"/>
       </context>
 
       <context attribute="String" lineEndContext="#pop" name="String">
@@ -126,14 +110,18 @@
         <RegExpr attribute="Package" String="[\w\\.]+" context="#pop"/>
       </context>
 
-      <context attribute="Normal Text" lineEndContext="#pop" name="Member" fallthrough="true" fallthroughContext="#pop">
-        <RegExpr attribute="Function" context="#pop" String="\b[_\w][_\w\d]*(?=[\s]*)" />
+      <context name="MatchComment" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="#pop!Commentar 1" char="/" char1="/" />
+        <Detect2Chars attribute="Comment" context="#pop!Commentar 2" char="/" char1="*" beginRegion="Comment" />
       </context>
 
-      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1"/>
-      <context attribute="Comment" lineEndContext="#pop" name="Commentar 2"/>
-      <context attribute="Comment" lineEndContext="#stay" name="Commentar 3">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+        <IncludeRules context="##Comments" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment"/>
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
     <itemDatas>
@@ -147,7 +135,7 @@
       <itemData name="Char"         defStyleNum="dsChar"/>
       <itemData name="String"       defStyleNum="dsString"/>
       <itemData name="Comment"      defStyleNum="dsComment"/>
-      <itemData name="Symbol"       defStyleNum="dsNormal"/>
+      <itemData name="Symbol"       defStyleNum="dsOperator"/>
       <itemData name="Substitution" defStyleNum="dsOthers"/>
       <itemData name="Package"      defStyleNum="dsFunction"/>
       <itemData name="Function"     defStyleNum="dsFunction"/>
@@ -157,7 +145,9 @@
   <general>
     <comments>
       <comment name="singleLine" start="#" />
+      <comment name="multiLine" start="/*" end="*/" region="BlockComment"/>
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

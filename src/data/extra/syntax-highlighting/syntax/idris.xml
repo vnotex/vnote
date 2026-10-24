@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!-- Based on haskell.xml and idris.vim (https://github.com/idris-hackers/idris-vim/blob/6bdb44b85406b75e3b3a4fa265deab1dbe8c6ff1/syntax/idris.vim) -->
+<language name="Idris" version="7" kateversion="5.0" section="Sources" extensions="*.idr" author="Alexander Shabalin" license="LGPL">
+  <highlighting>
+  <list name="keywords">
+    <item>abstract</item>
+    <item>auto</item>
+    <item>case</item>
+    <item>class</item>
+    <item>codata</item>
+    <item>constructor</item>
+    <item>covering</item>
+    <item>data</item>
+    <item>default</item>
+    <item>do</item>
+    <item>dsl</item>
+    <item>else</item>
+    <item>export</item>
+    <item>if</item>
+    <item>implementation</item>
+    <item>implicit</item>
+    <item>import</item>
+    <item>impossible</item>
+    <item>in</item>
+    <item>index_first</item>
+    <item>index_next</item>
+    <item>infix</item>
+    <item>infixl</item>
+    <item>infixr</item>
+    <item>instance</item>
+    <item>interface</item>
+    <item>lambda</item>
+    <item>let</item>
+    <item>module</item>
+    <item>mutual</item>
+    <item>namespace</item>
+    <item>of</item>
+    <item>parameters</item>
+    <item>partial</item>
+    <item>pattern</item>
+    <item>postulate</item>
+    <item>prefix</item>
+    <item>private</item>
+    <item>proof</item>
+    <item>public</item>
+    <item>record</item>
+    <item>rewrite</item>
+    <item>static</item>
+    <item>syntax</item>
+    <item>tactics</item>
+    <item>term</item>
+    <item>then</item>
+    <item>total</item>
+    <item>using</item>
+    <item>variable</item>
+    <item>where</item>
+    <item>with</item>
+  </list>
+  <list name="directives">
+     <item>access</item>
+     <item>assert_total</item>
+     <item>default</item>
+     <item>dynamic</item>
+     <item>elim</item>
+     <item>error_handlers</item>
+     <item>error_reverse</item>
+     <item>flag</item>
+     <item>hide</item>
+     <item>include</item>
+     <item>language</item>
+     <item>lib</item>
+     <item>link</item>
+     <item>name</item>
+     <item>provide</item>
+     <item>reflection</item>
+  </list>
+  <list name="tactics">
+    <item>applyTactic</item>
+    <item>attack</item>
+    <item>compute</item>
+    <item>exact</item>
+    <item>fill</item>
+    <item>focus</item>
+    <item>induction</item>
+    <item>intro</item>
+    <item>intros</item>
+    <item>let</item>
+    <item>refine</item>
+    <item>reflect</item>
+    <item>rewrite</item>
+    <item>solve</item>
+    <item>trivial</item>
+    <item>try</item>
+  </list>
+  <contexts>
+     <context attribute="Normal" lineEndContext="#stay" name="code">
+        <RegExpr attribute="Comment" context="line comment"
+           String="---*(?=[^!#\$%&amp;\*\+/&lt;=&gt;\?&#92;@\^\|~\.:]|$)|\|\|\|(?=[^\-!#\$%&amp;\*\+/&lt;=&gt;\?&#92;@\^\|~\.:]|$)" />
+        <Detect2Chars attribute="Comment" context="block comment" char="{" char1="-" beginRegion="BlockComment" />
+        <RegExpr attribute="Normal" context="declaration" lookAhead="true"
+           String="^\s*(?:[a-z]+\s+)*(?:[A-Za-z][A-Za-z0-9_]*'*|\([\-!#\$%&amp;\*\+\./&lt;=&gt;\?@&#92;\^\|~:]+\))\s*:" column="0" />
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <DetectChar attribute="Keyword" context="directive" char="%" />
+        <keyword attribute="Tactic" context="#stay" String="tactics" />
+        <DetectChar attribute="Char" context="char" char="'" />
+        <DetectChar attribute="String" context="string" char="&quot;" />
+        <Int attribute="Decimal" context="#stay" />
+        <RegExpr attribute="Hex" context="#stay" String="0[Xx][0-9A-Fa-f]+"/>
+        <RegExpr attribute="Float" context="#stay" String="\d+\.\d+([eE][-+]?\d+)?" />
+        <RegExpr attribute="Type" context="#stay" String="([A-Z][a-zA-Z0-9_]*'*|_\|_)" />
+        <RegExpr attribute="Normal" context="#stay" String="[a-z][a-zA-Z0-9_]*'*" />
+        <RegExpr attribute="MetaVar" context="#stay" String="\?[a-z][A-Za-z0-9_]+'*" />
+        <RegExpr attribute="Special" context="#stay" String="(:|=&gt;|\-&gt;|&lt;\-)" />
+        <RegExpr attribute="Operator" context="#stay"
+           String="([\-!#\$%&amp;\*\+\./&lt;=&gt;\?@&#92;\^\|~:]+|\b_\b)|`[A-Za-z][A-Za-z0-9_]*'*`" />
+     </context>
+     <context attribute="Normal" lineEndContext="#pop" name="declaration">
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <RegExpr attribute="Type" context="#stay" String="([A-Z][a-zA-Z0-9_]*'*|_\|_)" />
+        <RegExpr attribute="Declaration" context="#stay" String="[a-z][A-Za-z0-9_]*'*"/>
+        <RegExpr attribute="Operator" context="#stay"
+           String="\([\-!#\$%&amp;\*\+\./&lt;=&gt;\?@&#92;\^\|~:]+\)" />
+        <DetectChar attribute="Special" context="#pop" char=":" />
+     </context>
+     <context attribute="Normal" lineEndContext="#pop" name="directive">
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Keyword" context="#stay" String="directives" />
+     </context>
+     <context attribute="Char" lineEndContext="#pop" name="char">
+        <RegExpr attribute="Char" context="#stay" String="\\." />
+        <DetectChar attribute="Char" context="#pop" char="'" />
+     </context>
+     <context attribute="String" lineEndContext="#stay" name="string">
+        <RegExpr attribute="String" context="#stay" String="\\." />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+     </context>
+     <context attribute="Comment" lineEndContext="#pop" name="line comment">
+         <DetectSpaces />
+         <IncludeRules context="##Comments" />
+     </context>
+     <context attribute="Comment" lineEndContext="#stay" name="block comment">
+        <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" endRegion="BlockComment" />
+        <Detect2Chars attribute="Comment" context="block comment" char="{" char1="-" beginRegion="BlockComment" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+     </context>
+  </contexts>
+  <itemDatas>
+    <itemData name="Normal" defStyleNum="dsNormal" spellChecking="false" />
+    <itemData name="Comment" defStyleNum="dsComment" spellChecking="true" />
+    <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false" />
+    <itemData name="Tactic" defStyleNum="dsKeyword" spellChecking="false" />
+    <itemData name="Char" defStyleNum="dsChar" spellChecking="false" />
+    <itemData name="String" defStyleNum="dsString" spellChecking="true" />
+    <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false" />
+    <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false" />
+    <itemData name="Float" defStyleNum="dsFloat" spellChecking="false" />
+    <itemData name="Type" defStyleNum="dsDataType" spellChecking="false" />
+    <itemData name="MetaVar" defStyleNum="dsOthers" spellChecking="false" />
+    <itemData name="Operator" defStyleNum="dsFunction" spellChecking="false" />
+    <itemData name="Special" defStyleNum="dsOthers" spellChecking="false" />
+    <itemData name="Declaration" defStyleNum="dsFunction" spellChecking="false" />
+  </itemDatas>
+  </highlighting>
+  <general>
+    <folding indentationsensitive="1"/>
+    <comments>
+      <comment name="singleLine" start="--" />
+      <comment name="multiLine" start="{-" end="-}" region="BlockComment" />
+    </comments>
+    <keywords casesensitive="1" />
+</general>
+</language>

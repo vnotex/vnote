@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!--
+  MapCSS: https://wiki.openstreetmap.org/wiki/MapCSS/0.2
+  layer selector extension: https://wiki.openstreetmap.org/wiki/MapCSS/0.2/Proposal_layer_selector
+-->
+<language name="MapCSS" section="Markup" version="3" kateversion="5.0" extensions="*.mapcss" author="Volker Krause (vkrause@kde.org)" license="MIT">
+  <highlighting>
+    <list name="listKeywords">
+      <item>@import</item>
+      <item>set</item>
+    </list>
+    <list name="listFunctions">
+      <item>eval</item>
+      <item>rgb</item>
+      <item>rgba</item>
+      <item>url</item>
+    </list>
+   <list name="listObjects">
+      <item>node</item>
+      <item>way</item>
+      <item>relation</item>
+      <item>area</item>
+      <item>line</item>
+      <item>canvas</item>
+    </list>
+    <list name="listProperties">
+      <item>antialiasing</item>
+      <item>casing-color</item>
+      <item>casing-dashes</item>
+      <item>casing-linecap</item>
+      <item>casing-linejoin</item>
+      <item>casing-opacity</item>
+      <item>casing-width</item>
+      <item>color</item>
+      <item>dashes</item>
+      <item>extrude</item>
+      <item>extrude-edge-color</item>
+      <item>extrude-edge-opacity</item>
+      <item>extrude-face-color</item>
+      <item>extrude-face-opacity</item>
+      <item>fill-color</item>
+      <item>fill-image</item>
+      <item>fill-opacity</item>
+      <item>font-family</item>
+      <item>font-size</item>
+      <item>font-style</item>
+      <item>font-variant</item>
+      <item>font-weight</item>
+      <item>icon-color</item>
+      <item>icon-height</item>
+      <item>icon-image</item>
+      <item>icon-opacity</item>
+      <item>icon-width</item>
+      <item>image</item>
+      <item>linecap</item>
+      <item>linejoin</item>
+      <item>max-width</item>
+      <item>opacity</item>
+      <item>shield-color</item>
+      <item>shield-frame-color</item>
+      <item>shield-frame-width</item>
+      <item>shield-casing-color</item>
+      <item>shield-casing-width</item>
+      <item>shield-image</item>
+      <item>shield-opacity</item>
+      <item>shield-shape</item>
+      <item>shield-text</item>
+      <item>text</item>
+      <item>text-color</item>
+      <item>text-decoration</item>
+      <item>text-halo-color</item>
+      <item>text-halo-radius</item>
+      <item>text-opacity</item>
+      <item>text-offset</item>
+      <item>text-position</item>
+      <item>text-transform</item>
+      <item>width</item>
+      <item>z-index</item>
+    </list>
+    <list name="listConstants">
+      <item>bevel</item>
+      <item>bold</item>
+      <item>capitalize</item>
+      <item>center</item>
+      <item>full</item>
+      <item>italic</item>
+      <item>line</item>
+      <item>lowercase</item>
+      <item>miter</item>
+      <item>none</item>
+      <item>normal</item>
+      <item>rectangular</item>
+      <item>round</item>
+      <item>rounded</item>
+      <item>small-caps</item>
+      <item>square</item>
+      <item>text</item>
+      <item>uppercase</item>
+    </list>
+    <list name="listUnits">
+      <item>m</item>
+      <item>pt</item>
+      <item>px</item>
+    </list>
+
+    <contexts>
+      <context name="ctxNormal" lineEndContext="#stay" attribute="Normal">
+        <DetectChar char="[" context="ctxCondition"/>
+        <DetectChar char="{" beginRegion="RegionBrace" context="ctxDeclarationBlock"/>
+        <Float attribute="Float"/>
+        <Int attribute="Decimal"/>
+        <keyword String="listKeywords" attribute="Keyword"/>
+        <keyword String="listFunctions" attribute="Function"/>
+        <keyword String="listObjects" attribute="Type"/>
+        <DetectChar char="*" attribute="Type"/>
+        <DetectChar attribute="String" context="ctxDoubleQuoteString" char="&quot;"/>
+        <DetectChar attribute="String" context="ctxSingleQuoteString" char="'"/>
+        <Detect2Chars attribute="Comment" context="ctxSingleLineComment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="ctxComment" char="/" char1="*" beginRegion="RegionComment"/>
+        <RegExpr String="::\w+" context="#stay" attribute="Layer"/>
+        <RegExpr String="[:\.]\w+" context="#stay" attribute="Class"/>
+        <RegExpr String="(?&lt;=|)z(?:\d+)?-?(?:\d+)?" context="#stay" attribute="Zoom"/>
+      </context>
+
+      <context name="ctxCondition" lineEndContext="#stay" attribute="Normal">
+        <Float attribute="Float"/>
+        <Int attribute="Decimal"/>
+        <DetectChar attribute="String" context="ctxDoubleQuoteString" char="&quot;"/>
+        <DetectChar attribute="String" context="ctxSingleQuoteString" char="'"/>
+        <DetectChar char="]" context="#pop"/>
+      </context>
+
+      <context name="ctxDeclarationBlock" lineEndContext="#stay" attribute="Normal">
+        <DetectChar char="}" endRegion="RegionBrace" context="#pop"/>
+        <keyword String="listKeywords" attribute="Keyword"/>
+        <keyword String="listFunctions" attribute="Function"/>
+        <keyword String="listObjects" attribute="Type"/>
+        <keyword String="listProperties" attribute="Properties" context="ctxDeclaration"/>
+        <DetectChar attribute="String" context="ctxDoubleQuoteString" char="&quot;"/>
+        <DetectChar attribute="String" context="ctxSingleQuoteString" char="'"/>
+        <Detect2Chars attribute="Comment" context="ctxSingleLineComment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="ctxComment" char="/" char1="*" beginRegion="RegionComment"/>
+        <RegExpr String="\.\w+" context="#stay" attribute="Class"/>
+      </context>
+
+      <context name="ctxDeclaration" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="Normal" context="#pop" char=";"/>
+        <keyword String="listFunctions" attribute="Function"/>
+        <Float attribute="Float"/>
+        <Int attribute="Decimal"/>
+        <DetectChar attribute="String" context="ctxDoubleQuoteString" char="&quot;"/>
+        <DetectChar attribute="String" context="ctxSingleQuoteString" char="'"/>
+        <RegExpr String="#[0-9A-Fa-f]{3,8}" attribute="Color"/>
+        <keyword String="listConstants" attribute="Constant"/>
+        <keyword String="listUnits" attribute="Keyword"/>
+        <!-- explicitly handle negative numbers, needed as '-' is handled differently than usual -->
+        <RegExpr String="(?&lt;=-)\d+.\d+" attribute="Float"/>
+        <RegExpr String="(?&lt;=-)\d+" attribute="Decimal"/>
+      </context>
+
+      <context name="ctxDoubleQuoteString" attribute="String" lineEndContext="#pop">
+        <HlCStringChar attribute="Special Character" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context name="ctxSingleQuoteString" attribute="String" lineEndContext="#pop">
+        <HlCStringChar attribute="Special Character" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+
+      <context name="ctxSingleLineComment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context name="ctxComment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="RegionComment"/>
+        <IncludeRules context="##Comments"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Class" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Zoom" defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Layer" defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Properties" defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Special Character" defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Function" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Constant" defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Type" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Color" defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" weakDeliminator="-"/>
+    <comments>
+      <comment name="singleLine" start="//"/>
+      <comment name="multiLine" start="/*" end="*/" region="RegionComment"/>
+    </comments>
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

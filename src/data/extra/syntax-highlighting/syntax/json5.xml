@@ -1,0 +1,177 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY escape "\\(?:['&quot;\\bfnrtv0]|x[0-9a-fA-f]{2}|u[0-9a-fA-f]{4})">
+  <!ENTITY dec "(0|[1-9][0-9]*)">
+  <!ENTITY exp "([eE][+-]?[0-9]+)">
+  <!ENTITY number "\b0[xX][0-9a-fA-F]+|\b&dec;(\.[0-9]*)?&exp;?|(?&lt;!\w)\.[0-9]+&exp;?">
+]>
+<!--
+  https://spec.json5.org/
+-->
+<language name="JSON5" section="Markup" version="10" kateversion="5.79" extensions="*.json5" author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT">
+  <highlighting>
+    <list name="Constants">
+      <item>null</item>
+      <item>true</item>
+      <item>false</item>
+    </list>
+
+    <contexts>
+      <!-- Find String, Number, Object, Array, Constant, Comment-->
+      <context name="JSON5" attribute="Error">
+        <DetectChar char='"' context="DQString" attribute="String Delimiter"/>
+        <DetectChar char="'" context="SQString" attribute="String Delimiter"/>
+        <DetectChar char="{" context="Object" attribute="Object Delimiter" beginRegion="object"/>
+        <DetectChar char="[" context="Array" attribute="Array Delimiter" beginRegion="array"/>
+        <DetectSpaces attribute="Normal"/>
+        <IncludeRules context="FindComment"/>
+        <keyword String="Constants" attribute="Keyword"/>
+        <RegExpr String="[-+]?(&number;|\bInfinity|\bNaN)" attribute="Number"/>
+      </context>
+
+      <!-- {
+            ^~~~
+      -->
+      <context name="Object" attribute="Error">
+        <DetectChar char='"' context="DQStringKey" attribute="String Key Delimiter"/>
+        <DetectChar char="'" context="SQStringKey" attribute="String Key Delimiter"/>
+        <DetectChar char=":" context="ObjectValue" attribute="Key Separator"/>
+        <DetectChar char="}" context="#pop" attribute="Object Delimiter" endRegion="object"/>
+        <DetectSpaces context="#stay" attribute="Normal"/>
+        <IncludeRules context="FindComment"/>
+      </context>
+
+      <!-- { "
+              ^~~~
+      -->
+      <context name="DQStringKey" lineEndContext="EndStringError" attribute="String Key">
+        <DetectChar char='"' context="#pop" attribute="String Key Delimiter"/>
+        <DetectChar char="\" context="StringKeyEscape" lookAhead="1"/>
+      </context>
+
+      <!-- { '
+              ^~~~
+      -->
+      <context name="SQStringKey" lineEndContext="EndStringError" attribute="String Key">
+        <DetectChar char="'" context="#pop" attribute="String Key Delimiter"/>
+        <DetectChar char="\" context="StringKeyEscape" lookAhead="1"/>
+      </context>
+
+      <!-- { '\
+              ^~~~
+           { "\
+              ^~~~
+      -->
+      <context name="StringKeyEscape" attribute="Normal">
+        <LineContinue context="#pop" attribute="String Key Char"/>
+        <RegExpr String="&escape;" context="#pop" attribute="String Key Char"/>
+        <IncludeRules context="InvalidEscape"/>
+      </context>
+      <context name="InvalidEscape" attribute="Normal">
+        <RegExpr String="\\(u[0-9a-fA-f]+|x[0-9a-fA-f]?|.)" context="#pop" attribute="Error"/>
+      </context>
+
+      <!-- "bla bla
+           (newline)
+           ^~~~
+      -->
+      <context name="EndStringError" attribute="Normal" fallthroughContext="#pop#pop">
+        <DetectSpaces context="#pop#pop" attribute="Error"/>
+        <DetectIdentifier context="#pop#pop" attribute="Error"/>
+      </context>
+
+      <!-- { 'key':
+                   ^~~~
+      -->
+      <context name="ObjectValue" attribute="Error" >
+        <DetectChar char="," context="#pop" attribute="Object Value Separator"/>
+        <DetectChar char="}" context="#pop#pop" attribute="Object Delimiter" endRegion="object"/>
+        <IncludeRules context="JSON5"/>
+      </context>
+
+      <!-- "
+            ^~~~
+      -->
+      <context name="DQString" lineEndContext="EndStringError" attribute="String">
+        <DetectChar char='"' context="#pop" attribute="String"/>
+        <DetectChar char="\" context="StringEscape" lookAhead="1"/>
+      </context>
+
+      <!-- '
+            ^~~~
+      -->
+      <context name="SQString" lineEndContext="EndStringError" attribute="String">
+        <DetectChar char="'" context="#pop" attribute="String"/>
+        <DetectChar char="\" context="StringEscape" lookAhead="1"/>
+      </context>
+
+      <!-- '\
+            ^~~~
+           "\
+            ^~~~
+      -->
+      <context name="StringEscape" attribute="Normal">
+        <LineContinue context="#pop" attribute="String Char"/>
+        <RegExpr String="&escape;" context="#pop" attribute="String Char"/>
+        <IncludeRules context="InvalidEscape"/>
+      </context>
+
+      <!-- [
+            ^~~~
+      -->
+      <context name="Array" attribute="Error">
+        <DetectChar char="," context="#stay" attribute="Array Value Separator"/>
+        <DetectChar char="]" context="#pop" endRegion="array" attribute="Array Delimiter"/>
+        <IncludeRules context="JSON5"/>
+      </context>
+
+
+      <!-- Comment -->
+
+      <context name='FindComment' lineEndContext='#pop' attribute='Normal'>
+        <StringDetect String='//' context='CommentSingle'/>
+        <StringDetect String='/*' context='CommentMultiLine'/>
+      </context>
+
+      <context name='CommentSingle' lineEndContext='#pop' attribute='Comment'>
+        <DetectSpaces/>
+        <IncludeRules context='##Comments'/>
+        <DetectIdentifier/>
+      </context>
+
+      <context name='CommentMultiLine' attribute='Comment'>
+        <IncludeRules context='CommentSingle'/>
+        <StringDetect String='*/' context='#pop' attribute='Comment'/>
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal" defStyleNum="dsNormal"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+
+      <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+
+      <itemData name="Object Delimiter"       defStyleNum="dsFunction" bold="true"/>
+      <itemData name="Object Value Separator" defStyleNum="dsFunction"/>
+      <itemData name="Key Separator"          defStyleNum="dsFunction"/>
+
+      <itemData name="Array Delimiter"        defStyleNum="dsOthers" bold="true"/>
+      <itemData name="Array Value Separator"  defStyleNum="dsOthers"/>
+
+      <itemData name="String Key Delimiter" defStyleNum="dsDataType"/>
+      <itemData name="String Key"           defStyleNum="dsDataType"/>
+      <itemData name="String Key Char"      defStyleNum="dsChar"/>
+
+      <itemData name="String Delimiter" defStyleNum="dsString"/>
+      <itemData name="String"           defStyleNum="dsString"/>
+      <itemData name="String Char"      defStyleNum="dsChar"/>
+
+      <itemData name="Error" defStyleNum="dsError"/>
+    </itemDatas>
+  </highlighting>
+</language>
+<!--
+// kate: space-indent on; indent-width 2; replace-tabs on;
+-->

@@ -1,0 +1,599 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+        <!ENTITY tab                    "&#x9;">
+        <!ENTITY space                  "&#x20;">
+        <!ENTITY CR                     "&#x0D;">
+        <!ENTITY LF                     "&#x0A;">
+        <!ENTITY comment                "#.*?(?:[&CR;&LF;]|$)"> <!-- starting with # and ending before (but not including) the next carriage return, newline or end of file; -->
+        <!ENTITY line_continue          "&#x5E;(?:&CR;|&CR;&LF;)"> <!-- a ^ followed by a newline ("\n"), or a carriage return and newline ("\r\n"). -->
+        <!ENTITY inline_whitespace      "&space;|&tab;|&comment;|&line_continue;">
+        <!ENTITY whitespace             "&inline_whitespace;|&CR;|&LF;">
+        <!ENTITY bareword               "[a-zA-Z0-9!&#x25;+,-.\/:@\_~]+|\p{L}+"> <!-- Matches a-z, A-Z, 0-9, ! % + , - . / : @ \ _ ~  OR Any letter from any language UTF-8 -->
+        <!ENTITY ns_identifier          "[\p{L}_]+"> <!-- Matches any letter from any language UTF-8 or _. NOTE: This is not explicitly defined by the language author -->
+]>
+
+<!-- NOTE: This document was made for Elvish version 0.19.1 and may be inaccurate when the language gets updated -->
+<language name="Elvish" version="1" kateversion="5.72" section="Scripts" extensions="*.elv" casesensitive="1" author="Lilith Houtjes (lilith@stroopwafel.dev)" license="MIT">
+
+  <highlighting>
+    <list name="keywords">
+      <item>fn</item>
+      <item>pragma</item>
+    </list>
+
+    <list name="variables">
+      <item>var</item>
+      <item>tmp</item>
+      <item>set</item>
+      <item>del</item>
+    </list>
+
+    <list name="controlFlow">
+      <item>break</item>
+      <item>continue</item>
+      <item>defer</item>
+      <item>elif</item>
+      <item>else</item>
+      <item>if</item>
+      <item>return</item>
+      <item>while</item>
+      <item>try</item>
+      <item>catch</item>
+      <item>except</item>
+      <item>finally</item>
+      <item>for</item>
+    </list>
+
+    <list name="functions">
+      <item>+</item>
+      <item>-</item>
+      <item>*</item>
+      <item>/</item>
+      <item>%</item>
+      <item>&lt;</item>
+      <item>&lt;=</item>
+      <item>==</item>
+      <item>!=</item>
+      <item>&gt;</item>
+      <item>&gt;=</item>
+       <item>&lt;s</item>
+      <item>&lt;=s</item>
+      <item>==s</item>
+      <item>!=s</item>
+      <item>&gt;s</item>
+      <item>&gt;=s</item>
+      <item>all</item>
+      <item>assoc</item>
+      <item>base</item>
+      <item>benchmark</item>
+      <item>bool</item>
+      <item>call</item>
+      <item>cd</item>
+      <item>compact</item>
+      <item>compare</item>
+      <item>conj</item>
+      <item>constantly</item>
+      <item>count</item>
+      <item>deprecate</item>
+      <item>dissoc</item>
+      <item>drop</item>
+      <item>each</item>
+      <item>eawk</item>
+      <item>echo</item>
+      <item>eq</item>
+      <item>eval</item>
+      <item>exact-num</item>
+      <item>exec</item>
+      <item>exit</item>
+      <item>external</item>
+      <item>fail</item>
+      <item>float64</item>
+      <item>from-terminated</item>
+      <item>get-env</item>
+      <item>has-env</item>
+      <item>has-external</item>
+      <item>has-key</item>
+      <item>has-value</item>
+      <item>inexact-num</item>
+      <item>is</item>
+      <item>keys</item>
+      <item>kind-of</item>
+      <item>-log</item>
+      <item>make-map</item>
+      <item>nop</item>
+      <item>not-eq</item>
+      <item>ns</item>
+      <item>num</item>
+      <item>one</item>
+      <item>order</item>
+      <item>peach</item>
+      <item>pprint</item>
+      <item>print</item>
+      <item>printf</item>
+      <item>put</item>
+      <item>randint</item>
+      <item>-randseed</item>
+      <item>range</item>
+      <item>read-upto</item>
+      <item>repeat</item>
+      <item>repr</item>
+      <item>resolve</item>
+      <item>run-parallel</item>
+      <item>search-external</item>
+      <item>set-env</item>
+      <item>show</item>
+      <item>sleep</item>
+      <item>styled</item>
+      <item>styled-segment</item>
+      <item>take</item>
+      <item>tilde-abbr</item>
+      <item>time</item>
+      <item>to-lines</item>
+      <item>to-string</item>
+      <item>to-terminated</item>
+      <item>unset-env</item>
+      <item>use-mod</item>
+      <item>wcswidth</item>
+    </list>
+
+    <list name="functionsnoargs">
+      <item>from-json</item>
+      <item>from-lines</item>
+      <item>-gc</item>
+      <item>-ifaddrs</item>
+      <item>only-bytes</item>
+      <item>only-values</item>
+      <item>rand</item>
+      <item>read-line</item>
+      <item>slurp</item>
+      <item>src</item>
+      <item>-stack</item>
+      <item>to-json</item>
+    </list>
+
+    <list name="booloperators">
+      <item>and</item>
+      <item>not</item>
+      <item>coalesce</item>
+    </list>
+
+    <list name="docfunctions">
+      <item>find</item>
+      <item>show</item>
+      <item>source</item>
+    </list>
+
+    <list name="editfunctions">
+      <item>add-var</item>
+      <item>add-vars</item>
+      <item>binding-table</item>
+      <item>command-history</item>
+      <item>complete-filename</item>
+      <item>complete-getopt</item>
+      <item>complex-candidate</item>
+      <item>del-var</item>
+      <item>del-vars</item>
+      <item>insert-at-dot</item>
+      <item>key</item>
+      <item>listing:start-custom</item>
+      <item>match-prefix</item>
+      <item>match-subseq</item>
+      <item>match-substr</item>
+      <item>notify</item>
+      <item>redraw</item>
+      <item>replace-input</item>
+      <item>wordify</item>
+    </list>
+
+    <list name="editfunctionsnoargs">
+      <item>apply-autofix</item>
+      <item>clear</item>
+      <item>close-mode</item>
+      <item>command:start</item>
+      <item>completion:close</item>
+      <item>completion:smart-start</item>
+      <item>completion:start</item>
+      <item>end-of-history</item>
+      <item>histlist:start</item>
+      <item>histlist:toggle-dedup</item>
+      <item>history:accept</item>
+      <item>history:down</item>
+      <item>history:down-or-quit</item>
+      <item>history:fast-forward</item>
+      <item>history:start</item>
+      <item>history:up</item>
+      <item>insert-last-word</item>
+      <item>insert-raw</item>
+      <item>-instant:start</item>
+      <item>kill-alnum-word-left</item>
+      <item>kill-alnum-word-right</item>
+      <item>kill-line-left</item>
+      <item>kill-line-right</item>
+      <item>kill-rune-left</item>
+      <item>kill-rune-right</item>
+      <item>kill-small-word-left</item>
+      <item>kill-small-word-right</item>
+      <item>kill-word-left</item>
+      <item>kill-word-right</item>
+      <item>lastcmd:start</item>
+      <item>listing:accept</item>
+      <item>listing:down</item>
+      <item>listing:down-cycle</item>
+      <item>listing:page-down</item>
+      <item>listing:page-up</item>
+      <item>listing:up</item>
+      <item>listing:up-cycle</item>
+      <item>move-dot-down</item>
+      <item>move-dot-eol</item>
+      <item>move-dot-left</item>
+      <item>move-dot-left-alnum-word</item>
+      <item>move-dot-left-small-word</item>
+      <item>move-dot-left-word</item>
+      <item>move-dot-right</item>
+      <item>move-dot-right-alnum-word</item>
+      <item>move-dot-right-small-word</item>
+      <item>move-dot-right-word</item>
+      <item>move-dot-sol</item>
+      <item>move-dot-up</item>
+      <item>navigation:insert-selected</item>
+      <item>navigation:insert-selected-and-quit</item>
+      <item>navigation:start</item>
+      <item>navigation:trigger-filter</item>
+      <item>navigation:trigger-shown-hidden</item>
+      <item>return-eof</item>
+      <item>return-line</item>
+      <item>smart-enter</item>
+      <item>toggle-quote-paste</item>
+      <item>transponse-alnum-word</item>
+      <item>tranpose-rune</item>
+      <item>tranpose-small-word</item>
+      <item>tranpose-word</item>
+    </list>
+
+    <list name="epmfunctions">
+      <item>dest</item>
+      <item>install</item>
+      <item>is-installed</item>
+      <item>metadata</item>
+      <item>query</item>
+      <item>uninstall</item>
+      <item>upgrade</item>
+    </list>
+
+    <list name="epmfunctionsnoargs">
+      <item>installed</item>
+      <item>list</item>
+    </list>
+
+    <list name="flagfunctions">
+      <item>call</item>
+      <item>parse</item>
+      <item>parse-getopt</item>
+    </list>
+
+    <list name="filefunctions">
+      <item>close</item>
+      <item>is-tty</item>
+      <item>open</item>
+      <item>truncate</item>
+    </list>
+
+    <list name="filefunctionsnoargs">
+      <item>pipe</item>
+    </list>
+
+    <list name="mathfunctions">
+      <item>abs</item>
+      <item>acos</item>
+      <item>acosh</item>
+      <item>asin</item>
+      <item>asinh</item>
+      <item>atan</item>
+      <item>atanh</item>
+      <item>ceil</item>
+      <item>cos</item>
+      <item>cosh</item>
+      <item>floor</item>
+      <item>is-inf</item>
+      <item>is-nan</item>
+      <item>log</item>
+      <item>log10</item>
+      <item>log2</item>
+      <item>max</item>
+      <item>min</item>
+      <item>pow</item>
+      <item>round</item>
+      <item>round-to-even</item>
+      <item>sin</item>
+      <item>sinh</item>
+      <item>sqrt</item>
+      <item>tan</item>
+      <item>tanh</item>
+      <item>trunc</item>
+    </list>
+
+    <list name="pathfunctions">
+      <item>abs</item>
+      <item>base</item>
+      <item>clean</item>
+      <item>dir</item>
+      <item>eval-symlinks</item>
+      <item>ext</item>
+      <item>is-abs</item>
+      <item>is-dir</item>
+      <item>is-regular</item>
+      <item>join</item>
+      <item>temp-dir</item>
+      <item>temp-file</item>
+    </list>
+
+    <list name="platformfunctions">
+      <item>hostname</item>
+    </list>
+
+    <list name="refunctions">
+      <item>find</item>
+      <item>match</item>
+      <item>quote</item>
+      <item>replace</item>
+      <item>split</item>
+    </list>
+
+    <list name="storefunctions">
+      <item>add-cmd</item>
+      <item>add-dir</item>
+      <item>cmd</item>
+      <item>cmds</item>
+      <item>del-cmd</item>
+      <item>del-dir</item>
+    </list>
+
+     <list name="storefunctionsnoargs">
+      <item>dirs</item>
+      <item>next-cmd-seq</item>
+    </list>
+
+    <list name="stringfunctions">
+      <item>compare</item>
+      <item>contains</item>
+      <item>contains-any</item>
+      <item>count</item>
+      <item>equal-fold</item>
+      <item>fields</item>
+      <item>from-codepoints</item>
+      <item>from-utf8-bytes</item>
+      <item>has-prefix</item>
+      <item>has-suffix</item>
+      <item>index</item>
+      <item>index-any</item>
+      <item>join</item>
+      <item>last-index</item>
+      <item>replace</item>
+      <item>split</item>
+      <item>title</item>
+      <item>to-codepoints</item>
+      <item>to-lower</item>
+      <item>to-title</item>
+      <item>to-upper</item>
+      <item>to-utf8-bytes</item>
+      <item>trim</item>
+      <item>trim-left</item>
+      <item>trim-prefix</item>
+      <item>trim-right</item>
+      <item>trim-space</item>
+      <item>trim-suffix</item>
+    </list>
+
+    <list name="unixcommands">
+      <include>unixcommands##Bash</include>
+    </list>
+
+    <contexts>
+      <context name="normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces />
+
+        <!-- Match keywords -->
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+
+        <!-- Match control flow statements -->
+        <keyword attribute="Control Flow" context="#stay" String="controlFlow" />
+
+        <!-- Match functions -->
+        <keyword attribute="Builtin" context="#stay" String="functions" />
+        <keyword attribute="Builtin" context="#stay" String="functionsnoargs" />
+        <AnyChar attribute="Builtin" context="CompFunction" String="&lt;&gt;" />
+        <keyword attribute="Function" context="#stay" String="unixcommands" />
+
+        <!-- Match braces -->
+        <DetectChar attribute="Operator" context="TryVariable" char="{" lookAhead="true" beginRegion="Brace1" />
+        <DetectChar attribute="Operator" context="#stay" char="}" endRegion="Brace1" />
+
+        <!-- Match variables -->
+        <keyword attribute="Keyword" context="Variable" String="variables" firstNonSpace="true" />
+        <AnyChar context="TryVariable" lookAhead="true" String="{(|;" />
+        <DetectChar attribute="Variable" context="Variable" char="$" />
+
+        <!-- Match operators -->
+        <AnyChar attribute="Operator" context="#stay" String="*?|&amp;;&lt;&gt;()[]{}=" />
+        <keyword attribute="Operator" context="#stay" String="booloperators" />
+
+        <!-- Match use statement -->
+        <WordDetect String="use" attribute="Use" context="#stay" />
+
+        <!-- Match builtin functions with namespaces -->
+        <StringDetect String="builtin:" attribute="Builtin" context="BuiltinFunctions" />
+        <StringDetect String="doc:" attribute="Builtin" context="DocFunctions" />
+        <StringDetect String="edit:" attribute="Builtin" context="EditFunctions" />
+        <StringDetect String="epm:" attribute="Builtin" context="EpmFunctions" />
+        <StringDetect String="flag:" attribute="Builtin" context="FlagFunctions" />
+        <StringDetect String="file:" attribute="Builtin" context="FileFunctions" />
+        <StringDetect String="math:" attribute="Builtin" context="MathFunctions" />
+        <StringDetect String="path:" attribute="Builtin" context="PathFunctions" />
+        <StringDetect String="platform:" attribute="Builtin" context="PlatformFunctions" />
+        <StringDetect String="re:" attribute="Builtin" context="RegexFunctions" />
+        <StringDetect String="store:" attribute="Builtin" context="StoreFunctions" />
+        <StringDetect String="str:" attribute="Builtin" context="StringFunctions" />
+
+        <!-- Match comments -->
+        <DetectChar attribute="Comment" context="Comment" char="#" />
+
+        <!-- Match numbers -->
+        <HlCOct attribute="NumberBaseN" context="#stay" /> <!-- This matches \b0[0-7]+ and not \b0o[0-7]+ so we have to check for that as well -->
+        <RegExpr String="\b0o[0-7]+|\b0b[01]+" attribute="NumberBaseN" context="#stay" /> <!-- Now we match against both octal types and Elvish also supports binary number declaration -->
+        <HlCHex attribute="NumberBaseN" context="#stay" />
+        <Float attribute="Float" context="#stay" />
+        <Int attribute="Decimal" context="#stay" />
+
+        <!-- Match strings -->
+        <DetectChar attribute="String" context="StringDouble" char="&quot;" />
+        <DetectChar attribute="String" context="StringSingle" char="'" />
+
+        <RegExpr String="(&ns_identifier;){1}(:){1}(&bareword;){1}" context="TryExternal" lookAhead="true" />
+      </context>
+
+      <!-- Match comparison functions: < <= >= > <s <=s >=s >s -->
+      <context attribute="Builtin" lineEndContext="#pop" name="CompFunction" fallthroughContext="#pop">
+        <Detect2Chars attribute="Builtin" context="#pop" char="=" char1="s" />
+        <AnyChar attribute="Builtin" context="#pop" String="=s" />
+      </context>
+
+      <!-- BEGIN Region of matching builtin namespace functions -->
+
+      <!-- Users can explicitly call builtin functions using the builtin: namespace -->
+      <context attribute="Builtin" lineEndContext="#pop" name="BuiltinFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="functions" />
+        <keyword attribute="Builtin" context="#pop" String="functionsnoargs" />
+      </context>
+
+      <context attribute="Builtin" lineEndContext="#pop" name="DocFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="docfunctions" />
+      </context>
+
+      <context attribute="Builtin" lineEndContext="#pop" name="EditFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="editfunctions" />
+        <keyword attribute="Builtin" context="#pop" String="editfunctionsnoargs" />
+      </context>
+
+      <context attribute="Builtin" lineEndContext="#pop" name="EpmFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="epmfunctions" />
+        <keyword attribute="Builtin" context="#pop" String="epmfunctionsnoargs" />
+      </context>
+
+      <context attribute="Builtin" lineEndContext="#pop" name="FlagFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="flagfunctions" />
+      </context>
+
+      <context attribute="Builtin" lineEndContext="#pop" name="FileFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="filefunctions" />
+        <keyword attribute="Builtin" context="#pop" String="filefunctionsnoargs" />
+      </context>
+
+      <context attribute="Builtin" lineEndContext="#pop" name="MathFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="mathfunctions" />
+      </context>
+
+      <context attribute="Builtin" lineEndContext="#pop" name="PathFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="pathfunctions" />
+      </context>
+
+      <context attribute="Builtin" lineEndContext="#pop" name="PlatformFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="platformfunctions" />
+      </context>
+
+      <context attribute="Builtin" lineEndContext="#pop" name="RegexFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="refunctions" />
+      </context>
+
+      <context attribute="Builtin" lineEndContext="#pop" name="StoreFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="storefunctions" />
+        <keyword attribute="Builtin" context="#pop" String="storefunctionsnoargs" />
+      </context>
+
+      <context attribute="Builtin" lineEndContext="#pop" name="StringFunctions" fallthroughContext="#pop">
+        <keyword attribute="Builtin" context="#pop" String="stringfunctions" />
+      </context>
+
+      <!-- END Region of matching builtin namespace functions -->
+
+      <!-- Use the comment rules already defined -->
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier />
+      </context>
+
+      <!-- Try to match variables that are not at the start of a line -->
+      <context attribute="Normal Text" lineEndContext="#pop" name="TryVariable" fallthroughContext="#pop">
+        <DetectChar context="CurlyVariable" char="{" lookAhead="true" />
+        <AnyChar attribute="Operator" context="#stay" String="{(|;" />
+        <DetectSpaces />
+        <keyword attribute="Keyword" context="Variable" String="variables" />
+      </context>
+
+      <!-- Elvish only allows variable declarations after a whitespace when it's proceded by a curly brace ('{') -->
+      <context attribute="Normal Text" lineEndContext="#pop#pop" name="CurlyVariable" fallthroughContext="#pop#pop">
+        <Detect2Chars attribute="Operator" context="#pop" char="{" char1=" " />
+        <Detect2Chars attribute="Operator" context="#pop" char="{" char1="&tab;" />
+        <DetectChar attribute="Operator" context="#stay" char="{" />
+        <DetectIdentifier context="#pop#pop" />
+      </context>
+
+      <!--
+      The definition of a variable is:
+        * ASCII letters (a-z and A-Z) and numbers (0-9)
+        * The symbols -_:~
+        * Non-ASCII codepoints that are printable, as defined by unicode.IsPrint in Go’s standard library.
+        - Source (https://elv.sh/ref/language.html#variable)
+      -->
+      <context attribute="Variable" lineEndContext="#pop" name="Variable" fallthroughContext="#pop">
+        <DetectSpaces />
+        <RegExpr String="&bareword;" attribute="Variable" context="#pop" />
+      </context>
+
+      <!-- Match strings with double quotes (") -->
+      <context attribute="String" lineEndContext="#pop" name="StringDouble">
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+        <HlCStringChar attribute="Keychar" context="#stay" />
+      </context>
+
+      <!-- Match strings with single quotes (') -->
+      <context attribute="String" lineEndContext="#pop" name="StringSingle">
+        <Detect2Chars attribute="String" context="#stay" char="'" char1="'" />
+        <DetectChar attribute="String" context="#pop" char="'" />
+        <HlCStringChar attribute="Keychar" context="#stay" />
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="TryExternal" fallthroughContext="#pop">
+        <StringDetect context="#stay" attribute="Extension" String="%1" dynamic="true" />
+        <StringDetect context="#stay" attribute="Operator" String="%2" dynamic="true" />
+        <StringDetect context="#pop" attribute="Function" String="%3" dynamic="true" />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Builtin"        defStyleNum="dsBuiltIn" />
+      <itemData name="Comment"        defStyleNum="dsComment" />
+      <itemData name="Control Flow"   defStyleNum="dsControlFlow" />
+      <itemData name="Decimal"        defStyleNum="dsDecVal" />
+      <itemData name="Extension"      defStyleNum="dsExtension" />
+      <itemData name="Float"          defStyleNum="dsFloat" />
+      <itemData name="Function"       defStyleNum="dsFunction" />
+      <itemData name="Keychar"        defStyleNum="dsSpecialChar" />
+      <itemData name="Keyword"        defStyleNum="dsKeyword" />
+      <itemData name="Normal Text"    defStyleNum="dsNormal" />
+      <itemData name="NumberBaseN"    defStyleNum="dsBaseN" />
+      <itemData name="Operator"       defStyleNum="dsOperator" />
+      <itemData name="String"         defStyleNum="dsString" />
+      <itemData name="Use"            defStyleNum="dsImport" />
+      <itemData name="Variable"       defStyleNum="dsVariable" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" weakDeliminator="\+,-:=!.@#&#37;^_`~"  wordWrapDeliminator="&whitespace;"/>
+  <comments>
+    <comment name="singleLine" start="#"/>
+  </comments>
+</general>
+</language>

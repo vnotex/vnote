@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- Nemerle syntax highlighting v0.2 by caminoix, approved of and corrected by Kamil Skalski (Nazgul) -->
-<language name="Nemerle" version="1" kateversion="2.3" section="Sources" extensions="*.n" mimetype="text/x-nemerle" casesensitive="1" author="caminoix + Kamil Skalski (Nazgul)" license="">
+<language name="Nemerle" alternativeNames="N" version="7" kateversion="5.0" section="Sources" extensions="*.n" mimetype="text/x-nemerle" casesensitive="1" author="caminoix + Kamil Skalski (Nazgul)" license="">
 	<highlighting>
 		<list name="Attributes">
 			<item>abstract</item>
@@ -119,13 +119,14 @@
 
 		<contexts>
 			<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
-				<StringDetect attribute="Comment" context="SingleLineComment" String="//" />
-				<StringDetect attribute="Comment" context="MultiLineComment" String="/*" />
+				<DetectSpaces attribute="Normal Text" />
+				<Detect2Chars attribute="Comment" context="SingleLineComment" char="/" char1="/" />
+				<Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*" beginRegion="BlockComment" />
 				<DetectChar attribute="String" context="NormalString" char="&quot;" />
 				<Detect2Chars attribute="String" context="StringInterpolation" char="$" char1="&quot;" />
 
-				<Int attribute="Number" context="#stay" />
 				<Float attribute="Number" context="#stay" />
+				<Int attribute="Number" context="#stay" />
 
 				<keyword attribute="Attribute" context="#stay" String="Attributes" />
 				<keyword attribute="CompilationUnit" context="#stay" String="CompilationUnits" />
@@ -134,50 +135,43 @@
 				<keyword attribute="Preprocessing" context="#stay" String="Preprocessing" />
 				<keyword attribute="TypeDeclaration" context="#stay" String="TypeDeclarations" />
 
+				<DetectIdentifier attribute="Normal Text" />
+
 				<DetectChar attribute="Keyword" context="#stay" char="{" beginRegion="Region1" />
 				<DetectChar attribute="Keyword" context="#stay" char="}" endRegion="Region1" />
 				<DetectChar attribute="Keyword" context="#stay" char="(" beginRegion="Region2" />
 				<DetectChar attribute="Keyword" context="#stay" char=")" endRegion="Region2" />
-				<Detect2Chars attribute="CompilationUnit" context="#stay" char="&#60;" char1="[" beginRegion="Region3" />
-				<Detect2Chars attribute="CompilationUnit" context="#stay" char="]" char1="&#62;" endRegion="Region3" />
+				<Detect2Chars attribute="CompilationUnit" context="#stay" char="&lt;" char1="[" beginRegion="Region3" />
+				<Detect2Chars attribute="CompilationUnit" context="#stay" char="]" char1=">" endRegion="Region3" />
 			</context>
 
 			<context name="SingleLineComment" attribute="Comment" lineEndContext="#pop">
-				<StringDetect attribute="Comment" String="//" context="#pop" />
+				<Detect2Chars attribute="Comment" char="/" char1="/" context="#pop" />
+				<DetectSpaces />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier />
 			</context>
 			<context name="MultiLineComment" attribute="Comment" lineEndContext="#stay">
-				<StringDetect attribute="Comment" String="*/" context="#pop" />
+				<Detect2Chars attribute="Comment" char="*" char1="/" context="#pop" endRegion="BlockComment" />
+				<DetectSpaces />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier />
 			</context>
 
 			<context name="NormalString" attribute="String" lineEndContext="#stay">
-				<DetectChar attribute="String" char="&quot;" context="#pop" />
-				<RegExpr attribute="EscapeSequence" context="#stay" String="\{[0-9]+\}" />
+				<DetectSpaces />
+				<DetectIdentifier />
 
-				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="&quot;" />
-				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="\" />
-				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="t" />
-				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="n" />
-				<StringDetect attribute="EscapeSequence" context="#stay" String="\u0008" />
-				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000D" />
-				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000d" />
-				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000A" />
-				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000a" />
+				<DetectChar attribute="String" char="&quot;" context="#pop" />
+				<RegExpr attribute="EscapeSequence" context="#stay" String="\{[0-9]+\}|\\[&quot;\\tn]|\\u000[8DdAa]" />
 			</context>
 
 			<context name="StringInterpolation" attribute="String" lineEndContext="#stay">
-				<DetectChar attribute="String" char="&quot;" context="#pop" />
-				<RegExpr attribute="EscapeSequence" context="#stay" String="\{[0-9]+\}" />
-				<RegExpr attribute="EscapeSequence" context="#stay" String="\$(\S)+\s" />
+				<DetectSpaces />
+				<DetectIdentifier />
 
-				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="&quot;" />
-				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="\" />
-				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="t" />
-				<Detect2Chars attribute="EscapeSequence" context="#stay" char="\" char1="n" />
-				<StringDetect attribute="EscapeSequence" context="#stay" String="\u0008" />
-				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000D" />
-				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000d" />
-				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000A" />
-				<StringDetect attribute="EscapeSequence" context="#stay" String="\u000a" />
+				<DetectChar attribute="String" char="&quot;" context="#pop" />
+				<RegExpr attribute="EscapeSequence" context="#stay" String="\{[0-9]+\}|\$(\S)+\s|\\[&quot;\\tn]|\\u000[8DdAa]" />
 			</context>
 		</contexts>
 
@@ -202,7 +196,8 @@
 	<general>
 		<comments>
 			<comment name="singleLine" start="//" />
-			<comment name="multiLine" start="/*" end="*/" />
+			<comment name="multiLine" start="/*" end="*/" region="BlockComment" />
 		</comments>
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

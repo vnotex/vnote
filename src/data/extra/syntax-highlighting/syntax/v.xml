@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="V" version="1" kateversion="5.0" section="Sources" indenter="cstyle" mimetype="text/x-vlang" extensions="*.v;*.vh;*.vsh" author="Lars Pontoppidan (dev.larpon@gmail.com)" license="MIT">
+    <highlighting>
+        <list name="keywords">
+            <item>as</item>
+            <item>assert</item>
+            <item>break</item>
+            <item>const</item>
+            <item>continue</item>
+            <item>defer</item>
+            <item>else</item>
+            <item>enum</item>
+            <item>fn</item>
+            <item>for</item>
+            <item>go</item>
+            <item>spawn</item>
+            <item>goto</item>
+            <item>if</item>
+            <item>import</item>
+            <item>in</item>
+            <item>interface</item>
+            <item>is</item>
+            <item>match</item>
+            <item>module</item>
+            <item>none</item>
+            <item>nil</item>
+            <item>or</item>
+            <item>pub</item>
+            <item>return</item>
+            <item>shared</item>
+            <item>static</item>
+            <item>struct</item>
+            <item>type</item>
+            <item>union</item>
+        </list>
+        <list name="compile_time_keywords">
+            <item>$else</item>
+            <item>$embed_file</item>
+            <item>$for</item>
+            <item>$if</item>
+            <item>$Array</item>
+            <item>$Map</item>
+            <item>$Struct</item>
+            <item>$env</item>
+            <item>$pkgconfig</item>
+        </list>
+        <list name="scopes">
+            <item>asm</item>
+            <item>unsafe</item>
+        </list>
+        <list name="types">
+            <item>atomic</item>
+            <item>bool</item>
+            <item>chan</item>
+            <item>char</item>
+            <item>mut</item>
+            <item>int</item>
+            <item>u8</item>
+            <item>byte</item>
+            <item>i8</item>
+            <item>i16</item>
+            <item>i64</item>
+            <item>i128</item>
+            <item>u16</item>
+            <item>u32</item>
+            <item>u64</item>
+            <item>u128</item>
+            <item>f32</item>
+            <item>f64</item>
+            <item>voidptr</item>
+            <item>rune</item>
+            <item>string</item>
+            <item>thread</item>
+            <item>usize</item>
+            <item>isize</item>
+            <item>ustring</item>
+            <item>none</item>
+            <item>nil</item>
+        </list>
+        <list name="flags">
+            <item>#flag</item>
+            <item>#include</item>
+            <item>#insert</item>
+            <item>#define</item>
+            <item>#pkgconfig</item>
+        </list>
+        <list name="tag_attributes">
+            <item>flag</item>
+            <item>typedef</item>
+            <item>live</item>
+            <item>inline</item>
+            <item>no_inline</item>
+            <item>irq_handler</item>
+            <item>_cold</item>
+            <item>_constructor</item>
+            <item>_destructor</item>
+            <item>_flatten</item>
+            <item>_hot</item>
+            <item>_malloc</item>
+            <item>_pointer</item>
+            <item>_pure</item>
+            <item>_naked</item>
+            <item>windows_stdcall</item>
+            <item>heap</item>
+            <item>direct_array_access</item>
+            <item>deprecated</item>
+            <item>deprecated_after</item>
+            <item>required</item>
+            <item>trusted</item>
+            <item>unsafe</item>
+            <item>manualfree</item>
+            <item>console</item>
+            <item>noinline</item>
+            <item>keep_args_alive</item>
+            <item>trace_error</item>
+            <item>has_globals</item>
+        </list>
+        <list name="vlib">
+            <item>arrays</item>
+            <item>benchmark</item>
+            <item>bignum</item>
+            <item>bitfield</item>
+            <item>compiler</item>
+            <item>crypto</item>
+            <item>encoding</item>
+            <item>filepath</item>
+            <item>flag</item>
+            <item>freetype</item>
+            <item>gg</item>
+            <item>gl</item>
+            <item>glfw</item>
+            <item>glm</item>
+            <item>gx</item>
+            <item>hash</item>
+            <item>http</item>
+            <item>json</item>
+            <item>log</item>
+            <item>math</item>
+            <item>mysql</item>
+            <item>net</item>
+            <item>orm</item>
+            <item>os</item>
+            <item>os2</item>
+            <item>pg</item>
+            <item>rand</item>
+            <item>readline</item>
+            <item>runtime</item>
+            <item>sqlite</item>
+            <item>stbi</item>
+            <item>strconv</item>
+            <item>strings</item>
+            <item>sync</item>
+            <item>szip</item>
+            <item>term</item>
+            <item>time</item>
+            <item>ui</item>
+            <item>vweb</item>
+        </list>
+        <list name="builtin">
+            <item>error</item>
+            <item>len</item>
+            <item>panic</item>
+            <item>println</item>
+            <item>print</item>
+            <item>eprintln</item>
+        </list>
+        <list name="predeclared">
+            <item>false</item>
+            <item>gc_bohem</item>
+            <item>true</item>
+            <item>ios</item>
+            <item>macos</item>
+            <item>darwin</item>
+            <item>mach</item>
+            <item>linux</item>
+            <item>hpux</item>
+            <item>gnu</item>
+            <item>qnx</item>
+            <item>windows</item>
+            <item>freebsd</item>
+            <item>openbsd</item>
+            <item>netbsd</item>
+            <item>bsd</item>
+            <item>dragonfly</item>
+            <item>x64</item>
+            <item>x32</item>
+            <item>little_endian</item>
+            <item>big_endian</item>
+            <item>amd64</item>
+            <item>arm64</item>
+            <item>arm32</item>
+            <item>rv64</item>
+            <item>rv32</item>
+            <item>i386</item>
+            <item>aarch64</item>
+            <item>js_node</item>
+            <item>js_browser</item>
+            <item>js_freestanding</item>
+            <item>apk</item>
+            <item>js</item>
+            <item>debug</item>
+            <item>prod</item>
+            <item>test</item>
+            <item>glibc</item>
+            <item>prealloc</item>
+            <item>no_bounds_checking</item>
+            <item>freestanding</item>
+            <item>threads</item>
+            <item>interpreter</item>
+            <item>es5</item>
+            <item>android</item>
+            <item>termux</item>
+            <item>solaris</item>
+            <item>serenity</item>
+            <item>vinix</item>
+            <item>haiku</item>
+            <item>raw</item>
+            <item>all</item>
+            <item>gcc</item>
+            <item>tinyc</item>
+            <item>clang</item>
+            <item>mingw</item>
+            <item>msvc</item>
+            <item>cplusplus</item>
+        </list>
+        <contexts>
+            <context name="normal" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces/>
+                <keyword attribute="Tag Attribute" context="#stay" String="tag_attributes"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Compile Time Keyword" context="#stay" String="compile_time_keywords"/>
+                <keyword attribute="Predeclared Identifier" context="#stay" String="predeclared"/>
+                <keyword attribute="Scope" context="#stay" String="scopes"/>
+                <keyword attribute="Flag" context="#stay" String="flags"/>
+                <keyword attribute="Module" context="#stay" String="vlib"/>
+                <keyword attribute="Data Type" context="#stay" String="types"/>
+                <keyword attribute="Builtin Function" context="#stay" String="builtin"/>
+                <DetectIdentifier/>
+                <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1"/>
+                <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1"/>
+                <DetectChar attribute="Symbol" context="#stay" char="[" beginRegion="Bracket1"/>
+                <DetectChar attribute="Symbol" context="#stay" char="]" endRegion="Bracket1"/>
+                <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+                <Float attribute="Float" context="#stay"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <HlCOct attribute="Octal" context="#stay"/>
+                <HlCHex attribute="Hex" context="#stay"/>
+                <HlCChar attribute="Char" context="#stay"/>
+                <DetectChar attribute="String" char="'" context="LiteralString" beginRegion="MultiLineString"/>
+                <DetectChar attribute="String" char="&quot;" context="BasicString" beginRegion="MultiLineString"/>
+                <DetectChar attribute="Char" char="`" context="SingleChar" beginRegion="MultiLineString"/>
+                <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^;"/>
+            </context>
+            <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+                <LineContinue attribute="Comment" context="#stay"/>
+                <DetectSpaces/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier/>
+            </context>
+            <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+                <DetectSpaces/>
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier/>
+            </context>
+            <context attribute="Char" lineEndContext="#stay" name="SingleChar">
+                <HlCStringChar attribute="Escape"/>
+                <DetectChar attribute="Char" context="#pop" char="`" endRegion="MultiLineString"/>
+            </context>
+            <context attribute="String" lineEndContext="#stay" name="BasicString">
+                <HlCStringChar attribute="Escape"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;" endRegion="MultiLineString"/>
+            </context>
+            <context attribute="String" lineEndContext="#stay" name="LiteralString">
+                <HlCStringChar attribute="Escape"/>
+                <DetectChar attribute="String" context="#pop" char="'" endRegion="MultiLineString"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Compile Time Keyword" defStyleNum="dsPreprocessor" spellChecking="false"/>
+            <itemData name="Scope" defStyleNum="dsRegionMarker" spellChecking="false"/>
+            <itemData name="Flag" defStyleNum="dsPreprocessor" spellChecking="false"/>
+            <itemData name="Module" defStyleNum="dsImport" spellChecking="false"/>
+            <itemData name="Tag Attribute" defStyleNum="dsAttribute" spellChecking="false"/>
+            <itemData name="Predeclared Identifier" defStyleNum="dsOthers" spellChecking="false"/>
+            <itemData name="Builtin Function" defStyleNum="dsBuiltIn" spellChecking="false"/>
+            <itemData name="Data Type" defStyleNum="dsDataType" spellChecking="false"/>
+            <itemData name="String" defStyleNum="dsString" spellChecking="true"/>
+            <itemData name="Comment" defStyleNum="dsComment" spellChecking="true"/>
+            <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+            <itemData name="Char" defStyleNum="dsChar" spellChecking="false"/>
+            <itemData name="Symbol" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Escape" defStyleNum="dsSpecialChar" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="//"/>
+            <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+        </comments>
+    </general>
+</language>

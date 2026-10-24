@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!--
+    SPDX-FileCopyrightText: 2024 Younes IO <dev@younes.io>
+    SPDX-License-Identifier: MIT
+-->
+<language name="TLA+" version="1" kateversion="5.0" section="Sources" extensions="*.tla" mimetype="text/x-tlaplus" priority="5" author="Younes (dev@younes.io)">
+  <highlighting>
+    <list name="keywords">
+      <item>ASSUME</item>
+      <item>ASSUMPTION</item>
+      <item>AXIOM</item>
+      <item>CASE</item>
+      <item>CHOOSE</item>
+      <item>CONSTANT</item>
+      <item>CONSTANTS</item>
+      <item>DOMAIN</item>
+      <item>ELSE</item>
+      <item>ENABLED</item>
+      <item>EXCEPT</item>
+      <item>EXTENDS</item>
+      <item>IF</item>
+      <item>IN</item>
+      <item>INSTANCE</item>
+      <item>LET</item>
+      <item>LOCAL</item>
+      <item>MODULE</item>
+      <item>OTHER</item>
+      <item>SUBSET</item>
+      <item>THEN</item>
+      <item>THEOREM</item>
+      <item>UNCHANGED</item>
+      <item>UNION</item>
+      <item>VARIABLE</item>
+      <item>VARIABLES</item>
+      <item>WITH</item>
+    </list>
+    <list name="operators">
+      <item>/\</item>
+      <item>\/</item>
+      <item>~</item>
+      <item>=&gt;</item>
+      <item>&lt;=&gt;</item>
+      <item>\E</item>
+      <item>\A</item>
+      <item>\in</item>
+      <item>\notin</item>
+      <item>\subset</item>
+      <item>\subseteq</item>
+      <item>\supset</item>
+      <item>\supseteq</item>
+      <item>\union</item>
+      <item>\intersect</item>
+      <item>\setminus</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Operator" context="#stay" String="operators"/>
+        <Float attribute="Float" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <Detect2Chars attribute="Comment" context="SingleLineComment" char="\" char1="*" beginRegion="Comment"/>
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="(" char1="*" beginRegion="Comment"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="SingleLineComment">
+        <DetectSpaces/>
+        <IncludeRules context="##Alerts"/>
+        <DetectIdentifier/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="MultiLineComment">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")" endRegion="Comment"/>
+        <DetectSpaces/>
+        <IncludeRules context="##Alerts"/>
+        <DetectIdentifier/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Operator" defStyleNum="dsOperator"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="Decimal" defStyleNum="dsDecVal"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="\*"/>
+      <comment name="multiLine" start="(*" end="*)"/>
+    </comments>
+    <keywords casesensitive="1"/>
+  </general>
+</language>

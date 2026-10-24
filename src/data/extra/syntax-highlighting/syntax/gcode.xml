@@ -1,5 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language
+[
+  <!--
+    single . as number
+    1.2. is not a number (two .)
+    spaces are ignored (1 2 . 3 4 is a valid number)
+  -->
+  <!ENTITY number "&cmd_number;|[.]\s*(\d[\s\d]*+)?(?![.])">
+  <!ENTITY cmd_number "\d[\s\d]*+([.][\s\d]*+)?(?![.])">
+  <!ENTITY int "\d[\s\d]*+(?![.])">
+]>
 <!--
 
   G-code syntax highlighting for KatePart
@@ -25,13 +35,17 @@
 
 -->
 <language name="G-Code"
-	version="4"
-	kateversion="3.8"
+	version="12"
+	kateversion="5.0"
 	section="3D"
-	extensions="*.ngc"
+	extensions="*.ngc;*.gcode"
 	mimetype="text/ngc"
 	author="Fernand Veilleux (fernveilleux@gmail.com)"
 	license="LGPLv2+">
+
+  <!-- https://reprap.org/wiki/G-code -->
+  <!-- http://wiki.linuxcnc.org/cgi-bin/wiki.pl?Example_G-Code_Programs -->
+  <!-- https://docs.duet3d.com/en/User_manual/Reference/Gcode_meta_commands -->
 
   <highlighting>
     <list name="operators">
@@ -48,16 +62,26 @@
     </list>
 
     <list name="functions">
-      <item>atan</item>
       <item>abs</item>
       <item>acos</item>
       <item>asin</item>
+      <item>atan</item>
+      <item>atan2</item>
       <item>cos</item>
-      <item>exp</item>
+      <item>datetime</item>
+      <item>degrees</item>
       <item>exists</item>
+      <item>exp</item>
       <item>fix</item>
+      <item>floor</item>
       <item>fup</item>
+      <item>isnan</item>
       <item>ln</item>
+      <item>max</item>
+      <item>min</item>
+      <item>mod</item>
+      <item>radians</item>
+      <item>random</item>
       <item>round</item>
       <item>sin</item>
       <item>sqrt</item>
@@ -83,120 +107,151 @@
       <item>elseif</item>
       <item>else</item>
       <item>endif</item>
+      <!-- meta command -->
+      <item>abort</item>
+      <item>echo</item>
+      <item>var</item>
+      <item>global</item>
+      <item>set</item>
+    </list>
+
+    <list name="named constants">
+      <item>false</item>
+      <item>iterations</item>
+      <item>line</item>
+      <item>null</item>
+      <item>pi</item>
+      <item>result</item>
+      <item>true</item>
     </list>
 
     <contexts>
-      <context name="Alert" attribute="Alert" lineEndContext="#pop">
-        <RegExpr String="^[\s\t]*[nN][\s\t]*[\d]{1,5}" attribute="Line Number"/>
+      <context name="Alert" attribute="Alert" lineEndContext="#pop" fallthrough="true" fallthroughContext="alert">
+        <RegExpr String="^\s*[nN]\s*&int;" attribute="Line Number" column="0"/>
         <DetectSpaces attribute="Normal Text"/>
-				<DetectChar char="%" attribute="M-word"/>
-				<DetectChar char="[" attribute="Brackets"/>
-        <DetectChar char="]" attribute="Brackets"/>
+        <DetectChar char="%" attribute="M-word"/>
+        <AnyChar String="[]" attribute="Brackets"/>
         <DetectChar char="(" lookAhead="1" context="parenthese"/>
         <DetectChar char="#" lookAhead="1" context="hash1"/>
-        <RegExpr String="[.][\d\s\t]*[.]" lookAhead="1" context="alert"/>
-        <RegExpr String="[.][\d\s\t]*" attribute="Number"/>
-        <RegExpr String="[\d][\d\s\t]*[.][\d\s\t]*[.]" lookAhead="1" context="alert"/>
-        <RegExpr String="[\d][\d\s\t]*[.]?[\d\s\t]*" attribute="Number"/>
-        <RegExpr String="[+\-*/=]" attribute="Operator"/>
-        <RegExpr String=";.*$" attribute="Comment"/>
+        <AnyChar String="+-*/=:" attribute="Operator"/>
+        <DetectChar char="&quot;" attribute="String" context="string"/>
+        <DetectChar char="{" attribute="Operator" context="expression"/>
+        <DetectChar char=";" attribute="Comment" context="comment"/>
+        <RegExpr String="&number;" attribute="Number"/>
+        <RegExpr String="[abcu-z](?=[\s+\-\d#\[.{;]|$)" insensitive="1" attribute="Coordinate"/>
+        <RegExpr String="[gG]\s*(&cmd_number;|(?=[\[#]))" attribute="G-word"/>
+        <RegExpr String="[deh-lpqr@^](?=[\s+\-\d#\[.&quot;{;]|$)" insensitive="1" attribute="G-options"/>
+        <!-- exclude M1nn commands -->
+        <RegExpr String="[mM]\s*((?!1\s*\d\s*\d\s*(?=[^\d.]|$))&cmd_number;|[+#\[])" attribute="M-word"/>
+        <RegExpr String="[fF](?=\s*[+\d#\[.&quot;{])|[tsTS](?=\s*[+\d#\[&quot;{])" attribute="Tool"/>
+        <RegExpr String="[mM]&cmd_number;" attribute="M-word (user)"/>
+        <RegExpr String="[oO](\s*(&number;|&lt;\s*+[^>]+&gt;|$|(?=;))|\s+|(?=;))" attribute="O-word"/>
         <keyword String="functions" attribute="Function"/>
         <keyword String="operators" attribute="Operator"/>
         <keyword String="o_sub" attribute="Sub-program"/>
-        <keyword String="keyword" attribute="Keyword"/>
-        <RegExpr String="[oO][\s\t]*&lt;[\s\t]*&gt;" lookAhead="1" context="alert"/>
-				<RegExpr String="[oO][\s\t]*([\d]+|&lt;[^>]*&gt;)" attribute="O-word"/>
-        <RegExpr String="[abcu-z][\s\t]*[+\-\d#\[.]" insensitive="1" lookAhead="1" context="coords"/>
-        <RegExpr String="[abcu-z].*$" insensitive="1" attribute="Alert"/>
-        <RegExpr String="[deh-lpqr@^][\s\t]*[+\-\d#\[.]" insensitive="1" lookAhead="1" context="opts"/>
-        <RegExpr String="[deh-lpqr@^].*$" insensitive="1" attribute="Alert"/>
-        <RegExpr String="[gG][\s\t]*[\d]+[\s\t]*[.]?[\s\t]*[\d]*" attribute="G-word"/>
-        <RegExpr String="[gG][\s\t]*[\[#]" lookAhead="1" context="gword"/>
-        <RegExpr String="[tsTS][\s\t]*[+\d#\[]" lookAhead="1" context="tools"/>
-        <RegExpr String="[fF][\s\t]*[+\d#\[.]" lookAhead="1" context="feed"/>
-        <RegExpr String="[mM][\s\t]*[1][\s\t]*[\d][\s\t]*[\d]" attribute="M-word (user)"/>
-        <RegExpr String="[mM][\s\t]*([\d][\s\t]*[\d]?|[+#\[])" lookAhead="1" context="mword"/>
-        <RegExpr String=".*$" attribute="Alert"/>
-      </context>
-
-      <context name="feed" attribute="Alert" lineEndContext="#pop">
-        <RegExpr String="[fF]" attribute="Tool" context="#pop"/>
-      </context>
-
-      <context name="tools" attribute="Alert" lineEndContext="#pop">
-        <RegExpr String="[tsTS]" attribute="Tool" context="#pop"/>
-      </context>
-
-      <context name="gword" attribute="Alert" lineEndContext="#pop">
-        <RegExpr String="[gG]" attribute="G-word" context="#pop"/>
-      </context>
-
-      <context name="mword" attribute="Alert" lineEndContext="#pop">
-        <RegExpr String="[mM]" attribute="M-word" context="#pop"/>
-      </context>
-
-      <context name="coords" attribute="Alert" lineEndContext="#pop">
-        <RegExpr String="[abcu-z]" insensitive="1" attribute="Coordinate" context="#pop"/>
-      </context>
-
-      <context name="opts" attribute="Alert" lineEndContext="#pop">
-        <RegExpr String="[deh-lpqr@^]" insensitive="1" attribute="G-options" context="#pop"/>
+        <keyword String="keyword" attribute="Keyword" context="meta_command"/>
       </context>
 
       <context name="parenthese" attribute="Alert" lineEndContext="#pop">
-        <RegExpr String="\([\s\t]*(PRINT|DEBUG|MSG|AXIS|(PROBE(CLOSE|OPEN))|(LOG(OPEN|CLOSE|APPEND|[\s]|[\,])))[^\)]*\)"
+        <RegExpr String="\(\s*(PRINT|DEBUG|MSG|AXIS|(PROBE(CLOSE|OPEN))|(LOG(OPEN|CLOSE|APPEND|[\s,])))[^\)]*\)"
           insensitive="1" attribute="Message" context="#pop"/>
-        <RegExpr String="\([^\)]*\)" attribute="Comment" context="#pop"/>
+        <RangeDetect char="(" char1=")" attribute="Comment" context="#pop"/>
+        <DetectChar char="(" attribute="Alert" context="#pop!alert"/>
       </context>
 
-      <context name="hash1" attribute="Alert" lineEndContext="#pop">
-        <RegExpr String="#[\s\t]*&lt;[\s\t]*&gt;" context="alert"/>
-				<RegExpr String="#[\s\t]*[\d]{1,4}" attribute="Param (global)" context="#pop"/>
-				<RegExpr String="#[\s\t]*&lt;[\s\t]*_[^>]*&gt;" attribute="Param (global)" context="#pop"/>
-				<RegExpr String="#[\s\t]*&lt;[^>]*&gt;" attribute="Param (local)" context="#pop"/>
-        <RegExpr String="[#][\s\t]*[#][\s\t]*[#]+" lookAhead="1" context="alert"/>
-        <RegExpr String="#[\s\t]*#[\s\t]*[&lt;\[]" lookAhead="1" context="hash2"/>
-        <RegExpr String="#[\s\t]*#" attribute="Param (local)" context="#pop"/>
-        <RegExpr String="#[\s\t]*\[" lookAhead="1" context="hash2"/>
+      <context name="hash1" attribute="Alert" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!alert">
+        <RegExpr String="#\s*(&int;|&lt;\s*_[^>]*&gt;)" attribute="Param (global)" context="#pop"/>
+        <RegExpr String="#(?=\s*+(\[|#\s*[&lt;\[]))|#\s*+(#(?!\s*#)|&lt;\s*+[^>]+&gt;)" attribute="Param (local)" context="#pop"/>
       </context>
 
-      <context name="hash2" attribute= "Alert" lineEndContext="#pop">
-        <RegExpr String="#" attribute="Param (local)" context="#pop#pop"/>
+      <context name="string" attribute="String" lineEndContext="#pop">
+        <Detect2Chars char="&quot;" char1="&quot;" lookAhead="1" context="quot1"/>
+        <DetectChar char="&quot;" attribute="String" context="#pop"/>
+        <DetectChar char="'" attribute="Special String Char"/>
+        <RegExpr String="[^'&quot;]+" attribute="String"/>
+      </context>
+      <context name="quot1" attribute="String" lineEndContext="#pop">
+        <DetectChar char="&quot;" attribute="Special String Char" context="quot2"/>
+      </context>
+      <context name="quot2" attribute="String" lineEndContext="#pop">
+        <DetectChar char="&quot;" attribute="String" context="#pop#pop"/>
+      </context>
+
+      <context name="expression" attribute="Normal Text" lineEndContext="#pop">
+        <keyword String="functions" attribute="Function"/>
+        <DetectIdentifier attribute="Normal Text"/>
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar char="}" attribute="Operator" context="#pop"/>
+        <IncludeRules context="expression_common"/>
+      </context>
+
+      <context name="expression_common" attribute="Normal Text" lineEndContext="#pop">
+        <AnyChar String="+-*/=:!#&lt;>&amp;|^,?" attribute="Operator"/>
+        <AnyChar String="[]" attribute="Brackets"/>
+        <DetectChar char="&quot;" attribute="String" context="string"/>
+        <DetectChar char="{" attribute="Operator" context="expression"/>
+        <DetectChar char=";" attribute="Comment" context="comment"/>
+        <RegExpr String="&cmd_number;|[.]\s*&int;" attribute="Number"/>
+        <Int attribute="Alert"/>
+      </context>
+
+      <context name="meta_command" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword String="named constants" attribute="Constant"/>
+        <keyword String="functions" attribute="Function"/>
+        <keyword String="operators" attribute="Operator"/>
+        <DetectIdentifier attribute="Normal Text"/>
+        <DetectChar char="#" lookAhead="1" context="hash1"/>
+        <DetectChar char="(" lookAhead="1" context="parenthese"/>
+        <IncludeRules context="expression_common"/>
       </context>
 
       <context name="alert" attribute="Alert" lineEndContext="#pop">
+        <RegExpr String="[^;(]+" attribute="Alert"/>
+        <DetectChar char=";" attribute="Comment" context="comment"/>
+        <DetectChar char="(" lookAhead="1" context="parenthese"/>
+      </context>
+
+      <context name="comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
       </context>
     </contexts>
 
     <itemDatas>
-      <itemData name="Normal Text" defStyleNum="dsNormal"/>
-      <itemData name="Brackets" defStyleNum="dsNormal"/>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Brackets" defStyleNum="dsNormal" spellChecking="0"/>
       <itemData name="Comment" defStyleNum="dsComment"/>
-      <itemData name="Coordinate" defStyleNum="dsNormal" color="#A57800" bold="1" italic="0"/>
-      <itemData name="Function" defStyleNum="dsFunction" color="#800080" bold="1" italic="1"/>
-      <itemData name="G-options" defStyleNum="dsNormal" color="#800080"  bold="1" italic="0"/>
-      <itemData name="G-word" defStyleNum="dsNormal" selColor="#FFFFFF"  bold="1" italic="0"/>
-      <itemData name="Keyword" defStyleNum="dsNormal" bold="1" italic="1"/>
-      <itemData name="Line Number" defStyleNum="dsComment"/>
-      <itemData name="Message" defStyleNum="dsNormal" italic="1" />
-      <itemData name="M-word" defStyleNum="dsNormal" color="#A07400" bold="0" italic="0" />
-      <itemData name="M-word (user)" defStyleNum="dsNormal" color="#A07400" bold="1" italic="1"/>
-      <itemData name="Number" defStyleNum="dsDecVal" color="#A64C00" bold="1" italic="0"/>
-      <itemData name="Operator" defStyleNum="dsOperator" color="#000080" bold="1" italic="0"/>
-      <itemData name="O-word" defStyleNum="dsControlFlow" color="#BB7B40" bold="0" italic="0"/>
-      <itemData name="Param (global)" defStyleNum="dsVariable" color="#149E05" bold="0" italic="0"/>
-      <itemData name="Param (local)" defStyleNum="dsVariable" color="#0950AB" bold="0" italic="0"/>
-      <itemData name="Sub-program" defStyleNum="dsKeyword" color="#700070" bold="0" italic="0"/>
-      <itemData name="Tool" defStyleNum="dsNormal" color="#0000D6" bold="1" italic="0"/>
-      <itemData name="Alert" defStyleNum="dsError"/>
+      <itemData name="Coordinate" defStyleNum="dsNormal" color="#A57800" bold="1" italic="0" spellChecking="0"/>
+      <itemData name="Function" defStyleNum="dsFunction" color="#800080" bold="1" italic="1" spellChecking="0"/>
+      <itemData name="G-options" defStyleNum="dsNormal" color="#800080"  bold="1" italic="0" spellChecking="0"/>
+      <itemData name="G-word" defStyleNum="dsNormal" selColor="#FFFFFF"  bold="1" italic="0" spellChecking="0"/>
+      <itemData name="Keyword" defStyleNum="dsNormal" bold="1" italic="1" spellChecking="0"/>
+      <itemData name="Line Number" defStyleNum="dsComment" spellChecking="0"/>
+      <itemData name="Message" defStyleNum="dsNormal" italic="1"/>
+      <itemData name="M-word" defStyleNum="dsNormal" color="#A07400" bold="0" italic="0" spellChecking="0"/>
+      <itemData name="M-word (user)" defStyleNum="dsNormal" color="#A07400" bold="1" italic="1" spellChecking="0"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Special String Char" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Number" defStyleNum="dsDecVal" color="#A64C00" bold="1" italic="0" spellChecking="0"/>
+      <itemData name="Operator" defStyleNum="dsOperator" color="#000080" bold="1" italic="0" spellChecking="0"/>
+      <itemData name="O-word" defStyleNum="dsControlFlow" color="#BB7B40" bold="0" italic="0" spellChecking="0"/>
+      <itemData name="Param (global)" defStyleNum="dsVariable" color="#149E05" bold="0" italic="0" spellChecking="0"/>
+      <itemData name="Param (local)" defStyleNum="dsVariable" color="#0950AB" bold="0" italic="0" spellChecking="0"/>
+      <itemData name="Sub-program" defStyleNum="dsKeyword" color="#700070" bold="0" italic="0" spellChecking="0"/>
+      <itemData name="Tool" defStyleNum="dsNormal" color="#0000D6" bold="1" italic="0" spellChecking="0"/>
+      <itemData name="Alert" defStyleNum="dsError" spellChecking="0"/>
+      <itemData name="Constant" defStyleNum="dsConstant" spellChecking="0"/>
     </itemDatas>
   </highlighting>
 
   <general>
     <folding indentationsensitive="1"/>
     <comments>
-      <comment name="multiLine" start="(" end=")"/>
+      <comment name="singleLine" start=";"/>
     </comments>
     <keywords casesensitive="0"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; indent-width 2; tab-width 2; -->

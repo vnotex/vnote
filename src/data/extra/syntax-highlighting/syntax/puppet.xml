@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
   <!ENTITY BareWord  "[a-z][a-zA-Z0-9-_]*">
   <!ENTITY CapWord   "[A-Z][a-zA-Z0-9-_]*">
@@ -27,7 +27,7 @@
   Boston, MA  02110-1301, USA.
 -->
 
-<language name="Puppet" section="Scripts" version="6" kateversion="3.8" extensions="*.pp" priority="10" mimetype="application/x-puppet" style="puppet" indenter="cstyle" author="Michal Humpula (michal.humpula@seznam.cz)" license="LGPLv2+">
+<language name="Puppet" section="Scripts" version="12" kateversion="5.0" extensions="*.pp" priority="10" mimetype="application/x-puppet" style="puppet" indenter="cstyle" author="Michal Humpula (michal.humpula@seznam.cz)" license="LGPLv2+">
   <highlighting>
     <list name="keywords">
       <item>import</item>
@@ -98,7 +98,7 @@
       </context>
 
       <context name="FindVariable" attribute="Variable" lineEndContext="#pop">
-        <RegExpr String="\$(::)?(&namespace;::)*&BareWord;" lookAhead="true" context="variable"/>
+        <RegExpr String="\$(::)?(&namespace;::)*[a-z]" lookAhead="true" context="variable"/>
       </context>
 
       <context name="FindStatement" attribute="Normal Text" lineEndContext="#pop">
@@ -123,31 +123,23 @@
 
       <context name="FindOperator" attribute="Operator" lineEndContext="#pop" >
         <keyword attribute="Operator" String="operators" context="#stay"/>
-        <DetectChar attribute="Operator" char="!" context="#stay"/>
-        <DetectChar attribute="Operator" char="*" context="#stay"/>
-        <DetectChar attribute="Operator" char="/" context="#stay"/>
-        <DetectChar attribute="Operator" char="-" context="#stay"/>
-        <DetectChar attribute="Operator" char="+" context="#stay"/>
+        <Detect2Chars attribute="Operator" char="!" char1="=" context="#stay"/>
         <Detect2Chars attribute="Operator" char="+" char1="=" context="#stay"/>
         <Detect2Chars attribute="Operator" char="&lt;" char1="&lt;" context="#stay"/>
         <Detect2Chars attribute="Operator" char="&gt;" char1="&gt;" context="#stay"/>
         <Detect2Chars attribute="Operator" char="=" char1="=" context="#stay"/>
-        <Detect2Chars attribute="Operator" char="!" char1="=" context="#stay"/>
         <Detect2Chars attribute="Operator" char="&gt;" char1="=" context="#stay"/>
         <Detect2Chars attribute="Operator" char="&lt;" char1="=" context="#stay"/>
-        <DetectChar attribute="Operator" char="&gt;" context="#stay"/>
-        <DetectChar attribute="Operator" char="&lt;" context="#stay"/>
-        <DetectChar attribute="Operator" char="?" context="selector"/>
-
         <Detect2Chars attribute="Operator" char="=" char1="~" context="regexp operators"/>
         <Detect2Chars attribute="Operator" char="!" char1="~" context="regexp operators"/>
-
         <Detect2Chars attribute="Operator" char="-" char1="&gt;" context="#stay"/>
         <Detect2Chars attribute="Operator" char="~" char1="&gt;" context="#stay"/>
+        <AnyChar attribute="Operator" String="!*/-+&gt;&lt;" context="#stay"/>
+        <DetectChar attribute="Operator" char="?" context="selector"/>
       </context>
 
       <context name="FindResourcePath" attribute="Normal Text" lineEndContext="#pop">
-        <RegExpr String="(&BareWord;)?(::&BareWord;)*::&BareWord;" lookAhead="true" context="resource path"/>
+        <RegExpr String="(&BareWord;)?::[a-z]" lookAhead="true" context="resource path"/>
       </context>
 
       <context name="FindBareWord" attribute="Normal Text" lineEndContext="#pop">
@@ -233,13 +225,14 @@
 
       <!-- BEGIN Comments -->
       <context name="comment" attribute="Comment" lineEndContext="#pop">
-        <IncludeRules context="##Alerts"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
 
       <context name="multiline comment" attribute="Comment" lineEndContext="#stay">
         <DetectSpaces/>
         <Detect2Chars attribute="Comment" char="*" char1="/" endRegion="comment" context="#pop"/>
-        <IncludeRules context="##Alerts"/>
+        <IncludeRules context="##Comments"/>
       </context>
 
       <context name="region marker" attribute="Region Marker" lineEndContext="#pop">
@@ -426,8 +419,7 @@
       <context name="class params" attribute="Normal Text" lineEndContext="#stay">
         <!-- TODO: be more strict here -->
         <DetectSpaces/>
-        <DetectChar char="=" context="#stay"/>
-        <DetectChar char="," context="#stay"/>
+        <AnyChar String="=," context="#stay"/>
         <IncludeRules context="FindVariable"/>
         <IncludeRules context="parameter values"/>
         <DetectChar char=")" context="#pop"/>
@@ -602,8 +594,7 @@
 
       <context name="define params" attribute="Normal Text" lineEndContext="#stay">
         <DetectSpaces/>
-        <DetectChar char="=" context="#stay"/>
-        <DetectChar char="," context="#stay"/>
+        <AnyChar String="=," context="#stay"/>
         <IncludeRules context="FindVariable"/>
         <IncludeRules context="parameter values"/>
         <DetectChar char=")" context="#pop"/>
@@ -663,7 +654,6 @@
       </context>
 
       <context name="condition" attribute="Normal Text" lineEndContext="#stay">
-        <DetectSpaces/>
         <IncludeRules context="FindComment"/>
         <IncludeRules context="FindString"/>
         <IncludeRules context="FindOperator"/>
@@ -704,8 +694,9 @@
   <general>
     <comments>
       <comment name="singleLine" start="#"/>
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="comment"/>
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

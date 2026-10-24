@@ -1,5 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language
+[
+    <!ENTITY float1 "0x[0-9a-f_]*+(?:(?:\.[0-9a-f_]*+)?p[-+]?[0-9_]++|\.[0-9a-f_]*+)">
+    <!ENTITY float2 "0++p([0-9][0-9_]*+)?">
+    <!ENTITY float3 "[0-9][0-9_]*+(?:\.(?!nolist)[0-9_]*+(?:e[-+]?[0-9_]*+)?|(?=p))">
+    <!ENTITY float "&float1;|&float2;|&float3;">
+
+    <!ENTITY prefixed16 "0[hx][0-9a-f_]++">
+    <!ENTITY prefixed8 "0[oq][0-7_]++">
+    <!ENTITY prefixed2 "0b[01_]++\b|0y[01_]++">
+    <!ENTITY prefixed10 "0d[0-9_]++\b|0t[0-9_]++">
+    <!ENTITY prefixedBaseN "&prefixed16;|&prefixed8;|&prefixed2;|&prefixed10;">
+
+    <!ENTITY hex_cont "[0-9a-f_]*+(?=[hx])">
+    <!ENTITY oct_hex_cont "[0-7_]*+(?:&hex_cont;|(?=[oqhx]))">
+    <!ENTITY hex "[0-9]&hex_cont;">
+    <!ENTITY oct_hex "[0-7]&oct_hex_cont;">
+    <!ENTITY bin_oct_hex "[01][01_]*+(?:&oct_hex_cont;|(?=[byoqhx]))">
+    <!ENTITY baseN "&bin_oct_hex;|&oct_hex;|&hex;">
+
+    <!ENTITY number "[0-9][0-9_]*+(to[0-9]+|(?=[dt]))?">
+]>
 <!--
   NASM Intel x86 assembly syntax
 
@@ -40,38 +61,83 @@ You should have received a copy of the GNU General Public License along
 with this program; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
 -->
-<language name="Intel x86 (NASM)" section="Assembler" version="3" kateversion="2.3" extensions="*.asm;*.nasm" mimetype="" author="Nicola Gigante (nicola.gigante@gmail.com)" license="GPLv2+">
+<language name="Intel x86 (NASM)" section="Assembler" version="8" kateversion="5.62" extensions="*.asm" mimetype="" author="Nicola Gigante (nicola.gigante@gmail.com)" license="GPLv2+">
   <highlighting>
     <list name="registers">
       <!-- General purpose registers -->
+      <item>rax</item>
       <item>eax</item>
       <item>ax</item>
       <item>ah</item>
       <item>al</item>
+      <item>rbx</item>
       <item>ebx</item>
       <item>bx</item>
       <item>bh</item>
       <item>bl</item>
+      <item>rcx</item>
       <item>ecx</item>
       <item>cx</item>
       <item>ch</item>
       <item>cl</item>
+      <item>rdx</item>
       <item>edx</item>
       <item>dx</item>
       <item>dh</item>
       <item>dl</item>
+      <item>rbp</item>
       <item>ebp</item>
       <item>bp</item>
+      <item>bpl</item>
+      <item>rsi</item>
       <item>esi</item>
       <item>si</item>
+      <item>sil</item>
+      <item>rdi</item>
       <item>edi</item>
       <item>di</item>
-      <!--
+      <item>dil</item>
+
+      <item>rip</item>
       <item>eip</item>
       <item>ip</item>
-      -->
+
+      <item>rsp</item>
       <item>esp</item>
       <item>sp</item>
+      <item>spl</item>
+      <item>r8</item>
+      <item>r8d</item>
+      <item>r8w</item>
+      <item>r8b</item>
+      <item>r9</item>
+      <item>r9d</item>
+      <item>r9w</item>
+      <item>r9b</item>
+      <item>r10</item>
+      <item>r10d</item>
+      <item>r10w</item>
+      <item>r10b</item>
+      <item>r11</item>
+      <item>r11d</item>
+      <item>r11w</item>
+      <item>r11b</item>
+      <item>r12</item>
+      <item>r12d</item>
+      <item>r12w</item>
+      <item>r12b</item>
+      <item>r13</item>
+      <item>r13d</item>
+      <item>r13w</item>
+      <item>r13b</item>
+      <item>r14</item>
+      <item>r14d</item>
+      <item>r14w</item>
+      <item>r14b</item>
+      <item>r15</item>
+      <item>r15d</item>
+      <item>r15w</item>
+      <item>r15b</item>
       <!-- Segmentation registers -->
       <item>cs</item>
       <item>ds</item>
@@ -112,13 +178,105 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>xmm5</item>
       <item>xmm6</item>
       <item>xmm7</item>
+      <item>xmm8</item>
+      <item>xmm9</item>
+      <item>xmm10</item>
+      <item>xmm11</item>
+      <item>xmm12</item>
+      <item>xmm13</item>
+      <item>xmm14</item>
+      <item>xmm15</item>
+      <item>xmm16</item>
+      <item>xmm17</item>
+      <item>xmm18</item>
+      <item>xmm19</item>
+      <item>xmm20</item>
+      <item>xmm21</item>
+      <item>xmm22</item>
+      <item>xmm23</item>
+      <item>xmm24</item>
+      <item>xmm25</item>
+      <item>xmm26</item>
+      <item>xmm27</item>
+      <item>xmm28</item>
+      <item>xmm29</item>
+      <item>xmm30</item>
+      <item>xmm31</item>
+      <!-- YMM registers -->
+      <item>ymm0</item>
+      <item>ymm1</item>
+      <item>ymm2</item>
+      <item>ymm3</item>
+      <item>ymm4</item>
+      <item>ymm5</item>
+      <item>ymm6</item>
+      <item>ymm7</item>
+      <item>ymm8</item>
+      <item>ymm9</item>
+      <item>ymm10</item>
+      <item>ymm11</item>
+      <item>ymm12</item>
+      <item>ymm13</item>
+      <item>ymm14</item>
+      <item>ymm15</item>
+      <item>ymm16</item>
+      <item>ymm17</item>
+      <item>ymm18</item>
+      <item>ymm19</item>
+      <item>ymm20</item>
+      <item>ymm21</item>
+      <item>ymm22</item>
+      <item>ymm23</item>
+      <item>ymm24</item>
+      <item>ymm25</item>
+      <item>ymm26</item>
+      <item>ymm27</item>
+      <item>ymm28</item>
+      <item>ymm29</item>
+      <item>ymm30</item>
+      <item>ymm31</item>
+      <!-- ZMM registers -->
+      <item>zmm0</item>
+      <item>zmm1</item>
+      <item>zmm2</item>
+      <item>zmm3</item>
+      <item>zmm4</item>
+      <item>zmm5</item>
+      <item>zmm6</item>
+      <item>zmm7</item>
+      <item>zmm8</item>
+      <item>zmm9</item>
+      <item>zmm10</item>
+      <item>zmm11</item>
+      <item>zmm12</item>
+      <item>zmm13</item>
+      <item>zmm14</item>
+      <item>zmm15</item>
+      <item>zmm16</item>
+      <item>zmm17</item>
+      <item>zmm18</item>
+      <item>zmm19</item>
+      <item>zmm20</item>
+      <item>zmm21</item>
+      <item>zmm22</item>
+      <item>zmm23</item>
+      <item>zmm24</item>
+      <item>zmm25</item>
+      <item>zmm26</item>
+      <item>zmm27</item>
+      <item>zmm28</item>
+      <item>zmm29</item>
+      <item>zmm30</item>
+      <item>zmm31</item>
     </list>
+
     <list name="instructions">
       <item>aaa</item>
       <item>aad</item>
       <item>aam</item>
       <item>aas</item>
       <item>adc</item>
+      <item>adcx</item>
       <item>add</item>
       <item>addpd</item>
       <item>addps</item>
@@ -126,12 +284,44 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>addss</item>
       <item>addsubpd</item>
       <item>addsubps</item>
+      <item>adox</item>
+      <item>aesdec</item>
+      <item>aesdeclast</item>
+      <item>aesenc</item>
+      <item>aesenclast</item>
+      <item>aesimc</item>
+      <item>aeskeygenassist</item>
       <item>and</item>
+      <item>andn</item>
       <item>andnpd</item>
       <item>andnps</item>
       <item>andpd</item>
       <item>andps</item>
       <item>arpl</item>
+      <item>bb0_reset</item>
+      <item>bb1_reset</item>
+      <item>bextr</item>
+      <item>blcfill</item>
+      <item>blci</item>
+      <item>blcic</item>
+      <item>blcmsk</item>
+      <item>blcs</item>
+      <item>blendpd</item>
+      <item>blendps</item>
+      <item>blendvpd</item>
+      <item>blendvps</item>
+      <item>blsfill</item>
+      <item>blsi</item>
+      <item>blsic</item>
+      <item>blsmsk</item>
+      <item>blsr</item>
+      <item>bndcl</item>
+      <item>bndcn</item>
+      <item>bndcu</item>
+      <item>bndldx</item>
+      <item>bndmk</item>
+      <item>bndmov</item>
+      <item>bndstx</item>
       <item>bound</item>
       <item>bsf</item>
       <item>bsr</item>
@@ -140,19 +330,22 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>btc</item>
       <item>btr</item>
       <item>bts</item>
-      <item>call</item>
+      <item>bzhi</item>
       <item>cbw</item>
-      <item>cwde</item>
-      <item>cwd</item>
       <item>cdq</item>
       <item>cdqe</item>
-      <item>cqo</item>
+      <item>clac</item>
       <item>clc</item>
       <item>cld</item>
+      <item>cldemote</item>
+      <item>clflush</item>
+      <item>clflushopt</item>
       <item>clgi</item>
       <item>cli</item>
+      <item>clrssbsy</item>
       <item>clts</item>
-      <item>clflush</item>
+      <item>clwb</item>
+      <item>clzero</item>
       <item>cmc</item>
       <item>cmova</item>
       <item>cmovae</item>
@@ -215,9 +408,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>cmpordss</item>
       <item>cmppd</item>
       <item>cmpps</item>
-      <item>cmps</item>
       <item>cmpsb</item>
       <item>cmpsd</item>
+      <item>cmpsq</item>
       <item>cmpss</item>
       <item>cmpsw</item>
       <item>cmpunordpd</item>
@@ -225,12 +418,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>cmpunordsd</item>
       <item>cmpunordss</item>
       <item>cmpxchg</item>
+      <item>cmpxchg16b</item>
       <item>cmpxchg486</item>
       <item>cmpxchg8b</item>
-      <item>cmpxchg16b</item>
       <item>comisd</item>
       <item>comiss</item>
       <item>cpuid</item>
+      <item>cpu_read</item>
+      <item>cpu_write</item>
+      <item>cqo</item>
+      <item>crc32</item>
       <item>cvtdq2pd</item>
       <item>cvtdq2ps</item>
       <item>cvtpd2dq</item>
@@ -253,6 +450,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>cvttps2pi</item>
       <item>cvttsd2si</item>
       <item>cvttss2si</item>
+      <item>cwd</item>
+      <item>cwde</item>
       <item>daa</item>
       <item>das</item>
       <item>dec</item>
@@ -261,8 +460,20 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>divps</item>
       <item>divsd</item>
       <item>divss</item>
+      <item>dmint</item>
+      <item>dppd</item>
+      <item>dpps</item>
       <item>emms</item>
+      <item>encls</item>
+      <item>enclu</item>
+      <item>enclv</item>
+      <item>endbr32</item>
+      <item>endbr64</item>
+      <item>enqcmd</item>
+      <item>enqcmds</item>
       <item>enter</item>
+      <item>extractps</item>
+      <item>extrq</item>
       <item>f2xm1</item>
       <item>fabs</item>
       <item>fadd</item>
@@ -271,7 +482,6 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>fbstp</item>
       <item>fchs</item>
       <item>fclex</item>
-      <item>fnclex</item>
       <item>fcmovb</item>
       <item>fcmovbe</item>
       <item>fcmove</item>
@@ -281,19 +491,19 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>fcmovnu</item>
       <item>fcmovu</item>
       <item>fcom</item>
-      <item>fcomp</item>
-      <item>fcompp</item>
       <item>fcomi</item>
       <item>fcomip</item>
+      <item>fcomp</item>
+      <item>fcompp</item>
       <item>fcos</item>
       <item>fdecstp</item>
       <item>fdisi</item>
-      <item>feni</item>
       <item>fdiv</item>
-      <item>fdivr</item>
       <item>fdivp</item>
+      <item>fdivr</item>
       <item>fdivrp</item>
       <item>femms</item>
+      <item>feni</item>
       <item>ffree</item>
       <item>ffreep</item>
       <item>fiadd</item>
@@ -312,16 +522,17 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>fisubr</item>
       <item>fld</item>
       <item>fld1</item>
+      <item>fldcw</item>
+      <item>fldenv</item>
       <item>fldl2e</item>
       <item>fldl2t</item>
       <item>fldlg2</item>
       <item>fldln2</item>
-      <item>fldcw</item>
-      <item>fldenv</item>
       <item>fldpi</item>
       <item>fldz</item>
       <item>fmul</item>
       <item>fmulp</item>
+      <item>fnclex</item>
       <item>fndisi</item>
       <item>fneni</item>
       <item>fninit</item>
@@ -330,11 +541,10 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>fnstcw</item>
       <item>fnstenv</item>
       <item>fnstsw</item>
-      <item>fnwait</item>
       <item>fpatan</item>
-      <item>fptan</item>
       <item>fprem</item>
       <item>fprem1</item>
+      <item>fptan</item>
       <item>frndint</item>
       <item>frstor</item>
       <item>fsave</item>
@@ -344,105 +554,211 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>fsincos</item>
       <item>fsqrt</item>
       <item>fst</item>
-      <item>fstp</item>
       <item>fstcw</item>
       <item>fstenv</item>
+      <item>fstp</item>
       <item>fstsw</item>
       <item>fsub</item>
-      <item>fsubr</item>
       <item>fsubp</item>
+      <item>fsubr</item>
       <item>fsubrp</item>
       <item>ftst</item>
       <item>fucom</item>
-      <item>fucomp</item>
-      <item>fucompp</item>
       <item>fucomi</item>
       <item>fucomip</item>
+      <item>fucomp</item>
+      <item>fucompp</item>
       <item>fwait</item>
       <item>fxam</item>
       <item>fxch</item>
       <item>fxrstor</item>
+      <item>fxrstor64</item>
       <item>fxsave</item>
+      <item>fxsave64</item>
       <item>fxtract</item>
       <item>fyl2x</item>
       <item>fyl2xp1</item>
+      <item>getsec</item>
+      <item>gf2p8affineinvqb</item>
+      <item>gf2p8affineqb</item>
+      <item>gf2p8mulb</item>
       <item>haddpd</item>
       <item>haddps</item>
+      <item>hint_nop0</item>
+      <item>hint_nop1</item>
+      <item>hint_nop10</item>
+      <item>hint_nop11</item>
+      <item>hint_nop12</item>
+      <item>hint_nop13</item>
+      <item>hint_nop14</item>
+      <item>hint_nop15</item>
+      <item>hint_nop16</item>
+      <item>hint_nop17</item>
+      <item>hint_nop18</item>
+      <item>hint_nop19</item>
+      <item>hint_nop2</item>
+      <item>hint_nop20</item>
+      <item>hint_nop21</item>
+      <item>hint_nop22</item>
+      <item>hint_nop23</item>
+      <item>hint_nop24</item>
+      <item>hint_nop25</item>
+      <item>hint_nop26</item>
+      <item>hint_nop27</item>
+      <item>hint_nop28</item>
+      <item>hint_nop29</item>
+      <item>hint_nop3</item>
+      <item>hint_nop30</item>
+      <item>hint_nop31</item>
+      <item>hint_nop32</item>
+      <item>hint_nop33</item>
+      <item>hint_nop34</item>
+      <item>hint_nop35</item>
+      <item>hint_nop36</item>
+      <item>hint_nop37</item>
+      <item>hint_nop38</item>
+      <item>hint_nop39</item>
+      <item>hint_nop4</item>
+      <item>hint_nop40</item>
+      <item>hint_nop41</item>
+      <item>hint_nop42</item>
+      <item>hint_nop43</item>
+      <item>hint_nop44</item>
+      <item>hint_nop45</item>
+      <item>hint_nop46</item>
+      <item>hint_nop47</item>
+      <item>hint_nop48</item>
+      <item>hint_nop49</item>
+      <item>hint_nop5</item>
+      <item>hint_nop50</item>
+      <item>hint_nop51</item>
+      <item>hint_nop52</item>
+      <item>hint_nop53</item>
+      <item>hint_nop54</item>
+      <item>hint_nop55</item>
+      <item>hint_nop56</item>
+      <item>hint_nop57</item>
+      <item>hint_nop58</item>
+      <item>hint_nop59</item>
+      <item>hint_nop6</item>
+      <item>hint_nop60</item>
+      <item>hint_nop61</item>
+      <item>hint_nop62</item>
+      <item>hint_nop63</item>
+      <item>hint_nop7</item>
+      <item>hint_nop8</item>
+      <item>hint_nop9</item>
       <item>hlt</item>
       <item>hsubpd</item>
       <item>hsubps</item>
       <item>ibts</item>
+      <item>icebp</item>
       <item>idiv</item>
       <item>imul</item>
       <item>in</item>
       <item>inc</item>
-      <item>ins</item>
+      <item>incsspd</item>
+      <item>incsspq</item>
       <item>insb</item>
       <item>insd</item>
+      <item>insertps</item>
+      <item>insertq</item>
       <item>insw</item>
       <item>int</item>
+      <item>int01</item>
+      <item>int03</item>
       <item>int1</item>
       <item>int3</item>
       <item>into</item>
       <item>invd</item>
+      <item>invept</item>
       <item>invlpg</item>
       <item>invlpga</item>
-      <item>iret</item>
-      <item>iretd</item>
-      <item>iretq</item>
-      <item>iretw</item>
-      <item>ja</item>
-      <item>jae</item>
-      <item>jb</item>
-      <item>jbe</item>
-      <item>jc</item>
-      <item>je</item>
-      <item>jg</item>
-      <item>jge</item>
-      <item>jl</item>
-      <item>jle</item>
-      <item>jna</item>
-      <item>jnae</item>
-      <item>jnb</item>
-      <item>jnbe</item>
-      <item>jnc</item>
-      <item>jne</item>
-      <item>jng</item>
-      <item>jnge</item>
-      <item>jnl</item>
-      <item>jnle</item>
-      <item>jno</item>
-      <item>jnp</item>
-      <item>jns</item>
-      <item>jnz</item>
-      <item>jo</item>
-      <item>jp</item>
-      <item>jpe</item>
-      <item>jpo</item>
-      <item>js</item>
-      <item>jz</item>
-      <item>jcxz</item>
-      <item>jecxz</item>
-      <item>jrcxz</item>
-      <item>jmp</item>
+      <item>invpcid</item>
+      <item>invvpid</item>
+      <item>kadd</item>
+      <item>kaddb</item>
+      <item>kaddd</item>
+      <item>kaddq</item>
+      <item>kaddw</item>
+      <item>kand</item>
+      <item>kandb</item>
+      <item>kandd</item>
+      <item>kandn</item>
+      <item>kandnb</item>
+      <item>kandnd</item>
+      <item>kandnq</item>
+      <item>kandnw</item>
+      <item>kandq</item>
+      <item>kandw</item>
+      <item>kmov</item>
+      <item>kmovb</item>
+      <item>kmovd</item>
+      <item>kmovq</item>
+      <item>kmovw</item>
+      <item>knot</item>
+      <item>knotb</item>
+      <item>knotd</item>
+      <item>knotq</item>
+      <item>knotw</item>
+      <item>kor</item>
+      <item>korb</item>
+      <item>kord</item>
+      <item>korq</item>
+      <item>kortest</item>
+      <item>kortestb</item>
+      <item>kortestd</item>
+      <item>kortestq</item>
+      <item>kortestw</item>
+      <item>korw</item>
+      <item>kshiftl</item>
+      <item>kshiftlb</item>
+      <item>kshiftld</item>
+      <item>kshiftlq</item>
+      <item>kshiftlw</item>
+      <item>kshiftr</item>
+      <item>kshiftrb</item>
+      <item>kshiftrd</item>
+      <item>kshiftrq</item>
+      <item>kshiftrw</item>
+      <item>ktest</item>
+      <item>ktestb</item>
+      <item>ktestd</item>
+      <item>ktestq</item>
+      <item>ktestw</item>
+      <item>kunpck</item>
+      <item>kunpckbw</item>
+      <item>kunpckdq</item>
+      <item>kunpckwd</item>
+      <item>kxnor</item>
+      <item>kxnorb</item>
+      <item>kxnord</item>
+      <item>kxnorq</item>
+      <item>kxnorw</item>
+      <item>kxor</item>
+      <item>kxorb</item>
+      <item>kxord</item>
+      <item>kxorq</item>
+      <item>kxorw</item>
       <item>lahf</item>
       <item>lar</item>
       <item>lddqu</item>
       <item>ldmxcsr</item>
       <item>lds</item>
-      <item>les</item>
+      <item>ldtilecfg</item>
       <item>lea</item>
       <item>leave</item>
+      <item>les</item>
       <item>lfence</item>
       <item>lfs</item>
       <item>lgdt</item>
       <item>lgs</item>
       <item>lidt</item>
       <item>lldt</item>
+      <item>llwpcb</item>
       <item>lmsw</item>
       <item>loadall</item>
       <item>loadall286</item>
-      <item>lods</item>
       <item>lodsb</item>
       <item>lodsd</item>
       <item>lodsq</item>
@@ -455,6 +771,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>lsl</item>
       <item>lss</item>
       <item>ltr</item>
+      <item>lwpins</item>
+      <item>lwpval</item>
+      <item>lzcnt</item>
       <item>maskmovdqu</item>
       <item>maskmovq</item>
       <item>maxpd</item>
@@ -467,11 +786,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>minsd</item>
       <item>minss</item>
       <item>monitor</item>
+      <item>monitorx</item>
+      <item>montmul</item>
       <item>mov</item>
       <item>movapd</item>
       <item>movaps</item>
+      <item>movbe</item>
       <item>movd</item>
       <item>movddup</item>
+      <item>movdir64b</item>
+      <item>movdiri</item>
       <item>movdq2q</item>
       <item>movdqa</item>
       <item>movdqu</item>
@@ -484,31 +808,36 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>movmskpd</item>
       <item>movmskps</item>
       <item>movntdq</item>
+      <item>movntdqa</item>
       <item>movnti</item>
       <item>movntpd</item>
       <item>movntps</item>
       <item>movntq</item>
+      <item>movntsd</item>
+      <item>movntss</item>
       <item>movq</item>
       <item>movq2dq</item>
-      <item>movs</item>
       <item>movsb</item>
       <item>movsd</item>
       <item>movshdup</item>
       <item>movsldup</item>
       <item>movsq</item>
       <item>movss</item>
+      <item>movsw</item>
       <item>movsx</item>
       <item>movsxd</item>
-      <item>movsw</item>
       <item>movupd</item>
       <item>movups</item>
       <item>movzx</item>
+      <item>mpsadbw</item>
       <item>mul</item>
       <item>mulpd</item>
       <item>mulps</item>
       <item>mulsd</item>
       <item>mulss</item>
+      <item>mulx</item>
       <item>mwait</item>
+      <item>mwaitx</item>
       <item>neg</item>
       <item>nop</item>
       <item>not</item>
@@ -516,34 +845,60 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>orpd</item>
       <item>orps</item>
       <item>out</item>
-      <item>outs</item>
       <item>outsb</item>
-      <item>outsw</item>
       <item>outsd</item>
+      <item>outsw</item>
+      <item>pabsb</item>
+      <item>pabsd</item>
+      <item>pabsw</item>
       <item>packssdw</item>
       <item>packsswb</item>
+      <item>packusdw</item>
       <item>packuswb</item>
       <item>paddb</item>
       <item>paddd</item>
       <item>paddq</item>
       <item>paddsb</item>
+      <item>paddsiw</item>
       <item>paddsw</item>
       <item>paddusb</item>
       <item>paddusw</item>
       <item>paddw</item>
+      <item>palignr</item>
       <item>pand</item>
       <item>pandn</item>
       <item>pause</item>
+      <item>paveb</item>
       <item>pavgb</item>
       <item>pavgusb</item>
       <item>pavgw</item>
+      <item>pblendvb</item>
+      <item>pblendw</item>
+      <item>pclmulhqhqdq</item>
+      <item>pclmulhqlqdq</item>
+      <item>pclmullqhqdq</item>
+      <item>pclmullqlqdq</item>
+      <item>pclmulqdq</item>
       <item>pcmpeqb</item>
-      <item>pcmpeqw</item>
       <item>pcmpeqd</item>
+      <item>pcmpeqq</item>
+      <item>pcmpeqw</item>
+      <item>pcmpestri</item>
+      <item>pcmpestrm</item>
       <item>pcmpgtb</item>
-      <item>pcmpgtw</item>
       <item>pcmpgtd</item>
+      <item>pcmpgtq</item>
+      <item>pcmpgtw</item>
+      <item>pcmpistri</item>
+      <item>pcmpistrm</item>
+      <item>pcommit</item>
+      <item>pconfig</item>
+      <item>pdep</item>
       <item>pdistib</item>
+      <item>pext</item>
+      <item>pextrb</item>
+      <item>pextrd</item>
+      <item>pextrq</item>
       <item>pextrw</item>
       <item>pf2id</item>
       <item>pf2iw</item>
@@ -560,24 +915,62 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>pfrcp</item>
       <item>pfrcpit1</item>
       <item>pfrcpit2</item>
+      <item>pfrcpv</item>
       <item>pfrsqit1</item>
       <item>pfrsqrt</item>
+      <item>pfrsqrtv</item>
       <item>pfsub</item>
       <item>pfsubr</item>
+      <item>phaddd</item>
+      <item>phaddsw</item>
+      <item>phaddw</item>
+      <item>phminposuw</item>
+      <item>phsubd</item>
+      <item>phsubsw</item>
+      <item>phsubw</item>
       <item>pi2fd</item>
       <item>pi2fw</item>
+      <item>pinsrb</item>
+      <item>pinsrd</item>
+      <item>pinsrq</item>
       <item>pinsrw</item>
       <item>pmachriw</item>
+      <item>pmaddubsw</item>
       <item>pmaddwd</item>
       <item>pmagw</item>
+      <item>pmaxsb</item>
+      <item>pmaxsd</item>
       <item>pmaxsw</item>
       <item>pmaxub</item>
+      <item>pmaxud</item>
+      <item>pmaxuw</item>
+      <item>pminsb</item>
+      <item>pminsd</item>
       <item>pminsw</item>
       <item>pminub</item>
+      <item>pminud</item>
+      <item>pminuw</item>
       <item>pmovmskb</item>
-      <item>pmulhrw</item>
+      <item>pmovsxbd</item>
+      <item>pmovsxbq</item>
+      <item>pmovsxbw</item>
+      <item>pmovsxdq</item>
+      <item>pmovsxwd</item>
+      <item>pmovsxwq</item>
+      <item>pmovzxbd</item>
+      <item>pmovzxbq</item>
+      <item>pmovzxbw</item>
+      <item>pmovzxdq</item>
+      <item>pmovzxwd</item>
+      <item>pmovzxwq</item>
+      <item>pmuldq</item>
+      <item>pmulhriw</item>
+      <item>pmulhrsw</item>
+      <item>pmulhrwa</item>
+      <item>pmulhrwc</item>
       <item>pmulhuw</item>
       <item>pmulhw</item>
+      <item>pmulld</item>
       <item>pmullw</item>
       <item>pmuludq</item>
       <item>pmvgezb</item>
@@ -586,12 +979,13 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>pmvzb</item>
       <item>pop</item>
       <item>popa</item>
-      <item>popaw</item>
       <item>popad</item>
+      <item>popaw</item>
+      <item>popcnt</item>
       <item>popf</item>
-      <item>popfw</item>
       <item>popfd</item>
       <item>popfq</item>
+      <item>popfw</item>
       <item>por</item>
       <item>prefetch</item>
       <item>prefetchnta</item>
@@ -599,11 +993,16 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>prefetcht1</item>
       <item>prefetcht2</item>
       <item>prefetchw</item>
+      <item>prefetchwt1</item>
       <item>psadbw</item>
+      <item>pshufb</item>
       <item>pshufd</item>
       <item>pshufhw</item>
       <item>pshuflw</item>
       <item>pshufw</item>
+      <item>psignb</item>
+      <item>psignd</item>
+      <item>psignw</item>
       <item>pslld</item>
       <item>pslldq</item>
       <item>psllq</item>
@@ -624,6 +1023,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>psubusw</item>
       <item>psubw</item>
       <item>pswapd</item>
+      <item>ptest</item>
+      <item>ptwrite</item>
       <item>punpckhbw</item>
       <item>punpckhdq</item>
       <item>punpckhqdq</item>
@@ -642,35 +1043,49 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>pushfw</item>
       <item>pxor</item>
       <item>rcl</item>
-      <item>rcr</item>
       <item>rcpps</item>
       <item>rcpss</item>
+      <item>rcr</item>
+      <item>rdfsbase</item>
+      <item>rdgsbase</item>
+      <item>rdm</item>
       <item>rdmsr</item>
+      <item>rdpid</item>
+      <item>rdpkru</item>
       <item>rdpmc</item>
+      <item>rdrand</item>
+      <item>rdseed</item>
       <item>rdshr</item>
+      <item>rdsspd</item>
+      <item>rdsspq</item>
       <item>rdtsc</item>
       <item>rdtscp</item>
-      <item>ret</item>
-      <item>retf</item>
-      <item>retn</item>
       <item>rol</item>
       <item>ror</item>
+      <item>rorx</item>
+      <item>roundpd</item>
+      <item>roundps</item>
+      <item>roundsd</item>
+      <item>roundss</item>
       <item>rsdc</item>
       <item>rsldt</item>
       <item>rsm</item>
       <item>rsqrtps</item>
       <item>rsqrtss</item>
+      <item>rstorssp</item>
       <item>rsts</item>
       <item>sahf</item>
       <item>sal</item>
-      <item>sar</item>
       <item>salc</item>
+      <item>sar</item>
+      <item>sarx</item>
+      <item>saveprevssp</item>
       <item>sbb</item>
-      <item>scas</item>
       <item>scasb</item>
       <item>scasd</item>
       <item>scasq</item>
       <item>scasw</item>
+      <item>serialize</item>
       <item>seta</item>
       <item>setae</item>
       <item>setb</item>
@@ -700,18 +1115,29 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>setpe</item>
       <item>setpo</item>
       <item>sets</item>
+      <item>setssbsy</item>
       <item>setz</item>
       <item>sfence</item>
       <item>sgdt</item>
+      <item>sha1msg1</item>
+      <item>sha1msg2</item>
+      <item>sha1nexte</item>
+      <item>sha1rnds4</item>
+      <item>sha256msg1</item>
+      <item>sha256msg2</item>
+      <item>sha256rnds2</item>
       <item>shl</item>
       <item>shld</item>
+      <item>shlx</item>
       <item>shr</item>
       <item>shrd</item>
+      <item>shrx</item>
       <item>shufpd</item>
       <item>shufps</item>
       <item>sidt</item>
       <item>skinit</item>
       <item>sldt</item>
+      <item>slwpcb</item>
       <item>smi</item>
       <item>smint</item>
       <item>smintold</item>
@@ -720,17 +1146,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>sqrtps</item>
       <item>sqrtsd</item>
       <item>sqrtss</item>
+      <item>stac</item>
       <item>stc</item>
       <item>std</item>
       <item>stgi</item>
       <item>sti</item>
       <item>stmxcsr</item>
-      <item>stos</item>
       <item>stosb</item>
       <item>stosd</item>
       <item>stosq</item>
       <item>stosw</item>
       <item>str</item>
+      <item>sttilecfg</item>
       <item>sub</item>
       <item>subpd</item>
       <item>subps</item>
@@ -744,36 +1171,1252 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>sysenter</item>
       <item>sysexit</item>
       <item>sysret</item>
+      <item>t1mskc</item>
+      <item>tdpbf16ps</item>
+      <item>tdpbssd</item>
+      <item>tdpbsud</item>
+      <item>tdpbusd</item>
+      <item>tdpbuud</item>
       <item>test</item>
+      <item>tileloadd</item>
+      <item>tileloaddt1</item>
+      <item>tilerelease</item>
+      <item>tilestored</item>
+      <item>tilezero</item>
+      <item>tpause</item>
+      <item>tzcnt</item>
+      <item>tzmsk</item>
       <item>ucomisd</item>
       <item>ucomiss</item>
       <item>ud0</item>
       <item>ud1</item>
       <item>ud2</item>
+      <item>ud2a</item>
+      <item>ud2b</item>
+      <item>umonitor</item>
       <item>umov</item>
+      <item>umwait</item>
       <item>unpckhpd</item>
       <item>unpckhps</item>
       <item>unpcklpd</item>
       <item>unpcklps</item>
+      <item>v4dpwssd</item>
+      <item>v4dpwssds</item>
+      <item>v4fmaddps</item>
+      <item>v4fmaddss</item>
+      <item>v4fnmaddps</item>
+      <item>v4fnmaddss</item>
+      <item>vaddpd</item>
+      <item>vaddps</item>
+      <item>vaddsd</item>
+      <item>vaddss</item>
+      <item>vaddsubpd</item>
+      <item>vaddsubps</item>
+      <item>vaesdec</item>
+      <item>vaesdeclast</item>
+      <item>vaesenc</item>
+      <item>vaesenclast</item>
+      <item>vaesimc</item>
+      <item>vaeskeygenassist</item>
+      <item>valignd</item>
+      <item>valignq</item>
+      <item>vandnpd</item>
+      <item>vandnps</item>
+      <item>vandpd</item>
+      <item>vandps</item>
+      <item>vblendmpd</item>
+      <item>vblendmps</item>
+      <item>vblendpd</item>
+      <item>vblendps</item>
+      <item>vblendvpd</item>
+      <item>vblendvps</item>
+      <item>vbroadcastf128</item>
+      <item>vbroadcastf32x2</item>
+      <item>vbroadcastf32x4</item>
+      <item>vbroadcastf32x8</item>
+      <item>vbroadcastf64x2</item>
+      <item>vbroadcastf64x4</item>
+      <item>vbroadcasti128</item>
+      <item>vbroadcasti32x2</item>
+      <item>vbroadcasti32x4</item>
+      <item>vbroadcasti32x8</item>
+      <item>vbroadcasti64x2</item>
+      <item>vbroadcasti64x4</item>
+      <item>vbroadcastsd</item>
+      <item>vbroadcastss</item>
+      <item>vcmpeqpd</item>
+      <item>vcmpeqps</item>
+      <item>vcmpeqsd</item>
+      <item>vcmpeqss</item>
+      <item>vcmpeq_oqpd</item>
+      <item>vcmpeq_oqps</item>
+      <item>vcmpeq_oqsd</item>
+      <item>vcmpeq_oqss</item>
+      <item>vcmpeq_ospd</item>
+      <item>vcmpeq_osps</item>
+      <item>vcmpeq_ossd</item>
+      <item>vcmpeq_osss</item>
+      <item>vcmpeq_uqpd</item>
+      <item>vcmpeq_uqps</item>
+      <item>vcmpeq_uqsd</item>
+      <item>vcmpeq_uqss</item>
+      <item>vcmpeq_uspd</item>
+      <item>vcmpeq_usps</item>
+      <item>vcmpeq_ussd</item>
+      <item>vcmpeq_usss</item>
+      <item>vcmpfalsepd</item>
+      <item>vcmpfalseps</item>
+      <item>vcmpfalsesd</item>
+      <item>vcmpfalsess</item>
+      <item>vcmpfalse_oqpd</item>
+      <item>vcmpfalse_oqps</item>
+      <item>vcmpfalse_oqsd</item>
+      <item>vcmpfalse_oqss</item>
+      <item>vcmpfalse_ospd</item>
+      <item>vcmpfalse_osps</item>
+      <item>vcmpfalse_ossd</item>
+      <item>vcmpfalse_osss</item>
+      <item>vcmpgepd</item>
+      <item>vcmpgeps</item>
+      <item>vcmpgesd</item>
+      <item>vcmpgess</item>
+      <item>vcmpge_oqpd</item>
+      <item>vcmpge_oqps</item>
+      <item>vcmpge_oqsd</item>
+      <item>vcmpge_oqss</item>
+      <item>vcmpge_ospd</item>
+      <item>vcmpge_osps</item>
+      <item>vcmpge_ossd</item>
+      <item>vcmpge_osss</item>
+      <item>vcmpgtpd</item>
+      <item>vcmpgtps</item>
+      <item>vcmpgtsd</item>
+      <item>vcmpgtss</item>
+      <item>vcmpgt_oqpd</item>
+      <item>vcmpgt_oqps</item>
+      <item>vcmpgt_oqsd</item>
+      <item>vcmpgt_oqss</item>
+      <item>vcmpgt_ospd</item>
+      <item>vcmpgt_osps</item>
+      <item>vcmpgt_ossd</item>
+      <item>vcmpgt_osss</item>
+      <item>vcmplepd</item>
+      <item>vcmpleps</item>
+      <item>vcmplesd</item>
+      <item>vcmpless</item>
+      <item>vcmple_oqpd</item>
+      <item>vcmple_oqps</item>
+      <item>vcmple_oqsd</item>
+      <item>vcmple_oqss</item>
+      <item>vcmple_ospd</item>
+      <item>vcmple_osps</item>
+      <item>vcmple_ossd</item>
+      <item>vcmple_osss</item>
+      <item>vcmpltpd</item>
+      <item>vcmpltps</item>
+      <item>vcmpltsd</item>
+      <item>vcmpltss</item>
+      <item>vcmplt_oqpd</item>
+      <item>vcmplt_oqps</item>
+      <item>vcmplt_oqsd</item>
+      <item>vcmplt_oqss</item>
+      <item>vcmplt_ospd</item>
+      <item>vcmplt_osps</item>
+      <item>vcmplt_ossd</item>
+      <item>vcmplt_osss</item>
+      <item>vcmpneqpd</item>
+      <item>vcmpneqps</item>
+      <item>vcmpneqsd</item>
+      <item>vcmpneqss</item>
+      <item>vcmpneq_oqpd</item>
+      <item>vcmpneq_oqps</item>
+      <item>vcmpneq_oqsd</item>
+      <item>vcmpneq_oqss</item>
+      <item>vcmpneq_ospd</item>
+      <item>vcmpneq_osps</item>
+      <item>vcmpneq_ossd</item>
+      <item>vcmpneq_osss</item>
+      <item>vcmpneq_uqpd</item>
+      <item>vcmpneq_uqps</item>
+      <item>vcmpneq_uqsd</item>
+      <item>vcmpneq_uqss</item>
+      <item>vcmpneq_uspd</item>
+      <item>vcmpneq_usps</item>
+      <item>vcmpneq_ussd</item>
+      <item>vcmpneq_usss</item>
+      <item>vcmpngepd</item>
+      <item>vcmpngeps</item>
+      <item>vcmpngesd</item>
+      <item>vcmpngess</item>
+      <item>vcmpnge_uqpd</item>
+      <item>vcmpnge_uqps</item>
+      <item>vcmpnge_uqsd</item>
+      <item>vcmpnge_uqss</item>
+      <item>vcmpnge_uspd</item>
+      <item>vcmpnge_usps</item>
+      <item>vcmpnge_ussd</item>
+      <item>vcmpnge_usss</item>
+      <item>vcmpngtpd</item>
+      <item>vcmpngtps</item>
+      <item>vcmpngtsd</item>
+      <item>vcmpngtss</item>
+      <item>vcmpngt_uqpd</item>
+      <item>vcmpngt_uqps</item>
+      <item>vcmpngt_uqsd</item>
+      <item>vcmpngt_uqss</item>
+      <item>vcmpngt_uspd</item>
+      <item>vcmpngt_usps</item>
+      <item>vcmpngt_ussd</item>
+      <item>vcmpngt_usss</item>
+      <item>vcmpnlepd</item>
+      <item>vcmpnleps</item>
+      <item>vcmpnlesd</item>
+      <item>vcmpnless</item>
+      <item>vcmpnle_uqpd</item>
+      <item>vcmpnle_uqps</item>
+      <item>vcmpnle_uqsd</item>
+      <item>vcmpnle_uqss</item>
+      <item>vcmpnle_uspd</item>
+      <item>vcmpnle_usps</item>
+      <item>vcmpnle_ussd</item>
+      <item>vcmpnle_usss</item>
+      <item>vcmpnltpd</item>
+      <item>vcmpnltps</item>
+      <item>vcmpnltsd</item>
+      <item>vcmpnltss</item>
+      <item>vcmpnlt_uqpd</item>
+      <item>vcmpnlt_uqps</item>
+      <item>vcmpnlt_uqsd</item>
+      <item>vcmpnlt_uqss</item>
+      <item>vcmpnlt_uspd</item>
+      <item>vcmpnlt_usps</item>
+      <item>vcmpnlt_ussd</item>
+      <item>vcmpnlt_usss</item>
+      <item>vcmpordpd</item>
+      <item>vcmpordps</item>
+      <item>vcmpordsd</item>
+      <item>vcmpordss</item>
+      <item>vcmpord_qpd</item>
+      <item>vcmpord_qps</item>
+      <item>vcmpord_qsd</item>
+      <item>vcmpord_qss</item>
+      <item>vcmpord_spd</item>
+      <item>vcmpord_sps</item>
+      <item>vcmpord_ssd</item>
+      <item>vcmpord_sss</item>
+      <item>vcmppd</item>
+      <item>vcmpps</item>
+      <item>vcmpsd</item>
+      <item>vcmpss</item>
+      <item>vcmptruepd</item>
+      <item>vcmptrueps</item>
+      <item>vcmptruesd</item>
+      <item>vcmptruess</item>
+      <item>vcmptrue_uqpd</item>
+      <item>vcmptrue_uqps</item>
+      <item>vcmptrue_uqsd</item>
+      <item>vcmptrue_uqss</item>
+      <item>vcmptrue_uspd</item>
+      <item>vcmptrue_usps</item>
+      <item>vcmptrue_ussd</item>
+      <item>vcmptrue_usss</item>
+      <item>vcmpunordpd</item>
+      <item>vcmpunordps</item>
+      <item>vcmpunordsd</item>
+      <item>vcmpunordss</item>
+      <item>vcmpunord_qpd</item>
+      <item>vcmpunord_qps</item>
+      <item>vcmpunord_qsd</item>
+      <item>vcmpunord_qss</item>
+      <item>vcmpunord_spd</item>
+      <item>vcmpunord_sps</item>
+      <item>vcmpunord_ssd</item>
+      <item>vcmpunord_sss</item>
+      <item>vcomisd</item>
+      <item>vcomiss</item>
+      <item>vcompresspd</item>
+      <item>vcompressps</item>
+      <item>vcvtdq2pd</item>
+      <item>vcvtdq2ps</item>
+      <item>vcvtne2ps2bf16</item>
+      <item>vcvtpd2dq</item>
+      <item>vcvtpd2ps</item>
+      <item>vcvtpd2qq</item>
+      <item>vcvtpd2udq</item>
+      <item>vcvtpd2uqq</item>
+      <item>vcvtph2ps</item>
+      <item>vcvtps2dq</item>
+      <item>vcvtps2pd</item>
+      <item>vcvtps2ph</item>
+      <item>vcvtps2qq</item>
+      <item>vcvtps2udq</item>
+      <item>vcvtps2uqq</item>
+      <item>vcvtqq2pd</item>
+      <item>vcvtqq2ps</item>
+      <item>vcvtsd2si</item>
+      <item>vcvtsd2ss</item>
+      <item>vcvtsd2usi</item>
+      <item>vcvtsi2sd</item>
+      <item>vcvtsi2ss</item>
+      <item>vcvtss2sd</item>
+      <item>vcvtss2si</item>
+      <item>vcvtss2usi</item>
+      <item>vcvttpd2dq</item>
+      <item>vcvttpd2qq</item>
+      <item>vcvttpd2udq</item>
+      <item>vcvttpd2uqq</item>
+      <item>vcvttps2dq</item>
+      <item>vcvttps2qq</item>
+      <item>vcvttps2udq</item>
+      <item>vcvttps2uqq</item>
+      <item>vcvttsd2si</item>
+      <item>vcvttsd2usi</item>
+      <item>vcvttss2si</item>
+      <item>vcvttss2usi</item>
+      <item>vcvtudq2pd</item>
+      <item>vcvtudq2ps</item>
+      <item>vcvtuqq2pd</item>
+      <item>vcvtuqq2ps</item>
+      <item>vcvtusi2sd</item>
+      <item>vcvtusi2ss</item>
+      <item>vdbpsadbw</item>
+      <item>vdivpd</item>
+      <item>vdivps</item>
+      <item>vdivsd</item>
+      <item>vdivss</item>
+      <item>vdpbf16ps</item>
+      <item>vdppd</item>
+      <item>vdpps</item>
       <item>verr</item>
       <item>verw</item>
+      <item>vexp2pd</item>
+      <item>vexp2ps</item>
+      <item>vexpandpd</item>
+      <item>vexpandps</item>
+      <item>vextractf128</item>
+      <item>vextractf32x4</item>
+      <item>vextractf32x8</item>
+      <item>vextractf64x2</item>
+      <item>vextractf64x4</item>
+      <item>vextracti128</item>
+      <item>vextracti32x4</item>
+      <item>vextracti32x8</item>
+      <item>vextracti64x2</item>
+      <item>vextracti64x4</item>
+      <item>vextractps</item>
+      <item>vfixupimmpd</item>
+      <item>vfixupimmps</item>
+      <item>vfixupimmsd</item>
+      <item>vfixupimmss</item>
+      <item>vfmadd123pd</item>
+      <item>vfmadd123ps</item>
+      <item>vfmadd123sd</item>
+      <item>vfmadd123ss</item>
+      <item>vfmadd132pd</item>
+      <item>vfmadd132ps</item>
+      <item>vfmadd132sd</item>
+      <item>vfmadd132ss</item>
+      <item>vfmadd213pd</item>
+      <item>vfmadd213ps</item>
+      <item>vfmadd213sd</item>
+      <item>vfmadd213ss</item>
+      <item>vfmadd231pd</item>
+      <item>vfmadd231ps</item>
+      <item>vfmadd231sd</item>
+      <item>vfmadd231ss</item>
+      <item>vfmadd312pd</item>
+      <item>vfmadd312ps</item>
+      <item>vfmadd312sd</item>
+      <item>vfmadd312ss</item>
+      <item>vfmadd321pd</item>
+      <item>vfmadd321ps</item>
+      <item>vfmadd321sd</item>
+      <item>vfmadd321ss</item>
+      <item>vfmaddpd</item>
+      <item>vfmaddps</item>
+      <item>vfmaddsd</item>
+      <item>vfmaddss</item>
+      <item>vfmaddsub123pd</item>
+      <item>vfmaddsub123ps</item>
+      <item>vfmaddsub132pd</item>
+      <item>vfmaddsub132ps</item>
+      <item>vfmaddsub213pd</item>
+      <item>vfmaddsub213ps</item>
+      <item>vfmaddsub231pd</item>
+      <item>vfmaddsub231ps</item>
+      <item>vfmaddsub312pd</item>
+      <item>vfmaddsub312ps</item>
+      <item>vfmaddsub321pd</item>
+      <item>vfmaddsub321ps</item>
+      <item>vfmaddsubpd</item>
+      <item>vfmaddsubps</item>
+      <item>vfmsub123pd</item>
+      <item>vfmsub123ps</item>
+      <item>vfmsub123sd</item>
+      <item>vfmsub123ss</item>
+      <item>vfmsub132pd</item>
+      <item>vfmsub132ps</item>
+      <item>vfmsub132sd</item>
+      <item>vfmsub132ss</item>
+      <item>vfmsub213pd</item>
+      <item>vfmsub213ps</item>
+      <item>vfmsub213sd</item>
+      <item>vfmsub213ss</item>
+      <item>vfmsub231pd</item>
+      <item>vfmsub231ps</item>
+      <item>vfmsub231sd</item>
+      <item>vfmsub231ss</item>
+      <item>vfmsub312pd</item>
+      <item>vfmsub312ps</item>
+      <item>vfmsub312sd</item>
+      <item>vfmsub312ss</item>
+      <item>vfmsub321pd</item>
+      <item>vfmsub321ps</item>
+      <item>vfmsub321sd</item>
+      <item>vfmsub321ss</item>
+      <item>vfmsubadd123pd</item>
+      <item>vfmsubadd123ps</item>
+      <item>vfmsubadd132pd</item>
+      <item>vfmsubadd132ps</item>
+      <item>vfmsubadd213pd</item>
+      <item>vfmsubadd213ps</item>
+      <item>vfmsubadd231pd</item>
+      <item>vfmsubadd231ps</item>
+      <item>vfmsubadd312pd</item>
+      <item>vfmsubadd312ps</item>
+      <item>vfmsubadd321pd</item>
+      <item>vfmsubadd321ps</item>
+      <item>vfmsubaddpd</item>
+      <item>vfmsubaddps</item>
+      <item>vfmsubpd</item>
+      <item>vfmsubps</item>
+      <item>vfmsubsd</item>
+      <item>vfmsubss</item>
+      <item>vfnmadd123pd</item>
+      <item>vfnmadd123ps</item>
+      <item>vfnmadd123sd</item>
+      <item>vfnmadd123ss</item>
+      <item>vfnmadd132pd</item>
+      <item>vfnmadd132ps</item>
+      <item>vfnmadd132sd</item>
+      <item>vfnmadd132ss</item>
+      <item>vfnmadd213pd</item>
+      <item>vfnmadd213ps</item>
+      <item>vfnmadd213sd</item>
+      <item>vfnmadd213ss</item>
+      <item>vfnmadd231pd</item>
+      <item>vfnmadd231ps</item>
+      <item>vfnmadd231sd</item>
+      <item>vfnmadd231ss</item>
+      <item>vfnmadd312pd</item>
+      <item>vfnmadd312ps</item>
+      <item>vfnmadd312sd</item>
+      <item>vfnmadd312ss</item>
+      <item>vfnmadd321pd</item>
+      <item>vfnmadd321ps</item>
+      <item>vfnmadd321sd</item>
+      <item>vfnmadd321ss</item>
+      <item>vfnmaddpd</item>
+      <item>vfnmaddps</item>
+      <item>vfnmaddsd</item>
+      <item>vfnmaddss</item>
+      <item>vfnmsub123pd</item>
+      <item>vfnmsub123ps</item>
+      <item>vfnmsub123sd</item>
+      <item>vfnmsub123ss</item>
+      <item>vfnmsub132pd</item>
+      <item>vfnmsub132ps</item>
+      <item>vfnmsub132sd</item>
+      <item>vfnmsub132ss</item>
+      <item>vfnmsub213pd</item>
+      <item>vfnmsub213ps</item>
+      <item>vfnmsub213sd</item>
+      <item>vfnmsub213ss</item>
+      <item>vfnmsub231pd</item>
+      <item>vfnmsub231ps</item>
+      <item>vfnmsub231sd</item>
+      <item>vfnmsub231ss</item>
+      <item>vfnmsub312pd</item>
+      <item>vfnmsub312ps</item>
+      <item>vfnmsub312sd</item>
+      <item>vfnmsub312ss</item>
+      <item>vfnmsub321pd</item>
+      <item>vfnmsub321ps</item>
+      <item>vfnmsub321sd</item>
+      <item>vfnmsub321ss</item>
+      <item>vfnmsubpd</item>
+      <item>vfnmsubps</item>
+      <item>vfnmsubsd</item>
+      <item>vfnmsubss</item>
+      <item>vfpclasspd</item>
+      <item>vfpclassps</item>
+      <item>vfpclasssd</item>
+      <item>vfpclassss</item>
+      <item>vfrczpd</item>
+      <item>vfrczps</item>
+      <item>vfrczsd</item>
+      <item>vfrczss</item>
+      <item>vgatherdpd</item>
+      <item>vgatherdps</item>
+      <item>vgatherpf0dpd</item>
+      <item>vgatherpf0dps</item>
+      <item>vgatherpf0qpd</item>
+      <item>vgatherpf0qps</item>
+      <item>vgatherpf1dpd</item>
+      <item>vgatherpf1dps</item>
+      <item>vgatherpf1qpd</item>
+      <item>vgatherpf1qps</item>
+      <item>vgatherqpd</item>
+      <item>vgatherqps</item>
+      <item>vgetexppd</item>
+      <item>vgetexpps</item>
+      <item>vgetexpsd</item>
+      <item>vgetexpss</item>
+      <item>vgetmantpd</item>
+      <item>vgetmantps</item>
+      <item>vgetmantsd</item>
+      <item>vgetmantss</item>
+      <item>vgf2p8affineinvqb</item>
+      <item>vgf2p8affineqb</item>
+      <item>vgf2p8mulb</item>
+      <item>vhaddpd</item>
+      <item>vhaddps</item>
+      <item>vhsubpd</item>
+      <item>vhsubps</item>
+      <item>vinsertf128</item>
+      <item>vinsertf32x4</item>
+      <item>vinsertf32x8</item>
+      <item>vinsertf64x2</item>
+      <item>vinsertf64x4</item>
+      <item>vinserti128</item>
+      <item>vinserti32x4</item>
+      <item>vinserti32x8</item>
+      <item>vinserti64x2</item>
+      <item>vinserti64x4</item>
+      <item>vinsertps</item>
+      <item>vlddqu</item>
+      <item>vldmxcsr</item>
+      <item>vldqqu</item>
+      <item>vmaskmovdqu</item>
+      <item>vmaskmovpd</item>
+      <item>vmaskmovps</item>
+      <item>vmaxpd</item>
+      <item>vmaxps</item>
+      <item>vmaxsd</item>
+      <item>vmaxss</item>
+      <item>vmcall</item>
+      <item>vmclear</item>
+      <item>vmfunc</item>
+      <item>vminpd</item>
+      <item>vminps</item>
+      <item>vminsd</item>
+      <item>vminss</item>
+      <item>vmlaunch</item>
       <item>vmload</item>
       <item>vmmcall</item>
+      <item>vmovapd</item>
+      <item>vmovaps</item>
+      <item>vmovd</item>
+      <item>vmovddup</item>
+      <item>vmovdqa</item>
+      <item>vmovdqa32</item>
+      <item>vmovdqa64</item>
+      <item>vmovdqu</item>
+      <item>vmovdqu16</item>
+      <item>vmovdqu32</item>
+      <item>vmovdqu64</item>
+      <item>vmovdqu8</item>
+      <item>vmovhlps</item>
+      <item>vmovhpd</item>
+      <item>vmovhps</item>
+      <item>vmovlhps</item>
+      <item>vmovlpd</item>
+      <item>vmovlps</item>
+      <item>vmovmskpd</item>
+      <item>vmovmskps</item>
+      <item>vmovntdq</item>
+      <item>vmovntdqa</item>
+      <item>vmovntpd</item>
+      <item>vmovntps</item>
+      <item>vmovntqq</item>
+      <item>vmovq</item>
+      <item>vmovqqa</item>
+      <item>vmovqqu</item>
+      <item>vmovsd</item>
+      <item>vmovshdup</item>
+      <item>vmovsldup</item>
+      <item>vmovss</item>
+      <item>vmovupd</item>
+      <item>vmovups</item>
+      <item>vmpsadbw</item>
+      <item>vmptrld</item>
+      <item>vmptrst</item>
+      <item>vmread</item>
+      <item>vmresume</item>
       <item>vmrun</item>
       <item>vmsave</item>
-      <item>wait</item>
+      <item>vmulpd</item>
+      <item>vmulps</item>
+      <item>vmulsd</item>
+      <item>vmulss</item>
+      <item>vmwrite</item>
+      <item>vmxoff</item>
+      <item>vmxon</item>
+      <item>vorpd</item>
+      <item>vorps</item>
+      <item>vp2intersectd</item>
+      <item>vpabsb</item>
+      <item>vpabsd</item>
+      <item>vpabsq</item>
+      <item>vpabsw</item>
+      <item>vpackssdw</item>
+      <item>vpacksswb</item>
+      <item>vpackusdw</item>
+      <item>vpackuswb</item>
+      <item>vpaddb</item>
+      <item>vpaddd</item>
+      <item>vpaddq</item>
+      <item>vpaddsb</item>
+      <item>vpaddsw</item>
+      <item>vpaddusb</item>
+      <item>vpaddusw</item>
+      <item>vpaddw</item>
+      <item>vpalignr</item>
+      <item>vpand</item>
+      <item>vpandd</item>
+      <item>vpandn</item>
+      <item>vpandnd</item>
+      <item>vpandnq</item>
+      <item>vpandq</item>
+      <item>vpavgb</item>
+      <item>vpavgw</item>
+      <item>vpblendd</item>
+      <item>vpblendmb</item>
+      <item>vpblendmd</item>
+      <item>vpblendmq</item>
+      <item>vpblendmw</item>
+      <item>vpblendvb</item>
+      <item>vpblendw</item>
+      <item>vpbroadcastb</item>
+      <item>vpbroadcastd</item>
+      <item>vpbroadcastmb2q</item>
+      <item>vpbroadcastmw2d</item>
+      <item>vpbroadcastq</item>
+      <item>vpbroadcastw</item>
+      <item>vpclmulhqhqdq</item>
+      <item>vpclmulhqlqdq</item>
+      <item>vpclmullqhqdq</item>
+      <item>vpclmullqlqdq</item>
+      <item>vpclmulqdq</item>
+      <item>vpcmov</item>
+      <item>vpcmpb</item>
+      <item>vpcmpd</item>
+      <item>vpcmpeqb</item>
+      <item>vpcmpeqd</item>
+      <item>vpcmpeqq</item>
+      <item>vpcmpequb</item>
+      <item>vpcmpequd</item>
+      <item>vpcmpequq</item>
+      <item>vpcmpequw</item>
+      <item>vpcmpeqw</item>
+      <item>vpcmpestri</item>
+      <item>vpcmpestrm</item>
+      <item>vpcmpgeb</item>
+      <item>vpcmpged</item>
+      <item>vpcmpgeq</item>
+      <item>vpcmpgeub</item>
+      <item>vpcmpgeud</item>
+      <item>vpcmpgeuq</item>
+      <item>vpcmpgeuw</item>
+      <item>vpcmpgew</item>
+      <item>vpcmpgtb</item>
+      <item>vpcmpgtd</item>
+      <item>vpcmpgtq</item>
+      <item>vpcmpgtub</item>
+      <item>vpcmpgtud</item>
+      <item>vpcmpgtuq</item>
+      <item>vpcmpgtuw</item>
+      <item>vpcmpgtw</item>
+      <item>vpcmpistri</item>
+      <item>vpcmpistrm</item>
+      <item>vpcmpleb</item>
+      <item>vpcmpled</item>
+      <item>vpcmpleq</item>
+      <item>vpcmpleub</item>
+      <item>vpcmpleud</item>
+      <item>vpcmpleuq</item>
+      <item>vpcmpleuw</item>
+      <item>vpcmplew</item>
+      <item>vpcmpltb</item>
+      <item>vpcmpltd</item>
+      <item>vpcmpltq</item>
+      <item>vpcmpltub</item>
+      <item>vpcmpltud</item>
+      <item>vpcmpltuq</item>
+      <item>vpcmpltuw</item>
+      <item>vpcmpltw</item>
+      <item>vpcmpneqb</item>
+      <item>vpcmpneqd</item>
+      <item>vpcmpneqq</item>
+      <item>vpcmpnequb</item>
+      <item>vpcmpnequd</item>
+      <item>vpcmpnequq</item>
+      <item>vpcmpnequw</item>
+      <item>vpcmpneqw</item>
+      <item>vpcmpngtb</item>
+      <item>vpcmpngtd</item>
+      <item>vpcmpngtq</item>
+      <item>vpcmpngtub</item>
+      <item>vpcmpngtud</item>
+      <item>vpcmpngtuq</item>
+      <item>vpcmpngtuw</item>
+      <item>vpcmpngtw</item>
+      <item>vpcmpnleb</item>
+      <item>vpcmpnled</item>
+      <item>vpcmpnleq</item>
+      <item>vpcmpnleub</item>
+      <item>vpcmpnleud</item>
+      <item>vpcmpnleuq</item>
+      <item>vpcmpnleuw</item>
+      <item>vpcmpnlew</item>
+      <item>vpcmpnltb</item>
+      <item>vpcmpnltd</item>
+      <item>vpcmpnltq</item>
+      <item>vpcmpnltub</item>
+      <item>vpcmpnltud</item>
+      <item>vpcmpnltuq</item>
+      <item>vpcmpnltuw</item>
+      <item>vpcmpnltw</item>
+      <item>vpcmpq</item>
+      <item>vpcmpub</item>
+      <item>vpcmpud</item>
+      <item>vpcmpuq</item>
+      <item>vpcmpuw</item>
+      <item>vpcmpw</item>
+      <item>vpcomb</item>
+      <item>vpcomd</item>
+      <item>vpcompressb</item>
+      <item>vpcompressd</item>
+      <item>vpcompressq</item>
+      <item>vpcompressw</item>
+      <item>vpcomq</item>
+      <item>vpcomub</item>
+      <item>vpcomud</item>
+      <item>vpcomuq</item>
+      <item>vpcomuw</item>
+      <item>vpcomw</item>
+      <item>vpconflictd</item>
+      <item>vpconflictq</item>
+      <item>vpdpbusd</item>
+      <item>vpdpbusds</item>
+      <item>vpdpwssd</item>
+      <item>vpdpwssds</item>
+      <item>vperm2f128</item>
+      <item>vperm2i128</item>
+      <item>vpermb</item>
+      <item>vpermd</item>
+      <item>vpermi2b</item>
+      <item>vpermi2d</item>
+      <item>vpermi2pd</item>
+      <item>vpermi2ps</item>
+      <item>vpermi2q</item>
+      <item>vpermi2w</item>
+      <item>vpermilpd</item>
+      <item>vpermilps</item>
+      <item>vpermpd</item>
+      <item>vpermps</item>
+      <item>vpermq</item>
+      <item>vpermt2b</item>
+      <item>vpermt2d</item>
+      <item>vpermt2pd</item>
+      <item>vpermt2ps</item>
+      <item>vpermt2q</item>
+      <item>vpermt2w</item>
+      <item>vpermw</item>
+      <item>vpexpandb</item>
+      <item>vpexpandd</item>
+      <item>vpexpandq</item>
+      <item>vpexpandw</item>
+      <item>vpextrb</item>
+      <item>vpextrd</item>
+      <item>vpextrq</item>
+      <item>vpextrw</item>
+      <item>vpgatherdd</item>
+      <item>vpgatherdq</item>
+      <item>vpgatherqd</item>
+      <item>vpgatherqq</item>
+      <item>vphaddbd</item>
+      <item>vphaddbq</item>
+      <item>vphaddbw</item>
+      <item>vphaddd</item>
+      <item>vphadddq</item>
+      <item>vphaddsw</item>
+      <item>vphaddubd</item>
+      <item>vphaddubq</item>
+      <item>vphaddubw</item>
+      <item>vphaddudq</item>
+      <item>vphadduwd</item>
+      <item>vphadduwq</item>
+      <item>vphaddw</item>
+      <item>vphaddwd</item>
+      <item>vphaddwq</item>
+      <item>vphminposuw</item>
+      <item>vphsubbw</item>
+      <item>vphsubd</item>
+      <item>vphsubdq</item>
+      <item>vphsubsw</item>
+      <item>vphsubw</item>
+      <item>vphsubwd</item>
+      <item>vpinsrb</item>
+      <item>vpinsrd</item>
+      <item>vpinsrq</item>
+      <item>vpinsrw</item>
+      <item>vplzcntd</item>
+      <item>vplzcntq</item>
+      <item>vpmacsdd</item>
+      <item>vpmacsdqh</item>
+      <item>vpmacsdql</item>
+      <item>vpmacssdd</item>
+      <item>vpmacssdqh</item>
+      <item>vpmacssdql</item>
+      <item>vpmacsswd</item>
+      <item>vpmacssww</item>
+      <item>vpmacswd</item>
+      <item>vpmacsww</item>
+      <item>vpmadcsswd</item>
+      <item>vpmadcswd</item>
+      <item>vpmadd52huq</item>
+      <item>vpmadd52luq</item>
+      <item>vpmaddubsw</item>
+      <item>vpmaddwd</item>
+      <item>vpmaskmovd</item>
+      <item>vpmaskmovq</item>
+      <item>vpmaxsb</item>
+      <item>vpmaxsd</item>
+      <item>vpmaxsq</item>
+      <item>vpmaxsw</item>
+      <item>vpmaxub</item>
+      <item>vpmaxud</item>
+      <item>vpmaxuq</item>
+      <item>vpmaxuw</item>
+      <item>vpminsb</item>
+      <item>vpminsd</item>
+      <item>vpminsq</item>
+      <item>vpminsw</item>
+      <item>vpminub</item>
+      <item>vpminud</item>
+      <item>vpminuq</item>
+      <item>vpminuw</item>
+      <item>vpmovb2m</item>
+      <item>vpmovd2m</item>
+      <item>vpmovdb</item>
+      <item>vpmovdw</item>
+      <item>vpmovm2b</item>
+      <item>vpmovm2d</item>
+      <item>vpmovm2q</item>
+      <item>vpmovm2w</item>
+      <item>vpmovmskb</item>
+      <item>vpmovq2m</item>
+      <item>vpmovqb</item>
+      <item>vpmovqd</item>
+      <item>vpmovqw</item>
+      <item>vpmovsdb</item>
+      <item>vpmovsdw</item>
+      <item>vpmovsqb</item>
+      <item>vpmovsqd</item>
+      <item>vpmovsqw</item>
+      <item>vpmovswb</item>
+      <item>vpmovsxbd</item>
+      <item>vpmovsxbq</item>
+      <item>vpmovsxbw</item>
+      <item>vpmovsxdq</item>
+      <item>vpmovsxwd</item>
+      <item>vpmovsxwq</item>
+      <item>vpmovusdb</item>
+      <item>vpmovusdw</item>
+      <item>vpmovusqb</item>
+      <item>vpmovusqd</item>
+      <item>vpmovusqw</item>
+      <item>vpmovuswb</item>
+      <item>vpmovw2m</item>
+      <item>vpmovwb</item>
+      <item>vpmovzxbd</item>
+      <item>vpmovzxbq</item>
+      <item>vpmovzxbw</item>
+      <item>vpmovzxdq</item>
+      <item>vpmovzxwd</item>
+      <item>vpmovzxwq</item>
+      <item>vpmuldq</item>
+      <item>vpmulhrsw</item>
+      <item>vpmulhuw</item>
+      <item>vpmulhw</item>
+      <item>vpmulld</item>
+      <item>vpmullq</item>
+      <item>vpmullw</item>
+      <item>vpmultishiftqb</item>
+      <item>vpmuludq</item>
+      <item>vpopcntb</item>
+      <item>vpopcntd</item>
+      <item>vpopcntq</item>
+      <item>vpopcntw</item>
+      <item>vpor</item>
+      <item>vpord</item>
+      <item>vporq</item>
+      <item>vpperm</item>
+      <item>vprold</item>
+      <item>vprolq</item>
+      <item>vprolvd</item>
+      <item>vprolvq</item>
+      <item>vprord</item>
+      <item>vprorq</item>
+      <item>vprorvd</item>
+      <item>vprorvq</item>
+      <item>vprotb</item>
+      <item>vprotd</item>
+      <item>vprotq</item>
+      <item>vprotw</item>
+      <item>vpsadbw</item>
+      <item>vpscatterdd</item>
+      <item>vpscatterdq</item>
+      <item>vpscatterqd</item>
+      <item>vpscatterqq</item>
+      <item>vpshab</item>
+      <item>vpshad</item>
+      <item>vpshaq</item>
+      <item>vpshaw</item>
+      <item>vpshlb</item>
+      <item>vpshld</item>
+      <item>vpshldd</item>
+      <item>vpshldq</item>
+      <item>vpshldvd</item>
+      <item>vpshldvq</item>
+      <item>vpshldvw</item>
+      <item>vpshldw</item>
+      <item>vpshlq</item>
+      <item>vpshlw</item>
+      <item>vpshrdd</item>
+      <item>vpshrdq</item>
+      <item>vpshrdvd</item>
+      <item>vpshrdvq</item>
+      <item>vpshrdvw</item>
+      <item>vpshrdw</item>
+      <item>vpshufb</item>
+      <item>vpshufbitqmb</item>
+      <item>vpshufd</item>
+      <item>vpshufhw</item>
+      <item>vpshuflw</item>
+      <item>vpsignb</item>
+      <item>vpsignd</item>
+      <item>vpsignw</item>
+      <item>vpslld</item>
+      <item>vpslldq</item>
+      <item>vpsllq</item>
+      <item>vpsllvd</item>
+      <item>vpsllvq</item>
+      <item>vpsllvw</item>
+      <item>vpsllw</item>
+      <item>vpsrad</item>
+      <item>vpsraq</item>
+      <item>vpsravd</item>
+      <item>vpsravq</item>
+      <item>vpsravw</item>
+      <item>vpsraw</item>
+      <item>vpsrld</item>
+      <item>vpsrldq</item>
+      <item>vpsrlq</item>
+      <item>vpsrlvd</item>
+      <item>vpsrlvq</item>
+      <item>vpsrlvw</item>
+      <item>vpsrlw</item>
+      <item>vpsubb</item>
+      <item>vpsubd</item>
+      <item>vpsubq</item>
+      <item>vpsubsb</item>
+      <item>vpsubsw</item>
+      <item>vpsubusb</item>
+      <item>vpsubusw</item>
+      <item>vpsubw</item>
+      <item>vpternlogd</item>
+      <item>vpternlogq</item>
+      <item>vptest</item>
+      <item>vptestmb</item>
+      <item>vptestmd</item>
+      <item>vptestmq</item>
+      <item>vptestmw</item>
+      <item>vptestnmb</item>
+      <item>vptestnmd</item>
+      <item>vptestnmq</item>
+      <item>vptestnmw</item>
+      <item>vpunpckhbw</item>
+      <item>vpunpckhdq</item>
+      <item>vpunpckhqdq</item>
+      <item>vpunpckhwd</item>
+      <item>vpunpcklbw</item>
+      <item>vpunpckldq</item>
+      <item>vpunpcklqdq</item>
+      <item>vpunpcklwd</item>
+      <item>vpxor</item>
+      <item>vpxord</item>
+      <item>vpxorq</item>
+      <item>vrangepd</item>
+      <item>vrangeps</item>
+      <item>vrangesd</item>
+      <item>vrangess</item>
+      <item>vrcp14pd</item>
+      <item>vrcp14ps</item>
+      <item>vrcp14sd</item>
+      <item>vrcp14ss</item>
+      <item>vrcp28pd</item>
+      <item>vrcp28ps</item>
+      <item>vrcp28sd</item>
+      <item>vrcp28ss</item>
+      <item>vrcpps</item>
+      <item>vrcpss</item>
+      <item>vreducepd</item>
+      <item>vreduceps</item>
+      <item>vreducesd</item>
+      <item>vreducess</item>
+      <item>vrndscalepd</item>
+      <item>vrndscaleps</item>
+      <item>vrndscalesd</item>
+      <item>vrndscaless</item>
+      <item>vroundpd</item>
+      <item>vroundps</item>
+      <item>vroundsd</item>
+      <item>vroundss</item>
+      <item>vrsqrt14pd</item>
+      <item>vrsqrt14ps</item>
+      <item>vrsqrt14sd</item>
+      <item>vrsqrt14ss</item>
+      <item>vrsqrt28pd</item>
+      <item>vrsqrt28ps</item>
+      <item>vrsqrt28sd</item>
+      <item>vrsqrt28ss</item>
+      <item>vrsqrtps</item>
+      <item>vrsqrtss</item>
+      <item>vscalefpd</item>
+      <item>vscalefps</item>
+      <item>vscalefsd</item>
+      <item>vscalefss</item>
+      <item>vscatterdpd</item>
+      <item>vscatterdps</item>
+      <item>vscatterpf0dpd</item>
+      <item>vscatterpf0dps</item>
+      <item>vscatterpf0qpd</item>
+      <item>vscatterpf0qps</item>
+      <item>vscatterpf1dpd</item>
+      <item>vscatterpf1dps</item>
+      <item>vscatterpf1qpd</item>
+      <item>vscatterpf1qps</item>
+      <item>vscatterqpd</item>
+      <item>vscatterqps</item>
+      <item>vshuff32x4</item>
+      <item>vshuff64x2</item>
+      <item>vshufi32x4</item>
+      <item>vshufi64x2</item>
+      <item>vshufpd</item>
+      <item>vshufps</item>
+      <item>vsqrtpd</item>
+      <item>vsqrtps</item>
+      <item>vsqrtsd</item>
+      <item>vsqrtss</item>
+      <item>vstmxcsr</item>
+      <item>vsubpd</item>
+      <item>vsubps</item>
+      <item>vsubsd</item>
+      <item>vsubss</item>
+      <item>vtestpd</item>
+      <item>vtestps</item>
+      <item>vucomisd</item>
+      <item>vucomiss</item>
+      <item>vunpckhpd</item>
+      <item>vunpckhps</item>
+      <item>vunpcklpd</item>
+      <item>vunpcklps</item>
+      <item>vxorpd</item>
+      <item>vxorps</item>
+      <item>vzeroall</item>
+      <item>vzeroupper</item>
       <item>wbinvd</item>
+      <item>wbnoinvd</item>
+      <item>wrfsbase</item>
+      <item>wrgsbase</item>
       <item>wrmsr</item>
+      <item>wrpkru</item>
       <item>wrshr</item>
+      <item>wrssd</item>
+      <item>wrssq</item>
+      <item>wrussd</item>
+      <item>wrussq</item>
+      <item>xabort</item>
       <item>xadd</item>
+      <item>xbegin</item>
       <item>xbts</item>
       <item>xchg</item>
+      <item>xcryptcbc</item>
+      <item>xcryptcfb</item>
+      <item>xcryptctr</item>
+      <item>xcryptecb</item>
+      <item>xcryptofb</item>
+      <item>xend</item>
+      <item>xgetbv</item>
       <item>xlat</item>
       <item>xlatb</item>
       <item>xor</item>
       <item>xorpd</item>
       <item>xorps</item>
+      <item>xresldtrk</item>
+      <item>xrstor</item>
+      <item>xrstor64</item>
+      <item>xrstors</item>
+      <item>xrstors64</item>
+      <item>xsave</item>
+      <item>xsave64</item>
+      <item>xsavec</item>
+      <item>xsavec64</item>
+      <item>xsaveopt</item>
+      <item>xsaveopt64</item>
+      <item>xsaves</item>
+      <item>xsaves64</item>
+      <item>xsetbv</item>
+      <item>xsha1</item>
+      <item>xsha256</item>
+      <item>xstore</item>
+      <item>xsusldtrk</item>
+      <item>xtest</item>
     </list>
+
+    <list name="branch instructions">
+      <item>call</item>
+      <item>iret</item>
+      <item>iretd</item>
+      <item>iretq</item>
+      <item>iretw</item>
+      <item>ja</item>
+      <item>jae</item>
+      <item>jb</item>
+      <item>jbe</item>
+      <item>jc</item>
+      <item>jcxz</item>
+      <item>je</item>
+      <item>jecxz</item>
+      <item>jg</item>
+      <item>jge</item>
+      <item>jl</item>
+      <item>jle</item>
+      <item>jmp</item>
+      <item>jmpe</item>
+      <item>jna</item>
+      <item>jnae</item>
+      <item>jnb</item>
+      <item>jnbe</item>
+      <item>jnc</item>
+      <item>jne</item>
+      <item>jng</item>
+      <item>jnge</item>
+      <item>jnl</item>
+      <item>jnle</item>
+      <item>jno</item>
+      <item>jnp</item>
+      <item>jns</item>
+      <item>jnz</item>
+      <item>jo</item>
+      <item>jp</item>
+      <item>jpe</item>
+      <item>jpo</item>
+      <item>jrcxz</item>
+      <item>js</item>
+      <item>jz</item>
+      <item>ret</item>
+      <item>retd</item>
+      <item>retf</item>
+      <item>retfd</item>
+      <item>retfq</item>
+      <item>retfw</item>
+      <item>retn</item>
+      <item>retnd</item>
+      <item>retnq</item>
+      <item>retnw</item>
+      <item>retq</item>
+      <item>retw</item>
+    </list>
+
+    <list name="macros">
+      <item>arg</item>
+      <item>assign</item>
+      <item>clear</item>
+      <item>defalias</item>
+      <item>define</item>
+      <item>defstr</item>
+      <item>deftok</item>
+      <item>depend</item>
+      <item>elif</item>
+      <item>elifctx</item>
+      <item>elifdef</item>
+      <item>elifempty</item>
+      <item>elifenv</item>
+      <item>elifidn</item>
+      <item>elifidni</item>
+      <item>elifn</item>
+      <item>elifnctx</item>
+      <item>elifndef</item>
+      <item>elifnempty</item>
+      <item>elifnenv</item>
+      <item>elifnidn</item>
+      <item>elifnidni</item>
+      <item>elifntoken</item>
+      <item>eliftoken</item>
+      <item>else</item>
+      <item>exitrep</item>
+      <item>endif</item>
+      <item>endmacro</item>
+      <item>endrep</item>
+      <item>error</item>
+      <item>fatal</item>
+      <item>idefine</item>
+      <item>if</item>
+      <item>ifctx</item>
+      <item>ifdef</item>
+      <item>ifempty</item>
+      <item>ifid</item>
+      <item>ifidn</item>
+      <item>ifidni</item>
+      <item>ifmacro</item>
+      <item>ifn</item>
+      <item>ifnctx</item>
+      <item>ifndef</item>
+      <item>ifnempty</item>
+      <item>ifnenv</item>
+      <item>ifnidn</item>
+      <item>ifnidni</item>
+      <item>ifnmacro</item>
+      <item>ifntoken</item>
+      <item>ifnum</item>
+      <item>ifstr</item>
+      <item>iftoken</item>
+      <item>imacro</item>
+      <item>include</item>
+      <item>line</item>
+      <item>local</item>
+      <item>macro</item>
+      <item>pathsearch</item>
+      <item>pop</item>
+      <item>pragma</item>
+      <item>push</item>
+      <item>rep</item>
+      <item>repl</item>
+      <item>rotate</item>
+      <item>stacksize</item>
+      <item>strcat</item>
+      <item>strlen</item>
+      <item>substr</item>
+      <item>undef</item>
+      <item>unmacro</item>
+      <item>use</item>
+      <item>warning</item>
+      <item>xdefine</item>
+    </list>
+
     <list name="Data">
       <!-- repeat some data declaration -->
       <item>times</item>
@@ -785,12 +2428,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>dd</item>
       <item>dq</item>
       <item>dt</item>
+      <item>do</item>
+      <item>dy</item>
+      <item>dz</item>
       <!-- Uninitialized data -->
       <item>resb</item>
       <item>resw</item>
       <item>resd</item>
       <item>resq</item>
       <item>rest</item>
+      <item>reso</item>
+      <item>resy</item>
+      <item>resz</item>
       <!-- binary file include -->
       <item>incbin</item>
       <!-- operand size -->
@@ -798,24 +2447,50 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>word</item>
       <item>dword</item>
       <item>qword</item>
+      <item>tword</item>
+      <item>oword</item>
+      <item>yword</item>
+      <item>zword</item>
       <item>short</item>
       <item>ptr</item>
     </list>
+
     <list name="NASM Keywords">
+      <!-- prefix -->
+      <item>abs</item>
+      <item>a32</item>
+      <item>as</item>
+      <item>bnd</item>
+      <item>cs</item>
+      <item>lock</item>
+      <item>nobnd</item>
+      <item>rel</item>
+      <item>rep</item>
+      <item>repe</item>
+      <item>repne</item>
+      <item>repnz</item>
+      <item>repz</item>
+      <item>xacquire</item>
+      <item>xrelease</item>
+
       <!-- NASM directives -->
       <item>absolute</item>
       <item>bits</item>
       <item>common</item>
+      <item>default</item>
+      <item>cpu</item>
       <item>extern</item>
       <item>global</item>
       <item>org</item>
       <item>section</item>
       <item>seg</item>
       <item>segment</item>
+      <item>static</item>
       <item>strict</item>
       <item>use16</item>
       <item>use32</item>
       <item>wrt</item>
+
       <!-- NASM standard macros -->
       <item>struc</item>
       <item>endstruc</item>
@@ -825,45 +2500,251 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>align</item>
       <item>alignb</item>
 
-      <item>__SECT__</item>
-      <item>__NASM_MAJOR__</item>
-      <item>__NASM_MINOR__</item>
-      <item>__NASM_SUBMINOR__</item>
-      <item>___NASM_PATCHLEVEL__</item>
-      <item>__NASM_VERSION_ID__</item>
-      <item>__NASM_VER__</item>
-      <item>__FILE__</item>
-      <item>__LINE__</item>
+      <item>__?BITS?__</item>
+      <item>__?SECT?__</item>
+      <item>__?NASM_MAJOR?__</item>
+      <item>__?NASM_MINOR?__</item>
+      <item>__?NASM_SUBMINOR?__</item>
+      <item>__?NASM_PATCHLEVEL?__</item>
+      <item>__?NASM_SNAPSHOT?__</item>
+      <item>__?NASM_VERSION_ID?__</item>
+      <item>__?NASM_VER?__</item>
+      <item>__?FILE?__</item>
+      <item>__?LINE?__</item>
+      <item>__?OUTPUT_FORMAT?__</item>
+      <item>__?DEBUG_FORMAT?__</item>
+      <item>__?DATE?__</item>
+      <item>__?TIME?__</item>
+      <item>__?DATE_NUM?__</item>
+      <item>__?TIME_NUM?__</item>
+      <item>__?UTC_DATE?__</item>
+      <item>__?UTC_TIME?__</item>
+      <item>__?UTC_DATE_NUM?__</item>
+      <item>__?UTC_TIME_NUM?__</item>
+      <item>__?POSIX_TIME?__</item>
+      <item>__?PASS?__</item>
+      <item>__?USE_ALTREG?__</item>
+      <item>__?ALIGNMODE?__</item>
+
+      <item>__?utf16?__</item>
+      <item>__?utf16le?__</item>
+      <item>__?utf16be?__</item>
+      <item>__?utf32?__</item>
+      <item>__?utf32le?__</item>
+      <item>__?utf32be?__</item>
+      <item>__?float8?__</item>
+      <item>__?float16?__</item>
+      <item>__?bfloat16?__</item>
+      <item>__?float32?__</item>
+      <item>__?float64?__</item>
+      <item>__?float80m?__</item>
+      <item>__?float80e?__</item>
+      <item>__?float128l?__</item>
+      <item>__?float128h?__</item>
+      <item>__?Infinity?__</item>
+      <item>__?QNaN?__</item>
+      <item>__?NaN?__</item>
+      <item>__?SNaN?__</item>
+      <item>__?FLOAT_DAZ?__</item>
+      <item>__?FLOAT_ROUND?__</item>
+      <item>__?FLOAT?__</item>
     </list>
+
+    <list name="special symbols">
+      <item>got</item>
+      <item>gotoff</item>
+      <item>gotpc</item>
+      <item>gotpcrel</item>
+      <item>gottpoff</item>
+      <item>imagebase</item>
+      <item>plt</item>
+      <item>start</item>
+      <item>sym</item>
+      <item>tlsie</item>
+      <item>tlvp</item>
+    </list>
+
     <contexts>
-      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Instruction">
+        <DetectSpaces attribute="Normal Text"/>
+        <RegExpr attribute="Label" context="Instruction" String="(?:(?:\.|@@|&#37;&#37;)(?:\.@)?)?[A-Za-z_][A-Za-z0-9_.]*+:" firstNonSpace="1"/>
+      </context>
+
+      <context name="Instruction" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <IncludeRules context="IncInstruction"/>
+      </context>
+
+      <context name="IncInstruction" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Preprocessor" context="#pop!Preprocessor" char="%" firstNonSpace="1"/>
+        <DetectChar attribute="Comment" context="#pop!Comment" char=";"/>
+        <keyword attribute="Data" context="#pop!Operand" String="Data"/>
+        <keyword attribute="Instructions" context="#pop!Operand" String="instructions"/>
+        <keyword attribute="Branch Instructions" context="#pop!Operand" String="branch instructions"/>
+        <keyword attribute="NASM Keywords" context="#pop!Operand" String="NASM Keywords"/>
+        <DetectIdentifier attribute="Unknown Instructions" context="UnknownInstruction"/>
+        <LineContinue attribute="Symbol" context="#pop!Operand"/>
+      </context>
+      <context name="UnknownInstruction" attribute="Unknown Instructions" lineEndContext="#pop#pop" fallthroughContext="#pop#pop!Operand">
+        <DetectChar attribute="Symbol" context="#stay" char="."/>
+        <Int attribute="Unknown Instructions" context="#stay"/>
+        <DetectIdentifier attribute="Unknown Instructions" context="#stay"/>
+      </context>
+
+      <context name="Operand" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <Detect2Chars attribute="Label" context="LabelIdent" char="%" char1="%"/>
+        <Detect2Chars attribute="Label" context="LabelIdent" char="@" char1="@"/>
+        <AnyChar attribute="Symbol" context="#stay" String=",-+/*%~^=!(){}[]:|&amp;?&lt;>"/>
+        <DetectChar attribute="Symbol" context="Dollar" char="$"/>
+        <DetectChar attribute="Symbol" context="SymbolOrLabel" char="." lookAhead="1"/>
+        <DetectChar attribute="String" context="SQString" char="'"/>
+        <DetectChar attribute="String" context="DQString" char="&quot;"/>
+        <DetectChar attribute="String" context="String" char="`"/>
+        <DetectChar attribute="Comment" context="#pop!Comment" char=";"/>
+        <AnyChar attribute="Number" context="Number" String="0123456789" lookAhead="1"/>
         <keyword attribute="Registers" context="#stay" String="registers"/>
         <keyword attribute="Data" context="#stay" String="Data"/>
-        <keyword attribute="Instructions" context="#stay" String="instructions"/>
         <keyword attribute="NASM Keywords" context="#stay" String="NASM Keywords"/>
-        <DetectChar attribute="Comment" context="Comment" char=";"/>
-        <DetectChar attribute="Preprocessor" context="Preprocessor" char="%"/>
-        <AnyChar attribute="String" context="String" String="&quot;'"/>
-        <RegExpr attribute="Label" context="#stay" String="^\s*[A-Za-z0-9_.$]+:"/>
-        <!-- Conditional instructions -->
-        <RegExpr attribute="Instructions" context="#stay" String="(cmov|fcmov|j|loop|set)(a|ae|b|be|c|e|g|ge|l|le|na|nae|nb|nbe|nc|ne|ng|nge|nl|nle|no|np|ns|nz|o|p|pe|po|s|z)"/>
-        <!-- The NASM's CPU directive -->
-        <RegExpr attribute="NASM Keywords" context="#stay" String="cpu (pentium|ppro|p2|p3|katmai|p4|willamette|prescott|ia64)*"/>
-        <!-- hexadecimal numbers -->
-        <RegExpr attribute="BaseN" context="#stay" insensitive="true" String="(^|[ \t,]+)((\$|0x){1}[0-9]+[a-f0-9]*|[0-9]+[a-f0-9]*h)([ \t,]+|$)"/>
-        <!-- octal and binary numbers -->
-        <RegExpr attribute="BaseN" context="#stay" insensitive="true" String="(^|[ \t,]+)([0-7]+(q|o)|[01]+b)([ \t,]+|$)"/>
-        <DetectChar attribute="Number" context="#stay" char="$"/>
-        <HlCOct attribute="BaseN" context="#stay"/>
-        <HlCHex attribute="BaseN" context="#stay"/>
-        <Float attribute="Float" context="#stay"/>
-        <Int attribute="Number" context="#stay"/>
-        <HlCChar attribute="Char" context="#stay"/>
+        <DetectIdentifier attribute="Normal Text" context="Ident"/>
+        <LineContinue attribute="Symbol"/>
       </context>
-      <context name="Comment" attribute="Comment" lineEndContext="#pop"/>
-      <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop"/>
+
+      <context name="LabelIdent" attribute="Label" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectIdentifier attribute="Label" context="#stay"/>
+        <DetectChar attribute="Symbol" context="#stay" char="."/>
+        <Int attribute="Label" context="#stay"/>
+      </context>
+
+      <context name="Ident" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectChar attribute="Symbol" context="#stay" char="."/>
+        <AnyChar attribute="Normal Text" context="#stay" String="_$#@~?0123456789"/>
+        <DetectIdentifier attribute="Normal Text" context="#stay"/>
+      </context>
+
+      <context name="Dollar" attribute="Symbol" lineEndContext="#pop" fallthroughContext="#pop!Ident">
+        <Detect2Chars attribute="Symbol" context="#pop" char="$" char1="-"/>
+        <AnyChar attribute="Symbol" context="#pop!Ident" String="$+-"/>
+        <AnyChar attribute="BaseN" context="#pop!$Hex" String="0123456789"/>
+        <DetectIdentifier attribute="Normal Text" context="#pop!Ident"/>
+      </context>
+      <context name="$Hex" attribute="BaseN" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="BaseN" context="#pop!CheckNumberSuffix" String="[0-9a-fA-F_]*"/>
+      </context>
+
+      <context name="Number" attribute="Number" lineEndContext="#pop">
+        <RegExpr attribute="Float" context="#pop!FloatSuffix" insensitive="1" String="&float;"/>
+        <RegExpr attribute="Radix" context="#pop!PrefixedNumber" insensitive="1" String="&prefixedBaseN;" lookAhead="1" minimal="1"/>
+        <RegExpr attribute="BaseN" context="#pop!BaseSuffix" insensitive="1" String="&baseN;"/>
+        <RegExpr attribute="Number" context="#pop!NumberSuffix" insensitive="1" String="&number;"/>
+      </context>
+      <context name="FloatSuffix" attribute="Float" lineEndContext="#pop" fallthroughContext="#pop!CheckNumberSuffix">
+        <AnyChar attribute="Radix" context="#pop!CheckNumberSuffix" String="pP"/>
+      </context>
+      <context name="BaseSuffix" attribute="BaseN" lineEndContext="#pop" fallthroughContext="#pop!CheckNumberSuffix">
+        <AnyChar attribute="Radix" context="#pop!CheckNumberSuffix" String="byoqhxBYOQHX"/>
+      </context>
+      <context name="NumberSuffix" attribute="Number" lineEndContext="#pop" fallthroughContext="#pop!CheckNumberSuffix">
+        <AnyChar attribute="Radix" context="#pop!CheckNumberSuffix" String="dtDT"/>
+      </context>
+      <context name="PrefixedNumber" attribute="Radix" lineEndContext="#pop">
+        <Detect2Chars attribute="Radix" context="#pop!$Hex" char="0" char1="h"/>
+        <Detect2Chars attribute="Radix" context="#pop!$Hex" char="0" char1="x"/>
+        <Detect2Chars attribute="Radix" context="#pop!Octal" char="0" char1="q"/>
+        <Detect2Chars attribute="Radix" context="#pop!Octal" char="0" char1="o"/>
+        <Detect2Chars attribute="Radix" context="#pop!Binary" char="0" char1="b"/>
+        <Detect2Chars attribute="Radix" context="#pop!Binary" char="0" char1="y"/>
+        <Detect2Chars attribute="Radix" context="#pop!Decimal" char="0" char1="d"/>
+        <Detect2Chars attribute="Radix" context="#pop!Decimal" char="0" char1="t"/>
+        <Detect2Chars attribute="Radix" context="#pop!$Hex" char="0" char1="H"/>
+        <Detect2Chars attribute="Radix" context="#pop!$Hex" char="0" char1="X"/>
+        <Detect2Chars attribute="Radix" context="#pop!Octal" char="0" char1="Q"/>
+        <Detect2Chars attribute="Radix" context="#pop!Octal" char="0" char1="O"/>
+        <Detect2Chars attribute="Radix" context="#pop!Binary" char="0" char1="B"/>
+        <Detect2Chars attribute="Radix" context="#pop!Binary" char="0" char1="Y"/>
+        <Detect2Chars attribute="Radix" context="#pop!Decimal" char="0" char1="D"/>
+        <Detect2Chars attribute="Radix" context="#pop!Decimal" char="0" char1="T"/>
+      </context>
+      <context name="Octal" attribute="BaseN" lineEndContext="#pop">
+        <RegExpr attribute="BaseN" context="#pop!CheckNumberSuffix" insensitive="1" String="[0-7_]+"/>
+      </context>
+      <context name="Binary" attribute="BaseN" lineEndContext="#pop">
+        <RegExpr attribute="BaseN" context="#pop!CheckNumberSuffix" insensitive="1" String="[01_]+"/>
+      </context>
+      <context name="Decimal" attribute="Number" lineEndContext="#pop">
+        <RegExpr attribute="Number" context="#pop!CheckNumberSuffix" insensitive="1" String="[0-9_]+"/>
+      </context>
+      <context name="CheckNumberSuffix" attribute="Number" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text" context="#pop"/>
+        <AnyChar attribute="Symbol" context="#pop" String=",-+/*%~^=!(){}[]:|&amp;?&lt;>"/>
+        <WordDetect attribute="NASM Keywords" context="#pop" String=".nolist"/>
+        <RegExpr attribute="Error" context="#pop" String="[\d\w]+"/>
+      </context>
+
+      <context name="SymbolOrLabel" attribute="Symbol" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="Label" context="#pop" String="\.(?:\.@)?[A-Za-z0-9_.]*+"/>
+        <Detect2Chars attribute="Symbol" context="#pop!SpecialSymbol" char="." char1="."/>
+        <DetectChar attribute="Symbol" context="#pop" char="."/>
+      </context>
+      <context name="SpecialSymbol" attribute="Symbol" lineEndContext="#pop" fallthroughContext="#pop">
+        <keyword attribute="Symbol" context="#pop" String="special symbols"/>
+        <DetectIdentifier attribute="Unknown Symbol" context="#pop"/>
+      </context>
+
+      <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop" fallthroughContext="#pop">
+        <WordDetect attribute="Preprocessor" context="#pop!Macro" String="macro"/>
+        <WordDetect attribute="Preprocessor" context="#pop!Macro" String="imacro"/>
+        <keyword attribute="Preprocessor" context="#pop!Instruction" String="macros"/>
+        <Int attribute="Number" context="#pop"/>
+      </context>
+      <context name="Macro" attribute="Preprocessor" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Preprocessor" context="MacroPreprocessor" char="%" firstNonSpace="1"/>
+        <WordDetect attribute="NASM Keywords" context="#stay" String=".nolist"/>
+        <IncludeRules context="IncInstruction"/>
+      </context>
+      <context name="MacroPreprocessor" attribute="Preprocessor" lineEndContext="#pop" fallthroughContext="#pop!Preprocessor">
+        <WordDetect attribute="Preprocessor" context="#pop#pop" String="endmacro"/>
+        <Detect2Chars attribute="Preprocessor" context="#pop" char="?" char1="?"/>
+        <AnyChar attribute="Preprocessor" context="#pop" String="?,"/>
+        <Detect2Chars attribute="Preprocessor" context="#pop!MacroLabel" char="$" char1="$"/>
+        <AnyChar attribute="Preprocessor" context="#pop!MacroLabel" String="%$"/>
+        <AnyChar attribute="Preprocessor" context="#pop!MacroNumber" String="-+"/>
+        <DetectChar attribute="Preprocessor" context="#pop!MacroIdent" char="!"/>
+        <Int attribute="Preprocessor" context="#pop"/>
+      </context>
+      <context name="MacroNumber" attribute="Preprocessor" lineEndContext="#pop" fallthroughContext="#pop">
+        <Int attribute="Preprocessor" context="#pop"/>
+      </context>
+      <context name="MacroIdent" attribute="Preprocessor" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectIdentifier attribute="Normal Text" context="#pop"/>
+      </context>
+      <context name="MacroLabel" attribute="Preprocessor" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectIdentifier attribute="Label" context="#pop"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces attribute="Comment"/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier attribute="Comment"/>
+      </context>
+
+      <context name="SQString" attribute="String" lineEndContext="#pop">
+        <LineContinue attribute="Symbol"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+      <context name="DQString" attribute="String" lineEndContext="#pop">
+        <LineContinue attribute="Symbol"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
       <context name="String" attribute="String" lineEndContext="#pop">
-        <AnyChar attribute="String" context="#pop" String="&quot;'"/>
+        <LineContinue attribute="Symbol"/>
+        <DetectChar attribute="Symbol" context="Escape" char="\" lookAhead="1"/>
+        <DetectChar attribute="String" context="#pop" char="`"/>
+      </context>
+      <context name="Escape" attribute="Char" lineEndContext="#pop">
+        <RegExpr attribute="Char" context="#pop" String="\\(?:['&quot;`\\?abtnvfre]|[0-7]{3}|[xX][0-9a-fA-F]{2}|u[0-9a-fA-F]{4}|U[0-9a-fA-F]{8}|0)"/>
+        <RegExpr attribute="Bad Char" context="#pop" String="\\(?:[0-7]++|[xXuU][0-9a-fA-F]*|)"/>
       </context>
     </contexts>
 
@@ -871,6 +2752,8 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <itemData name="Normal Text" defStyleNum="dsNormal"/>
       <itemData name="Registers" defStyleNum="dsKeyword"/>
       <itemData name="Instructions" defStyleNum="dsKeyword"/>
+      <itemData name="Branch Instructions" defStyleNum="dsControlFlow"/>
+      <itemData name="Unknown Instructions" defStyleNum="dsNormal"/>
       <itemData name="NASM Keywords" defStyleNum="dsKeyword"/>
       <itemData name="Comment" defStyleNum="dsComment"/>
       <itemData name="Label" defStyleNum="dsFunction"/>
@@ -878,15 +2761,20 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <itemData name="BaseN" defStyleNum="dsBaseN"/>
       <itemData name="Float" defStyleNum="dsFloat"/>
       <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="Radix" defStyleNum="dsBaseN"/>
       <itemData name="Char" defStyleNum="dsChar"/>
       <itemData name="String" defStyleNum="dsString"/>
       <itemData name="Preprocessor" defStyleNum="dsOthers"/>
+      <itemData name="Symbol" defStyleNum="dsOperator"/>
+      <itemData name="Unknown Symbol" defStyleNum="dsError"/>
+      <itemData name="Bad Char" defStyleNum="dsError"/>
+      <itemData name="Error" defStyleNum="dsError"/>
     </itemDatas>
   </highlighting>
   <general>
-    <keywords casesensitive="0"/>
+    <keywords casesensitive="0" weakDeliminator="?"/>
     <comments>
-      <comment name="singleLine" start=";"/>
+      <comment name="singleLine" start=";" position="afterwhitespace"/>
     </comments>
   </general>
 </language>

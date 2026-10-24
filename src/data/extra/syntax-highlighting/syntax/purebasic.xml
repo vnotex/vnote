@@ -1,5 +1,5 @@
-<?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE language SYSTEM "language.dtd">
-<language name="PureBasic" version="7" kateversion="5.0" section="Sources" extensions="*.pb;*.pbi" mimetype="text/x-purebasic" author="Alexander Clay (Tuireann@EpicBasic.org);Sven Langenkamp (ace@kylixforum.de)" license="LGPL" priority="1" >
+<?xml version="1.0" encoding="UTF-8"?> <!DOCTYPE language>
+<language name="PureBasic" version="10" kateversion="5.0" section="Sources" extensions="*.pb;*.pbi" mimetype="text/x-purebasic" author="Alexander Clay (Tuireann@EpicBasic.org);Sven Langenkamp (ace@kylixforum.de)" license="LGPL" priority="1" >
   <highlighting>
     <list name="keywords">
       <item>Break</item>
@@ -1728,8 +1728,8 @@
 
         <DetectChar attribute="String" context="String" char="&quot;" />
 
-        <RegExpr attribute="Region Marker" context="#stay" String="^\s*;+\s*BEGIN.*$" beginRegion="marker"/>
-        <RegExpr attribute="Region Marker" context="#stay" String="^\s*;+\s*END.*$" endRegion="marker"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="^\s*;+\s*BEGIN.*$" beginRegion="marker" column="0"/>
+        <RegExpr attribute="Region Marker" context="#stay" String="^\s*;+\s*END.*$" endRegion="marker" column="0"/>
 
         <DetectChar attribute="Comment" context="Comment1" char=";"/>
 
@@ -1738,13 +1738,13 @@
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="Comment1">
-        <IncludeRules context="##Alerts" />
-        <IncludeRules context="##Modelines" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
     <itemDatas>
       <itemData name="Normal Text" defStyleNum="dsNormal"/>
-      <itemData name="Operator" defStyleNum="dsNormal"/>
+      <itemData name="Operator" defStyleNum="dsOperator"/>
       <itemData name="Separator" defStyleNum="dsNormal"/>
       <itemData name="Keyword" defStyleNum="dsKeyword"/>
       <itemData name="Debug Keyword" defStyleNum="dsKeyword"/>
@@ -1760,7 +1760,7 @@
   <general>
     <keywords casesensitive="0" />
     <comments>
-      <comment name="singleLine" start=";" />
+      <comment name="singleLine" start=";" position="afterwhitespace" />
     </comments>
   </general>
 </language>

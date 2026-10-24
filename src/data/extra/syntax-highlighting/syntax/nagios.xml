@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Nagios" section="Configuration" extensions="*.cfg" version="3" kateversion="2.4" author="Gastón Martini" license="GPL" casesensitive="true">
+<!DOCTYPE language>
+<language name="Nagios" section="Configuration" extensions="*.cfg" version="5" kateversion="5.0" author="Gastón Martini" license="GPL" casesensitive="true">
     <highlighting>
         <list name="Objects">
             <item>host</item>
@@ -27,7 +27,8 @@
                 <IncludeRules context="Variable" includeAttrib="true"/>
             </context>
             <context name="Comment" attribute="Comment" lineEndContext="#pop">
-                <IncludeRules context="##Alerts" />
+                <DetectSpaces />
+                <IncludeRules context="##Comments" />
             </context>
             <context name="Macro Definition" attribute="Macro Definition" lineEndContext="#pop">
                 <RangeDetect char="$" char1="$" firstNonSpace="true" context="#stay"/>
@@ -81,3 +82,4 @@
         <keywords casesensitive="true"/>
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

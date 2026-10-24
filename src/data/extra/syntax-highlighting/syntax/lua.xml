@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 <!ENTITY HEX "[0-9A-Fa-f]">
 ]>
@@ -48,7 +48,7 @@
     - NOTE, FIXME, TODO alerts added on comments
     - improved highlighting
 -->
-<language name="Lua" version="7" indenter="lua" kateversion="5.0" section="Scripts" extensions="*.lua" mimetype="text/x-lua">
+<language name="Lua" version="21" indenter="cstyle" kateversion="5.79" section="Scripts" extensions="*.lua;*.rockspec" mimetype="text/x-lua">
   <highlighting>
     <list name="keywords">
       <item>and</item>
@@ -57,7 +57,11 @@
       <item>local</item>
       <item>not</item>
       <item>or</item>
-      <!-- pseudo-variables -->
+      <!-- 5.5 -->
+      <item>global</item>
+    </list>
+
+    <list name="specialvars">
       <item>nil</item>
       <item>false</item>
       <item>true</item>
@@ -149,7 +153,7 @@
       <item>coroutine.create</item>
       <item>coroutine.isyieldable</item>
       <item>coroutine.resume</item>
-      <item>coroutine.kill</item>
+      <item>coroutine.close</item>
       <item>coroutine.running</item>
       <item>coroutine.status</item>
       <item>coroutine.wrap</item>
@@ -188,6 +192,7 @@
 
       <!-- Table Manipulation -->
       <item>table.concat</item>
+      <item>table.create</item>
       <item>table.insert</item>
       <item>table.move</item>
       <item>table.pack</item>
@@ -271,8 +276,6 @@
       <item>cgilua</item>
       <item>cgilua.addclosefunction</item>
       <item>cgilua.addopenfunction</item>
-      <item>cgilua.addopenfunction</item>
-      <item>cgilua.addscripthandler</item>
       <item>cgilua.addscripthandler</item>
       <item>cgilua.buildprocesshandler</item>
       <item>cgilua.contentheader</item>
@@ -366,13 +369,10 @@
       <item>concat</item>
       <item>insert</item>
       <item>move</item>
-      <item>pack</item>
       <item>remove</item>
       <item>sort</item>
-      <item>unpack</item>
 
       <!-- luasql -->
-      <item>close</item>
       <item>commit</item>
       <item>connect</item>
       <item>escape</item>
@@ -423,6 +423,8 @@
       <item>__call</item>
 
       <item>__tostring</item>
+      <item>__name</item>
+      <item>__close</item>
       <item>__pairs</item>
       <!-- setmetatable -->
       <item>__metatable</item>
@@ -457,19 +459,14 @@
     </list>
 
     <contexts>
-      <context name="Shebang"       attribute="Comment" lineEndContext="Normal" lineEmptyContext="Normal" fallthrough="true" fallthroughContext="Normal">
-        <Detect2Chars attribute="Comment" context="Comment" char="#" char1="!" column="0"/>
-      </context>
-
-      <context name="Comment"       attribute="Comment"     lineEndContext="#pop">
-      </context>
-
       <context name="Normal"        attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="ShebangLine" char="#" char1="!" column="0"/>
+
         <DetectSpaces />
         <keyword      attribute="Deprecated" context="#stay"       String="deprecated" />
-        <IncludeRules context="##DoxygenLua" />
+        <Detect2Chars attribute="Comment" context="MatchComment" char="-" char1="-" lookAhead="true"/>
 
-        <RegExpr      attribute="RawStrings" context="String_block"  String="\[(=*)\[" dynamic="true" />
+        <RegExpr      attribute="RawStrings" context="String_block"  String="\[(=*)\[" />
         <DetectChar   attribute="Strings"  context="String_single" char="'"/>
         <DetectChar   attribute="Strings"  context="String_double" char="&quot;"/>
         <keyword      attribute="BFunc"    context="#stay"         String="basefunc"/>
@@ -477,18 +474,21 @@
         <keyword      attribute="BVar"     context="#stay"         String="basevar"/>
 
         <WordDetect   attribute="Keyword"  context="Function" beginRegion="chunk" String="function" />
+        <WordDetect   attribute="Keyword"  context="Local" String="local" />
         <keyword      attribute="Keyword"  context="#stay" String="keywords" />
+        <keyword      attribute="Special Variable" context="#stay" String="specialvars" additionalDeliminator="."/>
+        <WordDetect   attribute="Self Variable" context="#stay" String="self" additionalDeliminator="." />
         <keyword      attribute="Control"  context="StartControl" beginRegion="chunk" String="startcontrol" />
         <keyword      attribute="Control"  context="#stay" String="control" />
 
         <DetectChar   attribute="Symbols"  context="#stay" beginRegion="table" char="{" />
         <DetectChar   attribute="Symbols"  context="#stay" endRegion="table"   char="}" />
 
-        <RegExpr      attribute="Numbers"  context="#stay" String="(?:0[xX](?:\.&HEX;+|&HEX;+\.?&HEX;*)(?:[pP][-+]?\d*)?|(?:\.\d+|\d+\.?\d*)(?:[eE][-+]?\d*)?)"/>
+        <RegExpr      attribute="Normal Text" context="#stay" String="[a-zA-Z_][a-zA-Z0-9_]*(?=\s*([({'&quot;]|\[\[|\[=))" />
+        <RegExpr      attribute="Constant" context="#stay" String="[A-Z_][A-Z0-9_]*\b" />
+        <DetectIdentifier attribute="Variable" context="#stay" />
 
-        <RegExpr      attribute="Normal Text" context="#stay" String="\b[a-zA-Z_][a-zA-Z0-9_]*(?=\s*([({'&quot;]|\[\[|\[=))" />
-        <RegExpr      attribute="Constant" context="#stay" String="\b[A-Z_][A-Z0-9_]*\b" />
-        <RegExpr      attribute="Variable" context="#stay" String="\b[a-zA-Z_][a-zA-Z0-9_]*\b" />
+        <RegExpr      attribute="Numbers"  context="NumberSuffix" String="(?:0[xX](?:\.&HEX;+|&HEX;+\.?&HEX;*)(?:[pP][-+]?\d*)?|(?:\.\d+|\d+\.?\d*)(?:[eE][-+]?\d*)?)"/>
 
         <Detect2Chars attribute="Error"    context="#stay" char="!" char1="="/>
         <Detect2Chars attribute="Error"    context="#stay" char="-" char1="="/>
@@ -498,10 +498,54 @@
         <AnyChar      attribute="Symbols"  context="#stay" String=":[]().,=~+-*/%&amp;|^&gt;&lt;#;" />
       </context>
 
+      <context name="ShebangLine"   attribute="Comment"     lineEndContext="#pop" />
+
+      <context name="MatchComment" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
+        <IncludeRules context="##DoxygenLua" />
+        <RegExpr attribute="Comment" context="#pop!BlockComment" String="--\[(=*)\[" beginRegion="BlockComment" />
+        <Detect2Chars attribute="Comment" context="#pop!Comment" char="-" char1="-" />
+      </context>
+
+      <context name="BlockComment" attribute="Comment" lineEndContext="#stay" dynamic="true">
+        <IncludeRules context="Comment" />
+        <StringDetect attribute="Comment" context="#pop" String="]%1]" dynamic="true" endRegion="BlockComment" />
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier />
+      </context>
+
       <context name="StartControl" attribute="Normal Text"  lineEndContext="#stay">
         <keyword      attribute="Control"  context="#stay" endRegion="chunk"   beginRegion="chunk" String="elsecontrol" />
         <keyword      attribute="Control"  context="#pop"  endRegion="chunk"   String="endcontrol" />
         <IncludeRules context="Normal" />
+      </context>
+
+      <context name="NumberSuffix" attribute="Normal Text"  lineEndContext="#pop" fallthroughContext="#pop">
+        <!-- some syntax like a=32print(a) are valid, but ugly -->
+        <DetectIdentifier attribute="Error" context="#pop" />
+      </context>
+
+      <context name="Local" attribute="Normal Text"  lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces />
+        <WordDetect   attribute="Keyword" context="#pop!Function" beginRegion="chunk" String="function" />
+        <Detect2Chars attribute="Comment" context="MatchComment" char="-" char1="-" lookAhead="true"/>
+        <RegExpr          attribute="Constant" context="LocalVariable" String="\b[A-Z_][A-Z0-9_]*\b" />
+        <DetectIdentifier attribute="Variable" context="LocalVariable" />
+      </context>
+
+      <context name="LocalVariable" attribute="Normal Text"  lineEndContext="#pop#pop" fallthroughContext="#pop#pop">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="MatchComment" char="-" char1="-" lookAhead="true"/>
+        <DetectChar   attribute="Symbols"   context="#pop" char="," />
+        <DetectChar   attribute="Attribute" context="Attribute" char="&lt;" lookAhead="true" />
+      </context>
+
+      <context name="Attribute" attribute="Attribute"  lineEndContext="#pop">
+        <RegExpr      attribute="Attribute" context="#pop" String="&lt;\s*(?:close|const)\s*>" />
+        <RegExpr      attribute="Error"     context="#pop" String="&lt;\s*\w*\s*>?" />
       </context>
 
       <context name="Function" attribute="Normal Text"      lineEndContext="#stay">
@@ -509,14 +553,22 @@
         <IncludeRules context="Normal" />
       </context>
 
-      <context name="String_single" attribute="Strings"     lineEndContext="Error">
+      <context name="String_single" attribute="Strings"     lineEndContext="UnclosedString">
         <DetectChar   attribute="Strings"  context="Special_char"  char="\" lookAhead="true"/>
         <DetectChar   attribute="Strings"  context="#pop"  char="'"/>
       </context>
 
-      <context name="String_double" attribute="Strings"     lineEndContext="Error">
+      <context name="String_double" attribute="Strings"     lineEndContext="UnclosedString">
         <DetectChar   attribute="Strings"  context="Special_char"  char="\" lookAhead="true"/>
         <DetectChar   attribute="Strings"  context="#pop"  char="&quot;"/>
+      </context>
+
+      <context name="UnclosedString" attribute="Error" lineEndContext="#stay" fallthroughContext="#pop#pop">
+				<!-- A single string/comment reached the end of the line without a \ line escape -->
+				<!-- We set the following line (or part of it) to the "Error" attribute so that this error is easier to spot -->
+        <DetectSpaces attribute="Error" context="#pop#pop"/>
+        <DetectIdentifier attribute="Error" context="#pop#pop"/>
+				<RegExpr attribute="Error" String="^([^-[()&quot;'\s]|-(?!-)|\[(?!=))+" context="#pop#pop" column="0"/>
       </context>
 
       <context name="Special_char"  attribute="Error"       lineEndContext="#pop">
@@ -535,8 +587,6 @@
         <StringDetect attribute="RawStrings"    context="#pop"  String="]%1]" dynamic="true" />
       </context>
 
-      <context name="Error"         attribute="Error"       lineEndContext="#stay">
-      </context>
     </contexts>
 
     <itemDatas>
@@ -546,24 +596,27 @@
       <itemData name="BVar"            defStyleNum="dsVariable" spellChecking="false"/>
       <itemData name="Comment"         defStyleNum="dsComment"/>
       <itemData name="Constant"        defStyleNum="dsConstant" spellChecking="false"/>
-      <itemData name="Control"         defStyleNum="dsControlFlow" color="#A1A100" selColor="#ffffff" bold="0" italic="0" spellChecking="false"/>
+      <itemData name="Control"         defStyleNum="dsControlFlow" spellChecking="false"/>
       <itemData name="Error"           defStyleNum="dsError" spellChecking="false"/>
       <itemData name="Deprecated"      defStyleNum="dsError" spellChecking="false"/>
       <itemData name="Keyword"         defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Special Variable" defStyleNum="dsKeyword" spellChecking="false"/>
       <itemData name="Numbers"         defStyleNum="dsDecVal" spellChecking="false"/>
       <itemData name="Special Char"    defStyleNum="dsSpecialChar" spellChecking="false"/>
       <itemData name="Strings"         defStyleNum="dsString"/>
       <itemData name="RawStrings"      defStyleNum="dsVerbatimString"/>
       <itemData name="Symbols"         defStyleNum="dsOperator" spellChecking="false"/>
-      <itemData name="Variable"        defStyleNum="dsKeyword" color="#5555FF" selColor="#ffffff" bold="0" italic="0" spellChecking="false"/>
+      <itemData name="Variable"        defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Self Variable"   defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Attribute"       defStyleNum="dsAttribute" spellChecking="false"/>
     </itemDatas>
   </highlighting>
   <general>
     <comments>
       <comment name="singleLine" start="--" />
-      <comment name="multiLine" start="--[[" end="]]" />
+      <comment name="multiLine" start="--[[" end="]]" region="BlockComment" />
     </comments>
-    <keywords casesensitive="1" weakDeliminator="." additionalDeliminator="'&quot;"/>
+    <keywords casesensitive="1" weakDeliminator="." additionalDeliminator="'&quot;#"/>
   </general>
 </language>
 <!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

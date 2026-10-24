@@ -1,0 +1,144 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="Cucumber Gherkin feature"
+    kateversion="5.0"
+    version="3"
+    section="Markup"
+    extensions="*.feature"
+    mimetype="text/x-gherkin"
+    casesensitive="1"
+    indenter="normal"
+    author="Samu Voutilainen (kde.gherkin-syntax@smar.fi)"
+    license="MIT">
+
+  <highlighting>
+    <list name="keywords">
+      <item>Rule</item>
+      <item>Scenario</item>
+      <item>Example</item>
+      <item>Background</item>
+    </list>
+
+    <list name="steps">
+      <item>Given</item>
+      <item>When</item>
+      <item>Then</item>
+      <item>And</item>
+      <item>But</item>
+    </list>
+
+    <contexts>
+      <context name="Normal" attribute="DocString" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <DetectSpaces/>
+        <WordDetect context="FeatureLine" attribute="Feature" String="Feature:" firstNonSpace="true"/>
+
+        <WordDetect context="ScenarioOutline" attribute="Keyword" String="Scenario Outline:" firstNonSpace="true"/>
+        <WordDetect context="ScenarioOutline" attribute="Keyword" String="Scenario Template:" firstNonSpace="true"/>
+
+        <keyword String="keywords" attribute="Keyword" context="Keywords" firstNonSpace="true"/>
+
+        <StringDetect context="Multi-line Comment" attribute="DocString" String="&quot;&quot;&quot;" beginRegion="RegionComment"/>
+        <DetectChar attribute="Comment" char="#" context="General Comment"/>
+      </context>
+
+      <context name="FeatureLine" attribute="HeaderText" lineEndContext="#pop">
+      </context>
+
+      <context name="Keywords" attribute="HeaderText" lineEndContext="#stay">
+        <keyword String="steps" attribute="Step" firstNonSpace="true" context="Step"/>
+        <!-- Defining * step word here, as it doesn’t get accepted from steps list. -->
+        <DetectChar attribute="Step" char="*" firstNonSpace="true" context="Step"/>
+
+        <keyword String="keywords" firstNonSpace="true" lookAhead="true" context="#pop"/>
+        <WordDetect context="#pop" attribute="SyntaxError" String="Feature:" firstNonSpace="true"/>
+
+        <WordDetect context="#stay" attribute="Keyword" String="Examples:" firstNonSpace="true"/>
+        <WordDetect context="#stay" attribute="Keyword" String="Scenarios:" firstNonSpace="true"/>
+        <RangeDetect context="StepTable" attribute="TableSeparator" char="|" char1="|" lookAhead="true"/>
+
+        <DetectChar attribute="GherkinTag" char="@" context="GherkinTag"/>
+
+        <StringDetect context="Multi-line Comment" attribute="DocString" String="&quot;&quot;&quot;" beginRegion="RegionComment"/>
+        <DetectChar attribute="Comment" char="#" context="General Comment"/>
+      </context>
+
+      <context name="ScenarioOutline" attribute="HeaderText" lineEndContext="#stay">
+        <keyword String="steps" attribute="Step" firstNonSpace="true" context="Step"/>
+        <!-- Defining * step word here, as it doesn’t get accepted from steps list. -->
+        <DetectChar attribute="Step" char="*" firstNonSpace="true" context="Step"/>
+
+        <keyword String="keywords" firstNonSpace="true" lookAhead="true" context="#pop"/>
+        <WordDetect context="#pop" attribute="SyntaxError" String="Feature:" firstNonSpace="true"/>
+
+        <StringDetect context="Multi-line Comment" attribute="DocString" String="&quot;&quot;&quot;" beginRegion="RegionComment"/>
+        <DetectChar attribute="Comment" char="#" context="General Comment"/>
+      </context>
+
+      <context name="Step" attribute="StepString" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <DetectChar attribute="QuotedString" char="&quot;" context="QuotedString"/>
+        <RangeDetect context="StepTable" attribute="TableSeparator" char="|" char1="|" lookAhead="true"/>
+
+        <keyword String="steps" firstNonSpace="true" lookAhead="true" context="#pop"/>
+        <keyword String="keywords" firstNonSpace="true" lookAhead="true" context="#pop#pop"/>
+        <WordDetect context="#pop" attribute="SyntaxError" lookAhead="true" String="Feature:" firstNonSpace="true"/>
+
+        <DetectChar attribute="StepOutlineVariable" char="&lt;" context="Step Outline Variable"/>
+        <DetectChar attribute="GherkinTag" char="@" context="GherkinTag"/>
+
+        <DetectChar attribute="Comment" char="#" context="General Comment"/>
+      </context>
+
+
+      <context name="StepTable" attribute="TableString" lineEndContext="#pop">
+        <DetectChar context="#stay" attribute="TableSeparator" char="|"/>
+      </context>
+
+      <context name="Step Outline Variable" attribute="StepOutlineVariable" lineEndContext="#stay">
+        <DetectChar context="#pop" attribute="StepOutlineVariable" char="&gt;"/>
+      </context>
+
+      <context name="QuotedString" attribute="QuotedString" lineEndContext="#stay">
+        <DetectChar context="#pop" attribute="QuotedString" char="&quot;"/>
+      </context>
+
+      <context name="GherkinTag" attribute="GherkinTag" lineEndContext="#pop">
+      </context>
+
+      <context name="Multi-line Comment" attribute="Comment" lineEndContext="#stay">
+        <StringDetect context="#pop" attribute="DocString" String="&quot;&quot;&quot;" endRegion="RegionComment"/>
+      </context>
+
+      <context name="General Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="HeaderText" defStyleNum="dsAttribute"/>
+      <itemData name="Feature" defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Step" defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="StepString" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="StepOutlineVariable" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="TableSeparator" defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="TableString" defStyleNum="dsVerbatimString" spellChecking="false"/>
+      <itemData name="QuotedString" defStyleNum="dsString" spellChecking="false"/>
+      <itemData name="GherkinTag" defStyleNum="dsAnnotation" spellChecking="false"/>
+      <itemData name="SyntaxError" defStyleNum="dsError" />
+      <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="DocString" defStyleNum="dsDocumentation" />
+    </itemDatas>
+
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#" position="afterwhitespace"/>
+    </comments>
+    <keywords casesensitive="1" />
+
+    <folding indentationsensitive="0"/>
+  </general>
+</language>
+<!-- kate: tab-width 2; indent-width 2; -->

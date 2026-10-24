@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
 This file is part of KDE's kate project.
 
@@ -11,7 +11,7 @@ it under the terms of the GNU General Public License as published by
 the Free Software Foundation; either version 2 of the License, or
 (at your option) any later version.
 -->
-<language version="4" kateversion="2.4" name="Replicode" section="Scientific" extensions="*.replicode" author="Martin Sandsmark" license="GPLv2+">
+<language version="6" kateversion="5.0" name="Replicode" section="Scientific" extensions="*.replicode" author="Martin Sandsmark" license="GPLv2+">
     <highlighting>
         <list name="operators">
             <item>_now</item>
@@ -142,8 +142,8 @@ the Free Software Foundation; either version 2 of the License, or
                 <DetectChar attribute="Class Definition" context="open_parens" char="(" beginRegion="true" />
             </context>
             <context attribute="Comment" lineEndContext="#pop" name="comment">
-                <IncludeRules context="##Alerts" />
-                <IncludeRules context="##Modelines" />
+                <DetectSpaces />
+                <IncludeRules context="##Comments" />
             </context>
             <context attribute="Class Definition" lineEndContext="#stay" name="class_definition">
                 <DetectChar attribute="Class Definition" context="#pop#pop" char=")" endRegion="true" />
@@ -187,7 +187,7 @@ the Free Software Foundation; either version 2 of the License, or
     </highlighting>
     <general>
         <comments>
-            <comment name="singleLine" start=";" />
+            <comment name="singleLine" start=";" position="afterwhitespace" />
         </comments>
         <folding indentationsensitive="1" />
         <keywords casesensitive="1" weakDeliminator="|." />

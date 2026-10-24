@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
-	<!ENTITY int "[0-9]([0-9_]*[0-9])?">
-	<!ENTITY hex "[0-9a-fA-F]([0-9a-fA-F_]*[0-9a-fA-F])?">
+	<!ENTITY int "(?:[0-9]++(_++[0-9]++)*+)">
+	<!ENTITY hex "(?:[0-9a-fA-F]++(_++[0-9a-fA-F]++)*+)">
+	<!ENTITY exp "(?:[eE][-+]?&int;)">
+	<!ENTITY float "(\b&int;(\.((&int;&exp;?+|&exp;)[fFdD]?\b|[fFdD]\b)?|&exp;[fFdD]?\b|[fFdD]\b)|\.&int;&exp;?[fFdD]?\b)">
+	<!ENTITY hexfloat "\b0[xX](&hex;\.?+&hex;?+|\.&hex;?)[pP][-+]?&int;[fFdD]?\b">
 ]>
-<language name="Java" version="5" kateversion="5.0" section="Sources" extensions="*.java" mimetype="text/x-java" license="LGPL" author="Alfredo Luiz Foltran Fialho (alfoltran@ig.com.br)">
+<language name="Java" version="13" kateversion="5.79" section="Sources" extensions="*.java" mimetype="text/x-java" license="LGPL" author="Alfredo Luiz Foltran Fialho (alfoltran@ig.com.br)">
 	<highlighting>
 		<list name="java15">
 			<item>ACTIVE</item>
@@ -151,7 +154,6 @@
 			<item>Any</item>
 			<item>AnyHolder</item>
 			<item>AnySeqHelper</item>
-			<item>AnySeqHelper</item>
 			<item>AnySeqHolder</item>
 			<item>AppConfigurationEntry</item>
 			<item>AppConfigurationEntry.LoginModuleControlFlag</item>
@@ -167,7 +169,6 @@
 			<item>Area</item>
 			<item>AreaAveragingScaleFilter</item>
 			<item>ArithmeticException</item>
-			<item>Array</item>
 			<item>Array</item>
 			<item>ArrayBlockingQueue</item>
 			<item>ArrayIndexOutOfBoundsException</item>
@@ -192,19 +193,14 @@
 			<item>AtomicStampedReference</item>
 			<item>Attr</item>
 			<item>Attribute</item>
-			<item>Attribute</item>
-			<item>Attribute</item>
 			<item>AttributeChangeNotification</item>
 			<item>AttributeChangeNotificationFilter</item>
 			<item>AttributeException</item>
 			<item>AttributeInUseException</item>
 			<item>AttributeList</item>
-			<item>AttributeList</item>
-			<item>AttributeList</item>
 			<item>AttributeListImpl</item>
 			<item>AttributeModificationException</item>
 			<item>AttributeNotFoundException</item>
-			<item>AttributeSet</item>
 			<item>AttributeSet</item>
 			<item>AttributeSet.CharacterAttribute</item>
 			<item>AttributeSet.ColorAttribute</item>
@@ -215,8 +211,6 @@
 			<item>AttributedCharacterIterator</item>
 			<item>AttributedCharacterIterator.Attribute</item>
 			<item>AttributedString</item>
-			<item>Attributes</item>
-			<item>Attributes</item>
 			<item>Attributes</item>
 			<item>Attributes.Name</item>
 			<item>Attributes2</item>
@@ -234,7 +228,6 @@
 			<item>AudioSystem</item>
 			<item>AuthPermission</item>
 			<item>AuthProvider</item>
-			<item>AuthenticationException</item>
 			<item>AuthenticationException</item>
 			<item>AuthenticationNotSupportedException</item>
 			<item>Authenticator</item>
@@ -367,7 +360,6 @@
 			<item>BinaryRefAddr</item>
 			<item>BindException</item>
 			<item>Binding</item>
-			<item>Binding</item>
 			<item>BindingHelper</item>
 			<item>BindingHolder</item>
 			<item>BindingIterator</item>
@@ -403,7 +395,6 @@
 			<item>BorderUIResource.MatteBorderUIResource</item>
 			<item>BorderUIResource.TitledBorderUIResource</item>
 			<item>BoundedRangeModel</item>
-			<item>Bounds</item>
 			<item>Bounds</item>
 			<item>Box</item>
 			<item>Box.Filler</item>
@@ -491,20 +482,13 @@
 			<item>CertStoreParameters</item>
 			<item>CertStoreSpi</item>
 			<item>Certificate</item>
-			<item>Certificate</item>
-			<item>Certificate</item>
 			<item>Certificate.CertificateRep</item>
 			<item>CertificateEncodingException</item>
-			<item>CertificateEncodingException</item>
 			<item>CertificateException</item>
-			<item>CertificateException</item>
-			<item>CertificateExpiredException</item>
 			<item>CertificateExpiredException</item>
 			<item>CertificateFactory</item>
 			<item>CertificateFactorySpi</item>
 			<item>CertificateNotYetValidException</item>
-			<item>CertificateNotYetValidException</item>
-			<item>CertificateParsingException</item>
 			<item>CertificateParsingException</item>
 			<item>ChangeEvent</item>
 			<item>ChangeListener</item>
@@ -643,7 +627,6 @@
 			<item>ConfigurationException</item>
 			<item>ConfirmationCallback</item>
 			<item>ConnectException</item>
-			<item>ConnectException</item>
 			<item>ConnectIOException</item>
 			<item>Connection</item>
 			<item>ConnectionEvent</item>
@@ -658,15 +641,12 @@
 			<item>ContainerListener</item>
 			<item>ContainerOrderFocusTraversalPolicy</item>
 			<item>ContentHandler</item>
-			<item>ContentHandler</item>
 			<item>ContentHandlerFactory</item>
 			<item>ContentModel</item>
-			<item>Context</item>
 			<item>Context</item>
 			<item>ContextList</item>
 			<item>ContextNotEmptyException</item>
 			<item>ContextualRenderedImageFactory</item>
-			<item>Control</item>
 			<item>Control</item>
 			<item>Control.Type</item>
 			<item>ControlFactory</item>
@@ -690,14 +670,8 @@
 			<item>CubicCurve2D.Float</item>
 			<item>Currency</item>
 			<item>Current</item>
-			<item>Current</item>
-			<item>Current</item>
-			<item>CurrentHelper</item>
-			<item>CurrentHelper</item>
 			<item>CurrentHelper</item>
 			<item>CurrentHolder</item>
-			<item>CurrentOperations</item>
-			<item>CurrentOperations</item>
 			<item>CurrentOperations</item>
 			<item>Cursor</item>
 			<item>CustomMarshal</item>
@@ -726,7 +700,6 @@
 			<item>DOMImplementationRegistry</item>
 			<item>DOMImplementationSource</item>
 			<item>DOMLocator</item>
-			<item>DOMLocator</item>
 			<item>DOMResult</item>
 			<item>DOMSource</item>
 			<item>DOMStringList</item>
@@ -752,11 +725,9 @@
 			<item>DataFormatException</item>
 			<item>DataInput</item>
 			<item>DataInputStream</item>
-			<item>DataInputStream</item>
 			<item>DataLine</item>
 			<item>DataLine.Info</item>
 			<item>DataOutput</item>
-			<item>DataOutputStream</item>
 			<item>DataOutputStream</item>
 			<item>DataSource</item>
 			<item>DataTruncation</item>
@@ -770,7 +741,6 @@
 			<item>DatatypeConstants</item>
 			<item>DatatypeConstants.Field</item>
 			<item>DatatypeFactory</item>
-			<item>Date</item>
 			<item>Date</item>
 			<item>DateFormat</item>
 			<item>DateFormat.Field</item>
@@ -814,7 +784,6 @@
 			<item>DefaultListModel</item>
 			<item>DefaultListSelectionModel</item>
 			<item>DefaultLoaderRepository</item>
-			<item>DefaultLoaderRepository</item>
 			<item>DefaultMenuLayout</item>
 			<item>DefaultMetalTheme</item>
 			<item>DefaultMutableTreeNode</item>
@@ -838,8 +807,6 @@
 			<item>DeflaterOutputStream</item>
 			<item>DelayQueue</item>
 			<item>Delayed</item>
-			<item>Delegate</item>
-			<item>Delegate</item>
 			<item>Delegate</item>
 			<item>DelegationPermission</item>
 			<item>Deprecated</item>
@@ -881,7 +848,6 @@
 			<item>DocFlavor.STRING</item>
 			<item>DocFlavor.URL</item>
 			<item>DocPrintJob</item>
-			<item>Document</item>
 			<item>Document</item>
 			<item>DocumentBuilder</item>
 			<item>DocumentBuilderFactory</item>
@@ -932,7 +898,6 @@
 			<item>DuplicateNameHelper</item>
 			<item>Duration</item>
 			<item>DynAny</item>
-			<item>DynAny</item>
 			<item>DynAnyFactory</item>
 			<item>DynAnyFactoryHelper</item>
 			<item>DynAnyFactoryOperations</item>
@@ -940,30 +905,23 @@
 			<item>DynAnyOperations</item>
 			<item>DynAnySeqHelper</item>
 			<item>DynArray</item>
-			<item>DynArray</item>
 			<item>DynArrayHelper</item>
 			<item>DynArrayOperations</item>
-			<item>DynEnum</item>
 			<item>DynEnum</item>
 			<item>DynEnumHelper</item>
 			<item>DynEnumOperations</item>
 			<item>DynFixed</item>
-			<item>DynFixed</item>
 			<item>DynFixedHelper</item>
 			<item>DynFixedOperations</item>
-			<item>DynSequence</item>
 			<item>DynSequence</item>
 			<item>DynSequenceHelper</item>
 			<item>DynSequenceOperations</item>
 			<item>DynStruct</item>
-			<item>DynStruct</item>
 			<item>DynStructHelper</item>
 			<item>DynStructOperations</item>
 			<item>DynUnion</item>
-			<item>DynUnion</item>
 			<item>DynUnionHelper</item>
 			<item>DynUnionOperations</item>
-			<item>DynValue</item>
 			<item>DynValue</item>
 			<item>DynValueBox</item>
 			<item>DynValueBoxOperations</item>
@@ -971,7 +929,6 @@
 			<item>DynValueCommonOperations</item>
 			<item>DynValueHelper</item>
 			<item>DynValueOperations</item>
-			<item>DynamicImplementation</item>
 			<item>DynamicImplementation</item>
 			<item>DynamicMBean</item>
 			<item>ECField</item>
@@ -989,8 +946,6 @@
 			<item>EOFException</item>
 			<item>EditorKit</item>
 			<item>Element</item>
-			<item>Element</item>
-			<item>Element</item>
 			<item>ElementIterator</item>
 			<item>ElementType</item>
 			<item>Ellipse2D</item>
@@ -1003,7 +958,6 @@
 			<item>Encoder</item>
 			<item>Encoding</item>
 			<item>EncryptedPrivateKeyInfo</item>
-			<item>Entity</item>
 			<item>Entity</item>
 			<item>EntityReference</item>
 			<item>EntityResolver</item>
@@ -1059,7 +1013,6 @@
 			<item>Fidelity</item>
 			<item>Field</item>
 			<item>FieldNameHelper</item>
-			<item>FieldNameHelper</item>
 			<item>FieldPosition</item>
 			<item>FieldView</item>
 			<item>File</item>
@@ -1070,7 +1023,6 @@
 			<item>FileChooserUI</item>
 			<item>FileDescriptor</item>
 			<item>FileDialog</item>
-			<item>FileFilter</item>
 			<item>FileFilter</item>
 			<item>FileHandler</item>
 			<item>FileImageInputStream</item>
@@ -1136,11 +1088,8 @@
 			<item>Formattable</item>
 			<item>FormattableFlags</item>
 			<item>Formatter</item>
-			<item>Formatter</item>
 			<item>FormatterClosedException</item>
 			<item>ForwardRequest</item>
-			<item>ForwardRequest</item>
-			<item>ForwardRequestHelper</item>
 			<item>ForwardRequestHelper</item>
 			<item>Frame</item>
 			<item>Future</item>
@@ -1346,7 +1295,6 @@
 			<item>IncompatibleClassChangeError</item>
 			<item>IncompleteAnnotationException</item>
 			<item>InconsistentTypeCode</item>
-			<item>InconsistentTypeCode</item>
 			<item>InconsistentTypeCodeHelper</item>
 			<item>IndexColorModel</item>
 			<item>IndexOutOfBoundsException</item>
@@ -1381,8 +1329,6 @@
 			<item>InputMismatchException</item>
 			<item>InputSource</item>
 			<item>InputStream</item>
-			<item>InputStream</item>
-			<item>InputStream</item>
 			<item>InputStreamReader</item>
 			<item>InputSubset</item>
 			<item>InputVerifier</item>
@@ -1413,7 +1359,6 @@
 			<item>InterruptedNamingException</item>
 			<item>InterruptibleChannel</item>
 			<item>IntrospectionException</item>
-			<item>IntrospectionException</item>
 			<item>Introspector</item>
 			<item>Invalid</item>
 			<item>InvalidActivityException</item>
@@ -1424,20 +1369,15 @@
 			<item>InvalidApplicationException</item>
 			<item>InvalidAttributeIdentifierException</item>
 			<item>InvalidAttributeValueException</item>
-			<item>InvalidAttributeValueException</item>
 			<item>InvalidAttributesException</item>
 			<item>InvalidClassException</item>
 			<item>InvalidDnDOperationException</item>
-			<item>InvalidKeyException</item>
 			<item>InvalidKeyException</item>
 			<item>InvalidKeySpecException</item>
 			<item>InvalidMarkException</item>
 			<item>InvalidMidiDataException</item>
 			<item>InvalidName</item>
-			<item>InvalidName</item>
-			<item>InvalidName</item>
 			<item>InvalidNameException</item>
-			<item>InvalidNameHelper</item>
 			<item>InvalidNameHelper</item>
 			<item>InvalidNameHolder</item>
 			<item>InvalidObjectException</item>
@@ -1462,7 +1402,6 @@
 			<item>InvalidTransactionException</item>
 			<item>InvalidTypeForEncoding</item>
 			<item>InvalidTypeForEncodingHelper</item>
-			<item>InvalidValue</item>
 			<item>InvalidValue</item>
 			<item>InvalidValueHelper</item>
 			<item>InvocationEvent</item>
@@ -1691,7 +1630,6 @@
 			<item>LinkedHashMap</item>
 			<item>LinkedHashSet</item>
 			<item>LinkedList</item>
-			<item>List</item>
 			<item>List</item>
 			<item>ListCellRenderer</item>
 			<item>ListDataEvent</item>
@@ -1996,8 +1934,6 @@
 			<item>NameNotFoundException</item>
 			<item>NameParser</item>
 			<item>NameValuePair</item>
-			<item>NameValuePair</item>
-			<item>NameValuePairHelper</item>
 			<item>NameValuePairHelper</item>
 			<item>NameValuePairSeqHelper</item>
 			<item>NamedNodeMap</item>
@@ -2097,14 +2033,12 @@
 			<item>OBJ_ADAPTER</item>
 			<item>OMGVMCID</item>
 			<item>ORB</item>
-			<item>ORB</item>
 			<item>ORBIdHelper</item>
 			<item>ORBInitInfo</item>
 			<item>ORBInitInfoOperations</item>
 			<item>ORBInitializer</item>
 			<item>ORBInitializerOperations</item>
 			<item>ObjID</item>
-			<item>Object</item>
 			<item>Object</item>
 			<item>ObjectAlreadyActive</item>
 			<item>ObjectAlreadyActiveHelper</item>
@@ -2114,8 +2048,6 @@
 			<item>ObjectHelper</item>
 			<item>ObjectHolder</item>
 			<item>ObjectIdHelper</item>
-			<item>ObjectIdHelper</item>
-			<item>ObjectImpl</item>
 			<item>ObjectImpl</item>
 			<item>ObjectInput</item>
 			<item>ObjectInputStream</item>
@@ -2159,7 +2091,6 @@
 			<item>OpenMBeanParameterInfo</item>
 			<item>OpenMBeanParameterInfoSupport</item>
 			<item>OpenType</item>
-			<item>OpenType</item>
 			<item>OperatingSystemMXBean</item>
 			<item>Operation</item>
 			<item>OperationNotSupportedException</item>
@@ -2171,8 +2102,6 @@
 			<item>OutOfMemoryError</item>
 			<item>OutputDeviceAssigned</item>
 			<item>OutputKeys</item>
-			<item>OutputStream</item>
-			<item>OutputStream</item>
 			<item>OutputStream</item>
 			<item>OutputStreamWriter</item>
 			<item>OverlappingFileLockException</item>
@@ -2225,7 +2154,6 @@
 			<item>PanelUI</item>
 			<item>Paper</item>
 			<item>ParagraphView</item>
-			<item>ParagraphView</item>
 			<item>Parameter</item>
 			<item>ParameterBlock</item>
 			<item>ParameterDescriptor</item>
@@ -2236,7 +2164,6 @@
 			<item>ParameterizedType</item>
 			<item>ParseException</item>
 			<item>ParsePosition</item>
-			<item>Parser</item>
 			<item>Parser</item>
 			<item>ParserAdapter</item>
 			<item>ParserConfigurationException</item>
@@ -2250,7 +2177,6 @@
 			<item>PathIterator</item>
 			<item>Pattern</item>
 			<item>PatternSyntaxException</item>
-			<item>Permission</item>
 			<item>Permission</item>
 			<item>PermissionCollection</item>
 			<item>Permissions</item>
@@ -2273,8 +2199,6 @@
 			<item>Point2D.Double</item>
 			<item>Point2D.Float</item>
 			<item>PointerInfo</item>
-			<item>Policy</item>
-			<item>Policy</item>
 			<item>Policy</item>
 			<item>PolicyError</item>
 			<item>PolicyErrorCodeHelper</item>
@@ -2312,7 +2236,6 @@
 			<item>PreferencesFactory</item>
 			<item>PreparedStatement</item>
 			<item>PresentationDirection</item>
-			<item>Principal</item>
 			<item>Principal</item>
 			<item>PrincipalHolder</item>
 			<item>PrintEvent</item>
@@ -2391,7 +2314,6 @@
 			<item>Provider.Service</item>
 			<item>ProviderException</item>
 			<item>Proxy</item>
-			<item>Proxy</item>
 			<item>Proxy.Type</item>
 			<item>ProxySelector</item>
 			<item>PublicKey</item>
@@ -2468,7 +2390,6 @@
 			<item>ReentrantReadWriteLock.WriteLock</item>
 			<item>Ref</item>
 			<item>RefAddr</item>
-			<item>Reference</item>
 			<item>Reference</item>
 			<item>ReferenceQueue</item>
 			<item>ReferenceUriSchemesSupported</item>
@@ -2817,7 +2738,6 @@
 			<item>StateEditable</item>
 			<item>StateFactory</item>
 			<item>Statement</item>
-			<item>Statement</item>
 			<item>StreamCorruptedException</item>
 			<item>StreamHandler</item>
 			<item>StreamPrintService</item>
@@ -2996,13 +2916,10 @@
 			<item>TimeZone</item>
 			<item>TimeoutException</item>
 			<item>Timer</item>
-			<item>Timer</item>
-			<item>Timer</item>
 			<item>TimerAlarmClockNotification</item>
 			<item>TimerMBean</item>
 			<item>TimerNotification</item>
 			<item>TimerTask</item>
-			<item>Timestamp</item>
 			<item>Timestamp</item>
 			<item>TitledBorder</item>
 			<item>TooManyListenersException</item>
@@ -3052,9 +2969,6 @@
 			<item>TypeInfo</item>
 			<item>TypeInfoProvider</item>
 			<item>TypeMismatch</item>
-			<item>TypeMismatch</item>
-			<item>TypeMismatch</item>
-			<item>TypeMismatchHelper</item>
 			<item>TypeMismatchHelper</item>
 			<item>TypeNotPresentException</item>
 			<item>TypeVariable</item>
@@ -3072,7 +2986,6 @@
 			<item>ULongLongSeqHolder</item>
 			<item>ULongSeqHelper</item>
 			<item>ULongSeqHolder</item>
-			<item>UNKNOWN</item>
 			<item>UNKNOWN</item>
 			<item>UNSUPPORTED_POLICY</item>
 			<item>UNSUPPORTED_POLICY_VALUE</item>
@@ -3111,7 +3024,6 @@
 			<item>UnknownFormatConversionException</item>
 			<item>UnknownFormatFlagsException</item>
 			<item>UnknownGroupException</item>
-			<item>UnknownHostException</item>
 			<item>UnknownHostException</item>
 			<item>UnknownObjectException</item>
 			<item>UnknownServiceException</item>
@@ -3215,7 +3127,6 @@
 			<item>X509CRLEntry</item>
 			<item>X509CRLSelector</item>
 			<item>X509CertSelector</item>
-			<item>X509Certificate</item>
 			<item>X509Certificate</item>
 			<item>X509EncodedKeySpec</item>
 			<item>X509ExtendedKeyManager</item>
@@ -3527,7 +3438,6 @@
 			<item>SimpleScriptContext</item>
 			<item>SimpleTypeVisitor6</item>
 			<item>SOAPBinding</item>
-			<item>SOAPBinding</item>
 			<item>SOAPBody</item>
 			<item>SOAPBodyElement</item>
 			<item>SOAPConnection</item>
@@ -3702,26 +3612,17 @@
 			
 <!-- 			end new classes -->
 		</list>
+
+		<!-- https://docs.oracle.com/javase/specs/jls/se20/html/jls-3.html#jls-Keyword -->
 		<list name="keywords">
 			<item>abstract</item>
-			<item>break</item>
-			<item>case</item>
-			<item>catch</item>
 			<item>class</item>
-			<item>continue</item>
 			<item>default</item>
-			<item>do</item>
-			<item>else</item>
 			<item>enum</item>
 			<item>extends</item>
 			<item>false</item>
-			<item>finally</item>
-			<item>for</item>
-			<item>goto</item>
-			<item>if</item>
 			<item>implements</item>
 			<item>instanceof</item>
-			<item>@interface</item>
 			<item>interface</item>
 			<item>native</item>
 			<item>new</item>
@@ -3729,19 +3630,38 @@
 			<item>private</item>
 			<item>protected</item>
 			<item>public</item>
-			<item>return</item>
 			<item>super</item>
 			<item>strictfp</item>
-			<item>switch</item>
 			<item>synchronized</item>
 			<item>this</item>
 			<item>throws</item>
-			<item>throw</item>
 			<item>transient</item>
 			<item>true</item>
-			<item>try</item>
 			<item>volatile</item>
+			<!-- contextual -->
+			<item>non-sealed</item>
+			<item>permits</item>
+			<item>record</item>
+			<item>sealed</item>
+		</list>
+		<list name="control flow">
+			<item>assert</item>
+			<item>break</item>
+			<item>case</item>
+			<item>catch</item>
+			<item>continue</item>
+			<item>do</item>
+			<item>else</item>
+			<item>finally</item>
+			<item>for</item>
+			<item>goto</item>
+			<item>if</item>
+			<item>return</item>
+			<item>switch</item>
+			<item>throw</item>
+			<item>try</item>
 			<item>while</item>
+			<item>yield</item>
 		</list>
 		<list name="types">
 			<item>boolean</item>
@@ -3755,87 +3675,158 @@
 			<item>long</item>
 			<item>short</item>
 			<item>static</item>
+			<item>var</item>
 			<item>void</item>
 		</list>
+
+		<list name="annotations">
+			<!-- builtin -->
+			<item>@Override</item>
+			<item>@Deprecated</item>
+			<item>@SuppressWarnings</item>
+			<item>@SafeVarargs</item>
+			<item>@FunctionalInterface</item>
+			<item>@interface</item>
+			<!-- java.lang.annotation -->
+			<item>@Retention</item>
+			<item>@Documented</item>
+			<item>@Target</item>
+			<item>@Inherited</item>
+			<item>@Repeatable</item>
+		</list>
+
+		<!-- https://docs.oracle.com/javase/specs/jls/se20/html/jls-3.html -->
+
 		<contexts>
 			<context attribute="Normal Text" lineEndContext="#stay" name="Normal">
-				<!-- Comment next line if you don't use Javadoc tool -->
-				<IncludeRules context="##Javadoc"/>
-				<keyword attribute="Keyword" context="#stay" String="keywords"/>
-				<keyword attribute="Data Type" context="#stay" String="types"/>
-				<keyword attribute="Java15" context="#stay" String="java15"/>
-				<RegExpr attribute="Float" context="#stay" String="(\b&int;\.?|(\b&int;)?\.&int;)([eE][\-\+]?&int;[fFdD]?|[fFdD])\b"/>
-				<RegExpr attribute="Float" context="#stay" String="(\b&int;\.|(\b&int;)?\.&int;\b)"/>
-				<RegExpr attribute="Float" context="#stay" String="\b0[xX](&hex;\.?|(&hex;)?\.&hex;)[pP][\-\+]?&int;[fFdD]?\b"/>
-				<RegExpr attribute="Hex" context="#stay" String="\b0[xX]&hex;[lL]?\b"/>
-				<RegExpr attribute="Binary" context="#stay" String="\b0[bB][01]([01_]*[01])?[lL]?\b"/>
-				<RegExpr attribute="Octal" context="#stay" String="\b0[0-7]([0-7_]*[0-7])?[lL]?\b"/>
-				<RegExpr attribute="Decimal" context="#stay" String="\b(0|[1-9]([0-9_]*[0-9])?)[lL]?\b"/>
-				<HlCChar attribute="Char" context="#stay"/>
-				<RegExpr attribute="Char" context="#stay" String="'\\u[0-9a-fA-F]{4}'"/>
-				<RegExpr attribute="Decimal" context="#stay" String="//\s*BEGIN.*$" beginRegion="Region1"/>
-				<RegExpr attribute="Decimal" context="#stay" String="//\s*END.*$" endRegion="Region1"/>
-				<DetectChar attribute="String" context="String" char="&quot;"/>
-				<RegExpr attribute="Function" context="EnterPrintf" String="\.(format|printf)\b"/>
-				<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
-				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+				<DetectSpaces context="#stay"/>
+
+				<DetectChar attribute="Symbol" context="Dot" char="." lookAhead="1"/>
 				<DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1"/>
 				<DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1"/>
-				<RegExpr attribute="Keyword" context="#stay" String="\.{3,3}\s+" />
-				<RegExpr attribute="Keyword" context="StaticImports" String="\b(import\s+static)\b" />
-				<RegExpr attribute="Keyword" context="Imports" String="\b(package|import)\b" />
-				<RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*(/\*\s*\d+\s*\*/\s*)?[(])" />
-				<RegExpr attribute="Annotation" context="#stay" String="@[_\w][_\w\d]*" />
-				<RegExpr attribute="Symbol" context="Member" String="[.]{1,1}" />
+				<DetectChar attribute="Annotation" context="Annotation" char="@" />
 				<DetectChar attribute="Symbol" context="InFunctionCall" char="("/>
-				<AnyChar attribute="Symbol" context="#stay" String=":!%&amp;+,-/.*&lt;=&gt;?[]|~^&#59;"/>
+
+				<!-- Comment next line if you don't use Javadoc tool -->
+				<IncludeRules context="##Javadoc"/>
+				<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+
+				<AnyChar attribute="Symbol" context="#stay" String="[]&amp;|+,-/*&lt;=&gt;;!%?:~^"/>
+
+				<AnyChar context="Number" String="0123456789" lookAhead="1"/>
+
+				<StringDetect attribute="Text Block" context="TextBlock" String="&quot;&quot;&quot;"/>
+				<DetectChar attribute="String" context="String" char="&quot;"/>
+				<DetectChar context="Char" char="'" lookAhead="1"/>
+
+				<keyword attribute="Keyword" context="#stay" String="keywords"/>
+				<keyword attribute="Control Flow" context="#stay" String="control flow"/>
+				<keyword attribute="Data Type" context="#stay" String="types"/>
+				<keyword attribute="Java15" context="#stay" String="java15"/>
+
+				<WordDetect attribute="Keyword" context="Imports" String="package" />
+				<WordDetect attribute="Keyword" context="ImportsOrStaticImports" String="import" />
+
+				<RegExpr attribute="Function" context="#stay" String="\b[_a-zA-Z]\w*(?=[\s]*(/\*\s*\d+\s*\*/\s*)?[(])" />
+				<WordDetect attribute="Keyword" context="ImportsOrStaticImports" String="non-sealed" />
+				<DetectIdentifier attribute="Normal Text"/>
 			</context>
+
+			<context attribute="Normal Text" lineEndContext="#stay" name="Number">
+				<IncludeRules context="FindFloat"/>
+				<RegExpr attribute="Hex" context="#pop" String="\b0[xX]&hex;[lL]?\b"/>
+				<RegExpr attribute="Binary" context="#pop" String="\b0[bB][01]++(_++[01]++)*+[lL]?\b"/>
+				<RegExpr attribute="Octal" context="#pop" String="\b0_*+[0-7]++(_++[0-7_]++)*+[lL]?\b"/>
+				<RegExpr attribute="Decimal" context="#pop" String="\b(0|[1-9][0-9]*+(_++[0-9_]++)*+)[lL]?\b"/>
+				<AnyChar attribute="Error" context="#pop" String="0123456789"/>
+			</context>
+			<context attribute="Normal Text" lineEndContext="#stay" name="FindFloat">
+				<RegExpr attribute="Float" context="#pop" String="&float;|&hexfloat;"/>
+			</context>
+
+			<context attribute="Normal Text" lineEndContext="#stay" name="Char">
+				<HlCChar attribute="Char" context="#pop"/>
+				<RegExpr attribute="Char" context="#pop" String="'\\u+[0-9a-fA-F]{4}'"/>
+				<RegExpr attribute="Error" context="#pop" String="'(\\(u+[0-9a-fA-F]*|.))?'?"/>
+			</context>
+
 			<context attribute="Normal Text" lineEndContext="#stay" name="InFunctionCall">
 				<IncludeRules context="Normal"/>
 				<DetectChar attribute="Symbol" context="#pop" char=")"/>
 			</context>
+
 			<context attribute="String" lineEndContext="#pop" name="String">
-				<LineContinue attribute="String" context="#stay"/>
-				<HlCStringChar attribute="String Char" context="#stay"/>
-				<RegExpr attribute="String Char" context="#stay" String="\\u[0-9a-fA-F]{4}"/>
+				<DetectChar context="StringEscapedChar" char="\" lookAhead="1"/>
 				<DetectChar attribute="String" context="#pop" char="&quot;"/>
 			</context>
-			<context attribute="Normal Text" lineEndContext="#stay" name="EnterPrintf" fallthrough="true" fallthroughContext="#pop">
-				<DetectChar attribute="Symbol" context="Printf" char="("/>
+			<context attribute="String" lineEndContext="#pop" name="StringEscapedChar">
+				<HlCStringChar attribute="String Char" context="#pop"/>
+				<RegExpr attribute="String Char" context="#pop" String="\\u+[0-9a-fA-F]{4}"/>
+				<RegExpr attribute="Error" context="#pop" String="\\(u+[0-9a-fA-F]*|.)?"/>
+			</context>
+
+			<context attribute="Text Block" lineEndContext="#stay" name="TextBlock">
+				<DetectChar context="StringEscapedChar" char="\" lookAhead="1"/>
+				<StringDetect attribute="Text Block" context="#pop" String="&quot;&quot;&quot;"/>
+			</context>
+
+			<context attribute="Normal Text" lineEndContext="#stay" name="Printf" fallthroughContext="#pop">
+				<DetectChar attribute="Symbol" context="#pop!InPrintf" char="("/>
 				<DetectSpaces attribute="Normal Text" context="#stay"/>
 			</context>
-			<context attribute="Normal Text" lineEndContext="#stay" name="Printf">
+			<context attribute="Normal Text" lineEndContext="#stay" name="InPrintf">
 				<DetectChar attribute="String" context="PrintfString" char="&quot;"/>
 				<IncludeRules context="InFunctionCall"/>
 			</context>
 			<context attribute="PrintfString" lineEndContext="#pop" name="PrintfString">
-				<LineContinue attribute="String" context="#stay"/>
-				<HlCStringChar attribute="String Char" context="#stay"/>
-				<DetectChar attribute="String" context="#pop" char="&quot;"/>
-				<RegExpr attribute="String Char" context="#stay" String="%(\d+\$)?(-|#|\+|\ |0|,|\()*\d*(\.\d+)?[a-hosxA-CEGHSX]" />
-				<RegExpr attribute="String Char" context="#stay" String="%(\d+\$)?(-|#|\+|\ |0|,|\()*\d*(t|T)(a|A|b|B|c|C|d|D|e|F|h|H|I|j|k|l|L|m|M|N|p|P|Q|r|R|s|S|T|y|Y|z|Z)" />
-				<RegExpr attribute="String Char" context="#stay" String="%(%|n)" />
+				<IncludeRules context="String"/>
+				<RegExpr attribute="String Char" context="#stay" String="%((\d+\$)?[-#+ 0,(]*\d*((\.\d+)?[a-hosxA-CEGHSX]|[tT][aAbBcCdDeFhHIjklLmMNpPQrRsSTyYzZ])|[%n])" />
 			</context>
-			<context attribute="Normal Text" lineEndContext="#pop" name="Member" fallthrough="true" fallthroughContext="#pop">
-				<RegExpr attribute="Function" context="#pop" String="\b[_a-zA-Z]\w*(?=[\s]*)" />
+
+			<context attribute="Normal Text" lineEndContext="#stay" name="Dot">
+				<StringDetect attribute="Keyword" context="#pop" String="..." />
+				<IncludeRules context="FindFloat"/>
+				<DetectChar attribute="Symbol" context="#pop!Member" char="." />
 			</context>
-			<context attribute="Normal Text" lineEndContext="#pop" name="StaticImports">
-				<RegExpr attribute="StaticImports" context="#pop" String="\s*.*;" />
+			<context attribute="Normal Text" lineEndContext="#stay" name="Member" fallthroughContext="#pop">
+				<DetectSpaces attribute="Normal Text" context="#stay"/>
+				<WordDetect attribute="Function" context="#pop!Printf" String="printf"/>
+				<WordDetect attribute="Function" context="#pop!Printf" String="format"/>
+				<DetectIdentifier attribute="Function" context="#pop"/>
 			</context>
-			<context attribute="Normal Text" lineEndContext="#pop" name="Imports">
-				<RegExpr attribute="Imports" context="#pop" String="\s*.*;" />
+
+			<context attribute="Normal Text" lineEndContext="#pop" name="Annotation" fallthroughContext="#pop">
+				<DetectIdentifier attribute="Annotation" context="#pop"/>
 			</context>
+
+			<context attribute="Normal Text" lineEndContext="#pop" name="ImportsOrStaticImports" fallthroughContext="#pop!Imports">
+				<DetectSpaces attribute="Normal Text"/>
+				<WordDetect attribute="Keyword" context="#pop!StaticImports" String="static"/>
+			</context>
+			<context attribute="StaticImports" lineEndContext="#pop" name="StaticImports">
+				<IncludeRules context="Imports"/>
+			</context>
+			<context attribute="Imports" lineEndContext="#pop" name="Imports">
+				<AnyChar attribute="Symbol" context="#stay" String=".*"/>
+				<DetectChar attribute="Symbol" context="#pop" char=";"/>
+			</context>
+
 			<context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
-				<IncludeRules context="##Alerts"/>
+				<DetectSpaces />
+				<IncludeRules context="##Comments"/>
 			</context>
 			<context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
 				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-				<IncludeRules context="##Alerts"/>
+				<DetectSpaces />
+				<IncludeRules context="##Comments"/>
 			</context>
+
 		</contexts>
 		<itemDatas>
 			<itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
 			<itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+			<itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="false"/>
 			<itemData name="Annotation"   defStyleNum="dsAttribute" spellChecking="false"/>
 			<itemData name="Function"     defStyleNum="dsFunction" spellChecking="false"/>
 			<itemData name="StaticImports" defStyleNum="dsImport" spellChecking="false"/>
@@ -3847,19 +3838,22 @@
 			<itemData name="Binary"       defStyleNum="dsBaseN" spellChecking="false"/>
 			<itemData name="Float"        defStyleNum="dsFloat" spellChecking="false"/>
 			<itemData name="Char"         defStyleNum="dsChar" spellChecking="false"/>
+			<itemData name="Text Block"   defStyleNum="dsString"/>
 			<itemData name="String"       defStyleNum="dsString"/>
 			<itemData name="String Char"  defStyleNum="dsSpecialChar" spellChecking="false"/>
 			<itemData name="PrintfString" defStyleNum="dsString"/>
 			<itemData name="Comment"      defStyleNum="dsComment"/>
-			<itemData name="Symbol"       defStyleNum="dsNormal" spellChecking="false"/>
+			<itemData name="Symbol"       defStyleNum="dsOperator" spellChecking="false"/>
 			<itemData name="Java15"       defStyleNum="dsBuiltIn" spellChecking="false"/>
+			<itemData name="Error"       defStyleNum="dsError" spellChecking="false"/>
 		</itemDatas>
 	</highlighting>
 	<general>
 		<comments>
-			<comment name="singleLine" start="//"/>
-			<comment name="multiLine" start="/*" end="*/"/>
+			<comment name="singleLine" start="//" position="afterwhitespace"/>
+			<comment name="multiLine" start="/*" end="*/" region="Comment"/>
 		</comments>
 		<keywords casesensitive="1"/>
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

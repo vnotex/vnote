@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!-- Author: Dominik Holland <dominik.holland@qt.io> -->
+<language name="QFace" version="5" kateversion="5.62" section="Scripts" extensions="*.qface"
+          mimetype="text/x-qface;application/x-qface" indenter="cstyle"
+          author="Dominik Holland (dominik.holland@qt.io), Zoltan Gera (zoltan.gera@qt.io)"
+          license="MIT">
+  <highlighting>
+    <list name="modules">
+      <item>module</item>
+      <item>import</item>
+    </list>
+    <list name="YAMLconstants">
+      <item>null</item>
+      <item>Null</item>
+      <item>NULL</item>
+      <item>y</item>
+      <item>Y</item>
+      <item>yes</item>
+      <item>Yes</item>
+      <item>YES</item>
+      <item>n</item>
+      <item>N</item>
+      <item>no</item>
+      <item>No</item>
+      <item>NO</item>
+      <item>true</item>
+      <item>True</item>
+      <item>TRUE</item>
+      <item>false</item>
+      <item>False</item>
+      <item>FALSE</item>
+      <item>on</item>
+      <item>On</item>
+      <item>ON</item>
+      <item>off</item>
+      <item>Off</item>
+      <item>OFF</item>
+    </list>
+    <list name="elements">
+      <item>flag</item>
+      <item>enum</item>
+    </list>
+    <list name="objects">
+      <item>interface</item>
+      <item>struct</item>
+    </list>
+    <list name="primitives">
+      <item>string</item>
+      <item>int</item>
+      <item>bool</item>
+      <item>real</item>
+      <item>var</item>
+    </list>
+    <list name="aggregates">
+      <item>model</item>
+      <item>list</item>
+      <item>map</item>
+    </list>
+    <list name="modifiers">
+      <item>readonly</item>
+      <item>const</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text">
+        <DetectSpaces/>
+        <keyword attribute="Module" context="Module" String="modules" />
+        <keyword attribute="Elements" context="Object" String="objects" />
+        <keyword attribute="Elements" context="Element" String="elements" />
+        <IncludeRules context="Basic" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Basic">
+        <DetectChar attribute="Annotation" context="AnnotationLeadIn" char="@" />
+        <IncludeRules context="Common" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Common">
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <DetectChar attribute="String" context="AltString" char="'" />
+        <StringDetect attribute="Documentation" context="Documentation" String="/**" beginRegion="Documentation" />
+        <HlCHex attribute="NumberBaseN" context="#stay" />
+        <Float attribute="Float" context="#stay" />
+        <Int attribute="Number" context="#stay" />
+        <IncludeRules context="Comment" />
+      </context>
+      <context attribute="Module" lineEndContext="#pop" name="Module">
+        <DetectSpaces/>
+        <DetectIdentifier attribute="Module Name" context="#stay"/>
+        <Float attribute="Module Version" context="#pop" />
+      </context>
+      <context attribute="Annotation" lineEndContext="#pop" name="AnnotationLeadIn" fallthroughContext="#pop!Annotation">
+        <DetectIdentifier attribute="Annotation" context="#pop!Annotation" />
+      </context>
+      <context attribute="Annotation" lineEndContext="#pop" name="Annotation">
+        <DetectSpaces/>
+        <AnyChar attribute="YAML Operator" context="#stay" String=":[]{}," />
+        <RegExpr attribute="YAML Key" context="#stay" String="[a-zA-Z_][a-zA-Z0-9_]*(?=:)" />
+        <keyword attribute="YAML Constant" context="#stay" String="YAMLconstants" />
+        <IncludeRules context="Common" />
+      </context>
+      <!-- QML supports multi-line strings, which are not supported by Javascript -->
+      <context attribute="String" lineEndContext="#stay" name="String">
+        <IncludeRules context="Escape" />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="AltString">
+        <IncludeRules context="Escape" />
+        <DetectChar attribute="String" context="#pop" char="'" />
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Escape">
+        <HlCStringChar attribute="Escape" />
+        <RegExpr attribute="Escape" String="\\u[0-9a-fA-F]{4}" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Element">
+        <DetectSpaces />
+        <DetectIdentifier attribute="Element Name"/>
+        <DetectChar attribute="Normal Text" context="Element Scope" char="{" beginRegion="Brace" />
+        <IncludeRules context="Common" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Element Scope">
+        <DetectSpaces />
+        <DetectChar attribute="Operator" context="#stay" char="=" />
+        <DetectIdentifier attribute="Element Constant" />
+        <DetectChar attribute="Normal Text" char="}" endRegion="Brace" context="#pop#pop" />
+        <IncludeRules context="Basic" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Object">
+        <DetectSpaces />
+        <WordDetect attribute="Keyword" context="#stay" String="extends"/>
+        <DetectIdentifier attribute="Object Name"/>
+        <DetectChar attribute="Normal Text" context="Object Context" char="{" beginRegion="Brace" />
+        <IncludeRules context="Common" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Object Context">
+        <DetectSpaces />
+        <keyword attribute="Keyword" context="#stay" String="modifiers" />
+        <DetectChar attribute="Operator" context="#stay" char="=" />
+        <WordDetect attribute="Signal" context="Function" String="signal"/>
+        <WordDetect attribute="Primitive" context="Function" String="void"/>
+        <keyword attribute="Primitive" context="FuncOrVar" String="primitives" />
+        <keyword attribute="Aggregate" context="Aggregate" String="aggregates" />
+        <RegExpr attribute="Normal Text" context="#stay" String="[a-zA-Z_][a-zA-Z0-9_]*(?=\.)" />
+        <DetectIdentifier attribute="Property Type" context="FuncOrVar" />
+        <DetectChar attribute="Normal Text" context="#pop#pop" char="}" endRegion="Brace" />
+        <IncludeRules context="Basic" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Aggregate">
+        <DetectSpaces />
+        <keyword attribute="Primitive" context="#pop!FuncOrVar" String="primitives" />
+        <keyword attribute="Aggregate" context="#stay" String="aggregates" />
+        <RegExpr attribute="Normal Text" context="#stay" String="[a-zA-Z_][a-zA-Z0-9_]*(?=\.)" />
+        <DetectIdentifier attribute="Property Type" context="#pop!FuncOrVar" />
+        <DetectChar attribute="Normal Text" context="#pop!FuncOrVar" char=">" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="FuncOrVar">
+        <DetectSpaces />
+        <RegExpr context="#pop!Function" lookAhead="true" String="[a-zA-Z_][a-zA-Z0-9_]*\(" />
+        <DetectIdentifier context="#pop!Variable" lookAhead="true" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Function">
+        <DetectSpaces />
+        <DetectIdentifier attribute="Function Name" context="#stay" />
+        <DetectChar attribute="Operator" context="FunctionParameter" char="(" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="FunctionParameter">
+        <DetectSpaces />
+        <keyword attribute="Primitive" context="Variable" String="primitives" />
+        <keyword attribute="Aggregate" context="AggrInParam" String="aggregates" />
+        <RegExpr attribute="Normal Text" context="#stay" String="[a-zA-Z_][a-zA-Z0-9_]*(?=\.)" />
+        <DetectIdentifier attribute="Property Type" context="Variable" />
+        <DetectChar attribute="Operator" context="#stay" char="," />
+        <DetectChar attribute="Operator" context="#pop#pop" char=")" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="AggrInParam">
+        <DetectSpaces />
+        <keyword attribute="Primitive" context="#pop!Variable" String="primitives" />
+        <keyword attribute="Aggregate" context="#stay" String="aggregates" />
+        <RegExpr attribute="Normal Text" context="#stay" String="[a-zA-Z_][a-zA-Z0-9_]*(?=\.)" />
+        <DetectIdentifier attribute="Property Type" context="#pop!Variable" />
+        <DetectChar attribute="Normal Text" context="#pop!Variable" char=">" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Variable">
+        <DetectSpaces />
+        <DetectIdentifier attribute="Property Name" context="#pop" />
+      </context>
+      <context name="Comment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="CommentStar" char="/" char1="*" beginRegion="comment" />
+        <Detect2Chars attribute="Comment" context="CommentSlash" char="/" char1="/" />
+      </context>
+      <context name="CommentStar" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="comment" />
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier/>
+      </context>
+      <context name="CommentSlash" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier/>
+      </context>
+      <context attribute="Documentation" lineEndContext="#stay" name="Documentation">
+        <DetectSpaces />
+        <Detect2Chars attribute="Documentation" context="#pop" char="*" char1="/" endRegion="Documentation" />
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false" />
+      <itemData name="Comment" defStyleNum="dsComment" spellChecking="false" />
+      <itemData name="Documentation" defStyleNum="dsDocumentation" spellChecking="true" />
+      <itemData name="Module" defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="Module Name" defStyleNum="dsImport" spellChecking="true" />
+      <itemData name="Module Version" defStyleNum="dsDecVal" spellChecking="false" />
+      <itemData name="Elements" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Element Constant" defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Annotation" defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="YAML Operator" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="YAML Key" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="YAML Constant" defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Property Type" defStyleNum="dsDataType" spellChecking="false" />
+      <itemData name="Property Name" defStyleNum="dsVariable" spellChecking="true" />
+      <itemData name="Function Name" defStyleNum="dsFunction" spellChecking="true" />
+      <itemData name="Object Name" defStyleNum="dsDataType" spellChecking="true" />
+      <itemData name="Element Name" defStyleNum="dsDataType" spellChecking="true" />
+      <itemData name="Signal" defStyleNum="dsExtension" spellChecking="false"/>
+      <itemData name="Primitive" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Aggregate" defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="String" defStyleNum="dsString" spellChecking="true" />
+      <itemData name="Number" defStyleNum="dsDecVal" spellChecking="false" />
+      <itemData name="NumberBaseN" defStyleNum="dsBaseN" spellChecking="false" />
+      <itemData name="Float" defStyleNum="dsFloat" spellChecking="false" />
+      <itemData name="Operator" defStyleNum="dsOperator" spellChecking="false" />
+      <itemData name="Escape" defStyleNum="dsSpecialChar" spellChecking="false" />
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" region="comment" />
+    </comments>
+    <keywords casesensitive="1" />
+  </general>
+</language>
+
+<!-- kate: tab-width 2; replace-tabs on; indent-width 2; -->

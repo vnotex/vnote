@@ -17,6 +17,7 @@ It does **not** restate licenses that already ship next to the code they cover:
 | [KaTeX 0.16.22](https://github.com/KaTeX/KaTeX/releases/tag/v0.16.22), including its WOFF2 / WOFF / TTF fonts (MIT) | `src/data/extra/web/js/katex/LICENSE` |
 | [html-to-image 1.11.13](https://github.com/bubkoo/html-to-image/tree/v1.11.13), used for KaTeX previews and raster exports (MIT) | `src/data/extra/web/js/html-to-image/LICENSE` |
 | [reveal.js 6.0.2](https://github.com/hakimel/reveal.js/tree/6.0.2) core, black theme and white palette (MIT), including embedded Source Sans Pro fonts (SIL OFL 1.1) | `src/data/extra/web/js/reveal/LICENSE` and `LICENSE.font` |
+| KSyntaxHighlighting 6.30.0 syntax definitions and highlighting themes | `src/data/extra/syntax-highlighting/LICENSES/`; per-file license and copyright metadata are retained |
 | `libs/vxcore`, `libs/vtextedit`, `libs/QHotkey`, `libs/qwindowkit`, and the cmark fork they vendor | each submodule's own repository |
 
 The KaTeX and html-to-image runtime files are unmodified upstream distribution files.
@@ -28,6 +29,14 @@ interval and removes the load listener even before readiness. The styles and emb
 are unmodified upstream distribution assets. `web/css/presentation.css` applies the upstream
 6.0.2 white palette as scoped variable overrides, sharing the black theme’s fonts and layout.
 Both license files ship in `vnote_extra.rcc`.
+
+The syntax-highlighting bundle follows `libs/vtextedit/libs/syntax-highlighting` commit
+`3e0d1682c1f609976e21f5a07f88cceb90840193`: all checked-in syntax XMLs plus Jinja
+outputs generated with the base-language list and generator in `data/CMakeLists.txt`.
+Upstream themes retain metadata, token styles and custom styles; only unused
+`editor-colors` are omitted. VNote's `markdown-default.theme`,
+`markdown-breeze-dark.theme` and `vscode-dark.theme` remain unchanged. The upstream
+license texts ship in `vnote_extra.rcc` alongside these resources.
 
 Icon provenance below was established by comparing SVG path data against upstream, not
 by assuming from file names. Where that failed, the file says so — see

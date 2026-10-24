@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="LDIF" version="3" kateversion="2.4" section="Database" extensions="*.ldif" mimetype="application/directory" author="Andreas Hochsteger (e9625392@student.tuwien.ac.at)" license="">
+<!DOCTYPE language>
+<language name="LDIF" version="8" kateversion="5.0" section="Database" extensions="*.ldif" mimetype="application/directory" author="Andreas Hochsteger (e9625392@student.tuwien.ac.at)" license="">
 	<highlighting>
 		<list name="attributetypes">
 			<item>IPPhone</item>
@@ -258,47 +258,60 @@
 		</list>
 		<contexts>
 			<context name="ctxStart" attribute="Value (Standard)" lineEndContext="#stay">
-				<RegExpr String="#.*$" attribute="Comment" context="#stay"/>
+				<DetectChar char="#" attribute="Comment" context="Comment"/>
 				<DetectChar char=":" attribute="Description Keyword" context="ctxEncoded"/>
 				<DetectChar char="&lt;" attribute="Description Keyword" context="ctxURL"/>
 				<RegExpr String="[^:&lt;]" attribute="Value (Standard)" context="ctxStandard"/>
-				<RegExpr String="[\w\-]+((;[\w\-]+)+)?:" attribute="Description Keyword" context="#stay" column="0"/>
+				<RegExpr String="^[\w\-]+(;[\w\-]+)*:" attribute="Description Keyword" context="#stay" column="0"/>
 			</context>
 			<context name="ctxEncoded" attribute="Value (Encoded)" lineEndContext="#stay">
-				<RegExpr String="#.*$" attribute="Comment" context="#stay"/>
-				<RegExpr String="\s.*$" attribute="Value (Encoded)" context="#stay"/>
-				<RegExpr String="[\w\-]+((;[\w\-]+)+)?:" attribute="Description Keyword" context="#pop" column="0"/>
+				<DetectChar char="#" attribute="Comment" context="Comment"/>
+				<DetectSpaces attribute="Value (Encoded)" context="Value (Encoded)"/>
+				<RegExpr String="^[\w\-]+(;[\w\-]+)*:" attribute="Description Keyword" context="#pop" column="0"/>
 			</context>
 			<context name="ctxURL" attribute="Value (URL)" lineEndContext="#stay">
-				<RegExpr String="#.*$" attribute="Comment" context="#stay"/>
+				<DetectChar char="#" attribute="Comment" context="Comment"/>
 				<RegExpr String="\s+[\w]+://[\w/.]+" attribute="Value (URL)" context="#stay"/>
-				<RegExpr String="\s.*$" attribute="Value (URL)" context="#stay"/>
-				<RegExpr String="[\w\-]+((;[\w\-]+)+)?:" attribute="Description Keyword" context="#pop" column="0"/>
+				<DetectSpaces attribute="Value (URL)" context="Value (URL)"/>
+				<RegExpr String="^[\w\-]+(;[\w\-]+)*:" attribute="Description Keyword" context="#pop" column="0"/>
 			</context>
 			<context name="ctxStandard" attribute="Value (Standard)" lineEndContext="#stay">
-				<RegExpr String="#.*$" attribute="Comment" context="#stay"/>
+				<DetectChar char="#" attribute="Comment" context="Comment"/>
 				<RegExpr String="\{\w+\}.*$" attribute="Value (Encrypted)" context="ctxEncrypted"/>
 				<keyword String="attributetypes" attribute="AttributeType" context="#stay"/>
 				<keyword String="objectclasses" attribute="ObjectClass" context="#stay"/>
-				<RegExpr String="[\w\-]+((;[\w\-]+)+)?:" attribute="Description Keyword" context="#pop" column="0"/>
+				<RegExpr String="^[\w\-]+(;[\w\-]+)*:" attribute="Description Keyword" context="#pop" column="0"/>
 				<RegExpr String="[a-zA-Z0-9\-]+=" attribute="Value (Keyword)" context="#stay"/>
 			</context>
 			<context name="ctxEncrypted" attribute="Value (Encrypted)" lineEndContext="#stay">
-				<RegExpr String="#.*$" attribute="Comment" context="#stay"/>
-				<RegExpr String="\s.*$" attribute="Value (Encrypted)" context="#stay"/>
-				<RegExpr String="[\w\-]+((;[\w\-]+)+)?:" attribute="Description Keyword" context="#pop#pop" column="0"/>
+				<DetectChar char="#" attribute="Comment" context="Comment"/>
+				<DetectSpaces attribute="Value (Encrypted)" context="Value (Encrypted)"/>
+				<RegExpr String="^[\w\-]+(;[\w\-]+)*:" attribute="Description Keyword" context="#pop#pop" column="0"/>
 			</context>
+			<context name="Comment" attribute="Comment" lineEndContext="#pop">
+				<DetectSpaces />
+				<IncludeRules context="##Comments"/>
+			</context>
+			<context name="Value (URL)" attribute="Value (URL)" lineEndContext="#pop"/>
+			<context name="Value (Encoded)" attribute="Value (Encoded)" lineEndContext="#pop"/>
+			<context name="Value (Encrypted)" attribute="Value (Encrypted)" lineEndContext="#pop"/>
 		</contexts>
 		<itemDatas>
-			<itemData name="Comment"		defStyleNum="dsComment"	color="#808080" selColor="#808080" bold="0" italic="0"/>
-			<itemData name="AttributeType"		defStyleNum="dsKeyword"	color="#404040" selColor="#FFFFFF" bold="1" italic="0"/>
-			<itemData name="ObjectClass"		defStyleNum="dsKeyword"	color="#800080" selColor="#FFFFFF" bold="1" italic="0"/>
-			<itemData name="Description Keyword"	defStyleNum="dsKeyword"	color="#000000" selColor="#FFFFFF" bold="1" italic="0"/>
-			<itemData name="Value (Standard)"	defStyleNum="dsString"	color="#008000" selColor="#008000" bold="0" italic="0"/>
-			<itemData name="Value (Encoded)"	defStyleNum="dsString"	color="#FF8000" selColor="#0080FF" bold="0" italic="0"/>
-			<itemData name="Value (Encrypted)"	defStyleNum="dsString"	color="#FF0000" selColor="#00FFFF" bold="0" italic="0"/>
-			<itemData name="Value (Keyword)"	defStyleNum="dsString"	color="#008000" selColor="#800080" bold="1" italic="0"/>
-			<itemData name="Value (URL)"		defStyleNum="dsString"	color="#0000FF" selColor="#FFFF00" bold="0" italic="0"/>
+			<itemData name="Comment"             defStyleNum="dsComment" /> <!-- #808080 -->
+			<itemData name="AttributeType"       defStyleNum="dsFunction"    bold="1" italic="0" spellChecking="false" /> <!-- #404040 -->
+			<itemData name="ObjectClass"         defStyleNum="dsExtension"   bold="1" spellChecking="false" /> <!-- #800080 -->
+			<itemData name="Description Keyword" defStyleNum="dsKeyword"     bold="1" spellChecking="false" /> <!-- #000000 -->
+			<itemData name="Value (Standard)"    defStyleNum="dsOthers"      bold="0" spellChecking="false" /> <!-- #008000 -->
+			<itemData name="Value (Encoded)"     defStyleNum="dsInformation" bold="0" spellChecking="false" /> <!-- #FF8000 -->
+			<itemData name="Value (Encrypted)"   defStyleNum="dsWarning"     bold="0" spellChecking="false" /> <!-- #FF0000 -->
+			<itemData name="Value (Keyword)"     defStyleNum="dsOthers"      bold="1" spellChecking="false" /> <!-- #008000 -->
+			<itemData name="Value (URL)"         defStyleNum="dsAttribute"   bold="0" spellChecking="false" /> <!-- #0000FF -->
 		</itemDatas>
 	</highlighting>
+	<general>
+		<comments>
+			<comment name="singleLine" start="#"/>
+		</comments>
+	</general>
 </language>
+<!-- kate: replace-tabs off; -->

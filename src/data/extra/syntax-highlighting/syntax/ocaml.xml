@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Kate syntax highlighting for Objective Caml version 4.02 in the standard and revised syntaxes, with Ocamldoc comments. -->
 
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 <!-- Regular expresion constants: -->
 <!ENTITY LOWER  "a-z\300-\326\330-\337">         <!-- Lowercase Latin-1 letters. -->
@@ -9,17 +9,18 @@
 <!ENTITY LETTER "&LOWER;&UPPER;">                <!-- All Latin-1 letters. -->
 <!ENTITY LIDENT "[&LOWER;_][&LETTER;0-9_']*">    <!-- Lowercase OCaml identifiers. -->
 <!ENTITY UIDENT "`?[&UPPER;][&LETTER;0-9_']*">   <!-- Uppercase OCaml identifiers. -->
-<!ENTITY IDENT  "`?[&LETTER;][&LETTER;0-9_']*">  <!-- All OCaml identifiers. -->
-<!ENTITY ESC    "(\\[ntbr'&quot;\\]|\\[0-9]{3}|\\x[0-9A-Fa-f]{2})"> <!-- OCaml character code escapes. -->
+<!ENTITY IDENT  "[&LETTER;_][&LETTER;0-9_']*">  <!-- All OCaml identifiers. -->
+<!ENTITY ESC    "(\\[ntbr'&quot; \\]|\\[0-9]{3}|\\x[0-9A-Fa-f]{2}|\\o[0-3][0-7]{2})"> <!-- OCaml character code escapes. -->
 <!ENTITY DEC    "[0-9][0-9_]*">                                     <!-- Decimal digits with underscores. -->
+<!ENTITY HEX    "0[xX][0-9A-Fa-f][0-9A-Fa-f_]*">                    <!-- Integer hex literals. -->
 ]>
 <language name="Objective Caml"
           extensions="*.ml;*.mli"
           mimetype="text/x-ocaml"
           section="Sources"
-          version="6"
+          version="12"
           priority="10"
-          kateversion="2.4"
+          kateversion="6.22"
           author="Glyn Webster (glynwebster@orcon.net.nz) and Vincent Hugot (vincent.hugot@gmail.com)"
           license="LGPL" >
 
@@ -36,7 +37,6 @@
       <item>asr</item>
       <item>begin</item>
       <item>class</item>
-      <item>closed</item>
       <item>constraint</item>
       <item>do</item>
       <item>done</item>
@@ -54,6 +54,7 @@
       <item>in</item>
       <item>include</item>
       <item>inherit</item>
+      <item>initializer</item>
       <item>land</item>
       <item>lazy</item>
       <item>let</item>
@@ -102,11 +103,15 @@
       <item>abs</item>
       <item>abs_float</item>
       <item>acos</item>
+      <item>acosh</item>
       <item>asin</item>
+      <item>asinh</item>
       <item>at_exit</item>
       <item>atan</item>
       <item>atan2</item>
+      <item>atanh</item>
       <item>bool_of_string</item>
+      <item>bool_of_string_opt</item>
       <item>ceil</item>
       <item>char_of_int</item>
       <item>classify_float</item>
@@ -120,12 +125,14 @@
       <item>cosh</item>
       <item>decr</item>
       <item>do_at_exit</item>
+      <item>do_domain_local_at_exit</item>
       <item>epsilon_float</item>
       <item>exp</item>
       <item>expm1</item>
       <item>float</item>
       <item>float_of_int</item>
       <item>float_of_string</item>
+      <item>float_of_string_opt</item>
       <item>floor</item>
       <item>flush</item>
       <item>flush_all</item>
@@ -146,6 +153,7 @@
       <item>int_of_char</item>
       <item>int_of_float</item>
       <item>int_of_string</item>
+      <item>int_of_string_opt</item>
       <item>ldexp</item>
       <item>lnot</item>
       <item>log</item>
@@ -195,7 +203,9 @@
       <item>print_newline</item>
       <item>print_string</item>
       <item>read_float</item>
+      <item>read_float_opt</item>
       <item>read_int</item>
+      <item>read_int_opt</item>
       <item>read_line</item>
       <item>really_input</item>
       <item>really_input_string</item>
@@ -240,6 +250,7 @@
       <item>char</item>
       <item>exn</item>
       <item>float</item>
+      <item>format</item>
       <item>format4</item>
       <item>format6</item>
       <item>fpclass</item>
@@ -253,19 +264,21 @@
       <item>open_flag</item>
       <item>option</item>
       <item>out_channel</item>
-      <item>real</item>
       <item>ref</item>
+      <item>result</item>
       <item>string</item>
       <item>unit</item>
     </list>
 
     <list name="Pervasive Variant Tags">
+      <item>Error</item>
       <item>FP_infinite</item>
       <item>FP_nan</item>
       <item>FP_normal</item>
       <item>FP_subnormal</item>
       <item>FP_zero</item>
       <item>None</item>
+      <item>Ok</item>
       <item>Open_append</item>
       <item>Open_binary</item>
       <item>Open_creat</item>
@@ -298,18 +311,29 @@
       <item>Arg</item>
       <item>Array</item>
       <item>ArrayLabels</item>
+      <item>Atomic</item>
+      <item>Bigarray</item>
+      <item>Bool</item>
       <item>Buffer</item>
       <item>Bytes</item>
+      <item>BytesLabels</item>
       <item>Callback</item>
       <item>Char</item>
       <item>Complex</item>
+      <item>Condition</item>
       <item>Digest</item>
+      <item>Domain</item>
+      <item>Effect</item>
+      <item>Either</item>
       <item>Ephemeron</item>
       <item>Filename</item>
       <item>Format</item>
+      <item>Fun</item>
       <item>Gc</item>
       <item>Genlex</item>
       <item>Hashtbl</item>
+      <item>In_channel</item>
+      <item>Int</item>
       <item>Int32</item>
       <item>Int64</item>
       <item>Lazy</item>
@@ -319,14 +343,20 @@
       <item>Map</item>
       <item>Marshal</item>
       <item>MoreLabels</item>
+      <item>Mutex</item>
       <item>Nativeint</item>
+      <item>Obj</item>
       <item>Oo</item>
+      <item>Option</item>
+      <item>Out_channel</item>
       <item>Parsing</item>
       <item>Printexc</item>
       <item>Printf</item>
       <item>Queue</item>
       <item>Random</item>
       <item>Scanf</item>
+      <item>Semaphore</item>
+      <item>Seq</item>
       <item>Set</item>
       <item>Sort</item>
       <item>Spacetime</item>
@@ -336,18 +366,15 @@
       <item>String</item>
       <item>StringLabels</item>
       <item>Sys</item>
+      <item>Type</item>
       <item>Uchar</item>
+      <item>Unit</item>
       <item>Weak</item>
     </list>
 
     <contexts>
 
       <context name="Code" lineEndContext="#stay" attribute="Operator">
-
-        <!-- ] and ]} close code samples in Ocamldoc, so -->
-        <!-- nested [ ] and { } brackets have to be allowed for: -->
-        <DetectChar char="[" context="Nested Code 1" attribute="Operator" />
-        <DetectChar char="{" context="Nested Code 2" attribute="Operator" />
 
         <!-- Comments. -->
         <!-- A (** begins a special comment with Ocamldoc documentation markup. -->
@@ -359,16 +386,22 @@
         <!-- Interpreter directives. -->
         <!-- (These are lines where the first symbol is a '#' followed by an identifier. -->
         <!-- Such lines could also be part of a method call split over two lines but     -->
-        <!-- it's unlikey anyone would code like that.)                                  -->
+        <!-- it's unlikely anyone would code like that.)                                  -->
         <RegExpr String="#&IDENT;.*$" context="#stay" firstNonSpace="true" attribute="Directive"/>
 
         <!-- String, character and Camlp4 "quotation" constants.              -->
         <!-- Note: If you must modify the pattern for characters be precise:  -->
         <!-- single quotes have several meanings in Ocaml.                    -->
         <DetectChar char="&quot;" context="String" attribute="String" />
+        <RegExpr String="{[a-z_]*\|" context="Quoted String" attribute="Quoted String" />
         <RegExpr String="'(&ESC;|[^'])'" context="#stay" attribute="Character" />
         <Detect2Chars char="&lt;" char1="&lt;" context="Camlp4 Quotation" attribute="Camlp4 Quotation" />
         <RegExpr String="&lt;:&IDENT;&lt;" context="Camlp4 Quotation" attribute="Camlp4 Quotation" />
+
+        <!-- ] and ]} close code samples in Ocamldoc, so -->
+        <!-- nested [ ] and { } brackets have to be allowed for: -->
+        <DetectChar char="[" context="Nested Code 1" attribute="Operator" />
+        <DetectChar char="{" context="Nested Code 2" attribute="Operator" />
 
         <!-- Identifiers and keywords. -->
         <keyword String="Keywords"                 context="#stay" attribute="Keyword" />
@@ -384,11 +417,11 @@
 
         <!-- Numeric constants. -->
         <!-- Note that they may contain underscores. -->
-        <RegExpr String="-?0[xX][0-9A-Fa-f_]+" context="#stay" attribute="Hexadecimal" />
-        <RegExpr String="-?0[oO][0-7_]+" context="#stay" attribute="Octal" />
-        <RegExpr String="-?0[bB][01_]+" context="#stay" attribute="Binary" />
-        <RegExpr String="-?&DEC;(\.&DEC;([eE][-+]?&DEC;)?|[eE][-+]?&DEC;)" context="#stay" attribute="Float" />
-        <RegExpr String="-?&DEC;" context="#stay" attribute="Decimal" />
+        <RegExpr String="-?0[oO][0-7][0-7_]*[lLn]?" context="#stay" attribute="Octal" />
+        <RegExpr String="-?0[bB][01][01_]*[lLn]?" context="#stay" attribute="Binary" />
+        <RegExpr String="-?(&DEC;(\.&DEC;([eE][-+]?&DEC;)?|[eE][-+]?&DEC;)|&HEX;(\.[0-9A-Fa-f_]+)?[pP][+-]&DEC;)" context="#stay" attribute="Float" />
+        <RegExpr String="-?&HEX;[lLn]?" context="#stay" attribute="Hexadecimal" />
+        <RegExpr String="-?&DEC;[lLn]?" context="#stay" attribute="Decimal" />
 
         <IncludeRules context="Unmatched Closing Brackets" />
       </context>
@@ -405,10 +438,9 @@
 
       <context name="String" lineEndContext="#stay" attribute="String">
         <DetectChar char="&quot;" context="#pop" attribute="String" />
-        <RegExpr String="&ESC;" context="#stay" attribute="Escaped Characters" />
         <!-- A backslash at the end of a line in a string indicates  -->
         <!-- that the string will continue on the next line:         -->
-        <RegExpr String="\\$" context="#stay" attribute="Escaped Characters" />
+        <RegExpr String="&ESC;|\\$|\\u{[0-9A-Fa-f]+}" context="#stay" attribute="Escaped Characters" />
       </context>
 
       <context name="qtest header" lineEndContext="qtest" attribute="Operator">
@@ -431,11 +463,18 @@
         <Detect2Chars char="(" char1="*" context="Comment" attribute="Comment" beginRegion="comment" />
         <!-- Strings in Ocaml comments must be well-formed: -->
         <DetectChar char="&quot;" context="String in Comment" attribute="String in Comment" />
+
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
 
       <context name="String in Comment" lineEndContext="#stay" attribute="String in Comment">
         <DetectChar char="&quot;" context="#pop" attribute="String in Comment" />
         <IncludeRules context="String" />
+      </context>
+
+      <context name="Quoted String" lineEndContext="#stay" attribute="Quoted String">
+        <RegExpr String="\|[a-z_]*}" context="#pop" attribute="Quoted String" />
       </context>
 
       <!-- Camlp4 Quotations. These are source code literals used by the Campl4 preprocessor.           -->
@@ -444,8 +483,7 @@
         <Detect2Chars char="&gt;" char1="&gt;"     context="#pop"             attribute="Camlp4 Quotation" />
         <Detect2Chars char="&lt;" char1="&lt;"     context="Camlp4 Quotation" attribute="Camlp4 Quotation" />
         <RegExpr String="&lt;:&IDENT;&lt;"         context="Camlp4 Quotation" attribute="Camlp4 Quotation" />
-        <RegExpr String="\\(\\|&gt;&gt;|&lt;&lt;)" context="#stay"            attribute="Escaped Characters" />
-        <RegExpr String="\\&lt;:&IDENT;&lt;"       context="#stay"            attribute="Escaped Characters" />
+        <RegExpr String="\\(\\|&gt;&gt;|&lt;&lt;|&lt;:&IDENT;&lt;)" context="#stay" attribute="Escaped Characters" />
       </context>
 
     <!-- Ocamldoc - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -->
@@ -486,7 +524,7 @@
 
 
         <!-- A dash at the start of a line is a bullet point. -->
-        <RegExpr String="^[ &#009;]*-\s" context="#stay"  attribute="Ocamldoc Markup" />
+        <RegExpr String="^[ &#009;]*-\s" context="#stay"  attribute="Ocamldoc Markup" column="0" />
 
         <IncludeRules context="Unmatched Closing Brackets" />
       </context>
@@ -558,8 +596,8 @@
         <Detect2Chars char="v" char1="}" context="#stay" attribute="Mismatched Brackets" />
         <Detect2Chars char="]" char1="}" context="#stay" attribute="Mismatched Brackets" />
         <Detect2Chars char="%" char1="}" context="#stay" attribute="Mismatched Brackets" />
-        <DetectChar   char="]"           context="#stay" attribute="Mismatched Brackets" />
-        <DetectChar   char="}"           context="#stay" attribute="Mismatched Brackets" />
+        <AnyChar      String="]}"        context="#stay" attribute="Mismatched Brackets" />
+        <RegExpr String="\|[a-z_]*}"      context="#pop" attribute="Mismatched Brackets" />
       </context>
     </contexts>
 
@@ -588,6 +626,7 @@
 
       <itemData name="Character"               defStyleNum="dsChar"     />
       <itemData name="String"                  defStyleNum="dsString"   />
+      <itemData name="Quoted String"           defStyleNum="dsString"   />
       <itemData name="Camlp4 Quotation"        defStyleNum="dsString"   />
       <itemData name="Escaped Characters"      defStyleNum="dsChar"     />
 

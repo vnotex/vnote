@@ -1,267 +1,441 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="sed" section="Scripts" version="2" kateversion="2.4" extensions="*.sed" mimetype="text/x-sed" author="Bart Sas (bart.sas@gmail.com)" license="GPL">
-        <highlighting>
-                <contexts>
-                        <context name="BeginningOfLine" attribute="Normal" lineEndContext="#stay">
-                                <DetectSpaces/>
-                                <DetectChar char="#"     attribute="Comment"     context="Comment"/>
-                                <RegExpr String="(/)"    attribute="Separator"   context="FirstAddressRegex"/>
-                                <RegExpr String="\\(\S)" attribute="Separator"   context="FirstAddressRegex"/>
-                                <Int                     attribute="Line Number" context="AfterFirstAddress"/>
-                                <DetectChar char="$"     attribute="Last Line"   context="AfterFirstAddress"/>
-                                <DetectChar char="}"     attribute="Brace"       context="AfterCommand"/>
-                                <DetectChar char=":"     attribute="Label"       context="Label"/>
-                                <DetectChar char="!"     attribute="Negation"    context="Command"/>
-                                <IncludeRules                                    context="Command"/>
-                                <RegExpr String="\S"     attribute="Error"       context="Error"/>
-                        </context>
+<!DOCTYPE language[
+  <!ENTITY literal_escape "\\([afnrtv\\]|c[0-9a-zA-Z]|x[0-9a-fA-F]{1,2}|d[0-9]{1,3}|o[0-7]{1,3})">
+]>
+<language name="sed" section="Scripts" version="9" kateversion="5.79" extensions="*.sed" mimetype="text/x-sed" author="Bart Sas (bart.sas@gmail.com);Jonathan Poelen (jonathan.poelen@gmail.com)" license="GPL">
+<highlighting>
+<contexts>
+  <!--
+  reference:
+    $ man sed
+    $ info sed
+  -->
+  <context name="BeginningOfLine" attribute="Normal" fallthroughContext="Error">
+    <IncludeRules context="Start"/>
+    <IncludeRules context="FindCommand"/>
+  </context>
 
-                        <context name="FirstAddressRegex" attribute="Regex" lineEndContext="Error" dynamic="true">
-                                <DetectSpaces/>
-                                <RegExpr String="\\%1" attribute="Regex Escape" context="#stay"             dynamic="true"/>
-                                <RegExpr String="%1"   attribute="Separator"    context="AfterFirstAddress" dynamic="true"/>
-                                <IncludeRules                                   context="Regex"/>
-                        </context>
+  <!--
+    Context to be used in other <IncludeRules> syntaxes,
+    because the FindCommand in BeginningOfLine makes an extra #pop,
+    but it avoids context switch
+  -->
+  <context name="Start" attribute="Normal" fallthroughContext="Command">
+    <DetectSpaces/>
+    <DetectChar char="#"  attribute="Comment"   context="Comment"/>
+    <!-- N -->
+    <!-- N~N -->
+    <!-- N,N -->
+    <!-- N,+N -->
+    <!-- N,~N -->
+    <Int                  attribute="Line Number" context="FirstNumberAddress"/>
+    <!--  /<regex>/ -->
+    <!-- \C<regex>C -->
+    <RegExpr String="(?|(/)|\\([\t -~]))" attribute="Separator" context="FirstAddressRegex"/>
+    <DetectChar char="$"  attribute="Last Line" context="AfterFirstAddress"/>
+    <DetectChar char="}"  attribute="Brace"     context="AfterCommand" endRegion="block"/>
+    <DetectChar char=":"  attribute="Label"     context="Label"/>
+    <DetectChar char="!"  attribute="Negation"  context="Command"/>
+    <DetectChar char=";"  attribute="Normal"/>
+  </context>
 
-                        <context name="AfterFirstAddress" attribute="Normal" lineEndContext="BeginningOfLine">
-                                <DetectSpaces/>
-                                <DetectChar char="!" attribute="Negation" context="Command"/>
-                                <IncludeRules                             context="AfterFirstAddress2"/>
-                                <RegExpr String="\S" attribute="Error"    context="Error"/>
-                        </context>
 
-                        <context name="AfterFirstAddress2" attribute="Normal" lineEndContext="BeginningOfLine">
-                                <DetectSpaces/>
-                                <DetectChar char="," attribute="Normal" context="SecondAddress"/>
-                                <DetectChar char="~" attribute="Normal" context="Step"/>
-                                <IncludeRules                           context="Command"/>
-                                <RegExpr String="\S" attribute="Error"  context="Error"/>
-                        </context>
+  <!--
+    N
+     ^
+  -->
+  <context name="FirstNumberAddress" attribute="Regex" lineEndContext="#pop" fallthroughContext="#pop!Command">
+    <DetectChar char="~" attribute="Normal"   context="Step"/>
+    <DetectChar char="!" attribute="Negation" context="#pop!Command"/>
+    <DetectChar char="," attribute="Normal"   context="SecondNumberAddress"/>
+    <DetectSpaces/>
+  </context>
 
-                        <context name="SecondAddress" attribute="Normal" lineEndContext="Error">
-                                <DetectSpaces/>
-                                <RegExpr String="(/)"    attribute="Separator"   context="SecondAddressRegex"/>
-                                <RegExpr String="\\(\S)" attribute="Separator"   context="SecondAddressRegex"/>
-                                <Int                     attribute="Line Number" context="AfterSecondAddress"/>
-                                <DetectChar char="$"     attribute="Last Line"   context="AfterSecondAddress"/>
-                                <RegExpr String="\S"     attribute="Error"       context="Error"/>
-                        </context>
+  <!--
+     N~N
+    N,~N
+    N,+N
+       ^
+  -->
+  <context name="Step" attribute="Normal" lineEndContext="#pop#pop" fallthroughContext="#pop#pop!Error">
+    <DetectSpaces/>
+    <Int attribute="Step" context="#pop#pop!Command"/>
+  </context>
 
-                        <context name="SecondAddressRegex" attribute="Regex" lineEndContext="Error" dynamic="true">
-                                <DetectSpaces/>
-                                <RegExpr String="\\%1" attribute="Regex Escape" context="#stay"              dynamic="true"/>
-                                <RegExpr String="%1"   attribute="Separator"    context="AfterSecondAddress" dynamic="true"/>
-                                <IncludeRules                                   context="Regex"/>
-                        </context>
+  <!--
+    N,
+      ^
+  -->
+  <context name="SecondNumberAddress" attribute="Normal" lineEndContext="#pop#pop" fallthroughContext="#pop#pop!Error">
+    <AnyChar String="+~" attribute="Normal" context="#pop!Step"/>
+    <IncludeRules context="SecondAddress"/>
+  </context>
 
-                        <context name="AfterSecondAddress" attribute="Normal" lineEndContext="Error" dynamic="true">
-                                <DetectSpaces/>
-                                <DetectChar char="!" attribute="Negation" context="Command"/>
-                                <IncludeRules                             context="Command"/>
-                                <RegExpr String="\S" attribute="Error"    context="Error"/>
-                        </context>
 
-                        <context name="Step" attribute="Normal" lineEndContext="Error">
-                                <DetectSpaces/>
-                                <Int                 attribute="Step"  context="Command"/>
-                                <RegExpr String="\S" attribute="Error" context="Error"/>
-                        </context>
+  <!--
+    \C<regex>C
+     /<regex>/
+      ^
+  -->
+  <context name="FirstAddressRegex" attribute="Regex" lineEndContext="#pop">
+    <StringDetect String="\%1" dynamic="1" attribute="Regex Escape"/>
+    <DetectChar     char="1"   dynamic="1" attribute="Separator"    context="#pop!AfterFirstAddress"/>
+    <IncludeRules context="Regex"/>
+  </context>
 
-                        <context name="Command" attribute="Normal" lineEndContext="Error">
-                                <DetectSpaces/>
-                                <DetectChar char="s"              attribute="Command" context="SCommand"/>
-                                <DetectChar char="y"              attribute="Command" context="YCommand"/>
-                                <AnyChar String="dpnDNPhHgGxFvz=" attribute="Command" context="AfterCommand"/>
-                                <AnyChar String="aic"             attribute="Command" context="AICCommand"/>
-                                <AnyChar String="bTt"             attribute="Command" context="BTCommand"/>
-                                <AnyChar String="WwrR"            attribute="Command" context="WRCommand"/>
-                                <AnyChar String="lL"              attribute="Command" context="LCommand"/>
-                                <AnyChar String="qQ"              attribute="Command" context="QCommand"/>
-                                <DetectChar char="{"              attribute="Brace"   context="BeginningOfLine"/>
-                                <RegExpr String="\S"              attribute="Error"   context="Error"/>
-                        </context>
+  <!--
+    addr
+        ^
+  -->
+  <context name="AfterFirstAddress" attribute="Normal" lineEndContext="#pop" fallthroughContext="#pop!Command">
+    <DetectChar char="!" attribute="Negation" context="#pop!Command"/>
+    <DetectChar char="," attribute="Normal"   context="SecondAddress"/>
+    <DetectSpaces/>
+  </context>
 
-                        <context name="SCommand" attribute="Normal" lineEndContext="Error">
-                                <DetectSpaces/>
-                                <RegExpr String="(\S)" attribute="Separator" context="SRegex"/>
-                        </context>
+  <!--
+    addr,
+         ^
+  -->
+  <context name="SecondAddress" attribute="Normal" lineEndContext="#pop#pop" fallthroughContext="#pop#pop!Error">
+    <DetectChar char="$" attribute="Last Line"   context="AfterSecondAddress"/>
+    <Int                 attribute="Line Number" context="AfterSecondAddress"/>
+    <DetectSpaces/>
+    <RegExpr String="(?|(/)|\\([\t -~]))" attribute="Separator" context="SecondAddressRegex"/>
+  </context>
 
-                        <context name="SRegex" attribute="Regex" lineEndContext="Error" dynamic="true">
-                                <DetectSpaces/>
-                                <RegExpr String="\\%1" attribute="Regex Escape" context="#stay"        dynamic="true"/>
-                                <RegExpr String="(%1)" attribute="Separator"    context="SReplacement" dynamic="true"/>
-                                <IncludeRules                                   context="Regex"/>
-                        </context>
+  <!--
+    addr,\C<regex>C
+     addr,/<regex>/
+           ^
+  -->
+  <context name="SecondAddressRegex" attribute="Regex" lineEndContext="Error">
+    <StringDetect String="\%1" dynamic="1" attribute="Regex Escape"/>
+    <StringDetect String="%1"  dynamic="1" attribute="Separator"    context="#pop!AfterSecondAddress"/>
+    <IncludeRules context="Regex"/>
+  </context>
 
-                        <context name="SReplacement" attribute="Replacement" lineEndContext="Error" dynamic="true">
-                                <DetectSpaces/>
-                                <RegExpr String="\\%1"                attribute="Repl Escape" context="#stay"  dynamic="true"/>
-                                <RegExpr String="%1"                  attribute="Separator"   context="SFlags" dynamic="true"/>
-                                <RegExpr String="\\[0-9LlUuE\\&amp;]" attribute="Repl Escape" context="#stay"/>
-                                <DetectChar char="&amp;"              attribute="Repl Escape" context="#stay"/>
-                        </context>
+  <!--
+    addr,addr
+             ^
+  -->
+  <context name="AfterSecondAddress" attribute="Normal" lineEndContext="#pop#pop#pop" fallthroughContext="#pop#pop#pop!Command">
+    <DetectChar char="!" attribute="Negation" context="#pop#pop#pop!Command"/>
+    <DetectSpaces/>
+  </context>
 
-                        <context name="SFlags" attribute="Normal" lineEndContext="BeginningOfLine">
-                                <DetectSpaces/>
-                                <AnyChar String="gpeIiMm" attribute="Flag"        context="#stay"/>
-                                <DetectChar char="w"      attribute="Flag"        context="WFlag"/>
-                                <Int                      attribute="Repl Number" context="#stay"/>
-                                <IncludeRules                                     context="AfterCommand"/>
-                        </context>
 
-                        <context name="WFlag" attribute="Normal" lineEndContext="BeginningOfLine">
-                                <DetectSpaces/>
-                                <RegExpr String="\S+" attribute="Filename" context="SFlags"/>
-                        </context>
+  <context name="Command" attribute="Normal" lineEndContext="#pop" fallthroughContext="#pop!Error">
+    <DetectSpaces/>
+    <IncludeRules context="FindCommand"/>
+  </context>
+  <context name="FindCommand" attribute="Normal">
+    <DetectChar char="s"        attribute="Command" context="SCommand"/>
+    <DetectChar char="y"        attribute="Command" context="YCommand"/>
+    <AnyChar String="dpnDNPhHgGxFvz=" attribute="Command" context="#pop!AfterCommand"/>
+    <AnyChar String="aic"       attribute="Command" context="AICCommand"/>
+    <AnyChar String="bTt"       attribute="Command" context="#pop!Label"/>
+    <AnyChar String="WwrR"      attribute="Command" context="WRCommand"/>
+    <AnyChar String="lL"        attribute="Command" context="LCommand"/>
+    <AnyChar String="qQ"        attribute="Command" context="QCommand"/>
+    <DetectChar char="{"        attribute="Brace"   context="#pop" beginRegion="block"/>
+    <DetectChar char="e"        attribute="Command" context="ECommand"/>
+  </context>
 
-                        <context name="YCommand" attribute="Normal" lineEndContext="Error">
-                                <DetectSpaces/>
-                                <RegExpr String="(\S)" attribute="Separator" context="YSourceList"/>
-                        </context>
 
-                        <context name="YSourceList" attribute="Char List" lineEndContext="Error" dynamic="true">
-                                <DetectSpaces/>
-                                <RegExpr String="\\%1"           attribute="Char List Escape" context="#stay"     dynamic="true"/>
-                                <RegExpr String="(%1)"           attribute="Separator"        context="YDestList" dynamic="true"/>
-                                <Detect2Chars char="\" char1="n" attribute="Char List Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="\" attribute="Char List Escape" context="#stay"/>
-                        </context>
+  <!--
+    s/regex/rep/
+     ^
+  -->
+  <context name="SCommand" attribute="Normal" lineEndContext="#pop#pop" fallthroughContext="#pop#pop!Error">
+    <RegExpr String="([\t -~])" attribute="Separator" context="SRegex"/>
+  </context>
 
-                        <context name="YDestList" attribute="Char List" lineEndContext="Error" dynamic="true">
-                                <DetectSpaces/>
-                                <RegExpr String="\\%1"           attribute="Char List Escape" context="#stay"        dynamic="true"/>
-                                <RegExpr String="%1"             attribute="Separator"        context="AfterCommand" dynamic="true"/>
-                                <Detect2Chars char="\" char1="n" attribute="Char List Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="\" attribute="Char List Escape" context="#stay"/>
-                        </context>
+  <!--
+    s/regex/rep/
+      ^
+  -->
+  <context name="SRegex" attribute="Regex" lineEndContext="#pop#pop#pop">
+    <StringDetect String="\%1" dynamic="1" attribute="Regex Escape"/>
+    <!-- Avoid a dynamic regex for performance reasons -->
+    <DetectChar     char="1"   dynamic="1" lookAhead="1" context="SRegexSep"/>
+    <IncludeRules context="Regex"/>
+  </context>
 
-                        <context name="AICCommand" attribute="Normal" lineEndContext="Error">
-                                <DetectSpaces/>
-                                <LineContinue             attribute="Line Continue" context="LiteralText"/>
-                                <RegExpr      String="\S" attribute="Error"         context="Error"/>
-                        </context>
+  <!--
+    s/regex/rep/
+           ^
+  -->
+  <context name="SRegexSep" attribute="Regex">
+    <RegExpr String="(.)" attribute="Separator" context="SReplacement"/>
+  </context>
 
-                        <context name="LiteralText" attribute="Literal Text" lineEndContext="BeginningOfLine">
-                                <Detect2Chars char="\" char1="\" attribute="Literal Escape" context="LiteralText"/>
-                                <LineContinue                    attribute="Line Continue"  context="LiteralText"/>
-                                <DetectChar   char="\"           attribute="Error"          context="Error"/>
-                        </context>
+  <!--
+    s/regex/rep/
+            ^
+  -->
+  <context name="SReplacement" attribute="Replacement" lineEndContext="#pop#pop#pop#pop#pop">
+    <StringDetect String="\%1" dynamic="1" attribute="Repl Escape"/>
+    <DetectChar     char="1"   dynamic="1" attribute="Separator"   context="SFlags"/>
+    <DetectSpaces/>
+    <DetectChar     char="&amp;"           attribute="Repl Substitution"/>
+    <DetectChar     char="\"   lookAhead="1"  context="SReplacementEscape"/>
+  </context>
+  <!--
+    on \ in rep
+               ^
+  -->
+  <context name="SReplacementEscape" attribute="Repl Escape" lineEndContext="#pop#pop#pop#pop#pop">
+    <LineContinue         attribute="Repl Escape" context="#pop"/>
+    <RegExpr String="&literal_escape;" attribute="Repl Escape" context="#pop"/>
+    <RegExpr String="\\[0-9LlUuE]" attribute="Repl Substitution" context="#pop"/>
+    <RegExpr String="\\." attribute="Unknown Escape" context="#pop"/>
+  </context>
 
-                        <context name="BTCommand" attribute="Normal" lineEndContext="BeginningOfLine">
-                                <DetectSpaces/>
-                                <RegExpr String="\w+" attribute="Label" context="AfterCommand"/>
-                                <IncludeRules                           context="AfterCommand"/>
-                        </context>
+  <!--
+    s/regex/rep/
+                ^
+  -->
+  <context name="SFlags" attribute="Normal" lineEndContext="#pop#pop#pop#pop#pop#pop" fallthroughContext="#pop#pop#pop#pop#pop#pop!AfterCommand">
+    <DetectSpaces/>
+    <AnyChar String="gpeIiMm"     attribute="Flag" />
+    <!-- Do not use <Int>, because the number can be surrounded by any character -->
+    <AnyChar String="0123456789"  attribute="Repl Number"/>
+    <DetectChar char="w"          attribute="Flag" context="#pop#pop#pop#pop#pop!WRCommand"/>
+  </context>
 
-                        <context name="WRCommand" attribute="Normal" lineEndContext="Error">
-                                <DetectSpaces/>
-                                <RegExpr String="\S+" attribute="Filename" context="AfterCommand"/>
-                        </context>
 
-                        <context name="LCommand" attribute="Normal" lineEndContext="BeginningOfLine">
-                                <DetectSpaces/>
-                                <Int attribute="Wrap Length" context="AfterCommand"/>
-                                <IncludeRules                context="AfterCommand"/>
-                        </context>
+  <!--
+    y/source/dest/
+     ^
+  -->
+  <context name="YCommand" attribute="Normal" lineEndContext="#pop#pop" fallthroughContext="#pop#pop!Error">
+    <RegExpr String="([\t -~])" attribute="Separator" context="YSourceList"/>
+  </context>
 
-                        <context name="QCommand" attribute="Normal" lineEndContext="BeginningOfLine">
-                                <DetectSpaces/>
-                                <Int attribute="Exit Code" context="AfterCommand"/>
-                                <IncludeRules              context="AfterCommand"/>
-                        </context>
+  <!--
+    y/source/dest/
+      ^
+  -->
+  <context name="YSourceList" attribute="Char List" lineEndContext="#pop#pop#pop">
+    <StringDetect String="\%1" dynamic="1" attribute="Char List Escape"/>
+    <!-- Avoid a dynamic regex for performance reasons -->
+    <DetectChar     char="1"   dynamic="1" lookAhead="1" context="YDestSep"/>
+    <DetectChar     char="\"   lookAhead="1" context="YLiteralEscape"/>
+  </context>
 
-                        <context name="Label" attribute="Normal" lineEndContext="Error">
-                                <DetectSpaces/>
-                                <RegExpr String="\w+" attribute="Label" context="AfterCommand"/>
-                                <RegExpr String="\S"  attribute="Error" context="Error"/>
-                        </context>
+  <!--
+    y/source/dest/
+            ^
+  -->
+  <context name="YDestSep" attribute="Regex">
+    <RegExpr String="(.)" attribute="Separator" context="YDestList"/>
+  </context>
 
-                        <context name="AfterCommand" attribute="Normal" lineEndContext="BeginningOfLine">
-                                <DetectSpaces/>
-                                <DetectChar char=";" attribute="Normal"  context="BeginningOfLine"/>
-                                <DetectChar char="}" attribute="Brace"   context="AfterCommand"/>
-                                <DetectChar char="#" attribute="Comment" context="Comment"/>
-                                <RegExpr String="\S" attribute="Error"   context="Error"/>
-                        </context>
+  <!--
+    y/source/dest/
+             ^
+  -->
+  <context name="YDestList" attribute="Char List" lineEndContext="#pop#pop#pop#pop#pop">
+    <StringDetect String="\%1" dynamic="1" attribute="Char List Escape"/>
+    <DetectChar     char="1"   dynamic="1" attribute="Separator"   context="#pop#pop#pop#pop#pop!AfterCommand"/>
+    <DetectChar     char="\"   lookAhead="1" context="YLiteralEscape"/>
+  </context>
+  <!--
+    on \ in dest
+  -->
+  <context name="YLiteralEscape" attribute="Char List Escape">
+    <LineContinue attribute="Char List Escape" context="#pop"/>
+    <RegExpr String="&literal_escape;" attribute="Char List Escape" context="#pop"/>
+    <RegExpr String="\\." attribute="Unknown Escape" context="#pop"/>
+  </context>
 
-                        <context name="Regex" attribute="Regex" lineEndContext="Error">
-                                <Detect2Chars char="\" char1="(" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1=")" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="+" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="?" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="|" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="{" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="}" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="[" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="]" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="." attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="*" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="\" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="^" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="$" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="n" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="t" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="0" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="1" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="2" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="3" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="4" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="5" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="6" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="7" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="8" attribute="Regex Escape" context="#stay"/>
-                                <Detect2Chars char="\" char1="9" attribute="Regex Escape" context="#stay"/>
-                                <DetectChar   char="*"           attribute="Regex Escape" context="#stay"/>
-                                <DetectChar   char="."           attribute="Regex Escape" context="#stay"/>
-                                <DetectChar   char="^"           attribute="Regex Escape" context="#stay"/>
-                                <DetectChar   char="$"           attribute="Regex Escape" context="#stay"/>
-                                <DetectChar   char="["           attribute="Regex Escape" context="#stay"/>
-                                <DetectChar   char="]"           attribute="Regex Escape" context="#stay"/>
-                        </context>
 
-                        <context name="Comment" attribute="Comment" lineEndContext="BeginningOfLine"/>
-                        <context name="Error"   attribute="Error"   lineEndContext="BeginningOfLine"/>
-                </contexts>
+  <!--
+    atext
+    itext
+    ctext
+     ^
+  -->
+  <context name="AICCommand" attribute="Normal" lineEndContext="#pop#pop" fallthroughContext="LiteralText">
+    <DetectSpaces/>
+    <LineContinue          attribute="Line Continue" context="LiteralText"/>
+    <DetectChar   char="\" attribute="Line Continue" context="LiteralText"/>
+  </context>
 
-                <itemDatas>
-                        <itemData name="Normal"           defStyleNum="dsNormal"/>
+  <!--
+    a\text
+    i\text
+    c\text
+     atext
+     itext
+     ctext
+      ^
+  -->
+  <context name="LiteralText" attribute="Literal Text" lineEndContext="#pop#pop#pop">
+    <DetectSpaces/>
+    <DetectIdentifier/>
+    <DetectChar char="\" lookAhead="1" context="LiteralTextEscape"/>
+  </context>
+  <!--
+    on \ in text
+  -->
+  <context name="LiteralTextEscape" attribute="Literal Escape">
+    <LineContinue attribute="Line Continue" context="#pop"/>
+    <RegExpr String="&literal_escape;" attribute="Literal Escape" context="#pop"/>
+    <RegExpr String="\\." attribute="Unknown Escape" context="#pop"/>
+  </context>
 
-                        <itemData name="Regex"            defStyleNum="dsString"/>
-                        <itemData name="Regex Escape"     defStyleNum="dsChar"/>
-                        <itemData name="Replacement"      defStyleNum="dsString"/>
-                        <itemData name="Repl Escape"      defStyleNum="dsChar"/>
-                        <itemData name="Char List"        defStyleNum="dsString"/>
-                        <itemData name="Char List Escape" defStyleNum="dsChar"/>
-                        <itemData name="Separator"        defStyleNum="dsString" color="#00F"/>
 
-                        <itemData name="Line Number"      defStyleNum="dsDecVal"/>
-                        <itemData name="Step"             defStyleNum="dsDecVal"/>
-                        <itemData name="Last Line"        defStyleNum="dsOthers" color="#808" bold="1"/>
-                        <itemData name="Negation"         defStyleNum="dsOthers" color="#808" bold="1"/>
+  <!--
+    s/regex/rep/w<filename>
+                w<filename>
+                r<filename>
+                W<filename>
+                R<filename>
+                 ^
+  -->
+  <context name="WRCommand" attribute="Normal" lineEndContext="#pop#pop" fallthroughContext="Filename">
+    <DetectSpaces attribute="Normal" context="Filename"/>
+  </context>
+  <context name="Filename" attribute="Filename" lineEndContext="#pop#pop#pop"/>
 
-                        <itemData name="Command"          defStyleNum="dsKeyword"/>
-                        <itemData name="Label"            defStyleNum="dsFunction"/>
-                        <itemData name="Brace"            defStyleNum="dsNormal"/>
 
-                        <itemData name="Flag"             defStyleNum="dsDataType"/>
-                        <itemData name="Repl Number"      defStyleNum="dsDecVal"/>
-                        <itemData name="Exit Code"        defStyleNum="dsDecVal"/>
-                        <itemData name="Filename"         defStyleNum="dsBaseN"/>
-                        <itemData name="Wrap Length"      defStyleNum="dsDecVal"/>
+  <!--
+    l[width]
+    L          # What does this command do?
+     ^
+  -->
+  <context name="LCommand" attribute="Normal" lineEndContext="#pop#pop" fallthroughContext="#pop#pop!AfterCommand">
+    <DetectSpaces/>
+    <Int attribute="Wrap Length" context="#pop#pop!AfterCommand" additionalDeliminator="lL"/>
+  </context>
 
-                        <itemData name="Line Continue"    defStyleNum="dsOthers" color="#000" bold="1"/>
-                        <itemData name="Literal Text"     defStyleNum="dsOthers" color="#080" italic="1"/>
-                        <itemData name="Literal Escape"   defStyleNum="dsOthers" color="#0A0" italic="1"/>
 
-                        <itemData name="Comment"          defStyleNum="dsComment"/>
-                        <itemData name="Error"            defStyleNum="dsError"/>
-                </itemDatas>
-        </highlighting>
+  <!--
+    q[exit-code]
+    Q[exit-code]
+     ^
+  -->
+  <context name="QCommand" attribute="Normal" lineEndContext="#pop#pop" fallthroughContext="#pop#pop!AfterCommand">
+    <DetectSpaces/>
+    <Int attribute="Exit Code" context="#pop#pop!AfterCommand" additionalDeliminator="qQ"/>
+  </context>
 
-        <general>
-                <comments>
-                        <comment name="singleLine" start="#"/>
-                </comments>
-        </general>
+
+  <!--
+    e[command]
+     ^
+  -->
+  <context name="ECommand" attribute="Shell Command" lineEndContext="#pop#pop">
+    <LineContinue          attribute="Line Continue"/>
+  </context>
+
+
+  <!--
+    blabel
+    tlabel
+    Tlabel
+    :label
+     ^
+  -->
+  <context name="Label" attribute="Normal" lineEndContext="#pop" fallthroughContext="#pop!AfterCommand">
+    <DetectSpaces/>
+    <RegExpr String="[^\s;}#]+" attribute="Label" context="#pop"/>
+  </context>
+
+
+  <context name="AfterCommand" attribute="Normal" lineEndContext="#pop" fallthroughContext="#pop!Error">
+    <DetectSpaces/>
+    <DetectChar char=";" attribute="Normal" context="#pop"/>
+    <DetectChar char="}" attribute="Brace"   context="#pop" endRegion="block"/>
+    <DetectChar char="#" attribute="Comment" context="#pop!Comment"/>
+  </context>
+
+
+  <!--
+    regex special char
+  -->
+  <context name="Regex" attribute="Regex">
+    <DetectSpaces/>
+    <AnyChar    String="*.^$[]"   attribute="Regex Special"/>
+    <AnyChar    String="+?|{}()"  attribute="Regex Special Extended"/>
+    <DetectChar char="\" lookAhead="1" context="RegexEscape"/>
+  </context>
+
+  <!--
+    on \
+  -->
+  <context name="RegexEscape" attribute="Regex" fallthroughContext="#pop">
+    <LineContinue         attribute="Regex Escape" context="#pop"/>
+    <RegExpr String="\\([afnrtv\\()+?|{}\[\].*^$]|c.|x[0-9a-fA-F]{1,2}|d[0-9]{1,3}|o[0-7]{1,3})"
+                          attribute="Regex Escape" context="#pop"/>
+    <RegExpr String="\\([0-9wWbBsS&lt;>`'])"
+                          attribute="Regex Escape Special" context="#pop"/>
+    <RegExpr String="\\." attribute="Unknown Escape" context="#pop"/>
+  </context>
+
+
+  <!--
+    #comment
+     ^
+  -->
+  <context name="Comment" attribute="Comment" lineEndContext="#pop">
+    <DetectSpaces/>
+    <IncludeRules context="##Comments"/>
+    <DetectIdentifier/>
+  </context>
+
+
+  <context name="Error" attribute="Error" lineEndContext="#pop"/>
+
+</contexts>
+
+<itemDatas>
+  <itemData name="Normal"     defStyleNum="dsNormal"/>
+
+  <itemData name="Regex"                  defStyleNum="dsString"/>
+  <itemData name="Regex Escape"           defStyleNum="dsChar"/>
+  <itemData name="Regex Escape Special"   defStyleNum="dsSpecialChar"/>
+  <itemData name="Regex Special"          defStyleNum="dsSpecialChar"/>
+  <itemData name="Regex Special Extended" defStyleNum="dsSpecialString"/>
+  <itemData name="Replacement"            defStyleNum="dsString"/>
+  <itemData name="Repl Escape"            defStyleNum="dsChar"/>
+  <itemData name="Repl Substitution"      defStyleNum="dsSpecialChar"/>
+  <itemData name="Char List"              defStyleNum="dsString"/>
+  <itemData name="Char List Escape"       defStyleNum="dsChar"/>
+  <itemData name="Separator"              defStyleNum="dsConstant"/>
+
+  <itemData name="Line Number"  defStyleNum="dsDecVal"/>
+  <itemData name="Step"         defStyleNum="dsDecVal"/>
+  <itemData name="Last Line"    defStyleNum="dsFunction" bold="1"/>
+  <itemData name="Negation"     defStyleNum="dsFunction" bold="1"/>
+
+  <itemData name="Command"        defStyleNum="dsKeyword"/>
+  <itemData name="Shell Command"  defStyleNum="dsPreprocessor"/>
+  <itemData name="Label"          defStyleNum="dsControlFlow"/>
+  <itemData name="Brace"          defStyleNum="dsNormal"/>
+
+  <itemData name="Flag"         defStyleNum="dsDataType"/>
+  <itemData name="Repl Number"  defStyleNum="dsDecVal"/>
+  <itemData name="Exit Code"    defStyleNum="dsDecVal"/>
+  <itemData name="Filename"     defStyleNum="dsBaseN"/>
+  <itemData name="Wrap Length"  defStyleNum="dsDecVal"/>
+
+  <itemData name="Line Continue"  defStyleNum="dsAttribute" bold="1"/>
+  <itemData name="Literal Text"   defStyleNum="dsImport" italic="1"/>
+  <itemData name="Literal Escape" defStyleNum="dsOperator" italic="1"/>
+
+  <itemData name="Unknown Escape" defStyleNum="dsChar"/>
+  <itemData name="Comment"        defStyleNum="dsComment"/>
+  <itemData name="Error"          defStyleNum="dsError"/>
+</itemDatas>
+</highlighting>
+
+<general>
+  <comments>
+    <comment name="singleLine" start="#"/>
+  </comments>
+</general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

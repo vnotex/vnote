@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="PostScript" version="2" kateversion="2.2" section="Markup" extensions="*.ps;*.ai;*.eps" mimetype="application/postscript">
+<!DOCTYPE language>
+<language name="PostScript" version="4" kateversion="5.0" section="Markup" extensions="*.ps;*.ai;*.eps" mimetype="application/postscript">
 <highlighting>
 	<list name="keywords">
 		<item>abs</item>
@@ -405,10 +405,13 @@
 			<DetectChar attribute="Comment" context="Comment" char="%"/>
 			<Float attribute="Float" context="#stay"/>
 			<Int attribute="Decimal" context="#stay"/>
-		        <DetectChar attribute="String" context="String" char="("/>
+			<DetectChar attribute="String" context="String" char="("/>
 			<RegExpr attribute="Data Type" context="#stay" String="\/{1,2}[^\s\(\)\{\}\[\]%/]*"/>
 		</context>
-		<context attribute="Comment" lineEndContext="#pop" name="Comment"/>
+		<context attribute="Comment" lineEndContext="#pop" name="Comment">
+			<DetectSpaces />
+			<IncludeRules context="##Comments" />
+		</context>
 		<context attribute="Header" lineEndContext="#pop" name="Header"/>
 		<context attribute="String" lineEndContext="#stay" name="String">
 			<DetectChar attribute="String" context="#pop" char=")" />
@@ -432,3 +435,4 @@
 	<keywords casesensitive="0" />
 </general>
 </language>
+<!-- kate: replace-tabs off; -->

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Kate syntax highlighting for the Objective Caml 'Ocamlllex' -->
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 <!-- Regular expresion constants: -->
 <!ENTITY LETTER "A-Za-z\300-\326\330-\366\370-\377">                <!-- Latin-1 letters. -->
@@ -11,8 +11,8 @@
           section="Sources"
           extensions="*.mll"
           mimetype=""
-          version="3"
-          kateversion="2.4"
+          version="8"
+          kateversion="6.22"
           priority="10"
           author="Glyn Webster (glynwebster@orcon.net.nz) and Vincent Hugot (vincent.hugot@gmail.com)"
           license="LGPL" >
@@ -45,6 +45,8 @@
         <Detect2Chars char="*" char1=")" context="#pop"    attribute="Comment" endRegion="comment" />
         <Detect2Chars char="(" char1="*" context="Comment" attribute="Comment" beginRegion="comment" />
         <DetectChar   char="&quot;"      context="String"  attribute="String" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
 
       <context name="Ocaml" lineEndContext="#stay" attribute="Normal">
@@ -54,8 +56,7 @@
 
       <context name="String" lineEndContext="#stay" attribute="String">
         <DetectChar char="&quot;"  context="#pop"  attribute="String" />
-        <RegExpr    String="&ESC;" context="#stay" attribute="Escaped Characters" />
-        <RegExpr    String="\\$"   context="#stay" attribute="Escaped Characters" />
+        <RegExpr    String="&ESC;|\\$"   context="#stay" attribute="Escaped Characters" />
       </context>
     </contexts>
 
@@ -74,7 +75,7 @@
   <general>
     <keywords casesensitive="true" />
     <comments>
-      <comment name="multiLine" start="(*" end="*)" />
+      <comment name="multiLine" start="(*" end="*)" region="comment" />
     </comments>
   </general>
 </language>

@@ -5,8 +5,10 @@ files mp.vim and mf.vim
 We have moved some keywords for consistency
 -->
 
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Metapost/Metafont" section="Markup" version="5" kateversion="5.0"
+<!DOCTYPE language [
+  <!ENTITY lengths "(bp|cc|cm|dd|in|mm|pc|pt)">
+]>
+<language name="Metapost/Metafont" section="Markup" version="12" kateversion="5.0"
 extensions="*.mp;*.mps;*.mpost;*.mf" mimetype="text/x-metapost" 
 author="Yedvilun (yedvilun@gmail.com)" license="LGPL">
   <highlighting>
@@ -689,7 +691,6 @@ author="Yedvilun (yedvilun@gmail.com)" license="LGPL">
       <item>pen_bot</item>
       <item>savepen</item>
 
-      <item>clearpen</item>
       <item>clear_pen_memory</item>
       <item>lft</item>
       <item>rt</item>
@@ -714,7 +715,6 @@ author="Yedvilun (yedvilun@gmail.com)" license="LGPL">
       <item>clearxy</item>
       <item>clearit</item>
       <item>clearpen</item>
-      <item>pickup</item>
       <item>shipit</item>
 
       <item>bye</item>
@@ -855,16 +855,11 @@ author="Yedvilun (yedvilun@gmail.com)" license="LGPL">
         <Int attribute="Decimal"/>
 
         <!--Metafont lengths-->
-        <RegExpr String="\b(bp|cc|cm|dd|in|mm|pc|pt)\b" attribute="Float" context="#stay"/>
-        <RegExpr String="\b-?\d+(bp|cc|cm|dd|in|mm|pc|pt)#?\b" attribute="Float" context="#stay"/>
-        <RegExpr String="\b-?\.\d+(bp|cc|cm|dd|in|mm|pc|pt)#?\b" attribute="Float" context="#stay"/>
-        <RegExpr String="\b-?\d+\.\d+(bp|cc|cm|dd|in|mm|pc|pt)#?\b" attribute="Float" context="#stay"/>
+        <RegExpr String="\b(&lengths;|-?(\d+&lengths;|\.\d+&lengths;|\d+\.\d+&lengths;)#?)\b" attribute="Float" context="#stay"/>
 
         <!--Metafont coordinates, points, pathes-->
 
-        <RegExpr String="\b[xy]\d(\w|\')*" attribute="Variable" context="#stay"/>
-        <RegExpr String="\bz\d(\w|\')*" attribute="Variable" context="#stay"/>
-        <RegExpr String="\bp\d(\w|\')*" attribute="Variable" context="#stay"/>
+        <RegExpr String="\b[xyzp]\d(\w|\')*" attribute="Variable" context="#stay"/>
 
         <!--Special characters-->
         <DetectChar char="$" attribute="Special" context="#stay"/>
@@ -900,21 +895,19 @@ author="Yedvilun (yedvilun@gmail.com)" license="LGPL">
       <!--TeX mode : we just define generic TeX commands-->
       <!--syntax from highlighting file latex.xml-->
       <context name="TeXMode" attribute="TeX" lineEndContext="#stay">
+        <Detect2Chars char="\" char1="(" attribute="Math" context="MathMode" beginRegion="mathMode" />
         <DetectChar char="\" attribute="Keyword" context="ContrSeq"/>
         <DetectChar char="$" attribute="Math" context="MathMode" beginRegion="mathMode" />
-
-        <StringDetect String="\(" attribute="Math" context="MathMode" beginRegion="mathMode" />
         <RegExpr String="\betex\b" insensitive="1" attribute="Identifier" context="#pop" endRegion="TeXblock"/>
       </context>
       <context name="ContrSeq" attribute="Keyword" lineEndContext="#pop">
         <StringDetect String="verb*" attribute="Keyword" context="Verb"/>
         <RegExpr String="verb(?=[^a-zA-Z])" attribute="Keyword" context="Verb"/>
         <DetectChar char="&#xd7;" attribute="Bullet" context="#stay"/>
-        <RegExpr String="[a-zA-Z]+(\+?|\*{0,3})" attribute="Keyword" context="#pop"/>
-        <RegExpr String="[^a-zA-Z]" attribute="Keyword" context="#pop" />
+        <RegExpr String="[a-zA-Z]+(\+?|\*{0,3})|[^a-zA-Z]" attribute="Keyword" context="#pop" />
       </context>
       <context name="Verb" attribute="Verbatim" lineEndContext="#pop#pop" >
-        <RegExpr String="(.)" attribute="Normal Text" dynamic="true" context="VerbEnd" />
+        <RegExpr String="(.)" attribute="Normal Text" context="VerbEnd" />
       </context>
       <context name="VerbEnd" attribute="Verbatim" lineEndContext="#pop#pop#pop" dynamic="true" >
         <StringDetect String="%1" attribute="Normal Text" context="#pop#pop#pop" dynamic="true" />
@@ -925,62 +918,60 @@ author="Yedvilun (yedvilun@gmail.com)" license="LGPL">
 
       <!-- math mode: starting with $ or \( -->
       <context name="MathMode" attribute="Math" lineEndContext="#stay">
-        <StringDetect String="$$" attribute="Error" context="#stay" />
+        <Detect2Chars char="$" char1="$" attribute="Error" context="#stay" />
+        <Detect2Chars char="\" char1=")" attribute="Math" context="#pop" endRegion="mathMode" />
         <DetectChar char="\" attribute="Keyword Mathmode" context="MathContrSeq"/>
         <DetectChar char="$" attribute="Math" context="#pop" endRegion="mathMode" />
-        <Detect2Chars char="\" char1=")" attribute="Math" context="#pop" endRegion="mathMode" />
-
-        <Detect2Chars char="\" char1="]" attribute="Error" context="#stay" />
       </context>
       <context name="MathContrSeq" attribute="Keyword Mathmode" lineEndContext="#pop">
         <DetectChar char="&#xd7;" attribute="Bullet" context="#stay"/>
-        <RegExpr String="[a-zA-Z]+\*?" attribute="Keyword Mathmode" context="#pop"/>
-        <RegExpr String="[^a-zA-Z]" attribute="Keyword Mathmode" context="#pop" /> 
+        <RegExpr String="[a-zA-Z]+\*?|[^a-zA-Z]" attribute="Keyword Mathmode" context="#pop" />
       </context>
 
       <!-- comment -->
       <context name="Comment" attribute="Comment" lineEndContext="#pop">
-        <IncludeRules context="##Alerts" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
         <DetectChar char="&#xd7;" attribute="Bullet" context="#stay"/>
       </context>
+    </contexts>
 
-</contexts>
     <itemDatas>
       <itemData name="Normal Text" defStyleNum="dsNormal"/>
-      <itemData name="Keyword" defStyleNum="dsNormal" color="#800000" selColor="#60FFFF" bold="0" italic="0"/>
-      <itemData name="Keyword Mathmode" defStyleNum="dsNormal" color="#606000" selColor="#FFD0FF" bold="0" italic="0"/>
+      <itemData name="Keyword" defStyleNum="dsFunction"/>
+      <itemData name="Keyword Mathmode" defStyleNum="dsFunction" italic="1"/>
       <itemData name="Comment" defStyleNum="dsComment"/>
 
       <itemData name="Error" defStyleNum="dsAlert"/>
-      <itemData name="Math" defStyleNum="dsNormal" color="#00A000" selColor="#FF40FF"  bold="0" italic="0"/>
+      <itemData name="Math" defStyleNum="dsSpecialString"/>
       <itemData name="TeX" defStyleNum="dsNormal"/>
       <itemData name="String" defStyleNum="dsString"/>
       <itemData name="Verbatim" defStyleNum="dsVerbatimString"/>
-      <itemData name="Macro"  defStyleNum="dsKeyword" color="#770000" selColor="#99FFFF" bold="0" italic="0"/>
+      <itemData name="Macro"  defStyleNum="dsKeyword"/>
       <itemData name="Operator" defStyleNum="dsOperator"/>
       <itemData name="Special" defStyleNum="dsKeyword" color="#008000" bold="0"/>
-      <itemData name="Conditional" defStyleNum="dsKeyword"/>
+      <itemData name="Conditional" defStyleNum="dsControlFlow"/>
 
-      <itemData name="Statement" defStyleNum="dsNormal" color="#0000FF" selColor="#FFFF00" bold="0" italic="0"/>
-      <itemData name="BoolExp" defStyleNum="dsKeyword" italic="1" bold="0" color="#AA00AA" selColor="#FFFF00"/>
-      <itemData name="NumExp" defStyleNum="dsFunction"/>
+      <itemData name="Statement" defStyleNum="dsAttribute"/>
+      <itemData name="BoolExp" defStyleNum="dsBuiltIn"/>
+      <itemData name="NumExp" defStyleNum="dsBuiltIn"/>
       <itemData name="Variable" defStyleNum="dsVariable"/>
-      <itemData name="Identifier" defStyleNum="dsKeyword"/>
+      <itemData name="Identifier" defStyleNum="dsRegionMarker"/>
       <itemData name="Type" defStyleNum="dsDataType"/>
       <itemData name="Decimal" defStyleNum="dsDecVal"/>
       <itemData name="Octal" defStyleNum="dsBaseN"/>
       <itemData name="Hex" defStyleNum="dsBaseN"/>
       <itemData name="Bullet" defStyleNum="dsExtension"/>
       <itemData name="Float" defStyleNum="dsFloat"/>
- </itemDatas>
+    </itemDatas>
   </highlighting>
 
   <general>
     <comments>
-      <comment name="singleLine" start="%"/>
+      <comment name="singleLine" start="%" position="afterwhitespace"/>
     </comments>
     <keywords casesensitive="0" />
 
   </general>
 </language>
-
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

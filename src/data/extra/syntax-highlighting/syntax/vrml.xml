@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="VRML" version="4" kateversion="2.3" section="3D" extensions="*.wrl" mimetype="model/vrml" author="Volker Krause (vkrause@kde.org)" license="LGPLv2+">
+<!DOCTYPE language>
+<language name="VRML" version="7" kateversion="5.0" section="3D" extensions="*.wrl" mimetype="model/vrml" author="Volker Krause (vkrause@kde.org)" license="LGPLv2+">
 	<highlighting>
 		<list name="keywords">
 			<item>DEF</item>
@@ -111,7 +111,10 @@
 				<DetectChar attribute="String" context="String" char="&quot;"/>
 				<DetectChar attribute="Comment" context="Comment" char="#"/>
 			</context>
-			<context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+			<context name="Comment" attribute="Comment" lineEndContext="#pop">
+				<DetectSpaces />
+				<IncludeRules context="##Comments"/>
+			</context>
 			<context attribute="String" lineEndContext="#stay" name="String">
 				<LineContinue attribute="String" context="#stay"/>
 				<HlCStringChar attribute="String Char" context="#stay"/>
@@ -119,21 +122,22 @@
 			</context>
 		</contexts>
 		<itemDatas>
-			<itemData name="Normal Text"  defStyleNum="dsNormal"/>
-			<itemData name="Keyword"      defStyleNum="dsKeyword"/>
-			<itemData name="Data Type"    defStyleNum="dsDataType"/>
-			<itemData name="Decimal"      defStyleNum="dsDecVal"/>
-			<itemData name="Hex"          defStyleNum="dsBaseN"/>
-			<itemData name="Float"        defStyleNum="dsFloat"/>
+			<itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
+			<itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+			<itemData name="Data Type"    defStyleNum="dsDataType" spellChecking="false"/>
+			<itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false"/>
+			<itemData name="Hex"          defStyleNum="dsBaseN" spellChecking="false"/>
+			<itemData name="Float"        defStyleNum="dsFloat" spellChecking="false"/>
 			<itemData name="String"       defStyleNum="dsString"/>
-			<itemData name="String Char"  defStyleNum="dsChar"/>
+			<itemData name="String Char"  defStyleNum="dsSpecialChar" spellChecking="false"/>
 			<itemData name="Comment"      defStyleNum="dsComment"/>
-			<itemData name="Node"         defStyleNum="dsNormal" color="#000080" selColor="#FFFFFF" bold="1" italic="0"/>
+			<itemData name="Node"         defStyleNum="dsVariable" bold="1" italic="0" spellChecking="false"/>
 		</itemDatas>
 	</highlighting>
 	<general>
 		<comments>
-			<comment name="singleLine" start="#"/>
+			<comment name="singleLine" start="#" position="afterwhitespace"/>
 		</comments>
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

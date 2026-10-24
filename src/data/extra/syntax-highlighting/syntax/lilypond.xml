@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd" [
+<!DOCTYPE language [
   <!ENTITY b "(?![A-Za-z])">
   <!ENTITY rest "\b[srR]&b;">
   <!ENTITY pitch "\b([a-h]((iss){1,2}|(ess){1,2}|(is){1,2}|(es){1,2}|(sharp){1,2}|(flat){1,2}|ss?|ff?)?|(do|re|mi|fa|sol|la|si)(dd?|bb?|ss?|kk?)?|q)('+|,+|&b;)">
@@ -23,7 +23,7 @@
   <!ENTITY markupnotextargs "arrow-head|beam|char|(semi|sesqui|double)?(flat|sharp)|draw-(circle|line)|epsfile|eyeglasses|filled-box|fret-diagram(-terse|-verbose)?|fromproperty|harp-pedal|(justify|wordwrap)-(field|string)|left-brace|lookup|markalphabet|markletter|musicglyph|natural|note-by-number|note|null|path|right-brace|simple|(back)?slashed-digit|stencil|strut|tied-lyric|triangle|verbatim-file">
   <!ENTITY markupwithtextargs "markup|bold|(rounded-)?box|bracket|caps|(center|general|left|right)-align|circle|((center|dir|left|right)-)?column|combine|concat|dynamic|fill-line|finger|fontCaps|(abs-)?fontsize|fraction|halign|hbracket|hcenter-in|hcenter|hspace|huge|italic|justify|larger?|line|lower|magnify|medium|normal-size-(sub|super)|normal-text|normalsize|number|on-the-fly|override|pad-(around|markup|to-box|x)|page-ref|postscript|put-adjacent|raise|roman|rotate|sans|small(er)?|smallCaps|sub|super|teeny|text|tiny|translate(-scaled)?|transparent|typewriter|underline|upright|vcenter|whiteout|with-(color|dimensions|url)|wordwrap|(markup|column-|justified-|override-|wordwrap-)lines|wordwrap-(string-)?internal">
   <!ENTITY deprecatedmarkup "bigger|h?center">
-  <!ENTITY headervars "dedication|(sub){,2}title|poet|composer|meter|opus|arranger|instrument|piece|breakbefore|copyright|tagline|mutopia(title|composer|poet|opus|instrument)|date|enteredby|source|style|maintainer(Email|Web)?|moreInfo|lastupdated|texidoc|footer">
+  <!ENTITY headervars "dedication|(?:sub){0,2}title|poet|composer|meter|opus|arranger|instrument|piece|breakbefore|copyright|tagline|mutopia(title|composer|poet|opus|instrument)|date|enteredby|source|style|maintainer(Email|Web)?|moreInfo|lastupdated|texidoc|footer">
 
   <!-- The '-new' entities are for for LilyPond 2.13.4 and higher, and '-old' for LilyPond up to 2.12 -->
   <!ENTITY paper-margin "(top|bottom|left|right)-margin|(foot|head)-separation|indent|short-indent|paper-(height|width)|horizontal-shift|line-width">
@@ -43,11 +43,11 @@
   <!ENTITY engraver0 "Accidental|Ambitus|Arpeggio|Auto_beam|Axis_group|Balloon|Bar|Bar_number|Beam|Bend|Break_align|Breathing_sign|Chord_name|Chord_tremolo|Clef|Cluster_spanner|Collision|Completion_heads|Custos|Default_bar_line|Dot_column|Dots|Drum_notes|Dynami_align|Dynamic|Episema|Extender|Figured_bass|Figured_bass_position|Fingering|Font_size|Forbid_line_break|Fretboard|Glissando|Grace_beam|Grace|Grace_spacing|Grid_line_span|Grid_point|Grob_pq|Hara_kiri|Horizontal_bracket">
   <!ENTITY engraver1 "Hyphen|Instrument_name|Instrument_switch|Key|Laissez_vibrer|Ledger_line|Ligature_bracket|Lyric|Mark|Measure_grouping|Melody|Mensural_ligature|Metronome_mark|Multi_measure_rest|New_dynamic|New_fingering|Note_head_line|Note_heads|Note_name|Note_spacing|Ottava_spanner|Output_property|Page_turn|Paper_column|Parenthesis|Part_combine|Percent_repeat|Phrasing_slur|Piano_pedal_align|Piano_pedal|Pitch_squash|Pitched_trill|Repeat_acknowledge|Repeat_tie|Rest_collision|Rest|Rhythmic_column|Scheme|Script_column|Script|Script_row">
   <!ENTITY engraver2 "Separating_line_group|Slash_repeat|Slur|Spacing|Span_arpeggio|Span_bar|Spanner_break_forbid|Staff_collecting|Staff_symbol|Stanza_number_align|Stanza_number|Stem|String_number|Swallow|System_start_delimiter|Tab_harmonic|Tab_note_heads|Tab_staff_symbol|Text|Text_spanner|Tie|Time_signature|Trill_spanner|Tuplet|Tweak|Vaticana_ligature|Vertical_align|Vertically_spaced_contexts|Volta">
-  <!ENTITY engravers00 "(&engraver0;)_engraver">
-  <!ENTITY engravers01 "(&engraver1;)_engraver">
-  <!ENTITY engravers02 "(&engraver2;)_engraver">
-  <!ENTITY engravers1 "(&performer;)_performer">
-  <!ENTITY engravers2 "(&translator;)_translator">
+  <!ENTITY engravers00 "(?:&engraver0;)_engraver">
+  <!ENTITY engravers01 "(?:&engraver1;)_engraver">
+  <!ENTITY engravers02 "(?:&engraver2;)_engraver">
+  <!ENTITY engravers1 "(?:&performer;)_performer">
+  <!ENTITY engravers2 "(?:&translator;)_translator">
 
   <!ENTITY schemename "[a-zA-Z#][^\s(){}[\];$&quot;]*">
   <!ENTITY schemefunc0 "\b(define|defined\?|define\*(-public)?|define-(\*|builtin-markup-(list-)?command|class|(extra-)?display-method|fonts?|grob-property|ly-syntax(-loc|-simple)?|macro(-public)?|markup-(list-)command|method|module|music-function|post-event-display-method|public(-macro|-toplevel)?|safe-public|span-event-display-method)|defmacro(\*(-public)?)?|lambda\*?|and|or|if|cond|case|let\*?|letrec|begin|do|delay|set!|else|(quasi)?quote|unquote(-splicing)?|(define|let|letrec)-syntax|syntax-rules)(?=($|\s|\)))">
@@ -56,7 +56,7 @@
 ]>
 <language name="LilyPond" section="Other"
           style="lilypond" indenter="lilypond"
-          version="6" kateversion="3.3"
+          version="11" kateversion="5.0"
           extensions="*.ly;*.LY;*.ily;*.ILY;*.lyi;*.LYI"
           mimetype="text/x-lilypond"
           author="Wilbert Berendsen (info@wilbertberendsen.nl)" license="LGPL">
@@ -104,7 +104,7 @@
     Changes:
     - better recognition of being inside lyrics, drums, notes, chords and markup sections
     - detect block comments %{  %}
-    - links to ##Alerts in comments (e.g. TODO, FIXME)
+    - links to ##Comments in comments (e.g. TODO, FIXME)
     - detect lilypond inside scheme #{ #}
     - detect \score inside \markup, etc.
     - helps with some often made errors like forgetting spaces around lyric extenders and hyphens
@@ -737,8 +737,7 @@
 
       <context name="musiccommand" attribute="Normal Text" lineEndContext="#pop"
                fallthrough="true" fallthroughContext="#pop">
-        <RegExpr String="\\(&dynamics;)&b;" attribute="Dynamic"/>
-        <RegExpr String="\\[&lt;!&gt;]" attribute="Dynamic"/>
+        <RegExpr String="\\((&dynamics;)&b;|[&lt;!&gt;])" attribute="Dynamic"/>
         <RegExpr String="\\(&scripts;)&b;" attribute="Articulation"/>
         <RegExpr String="\\[()]" attribute="Slur"/>
         <RegExpr String="\\[][]" attribute="Beam"/>
@@ -762,14 +761,7 @@
         <RegExpr String="\\skip&b;" attribute="Command" context="duration"/>
         <RegExpr String="\\tempo&b;" attribute="Command" context="tempo"/>
         <RegExpr String="\\(&keywords;)&b;" attribute="Keyword"/>
-        <RegExpr String="\\(&commands-heads;)&b;" attribute="Command"/>
-        <RegExpr String="\\(&commands-other1;)&b;" attribute="Command"/>
-        <RegExpr String="\\(&commands-other2;)&b;" attribute="Command"/>
-        <RegExpr String="\\(&commands-other3;)&b;" attribute="Command"/>
-        <RegExpr String="\\(&commands-other4;)&b;" attribute="Command"/>
-        <RegExpr String="\\(&commands-other5;)&b;" attribute="Command"/>
-        <RegExpr String="\\(&commands-other6;)&b;" attribute="Command"/>
-        <RegExpr String="\\(&commands-other7;)&b;" attribute="Command"/>
+        <RegExpr String="\\(&commands-heads;|&commands-other1;|&commands-other2;|&commands-other3;|&commands-other4;|&commands-other5;|&commands-other6;|&commands-other7;)&b;" attribute="Command"/>
         <RegExpr String="\\(&toplevelvars;)&b;" attribute="Variable"/>
         <RegExpr String="\\(&deprecatedkeywords;)&b;" attribute="Deprecated Keyword"/>
         <RegExpr String="\\(&deprecatedcommands;)&b;" attribute="Deprecated Command"/>
@@ -809,8 +801,9 @@
                fallthrough="true" fallthroughContext="#pop">
         <DetectSpaces attribute="Normal Text"/>
         <RegExpr String="=\s*('+|,+)?" attribute="Check"/>
-        <RegExpr String="&duration;" attribute="Invalid" context="#pop"/><!-- no duration in chord allowed -->
-        <RegExpr String="\d+" attribute="Invalid" context="#pop"/><!-- catch other (wrong) durations as well -->
+        <!-- no duration in chord allowed -->
+        <!-- catch other (wrong) durations as well -->
+        <RegExpr String="&duration;|\d+" attribute="Invalid" context="#pop"/>
       </context>
 
       <context name="chordend" attribute="Chord" lineEndContext="#stay"
@@ -820,12 +813,14 @@
       </context>
 
       <context name="commentline" attribute="Comment" lineEndContext="#pop">
-        <IncludeRules context="##Alerts"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
 
       <context name="commentblock" attribute="Comment" lineEndContext="#stay">
         <Detect2Chars char="%" char1="}" attribute="Comment" context="#pop" endRegion="comment"/>
-        <IncludeRules context="##Alerts"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
 
       <context name="string" attribute="Quoted Text" lineEndContext="#stay">
@@ -868,21 +863,14 @@
         <keyword String="musicexpressions" attribute="Scheme Keyword"/>
         <keyword String="contexts" attribute="Scheme Keyword"/>
         <keyword String="layoutobjects" attribute="Scheme Keyword"/>
-        <RegExpr String="[-+]?(\d+(\.\d+)?|\.\d+)" attribute="Scheme Value"/>
-        <RegExpr String="#(t|f|b[-+]?[01.]+|o[-+]?[0-7.]+|d[-+]?[0-9.]+|x[-+]?[0-9a-f.]+)"
-                 insensitive="true" attribute="Scheme Value"/>
-        <RegExpr String="[+-](inf|nan)\.0" attribute="Scheme Value"/>
-        <RegExpr String="&schemefunc0;" attribute="Scheme Keyword"/>
-        <RegExpr String="&schemefunc1;" attribute="Scheme Keyword"/>
-        <RegExpr String="&schemefunc2;" attribute="Scheme Keyword"/>
+        <RegExpr String="[-+]?(\d+(\.\d+)?|\.\d+)|#([tfTF]|[bB][-+]?[01.]+|[oO][-+]?[0-7.]+|[dD][-+]?[0-9.]+|[xX][-+]?[0-9a-fA-F.]+)|[+-](inf|nan)\.0" attribute="Scheme Value"/>
+        <RegExpr String="&schemefunc0;|&schemefunc1;|&schemefunc2;" attribute="Scheme Keyword"/>
         <RegExpr String="&schemename;"/>
       </context>
 
       <context name="schemequote" attribute="Scheme" lineEndContext="#pop"
                fallthrough="true" fallthroughContext="#pop">
-        <RegExpr String="&schemefunc0;"/>
-        <RegExpr String="&schemefunc1;"/>
-        <RegExpr String="&schemefunc2;"/>
+        <RegExpr String="&schemefunc0;|&schemefunc1;|&schemefunc2;"/>
       </context>
 
       <context name="schemelily" attribute="Normal Text" lineEndContext="#stay">
@@ -891,12 +879,14 @@
       </context>
 
       <context name="schemecommentline" attribute="Scheme Comment" lineEndContext="#pop">
-        <IncludeRules context="##Alerts"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
 
       <context name="schemecommentblock" attribute="Scheme Comment" lineEndContext="#stay">
         <Detect2Chars char="!" char1="#" attribute="Scheme Comment" context="#pop" endRegion="schemecomment"/>
-        <IncludeRules context="##Alerts"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
 
       <context name="schemesub" attribute="Scheme Subst" lineEndContext="#pop"
@@ -1083,14 +1073,10 @@
         <DetectChar char="{" attribute="Keyword" context="sectionrules" beginRegion="section"/>
         <keyword String="contexts" attribute="Context"/>
         <keyword String="deprecatedcontexts" attribute="Deprecated Context"/>
-        <RegExpr String="(&quot;?)\b(&engravers00;)\b\1" attribute="Engraver"/>
-        <RegExpr String="(&quot;?)\b(&engravers01;)\b\1" attribute="Engraver"/>
-        <RegExpr String="(&quot;?)\b(&engravers02;)\b\1" attribute="Engraver"/>
-        <RegExpr String="(&quot;?)\b(&engravers1;)\b\1" attribute="Engraver"/>
-        <RegExpr String="(&quot;?)\b(&engravers2;)\b\1" attribute="Engraver"/>
+        <RegExpr String="(&quot;?)\b(?:&engravers00;|&engravers01;|&engravers02;|&engravers1;|&engravers2;)\b\1" attribute="Engraver"/>
         <keyword String="layoutobjects" attribute="Layout Object"/>
         <keyword String="properties" attribute="Property"/>
-        <RegExpr String="\b(&headervars;|&papervars;|&layoutvars;)\b" attribute="Variable"/>
+        <RegExpr String="\b(?:&headervars;|&papervars;|&layoutvars;)\b" attribute="Variable"/>
         <keyword String="deprecatedproperties" attribute="Deprecated Property"/>
         <IncludeRules context="default"/>
       </context>

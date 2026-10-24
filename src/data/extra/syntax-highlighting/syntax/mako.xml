@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 	<!ENTITY name    "[A-Za-z_:][\w.:_-]*">
 	<!ENTITY entref  "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
 ]>
-<language name="Mako" version="5" kateversion="5.0" section="Markup" extensions="*.mako;*.mak" author="Massimiliano Torromeo (massimiliano.torromeo@gmail.com)" license="LGPL">
+<language name="Mako" version="10" kateversion="5.79" section="Markup" extensions="*.mako;*.mak" author="Massimiliano Torromeo (massimiliano.torromeo@gmail.com)" license="LGPL">
 
 <highlighting>
 <list name="flow">
@@ -21,7 +21,7 @@
 		<RegExpr attribute="MakoKeyword" context="NoMakoHTML" String="&lt;%text(?:\s+[^&gt;]*)?&gt;" beginRegion="nomako" />
 		<Detect2Chars attribute="MakoKeyword" context="Mako" char="&lt;" char1="%" />
 		<RegExpr attribute="MakoKeyword" context="Mako" String="&lt;/?%" />
-		<RegExpr attribute="MakoKeyword" context="MakoOneLiner" String="^\s*% " />
+		<RegExpr attribute="MakoKeyword" context="MakoOneLiner" String="^\s*% " column="0" />
 		<Detect2Chars attribute="MakoKeyword" context="MakoPrint" char="$" char1="{" />
 	</context>
 
@@ -55,23 +55,23 @@
 		<DetectIdentifier/>
 		<StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
 		<StringDetect attribute="CDATA" context="CDATA" String="&lt;![CDATA[" beginRegion="cdata" />
-		<RegExpr attribute="Doctype" context="Doctype" String="&lt;!DOCTYPE\s+" beginRegion="doctype" />
+		<WordDetect attribute="Doctype" context="Doctype" String="&lt;!DOCTYPE" beginRegion="doctype" />
 		<RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:-]*" beginRegion="pi" />
-		<RegExpr attribute="Element" context="CSS" String="&lt;style\b" insensitive="true" beginRegion="style" />
-		<RegExpr attribute="Element" context="JS" String="&lt;script\b" insensitive="true" beginRegion="script" />
-		<RegExpr attribute="Element" context="El Open" String="&lt;pre\b" insensitive="true" beginRegion="pre" />
-		<RegExpr attribute="Element" context="El Open" String="&lt;div\b" insensitive="true" beginRegion="div" />
-		<RegExpr attribute="Element" context="El Open" String="&lt;table\b" insensitive="true" beginRegion="table" />
-		<RegExpr attribute="Element" context="El Open" String="&lt;ul\b" insensitive="true" beginRegion="ul" />
-		<RegExpr attribute="Element" context="El Open" String="&lt;ol\b" insensitive="true" beginRegion="ol" />
-		<RegExpr attribute="Element" context="El Open" String="&lt;dl\b" insensitive="true" beginRegion="dl" />
+		<WordDetect attribute="Element" context="CSS" String="&lt;style" insensitive="true" beginRegion="style" />
+		<WordDetect attribute="Element" context="JS" String="&lt;script" insensitive="true" beginRegion="script" />
+		<WordDetect attribute="Element" context="El Open" String="&lt;pre" insensitive="true" beginRegion="pre" />
+		<WordDetect attribute="Element" context="El Open" String="&lt;div" insensitive="true" beginRegion="div" />
+		<WordDetect attribute="Element" context="El Open" String="&lt;table" insensitive="true" beginRegion="table" />
+		<WordDetect attribute="Element" context="El Open" String="&lt;ul" insensitive="true" beginRegion="ul" />
+		<WordDetect attribute="Element" context="El Open" String="&lt;ol" insensitive="true" beginRegion="ol" />
+		<WordDetect attribute="Element" context="El Open" String="&lt;dl" insensitive="true" beginRegion="dl" />
 		<RegExpr attribute="Element" context="El Open" String="&lt;&name;" />
-		<RegExpr attribute="Element" context="El Close" String="&lt;/pre\b" insensitive="true" endRegion="pre" />
-		<RegExpr attribute="Element" context="El Close" String="&lt;/div\b" insensitive="true" endRegion="div" />
-		<RegExpr attribute="Element" context="El Close" String="&lt;/table\b" insensitive="true" endRegion="table" />
-		<RegExpr attribute="Element" context="El Close" String="&lt;/ul\b" insensitive="true" endRegion="ul" />
-		<RegExpr attribute="Element" context="El Close" String="&lt;/ol\b" insensitive="true" endRegion="ol" />
-		<RegExpr attribute="Element" context="El Close" String="&lt;/dl\b" insensitive="true" endRegion="dl" />
+		<WordDetect attribute="Element" context="El Close" String="&lt;/pre" insensitive="true" endRegion="pre" />
+		<WordDetect attribute="Element" context="El Close" String="&lt;/div" insensitive="true" endRegion="div" />
+		<WordDetect attribute="Element" context="El Close" String="&lt;/table" insensitive="true" endRegion="table" />
+		<WordDetect attribute="Element" context="El Close" String="&lt;/ul" insensitive="true" endRegion="ul" />
+		<WordDetect attribute="Element" context="El Close" String="&lt;/ol" insensitive="true" endRegion="ol" />
+		<WordDetect attribute="Element" context="El Close" String="&lt;/dl" insensitive="true" endRegion="dl" />
 		<RegExpr attribute="Element" context="El Close" String="&lt;/&name;" />
 		<!-- as long as kde gives DTDs the text/html mimetype--><IncludeRules context="FindDTDRules" />
 		<IncludeRules context="FindEntityRefs" />
@@ -101,17 +101,15 @@
 
 	<context name="Comment" attribute="Comment" lineEndContext="#stay">
 		<DetectSpaces/>
-		<IncludeRules context="##Alerts" />
+		<IncludeRules context="##Comments" />
 		<DetectIdentifier/>
 		<StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
-		<RegExpr attribute="Error" context="#stay" String="-(-(?!-&gt;))+" />
 	</context>
 
 	<context name="CDATA" attribute="Normal Text" lineEndContext="#stay">
 		<DetectSpaces/>
 		<DetectIdentifier/>
 		<StringDetect attribute="CDATA" context="#pop" String="]]&gt;" endRegion="cdata" />
-		<StringDetect attribute="EntityRef" context="#stay" String="]]&amp;gt;" />
 	</context>
 
 	<context name="PI" attribute="Normal Text" lineEndContext="#stay">
@@ -154,41 +152,31 @@
 		<IncludeRules context="FindMako" />
 	</context>
 
-	<context name="El Close" attribute="Normal Text" lineEndContext="#stay">
+	<context name="El Close" attribute="Error" lineEndContext="#stay">
 		<DetectChar attribute="Element" context="#pop" char="&gt;" />
-		<RegExpr attribute="Error" context="#stay" String="\S" />
+		<DetectSpaces attribute="Normal Text"/>
 	</context>
 
-	<context name="El Close 2" attribute="Normal Text" lineEndContext="#stay">
-		<DetectChar attribute="Element" context="#pop#pop#pop" char="&gt;" />
-		<RegExpr attribute="Error" context="#stay" String="\S" />
-	</context>
-
-	<context name="El Close 3" attribute="Normal Text" lineEndContext="#stay">
-		<DetectChar attribute="Element" context="#pop#pop#pop#pop" char="&gt;" />
-		<RegExpr attribute="Error" context="#stay" String="\S" />
-	</context>
-
-	<context name="CSS" attribute="Normal Text" lineEndContext="#stay">
+	<context name="CSS" attribute="Error" lineEndContext="#stay">
 		<Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="style" />
 		<DetectChar attribute="Element" context="CSS content" char="&gt;" />
-		<RegExpr attribute="Error" context="#stay" String="\S" />
+		<DetectSpaces attribute="Normal Text"/>
 	</context>
 
 	<context name="CSS content" attribute="Normal Text" lineEndContext="#stay">
-		<RegExpr attribute="Element" context="El Close 2" String="&lt;/style\b" insensitive="true" endRegion="style" />
+		<WordDetect attribute="Element" context="#pop#pop!El Close" String="&lt;/style" insensitive="true" endRegion="style" />
 		<IncludeRules context="##CSS" includeAttrib="true"/>
 	</context>
 
-	<context name="JS" attribute="Normal Text" lineEndContext="#stay">
+	<context name="JS" attribute="Error" lineEndContext="#stay">
 		<Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="script" />
 		<DetectChar attribute="Element" context="JS content" char="&gt;" />
 		<IncludeRules context="FindAttributes" />
-		<RegExpr attribute="Error" context="#stay" String="\S" />
+		<DetectSpaces attribute="Normal Text"/>
 	</context>
 
 	<context name="JS content" attribute="Normal Text" lineEndContext="#stay">
-		<RegExpr attribute="Element" context="El Close 2" String="&lt;/script\b" insensitive="true" endRegion="script" />
+		<WordDetect attribute="Element" context="#pop#pop!El Close" String="&lt;/script" insensitive="true" endRegion="script" />
 		<RegExpr attribute="Comment" context="JS comment close" String="//(?=.*&lt;/script\b)" insensitive="true" />
 		<RegExpr attribute="MakoKeyword" context="NoMakoJS" String="&lt;%text(?:\s+[^&gt;]*)?&gt;" beginRegion="nomako" />
 		<IncludeRules context="FindMako" />
@@ -196,20 +184,20 @@
 	</context>
 
 	<context name="JS comment close" attribute="Comment" lineEndContext="#pop">
-		<RegExpr attribute="Element" context="El Close 3" String="&lt;/script\b" insensitive="true" endRegion="script" />
-		<IncludeRules context="##Alerts" />
+		<WordDetect attribute="Element" context="#pop#pop#pop!El Close" String="&lt;/script" insensitive="true" endRegion="script" />
+		<DetectSpaces />
+		<IncludeRules context="##Comments" />
 	</context>
 
-	<context name="Value" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="Value NQ">
+	<context name="Value" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Value NQ">
 		<DetectChar attribute="Value" context="Value DQ" char="&quot;" />
 		<DetectChar attribute="Value" context="Value SQ" char="&apos;" />
 		<DetectSpaces />
 	</context>
 
-	<context name="Value NQ" attribute="Normal Text" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
+	<context name="Value NQ" attribute="Normal Text" lineEndContext="#pop#pop" fallthroughContext="#pop#pop">
 		<IncludeRules context="FindEntityRefs" />
-		<RegExpr attribute="Value" context="#stay" String="/(?!&gt;)" />
-		<RegExpr attribute="Value" context="#stay" String="[^/&gt;&lt;&quot;&apos;\s]" />
+		<RegExpr attribute="Value" context="#stay" String="/(?!&gt;)|[^/&gt;&lt;&quot;&apos;\s]" />
 	</context>
 
 	<context name="Value DQ" attribute="Value" lineEndContext="#stay">
@@ -245,9 +233,9 @@
 </highlighting>
 <general>
   <comments>
-    <comment name="multiLine" start="&lt;!--" end="--&gt;" />
-    <comment name="multiLine" start="&lt;%doc&gt;" end="&lt;/%doc&gt;" />
-    <comment name="singleLine" start="##" position="afterwhitespace"/>
+    <comment name="singleLine" start="#" position="afterwhitespace"/>
+	<comment name="multiLine" start="&lt;!--" end="--&gt;" region="comment"/>
   </comments>
 </general>
 </language>
+<!-- kate: replace-tabs off; -->

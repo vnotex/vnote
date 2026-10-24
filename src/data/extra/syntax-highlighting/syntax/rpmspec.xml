@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd" [
+<!DOCTYPE language [
   <!ENTITY a_valid_char_in_macro_names "A-Za-z0-9_">
-  <!ENTITY command_section_name "(prep|build|pre|preun|install|post|postun|clean|files|trigger|triggerin|triggerun|triggerpostun|verifyscript|check|pretrans|posttrans)">
-  <!ENTITY arch "(aarch64|alpha|alphaev5|alphaev56|alphaev6|alphaev67|alphapca56|amd64|armv3l|armv4b|armv4l|armv4tl|armv5b|armv5l|armv5teb|armv5tejl|armv5tel|armv6l|armv7l|atariclone|atarist|atariste|ataritt|athlon|axp|em64t|falcon|fat|geode|hades|hppa|hppa1\.0|hppa1\.1|hppa1\.2|hppa2\.0|hppa64|i370|i386|i486|i586|i686|ia32e|ia64|IP|m68k|m68kmint|milan|mips|mipsel|noarch|osfmach3_i386|osfmach3_i486|osfmach3_i586|osfmach3_i686|osfmach3_ppc|parisc|pentium3|pentium4|powerpc|powerpc64|powerppc|ppc|ppc32dy4|ppc64|ppc64le|ppc64iseries|ppc64pseries|ppc8260|ppc8560|ppciseries|ppcpseries|rs6000|s390|s390x|sgi|sh|sh3|sh4|sh4a|sparc|sparc64|sparc64v|sparcv8|sparcv9|sparcv9v|sun4|sun4c|sun4d|sun4m|sun4u|x86_64|xtensa)">
-  <!ENTITY os "(AIX|AmigaOS|BSD_OS|bsdi|bsdi4\.0|cygwin32|CYGWIN32_95|CYGWIN32_NT|Darwin|darwin|Darwin|FreeBSD|FreeMiNT|HP-UX|hpux10|hpux10\.00|hpux10\.01|hpux10\.10|hpux10\.20|hpux10\.30|hpux11\.00|hpux9\.04|hpux9\.05|hpux9\.07|IRIX|Irix|IRIX|IRIX64|Irix64|IRIX64|Linux|Linux\/390|Linux\/ESA|machten|MacOSX|macosx|MacOSX|MiNT|mint|MiNT|mint|MiNT|mint|MP_RAS|ncr-sysv4\.2|ncr-sysv4\.3|NEXTSTEP|NextStep|OS\/390|OSF1|osf1|osf3\.2|osf4\.0|SCO_SV|SCO_SV3\.2v5\.0\.2|solaris|solaris2\.3|solaris2\.4|solaris2\.5|solaris2\.6|solaris2\.7|SunOS|SunOS4|SunOS5|TOS|UNIX_SV|VM\/ESA)">
+  <!ENTITY command_section_name "(prep|build|pre|preun|install|post|postun|clean|files|trigger|triggerin|triggerun|triggerpostun|verifyscript|check|pretrans|posttrans|filetriggerin|filetriggerun|filetriggerpostun|transfiletriggerin|transfiletriggerun|transfiletriggerpostun|generate_buildrequires)">
+  <!ENTITY arch "(aarch64|alpha|alphaev5|alphaev56|alphaev6|alphaev67|alphapca56|amd64|armv3l|armv4b|armv4l|armv4tl|armv5tejl|armv5tel|armv5tl|armv6hl|armv6l|armv7hl|armv7hnl|armv7l|atariclone|atarist|atariste|ataritt|athlon|em64t|falcon|fat|geode|hades|hppa1\.0|hppa1\.1|hppa1\.2|hppa2\.0|i370|i386|i486|i586|i686|ia32e|ia64|IP|m68k|m68kmint|milan|mips|mips64|mips64el|mips64r6|mips64r6el|mipsel|mipsr6|mipsr6el|noarch|osfmach3_i386|osfmach3_i486|osfmach3_i586|osfmach3_i686|osfmach3_ppc|parisc|pentium3|pentium4|powerpc|powerppc|ppc|ppc32dy4|ppc64|ppc64iseries|ppc64le|ppc64p7|ppc64pseries|ppc8260|ppc8560|ppciseries|ppcpseries|riscv|riscv64|rs6000|s390|s390x|sh|sh3|sh4|sh4a|sparc|sparc64|sparc64v|sparcv8|sparcv9|sparcv9v|sun4|sun4c|sun4d|sun4m|sun4u|x86_64|xtensa)">
+  <!ENTITY os "(AIX|AmigaOS|bsdi|bsdi4\.0|BSD_OS|cygwin32|CYGWIN32_95|CYGWIN32_NT|darwin|Darwin|FreeBSD|FreeMiNT|HP-UX|hpux10|hpux10\.00|hpux10\.01|hpux10\.10|hpux10\.20|hpux10\.30|hpux11\.00|hpux9\.04|hpux9\.05|hpux9\.07|Irix|IRIX|Irix64|IRIX64|Linux|Linux\/390|Linux\/ESA|machten|macosx|MacOSX|mint|MiNT|MP_RAS|ncr-sysv4\.2|ncr-sysv4\.3|NextStep|NEXTSTEP|OS\/390|osf1|OSF1|osf3\.2|osf4\.0|SCO_SV|SCO_SV3\.2v5\.0\.2|solaris|solaris2\.3|solaris2\.4|solaris2\.5|solaris2\.6|solaris2\.7|SunOS|SunOS4|SunOS5|TOS|UNIX_SV|VM\/ESA)">
   <!ENTITY arch_conditionals_names "(ifarch|ifnarch)">
   <!ENTITY os_conditionals_names "(ifos|ifnos)">
+  <!ENTITY predefined_commands "(if|&arch_conditionals_names;|&os_conditionals_names;|else|endif|define|undefine|package|description|&command_section_name;|changelog)($|[^&a_valid_char_in_macro_names;])">
   <!ENTITY lookahead_whitespace_eol "(?=($| |\t))">
 ]>
-<language name="RPM Spec" version="5" kateversion="2.4" section="Other" extensions="*.spec" mimetype="text/x-rpm-spec" license="Public Domain">
+<language name="RPM Spec" version="13" kateversion="5.79" section="Other" extensions="*.spec" mimetype="text/x-rpm-spec" license="Public Domain">
 
 <!-- The entities "arch" and "os" are based on /usr/lib/rpm/rpmrc (in the version coming with openSUSE 11.4). -->
 
@@ -82,25 +83,47 @@
       <item>31</item>
     </list>
 
+    <list name="bash_keyword">
+      <item>break</item>
+      <item>case</item>
+      <item>continue</item>
+      <item>do</item>
+      <item>done</item>
+      <item>elif</item>
+      <item>else</item>
+      <item>esac</item>
+      <item>fi</item>
+      <item>for</item>
+      <item>function</item>
+      <item>if</item>
+      <item>in</item>
+      <item>return</item>
+      <item>select</item>
+      <item>then</item>
+      <item>until</item>
+      <item>while</item>
+    </list>
+
     <contexts>
-      <!-- "package section" is the context for the package defination. As it is the first context
+      <!-- "package section" is the context for the package definition. As it is the first context
       in this file, it is also the context with which the interpreter starts. -->
       <context attribute="Error" lineEndContext="#stay" name="package section">
-        <!-- Handle tags: -->
-        <RegExpr attribute="Tag" context="tag_line_value" String="((Icon)[ \t]*:[ \t]*)" column="0" />
-        <RegExpr attribute="Tag" context="tag_line_os" String="((ExclusiveOs|ExcludeOs)[ \t]*:[ \t]*)" column="0" />
-        <RegExpr attribute="Tag" context="tag_line_arch" String="((BuildArch|BuildArchitectures|ExclusiveArch|ExcludeArch)[ \t]*:[ \t]*)" column="0" />
-        <RegExpr attribute="Tag" context="tag_line_package" String="((Conflicts|Obsoletes|Provides|Requires|Requires\(.*\)|Enhances|Suggests|BuildConflicts|BuildRequires|Recommends|PreReq)[ \t]*:[ \t]*)" column="0" />
-        <RegExpr attribute="Tag" context="tag_line_integer" String="((Epoch|Serial|Nosource|Nopatch)[ \t]*:[ \t]*)" column="0" />
-        <RegExpr attribute="Tag" context="tag_line_switch" String="((AutoReq|AutoProv|AutoReqProv)[ \t]*:[ \t]*)" column="0" />
-        <RegExpr attribute="Tag" context="tag_line_string" String="((Copyright|License|Summary|Summary\(.*\)|Distribution|Vendor|Packager|Group|Source\d*|Patch\d*|BuildRoot|Prefix)[ \t]*:[ \t]*)" column="0" />
-        <RegExpr attribute="Tag" context="tag_line_string_only_one_word" String="((Name|Version|Release|Url|URL)[ \t]*:[ \t]*)" column="0" />
         <!-- Handle % -->
-        <AnyChar context="macro entry in package section" String="%$" lookAhead="true" />
+        <DetectChar context="macro entry in package section" char="%" lookAhead="true" />
+        <!-- Handle tags: -->
+        <RegExpr attribute="Tag" context="tag_line_package" String="^(Conflicts|Obsoletes|Provides|Requires|Requires\([^)]*\)|Enhances|Suggests|BuildConflicts|BuildRequires|Recommends|PreReq|BuildPreReq|Supplements|OrderWithRequires|RemovePathPostfixes)[ \t]*:[ \t]*" column="0"/>
+        <RegExpr attribute="Tag" context="tag_line_string" String="^(Copyright|License|Summary|Summary\([^)]*\)|Distribution|Vendor|Packager|Group|Source\d*|Patch\d*|BuildRoot|Prefix)[ \t]*:[ \t]*" column="0"/>
+        <RegExpr attribute="Tag" context="tag_line_string_only_one_word" String="^(Name|Version|Release|Url|URL)[ \t]*:[ \t]*" column="0"/>
+        <RegExpr attribute="Tag" context="tag_line_os" String="^(ExclusiveOs|ExcludeOs)[ \t]*:[ \t]*" column="0"/>
+        <RegExpr attribute="Tag" context="tag_line_arch" String="^(BuildArch|BuildArchitectures|ExclusiveArch|ExcludeArch)[ \t]*:[ \t]*" column="0"/>
+        <RegExpr attribute="Tag" context="tag_line_integer" String="^(Epoch|Serial|Nosource|Nopatch)[ \t]*:[ \t]*" column="0"/>
+        <RegExpr attribute="Tag" context="tag_line_switch" String="^(AutoReq|AutoProv|AutoReqProv)[ \t]*:[ \t]*" column="0"/>
+        <RegExpr attribute="Tag" context="tag_line_value" String="^(Icon)[ \t]*:[ \t]*" column="0"/>
         <!-- Handle comments. "# norootforbuild" is displayed like a tag. -->
-        <RegExpr context="Comment" String="[ \t]*#" column="0" lookAhead="true" />
-                <!-- Spaces are okay -->
+        <RegExpr context="Comment" String="^[ \t]*#" column="0" lookAhead="true" />
+        <!-- Spaces are okay -->
         <DetectSpaces attribute="Fallback for separator spaces" />
+        <DetectIdentifier/>
         <!-- Fallback value for every non-space -->
         <!--RegExpr attribute="Error" context="#stay" String="[^\s]" /-->
       </context>
@@ -111,7 +134,8 @@
       context will switch back ("#pop"). -->
       <context attribute="Shell commands" lineEndContext="#pop" name="macro entry in package section">
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="true" />
+        <IncludeRules context="find_spaces_and_ident"/>
       </context>
 
       <!-- "package section start line" simply is used for the parameters after the
@@ -119,19 +143,21 @@
       "package section" context which will handle everything else. -->
       <context attribute="Shell commands" lineEndContext="package section" name="package section start line">
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="true" />
       </context>
 
-      <!-- "command section" is a generic context for all secions (like %prep, %build, %install...)
+      <!-- "command section" is a generic context for all sections (like %prep, %build, %install...)
       where you can enter shell commands. -->
-      <context attribute="Shell commands" lineEndContext="#stay" name="command section">
-        <!-- Handle \ -->
-        <RegExpr attribute="Escaped character" String="\\." />
-        <DetectChar attribute="Line break" char="\" />
-        <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
-        <!-- Handle comments. "# norootforbuild" is displayed like a tag. -->
-        <RegExpr context="Comment" String="[ \t]*#" column="0" lookAhead="true" />
+      <context attribute="Shell commands" lineEndContext="#stay" name="command section" fallthroughContext="#pop!shell in section">
+        <RegExpr attribute="Shell commands" String="\s+(?=.*-p\s+&lt;lua>)" context="#pop!command section lua"/>
+      </context>
+      <context attribute="Shell commands" lineEndContext="#pop!section lua" name="command section lua">
+        <DetectChar context="handle_percent" char="%" lookAhead="true" />
+        <IncludeRules context="find_spaces_and_ident"/>
+      </context>
+      <context attribute="Shell commands" lineEndContext="#stay" name="section lua">
+        <DetectChar context="handle_percent" char="%" lookAhead="1" column="0"/>
+        <IncludeRules context="##Lua"/>
       </context>
 
       <!-- "changelog section" is the context for the changelog. By default, everything that is
@@ -139,32 +165,31 @@
       <context attribute="String" lineEndContext="#stay" name="changelog section">
         <!-- Handle calender date -->
         <DetectChar attribute="Tag" context="changelog_weekday" char="*" column="0" />
-        <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
-        <!-- Handle comments. "# norootforbuild" is displayed like a tag. -->
-        <RegExpr context="Comment" String="[ \t]*#" column="0" lookAhead="true" />
+        <IncludeRules context="description section"/>
       </context>
 
       <!-- "description section start line" simply is used for the parameters after the
       "%description" macro. With the next line break, it will switch to the
       "description section" context which will handle the content of the description. -->
-      <context attribute="Shell commands" lineEndContext="description section" name="description section start line">
+      <context attribute="Shell commands" lineEndContext="#pop!description section" name="description section start line">
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="true" />
       </context>
 
       <!-- "description section" is a follow-up context of "description section start line". See
       there for further details. -->
       <context attribute="String" lineEndContext="#stay" name="description section">
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="true" />
+        <DetectIdentifier attribute="String"/>
         <!-- Handle comments. "# norootforbuild" is displayed like a tag. -->
-        <RegExpr context="Comment" String="[ \t]*#" column="0" lookAhead="true" />
+        <RegExpr context="Comment" String="^[ \t]*#" column="0" lookAhead="true" />
+        <DetectSpaces attribute="String"/>
       </context>
 
       <!-- This is a convenience context that is handling comments automatically. Furthermore it
       handles "# norootforbuild" because it looks like a comment. If a context supports comments,
-      simple use "<RegExpr context="Comment" String="[ \t]*#" column="0" lookAhead="true" />".
+      simple use "<RegExpr context="Comment" String="^[ \t]*#" column="0" lookAhead="true" />".
       (This context relies on the asumption that # is the first non-whitespace. We have to
       guarantee this when calling this context! -->
       <context attribute="Comment" lineEndContext="#pop" name="Comment">
@@ -172,20 +197,23 @@
         http://docs.fedoraproject.org/en-US/Fedora_Draft_Documentation/0.1/html/RPM_Guide/ch-specfile-syntax.html#id1961462),
         rpmbuild accepts them nevertheless. We highlight them as comments, but we mark the
         indeet. -->
-        <RegExpr attribute="Hint" context="#stay" String="[ \t]+(?=#)" column="0" />
-	<!-- Handle "# norootforbuild" and some of its miss-spellings. -->
+        <!-- Handle "# norootforbuild" and some of its miss-spellings. -->
         <StringDetect attribute="Tag" context="every_non_whitespace_is_warning" String="# norootforbuild" column="0" />
-        <RegExpr attribute="Warning" context="#stay" String="#[ \t]*norootforbuild" />
+        <RegExpr attribute="Warning" context="#stay" String="#[ \t]*norootforbuild" firstNonSpace="1"/>
+        <RegExpr attribute="Hint" context="#stay" String="^[ \t]+(?=#)" column="0" />
         <!-- Warning on single percent ("%"), but not on double percent ("%%"): -->
         <Detect2Chars attribute="Comment" char="%" char1="%"/>
         <DetectChar attribute="Warning" char="%"/>
-        <IncludeRules context="##Alerts"/> <!-- Alert -->
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/> <!-- Alert -->
+        <DetectIdentifier />
       </context>
 
       <!-- "every_non_whitespace_is_error" is a simple helper context. It switchs back to the
       previous context at the end of the line. -->
       <context attribute="Fallback for separator spaces" lineEndContext="#pop" name="every_non_whitespace_is_error">
-        <RegExpr attribute="Error" context="#stay" String="[^\s]" />
+        <DetectSpaces attribute="Fallback for separator spaces"/>
+        <RegExpr attribute="Error" context="#stay" String="[^\s]+"/>
       </context>
 
       <!-- "every_non_whitespace_is_warning" is a simple helper context. It switchs back to the
@@ -198,17 +226,16 @@
       check. -->
       <context attribute="Enumeration" lineEndContext="#pop" name="tag_line_value">
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
       </context>
 
       <!-- "tag_line_string" is a context for string values. It makes no further syntax
       check. -->
       <context attribute="String" lineEndContext="#pop" name="tag_line_string">
         <!-- Handle \ -->
-        <RegExpr attribute="Escaped character" String="\\[^%]" />
-        <RegExpr attribute="Escaped character" String="\\(?=(\%))" />
+        <RegExpr attribute="Escaped character" String="\\[^%]|\\(?=(\%))" />
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
       </context>
 
       <!-- "tag_line_string_only_one_word" is a context for string values. The first word is
@@ -217,8 +244,7 @@
       the begin! -->
       <context attribute="String" lineEndContext="#pop" name="tag_line_string_only_one_word">
         <!-- Handle \ -->
-        <RegExpr attribute="Escaped character" String="\\[^%]" />
-        <RegExpr attribute="Escaped character" String="\\(?=(\%))" />
+        <RegExpr attribute="Escaped character" String="\\[^%]|\\(?=(\%))" />
         <!-- Handle % -->
         <AnyChar context="tag_line_string" String="%$" lookAhead="true" />
         <!-- Handle spaces -->
@@ -227,11 +253,10 @@
 
       <!-- "tag_line_integer" is a context for integer values. Non-integer context is marked as
       error. -->
-      <context attribute="Error" lineEndContext="#pop" name="tag_line_integer">
+      <context attribute="Error" lineEndContext="#pop" name="tag_line_integer" fallthroughContext="every_non_whitespace_is_error">
         <Int attribute="Integer" context="every_non_whitespace_is_error" />
         <!-- Handle % -->
         <AnyChar context="tag_line_integer_without_syntax_check" String="%$" lookAhead="true" />
-        <RegExpr context="every_non_whitespace_is_error" String="." lookAhead="true" />
       </context>
 
       <!-- "tag_line_os" is a context for values that define the operation system. Unknown values
@@ -249,7 +274,7 @@
       "tag_line_integer" after macros. -->
       <context attribute="Integer" lineEndContext="#pop" name="tag_line_integer_without_syntax_check">
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
       </context>
 
       <!-- "tag_line_arch" is a context for values that define the computer type. Unknown values
@@ -275,26 +300,25 @@
         <Detect2Chars attribute="Keyword" context="#stay" char="=" char1="="/>
         <AnyChar attribute="Keyword" context="#stay" String="=&lt;&gt;," />
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
       </context>
 
       <!-- "tag_line_switch" is a context that accepts "0", "1", "yes" and "no" as value.
       Everything else is an error. See http://www.rpm.org/max-rpm-snapshot/s1-rpm-depend-auto-depend.html
       and http://www.rpm.org/max-rpm/s1-rpm-inside-tags.html#S3-RPM-INSIDE-AUTOREQPROV-TAG -->
-      <context attribute="Error" lineEndContext="#pop" name="tag_line_switch">
+      <context attribute="Error" lineEndContext="#pop" name="tag_line_switch" fallthroughContext="every_non_whitespace_is_error">
         <AnyChar attribute="Enumeration" context="every_non_whitespace_is_error" String="01" />
         <Detect2Chars attribute="Enumeration" context="every_non_whitespace_is_error" char="n" char1="o"/>
         <StringDetect attribute="Enumeration" context="every_non_whitespace_is_error" String="yes" />
         <!-- Handle % -->
         <AnyChar context="tag_line_value" String="%$" lookAhead="true" />
-        <RegExpr context="every_non_whitespace_is_error" String="." lookAhead="true" />
       </context>
 
       <!-- A context that doesn't test for format errors in the changelog date anymore. Necessary
       if macros are used. -->
       <context attribute="Tag" lineEndContext="#pop" name="changelog_generic">
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
       </context>
 
      <!-- A context that handles the weekday in the changelog date. -->
@@ -336,7 +360,7 @@
      <!-- A context that handles the text after the date in a changelog (name, e-mail...). -->
       <context attribute="Tag" lineEndContext="#pop" name="changelog_header">
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
       </context>
 
       <!-- Handles everything that comes after %ifos etc... -->
@@ -346,7 +370,7 @@
         <!-- Recognize valid values -->
         <RegExpr attribute="Enumeration" String="&os;&lookahead_whitespace_eol;" />
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
       </context>
 
       <!-- Handles everything that comes after %ifarch etc... -->
@@ -356,7 +380,7 @@
         <!-- Recognize valid values -->
         <RegExpr attribute="Enumeration" String="&arch;&lookahead_whitespace_eol;" />
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
       </context>
 
       <!-- Handles expressions after conditionals. -->
@@ -373,11 +397,11 @@
         <AnyChar attribute="Keyword" context="#stay" String="!&lt;&gt;" />
         <Detect2Chars attribute="Keyword" context="#stay" char="|" char1="|"/>
         <!-- %if interpretates values either as integer or as string -->
-        <Int attribute="Integer" context="#stay" />
+        <Int attribute="Integer" context="#stay" additionalDeliminator="!("/>
         <DetectIdentifier attribute="String" context="#stay" />
         <DetectChar attribute="String" context="quoted strings in if statements" char="&quot;" />
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
       </context>
 
       <!-- This context handles quoted strings in %if statements. WARNING: Make sure that you
@@ -387,21 +411,23 @@
         <!-- Handle \ -->
         <RegExpr attribute="Escaped character" String="\\[^&quot;]" />
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
         <!-- Switch back at the end of the quoted string -->
         <DetectChar attribute="String" context="#pop" char="&quot;" />
       </context>
 
       <!-- Context for %define -->
-      <context attribute="Fallback for separator spaces" lineEndContext="#pop" name="macro defination">
+      <context attribute="Fallback for separator spaces" lineEndContext="#pop" name="macro definition">
         <DetectSpaces />
-        <RegExpr attribute="Enumeration" context="macro defination content" String="[&a_valid_char_in_macro_names;]*&lookahead_whitespace_eol;" />
-        <RegExpr attribute="Error" context="macro defination content" String="[^ \t]*" />
+        <RegExpr attribute="Enumeration" context="macro definition content" String="[&a_valid_char_in_macro_names;]*(([(][)])|&lookahead_whitespace_eol;)" />
+        <RegExpr attribute="Error" context="macro definition content" String="[^ \t]*" />
       </context>
 
-      <!-- Context for the content of a macro defination. -->
-      <context attribute="String" lineEndContext="#pop" name="macro defination content">
-        <DetectSpaces />
+      <!-- Context for the content of a macro definition. -->
+      <context attribute="String" lineEndContext="#pop" name="macro definition content">
+        <IncludeRules context="find_spaces_and_ident"/>
+        <!-- Handle % -->
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
         <LineContinue attribute="Line break" context="#stay"/>
         <DetectChar attribute="Warning" char="\" />
       </context>
@@ -417,44 +443,547 @@
       It expects a string starting with % or $ (otherwise, this context will fail!). -->
       <context attribute="Fallback for separator spaces" lineEndContext="#pop" name="handle_percent">
         <Detect2Chars attribute="Escaped character" context="#pop" char="%" char1="%"/>
+        <!-- Handle normal macros -->
+        <Detect2Chars attribute="Macro call" context="#pop!macro content in braces" char="%" char1="{" />
+        <Detect2Chars attribute="Macro call" context="#pop!macro content in parenthesis" char="%" char1="(" />
         <!-- Keywords: -->
-        <RegExpr attribute="Keyword" context="expression after _if_ statement" String="%(if!?)&lookahead_whitespace_eol;" firstNonSpace="true" beginRegion="if_block" />
-        <RegExpr attribute="Keyword" context="parameters after ifarch" String="%&arch_conditionals_names;&lookahead_whitespace_eol;" firstNonSpace="true" beginRegion="if_block" />
-        <RegExpr attribute="Keyword" context="parameters after ifos" String="%&os_conditionals_names;&lookahead_whitespace_eol;" firstNonSpace="true" beginRegion="if_block" />
-        <RegExpr attribute="Keyword" context="every_non_whitespace_is_error" String="%else&lookahead_whitespace_eol;" firstNonSpace="true" endRegion="if_block" beginRegion="if_block" />
-        <RegExpr attribute="Keyword" context="every_non_whitespace_is_error" String="%endif&lookahead_whitespace_eol;" firstNonSpace="true" endRegion="if_block" />
-        <RegExpr attribute="Keyword" context="macro defination" String="%(define|global)&lookahead_whitespace_eol;" firstNonSpace="true" />
+        <RegExpr attribute="Control Flow" context="expression after _if_ statement" String="%(if!?)&lookahead_whitespace_eol;" firstNonSpace="true" beginRegion="if_block" />
+        <RegExpr attribute="Control Flow" context="parameters after ifarch" String="%&arch_conditionals_names;&lookahead_whitespace_eol;" firstNonSpace="true" beginRegion="if_block" />
+        <RegExpr attribute="Control Flow" context="parameters after ifos" String="%&os_conditionals_names;&lookahead_whitespace_eol;" firstNonSpace="true" beginRegion="if_block" />
+        <RegExpr attribute="Control Flow" context="every_non_whitespace_is_error" String="%else&lookahead_whitespace_eol;" firstNonSpace="true" endRegion="if_block" beginRegion="if_block" />
+        <RegExpr attribute="Control Flow" context="every_non_whitespace_is_error" String="%endif&lookahead_whitespace_eol;" firstNonSpace="true" endRegion="if_block" />
+        <RegExpr attribute="Keyword" context="macro definition" String="%(define|global)&lookahead_whitespace_eol;" firstNonSpace="true" />
         <RegExpr attribute="Keyword" context="undefine macro" String="%undefine&lookahead_whitespace_eol;" firstNonSpace="true" />
         <!-- If a command section starts (=section macro at begin of the line), we switch
              to the corresponding context. There will never be a return to THIS context...: -->
-        <RegExpr attribute="Section" context="package section start line" String="%package&lookahead_whitespace_eol;" column="0" />
-        <RegExpr attribute="Section" context="description section start line" String="%description&lookahead_whitespace_eol;" column="0" />
-        <RegExpr attribute="Section" context="command section" String="%&command_section_name;&lookahead_whitespace_eol;" column="0" />
-        <RegExpr attribute="Section" context="changelog section" String="%changelog&lookahead_whitespace_eol;" column="0" />
+        <RegExpr attribute="Section" context="#pop#pop!package section start line" String="^%package&lookahead_whitespace_eol;" column="0" />
+        <RegExpr attribute="Section" context="#pop#pop!description section start line" String="^%description&lookahead_whitespace_eol;" column="0" />
+        <RegExpr attribute="Section" context="#pop#pop!command section" String="^%&command_section_name;&lookahead_whitespace_eol;" column="0" />
+        <RegExpr attribute="Section" context="#pop#pop!changelog section" String="^%changelog&lookahead_whitespace_eol;" column="0" />
         <!-- Handle normal macros -->
-        <RegExpr attribute="Error" context="#pop" String="%([\{\(][ \t]{0,}){0,1}(if|&arch_conditionals_names;|&os_conditionals_names;|else|endif|define|global|undefine|package|description|&command_section_name;|changelog)(?=($|[^&a_valid_char_in_macro_names;]))" />
-        <RegExpr attribute="Macro call" context="macro content in parenthesis" String="%[&a_valid_char_in_macro_names;]*\(" />
-        <RegExpr attribute="Macro call" context="macro content in braces" String="(%|\$)\{" />
-        <RegExpr attribute="Macro call" context="#pop" String="(%|\$)([&a_valid_char_in_macro_names;]{1,}|\*|\#)(?=($|[^&a_valid_char_in_macro_names;]))" /> <!-- ')' and '}' are only allowed as macro terminator in the lookahead because when you do something like %__make %{?jobs:-j %jobs}, then the "%jobs" is a valid macro. However, the disadvantage is that a line like "%abc} isn't marked as error. But it is to complicate to distinguish this properly. -->
-        <RegExpr attribute="Error" context="#pop" String="(%|\$)([&a_valid_char_in_macro_names;]{1,}|\*|\#)" />
-        <AnyChar attribute="Error" context="#pop" String="%$" /> <!-- a single % or $ is also an error -->
+        <RegExpr attribute="Macro call" context="macro call in parenthesis" String="%(?!&predefined_commands;)[&a_valid_char_in_macro_names;]*\(" />
+        <RegExpr attribute="Macro call" context="#pop" String="%(?!&predefined_commands;)([&a_valid_char_in_macro_names;]+|[*#])(?=($|[^&a_valid_char_in_macro_names;]))" /> <!-- ')' and '}' are only allowed as macro terminator in the lookahead because when you do something like %__make %{?jobs:-j %jobs}, then the "%jobs" is a valid macro. However, the disadvantage is that a line like "%abc} isn't marked as error. But it is to complicate to distinguish this properly. -->
+        <RegExpr attribute="Error" context="#pop" String="%([&a_valid_char_in_macro_names;]+|[*#])?" /> <!-- a single % or $ is also an error -->
       </context>
 
       <!-- Used internally by "handle_percent" -->
-      <context attribute="Macro call" lineEndContext="#pop#pop" name="macro content in parenthesis">
-        <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
-        <DetectChar attribute="Macro call" context="#pop#pop" char=")" />
-        <AnyChar attribute="Error" context="#stay" String="({}" />
-      </context>
-
-      <!-- Used internally by "handle_percent" -->
-      <context attribute="Macro call" lineEndContext="#pop#pop" name="macro content in braces">
-        <DetectChar attribute="Macro call" context="#pop#pop" char="}" />
+      <context attribute="Macro call" lineEndContext="#pop" name="normal macro content in braces">
+        <DetectChar attribute="Macro call" context="#pop" char="}" />
+        <DetectIdentifier attribute="Macro call"/>
         <AnyChar attribute="Error" context="#stay" String="({)" />
         <!--(This seems to be confusing instead of helping)AnyChar attribute="Keyword" context="#stay" String="!?:" /-->
         <!-- Handle % -->
-        <AnyChar context="handle_percent" String="%$" lookAhead="true" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+        <DetectSpaces attribute="Macro call"/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#stay" name="macro_lua">
+        <DetectChar attribute="Macro call" context="#pop" char="}" />
+        <!-- Should exit on the first } found, even if this one is in a string,
+        but this is currently not possible -->
+        <IncludeRules context="##Lua"/>
+      </context>
+
+      <!-- Used internally by "handle_percent"
+      Context for %{  -->
+      <context attribute="Macro call" lineEndContext="#pop" name="macro content in braces" fallthroughContext="#pop!normal macro content in braces">
+        <StringDetect attribute="Macro call" context="#pop!macro_expand" String="expand:"/>
+        <StringDetect attribute="Macro call" context="#pop!macro_lua" String="lua:"/>
+      </context>
+
+      <!-- Used internally by "handle_percent"
+      Context for %xxx(  -->
+      <context attribute="Macro call" lineEndContext="#pop#pop" name="macro call in parenthesis">
+        <DetectChar attribute="Macro call" context="#pop#pop" char=")" />
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+        <DetectIdentifier attribute="Macro call"/>
+      </context>
+
+      <!-- Used internally by "handle_percent"
+      Context for %( -->
+      <context attribute="Shell commands" lineEndContext="#stay" name="macro content in parenthesis" fallthroughContext="shell_in_parenthesis_parameters">
+        <DetectChar attribute="Macro call" context="#pop" char=")"/>
+        <keyword attribute="Shell keyword" String="bash_keyword" additionalDeliminator="&amp;|);"/>
+        <DetectIdentifier attribute="Shell commands" context="shell_in_parenthesis_parameters"/>
+        <DetectSpaces attribute="Shell commands"/>
+        <AnyChar attribute="Shell symbol" String="&amp;|;!"/>
+        <DetectChar char="`" context="shell_in_parenthesis_bq" attribute="Shell symbol"/>
+        <Detect2Chars attribute="Shell variable" char="(" char1="(" context="shell_in_parenthesis_expr"/>
+        <DetectChar attribute="Shell symbol" char="(" context="shell_in_parenthesis_subcommand"/>
+        <DetectChar attribute="Comment" char="#" context="shell_in_parenthesis_comment"/>
+        <StringDetect attribute="Shell commands" String="[[ " context="shell_in_parenthesis_cond2"/>
+        <DetectChar attribute="Shell keyword" char="{" context="shell_in_parenthesis_brace"/>
+        <IncludeRules context="shell_find_redirections"/>
+        <RegExpr attribute="Shell commands" context="shell_in_parenthesis_parameters" String="[^ \t&lt;>|&amp;;()${}'&quot;`\\%#]++"/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#pop" name="find_spaces_and_ident">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_parenthesis_find_blank_and_ident" fallthroughContext="#pop">
+        <RegExpr attribute="Comment" String="^#|\s+#" context="shell_in_parenthesis_comment"/>
+        <RegExpr attribute="Shell keyword" String="(^|\s+)\{&lookahead_whitespace_eol;" context="shell_in_parenthesis_brace"/>
+        <IncludeRules context="find_spaces_and_ident"/>
+      </context>
+
+      <!-- %( with { -->
+      <context attribute="Shell commands" lineEndContext="#stay" name="shell_in_parenthesis_brace">
+        <DetectChar attribute="Shell keyword" context="#pop" char="}"/>
+        <DetectChar context="#pop" char=")" lookAhead="1"/>
+        <IncludeRules context="macro content in parenthesis"/>
+      </context>
+
+      <!-- %( with # -->
+      <context attribute="Comment" lineEndContext="#pop" name="shell_in_parenthesis_comment">
+        <DetectChar attribute="Comment" char="(" context="shell_in_parenthesis_comment_brace"/>
+        <DetectChar char=")" context="#pop" lookAhead="1"/>
+        <IncludeRules context="shell_in_section_comment"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="shell_in_parenthesis_comment_brace">
+        <DetectChar attribute="Comment" char=")" context="#pop"/>
+        <IncludeRules context="shell_in_parenthesis_comment"/>
+      </context>
+
+      <!-- %( with ` -->
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_parenthesis_bq" fallthroughContext="shell_in_parenthesis_parameters">
+        <DetectChar char="`" context="#pop" attribute="Shell symbol"/>
+        <DetectChar char=")" context="#pop" lookAhead="1"/>
+        <IncludeRules context="macro content in parenthesis"/>
+      </context>
+
+      <!-- %( with cmd ... -->
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_parenthesis_parameters">
+        <IncludeRules context="shell_in_parenthesis_find_blank_and_ident"/>
+        <AnyChar context="#pop" String=")`" lookAhead="1"/>
+        <AnyChar attribute="Shell symbol" String="&amp;|;" context="#pop"/>
+        <AnyChar attribute="Shell symbol" String="*?"/>
+        <DetectChar attribute="Shell commands" context="shell_in_parenthesis_parameters_brace" char="("/>
+        <IncludeRules context="shell_in_parenthesis_find_word"/>
+        <IncludeRules context="shell_find_redirections"/>
+      </context>
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_parenthesis_parameters_brace">
+        <DetectChar attribute="Shell commands" context="#pop" char=")"/>
+        <AnyChar String="&amp;|;" context="#pop" lookAhead="1"/>
+        <IncludeRules context="shell_in_parenthesis_parameters"/>
+      </context>
+
+      <!-- %( with [[ -->
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_parenthesis_cond2">
+        <Detect2Chars attribute="Shell commands" char="]" char1="]" context="#pop"/>
+        <AnyChar attribute="Shell symbol" String="&amp;|;"/>
+        <DetectChar attribute="Shell symbol" char="(" context="shell_in_parenthesis_sub_cond2"/>
+        <IncludeRules context="shell_in_parenthesis_parameters"/>
+      </context>
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_parenthesis_sub_cond2">
+        <DetectChar attribute="Shell symbol" char=")" context="#pop"/>
+        <AnyChar attribute="Shell symbol" String="&amp;|;"/>
+        <DetectChar attribute="Shell symbol" char="(" context="shell_in_parenthesis_sub_cond2"/>
+        <Detect2Chars char="]" char1="]" context="#pop" lookAhead="1"/>
+        <IncludeRules context="shell_in_parenthesis_parameters"/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_parenthesis_find_word" fallthroughContext="#pop">
+        <IncludeRules context="shell_in_parenthesis_find_variable"/>
+        <DetectChar attribute="Shell string" char="'" context="shell_in_parenthesis_sq_string"/>
+        <DetectChar attribute="Shell string" char="&quot;" context="shell_in_parenthesis_dq_string"/>
+        <IncludeRules context="shell_find_escape"/>
+        <DetectChar char="`" context="#pop" lookAhead="1"/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_parenthesis_find_variable">
+        <!-- Handle % -->
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+        <Detect2Chars attribute="Shell string" char="$" char1="'" context="shell_in_parenthesis_variable_sq"/>
+        <StringDetect attribute="Shell variable" String="$((" context="shell_in_parenthesis_expr"/>
+        <Detect2Chars attribute="Shell symbol" char="$" char1="(" context="shell_in_parenthesis_subcommand"/>
+        <Detect2Chars attribute="Shell variable" char="$" char1="{" context="shell_in_parenthesis_variable_brace"/>
+        <DetectChar attribute="Shell variable" char="$" context="shell_single_variable"/>
+      </context>
+
+      <!-- %( with $' -->
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_parenthesis_variable_sq">
+        <IncludeRules context="find_spaces_and_ident"/>
+        <DetectChar char="'" context="#pop" attribute="Shell string"/>
+        <DetectChar char=")" context="#pop" lookAhead="1"/>
+        <DetectChar char="(" context="shell_in_parenthesis_variable_sq_brace" attribute="Shell string"/>
+        <IncludeRules context="shell_find_escape"/>
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+      </context>
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_parenthesis_variable_sq_brace">
+        <DetectChar char="'" context="#pop" lookAhead="1"/>
+        <DetectChar char=")" context="#pop" attribute="Shell string"/>
+        <IncludeRules context="shell_in_parenthesis_variable_sq"/>
+      </context>
+
+      <!-- %( with $(( -->
+      <context attribute="Shell variable" lineEndContext="#pop" name="shell_in_parenthesis_expr">
+        <IncludeRules context="shell_in_parenthesis_find_blank_and_ident"/>
+        <Detect2Chars char=")" char1=")" context="#pop" attribute="Shell variable"/>
+        <DetectChar char=")" context="#pop!shell_in_parenthesis_subcommand" attribute="Shell variable"/>
+        <DetectChar char="(" context="shell_in_parenthesis_subexpr" attribute="Shell symbol"/>
+        <IncludeRules context="shell_in_parenthesis_find_word"/>
+      </context>
+      <context attribute="Shell variable" lineEndContext="#pop" name="shell_in_parenthesis_subexpr">
+        <IncludeRules context="shell_in_parenthesis_find_blank_and_ident"/>
+        <DetectChar char=")" context="#pop" attribute="Shell symbol"/>
+        <DetectChar char="(" context="shell_in_parenthesis_subexpr" attribute="Shell symbol"/>
+        <IncludeRules context="shell_in_parenthesis_find_word"/>
+      </context>
+
+      <!-- %( with $( -->
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_parenthesis_subcommand">
+        <DetectChar char=")" context="#pop" attribute="Shell symbol"/>
+        <IncludeRules context="macro content in parenthesis"/>
+      </context>
+
+      <!-- %( with ${ -->
+      <context attribute="Shell variable" lineEndContext="#pop" name="shell_in_parenthesis_variable_brace">
+        <DetectChar char=")" context="#pop" lookAhead="1"/>
+        <DetectChar char="(" context="shell_in_parenthesis_variable_brace_parenthesis" attribute="Shell variable"/>
+        <DetectChar attribute="Shell variable" char="}" context="#pop"/>
+        <DetectChar attribute="Shell variable" char="{" context="shell_in_parenthesis_variable_brace"/>
+        <DetectIdentifier attribute="Shell variable"/>
+        <IncludeRules context="shell_in_parenthesis_find_word"/>
+      </context>
+      <context attribute="Shell variable" lineEndContext="#pop" name="shell_in_parenthesis_variable_brace_parenthesis">
+        <DetectChar char=")" context="#pop" attribute="Shell variable"/>
+        <IncludeRules context="shell_in_parenthesis_variable_brace"/>
+      </context>
+
+      <!-- %( with ' -->
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_parenthesis_sq_string">
+        <IncludeRules context="find_spaces_and_ident"/>
+        <DetectChar char=")" context="#pop" lookAhead="1"/>
+        <DetectChar char="'" context="#pop" attribute="Shell string"/>
+        <DetectChar char="(" context="shell_in_parenthesis_sq_string_brace" attribute="Shell string"/>
+        <Detect2Chars char="\" char1=")" attribute="Escaped character"/>
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+      </context>
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_parenthesis_sq_string_brace">
+        <DetectChar char=")" context="#pop" attribute="Shell string"/>
+        <DetectChar char="'" context="#pop" lookAhead="1"/>
+        <IncludeRules context="shell_in_parenthesis_sq_string"/>
+      </context>
+
+      <!-- %( with " -->
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_parenthesis_dq_string">
+        <IncludeRules context="find_spaces_and_ident"/>
+        <DetectChar char="&quot;" context="#pop" attribute="Shell string"/>
+        <DetectChar char=")" context="#pop" lookAhead="1"/>
+        <DetectChar char="(" context="shell_in_parenthesis_dq_string_brace" attribute="Shell string"/>
+        <IncludeRules context="shell_find_escape"/>
+        <IncludeRules context="shell_in_parenthesis_find_variable"/>
+        <DetectChar char="`" context="shell_in_parenthesis_bq" attribute="Shell symbol"/>
+      </context>
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_parenthesis_dq_string_brace">
+        <DetectChar char="&quot;" context="#pop" lookAhead="1"/>
+        <DetectChar char=")" context="#pop" attribute="Shell string"/>
+        <IncludeRules context="shell_in_parenthesis_dq_string"/>
+      </context>
+
+
+      <!-- Used internally by "handle_percent"
+      Context for %{expand: -->
+      <context attribute="Shell commands" lineEndContext="#stay" name="macro_expand" fallthroughContext="shell_in_brace_parameters">
+        <DetectChar attribute="Macro call" context="#pop" char="}"/>
+        <WordDetect attribute="Shell keyword" String="function" context="shell_in_brace_function"/>
+        <keyword attribute="Shell keyword" String="bash_keyword" additionalDeliminator="&amp;|});"/>
+        <DetectIdentifier attribute="Shell commands" context="shell_in_brace_parameters"/>
+        <DetectSpaces attribute="Shell commands"/>
+        <AnyChar attribute="Shell symbol" String="&amp;|;!"/>
+        <DetectChar char="`" context="shell_in_brace_bq" attribute="Shell symbol"/>
+        <Detect2Chars attribute="Shell variable" char="(" char1="(" context="shell_in_brace_expr"/>
+        <DetectChar attribute="Shell symbol" char="(" context="shell_in_brace_subcommand"/>
+        <DetectChar attribute="Comment" char="#" context="shell_in_brace_comment"/>
+        <StringDetect attribute="Shell commands" String="[[ " context="shell_in_brace_cond2"/>
+        <DetectChar attribute="Shell keyword" char="{" context="shell_in_brace_brace"/>
+        <IncludeRules context="shell_find_redirections"/>
+        <RegExpr attribute="Shell commands" context="shell_in_brace_parameters" String="[^ \t&lt;>|&amp;;()${}'&quot;`\\%#]++"/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_brace_find_blank_and_ident" fallthroughContext="#pop">
+        <RegExpr attribute="Comment" String="^#|\s+#" context="shell_in_brace_comment"/>
+        <RegExpr attribute="Shell keyword" String="(^|\s+)\{&lookahead_whitespace_eol;" context="shell_in_brace_brace"/>
+        <IncludeRules context="find_spaces_and_ident"/>
+      </context>
+
+      <!-- %{expand with function -->
+      <context attribute="Shell commands" lineEndContext="#stay" name="shell_in_brace_function" fallthroughContext="#pop">
+        <DetectChar attribute="Shell keyword" context="#pop!shell_in_brace_brace" char="{"/>
+        <DetectChar context="#pop" char="}" lookAhead="1"/>
+        <Detect2Chars char="(" char1=")"/>
+        <IncludeRules context="find_spaces_and_ident"/>
+      </context>
+
+      <!-- %{expand with { -->
+      <context attribute="Shell commands" lineEndContext="#stay" name="shell_in_brace_brace">
+        <DetectChar attribute="Shell keyword" context="#pop" char="}"/>
+        <IncludeRules context="macro_expand"/>
+      </context>
+
+      <!-- %{expand with # -->
+      <context attribute="Comment" lineEndContext="#pop" name="shell_in_brace_comment">
+        <DetectChar attribute="Comment" char="{" context="shell_in_brace_comment_brace"/>
+        <DetectChar char="}" context="#pop" lookAhead="1"/>
+        <IncludeRules context="shell_in_section_comment"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="shell_in_brace_comment_brace">
+        <DetectChar attribute="Comment" char="}" context="#pop"/>
+        <IncludeRules context="shell_in_brace_comment"/>
+      </context>
+
+      <!-- %{expand with ` -->
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_brace_bq" fallthroughContext="shell_in_brace_parameters">
+        <DetectChar char="`" context="#pop" attribute="Shell symbol"/>
+        <DetectChar char="}" context="#pop" lookAhead="1"/>
+        <IncludeRules context="macro_expand"/>
+      </context>
+
+      <!-- %{expand with cmd ... -->
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_brace_parameters">
+        <IncludeRules context="shell_in_brace_find_blank_and_ident"/>
+        <AnyChar context="#pop" String="})`" lookAhead="1"/>
+        <AnyChar attribute="Shell symbol" String="&amp;|;" context="#pop"/>
+        <AnyChar attribute="Shell symbol" String="*?"/>
+        <DetectChar attribute="Shell commands" context="shell_in_brace_parameters_brace" char="{"/>
+        <IncludeRules context="shell_in_brace_find_word"/>
+        <IncludeRules context="shell_find_redirections"/>
+      </context>
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_brace_parameters_brace">
+        <DetectChar attribute="Shell commands" context="#pop" char="}"/>
+        <AnyChar String="&amp;|;" context="#pop" lookAhead="1"/>
+        <IncludeRules context="shell_in_brace_parameters"/>
+      </context>
+
+      <!-- %{expand with [[ -->
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_brace_cond2">
+        <Detect2Chars attribute="Shell commands" char="]" char1="]" context="#pop"/>
+        <AnyChar attribute="Shell symbol" String="&amp;|;"/>
+        <DetectChar attribute="Shell symbol" char="(" context="shell_in_brace_sub_cond2"/>
+        <IncludeRules context="shell_in_brace_parameters"/>
+      </context>
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_brace_sub_cond2">
+        <DetectChar attribute="Shell symbol" char=")" context="#pop"/>
+        <AnyChar attribute="Shell symbol" String="&amp;|;"/>
+        <DetectChar attribute="Shell symbol" char="(" context="shell_in_brace_sub_cond2"/>
+        <Detect2Chars char="]" char1="]" context="#pop" lookAhead="1"/>
+        <IncludeRules context="shell_in_brace_parameters"/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_find_redirections">
+        <RegExpr attribute="Shell redirection" context="shell_in_brace_find_word" String="([0-9]*>[>|&amp;]?|&amp;>>?|&lt;&lt;&lt;|&lt;[&amp;>]?)(&amp;[0-9]+|\s*[^\s{}()%$&amp;;|`]+)?"/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_brace_find_word" fallthroughContext="#pop">
+        <IncludeRules context="shell_in_brace_find_variable"/>
+        <DetectChar attribute="Shell string" char="'" context="shell_in_brace_sq_string"/>
+        <DetectChar attribute="Shell string" char="&quot;" context="shell_in_brace_dq_string"/>
+        <IncludeRules context="shell_find_escape"/>
+        <DetectChar char="`" context="#pop" lookAhead="1"/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_brace_find_variable">
+        <!-- Handle % -->
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+        <Detect2Chars attribute="Shell string" char="$" char1="'" context="shell_in_brace_variable_sq"/>
+        <StringDetect attribute="Shell variable" String="$((" context="shell_in_brace_expr"/>
+        <Detect2Chars attribute="Shell symbol" char="$" char1="(" context="shell_in_brace_subcommand"/>
+        <Detect2Chars attribute="Shell variable" char="$" char1="{" context="shell_in_brace_variable_brace"/>
+        <DetectChar attribute="Shell variable" char="$" context="shell_single_variable"/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_find_escape">
+        <DetectChar attribute="Shell symbol" char="\" context="shell_in_brace_escape" lookAhead="1"/>
+      </context>
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_brace_escape">
+        <RegExpr attribute="Escaped character" context="#pop" String="\\."/>
+        <LineContinue attribute="Line break" context="#pop"/>
+      </context>
+
+      <!-- %{expand with $' -->
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_brace_variable_sq">
+        <IncludeRules context="find_spaces_and_ident"/>
+        <DetectChar char="'" context="#pop" attribute="Shell string"/>
+        <DetectChar char="}" context="#pop" lookAhead="1"/>
+        <DetectChar char="{" context="shell_in_brace_variable_sq_brace" attribute="Shell string"/>
+        <IncludeRules context="shell_find_escape"/>
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+      </context>
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_brace_variable_sq_brace">
+        <DetectChar char="'" context="#pop" lookAhead="1"/>
+        <DetectChar char="}" context="#pop" attribute="Shell string"/>
+        <IncludeRules context="shell_in_brace_variable_sq"/>
+      </context>
+
+      <!-- %{expand with $(( -->
+      <context attribute="Shell variable" lineEndContext="#pop" name="shell_in_brace_expr">
+        <IncludeRules context="shell_in_brace_find_blank_and_ident"/>
+        <DetectChar char="}" context="#pop" lookAhead="1"/>
+        <Detect2Chars char=")" char1=")" context="#pop" attribute="Shell variable"/>
+        <DetectChar char=")" context="#pop!shell_in_brace_subcommand" attribute="Shell variable"/>
+        <DetectChar char="(" context="shell_in_brace_subexpr" attribute="Shell symbol"/>
+        <IncludeRules context="shell_in_brace_find_word"/>
+      </context>
+      <context attribute="Shell variable" lineEndContext="#pop" name="shell_in_brace_subexpr">
+        <IncludeRules context="shell_in_brace_find_blank_and_ident"/>
+        <DetectChar char="}" context="#pop" lookAhead="1"/>
+        <DetectChar char=")" context="#pop" attribute="Shell symbol"/>
+        <DetectChar char="(" context="shell_in_brace_subexpr" attribute="Shell symbol"/>
+        <IncludeRules context="shell_in_brace_find_word"/>
+      </context>
+
+      <!-- %{expand with $( -->
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_brace_subcommand">
+        <DetectChar char="}" context="#pop" lookAhead="1"/>
+        <DetectChar char=")" context="#pop" attribute="Shell symbol"/>
+        <IncludeRules context="macro_expand"/>
+      </context>
+
+      <!-- %{expand with ${ -->
+      <context attribute="Shell variable" lineEndContext="#pop" name="shell_in_brace_variable_brace">
+        <DetectChar attribute="Shell variable" char="}" context="#pop"/>
+        <DetectChar attribute="Shell variable" char="{" context="shell_in_brace_variable_brace"/>
+        <DetectIdentifier attribute="Shell variable"/>
+        <IncludeRules context="shell_in_brace_find_word"/>
+      </context>
+
+      <!-- %{expand with $ -->
+      <context attribute="Shell variable" lineEndContext="#pop" name="shell_single_variable" fallthroughContext="#pop">
+        <DetectIdentifier attribute="Shell variable" context="#pop"/>
+        <AnyChar attribute="Shell variable" context="#pop" String="*@#?$!0123456789-"/>
+      </context>
+
+      <!-- %{expand with ' -->
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_brace_sq_string">
+        <IncludeRules context="find_spaces_and_ident"/>
+        <DetectChar char="}" context="#pop" lookAhead="1"/>
+        <DetectChar char="'" context="#pop" attribute="Shell string"/>
+        <DetectChar char="{" context="shell_in_brace_sq_string_brace" attribute="Shell string"/>
+        <Detect2Chars char="\" char1="}" attribute="Escaped character"/>
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+      </context>
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_brace_sq_string_brace">
+        <DetectChar char="}" context="#pop" attribute="Shell string"/>
+        <DetectChar char="'" context="#pop" lookAhead="1"/>
+        <IncludeRules context="shell_in_brace_sq_string"/>
+      </context>
+
+      <!-- %{expand with " -->
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_brace_dq_string">
+        <IncludeRules context="find_spaces_and_ident"/>
+        <DetectChar char="&quot;" context="#pop" attribute="Shell string"/>
+        <DetectChar char="}" context="#pop" lookAhead="1"/>
+        <DetectChar char="{" context="shell_in_brace_dq_string_brace" attribute="Shell string"/>
+        <IncludeRules context="shell_find_escape"/>
+        <IncludeRules context="shell_in_brace_find_variable"/>
+        <DetectChar char="`" context="shell_in_brace_bq" attribute="Shell symbol"/>
+      </context>
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_brace_dq_string_brace">
+        <DetectChar char="&quot;" context="#pop" lookAhead="1"/>
+        <DetectChar char="}" context="#pop" attribute="Shell string"/>
+        <IncludeRules context="shell_in_brace_dq_string"/>
+      </context>
+
+
+      <!-- Used internally by "command section" -->
+      <context attribute="Shell commands" lineEndContext="#stay" name="shell in section" fallthroughContext="shell_in_section_parameters">
+        <keyword attribute="Shell keyword" String="bash_keyword" additionalDeliminator="&amp;|;"/>
+        <DetectIdentifier attribute="Shell commands" context="shell_in_section_parameters"/>
+        <DetectSpaces attribute="Shell commands"/>
+        <AnyChar attribute="Shell symbol" String="&amp;|;!"/>
+        <DetectChar char="`" context="shell_in_section_bq" attribute="Shell symbol"/>
+        <Detect2Chars attribute="Shell variable" char="(" char1="(" context="shell_in_parenthesis_expr"/>
+        <DetectChar attribute="Shell symbol" char="(" context="shell_in_parenthesis_subcommand"/>
+        <DetectChar attribute="Comment" char="#" context="shell_in_section_comment"/>
+        <StringDetect attribute="Shell commands" String="[[ " context="shell_in_section_cond2"/>
+        <DetectChar attribute="Shell keyword" char="{" context="shell_in_section_brace"/>
+        <IncludeRules context="shell_find_redirections"/>
+        <RegExpr attribute="Shell commands" context="shell_in_section_parameters" String="[^ \t&lt;>|&amp;;()${}'&quot;`\\%#]++"/>
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_section_blank_and_ident" fallthroughContext="#pop">
+        <RegExpr attribute="Comment" String="^#|\s+#" context="shell_in_section_comment"/>
+        <RegExpr attribute="Shell keyword" String="(^|\s+)\{&lookahead_whitespace_eol;" context="shell_in_section_brace"/>
+        <IncludeRules context="find_spaces_and_ident"/>
+      </context>
+
+      <!-- sections with { -->
+      <context attribute="Shell commands" lineEndContext="#stay" name="shell_in_section_brace">
+        <DetectChar attribute="Shell keyword" context="#pop" char="}"/>
+        <IncludeRules context="shell in section"/>
+      </context>
+
+      <!-- section with # -->
+      <context attribute="Comment" lineEndContext="#pop" name="shell_in_section_comment">
+        <!-- Warning on single percent ("%"), but not on double percent ("%%"): -->
+        <Detect2Chars attribute="Comment" char="%" char1="%"/>
+        <DetectChar attribute="Warning" char="%"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/> <!-- Alert -->
+        <DetectIdentifier />
+      </context>
+
+      <!-- section with ` -->
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_section_bq" fallthroughContext="shell_in_section_parameters">
+        <DetectChar char="`" context="#pop" attribute="Shell symbol"/>
+        <IncludeRules context="shell in section"/>
+      </context>
+
+      <!-- section with cmd ... -->
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_section_parameters">
+        <IncludeRules context="shell_in_section_blank_and_ident"/>
+        <AnyChar attribute="Shell symbol" String="&amp;|;" context="#pop"/>
+        <AnyChar attribute="Shell symbol" String="*?"/>
+        <IncludeRules context="shell_in_section_find_variable"/>
+        <DetectChar attribute="Shell string" char="'" context="shell_in_section_sq_string"/>
+        <DetectChar attribute="Shell string" char="&quot;" context="shell_in_section_dq_string"/>
+        <IncludeRules context="shell_find_escape"/>
+        <DetectChar char="`" context="#pop" lookAhead="1"/>
+        <IncludeRules context="shell_find_redirections"/>
+      </context>
+
+      <!-- section with [[ -->
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_section_cond2">
+        <Detect2Chars attribute="Shell commands" char="]" char1="]" context="#pop"/>
+        <AnyChar attribute="Shell symbol" String="&amp;|;"/>
+        <IncludeRules context="shell_in_section_parameters"/>
+      </context>
+
+      <context attribute="Shell commands" lineEndContext="#pop" name="shell_in_section_find_variable">
+        <!-- Handle % -->
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+        <Detect2Chars attribute="Shell string" char="$" char1="'" context="shell_in_section_variable_sq"/>
+        <StringDetect attribute="Shell variable" String="$((" context="shell_in_parenthesis_expr"/>
+        <Detect2Chars attribute="Shell symbol" char="$" char1="(" context="shell_in_parenthesis_subcommand"/>
+        <Detect2Chars attribute="Shell variable" char="$" char1="{" context="shell_in_brace_variable_brace"/>
+        <DetectChar attribute="Shell variable" char="$" context="shell_single_variable"/>
+      </context>
+
+      <!-- section with $' -->
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_section_variable_sq">
+        <IncludeRules context="find_spaces_and_ident"/>
+        <DetectChar char="'" context="#pop" attribute="Shell string"/>
+        <IncludeRules context="shell_find_escape"/>
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+      </context>
+
+      <!-- section with ' -->
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_section_sq_string">
+        <IncludeRules context="find_spaces_and_ident"/>
+        <DetectChar char="'" context="#pop" attribute="Shell string"/>
+        <DetectChar context="handle_percent" char="%" lookAhead="1"/>
+      </context>
+
+      <!-- section with " -->
+      <context attribute="Shell string" lineEndContext="#pop" name="shell_in_section_dq_string">
+        <IncludeRules context="find_spaces_and_ident"/>
+        <DetectChar char="&quot;" context="#pop" attribute="Shell string"/>
+        <IncludeRules context="shell_find_escape"/>
+        <IncludeRules context="shell_in_section_find_variable"/>
+        <DetectChar char="`" context="shell_in_section_bq" attribute="Shell symbol"/>
       </context>
 
     </contexts>
@@ -463,12 +992,18 @@
       <!-- "Shell commands" is used for the sections like %prep, %build or %install, where you write
       shell commands. -->
       <itemData name="Shell commands" defStyleNum="dsNormal"/>
+      <itemData name="Shell keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Shell string" defStyleNum="dsString"/>
+      <itemData name="Shell variable" defStyleNum="dsVariable"/>
+      <itemData name="Shell symbol" defStyleNum="dsOperator"/>
+      <itemData name="Shell redirection" defStyleNum="dsAttribute"/>
       <!-- "Fallback for separator spaces" is used as a fallback context for spaces between
       different contexts. For example: "%if 1 <= %number" has the contexts Keyword,
       Integer, Keyword and Macro call. But the spaces between? They are using THIS
       context. -->
       <itemData name="Fallback for separator spaces" defStyleNum="dsNormal"/>
       <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Control Flow" defStyleNum="dsControlFlow"/>
       <itemData name="Comment" defStyleNum="dsComment"/>
       <itemData name="Tag" defStyleNum="dsDataType"/>
       <!-- "Enumeration" is used for data types where you can't use arbitrary strings but have
@@ -503,3 +1038,4 @@
   </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

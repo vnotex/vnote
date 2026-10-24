@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <language name="PL/I"
 	  section="Sources"
-	  version="3"
+	  version="8"
 	  kateversion="5.0"
-	  extensions="*.pli"
-	  mimetype="text/x-pli"
+	  extensions="*.pli;*.pl1"
+	  mimetype="text/x-pli;text/x-pl1src"
 	  priority="8"
 	  indenter="pli"
 	  author="Nikolay Kultashev, nkultashev@yandex.ru"
@@ -347,10 +347,6 @@
       <item>ZERODIVIDE</item>
     </list>
     <list name="BuiltIn">
-      <item>MOD</item>
-      <item>ROUND</item>
-      <item>PLIRETC</item>
-      <item>PLIRETV</item>
       <item>ADDR</item>
       <item>CEIL</item>
       <item>DATETIME</item>
@@ -386,21 +382,19 @@
     </list>
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
-	<RegExpr      attribute="Comment"   context="CommentW"  String="^\s*/\*.*\*/\s*([0-9]{1,8})?$" beginRegion="CommentW"/>
-	<RegExpr      attribute="Comment"   context="Comment"   String="/\*"              beginRegion="Comment"/>
+	<RegExpr      attribute="Comment"   context="CommentW"  String="^\s*/\*.*\*/\s*([0-9]{1,8})?$" beginRegion="CommentW" column="0"/>
+	<Detect2Chars attribute="Comment"   context="Comment"   char="/" char1="*"                     beginRegion="Comment"/>
 	<RegExpr      attribute="Comment"   context="#stay"     String="[0-9]{1,8}$"/> <!-- Sequence number -->
-	<RegExpr      attribute="Comment"   context="#stay"     String="^1"/>          <!-- Printer control char -->
-	<RegExpr      attribute="PreProc"   context="#stay"     String="^\s*%"/>       <!-- Preprocessor directive -->
+	<DetectChar   attribute="Comment"   context="#stay"     char="1" column="0"/>             <!-- Printer control char -->
+	<RegExpr      attribute="PreProc"   context="#stay"     String="^\s*%" column="0"/>       <!-- Preprocessor directive -->
 	<RegExpr      attribute="Label"     context="#stay"     String="[#a-zA-Z][#_0-9a-zA-Z]*:"/>
 	<DetectChar   attribute="String"    context="String1"   char="'"/>
 	<DetectChar   attribute="String"    context="String2"   char='"'/>
 	<DetectChar   attribute="EndOfStat" context="#stay"     char=";"/>
 	<WordDetect   attribute="Return"    context="#stay"     String="RETURN" insensitive="true"/>
-	<RegExpr      attribute="DoEnd"     context="#stay"     String="\b(BEGIN|DO|SELECT|PROC|PROCEDURE)\b" insensitive="true" beginRegion="DoEnd"/>
+	<RegExpr      attribute="DoEnd"     context="#stay"     String="\b(?:BEGIN|DO|SELECT|PROC|PROCEDURE)\b" insensitive="true" beginRegion="DoEnd"/>
 	<RegExpr      attribute="Return"    context="#stay"     String="\bEND\b\s*\S+\s*;" insensitive="true" endRegion="DoEnd"/>
 	<RegExpr      attribute="DoEnd"     context="#stay"     String="\bEND\b\s*;" insensitive="true" endRegion="DoEnd"/>
-	<RegExpr      attribute="Bin"       context="#stay"     String="'[01]+'B"/>
-	<RegExpr      attribute="Bin"       context="#stay"     String='"[01]+"B'/>
 	<Float        attribute="Float"     context="#stay"/>
 	<Int          attribute="DecVal"    context="#stay"/>
 	<keyword      attribute="DataType"  context="#stay"     String="DataTypes"/>
@@ -410,13 +404,13 @@
 	<RegExpr      attribute="Identifier" context="#stay"    String="[#a-zA-Z][#_0-9a-zA-Z]*"/>
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="CommentW">
-	<RegExpr attribute="Comment" context="#stay" String="^\s*/\*.*\*/\s*([0-9]{8})?$"/>
-	<RegExpr attribute="Comment" context="#stay" String="^\s*$"/>
+	<RegExpr attribute="Comment" context="#stay" String="^\s*/\*.*\*/\s*([0-9]{8})?$|^\s*$" column="0"/>
 	<RegExpr                     context="#pop"   String="." endRegion="CommentW" lookAhead="true"/>
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Comment">
-	<RegExpr attribute="Comment" context="#pop"  String="\*/" endRegion="Comment"/>
-	<RegExpr attribute="Comment" context="#stay" String="."/>
+	<DetectSpaces />
+	<Detect2Chars attribute="Comment" context="#pop"  char="*" char1="/" endRegion="Comment"/>
+	<IncludeRules context="##Comments"/>
       </context>
       <context attribute="String" lineEndContext="#stay" name="String1">
 	<DetectChar attribute="String" context="#pop" char="'"/>
@@ -432,7 +426,6 @@
       <itemData name="DataType"     defStyleNum="dsDataType"/>
       <itemData name="DecVal"       defStyleNum="dsDecVal"/>
       <itemData name="Float"        defStyleNum="dsFloat"/>
-      <itemData name="Bin"          defStyleNum="dsBaseN"/>
       <itemData name="DoEnd"        defStyleNum="dsKeyword"/>
       <itemData name="Label"        defStyleNum="dsNormal"   color="#008200" underline="true" bold="true"/>
       <itemData name="EndOfStat"    defStyleNum="dsKeyword" color="#000080"/>
@@ -447,8 +440,7 @@
   <general>
     <keywords casesensitive="0" />
     <comments>
-      <!--comment name="singleLine" start="//" /-->
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
     </comments>
   </general>
 </language>

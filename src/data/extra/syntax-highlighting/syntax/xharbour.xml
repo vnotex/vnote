@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="xHarbour" version="3" kateversion="2.4" section="Sources" extensions="*.prg;*.PRG;*.ch" mimetype="text/x-xharbour-src" priority="5" author="Giancarlo Niccolai (giancarlo@niccolai.ws)" license="GPL">
+<!DOCTYPE language>
+<language name="xHarbour" version="7" kateversion="5.0" section="Sources" extensions="*.prg;*.PRG;*.ch" mimetype="text/x-xharbour-src" priority="5" author="Giancarlo Niccolai (giancarlo@niccolai.ws)" license="GPL">
 <highlighting>
 
    <list name="keywords">
@@ -32,7 +32,6 @@
       <item>switch</item>
       <item>self</item>
       <item>super</item>
-      <item>say</item>
       <item>get</item>
       <item>read</item>
       <item>use</item>
@@ -460,9 +459,7 @@
    <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="TopLevel">
 
-         <Detect2Chars attribute="Comment" context="ml_comment" char="/" char1="*" beginRegion="comment_region"/>
-         <DetectChar attribute="Comment" context="comment" char="*" firstNonSpace="true"/>
-         <Detect2Chars attribute="Comment" context="comment" char="/" char1="/" />
+         <IncludeRules context="FindComments" />
 
          <DetectChar attribute="String" context="string" char="&quot;" />
          <DetectChar attribute="String" context="stringc" char="'" />
@@ -481,7 +478,7 @@
          <RegExpr String="DO[\t ]+CASE[\t ]*$" attribute="Keyword" context="#stay" insensitive="true" beginRegion="IndentRegion" firstNonSpace="true"/>
          <keyword attribute="Keyword" context="#stay" String="context_beginners" beginRegion="IndentRegion" />
          <keyword attribute="Keyword" context="#stay" String="context_terminators" endRegion="IndentRegion" />
-         <RegExpr String="return ?" attribute="Keyword" context="#stay" insensitive="true" endRegion="IndentRegion" column="0"/>
+         <RegExpr String="^return ?" attribute="Keyword" context="#stay" insensitive="true" endRegion="IndentRegion" column="0"/>
 
          <keyword attribute="Keyword" context="#stay" String="keywords" />
          <keyword attribute="Keyword" context="#stay" String="set_commands" />
@@ -491,10 +488,21 @@
          <RegExpr attribute="Number" context="#stay" String="\d+" />
       </context>
 
-      <context attribute="Comment" lineEndContext="#pop" name="comment"/>
+      <context attribute="Normal Text" lineEndContext="#stay" name="FindComments">
+         <Detect2Chars attribute="Comment" context="ml_comment" char="/" char1="*" beginRegion="comment_region"/>
+         <DetectChar attribute="Comment" context="comment" char="*" firstNonSpace="true"/>
+         <Detect2Chars attribute="Comment" context="comment" char="/" char1="/" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="comment">
+         <DetectSpaces />
+         <IncludeRules context="##Comments"/>
+      </context>
 
       <context attribute="Comment" lineEndContext="#stay" name="ml_comment">
+         <DetectSpaces />
          <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="comment_region"/>
+         <IncludeRules context="##Comments"/>
       </context>
 
       <context attribute="String" lineEndContext="#pop" name="string">
@@ -505,10 +513,7 @@
       </context>
 
       <context attribute="Normal Text" lineEndContext="#stay" name="ClassContext">
-
-         <Detect2Chars attribute="Comment" context="ml_comment" char="/" char1="*" beginRegion="comment_region"/>
-         <DetectChar attribute="Comment" context="comment" char="*" firstNonSpace="true"/>
-         <Detect2Chars attribute="Comment" context="comment" char="/" char1="/" />
+         <IncludeRules context="FindComments" />
 
          <keyword attribute="Keyword" context="#stay" String="class_keywords" />
          <RegExpr String="END(CLASS)? *$" attribute="Keyword" context="#pop" insensitive="true" endRegion="ClassDeclRegion" firstNonSpace="true"/>
@@ -530,10 +535,10 @@
 
 <general>
    <comments>
-      <comment name="singleLine" start="*" />
-      <comment name="singleLine" start="//" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="singleLine" start="//" position="afterwhitespace" />
+      <comment name="multiLine" start="/*" end="*/" region="comment_region" />
    </comments>
    <keywords casesensitive="0" />
 </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 3; indent-width 3; -->

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Stata" version="10" kateversion="2.3" section="Scientific" extensions="*.do;*.ado;*.doh;*.DO;*.ADO;*.DOH"
+<!DOCTYPE language>
+<language name="Stata" version="12" kateversion="5.0" section="Scientific" extensions="*.do;*.ado;*.doh;*.DO;*.ADO;*.DOH"
  casesensitive="1" priority="5" author="Larry Radbill (Larry.Radbill gmail com)" license="LGPL" >
 
   <highlighting>
@@ -3175,12 +3175,14 @@
       </context>
 
       <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
-        <IncludeRules context="##Alerts" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
 
       <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+        <DetectSpaces />
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
 
       <context attribute="String" lineEndContext="#stay" name="string">
@@ -3214,10 +3216,11 @@
 
   <general>
     <comments>
-      <comment name="singleLine" start="//" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="singleLine" start="//" position="afterwhitespace" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
     </comments>
     <keywords casesensitive="1" />
   </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="GDL" version="2" kateversion="2.2" section="Scientific" extensions="*.gdl;*.vcg;*.GDL;*.VCG" mimetype="" author="Christoph Cullmann (cullmann@absint.com)" license="MIT">
+<!DOCTYPE language [
+  <!ENTITY nodes "foldnode.|node.|">
+  <!ENTITY edges "foldedge.|edge.|">
+]>
+<language name="GDL" version="6" kateversion="5.0" section="Scientific" extensions="*.gdl;*.vcg;*.GDL;*.VCG" mimetype="" author="Christoph Cullmann (cullmann@absint.com)" license="MIT">
  <highlighting>
   <list name="colors">
    <item>white</item>
@@ -127,84 +130,51 @@
   <contexts>
    <context name="default" attribute="Normal" lineEndContext="#stay">
     <Detect2Chars attribute="Comment" context="ccomment" char="/" char1="/"/>
-    <Detect2Chars attribute="Comment" context="cppcomment" char="/" char1="*"/>
+    <Detect2Chars attribute="Comment" context="cppcomment" char="/" char1="*" beginRegion="BlockComment"/>
     <StringDetect attribute="Keyword" context="#stay" String="focus"/>
     <RegExpr attribute="Keyword" context="#stay" String="(graph|edge|node|region|backedge|(left|right|)(bent|)nearedge):"/>
     <RegExpr attribute="Value" context="#stay" String="loc *:"/>
     <StringDetect attribute="Value" context="centry" String="colorentry"/>
     <RegExpr attribute="Value" context="arrowmode" String="arrow_?mode *:"/>
-    <RegExpr attribute="Value" context="colorid" String="(foldnode.|node.|)(text|border|)color *:"/>
-    <RegExpr attribute="Value" context="colorid" String="(foldedge.|edge.|)(arrow|backarrow|)color *:"/>
-    <RegExpr attribute="Value" context="arrow" String="(foldedge.|edge.|)(arrow|backarrow)style *:"/>
-    <RegExpr attribute="Value" context="lineid" String="(foldedge.|edge.|)linestyle *:"/>
-    <RegExpr attribute="Value" context="lineid" String="(foldnode.|node.|)borderstyle *:"/>
+    <RegExpr attribute="Value" context="colorid" String="(&nodes;)(text|border|)color *:|(&edges;)(arrow|backarrow|)color *:"/>
+    <RegExpr attribute="Value" context="arrow" String="(&edges;)(arrow|backarrow)style *:"/>
+    <RegExpr attribute="Value" context="lineid" String="(&edges;)linestyle *:|(&nodes;)borderstyle *:"/>
     <RegExpr attribute="Value" context="fishid" String="view *:"/>
-    <RegExpr attribute="Value" context="shapeid" String="(foldnode.|node.|)shape"/>
-    <RegExpr attribute="Value" context="lquote" String="(source|target)(name|)"/>
-    <RegExpr attribute="Value" context="lquote" String="title *:"/>
-    <RegExpr attribute="Value" context="lquote" String="(foldnode.|node.|foldedge.|edge.|)label *:"/>
-    <RegExpr attribute="Value" context="fontlq" String="(foldnode.|node.|foldedge.|edge.|)fontname *:"/>
-    <RegExpr attribute="Value" context="lquote" String="infoname(1|2|3) *:"/>
-    <RegExpr attribute="Value" context="lquote" String="(foldnode.|node.|)info(1|2|3) *:"/>
-    <RegExpr attribute="Value" context="intval" String="spreadlevel *:"/>
-    <RegExpr attribute="Value" context="nodelevel" String="(foldnode.|node.|)(level|vertical_?order) *:"/>
-    <RegExpr attribute="Value" context="intval" String="(foldnode.|node.|foldedge.|edge.|)horizontal_?order *:"/>
+    <RegExpr attribute="Value" context="shapeid" String="(&nodes;)shape"/>
+    <RegExpr attribute="Value" context="lquote" String="(source|target)(name|)|(title|(&nodes;&edges;)label|(&nodes;)info(1|2|3)|infoname(1|2|3)|useraction(name|cmd)(1|2|3|4)) *:"/>
+    <RegExpr attribute="Value" context="fontlq" String="(&nodes;&edges;)fontname *:"/>
+    <RegExpr attribute="Value" context="boolean" String="(crossing_?(optimization|phase2)|(dirty_edge_|display_edge_|displayedge|late_edge_|subgraph_?)labels|s?manhatt(a|e)n_?edges|(nodes|near_?edges|edges|splines) |equal(_y_|_?y)dist|(fast_?|)icons|fine_?tuning|(f?straight_?|priority_)phase|ignore_?singles|(in|out|)port_?sharing|linear_?segments|energetic) *:"/>
+    <RegExpr attribute="Value" context="intval" String="(spreadlevel|(&nodes;&edges;)horizontal_?order|(&nodes;)(height|width|borderwidth|stretch|shrink)|(&edges;)(arrowsize|backarrowsize|thickness|class|priority)|anchor|iconcolors|hidden|layout_(up|down|near|spline)factor|border +(x|y)|splinefactor|(xspace|xbase|xmax|xraster|x|yspace|ybase|ymax|yraster|y|xlraster|xlspace)|magnetic_force(1|2)|(a|b|c|fd|p|r|s)(max)|(c|p|r)(min)) *:"/>
+    <keyword attribute="Value" context="intval" String="forcedir"/>
+    <StringDetect attribute="Value" context="classname" String="classname"/>
+    <RegExpr attribute="Value" context="nodelevel" String="(&nodes;)(level|vertical_?order) *:"/>
     <RegExpr attribute="Value" context="stateid" String="stat(e|us) *:"/>
     <RegExpr attribute="Value" context="algid" String="layout_?algorithm *:"/>
-    <RegExpr attribute="Value" context="boolean" String="crossing_?optimization *:"/>
-    <RegExpr attribute="Value" context="boolean" String="crossing_?phase2 *:"/>
-    <RegExpr attribute="Value" context="boolean" String="(dirty_edge_|display_edge_|displayedge|late_edge_|subgraph_?)labels *:"/>
-    <RegExpr attribute="Value" context="boolean" String="s?manhatt(a|e)n_?edges *:"/>
-    <RegExpr attribute="Value" context="boolean" String="(nodes|near_?edges|edges|splines) *:"/>
-    <RegExpr attribute="Value" context="classname" String="classname"/>
     <RegExpr attribute="Value" context="orient" String="orientation *:"/>
     <RegExpr attribute="Value" context="nodealign" String="node_alignment *:"/>
-    <RegExpr attribute="Value" context="textmode" String="(foldnode.|node.|)textmode *:"/>
-    <RegExpr attribute="Value" context="boolean" String="equal_y_dist *:"/>
-    <RegExpr attribute="Value" context="boolean" String="equal_?ydist *:"/>
+    <RegExpr attribute="Value" context="textmode" String="(&nodes;)textmode *:"/>
     <RegExpr attribute="Value" context="weight" String="crossing_?weight *:"/>
-    <RegExpr attribute="Value" context="boolean" String="(fast_?|)icons *:"/>
-    <RegExpr attribute="Value" context="boolean" String="fine_?tuning *:"/>
-    <RegExpr attribute="Value" context="boolean" String="(f?straight_?|priority_)phase *:"/>
-    <RegExpr attribute="Value" context="boolean" String="ignore_?singles *:"/>
-    <RegExpr attribute="Value" context="boolean" String="(in|out|)port_?sharing *:"/>
-    <RegExpr attribute="Value" context="boolean" String="linear_?segments *:"/>
-    <RegExpr attribute="Value" context="intval" String="(foldnode.|node.|)(height|width|borderwidth|stretch|shrink) *:"/>
-    <RegExpr attribute="Value" context="intval" String="(foldedge.|edge.|)(arrowsize|backarrowsize|thickness|class|priority) *:"/>
-    <RegExpr attribute="Value" context="intval" String="anchor *:"/>
-    <RegExpr attribute="Value" context="intval" String="iconcolors *:"/>
-    <RegExpr attribute="Value" context="intval" String="hidden *:"/>
-    <RegExpr attribute="Value" context="boolean" String="energetic *:"/>
-    <RegExpr attribute="Value" context="intval" String="layout_(up|down|near|spline)factor *:"/>
-    <RegExpr attribute="Value" context="intval" String="border +(x|y) *:"/>
-    <RegExpr attribute="Value" context="intval" String="splinefactor *:"/>
     <RegExpr attribute="Value" context="floatval" String="(gravity|tempfactor|treefactor) *:"/>
-    <RegExpr attribute="Value" context="intval" String="(xspace|xbase|xmax|xraster|x) *:"/>
-    <RegExpr attribute="Value" context="intval" String="(yspace|ybase|ymax|yraster|y) *:"/>
-    <RegExpr attribute="Value" context="intval" String="(xlraster|xlspace) *:"/>
-    <RegExpr attribute="Value" context="intval" String="magnetic_force(1|2) *:"/>
     <RegExpr attribute="Value" context="magnor" String="magnetic_field(1|2) *:"/>
-    <RegExpr attribute="Value" context="intval" String="(a|b|c|fd|p|r|s)(max) *:"/>
-    <RegExpr attribute="Value" context="intval" String="(c|p|r)(min) *:"/>
-    <keyword attribute="Value" context="intval" String="forcedir"/>
     <RegExpr attribute="Value" context="scaling" String="scaling *:"/>
-    <RegExpr attribute="Value" context="lquote" String="useraction(name|cmd)(1|2|3|4) *:"/>
    </context>
    <context name="string" attribute="String" lineEndContext="#stay">
     <DetectChar attribute="String" context="default" char="&quot;"/>
     <Detect2Chars attribute="Char" context="#stay" char="\" char1="&quot;"/>
-    <RegExpr attribute="Char" context="#stay" String="\\(n|a|t|b)"/>
-    <RegExpr attribute="Char" context="#stay" String="\\fi(0|1|2)[0-9][0-9]"/>
-    <RegExpr attribute="Char" context="#stay" String="\\f(u|I|b|B|n|[0-9][0-9])"/>
+    <RegExpr attribute="Char" context="#stay" String="\\(n|a|t|b)|\\fi(0|1|2)[0-9][0-9]|\\f(u|I|b|B|n|[0-9][0-9])"/>
    </context>
    <context name="scaling" attribute="Normal" lineEndContext="#stay">
     <StringDetect attribute="Datatype" context="default" String="maxspect"/>
     <Float attribute="Float" context="default"/>
    </context>
    <context name="ccomment" attribute="Comment" lineEndContext="default">
+     <DetectSpaces />
+     <IncludeRules context="##Comments"/>
    </context>
    <context name="cppcomment" attribute="Comment" lineEndContext="#stay">
-    <Detect2Chars attribute="Comment" context="default" char="*" char1="/"/>
+    <Detect2Chars attribute="Comment" context="default" char="*" char1="/" endRegion="BlockComment"/>
+    <DetectSpaces />
+    <IncludeRules context="##Comments"/>
    </context>
    <context name="colorid" attribute="Normal" lineEndContext="#stay">
     <keyword attribute="Datatype" context="default" String="colors"/>
@@ -236,7 +206,7 @@
    </context>
    <context name="longint" attribute="Normal" lineEndContext="default">
     <Int attribute="Integer" context="longint"/>
-    <RegExpr attribute="Normal" context="default" String="\ "/>
+    <DetectChar attribute="Normal" context="default" char=" "/>
    </context>
    <context name="centry" attribute="Normal" lineEndContext="default">
     <RegExpr attribute="Value" context="cecolon" String="[0-9][0-9]?"/>
@@ -306,8 +276,9 @@
  <general>
   <comments>
    <comment name="singleLine" start="//" />
-   <comment name="multiLine" start="/*" end="*/"/>
+   <comment name="multiLine" start="/*" end="*/" region="BlockComment"/>
   </comments>
   <keywords casesensitive="1"/>
  </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

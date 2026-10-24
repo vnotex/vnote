@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Haskell" version="13" kateversion="5.0" section="Sources" extensions="*.hs;*.chs;*.hs-boot" mimetype="text/x-haskell" author="Nicolas Wu (zenzike@gmail.com)" license="LGPL" indenter="haskell" style="haskell">
+<!DOCTYPE language [
+  <!ENTITY symbolops "\-!#\$&#37;&amp;\*\+/&lt;=&gt;\?&#92;&#92;@\^\|~\.:">
+]>
+<language name="Haskell" alternativeNames="HS" version="22" kateversion="5.53" section="Sources" extensions="*.hs;*.chs;*.hs-boot" mimetype="text/x-haskell" author="Nicolas Wu (zenzike@gmail.com)" license="LGPL" indenter="haskell" style="haskell">
   <highlighting>
   <list name="keywords">
     <item>case</item>
@@ -457,11 +459,8 @@
   </list>
   <contexts>
     <context attribute="Normal" lineEndContext="#stay" name="code">
-      <StringDetect attribute="Pragma"  context="pragma" String="{-#"/>
-      <StringDetect attribute="Comment" context="#stay" String="{--}"/>
-      <RegExpr attribute="Comment" context="comments" String="\{-[^#]?" />
-      <RegExpr attribute="Comment" context="comment"  String="--[\-]*([^!#\$%&amp;\*\+\./&lt;=&gt;\?@&#92;\^\|\-~:]|$)" />
-      <WordDetect attribute="Keyword" context="import"   String="import" />
+      <IncludeRules context="FindComment"/>
+      <WordDetect attribute="Keyword" context="import" String="import"/>
       <Detect2Chars attribute="C2HS Directive" context="c2hs directive" char="{" char1="#"/>
       <DetectChar attribute="C Preprocessor" context="C Preprocessor" char="#" column="0"/>
 
@@ -471,14 +470,12 @@
       <keyword attribute="Data Prelude"     context="#stay" String="prelude data" />
       <keyword attribute="Class Prelude"    context="#stay" String="prelude class" />
 
-      <RegExpr attribute="Special"          context="#stay" String="(::|=&gt;|\-&gt;|&lt;\-|=)(?![\-!#\$%&amp;\*\+/&lt;=&gt;\?&#92;@\^\|~\.:])" />
-      <AnyChar attribute="Special"          context="#stay" String="∷⇒→←∀∃" />
-      <RegExpr attribute="Signature"        context="#stay" String="\s*[a-z_][a-zA-Z0-9_']*\s*(?=::([^\-!#\$%&amp;\*\+/&lt;=&gt;\?&#92;@\^\|~\.:]|$))" />
-      <RegExpr attribute="Signature"        context="#stay" String="\s*(\([\-!#\$%&amp;\*\+/&lt;=&gt;\?&#92;@\^\|~\.:]*\))*\s*(?=::[^\-!#\$%&amp;\*\+/&lt;=&gt;\?&#92;@\^\|~\.:])" />
+      <RegExpr attribute="Special"          context="#stay" String="(::|=&gt;|-&gt;|&lt;-|=)(?![&symbolops;])" />
+      <RegExpr attribute="Signature"        context="#stay" String="\s*[a-z_][a-zA-Z0-9_']*\s*(?=::([^&symbolops;]|$))|\s*(\([&symbolops;]*\))*\s*(?=::[^&symbolops;])" />
       <RegExpr attribute="Function"         context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*[a-z_][a-zA-Z0-9_']*" />
-      <RegExpr attribute="Operator"         context="#stay" String="([A-Z][a-zA-Z0-0_']*\.)*[\-!#\$%&amp;\*\+/&lt;=&gt;\?&#92;@\^\|~\.:]+" />
-      <RegExpr attribute="Type"             context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*[A-Z][a-zA-Z0-9_']*" />
-      <RegExpr attribute="Type"             context="#stay" String="'(?![A-Z]')([A-Z][a-zA-Z0-9_']*\.)*[A-Z][a-zA-Z0-9_']*" />
+      <!-- Match backslash operators before general operators (order matters for precedence) -->
+      <RegExpr attribute="Operator"         context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*\\[!#\$%&amp;\*\+/&lt;=&gt;\?\\@\^\|~\.:]+|([A-Z][a-zA-Z0-9_']*\.)*[&symbolops;]+" />
+      <RegExpr attribute="Type"             context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*[A-Z][a-zA-Z0-9_']*|'(?![A-Z]')([A-Z][a-zA-Z0-9_']*\.)*[A-Z][a-zA-Z0-9_']*" />
 
       <RegExpr    attribute="Float"   context="#stay" String ="\d+\.\d+([Ee][+-]?\d+)?|\d+[Ee][+-]?\d+"/>
       <RegExpr    attribute="Octal"   context="#stay" String="0[Oo][0-7]+"/>
@@ -489,11 +486,16 @@
 
       <DetectChar attribute="Function Infix" context="infix" char="`"/>
       <Detect2Chars attribute="EnumFromTo" context="#stay" char ="." char1="." />
-      <AnyChar      attribute="EnumFromTo" context="#stay" String="‥" />
+      <DetectChar attribute="EnumFromTo" context="#stay" char="‥" />
 
       <RegExpr attribute="Normal" context="Hamlet" String="\[[wxs]?hamlet\|" />
-      <RegExpr attribute="Normal" context="Julius" String="\[julius\|" />
+      <StringDetect attribute="Normal" context="Julius" String="[julius|" />
       <RegExpr attribute="Normal" context="QuasiQuote" String="\[[a-zA-Z_'](\w|[_'])*\|" />
+    </context>
+    <context attribute="Normal" lineEndContext="#pop" name="FindComment">
+      <StringDetect attribute="Pragma"  context="pragma" String="{-#"/>
+      <Detect2Chars attribute="Comment" context="comments" char="{" char1="-" beginRegion="BlockComment"/>
+      <RegExpr attribute="Comment" context="comment" String="--+(?![&symbolops;])"/>
     </context>
     <context attribute="Normal" lineEndContext="#stay" name="QuasiQuote">
       <Detect2Chars attribute="Normal" context="#pop" char="|" char1="]"/>
@@ -507,51 +509,62 @@
       <IncludeRules context="##Hamlet" />
     </context>
     <context attribute="Pragma" lineEndContext="#stay" name="pragma">
+      <DetectSpaces attribute="Pragma" />
       <keyword attribute="Pragma" context="#stay" String="language_pragmas" />
+      <DetectIdentifier attribute="Pragma" />
       <StringDetect attribute="Pragma"  context="#pop" String="#-}"/>
     </context>
     <context attribute="Comment" lineEndContext="#pop" name="comment">
+      <DetectSpaces attribute="Comment" />
       <IncludeRules context="Haddock" />
+      <IncludeRules context="##Comments" />
+      <DetectIdentifier attribute="Comment" />
     </context>
     <context attribute="Comment" lineEndContext="#stay" name="comments">
-      <Detect2Chars attribute="Comment" context="comment" char="{" char1="-" />
-      <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" />
+      <DetectSpaces attribute="Comment" />
+      <Detect2Chars attribute="Comment" context="comments" char="{" char1="-" beginRegion="BlockComment" />
+      <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" endRegion="BlockComment" />
       <IncludeRules context="Haddock" />
+      <IncludeRules context="##Comments" />
+      <DetectIdentifier attribute="Comment" />
     </context>
     <context attribute="Char" lineEndContext="#pop" name="char">
-      <RegExpr attribute="Char" context="#stay" String="\\." />
       <DetectChar attribute="Char" context="#pop" char="'" />
+      <RegExpr attribute="Char" context="#stay" String="\\." />
     </context>
     <context attribute="String" lineEndContext="#stay" name="string">
-      <RegExpr attribute="String" context="#stay" String="\\." />
       <DetectChar attribute="String" context="#pop" char="&quot;" />
+      <RegExpr attribute="String" context="#stay" String="\\." />
     </context>
     <context attribute="Function Infix" lineEndContext="#stay" name="infix">
       <DetectChar attribute="Function Infix" context="#pop" char="`"/>
+      <DetectIdentifier attribute="Function Infix"/>
     </context>
     <context attribute="Normal" lineEndContext="#pop" name="import">
+      <DetectSpaces attribute="Normal" />
+      <IncludeRules context="FindComment" />
       <keyword attribute="Keyword"          context="#stay" String="import_keywords" />
       <RegExpr attribute="Function"         context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*[a-z][a-zA-Z0-9_']*" />
       <RegExpr attribute="Type"             context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*[A-Z][a-zA-Z0-9_']*" />
-
-      <RegExpr attribute="Pragma"  context="#stay" String="\{-#.*#-\}"/>
-      <RegExpr attribute="Comment" context="comments" String="\{-[^#]?" />
-      <RegExpr attribute="Comment" context="comment"  String="--([^\-!#\$%&amp;\*\+/&lt;=&gt;\?&#92;@\^\|~\.:].*)?$" />
+      <!-- Add operator matching to import context (backslash operators matched first) -->
+      <RegExpr attribute="Operator"         context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*\\[!#\$%&amp;\*\+/&lt;=&gt;\?\\@\^\|~\.:]+|([A-Z][a-zA-Z0-9_']*\.)*[&symbolops;]+" />
     </context>
 
     <!-- Haddock -->
     <context attribute="Comment" lineEndContext="#stay" name="Haddock">
       <RegExpr attribute="Haddock Hyperlink" context="#stay" String="'([A-Z][a-zA-Z0-9_']*\.)*[a-z_][a-zA-Z0-9_']*'" />
       <RegExpr attribute="Haddock Module" context="#stay" String="&quot;([A-Z][a-zA-Z0-9_']*\.)*[A-Z][a-zA-Z0-9_']*&quot;" />
-      <RegExpr attribute="Haddock Emphasis" context="Start Haddock Emphasis" lookAhead="true" String="/.*/" />
-      <RegExpr attribute="Haddock Bold" context="Start Haddock Bold" lookAhead="true" String="__.*__" />
+      <RangeDetect context="Start Haddock Emphasis" lookAhead="true" char="/" char1="/" />
+      <RegExpr attribute="Haddock Bold" context="Start Haddock Bold" lookAhead="true" String="__.*?__" />
     </context>
     <context attribute="Haddock Emphasis" lineEndContext="#pop" name="Start Haddock Emphasis">
       <DetectChar attribute="Haddock Emphasis" context="Haddock Emphasis" char="/" />
     </context>
     <context attribute="Haddock Emphasis" lineEndContext="#pop" name="Haddock Emphasis">
+      <DetectSpaces attribute="Haddock Emphasis" />
       <DetectChar attribute="Haddock Emphasis" context="#pop#pop" char="/" />
       <IncludeRules context="Haddock"/>
+      <DetectIdentifier attribute="Haddock Emphasis" />
     </context>
     <context attribute="Haddock Bold" lineEndContext="#pop" name="Start Haddock Bold">
       <Detect2Chars attribute="Haddock Bold" context="Haddock Bold" char="_" char1="_" />
@@ -569,35 +582,38 @@
 
     <!-- C2Hs -->
     <context attribute="C2HS Directive" lineEndContext="#stay" name="c2hs directive">
+      <DetectSpaces attribute="C2HS Directive" />
       <Detect2Chars attribute="C2HS Directive" context="#pop" char="#" char1="}" />
       <keyword attribute="Keyword" context="#stay"          String="c2hs_keywords" />
-      <RegExpr attribute="Keyword" context="#stay"          String="context" />
-      <RegExpr attribute="Keyword" context="#stay"          String="call" />
-      <RegExpr attribute="Keyword" context="#stay"          String="sizeof" />
-      <RegExpr attribute="Keyword" context="#stay"          String="alignof" />
-      <RegExpr attribute="Keyword" context="c2hs fun"       String="fun" />
-      <RegExpr attribute="Keyword" context="c2hs pointer"   String="pointer" />
-      <RegExpr attribute="Keyword" context="c2hs enum"      String="enum" />
-      <RegExpr attribute="Keyword" context="c2hs import"    String="import" />
-    </context>
-    <context attribute="C2HS Directive" lineEndContext="#stay" name="c2hs import">
-      <RegExpr attribute="Type"    context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*[A-Z][a-zA-Z0-9_']*" />
-      <Detect2Chars attribute="C2HS Directive" context="#pop#pop" char="#" char1="}" />
-    </context>
-    <context attribute="C2HS Directive" lineEndContext="#stay" name="c2hs pointer">
-      <keyword attribute="Keyword" context="#stay" String="c2hs_keywords" />
-      <RegExpr attribute="Keyword" context="#stay" String="newtype" />
-      <RegExpr attribute="Type"    context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*[A-Z][a-zA-Z0-9_']*" />
-      <Detect2Chars attribute="C2HS Directive" context="#pop#pop" char="#" char1="}" />
-    </context>
-    <context attribute="C2HS Directive" lineEndContext="#stay" name="c2hs fun">
-      <keyword attribute="Keyword" context="#stay" String="c2hs_keywords" />
-      <RegExpr attribute="Type" context="#stay" String="`[^']*'" />
-      <Detect2Chars attribute="C2HS Directive" context="#pop#pop" char="#" char1="}" />
+      <StringDetect attribute="Keyword" context="#stay"          String="context" />
+      <StringDetect attribute="Keyword" context="#stay"          String="call" />
+      <StringDetect attribute="Keyword" context="#stay"          String="sizeof" />
+      <StringDetect attribute="Keyword" context="#stay"          String="alignof" />
+      <StringDetect attribute="Keyword" context="c2hs fun"       String="fun" />
+      <StringDetect attribute="Keyword" context="c2hs pointer"   String="pointer" />
+      <StringDetect attribute="Keyword" context="c2hs enum"      String="enum" />
+      <StringDetect attribute="Keyword" context="c2hs enum"      String="import" />
     </context>
     <context attribute="C2HS Directive" lineEndContext="#stay" name="c2hs enum">
-      <RegExpr attribute="Type"             context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*[A-Z][a-zA-Z0-9_']*" />
+      <DetectSpaces attribute="C2HS Directive" />
+      <RegExpr attribute="Type"    context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*[A-Z][a-zA-Z0-9_']*" />
       <Detect2Chars attribute="C2HS Directive" context="#pop#pop" char="#" char1="}" />
+      <DetectIdentifier attribute="C2HS Directive" />
+    </context>
+    <context attribute="C2HS Directive" lineEndContext="#stay" name="c2hs pointer">
+      <DetectSpaces attribute="C2HS Directive" />
+      <keyword attribute="Keyword" context="#stay" String="c2hs_keywords" />
+      <StringDetect attribute="Keyword" context="#stay" String="newtype" />
+      <RegExpr attribute="Type"    context="#stay" String="([A-Z][a-zA-Z0-9_']*\.)*[A-Z][a-zA-Z0-9_']*" />
+      <Detect2Chars attribute="C2HS Directive" context="#pop#pop" char="#" char1="}" />
+      <DetectIdentifier attribute="C2HS Directive" />
+    </context>
+    <context attribute="C2HS Directive" lineEndContext="#stay" name="c2hs fun">
+      <DetectSpaces attribute="C2HS Directive" />
+      <keyword attribute="Keyword" context="#stay" String="c2hs_keywords" />
+      <RangeDetect attribute="Type" context="#stay" char="`" char1="'" />
+      <Detect2Chars attribute="C2HS Directive" context="#pop#pop" char="#" char1="}" />
+      <DetectIdentifier attribute="C2HS Directive" />
     </context>
   </contexts>
   <itemDatas>
@@ -642,8 +658,9 @@
     <folding indentationsensitive="1"/>
     <comments>
       <comment name="singleLine" start="--" />
-      <comment name="multiLine" start="{-" end="-}" />
+      <comment name="multiLine" start="{-" end="-}" region="BlockComment" />
     </comments>
     <keywords casesensitive="1" />
 </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

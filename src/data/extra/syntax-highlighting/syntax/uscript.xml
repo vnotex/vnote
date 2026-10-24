@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="UnrealScript" version="2" kateversion="2.2" section="Scripts" extensions="*.uc" mimetype="text/x-uscript">
+<!DOCTYPE language>
+<language name="UnrealScript" version="6" kateversion="5.0" section="Scripts" extensions="*.uc" mimetype="text/x-uscript">
 	<highlighting>
 		<list name="keywords">
 			<item>break</item>
@@ -34,7 +34,6 @@
 			<item>synchronized</item>
 			<item>transient</item>
 			<item>volatile</item>
-			<item>final</item>
 			<item>throws</item>
 			<item>extends</item>
 			<item>expands</item>
@@ -121,10 +120,9 @@
 				<HlCHex attribute="Hex" context="#stay"/>
                 <Int attribute="Decimal" context="Int Suffixes"/>
 				<HlCChar attribute="Char" context="#stay"/>
-				<RegExpr attribute="Region Marker" context="#stay" String="//BEGIN.*$" beginRegion="Region1"/>
-				<RegExpr attribute="Region Marker" context="#stay" String="//END.*$" endRegion="Region1"/>
-				<DetectChar attribute="String" context="String" char="&quot;"/>
-				<DetectChar attribute="String" context="String" char="&#39;"/>
+				<StringDetect attribute="Region Marker" context="Region Marker" String="//BEGIN" beginRegion="Region1"/>
+				<StringDetect attribute="Region Marker" context="Region Marker" String="//END" endRegion="Region1"/>
+				<AnyChar attribute="String" context="String" String="&quot;'"/>
 				<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
 				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
 				<DetectChar attribute="Normal Text" context="#stay" char="{" beginRegion="Brace1"/>
@@ -132,33 +130,36 @@
 				<AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;=&gt;?[]^{|}~"/>
 				<StringDetect attribute="Preprocessor" context="Preprocessor" insensitive="true" String="#exec"/>
 			</context>
-            <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-                <AnyChar String="fF" attribute="Float" context="#pop"/>
-            </context>
-            <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-                <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
-                <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
-                <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
-                <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
-                <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
-                <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
-                <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
-                <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
-            </context>
+			<context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+				<AnyChar String="fF" attribute="Float" context="#pop"/>
+			</context>
+			<context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+				<StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
+				<StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
+				<StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
+				<StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
+				<StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
+				<AnyChar attribute="Decimal" context="#pop" String="ULul"/>
+			</context>
 			<context attribute="String" lineEndContext="#pop" name="String">
 				<LineContinue attribute="String" context="#stay"/>
 				<HlCStringChar attribute="String Char" context="#stay"/>
-				<DetectChar attribute="String" context="#pop" char="&quot;"/>
-				<DetectChar attribute="String" context="#pop" char="&#39;"/>
+				<AnyChar attribute="String" context="#pop" String="&quot;'"/>
 			</context>
-			<context attribute="Comment" lineEndContext="#pop" name="Commentar 1"/>
+			<context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+				<DetectSpaces />
+				<IncludeRules context="##Comments"/>
+			</context>
 			<context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+				<DetectSpaces />
 				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+				<IncludeRules context="##Comments"/>
 			</context>
 			<context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
 				<Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
-				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*"/>
+				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
 			</context>
+			<context attribute="Region Marker" lineEndContext="#pop" name="Region Marker"/>
 		</contexts>
 		<itemDatas>
 			<itemData name="Normal Text" defStyleNum="dsNormal"/>
@@ -180,9 +181,9 @@
 	<general>
 		<comments>
 			<comment name="singleLine" start="//"/>
-			<comment name="multiLine" start="/*" end="*/"/>
+			<comment name="multiLine" start="/*" end="*/" region="Comment"/>
 		</comments>
 		<keywords casesensitive="0" additionalDeliminator="&quot;&#39;"/>
 	</general>
 </language>
-
+<!-- kate: replace-tabs off; -->

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- Adapted from the VIM highlighter, by Markus Mottl (markus@oefai.at) -->
-<language name="dot" version="3" kateversion="5.0" section="Scientific" extensions="*.dot" mimetype="text/x-dot" author="Postula Loïs (lois.postula@live.be)" priority="0">
+<language name="dot" alternativeNames="Graphviz" version="7" kateversion="5.0" section="Scientific" extensions="*.dot;*.gv" mimetype="text/x-dot" author="Postula Loïs (lois.postula@live.be)" priority="0">
 
   <highlighting>
 
@@ -74,10 +74,6 @@
       <item>label</item>
       <item>URL</item>
       <!-- Shared attributes (nodes and edges) -->
-      <item>fontcolor</item>
-      <item>fontname</item>
-      <item>fontsize</item>
-      <item>layer</item>
       <item>style</item>
     </list>
 
@@ -133,12 +129,14 @@
       </context>
 
       <context attribute="Comment" lineEndContext="#pop" name="CommentSL">
-        <IncludeRules context="##Alerts"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
 
       <context attribute="Comment" lineEndContext="#stay" name="CommentML">
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-        <IncludeRules context="##Alerts"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
 
     </contexts>
@@ -162,7 +160,7 @@
 
     <comments>
       <comment name="singleLine" start="//"/>
-      <comment name="multiLine" start="/*" end="*/"/>
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
     </comments>
 
     <keywords casesensitive="1"/>
@@ -170,3 +168,4 @@
   </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Varnish 3 module spec file" version="2" kateversion="3.4" section="Sources" extensions="*.vcc;" mimetype="" author="Xavier Guerrin (xavier@tuxfamily.org)" license="WTFPL" priority="3">
+<!DOCTYPE language>
+<language name="Varnish module spec file" version="6" kateversion="5.0" section="Sources" extensions="*.vcc" author="Xavier Guerrin (xavier@tuxfamily.org)" license="WTFPL" priority="9">
   <highlighting>
     <!-- Extracted from the "ctypes" hash in lib/libvmod_std/vmod.py -->
     <list name="VCC C Types">
       <item>BACKEND</item>
+      <item>BLOB</item>
       <item>BOOL</item>
+      <item>BYTES</item>
       <item>DURATION</item>
       <item>HEADER</item>
+      <item>HTTP</item>
       <item>INT</item>
       <item>IP</item>
       <item>PRIV_CALL</item>
@@ -21,9 +24,12 @@
     <contexts>
       <!-- Default context: define main keywords. -->
       <context name="vccnormal_text" attribute="Normal Text" lineEndContext="#stay">
-        <StringDetect firstNonSpace="true" attribute="Keyword" context="module_declaration"   String="Module" />
-        <StringDetect firstNonSpace="true" attribute="Keyword" context="init_declaration"     String="Init" />
-        <StringDetect firstNonSpace="true" attribute="Keyword" context="function_declaration" String="Function" />
+        <IncludeRules context="##reStructuredText" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="module_declaration"   String="$Module"   endRegion="vcc_block" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="init_declaration"     String="$Init"     endRegion="vcc_block" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="function_declaration" String="$Function" endRegion="vcc_block" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="object_declaration"   String="$Object"   endRegion="vcc_block" />
+        <StringDetect firstNonSpace="true" attribute="Keyword" context="method_declaration"   String="$Method"   endRegion="vcc_block" />
         <IncludeRules context="comments" />
       </context>
 
@@ -32,26 +38,31 @@
         <DetectChar char="#" context="shell-like-comment" attribute="Comment" />
       </context>
       <context name="shell-like-comment" attribute="Comment" lineEndContext="#pop">
-        <IncludeRules context="##Alerts" />
-        <IncludeRules context="##Modelines" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
 
-      <!-- Contexts for the "Module" keyword. -->
+      <!-- Contexts for the "$Module" keyword. -->
       <context name="module_declaration" attribute="Normal Text" lineEndContext="#pop">
-        <RegExpr attribute="VMod Identifier" context="#stay" String="[a-z][a-z0-9_]*$" />
+        <RegExpr attribute="VMod Identifier" context="module_section_expected" String="[a-zA-Z][a-zA-Z0-9_]*" />
+      </context>
+      <context name="module_section_expected" attribute="Normal Text" lineEndContext="#pop">
+        <Int attribute="Decimal" context="module_fullname_expected" />
+      </context>
+      <context name="module_fullname_expected" attribute="String" lineEndContext="#pop">
       </context>
 
-      <!-- Contexts for the "Init" keyword. -->
+      <!-- Contexts for the "$Init" keyword. -->
       <context name="init_declaration" attribute="Normal Text" lineEndContext="#pop">
-        <RegExpr attribute="Function Identifier" context="#stay" String="[a-z][a-z0-9_]*$" />
+        <RegExpr attribute="Function Identifier" context="#stay" String="[a-zA-Z][a-zA-Z0-9_]*$" />
       </context>
 
-      <!-- Contexts for the "Function" keyword. -->
+      <!-- Contexts for the "$Function" keyword. -->
       <context name="function_declaration" attribute="Normal Text" lineEndContext="#pop">
         <keyword attribute="Data Type" String="VCC C Types" context="return_type_declared" />
       </context>
       <context name="return_type_declared" attribute="Normal Text" lineEndContext="#pop">
-        <RegExpr attribute="Function Identifier" context="function_name_declared" String="[a-z][a-z0-9_]*" />
+        <RegExpr attribute="Function Identifier" context="function_name_declared" String="[a-zA-Z][a-zA-Z0-9_]*" />
       </context>
       <context name="function_name_declared" attribute="Normal Text" lineEndContext="#pop">
         <DetectChar char="(" context="function_arg_type_expected" attribute="Normal Text" />
@@ -59,13 +70,27 @@
       <context name="function_arg_type_expected" attribute="Normal Text" lineEndContext="#pop">
         <keyword attribute="Data Type" String="VCC C Types" context="function_comma_expected" />
         <StringDetect String="ENUM" context="enum" attribute="Data Type" />
-        <DetectChar char=")" context="function_end" attribute="Normal Text" />
+        <DetectChar char=")" context="function_end" attribute="Normal Text" beginRegion="vcc_block" />
       </context>
       <context name="function_comma_expected" attribute="Normal Text" lineEndContext="#pop">
         <DetectChar char="," context="function_arg_type_expected" attribute="Normal Text" />
-        <DetectChar char=")" context="function_end" attribute="Normal Text" />
+        <DetectChar char=")" context="function_end" attribute="Normal Text" beginRegion="vcc_block" />
       </context>
       <context name="function_end" attribute="Normal Text" lineEndContext="#pop">
+      </context>
+
+      <!-- Contexts for the "$Object" keyword. -->
+      <context name="object_declaration" attribute="Normal Text" lineEndContext="#pop">
+        <!-- Parse $Object as a $Function which does not need to state a return type -->
+        <IncludeRules context="return_type_declared" />
+      </context>
+
+      <!-- Contexts for the "$Method" keyword. -->
+      <context name="method_declaration" attribute="Normal Text" lineEndContext="#pop">
+        <keyword attribute="Data Type" String="VCC C Types" context="method_return_type_declared" />
+      </context>
+      <context name="method_return_type_declared" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Function Identifier" context="function_name_declared" String="\.[a-zA-Z][a-zA-Z0-9_]*" />
       </context>
 
       <!-- Contexts for enums. -->
@@ -84,7 +109,9 @@
     <itemDatas>
       <itemData name="Normal Text"               defStyleNum="dsNormal" />
       <itemData name="Data Type"                 defStyleNum="dsDataType" spellChecking="false"/>
-      <itemData name="VMod Identifier"           defStyleNum="dsDataType" color="#0000FF" selColor="#0000FF" />
+      <itemData name="Decimal"                   defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="String"                    defStyleNum="dsString"/>
+      <itemData name="VMod Identifier"           defStyleNum="dsAttribute" /> <!-- #0000FF -->
       <itemData name="Function Identifier"       defStyleNum="dsFunction" />
       <itemData name="Comment"                   defStyleNum="dsComment" />
       <itemData name="Symbol"                    defStyleNum="dsNormal" spellChecking="false"/>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="CUE Sheet" version="1" kateversion="5.0" section="Other" extensions="*.cue" mimetype="application/x-cue">
+<!DOCTYPE language>
+<language name="CUE Sheet" version="3" kateversion="5.0" section="Other" extensions="*.cue" mimetype="application/x-cue">
   <highlighting>
     <list name="keywords">
       <item>CATALOG</item>
@@ -52,7 +52,9 @@
         <LineContinue attribute="String" context="#stay"/>
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
-      <context attribute="Comment" lineEndContext="#pop" name="Comment" />
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <IncludeRules context="##Comments" />
+      </context>
     </contexts>
     <itemDatas>
       <itemData name="Normal Text"  defStyleNum="dsNormal"/>
@@ -72,3 +74,4 @@
     <keywords casesensitive="0" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

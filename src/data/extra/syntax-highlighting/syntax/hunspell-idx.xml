@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd" >
+<!DOCTYPE language >
 <language name="Hunspell Thesaurus Index File" section="Other" extensions="*.idx" priority="-9" version="1" kateversion="2.3" author="Lukas Sommer" license="LGPL version 2.1, or version 3 or later versions approved by the membership of KDE e.V.; or any other license appoved by the emembership of KDE e.V.">
 
 <highlighting>

@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY identifier "[a-z][a-zA-Z0-9_]*[!?]?">
+  <!ENTITY module "[A-Z][a-zA-Z0-9_]*">
+  <!ENTITY attributename "[A-Za-z_:*#\(\[][\)\]\w.:_-]*">
+  <!ENTITY htmltag "[A-Za-z_:][\w.:_-]*">
+]>
+<language author="Jade Pfeiffer (jade@pfeiffer.codes)"
+          extensions="*.html.heex;*.heex"
+          indenter="xml"
+          kateversion="5.79"
+          license="MIT"
+          mimetype="text/x-elixir+heex"
+          name="Elixir/HEEx"
+          section="Scripts"
+          style="heex"
+          version="1">
+  <highlighting>
+    <list name="comprehensions">
+      <item>let</item>
+      <item>for</item>
+      <item>if</item>
+    </list>
+    <list name="phx-variables">
+      <item>assigns</item>
+    </list>
+    <list name="phx-bindings">
+      <item>phx-click</item>
+      <item>phx-click-away</item>
+      <item>phx-change</item>
+      <item>phx-submit</item>
+      <item>phx-disable-with</item>
+      <item>phx-trigger-action</item>
+      <item>phx-auto-recover</item>
+      <item>phx-blur</item>
+      <item>phx-focus</item>
+      <item>phx-window-blur</item>
+      <item>phx-window-focus</item>
+      <item>phx-keydown</item>
+      <item>phx-keyup</item>
+      <item>phx-window-keydown</item>
+      <item>phx-window-keyup</item>
+      <item>phx-key</item>
+      <item>phx-viewport-top</item>
+      <item>phx-viewport-bottom</item>
+      <item>phx-update</item>
+      <item>phx-mounted</item>
+      <item>phx-remove</item>
+      <item>phx-hook</item>
+      <item>phx-connected</item>
+      <item>phx-disconnected</item>
+      <item>phx-debounce</item>
+      <item>phx-throttle</item>
+      <item>phx-track-static</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Text">
+        <DetectChar char="&lt;" context="Tags" lookAhead="true"/>
+        <IncludeRules context="Interpolated" />
+        <DetectSpaces />
+      </context>
+
+      <context attribute="Normal Text" name="Tags">
+        <!-- Hook into existing HTML definitions here so there is still control over attributes -->
+        <Detect2Chars char="&lt;" char1="!" context="#pop!HTML Special" lookAhead="true" />
+        <Detect2Chars char="&lt;" char1="/" attribute="Symbol" context="#pop!End Tags" />
+        <!-- HEEx is still an EEx template, those rules can be inherited -->
+        <IncludeRules context="Tag##Elixir/EEx" />
+        <!-- Now Match -->
+        <Detect2Chars char="&lt;" char1="." attribute="Symbol" context="#pop!Tag Name Component" />
+        <Detect2Chars char="&lt;" char1=":" attribute="Symbol" context="#pop!Tag Name Slot" />
+        <DetectChar char="&lt;" context="#pop!Tag Name" attribute="Symbol" />
+      </context>
+      <context attribute="Symbol" fallthroughContext="#pop!Tag Name End" name="End Tags">
+        <DetectChar char="." attribute="Symbol" context="#pop!Tag Name End Component" />
+        <DetectChar char=":" attribute="Symbol" context="#pop!Tag Name End Slot" />
+      </context>
+
+      <!-- Tag Name handling -->
+      <context attribute="Element" name="Tag Name">
+        <RegExpr String="&module;" attribute="Module" context="#pop!Tag Name Module"/>
+        <WordDetect String="script" attribute="Element" context="#pop!Script Tag" />
+        <WordDetect String="style" attribute="Element" context="#pop!Style Tag" />
+        <RegExpr String="&htmltag;" attribute="Element" context="#pop!Tag Body" />
+      </context>
+      <context attribute="Element" name="Tag Name End">
+        <RegExpr String="&module;" attribute="Module" context="#pop!Tag Name End Module"/>
+        <RegExpr String="&htmltag;" attribute="Element" context="#pop!Tag End" />
+      </context>
+
+      <!-- Tag Module Name -->
+      <context attribute="Normal Text" name="Tag Module">
+        <DetectChar char="." context="#stay" />
+        <RegExpr String="&module;" attribute="Module" context="#stay"/>
+      </context>
+      <context attribute="Normal Text" fallthroughContext="#pop!Tag Body" name="Tag Name Module">
+        <IncludeRules context="Tag Module" />
+        <IncludeRules context="Tag Name Component" />
+      </context>
+      <context attribute="Normal Text" fallthroughContext="#pop!Tag End" name="Tag Name End Module">
+        <IncludeRules context="Tag Module" />
+        <IncludeRules context="Tag Name End Component" />
+      </context>
+
+      <!-- Tag Component -->
+      <context attribute="Normal Text" fallthroughContext="#pop!Tag Body" name="Tag Name Component">
+        <RegExpr String="&identifier;" attribute="Function" context="#pop!Tag Body" />
+      </context>
+      <context attribute="Normal Text" fallthroughContext="#pop!Tag End" name="Tag Name End Component">
+        <RegExpr String="&identifier;" attribute="Function" context="#pop!Tag End" />
+      </context>
+      <!-- Tag Component Slot -->
+      <context attribute="Normal Text" fallthroughContext="#pop!Tag Body" name="Tag Name Slot">
+        <RegExpr String="&identifier;" attribute="Symbol" context="#pop!Tag Body" />
+      </context>
+      <context attribute="Normal Text" fallthroughContext="#pop!Tag End" name="Tag Name End Slot">
+        <RegExpr String="&identifier;" attribute="Symbol" context="#pop!Tag End" />
+      </context>
+
+      <!-- Tag Body -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="Tag Body">
+        <IncludeRules context="Tag End" />
+        <IncludeRules context="Attributes" />
+        <IncludeRules context="Interpolated" />
+        <DetectSpaces />
+      </context>
+
+      <!-- End Tag, include-only -->
+      <context attribute="Normal Text" name="Tag End">
+        <Detect2Chars char="/" char1="&gt;" attribute="Symbol" context="#pop"/>
+        <DetectChar char="&gt;" attribute="Symbol" context="#pop" />
+      </context>
+
+      <!-- <script> Tags -->
+      <context attribute="Normal Text" name="Script Tag">
+        <Detect2Chars char="/" char1="&gt;" attribute="Symbol" context="#pop"/>
+        <DetectChar char="&gt;" attribute="Symbol" context="#pop!Script" />
+        <IncludeRules context="Attributes" />
+        <IncludeRules context="Interpolated" />
+        <DetectSpaces />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Script">
+        <StringDetect String="&lt;/script>" context="#pop!Script Tag End" lookAhead="true" />
+        <IncludeRules context="Text##Elixir/EEx" />
+        <DetectChar attribute="String" context="Script String" char="&quot;" />
+        <IncludeRules context="Normal##JavaScript" />
+      </context>
+      <context attribute="Normal Text" name="Script Tag End">
+        <Detect2Chars char="&lt;" char1="/" attribute="Symbol" context="#stay" />
+        <StringDetect String="script" attribute="Element" context="#stay" />
+        <DetectChar char="&gt;" attribute="Symbol" context="#pop" />
+      </context>
+      <context attribute="Normal Text" name="Script String">
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+        <IncludeRules context="Text##Elixir/EEx" />
+        <IncludeRules context="String##JavaScript" />
+      </context>
+
+      <!-- <style> Tags -->
+      <context attribute="Normal Text" name="Style Tag">
+        <Detect2Chars char="/" char1="&gt;" attribute="Symbol" context="#pop"/>
+        <DetectChar char="&gt;" attribute="Symbol" context="#pop!Style" />
+        <IncludeRules context="Attributes" />
+        <IncludeRules context="Interpolated" />
+        <DetectSpaces />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Style">
+        <StringDetect String="&lt;/style>" context="#pop!Style Tag End" lookAhead="true" />
+        <IncludeRules context="Text##Elixir/EEx" />
+        <IncludeRules context="Base##CSS" />
+      </context>
+      <context attribute="Normal Text" name="Style Tag End">
+        <Detect2Chars char="&lt;" char1="/" attribute="Symbol" context="#stay" />
+        <StringDetect String="style" attribute="Element" context="#stay" />
+        <DetectChar char="&gt;" attribute="Symbol" context="#pop" />
+      </context>
+
+      <!-- Tag Attributes -->
+      <context attribute="Attribute" name="Attributes">
+        <DetectChar char=":" attribute="Control Flow" context="Attribute BuiltIn" />
+        <StringDetect String="phx-" context="Phoenix Binding" lookAhead="true" />
+        <RegExpr String="&attributename;" attribute="Attribute" context="Attribute Equals" />
+      </context>
+      <context attribute="Control Flow" name="Attribute BuiltIn" fallthroughContext="#pop!Attribute Equals">
+        <keyword String="comprehensions" attribute="Control Flow" context="#pop!Attribute Equals" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop"  name="Attribute Equals">
+        <DetectChar char="=" attribute="Operator" context="#pop!Attribute Value" />
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Attribute Value">
+        <DetectChar char="&quot;" context="#pop!Attribute Value Quote" />
+        <DetectChar char="{" attribute="String" context="#pop!Interpolate" beginRegion="interpolate"/>
+        <DetectSpaces />
+      </context>
+      <context attribute="String" name="Attribute Value Quote">
+        <DetectChar char="&quot;" attribute="String" context="#pop" />
+        <IncludeRules context="FindEntityRefs##HTML" />
+      </context>
+      <context attribute="Symbol" name="Phoenix Binding">
+        <keyword String="phx-bindings" attribute="Symbol" context="#pop!Attribute Equals" />
+        <RegExpr String="phx-value-&attributename;" attribute="Symbol" context="#pop!Attribute Equals" />
+        <RegExpr String="phx-(&attributename;)?" attribute="Normal Text" context="#pop!Attribute Equals" />
+      </context>
+
+      <context attribute="Normal Text" name="HTML Special">
+        <IncludeRules context="FindHTML##HTML" />
+      </context>
+
+      <context attribute="Normal Text" name="Interpolated">
+        <DetectChar char="{" attribute="String" context="Interpolate" beginRegion="interpolate"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Interpolate">
+        <!-- Add Phoenix-specific terms for the template -->
+        <RegExpr String="@&identifier;" attribute="Assigns" context="#stay" />
+        <keyword String="phx-variables" attribute="Assigns" context="#stay"/>
+
+        <DetectChar char="{" beginRegion="map_or_struct_or_tuple" attribute="Braces" context="Interpolate Scope"/>
+        <DetectChar char="}" attribute="String" context="#pop" endRegion="interpolate" />
+        <IncludeRules context="Normal##Elixir" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Interpolate Scope">
+        <DetectChar char="}" attribute="String" context="#pop" endRegion="map_or_struct_or_tuple" />
+        <IncludeRules context="Interpolate" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData defStyleNum="dsNormal"    name="Normal Text" spellChecking="false"/>
+      <itemData defStyleNum="dsNormal"    name="Braces"/>
+      <itemData defStyleNum="dsBuiltIn"   name="Symbol"/>
+      <itemData defStyleNum="dsKeyword"   name="Element"/>
+      <itemData defStyleNum="dsOperator"  name="Operator"/>
+      <itemData defStyleNum="dsExtension" name="Control Flow"/>
+      <itemData defStyleNum="dsString"    name="String"/>
+      <itemData defStyleNum="dsNormal"    name="Module"/>
+      <itemData defStyleNum="dsFunction"  name="Function"/>
+      <itemData defStyleNum="dsOthers"    name="Assigns"/>
+      <itemData defStyleNum="dsNormal"    name="Attribute"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <!-- Same comments from Elixir/EEx -->
+      <comment name="multiLine" start="&lt;%!--" end="--%&gt;" region="comment" />
+    </comments>
+    <keywords weakDeliminator=":-" />
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

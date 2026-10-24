@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
 	====================================================================
 	GAP syntax highlighting file for the KDE editors Kate and Kwrite
@@ -14,7 +14,7 @@
 	-->
 
 
-<language name="GAP" section="Scientific" extensions="*.gd;*.gi;*.g" mimetype="text/gap" version="3" kateversion="5.0" author="Jose Joao Morais" license="GPL">
+<language name="GAP" section="Scientific" extensions="*.gd;*.gi;*.g" mimetype="text/gap" version="5" kateversion="5.0" author="Jose Joao Morais" license="GPL">
 
 	<highlighting>
 
@@ -7765,6 +7765,8 @@
 
 
 			<context name="Commentary" attribute="Commentary" lineEndContext="#pop">
+				<DetectSpaces />
+				<IncludeRules context="##Comments" />
 			</context>
 
 
@@ -7833,3 +7835,4 @@
 	</general>
 
 </language>
+<!-- kate: replace-tabs off; -->

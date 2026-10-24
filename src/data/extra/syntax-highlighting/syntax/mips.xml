@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="MIPS Assembler" version="3" kateversion="2.4" section="Assembler" extensions="*.s;" mimetype="text/x-mips" author="Dominik Haumann (dhaumann@kde.org)" license="MIT" priority="-1">
+<!DOCTYPE language>
+<language name="MIPS Assembler" version="6" kateversion="5.0" section="Assembler" extensions="*.s;" mimetype="text/x-mips" author="Dominik Haumann (dhaumann@kde.org)" license="MIT" priority="-1">
   <highlighting>
     <list name="type">
       <item>.align</item>
@@ -117,10 +117,6 @@
       <item>rfe</item>
       <item>sb</item>
       <item>sh</item>
-      <item>sw</item>
-      <item>swcl</item>
-      <item>swl</item>
-      <item>swr</item>
       <item>sll</item>
       <item>sllv</item>
       <item>slt</item>
@@ -139,6 +135,7 @@
       <item>swc1</item>
       <item>swc2</item>
       <item>swc3</item>
+      <item>swcl</item>
       <item>swl</item>
       <item>swr</item>
       <item>syscall</item>
@@ -317,7 +314,7 @@
         <keyword attribute="Section" context="#stay" String="type"/>
         <RegExpr attribute="Region Marker" context="#stay" String="#\s*BEGIN.*$" beginRegion="region" firstNonSpace="true"/>
         <RegExpr attribute="Region Marker" context="#stay" String="#\s*END.*$" endRegion="region" firstNonSpace="true"/>
-        <RegExpr attribute="Comment" context="#stay" String="#.*$" />
+        <DetectChar attribute="Comment" context="Comment" char="#" />
         <RegExpr attribute="Label" context="#stay" String="[\w_\.]+:" firstNonSpace="true"/>
         <DetectChar attribute="String" context="string" char="&quot;" />
         <Float attribute="Float" context="#stay"/>
@@ -328,6 +325,10 @@
       <context name="string" attribute="String" lineEndContext="#stay" >
         <RegExpr attribute="Char" context="#stay" String="\\." />
         <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
     </contexts>
     <itemDatas>
@@ -352,8 +353,9 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="#" />
+      <comment name="singleLine" start="#" position="afterwhitespace" />
     </comments>
     <keywords casesensitive="0" weakDeliminator="."/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

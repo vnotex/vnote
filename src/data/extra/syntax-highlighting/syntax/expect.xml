@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language[
+  <!ENTITY delims "!&#37;&amp;*+,-./:&lt;=>^|~">
+]>
+<language
+  name="Expect" section="Scripts"
+  version="1" kateversion="5.79"
+  extensions="*.exp;*.expect"
+  author="Jonathan Poelen (jonathan.poelen@gmail.com)"
+  license="MIT"
+>
+  <highlighting>
+    <list name="commands">
+      <item>close</item>
+      <item>debug</item>
+      <item>disconnect</item>
+      <item>exp_continue</item>
+      <item>exp_internal</item>
+      <item>exp_open</item>
+      <item>exp_pid</item>
+      <item>exp_send</item>
+      <item>exp_send_error</item>
+      <item>exp_send_log</item>
+      <item>exp_send_tty</item>
+      <item>exp_send_user</item>
+      <item>exp_version</item>
+      <item>expect</item>
+      <item>expect_after</item>
+      <item>expect_background</item>
+      <item>expect_before</item>
+      <item>expect_tty</item>
+      <item>expect_user</item>
+      <item>fork</item>
+      <item>interact</item>
+      <item>interpreter</item>
+      <item>log_file</item>
+      <item>log_user</item>
+      <item>match_max</item>
+      <item>overlay</item>
+      <item>parity</item>
+      <item>remove_nulls</item>
+      <item>send</item>
+      <item>send_error</item>
+      <item>send_log</item>
+      <item>send_tty</item>
+      <item>send_user</item>
+      <item>sleep</item>
+      <item>spawn</item>
+      <item>strace</item>
+      <item>stty</item>
+      <item>system</item>
+      <item>timestamp</item>
+      <item>trap</item>
+      <item>wait</item>
+    </list>
+
+    <list name="patterns">
+      <item>default</item>
+      <item>eof</item>
+      <item>full_buffer</item>
+      <item>null</item>
+      <item>timeout</item>
+    </list>
+
+    <contexts>
+
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect String="exp_continue" attribute="Control Flow" weakDeliminator="&delims;"/>
+        <keyword String="commands" attribute="Keyword" weakDeliminator="&delims;"/>
+        <keyword String="patterns" attribute="Pattern" weakDeliminator="&delims;"/>
+        <IncludeRules context="##Tcl/Tk"/>
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal"/>
+      <itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="0"/>
+      <itemData name="Pattern" defStyleNum="dsBuiltIn" spellChecking="0"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="0"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+    <keywords casesensitive="1"/>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

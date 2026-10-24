@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
 	====================================================================
 	Modelica syntax highlighting file for the KDE editors Kate and Kwrite
@@ -16,7 +16,7 @@
 -->
 
 
-<language name="Modelica" version="6" kateversion="5.0" casesensitive="1" section="Sources" extensions="*.mo" author="Federico Zenith" license="LGPLv2+">
+<language name="Modelica" version="9" kateversion="5.0" casesensitive="1" section="Sources" extensions="*.mo" author="Federico Zenith" license="LGPLv2+">
 
 	<highlighting>
 		<!-- Classes in Modelica can be called different names; "class" is the
@@ -192,7 +192,6 @@
 				<RegExpr attribute="Keyword" String="\bend\s+(for|while|loop)\b" endRegion="loopBlock"/>
 				<RegExpr attribute="Keyword" String="\bloop\b" beginRegion="loopBlock"/>
 				<RegExpr attribute="Keyword" String="\bend\s+(if|when)\b" endRegion="thenBlock"/>
-				<RegExpr attribute="Keyword" String="\bend\s+(if|when)\b" endRegion="thenBlock"/>
 				<RegExpr attribute="Keyword" String="\b(if|when)\b" beginRegion="thenBlock"/>
 
 				<keyword attribute="Class Type" String="classType_type"/>
@@ -220,14 +219,14 @@
 
 			<context attribute="Comment" lineEndContext="#pop" name="Single-line comment">
 				<DetectSpaces/>
-				<IncludeRules context="##Alerts"/>
+				<IncludeRules context="##Comments"/>
 				<DetectIdentifier/>
 			</context>
 
 			<context attribute="Comment" lineEndContext="#stay" name="Multi-line comment">
 				<DetectSpaces/>
 				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-				<IncludeRules context="##Alerts"/>
+				<IncludeRules context="##Comments"/>
 				<DetectIdentifier/>
 			</context>
 		</contexts>
@@ -252,9 +251,9 @@
 	<general>
 		<comments>
 			<comment name="singleLine" start="//"/>
-			<comment name="multiLine" start="/**" end="*/"/>
-			<comment name="multiLine" start="/*" end="*/"/>
+			<comment name="multiLine" start="/*" end="*/" region="Comment"/>
 		</comments>
 		<keywords casesensitive="1"/>
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

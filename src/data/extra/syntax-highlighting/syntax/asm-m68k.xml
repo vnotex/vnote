@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
-<language name="Motorola 68k (VASM/Devpac)" section="Assembler" version="2" kateversion="5.0"  extensions="*.s;*.i;*.S;*.I" author="Miro Kropacek (miro.kropacek@gmail.com)" license="LGPL">
+<language name="Motorola 68k (VASM/Devpac)" section="Assembler" version="5" kateversion="5.62"  extensions="*.s;*.i;*.S;*.I" author="Miro Kropacek (miro.kropacek@gmail.com)" license="LGPL">
 
   <highlighting>
     <list name="Data Registers">
@@ -72,6 +72,43 @@
       <item>fpiar</item>
     </list>
 
+    <list name="Branch Instructions (CPU)">
+      <item>bcc</item>
+      <item>bcs</item>
+      <item>beq</item>
+      <item>bge</item>
+      <item>bgt</item>
+      <item>bhi</item>
+      <item>ble</item>
+      <item>bls</item>
+      <item>blt</item>
+      <item>bmi</item>
+      <item>bne</item>
+      <item>bpl</item>
+      <item>bvc</item>
+      <item>bvs</item>
+      <item>bra</item>
+      <item>bsr</item>
+      <item>dbcc</item>
+      <item>dbcs</item>
+      <item>dbeq</item>
+      <item>dbge</item>
+      <item>dbgt</item>
+      <item>dbhi</item>
+      <item>dble</item>
+      <item>dbls</item>
+      <item>dblt</item>
+      <item>dbmi</item>
+      <item>dbne</item>
+      <item>dbpl</item>
+      <item>dbvc</item>
+      <item>dbvs</item>
+      <item>dbt</item>
+      <item>dbf</item>
+      <item>dbra</item>
+      <item>jmp</item>
+    </list>
+
     <list name="Instructions (CPU)">
       <item>abcd</item>
       <item>adda</item>
@@ -83,11 +120,8 @@
       <item>and</item>
       <item>asl</item>
       <item>asr</item>
-      <item>bcc</item>
       <item>bchg</item>
       <item>bclr</item>
-      <item>bcs</item>
-      <item>beq</item>
       <item>bfchg</item>
       <item>bfclr</item>
       <item>bfexts</item>
@@ -96,24 +130,11 @@
       <item>bfins</item>
       <item>bfset</item>
       <item>bftst</item>
-      <item>bge</item>
-      <item>bgt</item>
-      <item>bhi</item>
       <item>bhs</item>
       <item>bkpt</item>
-      <item>ble</item>
       <item>blo</item>
-      <item>bls</item>
-      <item>blt</item>
-      <item>bmi</item>
-      <item>bne</item>
-      <item>bpl</item>
-      <item>bra</item>
       <item>bset</item>
-      <item>bsr</item>
       <item>btst</item>
-      <item>bvc</item>
-      <item>bvs</item>
       <item>callm</item>
       <item>cas2</item>
       <item>cas</item>
@@ -131,23 +152,8 @@
       <item>cpusha</item>
       <item>cpushl</item>
       <item>cpushp</item>
-      <item>dbcc</item>
-      <item>dbcs</item>
-      <item>dbeq</item>
-      <item>dbf</item>
-      <item>dbge</item>
-      <item>dbgt</item>
-      <item>dbhi</item>
       <item>dbhs</item>
-      <item>dble</item>
       <item>dblo</item>
-      <item>dbls</item>
-      <item>dblt</item>
-      <item>dbmi</item>
-      <item>dbne</item>
-      <item>dbpl</item>
-      <item>dbra</item>
-      <item>dbt</item>
       <item>dbvc</item>
       <item>dbvs</item>
       <item>divs</item>
@@ -160,7 +166,6 @@
       <item>extb</item>
       <item>ext</item>
       <item>illegal</item>
-      <item>jmp</item>
       <item>jsr</item>
       <item>lea</item>
       <item>link</item>
@@ -251,7 +256,6 @@
       <item>trapne</item>
       <item>trappl</item>
       <item>trapt</item>
-      <item>trapvc</item>
       <item>trapvc</item>
       <item>trapv</item>
       <item>tst</item>
@@ -529,90 +533,145 @@
     </list>
 
     <contexts>
-      <!-- name = name of context, attribute = name of item data -->
-      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
-	<keyword attribute="Data Registers" context="#stay" String="Data Registers"/>
-	<keyword attribute="Address Registers" context="#stay" String="Address Registers"/>
-	<keyword attribute="Control Registers" context="#stay" String="Control Registers"/>
-	<keyword attribute="FPU Registers" context="#stay" String="FPU Registers"/>
-	<keyword attribute="Instructions (CPU)" context="#stay" String="Instructions (CPU)"/>
-	<keyword attribute="Instructions (FPU)" context="#stay" String="Instructions (FPU)"/>
-	<keyword attribute="Directives" context="#stay" String="Directives"/>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" fallthroughContext="SuffixInstruction">
+        <DetectSpaces attribute="Normal Text"/>
 
-	<!-- precedes ".[bwlsdqpx]" match -->
-	<RegExpr attribute="Label" context="#stay" String="^[A-Za-z_][A-Za-z_.0-9]*:?"/>
-	<RegExpr attribute="Local label" context="#stay" String="^\.[A-Za-z_][A-Za-z_.0-9]*:?"/>
+        <DetectChar attribute="Comment" context="Comment" char="*" firstNonSpace="1"/>
 
-	<RegExpr attribute="Operand sizes (CPU)" context="#stay" insensitive="true" String="\.b[\s,]"/>
-	<RegExpr attribute="Operand sizes (CPU)" context="#stay" insensitive="true" String="\.w[\s,]"/>
-	<RegExpr attribute="Operand sizes (CPU)" context="#stay" insensitive="true" String="\.l[\s,]"/>
-	<RegExpr attribute="Operand sizes (FPU)" context="#stay" insensitive="true" String="\.s[\s,]"/>
-	<RegExpr attribute="Operand sizes (FPU)" context="#stay" insensitive="true" String="\.d[\s,]"/>
-	<RegExpr attribute="Operand sizes (FPU)" context="#stay" insensitive="true" String="\.p[\s,]"/>
-	<RegExpr attribute="Operand sizes (FPU)" context="#stay" insensitive="true" String="\.q[\s,]"/>
-	<RegExpr attribute="Operand sizes (FPU)" context="#stay" insensitive="true" String="\.x[\s,]"/>
+        <DetectIdentifier attribute="Label" context="Label" column="0"/>
+        <DetectChar attribute="Local label" context="LocalLabel" char="." column="0"/>
 
-	<DetectChar attribute="Comment" context="Comment" char=";"/>
-	<DetectChar attribute="Comment" context="Comment" char="*" firstNonSpace="true"/>
-	<DetectChar attribute="Constant" context="Constant" char="#"/>
-	<DetectChar attribute="BaseN" context="Number16" char="$"/>
-	<DetectChar attribute="BaseN" context="Number2" char="%"/>
-	<DetectChar attribute="BaseN" context="Number8" char="@"/>
-	<Float attribute="Float" context="#stay"/>
-	<Int attribute="Number" context="#stay"/>
-	<RangeDetect attribute="Char" context="#stay" char="'"  char1="'"/>
-	<AnyChar attribute="String" context="String" String="&quot;'"/>
+        <keyword attribute="Instructions (CPU)" context="SuffixInstruction" String="Instructions (CPU)"/>
+        <keyword attribute="Branch Instructions (CPU)" context="SuffixInstruction" String="Branch Instructions (CPU)"/>
+        <keyword attribute="Instructions (FPU)" context="SuffixInstruction" String="Instructions (FPU)"/>
+        <keyword attribute="Directives" context="SuffixInstruction" String="Directives"/>
+
+        <RegExpr attribute="Label" context="EndLabel" String="[a-zA-Z][a-zA-Z0-9._]*+(?=:)"/>
+        <RegExpr attribute="Local label" context="EndLabel" String="\.[A-Za-z_][a-zA-Z0-9._]*+(?=:)"/>
+
+        <DetectIdentifier attribute="Unknown Instructions" context="SuffixInstruction"/>
       </context>
 
-      <context name="Comment" attribute="Comment" lineEndContext="#pop"/>
-
-      <context name="String" attribute="String" lineEndContext="#pop">
-	      <AnyChar attribute="String" context="#pop" String="&quot;'"/>
+      <context name="SuffixInstruction" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop!Operation">
+        <DetectSpaces attribute="Normal Text" context="#pop!Operation"/>
+        <RegExpr attribute="Operand sizes (CPU)" context="#pop!Operation" String="\.[bwlsBWLS](?=\s)"/>
+        <RegExpr attribute="Operand sizes (FPU)" context="#pop!Operation" String="\.[dpqxDPQX](?=\s)"/>
       </context>
 
-      <context name="Constant" attribute="Constant" lineEndContext="#pop">
-	      <RegExpr attribute="Constant" context="Operators" String="[0-9]+"/>
-	      <RegExpr attribute="Constant" context="Operators" String="\$[A-Fa-f0-9]+"/>
-	      <RegExpr attribute="Constant" context="Operators" String="@[0-7]+"/>
-	      <RegExpr attribute="Constant" context="Operators" String="%[01]+"/>
-	      <RegExpr attribute="Label" context="Operators" String="[A-Za-z_][A-Za-z_.0-9]*"/>
-	      <RegExpr attribute="Local label" context="Operators" String="\.[A-Za-z_][A-Za-z_.0-9]*"/>
-	      <RangeDetect attribute="Char" context="#pop" char="'"  char1="'"/>
-	      <DetectChar attribute="Normal Text" char="," context="#pop"/>
-	      <DetectSpaces attribute="Normal Text" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="(" context="#stay"/>
+      <context name="Operation" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="Expression">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Constant" context="Addressing Mode" char="#"/>
       </context>
 
-      <context name="Operators" attribute="Normal Text" lineEndContext="#pop">
-	      <DetectChar attribute="Normal Text" char="|" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="&amp;" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="^" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="*" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="(" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char=")" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="+" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="-" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="/" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="~" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="!" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="%" context="#pop"/>
-	      <Detect2Chars attribute="Normal Text" char="&lt;" char1="&lt;" context="#pop"/>
-	      <Detect2Chars attribute="Normal Text" char="&gt;" char1="&gt;" context="#pop"/>
-	      <DetectChar attribute="Normal Text" char="," context="#pop#pop"/>
-	      <DetectSpaces attribute="Normal Text" context="#pop#pop"/>
+      <context name="Addressing Mode" attribute="Constant" lineEndContext="#pop" fallthroughContext="#pop!Constant_Expression">
+        <AnyChar attribute="Constant" context="#pop!Constant_Expression" String="&lt;&gt;"/>
       </context>
 
-      <context name="Number16" attribute="BaseN" lineEndContext="#pop">
-	      <RegExpr attribute="BaseN" context="#pop" String="[A-Fa-f0-9]+"/>
+      <context name="Expression" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Hex" context="Number16" char="$"/>
+        <DetectChar attribute="Binary" context="Number2" char="%"/>
+        <DetectChar attribute="Number" context="Number8" char="@"/>
+        <Float attribute="Float" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
+        <IncludeRules context="Inc_Expression"/>
+        <DetectIdentifier attribute="Normal Text"/>
       </context>
 
-      <context name="Number2" attribute="BaseN" lineEndContext="#pop">
-	      <RegExpr attribute="BaseN" context="#pop" String="[01]+"/>
+      <context name="Constant_Expression" attribute="Constant" lineEndContext="#pop">
+        <DetectChar attribute="Constant" context="Constant_Number16" char="$"/>
+        <DetectChar attribute="Constant" context="Constant_Number2" char="%"/>
+        <DetectChar attribute="Constant" context="Constant_Number8" char="@"/>
+        <Float attribute="Constant" context="#stay"/>
+        <Int attribute="Constant" context="#stay"/>
+        <IncludeRules context="Inc_Expression"/>
+        <DetectIdentifier attribute="Label"/>
       </context>
 
-      <context name="Number8" attribute="BaseN" lineEndContext="#pop">
-	      <RegExpr attribute="BaseN" context="#pop" String="[0-7]+"/>
+      <context name="Inc_Expression" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Comment" context="#pop!Comment" char=";"/>
+        <DetectChar attribute="Symbol Separator" context="#pop" char=","/>
+        <DetectSpaces attribute="Normal Text" context="#pop"/>
+        <AnyChar attribute="Symbols" context="#stay" String="+-*/%?&amp;|&lt;&gt;^!=[]{}()"/>
+
+        <DetectChar attribute="String" context="SQ_String" char="'"/>
+        <DetectChar attribute="String" context="DQ_String" char="&quot;"/>
+
+        <keyword attribute="Data Registers" context="#stay" String="Data Registers"/>
+        <keyword attribute="Address Registers" context="#stay" String="Address Registers"/>
+        <keyword attribute="Control Registers" context="#stay" String="Control Registers"/>
+        <keyword attribute="FPU Registers" context="#stay" String="FPU Registers"/>
       </context>
+
+      <context name="Constant_Number16" attribute="Constant" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="Constant" context="#pop" String="[A-Fa-f0-9]+"/>
+      </context>
+
+      <context name="Constant_Number2" attribute="Constant" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="Constant" context="#pop" String="[01]+"/>
+      </context>
+
+      <context name="Constant_Number8" attribute="Constant" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="Constant" context="#pop" String="[0-7]+"/>
+      </context>
+
+      <context name="Number16" attribute="Hex" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="Hex" context="#pop" String="[A-Fa-f0-9]+"/>
+      </context>
+
+      <context name="Number2" attribute="Binary" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="Binary" context="#pop" String="[01]+"/>
+      </context>
+
+      <context name="Number8" attribute="Octal" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="Octal" context="#pop" String="[0-7]+"/>
+      </context>
+
+      <context name="Label" attribute="Label" lineEndContext="#pop" fallthroughContext="#pop!EndLabel">
+        <DetectChar attribute="Label" context="Label2" char="."/>
+      </context>
+      <context name="Label2" attribute="Label" lineEndContext="#pop" fallthroughContext="#pop#pop!EndLabel">
+        <DetectIdentifier attribute="Label" context="#stay"/>
+        <DetectChar attribute="Label" context="#stay" char="."/>
+      </context>
+
+      <context name="LocalLabel" attribute="Local label" lineEndContext="#pop" fallthroughContext="#pop!EndLabel">
+        <DetectChar attribute="Local label" context="LocalLabel2" char="."/>
+      </context>
+      <context name="LocalLabel2" attribute="Local label" lineEndContext="#pop" fallthroughContext="#pop#pop!EndLabel">
+        <DetectIdentifier attribute="Local label" context="#stay"/>
+        <DetectChar attribute="Local label" context="#stay" char="."/>
+      </context>
+
+      <context name="EndLabel" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectChar attribute="Symbols" context="#stay" char=":"/>
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <keyword attribute="Instructions (CPU)" context="#pop!SuffixInstruction" String="Instructions (CPU)"/>
+        <keyword attribute="Branch Instructions (CPU)" context="SuffixInstruction" String="Branch Instructions (CPU)"/>
+        <keyword attribute="Instructions (FPU)" context="#pop!SuffixInstruction" String="Instructions (FPU)"/>
+        <keyword attribute="Directives" context="#pop!SuffixInstruction" String="Directives"/>
+        <DetectIdentifier attribute="Unknown Instructions" context="#pop!SuffixInstruction"/>
+      </context>
+
+      <context name="SQ_String" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="String" context="#pop" char="'"/>
+        <DetectChar attribute="Char" context="Escape" char="\"/>
+      </context>
+
+      <context name="DQ_String" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <DetectChar attribute="Char" context="Escape" char="\"/>
+      </context>
+
+      <context name="Escape" attribute="Char" lineEndContext="#pop" fallthroughContext="#pop">
+        <AnyChar attribute="Char" context="#pop" String="bfnrt\'"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces attribute="Comment"/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier attribute="Comment"/>
+      </context>
+
     </contexts>
 
     <itemDatas>
@@ -624,6 +683,8 @@
       <itemData name="FPU Registers" defStyleNum="dsDataType"/>
       <itemData name="Instructions (CPU)" bold="true" defStyleNum="dsKeyword"/>
       <itemData name="Instructions (FPU)" bold="true" defStyleNum="dsKeyword"/>
+      <itemData name="Branch Instructions (CPU)" bold="true" defStyleNum="dsControlFlow"/>
+      <itemData name="Unknown Instructions" defStyleNum="dsKeyword"/>
       <itemData name="Directives" bold="true" defStyleNum="dsBuiltIn"/>
       <!-- defined in contexts -->
       <itemData name="Operand sizes (CPU)" bold="true" defStyleNum="dsKeyword"/>
@@ -632,11 +693,15 @@
       <itemData name="Label" defStyleNum="dsFunction"/>
       <itemData name="Local label" defStyleNum="dsFunction"/>
       <itemData name="Constant" defStyleNum="dsConstant"/>
-      <itemData name="BaseN" defStyleNum="dsBaseN"/>
+      <itemData name="Octal" defStyleNum="dsBaseN"/>
+      <itemData name="Hex" defStyleNum="dsBaseN"/>
+      <itemData name="Binary" defStyleNum="dsBaseN"/>
       <itemData name="Float" defStyleNum="dsFloat"/>
       <itemData name="Number" defStyleNum="dsDecVal"/>
       <itemData name="Char" defStyleNum="dsChar"/>
       <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Symbol Separator" defStyleNum="dsOperator"/>
+      <itemData name="Symbols" defStyleNum="dsOperator"/>
     </itemDatas>
   </highlighting>
 
@@ -644,8 +709,8 @@
     <keywords casesensitive="0"/>
     <comments>
       <comment name="singleLine" start=";"/>
-      <comment name="singleLine" start="*"/>
     </comments>
   </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Git Rebase" version="2" kateversion="2.4" section="Other" extensions="git-rebase-todo" license="LGPL" mimetype="text/vnd.git.rebase" author="Orgad Shaneh (orgads@gmail.com)">
+<!DOCTYPE language>
+<language name="Git Rebase" version="4" kateversion="5.79" section="Other" extensions="git-rebase-todo" license="LGPL" mimetype="text/vnd.git.rebase" author="Orgad Shaneh (orgads@gmail.com)">
   <highlighting>
     <list name="pick">
       <item>p</item>
@@ -26,35 +26,83 @@
       <item>x</item>
       <item>exec</item>
     </list>
+    <list name="break">
+      <item>b</item>
+      <item>break</item>
+    </list>
+    <list name="drop">
+      <item>d</item>
+      <item>drop</item>
+    </list>
+    <list name="label">
+      <item>l</item>
+      <item>label</item>
+    </list>
+    <list name="reset">
+      <item>t</item>
+      <item>reset</item>
+    </list>
+    <list name="merge">
+      <item>m</item>
+      <item>merge</item>
+    </list>
+    <list name="update-ref">
+      <item>u</item>
+      <item>update-ref</item>
+    </list>
+
     <contexts>
+
       <context attribute="Normal Text" lineEndContext="#pop" name="Normal">
-    <DetectChar char="#" attribute="Comment" context="Comment" column="0"/>
-    <keyword attribute="Pick" context="Commit" String="pick" />
-    <keyword attribute="Reword" context="Commit" String="reword" />
-    <keyword attribute="Edit" context="Commit" String="edit" />
-    <keyword attribute="Squash" context="Commit" String="squash" />
-    <keyword attribute="Fixup" context="Commit" String="fixup" />
-    <keyword attribute="Exec" context="Commit" String="exec" />
+        <DetectChar char="#" attribute="Comment" context="Comment" column="0"/>
+        <keyword attribute="Pick" context="Commit" String="pick" />
+        <keyword attribute="Reword" context="Commit" String="reword" />
+        <keyword attribute="Edit" context="Commit" String="edit" />
+        <keyword attribute="Squash" context="Commit" String="squash" />
+        <keyword attribute="Fixup" context="Commit" String="fixup" />
+        <keyword attribute="Drop" context="Commit" String="drop" />
+        <keyword attribute="Exec" context="Summary" String="exec" />
+        <keyword attribute="Break" context="Summary" String="break" />
+        <keyword attribute="Label" context="Summary" String="label" />
+        <keyword attribute="Reset" context="Summary" String="reset" />
+        <keyword attribute="Merge" context="Merge" String="merge" />
+        <keyword attribute="Update-Ref" context="Summary" String="update-ref" weakDeliminator="-"/>
       </context>
+
       <context attribute="Commit" lineEndContext="#pop" name="Commit">
         <RegExpr attribute="Commit" context="Summary" String="[0-9a-f]{7,40}" />
       </context>
+
       <context attribute="Summary" lineEndContext="#pop" name="Summary" />
+
       <context attribute="Comment" lineEndContext="#pop" name="Comment">
         <RegExpr attribute="Commit" context="#stay" String="[0-9a-f]{7,40}" />
       </context>
+
+      <context attribute="Commit" lineEndContext="#pop" name="Merge" fallthroughContext="#pop!Summary">
+        <DetectSpaces attribute="Commit"/>
+        <Detect2Chars attribute="Commit" context="#pop!Commit" char="-" char1="c" />
+        <Detect2Chars attribute="Commit" context="#pop!Commit" char="-" char1="C" />
+      </context>
+
     </contexts>
     <itemDatas>
       <itemData name="Normal Text" defStyleNum="dsNormal"/>
-      <itemData name="Pick"  defStyleNum="dsKeyword"/>
-      <itemData name="Reword"  defStyleNum="dsDecVal"/>
-      <itemData name="Edit"  defStyleNum="dsDataType"/>
-      <itemData name="Squash"  defStyleNum="dsChar"/>
-      <itemData name="Fixup"  defStyleNum="dsBaseN"/>
-      <itemData name="Exec"  defStyleNum="dsOthers"/>
-      <itemData name="Commit" defStyleNum="dsFunction"/>
+      <itemData name="Pick" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Reword" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Edit" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Squash" defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Fixup" defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Drop" defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Exec" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Break" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Label" defStyleNum="dsAnnotation" spellChecking="false"/>
+      <itemData name="Reset" defStyleNum="dsAnnotation" spellChecking="false"/>
+      <itemData name="Merge" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Update-Ref" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Commit" defStyleNum="dsFunction" spellChecking="false"/>
       <itemData name="Summary" defStyleNum="dsString"/>
-      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Comment" defStyleNum="dsComment" spellChecking="false"/>
     </itemDatas>
   </highlighting>
   <general>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="PLY" version="2" kateversion="5.0" section="3D" extensions="*.ply" mimetype="" author="Volker Krause (vkrause@kde.org)" license="LGPLv2+">
+<!DOCTYPE language>
+<language name="PLY" version="4" kateversion="5.0" section="3D" extensions="*.ply" mimetype="" author="Volker Krause (vkrause@kde.org)" license="LGPLv2+">
     <highlighting>
         <list name="keywords">
             <item>format</item>
@@ -32,7 +32,8 @@
                 <keyword attribute="DataType" context="#stay" String="types"/>
             </context>
             <context name="Comment" attribute="Comment" lineEndContext="#pop">
-                <IncludeRules context="##Alerts"/>
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
             </context>
         </contexts>
         <itemDatas>
@@ -51,4 +52,4 @@
         </comments>
     </general>
 </language>
-
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

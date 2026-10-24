@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>   <!-- KATE Syntax Highlighting for RSI IDL   -->
-<!DOCTYPE language SYSTEM "language.dtd"><!-- Created by Markus Fraenz,fraenz@linmpi.mpg.de Aug 2002 -->
-<language name="RSI IDL" version="3" kateversion="2.3" section="Sources" extensions="*.pro" mimetype="text/x-rsiidl-src" author="Markus Fraenz (fraenz@linmpi.mpg.de)" license="">
+<!DOCTYPE language><!-- Created by Markus Fraenz,fraenz@linmpi.mpg.de Aug 2002 -->
+<language name="RSI IDL" version="7" kateversion="5.0" section="Sources" extensions="*.pro" mimetype="text/x-rsiidl-src" author="Markus Fraenz (fraenz@linmpi.mpg.de)" license="">
     <highlighting>
         <list name="reserved words">
         <item>For</item>
@@ -34,7 +34,6 @@
         <item>Xor</item>
         <item>Not</item>
         <item>And</item>
-        <item>Then</item>
         <item>Return</item>
         <item>Common</item>
         <item>Of</item>
@@ -395,19 +394,16 @@
         <Int attribute="Decimal" context="#stay"/>
         <RangeDetect attribute="String" context="#stay" char="'" char1="'"/>
         <RangeDetect attribute="String" context="#stay" char="&quot;" char1="&quot;"/>
-        <DetectChar attribute="Hex" context="#stay" char="(" />
-        <DetectChar attribute="Hex" context="#stay" char=")" />
-        <DetectChar attribute="Char" context="#stay" char="[" />
-        <DetectChar attribute="Char" context="#stay" char="]" />
-        <DetectChar attribute="Float" context="#stay" char="{" />
-        <DetectChar attribute="Float" context="#stay" char="}" />
-        <DetectChar attribute="Char" context="#stay" char="$" />
-        <DetectChar attribute="Char" context="#stay" char="@" />
-        <DetectChar attribute="Char" context="#stay" char=":" />
-        <DetectChar attribute="Char" context="Comment" char="&#59;"/>
+        <AnyChar attribute="Hex" context="#stay" String="()" />
+        <AnyChar attribute="Char" context="#stay" String="[]" />
+        <AnyChar attribute="Float" context="#stay" String="{}" />
+        <AnyChar attribute="Char" context="#stay" String="$@:" />
+        <DetectChar attribute="Comment" context="Comment" char="&#59;"/>
         <DetectChar attribute="Char" context="systemvarcontext" char="!" />
         </context>
         <context attribute="Comment" lineEndContext="#pop" name="Comment">
+          <DetectSpaces />
+          <IncludeRules context="##Comments" />
         </context>
         <context attribute="Char" lineEndContext="#pop" name="systemvarcontext">
         <DetectChar attribute="Hex" context="#pop" char="(" />
@@ -433,8 +429,9 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="&#59;" />
+      <comment name="singleLine" start="&#59;" position="afterwhitespace" />
     </comments>
     <keywords casesensitive="0" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

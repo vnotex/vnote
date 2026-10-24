@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE language SYSTEM "language.dtd" []>
+<!DOCTYPE language []>
 
 <language name="vCard, vCalendar, iCalendar" version="2" kateversion="2.4" section="Markup" extensions="*.iCal;*.iCalendar;.ics;*.ifb;*.iFBf;*.vcal;*.vcalendar;*.vcard;*.vcf;" author="Lukas Sommer" mimetype="text/calendar;text/vcard" license="Public Domain">
 

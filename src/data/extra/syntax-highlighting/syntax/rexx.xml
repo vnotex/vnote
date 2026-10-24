@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="REXX" version="3" kateversion="2.2" section="Scripts" extensions="*.rex;*.rx;*.rexx" mimetype="">
+<!DOCTYPE language>
+<language name="REXX" version="6" kateversion="5.0" section="Scripts" extensions="*.rex;*.rx;*.rexx" mimetype="">
   <highlighting>
       <list name="keywords">
           <item>ADDRESS</item>
@@ -159,11 +159,7 @@
         <keyword attribute="Control"      context="#stay" String="loops" />
         <keyword attribute="Control"      context="#stay" String="control" />        
         <keyword attribute="Built In" context="#stay" String="builtin" />
-        <RegExpr attribute="Instructions" context="#stay" insensitive="true" String="\bsignal([\s]*(on|off)[\s]*(error|failure|halt|notready|novalue|syntax|lostdigits))*"/>
-        <RegExpr attribute="Instructions" context="#stay" insensitive="true" String="\bcall([\s]*(on|off)[\s]*(error|failure|halt|notready))*"/>
-        <RegExpr attribute="Instructions" context="#stay" insensitive="true" String="\b(trace|address)\s*[_\w\d]"/>
-        <RegExpr attribute="Instructions" context="#stay" insensitive="true" String="\bprocedure([\s]*expose)?"/>
-        <RegExpr attribute="Instructions" context="#stay" insensitive="true" String="\bdo([\s]*forever)?"/>
+        <RegExpr attribute="Instructions" context="#stay" insensitive="true" String="\bsignal([\s]*(on|off)[\s]*(error|failure|halt|notready|novalue|syntax|lostdigits))*|\bcall([\s]*(on|off)[\s]*(error|failure|halt|notready))*|\b(trace|address)\s*[_\w\d]|\bprocedure([\s]*expose)?|\bdo([\s]*forever)?"/>
         <DetectChar attribute="String" context="String" char="&apos;"/>
         <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="*" beginRegion="Comment"/>
         <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]{|}~^&#59;"/>
@@ -174,8 +170,9 @@
         <DetectChar attribute="String" context="#pop" char="&apos;"/>
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Commentar 1">
-        <RegExpr attribute="Alert" context="#stay" String="(FIXME|TODO)" />
+        <DetectSpaces />
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments"/>
       </context>
     </contexts>
     <itemDatas>
@@ -187,13 +184,13 @@
       <itemData name="String"       defStyleNum="dsString"/>
       <itemData name="Comment"      defStyleNum="dsComment"/>
       <itemData name="Symbol"       defStyleNum="dsVariable"/>
-      <itemData name="Alert"        defStyleNum="dsAlert" />
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
     </comments>
     <keywords casesensitive="0" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

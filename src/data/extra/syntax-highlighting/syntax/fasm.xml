@@ -1,19 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<!--
-"Intel x86 (FASM)" is based on ver. 1.3 of "Intel x86 (NASM)" by Nicola Gigante and Bogdan Drozdowski
+<!DOCTYPE language
+[
+    <!ENTITY float "[0-9]++(?:\.[0-9]*+(?:e[-+]?[0-9]*+)?|(?=f\b)|e[-+]?[0-9]++\b)">
 
-Known issues:
-* Does not include all 64-bit registers and instructions
-* "near" and "far" as in "jmp near MyLabel" is unhandeled.
-* Confuses and,or,not,xor,shl instructions,with operators with same name, e.g. "2 shl 4"
-* May confuse ah,bh,ch,dh with hexadecimal numbers.
+    <!ENTITY hex_cont "[0-9a-f]*+(?=h)">
+    <!ENTITY oct_hex_cont "[0-7]*+(?:&hex_cont;|(?=[oqh]))">
+    <!ENTITY hex "[0-9]&hex_cont;">
+    <!ENTITY oct_hex "[0-7]&oct_hex_cont;">
+    <!ENTITY bin_oct_hex "[01]*+(?:&oct_hex_cont;|(?=[byoqh]))">
 
-Notes:
-* "used" and "defined" are treated opperators and are not highlighted.
--->
-
-<language name="Intel x86 (FASM)" section="Assembler" version="2" kateversion="5.0" extensions="*.asm;*.inc;*.fasm" mimetype="" author="rCX (rCX12@yahoo.com)" license="GPL">
+    <!ENTITY number "[0-9]*+(?:to[0-9]+|(?=d?))">
+]>
+<language name="Intel x86 (FASM)" section="Assembler" version="6" kateversion="5.62" extensions="*.asm;*.inc;*.fasm" mimetype="" author="rCX (rCX12@yahoo.com)" license="GPL">
   <highlighting>
     <list name="registers">
       <!-- General purpose registers -->
@@ -78,7 +76,14 @@ Notes:
       <item>dr6</item>
       <item>dr7</item>
       <!-- x87 FPU Registers -->
-      <item>st</item>
+      <item>st0</item>
+      <item>st1</item>
+      <item>st2</item>
+      <item>st3</item>
+      <item>st4</item>
+      <item>st5</item>
+      <item>st6</item>
+      <item>st7</item>
       <!-- MMX registers -->
       <item>mm0</item>
       <item>mm1</item>
@@ -88,7 +93,7 @@ Notes:
       <item>mm5</item>
       <item>mm6</item>
       <item>mm7</item>
-      <!-- XMM registers -->
+      <!-- SEE registers -->
       <item>xmm0</item>
       <item>xmm1</item>
       <item>xmm2</item>
@@ -97,7 +102,112 @@ Notes:
       <item>xmm5</item>
       <item>xmm6</item>
       <item>xmm7</item>
+      <!-- AVX registers -->
+      <item>ymm0</item>
+      <item>ymm1</item>
+      <item>ymm2</item>
+      <item>ymm3</item>
+      <item>ymm4</item>
+      <item>ymm5</item>
+      <item>ymm6</item>
+      <item>ymm7</item>
+      <!-- AVX-512 registers -->
+      <item>zmm0</item>
+      <item>zmm1</item>
+      <item>zmm2</item>
+      <item>zmm3</item>
+      <item>zmm4</item>
+      <item>zmm5</item>
+      <item>zmm6</item>
+      <item>zmm7</item>
+      <!-- Opmask registers -->
+      <item>k0</item>
+      <item>k1</item>
+      <item>k2</item>
+      <item>k3</item>
+      <item>k4</item>
+      <item>k5</item>
+      <item>k6</item>
+      <item>k7</item>
+      <!-- Bounds -->
+      <item>bnd0</item>
+      <item>bnd1</item>
+      <item>bnd2</item>
+      <item>bnd3</item>
     </list>
+
+    <list name="branch instructions">
+      <item>call</item>
+      <item>ja</item>
+      <item>jae</item>
+      <item>jb</item>
+      <item>jbe</item>
+      <item>jc</item>
+      <item>je</item>
+      <item>jg</item>
+      <item>jge</item>
+      <item>jl</item>
+      <item>jle</item>
+      <item>jmp</item>
+      <item>jna</item>
+      <item>jnae</item>
+      <item>jnb</item>
+      <item>jnbe</item>
+      <item>jnc</item>
+      <item>jne</item>
+      <item>jng</item>
+      <item>jnge</item>
+      <item>jnl</item>
+      <item>jnle</item>
+      <item>jno</item>
+      <item>jnp</item>
+      <item>jns</item>
+      <item>jnz</item>
+      <item>jo</item>
+      <item>jp</item>
+      <item>jpe</item>
+      <item>jpo</item>
+      <item>js</item>
+      <item>jz</item>
+      <item>jcxz</item>
+      <item>jecxz</item>
+      <item>loop</item>
+      <item>loopd</item>
+      <item>loope</item>
+      <item>looped</item>
+      <item>loopew</item>
+      <item>loopne</item>
+      <item>loopned</item>
+      <item>loopnew</item>
+      <item>loopnz</item>
+      <item>loopnzd</item>
+      <item>loopnzw</item>
+      <item>loopw</item>
+      <item>loopz</item>
+      <item>loopzd</item>
+      <item>loopzw</item>
+      <item>ret</item>
+      <item>retd</item>
+      <item>retf</item>
+      <item>retfd</item>
+      <item>retfw</item>
+      <item>retn</item>
+      <item>retnd</item>
+      <item>retnw</item>
+      <item>retw</item>
+      <item>iret</item>
+      <item>iretd</item>
+      <item>iretq</item>
+      <item>iretw</item>
+      <item>rsm</item>
+      <item>syscall</item>
+      <item>sysenter</item>
+      <item>sysexit</item>
+      <item>sysret</item>
+      <item>syscallq</item>
+      <item>sysretq</item>
+    </list>
+
     <list name="instructions">
       <item>aaa</item>
       <item>aad</item>
@@ -111,12 +221,37 @@ Notes:
       <item>addss</item>
       <item>addsubpd</item>
       <item>addsubps</item>
+      <item>aesdec</item>
+      <item>aesdeclast</item>
+      <item>aesenc</item>
+      <item>aesenclast</item>
+      <item>aesimc</item>
+      <item>aeskeygenassist</item>
       <item>and</item>
+      <item>andn</item>
       <item>andnpd</item>
       <item>andnps</item>
       <item>andpd</item>
       <item>andps</item>
       <item>arpl</item>
+      <item>bextr</item>
+      <item>blcfill</item>
+      <item>blci</item>
+      <item>blcic</item>
+      <item>blcmsk</item>
+      <item>blcs</item>
+      <item>blendpd</item>
+      <item>blendps</item>
+      <item>blendvpd</item>
+      <item>blendvps</item>
+      <item>blsfill</item>
+      <item>blsi</item>
+      <item>blsic</item>
+      <item>blsmsk</item>
+      <item>blsr</item>
+      <item>bndldx</item>
+      <item>bndmk</item>
+      <item>bndstx</item>
       <item>bound</item>
       <item>bsf</item>
       <item>bsr</item>
@@ -125,20 +260,18 @@ Notes:
       <item>btc</item>
       <item>btr</item>
       <item>bts</item>
-      <item>call</item>
+      <item>bzhi</item>
       <item>cbw</item>
-      <item>cwde</item>
-      <item>cwd</item>
       <item>cdq</item>
       <item>cdqe</item>
-      <item>cqo</item>
       <item>clc</item>
       <item>cld</item>
+      <item>clflush</item>
       <item>clgi</item>
       <item>cli</item>
       <item>clts</item>
-      <item>clflush</item>
       <item>cmc</item>
+      <item>cmov</item>
       <item>cmova</item>
       <item>cmovae</item>
       <item>cmovb</item>
@@ -170,30 +303,37 @@ Notes:
       <item>cmovs</item>
       <item>cmovz</item>
       <item>cmp</item>
+      <item>cmpeq</item>
       <item>cmpeqpd</item>
       <item>cmpeqps</item>
       <item>cmpeqsd</item>
       <item>cmpeqss</item>
+      <item>cmple</item>
       <item>cmplepd</item>
       <item>cmpleps</item>
       <item>cmplesd</item>
       <item>cmpless</item>
+      <item>cmplt</item>
       <item>cmpltpd</item>
       <item>cmpltps</item>
       <item>cmpltsd</item>
       <item>cmpltss</item>
+      <item>cmpneq</item>
       <item>cmpneqpd</item>
       <item>cmpneqps</item>
       <item>cmpneqsd</item>
       <item>cmpneqss</item>
+      <item>cmpnle</item>
       <item>cmpnlepd</item>
       <item>cmpnleps</item>
       <item>cmpnlesd</item>
       <item>cmpnless</item>
+      <item>cmpnlt</item>
       <item>cmpnltpd</item>
       <item>cmpnltps</item>
       <item>cmpnltsd</item>
       <item>cmpnltss</item>
+      <item>cmpord</item>
       <item>cmpordpd</item>
       <item>cmpordps</item>
       <item>cmpordsd</item>
@@ -203,19 +343,24 @@ Notes:
       <item>cmps</item>
       <item>cmpsb</item>
       <item>cmpsd</item>
+      <item>cmpsq</item>
       <item>cmpss</item>
       <item>cmpsw</item>
+      <item>cmpunord</item>
       <item>cmpunordpd</item>
       <item>cmpunordps</item>
       <item>cmpunordsd</item>
       <item>cmpunordss</item>
-      <item>cmpxchg</item>
+      <item>cmpxchg16b</item>
       <item>cmpxchg486</item>
       <item>cmpxchg8b</item>
-      <item>cmpxchg16b</item>
+      <item>cmpxchg</item>
       <item>comisd</item>
       <item>comiss</item>
+      <item>compare</item>
       <item>cpuid</item>
+      <item>cqo</item>
+      <item>crc32</item>
       <item>cvtdq2pd</item>
       <item>cvtdq2ps</item>
       <item>cvtpd2dq</item>
@@ -238,6 +383,8 @@ Notes:
       <item>cvttps2pi</item>
       <item>cvttsd2si</item>
       <item>cvttss2si</item>
+      <item>cwd</item>
+      <item>cwde</item>
       <item>daa</item>
       <item>das</item>
       <item>dec</item>
@@ -246,8 +393,12 @@ Notes:
       <item>divps</item>
       <item>divsd</item>
       <item>divss</item>
+      <item>dppd</item>
+      <item>dpps</item>
       <item>emms</item>
       <item>enter</item>
+      <item>extractps</item>
+      <item>extrq</item>
       <item>f2xm1</item>
       <item>fabs</item>
       <item>fadd</item>
@@ -256,7 +407,6 @@ Notes:
       <item>fbstp</item>
       <item>fchs</item>
       <item>fclex</item>
-      <item>fnclex</item>
       <item>fcmovb</item>
       <item>fcmovbe</item>
       <item>fcmove</item>
@@ -266,19 +416,19 @@ Notes:
       <item>fcmovnu</item>
       <item>fcmovu</item>
       <item>fcom</item>
-      <item>fcomp</item>
-      <item>fcompp</item>
       <item>fcomi</item>
       <item>fcomip</item>
+      <item>fcomp</item>
+      <item>fcompp</item>
       <item>fcos</item>
       <item>fdecstp</item>
       <item>fdisi</item>
-      <item>feni</item>
       <item>fdiv</item>
-      <item>fdivr</item>
       <item>fdivp</item>
+      <item>fdivr</item>
       <item>fdivrp</item>
       <item>femms</item>
+      <item>feni</item>
       <item>ffree</item>
       <item>ffreep</item>
       <item>fiadd</item>
@@ -295,62 +445,78 @@ Notes:
       <item>fisttp</item>
       <item>fisub</item>
       <item>fisubr</item>
-      <item>fld</item>
       <item>fld1</item>
+      <item>fld</item>
+      <item>fldcw</item>
+      <item>fldenv</item>
+      <item>fldenvd</item>
+      <item>fldenvw</item>
       <item>fldl2e</item>
       <item>fldl2t</item>
       <item>fldlg2</item>
       <item>fldln2</item>
-      <item>fldcw</item>
-      <item>fldenv</item>
       <item>fldpi</item>
       <item>fldz</item>
       <item>fmul</item>
       <item>fmulp</item>
+      <item>fnclex</item>
       <item>fndisi</item>
       <item>fneni</item>
       <item>fninit</item>
       <item>fnop</item>
       <item>fnsave</item>
+      <item>fnsaved</item>
+      <item>fnsavew</item>
       <item>fnstcw</item>
       <item>fnstenv</item>
+      <item>fnstenvd</item>
+      <item>fnstenvw</item>
       <item>fnstsw</item>
       <item>fnwait</item>
       <item>fpatan</item>
-      <item>fptan</item>
-      <item>fprem</item>
       <item>fprem1</item>
+      <item>fprem</item>
+      <item>fptan</item>
       <item>frndint</item>
       <item>frstor</item>
+      <item>frstord</item>
+      <item>frstorw</item>
       <item>fsave</item>
+      <item>fsaved</item>
+      <item>fsavew</item>
       <item>fscale</item>
       <item>fsetpm</item>
       <item>fsin</item>
       <item>fsincos</item>
       <item>fsqrt</item>
       <item>fst</item>
-      <item>fstp</item>
       <item>fstcw</item>
       <item>fstenv</item>
+      <item>fstenvd</item>
+      <item>fstenvw</item>
+      <item>fstp</item>
       <item>fstsw</item>
       <item>fsub</item>
-      <item>fsubr</item>
       <item>fsubp</item>
+      <item>fsubr</item>
       <item>fsubrp</item>
       <item>ftst</item>
       <item>fucom</item>
-      <item>fucomp</item>
-      <item>fucompp</item>
       <item>fucomi</item>
       <item>fucomip</item>
+      <item>fucomp</item>
+      <item>fucompp</item>
       <item>fwait</item>
       <item>fxam</item>
       <item>fxch</item>
+      <item>fxrstor64</item>
       <item>fxrstor</item>
+      <item>fxsave64</item>
       <item>fxsave</item>
       <item>fxtract</item>
       <item>fyl2x</item>
       <item>fyl2xp1</item>
+      <item>getsec</item>
       <item>haddpd</item>
       <item>haddps</item>
       <item>hlt</item>
@@ -364,60 +530,27 @@ Notes:
       <item>ins</item>
       <item>insb</item>
       <item>insd</item>
+      <item>insertps</item>
+      <item>insertq</item>
       <item>insw</item>
-      <item>int</item>
       <item>int1</item>
       <item>int3</item>
+      <item>int</item>
       <item>into</item>
       <item>invd</item>
+      <item>invept</item>
       <item>invlpg</item>
       <item>invlpga</item>
-      <item>iret</item>
-      <item>iretd</item>
-      <item>iretq</item>
-      <item>iretw</item>
-      <item>ja</item>
-      <item>jae</item>
-      <item>jb</item>
-      <item>jbe</item>
-      <item>jc</item>
-      <item>je</item>
-      <item>jg</item>
-      <item>jge</item>
-      <item>jl</item>
-      <item>jle</item>
-      <item>jna</item>
-      <item>jnae</item>
-      <item>jnb</item>
-      <item>jnbe</item>
-      <item>jnc</item>
-      <item>jne</item>
-      <item>jng</item>
-      <item>jnge</item>
-      <item>jnl</item>
-      <item>jnle</item>
-      <item>jno</item>
-      <item>jnp</item>
-      <item>jns</item>
-      <item>jnz</item>
-      <item>jo</item>
-      <item>jp</item>
-      <item>jpe</item>
-      <item>jpo</item>
-      <item>js</item>
-      <item>jz</item>
-      <item>jcxz</item>
-      <item>jecxz</item>
-      <item>jrcxz</item>
-      <item>jmp</item>
+      <item>invpcid</item>
+      <item>invvpid</item>
       <item>lahf</item>
       <item>lar</item>
       <item>lddqu</item>
       <item>ldmxcsr</item>
       <item>lds</item>
-      <item>les</item>
       <item>lea</item>
       <item>leave</item>
+      <item>les</item>
       <item>lfence</item>
       <item>lfs</item>
       <item>lgdt</item>
@@ -425,21 +558,18 @@ Notes:
       <item>lidt</item>
       <item>lldt</item>
       <item>lmsw</item>
-      <item>loadall</item>
       <item>loadall286</item>
+      <item>loadall</item>
+      <item>lock</item>
       <item>lods</item>
       <item>lodsb</item>
       <item>lodsd</item>
       <item>lodsq</item>
       <item>lodsw</item>
-      <item>loop</item>
-      <item>loope</item>
-      <item>loopne</item>
-      <item>loopnz</item>
-      <item>loopz</item>
       <item>lsl</item>
       <item>lss</item>
       <item>ltr</item>
+      <item>lzcnt</item>
       <item>maskmovdqu</item>
       <item>maskmovq</item>
       <item>maxpd</item>
@@ -455,6 +585,7 @@ Notes:
       <item>mov</item>
       <item>movapd</item>
       <item>movaps</item>
+      <item>movbe</item>
       <item>movd</item>
       <item>movddup</item>
       <item>movdq2q</item>
@@ -469,12 +600,15 @@ Notes:
       <item>movmskpd</item>
       <item>movmskps</item>
       <item>movntdq</item>
+      <item>movntdqa</item>
       <item>movnti</item>
       <item>movntpd</item>
       <item>movntps</item>
       <item>movntq</item>
-      <item>movq</item>
+      <item>movntsd</item>
+      <item>movntss</item>
       <item>movq2dq</item>
+      <item>movq</item>
       <item>movs</item>
       <item>movsb</item>
       <item>movsd</item>
@@ -482,17 +616,19 @@ Notes:
       <item>movsldup</item>
       <item>movsq</item>
       <item>movss</item>
+      <item>movsw</item>
       <item>movsx</item>
       <item>movsxd</item>
-      <item>movsw</item>
       <item>movupd</item>
       <item>movups</item>
       <item>movzx</item>
+      <item>mpsadbw</item>
       <item>mul</item>
       <item>mulpd</item>
       <item>mulps</item>
       <item>mulsd</item>
       <item>mulss</item>
+      <item>mulx</item>
       <item>mwait</item>
       <item>neg</item>
       <item>nop</item>
@@ -503,10 +639,14 @@ Notes:
       <item>out</item>
       <item>outs</item>
       <item>outsb</item>
-      <item>outsw</item>
       <item>outsd</item>
+      <item>outsw</item>
+      <item>pabsb</item>
+      <item>pabsd</item>
+      <item>pabsw</item>
       <item>packssdw</item>
       <item>packsswb</item>
+      <item>packusdw</item>
       <item>packuswb</item>
       <item>paddb</item>
       <item>paddd</item>
@@ -516,19 +656,34 @@ Notes:
       <item>paddusb</item>
       <item>paddusw</item>
       <item>paddw</item>
+      <item>palignr</item>
       <item>pand</item>
       <item>pandn</item>
       <item>pause</item>
       <item>pavgb</item>
       <item>pavgusb</item>
       <item>pavgw</item>
+      <item>pblendvb</item>
+      <item>pblendw</item>
+      <item>pclmulqdq</item>
       <item>pcmpeqb</item>
-      <item>pcmpeqw</item>
       <item>pcmpeqd</item>
+      <item>pcmpeqq</item>
+      <item>pcmpeqw</item>
+      <item>pcmpestri</item>
+      <item>pcmpestrm</item>
       <item>pcmpgtb</item>
-      <item>pcmpgtw</item>
       <item>pcmpgtd</item>
+      <item>pcmpgtq</item>
+      <item>pcmpgtw</item>
+      <item>pcmpistri</item>
+      <item>pcmpistrm</item>
+      <item>pdep</item>
       <item>pdistib</item>
+      <item>pext</item>
+      <item>pextrb</item>
+      <item>pextrd</item>
+      <item>pextrq</item>
       <item>pextrw</item>
       <item>pf2id</item>
       <item>pf2iw</item>
@@ -549,20 +704,54 @@ Notes:
       <item>pfrsqrt</item>
       <item>pfsub</item>
       <item>pfsubr</item>
+      <item>phaddd</item>
+      <item>phaddsw</item>
+      <item>phaddw</item>
+      <item>phminposuw</item>
+      <item>phsubd</item>
+      <item>phsubsw</item>
+      <item>phsubw</item>
       <item>pi2fd</item>
       <item>pi2fw</item>
+      <item>pinsrb</item>
+      <item>pinsrd</item>
+      <item>pinsrq</item>
       <item>pinsrw</item>
       <item>pmachriw</item>
+      <item>pmaddubsw</item>
       <item>pmaddwd</item>
       <item>pmagw</item>
+      <item>pmaxsb</item>
+      <item>pmaxsd</item>
       <item>pmaxsw</item>
       <item>pmaxub</item>
+      <item>pmaxud</item>
+      <item>pmaxuw</item>
+      <item>pminsb</item>
+      <item>pminsd</item>
       <item>pminsw</item>
       <item>pminub</item>
+      <item>pminud</item>
+      <item>pminuw</item>
       <item>pmovmskb</item>
+      <item>pmovsxbd</item>
+      <item>pmovsxbq</item>
+      <item>pmovsxbw</item>
+      <item>pmovsxdq</item>
+      <item>pmovsxwd</item>
+      <item>pmovsxwq</item>
+      <item>pmovzxbd</item>
+      <item>pmovzxbq</item>
+      <item>pmovzxbw</item>
+      <item>pmovzxdq</item>
+      <item>pmovzxwd</item>
+      <item>pmovzxwq</item>
+      <item>pmuldq</item>
+      <item>pmulhrsw</item>
       <item>pmulhrw</item>
       <item>pmulhuw</item>
       <item>pmulhw</item>
+      <item>pmulld</item>
       <item>pmullw</item>
       <item>pmuludq</item>
       <item>pmvgezb</item>
@@ -571,12 +760,15 @@ Notes:
       <item>pmvzb</item>
       <item>pop</item>
       <item>popa</item>
-      <item>popaw</item>
       <item>popad</item>
+      <item>popaw</item>
+      <item>popcnt</item>
+      <item>popd</item>
       <item>popf</item>
-      <item>popfw</item>
       <item>popfd</item>
       <item>popfq</item>
+      <item>popfw</item>
+      <item>popw</item>
       <item>por</item>
       <item>prefetch</item>
       <item>prefetchnta</item>
@@ -585,10 +777,14 @@ Notes:
       <item>prefetcht2</item>
       <item>prefetchw</item>
       <item>psadbw</item>
+      <item>pshufb</item>
       <item>pshufd</item>
       <item>pshufhw</item>
       <item>pshuflw</item>
       <item>pshufw</item>
+      <item>psignb</item>
+      <item>psignd</item>
+      <item>psignw</item>
       <item>pslld</item>
       <item>pslldq</item>
       <item>psllq</item>
@@ -609,6 +805,7 @@ Notes:
       <item>psubusw</item>
       <item>psubw</item>
       <item>pswapd</item>
+      <item>ptest</item>
       <item>punpckhbw</item>
       <item>punpckhdq</item>
       <item>punpckhqdq</item>
@@ -621,25 +818,33 @@ Notes:
       <item>pusha</item>
       <item>pushad</item>
       <item>pushaw</item>
+      <item>pushd</item>
       <item>pushf</item>
       <item>pushfd</item>
       <item>pushfq</item>
       <item>pushfw</item>
+      <item>pushw</item>
       <item>pxor</item>
       <item>rcl</item>
-      <item>rcr</item>
       <item>rcpps</item>
       <item>rcpss</item>
+      <item>rcr</item>
+      <item>rdfsbase</item>
+      <item>rdgsbase</item>
       <item>rdmsr</item>
+      <item>rdmsrq</item>
       <item>rdpmc</item>
+      <item>rdrand</item>
       <item>rdshr</item>
       <item>rdtsc</item>
       <item>rdtscp</item>
-      <item>ret</item>
-      <item>retf</item>
-      <item>retn</item>
       <item>rol</item>
       <item>ror</item>
+      <item>rorx</item>
+      <item>roundpd</item>
+      <item>roundps</item>
+      <item>roundsd</item>
+      <item>roundss</item>
       <item>rsdc</item>
       <item>rsldt</item>
       <item>rsm</item>
@@ -648,14 +853,16 @@ Notes:
       <item>rsts</item>
       <item>sahf</item>
       <item>sal</item>
-      <item>sar</item>
       <item>salc</item>
+      <item>sar</item>
+      <item>sarx</item>
       <item>sbb</item>
       <item>scas</item>
       <item>scasb</item>
       <item>scasd</item>
       <item>scasq</item>
       <item>scasw</item>
+      <item>set</item>
       <item>seta</item>
       <item>setae</item>
       <item>setb</item>
@@ -690,8 +897,10 @@ Notes:
       <item>sgdt</item>
       <item>shl</item>
       <item>shld</item>
+      <item>shlx</item>
       <item>shr</item>
       <item>shrd</item>
+      <item>shrx</item>
       <item>shufpd</item>
       <item>shufps</item>
       <item>sidt</item>
@@ -725,11 +934,10 @@ Notes:
       <item>svldt</item>
       <item>svts</item>
       <item>swapgs</item>
-      <item>syscall</item>
-      <item>sysenter</item>
-      <item>sysexit</item>
-      <item>sysret</item>
+      <item>t1mskc</item>
       <item>test</item>
+      <item>tzcnt</item>
+      <item>tzmsk</item>
       <item>ucomisd</item>
       <item>ucomiss</item>
       <item>ud0</item>
@@ -740,24 +948,560 @@ Notes:
       <item>unpckhps</item>
       <item>unpcklpd</item>
       <item>unpcklps</item>
+      <item>vaesenc</item>
+      <item>vaesenclast</item>
+      <item>vaesimc</item>
+      <item>vblendvpd</item>
+      <item>vblendvps</item>
+      <item>vbroadcastf128</item>
+      <item>vbroadcasti128</item>
+      <item>vbroadcastsd</item>
+      <item>vbroadcastss</item>
+      <item>vcomisd</item>
+      <item>vcomiss</item>
+      <item>vcvtdq2pd</item>
+      <item>vcvtdq2ps</item>
+      <item>vcvtpd2dq</item>
+      <item>vcvtpd2ps</item>
+      <item>vcvtph2ps</item>
+      <item>vcvtps2dq</item>
+      <item>vcvtps2pd</item>
+      <item>vcvtps2ph</item>
+      <item>vcvtsd2si</item>
+      <item>vcvtsd2ss</item>
+      <item>vcvtsi2sd</item>
+      <item>vcvtsi2ss</item>
+      <item>vcvtss2sd</item>
+      <item>vcvtss2si</item>
+      <item>vcvttpd2dq</item>
+      <item>vcvttps2dq</item>
+      <item>vcvttsd2si</item>
+      <item>vcvttss2si</item>
+      <item>vdppd</item>
       <item>verr</item>
       <item>verw</item>
+      <item>vextractf128</item>
+      <item>vextracti128</item>
+      <item>vextractps</item>
+      <item>vfm132pd</item>
+      <item>vfm132ps</item>
+      <item>vfm132sd</item>
+      <item>vfm132ss</item>
+      <item>vfm213pd</item>
+      <item>vfm213ps</item>
+      <item>vfm213sd</item>
+      <item>vfm213ss</item>
+      <item>vfm231pd</item>
+      <item>vfm231ps</item>
+      <item>vfm231sd</item>
+      <item>vfm231ss</item>
+      <item>vfmaddpd</item>
+      <item>vfmaddsub132pd</item>
+      <item>vfmaddsub132ps</item>
+      <item>vfmaddsub213pd</item>
+      <item>vfmaddsub213ps</item>
+      <item>vfmaddsub231pd</item>
+      <item>vfmaddsub231ps</item>
+      <item>vfmsubadd132pd</item>
+      <item>vfmsubadd132ps</item>
+      <item>vfmsubadd213pd</item>
+      <item>vfmsubadd213ps</item>
+      <item>vfmsubadd231pd</item>
+      <item>vfmsubadd231ps</item>
+      <item>vfmsubss</item>
+      <item>vfnm132pd</item>
+      <item>vfnm132ps</item>
+      <item>vfnm132sd</item>
+      <item>vfnm132ss</item>
+      <item>vfnm213pd</item>
+      <item>vfnm213ps</item>
+      <item>vfnm213sd</item>
+      <item>vfnm213ss</item>
+      <item>vfnm231pd</item>
+      <item>vfnm231ps</item>
+      <item>vfnm231sd</item>
+      <item>vfnm231ss</item>
+      <item>vfrczpd</item>
+      <item>vfrczps</item>
+      <item>vfrczsd</item>
+      <item>vfrczss</item>
+      <item>vgatherdpd</item>
+      <item>vgatherdps</item>
+      <item>vgatherqpd</item>
+      <item>vgatherqps</item>
+      <item>vinsertf128</item>
+      <item>vinserti128</item>
+      <item>vinsertps</item>
+      <item>vlddqu</item>
+      <item>vldmxcsr</item>
+      <item>vmaskmovdqu</item>
+      <item>vmaskmovpd</item>
+      <item>vmaskmovps</item>
+      <item>vmcall</item>
+      <item>vmclear</item>
+      <item>vmlaunch</item>
       <item>vmload</item>
       <item>vmmcall</item>
+      <item>vmovapd</item>
+      <item>vmovaps</item>
+      <item>vmovd</item>
+      <item>vmovddup</item>
+      <item>vmovdqa</item>
+      <item>vmovdqu</item>
+      <item>vmovhlps</item>
+      <item>vmovhpd</item>
+      <item>vmovhps</item>
+      <item>vmovlhps</item>
+      <item>vmovlpd</item>
+      <item>vmovlps</item>
+      <item>vmovmskpd</item>
+      <item>vmovmskps</item>
+      <item>vmovntdq</item>
+      <item>vmovntdqa</item>
+      <item>vmovntpd</item>
+      <item>vmovntps</item>
+      <item>vmovq</item>
+      <item>vmovsd</item>
+      <item>vmovshdup</item>
+      <item>vmovsldup</item>
+      <item>vmovss</item>
+      <item>vmovupd</item>
+      <item>vmovups</item>
+      <item>vmptrld</item>
+      <item>vmptrst</item>
+      <item>vmread</item>
+      <item>vmresume</item>
       <item>vmrun</item>
       <item>vmsave</item>
+      <item>vmwrite</item>
+      <item>vmxoff</item>
+      <item>vmxon</item>
+      <item>vpabsb</item>
+      <item>vpabsd</item>
+      <item>vpabsw</item>
+      <item>vpackssdw</item>
+      <item>vpacksswb</item>
+      <item>vpackusdw</item>
+      <item>vpackuswb</item>
+      <item>vpaddb</item>
+      <item>vpaddd</item>
+      <item>vpaddq</item>
+      <item>vpaddsb</item>
+      <item>vpaddsw</item>
+      <item>vpaddusb</item>
+      <item>vpaddusw</item>
+      <item>vpaddw</item>
+      <item>vpalignr</item>
+      <item>vpand</item>
+      <item>vpandn</item>
+      <item>vpause</item>
+      <item>vpavgb</item>
+      <item>vpavgusb</item>
+      <item>vpavgw</item>
+      <item>vpblendvb</item>
+      <item>vpblendw</item>
+      <item>vpbroadcastb</item>
+      <item>vpbroadcastd</item>
+      <item>vpbroadcastq</item>
+      <item>vpbroadcastw</item>
+      <item>vpclmulqdq</item>
+      <item>vpcmov</item>
+      <item>vpcmpeqb</item>
+      <item>vpcmpeqd</item>
+      <item>vpcmpeqq</item>
+      <item>vpcmpeqw</item>
+      <item>vpcmpestri</item>
+      <item>vpcmpestrm</item>
+      <item>vpcmpgtb</item>
+      <item>vpcmpgtd</item>
+      <item>vpcmpgtq</item>
+      <item>vpcmpgtw</item>
+      <item>vpcmpistri</item>
+      <item>vpcmpistrm</item>
+      <item>vpcomb</item>
+      <item>vpcomd</item>
+      <item>vfmadd132ps</item>
+      <item>vfnmadd132ps</item>
+      <item>vfmsub132ps</item>
+      <item>vfnmsub132ps</item>
+      <item>vfmadd213ps</item>
+      <item>vfnmadd213ps</item>
+      <item>vfmsub213ps</item>
+      <item>vfnmsub213ps</item>
+      <item>vfmadd231ps</item>
+      <item>vfnmadd231ps</item>
+      <item>vfmsub231ps</item>
+      <item>vfnmsub231ps</item>
+      <item>vfmadd132pd</item>
+      <item>vfnmadd132pd</item>
+      <item>vfmsub132pd</item>
+      <item>vfnmsub132pd</item>
+      <item>vfmadd213pd</item>
+      <item>vfnmadd213pd</item>
+      <item>vfmsub213pd</item>
+      <item>vfnmsub213pd</item>
+      <item>vfmadd231pd</item>
+      <item>vfnmadd231pd</item>
+      <item>vfmsub231pd</item>
+      <item>vfnmsub231pd</item>
+      <item>vfmadd132ss</item>
+      <item>vfnmadd132ss</item>
+      <item>vfmsub132ss</item>
+      <item>vfnmsub132ss</item>
+      <item>vfmadd213ss</item>
+      <item>vfnmadd213ss</item>
+      <item>vfmsub213ss</item>
+      <item>vfnmsub213ss</item>
+      <item>vfmadd231ss</item>
+      <item>vfnmadd231ss</item>
+      <item>vfmsub231ss</item>
+      <item>vfnmsub231ss</item>
+      <item>vfmadd132sd</item>
+      <item>vfnmadd132sd</item>
+      <item>vfmsub132sd</item>
+      <item>vfnmsub132sd</item>
+      <item>vfmadd213sd</item>
+      <item>vfnmadd213sd</item>
+      <item>vfmsub213sd</item>
+      <item>vfnmsub213sd</item>
+      <item>vfmadd231sd</item>
+      <item>vfnmadd231sd</item>
+      <item>vfmsub231sd</item>
+      <item>vfnmsub231sd</item>
+      <item>vpcomeqb</item>
+      <item>vpcomeqd</item>
+      <item>vpcomeqq</item>
+      <item>vpcomequb</item>
+      <item>vpcomequd</item>
+      <item>vpcomequq</item>
+      <item>vpcomequw</item>
+      <item>vpcomeqw</item>
+      <item>vpcomfalseb</item>
+      <item>vpcomfalsed</item>
+      <item>vpcomfalseq</item>
+      <item>vpcomfalseub</item>
+      <item>vpcomfalseud</item>
+      <item>vpcomfalseuq</item>
+      <item>vpcomfalseuw</item>
+      <item>vpcomfalsew</item>
+      <item>vpcomgeb</item>
+      <item>vpcomged</item>
+      <item>vpcomgeq</item>
+      <item>vpcomgeub</item>
+      <item>vpcomgeud</item>
+      <item>vpcomgeuq</item>
+      <item>vpcomgeuw</item>
+      <item>vpcomgew</item>
+      <item>vpcomgtb</item>
+      <item>vpcomgtd</item>
+      <item>vpcomgtq</item>
+      <item>vpcomgtub</item>
+      <item>vpcomgtud</item>
+      <item>vpcomgtuq</item>
+      <item>vpcomgtuw</item>
+      <item>vpcomgtw</item>
+      <item>vpcomleb</item>
+      <item>vpcomled</item>
+      <item>vpcomleq</item>
+      <item>vpcomleub</item>
+      <item>vpcomleud</item>
+      <item>vpcomleuq</item>
+      <item>vpcomleuw</item>
+      <item>vpcomlew</item>
+      <item>vpcomltb</item>
+      <item>vpcomltd</item>
+      <item>vpcomltq</item>
+      <item>vpcomltub</item>
+      <item>vpcomltud</item>
+      <item>vpcomltuq</item>
+      <item>vpcomltuw</item>
+      <item>vpcomltw</item>
+      <item>vpcomneqb</item>
+      <item>vpcomneqd</item>
+      <item>vpcomneqq</item>
+      <item>vpcomnequb</item>
+      <item>vpcomnequd</item>
+      <item>vpcomnequq</item>
+      <item>vpcomnequw</item>
+      <item>vpcomneqw</item>
+      <item>vpcomq</item>
+      <item>vpcomtrueb</item>
+      <item>vpcomtrued</item>
+      <item>vpcomtrueq</item>
+      <item>vpcomtrueub</item>
+      <item>vpcomtrueud</item>
+      <item>vpcomtrueuq</item>
+      <item>vpcomtrueuw</item>
+      <item>vpcomtruew</item>
+      <item>vpcomub</item>
+      <item>vpcomud</item>
+      <item>vpcomuq</item>
+      <item>vpcomuw</item>
+      <item>vpcomw</item>
+      <item>vpdep</item>
+      <item>vpdistib</item>
+      <item>vperm2f128</item>
+      <item>vperm2i128</item>
+      <item>vpermd</item>
+      <item>vpermil2pd</item>
+      <item>vpermil2ps</item>
+      <item>vpermilpd</item>
+      <item>vpermilps</item>
+      <item>vpermpd</item>
+      <item>vpermps</item>
+      <item>vpermq</item>
+      <item>vpext</item>
+      <item>vpextrb</item>
+      <item>vpextrd</item>
+      <item>vpextrq</item>
+      <item>vpextrw</item>
+      <item>vpf2id</item>
+      <item>vpf2iw</item>
+      <item>vpfacc</item>
+      <item>vpfadd</item>
+      <item>vpfcmpeq</item>
+      <item>vpfcmpge</item>
+      <item>vpfcmpgt</item>
+      <item>vpfmax</item>
+      <item>vpfmin</item>
+      <item>vpfmul</item>
+      <item>vpfnacc</item>
+      <item>vpfpnacc</item>
+      <item>vpfrcp</item>
+      <item>vpfrcpit1</item>
+      <item>vpfrcpit2</item>
+      <item>vpfrsqit1</item>
+      <item>vpfrsqrt</item>
+      <item>vpfsub</item>
+      <item>vpfsubr</item>
+      <item>vpgatherdd</item>
+      <item>vscatterdpd</item>
+      <item>vscatterdps</item>
+      <item>vscatterqpd</item>
+      <item>vscatterqps</item>
+      <item>vpscatterdd</item>
+      <item>vpscatterdq</item>
+      <item>vpscatterqd</item>
+      <item>vpscatterqq</item>
+      <item>vpgatherdq</item>
+      <item>vpgatherqd</item>
+      <item>vpgatherqq</item>
+      <item>vphaddbd</item>
+      <item>vphaddbq</item>
+      <item>vphaddbw</item>
+      <item>vphaddd</item>
+      <item>vphadddq</item>
+      <item>vphaddsw</item>
+      <item>vphaddubd</item>
+      <item>vphaddubq</item>
+      <item>vphaddubw</item>
+      <item>vphaddudq</item>
+      <item>vphadduwd</item>
+      <item>vphadduwq</item>
+      <item>vphaddw</item>
+      <item>vphaddwd</item>
+      <item>vphaddwq</item>
+      <item>vphminposuw</item>
+      <item>vphsubbw</item>
+      <item>vphsubd</item>
+      <item>vphsubdq</item>
+      <item>vphsubsw</item>
+      <item>vphsubw</item>
+      <item>vphsubwd</item>
+      <item>vpi2fd</item>
+      <item>vpi2fw</item>
+      <item>vpinsrb</item>
+      <item>vpinsrd</item>
+      <item>vpinsrq</item>
+      <item>vpinsrw</item>
+      <item>vpmachriw</item>
+      <item>vpmacsdd</item>
+      <item>vpmacsdqh</item>
+      <item>vpmacsdql</item>
+      <item>vpmacssdd</item>
+      <item>vpmacssdqh</item>
+      <item>vpmacssdql</item>
+      <item>vpmacsswd</item>
+      <item>vpmacssww</item>
+      <item>vpmacswd</item>
+      <item>vpmacsww</item>
+      <item>vpmadcsswd</item>
+      <item>vpmadcswd</item>
+      <item>vpmaddubsw</item>
+      <item>vpmaddwd</item>
+      <item>vpmagw</item>
+      <item>vpmaskmovd</item>
+      <item>vpmaskmovq</item>
+      <item>vpmaxsb</item>
+      <item>vpmaxsd</item>
+      <item>vpmaxsw</item>
+      <item>vpmaxub</item>
+      <item>vpmaxud</item>
+      <item>vpmaxuw</item>
+      <item>vpminsb</item>
+      <item>vpminsd</item>
+      <item>vpminsw</item>
+      <item>vpminub</item>
+      <item>vpminud</item>
+      <item>vpminuw</item>
+      <item>vpmovmskb</item>
+      <item>vpmovsxbd</item>
+      <item>vpmovsxbq</item>
+      <item>vpmovsxbw</item>
+      <item>vpmovsxdq</item>
+      <item>vpmovsxwd</item>
+      <item>vpmovsxwq</item>
+      <item>vpmovzxbd</item>
+      <item>vpmovzxbq</item>
+      <item>vpmovzxbw</item>
+      <item>vpmovzxdq</item>
+      <item>vpmovzxwd</item>
+      <item>vpmovzxwq</item>
+      <item>vpmuldq</item>
+      <item>vpmulhrsw</item>
+      <item>vpmulhrw</item>
+      <item>vpmulhuw</item>
+      <item>vpmulhw</item>
+      <item>vpmulld</item>
+      <item>vpmullw</item>
+      <item>vpmuludq</item>
+      <item>vpmvgezb</item>
+      <item>vpmvlzb</item>
+      <item>vpmvnzb</item>
+      <item>vpmvzb</item>
+      <item>vpor</item>
+      <item>vpperm</item>
+      <item>vprefetch</item>
+      <item>vprefetchnta</item>
+      <item>vprefetcht0</item>
+      <item>vprefetcht1</item>
+      <item>vprefetcht2</item>
+      <item>vprefetchw</item>
+      <item>vprotb</item>
+      <item>vprotd</item>
+      <item>vprotq</item>
+      <item>vprotw</item>
+      <item>vpsadbw</item>
+      <item>vpshab</item>
+      <item>vpshad</item>
+      <item>vpshaq</item>
+      <item>vpshaw</item>
+      <item>vpshlb</item>
+      <item>vpshld</item>
+      <item>vpshlq</item>
+      <item>vpshlw</item>
+      <item>vpshufb</item>
+      <item>vpshufd</item>
+      <item>vpshufhw</item>
+      <item>vpshuflw</item>
+      <item>vpshufw</item>
+      <item>vpsignb</item>
+      <item>vpsignd</item>
+      <item>vpsignw</item>
+      <item>vpslld</item>
+      <item>vpslldq</item>
+      <item>vpsllq</item>
+      <item>vpsllvd</item>
+      <item>vpsllvq</item>
+      <item>vpsllw</item>
+      <item>vpsrad</item>
+      <item>vpsravd</item>
+      <item>vpsraw</item>
+      <item>vpsrld</item>
+      <item>vpsrldq</item>
+      <item>vpsrlq</item>
+      <item>vpsrlvd</item>
+      <item>vpsrlvq</item>
+      <item>vpsrlw</item>
+      <item>vpsubb</item>
+      <item>vpsubd</item>
+      <item>vpsubq</item>
+      <item>vpsubsb</item>
+      <item>vpsubsiw</item>
+      <item>vpsubsw</item>
+      <item>vpsubusb</item>
+      <item>vpsubusw</item>
+      <item>vpsubw</item>
+      <item>vpswapd</item>
+      <item>vptest</item>
+      <item>vpunpckhbw</item>
+      <item>vpunpckhdq</item>
+      <item>vpunpckhqdq</item>
+      <item>vpunpckhwd</item>
+      <item>vpunpcklbw</item>
+      <item>vpunpckldq</item>
+      <item>vpunpcklqdq</item>
+      <item>vpunpcklwd</item>
+      <item>vpxor</item>
+      <item>vrcpps</item>
+      <item>vroundpd</item>
+      <item>vroundps</item>
+      <item>vrsqrtps</item>
+      <item>vsqrtpd</item>
+      <item>vsqrtps</item>
+      <item>vstmxcsr</item>
+      <item>vtestpd</item>
+      <item>vtestps</item>
+      <item>vzeroall</item>
+      <item>vzeroupper</item>
       <item>wait</item>
       <item>wbinvd</item>
+      <item>wrfsbase</item>
+      <item>wrgsbase</item>
       <item>wrmsr</item>
+      <item>wrmsrq</item>
       <item>wrshr</item>
+      <item>xabort</item>
+      <item>xacquire</item>
       <item>xadd</item>
+      <item>xbegin</item>
       <item>xbts</item>
       <item>xchg</item>
+      <item>xend</item>
+      <item>xgetbv</item>
       <item>xlat</item>
       <item>xlatb</item>
       <item>xor</item>
       <item>xorpd</item>
       <item>xorps</item>
+      <item>xrelease</item>
+      <item>xrstor64</item>
+      <item>xrstor</item>
+      <item>xsave64</item>
+      <item>xsave</item>
+      <item>xsaveopt64</item>
+      <item>xsaveopt</item>
+      <item>xsetbv</item>
+      <item>xtest</item>
+    </list>
+
+    <list name="repeat prefixes">
+      <item>rep</item>
+      <item>repe</item>
+      <item>repz</item>
+      <item>repne</item>
+      <item>repnz</item>
+    </list>
+
+    <list name="operators">
+      <item>used</item>
+      <item>defined</item>
+
+      <item>mod</item>
+      <item>and</item>
+      <item>or</item>
+      <item>xor</item>
+      <item>not</item>
+      <item>shl</item>
+      <item>shr</item>
+      <item>bsf</item>
+      <item>bsr</item>
+      <item>rva</item>
+      <item>plt</item>
+      <!-- jump and call operand -->
+      <item>far</item>
+      <item>near</item>
+      <item>short</item>
     </list>
 
     <list name="Data">
@@ -784,41 +1528,54 @@ Notes:
       <item>byte</item>
       <item>word</item>
       <item>dword</item>
+      <item>fword</item>
       <item>pword</item>
       <item>qword</item>
       <item>tbyte</item>
       <item>tword</item>
       <item>dqword</item>
+      <item>xword</item>
+      <item>qqword</item>
+      <item>yword</item>
+      <item>dqqword</item>
+      <item>zword</item>
       <item>ptr</item>
     </list>
 
     <list name="Preprocessor Keywords"> <!-- Contains keywords for macros, structures, etc... -->
+      <item>assert</item>
       <item>append</item>
       <item>at</item>   <!-- As in "virtual at"-->
       <item>break</item>
+      <item>calminstruction</item>
       <item>common</item>
       <item>display</item>
       <item>else</item>
       <item>end</item> <!-- As in "end if"-->
       <item>equ</item>
+      <item>err</item>
       <item>fix</item>
       <item>foward</item>
       <item>if</item>
+      <item>iterate</item>
       <item>irp</item>
       <item>irps</item>
       <item>label</item>
       <item>local</item>
       <item>match</item>
       <item>macro</item>
+      <item>postpone</item>
       <item>purge</item>
       <item>repeat</item>
       <item>rept</item>
       <item>reverse</item>
       <item>restore</item>
+      <item>restruc</item>
       <item>struc</item>
       <item>times</item>
       <item>while</item>
       <item>virtual</item>
+      <item>namespace</item>
     </list>
 
     <list name="Instruction-like Keywords"> <!-- Contains instruction-like keywords -->
@@ -845,53 +1602,142 @@ Notes:
     </list>
 
     <contexts>
-      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Instruction">
+        <DetectSpaces attribute="Normal Text"/>
+        <RegExpr attribute="Label" context="Instruction" String="(?:(?:\.|@@|&#37;&#37;)(?:\.@)?)?[A-Za-z_][A-Za-z0-9_.]*+:|\.:|@@:" firstNonSpace="1"/>
+      </context>
+
+      <context name="Instruction" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Comment" context="#pop!Comment" char=";"/>
+        <keyword attribute="Instructions" context="#pop!Operand" String="instructions"/>
+        <keyword attribute="Branch Instructions" context="#pop!Operand" String="branch instructions"/>
+        <keyword attribute="Data" context="#pop!Operand" String="Data"/>
+        <keyword attribute="Preprocessor" context="#pop!Preprocessor" String="Preprocessor Keywords" lookAhead="1"/>
+        <keyword attribute="Instructions" context="#pop!Operand" String="Instruction-like Keywords"/>
+        <keyword attribute="Instructions" context="#stay" String="repeat prefixes"/>
+        <DetectIdentifier attribute="Unknown Instructions" context="UnknownInstruction"/>
+        <LineContinue attribute="Symbol" context="#pop!Operand"/>
+        <AnyChar attribute="Symbol" context="#stay" String="{}"/>
+      </context>
+      <context name="UnknownInstruction" attribute="Unknown Instructions" lineEndContext="#pop#pop" fallthroughContext="#pop#pop!Operand">
+        <DetectChar attribute="Symbol" context="#stay" char="."/>
+        <DetectIdentifier attribute="Unknown Instructions" context="#stay"/>
+      </context>
+
+      <context name="Operand" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Symbol" context="Dollar" char="$"/>
+        <LineContinue attribute="Symbol"/>
+        <AnyChar attribute="Symbol" context="#stay" String=",.+-=/*%~$!?&lt;>()[]{}:|&amp;#`\"/>
+        <DetectChar attribute="String" context="SQString" char="'"/>
+        <DetectChar attribute="String" context="DQString" char="&quot;"/>
+        <DetectChar attribute="Label" context="@Label" char="@"/>
+        <DetectChar attribute="Comment" context="#pop!Comment" char=";"/>
+        <AnyChar attribute="Number" context="Number" String="0123456789" lookAhead="1"/>
         <keyword attribute="Registers" context="#stay" String="registers"/>
         <keyword attribute="Data" context="#stay" String="Data"/>
-        <keyword attribute="Instructions" context="#stay" String="instructions"/>
-        <keyword attribute="Instructions" context="#stay" String="Instruction-like Keywords"/>
-        <keyword attribute="Preprocessor" context="#stay" String="Preprocessor Keywords"/>
-        <DetectChar attribute="Comment" context="Comment" char=";"/>
-        <AnyChar attribute="String" context="String" String="&quot;'"/>
-        <RegExpr attribute="Label" context="#stay" String="^\s*[A-Za-z0-9@_.$?]+:"/>
-        <!-- Conditional instructions -->
-        <RegExpr attribute="Instructions" context="#stay" String="(cmov|fcmov|j|loop|set)(a|ae|b|be|c|e|g|ge|l|le|na|nae|nb|nbe|nc|ne|ng|nge|nl|nle|no|np|ns|nz|o|p|pe|po|s|z)"/>
-        <!-- hexadecimal numbers -->
-        <RegExpr attribute="BaseN" context="#stay" insensitive="true" String="(^|[ \t,]+)((\$|0x){1}[0-9]+[a-f0-9]*|[a-f0-9]+h)([ \t,]+|$)"/>
-        <!-- octal and binary numbers -->
-        <RegExpr attribute="BaseN" context="#stay" insensitive="true" String="(^|[ \t,]+)([0-7]+(q|o)|[01]+b)([ \t,]+|$)"/>
-        <DetectChar attribute="Number" context="#stay" char="$"/>
-        <HlCOct attribute="BaseN" context="#stay"/>
-        <HlCHex attribute="BaseN" context="#stay"/>
-        <Float attribute="Float" context="#stay"/>
-        <Int attribute="Number" context="#stay"/>
-        <HlCChar attribute="Char" context="#stay"/>
+        <keyword attribute="Operators" context="#stay" String="operators"/>
+        <DetectIdentifier attribute="Normal Text" context="#stay"/>
       </context>
-      <context name="Comment" attribute="Comment" lineEndContext="#pop"/>
-      <context name="String" attribute="String" lineEndContext="#pop">
-        <AnyChar attribute="String" context="#pop" String="&quot;'"/>
+      <context name="@Label" attribute="Label" lineEndContext="#pop" fallthroughContext="#pop">
+        <AnyChar attribute="Label" context="#pop" String="bfr"/>
+        <RegExpr attribute="Error" context="#pop" String="."/>
       </context>
+
+      <context name="Dollar" attribute="Symbol" lineEndContext="#pop" fallthroughContext="#pop">
+        <AnyChar attribute="BaseN" context="#pop!$Hex" String="0123456789"/>
+        <AnyChar attribute="Symbol" context="#pop" String="$@%"/>
+      </context>
+      <context name="$Hex" attribute="BaseN" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="BaseN" context="#pop!CheckNumberSuffix" String="[0-9a-fA-F_]*"/>
+      </context>
+
+      <context name="Number" attribute="Number" lineEndContext="#pop">
+        <Detect2Chars attribute="Radix" context="#pop!$Hex" char="0" char1="x"/>
+        <Detect2Chars attribute="Radix" context="#pop!$Hex" char="0" char1="X"/>
+        <RegExpr attribute="Float" context="#pop!FloatSuffix" insensitive="1" String="&float;"/>
+        <RegExpr attribute="BaseN" context="#pop!BaseSuffix" insensitive="1" String="&bin_oct_hex;|&oct_hex;|&hex;"/>
+        <RegExpr attribute="Number" context="#pop!NumberSuffix" insensitive="1" String="&number;"/>
+      </context>
+      <context name="FloatSuffix" attribute="Float" lineEndContext="#pop" fallthroughContext="#pop!CheckNumberSuffix">
+        <AnyChar attribute="Radix" context="#pop!CheckNumberSuffix" String="fF"/>
+      </context>
+      <context name="BaseSuffix" attribute="BaseN" lineEndContext="#pop" fallthroughContext="#pop!CheckNumberSuffix">
+        <AnyChar attribute="Radix" context="#pop!CheckNumberSuffix" String="byoqhBYOQH"/>
+      </context>
+      <context name="NumberSuffix" attribute="Number" lineEndContext="#pop" fallthroughContext="#pop!CheckNumberSuffix">
+        <AnyChar attribute="Radix" context="#pop!CheckNumberSuffix" String="dD"/>
+      </context>
+      <context name="CheckNumberSuffix" attribute="Number" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text" context="#pop"/>
+        <AnyChar attribute="Symbol" context="#pop" String=",.+-=/*%~!?&lt;>()[]{}:|&amp;#`"/>
+        <RegExpr attribute="Error" context="#pop" String="[\d\w]+"/>
+      </context>
+
+      <context name="SQString" attribute="String" lineEndContext="#pop">
+        <LineContinue attribute="Symbol"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+      <context name="DQString" attribute="String" lineEndContext="#pop">
+        <LineContinue attribute="Symbol"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop">
+        <WordDetect attribute="Preprocessor" context="#pop!Preprocessor.prefix" String="end"/>
+        <WordDetect attribute="Preprocessor" context="#pop!Preprocessor.prefix" String="else"/>
+        <WordDetect attribute="Preprocessor" context="#pop!Preprocessor.virtual" String="virtual"/>
+        <DetectIdentifier attribute="Preprocessor" context="#pop!PreprocessorOperand"/>
+      </context>
+
+      <context name="PreprocessorOperand" attribute="Preprocessor" lineEndContext="#pop">
+        <DetectChar attribute="Symbol" context="#pop" char="{"/>
+        <IncludeRules context="Operand"/>
+      </context>
+
+      <context name="Preprocessor.virtual" attribute="Preprocessor" lineEndContext="#pop" fallthroughContext="#pop!Operand">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <WordDetect attribute="Preprocessor" context="#pop!Operand" String="at"/>
+      </context>
+      <context name="Preprocessor.prefix" attribute="Preprocessor" lineEndContext="#pop" fallthroughContext="#pop!PreprocessorOperand">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Preprocessor" context="#pop!PreprocessorOperand" String="Preprocessor Keywords"/>
+        <DetectIdentifier attribute="Normal Text" context="#pop!PreprocessorOperand"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces attribute="Comment"/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier attribute="Comment"/>
+      </context>
+
     </contexts>
 
     <itemDatas>
       <itemData name="Normal Text" defStyleNum="dsNormal"/>
       <itemData name="Registers" defStyleNum="dsKeyword"/>
       <itemData name="Instructions" defStyleNum="dsBuiltIn"/>
+      <itemData name="Branch Instructions" defStyleNum="dsControlFlow"/>
+      <itemData name="Unknown Instructions" defStyleNum="dsNormal"/>
+      <itemData name="Operators" defStyleNum="dsOperator"/>
       <itemData name="Comment" defStyleNum="dsComment"/>
       <itemData name="Label" defStyleNum="dsFunction"/>
       <itemData name="Data" defStyleNum="dsDataType"/>
       <itemData name="BaseN" defStyleNum="dsBaseN"/>
       <itemData name="Float" defStyleNum="dsFloat"/>
       <itemData name="Number" defStyleNum="dsDecVal"/>
-      <itemData name="Char" defStyleNum="dsChar"/>
+      <itemData name="Radix" defStyleNum="dsBaseN"/>
       <itemData name="String" defStyleNum="dsString"/>
       <itemData name="Preprocessor" defStyleNum="dsPreprocessor"/>
+      <itemData name="Symbol" defStyleNum="dsOperator"/>
+      <itemData name="Error" defStyleNum="dsError"/>
     </itemDatas>
   </highlighting>
   <general>
     <keywords casesensitive="0"/>
     <comments>
-      <comment name="singleLine" start=";"/>
+      <comment name="singleLine" start=";" position="afterwhitespace"/>
     </comments>
   </general>
 </language>

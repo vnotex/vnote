@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
 
 *************************************************************************
@@ -33,7 +33,7 @@ with this program; if not, write to the Free Software Foundation, Inc.,
 
 -->
 
-<language name="AVR Assembler" version="3" kateversion="5.0" section="Assembler" extensions="*.asm;*.ASM;*.asm-avr" mimetype="text/x-asm;text/x-asm-avr" author="Roland Nagy" license="GPLv2+">
+<language name="AVR Assembler" version="6" kateversion="5.62" section="Assembler" extensions="*.asm;*.ASM;*.asm-avr" mimetype="text/x-asm;text/x-asm-avr" author="Roland Nagy" license="GPLv2+">
   <highlighting>
     <list name="keywords">
       <item>adc</item>
@@ -44,30 +44,9 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>asr</item>
       <item>bclr</item>
       <item>bld</item>
-      <item>brbc</item>
-      <item>brbs</item>
-      <item>brcc</item>
-      <item>brcs</item>
       <item>break</item>
-      <item>breq</item>
-      <item>brge</item>
-      <item>brhc</item>
-      <item>brhs</item>
-      <item>brid</item>
-      <item>brie</item>
-      <item>brlo</item>
-      <item>brlt</item>
-      <item>brmi</item>
-      <item>brne</item>
-      <item>brpl</item>
-      <item>brsh</item>
-      <item>brtc</item>
-      <item>brts</item>
-      <item>brvc</item>
-      <item>brvs</item>
       <item>bset</item>
       <item>bst</item>
-      <item>call</item>
       <item>cbi</item>
       <item>cbr</item>
       <item>clc</item>
@@ -80,23 +59,18 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>clv</item>
       <item>clz</item>
       <item>com</item>
-      <item>cp</item>
-      <item>cpc</item>
-      <item>cpi</item>
-      <item>cpse</item>
       <item>dec</item>
-      <item>eicall</item>
-      <item>eijmp</item>
+      <item>des</item>
       <item>elpm</item>
       <item>eor</item>
       <item>fmul</item>
       <item>fmuls</item>
       <item>fmulsu</item>
-      <item>icall</item>
-      <item>ijmp</item>
       <item>in</item>
       <item>inc</item>
-      <item>jmp</item>
+      <item>lac</item>
+      <item>las</item>
+      <item>lat</item>
       <item>ld</item>
       <item>ldd</item>
       <item>ldi</item>
@@ -116,22 +90,14 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>out</item>
       <item>pop</item>
       <item>push</item>
-      <item>rcall</item>
-      <item>ret</item>
-      <item>reti</item>
-      <item>rjmp</item>
       <item>rol</item>
       <item>ror</item>
       <item>sbc</item>
       <item>sbr</item>
-      <item>sbrc</item>
-      <item>sbrs</item>
       <item>sec</item>
       <item>seh</item>
       <item>sbi</item>
       <item>sbci</item>
-      <item>sbic</item>
-      <item>sbis</item>
       <item>sbiw</item>
       <item>sei</item>
       <item>sen</item>
@@ -150,43 +116,261 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <item>swap</item>
       <item>tst</item>
       <item>wdr</item>
-  </list>
+      <item>xch</item>
+    </list>
+
+    <list name="branch instructions">
+      <item>brbc</item>
+      <item>brbs</item>
+      <item>brcc</item>
+      <item>brcs</item>
+      <item>breq</item>
+      <item>brge</item>
+      <item>brhc</item>
+      <item>brhs</item>
+      <item>brid</item>
+      <item>brie</item>
+      <item>brlo</item>
+      <item>brlt</item>
+      <item>brmi</item>
+      <item>brne</item>
+      <item>brpl</item>
+      <item>brsh</item>
+      <item>brtc</item>
+      <item>brts</item>
+      <item>brvc</item>
+      <item>brvs</item>
+      <item>call</item>
+      <item>cp</item>
+      <item>cpc</item>
+      <item>cpi</item>
+      <item>cpse</item>
+      <item>eicall</item>
+      <item>eijmp</item>
+      <item>icall</item>
+      <item>ijmp</item>
+      <item>jmp</item>
+      <item>rcall</item>
+      <item>ret</item>
+      <item>reti</item>
+      <item>rjmp</item>
+      <item>sbic</item>
+      <item>sbis</item>
+      <item>sbrc</item>
+      <item>sbrs</item>
+    </list>
+
+    <list name="directives">
+      <item>.byte</item>
+      <item>.cseg</item>
+      <item>.csegsize</item>
+      <item>.db</item>
+      <item>.dd</item>
+      <item>.def</item>
+      <item>.dq</item>
+      <item>.dseg</item>
+      <item>.dw</item>
+      <item>.elif</item>
+      <item>.else</item>
+      <item>.endif</item>
+      <item>.endm</item>
+      <item>.endmacro</item>
+      <item>.equ</item>
+      <item>.error</item>
+      <item>.esec</item>
+      <item>.exit</item>
+      <item>.if</item>
+      <item>.ifdef</item>
+      <item>.ifndef</item>
+      <item>.include</item>
+      <item>.list</item>
+      <item>.listmac</item>
+      <item>.macro</item>
+      <item>.message</item>
+      <item>.nolist</item>
+      <item>.nooverlap</item>
+      <item>.org</item>
+      <item>.overlap</item>
+      <item>.set</item>
+      <item>.undef</item>
+      <item>.warning</item>
+    </list>
+
+    <list name="functions">
+      <item>low</item>
+      <item>high</item>
+      <item>byte2</item>
+      <item>byte3</item>
+      <item>byte4</item>
+      <item>lwrd</item>
+      <item>hwrd</item>
+      <item>page</item>
+      <item>exp2</item>
+      <item>log2</item>
+      <item>int</item>
+      <item>frac</item>
+      <item>q7</item>
+      <item>q15</item>
+      <item>abs</item>
+      <item>defined</item>
+      <item>strlen</item>
+    </list>
+
+    <list name="constants">
+      <item>__AVRASM_VERSION__</item>
+      <item>__CORE_VERSION__</item>
+      <item>__DATE__</item>
+      <item>__TIME__</item>
+      <item>__CENTURY__</item>
+      <item>__YEAR__</item>
+      <item>__MONTH__</item>
+      <item>__FILE__</item>
+      <item>__LINE__</item>
+      <item>__SECOND__</item>
+      <item>__MINUTE__</item>
+      <item>__HOUR__</item>
+      <item>__DAY__</item>
+      <item>__PART_NAME__</item>
+    </list>
+
+    <list name="macros">
+      <item>#define</item>
+      <item>#undef</item>
+      <item>#idef</item>
+      <item>#ifndef</item>
+      <item>#if</item>
+      <item>#elif</item>
+      <item>#else</item>
+      <item>#endif</item>
+      <item>#error</item>
+      <item>#warning</item>
+      <item>#message</item>
+      <item>#include</item>
+      <item>#pragma</item>
+    </list>
 
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
-        <RegExpr      attribute="Label" context="#stay" String="[A-Za-z0-9_.$]+:" firstNonSpace="true"/>
-        <keyword      attribute="Keyword" context="#stay" String="keywords"/>
-        <HlCOct       attribute="Octal" context="#stay" />
-        <HlCHex       attribute="Hex" context="#stay" />
-        <RegExpr      attribute="Binary" context="#stay" String="0[bB][01]+" />
-        <Int          attribute="Decimal" context="#stay" />
-        <RegExpr      attribute="Float" context="#stay" String="0[fFeEdD][-+]?[0-9]*\.?[0-9]*[eE]?[-+]?[0-9]+" />
-        <RegExpr      attribute="Normal Text" context="#stay" String="[A-Za-z_.$][A-Za-z0-9_.$]*" />
-        <RegExpr      attribute="Char" context="#stay" String="'(\\x[0-9a-fA-F][0-9a-fA-F]?|\\[0-7]?[0-7]?[0-7]?|\\.|.)" />
+        <DetectSpaces attribute="Normal Text" />
+        <DetectChar   attribute="Decimal" context="Number" char="0" lookAhead="1" />
+        <Int          attribute="Decimal" context="Decimal" />
+        <DetectChar   attribute="Directive" context="Directive" char="." lookAhead="1"/>
+        <DetectChar   attribute="Hex" context="Hex" char="$" />
+        <DetectChar   attribute="Referred Macro Parameter" context="RefMacroParam" char="@" lookAhead="1" />
+        <HlCChar      attribute="Char" context="#stay" />
         <DetectChar   attribute="String" context="String" char="&quot;" />
-        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="*" />
-        <DetectChar   attribute="Comment" context="Commentar 2" char="@" />
+        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="*" beginRegion="BlockComment" />
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="/" />
         <DetectChar   attribute="Comment" context="Commentar 2" char=";" />
-        <AnyChar      attribute="Symbol" context="#stay" String="!#%&amp;*()+,-&lt;=&gt;?/:[]^{|}~" />
-        <RegExpr      attribute="Preprocessor" context="Preprocessor" String="^#" />
+        <AnyChar      attribute="Symbol" context="#stay" String="!~-*/%+-&lt;>=&amp;^|?,()\" />
+        <DetectChar   attribute="Preprocessor" context="Preprocessor" char="#" firstNonSpace="1" lookAhead="1"/>
+        <RegExpr      attribute="Label" context="#stay" String="[A-Za-z0-9_]+:" firstNonSpace="1"/>
+        <keyword      attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword      attribute="Branch Instructions" context="#stay" String="branch instructions"/>
+        <keyword      attribute="Function" context="#stay" String="functions"/>
+        <RegExpr context="#stay" String="[A-Za-z_.$][A-Za-z0-9_.$]*" />
       </context>
-      <context attribute="Comment" lineEndContext="#stay" name="Commentar 1">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+
+      <context attribute="Referred Macro Parameter" lineEndContext="#pop" name="RefMacroParam">
+        <Detect2Chars attribute="Referred Macro Parameter" context="#pop" char="@" char1="0" />
+        <Detect2Chars attribute="Referred Macro Parameter" context="#pop" char="@" char1="1" />
+        <Detect2Chars attribute="Referred Macro Parameter" context="#pop" char="@" char1="2" />
+        <Detect2Chars attribute="Referred Macro Parameter" context="#pop" char="@" char1="3" />
+        <Detect2Chars attribute="Referred Macro Parameter" context="#pop" char="@" char1="4" />
+        <Detect2Chars attribute="Referred Macro Parameter" context="#pop" char="@" char1="5" />
+        <Detect2Chars attribute="Referred Macro Parameter" context="#pop" char="@" char1="6" />
+        <Detect2Chars attribute="Referred Macro Parameter" context="#pop" char="@" char1="7" />
+        <Detect2Chars attribute="Referred Macro Parameter" context="#pop" char="@" char1="8" />
+        <Detect2Chars attribute="Referred Macro Parameter" context="#pop" char="@" char1="9" />
+        <DetectChar attribute="Error" context="#pop" char="@" />
       </context>
-      <context attribute="Comment" lineEndContext="#pop" name="Commentar 2" />
-      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor" />
+
+      <context attribute="Directive" lineEndContext="#pop" name="Directive" fallthroughContext="#pop!BadDirective">
+        <keyword attribute="Directive" context="#pop" String="directives" insensitive="1" />
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop" name="BadDirective" fallthroughContext="#pop">
+        <DetectChar       attribute="Error" context="#stay" char="." />
+        <DetectIdentifier attribute="Error" context="#pop" />
+      </context>
+
+      <context attribute="Decimal" lineEndContext="#pop" name="Number">
+        <StringDetect attribute="Hex" context="#pop!Hex" String="0x" insensitive="1" />
+        <StringDetect attribute="Binary" context="#pop!Binary" String="0b" insensitive="1" />
+        <StringDetect attribute="Float" context="#pop!Float" String="0f" insensitive="1" />
+        <StringDetect attribute="Float" context="#pop!Float" String="0e" insensitive="1" />
+        <StringDetect attribute="Float" context="#pop!Float" String="0d" insensitive="1" />
+        <WordDetect   attribute="Decimal" context="#pop" String="0" />
+        <DetectChar   attribute="Octal" context="#pop!Octal" char="0" />
+      </context>
+
+      <context attribute="Decimal" lineEndContext="#pop" name="Decimal" fallthroughContext="#pop">
+        <AnyChar attribute="Decimal" context="#stay" String="0123456789_" />
+      </context>
+
+      <context attribute="Binary" lineEndContext="#pop" name="Binary" fallthroughContext="#pop">
+        <AnyChar attribute="Binary" context="#stay" String="01_" />
+      </context>
+
+      <context attribute="Octal" lineEndContext="#pop" name="Octal" fallthroughContext="#pop">
+        <AnyChar attribute="Octal" context="#stay" String="01234567_" />
+      </context>
+
+      <context attribute="Hex" lineEndContext="#pop" name="Hex" fallthroughContext="#pop">
+        <AnyChar attribute="Hex" context="#stay" String="0123456789abcdefABCDEF_" />
+      </context>
+
+      <context attribute="Float" lineEndContext="#pop" name="Float" fallthroughContext="#pop">
+        <RegExpr attribute="Float" context="#stay" String="[-+]?[0-9]*+\.?[0-9]*+[eE]?[-+]?[0-9]+" />
+      </context>
+
       <context attribute="String" lineEndContext="#pop" name="String">
-        <LineContinue  attribute="String" context="Some Context" />
+        <LineContinue attribute="Symbol" />
         <HlCStringChar attribute="String Char" context="#stay" />
         <DetectChar    attribute="String" context="#pop" char="&quot;" />
       </context>
-      <context attribute="Normal Text" lineEndContext="#pop" name="Some Context" />
+
+      <context attribute="Comment" lineEndContext="#stay" name="Commentar 1">
+        <DetectSpaces attribute="Comment"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment" />
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier attribute="Comment"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 2">
+        <DetectSpaces attribute="Comment"/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier attribute="Comment"/>
+      </context>
+
+      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
+        <keyword    attribute="Preprocessor" context="#pop!InPreprocessor" String="macros" />
+        <DetectChar attribute="Preprocessor" context="#pop!PreprocessorName" char="#" />
+      </context>
+      <context attribute="Preprocessor" lineEndContext="#pop" name="PreprocessorName">
+        <DetectIdentifier attribute="Unknown Preprocessor" context="#pop!InPreprocessor" />
+      </context>
+
+      <context attribute="Preprocessor" lineEndContext="#pop" name="InPreprocessor">
+        <LineContinue attribute="Symbol" />
+        <DetectChar   attribute="Symbol" context="#stay" char="#" />
+        <Detect2Chars attribute="Constant" context="Constant" char="_" char1="_" lookAhead="1"/>
+        <IncludeRules context="Normal" />
+      </context>
+
+      <context attribute="Constant" lineEndContext="#stay" name="Constant">
+        <keyword attribute="Constant" context="#pop" String="constants"/>
+        <RegExpr attribute="Constant" context="#pop" String="__(?:[0-9a-zA-Z]++|_(?!_))++__" />
+        <DetectIdentifier attribute="Error" context="#pop" />
+      </context>
     </contexts>
 
     <itemDatas>
       <itemData name="Normal Text"  defStyleNum="dsNormal"   />
       <itemData name="Label"        defStyleNum="dsFunction" />
+      <itemData name="Function"     defStyleNum="dsFunction" />
       <itemData name="Keyword"      defStyleNum="dsKeyword"  />
+      <itemData name="Branch Instructions" defStyleNum="dsControlFlow" />
+      <itemData name="Directive"    defStyleNum="dsKeyword"  />
       <itemData name="Decimal"      defStyleNum="dsDecVal"   />
       <itemData name="Octal"        defStyleNum="dsBaseN"    />
       <itemData name="Hex"          defStyleNum="dsBaseN"    />
@@ -195,18 +379,22 @@ with this program; if not, write to the Free Software Foundation, Inc.,
       <itemData name="Char"         defStyleNum="dsChar"     />
       <itemData name="String"       defStyleNum="dsString"   />
       <itemData name="String Char"  defStyleNum="dsSpecialChar" />
-      <itemData name="Symbol"       defStyleNum="dsNormal"   />
+      <itemData name="Symbol"       defStyleNum="dsOperator" />
       <itemData name="Comment"      defStyleNum="dsComment"  />
       <itemData name="Preprocessor" defStyleNum="dsPreprocessor" />
+      <itemData name="Constant"     defStyleNum="dsOthers"   />
+      <itemData name="Error"        defStyleNum="dsError"    />
+      <itemData name="Unknown Preprocessor" defStyleNum="dsError" />
+      <itemData name="Referred Macro Parameter" defStyleNum="dsVariable" />
     </itemDatas>
   </highlighting>
 
   <general>
     <comments>
       <comment name="singleLine" start=";" />
-      <comment name="singleLine" start="@" />
-      <comment name="multiLine"  start="/*" end="*/" />
+      <comment name="multiLine"  start="/*" end="*/" region="BlockComment" />
     </comments>
-    <keywords casesensitive="1" weakDeliminator="_.$" />
+    <keywords casesensitive="1" weakDeliminator=".$#" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

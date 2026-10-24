@@ -1,40 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
-	<!ENTITY datetime "((.\[)?(\d{1,2};){2}\d{1,3}m\s*)?((\d{4}\-)?\d{2}\-\d{2}\s\d{2}(:\d{2}){2}\.\d{3,6}(\s[\-\+]\d{4})?|\d+\.\d{3,6}):?">
-	<!ENTITY priority_tag "([/\s][^:\(]*(\([^\)]+\))?:|\([^\)]+\):?)"> <!-- Tag/PID/Threads -->
+	<!ENTITY datetime "(?:(?:.\[)?(?:\d{1,2};){2}\d{1,3}m\s*)?(?:(?:\d{4}\-)?\d{2}\-\d{2}\s\d{2}(?:\:\d{2}){2}\.\d{3,6}(?:\s[\-\+]\d{4})?|\d+\.\d{3,6})\:?">
+	<!ENTITY priority_tag "(?:[/\s][^:\(]*(?:\([^\)]+\))?:|\([^\)]+\):?)"> <!-- Tag/PID/Threads -->
 	<!ENTITY delim        "[/\(\s]"> <!-- Delimiter between priority and tag -->
 ]>
 
 <!--
-  Syntax Highlighting Definition of Logcat, for the KDE's KSyntaxHighlighting Framework
-  ==========================================================================================
+   Logcat Syntax Highlighting Definition
+  ===========================================================================
+
    This file is part of the KDE's KSyntaxHighlighting framework.
 
-   Copyright (c) 2018-2019 Nibaldo González S. (nibgonz@gmail.com)
+   SPDX-FileCopyrightText: 2018-2020 Nibaldo González S. <nibgonz@gmail.com>
 
-   Permission is hereby granted, free of charge, to any person obtaining a copy of this
-   software and associated documentation files (the "Software"), to deal in the Software
-   without restriction, including without limitation the rights to use, copy, modify, merge,
-   publish, distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the following conditions:
+   SPDX-License-Identifier: MIT
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
+  ===========================================================================
 
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-   PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-   COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
-   AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-   WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  ==========================================================================================
-
-  Last update: August 30, 2019 (v4)
+  Last update: September 30, 2020 (v6)
 -->
 
 <language name="Logcat"
-          version="4"
+          version="9"
           kateversion="5.0"
           section="Other"
           extensions="*.logcat"
@@ -50,21 +38,21 @@
 			<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
 				<DetectChar   context="CommentLine" attribute="Comment" char="#" firstNonSpace="true" />
 				<StringDetect context="CommentLine" attribute="Comment" String="---------" firstNonSpace="true" />
-				<RegExpr      context="#stay"       attribute="Comment" String="\*\s.+\s\*$" column="0" />
+				<RegExpr      context="#stay"       attribute="Comment" String="^\*\s.+\s\*$" column="0" />
 
 				<RegExpr context="#stay" attribute="DateTime" String="&datetime;" firstNonSpace="true" />
 
 				<!-- Priority & Tag -->
-				<RegExpr context="VerboseMsg" attribute="Verbose Tag" String="(^|\s)[V\?](&priority_tag;|(?=&delim;))" />
-				<RegExpr context="DebugMsg"   attribute="Debug Tag"   String="(^|\s)D(&priority_tag;|(?=&delim;))" />
-				<RegExpr context="InfoMsg"    attribute="Info Tag"    String="(^|\s)I(&priority_tag;|(?=&delim;))" />
-				<RegExpr context="WarningMsg" attribute="Warning Tag" String="(^|\s)W(&priority_tag;|(?=&delim;))" />
-				<RegExpr context="AssertMsg"  attribute="Assert Tag"  String="(^|\s)A(&priority_tag;|(?=&delim;))" />
-				<RegExpr context="SilentMsg"  attribute="Silent Tag"  String="(^|\s)S(&priority_tag;|(?=&delim;))" />
-				<RegExpr context="ErrorMsg"   attribute="Error Tag"   String="(^|\s)E(&priority_tag;|(?=&delim;))" />
+				<RegExpr context="VerboseMsg" attribute="Verbose Tag" String="(?:^|\s)[V\?](?:&priority_tag;|(?=&delim;))" />
+				<RegExpr context="DebugMsg"   attribute="Debug Tag"   String="(?:^|\s)D(?:&priority_tag;|(?=&delim;))" />
+				<RegExpr context="InfoMsg"    attribute="Info Tag"    String="(?:^|\s)I(?:&priority_tag;|(?=&delim;))" />
+				<RegExpr context="WarningMsg" attribute="Warning Tag" String="(?:^|\s)W(?:&priority_tag;|(?=&delim;))" />
+				<RegExpr context="AssertMsg"  attribute="Assert Tag"  String="(?:^|\s)A(?:&priority_tag;|(?=&delim;))" />
+				<RegExpr context="SilentMsg"  attribute="Silent Tag"  String="(?:^|\s)S(?:&priority_tag;|(?=&delim;))" />
+				<RegExpr context="ErrorMsg"   attribute="Error Tag"   String="(?:^|\s)E(?:&priority_tag;|(?=&delim;))" />
 
 				<RegExpr context="#stay"      attribute="Error Tag"   String="\sF&delim;.*\033\[\d{1,3}m$" />
-				<RegExpr context="FatalMsg"   attribute="Fatal"       String="^F&delim;" />
+				<RegExpr context="FatalMsg"   attribute="Fatal"       String="^F&delim;" column="0" />
 				<RegExpr context="FatalMsg"   attribute="Normal Text" String="\s(?=F&delim;)" />
 
 				<!-- For "-v long" -->
@@ -73,8 +61,7 @@
 
 			<context name="CommentLine" attribute="Comment" lineEndContext="#pop">
 				<DetectSpaces />
-				<IncludeRules context="##Alerts" />
-				<IncludeRules context="##Modelines" />
+				<IncludeRules context="##Comments" />
 			</context>
 
 			<context name="VerboseMsg" attribute="Verbose Message" lineEndContext="#pop" />
@@ -153,18 +140,18 @@
 			</context>
 			<context name="DefaultLongLogMsg" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="EmptyLine">
 				<StringDetect context="#pop!CommentLine" attribute="Comment" String="---------" firstNonSpace="true" />
-				<RegExpr context="#pop" attribute="Comment" String="\*\s.+\s\*$" column="0" />
-				<RegExpr context="#pop!LongLog" attribute="Normal Text" String="\[(?=\s+&datetime;\s.+\s\]$)" column="0" />
-				<RegExpr context="EmptyLine" attribute="Normal Text" String="^\s*$" />
+				<RegExpr context="#pop" attribute="Comment" String="^\*\s.+\s\*$" column="0" />
+				<RegExpr context="#pop!LongLog" attribute="Normal Text" String="^\[(?=\s+&datetime;\s.+\s\]$)" column="0" />
+				<RegExpr context="EmptyLine" attribute="Normal Text" String="^\s*$" column="0" />
 			</context>
 			<context name="EmptyLine" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
 				<DetectChar context="#pop#pop!CommentLine" attribute="Comment" char="#" firstNonSpace="true" />
-				<RegExpr context="#pop#pop!LongLog" attribute="Normal Text" String="\[(?=\s.+\s\]$)" column="0" />
+				<RegExpr context="#pop#pop!LongLog" attribute="Normal Text" String="^\[(?=\s.+\s\]$)" column="0" />
 				<!-- In a normal Log this is not necessary, but probably some people put items of Logs
 				     of different formats in a single file. -->
 				<RegExpr context="#pop#pop" attribute="DateTime" String="&datetime;" firstNonSpace="true" />
 				<!-- NOTE: Use "^\s*" with lookAhead, not firstNonSpace -->
-				<RegExpr context="#pop#pop" attribute="Normal Text" String="\s*[VDIWASEF\?]&priority_tag;" column="0" lookAhead="true" />
+				<RegExpr context="#pop#pop" attribute="Normal Text" String="^\s*[VDIWASEF\?]&priority_tag;" column="0" lookAhead="true" minimal="1" />
 				<DetectSpaces />
 			</context>
 
@@ -175,21 +162,21 @@
 			<itemData name="Comment"     defStyleNum="dsComment" italic="1" />
 			<itemData name="DateTime"    defStyleNum="dsComment" italic="0" underline="0" spellChecking="false" />
 
-			<itemData name="Verbose Tag"     defStyleNum="dsNormal"         bold="1" />
-			<itemData name="Verbose Message" defStyleNum="dsNormal"         bold="0" />
-			<itemData name="Debug Tag"       defStyleNum="dsAttribute"      bold="1" />
-			<itemData name="Debug Message"   defStyleNum="dsAttribute"      bold="0" />
-			<itemData name="Info Tag"        defStyleNum="dsPreprocessor"   bold="1" />
-			<itemData name="Info Message"    defStyleNum="dsPreprocessor"   bold="0" />
-			<itemData name="Warning Tag"     defStyleNum="dsInformation"    bold="1" />
-			<itemData name="Warning Message" defStyleNum="dsInformation"    bold="0" />
-			<itemData name="Assert Tag"      defStyleNum="dsChar"           bold="1" />
-			<itemData name="Assert Message"  defStyleNum="dsChar"           bold="0" />
-			<itemData name="Silent Tag"      defStyleNum="dsBuiltIn"        bold="1" />
-			<itemData name="Silent Message"  defStyleNum="dsBuiltIn"        bold="0" />
-			<itemData name="Error Tag"       defStyleNum="dsError"          bold="1" underline="0" />
-			<itemData name="Error Message"   defStyleNum="dsError"          bold="0" underline="0" />
-			<itemData name="Fatal"           defStyleNum="dsAlert"          bold="1" />
+			<itemData name="Verbose Tag"     defStyleNum="dsNormal"         bold="1" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Verbose Message" defStyleNum="dsNormal"         bold="0" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Debug Tag"       defStyleNum="dsAttribute"      bold="1" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Debug Message"   defStyleNum="dsAttribute"      bold="0" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Info Tag"        defStyleNum="dsPreprocessor"   bold="1" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Info Message"    defStyleNum="dsPreprocessor"   bold="0" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Warning Tag"     defStyleNum="dsInformation"    bold="1" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Warning Message" defStyleNum="dsInformation"    bold="0" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Assert Tag"      defStyleNum="dsChar"           bold="1" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Assert Message"  defStyleNum="dsChar"           bold="0" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Silent Tag"      defStyleNum="dsBuiltIn"        bold="1" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Silent Message"  defStyleNum="dsBuiltIn"        bold="0" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Error Tag"       defStyleNum="dsError"          bold="1" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Error Message"   defStyleNum="dsError"          bold="0" italic="0" underline="0" strikeOut="0" />
+			<itemData name="Fatal"           defStyleNum="dsAlert"          bold="1" italic="0" underline="0" strikeOut="0" />
 		</itemDatas>
 
 	</highlighting>
@@ -198,6 +185,10 @@
 		<comments>
 			<comment name="singleLine" start="#" />
 		</comments>
+
+		<emptyLines>
+			<emptyLine regexpr="\s+"/>
+		</emptyLines>
 	</general>
 
 </language>

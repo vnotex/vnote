@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Velocity" version="2" kateversion="2.3" section="Scripts" extensions="*.vm;" mimetype="text/x-velocity-src;text/x-vm-src" author="John Christopher (John@animalsinneed.net)" license="">
+<!DOCTYPE language [
+	<!ENTITY variable1 "\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*">
+	<!ENTITY variable2 "\$\{[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*\}">
+	<!ENTITY variable3 "\$!\{[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*\}.">
+	<!ENTITY variable4 "\{\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[([0-9]*|&quot;[a-zA-Z_]*&quot;)|'[a-zA-Z_]*'|\])*(->[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*(\[[a-zA-Z0-9_]*\])*(\[([0-9]*|&quot;[a-zA-Z_]*&quot;)|'[a-zA-Z_]*'|\])*)*\}">
+]>
+<language name="Velocity" version="5" kateversion="5.0" section="Scripts" extensions="*.vm;" mimetype="text/x-velocity-src;text/x-vm-src" author="John Christopher (John@animalsinneed.net)" license="">
 	<highlighting>
 		<list name="keywords">
 			<item>#set</item>
@@ -17,19 +22,20 @@
 		<contexts>
 			<context attribute="Normal Text" lineEndContext="#stay" name="Keyword">
 				<keyword attribute="Keyword" context="#stay" String="keywords" />
-				<RegExpr attribute="Variable" context="#stay" String="\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*" />
-				<RegExpr attribute="Variable" context="#stay" String="\$\{[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*\}" />
-				<RegExpr attribute="Variable" context="#stay" String="\$!\{[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[[a-zA-Z0-9_]*\])*\}." />
-				<RegExpr attribute="Variable" context="#stay" String="\{\$[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\.\-]*(\[([0-9]*|&quot;[a-zA-Z_]*&quot;)|'[a-zA-Z_]*'|\])*(->[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*(\[[a-zA-Z0-9_]*\])*(\[([0-9]*|&quot;[a-zA-Z_]*&quot;)|'[a-zA-Z_]*'|\])*)*\}" />
+				<RegExpr attribute="Variable" context="#stay" String="&variable1;|&variable2;|&variable3;|&variable4;" />
 				<RegExpr attribute="Properties" context="#stay" String="[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff\-]*(\[[a-zA-Z0-9_]*\])*\.[a-zA-Z0-9_\x7f-\xff\-]*" />
 				<AnyChar attribute="Other" context="#stay" String="(),[]" />
 				<Detect2Chars attribute="Comment" context="singleline comment" char="#" char1="#" />
-				<Detect2Chars attribute="Comment" context="multilinecomment" char="#" char1="&#42;" />
+				<Detect2Chars attribute="Comment" context="multilinecomment" char="#" char1="&#42;" beginRegion="BlockComment" />
 			</context>
 			<context attribute="Comment" name="singleline comment" lineEndContext="#pop">
+				<DetectSpaces />
+				<IncludeRules context="##Comments" />
 			</context>
 			<context attribute="Comment" lineEndContext="#stay" name="multilinecomment" >
-				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="#" />
+				<DetectSpaces />
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="#" endRegion="BlockComment" />
+				<IncludeRules context="##Comments" />
 			</context>
 		</contexts>
 		<itemDatas>
@@ -44,8 +50,9 @@
 	<general>
 		<comments>
 			<comment name="singleLine" start="##" />
-			<comment name="multiLine" start="#*" end="*#" />
+			<comment name="multiLine" start="#*" end="*#" region="BlockComment" />
 		</comments>
 		<keywords casesensitive="1" weakDeliminator="+"/>
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

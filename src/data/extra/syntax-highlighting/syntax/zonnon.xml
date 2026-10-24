@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Zonnon" version="2" kateversion="2.2" section="Sources" extensions="*.znn" mimetype="text/x-zonnon">
+<!DOCTYPE language>
+<language name="Zonnon" version="4" kateversion="5.0" section="Sources" extensions="*.znn" mimetype="text/x-zonnon">
   <highlighting>
     <list name="keywords">
       <item>accept</item>
@@ -103,15 +103,15 @@
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
-	<keyword attribute="Type" context="#stay" String="types"/>
-	<keyword attribute="Modifier" context="#stay" String="modifiers"/>
-	<keyword attribute="Predefine" context="#stay" String="predefines"/>
+        <keyword attribute="Type" context="#stay" String="types"/>
+        <keyword attribute="Modifier" context="#stay" String="modifiers"/>
+        <keyword attribute="Predefine" context="#stay" String="predefines"/>
         <Float attribute="Number" context="#stay"/>
         <Int attribute="Number" context="#stay"/>
-	<HlCHex attribute="Number" context="#stay"/>
+        <HlCHex attribute="Number" context="#stay"/>
         <DetectChar attribute="String" context="String1" char="&quot;" />
         <DetectChar attribute="String" context="String2" char="'" />
-        <Detect2Chars attribute="Comment" context="Comment1" char="(" char1="*"/>
+        <Detect2Chars attribute="Comment" context="Comment1" char="(" char1="*" beginRegion="BlockComment"/>
       </context>
       <context attribute="String" lineEndContext="#pop" name="String1">
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
@@ -120,7 +120,9 @@
         <DetectChar attribute="String" context="#pop" char="'" />
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Comment1">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")"/>
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")" endRegion="BlockComment"/>
+        <IncludeRules context="##Comments" />
       </context>
 
     </contexts>
@@ -138,7 +140,8 @@
   <general>
     <keywords casesensitive="1" />
     <comments>
-      <comment name="multiLine" start="(*" end="*)" />
+      <comment name="multiLine" start="(*" end="*)" region="BlockComment" />
     </comments>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

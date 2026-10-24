@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Email" version="5" kateversion="5.0" extensions="*.eml;*.email;*.emlx;*.mbox;*.mbx" section="Other" mimetype="message/rfc822" casesensitive="0" author="Volker Krause (vkrause@kde.org)" license="MIT">
+<!DOCTYPE language>
+<language name="Email" version="7" kateversion="5.0" extensions="*.eml;*.email;*.emlx;*.mbox;*.mbx" section="Other" mimetype="message/rfc822" casesensitive="0" author="Volker Krause (vkrause@kde.org)" license="MIT">
     <highlighting>
         <list name="header-names">
             <item>Authentication-Results:</item>
@@ -53,36 +53,42 @@
             <context name="header" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#pop!body-context">
                 <WordDetect attribute="Common Header" context="header-subject" String="Subject:" column="0"/>
                 <keyword attribute="Common Header" context="header-structured-content" String="header-names" column="0"/>
-                <RegExpr attribute="Other Header" context="header-content" String="[0-9a-zA-Z-]+:\s" column="0"/>
+                <RegExpr attribute="Other Header" context="header-content" String="^[0-9a-zA-Z-]+:\s" column="0"/>
             </context>
 
             <context name="header-subject" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#pop#pop!body-context">
-                <RegExpr context="#pop" String="\S" column="0" lookAhead="true"/>
+                <RegExpr context="#pop" String="^\S" column="0" lookAhead="true"/>
                 <DetectChar attribute="String" context="string-context" char="&quot;"/>
             </context>
 
             <context name="header-structured-content" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#pop#pop!body-context">
-                <RegExpr context="#pop" String="\S" column="0" lookAhead="true"/>
+                <RegExpr context="#pop" String="^\S" column="0" lookAhead="true"/>
                 <DetectChar attribute="String" context="string-context" char="&quot;"/>
                 <DetectChar attribute="Comment" context="comment-context" char="("/>
                 <RegExpr attribute="Address" context="#stay" String="&lt;?[a-zA-Z0-9._-]+@[a-zA-Z0-9._-]+&gt;?"/>
             </context>
 
             <context name="header-content" attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#pop#pop!body-context">
-                <RegExpr context="#pop" String="\S" column="0" lookAhead="true"/>
+                <RegExpr context="#pop" String="^\S" column="0" lookAhead="true"/>
             </context>
 
             <context name="string-context" attribute="String" lineEndContext="#stay">
-                <HlCStringChar/>
+                <IncludeRules context="quoted-pair"/>
                 <DetectChar attribute="String" context="#pop" char="&quot;"/>
             </context>
 
             <context name="comment-context" attribute="Comment" lineEndContext="#stay">
+                <DetectChar attribute="Comment" context="comment-context" char="("/>
                 <DetectChar attribute="Comment" context="#pop" char=")"/>
+                <IncludeRules context="quoted-pair"/>
+            </context>
+
+            <context name="quoted-pair" attribute="Escaped Character" lineEndContext="#stay">
+                <RegExpr attribute="Escaped Character" context="#stay" String="\\[\x00-\x7F]"/>
             </context>
 
             <context name="body-context" attribute="Normal Text" lineEndContext="#stay">
-                <RegExpr attribute="Content Boundary" context="#pop!header" String="--[0-9a-zA-Z._=-]{10,}(--)?$" column="0"/>
+                <RegExpr attribute="Content Boundary" context="#pop!header" String="^--[0-9a-zA-Z._=-]{10,}(--)?$" column="0"/>
             </context>
         </contexts>
         <itemDatas>
@@ -92,6 +98,7 @@
             <itemData name="String" defStyleNum="dsString" spellChecking="false"/>
             <itemData name="Address" defStyleNum="dsVariable" spellChecking="false"/>
             <itemData name="Comment" defStyleNum="dsComment" spellChecking="false"/>
+            <itemData name="Escaped Character" defStyleNum="dsSpecialChar" spellChecking="false"/>
             <itemData name="Content Boundary" defStyleNum="dsRegionMarker" spellChecking="false"/>
         </itemDatas>
     </highlighting>

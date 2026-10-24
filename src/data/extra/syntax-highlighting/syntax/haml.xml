@@ -1,500 +1,1424 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Haml" version="7" kateversion="5.0" section="Markup"
+<!--
+  https://haml.info/docs/yardoc/file.REFERENCE.html
+
+Ruby code inserted with `=`, `-` and others differs slightly from Ruby syntax:
+- In Ruby, '\' at the end of a line is used for a line continuation,
+  Haml uses the regex '( \||,)\s*$'.
+- Blocks are automatically closed according to indentation.
+  This means that `do ... end` in Ruby need not contain `end` in Haml.
+
+As a result of these differences, the ruby.xml file is not used,
+but copied and modified accordingly.
+-->
+<!DOCTYPE language [
+  <!ENTITY tagc "[-a-zA-Z0-9_:]">
+  <!ENTITY tagid "#(&tagc;+|(?![{@$])|$)">
+  <!ENTITY entityname "(#[0-9]+|#[xX][0-9A-Fa-f]+|[A-Za-z_:][\w.:_-]*)">
+
+  <!--
+    Ruby syntax
+  -->
+
+  <!ENTITY dec "[0-9](_?[0-9]++)*+">
+  <!ENTITY percent_lit "[QqxwWiIsr]?[^\s[:alnum:]]">
+
+  <!ENTITY ident "[_[:alpha:]]\w*+">
+  <!-- NOTE Haml: without "(?!^__END__$)" -->
+  <!ENTITY global_constant "(\b_+\d[_\d]*\b|\b(_[_\d]*)?[[:upper:]][_\d[:upper:]]*\b)">
+  <!ENTITY constant "\b[[:upper:]][_\d[:upper:]]*[[:lower:]]\w*">
+  <!ENTITY no_param "abort|alias|and|at_exit|attr_accessor|attr_reader|attr_writer|begin|binding|break|callcc|caller|case|catch|class|def|do|else|elsif|end|ensure|eval|exec|extend|fail|false|__FILE__|for|fork|format|getc|gets|global_variables|if|in|include|lambda|__LINE__|load|local_variables|loop|method_missing|module|next|nil|not|open|or|p|prepend|print|printf|private|private_class_method|proc|protected|public|public_class_method|putc|puts|raise|rand|readline|readlines|redo|refine|require|require_relative|rescue|retry|return|scan|select|self|set_trace_func|sleep|split|sprintf|srand|super|syscall|system|test|then|throw|trace_var|trap|true|undef|unless|until|untrace_var|using|warn|when|while|yield|autoload|chomp|chop|exit|gsub|sub">
+  <!-- ignore keyword, constant, class name and symbol (e.g. sym:).
+      Constants can be preceded by ? or !, but this doesn't work with <keyword>
+  -->
+  <!ENTITY is_constant "((_[_\d]*)?[[:upper:]]\w*+|_+\d[_\d]*+\b)([^?!]|$)">
+  <!ENTITY ident_not_kw "\b((?!(abort|alias|and|at_exit|attr_accessor|attr_reader|attr_writer|begin|binding|break|callcc|caller|case|catch|class|def|do|else|elsif|end|ensure|eval|exec|extend|fail|false|for|fork|format|getc|gets|global_variables|if|in|include|lambda|load|local_variables|loop|method_missing|module|next|nil|not|open|or|p|prepend|print|printf|private|private_class_method|proc|protected|public|public_class_method|putc|puts|raise|rand|readline|readlines|redo|refine|require|require_relative|rescue|retry|return|scan|select|self|set_trace_func|sleep|split|sprintf|srand|super|syscall|system|test|then|throw|trace_var|trap|true|undef|unless|until|untrace_var|using|warn|when|while|yield)([^?!\w]|$)|\bautoload([^!\w]|$)|(block_given\?|defined\?|iterator\?)|(chomp|chop|exit|gsub|sub)([^?\w]|$)|&is_constant;)|(?&lt;=[!?])(?=[[:lower:]]))&ident;(?!:)[?!]?">
+  <!ENTITY msg "\b(?!&is_constant;)&ident;[?!]?">
+
+  <!ENTITY special_escape "[0-7]{1,3}|x[0-9a-fA-F]{1,2}|u\{[0-9a-fA-F]{0,6}\}|u[0-9a-fA-F]{4}|(c(\\M-)?|C-|M-(\\c|\\C-)?)(\\([^0-7xucCM]|[0-7]{1,3}|x[0-9a-fA-F]{1,2}|$)|[ -BD-LN-\[\]-bd-tv-~])">
+  <!ENTITY escape "\\([^0-7xucCM]|&special_escape;|$)">
+  <!ENTITY partial_escape "[ux][0-9a-fA-F]*|u(\{[0-9a-fA-F]{0,6})?|(c(\\M-)?|C-|M-(\\c|\\C-)?)(\\[xucCM]?)?|c(\\M?)?|C|M(-(\\c?|\\(C-?)?)?)?">
+
+  <!-- https://docs.ruby-lang.org/en/master/globals_rdoc.html -->
+  <!-- $= $, $; are deprecated -->
+  <!ENTITY global_var "\$([!@~&amp;`'+/\\&lt;>._*$?:&quot;=,;]|[0-9]+|-\w|[[:alpha:]]\w+)">
+
+  <!-- NOTE Haml: " |[\t ]*$" is not an operator -->
+  <!-- without ? : % / < = -->
+  <!ENTITY safe_op "(?:[-+*~^&amp;]+|===?|&lt;(=>?|(?!&lt;))|[!>]=?|\.\.\.?|(?&lt;! )[|]|[|](?![\t ]*$))">
+  <!ENTITY op1 "&safe_op;++|([?:/&#37;]|&lt;&lt;)&safe_op;*+">
+  <!-- /= %= <<= -->
+  <!-- / spaces -->
+  <!-- % which is not gld -->
+  <!-- << which is not heredoc -->
+  <!-- nospace / -->
+  <!-- nospace % -->
+  <!-- nospace << -->
+  <!ENTITY op2 "&safe_op;++|[?:](?=\s|$)|([/&#37;]|&lt;&lt;)(?=[\s=]|$)|&#37;(?!&percent_lit;)|&lt;&lt;(?=\s|$|[^-~\w'&quot;`]|[-~][^\w'&quot;`])|(?&lt;!\s)([/&#37;]|&lt;&lt;)&safe_op;*+">
+
+  <!ENTITY sym_op "\[\]=?|[-+~]@?|![=~@]?|[/&#37;|^&amp;]|&lt;(=>?)?|>=?|=~|===?|\*\*?">
+  <!ENTITY symbol "&ident;[=?!]?:(?!:)|\[\]=?:">
+]>
+<language name="Haml" version="16" kateversion="5.79" section="Markup"
           extensions="*.haml"
-          author="Cies Breijs (cies_at_kde_nl)" license="LGPL"
+          author="Cies Breijs (cies_at_kde_nl), Jonathan Poelen (jonathan.poelen@gmail.com)" license="LGPL"
           mimetype="text/x-haml">
 <!--      mimetype="text/x-haml"     this might be a problem as is doesn't exist -->
 
-<!-- learned and copied a lot from rhtml.xml -->
-<!-- ripped out some functionality from rhtml, like GDL, maybe put this back in some day... -->
-<!-- rhtml is rails specific, i ripped the rails helper keywords out as i'm a _merb_ guy... -->
-
-<!-- 1.1: fixed many many many buggers, clearly shows how arbitrary the title '1.0' was -->
-
-<!-- TODO: multi-line-based-on-indenting (comments, filters) don't work, mark more errors with error_hl_test.haml(?) (currently only unpaired spaces on indentation), give ruby code a little background, pipe character as a multiline splitter can use a little color (can it be escaped? "\|"), use hamls unittests for inspiration for better *_test.haml files -->
-
   <highlighting>
 
-    <list name="keywords">
-      <item>BEGIN</item>
-      <item>END</item>
+    <list name="ruby-keyword1">
       <item>and</item>
       <item>begin</item>
-      <item>break</item>
-      <item>case</item>
-      <item>defined?</item>
       <item>do</item>
       <item>else</item>
       <item>elsif</item>
-      <item>end</item>
       <item>ensure</item>
       <item>for</item>
       <item>if</item>
-      <item>in</item>
-      <item>include</item>
-      <item>next</item>
       <item>not</item>
       <item>or</item>
-      <item>redo</item>
       <item>rescue</item>
-      <item>retry</item>
-      <item>return</item>
       <item>then</item>
       <item>unless</item>
       <item>until</item>
       <item>when</item>
       <item>while</item>
+    </list>
+
+    <list name="ruby-keyword2">
+      <item>break</item>
+      <item>case</item>
+      <item>defined?</item>
+      <item>end</item>
+      <item>in</item>
+      <item>module</item>
+      <item>next</item>
+      <item>redo</item>
+      <item>retry</item>
+      <item>return</item>
       <item>yield</item>
     </list>
 
+    <list name="keyword">
+      <include>ruby-keyword1</include>
+      <include>ruby-keyword2</include>
+      <item>class</item>
+      <item>def</item>
+    </list>
+
     <list name="access-control">
-      <item>private_class_method</item>
-      <item>private</item>
-      <item>protected</item>
-      <item>public_class_method</item>
-      <item>public</item>
+      <include>access-control##Ruby</include>
     </list>
 
     <list name="attribute-definitions">
-      <item>attr_reader</item>
-      <item>attr_writer</item>
-      <item>attr_accessor</item>
+      <include>attribute-definitions##Ruby</include>
     </list>
 
     <list name="definitions">
-      <item>alias</item>
-      <item>module</item>
-      <item>class</item>
-      <item>def</item>
-      <item>undef</item>
+      <include>definitions##Ruby</include>
     </list>
 
     <list name="pseudo-variables">
-      <item>self</item>
-      <item>super</item>
-      <item>nil</item>
-      <item>false</item>
-      <item>true</item>
-      <item>caller</item>
-      <item>__FILE__</item>
-      <item>__LINE__</item>
+      <include>pseudo-variables##Ruby</include>
     </list>
 
-    <list name="default-globals">
-      <item>$stdout</item>
-      <item>$defout</item>
-      <item>$stderr</item>
-      <item>$deferr</item>
-      <item>$stdin</item>
-    </list>
-
-    <!-- Kernel module methods.
-      NOTE: Methods ending in ? or !
-        are included below as regexes.
-    -->
     <list name="kernel-methods">
-      <!-- backquote ` -->
-      <item>abort</item>
-      <item>at_exit</item>
-      <item>autoload</item>
-      <item>autoload?</item>
-      <item>binding</item>
-      <item>block_given?</item>
-      <item>callcc</item>
-      <item>caller</item>
-      <item>catch</item>
-      <item>chomp</item>
-      <item>chomp!</item>
-      <item>chop</item>
-      <item>chop!</item>
-      <item>eval</item>
-      <item>exec</item>
-      <item>exit</item>
-      <item>exit!</item>
-      <item>fail</item>
-      <item>fork</item>
-      <item>format</item>
-      <item>getc</item>
-      <item>gets</item>
-      <item>global_variables</item>
-      <item>gsub</item>
-      <item>gsub!</item>
-      <item>iterator?</item>
-      <item>lambda</item>
-      <item>load</item>
-      <item>local_variables</item>
-      <item>loop</item>
-      <item>method_missing</item>
-      <item>open</item>
-      <item>p</item>
-      <item>print</item>
-      <item>printf</item>
-      <item>proc</item>
-      <item>putc</item>
-      <item>puts</item>
-      <item>raise</item>
-      <item>rand</item>
-      <item>readline</item>
-      <item>readlines</item>
-      <item>require</item>
-      <item>scan</item>
-      <item>select</item>
-      <item>set_trace_func</item>
-      <item>sleep</item>
-      <item>split</item>
-      <item>sprintf</item>
-      <item>srand</item>
-      <item>sub</item>
-      <item>sub!</item>
-      <item>syscall</item>
-      <item>system</item>
-      <item>test</item>
-      <item>throw</item>
-      <item>trace_var</item>
-      <item>trap</item>
-      <item>untrace_var</item>
-      <item>warn</item>
+      <include>kernel-methods##Ruby</include>
     </list>
 
-    <list name="attention">
-      <item>TODO</item>
-      <item>FIXME</item>
-      <item>NOTE</item>
+    <list name="mixin-methods">
+      <include>mixin-methods##Ruby</include>
     </list>
 
     <contexts>
-      <context attribute="Normal Text" lineEndContext="#stay" name="normal" >
-        <RegExpr attribute="Error" firstNonSpace="false" context="#stay" String="^[ ]{1}([ ]{2})*[^ ]+" />
-        <RegExpr attribute="Doctype" context="#stay" String="^!!!.*$"/>
-
-<!--         2 failed attempts to implement multiline comments -->
-
-<!--        <RegExpr attribute="Comment" String="/.*$" context="#stay" beginRegion="comment0" column="0"/>
-        <RegExpr attribute="Comment" String="[^ /]" context="#stay" endRegion="comment0" column="0"/>
-
-        <RegExpr attribute="Comment" String="^[ ]{2}/.*$" context="#stay" beginRegion="comment2" column="0"/>
-        <RegExpr attribute="Comment" String="^[^ ]{4}" context="#stay" endRegion="comment2" column="0"/>-->
-
-<!--        <RegExpr attribute="Comment" context="comment0" String="^/.*" />
-        <RegExpr attribute="Comment" context="comment2" String="^[ ]{2}/.*" />
-        <RegExpr attribute="Comment" context="comment4" String="^[ ]{4}/.*" />-->
+      <context attribute="Normal Text" name="normal" fallthroughContext="Text">
+        <RegExpr attribute="Comment" context="mlComment2" column="0" String="^(\s)(\s*)(?:-#.*|/\s*$)"/>
+        <!-- match filters for special syntax highlighting before detecting spaces so we know how far we need to indent -->
+        <RegExpr context="SelectFilter" column="0" String="^\s*:" lookAhead="1"/>
 
         <DetectSpaces/>
-        <DetectChar attribute="Escaped Text" context="escaped" char="\" />
-        <DetectChar attribute="Comment" context="comment" char="/" />
 
-        <Detect2Chars attribute="Keyword" context="unquoted" char="=" char1="=" />
-        <DetectChar attribute="Keyword" context="rubysourceline" char="=" />
-        <DetectChar attribute="Keyword" context="rubysourceline" char="-" />
-        <DetectChar attribute="Keyword" context="rubysourceline" char="~" />
-        <Detect2Chars attribute="Keyword" context="rubysourceline" char="!" char1="=" />
-        <Detect2Chars attribute="Keyword" context="rubysourceline" char="&amp;" char1="=" />
+        <RegExpr attribute="Tag" context="Elem" String="%&tagc;*"/>
+        <RegExpr attribute="Div Id" context="Elem" String="&tagid;"/>
+        <RegExpr attribute="Div Class" context="Elem" String="\.&tagc;*"/>
 
-        <DetectChar attribute="Operator" context="array" char="[" beginRegion="Array" />
-        <DetectChar attribute="Operator" context="hash" char="{" beginRegion="Hash" />
+        <StringDetect attribute="Keyword" context="Text" String="=="/>
+        <AnyChar attribute="Keyword" context="RubySourceLine" String="=~"/>
+        <StringDetect attribute="Keyword" context="Text" String="!=="/>
+        <StringDetect attribute="Keyword" context="RubySourceLine" String="!="/>
+        <StringDetect attribute="Keyword" context="Text" String="!~="/>
+        <StringDetect attribute="Keyword" context="RubySourceLine" String="!~"/>
+        <StringDetect attribute="Keyword" context="Text" String="&amp;=="/>
+        <StringDetect attribute="Keyword" context="RubySourceLine" String="&amp;="/>
+        <StringDetect attribute="Keyword" context="Text" String="&amp;~="/>
+        <StringDetect attribute="Keyword" context="RubySourceLine" String="&amp;~"/>
+        <StringDetect attribute="Keyword" context="Text" String="! "/>
+        <StringDetect attribute="Keyword" context="Text" String="&amp; "/>
 
-        <RegExpr attribute="Filter" firstNonSpace="true" context="#stay" String=":[a-zA-Z0-9_\-]*" />
-        <RegExpr attribute="Tag" firstNonSpace="true" context="#stay" String="%[a-zA-Z_][a-zA-Z0-9_\-]*" />
-        <RegExpr attribute="Div Id" firstNonSpace="true" context="#stay" String="#[a-zA-Z_][a-zA-Z0-9_\-]*" />
-        <RegExpr attribute="Div Class" firstNonSpace="true" context="#stay" String="\.[a-zA-Z_][a-zA-Z0-9_\-]*" />
-        <RegExpr attribute="Element Id" context="#stay" String="#[a-zA-Z_][a-zA-Z0-9_\-]*" />
-        <RegExpr attribute="Element Class" context="#stay" String="\.[a-zA-Z_][a-zA-Z0-9_\-]*" />
-        <RegExpr attribute="Entity" context="#stay" String="&amp;[a-zA-Z]+;" />
+        <RegExpr attribute="Comment" context="mlComment1" column="0" String="^-#.*|^/\s*$"/>
+        <DetectChar attribute="Keyword" context="RubySourceLine" char="-"/>
+        <DetectChar attribute="Comment" context="comment" char="/"/>
+        <DetectChar attribute="Escaped Text" context="EscapedAny" char="\"/>
+
+        <StringDetect attribute="Doctype" context="Doctype" String="!!!" column="0"/>
       </context>
 
-      <context attribute="Operator" lineEndContext="#stay" name="array">
-        <DetectSpaces/>
-        <DetectChar attribute="Operator" context="#pop" char="]" endRegion="Array" />
-        <IncludeRules context="rubysourceline" />
+      <context attribute="Normal Text" name="EscapedAny" lineEndContext="#pop">
+        <RegExpr attribute="Escaped Text" context="#pop!Text" String="."/>
       </context>
 
-      <context attribute="Hash" lineEndContext="#stay" name="hash">
-        <DetectSpaces/>
-        <DetectChar attribute="Operator" context="#pop" char="}" endRegion="Hash" />
-        <IncludeRules context="rubysourceline" />
+      <context attribute="Normal Text" name="SelectFilter">
+        <RegExpr attribute="Filter" column="0" context="filterRuby" String="^(\s*):ruby\b"/>
+        <RegExpr attribute="Filter" column="0" context="filterCSS" String="^(\s*):css\b"/>
+        <RegExpr attribute="Filter" column="0" context="filterCoffeeScript" String="^(\s*):coffee(?:script)?\b"/>
+        <RegExpr attribute="Filter" column="0" context="filterERB" String="^(\s*):erb\b"/>
+        <RegExpr attribute="Filter" column="0" context="filterPlain" String="^(\s*):[a-zA-Z0-9_\-]*\b"/>
+        <DetectSpaces context="#pop#pop!normal"/>
       </context>
 
-      <context attribute="Unquoted String" lineEndContext="#pop" name="unquoted">
-        <IncludeRules context="Quoted String" />
+      <context attribute="Normal Text" lineEndContext="#pop" name="Elem" fallthroughContext="Attr">
+        <RegExpr attribute="Element Id" String="&tagid;"/>
+        <RegExpr attribute="Element Class" String="\.&tagc;*"/>
       </context>
 
-<!--      <context attribute="Comment" lineEndContext="#pop" name="comment0">
-        <DetectSpaces/>
-        <IncludeRules context="##Alerts" />
+      <context attribute="Normal Text" lineEndContext="#pop#pop" name="Attr" fallthroughContext="ElemOpt">
+        <DetectChar attribute="Operator" context="hash" char="{" beginRegion="Hash"/>
+        <DetectChar attribute="Operator" context="parenthesis" char="(" beginRegion="Parenthesis"/>
+        <DetectChar attribute="Operator" context="array" char="[" beginRegion="Array"/>
+        <StringDetect attribute="Keyword" context="ElemOpt" String="&lt;>"/>
+        <StringDetect attribute="Keyword" context="ElemOpt" String=">&lt;"/>
+        <AnyChar attribute="Keyword" context="ElemOpt" String=">&lt;"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop#pop#pop" name="ElemOpt" fallthroughContext="#pop#pop#pop!Text">
+        <DetectChar attribute="Keyword" context="Empty" char="/"/>
+        <AnyChar context="#pop#pop#pop" String="=~!&amp;" lookAhead="1"/>
+      </context>
+
+      <context attribute="Error" lineEndContext="#pop#pop#pop#pop" name="Empty">
+        <DetectSpaces attribute="Normal Text"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="Text">
+        <RegExpr attribute="Normal Text" String="([^&amp;#\\|]++|#(?![{@$])|\\\\?#(?![{@$])|&amp;(?!&entityname;;)|(?&lt;! )\||\|(?!\s*$))++"/>
+        <StringDetect attribute="Ruby Substitution" String="#{" context="RubySourceLineSubst"/>
+        <StringDetect lookAhead="1" String="#" context="MaybeShortSubst"/>
+        <StringDetect attribute="Escaped Text" String="\\"/>
+        <StringDetect attribute="Escaped Text" String="\#{"/>
+        <StringDetect attribute="Escaped Text" String="\#@"/>
+        <StringDetect attribute="Escaped Text" String="\#$"/>
+        <StringDetect attribute="Escaped Text" String="|" context="MultiLineText"/>
+        <RegExpr attribute="Entity" String="&amp;&entityname;;"/>
+      </context>
+
+      <context attribute="Normal Text" name="MaybeShortSubst">
+        <RegExpr attribute="Ruby Substitution" String="#@[[:upper:]]\w*|#\$([0-9]+|[[:alpha:]]\w*)" context="#pop"/>
+        <StringDetect attribute="Error" String="#@" context="#pop"/>
+        <StringDetect attribute="Error" String="#$" context="#pop"/>
+        <StringDetect attribute="Normal Text" String="#" context="#pop"/>
+      </context>
+
+      <context attribute="Normal Text" name="MultiLineText" lineEndContext="CheckMultiLineText">
+      </context>
+      <!-- Check that the line ends with '|'. Otherwise, this is a new Haml "instruction" -->
+      <context attribute="Normal Text" name="CheckMultiLineText" fallthroughContext="#pop#pop#pop">
+        <RegExpr String="^.* \|[\t ]*$" context="#pop#pop" column="0" lookAhead="1"/>
+        <RegExpr String="^\s+$" column="0" attribute="Normal Text"/>
+      </context>
+
+      <context attribute="Normal Text" name="MultiLineText2" lineEndContext="CheckMultiLineText2">
+      </context>
+      <!-- Check that the line ends with '|'. Otherwise, this is a new Haml "instruction" -->
+      <context attribute="Normal Text" name="CheckMultiLineText2" fallthroughContext="#pop#pop#pop#pop">
+        <IncludeRules context="CheckMultiLineText"/>
+      </context>
+
+      <context attribute="Normal Text" name="MultiLineText3" lineEndContext="CheckMultiLineText3">
+      </context>
+      <!-- Check that the line ends with '|'. Otherwise, this is a new Haml "instruction" -->
+      <context attribute="Normal Text" name="CheckMultiLineText3" fallthroughContext="#pop#pop#pop#pop#pop">
+        <IncludeRules context="CheckMultiLineText"/>
+      </context>
+
+      <context attribute="Comment" name="mlComment1" fallthroughContext="#pop">
+        <DetectSpaces attribute="Comment" context="CommentLine"/>
+      </context>
+      <context attribute="Comment" name="mlComment2" fallthroughContext="#pop">
+        <StringDetect attribute="Comment" column="0" context="CommentLine" dynamic="1" String="%1%2%1"/>
+      </context>
+      <context attribute="Comment" name="CommentLine" lineEndContext="#pop">
+      </context>
+
+      <context attribute="Normal Text" name="filterRuby" fallthroughContext="#pop#pop">
+        <!-- detect base indentation + 1 whitespace for code -->
+        <StringDetect attribute="Normal Text" context="RubySourceLine" String="%1 " dynamic="true"/>
+      </context>
+
+      <context attribute="Normal Text" name="filterCoffeeScript" fallthroughContext="#pop#pop">
+        <!-- detect base indentation + 1 whitespace for code -->
+        <StringDetect attribute="Normal Text" context="coffeesourceline" String="%1 " dynamic="true"/>
+      </context>
+
+      <context attribute="Normal Text" name="filterCSS" fallthroughContext="#pop#pop">
+        <!-- detect base indentation + 1 whitespace for code -->
+        <StringDetect attribute="Normal Text" context="csssourceline" String="%1 " dynamic="true"/>
+      </context>
+
+      <context attribute="Normal Text" name="filterERB" fallthroughContext="#pop#pop">
+        <!-- detect base indentation + 1 whitespace for code -->
+        <StringDetect attribute="Normal Text" context="erbsourceline" String="%1 " dynamic="true"/>
+      </context>
+
+      <context attribute="Normal Text" name="filterPlain" fallthroughContext="#pop#pop">
+        <!-- detect base indentation + 1 whitespace for code -->
+        <StringDetect attribute="Normal Text" context="plainsourceline" String="%1 " dynamic="true"/>
+      </context>
+
+      <context attribute="Ruby Normal Text" name="array" fallthroughContext="RubySourceLineExpr">
+        <DetectChar attribute="Operator" context="#pop" char="]" endRegion="Array"/>
+        <!-- leads to a syntax error in Haml -->
+        <DetectChar attribute="Error" char="#" context="#pop!LineError"/>
+        <IncludeRules context="RubySourceLine"/>
+      </context>
+
+      <context attribute="Ruby Normal Text" name="hash" fallthroughContext="#pop!hash2">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+      </context>
+      <context attribute="Ruby Normal Text" name="hash2" lineEndContext="hash3" fallthroughContext="RubySourceLineExpr">
+        <DetectChar attribute="Operator" context="#pop" char="}" endRegion="Hash"/>
+        <IncludeRules context="RubySourceLineSubstInner"/>
+      </context>
+      <context attribute="Ruby Normal Text" name="hash3" fallthroughContext="#pop#pop#pop#pop">
+        <DetectChar attribute="Operator" context="#pop#pop" char="}" endRegion="Hash"/>
+        <RegExpr attribute="Ruby Normal Text" String="^\s+(?=}|$)" column="0"/>
+      </context>
+
+      <context attribute="Ruby Normal Text" name="parenthesis" lineEndContext="AttrError">
+        <DetectSpaces attribute="Normal Text"/>
+        <WordDetect attribute="Special Attribute" String="class"/>
+        <WordDetect attribute="Special Attribute" String="id"/>
+        <DetectIdentifier attribute="Normal Text"/>
+        <DetectChar attribute="Ruby Operator" char="=" context="parenthesisValue"/>
+        <DetectChar attribute="Operator" context="#pop" char=")" endRegion="Parenthesis"/>
+        <DetectChar char='"' attribute="Error" context="DQuote"/>
+        <DetectChar char="'" attribute="Error" context="SQuote"/>
+      </context>
+      <context attribute="Ruby Normal Text" name="parenthesisValue" lineEndContext="#pop!AttrError" fallthroughContext="#pop">
+        <DetectChar char='"' attribute="String" context="#pop!DQuote"/>
+        <DetectChar char="'" attribute="String" context="#pop!SQuote"/>
+        <DetectChar attribute="Operator" context="#pop#pop" char=")" endRegion="Parenthesis"/>
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Ruby Pseudo variable" String="pseudo-variables" context="#pop"/>
+        <DetectIdentifier attribute="Ruby Normal Text" context="#pop"/>
+        <RegExpr attribute="Ruby Number" String="\b(0[xX][0-9a-fA-F](_?[0-9a-fA-F]++)*+|0[bB][01](_?[01]++)*+|0[oO]?[0-7](_?[0-7]++)*+|((0[dD][0-9]|[1-9])(_?[0-9]++)*+|0)([eE]&dec;)?)" context="#pop"/>
+      </context>
+
+      <context name="AttrError" attribute="Error" fallthroughContext="#pop#pop">
+        <DetectSpaces attribute="Error" context="#pop#pop"/>
+      </context>
+
+      <context name="DQuote" attribute="String">
+        <DetectChar char='"' attribute="String" context="#pop"/>
+        <IncludeRules context="CommonString"/>
+      </context>
+
+      <context name="SQuote" attribute="String">
+        <DetectChar char="'" attribute="String" context="#pop"/>
+        <IncludeRules context="CommonString"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="CommonString">
         <DetectIdentifier/>
-<!- - was commented out         <RegExpr attribute="Comment" context="#pop" String="^[^/ ]" endRegion="comment" />  attempt for multiline comments  - ->
-      </context>
--->
-<!--      <context attribute="Comment" lineEndContext="#pop" name="comment2">
         <DetectSpaces/>
-        <IncludeRules context="##Alerts" />
-        <DetectIdentifier/>
-        <RegExpr attribute="Comment" context="#pop" String="^[ ]{2}[^ /]" endRegion="comment" />
-      </context>-->
+        <StringDetect attribute="Ruby Substitution" String="#{" context="RubySourceLineSubst"/>
+        <RegExpr attribute="Escaped Text" String="\\.?"/>
+      </context>
 
 
       <context attribute="Comment" lineEndContext="#pop" name="comment">
         <DetectSpaces/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments"/>
         <DetectIdentifier/>
-        <StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
+        <StringDetect attribute="Error" String="--"/>
       </context>
 
-      <context attribute="Escaped Text" lineEndContext="#pop" name="escaped">
+      <context name="csssourceline" attribute="Other code embedded in haml" lineEndContext="#pop">
+        <IncludeRules context="##CSS"/>
       </context>
 
-      <context name="rubysourceline" attribute="Ruby embedded in haml" lineEndContext="#pop">
-        <IncludeRules context="rubysource" />
+      <context name="coffeesourceline" attribute="Other code embedded in haml" lineEndContext="#pop">
+        <IncludeRules context="##CoffeeScript"/>
       </context>
 
-      <context name="rubysource" attribute="Ruby embedded in haml"  lineEndContext="#stay">
-        <!-- ruby ignores newline after \ -->
-        <LineContinue attribute="Ruby Normal Text" context="Line Continue"/>
+      <context name="erbsourceline" attribute="Other code embedded in haml" lineEndContext="#pop">
+        <IncludeRules context="##Ruby/Rails/RHTML"/>
+      </context>
 
-        <!-- "def" - "end" blocks -->
-        <!-- check for statement modifiers with regexes -->
-        <RegExpr attribute="Keyword" String="(\=|\(|\[|\{)\s*(if|unless|while|until)\b" context="#stay" beginRegion="def block"/>
-        <RegExpr attribute="Keyword" String="(while|until)\b(?!.*\bdo\b)" context="#stay" beginRegion="def block" firstNonSpace="true"/>
-        <RegExpr attribute="Keyword" String="\;\s*(while|until)\b(?!.*\bdo\b)" context="#stay" beginRegion="def block"/>
-        <RegExpr attribute="Keyword" String="(if|unless)\b" context="#stay" beginRegion="def block" firstNonSpace="true"/>
-        <RegExpr attribute="Keyword" String="\;\s*(if|unless)\b" context="#stay" beginRegion="def block"/>
-        <WordDetect attribute="Keyword" String="class" context="#stay" beginRegion="def block"/>
-        <WordDetect attribute="Keyword" String="module" context="#stay" beginRegion="def block"/>
-        <WordDetect attribute="Keyword" String="begin" context="#stay" beginRegion="def block"/>
-        <RegExpr attribute="Keyword" String="\bfor\b(?!.*\bdo\b)" context="#stay" beginRegion="def block"/>
-        <WordDetect attribute="Keyword" String="case" context="#stay" beginRegion="def block"/>
-        <WordDetect attribute="Keyword" String="do" context="#stay" beginRegion="def block"/>
-        <WordDetect attribute="Keyword" String="def" context="#stay" beginRegion="def block"/>
-        <WordDetect attribute="Keyword" String="end" context="#stay" endRegion="def block"/>
-        <!-- elsif/else close the current block and start a new one -->
-        <RegExpr attribute="Keyword" String="(\b|^\s*)(else|elsif|rescue|ensure)(\s+|$)" context="#stay" endRegion="def block" beginRegion="def block"/>
+      <context name="plainsourceline" attribute="Other code embedded in haml" lineEndContext="#pop"/>
 
-        <StringDetect attribute="Operator" String="..." context="#stay"/>
-        <Detect2Chars attribute="Operator" char="." char1="." context="#stay"/>
+      <context name="Doctype" attribute="Doctype" lineEndContext="#pop"/>
 
-        <!-- marks a message (being sent, not defined) -->
-        <RegExpr attribute="Message" String="\.[_a-z][_a-zA-Z0-9]*(\?|\!|\b)" context="#stay"/>
+      <context name="LineError" attribute="Error" lineEndContext="#pop"/>
 
-        <!-- Check for "ASCII code operator". e.g.: ?a -->
-        <RegExpr attribute="Dec" String="\s\?(\\M\-)?(\\C\-)?\\?\S" context="#stay"/>
+      <context name="RubySourceMultiLine" attribute="Ruby Normal Text">
+        <DetectChar char="," context="IgnoreEmptyLine" attribute="Ruby Normal Text"/>
+        <DetectChar char="|" context="#pop!MultiLineText" attribute="Escaped Text"/>
+      </context>
 
-        <keyword attribute="Keyword" String="keywords" context="#stay"/>
-        <keyword attribute="Attribute Definition" String="attribute-definitions"  context="#stay"/>
-        <keyword attribute="Access Control" String="access-control" context="#stay"/>
-        <keyword attribute="Definition" String="definitions"  context="#stay" />
-        <keyword attribute="Pseudo variable" String="pseudo-variables"  context="#stay"/>
-        <keyword attribute="Default globals" String="default-globals" context="#stay"/>
-        <keyword attribute="Kernel methods" String="kernel-methods" context="#stay"/>
+      <context name="RubySourceMultiLine2" attribute="Ruby Normal Text">
+        <DetectChar char="," context="IgnoreEmptyLine" attribute="Ruby Normal Text"/>
+        <DetectChar char="|" context="#pop!MultiLineText2" attribute="Escaped Text"/>
+      </context>
 
-        <!-- (global) vars starting with $
-          Match them before $_.
-          -->
-        <RegExpr attribute="Global Variable" String="\$[a-zA-Z_0-9]+" context="#stay"/>
-        <RegExpr attribute="Global Variable" String="\$\-[a-zA-Z_]\b" context="#stay"/>
-        <!-- special-character globals -->
-        <RegExpr attribute="Default globals" String="\$[\d_*`\!:?'/\\\-\&amp;]" context="#stay"/>
-        <RegExpr attribute="Global Constant" String="\b[_A-Z]+[A-Z_0-9]+\b" context="#stay"/>
+      <context name="RubySourceMultiLine3" attribute="Ruby Normal Text">
+        <DetectChar char="," context="IgnoreEmptyLine" attribute="Ruby Normal Text"/>
+        <DetectChar char="|" context="#pop!MultiLineText3" attribute="Escaped Text"/>
+      </context>
+
+      <context name="IgnoreEmptyLine" attribute="Ruby Normal Text" fallthroughContext="#pop#pop">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+      </context>
+
+      <context name="RubySourceLineContinue" attribute="Ruby Normal Text">
+        <RegExpr String="(,|(?&lt;= )\|)[\t ]*$" context="RubySourceMultiLine" lookAhead="1"/>
+      </context>
+
+      <context name="RubySourceLineContinue2" attribute="Ruby Normal Text">
+        <RegExpr String="(,|(?&lt;= )\|)[\t ]*$" context="RubySourceMultiLine2" lookAhead="1"/>
+      </context>
+
+      <context name="RubySourceLineContinue3" attribute="Ruby Normal Text">
+        <RegExpr String="(,|(?&lt;= )\|)[\t ]*$" context="RubySourceMultiLine3" lookAhead="1"/>
+      </context>
+
+
+      <!--
+        Ruby syntax
+      -->
+
+      <context name="RubySourceLine" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="RubySourceLineExpr">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+
+        <AnyChar attribute="Ruby Normal Text" String=";("/>
+        <DetectChar attribute="Ruby Normal Text" char=")" context="RubySourceLineOp1ThenExpr"/>
+
+        <DetectChar attribute="Ruby Delimiter" char="]" context="RubySourceLineOp1ThenExpr"/>
+
+        <DetectChar attribute="Ruby Operator" char="{" beginRegion="brace"/>
+        <DetectChar attribute="Ruby Operator" char="}" context="RubySourceLineOp1ThenExpr" endRegion="brace"/>
+
+        <DetectChar attribute="Ruby Comment" char="#" context="RubySourceLineGeneral Comment"/>
+
+        <RegExpr attribute="Ruby Normal Text" String="&ident_not_kw;" context="RubySourceLineMsgParamOrOp2"/>
+
+        <!-- Detects key symbol in a hash
+              Unfortunately in the absence of a space before ':',
+              the syntax is ambiguous with a function call containing a symbol.
+
+              hash:    {sym:foo}
+              function: foo:sym  <- 'foo:' is considered as a symbol
+        -->
+        <RegExpr attribute="Ruby Symbol" String="&symbol;" context="RubySourceLineMsgParamOrOp2"/>
+
+        <DetectChar attribute="Ruby Delimiter" char="[" context="RubySourceLineMsgParamOrOp2"/>
+
+        <keyword attribute="Ruby Keyword" String="ruby-keyword1"/>
+        <keyword attribute="Ruby Keyword" String="ruby-keyword2" context="RubySourceLineMsgParamOrOp2"/>
+
+        <keyword attribute="Ruby Attribute Definition" String="attribute-definitions"  context="RubySourceLineOp2ThenExpr"/>
+        <keyword attribute="Ruby Access Control" String="access-control" context="RubySourceLineOp2ThenExpr"/>
+        <keyword attribute="Ruby Definition" String="definitions" context="RubySourceLineExpr"/>
+        <keyword attribute="Ruby Pseudo variable" String="pseudo-variables" context="RubySourceLineOp1ThenExpr"/>
+        <keyword attribute="Ruby Kernel methods" String="kernel-methods" context="RubySourceLineOp2ThenExpr"/>
+        <keyword attribute="Ruby Module mixin methods" String="mixin-methods" context="RubySourceLineOp2ThenExpr"/>
+
+        <WordDetect attribute="Ruby Keyword" String="class" context="RubySourceLineOp1ThenExpr"/>
+        <WordDetect attribute="Ruby Keyword" String="def" context="RubySourceLineDefFn"/>
+        <WordDetect attribute="Ruby Definition" String="alias" context="RubySourceLineAlias"/>
+        <WordDetect attribute="Ruby Definition" String="undef" context="RubySourceLineAlias"/>
+
         <!-- Generally a module or class name like "File", "MyModule_1", .. -->
-        <RegExpr attribute="Constant" String="\b[A-Z]+_*([0-9]|[a-z])[_a-zA-Z0-9]*\b" context="#stay"/>
+        <RegExpr attribute="Ruby Constant" String="&constant;" context="RubySourceLineMsgParamOrOp2"/>
+        <RegExpr attribute="Ruby Global Constant" String="&global_constant;" context="RubySourceLineMsgParamOrOp2"/>
 
-        <RegExpr attribute="Hex" String="\b\-?0[xX][_0-9a-fA-F]+" context="#stay"/>
-        <RegExpr attribute="Bin" String="\b\-?0[bB][_01]+" context="#stay"/>
-        <RegExpr attribute="Octal" String="\b\-?0[1-7][_0-7]*" context="#stay"/>
-        <RegExpr attribute="Float" String="\b\-?[0-9][0-9_]*\.[0-9][0-9_]*([eE]\-?[1-9][0-9]*(\.[0-9]*)?)?" context="#stay"/>
-        <RegExpr attribute="Dec" String="\b\-?[1-9][0-9_]*\b" context="#stay"/>
-        <Int attribute="Dec" context="#stay"/>
-        <HlCChar attribute="Char" context="#stay"/>
+        <DetectIdentifier attribute="Ruby Normal Text" context="RubySourceLineSuffixFunctionMsgParamOrOp2"/>
 
-        <!-- Check for =begin before assignment operator. -->
-        <StringDetect attribute="Blockcomment" String="=begin" context="Embedded documentation" beginRegion="comment block" column="0"/>
-
-        <DetectChar attribute="Operator" char="." context="#stay"/>
-        <Detect2Chars attribute="Operator" char="&amp;" char1="&amp;" context="#stay"/>
-        <Detect2Chars attribute="Operator" char="|" char1="|" context="#stay"/>
-        <RegExpr attribute="Operator" String="\s[\?\:\%/]\s" context="#stay"/>
-        <RegExpr attribute="Operator" String="[|&amp;&lt;&gt;\^\+*~\-=]+" context="#stay"/>
-        <!-- regexp hack -->
-        <RegExpr attribute="Operator" String="\s!" context="#stay"/>
-        <RegExpr attribute="Operator" String="/=\s" context="#stay" insensitive="0"/>
-        <StringDetect attribute="Operator" String="%=" context="#stay" insensitive="0"/>
-        <Detect2Chars attribute="Operator" char=":" char1=":" context="Member Access"/>
-
-        <RegExpr attribute="Symbol" String=":[a-zA-Z_][a-zA-Z0-9_]*" context="#stay"/>
-
-        <DetectChar attribute="String" char="&quot;" context="Quoted String"/>
-        <DetectChar attribute="Raw String" char="'" context="Apostrophed String"/>
-        <DetectChar attribute="Command" char="`" context="Command String"/>
-
-        <StringDetect attribute="Normal Text" String="?#" context="#stay"/>
-
-        <RegExpr attribute="Comment" String="#\s*BEGIN.*$"  context="#stay" beginRegion="marker" column="0"/>
-        <RegExpr attribute="Comment" String="#\s*END.*$"  context="#stay" endRegion="marker" column="0"/>
-        <RegExpr attribute="Comment" String="#"  context="General Comment"/>
-
-        <RegExpr attribute="Delimiter" String="[\[\]]+"  context="#stay"/>
-        <DetectChar attribute="Delimiter" char="{" context="#stay" beginRegion="def block"/>
-        <DetectChar attribute="Delimiter" char="}" context="#stay" endRegion="def block"/>
-
-        <RegExpr attribute="Instance Variable" String="@[a-zA-Z_0-9]+" context="#stay"/>
-        <RegExpr attribute="Class Variable" String="@@[a-zA-Z_0-9]+" context="#stay"/>
-
-        <!-- handle the different regular expression formats -->
-        <DetectChar attribute="Regular Expression" char="/" context="RegEx 1"/>
+        <IncludeRules context="RubySourceLineContinue"/>
+        <DetectChar attribute="Ruby Normal Text" char="," context="RubySourceLineMsgParamOrOp2"/>
       </context>
 
-      <context name="Line Continue" attribute="Ruby Normal Text" lineEndContext="#pop">
-        <RegExpr attribute="Keyword" String="(while|until)\b(?!.*\bdo\b)" context="#stay" firstNonSpace="true"/>
-        <RegExpr attribute="Keyword" String="(if|unless)\b" context="#stay" firstNonSpace="true"/>
-        <IncludeRules context="rubysource"/>
+      <context name="RubySourceLineSuffixFunctionMsgParamOrOp2" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="#pop!RubySourceLineMsgParamOrOp2">
+        <AnyChar attribute="Ruby Normal Text" String="!?" context="#pop!RubySourceLineMsgParamOrOp2"/>
       </context>
 
-      <context name="Quoted String" attribute="String" lineEndContext="#stay">
-        <StringDetect attribute="String" String="\\" context="#stay"/>
-        <RegExpr attribute="String" String="\\\&quot;" context="#stay"/>
-        <RegExpr attribute="Substitution" String="#@{1,2}" context="Short Subst"/>
-        <Detect2Chars attribute="Substitution" char="#" char1="{" context="Subst"/>
-        <!--HlCChar attribute="Char" context="#pop"/-->
-        <DetectChar char="&quot;" attribute="String" context="#pop"/>
+      <!-- after function call
+        Assume that
+            foo /a is a regex but not foo /=a
+            foo %+ is a percent literal
+            foo <<a is a heredoc
+        (This is not true when foo is a variable...)
+      -->
+      <context name="RubySourceLineMsgParamOrOp2" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="#pop!RubySourceLineExpr">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+        <RegExpr attribute="Ruby Operator" String="&op2;" context="#pop!RubySourceLineExpr"/>
+        <DetectChar attribute="Ruby Member" char="." context="RubySourceLineMemberAccessCall"/>
+        <StringDetect attribute="Ruby Operator" String="::" context="RubySourceLineMemberAccessCall"/>
+        <DetectChar char="," context="#pop" lookAhead="1"/>
+        <IncludeRules context="RubySourceLineContinue2"/>
       </context>
 
-      <context name="Apostrophed String" attribute="Raw String" lineEndContext="#stay">
-        <!-- <HlCChar attribute="Char" context="#pop"/> -->
-        <StringDetect attribute="String" String="\\" context="#stay"/>
-        <RegExpr attribute="String" String="\\\'" context="#stay"/>
-        <DetectChar char="'" attribute="Raw String" context="#pop"/>
+      <context name="RubySourceLineMsgFnName" attribute="Ruby Normal Text" lineEndContext="#pop#pop#pop" fallthroughContext="#pop!RubySourceLineFnParent">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+        <DetectChar attribute="Ruby Member" char="." context="RubySourceLineMemberAccess"/>
+        <StringDetect attribute="Ruby Operator" String="::" context="RubySourceLineMemberAccess"/>
+        <DetectChar char="," context="#pop" lookAhead="1"/>
+        <IncludeRules context="RubySourceLineContinue2"/>
       </context>
 
-      <context name="Command String" attribute="Command" lineEndContext="#stay">
-        <StringDetect attribute="String" String="\\" context="#stay"/>
-        <RegExpr attribute="String" String="\\\`" context="#stay"/>
-        <RegExpr attribute="Substitution" String="#@{1,2}" context="Short Subst"/>
-        <Detect2Chars attribute="Substitution" char="#" char1="{" context="Subst"/>
-        <HlCChar attribute="Char" context="#pop"/>
-        <DetectChar char="`" attribute="Command" context="#pop"/>
+      <context name="RubySourceLineExpr" attribute="Ruby Normal Text" lineEndContext="#pop">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+
+        <StringDetect attribute="Ruby Operator" String=".." context="RubySourceLineDot2Op"/>
+        <DetectChar attribute="Ruby Member" char="." context="RubySourceLineMemberAccess"/>
+
+        <DetectChar attribute="Ruby Operator" char="=" context="#pop"/>
+
+        <!-- pop to parent for interpolation -->
+        <AnyChar String="{}]" context="#pop" lookAhead="1"/>
+
+        <AnyChar attribute="Ruby Normal Text" String=";(" context="#pop"/>
+        <LineContinue attribute="Ruby Normal Text" char="," context="IgnoreEmptyLine"/>
+        <DetectChar attribute="Ruby Normal Text" char=")" context="RubySourceLineOp1"/>
+
+        <DetectChar attribute="Ruby Comment" char="#" context="#pop!RubySourceLineGeneral Comment"/>
+
+        <DetectChar char="@" context="RubySourceLineAtVar" lookAhead="1"/>
+        <DetectChar char="$" context="RubySourceLineVar" lookAhead="1"/>
+
+        <HlCChar attribute="Ruby Char" context="RubySourceLineOp1"/>
+        <DetectChar attribute="Ruby String" char='"' context="RubySourceLineDQuote"/>
+        <DetectChar attribute="Ruby Raw String" char="'" context="RubySourceLineSQuote"/>
+        <DetectChar attribute="Ruby Command" char="`" context="RubySourceLineCommand String"/>
+
+        <DetectChar attribute="Ruby Regular Expression" char="/" context="RubySourceLineRegEx"/>
+        <!-- Check for "ASCII code operator". e.g.: ?a -->
+        <DetectChar char="?" context="RubySourceLineMaybeCharLiteral" lookAhead="1"/>
+
+        <AnyChar context="RubySourceLineNumber" String="0123456789" lookAhead="1"/>
+
+        <RegExpr attribute="Ruby Normal Text" String="&ident_not_kw;" context="RubySourceLineOp2"/>
+
+        <RegExpr attribute="Ruby Symbol" String="&symbol;" context="#pop!RubySourceLineMsgParamOrOp2"/>
+
+        <DetectChar attribute="Ruby Delimiter" char="[" context="#pop!RubySourceLineMsgParamOrOp2"/>
+
+        <StringDetect attribute="Ruby Operator" String="::" context="RubySourceLineMemberAccess"/>
+
+        <keyword attribute="Ruby Keyword" String="ruby-keyword1" context="#pop"/>
+        <keyword attribute="Ruby Keyword" String="ruby-keyword2" context="#pop!RubySourceLineMsgParamOrOp2"/>
+
+        <keyword attribute="Ruby Attribute Definition" String="attribute-definitions" context="RubySourceLineOp2"/>
+        <keyword attribute="Ruby Access Control" String="access-control" context="RubySourceLineOp2"/>
+        <keyword attribute="Ruby Pseudo variable" String="pseudo-variables" context="RubySourceLineOp1"/>
+        <keyword attribute="Ruby Kernel methods" String="kernel-methods" context="RubySourceLineOp2"/>
+        <keyword attribute="Ruby Module mixin methods" String="mixin-methods" context="RubySourceLineOp2"/>
+
+        <WordDetect attribute="Ruby Keyword" String="class" context="RubySourceLineOp1"/>
+        <WordDetect attribute="Ruby Keyword" String="def" context="#pop!RubySourceLineDefFn"/>
+        <WordDetect attribute="Ruby Definition" String="alias" context="RubySourceLineAlias"/>
+        <WordDetect attribute="Ruby Definition" String="undef" context="RubySourceLineAlias"/>
+
+        <keyword attribute="Ruby Definition" String="definitions"/>
+
+        <!-- Generally a module or class name like "File", "MyModule_1", .. -->
+        <RegExpr attribute="Ruby Constant" String="&constant;" context="RubySourceLineOp1"/>
+        <RegExpr attribute="Ruby Global Constant" String="&global_constant;" context="RubySourceLineOp1"/>
+
+        <RegExpr attribute="Ruby Symbol" String=":((@@?|\$)&ident;|&ident;([?]|!(?!=)|=(?![=>~]))?|&sym_op;|(?=['&quot;])|&global_var;)" context="RubySourceLineOp1"/>
+
+        <!-- recognize the beginning of a general delimited input format -->
+        <!-- this moves to the next context to separate out the exact nature of the GDL input -->
+        <RegExpr attribute="Ruby GDL input" context="RubySourceLinefind_gdl_input" String="%(?=&percent_lit;)" beginRegion="GdlInput"/>
+
+        <!-- recognize the beginning of a HEREDOC -->
+        <RegExpr attribute="Ruby Operator" context="RubySourceLineHeredoc" String="&lt;&lt;(?=[-~]?(\w+|'\w+'|&quot;\w+&quot;|`\w+`))" beginRegion="HereDocument"/>
+
+        <!-- should not happen in valid syntax -->
+        <RegExpr attribute="Ruby Operator" String="([/%?:]|&lt;&lt;?)&safe_op;*|&safe_op;+"/>
+        <DetectIdentifier attribute="Ruby Normal Text" context="RubySourceLineSuffixFunction"/>
+
+        <IncludeRules context="RubySourceLineContinue2"/>
       </context>
 
-      <context name="Embedded documentation" attribute="Ruby Comment" lineEndContext="#stay">
-        <StringDetect attribute="Ruby Comment" String="=end" context="#pop" endRegion="comment block" column="0"/>
+      <!-- alias / +
+                 ~ never regex
+            same for undef
+      -->
+      <context name="RubySourceLineAlias" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+        <AnyChar attribute="Ruby Operator" String="-+*~^|&amp;=&lt;>!%/"/>
+        <DetectChar char="$" context="RubySourceLineVar" lookAhead="1"/>
+        <DetectChar attribute="Ruby String" char='"' context="RubySourceLineAliasDQuote"/>
+        <DetectChar attribute="Ruby Raw String" char="'" context="RubySourceLineAliasSQuote"/>
+        <RegExpr attribute="Ruby Symbol" String=":(&ident;[=?!]?|&sym_op;)"/>
+        <RegExpr attribute="Ruby Normal Text" String="\b(?!(&no_param;)([^?!\w]|$))&ident;"/>
+        <IncludeRules context="RubySourceLineContinue2"/>
+        <LineContinue attribute="Ruby Normal Text" char=","/>
+      </context>
+      <context name="RubySourceLineAliasDQuote" attribute="Ruby String">
+        <DetectChar char='"' attribute="Ruby String" context="RubySourceLineAliasCheckSym"/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+      <context name="RubySourceLineAliasSQuote" attribute="Ruby Raw String">
+        <Detect2Chars attribute="Ruby String" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String" char="\" char1="'"/>
+        <DetectChar char="'" attribute="Ruby Raw String" context="RubySourceLineAliasCheckSym"/>
+      </context>
+      <context name="RubySourceLineAliasCheckSym" attribute="Ruby Raw String" lineEndContext="#pop#pop#pop" fallthroughContext="#pop#pop">
+        <DetectChar char=":" attribute="Ruby Symbol" context="#pop#pop"/>
       </context>
 
-      <context name="RegEx 1" attribute="Regular Expression" lineEndContext="#stay">
-        <RegExpr attribute="Regular Expression" String="\\\/" context="#stay"/>
-        <RegExpr attribute="Regular Expression" String="[^\\]$" context="#pop"/>
-        <RegExpr attribute="Substitution" String="#@{1,2}" context="Short Subst"/>
-        <Detect2Chars attribute="Substitution" char="#" char1="{" context="Subst"/>
-        <RegExpr attribute="Regular Expression" String="/[uiomxn]*" context="#pop"/>
+      <context name="RubySourceLineDot2Op" attribute="Ruby Operator" lineEndContext="#pop#pop" fallthroughContext="#pop">
+        <!-- triple dot -->
+        <DetectChar attribute="Ruby Operator" char="." context="#pop"/>
+      </context>
+
+      <context name="RubySourceLineSuffixFunction" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="#pop!RubySourceLineOp2">
+        <AnyChar attribute="Ruby Normal Text" String="!?" context="#pop!RubySourceLineOp2"/>
+      </context>
+
+      <!-- A slash is always a division operator, even if preceeded by whitespace -->
+      <context name="RubySourceLineOp1" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+        <DetectChar attribute="Ruby Operator" char="=" context="#pop#pop"/>
+        <RegExpr attribute="Ruby Operator" String="&op1;" context="#pop"/>
+        <DetectChar char="," context="#pop" lookAhead="1"/>
+        <IncludeRules context="RubySourceLineContinue3"/>
+      </context>
+
+      <context name="RubySourceLineOp1ThenExpr" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="#pop!RubySourceLineExpr">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+        <DetectChar attribute="Ruby Operator" char="=" context="#pop"/>
+        <RegExpr attribute="Ruby Operator" String="&op1;" context="#pop!RubySourceLineExpr"/>
+        <DetectChar char="," context="#pop" lookAhead="1"/>
+        <IncludeRules context="RubySourceLineContinue2"/>
+      </context>
+
+      <!-- A slash is division operator if it's the first character, or if preceeded and followed by whitespace -->
+      <context name="RubySourceLineOp2" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+        <DetectChar attribute="Ruby Operator" char="=" context="#pop#pop"/>
+        <RegExpr attribute="Ruby Operator" String="&op2;" context="#pop"/>
+        <DetectChar char="," context="#pop" lookAhead="1"/>
+        <IncludeRules context="RubySourceLineContinue3"/>
+      </context>
+
+      <context name="RubySourceLineOp2ThenExpr" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="#pop!RubySourceLineExpr">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+        <DetectChar attribute="Ruby Operator" char="=" context="#pop"/>
+        <RegExpr attribute="Ruby Operator" String="&op2;" context="#pop!RubySourceLineExpr"/>
+        <DetectChar char="," context="#pop" lookAhead="1"/>
+        <IncludeRules context="RubySourceLineContinue2"/>
+      </context>
+
+      <context name="RubySourceLineVar" attribute="Ruby Normal Text" lineEndContext="#pop#pop">
+        <!-- (global) vars starting with $ -->
+        <RegExpr attribute="Ruby Global Variable" String="\$(?!(stdin|stdout|stderr|_|LOAD_PATH|LOADED_FEATURES|FILENAME|DEBUG|VERBOSE)\b)[0-9]+|[[:alpha:]]\w*|\$-(?![ailpFIvWwdx])\w" context="#pop!RubySourceLineOp1"/>
+        <!-- special-character globals and other predefined variables -->
+        <RegExpr attribute="Ruby Default globals" String="&global_var;" context="#pop!RubySourceLineOp1"/>
+        <DetectChar attribute="Error" char="$" context="#pop!RubySourceLineOp1"/>
+      </context>
+
+      <context name="RubySourceLineAtVar" attribute="Ruby Normal Text" lineEndContext="#pop#pop">
+        <RegExpr attribute="Ruby Instance Variable" String="@&ident;" context="#pop!RubySourceLineOp1"/>
+        <RegExpr attribute="Ruby Class Variable" String="@@&ident;" context="#pop!RubySourceLineOp1"/>
+        <DetectChar attribute="Error" char="@"/>
+      </context>
+
+      <!-- def foo() block-statement
+              ~~~ any ident (including keyword)
+
+          def Abc::foo() block-statement
+              ~~~  ~~~ ident (no keyword)
+      -->
+      <context name="RubySourceLineDefFn" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="RubySourceLineFnName">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+        <DetectChar attribute="Ruby Comment" char="#" context="RubySourceLineGeneral Comment"/>
+        <DetectChar char="," context="#pop" lookAhead="1"/>
+        <IncludeRules context="RubySourceLineContinue2"/>
+      </context>
+      <context name="RubySourceLineFnName" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="RubySourceLineFnParent">
+        <RegExpr attribute="Ruby Normal Text" String="&ident_not_kw;" context="RubySourceLineMsgFnName"/>
+
+        <keyword attribute="Ruby Attribute Definition" String="attribute-definitions" context="RubySourceLineFnParent" weakDeliminator=":"/>
+        <keyword attribute="Ruby Access Control" String="access-control" context="RubySourceLineFnParent" weakDeliminator=":"/>
+        <keyword attribute="Ruby Definition" String="definitions" context="RubySourceLineFnParent" weakDeliminator=":"/>
+        <keyword attribute="Ruby Pseudo variable" String="pseudo-variables" context="RubySourceLineFnParent" weakDeliminator=":"/>
+        <keyword attribute="Ruby Kernel methods" String="kernel-methods" context="RubySourceLineFnParent" weakDeliminator=":"/>
+        <keyword attribute="Ruby Module mixin methods" String="mixin-methods" context="RubySourceLineFnParent" weakDeliminator=":"/>
+        <keyword attribute="Ruby Keyword" String="keyword" context="RubySourceLineFnParent" weakDeliminator=":"/>
+
+        <RegExpr attribute="Ruby Operator" String="[-+~]@?|![~@]?|[/%^]|\*\*?|\|\||&amp;&amp;|&lt;(=>?)?|>=?|===?|\*\*?" context="RubySourceLineFnParent"/>
+        <RegExpr attribute="Ruby Constant" String="&constant;" context="RubySourceLineMsgFnName"/>
+        <RegExpr attribute="Ruby Global Constant" String="&global_constant;" context="RubySourceLineMsgFnName"/>
+
+        <StringDetect attribute="Ruby Symbol" String="[]=" context="RubySourceLineFnParent"/>
+        <StringDetect attribute="Ruby Symbol" String="[]" context="RubySourceLineFnParent"/>
+        <DetectChar attribute="Ruby Comment" char="#" context="RubySourceLineGeneral Comment"/>
+      </context>
+      <context name="RubySourceLineFnParent" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="#pop#pop#pop">
+        <DetectChar attribute="Ruby Normal Text" char="(" context="RubySourceLineDefFnParams"/>
+        <DetectSpaces attribute="Ruby Normal Text"/>
+        <DetectChar attribute="Ruby Comment" char="#" context="RubySourceLineGeneral Comment"/>
+        <DetectChar char="," context="#pop" lookAhead="1"/>
+        <IncludeRules context="RubySourceLineContinue2"/>
+      </context>
+      <context name="RubySourceLineDefFnParams" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="#pop#pop#pop#pop">
+        <DetectChar attribute="Ruby Normal Text" char=")" context="#pop#pop#pop#pop"/>
+        <DetectChar attribute="Ruby Comment" char="#" context="RubySourceLineGeneral Comment"/>
+        <RegExpr attribute="Ruby Normal Text" String="([\s,]+|\b(?!(&no_param;)\b|[[:upper:]])&ident;(?=$|[^?!]))++"/>
+        <RegExpr attribute="Ruby Constant" String="&constant;"/>
+        <RegExpr attribute="Ruby Global Constant" String="&global_constant;"/>
+        <keyword attribute="Ruby Attribute Definition" String="attribute-definitions"/>
+        <keyword attribute="Ruby Access Control" String="access-control"/>
+        <keyword attribute="Ruby Kernel methods" String="kernel-methods"/>
+        <keyword attribute="Ruby Module mixin methods" String="mixin-methods"/>
+        <IncludeRules context="RubySourceLineContinue2"/>
+      </context>
+
+
+      <!-- Numeric values. Note that we have to allow underscores between two digits. -->
+      <context name="RubySourceLineNumber" attribute="Ruby Normal Text" lineEndContext="#pop#pop" fallthroughContext="RubySourceLineNumberError">
+        <RegExpr attribute="Ruby Number" String="\b([1-9](_?[0-9]++)*+|0)(\.&dec;([eE][-+]?&dec;)?|[eE][-+]?&dec;)|\b(0[dD]&dec;|(0(\b|(?=[ri]))|[1-9](_?[0-9]++)*+))|\b0[xX][0-9a-fA-F](_?[0-9a-fA-F]++)*+|\b0[bB][01](_?[01]++)*+|\b0[oO]?[0-7](_?[0-7]++)*+" context="RubySourceLineNumberSuffix"/>
+        <DetectChar char="0" attribute="Ruby Number" context="RubySourceLineNumberError"/>
+      </context>
+
+      <context name="RubySourceLineNumberSuffix" attribute="Ruby Number Suffix" lineEndContext="#pop#pop#pop" fallthroughContext="#pop!RubySourceLineNumberError">
+        <StringDetect attribute="Ruby Number Suffix" String="ri" context="#pop!RubySourceLineNumberError"/>
+        <AnyChar attribute="Ruby Number Suffix" String="ri" context="#pop!RubySourceLineNumberError"/>
+      </context>
+
+      <context name="RubySourceLineNumberError" attribute="Error" lineEndContext="#pop#pop#pop" fallthroughContext="#pop#pop!RubySourceLineOp1">
+        <DetectIdentifier/>
+        <AnyChar String="0123456789"/>
+      </context>
+
+      <context name="RubySourceLineBrace" attribute="Ruby Normal Text" fallthroughContext="#pop!RubySourceLineBraceInner">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+      </context>
+      <context name="RubySourceLineBraceInner" attribute="Ruby Normal Text" lineEndContext="#pop" fallthroughContext="RubySourceLineExpr">
+        <DetectChar attribute="Ruby Operator" char="}" context="#pop!RubySourceLineOp1ThenExpr" endRegion="brace"/>
+        <DetectChar attribute="Ruby Operator" char="{" context="RubySourceLineBrace" beginRegion="brace"/>
+        <IncludeRules context="RubySourceLine"/>
+      </context>
+
+      <!-- "..." -->
+      <context name="RubySourceLineDQuote" attribute="Ruby String">
+        <DetectChar char='"' attribute="Ruby String" context="RubySourceLineCheckSym"/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+
+      <!-- "...": -->
+      <context name="RubySourceLineCheckSym" attribute="Ruby Raw String" lineEndContext="#pop#pop!RubySourceLineOp1" fallthroughContext="#pop#pop!RubySourceLineOp1">
+        <DetectChar char=":" attribute="Ruby Symbol" context="#pop#pop#pop"/>
+      </context>
+
+      <!-- \ in "..." -->
+      <context name="RubySourceLineDQuoteSpecial" attribute="Ruby String">
+        <DetectChar char="\" context="RubySourceLineDQuoteEscape" lookAhead="1"/>
+        <DetectChar char="#" context="RubySourceLineDQuoteSubstitution" lookAhead="1"/>
+        <IncludeRules context="RubySourceLineContinue3"/>
+      </context>
+      <context name="RubySourceLineDQuoteEscape" attribute="Ruby String">
+        <RegExpr attribute="Ruby String Char" String="&escape;" context="#pop"/>
+        <RegExpr attribute="Error" String="\\(&partial_escape;|)" context="#pop"/>
+      </context>
+      <context name="RubySourceLineDQuoteSubstitution" attribute="Ruby String">
+        <StringDetect attribute="Ruby Substitution" String="#{" context="#pop!RubySourceLineSubst"/>
+        <RegExpr attribute="Ruby Substitution" String="#@@?\w+|#&global_var;" context="#pop"/>
+        <DetectChar char="#" context="#pop"/>
+      </context>
+
+      <!-- '...' -->
+      <context name="RubySourceLineSQuote" attribute="Ruby Raw String">
+        <Detect2Chars attribute="Ruby String" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String" char="\" char1="'"/>
+        <DetectChar char="'" attribute="Ruby Raw String" context="RubySourceLineCheckSym"/>
+        <IncludeRules context="RubySourceLineContinue3"/>
+      </context>
+
+      <!-- `...` -->
+      <context name="RubySourceLineCommand String" attribute="Ruby Command">
+        <DetectChar char="`" attribute="Ruby Command" context="#pop!RubySourceLineOp1"/>
+        <Detect2Chars attribute="Ruby String" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String" char="\" char1="`"/>
+        <DetectChar char="#" context="RubySourceLineDQuoteSubstitution" lookAhead="1"/>
+        <IncludeRules context="RubySourceLineContinue3"/>
+      </context>
+
+      <!-- ?x -->
+      <context name="RubySourceLineMaybeCharLiteral" attribute="Ruby String" lineEndContext="#pop" fallthroughContext="#pop!RubySourceLineOp1">
+        <RegExpr attribute="Ruby Operator" String="\?(?=\s|$)" context="#pop"/>
+        <DetectChar attribute="Ruby Char Literal" char="?" context="RubySourceLineCharLiteral"/>
+      </context>
+      <context name="RubySourceLineCharLiteral" attribute="Ruby String">
+        <RegExpr attribute="Ruby Char" String="[^\\\s]" context="#pop#pop!RubySourceLineOp1"/>
+        <RegExpr attribute="Ruby String Char" String="&escape;" context="#pop#pop!RubySourceLineOp1"/>
+        <RegExpr attribute="Error" String="\\(&partial_escape;|)" context="#pop#pop!RubySourceLineOp1"/>
+      </context>
+
+      <context name="RubySourceLineRegEx" attribute="Ruby Regular Expression">
+        <DetectChar attribute="Ruby Regular Expression" context="RubySourceLineRegExMode" char="/"/>
+        <IncludeRules context="RubySourceLineRegExSpecial"/>
+      </context>
+      <!-- as DQuoteSpecial, but with \. and \p{...} -->
+      <context name="RubySourceLineRegExSpecial" attribute="Ruby String Char">
+        <DetectChar char="#" context="RubySourceLineDQuoteSubstitution" lookAhead="1"/>
+        <DetectChar char="\" context="RubySourceLineRegExEscape" lookAhead="1"/>
+      </context>
+      <context name="RubySourceLineRegExEscape" attribute="Ruby String">
+        <RegExpr attribute="Ruby String Char" String="\\([^0-7xucCMp]|&special_escape;|p\{[-[:alpha:]]*\}|$)" context="#pop"/>
+        <RegExpr attribute="Error" String="\\(&partial_escape;|p\{?|)" context="#pop"/>
+      </context>
+
+      <context name="RubySourceLineRegExMode" attribute="Ruby String" lineEndContext="#pop#pop" fallthroughContext="#pop#pop!RubySourceLineOp1">
+        <AnyChar attribute="Ruby Regular Expression" String="imxonues"/>
       </context>
 
       <!-- Substitutions can be nested -->
-      <context name="Subst" attribute="Ruby Normal Text" lineEndContext="#stay">
-        <DetectChar attribute="Substitution" char="}" context="#pop"/>
-        <!-- Highlight substitution as code. -->
-        <IncludeRules context="rubysource"/>
+      <context name="RubySourceLineSubst" attribute="Ruby Normal Text" fallthroughContext="RubySourceLineExpr">
+        <DetectChar attribute="Ruby Substitution" char="}" context="#pop"/>
+        <IncludeRules context="RubySourceLineSubstInner"/>
       </context>
-
-      <context name="Short Subst" attribute="Substitution" lineEndContext="#pop">
-        <!-- Check for e.g.: "#@var#@@xy" -->
-        <RegExpr attribute="Substitution" String="#@{1,2}" context="#stay"/>
-        <RegExpr attribute="Substitution" String="\w(?!\w)" context="#pop"/>
+      <context attribute="Ruby Normal Text" name="RubySourceLineSubstInner">
+        <DetectChar attribute="Ruby Operator" char="{" context="RubySourceLineBrace" beginRegion="brace"/>
+        <!-- leads to a syntax error in Haml -->
+        <DetectChar attribute="Error" char="#" context="#pop!LineError"/>
+        <IncludeRules context="RubySourceLine"/>
       </context>
 
       <!-- This handles access of nested module classes and class methods -->
-      <context name="Member Access" attribute="Member" lineEndContext="#pop">
+      <context name="RubySourceLineMemberAccess" attribute="Ruby Member" fallthroughContext="#pop!RubySourceLineOp1">
+        <DetectSpaces attribute="Ruby Normal Text"/>
         <!-- marks a message (being sent, not defined) -->
-        <RegExpr attribute="Message" String="\.?[_a-z]\w*(\?|\!)?(?=[^\w\d\.\:])" context="#pop"/>
-        <RegExpr attribute="Message" String="\.?[_a-z]\w*(\?|\!)?" context="#stay"/>
-        <RegExpr attribute="Constant" String="[A-Z]+_*(\d|[a-z])\w*(?=[^\w\d\.\:])" context="#pop"/>
-        <RegExpr attribute="Constant" String="[A-Z]+_*([0-9]|[a-z])\w*" context="#stay"/>
-        <RegExpr attribute="Constant Value" String="[_A-Z][_A-Z0-9]*(?=[^\w\d\.\:])" context="#pop"/>
-        <RegExpr attribute="Constant Value" String="[_A-Z][_A-Z0-9]*" context="#stay"/>
-        <Detect2Chars attribute="Operator" char=":" char1=":" context="#stay"/>
-        <DetectChar attribute="Member" char="." context="#stay"/>
-
-        <AnyChar attribute="Operator" String="=+-*/%|&amp;[]{}~" context="#pop"/>
-        <DetectChar attribute="Ruby Comment" char="#" context="#pop"/>
-        <AnyChar attribute="Ruby Normal Text" String="()\" context="#pop"/>
-        <RegExpr attribute="Member" String="\W" context="#pop"/>
+        <RegExpr attribute="Ruby Message" String="&msg;" context="#pop!RubySourceLineOp1"/>
+        <RegExpr attribute="Ruby Constant" String="&constant;" context="#pop!RubySourceLineOp1"/>
+        <RegExpr attribute="Ruby Constant Value" String="&global_constant;" context="#pop!RubySourceLineOp1"/>
+        <RegExpr attribute="Ruby Operator" String="&sym_op;" context="#pop"/>
       </context>
 
-      <context name="General Comment" attribute="Ruby Comment" lineEndContext="#pop">
-        <keyword attribute="Dec" String="attention" context="#stay"/>
+      <context name="RubySourceLineMemberAccessCall" attribute="Ruby Member" fallthroughContext="#pop">
+        <DetectSpaces attribute="Ruby Normal Text"/>
+        <!-- marks a message (being sent, not defined) -->
+        <RegExpr attribute="Ruby Message" String="&msg;" context="#pop"/>
+        <RegExpr attribute="Ruby Constant" String="&constant;" context="#pop"/>
+        <RegExpr attribute="Ruby Constant Value" String="&global_constant;" context="#pop"/>
+        <RegExpr attribute="Ruby Operator" String="&sym_op;" context="#pop"/>
       </context>
+
+      <context name="RubySourceLineGeneral Comment" attribute="Ruby Comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+
+      <!-- HEREDOC support
+        The contexts below support both normal and indented heredocs
+        -->
+      <!-- here we markup the heredoc markers -->
+      <context name="RubySourceLineHeredoc" attribute="Ruby Normal Text">
+        <AnyChar attribute="Ruby Operator" String="-~" context="#pop!RubySourceLineIndentedHeredoc"/>
+        <RegExpr attribute="Ruby Keyword" context="RubySourceLineapostrophed_normal_heredoc" String="'(\w+)'"/>
+        <RegExpr attribute="Ruby Keyword" context="RubySourceLinenormal_heredoc" String="(?|(\w+)|&quot;(\w+)&quot;|`(\w+)`)"/>
+      </context>
+      <context name="RubySourceLineIndentedHeredoc" attribute="Ruby Normal Text">
+        <RegExpr attribute="Ruby Keyword" context="RubySourceLineapostrophed_indented_heredoc" String="'(\w+)'"/>
+        <RegExpr attribute="Ruby Keyword" context="RubySourceLineindented_heredoc" String="(?|(\w+)|&quot;(\w+)&quot;|`(\w+)`)"/>
+      </context>
+      <!-- these are the real heredoc contexts -->
+      <context name="RubySourceLineindented_heredoc" attribute="Ruby Here Document">
+        <RegExpr attribute="Ruby Keyword" context="#pop#pop" String="%1$" dynamic="true" endRegion="HereDocument" firstNonSpace="true"/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+      <context name="RubySourceLineapostrophed_indented_heredoc" attribute="Ruby Here Document">
+        <RegExpr attribute="Ruby Keyword" context="#pop#pop" String="%1$" dynamic="true" endRegion="HereDocument" firstNonSpace="true"/>
+      </context>
+
+      <context name="RubySourceLinenormal_heredoc" attribute="Ruby Here Document">
+        <RegExpr attribute="Ruby Keyword" context="#pop#pop" String="^%1$" dynamic="true" endRegion="HereDocument" column="0"/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+      <context name="RubySourceLineapostrophed_normal_heredoc" attribute="Ruby Here Document">
+        <RegExpr attribute="Ruby Keyword" context="#pop#pop" String="^%1$" dynamic="true" endRegion="HereDocument" column="0"/>
+      </context>
+
+      <!-- General delimited input support
+        The contexts below handle the various gdl formats
+        -->
+      <context name="RubySourceLinefind_gdl_input" attribute="Ruby Normal Text" lineEndContext="#pop">
+        <!-- handle double-quoted strings -->
+        <DetectChar attribute="Ruby GDL input" context="RubySourceLine%Q(" char="("/>
+        <DetectChar attribute="Ruby GDL input" context="RubySourceLine%Q{" char="{"/>
+        <DetectChar attribute="Ruby GDL input" context="RubySourceLine%Q[" char="["/>
+        <DetectChar attribute="Ruby GDL input" context="RubySourceLine%Q&lt;" char="&lt;"/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q(" String="Q("/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q{" String="Q{"/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q[" String="Q["/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q&lt;" String="Q&lt;"/>
+
+        <!-- handle token arrays -->
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q(" String="W("/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q{" String="W{"/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q[" String="W["/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q&lt;" String="W&lt;"/>
+
+        <!-- handle token arrays -->
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q(" String="I("/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q{" String="I{"/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q[" String="I["/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%Q&lt;" String="I&lt;"/>
+
+        <!-- then we handle the 'any char' format -->
+        <RegExpr attribute="Ruby GDL input" context="RubySourceLine%Q_" String="[QWI]?([^[:alnum:]])"/>
+
+        <!-- handle token arrays -->
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%w(" String="w("/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%w{" String="w{"/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%w[" String="w["/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%w&lt;" String="w&lt;"/>
+
+        <!-- handle token arrays -->
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%w(" String="i("/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%w{" String="i{"/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%w[" String="i["/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%w&lt;" String="i&lt;"/>
+
+        <!-- then we handle the 'any char' format -->
+        <RegExpr attribute="Ruby GDL input" context="RubySourceLine%w_" String="[wi]([^[:alnum:]])"/>
+
+        <!-- handle apostrophed strings -->
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%q(" String="q("/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%q{" String="q{"/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%q[" String="q["/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%q&lt;" String="q&lt;"/>
+        <!-- then we handle the 'any char' format -->
+        <RegExpr attribute="Ruby GDL input" context="RubySourceLine%q_" String="q([^[:alnum:]])"/>
+
+        <!-- handle token arrays -->
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%s(" String="s("/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%s{" String="s{"/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%s[" String="s["/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%s&lt;" String="s&lt;"/>
+        <!-- then ie handle the 'any char' format -->
+        <RegExpr attribute="Ruby GDL input" context="RubySourceLine%s_" String="s([^[:alnum:]])"/>
+
+        <!-- handle regular expressions -->
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%r(" String="r("/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%r{" String="r{"/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%r[" String="r["/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%r&lt;" String="r&lt;"/>
+        <!-- then we handle the 'any char' format -->
+        <RegExpr attribute="Ruby GDL input" context="RubySourceLine%r_" String="r([^[:alnum:]])"/>
+
+        <!-- handle shell commands -->
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%x(" String="x("/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%x{" String="x{"/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%x[" String="x["/>
+        <StringDetect attribute="Ruby GDL input" context="RubySourceLine%x&lt;" String="x&lt;"/>
+        <!-- then we handle the 'any char' format -->
+        <RegExpr attribute="Ruby GDL input" context="RubySourceLine%x_" String="x([^[:alnum:]])"/>
+      </context>
+
+
+      <!-- double-quoted string specific contexts follow -->
+
+      <context name="RubySourceLine%Q(" attribute="Ruby String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char=")" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%Q(_rule"/>
+      </context>
+      <context name="RubySourceLine%Q(_nested" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="#pop" char=")"/>
+        <IncludeRules context="RubySourceLine%Q(_rule"/>
+      </context>
+      <context name="RubySourceLine%Q(_rule" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="RubySourceLine%Q(_nested" char="("/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+
+      <!-- note that here substitution should win over nesting -->
+      <context name="RubySourceLine%Q{" attribute="Ruby String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="}" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%Q{_rule"/>
+      </context>
+      <context name="RubySourceLine%Q{_nested" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="#pop" char="}"/>
+        <IncludeRules context="RubySourceLine%Q{_rule"/>
+      </context>
+      <context name="RubySourceLine%Q{_rule" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="RubySourceLine%Q{_nested" char="{"/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+
+      <context name="RubySourceLine%Q[" attribute="Ruby String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="]" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%Q[_rule"/>
+      </context>
+      <context name="RubySourceLine%Q[_nested" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="#pop" char="]"/>
+        <IncludeRules context="RubySourceLine%Q[_rule"/>
+      </context>
+      <context name="RubySourceLine%Q[_rule" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="RubySourceLine%Q[_nested" char="["/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+
+      <context name="RubySourceLine%Q&lt;" attribute="Ruby String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char=">" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%Q&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%Q&lt;_nested" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="#pop" char=">"/>
+        <IncludeRules context="RubySourceLine%Q&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%Q&lt;_rule" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="RubySourceLine%Q&lt;_nested" char="&lt;"/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+
+      <!-- this format doesn't allow nesting. it is terminated by the next occurrence of the
+        delimiter character
+        -->
+      <context name="RubySourceLine%Q_" attribute="Ruby String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="1" dynamic="true" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+
+
+      <!-- token array specific contexts -->
+
+      <context name="RubySourceLine%w(" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char=")" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%w(_rule"/>
+      </context>
+      <context name="RubySourceLine%w(_nested" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="#pop" char=")"/>
+        <IncludeRules context="RubySourceLine%w(_rule"/>
+      </context>
+      <context name="RubySourceLine%w(_rule" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="RubySourceLine%w(_nested" char="("/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1=" "/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1=")"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="("/>
+      </context>
+
+      <context name="RubySourceLine%w{" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="}" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%w{_rule"/>
+      </context>
+      <context name="RubySourceLine%w{_nested" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="#pop" char="}"/>
+        <IncludeRules context="RubySourceLine%w{_rule"/>
+      </context>
+      <context name="RubySourceLine%w{_rule" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="RubySourceLine%w{_nested" char="{"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1=" "/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="}"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="{"/>
+      </context>
+
+      <context name="RubySourceLine%w[" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="]" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%w[_rule"/>
+      </context>
+      <context name="RubySourceLine%w[_nested" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="#pop" char="]"/>
+        <IncludeRules context="RubySourceLine%w[_rule"/>
+      </context>
+      <context name="RubySourceLine%w[_rule" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="RubySourceLine%w[_nested" char="["/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1=" "/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="]"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="["/>
+      </context>
+
+      <context name="RubySourceLine%w&lt;" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char=">" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%w&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%w&lt;_nested" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="#pop" char=">"/>
+        <IncludeRules context="RubySourceLine%w&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%w&lt;_rule" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="RubySourceLine%w&lt;_nested" char="&lt;"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1=" "/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1=">"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="&lt;"/>
+      </context>
+
+      <!-- this format doesn't allow nesting. it is terminated by the next occurrence of the
+        delimiter character
+        -->
+      <context name="RubySourceLine%w_" attribute="Ruby Raw String">
+        <Detect2Chars attribute="Ruby String Char" char="\" char1=" "/>
+        <IncludeRules context="RubySourceLine%q_"/>
+      </context>
+
+
+      <!-- apostrophed string specific contexts -->
+
+      <context name="RubySourceLine%q(" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char=")" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%q(_rule"/>
+      </context>
+      <context name="RubySourceLine%q(_nested" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="#pop" char=")"/>
+        <IncludeRules context="RubySourceLine%q(_rule"/>
+      </context>
+      <context name="RubySourceLine%q(_rule" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="RubySourceLine%q(_nested" char="("/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1=")"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="("/>
+      </context>
+
+      <context name="RubySourceLine%q{" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="}" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%q{_rule"/>
+      </context>
+      <context name="RubySourceLine%q{_nested" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="#pop" char="}"/>
+        <IncludeRules context="RubySourceLine%q{_rule"/>
+      </context>
+      <context name="RubySourceLine%q{_rule" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="RubySourceLine%q{_nested" char="{"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="}"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="{"/>
+      </context>
+
+      <context name="RubySourceLine%q[" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="]" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%q[_rule"/>
+      </context>
+      <context name="RubySourceLine%q[_nested" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="#pop" char="]"/>
+        <IncludeRules context="RubySourceLine%q[_rule"/>
+      </context>
+      <context name="RubySourceLine%q[_rule" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="RubySourceLine%q[_nested" char="["/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="]"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="["/>
+      </context>
+
+      <context name="RubySourceLine%q&lt;" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char=">" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%q&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%q&lt;_nested" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="#pop" char=">"/>
+        <IncludeRules context="RubySourceLine%q&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%q&lt;_rule" attribute="Ruby Raw String">
+        <DetectChar attribute="Ruby Raw String" context="RubySourceLine%q&lt;_nested" char="&lt;"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1=">"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="&lt;"/>
+      </context>
+
+      <!-- this format doesn't allow nesting. it is terminated by the next occurrence of the
+        delimiter character
+        -->
+      <context name="RubySourceLine%q_" attribute="Ruby Raw String">
+        <Detect2Chars attribute="Ruby Raw String" char="\" char1="\"/>
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="1" dynamic="true" endRegion="GdlInput"/>
+        <StringDetect attribute="Ruby String Char" String="\%1" dynamic="true"/>
+      </context>
+
+
+      <!-- symbol string specific contexts -->
+
+      <context name="RubySourceLine%s(" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char=")" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%s(_rule"/>
+      </context>
+      <context name="RubySourceLine%s(_nested" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby Symbol" context="#pop" char=")"/>
+        <IncludeRules context="RubySourceLine%s(_rule"/>
+      </context>
+      <context name="RubySourceLine%s(_rule" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby Symbol" context="RubySourceLine%s(_nested" char="("/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1=")"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="("/>
+      </context>
+
+      <context name="RubySourceLine%s{" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="}" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%s{_rule"/>
+      </context>
+      <context name="RubySourceLine%s{_nested" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby Symbol" context="#pop" char="}"/>
+        <IncludeRules context="RubySourceLine%s{_rule"/>
+      </context>
+      <context name="RubySourceLine%s{_rule" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby Symbol" context="RubySourceLine%s{_nested" char="{"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="}"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="{"/>
+      </context>
+
+      <context name="RubySourceLine%s[" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="]" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%s[_rule"/>
+      </context>
+      <context name="RubySourceLine%s[_nested" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby Symbol" context="#pop" char="]"/>
+        <IncludeRules context="RubySourceLine%s[_rule"/>
+      </context>
+      <context name="RubySourceLine%s[_rule" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby Symbol" context="RubySourceLine%s[_nested" char="["/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="]"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="["/>
+      </context>
+
+      <context name="RubySourceLine%s&lt;" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char=">" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%s&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%s&lt;_nested" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby Symbol" context="#pop" char=">"/>
+        <IncludeRules context="RubySourceLine%s&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%s&lt;_rule" attribute="Ruby Symbol">
+        <DetectChar attribute="Ruby Symbol" context="RubySourceLine%s&lt;_nested" char="&lt;"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="\"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1=">"/>
+        <Detect2Chars attribute="Ruby String Char" char="\" char1="&lt;"/>
+      </context>
+
+      <!-- this format doesn't allow nesting. it is terminated by the next occurrence of the
+        delimiter character
+        -->
+      <context name="RubySourceLine%s_" attribute="Ruby Symbol">
+        <Detect2Chars attribute="Ruby Symbol" char="\" char1="\"/>
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="1" dynamic="true" endRegion="GdlInput"/>
+        <StringDetect attribute="Ruby String Char" String="\%1" dynamic="true"/>
+      </context>
+
+
+      <!-- regular expression specific contexts -->
+
+      <context name="RubySourceLine%r(" attribute="Ruby String">
+        <DetectChar attribute="Ruby GDL input" context="#pop!RubySourceLineRegExMode" char=")" endRegion="GdlInput"/> <IncludeRules context="RubySourceLine%r(_rule"/>
+      </context>
+      <context name="RubySourceLine%r(_nested" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="#pop" char=")"/>
+        <IncludeRules context="RubySourceLine%r(_rule"/>
+      </context>
+      <context name="RubySourceLine%r(_rule" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="RubySourceLine%r(_nested" char="("/>
+        <IncludeRules context="RubySourceLineRegExSpecial"/>
+      </context>
+
+      <context name="RubySourceLine%r{" attribute="Ruby String">
+        <DetectChar attribute="Ruby GDL input" context="#pop!RubySourceLineRegExMode" char="}" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%r{_rule"/>
+      </context>
+      <context name="RubySourceLine%r{_nested" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="#pop" char="}"/>
+        <IncludeRules context="RubySourceLine%r{_rule"/>
+      </context>
+      <context name="RubySourceLine%r{_rule" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="RubySourceLine%r{_nested" char="{"/>
+        <IncludeRules context="RubySourceLineRegExSpecial"/>
+      </context>
+
+      <context name="RubySourceLine%r[" attribute="Ruby String">
+        <DetectChar attribute="Ruby GDL input" context="#pop!RubySourceLineRegExMode" char="]" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%r[_rule"/>
+      </context>
+      <context name="RubySourceLine%r[_nested" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="#pop" char="]"/>
+        <IncludeRules context="RubySourceLine%r[_rule"/>
+      </context>
+      <context name="RubySourceLine%r[_rule" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="RubySourceLine%r[_nested" char="["/>
+        <IncludeRules context="RubySourceLineRegExSpecial"/>
+      </context>
+
+      <context name="RubySourceLine%r&lt;" attribute="Ruby String">
+        <DetectChar attribute="Ruby GDL input" context="#pop!RubySourceLineRegExMode" char=">" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%r&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%r&lt;_nested" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="#pop" char=">"/>
+        <IncludeRules context="RubySourceLine%r&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%r&lt;_rule" attribute="Ruby String">
+        <DetectChar attribute="Ruby String" context="RubySourceLine%r&lt;_nested" char="&lt;"/>
+        <IncludeRules context="RubySourceLineRegExSpecial"/>
+      </context>
+
+      <!-- this format doesn't allow nesting. it is terminated by the next occurrence of the
+        delimiter character
+        -->
+      <context name="RubySourceLine%r_" attribute="Ruby Regular Expression">
+        <DetectChar attribute="Ruby GDL input" context="#pop!RubySourceLineRegExMode" char="1" dynamic="true" endRegion="GdlInput"/>
+        <StringDetect attribute="Ruby String Char" String="\%1" dynamic="true"/>
+        <IncludeRules context="RubySourceLineRegExSpecial"/>
+      </context>
+
+
+      <!-- shell command specific contexts -->
+
+      <context name="RubySourceLine%x(" attribute="Ruby Command">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char=")" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%x(_rule"/>
+      </context>
+      <context name="RubySourceLine%x(_nested" attribute="Ruby Command">
+        <DetectChar attribute="Ruby Command" context="#pop" char=")"/>
+        <IncludeRules context="RubySourceLine%x(_rule"/>
+      </context>
+      <context name="RubySourceLine%x(_rule" attribute="Ruby Command">
+        <DetectChar attribute="Ruby Command" context="RubySourceLine%x(_nested" char="("/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+
+      <context name="RubySourceLine%x{" attribute="Ruby Command">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="}" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%x{_rule"/>
+      </context>
+      <context name="RubySourceLine%x{_nested" attribute="Ruby Command">
+        <DetectChar attribute="Ruby Command" context="#pop" char="}"/>
+        <IncludeRules context="RubySourceLine%x{_rule"/>
+      </context>
+      <context name="RubySourceLine%x{_rule" attribute="Ruby Command">
+        <DetectChar attribute="Ruby Command" context="RubySourceLine%x{_nested" char="{"/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+
+      <context name="RubySourceLine%x[" attribute="Ruby Command">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char="]" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%x[_rule"/>
+      </context>
+      <context name="RubySourceLine%x[_nested" attribute="Ruby Command">
+        <DetectChar attribute="Ruby Command" context="#pop" char="]"/>
+        <IncludeRules context="RubySourceLine%x[_rule"/>
+      </context>
+      <context name="RubySourceLine%x[_rule" attribute="Ruby Command">
+        <DetectChar attribute="Ruby Command" context="RubySourceLine%x[_nested" char="["/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+
+      <context name="RubySourceLine%x&lt;" attribute="Ruby Command">
+        <DetectChar attribute="Ruby GDL input" context="#pop#pop!RubySourceLineOp1" char=">" endRegion="GdlInput"/>
+        <IncludeRules context="RubySourceLine%x&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%x&lt;_nested" attribute="Ruby Command">
+        <DetectChar attribute="Ruby Command" context="#pop" char=">"/>
+        <IncludeRules context="RubySourceLine%x&lt;_rule"/>
+      </context>
+      <context name="RubySourceLine%x&lt;_rule" attribute="Ruby Command">
+        <DetectChar attribute="Ruby Command" context="RubySourceLine%x&lt;_nested" char="&lt;"/>
+        <IncludeRules context="RubySourceLineDQuoteSpecial"/>
+      </context>
+
+      <!-- this format doesn't allow nesting. it is terminated by the next occurrence of the
+        delimiter character
+        -->
+      <context name="RubySourceLine%x_" attribute="Ruby Command">
+        <IncludeRules context="RubySourceLine%Q_"/>
+      </context>
+
     </contexts>
 
 
-
-
     <itemDatas>
-    <!-- Ruby itemData -->
-      <itemData name="Ruby Normal Text" defStyleNum="dsNormal"/>
-      <itemData name="Ruby embedded in haml" defStyleNum="dsNormal"/>
+      <!-- HAML itemData -->
 
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Other code embedded in haml" defStyleNum="dsNormal"/>
       <itemData name="Keyword" defStyleNum="dsKeyword"/>
-      <itemData name="Attribute Definition" defStyleNum="dsOthers"/>
-      <itemData name="Access Control" defStyleNum="dsKeyword" color="#0000FF"/>
-      <itemData name="Definition" defStyleNum="dsKeyword"/>
-      <itemData name="Pseudo variable" defStyleNum="dsDecVal"/>
-
-      <itemData name="Dec" defStyleNum="dsDecVal"/>
-      <itemData name="Float" defStyleNum="dsFloat"/>
-      <itemData name="Char" defStyleNum="dsChar"/>
-      <itemData name="Octal" defStyleNum="dsBaseN"/>
-      <itemData name="Hex" defStyleNum="dsBaseN"/>
-      <itemData name="Bin" defStyleNum="dsBaseN"/>
-
-      <itemData name="Symbol" defStyleNum="dsDataType" />
       <itemData name="String" defStyleNum="dsString"/>
-      <itemData name="Escaped Text" defStyleNum="dsChar"/>
-      <itemData name="Unquoted String" defStyleNum="dsString"/>
-      <itemData name="Raw String" defStyleNum="dsString" color="#DD4A4A" selColor="#DD4A4A"/>
-      <itemData name="Command" defStyleNum="dsString" color="#AA3000"/>
-      <itemData name="Message" defStyleNum="dsNormal" color="#4000A7"/> <!-- #4A00C0 -->
-      <itemData name="Regular Expression" defStyleNum="dsOthers" color="#4A5704"/>
-      <itemData name="Substitution" defStyleNum="dsOthers"/>
+      <itemData name="Escaped Text" defStyleNum="dsSpecialChar"/>
+      <itemData name="Operator" defStyleNum="dsPreprocessor"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Doctype" defStyleNum="dsDataType" bold="1"/>
+      <itemData name="Filter" defStyleNum="dsOthers"/>
+      <itemData name="Element Id" defStyleNum="dsFloat" bold="1"/>
+      <itemData name="Element Class" defStyleNum="dsFloat"/>
+      <itemData name="Special Attribute" defStyleNum="dsAttribute"/>
+      <itemData name="Div Id" defStyleNum="dsDecVal" bold="1"/>
+      <itemData name="Div Class" defStyleNum="dsDecVal"/>
+      <itemData name="Tag" defStyleNum="dsKeyword"/>
+      <itemData name="Entity" defStyleNum="dsDecVal"/>
+      <!-- use these to mark errors and alerts things -->
+      <itemData name="Error" defStyleNum="dsError"/>
 
-      <itemData name="Default globals" defStyleNum="dsDataType" color="#C00000" bold="1"/>
-      <itemData name="Global Variable" defStyleNum="dsDataType" color="#C00000"/>
-      <itemData name="Global Constant" defStyleNum="dsDataType" color="#bb1188" bold="1"/>
-      <itemData name="Constant" defStyleNum="dsDataType"/>
-      <itemData name="Constant Value" defStyleNum="dsDataType" color="#bb1188"/>
-      <itemData name="Kernel methods" defStyleNum="dsNormal" color="#000080" selColor="#ffffff"/> <!-- #CC0E86 -->
-      <itemData name="Member" defStyleNum="dsNormal"/>
-      <itemData name="Instance Variable" defStyleNum="dsOthers"/>
-      <itemData name="Class Variable" defStyleNum="dsOthers"/>
+      <!-- Ruby itemData -->
+
+      <itemData name="Ruby Normal Text" defStyleNum="dsNormal"/>
+
+      <itemData name="Ruby Keyword" defStyleNum="dsControlFlow"/>
+      <itemData name="Ruby Attribute Definition" defStyleNum="dsOthers"/>
+      <itemData name="Ruby Access Control" defStyleNum="dsAttribute" bold="1"/> <!-- #0000FF -->
+      <itemData name="Ruby Definition" defStyleNum="dsKeyword"/>
+      <itemData name="Ruby Pseudo variable" defStyleNum="dsDecVal"/>
+
+      <itemData name="Ruby Number" defStyleNum="dsDecVal"/>
+      <itemData name="Ruby Number Suffix" defStyleNum="dsBuiltIn"/>
+
+      <itemData name="Ruby Symbol" defStyleNum="dsWarning" bold="0" underline="0"/> <!-- #D40000 -->
+      <itemData name="Ruby String" defStyleNum="dsString"/>
+      <itemData name="Ruby String Char" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Ruby Raw String" defStyleNum="dsVerbatimString"/> <!-- #DD4A4A -->
+      <itemData name="Ruby Char Literal" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Ruby Char" defStyleNum="dsChar"/>
+
+      <itemData name="Ruby Command" defStyleNum="dsInformation"/> <!-- #AA3000 -->
+      <itemData name="Ruby Message" defStyleNum="dsAttribute" bold="0"/> <!-- #4000A7 -->
+      <itemData name="Ruby Regular Expression" defStyleNum="dsSpecialString" spellChecking="false"/> <!-- #4A5704 -->
+      <itemData name="Ruby Substitution"	defStyleNum="dsSpecialChar"/>
+      <!-- short for 'general delimited input' -->
+      <itemData name="Ruby GDL input" defStyleNum="dsOthers"/>
+
+      <itemData name="Ruby Default globals" defStyleNum="dsVariable" bold="1"/> <!-- #C00000 -->
+      <itemData name="Ruby Global Variable" defStyleNum="dsVariable"/> <!-- #C00000 -->
+      <itemData name="Ruby Global Constant" defStyleNum="dsConstant" bold="1"/> <!-- #bb1188 -->
+      <itemData name="Ruby Constant" defStyleNum="dsDataType"/>
+      <itemData name="Ruby Constant Value" defStyleNum="dsConstant" bold="0"/> <!-- #bb1188 -->
+      <itemData name="Ruby Kernel methods" defStyleNum="dsFunction" bold="1"/> <!-- #CC0E86 -->
+      <itemData name="Ruby Module mixin methods" defStyleNum="dsFunction" bold="1"/> <!-- #CC0E86 -->
+      <itemData name="Ruby Member" defStyleNum="dsAttribute"/>
+      <itemData name="Ruby Instance Variable" defStyleNum="dsOthers"/>
+      <itemData name="Ruby Class Variable" defStyleNum="dsOthers"/>
 
       <itemData name="Ruby Comment" defStyleNum="dsComment"/>
-      <itemData name="Blockcomment" defStyleNum="dsComment"/>
 
-      <!-- use these to mark errors and alerts things -->
-      <itemData name="Error" defStyleNum="dsError" />
+      <itemData name="Ruby Here Document" defStyleNum="dsDocumentation"/>
 
-      <itemData name="Delimiter" defStyleNum="dsChar"/>
-      <itemData name="Operator" defStyleNum="dsChar"/>
+      <itemData name="Ruby Delimiter" defStyleNum="dsKeyword"/> <!-- #FF9FEC -->
+      <itemData name="Ruby Operator" defStyleNum="dsOperator" bold="1"/> <!-- #FF9FEC -->
 
-     <!-- HAML itemData -->
-
-      <itemData name="Normal Text" defStyleNum="dsNormal" />
-      <itemData name="Hash" defStyleNum="dsNormal" />
-      <itemData name="Comment" defStyleNum="dsComment" />
-      <itemData name="Doctype" defStyleNum="dsDataType" bold="1" />
-      <itemData name="Filter" defStyleNum="dsOthers" />
-      <itemData name="Element Id" defStyleNum="dsFloat" bold="1" />
-      <itemData name="Element Class" defStyleNum="dsFloat" />
-      <itemData name="Div Id" defStyleNum="dsDecVal" bold="1" />
-      <itemData name="Div Class" defStyleNum="dsDecVal" />
-      <itemData name="Tag" defStyleNum="dsKeyword" />
-      <itemData name="Entity" defStyleNum="dsDecVal" />
     </itemDatas>
   </highlighting>
   <general>
-    <folding indentationsensitive="1" />
+    <folding indentationsensitive="1"/>
     <emptyLines>
-      <emptyLine regexpr="\s+" casesensitive="false"/>
+      <emptyLine regexpr="\s+"/>
     </emptyLines>
     <comments>
-      <comment name="singleLine" start="/"/>
+      <comment name="singleLine" start="/" position="afterwhitespace"/>
     </comments>
-    <keywords casesensitive="1"/>
+    <keywords casesensitive="1" weakDeliminator="!?"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!--
+  Overpass Query Language: https://wiki.openstreetmap.org/wiki/Overpass_API/Overpass_QL
+  Examples: https://wiki.openstreetmap.org/wiki/Overpass_API/Overpass_API_by_Example
+-->
+<language name="Overpass QL" section="Other" version="3" kateversion="5.0" extensions="*.overpassql" author="Volker Krause (vkrause@kde.org)" license="MIT">
+  <highlighting>
+    <list name="listSets">
+      <item>node</item>
+      <item>rel</item>
+      <item>relation</item>
+      <item>way</item>
+    </list>
+
+    <list name="listBlockStatements">
+      <item>compare</item>
+      <item>complete</item>
+      <item>if</item>
+      <item>else</item>
+      <item>for</item>
+      <item>foreach</item>
+      <item>retro</item>
+    </list>
+
+    <list name="listQueries">
+      <item>convert</item>
+      <item>is_in</item>
+      <item>local</item>
+      <item>make</item>
+      <item>out</item>
+      <item>timeline</item>
+    </list>
+    <list name="listFilters">
+      <item>area</item>
+      <item>around</item>
+      <item>changed</item>
+      <item>newer</item>
+      <item>pivot</item>
+      <item>poly</item>
+      <item>user</item>
+      <item>uid</item>
+    </list>
+
+    <list name="listEvaluators">
+      <item>changeset</item>
+      <item>center</item>
+      <item>count</item>
+      <item>count_distinct_by_role</item>
+      <item>count_distinct_members</item>
+      <item>count_members</item>
+      <item>count_tags</item>
+      <item>date</item>
+      <item>id</item>
+      <item>is_date</item>
+      <item>is_number</item>
+      <item>gcat</item>
+      <item>geom</item>
+      <item>hull</item>
+      <item>is_closed</item>
+      <item>is_tag</item>
+      <item>keys</item>
+      <item>length</item>
+      <item>lrs_in</item>
+      <item>lrs_isect</item>
+      <item>lrs_max</item>
+      <item>lrs_min</item>
+      <item>lrc_union</item>
+      <item>max</item>
+      <item>min</item>
+      <item>number</item>
+      <item>lstr</item>
+      <item>pt</item>
+      <item>set</item>
+      <item>suffix</item>
+      <item>sum</item>
+      <item>timestamp</item>
+      <item>trace</item>
+      <item>type</item>
+      <item>version</item>
+    </list>
+    <list name="listOther">
+      <item>bb</item>
+      <item>body</item>
+      <item>center</item>
+      <item>ids</item>
+      <item>meta</item>
+      <item>qt</item>
+      <item>skel</item>
+    </list>
+
+    <contexts>
+      <context name="ctxNormal" lineEndContext="#stay" attribute="Normal">
+        <DetectChar char="(" beginRegion="regionUnion"/>
+        <DetectChar char=")" endRegion="regionUnion"/>
+        <Float attribute="Float"/>
+        <Int attribute="Decimal"/>
+        <keyword String="listSets" attribute="Queries"/>
+        <keyword String="listBlockStatements" attribute="Keyword"/>
+        <keyword String="listQueries" attribute="Queries"/>
+        <keyword String="listFilters" attribute="Queries"/>
+        <keyword String="listEvaluators" attribute="Evaluators"/>
+        <keyword String="listOther" attribute="Evaluators"/>
+        <DetectChar attribute="String" context="ctxString" char="&quot;"/>
+        <Detect2Chars attribute="Comment" context="ctxSingeLineComment" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="ctxMultiLineComment" char="/" char1="*" beginRegion="Comment"/>
+        <RegExpr String="\b[_A-Za-z][_0-9A-Za-z]*(?=:)" attribute="Named Argument"/>
+        <StringDetect String="{{bbox}}" attribute="Overpass Turbo Placeholders"/>
+      </context>
+
+      <context name="ctxString" attribute="String" lineEndContext="#pop">
+        <HlCStringChar attribute="Special Character" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <context name="ctxSingeLineComment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context name="ctxMultiLineComment" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces />
+        <Detect2Chars context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Named Argument" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Decimal" defStyleNum="dsDecVal"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Special Character" defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Queries" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Evaluators" defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="Overpass Turbo Placeholders" defStyleNum="dsPreprocessor" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//"/>
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+    </comments>
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Fortran (Free Format)" version="2" kateversion="5.53" section="Sources" extensions="*.f90;*.F90;*.f95;*.F95;*.f03;*.F03;*.f08;*.F08;" mimetype="text/x-fortran-src" casesensitive="0" author="Franchin Matteo (fnch@libero.it), Janus Weil" license="MIT" priority="10">
+<!DOCTYPE language>
+<language name="Fortran (Free Format)" version="5" kateversion="5.53" section="Sources" extensions="*.f90;*.F90;*.f95;*.F95;*.f03;*.F03;*.f08;*.F08;" mimetype="text/x-fortran-src" casesensitive="0" author="Franchin Matteo (fnch@libero.it), Janus Weil" license="MIT" priority="10">
 <!-- Original author: Franchin Matteo (fnch@libero.it).
      Adaptation to free & fixed format: Janus Weil.
 -->
@@ -148,8 +148,7 @@
         <DetectChar attribute="Comment" context="comment" char="!"/>
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="comment">
-        <IncludeRules context="##Alerts"/>
-        <IncludeRules context="##Modelines"/>
+        <IncludeRules context="##Comments"/>
       </context>
 
 <!-- This context highlights items inside the parentesis of a function -->
@@ -164,9 +163,8 @@
 
 <!-- The following two contexts match input/output statements -->
       <context attribute="Normal Text" lineEndContext="#stay" name="find_io_stmnts">
-        <RegExpr attribute="IO Function" context="find_io_paren" String="\b(flush|wait)\s*[(]" insensitive="true"/>
       <!-- find_io_stmnts##Fortran (Fixed Format) -->
-        <RegExpr attribute="IO Function" context="find_io_paren" String="\b(read|write|backspace|rewind|end\s*file|close|open|inquire)\s*[(]" insensitive="true"/>
+        <RegExpr attribute="IO Function" context="find_io_paren" String="\b(?:flush|wait|read|write|backspace|rewind|end\s*file|close|open|inquire)\s*[(]" insensitive="true"/>
         <RegExpr attribute="IO Function" context="format_stmnt" String="\bformat\s*[(]" insensitive="true"/>
         <RegExpr attribute="IO Function" context="#stay" String="\bend\s*file\b" insensitive="true"/>
         <keyword attribute="IO Function" context="#stay" String="io_functions"/>
@@ -197,53 +195,51 @@
 <!-- The following context matches the begin of program units -->
       <context attribute="Normal Text" lineEndContext="#stay" name="find_begin_stmnts">
         <WordDetect attribute="Keyword" context="#stay" String="submodule" insensitive="true" beginRegion="Routine"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\b(do\s*(,|\s)\s*concurrent|select\s+type|block|critical)\b" insensitive="true" beginRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(?:do\s*[,\s]\s*concurrent|select\s+type|block|critical)\b" insensitive="true" beginRegion="Block"/>
       <!-- Here IncludeRules: find_begin_stmnts##Fortran (Fixed Format) -->
         <RegExpr attribute="Keyword" context="#stay" String="\bmodule\s+procedure\b" insensitive="true"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\b(subroutine|function|block\s*data|program|module)\b" insensitive="true" beginRegion="Routine"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\b(then|do|select\s+case)\b" insensitive="true" beginRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(?:subroutine|function|block\s*data|program|module)\b" insensitive="true" beginRegion="Routine"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(?:then|do|select\s+case)\b" insensitive="true" beginRegion="Block"/>
       </context>
 <!-- The following context matches the end of program units -->
       <context attribute="Normal Text" lineEndContext="#stay" name="find_end_stmnts">
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(procedure|submodule)\b" insensitive="true" endRegion="Routine"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(block|critical)\b" insensitive="true" endRegion="Block"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(associate)\b" insensitive="true"/>
-        <RegExpr attribute="Data Type" context="#stay" String="\bend\s*(type|enum)\b" insensitive="true"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(?:procedure|submodule)\b" insensitive="true" endRegion="Routine"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(?:block|critical)\b" insensitive="true" endRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(?:associate)\b" insensitive="true"/>
+        <RegExpr attribute="Data Type" context="#stay" String="\bend\s*(?:type|enum)\b" insensitive="true"/>
       <!-- Here IncludeRules: find_end_stmnts##Fortran (Fixed Format) -->
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(subroutine|function|block\s*data|program|module)\b" insensitive="true" endRegion="Routine"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(do|if)\b" insensitive="true" endRegion="Block"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(select|where|forall|interface)\b" insensitive="true"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(?:subroutine|function|block\s*data|program|module)\b" insensitive="true" endRegion="Routine"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(?:do|if)\b" insensitive="true" endRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s*(?:select|where|forall|interface)\b" insensitive="true"/>
         <RegExpr attribute="Keyword" context="#stay" String="\belse\s*if\b" insensitive="true" endRegion="Block"/>
         <WordDetect attribute="Keyword" context="#stay" String="end" insensitive="true" endRegion="Routine"/>
       </context>
 <!-- The following context matches the mid of program units -->
       <context attribute="Normal Text" lineEndContext="#stay" name="find_mid_stmnts">
-        <RegExpr attribute="Keyword" context="#stay" String="\b(type\s+is|class\s+(is|default))\b" insensitive="true" endRegion="Block" beginRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(?:type\s+is|class\s+(?:is|default))\b" insensitive="true" endRegion="Block" beginRegion="Block"/>
       <!-- Here IncludeRules: find_mid_stmnts##Fortran (Fixed Format) -->
         <WordDetect attribute="Keyword" context="#stay" String="else" insensitive="true" endRegion="Block" beginRegion="Block"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bcase(\s+default)?\b" insensitive="true" endRegion="Block" beginRegion="Block"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\bcase(?:\s+default)?\b" insensitive="true" endRegion="Block" beginRegion="Block"/>
         <WordDetect attribute="Keyword" context="#stay" String="contains" insensitive="true" endRegion="Routine" beginRegion="Routine"/>
       </context>
 
 <!-- The following two contexts match declarations -->
       <context attribute="Normal Text" lineEndContext="#stay" name="find_decls">
-        <RegExpr attribute="Data Type" context="find_paren" String="\b(class|extends|procedure|pass|codimension)\s*[(]" insensitive="true"/>
+        <RegExpr attribute="Data Type" context="find_paren" String="\b(?:class|extends|procedure|pass|codimension)\s*[(]" insensitive="true"/>
         <WordDetect attribute="Data Type" context="#stay" String="codimension" insensitive="true"/>
         <WordDetect attribute="Data Type" context="#stay" String="procedure" insensitive="true"/>
         <WordDetect attribute="Data Type" context="#stay" String="pass" insensitive="true"/>
       <!-- find_decls##Fortran (Fixed Format) -->
         <keyword attribute="Data Type" context="#stay" String="types"/>
         <!--<RegExpr attribute="Data Type" context="find_paren" String="real\s*[(]" firstNonSpace="true" insensitive="true"/>-->
-        <RegExpr attribute="Data Type" context="find_paren" String="\b(type|integer|real|complex|character|logical|intent|dimension)\s*[(]" insensitive="true"/>
+        <RegExpr attribute="Data Type" context="find_paren" String="\b(?:type|integer|real|complex|character|logical|intent|dimension)\s*[(]" insensitive="true"/>
         <IncludeRules context="find_decls##Fortran (Fixed Format)"/>
       </context>
 <!-- This context matches parenthesis in data type declarations, such as in 'real(...)'-->
       <context attribute="Data Type" lineEndContext="#pop" name="find_paren">
       <!-- find_paren##Fortran (Fixed Format) -->
-        <DetectChar attribute="Data Type" context="find_paren" char="("/>
-        <DetectChar attribute="Data Type" context="find_paren" char="["/>
-        <DetectChar attribute="Data Type" context="#pop" char=")"/>
-        <DetectChar attribute="Data Type" context="#pop" char="]"/>
+        <AnyChar attribute="Data Type" context="find_paren" String="(["/>
+        <AnyChar attribute="Data Type" context="#pop" String=")]"/>
       </context>
 
 <!-- The following context matches intrinsic procedures -->

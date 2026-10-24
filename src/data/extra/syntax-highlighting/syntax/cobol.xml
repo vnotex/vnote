@@ -1,0 +1,749 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY div "DATA|ENVIRONMENT|ID|IDENTIFICATION|PROCEDURE">
+  <!ENTITY sec "COMMUNICATION|CONFIGURATION|FILE|INPUT-OUTPUT|LINKAGE|LOCAL-STORAGE|REPORT|SCREEN|WORKING-STORAGE">
+  <!ENTITY seplist "[\s&lt;>+/*$,;():=.]">
+  <!ENTITY picsym "([-+*$ABCDENPRSUVXZ910]+(\([0-9]+\))?)+">
+]>
+<language name="COBOL" section="Sources" version="2" kateversion="5.62"
+          extensions="*.cob;*.cbl;*.cpy;*.copy;*.lst;*.pco;*.scb;*.sqb"
+          author="Jonathan Poelen (jonathan.poelen@gmail.com);github.com/MihailJP" license="MIT">
+<highlighting>
+
+<list name="picture">
+  <item>PIC</item>
+  <item>PICTURE</item>
+</list>
+
+<list name="verbs">
+  <item>ACCEPT</item>
+  <item>ADD</item>
+  <item>ALTER</item>
+  <item>CALL</item>
+  <item>COMPUTE</item>
+  <item>DELETE</item>
+  <item>DISPLAY</item>
+  <item>DIVIDE</item>
+  <item>END-ACCEPT</item>
+  <item>END-ADD</item>
+  <item>END-CALL</item>
+  <item>END-COMPUTE</item>
+  <item>END-DELETE</item>
+  <item>END-DISPLAY</item>
+  <item>END-DIVIDE</item>
+  <item>END-EVALUATE</item>
+  <item>END-IF</item>
+  <item>END-MULTIPLY</item>
+  <item>END-PERFORM</item>
+  <item>END-READ</item>
+  <item>END-RECEIVE</item>
+  <item>END-RETURN</item>
+  <item>END-REWRITE</item>
+  <item>END-SEARCH</item>
+  <item>END-START</item>
+  <item>END-STRING</item>
+  <item>END-SUBTRACT</item>
+  <item>END-UNSTRING</item>
+  <item>END-WRITE</item>
+  <item>EVALUATE</item>
+  <item>IF</item>
+  <item>MULTIPLY</item>
+  <item>PERFORM</item>
+  <item>READ</item>
+  <item>RECEIVE</item>
+  <item>RETURN</item>
+  <item>REWRITE</item>
+  <item>SEARCH</item>
+  <item>START</item>
+  <item>STRING</item>
+  <item>SUBTRACT</item>
+  <item>UNSTRING</item>
+  <item>WRITE</item>
+  <item>ASSIGN</item>
+  <item>CHAIN</item>
+  <item>CLOSE</item>
+  <item>CONTINUE</item>
+  <item>CONTROL</item>
+  <item>COPY</item>
+  <item>COUNT</item>
+  <item>ELSE</item>
+  <item>ENABLE</item>
+  <item>ERASE</item>
+  <item>EXIT</item>
+  <item>GENERATE</item>
+  <item>GO</item>
+  <item>GOBACK</item>
+  <item>IGNORE</item>
+  <item>INITIALIZE</item>
+  <item>INITIATE</item>
+  <item>INSPECT</item>
+  <item>INVOKE</item>
+  <item>MERGE</item>
+  <item>MOVE</item>
+  <item>OPEN</item>
+  <item>RELEASE</item>
+  <item>REPLACE</item>
+  <item>RESERVE</item>
+  <item>RESET</item>
+  <item>REWIND</item>
+  <item>ROLLBACK</item>
+  <item>RUN</item>
+  <item>SELECT</item>
+  <item>SEND</item>
+  <item>SET</item>
+  <item>SORT</item>
+  <item>STOP</item>
+  <item>SUM</item>
+  <item>SUPPRESS</item>
+  <item>TERMINATE</item>
+  <item>THEN</item>
+  <item>TRANSFORM</item>
+  <item>UNLOCK</item>
+  <item>UPDATE</item>
+  <item>USE</item>
+  <item>WAIT</item>
+  <item>WHEN</item>
+</list>
+
+<list name="usages">
+  <item>BINARY</item>
+  <item>BINARY-C-LONG</item>
+  <item>BINARY-CHAR</item>
+  <item>BINARY-DOUBLE</item>
+  <item>BINARY-LONG</item>
+  <item>BINARY-SHORT</item>
+  <item>COMP</item>
+  <item>COMP-1</item>
+  <item>COMP-2</item>
+  <item>COMP-3</item>
+  <item>COMP-4</item>
+  <item>COMP-5</item>
+  <item>COMP-X</item>
+  <item>COMPUTATIONAL</item>
+  <item>COMPUTATIONAL-1</item>
+  <item>COMPUTATIONAL-2</item>
+  <item>COMPUTATIONAL-3</item>
+  <item>COMPUTATIONAL-4</item>
+  <item>COMPUTATIONAL-5</item>
+  <item>COMPUTATIONAL-X</item>
+  <item>FLOAT-BINARY-16</item>
+  <item>FLOAT-BINARY-34</item>
+  <item>FLOAT-BINARY-7</item>
+  <item>FLOAT-DECIMAL-16</item>
+  <item>FLOAT-DECIMAL-34</item>
+  <item>FLOAT-EXTENDED</item>
+  <item>FLOAT-LONG</item>
+  <item>FLOAT-SHORT</item>
+  <item>FUNCTION-POINTER</item>
+  <item>INDEX</item>
+  <item>NATIONAL</item>
+  <item>PACKED-DECIMAL</item>
+  <item>POINTER</item>
+  <item>PROCEDURE-POINTER</item>
+  <item>PROGRAM-POINTER</item>
+  <item>SIGNED</item>
+  <item>SIGNED-INT</item>
+  <item>SIGNED-LONG</item>
+  <item>SIGNED-SHORT</item>
+  <item>UNSIGNED</item>
+  <item>UNSIGNED-INT</item>
+  <item>UNSIGNED-LONG</item>
+  <item>UNSIGNED-SHORT</item>
+</list>
+
+<list name="keywords">
+  <item>CD</item>
+  <item>COMMUNICATION</item>
+  <item>CONFIGURATION</item>
+  <item>DATA</item>
+  <item>DECLARATIVES</item>
+  <item>DIVISION</item>
+  <item>ENVIRONMENT</item>
+  <item>FD</item>
+  <item>FILE</item>
+  <item>FILE-CONTROL</item>
+  <item>I-O</item>
+  <item>I-O-CONTROL</item>
+  <item>ID</item>
+  <item>IDENTIFICATION</item>
+  <item>INPUT</item>
+  <item>INPUT-OUTPUT</item>
+  <item>LINKAGE</item>
+  <item>LOCAL-STORAGE</item>
+  <item>OUTPUT</item>
+  <item>PROCEDURE</item>
+  <item>PROGRAM</item>
+  <item>RD</item>
+  <item>REPORT</item>
+  <item>REPOSITORY</item>
+  <item>SD</item>
+  <item>SECTION</item>
+  <item>SPECIAL-NAMES</item>
+  <item>WORKING-STORAGE</item>
+</list>
+
+<list name="keywords-block">
+  <item>PROGRAM-ID</item>
+  <item>FUNCTION-ID</item>
+  <item>CLASS-ID</item>
+  <item>INTERFACE-ID</item>
+  <item>METHOD-ID</item>
+  <item>FACTORY</item>
+  <item>OBJECT</item>
+</list>
+
+<list name="logical">
+  <item>AND</item>
+  <item>EQUAL</item>
+  <item>EQUALS</item>
+  <item>GREATER</item>
+  <item>LESS</item>
+  <item>OR</item>
+  <item>THAN</item>
+</list>
+
+<list name="constants">
+  <item>HIGH-VALUEHIGH-VALUES</item>
+  <item>LOW-VALUE</item>
+  <item>LOW-VALUES</item>
+  <item>NULL</item>
+  <item>NULLS</item>
+  <item>QUOTE</item>
+  <item>QUOTES</item>
+  <item>SPACE</item>
+  <item>SPACES</item>
+  <item>ZERO</item>
+  <item>ZEROES</item>
+  <item>ZEROS</item>
+</list>
+
+<list name="reserved">
+  <item>ACCESS</item>
+  <item>ACTIVE-CLASS</item>
+  <item>ADDRESS</item>
+  <item>ADVANCING</item>
+  <item>AFTER</item>
+  <item>ALIGNED</item>
+  <item>ALL</item>
+  <item>ALLOCATE</item>
+  <item>ALPHABET</item>
+  <item>ALPHABETIC</item>
+  <item>ALPHABETIC-LOWER</item>
+  <item>ALPHABETIC-UPPER</item>
+  <item>ALPHANUMERIC</item>
+  <item>ALPHANUMERIC-EDITED</item>
+  <item>ALSO</item>
+  <item>ALTERNATE</item>
+  <item>ANY</item>
+  <item>ANYCASE</item>
+  <item>ARE</item>
+  <item>AREA</item>
+  <item>AREAS</item>
+  <item>ARGUMENT-NUMBER</item>
+  <item>ARGUMENT-VALUE</item>
+  <item>ARITHMETIC</item>
+  <item>AS</item>
+  <item>ASCENDING</item>
+  <item>AT</item>
+  <item>ATTRIBUTE</item>
+  <item>AUTO</item>
+  <item>AUTO-SKIP</item>
+  <item>AUTOMATIC</item>
+  <item>AUTOTERMINATE</item>
+  <item>B-AND</item>
+  <item>B-NOT</item>
+  <item>B-OR</item>
+  <item>B-XOR</item>
+  <item>BACKGROUND-COLOR</item>
+  <item>BASED</item>
+  <item>BEEP</item>
+  <item>BEFORE</item>
+  <item>BELL</item>
+  <item>BIT</item>
+  <item>BLANK</item>
+  <item>BLINK</item>
+  <item>BLOCK</item>
+  <item>BOOLEAN</item>
+  <item>BOTTOM</item>
+  <item>BY</item>
+  <item>BYTE-LENGTH</item>
+  <item>CANCEL</item>
+  <item>CENTER</item>
+  <item>CF</item>
+  <item>CH</item>
+  <item>CHAINING</item>
+  <item>CHARACTER</item>
+  <item>CHARACTERS</item>
+  <item>CLASS</item>
+  <item>CLASSIFICATION</item>
+  <item>CODE</item>
+  <item>CODE-SET</item>
+  <item>COL</item>
+  <item>COLLATING</item>
+  <item>COLS</item>
+  <item>COLUMN</item>
+  <item>COLUMNS</item>
+  <item>COMMA</item>
+  <item>COMMAND-LINE</item>
+  <item>COMMIT</item>
+  <item>COMMON</item>
+  <item>CONDITION</item>
+  <item>CONSTANT</item>
+  <item>CONTAINS</item>
+  <item>CONTENT</item>
+  <item>CONTROLS</item>
+  <item>CONVERTING</item>
+  <item>CORR</item>
+  <item>CORRESPONDING</item>
+  <item>CRT</item>
+  <item>CURRENCY</item>
+  <item>CURSOR</item>
+  <item>CYCLE</item>
+  <item>DATA-POINTER</item>
+  <item>DATE</item>
+  <item>DAY</item>
+  <item>DAY-OF-WEEK</item>
+  <item>DE</item>
+  <item>DEBUGGING</item>
+  <item>DECIMAL-POINT</item>
+  <item>DEFAULT</item>
+  <item>DELIMITED</item>
+  <item>DELIMITER</item>
+  <item>DEPENDING</item>
+  <item>DESCENDING</item>
+  <item>DESTINATION</item>
+  <item>DETAIL</item>
+  <item>DISABLE</item>
+  <item>DISK</item>
+  <item>DOWN</item>
+  <item>DUPLICATES</item>
+  <item>DYNAMIC</item>
+  <item>EBCDIC</item>
+  <item>EC</item>
+  <item>EGI</item>
+  <item>EMI</item>
+  <item>END</item>
+  <item>END-OF-PAGE</item>
+  <item>ENTRY</item>
+  <item>ENTRY-CONVENTION</item>
+  <item>ENVIRONMENT-NAME</item>
+  <item>ENVIRONMENT-VALUE</item>
+  <item>EO</item>
+  <item>EOL</item>
+  <item>EOP</item>
+  <item>EOS</item>
+  <item>ERROR</item>
+  <item>ESCAPE</item>
+  <item>ESI</item>
+  <item>EXCEPTION</item>
+  <item>EXCEPTION-OBJECT</item>
+  <item>EXCLUSIVE</item>
+  <item>EXPANDS</item>
+  <item>EXTEND</item>
+  <item>EXTERNAL</item>
+  <item>FALSE</item>
+  <item>FILE-ID</item>
+  <item>FILLER</item>
+  <item>FINAL</item>
+  <item>FIRST</item>
+  <item>FOOTING</item>
+  <item>FOR</item>
+  <item>FOREGROUND-COLOR</item>
+  <item>FOREVER</item>
+  <item>FORMAT</item>
+  <item>FREE</item>
+  <item>FROM</item>
+  <item>FULL</item>
+  <item>GET</item>
+  <item>GIVING</item>
+  <item>GLOBAL</item>
+  <item>GROUP</item>
+  <item>GROUP-USAGE</item>
+  <item>HEADING</item>
+  <item>HIGH-VALUE</item>
+  <item>HIGH-VALUES</item>
+  <item>HIGHLIGHT</item>
+  <item>IGNORING</item>
+  <item>IMPLEMENTS</item>
+  <item>IN</item>
+  <item>INDEXED</item>
+  <item>INDICATE</item>
+  <item>INFINITY</item>
+  <item>INHERITS</item>
+  <item>INITIAL</item>
+  <item>INITIALIZED</item>
+  <item>INTERFACE</item>
+  <item>INTO</item>
+  <item>INTRINSIC</item>
+  <item>INVALID</item>
+  <item>IS</item>
+  <item>JUST</item>
+  <item>JUSTIFIED</item>
+  <item>KEY</item>
+  <item>LABEL</item>
+  <item>LAST</item>
+  <item>LC_ALL</item>
+  <item>LC_COLLATE</item>
+  <item>LC_CTYPE</item>
+  <item>LC_MESSAGES</item>
+  <item>LC_MONETARY</item>
+  <item>LC_NUMERIC</item>
+  <item>LC_TIME</item>
+  <item>LEADING</item>
+  <item>LEFT</item>
+  <item>LENGTH</item>
+  <item>LIMIT</item>
+  <item>LIMITS</item>
+  <item>LINAGE</item>
+  <item>LINAGE-COUNTER</item>
+  <item>LINE</item>
+  <item>LINE-COUNTER</item>
+  <item>LINES</item>
+  <item>LOCALE</item>
+  <item>LOCK</item>
+  <item>LOWLIGHT</item>
+  <item>MANUAL</item>
+  <item>MEMORY</item>
+  <item>MESSAGE</item>
+  <item>METHOD</item>
+  <item>MINUS</item>
+  <item>MODE</item>
+  <item>MULTIPLE</item>
+  <item>NATIONAL-EDITED</item>
+  <item>NATIVE</item>
+  <item>NEGATIVE</item>
+  <item>NESTED</item>
+  <item>NEXT</item>
+  <item>NO</item>
+  <item>NONE</item>
+  <item>NORMAL</item>
+  <item>NOT</item>
+  <item>NUMBER</item>
+  <item>NUMBERS</item>
+  <item>NUMERIC</item>
+  <item>NUMERIC-EDITED</item>
+  <item>OBJECT-COMPUTER</item>
+  <item>OBJECT-REFERENCE</item>
+  <item>OCCURS</item>
+  <item>OF</item>
+  <item>OFF</item>
+  <item>OMITTED</item>
+  <item>ON</item>
+  <item>ONLY</item>
+  <item>OPTIONAL</item>
+  <item>OPTIONS</item>
+  <item>ORDER</item>
+  <item>ORGANIZATION</item>
+  <item>OTHER</item>
+  <item>OVERFLOW</item>
+  <item>OVERLINE</item>
+  <item>OVERRIDE</item>
+  <item>PADDING</item>
+  <item>PAGE</item>
+  <item>PAGE-COUNTER</item>
+  <item>PARAGRAPH</item>
+  <item>PF</item>
+  <item>PH</item>
+  <item>PLUS</item>
+  <item>POSITION</item>
+  <item>POSITIVE</item>
+  <item>PRESENT</item>
+  <item>PREVIOUS</item>
+  <item>PRINTER</item>
+  <item>PRINTING</item>
+  <item>PROCEDURES</item>
+  <item>PROCEED</item>
+  <item>PROMPT</item>
+  <item>PROPERTY</item>
+  <item>PROTOTYPE</item>
+  <item>PURGE</item>
+  <item>QUEUE</item>
+  <item>RAISE</item>
+  <item>RAISING</item>
+  <item>RANDOM</item>
+  <item>RECORD</item>
+  <item>RECORDING</item>
+  <item>RECORDS</item>
+  <item>RECURSIVE</item>
+  <item>REDEFINES</item>
+  <item>REEL</item>
+  <item>REFERENCE</item>
+  <item>RELATION</item>
+  <item>RELATIVE</item>
+  <item>REMAINDER</item>
+  <item>REMOVAL</item>
+  <item>RENAMES</item>
+  <item>REPLACING</item>
+  <item>REPORTING</item>
+  <item>REPORTS</item>
+  <item>REQUIRED</item>
+  <item>RESUME</item>
+  <item>RETRY</item>
+  <item>RETURNING</item>
+  <item>REVERSE-VIDEO</item>
+  <item>RF</item>
+  <item>RH</item>
+  <item>RIGHT</item>
+  <item>ROUNDED</item>
+  <item>SAME</item>
+  <item>SCREEN</item>
+  <item>SCROLL</item>
+  <item>SECONDS</item>
+  <item>SECURE</item>
+  <item>SEGMENT</item>
+  <item>SEGMENT-LIMIT</item>
+  <item>SELF</item>
+  <item>SENTENCE</item>
+  <item>SEPARATE</item>
+  <item>SEQUENCE</item>
+  <item>SEQUENTIAL</item>
+  <item>SHARING</item>
+  <item>SIGN</item>
+  <item>SIZE</item>
+  <item>SORT-MERGE</item>
+  <item>SOURCE</item>
+  <item>SOURCE-COMPUTER</item>
+  <item>SOURCES</item>
+  <item>STANDARD</item>
+  <item>STANDARD-1</item>
+  <item>STANDARD-2</item>
+  <item>STATEMENT</item>
+  <item>STATUS</item>
+  <item>STEP</item>
+  <item>STRONG</item>
+  <item>SUB-QUEUE-1</item>
+  <item>SUB-QUEUE-2</item>
+  <item>SUB-QUEUE-3</item>
+  <item>SUPER</item>
+  <item>SYMBOL</item>
+  <item>SYMBOLIC</item>
+  <item>SYNC</item>
+  <item>SYNCHRONIZED</item>
+  <item>SYSTEM-DEFAULT</item>
+  <item>TABLE</item>
+  <item>TALLYING</item>
+  <item>TAPE</item>
+  <item>TERMINAL</item>
+  <item>TEST</item>
+  <item>TEXT</item>
+  <item>THROUGH</item>
+  <item>THRU</item>
+  <item>TIME</item>
+  <item>TIMES</item>
+  <item>TO</item>
+  <item>TOP</item>
+  <item>TRAILING</item>
+  <item>TRUE</item>
+  <item>TYPE</item>
+  <item>TYPEDEF</item>
+  <item>UCS-4</item>
+  <item>UNDERLINE</item>
+  <item>UNIT</item>
+  <item>UNIVERSAL</item>
+  <item>UNTIL</item>
+  <item>UP</item>
+  <item>UPON</item>
+  <item>USAGE</item>
+  <item>USER-DEFAULT</item>
+  <item>USING</item>
+  <item>UTF-16</item>
+  <item>UTF-8</item>
+  <item>VAL-STATUS</item>
+  <item>VALID</item>
+  <item>VALIDATE</item>
+  <item>VALIDATE-STATUS</item>
+  <item>VALUE</item>
+  <item>VALUES</item>
+  <item>VARYING</item>
+  <item>WITH</item>
+  <item>WORDS</item>
+  <item>YYYYDDD</item>
+  <item>YYYYMMDD</item>
+</list>
+
+<list name="functions">
+  <item>ABS</item>
+  <item>ACOS</item>
+  <item>ANNUITY</item>
+  <item>ASIN</item>
+  <item>ATAN</item>
+  <item>BYTE-LENGTH</item>
+  <item>CHAR</item>
+  <item>CONCATENATE</item>
+  <item>COS</item>
+  <item>CURRENT-DATE</item>
+  <item>DATE-OF-INTEGER</item>
+  <item>DATE-TO-YYYYMMDD</item>
+  <item>DAY-OF-INTEGER</item>
+  <item>DAY-TO-YYYYDDD</item>
+  <item>E</item>
+  <item>EXCEPTION-FILE</item>
+  <item>EXCEPTION-LOCATION</item>
+  <item>EXCEPTION-STATEMENT</item>
+  <item>EXCEPTION-STATUS</item>
+  <item>EXP</item>
+  <item>EXP10</item>
+  <item>FACTORIAL</item>
+  <item>FRACTION-PART</item>
+  <item>INTEGER</item>
+  <item>INTEGER-OF-DATE</item>
+  <item>INTEGER-OF-DAY</item>
+  <item>INTEGER-PART</item>
+  <item>LENGTH</item>
+  <item>LOCALE-DATE</item>
+  <item>LOCALE-TIME</item>
+  <item>LOG</item>
+  <item>LOG10</item>
+  <item>LOWER-CASE</item>
+  <item>MAX</item>
+  <item>MEAN</item>
+  <item>MEDIAN</item>
+  <item>MIDRANGE</item>
+  <item>MIN</item>
+  <item>MOD</item>
+  <item>NUMVAL</item>
+  <item>NUMVAL-C</item>
+  <item>ORD</item>
+  <item>ORD-MAX</item>
+  <item>ORD-MIN</item>
+  <item>PI</item>
+  <item>PRESENT-VALUE</item>
+  <item>RANDOM</item>
+  <item>RANGE</item>
+  <item>REM</item>
+  <item>REVERSE</item>
+  <item>SECONDS-FROM-FORMATTED-TIME</item>
+  <item>SECONDS-PAST-MIDNIGHT</item>
+  <item>SIGN</item>
+  <item>SIN</item>
+  <item>SQRT</item>
+  <item>STANDARD-DEVIATION</item>
+  <item>STORED-CHAR-LENGTH</item>
+  <item>SUBSTITUTE</item>
+  <item>SUBSTITUTE-CASE</item>
+  <item>TAN</item>
+  <item>TEST-DATE-YYYYMMDD</item>
+  <item>TEST-DAY-YYYYDDD</item>
+  <item>TRIM</item>
+  <item>UPPER-CASE</item>
+  <item>VARIANCE</item>
+  <item>WHEN-COMPILED</item>
+  <item>YEAR-TO-YYYY</item>
+</list>
+
+<contexts>
+
+  <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+    <DetectSpaces attribute="Normal Text"/>
+    <Int attribute="Sequence Number Area" firstNonSpace="1"/>
+    <DetectChar attribute="Comment" context="comment" char="*" column="6"/>
+    <DetectChar attribute="Comment" context="comment" char="*" column="0"/>
+    <DetectChar attribute="Comment" context="comment" char="/" column="6"/>
+    <DetectChar attribute="Comment" context="comment" char="/" column="0"/>
+    <DetectChar attribute="String" context="stringDQ" char="&quot;"/>
+    <DetectChar attribute="String" context="stringSQ" char="'"/>
+    <StringDetect attribute="Comment" context="comment" String="*>"/>
+    <AnyChar attribute="Normal Text" String="&lt;>+/*$,;():="/>
+    <keyword attribute="Keywords" String="keywords-block" beginRegion="ID"/>
+    <keyword attribute="Other Reserved Words" context="picture" String="picture"/>
+    <keyword attribute="Verb" String="verbs"/>
+    <keyword attribute="Usage" String="usages"/>
+    <keyword attribute="Constant" String="constants"/>
+    <keyword attribute="Logical" String="logical"/>
+    <WordDetect attribute="Keywords" context="end" String="END" insensitive="1"/>
+    <RegExpr attribute="Division" String="\b(?!-)(&div;)\s+DIVISION\b(?!-)" insensitive="1"/>
+    <RegExpr attribute="Section" String="\b(?!-)(&sec;)\s+SECTION\b(?!-)" insensitive="1"/>
+    <keyword attribute="Keywords" String="keywords"/>
+    <keyword attribute="Other Reserved Words" String="reserved"/>
+    <WordDetect attribute="Other Reserved Words" context="function" String="FUNCTION" insensitive="1"/>
+    <WordDetect context="exec" String="EXEC" insensitive="1" lookAhead="1"/>
+    <RegExpr attribute="Float" String="(?&lt;=^|\s)-?[0-9]*\.[0-9]+(?=$|&seplist;)" context="#stay"/>
+    <RegExpr attribute="Decimal" String="(?&lt;=^|\s)-?[0-9]+(?=$|&seplist;)" context="#stay"/>
+    <RegExpr attribute="Hex" String="H(&quot;[0-9A-F]+&quot;|'[0-9A-F]+')" insensitive="1"/>
+    <RegExpr attribute="Char" String="X(&quot;[0-9A-F]+&quot;|'[0-9A-F]+')" insensitive="1"/>
+    <RegExpr attribute="Normal Text" String="[-\w]*[\s&lt;>+$,;():=.]"/>
+  </context>
+
+  <context name="end" attribute="Keywords" lineEndContext="#pop" fallthroughContext="#pop">
+    <keyword attribute="Keywords" String="keywords-block" context="#pop" endRegion="ID"/>
+  </context>
+
+  <context name="comment" attribute="Comment" lineEndContext="#pop">
+    <DetectSpaces attribute="Comment"/>
+    <IncludeRules context="##Comments"/>
+    <DetectIdentifier attribute="Comment"/>
+  </context>
+
+  <context name="stringDQ" attribute="String" lineEndContext="#pop">
+    <DetectChar attribute="String" context="#pop" char="&quot;"/>
+  </context>
+
+  <context name="stringSQ" attribute="String" lineEndContext="#pop">
+    <DetectChar attribute="String" context="#pop" char="'"/>
+  </context>
+
+  <context name="picture" attribute="String" lineEndContext="#pop" fallthroughContext="#pop!picture3">
+    <DetectSpaces attribute="Normal Text"/>
+    <WordDetect attribute="Other Reserved Words" context="#pop!picture2" String="IS" insensitive="1"/>
+  </context>
+  <context name="picture2" attribute="String" lineEndContext="#pop" fallthroughContext="#pop!picture3">
+    <DetectSpaces attribute="Normal Text" context="#pop!picture3"/>
+  </context>
+  <context name="picture3" attribute="Error" lineEndContext="#pop">
+    <RegExpr attribute="Picture" String="\s*&picsym;([,./]&picsym;)*(CR|DB)?" insensitive="1" context="#pop"/>
+    <AnyChar attribute="Normal Text" context="#pop" String=",./ &#9;"/>
+    <StringDetect attribute="Comment" context="#pop!comment" String="*>"/>
+  </context>
+
+  <context name="function" attribute="Error" lineEndContext="#pop">
+    <keyword attribute="Function" context="#pop" String="functions"/>
+    <WordDetect attribute="Other Reserved Words" context="#pop" String="ALL" insensitive="1"/>
+    <AnyChar attribute="Normal Text" context="#pop" String=". &#9;"/>
+    <StringDetect attribute="Comment" context="#pop!comment" String="*>"/>
+  </context>
+
+  <context name="exec" attribute="Normal Text" lineEndContext="#pop">
+    <RegExpr attribute="SQL" String="EXEC\s+SQL\b(?!-)" context="#pop!sql" insensitive="1" beginRegion="sql"/>
+    <DetectIdentifier attribute="Normal Text" context="#pop"/>
+  </context>
+
+  <context name="sql" attribute="Normal Text" lineEndContext="#stay">
+    <StringDetect attribute="Comment" context="comment" String="*>"/>
+    <WordDetect attribute="SQL" context="#pop" String="END-EXEC" insensitive="1" endRegion="sql"/>
+    <IncludeRules context="##SQL" includeAttrib="1"/>
+  </context>
+
+</contexts>
+
+<itemDatas>
+  <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0"/>
+  <itemData name="Sequence Number Area" defStyleNum="dsComment" spellChecking="0" italic="1"/>
+  <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="0"/>
+  <itemData name="Float" defStyleNum="dsFloat" spellChecking="0"/>
+  <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="0"/>
+  <itemData name="Constant" defStyleNum="dsConstant" spellChecking="0"/>
+  <itemData name="Logical" defStyleNum="dsKeyword" spellChecking="0" italic="1"/>
+  <itemData name="String" defStyleNum="dsString"/>
+  <itemData name="Char" defStyleNum="dsChar" spellChecking="0"/>
+  <itemData name="Division" defStyleNum="dsRegionMarker" spellChecking="0"/>
+  <itemData name="Section" defStyleNum="dsRegionMarker" spellChecking="0"/>
+  <itemData name="SQL" defStyleNum="dsRegionMarker" spellChecking="0"/>
+  <itemData name="Keywords" defStyleNum="dsKeyword" spellChecking="0"/>
+  <itemData name="Verb" defStyleNum="dsKeyword" spellChecking="0"/>
+  <itemData name="Picture" defStyleNum="dsDataType" spellChecking="0"/>
+  <itemData name="Usage" defStyleNum="dsDataType" spellChecking="0"/>
+  <itemData name="Other Reserved Words" defStyleNum="dsOthers" spellChecking="0"/>
+  <itemData name="Function" defStyleNum="dsFunction" spellChecking="0"/>
+  <itemData name="Comment" defStyleNum="dsComment"/>
+  <itemData name="Error" defStyleNum="dsError" spellChecking="0"/>
+</itemDatas>
+
+</highlighting>
+<general>
+  <comments>
+    <comment name="singleLine" start="*>"/>
+  </comments>
+  <keywords casesensitive="0" weakDeliminator="-"/>
+</general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

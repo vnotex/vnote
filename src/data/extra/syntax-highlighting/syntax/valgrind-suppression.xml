@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Valgrind Suppression" section="Other" extensions="*.supp;" mimetype="" version="2" kateversion="2.4" author="Milian Wolff (mail@milianw.de)" license="LGPL">
+<!DOCTYPE language>
+<language name="Valgrind Suppression" section="Other" extensions="*.supp;" mimetype="" version="4" kateversion="5.0" author="Milian Wolff (mail@milianw.de)" license="LGPL">
 <highlighting>
 <contexts>
   <context name="File" attribute="Normal Text" lineEndContext="#stay">
@@ -9,7 +9,7 @@
  </context>
 
   <context name="Rule" attribute="Normal Text" lineEndContext="#stay" >
-    <RegExpr attribute="RuleName" String="^[^\}]+$" context="Rule2" />
+    <RegExpr attribute="RuleName" String="^[^\}]+$" context="Rule2" column="0" />
     <DetectChar char="}" attribute="Normal Text" context="#pop" firstNonSpace="true" />
   </context>
 
@@ -25,7 +25,7 @@
 
   <context name="Comment" attribute="Comment" lineEndContext="#pop">
     <DetectSpaces />
-    <IncludeRules context="##Alerts" />
+    <IncludeRules context="##Comments" />
     <DetectIdentifier />
   </context>
 </contexts>
@@ -49,3 +49,4 @@
 </general>
 
 </language>
+<!-- kate: replace-tabs on; indent-width 2; -->

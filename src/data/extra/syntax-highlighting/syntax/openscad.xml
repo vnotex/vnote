@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
 <language name="OpenSCAD"
-          version="2"
+          version="6"
           indenter="cstyle"
           kateversion="5.53"
           section="3D"
@@ -13,20 +13,22 @@
           author="Julian Stirling (julian@julianstirling.co.uk)"
           license="MIT">
     <highlighting>
-
         <list name="preprocessor">
             <item>include</item>
             <item>import</item>
             <item>use</item>
         </list>
+
         <list name="keywords">
-            <item>echo</item>
             <item>for</item>
             <item>intersection_for</item>
             <item>if</item>
             <item>else</item>
             <item>module</item>
             <item>function</item>
+            <item>true</item>
+            <item>false</item>
+            <item>undef</item>
         </list>
 
         <list name="2D">
@@ -50,7 +52,6 @@
             <item>resize</item>
             <item>mirror</item>
             <item>multmatrix</item>
-            <item>color</item>
             <item>color</item>
             <item>offset</item>
             <item>hull</item>
@@ -99,6 +100,7 @@
             <item>norm</item>
             <item>cross</item>
             <item>parent_module</item>
+            <item>assert</item>
         </list>
 
         <list name="list_comp">
@@ -108,6 +110,7 @@
         </list>
 
         <list name="other">
+            <item>echo</item>
             <item>linear_extrude</item>
             <item>rotate_extrude</item>
             <item>surface</item>
@@ -115,10 +118,11 @@
             <item>render</item>
             <item>children</item>
         </list>
+
         <contexts>
             <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
                 <DetectSpaces />
-        <RegExpr attribute="Error" context="AfterDollar" String="\$[a-zA-Z]*" insensitive="true" firstNonSpace="false"  lookAhead="true"/>
+                <RegExpr attribute="Error" context="AfterDollar" String="\$[a-zA-Z]" insensitive="true" firstNonSpace="false" lookAhead="true"/>
                 <keyword attribute="Preprocessor" context="#stay" String="preprocessor"/>
                 <keyword attribute="Keywords" context="#stay" String="keywords"/>
                 <keyword attribute="Two Dim" context="#stay" String="2D"/>
@@ -129,21 +133,43 @@
                 <keyword attribute="Functions" context="#stay" String="functions"/>
                 <keyword attribute="List Comprehensions" context="#stay" String="list_comp"/>
                 <keyword attribute="Other" context="#stay" String="other"/>
+                <Float attribute="Float" context="#stay"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <DetectChar attribute="String" context="Strings" char="&quot;" beginRegion="String"/>
+                <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Scope"/>
+                <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Scope"/>
+                <DetectChar attribute="Symbol" context="#stay" char="[" beginRegion="Vector"/>
+                <DetectChar attribute="Symbol" context="#stay" char="]" endRegion="Vector"/>
                 <Detect2Chars attribute="Comment" context="OneLineCom" char="/" char1="/"/>
                 <Detect2Chars attribute="Comment" context="MultLineCom" char="/" char1="*" beginRegion="Comment"/>
+                <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/*&lt;=&gt;?|^;#"/>
             </context>
+
             <context attribute="Error" lineEndContext="#pop" name="AfterDollar">
                 <RegExpr attribute="SpecialVar" context="SpecialVar" String="\$(fa|fs|fn|t|vpr|vpt|vpd|children)" insensitive="true" firstNonSpace="false"/>
-        <RegExpr attribute="Normal Text" context="#pop" String="[^a-zA-Z0-9\$]" insensitive="true" firstNonSpace="false"/>
+                <RegExpr attribute="Normal Text" context="#pop" String="[^a-zA-Z0-9\$]" insensitive="true" firstNonSpace="false"/>
             </context>
+
             <context attribute="SpecialVar" lineEndContext="#pop" name="SpecialVar">
-            <RegExpr attribute="Error" context="#pop#pop" String="[^\s=\*\+\-/\);]+" insensitive="true" firstNonSpace="false"/>
-            <RegExpr attribute="Normal Text" context="#pop#pop" String="\s*[=\*\+\-/\);]" insensitive="true" firstNonSpace="false"/>
+                <RegExpr attribute="Error" context="#pop#pop" String="[^\s=\*\+\-/\);]+" insensitive="true" firstNonSpace="false"/>
+                <RegExpr attribute="Normal Text" context="#pop#pop" String="\s*[=\*\+\-/\);]" insensitive="true" firstNonSpace="false"/>
             </context>
+
+            <context attribute="String" lineEndContext="#stay" name="Strings">
+                <Detect2Chars attribute="String" char="\" char1="\" context="#stay"/>
+                <Detect2Chars attribute="String" char="\" char1="&quot;" context="#stay"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;" endRegion="String"/>
+            </context>
+
             <context attribute="Comment" lineEndContext="#pop" name="OneLineCom">
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
             </context>
+
             <context attribute="Comment" lineEndContext="#stay" name="MultLineCom">
+                <DetectSpaces />
                 <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+                <IncludeRules context="##Comments"/>
             </context>
         </contexts>
         <itemDatas>
@@ -151,7 +177,7 @@
             <itemData name="Comment"                  defStyleNum="dsComment"/>
             <itemData name="Error"                    defStyleNum="dsError" spellChecking="false"/>
             <itemData name="Preprocessor"             defStyleNum="dsPreprocessor" spellChecking="false"/>
-            <itemData name="Keywords"                 defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Keywords"                 defStyleNum="dsKeyword" spellChecking="false"/>
             <itemData name="Two Dim"                  defStyleNum="dsKeyword" spellChecking="false"/>
             <itemData name="Three Dim"                defStyleNum="dsKeyword" spellChecking="false"/>
             <itemData name="Transformation"           defStyleNum="dsFunction" spellChecking="false"/>
@@ -160,14 +186,19 @@
             <itemData name="Functions"                defStyleNum="dsExtension" spellChecking="false"/>
             <itemData name="List Comprehensions"      defStyleNum="dsFunction" spellChecking="false"/>
             <itemData name="Other"                    defStyleNum="dsExtension" spellChecking="false"/>
-        <itemData name="SpecialVar"               defStyleNum="dsAttribute" spellChecking="false"/>
+            <itemData name="SpecialVar"               defStyleNum="dsAttribute" spellChecking="false"/>
+            <itemData name="Decimal"                  defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Float"                    defStyleNum="dsFloat" spellChecking="false"/>
+            <itemData name="String"                   defStyleNum="dsString"/>
+            <itemData name="Symbol"                   defStyleNum="dsOperator" spellChecking="false"/>
         </itemDatas>
     </highlighting>
     <general>
         <comments>
             <comment name="singleLine" start="//" />
-            <comment name="multiLine" start="/*" end="*/" />
+            <comment name="multiLine" start="/*" end="*/" region="Comment" />
         </comments>
         <keywords casesensitive="1" additionalDeliminator="'&quot;" />
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

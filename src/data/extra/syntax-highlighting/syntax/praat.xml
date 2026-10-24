@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
   <!ENTITY B '([^a-zA-Z0-9\._"&apos;\$#\[:\(]|\s|^|$)'>
 ]>
@@ -21,7 +21,7 @@
    the Free Software Foundation, Inc., 51 Franklin Street, Fifth Floor,
    Boston, MA 02110-1301, USA.
 -->
-<language name="Praat" version="2" kateversion="2.4" section="Scripts" extensions="*.Praat;*.praat;*.psc;*.praat-script;*.praatscript;*.proc" author="Jose Joaquín Atria (jjatria@gmail.com)" license="LGPLv2">
+<language name="Praat" version="6" kateversion="5.0" section="Scripts" extensions="*.Praat;*.praat;*.psc;*.praat-script;*.praatscript;*.proc" author="Jose Joaquín Atria (jjatria@gmail.com)" license="LGPLv2">
   <highlighting>
     <list name="keywords">
       <item>assert</item>
@@ -270,27 +270,19 @@
         <StringDetect String="select all" attribute="keyword" firstNonSpace="true" />
         <keyword String="keywords" attribute="keyword" />
 
-        <RegExpr String="&B;print(line|tab)?&B;" attribute="keyword" context="unquoted string" />
-        <RegExpr String="&B;echo&B;" attribute="keyword" context="unquoted string" />
-        <RegExpr String="&B;exit&B;" attribute="keyword" context="unquoted string" />
-        <RegExpr String="&B;asserterror&B;" attribute="keyword" context="unquoted string" />
-        <RegExpr String="&B;pause&B;" attribute="keyword" context="unquoted string" />
-        <RegExpr String="&B;send(praat|socket)&B;" attribute="keyword" context="unquoted string" />
-        <RegExpr String="&B;execute&B;" attribute="keyword" context="unquoted string" />
+        <RegExpr String="&B;(print(line|tab)?|echo|exit|asserterror|pause|send(praat|socket)|execute)&B;" attribute="keyword" context="unquoted string" />
         <RegExpr String="&B;editor&B;" attribute="keyword" context="unquoted string" beginRegion="editor" />
         <RegExpr String="&B;endeditor&B;" attribute="keyword" endRegion="editor" />
 
         <RegExpr String="form&B;" attribute="keyword" context="old form definition" firstNonSpace="true" beginRegion="form" />
 
-        <RegExpr String="goto&B;" attribute="keyword" context="label"  firstNonSpace="true" />
-        <RegExpr String="label&B;" attribute="keyword" context="label" firstNonSpace="true" />
+        <RegExpr String="(goto|label)&B;" attribute="keyword" context="label" firstNonSpace="true" />
 
         <DetectChar char='"' attribute="string" context="quoted string" />
         <IncludeRules context="expansion" />
 
         <IncludeRules context="operator" />
         <IncludeRules context="variable name" />
-        <IncludeRules context="number" />
 
         <RegExpr String="\b[A-Z]" attribute="command" context="command" />
 
@@ -304,22 +296,16 @@
       <context name="old form" attribute="normal" lineEndContext="#stay">
         <DetectChar char='#' attribute="comment" context="comment" firstNonSpace="true" />
 
-        <RegExpr String="choice&B;" attribute="keyword" context="normal word with colon to number" firstNonSpace="true" />
-        <RegExpr String="optionmenu&B;" attribute="keyword" context="normal word with colon to number" firstNonSpace="true" />
-        <RegExpr String="option&B;" attribute="keyword" context="unquoted string" firstNonSpace="true" />
-        <RegExpr String="button&B;" attribute="keyword" context="unquoted string" firstNonSpace="true" />
+        <RegExpr String="(choice|optionmenu)&B;" attribute="keyword" context="normal word with colon to number" firstNonSpace="true" />
+        <RegExpr String="(option|button)&B;" attribute="keyword" context="unquoted string" firstNonSpace="true" />
 
-        <RegExpr String="sentence&B;" attribute="keyword" context="normal word to string" firstNonSpace="true" />
-        <RegExpr String="text&B;" attribute="keyword" context="normal word to string" firstNonSpace="true" />
+        <RegExpr String="(sentence|text)&B;" attribute="keyword" context="normal word to string" firstNonSpace="true" />
 
         <RegExpr String="word&B;" attribute="keyword" context="normal word to string word" firstNonSpace="true" />
 
         <RegExpr String="comment&B;" attribute="keyword" context="unquoted string" firstNonSpace="true" />
 
-        <RegExpr String="real&B;" attribute="keyword" context="number" firstNonSpace="true" />
-        <RegExpr String="natural&B;" attribute="keyword" context="number" firstNonSpace="true" />
-        <RegExpr String="positive&B;" attribute="keyword" context="number" firstNonSpace="true" />
-        <RegExpr String="integer&B;" attribute="keyword" context="number" firstNonSpace="true" />
+        <RegExpr String="(real|natural|positive|integer)&B;" attribute="keyword" context="number" firstNonSpace="true" />
 
         <RegExpr String="boolean&B;" attribute="keyword" context="normal word to variable" firstNonSpace="true" />
 
@@ -328,8 +314,7 @@
 
       <context name="operator" attribute="operator" lineEndContext="#pop" >
         <RegExpr String="([+\/*&lt;>=!-]=?|[&amp;*|][&amp;*|]?|\^|&lt;>)" attribute="operator" />
-        <RegExpr String="\.(and|or|not|div|mod)" attribute="normal" />
-        <RegExpr String="(and|or|not|div|mod)\." attribute="normal" />
+        <RegExpr String="\.(and|or|not|div|mod)|(and|or|not|div|mod)\." attribute="normal" />
         <WordDetect String="and" attribute="operator" />
         <WordDetect String="or"  attribute="operator" />
         <WordDetect String="not" attribute="operator" />
@@ -345,8 +330,6 @@
 
       <context name="shorthand arguments" attribute="normal" lineEndContext="#pop#pop" >
         <IncludeRules context="variable name" />
-        <IncludeRules context="operator" />
-        <IncludeRules context="number" />
         <DetectChar char='"' attribute="string" context="quoted string" />
       </context>
 
@@ -370,16 +353,7 @@
       </context>
 
       <context name="object attributes" attribute="normal" lineEndContext="#pop" >
-        <RegExpr String="\.ncol&B;" attribute="object.attribute" context="#pop" />
-        <RegExpr String="\.nrow&B;" attribute="object.attribute" context="#pop" />
-        <RegExpr String="\.xmin&B;" attribute="object.attribute" context="#pop" />
-        <RegExpr String="\.ymin&B;" attribute="object.attribute" context="#pop" />
-        <RegExpr String="\.xmax&B;" attribute="object.attribute" context="#pop" />
-        <RegExpr String="\.ymax&B;" attribute="object.attribute" context="#pop" />
-        <RegExpr String="\.nx&B;" attribute="object.attribute" context="#pop" />
-        <RegExpr String="\.ny&B;" attribute="object.attribute" context="#pop" />
-        <RegExpr String="\.dx&B;" attribute="object.attribute" context="#pop" />
-        <RegExpr String="\.dy&B;" attribute="object.attribute" context="#pop" />
+        <RegExpr String="\.(ncol|nrow|xmin|ymin|xmax|ymax|nx|ny|dx|dy)&B;" attribute="object.attribute" context="#pop" />
       </context>
 
       <context name="normal word with colon to number" attribute="normal" lineEndContext="#pop" >
@@ -411,7 +385,10 @@
 
       <context name="ignore" attribute="normal" lineEndContext="#pop" />
 
-      <context name="comment" attribute="comment" lineEndContext="#pop" />
+      <context name="comment" attribute="comment" lineEndContext="#pop" >
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+      </context>
 
       <context name="quoted string" attribute="string" lineEndContext="broken quoted string" >
         <IncludeRules context="expansion" />
@@ -468,20 +445,17 @@
         <RegExpr String="&B;endPause&B;" endRegion="pause" />
 
         <DetectSpaces attribute="normal" />
-        <DetectChar char=":" attribute="normal" context="#pop#pop#pop" />
-        <DetectChar char="(" attribute="normal" context="#pop#pop#pop" />
+        <AnyChar String=":(" attribute="normal" context="#pop#pop#pop" />
       </context>
 
       <context name="procedure name" attribute="function" lineEndContext="#pop" >
-        <DetectChar char=":" attribute="normal" context="#pop" />
-        <DetectChar char="(" attribute="normal" context="#pop" />
+        <AnyChar String=":(" attribute="normal" context="#pop" />
         <IncludeRules context="expansion" />
         <DetectSpaces attribute="normal" context="#pop" />
       </context>
 
       <context name="function word to shorthand arguments" attribute="function" lineEndContext="#pop" >
-        <DetectChar char=":" attribute="normal" context="#pop" />
-        <DetectChar char="(" attribute="normal" context="#pop" />
+        <AnyChar String=":(" attribute="normal" context="#pop" />
         <IncludeRules context="expansion" />
         <DetectSpaces attribute="normal" context="#pop!shorthand arguments" />
       </context>
@@ -503,7 +477,7 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="#" />
+      <comment name="singleLine" start="#" position="afterwhitespace" />
     </comments>
     <keywords casesensitive="true" weakDeliminator="._#$" />
   </general>

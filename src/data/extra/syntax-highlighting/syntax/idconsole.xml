@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Quake Script" version="4" kateversion="5.0" section="Scripts" extensions="*.cfg" mimetype="">
+<!DOCTYPE language>
+<language name="Quake Script" version="7" kateversion="5.0" section="Scripts" extensions="*.cfg" mimetype="">
 
 <highlighting>
 <list name="Commands">
@@ -2075,11 +2075,13 @@
                 <keyword attribute="Command" context="Alias phrase" String="setFamily"/>
                 <keyword attribute="Command" context="Echo" String="PrintsString"/>
                 <StringDetect attribute="Command" context="Alias phrase" String="alias" insensitive="true"/>
-                <keyword attribute="Command" context="Echo" String="PrintsString"/>
                 <DetectChar attribute="Symbol" context="#stay" char="$"/>
                 <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
           </context>
-          <context attribute="Comment" lineEndContext="Normal Text" name="Comment"/>
+          <context attribute="Comment" lineEndContext="Normal Text" name="Comment">
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
+          </context>
           <context attribute="String" lineEndContext="Normal Text" name="String">
                 <DetectChar attribute="String" context="#pop" char="&quot;"/>
           </context>
@@ -2107,9 +2109,8 @@
                 <keyword attribute="Command" context="Echo" String="PrintsString"/>
                 <StringDetect attribute="Command" context="Alias phrase" String="alias"/>
                 <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
-                <DetectChar attribute="Symbol" context="#stay" char=";"/>
-                <Int attribute="Int" context="#stay"/>
                 <DetectChar attribute="Symbol" context="#pop" char=";"/>
+                <Int attribute="Int" context="#stay"/>
           </context>
           <context attribute="Normal Text" lineEndContext="Normal Text" name="Bind phrase">
                 <keyword attribute="Hex" context="Sub phrase" String="KeyTypes"/>

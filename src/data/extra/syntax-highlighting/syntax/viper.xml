@@ -1,0 +1,200 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [<!ENTITY identifier "[a-zA-Z$_][a-zA-Z0-9$_'\[\]]*">]>
+
+<!-- The Viper intermediate verification language
+     https://github.com/viperproject/silver -->
+<language name="Viper" section="Sources" version="2" kateversion="5.0" indenter="cstyle"
+          extensions="*.vpr" mimetype="text/x-vpr" author="nishanthkarthik" license="MIT">
+    <highlighting>
+        <list name="blocks">
+            <item>domain</item>
+            <item>axiom</item>
+            <item>define</item>
+            <item>function</item>
+            <item>predicate</item>
+            <item>method</item>
+            <item>field</item>
+        </list>
+
+        <list name="constants">
+            <item>true</item>
+            <item>false</item>
+            <item>null</item>
+        </list>
+
+        <list name="controlFlow">
+            <item>goto</item>
+            <item>label</item>
+            <item>if</item>
+            <item>elseif</item>
+            <item>else</item>
+            <item>while</item>
+        </list>
+
+        <list name="kw">
+            <item>result</item>
+            <item>old</item>
+            <item>acc</item>
+
+            <item>none</item>
+            <item>write</item>
+            <item>epsilon</item>
+            <item>wildcard</item>
+            <item>perm</item>
+            <item>unfolding</item>
+            <item>folding</item>
+            <item>applying</item>
+            <item>packaging</item>
+            <item>forperm</item>
+            <item>constraining</item>
+
+            <item>let</item>
+            <item>in</item>
+
+            <item>var</item>
+            <item>fresh</item>
+
+            <item>forall</item>
+            <item>exists</item>
+            <item>unique</item>
+            <item>returns</item>
+            <item>requires</item>
+            <item>ensures</item>
+            <item>invariant</item>
+
+            <item>assert</item>
+            <item>assume</item>
+            <item>inhale</item>
+            <item>exhale</item>
+            <item>fold</item>
+            <item>unfold</item>
+
+            <item>wand</item>
+            <item>package</item>
+            <item>apply</item>
+        </list>
+
+        <list name="ops">
+            <item>==</item>
+            <item>!=</item>
+            <item>==></item>
+            <item>&lt;==></item>
+            <item>||</item>
+            <item>&amp;&amp;</item>
+            <item>&lt;</item>
+            <item>&gt;</item>
+            <item>&lt;=</item>
+            <item>&gt;=</item>
+            <item>+</item>
+            <item>-</item>
+            <item>*</item>
+            <item>/</item>
+            <item>\\</item>
+            <item>\%</item>
+            <item>\/</item>
+            <item>--*</item>
+            <item>union</item>
+            <item>intersection</item>
+            <item>setminus</item>
+            <item>++</item>
+            <item>in</item>
+            <item>subset</item>
+            <item>!</item>
+            <item>::</item>
+        </list>
+
+        <list name="types">
+            <item>Int</item>
+            <item>Bool</item>
+            <item>Rational</item>
+            <item>Perm</item>
+            <item>Ref</item>
+            <item>Seq</item>
+            <item>Set</item>
+            <item>Multiset</item>
+        </list>
+
+        <contexts>
+            <context name="normal" attribute="Normal" lineEndContext="#stay">
+                <DetectSpaces/>
+                <WordDetect String="import" lookAhead="true" context="import"/>
+                <keyword String="blocks" lookAhead="true" context="block"/>
+                <WordDetect String="/*" lookAhead="true" context="mlComment"/>
+                <WordDetect String="//" lookAhead="true" context="comment"/>
+                <keyword String="constants" attribute="Constant"/>
+                <keyword String="kw" attribute="Keyword"/>
+                <RegExpr String="([:]{2})" context="quantifier" lookAhead="true"/>
+                <keyword String="ops" attribute="Operator"/>
+                <keyword String="types" attribute="DataType"/>
+                <keyword String="controlFlow" attribute="ControlFlow"/>
+                <DetectChar char="{" context="#stay" attribute="Operator" beginRegion="regionBraced"/>
+                <DetectChar char="}" context="#stay" attribute="Operator" endRegion="regionBraced"/>
+                <RegExpr String="(&identifier;)(\.\b&identifier;)" lookAhead="true" context="fieldAccess"/>
+                <Int attribute="DecVal"/>
+            </context>
+
+            <context name="quantifier" attribute="Normal" lineEndContext="#stay">
+                <StringDetect String="%1" dynamic="true"/>
+                <IncludeRules context="nextTrigger"/>
+            </context>
+
+            <context name="nextTrigger" attribute="Normal" lineEndContext="#stay">
+                <DetectChar char="{" context="#pop!inTrigger" attribute="TriggerZone"/>
+                <RegExpr String="[^\{\s]" context="#pop#pop"/>
+            </context>
+
+            <context name="inTrigger" attribute="Normal" lineEndContext="#stay">
+                <DetectChar char="}" context="#pop!nextTrigger" attribute="TriggerZone"/>
+                <RegExpr String="[^\}\s]" attribute="Italic"/>
+            </context>
+
+            <context name="import" attribute="Keyword" lineEndContext="#pop">
+                <WordDetect String="import" attribute="Keyword"/>
+                <DetectChar char='"' context="string" attribute="String"/>
+            </context>
+
+            <context name="fieldAccess" attribute="Normal" lineEndContext="#stay">
+                <StringDetect String="%1" dynamic="true" context="#stay"/>
+                <StringDetect String="%2" attribute="Field" dynamic="true" context="#pop"/>
+            </context>
+
+            <context name="block" attribute="Normal" lineEndContext="#stay">
+                <keyword String="blocks" attribute="Keyword"/>
+                <AnyChar String="{[(" lookAhead="true" context="#pop"/>
+                <RegExpr String="&identifier;" attribute="Declaration" context="#pop"/>
+            </context>
+
+            <context name="string" attribute="String" lineEndContext="#stay">
+                <RegExpr String='[^"]+' attribute="String" context="#stay"/>
+                <DetectChar char='"' attribute="String" context="#pop"/>
+            </context>
+
+            <context name="comment" attribute="Comment" lineEndContext="#pop">
+                <Detect2Chars char="/" char1="/"/>
+            </context>
+
+            <context name="mlComment" attribute="Comment" lineEndContext="#stay">
+                <Detect2Chars char="/" char1="*"/>
+                <RegExpr String="[^(*/)]*"/>
+                <Detect2Chars char="*" char1="/" attribute="Comment" context="#pop"/>
+            </context>
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Declaration" defStyleNum="dsFunction"/>
+            <itemData name="Italic" defStyleNum="dsNormal" italic="true"/>
+            <itemData name="Field" defStyleNum="dsNormal" italic="true"/>
+            <itemData name="TriggerZone" defStyleNum="dsSpecialChar"/>
+
+            <itemData name="Normal" defStyleNum="dsNormal"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword"/>
+            <itemData name="ControlFlow" defStyleNum="dsControlFlow"/>
+            <itemData name="Operator" defStyleNum="dsOperator"/>
+            <itemData name="String" defStyleNum="dsString"/>
+            <itemData name="DataType" defStyleNum="dsDataType"/>
+            <itemData name="DecVal" defStyleNum="dsDecVal"/>
+            <itemData name="Constant" defStyleNum="dsConstant"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+        </itemDatas>
+    </highlighting>
+</language>

@@ -1,0 +1,372 @@
+<!--
+
+    gd-script.xml: Mario Aichinger <aichingm@gmail.com> 2021
+
+    This file is derivatived from the python.xml file which has ATM no license notice. This means that same license which covers the file python.xml, which ever it may be, applies to this file. Besides the inherited license, the code I (Mario Aichinger) added, which is/was not part of the python.xml file, is covered by the MIT license.
+
+-->
+<language name="Godot" version="3" style="godot" kateversion="5.0" section="Scripts" indenter="python" priority="5" extensions="*.gd" casesensitive="1" author="Mario Aichinger" >
+	<highlighting>
+        <list name="preprocessor">
+            <item>breakpoint</item>
+            <item>preload</item>
+            <item>assert</item>
+        </list>
+        <list name="consts">
+            <item>PI</item>
+            <item>TAU</item>
+            <item>INF</item>
+        </list>
+		<list name="defs">
+			<item>class</item>
+			<item>class_name</item>
+			<item>extends</item>
+			<item>tool</item>
+			<item>signal</item>
+			<item>func</item>
+			<item>static</item>
+			<item>const</item>
+			<item>enum</item>
+			<item>var</item>
+			<item>onready</item>
+			<item>export</item>
+			<item>setget</item>
+			<item>remote</item>
+			<item>master</item>
+			<item>puppet</item>
+			<item>remotesync</item>
+			<item>mastersync</item>
+			<item>puppetsync</item>
+		</list>
+		<list name="operators">
+			<item>is</item>
+			<item>and</item>
+			<item>or</item>
+			<item>in</item>
+			<item>not</item>
+            <item>as</item>
+		</list>
+		<list name="flow">
+			<item>if</item>
+            <item>elif</item>
+            <item>else</item>
+            <item>for</item>
+            <item>while</item>
+            <item>match</item>
+            <item>break</item>
+            <item>continue</item>
+            <item>pass</item>
+            <item>return</item>
+            <item>yield</item>
+		</list>
+		<list name="builtinfuncs">
+            <item>Color8</item>
+            <item>ColorN</item>
+            <item>abs</item>
+            <item>acos</item>
+            <item>asin</item>
+            <item>atan</item>
+            <item>atan2</item>
+            <item>bytes2var</item>
+            <item>cartesian2polar</item>
+            <item>ceil</item>
+            <item>char</item>
+            <item>clamp</item>
+            <item>convert</item>
+            <item>cos</item>
+            <item>cosh</item>
+            <item>db2linear</item>
+            <item>decimals</item>
+            <item>dectime</item>
+            <item>deg2rad</item>
+            <item>dict2inst</item>
+            <item>ease</item>
+            <item>exp</item>
+            <item>floor</item>
+            <item>fmod</item>
+            <item>fposmod</item>
+            <item>funcref</item>
+            <item>get_stack</item>
+            <item>hash</item>
+            <item>inst2dict</item>
+            <item>instance_from_id</item>
+            <item>inverse_lerp</item>
+            <item>is_equal_approx</item>
+            <item>is_inf</item>
+            <item>is_instance_valid</item>
+            <item>is_nan</item>
+            <item>is_zero_approx</item>
+            <item>len</item>
+            <item>lerp</item>
+            <item>lerp_angle</item>
+            <item>linear2db</item>
+            <item>load</item>
+            <item>log</item>
+            <item>max</item>
+            <item>min</item>
+            <item>move_toward</item>
+            <item>nearest_po2</item>
+            <item>ord</item>
+            <item>parse_json</item>
+            <item>polar2cartesian</item>
+            <item>posmod</item>
+            <item>pow</item>
+            <item>print</item>
+            <item>print_debug</item>
+            <item>print_stack</item>
+            <item>printerr</item>
+            <item>printraw</item>
+            <item>prints</item>
+            <item>printt</item>
+            <item>push_error</item>
+            <item>push_warning</item>
+            <item>rad2deg</item>
+            <item>rand_range</item>
+            <item>rand_seed</item>
+            <item>randf</item>
+            <item>randi</item>
+            <item>randomize</item>
+            <item>range</item>
+            <item>range_lerp</item>
+            <item>round</item>
+            <item>seed</item>
+            <item>sign</item>
+            <item>sin</item>
+            <item>sinh</item>
+            <item>smoothstep</item>
+            <item>sqrt</item>
+            <item>step_decimals</item>
+            <item>stepify</item>
+            <item>str</item>
+            <item>str2var</item>
+            <item>tan</item>
+            <item>tanh</item>
+            <item>to_json</item>
+            <item>type_exists</item>
+            <item>typeof</item>
+            <item>validate_json</item>
+            <item>var2bytes</item>
+            <item>var2str</item>
+            <item>weakref</item>
+            <item>wrapf</item>
+            <item>wrapi</item>
+		</list>
+		<list name="specialvars">
+			<item>null</item>
+			<item>self</item>
+			<item>true</item>
+			<item>false</item>
+		</list>
+		<list name="bindings">
+			<item>connect</item>
+		</list>
+		<list name="overloaders">
+            <item>_get</item>
+            <item>_get_property_list</item>
+            <item>_init</item>
+            <item>_notification</item>
+            <item>_set</item>
+            <item>_to_string</item>
+            <item>_enter_tree</item>
+            <item>_exit_tree</item>
+            <item>_get_configuration_warning</item>
+            <item>_input</item>
+            <item>_physics_process</item>
+            <item>_process</item>
+            <item>_ready</item>
+            <item>_unhandled_input</item>
+            <item>_unhandled_key_input</item>
+		</list>
+		<contexts>
+			<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+				<DetectSpaces/>
+
+
+				<keyword attribute="Preprocessor" String="preprocessor" context="#stay"/>
+				<keyword attribute="Consts Keyword" String="consts" context="#stay"/>
+				<keyword attribute="Definition Keyword" String="defs" context="#stay"/>
+				<keyword attribute="Operator Keyword" String="operators" context="#stay"/>
+				<keyword attribute="Flow Control Keyword" String="flow" context="#stay"/>
+				<keyword attribute="Builtin Function" String="builtinfuncs" context="#stay"/>
+				<keyword attribute="Special Variable" String="specialvars" context="#stay"/>
+				<keyword attribute="Bindings" String="bindings" context="#stay"/>
+				<keyword attribute="Overloaders" String="overloaders" context="#stay"/>
+
+                <IncludeRules context="FunctionCall"/>
+                <IncludeRules context="UnusedVariable"/>
+
+                <RegExpr attribute="Normal Text" String="[a-zA-Z_][a-zA-Z_0-9]{2,}" context="#stay"/>
+
+				<!-- Hexadecimal: 0xA1, Binary: 0b01, Octal: 0o71 -->
+				<RegExpr attribute="Hex" String="0x(?:_?[\da-fA-F])+\b" context="#stay"/>
+				<RegExpr attribute="Binary" String="0b(?:_?[01])+\b" context="#stay"/>
+				<RegExpr attribute="Octal" String="0o(?:_?[0-7])+\b" context="#stay"/>
+
+				<!-- Float: .1e3 ; 1.1e3                                                               | Float: 1e3 ; 1.e3 ;                 | Float: 1.1 ; ; .1  -->
+				<RegExpr attribute="Float" String="([0-9][_0-9]*(\.[0-9]([_0-9])*)e[\+\-]?[0-9][_0-9]*)|([0-9][_0-9]*\.?e[\+\-]?[0-9][_0-9]*)|(([0-9]([_0-9])*)?\.[0-9][_0-9]*)" context="#stay"/>
+
+                <!-- Decimal: 123 ; 000 -->
+				<RegExpr attribute="Int" String="\d[_\d]*" context="#stay"/>
+
+				<DetectChar attribute="Normal Text" char="{" context="Dictionary" beginRegion="Dictionary"/>
+				<DetectChar attribute="Normal Text" char="[" context="List" beginRegion="List"/>
+
+				<DetectChar attribute="Comment" char="#" context="Hash comment"/>
+
+				<IncludeRules context="StringVariants"/>
+
+                <IncludeRules context="VariableVariants"/>
+
+                <AnyChar attribute="Operator" String="~-*/%+&amp;^|&lt;>=!" context="#stay"/>
+
+				<DetectIdentifier/>
+			</context>
+
+			<context name="#CheckForString" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+				<DetectSpaces/>
+				<LineContinue attribute="Normal Text" context="CheckForStringNext"/>
+			</context>
+
+			<context name="CheckForStringNext" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+				<DetectSpaces/>
+				<LineContinue attribute="Normal Text" context="CheckForStringNext"/>
+				<IncludeRules context="StringVariants"/>
+			</context>
+
+			<context name="StringVariants" attribute="Normal Text" lineEndContext="#stay">
+				<StringDetect attribute="String" String="'''" insensitive="true" context="Triple A-string" beginRegion="Triple A-region"/>
+				<StringDetect attribute="String" String="&quot;&quot;&quot;" insensitive="true" context="Triple Q-string" beginRegion="Triple Q-region"/>
+				<DetectChar attribute="String" char="'" context="Single A-string"/>
+				<DetectChar attribute="String" char="&quot;" context="Single Q-string"/>
+
+			</context>
+
+            <context name="VariableVariants" attribute="Normal Text" lineEndContext="#stay">
+                <Detect2Chars attribute="NodePath-String"  char="@" char1="&quot;" context="NodePath-String"/>
+				<RegExpr attribute="NodePath-Var" String="\$[a-zA-Z0-9_]" insensitive="true" context="NodePath-Var"/>
+			</context>
+
+			<context name="Dictionary" attribute="Normal Text" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces/>
+				<DetectChar attribute="Normal Text" char="}" context="#pop" endRegion="Dictionary"/>
+				<IncludeRules context="Normal"/>
+			</context>
+
+			<context name="List" attribute="Normal Text" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<DetectSpaces/>
+				<DetectChar attribute="Normal Text" char="]" context="#pop" endRegion="List"/>
+				<IncludeRules context="Normal"/>
+			</context>
+
+			<!-- Comments -->
+
+			<context name="Hash comment" attribute="Comment" lineEndContext="#pop">
+				<DetectSpaces/>
+				<IncludeRules context="##Comments"/>
+			</context>
+
+			<!-- Strings -->
+
+			<!-- format characters -->
+			<context name="stringformat" attribute="String Substitution" lineEndContext="#stay">
+                <Detect2Chars attribute="String"  char="%" char1="%" context="#stay"/>
+                <RegExpr attribute="String Substitution" String="%.?-?(([1-9][0-9]*)\*?)?(\.(([1-9][0-9]*)|\*))?[scdoxf]|\{(([a-zA-Z_][a-zA-Z_0-9]*)|[0-9]+)?\}" context="#stay"/>
+                <Detect2Chars attribute="String Substitution" char="{" char1="{" context="#stay"/>
+				<Detect2Chars attribute="String Substitution" char="}" char1="}" context="#stay"/>
+			</context>
+
+			<!-- escape characters -->
+			<context name="stringescape" attribute="String Char" lineEndContext="#stay">
+				<RegExpr attribute="String Char" String="\\[\\'&quot;ntrabfv]|\\u[0-9A-Fa-f]{4}" context="#stay"/>
+			</context>
+
+			<!-- Triple-quoted A-strings -->
+			<context name="Triple A-string" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="stringescape"/>
+				<IncludeRules context="stringformat"/>
+				<StringDetect attribute="String" String="'''" context="#pop!#CheckForString" endRegion="Triple A-region"/>
+			</context>
+
+			<!-- Triple-quoted Q-strings -->
+			<context name="Triple Q-string" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+				<IncludeRules context="stringescape"/>
+				<IncludeRules context="stringformat"/>
+				<StringDetect attribute="String" String="&quot;&quot;&quot;" context="#pop!#CheckForString" endRegion="Triple Q-region"/>
+			</context>
+
+			<!-- Single-quoted A-strings -->
+			<context name="Single A-string" attribute="String" lineEndContext="#stay">
+				<IncludeRules context="stringescape"/>
+				<IncludeRules context="stringformat"/>
+				<DetectChar attribute="String" char="'" context="#pop!#CheckForString"/>
+			</context>
+
+			<!-- Single-quoted Q-strings -->
+			<context name="Single Q-string" attribute="String" lineEndContext="#stay">
+				<IncludeRules context="stringescape"/>
+				<IncludeRules context="stringformat"/>
+				<DetectChar attribute="String" char="&quot;" context="#pop!#CheckForString"/>
+			</context>
+
+            <!-- Node Types -->
+			<context name="NodePath-String" attribute="NodePath-String" lineEndContext="#pop">
+				<DetectChar attribute="String" char="&quot;" context="#pop!#CheckForString"/>
+			</context>
+
+            <context name="NodePath-Var" attribute="NodePath-Var" lineEndContext="#pop" fallthroughContext="#pop" fallthrough="1">
+				<RegExpr attribute="NodePath-Var" String="[a-zA-Z0-9_]" context="#stay"/>
+			</context>
+
+            <context name="UnusedVariable" attribute="UnusedVariable" lineEndContext="#pop" fallthroughContext="#pop" fallthrough="1">
+                <RegExpr attribute="Normal Text" lookAhead="true" String="_[a-zA-Z][a-zA-Z0-9_]+\w*\(" context="#pop"/> <!-- exclude function calls and definitions -->
+				<RegExpr attribute="UnusedVariable" String="_[a-zA-Z][a-zA-Z0-9_]+" context="#stay"/>
+			</context>
+
+            <context name="FunctionCall" attribute="Function Call" lineEndContext="#pop" fallthroughContext="#pop" fallthrough="1">
+                <RegExpr lookAhead="true" String="[a-zA-Z_][a-zA-Z0-9_]+\w*\(" context="FunctionCallName"/> <!-- exclude none function calls and definitions -->
+			</context>
+
+            <context name="FunctionCallName" attribute="Function Call" lineEndContext="#pop" fallthroughContext="#pop" fallthrough="1">
+				<RegExpr attribute="Function Call" String="[a-zA-Z_][a-zA-Z0-9_]+" context="#pop"/>
+			</context>
+
+		</contexts>
+
+		<itemDatas>
+			<itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+			<itemData name="Preprocessor" defStyleNum="dsPreprocessor" spellChecking="false"/>
+			<itemData name="Consts Keyword" defStyleNum="dsConstant" spellChecking="false"/>
+			<itemData name="Definition Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+			<itemData name="Operator" defStyleNum="dsOperator" spellChecking="false"/>
+			<itemData name="Operator Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+			<itemData name="Flow Control Keyword" defStyleNum="dsControlFlow" spellChecking="false"/>
+			<itemData name="Builtin Function" defStyleNum="dsBuiltIn" spellChecking="false"/>
+			<itemData name="Special Variable" defStyleNum="dsVariable" spellChecking="false"/>
+			<itemData name="Bindings" defStyleNum="dsBuiltIn" spellChecking="false"/>
+			<itemData name="Overloaders" defStyleNum="dsBuiltIn" spellChecking="false"/>
+			<itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+			<itemData name="Int" defStyleNum="dsDecVal" spellChecking="false"/>
+			<itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
+			<itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false"/>
+			<itemData name="Binary" defStyleNum="dsBaseN" spellChecking="false"/>
+			<itemData name="Comment" defStyleNum="dsComment"/>
+			<itemData name="String" defStyleNum="dsString"/>
+			<itemData name="String Char" defStyleNum="dsChar" spellChecking="false"/>
+			<itemData name="String Substitution" defStyleNum="dsSpecialChar" spellChecking="false"/>
+			<itemData name="NodePath-String" defStyleNum="dsSpecialString" spellChecking="false"/>
+			<itemData name="NodePath-Var" defStyleNum="dsVariable" spellChecking="false"/>
+			<itemData name="UnusedVariable" defStyleNum="dsComment" spellChecking="false"/>
+			<itemData name="Function Call" defStyleNum="dsFunction" spellChecking="false"/>
+		</itemDatas>
+	</highlighting>
+	<general>
+		<folding indentationsensitive="1"/>
+		<emptyLines>
+			<emptyLine regexpr="(?:\s+|\s*#.*)"/>
+		</emptyLines>
+		<comments>
+			<comment name="singleLine" start="#" position="afterwhitespace"/>
+		</comments>
+		<keywords casesensitive="1" additionalDeliminator="#'"/>
+	</general>
+</language>

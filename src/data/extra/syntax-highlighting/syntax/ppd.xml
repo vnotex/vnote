@@ -1,6 +1,6 @@
 ﻿<?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE language SYSTEM "language.dtd" []>
+<!DOCTYPE language []>
 
 <!--
 The following documentation is available for PPD:
@@ -9,7 +9,7 @@ The following documentation is available for PPD:
 - CUPS PPD Extensions: http://www.cups.org/documentation.php/doc-1.4/spec-ppd.html
 -->
 
-<language name="PostScript Printer Description" version="2" kateversion="2.4" section="Markup" extensions="*.ppd" author="Lukas Sommer" mimetype="application/vnd.cups-ppd" license="Public Domain">
+<language name="PostScript Printer Description" version="4" kateversion="5.0" section="Markup" extensions="*.ppd" author="Lukas Sommer" mimetype="application/vnd.cups-ppd" license="Public Domain">
 
     <highlighting>
 
@@ -24,7 +24,8 @@ The following documentation is available for PPD:
                 <RegExpr attribute="Keyword" String="\*[&#33;-&#46;&#48;-&#57;&#59;-&#126;]*"/> <!-- According to http://partners.adobe.com/public/developer/en/ps/5003.PPD_Spec_v4.3.pdf page 16 (page 20 in the PDF file), all characters from 33 to 126 are allowed, except ':' and '/'. -->
             </context>
             <context attribute="Comment" lineEndContext="#pop" name="contextComment">
-                <IncludeRules context="##Alerts"/>
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
             </context>
             <context attribute="Value" lineEndContext="#pop" name="contextValue">
                 <DetectSpaces/>
@@ -56,3 +57,4 @@ The following documentation is available for PPD:
     </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

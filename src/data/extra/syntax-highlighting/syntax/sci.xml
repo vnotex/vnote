@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="scilab" version="3" kateversion="2.2" section="Scientific" extensions="*.sci;*.sce" mimetype="text/x-sci">
+<!DOCTYPE language>
+<language name="scilab" version="6" kateversion="5.0" section="Scientific" extensions="*.sci;*.sce" mimetype="text/x-sci">
   <highlighting>
     <list name="Structure-keywords">
       <item>do</item>
@@ -1164,8 +1164,12 @@
         <keyword attribute="functions" context="#stay" String="functions"/>
         <Float attribute = "Float" context="#stay"/>
         <Int attribute = "Decimal" context="#stay"/>
-        <RegExpr String= "//.*$" attribute = "Comment" context="#stay"/>
+        <Detect2Chars char = "/" char1 = "/" attribute = "Comment" context="Comment"/>
         <RangeDetect char = "&quot;" char1 = "&quot;" attribute = "String" context="#stay"/>
+     </context>
+     <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
      </context>
    </contexts>
     <itemDatas>
@@ -1184,7 +1188,7 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="//" />
+      <comment name="singleLine" start="//" position="afterwhitespace" />
     </comments>
     <keywords casesensitive="1" weakDeliminator="%$" />
   </general>

@@ -1,10 +1,28 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="SGML" version="2" kateversion="2.2" section="Markup" extensions="*.sgml" mimetype="text/sgml">
+<!DOCTYPE language>
+<language name="SGML" version="5" kateversion="5.0" section="Markup" extensions="*.sgml" mimetype="text/sgml">
+
+<!--
+missing features:
+- DOCTYPE with ELEMENT, ENTITY, SHORTREF, USEMAP
+- special processing: INCLUDE, IGNORE, CDATA, RCDATA, TEMP
+    <![ IGNORE [ bla bla ]]>
+    <![ %Maryland; [ bla bla ]]> (entity replacement)
+- `<ITALIC>text</>` (SHORTTAG) for `<ITALIC>text</ITALIC>`
+- `<ITALIC/text/` (NET) for `<ITALIC>text</ITALIC>`
+    `<ITALIC/text<BOLD/text//` for `<ITALIC>text<BOLD>text</BOLD></ITALIC>`
+- `<cell>a<>b<>c` for `<cell>a</cell><cell>b</cell><cell>c`
+- entity: `&je;`, `&#space;`, `&#2345;`, etc
+- comment everywhere: <tag - - comment - - no comment>
+                            ~           ~ These spaces do not exist,
+                                          but it is not possible to delete them
+                                          without having an XML syntax error
+-->
+
   <highlighting>
     <contexts>
        <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
-         <StringDetect attribute="Comment" context="Comment" String="&lt;!--"/>
+         <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="Comment"/>
          <RegExpr attribute="Tag" context="Attribute" String="&lt;\s*\/?\s*[a-zA-Z_:][a-zA-Z0-9._:-]*" />
        </context>
 
@@ -25,21 +43,23 @@
        </context>
 
        <context attribute="Comment" lineEndContext="#stay" name="Comment" >
-         <StringDetect attribute="Comment" context="#pop" String="--&gt;"/>
+         <DetectSpaces />
+         <StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="Comment"/>
+         <IncludeRules context="##Comments"/>
        </context>
 
     </contexts>
     <itemDatas>
       <itemData name="Normal Text" defStyleNum="dsNormal"/>
-      <itemData name="Tag" defStyleNum="dsKeyword"/>
-      <itemData name="Attribute Name" defStyleNum="dsOthers"/>
-      <itemData name="Attribute Value" defStyleNum="dsDataType"/>
+      <itemData name="Tag" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Attribute Name" defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Attribute Value" defStyleNum="dsDataType" spellChecking="false"/>
       <itemData name="Comment" defStyleNum="dsComment"/>
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment name="multiLine" start="&lt;!--" end="//--&gt;" />
+      <comment name="multiLine" start="&lt;!--" end="--&gt;" region="Comment" />
     </comments>
     <keywords casesensitive="0" />
   </general>

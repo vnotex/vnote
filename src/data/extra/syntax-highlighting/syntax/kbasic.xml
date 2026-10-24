@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="KBasic" version="3" kateversion="2.2" section="Sources" extensions="*.kbasic" mimetype="text/x-kbasic-src">
+<!DOCTYPE language>
+<language name="KBasic" version="5" kateversion="5.0" section="Sources" extensions="*.kbasic" mimetype="text/x-kbasic-src">
     <highlighting>
         <list name="keywords">
         <item>For</item>
@@ -15,7 +15,6 @@
         <item>End</item>
         <item>Function</item>
         <item>Goto</item>
-        <item>Sub</item>
         <item>Implements</item>
         <item>In</item>
         <item>Sub</item>
@@ -73,7 +72,10 @@
         <DetectChar attribute="String" context="String" char="&quot;"/>
         <DetectChar attribute="Comment" context="Comment" char="'"/>
         </context>
-        <context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+        <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+        </context>
         <context name="String" attribute="String" lineEndContext="#pop">
         <DetectChar attribute="String" context="#pop" char="'"/>
         </context>
@@ -89,8 +91,7 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="//" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="singleLine" start="'" />
     </comments>
     <keywords casesensitive="1" />
   </general>

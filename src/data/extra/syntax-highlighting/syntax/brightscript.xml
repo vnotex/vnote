@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <language
 	name="BrightScript"
 	section="Scripts"
 	extensions="*.brs"
-	version="5"
+	version="11"
 	kateversion="5.0"
 	author="Daniel Levin (dendy.ua@gmail.com)"
 	license="MIT">
@@ -48,6 +48,11 @@
 <list name="dim"><item>dim</item></list>
 <list name="stop"><item>stop</item></list>
 <list name="goto"><item>goto</item></list>
+
+<list name="try"><item>try</item></list>
+<list name="endtry"><item>endtry</item></list>
+<list name="catch"><item>catch</item></list>
+<list name="throw"><item>throw</item></list>
 
 <list name="m"><item>m</item></list>
 <list name="top">
@@ -198,6 +203,7 @@
 </context>
 
 <context name="comment" attribute="comment" lineEndContext="#pop">
+	<IncludeRules context="##Comments"/>
 </context>
 
 
@@ -253,6 +259,13 @@
 </context>
 
 
+<!-- Inline lambda call for sub/function -->
+<context name="inline_call" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<DetectChar char="(" attribute="scope" context="#pop!lvalue_call_args"/>
+</context>
+
+
 <!-- Regular function definition. -->
 <context name="@function" attribute="g" lineEndContext="#stay">
 	<keyword String="function" attribute="keyword" context="function" beginRegion="function"/>
@@ -272,7 +285,7 @@
 	<DetectChar char="(" attribute="scope" context="func_args"/>
 </context>
 
-<context name="func_args" attribute="g" lineEndContext="#stay" fallthroughContext="#pop#pop!function_code">
+<context name="func_args" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop!function_code">
 	<DetectSpaces/>
 	<DetectIdentifier context="arg_as_type" lookAhead="true"/>
 	<DetectChar char=")" attribute="scope" context="#pop#pop!function_ret"/>
@@ -297,7 +310,7 @@
 
 <context name="function_end" attribute="keyword" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
 	<DetectSpaces/>
-	<StringDetect String="function" insensitive="true" attribute="keyword" context="#pop#pop" endRegion="function"/>
+	<StringDetect String="function" insensitive="true" attribute="keyword" context="#pop#pop!inline_call" endRegion="function"/>
 </context>
 
 
@@ -320,7 +333,7 @@
 	<DetectChar char="(" attribute="scope" context="sub_args"/>
 </context>
 
-<context name="sub_args" attribute="g" lineEndContext="#stay" fallthroughContext="#pop#pop!sub_code">
+<context name="sub_args" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop!sub_code">
 	<DetectSpaces/>
 	<DetectIdentifier context="arg_as_type" lookAhead="true"/>
 	<DetectChar char=")" attribute="scope" context="#pop#pop!sub_ret"/>
@@ -345,14 +358,13 @@
 
 <context name="sub_end" attribute="keyword" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
 	<DetectSpaces/>
-	<StringDetect String="sub" insensitive="true" attribute="keyword" context="#pop#pop" endRegion="sub"/>
+	<StringDetect String="sub" insensitive="true" attribute="keyword" context="#pop#pop!inline_call" endRegion="sub"/>
 </context>
 
 
 <!-- @code represents execution body, including function and sub contents.
 -->
 <context name="@code" attribute="g" lineEndContext="#stay">
-	<DetectSpaces/>
 	<IncludeRules context="@macro"/>
 	<IncludeRules context="@comment"/>
 	<IncludeRules context="@code_end"/>
@@ -380,14 +392,50 @@
 
 	<keyword String="exit" attribute="control" context="exit"/>
 
+	<keyword String="try" context="try_test" lookAhead="true"/>
+	<keyword String="throw" attribute="keyword" context="rvalue"/>
+
 	<DetectChar char=":" context="line_break" lookAhead="true"/>
 
 	<DetectIdentifier context="lvalue" lookAhead="true"/>
 </context>
 
+<context name="try_test" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!lvalue">
+	<RegExpr String="try\s*('|$)" context="#pop!try_begin" lookAhead="true"/>
+</context>
+
+<context name="try_begin" attribute="g" lineEndContext="#pop">
+	<DetectIdentifier attribute="keyword" context="#pop!try_body"/>
+</context>
+
+<context name="try_body" attribute="g" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces/>
+	<StringDetect String="end" insensitive="true" attribute="keyword" context="#pop!try_end"/>
+	<keyword String="endtry" attribute="keyword" context="#pop"/>
+	<keyword String="catch" context="catch_test" lookAhead="true"/>
+	<IncludeRules context="@code"/>
+</context>
+
+<context name="try_end" attribute="g" lineEndContext="#pop">
+	<DetectSpaces/>
+	<keyword String="try" attribute="keyword" context="#pop"/>
+</context>
+
+<context name="catch_test" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!lvalue">
+	<RegExpr String="catch\s*[a-zA-Z_]" attribute="control" context="#pop!catch_expr" lookAhead="true"/>
+</context>
+
+<context name="catch_expr" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+	<keyword String="catch" attribute="keyword" context="#pop!catch_var"/>
+</context>
+
+<context name="catch_var" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+	<DetectSpaces/>
+	<DetectIdentifier attribute="var" context="#pop"/>
+</context>
+
 <context name="print" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="rvalue">
-	<DetectChar char="," attribute="coma"/>
-	<DetectChar char=";" attribute="coma"/>
+	<AnyChar String=",;" attribute="coma"/>
 	<IncludeRules context="@line_break"/>
 </context>
 
@@ -599,8 +647,7 @@
 -->
 <context name="rvalue" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
 	<DetectSpaces/>
-	<DetectChar char="-" attribute="unary"/>
-	<DetectChar char="+" attribute="unary"/>
+	<AnyChar String="-+" attribute="unary"/>
 	<IncludeRules context="@comment"/>
 	<IncludeRules context="@function"/>
 	<IncludeRules context="@sub"/>
@@ -630,8 +677,7 @@
 
 <context name="rvalue_operator" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!rvalue_end">
 	<DetectSpaces/>
-	<DetectChar char="." attribute="operator" context="#pop!rvalue_dot"/>
-	<DetectChar char="@" attribute="operator" context="#pop!rvalue_dot"/>
+	<AnyChar String=".@" attribute="operator" context="#pop!rvalue_dot"/>
 	<IncludeRules context="@rvalue_ops"/>
 </context>
 
@@ -642,13 +688,7 @@
 
 <context name="rvalue_end" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
 	<DetectSpaces/>
-	<RegExpr String="(=|&lt;&gt;|&lt;&lt;|&gt;&gt;|&lt;=|&gt;=|&lt;|&gt;|\^|\-|\+|\*|\/|\\)" context="#pop!rvalue_binary" lookAhead="true"/>
-	<RegExpr String="(and|or|mod)[\W]" insensitive="true" context="#pop!rvalue_binary" lookAhead="true"/>
-</context>
-
-<context name="rvalue_binary" attribute="invalid" lineEndContext="#stay">
-	<DetectSpaces/>
-	<RegExpr String="(=|&lt;&gt;|&lt;&lt;|&gt;&gt;|&lt;=|&gt;=|&lt;|&gt;|\^|\-|\+|\*|\/|\\|and|or|mod)" insensitive="true" attribute="binary" context="#pop!rvalue"/>
+	<RegExpr String="=|&lt;&gt;|&lt;&lt;|&gt;&gt;|&lt;=|&gt;=|&lt;|&gt;|\^|\-|\+|\*|\/|\\|(and|or|mod)(?=\W)" insensitive="true" attribute="binary" context="#pop!rvalue"/>
 </context>
 
 <context name="rvalue_m_dot" attribute="g" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!rvalue_end">
@@ -799,3 +839,4 @@
 </general>
 
 </language>
+<!-- kate: replace-tabs off; -->

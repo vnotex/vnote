@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- Author: Pablo Oliveira <pablo@sifflez.org> //-->
-<language name="Tiger" version="1" kateversion="5.0" section="Other" extensions="*.tig"
+<language name="Tiger" version="3" kateversion="5.0" section="Other" extensions="*.tig"
           mimetype="" author="Pablo Oliveira" license="MIT">
   <highlighting>
     <list name="controlflow">
@@ -67,8 +67,9 @@
       </context>
 
       <context attribute="Comment" lineEndContext="#stay" name="Multi/inline Comment">
+        <DetectSpaces />
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment" />
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
 
     </contexts>
@@ -87,7 +88,7 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
     </comments>
     <keywords casesensitive="1" />
   </general>

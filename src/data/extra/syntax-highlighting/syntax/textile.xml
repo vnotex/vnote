@@ -6,7 +6,7 @@
     Licensed under GPL license.
 -->
 
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
             [           
             <!ENTITY strongregex "(\s|^)\*[^*]\w.*\w[^*]\*(\s|\.|,|;|:|\-|\?|$)">
             <!ENTITY strikeoutregex "(\s|^)-[^-]\w.*\w[^-]-(\s|\.|,|;|:|\-|\?|$)">
@@ -16,7 +16,7 @@
 ]>
             
 <language section="Markup" name="Textile" 
-        version="4" kateversion="3.0"
+        version="6" kateversion="5.0"
         extensions="*.textile" priority="15"
         author="Alexander Kabakov (kabakov.as@gmail.com)"
         license="LGPL" >
@@ -32,12 +32,12 @@
                 <Detect2Chars context="sectionheader_block" char="h" char1="4" column="0" />
                 <Detect2Chars context="sectionheader_block" char="h" char1="5" column="0" />
                 
-                <RegExpr attribute="textblock" String="^(p|pre|bq|bc)&blockattrsregex;&formatregex;\." />
+                <RegExpr attribute="textblock" String="^(p|pre|bq|bc)&blockattrsregex;&formatregex;\." column="0" />
                 <DetectChar context="image" char="!"/>
                 
                 <IncludeRules context="inc" />
 
-                <RegExpr attribute="itemlist" String="^[\*\#]+\s" />
+                <RegExpr attribute="itemlist" String="^[\*\#]+\s" column="0" />
                 <RegExpr attribute="htmllink" String='".*":http(s)?:[\w_/\\\d\.%\?&amp;=-]*' />
             </context>
             
@@ -57,8 +57,9 @@
             
             <context name="comment" attribute="comment" lineEndContext="#stay">
                 <DetectSpaces/>
-                <DetectIdentifier/>
                 <StringDetect attribute="comment" context="#pop" String="--&gt;" endRegion="comment" />
+                <IncludeRules context="##Comments" />
+                <DetectIdentifier/>
             </context>
             
             <context attribute="Normal Text" name="inc" lineEndContext="#stay" >
@@ -93,8 +94,9 @@
 
     <general>
         <comments>
-            <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+            <comment name="multiLine" start="&lt;!--" end="--&gt;" region="comment" />
         </comments>
     </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

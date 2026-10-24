@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- author: Giancarlo Niccolai (giancarlo@niccolai.ws) -->
 <!-- This file is released under GPL license 2.0 or any later version at your choice. -->
-<language name="Inform" version="2" kateversion="2.4" section="Sources" extensions="*.inf;*.h" mimetype="text/x-inform-src" author="Giancarlo Niccolai (giancarlo@niccolai.ws)" license="GPL">
+<language name="Inform" version="5" kateversion="5.0" section="Sources" extensions="*.inf;*.h" mimetype="text/x-inform-src" author="Giancarlo Niccolai (giancarlo@niccolai.ws)" license="GPL">
 <highlighting>
    <list name="keywords">
       <item>if</item>
@@ -97,15 +97,12 @@
       <item>LMode1</item>
       <item>LMode2</item>
       <item>LMode3</item>
-      <item>Inv</item>
-
 
       <item>Inv</item>
       <item>InvTall</item>
       <item>InvWide</item>
       <item>Take</item>
       <item>Drop</item>
-      <item>Empty</item>
       <item>Enter</item>
       <item>Exit</item>
       <item>GetOff</item>
@@ -133,8 +130,6 @@
       <item>Transfer</item>
       <item>Empty</item>
       <item>EmptyT</item>
-      <item>GetOff</item>
-      <item>GoIn</item>
       <item>Listen</item>
       <item>Taste</item>
       <item>Touch</item>
@@ -159,7 +154,6 @@
       <item>Buy</item>
       <item>Climb</item>
       <item>Squeeze</item>
-      <item>Climb</item>
       <item>Burn</item>
       <item>Cut</item>
       <item>Dig</item>
@@ -172,11 +166,9 @@
       <item>Kiss</item>
 
       <item>Sleep</item>
-      <item>Sing</item>
       <item>WaveHands</item>
       <item>Swim</item>
       <item>Sorry</item>
-      <item>Sing</item>
       <item>Strong</item>
       <item>Mild</item>
       <item>Smell</item>
@@ -233,9 +225,6 @@
       <item>Default</item>
       <item>Extend</item>
       <item>Global</item>
-      <item>Ifnot</item>
-      <item>Iftrue</item>
-      <item>Iffalse</item>
       <item>Import</item>
       <item>Include</item>
       <item>Link</item>
@@ -282,7 +271,7 @@
          <RegExpr attribute="Function" context="funcdef" beginRegion="reg_function"
             String="[[]\s*[a-zA-Z_]+\w*" />
 
-         <RegExpr String=" *object | *class " attribute="Pragma"
+         <RegExpr String="^ *(object|class) " attribute="Pragma"
             context="ClassDecl"
             insensitive="true" beginRegion="reg_class" column="0"/>
 
@@ -291,8 +280,7 @@
 
          <RegExpr attribute="Operator" context="#stay" String="--?>" />
          <RegExpr attribute="Normal Text" context="#stay" String="[a-zA-Z_]+\d*" />
-         <RegExpr attribute="Number" context="#stay" String="\$[0-9a-fA-F]{1,4}" />
-         <RegExpr attribute="Number" context="#stay" String="\d+" />
+         <RegExpr attribute="Number" context="#stay" String="\$[0-9a-fA-F]{1,4}|\d+" />
       </context>
 
       <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
@@ -324,8 +312,7 @@
          <DetectChar attribute="Word" context="word" char="'" />
          <DetectChar attribute="Function" context="prop_func_def" char="[" beginRegion="reg_prop_def_func" />
          <DetectChar attribute="Operator" context="#pop" char="," />
-         <RegExpr attribute="Number" context="#stay" String="\$[0-9a-fA-F]{1,4}" />
-         <RegExpr attribute="Number" context="#stay" String="\d+" />
+         <RegExpr attribute="Number" context="#stay" String="\$[0-9a-fA-F]{1,4}|\d+" />
       </context>
 
 
@@ -340,7 +327,7 @@
      </context>
 
      <context name="ClassDecl_1" attribute="Normal Text" lineEndContext="#stay">
-         <RegExpr String="^[\t ]*has " attribute="Keyword" context="has_decl" insensitive="true"/>
+         <RegExpr String="^[\t ]*has " attribute="Keyword" context="has_decl" insensitive="true" column="0"/>
          <keyword String="ClassDeclOps" attribute="Keyword" context="#stay" />
          <RegExpr String="[a-zA-Z_]+\w*" context = "prop_def"
             attribute="Function"/>
@@ -376,7 +363,10 @@
          <IncludeRules context="PropDefVal rules" />
       </context>
 
-      <context attribute="Comment" lineEndContext="#pop" name="comment"/>
+      <context attribute="Comment" lineEndContext="#pop" name="comment">
+         <DetectSpaces />
+         <IncludeRules context="##Comments" />
+      </context>
 
    </contexts>
 

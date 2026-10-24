@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Literate Curry" version="2" kateversion="3.4"
+<!DOCTYPE language>
+<language name="Literate Curry" version="6" kateversion="5.0"
           section="Sources" extensions="*.lcurry" mimetype="text/x-curry"
           author="Björn Peemöller (bjp@informatik.uni-kiel.de)" license="LGPL"
           indenter="haskell">
@@ -9,15 +9,14 @@
 
     <context attribute="Text" lineEndContext="#stay" name="Text">
       <!-- Bird Tracks -->
-      <DetectChar attribute="BirdTrack" context="Code" char="&gt;" column="0"/>
-      <DetectChar attribute="BirdTrack" context="Code" char="&lt;" column="0"/>
+      <AnyChar attribute="BirdTrack" context="Code" String="&gt;&lt;" column="0"/>
       <!-- \begin{code} and \begin{spec} -->
       <StringDetect attribute="Text" context="normals" String="&#92;begin&#123;code&#125;"/>
       <StringDetect attribute="Text" context="normals" String="&#92;begin&#123;spec&#125;"/>
     </context>
 
     <context attribute="Text" lineEndContext="#pop" name="Code">
-      <RegExpr attribute="Comment" context="multiline" String="\{-[^#]" />
+      <RegExpr attribute="Comment" context="multiline" String="\{-[^#]" beginRegion="Comment" />
       <IncludeRules context="##Curry" />
     </context>
 
@@ -29,12 +28,13 @@
 
     <!-- Handle comments in presence of bird tracks -->
     <context attribute="Comment" lineEndContext="lineend" name="multiline" >
-      <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" />
+      <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" endRegion="Comment" />
+      <DetectSpaces />
+      <IncludeRules context="##Comments" />
     </context>
 
     <context attribute="Text" lineEndContext="#stay" name="lineend">
-      <DetectChar attribute="BirdTrack" context="restart" char="&gt;" column="0"/>
-      <DetectChar attribute="BirdTrack" context="restart" char="&lt;" column="0"/>
+      <AnyChar attribute="BirdTrack" context="restart" String="&gt;&lt;" column="0"/>
     </context>
 
     <context attribute="Comment" lineEndContext="#pop" name="restart">
@@ -47,4 +47,9 @@
     <itemData name="Comment"   defStyleNum="dsComment" />
   </itemDatas>
   </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine" start="{-" end="-}" region="Comment"/>
+    </comments>
+  </general>
 </language>

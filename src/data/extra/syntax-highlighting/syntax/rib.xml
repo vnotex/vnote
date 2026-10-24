@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
 <!--Kate syntax file for RenderMan Interface Byte stream-->
 <!--By David Williams-->
 <!--Email david@david-williams.info-->
 
-<language name="RenderMan RIB" version="3" kateversion="2.3" section="3D" mimetype="" extensions="*.rib" author="David Williams &lt;david@david-williams.info&gt;" license="LGPL">
+<language name="RenderMan RIB" version="5" kateversion="5.0" section="3D" mimetype="" extensions="*.rib" author="David Williams &lt;david@david-williams.info&gt;" license="LGPL">
 	<highlighting>
 		<list name="Graphics States">
 			<item>AreaLightSource</item>
@@ -119,7 +119,10 @@
 			<context name="String" attribute="String" lineEndContext="#pop">
 				<DetectChar attribute="String" context="#pop" char="&quot;"/>
 			</context>
-			<context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+			<context name="Comment" attribute="Comment" lineEndContext="#pop">
+				<DetectSpaces />
+				<IncludeRules context="##Comments"/>
+			</context>
 		</contexts>
 		<itemDatas>
 			<itemData name="Normal Text" defStyleNum="dsNormal"/>
@@ -141,3 +144,4 @@
 		</comments>
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

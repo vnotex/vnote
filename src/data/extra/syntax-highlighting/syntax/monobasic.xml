@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
 <!--
     Mono Basic syntax
@@ -10,7 +10,7 @@
     License: GNU General Public License
 -->
 
-<language name="MonoBasic" section="Sources" version="3" kateversion="2.3" extensions="*.vb" mimetype="" author="Davide Bettio (davide.bettio@kdemail.net)" license="GPL">
+<language name="MonoBasic" section="Sources" version="5" kateversion="5.0" extensions="*.vb" mimetype="" author="Davide Bettio (davide.bettio@kdemail.net)" license="GPL">
   <highlighting>
      <list name="keywords">
         <item>Option</item>
@@ -192,7 +192,10 @@
          <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
 
-      <context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+         <DetectSpaces />
+         <IncludeRules context="##Comments"/>
+      </context>
     </contexts>
 
     <itemDatas>

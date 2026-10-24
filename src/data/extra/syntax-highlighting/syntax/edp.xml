@@ -1,0 +1,479 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+* FreFEM syntax definition.
+*
+* SPDX-FileCopyrightText: 2025 Lukas Spies <Lukas.Spies@inria.fr>
+*
+* SPDX-License-Identifier: MIT
+-->
+<language name="FreeFEM"
+          section="Sources"
+          extensions="*.edp;*.idp"
+          version="1"
+          kateversion="5.79">
+    <highlighting>
+        <list name="types">
+            <!-- Standard types -->
+            <item>int</item>
+            <item>bool</item>
+            <item>real</item>
+            <item>complex</item>
+            <item>string</item>
+            <item>file</item>
+            <!-- Mesh design -->
+            <item>border</item>
+            <item>mesh</item>
+            <item>mesh3</item>
+            <!-- Finite element space design -->
+            <item>fespace</item>
+            <!-- Macro design -->
+            <item>macro</item>
+            <item>NewMacro</item>
+            <item>EndMacro</item>
+            <item>IFMACRO</item>
+            <item>ENDIFMACRO</item>
+            <!-- Functions design -->
+            <item>func</item>
+            <!-- Problem design -->
+            <item>problem</item>
+            <item>solve</item>
+            <item>varf</item>
+            <item>matrix</item>
+            <!-- properties of arrays and matrices -->
+            <item>n</item>
+            <item>m</item>
+            <item>sort</item>
+            <item>min</item>
+            <item>max</item>
+            <item>imin</item>
+            <item>jmin</item>
+            <item>imax</item>
+            <item>jmax</item>
+            <item>resize</item>
+            <item>diag</item>
+            <item>re</item>
+            <item>im</item>
+            <item>ndof</item>
+        </list>
+
+        <!-- all the finite elements -->
+        <list name="fespace">
+            <item>P0</item>
+            <item>P03d</item>
+            <item>P0Edge</item>
+            <item>P1</item>
+            <item>P13d</item>
+            <item>P1dc</item>
+            <item>P1b</item>
+            <item>P1b3d</item>
+            <item>P1nc</item>
+            <item>P2</item>
+            <item>P23d</item>
+            <item>P2b</item>
+            <item>P2dc</item>
+            <item>P2h</item>
+            <item>RT0</item>
+            <item>RT03d</item>
+            <item>RT0Ortho</item>
+            <item>Edge03d</item>
+            <item>P3</item>
+            <item>P3dc</item>
+            <item>P4</item>
+            <item>P4dc</item>
+            <item>P1Edge</item>
+            <item>P2Edge</item>
+            <item>P3Edge</item>
+            <item>P4Edge</item>
+            <item>P5Edge</item>
+            <item>P2Morley</item>
+            <item>HCT</item>
+            <item>P2BR</item>
+            <item>RT1</item>
+            <item>RT1Ortho</item>
+            <item>RT2</item>
+            <item>RT2Ortho</item>
+            <item>BDM1</item>
+            <item>BDM1Ortho</item>
+            <item>Edge13d</item>
+            <item>Edge23d</item>
+            <item>FEQF</item>
+        </list>
+
+        <!-- global variables -->
+        <list name="globvar">
+            <item>area</item>
+            <item>ARGV</item>
+            <item>BoundaryEdge</item>
+            <item>CG</item>
+            <item>Cholesky</item>
+            <item>Crout</item>
+            <item>edgeOrientation</item>
+            <item>false</item>
+            <item>GMRES</item>
+            <item>hTriangle</item>
+            <item>include</item>
+            <item>InternalEdge</item>
+            <item>lenEdge</item>
+            <item>load</item>
+            <item>LU</item>
+            <item>N</item>
+            <item>nTonEdge</item>
+            <item>nuEdge</item>
+            <item>nuTriangle</item>
+            <item>P</item>
+            <item>pi</item>
+            <item>sparsesolver</item>
+            <item>true</item>
+            <item>verbosity</item>
+            <item>version</item>
+            <item>volume</item>
+            <item>x</item>
+            <item>y</item>
+            <item>z</item>
+            <item>label</item>
+            <item>region</item>
+        </list>
+
+        <!-- Quadrature formulas -->
+        <list name="quadform">
+            <item>qf1pE</item>
+            <item>qf2pE</item>
+            <item>qf3pE</item>
+            <item>qf4pE</item>
+            <item>qf5pE</item>
+            <item>qf1pElump</item>
+            <item>qf1pT</item>
+            <item>qf2pT</item>
+            <item>qf5pT</item>
+            <item>qf1pTlump</item>
+            <item>qf2pT4P1</item>
+            <item>qf7pT</item>
+            <item>qf9pT</item>
+            <item>qfV1</item>
+            <item>qfV2</item>
+            <item>qfV5</item>
+            <item>qfV1lump</item>
+        </list>
+
+        <!-- Loops -->
+        <list name="loops">
+            <item>for</item>
+            <item>if</item>
+            <item>else</item>
+            <item>while</item>
+            <item>continue</item>
+            <item>break</item>
+            <item>try</item>
+            <item>catch</item>
+            <item>return</item>
+        </list>
+
+        <!-- I/O -->
+        <list name="io">
+            <item>cout</item>
+            <item>cin</item>
+            <item>endl</item>
+            <item>ifstream</item>
+            <item>ofstream</item>
+            <item>append</item>
+            <item>binary</item>
+            <item>seekg</item>
+            <item>tellg</item>
+            <item>flush</item>
+            <item>getline</item>
+            <item>precision</item>
+            <item>scientific</item>
+            <item>fixed</item>
+            <item>showbase</item>
+            <item>noshowbase</item>
+            <item>showpos</item>
+            <item>noshowpos</item>
+            <item>default</item>
+            <item>setw</item>
+        </list>
+
+        <!-- Functions -->
+        <list name="functions">
+            <item>abs</item>
+            <item>acos</item>
+            <item>acosh</item>
+            <item>adaptmesh</item>
+            <item>adj</item>
+            <item>AffineCG</item>
+            <item>AffineGMRES</item>
+            <item>arg</item>
+            <item>asin</item>
+            <item>asinh</item>
+            <item>assert</item>
+            <item>atan</item>
+            <item>atan2</item>
+            <item>atanh</item>
+            <item>atoi</item>
+            <item>atof</item>
+            <item>BFGS</item>
+            <item>buildmesh</item>
+            <item>ceil</item>
+            <item>change</item>
+            <item>checkmovemesh</item>
+            <item>chi</item>
+            <item>clock</item>
+            <item>complexEigenValue</item>
+            <item>conj</item>
+            <item>convect</item>
+            <item>copysign</item>
+            <item>cos</item>
+            <item>cosh</item>
+            <item>diffnp</item>
+            <item>diffpos</item>
+            <item>dist</item>
+            <item>dumptable</item>
+            <item>dx</item>
+            <item>dxx</item>
+            <item>dxy</item>
+            <item>dxz</item>
+            <item>dy</item>
+            <item>dyx</item>
+            <item>dyy</item>
+            <item>dyz</item>
+            <item>dz</item>
+            <item>dzx</item>
+            <item>dzy</item>
+            <item>dzz</item>
+            <item>EigenValue</item>
+            <item>emptymesh</item>
+            <item>erf</item>
+            <item>erfc</item>
+            <item>exec</item>
+            <item>exit</item>
+            <item>exp</item>
+            <item>fdim</item>
+            <item>floor</item>
+            <item>fmax</item>
+            <item>fmin</item>
+            <item>fmod</item>
+            <item>imag</item>
+            <item>int1d</item>
+            <item>int2d</item>
+            <item>int3d</item>
+            <item>intalledges</item>
+            <item>intallfaces</item>
+            <item>interpolate</item>
+            <item>invdiff</item>
+            <item>invdiffnp</item>
+            <item>invdiffpos</item>
+            <item>isInf</item>
+            <item>isNaN</item>
+            <item>isNormal</item>
+            <item>j0</item>
+            <item>j1</item>
+            <item>jn</item>
+            <item>jump</item>
+            <item>LinearCG</item>
+            <item>LinearGMRES</item>
+            <item>lgamma</item>
+            <item>log</item>
+            <item>log10</item>
+            <item>lrint</item>
+            <item>lround</item>
+            <item>ltime</item>
+            <item>max</item>
+            <item>min</item>
+            <item>movemesh</item>
+            <item>NaN</item>
+            <item>NLCG</item>
+            <item>on</item>
+            <item>plot</item>
+            <item>polar</item>
+            <item>pow</item>
+            <item>projection</item>
+            <item>randinit</item>
+            <item>randint31</item>
+            <item>randint32</item>
+            <item>randreal1</item>
+            <item>randreal2</item>
+            <item>randreal3</item>
+            <item>randres53</item>
+            <item>readmesh</item>
+            <item>readmesh3</item>
+            <item>real</item>
+            <item>rint</item>
+            <item>round</item>
+            <item>savemesh</item>
+            <item>set</item>
+            <item>sign</item>
+            <item>signbit</item>
+            <item>sin</item>
+            <item>sinh</item>
+            <item>sort</item>
+            <item>splitmesh</item>
+            <item>sqrt</item>
+            <item>square</item>
+            <item>storagetotal</item>
+            <item>storageused</item>
+            <item>strtod</item>
+            <item>strtol</item>
+            <item>swap</item>
+            <item>system</item>
+            <item>tan</item>
+            <item>tanh</item>
+            <item>tgamma</item>
+            <item>time</item>
+            <item>trace</item>
+            <item>trunc</item>
+            <item>y0</item>
+            <item>y1</item>
+            <item>yn</item>
+            <item>str</item>
+            <item>Stringification</item>
+            <item>mpiRank</item>
+        </list>
+
+        <!-- some parameters -->
+        <list name="parameters">
+            <item>hmin</item>
+            <item>hmax</item>
+            <item>err</item>
+            <item>errg</item>
+            <item>nbvx</item>
+            <item>nbsmooth</item>
+            <item>nbjacoby</item>
+            <item>ratio</item>
+            <item>omega</item>
+            <item>iso</item>
+            <item>abserror</item>
+            <item>cutoff</item>
+            <item>verbosity</item>
+            <item>inquire</item>
+            <item>splitpbedge</item>
+            <item>maxsubdiv</item>
+            <item>rescaling</item>
+            <item>keepbackvertices</item>
+            <item>IsMetric</item>
+            <item>power</item>
+            <item>thetamax</item>
+            <item>splitin2</item>
+            <item>metric</item>
+            <item>nomeshgeneration</item>
+            <item>periodic</item>
+            <item>precon</item>
+            <item>nbiter</item>
+            <item>eps</item>
+            <item>veps</item>
+            <item>stop</item>
+            <item>fixedborder</item>
+            <item>label</item>
+            <item>region</item>
+            <item>flabel</item>
+            <item>fregion</item>
+            <item>nev</item>
+            <item>sym</item>
+            <item>tol</item>
+            <item>value</item>
+            <item>ivalue</item>
+            <item>vector</item>
+            <item>sigma</item>
+            <item>qfe</item>
+            <item>qforder</item>
+            <item>qft</item>
+            <item>qfV</item>
+            <item>facemerge</item>
+            <item>ptmerge</item>
+            <item>orientation</item>
+            <item>wait</item>
+            <item>ps</item>
+            <item>coef</item>
+            <item>fill</item>
+            <item>cmm</item>
+            <item>aspectratio</item>
+            <item>bb</item>
+            <item>nbiso</item>
+            <item>nbarrow</item>
+            <item>viso</item>
+            <item>varrow</item>
+            <item>bw</item>
+            <item>grey</item>
+            <item>hsv</item>
+            <item>boundary</item>
+            <item>dim</item>
+            <item>prev</item>
+            <item>WindowIndex</item>
+            <item>split</item>
+            <item>commworld</item>
+            <item>solver</item>
+        </list>
+
+        <contexts>
+            <context attribute="Normal" lineEndContext="#pop" name="Normal" >
+
+                <!-- Various categories of highlighted words -->
+                <keyword attribute="Types" context="#stay" String="types" />
+                <keyword attribute="FE Space" context="#stay" String="fespace" />
+                <keyword attribute="Global Variables" context="#stay" String="globvar" />
+                <keyword attribute="Quadrature Formulae" context="#stay" String="quadform" />
+                <keyword attribute="Loops" context="#stay" String="loops" />
+                <keyword attribute="IO" context="#stay" String="io" />
+                <keyword attribute="Functions" context="#stay" String="functions" />
+                <keyword attribute="Parameters" context="#stay" String="parameters" />
+
+                <!-- Two types of comments - part 1/3 -->
+                <Detect2Chars attribute="Comment" context="Comment 1" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="Comment 2" char="/" char1="*" beginRegion="Comment"/>
+
+                <!-- All defined operators -->
+                <StringDetect String="^-1" attribute="Operator" context="#stay"/>
+                <StringDetect String="!=" attribute="Operator" context="#stay"/>
+                <StringDetect String=".*" attribute="Operator" context="#stay"/>
+                <StringDetect String="./" attribute="Operator" context="#stay"/>
+                <AnyChar String="#+-*/=&lt;&gt;%^'?:|'" attribute="Operator" context="#stay"/>
+
+                <!-- Needed to detect quoted text - part 1/2 -->
+                <DetectChar attribute="String" context="string" char="&quot;" />
+            </context>
+
+            <!-- Needed to detect quoted text - part 2/2 -->
+            <context attribute="String" lineEndContext="#stay" name="string" >
+                <DetectChar attribute="String" context="#pop" char="&quot;" />
+            </context>
+
+            <!-- Two types of comments - part 2/3 -->
+            <context attribute="Comment" lineEndContext="#pop" name="Comment 1">
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
+            </context>
+            <context attribute="Comment" lineEndContext="#stay" name="Comment 2">
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
+            </context>
+
+        </contexts>
+
+        <!-- The various style definitions -->
+        <itemDatas>
+            <itemData name="Normal" defStyleNum="dsNormal" />
+            <itemData name="Types" defStyleNum="dsKeyword" />
+            <itemData name="FE Space" defStyleNum="dsBuiltIn" />
+            <itemData name="Global Variables" defStyleNum="dsVariable" />
+            <itemData name="Quadrature Formulae" defStyleNum="dsBuiltIn" />
+            <itemData name="Loops" defStyleNum="dsControlFlow" />
+            <itemData name="IO" defStyleNum="dsKeyword" />
+            <itemData name="Functions" defStyleNum="dsFunction" />
+            <itemData name="Parameters" defStyleNum="dsKeyword" />
+            <itemData name="Operator" defStyleNum="dsOperator" />
+            <itemData name="String" defStyleNum="dsString" />
+            <itemData name="Comment" defStyleNum="dsComment"/>
+        </itemDatas>
+    </highlighting>
+
+    <general>
+        <!-- Two types of comments - part 3/3 -->
+        <comments>
+            <comment name="singleLine" start="//" position="afterwhitespace"/>
+            <comment name="multiLine" start="/*" end="*/" region="Comment" />
+        </comments>
+
+        <!-- Everything is case sensitive here -->
+        <keywords casesensitive="1" />
+    </general>
+
+</language>

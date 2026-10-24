@@ -1,0 +1,268 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+
+<language name="Terraform"
+          section="Sources"
+          version="3"
+          kateversion="5.0"
+          indenter="normal"
+          extensions="*.tf;*.tfvars"
+          mimetype="text/x-terraform"
+          priority="1"
+          author="Thuck (denisdoria@gmail.com)"
+          license="MIT">
+    <highlighting>
+        <list name="blocks">
+            <item>resource</item>
+            <item>data</item>
+            <item>variable</item>
+            <item>output</item>
+            <item>locals</item>
+            <item>module</item>
+            <item>provider</item>
+            <item>terraform</item>
+        </list>
+        <list name="sub blocks">
+            <item>dynamic</item>
+            <item>content</item>
+            <item>provisioner</item>
+            <item>required_providers</item>
+            <item>backend</item>
+        </list>
+        <list name="meta arguments">
+            <item>depends_on</item>
+            <item>count</item>
+            <item>for_each</item>
+            <!--<item>provider</item> needs context to behave like an argument -->
+            <item>lifecycle</item>
+        </list>
+        <list name="keywords">
+            <item>source</item>
+            <item>required_version</item>
+            <!--<item>index</item> can also be a function-->
+        </list>
+
+        <list name="controlflow">
+            <item>for</item>
+            <item>in</item>
+            <item>if</item>
+        </list>
+
+        <list name="variables">
+            <item>var</item>
+            <item>local</item>
+            <item>each</item>
+            <item>self</item>
+        </list>
+        <list name="built in functions">
+            <item>abs</item>
+            <item>ceil</item>
+            <item>floor</item>
+            <item>log</item>
+            <item>max</item>
+            <item>min</item>
+            <item>parseint</item>
+            <item>pow</item>
+            <item>signum</item>
+            <item>chomp</item>
+            <item>format</item>
+            <item>formatlist</item>
+            <item>indent</item>
+            <item>join</item>
+            <item>lower</item>
+            <item>regex</item>
+            <item>regexall</item>
+            <item>replace</item>
+            <item>split</item>
+            <item>strrev</item>
+            <item>substr</item>
+            <item>title</item>
+            <item>trim</item>
+            <item>trimprefix</item>
+            <item>trimsuffix</item>
+            <item>trimspace</item>
+            <item>upper</item>
+            <item>alltrue</item>
+            <item>anytrue</item>
+            <item>chunklist</item>
+            <item>coalesce</item>
+            <item>coalescelist</item>
+            <item>compact</item>
+            <item>concat</item>
+            <item>contains</item>
+            <item>distinct</item>
+            <item>element</item>
+            <item>flatten</item>
+            <item>index</item>
+            <item>keys</item>
+            <item>length</item>
+            <item>lookup</item>
+            <item>matchkeys</item>
+            <item>merge</item>
+            <item>one</item>
+            <item>range</item>
+            <item>reverse</item>
+            <item>setintersection</item>
+            <item>setproduct</item>
+            <item>setsubtract</item>
+            <item>setunion</item>
+            <item>slice</item>
+            <item>sort</item>
+            <item>sum</item>
+            <item>transpose</item>
+            <item>values</item>
+            <item>zipmap</item>
+            <item>base64decode</item>
+            <item>base64encode</item>
+            <item>base64gzip</item>
+            <item>csvdecode</item>
+            <item>jsondecode</item>
+            <item>jsonencode</item>
+            <item>textdecodebase64</item>
+            <item>textencodebase64</item>
+            <item>urlencode</item>
+            <item>yamldecode</item>
+            <item>yamlencode</item>
+            <item>abspath</item>
+            <item>dirname</item>
+            <item>pathexpand</item>
+            <item>basename</item>
+            <item>file</item>
+            <item>fileexists</item>
+            <item>fileset</item>
+            <item>filebase64</item>
+            <item>templatefile</item>
+            <item>formatdate</item>
+            <item>timeadd</item>
+            <item>timestamp</item>
+            <item>base64sha256</item>
+            <item>base64sha512</item>
+            <item>bcrypt</item>
+            <item>filebase64sha256</item>
+            <item>filebase64sha512</item>
+            <item>filemd5</item>
+            <item>filesha1</item>
+            <item>filesha256</item>
+            <item>filesha512</item>
+            <item>md5</item>
+            <item>rsadecrypt</item>
+            <item>sha1</item>
+            <item>sha256</item>
+            <item>sha512</item>
+            <item>uuid</item>
+            <item>uuidv5</item>
+            <item>cidrhost</item>
+            <item>cidrnetmask</item>
+            <item>cidrsubnet</item>
+            <item>cidrsubnets</item>
+            <item>can</item>
+            <item>defaults</item>
+            <item>nonsensitive</item>
+            <item>sensitive</item>
+            <item>tobool</item>
+            <item>tolist</item>
+            <item>tomap</item>
+            <item>tonumber</item>
+            <item>toset</item>
+            <item>tostring</item>
+            <item>try</item>
+            <item>optional</item> <!-- not exactly a function -->
+        </list>
+        <list name="primitive types">
+            <item>string</item>
+            <item>number</item>
+            <item>bool</item>
+        </list>
+        <list name="complex types">
+            <item>list</item>
+            <item>map</item>
+            <item>set</item>
+        </list>
+        <list name="structural types">
+            <item>object</item>
+            <item>tuple</item>
+        </list>
+        <list name="dynamic types">
+            <item>any</item>
+        </list>
+        <list name="special vars">
+            <item>true</item>
+            <item>false</item>
+            <item>null</item>
+        </list>
+
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <DetectSpaces />
+
+                <keyword attribute="Control Flow" context="#stay" String="controlflow"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Meta Argument" context="#stay" String="meta arguments"/>
+                <keyword attribute="Block" context="#stay" String="blocks"/>
+                <keyword attribute="Sub Block" context="#stay" String="sub blocks"/>
+                <keyword attribute="Built In" context="#stay" String="built in functions" />
+                <keyword attribute="Variable" context="#stay" String="variables" />
+                <keyword attribute="Variable" context="#stay" String="special vars" />
+                <keyword attribute="Data Type" context="#stay" String="primitive types"/>
+                <keyword attribute="Data Type" context="#stay" String="complex types"/>
+                <keyword attribute="Data Type" context="#stay" String="structural types"/>
+                <keyword attribute="Data Type" context="#stay" String="dynamic types"/>
+                <DetectIdentifier />
+
+                <Float attribute="Float" context="#stay"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <HlCHex attribute="Hex" context="#stay"/>
+                <HlCOct attribute="Octal" context="#stay"/>
+
+                <DetectChar attribute="String" context="DoubleQuoteString" char="&quot;"/>
+                <DetectChar attribute="Comment" char="#" context="Comment"/>
+                <StringDetect attribute="Operator" context="#stay" String="..." />
+                <AnyChar attribute="Operator" String="-+*/%\|=;&lt;&gt;!&amp;" context="#stay"/>
+
+            </context>
+
+            <context attribute="String" lineEndContext="#pop" name="DoubleQuoteString">
+                <Detect2Chars attribute="Special String" context="Interpolation" char="$" char1="{"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+
+            <context attribute="Variable" lineEndContext="#pop" name="Interpolation">
+                <DetectChar attribute="Special String" context="#pop" char="}"/>
+            </context>
+
+            <context attribute="Comment" lineEndContext="#pop" name="Comment">
+                <DetectSpaces/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier/>
+            </context>
+
+
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text"    defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Control Flow"   defStyleNum="dsControlFlow" spellChecking="false"/>
+            <itemData name="Keyword"        defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Block"          defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Sub Block"      defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Meta Argument"  defStyleNum="dsAttribute" spellChecking="false"/>
+            <itemData name="Built In"       defStyleNum="dsBuiltIn" spellChecking="false" />
+            <itemData name="Operator"       defStyleNum="dsOperator" spellChecking="false" />
+            <itemData name="Variable"       defStyleNum="dsVariable" spellChecking="false" />
+            <itemData name="Data Type"      defStyleNum="dsDataType" spellChecking="false"/>
+            <itemData name="Decimal"        defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Octal"          defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Hex"            defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Float"          defStyleNum="dsFloat" spellChecking="false"/>
+            <itemData name="String"         defStyleNum="dsString"/>
+            <itemData name="Special String" defStyleNum="dsSpecialString"/>
+            <itemData name="Comment"        defStyleNum="dsComment"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="#" />
+        </comments>
+        <keywords casesensitive="true" />
+    </general>
+</language>

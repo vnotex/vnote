@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language version="6" kateversion="5.0" name="Common Lisp" section="Sources" extensions="*.lisp;*.cl;*.lsp" mimetype="" author="Dominik Haumann (dhaumann@kde.org)" license="MIT">
+<!DOCTYPE language [
+    <!ENTITY identchar "[A-Za-z0-9-+&lt;&gt;/*]">
+]>
+<language version="12" kateversion="5.79" name="Common Lisp" section="Sources" extensions="*.lisp;*.cl;*.lsp;*.el" mimetype="" author="Dominik Haumann (dhaumann@kde.org)" license="MIT">
   <highlighting>
     <list name="symbols">
       <item>&lt;</item>
@@ -21,7 +23,7 @@
       <item>++</item> 
       <item>+++</item> 
       <item>1-</item> 
-      <item>1+</item> 
+      <item>1+</item>
     </list>
     <list name="definitions">
       <item>defclass</item> 
@@ -425,7 +427,6 @@
       <item>initialize-instance</item> 
       <item>inline</item> 
       <item>in-package</item> 
-      <item>in-package</item> 
       <item>input-stream-p</item> 
       <item>inspect</item> 
       <item>int-char</item> 
@@ -517,7 +518,6 @@
       <item>macroexpand-l</item> 
       <item>macro-function</item> 
       <item>macrolet</item> 
-      <item>make-array</item> 
       <item>make-array</item> 
       <item>make-broadcast-stream</item> 
       <item>make-char</item> 
@@ -789,7 +789,7 @@
       <item>simple-base-string</item> 
       <item>simple-bit-vector</item> 
       <item>simple-bit-vector-p</item> 
-      <item>simple-condition-format-arguments</item> 
+      <item>simple-condition-format-arguments</item>
       <item>simple-condition-format-control</item> 
       <item>simple-error</item> 
       <item>simple-string</item> 
@@ -909,7 +909,6 @@
       <item>translate-pathname</item> 
       <item>tree-equal</item> 
       <item>truename</item> 
-      <item>truncase</item> 
       <item>truncate</item> 
       <item>two-way-stream</item> 
       <item>two-way-stream-input-stream</item> 
@@ -1056,14 +1055,10 @@
     <list name="variables">
       <item>*applyhook*</item>
       <item>*break-on-signals*</item>
-      <item>*break-on-signals*</item>
       <item>*break-on-warnings*</item>
       <item>*compile-file-pathname*</item>
-      <item>*compile-file-pathname*</item>
-      <item>*compile-file-truename*</item>
       <item>*compile-file-truename*</item>
       <item>*compile-print*</item>
-      <item>*compile-verbose*</item>
       <item>*compile-verbose*</item>
       <item>*debugger-hook*</item>
       <item>*debug-io*</item>
@@ -1089,13 +1084,10 @@
       <item>*print-level*</item>
       <item>*print-lines*</item>
       <item>*print-miser-width*</item>
-      <item>*print-miser-width*</item>
-      <item>*print-pprint-dispatch*</item>
       <item>*print-pprint-dispatch*</item>
       <item>*print-pretty*</item>
       <item>*print-radix*</item>
       <item>*print-readably*</item>
-      <item>*print-right-margin*</item>
       <item>*print-right-margin*</item>
       <item>*query-io*</item>
       <item>*random-state*</item>
@@ -1110,58 +1102,104 @@
       <item>*trace-output*</item>
     </list>
 
+    <list name="operators">
+      <item>&amp;allow-other-keys</item>
+      <item>&amp;aux</item>
+      <item>&amp;body</item>
+      <item>&amp;environment</item>
+      <item>&amp;key</item>
+      <item>&amp;optional</item>
+      <item>&amp;rest</item>
+      <item>&amp;whole</item>
+    </list>
+
     <contexts>
       <context name="Normal" attribute="Normal" lineEndContext="#stay">
-        <RegExpr attribute="Region Marker" context="#stay" String=";+\s*BEGIN.*$" beginRegion="region"/>
-        <RegExpr attribute="Region Marker" context="#stay" String=";+\s*END.*$" endRegion="region"/>
-        <RegExpr attribute="Comment" context="#stay" String=";.*$"/>
-        <Detect2Chars attribute="Comment" context="MultiLineComment" char="#" char1="|" beginRegion="region"/>
-        <DetectChar attribute="Brackets" context="#stay" char="("/>
-        <DetectChar attribute="Brackets" context="#stay" char=")"/>
+        <DetectSpaces/>
+        <DetectChar context="StartSingleComment" char=";" lookAhead="1"/>
+        <DetectChar context="StartHash" char="#" lookAhead="1"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <AnyChar attribute="Brackets" context="#stay" String="()"/>
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
         <keyword attribute="Operator" context="#stay" String="symbols"/>
         <keyword attribute="Modifier" context="#stay" String="modifiers"/>
         <keyword attribute="Variable" context="#stay" String="variables"/>
         <keyword attribute="Definition" context="function_decl" String="definitions"/>
-        <RegExpr attribute="Char" context="#stay" String="#\\."/>
-        <DetectChar attribute="String" context="String" char="&quot;"/>
-        <RegExpr attribute="Char" context="SpecialNumber" String="#[bodxei]"/>
-        <RegExpr attribute="Decimal" context="#stay" String="#[tf]"/>
-        <Float attribute="Float" context="#stay"/>
-        <Int attribute="Decimal" context="#stay"/>
+        <keyword attribute="Operator" context="#stay" String="operators" weakDeliminator="&amp;"/>
+        <RegExpr attribute="Type" context="#stay" String="'&identchar;+"/>
+        <Float attribute="Float" context="#stay" additionalDeliminator="-"/>
+        <Int attribute="Decimal" context="#stay" additionalDeliminator="-"/>
+        <WordDetect attribute="Operator" context="#stay" String="-" additionalDeliminator="0123456789"/>
+        <RegExpr String="&identchar;+"/>
       </context>
+
+      <context name="StartHash" attribute="Normal" lineEndContext="#pop">
+        <Detect2Chars attribute="Comment" context="#pop!MultiLineComment" char="#" char1="|" beginRegion="BlockComment"/>
+        <Detect2Chars attribute="Function Operator" context="#pop!FunctionOperator" char="#" char1="'"/>
+        <Detect2Chars attribute="Decimal" context="#pop" char="#" char1="t"/>
+        <Detect2Chars attribute="Decimal" context="#pop" char="#" char1="f"/>
+        <RegExpr attribute="Char" context="#pop" String="#\\."/>
+        <RegExpr attribute="Char" context="#pop!SpecialNumber" String="#[bodxei]"/>
+        <DetectChar context="#pop" char="#"/>
+      </context>
+
+      <context name="FunctionOperator" attribute="Normal" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="Function By Name" context="#pop" String="&identchar;+"/>
+      </context>
+
       <context name="MultiLineComment" attribute="Comment" lineEndContext="#stay">
-        <Detect2Chars attribute="Comment" context="#pop" char="|" char1="#" endRegion="region"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="|" char1="#" endRegion="BlockComment"/>
+        <IncludeRules context="##Comments"/>
       </context>
+
       <context name="function_decl" attribute="Function" lineEndContext="#stay">
-        <RegExpr attribute="Function" context="#pop" String="\s*[A-Za-z0-9-+\&lt;\&gt;//\*]*\s*" />
+        <RegExpr attribute="Function" context="#pop" String="\s*&identchar;*\s*" />
       </context>
+
       <context name="SpecialNumber" attribute="Normal" lineEndContext="#pop">
         <Float attribute="Float" context="#pop"/>
         <Int attribute="Decimal" context="#pop"/>
         <HlCOct attribute="BaseN" context="#pop"/>
         <HlCHex attribute="Float" context="#pop"/>
       </context>
+
       <context name="String" attribute="String" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
         <RegExpr attribute="Char" context="#stay" String="#\\."/>
         <HlCStringChar attribute="String Char" context="#stay"/>
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
+
+      <context name="StartSingleComment" attribute="Comment" lineEndContext="#pop">
+        <RegExpr attribute="Region Marker" context="#pop" String=";+\s*BEGIN.*$" beginRegion="region"/>
+        <RegExpr attribute="Region Marker" context="#pop" String=";+\s*END.*$" endRegion="region"/>
+        <DetectChar attribute="Comment" context="#pop!Comment" char=";"/>
+      </context>
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+
     </contexts>
     <itemDatas>
-      <itemData name="Normal"      defStyleNum="dsNormal"/>
-      <itemData name="Keyword"     defStyleNum="dsKeyword"/>
-      <itemData name="Operator"    defStyleNum="dsOperator"/>
-      <itemData name="Modifier"    defStyleNum="dsBuiltIn"/>
-      <itemData name="Variable"    defStyleNum="dsVariable"/>
-      <itemData name="Definition"  defStyleNum="dsKeyword"/>
-      <itemData name="Decimal"     defStyleNum="dsDecVal"/>
-      <itemData name="BaseN"       defStyleNum="dsBaseN"/>
-      <itemData name="Float"       defStyleNum="dsFloat"/>
-      <itemData name="Function"    defStyleNum="dsFunction"/>
-      <itemData name="Char"        defStyleNum="dsChar"/>
-      <itemData name="String"      defStyleNum="dsString"/>
-      <itemData name="String Char" defStyleNum="dsSpecialChar"/>
+      <itemData name="Normal"      defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword"     defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Operator"    defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Modifier"    defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="Variable"    defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Definition"  defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Decimal"     defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="BaseN"       defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float"       defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Function"    defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Function Operator" defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Function By Name"  defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Type"        defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Char"        defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="String"      defStyleNum="dsString" spellChecking="false"/>
+      <itemData name="String Char" defStyleNum="dsSpecialChar" spellChecking="false"/>
       <itemData name="Comment"     defStyleNum="dsComment"/>
       <itemData name="Region Marker" defStyleNum="dsRegionMarker"/>
       <itemData name="Brackets"    defStyleNum="dsNormal" color="#0000ff" selColor="#00ff00" bold="1" italic="0"/>
@@ -1171,7 +1209,8 @@
     <keywords casesensitive="1" weakDeliminator="-+*?!&lt;&gt;=/:#\"/>
     <comments>
       <comment name="singleLine" start=";;" />
-      <comment name="multiLine" start="#|" end="|#" />
+      <comment name="multiLine" start="#|" end="|#" region="BlockComment" />
     </comments>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

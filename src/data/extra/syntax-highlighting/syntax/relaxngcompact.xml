@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="RelaxNG-Compact" version="1" kateversion="2.4" section="Markup" extensions="*.rnc" casesensitive="1" author="Rintze Zelle" license="LGPL">
+<!DOCTYPE language>
+<language name="RelaxNG-Compact" version="3" kateversion="5.0" section="Markup" extensions="*.rnc" casesensitive="1" author="Rintze Zelle" license="LGPL">
   <highlighting>
     <list name="Keywords">
       <item>default</item>
@@ -81,6 +81,8 @@
 	<RegExpr attribute="Definitions" context="Definitions" String="[\w\.-]+[\s]+=" lookAhead="true" />
       </context>
       <context attribute="Comments" lineEndContext="#pop" name="Comments" >
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="String" lineEndContext="#stay" name="String" >
         <DetectChar attribute="String" context="#pop" char="&quot;" />
@@ -104,5 +106,8 @@
   </highlighting>
   <general>
     <keywords weakDeliminator="-:"/>
+    <comments>
+      <comment name="singleLine" start="#" />
+    </comments>
   </general>
 </language>

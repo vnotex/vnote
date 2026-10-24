@@ -1,0 +1,163 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+ ***************************************************************************
+ ** Jsonnet Configuration Language
+ ** https://jsonnet.org/
+ **
+ ** Language Reference
+ ** https://jsonnet.org/ref/language.html
+ **
+ ** Jsonnet Specification
+ ** https://jsonnet.org/ref/spec.html
+ ***************************************************************************
+-->
+<!DOCTYPE language
+[
+    <!ENTITY int "(?:[0-9]++(_++[0-9]++)*+)">
+    <!ENTITY exp "(?:[eE][-+]?&int;)">
+    <!ENTITY float "(\b&int;(\.((&int;&exp;?+|&exp;)[fFdD]?\b|[fFdD]\b)?|&exp;[fFdD]?\b|[fFdD]\b)|\.&int;&exp;?[fFdD]?\b)">
+]>
+<language name="Jsonnet" version="1" kateversion="5.62" section="Configuration" extensions="*.jsonnet;*.libsonnet" license="MIT" author="Ribhav Kaul">
+    <highlighting>
+        <list name="stdlib">
+            <item>extVar</item>
+            <item>type</item>
+            <item>length</item>
+            <item>join</item>
+            <item>abs</item>
+            <item>sign</item>
+            <item>max</item>
+            <item>min</item>
+            <item>pow</item>
+            <item>exp</item>
+            <item>log</item>
+            <item>exponent</item>
+            <item>mantissa</item>
+            <item>floor</item>
+            <item>ceil</item>
+            <item>sqrt</item>
+            <item>sin</item>
+            <item>cos</item>
+            <item>tan</item>
+            <item>asin</item>
+            <item>acos</item>
+            <item>atan</item>
+            <item>round</item>
+        </list>
+        <list name="keywords">
+            <item>local</item>
+            <item>import</item>
+            <item>self</item>
+            <item>std</item>
+            <item>error</item>
+        </list>
+        <list name="control flow">
+            <item>else</item>
+            <item>if</item>
+            <item>then</item>
+        </list>
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <DetectSpaces context="#stay"/>
+
+                <DetectChar attribute="Symbol" context="Dot" char="." lookAhead="1"/>
+                <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1"/>
+                <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1"/>
+                <DetectChar attribute="Symbol" context="#stay" char="[" beginRegion="Brace2"/>
+                <DetectChar attribute="Symbol" context="#stay" char="]" endRegion="Brace2"/>
+                <DetectChar attribute="Symbol" context="InFunctionCall" char="("/>
+
+                <DetectChar attribute="Comment" char="#" context="Hash comment"/>
+
+                <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+
+                <AnyChar attribute="Symbol" context="#stay" String="[]&amp;+,-/*&lt;=&gt;;!%?:~^"/>
+
+                <AnyChar context="Number" String="0123456789" lookAhead="1"/>
+
+                <DetectChar attribute="String" context="String" char="&quot;" beginRegion="Double Quote Region"/>
+                <DetectChar attribute="String" char="'" context="Single Quote Strings" beginRegion="Single Quote Region"/>
+                <StringDetect attribute="String" String="|||" context="Triple Pipe Strings" beginRegion="Triple Pipe Region"/>
+
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Control Flow" context="#stay" String="control flow"/>
+                <keyword attribute="Stdlib" context="#stay" String="stdlib"/>
+
+                <RegExpr attribute="Function" context="#stay" String="\b[_a-zA-Z]\w*(?=[\s]*(/\*\s*\d+\s*\*/\s*)?[(])" />
+                <DetectIdentifier attribute="Normal Text"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="Number">
+                <IncludeRules context="FindFloat"/>
+                <RegExpr attribute="Decimal" context="#pop" String="\b(0|[1-9][0-9]*+(_++[0-9_]++)*+)[lL]?\b"/>
+                <AnyChar attribute="Error" context="#pop" String="0123456789"/>
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="FindFloat">
+                <RegExpr attribute="Float" context="#pop" String="&float;"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="InFunctionCall">
+                <IncludeRules context="Normal"/>
+                <DetectChar attribute="Symbol" context="#pop" char=")"/>
+            </context>
+
+            <context attribute="String" lineEndContext="#stay" name="String">
+                <DetectChar context="StringEscapedChar" char="\" lookAhead="1"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;" endRegion="Double Quote Region"/>
+            </context>
+            <context attribute="String" lineEndContext="#pop" name="StringEscapedChar">
+                <HlCStringChar attribute="String Char" context="#pop"/>
+                <RegExpr attribute="String Char" context="#pop" String="\\u+[0-9a-fA-F]{4}"/>
+                <RegExpr attribute="Error" context="#pop" String="\\(u+[0-9a-fA-F]*|.)?"/>
+            </context>
+            <context attribute="String" lineEndContext="#stay" name="Single Quote Strings">
+                <DetectChar context="StringEscapedChar" char="\" lookAhead="1"/>
+                <DetectChar attribute="String" char="'" context="#pop" endRegion="Single Quote Region"/>
+            </context>
+            <context name="Triple Pipe Strings" lineEndContext="#stay" attribute="String">
+                <StringDetect attribute="String" String="|||" context="#pop" endRegion="Triple Pipe Region"/>
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Dot">
+                <IncludeRules context="FindFloat"/>
+                <DetectChar attribute="Symbol" context="#pop!Member" char="." />
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Member" fallthroughContext="#pop">
+                <DetectSpaces attribute="Normal Text" context="#stay"/>
+                <DetectIdentifier attribute="Function" context="#pop"/>
+            </context>
+
+            <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
+            </context>
+            <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
+            </context>
+            <context attribute="Comment" name="Hash comment" lineEndContext="#pop">
+                <DetectSpaces />
+                <IncludeRules context="##Comments" />
+                <DetectIdentifier/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="false"/>
+            <itemData name="Function"     defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Float"        defStyleNum="dsFloat" spellChecking="false"/>
+            <itemData name="String"       defStyleNum="dsString"/>
+            <itemData name="String Char"  defStyleNum="dsSpecialChar" spellChecking="false"/>
+            <itemData name="Comment"      defStyleNum="dsComment"/>
+            <itemData name="Symbol"       defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Stdlib"       defStyleNum="dsBuiltIn" spellChecking="false"/>
+            <itemData name="Error"        defStyleNum="dsError" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <keywords casesensitive="1"/>
+    </general>
+</language>

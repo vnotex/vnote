@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="PlantUML" alternativeNames="puml" version="1" kateversion="5.62" section="Scientific" extensions="*.puml;*.plantuml;*.pu" license="MIT">
+  <highlighting>
+    <list name="elements">
+      <item>abstract</item>
+      <item>actor</item>
+      <item>agent</item>
+      <item>annotation</item>
+      <item>archimate</item>
+      <item>artifact</item>
+      <item>boundary</item>
+      <item>card</item>
+      <item>class</item>
+      <item>cloud</item>
+      <item>collections</item>
+      <item>component</item>
+      <item>control</item>
+      <item>database</item>
+      <item>entity</item>
+      <item>enum</item>
+      <item>file</item>
+      <item>folder</item>
+      <item>frame</item>
+      <item>interface</item>
+      <item>map</item>
+      <item>namespace</item>
+      <item>node</item>
+      <item>object</item>
+      <item>package</item>
+      <item>participant</item>
+      <item>partition</item>
+      <item>person</item>
+      <item>queue</item>
+      <item>rectangle</item>
+      <item>stack</item>
+      <item>state</item>
+      <item>storage</item>
+      <item>struct</item>
+      <item>usecase</item>
+    </list>
+    <list name="keywords">
+      <item>activate</item>
+      <item>as</item>
+      <item>autonumber</item>
+      <item>bottom</item>
+      <item>box</item>
+      <item>center</item>
+      <item>create</item>
+      <item>deactivate</item>
+      <item>destroy</item>
+      <item>down</item>
+      <item>extends</item>
+      <item>hide</item>
+      <item>implements</item>
+      <item>left</item>
+      <item>link</item>
+      <item>mainframe</item>
+      <item>newpage</item>
+      <item>of</item>
+      <item>on</item>
+      <item>order</item>
+      <item>over</item>
+      <item>ref</item>
+      <item>remove</item>
+      <item>right</item>
+      <item>rotate</item>
+      <item>scale</item>
+      <item>set</item>
+      <item>show</item>
+      <item>skinparam</item>
+      <item>static</item>
+      <item>together</item>
+      <item>top</item>
+      <item>up</item>
+    </list>
+    <list name="control">
+      <item>again</item>
+      <item>alt</item>
+      <item>and</item>
+      <item>backward</item>
+      <item>break</item>
+      <item>case</item>
+      <item>critical</item>
+      <item>detach</item>
+      <item>else</item>
+      <item>elseif</item>
+      <item>end</item>
+      <item>endfork</item>
+      <item>endif</item>
+      <item>endsplit</item>
+      <item>endswitch</item>
+      <item>endwhile</item>
+      <item>equals</item>
+      <item>fork</item>
+      <item>goto</item>
+      <item>group</item>
+      <item>if</item>
+      <item>is</item>
+      <item>kill</item>
+      <item>label</item>
+      <item>loop</item>
+      <item>merge</item>
+      <item>not</item>
+      <item>opt</item>
+      <item>par</item>
+      <item>repeat</item>
+      <item>repeatwhile</item>
+      <item>return</item>
+      <item>split</item>
+      <item>start</item>
+      <item>stop</item>
+      <item>switch</item>
+      <item>then</item>
+      <item>while</item>
+    </list>
+
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <RegExpr attribute="Directive" context="#stay" String="@(?:start|end)[A-Za-z][A-Za-z0-9_]*\b" firstNonSpace="true"/>
+        <RegExpr attribute="Directive" context="Preprocessor" String="![A-Za-z_][A-Za-z0-9_]*\b" firstNonSpace="true"/>
+        <!-- A bare title/header/footer opens a block; inline text lasts one line. -->
+        <RegExpr attribute="Keyword" context="Text Block" String="(?:(?:left|center|right)\s+)?(title|header|footer)\s*$" firstNonSpace="true" insensitive="true"/>
+        <RegExpr attribute="Keyword" context="Label" String="(?:(?:left|center|right)\s+)?(?:title|header|footer|caption)\b" firstNonSpace="true" insensitive="true"/>
+        <RegExpr attribute="Keyword" context="Legend" String="legend\b(?:\s+(?:left|right|top|bottom|center))*\s*$" firstNonSpace="true" insensitive="true"/>
+        <!-- Quoted standalone notes do not open multiline note bodies. -->
+        <RegExpr attribute="Keyword" context="Quoted Note" String="(?:note|hnote|rnote)(?=\s+&quot;)" firstNonSpace="true" insensitive="true"/>
+        <RegExpr attribute="Keyword" context="Note Header" String="(?:note|hnote|rnote)\b" firstNonSpace="true" insensitive="true"/>
+        <DetectChar attribute="Operator" context="Activity" char=":" firstNonSpace="true"/>
+        <Detect2Chars attribute="Operator" context="#stay" char=":" char1=":"/>
+        <DetectChar attribute="Operator" context="Label" char=":"/>
+        <IncludeRules context="Tokens"/>
+      </context>
+
+      <context name="Tokens" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <RegExpr attribute="Stereotype" context="#stay" String="&lt;&lt;[^&gt;]*&gt;&gt;"/>
+        <RegExpr attribute="Color" context="#stay" String="#[A-Za-z0-9]+(?:[-/\\|][A-Za-z0-9]+)?"/>
+        <!-- Sequence arrows and solid/dotted UML relations, including styled directions. -->
+        <RegExpr attribute="Operator" context="#stay" String="(?:&lt;{1,2}\|?|[ox*+])?[-.]+(?:\[[^\]]+\])?(?:(?:left|right|up|down|le|ri|do|[udlr])?[-.]+)?(?:\|?&gt;{1,2}|[ox*+])?"/>
+        <keyword attribute="Keyword" context="#stay" String="elements"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Control Flow" context="#stay" String="control"/>
+        <Float attribute="Number" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
+        <DetectIdentifier attribute="Identifier" context="#stay"/>
+        <AnyChar attribute="Operator" context="#stay" String="{}[]();,=+*~&amp;|&lt;&gt;"/>
+      </context>
+
+      <context name="Preprocessor" attribute="Directive" lineEndContext="#pop">
+        <IncludeRules context="Comments"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <RegExpr attribute="Identifier" context="#stay" String="\$[A-Za-z_][A-Za-z0-9_]*"/>
+        <Float attribute="Number" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
+      </context>
+
+      <context name="Quoted Note" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="Comments"/>
+        <IncludeRules context="Tokens"/>
+      </context>
+      <context name="Note Header" attribute="Normal Text" lineEndContext="#pop!Note">
+        <DetectChar attribute="Operator" context="#pop!Label" char=":"/>
+        <IncludeRules context="Comments"/>
+        <IncludeRules context="Tokens"/>
+      </context>
+      <context name="Note" attribute="Text" lineEndContext="#stay">
+        <RegExpr attribute="Keyword" context="#pop" String="end\s*(?:note|hnote|rnote)\s*$" firstNonSpace="true" insensitive="true"/>
+        <IncludeRules context="Text Escapes"/>
+      </context>
+      <context name="Text Block" attribute="Text" lineEndContext="#stay" dynamic="true">
+        <RegExpr attribute="Keyword" context="#pop" String="end\s*%1\s*$" dynamic="true" firstNonSpace="true" insensitive="true"/>
+        <IncludeRules context="Text Escapes"/>
+      </context>
+      <context name="Legend" attribute="Text" lineEndContext="#stay">
+        <RegExpr attribute="Keyword" context="#pop" String="end\s*legend\s*$" firstNonSpace="true" insensitive="true"/>
+        <IncludeRules context="Text Escapes"/>
+      </context>
+
+      <!-- Labels and prose deliberately do not include keyword or comment rules. -->
+      <context name="Label" attribute="Text" lineEndContext="#pop">
+        <IncludeRules context="Text Escapes"/>
+      </context>
+      <context name="Activity" attribute="Text" lineEndContext="#stay">
+        <DetectChar attribute="Operator" context="#pop" char=";"/>
+        <IncludeRules context="Text Escapes"/>
+      </context>
+      <context name="Text Escapes" attribute="Text" lineEndContext="#stay">
+        <RegExpr attribute="Escape" context="#stay" String="\\[\\&quot;nrtl]"/>
+      </context>
+      <context name="String" attribute="String" lineEndContext="#pop">
+        <RegExpr attribute="Escape" context="#stay" String="\\."/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <context name="Comments" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="Line Comment" char="'" firstNonSpace="true"/>
+        <Detect2Chars attribute="Comment" context="Block Comment" char="/" char1="'" beginRegion="Comment"/>
+      </context>
+      <context name="Line Comment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="Block Comment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="#pop" char="'" char1="/" endRegion="Comment"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+      <itemData name="Control Flow" defStyleNum="dsControlFlow"/>
+      <itemData name="Directive" defStyleNum="dsPreprocessor"/>
+      <itemData name="Identifier" defStyleNum="dsVariable"/>
+      <itemData name="Operator" defStyleNum="dsOperator"/>
+      <itemData name="Stereotype" defStyleNum="dsAttribute"/>
+      <itemData name="Color" defStyleNum="dsConstant"/>
+      <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Text" defStyleNum="dsString" spellChecking="true"/>
+      <itemData name="Escape" defStyleNum="dsSpecialChar"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="0"/>
+    <comments>
+      <comment name="singleLine" start="'" position="afterwhitespace"/>
+      <comment name="multiLine" start="/'" end="'/" region="Comment"/>
+    </comments>
+  </general>
+</language>

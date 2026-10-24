@@ -1,46 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 	<!ENTITY symbol         "\w\[\]\.@\=/\*\-&#036;&#037;\+&#033;\|&amp;\^&#058;&#126;&#096;#\{\}&#039;&lt;&gt;\?,\\"> <!-- [].@=/*-_$%+!|&^:~`#{}'<>?,\ -->
 	<!ENTITY identifier     "[a-zA-Z][\w\-]*">
 	<!ENTITY statementchar  "[a-z_\-]">
 
-	<!ENTITY fullIdentifier "[a-zA-Z][\w\-]*(\.?[\w\-])*">
-	<!ENTITY mlsLevel       "&fullIdentifier;(:&fullIdentifier;(\s*,\s*&fullIdentifier;)*)?">
+	<!ENTITY fullIdentifier "[a-zA-Z][\w\-]*(?:\.?[\w\-])*">
+	<!ENTITY mlsLevel       "&fullIdentifier;(?:\:&fullIdentifier;(?:\s*,\s*&fullIdentifier;)*)?">
 ]>
 
 <!--
-  SELinux CIL (Common Interface Language) Policy Syntax Highlighting Definition for Kate
-  ==========================================================================================
+   SELinux CIL (Common Interface Language) Policy Syntax Highlighting Definition
+  ===============================================================================
+
    This file is part of the KDE's KSyntaxHighlighting framework.
 
-   Copyright (c) 2018-2019 Nibaldo González S. (nibgonz@gmail.com)
+   SPDX-FileCopyrightText: 2018-2020 Nibaldo González S. <nibgonz@gmail.com>
 
-   Permission is hereby granted, free of charge, to any person obtaining a copy of this
-   software and associated documentation files (the "Software"), to deal in the Software
-   without restriction, including without limitation the rights to use, copy, modify, merge,
-   publish, distribute, sublicense, and/or sell copies of the Software, and to permit
-   persons to whom the Software is furnished to do so, subject to the following conditions:
+   SPDX-License-Identifier: MIT
 
-   The above copyright notice and this permission notice shall be included
-   in all copies or substantial portions of the Software.
-
-   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
-   INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
-   PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-   COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN
-   AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
-   WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-  ==========================================================================================
+  ===============================================================================
 
   Based on the Scheme syntax highlighting file (scheme.xml),
-  created by Dominik Haumann (dhaumann@kde.org) & licensed under MIT.
+  created by Dominik Haumann (dhaumann@kde.org).
 
-  Last update: secilc 2.8
+  Last update: secilc 3.0
   More details about CIL:
     https://github.com/SELinuxProject/selinux/tree/master/secilc/docs
 
   Change log:
+   * Version 7 [30-Sep-2020]: Use include-keywods and other minor changes.
+   * Version 6 [25-Aug-2020]: Update colors in brackets.
+   * Version 5 [10-Dec-2019]: Add "glblub" keyword (defaultrange).
+   * Version 4 [03-Oct-2019]: Replace unnecessary WordDetect rules.
    * Version 3 [02-Apr-2019]: Remove one indentation.
    * Version 2 [28-Aug-2018]:
       - Implement "selinux.xml": some rules and keywords are moved there. Improve RegExp
@@ -53,8 +45,8 @@
 -->
 
 <language name="SELinux CIL Policy"
-          version="3"
-          kateversion="5.0"
+          version="10"
+          kateversion="5.53"
           section="Sources"
           extensions="*.cil"
           priority="9"
@@ -293,6 +285,7 @@
 	<list name="other_keywords">
 		<item>source</item>
 		<item>target</item>
+		<item>glblub</item> <!-- defaultrange -->
 		<item>low</item>
 		<item>high</item>
 		<item>low-high</item>
@@ -313,11 +306,17 @@
 		<item>h1</item>
 		<item>h2</item>
 	</list>
+	<list name="policy_capabilities">
+		<include>policy_capabilities##SELinux Policy</include>
+	</list>
+	<list name="filesystem">
+		<include>filesystem##SELinux Policy</include>
+	</list>
 
 	<contexts>
 
 		<context name="_normal" attribute="Normal Text" lineEndContext="#stay">
-			<DetectChar context="_rule_bracket_level1" attribute="Brackets1" char="("/>
+			<DetectChar context="_rule_bracket_level1" attribute="Brackets Level 1" char="("/>
 			<DetectChar context="#stay" attribute="Error"  char=")"/>
 			<IncludeRules context="_common"/>
 			<IncludeRules context="_identifiers"/>
@@ -333,9 +332,9 @@
 			<DetectChar context="#stay" attribute="Special Char" char="*"/>
 
 			<!-- File Contexts: user_u:role_r:type_t:s0:c0 -->
-			<RegExpr context="_file_contexts" attribute="File Contexts" String="\b&fullIdentifier;(:&fullIdentifier;){2}(:&mlsLevel;(\s*\-\s*&mlsLevel;)?)?([^&symbol;:]|\s|$)" lookAhead="true"/>
+			<RegExpr context="_file_contexts" attribute="File Contexts" String="\b&fullIdentifier;(?:\:&fullIdentifier;){2}(?:\:&mlsLevel;(?:\s*\-\s*&mlsLevel;)?)?(?:[^&symbol;:]|\s|$)" lookAhead="true"/>
 			<!-- Global Namespace (this avoids highlighting keywords) -->
-			<RegExpr context="#stay" String="(\b&identifier;)?(\.&identifier;)+(?=\s|[^&symbol;]|$)"/>
+			<RegExpr context="#stay" String="(?:\b&identifier;)?(?:\.&identifier;)+(?=\s|[^&symbol;]|$)"/>
 
 			<!-- Numbers -->
 			<HlCHex context="#stay" attribute="Hexadecimal"/>
@@ -351,8 +350,7 @@
 		<context name="_comment" attribute="Comment" lineEndContext="#pop">
 			<DetectSpaces />
 			<LineContinue context="#pop" attribute="Comment"/>
-			<IncludeRules context="##Alerts"/>
-			<IncludeRules context="##Modelines"/>
+			<IncludeRules context="##Comments"/>
 			<IncludeRules context="_default_comment##SELinux Policy"/>
 		</context>
 
@@ -371,7 +369,7 @@
 		</context>
 		<context name="_square_brackets_cil_path" attribute="RegExp Brackets (Paths)"
 		         lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!_square_brackets_cil_path_content">
-		<RegExpr context="#pop!_square_brackets_cil_path_content" attribute="Special Char of Brackets (Paths)" String="\^(?=[&symbol;])"/>
+			<RegExpr context="#pop!_square_brackets_cil_path_content" attribute="Special Char of Brackets (Paths)" String="\^(?=[&symbol;])"/>
 		</context>
 		<context name="_square_brackets_cil_path_content" attribute="RegExp Brackets (Paths)" lineEndContext="#pop">
 			<DetectChar context="#pop" attribute="RegExp Brackets (Paths)" char="]"/>
@@ -406,7 +404,7 @@
 		</context>
 		<context name="_policycap_statement" attribute="Normal Text" lineEndContext="#stay">
 			<IncludeRules context="_default_end"/>
-			<IncludeRules context="_policy_capabilities##SELinux Policy"/>
+			<keyword context="#stay" attribute="Policy Capability" String="policy_capabilities"/>
 			<IncludeRules context="_common"/>
 			<IncludeRules context="_identifiers"/>
 		</context>
@@ -425,8 +423,7 @@
 			     (permissionx permissionx_id (ioctl class_id (permission ... | expr ...))) -->
 			<RegExpr context="#pop" attribute="Type Name Statements" String="ioctl(?=\s+[&symbol;]+\s*\()"/>
 			<!-- ioctl can be a kind of permissionx or AV permission -->
-			<RegExpr context="#pop!_av_permissions_statement" attribute="Type Name Statements" String="ioctl(?=(\s+[&symbol;]+)?\s*($|;))"/>
-			<RegExpr context="#pop!_av_permissions_statement" attribute="Type Name Statements" String="ioctl(?=\s+[&symbol;]+\s+\d)"/>
+			<RegExpr context="#pop!_av_permissions_statement" attribute="Type Name Statements" String="ioctl(?=\s+[&symbol;]+\s+\d|(?:\s+[&symbol;]+)?\s*(?:$|;))"/>
 		</context>
 
 		<context name="_default_statement" attribute="Normal Text" lineEndContext="#stay">
@@ -437,7 +434,7 @@
 			<WordDetect context="_portcon_statement" attribute="Statements" String="portcon"/>
 			<!-- Fix permissions list if the keywords "ioctl" or "call" are not statements,
 			     but a permissions (see "av_permissions" keyword list of "selinux.xml"). -->
-			<RegExpr context="_av_permissions_statement" String="\b(call|ioctl)\s*\)" lookAhead="true"/>
+			<RegExpr context="_av_permissions_statement" String="\b(?:call|ioctl)\s*\)" lookAhead="true"/>
 			<WordDetect context="_find_ioctl_kind" String="ioctl" lookAhead="true"/>
 			<WordDetect context="_av_permissions_statement" attribute="Statements" String="call"/>
 
@@ -456,13 +453,13 @@
 			<keyword context="#stay" attribute="Booleans" String="booleans"/>
 			<keyword context="#stay" attribute="Special Keys" String="special_keys"/>
 
-			<WordDetect context="#stay" attribute="Other Keywords" String="&lt;root&gt;"/>
-			<WordDetect context="#stay" attribute="Other Keywords" String="&lt;node&gt;"/>
-			<WordDetect context="#stay" attribute="Other Keywords" String="&lt;src_info&gt;"/>
-			<WordDetect context="#stay" attribute="Other Keywords" String="&lt;src_cil&gt;"/>
-			<WordDetect context="#stay" attribute="Other Keywords" String="&lt;src_hll&gt;"/>
+			<StringDetect context="#stay" attribute="Other Keywords" String="&lt;root&gt;"/>
+			<StringDetect context="#stay" attribute="Other Keywords" String="&lt;node&gt;"/>
+			<StringDetect context="#stay" attribute="Other Keywords" String="&lt;src_info&gt;"/>
+			<StringDetect context="#stay" attribute="Other Keywords" String="&lt;src_cil&gt;"/>
+			<StringDetect context="#stay" attribute="Other Keywords" String="&lt;src_hll&gt;"/>
 			<keyword context="#stay" attribute="Other Keywords" String="other_keywords"/>
-			<IncludeRules context="_filesystem##SELinux Policy"/>
+			<keyword context="#stay" attribute="Filesystem" String="filesystem"/>
 
 			<IncludeRules context="_identifiers"/>
 		</context>
@@ -484,11 +481,11 @@
 		<context name="_statement_level1" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level1" lineEndContext="#pop!_rule_level1">
 			<!-- When writing a statement and then a delimiter (like a space), go to the context "_rule_level1" -->
 			<IncludeRules context="_default_statement"/>
-			<RegExpr context="#pop!_rule_without_statement_level1" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+			<RegExpr context="#pop!_rule_without_statement_level1" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
 		</context>
 		<context name="_rule_level1" attribute="Normal Text" lineEndContext="#stay"> <!-- Rule content -->
-			<DetectChar attribute="Brackets2" context="_rule_bracket_level2" char="("/>
-			<DetectChar attribute="Brackets1" context="#pop" char=")" />
+			<DetectChar attribute="Brackets Level 2" context="_rule_bracket_level2" char="("/>
+			<DetectChar attribute="Brackets Level 1" context="#pop" char=")" />
 			<IncludeRules context="_default_rule"/>
 		</context>
 		<context name="_rule_without_statement_level1" attribute="Normal Text" lineEndContext="#stay">
@@ -502,11 +499,11 @@
 		</context>
 		<context name="_statement_level2" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level2" lineEndContext="#pop!_rule_level2">
 			<IncludeRules context="_default_statement"/>
-			<RegExpr context="#pop!_rule_without_statement_level2" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+			<RegExpr context="#pop!_rule_without_statement_level2" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
 		</context>
 		<context name="_rule_level2" attribute="Normal Text" lineEndContext="#stay">
-			<DetectChar attribute="Brackets3" context="_rule_bracket_level3" char="("/>
-			<DetectChar attribute="Brackets2" context="#pop" char=")" />
+			<DetectChar attribute="Brackets Level 3" context="_rule_bracket_level3" char="("/>
+			<DetectChar attribute="Brackets Level 2" context="#pop" char=")" />
 			<IncludeRules context="_default_rule"/>
 		</context>
 		<context name="_rule_without_statement_level2" attribute="Normal Text" lineEndContext="#stay">
@@ -520,11 +517,11 @@
 		</context>
 		<context name="_statement_level3" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level3" lineEndContext="#pop!_rule_level3">
 			<IncludeRules context="_default_statement"/>
-			<RegExpr context="#pop!_rule_without_statement_level3" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+			<RegExpr context="#pop!_rule_without_statement_level3" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
 		</context>
 		<context name="_rule_level3" attribute="Normal Text" lineEndContext="#stay">
-			<DetectChar attribute="Brackets4" context="_rule_bracket_level4" char="("/>
-			<DetectChar attribute="Brackets3" context="#pop" char=")" />
+			<DetectChar attribute="Brackets Level 4" context="_rule_bracket_level4" char="("/>
+			<DetectChar attribute="Brackets Level 3" context="#pop" char=")" />
 			<IncludeRules context="_default_rule"/>
 		</context>
 		<context name="_rule_without_statement_level3" attribute="Normal Text" lineEndContext="#stay">
@@ -538,11 +535,11 @@
 		</context>
 		<context name="_statement_level4" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level4" lineEndContext="#pop!_rule_level4">
 			<IncludeRules context="_default_statement"/>
-			<RegExpr context="#pop!_rule_without_statement_level4" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+			<RegExpr context="#pop!_rule_without_statement_level4" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
 		</context>
 		<context name="_rule_level4" attribute="Normal Text" lineEndContext="#stay">
-			<DetectChar attribute="Brackets5" context="_rule_bracket_level5" char="("/>
-			<DetectChar attribute="Brackets4" context="#pop" char=")" />
+			<DetectChar attribute="Brackets Level 5" context="_rule_bracket_level5" char="("/>
+			<DetectChar attribute="Brackets Level 4" context="#pop" char=")" />
 			<IncludeRules context="_default_rule"/>
 		</context>
 		<context name="_rule_without_statement_level4" attribute="Normal Text" lineEndContext="#stay">
@@ -556,11 +553,11 @@
 		</context>
 		<context name="_statement_level5" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level5" lineEndContext="#pop!_rule_level5">
 			<IncludeRules context="_default_statement"/>
-			<RegExpr context="#pop!_rule_without_statement_level5" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+			<RegExpr context="#pop!_rule_without_statement_level5" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
 		</context>
 		<context name="_rule_level5" attribute="Normal Text" lineEndContext="#stay">
-			<DetectChar attribute="Brackets6" context="_rule_bracket_level6" char="("/>
-			<DetectChar attribute="Brackets5" context="#pop" char=")" />
+			<DetectChar attribute="Brackets Level 6" context="_rule_bracket_level6" char="("/>
+			<DetectChar attribute="Brackets Level 5" context="#pop" char=")" />
 			<IncludeRules context="_default_rule"/>
 		</context>
 		<context name="_rule_without_statement_level5" attribute="Normal Text" lineEndContext="#stay">
@@ -574,11 +571,11 @@
 		</context>
 		<context name="_statement_level6" attribute="Normal Text" fallthrough="true" fallthroughContext="#pop!_rule_level6" lineEndContext="#pop!_rule_level6">
 			<IncludeRules context="_default_statement"/>
-			<RegExpr context="#pop!_rule_without_statement_level6" attribute="Normal Text" String="&statementchar;+" lookAhead="true"/>
+			<RegExpr context="#pop!_rule_without_statement_level6" attribute="Normal Text" String="&statementchar;" lookAhead="true"/>
 		</context>
 		<context name="_rule_level6" attribute="Normal Text" lineEndContext="#stay">
-			<DetectChar attribute="Brackets1" context="_rule_bracket_level1" char="("/>
-			<DetectChar attribute="Brackets6" context="#pop" char=")" />
+			<DetectChar attribute="Brackets Level 1" context="_rule_bracket_level1" char="("/>
+			<DetectChar attribute="Brackets Level 6" context="#pop" char=")" />
 			<IncludeRules context="_default_rule"/>
 		</context>
 		<context name="_rule_without_statement_level6" attribute="Normal Text" lineEndContext="#stay">
@@ -597,7 +594,7 @@
 			<DetectSpaces context="#pop" attribute="Normal Text" lookAhead="true"/>
 		</context>
 		<context name="_fc_type" attribute="File Contexts (Type Enforcement)" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-			<RegExpr context="#pop!_fc_mls" attribute="File Contexts (Type Enforcement)" String="&fullIdentifier;(?=:&mlsLevel;)"/> <!-- Find Level/Range -->
+			<RegExpr context="#pop!_fc_mls" attribute="File Contexts (Type Enforcement)" String="&fullIdentifier;(?=\:&mlsLevel;)"/> <!-- Find Level/Range -->
 			<RegExpr context="#pop" attribute="File Contexts (Type Enforcement)" String="&fullIdentifier;"/>
 		</context>
 		<!-- (MLS/MCS) user:role:type:level -->
@@ -612,7 +609,7 @@
 		</context>
 		<context name="_fc_level_range_cat" attribute="File Contexts" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
 			<RegExpr context="#pop!_fc_level_sen" attribute="Normal Text" String="\s*\-\s*(?=&mlsLevel;)"/> <!-- Find Range -->
-			<RegExpr context="#stay" attribute="Normal Text" String="(\.|\s*,\s*)(?=&identifier;)"/>
+			<RegExpr context="#stay" attribute="Normal Text" String="(?:\.|\s*,\s*)(?=&identifier;)"/>
 			<IncludeRules context="_default_fc_level"/>
 		</context>
 		<!-- (MLS/MCS) user:role:type:level-level -->
@@ -622,7 +619,7 @@
 			<IncludeRules context="_default_fc_level"/>
 		</context>
 		<context name="_fc_level_cat" attribute="File Contexts" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-			<RegExpr context="#stay" attribute="Normal Text" String="(\.|\s*,\s*)(?=&identifier;)"/>
+			<RegExpr context="#stay" attribute="Normal Text" String="(?:\.|\s*,\s*)(?=&identifier;)"/>
 			<IncludeRules context="_default_fc_level"/>
 		</context>
 		<context name="_default_fc_level" attribute="File Contexts" lineEndContext="#pop">
@@ -638,33 +635,35 @@
 		<itemData name="Text Quoted" defStyleNum="dsString" spellChecking="false"/>
 		<itemData name="Path"        defStyleNum="dsNormal" spellChecking="false"/>
 
-		<itemData name="Statements"                defStyleNum="dsKeyword"      bold="1" spellChecking="false"/>
-		<itemData name="Type Statements"           defStyleNum="dsFunction"     bold="1" spellChecking="false"/>
-		<itemData name="Policy Config. Statements" defStyleNum="dsPreprocessor" bold="1" spellChecking="false"/>
-		<itemData name="Access Keys"               defStyleNum="dsWarning"      bold="1" spellChecking="false"/>
-		<itemData name="Expression Keys"           defStyleNum="dsVariable"     bold="1" spellChecking="false"/>
-		<itemData name="Type Name Statements"      defStyleNum="dsDataType"     bold="1" spellChecking="false"/>
+		<itemData name="Statements"                defStyleNum="dsKeyword"      bold="1" italic="0" underline="0" spellChecking="false"/>
+		<itemData name="Type Statements"           defStyleNum="dsFunction"     bold="1" italic="0" underline="0" spellChecking="false"/>
+		<itemData name="Policy Config. Statements" defStyleNum="dsPreprocessor" bold="1" italic="0" underline="0" spellChecking="false"/>
+		<itemData name="Access Keys"               defStyleNum="dsWarning"      bold="1" italic="0" underline="0" spellChecking="false"/>
+		<itemData name="Expression Keys"           defStyleNum="dsVariable"     bold="1" italic="0" underline="0" spellChecking="false"/>
+		<itemData name="Type Name Statements"      defStyleNum="dsDataType"     bold="1" italic="0" underline="0" spellChecking="false"/>
 		<itemData name="Booleans"                  defStyleNum="dsExtension"    bold="1" spellChecking="false"/>
 
 		<itemData name="Types"                defStyleNum="dsDataType"      bold="0" spellChecking="false"/>
 		<itemData name="Special Keys"         defStyleNum="dsOthers"        spellChecking="false"/>
-		<itemData name="File Contexts"        defStyleNum="dsSpecialString" spellChecking="false"/>
-		<itemData name="File Contexts (Type Enforcement)" defStyleNum="dsInformation" spellChecking="false"/>
+		<itemData name="File Contexts"        defStyleNum="dsSpecialString" bold="0" italic="0" underline="0" spellChecking="false"/>
+		<itemData name="File Contexts (Type Enforcement)" defStyleNum="dsInformation" bold="0" italic="0" underline="0" spellChecking="false"/>
+		<itemData name="Policy Capability"    defStyleNum="dsPreprocessor"  bold="0" italic="0" underline="0" spellChecking="false"/>
+		<itemData name="Filesystem"           defStyleNum="dsNormal"        italic="1" spellChecking="false"/>
 		<itemData name="Other Keywords"       defStyleNum="dsNormal"        italic="1" spellChecking="false"/>
 
 		<itemData name="Number"      defStyleNum="dsDecVal" spellChecking="false"/>
 		<itemData name="Hexadecimal" defStyleNum="dsBaseN"  spellChecking="false"/>
 
 		<!-- Obtained from "scheme.xml" -->
-		<itemData name="Brackets1" defStyleNum="dsNormal" color="#ff0000" bold="1" />
-		<itemData name="Brackets2" defStyleNum="dsNormal" color="#ff8800" bold="1" />
-		<itemData name="Brackets3" defStyleNum="dsNormal" color="#888800" bold="1" />
-		<itemData name="Brackets4" defStyleNum="dsNormal" color="#008800" bold="1" />
-		<itemData name="Brackets5" defStyleNum="dsNormal" color="#000088" bold="1" />
-		<itemData name="Brackets6" defStyleNum="dsNormal" color="#880088" bold="1" />
+		<itemData name="Brackets Level 1" defStyleNum="dsNormal" color="#c6262e" bold="1" spellChecking="false"/>
+		<itemData name="Brackets Level 2" defStyleNum="dsNormal" color="#ff8800" bold="1" spellChecking="false"/>
+		<itemData name="Brackets Level 3" defStyleNum="dsNormal" color="#888800" bold="1" spellChecking="false"/>
+		<itemData name="Brackets Level 4" defStyleNum="dsNormal" color="#009400" bold="1" spellChecking="false"/>
+		<itemData name="Brackets Level 5" defStyleNum="dsNormal" color="#3689e6" bold="1" spellChecking="false"/>
+		<itemData name="Brackets Level 6" defStyleNum="dsNormal" color="#a56de2" bold="1" spellChecking="false"/>
 
 		<itemData name="Special Char"                     defStyleNum="dsSpecialChar"   spellChecking="false"/>
-		<itemData name="Special Char of Brackets (Paths)" defStyleNum="dsAnnotation"    spellChecking="false"/>
+		<itemData name="Special Char of Brackets (Paths)" defStyleNum="dsAnnotation"    bold="0" italic="0" underline="0" spellChecking="false"/>
 		<itemData name="RegExp Brackets (Paths)"          defStyleNum="dsSpecialString" spellChecking="false"/>
 		<itemData name="Open RegExp Brackets (Paths)"     defStyleNum="dsSpecialString" underline="1" spellChecking="false"/>
 		<itemData name="Text Quoted Open"                 defStyleNum="dsString"        underline="1" spellChecking="false"/>

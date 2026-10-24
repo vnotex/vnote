@@ -38,8 +38,8 @@
 <!-- $LastChangedRevision: 10 $                                             -->
 <!--                                                                       -->
 <!--***********************************************************************-->
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="SystemVerilog" version="7" kateversion="2.4" section="Hardware" extensions="*.sv;*.svh" mimetype="text/x-systemverilog-src" author="Sean O'Boyle (seanoboyle@intelligentdv.com)" license="GPLv3+">
+<!DOCTYPE language>
+<language name="SystemVerilog" version="11" kateversion="5.0" section="Hardware" extensions="*.sv;*.svh" mimetype="text/x-systemverilog-src" author="Sean O'Boyle (seanoboyle@intelligentdv.com)" license="GPLv3+">
   <highlighting>
     <list name="key_deprecated">
        <item>defparam</item>
@@ -144,7 +144,6 @@
        <item>ms</item>
        <item>ns</item>
        <item>us</item>
-       <item>ns</item>
        <item>ps</item>
        <item>fs</item>
        <item>step</item>
@@ -362,10 +361,6 @@
         <item>$acosh</item>
         <item>$tan</item>
         <item>$atanh</item>
-        <item>$fatal</item>
-        <item>$error</item>
-        <item>$warning</item>
-        <item>$info</item>
         <item>$fatal</item>
         <item>$error</item>
         <item>$warning</item>
@@ -852,10 +847,9 @@
         <keyword attribute="Library Keyword" context="#stay" String="key_library"/>
         <keyword attribute="Interface Keyword" context="#stay" String="key_interface"/>
         <keyword attribute="Checker Keyword" context="#stay" String="key_checker"/>
-        <keyword attribute="Type Keyword" context="#stay" String="key_types"/>
+        <keyword attribute="Data Type Keyword" context="#stay" String="key_types"/>
         <keyword attribute="Preprocessor Keyword" context="#stay" String="key_preprocessor"/>
         <keyword attribute="System Task Keyword" context="#stay" String="key_system"/>
-        <keyword attribute="Data Type Keyword" context="#stay" String="key_types"/>
         <keyword attribute="Drive/Charge Strength Keyword" context="#stay" String="key_strength"/>
         <keyword attribute="Gate Instantiation Keyword" context="#stay" String="key_gates"/>
         <keyword attribute="Standard Library" context="#stay" String="key_stdlib"/>
@@ -870,9 +864,7 @@
         <RegExpr attribute="Port Connection" context="#stay" String="[^\w$]\.[a-zA-Z]+[\w$]*"/>
 
         <DetectChar attribute="String" context="String" char="&quot;"/>
-        <IncludeRules context="##Doxygen" />
-        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+        <IncludeRules context="FindComments" />
         <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;=+/:;&gt;?[]^{|}~@"/>
 
         <DetectChar attribute="Preprocessor" context="Preprocessor" char="`" column="0"/>
@@ -900,17 +892,28 @@
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
 
+      <context name="FindComments" attribute="Normal Text" lineEndContext="#pop">
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="/" lookAhead="true" />
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="*" lookAhead="true" />
+      </context>
+
+      <context name="MatchComment" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <IncludeRules context="##Doxygen" />
+        <Detect2Chars attribute="Comment" context="#pop!Commentar 1" char="/" char1="/"/>
+        <Detect2Chars attribute="Comment" context="#pop!Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+      </context>
+
       <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
         <LineContinue attribute="Comment" context="#stay"/>
         <DetectSpaces />
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
         <DetectIdentifier />
       </context>
 
       <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
         <DetectSpaces />
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
         <DetectIdentifier />
       </context>
      
@@ -918,30 +921,9 @@
         <LineContinue attribute="Preprocessor" context="#stay"/>
         <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
         <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
-        <IncludeRules context="##Doxygen" />
-        <Detect2Chars attribute="Comment" context="Commentar/Preprocessor" char="/" char1="*" beginRegion="Comment2" />
-
-        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
+        <IncludeRules context="FindComments" />
       </context>
 
-      <context attribute="Comment" lineEndContext="#stay" name="Commentar/Preprocessor">
-        <DetectSpaces />
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment2" />
-        <DetectIdentifier />
-      </context>
-
-      <context attribute="Comment" lineEndContext="#stay" name="Outscoped intern">
-        <DetectSpaces />
-        <IncludeRules context="##Alerts" />
-        <DetectIdentifier />
-        <DetectChar attribute="String" context="String" char="&quot;"/>
-        <IncludeRules context="##Doxygen" />
-        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
-        <RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="PP" firstNonSpace="true" />
-        <RegExpr attribute="Comment" context="#pop" String="#\s*endif" endRegion="PP" firstNonSpace="true" />
-      </context>
-      
       <context attribute="Block Name" lineEndContext="#pop" name="Block Name">
           <RegExpr attribute="Data Type Keyword" context="#pop" String="[^ ]+"/>
       </context>
@@ -997,9 +979,10 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="//" />
+      <comment name="singleLine" start="//" position="afterwhitespace" />
       <comment name="multiLine" start="/*" end="*/" region="Comment"/>
     </comments>
     <keywords casesensitive="1"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

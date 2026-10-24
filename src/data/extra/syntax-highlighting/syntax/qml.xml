@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language
+[
+  <!ENTITY identifier "[a-zA-Z_$][\w$]*">
+]>
 <!-- Author: Milian Wolff <mail@milianw.de> -->
-<language name="QML" version="7" kateversion="5.0" section="Scripts" extensions="*.qml;*.qmltypes"
+<language name="QML" version="14" kateversion="5.53" section="Scripts" extensions="*.qml;*.qmltypes"
           mimetype="text/x-qml;application/x-qml" indenter="cstyle"
           author="Milian Wolff (mail@milianw.de)" license="MIT">
   <highlighting>
@@ -85,7 +88,12 @@
     </list>
     <!-- keywords not part of JavaScript -->
     <list name="extra-keywords">
+      <item>pragma</item>
       <item>readonly</item>
+      <item>required</item>
+      <item>virtual</item>
+      <item>final</item>
+      <item>override</item>
     </list>
     <list name="types">
       <!-- see: http://doc.trolltech.com/4.7-snapshot/qml-extending-types.html -->
@@ -101,6 +109,14 @@
       <item>variant</item>
     </list>
     <contexts>
+      <!-- Shebang: ("#!") Detect shebang and fallthrough to Normal -->
+      <!-- Based on the similar clause from prolog.xml.
+           This uses "lineEmptyContext" & "lineEndContext" to force the highlight only on the first line. -->
+      <context name="Shebang" attribute="Normal Text" lineEndContext="Normal" lineEmptyContext="Normal" fallthrough="true" fallthroughContext="Normal">
+        <Detect2Chars column="0" char="#" char1="!" context="Shebang Line" attribute="Shebang" />
+      </context>
+      <context name="Shebang Line" attribute="Shebang" lineEndContext="#pop!Normal" />
+
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
         <DetectSpaces/>
         <WordDetect attribute="Import" context="Import" String="import"/>
@@ -111,17 +127,29 @@
         <WordDetect attribute="Keywords" context="Property" String="property" />
         <DetectChar attribute="String" context="String" char="&quot;" />
         <DetectChar attribute="Normal Text" context="Object" char="{" beginRegion="Brace" />
-        <IncludeRules context="Normal##JavaScript" />
+        <!-- Normal##JavaScript -->
+        <IncludeRules context="FindSomeSymbols##JavaScript" />
+        <AnyChar context="#stay" String="[(" />
+        <AnyChar context="NoRegExp##JavaScript" String="])" />
+        <IncludeRules context="FindNumbers##JavaScript" />
+        <IncludeRules context="FindKeywords##JavaScript" />
+        <IncludeRules context="FindStrings##JavaScript" />
+        <RegExpr attribute="Objects" context="FindMemberObjectMath##JavaScript" String="\bMath(?=\s*\.)" />
+        <RegExpr attribute="Objects" context="#stay" String="\b[A-Z][\w$]*(?=\s*\.)" />
+        <IncludeRules context="FindMembers##JavaScript" />
+        <IncludeRules context="FindObjectMembersAndFunctions##JavaScript" />
+        <IncludeRules context="JSBase##JavaScript" />
       </context>
       <context attribute="ImportValue" lineEndContext="#pop" name="Import">
+        <IncludeRules context="FindComments##JavaScript" />
       </context>
       <context attribute="Normal Text" lineEndContext="#pop" name="Property">
         <WordDetect attribute="Property Type" context="#stay" String="alias" />
         <keyword attribute="Property Type" context="#stay" String="types" />
         <DetectSpaces />
         <DetectIdentifier />
-        <DetectSpaces />
         <DetectChar char=":" context="#pop" />
+        <IncludeRules context="FindComments##JavaScript" />
       </context>
       <context attribute="Normal Text" lineEndContext="#pop" name="Signal">
         <DetectSpaces />
@@ -131,39 +159,45 @@
       <context attribute="Normal Text" name="SignalParameter" lineEndContext="#pop">
         <DetectSpaces />
         <keyword attribute="Property Type" context="#stay" String="types" />
-        <DetectSpaces />
         <DetectIdentifier />
-        <DetectSpaces />
         <DetectChar char=")" context="#pop"/>
       </context>
       <!-- QML supports multi-line strings, which are not supported by Javascript -->
       <context attribute="String" lineEndContext="#stay" name="String">
-        <HlCStringChar attribute="Escape" />
-        <RegExpr attribute="Escape" String="\\u[0-9a-fA-F]{4}" />
-        <DetectChar attribute="String" context="#pop" char="&quot;" />
+        <DetectChar attribute="String" context="RegExpAfterString##JavaScript" char="&quot;" />
+        <IncludeRules context="Escape##JavaScript" />
       </context>
       <context attribute="Normal Text" lineEndContext="#stay" name="Object">
         <!--DetectIdentifier-->
-        <RegExpr attribute="Property Type" String="[a-zA-Z_$][\w$]*\s*(?=:)" />
+        <RegExpr attribute="Property Type" String="&identifier;\s*(?=(\/\*.*?\*\/)?:)" />
+        <!-- Avoid highlighting Property Type before ":" in conditional expressions. -->
+        <RegExpr attribute="Symbol" context="ConditionalExpression" String="\?(?=[^\}]*&identifier;\s*\:)" />
         <DetectChar attribute="Normal Text" char="}" endRegion="Brace" context="#pop" />
+        <IncludeRules context="Normal" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="ConditionalExpression">
+        <AnyChar context="#pop" String=":}" lookAhead="true" />
+        <DetectChar attribute="Symbol" context="#stay" char="?" />
         <IncludeRules context="Normal" />
       </context>
     </contexts>
     <itemDatas>
       <itemData name="Normal Text"  defStyleNum="dsNormal"  spellChecking="false" />
       <itemData name="Import"  defStyleNum="dsKeyword"  spellChecking="false" />
-      <itemData name="ImportValue"  defStyleNum="dsString"  spellChecking="false" />
+      <itemData name="ImportValue"  defStyleNum="dsImport"  spellChecking="false" />
       <itemData name="Keywords"  defStyleNum="dsKeyword"  spellChecking="false" />
-      <itemData name="Elements" defStyleNum="dsKeyword" color="#008000" selColor="#00ffff" bold="0" italic="0" spellChecking="false"/>
-      <itemData name="Signal" defStyleNum="dsKeyword" color="#0095ff" selColor="#ffffff" spellChecking="false"/>
+      <itemData name="Elements" defStyleNum="dsOthers" spellChecking="false"/> <!-- #008000 -->
+      <itemData name="Signal" defStyleNum="dsExtension" bold="1" spellChecking="false"/> <!-- #0095ff -->
       <itemData name="Property Type" defStyleNum="dsDataType" spellChecking="false" />
       <itemData name="String"       defStyleNum="dsString" />
-      <itemData name="Escape"       defStyleNum="dsSpecialChar" spellChecking="false" />
+      <itemData name="Objects"      defStyleNum="dsExtension" bold="0" spellChecking="false" />
+      <itemData name="Symbol"       defStyleNum="dsOperator" spellChecking="false" />
+      <itemData name="Shebang"      defStyleNum="dsComment" spellChecking="false" />
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="//" />
+      <comment name="singleLine" start="//" position="afterwhitespace" />
       <comment name="multiLine" start="/*" end="*/" />
     </comments>
     <keywords casesensitive="1" />

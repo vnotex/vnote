@@ -1,0 +1,492 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!--
+	ACPI 6.5A ASL (ACPI Source Language) Highlighting Definition
+	===============================================================================
+
+	This file is part of the KDE's KSyntaxHighlighting framework.
+
+	SPDX-FileCopyrightText: 2025 Fabian Vogt <fabian@ritter-vogt.de>
+	SPDX-License-Identifier: BSD-3-Clause
+
+	For simplicity, this does not care too much about the actual grammar, it accepts
+	all kinds of terms everywhere:
+	- Whitespace and comments (//, /* */)
+	- Groupings like FixedList with terms inside ((x, , y))
+	- VariableList ({ x, y })
+	- Operators
+	- Integer and string literals
+	- Keywords
+	- Names and other identifiers
+-->
+<language name="ACPI Source Language" section="Sources"
+          version="1" kateversion="5.62"
+          extensions="" mimetype=""
+          author="Fabian Vogt (fabian@ritter-vogt.de)"
+          license="BSD-3-Clause">
+<highlighting>
+	<!--
+	Generated from acpica source code:
+	curl -sL https://github.com/acpica/acpica/raw/e374230f5fea5b2c92d9221ae3d5cad4d788569b/source/compiler/aslcompiler.l | awk 'match($1, /^"([A-Za-z_][^"]*)"$/, m) { printf "<item>%s</item>\n", m[1] }'
+	-->
+	<list name="keywords">
+		<item>Include</item>
+		<item>External</item>
+		<item>AccessAs</item>
+		<item>Acquire</item>
+		<item>Add</item>
+		<item>Alias</item>
+		<item>And</item>
+		<item>BankField</item>
+		<item>Break</item>
+		<item>BreakPoint</item>
+		<item>Buffer</item>
+		<item>Case</item>
+		<item>Concatenate</item>
+		<item>ConcatenateResTemplate</item>
+		<item>CondRefOf</item>
+		<item>Connection</item>
+		<item>Continue</item>
+		<item>CopyObject</item>
+		<item>CreateBitField</item>
+		<item>CreateByteField</item>
+		<item>CreateDWordField</item>
+		<item>CreateField</item>
+		<item>CreateQWordField</item>
+		<item>CreateWordField</item>
+		<item>DataTableRegion</item>
+		<item>Debug</item>
+		<item>Decrement</item>
+		<item>Default</item>
+		<item>DefinitionBlock</item>
+		<item>DeRefOf</item>
+		<item>Device</item>
+		<item>Divide</item>
+		<item>Eisaid</item>
+		<item>Else</item>
+		<item>ElseIf</item>
+		<item>Event</item>
+		<item>Fatal</item>
+		<item>Field</item>
+		<item>FindSetLeftBit</item>
+		<item>FindSetRightBit</item>
+		<item>FromBcd</item>
+		<item>Function</item>
+		<item>If</item>
+		<item>Increment</item>
+		<item>Index</item>
+		<item>IndexField</item>
+		<item>LAnd</item>
+		<item>LEqual</item>
+		<item>LGreater</item>
+		<item>LGreaterEqual</item>
+		<item>LLess</item>
+		<item>LLessEqual</item>
+		<item>LNot</item>
+		<item>LNotEqual</item>
+		<item>Load</item>
+		<item>LoadTable</item>
+		<item>LOr</item>
+		<item>Match</item>
+		<item>Method</item>
+		<item>Mid</item>
+		<item>Mod</item>
+		<item>Multiply</item>
+		<item>Mutex</item>
+		<item>Name</item>
+		<item>NAnd</item>
+		<item>Noop</item>
+		<item>NOr</item>
+		<item>Not</item>
+		<item>Notify</item>
+		<item>ObjectType</item>
+		<item>Offset</item>
+		<item>One</item>
+		<item>Ones</item>
+		<item>OperationRegion</item>
+		<item>Or</item>
+		<item>Package</item>
+		<item>PowerResource</item>
+		<item>Processor</item>
+		<item>RefOf</item>
+		<item>Release</item>
+		<item>Reset</item>
+		<item>Return</item>
+		<item>Revision</item>
+		<item>Scope</item>
+		<item>ShiftLeft</item>
+		<item>ShiftRight</item>
+		<item>Signal</item>
+		<item>SizeOf</item>
+		<item>Sleep</item>
+		<item>Stall</item>
+		<item>Store</item>
+		<item>Subtract</item>
+		<item>Switch</item>
+		<item>ThermalZone</item>
+		<item>Timer</item>
+		<item>ToBcd</item>
+		<item>ToBuffer</item>
+		<item>ToDecimalString</item>
+		<item>ToHexString</item>
+		<item>ToInteger</item>
+		<item>ToString</item>
+		<item>ToUuid</item>
+		<item>Unicode</item>
+		<item>Unload</item>
+		<item>Wait</item>
+		<item>While</item>
+		<item>XOr</item>
+		<item>Zero</item>
+		<item>Arg0</item>
+		<item>Arg1</item>
+		<item>Arg2</item>
+		<item>Arg3</item>
+		<item>Arg4</item>
+		<item>Arg5</item>
+		<item>Arg6</item>
+		<item>Local0</item>
+		<item>Local1</item>
+		<item>Local2</item>
+		<item>Local3</item>
+		<item>Local4</item>
+		<item>Local5</item>
+		<item>Local6</item>
+		<item>Local7</item>
+		<item>ResourceTemplate</item>
+		<item>RawDataBuffer</item>
+		<item>Csi2Bus</item>
+		<item>DMA</item>
+		<item>DWordIO</item>
+		<item>DWordMemory</item>
+		<item>DWordPcc</item>
+		<item>DWordSpace</item>
+		<item>EndDependentFn</item>
+		<item>ExtendedIO</item>
+		<item>ExtendedMemory</item>
+		<item>ExtendedSpace</item>
+		<item>FixedDma</item>
+		<item>FixedIO</item>
+		<item>GpioInt</item>
+		<item>GpioIo</item>
+		<item>I2cSerialBus</item>
+		<item>I2cSerialBusV2</item>
+		<item>Interrupt</item>
+		<item>IO</item>
+		<item>IRQ</item>
+		<item>IRQNoFlags</item>
+		<item>Memory24</item>
+		<item>Memory32</item>
+		<item>Memory32Fixed</item>
+		<item>PinConfig</item>
+		<item>PinFunction</item>
+		<item>PinGroup</item>
+		<item>PinGroupConfig</item>
+		<item>PinGroupFunction</item>
+		<item>ClockInput</item>
+		<item>QWordIO</item>
+		<item>QWordMemory</item>
+		<item>QWordPcc</item>
+		<item>QWordSpace</item>
+		<item>Register</item>
+		<item>SpiSerialBus</item>
+		<item>SpiSerialBusV2</item>
+		<item>StartDependentFn</item>
+		<item>StartDependentFnNoPri</item>
+		<item>UartSerialBus</item>
+		<item>UartSerialBusV2</item>
+		<item>VendorLong</item>
+		<item>VendorShort</item>
+		<item>WordBusNumber</item>
+		<item>WordIO</item>
+		<item>WordPcc</item>
+		<item>WordSpace</item>
+		<item>AttribQuick</item>
+		<item>AttribSendReceive</item>
+		<item>AttribByte</item>
+		<item>AttribWord</item>
+		<item>AttribBlock</item>
+		<item>AttribProcessCall</item>
+		<item>AttribBlockProcessCall</item>
+		<item>SMBQuick</item>
+		<item>SMBSendReceive</item>
+		<item>SMBByte</item>
+		<item>SMBWord</item>
+		<item>SMBBlock</item>
+		<item>SMBProcessCall</item>
+		<item>SMBBlockProcessCall</item>
+		<item>AnyAcc</item>
+		<item>ByteAcc</item>
+		<item>WordAcc</item>
+		<item>DWordAcc</item>
+		<item>QWordAcc</item>
+		<item>BufferAcc</item>
+		<item>AddressingMode7Bit</item>
+		<item>AddressingMode10Bit</item>
+		<item>AddressRangeMemory</item>
+		<item>AddressRangeReserved</item>
+		<item>AddressRangeNVS</item>
+		<item>AddressRangeACPI</item>
+		<item>BusMaster</item>
+		<item>NotBusMaster</item>
+		<item>DataBitsFive</item>
+		<item>DataBitsSix</item>
+		<item>DataBitsSeven</item>
+		<item>DataBitsEight</item>
+		<item>DataBitsNine</item>
+		<item>ClockPhaseFirst</item>
+		<item>ClockPhaseSecond</item>
+		<item>ClockPolarityLow</item>
+		<item>ClockPolarityHigh</item>
+		<item>PosDecode</item>
+		<item>SubDecode</item>
+		<item>Compatibility</item>
+		<item>TypeA</item>
+		<item>TypeB</item>
+		<item>TypeF</item>
+		<item>LittleEndian</item>
+		<item>BigEndian</item>
+		<item>AttribBytes</item>
+		<item>AttribRawBytes</item>
+		<item>AttribRawProcessBytes</item>
+		<item>FlowControlHardware</item>
+		<item>FlowControlNone</item>
+		<item>FlowControlXon</item>
+		<item>ActiveBoth</item>
+		<item>ActiveHigh</item>
+		<item>ActiveLow</item>
+		<item>Edge</item>
+		<item>Level</item>
+		<item>Decode10</item>
+		<item>Decode16</item>
+		<item>IoRestrictionNone</item>
+		<item>IoRestrictionInputOnly</item>
+		<item>IoRestrictionOutputOnly</item>
+		<item>IoRestrictionNoneAndPreserve</item>
+		<item>Lock</item>
+		<item>NoLock</item>
+		<item>MTR</item>
+		<item>MEQ</item>
+		<item>MLE</item>
+		<item>MLT</item>
+		<item>MGE</item>
+		<item>MGT</item>
+		<item>MaxFixed</item>
+		<item>MaxNotFixed</item>
+		<item>Cacheable</item>
+		<item>WriteCombining</item>
+		<item>Prefetchable</item>
+		<item>NonCacheable</item>
+		<item>MinFixed</item>
+		<item>MinNotFixed</item>
+		<item>UnknownObj</item>
+		<item>IntObj</item>
+		<item>StrObj</item>
+		<item>BuffObj</item>
+		<item>PkgObj</item>
+		<item>FieldUnitObj</item>
+		<item>DeviceObj</item>
+		<item>EventObj</item>
+		<item>MethodObj</item>
+		<item>MutexObj</item>
+		<item>OpRegionObj</item>
+		<item>PowerResObj</item>
+		<item>ProcessorObj</item>
+		<item>ThermalZoneObj</item>
+		<item>BuffFieldObj</item>
+		<item>DDBHandleObj</item>
+		<item>ParityTypeSpace</item>
+		<item>ParityTypeMark</item>
+		<item>ParityTypeOdd</item>
+		<item>ParityTypeEven</item>
+		<item>ParityTypeNone</item>
+		<item>PullDefault</item>
+		<item>PullUp</item>
+		<item>PullDown</item>
+		<item>PullNone</item>
+		<item>Hz</item>
+		<item>KHz</item>
+		<item>MHz</item>
+		<item>Fixed</item>
+		<item>Variable</item>
+		<item>PolarityLow</item>
+		<item>PolarityHigh</item>
+		<item>ISAOnlyRanges</item>
+		<item>NonISAOnlyRanges</item>
+		<item>EntireRange</item>
+		<item>ReadWrite</item>
+		<item>ReadOnly</item>
+		<item>SystemIO</item>
+		<item>SystemMemory</item>
+		<item>PCI_Config</item>
+		<item>EmbeddedControl</item>
+		<item>SMBus</item>
+		<item>SystemCMOS</item>
+		<item>PciBarTarget</item>
+		<item>IPMI</item>
+		<item>GeneralPurposeIo</item>
+		<item>GenericSerialBus</item>
+		<item>PCC</item>
+		<item>PlatformRtMechanism</item>
+		<item>FFixedHW</item>
+		<item>ResourceConsumer</item>
+		<item>ResourceProducer</item>
+		<item>Serialized</item>
+		<item>NotSerialized</item>
+		<item>Shared</item>
+		<item>Exclusive</item>
+		<item>SharedAndWake</item>
+		<item>ExclusiveAndWake</item>
+		<item>ControllerInitiated</item>
+		<item>DeviceInitiated</item>
+		<item>StopBitsOne</item>
+		<item>StopBitsOnePlusHalf</item>
+		<item>StopBitsTwo</item>
+		<item>StopBitsZero</item>
+		<item>Width8bit</item>
+		<item>Width16bit</item>
+		<item>Width32bit</item>
+		<item>Width64bit</item>
+		<item>Width128bit</item>
+		<item>Width256bit</item>
+		<item>SparseTranslation</item>
+		<item>DenseTranslation</item>
+		<item>TypeTranslation</item>
+		<item>TypeStatic</item>
+		<item>Preserve</item>
+		<item>WriteAsOnes</item>
+		<item>WriteAsZeros</item>
+		<item>FourWireMode</item>
+		<item>ThreeWireMode</item>
+		<item>Transfer8</item>
+		<item>Transfer8_16</item>
+		<item>Transfer16</item>
+		<item>ToPLD</item>
+		<item>PLD_Revision</item>
+		<item>PLD_IgnoreColor</item>
+		<item>PLD_Red</item>
+		<item>PLD_Green</item>
+		<item>PLD_Blue</item>
+		<item>PLD_Width</item>
+		<item>PLD_Height</item>
+		<item>PLD_UserVisible</item>
+		<item>PLD_Dock</item>
+		<item>PLD_Lid</item>
+		<item>PLD_Panel</item>
+		<item>PLD_VerticalPosition</item>
+		<item>PLD_HorizontalPosition</item>
+		<item>PLD_Shape</item>
+		<item>PLD_GroupOrientation</item>
+		<item>PLD_GroupToken</item>
+		<item>PLD_GroupPosition</item>
+		<item>PLD_Bay</item>
+		<item>PLD_Ejectable</item>
+		<item>PLD_EjectRequired</item>
+		<item>PLD_CabinetNumber</item>
+		<item>PLD_CardCageNumber</item>
+		<item>PLD_Reference</item>
+		<item>PLD_Rotation</item>
+		<item>PLD_Order</item>
+		<item>PLD_Reserved</item>
+		<item>PLD_VerticalOffset</item>
+		<item>PLD_HorizontalOffset</item>
+		<item>printf</item>
+		<item>fprintf</item>
+		<item>For</item>
+		<item>__DATE__</item>
+		<item>__FILE__</item>
+		<item>__LINE__</item>
+		<item>__PATH__</item>
+		<item>__METHOD__</item>
+	</list>
+
+	<contexts>
+		<context name="StartTerm" attribute="Normal" lineEndContext="#stay" fallthroughContext="#stay">
+			<IncludeRules context="SkipComments"/>
+
+			<!-- Could also be a method call or grouping in If() -->
+			<DetectChar attribute="Operator" context="FixedList" char="("/>
+
+			<DetectChar attribute="Operator" context="VariableList" char="{" beginRegion="variableList"/>
+
+			<DetectChar attribute="StringLiteral" context="StringLiteral" char="&quot;"/>
+
+			<!-- Integer literals -->
+			<HlCHex attribute="Non-Decimal Integer" context="#stay"/>
+			<HlCOct attribute="Non-Decimal Integer" context="#stay"/>
+			<Int attribute="Decimal" context="#stay"/>
+
+			<!-- Keywords -->
+			<keyword attribute="Keyword" String="keywords" context="#stay" />
+
+			<!-- Operators -->
+			<StringDetect attribute="Operator" context="#stay" String="&gt;&gt;="/>
+			<StringDetect attribute="Operator" context="#stay" String="&lt;&lt;="/>
+			<Detect2Chars attribute="Operator" context="#stay" char="&gt;" char1="&gt;"/>
+			<Detect2Chars attribute="Operator" context="#stay" char="&lt;" char1="&lt;"/>
+			<!-- Operators like +=, -=, ... -->
+			<RegExpr attribute="Operator" context="#stay" String="[-&lt;&gt;=!+*/%&amp;^|]=" />
+			<!-- Single-char operators come last -->
+			<AnyChar attribute="Operator" context="#stay" String=".^\;~!*/%+-[]=&lt;&gt;&amp;|"/>
+
+			<!-- Custom names -->
+			<RegExpr attribute="Variable" String="[A-Za-z0-9_]{1,4}" context="#stay" />
+		</context>
+
+		<context name="SkipComments" attribute="Comment" lineEndContext="#stay">
+			<DetectSpaces/>
+			<Detect2Chars attribute="Comment" context="LineComment" char="/" char1="/"/>
+			<Detect2Chars attribute="Comment" context="MultilineComment" char="/" char1="*" beginRegion="Comment"/>
+		</context>
+
+		<context name="LineComment" attribute="Comment" lineEndContext="#pop" fallthroughContext="#stay">
+		</context>
+
+		<context name="MultilineComment" attribute="Comment" lineEndContext="#stay">
+			<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+		</context>
+
+		<context name="StringLiteral" attribute="StringLiteral" lineEndContext="#stay" fallthroughContext="#stay">
+			<DetectChar attribute="Operator" context="#pop" char="&quot;"/>
+			<DetectChar attribute="Special Char" context="StringLiteralEscape" char="\"/>
+		</context>
+
+		<context name="StringLiteralEscape" attribute="Special Char" lineEndContext="#pop" fallthroughContext="#pop">
+			<!-- Escape sequences -->
+			<AnyChar attribute="Special Char" String="'&quot;abfnrtv\" context="#pop"/>
+			<RegExpr attribute="Special Char" String="[0-7]{1,3}|(x[0-9A-Fa-f]{1,2})" context="#pop"/>
+		</context>
+
+		<context name="FixedList" lineEndContext="#stay" attribute="Normal">
+			<IncludeRules context="StartTerm"/>
+			<DetectChar attribute="Operator" context="#stay" char=","/>
+			<DetectChar attribute="Operator" context="#pop" char=")"/>
+		</context>
+
+		<context name="VariableList" lineEndContext="#stay" attribute="Normal">
+			<IncludeRules context="StartTerm"/>
+			<DetectChar attribute="Operator" context="#stay" char=","/>
+			<DetectChar attribute="Operator" context="#pop" char="}" endRegion="variableList"/>
+		</context>
+	</contexts>
+
+	<itemDatas>
+		<itemData name="Normal" defStyleNum="dsNormal" spellChecking="false"/>
+		<itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+		<itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
+		<itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+		<itemData name="Non-Decimal Integer" defStyleNum="dsBaseN" spellChecking="false"/>
+		<itemData name="StringLiteral" defStyleNum="dsString"/>
+		<itemData name="Comment" defStyleNum="dsComment"/>
+		<itemData name="Operator" defStyleNum="dsOperator" spellChecking="false"/>
+		<itemData name="Special Char" defStyleNum="dsSpecialChar" spellChecking="false"/>
+	</itemDatas>
+</highlighting>
+<general>
+	<keywords casesensitive="false"/>
+	<comments>
+		<comment name="singleLine" start="//"/>
+		<comment name="multiLine" start="/*" end="*/" region="Comment"/>
+	</comments>
+</general>
+</language>

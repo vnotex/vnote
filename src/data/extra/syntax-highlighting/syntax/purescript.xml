@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="PureScript" version="1" kateversion="5.53" section="Sources" extensions="*.purs" author="Gleb Popov (6yearold@gmail.com)" license="BSD3" indenter="haskell" style="haskell">
+  <highlighting>
+  <contexts>
+    <context attribute="Normal" lineEndContext="#stay" name="code">
+      <IncludeRules context="code##Haskell" />
+    </context>
+  </contexts>
+  <itemDatas>
+    <itemData name="Normal"           defStyleNum="dsNormal"   spellChecking="false" />
+  </itemDatas>
+  </highlighting>
+  <general>
+    <folding indentationsensitive="1"/>
+    <comments>
+      <comment name="singleLine" start="--" />
+      <comment name="multiLine" start="{-" end="-}" />
+    </comments>
+    <keywords casesensitive="1" />
+</general>
+</language>

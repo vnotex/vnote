@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- Author: Werner Braun <wb@o3-software.de> -->
 <!-- 29.05.2003 wb mailed to the kate-team (cullmann) -->
 <!-- 23.05.2003 wb added *.bro File-Type for GPCP Browser output-->
@@ -10,7 +10,7 @@
 <!-- 19.04.2003 wb Some more Enhancements -->
 <!-- 18.04.2003 wb Enhancenment for Maior / Minor Comments and Full / ReadOnly Exports, Folds for Procedures, Records, Comments -->
 <!-- 17.04.2003 wb Enhancements for Relation and Operators -->
-<language name="Component-Pascal" version="2" kateversion="2.3" section="Sources" extensions="*.cp;*.bro" mimetype="text/x-component-pascal" author="Werner Braun (wb@o3-software.de)" license="">
+<language name="Component-Pascal" version="5" kateversion="5.0" section="Sources" extensions="*.cp;*.bro" mimetype="text/x-component-pascal" author="Werner Braun (wb@o3-software.de)" license="">
 	<highlighting>
 		<list name="keywords">
 			<item>BEGIN</item>
@@ -103,8 +103,8 @@
 				<DetectChar attribute="String" context="String2" char="'" />
 				<RegExpr attribute="Keyword" context="#stay" String="PROCEDURE\s" beginRegion="Proc"/>
 				<RegExpr attribute="Normal Text" context="#stay" String="ABSTRACT;|EMPTY;|END\s*[A-Za-z][A-Za-z0-9_]*\;" endRegion="Proc"/>
-				<RegExpr attribute="Type" context="#stay" String="RECORD" beginRegion="Rec"/>
-				<RegExpr attribute="Keyword" context="#stay" String="END" endRegion="Rec"/>
+				<StringDetect attribute="Type" context="#stay" String="RECORD" beginRegion="Rec"/>
+				<StringDetect attribute="Keyword" context="#stay" String="END" endRegion="Rec"/>
 				<StringDetect attribute="MemAlloc" context="#stay" String="NEW"/>
 				<keyword attribute="Keyword" context="#stay" String="keywords"/>
 				<keyword attribute="Exit" context="#stay" String="exits"/>
@@ -123,17 +123,21 @@
 			<context attribute="CommentMaior" lineEndContext="#stay" name="Comment1">
 				<Detect2Chars attribute="CommentMaior" context="#pop" char="*" char1=")" endRegion="Comment"/>
 				<Detect2Chars attribute="CommentMinor" context="CommentN" char="(" char1="*"/>
+				<IncludeRules context="##Comments"/>
 			</context>
 			<context attribute="CommentMinor" lineEndContext="#stay" name="Comment2">
 				<Detect2Chars attribute="CommentMinor" context="#pop" char="*" char1=")" endRegion="Comment"/>
 				<Detect2Chars attribute="CommentMinor" context="CommentN" char="(" char1="*"/>
+				<IncludeRules context="##Comments"/>
 			</context>
 			<context attribute="CommentMinor" lineEndContext="#stay" name="CommentN">
 				<Detect2Chars attribute="CommentMinor" context="#pop" char="*" char1=")"/>
 				<Detect2Chars attribute="CommentMinor" context="CommentN2" char="(" char1="*"/>
+				<IncludeRules context="##Comments"/>
 			</context>
 			<context attribute="CommentMinor" lineEndContext="#stay" name="CommentN2">
 				<Detect2Chars attribute="CommentMinor" context="#pop" char="*" char1=")"/>
+				<IncludeRules context="##Comments"/>
 			</context>
 			<context attribute="String" lineEndContext="#stay" name="String1">
 				<DetectChar attribute="String" context="#pop" char="&quot;"/>
@@ -166,7 +170,8 @@
 	<general>
 		<keywords casesensitive="1" />
 		<comments>
-			<comment name="multiLine" start="(*" end="*)" />
+			<comment name="multiLine" start="(*" end="*)" region="Comment" />
 		</comments>
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

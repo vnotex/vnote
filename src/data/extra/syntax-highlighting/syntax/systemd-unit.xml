@@ -1,0 +1,2546 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Created for systemd version 261. -->
+<!DOCTYPE language [
+<!ENTITY alp "A-Za-z">
+<!ENTITY aln "&alp;0-9">
+<!ENTITY end "(?:\s+|$)">
+<!ENTITY escaped "\\x[0-9a-f]{2}">
+<!ENTITY hex "0-9A-Fa-f">
+<!ENTITY specifier "&#x0025;[&#x0025;ABCDEGHIJLMNPSTUVWYabdfghijlmnopqstuvwy]">
+<!ENTITY name "(?:[-\w]|&specifier;)+@?(?:[-.@\:\w]|&escaped;|&specifier;)*">
+<!ENTITY extension "automount|device|mount|path|service|slice|socket|swap|target|timer">
+<!ENTITY unit "&name;\.(?:&extension;)&end;">
+<!ENTITY tsp_year "years?|y">
+<!ENTITY tsp_month "months?|M">
+<!ENTITY tsp_week "weeks?|w">
+<!ENTITY tsp_day "days?|d">
+<!ENTITY tsp_hour "hours?|hr?">
+<!ENTITY tsp_min "minutes?|min|m">
+<!ENTITY tsp_sec "seconds?|sec|s">
+<!ENTITY tsp_msec "msec|ms">
+<!-- Accept both UTF-8 "Micro Sign" and UTF-8 "Greek Small Letter Mu" for micro seconds. -->
+<!ENTITY tsp_usec "usec|[u&#181;&#956;]s">
+<!ENTITY tsp_unit "&tsp_year;|&tsp_month;|&tsp_week;|&tsp_day;|&tsp_hour;|&tsp_sec;|&tsp_msec;|&tsp_usec;|&tsp_min;">
+<!ENTITY tsp "\d+(?:\.\d+)?\h*(?=(&tsp_unit;)?)">
+]>
+<language version="21" author="Andreas Gratzer" extensions="*.automount;*.device;*.mount;*.path;*.service;*.slice;*.socket;*.swap;*.target;*.timer" kateversion="5.0" license="MIT" mimetype="text/x-systemd-unit" name="systemd unit" section="Configuration">
+  <highlighting>
+    <list name="boolean">
+      <item>true</item>
+      <item>yes</item>
+      <item>on</item>
+      <item>t</item>
+      <item>y</item>
+      <item>1</item>
+      <item>false</item>
+      <item>no</item>
+      <item>off</item>
+      <item>f</item>
+      <item>n</item>
+      <item>0</item>
+    </list>
+    <list name="action">
+      <item>soft-reboot-force</item>
+      <item>soft-reboot</item>
+      <item>reboot-immediate</item>
+      <item>reboot-force</item>
+      <item>reboot</item>
+      <item>poweroff-immediate</item>
+      <item>poweroff-force</item>
+      <item>poweroff</item>
+      <item>none</item>
+      <item>kexec-force</item>
+      <item>kexec</item>
+      <item>halt-immediate</item>
+      <item>halt-force</item>
+      <item>halt</item>
+      <item>exit-force</item>
+      <item>exit</item>
+    </list>
+    <list name="address family">
+      <item>AF_XDP</item>
+      <item>AF_X25</item>
+      <item>AF_WANPIPE</item>
+      <item>AF_VSOCK</item>
+      <item>AF_UNSPEC</item>
+      <item>AF_UNIX</item>
+      <item>AF_TIPC</item>
+      <item>AF_SNA</item>
+      <item>AF_SMC</item>
+      <item>AF_SECURITY</item>
+      <item>AF_RXRPC</item>
+      <item>AF_ROUTE</item>
+      <item>AF_ROSE</item>
+      <item>AF_RDS</item>
+      <item>AF_QIPCRTR</item>
+      <item>AF_PPPOX</item>
+      <item>AF_PHONET</item>
+      <item>AF_PACKET</item>
+      <item>AF_NFC</item>
+      <item>AF_NETROM</item>
+      <item>AF_NETLINK</item>
+      <item>AF_NETBEUI</item>
+      <item>AF_MPLS</item>
+      <item>AF_MCTP</item>
+      <item>AF_MAX</item>
+      <item>AF_LOCAL</item>
+      <item>AF_LLC</item>
+      <item>AF_KEY</item>
+      <item>AF_KCM</item>
+      <item>AF_IUCV</item>
+      <item>AF_ISDN</item>
+      <item>AF_IRDA</item>
+      <item>AF_IPX</item>
+      <item>AF_INET6</item>
+      <item>AF_INET</item>
+      <item>AF_IEEE802154</item>
+      <item>AF_IB</item>
+      <item>AF_FILE</item>
+      <item>AF_ECONET</item>
+      <item>AF_DECnet</item>
+      <item>AF_CAN</item>
+      <item>AF_CAIF</item>
+      <item>AF_BRIDGE</item>
+      <item>AF_BLUETOOTH</item>
+      <item>AF_AX25</item>
+      <item>AF_ATMSVC</item>
+      <item>AF_ATMPVC</item>
+      <item>AF_ASH</item>
+      <item>AF_APPLETALK</item>
+      <item>AF_ALG</item>
+    </list>
+    <list name="architecture">
+      <item>x86-64</item>
+      <item>x86</item>
+      <item>tilegx</item>
+      <item>sparc64</item>
+      <item>sparc</item>
+      <item>sh64</item>
+      <item>sh</item>
+      <item>s390x</item>
+      <item>s390</item>
+      <item>ppc64-le</item>
+      <item>ppc64</item>
+      <item>ppc-le</item>
+      <item>ppc</item>
+      <item>parisc64</item>
+      <item>parisc</item>
+      <item>native</item>
+      <item>mips64-le</item>
+      <item>mips64</item>
+      <item>mips-le</item>
+      <item>mips</item>
+      <item>m68k</item>
+      <item>ia64</item>
+      <item>cris</item>
+      <item>arm64-be</item>
+      <item>arm64</item>
+      <item>arm-be</item>
+      <item>arm</item>
+      <item>arc-be</item>
+      <item>arc</item>
+      <item>alpha</item>
+    </list>
+    <list name="bpf delegate attachment">
+      <item>BPFXdpDevmap</item>
+      <item>BPFXdpCpumap</item>
+      <item>BPFXdp</item>
+      <item>BPFTraceUprobeSession</item>
+      <item>BPFTraceUprobeMulti</item>
+      <item>BPFTraceRawTp</item>
+      <item>BPFTraceKprobeSession</item>
+      <item>BPFTraceKprobeMulti</item>
+      <item>BPFTraceIter</item>
+      <item>BPFTraceFsession</item>
+      <item>BPFTraceFexit</item>
+      <item>BPFTraceFentry</item>
+      <item>BPFTcxIngress</item>
+      <item>BPFTcxEgress</item>
+      <item>BPFStructOps</item>
+      <item>BPFSkSkbVerdict</item>
+      <item>BPFSkSkbStreamVerdict</item>
+      <item>BPFSkSkbStreamParser</item>
+      <item>BPFSkReuseportSelectOrMigrate</item>
+      <item>BPFSkReuseportSelect</item>
+      <item>BPFSkMsgVerdict</item>
+      <item>BPFSkLookup</item>
+      <item>BPFPerfEvent</item>
+      <item>BPFNetkitPrimary</item>
+      <item>BPFNetkitPeer</item>
+      <item>BPFNetfilter</item>
+      <item>BPFModifyReturn</item>
+      <item>BPFLsmMac</item>
+      <item>BPFLsmCgroup</item>
+      <item>BPFLircMode2</item>
+      <item>BPFFlowDissector</item>
+      <item>BPFCgroupUnixSendmsg</item>
+      <item>BPFCgroupUnixRecvmsg</item>
+      <item>BPFCgroupUnixGetsockname</item>
+      <item>BPFCgroupUnixGetpeername</item>
+      <item>BPFCgroupUnixConnect</item>
+      <item>BPFCgroupUdp6Sendmsg</item>
+      <item>BPFCgroupUdp6Recvmsg</item>
+      <item>BPFCgroupUdp4Sendmsg</item>
+      <item>BPFCgroupUdp4Recvmsg</item>
+      <item>BPFCgroupSysctl</item>
+      <item>BPFCgroupSockOps</item>
+      <item>BPFCgroupSetsockopt</item>
+      <item>BPFCgroupInetSockRelease</item>
+      <item>BPFCgroupInetSockCreate</item>
+      <item>BPFCgroupInetIngress</item>
+      <item>BPFCgroupInetEgress</item>
+      <item>BPFCgroupInet6PostBind</item>
+      <item>BPFCgroupInet6Getsockname</item>
+      <item>BPFCgroupInet6Getpeername</item>
+      <item>BPFCgroupInet6Connect</item>
+      <item>BPFCgroupInet6Bind</item>
+      <item>BPFCgroupInet4PostBind</item>
+      <item>BPFCgroupInet4Getsockname</item>
+      <item>BPFCgroupInet4Getpeername</item>
+      <item>BPFCgroupInet4Connect</item>
+      <item>BPFCgroupInet4Bind</item>
+      <item>BPFCgroupGetsockopt</item>
+      <item>BPFCgroupDevice</item>
+    </list>
+    <list name="bpf delegate command">
+      <item>BPFTokenCreate</item>
+      <item>BPFTaskFdQuery</item>
+      <item>BPFRawTracepointOpen</item>
+      <item>BPFProgTestRun</item>
+      <item>BPFProgStreamReadByFd</item>
+      <item>BPFProgQuery</item>
+      <item>BPFProgLoad</item>
+      <item>BPFProgGetNextId</item>
+      <item>BPFProgGetFdById</item>
+      <item>BPFProgDetach</item>
+      <item>BPFProgBindMap</item>
+      <item>BPFProgAttach</item>
+      <item>BPFProgAssocStructOps</item>
+      <item>BPFObjPin</item>
+      <item>BPFObjGetInfoByFd</item>
+      <item>BPFObjGet</item>
+      <item>BPFMapUpdateElem</item>
+      <item>BPFMapUpdateBatch</item>
+      <item>BPFMapLookupElem</item>
+      <item>BPFMapLookupBatch</item>
+      <item>BPFMapLookupAndDeleteElem</item>
+      <item>BPFMapLookupAndDeleteBatch</item>
+      <item>BPFMapGetNextKey</item>
+      <item>BPFMapGetNextId</item>
+      <item>BPFMapGetFdById</item>
+      <item>BPFMapFreeze</item>
+      <item>BPFMapDeleteElem</item>
+      <item>BPFMapDeleteBatch</item>
+      <item>BPFMapCreate</item>
+      <item>BPFLinkUpdate</item>
+      <item>BPFLinkGetNextId</item>
+      <item>BPFLinkGetFdById</item>
+      <item>BPFLinkDetach</item>
+      <item>BPFLinkCreate</item>
+      <item>BPFIterCreate</item>
+      <item>BPFEnableStats</item>
+      <item>BPFBtfLoad</item>
+      <item>BPFBtfGetNextId</item>
+      <item>BPFBtfGetFdById</item>
+    </list>
+    <list name="bpf delegate map">
+      <item>BPFMapTypeXskmap</item>
+      <item>BPFMapTypeUserRingbuf</item>
+      <item>BPFMapTypeUnspec</item>
+      <item>BPFMapTypeTaskStorage</item>
+      <item>BPFMapTypeStructOps</item>
+      <item>BPFMapTypeStackTrace</item>
+      <item>BPFMapTypeStack</item>
+      <item>BPFMapTypeSockmap</item>
+      <item>BPFMapTypeSockhash</item>
+      <item>BPFMapTypeSkStorage</item>
+      <item>BPFMapTypeRingbuf</item>
+      <item>BPFMapTypeReuseportSockarray</item>
+      <item>BPFMapTypeQueue</item>
+      <item>BPFMapTypeProgArray</item>
+      <item>BPFMapTypePerfEventArray</item>
+      <item>BPFMapTypePercpuHash</item>
+      <item>BPFMapTypePercpuCgroupStorageDeprecated</item>
+      <item>BPFMapTypePercpuArray</item>
+      <item>BPFMapTypeLruPercpuHash</item>
+      <item>BPFMapTypeLruHash</item>
+      <item>BPFMapTypeLpmTrie</item>
+      <item>BPFMapTypeInsnArray</item>
+      <item>BPFMapTypeInodeStorage</item>
+      <item>BPFMapTypeHashOfMaps</item>
+      <item>BPFMapTypeHash</item>
+      <item>BPFMapTypeDevmapHash</item>
+      <item>BPFMapTypeDevmap</item>
+      <item>BPFMapTypeCpumap</item>
+      <item>BPFMapTypeCgrpStorage</item>
+      <item>BPFMapTypeCgroupStorageDeprecated</item>
+      <item>BPFMapTypeCgroupArray</item>
+      <item>BPFMapTypeBloomFilter</item>
+      <item>BPFMapTypeArrayOfMaps</item>
+      <item>BPFMapTypeArray</item>
+      <item>BPFMapTypeArena</item>
+    </list>
+    <list name="bpf delegate program">
+      <item>BPFProgTypeXdp</item>
+      <item>BPFProgTypeUnspec</item>
+      <item>BPFProgTypeTracing</item>
+      <item>BPFProgTypeTracepoint</item>
+      <item>BPFProgTypeStructOps</item>
+      <item>BPFProgTypeSocketFilter</item>
+      <item>BPFProgTypeSockOps</item>
+      <item>BPFProgTypeSkSkb</item>
+      <item>BPFProgTypeSkReuseport</item>
+      <item>BPFProgTypeSkMsg</item>
+      <item>BPFProgTypeSkLookup</item>
+      <item>BPFProgTypeSchedCls</item>
+      <item>BPFProgTypeSchedAct</item>
+      <item>BPFProgTypeRawTracepointWritable</item>
+      <item>BPFProgTypeRawTracepoint</item>
+      <item>BPFProgTypePerfEvent</item>
+      <item>BPFProgTypeNetfilter</item>
+      <item>BPFProgTypeLwtXmit</item>
+      <item>BPFProgTypeLwtSeg6local</item>
+      <item>BPFProgTypeLwtOut</item>
+      <item>BPFProgTypeLwtIn</item>
+      <item>BPFProgTypeLsm</item>
+      <item>BPFProgTypeLircMode2</item>
+      <item>BPFProgTypeKprobe</item>
+      <item>BPFProgTypeFlowDissector</item>
+      <item>BPFProgTypeExt</item>
+      <item>BPFProgTypeCgroupSysctl</item>
+      <item>BPFProgTypeCgroupSockopt</item>
+      <item>BPFProgTypeCgroupSockAddr</item>
+      <item>BPFProgTypeCgroupSock</item>
+      <item>BPFProgTypeCgroupSkb</item>
+      <item>BPFProgTypeCgroupDevice</item>
+    </list>
+    <list name="bpf program type">
+      <item>sysctl</item>
+      <item>sock_ops</item>
+      <item>sock_create</item>
+      <item>setsockopt</item>
+      <item>sendmsg6</item>
+      <item>sendmsg4</item>
+      <item>recvmsg6</item>
+      <item>recvmsg4</item>
+      <item>post_bind6</item>
+      <item>post_bind4</item>
+      <item>ingress</item>
+      <item>getsockopt</item>
+      <item>egress</item>
+      <item>device</item>
+      <item>connect6</item>
+      <item>connect4</item>
+      <item>bind6</item>
+      <item>bind4</item>
+    </list>
+    <list name="calendar">
+      <item>yearly</item>
+      <item>weekly</item>
+      <item>semiannually</item>
+      <item>quarterly</item>
+      <item>monthly</item>
+      <item>minutely</item>
+      <item>hourly</item>
+      <item>daily</item>
+    </list>
+    <list name="capability">
+      <item>CAP_WAKE_ALARM</item>
+      <item>CAP_SYS_TTY_CONFIG</item>
+      <item>CAP_SYS_TIME</item>
+      <item>CAP_SYS_RESOURCE</item>
+      <item>CAP_SYS_RAWIO</item>
+      <item>CAP_SYS_PTRACE</item>
+      <item>CAP_SYS_PACCT</item>
+      <item>CAP_SYS_NICE</item>
+      <item>CAP_SYS_MODULE</item>
+      <item>CAP_SYS_CHROOT</item>
+      <item>CAP_SYS_BOOT</item>
+      <item>CAP_SYS_ADMIN</item>
+      <item>CAP_SYSLOG</item>
+      <item>CAP_SETUID</item>
+      <item>CAP_SETPCAP</item>
+      <item>CAP_SETGID</item>
+      <item>CAP_SETFCAP</item>
+      <item>CAP_PERFMON</item>
+      <item>CAP_NET_RAW</item>
+      <item>CAP_NET_BROADCAST</item>
+      <item>CAP_NET_BIND_SERVICE</item>
+      <item>CAP_NET_ADMIN</item>
+      <item>CAP_MKNOD</item>
+      <item>CAP_MAC_OVERRIDE</item>
+      <item>CAP_MAC_ADMIN</item>
+      <item>CAP_LINUX_IMMUTABLE</item>
+      <item>CAP_LEASE</item>
+      <item>CAP_KILL</item>
+      <item>CAP_IPC_OWNER</item>
+      <item>CAP_IPC_LOCK</item>
+      <item>CAP_FSETID</item>
+      <item>CAP_FOWNER</item>
+      <item>CAP_DAC_READ_SEARCH</item>
+      <item>CAP_DAC_OVERRIDE</item>
+      <item>CAP_CHOWN</item>
+      <item>CAP_CHECKPOINT_RESTORE</item>
+      <item>CAP_BPF</item>
+      <item>CAP_BLOCK_SUSPEND</item>
+      <item>CAP_AUDIT_WRITE</item>
+      <item>CAP_AUDIT_READ</item>
+      <item>CAP_AUDIT_CONTROL</item>
+    </list>
+    <list name="collect mode">
+      <item>inactive-or-failed</item>
+      <item>inactive</item>
+      <item>failed</item>
+    </list>
+    <list name="controller">
+      <item>pids</item>
+      <item>memory</item>
+      <item>io</item>
+      <item>cpuset</item>
+      <item>cpu</item>
+      <item>bpf-socket-bind</item>
+      <item>bpf-restrict-network-interfaces</item>
+      <item>bpf-foreign</item>
+      <item>bpf-firewall</item>
+      <item>bpf-devices</item>
+      <item>bpf-bind-network-interface</item>
+    </list>
+    <list name="controller cg">
+      <item>v2</item>
+      <item>v1</item>
+      <item>pids</item>
+      <item>memory</item>
+      <item>io</item>
+      <item>cpu</item>
+    </list>
+    <list name="cpu feature">
+      <item>xsave</item>
+      <item>vme</item>
+      <item>tsc</item>
+      <item>syscall</item>
+      <item>ssse3</item>
+      <item>sse4_2</item>
+      <item>sse4_1</item>
+      <item>sse2</item>
+      <item>sse</item>
+      <item>sha_ni</item>
+      <item>sep</item>
+      <item>rdtscp</item>
+      <item>rdseed</item>
+      <item>rdrand</item>
+      <item>pse36</item>
+      <item>pse</item>
+      <item>popcnt</item>
+      <item>pni</item>
+      <item>pge</item>
+      <item>pclmul</item>
+      <item>pat</item>
+      <item>pae</item>
+      <item>osxsave</item>
+      <item>mtrr</item>
+      <item>msr</item>
+      <item>movbe</item>
+      <item>monitor</item>
+      <item>mmx</item>
+      <item>mce</item>
+      <item>mca</item>
+      <item>lm</item>
+      <item>lahf_lm</item>
+      <item>ht</item>
+      <item>fxsr</item>
+      <item>fpu</item>
+      <item>fma3</item>
+      <item>f16c</item>
+      <item>de</item>
+      <item>cx8</item>
+      <item>cx16</item>
+      <item>constant_tsc</item>
+      <item>cmov</item>
+      <item>clflush</item>
+      <item>bmi2</item>
+      <item>bmi1</item>
+      <item>avx2</item>
+      <item>avx</item>
+      <item>apic</item>
+      <item>aes</item>
+      <item>adx</item>
+      <item>abm</item>
+    </list>
+    <list name="cpu scheduling policy">
+      <item>rr</item>
+      <item>other</item>
+      <item>idle</item>
+      <item>fifo</item>
+      <item>ext</item>
+      <item>batch</item>
+    </list>
+    <list name="cpuset partition type">
+      <item>root</item>
+      <item>member</item>
+      <item>isolated</item>
+    </list>
+    <list name="device policy">
+      <item>strict</item>
+      <item>closed</item>
+      <item>auto</item>
+    </list>
+    <list name="errno">
+      <item>log</item>
+      <item>kill</item>
+      <item>EXFULL</item>
+      <item>EXDEV</item>
+      <item>EWOULDBLOCK</item>
+      <item>EUSERS</item>
+      <item>EUNATCH</item>
+      <item>EUCLEAN</item>
+      <item>ETXTBSY</item>
+      <item>ETOOMANYREFS</item>
+      <item>ETIMEDOUT</item>
+      <item>ETIME</item>
+      <item>ESTRPIPE</item>
+      <item>ESTALE</item>
+      <item>ESRCH</item>
+      <item>ESPIPE</item>
+      <item>ESOCKTNOSUPPORT</item>
+      <item>ESHUTDOWN</item>
+      <item>EROFS</item>
+      <item>ERFKILL</item>
+      <item>ERESTART</item>
+      <item>EREMOTEIO</item>
+      <item>EREMOTE</item>
+      <item>EREMCHG</item>
+      <item>ERANGE</item>
+      <item>EPROTOTYPE</item>
+      <item>EPROTONOSUPPORT</item>
+      <item>EPROTO</item>
+      <item>EPIPE</item>
+      <item>EPFNOSUPPORT</item>
+      <item>EPERM</item>
+      <item>EOWNERDEAD</item>
+      <item>EOVERFLOW</item>
+      <item>EOPNOTSUPP</item>
+      <item>ENXIO</item>
+      <item>ENOTUNIQ</item>
+      <item>ENOTTY</item>
+      <item>ENOTSUP</item>
+      <item>ENOTSOCK</item>
+      <item>ENOTRECOVERABLE</item>
+      <item>ENOTEMPTY</item>
+      <item>ENOTDIR</item>
+      <item>ENOTCONN</item>
+      <item>ENOTBLK</item>
+      <item>ENOSYS</item>
+      <item>ENOSTR</item>
+      <item>ENOSR</item>
+      <item>ENOSPC</item>
+      <item>ENOPROTOOPT</item>
+      <item>ENOPKG</item>
+      <item>ENONET</item>
+      <item>ENOMSG</item>
+      <item>ENOMEM</item>
+      <item>ENOMEDIUM</item>
+      <item>ENOLINK</item>
+      <item>ENOLCK</item>
+      <item>ENOKEY</item>
+      <item>ENOEXEC</item>
+      <item>ENOENT</item>
+      <item>ENODEV</item>
+      <item>ENODATA</item>
+      <item>ENOBUFS</item>
+      <item>ENOANO</item>
+      <item>ENFILE</item>
+      <item>ENETUNREACH</item>
+      <item>ENETRESET</item>
+      <item>ENETDOWN</item>
+      <item>ENAMETOOLONG</item>
+      <item>EMULTIHOP</item>
+      <item>EMSGSIZE</item>
+      <item>EMLINK</item>
+      <item>EMFILE</item>
+      <item>EMEDIUMTYPE</item>
+      <item>ELOOP</item>
+      <item>ELNRNG</item>
+      <item>ELIBSCN</item>
+      <item>ELIBMAX</item>
+      <item>ELIBEXEC</item>
+      <item>ELIBBAD</item>
+      <item>ELIBACC</item>
+      <item>EL3RST</item>
+      <item>EL3HLT</item>
+      <item>EL2NSYNC</item>
+      <item>EL2HLT</item>
+      <item>EKEYREVOKED</item>
+      <item>EKEYREJECTED</item>
+      <item>EKEYEXPIRED</item>
+      <item>EISNAM</item>
+      <item>EISDIR</item>
+      <item>EISCONN</item>
+      <item>EIO</item>
+      <item>EINVAL</item>
+      <item>EINTR</item>
+      <item>EINPROGRESS</item>
+      <item>EILSEQ</item>
+      <item>EIDRM</item>
+      <item>EHWPOISON</item>
+      <item>EHOSTUNREACH</item>
+      <item>EHOSTDOWN</item>
+      <item>EFBIG</item>
+      <item>EFAULT</item>
+      <item>EEXIST</item>
+      <item>EDQUOT</item>
+      <item>EDOM</item>
+      <item>EDESTADDRREQ</item>
+      <item>EDEADLOCK</item>
+      <item>EDEADLK</item>
+      <item>ECONNRESET</item>
+      <item>ECONNREFUSED</item>
+      <item>ECONNABORTED</item>
+      <item>ECOMM</item>
+      <item>ECHRNG</item>
+      <item>ECHILD</item>
+      <item>ECANCELED</item>
+      <item>EBUSY</item>
+      <item>EBADSLT</item>
+      <item>EBADRQC</item>
+      <item>EBADR</item>
+      <item>EBADMSG</item>
+      <item>EBADFD</item>
+      <item>EBADF</item>
+      <item>EBADE</item>
+      <item>EALREADY</item>
+      <item>EAGAIN</item>
+      <item>EAFNOSUPPORT</item>
+      <item>EADDRNOTAVAIL</item>
+      <item>EADDRINUSE</item>
+      <item>EACCES</item>
+    </list>
+    <list name="exit status">
+      <item>USER</item>
+      <item>USAGE</item>
+      <item>UNAVAILABLE</item>
+      <item>TIMERSLACK</item>
+      <item>TEMPFAIL</item>
+      <item>SUCCESS</item>
+      <item>STDOUT</item>
+      <item>STDIN</item>
+      <item>STDERR</item>
+      <item>STATE_DIRECTORY</item>
+      <item>SOFTWARE</item>
+      <item>SMACK_PROCESS_LABEL</item>
+      <item>SIGNAL_MASK</item>
+      <item>SETSID</item>
+      <item>SETSCHEDULER</item>
+      <item>SELINUX_CONTEXT</item>
+      <item>SECUREBITS</item>
+      <item>SECCOMP</item>
+      <item>RUNTIME_DIRECTORY</item>
+      <item>PROTOCOL</item>
+      <item>PERSONALITY</item>
+      <item>PAM</item>
+      <item>OSFILE</item>
+      <item>OSERR</item>
+      <item>OOM_ADJUST</item>
+      <item>NUMA_POLICY</item>
+      <item>NO_NEW_PRIVILEGES</item>
+      <item>NOUSER</item>
+      <item>NOTRUNNING</item>
+      <item>NOTINSTALLED</item>
+      <item>NOTIMPLEMENTED</item>
+      <item>NOTCONFIGURED</item>
+      <item>NOPERMISSION</item>
+      <item>NOPERM</item>
+      <item>NOINPUT</item>
+      <item>NOHOST</item>
+      <item>NICE</item>
+      <item>NETWORK</item>
+      <item>NAMESPACE</item>
+      <item>MEMORY_THP</item>
+      <item>MEMORY</item>
+      <item>LOGS_DIRECTORY</item>
+      <item>LIMITS</item>
+      <item>KSM</item>
+      <item>KEYRING</item>
+      <item>IOPRIO</item>
+      <item>IOERR</item>
+      <item>INVALIDARGUMENT</item>
+      <item>GROUP</item>
+      <item>FDS</item>
+      <item>FAILURE</item>
+      <item>EXEC</item>
+      <item>EXCEPTION</item>
+      <item>DATAERR</item>
+      <item>CREDENTIALS</item>
+      <item>CPUAFFINITY</item>
+      <item>CONFIRM</item>
+      <item>CONFIGURATION_DIRECTORY</item>
+      <item>CONFIG</item>
+      <item>CHROOT</item>
+      <item>CHOWN</item>
+      <item>CHDIR</item>
+      <item>CGROUP</item>
+      <item>CAPABILITIES</item>
+      <item>CANTCREAT</item>
+      <item>CACHE_DIRECTORY</item>
+      <item>BPF</item>
+      <item>APPARMOR</item>
+      <item>ADDRESS_FAMILIES</item>
+    </list>
+    <list name="exit type">
+      <item>main</item>
+      <item>cgroup</item>
+    </list>
+    <list name="failure mode">
+      <item>terminate</item>
+      <item>kill</item>
+      <item>abort</item>
+    </list>
+    <list name="fd store preserve">
+      <item>yes</item>
+      <item>restart</item>
+      <item>on-success</item>
+      <item>no</item>
+    </list>
+    <list name="fs set">
+      <item>@temporary</item>
+      <item>@privileged-api</item>
+      <item>@network</item>
+      <item>@known</item>
+      <item>@historical-block</item>
+      <item>@common-block</item>
+      <item>@basic-api</item>
+      <item>@auxiliary-api</item>
+    </list>
+    <list name="fs type">
+      <item>xfs</item>
+      <item>virtiofs</item>
+      <item>vfat</item>
+      <item>udf</item>
+      <item>tracefs</item>
+      <item>tmpfs</item>
+      <item>proc</item>
+      <item>overlay</item>
+      <item>ocfs2</item>
+      <item>ntfs3</item>
+      <item>ntfs</item>
+      <item>nilfs2</item>
+      <item>nfs</item>
+      <item>msdos</item>
+      <item>mqueue</item>
+      <item>jfs</item>
+      <item>iso9660</item>
+      <item>hugetlbfs</item>
+      <item>gfs2</item>
+      <item>fusectl</item>
+      <item>fuse</item>
+      <item>f2fs</item>
+      <item>ext4</item>
+      <item>ext3</item>
+      <item>ext2</item>
+      <item>exfat</item>
+      <item>efivarfs</item>
+      <item>devtmpfs</item>
+      <item>debugfs</item>
+      <item>configfs</item>
+      <item>btrfs</item>
+      <item>binfmt_misc</item>
+      <item>bcachefs</item>
+    </list>
+    <list name="io scheduling class">
+      <item>realtime</item>
+      <item>idle</item>
+      <item>best-effort</item>
+    </list>
+    <list name="ip address name">
+      <item>multicast</item>
+      <item>localhost</item>
+      <item>link-local</item>
+      <item>any</item>
+    </list>
+    <list name="ip bind">
+      <item>ipv6-only</item>
+      <item>default</item>
+      <item>both</item>
+    </list>
+    <list name="ip tos">
+      <item>throughput</item>
+      <item>reliability</item>
+      <item>low-delay</item>
+      <item>low-cost</item>
+    </list>
+    <list name="job mode">
+      <item>replace-irreversibly</item>
+      <item>replace</item>
+      <item>lenient</item>
+      <item>isolate</item>
+      <item>ignore-requirements</item>
+      <item>ignore-dependencies</item>
+      <item>flush</item>
+      <item>fail</item>
+    </list>
+    <list name="keyring mode">
+      <item>shared</item>
+      <item>private</item>
+      <item>inherit</item>
+    </list>
+    <list name="kill mode">
+      <item>process</item>
+      <item>none</item>
+      <item>mixed</item>
+      <item>control-group</item>
+    </list>
+    <list name="log facility">
+      <item>uucp</item>
+      <item>user</item>
+      <item>syslog</item>
+      <item>news</item>
+      <item>mail</item>
+      <item>lpr</item>
+      <item>local7</item>
+      <item>local6</item>
+      <item>local5</item>
+      <item>local4</item>
+      <item>local3</item>
+      <item>local2</item>
+      <item>local1</item>
+      <item>local0</item>
+      <item>kern</item>
+      <item>ftp</item>
+      <item>daemon</item>
+      <item>cron</item>
+      <item>authpriv</item>
+      <item>auth</item>
+    </list>
+    <list name="log level">
+      <item>warning</item>
+      <item>notice</item>
+      <item>info</item>
+      <item>err</item>
+      <item>emerg</item>
+      <item>debug</item>
+      <item>crit</item>
+      <item>alert</item>
+    </list>
+    <list name="memory mapping">
+      <item>shared-huge</item>
+      <item>shared-file-backed</item>
+      <item>shared-dax</item>
+      <item>shared-anonymous</item>
+      <item>private-huge</item>
+      <item>private-file-backed</item>
+      <item>private-dax</item>
+      <item>private-anonymous</item>
+      <item>elf-headers</item>
+      <item>default</item>
+      <item>all</item>
+    </list>
+    <list name="memory pressure watch">
+      <item>skip</item>
+      <item>auto</item>
+    </list>
+    <list name="memory thp">
+      <item>system</item>
+      <item>madvise</item>
+      <item>inherit</item>
+      <item>disable</item>
+    </list>
+    <list name="mount flag">
+      <item>slave</item>
+      <item>shared</item>
+      <item>private</item>
+    </list>
+    <list name="namespace type">
+      <item>uts</item>
+      <item>user</item>
+      <item>time</item>
+      <item>pid</item>
+      <item>net</item>
+      <item>mnt</item>
+      <item>ipc</item>
+      <item>cgroup</item>
+    </list>
+    <list name="nft address family">
+      <item>netdev</item>
+      <item>ip6</item>
+      <item>ip</item>
+      <item>inet</item>
+      <item>bridge</item>
+      <item>arp</item>
+    </list>
+    <list name="nft source type">
+      <item>user</item>
+      <item>group</item>
+      <item>cgroup</item>
+    </list>
+    <list name="notify access">
+      <item>none</item>
+      <item>main</item>
+      <item>exec</item>
+      <item>all</item>
+    </list>
+    <list name="numa policy">
+      <item>preferred</item>
+      <item>local</item>
+      <item>interleave</item>
+      <item>default</item>
+      <item>bind</item>
+    </list>
+    <list name="oom behavior">
+      <item>kill</item>
+      <item>auto</item>
+    </list>
+    <list name="oom policy">
+      <item>stop</item>
+      <item>kill</item>
+      <item>continue</item>
+    </list>
+    <list name="oom preference">
+      <item>omit</item>
+      <item>none</item>
+      <item>avoid</item>
+    </list>
+    <list name="open file option">
+      <item>truncate</item>
+      <item>read-only</item>
+      <item>graceful</item>
+      <item>append</item>
+    </list>
+    <list name="personality">
+      <item>x86-64</item>
+      <item>x86</item>
+      <item>s390x</item>
+      <item>s390</item>
+      <item>ppc64-le</item>
+      <item>ppc64</item>
+      <item>ppc-le</item>
+      <item>ppc</item>
+      <item>arm64-be</item>
+      <item>arm64</item>
+      <item>arm-be</item>
+      <item>arm</item>
+    </list>
+    <list name="pressure watch">
+      <item>yes</item>
+      <item>skip</item>
+      <item>no</item>
+      <item>auto</item>
+    </list>
+    <list name="private tmp">
+      <item>disconnected</item>
+    </list>
+    <list name="private users">
+      <item>self</item>
+      <item>managed</item>
+      <item>identity</item>
+      <item>full</item>
+    </list>
+    <list name="proc subset">
+      <item>pid</item>
+      <item>all</item>
+    </list>
+    <list name="protect control groups">
+      <item>strict</item>
+      <item>private</item>
+    </list>
+    <list name="protect home">
+      <item>tmpfs</item>
+      <item>read-only</item>
+    </list>
+    <list name="protect system">
+      <item>strict</item>
+      <item>full</item>
+    </list>
+    <list name="refresh on reload">
+      <item>extensions</item>
+      <item>credentials</item>
+    </list>
+    <list name="restart">
+      <item>on-watchdog</item>
+      <item>on-success</item>
+      <item>on-failure</item>
+      <item>on-abort</item>
+      <item>on-abnormal</item>
+      <item>no</item>
+      <item>always</item>
+    </list>
+    <list name="restart mode">
+      <item>normal</item>
+      <item>direct</item>
+      <item>debug</item>
+    </list>
+    <list name="runtime directory preserve">
+      <item>restart</item>
+    </list>
+    <list name="secure bits">
+      <item>noroot-locked</item>
+      <item>noroot</item>
+      <item>no-setuid-fixup-locked</item>
+      <item>no-setuid-fixup</item>
+      <item>keep-caps-locked</item>
+      <item>keep-caps</item>
+    </list>
+    <list name="security">
+      <item>uefi-secureboot</item>
+      <item>tpm2</item>
+      <item>tomoyo</item>
+      <item>smack</item>
+      <item>selinux</item>
+      <item>measured-uki</item>
+      <item>measured-os</item>
+      <item>ima</item>
+      <item>cvm</item>
+      <item>audit</item>
+      <item>apparmor</item>
+    </list>
+    <list name="service type">
+      <item>simple</item>
+      <item>oneshot</item>
+      <item>notify-reload</item>
+      <item>notify</item>
+      <item>idle</item>
+      <item>forking</item>
+      <item>exec</item>
+      <item>dbus</item>
+    </list>
+    <list name="signal">
+      <item>SIGXFSZ</item>
+      <item>SIGXCPU</item>
+      <item>SIGWINCH</item>
+      <item>SIGVTALRM</item>
+      <item>SIGUSR2</item>
+      <item>SIGUSR1</item>
+      <item>SIGURG</item>
+      <item>SIGUNUSED</item>
+      <item>SIGTTOU</item>
+      <item>SIGTTIN</item>
+      <item>SIGTSTP</item>
+      <item>SIGTRAP</item>
+      <item>SIGTERM</item>
+      <item>SIGSYS</item>
+      <item>SIGSTOP</item>
+      <item>SIGSTKFLT</item>
+      <item>SIGSEGV</item>
+      <item>SIGQUIT</item>
+      <item>SIGPWR</item>
+      <item>SIGPROF</item>
+      <item>SIGPOLL</item>
+      <item>SIGPIPE</item>
+      <item>SIGLOST</item>
+      <item>SIGKILL</item>
+      <item>SIGIOT</item>
+      <item>SIGIO</item>
+      <item>SIGINT</item>
+      <item>SIGINFO</item>
+      <item>SIGILL</item>
+      <item>SIGHUP</item>
+      <item>SIGFPE</item>
+      <item>SIGEMT</item>
+      <item>SIGCONT</item>
+      <item>SIGCLD</item>
+      <item>SIGCHLD</item>
+      <item>SIGBUS</item>
+      <item>SIGALRM</item>
+      <item>SIGABRT</item>
+    </list>
+    <list name="socket protocol">
+      <item>udplite</item>
+      <item>sctp</item>
+      <item>mptcp</item>
+    </list>
+    <list name="standard input">
+      <item>tty-force</item>
+      <item>tty-fail</item>
+      <item>tty</item>
+      <item>socket</item>
+      <item>null</item>
+      <item>data</item>
+    </list>
+    <list name="standard output">
+      <item>tty</item>
+      <item>socket</item>
+      <item>null</item>
+      <item>kmsg+console</item>
+      <item>kmsg</item>
+      <item>journal+console</item>
+      <item>journal</item>
+      <item>inherit</item>
+    </list>
+    <list name="system call architecture">
+      <item>x32</item>
+      <item>native</item>
+      <item>mips64-n32</item>
+      <item>mips64-le-n32</item>
+    </list>
+    <list name="system call filter set">
+      <item>@timer</item>
+      <item>@temporary</item>
+      <item>@system-service</item>
+      <item>@sync</item>
+      <item>@swap</item>
+      <item>@signal</item>
+      <item>@setuid</item>
+      <item>@sandbox</item>
+      <item>@resources</item>
+      <item>@reboot</item>
+      <item>@raw-io</item>
+      <item>@process</item>
+      <item>@privileged-api</item>
+      <item>@privileged</item>
+      <item>@pkey</item>
+      <item>@obsolete</item>
+      <item>@network-io</item>
+      <item>@network</item>
+      <item>@mount</item>
+      <item>@module</item>
+      <item>@memlock</item>
+      <item>@known</item>
+      <item>@keyring</item>
+      <item>@ipc</item>
+      <item>@io-event</item>
+      <item>@historical-block</item>
+      <item>@file-system</item>
+      <item>@default</item>
+      <item>@debug</item>
+      <item>@cpu-emulation</item>
+      <item>@common-block</item>
+      <item>@clock</item>
+      <item>@chown</item>
+      <item>@basic-io</item>
+      <item>@basic-api</item>
+      <item>@auxiliary-api</item>
+      <item>@aio</item>
+    </list>
+    <list name="threshold time span">
+      <item>5min</item>
+      <item>1min</item>
+      <item>10sec</item>
+    </list>
+    <list name="timestamping">
+      <item>μs</item>
+      <item>µs</item>
+      <item>usec</item>
+      <item>us</item>
+      <item>off</item>
+      <item>nsec</item>
+      <item>ns</item>
+    </list>
+    <list name="utmp mode">
+      <item>user</item>
+      <item>login</item>
+      <item>init</item>
+    </list>
+    <list name="virtualization">
+      <item>zvm</item>
+      <item>xen</item>
+      <item>wsl</item>
+      <item>vmware</item>
+      <item>vm</item>
+      <item>uml</item>
+      <item>systemd-nspawn</item>
+      <item>sre</item>
+      <item>rkt</item>
+      <item>qnx</item>
+      <item>qemu</item>
+      <item>proot</item>
+      <item>private-users</item>
+      <item>powervm</item>
+      <item>pouch</item>
+      <item>podman</item>
+      <item>parallels</item>
+      <item>oracle</item>
+      <item>openvz</item>
+      <item>microsoft</item>
+      <item>lxc-libvirt</item>
+      <item>lxc</item>
+      <item>kvm</item>
+      <item>google</item>
+      <item>docker</item>
+      <item>container</item>
+      <item>bochs</item>
+      <item>bhyve</item>
+      <item>apple</item>
+      <item>amazon</item>
+      <item>acrn</item>
+    </list>
+    <list name="options automount">
+      <!-- Only options of type "text". Others are handled separately. -->
+      <item>ExtraOptions</item>
+      <item>Where</item>
+    </list>
+    <list name="options exec">
+      <!-- Only options of type "text". Others are handled separately. -->
+      <item>CacheDirectory</item>
+      <item>ConfigurationDirectory</item>
+      <item>ExecSearchPath</item>
+      <item>ExtensionDirectories</item>
+      <item>ExtensionImagePolicy</item>
+      <item>ExtensionImages</item>
+      <item>IPCNamespacePath</item>
+      <item>ImportCredential</item>
+      <item>InaccessiblePaths</item>
+      <item>LoadCredential</item>
+      <item>LoadCredentialEncrypted</item>
+      <item>LogNamespace</item>
+      <item>LogsDirectory</item>
+      <item>MountImagePolicy</item>
+      <item>MountImages</item>
+      <item>NetworkNamespacePath</item>
+      <item>PAMName</item>
+      <item>PassEnvironment</item>
+      <item>ProtectProc</item>
+      <item>ReadOnlyPaths</item>
+      <item>RootDirectory</item>
+      <item>RootHashSignature</item>
+      <item>RootImage</item>
+      <item>RootImageOptions</item>
+      <item>RootImagePolicy</item>
+      <item>RootMStack</item>
+      <item>RootVerity</item>
+      <item>RuntimeDirectory</item>
+      <item>SetCredential</item>
+      <item>SetCredentialEncrypted</item>
+      <item>StandardInputData</item>
+      <item>StandardInputText</item>
+      <item>StateDirectory</item>
+      <item>SyslogIdentifier</item>
+      <item>TTYPath</item>
+      <item>TemporaryFileSystem</item>
+      <item>UnsetEnvironment</item>
+      <item>UserNamespacePath</item>
+      <item>UtmpIdentifier</item>
+    </list>
+    <list name="options mount">
+      <!-- Only options of type "text". Others are handled separately. -->
+      <item>Options</item>
+      <item>What</item>
+      <item>Where</item>
+    </list>
+    <list name="options path">
+      <!-- Only options of type "text". Others are handled separately. -->
+      <item>DirectoryNotEmpty</item>
+      <item>PathChanged</item>
+      <item>PathExists</item>
+      <item>PathModified</item>
+    </list>
+    <list name="options resource-control">
+      <!-- Only options of type "text". Others are handled separately. -->
+      <item>BindNetworkInterface</item>
+      <item>DelegateSubgroup</item>
+      <item>DeviceAllow</item>
+      <item>IPEgressFilterPath</item>
+      <item>IPIngressFilterPath</item>
+      <item>OOMRules</item>
+    </list>
+    <list name="options service">
+      <!-- Only options of type "text". Others are handled separately. -->
+      <item>BusName</item>
+      <item>PIDFile</item>
+      <item>USBFunctionDescriptors</item>
+      <item>USBFunctionStrings</item>
+    </list>
+    <list name="options socket">
+      <!-- Only options of type "text". Others are handled separately. -->
+      <item>BindToDevice</item>
+      <item>FileDescriptorName</item>
+      <item>ListenDatagram</item>
+      <item>ListenFIFO</item>
+      <item>ListenMessageQueue</item>
+      <item>ListenNetlink</item>
+      <item>ListenSequentialPacket</item>
+      <item>ListenSpecial</item>
+      <item>ListenStream</item>
+      <item>ListenUSBFunction</item>
+      <item>SmackLabel</item>
+      <item>SmackLabelIPIn</item>
+      <item>SmackLabelIPOut</item>
+      <item>Symlinks</item>
+      <item>TCPCongestion</item>
+    </list>
+    <list name="options swap">
+      <!-- Only options of type "text". Others are handled separately. -->
+      <item>Options</item>
+      <item>What</item>
+    </list>
+    <list name="options unit">
+      <!-- Only options of type "text". Others are handled separately. -->
+      <item>AssertCredential</item>
+      <item>AssertKernelModuleLoaded</item>
+      <item>AssertVersion</item>
+      <item>ConditionCredential</item>
+      <item>ConditionKernelModuleLoaded</item>
+      <item>Description</item>
+      <item>Documentation</item>
+      <item>JobTimeoutRebootArgument</item>
+      <item>RebootArgument</item>
+      <item>RequiresMountsFor</item>
+      <item>SourcePath</item>
+      <item>WantsMountsFor</item>
+    </list>
+    <contexts>
+      <context name="start" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+      </context>
+      <!-- Contexts for Assert... and Condition... prefix. -->
+      <context name="AC architecture" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!architecture">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!architecture"/>
+      </context>
+      <context name="AC boolean" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!boolean">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!boolean"/>
+      </context>
+      <context name="AC capability" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!capability">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!capability"/>
+      </context>
+      <context name="AC cardinal" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!cardinal">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!cardinal"/>
+      </context>
+      <context name="AC cardinal KMGT" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!cardinal KMGT">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!cardinal KMGT"/>
+      </context>
+      <context name="AC controller cg" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!controller cg">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!controller cg"/>
+      </context>
+      <context name="AC cpu feature" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!cpu feature">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!cpu feature"/>
+      </context>
+      <context name="AC firmware" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!firmware">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!firmware"/>
+      </context>
+      <context name="AC group" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!group user">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!group user"/>
+      </context>
+      <context name="AC security" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!security">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!security"/>
+      </context>
+      <context name="AC text" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!text">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!text"/>
+      </context>
+      <context name="AC text *" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!text *">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!text *"/>
+      </context>
+      <context name="AC text glob" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!text glob">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!text glob"/>
+      </context>
+      <context name="AC threshold" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!threshold">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!threshold"/>
+      </context>
+      <context name="AC user" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!user @system">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!user @system"/>
+      </context>
+      <context name="AC virtualization" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!boolean virtualization">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <RegExpr String="\|?\h*(?:!(?!=))?" attribute="Prefix" context="#pop!boolean virtualization"/>
+      </context>
+      <!-- Contexts for other prefixes. -->
+      <context name="- text" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!text">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <DetectChar char="-" attribute="Prefix" context="#pop!text"/>
+      </context>
+      <context name="- working directory" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!working directory">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <DetectChar char="-" attribute="Prefix" context="#pop!working directory"/>
+      </context>
+      <context name="~ address family list" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!address family list">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <DetectChar char="~" attribute="Prefix" context="#pop!address family list"/>
+      </context>
+      <context name="~ capability list" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!capability list">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <DetectChar char="~" attribute="Prefix" context="#pop!capability list"/>
+      </context>
+      <context name="~ fs type set list" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!fs type set list">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <DetectChar char="~" attribute="Prefix" context="#pop!fs type set list"/>
+      </context>
+      <context name="~ namespace list" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!namespace list">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <DetectChar char="~" attribute="Prefix" context="#pop!namespace list"/>
+      </context>
+      <context name="~ system call filter list" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!system call filter list">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <DetectChar char="~" attribute="Prefix" context="#pop!system call filter list"/>
+      </context>
+      <context name="~ text" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!text">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <DetectChar char="~" attribute="Prefix" context="#pop!text"/>
+      </context>
+      <!-- Contexts for option value data types. -->
+      <context name="-+/path list" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="(?&lt;==|\h)(?:\+|-\+?)(?=/)" attribute="Prefix"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="action" attribute="Normal" lineEndContext="#pop">
+        <keyword String="action" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="address family list" attribute="Normal" lineEndContext="#pop">
+        <WordDetect String="none" attribute="Constant" context="#pop"/>
+        <keyword String="address family" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="architecture" attribute="Normal" lineEndContext="#pop">
+        <keyword String="architecture" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="bind list" attribute="Normal" lineEndContext="#pop">
+        <WordDetect String="norbind" attribute="Constant"/>
+        <WordDetect String="rbind" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="boolean" attribute="Normal" lineEndContext="#pop">
+        <keyword String="boolean" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="boolean virtualization" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="boolean"/>
+        <IncludeRules context="virtualization"/>
+      </context>
+      <context name="bpf delegate attachments" attribute="Normal" lineEndContext="#pop">
+        <keyword String="bpf delegate attachment" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="bpf delegate commands" attribute="Normal" lineEndContext="#pop">
+        <keyword String="bpf delegate command" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="bpf delegate maps" attribute="Normal" lineEndContext="#pop">
+        <keyword String="bpf delegate map" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="bpf delegate programs" attribute="Normal" lineEndContext="#pop">
+        <keyword String="bpf delegate program" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="bpf program" attribute="Normal" lineEndContext="#pop">
+        <keyword String="bpf program type" attribute="Constant"/>
+      </context>
+      <context name="calendar" attribute="Normal" lineEndContext="#pop">
+        <keyword String="calendar" attribute="Constant"/>
+        <!-- Keywords are set to be case-sensitive, so use case-insensitive WordDetect. -->
+        <WordDetect String="monday" insensitive="true" attribute="Constant"/>
+        <WordDetect String="mon" insensitive="true" attribute="Constant"/>
+        <WordDetect String="tuesday" insensitive="true" attribute="Constant"/>
+        <WordDetect String="tue" insensitive="true" attribute="Constant"/>
+        <WordDetect String="wednesday" insensitive="true" attribute="Constant"/>
+        <WordDetect String="wed" insensitive="true" attribute="Constant"/>
+        <WordDetect String="thursday" insensitive="true" attribute="Constant"/>
+        <WordDetect String="thu" insensitive="true" attribute="Constant"/>
+        <WordDetect String="friday" insensitive="true" attribute="Constant"/>
+        <WordDetect String="fri" insensitive="true" attribute="Constant"/>
+        <WordDetect String="saturday" insensitive="true" attribute="Constant"/>
+        <WordDetect String="sat" insensitive="true" attribute="Constant"/>
+        <WordDetect String="sunday" insensitive="true" attribute="Constant"/>
+        <WordDetect String="sun" insensitive="true" attribute="Constant"/>
+        <WordDetect String="utc" insensitive="true" attribute="Constant"/>
+        <DetectChar char="*" attribute="Wildcard"/>
+      </context>
+      <context name="capability" attribute="Normal" lineEndContext="#pop">
+        <keyword String="capability" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="capability list" attribute="Normal" lineEndContext="#pop">
+        <keyword String="capability" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="cardinal" attribute="Normal" lineEndContext="#pop">
+        <Int attribute="Number" context="#pop"/>
+      </context>
+      <context name="cardinal % infinity" attribute="Normal" lineEndContext="#pop">
+        <Int attribute="Number"/>
+        <DetectChar char="%" attribute="Measurement Unit" context="#pop"/>
+        <IncludeRules context="infinity"/>
+      </context>
+      <context name="cardinal %KMGT infinity" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="cardinal %KMGT"/>
+        <IncludeRules context="infinity"/>
+      </context>
+      <context name="cardinal %KMGT off" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="cardinal %KMGT"/>
+        <WordDetect String="off" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="cardinal %KMGT" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="\b[1-9]\d*\h*(?=([KMGT%])?)" attribute="Number" context="#pop!measurement unit"/>
+        <LineContinue attribute="Continuation"/>
+      </context>
+      <context name="cardinal KMGT" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="\b[1-9]\d*\h*(?=([KMGT])?)" attribute="Number" context="#pop!measurement unit"/>
+        <LineContinue attribute="Continuation"/>
+      </context>
+      <context name="cardinal KMGT infinity" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="cardinal KMGT"/>
+        <IncludeRules context="infinity"/>
+      </context>
+      <context name="collect mode" attribute="Normal" lineEndContext="#pop">
+        <keyword String="collect mode" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="controller cg" attribute="Normal" lineEndContext="#pop">
+        <keyword String="controller cg" attribute="Constant"/>
+      </context>
+      <context name="controller list" attribute="Normal" lineEndContext="#pop">
+        <keyword String="controller" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context name="cpu affinity" attribute="Normal" lineEndContext="#pop">
+        <WordDetect String="numa" attribute="Constant" context="#pop"/>
+        <Int lookAhead="true" context="#pop!cpu index list"/>
+        <IncludeRules context="specifier"/>
+      </context>
+      <context name="cpu feature" attribute="Normal" lineEndContext="#pop">
+        <keyword String="cpu feature" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="cpu index list" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="\b\d+(?:\s*-\s*\d+)?\b" attribute="Number"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="cpu scheduling policy" attribute="Normal" lineEndContext="#pop">
+        <keyword String="cpu scheduling policy" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="cpu scheduling priority" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="\b[1-9]\d?\b" attribute="Number" context="#pop"/>
+      </context>
+      <context name="cpu weight" attribute="Normal" lineEndContext="#pop">
+        <WordDetect String="idle" attribute="Constant" context="#pop"/>
+        <IncludeRules context="weight"/>
+      </context>
+      <context name="cpuset partition type" attribute="Normal" lineEndContext="#pop">
+        <keyword String="cpuset partition type" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="defer trigger" attribute="Normal" lineEndContext="#pop">
+        <WordDetect String="patient" attribute="Constant" context="#pop"/>
+        <IncludeRules context="boolean"/>
+      </context>
+      <context name="delegate" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="boolean"/>
+        <IncludeRules context="controller list"/>
+      </context>
+      <context name="device cardinal KMGT" attribute="Normal" lineEndContext="#pop">
+        <!-- Skip the device. -->
+        <RegExpr String="/.*?\h+" context="#pop!cardinal KMGT"/>
+      </context>
+      <context name="device policy" attribute="Normal" lineEndContext="#pop">
+        <keyword String="device policy" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="device time span" attribute="Normal" lineEndContext="#pop">
+        <!-- Skip the device. -->
+        <RegExpr String="/.+?\h+" context="#pop!time span"/>
+      </context>
+      <context name="exec" attribute="Normal" lineEndContext="#pop">
+        <DetectChar char="=" context="#pop!exec prefix"/>
+      </context>
+      <context name="exec command" attribute="Normal" lineEndContext="#pop">
+        <DetectChar char="," context="#pop!exec prefix"/>
+        <!-- Escapes (not exactly the same as detected by HlCStringChar). -->
+        <RegExpr String="\\(?:[&quot;'\\abfnrstv]|[0-7]{3}|u[&hex;]{4}|U[&hex;]{8}|x[&hex;]{2})" attribute="Escape"/>
+        <!-- Environment variable as a separate word. | Environment variable within word. -->
+        <RegExpr String="(?&lt;=\h)\$\w+(?=\h|,|\\|$)|\${\w+}" attribute="Environment Variable"/>
+        <IncludeRules context="text"/>
+      </context>
+      <context name="exec prefix" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!exec command">
+        <DetectSpaces/>
+        <RegExpr String="[@|:\-+!]*(?=\H)" attribute="Prefix" context="#pop!exec command"/>
+      </context>
+      <context name="exit status" attribute="Normal" lineEndContext="#pop">
+        <keyword String="exit status" attribute="Constant"/>
+        <IncludeRules context="exit status signal"/>
+      </context>
+      <context name="exit status signal" attribute="Normal" lineEndContext="#pop">
+        <keyword String="signal" attribute="Constant"/>
+        <Int attribute="Number"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="exit type" attribute="Normal" lineEndContext="#pop">
+        <keyword String="exit type" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="extension option" attribute="Extension" lineEndContext="#pop">
+        <LineContinue attribute="Continuation"/>
+      </context>
+      <context name="extension section" attribute="Extension" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+      </context>
+      <context name="failure mode" attribute="Normal" lineEndContext="#pop">
+        <keyword String="failure mode" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="fd store preserve" attribute="Normal" lineEndContext="#pop">
+        <keyword String="fd store preserve" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="file mode" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="[0-7]{3,4}" attribute="File Mode" context="#pop"/>
+      </context>
+      <context name="firmware" attribute="Normal" lineEndContext="#pop">
+        <WordDetect String="uefi" attribute="Constant" context="#pop"/>
+        <RegExpr String="device-tree(?:-compatible(?=\(.+\)))?|smbios-field(?=\(.+\))" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="fraction" attribute="Normal" fallthrough="true" fallthroughContext="fraction tag" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <DetectChar char="!" attribute="Prefix" context="#pop!fraction tag"/>
+      </context>
+      <context name="fraction tag" attribute="Normal" fallthrough="true" fallthroughContext="fraction percent" lineEndContext="#pop">
+        <!-- arbitrary string not containing whitespace -->
+        <RegExpr String="\h*[^\h]+\h+" attribute="Tag" context="#pop!fraction percent"/>
+      </context>
+      <context name="fraction percent" attribute="Normal" lineEndContext="#pop">
+        <!-- 0..100 percent with 0..2 decimal places -->
+        <RegExpr String="\h*(?:100|[1-9]?\d(?:\.(?:\d\d?)?)?)\h*(?=%)" attribute="Number" context="#pop!percent S"/>
+      </context>
+      <context name="fs type" attribute="Normal" lineEndContext="#pop">
+        <keyword String="fs type" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="fs type set list" attribute="Normal" lineEndContext="#pop">
+        <keyword String="fs set" attribute="Constant"/>
+        <keyword String="fs type" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="group list" attribute="Normal" lineEndContext="#pop">
+        <Int attribute="Number"/>
+        <IncludeRules context="specifier"/>
+        <IncludeRules context="list"/>
+      </context>
+      <!-- User group or user, with both number and name being valid. -->
+      <context name="group user" attribute="Normal" lineEndContext="#pop">
+        <Int attribute="Number" context="#pop"/>
+        <IncludeRules context="specifier"/>
+      </context>
+      <context name="hex" attribute="Normal" lineEndContext="#pop">
+        <HlCHex attribute="Number Hexadecimal"/>
+      </context>
+      <context name="infinity" attribute="Normal" lineEndContext="#stay">
+        <WordDetect String="infinity" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="io scheduling class" attribute="Normal" lineEndContext="#pop">
+        <keyword String="io scheduling class" attribute="Constant" context="#pop"/>
+        <AnyChar String="0123" attribute="Number" context="#pop"/>
+      </context>
+      <context name="io scheduling priority" attribute="Normal" lineEndContext="#pop">
+        <AnyChar String="01234567" attribute="Number" context="#pop"/>
+      </context>
+      <context name="ip address list" attribute="Normal" lineEndContext="#pop">
+        <keyword String="ip address name" attribute="Constant"/>
+        <Int attribute="Number"/>
+        <RegExpr String="[a-fA-F0-9]*[a-fA-F][a-fA-F0-9]*" attribute="Number Hexadecimal"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="ip bind" attribute="Normal" lineEndContext="#pop">
+        <keyword String="ip bind" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="ip tos" attribute="Normal" lineEndContext="#pop">
+        <Int attribute="Number" context="#pop"/>
+        <keyword String="ip tos" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="job mode" attribute="Normal" lineEndContext="#pop">
+        <keyword String="job mode" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="keyring mode" attribute="Normal" lineEndContext="#pop">
+        <keyword String="keyring mode" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="kill mode" attribute="Normal" lineEndContext="#pop">
+        <keyword String="kill mode" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="limit" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="infinity"/>
+      </context>
+      <context name="limit bytes" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="limit"/>
+        <Int attribute="Number"/>
+        <AnyChar String="KMGTPE" attribute="Measurement Unit"/>
+      </context>
+      <context name="limit nice level" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="limit"/>
+        <RegExpr String="(?:[\b+-]1?\d|-20|\b[1-3]?\d|\b40)\b" attribute="Number"/>
+      </context>
+      <context name="limit number" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="limit"/>
+        <Int attribute="Number"/>
+      </context>
+      <context name="limit time span" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="limit"/>
+        <IncludeRules context="time span"/>
+      </context>
+      <context name="list" attribute="Normal" lineEndContext="#stay">
+        <LineContinue attribute="Continuation"/>
+      </context>
+      <context name="log facility" attribute="Normal" lineEndContext="#pop">
+        <keyword String="log facility" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="log level" attribute="Normal" lineEndContext="#pop">
+        <keyword String="log level" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="measurement unit" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <StringDetect String="%1" dynamic="true" attribute="Measurement Unit" context="#pop"/>
+      </context>
+      <context name="memory mapping" attribute="Normal" lineEndContext="#pop">
+        <keyword String="memory mapping" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="memory pressure watch" attribute="Normal" lineEndContext="#pop">
+        <keyword String="memory pressure watch" attribute="Constant" context="#pop"/>
+        <IncludeRules context="boolean"/>
+      </context>
+      <context name="memory thp" attribute="Normal" lineEndContext="#pop">
+        <keyword String="memory thp" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="mount flag" attribute="Normal" lineEndContext="#pop">
+        <keyword String="mount flag" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="namespace list" attribute="Normal" lineEndContext="#pop">
+        <keyword String="namespace type" attribute="Constant"/>
+        <IncludeRules context="boolean"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="nft address family" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectChar char=":"/>
+        <keyword String="nft address family" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="nft set list" attribute="Normal" lineEndContext="#pop">
+        <keyword String="nft source type" attribute="Constant" context="nft address family"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="nice level" attribute="Normal" lineEndContext="#pop">
+        <StringDetect String="-20" attribute="Number" context="#pop"/>
+        <RegExpr String="[+\-]?1?\d" attribute="Number" context="#pop"/>
+      </context>
+      <context name="notify access" attribute="Normal" lineEndContext="#pop">
+        <keyword String="notify access" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="numa mask" attribute="Normal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop!cpu index list">
+        <DetectSpaces/>
+        <DetectChar char="="/>
+        <WordDetect String="all" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="numa policy" attribute="Normal" lineEndContext="#pop">
+        <keyword String="numa policy" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="oom behavior" attribute="Normal" lineEndContext="#pop">
+        <keyword String="oom behavior" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="oom preference" attribute="Normal" lineEndContext="#pop">
+        <keyword String="oom preference" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="oom policy" attribute="Normal" lineEndContext="#pop">
+        <keyword String="oom policy" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="oom score adjust" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="[+\-]?(?:1000|\d{1,3})" attribute="Number" context="#pop"/>
+      </context>
+      <context name="open file" attribute="Normal" lineEndContext="#pop">
+        <DetectChar char=":" attribute="Separator" context="open file name"/>
+      </context>
+      <context name="open file name" attribute="File Descriptor Name" lineEndContext="#pop">
+        <DetectChar char=":" attribute="Separator" context="open file options"/>
+      </context>
+      <context name="open file options" attribute="Normal" lineEndContext="#pop">
+        <keyword String="open file option" attribute="Constant"/>
+      </context>
+      <context name="percent" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="\d+(?:\.\d+)?(?=\h*%&end;)" attribute="Number" context="#pop!percent S"/>
+      </context>
+      <context name="percent S" attribute="Normal" lineEndContext="#pop">
+        <DetectChar char="%" attribute="Measurement Unit" context="#pop"/>
+      </context>
+      <context name="personality" attribute="Normal" lineEndContext="#pop">
+        <keyword String="personality" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="pressure watch" attribute="Normal" lineEndContext="#pop">
+        <keyword String="pressure watch" attribute="Constant" context="#pop"/>
+        <IncludeRules context="boolean"/>
+      </context>
+      <context name="private tmp" attribute="Normal" lineEndContext="#pop">
+        <keyword String="private tmp" attribute="Constant" context="#pop"/>
+        <IncludeRules context="boolean"/>
+      </context>
+      <context name="private users" attribute="Normal" lineEndContext="#pop">
+        <keyword String="private users" attribute="Constant" context="#pop"/>
+        <IncludeRules context="boolean"/>
+      </context>
+      <context name="proc subset" attribute="Normal" lineEndContext="#pop">
+        <keyword String="proc subset" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="protect control groups" attribute="Normal" lineEndContext="#pop">
+        <keyword String="protect control groups" attribute="Constant" context="#pop"/>
+        <IncludeRules context="boolean"/>
+      </context>
+      <context name="protect home" attribute="Normal" lineEndContext="#pop">
+        <keyword String="protect home" attribute="Constant" context="#pop"/>
+        <IncludeRules context="boolean"/>
+      </context>
+      <context name="protect hostname" attribute="Normal" lineEndContext="#pop">
+        <WordDetect String="private" attribute="Constant" context="#pop"/>
+        <IncludeRules context="boolean"/>
+      </context>
+      <context name="protect system" attribute="Normal" lineEndContext="#pop">
+        <keyword String="protect system" attribute="Constant" context="#pop"/>
+        <IncludeRules context="boolean"/>
+      </context>
+      <context name="refresh on reload" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="boolean"/>
+        <IncludeRules context="refresh on reload resource list"/>
+        <DetectChar char="~" attribute="Prefix" context="refresh on reload resource list"/>
+      </context>
+      <context name="refresh on reload resource list" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="boolean"/>
+        <keyword String="refresh on reload" attribute="Constant"/>
+      </context>
+      <context name="restart" attribute="Normal" lineEndContext="#pop">
+        <keyword String="restart" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="restart mode" attribute="Normal" lineEndContext="#pop">
+        <keyword String="restart mode" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="runtime directory preserve" attribute="Normal" lineEndContext="#pop">
+        <keyword String="runtime directory preserve" attribute="Constant" context="#pop"/>
+        <IncludeRules context="boolean"/>
+      </context>
+      <context name="section" attribute="Normal" lineEndContext="#stay">
+        <AnyChar String="#;" firstNonSpace="true" attribute="Comment" context="comment"/>
+        <Detect2Chars char="X" char1="-" firstNonSpace="true" attribute="Extension" context="extension option"/>
+        <StringDetect String="[Automount]" firstNonSpace="true" attribute="Section Header" context="#pop!section automount" endRegion="section" beginRegion="section"/>
+        <StringDetect String="[Install]" firstNonSpace="true" attribute="Section Header" context="#pop!section install" endRegion="section" beginRegion="section"/>
+        <StringDetect String="[Mount]" firstNonSpace="true" attribute="Section Header" context="#pop!section mount" endRegion="section" beginRegion="section"/>
+        <StringDetect String="[Path]" firstNonSpace="true" attribute="Section Header" context="#pop!section path" endRegion="section" beginRegion="section"/>
+        <StringDetect String="[Slice]" firstNonSpace="true" attribute="Section Header" context="#pop!section slice" endRegion="section" beginRegion="section"/>
+        <StringDetect String="[Service]" firstNonSpace="true" attribute="Section Header" context="#pop!section service" endRegion="section" beginRegion="section"/>
+        <StringDetect String="[Socket]" firstNonSpace="true" attribute="Section Header" context="#pop!section socket" endRegion="section" beginRegion="section"/>
+        <StringDetect String="[Swap]" firstNonSpace="true" attribute="Section Header" context="#pop!section swap" endRegion="section" beginRegion="section"/>
+        <StringDetect String="[Timer]" firstNonSpace="true" attribute="Section Header" context="#pop!section timer" endRegion="section" beginRegion="section"/>
+        <StringDetect String="[Unit]" firstNonSpace="true" attribute="Section Header" context="#pop!section unit" endRegion="section" beginRegion="section"/>
+        <RegExpr String="\[X-\w*\]" firstNonSpace="true" attribute="Extension Header" context="#pop!extension section" endRegion="section" beginRegion="section"/>
+      </context>
+      <context name="secure bits list" attribute="Normal" lineEndContext="#pop">
+        <keyword String="secure bits" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="security" attribute="Normal" lineEndContext="#pop">
+        <keyword String="security" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="service type" attribute="Normal" lineEndContext="#pop">
+        <keyword String="service type" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="signal" attribute="Normal" lineEndContext="#pop">
+        <keyword String="signal" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="socket protocol" attribute="Normal" lineEndContext="#pop">
+        <keyword String="socket protocol" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="socket bind rule" attribute="Normal" lineEndContext="#pop">
+        <WordDetect String="any" attribute="Constant" context="#pop"/>
+        <RegExpr String="(?:ipv[46]:)?(?:\s*(?:tcp|udp):)?(?:\s*\d{1,5}(?:\s*-\s*\d{1,5})?)?\s*$" attribute="Normal" lookAhead="true" context="#pop!socket bind rule S"/>
+      </context>
+      <context name="socket bind rule S" attribute="Normal" lineEndContext="#pop">
+        <WordDetect String="ipv4" attribute="Constant"/>
+        <WordDetect String="ipv6" attribute="Constant"/>
+        <WordDetect String="tcp" attribute="Constant"/>
+        <WordDetect String="udp" attribute="Constant"/>
+        <!-- The "Int" rule does not detect the second part of a range, so just use a "RegExpr". -->
+        <RegExpr String="\d+" attribute="Number"/>
+      </context>
+      <context name="specifier" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&specifier;" attribute="Specifier"/>
+      </context>
+      <context name="standard io" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="fd(?::(?=\S))?|file:(?=/\S)" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="standard input" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="standard io"/>
+        <keyword String="standard input" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="standard output" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="(?:append|truncate):(?=/\S)" attribute="Constant" context="#pop"/>
+        <IncludeRules context="standard io"/>
+        <keyword String="standard output" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="system call architecture" attribute="Normal" lineEndContext="#pop">
+        <keyword String="system call architecture" attribute="Constant"/>
+        <keyword String="architecture" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="system call errno" attribute="Normal" lineEndContext="#pop">
+        <keyword String="errno" attribute="Errno Name" context="#pop"/>
+        <RegExpr String="40(?:9[0-5]|[0-8]\d)|[1-3]\d{1,3}|[1-9]\d{0,2}" attribute="Errno Number" context="#pop"/>
+      </context>
+      <context name="system call filter list" attribute="Normal" lineEndContext="#pop">
+        <keyword String="system call filter set" attribute="Constant"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="text" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="specifier"/>
+        <LineContinue attribute="Continuation"/>
+      </context>
+      <context name="text *" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="text"/>
+        <DetectChar char="*" attribute="Wildcard"/>
+      </context>
+      <context name="text glob" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="text"/>
+        <AnyChar String="*?" attribute="Wildcard"/>
+        <RangeDetect char="[" char1="]" attribute="Wildcard"/>
+      </context>
+      <context name="threshold" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="\d+(?:\.\d+)?(?=\h*%)" attribute="Number" context="#pop!threshold %"/>
+      </context>
+      <context name="threshold %" attribute="Normal" lineEndContext="#pop">
+        <DetectChar char="/" attribute="Separator" context="#pop!threshold time span"/>
+      </context>
+      <context name="threshold time span" attribute="Normal" lineEndContext="#pop">
+        <!-- There is only a fixed set of possible time spans to choose from. -->
+        <keyword String="threshold time span" attribute="Threshold Time Span"/>
+      </context>
+      <context name="time span" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="&tsp;" attribute="Number" context="measurement unit"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="timeout" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="infinity"/>
+        <IncludeRules context="time span"/>
+      </context>
+      <context name="timestamping" attribute="Normal" lineEndContext="#pop">
+        <keyword String="timestamping" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="unit" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="&unit;" lookAhead="true" attribute="Unit Name" context="#pop!unit S"/>
+      </context>
+      <context name="unit extension" attribute="Unit Extension" lineEndContext="#pop">
+        <RegExpr String="\.(?:&extension;)&end;" attribute="Unit Extension" context="#pop"/>
+      </context>
+      <context name="unit instance" attribute="Unit Instance" lineEndContext="#pop">
+        <IncludeRules context="specifier"/>
+        <RegExpr String="&escaped;" attribute="Escape"/>
+        <IncludeRules context="unit extension"/>
+      </context>
+      <context name="unit list" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="&unit;" lookAhead="true" attribute="Unit Name" context="unit S"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="unit list socket" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="&name;\.socket&end;" lookAhead="true" attribute="Unit Name" context="unit S"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="unit S" attribute="Unit Name" lineEndContext="#pop">
+        <IncludeRules context="specifier"/>
+        <RegExpr String="&escaped;" attribute="Escape"/>
+        <IncludeRules context="unit extension"/>
+        <DetectChar char="@" attribute="Unit Instance" context="#pop!unit instance"/>
+      </context>
+      <context name="unit service" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="&name;\.service&end;" lookAhead="true" attribute="Unit Name" context="#pop!unit S"/>
+      </context>
+      <context name="unit slice" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="&name;\.slice&end;" lookAhead="true" attribute="Unit Name" context="#pop!unit S"/>
+      </context>
+      <context name="user @system" attribute="Normal" lineEndContext="#pop">
+        <IncludeRules context="group user"/>
+        <WordDetect String="@system" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="utmp mode" attribute="Normal" lineEndContext="#pop">
+        <keyword String="utmp mode" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="variable assignment" attribute="Normal" lineEndContext="#pop">
+        <DetectChar char="=" context="#pop!variable assignment list"/>
+      </context>
+      <context name="variable assignment list" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="\b\w+(?=\h*=)" attribute="Environment Variable"/>
+        <IncludeRules context="specifier"/>
+        <IncludeRules context="list"/>
+      </context>
+      <context name="virtualization" attribute="Normal" lineEndContext="#pop">
+        <keyword String="virtualization" attribute="Constant" context="#pop"/>
+      </context>
+      <context name="weight" attribute="Normal" lineEndContext="#pop">
+        <!-- 1..10000 -->
+        <RegExpr String="\b10000|[1-9]\d{0,3}\h*$" attribute="Number" context="#pop"/>
+      </context>
+      <context name="working directory" attribute="Normal" lineEndContext="#pop">
+        <!-- As `~` has the same effect as the specifier %h, we use the same style. -->
+        <DetectChar char="~" attribute="Specifier" context="#pop"/>
+        <IncludeRules context="specifier"/>
+      </context>
+      <!-- Contexts for option groups. -->
+      <context name="options automount" attribute="Normal" lineEndContext="#stay">
+        <keyword String="options automount" firstNonSpace="true" attribute="Option Name" context="text"/>
+        <WordDetect String="DirectoryMode" firstNonSpace="true" attribute="Option Name" context="file mode"/>
+        <WordDetect String="TimeoutIdleSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+      </context>
+      <context name="options exec" attribute="Normal" lineEndContext="#stay">
+        <keyword String="options exec" firstNonSpace="true" attribute="Option Name" context="text"/>
+        <WordDetect String="AmbientCapabilities" firstNonSpace="true" attribute="Option Name" context="~ capability list"/>
+        <WordDetect String="AppArmorProfile" firstNonSpace="true" attribute="Option Name" context="- text"/>
+        <WordDetect String="BPFDelegateAttachments" firstNonSpace="true" attribute="Option Name" context="bpf delegate attachments"/>
+        <WordDetect String="BPFDelegateCommands" firstNonSpace="true" attribute="Option Name" context="bpf delegate commands"/>
+        <WordDetect String="BPFDelegateMaps" firstNonSpace="true" attribute="Option Name" context="bpf delegate maps"/>
+        <WordDetect String="BPFDelegatePrograms" firstNonSpace="true" attribute="Option Name" context="bpf delegate programs"/>
+        <WordDetect String="BindLogSockets" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="BindPaths" firstNonSpace="true" attribute="Option Name" context="bind list"/>
+        <WordDetect String="BindReadOnlyPaths" firstNonSpace="true" attribute="Option Name" context="bind list"/>
+        <WordDetect String="CPUAffinity" firstNonSpace="true" attribute="Option Name" context="cpu affinity"/>
+        <WordDetect String="CPUSchedulingPolicy" firstNonSpace="true" attribute="Option Name" context="cpu scheduling policy"/>
+        <WordDetect String="CPUSchedulingPriority" firstNonSpace="true" attribute="Option Name" context="cpu scheduling priority"/>
+        <WordDetect String="CPUSchedulingResetOnFork" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="CacheDirectoryAccounting" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="CacheDirectoryMode" firstNonSpace="true" attribute="Option Name" context="file mode"/>
+        <WordDetect String="CacheDirectoryQuota" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT off"/>
+        <WordDetect String="CapabilityBoundingSet" firstNonSpace="true" attribute="Option Name" context="~ capability list"/>
+        <WordDetect String="ConfigurationDirectoryMode" firstNonSpace="true" attribute="Option Name" context="file mode"/>
+        <WordDetect String="CoredumpFilter" firstNonSpace="true" attribute="Option Name" context="memory mapping"/>
+        <WordDetect String="DelegateNamespaces" firstNonSpace="true" attribute="Option Name" context="~ namespace list"/>
+        <WordDetect String="DynamicUser" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="Environment" firstNonSpace="true" attribute="Option Name" context="variable assignment"/>
+        <WordDetect String="EnvironmentFile" firstNonSpace="true" attribute="Option Name" context="- text"/>
+        <WordDetect String="ExecPaths" firstNonSpace="true" attribute="Option Name" context="-+/path list"/>
+        <WordDetect String="Group" firstNonSpace="true" attribute="Option Name" context="group user"/>
+        <WordDetect String="IOSchedulingClass" firstNonSpace="true" attribute="Option Name" context="io scheduling class"/>
+        <WordDetect String="IOSchedulingPriority" firstNonSpace="true" attribute="Option Name" context="io scheduling priority"/>
+        <WordDetect String="IgnoreSIGPIPE" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="KeyringMode" firstNonSpace="true" attribute="Option Name" context="keyring mode"/>
+        <WordDetect String="LimitAS" firstNonSpace="true" attribute="Option Name" context="limit bytes"/>
+        <WordDetect String="LimitCORE" firstNonSpace="true" attribute="Option Name" context="limit bytes"/>
+        <WordDetect String="LimitCPU" firstNonSpace="true" attribute="Option Name" context="limit time span"/>
+        <WordDetect String="LimitDATA" firstNonSpace="true" attribute="Option Name" context="limit bytes"/>
+        <WordDetect String="LimitFSIZE" firstNonSpace="true" attribute="Option Name" context="limit bytes"/>
+        <WordDetect String="LimitLOCKS" firstNonSpace="true" attribute="Option Name" context="limit number"/>
+        <WordDetect String="LimitMEMLOCK" firstNonSpace="true" attribute="Option Name" context="limit bytes"/>
+        <WordDetect String="LimitMSGQUEUE" firstNonSpace="true" attribute="Option Name" context="limit bytes"/>
+        <WordDetect String="LimitNICE" firstNonSpace="true" attribute="Option Name" context="limit nice level"/>
+        <WordDetect String="LimitNOFILE" firstNonSpace="true" attribute="Option Name" context="limit number"/>
+        <WordDetect String="LimitNPROC" firstNonSpace="true" attribute="Option Name" context="limit number"/>
+        <WordDetect String="LimitRSS" firstNonSpace="true" attribute="Option Name" context="limit bytes"/>
+        <WordDetect String="LimitRTPRIO" firstNonSpace="true" attribute="Option Name" context="limit number"/>
+        <WordDetect String="LimitRTTIME" firstNonSpace="true" attribute="Option Name" context="limit time span"/>
+        <WordDetect String="LimitSIGPENDING" firstNonSpace="true" attribute="Option Name" context="limit number"/>
+        <WordDetect String="LimitSTACK" firstNonSpace="true" attribute="Option Name" context="limit bytes"/>
+        <WordDetect String="LockPersonality" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="LogExtraFields" firstNonSpace="true" attribute="Option Name" context="variable assignment"/>
+        <WordDetect String="LogFilterPatterns" firstNonSpace="true" attribute="Option Name" context="~ text"/>
+        <WordDetect String="LogLevelMax" firstNonSpace="true" attribute="Option Name" context="log level"/>
+        <WordDetect String="LogRateLimitBurst" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="LogRateLimitIntervalSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="LogsDirectoryAccounting" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="LogsDirectoryMode" firstNonSpace="true" attribute="Option Name" context="file mode"/>
+        <WordDetect String="LogsDirectoryQuota" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT off"/>
+        <WordDetect String="MemoryDenyWriteExecute" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="MemoryKSM" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="MemoryTHP" firstNonSpace="true" attribute="Option Name" context="memory thp"/>
+        <WordDetect String="MountAPIVFS" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="MountFlags" firstNonSpace="true" attribute="Option Name" context="mount flag"/>
+        <WordDetect String="NUMAMask" firstNonSpace="true" attribute="Option Name" context="numa mask"/>
+        <WordDetect String="NUMAPolicy" firstNonSpace="true" attribute="Option Name" context="numa policy"/>
+        <WordDetect String="Nice" firstNonSpace="true" attribute="Option Name" context="nice level"/>
+        <WordDetect String="NoExecPaths" firstNonSpace="true" attribute="Option Name" context="-+/path list"/>
+        <WordDetect String="NoNewPrivileges" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="OOMScoreAdjust" firstNonSpace="true" attribute="Option Name" context="oom score adjust"/>
+        <WordDetect String="Personality" firstNonSpace="true" attribute="Option Name" context="personality"/>
+        <WordDetect String="PrivateBPF" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PrivateDevices" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PrivateIPC" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PrivateMounts" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PrivateNetwork" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PrivatePIDs" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PrivateTmp" firstNonSpace="true" attribute="Option Name" context="private tmp"/>
+        <WordDetect String="PrivateUsers" firstNonSpace="true" attribute="Option Name" context="private users"/>
+        <WordDetect String="ProcSubset" firstNonSpace="true" attribute="Option Name" context="proc subset"/>
+        <WordDetect String="ProtectClock" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="ProtectControlGroups" firstNonSpace="true" attribute="Option Name" context="protect control groups"/>
+        <WordDetect String="ProtectHome" firstNonSpace="true" attribute="Option Name" context="protect home"/>
+        <WordDetect String="ProtectHostname" firstNonSpace="true" attribute="Option Name" context="protect hostname"/>
+        <WordDetect String="ProtectKernelLogs" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="ProtectKernelModules" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="ProtectKernelTunables" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="ProtectSystem" firstNonSpace="true" attribute="Option Name" context="protect system"/>
+        <WordDetect String="ReadWritePaths" firstNonSpace="true" attribute="Option Name" context="-+/path list"/>
+        <WordDetect String="RemoveIPC" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="RestrictAddressFamilies" firstNonSpace="true" attribute="Option Name" context="~ address family list"/>
+        <WordDetect String="RestrictFileSystems" firstNonSpace="true" attribute="Option Name" context="~ fs type set list"/>
+        <WordDetect String="RestrictNamespaces" firstNonSpace="true" attribute="Option Name" context="~ namespace list"/>
+        <WordDetect String="RestrictRealtime" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="RestrictSUIDSGID" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="RootEphemeral" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="RootHash" firstNonSpace="true" attribute="Option Name" context="hex"/>
+        <WordDetect String="RuntimeDirectoryMode" firstNonSpace="true" attribute="Option Name" context="file mode"/>
+        <WordDetect String="RuntimeDirectoryPreserve" firstNonSpace="true" attribute="Option Name" context="runtime directory preserve"/>
+        <WordDetect String="SELinuxContext" firstNonSpace="true" attribute="Option Name" context="- text"/>
+        <WordDetect String="SecureBits" firstNonSpace="true" attribute="Option Name" context="secure bits list"/>
+        <WordDetect String="SetLoginEnvironment" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="SmackProcessLabel" firstNonSpace="true" attribute="Option Name" context="- text"/>
+        <WordDetect String="StandardError" firstNonSpace="true" attribute="Option Name" context="standard output"/>
+        <WordDetect String="StandardInput" firstNonSpace="true" attribute="Option Name" context="standard input"/>
+        <WordDetect String="StandardOutput" firstNonSpace="true" attribute="Option Name" context="standard output"/>
+        <WordDetect String="StateDirectoryAccounting" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="StateDirectoryMode" firstNonSpace="true" attribute="Option Name" context="file mode"/>
+        <WordDetect String="StateDirectoryQuota" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT off"/>
+        <WordDetect String="SupplementaryGroups" firstNonSpace="true" attribute="Option Name" context="group list"/>
+        <WordDetect String="SyslogFacility" firstNonSpace="true" attribute="Option Name" context="log facility"/>
+        <WordDetect String="SyslogLevel" firstNonSpace="true" attribute="Option Name" context="log level"/>
+        <WordDetect String="SyslogLevelPrefix" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="SystemCallArchitectures" firstNonSpace="true" attribute="Option Name" context="system call architecture"/>
+        <WordDetect String="SystemCallErrorNumber" firstNonSpace="true" attribute="Option Name" context="system call errno"/>
+        <WordDetect String="SystemCallFilter" firstNonSpace="true" attribute="Option Name" context="~ system call filter list"/>
+        <WordDetect String="SystemCallLog" firstNonSpace="true" attribute="Option Name" context="~ text"/>
+        <WordDetect String="TTYColumns" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="TTYReset" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="TTYRows" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="TTYVHangup" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="TTYVTDisallocate" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="TimeoutCleanSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+        <WordDetect String="TimerSlackNSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="UMask" firstNonSpace="true" attribute="Option Name" context="file mode"/>
+        <WordDetect String="User" firstNonSpace="true" attribute="Option Name" context="group user"/>
+        <WordDetect String="UtmpMode" firstNonSpace="true" attribute="Option Name" context="utmp mode"/>
+        <WordDetect String="WorkingDirectory" firstNonSpace="true" attribute="Option Name" context="- working directory"/>
+      </context>
+      <context name="options install" attribute="Normal" lineEndContext="#stay">
+        <WordDetect String="Alias" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="Also" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="DefaultInstance" firstNonSpace="true" attribute="Option Name" context="unit instance"/>
+        <WordDetect String="RequiredBy" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="UpheldBy" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="WantedBy" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+      </context>
+      <context name="options kill" attribute="Normal" lineEndContext="#stay">
+        <WordDetect String="FinalKillSignal" firstNonSpace="true" attribute="Option Name" context="signal"/>
+        <WordDetect String="KillMode" firstNonSpace="true" attribute="Option Name" context="kill mode"/>
+        <WordDetect String="KillSignal" firstNonSpace="true" attribute="Option Name" context="signal"/>
+        <WordDetect String="RestartKillSignal" firstNonSpace="true" attribute="Option Name" context="signal"/>
+        <WordDetect String="SendSIGHUP" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="SendSIGKILL" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="WatchdogSignal" firstNonSpace="true" attribute="Option Name" context="signal"/>
+      </context>
+      <context name="options mount" attribute="Normal" lineEndContext="#stay">
+        <keyword String="options mount" firstNonSpace="true" attribute="Option Name" context="text"/>
+        <WordDetect String="DirectoryMode" firstNonSpace="true" attribute="Option Name" context="file mode"/>
+        <WordDetect String="ForceUnmount" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="LazyUnmount" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="ReadWriteOnly" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="SloppyOptions" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="TimeoutSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="Type" firstNonSpace="true" attribute="Option Name" context="fs type"/>
+      </context>
+      <context name="options path" attribute="Normal" lineEndContext="#stay">
+        <keyword String="options path" firstNonSpace="true" attribute="Option Name" context="text"/>
+        <WordDetect String="DirectoryMode" firstNonSpace="true" attribute="Option Name" context="file mode"/>
+        <WordDetect String="MakeDirectory" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PathExistsGlob" firstNonSpace="true" attribute="Option Name" context="text glob"/>
+        <WordDetect String="TriggerLimitBurst" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="TriggerLimitIntervalSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="Unit" firstNonSpace="true" attribute="Option Name" context="unit"/>
+      </context>
+      <context name="options resource-control" attribute="Normal" lineEndContext="#stay">
+        <keyword String="options resource-control" firstNonSpace="true" attribute="Option Name" context="text"/>
+        <WordDetect String="AllowedCPUs" firstNonSpace="true" attribute="Option Name" context="cpu index list"/>
+        <WordDetect String="AllowedMemoryNodes" firstNonSpace="true" attribute="Option Name" context="cpu index list"/>
+        <WordDetect String="BPFProgram" firstNonSpace="true" attribute="Option Name" context="bpf program"/>
+        <WordDetect String="CPUPressureThresholdSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="CPUPressureWatch" firstNonSpace="true" attribute="Option Name" context="pressure watch"/>
+        <WordDetect String="CPUQuota" firstNonSpace="true" attribute="Option Name" context="percent"/>
+        <WordDetect String="CPUQuotaPeriodSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="CPUSetPartition" firstNonSpace="true" attribute="Option Name" context="cpuset partition type"/>
+        <WordDetect String="CPUWeight" firstNonSpace="true" attribute="Option Name" context="cpu weight"/>
+        <WordDetect String="CoredumpReceive" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="Delegate" firstNonSpace="true" attribute="Option Name" context="delegate"/>
+        <WordDetect String="DevicePolicy" firstNonSpace="true" attribute="Option Name" context="device policy"/>
+        <WordDetect String="DisableControllers" firstNonSpace="true" attribute="Option Name" context="controller list"/>
+        <WordDetect String="IOAccounting" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="IODeviceLatencyTargetSec" firstNonSpace="true" attribute="Option Name" context="device time span"/>
+        <WordDetect String="IODeviceWeight" firstNonSpace="true" attribute="Option Name" context="weight"/>
+        <WordDetect String="IOPressureThresholdSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="IOPressureWatch" firstNonSpace="true" attribute="Option Name" context="pressure watch"/>
+        <WordDetect String="IOReadBandwidthMax" firstNonSpace="true" attribute="Option Name" context="device cardinal KMGT"/>
+        <WordDetect String="IOReadIOPSMax" firstNonSpace="true" attribute="Option Name" context="device cardinal KMGT"/>
+        <WordDetect String="IOWeight" firstNonSpace="true" attribute="Option Name" context="weight"/>
+        <WordDetect String="IOWriteBandwidthMax" firstNonSpace="true" attribute="Option Name" context="device cardinal KMGT"/>
+        <WordDetect String="IOWriteIOPSMax" firstNonSpace="true" attribute="Option Name" context="device cardinal KMGT"/>
+        <WordDetect String="IPAccounting" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="IPAddressAllow" firstNonSpace="true" attribute="Option Name" context="ip address list"/>
+        <WordDetect String="IPAddressDeny" firstNonSpace="true" attribute="Option Name" context="ip address list"/>
+        <WordDetect String="ManagedOOMMemoryPressure" firstNonSpace="true" attribute="Option Name" context="oom behavior"/>
+        <WordDetect String="ManagedOOMMemoryPressureDurationSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="ManagedOOMMemoryPressureLimit" firstNonSpace="true" attribute="Option Name" context="percent"/>
+        <WordDetect String="ManagedOOMPreference" firstNonSpace="true" attribute="Option Name" context="oom preference"/>
+        <WordDetect String="ManagedOOMSwap" firstNonSpace="true" attribute="Option Name" context="oom behavior"/>
+        <WordDetect String="MemoryAccounting" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="MemoryHigh" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT infinity"/>
+        <WordDetect String="MemoryLow" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT infinity"/>
+        <WordDetect String="MemoryMax" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT infinity"/>
+        <WordDetect String="MemoryMin" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT infinity"/>
+        <WordDetect String="MemoryPressureThresholdSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="MemoryPressureWatch" firstNonSpace="true" attribute="Option Name" context="memory pressure watch"/>
+        <WordDetect String="MemorySwapMax" firstNonSpace="true" attribute="Option Name" context="cardinal KMGT infinity"/>
+        <WordDetect String="MemoryZSwapMax" firstNonSpace="true" attribute="Option Name" context="cardinal KMGT infinity"/>
+        <WordDetect String="MemoryZSwapWriteback" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="NFTSet" firstNonSpace="true" attribute="Option Name" context="nft set list"/>
+        <WordDetect String="RestrictNetworkInterfaces" firstNonSpace="true" attribute="Option Name" context="~ text"/>
+        <WordDetect String="Slice" firstNonSpace="true" attribute="Option Name" context="unit slice"/>
+        <WordDetect String="SocketBindAllow" firstNonSpace="true" attribute="Option Name" context="socket bind rule"/>
+        <WordDetect String="SocketBindDeny" firstNonSpace="true" attribute="Option Name" context="socket bind rule"/>
+        <WordDetect String="StartupAllowedCPUs" firstNonSpace="true" attribute="Option Name" context="cpu index list"/>
+        <WordDetect String="StartupAllowedMemoryNodes" firstNonSpace="true" attribute="Option Name" context="cpu index list"/>
+        <WordDetect String="StartupCPUWeight" firstNonSpace="true" attribute="Option Name" context="cpu weight"/>
+        <WordDetect String="StartupIOWeight" firstNonSpace="true" attribute="Option Name" context="weight"/>
+        <WordDetect String="StartupMemoryHigh" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT infinity"/>
+        <WordDetect String="StartupMemoryLow" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT infinity"/>
+        <WordDetect String="StartupMemoryMax" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT infinity"/>
+        <WordDetect String="StartupMemorySwapMax" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT infinity"/>
+        <WordDetect String="StartupMemoryZSwapMax" firstNonSpace="true" attribute="Option Name" context="cardinal %KMGT infinity"/>
+        <WordDetect String="TasksAccounting" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="TasksMax" firstNonSpace="true" attribute="Option Name" context="cardinal % infinity"/>
+      </context>
+      <context name="options slice" attribute="Normal" lineEndContext="#stay">
+        <WordDetect String="ConcurrencyHardMax" firstNonSpace="true" attribute="Option Name" context="cardinal KMGT infinity"/>
+        <WordDetect String="ConcurrencySoftMax" firstNonSpace="true" attribute="Option Name" context="cardinal KMGT infinity"/>
+      </context>
+      <context name="options service" attribute="Normal" lineEndContext="#stay">
+        <keyword String="options service" firstNonSpace="true" attribute="Option Name" context="text"/>
+        <WordDetect String="ExecCondition" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="ExecReload" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="ExecReloadPost" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="ExecStart" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="ExecStartPost" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="ExecStartPre" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="ExecStop" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="ExecStopPost" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="ExitType" firstNonSpace="true" attribute="Option Name" context="exit type"/>
+        <WordDetect String="FileDescriptorStoreMax" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="FileDescriptorStorePreserve" firstNonSpace="true" attribute="Option Name" context="fd store preserve"/>
+        <WordDetect String="GuessMainPID" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="NonBlocking" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="NotifyAccess" firstNonSpace="true" attribute="Option Name" context="notify access"/>
+        <WordDetect String="OOMPolicy" firstNonSpace="true" attribute="Option Name" context="oom policy"/>
+        <WordDetect String="OpenFile" firstNonSpace="true" attribute="Option Name" context="open file"/>
+        <WordDetect String="RefreshOnReload" firstNonSpace="true" attribute="Option Name" context="refresh on reload"/>
+        <WordDetect String="ReloadSignal" firstNonSpace="true" attribute="Option Name" context="signal"/>
+        <WordDetect String="RemainAfterExit" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="Restart" firstNonSpace="true" attribute="Option Name" context="restart"/>
+        <WordDetect String="RestartForceExitStatus" firstNonSpace="true" attribute="Option Name" context="exit status signal"/>
+        <WordDetect String="RestartMaxDelaySec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="RestartMode" firstNonSpace="true" attribute="Option Name" context="restart mode"/>
+        <WordDetect String="RestartPreventExitStatus" firstNonSpace="true" attribute="Option Name" context="exit status signal"/>
+        <WordDetect String="RestartSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="RestartSteps" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="RootDirectoryStartOnly" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="RuntimeMaxSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+        <WordDetect String="RuntimeRandomizedExtraSec" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="Sockets" firstNonSpace="true" attribute="Option Name" context="unit list socket"/>
+        <WordDetect String="SuccessExitStatus" firstNonSpace="true" attribute="Option Name" context="exit status"/>
+        <WordDetect String="TimeoutAbortSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+        <WordDetect String="TimeoutSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+        <WordDetect String="TimeoutStartFailureMode" firstNonSpace="true" attribute="Option Name" context="failure mode"/>
+        <WordDetect String="TimeoutStartSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+        <WordDetect String="TimeoutStopFailureMode" firstNonSpace="true" attribute="Option Name" context="failure mode"/>
+        <WordDetect String="TimeoutStopSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+        <WordDetect String="Type" firstNonSpace="true" attribute="Option Name" context="service type"/>
+        <WordDetect String="WatchdogSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+      </context>
+      <context name="options socket" attribute="Normal" lineEndContext="#stay">
+        <keyword String="options socket" firstNonSpace="true" attribute="Option Name" context="text"/>
+        <WordDetect String="Accept" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="AcceptFileDescriptors" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="Backlog" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="BindIPv6Only" firstNonSpace="true" attribute="Option Name" context="ip bind"/>
+        <WordDetect String="Broadcast" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="DeferAcceptSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="DeferTrigger" firstNonSpace="true" attribute="Option Name" context="defer trigger"/>
+        <WordDetect String="DeferTriggerMaxSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+        <WordDetect String="DirectoryMode" firstNonSpace="true" attribute="Option Name" context="file mode"/>
+        <WordDetect String="ExecStartPost" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="ExecStartPre" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="ExecStopPost" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="ExecStopPre" firstNonSpace="true" attribute="Option Name" context="exec"/>
+        <WordDetect String="FlushPending" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="FreeBind" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="IPTOS" firstNonSpace="true" attribute="Option Name" context="ip tos"/>
+        <WordDetect String="IPTTL" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="KeepAlive" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="KeepAliveIntervalSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="KeepAliveProbes" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="KeepAliveTimeSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="Mark" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="MaxConnections" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="MaxConnectionsPerSource" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="MessageQueueMaxMessages" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="MessageQueueMessageSize" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="NoDelay" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PassCredentials" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PassFileDescriptorsToExec" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PassPIDFD" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PassPacketInfo" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PassSecurity" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="PipeSize" firstNonSpace="true" attribute="Option Name" context="cardinal KMGT"/>
+        <WordDetect String="PollLimitBurst" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="PollLimitIntervalSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="Priority" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="ReceiveBuffer" firstNonSpace="true" attribute="Option Name" context="cardinal KMGT"/>
+        <WordDetect String="RemoveOnStop" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="ReusePort" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="SELinuxContextFromNet" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="SendBuffer" firstNonSpace="true" attribute="Option Name" context="cardinal KMGT"/>
+        <WordDetect String="Service" firstNonSpace="true" attribute="Option Name" context="unit service"/>
+        <WordDetect String="SocketGroup" firstNonSpace="true" attribute="Option Name" context="group user"/>
+        <WordDetect String="SocketMode" firstNonSpace="true" attribute="Option Name" context="file mode"/>
+        <WordDetect String="SocketProtocol" firstNonSpace="true" attribute="Option Name" context="socket protocol"/>
+        <WordDetect String="SocketUser" firstNonSpace="true" attribute="Option Name" context="group user"/>
+        <WordDetect String="TimeoutSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+        <WordDetect String="Timestamping" firstNonSpace="true" attribute="Option Name" context="timestamping"/>
+        <WordDetect String="Transparent" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="TriggerLimitBurst" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="TriggerLimitIntervalSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="Writable" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+      </context>
+      <context name="options swap" attribute="Normal" lineEndContext="#stay">
+        <keyword String="options swap" firstNonSpace="true" attribute="Option Name" context="text"/>
+        <WordDetect String="Priority" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="TimeoutSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+      </context>
+      <context name="options timer" attribute="Normal" lineEndContext="#stay">
+        <WordDetect String="AccuracySec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="DeferReactivation" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="FixedRandomDelay" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="OnActiveSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="OnBootSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="OnCalendar" firstNonSpace="true" attribute="Option Name" context="calendar"/>
+        <WordDetect String="OnClockChange" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="OnStartupSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="OnTimezoneChange" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="OnUnitActiveSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="OnUnitInactiveSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="Persistent" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="RandomizedDelaySec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="RandomizedOffsetSec" firstNonSpace="true" attribute="Option Name" context="time span"/>
+        <WordDetect String="RemainAfterElapse" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="Unit" firstNonSpace="true" attribute="Option Name" context="unit"/>
+        <WordDetect String="WakeSystem" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+      </context>
+      <context name="options unit" attribute="Normal" lineEndContext="#stay">
+        <keyword String="options unit" firstNonSpace="true" attribute="Option Name" context="text"/>
+        <WordDetect String="After" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="AllowIsolate" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="AssertACPower" firstNonSpace="true" attribute="Option Name" context="AC boolean"/>
+        <WordDetect String="AssertArchitecture" firstNonSpace="true" attribute="Option Name" context="AC architecture"/>
+        <WordDetect String="AssertCPUFeature" firstNonSpace="true" attribute="Option Name" context="AC cpu feature"/>
+        <WordDetect String="AssertCPUPressure" firstNonSpace="true" attribute="Option Name" context="AC threshold"/>
+        <WordDetect String="AssertCPUs" firstNonSpace="true" attribute="Option Name" context="AC cardinal"/>
+        <WordDetect String="AssertCapability" firstNonSpace="true" attribute="Option Name" context="AC capability"/>
+        <WordDetect String="AssertControlGroupController" firstNonSpace="true" attribute="Option Name" context="AC controller cg"/>
+        <WordDetect String="AssertDirectoryNotEmpty" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertEnvironment" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertFileIsExecutable" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertFileNotEmpty" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertFirstBoot" firstNonSpace="true" attribute="Option Name" context="AC boolean"/>
+        <WordDetect String="AssertFraction" firstNonSpace="true" attribute="Option Name" context="fraction"/>
+        <WordDetect String="AssertGroup" firstNonSpace="true" attribute="Option Name" context="AC group"/>
+        <WordDetect String="AssertHost" firstNonSpace="true" attribute="Option Name" context="AC text *"/>
+        <WordDetect String="AssertIOPressure" firstNonSpace="true" attribute="Option Name" context="AC threshold"/>
+        <WordDetect String="AssertKernelCommandLine" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertKernelVersion" firstNonSpace="true" attribute="Option Name" context="AC text *"/>
+        <WordDetect String="AssertMachineTag" firstNonSpace="true" attribute="Option Name" context="text glob"/>
+        <WordDetect String="AssertMemory" firstNonSpace="true" attribute="Option Name" context="AC cardinal"/>
+        <WordDetect String="AssertMemoryPressure" firstNonSpace="true" attribute="Option Name" context="AC threshold"/>
+        <WordDetect String="AssertNeedsUpdate" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertOSRelease" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertPathExists" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertPathExistsGlob" firstNonSpace="true" attribute="Option Name" context="AC text glob"/>
+        <WordDetect String="AssertPathIsDirectory" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertPathIsEncrypted" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertPathIsMountPoint" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertPathIsReadWrite" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertPathIsSocket" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertPathIsSymbolicLink" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="AssertSecurity" firstNonSpace="true" attribute="Option Name" context="AC security"/>
+        <WordDetect String="AssertUser" firstNonSpace="true" attribute="Option Name" context="AC user"/>
+        <WordDetect String="AssertVirtualization" firstNonSpace="true" attribute="Option Name" context="AC virtualization"/>
+        <WordDetect String="Before" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="BindsTo" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="CollectMode" firstNonSpace="true" attribute="Option Name" context="collect mode"/>
+        <WordDetect String="ConditionACPower" firstNonSpace="true" attribute="Option Name" context="AC boolean"/>
+        <WordDetect String="ConditionArchitecture" firstNonSpace="true" attribute="Option Name" context="AC architecture"/>
+        <WordDetect String="ConditionCPUFeature" firstNonSpace="true" attribute="Option Name" context="AC cpu feature"/>
+        <WordDetect String="ConditionCPUPressure" firstNonSpace="true" attribute="Option Name" context="AC threshold"/>
+        <WordDetect String="ConditionCPUs" firstNonSpace="true" attribute="Option Name" context="AC cardinal"/>
+        <WordDetect String="ConditionCapability" firstNonSpace="true" attribute="Option Name" context="AC capability"/>
+        <WordDetect String="ConditionControlGroupController" firstNonSpace="true" attribute="Option Name" context="AC controller cg"/>
+        <WordDetect String="ConditionDirectoryNotEmpty" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionEnvironment" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionFileIsExecutable" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionFileNotEmpty" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionFirmware" firstNonSpace="true" attribute="Option Name" context="AC firmware"/>
+        <WordDetect String="ConditionFirstBoot" firstNonSpace="true" attribute="Option Name" context="AC boolean"/>
+        <WordDetect String="ConditionFraction" firstNonSpace="true" attribute="Option Name" context="fraction"/>
+        <WordDetect String="ConditionGroup" firstNonSpace="true" attribute="Option Name" context="AC group"/>
+        <WordDetect String="ConditionHost" firstNonSpace="true" attribute="Option Name" context="AC text *"/>
+        <WordDetect String="ConditionIOPressure" firstNonSpace="true" attribute="Option Name" context="AC threshold"/>
+        <WordDetect String="ConditionKernelCommandLine" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionKernelVersion" firstNonSpace="true" attribute="Option Name" context="AC text *"/>
+        <WordDetect String="ConditionMachineTag" firstNonSpace="true" attribute="Option Name" context="text glob"/>
+        <WordDetect String="ConditionMemory" firstNonSpace="true" attribute="Option Name" context="AC cardinal KMGT"/>
+        <WordDetect String="ConditionMemoryPressure" firstNonSpace="true" attribute="Option Name" context="AC threshold"/>
+        <WordDetect String="ConditionNeedsUpdate" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionOSRelease" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionPathExists" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionPathExistsGlob" firstNonSpace="true" attribute="Option Name" context="AC text glob"/>
+        <WordDetect String="ConditionPathIsDirectory" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionPathIsEncrypted" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionPathIsMountPoint" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionPathIsReadWrite" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionPathIsSocket" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionPathIsSymbolicLink" firstNonSpace="true" attribute="Option Name" context="AC text"/>
+        <WordDetect String="ConditionSecurity" firstNonSpace="true" attribute="Option Name" context="AC security"/>
+        <WordDetect String="ConditionUser" firstNonSpace="true" attribute="Option Name" context="AC user"/>
+        <WordDetect String="ConditionVersion" firstNonSpace="true" attribute="Option Name" context="AC text *"/>
+        <WordDetect String="ConditionVirtualization" firstNonSpace="true" attribute="Option Name" context="AC virtualization"/>
+        <WordDetect String="Conflicts" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="DefaultDependencies" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="FailureAction" firstNonSpace="true" attribute="Option Name" context="action"/>
+        <WordDetect String="FailureActionExitStatus" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="IgnoreOnIsolate" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="JobRunningTimeoutSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+        <WordDetect String="JobTimeoutAction" firstNonSpace="true" attribute="Option Name" context="action"/>
+        <WordDetect String="JobTimeoutSec" firstNonSpace="true" attribute="Option Name" context="timeout"/>
+        <WordDetect String="JoinsNamespaceOf" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="OnFailure" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="OnFailureJobMode" firstNonSpace="true" attribute="Option Name" context="job mode"/>
+        <WordDetect String="OnSuccess" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="OnSuccessJobMode" firstNonSpace="true" attribute="Option Name" context="job mode"/>
+        <WordDetect String="PartOf" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="PropagatesReloadTo" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="PropagatesStopTo" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="RefuseManualStart" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="RefuseManualStop" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="ReloadPropagatedFrom" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="Requires" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="Requisite" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="StartLimitAction" firstNonSpace="true" attribute="Option Name" context="action"/>
+        <WordDetect String="StartLimitBurst" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="StartLimitIntervalSec" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="StopPropagatedFrom" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="StopWhenUnneeded" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="SuccessAction" firstNonSpace="true" attribute="Option Name" context="action"/>
+        <WordDetect String="SuccessActionExitStatus" firstNonSpace="true" attribute="Option Name" context="cardinal"/>
+        <WordDetect String="SurviveFinalKillSignal" firstNonSpace="true" attribute="Option Name" context="boolean"/>
+        <WordDetect String="Upholds" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+        <WordDetect String="Wants" firstNonSpace="true" attribute="Option Name" context="unit list"/>
+      </context>
+      <!-- Contexts for sections. -->
+      <context name="section automount" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+        <IncludeRules context="options automount"/>
+      </context>
+      <context name="section install" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+        <IncludeRules context="options install"/>
+      </context>
+      <context name="section mount" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+        <IncludeRules context="options exec"/>
+        <IncludeRules context="options kill"/>
+        <IncludeRules context="options resource-control"/>
+        <IncludeRules context="options mount"/>
+      </context>
+      <context name="section path" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+        <IncludeRules context="options path"/>
+      </context>
+      <context name="section slice" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+        <IncludeRules context="options resource-control"/>
+        <IncludeRules context="options slice"/>
+      </context>
+      <context name="section service" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+        <IncludeRules context="options exec"/>
+        <IncludeRules context="options kill"/>
+        <IncludeRules context="options resource-control"/>
+        <IncludeRules context="options service"/>
+      </context>
+      <context name="section socket" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+        <IncludeRules context="options exec"/>
+        <IncludeRules context="options kill"/>
+        <IncludeRules context="options resource-control"/>
+        <IncludeRules context="options socket"/>
+      </context>
+      <context name="section swap" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+        <IncludeRules context="options exec"/>
+        <IncludeRules context="options kill"/>
+        <IncludeRules context="options resource-control"/>
+        <IncludeRules context="options swap"/>
+      </context>
+      <context name="section timer" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+        <IncludeRules context="options timer"/>
+      </context>
+      <context name="section unit" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="section"/>
+        <IncludeRules context="options unit"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal" defStyleNum="dsNormal"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Constant" defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Continuation" defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Environment Variable" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Errno Name" defStyleNum="dsSpecialString" spellChecking="false"/>
+      <itemData name="Errno Number" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Escape" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Extension" defStyleNum="dsNormal" italic="true" spellChecking="false"/>
+      <itemData name="Extension Header" defStyleNum="dsKeyword" italic="true" spellChecking="false"/>
+      <itemData name="File Descriptor Name" defStyleNum="dsNormal" italic="true" spellChecking="false"/>
+      <itemData name="File Mode" defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Measurement Unit" defStyleNum="dsNormal" italic="true" spellChecking="false"/>
+      <itemData name="Number" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Number Hexadecimal" defStyleNum="dsBaseN" spellChecking="false"/>
+      <!-- Styling identical to INI-files. -->
+      <itemData name="Option Name" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Prefix" defStyleNum="dsSpecialString" spellChecking="false"/>
+      <!-- Styling identical to INI-files. -->
+      <itemData name="Section Header" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Separator" defStyleNum="dsSpecialString" spellChecking="false"/>
+      <itemData name="Specifier" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Tag" defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="Threshold Time Span" defStyleNum="dsConstant" italic="true" spellChecking="false"/>
+      <itemData name="Unit Extension" defStyleNum="dsPreprocessor" italic="true" spellChecking="false"/>
+      <itemData name="Unit Instance" defStyleNum="dsPreprocessor" bold="true" spellChecking="false"/>
+      <itemData name="Unit Name" defStyleNum="dsPreprocessor" spellChecking="false"/>
+      <itemData name="Wildcard" defStyleNum="dsSpecialChar" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+    <keywords casesensitive="true" weakDeliminator="-+"/>
+  </general>
+</language>

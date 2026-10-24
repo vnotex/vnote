@@ -1,19 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd" [
-  <!ENTITY funcname "[A-Za-z_:][A-Za-z0-9_:#&#37;@-]*">
-  <!ENTITY varname  "\b(?!(?:process|constant|signal|variable))([A-Za-z_][A-Za-z0-9_]*)\b">
-  <!ENTITY bos      "(\b)">                        <!-- bol or space following -->
-  <!ENTITY eos      "\b">                <!-- eol or space following -->
-  <!ENTITY noword   "(?![\w$+-])">                <!-- no word, $, + or - following -->
-  <!ENTITY label     "((&varname;)\s*:\s*)?">
-
+<!DOCTYPE language [
+  <!ENTITY varname  "[A-Za-z_][A-Za-z0-9_]*">
+  <!ENTITY identifier "(?:\b&varname;\b|\\[^\\]*\\)">
+  <!ENTITY designator "(?:\b&varname;\b|\\[^\\]*\\|&quot;[^&quot;]*&quot;)">
+  <!ENTITY label    "\b&varname;(?=\s*:(?!=))">
+  <!ENTITY bos      "\b">                        <!-- bol or space following -->
 ]>
-<language name="VHDL" version="6" kateversion="3.0" section="Hardware" extensions="*.vhdl;*.vhd" mimetype="text/x-vhdl" author="Rocky Scaletta (rocky@purdue.edu), Stefan Endrullis (stefan@endrullis.de), Florent Ouchet (outchy@users.sourceforge.net), Chris Higgs (chiggs.99@gmail.com), Jan Michel (jan@mueschelsoft.de), Luigi Calligaris (luigi.calligaris@stfc.ac.uk)">
+<language name="VHDL" version="16" kateversion="5.62" section="Hardware" extensions="*.vhdl;*.vhd" mimetype="text/x-vhdl" author="Rocky Scaletta (rocky@purdue.edu), Stefan Endrullis (stefan@endrullis.de), Florent Ouchet (outchy@users.sourceforge.net), Chris Higgs (chiggs.99@gmail.com), Jan Michel (jan@mueschelsoft.de), Luigi Calligaris (luigi.calligaris@stfc.ac.uk)">
+  <!-- BNF: https://github.com/antlr/grammars-v4/blob/master/vhdl/vhdl.g4 (VHDL-2005) -->
+  <!-- Based on VHDL-2008 -->
   <highlighting>
     <list name="keywordsToplevel">
       <item>file</item>
       <item>library</item>
       <item>use</item>
+      <item>with</item>
     </list>
 
     <list name="keywords">
@@ -30,6 +31,7 @@
       <item>block</item>
       <item>body</item>
       <item>bus</item>
+      <item>case</item>
       <item>component</item>
       <item>constant</item>
       <item>context</item>
@@ -37,10 +39,12 @@
       <item>default</item>
       <item>disconnect</item>
       <item>downto</item>
+      <item>else</item>
+      <item>elsif</item>
       <item>end</item>
-      <item>exit</item>
       <item>fairness</item>
       <item>falling_edge</item>
+      <item>false</item>
       <item>file</item>
       <item>for</item>
       <item>force</item>
@@ -49,6 +53,7 @@
       <item>generic</item>
       <item>group</item>
       <item>guarded</item>
+      <item>if</item>
       <item>impure</item>
       <item>inertial</item>
       <item>is</item>
@@ -57,12 +62,12 @@
       <item>literal</item>
       <item>map</item>
       <item>new</item>
-      <item>next</item>
       <item>null</item>
       <item>of</item>
       <item>on</item>
       <item>open</item>
       <item>others</item>
+      <item>package</item>
       <item>parameter</item>
       <item>port</item>
       <item>postponed</item>
@@ -77,7 +82,6 @@
       <item>reject</item>
       <item>release</item>
       <item>report</item>
-      <item>return</item>
       <item>rising_edge</item>
       <item>select</item>
       <item>sequence</item>
@@ -86,13 +90,17 @@
       <item>shared</item>
       <item>strong</item>
       <item>subtype</item>
+      <item>then</item>
       <item>to</item>
       <item>transport</item>
+      <item>true</item>
       <item>type</item>
+      <item>use</item>
       <item>unaffected</item>
       <item>units</item>
       <item>until</item>
       <item>variable</item>
+      <item>view</item>
       <item>vmode</item>
       <item>vprop</item>
       <item>vunit</item>
@@ -125,11 +133,10 @@
       <item>srl</item>
     </list>
 
-    <list name="if">
-      <item>if</item>
-      <item>else</item>
-      <item>elsif</item>
-      <item>then</item>
+    <list name="controls">
+      <item>exit</item>
+      <item>next</item>
+      <item>return</item>
     </list>
 
     <list name="signals">
@@ -146,11 +153,6 @@
       <item>others</item>
     </list>
 
-    <list name="case">
-      <item>case</item>
-      <item>when</item>
-    </list>
-
     <list name="timeunits">
       <item>fs</item>
       <item>ps</item>
@@ -161,7 +163,6 @@
       <item>min</item>
       <item>hr</item>
     </list>
-
 
     <list name="types">
       <item>bit</item>
@@ -211,405 +212,1080 @@
       <item>wor_vector</item>
     </list>
 
+    <list name="instantiated">
+      <item>configuration</item>
+      <item>component</item>
+      <item>entity</item>
+    </list>
 
     <contexts>
 
+
 <!-- start / global environment -->
-      <context name="start" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
+      <context name="start" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
 
-        <RegExpr attribute="Control" context="architecture_main" insensitive="true" dynamic="true" lookAhead="true"
-                 String="&bos;architecture\s+(&varname;)&eos;"/>
-        <StringDetect attribute="Control" context="entity"
-                 String="entity"/>
-        <RegExpr attribute="Control" context="package" insensitive="true" lookAhead="true" dynamic="true" beginRegion="PackageRegion1"
-                 String="&bos;package\s+(&varname;)\s+is&eos;"/>
-        <RegExpr attribute="Control" context="packagebody" lookAhead="true" insensitive="true" dynamic="true" beginRegion="PackageBodyRegion1"
-                 String="&bos;package\s+body\s+(&varname;)\s+is&eos;"/>
-       <!-- <StringDetect  attribute="Control"  context="arch_decl"      String="package"     />temporary-->
-        <RegExpr attribute="Control" context="configuration" insensitive="true" dynamic="true" lookAhead="true"
-                 String="&bos;configuration\s+(&varname;)&eos;"/>
+        <WordDetect attribute="Control" context="entity" insensitive="1" String="entity"/>
+        <WordDetect attribute="Control" context="configuration" insensitive="1" String="configuration"/>
+        <WordDetect attribute="Control" context="architecture" insensitive="1" String="architecture"/>
+        <WordDetect attribute="Control" context="package" insensitive="1" String="package"/>
+        <WordDetect attribute="Keyword" context="context" insensitive="1" String="context"/>
+
         <keyword attribute="Keyword" context="#stay" String="keywordsToplevel"/>
+
+        <WordDetect attribute="Signal" context="type" insensitive="1" String="type"/>
+        <WordDetect attribute="Redirection" context="function" insensitive="1" String="function"/>
+        <WordDetect attribute="Keyword" context="procedure" insensitive="1" String="procedure" beginRegion="ProcedureRegion1"/>
+        <WordDetect attribute="Control" context="component" insensitive="1" String="component"/>
+        <WordDetect attribute="Keyword" context="view" insensitive="1" String="view" beginRegion="sig"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <keyword attribute="Data Type" context="#stay" String="timeunits"/>
+        <keyword attribute="Range" context="#stay" String="range"/>
+        <keyword attribute="Signal" context="signal" String="signals"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Control" context="#stay" String="controls"/>
+        <DetectIdentifier attribute="Normal Text"/>
       </context>
 
+<!--
+package ::=
+    *package* identifier *is* *new* name
+        [ *generic* *map* ( association_list ) ] ;
 
-      <context name="package" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control"   context="#stay" insensitive="true" String="&bos;package&eos;" />
-        <RegExpr attribute="Keyword"   context="packagemain" insensitive="true" String="&bos;is&eos;" />
-        <RegExpr attribute="Name"      context="#stay"     insensitive="true" String="&bos;%2&eos;" dynamic="true"/>
-        <RegExpr attribute="Redirection" context="#pop"  dynamic="true" endRegion="PackageRegion1" insensitive="true"
-                 String="&bos;end(\s+package)?(\s+%2)?\s*;" />
-        <IncludeRules context="generalDetection"/>
+  | *package* identifier *is*
+        [ *generic* ( interface_list ) ;
+        [ *generic* *map* ( association_list ) ; ] ]
+        { package_declarative_item }
+    *end* [ *package* ] [ identifier ] ;
+
+  | *package *body* identifier *is*
+        { process_declarative_item }
+    *end* [ *package* *body* ] [ identifier ] ;
+-->
+      <context name="package" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Control" context="#pop!packagebody" insensitive="true" String="body"/>
+        <RegExpr attribute="Name" context="package_main" beginRegion="PackageRegion1"
+                 String="(&identifier;)"/>
       </context>
 
-      <context name="packagemain" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Keyword"   context="#pop" lookAhead="true" insensitive="true" String="&bos;end&eos;" />
-        <RegExpr attribute="Keyword"   context="packagefunction" insensitive="true" String="&bos;function&eos;" />
-        <IncludeRules context="generalDetection"/>
+      <context name="package_main" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="package_is">
+        <RegExpr attribute="Control" context="#pop#pop" dynamic="1" insensitive="1"
+                 String="&bos;end(\s+package\b)?(\s+%1)?\s*;" endRegion="PackageRegion1"/>
+        <WordDetect attribute="Error" context="#pop#pop!expressionError" insensitive="true"
+                    String="end" endRegion="PackageRegion1"/>
       </context>
 
-      <context name="packagefunction" attribute="Normal Text" lineEndContext="#stay">
-        <RegExpr attribute="Name" context="#pop" insensitive="true" String="&bos;&varname;&eos;" />
+      <context name="package_is" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!package_decl">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Keyword" insensitive="1" String="is"/>
+        <WordDetect attribute="Keyword" insensitive="1" String="new" context="#pop#pop#pop!package_is_new"/>
+      </context>
+
+      <context name="package_is_new" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!package_is_new_main">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="pop_end"/>
+        <DetectIdentifier attribute="Name" context="#pop!package_is_new_main"/>
+        <RangeDetect attribute="Name" context="#pop!package_is_new_main" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Name" context="#pop!package_is_new_main" char="\" char1="\"/>
+      </context>
+
+      <context name="package_is_new_main" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="blank"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=";" endRegion="PackageRegion1"/>
+        <DetectChar attribute="Operator" char="."/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="find_instantiated_map"/>
+      </context>
+
+      <context name="package_decl" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!package_declarative_list">
+        <IncludeRules context="blank"/>
+        <DetectChar attribute="Normal Text" char=";"/>
+        <IncludeRules context="enclosed_interface_list"/>
+        <IncludeRules context="find_instantiated_map"/>
+        <WordDetect attribute="Control" insensitive="true" String="generic"/>
+      </context>
+
+      <context name="package_declarative_list" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="package_declarative_start_expr"/>
+        <IncludeRules context="start_simple_expr"/>
       </context>
 
       <!-- package body environment -->
 
-      <context name="packagebody" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control"   context="#stay" insensitive="true" String="&bos;package&eos;" />
-        <RegExpr attribute="Keyword"   context="packagebodymain" insensitive="true" String="&bos;is&eos;" />
-        <RegExpr attribute="Name"      context="#stay"     insensitive="true" String="&bos;%2&eos;" dynamic="true"/>
-        <RegExpr attribute="Redirection" context="#pop" dynamic="true" endRegion="PackageBodyRegion1" insensitive="true"
-                 String="&bos;end(\s+package)?(\s+%2)?\s*;" />
-        <IncludeRules context="generalDetection"/>
+      <context name="packagebody" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
+        <IncludeRules context="blank"/>
+        <RegExpr attribute="Name" context="packagebody_main" beginRegion="PackageBodyRegion1"
+                 String="(&identifier;)"/>
       </context>
 
-      <context name="packagebodymain" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Keyword"   context="#pop" lookAhead="true" insensitive="true" String="&bos;end\s+package&eos;" />
-        <RegExpr attribute="Keyword"   context="packagebodyfunc1" beginRegion="PackBodyFunc" insensitive="true" dynamic="true" lookAhead="true" String="&bos;function\s+(&varname;)&eos;" />
-        <IncludeRules context="generalDetection"/>
+      <context name="packagebody_main" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="packagebody_is">
+        <RegExpr attribute="Control" context="#pop#pop" dynamic="1" insensitive="1"
+                 String="&bos;end(\s+package\s+body\b)?(\s+%1)?\s*;" endRegion="PackageBodyRegion1"/>
+        <WordDetect attribute="Error" context="#pop#pop!expressionError" insensitive="true"
+                    String="end" endRegion="PackageBodyRegion1"/>
       </context>
 
-      <context name="packagebodyfunc1" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Redirection" context="packagebodyfunc2" beginRegion="RegionFunction" insensitive="true" String="&bos;begin&eos;" />
-        <RegExpr attribute="Keyword"   context="#pop" insensitive="true" endRegion="PackBodyFunc" dynamic="true" String="&bos;end(\s+function)?(\s+%2)?&eos;" />
-        <RegExpr attribute="Name" context="#stay" insensitive="true" String="&bos;%2&eos;"  dynamic="true"/>
-        <IncludeRules context="generalDetection"/>
+      <context name="packagebody_is" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!package_declarative_list">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Keyword" context="#pop!package_declarative_list" insensitive="1" String="is"/>
       </context>
 
-      <context name="packagebodyfunc2" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Redirection" context="#pop" insensitive="true" dynamic="true" lookAhead="true" endRegion="RegionFunction"
-                 String="&bos;end(\s+function)?&eos;"/>
-        <!--<RegExpr attribute="Error" context="#pop" insensitive="true" dynamic="true" lookAhead="true" endRegion="RegionFunction"
-                 String="&bos;end\s+function(\s+&varname;)?&eos;"/>-->
-        <RegExpr attribute="Process" context="#stay" insensitive="true"
-                 String="&bos;begin&eos;"/>
-        <IncludeRules context="proc_rules"/>
+<!--
+architecture ::=
+    *architecture* identifier *of* name *is*
+        { block_declarative_item }
+    *begin*
+        { concurrent_statement }
+    *end* [ *architecture* ] [ identifier ] ;
+-->
+      <context name="architecture" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="blank"/>
+        <RegExpr attribute="Name" context="arch_end" beginRegion="ArchitectureRegion1"
+                 String="(&identifier;)"/>
       </context>
 
-
-<!--====ARCHITECTURE ===============-->
-      <context name="architecture_main" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" context="arch_start" insensitive="true" lookAhead="true" dynamic="true" beginRegion="ArchitectureRegion1"
-                 String="&bos;architecture\s+(&varname;)\s+of\s+(&varname;)\s+is"/>
-        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" dynamic="true" endRegion="ArchitectureRegion1"
-                 String="&bos;end(\s+architecture)?(\s+%2)?\s*;"/>
-        <RegExpr attribute="Error" context="#pop#pop" insensitive="true" dynamic="true" endRegion="ArchitectureRegion1"
-                 String="&bos;end(\s+architecture)?(\s+&varname;)\s*;"/>
-        <IncludeRules context="detect_arch_parts"/>
+      <context name="arch_end" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="arch_of">
+        <RegExpr attribute="Control" context="#pop#pop" insensitive="1" dynamic="1"
+                 String="&bos;end(\s+architecture\b)?(\s+%1)?\s*;" endRegion="ArchitectureRegion1"/>
+        <WordDetect attribute="Error" context="#pop#pop!expressionError" insensitive="1"
+                    String="end" endRegion="ArchitectureRegion1"/>
       </context>
 
-<!-- architecture environment "before begin" -->
-      <context name="arch_start" attribute="Control" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Keyword"   context="arch_decl" insensitive="true" String="&bos;is&eos;" />
-        <RegExpr attribute="Name"      context="#stay"     insensitive="true" String="&bos;%2&eos;" dynamic="true"/>
-        <RegExpr attribute="Reference" context="#stay"     insensitive="true" String="&bos;%4&eos;" dynamic="true"/>
-        <IncludeRules context="generalDetection"/>
+      <context name="arch_of" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!block_declarative_stmt">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Keyword" context="#pop!arch_ref" insensitive="1" String="of"/>
       </context>
 
-      <context name="arch_decl" attribute="Normal Text" lineEndContext="#stay">
-        <IncludeRules context="preDetection"/>
-        <keyword attribute="Signal" context="signal"          insensitive="true" String="signals"/>
-        <StringDetect attribute="Control" context="archfunc1" insensitive="true" String="function" beginRegion="ArchFunctionRegion1"/>
-        <StringDetect attribute="Control" context="entity"    insensitive="true" String="component"/>
-        <StringDetect attribute="Control" context="#pop#pop"  insensitive="true" String="begin"/>
-        <IncludeRules context="generalDetection"/>
+      <context name="arch_ref" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!block_declarative_stmt">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Keyword" context="#pop!block_declarative_stmt" insensitive="1" String="is" />
+        <IncludeRules context="reference"/>
       </context>
 
-      <context name="archfunc1" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Redirection" context="archfunc2" beginRegion="RegionFunction" insensitive="true" String="&bos;begin&eos;" />
-        <RegExpr attribute="Keyword"   context="#pop" insensitive="true" endRegion="ArchFunctionRegion1" dynamic="true" String="&bos;end(\s+function)?(\s+%2)?&eos;" />
-        <RegExpr attribute="Name" context="#stay" insensitive="true" String="&bos;%2&eos;"  dynamic="true"/>
-        <IncludeRules context="generalDetection"/>
+      <context name="reference" attribute="Normal Text" lineEndContext="#stay">
+        <DetectIdentifier attribute="Reference"/>
+        <RangeDetect attribute="Reference" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Reference" char="\" char1="\"/>
+        <DetectChar attribute="Reference" char="."/>
       </context>
 
-      <context name="archfunc2" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Redirection" context="#pop" insensitive="true" dynamic="true" lookAhead="true" endRegion="RegionFunction"
-                 String="&bos;end(\s+function)?&eos;"/>
-        <!--<RegExpr attribute="Error" context="#pop" insensitive="true" dynamic="true" lookAhead="true" endRegion="RegionFunction"
-                 String="&bos;end\s+function(\s+&varname;)?&eos;"/>-->
-        <RegExpr attribute="Process" context="#stay" insensitive="true"
-                 String="&bos;begin&eos;"/>
-        <IncludeRules context="proc_rules"/>
+<!-- { block_declarative_item } -->
+      <context name="block_declarative_stmt" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="block_declarative_start_expr"/>
+        <WordDetect attribute="Control" context="#pop!concurrent_stmt" insensitive="1" String="begin"/>
+        <IncludeRules context="start_simple_expr"/>
       </context>
 
-
-<!-- parts of architecture body -->
-      <context name="detect_arch_parts" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <RegExpr attribute="Normal Text" context="generate1" lookAhead="true" insensitive="true" dynamic="true"
-                 String="&bos;(&varname;\s*:\s*)(if|for).*\s+generate&eos;"/>
-        <RegExpr attribute="Normal Text" context="process1" lookAhead="true" insensitive="true" dynamic="true"
-                 String="&bos;(&varname;\s*:\s*)?process&eos;"/>
-        <RegExpr attribute="Normal Text" context="instance" lookAhead="true" insensitive="true" dynamic="true" beginRegion="InstanceRegion1"
-                 String="&bos;(&varname;)\s*:\s*((entity\s+)?(&varname;)(\.&varname;)?)"/>
-
-        <IncludeRules context="generalDetection"/>
+      <context name="block_declarative_start_expr" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="package_declarative_start_expr"/>
+        <WordDetect attribute="Control" context="for_block_decl" insensitive="1" String="for" beginRegion="LoopRegion1"/>
       </context>
 
-<!--====generate ===============-->
-      <context name="generate1" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" context="generate2" insensitive="true" beginRegion="GenerateRegion"
-                 String="&bos;(generate|loop)&eos;"/>
-        <RegExpr attribute="Name"      context="#stay" dynamic="true" insensitive="true"
-                 String="&bos;%3&eos;"/>
-        <RegExpr attribute="Control" context="#stay"                insensitive="true"
-                 String="&bos;(for|if|while)&eos;"/>
-        <IncludeRules context="generalDetection"/>
+      <context name="package_declarative_start_expr" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect attribute="Control" context="component" insensitive="1" String="component"/>
+        <IncludeRules context="process_declarative_start_expr"/>
       </context>
 
-      <context name="generate2" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" context="#stay" insensitive="true"
-                 String="&bos;begin&eos;"/>
-        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" endRegion="GenerateRegion"
-                 String="&bos;end\s+(generate|loop)(\s+&varname;)?"/>
-        <IncludeRules context="detect_arch_parts"/>
+      <context name="process_declarative_start_expr" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect attribute="Control" context="package" insensitive="1" String="package"/>
+        <WordDetect attribute="Signal" context="type" insensitive="1" String="type"/>
+        <WordDetect attribute="Redirection" context="function" insensitive="1" String="function"/>
+        <WordDetect attribute="Keyword" context="procedure" insensitive="1" String="procedure" beginRegion="ProcedureRegion1"/>
+        <!-- *shared* *variable* ... -->
+        <WordDetect attribute="Keyword" insensitive="1" String="shared"/>
+        <!-- *impure* *function* ... -->
+        <WordDetect attribute="Keyword" insensitive="1" String="impure"/>
+        <!-- *pure* *function* ... -->
+        <WordDetect attribute="Keyword" insensitive="1" String="pure"/>
+        <WordDetect attribute="Keyword" context="view" insensitive="1" String="view" beginRegion="sig"/>
+        <keyword attribute="Signal" context="signal" String="signals"/>
       </context>
 
-
-<!--====process ===============-->
-<!-- process environment -->
-
-      <context name="process1" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Process" context="#pop" insensitive="true" dynamic="true" endRegion="RegionProcess"
-                 String="&bos;end\s+process(\s+%3)?"/>
-        <RegExpr attribute="Error" context="#pop" insensitive="true" dynamic="true" endRegion="RegionProcess"
-                 String="&bos;end\s+process(\s+&varname;)?"/>
-        <RegExpr attribute="Process" context="#stay" insensitive="true" beginRegion="RegionProcess"
-                 String="&bos;process&eos;"/>
-        <RegExpr attribute="Process" context="#stay" insensitive="true"
-                 String="&bos;begin&eos;"/>
-        <IncludeRules context="proc_rules"/>
+      <context name="start_simple_expr" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="pop_end"/>
+        <keyword attribute="Keyword" context="sequential_stmt_expr" String="keywords"/>
+        <DetectIdentifier attribute="Normal Text" context="sequential_stmt_expr"/>
       </context>
 
-      <context name="proc_rules" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-         <RegExpr attribute="Name" context="#stay" insensitive="true"
-                  String="&bos;&varname;(?=\s*:(?!=))"/>
-         <RegExpr attribute="Control" context="if_start" insensitive="true"
-                  String="&bos;if&eos;"/>
-         <RegExpr attribute="Control" context="case1" lookAhead="true" insensitive="true"
-                  String="&bos;case&eos;"/>
-         <RegExpr attribute="Control" context="forwhile1" dynamic="true" lookAhead="true" insensitive="true"
-                  String="&bos;((&varname;)\s*:\s*)?((for|while)\s+.+\s+)loop&eos;"/>
-         <IncludeRules context="generalDetection"/>
+      <context name="start_simple_expr_then_pop" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="pop_end"/>
+        <keyword attribute="Keyword" context="#pop!sequential_stmt_expr" String="keywords"/>
+        <DetectIdentifier attribute="Normal Text" context="#pop!sequential_stmt_expr"/>
       </context>
 
+<!-- { concurrent_statement } -->
+      <context name="concurrent_stmt" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="concurrent_stmt_item">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="concurrent_label"/>
+      </context>
 
+      <context name="concurrent_label" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Name" context="concurrent_stmt_label" String="\b(?!(process|constant|signal|variable)\b)&label;"/>
+      </context>
 
+      <context name="concurrent_stmt_label" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Operator" context="#pop!concurrent_stmt_labelized_item" char=":"/>
+        <DetectSpaces attribute="Normal Text"/>
+      </context>
 
-<!--====instance =============== -->
-      <!-- When an instance has been detected-->
-      <context name="instance" attribute="Error" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Reference"   context="#stay" String="&bos;%4&eos;" dynamic="true"/>
-        <RegExpr attribute="Name"        context="#stay" String="&bos;%3&eos;" dynamic="true"/>
-        <RegExpr attribute="Keyword"     context="instanceMap" beginRegion="InstanceMapRegion"
-                 String="&bos;(port|generic)\s+map\s*\(" />
+      <context name="concurrent_stmt_labelized_item" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Control" context="#pop!case_generate" insensitive="1" String="case" beginRegion="CaseRegion1"/>
+        <WordDetect attribute="Control" context="#pop!for_generate" insensitive="1" String="for" beginRegion="LoopRegion1"/>
+        <WordDetect attribute="Control" context="#pop!if_generate" insensitive="1" String="if" beginRegion="IfRegion1"/>
+        <keyword attribute="Keyword" context="#pop!instantiated_unit" String="instantiated"/>
+        <IncludeRules context="concurrent_stmt_item_start"/>
+        <IncludeRules context="instantiated_unit_name"/>
+        <DetectIdentifier attribute="Normal Text" context="#pop!sequential_stmt_expr"/>
+      </context>
+
+      <context name="concurrent_stmt_item" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="concurrent_stmt_item_start"/>
+        <DetectIdentifier attribute="Normal Text" context="#pop!sequential_stmt_expr"/>
+      </context>
+
+      <context name="concurrent_stmt_item_start" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect attribute="Keyword" context="#stay" insensitive="1" String="postponed"/>
+        <WordDetect attribute="Control" context="#pop!package" insensitive="1" String="package"/>
+        <WordDetect attribute="Signal" context="#pop!type" insensitive="1" String="type"/>
+        <WordDetect attribute="Redirection" context="#pop!function" insensitive="1" String="function"/>
+        <WordDetect attribute="Keyword" context="#pop!procedure" insensitive="1" String="procedure" beginRegion="ProcedureRegion1"/>
+        <WordDetect attribute="Process" context="#pop!process" insensitive="1" String="process" beginRegion="ProcessRegion1"/>
+        <WordDetect attribute="Control" context="#pop!block" insensitive="1" String="block" beginRegion="BlockRegion1"/>
+        <WordDetect attribute="Keyword" context="#pop!view" insensitive="1" String="view"/>
+        <keyword attribute="Signal" context="#pop!signal" String="signals" beginRegion="sig"/>
+        <IncludeRules context="sequential_stmt_item_start"/>
+        <keyword attribute="Keyword" context="#pop!sequential_stmt_expr" String="keywords"/>
+      </context>
+
+<!--
+block_declarative_item_for ::=
+    *for* instantiation_list : name
+        [ *use* entity_aspect ]
+        [ generic_map_aspect ]
+        [ port_map_aspect ] ;
+    [ block_declarative_item_for_end ]
+
+block_declarative_item_for ::=
+        [ *use* *vunit* name_list ;
+          { *use* *vunit* name_list ; } ]
+      *end* *for* ;
+    | *end* *for* ;
+-->
+      <context name="for_block_decl" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <DetectChar attribute="Normal Text" context="#pop!for_block_unit" char=";" endRegion="InstanceRegion1"/>
+        <WordDetect context="#pop!expressionError" insensitive="1" String="end"/>
+        <IncludeRules context="find_instantiated_map"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+
+      <context name="for_block_unit" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!for_block_end_region">
+        <IncludeRules context="blank"/>
+        <WordDetect context="sequential_stmt_expr" insensitive="1" String="use"/>
+        <WordDetect context="for_block_end" insensitive="1" String="end"/>
+      </context>
+
+      <context name="for_block_end" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Control" context="#pop#pop" insensitive="1"
+                 String="&bos;end\s+for\s*;" endRegion="LoopRegion1"/>
+        <WordDetect attribute="Error" context="#pop#pop!expressionError" insensitive="1"
+                    String="end" endRegion="LoopRegion1"/>
+      </context>
+
+      <context name="for_block_end_region" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr context="#pop" String="." lookAhead="1" endRegion="LoopRegion1"/>
+      </context>
+
+<!--
+instantiated ::=
+    instantiated_unit
+    instantiated_unit_decl
+
+instantiated_unit ::=
+      [ *component* ] name
+    | *entity* name [ ( identifier ) ]
+    | *configuration* name
+
+instantiated_unit_decl ::=
+    [ generic_map_aspect ] [ port_map_aspect ] ;
+
+port_map_aspect ::=
+    *port* *map* ( association_list )
+
+generic_map_aspect ::=
+    *generic* *map* ( association_list )
+-->
+      <context name="instantiated_unit" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!instantiated_unit_decl">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="instantiated_unit_name"/>
+      </context>
+
+      <context name="instantiated_unit_name" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Reference" context="#pop!instantiated_unit_decl" String="&varname;(\s*\.\s*&varname;)?" beginRegion="InstanceRegion1"/>
+      </context>
+
+      <context name="instantiated_unit_decl" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!end_instance_region">
+        <IncludeRules context="blank"/>
         <DetectChar attribute="Normal Text" context="#pop" char=";" endRegion="InstanceRegion1"/>
-        <IncludeRules context="generalDetection"/>
+        <!-- *entity* name ( identifier ) -->
+        <!--               ^_____________ -->
+        <DetectChar attribute="Normal Text" context="instantiated_unit_identifier" char="("/>
+        <IncludeRules context="find_instantiated_map"/>
       </context>
 
-      <!-- Inside a port or generic map-->
-      <context name="instanceMap" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
+      <context name="find_instantiated_map" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Keyword" context="instance_map_start" insensitive="true" String="&bos;(port|generic)\s+map\b\s*"/>
+      </context>
+
+      <context name="instantiated_unit_identifier" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop#pop!end_instance_region">
+        <IncludeRules context="blank"/>
+        <DetectChar attribute="Error" context="#pop" char=")"/>
+        <RegExpr attribute="Normal Text" context="#pop!instantiated_unit_identifier_end" String="&identifier;"/>
+      </context>
+      <context name="instantiated_unit_identifier_end" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop#pop!end_instance_region">
+        <IncludeRules context="blank"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=")"/>
+      </context>
+
+      <context name="end_instance_region" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect context="#pop" insensitive="1" String="end" lookAhead="1" endRegion="InstanceRegion1"/>
+        <DetectIdentifier context="#pop" lookAhead="1" endRegion="InstanceRegion1"/>
+        <RegExpr context="#pop" String="." lookAhead="1" endRegion="InstanceRegion1"/>
+      </context>
+
+      <context name="instance_map_start" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
+        <IncludeRules context="blank"/>
+        <DetectChar attribute="Normal Text" context="#pop!instance_map" char="(" beginRegion="InstanceMapRegion"/>
+      </context>
+
+      <!-- Inside a port or generic map -->
+      <context name="instance_map" attribute="Normal Text" lineEndContext="#stay">
         <AnyChar attribute="Error" context="#stay" String="&lt;;:"/>
-        <DetectChar attribute="Error" context="#stay" char=":" />
-        <IncludeRules context="preDetection"/>
+        <IncludeRules context="preExpression"/>
         <DetectChar attribute="Normal Text" context="#pop" char=")" endRegion="InstanceMapRegion"/>
-        <DetectChar attribute="Normal Text" context="instanceInnerPar" char="("/>
-        <IncludeRules context="generalDetection"/>
+        <IncludeRules context="enclosed_association_list"/>
+        <IncludeRules context="postExpression"/>
       </context>
 
-      <!-- Inside parantheses inside a map-->
-      <context name="instanceInnerPar" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <DetectChar attribute="Normal Text" context="#pop" char=")" endRegion="instanceInnerPar"/>
-        <DetectChar attribute="Normal Text" context="instanceInnerPar" char="("/>
-        <DetectChar attribute="Error" context="#stay" char=";"/>
-        <IncludeRules context="generalDetection"/>
-      </context>
-
-<!--====loop ===============-->
-      <context name="forwhile1" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" context="forwhile2" insensitive="true" beginRegion="ForWhileRegion"
-                 String="&bos;loop&eos;"/>
-        <RegExpr attribute="Name"      context="#stay" dynamic="true" insensitive="true"
-                 String="&bos;%3&eos;"/>
-        <RegExpr attribute="Control" context="#stay"                insensitive="true"
-                 String="&bos;(for|while)&eos;"/>
-        <IncludeRules context="generalDetection"/>
-      </context>
-
-      <context name="forwhile2" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" context="#stay" insensitive="true"
-                 String="&bos;begin&eos;"/>
-        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" endRegion="ForWhileRegion"
-                 String="&bos;end\s+loop(\s+&varname;)?"/>
-        <IncludeRules context="proc_rules"/>
-      </context>
-
-<!--====if ===============-->
-      <context name="if_start" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" context="if" insensitive="true" beginRegion="IfRegion1"
-                 String="&bos;then&eos;"/>
-        <IncludeRules context="generalDetection"/>
-      </context>
-
-      <context name="if" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" endRegion="IfRegion1"
+<!--
+if ::=
+    *if* expression *then*
+        { sequential_statement }
+    { *elsif* expression *then*
+        { sequential_statement } }
+    [ *else*
+        { sequential_statement } ]
+    *end* *if* [ label ] ;
+-->
+      <context name="if_start" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="if_expr">
+        <RegExpr attribute="Control" context="#pop" insensitive="true" endRegion="IfRegion1"
                  String="&bos;end\s+if(\s+&varname;)?\s*;"/>
-        <IncludeRules context="proc_rules"/>
-        <keyword attribute="Control" context="#stay" insensitive="true" String="if"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="IfRegion1"/>
       </context>
 
-
-<!--====case ===============-->
-
-      <context name="case1" attribute="Normal Text" lineEndContext="#stay">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Keyword" context="case2" insensitive="true"
-                 String="&bos;is&eos;"/>
-        <keyword attribute="Control" context="#stay" insensitive="true" beginRegion="CaseRegion1" String="case"/>
-        <IncludeRules context="generalDetection"/>
+      <context name="if_expr" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <IncludeRules context="pop_end"/>
+        <WordDetect attribute="Control" context="if_body" insensitive="true" String="then"/>
+        <IncludeRules context="postExpression"/>
       </context>
 
-      <context name="case2" attribute="Normal Text" lineEndContext="#stay">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" endRegion="CaseRegion1"
-                 String="&bos;end\s+case(&varname;)?\s*;"/>
-        <RegExpr attribute="Control" context="caseWhen" lookAhead="true" dynamic="true" insensitive="true"
-                 String="&bos;when(\s+&varname;)?&eos;"/>
-        <IncludeRules context="proc_rules"/>
+      <context name="if_body" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_item">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Control" context="#pop" insensitive="true" String="elsif"/>
+        <WordDetect attribute="Control" context="#pop#pop!sequential_stmt" insensitive="true" String="else"/>
+        <WordDetect attribute="Control" context="#pop#pop" insensitive="true" String="end" lookAhead="1"/>
+        <IncludeRules context="sequential_label"/>
       </context>
 
-      <context name="caseWhen" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <Detect2Chars char="=" char1="&gt;" attribute="Operator" context="caseWhen2" beginRegion="CaseWhenRegion1"/>
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" insensitive="true"
-                 String="&bos;when&eos;"/>
-        <RegExpr attribute="Name" insensitive="true" dynamic="true"
-                 String="&bos;%2&eos;"/>
-        <IncludeRules context="proc_rules"/>
+<!--
+case ::=
+    *case* [ ? ] expression *is*
+        *when* choices => { sequential_statement }
+        { *when* choices => { sequential_statement } }
+    *end* *case* [ ? ] [ label ] ;
+-->
+      <context name="case" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="case_expr">
+        <RegExpr attribute="Control" context="#pop" insensitive="true" endRegion="CaseRegion1"
+                 String="&bos;end\s+case(\s*[?])?(?:\s*\b&varname;)?\s*;"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="CaseRegion1"/>
       </context>
 
-      <context name="caseWhen2" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" context="#pop#pop" lookAhead="true" insensitive="true" endRegion="CaseWhenRegion1" firstNonSpace="true"
-                 String="(when|end\s+case)&eos;"/>
-        <IncludeRules context="proc_rules"/>
+      <context name="case_expr" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <IncludeRules context="pop_end"/>
+        <WordDetect attribute="Keyword" context="#pop!case_is" insensitive="true" String="is"/>
+        <DetectChar char=";" attribute="Normal Text" context="#pop!case_body" beginRegion="CaseWhenRegion1"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+
+      <context name="case_is" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!case_when">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Control" context="#pop!case_when" insensitive="true" String="when"/>
+      </context>
+
+      <context name="case_when" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars char="=" char1="&gt;" attribute="Operator" context="#pop!case_body" beginRegion="CaseWhenRegion1"/>
+        <IncludeRules context="preExpression"/>
+        <DetectChar char=";" attribute="Normal Text" context="#pop!case_body" beginRegion="CaseWhenRegion1"/>
+        <IncludeRules context="case_when_post_expr"/>
+      </context>
+
+      <context name="case_when_post_expr" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect attribute="Keyword" insensitive="1" String="others"/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="keywordExpression"/>
+        <DetectIdentifier attribute="Name"/>
+      </context>
+
+      <context name="case_body" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_item">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Control" context="#pop!case_when" insensitive="1" String="when" endRegion="CaseWhenRegion1"/>
+        <WordDetect context="#pop" insensitive="1" String="end" lookAhead="1" endRegion="CaseWhenRegion1"/>
+        <IncludeRules context="sequential_label"/>
       </context>
       <!-- 'when' and 'end case' are checked at the beginning of the line for better code folding -->
 
+<!--
+while ::=
+    *while* expression *loop*
+        { sequential_statement }
+    *end* *loop* [ label ] ;
 
-
-
-<!--====ENTITY ===============-->
-<!-- entity environment -->
-
-      <context name="entity" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Name" context="entity_main" beginRegion="EntityRegion1" insensitive="true"
-                 String="(&varname;)"/>
-        <IncludeRules context="generalDetection"/>
+for ::=
+    *for* identifier *in* discrete_range *loop*
+        { sequential_statement }
+    *end* *loop* [ label ] ;
+-->
+      <context name="while" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <WordDetect attribute="Control" context="#pop!loop" insensitive="true" String="loop" beginRegion="LoopRegion1"/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="postExpression"/>
       </context>
 
-
-      <context name="entity_main" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" context="#pop#pop" dynamic="true" insensitive="true" endRegion="EntityRegion1"
-                 String="&bos;end(\s+(entity|component))?(\s+%1)?\s*;"/>
-        <RegExpr attribute="Error" context="#pop#pop" dynamic="true" insensitive="true" endRegion="EntityRegion1"
-                 String="&bos;end(\s+(entity|component))?(\s+&varname;)?\s*;"/>
-        <StringDetect attribute="Control" context="#stay" insensitive="true" String="generic"/>
-        <StringDetect attribute="Control" context="#stay" insensitive="true" String="port"/>
-        <IncludeRules context="generalDetection"/>
+<!--
+loop ::=
+    *loop*
+        { sequential_statement }
+    *end* *loop* [ label ] ;
+-->
+      <context name="loop" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt">
+        <RegExpr attribute="Control" context="#pop" insensitive="true" endRegion="LoopRegion1"
+                 String="&bos;end\s+loop(\s+&varname;)?\s*;"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="LoopRegion1"/>
       </context>
 
-<!--====Configuration ===============-->
-<!-- configuration environment -->
-      <context name="configuration" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Control" context="conf_start" insensitive="true" lookAhead="true" dynamic="true" beginRegion="ConfigurationRegion1"
-                 String="&bos;configuration\s+(&varname;)\s+of\s+(&varname;)\s+is"/>
-        <RegExpr attribute="Control" context="#pop#pop" insensitive="true" dynamic="true" endRegion="ConfigurationRegion1"
-                 String="&bos;end(\s+configuration)?(\s+%2)?\s*;"/>
-        <RegExpr attribute="Error" context="#pop#pop" insensitive="true" dynamic="true" endRegion="ConfigurationRegion1"
-                 String="&bos;end(\s+configuration)?(\s+&varname;)\s*;"/>
+<!--====declare ===============-->
+      <context name="declare" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="block_body">
+        <RegExpr attribute="Keyword" context="#pop" insensitive="true" endRegion="DeclareRegion1"
+                 String="&bos;end(\s+declare)?\s*;"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="DeclareRegion1"/>
       </context>
 
-      <context name="conf_start" attribute="Control" lineEndContext="#stay" dynamic="true">
-        <IncludeRules context="preDetection"/>
-        <RegExpr attribute="Keyword"   context="conf_decl" insensitive="true" String="&bos;is&eos;" />
-        <RegExpr attribute="Name"      context="#stay"     insensitive="true" String="&bos;%2&eos;" dynamic="true"/>
-        <RegExpr attribute="Reference" context="#stay"     insensitive="true" String="&bos;%4&eos;" dynamic="true"/>
-        <IncludeRules context="generalDetection"/>
+<!--
+entity ::=
+    *entity* identifier *is*
+        [ entity_header ]
+        { entity_declarative_item }
+    [ *begin*
+        { entity_statement } ]
+    *end* [ *entity* ] [ identifier ] ;
+
+entity_header ::=
+    [ *generic* ( interface_list ) ; ]
+    [ *port* ( interface_list ) ; ]
+-->
+      <context name="entity" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
+        <IncludeRules context="blank"/>
+        <RegExpr attribute="Name" context="entity_main" beginRegion="EntityRegion1"
+                 String="(&identifier;)"/>
+      </context>
+
+      <context name="entity_main" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="entity_header">
+        <RegExpr attribute="Control" context="#pop#pop" dynamic="1" insensitive="1"
+                 String="&bos;end(\s+entity)?(\s+%1)?\s*;" endRegion="EntityRegion1"/>
+        <WordDetect attribute="Error" context="#pop#pop!expressionError" insensitive="true"
+                    String="end" endRegion="EntityRegion1"/>
+      </context>
+
+      <context name="entity_header" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!entity_decl">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="enclosed_interface_list"/>
+        <DetectChar attribute="Normal Text" char=";"/>
+        <WordDetect attribute="Control" insensitive="true" String="generic"/>
+        <WordDetect attribute="Control" insensitive="true" String="port"/>
+        <WordDetect attribute="Keyword" insensitive="true" String="is"/>
+      </context>
+
+      <context name="entity_decl" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="process_declarative_start_expr"/>
+        <WordDetect attribute="Keyword" context="#pop!entity_stmt" insensitive="1" String="begin"/>
+        <IncludeRules context="start_simple_expr"/>
+      </context>
+
+      <context name="entity_stmt" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="entity_stmt_item">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="pop_end"/>
+        <RegExpr attribute="Name" context="entity_stmt_label" String="&label;"/>
+      </context>
+
+      <context name="entity_stmt_label" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Operator" context="#pop!entity_stmt_item" char=":"/>
+        <DetectSpaces attribute="Normal Text"/>
+      </context>
+
+      <context name="entity_stmt_item" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Keyword" context="#stay" insensitive="1" String="postponed"/>
+        <WordDetect attribute="Process" context="#pop!process" insensitive="1" String="process" beginRegion="ProcessRegion1"/>
+        <IncludeRules context="start_simple_expr_then_pop"/>
+      </context>
+
+<!--
+configuration ::=
+    *configuration* identifier *of* name *is*
+        { configuration_declarative_item }
+        { verification_unit_binding_indication ; }
+        *for* block_specification
+            { use_clause }
+            { configuration_item }
+        *end* *for* ;
+    *end* [ *configuration* ] [ identifier ] ;
+-->
+      <context name="configuration" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
+        <IncludeRules context="blank"/>
+        <RegExpr attribute="Name" context="conf_of" beginRegion="ConfigurationRegion1"
+                 String="(&identifier;)"/>
+      </context>
+
+      <context name="conf_of" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="conf_is">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Keyword" context="conf_ref" insensitive="1" String="of"/>
+        <RegExpr attribute="Control" context="#pop#pop" insensitive="1" dynamic="1"
+                 String="&bos;end(\s+configuration\b)?(\s+%1)?\s*;" endRegion="ConfigurationRegion1"/>
+        <WordDetect attribute="Error" context="#pop#pop!expressionError" insensitive="1"
+                    String="end" endRegion="ConfigurationRegion1"/>
+      </context>
+
+      <context name="conf_ref" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!conf_decl">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Keyword" context="#pop!conf_decl" insensitive="1" String="is" />
+        <IncludeRules context="reference"/>
+      </context>
+
+      <context name="conf_is" attribute="Control" lineEndContext="#stay" fallthroughContext="#pop#pop#pop">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Keyword" context="#pop!conf_decl" insensitive="1" String="is" />
       </context>
 
       <context name="conf_decl" attribute="Normal Text" lineEndContext="#stay">
-        <IncludeRules context="preDetection"/>
-        <StringDetect attribute="Control" context="conf_for" insensitive="true" String="for"/>
-        <StringDetect attribute="Control" context="#pop#pop" insensitive="true" lookAhead="true"  String="end"/>
-        <IncludeRules context="generalDetection"/>
+        <IncludeRules context="preExpression"/>
+        <WordDetect attribute="Control" context="conf_for" insensitive="1" String="for" beginRegion="LoopRegion1"/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="postExpression"/>
       </context>
 
       <context name="conf_for" attribute="Normal Text" lineEndContext="#stay">
-        <IncludeRules context="preDetection"/>
-        <StringDetect attribute="Control" context="conf_for" insensitive="true" String="for"/>
-        <RegExpr attribute="Control" context="#pop" insensitive="true"  String="end(\s+&varname;)?"/>
-        <IncludeRules context="generalDetection"/>
+        <IncludeRules context="preExpression"/>
+        <WordDetect attribute="Control" context="conf_for" insensitive="1" String="for" beginRegion="LoopRegion1"/>
+        <WordDetect attribute="Control" context="conf_for_end" insensitive="1" lookAhead="1" String="end" endRegion="LoopRegion1"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+
+      <context name="conf_for_end" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop#pop!expressionError">
+        <RegExpr attribute="Control" context="#pop#pop" insensitive="true"  String="&bos;end(\s+for\b)?\s*;"/>
+      </context>
+
+<!--
+context ::=
+    *context* identifier *is*
+        { context_item }
+    *end* [ *context* ] [ identifier ] ;
+
+  | *context* selected_name { , selected_name } ;
+
+ context_item ::=
+      *library* identifier { , identifier } ;
+    | *use* selected_name { , selected_name } ;
+    | *context* selected_name { , selected_name } ;
+
+selected_name ::= prefix . suffix
+-->
+      <context name="context" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <RegExpr attribute="Name" context="#pop!context_main" beginRegion="ContextRegion1"
+                 String="(&identifier;)(?!\.)"/>
+      </context>
+
+      <context name="context_main" attribute="Control" lineEndContext="#stay" fallthroughContext="context_decl">
+        <RegExpr attribute="Keyword" context="#pop" dynamic="1" insensitive="1"
+                 String="&bos;end(\s+context)?(\s+%1)?\s*;" endRegion="ContextRegion1"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="1"
+                    String="end" endRegion="ContextRegion1"/>
+      </context>
+
+      <context name="context_decl" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <keyword attribute="Keyword" context="sequential_stmt_expr" String="keywordsToplevel"/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="postExpression"/>
       </context>
 
 
 <!--====Basic Stuff ===============-->
-<!-- basic rules -->
-      <context name="preDetection" attribute="Normal Text" lineEndContext="#stay">
+<!-- comment and spaces -->
+      <context name="blank" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
         <Detect2Chars attribute="Comment" context="comment" char="-" char1="-"/>
-        <DetectChar attribute="Vector" context="string" char="&quot;"/>
-        <AnyChar attribute="Operator" context="#stay" String="[&amp;&gt;&lt;=:+\-*\/|].,"/>
-        <DetectChar attribute="Attribute" context="attribute" char="'"/>
+        <Detect2Chars attribute="Comment" context="block_comment" char="/" char1="*"/>
+      </context>
+
+<!--
+abstract_literal ::=
+    integer [ . integer ] [ exponent ]
+  | base # based_integer [ . based_integer ] # [ exponent ]
+
+base ::= integer
+integer ::= digit { [ _ ] digit }
+exponent ::= E [ + ] integer | E – integer
+based_integer ::= extended_digit { [ _ ] extended_digit }
+extended_digit ::= digit | letter
+-->
+      <context name="abstract_literal" attribute="Integer" lineEndContext="#pop" fallthroughContext="exponent">
+        <DetectChar attribute="Operator" char="."/>
+        <DetectChar attribute="Operator" context="based_integer" char="#"/>
+        <RegExpr attribute="Integer" context="exponent" String="_?[0-9]++(_[0-9]+)*"/>
+      </context>
+      <context name="exponent" attribute="Integer" lineEndContext="#pop#pop" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Exponent" context="#pop#pop" String="[eE][+-]?[0-9]++(_[0-9]+)*+"/>
+        <AnyChar attribute="Error" context="#pop#pop" String="eE_"/>
+      </context>
+      <context name="based_integer" attribute="Integer" lineEndContext="#pop#pop" fallthroughContext="#pop#pop">
+        <DetectChar attribute="Operator" char="."/>
+        <DetectChar attribute="Error" char="_"/>
+        <DetectChar attribute="Operator" context="#pop!exponent" char="#"/>
+        <RegExpr attribute="Based Integer" String="[0-9a-fA-F]++(_[0-9a-fA-F]+)*"/>
+      </context>
+
+<!--
+external_name ::=
+    << *constant* external_pathname : subtype_indication >>
+  | << *signal* external_pathname : subtype_indication >>
+  | << *variable* external_pathname : subtype_indication >>
+-->
+      <context name="external_name" attribute="Integer" lineEndContext="#stay" fallthroughContext="#pop">
+        <IncludeRules context="blank"/>
+        <!-- back to expression context -->
+        <keyword attribute="Signal" context="#pop" String="signals"/>
+      </context>
+
+<!--
+interface_list ::=
+    interface_element { ; interface_element }
+
+interface_element ::=
+      [ *constant* ] identifier_list : [ *in* ] subtype_indication [ := expression ]
+    | [ *signal* ] identifier_list : [ *in* | *out* ] subtype_indication [ *bus* ] [ := expression ]
+    | [ *variable* ] identifier_list : [ *in* | *out* ] subtype_indication [ := expression ]
+    | *file* identifier_list : subtype_indication
+    | *type* identifier
+    | interface_subprogram_specification [ *is* name ]
+    | interface_subprogram_specification [ *is* <> ]
+    | *package* identifier *is* *new* name *generic* *map* ( association_list )
+    | *package* identifier *is* *new* name *generic* *map* ( <> )
+    | *package* identifier *is* *new* name *generic* *map* ( *default* )
+
+interface_subprogram_specification ::=
+      *procedure* designator [ [ *parameter* ] ( interface_list ) ]
+    | [ *pure* | *impure* ] *function* designator
+         [ [ *parameter* ] ( interface_list ) ] *return* name
+
+designator ::= identifier | string_literal
+-->
+      <context name="enclosed_interface_list" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Normal Text" context="interface_list" char="("/>
+      </context>
+
+      <context name="interface_list" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <IncludeRules context="pop_end"/>
+        <keyword attribute="Signal" String="signals"/>
+        <IncludeRules context="postExpression"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=")"/>
+        <IncludeRules context="enclosed_association_list"/>
+      </context>
+
+<!--
+association_list ::=
+    association_element { , association_element }
+
+association_element ::=
+    [ name [ ( name ) ] => ] actual_part
+
+actual_part ::=
+      actual_designator
+    | name ( actual_designator )
+
+actual_designator ::=
+      [ *inertial* ] expression
+    | name
+    | subtype_indication
+    | *open*
+-->
+      <context name="enclosed_association_list" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Normal Text" context="association_list" char="("/>
+      </context>
+
+      <context name="association_list" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="postExpression"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=")"/>
+        <IncludeRules context="enclosed_association_list"/>
+        <DetectChar context="#pop" char=";" lookAhead="1"/>
       </context>
 
 
+<!-- sequential statement -->
+      <context name="sequential_stmt" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_item">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="sequential_label"/>
+      </context>
 
-<!-- general detection -->
-      <context name="generalDetection" attribute="Normal Text" lineEndContext="#stay">
+      <context name="sequential_label" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Name" context="sequential_stmt_label" String="&label;"/>
+      </context>
+
+      <context name="sequential_stmt_label" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Operator" context="#pop!sequential_stmt_item" char=":"/>
+        <DetectSpaces attribute="Normal Text"/>
+      </context>
+
+      <context name="sequential_stmt_item" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=";"/>
+        <IncludeRules context="sequential_stmt_item_start"/>
+        <IncludeRules context="start_simple_expr_then_pop"/>
+      </context>
+
+      <context name="sequential_stmt_item_start" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect attribute="Control" context="#pop!if_start" insensitive="1" String="if" beginRegion="IfRegion1"/>
+        <WordDetect attribute="Control" context="#pop!case" insensitive="1" String="case" beginRegion="CaseRegion1"/>
+        <WordDetect attribute="Control" context="#pop!while" insensitive="1" String="for"/>
+        <WordDetect attribute="Control" context="#pop!while" insensitive="1" String="while"/>
+        <WordDetect attribute="Control" context="#pop!loop" insensitive="1" String="loop" beginRegion="LoopRegion1"/>
+        <WordDetect attribute="Keyword" context="#pop!declare" insensitive="1" String="declare" beginRegion="DeclareRegion1"/>
+        <keyword attribute="Control" context="#pop!sequential_stmt_expr" String="controls"/>
+      </context>
+
+      <context name="sequential_stmt_expr" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=";"/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+
+<!--
+if_generate ::=
+    *if* [ alternative_label : ] expression *generate*
+        generate_statement_body
+    { *elsif* [ alternative_label : ] expression *generate*
+        generate_statement_body }
+    [ *else* [ alternative_label : ] *generate*
+        generate_statement_body ]
+    *end* *generate* [ label ] ;
+
+generate_statement_body ::=
+        generate_body
+    [ *end* [ alternative_label ] ; ]
+-->
+      <context name="if_generate" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="if_generate_label">
+        <RegExpr attribute="Control" context="#pop" insensitive="1" endRegion="IfRegion1"
+                 String="&bos;end\s+generate(\s+&varname;)?\s*;"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="1"
+                    String="end" endRegion="IfRegion1"/>
+      </context>
+
+      <context name="if_generate_label" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!if_generate_expr">
+        <IncludeRules context="blank"/>
+        <RegExpr attribute="Name" context="if_generate_after_label" String="&label;"/>
+      </context>
+
+      <context name="if_generate_after_label" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop#pop!if_generate_expr">
+        <DetectChar attribute="Operator" context="#pop#pop!if_generate_expr" char=":"/>
+        <DetectSpaces attribute="Normal Text"/>
+      </context>
+
+      <context name="if_generate_expr" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <IncludeRules context="pop_end"/>
+        <WordDetect attribute="Control" context="#pop!if_generate_body" insensitive="1" String="generate"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+
+      <context name="if_generate_body" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="generate_body_pre_start"/>
+        <WordDetect attribute="Control" context="#pop!if_generate_label" insensitive="1" String="elsif"/>
+        <WordDetect attribute="Control" context="#pop!if_generate_label" insensitive="1" String="else"/>
+        <WordDetect context="if_generate_body_end" insensitive="1" String="end" lookAhead="1"/>
+        <IncludeRules context="generate_body_post_start"/>
+      </context>
+
+      <context name="if_generate_body_end" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!expressionError">
+        <RegExpr context="#pop#pop" insensitive="1" String="end\s+generate\b" lookAhead="1"/>
+        <RegExpr attribute="Control" context="#pop" insensitive="1" String="end(\s+&varname;)?\s*;"/>
+      </context>
+
+<!--
+generate_body ::=
+        [ { block_declarative_item }
+    *begin* ]
+        { concurrent_statement }
+-->
+      <context name="generate_body" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="generate_body_pre_start"/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="generate_body_post_start"/>
+      </context>
+
+      <context name="generate_body_pre_start" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="block_declarative_start_expr"/>
+
+        <!-- concurrent_stmt_item -->
+        <WordDetect attribute="Keyword" context="#stay" insensitive="1" String="postponed"/>
+        <WordDetect attribute="Process" context="process" insensitive="1" String="process" beginRegion="ProcessRegion1"/>
+        <WordDetect attribute="Control" context="block" insensitive="1" String="block" beginRegion="BlockRegion1"/>
+
+        <!-- sequential_stmt_item -->
+        <WordDetect attribute="Control" context="if_start" insensitive="1" String="if" beginRegion="IfRegion1"/>
+        <WordDetect attribute="Control" context="case" insensitive="1" String="case" beginRegion="CaseRegion1"/>
+        <WordDetect attribute="Control" context="while" insensitive="1" String="while"/>
+        <WordDetect attribute="Control" context="loop" insensitive="1" String="loop" beginRegion="LoopRegion1"/>
+        <WordDetect attribute="Keyword" context="declare" insensitive="1" String="declare" beginRegion="DeclareRegion1"/>
+        <keyword attribute="Control" context="sequential_stmt_expr" String="controls"/>
+
+        <WordDetect attribute="Control" insensitive="1" String="begin"/>
+      </context>
+
+      <context name="generate_body_post_start" attribute="Normal Text" lineEndContext="#stay">
+        <keyword attribute="Keyword" context="sequential_stmt_expr" String="keywords"/>
+        <IncludeRules context="concurrent_label"/>
+        <DetectIdentifier attribute="Normal Text" context="sequential_stmt_expr"/>
+      </context>
+
+<!--
+case_generate ::=
+    *case* expression *generate*
+        *when* [ label : ] choices => generate_statement_body
+        { *when* [ label : ] choices => generate_statement_body }
+    *end* *generate* [ label ] ;
+
+generate_statement_body ::=
+        generate_body
+    [ *end* [ alternative_label ] ; ]
+-->
+      <context name="case_generate" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="case_generate_expr">
+        <RegExpr attribute="Control" context="#pop" insensitive="1" endRegion="CaseRegion1"
+                 String="&bos;end\s+generate(\s+&varname;)?\s*;"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="1"
+                    String="end" endRegion="CaseRegion1"/>
+      </context>
+
+      <context name="case_generate_expr" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <IncludeRules context="pop_end"/>
+        <WordDetect attribute="Control" context="#pop!case_generate_is" insensitive="1" String="generate"/>
+        <!-- fallback to case ... is -->
+        <WordDetect attribute="Keyword" context="#pop!case_is" insensitive="1" String="is"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+
+      <context name="case_generate_is" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!case_generate_when">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Control" context="case_generate_when" insensitive="1" String="when"/>
+      </context>
+
+      <context name="case_generate_when" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!case_generate_when_expr">
+        <IncludeRules context="blank"/>
+        <RegExpr attribute="Name" context="case_generate_when_label" String="&label;"/>
+      </context>
+
+      <context name="case_generate_when_label" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop#pop!case_generate_when_expr">
+        <DetectChar attribute="Operator" context="#pop#pop!case_generate_when_expr" char=":"/>
+        <DetectSpaces attribute="Normal Text"/>
+      </context>
+
+      <context name="case_generate_when_expr" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars char="=" char1="&gt;" attribute="Operator" context="#pop!case_generate_body" beginRegion="CaseWhenRegion1"/>
+        <IncludeRules context="preExpression"/>
+        <DetectChar char=";" attribute="Normal Text" context="#pop!case_generate_body" beginRegion="CaseWhenRegion1"/>
+        <IncludeRules context="case_when_post_expr"/>
+      </context>
+
+      <context name="case_generate_body" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="generate_body_pre_start"/>
+        <WordDetect attribute="Control" context="#pop!case_generate_when" insensitive="1" String="when" endRegion="CaseWhenRegion1"/>
+        <WordDetect context="#pop!if_generate_body_end" insensitive="1" String="end" lookAhead="1" endRegion="CaseWhenRegion1"/>
+        <IncludeRules context="generate_body_post_start"/>
+      </context>
+
+<!--
+for_generate ::=
+    *for* parameter_specification *generate*
+        generate_body
+    *end* *generate* [ label ] ;
+-->
+      <context name="for_generate" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="for_generate_expr">
+        <RegExpr attribute="Control" context="#pop" insensitive="1" endRegion="LoopRegion1"
+                 String="&bos;end\s+generate(\s+&varname;)?\s*;"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="1"
+                    String="end" endRegion="LoopRegion1"/>
+      </context>
+
+      <context name="for_generate_expr" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <IncludeRules context="pop_end"/>
+        <WordDetect attribute="Control" context="#pop!generate_body" insensitive="1" String="generate"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+
+<!--
+block ::=
+    *block* [ ( condition ) ] [ *is* ]
+        [ generic_clause
+        [ generic_map_aspect ; ] ]
+        [ port_clause
+        [ port_map_aspect ; ] ]
+        { block_declarative_item }
+    *begin*
+        { concurrent_statement }
+    *end* *block* [ block_label ] ;
+-->
+      <context name="block" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="block_cont">
+        <RegExpr attribute="Control" context="#pop" insensitive="1"
+                 String="&bos;end\s+block(\s+&varname;)?\s*;" endRegion="BlockRegion1"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="BlockRegion1"/>
+      </context>
+
+      <context name="block_cont" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!block_is">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="enclosed_association_list"/>
+        <WordDetect attribute="Keyword" context="#pop!block_is" insensitive="true" String="is"/>
+      </context>
+
+      <context name="block_is" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!block_body">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="enclosed_interface_list"/>
+        <DetectChar attribute="Normal Text" char=";"/>
+        <IncludeRules context="find_instantiated_map"/>
+        <WordDetect attribute="Control" insensitive="true" String="generic"/>
+        <WordDetect attribute="Control" insensitive="true" String="port"/>
+      </context>
+
+      <!-- as block_declarative_stmt but with begin as Keyword -->
+      <context name="block_body" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="block_declarative_start_expr"/>
+        <WordDetect attribute="Keyword" context="#pop!concurrent_stmt" insensitive="1" String="begin"/>
+        <IncludeRules context="start_simple_expr"/>
+      </context>
+
+<!--
+process  ::=
+    *process* [ ( *all* | name_list ) ] [ *is* ]
+        { process_declarative_item }
+    *begin*
+        { sequential_statement }
+    *end* [ *postponed* ] *process* [ label ] ;
+-->
+      <context name="process" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="process_params">
+        <RegExpr attribute="Process" context="#pop" insensitive="1"
+                 String="&bos;end(\s+postponed)?(\s+process\b)?(\s+&varname;)?\s*;" endRegion="ProcessRegion1"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="ProcessRegion1"/>
+      </context>
+
+      <context name="process_params" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!process_decl">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="enclosed_association_list"/>
+        <WordDetect attribute="Keyword" context="#pop!process_decl" String="is"/>
+      </context>
+
+      <context name="process_decl" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="process_declarative_start_expr"/>
+        <WordDetect attribute="Process" context="#pop!sequential_stmt" insensitive="true" String="begin"/>
+        <IncludeRules context="start_simple_expr"/>
+      </context>
+
+<!-- expression -->
+      <context name="preExpression" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="blank"/>
+        <Detect2Chars attribute="Operator" context="external_name" char="&lt;" char1="&lt;"/>
+        <AnyChar attribute="Operator" context="#stay" String="[]&amp;&gt;&lt;=:+-*/|`.,?@"/>
+        <DetectChar attribute="Vector" context="string" char="&quot;"/>
+        <DetectChar attribute="Attribute" context="attribute" char="'"/>
+        <Int attribute="Integer" context="abstract_literal"/>
+      </context>
+
+      <context name="postExpression" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="keywordExpression"/>
+        <DetectIdentifier attribute="Normal Text"/>
+      </context>
+
+      <context name="keywordExpression" attribute="Normal Text" lineEndContext="#stay">
         <keyword attribute="Data Type" context="#stay" String="types"/>
         <keyword attribute="Data Type" context="#stay" String="timeunits"/>
-        <keyword attribute="Signal" context="signal" String="signals" beginRegion="sig"/>
         <keyword attribute="Range" context="#stay" String="range"/>
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
-        <Int attribute="Integer" context="#stay"/>
-        <HlCChar attribute="Bit" context="#stay"/>
-        <DetectSpaces attribute="Normal Text" context="#stay"/>
+      </context>
+
+<!-- expression error -->
+      <context name="expressionError" attribute="Error" lineEndContext="#pop">
+        <Detect2Chars attribute="Comment" context="comment" char="-" char1="-"/>
+        <DetectChar attribute="Error" context="#pop" char=";"/>
       </context>
 
 <!-- other environments -->
-      <context name="comment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+      </context>
+
+      <context name="block_comment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+        <IncludeRules context="comment"/>
+      </context>
 
       <context name="string" attribute="Vector" lineEndContext="#stay">
         <DetectChar attribute="Vector" context="#pop" char="&quot;"/>
       </context>
 
       <context name="attribute" attribute="Attribute" lineEndContext="#pop">
+        <!-- character_literal or end attribute -->
+        <RegExpr attribute="Attribute" context="#pop" String="[^']?'"/>
+        <DetectIdentifier attribute="Attribute"/>
         <DetectChar attribute="Attribute" context="quot in att" char="&quot;"/>
         <DetectChar attribute="Attribute" context="par in att" char="("/>
-        <DetectChar attribute="Normal Text" context="#pop" char=" "/>
-        <DetectChar attribute="Attribute" context="#pop" char="'"/>
-        <AnyChar attribute="Attribute" context="#pop" String=")=&lt;&gt;" lookAhead="true" />
+        <DetectSpaces attribute="Normal Text" context="#pop"/>
+        <AnyChar attribute="Attribute" context="#pop" String=")=&lt;&gt;;" lookAhead="true" />
        </context>
 
       <context name="quot in att" attribute="Attribute" lineEndContext="#stay">
@@ -620,10 +1296,308 @@
       </context>
 
       <context name="signal" attribute="Normal Text" lineEndContext="#stay">
-        <IncludeRules context="preDetection"/>
-        <DetectChar attribute="Normal Text" lookAhead="true" context="#pop" char=";" endRegion="sig"/>
-        <IncludeRules context="generalDetection"/>
+        <IncludeRules context="preExpression"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=";"/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="postExpression"/>
       </context>
+
+<!--
+type ::= *type* identifier [ *is* type_definition ] ;
+
+type_definition ::=
+      type_definition_range
+    | type_definition_record
+    | type_definition_protected
+    | ......
+-->
+      <context name="type" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="blank"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=";"/>
+        <WordDetect attribute="Signal" context="type_is" insensitive="1" String="is"/>
+        <DetectIdentifier attribute="Normal Text"/>
+      </context>
+
+      <context name="type_is" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop#pop!signal">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Keyword" context="#pop#pop!type_record" insensitive="1" String="record" beginRegion="sig"/>
+        <WordDetect attribute="Keyword" context="#pop#pop!type_range" insensitive="1" String="range"/>
+        <WordDetect attribute="Keyword" context="#pop#pop!type_protected" insensitive="1" String="protected" beginRegion="BlockRegion1"/>
+      </context>
+
+<!-- type range
+
+type_definition_range ::=
+    *range* range
+        [ *units*
+            identifier
+            { identifier = physical_literal ; }
+          *end* *units* [ identifier ] ]
+
+range ::=
+      attribute_name
+    | simple_expression direction simple_expression
+
+attribute_name ::=
+    prefix [ signature ] ' identifier [ ( expression ) ]
+-->
+      <context name="type_range" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=";"/>
+        <WordDetect attribute="Control" context="#pop!type_range_units" insensitive="1" String="units" beginRegion="UnitRegion1"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+
+      <context name="type_range_units" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="type_body">
+        <RegExpr attribute="Control" context="#pop" insensitive="1"
+                 String="&bos;end\s+units(\s+&identifier;)?\s*;" endRegion="UnitRegion1"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="UnitRegion1"/>
+      </context>
+
+      <context name="type_body" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <IncludeRules context="pop_end"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+
+<!-- type record
+
+type_definition_record ::=
+    *record*
+        element_declaration
+        { element_declaration }
+    *end* *record* [ identifier ]
+-->
+      <context name="type_record" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="type_body">
+        <RegExpr attribute="Keyword" context="#pop" insensitive="1"
+                 String="&bos;end\s+record(\s+&identifier;)?\s*;" endRegion="sig"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="sig"/>
+      </context>
+
+<!-- type protected
+
+type_definition_protected ::=
+      *protected*
+         { protected_type_declarative_item }
+      *end* *protected* [ identifier ]
+    | *protected* *body*
+          { process_declarative_item }
+      *end *protected* *body* [ simple name ]
+-->
+      <context name="type_protected" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="type_protected_stmt">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Keyword" context="type_protected_stmt" insensitive="1" String="body"/>
+        <RegExpr attribute="Keyword" context="#pop" insensitive="1"
+                 String="&bos;end\s+protected(\s+body)?(\s+&identifier;)?\s*;" endRegion="BlockRegion1"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="BlockRegion1"/>
+      </context>
+
+      <context name="type_protected_stmt" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="process_declarative_start_expr"/>
+        <IncludeRules context="start_simple_expr"/>
+      </context>
+
+<!--
+view ::=
+    *view* identifier *of* name *is*
+        element_declaration
+        { element_declaration }
+    *end* *view* [ identifier ] ;
+-->
+      <context name="view" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="type_body">
+        <RegExpr attribute="Keyword" context="#pop" insensitive="1"
+                 String="&bos;end\s+view(\s+&identifier;)?\s*;" endRegion="sig"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="sig"/>
+      </context>
+
+<!--
+function ::=
+    *function* designator
+        [ *generic* ( interface_list )
+        [ generic_map_aspect ] ]
+        [ [ *parameter* ] ( interface_list ) ] *return* name ;
+
+  | *function* identifier *is* *new* name
+        [ name_list ]
+        [ *return* name ]
+        [ generic_map_aspect ] ;
+
+  | *function* identifier *is*
+        { process_declarative_item }
+    *begin*
+        { sequential_statement }
+    *end* [ *function* ] [ designator ] ;
+-->
+      <context name="function" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="function_name">
+        <IncludeRules context="blank"/>
+        <DetectIdentifier attribute="Name" context="function_name"/>
+        <RangeDetect attribute="Vector" context="function_name" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Name" context="function_name" char="\" char1="\"/>
+      </context>
+
+      <context name="function_name" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="blank"/>
+        <DetectChar attribute="Normal Text" context="function_params" char="("/>
+        <DetectChar attribute="Normal Text" context="#pop#pop" char=";"/>
+        <WordDetect attribute="Control" context="function_return" insensitive="1" String="return"/>
+        <WordDetect attribute="Keyword" context="#pop#pop!function_is" insensitive="1" String="is" beginRegion="FunctionRegion1"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+      </context>
+
+      <context name="function_params" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+         <DetectChar attribute="Normal Text" context="#pop" char=")"/>
+        <IncludeRules context="pop_end"/>
+        <DetectChar attribute="Normal Text" context="function_params_recursive" char="("/>
+        <WordDetect attribute="Error" context="#pop!function_return" insensitive="1" String="return"/>
+        <keyword attribute="Signal" String="signals"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+      <context name="function_params_recursive" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <DetectChar attribute="Normal Text" context="#pop" char=")"/>
+        <DetectChar attribute="Normal Text" context="function_params_recursive" char="("/>
+        <WordDetect context="#pop" insensitive="1" String="return" lookAhead="1"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+
+      <context name="function_return" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="preExpression"/>
+        <DetectChar attribute="Normal Text" context="#pop#pop#pop" char=";"/>
+        <WordDetect attribute="Keyword" context="#pop#pop#pop!function_is" insensitive="1" String="is" beginRegion="FunctionRegion1"/>
+        <IncludeRules context="postExpression"/>
+      </context>
+
+      <context name="function_is" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!function_decl">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Keyword" context="#pop!function_new" insensitive="1" String="new"/>
+      </context>
+
+      <context name="function_new" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <WordDetect attribute="Control" context="#pop!sequential_stmt_expr" insensitive="1" String="return"/>
+        <IncludeRules context="start_simple_expr_then_pop"/>
+      </context>
+
+      <context name="function_decl" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="process_declarative_start_expr"/>
+        <WordDetect attribute="Redirection" context="#pop!function_begin" insensitive="true" String="begin"/>
+        <IncludeRules context="start_simple_expr"/>
+      </context>
+
+      <context name="function_begin" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt">
+        <RegExpr attribute="Redirection" context="#pop" insensitive="1"
+                 String="&bos;end(\s+function\b)?(\s+&designator;)?\s*;" endRegion="FunctionRegion1"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="FunctionRegion1"/>
+      </context>
+
+<!--
+procedure ::=
+      *procedure* designator
+          [ *generic* ( interface_list )
+          [ generic_map_aspect ] ]
+          [ [ *parameter* ] ( interface_list ) ] ;
+
+    | *procedure* identifier *is* *new* name
+          [ name_list ]
+          [ *return* name ]
+          [ generic_map_aspect ] ;
+
+    | *procedure* designator
+          [ [ *parameter* ] ( interface_list ) ] *is*
+          { process_declarative_item }
+      *begin*
+          { sequential_statement }
+      *end* [ *procedure* ] [ designator ] ;
+-->
+      <context name="procedure" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="blank"/>
+        <DetectIdentifier attribute="Name" context="procedure_name"/>
+        <RangeDetect attribute="Vector" context="procedure_name" char="&quot;" char1="&quot;"/>
+        <RangeDetect attribute="Name" context="procedure_name" char="\" char1="\"/>
+      </context>
+
+      <context name="procedure_name" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="enclosed_interface_list"/>
+        <DetectChar attribute="Normal Text" context="#pop#pop" char=";" endRegion="ProcedureRegion1"/>
+        <WordDetect attribute="Control" context="#pop#pop!procedure_is" insensitive="true" String="is"/>
+        <!-- ghdl extension ?
+          procedure readline (variable f: in text; l: inout line)  <- no ;
+          procedure readline (file f: text; l: inout line)
+          is ...
+        -->
+        <WordDetect attribute="Keyword" context="#pop" insensitive="true" String="procedure" endRegion="ProcedureRegion1" beginRegion="ProcedureRegion1"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+      </context>
+
+      <context name="procedure_is" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!procedure_is2">
+        <IncludeRules context="function_is"/>
+      </context>
+
+      <!-- ghdl extension ?
+        *procedure* designator
+          (...) is
+          (...) is                <- here
+        begin ...
+      -->
+      <context name="procedure_is2" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!procedure_decl">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="enclosed_interface_list"/>
+        <WordDetect attribute="Control" context="#pop!procedure_is" insensitive="true" String="is"/>
+        <WordDetect attribute="Keyword" insensitive="true" String="parameter"/>
+      </context>
+
+      <context name="procedure_decl" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt_expr">
+        <IncludeRules context="blank"/>
+        <IncludeRules context="process_declarative_start_expr"/>
+        <WordDetect attribute="Keyword" context="#pop!procedure_begin" insensitive="true" String="begin" endRegion="ProcedureRegion1" beginRegion="ProcedureRegion1"/>
+        <IncludeRules context="start_simple_expr"/>
+      </context>
+
+      <context name="procedure_begin" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="sequential_stmt">
+        <RegExpr attribute="Keyword" context="#pop" insensitive="1"
+                 String="&bos;end(\s+procedure)?(\s+&designator;)?\s*;" endRegion="ProcedureRegion1"/>
+        <WordDetect attribute="Error" context="#pop!expressionError" insensitive="true"
+                    String="end" endRegion="ProcedureRegion1"/>
+      </context>
+
+<!--
+component ::=
+    *component* identifier [ *is* ]
+        entity_header
+    *end* *component* [ identifier ] ;
+-->
+      <context name="component" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
+        <IncludeRules context="blank"/>
+        <RegExpr attribute="Name" context="component_main" beginRegion="ComponentRegion1"
+                 String="(&identifier;)"/>
+      </context>
+
+      <context name="component_main" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="component_body">
+        <RegExpr attribute="Control" context="#pop#pop" dynamic="1" insensitive="1"
+                 String="&bos;end\s+component\b(\s+%1)?\s*;" endRegion="ComponentRegion1"/>
+        <WordDetect attribute="Error" context="#pop#pop!expressionError" insensitive="true"
+                    String="end" endRegion="ComponentRegion1"/>
+      </context>
+
+      <context name="component_body" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="entity_header"/>
+        <IncludeRules context="pop_end"/>
+        <DetectIdentifier attribute="Error"/>
+      </context>
+
+      <context name="pop_end" attribute="Normal Text" lineEndContext="#stay">
+        <WordDetect context="#pop" insensitive="1" String="end" lookAhead="1"/>
+      </context>
+
     </contexts>
     <itemDatas>
       <itemData name="Normal Text" defStyleNum="dsNormal"/>
@@ -631,24 +1605,26 @@
       <itemData name="Data Type" defStyleNum="dsDataType"/>
       <itemData name="Comment" defStyleNum="dsComment"/>
       <itemData name="Integer" defStyleNum="dsDecVal"/>
-      <itemData name="Bit" defStyleNum="dsChar"/>
+      <itemData name="Exponent" defStyleNum="dsFloat"/>
+      <itemData name="Based Integer" defStyleNum="dsBaseN"/>
       <itemData name="Reference" defStyleNum="dsFunction"/>
-      <itemData name="Error" defStyleNum="dsError" color="#ff0000" bold="1"/>
+      <itemData name="Error" defStyleNum="dsError" bold="1"/>
       <itemData name="Vector" defStyleNum="dsString"/>
       <itemData name="Operator" defStyleNum="dsOthers"/>
       <itemData name="Attribute" defStyleNum="dsBaseN"/>
       <itemData name="Signal" defStyleNum="dsOthers"/>
       <itemData name="Range" defStyleNum="dsOthers"/>
-      <itemData name="Redirection" defStyleNum="dsKeyword" color="#223388"/>
-      <itemData name="Process" defStyleNum="dsKeyword" color="#0099AA"/>
-      <itemData name="Control" defStyleNum="dsKeyword" color="#223388"/>
-      <itemData name="Name" defStyleNum="dsKeyword" color="#bb6600" bold="1"/>
+      <itemData name="Redirection" defStyleNum="dsAttribute" bold="1"/> <!-- #223388 -->
+      <itemData name="Process" defStyleNum="dsSpecialChar" bold="1"/> <!-- #0099AA -->
+      <itemData name="Control" defStyleNum="dsControlFlow"/> <!-- #223388 -->
+      <itemData name="Name" defStyleNum="dsDecVal" bold="1"/> <!-- #bb6600 -->
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="--"/>
+      <comment name="singleLine" start="--" position="afterwhitespace"/>
     </comments>
     <keywords casesensitive="0"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,0 +1,441 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!--
+This file contains the XML syntax highlighting description for the ARMv7-A Assembler.
+For now, only some of the common functions and registers have been implemented, which is useful for people just
+getting into ARM (eg. college classes). Feel free to delete this comment if someone decides to expand on it.
+-->
+<language name="ARM Assembler" version="1" kateversion="5.62" section="Assembler" extensions="*.arm;*.asm-arm" mimetype="text/x-asm;" author="Leo Marušić" license="MIT">
+  <highlighting>
+    <list name="Arithmetic Instructions">
+      <item>ADCS</item>
+      <item>ADD</item>
+      <item>ADDS</item>
+      <item>ADDW</item>
+      <item>ADR</item>
+      <item>CMN</item>
+      <item>CMP</item>
+      <item>QADD</item>
+      <item>QDADD</item>
+      <item>QDSUB</item>
+      <item>QSUB</item>
+      <item>RSB</item>
+      <item>RSBS</item>
+      <item>RSC</item>
+      <item>RSCS</item>
+      <item>SBC</item>
+      <item>SBCS</item>
+      <item>SDIV</item>
+      <item>SSAT</item>
+      <item>SSAT16</item>
+      <item>SUB</item>
+      <item>SUBS</item>
+      <item>SUBW</item>
+      <item>UDIV</item>
+      <item>USAD8</item>
+      <item>USADA8</item>
+      <item>USAT</item>
+      <item>USAT16</item>
+    </list>
+
+    <list name="Bitwise and Move Instructions">
+      <item>AND</item>
+      <item>ANDS</item>
+      <item>ASR</item>
+      <item>ASRS</item>
+      <item>BFC</item>
+      <item>BFI</item>
+      <item>BIC</item>
+      <item>BICS</item>
+      <item>CLZ</item>
+      <item>EOR</item>
+      <item>EORS</item>
+      <item>LSL</item>
+      <item>LSLS</item>
+      <item>LSR</item>
+      <item>LSRS</item>
+      <item>MOV</item>
+      <item>MOVS</item>
+      <item>MOVT</item>
+      <item>MOVW</item>
+      <item>MVN</item>
+      <item>MVNS</item>
+      <item>ORN</item>
+      <item>ORNS</item>
+      <item>ORR</item>
+      <item>ORRS</item>
+      <item>RBIT</item>
+      <item>REV</item>
+      <item>REV16</item>
+      <item>REVSH</item>
+      <item>ROR</item>
+      <item>RORS</item>
+      <item>RRX</item>
+      <item>RRXS</item>
+      <item>SBFX</item>
+      <item>TEQ</item>
+      <item>TST</item>
+      <item>UBFX</item>
+    </list>
+
+    <list name="Load and Store Instructions">
+      <item>LDMDA</item>
+      <item>LDMDB</item>
+      <item>LDMIA</item>
+      <item>LDMIB</item>
+      <item>LDMFD</item>
+      <item>LDMFA</item>
+      <item>LDR</item>
+      <item>LDRT</item>
+      <item>LDRB</item>
+      <item>LDRBT</item>
+      <item>LDRD</item>
+      <item>LDRH</item>
+      <item>LDRHT</item>
+      <item>LDRSB</item>
+      <item>LDRSBT</item>
+      <item>LDRSH</item>
+      <item>LDRSHT</item>
+      <item>POP</item>
+      <item>PUSH</item>
+      <item>STMDA</item>
+      <item>STMDB</item>
+      <item>STMIA</item>
+      <item>STMIB</item>
+      <item>STMFA</item>
+      <item>STMFD</item>
+      <item>STR</item>
+      <item>STRT</item>
+      <item>STRB</item>
+      <item>STRBT</item>
+      <item>STRD</item>
+      <item>STRH</item>
+      <item>STRHT</item>
+    </list>
+
+    <list name="Branch and Jump Instructions">
+      <item>B</item>
+      <item>BKPT</item>
+      <item>BL</item>
+      <item>BLX</item>
+      <item>BX</item>
+      <item>TBB</item>
+      <item>TBH</item>
+    </list>
+
+    <list name="Multiplication Instructions">
+      <item>MLA</item>
+      <item>MLAS</item>
+      <item>MLS</item>
+      <item>MUL</item>
+      <item>MULS</item>
+      <item>SMLABB</item>
+      <item>SMLABT</item>
+      <item>SMLATB</item>
+      <item>SMLATT</item>
+      <item>SMLaD</item>
+      <item>SMLaDX</item>
+      <item>SMLaLD</item>
+      <item>SMLaLDX</item>
+      <item>SMLAL</item>
+      <item>SMLALS</item>
+      <item>SMLALBB</item>
+      <item>SMLALBT</item>
+      <item>SMLALTB</item>
+      <item>SMLALTT</item>
+      <item>SMLAWB</item>
+      <item>SMLAWT</item>
+      <item>SMMLa</item>
+      <item>SMMLaR</item>
+      <item>SMMUL</item>
+      <item>SMMULR</item>
+      <item>SMUaD</item>
+      <item>SMUaDX</item>
+      <item>SMULBB</item>
+      <item>SMULBT</item>
+      <item>SMULTB</item>
+      <item>SMULTT</item>
+      <item>SMULL</item>
+      <item>SMULLS</item>
+      <item>SMULWB</item>
+      <item>SMULWT</item>
+      <item>UMAAL</item>
+      <item>UMLAL</item>
+      <item>UMULL</item>
+    </list>
+
+    <list name="Packing and Unpacking Instructions">
+      <item>PKHBT</item>
+      <item>PKHTB</item>
+      <item>SXTAB</item>
+      <item>SXTAB16</item>
+      <item>SXTAH</item>
+      <item>SXTB</item>
+      <item>SXTB16</item>
+      <item>SXTH</item>
+      <item>UXTAB</item>
+      <item>UXTAB16</item>
+      <item>UXTAH</item>
+      <item>UXTB</item>
+      <item>UXTB16</item>
+      <item>UXTH</item>
+    </list>
+
+    <list name="Special Instructions">
+      <item>DBG</item>
+      <item>DMB</item>
+      <item>DSB</item>
+      <item>ISB</item>
+      <item>NOP</item>
+      <item>PLD</item>
+      <item>PLDW</item>
+      <item>PLI</item>
+      <item>SETEND</item>
+      <item>SEV</item>
+      <item>SVC</item>
+      <item>SWI</item>
+      <item>UDF</item>
+      <item>WFE</item>
+      <item>WFI</item>
+      <item>YIELD</item>
+    </list>
+
+    <list name="Exclusive Load and Store Instructions">
+      <item>CLREX</item>
+      <item>LDREX</item>
+      <item>LDREXB</item>
+      <item>LDREXD</item>
+      <item>LDREXH</item>
+      <item>STREX</item>
+      <item>STREXB</item>
+      <item>STREXD</item>
+      <item>STREXH</item>
+    </list>
+
+    <list name="System Instructions">
+      <item>CPS</item>
+      <item>ERET</item>
+      <item>HVC</item>
+      <item>MRS</item>
+      <item>MSR</item>
+      <item>RFE</item>
+      <item>RFEDA</item>
+      <item>RFEDB</item>
+      <item>RFEIA</item>
+      <item>RFEIB</item>
+      <item>SMC</item>
+      <item>SRS</item>
+      <item>SRSDA</item>
+      <item>SRSDB</item>
+      <item>SRSIA</item>
+      <item>SRSIB</item>
+    </list>
+
+    <list name="Common Registers">
+      <item>R0</item>
+      <item>R1</item>
+      <item>R2</item>
+      <item>R3</item>
+      <item>R4</item>
+      <item>R5</item>
+      <item>R6</item>
+      <item>R7</item>
+      <item>R8</item>
+      <item>R9</item>
+      <item>R10</item>
+      <item>R11</item>
+      <item>R12</item>
+      <item>R13</item>
+      <item>R14</item>
+      <item>R15</item>
+      <item>IP</item>
+      <item>SP</item>
+      <item>LR</item>
+      <item>PC</item>
+      <item>CPSR</item>
+      <item>R8_fiq</item>
+      <item>R9_fiq</item>
+      <item>R10_fiq</item>
+      <item>R11_fiq</item>
+      <item>R12_fiq</item>
+      <item>SP_fiq</item>
+      <item>LR_fiq</item>
+      <item>SP_svc</item>
+      <item>LR_svc</item>
+      <item>SP_abt</item>
+      <item>LR_abt</item>
+      <item>SP_und</item>
+      <item>LR_und</item>
+      <item>SP_mon</item>
+      <item>LR_mon</item>
+      <item>SP_hyp</item>
+      <item>SPSR_fiq</item>
+      <item>SPSR_irq</item>
+      <item>SPSR_abt</item>
+      <item>SPSR_svc</item>
+      <item>SPSR_und</item>
+      <item>SPSR_mon</item>
+      <item>SPSR_hyp</item>
+      <item>ELR_hyp</item>
+    </list>
+
+    <list name="Control Statements">
+      <item>ALIGN</item>
+      <item>EVEN</item>
+      <item>ORG</item>
+      <item>USING</item>
+      <item>IF</item>
+      <item>ELSEIF</item>
+      <item>ELSE</item>
+      <item>ENDIF</item>
+      <item>DB</item>
+      <item>DD</item>
+      <item>DW</item>
+      <item>DBIT</item>
+      <item>DS</item>
+      <item>DSB</item>
+      <item>DSD</item>
+      <item>DSW</item>
+      <item>ENDP</item>
+      <item>LABEL</item>
+      <item>PROC</item>
+      <item>EXTERN</item>
+      <item>EXTRN</item>
+      <item>NAME</item>
+      <item>PUBLIC</item>
+      <item>BSEG</item>
+      <item>CSEG</item>
+      <item>DSEG</item>
+      <item>ISEG</item>
+      <item>RSEG</item>
+      <item>SEGMENT</item>
+      <item>XSEG</item>
+      <item>BIT</item>
+      <item>CODE</item>
+      <item>DATA</item>
+      <item>EQU</item>
+      <item>IDATA</item>
+      <item>LIT</item>
+      <item>SBIT</item>
+      <item>SET</item>
+      <item>SFR</item>
+      <item>SFR16</item>
+      <item>XDATA</item>
+      <item>__ERROR__</item>
+      <item>__WARNING__</item>
+      <item>END</item>
+    </list>
+
+    <list name="Condition Codes">
+      <item>EQ</item>
+      <item>NE</item>
+      <item>CS</item>
+      <item>HS</item>
+      <item>CC</item>
+      <item>LO</item>
+      <item>MI</item>
+      <item>PL</item>
+      <item>VS</item>
+      <item>VC</item>
+      <item>HI</item>
+      <item>LS</item>
+      <item>GE</item>
+      <item>LT</item>
+      <item>GT</item>
+      <item>LE</item>
+      <item>AL</item>
+    </list>
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectSpaces attribute="Normal Text" />
+        <DetectChar attribute="Number" context="Number" char="#" />
+        <DetectChar attribute="String" context="String" char="&quot;" />
+        <AnyChar attribute="Comment" context="Comment" String=";@" />
+        <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-/.*&lt;=&gt;?[]^{|}~" />
+        <RegExpr attribute="Label" context="#stay" String="^[a-zA-Z_][a-zA-Z0-9_]*:" column="0" firstNonSpace="true" />
+        <!-- If there is a better way to do this using the existing lists, it would be nice to do it that way -->
+        <RegExpr attribute="Arithmetic Instruction" context="CheckCondition" String="\b(?:ADCS|ADCS|ADD|ADDS|ADDW|ADR|CMN|CMP|QADD|QDADD|QDSUB|QSUB|RSB|RSBS|RSC|RSCS|SBC|SBCS|SDIV|SSAT|SSAT16|SUB|SUBS|SUBW|UDIV|USAD8|USADA8|USAT|USAT16)(?:EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)?\b(?=\s|$)" insensitive="true" />
+        <RegExpr attribute="Bitwise Instruction" context="CheckCondition" String="\b(?:AND|ANDS|ASR|ASRS|BFC|BFI|BIC|BICS|CLZ|EOR|EORS|LSL|LSLS|LSR|LSRS|MOV|MOVS|MOVT|MOVW|MVN|MVNS|ORN|ORNS|ORR|ORRS|RBIT|REV|REV16|REVSH|ROR|RORS|RRX|RRXS|SBFX|TEQ|TST|UBFX)(?:EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)?\b(?=\s|$)" insensitive="true" />
+        <keyword attribute="Load/Store Instruction" context="#stay" String="Load and Store Instructions" />
+        <RegExpr attribute="Branch Instruction" context="CheckCondition" String="\b(?:B|BL|BLX|BX|TBB|TBH)(?:EQ|NE|CS|HS|CC|LO|MI|PL|VS|VC|HI|LS|GE|LT|GT|LE|AL)?\b(?=\s|$)" insensitive="true" />
+        <keyword attribute="Multiplication Instruction" context="#stay" String="Multiplication Instructions" />
+        <keyword attribute="Packing Instruction" context="#stay" String="Packing and Unpacking Instructions" />
+        <keyword attribute="Special Instruction" context="#stay" String="Special Instructions" />
+        <keyword attribute="Exclusive Load/Store Instruction" context="#stay" String="Exclusive Load and Store Instructions" />
+        <keyword attribute="System Instruction" context="#stay" String="System Instructions" />
+        <keyword attribute="Control Statement" context="#stay" String="Control Statements" />
+        <keyword attribute="Register" context="#stay" String="Common Registers" />
+        <RegExpr attribute="Normal Text" context="#stay" String="[a-zA-Z_][a-zA-Z0-9_]*" />
+      </context>
+
+      <context attribute="CheckCondition" lineEndContext="#pop" name="CheckCondition" fallthroughContext="#pop">
+        <keyword attribute="Condition Code" context="#pop" String="Condition Codes" />
+        <AnyChar attribute="Symbol" context="#pop" String="!%&amp;()+,-/.*&lt;=&gt;?[]^{|}~" />
+        <RegExpr attribute="Normal Text" context="#pop" String="\S" />
+      </context>
+
+      <context attribute="Number" lineEndContext="#pop" name="Number" fallthroughContext="#pop">
+        <StringDetect attribute="Hex" context="Hex" String="0x" />
+        <StringDetect attribute="Binary" context="Binary" String="0b" />
+        <AnyChar attribute="Decimal" context="Decimal" String="0123456789" />
+      </context>
+
+      <context attribute="Hex" lineEndContext="#pop" name="Hex" fallthroughContext="#pop">
+        <RegExpr attribute="Hex" context="#pop" String="[0-9a-fA-F]+" />
+      </context>
+
+      <context attribute="Decimal" lineEndContext="#pop" name="Decimal" fallthroughContext="#pop">
+        <RegExpr attribute="Decimal" context="#pop" String="[0-9]+" />
+      </context>
+
+      <context attribute="Binary" lineEndContext="#pop" name="Binary" fallthroughContext="#pop">
+        <RegExpr attribute="Binary" context="#pop" String="[01]+" />
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <HlCStringChar attribute="String Char" context="#stay" />
+        <DetectChar attribute="String" context="#pop" char="&quot;" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <DetectSpaces attribute="Comment" />
+        <IncludeRules context="##Comments" />
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"                      defStyleNum="dsNormal" />
+      <itemData name="Control Statement"                defStyleNum="dsKeyword" />
+      <itemData name="CheckCondition"                   defStyleNum="dsNormal" />
+      <itemData name="Arithmetic Instruction"           defStyleNum="dsFunction" />
+      <itemData name="Bitwise Instruction"              defStyleNum="dsFunction" />
+      <itemData name="Load/Store Instruction"           defStyleNum="dsFunction" />
+      <itemData name="Branch Instruction"               defStyleNum="dsControlFlow" />
+      <itemData name="Condition Code"                   defStyleNum="dsInformation" />
+      <itemData name="Multiplication Instruction"       defStyleNum="dsFunction" />
+      <itemData name="Packing Instruction"              defStyleNum="dsFunction" />
+      <itemData name="Special Instruction"              defStyleNum="dsFunction" />
+      <itemData name="Exclusive Load/Store Instruction" defStyleNum="dsFunction" />
+      <itemData name="System Instruction"               defStyleNum="dsFunction" />
+      <itemData name="Register"                         defStyleNum="dsDataType" />
+      <itemData name="Label"                            defStyleNum="dsControlFlow" />
+      <itemData name="Number"                           defStyleNum="dsNormal" />
+      <itemData name="Decimal"                          defStyleNum="dsDecVal" />
+      <itemData name="Hex"                              defStyleNum="dsBaseN" />
+      <itemData name="Binary"                           defStyleNum="dsBaseN" />
+      <itemData name="String"                           defStyleNum="dsString" />
+      <itemData name="String Char"                      defStyleNum="dsSpecialChar" />
+      <itemData name="Comment"                          defStyleNum="dsComment" />
+      <itemData name="Symbol"                           defStyleNum="dsOperator" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="0"/>
+    <comments>
+      <comment name="singleLine" start=";"/>
+      <comment name="singleLine" start="@"/>
+    </comments>
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

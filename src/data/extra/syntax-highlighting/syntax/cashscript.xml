@@ -1,0 +1,240 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="CashScript" section="Sources" version="1" kateversion="5.0" indenter="cstyle" mimetype="" extensions="*.cash" priority="5" author="James Zuccon" license="MIT">
+    <highlighting>
+        <list name="types">
+            <item>address</item>
+            <item>int</item>
+            <item>bool</item>
+            <item>string</item>
+            <item>pubkey</item>
+            <item>sig</item>
+            <item>datasig</item>
+            <item>byte</item>
+            <item>bytes</item>
+            <item>bytes1</item>
+            <item>bytes2</item>
+            <item>bytes3</item>
+            <item>bytes4</item>
+            <item>bytes5</item>
+            <item>bytes6</item>
+            <item>bytes7</item>
+            <item>bytes8</item>
+            <item>bytes9</item>
+            <item>bytes10</item>
+            <item>bytes11</item>
+            <item>bytes12</item>
+            <item>bytes13</item>
+            <item>bytes14</item>
+            <item>bytes15</item>
+            <item>bytes16</item>
+            <item>bytes17</item>
+            <item>bytes18</item>
+            <item>bytes19</item>
+            <item>bytes20</item>
+            <item>bytes21</item>
+            <item>bytes22</item>
+            <item>bytes23</item>
+            <item>bytes24</item>
+            <item>bytes25</item>
+            <item>bytes26</item>
+            <item>bytes27</item>
+            <item>bytes28</item>
+            <item>bytes29</item>
+            <item>bytes30</item>
+            <item>bytes31</item>
+            <item>bytes32</item>
+            <item>bytes33</item>
+            <item>bytes34</item>
+            <item>bytes35</item>
+            <item>bytes36</item>
+            <item>bytes37</item>
+            <item>bytes38</item>
+            <item>bytes39</item>
+            <item>bytes40</item>
+            <item>bytes41</item>
+            <item>bytes42</item>
+            <item>bytes43</item>
+            <item>bytes44</item>
+            <item>bytes45</item>
+            <item>bytes46</item>
+            <item>bytes47</item>
+            <item>bytes48</item>
+            <item>bytes49</item>
+            <item>bytes50</item>
+            <item>bytes51</item>
+            <item>bytes52</item>
+            <item>bytes53</item>
+            <item>bytes54</item>
+            <item>bytes55</item>
+            <item>bytes56</item>
+            <item>bytes57</item>
+            <item>bytes58</item>
+            <item>bytes59</item>
+            <item>bytes60</item>
+            <item>bytes61</item>
+            <item>bytes62</item>
+            <item>bytes63</item>
+            <item>bytes64</item>
+            <item>bytes65</item>
+            <item>bytes66</item>
+            <item>bytes67</item>
+            <item>bytes68</item>
+            <item>bytes69</item>
+            <item>bytes70</item>
+            <item>bytes71</item>
+            <item>bytes72</item>
+            <item>bytes73</item>
+            <item>bytes74</item>
+            <item>bytes75</item>
+            <item>bytes76</item>
+            <item>bytes77</item>
+            <item>bytes78</item>
+            <item>bytes79</item>
+            <item>bytes80</item>
+            <item>bytes81</item>
+            <item>bytes82</item>
+            <item>bytes83</item>
+            <item>bytes84</item>
+            <item>bytes85</item>
+            <item>bytes86</item>
+            <item>bytes87</item>
+            <item>bytes88</item>
+            <item>bytes89</item>
+            <item>bytes90</item>
+            <item>bytes91</item>
+            <item>bytes92</item>
+            <item>bytes93</item>
+            <item>bytes94</item>
+            <item>bytes95</item>
+            <item>bytes96</item>
+            <item>bytes97</item>
+            <item>bytes98</item>
+            <item>bytes99</item>
+        </list>
+        <list name="units">
+            <item>satoshis</item>
+            <item>sats</item>
+            <item>finney</item>
+            <item>bits</item>
+            <item>bitcoin</item>
+            <item>seconds</item>
+            <item>minutes</item>
+            <item>hours</item>
+            <item>days</item>
+            <item>weeks</item>
+        </list>
+        <list name="globals">
+            <!-- General -->
+            <item>require</item>
+            <!-- Arithmetic functions -->
+            <item>abs</item>
+            <item>min</item>
+            <item>max</item>
+            <item>within</item>
+            <!-- Hashing functions -->
+            <item>hash160</item>
+            <item>hash256</item>
+            <item>ripemd160</item>
+            <item>sha1</item>
+            <item>sha256</item>
+            <!-- Signature checking functions -->
+            <item>checkSig</item>
+            <item>checkMultiSig</item>
+            <item>checkDataSig</item>
+            <!-- LockingBytecode -->
+            <item>LockingBytecodeP2PKH</item>
+            <item>LockingBytecodeP2SH20</item>
+            <item>LockingBytecodeP2SH32</item>
+            <item>LockingBytecodeNullData</item>
+        </list>
+        <list name="keywords">
+            <item>true</item>
+            <item>false</item>
+            <item>new</item>
+        </list>
+        <list name="controlstructures">
+            <item>if</item>
+            <item>else</item>
+            <item>contract</item>
+            <item>function</item>
+        </list>
+        <contexts>
+            <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+                <DetectSpaces/>
+                <StringDetect attribute="Keyword" String="pragma" context="Pragma" firstNonSpace="true" insensitive="true"/>
+                <keyword attribute="Control Structures" context="#stay" String="controlstructures"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Data Type" context="#stay" String="types"/>
+                <keyword attribute="Unit" context="#stay" String="units"/>
+                <keyword attribute="Built-in" context="#stay" String="globals"/>
+                <DetectIdentifier/>
+                <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1"/>
+                <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1"/>
+                <HlCHex attribute="Hex" context="#stay"/>
+                <Float attribute="Decimal" context="#stay"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <HlCChar attribute="Char" context="#stay"/>
+                <DetectChar attribute="String" context="String" char="&quot;"/>
+                <Detect2Chars attribute="Built-in" context="#stay" char="+" char1="+"/>
+                <Detect2Chars attribute="Built-in" context="#stay" char="-" char1="-"/>
+                <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="/" lookAhead="true"/>
+                <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="*" lookAhead="true"/>
+                <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^;"/>
+            </context>
+            <context name="MatchComment" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+                <IncludeRules context="##Doxygen"/>
+                <Detect2Chars attribute="Comment" context="#pop!Comment Single" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="#pop!Comment Multi" char="/" char1="*" beginRegion="Comment"/>
+            </context>
+            <context name="Pragma" attribute="Normal Text" lineEndContext="#pop">
+                <WordDetect attribute="Built-in" String="cashscript" context="Pragma CashScript" insensitive="true"/>
+                <RegExpr attribute="Error" context="#pop" String="[^\s;]+"/>
+            </context>
+            <context name="Pragma CashScript" attribute="Normal Text" lineEndContext="#pop">
+                <RegExpr attribute="Normal Text" context="#pop" String="[\^\. \-&lt;&gt;=\|\d\w]+"/>
+                <RegExpr attribute="Error" context="#pop" String="[^\s;]+"/>
+            </context>
+            <context name="String" attribute="String" lineEndContext="#pop">
+                <LineContinue attribute="String" context="#stay"/>
+                <HlCStringChar attribute="String Char" context="#stay"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+            <context name="Comment Single" attribute="Comment" lineEndContext="#pop">
+                <LineContinue attribute="Comment" context="#stay"/>
+                <DetectSpaces/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier/>
+            </context>
+            <context name="Comment Multi" attribute="Comment" lineEndContext="#stay">
+                <DetectSpaces/>
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Control Structures" defStyleNum="dsControlFlow" spellChecking="false"/>
+            <itemData name="Symbol" defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Built-in" defStyleNum="dsBuiltIn" spellChecking="false"/>
+            <itemData name="Unit" defStyleNum="dsConstant" bold="0" spellChecking="false"/>
+            <itemData name="Data Type" defStyleNum="dsDataType" spellChecking="false"/>
+            <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="String" defStyleNum="dsString"/>
+            <itemData name="Char" defStyleNum="dsChar"/>
+            <itemData name="String Char" defStyleNum="dsSpecialChar"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+            <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="//"/>
+            <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+        </comments>
+        <keywords casesensitive="1"/>
+    </general>
+</language>

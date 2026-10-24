@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="YANG" version="1" kateversion="3.4" section="Markup" extensions="*.yang" author="Nicolás Alvarez (based on yang.vim by Matt Parker)" license="LGPLv2.1+">
+<!DOCTYPE language>
+<language name="YANG" version="3" kateversion="5.0" section="Markup" extensions="*.yang" author="Nicolás Alvarez (based on yang.vim by Matt Parker)" license="LGPLv2.1+">
   <highlighting>
     <list name="Types">
       <item>decimal64</item>
@@ -113,7 +113,7 @@
         <keyword attribute="Other Keywords" context="#stay" String="Others" />
         <keyword attribute="Boolean" context="#stay" String="Booleans" />
         <WordDetect attribute="Conditional" context="#stay" String="if-feature" />
-        <Detect2Chars attribute="Comment" context="Block comment" char="/" char1="*" />
+        <Detect2Chars attribute="Comment" context="Block comment" char="/" char1="*" beginRegion="BlockComment" />
         <Detect2Chars attribute="Comment" context="Line comment" char="/" char1="/" />
         <DetectChar attribute="String" context="dq string" char="&quot;" />
         <DetectChar attribute="String" context="sq string" char="'" />
@@ -121,9 +121,13 @@
         <DetectChar context="#pop" char="}" endRegion="Block" />
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Block comment">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment" />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="Comment" name="Line comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="String" lineEndContext="#stay" name="dq string" >
         <RegExpr attribute="Escape" String="\\[nt&quot;\\]" context="#stay" />
@@ -149,7 +153,8 @@
       <keywords weakDeliminator="-" casesensitive="1" />
       <comments>
         <comment name="singleLine" start="//" />
-        <comment name="multiLine" start="/*" end="*/" />
+        <comment name="multiLine" start="/*" end="*/" region="BlockComment" />
       </comments>
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

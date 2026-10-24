@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="Hjson" section="Configuration" version="1" kateversion="5.0" extensions="*.hjson" mimetype="application/hjson" author="Marco Nelles (marco@maniatek.de)" license="MIT">
+  <highlighting>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Data Type" context="#stay" String="^[\s]*[A-Za-z0-9_-]+(?=\s*:)" column="0"/>
+        <RegExpr attribute="Data Type" context="QuotedKeyDouble" String="^[\s]*&quot;" column="0"/>
+        <RegExpr attribute="Data Type" context="QuotedKeySingle" String="^[\s]*'" column="0"/>
+        <AnyChar attribute="Bold" context="#stay" String="{}[]"/>
+        <DetectChar attribute="String" context="DoubleQuoteString" char="&quot;"/>
+        <StringDetect attribute="String" context="MultiLineString" String="'''"/>
+        <DetectChar attribute="String" context="SingleQuoteString" char="'"/>
+        <RegExpr attribute="Number" context="#stay" String="\b-?[0-9]+(\.[0-9]+)?\b"/>
+        <RegExpr attribute="Comment" context="#stay" String="(#|//).*$"/>
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*" beginRegion="Comment"/>
+        <RegExpr attribute="Keyword" context="#stay" String="\b(true|false|null)\b"/>
+      </context>
+      <context name="QuotedKeyDouble" attribute="Data Type" lineEndContext="#stay">
+        <DetectChar attribute="Data Type" context="#pop" char="&quot;"/>
+        <RegExpr attribute="Data Type" context="#stay" String="."/>
+      </context>
+      <context name="QuotedKeySingle" attribute="Data Type" lineEndContext="#stay">
+        <DetectChar attribute="Data Type" context="#pop" char="'"/>
+        <RegExpr attribute="Data Type" context="#stay" String="."/>
+      </context>
+      <context name="DoubleQuoteString" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <RegExpr attribute="String" context="#stay" String="."/>
+      </context>
+      <context name="SingleQuoteString" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="String" context="#pop" char="'"/>
+        <RegExpr attribute="String" context="#stay" String="."/>
+      </context>
+      <context name="MultiLineString" attribute="String" lineEndContext="#stay">
+        <StringDetect attribute="String" context="#pop" String="'''"/>
+        <RegExpr attribute="String" context="#stay" String="."/>
+      </context>
+      <context name="MultiLineComment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Data Type" defStyleNum="dsDataType"/>
+      <itemData name="Bold" defStyleNum="dsNormal" bold="true"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+      <comment name="singleLine" start="//"/>
+      <comment name="multiLine" start="/*" end="*/"/>
+    </comments>
+    <keywords casesensitive="1"/>
+  </general>
+</language>

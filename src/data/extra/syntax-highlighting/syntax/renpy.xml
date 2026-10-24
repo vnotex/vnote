@@ -1,0 +1,665 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="RenPy" section="Sources" version="3" kateversion="5.0" indenter="python" extensions="*.rpy" mimetype="text/x-renpy" priority="5" author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT">
+  <!-- https://www.renpy.org/doc/html/index.html -->
+
+  <highlighting>
+    <list name="flow">
+      <item>elif</item>
+      <item>else</item>
+      <item>label</item>
+      <item>jump</item>
+      <item>repeat</item>
+      <item>return</item>
+      <item>while</item>
+    </list>
+
+    <list name="keyword">
+      <item>add</item>
+      <item>bloc</item>
+      <item>call</item>
+      <item>choice</item>
+      <item>contains</item>
+      <item>default</item>
+      <item>define</item>
+      <item>function</item>
+      <item>hide</item>
+      <item>if</item>
+      <item>image</item>
+      <item>init</item>
+      <item>menu</item>
+      <item>on</item>
+      <item>parallel</item>
+      <item>pass</item>
+      <item>pause</item>
+      <item>play</item>
+      <item>python</item>
+      <item>scene</item>
+      <item>screen</item>
+      <item>show</item>
+      <item>textbutton</item>
+      <item>time</item>
+      <item>transform</item>
+      <item>vbox</item>
+      <item>voice</item>
+      <item>window</item>
+      <item>with</item>
+      <!-- show statement -->
+      <item>at</item>
+      <item>as</item>
+      <item>zorder</item>
+      <item>onlayer</item>
+      <item>behind</item>
+    </list>
+
+    <list name="datatype">
+      <item>None</item>
+      <item>True</item>
+      <item>False</item>
+    </list>
+
+    <list name="special character">
+      <item>adv</item>
+      <item>nvl</item>
+      <item>narrator</item>
+      <item>name_only</item>
+      <item>centered</item>
+      <item>vcentered</item>
+      <item>extend</item>
+    </list>
+
+    <list name="reserved">
+      <item>set</item>
+      <item>ADVCharacter</item>
+      <item>ADVSpeaker</item>
+      <item>Action</item>
+      <item>AddToSet</item>
+      <item>Alpha</item>
+      <item>AlphaBlend</item>
+      <item>AlphaDissolve</item>
+      <item>AlphaMask</item>
+      <item>AnimatedValue</item>
+      <item>Animation</item>
+      <item>At</item>
+      <item>Attribute</item>
+      <item>AudioPositionValue</item>
+      <item>Bar</item>
+      <item>BarValue</item>
+      <item>Borders</item>
+      <item>Button</item>
+      <item>Call</item>
+      <item>Character</item>
+      <item>Color</item>
+      <item>ComposeTransition</item>
+      <item>Composite</item>
+      <item>Condition</item>
+      <item>ConditionGroup</item>
+      <item>ConditionSwitch</item>
+      <item>Confirm</item>
+      <item>Crop</item>
+      <item>CropMove</item>
+      <item>DictEquality</item>
+      <item>DictInputValue</item>
+      <item>DictValue</item>
+      <item>DisableAllInputValues</item>
+      <item>Dissolve</item>
+      <item>Drag</item>
+      <item>DragGroup</item>
+      <item>DynamicCharacter</item>
+      <item>DynamicDisplayable</item>
+      <item>DynamicImage</item>
+      <item>EndReplay</item>
+      <item>FactorZoom</item>
+      <item>Fade</item>
+      <item>FieldEquality</item>
+      <item>FieldInputValue</item>
+      <item>FieldValue</item>
+      <item>FileAction</item>
+      <item>FileCurrentPage</item>
+      <item>FileCurrentScreenshot</item>
+      <item>FileDelete</item>
+      <item>FileJson</item>
+      <item>FileLoad</item>
+      <item>FileLoadable</item>
+      <item>FileNewest</item>
+      <item>FilePage</item>
+      <item>FilePageName</item>
+      <item>FilePageNameInputValue</item>
+      <item>FilePageNext</item>
+      <item>FilePagePrevious</item>
+      <item>FileSave</item>
+      <item>FileSaveName</item>
+      <item>FileScreenshot</item>
+      <item>FileSlotName</item>
+      <item>FileTakeScreenshot</item>
+      <item>FileTime</item>
+      <item>FileUsedSlots</item>
+      <item>Fixed</item>
+      <item>Flatten</item>
+      <item>FontGroup</item>
+      <item>Frame</item>
+      <item>Function</item>
+      <item>Gallery</item>
+      <item>GamepadCalibrate</item>
+      <item>GamepadExists</item>
+      <item>GetTooltip</item>
+      <item>Grid</item>
+      <item>HBox</item>
+      <item>Help</item>
+      <item>Hide</item>
+      <item>HideInterface</item>
+      <item>If</item>
+      <item>Image</item>
+      <item>ImageButton</item>
+      <item>ImageDissolve</item>
+      <item>ImageReference</item>
+      <item>Input</item>
+      <item>InputValue</item>
+      <item>InvertSelected</item>
+      <item>Jump</item>
+      <item>Language</item>
+      <item>LayeredImage</item>
+      <item>LayeredImageProxy</item>
+      <item>LiveComposite</item>
+      <item>LiveCrop</item>
+      <item>LiveTile</item>
+      <item>MainMenu</item>
+      <item>MixerValue</item>
+      <item>Motion</item>
+      <item>MouseMove</item>
+      <item>Move</item>
+      <item>MoveFactory</item>
+      <item>MoveIn</item>
+      <item>MoveOut</item>
+      <item>MoveTransition</item>
+      <item>Movie</item>
+      <item>MultiPersistent</item>
+      <item>MultipleTransition</item>
+      <item>MusicRoom</item>
+      <item>NVLCharacter</item>
+      <item>NVLSpeaker</item>
+      <item>NoRollback</item>
+      <item>Notify</item>
+      <item>Null</item>
+      <item>NullAction</item>
+      <item>OldMoveTransition</item>
+      <item>OpenURL</item>
+      <item>Pan</item>
+      <item>ParameterizedText</item>
+      <item>Particles</item>
+      <item>Pause</item>
+      <item>PauseAudio</item>
+      <item>Pixellate</item>
+      <item>Placeholder</item>
+      <item>Play</item>
+      <item>PlayCharacterVoice</item>
+      <item>Position</item>
+      <item>Preference</item>
+      <item>PushMove</item>
+      <item>Queue</item>
+      <item>QueueEvent</item>
+      <item>QuickLoad</item>
+      <item>QuickSave</item>
+      <item>Quit</item>
+      <item>RemoveFromSet</item>
+      <item>Replay</item>
+      <item>RestartStatement</item>
+      <item>Return</item>
+      <item>Revolve</item>
+      <item>RevolveInOut</item>
+      <item>RollForward</item>
+      <item>Rollback</item>
+      <item>RollbackToIdentifier</item>
+      <item>RotoZoom</item>
+      <item>RoundRect</item>
+      <item>ScreenVariableInputValue</item>
+      <item>ScreenVariableValue</item>
+      <item>Screenshot</item>
+      <item>Scroll</item>
+      <item>SelectedIf</item>
+      <item>SensitiveIf</item>
+      <item>Set</item>
+      <item>SetCharacterVolume</item>
+      <item>SetDict</item>
+      <item>SetField</item>
+      <item>SetLocalVariable</item>
+      <item>SetMixer</item>
+      <item>SetMute</item>
+      <item>SetScreenVariable</item>
+      <item>SetVariable</item>
+      <item>SetVoiceMute</item>
+      <item>Show</item>
+      <item>ShowMenu</item>
+      <item>ShowTransient</item>
+      <item>ShowingSwitch</item>
+      <item>SideImage</item>
+      <item>SizeZoom</item>
+      <item>Skip</item>
+      <item>SnowBlossom</item>
+      <item>Solid</item>
+      <item>Speaker</item>
+      <item>SplineMotion</item>
+      <item>Sprite</item>
+      <item>SpriteManager</item>
+      <item>Start</item>
+      <item>StaticValue</item>
+      <item>Stop</item>
+      <item>Style</item>
+      <item>StylePreference</item>
+      <item>SubTransition</item>
+      <item>Text</item>
+      <item>TextButton</item>
+      <item>Tile</item>
+      <item>ToggleDict</item>
+      <item>ToggleField</item>
+      <item>ToggleLocalVariable</item>
+      <item>ToggleMute</item>
+      <item>ToggleScreen</item>
+      <item>ToggleScreenVariable</item>
+      <item>ToggleSetMembership</item>
+      <item>ToggleVariable</item>
+      <item>ToggleVoiceMute</item>
+      <item>Tooltip</item>
+      <item>Transform</item>
+      <item>VBox</item>
+      <item>VariableInputValue</item>
+      <item>VariableValue</item>
+      <item>Viewport</item>
+      <item>VoiceInfo</item>
+      <item>VoiceReplay</item>
+      <item>Window</item>
+      <item>With</item>
+      <item>XScrollValue</item>
+      <item>YScrollValue</item>
+      <item>Zoom</item>
+      <item>ZoomInOut</item>
+      <item>absolute</item>
+      <item>achievement</item>
+      <item>adv</item>
+      <item>alt</item>
+      <item>anim</item>
+      <item>audio</item>
+      <item>blinds</item>
+      <item>build</item>
+      <item>center</item>
+      <item>centered</item>
+      <item>color</item>
+      <item>config</item>
+      <item>default</item>
+      <item>default_transition</item>
+      <item>define</item>
+      <item>director</item>
+      <item>dissolve</item>
+      <item>ease</item>
+      <item>easeinbottom</item>
+      <item>easeinleft</item>
+      <item>easeinright</item>
+      <item>easeintop</item>
+      <item>easeoutbottom</item>
+      <item>easeoutleft</item>
+      <item>easeoutright</item>
+      <item>easeouttop</item>
+      <item>extend</item>
+      <item>fade</item>
+      <item>gui</item>
+      <item>hpunch</item>
+      <item>hyperlink_function</item>
+      <item>hyperlink_sensitive</item>
+      <item>hyperlink_styler</item>
+      <item>i</item>
+      <item>iap</item>
+      <item>icon</item>
+      <item>im</item>
+      <item>irisin</item>
+      <item>irisout</item>
+      <item>layeredimage</item>
+      <item>layout</item>
+      <item>left</item>
+      <item>library</item>
+      <item>main_menu</item>
+      <item>menu</item>
+      <item>mouse_visible</item>
+      <item>move</item>
+      <item>moveinbottom</item>
+      <item>moveinleft</item>
+      <item>moveinright</item>
+      <item>moveintop</item>
+      <item>moveoutbottom</item>
+      <item>moveoutleft</item>
+      <item>moveoutright</item>
+      <item>moveouttop</item>
+      <item>name_only</item>
+      <item>narrator</item>
+      <item>nvl</item>
+      <item>nvl_clear</item>
+      <item>nvl_clear_next</item>
+      <item>nvl_erase</item>
+      <item>nvl_hide</item>
+      <item>nvl_list</item>
+      <item>nvl_menu</item>
+      <item>nvl_narrator</item>
+      <item>nvl_show</item>
+      <item>nvl_show_core</item>
+      <item>nvl_variant</item>
+      <item>nvl_window</item>
+      <item>offscreenleft</item>
+      <item>offscreenright</item>
+      <item>os</item>
+      <item>persistent</item>
+      <item>pixellate</item>
+      <item>predict_menu</item>
+      <item>predict_say</item>
+      <item>preferences</item>
+      <item>print_function</item>
+      <item>pushdown</item>
+      <item>pushleft</item>
+      <item>pushright</item>
+      <item>pushup</item>
+      <item>python_dict</item>
+      <item>python_list</item>
+      <item>python_object</item>
+      <item>python_set</item>
+      <item>renpy</item>
+      <item>reset</item>
+      <item>right</item>
+      <item>save_name</item>
+      <item>say</item>
+      <item>slideawaydown</item>
+      <item>slideawayleft</item>
+      <item>slideawayright</item>
+      <item>slideawayup</item>
+      <item>slidedown</item>
+      <item>slideleft</item>
+      <item>slideright</item>
+      <item>slideup</item>
+      <item>squares</item>
+      <item>store</item>
+      <item>style</item>
+      <item>suppress_overlay</item>
+      <item>sv</item>
+      <item>sys</item>
+      <item>theme</item>
+      <item>toggle_skipping</item>
+      <item>top</item>
+      <item>topleft</item>
+      <item>topright</item>
+      <item>truecenter</item>
+      <item>ui</item>
+      <item>updater</item>
+      <item>vcentered</item>
+      <item>voice</item>
+      <item>voice_can_replay</item>
+      <item>voice_replay</item>
+      <item>voice_sustain</item>
+      <item>vpunch</item>
+      <item>wipedown</item>
+      <item>wipeleft</item>
+      <item>wiperight</item>
+      <item>wipeup</item>
+      <item>zoomin</item>
+      <item>zoominout</item>
+      <item>zoomout</item>
+    </list>
+
+    <list name="attribute">
+      <item>mad</item>
+      <item>surprised</item>
+      <item>smile</item>
+      <item>normal</item>
+      <item>happy</item>
+      <item>vhappy</item>
+      <item>concerned</item>
+    </list>
+
+    <list name="play">
+      <item>music</item>
+      <item>sound</item>
+      <item>voice</item>
+    </list>
+
+    <list name="expression">
+      <item>expression</item>
+    </list>
+
+    <list name="class">
+      <item>Character</item>
+      <item>SetVoiceMute</item>
+      <item>ToggleVoiceMute</item>
+      <item>LiveTile</item>
+      <item>VBox</item>
+      <item>Movie</item>
+    </list>
+
+    <list name="property">
+      <item>action</item>
+      <item>xalign</item>
+      <item>alpha</item>
+      <item>yalign</item>
+      <item>alignaround</item>
+      <item>zoom</item>
+      <item>linear</item>
+      <item>rotate</item>
+    </list>
+
+    <list name="layer">
+      <item>layer</item>
+    </list>
+
+    <list name="layer list">
+      <item>overlay</item>
+      <item>screens</item>
+      <item>transient</item>
+      <item>master</item>
+    </list>
+
+    <list name="sustain">
+      <item>sustain</item>
+    </list>
+
+    <list name="special label">
+      <item>start</item>
+      <item>quit</item>
+      <item>after_load</item>
+      <item>splashscreen</item>
+      <item>before_main_menu</item>
+      <item>main_menu</item>
+      <item>after_warp</item>
+    </list>
+
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+
+        <StringDetect attribute="String" context="QQQString" String="&quot;&quot;&quot;" beginRegion="QQQ"/>
+        <DetectChar attribute="String" context="QString" char="&quot;"/>
+        <DetectChar attribute="String" context="SQString" char="'"/>
+        <DetectChar attribute="String" context="BQString" char="`"/>
+
+        <DetectChar attribute="Symbol" context="One-Line Python" char="$"/>
+        <DetectChar attribute="Symbol" context="Image Attribute" char="@"/>
+        <DetectChar attribute="Symbol" context="Assign" char="="/>
+
+        <DetectChar attribute="Symbol" context="#stay" char="(" beginRegion="paren"/>
+        <DetectChar attribute="Symbol" context="#stay" char=")" endRegion="paren"/>
+        <DetectChar attribute="Symbol" context="#stay" char="[" beginRegion="brace"/>
+        <DetectChar attribute="Symbol" context="#stay" char="]" endRegion="brace"/>
+
+        <AnyChar attribute="Symbol" context="#stay" String=":="/>
+
+        <Float attribute="Float" context="#stay" />
+        <HlCHex attribute="Hex" context="#stay"/>
+        <HlCOct attribute="Octal" context="#stay"/>
+        <Int attribute="Int" context="#stay"/>
+
+        <WordDetect attribute="Keyword" context="Call" String="call" firstNonSpace="1"/>
+        <WordDetect attribute="Keyword" context="Label" String="label" firstNonSpace="1"/>
+        <WordDetect attribute="Keyword" context="Voice" String="voice" firstNonSpace="1"/>
+        <WordDetect attribute="Keyword" context="Play" String="play" firstNonSpace="1"/>
+        <WordDetect attribute="Keyword" context="Show" String="show" firstNonSpace="1"/>
+        <WordDetect attribute="Keyword" context="Init" String="init" column="0"/>
+        <WordDetect attribute="Keyword" context="Init Python" String="python" column="0"/>
+
+        <keyword attribute="Keyword" context="#stay" String="keyword"/>
+        <keyword attribute="Control Flow" context="#stay" String="flow" firstNonSpace="1"/>
+        <keyword attribute="Data Type" context="#stay" String="datatype"/>
+        <keyword attribute="Special Char" context="#stay" String="special character"/>
+        <keyword attribute="Property" context="#stay" String="property"/>
+        <keyword attribute="Reserved" context="#stay" String="reserved"/>
+
+        <DetectIdentifier/>
+      </context>
+
+
+      <!-- Keyword -->
+
+      <context name="Call" attribute="Normal Text" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword attribute="Keyword" context="#pop" String="expression"/>
+      </context>
+
+      <context name="Label" attribute="Normal Text" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword attribute="Property" context="#pop" String="special label"/>
+      </context>
+
+      <context name="Image Attribute" attribute="Normal Text" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword attribute="Image Attribute" context="#pop" String="attribute"/>
+      </context>
+
+      <context name="Voice" attribute="Normal Text" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword attribute="Property" context="#pop" String="sustain"/>
+      </context>
+
+      <context name="Play" attribute="Normal Text" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword attribute="Property" context="#pop" String="play"/>
+      </context>
+
+      <context name="Show" attribute="Normal Text" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword attribute="Property" context="Layer" String="layer"/>
+      </context>
+
+      <context name="Layer" attribute="Normal Text" lineEndContext="#pop#pop" fallthrough="1" fallthroughContext="#pop#pop">
+        <DetectSpaces/>
+        <keyword attribute="Property" context="#pop#pop" String="layer list"/>
+      </context>
+
+      <context name="Init" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Symbol" context="#pop" char=":"/>
+        <Int attribute="Int" context="#stay"/>
+        <WordDetect attribute="Keyword" context="#pop!Init Python" String="python"/>
+        <DetectIdentifier/>
+      </context>
+
+      <context name="Assign" attribute="Normal Text" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword attribute="Class" context="#pop" String="class"/>
+      </context>
+
+
+      <!-- Comment -->
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+
+
+      <!-- String -->
+
+      <context name="QQQString" attribute="String" lineEndContext="#stay">
+        <RegExpr attribute="String" context="#stay" String="[^\\{&quot;]+"/>
+        <IncludeRules context="find_SpecialChar"/>
+        <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;" endRegion="QQQ"/>
+      </context>
+
+      <context name="QString" attribute="String" lineEndContext="#stay">
+        <RegExpr attribute="String" context="#stay" String="[^\\{&quot;]+"/>
+        <IncludeRules context="find_SpecialChar"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <context name="SQString" attribute="String" lineEndContext="#stay">
+        <RegExpr attribute="String" context="#stay" String="[^\\{']+"/>
+        <IncludeRules context="find_SpecialChar"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+
+      <context name="BQString" attribute="String" lineEndContext="#stay">
+        <RegExpr attribute="String" context="#stay" String="[^\\{`]+"/>
+        <IncludeRules context="find_SpecialChar"/>
+        <DetectChar attribute="String" context="#pop" char="`"/>
+      </context>
+
+      <context name="find_SpecialChar" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="Special Char" context="Special Char" char="\"/>
+        <DetectChar attribute="Special Char" context="String Style" char="{" lookAhead="1"/>
+      </context>
+
+      <context name="Special Char" attribute="String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop">
+        <RegExpr attribute="Special Char" context="#pop" String="."/>
+      </context>
+
+      <context name="String Style" attribute="String" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop">
+        <RegExpr attribute="Special Char" context="#pop" String="\{[\w/]+\}"/>
+        <DetectChar attribute="String" context="#pop" char="{"/>
+      </context>
+
+
+      <!-- Python -->
+
+      <context name="One-Line Python" attribute="Normal Text" lineEndContext="#pop">
+        <IncludeRules context="##Python"/>
+      </context>
+
+      <context name="Init Python" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Symbol" context="Python" char=":"/>
+        <DetectIdentifier/>
+      </context>
+
+      <context name="Python" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Normal Text" context="#pop#pop" String="^[^\s#]" lookAhead="1" column="0"/>
+        <IncludeRules context="##Python"/>
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text"      defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Control Flow"     defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Keyword"          defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Data Type"        defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Image Attribute"  defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="Property"         defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="Class"            defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="Reserved"         defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="Int"              defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Hex"              defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Octal"            defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float"            defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Special Char"     defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="String"           defStyleNum="dsString"/>
+      <itemData name="Comment"          defStyleNum="dsComment"/>
+      <itemData name="Symbol"           defStyleNum="dsOperator" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <folding indentationsensitive="1"/>
+    <emptyLines>
+      <emptyLine regexpr="(?:\s+|\s*#.*)"/>
+    </emptyLines>
+    <comments>
+      <comment name="singleLine" start="#" position="afterwhitespace" />
+    </comments>
+    <keywords casesensitive="1" weakDeliminator="#" />
+  </general>
+</language>
+<!-- kate: indent-width 2; tab-width 2; -->

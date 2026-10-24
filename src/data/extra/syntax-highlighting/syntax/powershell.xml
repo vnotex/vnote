@@ -1,48 +1,54 @@
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language [
+  <!ENTITY varscope "(?:global|local|private|script|using|workflow|alias|env|function|variable)">
+  <!ENTITY varname  "(?:[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*)">
+]>
 <language
   name="PowerShell"
-  version="4"
-  kateversion="5.0"
-  extensions="*.ps1;*.ps1m;*.ps1d"
+  version="16"
+  kateversion="5.79"
+  extensions="*.ps1;*.psm1;*.psd1"
   section="Scripts"
   author="Motoki Kashihara (motoki8791@gmail.com); Michael Lombardi (Michael.T.Lombardi@outlook.com)"
   casesensitive="0"
   license="MIT">
   <highlighting>
-    <list name="keywords">
-      <item>Begin</item>
+    <list name="control-flow">
       <item>Exit</item>
       <item>Process</item>
       <item>Break</item>
-      <item>Filter</item>
       <item>Return</item>
       <item>Catch</item>
       <item>Finally</item>
-      <item>Sequence</item>
       <item>Class</item>
       <item>For</item>
       <item>Switch</item>
       <item>Continue</item>
       <item>ForEach</item>
       <item>Throw</item>
+      <item>Try</item>
+      <item>Do</item>
+      <item>If</item>
+      <item>Until</item>
+      <item>Else</item>
+      <item>ElseIf</item>
+      <item>While</item>
+    </list>
+
+    <list name="keywords">
+      <item>Begin</item>
+      <item>Filter</item>
+      <item>Sequence</item>
       <item>Data</item>
       <item>From</item>
       <item>Trap</item>
       <item>Define</item>
       <item>Function</item>
-      <item>Try</item>
-      <item>Do</item>
-      <item>If</item>
-      <item>Until</item>
       <item>DynamicParam</item>
       <item>In</item>
       <item>Using</item>
-      <item>Else</item>
       <item>InlineScript</item>
       <item>Var</item>
-      <item>ElseIf</item>
       <item>Parallel</item>
-      <item>While</item>
       <item>End</item>
       <item>Param</item>
       <item>Workflow</item>
@@ -75,69 +81,6 @@
       <item>ulong</item>
       <item>ushort</item>
     </list>
-<!-- TODO: Seems unused?!
-      <list name="operators">
-      <item>-split</item>
-      <item>-isplit</item>
-      <item>-csplit</item>
-      <item>-join</item>
-      <item>-is</item>
-      <item>-isnot</item>
-      <item>-as</item>
-      <item>-eq</item>
-      <item>-ieq</item>
-      <item>-ceq</item>
-      <item>-ne</item>
-      <item>-ine</item>
-      <item>-cne</item>
-      <item>-gt</item>
-      <item>-igt</item>
-      <item>-cgt</item>
-      <item>-ge</item>
-      <item>-ige</item>
-      <item>-cge</item>
-      <item>-lt</item>
-      <item>-ilt</item>
-      <item>-clt</item>
-      <item>-le</item>
-      <item>-ile</item>
-      <item>-cle</item>
-      <item>-like</item>
-      <item>-ilike</item>
-      <item>-clike</item>
-      <item>-notlike</item>
-      <item>-inotlike</item>
-      <item>-cnotlike</item>
-      <item>-match</item>
-      <item>-imatch</item>
-      <item>-cmatch</item>
-      <item>-notmatch</item>
-      <item>-inotmatch</item>
-      <item>-cnotmatch</item>
-      <item>-contains</item>
-      <item>-icontains</item>
-      <item>-ccontains</item>
-      <item>-notcontains</item>
-      <item>-inotcontains</item>
-      <item>-cnotcontains</item>
-      <item>-replace</item>
-      <item>-ireplace</item>
-      <item>-creplace</item>
-      <item>-band</item>
-      <item>-bor</item>
-      <item>-bxor</item>
-      <item>-and</item>
-      <item>-or</item>
-      <item>-xor</item>
-      <item>.</item>
-      <item>&amp;</item>
-      <item>=</item>
-      <item>+=</item>
-      <item>-=</item>
-      <item>*=</item>
-      <item>/=</item>
-      <item>%=</item>
-    </list>-->
     <list name="cmdlets">
       <item>Add-Content</item>
       <item>Add-ADComputerServiceAccount</item>
@@ -161,7 +104,6 @@
       <item>Add-ClusterSharedVolume</item>
       <item>Add-ClusterVirtualMachineRole</item>
       <item>Add-Computer</item>
-      <item>Add-Content</item>
       <item>Add-History</item>
       <item>Add-JobTrigger</item>
       <item>Add-Member</item>
@@ -847,11 +789,23 @@
       <item>\%</item>
       <item>\?</item>
     </list>
+
     <list name="special-variables">
+      <!-- https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_scopes?view=powershell-7.3#scope-modifiers -->
+      <item>$Global:</item>
+      <item>$Local:</item>
+      <item>$Private:</item>
+      <item>$Script:</item>
+      <item>$Using:</item>
+      <item>$Workflow:</item>
+      <item>$Alias:</item>
+      <item>$Env:</item>
+      <item>$Function:</item>
+      <item>$Variable:</item>
+
       <item>$_</item>
       <item>$True</item>
       <item>$False</item>
-      <item>$Env</item>
       <item>$Null</item>
       <item>$^</item>
       <item>$$</item>
@@ -873,55 +827,181 @@
       <item>$Host</item>
       <item>$OFS</item>
     </list>
+
+    <!-- https://learn.microsoft.com/en-us/powershell/scripting/developer/help/comment-based-help-keywords?view=powershell-7.3 -->
+    <list name="comment-based-help">
+      <item>.SYNOPSIS</item>
+      <item>.DESCRIPTION</item>
+      <item>.PARAMETER</item>
+      <item>.EXAMPLE</item>
+      <item>.INPUTS</item>
+      <item>.OUTPUTS</item>
+      <item>.NOTES</item>
+      <item>.LINK</item>
+      <item>.COMPONENT</item>
+      <item>.ROLE</item>
+      <item>.FUNCTIONALITY</item>
+      <item>.FORWARDHELPTARGETNAME</item>
+      <item>.FORWARDHELPCATEGORY</item>
+      <item>.REMOTEHELPRUNSPACE</item>
+      <item>.EXTERNALHELP</item>
+    </list>
+
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectSpaces attribute="Normal Text"/>
+        <IncludeRules context="FindSpecialSymbol"/>
+        <DetectChar attribute="Symbol" context="Attribute" char="["/>
+        <IncludeRules context="FindSpecialOtherSymbol"/>
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
-        <keyword attribute="Data Type" context="#stay" String="types" />
-        <IncludeRules context="Cmdlet" />
-        <DetectChar attribute="String" context="String" char="&quot;"/>
-        <Detect2Chars attribute="HereString" context="HereStringer" char="@" char1="&quot;" beginRegion="StringRegion"/>
-        <IncludeRules context="##Doxygen" />
+        <keyword attribute="Control Flow" context="#stay" String="control-flow"/>
+        <keyword attribute="Function" context="#stay" String="cmdlets"/>
+        <IncludeRules context="FindIdentifiant"/>
+        <IncludeRules context="FindEscape"/>
+      </context>
+
+      <context attribute="Attribute" name="Attribute">
+        <DetectSpaces attribute="Normal Text"/>
+        <keyword attribute="Data Type" context="#stay" String="types"/>
+        <IncludeRules context="FindIdentifiant"/>
+        <DetectChar attribute="Symbol" context="#pop" char="]"/>
+        <IncludeRules context="FindSpecialSymbol"/>
+        <IncludeRules context="FindSpecialOtherSymbol"/>
+        <IncludeRules context="FindEscape"/>
+      </context>
+
+      <context attribute="Normal Text" name="FindSpecialSymbol">
+        <DetectChar attribute="String" context="StringDQ" char="&quot;"/>
+        <DetectChar attribute="String" context="StringSQ" char="'"/>
+        <StringDetect attribute="HereString" context="HereStringDQ" String="@&quot;" beginRegion="StringRegion"/>
+        <StringDetect attribute="HereString" context="HereStringSQ" String="@'" beginRegion="StringRegion"/>
+        <StringDetect attribute="Symbol" String="@("/>
         <DetectChar attribute="Comment" context="Commentar 1" char="#"/>
-        <Detect2Chars attribute="Comment" context="Commentar 2" char="&lt;" char1="#" beginRegion="CommentRegion"/>
+        <StringDetect attribute="Comment" context="Commentar 2" String="&lt;#" beginRegion="CommentRegion"/>
         <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="block1"/>
         <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="block1"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\b\$global(?=\s+(:))"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\b\$script(?=\s+(:))"/>
-        <RegExpr attribute="Variable" context="#stay" String="\$+[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*" />
-        <keyword attribute="Special Variable" context="#stay" String="special-variables"/>
-        <RegExpr attribute="Symbol" context="Member" String="[.]{1,1}" />
-        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^&#59;"/>
+        <DetectChar attribute="Symbol" context="Member" char="."/>
       </context>
-      <context attribute="String" lineEndContext="#pop" name="String">
-        <LineContinue attribute="String" context="#pop"/>
+
+      <context attribute="Normal Text" name="FindSpecialOtherSymbol">
+        <RegExpr attribute="Operator" String="(?&lt;=^|[\s(){}])-([ic]?(split|eq|ne|gt|ge|lt|le|like|notlike|match|notmatch|contains|notcontains|replace)|b?(and|or|xor)|join|not|isnot|is|as)(?=[\s(){}$]|$)"/>
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/*&lt;=&gt;?[]|~^;"/>
+        <IncludeRules context="FindVariable"/>
+      </context>
+
+      <context attribute="Normal Text" name="FindEscape">
+        <RegExpr attribute="String Char" String="`u\{[0-9A-Fa-f]+\}|`."/>
+        <RegExpr attribute="Escape" String="(?&lt;=\s)`"/>
+      </context>
+
+      <context attribute="Normal Text" name="FindVariable">
+        <StringDetect attribute="Variable Substitution" context="VarSubst" String="${" />
+        <StringDetect attribute="Symbol" context="VarCmd" String="$(" />
+        <RegExpr attribute="Variable" context="VariableScopeModifier" String="\$(?=&varscope;:)" insensitive="1"/>
+        <RegExpr attribute="Variable" String="\$([a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*|[?^$])"/>
+      </context>
+
+      <context attribute="Normal Text" name="FindIdentifiant">
+        <RegExpr attribute="Number" context="NumericSuffix" String="\b(0b[01]+|0x[0-9a-fA-F]+|([0-9]+(\.[0-9]*)?|\.[0-9]+)(e([-+][0-9]+|[0-9]*))?)(?=(u?[ysl]|[und])?([kmgtp]b)?\b)" insensitive="1"/>
+        <RegExpr String="[-\w]+"/>
+      </context>
+      <context attribute="Numeric Suffix" name="NumericSuffix" fallthroughContext="#pop" lineEndContext="#pop">
+        <DetectIdentifier attribute="Numeric Suffix" context="#pop"/>
+      </context>
+
+      <!-- $( -->
+      <context attribute="Normal Text" name="VarCmd">
+        <DetectChar attribute="Symbol" context="#pop" char=")"/>
+        <DetectChar attribute="Symbol" context="VarCmdFuncCall" char="("/>
+        <IncludeRules context="Normal"/>
+      </context>
+      <context attribute="Normal Text" name="VarCmdFuncCall">
+        <DetectChar attribute="Symbol" context="#pop" char=")"/>
+        <IncludeRules context="Normal"/>
+      </context>
+
+      <!-- ${ -->
+      <context attribute="Variable" name="VarSubst" fallthroughContext="VarNameSubst">
+        <DetectChar attribute="Variable Substitution" context="#pop" char="}"/>
+        <RegExpr attribute="Scope Modifier" context="VariableName" String="&varscope;:" insensitive="1"/>
+      </context>
+      <context attribute="Variable" name="VarNameSubst">
+        <DetectChar attribute="Variable Substitution" context="#pop#pop" char="}"/>
+      </context>
+
+      <!-- $xxx:varname -->
+      <context attribute="Normal Text" name="VariableScopeModifier" lineEndContext="#pop">
+        <DetectChar attribute="Symbol" context="#pop!VariableName" char=":"/>
+        <DetectIdentifier attribute="Scope Modifier"/>
+      </context>
+      <context attribute="Normal Text" name="VariableName" lineEndContext="#pop">
+        <RegExpr attribute="Variable" context="#pop" String="&varname;(:&varname;)*"/>
+      </context>
+
+      <context attribute="String" name="StringDQ">
+        <IncludeRules context="FindVariable"/>
+        <RegExpr attribute="String Char" String="`u\{[0-9A-Fa-f]+\}|`.|`$|&quot;&quot;"/>
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
-      <context attribute="HereString" lineEndContext="#stay" name="HereStringer">
-        <Detect2Chars attribute="HereString" context="#pop" char="&quot;" char1="@" endRegion="StringRegion"/>
+      <context attribute="String" name="StringSQ">
+        <StringDetect attribute="String Char" String="''"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
       </context>
-      <context attribute="Normal Text" lineEndContext="#pop" name="Member" fallthrough="true" fallthroughContext="#pop">
-        <RegExpr attribute="Function" context="#pop" String="\b[_\w][_\w\d]*(?=[\s]*)" />
+
+      <context attribute="HereString" lineEndContext="#stay" name="HereStringDQ">
+        <IncludeRules context="FindVariable"/>
+        <StringDetect attribute="HereString" context="#pop" String="&quot;@" endRegion="StringRegion" column="0"/>
       </context>
-      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1"/>
+      <context attribute="HereString" lineEndContext="#stay" name="HereStringSQ">
+        <StringDetect attribute="HereString" context="#pop" String="'@" endRegion="StringRegion" column="0"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="Member" fallthroughContext="#pop">
+        <RegExpr attribute="Function" context="#pop" String="[_[:alpha:]]\w*" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+      </context>
+
       <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+        <DetectSpaces />
         <Detect2Chars attribute="Comment" context="#pop" char="#" char1="&gt;" endRegion="CommentRegion"/>
+        <!-- no delimiter except spaces -->
+        <keyword context="CommentHelp" String="comment-based-help" weakDeliminator="!%&amp;()*+,-./:;$lt;=>?[\]^{|}~" firstNonSpace="1" lookAhead="1" insensitive="0"/>
+        <IncludeRules context="##Comments"/>
       </context>
-      <context attribute="Cmdlets" lineEndContext="#stay" name="Cmdlet">
-        <keyword attribute="Function" context="#stay" String="cmdlets"/>
+      <context attribute="Comment-Based Help Keyword" lineEndContext="#pop" name="CommentHelp">
+        <DetectChar attribute="Symbol" char="."/>
+        <DetectIdentifier attribute="Comment-Based Help Keyword" context="CommentHelpParam"/>
       </context>
+      <context attribute="Comment-Based Help Paramater" lineEndContext="#pop#pop" name="CommentHelpParam">
+      </context>
+
     </contexts>
+
     <itemDatas>
-      <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
-      <itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
-      <itemData name="Function"     defStyleNum="dsFunction" spellChecking="false"/>
-      <itemData name="Data Type"    defStyleNum="dsDataType" spellChecking="false"/>
-      <itemData name="String"       defStyleNum="dsString"/>
-      <itemData name="HereString"       defStyleNum="dsVerbatimString"/>
-      <itemData name="Comment"      defStyleNum="dsComment"/>
-      <itemData name="Cmdlets"      defStyleNum="dsBuiltIn" spellChecking="false"/>
-      <itemData name="Symbol"       defStyleNum="dsNormal" spellChecking="false"/>
-      <itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
-      <itemData name="Special Variable" defStyleNum="dsVariable" bold="1" spellChecking="false"/>
+      <itemData name="Normal Text"           defStyleNum="dsNormal"   spellChecking="false"/>
+      <itemData name="Attribute"             defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="Escape"                defStyleNum="dsChar"     spellChecking="false"/>
+      <itemData name="Keyword"               defStyleNum="dsKeyword"  spellChecking="false"/>
+      <itemData name="Control Flow"          defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Function"              defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Data Type"             defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="String"                defStyleNum="dsString"/>
+      <itemData name="String Char"           defStyleNum="dsChar"     spellChecking="false"/>
+      <itemData name="HereString"            defStyleNum="dsVerbatimString"/>
+      <itemData name="Number"                defStyleNum="dsDecVal"   spellChecking="false"/>
+      <itemData name="Numeric Suffix"        defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Comment"               defStyleNum="dsComment"/>
+      <itemData name="Comment-Based Help Keyword" defStyleNum="dsDocumentation" spellChecking="false"/>
+      <itemData name="Comment-Based Help Paramater" defStyleNum="dsSpecialString" spellChecking="false"/>
+      <itemData name="Symbol"                defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Operator"              defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Variable"              defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Scope Modifier"        defStyleNum="dsVariable" spellChecking="false" bold="1"/>
+      <itemData name="Variable Substitution" defStyleNum="dsPreprocessor" spellChecking="false"/>
     </itemDatas>
   </highlighting>
   <general>
@@ -932,3 +1012,4 @@
     <keywords casesensitive="0" weakDeliminator=":-"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,15 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language
+[
+        <!ENTITY funcname "[A-Za-z_:][A-Za-z0-9_:#&#37;${}@-]*">
+        <!ENTITY parens   "\(\s*\)">
+        <!ENTITY eos      "(?=$|\s)">                 <!-- eol or space following -->
+]>
 <!--
   ====================================================================
   Bitbake syntax highlighting file for the Kate and QtCreator
   ====================================================================
 
   Author: Ivan Koveshnikov
+  Changes by Mark Nauwelaerts
 -->
 
 <language name="Bitbake" section="Sources"
-          version="5" kateversion="2.4"
+          version="12" kateversion="5.79"
           extensions="*.bb;*.bbappend;*.bbclass;*.inc"
           license="GPL" author="Ivan Koveshnikov">
 
@@ -116,12 +122,52 @@
       <context name="Normal Text" attribute="Normal Text" lineEndContext="#pop" >
         <DetectSpaces/>
         <DetectChar                         context="bbComment" char="#" />
+        <!-- detect sub-context before marked as keyword -->
+        <RegExpr context="pbfunction" String="^\s*python\s+&funcname;\s*&parens;" lookAhead="true" column="0" />
+        <RegExpr context="pfunction" String="^def\s+&funcname;\s*\(.*\)\s*:&eos;" lookAhead="true" column="0" minimal="true" />
+        <RegExpr context="function" String="^\s*&funcname;\s*&parens;" lookAhead="true" column="0" />
+        <IncludeRules context="keywords" />
+        <DetectChar attribute="String"      context="bbString"  char="&quot;" />
+        <RegExpr attribute="Variable" context="#stay" String="\$\{[A-Za-z0-9_-]+\}" />
+        <RegExpr attribute="Keyword" context="#stay" String="(?:[A-Z]+)[0-9_]*" />
+      </context>
+
+      <!-- used for include -->
+      <context name="keywords" attribute="Normal Text" lineEndContext="#stay">
         <keyword attribute="Keyword"        context="#stay"     String="keywords" />
         <keyword attribute="OEFunction"     context="#stay"     String="oe_functions" />
         <keyword attribute="Dependency"     context="#stay"     String="dependencies" />
-        <DetectChar attribute="String"      context="bbString"  char="&quot;" />
-        <RegExpr attribute="Variable" context="#stay" String="\$\{[A-Za-z0-9_-]+\}" />
-        <RegExpr attribute="Keyword" context="#stay" String="([A-Z]+)[0-9_]*" />
+      </context>
+
+      <!-- bitbake shell function -->
+      <context name="function" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="keywords" />
+        <RegExpr attribute="Function" context="#stay" String="&funcname;\s*&parens;" />
+        <DetectChar char="{" context="bash"  beginRegion="function" />
+      </context>
+
+      <context name="bash" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Command##Bash">
+        <DetectChar attribute="Keyword" char="}" context="#pop#pop" endRegion="function" />
+        <IncludeRules context="##Bash" />
+      </context>
+
+      <!-- bitbake python function -->
+      <context name="pbfunction" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="keywords" />
+        <RegExpr attribute="Function" context="#stay" String="&funcname;\s*&parens;" />
+        <DetectChar char="{" context="python"  beginRegion="function" />
+      </context>
+
+      <!-- (internal) python function -->
+      <context name="pfunction" attribute="Normal Text" lineEndContext="python">
+        <WordDetect attribute="Keyword" String="def" />
+        <Detect2Chars char=")" char1=":" context="python"  beginRegion="function" />
+      </context>
+
+      <context name="python" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar attribute="Keyword" char="}" context="#pop#pop" endRegion="function" />
+        <RegExpr String="^\w" column="0" context="#pop#pop" endRegion="function" lookAhead="true" />
+        <IncludeRules context="##Python" />
       </context>
 
       <context name="bbString" attribute="String" lineEndContext="bbError" >
@@ -133,7 +179,9 @@
         <RegExpr    attribute="Variable"    context="#stay" String="\$\{[A-Za-z0-9_-]+\}" />
       </context>
 
-      <context name="bbComment" attribute="Comment" lineEndContext="#pop" />
+      <context name="bbComment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments" />
+      </context>
 
       <context name="bbError" attribute="Error" lineEndContext="#stay" >
         <DetectChar attribute="Error"      context="#pop"  char="&quot;" />
@@ -166,6 +214,7 @@
       <itemData name="Dependency"     defStyleNum="dsDataType"    spellChecking="false"/>
       <itemData name="BBFunction"     defStyleNum="dsOthers"      spellChecking="false" color="darkblue" />
       <itemData name="OEFunction"     defStyleNum="dsBaseN"       spellChecking="false" />
+      <itemData name="Function"       defStyleNum="dsFunction"    spellChecking="false" />
       <itemData name="Escape"         defStyleNum="dsOthers"      spellChecking="false" color="grey" />
       <itemData name="Error"          defStyleNum="dsError"       spellChecking="false" />
 
@@ -180,4 +229,4 @@
   </general>
 
 </language>
-
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

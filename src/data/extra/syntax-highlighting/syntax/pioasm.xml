@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+    <!ENTITY instruction_symbols "~!=-:,">
+    <!ENTITY expression_symbols "+-*/:&lt;&gt;">
+]>
+<!--
+    SPDX-FileCopyrightText: 2026 Dale Cook <cook.dale.e@gmail.com>
+    SPDX-License-Identifier: MIT
+-->
+
+<language name="PIO Assembler" section="Assembler" extensions="*.pio" version="1" kateversion="5.79" author="Dale Cook (cook.dale.e@gmail.com)" license="MIT">
+<highlighting>
+    <list name="Directives">
+        <item>.define</item>
+        <item>.clock_div</item>
+        <item>.fifo</item>
+        <item>.mov_status</item>
+        <item>.in</item>
+        <item>.program</item>
+        <item>.origin</item>
+        <item>.out</item>
+        <item>.pio_version</item>
+        <item>.set</item>
+        <item>.side_set</item>
+        <item>.wrap_target</item>
+        <item>.wrap</item>
+        <item>.lang_opt</item>
+        <item>.word</item>
+    </list>
+
+    <list name="Instructions">
+        <item>nop</item>
+        <item>jmp</item>
+        <item>wait</item>
+        <item>in</item>
+        <item>out</item>
+        <item>push</item>
+        <item>pull</item>
+        <item>mov</item>
+        <item>irq</item>
+        <item>set</item>
+    </list>
+
+    <list name="Registers">
+        <item>osr</item>
+        <item>isr</item>
+        <item>x</item>
+        <item>y</item>
+    </list>
+
+    <list name="Keywords">
+        <item>c-sdk</item>
+        <item>python</item>
+        <item>rxfifo</item>
+        <item>txfifo</item>
+        <item>auto</item>
+        <item>right</item>
+        <item>left</item>
+        <item>prev</item>
+        <item>next</item>
+        <item>public</item>
+        <item>opt</item>
+        <item>pindirs</item>
+        <item>pin</item>
+        <item>pins</item>
+        <item>osre</item>
+        <item>gpio</item>
+        <item>irq</item>
+        <item>rel</item>
+        <item>null</item>
+        <item>pc</item>
+        <item>exec</item>
+        <item>iffull</item>
+        <item>ifempty</item>
+        <item>block</item>
+        <item>noblock</item>
+        <item>status</item>
+        <item>set</item>
+        <item>wait</item>
+        <item>nowait</item>
+        <item>clear</item>
+    </list>
+
+    <contexts>
+        <context name="Normal" attribute="Normal Text" fallthroughContext="Unknown Normal">
+            <DetectSpaces />
+            <keyword attribute="Directive" context="Directive" String="Directives" insensitive="true" />
+            <StringDetect attribute="Keyword" context="Public" String="public" insensitive="true" />
+            <keyword attribute="Instruction" context="Instruction" String="Instructions" insensitive="true" />
+            <DetectChar attribute="Comment" context="Line Comment" char=";" />
+            <StringDetect attribute="Comment" context="Line Comment" String="//" />
+            <StringDetect attribute="Comment" context="Block Comment" String="/*" beginRegion="Block Comment" />
+            <DetectChar attribute="Symbol" context="Pass Through" char="%" beginRegion="Pass Through" />
+            <DetectIdentifier attribute="Label" context="Label Definition" />
+        </context>
+
+        <context name="Unknown Normal" attribute="Normal Text" lineEndContext="#pop">
+        </context>
+
+        <context name="Directive" attribute="Normal Text" lineEndContext="#pop">
+            <keyword attribute="Keyword" String="Keywords" insensitive="true" />
+            <IncludeRules context="Comment" />
+            <IncludeRules context="Value" />
+        </context>
+
+        <context name="Public" attribute="Normal Text" lineEndContext="#pop">
+            <DetectSpaces />
+            <StringDetect attribute="Comment" context="Block Comment" String="/*" beginRegion="Block Comment" />
+            <DetectIdentifier attribute="Label" context="Label Definition" />
+        </context>
+
+        <context name="Label Definition" attribute="Normal Text">
+            <DetectSpaces />
+            <StringDetect attribute="Comment" context="Block Comment" String="/*" beginRegion="Block Comment" />
+            <DetectChar attribute="Symbol" context="#pop!Label" char=":" />
+        </context>
+
+        <context name="Label" attribute="Normal Text" lineEndContext="#pop">
+            <DetectSpaces />
+            <keyword attribute="Instruction" context="#pop!Instruction" String="Instructions" insensitive="true" />
+            <IncludeRules context="Comment" />
+        </context>
+
+        <context name="Instruction" attribute="Normal Text" lineEndContext="#pop">
+            <DetectSpaces />
+            <StringDetect attribute="Keyword" context="#pop!Side Set" String="side" insensitive="true" />
+            <DetectChar attribute="Symbol" context="#pop!Delay" char="[" />
+            <keyword attribute="Keyword" String="Keywords" insensitive="true" />
+            <keyword attribute="Register" String="Registers" insensitive="true" />
+            <AnyChar attribute="Symbol" String="&instruction_symbols;" />
+            <IncludeRules context="Comment" />
+            <IncludeRules context="Value" />
+        </context>
+
+        <context name="Side Set" attribute="Normal Text" lineEndContext="#pop">
+            <DetectSpaces />
+            <DetectChar attribute="Symbol" context="#pop!Delay" char="[" />
+            <IncludeRules context="Comment" />
+            <IncludeRules context="Value" />
+        </context>
+
+        <context name="Delay" attribute="Normal Text" lineEndContext="#pop">
+            <DetectSpaces />
+            <StringDetect attribute="Comment" context="Block Comment" String="/*" beginRegion="Block Comment" />
+            <DetectChar attribute="Symbol" char="]" context="#pop!Comment" />
+            <AnyChar attribute="Symbol" String="&expression_symbols;" />
+            <IncludeRules context="Value" />
+        </context>
+
+        <context name="Comment" attribute="Normal Text" lineEndContext="#pop">
+            <DetectChar attribute="Comment" context="#pop!Line Comment" char=";" />
+            <StringDetect attribute="Comment" context="#pop!Line Comment" String="//" />
+            <StringDetect attribute="Comment" context="Block Comment" String="/*" beginRegion="Block Comment" />
+        </context>
+
+        <context name="Line Comment" attribute="Comment" lineEndContext="#pop">
+            <IncludeRules context="##Comments"/>
+        </context>
+
+        <context name="Block Comment" attribute="Comment">
+            <IncludeRules context="##Comments"/>
+            <StringDetect attribute="Comment" context="#pop" String="*/" endRegion="Block Comment" />
+        </context>
+
+        <context name="Value" attribute="Normal Text">
+            <DetectChar attribute="Symbol" context="Expression" char="(" />
+            <HlCHex attribute="Hex" />
+            <RegExpr attribute="Binary" String="\b0[bB][01]+" />
+            <Int attribute="Decimal" />
+            <DetectIdentifier attribute="Identifier" />
+        </context>
+
+        <context name="Expression" attribute="Normal Text" lineEndContext="#pop">
+            <DetectSpaces />
+            <DetectChar attribute="Symbol" context="#pop" char=")" />
+            <StringDetect attribute="Comment" context="Block Comment" String="/*" beginRegion="Block Comment" />
+            <AnyChar attribute="Symbol" String="&expression_symbols;" />
+            <IncludeRules context="Value" />
+        </context>
+
+        <context name="Pass Through" attribute="Normal Text" fallthroughContext="#pop!Unknown Pass Through">
+            <RegExpr context="#pop!Pass Through C" String="\s*c-sdk\s*{" lookAhead="true" />
+            <RegExpr context="#pop!Pass Through Python" String="\s*python\s*{" lookAhead="true" />
+        </context>
+
+        <context name="Unknown Pass Through" attribute="Identifier" lineEndContext="#pop">
+            <DetectSpaces attribute="Normal Text"/>
+            <DetectChar attribute="Symbol" context="#pop!End Pass Through" char="{" />
+        </context>
+
+        <context name="Pass Through C" attribute="Keyword">
+            <DetectSpaces attribute="Normal Text"/>
+            <DetectChar attribute="Symbol" context="#pop!Normal C" char="{" />
+        </context>
+
+        <context name="Pass Through Python" attribute="Keyword">
+            <DetectSpaces attribute="Normal Text"/>
+            <DetectChar attribute="Symbol" context="#pop!Normal Python" char="{" />
+        </context>
+
+        <context name="End Pass Through" attribute="Normal Text">
+            <StringDetect attribute="Symbol" context="#pop" String="%}" column="0" endRegion="Pass Through" />
+        </context>
+
+        <context name="Normal C" attribute="Normal Text">
+            <IncludeRules context="End Pass Through" />
+            <IncludeRules context="Normal##C" />
+        </context>
+
+        <context name="Normal Python" attribute="Normal Text">
+            <IncludeRules context="End Pass Through" />
+            <IncludeRules context="Normal##Python" />
+        </context>
+    </contexts>
+
+    <itemDatas>
+        <itemData name="Normal Text" defStyleNum="dsNormal" />
+        <itemData name="Directive" defStyleNum="dsPreprocessor"/>
+        <itemData name="Keyword" defStyleNum="dsKeyword" />
+        <itemData name="Register" defStyleNum="dsKeyword" />
+        <itemData name="Label" defStyleNum="dsFunction" />
+        <itemData name="Instruction" defStyleNum="dsKeyword" />
+        <itemData name="Identifier" defStyleNum="dsVariable" />
+        <itemData name="Symbol" defStyleNum="dsOperator" />
+        <itemData name="Comment" defStyleNum="dsComment" spellChecking="true"/>
+        <itemData name="Hex" defStyleNum="dsBaseN" />
+        <itemData name="Binary" defStyleNum="dsBaseN" />
+        <itemData name="Decimal" defStyleNum="dsDecVal" />
+    </itemDatas>
+</highlighting>
+
+<general>
+    <comments>
+        <comment name="singleLine" start=";" position="afterwhitespace"/>
+        <comment name="multiLine" start="/*" end="*/" region="Block Comment" />
+    </comments>
+    <keywords casesensitive="false" weakDeliminator="." />
+</general>
+
+</language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

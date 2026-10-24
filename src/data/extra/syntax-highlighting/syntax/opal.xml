@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="OPAL" version="2" kateversion="2.3" section="Sources" extensions="*.impl;*.sign" mimetype="" author="Sebastian Pipping (webmaster@hartwork.org)">
+<!DOCTYPE language>
+<language name="OPAL" version="4" kateversion="5.0" section="Sources" extensions="*.impl;*.sign" mimetype="" author="Sebastian Pipping (webmaster@hartwork.org)">
 
 	<highlighting>
 
@@ -293,7 +293,7 @@
 				<keyword attribute="Decimal" context="#stay" String="opal_other"/>
 				<DetectChar attribute="String" context="String" char="&quot;"/>
 				<RegExpr attribute="Comment" context="SingLineCom" String="(?:^--$|^--[^-]|[^-]--[^-]|[^-]--$)"/>
-				<Detect2Chars attribute="Comment" context="MultLineCom" char="/" char1="*"/>
+				<Detect2Chars attribute="Comment" context="MultLineCom" char="/" char1="*" beginRegion="Comment"/>
 			</context>
 			
 			<context attribute="String" lineEndContext="#stay" name="String">
@@ -301,11 +301,16 @@
 				<DetectChar attribute="String" context="#pop" char="&quot;"/>
 			</context>
 			
-			<context attribute="Comment" lineEndContext="#pop" name="SingLineCom"/>
+			<context attribute="Comment" lineEndContext="#pop" name="SingLineCom">
+				<DetectSpaces />
+				<IncludeRules context="##Comments" />
+			</context>
 			
 			<context attribute="Comment" lineEndContext="#stay" name="MultLineCom">
-				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
-				<Detect2Chars attribute="Comment" context="MultLineCom" char="/" char1="*"/>
+				<DetectSpaces />
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+				<Detect2Chars attribute="Comment" context="MultLineCom" char="/" char1="*" beginRegion="Comment"/>
+				<IncludeRules context="##Comments" />
 			</context>
 		</contexts>
 
@@ -323,9 +328,10 @@
 	<general>
 		<comments>
 			<comment name="singleLine" start="--"/>
-			<comment name="multiLine" start="/*" end="*/"/>
+			<comment name="multiLine" start="/*" end="*/" region="Comment"/>
 		</comments>
 		<keywords casesensitive="1"/>
 	</general>
 
 </language>
+<!-- kate: replace-tabs off; -->

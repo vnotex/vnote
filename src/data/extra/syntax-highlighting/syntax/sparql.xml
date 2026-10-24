@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="SPARQL" section="Database" version="1" kateversion="5.0"
+    extensions="*.rq;*.sparql"
+    mimetype="application/sparql-query"
+    author="Damian Oswald (damian.oswald@protonmail.com)"
+    license="MIT">
+  <highlighting>
+    <list name="keywords">
+      <item>ADD</item>
+      <item>AS</item>
+      <item>ASC</item>
+      <item>ASK</item>
+      <item>BASE</item>
+      <item>BIND</item>
+      <item>BY</item>
+      <item>CLEAR</item>
+      <item>CONSTRUCT</item>
+      <item>COPY</item>
+      <item>CREATE</item>
+      <item>DATA</item>
+      <item>DEFAULT</item>
+      <item>DELETE</item>
+      <item>DESC</item>
+      <item>DESCRIBE</item>
+      <item>DISTINCT</item>
+      <item>DROP</item>
+      <item>EXISTS</item>
+      <item>FILTER</item>
+      <item>FROM</item>
+      <item>GRAPH</item>
+      <item>GROUP</item>
+      <item>HAVING</item>
+      <item>IN</item>
+      <item>INSERT</item>
+      <item>INTO</item>
+      <item>LIMIT</item>
+      <item>LOAD</item>
+      <item>MINUS</item>
+      <item>MOVE</item>
+      <item>NAMED</item>
+      <item>NOT</item>
+      <item>OFFSET</item>
+      <item>OPTIONAL</item>
+      <item>ORDER</item>
+      <item>PREFIX</item>
+      <item>REDUCED</item>
+      <item>SELECT</item>
+      <item>SERVICE</item>
+      <item>SILENT</item>
+      <item>TO</item>
+      <item>UNDEF</item>
+      <item>UNION</item>
+      <item>USING</item>
+      <item>VALUES</item>
+      <item>WHERE</item>
+      <item>WITH</item>
+    </list>
+    <list name="functions">
+      <item>ABS</item>
+      <item>BNODE</item>
+      <item>BOUND</item>
+      <item>CEIL</item>
+      <item>COALESCE</item>
+      <item>CONCAT</item>
+      <item>CONTAINS</item>
+      <item>DATATYPE</item>
+      <item>DAY</item>
+      <item>ENCODE_FOR_URI</item>
+      <item>FLOOR</item>
+      <item>HOURS</item>
+      <item>IF</item>
+      <item>IRI</item>
+      <item>ISBLANK</item>
+      <item>ISIRI</item>
+      <item>ISLITERAL</item>
+      <item>ISNUMERIC</item>
+      <item>ISURI</item>
+      <item>LANG</item>
+      <item>LANGMATCHES</item>
+      <item>LCASE</item>
+      <item>MD5</item>
+      <item>MINUTES</item>
+      <item>MONTH</item>
+      <item>NOW</item>
+      <item>RAND</item>
+      <item>REGEX</item>
+      <item>REPLACE</item>
+      <item>ROUND</item>
+      <item>SAMETERM</item>
+      <item>SECONDS</item>
+      <item>SHA1</item>
+      <item>SHA256</item>
+      <item>SHA384</item>
+      <item>SHA512</item>
+      <item>STR</item>
+      <item>STRAFTER</item>
+      <item>STRBEFORE</item>
+      <item>STRDT</item>
+      <item>STRENDS</item>
+      <item>STRLANG</item>
+      <item>STRLEN</item>
+      <item>STRSTARTS</item>
+      <item>STRUUID</item>
+      <item>SUBSTR</item>
+      <item>TIMEZONE</item>
+      <item>TZ</item>
+      <item>UCASE</item>
+      <item>URI</item>
+      <item>UUID</item>
+      <item>YEAR</item>
+    </list>
+    <list name="aggregates">
+      <item>AVG</item>
+      <item>COUNT</item>
+      <item>GROUP_CONCAT</item>
+      <item>MAX</item>
+      <item>MIN</item>
+      <item>SAMPLE</item>
+      <item>SUM</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar attribute="Comment" context="Singleline Comment" char="#"/>
+        <RangeDetect attribute="IRI" context="#stay" char="&lt;" char1="&gt;"/>
+        <StringDetect attribute="String" context="StringTSS" String="'''"/>
+        <StringDetect attribute="String" context="StringTDS" String="&quot;&quot;&quot;"/>
+        <DetectChar attribute="String" context="StringS" char="'"/>
+        <DetectChar attribute="String" context="StringD" char="&quot;"/>
+        <HlCHex attribute="Hex" context="#stay"/>
+        <Float attribute="Float" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
+        <StringDetect attribute="Variable" context="#stay" String="[\?\$]\w+"/>
+        <keyword attribute="Keyword" String="keywords" context="#stay" insensitive="true"/>
+        <keyword attribute="Function" String="functions" context="#stay" insensitive="true"/>
+        <keyword attribute="Function" String="aggregates" context="#stay" insensitive="true"/>
+        <Detect2Chars attribute="Operator" context="#stay" char="&amp;" char1="&amp;"/>
+        <Detect2Chars attribute="Operator" context="#stay" char="|" char1="|"/>
+        <Detect2Chars attribute="Operator" context="#stay" char="!" char1="="/>
+        <Detect2Chars attribute="Operator" context="#stay" char="&lt;" char1="="/>
+        <Detect2Chars attribute="Operator" context="#stay" char="&gt;" char1="="/>
+        <Detect2Chars attribute="Operator" context="#stay" char="^" char1="^"/>
+        <AnyChar attribute="Operator" context="#stay" String="*+-/=!&lt;&gt;()[]{},;.|^"/>
+        <StringDetect attribute="Boolean" context="#stay" String="\b(true|false)\b" insensitive="true"/>
+        <StringDetect attribute="Prefixed Name" context="#stay" String="\b[a-zA-Z0-9_.-]*:[a-zA-Z0-9_.-]+"/>
+        <StringDetect attribute="Blank Node" context="#stay" String="_:[a-zA-Z0-9_.-]+"/>
+        <StringDetect attribute="LangTag" context="#stay" String="@[a-zA-Z]+(-[a-zA-Z0-9]+)*"/>
+      </context>
+      <context name="StringS" attribute="String" lineEndContext="#stay">
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+      <context name="StringD" attribute="String" lineEndContext="#stay">
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context name="StringTSS" attribute="String" lineEndContext="#stay">
+        <StringDetect attribute="String" context="#pop" String="'''"/>
+      </context>
+      <context name="StringTDS" attribute="String" lineEndContext="#stay">
+        <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;"/>
+      </context>
+      <context name="Singleline Comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"   defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword"       defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Function"      defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Decimal"       defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Hex"           defStyleNum="dsBaseN" spellChecking="false"/>
+      <itemData name="Float"         defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="String"        defStyleNum="dsString"/>
+      <itemData name="String Char"   defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Comment"       defStyleNum="dsComment"/>
+      <itemData name="Operator"      defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Variable"      defStyleNum="dsOthers" spellChecking="false" bold="1"/>
+      <itemData name="IRI"           defStyleNum="dsString" spellChecking="false"/>
+      <itemData name="Prefixed Name" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Blank Node"    defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="LangTag"       defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Boolean"       defStyleNum="dsConstant" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>

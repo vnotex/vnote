@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language [
+  <!ENTITY var "\$([a-zA-Z0-9_]|::)+">
+  <!ENTITY delims "!&#37;&amp;*+,-./:&lt;=>^|~">
+]>
 
 <!-- Authors: Alexander Dederer & JM. Philippe -->
 <!-- Copyright: BSD copyright & Irsid - Arcelor Innovation R&D -->
@@ -28,11 +31,34 @@
 	    - Fixed detection of varaibles with names containing serval namespace delimiters (::)
 -->
 
-<language name="Tcl/Tk" version="4" kateversion="2.4" section="Scripts" extensions="*.tcl;*.tk" mimetype="text/x-tcl" license="BSD">
+<language name="Tcl/Tk" version="9" kateversion="5.79" section="Scripts" extensions="*.tcl;*.tk" mimetype="text/x-tcl" license="BSD">
   <highlighting>
+    <list name="control-flow">
+      <item>break</item>
+      <item>catch</item>
+      <item>continue</item>
+      <item>else</item>
+      <item>elseif</item>
+      <item>exit</item>
+      <item>finally</item>
+      <item>for</item>
+      <item>foreach</item>
+      <item>if</item>
+      <item>return</item>
+      <item>switch</item>
+      <item>switch</item>
+      <item>throw</item>
+      <item>trap</item>
+      <item>try</item>
+      <item>while</item>
+      <item>yield</item>
+      <item>yieldto</item>
+    </list>
+
     <list name="keywords">
       <item>after</item>
       <item>append</item>
+      <item>apply</item>
       <item>AppleScript</item>
       <item>argv</item>
       <item>argc</item>
@@ -56,7 +82,6 @@
       <item>button</item>
       <item>canvas</item>
       <item>case</item>
-      <item>catch</item>
       <item>cd</item>
       <item>chan</item>
       <item>checkbutton</item>
@@ -66,12 +91,13 @@
       <item>combobox</item>
       <item>concat</item>
       <item>console</item>
-      <item>continue</item>
+      <item>const</item>
+      <item>coroinject</item>
+      <item>coroprobe</item>
+      <item>coroutine</item>
       <item>dde</item>
       <item>destroy</item>
       <item>dict</item>
-      <item>else</item>
-      <item>elseif</item>
       <item>encoding</item>
       <item>entry</item>
       <item>env</item>
@@ -82,7 +108,6 @@
       <item>eval</item>
       <item>event</item>
       <item>exec</item>
-      <item>exit</item>
       <item>expr</item>
       <item>fblocked</item>
       <item>fconfigure</item>
@@ -92,8 +117,6 @@
       <item>flush</item>
       <item>focus</item>
       <item>font</item>
-      <item>for</item>
-      <item>foreach</item>
       <item>format</item>
       <item>frame</item>
       <item>gets</item>
@@ -102,7 +125,6 @@
       <item>grab</item>
       <item>grid</item>
       <item>history</item>
-      <item>if</item>
       <item>image</item>
       <item>incr</item>
       <item>info</item>
@@ -112,19 +134,23 @@
       <item>labelframe</item>
       <item>lappend</item>
       <item>lassign</item>
+      <item>ledit</item>
       <item>lindex</item>
       <item>linsert</item>
       <item>list</item>
       <item>listbox</item>
       <item>llength</item>
+      <item>lmap</item>
       <item>load</item>
       <item>lower</item>
+      <item>lpop</item>
       <item>lrange</item>
       <item>lremove</item>
       <item>lrepeat</item>
       <item>lreplace</item>
       <item>lreverse</item>
       <item>lsearch</item>
+      <item>lseq</item>
       <item>lset</item>
       <item>lsort</item>
       <item>menu</item>
@@ -154,7 +180,6 @@
       <item>regsub</item>
       <item>rename</item>
       <item>resource</item>
-      <item>return</item>
       <item>scale</item>
       <item>scan</item>
       <item>scrollbar</item>
@@ -171,7 +196,7 @@
       <item>string</item>
       <item>style</item>
       <item>subst</item>
-      <item>switch</item>
+      <item>tailcall</item>
       <item>tclLog</item>
       <item>tcl_endOfWord</item>
       <item>tcl_findLibrary</item>
@@ -224,7 +249,6 @@
       <item>upvar</item>
       <item>variable</item>
       <item>vwait</item>
-      <item>while</item>
       <item>winfo</item>
       <item>wm</item>
     </list>
@@ -249,6 +273,7 @@
       <item>default</item>
       <item>delete</item>
       <item>dirname</item>
+      <item>epoll</item>
       <item>equal</item>
       <item>executable</item>
       <item>exists</item>
@@ -267,6 +292,7 @@
       <item>isdirectory</item>
       <item>isfile</item>
       <item>join</item>
+      <item>kqueue</item>
       <item>last</item>
       <item>length</item>
       <item>level</item>
@@ -329,7 +355,6 @@
       <item>wordend</item>
       <item>wordstart</item>
       <item>writable</item>
-
       <item>activate</item>
       <item>actual</item>
       <item>addtag</item>
@@ -412,6 +437,7 @@
       <item>mark</item>
       <item>maxsize</item>
       <item>measure</item>
+      <item>method</item>
       <item>metrics</item>
       <item>minsize</item>
       <item>move</item>
@@ -487,79 +513,119 @@
       <item>x</item>
       <item>xview</item>
       <item>y</item>
+      <item>zlib</item>
     </list>
 
     <contexts>
       <context name = "Base" attribute = "Normal Text" lineEndContext="#stay">
-      
-        <!-- Virtual blocks -->
-        <RegExpr attribute="Region Marker" context="#stay" String="#\s*BEGIN.*$" beginRegion="region" firstNonSpace="true"/>
-        <RegExpr attribute="Region Marker" context="#stay" String="#\s*END.*$" endRegion="region" firstNonSpace="true"/>
-        
-        <!-- Standard -->
-        <keyword String = "keywords" attribute = "Keyword" context="#stay"/>
-        <keyword String = "keywords-opt" attribute = "Parameter" context="#stay"/>
-        <Float attribute = "Float" context="#stay"/>
-        <Int attribute ="Decimal" context="#stay"/>
-        <RegExpr String="\\." attribute = "Char" context = "#stay"/>
-        
-        <!-- Options -->
-        <RegExpr String = "\s-\w+" attribute = "Parameter" context="#stay"/>
-        
-        <!-- Variables -->
-        <RegExpr String = "\$\{([^\}]|\\\})+\}" attribute = "Variable" context="#stay"/>
-        <RegExpr String = "\$(::|\w)+" attribute = "Variable" context="#stay"/>
-        
-        <!-- Strings -->
-        <Detect2Chars char = "&quot;" char1 = "&quot;" attribute = "String" context="#stay"/>
-        <DetectChar char = "&quot;" attribute = "String" context="String"/>
-        
-        <!-- Comments -->
-        <DetectChar char = ";" attribute = "Normal Text" context="New command line" />
-        <DetectChar char = "#" attribute = "Comment" context="Comment" firstNonSpace="true"/>
-        
+        <DetectSpaces/>
+
         <!-- Braces, brackets, etc -->
-        <DetectChar char = "{" attribute = "Keyword" context="#stay" beginRegion="block"/>
-        <DetectChar char = "}" attribute = "Keyword" context="#stay" endRegion="block"/>
-        <DetectChar char = "[" attribute = "Keyword" context="#stay"/>
-        <DetectChar char = "]" attribute = "Keyword" context="#stay"/>
+        <DetectChar char = "{" attribute = "Block Symbol" context="#stay" beginRegion="block"/>
+        <DetectChar char = "}" attribute = "Block Symbol" context="#stay" endRegion="block"/>
+        <AnyChar String = "[]" attribute = "Substitution Symbol" context="#stay"/>
+        <StringDetect String="${" attribute="Variable" context="VarBrace"/>
+
+        <!-- Symbols -->
+        <AnyChar String="=!&lt;>&amp;|+*/%!:" attribute="Operator"/>
+        <AnyChar String="()" attribute="Symbol"/>
+
+        <!-- Strings -->
+        <DetectChar char = "&quot;" attribute = "String" context="String"/>
+
+        <!-- Comments -->
+        <DetectChar char = ";" attribute = "Separator Symbol" context="New command line" />
+        <DetectChar char = "#" attribute = "Comment" context="CommentWithOptionalRegion" firstNonSpace="true" lookAhead="1"/>
+
+        <!-- Standard -->
+        <keyword String="keywords" attribute="Keyword" weakDeliminator="&delims;"/>
+        <keyword String="keywords-opt" attribute="Parameter" weakDeliminator="&delims;"/>
+        <keyword String="control-flow" attribute="Control Flow" weakDeliminator="&delims;"/>
+        <Float attribute="Float"/>
+        <Int attribute="Decimal"/>
+        <IncludeRules context="FindSpecialChar"/>
+
+        <!-- Options -->
+        <RegExpr String = "(?&lt;=\s)-\w+" attribute = "Parameter"/>
+        <DetectChar char = "-" attribute = "Symbol"/>
+
+        <!-- Variables -->
+        <RegExpr String="&var;" attribute="Variable"/>
         
+        <RegExpr String="[^\s;{}()\[\]&quot;$\\=!&lt;>&amp;|+*/%!:]+"/>
       </context>
 
-      <context name = "String" attribute = "String" lineEndContext="#stay">
-        <RegExpr String="\\." attribute = "Char" context = "#stay"/>
-        <DetectChar char="&quot;" attribute = "String" context = "#pop"/>
-        <DetectChar char  = "$" attribute = "Variable" context="#stay"/>
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <DetectChar char="&quot;" attribute="String" context="#pop"/>
+        <IncludeRules context="FindSpecialChar"/>
+        <StringDetect String="${" attribute="Variable" context="VarBrace"/>
+        <RegExpr String="&var;" attribute="Variable" context="StringAfterVar"/>
       </context>
 
-      <context name = "Comment" attribute = "Comment" lineEndContext="#pop"/>
+      <context name="StringAfterVar" attribute="Variable" fallthroughContext="#pop">
+        <DetectChar char="(" attribute="Variable Index Symbol" context="StringVarIndex"/>
+      </context>
+      <context name="StringVarIndex" attribute="String Variable Index">
+        <DetectChar char=")" attribute="Variable Index Symbol" context="#pop#pop"/>
+        <DetectChar char="&quot;" context="#pop#pop" lookAhead="1"/>
+        <IncludeRules context="String"/>
+      </context>
 
-      <context name = "New command line" attribute = "Normal Text" lineEndContext="#stay">
-        <RegExpr String = "\s*#" attribute="Comment" context="Comment" />
-        <RegExpr String = "." attribute="Normal Text" context="#pop" lookAhead="true" />
+      <context name="FindSpecialChar" attribute="Char" lineEndContext="#pop">
+        <RegExpr String="\\(x[0-9a-fA-F]{1,2}|[0-7]{1,3}|.)?" attribute="Char"/>
+      </context>
+
+      <context name="VarBrace" attribute="Variable" lineEndContext="#pop">
+        <DetectChar char="}" attribute="Variable" context="#pop"/>
+      </context>
+
+      <context name = "CommentWithOptionalRegion" attribute = "Comment" lineEndContext="#pop" fallthroughContext="#pop!Comment">
+        <!-- Virtual blocks -->
+        <RegExpr attribute="Region Marker" context="#pop" String="#\s*BEGIN\b.*" beginRegion="region" firstNonSpace="true"/>
+        <RegExpr attribute="Region Marker" context="#pop" String="#\s*END\b.*" endRegion="region" firstNonSpace="true"/>
+      </context>
+
+      <context name = "Comment" attribute = "Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+
+      <context name = "New command line" attribute = "Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text" context="#stay"/>
+        <DetectChar char="#" attribute="Comment" context="Comment" />
       </context>
     </contexts>
 
     <itemDatas>
       <itemData name = "Normal Text" defStyleNum = "dsNormal"/>
-      <itemData name = "Keyword" defStyleNum = "dsKeyword"/>
-      <itemData name = "Decimal" defStyleNum = "dsDecVal"/>
-      <itemData name = "Float" defStyleNum = "dsFloat"/>
+      <itemData name = "Keyword" defStyleNum = "dsKeyword" spellChecking="0"/>
+      <itemData name = "Control Flow" defStyleNum = "dsControlFlow" spellChecking="0"/>
+      <itemData name = "Substitution Symbol" defStyleNum = "dsKeyword" spellChecking="0"/>
+      <itemData name = "Block Symbol" defStyleNum = "dsKeyword" spellChecking="0"/>
+      <itemData name = "Separator Symbol" defStyleNum = "dsNormal" bold="1" spellChecking="0"/>
+      <itemData name = "Decimal" defStyleNum = "dsDecVal" spellChecking="0"/>
+      <itemData name = "Float" defStyleNum = "dsFloat" spellChecking="0"/>
+      <itemData name = "Operator" defStyleNum = "dsOperator" spellChecking="0"/>
+      <itemData name = "Symbol" defStyleNum = "dsNormal"/>
       <itemData name = "String" defStyleNum = "dsString"/>
+      <itemData name = "String Variable Index" defStyleNum = "dsVerbatimString"/>
       <itemData name = "Comment" defStyleNum = "dsComment"/>
-      <itemData name = "Parameter" defStyleNum = "dsOthers"/>
+      <itemData name = "Parameter" defStyleNum = "dsOthers" spellChecking="0"/>
       <itemData name = "Variable" defStyleNum = "dsDataType"/>
-      <itemData name = "Char" defStyleNum="dsChar"/>
-      <itemData name = "Region Marker" defStyleNum="dsRegionMarker"/>
+      <itemData name = "Variable Index Symbol" defStyleNum = "dsVariable" spellChecking="0"/>
+      <itemData name = "Char" defStyleNum="dsChar" spellChecking="0"/>
+      <itemData name = "Region Marker" defStyleNum="dsRegionMarker" spellChecking="0"/>
     </itemDatas>
 
   </highlighting>
 
   <general>
     <comments>
-	<comment name="singleLine" start="#" />
+      <comment name="singleLine" start="#" />
     </comments>
     <keywords casesensitive="1"/>
   </general>
 
 </language>
+<!-- kate: replace-tabs on; indent-width 2; -->

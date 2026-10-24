@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!-- WaveJSON: https://wavedrom.com/tutorial.html -->
+<language name="WaveDrom" alternativeNames="WaveJSON" version="1" kateversion="5.79" section="Scientific" extensions="*.wavedrom;*.wavejson" license="MIT">
+  <highlighting>
+    <list name="Constants">
+      <item>true</item>
+      <item>false</item>
+      <item>null</item>
+    </list>
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="Find Comments"/>
+        <DetectChar char="{" attribute="Symbol" context="Object" beginRegion="object"/>
+        <DetectChar char="[" attribute="Symbol" context="Array" beginRegion="array"/>
+        <DetectChar char="&quot;" attribute="String" context="Double String"/>
+        <DetectChar char="'" attribute="String" context="Single String"/>
+        <keyword String="Constants" attribute="Constant"/>
+        <RegExpr String="[+-]?(?:Infinity|NaN)\b" attribute="Constant"/>
+        <RegExpr String="[+-]?0[xX][0-9a-fA-F]+\b" attribute="Base Number"/>
+        <RegExpr String="[+-]?(?:(?:[0-9]+\.[0-9]*|\.[0-9]+)(?:[eE][+-]?[0-9]+)?|[0-9]+[eE][+-]?[0-9]+)" attribute="Float"/>
+        <RegExpr String="[+-]?[0-9]+\b" attribute="Number"/>
+      </context>
+      <!-- Object keys may be quoted or bare, including WaveDrom and JsonML properties. -->
+      <context name="Object" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="Find Comments"/>
+        <DetectChar char="&quot;" attribute="Key" context="Double Key"/>
+        <DetectChar char="'" attribute="Key" context="Single Key"/>
+        <RegExpr String="[$_\p{L}][$_\p{L}\p{N}]*" attribute="Key"/>
+        <DetectChar char=":" attribute="Symbol" context="Object Value"/>
+        <DetectChar char="," attribute="Symbol"/>
+        <DetectChar char="}" attribute="Symbol" context="#pop" endRegion="object"/>
+      </context>
+      <context name="Object Value" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="," attribute="Symbol" context="#pop"/>
+        <DetectChar char="}" attribute="Symbol" context="#pop#pop" endRegion="object"/>
+        <IncludeRules context="Normal"/>
+      </context>
+      <context name="Array" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="," attribute="Symbol"/>
+        <DetectChar char="]" attribute="Symbol" context="#pop" endRegion="array"/>
+        <IncludeRules context="Normal"/>
+      </context>
+      <context name="Double Key" attribute="Key" lineEndContext="#pop">
+        <DetectChar char="&quot;" attribute="Key" context="#pop"/>
+        <IncludeRules context="Escapes"/>
+      </context>
+      <context name="Single Key" attribute="Key" lineEndContext="#pop">
+        <DetectChar char="'" attribute="Key" context="#pop"/>
+        <IncludeRules context="Escapes"/>
+      </context>
+      <context name="Double String" attribute="String" lineEndContext="#pop">
+        <DetectChar char="&quot;" attribute="String" context="#pop"/>
+        <IncludeRules context="Escapes"/>
+      </context>
+      <context name="Single String" attribute="String" lineEndContext="#pop">
+        <DetectChar char="'" attribute="String" context="#pop"/>
+        <IncludeRules context="Escapes"/>
+      </context>
+      <context name="Escapes" attribute="String" lineEndContext="#stay">
+        <LineContinue attribute="Escape"/>
+        <RegExpr String="\\(?:u[0-9a-fA-F]{4}|x[0-9a-fA-F]{2}|.)" attribute="Escape"/>
+      </context>
+      <context name="Find Comments" attribute="Normal Text" lineEndContext="#stay">
+        <StringDetect String="//" attribute="Comment" context="Line Comment"/>
+        <StringDetect String="/*" attribute="Comment" context="Block Comment" beginRegion="comment"/>
+      </context>
+      <context name="Line Comment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="Block Comment" attribute="Comment" lineEndContext="#stay">
+        <StringDetect String="*/" attribute="Comment" context="#pop" endRegion="comment"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Key" defStyleNum="dsDataType"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Escape" defStyleNum="dsChar"/>
+      <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="Base Number" defStyleNum="dsBaseN"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="Constant" defStyleNum="dsConstant"/>
+      <itemData name="Symbol" defStyleNum="dsOperator"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//"/>
+      <comment name="multiLine" start="/*" end="*/"/>
+    </comments>
+  </general>
+</language>

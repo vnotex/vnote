@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!-- same as logfile-advanced.xml -->
+  <!ENTITY critical "crit|critical|fatal|QFATAL">
+  <!ENTITY debug "debug|QDEBUG">
+  <!ENTITY error "err|error|fail|failure|QCRITICAL">
+  <!ENTITY info "info|information|QINFO">
+  <!ENTITY warn "warn|warning|QWARN">
+  <!ENTITY firstchars "cdefiqw">
+  <!ENTITY search "^([^&firstchars;]*+((?!\b(&critical;|&debug;|&error;|&info;|&warn;)\b)[&firstchars;])?)*+">
+]>
+<language name="Log File (simplified)" section="Other" version="3" kateversion="5.62" extensions="*.log;*.log.*;syslog;syslog.*" priority="-10" author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT">
+  <highlighting>
+
+    <contexts>
+      <context name="Start" lineEndContext="#stay" attribute="Normal">
+        <RegExpr String="&search;\b(&info;)\b.*" attribute="Information" insensitive="1" column="0"/>
+        <RegExpr String="&search;\b(&debug;)\b.*" attribute="Debug" insensitive="1" column="0"/>
+        <RegExpr String="&search;\b(&warn;)\b.*" attribute="Warning" insensitive="1" column="0"/>
+        <RegExpr String="&search;\b(&error;)\b.*" attribute="Error" insensitive="1" column="0"/>
+        <RegExpr String="&search;\b(&critical;)\b.*" attribute="Critical" insensitive="1" column="0"/>
+        <RegExpr String=".*" attribute="Normal"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal" defStyleNum="dsNormal"/>
+      <itemData name="Information" defStyleNum="dsPreprocessor"/>
+      <itemData name="Warning" defStyleNum="dsInformation"/>
+      <itemData name="Error" defStyleNum="dsError" underline="0"/>
+      <itemData name="Critical" defStyleNum="dsAlert"/>
+      <itemData name="Debug" defStyleNum="dsDataType"/>
+    </itemDatas>
+  </highlighting>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

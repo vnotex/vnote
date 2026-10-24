@@ -1,0 +1,416 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+    <!ENTITY int "(?:[0-9]++(_++[0-9]++)*+)">
+    <!ENTITY hex "(?:[0-9a-fA-F]++(_++[0-9a-fA-F]++)*+)">
+    <!ENTITY exp "(?:[eE][-+]?&int;)">
+    <!ENTITY float "(\b&int;(\.((&int;&exp;?+|&exp;)[fF]?\b|[fF]\b)?|&exp;[fF]?\b|[fF]\b)|\.&int;&exp;?[fF]?\b)">
+    <!ENTITY hexfloat "\b0[xX](&hex;\.?+&hex;?+|\.&hex;?)[pP][-+]?&int;[fF]?\b">
+]>
+
+<language
+    name="Swift"
+    version="2"
+    kateversion="5.62"
+    section="Sources"
+    extensions="*.swift"
+    license="MIT"
+    author="I. Elland (igor@elland.me)"
+    style="cstyle"
+    indenter="cstyle">
+    <highlighting>
+        <list name="keywords">
+            <item>@testable</item>
+            <item>import</item>
+
+            <item>struct</item>
+            <item>class</item>
+            <item>enum</item>
+            <item>protocol</item>
+            <item>extension</item>
+
+            <item>private</item>
+            <item>lazy</item>
+            <item>public</item>
+            <item>fileprivate</item>
+            <item>internal</item>
+            <item>final</item>
+            <item>dynamic</item>
+            <item>static</item>
+            <item>mutating</item>
+            <item>nonmutating</item>
+
+            <item>get</item>
+            <item>set</item>
+            <item>func</item>
+            <item>var</item>
+            <item>let</item>
+
+            <item>is</item>
+            <item>as</item>
+            <item>where</item>
+
+            <item>willSet</item>
+            <item>didSet</item>
+            <item>willGet</item>
+            <item>didGet</item>
+
+            <item>return</item>
+            <item>throws</item>
+            <item>rethrows</item>
+            <item>throw</item>
+
+            <item>typealias</item>
+            <item>typeof</item>
+            <item>override</item>
+            <item>infix</item>
+            <item>operator</item>
+        </list>
+        <list name="controlFlowKeyword">
+            <item>if</item>
+            <item>else</item>
+            <item>guard</item>
+            <item>defer</item>
+
+            <item>in</item>
+            <item>inout</item>
+
+            <item>for</item>
+            <item>repeat</item>
+            <item>while</item>
+            <item>case</item>
+            <item>switch</item>
+
+            <item>do</item>
+            <item>try</item>
+            <item>catch</item>
+
+            <item>async</item>
+            <item>await</item>
+            <item>actor</item>
+
+            <item>continue</item>
+            <item>break</item>
+            <item>fallthrough</item>
+            <item>fatalError</item>
+        </list>
+        <list name="predeclared">
+            <item>nil</item>
+            <item>super</item>
+            <item>self</item>
+            <item>init</item>
+            <item>deinit</item>
+            <item>true</item>
+            <item>false</item>
+            <item>required</item>
+            <item>weak</item>
+            <item>strong</item>
+            <item>unowned</item>
+            <item>default</item>
+        </list>
+        <list name="types">
+            <item>Unit</item>
+            <item>Nothing</item>
+
+            <item>String</item>
+            <item>Char</item>
+
+            <item>Int</item>
+            <item>Long</item>
+            <item>Byte</item>
+            <item>Short</item>
+            <item>Float</item>
+            <item>Double</item>
+
+            <item>Boolean</item>
+        </list>
+
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Start" fallthroughContext="Normal">
+                <Detect2Chars attribute="Comment" context="Shebang" char="#" char1="!" />
+            </context>
+            <context attribute="Normal Text" lineEndContext="#pop!Normal" name="Shebang">
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <DetectSpaces context="#stay"/>
+
+                <DetectChar attribute="Symbol" context="Dot" char="." lookAhead="1"/>
+                <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1"/>
+                <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1"/>
+
+                <IncludeRules context="FindComments"/>
+
+                <AnyChar attribute="Symbol" context="#stay" String="()[]&amp;|+,-/*&lt;=&gt;;!%?:~^"/>
+
+                <AnyChar context="Number" String="0123456789" lookAhead="1"/>
+
+                <DetectChar context="String" char="&quot;" lookAhead="1"/>
+                <DetectChar context="Char" char="'" lookAhead="1"/>
+
+                <WordDetect attribute="Keyword" context="VariableDeclaration" String="let"/>
+                <WordDetect attribute="Keyword" context="VariableDeclaration" String="var"/>
+
+                <WordDetect attribute="Keyword" context="FunctionDeclaration" String="func"/>
+
+                <WordDetect attribute="Keyword" context="Imports" String="@testable"/>
+                <WordDetect attribute="Keyword" context="Imports" String="import"/>
+
+                <DetectChar attribute="Annotation" context="Annotation" char="@" />
+
+                <WordDetect attribute="Keyword" context="TypeDeclaration" String="struct"/>
+                <WordDetect attribute="Keyword" context="TypeDeclaration" String="class"/>
+                <WordDetect attribute="Keyword" context="TypeDeclaration" String="protocol"/>
+                <WordDetect attribute="Keyword" context="TypeDeclaration" String="enum"/>
+                <WordDetect attribute="Keyword" context="TypeDeclaration" String="extension"/>
+
+                <keyword attribute="Keyword" context="#stay" String="predeclared"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="ControlFlowKeyword" context="#stay" String="controlFlowKeyword"/>
+
+                <DetectIdentifier attribute="Normal Text"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="FindComments">
+                <Detect2Chars attribute="Comment" context="CommentSingleLine" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="CommentMultiline" char="/" char1="*" beginRegion="Comment"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="Number">
+                <IncludeRules context="FindFloat"/>
+                <RegExpr attribute="Hex" context="#pop" String="\b0[xX]&hex;[lL]?\b"/>
+                <RegExpr attribute="Binary" context="#pop" String="\b0[bB][01]++(_++[01]++)*+[uUlL]?\b"/>
+                <RegExpr attribute="Decimal" context="#pop" String="\b(0|[1-9][0-9]*+(_++[0-9_]++)*+)[uUlL]?\b"/>
+                <AnyChar attribute="Error" context="#pop" String="0123456789"/>
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="FindFloat">
+                <RegExpr attribute="Float" context="#pop" String="&float;|&hexfloat;"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="Dot">
+                <IncludeRules context="FindFloat"/>
+                <DetectChar attribute="Symbol" context="#pop" char="." />
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#pop" name="Annotation" fallthroughContext="#pop">
+                <DetectIdentifier attribute="Annotation" context="#pop"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#stay" name="Char">
+                <HlCChar attribute="Char" context="#pop"/>
+                <RegExpr attribute="Char" context="#pop" String="'\\u[0-9a-fA-F]{4}'"/>
+                <RegExpr attribute="Error" context="#pop" String="'(\\(u[0-9a-fA-F]*|.))?'?"/>
+            </context>
+
+            <context attribute="String" lineEndContext="#pop" name="String">
+                <StringDetect attribute="String" context="#pop!MultiLineString" String="&quot;&quot;&quot;" beginRegion="MultiLineString"/>
+                <DetectChar attribute="String" context="#pop!SingleLineString" char="&quot;"/>
+            </context>
+            <context attribute="String" lineEndContext="#pop" name="SingleLineString">
+                <DetectChar context="StringEscapedChar" char="\" lookAhead="1"/>
+                <DetectChar context="Interpolation" char="$" lookAhead="1"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+            <context attribute="String" lineEndContext="#stay" name="MultiLineString">
+                <DetectChar context="StringEscapedChar" char="\" lookAhead="1"/>
+                <DetectChar context="Interpolation" char="$" lookAhead="1"/>
+                <DetectChar context="MultiLineStringFinal" char="&quot;" lookAhead="1"/>
+            </context>
+            <context attribute="String" lineEndContext="#stay" name="MultiLineStringFinal">
+                <StringDetect context="MultiLineStringNoFinal" String="&quot;&quot;&quot;&quot;" lookAhead="1"/>
+                <StringDetect attribute="String" context="#pop#pop" String="&quot;&quot;&quot;" endRegion="MultiLineString"/>
+                <Detect2Chars attribute="String" context="#pop" char="&quot;" char1="&quot;"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+            <context attribute="String" lineEndContext="#stay" name="MultiLineStringNoFinal">
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+            <context attribute="String" lineEndContext="#pop" name="StringEscapedChar">
+                <HlCStringChar attribute="String Char" context="#pop"/>
+                <Detect2Chars attribute="String Char" context="#pop" char="\" char1="$"/>
+                <RegExpr attribute="String Char" context="#pop" String="\\u[0-9a-fA-F]{4}"/>
+                <RegExpr attribute="Error" context="#pop" String="\\(u[0-9a-fA-F]*|.)?"/>
+            </context>
+
+            <context attribute="String" lineEndContext="#stay" name="Interpolation">
+                <Detect2Chars attribute="String Interpolation" context="#pop!InInterpolation" char="$" char1="{"/>
+                <DetectChar attribute="String Interpolation" context="#pop!Variable" char="$"/>
+            </context>
+            <context attribute="String Interpolation" lineEndContext="#stay" name="InInterpolation">
+                <DetectChar attribute="String Interpolation" context="#pop" char="}"/>
+                <IncludeRules context="Normal"/>
+            </context>
+            <context attribute="String" lineEndContext="#pop" name="Variable" fallthroughContext="#pop">
+                <DetectIdentifier attribute="String Interpolation" context="#pop"/>
+            </context>
+
+            <context attribute="Normal Text" lineEndContext="#pop" name="Imports">
+                <AnyChar attribute="Symbol" context="#stay" String=".*"/>
+                <WordDetect attribute="Keyword" context="TypeName" String="as" />
+                <DetectIdentifier attribute="Imports" context="#stay"/>
+                <DetectChar attribute="Symbol" context="#pop" char=";"/>
+            </context>
+
+            <context name="VariableDeclaration" lineEndContext="#stay" attribute="Normal Text">
+                <DetectIdentifier attribute="Variable" context="#pop" />
+            </context>
+
+            <context name="TypeDeclaration" lineEndContext="#stay" attribute="Normal Text" fallthroughContext="#pop">
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+
+                <DetectChar attribute="Symbol" context="TypeParameters" char="&lt;" />
+                <DetectChar attribute="Symbol" context="Parameters" char="(" />
+                <DetectChar attribute="Symbol" context="SuperTypes" char=":" />
+                <DetectChar attribute="Symbol" context="#pop" char="{" lookAhead="true" />
+
+                <DetectIdentifier attribute="Normal Text" context="#stay"/>
+                <DetectSpaces attribute="Normal Text" context="#stay"/>
+                <IncludeRules context="FindComments"/>
+            </context>
+
+            <context name="SuperTypes" lineEndContext="#stay" attribute="Normal Text" fallthroughContext="#pop">
+                <keyword attribute="Keyword" context="#pop#pop" String="keywords" lookAhead="true" />
+
+                <DetectChar attribute="Symbol" context="#stay" char="," />
+                <DetectChar attribute="Symbol" context="#pop" char="{" lookAhead="true" />
+                <DetectChar attribute="Symbol" context="Parameters" char="(" />
+                <DetectChar attribute="Symbol" context="TypeParameters" char="&lt;" />
+
+                <DetectIdentifier attribute="Data Type" context="#stay"/>
+                <DetectSpaces attribute="Normal Text" context="#stay"/>
+                <IncludeRules context="FindComments"/>
+            </context>
+
+            <context name="FunctionDeclaration" lineEndContext="#stay" attribute="Normal Text" fallthroughContext="#pop">
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <DetectChar attribute="Symbol" context="#stay" char="." />
+                <DetectChar attribute="Symbol" context="Parameters" char="(" />
+                <DetectChar attribute="Symbol" context="TypeParameters" char="&lt;" />
+                <DetectChar attribute="Symbol" context="TypeName" char=":" />
+                <AnyChar attribute="Normal Text" String="->[]?" />
+
+                <DetectIdentifier attribute="Function" context="#stay"/>
+                <DetectSpaces attribute="Normal Text" context="#stay"/>
+                <IncludeRules context="FindComments"/>
+            </context>
+
+            <context name="TypeParameters" lineEndContext="#stay" attribute="Normal Text">
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+
+                <DetectChar attribute="Symbol" context="TypeName" char=":" />
+                <DetectChar attribute="Symbol" context="#stay" char="*" />
+
+                <DetectChar attribute="Symbol" context="#pop" char="&gt;" />
+                <DetectChar attribute="Symbol" context="TypeParameters" char="&lt;" />
+
+                <DetectIdentifier attribute="Data Type" context="DataTypeSuffix"/>
+                <DetectSpaces attribute="Normal Text" context="#stay"/>
+                <IncludeRules context="FindComments"/>
+            </context>
+            <context name="DataTypeSuffix" lineEndContext="#pop" attribute="Normal Text" fallthroughContext="#pop">
+                <DetectChar attribute="Symbol" context="#pop" char="?"/>
+            </context>
+
+            <context name="Parameters" lineEndContext="#stay" attribute="Normal Text">
+                <keyword attribute="Keyword" context="#stay" String="keywords" />
+                <DetectChar attribute="Symbol" context="#pop" char=")" />
+                <DetectChar attribute="Symbol" context="TypeName" char=":" />
+                <DetectChar attribute="Symbol" context="Expression" char="=" />
+                <DetectIdentifier attribute="Variable" context="#stay"/>
+                <DetectChar attribute="Symbol" context="#stay" char=","/>
+                <DetectSpaces attribute="Normal Text" context="#stay"/>
+                <IncludeRules context="FindComments"/>
+            </context>
+
+            <context name="TypeName" lineEndContext="#stay" attribute="Normal Text">
+                <AnyChar attribute="Symbol" context="#pop" String=",*" />
+                <DetectChar attribute="Symbol" context="FunctionType" char="(" />
+                <Detect2Chars attribute="Symbol" context="#stay" char="-" char1="&gt;" />
+                <DetectIdentifier attribute="Data Type" context="#pop!DataTypeSuffix"/>
+            </context>
+
+            <context name="FunctionType" lineEndContext="#stay" attribute="Normal Text">
+                <DetectChar attribute="Symbol" context="#pop" char=")" />
+                <DetectIdentifier attribute="Data Type" context="DataTypeSuffix"/>
+                <Detect2Chars attribute="Symbol" context="#stay" char="-" char1="&gt;" />
+                <DetectChar attribute="Symbol" context="#stay" char="," />
+            </context>
+
+            <context name="Expression" lineEndContext="#stay" attribute="Normal Text">
+                <DetectChar attribute="Symbol" context="#pop" char=")" lookAhead="true" />
+                <DetectChar attribute="Error" context="#pop" char="}" />
+                <DetectChar attribute="Symbol" context="#pop" char=","/>
+                <IncludeRules context="FindSubExpression"/>
+            </context>
+            <context name="FindSubExpression" lineEndContext="#stay" attribute="Normal Text">
+                <DetectSpaces attribute="Normal Text"/>
+
+                <AnyChar attribute="Symbol" context="ExpressionInner" String="({" />
+
+                <DetectChar context="MaybeTypeParameters" char="&lt;" lookAhead="1" />
+
+                <DetectChar attribute="Symbol" context="Dot" char="." lookAhead="1"/>
+                <AnyChar context="Number" String="0123456789" lookAhead="1"/>
+                <DetectChar context="String" char="&quot;" lookAhead="1"/>
+                <DetectChar context="Char" char="'" lookAhead="1"/>
+
+                <IncludeRules context="FindComments"/>
+
+                <DetectIdentifier attribute="Normal Text"/>
+            </context>
+            <context name="MaybeTypeParameters" lineEndContext="#pop" attribute="Normal Text">
+                <RegExpr context="#pop!TypeParameters" String="&lt;\w" lookAhead="1" />
+                <DetectChar attribute="Symbol" context="#pop" char="&lt;"/>
+            </context>
+
+            <context name="ExpressionInner" lineEndContext="#stay" attribute="Normal Text">
+                <AnyChar attribute="Symbol" context="#pop" String=")}" />
+                <IncludeRules context="FindSubExpression"/>
+            </context>
+
+            <context attribute="Comment" lineEndContext="#pop" name="CommentSingleLine">
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier />
+            </context>
+            <context attribute="Comment" lineEndContext="#stay" name="CommentMultiline">
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+                <Detect2Chars attribute="Comment" context="CommentMultiline" char="/" char1="*" beginRegion="Comment"/>
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier />
+            </context>
+
+        </contexts>
+
+        <itemDatas>
+            <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="ControlFlowKeyword" defStyleNum="dsControlFlow" spellChecking="false"/>
+            <itemData name="Function"     defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Variable"     defStyleNum="dsVariable" spellChecking="false"/>
+            <itemData name="Imports"      defStyleNum="dsImport" spellChecking="false"/>
+            <itemData name="Annotation"   defStyleNum="dsAttribute" spellChecking="false"/>
+            <itemData name="Data Type"    defStyleNum="dsDataType" spellChecking="false"/>
+            <itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Hex"          defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Binary"       defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Float"        defStyleNum="dsFloat" spellChecking="false"/>
+            <itemData name="Char"         defStyleNum="dsChar" spellChecking="false"/>
+            <itemData name="String"       defStyleNum="dsString"/>
+            <itemData name="String Char"  defStyleNum="dsSpecialChar" spellChecking="false"/>
+            <itemData name="String Interpolation" defStyleNum="dsSpecialString"/>
+            <itemData name="Comment"      defStyleNum="dsComment"/>
+            <itemData name="Symbol"       defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Error"        defStyleNum="dsError" spellChecking="false"/>
+    </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="//"/>
+            <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+        </comments>
+        <keywords casesensitive="1"/>
+    </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

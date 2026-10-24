@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY rulename "[[:alpha:]_][-\w]*([.]+[-\w]+)*">
+]>
+<!--
+  BNF family (BNF, EBNF, WBNF etc.) Syntax Highlighting Definition
+  Original file to https://github.com/jip/syntax-highlighting
+
+  Backus-Naur form (BNF) is a notation technique for context-free grammars
+
+  SPDX-FileCopyrightText: 2026 Igor Zhuravlov <zhuravlov.ip@ya.ru>
+  SPDX-FileCopyrightText: 2026 Jonathan Poelen <jonathan.poelen@gmail.com>
+  SPDX-License-Identifier: GPL-3.0-or-later
+-->
+<language
+  name="BNF"
+  alternativeNames="EBNF;WBNF;PEG"
+  section="Sources"
+  version="5"
+  kateversion="5.0"
+  extensions="*.bnf;*.ebnf;*.peg"
+  mimetype="text/x-bnf;text/x-ebnf;text/x-peg"
+  author="Igor Zhuravlov (zhuravlov.ip@ya.ru); Jonathan Poelen (jonathan.poelen@gmail.com)"
+  indenter="normal"
+  license="GPL"
+>
+  <highlighting>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectSpaces/>
+
+        <StringDetect attribute="Repeater" context="#stay" String="(/"/>
+        <StringDetect attribute="Repeater" context="#stay" String="/)"/>
+        <StringDetect attribute="Repeater" context="#stay" String="(:"/>
+        <StringDetect attribute="Repeater" context="#stay" String=":)"/>
+
+        <StringDetect attribute="Copulae" context="#stay" String=":≡"/>
+        <StringDetect attribute="Copulae" context="#stay" String="&lt;-"/>
+        <StringDetect attribute="Copulae" context="#stay" String="&lt;="/>
+        <StringDetect attribute="Copulae" context="#stay" String="-&gt;"/>
+        <StringDetect attribute="Copulae" context="#stay" String="=&gt;"/>
+        <AnyChar attribute="Copulae" context="#stay" String=":=←→⇐⇒≜"/>
+
+        <StringDetect attribute="Comment" context="comment inline" String="//"/>
+        <StringDetect attribute="Comment" context="comment inline" String="%%"/>
+        <StringDetect attribute="Comment" context="comment block C" String="/*" beginRegion="CommentBlockC"/>
+        <StringDetect attribute="Comment" context="comment EBNF" String="(*" beginRegion="CommentBlock"/>
+
+        <AnyChar attribute="Combinator" context="#stay" String="|/-,"/>
+
+        <AnyChar attribute="Operator" context="#stay" String="!#$&amp;*+?@^~%"/>
+
+        <AnyChar attribute="Semicolon Terminator" context="comment inline" String=";"/>
+        <AnyChar attribute="Terminator" context="#stay" String="."/>
+
+        <DetectChar lookAhead="true" context="escaped" char="\"/>
+
+        <DetectChar attribute="String" context="sq-terminal" char="'"/>
+        <DetectChar attribute="String" context="dq-terminal" char="&quot;"/>
+        <DetectChar attribute="Special" context="special block" char="`" beginRegion="QBlock"/>
+
+        <DetectChar attribute="Parenthese" context="#stay" char="(" beginRegion="PBlock"/>
+        <DetectChar attribute="Parenthese" context="#stay" char=")" endRegion="PBlock"/>
+        <DetectChar attribute="Parenthese" context="#stay" char="&lt;" beginRegion="ABlock"/>
+        <DetectChar attribute="Parenthese" context="#stay" char="&gt;" endRegion="ABlock"/>
+        <DetectChar attribute="Parenthese" context="#stay" char="[" beginRegion="SBlock"/>
+        <DetectChar attribute="Parenthese" context="#stay" char="]" endRegion="SBlock"/>
+        <DetectChar attribute="Parenthese" context="#stay" char="{" beginRegion="CBlock"/>
+        <DetectChar attribute="Parenthese" context="#stay" char="}" endRegion="CBlock"/>
+
+        <RegExpr attribute="Label" context="#stay" String="&rulename;:"/>
+
+        <RegExpr attribute="Nonterminal" context="#stay" String="&lt;&rulename;&gt;|&rulename;"/>
+
+        <RegExpr attribute="Integer" context="#stay" String="0|-?[1-9][0-9]*"/>
+      </context>
+
+      <!-- //... -->
+      <context attribute="Comment" lineEndContext="#pop" name="comment inline">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+      <!-- /* ... */ -->
+      <context attribute="Comment" lineEndContext="#stay" name="comment block C">
+        <DetectSpaces/>
+        <StringDetect attribute="Comment" context="#pop" String="*/" endRegion="CommentBlockC"/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+      <!-- (* ... *) -->
+      <context attribute="Comment" lineEndContext="#stay" name="comment EBNF">
+        <DetectSpaces/>
+        <StringDetect attribute="Comment" context="#pop" String="*)" endRegion="CommentBlock"/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+
+      <!-- '...' -->
+      <context attribute="String" lineEndContext="#pop" name="sq-terminal">
+        <DetectChar attribute="String" context="#pop" char="'"/>
+        <DetectChar lookAhead="true" context="q-escaped" char="\"/>
+      </context>
+      <!-- "..." -->
+      <context attribute="String" lineEndContext="#stay" name="dq-terminal">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <DetectChar lookAhead="true" context="q-escaped" char="\"/>
+      </context>
+      <!-- \... in '...' and "..." -->
+      <context attribute="String" lineEndContext="#stay" name="q-escaped">
+        <IncludeRules context="find escape"/>
+        <DetectChar attribute="String" context="#pop" char="\"/>
+      </context>
+
+      <!-- \w, \d, etc or Combinator -->
+      <context attribute="String" lineEndContext="#stay" name="escaped">
+        <IncludeRules context="find escape"/>
+        <DetectChar attribute="Combinator" context="#pop" char="\"/>
+      </context>
+
+      <!-- \... -->
+      <context attribute="String" lineEndContext="#stay" name="find escape">
+        <HlCStringChar attribute="String Char" context="#pop"/>
+        <RegExpr attribute="String Char" context="#pop" String="\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8}|\\[a-zA-Z]\b"/>
+      </context>
+
+      <!-- `...` -->
+      <context attribute="Special" lineEndContext="#stay" name="special block">
+        <StringDetect attribute="Special Char" context="#stay" String="\`"/>
+        <DetectChar attribute="Special" context="#pop" char="`" endRegion="QBlock"/>
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Combinator" defStyleNum="dsOperator" bold="true" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment" spellChecking="true"/>
+      <itemData name="Copulae" defStyleNum="dsOperator" bold="true" spellChecking="false"/>
+      <itemData name="Integer" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Label" defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Nonterminal" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Operator" defStyleNum="dsOperator" bold="true" spellChecking="false"/>
+      <itemData name="Parenthese" defStyleNum="dsRegionMarker" spellChecking="false"/>
+      <itemData name="Repeater" defStyleNum="dsRegionMarker" spellChecking="false"/>
+      <itemData name="Terminator" defStyleNum="dsOperator" bold="true" spellChecking="false"/>
+      <itemData name="Semicolon Terminator" defStyleNum="dsOperator" bold="true" spellChecking="false"/>
+      <itemData name="Special" defStyleNum="dsExtension" spellChecking="false"/>
+      <itemData name="Special Char" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="String" defStyleNum="dsString" spellChecking="false"/>
+      <itemData name="String Char" defStyleNum="dsSpecialChar" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//"/>
+      <comment name="multiLine" start="(*" end="*)" region="CommentBlock"/>
+    </comments>
+    <folding indentationsensitive="true"/>
+  </general>
+</language>
+<!-- kate: replace-tabs on; indent-width 2; -->

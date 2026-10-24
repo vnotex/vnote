@@ -1,0 +1,295 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!--
+    SPDX-License-Identifier: MIT
+-->
+<language name="Just" section="Other" version="2" kateversion="5.79"
+          extensions="justfile;Justfile;.justfile;.Justfile;*.just"
+          mimetype="text/x-just" license="MIT">
+  <highlighting>
+    <list name="literals">
+      <item>true</item>
+      <item>false</item>
+    </list>
+    <list name="expression keywords">
+      <item>assert</item>
+      <item>else</item>
+      <item>if</item>
+    </list>
+    <list name="settings">
+      <item>allow-duplicate-recipes</item>
+      <item>allow-duplicate-variables</item>
+      <item>default-list</item>
+      <item>default-script</item>
+      <item>dotenv-command</item>
+      <item>dotenv-filename</item>
+      <item>dotenv-load</item>
+      <item>dotenv-override</item>
+      <item>dotenv-path</item>
+      <item>dotenv-required</item>
+      <item>export</item>
+      <item>fallback</item>
+      <item>guards</item>
+      <item>ignore-comments</item>
+      <item>indentation</item>
+      <item>lazy</item>
+      <item>lists</item>
+      <item>minimum-version</item>
+      <item>no-cd</item>
+      <item>no-exit-message</item>
+      <item>positional-arguments</item>
+      <item>quiet</item>
+      <item>script-interpreter</item>
+      <item>shell</item>
+      <item>tempdir</item>
+      <item>unstable</item>
+      <item>windows-powershell</item>
+      <item>windows-shell</item>
+      <item>working-directory</item>
+    </list>
+
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <DetectChar attribute="Attribute" context="Attributes" char="[" firstNonSpace="true"/>
+
+        <WordDetect attribute="Keyword" context="Alias" String="alias" firstNonSpace="true"/>
+        <WordDetect attribute="Keyword" String="eager" firstNonSpace="true"/>
+        <WordDetect attribute="Keyword" String="export" firstNonSpace="true"/>
+        <WordDetect attribute="Keyword" String="unexport" firstNonSpace="true"/>
+        <WordDetect attribute="Keyword" context="Set" String="set" firstNonSpace="true"/>
+        <WordDetect attribute="Keyword" context="Import" String="import" firstNonSpace="true"/>
+        <WordDetect attribute="Keyword" context="Module" String="mod" firstNonSpace="true"/>
+
+        <RegExpr attribute="Variable" String="[A-Za-z_][A-Za-z0-9_-]*(?=\s*:=)"/>
+        <RegExpr attribute="Function" String="[A-Za-z_][A-Za-z0-9_-]*(?=\s*\()" firstNonSpace="true"/>
+        <RegExpr attribute="Recipe" context="Recipe Header" String="@?[A-Za-z_][A-Za-z0-9_-]*" firstNonSpace="true"/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Alias" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <RegExpr attribute="Recipe" String="[A-Za-z_][A-Za-z0-9_-]*"/>
+        <StringDetect attribute="Operator" String=":="/>
+        <StringDetect attribute="Operator" String="::"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+      </context>
+
+      <context name="Set" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <keyword attribute="Built-in" String="settings"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Import" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Operator" char="?"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Module" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Operator" char="?"/>
+        <RegExpr attribute="Module" String="[A-Za-z_][A-Za-z0-9_-]*"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Attributes" attribute="Attribute" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Attribute" context="#pop" char="]"/>
+        <RegExpr attribute="Attribute" String="[A-Za-z_][A-Za-z0-9_-]*"/>
+        <AnyChar attribute="Operator" String=":(),"/>
+        <IncludeRules context="Strings"/>
+      </context>
+
+      <context name="Recipe Header" attribute="Normal Text" lineEndContext="Recipe Body">
+        <DetectSpaces/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <DetectChar attribute="Separator" char=":" context="Dependencies"/>
+        <RegExpr attribute="Variable" String="[$*+]?[A-Za-z_][A-Za-z0-9_-]*"/>
+        <AnyChar attribute="Operator" String="=(),"/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Dependencies" attribute="Normal Text" lineEndContext="#pop#pop!Recipe Body">
+        <DetectSpaces/>
+        <LineContinue attribute="Operator" context="#stay"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <StringDetect attribute="Operator" String="&amp;&amp;"/>
+        <StringDetect attribute="Operator" String="::"/>
+        <AnyChar attribute="Operator" String="*(),"/>
+        <RegExpr attribute="Recipe" String="[A-Za-z_][A-Za-z0-9_-]*"/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Recipe Body" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr String="^\S" column="0" lookAhead="true" context="#pop"/>
+        <DetectSpaces/>
+        <RegExpr attribute="Control" String="[-@?]+" firstNonSpace="true"/>
+        <StringDetect attribute="Special Character" String="{{{{"/>
+        <StringDetect attribute="Interpolation" context="Interpolation" String="{{"/>
+        <DetectChar attribute="String" context="Recipe Double String" char="&quot;"/>
+        <DetectChar attribute="String" context="Recipe Single String" char="'"/>
+        <DetectChar attribute="Comment" context="Recipe Comment" char="#" firstNonSpace="true"/>
+        <RegExpr attribute="Variable" String="\$(?:[A-Za-z_][A-Za-z0-9_]*|\{[^}]+\})"/>
+        <RegExpr attribute="Option" String="--?[A-Za-z0-9][A-Za-z0-9_-]*"/>
+        <AnyChar attribute="Operator" String="|&amp;;&lt;>()"/>
+      </context>
+
+      <context name="Recipe Double String" attribute="String" lineEndContext="#stay">
+        <RegExpr String="^\S" column="0" lookAhead="true" context="#pop#pop"/>
+        <StringDetect attribute="Special Character" String="{{{{"/>
+        <StringDetect attribute="Interpolation" context="Interpolation" String="{{"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <RegExpr attribute="Special Character" String="\\[nrt&quot;\\$]"/>
+        <RegExpr attribute="Variable" String="\$(?:[A-Za-z_][A-Za-z0-9_]*|\{[^}]+\})"/>
+      </context>
+
+      <context name="Recipe Single String" attribute="String" lineEndContext="#stay">
+        <RegExpr String="^\S" column="0" lookAhead="true" context="#pop#pop"/>
+        <StringDetect attribute="Special Character" String="{{{{"/>
+        <StringDetect attribute="Interpolation" context="Interpolation" String="{{"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+
+      <context name="Recipe Comment" attribute="Comment" lineEndContext="#pop">
+        <StringDetect attribute="Special Character" String="{{{{"/>
+        <StringDetect attribute="Interpolation" context="Interpolation" String="{{"/>
+        <IncludeRules context="##Comments"/>
+      </context>
+
+      <context name="Interpolation" attribute="Normal Text" lineEndContext="#stay">
+        <StringDetect attribute="Interpolation" context="#pop" String="}}"/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Expression" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <keyword attribute="Keyword" String="expression keywords"/>
+        <keyword attribute="Constant" String="literals"/>
+        <IncludeRules context="Strings"/>
+        <RegExpr attribute="Function" String="[A-Za-z_][A-Za-z0-9_-]*(?=\s*\()"/>
+        <RegExpr attribute="Variable" String="[A-Za-z_][A-Za-z0-9_-]*"/>
+        <StringDetect attribute="Operator" String="&amp;&amp;"/>
+        <StringDetect attribute="Operator" String="||"/>
+        <StringDetect attribute="Operator" String="++"/>
+        <StringDetect attribute="Operator" String="=="/>
+        <StringDetect attribute="Operator" String="!="/>
+        <StringDetect attribute="Operator" String="=~"/>
+        <StringDetect attribute="Operator" String="!~"/>
+        <StringDetect attribute="Operator" String=":="/>
+        <DetectChar attribute="Operator" context="Expression Parenthesis" char="("/>
+        <DetectChar attribute="Operator" context="Expression List" char="["/>
+        <DetectChar attribute="Operator" context="Expression Brace" char="{"/>
+        <AnyChar attribute="Operator" String="!+/=)]},"/>
+      </context>
+
+      <context name="Expression Parenthesis" attribute="Normal Text" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <DetectChar attribute="Operator" context="#pop" char=")"/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Expression List" attribute="Normal Text" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <DetectChar attribute="Operator" context="#pop" char="]"/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Expression Brace" attribute="Normal Text" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <DetectChar attribute="Operator" context="#pop" char="}"/>
+        <IncludeRules context="Expression"/>
+      </context>
+
+      <context name="Strings" attribute="Normal Text" lineEndContext="#stay">
+        <StringDetect attribute="String" context="Format Triple Double String" String="f&quot;&quot;&quot;"/>
+        <StringDetect attribute="String" context="Format Triple Raw String" String="f'''"/>
+        <StringDetect attribute="String" context="Format Double String" String="f&quot;"/>
+        <StringDetect attribute="String" context="Format Raw String" String="f'"/>
+        <RegExpr attribute="String" context="Triple Double String" String="x?&quot;&quot;&quot;"/>
+        <RegExpr attribute="String" context="Triple Raw String" String="x?'''"/>
+        <RegExpr attribute="String" context="Double String" String="x?&quot;"/>
+        <RegExpr attribute="String" context="Raw String" String="x?'"/>
+        <StringDetect attribute="Command" context="Triple Backtick" String="```"/>
+        <DetectChar attribute="Command" context="Backtick" char="`"/>
+      </context>
+
+      <context name="Double String" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <RegExpr attribute="Special Character" String="\\[nrt&quot;\\]"/>
+      </context>
+      <context name="Raw String" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+      <context name="Triple Double String" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;"/>
+        <RegExpr attribute="Special Character" String="\\[nrt&quot;\\]"/>
+      </context>
+      <context name="Triple Raw String" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <StringDetect attribute="String" context="#pop" String="'''"/>
+      </context>
+      <context name="Format Double String" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <StringDetect attribute="Special Character" String="{{{{"/>
+        <StringDetect attribute="Interpolation" context="Interpolation" String="{{"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <RegExpr attribute="Special Character" String="\\[nrt&quot;\\]"/>
+      </context>
+      <context name="Format Raw String" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <StringDetect attribute="Special Character" String="{{{{"/>
+        <StringDetect attribute="Interpolation" context="Interpolation" String="{{"/>
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+      <context name="Format Triple Double String" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <StringDetect attribute="Special Character" String="{{{{"/>
+        <StringDetect attribute="Interpolation" context="Interpolation" String="{{"/>
+        <StringDetect attribute="String" context="#pop" String="&quot;&quot;&quot;"/>
+        <RegExpr attribute="Special Character" String="\\[nrt&quot;\\]"/>
+      </context>
+      <context name="Format Triple Raw String" attribute="String" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <StringDetect attribute="Special Character" String="{{{{"/>
+        <StringDetect attribute="Interpolation" context="Interpolation" String="{{"/>
+        <StringDetect attribute="String" context="#pop" String="'''"/>
+      </context>
+      <context name="Backtick" attribute="Command" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <DetectChar attribute="Command" context="#pop" char="`"/>
+      </context>
+      <context name="Triple Backtick" attribute="Command" lineEndContext="#stay" noIndentationBasedFolding="true">
+        <StringDetect attribute="Command" context="#pop" String="```"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="Built-in" defStyleNum="dsBuiltIn" spellChecking="0"/>
+      <itemData name="Constant" defStyleNum="dsConstant" spellChecking="0"/>
+      <itemData name="Variable" defStyleNum="dsVariable" spellChecking="0"/>
+      <itemData name="Function" defStyleNum="dsFunction" spellChecking="0"/>
+      <itemData name="Recipe" defStyleNum="dsFunction" spellChecking="0"/>
+      <itemData name="Module" defStyleNum="dsImport" spellChecking="0"/>
+      <itemData name="Attribute" defStyleNum="dsAttribute" spellChecking="0"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Command" defStyleNum="dsSpecialString" spellChecking="0"/>
+      <itemData name="Special Character" defStyleNum="dsSpecialChar" spellChecking="0"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Operator" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Separator" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Control" defStyleNum="dsControlFlow" spellChecking="0"/>
+      <itemData name="Interpolation" defStyleNum="dsPreprocessor" spellChecking="0"/>
+      <itemData name="Option" defStyleNum="dsAttribute" spellChecking="0"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#" position="afterwhitespace"/>
+    </comments>
+    <keywords weakDeliminator="-"/>
+    <folding indentationsensitive="true"/>
+  </general>
+</language>

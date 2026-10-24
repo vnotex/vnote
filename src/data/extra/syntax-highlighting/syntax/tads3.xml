@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- TADS 3 syntax highlight definition for Kate. -->
 <!-- Author: Nikos Chantziaras <realnc@gmail.com> -->
 <language name="TADS 3" section="Sources"
-          version="4" kateversion="3.3"
+          version="7" kateversion="5.0"
           indenter="cstyle"
           extensions="*.t;*.h"
           mimetype=""
@@ -115,12 +115,14 @@
 		</context>
 
 		<context attribute="Comment" lineEndContext="#pop" name="ShortComment">
-			<RegExpr attribute="Preprocessor" context="#stay" String="(FIXME|TODO)"/>
+			<DetectSpaces />
+			<IncludeRules context="##Comments"/>
 		</context>
 
 		<context attribute="Comment" lineEndContext="#stay" name="LongComment">
-			<RegExpr attribute="Preprocessor" context="#stay" String="(FIXME|TODO)"/>
+			<DetectSpaces />
 			<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+			<IncludeRules context="##Comments"/>
 		</context>
 
 		<context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
@@ -132,8 +134,9 @@
 		</context>
 
 		<context attribute="Comment" lineEndContext="#stay" name="LongComment/Preprocessor">
-			<RegExpr attribute="Preprocessor" context="#stay" String="(FIXME|TODO)"/>
+			<DetectSpaces />
 			<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+			<IncludeRules context="##Comments"/>
 		</context>
 
 		<context name="embedded" attribute="Embedded Expression" lineEndContext="#stay">
@@ -148,18 +151,18 @@
 
 	<itemDatas>
 		<itemData name="Normal Text" defStyleNum="dsNormal"/>
-		<itemData name="Keyword" defStyleNum="dsKeyword"/>
-		<itemData name="Decimal" defStyleNum="dsDecVal"/>
-		<itemData name="Octal" defStyleNum="dsBaseN"/>
-		<itemData name="Hex" defStyleNum="dsBaseN"/>
+		<itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+		<itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+		<itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false"/>
+		<itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
 		<itemData name="String" defStyleNum="dsString"/>
 		<itemData name="ValString" defStyleNum="dsString"/>
 		<itemData name="Comment" defStyleNum="dsComment"/>
-		<itemData name="Symbol" defStyleNum="dsNormal"/>
-		<itemData name="Preprocessor" defStyleNum="dsOthers"/>
-		<itemData name="Backslash Code" defStyleNum="dsKeyword" color="#0F0F8F" selColor="#ffffff" bold="1" italic="0"/>
-		<itemData name="HTML Tag" defStyleNum="dsKeyword" color="#0F0F8F" selColor="#ffffff" bold="0" italic="1"/>
-		<itemData name="Embedded Expression" defStyleNum="dsNormal" color="#000000" selColor="#ffffff" bold="0" italic="1"/>
+		<itemData name="Symbol" defStyleNum="dsOperator" spellChecking="false"/>
+		<itemData name="Preprocessor" defStyleNum="dsPreprocessor" spellChecking="false"/>
+		<itemData name="Backslash Code" defStyleNum="dsSpecialChar" bold="1" italic="0" spellChecking="false"/>
+		<itemData name="HTML Tag" defStyleNum="dsOthers" bold="0" italic="1" spellChecking="false"/>
+		<itemData name="Embedded Expression" defStyleNum="dsVariable" bold="0" italic="1" spellChecking="false"/>
 	</itemDatas>
 
 </highlighting>
@@ -167,10 +170,11 @@
 <general>
 	<comments>
 		<comment name="singleLine" start="//"/>
-		<comment name="multiLine" start="/*" end="*/"/>
+		<comment name="multiLine" start="/*" end="*/" region="Comment"/>
 	</comments>
 
 	<keywords casesensitive="1"/>
 </general>
 
 </language>
+<!-- kate: replace-tabs off; -->

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="LaTeX Log File" version="1" section="Markup" kateversion="5.0" extensions="*.log" priority="-20" author="Thomas Braun (thomas.braun@virtuell-zuhause.de)" license="MIT" >
+  <highlighting>
+    <contexts>
+      <context name="Normal Text" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr      String="Package:? "  attribute="Normal Text" context="Package" firstNonSpace="true"/>
+        <StringDetect String="LaTeX " context="Information Type" lookAhead="true" firstNonSpace="true"/>
+        <IncludeRules context="File Name Start"/>
+        <RegExpr String="^\)+" attribute="File Names" endRegion="FileOutput" column="0"/>
+        <RegExpr String="\\[_a-zA-Z@][_a-zA-Z0-9@]+" attribute="Keyword" />
+        <DetectChar char="!" attribute="Error" context="Error Message" firstNonSpace="true"/>
+        <StringDetect String="Underfull \hbox" context="Warning Message" firstNonSpace="true"/>
+        <StringDetect String="Overfull \hbox" context="Warning Message" firstNonSpace="true"/>
+      </context>
+
+      <context name="Package" attribute="Package" lineEndContext="#pop">
+        <DetectIdentifier/>
+        <DetectChar char=" " context="#pop!Information Type"/>
+      </context>
+
+      <context name="Information Type" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr String="(LaTeX)?\s*(Font)?\s*Info:?" attribute="Info" context="#pop!Info Message"/>
+        <RegExpr String="(LaTeX)?\s*Warning:?" attribute="Warning" context="#pop!Warning Message"/>
+        <RegExpr String="(LaTeX)?\s*Error:?" attribute="Error" context="#pop!Error Message"/>
+      </context>
+
+      <context name="Warning Message" attribute="Warning" lineEndContext="#stay">
+        <RegExpr String="[^(]" lookAhead="true" context="#pop" firstNonSpace="true"/>
+        <IncludeRules context="File Name Start"/>
+        <RegExpr String="[^(]+"/>
+      </context>
+
+      <context name="Error Message" attribute="Error" lineEndContext="#stay">
+        <IncludeRules context="Warning Message"/>
+      </context>
+
+     <context name="Info Message" attribute="Info" lineEndContext="#stay">
+       <IncludeRules context="Warning Message"/>
+     </context>
+
+     <context name="File Name Start" lineEndContext="#pop" attribute="File Names">
+       <!-- '(' followed by a Linux or Windows path -->
+       <RegExpr String="\(([/.]|&quot;?[CDE]:)" context="File Names" beginRegion="FileOutput"/>
+     </context>
+
+     <context name="File Names" attribute="File Names" lineEndContext="#pop">
+     </context>
+
+</contexts>
+   <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Info" defStyleNum="dsDataType"/>
+      <itemData name="Warning" defStyleNum="dsInformation"/>
+      <itemData name="Error" defStyleNum="dsError"/>
+      <itemData name="File Names" defStyleNum="dsNormal" bold="1"/>
+      <itemData name="Package" defStyleNum="dsImport"/>
+      <itemData name="Keyword" defStyleNum="dsVerbatimString" />
+    </itemDatas>
+</highlighting>
+
+<general>
+  <keywords weakDeliminator="\" wordWrapDeliminator=",{}[]"/>
+</general>
+</language>

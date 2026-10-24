@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
   <!-- from xml.xml -->
   <!ENTITY name    "(?![0-9])[\w_:][\w.:_-]*">
   <!ENTITY entref  "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
 ]>
-<language name="GNU Gettext" version="7" kateversion="5.0" section="Markup" extensions="*.po;*.pot" mimetype="text/x-gettext-translation" author="Dominik Haumann (dhaumann@kde.org)" license="MIT">
+<language name="GNU Gettext" version="9" kateversion="5.0" section="Markup" extensions="*.po;*.pot" mimetype="text/x-gettext-translation" author="Dominik Haumann (dhaumann@kde.org)" license="MIT">
   <highlighting>
     <list name="keywords">
       <item>msgid</item>
@@ -68,9 +68,10 @@
 
       <context name="CommonComment" attribute="Translator Comment" lineEndContext="#pop">
         <DetectSpaces/>
-        <DetectIdentifier/>
         <Detect2Chars char="{" char1="+" attribute="StringDiffNewWrapComment" context="StringDiffNewComment"/>
         <Detect2Chars char="{" char1="-" attribute="StringDiffOldWrapComment" context="StringDiffOldComment"/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
       </context>
       <context name="StringDiffNewComment" attribute="StringDiffNewComment" lineEndContext="#pop">
         <Detect2Chars char="+" char1="}" attribute="StringDiffNewWrapComment" context="#pop"/>
@@ -220,3 +221,4 @@
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 <!-- Replicated from "markdown.xml": -->
 <!ENTITY rulerregex "\s*(?:(?:\*\s*){3,}|(?:_\s*){3,}|(?:\-\s*){3,})\s*$">
@@ -23,8 +23,8 @@
 section="Markup"
 extensions="*.rmd;*.Rmd;*.RMD"
 mimetype="text/x-r-markdown"
-version="7"
-kateversion="5.53"
+version="11"
+kateversion="6.22"
 casesensitive="true"
 author="Dirk Sarpe (dsarpe@posteo.de)"
 license="GPL">
@@ -32,7 +32,7 @@ license="GPL">
   <highlighting>
     <contexts>
 
-      <context name="Start Document" attribute="Markdown" lineEndContext="Normal Text" lineEmptyContext="Normal Text" fallthrough="true" fallthroughContext="Normal Text">
+      <context name="Start Document" attribute="Markdown" lineEndContext="Normal Text" lineEmptyContext="Normal Text" fallthroughContext="Normal Text">
         <RegExpr String="^---$" column="0" attribute="Markdown" context="YAMLhead" beginRegion="YAMLhead block"/>
       </context>
 
@@ -41,7 +41,7 @@ license="GPL">
         <IncludeRules context="Overwrite Markdown Normal Text"/>
         <IncludeRules context="Normal Text##Markdown" includeAttrib="true"/>
       </context>
-      <context name="find-code-block" attribute="Markdown" lineEndContext="#stay" lineEmptyContext="#stay" fallthrough="true" fallthroughContext="#pop">
+      <context name="find-code-block" attribute="Markdown" lineEndContext="#stay" lineEmptyContext="#stay" fallthroughContext="#pop">
         <IncludeRules context="find-code-block##Markdown" includeAttrib="true"/>
       </context>
 
@@ -82,7 +82,7 @@ license="GPL">
       </context>
 
       <context name="YAMLhead" attribute="Document Headers"
-               lineEndContext="#stay">
+               lineEndContext="#stay" fallthroughContext="Lvl0Text##YAML">
         <RegExpr String="^---$" column="0" attribute="Markdown" context="#pop"
                  endRegion="YAMLhead block"/>
         <IncludeRules context="##YAML" includeAttrib="true"/>
@@ -95,40 +95,40 @@ license="GPL">
         <!-- Blockquotes -->
         <DetectChar attribute="Blockquote" context="blockquote" char="&gt;" firstNonSpace="true"/>
         <!-- Lists: avoid highlighting code blocks incorrectly, capturing indentation -->
-        <RegExpr attribute="List" context="list" String="(\s*)&listbullet;(\s+)" column="0"/>
-        <RegExpr attribute="Number List" context="numlist" String="(\s*)\d\.(\s+)" column="0"/>
-        <RegExpr attribute="Number List" context="numlist2" String="(\s*)\d\d+\.(\s+)" column="0"/>
+        <RegExpr attribute="List" context="list" String="^(\s*)&listbullet;(\s+)" column="0"/>
+        <RegExpr attribute="Number List" context="numlist" String="^(\s*)\d\.(\s+)" column="0"/>
+        <RegExpr attribute="Number List" context="numlist2" String="^(\s*)\d\d+\.(\s+)" column="0"/>
       </context>
 
-      <context name="list" attribute="Markdown" lineEndContext="#stay" fallthrough="true" fallthroughContext="content-list">
+      <context name="list" attribute="Markdown" lineEndContext="#stay" fallthroughContext="content-list">
         <!-- Find indented code blocks, blockquotes and horizontal rules -->
-        <RegExpr attribute="List: Code" String="%1%2\s&indentedcodeblock;" column="0" dynamic="true"/>
-        <RegExpr attribute="Blockquote" context="blockquote-list" String="%1%2\s+&gt;" column="0" dynamic="true"/>
-        <RegExpr attribute="List: Horizontal Rule" String="%1%2\s+&rulerregex;" column="0" dynamic="true"/>
+        <RegExpr attribute="List: Code" String="^%1%2\s&indentedcodeblock;" column="0" dynamic="true"/>
+        <RegExpr attribute="Blockquote" context="blockquote-list" String="^%1%2\s+&gt;" column="0" dynamic="true"/>
+        <RegExpr attribute="List: Horizontal Rule" String="^%1%2\s+&rulerregex;" column="0" dynamic="true"/>
         <RegExpr String="&emptyline;" column="0"/>
         <!-- Text with the same indentation captured corresponds to the item list -->
-        <RegExpr context="content-list" String="%1%2\s" column="0" lookAhead="true" dynamic="true"/>
+        <RegExpr context="content-list" String="^%1%2\s" column="0" lookAhead="true" dynamic="true"/>
         <!-- Finish when the text has a lower indentation than the list -->
         <RegExpr context="#pop" String="^\s*\S" column="0" lookAhead="true"/>
         <!-- Highlight checkbox at the start of the item (task list) -->
         <RegExpr attribute="List: Checkbox" context="content-list" String="\s*&checkbox;"/>
       </context>
       <!-- 1. numlist (one digit) -->
-      <context name="numlist" attribute="Markdown" lineEndContext="#stay" fallthrough="true" fallthroughContext="content-list">
-        <RegExpr attribute="List: Code" String="%1%2\s{2}&indentedcodeblock;" column="0" dynamic="true"/>
-        <RegExpr attribute="Blockquote" context="blockquote-list" String="%1%2\s{2,}&gt;" column="0" dynamic="true"/>
-        <RegExpr attribute="List: Horizontal Rule" String="%1%2\s{2,}&rulerregex;" column="0" dynamic="true"/>
+      <context name="numlist" attribute="Markdown" lineEndContext="#stay" fallthroughContext="content-list">
+        <RegExpr attribute="List: Code" String="^%1%2\s{2}&indentedcodeblock;" column="0" dynamic="true"/>
+        <RegExpr attribute="Blockquote" context="blockquote-list" String="^%1%2\s{2,}&gt;" column="0" dynamic="true"/>
+        <RegExpr attribute="List: Horizontal Rule" String="^%1%2\s{2,}&rulerregex;" column="0" dynamic="true"/>
         <RegExpr String="&emptyline;" column="0"/>
-        <RegExpr context="content-list" String="%1%2\s{2}" column="0" lookAhead="true" dynamic="true"/>
+        <RegExpr context="content-list" String="^%1%2\s{2}" column="0" lookAhead="true" dynamic="true"/>
         <RegExpr context="#pop" String="^\s*\S" column="0" lookAhead="true"/>
       </context>
       <!-- 10. numlist (two or more digits) -->
-      <context name="numlist2" attribute="Markdown" lineEndContext="#stay" fallthrough="true" fallthroughContext="content-list">
-        <RegExpr attribute="List: Code" String="%1%2\s{3}&indentedcodeblock;" column="0" dynamic="true"/>
-        <RegExpr attribute="Blockquote" context="blockquote-list" String="%1%2\s{3,}&gt;" column="0" dynamic="true"/>
-        <RegExpr attribute="List: Horizontal Rule" String="%1%2\s{3,}&rulerregex;" column="0" dynamic="true"/>
+      <context name="numlist2" attribute="Markdown" lineEndContext="#stay" fallthroughContext="content-list">
+        <RegExpr attribute="List: Code" String="^%1%2\s{3}&indentedcodeblock;" column="0" dynamic="true"/>
+        <RegExpr attribute="Blockquote" context="blockquote-list" String="^%1%2\s{3,}&gt;" column="0" dynamic="true"/>
+        <RegExpr attribute="List: Horizontal Rule" String="^%1%2\s{3,}&rulerregex;" column="0" dynamic="true"/>
         <RegExpr String="&emptyline;" column="0"/>
-        <RegExpr context="content-list" String="%1%2\s{3}" column="0" lookAhead="true" dynamic="true"/>
+        <RegExpr context="content-list" String="^%1%2\s{3}" column="0" lookAhead="true" dynamic="true"/>
         <RegExpr context="#pop" String="^\s*\S" column="0" lookAhead="true"/>
       </context>
 

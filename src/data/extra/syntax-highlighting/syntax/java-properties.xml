@@ -1,0 +1,42 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="Java Properties" version="6" kateversion="5.0" section="Other" extensions="*.properties" author="Matthias Böhm (MatthiasBoehm87 _at_ gmail.com)" license="MIT">
+  <highlighting>
+    <contexts>
+      <context name="key" attribute="Key" lineEndContext="#stay">
+          <LineContinue char="=" attribute="Separator" column="0"/>
+          <LineContinue char=":" attribute="Separator" column="0"/>
+          <AnyChar String="=:" attribute="Separator" context="value" column="0"/>
+          <AnyChar String="#!" attribute="Comment" context="comment" firstNonSpace="true"/>
+          <RegExpr String="(?:[^=:\s\\]|\\.)*\s*(?==|:)" attribute="Key" context="separator"/>
+          <RegExpr String="(?:[^=:\s\\]|\\.)+\s+(?=\S)" attribute="Key" context="value"/>
+      </context>
+      <context name="separator" attribute="Key" lineEndContext="#pop" >
+          <LineContinue char="=" attribute="Separator" context="#pop" />
+          <LineContinue char=":" attribute="Separator" context="#pop" />
+          <AnyChar String="=:" attribute="Separator" context="#pop!value"/>
+      </context>
+      <context name="value" attribute="Value" lineEndContext="#stay">
+          <RegExpr String="(?:[^\\]|\\.)*$" attribute="Value" context="#pop!continueWithKey"/>
+          <RegExpr String="(?:[^\\]|\\.)*\\$" attribute="Value" context="#pop!continueWithValue"/>
+      </context>
+      <context name="continueWithKey" attribute="Key" lineEndContext="#pop" />
+      <context name="continueWithValue" attribute="Value" lineEndContext="#pop!value" />
+      <context name="comment" attribute="Comment" lineEndContext="#pop">
+          <DetectSpaces />
+          <IncludeRules context="##Comments" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Key" spellChecking="false" defStyleNum="dsOthers"/>
+      <itemData name="Value" spellChecking="false" defStyleNum="dsString"/>
+      <itemData name="Comment" spellChecking="true" defStyleNum="dsComment"/>
+      <itemData name="Separator" spellChecking="false" defStyleNum="dsVariable"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+  </general>
+</language>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="R documentation" version="2" section="Markup" kateversion="5.0"
+<!DOCTYPE language>
+<language name="R documentation" version="4" section="Markup" kateversion="5.0"
           extensions="*.Rd" author="Aaron Puchert" license="MIT" >
 <highlighting>
     <list name="PreprocessorOptions">
@@ -354,7 +354,8 @@
         </context>
 
         <context name="Comment" attribute="Comment" lineEndContext="#pop">
-            <IncludeRules context="##Alerts"/>
+            <DetectSpaces />
+            <IncludeRules context="##Comments"/>
         </context>
 
         <context name="PreprocessorCondition" attribute="Preprocessor" lineEndContext="#pop">
@@ -386,3 +387,4 @@
     </comments>
 </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

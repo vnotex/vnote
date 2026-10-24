@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
 <!-- Changelog:
 
@@ -13,7 +13,7 @@ v1.0:
 -->
 
 <language name="Apache Configuration" section="Configuration"
-          version="3" kateversion="5.0"
+          version="6" kateversion="5.0"
           extensions="httpd.conf;httpd2.conf;apache.conf;apache2.conf;.htaccess*;.htpasswd*"
           mimetype=""
           author="Jan Janssen (medhefgo@googlemail.com)" license="LGPL">
@@ -426,7 +426,6 @@ v1.0:
 <item>None</item>
 <item>AuthConfig</item>
 <item>FileInfo</item>
-<item>Indexes</item>
 <item>Limit</item>
 <item>Options</item>
 
@@ -488,7 +487,6 @@ v1.0:
 <item>Descending</item>
 <item>Name</item>
 <item>Date</item>
-<item>Size</item>
 <item>Description</item>
 <item>SSL</item>
 <item>TLS</item>
@@ -496,7 +494,6 @@ v1.0:
 <item>emerg</item>
 <item>alert</item>
 <item>crit</item>
-<item>error</item>
 <item>warn</item>
 <item>notice</item>
 <item>info</item>
@@ -527,12 +524,8 @@ v1.0:
 <item>Prod</item>
 <item>ProductOnly</item>
 <item>OS</item>
-<item>Full</item>
 <item>optional</item>
-<item>posixsem</item>
-<item>sysvsem</item>
 <item>sem</item>
-<item>pthread</item>
 <item>fcntl:</item>
 <item>flock:</item>
 <item>file:</item>
@@ -576,15 +569,14 @@ v1.0:
 
  <context name="Alternative Directives" attribute="Other" lineEndContext="#pop">
   <keyword attribute="Alternates" context="#stay" String="Alternates" />
-  <DetectChar attribute="Alternates" context="#stay" char="-" />
-  <DetectChar attribute="Alternates" context="#stay" char="+" />
+  <AnyChar attribute="Alternates" context="#stay" String="-+" />
   <IncludeRules context="Comment Alert" />
  </context>
 
 <!--	Other -->
  <context name="Comment" attribute="Comment" lineEndContext="#pop">
   <DetectSpaces />
-  <IncludeRules context="##Alerts" />
+  <IncludeRules context="##Comments" />
   <DetectIdentifier />
  </context>
 
@@ -631,3 +623,4 @@ v1.0:
 </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 1; indent-width 1; -->

@@ -1,17 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="MAB-DB" version="2" kateversion="2.4" extensions="*.mab;*.MAB;*.Mab" section="Markup" mimetype="text/x-mab" casesensitive="0">
+<!DOCTYPE language>
+<language name="MAB-DB" version="5" kateversion="5.0" extensions="*.mab;*.MAB;*.Mab" section="Markup" mimetype="text/x-mab" casesensitive="0">
   <highlighting>
     <contexts>
       <context attribute="Normal Text" name="Section" lineEndContext="#stay" >
-        <RegExpr String="\*I [a-zA-Z0-9]* " attribute="Mab I Field"  context="#stay" column="0"/>
-        <RegExpr String="\*\*\*\**E.*" attribute="Header Piece" context="#stay" column="0"/>
-        <RegExpr String="\*\*\*\**M.*" attribute="Header Medium" context="#stay" column="0"/>
-        <RegExpr String="\*\*\*\* BIBLIOTHECA.*" attribute="Database Header" context="#stay" column="0"/>
-        <RegExpr String="\*M [a-zA-Z0-9]* " attribute="Mab M Field" context="#stay" column="0"/>
-        <RegExpr String="\*X TYP .*" attribute="Mab Comment Description" context="#stay" column="0"/>
-        <RegExpr String="\*X DESC .*" attribute="Mab Comment Type" context="#stay" column="0"/>
-        <RegExpr String="\*X .*" attribute="Comment" context="#stay" column="0"/>
+        <RegExpr String="^\*I [a-zA-Z0-9]* " attribute="Mab I Field"  context="#stay" column="0"/>
+        <RegExpr String="^\*\*\*\**E" attribute="Header Piece" context="Header Piece" column="0"/>
+        <RegExpr String="^\*\*\*\**M" attribute="Header Medium" context="Header Medium" column="0"/>
+        <StringDetect String="**** BIBLIOTHECA" attribute="Database Header" context="Database Header" column="0"/>
+        <RegExpr String="^\*M [a-zA-Z0-9]* " attribute="Mab M Field" context="#stay" column="0"/>
+        <StringDetect String="*X TYP " attribute="Mab Comment Description" context="Mab Comment Description" column="0"/>
+        <StringDetect String="*X DESC " attribute="Mab Comment Type" context="Mab Comment Type" column="0"/>
+        <StringDetect String="*X " attribute="Comment" context="Comment" column="0"/>
+      </context>
+      <context attribute="Header Piece" name="Header Piece" lineEndContext="#pop" />
+      <context attribute="Header Medium" name="Header Medium" lineEndContext="#pop" />
+      <context attribute="Database Header" name="Database Header" lineEndContext="#pop" />
+      <context attribute="Mab Comment Description" name="Mab Comment Description" lineEndContext="#pop" />
+      <context attribute="Mab Comment Type" name="Mab Comment Type" lineEndContext="#pop" />
+      <context attribute="Comment" name="Comment" lineEndContext="#pop" >
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
 
@@ -27,4 +36,10 @@
       <itemData name="Comment"  	defStyleNum="dsComment" color="#999999" selColor="#ffffff" italic="1" bold="1" />
     </itemDatas>
   </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="*X "/>
+    </comments>
+  </general>
 </language>
+<!-- kate: replace-tabs on; indent-width 2; -->

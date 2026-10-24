@@ -1,0 +1,497 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language
+  name="Twig/Twig" section="Markup" version="1" kateversion="5.79" extensions="*.twig"
+  author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT"
+  mimetype="text/x-twig" priority="-1"
+>
+
+  <!-- https://twig.symfony.com/doc/3.x/ -->
+
+  <highlighting>
+    <list name="operators">
+      <item>and</item>
+      <item>or</item>
+      <item>not</item>
+      <item>b-and</item>
+      <item>b-xor</item>
+      <item>b-or</item>
+      <item>starts with</item>
+      <item>ends with</item>
+      <item>matches</item>
+      <item>has every</item>
+      <item>has some</item>
+      <item>in</item>
+      <item>is</item>
+    </list>
+
+    <list name="control flow">
+      <item>for</item>
+      <item>endfor</item>
+      <item>if</item>
+      <item>elseif</item>
+      <item>else</item>
+      <item>endif</item>
+    </list>
+
+    <list name="variables">
+      <item>_self</item>
+      <item>_context</item>
+      <item>_charset</item>
+      <item>loop</item>
+    </list>
+
+    <list name="special values">
+      <item>true</item>
+      <item>false</item>
+      <item>null</item>
+      <item>none</item>
+    </list>
+
+    <list name="filters">
+      <item>e</item>
+      <item>abs</item>
+      <item>batch</item>
+      <item>capitalize</item>
+      <item>column</item>
+      <item>convert_encoding</item>
+      <item>country_name</item>
+      <item>currency_name</item>
+      <item>currency_symbol</item>
+      <item>data_uri</item>
+      <item>date</item>
+      <item>date_modify</item>
+      <item>default</item>
+      <item>escape</item>
+      <item>filter</item>
+      <item>first</item>
+      <item>format</item>
+      <item>format_decimal_number</item>
+      <item>format_currency_number</item>
+      <item>format_percent_number</item>
+      <item>format_scientific_number</item>
+      <item>format_spellout_number</item>
+      <item>format_ordinal_number</item>
+      <item>format_duration_number</item>
+      <item>format_currency</item>
+      <item>format_date</item>
+      <item>format_datetime</item>
+      <item>format_number</item>
+      <item>format_time</item>
+      <item>html_to_markdown</item>
+      <item>inline_css</item>
+      <item>inky_to_html</item>
+      <item>join</item>
+      <item>json_encode</item>
+      <item>keys</item>
+      <item>language_name</item>
+      <item>last</item>
+      <item>length</item>
+      <item>locale_name</item>
+      <item>lower</item>
+      <item>map</item>
+      <item>markdown_to_html</item>
+      <item>merge</item>
+      <item>nl2br</item>
+      <item>number_format</item>
+      <item>raw</item>
+      <item>reduce</item>
+      <item>replace</item>
+      <item>reverse</item>
+      <item>round</item>
+      <item>slice</item>
+      <item>slug</item>
+      <item>sort</item>
+      <item>spaceless</item>
+      <item>split</item>
+      <item>striptags</item>
+      <item>timezone_name</item>
+      <item>title</item>
+      <item>trim</item>
+      <item>u</item>
+      <item>upper</item>
+      <item>url_encode</item>
+      <!-- symfony -->
+      <item>abbr_class</item>
+      <item>abbr_method</item>
+      <item>file_excerpt</item>
+      <item>file_link</item>
+      <item>file_relative</item>
+      <item>format_args</item>
+      <item>format_args_as_text</item>
+      <item>format_file</item>
+      <item>format_file_from_text</item>
+      <item>humanize</item>
+      <item>sanitize_html</item>
+      <item>serialize</item>
+      <item>trans</item>
+      <item>yaml_dump</item>
+      <item>yaml_encode</item>
+    </list>
+
+    <list name="tags">
+      <item>apply</item>
+      <item>autoescape</item>
+      <item>endautoescape</item>
+      <item>block</item>
+      <item>endblock</item>
+      <item>cache</item>
+      <item>endcache</item>
+      <item>deprecated</item>
+      <item>do</item>
+      <item>embed</item>
+      <item>endembed</item>
+      <item>extends</item>
+      <item>flush</item>
+      <item>from</item>
+      <item>import</item>
+      <item>include</item>
+      <item>macro</item>
+      <item>endmacro</item>
+      <item>sandbox</item>
+      <item>endsandbox</item>
+      <item>set</item>
+      <item>endset</item>
+      <item>use</item>
+      <item>verbatim</item>
+      <item>with</item>
+      <item>endwith</item>
+      <!-- symfony -->
+      <item>form_theme</item>
+      <item>stopwatch</item>
+      <item>trans</item>
+      <item>trans_default_domain</item>
+      <!-- option of include -->
+      <item>ignore missing</item>
+    </list>
+
+    <list name="functions">
+      <item>attribute</item>
+      <item>block</item>
+      <item>constant</item>
+      <item>country_names</item>
+      <item>country_timezones</item>
+      <item>currency_names</item>
+      <item>cycle</item>
+      <item>date</item>
+      <item>dump</item>
+      <item>html_classes</item>
+      <item>include</item>
+      <item>language_names</item>
+      <item>locale_names</item>
+      <item>max</item>
+      <item>min</item>
+      <item>parent</item>
+      <item>random</item>
+      <item>range</item>
+      <item>script_names</item>
+      <item>source</item>
+      <item>template_from_string</item>
+      <item>timezone_names</item>
+      <!-- symfony -->
+      <item>absolute_url</item>
+      <item>asset</item>
+      <item>asset_version</item>
+      <item>controller</item>
+      <item>csrf_token</item>
+      <item>expression</item>
+      <item>form</item>
+      <item>form_end</item>
+      <item>form_errors</item>
+      <item>form_help</item>
+      <item>form_label</item>
+      <item>form_parent</item>
+      <item>form_rest</item>
+      <item>form_row</item>
+      <item>form_start</item>
+      <item>form_widget</item>
+      <item>fragment_uri</item>
+      <item>impersonation_exit_path</item>
+      <item>impersonation_exit_url</item>
+      <item>importmap</item>
+      <item>is_granted</item>
+      <item>logout_path</item>
+      <item>logout_url</item>
+      <item>path</item>
+      <item>relative_path</item>
+      <item>render</item>
+      <item>render_esi</item>
+      <item>t</item>
+      <item>url</item>
+    </list>
+
+    <list name="tests">
+      <item>constant</item>
+      <item>defined</item>
+      <item>divisible by</item>
+      <item>empty</item>
+      <item>even</item>
+      <item>iterable</item>
+      <item>odd</item>
+      <item>same as</item>
+      <!-- symfony -->
+      <item>rootform</item>
+      <item>selectedchoice</item>
+    </list>
+
+    <list name="named arguments">
+      <!-- filter / function -->
+      <item>allowable_tags</item>
+      <item>locale</item>
+      <item>to</item>
+      <item>from</item>
+      <item>size</item>
+      <item>fill</item>
+      <item>preserve_keys</item>
+      <item>attrs</item>
+      <item>style</item>
+      <item>dateFormat</item>
+      <item>timeFormat</item>
+      <item>pattern</item>
+      <item>timezone</item>
+      <item>calendar</item>
+      <item>currency</item>
+      <item>array</item>
+      <item>arrow</item>
+      <item>strategy</item>
+      <item>charset</item>
+      <item>default</item>
+      <item>modifier</item>
+      <item>format</item>
+      <item>mime</item>
+      <item>parameters</item>
+      <item>name</item>
+      <item>glue</item>
+      <item>and</item>
+      <item>options</item>
+      <item>decimal</item>
+      <item>decimal_point</item>
+      <item>thousand_sep</item>
+      <item>initial</item>
+      <item>character_mask</item>
+      <item>side</item>
+      <item>separator</item>
+      <item>start</item>
+      <item>length</item>
+      <item>precision</item>
+      <item>method</item>
+      <item>delimiter</item>
+      <item>limit</item>
+      <!-- function -->
+      <item>values</item>
+      <item>position</item>
+      <item>template</item>
+      <item>variables</item>
+      <item>with_context</item>
+      <item>sandboxed</item>
+      <item>max</item>
+      <item>low</item>
+      <item>high</item>
+      <item>step</item>
+      <item>ignore_missing</item>
+      <item>context</item>
+      <item>date</item>
+    </list>
+
+    <contexts>
+
+      <context name="Start" attribute="Normal">
+        <StringDetect String="{%" attribute="Twig Context" context="statement"/>
+        <StringDetect String="{{" attribute="Twig Context" context="expression"/>
+        <StringDetect String="{#" attribute="Comment" context="Comment"/>
+      </context>
+
+      <context name="statement" attribute="Normal" fallthroughContext="statement_expr">
+        <DetectSpaces attribute="Normal"/>
+        <StringDetect String="%}" attribute="Twig Context" context="#pop"/>
+        <WordDetect String="if" attribute="Control Flow" context="statement_expr" beginRegion="if"/>
+        <WordDetect String="endif" attribute="Control Flow" context="statement_expr" endRegion="if"/>
+        <WordDetect String="for" attribute="Control Flow" context="statement_expr" beginRegion="for"/>
+        <WordDetect String="endfor" attribute="Control Flow" context="statement_expr" endRegion="for"/>
+        <keyword String="control flow" attribute="Control Flow" context="statement_expr"/>
+        <WordDetect String="apply" attribute="Tag" context="apply_expr"/>
+        <WordDetect String="from" attribute="Tag" context="from_expr"/>
+        <WordDetect String="include" attribute="Tag" context="include_expr"/>
+        <WordDetect String="embed" attribute="Tag" context="include_expr"/>
+        <WordDetect String="import" attribute="Tag" context="import_expr"/>
+        <WordDetect String="use" attribute="Tag" context="import_expr"/>
+        <WordDetect String="verbatim" attribute="Tag" context="verbatim_expr"/>
+        <WordDetect String="with" attribute="Tag" context="with_expr"/>
+        <DetectIdentifier attribute="Tag" context="statement_expr"/>
+      </context>
+      <context name="statement_expr1" attribute="Normal">
+        <DetectSpaces attribute="Normal"/>
+        <StringDetect String="%}" attribute="Twig Context" context="#pop#pop"/>
+      </context>
+      <context name="statement_expr2" attribute="Normal">
+        <IncludeRules context="value"/>
+        <DetectIdentifier attribute="Normal"/>
+      </context>
+      <context name="statement_expr" attribute="Normal">
+        <IncludeRules context="statement_expr1"/>
+        <IncludeRules context="statement_expr2"/>
+      </context>
+
+      <context name="apply_expr" attribute="Normal" fallthroughContext="#pop!statement_expr">
+        <IncludeRules context="statement_expr1"/>
+        <DetectIdentifier attribute="Filter" context="#pop!statement_expr"/>
+      </context>
+      <context name="from_expr" attribute="Normal">
+        <IncludeRules context="statement_expr1"/>
+        <WordDetect String="import" attribute="Tag"/>
+        <IncludeRules context="statement_expr2"/>
+      </context>
+      <context name="include_expr" attribute="Normal">
+        <IncludeRules context="statement_expr1"/>
+        <WordDetect String="only" attribute="Keyword Operator"/>
+        <WordDetect String="with" attribute="Keyword Operator"/>
+        <RegExpr String="\bignore\s+missing\b" attribute="Tag"/>
+        <IncludeRules context="statement_expr2"/>
+      </context>
+      <context name="import_expr" attribute="Normal">
+        <IncludeRules context="statement_expr1"/>
+        <WordDetect String="as" attribute="Keyword Operator"/>
+        <IncludeRules context="statement_expr2"/>
+      </context>
+      <context name="with_expr" attribute="Normal">
+        <IncludeRules context="statement_expr1"/>
+        <WordDetect String="only" attribute="Keyword Operator"/>
+        <IncludeRules context="statement_expr2"/>
+      </context>
+      <context name="verbatim_expr" attribute="Normal">
+        <DetectSpaces attribute="Normal"/>
+        <StringDetect String="%}" attribute="Twig Context" context="#pop#pop!verbatim_block"/>
+        <IncludeRules context="statement_expr2"/>
+      </context>
+      <context name="verbatim_block" attribute="Verbatim">
+        <RegExpr String="{%\s+endverbatim\b" lookAhead="1" context="#pop"/>
+      </context>
+
+      <context name="expression" attribute="Normal">
+        <DetectSpaces attribute="Normal"/>
+        <StringDetect String="}}" attribute="Twig Context" context="#pop"/>
+        <IncludeRules context="value"/>
+        <DetectIdentifier attribute="Normal"/>
+      </context>
+
+      <context name="Comment" attribute="Comment">
+        <DetectSpaces attribute="Comment"/>
+        <StringDetect String="#}" attribute="Comment" context="#pop"/>
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier attribute="Comment"/>
+      </context>
+
+      <context name="value" attribute="Normal">
+        <AnyChar String=")[]" attribute="Symbol"/>
+        <StringDetect String="(" context="parameters" attribute="Symbol"/>
+        <StringDetect String="|" attribute="Filter Operator" context="filter"/>
+        <StringDetect String=".." attribute="Operator"/>
+        <StringDetect String="." context="prop" attribute="Dot Operator"/>
+        <StringDetect String="'" context="sq_string" attribute="String"/>
+        <StringDetect String="&quot;" context="dq_string" attribute="String"/>
+        <StringDetect String="=>" attribute="Arrow Operator"/>
+        <StringDetect String="{" context="hash" attribute="Symbol"/>
+        <!-- implies <=> -->
+        <StringDetect String="&lt;=" attribute="Operator"/>
+        <AnyChar String="+-/%*~!=&lt;>?:" attribute="Operator"/>
+        <Float attribute="Float"/>
+        <Int attribute="Integer"/>
+        <keyword String="functions" attribute="Function"/>
+        <keyword String="operators" attribute="Keyword Operator" weakDeliminator="-"/>
+        <keyword String="tests" attribute="Test"/>
+        <keyword String="special values" attribute="Special Value"/>
+        <keyword String="variables" attribute="Predefined Variable"/>
+        <!-- keyword with spaces -->
+        <RegExpr String="\b((starts|ends)\s+with|has\s+(every|some))\b" attribute="Keyword Operator"/>
+        <!-- keyword with spaces -->
+        <RegExpr String="\b(divisible\s+by|same\s+as)\b" attribute="Test"/>
+        <RegExpr String="\b\w+(?=\()" attribute="Function"/>
+      </context>
+
+      <context name="filter" attribute="Normal" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal"/>
+        <DetectIdentifier attribute="Filter" context="#pop"/>
+      </context>
+
+      <context name="prop" attribute="Normal" fallthroughContext="#pop">
+        <RegExpr String="\b\w+(?=\()" attribute="Function" context="#pop"/>
+        <DetectIdentifier attribute="Property" context="#pop"/>
+        <DetectSpaces attribute="Normal"/>
+      </context>
+
+      <context name="hash" attribute="Normal">
+        <DetectSpaces attribute="Normal"/>
+        <StringDetect String="}" context="#pop" attribute="Symbol"/>
+        <IncludeRules context="value"/>
+        <DetectIdentifier attribute="Normal"/>
+      </context>
+
+      <context name="parameters" attribute="Normal">
+        <DetectSpaces attribute="Normal"/>
+        <StringDetect String=")" context="#pop" attribute="Symbol"/>
+        <StringDetect String="(" context="parameters" attribute="Symbol"/>
+        <IncludeRules context="value"/>
+        <RegExpr String="\b\w+\s*(?=\s*=)" attribute="Named Parameter"/>
+        <DetectIdentifier attribute="Normal"/>
+      </context>
+
+      <context name="common_string" attribute="String" lineEndContext="#pop">
+        <DetectSpaces attribute="String"/>
+        <DetectIdentifier attribute="String"/>
+        <HlCStringChar attribute="String Char"/>
+      </context>
+
+      <context name="sq_string" attribute="String">
+        <StringDetect String="'" context="#pop" attribute="String"/>
+        <IncludeRules context="common_string"/>
+      </context>
+
+      <context name="dq_string" attribute="String">
+        <StringDetect String="&quot;" context="#pop" attribute="String"/>
+        <IncludeRules context="common_string"/>
+        <StringDetect String="#{" context="interpolation" attribute="String Char"/>
+        <StringDetect String="\#" attribute="String Char"/>
+      </context>
+
+      <context name="interpolation" attribute="Normal">
+        <DetectSpaces attribute="Normal"/>
+        <StringDetect String="}" context="#pop" attribute="String Char"/>
+        <IncludeRules context="value"/>
+        <DetectIdentifier attribute="Normal"/>
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Twig Context" defStyleNum="dsPreprocessor" spellChecking="0"/>
+      <itemData name="Normal" defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="0"/>
+      <itemData name="Filter" defStyleNum="dsFunction" spellChecking="0"/>
+      <itemData name="Operator" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Dot Operator" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Arrow Operator" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Filter Operator" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Keyword Operator" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="Tag" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="Test" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="Predefined Variable" defStyleNum="dsVariable" spellChecking="0"/>
+      <itemData name="Special Value" defStyleNum="dsConstant" spellChecking="0"/>
+      <itemData name="Property" defStyleNum="dsFunction" spellChecking="0"/>
+      <itemData name="Function" defStyleNum="dsFunction" spellChecking="0"/>
+      <itemData name="Named Parameter" defStyleNum="dsAttribute" spellChecking="0"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="String Char" defStyleNum="dsSpecialChar" spellChecking="0"/>
+      <itemData name="Verbatim" defStyleNum="dsVerbatimString" spellChecking="0"/>
+      <itemData name="Symbol" defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Integer" defStyleNum="dsDecVal" spellChecking="0"/>
+      <itemData name="Float" defStyleNum="dsFloat" spellChecking="0"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY identifier "[a-z][a-zA-Z0-9_]*[!?]?">
+]>
+<language author="Jade Pfeiffer (jade@pfeiffer.codes)"
+          extensions="*.eex"
+          indenter="none"
+          kateversion="5.79"
+          license="MIT"
+          mimetype="text/x-elixir+eex"
+          name="Elixir/EEx"
+          section="Scripts"
+          style="eex"
+          version="1">
+  <highlighting>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Text">
+        <!-- Search document using only 2 characters before matching -->
+        <Detect2Chars char="&lt;" char1="%" context="Tag" lookAhead="true"/>
+      </context>
+      <context attribute="Normal Text" name="Tag">
+        <!-- Comments: they are discarded from source -->
+        <StringDetect String="&lt;%!--" attribute="Comment" context="#pop!Comment" beginRegion="comment" />
+        <!-- EEx Quotation: returns the contents inside the tag as is -->
+        <StringDetect String="&lt;%%" attribute="Quotation" context="#pop!Quotation" />
+        <!-- Elixir expression: executes code and prints result -->
+        <StringDetect String="&lt;%=" attribute="Tag" context="#pop!Expression" />
+        <!-- Additional tags that are supported but don't have special meaning by default -->
+        <StringDetect String="&lt;%|" attribute="Tag" context="#pop!Expression" />
+        <StringDetect String="&lt;%/" attribute="Tag" context="#pop!Expression" />
+        <!-- Elixir Expression: executes code but discards output -->
+        <Detect2Chars char="&lt;" char1="%" attribute="Tag" context="#pop!Expression" />
+      </context>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Expression">
+        <Detect2Chars char="%" char1="&gt;" attribute="Tag" context="#pop"/>
+        <RegExpr String="@&identifier;" attribute="Assigns" context="#stay" />
+        <IncludeRules context="Normal##Elixir" />
+      </context>
+      <context attribute="Quotation" lineEndContext="#stay" name="Quotation">
+        <Detect2Chars char="%" char1="&gt;" attribute="Quotation" context="#pop"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment">
+        <StringDetect String="--%&gt;" attribute="Comment" context="#pop" endRegion="comment" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData defStyleNum="dsNormal"         name="Normal Text" spellChecking="false"/>
+      <itemData defStyleNum="dsBuiltIn"        name="Tag"/>
+      <itemData defStyleNum="dsVerbatimString" name="Quotation"/>
+      <itemData defStyleNum="dsComment"        name="Comment"/>
+      <itemData defStyleNum="dsFunction"       name="Assigns"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine" start="&lt;%!--" end="--%&gt;" region="comment" />
+    </comments>
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

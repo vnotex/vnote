@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="SiSU" version="5" section="Markup" kateversion="2.4" extensions="*.sst;*.ssm;*.ssi;*._sst;*.-sst;" author="Ralph Amissah (ralph.amissah@gmail.com)" license="LGPL" >
+<!DOCTYPE language>
+<language name="SiSU" version="8" section="Markup" kateversion="5.0" extensions="*.sst;*.ssm;*.ssi;*._sst;*.-sst;" author="Ralph Amissah (ralph.amissah@gmail.com)" license="LGPL" >
   <highlighting>
     <list name="somename">
       <item>class</item>
@@ -10,8 +10,8 @@
     <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
       <keyword attribute="Keyword" context="#stay" String="somename" />
       <DetectChar attribute="String" context="string" char="&quot;" />
-      <RegExpr String="^(0~\S+|@\S+)\s.+$" attribute="Header" context="#pop" />
-      <RegExpr String="^:?[A-C1-6]~.+$" attribute="Heading" context="#pop" />
+      <RegExpr String="^(0~\S+|@\S+)\s.+$" attribute="Header" context="#pop" column="0" />
+      <RegExpr String="^:?[A-C1-6]~.+$" attribute="Heading" context="#pop" column="0" />
       <Detect2Chars char="~" char1="{" attribute="Endnote" context="footnote"/>
       <Detect2Chars char="^" char1="~" attribute="Endnote" context="endnote"/>
       <Detect2Chars char="!" char1="{" attribute="Bold" context="emphasis"/>
@@ -23,12 +23,15 @@
       <Detect2Chars char="-" char1="{" attribute="Strike" context="strike"/>
       <Detect2Chars char="+" char1="{" attribute="Insert" context="insert"/>
       <StringDetect String="&lt;br&gt;" attribute="Break" context="#pop" />
-      <RegExpr String="\{.+?\}(http:\/\/\S+|image)" attribute="Link" context="#stay"/>
-      <RegExpr String="(^|\s)http:\/\/\S+" attribute="Link" context="#stay"/>
-      <RegExpr String="^!_ .+" attribute="Bold" context="boldline"/>
-      <RegExpr String="^(_[12]|_\*|_[12]\*)\s" attribute="Indent" context="#stay"/>
+      <RegExpr String="\{.+?\}(http:\/\/\S+|image)|(^|\s)http:\/\/\S+" attribute="Link" context="#stay"/>
+      <RegExpr String="^!_ .+" attribute="Bold" context="boldline" column="0"/>
+      <RegExpr String="^(_[12]|_\*|_[12]\*)\s" attribute="Indent" context="#stay" column="0"/>
       <Detect2Chars char="~" char1="^" attribute="Endnote" context="#stay"/>
-      <RegExpr String="^%+\s.+$" attribute="Comment" context="#stay" endRegion="regionMarker" firstNonSpace="true" />
+      <RegExpr String="^%+(?=\s.)" attribute="Comment" context="comment" column="0" />
+    </context>
+    <context attribute="Comment" lineEndContext="#pop" name="comment" >
+      <DetectSpaces />
+      <IncludeRules context="##Comments" />
     </context>
     <context attribute="String" lineEndContext="#stay" name="string" >
       <DetectChar attribute="String" context="#pop" char="&quot;" />
@@ -152,3 +155,4 @@
     </comments>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

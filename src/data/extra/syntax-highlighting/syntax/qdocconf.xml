@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <language name="QDoc Configuration"
-          version="1"
+          version="3"
           kateversion="5.0"
           section="Configuration"
           extensions="*.qdocconf"
@@ -84,7 +84,7 @@
 
         <contexts>
             <context name="key-context" attribute="Normal Text" lineEndContext="#stay">
-                <DetectChar char="#" context="comment-context" column="0"/>
+                <DetectChar char="#" attribute="Comment" context="comment-context" column="0"/>
                 <keyword attribute="Keyword" String="key-names"/>
                 <keyword attribute="Function" String="function-names"/>
                 <DetectChar char="=" context="value-context"/>
@@ -112,7 +112,8 @@
             </context>
 
             <context name="comment-context" attribute="Comment" lineEndContext="#pop">
-                <IncludeRules context="##Alerts"/>
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
             </context>
         </contexts>
 
@@ -134,3 +135,4 @@
         <keywords casesensitive="1" weakDeliminator="-/"/>
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

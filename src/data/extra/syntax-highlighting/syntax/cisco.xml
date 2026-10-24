@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Cisco" version="5" kateversion="5.0" section="Configuration" extensions="*.cis" mimetype="text/cisco" author="Raphaël GRAPINET" license="LGPL">
+<!DOCTYPE language>
+<language name="Cisco" version="9" kateversion="5.0" section="Configuration" extensions="*.cis" mimetype="text/cisco" author="Raphaël GRAPINET" license="LGPL">
 	<highlighting>
 		<list name = "commands">
 			<item>aaa</item>
@@ -244,59 +244,63 @@
 			<item>wccp</item>
 		</list>
 		<contexts>
-                        <context name = "Base" attribute = "Normal Text" lineEndContext = "#stay">
-                                <WordDetect attribute="Keyword" context="#stay" String="done" insensitive="true" endRegion="dodone1"/>
-                                <WordDetect attribute="Keyword" context="#stay" String="do" insensitive="true" beginRegion="dodone1"/>
-                                <WordDetect attribute="Keyword" context="#stay" String="elif" insensitive="true" beginRegion="iffi1" endRegion="iffi1"/>
-                                <WordDetect attribute="Keyword" context="#stay" String="if" insensitive="true" beginRegion="iffi1"/>
-                                <WordDetect attribute="Keyword" context="#stay" String="fi" insensitive="true" endRegion="iffi1"/>
-                                <WordDetect attribute="Keyword" context="#stay" String="case" insensitive="true" beginRegion="case1"/>
-                                <WordDetect attribute="Keyword" context="#stay" String="esac" insensitive="true" endRegion="case1"/>
-                                <RegExpr attribute="Keyword" context="#stay" String="[^()]+\)" insensitive="true" beginRegion="subcase1" column="0"/>
-                                <Detect2Chars attribute="Keyword" context="#stay" char=";" char1=";" endRegion="subcase1"/>
-                                <DetectChar attribute="Keyword" context="#stay" char="{" beginRegion="func1"/>
-                                <DetectChar attribute="Keyword" context="#stay" char="}" endRegion="func1"/>
+			<context name = "Base" attribute = "Normal Text" lineEndContext = "#stay">
+				<WordDetect attribute="Keyword" context="#stay" String="done" insensitive="true" endRegion="dodone1"/>
+				<WordDetect attribute="Keyword" context="#stay" String="do" insensitive="true" beginRegion="dodone1"/>
+				<WordDetect attribute="Keyword" context="#stay" String="elif" insensitive="true" beginRegion="iffi1" endRegion="iffi1"/>
+				<WordDetect attribute="Keyword" context="#stay" String="if" insensitive="true" beginRegion="iffi1"/>
+				<WordDetect attribute="Keyword" context="#stay" String="fi" insensitive="true" endRegion="iffi1"/>
+				<WordDetect attribute="Keyword" context="#stay" String="case" insensitive="true" beginRegion="case1"/>
+				<WordDetect attribute="Keyword" context="#stay" String="esac" insensitive="true" endRegion="case1"/>
+				<RegExpr attribute="Keyword" context="#stay" String="^[^()]+\)" insensitive="true" beginRegion="subcase1" column="0"/>
+				<Detect2Chars attribute="Keyword" context="#stay" char=";" char1=";" endRegion="subcase1"/>
+				<DetectChar attribute="Keyword" context="#stay" char="{" beginRegion="func1"/>
+				<DetectChar attribute="Keyword" context="#stay" char="}" endRegion="func1"/>
 
-                                <keyword String = "commands" attribute = "Command" context = "#stay"/>
-                                <keyword String = "parameters" attribute = "Parameter" context = "#stay"/>
-                                <keyword String = "options" attribute = "Keyword" context = "#stay"/>
-                                <Int attribute = "Decimal" context = "#stay"/>
-                                <RegExpr String = "\$[A-Za-z0-9_?{}!]+" attribute = "Parameter" context = "#stay"/>
-                                <RangeDetect char = "&quot;" char1 = "&quot;" attribute = "String" context = "#stay"/>
-                                <AnyChar String = "|&lt;&gt;=;" attribute = "Operator" context = "#stay"/>
-                                <DetectChar char="'" attribute = "String" context = "Single Quote"/>
-                                <DetectChar char="`" attribute = "Substitution" context = "Substitution"/>
-                                <Detect2Chars attribute = "Normal Text" context = "#stay" char = "\" char1 = "#"/>
-                                <RegExpr String= "#.*$" attribute = "Comment" context="#stay"/>
+				<keyword String = "commands" attribute = "Command" context = "#stay"/>
+				<keyword String = "parameters" attribute = "Parameter" context = "#stay"/>
+				<keyword String = "options" attribute = "Keyword" context = "#stay"/>
+				<Int attribute = "Decimal" context = "#stay"/>
+				<RegExpr String = "\$[A-Za-z0-9_?{}!]+" attribute = "Parameter" context = "#stay"/>
+				<RangeDetect char = "&quot;" char1 = "&quot;" attribute = "String" context = "#stay"/>
+				<AnyChar String = "|&lt;&gt;=;" attribute = "Operator" context = "#stay"/>
+				<DetectChar char="'" attribute = "String" context = "Single Quote"/>
+				<DetectChar char="`" attribute = "Substitution" context = "Substitution"/>
+				<Detect2Chars attribute = "Normal Text" context = "#stay" char = "\" char1 = "#"/>
+				<AnyChar String="#!" attribute = "Comment" context="Comment"/>
 
-                        </context>
+			</context>
 			<context name = "Single Quote" attribute = "String" lineEndContext="#stay">
 				<Detect2Chars char = "\" char1 = "\" attribute = "String" context = "#stay"/>
 				<Detect2Chars char = "\" char1 = "'" attribute = "String" context = "#stay"/>
 				<DetectChar char = "'" attribute = "String" context = "#pop"/>
-                        </context>
-                        <context name = "Substitution" attribute = "Substitution" lineEndContext="#stay">
+			</context>
+			<context name = "Substitution" attribute = "Substitution" lineEndContext="#stay">
 				<Detect2Chars char = "\" char1 = "\" attribute = "String" context = "#stay"/>
 				<Detect2Chars char = "\" char1 = "`" attribute = "String" context = "#stay"/>
-                                <DetectChar char = "`" attribute = "Substitution" context = "#pop"/>
-                        </context>
-                </contexts>
-                <itemDatas>
-                        <itemData name = "Normal Text" defStyleNum = "dsNormal"/>
-                        <itemData name = "Keyword" defStyleNum = "dsKeyword"/>
-                        <itemData name = "Decimal" defStyleNum = "dsDecVal"/>
-                        <itemData name = "String" defStyleNum = "dsString"/>
-                        <itemData name = "Comment" defStyleNum = "dsComment"/>
-                        <itemData name = "Substitution" defStyleNum = "dsOthers"/>
-                        <itemData name = "Parameter" defStyleNum = "dsVariable"/>
-                        <itemData name = "Operator" defStyleNum = "dsOperator"/>
-                        <itemData name = "Command" defStyleNum = "dsNormal"/>
-                </itemDatas>
+				<DetectChar char = "`" attribute = "Substitution" context = "#pop"/>
+			</context>
+			<context name = "Comment" attribute = "Comment" lineEndContext="#pop">
+				<IncludeRules context="##Comments" />
+			</context>
+		</contexts>
+		<itemDatas>
+			<itemData name = "Normal Text" defStyleNum = "dsNormal"/>
+			<itemData name = "Keyword" defStyleNum = "dsKeyword"/>
+			<itemData name = "Decimal" defStyleNum = "dsDecVal"/>
+			<itemData name = "String" defStyleNum = "dsString"/>
+			<itemData name = "Comment" defStyleNum = "dsComment"/>
+			<itemData name = "Substitution" defStyleNum = "dsOthers"/>
+			<itemData name = "Parameter" defStyleNum = "dsVariable"/>
+			<itemData name = "Operator" defStyleNum = "dsOperator"/>
+			<itemData name = "Command" defStyleNum = "dsNormal"/>
+		</itemDatas>
 	</highlighting>
 	<general>
 		<comments>
 			<comment name="singleLine" start="!"/>
 		</comments>
 		<keywords casesensitive="0"/>
-		</general>
+	</general>
 </language>
+<!-- kate: replace-tabs off; -->

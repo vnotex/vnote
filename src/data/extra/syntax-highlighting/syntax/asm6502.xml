@@ -1,117 +1,243 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Asm6502" version="3" kateversion="5.0" section="Assembler" extensions="*.asm" mimetype="text/x-asm6502">
-        <highlighting>
+<!DOCTYPE language>
+<language name="Asm6502" version="7" kateversion="5.62" section="Assembler" extensions="*.asm" mimetype="text/x-asm6502">
+<highlighting>
 
-                <contexts>
-                        <context name = "Base" attribute = "Normal Text" lineEndContext = "#stay">
+	<list name="Directives">
+		<item>.align</item>
+		<item>.asc</item>
+		<item>.bss</item>
+		<item>.byt</item>
+		<item>.byte</item>
+		<item>.data</item>
+		<item>.db</item>
+		<item>.dsb</item>
+		<item>.dsw</item>
+		<item>.dw</item>
+		<item>.ende</item>
+		<item>.endm</item>
+		<item>.ends</item>
+		<item>.endst</item>
+		<item>.enum</item>
+		<item>.fopt</item>
+		<item>.incbin</item>
+		<item>.include</item>
+		<item>.macro</item>
+		<item>.memorymap</item>
+		<item>.org</item>
+		<item>.struct</item>
+		<item>.text</item>
+		<item>.word</item>
+		<item>.zero</item>
+		<item>db</item>
+		<item>dsb</item>
+		<item>dsw</item>
+		<item>dw</item>
+		<item>instanceof</item>
+	</list>
 
+	<list name="Branch Instructions">
+		<item>bcc</item>
+		<item>bcs</item>
+		<item>beq</item>
+		<item>bmi</item>
+		<item>bne</item>
+		<item>bpl</item>
+		<item>brk</item>
+		<item>bvc</item>
+		<item>bvs</item>
+		<item>jmp</item>
+		<item>jsr</item>
+		<item>rti</item>
+		<item>rts</item>
 
-				<RegExpr String= "#define.*$" attribute = "Preprocessor" context="#stay"/>
-				<RegExpr String= "#include .*$" attribute = "Preprocessor" context="#stay"/>
-				<RegExpr String= ";.*$" attribute = "Comment" context="#stay"/>
-				<RegExpr String= "\.byte" attribute = "Data Type" context="#stay"/>
-				<RegExpr String= "\.byt" attribute = "Data Type" context="#stay"/>
-				<RegExpr String= "\.word" attribute = "Data Type" context="#stay"/>
-				<RegExpr String= "\.asc" attribute = "Data Type" context="#stay"/>
-				<RegExpr String= "\.dsb" attribute = "Data Type" context="#stay"/>
-				<RegExpr String= "\.fopt" attribute = "Data Type" context="#stay"/>
-				<RegExpr String= "\.text" attribute = "Data Type" context="#stay"/>
-				<RegExpr String= "\.data" attribute = "Data Type" context="#stay"/>
-				<RegExpr String= "\.bss" attribute = "Data Type" context="#stay"/>
-				<RegExpr String= "\.zero" attribute = "Data Type" context="#stay"/>
-				<RegExpr String= "\.align" attribute = "Data Type" context="#stay"/>
-				<RegExpr String= "\$[A-Za-z0-9]*" attribute = "Hex" context="#stay"/>
-				<RegExpr String= ",x$" attribute = "Keyword" context="#stay"  insensitive="true"/>
-				<RegExpr String= ",y$" attribute = "Keyword" context="#stay"  insensitive="true"/>
-				<RegExpr String= "#" attribute = "Keyword" context="#stay"  insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="TAX" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="ADC" insensitive="true"/>
-	 			<StringDetect attribute="Keyword" context="#stay" String="AND" insensitive="true"/>
- 				<StringDetect attribute="Keyword" context="#stay" String="ASL" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="BCC" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="BCS" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="BEQ" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="BIT" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="BMI" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="BNE" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="BPL" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="BRK" insensitive="true"/>
- 				<StringDetect attribute="Keyword" context="#stay" String="BVC" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="BVS" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="CLC" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="CLD" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="CLI" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="CLV" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="CMP" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="CPX" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="CPY" insensitive="true"/>
- 				<StringDetect attribute="Keyword" context="#stay" String="DEC" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="DEX" insensitive="true"/>
-	  			<StringDetect attribute="Keyword" context="#stay" String="DEY" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="EOR" insensitive="true"/>
- 				<StringDetect attribute="Keyword" context="#stay" String="INC" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="INX" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="INY" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="JMP" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="JSR" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="LDA" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="LDX" insensitive="true"/>
- 				<StringDetect attribute="Keyword" context="#stay" String="LDY" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="LSR" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="NOP" insensitive="true"/>
-     				<StringDetect attribute="Keyword" context="#stay" String="ORA" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="PHA" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="PHP" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="PLA" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="PLP" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="ROL" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="ROR" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="RTI" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="RTS" insensitive="true"/>
-  				<StringDetect attribute="Keyword" context="#stay" String="SBC" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="SEC" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="SED" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="SEI" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="STA" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="STX" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="STY" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="TAY" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="TSX" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="TXA" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="TXS" insensitive="true"/>
-				<StringDetect attribute="Keyword" context="#stay" String="TYA" insensitive="true"/>
+		<!-- asm 65816 -->
+		<item>bra</item>
+		<item>brl</item>
+		<item>jml</item>
+		<item>jsl</item>
+		<item>rtl</item>
+		<item>cop</item>
+		<item>wai</item>
+	</list>
 
-				<RegExpr String= "\*=" attribute = "Decimal" context="#stay"/>
-				<RangeDetect char = "&quot;" char1 = "&quot;" attribute = "String" context = "#stay"/>
-				<AnyChar String = "-+&lt;&gt;=;" attribute = "Operator" context = "#stay"/>
-				<Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+	<list name="Instructions">
+		<item>adc</item>
+		<item>and</item>
+		<item>asl</item>
+		<item>bit</item>
+		<item>clc</item>
+		<item>cld</item>
+		<item>cli</item>
+		<item>clv</item>
+		<item>cmp</item>
+		<item>cpx</item>
+		<item>cpy</item>
+		<item>dec</item>
+		<item>dex</item>
+		<item>dey</item>
+		<item>eor</item>
+		<item>inc</item>
+		<item>inx</item>
+		<item>iny</item>
+		<item>lda</item>
+		<item>ldx</item>
+		<item>ldy</item>
+		<item>lsr</item>
+		<item>nop</item>
+		<item>ora</item>
+		<item>pha</item>
+		<item>php</item>
+		<item>pla</item>
+		<item>plp</item>
+		<item>rol</item>
+		<item>ror</item>
+		<item>sbc</item>
+		<item>sec</item>
+		<item>sed</item>
+		<item>sei</item>
+		<item>sta</item>
+		<item>stx</item>
+		<item>sty</item>
+		<item>tax</item>
+		<item>tay</item>
+		<item>tsx</item>
+		<item>txa</item>
+		<item>txs</item>
+		<item>tya</item>
 
+		<!-- asm 65816 -->
+		<item>bge</item>
+		<item>blt</item>
+		<item>dea</item>
+		<item>ina</item>
+		<item>lda.b</item>
+		<item>lda.w</item>
+		<item>ldx.b</item>
+		<item>ldx.w</item>
+		<item>ldy.b</item>
+		<item>ldy.w</item>
+		<item>mvn</item>
+		<item>pea</item>
+		<item>pei</item>
+		<item>phb</item>
+		<item>phd</item>
+		<item>phk</item>
+		<item>phx</item>
+		<item>phy</item>
+		<item>plb</item>
+		<item>pld</item>
+		<item>plx</item>
+		<item>ply</item>
+		<item>rep</item>
+		<item>sep</item>
+		<item>stz</item>
+		<item>tcd</item>
+		<item>txy</item>
+		<item>tyx</item>
+		<item>xba</item>
+		<item>xce</item>
+	</list>
 
-			</context>
-			<context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
-				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-			</context>
-                </contexts>
+	<contexts>
+		<context name="Base" attribute="Normal Text" lineEndContext="#stay">
+			<DetectSpaces attribute="Normal Text"/>
+			<DetectChar attribute="Comment" context="Comment" char=";"/>
 
-		<itemDatas>
-                        <itemData name = "Normal Text" defStyleNum = "dsNormal"/>
-                        <itemData name = "Keyword" defStyleNum = "dsKeyword"/>
-			<itemData name="Decimal" defStyleNum="dsDecVal"/>
-			<itemData name="Data Type"  defStyleNum="dsDataType"/>
-			<itemData name="Hex"  defStyleNum="dsBaseN"/>
-                        <itemData name = "String" defStyleNum = "dsString"/>
-                        <itemData name = "Comment" defStyleNum = "dsComment"/>
- 			<itemData name="Preprocessor"  defStyleNum="dsPreprocessor"/>
-                        <itemData name = "Operator" defStyleNum = "dsOperator"/>
-                </itemDatas>
-        </highlighting>
-        <general>
-                <comments>
-                        <comment name="singleLine" start=";"/>
-			<comment name="multiLine" start="/*" end="*/"/>
-		</comments>
-                <keywords casesensitive="1"/>
-        </general>
+			<RegExpr attribute="Label" context="AfterLabel" String="[a-zA-Z][a-zA-Z0-9._]*+:|[+-]+:"/>
+
+			<keyword attribute="Directive" context="Instruction" String="Directives" insensitive="1"/>
+			<keyword attribute="Instruction" context="Instruction" String="Instructions" insensitive="1"/>
+			<keyword attribute="Branch Instruction" context="Instruction" String="Branch Instructions" insensitive="1"/>
+			<DetectChar attribute="Directive" context="Directive" char="."/>
+			<DetectIdentifier attribute="Unknown Instruction" context="Instruction"/>
+		</context>
+
+		<context name="AfterLabel" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop!Instruction">
+			<DetectSpaces attribute="Normal Text"/>
+			<DetectChar attribute="Comment" context="#pop!Comment" char=";"/>
+
+			<keyword attribute="Directive" context="#pop!Instruction" String="Directives" insensitive="1"/>
+			<keyword attribute="Instruction" context="#pop!Instruction" String="Instructions" insensitive="1"/>
+			<keyword attribute="Branch Instruction" context="#pop!Instruction" String="Branch Instructions" insensitive="1"/>
+			<DetectChar attribute="Directive" context="Directive" char="."/>
+			<DetectIdentifier attribute="Unknown Instruction" context="#pop!Instruction"/>
+		</context>
+
+		<context name="Instruction" attribute="Normal Text" lineEndContext="#pop">
+			<DetectSpaces attribute="Normal Text"/>
+			<DetectChar attribute="Comment" context="#pop!Comment" char=";"/>
+
+			<DetectChar attribute="Hex" context="Number16" char="$"/>
+			<DetectChar attribute="Binary" context="Number2" char="%"/>
+			<DetectChar attribute="Octal" context="Number8" char="@"/>
+			<Int attribute="Decimal" context="#stay"/>
+
+			<DetectChar attribute="Symbol Separator" context="Register" char="," lookAhead="1"/>
+			<DetectChar attribute="Keyword" context="#stay" char="#"/>
+
+			<DetectIdentifier attribute="Normal Text" context="#stay"/>
+
+			<RangeDetect attribute="String" context="#stay" char="&quot;" char1="&quot;"/>
+			<AnyChar attribute="Operator" context="#stay" String="-+&lt;&gt;=\&amp;|^~"/>
+		</context>
+
+		<context name="Directive" attribute="Directive" lineEndContext="#pop" fallthroughContext="#pop!Instruction">
+			<DetectIdentifier attribute="Unknown Directive" context="#pop!Instruction"/>
+		</context>
+
+		<context name="Register" attribute="Normal Text" lineEndContext="#pop">
+			<Detect2Chars attribute="Keyword" context="#pop" char="," char1="X"/>
+			<Detect2Chars attribute="Keyword" context="#pop" char="," char1="Y"/>
+			<Detect2Chars attribute="Keyword" context="#pop" char="," char1="x"/>
+			<Detect2Chars attribute="Keyword" context="#pop" char="," char1="y"/>
+			<DetectChar attribute="Symbol Separator" context="#pop" char=","/>
+		</context>
+
+		<context name="Number16" attribute="Hex" lineEndContext="#pop" fallthroughContext="#pop">
+			<RegExpr attribute="Hex" context="#pop" String="[A-Fa-f0-9]+"/>
+		</context>
+
+		<context name="Number2" attribute="Binary" lineEndContext="#pop" fallthroughContext="#pop">
+			<RegExpr attribute="Binary" context="#pop" String="[01]+"/>
+		</context>
+
+		<context name="Number8" attribute="Octal" lineEndContext="#pop" fallthroughContext="#pop">
+			<RegExpr attribute="Octal" context="#pop" String="[0-7]+"/>
+		</context>
+
+		<context name="Comment" attribute="Comment" lineEndContext="#pop">
+			<DetectSpaces attribute="Comment"/>
+			<IncludeRules context="##Comments"/>
+			<DetectIdentifier attribute="Comment"/>
+		</context>
+	</contexts>
+
+	<itemDatas>
+		<itemData name="Label" defStyleNum="dsFunction"/>
+		<itemData name="Normal Text" defStyleNum="dsNormal"/>
+		<itemData name="Keyword" defStyleNum="dsKeyword"/>
+		<itemData name="Instruction" defStyleNum="dsKeyword"/>
+		<itemData name="Unknown Instruction" defStyleNum="dsKeyword"/>
+		<itemData name="Branch Instruction" defStyleNum="dsControlFlow"/>
+		<itemData name="Decimal" defStyleNum="dsDecVal"/>
+		<itemData name="Directive" defStyleNum="dsDataType"/>
+		<itemData name="Unknown Directive" defStyleNum="dsDataType"/>
+		<itemData name="Hex" defStyleNum="dsBaseN"/>
+		<itemData name="Octal" defStyleNum="dsBaseN"/>
+		<itemData name="Binary" defStyleNum="dsBaseN"/>
+		<itemData name="String" defStyleNum="dsString"/>
+		<itemData name="Comment" defStyleNum="dsComment"/>
+		<itemData name="Operator" defStyleNum="dsOperator"/>
+		<itemData name="Symbol Separator" defStyleNum="dsOperator"/>
+	</itemDatas>
+</highlighting>
+<general>
+	<comments>
+		<comment name="singleLine" start=";"/>
+	</comments>
+	<keywords casesensitive="1" weakDeliminator="." additionalDeliminator="#"/>
+</general>
+
 </language>
-
+<!-- kate: replace-tabs off; -->

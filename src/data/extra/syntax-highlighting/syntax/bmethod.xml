@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="B-Method" version="1" kateversion="5.0" section="Scientific" extensions="*.mch;*.imp;*.ref" author="Ivo Anjo (knuckles@gmail.com)" license="LGPL">
+<!DOCTYPE language>
+<language name="B-Method" version="3" kateversion="5.0" section="Scientific" extensions="*.mch;*.imp;*.ref" author="Ivo Anjo (knuckles@gmail.com)" license="LGPL">
 
 <highlighting>
 	<list name="sections">
@@ -73,8 +73,8 @@
 		
 		<context attribute="Comment" lineEndContext="#stay" name="Comment">
 			<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-			<IncludeRules context="##Alerts"/>
-      		</context>
+			<IncludeRules context="##Comments"/>
+		</context>
 	</contexts>
 	<itemDatas>
 		<itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0"/>
@@ -88,9 +88,10 @@
 
 <general>
 	<comments>
-		<comment name="multiLine" start="/*" end="*/"/>
+		<comment name="multiLine" start="/*" end="*/" region="Comment"/>
 	</comments>
 	<keywords casesensitive="1"/>
 </general>
 
 </language>
+<!-- kate: replace-tabs off; -->

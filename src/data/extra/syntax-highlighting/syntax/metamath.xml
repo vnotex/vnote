@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd" [
+<!DOCTYPE language [
 	<!ENTITY label "[0-9A-Za-z.\-_]+">
 	<!ENTITY symbol "[^ $]+">
 ]>
-<language name="Metamath" section="Scientific" extensions="*.mm"
-	version="2" kateversion="5.0" author="Aaron Puchert" license="MIT">
+<!-- low priority to let Objective-C++ win for .mm files per default -->
+<language name="Metamath" section="Scientific" extensions="*.mm" priority="-9"
+	version="5" kateversion="5.0" author="Aaron Puchert" license="MIT">
 <highlighting>
 	<contexts>
 		<!-- Block: ${ statement* $} -->
@@ -23,6 +24,7 @@
 		<context name="Comment" attribute="Comment" lineEndContext="#stay">
 			<RegExpr String=" ~ *&label;" attribute="ReferenceLabel" context="#stay"/>
 			<Detect2Chars char="$" char1=")" attribute="Comment" context="#pop" endRegion="comment"/>
+			<IncludeRules context="##Comments"/>
 		</context>
 		<!-- Include: $[ filename $] -->
 		<context name="Include" attribute="Include" lineEndContext="#stay">
@@ -120,3 +122,4 @@
 	</comments>
 </general>
 </language>
+<!-- kate: replace-tabs off; -->

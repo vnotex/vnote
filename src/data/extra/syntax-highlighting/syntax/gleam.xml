@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+    ==============================================
+     Gleam syntax-highlighting definition for KDE
+    ==============================================
+
+    SPDX-FileCopyrightText: 2024 Louis Guichard <kde@glpda.net>
+    SPDX-License-Identifier: MIT
+
+-->
+<!DOCTYPE language
+[
+	<!ENTITY camel_case "[A-Z][0-9a-zA-Z]*">
+	<!ENTITY snake_case "[_a-z][_0-9a-z]*">
+	<!ENTITY binary_digits "[01]+(?:_[01]+)*">
+	<!ENTITY octal_digits "[0-7]+(?:_[0-7]+)*">
+	<!ENTITY decimal_digits "[0-9]+(?:_[0-9]+)*">
+	<!ENTITY hex_digits "[0-9a-fA-F]+(?:_[0-9a-fA-F]+)*">
+]>
+<language name="Gleam" version="3" kateversion="5.79" section="Sources" extensions="*.gleam" priority="1" indenter="cstyle" license="MIT" author="Louis Guichard (kde@glpda.net)">
+<highlighting>
+	<list name="keywords">
+		<item>as</item>
+		<item>case</item>
+		<item>const</item>
+		<item>echo</item>
+		<item>fn</item>
+		<item>if</item>
+		<item>let</item>
+		<item>opaque</item>
+		<item>pub</item>
+		<item>type</item>
+		<item>use</item>
+	</list>
+	<list name="import keyword">
+		<item>import</item>
+	</list>
+	<list name="crash keywords">
+		<item>assert</item>
+		<item>panic</item>
+		<item>todo</item>
+	</list>
+	<list name="reserved keywords">
+		<item>auto</item>
+		<item>delegate</item>
+		<item>derive</item>
+		<item>else</item>
+		<item>implement</item>
+		<item>macro</item>
+		<item>test</item>
+	</list>
+	<list name="attributes">
+		<item>@deprecated</item>
+		<item>@external</item>
+		<item>@internal</item>
+		<item>@target</item>
+	</list>
+	<list name="bitarrayoptions">
+		<item>size</item>
+		<item>unit</item>
+		<item>bits</item>
+		<item>bytes</item>
+		<item>float</item>
+		<item>int</item>
+		<item>big</item>
+		<item>little</item>
+		<item>native</item>
+		<item>utf8</item>
+		<item>utf16</item>
+		<item>utf32</item>
+		<item>utf8_codepoint</item>
+		<item>utf16_codepoint</item>
+		<item>utf32_codepoint</item>
+		<item>signed</item>
+		<item>unsigned</item>
+	</list>
+	<list name="types">
+		<item>Int</item>
+		<item>Float</item>
+		<!--<item>Infinity</item>-->
+		<!--<item>NaN</item>-->
+		<item>Bool</item>
+		<item>True</item>
+		<item>False</item>
+		<item>Nil</item>
+		<item>Option</item>
+		<item>Some</item>
+		<item>None</item>
+		<item>Result</item>
+		<item>Ok</item>
+		<item>Error</item>
+		<item>String</item>
+		<item>StringBuilder</item>
+		<item>BitArray</item>
+		<item>BytesBuilder</item>
+		<item>List</item>
+		<item>Dict</item>
+		<item>Dynamic</item>
+		<item>Decoder</item>
+		<item>DecodeError</item>
+		<item>DecodeErrors</item>
+		<item>Order</item>
+		<item>Lt</item>
+		<item>Eq</item>
+		<item>Gt</item>
+		<item>InvalidBase</item>
+		<item>Iterator</item>
+		<item>Step</item>
+		<item>Next</item>
+		<item>Done</item>
+		<item>ContinueOrStop</item>
+		<item>Continue</item>
+		<item>Stop</item>
+		<item>Queue</item>
+		<item>Regex</item>
+		<item>CompileError</item>
+		<item>Match</item>
+		<item>Options</item>
+		<item>Set</item>
+		<item>Uri</item>
+	</list>
+	<contexts>
+		<context attribute="Normal Text" lineEndContext="#stay" name="normal text" >
+			<DetectSpaces attribute="Normal Text" />
+			<IncludeRules context="find comments" />
+			<!-- Strings and BitArrays -->
+			<DetectChar attribute="String" context="string" char="&quot;" beginRegion="quotes" />
+			<Detect2Chars attribute="Symbol" context="bitarray" char="&lt;" char1="&lt;" beginRegion="chevrons" />
+			<!-- Keywords -->
+			<keyword attribute="Keyword" context="#stay" String="keywords" />
+			<keyword attribute="Error" context="#stay" String="reserved keywords" />
+			<keyword attribute="Crash" context="#stay" String="crash keywords" />
+			<keyword attribute="Keyword" context="import module" String="import keyword" />
+			<!-- Names -->
+			<keyword attribute="Attribute" context="#stay" String="attributes" />
+			<RegExpr attribute="Error" context="#stay" String="@\w*\b" />
+			<keyword attribute="Type" context="#stay" String="types" />
+			<RegExpr attribute="Type" context="#stay" String="\b&camel_case;\b" />
+			<RegExpr attribute="Function" context="#stay" String="\b&snake_case;(?=\()" />
+			<!-- Numbers -->
+			<RegExpr attribute="Float" context="number suffix error" String="&decimal_digits;\.(?:&decimal_digits;)?(?:e-?&decimal_digits;)?" />
+			<RegExpr attribute="Binary" context="number suffix error" String="\b0[bB]&binary_digits;" />
+			<RegExpr attribute="Octal" context="number suffix error" String="\b0[oO]&octal_digits;" />
+			<RegExpr attribute="Hex" context="number suffix error" String="\b0[xX]&hex_digits;" />
+			<RegExpr attribute="Decimal" context="number suffix error" String="\b&decimal_digits;" />
+			<!-- Symbols -->
+			<DetectChar attribute="Symbol" context="#stay" char="(" beginRegion="round brackets" />
+			<DetectChar attribute="Symbol" context="#stay" char=")" endRegion="round brackets" />
+			<DetectChar attribute="Symbol" context="#stay" char="[" beginRegion="square brackets" />
+			<DetectChar attribute="Symbol" context="#stay" char="]" endRegion="square brackets" />
+			<DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="curly brackets" />
+			<DetectChar attribute="Symbol" context="#stay" char="}" endRegion="curly brackets" />
+			<AnyChar String="#:!,.+-*/%&lt;=&gt;|&amp;" attribute="Symbol" context="#stay" />
+			<AnyChar String=";?&apos;~^$\" attribute="Error" context="#stay" />
+		</context>
+		<!-- Strings and BitArrays -->
+		<context attribute="String" lineEndContext="#stay" name="string" >
+			<LineContinue attribute="Error" context="#stay" />
+			<DetectChar attribute="EscapeSequence" context="escape sequence" char="\" />
+			<DetectChar attribute="String" context="#pop" char="&quot;" endRegion="quotes" />
+		</context>
+		<context attribute="EscapeSequence" lineEndContext="#pop!error" fallthroughContext="#pop!error" name="escape sequence" >
+			<AnyChar attribute="EscapeSequence" context="#pop" String="efnrt&quot;\" />
+			<RegExpr attribute="EscapeSequence" context="#pop" String="u\{[0-9a-fA-F]{1,6}\}" />
+			<RegExpr attribute="Error" context="#pop" String="u\{[^}]*\}|[^efnrt&quot;\\]" />
+		</context>
+		<context attribute="Normal Text" lineEndContext="#stay" name="bitarray" >
+			<keyword attribute="BitArrayOption" context="#stay" String="bitarrayoptions" />
+			<Detect2Chars attribute="Symbol" context="#pop" char="&gt;" char1="&gt;" endRegion="chevrons" />
+			<IncludeRules context="normal text" />
+		</context>
+		<!-- Comments -->
+		<context attribute="Normal Text" lineEndContext="#stay" name="find comments" >
+			<StringDetect attribute="Documentation" context="documentation" String="///" />
+			<Detect2Chars attribute="Comment" context="comment" char="/" char1="/" />
+        </context>
+		<context attribute="Comment" lineEndContext="#pop" name="comment" >
+			<DetectSpaces/>
+			<IncludeRules context="##Comments" />
+		</context>
+		<context attribute="Documentation" lineEndContext="#pop" name="documentation" >
+			<!-- TODO documentation use a markdown syntax -->
+		</context>
+		<!-- Imports -->
+		<context attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#stay"  name="import module" fallthroughContext="#pop!error" >
+			<DetectSpaces attribute="Normal Text" />
+			<IncludeRules context="find comments" />
+			<keyword attribute="Error" context="#pop" String="keywords" />
+			<keyword attribute="Error" context="#pop" String="reserved keywords" />
+			<keyword attribute="Error" context="#pop" String="import keyword" />
+			<RegExpr attribute="Module" context="#pop!import suffix" String="&snake_case;(?:/&snake_case;)*\b" />
+		</context>
+		<context attribute="Normal Text" lineEndContext="#stay" name="import suffix" fallthroughContext="#pop#pop" >
+			<DetectSpaces attribute="Normal Text" />
+			<Detect2Chars attribute="Symbol" context="unqualified imports" char="." char1="{" beginRegion="curly brackets" />
+			<WordDetect attribute="Keyword" context="#pop!renamed import" String="as" />
+		</context>
+		<context attribute="Normal Text" lineEndContext="#stay" name="unqualified imports" >
+			<DetectChar attribute="Symbol" context="#pop" char="}" endRegion="curly brackets" />
+			<IncludeRules context="normal text" />
+		</context>
+		<context attribute="Normal Text" lineEndContext="#stay" lineEmptyContext="#stay" name="renamed import" fallthroughContext="#pop!error" >
+			<DetectSpaces attribute="Normal Text" />
+			<IncludeRules context="find comments" />
+			<keyword attribute="Error" context="#pop" String="keywords" />
+			<keyword attribute="Error" context="#pop" String="reserved keywords" />
+			<keyword attribute="Error" context="#pop" String="import keyword" />
+			<RegExpr attribute="Module" context="#pop" String="&snake_case;\b" />
+		</context>
+		<!-- Errors -->
+		<context attribute="Error" lineEndContext="#pop" name="error" >
+		</context>
+		<context attribute="Normal Text" lineEndContext="#pop" name="number suffix error" fallthroughContext="#pop" >
+			<RegExpr attribute="Error" String="\w+" context="#pop"/>
+		</context>
+	</contexts>
+	<itemDatas>
+		<itemData name="Normal Text" defStyleNum="dsNormal" />
+		<itemData name="Error" defStyleNum="dsError" />
+		<!-- Strings and BitArrays -->
+		<itemData name="String" defStyleNum="dsString" />
+		<itemData name="EscapeSequence" defStyleNum="dsSpecialChar" />
+		<itemData name="BitArrayOption" defStyleNum="dsSpecialChar" />
+		<!-- Comments -->
+		<itemData name="Comment" defStyleNum="dsComment" />
+		<itemData name="Documentation" defStyleNum="dsDocumentation" />
+		<!-- Keywords -->
+		<itemData name="Keyword" defStyleNum="dsKeyword" />
+		<itemData name="Crash" defStyleNum="dsControlFlow" />
+		<!-- Names -->
+		<itemData name="Attribute" defStyleNum="dsAttribute" />
+		<itemData name="Module" defStyleNum="dsImport" />
+		<itemData name="Function" defStyleNum="dsFunction" />
+		<itemData name="Type" defStyleNum="dsDataType" />
+		<!-- Numbers -->
+		<itemData name="Binary" defStyleNum="dsBaseN" />
+		<itemData name="Octal" defStyleNum="dsBaseN" />
+		<itemData name="Decimal" defStyleNum="dsDecVal" />
+		<itemData name="Hex" defStyleNum="dsBaseN" />
+		<itemData name="Float" defStyleNum="dsFloat" />
+		<!-- Symbols -->
+		<itemData name="Symbol" defStyleNum="dsOperator" />
+	</itemDatas>
+</highlighting>
+<general>
+	<comments>
+		<comment name="singleLine" start="//" position="afterwhitespace"/>
+	</comments>
+	<keywords casesensitive="true"/>
+	<folding indentationsensitive="false"/>
+</general>
+</language>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="RapidQ" version="2" kateversion="2.3" section="Sources" extensions="*.rqb" author="Tiberiu Dragulinescu" license="LGPL">
+<!DOCTYPE language>
+<language name="RapidQ" version="4" kateversion="5.0" section="Sources" extensions="*.rqb" author="Tiberiu Dragulinescu" license="LGPL">
     <highlighting>
         <list name="keywords">
 		<item>abs</item>
@@ -326,33 +326,28 @@
 		<item>maxlength</item>
 		<item>inputmask</item>
 		<item>forecolor</item>
-		<item></item>
 		<item>backcolor</item>
 		<item>deldrivetypes</item>
 		<item>adddrivetypes</item>
 		<item>update</item>
 		<item>bevelouter</item>
-		<item></item>
 		<item>loadfromfile</item>
 		<item>subitem</item>
 		<item>viewstyle</item>
 		<item>rowselect</item>
 		<item>readonly</item>
 		<item>gridlines</item>
-		<item></item>
 		<item>addcolumns</item>
 		<item>oncolumnclick</item>
 		<item>ondblclick</item>
 		<item>addsubitem</item>
 		<item>scrollbars</item>
-		<item></item>
 		<item>addchilditems</item>
 		<item>plaintext</item>
 		<item>selstart</item>
 		<item>sellength</item>
 		<item>sorted</item>
 		<item>ColCount</item>
-		<item></item>
 		<item>onmoved</item>
 		<item>groupindex</item>
 		<item>OnResize</item>
@@ -401,12 +396,16 @@
 	<keyword attribute="Object" context="#stay" String="objects"/>
 	<keyword attribute="Directive" context="#stay" String="directives"/>
 	<keyword attribute="Propormeth" context="#stay" String="propsandmeths"/>
+    <DetectChar attribute="Propormeth" context="#stay" char="+"/>
         <DetectChar attribute="String" context="String" char="&quot;"/>
         <DetectChar attribute="Comment" context="Comment" char="'"/>
 	<Float attribute="Float" context="#stay" />
 	<Int attribute="Decimal" context="#stay" />
         </context>
-        <context name="Comment" attribute="Comment" lineEndContext="#pop"/>
+        <context name="Comment" attribute="Comment" lineEndContext="#pop">
+            <DetectSpaces />
+            <IncludeRules context="##Comments"/>
+        </context>
         <context name="String" attribute="String" lineEndContext="#pop">
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
         </context>

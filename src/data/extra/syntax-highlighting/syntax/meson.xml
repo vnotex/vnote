@@ -1,58 +1,74 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <language name="Meson" section="Other"
-	version="2" kateversion="2.4"
-	extensions="meson.build;meson_options.txt"
+	version="6" kateversion="5.0"
+	extensions="meson.build;meson.options;meson_options.txt"
 	mimetype="text/x-meson"
 	priority="5"
 	license="LGPL">
 
 	<highlighting>
-		<list name = "flowControl">
+		<list name="flowControl">
 			<item>if</item>
 			<item>else</item>
 			<item>endif</item>
 			<item>foreach</item>
 			<item>endforeach</item>
 		</list>
-		<list name = "builtinfuncs">
+		<list name="builtinfuncs">
 			<item>add_global_arguments</item>
+			<item>add_global_link_arguments</item>
+			<item>add_languages</item>
+			<item>add_project_arguments</item>
+			<item>add_project_link_arguments</item>
+			<item>add_test_setup</item>
+			<item>alias_target</item>
+			<item>assert</item>
+			<item>benchmark</item>
+			<item>both_libraries</item>
 			<item>build_target</item>
 			<item>configuration_data</item>
 			<item>configure_file</item>
 			<item>custom_target</item>
 			<item>declare_dependency</item>
 			<item>dependency</item>
+			<item>disabler</item>
+			<item>environment</item>
 			<item>error</item>
 			<item>executable</item>
-			<item>find_program</item>
-			<item>find_library</item>
 			<item>files</item>
+			<item>find_library</item>
+			<item>find_program</item>
 			<item>generator</item>
 			<item>get_option</item>
-			<item>gettext</item>
+			<item>get_variable</item>
 			<item>import</item>
 			<item>include_directories</item>
 			<item>install_data</item>
 			<item>install_headers</item>
 			<item>install_man</item>
 			<item>install_subdir</item>
-			<item>is_subproject</item>
+			<item>is_disabler</item>
+			<item>is_variable</item>
 			<item>jar</item>
+			<item>join_paths</item>
+			<item>library</item>
 			<item>message</item>
-			<item>pkgconfig_gen</item>
 			<item>project</item>
 			<item>run_command</item>
 			<item>run_target</item>
 			<item>set_variable</item>
 			<item>shared_library</item>
+			<item>shared_module</item>
 			<item>static_library</item>
 			<item>subdir</item>
+			<item>subdir_done</item>
 			<item>subproject</item>
 			<item>test</item>
 			<item>vcs_tag</item>
+			<item>warning</item>
 		</list>
-		<list name = "logicalOperations">
+		<list name="logicalOperations">
 			<item>and</item>
 			<item>or</item>
 			<item>not</item>
@@ -61,6 +77,118 @@
 			<item>true</item>
 			<item>false</item>
 		</list>
+		<list name="mesonObjet">
+			<item>meson</item>
+		</list>
+		<list name="machineObjet">
+			<item>build_machine</item>
+			<item>host_machine</item>
+			<item>target_machine</item>
+		</list>
+		<list name="mesonMembers">
+			<item>add_dist_script</item>
+			<item>add_install_script</item>
+			<item>add_postconf_script</item>
+			<item>backend</item>
+			<item>build_root</item>
+			<item>source_root</item>
+			<item>current_build_dir</item>
+			<item>current_source_dir</item>
+			<item>get_cross_property</item>
+			<item>get_compiler</item>
+			<item>has_exe_wrapper</item>
+			<item>install_dependency_manifest</item>
+			<item>is_cross_build</item>
+			<item>is_subproject</item>
+			<item>is_unity</item>
+			<item>override_find_program</item>
+			<item>project_version</item>
+			<item>project_license</item>
+			<item>project_name</item>
+			<item>version</item>
+		</list>
+		<list name="machineMembers">
+			<item>cpu_family</item>
+			<item>cpu</item>
+			<item>system</item>
+			<item>endian</item>
+		</list>
+		<list name="builtinmembers">
+			<item>alignment</item>
+			<item>append</item>
+			<item>as_system</item>
+			<item>cmd_array</item>
+			<item>compiled</item>
+			<item>compiles</item>
+			<item>compute_int</item>
+			<item>contains</item>
+			<item>endswith</item>
+			<item>extract_all_objects</item>
+			<item>extract_objects</item>
+			<item>find_library</item>
+			<item>first_supported_argument</item>
+			<item>first_supported_link_argument</item>
+			<item>format</item>
+			<item>found</item>
+			<item>full_path</item>
+			<item>get_argument_syntax</item>
+			<item>get_configtool_variable</item>
+			<item>get_define</item>
+			<item>get_id</item>
+			<item>get</item>
+			<item>get_pkgconfig_variable</item>
+			<item>get_supported_arguments</item>
+			<item>get_supported_function_attributes</item>
+			<item>get_supported_link_arguments</item>
+			<item>get_unquoted</item>
+			<item>get_variable</item>
+			<item>gettext</item>
+			<item>has_argument</item>
+			<item>has_function_attribute</item>
+			<item>has_function</item>
+			<item>has_header_symbol</item>
+			<item>has</item>
+			<item>has_key</item>
+			<item>has_link_argument</item>
+			<item>has_member</item>
+			<item>has_members</item>
+			<item>has_multi_arguments</item>
+			<item>has_multi_link_arguments</item>
+			<item>has_type</item>
+			<item>include_type</item>
+			<item>is_even</item>
+			<item>is_odd</item>
+			<item>join</item>
+			<item>length</item>
+			<item>links</item>
+			<item>merge_from</item>
+			<item>name</item>
+			<item>partial_dependency</item>
+			<item>path</item>
+			<item>pkgconfig_gen</item>
+			<item>prepend</item>
+			<item>private_dir_include</item>
+			<item>process</item>
+			<item>returncode</item>
+			<item>run</item>
+			<item>set10</item>
+			<item>set</item>
+			<item>set_quoted</item>
+			<item>sizeof</item>
+			<item>split</item>
+			<item>startswith</item>
+			<item>stderr</item>
+			<item>stdout</item>
+			<item>strip</item>
+			<item>symbols_have_underscore_prefix</item>
+			<item>to_lower</item>
+			<item>to_string</item>
+			<item>to_upper</item>
+			<item>type_name</item>
+			<item>underscorify</item>
+			<item>version_compare</item>
+			<item>version</item>
+		</list>
 
 		<contexts>
 			<context name="Normal" attribute="Normal Text" lineEndContext="#stay">
@@ -68,11 +196,34 @@
 				<keyword attribute="Operator" String="logicalOperations" context="#stay"/>
 				<keyword attribute="Builtin Function" String="builtinfuncs" context="#stay"/>
 				<keyword attribute="Boolean Values" String="booleans" context="#stay"/>
+				<keyword attribute="Builtin Objet" String="mesonObjet" context="mesonObjet"/>
+				<keyword attribute="Builtin Objet" String="machineObjet" context="machineObjet"/>
 				<Int attribute="Int" context="#stay"/>
 				<DetectChar attribute="Comment" char="#" context="comment"/>
 				<AnyChar attribute="Operator" String="+-*/=&lt;&gt;" context="#stay"/>
 				<DetectChar attribute="Normal Text" char="[" context="List" beginRegion="List"/>
 				<IncludeRules context="StringVariants" />
+				<DetectChar attribute="Normal Text" char="." context="members"/>
+			</context>
+
+			<context name="mesonObjet" attribute="Normal Text" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+				<DetectChar attribute="Normal Text" char="." context="mesonMembers"/>
+			</context>
+
+			<context name="mesonMembers" attribute="Normal Text" lineEndContext="#pop#pop" fallthrough="1" fallthroughContext="#pop#pop">
+				<keyword attribute="Builtin Function" String="mesonMembers" context="#pop#pop"/>
+			</context>
+
+			<context name="machineObjet" attribute="Normal Text" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+				<DetectChar attribute="Normal Text" char="." context="machineMembers"/>
+			</context>
+
+			<context name="machineMembers" attribute="Normal Text" lineEndContext="#pop#pop" fallthrough="1" fallthroughContext="#pop#pop">
+				<keyword attribute="Builtin Function" String="machineMembers" context="#pop#pop"/>
+			</context>
+
+			<context name="members" attribute="Normal Text" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop#pop">
+				<keyword attribute="Builtin Member Function" String="builtinmembers" context="#pop"/>
 			</context>
 
 			<context name="List" attribute="Normal Text" lineEndContext="#stay" noIndentationBasedFolding="true">
@@ -82,8 +233,7 @@
 			</context>
 
 			<context name="comment" attribute="Comment" lineEndContext="#pop">
-				<IncludeRules context="##Alerts" />
-				<IncludeRules context="##Modelines" />
+				<IncludeRules context="##Comments" />
 			</context>
 
 			<!--strings-->
@@ -108,10 +258,20 @@
 			<itemData name="Int"                  defStyleNum="dsDecVal"   spellChecking="false"/>
 			<itemData name="Flow Control Keyword" defStyleNum="dsKeyword"  spellChecking="false"/>
 			<itemData name="Builtin Function"     defStyleNum="dsDataType" spellChecking="false"/>
+			<itemData name="Builtin Objet"        defStyleNum="dsDataType" spellChecking="false"/>
+			<itemData name="Builtin Member Function" defStyleNum="dsDataType" spellChecking="false"/>
 			<itemData name="Boolean Values"       defStyleNum="dsKeyword"  spellChecking="false"/>
 			<itemData name="String Char"          defStyleNum="dsChar"     spellChecking="false"/>
 			<itemData name="String"               defStyleNum="dsString"/>
 			<itemData name="Comment"              defStyleNum="dsComment"/>
 		</itemDatas>
 	</highlighting>
+
+	<general>
+		<comments>
+			<comment name="singleLine" start="#"/>
+		</comments>
+	</general>
+
 </language>
+<!-- kate: replace-tabs off; -->

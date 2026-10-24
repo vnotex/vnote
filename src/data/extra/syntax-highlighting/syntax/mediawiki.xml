@@ -1,247 +1,489 @@
-<?xml version = '1.0' encoding = 'UTF-8'?>
-<!DOCTYPE language SYSTEM "language.dtd" [
-  <!ENTITY url          "(http:|https:|ftp:|mailto:)[^]| ]*(?=$|[]|\s])">
-  <!ENTITY htmlTagName  "(?![0-9])[\w_:][\w.:_-]*">
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY tab "&#9;">
+  <!ENTITY externalLink "(https?://|ftp://|mailto:|//)((?=\{\{)|\{?[^\s\[\]{|}]+)">
+  <!--
+    end punctuation are not part of the link
+    http://example.com?p=1
+    ~~~~~~~~~~~~~~~~~~~~~~ link
+    http://example.com?
+    ~~~~~~~~~~~~~~~~~~  link
+                      ~ no link
+  -->
+  <!ENTITY url          "(https?://|ftp://|mailto:)((?=\{\{)|\{?&urlpart;)">
+  <!ENTITY urlpart      "([^\s\[\]{|}?!.,]++|([?!.,]++)(?=[^\s\[\]?!.,]))++">
+  <!ENTITY htmlTagName  "[[:alpha:]_][\w_-]*">
   <!ENTITY htmlEntity   "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&htmlTagName;);">
-  <!ENTITY wikiLinkWithDescription "\[\[[^]|]*\|[^]]*\]\]">
-  <!ENTITY wikiLinkWithoutDescription "\[\[[^]|]*\]\]">
+  <!ENTITY wikiLinkWithDescription "\[\[(?=[^]|]*\|[^]]*\]\])">
+  <!ENTITY wikiLinkWithoutDescription "\[\[(?=[^]|]*\]\])">
 ]>
-<language name="MediaWiki" section="Markup" version="6" kateversion="5.0" extensions="*.mediawiki" mimetype="" license="FDL" >
+<language name="MediaWiki" section="Markup" version="14" kateversion="5.62" extensions="*.mediawiki" mimetype="" license="FDL" >
+
+  <!--
+    https://www.mediawiki.org/wiki/Special:MyLanguage/Help:Formatting
+    https://www.mediawiki.org/wiki/Help:Advanced_editing
+    https://en.wikipedia.org/wiki/Help:Wikitext
+  -->
+
   <highlighting>
     <contexts>
       <context attribute="Normal" lineEndContext="#stay" name="normal" >
-        <StringDetect String="&lt;!--" context="comment" attribute="Comment" beginRegion="comment" />
-        <RegExpr String="[=]{5,5}(?!=)" context="Section5" attribute="Section" column="0" />
-        <RegExpr String="[=]{4,4}(?!=)" context="Section4" attribute="Section" column="0" />
-        <RegExpr String="[=]{3,3}(?!=)" context="Section3" attribute="Section" column="0" />
-        <RegExpr String="[=]{2,2}(?!=)" context="Section2" attribute="Section" column="0" />
-        <RegExpr String="[~]{3,4}" attribute="WikiTag" context="#stay" />
-        <DetectChar char=";" attribute="WikiTag" context="DefinitionListHeader" column="0" />
-        <IncludeRules context="FindListItem" />
+        <AnyChar String="&tab; " context="Unformatted" column="0" />
+        <DetectSpaces/>
+
         <IncludeRules context="FindUrl" />
+        <DetectIdentifier/>
+
+        <IncludeRules context="FindListItem" />
+        <IncludeRules context="FindSection" />
         <IncludeRules context="FindTextDecorations" />
+        <IncludeRules context="FindComment" />
         <IncludeRules context="FindTable" />
-        <StringDetect String="{{{" context="TemplateParameter" attribute="WikiTag" />
-        <IncludeRules context="FindTemplate" />
+        <IncludeRules context="FindTemplates" />
         <IncludeRules context="FindWikiLink" />
         <IncludeRules context="FindHtmlEntities" />
-        <StringDetect String="&lt;nowiki&gt;" context="NoWiki" attribute="WikiTag" />
-        <StringDetect String="&lt;pre&gt;" context="Pre" attribute="HtmlTag" />
-        <IncludeRules context="FindSyntaxHighlightingHtmlElement" />
-        <RegExpr String="[&lt;][^&gt;]+[&gt;]" attribute="HtmlTag" context="#stay" />
-        <RegExpr String="[\s]" context="Unformatted" column="0" />
+        <IncludeRules context="FindHtmlElements" />
+        <IncludeRules context="FindSignature" />
+        <IncludeRules context="FindLineSep" />
       </context>
+
+
+      <!--
+        Table @{
+
+        e.g.
+        {|
+      -->
+
+      <context name="FindTable" attribute="Normal" lineEndContext="#stay">
+        <StringDetect String="{|" column="0" context="TableHeader" attribute="WikiTag" beginRegion="table" />
+      </context>
+
       <context name="TableHeader" attribute="Normal" lineEndContext="TableContent" >
-        <Detect2Chars char="{" char1="|" attribute="WikiTag" beginRegion="table" />
-        <IncludeRules context="FindHtmlStartTagAttributes" />
+        <DetectChar attribute="HtmlAttributeSeparator" char="=" />
+        <DetectIdentifier attribute="HtmlAttribute"/>
+        <DetectChar attribute="HtmlValue" context="ValueWithDoubleQuotes" char="&quot;" />
+        <DetectChar attribute="HtmlValue" context="ValueWithSingleQuotes" char="&apos;" />
       </context>
+
       <context name="TableContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="&lt;!--" context="comment" attribute="Comment" />
-        <RegExpr String="[=]{5,5}(?!=)" context="Section5" attribute="Section" column="0" />
-        <RegExpr String="[=]{4,4}(?!=)" context="Section4" attribute="Section" column="0" />
-        <RegExpr String="[=]{3,3}(?!=)" context="Section3" attribute="Section" column="0" />
-        <RegExpr String="[=]{2,2}(?!=)" context="Section2" attribute="Section" column="0" />
-        <DetectChar char=";" attribute="WikiTag" context="DefinitionListHeader" column="0" />
-        <IncludeRules context="FindListItem" />
-        <IncludeRules context="FindUrl" />
-        <IncludeRules context="FindTextDecorations" />
-        <IncludeRules context="FindTable" />
-        <Detect2Chars char="|" char1="}" column="0" attribute="WikiTag" context="#pop#pop" endRegion="table" />
-        <Detect2Chars char="|" char1="-" column="0" attribute="WikiTag" />
-        <DetectChar char="|" attribute="WikiTag" context="#stay"/>
-        <StringDetect String="{{{" context="TemplateParameter" attribute="WikiTag" />
-        <IncludeRules context="FindTemplate" />
-        <IncludeRules context="FindWikiLink" />
-        <IncludeRules context="FindHtmlEntities" />
-        <StringDetect String="&lt;nowiki&gt;" context="NoWiki" attribute="WikiTag" />
-        <StringDetect String="&lt;pre&gt;" context="Pre" attribute="HtmlTag" />
-        <IncludeRules context="FindSyntaxHighlightingHtmlElement" />
-        <RegExpr String="[&lt;][^&gt;]+[&gt;]" attribute="HtmlTag" context="#stay" />
-        <RegExpr String="[\s]" context="Unformatted" column="0" />
-        <RegExpr String="[~]{3,4}" attribute="WikiTag" context="#stay" />
-        <RegExpr String="[-]{4,}" attribute="WikiTag" context="#stay" />
-        <DetectChar char="!" attribute="WikiTag" context="#stay" column="0" />
+        <StringDetect String="|}" column="0" attribute="WikiTag" context="#pop#pop" endRegion="table" />
+        <StringDetect String="|-" column="0" attribute="WikiTag"/>
+        <StringDetect String="|+" column="0" attribute="WikiTag" context="CellAttr"/>
+        <DetectChar char="|" column="0" attribute="WikiTag" context="CellAttr"/>
+        <StringDetect String="||" attribute="WikiTag" context="CellAttr"/>
+        <IncludeRules context="normal" />
+        <DetectChar char="!" attribute="WikiTag" column="0" context="CellAttr"/>
+        <StringDetect String="!!" attribute="WikiTag" context="CellAttr"/>
       </context>
+
+      <context name="CellAttr" attribute="Normal" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal"/>
+        <DetectChar char="|" attribute="WikiTag" context="#pop"/>
+        <RegExpr String="\w+(?=\s*=\s*(&quot;[^&quot;]*&quot;|'[^']*'))" context="HtmlAttrSep" attribute="HtmlAttribute"/>
+      </context>
+
+      <!-- @} Table -->
+
+
+      <!--
+        Section @{
+
+        e.g.
+        === title ===
+      -->
+
+      <context name="FindSection" attribute="Normal">
+        <!-- not a section -->
+        <StringDetect String="======" column="0"/>
+        <!-- sections -->
+        <StringDetect String="=====" column="0" context="Section5" attribute="SectionDeliminator"/>
+        <StringDetect String="====" column="0" context="Section4" attribute="SectionDeliminator"/>
+        <StringDetect String="===" column="0" context="Section3" attribute="SectionDeliminator"/>
+        <StringDetect String="==" column="0" context="Section2" attribute="SectionDeliminator"/>
+      </context>
+
       <context attribute="Section" lineEndContext="#pop" name="Section5" >
-        <StringDetect String="&lt;!--" context="comment" attribute="Comment" beginRegion="comment" />
-        <RegExpr String="[~]{3,4}" attribute="WikiTag" context="#stay" />
-        <IncludeRules context="FindUrl" />
-        <IncludeRules context="FindTextDecorationsInHeader" />
-        <StringDetect String="{{{" context="TemplateParameter" attribute="WikiTag" />
-        <IncludeRules context="FindTemplate" />
-        <IncludeRules context="FindWikiLink" />
-        <IncludeRules context="FindHtmlEntities" />
-        <StringDetect String="&lt;nowiki&gt;" context="NoWiki" attribute="HtmlTag" />
-        <StringDetect String="&lt;pre&gt;" context="Pre" attribute="HtmlTag" />
-        <IncludeRules context="FindSyntaxHighlightingHtmlElement" />
-        <RegExpr String="[&lt;][^&gt;]+[&gt;]" attribute="HtmlTag" context="#stay" />
-        <RegExpr String="={6,} *$" context="#pop" attribute="Normal" />
-        <RegExpr String="={5,5} *$" context="#pop" attribute="Section" />
-        <RegExpr String="={1,4} *$" context="#pop" attribute="Normal" />
-        <RegExpr String="={1,4} *$" context="#pop" attribute="Normal" />
-        <RegExpr String="=*[^=]+$" context="#pop" attribute="Normal" />
+        <IncludeRules context="FindInHeader" />
+        <RegExpr String="===== *$" context="#pop" attribute="SectionDeliminator" />
       </context>
       <context attribute="Section" lineEndContext="#pop" name="Section4" >
-        <StringDetect String="&lt;!--" context="comment" attribute="Comment" beginRegion="comment" />
-        <RegExpr String="[~]{3,4}" attribute="WikiTag" context="#stay" />
-        <IncludeRules context="FindUrl" />
-        <IncludeRules context="FindTextDecorationsInHeader" />
-        <StringDetect String="{{{" context="TemplateParameter" attribute="WikiTag" />
-        <IncludeRules context="FindTemplate" />
-        <IncludeRules context="FindWikiLink" />
-        <IncludeRules context="FindHtmlEntities" />
-        <StringDetect String="&lt;nowiki&gt;" context="NoWiki" attribute="HtmlTag" />
-        <StringDetect String="&lt;pre&gt;" context="Pre" attribute="HtmlTag" />
-        <IncludeRules context="FindSyntaxHighlightingHtmlElement" />
-        <RegExpr String="[&lt;][^&gt;]+[&gt;]" attribute="HtmlTag" context="#stay" />
-        <RegExpr String="={5,} *$" context="#pop" attribute="Normal" />
-        <RegExpr String="={4,4} *$" context="#pop" attribute="Section" />
-        <RegExpr String="={1,3} *$" context="#pop" attribute="Normal" />
-        <RegExpr String="=*[^=]+$" context="#pop" attribute="Normal" />
+        <IncludeRules context="FindInHeader" />
+        <RegExpr String="==== *$" context="#pop" attribute="SectionDeliminator" />
       </context>
       <context attribute="Section" lineEndContext="#pop" name="Section3" >
-        <StringDetect String="&lt;!--" context="comment" attribute="Comment" beginRegion="comment" />
-        <RegExpr String="[~]{3,4}" attribute="WikiTag" context="#stay" />
-        <IncludeRules context="FindUrl" />
-        <IncludeRules context="FindTextDecorationsInHeader" />
-        <StringDetect String="{{{" context="TemplateParameter" attribute="WikiTag" />
-        <IncludeRules context="FindTemplate" />
-        <IncludeRules context="FindWikiLink" />
-        <IncludeRules context="FindHtmlEntities" />
-        <StringDetect String="&lt;nowiki&gt;" context="NoWiki" attribute="HtmlTag" />
-        <StringDetect String="&lt;pre&gt;" context="Pre" attribute="HtmlTag" />
-        <IncludeRules context="FindSyntaxHighlightingHtmlElement" />
-        <RegExpr String="[&lt;][^&gt;]+[&gt;]" attribute="HtmlTag" context="#stay" />
-        <RegExpr String="={4,} *$" context="#pop" attribute="Normal" />
-        <RegExpr String="={3,3} *$" context="#pop" attribute="Section" />
-        <RegExpr String="={1,2} *$" context="#pop" attribute="Normal" />
-        <RegExpr String="=*[^=]+$" context="#pop" attribute="Normal" />
+        <IncludeRules context="FindInHeader" />
+        <RegExpr String="=== *$" context="#pop" attribute="SectionDeliminator" />
       </context>
       <context attribute="Section" lineEndContext="#pop" name="Section2" >
-        <StringDetect String="&lt;!--" context="comment" attribute="Comment" beginRegion="comment" />
-        <RegExpr String="[~]{3,4}" attribute="WikiTag" context="#stay" />
-        <IncludeRules context="FindUrl" />
-        <IncludeRules context="FindTextDecorationsInHeader" />
-        <StringDetect String="{{{" context="TemplateParameter" attribute="WikiTag" />
-        <IncludeRules context="FindTemplate" />
+        <IncludeRules context="FindInHeader" />
+        <RegExpr String="== *$" context="#pop" attribute="SectionDeliminator" />
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="FindInHeader" >
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <StringDetect String="'''" attribute="WikiTag" context="Bold" />
+        <StringDetect String="''" attribute="WikiTag" context="BoldItalic" />
+        <IncludeRules context="FindComment" />
+        <IncludeRules context="FindTemplates" />
         <IncludeRules context="FindWikiLink" />
         <IncludeRules context="FindHtmlEntities" />
-        <StringDetect String="&lt;nowiki&gt;" context="NoWiki" attribute="HtmlTag" />
-        <StringDetect String="&lt;pre&gt;" context="Pre" attribute="HtmlTag" />
-        <IncludeRules context="FindSyntaxHighlightingHtmlElement" />
-        <RegExpr String="[&lt;][^&gt;]+[&gt;]" attribute="HtmlTag" context="#stay" />
-        <RegExpr String="={3,} *$" context="#pop" attribute="Normal" />
-        <RegExpr String="={2,2} *$" context="#pop" attribute="Section" />
-        <RegExpr String="={1,1} *$" context="#pop" attribute="Normal" />
-        <RegExpr String="=*[^=]+$" context="#pop" attribute="Normal" />
-      </context>
-      <context attribute="Comment" lineEndContext="#stay" name="comment" >
-        <StringDetect String="--&gt;" context="#pop" attribute="Comment" endRegion="comment" />
-      </context>
-      <context attribute="Link" lineEndContext="#stay" name="DelimitedURL" >
-        <DetectChar char="]" context="#pop" attribute="WikiTag" />
-        <DetectChar char="[" context="#stay" attribute="WikiTag" />
-        <RegExpr String="&url;" context="DelimitedUrlLink" lookAhead="true" />
-        <DetectChar char=" " context="URLTag" attribute="WikiTag" />
-      </context>
-      <context attribute="Link" lineEndContext="#stay" name="DelimitedUrlLink" >
-        <IncludeRules context="FindTemplate" />
-        <DetectChar char=" " context="#pop" lookAhead="true" />
-        <DetectChar char="]" context="#pop" lookAhead="true" />
+        <IncludeRules context="FindHtmlElements" />
+        <IncludeRules context="FindSignature" />
       </context>
 
-      <context attribute="Link" lineEndContext="#pop" name="LooseURL" >
-        <IncludeRules context="FindTemplate" />
-        <DetectChar char=" " context="#pop" attribute="WikiTag" />
+      <!-- @} Section -->
+
+
+      <!--
+        Link @{
+
+        e.g.
+        [link label]
+        http://example.com
+      -->
+
+      <context attribute="Normal" lineEndContext="#stay" name="FindUrl" >
+        <RegExpr String="\[(?=&externalLink;)" attribute="WikiTag" context="DelimitedURL" />
+        <RegExpr String="&url;" attribute="Link" context="LooseURL" />
+      </context>
+      <context attribute="Normal" lineEndContext="#stay" name="FindUrlWithinTemplate" >
+        <RegExpr String="\[(?=&externalLink;)" attribute="WikiTag" context="DelimitedURL" />
+        <RegExpr String="&url;" attribute="Link" context="LooseURLWithinTemplate" />
+      </context>
+
+      <!-- external link: [link label] -->
+
+      <context attribute="Link" lineEndContext="#pop" name="DelimitedURL" >
+        <DetectChar char="]" context="#pop" attribute="WikiTag" />
+        <DetectSpaces context="URLTag" attribute="WikiTag" />
+        <IncludeRules context="FindTemplates" />
+      </context>
+      <context attribute="Normal" lineEndContext="#pop#pop" name="URLTag" >
+        <DetectChar char="]" context="#pop#pop" attribute="WikiTag" />
+        <IncludeRules context="FindTextDecorations" />
+        <IncludeRules context="FindTemplates" />
+      </context>
+
+      <!-- link in text -->
+
+      <context attribute="Link" lineEndContext="#pop" name="LooseURL" fallthroughContext="#pop">
+        <DetectChar char="|" context="#pop" lookAhead="true" />
+        <DetectSpaces context="#pop" attribute="Normal" />
+        <IncludeRules context="FindTemplates" />
+        <RegExpr String="(&urlpart;|{(?!\{))++" attribute="Link" />
       </context>
       <context attribute="Link" lineEndContext="#pop" name="LooseURLWithinTemplate" >
-        <IncludeRules context="FindTemplate" />
-        <Detect2Chars char="}" char1="}" context="#pop" lookAhead="true" />
-        <DetectChar char=" " context="#pop" attribute="WikiTag" />
+        <StringDetect String="}}" context="#pop" lookAhead="true" />
+        <IncludeRules context="LooseURL" />
       </context>
 
-      <context attribute="Normal" lineEndContext="#stay" name="URLTag" >
-        <IncludeRules context="FindTextDecorations" />
-        <IncludeRules context="FindTemplate" />
-        <DetectChar char="]" context="#pop" lookAhead="true" />
+      <!-- @} Link -->
+
+
+      <!--
+        List, Indentation and Definition @{
+
+        e.g.
+        * item
+        ::; term
+        ; term: desc
+      -->
+
+      <context attribute="Normal" lineEndContext="#stay" name="FindListItem" >
+        <AnyChar String="*#;:" context="ListItem" column="0" lookAhead="1"/>
       </context>
 
-      <context name="WikiLinkWithoutDescriptionRules" attribute="Normal" lineEndContext="#stay" >
-        <IncludeRules context="FindTemplate" />
+      <!-- dispatching -->
+
+      <context attribute="Normal" lineEndContext="#pop" name="ListItem" fallthroughContext="#pop">
+        <AnyChar String="*#:" attribute="WikiTag"/>
+        <DetectChar char=";" attribute="WikiTag" context="DefinitionItem" />
+      </context>
+
+      <!-- definition -->
+
+      <context attribute="Normal" lineEndContext="#pop#pop" name="DefinitionItem" fallthroughContext="DefinitionListHeader">
+        <AnyChar String="*#:;" attribute="WikiTag"/>
+      </context>
+
+      <context attribute="DefinitionListHeader" lineEndContext="#pop#pop#pop" name="DefinitionListHeader" >
+        <DetectChar char=":" context="#pop#pop#pop" attribute="WikiTag" />
+      </context>
+
+      <!-- @} List, Indentation and Definition -->
+
+
+      <!--
+        Bold, Italic and Underlined @{
+
+        e.g.
+        ''abc''
+        '''abc'''
+        <u>abc</u>
+      -->
+
+      <context name="FindTextDecorations" attribute="Normal" lineEndContext="#stay">
+        <StringDetect String="'''" attribute="WikiTag" context="Bold" />
+        <StringDetect String="''" attribute="WikiTag" context="Italic" />
+        <StringDetect String="&lt;u&gt;" attribute="HtmlTag" context="Underlined" />
+      </context>
+
+      <context name="FindTextInDecorations" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="FindUrl" />
+        <DetectIdentifier/>
+        <IncludeRules context="FindComment" />
+        <IncludeRules context="FindTemplates" />
+        <IncludeRules context="FindWikiLink" />
         <IncludeRules context="FindHtmlEntities" />
-        <Detect2Chars char="[" char1="[" attribute="WikiTag" />
-        <Detect2Chars char="]" char1="]" context="#pop" attribute="WikiTag" />
+        <IncludeRules context="FindHtmlElements" />
+      </context>
+
+      <context attribute="Bold" lineEndContext="#pop" name="Bold" >
+        <StringDetect String="'''" context="#pop" attribute="WikiTag" />
+        <StringDetect String="''" context="BoldItalic" attribute="WikiTag" />
+        <StringDetect String="&lt;u&gt;" attribute="HtmlTag" context="BoldUnderlined" />
+        <IncludeRules context="FindWikiLinkBeingBold" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context attribute="Italic" lineEndContext="#pop" name="Italic" >
+        <StringDetect String="'''" attribute="WikiTag" context="ItalicBold" />
+        <StringDetect String="''" context="#pop" attribute="WikiTag" />
+        <StringDetect String="&lt;u&gt;" attribute="HtmlTag" context="ItalicUnderlined" />
+        <IncludeRules context="FindWikiLinkBeingItalic" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context attribute="Underlined" name="Underlined" lineEndContext="#stay" >
+        <StringDetect String="'''" context="UnderlinedBold" attribute="WikiTag" />
+        <StringDetect String="''" context="UnderlinedItalic" attribute="WikiTag" />
+        <StringDetect String="&lt;/u&gt;" context="#pop" attribute="HtmlTag" />
+        <IncludeRules context="FindWikiLinkBeingUnderlined" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context name="BoldItalic" attribute="BoldItalic" lineEndContext="#pop" >
+        <StringDetect String="''" context="#pop" attribute="WikiTag" />
+        <StringDetect String="&lt;u&gt;" attribute="HtmlTag" context="BoldItalicUnderlined" />
+        <IncludeRules context="FindWikiLinkBeingBoldItalic" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context name="ItalicBold" attribute="BoldItalic" lineEndContext="#pop" >
+        <StringDetect String="'''" context="#pop" attribute="WikiTag" />
+        <StringDetect String="&lt;u&gt;" attribute="HtmlTag" context="BoldItalicUnderlined" />
+        <IncludeRules context="FindWikiLinkBeingBoldItalic" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context name="BoldUnderlined" attribute="BoldUnderlined" lineEndContext="#pop#pop!Underlined" >
+        <StringDetect String="&lt;/u&gt;" context="#pop" attribute="HtmlTag" />
+        <StringDetect String="''" context="BoldUnderlinedItalic" attribute="WikiTag" />
+        <IncludeRules context="FindWikiLinkBeingBoldUnderlined" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context name="UnderlinedBold" attribute="BoldUnderlined" lineEndContext="#pop" >
+        <StringDetect String="'''" context="#pop" attribute="WikiTag" />
+        <StringDetect String="''" context="UnderlinedBoldItalic" attribute="WikiTag" />
+        <StringDetect String="&lt;/u&gt;" context="#pop#pop!Bold" attribute="Error" />
+        <IncludeRules context="FindWikiLinkBeingBoldUnderlined" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context name="ItalicUnderlined" attribute="ItalicUnderlined" lineEndContext="#pop#pop!Underlined" >
+        <StringDetect String="&lt;/u&gt;" context="#pop" attribute="HtmlTag" />
+        <StringDetect String="'''" context="ItalicUnderlinedBold" attribute="WikiTag" />
+        <IncludeRules context="FindWikiLinkBeingItalicUnderlined" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context name="UnderlinedItalic" attribute="ItalicUnderlined" lineEndContext="#pop" >
+        <StringDetect String="'''" context="UnderlinedItalicBold" attribute="WikiTag" />
+        <StringDetect String="''" context="#pop" attribute="WikiTag" />
+        <StringDetect String="&lt;/u&gt;" context="#pop#pop!Italic" attribute="Error" />
+        <IncludeRules context="FindWikiLinkBeingItalicUnderlined" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <!-- and ItalicBoldUnderlined -->
+      <context name="BoldItalicUnderlined" attribute="BoldItalicUnderlined" lineEndContext="#pop#pop#pop!Underlined" >
+        <StringDetect String="&lt;/u&gt;" context="#pop" attribute="HtmlTag" />
+        <IncludeRules context="FindWikiLinkBeingBoldItalicUnderlined" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context name="BoldUnderlinedItalic" attribute="BoldItalicUnderlined" lineEndContext="#pop#pop#pop!Underlined" >
+        <StringDetect String="''" context="#pop" attribute="WikiTag" />
+        <StringDetect String="&lt;/u&gt;" context="#pop#pop!BoldItalic" attribute="Error" />
+        <IncludeRules context="FindWikiLinkBeingBoldItalicUnderlined" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context name="ItalicUnderlinedBold" attribute="BoldItalicUnderlined" lineEndContext="#pop#pop#pop!Underlined" >
+        <StringDetect String="'''" context="#pop" attribute="WikiTag" />
+        <StringDetect String="&lt;/u&gt;" context="#pop#pop!ItalicBold" attribute="Error" />
+        <IncludeRules context="FindWikiLinkBeingBoldItalicUnderlined" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context name="UnderlinedItalicBold" attribute="BoldItalicUnderlined" lineEndContext="#pop#pop" >
+        <StringDetect String="'''" context="#pop" attribute="WikiTag" />
+        <StringDetect String="&lt;/u&gt;" context="#pop#pop#pop" attribute="Error" />
+        <IncludeRules context="FindWikiLinkBeingBoldItalicUnderlined" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <context name="UnderlinedBoldItalic" attribute="BoldItalicUnderlined" lineEndContext="#pop#pop" >
+        <StringDetect String="''" context="#pop" attribute="WikiTag" />
+        <StringDetect String="&lt;/u&gt;" context="#pop#pop#pop" attribute="Error" />
+        <IncludeRules context="FindWikiLinkBeingBoldItalicUnderlined" />
+        <IncludeRules context="FindTextInDecorations" />
+      </context>
+
+      <!-- @} Bold, Italic and Underlined -->
+
+
+      <!--
+        Find Wiki Link @{
+
+        e.g.
+        [[Page|label]]
+      -->
+      <context name="FindWikiLink" attribute="Normal" lineEndContext="#stay">
+        <Detect2Chars char="[" char1="[" attribute="WikiTag" context="WikiLink" />
+      </context>
+
+      <!-- in Bold, Italic and Underlined -->
+
+      <context name="FindWikiLinkBeingBold" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkBoldWithDescription" attribute="WikiTag" />
+        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkBoldWithoutDescription" attribute="WikiTag" />
+      </context>
+      <context name="FindWikiLinkBeingItalic" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkItalicWithDescription" attribute="WikiTag" />
+        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkItalicWithoutDescription" attribute="WikiTag" />
+      </context>
+      <context name="FindWikiLinkBeingUnderlined" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkUnderlinedWithDescription" attribute="WikiTag" />
+        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkUnderlinedWithoutDescription" attribute="WikiTag" />
+      </context>
+      <context name="FindWikiLinkBeingBoldItalic" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkBoldItalicWithDescription" attribute="WikiTag" />
+        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkBoldItalicWithoutDescription" attribute="WikiTag" />
+      </context>
+      <context name="FindWikiLinkBeingBoldUnderlined" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkBoldUnderlinedWithDescription" attribute="WikiTag" />
+        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkBoldUnderlinedWithoutDescription" attribute="WikiTag" />
+      </context>
+      <context name="FindWikiLinkBeingItalicUnderlined" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkItalicUnderlinedWithDescription" attribute="WikiTag" />
+        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkItalicUnderlinedWithoutDescription" attribute="WikiTag" />
+      </context>
+      <context name="FindWikiLinkBeingBoldItalicUnderlined" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkBoldItalicUnderlinedWithDescription" attribute="WikiTag" />
+        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkBoldItalicUnderlinedWithoutDescription" attribute="WikiTag" />
+      </context>
+
+      <!-- @} Find Wiki Link -->
+
+      <!--
+        Within Wiki link @{
+
+        e.g.
+        [[Page|label]]
+          ~~~~~~~~~~~~
+      -->
+      <context name="WikiLinkWithoutDescriptionRules" attribute="Normal" lineEndContext="#stay" >
+        <DetectIdentifier/>
+        <StringDetect String="]]" context="#pop" attribute="WikiTag" />
+        <IncludeRules context="FindTemplates" />
+        <IncludeRules context="FindHtmlEntities" />
       </context>
       <context name="WikiLinkWithDescriptionRules" attribute="Normal" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
         <DetectChar char="#" attribute="WikiTag" />
-      </context>
-      <context name="WikiLink" attribute="Link" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithDescriptionRules" />
-        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescription" />
-      </context>
-      <context name="WikiLinkBoldWithDescription" attribute="Link" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithDescriptionRules" />
-        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionBold" />
-      </context>
-      <context name="WikiLinkBoldWithoutDescription" attribute="LinkBold" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
-        <DetectChar char="#" attribute="WikiTagBold" />
-      </context>
-      <context name="WikiLinkItalicWithDescription" attribute="Link" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithDescriptionRules" />
-        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionItalic" />
-      </context>
-      <context name="WikiLinkItalicWithoutDescription" attribute="LinkItalic" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
-        <DetectChar char="#" attribute="WikiTagItalic" />
-      </context>
-      <context name="WikiLinkUnderlinedWithDescription" attribute="Link" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithDescriptionRules" />
-        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionUnderlined" />
-      </context>
-      <context name="WikiLinkUnderlinedWithoutDescription" attribute="LinkUnderlined" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
-        <DetectChar char="#" attribute="WikiTagUnderlined" />
-      </context>
-      <context name="WikiLinkBoldItalicWithDescription" attribute="Link" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithDescriptionRules" />
-        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionBoldItalic" />
-      </context>
-      <context name="WikiLinkBoldItalicWithoutDescription" attribute="LinkBoldItalic" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
-        <DetectChar char="#" attribute="WikiTagBoldItalic" />
-      </context>
-      <context name="WikiLinkBoldUnderlinedWithDescription" attribute="Link" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithDescriptionRules" />
-        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionBoldUnderlined" />
-      </context>
-      <context name="WikiLinkBoldUnderlinedWithoutDescription" attribute="LinkBoldUnderlined" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
-        <DetectChar char="#" attribute="WikiTagBoldUnderlined" />
-      </context>
-      <context name="WikiLinkItalicUnderlinedWithDescription" attribute="Link" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithDescriptionRules" />
-        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionItalicUnderlined" />
-      </context>
-      <context name="WikiLinkItalicUnderlinedWithoutDescription" attribute="LinkItalicUnderlined" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
-        <DetectChar char="#" attribute="WikiTagItalicUnderlined" />
-      </context>
-      <context name="WikiLinkBoldItalicUnderlinedWithDescription" attribute="Link" lineEndContext="#stay" >
-        <IncludeRules context="WikiLinkWithDescriptionRules" />
-        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionBoldItalicUnderlined" />
-      </context>
-      <context name="WikiLinkBoldItalicUnderlinedWithoutDescription" attribute="LinkBoldItalicUnderlined" lineEndContext="#stay" >
-        <DetectChar char="#" attribute="WikiTagBoldItalicUnderlined" />
         <IncludeRules context="WikiLinkWithoutDescriptionRules" />
       </context>
 
-      <context name="WikiLinkDescriptionRules" attribute="Normal" lineEndContext="#stay">
-        <IncludeRules context="FindTemplate" />
-        <IncludeRules context="FindHtmlEntities" />
-        <Detect2Chars char="]" char1="]" context="#pop" attribute="WikiTag" lookAhead="true" />
+      <context name="WikiLink" attribute="Link" lineEndContext="#stay" >
+        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescription" />
+        <IncludeRules context="WikiLinkWithDescriptionRules" />
       </context>
+      <context name="WikiLinkBoldWithDescription" attribute="Link" lineEndContext="#stay" >
+        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionBold" />
+        <IncludeRules context="WikiLinkWithDescriptionRules" />
+      </context>
+      <context name="WikiLinkBoldWithoutDescription" attribute="LinkBold" lineEndContext="#stay" >
+        <DetectChar char="#" attribute="WikiTagBold" />
+        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
+      </context>
+      <context name="WikiLinkItalicWithDescription" attribute="Link" lineEndContext="#stay" >
+        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionItalic" />
+        <IncludeRules context="WikiLinkWithDescriptionRules" />
+      </context>
+      <context name="WikiLinkItalicWithoutDescription" attribute="LinkItalic" lineEndContext="#stay" >
+        <DetectChar char="#" attribute="WikiTagItalic" />
+        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
+      </context>
+      <context name="WikiLinkUnderlinedWithDescription" attribute="Link" lineEndContext="#stay" >
+        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionUnderlined" />
+        <IncludeRules context="WikiLinkWithDescriptionRules" />
+      </context>
+      <context name="WikiLinkUnderlinedWithoutDescription" attribute="LinkUnderlined" lineEndContext="#stay" >
+        <DetectChar char="#" attribute="WikiTagUnderlined" />
+        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
+      </context>
+      <context name="WikiLinkBoldItalicWithDescription" attribute="Link" lineEndContext="#stay" >
+        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionBoldItalic" />
+        <IncludeRules context="WikiLinkWithDescriptionRules" />
+      </context>
+      <context name="WikiLinkBoldItalicWithoutDescription" attribute="LinkBoldItalic" lineEndContext="#stay" >
+        <DetectChar char="#" attribute="WikiTagBoldItalic" />
+        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
+      </context>
+      <context name="WikiLinkBoldUnderlinedWithDescription" attribute="Link" lineEndContext="#stay" >
+        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionBoldUnderlined" />
+        <IncludeRules context="WikiLinkWithDescriptionRules" />
+      </context>
+      <context name="WikiLinkBoldUnderlinedWithoutDescription" attribute="LinkBoldUnderlined" lineEndContext="#stay" >
+        <DetectChar char="#" attribute="WikiTagBoldUnderlined" />
+        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
+      </context>
+      <context name="WikiLinkItalicUnderlinedWithDescription" attribute="Link" lineEndContext="#stay" >
+        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionItalicUnderlined" />
+        <IncludeRules context="WikiLinkWithDescriptionRules" />
+      </context>
+      <context name="WikiLinkItalicUnderlinedWithoutDescription" attribute="LinkItalicUnderlined" lineEndContext="#stay" >
+        <DetectChar char="#" attribute="WikiTagItalicUnderlined" />
+        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
+      </context>
+      <context name="WikiLinkBoldItalicUnderlinedWithDescription" attribute="Link" lineEndContext="#stay" >
+        <DetectChar char="|" attribute="WikiTag" context="WikiLinkDescriptionBoldItalicUnderlined" />
+        <IncludeRules context="WikiLinkWithDescriptionRules" />
+      </context>
+      <context name="WikiLinkBoldItalicUnderlinedWithoutDescription" attribute="LinkBoldItalicUnderlined" lineEndContext="#stay" >
+        <IncludeRules context="WikiLinkWithoutDescriptionRules" />
+        <DetectChar char="#" attribute="WikiTagBoldItalicUnderlined" />
+      </context>
+
+      <!--
+        [[Page|label or parameters]]
+               ~~~~~~~~~~~~~~~~~~~~~
+      -->
+
+      <context name="WikiLinkDescriptionRules" attribute="Normal" lineEndContext="#stay">
+        <DetectIdentifier/>
+        <DetectSpaces/>
+        <DetectChar char="|" attribute="WikiTag" />
+        <Detect2Chars char="]" char1="]" context="#pop" attribute="WikiTag" lookAhead="true" />
+        <IncludeRules context="FindTemplates" />
+        <IncludeRules context="FindComment" />
+        <IncludeRules context="FindHtmlEntities" />
+        <IncludeRules context="FindHtmlElements" />
+      </context>
+
       <context name="WikiLinkDescription" attribute="Normal" lineEndContext="#stay">
         <IncludeRules context="WikiLinkDescriptionRules" />
         <IncludeRules context="FindTextDecorations" />
@@ -249,12 +491,12 @@
       <context name="WikiLinkDescriptionBold" attribute="Bold" lineEndContext="#stay" >
         <IncludeRules context="WikiLinkDescriptionRules" />
         <StringDetect String="''" context="BoldItalic" attribute="WikiTag" />
-        <RegExpr String="&lt;u *&gt;" attribute="HtmlTag" context="BoldUnderlined" />
+        <StringDetect String="&lt;u&gt;" attribute="HtmlTag" context="BoldUnderlined" />
       </context>
       <context name="WikiLinkDescriptionItalic" attribute="Italic" lineEndContext="#stay" >
         <IncludeRules context="WikiLinkDescriptionRules" />
         <StringDetect String="'''" attribute="WikiTag" context="ItalicBold" />
-        <RegExpr String="&lt;u *&gt;" attribute="HtmlTag" context="ItalicUnderlined" />
+        <StringDetect String="&lt;u&gt;" attribute="HtmlTag" context="ItalicUnderlined" />
       </context>
       <context name="WikiLinkDescriptionUnderlined" attribute="Underlined" lineEndContext="#stay" >
         <IncludeRules context="WikiLinkDescriptionRules" />
@@ -263,7 +505,7 @@
       </context>
       <context name="WikiLinkDescriptionBoldItalic" attribute="BoldItalic" lineEndContext="#stay" >
         <IncludeRules context="WikiLinkDescriptionRules" />
-        <RegExpr String="&lt;u *&gt;" attribute="HtmlTag" context="BoldItalicUnderlined" />
+        <StringDetect String="&lt;u&gt;" attribute="HtmlTag" context="BoldItalicUnderlined" />
       </context>
       <context name="WikiLinkDescriptionBoldUnderlined" attribute="BoldUnderlined" lineEndContext="#stay" >
         <IncludeRules context="WikiLinkDescriptionRules" />
@@ -277,103 +519,171 @@
         <IncludeRules context="WikiLinkDescriptionRules" />
       </context>
 
+      <!-- @} Within Wiki link -->
+
+
+      <!--
+        Template @{
+
+        e.g.
+        {{{value|default}}}
+        {{template|param=value}}
+      -->
+
+      <context attribute="Normal" lineEndContext="#stay" name="FindTemplates" >
+        <RegExpr String="{{(?=$|{{{|[^{])" context="Template" attribute="WikiTag" beginRegion="template" />
+        <StringDetect String="{{{" context="TemplateParameter" attribute="WikiTag" />
+      </context>
+
+      <!-- {{...}} -->
+
       <context attribute="TemplateName" lineEndContext="#stay" name="Template" >
-        <StringDetect String="|" context="TemplateParameterSlot" attribute="WikiTag" />
-        <Detect2Chars char="}" char1="}" context="#pop" attribute="WikiTag" endRegion="template" />
+        <DetectIdentifier/>
+        <DetectChar char="|" context="TemplateParameterSlotStart" attribute="WikiTag" />
+        <DetectChar char=":" context="TemplatenameOrText" attribute="TemplateName" />
+        <StringDetect String="}}" context="#pop" attribute="WikiTag" endRegion="template" />
+        <IncludeRules context="FindTemplates" />
+      </context>
+
+      <!-- {{...:...}}
+                ~ -->
+      <context attribute="TemplateName" lineEndContext="#stay" name="TemplatenameOrText" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <!-- {{...:*bla}}
+                   ~ list item -->
+        <AnyChar String="*#;&lt;[']" context="#pop!TemplateParameterSlotStart" lookAhead="1"/>
+      </context>
+
+      <!--
+        {{template|*...}}
+                   ~ start with list item
+        {{template|...}}
+                   ~~~ normal text or parameters
+      -->
+      <context attribute="Normal" lineEndContext="TemplateParameterSlot" fallthroughContext="TemplateParameterSlot" name="TemplateParameterSlotStart">
+        <DetectSpaces/>
+        <AnyChar String="*#;:" context="TemplateParameterSlotList" attribute="WikiTag"/>
+      </context>
+      <context attribute="Normal" lineEndContext="#pop!TemplateParameterSlot" fallthroughContext="#pop!TemplateParameterSlot" name="TemplateParameterSlotList">
+        <AnyChar String="*#;:" attribute="WikiTag"/>
       </context>
       <context attribute="Normal" lineEndContext="#stay" name="TemplateParameterSlot" >
-        <Detect2Chars char="}" char1="}" context="#pop" attribute="WikiTag" lookAhead="true" />
-        <StringDetect String="&lt;!--" context="comment" attribute="Comment" beginRegion="comment" />
-        <RegExpr String="[~]{3,4}" attribute="WikiTag" context="#stay" />
-        <IncludeRules context="FindListItem" />
-        <IncludeRules context="FindUrlWithinTemplate" />
-        <IncludeRules context="FindTextDecorations" />
-        <StringDetect String="{{{" context="TemplateParameter" attribute="WikiTag" />
-        <IncludeRules context="FindTemplate" />
-        <IncludeRules context="FindWikiLink" />
-        <IncludeRules context="FindHtmlEntities" />
-        <StringDetect String="&lt;nowiki&gt;" context="NoWiki" attribute="HtmlTag" />
-        <StringDetect String="&lt;pre&gt;" context="Pre" attribute="HtmlTag" />
-        <IncludeRules context="FindSyntaxHighlightingHtmlElement" />
-        <RegExpr String="[&lt;][^&gt;]+[&gt;]" attribute="HtmlTag" context="#stay" />
-        <StringDetect String="|" context="#pop" attribute="WikiTag" lookAhead="true" />
-        <RegExpr String="[^{}|=]+(?=[=])" attribute="Parameter" context="TemplateParameterSlotEqual" />
+        <DetectChar char="|" context="#pop" attribute="WikiTag" />
+        <DetectChar char="=" context="TemplateParameterSlotValue" attribute="WikiTag" />
+        <StringDetect String="}}" context="#pop#pop#pop" attribute="WikiTag" endRegion="template" />
+        <IncludeRules context="FindInTemplate" />
+        <RegExpr String="[_\w]+\s*(?=[=])" attribute="Parameter"/>
       </context>
-      <context attribute="Normal" lineEndContext="#stay" name="TemplateParameterSlotEqual" >
-        <Detect2Chars char="}" char1="}" context="#pop" attribute="WikiTag" lookAhead="true" />
-        <StringDetect String="|" context="#pop" attribute="WikiTag" lookAhead="true" />
-        <StringDetect String="=" context="TemplateParameterSlotValue" attribute="WikiTag" />
-      </context>
+
+      <!--
+        {{template|param=value}}
+                         ~~~~~~~
+      -->
       <context attribute="Normal" lineEndContext="#stay" name="TemplateParameterSlotValue" >
-        <StringDetect String="&lt;!--" context="comment" attribute="Comment" beginRegion="comment" />
-        <RegExpr String="[~]{3,4}" attribute="WikiTag" context="#stay" />
+        <DetectChar char="|" context="#pop#pop" attribute="WikiTag" />
+        <StringDetect String="}}" context="#pop#pop#pop#pop" attribute="WikiTag" endRegion="template" />
+        <IncludeRules context="FindInTemplate" />
+      </context>
+
+      <context attribute="Normal" lineEndContext="#stay" name="FindInTemplate" >
+        <IncludeRules context="FindComment" />
+        <IncludeRules context="FindSignature" />
         <IncludeRules context="FindListItem" />
         <IncludeRules context="FindUrlWithinTemplate" />
         <IncludeRules context="FindTextDecorations" />
-        <StringDetect String="{{{" context="TemplateParameter" attribute="WikiTag" />
-        <IncludeRules context="FindTemplate" />
+        <IncludeRules context="FindTemplates" />
         <IncludeRules context="FindWikiLink" />
         <IncludeRules context="FindHtmlEntities" />
-        <StringDetect String="&lt;nowiki&gt;" context="NoWiki" attribute="HtmlTag" />
-        <StringDetect String="&lt;pre&gt;" context="Pre" attribute="HtmlTag" />
-        <IncludeRules context="FindSyntaxHighlightingHtmlElement" />
-        <RegExpr String="[&lt;][^&gt;]+[&gt;]" attribute="HtmlTag" context="#stay" />
-        <Detect2Chars char="}" char1="}" context="#pop" attribute="WikiTag" lookAhead="true" />
-        <StringDetect String="|" context="#pop" attribute="WikiTag" lookAhead="true" />
+        <IncludeRules context="FindHtmlElements" />
       </context>
+
+      <!-- {{{...}}} -->
+
       <context attribute="Parameter" lineEndContext="#stay" name="TemplateParameter" >
+        <DetectIdentifier/>
         <StringDetect String="}}}" context="#pop" attribute="WikiTag" />
+        <DetectChar char="|" attribute="WikiTag" />
+        <IncludeRules context="FindTemplates" />
       </context>
+
+      <!-- @} Template -->
+
+
+      <!--
+        HTML element and special tags @{
+
+        e.g.
+        <tag>
+        <nowiki/>
+      -->
+
+      <context attribute="Normal" lineEndContext="#stay" name="FindHtmlElements" >
+        <StringDetect String="&lt;nowiki&gt;" context="NoWiki" attribute="WikiTag" />
+        <RegExpr String="&lt;nowiki\s*/&gt;" attribute="WikiTag" />
+        <WordDetect String="&lt;pre" context="PreAttr" attribute="HtmlTag" />
+        <WordDetect String="&lt;source" context="SourceStartTag" attribute="HtmlTag" />
+        <WordDetect String="&lt;syntaxhighlight" context="SyntaxHighlightStartTag" attribute="HtmlTag" />
+        <RegExpr String="&lt;/?&htmlTagName;" context="HtmlElement" attribute="HtmlTag" />
+      </context>
+
+      <!-- nowiki -->
+
       <context attribute="NoWiki" lineEndContext="#stay" name="NoWiki" >
-        <RegExpr String="&lt;!--[^-]*--&gt;" attribute="NoWiki" />
-        <StringDetect String="&lt;/nowiki&gt;" context="#pop" attribute="HtmlTag" />
-        <RegExpr String="[&lt;][^&gt;]+[&gt;]" attribute="HtmlTag" context="#stay" />
-        <StringDetect String="&lt;pre&gt;" context="Pre" attribute="HtmlTag" />
+        <StringDetect String="&lt;/nowiki&gt;" context="#pop" attribute="WikiTag" />
       </context>
-      <context attribute="Unformatted" lineEndContext="#pop" name="Unformatted" />
+
+      <!-- <tag> -->
+
+      <context attribute="HtmlTag" lineEndContext="#stay" name="HtmlElement" fallthroughContext="#pop">
+        <DetectSpaces attribute="HtmlTag"/>
+        <DetectChar char=">" context="#pop" attribute="HtmlTag"/>
+        <IncludeRules context="FindHtmlAttribute"/>
+      </context>
+
+      <!-- <pre> -->
+
+      <context attribute="HtmlTag" lineEndContext="#stay" name="PreAttr" fallthroughContext="#pop">
+        <DetectSpaces attribute="HtmlTag"/>
+        <DetectChar char=">" context="Pre" attribute="HtmlTag"/>
+        <IncludeRules context="FindHtmlAttribute"/>
+      </context>
+
       <context attribute="NoWiki" lineEndContext="#stay" name="Pre" >
-        <StringDetect String="&lt;/pre&gt;" context="#pop" attribute="HtmlTag" />
+        <StringDetect String="&lt;/pre&gt;" context="#pop#pop" attribute="HtmlTag" />
       </context>
 
+      <!-- <source> and <syntaxhighlight> -->
 
-
-      <!-- <source> and <syntaxhighlight> tags. -->
-
-      <context name="SourceStartTag" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="(^|\s+)lang\=(&quot;javascript&quot;|&apos;javascript&apos;)" context="JavaScriptSourceStartTag" lookAhead="true" />
-        <DetectChar attribute="HtmlTag" context="UnsupportedLanguageSourceStartTag" char="&gt;" lookAhead="true" />
-        <IncludeRules context="FindHtmlStartTagAttributes" />
+      <context name="SourceStartTag" attribute="Normal" lineEndContext="#stay" fallthroughContext="#pop">
+        <DetectSpaces attribute="HtmlTag"/>
+        <DetectChar char=">" context="UnsupportedLanguageSourceContent" attribute="HtmlTag"/>
+        <StringDetect String="lang=&quot;javascript&quot;" context="#pop!JavaScriptSourceStartTag" lookAhead="1"/>
+        <StringDetect String="lang=&apos;javascript&apos;" context="#pop!JavaScriptSourceStartTag" lookAhead="1"/>
+        <IncludeRules context="FindHtmlAttribute"/>
       </context>
-      <context name="SyntaxHighlightStartTag" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="(^|\s+)lang\=(&quot;javascript&quot;|&apos;javascript&apos;)" context="JavaScriptSyntaxHighlightStartTag" lookAhead="true" />
-        <DetectChar attribute="HtmlTag" context="UnsupportedLanguageSyntaxHighlightStartTag" char="&gt;" lookAhead="true" />
-        <IncludeRules context="FindHtmlStartTagAttributes" />
-      </context>
-
-
-      <context name="UnsupportedLanguageSourceStartTag" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="HtmlTag" context="UnsupportedLanguageSourceContent" char="&gt;" />
-        <IncludeRules context="FindHtmlStartTagAttributes" />
-      </context>
-      <context name="UnsupportedLanguageSyntaxHighlightStartTag" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="HtmlTag" context="UnsupportedLanguageSyntaxHighlightContent" char="&gt;" />
-        <IncludeRules context="FindHtmlStartTagAttributes" />
+      <context name="SyntaxHighlightStartTag" attribute="Normal" lineEndContext="#stay" fallthroughContext="#pop">
+        <DetectSpaces attribute="HtmlTag"/>
+        <DetectChar char=">" context="UnsupportedLanguageSyntaxHighlightContent" attribute="HtmlTag"/>
+        <StringDetect String="lang=&quot;javascript&quot;" context="#pop!JavaScriptSyntaxHighlightStartTag" lookAhead="1"/>
+        <StringDetect String="lang=&apos;javascript&apos;" context="#pop!JavaScriptSyntaxHighlightStartTag" lookAhead="1"/>
+        <IncludeRules context="FindHtmlAttribute"/>
       </context>
 
-      <context name="JavaScriptSourceStartTag" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="HtmlTag" context="JavaScriptSourceContent" char="&gt;" />
-        <IncludeRules context="FindHtmlStartTagAttributes" />
+      <context name="JavaScriptSourceStartTag" attribute="Normal" lineEndContext="#stay" fallthroughContext="#pop">
+        <DetectSpaces attribute="HtmlTag"/>
+        <DetectChar char=">" context="JavaScriptSourceContent" attribute="HtmlTag"/>
+        <IncludeRules context="FindHtmlAttribute"/>
       </context>
-      <context name="JavaScriptSyntaxHighlightStartTag" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="HtmlTag" context="JavaScriptSyntaxHighlightContent" char="&gt;" />
-        <IncludeRules context="FindHtmlStartTagAttributes" />
+      <context name="JavaScriptSyntaxHighlightStartTag" attribute="Normal" lineEndContext="#stay" fallthroughContext="#pop">
+        <DetectSpaces attribute="HtmlTag"/>
+        <DetectChar char=">" context="JavaScriptSyntaxHighlightContent" attribute="HtmlTag"/>
+        <IncludeRules context="FindHtmlAttribute"/>
       </context>
 
-
-      <context name="UnsupportedLanguageSourceContent" attribute="NoWiki" lineEndContext="#stay">
+      <context name="UnsupportedLanguageSourceContent" attribute="NoWiki">
         <IncludeRules context="SourceEnd" />
       </context>
-      <context name="UnsupportedLanguageSyntaxHighlightContent" attribute="NoWiki" lineEndContext="#stay">
+      <context name="UnsupportedLanguageSyntaxHighlightContent" attribute="NoWiki">
         <IncludeRules context="SyntaxHighlightEnd" />
       </context>
 
@@ -382,195 +692,90 @@
         <IncludeRules context="Normal##JavaScript" />
       </context>
       <context name="JavaScriptSyntaxHighlightContent" attribute="NoWiki" lineEndContext="#stay">
-        <StringDetect String="&lt;/syntaxhighlight&gt;" context="#pop#pop#pop" attribute="HtmlTag" />
         <IncludeRules context="SyntaxHighlightEnd" />
         <IncludeRules context="Normal##JavaScript" />
       </context>
 
+      <context name="SourceEnd" attribute="Normal">
+        <StringDetect String="&lt;/source&gt;" context="#pop#pop" attribute="HtmlTag" />
+      </context>
+      <context name="SyntaxHighlightEnd" attribute="Normal">
+        <StringDetect String="&lt;/syntaxhighlight&gt;" context="#pop#pop" attribute="HtmlTag" />
+      </context>
 
-      <context name="SourceEnd" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="&lt;/source&gt;" context="#pop#pop#pop" attribute="HtmlTag" />
-      </context>
-      <context name="SyntaxHighlightEnd" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="&lt;/syntaxhighlight&gt;" context="#pop#pop#pop" attribute="HtmlTag" />
+      <!--
+        <tag attr="value" ...>
+             ~~~~~~~~~~~~
+        Leaves the tag when the attribute syntax is not valid
+      -->
+
+      <context attribute="Normal" lineEndContext="#stay" name="FindHtmlAttribute">
+        <DetectIdentifier attribute="HtmlAttribute" context="HtmlAttrSep"/>
       </context>
 
+      <context attribute="Normal" lineEndContext="#stay" name="HtmlAttrSep" fallthroughContext="#pop#pop">
+        <DetectChar attribute="HtmlAttributeSeparator" context="HtmlValue" char="=" />
+        <DetectSpaces attribute="Normal"/>
+      </context>
 
-      <context name="HtmlAttribute" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="HtmlAttribute" context="HtmlValue" char="=" />
-        <RegExpr attribute="Error" context="#stay" String="\S" />
+      <context attribute="Normal" lineEndContext="#stay" name="HtmlValue" fallthroughContext="#pop#pop#pop">
+        <DetectSpaces attribute="Normal"/>
+        <DetectChar attribute="HtmlValue" context="#pop#pop!ValueWithDoubleQuotes" char="&quot;" />
+        <DetectChar attribute="HtmlValue" context="#pop#pop!ValueWithSingleQuotes" char="&apos;" />
+        <DetectIdentifier attribute="HtmlValue" context="#pop#pop"/>
       </context>
-      <context name="HtmlValue" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="HtmlValue" context="ValueWithDoubleQuotes" char="&quot;" />
-        <DetectChar attribute="HtmlValue" context="ValueWithSingleQuotes" char="&apos;" />
-        <RegExpr attribute="Error" context="#stay" String="\S" />
-      </context>
+
       <context name="ValueWithDoubleQuotes" attribute="HtmlValue" lineEndContext="#stay">
-        <DetectChar attribute="HtmlValue" context="#pop#pop#pop" char="&quot;" />
+        <DetectChar attribute="HtmlValue" context="#pop" char="&quot;" />
         <IncludeRules context="FindHtmlEntities" />
       </context>
       <context name="ValueWithSingleQuotes" attribute="HtmlValue" lineEndContext="#stay">
-        <DetectChar attribute="HtmlValue" context="#pop#pop#pop" char="&apos;" />
+        <DetectChar attribute="HtmlValue" context="#pop" char="&apos;" />
         <IncludeRules context="FindHtmlEntities" />
       </context>
 
+      <!-- @} HTML element and special tags -->
 
 
-      <context attribute="DefinitionListHeader" lineEndContext="#pop" name="DefinitionListHeader" >
-        <DetectChar char=":" context="#pop" attribute="WikiTag" />
-      </context>
-      <context attribute="Bold" lineEndContext="#pop" name="Bold" >
-        <IncludeRules context="FindTemplate" />
-        <StringDetect String="'''" context="#pop" attribute="WikiTag" />
-        <StringDetect String="''" context="BoldItalic" attribute="WikiTag" />
-        <RegExpr String="&lt;u *&gt;" attribute="HtmlTag" context="BoldUnderlined" />
-        <IncludeRules context="FindWikiLinkBeingBold" />
-      </context>
-      <context attribute="Italic" lineEndContext="#pop" name="Italic" >
-        <IncludeRules context="FindTemplate" />
-        <StringDetect String="'''" attribute="WikiTag" context="ItalicBold" />
-        <StringDetect String="''" context="#pop" attribute="WikiTag" />
-        <RegExpr String="&lt;u *&gt;" attribute="HtmlTag" context="ItalicUnderlined" />
-        <IncludeRules context="FindWikiLinkBeingItalic" />
-      </context>
-      <context attribute="Underlined" name="Underlined" lineEndContext="#stay" >
-        <IncludeRules context="FindTemplate" />
-        <StringDetect String="'''" context="UnderlinedBold" attribute="WikiTag" />
-        <StringDetect String="''" context="UnderlinedItalic" attribute="WikiTag" />
-        <RegExpr String="&lt;/u *&gt;" context="#pop" attribute="HtmlTag" />
-        <IncludeRules context="FindWikiLinkBeingUnderlined" />
-      </context>
-      <context name="BoldItalic" attribute="BoldItalic" lineEndContext="#pop" >
-        <IncludeRules context="FindTemplate" />
-        <StringDetect String="''" context="#pop" attribute="WikiTag" />
-        <RegExpr String="&lt;u *&gt;" attribute="HtmlTag" context="BoldItalicUnderlined" />
-        <IncludeRules context="FindWikiLinkBeingBoldItalic" />
-      </context>
-      <context name="ItalicBold" attribute="BoldItalic" lineEndContext="#pop" >
-        <IncludeRules context="FindTemplate" />
-        <StringDetect String="'''" context="#pop" attribute="WikiTag" />
-        <RegExpr String="&lt;u *&gt;" attribute="HtmlTag" context="BoldItalicUnderlined" />
-        <IncludeRules context="FindWikiLinkBeingBoldItalic" />
-      </context>
-      <context name="BoldUnderlined" attribute="BoldUnderlined" lineEndContext="#pop" >
-        <IncludeRules context="FindTemplate" />
-        <RegExpr String="&lt;/u *&gt;" context="#pop" attribute="HtmlTag" />
-        <StringDetect String="''" context="BoldUnderlinedItalic" attribute="WikiTag" />
-        <IncludeRules context="FindWikiLinkBeingBoldUnderlined" />
-      </context>
-      <context name="UnderlinedBold" attribute="BoldUnderlined" lineEndContext="#pop" >
-        <IncludeRules context="FindTemplate" />
-        <StringDetect String="'''" context="#pop" attribute="WikiTag" />
-        <StringDetect String="''" context="BoldUnderlinedItalic" attribute="WikiTag" />
-        <IncludeRules context="FindWikiLinkBeingBoldUnderlined" />
-      </context>
-      <context name="ItalicUnderlined" attribute="ItalicUnderlined" lineEndContext="#pop" >
-        <IncludeRules context="FindTemplate" />
-        <RegExpr String="&lt;/u *&gt;" context="#pop" attribute="HtmlTag" />
-        <StringDetect String="'''" context="ItalicUnderlinedBold" attribute="WikiTag" />
-        <IncludeRules context="FindWikiLinkBeingItalicUnderlined" />
-      </context>
-      <context name="UnderlinedItalic" attribute="ItalicUnderlined" lineEndContext="#pop" >
-        <IncludeRules context="FindTemplate" />
-        <StringDetect String="''" context="#pop" attribute="WikiTag" />
-        <StringDetect String="'''" context="ItalicUnderlinedBold" attribute="WikiTag" />
-        <IncludeRules context="FindWikiLinkBeingItalicUnderlined" />
-      </context>
-      <context name="BoldItalicUnderlined" attribute="BoldItalicUnderlined" lineEndContext="#pop" >
-        <IncludeRules context="FindTemplate" />
-        <RegExpr String="&lt;/u *&gt;" context="#pop" attribute="HtmlTag" />
-        <IncludeRules context="FindWikiLinkBeingBoldItalicUnderlined" />
-      </context>
-      <context name="BoldUnderlinedItalic" attribute="BoldItalicUnderlined" lineEndContext="#pop" >
-        <IncludeRules context="FindTemplate" />
-        <StringDetect String="''" context="#pop" attribute="WikiTag" />
-        <IncludeRules context="FindWikiLinkBeingBoldItalicUnderlined" />
-      </context>
-      <context name="ItalicUnderlinedBold" attribute="BoldItalicUnderlined" lineEndContext="#pop" >
-        <IncludeRules context="FindTemplate" />
-        <StringDetect String="'''" context="#pop" attribute="WikiTag" />
-        <IncludeRules context="FindWikiLinkBeingBoldItalicUnderlined" />
+      <!--
+        Comment @{
+      -->
+
+      <context name="FindComment" attribute="Normal" lineEndContext="#stay">
+        <StringDetect String="&lt;!--" context="comment" attribute="Comment" beginRegion="comment" />
       </context>
 
-      <!-- Contexts for inclusion. -->
+      <context attribute="Comment" lineEndContext="#stay" name="comment" >
+        <DetectSpaces />
+        <StringDetect String="--&gt;" context="#pop" attribute="Comment" endRegion="comment" />
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier />
+      </context>
+
+      <!-- @} Comment -->
+
+
+      <!--
+        Others @{
+      -->
+
+      <context attribute="Unformatted" lineEndContext="#pop" name="Unformatted" />
+
+      <context name="FindSignature" attribute="Normal" lineEndContext="#stay">
+        <StringDetect String="~~~~~" attribute="WikiTag"/>
+        <StringDetect String="~~~~" attribute="WikiTag"/>
+        <StringDetect String="~~~" attribute="WikiTag"/>
+      </context>
+
+      <context name="FindLineSep" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="^[-]{4,}" attribute="WikiTag" column="0"/>
+      </context>
 
       <context name="FindHtmlEntities" attribute="Normal" lineEndContext="#stay">
         <RegExpr String="&htmlEntity;" attribute="HtmlEntity" />
       </context>
 
-      <context name="FindHtmlStartTagAttributes" attribute="Normal" lineEndContext="#stay">
-        <RegExpr attribute="HtmlAttribute" context="HtmlAttribute" String="^&htmlTagName;" />
-        <RegExpr attribute="HtmlAttribute" context="HtmlAttribute" String="\s+&htmlTagName;" />
-        <RegExpr attribute="Error" context="#stay" String="\S" />
-      </context>
-
-      <context attribute="Normal" lineEndContext="#stay" name="FindListItem" >
-        <RegExpr String="[*#;:\s]*[*#:]+" attribute="WikiTag" context="#stay" column="0" />
-      </context>
-
-      <context attribute="Normal" lineEndContext="#stay" name="FindSyntaxHighlightingHtmlElement" >
-        <RegExpr String="&lt;source(?=\s)" context="SourceStartTag" attribute="HtmlTag" />
-        <RegExpr String="&lt;syntaxhighlight(?=\s)" context="SyntaxHighlightStartTag" attribute="HtmlTag" />
-      </context>
-
-      <context name="FindTable" attribute="Normal" lineEndContext="#stay">
-        <Detect2Chars char="{" char1="|" column="0" context="TableHeader"  lookAhead="true" />
-      </context>
-
-      <context attribute="Normal" lineEndContext="#stay" name="FindTemplate" >
-        <Detect2Chars char="{" char1="{" context="Template" attribute="WikiTag" beginRegion="template" />
-      </context>
-
-      <context name="FindTextDecorations" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="'''" attribute="WikiTag" context="Bold" />
-        <StringDetect String="''" attribute="WikiTag" context="Italic" />
-        <RegExpr String="&lt;u *&gt;" attribute="HtmlTag" context="Underlined" />
-      </context>
-      <context attribute="Normal" lineEndContext="#stay" name="FindTextDecorationsInHeader" >
-        <StringDetect String="'''" attribute="WikiTag" context="Bold" />
-        <StringDetect String="''" attribute="WikiTag" context="BoldItalic" />
-      </context>
-
-      <context attribute="Normal" lineEndContext="#stay" name="FindUrl" >
-        <RegExpr String="\[&url;" attribute="WikiTag" context="DelimitedURL" lookAhead="true" />
-        <RegExpr String="&url;" attribute="URL" context="LooseURL" lookAhead="true" />
-      </context>
-      <context attribute="Normal" lineEndContext="#stay" name="FindUrlWithinTemplate" >
-        <RegExpr String="\[&url;" attribute="WikiTag" context="DelimitedURL" lookAhead="true" />
-        <RegExpr String="&url;" attribute="URL" context="LooseURLWithinTemplate" lookAhead="true" />
-      </context>
-
-      <context name="FindWikiLink" attribute="Normal" lineEndContext="#stay">
-        <Detect2Chars char="[" char1="[" attribute="WikiTag" context="WikiLink" />
-      </context>
-      <context name="FindWikiLinkBeingBold" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkBoldWithDescription" lookAhead="true" />
-        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkBoldWithoutDescription" lookAhead="true" />
-      </context>
-      <context name="FindWikiLinkBeingItalic" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkItalicWithDescription" lookAhead="true" />
-        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkItalicWithoutDescription" lookAhead="true" />
-      </context>
-      <context name="FindWikiLinkBeingUnderlined" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkUnderlinedWithDescription" lookAhead="true" />
-        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkUnderlinedWithoutDescription" lookAhead="true" />
-      </context>
-      <context name="FindWikiLinkBeingBoldItalic" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkBoldItalicWithDescription" lookAhead="true" />
-        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkBoldItalicWithoutDescription" lookAhead="true" />
-      </context>
-      <context name="FindWikiLinkBeingBoldUnderlined" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkBoldUnderlinedWithDescription" lookAhead="true" />
-        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkBoldUnderlinedWithoutDescription" lookAhead="true" />
-      </context>
-      <context name="FindWikiLinkBeingItalicUnderlined" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkItalicUnderlinedWithDescription" lookAhead="true" />
-        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkItalicUnderlinedWithoutDescription" lookAhead="true" />
-      </context>
-      <context name="FindWikiLinkBeingBoldItalicUnderlined" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="&wikiLinkWithDescription;" context="WikiLinkBoldItalicUnderlinedWithDescription" lookAhead="true" />
-        <RegExpr String="&wikiLinkWithoutDescription;" context="WikiLinkBoldItalicUnderlinedWithoutDescription" lookAhead="true" />
-      </context>
+      <!-- @} Others -->
 
     </contexts>
     <itemDatas>
@@ -583,9 +788,9 @@
       <itemData name="LinkBoldUnderlined" defStyleNum="dsOthers" bold="true" underline="true" />
       <itemData name="LinkItalicUnderlined" defStyleNum="dsOthers" italic="true" underline="true" />
       <itemData name="LinkBoldItalicUnderlined" defStyleNum="dsOthers" bold="true" italic="true" underline="true" />
-      <itemData name="URL" defStyleNum="dsOthers" />
       <itemData name="Comment" defStyleNum="dsComment" />
       <itemData name="Section" defStyleNum="dsKeyword" />
+      <itemData name="SectionDeliminator" defStyleNum="dsAttribute" />
       <itemData name="DefinitionListHeader" defStyleNum="dsKeyword" />
       <itemData name="HtmlEntity" defStyleNum="dsDecVal" />
       <itemData name="HtmlTag" defStyleNum="dsKeyword" />
@@ -610,13 +815,15 @@
       <itemData name="ItalicUnderlined" defStyleNum="dsNormal" italic="true" underline="true" />
       <itemData name="BoldItalicUnderlined" defStyleNum="dsNormal" bold="true" italic="true" underline="true" />
       <itemData name="HtmlAttribute" defStyleNum="dsOthers" spellChecking="false" />
+      <itemData name="HtmlAttributeSeparator" defStyleNum="dsOthers" spellChecking="false" />
       <itemData name="HtmlValue" defStyleNum="dsString" spellChecking="false" />
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment end="//-->" start="&lt;!--" name="multiLine" />
+      <comment name="multiLine" start="&lt;!--" end="--&gt;" region="comment" />
     </comments>
     <keywords casesensitive="0" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

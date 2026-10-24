@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language
-  SYSTEM 'language.dtd'>
+<!DOCTYPE language [
+  <!ENTITY identifier "[a-z][a-zA-Z0-9_]*">
+  <!ENTITY module "[A-Z][a-zA-Z0-9_]*">
+]>
 <!--
   Elixir syntax highlighting definition for Kate.
 
   Copyright (C) 2014  by Rubén Caro (ruben.caro.estevez@gmail.com)
   Copyright (C) 2016  by Boris Egorov (egorov@linux.com)
+  Copyright (C) 2025  by Jade Pfeiffer (jade@pfeiffer.codes)
 
   This library is free software; you can redistribute it and/or
   modify it under the terms of the GNU Library General Public
@@ -21,16 +24,17 @@
   Boston, MA  02110-1301, USA.
 -->
 <!-- Hold the "language" opening tag on a single line, as mentioned in "language.dtd". -->
-<language author="Rubén Caro (ruben.caro.estevez@gmail.com), Boris Egorov (egorov@linux.com)"
-          extensions="*.ex;*.exs;*.eex;*.xml.eex;*.js.eex"
+<language author="Rubén Caro (ruben.caro.estevez@gmail.com), Boris Egorov (egorov@linux.com), Jade Pfeiffer (jade@pfeiffer.codes)"
+          extensions="*.ex;*.exs"
           indenter="elixir"
-          kateversion="5.53"
+          kateversion="5.79"
           license="LGPLv2+"
           mimetype="text/x-elixir"
           name="Elixir"
           section="Sources"
           style="elixir"
-          version="5">
+          version="16"
+          priority="2">
   <highlighting>
     <list name="control-flow">
       <item>catch</item>
@@ -38,54 +42,50 @@
       <item>else</item>
       <item>if</item>
       <item>raise</item>
+      <item>reraise</item>
       <item>rescue</item>
       <item>throw</item>
       <item>try</item>
       <item>unless</item>
     </list>
     <list name="keywords">
-      <item>do</item>
-      <item>end</item>
       <item>case</item>
-      <item>bc</item>
-      <item>lc</item>
+      <item>with</item>
       <item>for</item>
       <item>receive</item>
-      <item>exit</item>
       <item>after</item>
       <item>quote</item>
       <item>unquote</item>
+      <item>unquote_splicing</item>
       <item>super</item>
       <item>and</item>
       <item>not</item>
       <item>or</item>
       <item>when</item>
-      <item>xor</item>
       <item>in</item>
-      <item>inlist</item>
-      <item>inbits</item>
     </list>
-    <list name="pseudo-variables">
+    <list name="atoms">
       <item>nil</item>
       <item>true</item>
       <item>false</item>
     </list>
     <list name="definitions">
-      <item>fn</item>
       <item>defmodule</item>
-      <item>def</item>
-      <item>defp</item>
       <item>defprotocol</item>
       <item>defimpl</item>
       <item>defrecord</item>
       <item>defstruct</item>
-      <item>defmacro</item>
-      <item>defmacrop</item>
-      <item>defdelegate</item>
-      <item>defcallback</item>
-      <item>defmacrocallback</item>
       <item>defexception</item>
       <item>defoverridable</item>
+    </list>
+    <list name="def-functions">
+      <item>def</item>
+      <item>defp</item>
+      <item>defmacro</item>
+      <item>defmacrop</item>
+      <item>defguard</item>
+      <item>defguardp</item>
+      <item>defdelegate</item>
     </list>
     <list name="mixin-macros">
       <item>import</item>
@@ -93,133 +93,435 @@
       <item>alias</item>
       <item>use</item>
     </list>
+    <list name="special-forms">
+      <item>__MODULE__</item>
+      <item>__ENV__</item>
+      <item>__DIR__</item>
+      <item>__STACKTRACE__</item>
+      <item>__CALLER__</item>
+    </list>
+    <list name="module-attributes">
+      <item>after_compile</item>
+      <item>after_verify</item>
+      <item>before_compile</item>
+      <item>behaviour</item>
+      <item>callback</item>
+      <item>compile</item>
+      <item>deprecated</item>
+      <item>dialyzer</item>
+      <item>external_resource</item>
+      <item>file</item>
+      <item>impl</item>
+      <item>nifs</item>
+      <item>on_definition</item>
+      <item>on_load</item>
+      <item>vsn</item>
+    </list>
+    <list name="struct-attributes">
+      <item>derive</item>
+      <item>enforce_keys</item>
+    </list>
+    <list name="typespec-attributes">
+      <item>type</item>
+      <item>typep</item>
+      <item>opaque</item>
+      <item>spec</item>
+      <item>callback</item>
+      <item>macrocallback</item>
+      <item>optional_callbacks</item>
+    </list>
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
-        <!-- "shebang" line -->
-        <RegExpr String="#!\/.*" attribute="Keyword" column="0" context="#stay"/>
+        <!-- Lists -->
+        <DetectChar char="[" beginRegion="list" attribute="Braces"/>
+        <DetectChar char="]" endRegion="list" attribute="Braces"/>
+
+        <!-- Maps, Structs and Tuples -->
+        <DetectChar char="%" attribute="Braces" context="Map Or Struct"/>
+        <DetectChar char="{" beginRegion="map_or_struct_or_tuple" attribute="Braces"/>
+        <DetectChar char="}" endRegion="map_or_struct_or_tuple" attribute="Braces"/>
+
+        <!-- Function calls and definitions -->
+        <DetectChar char="(" beginRegion="parameters" attribute="Braces"/>
+        <DetectChar char=")" endRegion="parameters" attribute="Braces"/>
 
         <!-- Defined words -->
         <keyword String="keywords" attribute="Keyword" context="#stay"/>
         <keyword String="control-flow" attribute="Control Flow" context="#stay"/>
         <keyword String="definitions" attribute="Definition" context="#stay"/>
-        <keyword String="pseudo-variables" attribute="Pseudo variable" context="#stay"/>
+        <keyword String="def-functions" attribute="Definition" context="Function Definition"/>
+        <keyword String="atoms" attribute="Atom" context="#stay"/>
         <keyword String="mixin-macros" attribute="Mixin macros" context="#stay"/>
+        <keyword String="special-forms" attribute="Built In" context="#stay"/>
 
-        <!-- special-character globals -->
-        <RegExpr String="\b[_A-Z]+[A-Z_0-9]+\b" attribute="Global Constant" context="#stay"/>
+        <!-- Numeric values. -->
+        <DetectChar char="0" context="Numeric" lookAhead="true"/>
+        <AnyChar String="123456789" context="Int" lookAhead="true"/>
 
+        <DetectChar char="," attribute="Normal Text" context="#stay"/>
+        <DetectChar char="?" context="CharacterLiteral" lookAhead="true"/>
+        <IncludeRules context="Sigils"/>
+        <Detect2Chars char=":" char1=":" attribute="Operator" context="#stay"/>
+        <DetectChar char=":" attribute="Atom" context="AtomValue"/>
+
+        <AnyChar String=".=+-*/\!^:|&amp;&lt;&gt;" context="Operators" lookAhead="true"/>
+        <StringDetect String="&quot;&quot;&quot;" attribute="String" context="Heredoc"/>
+        <DetectChar char="&quot;" attribute="String" context="Bitstring" lookAhead="true"/>
+        <DetectChar char="'" attribute="Charlist" context="Charlist"/>
+        <DetectChar char="#" attribute="Comment" context="Line Comment"/>
+        <DetectChar char="@" context="Module Attribute" lookAhead="true"/>
+
+        <!-- Identifiers -->
+        <DetectChar char="_" context="Underscore" lookAhead="true"/>
         <!-- Generally a module or class name like "File", "MyModule_1", .. -->
-        <RegExpr String="\b[A-Z]+_*([0-9]|[a-z])[_a-zA-Z0-9]*\b" attribute="Constant" context="#stay"/>
+        <RegExpr String="&module;" attribute="Module" context="#stay"/>
+        <RegExpr String="(&identifier;[?!]?)" context="Identifier" lookAhead="true"/>
+        <DetectSpaces/>
+      </context>
 
-        <!-- Numeric values. Note that we have to allow underscores between two digits (thus the creepy regular expressions). -->
-        <RegExpr String="\b\-?0[xX]([0-9a-fA-F]|_[0-9a-fA-F])+" attribute="Hex" context="#stay"/>
-        <RegExpr String="\b\-?0[bB]([01]|_[01])+" attribute="Bin" context="#stay"/>
-        <RegExpr String="\b\-?0[1-7]([0-7]|_[0-7])*" attribute="Octal" context="#stay"/>
-        <RegExpr String="\b\-?[0-9]([0-9]|_[0-9])*\.[0-9]([0-9]|_[0-9])*([eE]\-?[1-9]([0-9]|_[0-9])*(\.[0-9]*)?)?" attribute="Float" context="#stay"/>
-        <RegExpr String="\b\-?[1-9]([0-9]|_[0-9])*\b" attribute="Dec" context="#stay"/>
-        <Int attribute="Dec" context="#stay"/>
-        <HlCChar attribute="Char" context="#stay"/>
-        <DetectChar attribute="Operator" char="." context="#stay"/>
-        <Detect2Chars attribute="Operator" char="&amp;" char1="&amp;" context="#stay"/>
-        <Detect2Chars attribute="Operator" char="|" char1="|" context="#stay"/>
-        <RegExpr String="\s[\?\:\%]\s" attribute="Operator" context="#stay"/>
-        <RegExpr String="[|&amp;&lt;&gt;\^\+*~\-=/]+" attribute="Operator" context="#stay"/>
-        <!-- regexp hack -->
-        <RegExpr String="\s!" attribute="Operator" context="#stay"/>
-        <RegExpr String="/=\s" attribute="Operator" context="#stay" insensitive="0"/>
-        <StringDetect String="%=" attribute="Operator" context="#stay" insensitive="0"/>
-        <RegExpr String=":(@{1,2}|\$)?[a-zA-Z_][a-zA-Z0-9_]*[=?!]?" attribute="Symbol" context="#stay"/>
-        <RegExpr String="\b(@{1,2}|\$)?[a-zA-Z_][a-zA-Z0-9_]*[=?!]?:" attribute="Symbol" context="#stay"/>
-        <RegExpr String=":\[\]=?" attribute="Symbol" context="#stay"/>
-        <RegExpr String="@(module)?doc\s+&quot;&quot;&quot;" attribute="Attribute" context="Documentation"/>
-        <StringDetect String="&quot;&quot;&quot;" attribute="String" context="Triple Quoted String"/>
-        <DetectChar attribute="String" char="&quot;" context="Quoted String"/>
-        <DetectChar attribute="Raw String" char="'" context="Apostrophed String"/>
-        <StringDetect String="?#" attribute="Normal Text" context="#stay"/>
-        <DetectChar attribute="Comment" char="#" context="General Comment"/>
-        <DetectChar attribute="Delimiter" char="[" context="#stay"/>
-        <DetectChar attribute="Delimiter" char="]" context="#stay"/>
-        <RegExpr String="@[a-zA-Z_0-9]+" attribute="Attribute" context="#stay"/>
-        <!-- handle the different regular expression formats -->
-        <DetectChar attribute="Normal Text" char=")" context="#stay"/>
-        <DetectIdentifier attribute="Normal Text" context="#stay"/>
+      <context attribute="Normal Text" fallthroughContext="#pop" name="Map Or Struct">
+        <DetectChar char="{" context="#pop" lookAhead="true"/>
+        <keyword String="special-forms" attribute="Built In" context="#stay"/>
+        <RegExpr String="_*&module;" attribute="Module" context="#stay"/>
       </context>
-      <context attribute="DocComment" lineEndContext="#stay" name="Documentation">
-        <StringDetect String="&quot;&quot;&quot;" attribute="Attribute" context="#pop"/>
-        <RegExpr attribute="MarkdownHead" String="^\s*#+\s.*[#]?$"/>
-        <RegExpr attribute="MarkdownBullet" String="^\s*[\*\+\-]\s"/>
-        <RegExpr attribute="MarkdownNumlist" String="^\s*[\d]+\.\s"/>
-        <RegExpr attribute="MarkdownCode" context="Markdown Code" String="^\s*\`\`\`\s*$"/>
-        <DetectSpaces />
-        <IncludeRules context="Normal Text##Markdown"/>
+
+      <!-- Operators -->
+      <context attribute="Operator" fallthroughContext="#pop" name="Operators">
+        <Detect2Chars char="=" char1=">" attribute="Operator" context="#pop"/>
+        <Detect2Chars char=":" char1=":" attribute="Operator" context="#pop"/>
+        <AnyChar String="&lt;&gt;" context="Arrows" lookAhead="true"/>
+        <StringDetect String="..." attribute="Operator" context="#pop"/>
+        <Detect2Chars char="." char1="." attribute="Operator" context="#pop"/>
+        <DetectChar char="." attribute="Normal Text" context="#pop"/>
+        <AnyChar String="=+-*/\!^:|&amp;~" context="Atomable Operators" lookAhead="true"/>
       </context>
-      <context attribute="String" lineEndContext="#stay" name="Triple Quoted String">
-        <StringDetect String="&quot;&quot;&quot;" attribute="String" context="#pop"/>
+      <context attribute="Error" fallthroughContext="#pop" name="Atomable Operators">
+        <Detect2Chars char="*" char1="*" context="#pop"/>
+        <Detect2Chars char="=" char1="~" context="#pop"/>
+        <Detect2Chars char="\" char1="\" context="#pop"/>
+        <Detect2Chars char="|" char1="&gt;" context="#pop"/>
+        <Detect2Chars char="-" char1="&gt;" context="#pop"/>
+        <Detect2Chars char="&gt;" char1="=" context="#pop"/>
+        <AnyChar String="*/^" context="#pop"/>
+        <RegExpr String="([\+\-\=\|\!\&amp;])(?:\1\1?)?|&lt;(?:&lt;&lt;|~?&gt;|&lt;?~|[-=])?|(?:[~&gt;]&gt;&gt;|[~=]?&gt;)" context="#pop"/>
       </context>
-      <context attribute="String" lineEndContext="#stay" name="Quoted String">
-        <StringDetect String="\\" attribute="String" context="#stay"/>
-        <RegExpr String="\\\&quot;" attribute="String" context="#stay"/>
-        <RegExpr String="#@{1,2}" attribute="Substitution" context="Short Subst"/>
-        <Detect2Chars attribute="Substitution" char="#" char1="{" context="Subst"/>
-        <DetectChar attribute="String" char="&quot;" context="#pop"/>
+      <context attribute="Operator" fallthroughContext="#pop!Atomable Operators" name="Arrows">
+        <StringDetect String="&lt;&lt;&lt;" attribute="Operator" context="#pop"/>
+        <StringDetect String="&gt;&gt;&gt;" attribute="Operator" context="#pop"/>
+        <StringDetect String="&lt;&lt;" attribute="Braces" context="#pop" beginRegion="bitstring"/>
+        <StringDetect String="&gt;&gt;" attribute="Braces" context="#pop" endRegion="bitstring"/>
       </context>
-      <context attribute="Raw String" lineEndContext="#stay" name="Apostrophed String">
-        <StringDetect String="\\" attribute="String" context="#stay"/>
-        <RegExpr String="\\\'" attribute="String" context="#stay"/>
-        <DetectChar attribute="Raw String" char="'" context="#pop"/>
+
+      <!-- Numeric Literals -->
+      <context attribute="Integer" lineEndContext="#pop" fallthroughContext="#pop" name="Numeric">
+        <Detect2Chars char="0" char1="b" attribute="Bin" context="#pop!Base Bin"/>
+        <Detect2Chars char="0" char1="x" attribute="Hex" context="#pop!Base Hex"/>
+        <Detect2Chars char="0" char1="o" attribute="Octal" context="#pop!Base Oct"/>
+        <Detect2Chars char="0" char1="." attribute="Float" context="#pop!Float Point"/>
+        <DetectChar char="0" attribute="Integer" context="#pop!Int" lookAhead="true"/>
       </context>
-      <!-- Substitutions can be nested -->
-      <context attribute="Normal Text" lineEndContext="#stay" name="Subst">
-        <DetectChar attribute="Substitution" char="}" context="#pop"/>
-        <!-- Highlight substitution as code. -->
+      <context attribute="Hex" lineEndContext="#pop" fallthroughContext="#pop" name="Base Hex">
+        <AnyChar String="0123456789ABCDEFabcdef" context="#stay"/>
+        <RegExpr String="_[\dA-F]+" insensitive="true" context="#stay"/>
+      </context>
+      <context attribute="Octal" lineEndContext="#pop" fallthroughContext="#pop" name="Base Oct">
+        <AnyChar String="01234567" context="#stay"/>
+        <RegExpr String="_[0-7]+" context="#stay"/>
+      </context>
+      <context attribute="Bin" lineEndContext="#pop" fallthroughContext="#pop" name="Base Bin">
+        <AnyChar String="01" context="#stay"/>
+        <Detect2Chars char="_" char1="1" context="#stay"/>
+        <Detect2Chars char="_" char1="0" context="#stay"/>
+      </context>
+
+      <context attribute="Integer" lineEndContext="#pop" fallthroughContext="#pop" name="Int">
+        <RegExpr String="\d+(_\d+)*\.[^\.]" attribute="Float" context="#pop!Float Point"/>
+        <AnyChar String="0123456789" context="#stay"/>
+        <RegExpr String="_\d+" context="#stay"/>
+        <Detect2Chars char="." char1="." context="#pop!Operators"/>
+        <DetectChar char="." context="#pop!Float Point"/>
+      </context>
+      <context attribute="Float" lineEndContext="#pop" fallthroughContext="#pop" name="Float Point">
+        <AnyChar String="0123456789" context="#stay"/>
+        <RegExpr String="_\d+" context="#stay"/>
+        <Detect2Chars char="e" char1="-" context="#pop!Scientific Notation"/>
+        <DetectChar char="e" context="#pop!Scientific Notation"/>
+      </context>
+      <context attribute="Float" lineEndContext="#pop" fallthroughContext="#pop" name="Scientific Notation">
+        <AnyChar String="0123456789" context="#stay"/>
+        <RegExpr String="_\d+" context="#stay"/>
+      </context>
+
+      <context attribute="Char Literal" fallthroughContext="#pop" name="CharacterLiteral">
+        <RegExpr String="\?(\\\S|[^\s\\])" attribute="Char Literal" context="#pop"/>
+        <Detect2Chars char="?" char1="\" attribute="Error" context="#pop"/>
+      </context>
+
+      <!-- Variables, Functions, Keywords -->
+      <context attribute="Variable Underscore" name="Underscore">
+        <RegExpr String="_*&identifier;[?!]?" attribute="Variable Underscore" context="#pop"/>
+        <DetectChar char="_" attribute="Variable Underscore" context="#pop"/>
+      </context>
+      <context attribute="Variable" fallthroughContext="#pop" name="Identifier">
+        <RegExpr String="(%1)\(" context="#pop!Function" lookAhead="true" dynamic="true"/>
+        <RegExpr String="%1:(?!:)" attribute="Atom" context="#pop" dynamic="true"/>
+
+        <!-- End terminated blocks -->
+        <WordDetect String="do" attribute="Keyword" beginRegion="doend_block"/>
+        <WordDetect String="fn" attribute="Keyword" beginRegion="doend_block"/>
+        <WordDetect String="end" attribute="Keyword" endRegion="doend_block"/>
+
+        <StringDetect String="%1" attribute="Variable" context="#pop" dynamic="true"/>
+        <DetectSpaces lookAhead="true" context="#pop"/>
+      </context>
+      <context attribute="Function" fallthroughContext="#pop" name="Function">
+        <StringDetect String="%1" attribute="Function" context="#pop" dynamic="true"/>
+        <DetectChar char="(" context="#pop" beginRegion="parameters" attribute="Braces"/>
+      </context>
+      <context attribute="Function" fallthroughContext="#pop" name="Function Definition">
+        <RegExpr String="_*&identifier;[?!]?" attribute="Function" context="#pop"/>
+        <DetectSpaces attribute="Normal Text"/>
+      </context>
+
+      <context attribute="Attribute" lineEndContext="#pop" name="Module Attribute">
+        <RegExpr String="(@(?:module|type)?doc)" context="#pop!Doc" lookAhead="true"/>
+        <DetectChar char="@" attribute="Normal Text" context="#stay"/>
+        <keyword String="module-attributes" attribute="Built In" context="#stay"/>
+        <keyword String="struct-attributes" attribute="Built In" context="#stay"/>
+        <keyword String="typespec-attributes" attribute="Built In" context="#stay"/>
+        <RegExpr String="(&identifier;[?!]?)" attribute="Normal Text" context="#pop"/>
+        <DetectSpaces context="#pop"/>
+      </context>
+
+      <!-- @moduledoc, @typedoc, and @doc -->
+      <context attribute="Attribute" lineEndContext="#pop" fallthroughContext="#pop" name="Doc">
+        <RegExpr String="%1 (?:~[Ss])?(&quot;(?:&quot;&quot;)?)" context="#pop!Doc Interp" beginRegion="doc_comment" dynamic="true"/>
+        <StringDetect String="%1" context="#pop" dynamic="true"/>
+      </context>
+      <context attribute="DocComment" lineEndContext="#stay" name="Doc Interp">
+        <StringDetect String="%1" attribute="DocComment" context="#pop" endRegion="doc_comment" dynamic="true"/>
+        <IncludeRules context="Interpolated"/>
+        <IncludeRules context="Markdown"/>
+      </context>
+
+      <!-- Atoms (keys: and :values) -->
+      <context attribute="Atom" fallthroughContext="#pop!AtomOperator" name="AtomValue">
+        <RegExpr String="(&quot;|')" attribute="Atom" context="#pop!Quoted Atom"/>
+        <RegExpr String="(?:_|&identifier;)" attribute="Atom" context="#pop!AtomNodeName"/>
+      </context>
+      <context attribute="Atom" lineEndContext="#pop" fallthroughContext="#pop" name="AtomNodeName">
+        <!-- Used for Node names -->
+        <AnyChar String="!?" attribute="Atom" context="#pop"/>
+        <RegExpr String="&identifier;|@[a-zA-Z0-9_]*(\.&identifier;)*" attribute="Atom" context="#stay"/>
+      </context>
+      <context attribute="Atom" lineEndContext="#pop" fallthroughContext="#pop" name="AtomOperator">
+        <DetectChar char="@" attribute="Atom" context="#pop"/>
+        <Detect2Chars char="{" char1="}" attribute="Atom" context="#pop"/>
+        <StringDetect String="%{}" attribute="Atom" context="#pop"/>
+        <StringDetect String="&lt;&lt;&gt;&gt;" attribute="Atom" context="#pop"/>
+        <StringDetect String="..." attribute="Atom" context="#pop"/>
+        <Detect2Chars char="." char1="." attribute="Atom" context="#pop"/>
+        <DetectChar char="." attribute="Atom" context="#pop"/>
+        <AnyChar String=".=+-*/\!^~:|&amp;&lt;&gt;" context="AtomValue Operator" lookAhead="true"/>
+      </context>
+      <context attribute="Error" fallthroughContext="#pop"  name="AtomValue Operator">
+        <IncludeRules context="Atomable Operators"/>
+      </context>
+      <context attribute="Atom" lineEndContext="#stay" name="Quoted Atom">
+        <StringDetect String="%1" attribute="Atom" context="#pop" dynamic="true"/>
+        <IncludeRules context="Interpolated"/>
+      </context>
+      <context attribute="Atom" name="Atom Bitstring Key">
+        <DetectChar char="&quot;" attribute="Atom" context="#pop!Atom Bitstring Key Body"/>
+      </context>
+      <context attribute="Atom" name="Atom Bitstring Key Body">
+        <Detect2Chars char="&quot;" char1=":" attribute="Atom" context="#pop"/>
+        <IncludeRules context="Interpolated"/>
+      </context>
+
+      <context attribute="DocComment" name="Markdown">
+        <RegExpr String="^(\s*)#{1,7}\s" context="Markdown Header" column="0" lookAhead="true"/>
+        <RegExpr String="^\s*([\+\-\*]|\d+\.)\s" attribute="MarkdownMark" column="0"/>
+        <RegExpr String="`.+`" context="Markdown Code" minimal="true" lookAhead="true"/>
+        <DetectSpaces/>
+      </context>
+      <context attribute="MarkdownHead" lineEndContext="#pop" name="Markdown Header">
+        <StringDetect String="%1" attribute="Normal Text" dynamic="true"/>
+        <DetectSpaces/>
+      </context>
+      <context attribute="Normal Text" name="Markdown Code">
+        <DetectChar char="`" attribute="DocComment" context="#pop!Markdown Code Body"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Markdown Code Body">
+        <DetectChar char="`" context="#pop"/>
         <IncludeRules context="Normal"/>
       </context>
-      <context attribute="Substitution" lineEndContext="#pop" name="Short Subst">
-        <!-- Check for e.g.: "#@var#@@xy" -->
-        <RegExpr String="#@{1,2}" attribute="Substitution" context="#stay"/>
-        <RegExpr String="\w(?!\w)" attribute="Substitution" context="#pop"/>
+
+      <context attribute="String" lineEndContext="#stay" name="Heredoc">
+        <StringDetect String="&quot;&quot;&quot;" attribute="String" context="#pop"/>
       </context>
-      <context attribute="Comment" lineEndContext="#pop" name="General Comment">
+      <context attribute="String" name="Bitstring">
+        <!-- Atom keys can also have interpolatation if they are a "String" -->
+        <RegExpr String="&quot;(?:\\.|#\{.+\}|[^&quot;])*&quot;:\s" attribute="Atom" context="#pop!Atom Bitstring Key" minimal="true" lookAhead="true"/>
+        <DetectChar char="&quot;" attribute="String" context="#pop!Bitstring Body"/>
       </context>
-      <context attribute="MarkdownCode" lineEndContext="#stay" name="Markdown Code">
-        <RegExpr String="^\s*\`\`\`\s*$" attribute="MarkdownCode" context="#pop"/>
+      <context attribute="String" lineEndContext="#stay" name="Bitstring Body">
+        <DetectChar char="&quot;" attribute="String" context="#pop"/>
+        <IncludeRules context="Interpolated"/>
       </context>
+      <context attribute="Charlist" lineEndContext="#stay" name="Charlist">
+        <DetectChar char="'" attribute="Charlist" context="#pop"/>
+        <IncludeRules context="Interpolated"/>
+      </context>
+
+      <!-- Sigils -->
+      <context attribute="String" name="Sigils">
+        <StringDetect String="~H&quot;" context="Sigil HEEx" lookAhead="true"/>
+        <RegExpr String="~(?:[a-z]|[A-Z][A-Z\d]*)[/|&quot;'\(\{\[\&lt;]" attribute="String" context="Sigil" lookAhead="true"/>
+        <DetectChar char="~" attribute="Operator" context="Operators" lookAhead="true"/>
+      </context>
+      <context attribute="String" name="Sigil">
+        <DetectChar char="~" attribute="String" context="#stay"/>
+        <RegExpr String="[a-z]" attribute="String" context="#pop!Sigil Delimeter Interp"/>
+        <RegExpr String="[A-Z]" attribute="String" context="#pop!Sigil Delimeter Raw"/>
+      </context>
+
+      <context attribute="String" name="Sigil HEEx">
+        <DetectChar char="~" attribute="String" context="#stay" beginRegion="sigil_heex"/>
+        <DetectChar char="H" attribute="String" context="#stay"/>
+        <RegExpr String="(&quot;&quot;&quot;|[/|&quot;'])" attribute="String" context="#pop!Sigil Interp HEEx" beginRegion="sigil"/>
+      </context>
+      <context attribute="Normal Text" name="Sigil Interp HEEx">
+        <StringDetect String="%1" attribute="String" context="#pop" dynamic="true"/>
+        <IncludeRules context="Text##Elixir/HEEx"/>
+      </context>
+
+      <!-- Sigils, Interpolated -->
+      <context attribute="String" name="Sigil Delimeter Interp">
+        <DetectChar char="[" attribute="String" context="#pop!Sigil Interp Square" beginRegion="sigil"/>
+        <DetectChar char="(" attribute="String" context="#pop!Sigil Interp Paren" beginRegion="sigil"/>
+        <DetectChar char="{" attribute="String" context="#pop!Sigil Interp Curly" beginRegion="sigil"/>
+        <DetectChar char="&lt;" attribute="String" context="#pop!Sigil Interp Angle" beginRegion="sigil"/>
+        <RegExpr String="(&quot;&quot;&quot;|[/|&quot;'])" attribute="String" context="#pop!Sigil Interp Match" beginRegion="sigil"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Sigil Interp Square">
+        <IncludeRules context="Sigil Square"/>
+        <IncludeRules context="Interpolated"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Sigil Interp Paren">
+        <IncludeRules context="Sigil Paren"/>
+        <IncludeRules context="Interpolated"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Sigil Interp Curly">
+        <IncludeRules context="Sigil Curly"/>
+        <IncludeRules context="Interpolated"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Sigil Interp Angle">
+        <IncludeRules context="Sigil Angle"/>
+        <IncludeRules context="Interpolated"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Sigil Interp Match">
+        <IncludeRules context="Sigil Match"/>
+        <IncludeRules context="Interpolated"/>
+      </context>
+
+      <!-- Sigils, Non-Interpolated -->
+      <context attribute="String" name="Sigil Delimeter Raw">
+        <DetectChar char="[" attribute="String" context="#pop!Sigil Square" beginRegion="sigil"/>
+        <DetectChar char="(" attribute="String" context="#pop!Sigil Paren" beginRegion="sigil"/>
+        <DetectChar char="{" attribute="String" context="#pop!Sigil Curly" beginRegion="sigil"/>
+        <DetectChar char="&lt;" attribute="String" context="#pop!Sigil Angle" beginRegion="sigil"/>
+        <RegExpr String="(&quot;&quot;&quot;|[/|&quot;'])" attribute="String" context="#pop!Sigil Match" beginRegion="sigil"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Sigil Square">
+        <DetectChar char="]" attribute="String" context="#pop!Sigil Delimeter Modifiers" endRegion="sigil"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Sigil Paren">
+        <DetectChar char=")" attribute="String" context="#pop!Sigil Delimeter Modifiers" endRegion="sigil"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Sigil Curly">
+        <DetectChar char="}" attribute="String" context="#pop!Sigil Delimeter Modifiers" endRegion="sigil"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Sigil Angle">
+        <DetectChar char="&gt;" attribute="String" context="#pop!Sigil Delimeter Modifiers" endRegion="sigil"/>
+      </context>
+      <context attribute="String" lineEndContext="#stay" name="Sigil Match">
+        <StringDetect String="%1" attribute="String" context="#pop!Sigil Delimeter Modifiers" dynamic="true" endRegion="sigil"/>
+      </context>
+
+      <context attribute="Normal Text" fallthroughContext="#pop" lineEndContext="#pop" name="Sigil Delimeter Modifiers">
+        <!-- Captures modifiers after delimeter -->
+        <RegExpr String="[a-zA-Z]*" attribute="String" context="#pop"/>
+      </context>
+
+      <!-- Interpolatation format -->
+      <context attribute="Interpolation" name="Interpolated">
+        <!-- Escapes can only happen in the same context as Interpolated strings -->
+        <DetectChar char="\" context="Escape Sequence" lookAhead="true"/>
+        <Detect2Chars char="#" char1="{" attribute="Interpolation" context="Interp"/>
+      </context>
+      <!-- Interpolations can be nested -->
+      <context attribute="Normal Text" lineEndContext="#stay" name="Interp">
+        <DetectChar char="}" attribute="Interpolation" context="#pop"/>
+        <!-- Highlight interpolation as code. -->
+        <IncludeRules context="Normal"/>
+      </context>
+      <context attribute="Special Char" name="Escape Sequence">
+        <RegExpr String="\\(?:.|x[\dA-F]{2}|u(?:[\dA-F]{4}|\{[\dA-F]+\}))" attribute="Special Char" insensitive="true" context="#pop"/>
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Line Comment">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+      </context>
+
     </contexts>
     <itemDatas>
-      <itemData name="Global Constant" defStyleNum="dsConstant"/>
-      <itemData name="Constant" defStyleNum="dsConstant"/>
-      <itemData defStyleNum="dsNormal" name="Normal Text"/>
-      <itemData defStyleNum="dsKeyword" name="Keyword"/>
+      <itemData defStyleNum="dsNormal"      name="Normal Text"/>
+      <itemData defStyleNum="dsNormal"      name="Braces"/>
+      <itemData defStyleNum="dsOperator"    name="Operator"/>
+      <itemData defStyleNum="dsKeyword"     name="Keyword"/>
       <itemData defStyleNum="dsControlFlow" name="Control Flow"/>
-      <itemData defStyleNum="dsKeyword" name="Definition"/>
-      <itemData defStyleNum="dsImport" name="Mixin macros"/>
-      <itemData defStyleNum="dsConstant" name="Pseudo variable"/>
-      <itemData defStyleNum="dsDecVal" name="Dec"/>
-      <itemData defStyleNum="dsFloat" name="Float"/>
-      <itemData defStyleNum="dsChar" name="Char"/>
-      <itemData defStyleNum="dsBaseN" name="Octal"/>
-      <itemData defStyleNum="dsBaseN" name="Hex"/>
-      <itemData defStyleNum="dsBaseN" name="Bin"/>
-      <itemData defStyleNum="dsVariable" name="Symbol"/>
-      <itemData defStyleNum="dsString" name="String"/>
-      <itemData defStyleNum="dsVerbatimString" name="Raw String"/>
-      <itemData defStyleNum="dsOthers" name="Substitution"/>
-      <itemData defStyleNum="dsOthers" name="Attribute"/>
-      <itemData defStyleNum="dsComment" name="Comment"/>
-      <itemData defStyleNum="dsComment" name="DocComment"/>
+      <itemData defStyleNum="dsKeyword"     name="Definition"/>
+      <itemData defStyleNum="dsImport"      name="Mixin macros"/>
+      <itemData defStyleNum="dsNormal"      name="Variable"/>
+      <itemData defStyleNum="dsComment"     name="Variable Underscore"/>
+      <itemData defStyleNum="dsNormal"      name="Module"/>
+      <itemData defStyleNum="dsNormal"      name="Attribute"/>
+      <itemData defStyleNum="dsBuiltIn"     name="Built In"/>
+      <itemData defStyleNum="dsFunction"    name="Function"/>
+      <itemData defStyleNum="dsVariable"    name="Atom"/>
+
+      <!-- Literals -->
+      <itemData defStyleNum="dsDecVal" name="Integer"/>
+      <itemData defStyleNum="dsFloat"  name="Float"/>
+      <itemData defStyleNum="dsBaseN"  name="Octal"/>
+      <itemData defStyleNum="dsBaseN"  name="Hex"/>
+      <itemData defStyleNum="dsBaseN"  name="Bin"/>
+
+      <itemData defStyleNum="dsChar"   name="Char Literal"/>
+
+      <itemData defStyleNum="dsString"         name="String" spellChecking="true"/>
+      <itemData defStyleNum="dsVerbatimString" name="Charlist"/>
+      <itemData defStyleNum="dsSpecialChar"    name="Special Char"/>
+      <itemData defStyleNum="dsFunction"       name="Interpolation"/>
+
+      <!-- Comments and Documentation -->
+      <itemData defStyleNum="dsComment"       name="Comment"/>
+      <itemData defStyleNum="dsDocumentation" name="DocComment"/>
+
+      <itemData defStyleNum="dsDocumentation" name="MarkdownHead" bold="true" underline="true"/>
+      <itemData defStyleNum="dsDocumentation" name="MarkdownMark" bold="true"/>
+
       <!-- use these to mark errors and alerts things -->
-      <itemData color="#FF9FEC" defStyleNum="dsNormal" name="Delimiter"/>
-      <itemData defStyleNum="dsOperator" name="Operator"/>
-      <itemData name="MarkdownHead" defStyleNum="dsFunction" bold="true"/>
-      <itemData name="MarkdownBullet" defStyleNum="dsFunction"/>
-      <itemData name="MarkdownNumlist" defStyleNum="dsFunction"/>
-      <itemData name="MarkdownCode" defStyleNum="dsFunction"/>
+      <itemData defStyleNum="dsError" name="Error"/>
     </itemDatas>
   </highlighting>
   <general>
     <comments>
       <comment name="singleLine" start="#"/>
     </comments>
-    <keywords casesensitive="1" weakDeliminator="!?"/>
+    <keywords casesensitive="1" weakDeliminator="!?:"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

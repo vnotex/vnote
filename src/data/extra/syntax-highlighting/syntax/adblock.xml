@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- See https://adblockplus.org/en/filters -->
 <language
     name="Adblock Plus"
-    version="1"
+    version="2"
     kateversion="5.0"
     section="Configuration"
     author="Volker Krause (vkrause@kde.org)"
@@ -82,6 +82,10 @@
     </highlighting>
 
     <general>
+        <comments>
+            <comment name="singleLine" start="!"/>
+        </comments>
         <keywords casesensitive="1" weakDeliminator="-" additionalDeliminator="$"/>
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

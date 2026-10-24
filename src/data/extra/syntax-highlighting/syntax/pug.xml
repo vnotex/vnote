@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd" [
+<!DOCTYPE language [
 <!ENTITY name "[A-Za-z][A-Za-z0-9_-]*">
 <!ENTITY voidtag "(area|base|br|col|embed|hr|img|input|keygen|link|meta|param|source|track|wbr)">
 <!ENTITY entity "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|[A-Za-z][A-Za-z0-9_-]*);">
@@ -17,7 +17,7 @@ Version 1 - Guo Yunhe guoyunhebrave@gmail.com - 2017-04-14
 - Do NOT support multi-line comment or text block
 
 -->
-<language name="Pug" version="5" kateversion="5.0" section="Markup" extensions="*.pug;*.jade" mimetype="" priority="10" author="Guo Yunhe (guoyunhebrave@gmail.com)" license="LGPL">
+<language name="Pug" version="8" kateversion="5.53" section="Markup" extensions="*.pug;*.jade" mimetype="" priority="10" author="Guo Yunhe (guoyunhebrave@gmail.com)" license="LGPL">
   <highlighting>
     <list name="controlflow">
       <item>case</item>
@@ -31,13 +31,13 @@ Version 1 - Guo Yunhe guoyunhebrave@gmail.com - 2017-04-14
     </list>
     <contexts>
       <context name="Start" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr attribute="Comment" context="BlockComment" String="^(\s*)//" column="0"/>
         <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
         <StringDetect attribute="Doctype" context="#stay" String="doctype" insensitive="true"/>
         <RegExpr attribute="ControlFlow" context="JavaScript" String="\belse\s+if\b" firstNonSpace="true"/>
         <keyword attribute="ControlFlow" context="JavaScript" String="controlflow" firstNonSpace="true"/>
         <DetectIdentifier attribute="Normal Text" context="Element" firstNonSpace="true" lookAhead="true"/>
-        <DetectChar attribute="Normal Text" context="Element" char="#" firstNonSpace="true" lookAhead="true"/>
-        <DetectChar attribute="Normal Text" context="Element" char="." firstNonSpace="true" lookAhead="true"/>
+        <AnyChar attribute="Normal Text" context="Element" String="#." firstNonSpace="true" lookAhead="true"/>
         <DetectChar attribute="Normal Text" context="JavaScript" char="-" firstNonSpace="true"/>
         <DetectChar attribute="Normal Text" context="#stay" char="|" firstNonSpace="true"/>
       </context>
@@ -87,7 +87,14 @@ Version 1 - Guo Yunhe guoyunhebrave@gmail.com - 2017-04-14
         <AnyChar attribute="Normal Text" context="#pop" String=",)}:" lookAhead="true"/>
       </context>
       <context name="Comment" attribute="Comment" lineEndContext="#pop">
-        <IncludeRules context="##Alerts"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context name="BlockComment" attribute="Comment" lineEndContext="#stay">
+        <RegExpr attribute="Comment" context="#stay" String="^%1\s" column="0" dynamic="true"/>
+        <RegExpr attribute="Comment" context="#stay" String="^\s*$" column="0"/>
+        <RegExpr attribute="Comment" context="#pop" String="." lookAhead="true" column="0"/>
+        <IncludeRules context="Comment"/>
       </context>
     </contexts>
     <itemDatas>
@@ -107,12 +114,13 @@ Version 1 - Guo Yunhe guoyunhebrave@gmail.com - 2017-04-14
   <general>
     <keywords casesensitive="1" weakDeliminator="-"/>
     <comments>
-      <comment name="singleLine" start="//-"/>
-      <comment name="singleLine" start="//"/>
+      <comment name="singleLine" start="//" position="afterwhitespace"/>
     </comments>
     <folding indentationsensitive="1"/>
     <emptyLines>
-      <emptyLine regexpr="(?:\s+|\s*#.*)"/>
+      <emptyLine regexpr="\s+"/>
+      <emptyLine regexpr="\s*//.*"/>
     </emptyLines>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

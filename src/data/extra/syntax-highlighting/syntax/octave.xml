@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
   =====================================================================================================
   Octave syntax highlighting file for the KDE editors Kate and Kwrite
@@ -20,8 +20,8 @@
   Thanks to Luis Silvestre for previous version and suggestions
 -->
 
-
-<language name="Octave" version="5" kateversion="5.0" section="Scientific" extensions="*.octave;*.m;*.M" mimetype="text/octave" casesensitive="1" license="GPL" author="Luis Silvestre and Federico Zenith">
+<!-- low priority to let Objective-C win for .m files per default -->
+<language name="Octave" version="12" kateversion="5.0" section="Scientific" extensions="*.octave;*.m;*.M" priority="-9" mimetype="text/octave" casesensitive="1" license="GPL" author="Luis Silvestre and Federico Zenith">
 
   <highlighting>
 
@@ -1847,7 +1847,6 @@
       <item>bisectionstep</item>
       <item>builtin</item>
       <item>bwfill</item>
-      <item>bwlabel</item>
       <item>cell2csv</item>
       <item>celleval</item>
       <item>Chi</item>
@@ -1877,7 +1876,6 @@
       <item>dispatch</item>
       <item>dispatch_help</item>
       <item>display_fixed_operations</item>
-      <item>dlmread</item>
       <item>ellint_Ecomp</item>
       <item>ellint_Kcomp</item>
       <item>ellipj</item>
@@ -2054,7 +2052,6 @@
       <item>transport_3</item>
       <item>transport_4</item>
       <item>transport_5</item>
-      <item>trisolve</item>
       <item>waitbar</item>
       <item>xmlread</item>
       <item>zeta</item>
@@ -2202,7 +2199,6 @@
       <item>dftmtx</item>
       <item>dhbar</item>
       <item>dilate</item>
-      <item>dispatch</item>
       <item>distance</item>
       <item>dlmread</item>
       <item>dlmwrite</item>
@@ -2215,7 +2211,6 @@
       <item>edit</item>
       <item>ellip</item>
       <item>ellipdemo</item>
-      <item>ellipj</item>
       <item>ellipke</item>
       <item>ellipord</item>
       <item>__ellip_ws</item>
@@ -2765,29 +2760,29 @@
         <keyword context="#stay" attribute="Functions" String="functions" />
         <keyword context="#stay" attribute="Builtin" String="builtin"/>
         <keyword context="#stay" attribute="Forge" String="forge" />
-        <RegExpr context="#stay" attribute="Comment" String="[%#].*$" />
+        <AnyChar context="Comment" attribute="Comment" String="%#" />
         <RegExpr context="#stay" attribute="Variable" String="[a-zA-Z]\w*" />
         <RegExpr context="#stay" attribute="Number" String="(\d+(\.\d+)?|\.\d+)([eE][+-]?\d+)?[ij]?" />
         <AnyChar context="#stay" attribute="Delimiter" String="()[]{}"/>
 
         <!-- Three- and two-character operators -->
         <StringDetect context="#stay" attribute="Operator" String="..."/>
-        <StringDetect context="#stay" attribute="Operator" String="=="/>
-        <StringDetect context="#stay" attribute="Operator" String="~="/>
-        <StringDetect context="#stay" attribute="Operator" String="!="/>
-        <StringDetect context="#stay" attribute="Operator" String="&lt;="/>
-        <StringDetect context="#stay" attribute="Operator" String="&gt;="/>
-        <StringDetect context="#stay" attribute="Operator" String="&lt;&gt;"/>
-        <StringDetect context="#stay" attribute="Operator" String="&amp;&amp;"/>
-        <StringDetect context="#stay" attribute="Operator" String="||"/>
-        <StringDetect context="#stay" attribute="Operator" String="++"/>
-        <StringDetect context="#stay" attribute="Operator" String="--"/>
-        <StringDetect context="#stay" attribute="Operator" String="**"/>
-        <StringDetect context="#stay" attribute="Operator" String=".*"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="=" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="~" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="!" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="&lt;" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="&gt;" char1="="/>
+        <Detect2Chars context="#stay" attribute="Operator" char="&lt;" char1="&gt;"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="&amp;" char1="&amp;"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="|" char1="|"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="+" char1="+"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="-" char1="-"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="*" char1="*"/>
         <StringDetect context="#stay" attribute="Operator" String=".**"/>
-        <StringDetect context="#stay" attribute="Operator" String=".^"/>
-        <StringDetect context="#stay" attribute="Operator" String="./"/>
-        <StringDetect context="#stay" attribute="Operator" String=".'"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="." char1="*"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="." char1="^"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="." char1="/"/>
+        <Detect2Chars context="#stay" attribute="Operator" char="." char1="'"/>
 
         <!-- Single-character operators -->
         <AnyChar context="#stay" attribute="Operator" String="!&quot;%(*+,/;=>[]|~#&amp;)-:&lt;&gt;\^"/>
@@ -2798,6 +2793,12 @@
       <!--Context entered after encountering an ' adjoint operator -->
       <context name="_adjoint" attribute="Operator" lineEndContext="#pop">
         <RegExpr context="#pop" attribute="Operator" String="'+" />
+      </context>
+
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
 
 
@@ -2823,8 +2824,7 @@
 
   <general>
     <comments>
-      <comment name="singleLine" start="%" />
-      <comment name="singleLine" start="#" />
+      <comment name="singleLine" start="#" position="afterwhitespace" />
     </comments>
     <keywords weakDeliminator="." casesensitive="1"/>
   </general>

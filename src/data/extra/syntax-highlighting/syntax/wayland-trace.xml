@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
 <language name="Wayland Trace" section="Other"
-          version="1" kateversion="3.4"
+          version="3" kateversion="3.4"
           extensions=""
           mimetype=""
           author="Andreas Cord-Landwehr (cordlandwehr@kde.org)" license="MIT">
@@ -20,10 +20,10 @@
         <context name="WaylandTrace" attribute="Normal" lineEndContext="#stay">
             <RegExpr attribute="TimeStamp" context="#stay" String="\[[0-9]*\.[0-9]*\]" />
             <Detect2Chars attribute="Operator" char="-" char1=">" context="#stay" />
-            <RegExpr attribute="Interface" String="[a-zA-Z0-9_]*@[0-9]*." context="Interface" lookAhead="true" />
+            <RegExpr attribute="Interface" String="[a-zA-Z0-9_]*[@#]." context="Interface" lookAhead="true" />
         </context>
         <context name="Interface" attribute="Interface" lineEndContext="#pop">
-            <RegExpr attribute="Interface" String="(\[unknown\]|[a-zA-Z0-9_])*@[0-9]*" />
+            <RegExpr attribute="Interface" String="(\[unknown\]|[a-zA-Z0-9_])*[@#][0-9]*" />
             <DetectChar char="." context="Message" />
             <DetectSpaces lookAhead="true" context="#pop" />
         </context>
@@ -35,7 +35,7 @@
             <Int attribute="NumberParameter" />
             <DetectChar attribute="StringParameter" context="String" char="&quot;"/>
             <keyword attribute="Keyword" String="ParameterKeywords" />
-            <RegExpr attribute="Interface" String="(\[unknown\]|[a-zA-Z0-9_])*@[0-9]*" />
+            <RegExpr attribute="Interface" String="(\[unknown\]|[a-zA-Z0-9_])*[@#][0-9]*" />
             <DetectChar char=")" attribute="Normal" context="#pop#pop" />
         </context>
         <context attribute="StringParameter" lineEndContext="#pop" name="String">
@@ -58,4 +58,4 @@
 
 </language>
 
-<!-- kate: replace-tabs: on; tab-width: 4; indent-width: 4; -->
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

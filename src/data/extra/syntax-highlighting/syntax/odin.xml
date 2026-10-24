@@ -1,0 +1,290 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+  <!ENTITY symbols ":!&#37;&amp;()+,-/.*&lt;=&gt;?[]|~^;">
+  <!ENTITY bin_int "(?:[01]+(?:_[01]+)*)">
+  <!ENTITY oct_int "(?:[0-7]+(?:_[0-7]+)*)">
+  <!ENTITY dec_int "(?:[0-9]+(?:_[0-9]+)*)">
+  <!ENTITY hex_int "(?:[0-9A-Fa-f]+(?:_[0-9A-Fa-f]+)*)">
+  <!ENTITY exp_float "(?:[eE][+-]?&dec_int;)">
+  <!ENTITY exp_hexfloat "(?:[pP][-+]?&dec_int;)">
+]>
+<language name="Odin" section="Sources"
+          version="7" kateversion="5.79"
+          indenter="cstyle"
+          extensions="*.odin"
+          priority="1"
+          author="Akseli Lahtinen (akselmo@akselmo.dev)"
+          license="MIT">
+
+  <highlighting>
+    <list name="controlflow">
+     <item>if</item>
+     <item>else</item>
+     <item>when</item>
+     <item>for</item>
+     <item>in</item>
+     <item>not_in</item>
+     <item>switch</item>
+     <item>return</item>
+     <item>do</item>
+     <item>where</item>
+     <item>fallthrough</item>
+     <item>break</item>
+     <item>continue</item>
+     <item>or_else</item>
+     <item>or_return</item>
+     <item>or_break</item>
+     <item>or_continue</item>
+    </list>
+
+    <list name="keywords">
+      <item>const</item>
+      <item>case</item>
+      <item>defer</item>
+      <item>asm</item>
+      <item>distinct</item>
+      <item>nil</item>
+      <item>true</item>
+      <item>false</item>
+      <item>---</item>
+      <item>struct</item>
+      <item>enum</item>
+      <item>union</item>
+      <item>map</item>
+      <item>bit_set</item>
+      <item>dynamic</item>
+      <item>cast</item>
+      <item>transmute</item>
+      <item>auto_cast</item>
+      <item>force_inline</item>
+      <item>force_no_inline</item>
+      <item>size_of</item>
+      <item>align_of</item>
+      <item>offset_of</item>
+      <item>type_of</item>
+      <item>type_info_of</item>
+      <item>typeid_of</item>
+    </list>
+
+    <list name="context">
+      <item>context</item>
+    </list>
+
+    <list name="types">
+      <item>i8</item>
+      <item>i16</item>
+      <item>i32</item>
+      <item>i64</item>
+      <item>i128</item>
+      <item>int</item>
+      <item>u8</item>
+      <item>u16</item>
+      <item>u32</item>
+      <item>u64</item>
+      <item>u128</item>
+      <item>uint</item>
+      <item>uintptr</item>
+      <item>f16</item>
+      <item>f32</item>
+      <item>f64</item>
+      <item>f16le</item>
+      <item>f32le</item>
+      <item>f64le</item>
+      <item>f16be</item>
+      <item>f32be</item>
+      <item>f64be</item>
+      <item>complex32</item>
+      <item>complex64</item>
+      <item>complex128</item>
+      <item>complex_float</item>
+      <item>complex_double</item>
+      <item>quaternion64</item>
+      <item>quaternion128</item>
+      <item>quaternion256</item>
+      <item>bool</item>
+      <item>b8</item>
+      <item>b16</item>
+      <item>b32</item>
+      <item>b64</item>
+      <item>string</item>
+      <item>cstring</item>
+      <item>rune</item>
+      <item>rawptr</item>
+      <item>any</item>
+      <item>typeid</item>
+      <item>byte</item>
+      <item>u16le</item>
+      <item>u32le</item>
+      <item>u64le</item>
+      <item>u128le</item>
+      <item>i16le</item>
+      <item>i32le</item>
+      <item>i64le</item>
+      <item>i128le</item>
+      <item>i16be</item>
+      <item>i32be</item>
+      <item>i64be</item>
+      <item>i128be</item>
+      <item>u16be</item>
+      <item>u32be</item>
+      <item>u64be</item>
+      <item>u128be</item>
+    </list>
+
+    <list name="procedure">
+      <item>proc</item>
+    </list>
+
+    <list name="import">
+      <item>import</item>
+      <item>package</item>
+      <item>foreign</item>
+    </list>
+
+    <list name="attributes">
+      <item>private</item>
+      <item>require</item>
+      <item>link_name</item>
+      <item>link_prefix</item>
+      <item>linkage</item>
+      <item>default_calling_convention</item>
+      <item>link_section</item>
+      <item>extra_linker_flags</item>
+      <item>deferred_in</item>
+      <item>deferred_out</item>
+      <item>deferred_in_out</item>
+      <item>deferred_none</item>
+      <item>deprecated</item>
+      <item>require_results</item>
+      <item>disabled</item>
+      <item>init</item>
+      <item>cold</item>
+      <item>optimization_mode</item>
+      <item>test</item>
+      <item>static</item>
+      <item>thread_local</item>
+      <item>builtin</item>
+      <item>objc_type</item>
+      <item>objc_is_class_method</item>
+      <item>require_target_feature</item>
+      <item>enable_target_feature</item>
+    </list>
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal Text" >
+        <Detect2Chars attribute="Comment" char="/" char1="/" context="SingleLineComment"/>
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*" lookAhead="true" beginRegion="Comment1" />
+        <Detect2Chars attribute="Operator" char=":" char1=":" context="#stay"/>
+        <DetectChar attribute="String" context="DoubleQuoteString" char="&quot;"/>
+        <DetectChar attribute="Character" context="Character" char="'"/>
+        <keyword attribute="Control Flow" context="#stay" String="controlflow" />
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Data Type" context="#stay" String="types" />
+        <keyword String="context" attribute="Context Variable" context="#stay"/>
+        <DetectChar attribute="Attribute" context="AttributeContext" char='@' column="0"/>
+        <AnyChar context="Number" String="0123456789" lookAhead="1" />
+        <RegExpr attribute="Directive" context="#stay" String="\#\w+"/>
+        <RegExpr attribute="Procedure" firstNonSpace="true" context="Procedure" String="\w{1,}\s{0,}::\s{0,}(?=proc)" lookAhead="true"/>
+        <RegExpr attribute="Procedure" context="#stay" String="[A-Za-z_0-9]*\s*(?=\()" />
+        <RegExpr attribute="Variable" context="#stay" firstNonSpace="true" String="\w{1,},{0,1}\s{0,}\w{0,}\s{0,}(?=:\=|:\s{0,}\w{1,}\s{0,}\=)(?!::)"/> <!--TODO this is too expensive-->
+        <AnyChar attribute="Operator" context="#stay" String="&symbols;" />
+        <DetectChar attribute="Operator" context="#stay" char="{" beginRegion="Brace1" />
+        <DetectChar attribute="Operator" context="#stay" char="}" endRegion="Brace1" />
+        <DetectChar attribute="RawString" context="RawString" char="`" />
+        <keyword attribute="Use" context="#stay" String="import"/>
+        <DetectIdentifier/>
+      </context>
+
+      <context name="SingleLineComment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments" />
+      </context>
+
+      <context name="MultiLineComment" attribute="Comment" lineEndContext="#stay">
+        <IncludeRules context="##Comments" />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment1"/>
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="DoubleQuoteString">
+          <DetectChar context="EscapeChar" char="\" lookAhead="1"/>
+          <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Character" lineEndContext="#pop" name="Character">
+          <DetectChar context="EscapeChar" char="\" lookAhead="1"/>
+          <DetectChar attribute="Character" context="#pop" char="'"/>
+      </context>
+      <context name="EscapeChar" attribute="String Char" lineEndContext="#pop">
+          <RegExpr attribute="String Char" context="#pop" String="\\([nrt'&quot;\\]|x[0-9a-fA-F]{2}|[0-7]{3}|u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8})"/>
+      </context>
+
+      <context name="RawString" attribute="RawString" lineEndContext="#stay">
+          <DetectChar attribute="RawString" context="#pop" char="`" />
+      </context>
+
+      <context name="Procedure" attribute="Procedure" lineEndContext="#pop">
+        <Detect2Chars attribute="Operator" char=":" char1=":" context="#stay"/>
+        <WordDetect attribute="Keyword" context="#stay" String="proc" />
+        <DetectChar attribute="String" context="SimpleDoubleQuoteString" char="&quot;"/> <!--e.g, "contextless" | "c" -->
+        <AnyChar attribute="Symbol" context="#pop" lookAhead="true" String="\("/>
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="SimpleDoubleQuoteString">
+          <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+      <context name="AttributeContext" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Symbol" context="#stay" char='('/>
+        <DetectSpaces />
+        <keyword attribute="Attribute" context="#pop" String="attributes" />
+      </context>
+
+      <!-- Integer / Float -->
+      <context name="Number" attribute="Normal Text" lineEndContext="#pop">
+          <RegExpr attribute="Float" context="#pop!SuffixNumber" String="&dec_int;(\.&dec_int;&exp_float;?|&exp_float;)"/>
+          <RegExpr attribute="Decimal" context="#pop!SuffixNumber" String="0(?=[^xob]|$)|(?=0[xob])|&dec_int;"/>
+          <RegExpr attribute="Hex" context="#pop!SuffixNumber" String="0x&hex_int;"/>
+          <RegExpr attribute="Octal" context="#pop!SuffixNumber" String="0o&oct_int;"/>
+          <RegExpr attribute="Binary" context="#pop!SuffixNumber" String="0b&bin_int;"/>
+          <DetectChar attribute="Decimal" context="#pop!SuffixNumber" char="0"/>
+      </context>
+      <context name="SuffixNumber" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
+          <DetectChar attribute="Symbol" char=':' context="#pop"/> <!-- in `[0:a]` -->
+          <StringDetect attribute="Symbol" String=".." context="#pop"/> <!-- in `0..a` -->
+          <AnyChar attribute="Error" String=".0123456789" context="#pop"/>
+          <DetectIdentifier attribute="Error" context="#pop"/>
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Variable" defStyleNum="dsVariable"/>
+      <itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Data Type"    defStyleNum="dsDataType" spellChecking="false"/>
+      <itemData name="Attribute"       defStyleNum="dsAttribute"/>
+      <itemData name="Directive"       defStyleNum="dsPreprocessor"/>
+      <itemData name="Procedure"       defStyleNum="dsFunction"/>
+      <itemData name="Operator"       defStyleNum="dsOperator"/>
+      <itemData name="String"       defStyleNum="dsString"/>
+      <itemData name="RawString"       defStyleNum="dsSpecialString"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Binary"       defStyleNum="dsBaseN"  spellChecking="false"/>
+      <itemData name="Octal"        defStyleNum="dsBaseN"  spellChecking="false"/>
+      <itemData name="Hex"          defStyleNum="dsBaseN"  spellChecking="false"/>
+      <itemData name="Decimal"      defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Float"        defStyleNum="dsFloat"  spellChecking="false"/>
+      <itemData name="Use"          defStyleNum="dsImport"/>
+      <itemData name="Error"        defStyleNum="dsError" spellChecking="false"/>
+      <itemData name="Context Variable" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="Symbol"       defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
+      <itemData name="Character" defStyleNum="dsChar" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" position="afterwhitespace" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+    </comments>
+  </general>
+</language>

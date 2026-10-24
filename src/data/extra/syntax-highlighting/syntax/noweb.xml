@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="noweb" version="2" kateversion="2.4" section="Sources" extensions="*.w;*.nw" author="Scott Collins (scc@scottcollins.net)">
+<!DOCTYPE language>
+<language name="noweb" version="5" kateversion="5.79" section="Sources" extensions="*.w;*.nw" author="Scott Collins (scc@scottcollins.net)">
 <!-- 
 #########################################################################
 # First version added to repository was 0.4, added as 1.0 .
@@ -18,7 +18,7 @@
   <highlighting>
     <contexts>
       <context name="RawDocumentation" attribute="Prose" lineEndContext="#stay">
-        <RegExpr String="^&lt;&lt;.*&gt;&gt;=$" attribute="SectionName" context="CodeSection" beginRegion="CodeSection" />
+        <RegExpr String="^&lt;&lt;.*&gt;&gt;=$" attribute="SectionName" context="CodeSection" beginRegion="CodeSection" column="0" />
         <Detect2Chars char="@" char1="[" context="#stay" />
         <Detect2Chars char="[" char1="[" attribute="Punctuation" context="CodeQuote" />
         <IncludeRules context="##HTML" includeAttrib="true" />
@@ -30,14 +30,13 @@
         <IncludeRules context="##C++" includeAttrib="true" />
       </context>
       <context name="CodeSection" attribute="Code" lineEndContext="#stay">
-        <RegExpr String="^@$" attribute="Punctuation" context="RawDocumentation" endRegion="CodeSection" />
-        <RegExpr String="^@(?=[\s%])" attribute="Punctuation" context="RawDocumentation" endRegion="CodeSection" />
-        <RegExpr String="^&lt;&lt;.*&gt;&gt;=$" context="RawDocumentation" lookAhead="true" endRegion="CodeSection" />
+        <RegExpr String="^@$|^@(?=[\s%])" attribute="Punctuation" context="RawDocumentation" endRegion="CodeSection" column="0" />
+        <RegExpr String="^&lt;&lt;.*&gt;&gt;=$" context="RawDocumentation" lookAhead="true" endRegion="CodeSection" column="0" />
         <IncludeRules context="SectionNames" />
         <IncludeRules context="##C++" includeAttrib="true" />
       </context>
       <context name="SectionNames" attribute="Prose" lineEndContext="#stay">
-        <RegExpr String="@&lt;&lt;" context="#stay" />
+        <StringDetect String="@&lt;&lt;" context="#stay" />
         <RegExpr String="&lt;&lt;.*[^@]&gt;&gt;(?!=)" minimal="true" attribute="SectionName" />
       </context>
     </contexts>
@@ -48,5 +47,10 @@
       <itemData name="SectionName"  defStyleNum="dsRegionMarker" italic="true" />
     </itemDatas>
   </highlighting>
+  <general>
+    <comments>
+      <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+    </comments>
+  </general>
 </language>
 

@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- Extended and updated by                                    -->
 <!-- Christoph Hormann <chris_hormann@gmx.de>, March 2004       -->
 <!-- features full POV-Ray 3.6 syntax with special highlighting -->
 <!-- of variable and macro declarations                         -->
 <!-- v1.1: added MegaPOV 1.2.1 keywords (Febuary 2006)          -->
-<language name="POV-Ray" version="5" kateversion="2.4" section="3D" extensions="*.inc;*.pov" mimetype="text/x-povray-script;text/x-povray-include" author="Christoph Hormann (chris_hormann@gmx.de)" license="LGPL" priority="2">
+<language name="POV-Ray" version="8" kateversion="5.0" section="3D" extensions="*.inc;*.pov" mimetype="text/x-povray-script;text/x-povray-include" author="Christoph Hormann (chris_hormann@gmx.de)" license="LGPL" priority="2">
 	<highlighting>
 		<list name="keywords">
 			<item>aa_threshold</item>
@@ -376,7 +376,6 @@
 			<item>tightness</item>
 			<item>tile2</item>
 			<item>tiles</item>
-			<item>normal</item>
 			<item>tolerance</item>
 			<item>toroidal</item>
 			<item>torus</item>
@@ -716,7 +715,6 @@
 			<item>texture</item>
 			<item>tile2</item>
 			<item>tiles</item>
-			<item>normal</item>
 			<item>toroidal</item>
 			<item>transmit</item>
 			<item>triangle_wave</item>
@@ -923,45 +921,48 @@
 			</context>
 
 			<context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
-				<IncludeRules context="##Alerts" />
+				<DetectSpaces />
+				<IncludeRules context="##Comments" />
 			</context>
 
 			<context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
-				<IncludeRules context="##Alerts" />
+				<DetectSpaces />
 				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+				<IncludeRules context="##Comments" />
 			</context>
 		</contexts>
 
 		<itemDatas>
-			<itemData name="Normal Text"     defStyleNum="dsNormal"   color="#000000" selColor="#ffffff" bold="0" italic="0"/>
-			<itemData name="Keyword"         defStyleNum="dsKeyword"  color="#000080" selColor="#ffffff" bold="0" italic="0"/>
-			<itemData name="Unofficial"      defStyleNum="dsKeyword"  color="#0080d0" selColor="#ffffff" bold="0" italic="0"/>
-			<itemData name="Objects"         defStyleNum="dsKeyword"  color="#800000" selColor="#ffffff" bold="0" italic="0"/>
-			<itemData name="Texturing"       defStyleNum="dsKeyword"  color="#000080" selColor="#ffffff" bold="0" italic="0"/>
-			<itemData name="Transforms"      defStyleNum="dsKeyword"  color="#000080" selColor="#ffffff" bold="0" italic="0"/>
-			<itemData name="Declaration"     defStyleNum="dsKeyword"  color="#000080" selColor="#000080" bold="1" italic="0"/>
-			<itemData name="Macro"           defStyleNum="dsKeyword"  color="#000080" selColor="#000080" bold="1" italic="0"/>
-			<itemData name="Declare Keyword" defStyleNum="dsKeyword"  color="#990099" selColor="#990099" bold="1" italic="0"/>
-			<itemData name="Declare Macro"   defStyleNum="dsKeyword"  color="#CC0000" selColor="#990099" bold="1" italic="0"/>
-			<itemData name="Functions"       defStyleNum="dsKeyword"  color="#000080" selColor="#ffffff" bold="0" italic="0"/>
-			<itemData name="Directives"      defStyleNum="dsOthers"   color="#3300ff" selColor="#3300ff" bold="1" italic="0"/>
-			<itemData name="Filetype"        defStyleNum="dsDataType" color="#000080" selColor="#ffffff" bold="0" italic="0"/>
-			<itemData name="Constant"        defStyleNum="dsFloat"    color="#0000ff" selColor="#ffffff" bold="0" italic="0"/>
-			<itemData name="Float"           defStyleNum="dsFloat"    color="#0000ff" selColor="#ffffff" bold="0" italic="0"/>
-			<itemData name="Char"            defStyleNum="dsChar"     color="#000080" selColor="#ffffff" bold="0" italic="0"/>
-			<itemData name="String"          defStyleNum="dsString"   color="#ff0000" selColor="#ff0000" bold="0" italic="0"/>
-			<itemData name="String Char"     defStyleNum="dsChar"     color="#ff00ff" selColor="#ff00ff" bold="0" italic="0"/>
-			<itemData name="Comment"         defStyleNum="dsComment"  color="#008000" selColor="#008000" bold="0" italic="0"/>
-			<itemData name="Symbol"          defStyleNum="dsNormal"   color="#660099" selColor="#660099" bold="0" italic="0"/>
-			<itemData name="Region Marker"   defStyleNum="dsRegionMarker"/>
+			<itemData name="Normal Text"     defStyleNum="dsNormal"       spellChecking="false" />
+			<itemData name="Keyword"         defStyleNum="dsVariable"     bold="0" spellChecking="false" /> <!-- #000080 -->
+			<itemData name="Unofficial"      defStyleNum="dsExtension"    bold="0" spellChecking="false" /> <!-- #0080d0 -->
+			<itemData name="Objects"         defStyleNum="dsWarning"      bold="0" spellChecking="false" /> <!-- #800000 -->
+			<itemData name="Texturing"       defStyleNum="dsAttribute"    bold="0" spellChecking="false" /> <!-- #000080 -->
+			<itemData name="Transforms"      defStyleNum="dsOthers"       bold="0" spellChecking="false" /> <!-- #000080 -->
+			<itemData name="Declaration"     defStyleNum="dsPreprocessor" bold="1" spellChecking="false" /> <!-- #000080 -->
+			<itemData name="Macro"           defStyleNum="dsPreprocessor" bold="1" spellChecking="false" /> <!-- #000080 -->
+			<itemData name="Declare Keyword" defStyleNum="dsFunction"     bold="1" spellChecking="false" /> <!-- #990099 -->
+			<itemData name="Declare Macro"   defStyleNum="dsImport"       bold="1" spellChecking="false" /> <!-- #CC0000 -->
+			<itemData name="Functions"       defStyleNum="dsFunction"     bold="0" spellChecking="false" /> <!-- #000080 -->
+			<itemData name="Directives"      defStyleNum="dsOthers"       bold="1" spellChecking="false" /> <!-- #3300ff -->
+			<itemData name="Filetype"        defStyleNum="dsDataType"     bold="0" spellChecking="false" /> <!-- #000080 -->
+			<itemData name="Constant"        defStyleNum="dsConstant"     spellChecking="false" /> <!-- #0000ff -->
+			<itemData name="Float"           defStyleNum="dsFloat"        spellChecking="false" /> <!-- #0000ff -->
+			<itemData name="Char"            defStyleNum="dsChar"         spellChecking="false" /> <!-- #000080 -->
+			<itemData name="String"          defStyleNum="dsString"                             /> <!-- #ff0000 -->
+			<itemData name="String Char"     defStyleNum="dsSpecialChar"  spellChecking="false" /> <!-- #ff00ff -->
+			<itemData name="Comment"         defStyleNum="dsComment"                            /> <!-- #008000 -->
+			<itemData name="Symbol"          defStyleNum="dsOperator"     spellChecking="false" /> <!-- #660099 -->
+			<itemData name="Region Marker"   defStyleNum="dsRegionMarker" />
 		</itemDatas>
 	</highlighting>
 
 	<general>
 		<comments>
-			<comment name="singleLine" start="//" />
-			<comment name="multiLine" start="/*" end="*/" />
+			<comment name="singleLine" start="//" position="afterwhitespace" />
+			<comment name="multiLine" start="/*" end="*/" region="Comment" />
 		</comments>
 		<keywords casesensitive="1" />
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

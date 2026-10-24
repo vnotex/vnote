@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="CLIST" version="1" kateversion="5.0" section="Scripts" extensions="*.clist;*.CLIST" mimetype="" license="MIT">
+<!DOCTYPE language>
+<language name="CLIST" version="4" kateversion="5.0" section="Scripts" extensions="*.clist;*.CLIST" mimetype="" license="MIT">
     <!--
       Command LIST, or CLIST, is the scripting language for TSO (Time Sharing Option) on IBM mainframes running z/OS.
       Developers can use CLISTs to automate repetitive tasks or to automate complex TSO commands.
@@ -54,12 +54,12 @@
         <RegExpr attribute="Variable"     context="#stay" insensitive="true" String="&amp;+[A-Z0-9]*"/>
         <RegExpr attribute="Number"       context="#stay" insensitive="true" String="\b(\d+)\b"/>
         <RegExpr attribute="String"       context="#stay" insensitive="true" String="(?&lt;=WRITE).*"/>
-        <DetectChar attribute="String"    context="String" char="&apos;"/>
-        <DetectChar attribute="String"    context="String" char="&quot;"/>
+        <AnyChar attribute="String"       context="String" String="&apos;&quot;"/>
         <Detect2Chars attribute="Comment" context="comments" char="/" char1="*" beginRegion="Comment"/>
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="comments">
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments"/>
       </context>
       <context attribute="String" lineEndContext="#pop" name="String">
         <DetectChar attribute="String" context="#pop" char="&apos;"/>
@@ -80,8 +80,9 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="/*"/>
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
     </comments>
     <keywords casesensitive="0" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

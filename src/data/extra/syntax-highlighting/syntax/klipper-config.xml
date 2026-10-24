@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+  <!ENTITY ident "[_a-zA-Z][_a-zA-Z0-9]+">
+  <!ENTITY params "DEFHIJNPQRSTUVWXYZdefhijnpqrstuvwxyz">
+]>
+<language name="Klipper Config" version="1" kateversion="5.79" section="3D" extensions="*.cfg" mimetype="" author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT">
+
+  <!-- https://github.com/Klipper3d/klipper/ -->
+
+  <highlighting>
+    <list name="special variables">
+      <item>true</item>
+      <item>True</item>
+      <item>false</item>
+      <item>False</item>
+      <item>none</item>
+      <item>None</item>
+    </list>
+
+    <list name="jinja control flow">
+      <item>for</item>
+      <item>endfor</item>
+      <item>if</item>
+      <item>elif</item>
+      <item>else</item>
+      <item>endif</item>
+    </list>
+
+    <list name="jinja keywords">
+      <item>in</item>
+      <item>is</item>
+      <item>set</item>
+      <item>not</item>
+      <item>and</item>
+      <item>or</item>
+    </list>
+
+    <list name="jinja filter">
+      <item>abs</item>
+      <item>attr</item>
+      <item>batch</item>
+      <item>capitalize</item>
+      <item>center</item>
+      <item>default</item>
+      <item>dictsort</item>
+      <item>escape</item>
+      <item>filesizeformat</item>
+      <item>first</item>
+      <item>float</item>
+      <item>forceescape</item>
+      <item>format</item>
+      <item>groupby</item>
+      <item>indent</item>
+      <item>int</item>
+      <item>join</item>
+      <item>last</item>
+      <item>length</item>
+      <item>list</item>
+      <item>lower</item>
+      <item>map</item>
+      <item>max</item>
+      <item>min</item>
+      <item>pprint</item>
+      <item>random</item>
+      <item>reject</item>
+      <item>rejectattr</item>
+      <item>replace</item>
+      <item>reverse</item>
+      <item>round</item>
+      <item>safe</item>
+      <item>select</item>
+      <item>selectattr</item>
+      <item>slice</item>
+      <item>sort</item>
+      <item>string</item>
+      <item>striptags</item>
+      <item>sum</item>
+      <item>title</item>
+      <item>tojson</item>
+      <item>truncate</item>
+      <item>unique</item>
+      <item>upper</item>
+      <item>urlencode</item>
+      <item>urlize</item>
+      <item>wordcount</item>
+      <item>wordwrap</item>
+      <item>xmlattr</item>
+    </list>
+
+    <contexts>
+      <context name="Start" attribute="Normal Text" fallthroughContext="Property">
+        <IncludeRules context="FindComment"/>
+        <DetectChar char="[" attribute="Section Symbol" context="Section" column="0"/>
+        <WordDetect String="gcode" attribute="Property gcode" context="GCode" column="0"/>
+        <RegExpr String="^(_?pin|[_a-z][_a-z0-9]*?_pin)\b" attribute="Property pin" context="Pin" column="0" insensitive="1"/>
+        <DetectIdentifier attribute="Property" context="Property" column="0"/>
+      </context>
+
+      <context name="FindComment" attribute="Normal Text" lineEndContext="#pop">
+        <AnyChar String="#;" attribute="Comment" context="comment"/>
+      </context>
+
+      <!-- [ ... ] -->
+      <context name="Section" attribute="Section" lineEndContext="#pop" fallthroughContext="#pop">
+        <WordDetect String="include" attribute="Section" context="Include"/>
+        <DetectIdentifier attribute="Section" context="SectionName"/>
+      </context>
+      <context name="SectionName" attribute="Section Name" lineEndContext="#pop#pop">
+        <DetectChar char="]" attribute="Section Symbol" context="#pop#pop!SectionEnd"/>
+      </context>
+      <context name="Include" attribute="Path" lineEndContext="#pop#pop">
+        <IncludeRules context="SectionName"/>
+      </context>
+      <context name="SectionEnd" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="FindComment"/>
+      </context>
+
+      <!-- ^&ident;: -->
+      <context name="Property" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar char=":" attribute="Symbol Separator" context="PropertyBody"/>
+        <DetectSpaces attribute="Normal Text"/>
+      </context>
+      <context name="PropertyBody" attribute="Normal Text" fallthroughContext="PropertyLine">
+        <DetectSpaces attribute="Normal Text" context="PropertyLine" column="0"/>
+        <IncludeRules context="FindPropertyEnd"/>
+      </context>
+      <context name="FindPropertyEnd" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr String="." context="#pop#pop" lookAhead="1" column="0"/>
+      </context>
+      <context name="PropertyLine" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="FindValue"/>
+        <IncludeRules context="FindComment"/>
+        <IncludeRules context="FindWord"/>
+      </context>
+      <context name="FindValue" attribute="Normal Text" lineEndContext="#pop">
+        <Float attribute="Float"/>
+        <Int attribute="Int"/>
+        <DetectChar char="-" attribute="Operator"/>
+        <DetectChar char="'" attribute="String" context="StringSQ"/>
+        <DetectChar char="&quot;" attribute="String" context="StringDQ"/>
+      </context>
+      <context name="FindWord" attribute="Normal Text" lineEndContext="#pop">
+        <keyword String="special variables" attribute="Special Variable"/>
+        <DetectIdentifier/>
+      </context>
+
+      <!-- ^.*_pin: -->
+      <context name="Pin" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar char=":" attribute="Symbol Separator" context="PinBody"/>
+        <DetectSpaces attribute="Normal Text"/>
+      </context>
+      <context name="PinBody" attribute="Normal Text" fallthroughContext="PinLine">
+        <DetectSpaces attribute="Normal Text" context="PropertyLine" column="0"/>
+        <IncludeRules context="FindPropertyEnd"/>
+      </context>
+      <context name="PinLine" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop!PropertyLine">
+        <DetectSpaces/>
+        <AnyChar String="-!^" attribute="Operator"/>
+        <RegExpr String="([A-Z]{1,2}|gpio)[0-9]+" attribute="Pin Id"/>
+        <IncludeRules context="FindComment"/>
+      </context>
+
+      <!-- ^gcode: -->
+      <context name="GCode" attribute="Path" lineEndContext="#pop#pop">
+        <DetectChar char=":" attribute="Symbol Separator" context="GCodeBody"/>
+        <DetectSpaces attribute="Normal Text"/>
+      </context>
+      <context name="GCodeBody" attribute="Normal Text" fallthroughContext="GCodeCommand">
+        <DetectSpaces attribute="Normal Text" context="GCodeCommand" column="0"/>
+        <IncludeRules context="FindPropertyEnd"/>
+        <IncludeRules context="FindComment"/>
+      </context>
+      <context name="GCodeCommand" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="GCodeExtendedLine">
+        <RegExpr String="[gG][0-9]{1,3}" attribute="G-word" context="GCodeLine"/>
+        <RegExpr String="[mM][0-9]{1,3}" attribute="M-word" context="GCodeLine"/>
+        <DetectIdentifier attribute="Macro" context="GCodeExtendedLine"/>
+      </context>
+      <context name="GCodeLine" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="FindValue"/>
+        <IncludeRules context="FindTemplate"/>
+        <IncludeRules context="FindComment"/>
+        <IncludeRules context="FindGCodeParam"/>
+        <IncludeRules context="FindWord"/>
+      </context>
+      <context name="FindGCodeParam" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr String="\b[&params;](?=-?(\{|\.?[0-9]))" attribute="Parameter" context="GCodeParam"/>
+      </context>
+      <context name="GCodeExtendedLine" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <DetectChar char="=" attribute="Operator"/>
+        <IncludeRules context="FindValue"/>
+        <IncludeRules context="FindTemplate"/>
+        <IncludeRules context="FindComment"/>
+        <RegExpr String="\b&ident;(?==)" attribute="Parameter"/>
+        <IncludeRules context="FindGCodeParam"/>
+        <IncludeRules context="FindWord"/>
+      </context>
+      <context name="GCodeParam" attribute="Parameter Value" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectChar char="-"/>
+        <Float attribute="Float" context="#pop" additionalDeliminator="&params;"/>
+        <Int attribute="Int" context="#pop" additionalDeliminator="&params;"/>
+      </context>
+
+      <!-- jinja template -->
+      <context name="FindTemplate" attribute="String" lineEndContext="#pop">
+        <StringDetect String="{%" attribute="Jinja Expression" context="Jinja{%"/>
+        <DetectChar char="{" attribute="Jinja Expression" context="Jinja{"/>
+      </context>
+      <context name="Jinja{" attribute="Normal Text">
+        <DetectChar char="}" attribute="Jinja Expression" context="#pop"/>
+        <IncludeRules context="Jinja"/>
+      </context>
+      <context name="Jinja{%" attribute="Normal Text">
+        <StringDetect String="%}" attribute="Jinja Expression" context="#pop"/>
+        <IncludeRules context="Jinja"/>
+      </context>
+      <context name="Jinja" attribute="Normal Text">
+        <DetectSpaces/>
+        <AnyChar String="/*+-%!=&lt;>~|" attribute="Jinja Operator Symbol"/>
+        <AnyChar String=",;" attribute="Jinja Symbol Separator"/>
+        <DetectChar char="." attribute="Jinja Accessor Symbol"/>
+        <Float attribute="Float"/>
+        <Int attribute="Int"/>
+        <DetectChar char="'" attribute="String" context="StringSQ"/>
+        <DetectChar char="&quot;" attribute="String" context="StringDQ"/>
+        <WordDetect String="if" attribute="Jinja Control Flow" beginRegion="if"/>
+        <WordDetect String="endif" attribute="Jinja Control Flow" endRegion="if"/>
+        <WordDetect String="for" attribute="Jinja Control Flow" beginRegion="for"/>
+        <WordDetect String="endfor" attribute="Jinja Control Flow" endRegion="for"/>
+        <keyword String="jinja control flow" attribute="Jinja Control Flow"/>
+        <keyword String="jinja keywords" attribute="Jinja Keyword"/>
+        <keyword String="jinja filter" attribute="Jinja Function"/>
+        <keyword String="special variables" attribute="Special Variable"/>
+        <DetectIdentifier/>
+      </context>
+
+      <!-- ' ... ' -->
+      <context name="StringSQ" attribute="String" lineEndContext="#pop">
+        <StringDetect String="\'" attribute="String Special Char"/>
+        <DetectChar char="'" attribute="String" context="#pop"/>
+      </context>
+
+      <!-- " ... " -->
+      <context name="StringDQ" attribute="String" lineEndContext="#pop">
+        <StringDetect String="\&quot;" attribute="String Special Char"/>
+        <DetectChar char="&quot;" attribute="String" context="#pop"/>
+      </context>
+
+      <context name="comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Section Symbol" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Section" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="Section Name" defStyleNum="dsString" spellChecking="0"/>
+      <itemData name="Property" defStyleNum="dsVariable" spellChecking="0"/>
+      <itemData name="Property gcode" defStyleNum="dsVerbatimString" spellChecking="0"/>
+      <itemData name="Property pin" defStyleNum="dsAttribute" spellChecking="0"/>
+      <itemData name="Path" defStyleNum="dsVerbatimString" spellChecking="0"/>
+      <itemData name="Operator" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="String Special Char" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Int" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+      <itemData name="Pin Id" defStyleNum="dsPreprocessor" spellChecking="false"/>
+      <itemData name="Symbol Separator" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Special Variable" defStyleNum="dsConstant" spellChecking="0"/>
+      <itemData name="G-word" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="M-word" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="Macro" defStyleNum="dsExtension" spellChecking="0"/>
+      <itemData name="Parameter" defStyleNum="dsVariable" spellChecking="0"/>
+      <itemData name="Parameter Value" defStyleNum="dsDecVal" spellChecking="0"/>
+      <itemData name="Jinja Expression" defStyleNum="dsPreprocessor" spellChecking="0"/>
+      <itemData name="Jinja Symbol Separator" defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Jinja Operator Symbol" defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Jinja Accessor Symbol" defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Jinja Control Flow" defStyleNum="dsControlFlow" spellChecking="0"/>
+      <itemData name="Jinja Keyword" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="Jinja Function" defStyleNum="dsFunction" spellChecking="0"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <folding indentationsensitive="1"/>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+    <keywords casesensitive="0"/>
+  </general>
+</language>
+<!-- kate: replace-tabs on; indent-width 2; tab-width 2; -->

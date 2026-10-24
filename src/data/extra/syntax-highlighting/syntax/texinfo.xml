@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Texinfo" extensions="*.texi" section="Markup" mimetype="application/x-texinfo" author="Daniel Franke (franke.daniel@gmail.com)" license="LGPL" version="1" kateversion="2.4">
+<!DOCTYPE language>
+<language name="Texinfo" extensions="*.texi" section="Markup" mimetype="application/x-texinfo" author="Daniel Franke (franke.daniel@gmail.com)" license="LGPL" version="3" kateversion="5.0">
 
   <highlighting>
     <!--
@@ -15,7 +15,7 @@
       -->
     <contexts>
       <context name="Normal Text" attribute="Normal Text" lineEndContext="#stay">
-        <RegExpr attribute="Comment" context="singleLineComment" String="@c(omment)?\b" />
+        <RegExpr attribute="Comment" context="singleLineComment" String="@c(?:omment)?\b" />
         <RegExpr attribute="Comment" context="multiLineComment" String="@ignore\b" beginRegion="ignore" />
         <RegExpr attribute="Command" context="nodeFolding" String="@node\b" beginRegion="node" />
 
@@ -26,12 +26,14 @@
       </context>
 
       <context name="singleLineComment" attribute="Comment" lineEndContext="#pop">
-				<IncludeRules context="##Alerts" />
-			</context>
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+      </context>
 
       <context name="multiLineComment" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces />
         <StringDetect attribute="Comment" context="#pop" String="@end ignore" endRegion="ignore" />
-				<IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
 
       <context name="nodeFolding" attribute="Normal Text" lineEndContext="#stay">
@@ -55,9 +57,10 @@
 
   <general>
     <comments>
-      <comment name="singleLine" start="@comment " />
-      <comment name="multiLine" start="@ignore" end="@end ignore" region="ignore" />
+      <comment name="singleLine" start="@c " />
+      <comment name="multiLine" start="@ignore " end="@end ignore" region="ignore" />
     </comments>
   </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

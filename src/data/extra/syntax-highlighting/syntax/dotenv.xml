@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!--
+    SPDX-License-Identifier: MIT
+
+    dotenv file format: https://github.com/motdotla/dotenv#readme
+-->
+<language name="DotEnv" section="Configuration" version="1" kateversion="5.79"
+          extensions=".env;.env.*" license="MIT">
+  <highlighting>
+    <contexts>
+      <context name="DotEnv" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <RegExpr attribute="Keyword" context="Export" String="export(?=\s+[A-Za-z_][A-Za-z0-9_.-]*\s*=)" firstNonSpace="true"/>
+        <RegExpr attribute="Key" context="Key" String="[A-Za-z_][A-Za-z0-9_.-]*(?=\s*=)" firstNonSpace="true"/>
+        <RegExpr attribute="Error" String="\S.*$"/>
+      </context>
+
+      <context name="Export" attribute="Error" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <RegExpr attribute="Key" context="#pop!Key" String="[A-Za-z_][A-Za-z0-9_.-]*(?=\s*=)"/>
+      </context>
+
+      <context name="Key" attribute="Error" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <DetectChar attribute="Assignment" context="#pop!Value" char="="/>
+      </context>
+
+      <context name="Value" attribute="Value" lineEndContext="#pop">
+        <DetectChar attribute="Comment" context="#pop!Comment" char="#"/>
+        <DetectChar attribute="String" context="Double Quoted Value" char="&quot;"/>
+        <DetectChar attribute="String" context="Single Quoted Value" char="'"/>
+        <IncludeRules context="Interpolation"/>
+      </context>
+
+      <context name="Double Quoted Value" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <RegExpr attribute="Special Character" String="\\(?:[nrtfb&quot;'\\]|u[0-9A-Fa-f]{4})"/>
+        <IncludeRules context="Interpolation"/>
+      </context>
+
+      <context name="Single Quoted Value" attribute="String" lineEndContext="#pop">
+        <DetectChar attribute="String" context="#pop" char="'"/>
+      </context>
+
+      <context name="Interpolation" attribute="Value" lineEndContext="#stay">
+        <RegExpr attribute="Variable Expansion" String="\$(?:[A-Za-z_][A-Za-z0-9_]*|\{[A-Za-z_][A-Za-z0-9_]*\})"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Key" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Assignment" defStyleNum="dsOperator" spellChecking="false"/>
+      <itemData name="Value" defStyleNum="dsString" spellChecking="false"/>
+      <itemData name="String" defStyleNum="dsString" spellChecking="false"/>
+      <itemData name="Variable Expansion" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Special Character" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+  </general>
+</language>

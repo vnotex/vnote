@@ -1,34 +1,30 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
-<!DOCTYPE language SYSTEM "language.dtd" [
+<!DOCTYPE language [
 
-  <!ENTITY citation "(\s|^)\?\?[^\s]{1}[^?]+\?\?(?=\s|\.|,|;|:|\-|$)">
-  <!ENTITY deleted "(\s|^)\-[^\s]{1}[^\-]+\-(?=\s|\.|,|;|:|\?|$)">
-  <!ENTITY emphasis "(\s|^)_[^\s]{1}[^_]+_(?=\s|\.|,|;|:|\-|\?|$)">
-  <!ENTITY inserted "(\s|^)\+[^\s]{1}[^\+]+\+(?=\s|\.|,|;|:|\-|\?|$)">
-  <!ENTITY monospaced "(\s|^)\{\{[^\s]{1}[^}]+\}\}(?=\s|\.|,|;|:|\-|$)">
-  <!ENTITY strong "(\s|^)\*[^\s]{1}[^\*]+\*(?=\s|\.|,|;|:|\-|\?|$)">
-  <!ENTITY subscript "(\s|^)~[^\s]{1}[^~]+~(?=\s|\.|,|;|:|\-|\?|$)">
-  <!ENTITY superscript "(\s|^)\^[^\s]{1}[^\^]+\^(?=\s|\.|,|;|:|\-|\?|$)">
+  <!ENTITY start "(^|(?&lt;=\s))">
+  <!ENTITY citation "&start;\?\?(?=[^\s][^?]+\?\?([\s.,;:-]|$))">
+  <!ENTITY deleted "&start;\-(?=[^\s][^\-]+\-([\s.,;:?]|$))">
+  <!ENTITY emphasis "&start;_(?=[^\s][^_]+_([\s.,;:-]|\?|$))">
+  <!ENTITY inserted "&start;\+(?=[^\s][^\+]+\+([\s.,;:-]|\?|$))">
+  <!ENTITY monospaced "&start;\{\{(?=[^\s][^}]+\}\}([\s.,;:-]|$))">
+  <!ENTITY strong "&start;\*(?=[^\s][^\*]+\*([\s.,;:-]|\?|$))">
+  <!ENTITY subscript "&start;~(?=[^\s][^~]+~([\s.,;:-]|\?|$))">
+  <!ENTITY superscript "&start;\^(?=[^\s][^\^]+\^([\s.,;:-]|\?|$))">
 
-  <!ENTITY attachment                       "(\s|^)\[\^[^]\s]{1}[^]]+\]">
-  <!ENTITY bracketAnchor                    "(\s|^)\[#[^]\s]{1}[^]]+\]">
-  <!ENTITY taggedLink                       "(\s|^)\[[^]\s|]{1}[^]|]+\]">
-  <!ENTITY taggedLinkWithDisplayText        "(\s|^)\[[^]\s|]{1}[^]|]+\|[^]\s|]{1}[^]|]+\]">
-  <!ENTITY userTag                          "(\s|^)\[~[^]\s]{1}[^]]+\]">
+  <!ENTITY attachment     "&start;\[\^(?=[^]\s][^]]+\])">
+  <!ENTITY bracketAnchor  "&start;\[#(?=[^]\s][^]]+\])">
+  <!ENTITY taggedLink     "&start;\[(?=[^]\s|][^]|]+(\|[^]\s|][^]|]+)?\])">
+  <!ENTITY userTag        "&start;\[~(?=[^]\s][^]]+\])">
 
-  <!ENTITY embeddedItem                     "(\s|^)![^!\s]{1}[^!]+!">
-  <!ENTITY embeddedItemAttributeAndValue    "(\s|^)\w+=\w+">
+  <!ENTITY embeddedItem   "&start;!(?=[^!\s][^!]+!)">
 
-  <!ENTITY panel                    "(\s|^)\{panel[^\}]*\}">
-  <!ENTITY panelAttributeAndValue   "(\s|^)\w+=[^\}\|]+">
+  <!ENTITY panel          "&start;\{panel(?=[^\}]*\})">
 
-  <!ENTITY code                     "(\s|^)\{code[^\}]*\}">
-  <!ENTITY codeAttribute            "(\s|^)[^\}\|]+">
-  <!ENTITY codeAttributeAndValue    "(\s|^)\w+=[^\}\|]+">
+  <!ENTITY code           "&start;\{code(?=[^\}]*\})">
 
   <!ENTITY url "(http:|https:|ftp:|mailto:)[^]|) ]*(?=$|[]|\s|\)])">
 ]>
-<language name="Jira" section="Markup" version="7" kateversion="5.53" extensions="*.jira" mimetype="" license="FDL" >
+<language name="Jira" section="Markup" version="15" kateversion="6.22" extensions="*.jira" mimetype="" license="FDL" >
   <highlighting>
 
     <!--
@@ -38,12 +34,15 @@
     <contexts>
 
       <!-- Main Context -->
-      <context name="Start" attribute="Normal" lineEndContext="#stay" >
+      <context name="Start" attribute="Normal" lineEndContext="#stay">
+        <DetectSpaces />
+        <IncludeRules context="FindHeader" />
+        <IncludeRules context="FindBlockQuote" />
+        <IncludeRules context="FindText" />
+        <IncludeRules context="FindListItem" />
         <IncludeRules context="FindIcons" />
         <IncludeRules context="FindTables" />
-        <IncludeRules context="FindBlockQuote" />
         <IncludeRules context="FindColor" />
-        <IncludeRules context="FindHeader" />
         <IncludeRules context="FindQuote" />
         <IncludeRules context="FindNoFormat" />
         <IncludeRules context="FindPanels" />
@@ -51,8 +50,6 @@
         <IncludeRules context="FindTextBreaks" />
         <IncludeRules context="FindEmbeddedItems" />
         <IncludeRules context="FindLinks" />
-        <IncludeRules context="FindListItem" />
-        <IncludeRules context="FindTextEffects" />
         <IncludeRules context="FindEscapeSequences" />
         <IncludeRules context="FindLineBreaks" />
       </context>
@@ -63,332 +60,395 @@
       <!-- Headings -->
       <context name="Header" attribute="Header" lineEndContext="#pop" />
 
-      <!-- Links -->
-      <context name="BracketAnchor" lineEndContext="#stay" attribute="Normal">
-        <Detect2Chars char="[" char1="#" attribute="Special Character" context="BracketAnchorContent" />
-      </context>
-      <context name="BracketAnchorContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char="]" attribute="Special Character" context="#pop#pop" />
-      </context>
 
-      <context name="AttachmentLink" lineEndContext="#stay" attribute="Normal">
-        <Detect2Chars char="[" char1="^" attribute="Special Character" context="AttachmentLinkContent" />
+      <!-- Images / Attachments -->
+      <context name="EmbeddedItemContent" attribute="Link" lineEndContext="#stay" fallthroughContext="EmbeddedItemLink">
+        <!-- !spaceKey:pageTitle^attachment.mov! -->
+        <RegExpr String="[^:!|]+(?=:[^!|]*\^)" attribute="Label" context="EmbeddedItemPageTitle" />
       </context>
-      <context name="AttachmentLinkContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char="]" attribute="Special Character" context="#pop#pop" />
-      </context>
-
-      <context name="EmbeddedItem" lineEndContext="#stay" attribute="Normal">
-        <DetectChar char="!" attribute="Special Character" context="EmbeddedItemContent" />
-      </context>
-      <context name="EmbeddedItemContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="#stay" />
-        <DetectChar char="^" attribute="Special Character" context="#stay" />
+      <context name="EmbeddedItemLink" attribute="Link" lineEndContext="#stay">
         <DetectChar char="|" attribute="Special Character" context="EmbeddedItemAttributes" />
         <DetectChar char="!" attribute="Special Character" context="#pop#pop" />
       </context>
-      <context name="EmbeddedItemAttributes" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="&embeddedItemAttributeAndValue;" context="EmbeddedItemAttributeAndValue" lookAhead="true" />
-        <RegExpr String="\w+" attribute="AttributeKeyword" context="#stay" />
-        <DetectChar char="!" attribute="Special Character" context="#pop#pop#pop" />
+      <context name="EmbeddedItemPageTitle" attribute="Label" lineEndContext="#stay">
+        <DetectChar char=":" attribute="Special Character" context="#stay" />
+        <DetectChar char="^" attribute="Special Character" context="#pop!EmbeddedItemLink" />
       </context>
-      <context name="EmbeddedItemAttributeAndValue" attribute="AttributeKeyword" lineEndContext="#stay">
-        <DetectChar char="=" attribute="AttributeKeyword" context="EmbeddedItemAttributeValue" />
-        <DetectChar char="!" attribute="Special Character" context="#pop#pop#pop#pop" />
+      <context name="EmbeddedItemAttributes" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="!" attribute="Special Character" context="#pop#pop#pop" />
+        <DetectChar char="=" attribute="Normal" context="EmbeddedItemAttributeValue" />
+        <DetectIdentifier attribute="AttributeKeyword" context="#stay" />
       </context>
       <context name="EmbeddedItemAttributeValue" attribute="AttributeValue" lineEndContext="#stay">
-        <DetectChar char="," attribute="Normal" context="#pop#pop" />
-        <DetectChar char="!" attribute="Special Character" context="#pop#pop#pop#pop#pop" />
+        <DetectChar char="," attribute="Normal" context="#pop" />
+        <DetectChar char="!" attribute="Special Character" context="#pop#pop#pop#pop" />
+        <DetectIdentifier attribute="AttributeValue" context="#stay" />
       </context>
 
-      <context name="Panel" lineEndContext="#stay" attribute="Normal">
-        <StringDetect String="{panel" attribute="Special Character" context="PanelStartTagContent" />
-      </context>
-      <context name="PanelStartTagContent" attribute="Green" lineEndContext="#stay">
+      <context name="PanelStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char=":" attribute="Special Character" context="PanelAttributes" />
         <DetectChar char="}" attribute="Special Character" context="PanelContent" />
       </context>
       <context name="PanelContent" attribute="Normal" lineEndContext="#stay">
-        <IncludeRules context="FindTextEffects" />
-        <StringDetect String="{panel}" attribute="Special Character" context="#pop#pop#pop" />
+        <DetectSpaces />
+        <StringDetect String="{panel}" attribute="Special Character" context="#pop#pop" />
+        <IncludeRules context="FindBlockQuote" />
+        <IncludeRules context="FindText" />
+        <IncludeRules context="FindListItem" />
+        <IncludeRules context="FindIcons" />
+        <IncludeRules context="FindTables" />
+        <IncludeRules context="FindColor" />
+        <IncludeRules context="FindQuote" />
+        <IncludeRules context="FindNoFormat" />
+        <IncludeRules context="FindCode" />
+        <IncludeRules context="FindTextBreaks" />
+        <IncludeRules context="FindEmbeddedItems" />
+        <IncludeRules context="FindLinks" />
+        <IncludeRules context="FindEscapeSequences" />
+        <IncludeRules context="FindLineBreaks" />
       </context>
       <context name="PanelAttributes" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="&panelAttributeAndValue;" context="PanelAttributeAndValue" lookAhead="true" />
-        <DetectChar char="}" context="#pop" lookAhead="true" />
-      </context>
-      <context name="PanelAttributeAndValue" attribute="AttributeKeyword" lineEndContext="#stay">
-        <DetectChar char="=" attribute="AttributeKeyword" context="PanelAttributeValue" />
-        <DetectChar char="}" context="#pop#pop" lookAhead="true" />
+        <DetectChar char="}" attribute="Special Character" context="#pop!PanelContent" />
+        <DetectChar char="=" attribute="Normal" context="PanelAttributeValue" />
+        <DetectIdentifier attribute="AttributeKeyword" context="#stay" />
       </context>
       <context name="PanelAttributeValue" attribute="AttributeValue" lineEndContext="#stay">
-        <DetectChar char="|" attribute="Special Character" context="#pop#pop" />
-        <DetectChar char="}" context="#pop#pop#pop" lookAhead="true" />
+        <DetectChar char="|" attribute="Special Character" context="#pop" />
+        <DetectChar char="}" attribute="Special Character" context="#pop#pop!PanelContent" />
       </context>
+
 
       <!-- See https://confluence.atlassian.com/display/DOC/Code+Block+Macro for keywords -->
-      <context name="CodeContext" lineEndContext="#stay" attribute="Normal">
+      <context name="CodeContext" lineEndContext="#stay" attribute="Normal" fallthroughContext="JavaCodeStartTagContent">
+        <!-- TODO see note -->
           <!-- Note: Commented out lines are for languages that Jira supports but KTextEditor does not yet. -->
-<!--         <RegExpr String="\{code:(?= *actionscript3 *(\||\}))" attribute="Special Character" context="JavaCodeStartTagContent" /> -->
-        <RegExpr String="\{code:(?= *bash *(\||\}))" attribute="Special Character" context="BashCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *csharp *(\||\}))" attribute="Special Character" context="CSharpCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *coldfusion *(\||\}))" attribute="Special Character" context="ColdFusionCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *cpp *(\||\}))" attribute="Special Character" context="CppCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *css *(\||\}))" attribute="Special Character" context="CssCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *delphi *(\||\}))" attribute="Special Character" context="PascalCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *diff *(\||\}))" attribute="Special Character" context="DiffCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *erlang *(\||\}))" attribute="Special Character" context="ErlangCodeStartTagContent" />
-<!--         <RegExpr String="\{code:(?= *groovy *(\||\}))" attribute="Special Character" context="JavaCodeStartTagContent" /> -->
-        <RegExpr String="\{code:(?= *html *(\||\}))" attribute="Special Character" context="HtmlCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *java *(\||\}))" attribute="Special Character" context="JavaCodeStartTagContent" />
-<!--         <RegExpr String="\{code:(?= *javafx *(\||\}))" attribute="Special Character" context="JavaCodeStartTagContent" /> -->
-        <RegExpr String="\{code:(?= *javascript *(\||\}))" attribute="Special Character" context="JavaScriptCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *none *(\||\}))" attribute="Special Character" context="NoneCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *perl *(\||\}))" attribute="Special Character" context="PerlCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *php *(\||\}))" attribute="Special Character" context="PhpCodeStartTagContent" />
-<!--         <RegExpr String="\{code:(?= *powershell *(\||\}))" attribute="Special Character" context="JavaCodeStartTagContent" /> -->
-        <RegExpr String="\{code:(?= *python *(\||\}))" attribute="Special Character" context="PythonCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *ruby *(\||\}))" attribute="Special Character" context="RubyCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *scala *(\||\}))" attribute="Special Character" context="ScalaCodeStartTagContent" />
-        <RegExpr String="\{code:(?= *sql *(\||\}))" attribute="Special Character" context="SqlCodeStartTagContent" />
-<!--         <RegExpr String="\{code:(?= *vb *(\||\}))" attribute="Special Character" context="JavaCodeStartTagContent" /> -->
-        <RegExpr String="\{code:(?= *xml *(\||\}))" attribute="Special Character" context="XmlCodeStartTagContent" />
-        <StringDetect String="{code" attribute="Special Character" context="JavaCodeStartTagContent" />
+<!--         <RegExpr String=":(?= *actionscript3 *[|}])" attribute="Special Character" context="JavaCodeStartTagContent" /> -->
+        <RegExpr String=":(?= *(ada|title=[- \w]+\.(adb|ads|ada|a)) *[|}])" attribute="Special Character" context="AdaCodeStartTagContent" />
+<!--         <RegExpr String=":(?= *AppleScript *[|}])" attribute="Special Character" context="AppleScriptCodeStartTagContent" /> -->
+        <RegExpr String=":(?= *(bash|title=[- \w]*\.(sh|bash)) *[|}])" attribute="Special Character" context="BashCodeStartTagContent" />
+        <RegExpr String=":(?= *(csharp|title=[- \w]*\.(cs|ashx)) *[|}])" attribute="Special Character" context="CSharpCodeStartTagContent" />
+        <RegExpr String=":(?= *(coldfusion|title=[- \w]*\.(cfm|cfc|cfml|dbm)) *[|}])" attribute="Special Character" context="ColdFusionCodeStartTagContent" />
+        <RegExpr String=":(?= *(c(pp)?|title=[- \w]*\.([cChH]|cpp|hpp|cxx|c\+\+|cc|cu|hh)) *[|}])" attribute="Special Character" context="CppCodeStartTagContent" />
+        <RegExpr String=":(?= *(css|title=[- \w]*\.css) *[|}])" attribute="Special Character" context="CssCodeStartTagContent" />
+        <RegExpr String=":(?= *(delphi|title=[- \w]*\.(p|pas|pp)) *[|}])" attribute="Special Character" context="PascalCodeStartTagContent" />
+        <RegExpr String=":(?= *(diff|title=[- \w]*\.(diff|patch)) *[|}])" attribute="Special Character" context="DiffCodeStartTagContent" />
+        <RegExpr String=":(?= *(erlang|title=[- \w]*\.erl) *[|}])" attribute="Special Character" context="ErlangCodeStartTagContent" />
+        <RegExpr String=":(?= *(groovy|title=([- \w]*\.(groovy|gradle|gvy)|Jenkinsfile)) *[|}])" attribute="Special Character" context="GroovyCodeStartTagContent" />
+        <RegExpr String=":(?= *(haskell|title=[- \w]*\.c?hs) *[|}])" attribute="Special Character" context="HaskellCodeStartTagContent" />
+        <RegExpr String=":(?= *(html|title=[- \w]*\.(s?html?|aspx)) *[|}])" attribute="Special Character" context="HtmlCodeStartTagContent" />
+        <RegExpr String=":(?= *(java|title=[- \w]*\.java) *[|}])" attribute="Special Character" context="JavaCodeStartTagContent" />
+<!--         <RegExpr String=":(?= *javafx *[|}])" attribute="Special Character" context="JavaCodeStartTagContent" /> -->
+        <RegExpr String=":(?= *(javascript|title=[- \w]*\.([cm]?js)) *[|}])" attribute="Special Character" context="JavaScriptCodeStartTagContent" />
+        <RegExpr String=":(?= *(json|title=[- \w]*\.json) *[|}])" attribute="Special Character" context="JsonCodeStartTagContent" />
+        <RegExpr String=":(?= *(lua|title=[- \w]*\.(lua|rockspec)) *[|}])" attribute="Special Character" context="LuaCodeStartTagContent" />
+        <RegExpr String=":(?= *none *[|}])" attribute="Special Character" context="NoneCodeStartTagContent" />
+<!-- <RegExpr String=":(?= *nyan *[|}])" attribute="Special Character" context="NyanCodeStartTagContent" /> -->
+        <RegExpr String=":(?= *(perl|title=[- \w]*\.(pl|PL|pm)) *[|}])" attribute="Special Character" context="PerlCodeStartTagContent" />
+        <RegExpr String=":(?= *(php|title=[- \w]*\.php) *[|}])" attribute="Special Character" context="PhpCodeStartTagContent" />
+        <RegExpr String=":(?= *(powershell|title=[- \w]*\.(ps1|psm1|psd1)) *[|}])" attribute="Special Character" context="PowerShellCodeStartTagContent" />
+        <RegExpr String=":(?= *(python|title=[- \w]*\.py) *[|}])" attribute="Special Character" context="PythonCodeStartTagContent" />
+        <RegExpr String=":(?= *(ruby|title=([- \w]*\.(rb|rake|gemspec)|Rakefile|Gemfile|Vagrantfile)) *[|}])" attribute="Special Character" context="RubyCodeStartTagContent" />
+        <RegExpr String=":(?= *(ruby|title=([- \w]*\.erv)) *[|}])" attribute="Special Character" context="RHTMLCodeStartTagContent" />
+        <RegExpr String=":(?= *(scala|title=[- \w]*\.(scala|sbt)) *[|}])" attribute="Special Character" context="ScalaCodeStartTagContent" />
+        <RegExpr String=":(?= *(sql|title=[- \w]*\.sql) *[|}])" attribute="Special Character" context="SqlCodeStartTagContent" />
+        <RegExpr String=":(?= *(swift|title=[- \w]*\.swift) *[|}])" attribute="Special Character" context="SwiftCodeStartTagContent" />
+<!--         <RegExpr String=":(?= *vb *[|}])" attribute="Special Character" context="VisualBasicCodeStartTagContent" /> -->
+        <RegExpr String=":(?= *(xml|title=[- \w]*\.(xml|xslt?)) *[|}])" attribute="Special Character" context="XmlCodeStartTagContent" />
+        <RegExpr String=":(?= *(yaml|title=[- \w]*\.ya?ml) *[|}])" attribute="Special Character" context="YamlCodeStartTagContent" />
       </context>
 
-      <context name="CodeAttributes" attribute="Normal" lineEndContext="#stay">
-        <RegExpr String="&codeAttributeAndValue;" context="CodeAttributeAndValue" lookAhead="true" />
-        <RegExpr String="&codeAttribute;" attribute="AttributeKeyword" />
-        <DetectChar char="}" context="#pop" lookAhead="true" />
-      </context>
-      <context name="CodeAttributeAndValue" attribute="AttributeKeyword" lineEndContext="#stay">
-        <DetectChar char="=" attribute="AttributeKeyword" context="CodeAttributeValue" />
-        <DetectChar char="}" context="#pop#pop" lookAhead="true" />
+      <context name="FindCodeAttributes" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="|" attribute="Special Character" context="#stay" />
+        <DetectChar char="=" attribute="Normal" context="CodeAttributeValue" />
+        <DetectIdentifier attribute="AttributeKeyword" context="#stay" />
       </context>
       <context name="CodeAttributeValue" attribute="AttributeValue" lineEndContext="#stay">
-        <DetectChar char="|" attribute="Special Character" context="#pop#pop" />
-        <DetectChar char="}" context="#pop#pop#pop" lookAhead="true" />
+        <AnyChar String="|}" context="#pop" lookAhead="true" />
       </context>
 
-      <context name="BashCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
-        <DetectChar char="}" attribute="Special Character" context="BashCodeContent" />
-      </context>
-      <context name="BashCodeContent" attribute="Normal" lineEndContext="#stay">
+      <context name="FindEndCode" attribute="Normal" lineEndContext="#stay">
         <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Start##Bash" />
       </context>
 
-      <context name="CSharpCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="AdaCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="AdaCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
+      </context>
+      <context name="AdaCodeContent" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Ada" />
+      </context>
+
+      <context name="BashCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="BashCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
+      </context>
+      <context name="BashCodeContent" attribute="Normal" lineEndContext="#stay" fallthroughContext="Command##Bash">
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Bash" />
+      </context>
+
+      <context name="CSharpCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="CSharpCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="CSharpCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Normal##C#" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##C#" />
       </context>
 
-      <context name="ColdFusionCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="ColdFusionCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="ColdFusionCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="ColdFusionCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Normal Text##ColdFusion" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##ColdFusion" />
       </context>
 
-      <context name="CppCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="CppCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="CppCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="CppCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Normal##C++" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##C++" />
       </context>
 
-      <context name="CssCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="CssCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="CssCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="CssCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Base##CSS" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##CSS" />
       </context>
 
-      <context name="DiffCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="DiffCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="DiffCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="DiffCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Normal##Diff" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Diff" />
       </context>
 
-      <context name="ErlangCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="ErlangCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="ErlangCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="ErlangCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Normal Text##Erlang" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Erlang" />
       </context>
 
-      <context name="HtmlCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="GroovyCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="GroovyCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
+      </context>
+      <context name="GroovyCodeContent" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Groovy" />
+      </context>
+
+      <context name="HaskellCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="HaskellCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
+      </context>
+      <context name="HaskellCodeContent" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Haskell" />
+      </context>
+
+      <context name="HtmlCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="HtmlCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="HtmlCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Start##HTML" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##HTML" />
       </context>
 
-      <context name="JavaCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="JavaCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="JavaCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="JavaCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Normal##Java" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Java" />
       </context>
 
-      <context name="JavaScriptCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="JavaScriptCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="JavaScriptCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="JavaScriptCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
+        <IncludeRules context="FindEndCode" />
         <IncludeRules context="Normal##JavaScript" />
       </context>
 
-      <context name="NoneCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="JsonCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="JsonCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
+      </context>
+      <context name="JsonCodeContent" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##JSON" />
+      </context>
+
+      <context name="LuaCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="LuaCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
+      </context>
+      <context name="LuaCodeContent" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Lua" />
+      </context>
+
+      <context name="NoneCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="NoneCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="NoneCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
+        <IncludeRules context="FindEndCode" />
       </context>
 
-      <context name="PascalCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="PascalCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="PascalCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="PascalCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Normal##Pascal" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Pascal" />
       </context>
 
-      <context name="PerlCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="PerlCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="PerlCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="PerlCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="normal##Perl" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Perl" />
       </context>
 
-      <context name="PhpCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="PhpCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="PhpCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="PhpCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="start##PHP/PHP" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="phpsource##PHP/PHP" />
       </context>
 
-      <context name="PythonCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="PowerShellCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="PowerShellCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
+      </context>
+      <context name="PowerShellCodeContent" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##PowerShell" />
+      </context>
+
+      <context name="PythonCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="PythonCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="PythonCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Normal##Python" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Python" />
       </context>
 
-      <context name="RubyCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="RubyCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="RubyCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
-      <context name="RubyCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Normal##Ruby" />
+      <context name="RubyCodeContent" attribute="Normal" lineEndContext="#stay" fallthroughContext="Expr##Ruby">
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="Ruby##Ruby" />
       </context>
 
-      <context name="ScalaCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="RHTMLCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="RHTMLCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
+      </context>
+      <context name="RHTMLCodeContent" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Ruby/Rails/RHTML" />
+      </context>
+
+      <context name="ScalaCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="ScalaCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="ScalaCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Normal##Scala" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##Scala" />
       </context>
 
-      <context name="SqlCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="SqlCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="SqlCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="SqlCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Normal##SQL" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##SQL" />
       </context>
 
-      <context name="XmlCodeStartTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char=":" attribute="Special Character" context="CodeAttributes" />
+      <context name="SwiftCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="SwiftCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
+      </context>
+      <context name="SwiftCodeContent" attribute="Normal" lineEndContext="#stay">
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="Normal##Swift" />
+      </context>
+
+      <context name="XmlCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="XmlCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
       </context>
       <context name="XmlCodeContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{code}" attribute="Special Character" context="#pop#pop#pop" />
-        <IncludeRules context="Start##XML" />
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##XML" />
+      </context>
+
+      <context name="YamlCodeStartTagContent" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="YamlCodeContent" />
+        <IncludeRules context="FindCodeAttributes" />
+      </context>
+      <context name="YamlCodeContent" attribute="Normal" lineEndContext="#stay" fallthroughContext="Lvl0Text##YAML">
+        <IncludeRules context="FindEndCode" />
+        <IncludeRules context="##YAML" />
       </context>
 
 
-      <context name="UserTag" lineEndContext="#stay" attribute="Normal">
-        <Detect2Chars char="[" char1="~" attribute="Special Character" context="UserTagContent" />
-      </context>
-      <context name="UserTagContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char="]" attribute="Special Character" context="#pop#pop" />
+      <!-- Links -->
+      <context name="BracketAnchorContent" attribute="Link" lineEndContext="#stay">
+        <DetectChar char="]" attribute="Special Character" context="#pop" />
       </context>
 
-      <context name="TaggedLink" lineEndContext="#stay" attribute="Normal">
-        <DetectChar char="[" attribute="Special Character" context="TaggedLinkContent" />
-      </context>
-      <context name="TaggedLinkContent" attribute="Green" lineEndContext="#stay">
-        <DetectChar char="]" attribute="Special Character" context="#pop#pop" />
+      <context name="AttachmentLinkContent" attribute="Link" lineEndContext="#stay">
+        <DetectChar char="]" attribute="Special Character" context="#pop" />
       </context>
 
-      <context name="TaggedLinkWithDisplayText" lineEndContext="#stay" attribute="Normal">
-        <DetectChar char="[" attribute="Special Character" context="TaggedLinkDisplayText" />
+      <context name="UserTagContent" attribute="Link" lineEndContext="#stay">
+        <DetectChar char="]" attribute="Special Character" context="#pop" />
       </context>
-      <context name="TaggedLinkDisplayText" attribute="Normal" lineEndContext="#stay">
+
+      <context name="TaggedLinkContent" attribute="Link" lineEndContext="#stay" fallthroughContext="TaggedLinkUrl">
         <DetectChar char="|" attribute="Special Character" context="TaggedLinkUrl" />
+        <RegExpr String="[^]|]+(?=\|)" attribute="Label" context="#stay" />
       </context>
-      <context name="TaggedLinkUrl" attribute="Green" lineEndContext="#stay">
-        <DetectChar char="]" attribute="Special Character" context="#pop#pop#pop" />
+      <context name="TaggedLinkUrl" attribute="Link" lineEndContext="#stay">
+        <DetectChar char="]" attribute="Special Character" context="#pop#pop" />
       </context>
 
-      <context name="BraceAnchor" lineEndContext="#stay" attribute="Normal">
-        <StringDetect String="{anchor:" attribute="Special Character" context="BraceAnchorContent" />
-      </context>
-      <context name="BraceAnchorContent" attribute="Green" lineEndContext="#stay">
+      <context name="BraceAnchorContent" attribute="Link" lineEndContext="#stay">
         <DetectChar char="}" attribute="Special Character" context="#pop#pop" />
       </context>
 
-      <!-- Text Effects -->
-      <context name="BlockQuote" lineEndContext="#pop" attribute="Normal"/>
-      <context name="Bold" lineEndContext="#stay" attribute="Normal">
-        <DetectChar char="*" attribute="Special Character" context="BoldContent" />
-      </context>
-      <context name="BoldContent" attribute="Bold" lineEndContext="#stay">
-        <DetectChar char="*" attribute="Special Character" context="#pop#pop" />
-      </context>
-      <context name="Citation" lineEndContext="#stay" attribute="Normal">
-        <Detect2Chars char="?" char1="?" attribute="Special Character" context="CitationContent" />
-      </context>
-      <context name="CitationContent" attribute="Italic" lineEndContext="#stay">
-        <Detect2Chars char="?" char1="?" attribute="Special Character" context="#pop#pop" />
-      </context>
 
-      <context name="Color" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{color:" context="ColorTagColor" attribute="Special Character" />
-      </context>
+      <!-- Text Effects -->
       <context name="ColorTagColor" attribute="Normal" lineEndContext="#stay">
         <!-- Black and White have been skipped on purpose. -->
         <StringDetect String="silver}"  context="ColorSilverTagColor" lookAhead="true" />
@@ -405,159 +465,167 @@
         <StringDetect String="navy}"  context="ColorNavyTagColor" lookAhead="true" />
         <StringDetect String="fuchsia}"  context="ColorFuchsiaTagColor" lookAhead="true" />
         <StringDetect String="purple}"  context="ColorPurpleTagColor" lookAhead="true" />
-        <DetectChar char="}"  attribute="Special Character" context="UnhighlightedColorContent" />
-      </context>
-      <context name="UnhighlightedColorContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{color}" attribute="Special Character" context="#pop#pop#pop" />
+        <DetectChar char="}"  attribute="Special Character" context="HighlightedColorContent" />
       </context>
       <context name="HighlightedColorContent" attribute="Normal" lineEndContext="#stay">
-        <StringDetect String="{color}" attribute="Special Character" context="#pop#pop#pop#pop" />
+        <DetectSpaces />
+        <DetectIdentifier />
+        <StringDetect String="{color}" attribute="Special Character" context="#pop#pop" />
       </context>
       <context name="ColorSilverTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!SilverContent" />
         <StringDetect String="silver" attribute="Silver" />
-        <DetectChar char="}" attribute="Special Character" context="SilverContent" />
       </context>
       <context name="SilverContent" attribute="Silver" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorGrayTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!GrayContent" />
         <StringDetect String="gray" attribute="Gray" />
-        <DetectChar char="}" attribute="Special Character" context="GrayContent" />
       </context>
       <context name="GrayContent" attribute="Gray" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorRedTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!RedContent" />
         <StringDetect String="red" attribute="Red" />
-        <DetectChar char="}" attribute="Special Character" context="RedContent" />
       </context>
       <context name="RedContent" attribute="Red" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorMaroonTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!MaroonContent" />
         <StringDetect String="maroon" attribute="Maroon" />
-        <DetectChar char="}" attribute="Special Character" context="MaroonContent" />
       </context>
       <context name="MaroonContent" attribute="Maroon" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorYellowTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!YellowContent" />
         <StringDetect String="yellow" attribute="Yellow" />
-        <DetectChar char="}" attribute="Special Character" context="YellowContent" />
       </context>
       <context name="YellowContent" attribute="Yellow" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorOliveTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!OliveContent" />
         <StringDetect String="olive" attribute="Olive" />
-        <DetectChar char="}" attribute="Special Character" context="OliveContent" />
       </context>
       <context name="OliveContent" attribute="Olive" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorLimeTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!LimeContent" />
         <StringDetect String="lime" attribute="Lime" />
-        <DetectChar char="}" attribute="Special Character" context="LimeContent" />
       </context>
       <context name="LimeContent" attribute="Lime" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorGreenTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!GreenContent" />
         <StringDetect String="green" attribute="Green" />
-        <DetectChar char="}" attribute="Special Character" context="GreenContent" />
       </context>
       <context name="GreenContent" attribute="Green" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorAquaTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!AquaContent" />
         <StringDetect String="aqua" attribute="Aqua" />
-        <DetectChar char="}" attribute="Special Character" context="AquaContent" />
       </context>
       <context name="AquaContent" attribute="Aqua" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorTealTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!TealContent" />
         <StringDetect String="teal" attribute="Teal" />
-        <DetectChar char="}" attribute="Special Character" context="TealContent" />
       </context>
       <context name="TealContent" attribute="Teal" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorBlueTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!BlueContent" />
         <StringDetect String="blue" attribute="Blue" />
-        <DetectChar char="}" attribute="Special Character" context="BlueContent" />
       </context>
       <context name="BlueContent" attribute="Blue" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorNavyTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!NavyContent" />
         <StringDetect String="navy" attribute="Navy" />
-        <DetectChar char="}" attribute="Special Character" context="NavyContent" />
       </context>
       <context name="NavyContent" attribute="Navy" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorFuchsiaTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!FuchsiaContent" />
         <StringDetect String="fuchsia" attribute="Fuchsia" />
-        <DetectChar char="}" attribute="Special Character" context="FuchsiaContent" />
       </context>
       <context name="FuchsiaContent" attribute="Fuchsia" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
       <context name="ColorPurpleTagColor" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Special Character" context="#pop!PurpleContent" />
         <StringDetect String="purple" attribute="Purple" />
-        <DetectChar char="}" attribute="Special Character" context="PurpleContent" />
       </context>
       <context name="PurpleContent" attribute="Purple" lineEndContext="#stay">
         <IncludeRules context="HighlightedColorContent" />
       </context>
 
-      <context name="Deleted" attribute="Normal" lineEndContext="#stay">
-        <DetectChar char="-" attribute="Special Character" context="DeletedContent" />
+      <context name="BlockQuote" lineEndContext="#stay" lineEmptyContext="#pop" attribute="Block Quotation"/>
+      <context name="BoldContent" attribute="Bold" lineEndContext="#stay">
+        <DetectChar char="*" attribute="Special Character" context="#pop" />
+      </context>
+      <context name="CitationContent" attribute="Citation" lineEndContext="#stay">
+        <Detect2Chars char="?" char1="?" attribute="Special Character" context="#pop" />
       </context>
       <context name="DeletedContent" attribute="Stroked Out" lineEndContext="#stay">
-        <DetectChar char="-" attribute="Special Character" context="#pop#pop" />
-      </context>
-      <context name="Inserted" attribute="Normal" lineEndContext="#stay">
-        <DetectChar char="+" attribute="Special Character" context="InsertedContent" />
+        <DetectChar char="-" attribute="Special Character" context="#pop" />
       </context>
       <context name="InsertedContent" attribute="Underlined" lineEndContext="#stay">
-        <DetectChar char="+" attribute="Special Character" context="#pop#pop" />
-      </context>
-      <context name="Italic" attribute="Normal" lineEndContext="#stay">
-        <DetectChar char="_" attribute="Special Character" context="ItalicContent" />
+        <DetectChar char="+" attribute="Special Character" context="#pop" />
       </context>
       <context name="ItalicContent" attribute="Italic" lineEndContext="#stay">
-        <DetectChar char="_" attribute="Special Character" context="#pop#pop" />
+        <DetectChar char="_" attribute="Special Character" context="#pop" />
       </context>
       <context name="Monospaced" attribute="Normal" lineEndContext="#stay">
         <Detect2Chars char="}" char1="}" attribute="Special Character" context="#pop" />
-        <Detect2Chars char="{" char1="{" attribute="Special Character" />
       </context>
-      <context name="Quote" attribute="Normal" lineEndContext="#stay">
+      <context name="Quote" attribute="Block Quotation" lineEndContext="#stay">
+        <DetectSpaces />
+        <DetectIdentifier />
         <StringDetect String="{quote}" context="#pop" attribute="Special Character" />
       </context>
-      <context name="Subscript" attribute="Normal" lineEndContext="#stay">
-        <DetectChar char="~" attribute="Special Character" context="SubscriptContent" />
-      </context>
       <context name="SubscriptContent" attribute="Normal" lineEndContext="#stay">
-        <DetectChar char="~" attribute="Special Character" context="#pop#pop" />
-      </context>
-      <context name="Superscript" attribute="Normal" lineEndContext="#stay">
-        <DetectChar char="^" attribute="Special Character" context="SuperscriptContent" />
+        <DetectChar char="~" attribute="Special Character" context="#pop" />
       </context>
       <context name="SuperscriptContent" attribute="Normal" lineEndContext="#stay">
-        <DetectChar char="^" attribute="Special Character" context="#pop#pop" />
+        <DetectChar char="^" attribute="Special Character" context="#pop" />
       </context>
 
+
+      <!-- Tables -->
       <context name="TableHeaderRow" attribute="Bold" lineEndContext="#pop">
+        <DetectSpaces />
+        <DetectIdentifier />
         <Detect2Chars char="|" char1="|" attribute="Special Character" context="#stay" />
+        <IncludeRules context="FindTextBreaks" />
+        <IncludeRules context="FindEscapeSequences" />
+        <IncludeRules context="FindIcons" />
       </context>
       <context name="TableRegularRow" attribute="Normal" lineEndContext="#pop">
+        <DetectSpaces />
         <DetectChar char="|" attribute="Special Character" context="#stay" />
+        <IncludeRules context="FindText" />
+        <IncludeRules context="FindTextBreaks" />
+        <IncludeRules context="FindEscapeSequences" />
+        <IncludeRules context="FindLinks" />
+        <IncludeRules context="FindColor" />
+        <IncludeRules context="FindIcons" />
       </context>
 
-      <context name="NoFormat" attribute="Normal" lineEndContext="#stay" >
+      <context name="NoFormat" attribute="Normal" lineEndContext="#stay">
+        <DetectSpaces />
+        <DetectIdentifier />
         <StringDetect String="{noformat}" attribute="Special Character" context="#pop" />
       </context>
 
@@ -565,120 +633,109 @@
       <!-- Rules to Include -->
 
       <!-- BlockQuotes -->
-      <context name="FindBlockQuote" attribute="Normal" lineEndContext="#stay" >
-        <RegExpr String="bq\. " context="BlockQuote" attribute="Special Character" column="0" />
+      <context name="FindBlockQuote" attribute="Normal" lineEndContext="#stay">
+        <StringDetect String="bq. " context="BlockQuote" attribute="Special Character" column="0" />
       </context>
 
       <!-- Colors -->
-      <context name="FindColor" attribute="Normal" lineEndContext="#stay" >
-        <RegExpr String="\{color:[^}]+\}" context="Color" lookAhead="true" />
+      <context name="FindColor" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="\{color:(?=[^}]+\})" attribute="Special Character" context="ColorTagColor" />
       </context>
 
       <!-- Headings -->
-      <context name="FindHeader" attribute="Normal" lineEndContext="#stay" >
-        <RegExpr String="h[1-6]\. " context="Header" attribute="Special Character" column="0" />
+      <context name="FindHeader" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="^h[1-6]\. " context="Header" attribute="Special Character" column="0" />
       </context>
 
       <!-- Quotes -->
-      <context name="FindQuote" attribute="Normal" lineEndContext="#stay" >
+      <context name="FindQuote" attribute="Normal" lineEndContext="#stay">
         <StringDetect String="{quote}" context="Quote" attribute="Special Character" />
       </context>
 
       <!-- Text Breaks -->
-      <context name="FindTextBreaks" attribute="Normal" lineEndContext="#stay" >
+      <context name="FindTextBreaks" attribute="Normal" lineEndContext="#stay">
         <Detect2Chars char="\" char1="\" attribute="Special Character" />
-        <StringDetect String="----" attribute="Special Character" />
+        <StringDetect String="----" attribute="Special Character" column="0" />
         <StringDetect String="---" attribute="Special Character" />
         <Detect2Chars char="-" char1="-" attribute="Special Character" />
       </context>
 
       <!-- Embedded Items -->
-      <context name="FindEmbeddedItems" attribute="Normal" lineEndContext="#stay" >
-        <RegExpr String="&embeddedItem;" context="EmbeddedItem" lookAhead="true" />
+      <context name="FindEmbeddedItems" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&embeddedItem;" attribute="Special Character" context="EmbeddedItemContent" />
       </context>
 
       <!-- Links -->
-      <context name="FindLinks" attribute="Normal" lineEndContext="#stay" >
-        <RegExpr String="&bracketAnchor;" context="BracketAnchor" lookAhead="true" />
-        <RegExpr String="&attachment;" context="AttachmentLink" lookAhead="true" />
-        <RegExpr String="&userTag;" context="UserTag" lookAhead="true" />
-        <RegExpr String="&taggedLink;" context="TaggedLink" lookAhead="true" />
-        <RegExpr String="&taggedLinkWithDisplayText;" context="TaggedLinkWithDisplayText" lookAhead="true" />
-        <RegExpr String="\{anchor:[^}]+\}" context="BraceAnchor" lookAhead="true" />
-        <RegExpr String="&url;" attribute="Green" />
+      <context name="FindLinks" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&bracketAnchor;" attribute="Special Character" context="BracketAnchorContent" />
+        <RegExpr String="&attachment;" attribute="Special Character" context="AttachmentLinkContent" />
+        <RegExpr String="&userTag;" attribute="Special Character" context="UserTagContent" />
+        <RegExpr String="&taggedLink;" attribute="Special Character" context="TaggedLinkContent" />
+        <RegExpr String="\{anchor:(?=[^}]+\})" attribute="Special Character" context="BraceAnchorContent" />
+        <RegExpr String="&url;" attribute="Link" />
       </context>
 
       <!-- Lists -->
-      <context name="FindListItem" attribute="Normal" lineEndContext="#stay" >
-        <RegExpr String="([*#]*[*#]+|-)" attribute="Special Character" context="#stay" column="0" />
+      <context name="FindListItem" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="^([*#]+|-)(?=\s)" attribute="Special Character" context="#stay" column="0" />
       </context>
 
       <!-- Text Effects -->
-      <context name="FindTextEffects" attribute="Normal" lineEndContext="#stay" >
-        <RegExpr String="&citation;" context="Citation" lookAhead="true" />
-        <RegExpr String="&deleted;" context="Deleted" lookAhead="true" />
-        <RegExpr String="&emphasis;" context="Italic" lookAhead="true" />
-        <RegExpr String="&inserted;" context="Inserted" lookAhead="true" />
-        <RegExpr String="&strong;" context="Bold" lookAhead="true" />
-        <RegExpr String="&subscript;" context="Subscript" lookAhead="true" />
-        <RegExpr String="&superscript;" context="Superscript" lookAhead="true" />
-        <RegExpr String="&monospaced;" context="Monospaced" lookAhead="true" />
+      <context name="FindTextEffects" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&strong;" attribute="Special Character" context="BoldContent" />
+        <RegExpr String="&citation;" attribute="Special Character" context="CitationContent" />
+        <RegExpr String="&deleted;" attribute="Special Character" context="DeletedContent" />
+        <RegExpr String="&inserted;" attribute="Special Character" context="InsertedContent" />
+        <RegExpr String="&subscript;" attribute="Special Character" context="SubscriptContent" />
+        <RegExpr String="&superscript;" attribute="Special Character" context="SuperscriptContent" />
+        <RegExpr String="&monospaced;" attribute="Special Character" context="Monospaced" />
+      </context>
+      <context name="EmphasisOrIdentifier" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&emphasis;" attribute="Special Character" context="#pop!ItalicContent" />
+        <DetectIdentifier context="#pop" />
+      </context>
+
+      <!-- Text -->
+      <context name="FindText" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char="_" context="EmphasisOrIdentifier" lookAhead="true" />
+        <DetectIdentifier />
+        <IncludeRules context="FindTextEffects" />
       </context>
 
       <!-- Tables -->
-      <context name="FindTables" attribute="Normal" lineEndContext="#stay" >
-        <RegExpr String="^\|\|" context="TableHeaderRow" lookAhead="true" />
-        <RegExpr String="^\|" context="TableRegularRow" lookAhead="true" />
+      <context name="FindTables" attribute="Normal" lineEndContext="#stay">
+        <Detect2Chars char="|" char1="|" attribute="Special Character" context="TableHeaderRow" column="0" />
+        <DetectChar char="|" attribute="Special Character" context="TableRegularRow" column="0" />
       </context>
 
       <!-- No format -->
-      <context name="FindNoFormat" attribute="Normal" lineEndContext="#stay" >
+      <context name="FindNoFormat" attribute="Normal" lineEndContext="#stay">
         <StringDetect String="{noformat}" context="NoFormat" attribute="Special Character" />
       </context>
 
       <!-- Panels -->
-      <context name="FindPanels" attribute="Normal" lineEndContext="#stay" >
-        <RegExpr String="&panel;" context="Panel" lookAhead="true" />
+      <context name="FindPanels" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&panel;" attribute="Special Character" context="PanelStartTagContent" />
       </context>
 
       <!-- Code -->
-      <context name="FindCode" attribute="Normal" lineEndContext="#stay" >
-        <RegExpr String="&code;" context="CodeContext" lookAhead="true" />
+      <context name="FindCode" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String="&code;" attribute="Special Character" context="CodeContext" />
       </context>
 
       <!-- Escape Sequences -->
-      <context name="FindEscapeSequences" attribute="Normal" lineEndContext="#stay" >
+      <context name="FindEscapeSequences" attribute="Normal" lineEndContext="#stay">
         <RegExpr String="\\[^ \\]" attribute="EscapeSequence" />
       </context>
 
       <!-- Line Breaks -->
-      <context name="FindLineBreaks" attribute="Normal" lineEndContext="#stay" >
-        <RegExpr String="\\$" attribute="Special Character" />
+      <context name="FindLineBreaks" attribute="Normal" lineEndContext="#stay">
+        <LineContinue attribute="Special Character" />
       </context>
 
       <!-- Icons -->
-      <context name="FindIcons" attribute="Normal" lineEndContext="#stay" >
-        <StringDetect String=":)" attribute="Special Character" />
-        <StringDetect String=":(" attribute="Special Character" />
-        <StringDetect String=":P" attribute="Special Character" />
-        <StringDetect String=":D" attribute="Special Character" />
-        <StringDetect String=";)" attribute="Special Character" />
-        <StringDetect String="(y)" attribute="Special Character" />
-        <StringDetect String="(n)" attribute="Special Character" />
-        <StringDetect String="(i)" attribute="Special Character" />
-        <StringDetect String="(/)" attribute="Special Character" />
-        <StringDetect String="(x)" attribute="Special Character" />
-        <StringDetect String="(!)" attribute="Special Character" />
-        <StringDetect String="(+)" attribute="Special Character" />
-        <StringDetect String="(-)" attribute="Special Character" />
-        <StringDetect String="(?)" attribute="Special Character" />
-        <StringDetect String="(on)" attribute="Special Character" />
-        <StringDetect String="(off)" attribute="Special Character" />
-        <StringDetect String="(*)" attribute="Special Character" />
-        <StringDetect String="(*r)" attribute="Special Character" />
-        <StringDetect String="(*g)" attribute="Special Character" />
-        <StringDetect String="(*b)" attribute="Special Character" />
-        <StringDetect String="(*y)" attribute="Special Character" />
+      <context name="FindIcons" attribute="Normal" lineEndContext="#stay">
+        <RegExpr String=":\)|:\(|:P|:D|;\)|\(([yni/x!+-?*]|on|off|[*][rgby]|flag|flagoff)\)" attribute="Special Character" />
       </context>
 
     </contexts>
@@ -688,12 +745,16 @@
       <itemData name="Bold" defStyleNum="dsNormal" bold="true" />
       <itemData name="Header" defStyleNum="dsKeyword" />
       <itemData name="Italic" defStyleNum="dsNormal" italic="true" />
+      <itemData name="Citation" defStyleNum="dsNormal" italic="true" />
+      <itemData name="Block Quotation" defStyleNum="dsNormal" />
       <itemData name="Special Character" defStyleNum="dsDecVal" bold="true" />
       <itemData name="Stroked Out" defStyleNum="dsNormal" strikeOut="true" />
       <itemData name="Underlined" defStyleNum="dsNormal" underline="true" />
       <itemData name="AttributeKeyword" defStyleNum="dsOthers" spellChecking="false" />
       <itemData name="AttributeValue" defStyleNum="dsString" spellChecking="false" />
       <itemData name="EscapeSequence" defStyleNum="dsChar" spellChecking="false" />
+      <itemData name="Link" defStyleNum="dsPreprocessor" spellChecking="false" />
+      <itemData name="Label" defStyleNum="dsAnnotation" spellChecking="false" />
 
       <!-- Colors -->
       <itemData name="Silver" defStyleNum="dsNormal" color="silver" />

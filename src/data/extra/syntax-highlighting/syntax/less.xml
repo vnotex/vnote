@@ -1,22 +1,21 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
   <!-- http://www.w3.org/TR/CSS21/syndata.html#tokenization -->
-  <!ENTITY nmstart "[_a-zA-Z]|(\\[0-9a-fA-F]{1,6})|(\\[^\n\r\f0-9a-fA-F])">
-  <!ENTITY nmchar  "[_a-zA-Z0-9-]|(\\[0-9a-fA-F]{1,6})|(\\[^\n\r\f0-9a-fA-F])">
+  <!ENTITY escaped "\\([0-9a-fA-F]{1,6}|[^\n\r\f0-9a-fA-F])">
+  <!ENTITY nmstart "[_a-zA-Z]|&escaped;">
+  <!ENTITY nmchar  "[_a-zA-Z0-9-]|&escaped;">
 ]>
-<language name="LESSCSS" version="5" kateversion="5.53" section="Markup" extensions="*.less" mimetype="text/css"
+<language name="LESSCSS" version="10" kateversion="5.79" section="Markup" extensions="*.less" mimetype="text/css"
           author="from CCS:Wilbert Berendsen (wilbert@kde.nl)" license="LGPL">
-    <!--
-    Version 3 (2017-05-10):
-    - rebased on SCSS syntax version 4 (by Guo Yunhe guoyunhebrave@gmail.com)
-    - added some CSS colours and properties
-    -->
 
     <highlighting>
         <list name="properties">
             <include>properties##CSS</include>
-            <include>within-@font-face##CSS</include>
+        </list>
+
+        <list name="vendor properties">
+            <include>vendor properties##CSS</include>
         </list>
 
         <list name="values">
@@ -35,50 +34,53 @@
             <include>functions##CSS</include>
 
             <!-- Less functions, @see http://lesscss.org/functions/ -->
-
-            <!-- Misc Functions -->
+            <item>%</item>
+            <item>abs</item>
+            <item>acos</item>
+            <item>alpha</item>
+            <item>argb</item>
+            <item>asin</item>
+            <item>atan</item>
+            <item>average</item>
+            <item>blue</item>
+            <item>boolean</item>
+            <item>ceil</item>
             <item>color</item>
+            <item>contrast</item>
             <item>convert</item>
+            <item>cos</item>
+            <item>darken</item>
             <item>data-uri</item>
             <item>default</item>
+            <item>desaturate</item>
+            <item>difference</item>
+            <item>e</item>
+            <item>each</item>
+            <item>escape</item>
+            <item>exclusion</item>
+            <item>extract</item>
+            <item>fade</item>
+            <item>fadein</item>
+            <item>fadeout</item>
+            <item>floor</item>
             <item>get-unit</item>
+            <item>green</item>
+            <item>greyscale</item>
+            <item>hardlight</item>
+            <item>hsl</item>
+            <item>hsla</item>
+            <item>hsv</item>
+            <item>hsva</item>
+            <item>hsvhue</item>
+            <item>hsvsaturation</item>
+            <item>hsvvalue</item>
+            <item>hue</item>
+            <item>if</item>
             <item>image-height</item>
             <item>image-size</item>
             <item>image-width</item>
-            <item>svg-gradient</item>
-            <item>unit</item>
-
-            <!-- String Functions -->
-            <item>%</item>
-            <item>e</item>
-            <item>escape</item>
-            <item>replace</item>
-
-            <!-- List Functions -->
-            <item>extract</item>
-            <item>length</item>
-
-            <!-- Math Functions -->
-            <item>abs</item>
-            <item>acos</item>
-            <item>asin</item>
-            <item>atan</item>
-            <item>ceil</item>
-            <item>cos</item>
-            <item>floor</item>
-            <item>max</item>
-            <item>min</item>
-            <item>mod</item>
-            <item>percentage</item>
-            <item>pi</item>
-            <item>pow</item>
-            <item>round</item>
-            <item>sin</item>
-            <item>sqrt</item>
-            <item>tan</item>
-
-            <!-- Type Functions -->
             <item>iscolor</item>
+            <item>isdefined</item>
             <item>isem</item>
             <item>iskeyword</item>
             <item>isnumber</item>
@@ -88,116 +90,61 @@
             <item>isstring</item>
             <item>isunit</item>
             <item>isurl</item>
-
-            <!-- Color Definition Functions -->
-            <item>argb</item>
-            <item>hsl</item>
-            <item>hsla</item>
-            <item>hsv</item>
-            <item>hsva</item>
-            <item>rgb</item>
-            <item>rgba</item>
-
-            <!-- Color Channel Functions -->
-            <item>alpha</item>
-            <item>blue</item>
-            <item>green</item>
-            <item>hsvhue</item>
-            <item>hsvsaturation</item>
-            <item>hsvvalue</item>
-            <item>hue</item>
+            <item>length</item>
+            <item>lighten</item>
             <item>lightness</item>
             <item>luma</item>
             <item>luminance</item>
-            <item>red</item>
-            <item>saturation</item>
-
-            <!-- Color Operation Functions -->
-            <item>contrast</item>
-            <item>darken</item>
-            <item>desaturate</item>
-            <item>fade</item>
-            <item>fadein</item>
-            <item>fadeout</item>
-            <item>greyscale</item>
-            <item>lighten</item>
+            <item>max</item>
+            <item>min</item>
             <item>mix</item>
-            <item>saturate</item>
-            <item>shade</item>
-            <item>spin</item>
-            <item>tint</item>
-
-            <!-- Color Blending Functions -->
-            <item>average</item>
-            <item>difference</item>
-            <item>exclusion</item>
-            <item>hardlight</item>
+            <item>mod</item>
             <item>multiply</item>
             <item>negation</item>
             <item>overlay</item>
+            <item>percentage</item>
+            <item>pi</item>
+            <item>pow</item>
+            <item>range</item>
+            <item>red</item>
+            <item>replace</item>
+            <item>rgb</item>
+            <item>rgba</item>
+            <item>round</item>
+            <item>saturate</item>
+            <item>saturation</item>
             <item>screen</item>
+            <item>shade</item>
+            <item>sin</item>
             <item>softlight</item>
+            <item>spin</item>
+            <item>sqrt</item>
+            <item>svg-gradient</item>
+            <item>tan</item>
+            <item>tint</item>
+            <item>unit</item>
         </list>
 
-        <list name="mediatypes">
-            <item>all</item>
-            <item>aural</item>
-            <item>braille</item>
-            <item>embossed</item>
-            <item>handheld</item>
-            <item>print</item>
-            <item>projection</item>
-            <item>screen</item>
-            <item>speech</item>
-            <item>tty</item>
-            <item>tv</item>
+        <list name="media types">
+            <include>media types##CSS</include>
         </list>
 
-        <list name="mediatypes_op">
+        <list name="media operators">
             <include>media operators##CSS</include>
-            <item>or</item>
         </list>
 
-        <list name="media_features">
-            <item>width</item>
-            <item>min-width</item>
-            <item>max-width</item>
-            <item>height</item>
-            <item>min-height</item>
-            <item>max-height</item>
-            <item>device-width</item>
-            <item>min-device-width</item>
-            <item>max-device-width</item>
-            <item>device-height</item>
-            <item>min-device-height</item>
-            <item>max-device-height</item>
-            <item>orientation</item>
-            <item>aspect-ratio</item>
-            <item>min-aspect-ratio</item>
-            <item>max-aspect-ratio</item>
-            <item>device-aspect-ratio</item>
-            <item>min-device-aspect-ratio</item>
-            <item>max-device-aspect-ratio</item>
-            <item>color</item>
-            <item>min-color</item>
-            <item>max-color</item>
-            <item>color-index</item>
-            <item>min-color-index</item>
-            <item>max-color-index</item>
-            <item>monochrome</item>
-            <item>min-monochrome</item>
-            <item>max-monochrome</item>
-            <item>resolution</item>
-            <item>min-resolution</item>
-            <item>max-resolution</item>
-            <item>scan</item>
-            <item>grid</item>
+        <list name="media features">
+            <include>media features##CSS</include>
         </list>
 
-        <list name="pseudoclasses">
-            <include>pseudoclasses##CSS</include>
+        <list name="pseudo-classes">
+            <include>pseudo-classes##CSS</include>
             <!-- Less -->
             <item>extend</item>
+        </list>
+
+        <list name="pseudo-elements">
+            <include>pseudo-elements##CSS</include>
         </list>
 
         <contexts>
@@ -229,11 +176,11 @@
             </context>
 
             <context attribute="Normal Text" lineEndContext="#stay" name="Condition">
+                <DetectChar attribute="Normal Text" char=")" context="#pop"/>
+
                 <IncludeRules context="FindFunctions"/>
                 <IncludeRules context="FindVariables"/>
                 <IncludeRules context="FindValues"/>
-
-                <DetectChar attribute="Normal Text" char=")" context="#pop"/>
             </context>
 
             <!-- find variables // @page-width -->
@@ -248,7 +195,7 @@
 
             <!-- find functions // rgba(255,255,255,0.75) -->
             <context attribute="Normal Text" lineEndContext="#stay" name="FindFunctions">
-                <RegExpr attribute="Function" context="Function" String="[a-z\-]+\(" lookAhead="true"/>
+                <RegExpr attribute="Function" context="Function" String="([a-z\-]+|%)\(" lookAhead="true"/>
             </context>
 
             <!-- find values //  10px 12pt 2.5em 1rem 75% #ffcc99 red solid -->
@@ -267,13 +214,13 @@
                 <RegExpr attribute="Normal Text" context="#stay" String="[\w\-]+"/>
             </context>
 
-            <context name="Annotation" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+            <context name="Annotation" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
                 <WordDetect attribute="Annotation" context="#pop" String="important"/>
                 <WordDetect attribute="Annotation" context="#pop" String="default"/>
             </context>
 
-            <context name="FindUnits" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-                <RegExpr attribute="Unit" context="#stay" String="(%|(em|ex|ch|rem|vw|vh|vm|px|in|cm|mm|pt|pc|deg|rad|grad|turn|ms|s|Hz|kHz)\b)"/>
+            <context name="FindUnits" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
+                <RegExpr attribute="Unit" context="#stay" String="(%|(em|ex|cap|ch|ic|rem|lh|rlh|vw|vh|vi|vb|vmin|vmax|cqw|cqh|cqi|cqb|cqmin|cqmax|cm|mm|Q|in|pc|pt|px|deg|grad|rad|turn|s|ms|Hz|kHz|fr|dpi|dpcm|dppx|x)\b)"/>
             </context>
 
             <!-- find strings // "some words" 'some words' -->
@@ -284,10 +231,8 @@
 
             <!-- find comments // /* comment */  // comment -->
             <context attribute="Normal Text" lineEndContext="#stay" name="FindComments">
-                <RegExpr attribute="Region Marker" context="#stay" String="/\*BEGIN.*\*/" beginRegion="UserDefined"/>
-                <RegExpr attribute="Region Marker" context="#stay" String="//\s*BEGIN.*" beginRegion="UserDefined"/>
-                <RegExpr attribute="Region Marker" context="#stay" String="/\*END.*\*/" endRegion="UserDefined"/>
-                <RegExpr attribute="Region Marker" context="#stay" String="//\s*END.*" endRegion="UserDefined"/>
+                <RegExpr attribute="Region Marker" context="#stay" String="/\*BEGIN.*\*/|//\s*BEGIN.*" beginRegion="UserDefined"/>
+                <RegExpr attribute="Region Marker" context="#stay" String="/\*END.*\*/|//\s*END.*" endRegion="UserDefined"/>
                 <Detect2Chars attribute="Comment" context="Comment" char="/" char1="*" beginRegion="comment"/>
                 <Detect2Chars attribute="Comment" context="LessComment" char="/" char1="/" />
             </context>
@@ -296,9 +241,9 @@
                 <IncludeRules context="FindComments"/>
                 <IncludeRules context="FindStrings"/>
 
-                <keyword attribute="Value" context="#stay" String="mediatypes"/>
-                <keyword attribute="Control Flow" context="#stay" String="mediatypes_op"/>
-                <keyword attribute="Property" context="#stay" String="media_features"/>
+                <keyword attribute="Value" context="#stay" String="media types"/>
+                <keyword attribute="Control Flow" context="#stay" String="media operators"/>
+                <keyword attribute="Property" context="#stay" String="media features"/>
                 <AnyChar attribute="Normal Text" context="#pop" lookAhead="true" String=";{"/>
 
                 <IncludeRules context="FindInterpolation"/>
@@ -307,25 +252,23 @@
             </context>
 
             <context attribute="Normal Text" lineEndContext="#stay" name="VariableDefine">
+                <DetectChar attribute="Normal Text" beginRegion="ruleset" char="{" context="#pop!RuleSet"/>
+                <DetectChar attribute="Normal Text" char=";" context="#pop"/>
+
                 <IncludeRules context="FindInterpolation"/>
                 <IncludeRules context="FindVariables"/>
-
-                <DetectChar attribute="Normal Text" beginRegion="ruleset" char="{" context="#pop!RuleSet"/>
-
                 <IncludeRules context="FindComments"/>
                 <IncludeRules context="FindStrings"/>
                 <IncludeRules context="FindFunctions"/>
                 <IncludeRules context="FindValues"/>
-
-                <DetectChar attribute="Normal Text" char=";" context="#pop"/>
             </context>
 
             <!-- Interpolation -->
             <context attribute="Normal Text" lineEndContext="#stay" name="Interpolation">
+                <DetectChar attribute="Variable" char="}" context="#pop"/>
+
                 <IncludeRules context="FindInterpolation"/>
                 <IncludeRules context="FindVariables"/>
-
-                <DetectChar attribute="Variable" char="}" context="#pop"/>
             </context>
 
             <context attribute="Selector Attribute" lineEndContext="#stay" name="SelectorAttr">
@@ -334,37 +277,38 @@
                 <IncludeRules context="FindStrings"/>
             </context>
 
-            <context attribute="Selector Pseudo" fallthrough="true" fallthroughContext="#pop" lineEndContext="#pop"
+            <context attribute="Selector Pseudo" fallthroughContext="#pop" lineEndContext="#pop"
                      name="SelectorPseudo">
                 <RegExpr attribute="Selector Pseudo" context="SelectorPseudoParameters" String="extend(?=\s*\()"/>
-                <keyword attribute="Selector Pseudo" context="#pop" String="pseudoclasses"/>
+                <keyword attribute="Selector Pseudo" context="#pop" String="pseudo-classes"/>
             </context>
 
             <context attribute="Normal Text" lineEndContext="#stay" name="SelectorPseudoParameters">
                 <DetectChar attribute="Normal Text" char="(" context="#stay"/>
+                <DetectChar attribute="Normal Text" char=")" context="#pop#pop"/>
 
                 <IncludeRules context="FindSelectors"/>
-
-                <DetectChar attribute="Normal Text" char=")" context="#pop#pop"/>
             </context>
 
-            <context attribute="Comment" lineEndContext="#pop" name="LessComment"></context>
+            <context attribute="Comment" lineEndContext="#pop" name="LessComment">
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier />
+            </context>
 
             <context attribute="Comment" lineEndContext="#stay" name="Comment">
                 <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="comment"/>
 
-                <IncludeRules context="##Alerts"/>
+                <IncludeRules context="LessComment"/>
             </context>
 
             <context attribute="Normal Text" lineEndContext="#stay" name="RuleSet">
                 <DetectChar attribute="Normal Text" char="{" context="RuleSet" beginRegion="ruleset"/>
                 <DetectChar attribute="Normal Text" char="}" context="#pop" endRegion="ruleset"/>
                 <!-- find CSS property, like border-radius with optional + or +- decorators -->
-                <RegExpr attribute="Property" context="Rule" String="-?[A-Za-z_\-]+(?=\s*(\+|\+_)?\s*:)"
-                         lookAhead="true"/>
                 <!-- as above, but include support for interpolation -->
                 <RegExpr attribute="Property" context="Rule"
-                         String="-?[A-Za-z_\-]*@{\s*[a-zA-Z0-9\-_]+}[A-Za-z_\-]*(?=\s*(\+|\+_)?\s*:)" lookAhead="true"
+                         String="-?[A-Za-z_\-]+(?=\s*(\+|\+_)?\s*:)|-?[A-Za-z_\-]*@{\s*[a-zA-Z0-9\-_]+}[A-Za-z_\-]*(?=\s*(\+|\+_)?\s*:)" lookAhead="true"
                          />
 
                 <IncludeRules context="Base"/>
@@ -375,17 +319,18 @@
 
                 <RegExpr attribute="Normal Text" context="RuleParameters" String="(\+|\+_)?\s*:"/>
                 <keyword attribute="Property" context="#stay" String="properties"/>
-                <RegExpr attribute="Unknown Property" context="#stay" String="\S"/>
+                <RegExpr attribute="Vendor Property" context="#stay" String="-(webkit|moz|o|ms)-[-_a-zA-Z0-9]*"/>
+                <RegExpr attribute="Unknown Property" context="#stay" String="\S[a-zA-Z0-9]*"/>
             </context>
 
             <context attribute="Normal Text" lineEndContext="#stay" name="RuleParameters">
+                <DetectChar attribute="Normal Text" context="#pop#pop" char=";"/>
+                <DetectChar attribute="Normal Text" context="#pop#pop#pop" char="}" endRegion="ruleset"/>
+
                 <IncludeRules context="FindComments"/>
                 <IncludeRules context="FindStrings"/>
                 <IncludeRules context="FindFunctions"/>
                 <IncludeRules context="FindValues"/>
-
-                <DetectChar attribute="Normal Text" context="#pop#pop" char=";"/>
-                <DetectChar attribute="Normal Text" context="#pop#pop#pop" char="}" endRegion="ruleset"/>
             </context>
 
             <context attribute="Normal Text" lineEndContext="#stay" name="Function">
@@ -394,14 +339,13 @@
             </context>
 
             <context attribute="Normal Text" lineEndContext="#stay" name="FunctionParameters">
+                <DetectChar attribute="Normal Text" context="#pop#pop" char=")"/>
                 <IncludeRules context="FindComments"/>
                 <IncludeRules context="FindStrings"/>
                 <IncludeRules context="FindInterpolation"/>
                 <IncludeRules context="FindVariables"/>
                 <IncludeRules context="FindFunctions"/>
                 <IncludeRules context="FindValues"/>
-
-                <DetectChar attribute="Normal Text" context="#pop#pop" char=")"/>
             </context>
 
             <!-- string contexts -->
@@ -432,6 +376,7 @@
             <itemData defStyleNum="dsControlFlow" name="Control Flow" spellChecking="false"/>
             <itemData defStyleNum="dsImport" name="At Rule" spellChecking="false"/>
             <itemData defStyleNum="dsKeyword" name="Property" spellChecking="false"/>
+            <itemData defStyleNum="dsKeyword" name="Vendor Property" spellChecking="false" italic="1"/>
             <itemData defStyleNum="dsNormal" italic="1" name="Unknown Property" spellChecking="false"/>
             <itemData defStyleNum="dsString" name="String"/>
             <itemData defStyleNum="dsDecVal" name="Value" spellChecking="false"/>
@@ -453,7 +398,9 @@
     <general>
         <keywords casesensitive="0" weakDeliminator="-%"/>
         <comments>
-            <comment name="multiLine" start="/*" end="*/" />
+            <comment name="multiLine" start="/*" end="*/" region="comment"/>
+            <comment name="singleLine" start="//" position="afterwhitespace"/>
         </comments>
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Debian Changelog" version="8" kateversion="2.4" section="Other" extensions="" mimetype="">
+<!DOCTYPE language>
+<language name="Debian Changelog" version="22" kateversion="2.4" section="Other" extensions="changelog" mimetype="">
     <highlighting>
         <list name="keywords">
             <item>urgency</item>
@@ -54,6 +54,12 @@
             <item>bookworm</item>
             <item>bookworm-backports</item>
             <item>bookworm-backports-sloppy</item>
+            <item>trixie</item>
+            <item>trixie-backports</item>
+            <item>trixie-backports-sloppy</item>
+            <item>forky</item>
+            <item>forky-backports</item>
+            <item>forky-backports-sloppy</item>
             <!-- Ubuntu releases -->
             <item>dapper</item>
             <item>dapper-security</item>
@@ -202,6 +208,61 @@
             <item>eoan-proposed</item>
             <item>eoan-updates</item>
             <item>eoan-backports</item>
+            <item>focal</item>
+            <item>focal-security</item>
+            <item>focal-proposed</item>
+            <item>focal-updates</item>
+            <item>focal-backports</item>
+            <item>groovy</item>
+            <item>groovy-security</item>
+            <item>groovy-proposed</item>
+            <item>groovy-updates</item>
+            <item>groovy-backports</item>
+            <item>hirsute</item>
+            <item>hirsute-security</item>
+            <item>hirsute-proposed</item>
+            <item>hirsute-updates</item>
+            <item>hirsute-backports</item>
+            <item>impish</item>
+            <item>impish-security</item>
+            <item>impish-proposed</item>
+            <item>impish-updates</item>
+            <item>impish-backports</item>
+            <item>jammy</item>
+            <item>jammy-security</item>
+            <item>jammy-proposed</item>
+            <item>jammy-updates</item>
+            <item>jammy-backports</item>
+            <item>kinetic</item>
+            <item>kinetic-security</item>
+            <item>kinetic-proposed</item>
+            <item>kinetic-updates</item>
+            <item>kinetic-backports</item>
+            <item>lunar</item>
+            <item>lunar-security</item>
+            <item>lunar-proposed</item>
+            <item>lunar-updates</item>
+            <item>lunar-backports</item>
+            <item>mantic</item>
+            <item>mantic-security</item>
+            <item>mantic-proposed</item>
+            <item>mantic-updates</item>
+            <item>mantic-backports</item>
+            <item>noble</item>
+            <item>noble-security</item>
+            <item>noble-proposed</item>
+            <item>noble-updates</item>
+            <item>noble-backports</item>
+            <item>oracular</item>
+            <item>oracular-security</item>
+            <item>oracular-proposed</item>
+            <item>oracular-updates</item>
+            <item>oracular-backports</item>
+            <item>plucky</item>
+            <item>plucky-security</item>
+            <item>plucky-proposed</item>
+            <item>plucky-updates</item>
+            <item>plucky-backports</item>
         </list>
 
         <list name="urgencies">
@@ -215,16 +276,16 @@
 
         <contexts>
             <context attribute="Normal Text" lineEndContext="#stay" name="INIT">
-                <RegExpr attribute="Keyword" context="Head" String="[^ ]*" column="0"/>
+                <RegExpr attribute="Keyword" context="Head" String="^[^ ]*" column="0"/>
                 <RegExpr attribute="Email" context="#stay" String="&lt;.*@.*&gt;"/>
-                <RegExpr attribute="Keyword" context="#stay" String=" \-\-" column="0"/>
-                <RegExpr attribute="Keyword" context="#stay" String="  \*" column="0"/>
+                <StringDetect attribute="Keyword" context="#stay" String=" --" column="0"/>
+                <StringDetect attribute="Keyword" context="#stay" String="  *" column="0"/>
                 <RegExpr attribute="Bug" context="#stay" String="closes:[\s]*((bug\s*)?#\s*\d+)(\s*, *(bug\s*)?#\s*\d+)*" insensitive="true"/>
             </context>
 
             <context attribute="Normal Text" lineEndContext="#pop" name="Head">
                 <DetectChar attribute="Keyword" context="Version" char="("/>
-                <RegExpr attribute="Keyword" context="#stay" String="[,;=]"/>
+                <AnyChar attribute="Keyword" context="#stay" String=",;="/>
                 <keyword attribute="Keyword" context="#stay" String="keywords"/>
                 <keyword attribute="Data" context="#stay" String="distributions"/>
                 <keyword attribute="Data" context="#stay" String="urgencies"/>
@@ -249,3 +310,4 @@
         <keywords casesensitive="1" weakDeliminator="-"/>
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

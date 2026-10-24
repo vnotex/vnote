@@ -1,0 +1,390 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="GPRBuild"
+          version="1"
+          kateversion="5.79"
+          section="Sources"
+          extensions="*.gpr"
+          indenter="ada"
+          mimetype="text/x-adasrc"
+          author="Léo Germond (germond@adacore.com)"
+          license="MIT">
+  <highlighting>
+    <!-- https://github.com/AdaCore/gprbuild/blob/master/gpr/src/gpr-snames.adb -->
+    
+    <list name="keywords">
+      <item>c</item>
+      <item>abort</item>
+      <item>abs</item>
+      <item>accept</item>
+      <item>and</item>
+      <item>all</item>
+      <item>array</item>
+      <item>at</item>
+      <item>begin</item>
+      <item>body</item>
+      <item>case</item>
+      <item>constant</item>
+      <item>declare</item>
+      <item>delay</item>
+      <item>do</item>
+      <item>else</item>
+      <item>elsif</item>
+      <item>end</item>
+      <item>entry</item>
+      <item>exception</item>
+      <item>exit</item>
+      <item>for</item>
+      <item>function</item>
+      <item>generic</item>
+      <item>goto</item>
+      <item>if</item>
+      <item>in</item>
+      <item>is</item>
+      <item>limited</item>
+      <item>loop</item>
+      <item>new</item>
+      <item>not</item>
+      <item>null</item>
+      <item>of</item>
+      <item>or</item>
+      <item>others</item>
+      <item>out</item>
+      <item>package</item>
+      <item>pragma</item>
+      <item>private</item>
+      <item>procedure</item>
+      <item>raise</item>
+      <item>record</item>
+      <item>rem</item>
+      <item>renames</item>
+      <item>return</item>
+      <item>reverse</item>
+      <item>select</item>
+      <item>separate</item>
+      <item>subtype</item>
+      <item>task</item>
+      <item>terminate</item>
+      <item>then</item>
+      <item>type</item>
+      <item>use</item>
+      <item>when</item>
+      <item>while</item>
+      <item>with</item>
+      <item>xor</item>
+      <item>access</item>
+      <item>delta</item>
+      <item>digits</item>
+      <item>mod</item>
+      <item>range</item>
+      <item>abstract</item>
+      <item>aliased</item>
+      <item>protected</item>
+      <item>until</item>
+      <item>requeue</item>
+      <item>tagged</item>
+      <item>project</item>
+      <item>extends</item>
+      <item>external</item>
+      <item>external_as_list</item>
+      <item>interface</item>
+      <item>overriding</item>
+      <item>synchronized</item>
+      <item>some</item>
+      <item>active</item>
+      <item>aggregate</item>
+      <item>archive_builder</item>
+      <item>archive_builder_append_option</item>
+      <item>archive_indexer</item>
+      <item>archive_suffix</item>
+      <item>artifacts</item>
+      <item>artifacts_in_exec_dir</item>
+      <item>artifacts_in_object_dir</item>
+      <item>binder</item>
+      <item>bindfile_option_substitution</item>
+      <item>body_suffix</item>
+      <item>builder</item>
+      <item>clean</item>
+      <item>compiler</item>
+      <item>compiler_command</item>
+      <item>config_body_file_name</item>
+      <item>config_body_file_name_index</item>
+      <item>config_body_file_name_pattern</item>
+      <item>config_file_dependency_support</item>
+      <item>config_file_switches</item>
+      <item>config_file_unique</item>
+      <item>config_spec_file_name</item>
+      <item>config_spec_file_name_index</item>
+      <item>config_spec_file_name_pattern</item>
+      <item>configuration</item>
+      <item>cross_reference</item>
+      <item>def</item>
+      <item>default_language</item>
+      <item>default_switches</item>
+      <item>dependency_driver</item>
+      <item>dependency_kind</item>
+      <item>dependency_switches</item>
+      <item>driver</item>
+      <item>excluded_source_dirs</item>
+      <item>excluded_source_files</item>
+      <item>excluded_source_list_file</item>
+      <item>exec_dir</item>
+      <item>exec_subdir</item>
+      <item>excluded_patterns</item>
+      <item>executable</item>
+      <item>executable_suffix</item>
+      <item>externally_built</item>
+      <item>finder</item>
+      <item>flat</item>
+      <item>gcc</item>
+      <item>gcc_gnu</item>
+      <item>gcc_option_list</item>
+      <item>gcc_object_list</item>
+      <item>global_compilation_switches</item>
+      <item>global_configuration_pragmas</item>
+      <item>global_config_file</item>
+      <item>gnatls</item>
+      <item>gnatstub</item>
+      <item>gnu</item>
+      <item>ide</item>
+      <item>ignore_source_sub_dirs</item>
+      <item>implementation</item>
+      <item>implementation_exceptions</item>
+      <item>implementation_suffix</item>
+      <item>included_artifact_patterns</item>
+      <item>included_patterns</item>
+      <item>include_switches</item>
+      <item>include_path</item>
+      <item>include_path_file</item>
+      <item>inherit_source_path</item>
+      <item>install</item>
+      <item>install_project</item>
+      <item>languages</item>
+      <item>language_kind</item>
+      <item>leading_library_options</item>
+      <item>leading_required_switches</item>
+      <item>leading_switches</item>
+      <item>ali_subdir</item>
+      <item>lib_subdir</item>
+      <item>link_lib_subdir</item>
+      <item>library</item>
+      <item>library_ali_dir</item>
+      <item>library_auto_init</item>
+      <item>library_auto_init_supported</item>
+      <item>library_builder</item>
+      <item>library_dir</item>
+      <item>library_gcc</item>
+      <item>library_install_name_option</item>
+      <item>library_interface</item>
+      <item>library_kind</item>
+      <item>library_name</item>
+      <item>library_major_minor_id_supported</item>
+      <item>library_options</item>
+      <item>library_partial_linker</item>
+      <item>library_rpath_options</item>
+      <item>library_standalone</item>
+      <item>library_encapsulated_options</item>
+      <item>library_encapsulated_supported</item>
+      <item>library_src_dir</item>
+      <item>library_support</item>
+      <item>library_symbol_file</item>
+      <item>library_symbol_policy</item>
+      <item>library_version</item>
+      <item>library_version_switches</item>
+      <item>linker</item>
+      <item>linker_executable_option</item>
+      <item>linker_lib_dir_option</item>
+      <item>linker_lib_name_option</item>
+      <item>local_config_file</item>
+      <item>local_configuration_pragmas</item>
+      <item>locally_removed_files</item>
+      <item>map_file_option</item>
+      <item>mapping_file_switches</item>
+      <item>mapping_spec_suffix</item>
+      <item>mapping_body_suffix</item>
+      <item>max_command_line_length</item>
+      <item>metrics</item>
+      <item>multi_unit_object_separator</item>
+      <item>multi_unit_switches</item>
+      <item>naming</item>
+      <item>none</item>
+      <item>object_artifact_extensions</item>
+      <item>object_file_suffix</item>
+      <item>object_file_switches</item>
+      <item>object_generated</item>
+      <item>object_list</item>
+      <item>object_path_switches</item>
+      <item>objects_linked</item>
+      <item>objects_path</item>
+      <item>objects_path_file</item>
+      <item>object_dir</item>
+      <item>option_list</item>
+      <item>pic_option</item>
+      <item>pretty_printer</item>
+      <item>prefix</item>
+      <item>project_dir</item>
+      <item>project_files</item>
+      <item>project_path</item>
+      <item>project_subdir</item>
+      <item>remote</item>
+      <item>response_file_format</item>
+      <item>response_file_switches</item>
+      <item>root_dir</item>
+      <item>roots</item>
+      <item>required_artifacts</item>
+      <item>required_switches</item>
+      <item>run_path_option</item>
+      <item>run_path_origin</item>
+      <item>separate_run_path_options</item>
+      <item>shared_library_minimum_switches</item>
+      <item>shared_library_prefix</item>
+      <item>shared_library_suffix</item>
+      <item>separate_suffix</item>
+      <item>side_debug</item>
+      <item>source_artifact_extensions</item>
+      <item>source_dirs</item>
+      <item>source_file_switches</item>
+      <item>source_files</item>
+      <item>source_list_file</item>
+      <item>sources_subdir</item>
+      <item>spec</item>
+      <item>spec_suffix</item>
+      <item>specification</item>
+      <item>specification_exceptions</item>
+      <item>specification_suffix</item>
+      <item>stack</item>
+      <item>switches</item>
+      <item>symbolic_link_supported</item>
+      <item>toolchain_description</item>
+      <item>toolchain_version</item>
+      <item>trailing_required_switches</item>
+      <item>trailing_switches</item>
+      <item>runtime_library_dir</item>
+      <item>runtime_library_dirs</item>
+      <item>runtime_source_dir</item>
+      <item>ada</item>
+      <item>interfaces</item>
+      <item>main</item>
+      <item>target</item>
+      <item>casing</item>
+      <item>dot_replacement</item>
+      <item>standard</item>
+      <item>name</item>
+      <item>linker_options</item>
+      <item>runtime</item>
+      <item>mode</item>
+      <item>install_name</item>
+      <item>object_lister</item>
+      <item>object_lister_matcher</item>
+      <item>export_file_format</item>
+      <item>export_file_switch</item>
+      <item>runtime_source_dirs</item>
+      <item>runtime_dir</item>
+      <item>runtime_library_version</item>
+      <item>split</item>
+      <item>create_missing_dirs</item>
+      <item>canonical_target</item>
+      <item>warning_message</item>
+      <item>only_dirs_with_sources</item>
+      <item>include_switches_via_spec</item>
+      <item>required_toolchain_version</item>
+      <item>toolchain_name</item>
+      <item>check</item>
+      <item>eliminate</item>
+      <item>remote_host</item>
+      <item>program_host</item>
+      <item>communication_protocol</item>
+      <item>debugger_command</item>
+      <item>gnatlist</item>
+      <item>vcs_kind</item>
+      <item>vcs_file_check</item>
+      <item>vcs_log_check</item>
+      <item>documentation_dir</item>
+      <item>codepeer</item>
+      <item>output_directory</item>
+      <item>database_directory</item>
+      <item>message_patterns</item>
+      <item>additional_patterns</item>
+      <item>origin_project</item>
+      <item>library_reference_symbol_file</item>
+      <item>unconditional_linking</item>
+      <item>toolchain_path</item>
+    </list>
+
+    <list name="pragmas">
+    </list>
+
+    <list name="types">
+    </list>
+
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Default">
+        <DetectSpaces />
+
+        <StringDetect attribute="Region Marker" context="Region Marker" String="--  BEGIN" beginRegion="RegionMarker" firstNonSpace="true" />
+        <StringDetect attribute="Region Marker" context="Region Marker" String="--  END" endRegion="RegionMarker" firstNonSpace="true" />
+        <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;|"/>
+        <DetectChar context="String" char="&quot;" lookAhead="1"/>
+
+        <WordDetect attribute="Keyword" context="#stay" String="record" insensitive="true" beginRegion="RecordRegion"/>
+        <WordDetect attribute="Keyword" context="#stay" String="case"   insensitive="true" beginRegion="CaseRegion"/>
+        <WordDetect attribute="Keyword" context="#stay" String="if"     insensitive="true" beginRegion="IfRegion"/>
+        <WordDetect attribute="Keyword" context="#stay" String="loop"   insensitive="true" beginRegion="LoopRegion"/>
+        <WordDetect attribute="Keyword" context="#stay" String="select" insensitive="true" beginRegion="SelectRegion"/>
+        <WordDetect attribute="Keyword" context="#stay" String="begin"  insensitive="true" beginRegion="BeginRegion"/>
+
+        <WordDetect attribute="Keyword" context="End"   String="end"    insensitive="true" lookAhead="1"/>
+        <WordDetect attribute="Keyword" context="Null"  String="null"   insensitive="true"/>
+
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+       
+        <DetectIdentifier />
+      </context>
+
+      <context attribute="Keyword" lineEndContext="#pop" name="End">
+        <RegExpr    attribute="Keyword" context="#pop" String="end\s+record\b" insensitive="true"   endRegion="RecordRegion"/>
+        <RegExpr    attribute="Keyword" context="#pop" String="end\s+case\b"   insensitive="true"   endRegion="CaseRegion"/>
+        <RegExpr    attribute="Keyword" context="#pop" String="end\s+if\b"     insensitive="true"   endRegion="IfRegion"/>
+        <RegExpr    attribute="Keyword" context="#pop" String="end\s+loop\b"   insensitive="true"   endRegion="LoopRegion"/>
+        <RegExpr    attribute="Keyword" context="#pop" String="end\s+select\b" insensitive="true"   endRegion="SelectRegion"/>
+        <DetectIdentifier attribute="Keyword" context="#pop" endRegion="BeginRegion"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="Null" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <WordDetect attribute="Keyword" context="#pop" String="record" insensitive="true"/>
+      </context>
+
+      <context attribute="Region Marker" lineEndContext="#pop" name="Region Marker">
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="String" fallthroughContext="PartialString">
+        <RangeDetect attribute="String" context="#pop" char="&quot;" char1="&quot;"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop#pop" name="PartialString">
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <DetectSpaces attribute="Comment"/>
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier attribute="Comment"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Keyword"     defStyleNum="dsKeyword" />
+      <itemData name="String"      defStyleNum="dsString" />
+      <itemData name="Comment"     defStyleNum="dsComment" />
+      <itemData name="Symbol"      defStyleNum="dsOperator"/>
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="--" position="afterwhitespace" />
+    </comments>
+    <keywords casesensitive="0" />
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

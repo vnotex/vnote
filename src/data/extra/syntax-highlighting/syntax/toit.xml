@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+
+<language
+    name="toit"
+    version="1"
+    kateversion="5.0"
+    section="Sources"
+    author="Florian Loitsch (florian@toit.io)"
+    license="MIT"
+    extensions="*.toit">
+
+<highlighting>
+  <list name="keywords">
+    <item> import </item>
+    <item> export </item>
+    <item> assert </item>
+    <item> try </item>
+    <item> finally </item>
+    <item> monitor </item>
+    <item> class </item>
+    <item> interface </item>
+    <item> mixin </item>
+    <item> operator </item>
+    <item> implements </item>
+    <item> extends </item>
+    <item> with </item>
+    <item> show </item>
+  </list>
+
+  <list name="controlflow">
+    <item> if </item>
+    <item> for </item>
+    <item> else </item>
+    <item> while </item>
+    <item> break </item>
+    <item> continue </item>
+    <item> throw </item>
+    <item> return </item>
+  </list>
+
+  <list name="operators">
+    <item> and </item>
+    <item> or </item>
+    <item> not </item>
+  </list>
+
+  <list name="constants">
+    <item> true </item>
+    <item> false </item>
+    <item> null </item>
+  </list>
+
+  <list name="special vars">
+    <item> this </item>
+    <item> super </item>
+  </list>
+
+  <list name="types">
+    <item> int </item>
+    <item> float </item>
+    <item> string </item>
+    <item> bool </item>
+    <item> List </item>
+    <item> Map </item>
+    <item> Set </item>
+    <item> Object </item>
+    <item> any </item>
+  </list>
+
+  <list name="modifiers">
+    <item> static </item>
+    <item> abstract </item>
+  </list>
+
+  <contexts>
+    <context name="Main" attribute="Normal Text">
+      <IncludeRules context="Normal"/>
+    </context>
+
+    <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+      <DetectSpaces/>
+      <keyword String="keywords" attribute="Keyword" context="#stay" />
+      <keyword String="controlflow" attribute="Control Flow" context="#stay" />
+      <keyword String="types" attribute="Data Type" context="#stay" />
+      <keyword String="modifiers" attribute="Modifiers" context="#stay" />
+      <keyword String="constants" attribute="Constant" context="#stay" />
+      <keyword String="special vars" attribute="Special Vars" context="#stay" />
+      <RegExpr String="[A-Z][a-z](?:[-]?[A-Za-z0-9_]+)*" attribute="Data Type" context="#stay" />
+      <RegExpr String="[A-Z](?:[-]?[A-Z0-9_]+)*" attribute="Constant" context="#stay" />
+      <RegExpr String="(?:[-][-])?[a-z](?:[-]?[A-Za-z0-9_]+)*" attribute="Variable" context="#stay" />
+      <HlCHex attribute="Hex" context="#stay"/>
+      <RegExpr String="0b[01]+" attribute="Binary" context="#stay"/>
+      <Float attribute="Float" context="#stay"/>
+      <Int attribute="Decimal" context="#stay"/>
+      <StringDetect String="&quot;&quot;&quot;" attribute="String" context="MultilineString" />
+      <DetectChar char="&quot;" attribute="String" context="DoubleQuoteString" />
+      <HlCChar attribute="Char" context="#stay"/>
+      <IncludeRules context="FindComments"/>
+      <AnyChar String=":!%&amp;+,-/.*&lt;=&gt;?|~^" attribute="Symbol" context="#stay" />
+      <AnyChar String="([{" attribute="Symbol" context="Normal" />
+      <AnyChar String=")]}" attribute="Symbol" context="#pop" />
+    </context>
+    <!-- Strings -->
+    <context name="DoubleQuoteString" attribute="String" lineEndContext="#pop">
+      <DetectSpaces attribute="String"/>
+      <HlCStringChar attribute="String Char" context="#stay"/>
+      <DetectChar char="&quot;" attribute="String" context="#pop" />
+      <Detect2Chars char="$" char1="(" attribute="String" context="Normal" />
+      <DetectChar char="$" attribute="String" context="Interpolated" />
+    </context>
+    <context name="MultilineString" attribute="String" lineEndContext="#pop">
+      <DetectSpaces attribute="String" context="#stay" />
+      <LineContinue attribute="String" context="#stay" />
+      <HlCStringChar attribute="String Char" context="#stay" />
+      <StringDetect String="&quot;&quot;&quot;&quot;&quot;" attribute="String" context="#pop" />
+      <StringDetect String="&quot;&quot;&quot;&quot;" attribute="String" context="#pop" />
+      <StringDetect String="&quot;&quot;&quot;" attribute="String" context="#pop" />
+      <Detect2Chars char="$" char1="(" attribute="String" context="Normal" />
+      <DetectChar char="$" attribute="String" context="Interpolated" />
+    </context>
+    <context name="Interpolated" attribute="String" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+      <RegExpr String="[A-Z]|[A-Z][a-z](?:[-]?[A-Za-z0-9_]+)*" attribute="Data Type" context="InterpolatedContinuation" />
+      <RegExpr String="[A-Z](?:[-]?[A-Z0-9_]+)*" attribute="Constant" context="InterpolatedContinuation" />
+      <RegExpr String="[_a-z](?:[-]?[A-Z0-9_]+)*" attribute="Variable" context="InterpolatedContinuation" />
+    </context>
+    <context name="InterpolatedContinuation" attribute="String" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop">
+      <RegExpr String="[.][_a-zA-Z](?:[-]?[A-Za-z0-9_]+)*" attribute="Data Type" />
+      <DetectChar char="[" attribute="Symbol" context="Normal" />
+    </context>
+    <!-- Comments -->
+    <context name="FindComments" attribute="Normal Text" lineEndContext="#pop">
+      <Detect2Chars char="/" char1="/" attribute="Comment" context="MatchComment" />
+      <StringDetect String="/**/" attribute="Comment" context="#stay" />
+      <StringDetect String="/**" attribute="Toitdoc" context="MatchToitdoc" />
+      <Detect2Chars char="/" char1="*" attribute="Comment" context="MatchMultilineComment" />
+    </context>
+    <context name="MatchComment" attribute="Comment" lineEndContext="#pop" >
+    </context>
+    <context name="MatchMultilineComment" attribute="Comment" >
+      <Detect2Chars char="/" char1="*" attribute="Comment" context="MatchMultilineComment" />
+      <Detect2Chars char="*" char1="/" attribute="Comment" context="#pop" />
+    </context>
+    <context name="MatchToitdoc" attribute="Comment" >
+      <RegExpr attribute="ToitdocRef" String="[$][_A-Za-z](?:[-]?[A-Za-z0-9_]+)*(?:[_A-Za-z](?:[-]?[A-Za-z0-9_]+)*)*" />
+      <Detect2Chars char="$" char1="(" attribute="Symbol" context="Normal" />
+      <Detect2Chars char="/" char1="*" attribute="Comment" context="MatchMultilineComment" />
+      <Detect2Chars char="*" char1="/" attribute="Comment" context="#pop" />
+    </context>
+  </contexts>
+
+  <itemDatas>
+    <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false" />
+    <itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="false"/>
+    <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false" />
+    <itemData name="Data Type" defStyleNum="dsDataType" spellChecking="false"/>
+    <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+    <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
+    <itemData name="Binary" defStyleNum="dsBaseN" spellChecking="false"/>
+    <itemData name="Constant" defStyleNum="dsConstant" spellChecking="false"/>
+    <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+    <itemData name="Modifiers" defStyleNum="dsAttribute" spellChecking="false"/>
+    <itemData name="Char" defStyleNum="dsChar"/>
+    <itemData name="String" defStyleNum="dsString"/>
+    <itemData name="String Char" defStyleNum="dsSpecialChar"/>
+    <itemData name="Comment" defStyleNum="dsComment"/>
+    <itemData name="Toitdoc" defStyleNum="dsDocumentation"/>
+    <itemData name="ToitdocRef" defStyleNum="dsCommentVar"/>
+    <itemData name="Symbol" defStyleNum="dsOperator" spellChecking="false"/>
+    <itemData name="Special Vars" defStyleNum="dsKeyword" spellChecking="false"/>
+    <itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
+  </itemDatas>
+</highlighting>
+
+<general>
+  <comments>
+    <comment name="singleLine" start="//"/>
+    <comment name="multiLine" start="/*" end="*/" region="Comment" />
+  </comments>
+  <keywords casesensitive="1" weakDeliminator="-" />
+  <folding indentationsensitive="true" />
+</general>
+
+</language>

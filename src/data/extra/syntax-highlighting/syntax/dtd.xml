@@ -1,10 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"[
-  <!ENTITY nmtoken "[\-\w\d\.:_]+">
-  <!ENTITY entref  "(#[0-9]+|#[xX][0-9A-Fa-f]+|&nmtoken;);">
+<!DOCTYPE language[
+  <!ENTITY nmtoken "[-\w.:]+">
+  <!ENTITY entity  "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&nmtoken;);">
 ]>
-<language name="DTD" version="2" kateversion="3.4" section="Markup" extensions="*.dtd" mimetype="application/xml-dtd" author="Andriy Lesyuk (s-andy@in.if.ua)" license="LGPL">
+<language name="DTD" version="5" kateversion="5.62" section="Markup" extensions="*.dtd" mimetype="application/xml-dtd" author="Andriy Lesyuk (s-andy@in.if.ua)" license="LGPL">
   <highlighting>
+
+    <!--
+      https://www.w3.org/TR/REC-xml/#ext-Subset
+    -->
 
     <list name="Category">
       <item>EMPTY</item>
@@ -39,45 +43,86 @@
         <StringDetect attribute="Declaration" context="Declaration" String="&lt;!ATTLIST" beginRegion="declaration" />
         <StringDetect attribute="Declaration" context="Declaration" String="&lt;!NOTATION" beginRegion="declaration" />
         <StringDetect attribute="Declaration" context="Declaration" String="&lt;!ENTITY" beginRegion="declaration" />
+        <RegExpr attribute="Entity" context="#stay" String="%&nmtoken;;" />
+        <StringDetect attribute="Conditional Section" context="conditionalSect" String="&lt;![" beginRegion="section"/>
         <DetectIdentifier />
       </context>
 
       <context name="Comment" attribute="Comment" lineEndContext="#stay">
         <DetectSpaces />
-        <StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
-        <IncludeRules context="##Alerts" />
+        <StringDetect context="EndComment" String="--" lookAhead="1"/>
+        <IncludeRules context="##Comments" />
         <DetectIdentifier />
+      </context>
+      <context name="EndComment" attribute="Comment" lineEndContext="#pop" fallthroughContext="#pop">
+        <StringDetect attribute="Comment" context="#pop#pop" String="-->" endRegion="comment" />
+        <DetectChar attribute="Error" char="-" />
       </context>
 
       <context name="PI" attribute="Other" lineEndContext="#stay">
         <Detect2Chars attribute="Processing Instruction" context="#pop" char="?" char1="&gt;" endRegion="pi" />
       </context>
 
-      <context name="Declaration" attribute="Other" lineEndContext="#stay">
+      <context name="Declaration" attribute="Normal" lineEndContext="#stay">
+        <DetectSpaces />
         <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
-        <Detect2Chars attribute="Comment" context="InlineComment" char="-" char1="-" />
         <DetectChar attribute="Declaration" context="#pop" char="&gt;" endRegion="declaration" />
-        <DetectChar attribute="String" context="String" char="&quot;" />
-        <RegExpr attribute="Declaration" context="#stay" String="(-|O)\s(-|O)" />
+        <DetectChar attribute="String" context="StringDQ" char="&quot;" />
+        <DetectChar attribute="String" context="StringSQ" char="'" />
+        <Detect2Chars attribute="Comment" context="InlineComment" char="-" char1="-" />
+        <RegExpr attribute="Declaration" context="#stay" String="[-O]\s[-O]" />
         <AnyChar attribute="Delimiter" context="#stay" String="(|)," />
-        <RegExpr attribute="Entity" context="#stay" String="(%|&amp;)&entref;" />
         <AnyChar attribute="Symbol" context="#stay" String="?*+-&amp;" />
-        <RegExpr attribute="Local" context="#stay" String="%\s" />
+        <IncludeRules context="FindReference"/>
+        <StringDetect attribute="Local" context="#stay" String="% " />
+        <StringDetect attribute="Local" context="#stay" String="%&#9;" />
         <keyword attribute="Keyword" context="#stay" String="Category" />
         <keyword attribute="Keyword" context="#stay" String="Keywords" />
         <RegExpr attribute="Name" context="#stay" String="\b&nmtoken;\b" />
       </context>
 
-      <context name="String" attribute="String" lineEndContext="#stay">
-        <DetectSpaces />
+      <context name="StringDQ" attribute="String" lineEndContext="#stay">
         <DetectChar attribute="String" context="#pop" char="&quot;" />
-        <RegExpr attribute="Entity" context="#stay" String="%&nmtoken;;" />
+        <IncludeRules context="InString"/>
       </context>
 
+      <context name="StringSQ" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="String" context="#pop" char="'" />
+        <IncludeRules context="InString"/>
+      </context>
+
+      <context name="InString" attribute="String" lineEndContext="#stay">
+        <DetectSpaces />
+        <DetectIdentifier />
+        <IncludeRules context="FindReference"/>
+      </context>
+
+      <context name="FindReference" attribute="String" lineEndContext="#stay">
+        <RegExpr attribute="Entity" context="#stay" String="&entity;|%&nmtoken;;" />
+      </context>
+
+      <context name="conditionalSect" attribute="Conditional Section" lineEndContext="#stay" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <WordDetect attribute="Conditional Section" context="conditionalContraint" String="INCLUDE" />
+        <WordDetect attribute="Conditional Section" context="conditionalContraint" String="IGNORE" />
+        <RegExpr attribute="Entity" context="conditionalContraint" String="%&nmtoken;;" />
+      </context>
+
+      <context name="conditionalContraint" attribute="Conditional Section" lineEndContext="#stay" fallthroughContext="#pop#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Conditional Section" context="section" char="["/>
+      </context>
+
+      <context name="section" attribute="Normal">
+        <StringDetect attribute="Conditional Section" context="#pop#pop#pop" String="]]>" endRegion="section"/>
+        <IncludeRules context="Normal"/>
+      </context>
+
+      <!-- SGML -->
       <context name="InlineComment" attribute="Comment" lineEndContext="#pop">
         <DetectSpaces />
         <Detect2Chars attribute="Comment" context="#pop" char="-" char1="-" />
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
         <DetectIdentifier />
       </context>
 
@@ -96,15 +141,16 @@
       <itemData name="String" defStyleNum="dsString" spellChecking="false" />
       <itemData name="Entity" defStyleNum="dsDecVal" spellChecking="false" />
       <itemData name="Local" defStyleNum="dsDecVal" bold="1" spellChecking="false" />
+      <itemData name="Conditional Section" defStyleNum="dsControlFlow" spellChecking="false" />
+      <itemData name="Error" defStyleNum="dsError" spellChecking="false" />
     </itemDatas>
   </highlighting>
 
   <general>
     <comments>
-      <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+      <comment name="multiLine" start="&lt;!--" end="--&gt;" region="comment" />
     </comments>
   </general>
 
 </language>
-<!-- kate: indent-width 2; indent-mode normal; tab-indents on; -->
-
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

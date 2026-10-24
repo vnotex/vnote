@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
   <!-- qualification of entities -->
-  <!ENTITY qualify     "([A-Z][a-zA-Z0-9_']*\.)*">
+  <!ENTITY qualify     "(?:[A-Z][a-zA-Z0-9_']*\.)*">
   <!-- identifier -->
   <!ENTITY ident       "[a-z][a-zA-Z0-9_']*">
   <!-- Type -->
@@ -10,7 +10,7 @@
   <!-- infix operator characters -->
   <!ENTITY infixchar   "~!@#\$&#37;\^&amp;\*\+\-=&lt;&gt;\?\./\|&backslash;:">
   <!-- identifier in prefix notation, e.g.: id, ($) -->
-  <!ENTITY prefixIdent "(&ident;|\([&infixchar;]+\))">
+  <!ENTITY prefixIdent "(?:&ident;|\([&infixchar;]+\))">
 
   <!-- Characters allowed in character escape sequence, e.g., \n -->
   <!ENTITY escSeqChar  "abfnrtv\&quot;'" >
@@ -30,7 +30,7 @@
   <!-- dashes introducing a currydoc comment -->
   <!ENTITY currydoc    "---" >
 ]>
-<language name="Curry" version="1" kateversion="5.0"
+<language name="Curry" version="4" kateversion="5.0"
           section="Sources" extensions="*.curry" mimetype="text/x-curry"
           author="Björn Peemöller (bjp@informatik.uni-kiel.de)" license="LGPL"
           indenter="haskell">
@@ -194,19 +194,19 @@
       <keyword      attribute="Prelude Function"    context="#stay"   String="Prelude Func" />
       <keyword      attribute="Prelude Type"        context="#stay"   String="Prelude Type" />
       <keyword      attribute="Prelude Constructor" context="#stay"   String="Prelude Cons" />
-      <RegExpr      attribute="Keyword"             context="Import"  String="import\s+(qualified)?" />
+      <RegExpr      attribute="Keyword"             context="Import"  String="import\s+(?:qualified)?" />
 
       <!-- Literals -->
       <Float        attribute="Float"   context="#stay"   />
-      <RegExpr      attribute="Octal"   context="#stay"   String="0(o|O)&octal;" />
+      <RegExpr      attribute="Octal"   context="#stay"   String="0[oO]&octal;" />
       <HlCHex       attribute="Hex"     context="#stay"   />
       <Int          attribute="Decimal" context="#stay"   />
       <DetectChar   attribute="Char"    context="Char"    char="'" />
       <DetectChar   attribute="String"  context="String"  char="&quot;" />
 
       <!-- Others -->
-      <RegExpr      attribute="Special Symbol"    context="#stay"   String="(::|:=|:&gt;|\-&gt;|&lt;\-|\.\.)" />
-      <RegExpr      attribute="Signature"         context="#stay"   String="\s*&prefixIdent;\s*(,\s*&prefixIdent;)*\s*(?=::[^&infixchar;])" />
+      <RegExpr      attribute="Special Symbol"    context="#stay"   String="(?:::|:=|:&gt;|\-&gt;|&lt;\-|\.\.)" />
+      <RegExpr      attribute="Signature"         context="#stay"   String="\s*&prefixIdent;\s*(?:,\s*&prefixIdent;)*\s*(?=::[^&infixchar;])" />
       <RegExpr      attribute="Function"          context="#stay"   String="&qualify;&ident;" />
       <RegExpr      attribute="Operator"          context="#stay"   String="&qualify;[&infixchar;]+" />
       <RegExpr      attribute="Type, Constructor" context="#stay"   String="&qualify;&type;" />
@@ -229,13 +229,16 @@
     <!-- Multiline comment -->
     <context name="Multiline Comment" attribute="Comment" lineEndContext="#stay" >
       <Detect2Chars attribute="Comment" context="#pop" char="-" char1="}" endRegion="Multiline Comment" />
+      <IncludeRules context="##Comments" />
     </context>
 
     <!-- Currydoc -->
     <context name="Currydoc" attribute="Currydoc" lineEndContext="#pop" />
 
     <!-- Single line comment -->
-    <context name="Comment" attribute="Comment" lineEndContext="#pop" />
+    <context name="Comment" attribute="Comment" lineEndContext="#pop">
+      <IncludeRules context="##Comments" />
+    </context>
 
     <!-- Import section -->
     <context name="Import" attribute="Normal" lineEndContext="#pop" >
@@ -261,18 +264,14 @@
     </context>
 
     <!-- Character escape sequence -->
-    <context name="CharEscape" attribute="Char" lineEndContext="#popCharSyntaxError" >
-      <AnyChar attribute="Char"         context="#popCharEnd" String="&escSeqChar;"   />
-      <RegExpr attribute="Char"         context="#popCharEnd" String="o&octal;"       />
-      <RegExpr attribute="Char"         context="#popCharEnd" String="&decimal;"      />
-      <RegExpr attribute="Char"         context="#popCharEnd" String="x&hexadecimal;" />
-      <RegExpr attribute="Char"         context="#popCharEnd" String="&escSeqCntrl;"  />
-      <RegExpr attribute="Char"         context="#popCharEnd" String="&escSeqAscii;"  />
-      <RegExpr attribute="Syntax Error" context="#popCharEnd" String="."              />
+    <context name="CharEscape" attribute="Char" lineEndContext="#pop!CharSyntaxError" >
+      <AnyChar attribute="Char"         context="#pop!CharEnd" String="&escSeqChar;"   />
+      <RegExpr attribute="Char"         context="#pop!CharEnd" String="o&octal;|&decimal;|x&hexadecimal;|&escSeqCntrl;|&escSeqAscii;" />
+      <RegExpr attribute="Syntax Error" context="#pop!CharEnd" String="."              />
     </context>
 
     <!-- Ending quote of character literal -->
-    <context name="CharEnd" attribute="Char" lineEndContext="#popCharSyntaxError" >
+    <context name="CharEnd" attribute="Char" lineEndContext="#pop!CharSyntaxError" >
       <DetectChar attribute="Char"         context="#pop#pop" char="'" />
       <RegExpr    attribute="Syntax Error" context="#stay"    String="." />
     </context>
@@ -292,18 +291,14 @@
     <!-- String escape sequence -->
     <context name="StringEscape" attribute="String" lineEndContext="StringGap" >
       <AnyChar      attribute="String Escape"  context="#pop"      String="&escSeqChar;&amp;" />
-      <RegExpr      attribute="String Escape"  context="#pop"      String="o&octal;"          />
-      <RegExpr      attribute="String Escape"  context="#pop"      String="&decimal;"         />
-      <RegExpr      attribute="String Escape"  context="#pop"      String="x&hexadecimal;"    />
-      <RegExpr      attribute="String Escape"  context="#pop"      String="&escSeqCntrl;"     />
-      <RegExpr      attribute="String Escape"  context="#pop"      String="&escSeqAscii;"     />
+      <RegExpr      attribute="String Escape"  context="#pop"      String="o&octal;|&decimal;|x&hexadecimal;|&escSeqCntrl;|&escSeqAscii;" />
       <DetectSpaces attribute="String Escape"  context="StringGap"                            />
       <RegExpr      attribute="Syntax Error"   context="#pop"      String="."                 />
     </context>
 
     <context name="StringGap" attribute="String" lineEndContext="#stay" >
       <DetectSpaces attribute="String Escape" context="#stay" />
-      <DetectChar   attribute="String Escape" context="#pop#pop#popString" char="\"      />
+      <DetectChar   attribute="String Escape" context="#pop#pop#pop!String" char="\"      />
       <DetectChar   attribute="Syntax Error"  context="#pop#pop#pop"       char="&quot;" />
       <RegExpr      attribute="Syntax Error"  context="#stay"              String="."    />
     </context>
@@ -356,9 +351,10 @@
   <general>
     <folding indentationsensitive="1"/>
     <comments>
-      <comment name="singleLine" start="--" />
+      <comment name="singleLine" start="--" position="afterwhitespace" />
       <comment name="multiLine" start="{-" end="-}" region="Multiline Comment" />
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="GlossTex" version="2" kateversion="5.0" extensions="*.gdf" section="Markup" mimetype="text/x-gdf" casesensitive="1" author="Thomas Braun(braun@physik.fu-berlin.de)" license="LGPL">
+<!DOCTYPE language>
+<language name="GlossTex" version="4" kateversion="6.22" extensions="*.gdf" section="Markup" mimetype="text/x-gdf" casesensitive="1" author="Thomas Braun(braun@physik.fu-berlin.de)" license="LGPL">
   <highlighting>
     <contexts>
       <context name="Comment" attribute="Comment" lineEndContext="#stay">

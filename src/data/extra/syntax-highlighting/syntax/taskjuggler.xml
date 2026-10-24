@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
     TaskJuggler 2.4.x syntax highlighting.
     Works for TJ 3.x., too.
@@ -11,7 +11,7 @@
 
     Licensed under the GPLv2.
 -->
-<language name="TaskJuggler" version="5" kateversion="5.0" section="Scripts" extensions="*.tjp;*.tji" license="GPLv2" author="Chris Schlaeger (chris@linux.com)">
+<language name="TaskJuggler" version="7" kateversion="5.0" section="Scripts" extensions="*.tjp;*.tji" license="GPLv2" author="Chris Schlaeger (chris@linux.com)">
 <highlighting>
     <list name="keywords">
         <item>account</item>
@@ -124,7 +124,6 @@
         <item>order</item>
         <item>overtime</item>
         <item>pathcriticalness</item>
-        <item>period</item>
         <item>period</item>
         <item>persistent</item>
         <item>precedes</item>
@@ -308,9 +307,9 @@
         <!-- Date(+Time) values -->
         <RegExpr attribute="Date" String="\d{4}-\d{2}-\d{2}\S*"/>
         <!-- Time values -->
-        <RegExpr attribute="Time" String="\d{1-2}:\d{2}(:\d{2}|)"/>
+        <RegExpr attribute="Time" String="\d{1-2}:\d{2}(?::\d{2}|)"/>
         <!-- Duration specifications --> 
-        <RegExpr attribute="Duration" String="\d(min|h|d|w|m|y)"/>
+        <RegExpr attribute="Duration" String="\d(?:min|h|d|w|m|y)"/>
 
         <!-- keywords and other builtins -->
         <keyword attribute="Builtin Function" String="builtinfuncs" context="#stay"/>
@@ -325,44 +324,32 @@
         <DetectChar attribute="Symbol" context="#stay" char="]" endRegion="Brace1" />
 
         <!-- number highlighting -->
-        <Float attribute="Float" context="Float Suffixes"/>
-        <Int attribute="Decimal" context="Int Suffixes"/>
+        <Float attribute="Float" context="#stay"/>
+        <Int attribute="Decimal" context="#stay"/>
 
         <!-- strings -->
         <DetectChar attribute="String" context="String1" char="&apos;"/>
         <DetectChar attribute="String" context="String2" char="&quot;"/>
 
         <!-- comments -->
-        <DetectChar attribute="Comment" context="Comment1" char="#"/>
-        <Detect2Chars attribute="Comment" context="Comment2" char="/" char1="*"/>
-      </context>
-
-      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-          <AnyChar String="fF" attribute="Float" context="#pop"/>
-      </context>
-
-      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-          <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+        <DetectChar attribute="Comment" context="Comment" char="#"/>
+        <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
       </context>
 
       <context attribute="String" lineEndContext="#stay" name="String1">
         <DetectChar attribute="String" context="#pop" char="&apos;"/>
+        <DetectChar attribute="String" context="StringEsc" char="\"/>
       </context>
       <context attribute="String" lineEndContext="#stay" name="String2">
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <DetectChar attribute="String" context="StringEsc" char="\"/>
       </context>
-      <context attribute="Comment" lineEndContext="#pop" name="Comment1">
-        <IncludeRules context="##Alerts" />
+      <context attribute="String" lineEndContext="#stay" name="StringEsc" fallthrough="true" fallthroughContext="#pop">
+        <AnyChar attribute="String" context="#pop" String="&quot;&apos;"/>
       </context>
-      <context attribute="Comment" lineEndContext="#stay" name="Comment2">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
     <itemDatas>
@@ -382,8 +369,8 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="#" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="singleLine" start="#" position="afterwhitespace" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
     </comments>
     <keywords casesensitive="0" />
   </general>

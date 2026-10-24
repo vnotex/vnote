@@ -1,0 +1,1370 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE language [
+    <!ENTITY identifier  "[A-Za-z_]\w*">
+    <!ENTITY datastep    "\bdata\b(?!\s*=)">
+    <!ENTITY proc_data   "\bproc\b|&datastep;">
+    <!ENTITY proc_py     "\bproc\s+python\b">
+    <!ENTITY proc_lua    "\bproc\s+lua\b">
+    <!ENTITY run_quit    "\b(?:run|quit)\s*;">
+    <!ENTITY option_name "\b&identifier;(?=\s*=)">
+    <!ENTITY submit      "\b(?:submit|interactive|i)\b[^;]*;">
+    <!ENTITY endsubmit   "\b(?:endsubmit|endinteractive)\s*;">
+]>
+<!--
+    SPDX-FileCopyrightText: 2026 Michael Walshe <michael.j.t.walshe@gmail.com>
+    SPDX-License-Identifier: MIT
+-->
+<!--
+    SAS syntax highlighting for Kate
+    Author: Michael Walshe
+    License: MIT
+
+    SAS syntax highlighting using VSCode or SAS products (Enterprise Guide, SAS Studio, DM, etc) relies on knowledge
+    of exact options & values required by every procedure/function/statement to correctly highlight only the valid
+    syntax. This is out of scope for this highlighter, which uses general heuristics (such as highlighting <option> = value
+    in options statements) combined with some common SAS keywords to cover most cases.
+ 
+    SAS Language elements implemented:
+        Comments
+            - Block comments        /* ... */
+            - Statement comments    * ... ;
+            - Macro comments        %* ... ;
+        Step boundaries
+            - DATA / RUN step regions (fold)
+            - Generic PROC step regions (fold)
+            - PROC SQL  — delegates to the SQL language definition
+            - PROC PYTHON / PROC LUA — delegates to the Python / Lua definitions
+                (SUBMIT / INTERACTIVE block triggers the embedded-language context)
+        Keywords
+            - Control flow          DO END ELSE IF SELECT THEN UNTIL WHEN WHILE ...
+            - General Statements    ARRAY ATTRIB BY FORMAT INFORMAT INPUT KEEP MERGE OUTPUT PUT RENAME RETAIN SET WHERE ...
+            - Functions             All SAS built in functions highlighted
+            - Proc options          Procedure options and settings highlighting
+            - Proc statements       Statements inside of procedures get first keyword highlighted
+            - System options        OBS NODATE MPRINT SYMBOLGEN ... active only inside the OPTIONS statement
+            - Dataset options       KEEP DROP RENAME WHERE OBS FIRSTOBS ... active only inside ( ) after a dataset name
+            - Mnemonic operators    AND OR NOT EQ NE GT LT GE LE IN BETWEEN LIKE CONTAINS ...
+            - Special/auto vars     _N_ _ERROR_ _ALL_ _NULL_  ...
+        Macro language
+            - %MACRO / %MEND, fold region + MacroDef colour
+            - %DO / %END, fold region
+            - %IF %THEN, other %keywords
+            - Macro variable refs  &name  &&name. etc
+            - User-defined macro calls  %name(...) 
+        Literals
+            - Double and single-quoted strings
+            - Date/datetime/time string suffixes  "..."d  "..."dt  "..."t
+                coloured as Number to distinguish them from plain strings
+            - Bitmask / namelit / hex suffixes    "..."b  "..."n  "..."x
+                coloured as String, matching SAS EG style highlighting
+            - Integer, floating-point, Hex numbers, scientific notation
+            - SAS format/informat tokens DATE9.  COMMA12.2  $CHAR20., ...
+        Operators
+            - + - * / ** = ^= ~= >= <= <> >< || =: >: <: ^=: ~=: >=: <=: ||
+        Inline data blocks
+            - CARDS / DATALINES / LINES — terminated by lone ;
+            - CARDS4 / DATALINES4 / LINES4 — terminated by ;;;;1
+            - PARMCARDS / PARMCARDS4
+-->
+<language
+    name="SAS" 
+    section="Scientific"
+    extensions="*.sas;*.SAS;*.Sas"
+    casesensitive="false"
+    author="Michael Walshe (michael.j.t.walshe@gmail.com)"
+    license="MIT"
+    version="1"
+    kateversion="5.79"
+>
+    <highlighting>
+        <!-- ====
+        	Keyword Lists
+        	 ==== -->
+        <!-- Data Step control-flow words -->
+        <list name="controls">
+            <item>BY</item>
+            <item>DO</item>
+            <item>ELSE</item>
+            <item>END</item>
+            <item>GOTO</item>
+            <item>IF</item>
+            <item>LINK</item>
+            <item>OTHERWISE</item>
+            <item>SELECT</item>
+            <item>THEN</item>
+            <item>TO</item>
+            <item>UNTIL</item>
+            <item>WHEN</item>
+            <item>WHILE</item>
+        </list>
+        <!-- Mnemonic / word operators -->
+        <list name="operators-word">
+            <item>AND</item>
+            <item>BETWEEN</item>
+            <item>CONTAINS</item>
+            <item>EQ</item>
+            <item>EQT</item>
+            <item>GE</item>
+            <item>GET</item>
+            <item>GT</item>
+            <item>IN</item>
+            <item>IS</item>
+            <item>LE</item>
+            <item>LET</item>
+            <item>LIKE</item>
+            <item>LT</item>
+            <item>NE</item>
+            <item>NET</item>
+            <item>NOT</item>
+            <item>OR</item>
+            <item>SAME</item>
+            <item>ALSO</item>
+        </list>
+        <!-- SAS automatic / special variables -->
+        <list name="constants">
+            <item>_ALL_</item>
+            <item>_BLANKPAGE_</item>
+            <item>_CHARACTER_</item>
+            <item>_ERROR_</item>
+            <item>_FILE_</item>
+            <item>_INFILE_</item>
+            <item>_IORC_</item>
+            <item>_MRG_</item>
+            <item>_NULL_</item>
+            <item>_NUMERIC_</item>
+            <item>_N_</item>
+            <item>_PAGE_</item>
+            <item>_TEMPORARY_</item>
+        </list>
+        <!-- Global SAS statements -->
+        <list name="keywords">
+            <item>AXIS</item>
+            <item>CAS</item>
+            <item>CASLIB</item>
+            <item>CATNAME</item>
+            <item>DECLARE</item>
+            <item>ENDRSUBMIT</item>
+            <item>ENDSAS</item>
+            <item>FILENAME</item>
+            <item>FOOTNOTE</item>
+            <item>GOPTIONS</item>
+            <item>KILLTASK</item>
+            <item>LEGEND</item>
+            <item>LIBNAME</item>
+            <item>LISTTASK</item>
+            <item>LOCK</item>
+            <item>MISSING</item>
+            <item>ODS</item>
+            <item>PAGE</item>
+            <item>PATTERN</item>
+            <item>PROCEDURE</item>
+            <item>RESETLINE</item>
+            <item>RGET</item>
+            <item>RSPT</item>
+            <item>RSUBMIT</item>
+            <item>SASFILE</item>
+            <item>SIGNOFF</item>
+            <item>SIGNON</item>
+            <item>SKIP</item>
+            <item>SYMBOL</item>
+            <item>SYSECHO</item>
+            <item>SYSTASK</item>
+            <item>TITLE</item>
+            <item>TRANTAB</item>
+            <item>WAITFOR</item>
+        </list>
+        <!-- DATA step statement keywords (active only inside a DATA step) -->
+        <list name="datastep-keywords">
+            <item>ABORT</item>
+            <item>ARRAY</item>
+            <item>ATTRIB</item>
+            <item>BY</item>
+            <item>CALL</item>
+            <item>CONTINUE</item>
+            <item>DELETE</item>
+            <item>DESCRIBE</item>
+            <item>DROP</item>
+            <item>ERROR</item>
+            <item>EXECUTE</item>
+            <item>FILE</item>
+            <item>FORMAT</item>
+            <item>INFILE</item>
+            <item>INFORMAT</item>
+            <item>INPUT</item>
+            <item>KEEP</item>
+            <item>LABEL</item>
+            <item>LEAVE</item>
+            <item>LENGTH</item>
+            <item>LIST</item>
+            <item>LOSTCARD</item>
+            <item>MERGE</item>
+            <item>MODIFY</item>
+            <item>OUTPUT</item>
+            <item>PUT</item>
+            <item>PUTLOG</item>
+            <item>REDIRECT</item>
+            <item>REMOVE</item>
+            <item>RENAME</item>
+            <item>REPLACE</item>
+            <item>RETAIN</item>
+            <item>RETURN</item>
+            <item>SET</item>
+            <item>STOP</item>
+            <item>UPDATE</item>
+            <item>WHERE</item>
+        </list>
+        <!-- Macro statements, excluding %macro/%mend/%do/%end for folding -->
+        <list name="macros">
+            <item>%ABORT</item>
+            <item>%COMPSTOR</item>
+            <item>%COPY</item>
+            <item>%DISPLAY</item>
+            <item>%DQLOAD</item>
+            <item>%DQPUTLOC</item>
+            <item>%DQUNLOAD</item>
+            <item>%ELSE</item>
+            <item>%GLOBAL</item>
+            <item>%GOTO</item>
+            <item>%IF</item>
+            <item>%INC</item>
+            <item>%INCLUDE</item>
+            <item>%INPUT</item>
+            <item>%LABEL</item>
+            <item>%LET</item>
+            <item>%LIST</item>
+            <item>%LOCAL</item>
+            <item>%PUT</item>
+            <item>%RETURN</item>
+            <item>%RUN</item>
+            <item>%SYMDEL</item>
+            <item>%SYSMACDELETE</item>
+            <item>%SYSMACEXEC</item>
+            <item>%SYSEXEC</item>
+            <item>%THEN</item>
+            <item>%TO</item>
+            <item>%TPLOT</item>
+            <item>%UNTIL</item>
+            <item>%WHILE</item>
+            <item>%WINDOW</item>
+        </list>
+        <!-- Dataset options used inside (...) after dataset names -->
+        <list name="dataset-options">
+            <item>ALTER</item>
+            <item>APPEND</item>
+            <item>BUFNO</item>
+            <item>BUFSIZE</item>
+            <item>CASLIB</item>
+            <item>CNTLLEV</item>
+            <item>COMPRESS</item>
+            <item>COPIES</item>
+            <item>DATALIMIT</item>
+            <item>DLDMGACTION</item>
+            <item>DROP</item>
+            <item>DUPLICATE</item>
+            <item>ENCODING</item>
+            <item>ENCRYPT</item>
+            <item>ENCRYPTKEY</item>
+            <item>EOC</item>
+            <item>EXTENDOBSCOUNTER</item>
+            <item>FILECLOSE</item>
+            <item>FIRSTOBS</item>
+            <item>GENMAX</item>
+            <item>GENNUM</item>
+            <item>IDXNAME</item>
+            <item>IDXWHERE</item>
+            <item>IN</item>
+            <item>INDEX</item>
+            <item>KEEP</item>
+            <item>LABEL</item>
+            <item>MEMTYPE</item>
+            <item>OBS</item>
+            <item>OBSBUF</item>
+            <item>ONDEMAND</item>
+            <item>ORDERBY</item>
+            <item>OUTREP</item>
+            <item>PARTITION</item>
+            <item>POINTOBS</item>
+            <item>PROMOTE</item>
+            <item>PW</item>
+            <item>PWREQ</item>
+            <item>READ</item>
+            <item>READTRANSFERSIZE</item>
+            <item>RENAME</item>
+            <item>REPEMPTY</item>
+            <item>REPLACE</item>
+            <item>REUSE</item>
+            <item>ROLE</item>
+            <item>RTS</item>
+            <item>SCRIPT</item>
+            <item>SGIO</item>
+            <item>SORTEDBY</item>
+            <item>SPILL</item>
+            <item>TAG</item>
+            <item>TEMPEXPRESS</item>
+            <item>TEMPNAMES</item>
+            <item>TOBSNO</item>
+            <item>TRANSCODE_FAIL</item>
+            <item>TRANTAB</item>
+            <item>TYPE</item>
+            <item>WHERE</item>
+            <item>WHEREUP</item>
+            <item>WRITE</item>
+            <item>WRITETRANSFERSIZE</item>
+        </list>
+        <!-- Built-in SAS functions -->
+        <list name="functions">
+            <item>ABS</item>
+            <item>ADDMATRIX</item>
+            <item>ADDR</item>
+            <item>ADDRLONG</item>
+            <item>ADDROW</item>
+            <item>ADD_TABLE_ATTR</item>
+            <item>AIRY</item>
+            <item>ALLCOMB</item>
+            <item>ALLCOMBI</item>
+            <item>ALLPERM</item>
+            <item>ANYALNUM</item>
+            <item>ANYALPHA</item>
+            <item>ANYCNTRL</item>
+            <item>ANYDIGIT</item>
+            <item>ANYFIRST</item>
+            <item>ANYGRAPH</item>
+            <item>ANYLOWER</item>
+            <item>ANYNAME</item>
+            <item>ANYPRINT</item>
+            <item>ANYPUNCT</item>
+            <item>ANYSPACE</item>
+            <item>ANYUPPER</item>
+            <item>ANYXDIGIT</item>
+            <item>ARCOS</item>
+            <item>ARCOSH</item>
+            <item>ARMCONV</item>
+            <item>ARMEND</item>
+            <item>ARMGTID</item>
+            <item>ARMINIT</item>
+            <item>ARMJOIN</item>
+            <item>ARMPROC</item>
+            <item>ARMSTOP</item>
+            <item>ARMSTRT</item>
+            <item>ARMUPDT</item>
+            <item>ARSIN</item>
+            <item>ARSINH</item>
+            <item>ARTANH</item>
+            <item>ASCEBC</item>
+            <item>ATAN</item>
+            <item>ATAN2</item>
+            <item>ATTRC</item>
+            <item>ATTRN</item>
+            <item>BAND</item>
+            <item>BETA</item>
+            <item>BETAINV</item>
+            <item>BLACKCLPRC</item>
+            <item>BLACKPTPRC</item>
+            <item>BLKSHCLPRC</item>
+            <item>BLKSHPTPRC</item>
+            <item>BLSHIFT</item>
+            <item>BNOT</item>
+            <item>BOR</item>
+            <item>BQUOTE</item>
+            <item>BRSHIFT</item>
+            <item>BXOR</item>
+            <item>BYTE</item>
+            <item>CAT</item>
+            <item>CATQ</item>
+            <item>CATS</item>
+            <item>CATT</item>
+            <item>CATX</item>
+            <item>CDF</item>
+            <item>CEIL</item>
+            <item>CEILZ</item>
+            <item>CEXIST</item>
+            <item>CHAR</item>
+            <item>CHOL</item>
+            <item>CHOOSEC</item>
+            <item>CHOOSEN</item>
+            <item>CINV</item>
+            <item>CLIBEXIST</item>
+            <item>CLOSE</item>
+            <item>CMISS</item>
+            <item>CMPRES</item>
+            <item>CNONCT</item>
+            <item>COALESCE</item>
+            <item>COALESCEC</item>
+            <item>COLLATE</item>
+            <item>COMB</item>
+            <item>COMPANION_NEXT</item>
+            <item>COMPARE</item>
+            <item>COMPBL</item>
+            <item>COMPCOST</item>
+            <item>COMPFUZZ</item>
+            <item>COMPGED</item>
+            <item>COMPLEV</item>
+            <item>COMPOUND</item>
+            <item>COMPRESS</item>
+            <item>COMPSTOR</item>
+            <item>CONSTANT</item>
+            <item>CONVX</item>
+            <item>CONVXP</item>
+            <item>COS</item>
+            <item>COSH</item>
+            <item>COT</item>
+            <item>COUNT</item>
+            <item>COUNTC</item>
+            <item>COUNTW</item>
+            <item>CSC</item>
+            <item>CSS</item>
+            <item>CUMIPMT</item>
+            <item>CUMPRINC</item>
+            <item>CUROBS</item>
+            <item>CV</item>
+            <item>DACCDB</item>
+            <item>DACCDBSL</item>
+            <item>DACCSL</item>
+            <item>DACCSYD</item>
+            <item>DACCTAB</item>
+            <item>DAIRY</item>
+            <item>DATATYP</item>
+            <item>DATDIF</item>
+            <item>DATE</item>
+            <item>DATEJUL</item>
+            <item>DATEPART</item>
+            <item>DATETIME</item>
+            <item>DAY</item>
+            <item>DCLOSE</item>
+            <item>DCREATE</item>
+            <item>DEFINE</item>
+            <item>DEPDB</item>
+            <item>DEPDBSL</item>
+            <item>DEPSL</item>
+            <item>DEPSYD</item>
+            <item>DEPTAB</item>
+            <item>DEQUOTE</item>
+            <item>DET</item>
+            <item>DEVIANCE</item>
+            <item>DHMS</item>
+            <item>DICTIONARY</item>
+            <item>DIF</item>
+            <item>DIGAMMA</item>
+            <item>DIM</item>
+            <item>DINFO</item>
+            <item>DISCARD</item>
+            <item>DIVIDE</item>
+            <item>DNUM</item>
+            <item>DOPEN</item>
+            <item>DOPTNAME</item>
+            <item>DOPTNUM</item>
+            <item>DOSUBL</item>
+            <item>DQCASE</item>
+            <item>DQGENDER</item>
+            <item>DQGENDERINFOGET</item>
+            <item>DQGENDERPARSED</item>
+            <item>DQIDENTIFY</item>
+            <item>DQLOCALEGUESS</item>
+            <item>DQLOCALEINFOGET</item>
+            <item>DQLOCALEINFOLIST</item>
+            <item>DQMATCH</item>
+            <item>DQMATCHINFOGET</item>
+            <item>DQMATCHPARSED</item>
+            <item>DQPARSE</item>
+            <item>DQPARSEINFOGET</item>
+            <item>DQPARSETOKENGET</item>
+            <item>DQPARSETOKENPUT</item>
+            <item>DQPATTERN</item>
+            <item>DQSCHEMEAPPLY</item>
+            <item>DQSRVARCHJOB</item>
+            <item>DQSRVCOPYLOG</item>
+            <item>DQSRVDELETELOG</item>
+            <item>DQSRVJOBSTATUS</item>
+            <item>DQSRVKILLJOB</item>
+            <item>DQSRVPROFJOBFILE</item>
+            <item>DQSRVPROFJOBREP</item>
+            <item>DQSRVUSER</item>
+            <item>DQSTANDARDIZE</item>
+            <item>DQTOKEN</item>
+            <item>DREAD</item>
+            <item>DROPNOTE</item>
+            <item>DSNAME</item>
+            <item>DSNCATLGD</item>
+            <item>DUR</item>
+            <item>DURP</item>
+            <item>DYNAMIC_ARRAY</item>
+            <item>EBCASC</item>
+            <item>EFFRATE</item>
+            <item>ELEMMULT</item>
+            <item>ENTRY_FIRST</item>
+            <item>ENTRY_NEXT</item>
+            <item>ENVLEN</item>
+            <item>ERF</item>
+            <item>ERFC</item>
+            <item>EUCLID</item>
+            <item>EVAL</item>
+            <item>EXECUTE</item>
+            <item>EXIST</item>
+            <item>EXISTS</item>
+            <item>EXP</item>
+            <item>EXPMATRIX</item>
+            <item>FACT</item>
+            <item>FAPPEND</item>
+            <item>FCLOSE</item>
+            <item>FCOL</item>
+            <item>FCOPY</item>
+            <item>FDELETE</item>
+            <item>FETCH</item>
+            <item>FETCHOBS</item>
+            <item>FEXIST</item>
+            <item>FGET</item>
+            <item>FILEATTR</item>
+            <item>FILEEXIST</item>
+            <item>FILENAME</item>
+            <item>FILEREF</item>
+            <item>FILLMATRIX</item>
+            <item>FINANCE</item>
+            <item>FIND</item>
+            <item>FINDC</item>
+            <item>FINDFILE</item>
+            <item>FINDTABLE</item>
+            <item>FINDW</item>
+            <item>FINFO</item>
+            <item>FINV</item>
+            <item>FIPNAME</item>
+            <item>FIPNAMEL</item>
+            <item>FIPSTATE</item>
+            <item>FIRST</item>
+            <item>FLOOR</item>
+            <item>FLOORZ</item>
+            <item>FMTINFO</item>
+            <item>FNONCT</item>
+            <item>FNOTE</item>
+            <item>FOPEN</item>
+            <item>FOPTNAME</item>
+            <item>FOPTNUM</item>
+            <item>FPOINT</item>
+            <item>FPOS</item>
+            <item>FPUT</item>
+            <item>FREAD</item>
+            <item>FREWIND</item>
+            <item>FRLEN</item>
+            <item>FSEP</item>
+            <item>FUZZ</item>
+            <item>FWRITE</item>
+            <item>GAMINV</item>
+            <item>GAMMA</item>
+            <item>GARKHCLPRC</item>
+            <item>GARKHPTPRC</item>
+            <item>GCD</item>
+            <item>GEODIST</item>
+            <item>GEOMEAN</item>
+            <item>GEOMEANZ</item>
+            <item>GETCASURL</item>
+            <item>GETDVI</item>
+            <item>GETJPI</item>
+            <item>GETLCASLIB</item>
+            <item>GETLOG</item>
+            <item>GETLSESSREF</item>
+            <item>GETLTAG</item>
+            <item>GETMSG</item>
+            <item>GETOPTION</item>
+            <item>GETQUOTA</item>
+            <item>GETSESSOPT</item>
+            <item>GETSYM</item>
+            <item>GETTERM</item>
+            <item>GETVARC</item>
+            <item>GETVARN</item>
+            <item>GITFN_CLONE</item>
+            <item>GITFN_COMMIT</item>
+            <item>GITFN_COMMITFREE</item>
+            <item>GITFN_COMMIT_GET</item>
+            <item>GITFN_COMMIT_LOG</item>
+            <item>GITFN_CO_BRANCH</item>
+            <item>GITFN_DEL_REPO</item>
+            <item>GITFN_DIFF</item>
+            <item>GITFN_DIFF_FREE</item>
+            <item>GITFN_DIFF_GET</item>
+            <item>GITFN_DIFF_IDX_F</item>
+            <item>GITFN_IDX_ADD</item>
+            <item>GITFN_IDX_REMOVE</item>
+            <item>GITFN_MRG_BRANCH</item>
+            <item>GITFN_NEW_BRANCH</item>
+            <item>GITFN_PULL</item>
+            <item>GITFN_PUSH</item>
+            <item>GITFN_RESET</item>
+            <item>GITFN_RESET_FILE</item>
+            <item>GITFN_STATUS</item>
+            <item>GITFN_STATUSFREE</item>
+            <item>GITFN_STATUS_GET</item>
+            <item>GITFN_VERSION</item>
+            <item>GRAYCODE</item>
+            <item>GRDSVC_ENABLE</item>
+            <item>GRDSVC_GETADDR</item>
+            <item>GRDSVC_GETINFO</item>
+            <item>GRDSVC_GETNAME</item>
+            <item>GRDSVC_NNODES</item>
+            <item>HARMEAN</item>
+            <item>HARMEANZ</item>
+            <item>HASHING</item>
+            <item>HASHING_FILE</item>
+            <item>HASHING_HMAC</item>
+            <item>HASHING_HMAC_FILE</item>
+            <item>HASHING_HMAC_INIT</item>
+            <item>HASHING_INIT</item>
+            <item>HASHING_PART</item>
+            <item>HASHING_TERM</item>
+            <item>HBOUND</item>
+            <item>HMS</item>
+            <item>HOLIDAY</item>
+            <item>HOLIDAYCK</item>
+            <item>HOLIDAYCOUNT</item>
+            <item>HOLIDAYNAME</item>
+            <item>HOLIDAYNX</item>
+            <item>HOLIDAYNY</item>
+            <item>HOLIDAYTEST</item>
+            <item>HOUR</item>
+            <item>HTMLDECODE</item>
+            <item>HTMLENCODE</item>
+            <item>IBESSEL</item>
+            <item>IDENTITY</item>
+            <item>IFC</item>
+            <item>IFN</item>
+            <item>INDEX</item>
+            <item>INDEXC</item>
+            <item>INDEXW</item>
+            <item>INPUT</item>
+            <item>INPUTC</item>
+            <item>INPUTN</item>
+            <item>INSERT_CATALOG</item>
+            <item>INSERT_DATASET</item>
+            <item>INSERT_FDB</item>
+            <item>INSERT_FILE</item>
+            <item>INSERT_HTML</item>
+            <item>INSERT_MDDB</item>
+            <item>INSERT_PACKAGE</item>
+            <item>INSERT_REF</item>
+            <item>INSERT_SQLVIEW</item>
+            <item>INSERT_VIEWER</item>
+            <item>INT</item>
+            <item>INTCINDEX</item>
+            <item>INTCK</item>
+            <item>INTCYCLE</item>
+            <item>INTFIT</item>
+            <item>INTFMT</item>
+            <item>INTGET</item>
+            <item>INTINDEX</item>
+            <item>INTNEST</item>
+            <item>INTNX</item>
+            <item>INTRR</item>
+            <item>INTSEAS</item>
+            <item>INTSHIFT</item>
+            <item>INTTEST</item>
+            <item>INTZ</item>
+            <item>INV</item>
+            <item>INVCDF</item>
+            <item>INVERSE</item>
+            <item>IORCMSG</item>
+            <item>IPMT</item>
+            <item>IQR</item>
+            <item>IRR</item>
+            <item>IS8601_CONVERT</item>
+            <item>ISARRAY</item>
+            <item>ISBLOB</item>
+            <item>ISDICTIONARY</item>
+            <item>ISDOUBLE</item>
+            <item>ISINTEGER</item>
+            <item>ISLIST</item>
+            <item>ISNULL</item>
+            <item>ISSTRING</item>
+            <item>ISTABLE</item>
+            <item>ISTYPE</item>
+            <item>JBESSEL</item>
+            <item>JSONPP</item>
+            <item>JULDATE</item>
+            <item>JULDATE7</item>
+            <item>KCOMPARE</item>
+            <item>KCOMPRESS</item>
+            <item>KCOUNT</item>
+            <item>KINDEX</item>
+            <item>KINDEXC</item>
+            <item>KLEFT</item>
+            <item>KLENGTH</item>
+            <item>KLOWCASE</item>
+            <item>KREVERSE</item>
+            <item>KRIGHT</item>
+            <item>KSCAN</item>
+            <item>KSUBSTR</item>
+            <item>KSUBSTRB</item>
+            <item>KTRANSLATE</item>
+            <item>KTRIM</item>
+            <item>KTRUNCATE</item>
+            <item>KUPCASE</item>
+            <item>KUPDATE</item>
+            <item>KUPDATEB</item>
+            <item>KURTOSIS</item>
+            <item>KVERIFY</item>
+            <item>LABEL</item>
+            <item>LAG</item>
+            <item>LARGEST</item>
+            <item>LBOUND</item>
+            <item>LCM</item>
+            <item>LCOMB</item>
+            <item>LEFT</item>
+            <item>LENGTH</item>
+            <item>LENGTHC</item>
+            <item>LENGTHM</item>
+            <item>LENGTHN</item>
+            <item>LEXCOMB</item>
+            <item>LEXCOMBI</item>
+            <item>LEXPERK</item>
+            <item>LEXPERM</item>
+            <item>LFACT</item>
+            <item>LGAMMA</item>
+            <item>LIBNAME</item>
+            <item>LIBREF</item>
+            <item>LIMMOMENT</item>
+            <item>LOG</item>
+            <item>LOG10</item>
+            <item>LOG1PX</item>
+            <item>LOG2</item>
+            <item>LOGBETA</item>
+            <item>LOGCDF</item>
+            <item>LOGISTIC</item>
+            <item>LOGPDF</item>
+            <item>LOGSDF</item>
+            <item>LOWCASE</item>
+            <item>LPERM</item>
+            <item>LPNORM</item>
+            <item>MAD</item>
+            <item>MARGRCLPRC</item>
+            <item>MARGRPTPRC</item>
+            <item>MAX</item>
+            <item>MD5</item>
+            <item>MDY</item>
+            <item>MEAN</item>
+            <item>MEDIAN</item>
+            <item>MIN</item>
+            <item>MINUTE</item>
+            <item>MISSING</item>
+            <item>MOD</item>
+            <item>MODEXIST</item>
+            <item>MODULE</item>
+            <item>MODULEC</item>
+            <item>MODULEN</item>
+            <item>MODZ</item>
+            <item>MONTH</item>
+            <item>MOPEN</item>
+            <item>MORT</item>
+            <item>MSPLINT</item>
+            <item>MULT</item>
+            <item>MVALID</item>
+            <item>N</item>
+            <item>NETPV</item>
+            <item>NEWTABLE</item>
+            <item>NLITERAL</item>
+            <item>NMISS</item>
+            <item>NODENAME</item>
+            <item>NOMRATE</item>
+            <item>NORMAL</item>
+            <item>NOTALNUM</item>
+            <item>NOTALPHA</item>
+            <item>NOTCNTRL</item>
+            <item>NOTDIGIT</item>
+            <item>NOTE</item>
+            <item>NOTFIRST</item>
+            <item>NOTGRAPH</item>
+            <item>NOTLOWER</item>
+            <item>NOTNAME</item>
+            <item>NOTPRINT</item>
+            <item>NOTPUNCT</item>
+            <item>NOTSPACE</item>
+            <item>NOTUPPER</item>
+            <item>NOTXDIGIT</item>
+            <item>NPV</item>
+            <item>NRBQUOTE</item>
+            <item>NRQUOTE</item>
+            <item>NRSTR</item>
+            <item>NVALID</item>
+            <item>NWKDOM</item>
+            <item>OPEN</item>
+            <item>ORDINAL</item>
+            <item>PACKAGE_BEGIN</item>
+            <item>PACKAGE_DESTROY</item>
+            <item>PACKAGE_END</item>
+            <item>PACKAGE_FIRST</item>
+            <item>PACKAGE_NEXT</item>
+            <item>PACKAGE_PUBLISH</item>
+            <item>PACKAGE_TERM</item>
+            <item>PATHNAME</item>
+            <item>PCTL</item>
+            <item>PDF</item>
+            <item>PEEK</item>
+            <item>PEEKC</item>
+            <item>PEEKCLONG</item>
+            <item>PEEKLONG</item>
+            <item>PERM</item>
+            <item>PMF</item>
+            <item>PMT</item>
+            <item>POINT</item>
+            <item>POISSON</item>
+            <item>POKE</item>
+            <item>POKELONG</item>
+            <item>POWER</item>
+            <item>PPMT</item>
+            <item>PRINTTABLE</item>
+            <item>PROBBETA</item>
+            <item>PROBBNML</item>
+            <item>PROBBNRM</item>
+            <item>PROBCHI</item>
+            <item>PROBF</item>
+            <item>PROBGAM</item>
+            <item>PROBHYPR</item>
+            <item>PROBIT</item>
+            <item>PROBMC</item>
+            <item>PROBMED</item>
+            <item>PROBNEGB</item>
+            <item>PROBNORM</item>
+            <item>PROBT</item>
+            <item>PROPCASE</item>
+            <item>PRXCHANGE</item>
+            <item>PRXDEBUG</item>
+            <item>PRXFREE</item>
+            <item>PRXMATCH</item>
+            <item>PRXNEXT</item>
+            <item>PRXPAREN</item>
+            <item>PRXPARSE</item>
+            <item>PRXPOSN</item>
+            <item>PRXSUBSTR</item>
+            <item>PTRLONGADD</item>
+            <item>PUT</item>
+            <item>PUTC</item>
+            <item>PUTLOG</item>
+            <item>PUTN</item>
+            <item>PUTSYM</item>
+            <item>PVP</item>
+            <item>QCMPRES</item>
+            <item>QLEFT</item>
+            <item>QLOWCASE</item>
+            <item>QSCAN</item>
+            <item>QSUBSTR</item>
+            <item>QSYSFUNC</item>
+            <item>QTR</item>
+            <item>QTRIM</item>
+            <item>QUANTILE</item>
+            <item>QUOTE</item>
+            <item>QUPCASE</item>
+            <item>RANBIN</item>
+            <item>RANCAU</item>
+            <item>RANCOMB</item>
+            <item>RAND</item>
+            <item>RANEXP</item>
+            <item>RANGAM</item>
+            <item>RANGE</item>
+            <item>RANK</item>
+            <item>RANNOR</item>
+            <item>RANPERK</item>
+            <item>RANPERM</item>
+            <item>RANPOI</item>
+            <item>RANTBL</item>
+            <item>RANTRI</item>
+            <item>RANUNI</item>
+            <item>READPATH</item>
+            <item>READ_ARRAY</item>
+            <item>RENAME</item>
+            <item>REPEAT</item>
+            <item>RESOLVE</item>
+            <item>RETRIEVE_CATALOG</item>
+            <item>RETRIEVE_DATASET</item>
+            <item>RETRIEVE_FDB</item>
+            <item>RETRIEVE_FILE</item>
+            <item>RETRIEVE_HTML</item>
+            <item>RETRIEVE_MDDB</item>
+            <item>RETRIEVE_NESTED</item>
+            <item>RETRIEVE_PACKAGE</item>
+            <item>RETRIEVE_REF</item>
+            <item>RETRIEVE_SQLVIEW</item>
+            <item>RETRIEVE_VIEWER</item>
+            <item>REVERSE</item>
+            <item>REWIND</item>
+            <item>RIGHT</item>
+            <item>RMS</item>
+            <item>ROUND</item>
+            <item>ROUNDE</item>
+            <item>ROUNDZ</item>
+            <item>RUN_MACRO</item>
+            <item>RUN_SASFILE</item>
+            <item>RXCHANGE</item>
+            <item>RXFREE</item>
+            <item>RXSUBSTR</item>
+            <item>SAVING</item>
+            <item>SAVINGS</item>
+            <item>SCAN</item>
+            <item>SCANQ</item>
+            <item>SDF</item>
+            <item>SEC</item>
+            <item>SECOND</item>
+            <item>SESSFOUND</item>
+            <item>SESSIONS</item>
+            <item>SET</item>
+            <item>SETNULL</item>
+            <item>SETTERM</item>
+            <item>SHA256</item>
+            <item>SHA256HEX</item>
+            <item>SHA256HMACHEX</item>
+            <item>SIGN</item>
+            <item>SIN</item>
+            <item>SINH</item>
+            <item>SKEWNESS</item>
+            <item>SLEEP</item>
+            <item>SMALLEST</item>
+            <item>SOAPWEB</item>
+            <item>SOAPWEBMETA</item>
+            <item>SOAPWIPSERVICE</item>
+            <item>SOAPWIPSRS</item>
+            <item>SOAPWS</item>
+            <item>SOAPWSMETA</item>
+            <item>SOFTMAX</item>
+            <item>SOLVE</item>
+            <item>SORT</item>
+            <item>SORTC</item>
+            <item>SORTN</item>
+            <item>SORT_REV</item>
+            <item>SOUNDEX</item>
+            <item>SPEDIS</item>
+            <item>SQRT</item>
+            <item>SQUANTILE</item>
+            <item>STD</item>
+            <item>STDERR</item>
+            <item>STDIZE</item>
+            <item>STFIPS</item>
+            <item>STNAME</item>
+            <item>STNAMEL</item>
+            <item>STR</item>
+            <item>STREAMINIT</item>
+            <item>STRIP</item>
+            <item>STRUCTINDEX</item>
+            <item>SUBPAD</item>
+            <item>SUBSTR</item>
+            <item>SUBSTRN</item>
+            <item>SUBTRACTMATRIX</item>
+            <item>SUM</item>
+            <item>SUMABS</item>
+            <item>SUPERQ</item>
+            <item>SYMEXIST</item>
+            <item>SYMGET</item>
+            <item>SYMGLOBL</item>
+            <item>SYMLOCAL</item>
+            <item>SYMPUT</item>
+            <item>SYMPUTX</item>
+            <item>SYSEVALF</item>
+            <item>SYSEXIST</item>
+            <item>SYSFUNC</item>
+            <item>SYSGET</item>
+            <item>SYSMSG</item>
+            <item>SYSPARM</item>
+            <item>SYSPROCESSID</item>
+            <item>SYSPROCESSNAME</item>
+            <item>SYSPROD</item>
+            <item>SYSRC</item>
+            <item>SYSTEM</item>
+            <item>TABCOLUMNS</item>
+            <item>TABTYPES</item>
+            <item>TAN</item>
+            <item>TANH</item>
+            <item>TERMIN</item>
+            <item>TERMOUT</item>
+            <item>TIME</item>
+            <item>TIMEPART</item>
+            <item>TIMEVALUE</item>
+            <item>TINV</item>
+            <item>TNONCT</item>
+            <item>TODAY</item>
+            <item>TRACEBACK</item>
+            <item>TRANSLATE</item>
+            <item>TRANSPOSE</item>
+            <item>TRANSTRN</item>
+            <item>TRANWRD</item>
+            <item>TRIGAMMA</item>
+            <item>TRIM</item>
+            <item>TRIMN</item>
+            <item>TRUNC</item>
+            <item>TSO</item>
+            <item>TTCLOSE</item>
+            <item>TTCONTRL</item>
+            <item>TTOPEN</item>
+            <item>TTREAD</item>
+            <item>TTWRITE</item>
+            <item>TYPEOF</item>
+            <item>TZID</item>
+            <item>TZONEID</item>
+            <item>TZONENAME</item>
+            <item>TZONEOFF</item>
+            <item>TZONES2U</item>
+            <item>TZONEU2S</item>
+            <item>UNIFORM</item>
+            <item>UNQUOTE</item>
+            <item>UPCASE</item>
+            <item>URLDECODE</item>
+            <item>URLENCODE</item>
+            <item>USS</item>
+            <item>UUIDGEN</item>
+            <item>VAR</item>
+            <item>VARFMT</item>
+            <item>VARINFMT</item>
+            <item>VARLABEL</item>
+            <item>VARLEN</item>
+            <item>VARNAME</item>
+            <item>VARNUM</item>
+            <item>VARRAY</item>
+            <item>VARRAYX</item>
+            <item>VARTYPE</item>
+            <item>VERIFY</item>
+            <item>VFORMAT</item>
+            <item>VFORMATD</item>
+            <item>VFORMATDX</item>
+            <item>VFORMATN</item>
+            <item>VFORMATNX</item>
+            <item>VFORMATW</item>
+            <item>VFORMATWX</item>
+            <item>VFORMATX</item>
+            <item>VINARRAY</item>
+            <item>VINARRAYX</item>
+            <item>VINFORMAT</item>
+            <item>VINFORMATD</item>
+            <item>VINFORMATDX</item>
+            <item>VINFORMATN</item>
+            <item>VINFORMATNX</item>
+            <item>VINFORMATW</item>
+            <item>VINFORMATWX</item>
+            <item>VINFORMATX</item>
+            <item>VLABEL</item>
+            <item>VLABELX</item>
+            <item>VLENGTH</item>
+            <item>VLENGTHX</item>
+            <item>VMS</item>
+            <item>VNAME</item>
+            <item>VNAMEX</item>
+            <item>VNEXT</item>
+            <item>VTYPE</item>
+            <item>VTYPEX</item>
+            <item>VVALUE</item>
+            <item>VVALUEX</item>
+            <item>WEEK</item>
+            <item>WEEKDAY</item>
+            <item>WHICHC</item>
+            <item>WHICHN</item>
+            <item>WRITE_ARRAY</item>
+            <item>WTO</item>
+            <item>YEAR</item>
+            <item>YIELDP</item>
+            <item>YRDIF</item>
+            <item>YYQ</item>
+            <item>ZEROMATRIX</item>
+            <item>ZIPCITY</item>
+            <item>ZIPCITYDISTANCE</item>
+            <item>ZIPFIPS</item>
+            <item>ZIPNAME</item>
+            <item>ZIPNAMEL</item>
+            <item>ZIPSTATE</item>
+        </list>
+        <contexts>
+            <!-- ====
+            	Init - default file-start for comments (ensure statement comment). Fall through to Normal
+            	 ==== -->
+            <context attribute="Normal Text" name="Init" lineEndContext="#stay" fallthroughContext="Normal">
+                <IncludeRules context="Statement"/>
+            </context>
+            <!-- ====
+            	General - highlighting context rules for e.g. macros,
+            	strings, numbers, without proc/data keywords, used via
+            	IncludeRule
+            	 ==== -->
+            <context attribute="Normal Text" name="General" lineEndContext="#stay">
+                <!-- Intra-statement comments, handle statement comments via Statement context -->
+                <Detect2Chars attribute="Comment" context="BlockComment" char="/" char1="*" beginRegion="Comment"/>
+                <Detect2Chars attribute="Comment" context="MacroComment" char="%" char1="*" beginRegion="Comment"/>
+                <DetectChar attribute="Normal Text" context="Statement" char=";"/>
+                <!-- %DO / %END folding -->
+                <WordDetect attribute="MacroKeyword" context="#stay" String="%do" insensitive="true" beginRegion="macrogroup"/>
+                <WordDetect attribute="MacroKeyword" context="#stay" String="%end" insensitive="true" endRegion="macrogroup"/>
+                <!-- %MACRO / %MEND folding -->
+                <WordDetect attribute="MacroDef" context="MacroName" String="%macro" insensitive="true" beginRegion="macrodef"/>
+                <WordDetect attribute="MacroDef" context="#stay" String="%mend" endRegion="macrodef"/>
+                <!-- Macro keywords (%IF %LET %PUT etc.) -->
+                <keyword attribute="MacroKeyword" context="#stay" String="macros"/>
+                <!-- Macro variable: &varname -->
+                <DetectChar attribute="MacroVariable" context="MacroVariable" char="&amp;"/>
+                <!-- Generic macro call: %name (user-defined macros or macro functions) -->
+                <DetectChar attribute="MacroName" context="MacroName" char="%"/>
+                <!-- OPTIONS statement -->
+                <WordDetect attribute="Keywords" context="OptionsStmt" String="options" insensitive="true"/>
+                <!-- Mnemonic operators -->
+                <keyword attribute="Operator" context="#stay" String="operators-word"/>
+                <!-- Automatic variables -->
+                <keyword attribute="Constants" context="#stay" String="constants"/>
+                <!-- Format specifications -->
+                <RegExpr attribute="Format" context="#stay" String="(?:\$?[A-Za-z_]|\$\d+)\w*\.(?![a-zA-Z])(?:\d+)?" insensitive="true"/>
+                <!-- Suffixed and regular strings -->
+                <RegExpr attribute="Number" context="#stay" insensitive="true" String="&quot;(?:[^&quot;]|&quot;&quot;)*&quot;(?:dt|[dtDT])(?!\w)"/>
+                <RegExpr attribute="String" context="#stay" insensitive="true" String="&quot;(?:[^&quot;]|&quot;&quot;)*&quot;[bnxBNX](?!\w)"/>
+                <DetectChar attribute="String" context="StringDouble" char="&quot;"/>
+                <RegExpr attribute="Number" context="#stay" insensitive="true" String="'(?:[^']|'')*'(?:dt|[dtDT])(?!\w)"/>
+                <RegExpr attribute="String" context="#stay" insensitive="true" String="'(?:[^']|'')*'[bnxBNX](?!\w)"/>
+                <DetectChar attribute="String" context="StringSingle" char="'"/>
+                <!-- Numbers -->
+                <RegExpr attribute="Number" context="#stay" insensitive="true" String="[0-9][0-9A-Fa-f]*[xX](?!\w)|(?:\d+\.?\d*|\.\d+)(?:[eE][+-]?\d+)?"/>
+                <!-- Symbolic operators, multi char and single char -->
+                <RegExpr attribute="Operator" context="#stay" String="\^=:|~=:|&gt;=:|&lt;=:|\*\*|\|\||\^=|~=|&gt;=|&lt;=|&lt;&gt;|&gt;&lt;|=:|&gt;:|&lt;:|=\*"/>
+                <AnyChar attribute="Operator" context="#stay" String="+-*/=&lt;&gt;^~|!#@"/>
+            </context>
+            <!-- Statement - used to ensure ; are respected for comments. Falls through to previous context -->
+            <context attribute="Normal Text" name="Statement" lineEndContext="#stay" fallthroughContext="#pop">
+                <DetectSpaces attribute="Normal Text" context="#stay"/>
+                <DetectChar attribute="Comment" context="StmtComment" char="*" beginRegion="Comment"/>
+                <Detect2Chars attribute="Comment" context="BlockComment" char="/" char1="*" beginRegion="Comment"/>
+                <Detect2Chars attribute="Comment" context="MacroComment" char="%" char1="*" beginRegion="Comment"/>
+            </context>
+            <!-- ====
+            	Main / Normal context
+            	 ==== -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <DetectSpaces context="#stay"/>
+                <!-- Proc-specific embedded-language contexts — tested before generic \bproc\b -->
+                <RegExpr attribute="Step" context="ProcSQL" String="\bproc\s+(?:sql|fedsql)\b" insensitive="true" beginRegion="datastep"/>
+                <RegExpr attribute="Step" context="ProcPython" String="&proc_py;" insensitive="true" beginRegion="datastep"/>
+                <RegExpr attribute="Step" context="ProcLua" String="&proc_lua;" insensitive="true" beginRegion="datastep"/>
+                <!-- Generic PROC <name> -->
+                <RegExpr attribute="Step" context="ProcHeader" String="\bproc\s+[a-zA-Z]\w*" insensitive="true" beginRegion="datastep"/>
+                <!-- DATA step — negative lookahead prevents firing on `data=` common option -->
+                <RegExpr attribute="Step" context="DataBody" String="&datastep;" insensitive="true" beginRegion="datastep"/>
+                <!-- RUN; or QUIT; at global scope -->
+                <RegExpr attribute="Step" context="Statement" String="\brun|quit\s*;" insensitive="true" endRegion="datastep"/>
+                <!-- SAS statement keywords -->
+                <keyword attribute="Keywords" context="#stay" String="keywords"/>
+                <IncludeRules context="General"/>
+            </context>
+            <!-- ====
+            	ProcHeader — proc option line (proc <name> <options> ;)
+            	Colours option names as SecKeyword:
+            	option=value  — lookahead on = to match only the name
+            	standalone option — DetectIdentifier
+            	On ; transitions to ProcBody
+            	 ==== -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="ProcHeader">
+                <!-- Semicolon ends the header line; dont consume and enter ProcBody -->
+                <DetectChar attribute="Normal Text" context="#pop!ProcBody" char=";" lookAhead="true"/>
+                <!-- option=value - colour option name as SecKeyword, push helper to color value depending on type -->
+                <RegExpr attribute="SecKeyword" context="OptValue" String="&option_name;" insensitive="true"/>
+                <!-- standalone boolean option -->
+                <DetectIdentifier attribute="SecKeyword" context="#stay"/>
+                <!-- Dataset options inside () -->
+                <DetectChar attribute="Normal Text" context="DatasetOpts" char="("/>
+                <IncludeRules context="General"/>
+            </context>
+            <!-- ====
+            	ProcBody — generic proc body, handles each statment by colouring first keyword using
+                helper context (which also exits context), then colouring dataset options, then regular rules
+            	 ==== -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="ProcBody">
+                <!-- After each semicolon, colour the next identifier as a proc keyword -->
+                <DetectChar attribute="Normal Text" context="ProcStmt" char=";"/>
+                <!-- Dataset options inside () -->
+                <DetectChar attribute="Normal Text" context="DatasetOpts" char="("/>
+                <!-- All regular Normal rules -->
+                <IncludeRules context="General"/>
+            </context>
+            <!-- ====
+            	ProcStmt — after ; inside a proc body.
+            	Exit when run/quit/new statement
+            	Skips whitespace/comments, colours the first identifier as SecKeyword, then pops back to ProcBody.
+            	 ==== -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="ProcStmt" fallthroughContext="#pop">
+                <DetectSpaces context="#stay"/>
+                <DetectChar attribute="Comment" context="StmtComment" char="*" beginRegion="Comment"/>
+                <Detect2Chars attribute="Comment" context="BlockComment" char="/" char1="*" beginRegion="Comment"/>
+                <Detect2Chars attribute="Comment" context="MacroComment" char="%" char1="*" beginRegion="Comment"/>
+                <!-- Exit on run or quit -->
+                <RegExpr attribute="Step" context="#pop#pop!Statement" String="&run_quit;" insensitive="true" endRegion="datastep"/>
+                <!-- Bail out if another step starts without RUN/QUIT, dont consume and handle with main context -->
+                <RegExpr attribute="Normal Text" context="#pop#pop" String="&proc_data;" firstNonSpace="true" insensitive="true" lookAhead="true"/>
+                <!-- Colour the first identifier as a proc sub-statement keyword, then re-enter ProcBody for remaining rules -->
+                <DetectIdentifier attribute="SecKeyword" context="#pop"/>
+            </context>
+            <!-- ====
+            	DataBody — DATA step body
+            	 ==== -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="DataBody">
+                <DetectSpaces context="#stay"/>
+                <!-- Exit on RUN; -->
+                <RegExpr attribute="Step" context="#pop!Statement" String="\brun\s*;" insensitive="true" endRegion="datastep"/>
+                <!-- Bail out if another step starts without RUN, dont consume and handle with main context -->
+                <RegExpr attribute="Normal Text" context="#pop" String="&proc_data;" insensitive="true" lookAhead="true"/>
+                <!-- Dataset options inside () -->
+                <DetectChar attribute="Normal Text" context="DatasetOpts" char="("/>
+                <!-- Control flow -->
+                <keyword attribute="Control" context="#stay" String="controls"/>
+                <!-- Built-in functions: lookahead for func( then classify in FuncCheck -->
+                <RegExpr attribute="Normal Text" context="FuncCheck" String="&identifier;\s*\(" insensitive="true" lookAhead="true"/>
+                <!-- Data-step statement keywords -->
+                <keyword attribute="Keywords" context="#stay" String="datastep-keywords"/>
+                <!-- Cards / Datalines / Parmcards -->
+                <RegExpr attribute="Keywords" context="Cards4" String="\b(?:cards4|lines4|datalines4|parmcards4)\b[^;]*;" insensitive="true" beginRegion="Cards"/>
+                <RegExpr attribute="Keywords" context="Cards" String="\b(?:cards|lines|datalines|parmcards)\b[^;]*;" insensitive="true" beginRegion="Cards"/>
+                <!-- DO / END folding -->
+                <WordDetect attribute="Control" context="#stay" String="do" insensitive="true" beginRegion="doblock"/>
+                <RegExpr attribute="Control" context="#stay" String="\bend(?=\s*;)" insensitive="true" endRegion="doblock"/>
+                <!-- All regular General rules -->
+                <IncludeRules context="General"/>
+            </context>
+            <!-- ====
+            	FuncCheck — classify word before ( as Function or Normal Text
+            	 ==== -->
+            <context attribute="Normal Text" name="FuncCheck" fallthroughContext="#pop">
+                <keyword attribute="Functions" context="#pop" String="functions"/>
+                <!-- If we dont match then consume identfiers to avoid popping back to same position and re-entering match  -->
+                <DetectIdentifier attribute="Normal Text" context="#pop"/>
+            </context>
+            <!-- ====
+            	DatasetOpts — inside (...) after a dataset name
+            	 ==== -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="DatasetOpts">
+                <!-- Nested data set option/value key pairs -->
+                <DetectChar attribute="Normal Text" context="DatasetOpts" char="("/>
+                <DetectChar attribute="Normal Text" context="#pop" char=")"/>
+                <keyword attribute="SecKeyword" context="#stay" String="dataset-options"/>
+                <IncludeRules context="General"/>
+            </context>
+            <!-- ====
+            	OptionsStmt — after OPTIONS keyword, until ;
+            	 ==== -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="OptionsStmt">
+                <DetectChar attribute="Normal Text" context="#pop" char=";"/>
+                <!-- option=value - colour option name as SecKeyword, push helper to color value depending on type -->
+                <RegExpr attribute="SecKeyword" context="OptValue" String="&option_name;" insensitive="true"/>
+                <!-- standalone boolean option -->
+                <DetectIdentifier attribute="SecKeyword" context="#stay"/>
+                <IncludeRules context="General"/>
+            </context>
+            <!-- ====
+            	OptValue / OptValueAfterEq — shared by ProcHeader and
+            	OptionsStmt to consume =<value> without colouring the
+            	value as SecKeyword.
+            	 ==== -->
+            <context attribute="Normal Text" lineEndContext="#stay" name="OptValue" fallthroughContext="#pop">
+                <DetectSpaces context="#stay"/>
+                <DetectChar attribute="Operator" context="OptValueAfterEq" char="="/>
+            </context>
+            <context attribute="Normal Text" lineEndContext="#stay" name="OptValueAfterEq" fallthroughContext="#pop#pop">
+                <DetectSpaces context="#stay"/>
+                <!-- Identifier value (libref.member or plain): consume as Normal Text, pop both -->
+                <RegExpr attribute="Normal Text" context="#pop#pop" String="&identifier;(\.&identifier;)*"/>
+                <!-- Numbers, strings, other values: fall through #pop#pop — caller's General rules colour them -->
+            </context>
+            <!-- ====
+            	Comments
+            	 ==== -->
+            <context attribute="Comment" name="BlockComment">
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+            </context>
+            <context attribute="Comment" name="MacroComment">
+                <DetectChar attribute="Comment" context="#pop" char=";" endRegion="Comment"/>
+            </context>
+            <context attribute="Comment" name="StmtComment">
+                <DetectChar attribute="Comment" context="#pop" char=";" endRegion="Comment"/>
+            </context>
+            <!-- ====
+            	Regular Strings - allow double quoting to escape
+            	 ==== -->
+            <context attribute="String" name="StringDouble">
+                <StringDetect attribute="String" context="#stay" String="&quot;&quot;"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+            <context attribute="String" name="StringSingle">
+                <StringDetect attribute="String" context="#stay" String="''"/>
+                <DetectChar attribute="String" context="#pop" char="'"/>
+            </context>
+            <!-- ====
+            	Macro Names & Variables
+            	 ==== -->
+            <context attribute="MacroName" name="MacroName">
+                <!-- Highlight macro name as in %macro <macro_name>, or as in %macro_name -->
+                <DetectSpaces attribute="Normal Text" context="#stay"/>
+                <DetectIdentifier attribute="MacroName" context="#pop"/>
+            </context>
+            <context attribute="MacroVariable" name="MacroVariable">
+                <DetectIdentifier attribute="MacroVariable" context="#stay"/>
+                <DetectChar attribute="MacroVariable" context="#pop" char="."/>
+                <RegExpr attribute="MacroVariable" context="#pop" String="\W" lookAhead="true"/>
+            </context>
+            <!-- ====
+            	CARDS / DATALINES inline data
+            	 ==== -->
+            <context attribute="Cards" name="Cards">
+                <DetectChar attribute="Normal Text" context="#pop" char=";" endRegion="Cards"/>
+            </context>
+            <context attribute="Cards" name="Cards4">
+                <StringDetect attribute="Normal Text" context="#pop" String=";;;;" endRegion="Cards"/>
+            </context>
+            <!-- ====
+            	Embedded Language PROCS
+            	 ==== -->
+            <context attribute="Normal Text" name="ProcSQL">
+                <!-- Add rules to jump to correct block if a proc sql block is ended - to take precedence over
+                     regular SQL rules -->
+                <RegExpr attribute="Step" context="#pop!Statement" String="\bquit\s*;" insensitive="true" endRegion="datastep"/>
+                <RegExpr attribute="Step" context="#pop!DataBody" String="&datastep;" insensitive="true" firstNonSpace="true" beginRegion="datastep"/>
+                <RegExpr attribute="Step" context="#pop!ProcSQL" String="\bproc\s+(?:sql|fedsql)\b[^;]*;" insensitive="true" firstNonSpace="true" beginRegion="datastep"/>
+                <RegExpr attribute="Step" context="#pop!ProcPython" String="&proc_py;" insensitive="true" firstNonSpace="true" beginRegion="datastep"/>
+                <RegExpr attribute="Step" context="#pop!ProcLua" String="&proc_lua;" insensitive="true" firstNonSpace="true" beginRegion="datastep"/>
+                <RegExpr attribute="Step" context="#pop!ProcBody" String=";\s*\bproc\b" insensitive="true" firstNonSpace="true" beginRegion="datastep"/>
+                <IncludeRules context="Normal##SQL"/>
+            </context>
+            <context attribute="Normal Text" name="ProcPython">
+                <RegExpr attribute="Step" context="#pop!Statement" String="&run_quit;" insensitive="true" endRegion="datastep"/>
+                <RegExpr attribute="Normal Text" context="#pop" String="&proc_data;" insensitive="true" lookAhead="true"/>
+                <RegExpr attribute="Keywords" context="PythonBlock" String="&submit;" insensitive="true"/>
+                <IncludeRules context="Normal"/>
+            </context>
+            <context attribute="Normal Text" name="PythonBlock">
+                <RegExpr attribute="Keywords" context="#pop" String="&endsubmit;" insensitive="true"/>
+                <IncludeRules context="Normal##Python"/>
+            </context>
+            <context attribute="Normal Text" name="ProcLua">
+                <RegExpr attribute="Step" context="#pop!Statement" String="&run_quit;" insensitive="true" endRegion="datastep"/>
+                <RegExpr attribute="Normal Text" context="#pop" String="&proc_data;" insensitive="true" lookAhead="true"/>
+                <RegExpr attribute="Keywords" context="LuaBlock" String="&submit;" insensitive="true"/>
+                <IncludeRules context="Normal"/>
+            </context>
+            <context attribute="Normal Text" name="LuaBlock">
+                <RegExpr attribute="Keywords" context="#pop" String="&endsubmit;" insensitive="true"/>
+                <IncludeRules context="Normal##Lua"/>
+            </context>
+        </contexts>
+        <!-- ====
+        	Style Definitions
+        	 ==== -->
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal"/>
+            <itemData name="Operator" defStyleNum="dsOperator"/>
+            <itemData name="Keywords" defStyleNum="dsKeyword"/>
+            <itemData name="SecKeyword" defStyleNum="dsBuiltIn"/>
+            <itemData name="Functions" defStyleNum="dsFunction"/>
+            <itemData name="Constants" defStyleNum="dsConstant"/>
+            <itemData name="Format" defStyleNum="dsDataType"/>
+            <itemData name="MacroDef" defStyleNum="dsPreprocessor"/>
+            <itemData name="MacroKeyword" defStyleNum="dsPreprocessor"/>
+            <itemData name="Control" defStyleNum="dsControlFlow"/>
+            <itemData name="Step" defStyleNum="dsKeyword" bold="true"/>
+            <itemData name="Comment" defStyleNum="dsComment" spellChecking="true"/>
+            <itemData name="String" defStyleNum="dsString"/>
+            <itemData name="Number" defStyleNum="dsFloat"/>
+            <itemData name="MacroName" defStyleNum="dsExtension" italic="true"/>
+            <itemData name="MacroVariable" defStyleNum="dsVariable"/>
+            <itemData name="Cards" defStyleNum="dsOthers"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+            <comment name="multiLine" start="*" end=";" region="Comment"/>
+            <comment name="multiLine" start="%*" end=";" region="Comment"/>
+        </comments>
+        <keywords casesensitive="false" weakDeliminator="%"/>
+    </general>
+</language>

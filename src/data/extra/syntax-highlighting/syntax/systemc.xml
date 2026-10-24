@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
     Copyright (C) Joseph Wenninger, 2008
     Highlighting for SystemC (www.systemc.org)
@@ -7,7 +7,7 @@
 ================================================================================
     July 17th 2008                            Initial version
 -->
-<language name="SystemC" version="3" kateversion="2.4" section="Hardware" extensions="*.c++;*.cxx;*.cpp;*.cc;*.C;*.h;*.hh;*.H;*.h++;*.hxx;*.hpp;*.hcc;*.moc" mimetype="text/x-c++src;text/x-c++hdr;text/x-chdr" priority="1" author="Joseph Wenninger (jowenn@kde.org)" license="LGPLv2+">
+<language name="SystemC" version="5" kateversion="5.79" section="Hardware" extensions="*.c++;*.cxx;*.cpp;*.cc;*.C;*.h;*.hh;*.H;*.h++;*.hxx;*.hpp;*.hcc;*.moc" mimetype="text/x-c++src;text/x-c++hdr;text/x-chdr" priority="1" author="Joseph Wenninger (jowenn@kde.org)" license="LGPLv2+">
 
 <highlighting>
 <list name="systemc_keywords">
@@ -94,7 +94,7 @@
 </list>
 <contexts>
   <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
-    <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/> <!-- see below -->
+    <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="*" lookAhead="true"/> <!-- see below -->
     <keyword attribute="Extensions-Keywords" context="#stay" String="systemc_keywords" />
     <keyword attribute="Extensions-Functions" context="#stay" String="systemc_functions" />
     <keyword attribute="Extensions-Macros" context="#stay" String="systemc_macros" />
@@ -102,10 +102,14 @@
     <IncludeRules context="##C++" />
   </context>
   
+  <context attribute="Comment" lineEndContext="#pop" name="MatchComment" fallthroughContext="#pop">
+    <IncludeRules context="##Doxygen"/>
+    <Detect2Chars attribute="Comment" context="#pop!Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+  </context>
   <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
       <DetectSpaces />
       <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-      <IncludeRules context="##Alerts" />
+      <IncludeRules context="##Comments" />
       <DetectIdentifier />
   </context>
 
@@ -118,7 +122,6 @@
   <itemData name="Extensions-Keywords"   defStyleNum="dsKeyword" />
   <itemData name="Data Type"    defStyleNum="dsDataType"/>
   <itemData name="Comment"      defStyleNum="dsComment"/>
-<!--   <itemData name="Comment" defStyleNum="dsComment" /> -->
 </itemDatas>
 
 </highlighting>

@@ -12,7 +12,7 @@
     - Know bugs:
     * None.
 -->
-<language name="PGN" version="4" kateversion="2.3" section="Other" extensions="*.pgn;*.PGN" priority="5" mimetype="" casesensitive="1" author="Ruben Carlo Benante (dr.beco@gmail.com)" license="GPL">
+<language name="PGN" version="6" kateversion="5.0" section="Other" extensions="*.pgn;*.PGN" priority="5" mimetype="" casesensitive="1" author="Ruben Carlo Benante (dr.beco@gmail.com)" license="GPL">
 <highlighting>
   <list name="keywords_list">
     <item>Event</item>
@@ -65,23 +65,27 @@
     <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
       <keyword attribute="Keyword" context="#stay" String="keywords_list"/>
       <AnyChar attribute="Piece" context="#stay" String="KQBNRPODCTA"/>
-      <DetectChar attribute="Commentp" context="Comment_p" char="("/>
-      <DetectChar attribute="Commentc" context="Comment_c" char="{"/>
+      <DetectChar attribute="Commentp" context="Comment_p" char="(" beginRegion="Comment_p"/>
+      <DetectChar attribute="Commentc" context="Comment_c" char="{" beginRegion="Comment_c"/>
       <DetectChar attribute="String" context="String" char="&quot;"/>
       <RegExpr attribute="Symbol" context="#stay" String="(\$\d*|1\-0|0\-1|1/2\-1/2|\*|#|\+|\?|!|=|x|\+\-|\-\+)"/>
       <RegExpr attribute="Number" context="#stay" String="\d*(\.|\.\.\.)( |$)"/>
     </context>
     <context attribute="Commentp" lineEndContext="#stay" name="Comment_p">
+      <DetectSpaces />
       <DetectChar attribute="String" context="String" char="&quot;"/>
-      <DetectChar attribute="Commentp" context="Comment_p" char="("/>
-      <DetectChar attribute="Commentc" context="Comment_c" char="{"/>
+      <DetectChar attribute="Commentp" context="Comment_p" char="(" beginRegion="Comment_p"/>
+      <DetectChar attribute="Commentc" context="Comment_c" char="{" beginRegion="Comment_c"/>
       <DetectChar attribute="Commentp" context="#pop" char=")" endRegion="Comment_p"/>
+      <IncludeRules context="##Comments"/>
     </context>
-      <context attribute="Commentc" lineEndContext="#stay" name="Comment_c">
+    <context attribute="Commentc" lineEndContext="#stay" name="Comment_c">
+      <DetectSpaces />
       <DetectChar attribute="String" context="String" char="&quot;"/>
-      <DetectChar attribute="Commentp" context="Comment_p" char="("/>
-      <DetectChar attribute="Commentc" context="Comment_c" char="{"/>
+      <DetectChar attribute="Commentp" context="Comment_p" char="(" beginRegion="Comment_p"/>
+      <DetectChar attribute="Commentc" context="Comment_c" char="{" beginRegion="Comment_c"/>
       <DetectChar attribute="Commentc" context="#pop" char="}" endRegion="Comment_c"/>
+      <IncludeRules context="##Comments"/>
     </context>
     <context attribute="String" lineEndContext="#stay" name="String">
       <DetectChar attribute="String" context="#pop" char="&quot;"/>
@@ -100,9 +104,9 @@
 </highlighting>
 <general>
   <comments>
-    <comment name="multiLine" start="(" end=")"/>
-    <comment name="multiLine" start="{" end="}"/>
+    <comment name="multiLine" start="{" end="}" region="Comment_c"/>
   </comments>
   <keywords casesensitive="0" weakDeliminator=""/>
 </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

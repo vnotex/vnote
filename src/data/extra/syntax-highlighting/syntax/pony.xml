@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 <!ENTITY punctuators ":!&amp;()&#37;+-/.*&lt;=&gt;?[]{|}~^,;">
 <!ENTITY EXP "(?:[eE][+-]?[0-9](?:_?[0-9]+)*)">
@@ -10,7 +10,7 @@
 ]>
 <language author="Jonathan Poelen (jonathan.poelen@gmail.com)"
   name="Pony" section="Sources"
-  version="5" kateversion="5.0"
+  version="7" kateversion="5.0"
   indenter="ruby"
   extensions="*.pony"
   mimetype="text/x-pony"
@@ -120,7 +120,6 @@
       <item>isnt</item>
       <item>in</item>
       <item>where</item>
-      <item>is</item>
       <item>consume</item>
       <item>addressof</item>
       <item>digestof</item>
@@ -229,15 +228,16 @@
 
 
       <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
-        <IncludeRules context="##Alerts" />
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
         <DetectIdentifier />
       </context>
 
       <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
         <DetectSpaces />
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" endRegion="Comment"/>
-        <IncludeRules context="##Alerts" />
+        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+        <IncludeRules context="##Comments" />
         <DetectIdentifier />
       </context>
 
@@ -305,8 +305,8 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="//" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="singleLine" start="//" position="afterwhitespace" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
     </comments>
     <keywords casesensitive="1" weakDeliminator="#" />
   </general>

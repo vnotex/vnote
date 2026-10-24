@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
 	<!ENTITY name    "[A-Za-z_:][\w.:_-]*">
-	<!ENTITY entref  "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
+	<!ENTITY entref  "&amp;(?:#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
 ]>
 	
 <!--
@@ -44,7 +44,7 @@
 -->
 	
 <!-- Hold the "language" opening tag on a single line, as mentioned in "language.dtd". -->
-<language name="Ruby/Rails/RHTML" version="9" kateversion="5.0" section="Markup" extensions="*.rhtml;*.RHTML;*.html.erb" mimetype="" author="Richard Dale rdale@foton.es" license="LGPLv2+">
+<language name="Ruby/Rails/RHTML" version="17" kateversion="5.79" section="Markup" extensions="*.rhtml;*.RHTML;*.erb" mimetype="" author="Richard Dale rdale@foton.es" license="LGPLv2+" priority="1">
 	
 	<highlighting>
 	
@@ -171,7 +171,6 @@
 			<item>readlines</item>
 			<item>require</item>
 			<item>scan</item>
-			<item>select</item>
 			<item>set_trace_func</item>
 			<item>sleep</item>
 			<item>split</item>
@@ -315,12 +314,6 @@
 			<item>word_wrap</item>
 		</list>
 		
-		<list name="attention">
-			<item>TODO</item>
-			<item>FIXME</item>
-			<item>NOTE</item>
-		</list>
-		
 		<contexts>
 			
 		<!-- BEGIN HTML contexts -->
@@ -332,22 +325,22 @@
 				<DetectSpaces/>
 				<DetectIdentifier/>
 				
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
-				<DetectChar attribute="Keyword" context="rubysourceline" char="%" />
+				<IncludeRules context="find-rubysource" />
+				<DetectChar attribute="Ruby Source" context="rubysourceline" char="%" />
 				
 				<StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
 				<StringDetect attribute="CDATA" context="CDATA" String="&lt;![CDATA[" beginRegion="cdata" />
 				<RegExpr attribute="Doctype" context="Doctype" String="&lt;!DOCTYPE\s+" beginRegion="doctype" />
 				<RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:-]*" beginRegion="pi" />
-				<RegExpr attribute="Element" context="CSS" String="&lt;style\b" insensitive="true" beginRegion="style" />
-				<RegExpr attribute="Element" context="JS" String="&lt;script\b" insensitive="true" beginRegion="script" />
-				<RegExpr attribute="Element" context="El Open" String="&lt;pre\b" insensitive="true" beginRegion="pre" />
-				<RegExpr attribute="Element" context="El Open" String="&lt;div\b" insensitive="true" beginRegion="div" />
-				<RegExpr attribute="Element" context="El Open" String="&lt;table\b" insensitive="true" beginRegion="table" />
+				<WordDetect attribute="Element" context="CSS" String="&lt;style" insensitive="true" beginRegion="style" />
+				<WordDetect attribute="Element" context="JS" String="&lt;script" insensitive="true" beginRegion="script" />
+				<WordDetect attribute="Element" context="El Open" String="&lt;pre" insensitive="true" beginRegion="pre" />
+				<WordDetect attribute="Element" context="El Open" String="&lt;div" insensitive="true" beginRegion="div" />
+				<WordDetect attribute="Element" context="El Open" String="&lt;table" insensitive="true" beginRegion="table" />
 				<RegExpr attribute="Element" context="El Open" String="&lt;&name;" />
-				<RegExpr attribute="Element" context="El Close" String="&lt;/pre\b" insensitive="true" endRegion="pre" />
-				<RegExpr attribute="Element" context="El Close" String="&lt;/div\b" insensitive="true" endRegion="div" />
-				<RegExpr attribute="Element" context="El Close" String="&lt;/table\b" insensitive="true" endRegion="table" />
+				<WordDetect attribute="Element" context="El Close" String="&lt;/pre" insensitive="true" endRegion="pre" />
+				<WordDetect attribute="Element" context="El Close" String="&lt;/div" insensitive="true" endRegion="div" />
+				<WordDetect attribute="Element" context="El Close" String="&lt;/table" insensitive="true" endRegion="table" />
 				<RegExpr attribute="Element" context="El Close" String="&lt;/&name;" />
 				<!-- as long as kde gives DTDs the text/html mimetype--><IncludeRules context="FindDTDRules" />
 				<IncludeRules context="FindEntityRefs" />
@@ -365,29 +358,26 @@
 			</context>
 			
 			<context name="FindAttributes" attribute="Normal Text" lineEndContext="#stay">
-				<RegExpr attribute="Attribute" context="#stay" String="&name;" column="0"/>
-				<RegExpr attribute="Attribute" context="#stay" String="\s+&name;" />
+				<RegExpr attribute="Attribute" context="#stay" String="^&name;|\s+&name;" />
 				<DetectChar attribute="Attribute" context="Value" char="=" />
 			</context>
 			
 			<context name="FindDTDRules" attribute="Normal Text" lineEndContext="#stay">
-				<RegExpr attribute="Doctype" context="Doctype Markupdecl" String="&lt;!(ELEMENT|ENTITY|ATTLIST|NOTATION)\b" />
+				<RegExpr attribute="Doctype" context="Doctype Markupdecl" String="&lt;!(?:ELEMENT|ENTITY|ATTLIST|NOTATION)\b" />
 			</context>
 			
 			
 			<context name="Comment" attribute="Comment" lineEndContext="#stay">
 				<DetectSpaces/>
-				<IncludeRules context="##Alerts" />
-				<DetectIdentifier/>
 				<StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
-				<RegExpr attribute="Error" context="#stay" String="-(-(?!-&gt;))+" />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier/>
 			</context>
 			
 			<context name="CDATA" attribute="Normal Text" lineEndContext="#stay">
 				<DetectSpaces/>
 				<DetectIdentifier/>
 				<StringDetect attribute="CDATA" context="#pop" String="]]&gt;" endRegion="cdata" />
-				<StringDetect attribute="EntityRef" context="#stay" String="]]&amp;gt;" />
 			</context>
 			
 			<context name="PI" attribute="Normal Text" lineEndContext="#stay">
@@ -414,112 +404,97 @@
 			</context>
 			
 			<context name="Doctype Markupdecl DQ" attribute="Value" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+				<IncludeRules context="find-rubysource" />
 				
 				<DetectChar attribute="Value" context="#pop" char="&quot;" />
 				<IncludeRules context="FindPEntityRefs" />
 			</context>
 			
 			<context name="Doctype Markupdecl SQ" attribute="Value" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+				<IncludeRules context="find-rubysource" />
 				
 				<DetectChar attribute="Value" context="#pop" char="&apos;" />
 				<IncludeRules context="FindPEntityRefs" />
 			</context>
 			
-			<context name="El Open" attribute="Normal Text" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+			<context name="El Open" attribute="Error" lineEndContext="#stay">
+				<IncludeRules context="find-rubysource" />
 				
 				<Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" />
 				<DetectChar attribute="Element" context="#pop" char="&gt;" />
 				<IncludeRules context="FindAttributes" />
-				<RegExpr attribute="Error" context="#stay" String="\S" />
+				<DetectSpaces attribute="Normal Text"/>
 			</context>
 			
-			<context name="El Close" attribute="Normal Text" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+			<context name="El Close" attribute="Error" lineEndContext="#stay">
+				<IncludeRules context="find-rubysource" />
 				
 				<DetectChar attribute="Element" context="#pop" char="&gt;" />
-				<RegExpr attribute="Error" context="#stay" String="\S" />
+				<DetectSpaces attribute="Normal Text"/>
 			</context>
 			
-			<context name="El Close 2" attribute="Normal Text" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
-				
-				<DetectChar attribute="Element" context="#pop#pop#pop" char="&gt;" />
-				<RegExpr attribute="Error" context="#stay" String="\S" />
-			</context>
-			
-			<context name="El Close 3" attribute="Normal Text" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
-				
-				<DetectChar attribute="Element" context="#pop#pop#pop#pop" char="&gt;" />
-				<RegExpr attribute="Error" context="#stay" String="\S" />
-			</context>
-			
-			<context name="CSS" attribute="Normal Text" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+			<context name="CSS" attribute="Error" lineEndContext="#stay">
+				<IncludeRules context="find-rubysource" />
 				
 				<Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="style" />
 				<DetectChar attribute="Element" context="CSS content" char="&gt;" />
 				<IncludeRules context="FindAttributes" />
-				<RegExpr attribute="Error" context="#stay" String="\S" />
+				<DetectSpaces attribute="Normal Text"/>
 			</context>
 			
 			<context name="CSS content" attribute="Normal Text" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+				<IncludeRules context="find-rubysource" />
 				
-				<RegExpr attribute="Element" context="El Close 2" String="&lt;/style\b" insensitive="true" endRegion="style" />
+				<WordDetect attribute="Element" context="#pop#pop!El Close" String="&lt;/style" insensitive="true" endRegion="style" />
 				<IncludeRules context="##CSS" includeAttrib="true"/>
 			</context>
 			
-			<context name="JS" attribute="Normal Text" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+			<context name="JS" attribute="Error" lineEndContext="#stay">
+				<IncludeRules context="find-rubysource" />
 				
 				<Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="script" />
 				<DetectChar attribute="Element" context="JS content" char="&gt;" />
 				<IncludeRules context="FindAttributes" />
-				<RegExpr attribute="Error" context="#stay" String="\S" />
+				<DetectSpaces attribute="Normal Text"/>
 			</context>
 			
 			<context name="JS content" attribute="Normal Text" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+				<IncludeRules context="find-rubysource" />
 				
-				<RegExpr attribute="Element" context="El Close 2" String="&lt;/script\b" insensitive="true" endRegion="script" />
+				<WordDetect attribute="Element" context="#pop#pop!El Close" String="&lt;/script" insensitive="true" endRegion="script" />
 				<RegExpr attribute="Comment" context="JS comment close" String="//(?=.*&lt;/script\b)" insensitive="true" />
 				<IncludeRules context="Normal##JavaScript" includeAttrib="true"/>
 			</context>
 			
 			<context name="JS comment close" attribute="Comment" lineEndContext="#pop">
-				<RegExpr attribute="Element" context="El Close 3" String="&lt;/script\b" insensitive="true" endRegion="script" />
-				<IncludeRules context="##Alerts" />
+				<RegExpr attribute="Element" context="#pop#pop#pop!El Close" String="&lt;/script\b" insensitive="true" endRegion="script" />
+				<IncludeRules context="##Comments" />
 			</context>
 			
-			<context name="Value" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="Value NQ">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+			<context name="Value" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Value NQ">
+				<IncludeRules context="find-rubysource" />
 				
 				<DetectChar attribute="Value" context="Value DQ" char="&quot;" />
 				<DetectChar attribute="Value" context="Value SQ" char="&apos;" />
 				<DetectSpaces />
 			</context>
 			
-			<context name="Value NQ" attribute="Normal Text" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+			<context name="Value NQ" attribute="Normal Text" lineEndContext="#pop#pop" fallthroughContext="#pop#pop">
+				<IncludeRules context="find-rubysource" />
 				
 				<IncludeRules context="FindEntityRefs" />
-				<RegExpr attribute="Value" context="#stay" String="/(?!&gt;)" />
-				<RegExpr attribute="Value" context="#stay" String="[^/&gt;&lt;&quot;&apos;\s]" />
+				<RegExpr attribute="Value" context="#stay" String="/(?!&gt;)|[^/&gt;&lt;&quot;&apos;\s]" />
 			</context>
 			
 			<context name="Value DQ" attribute="Value" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+				<IncludeRules context="find-rubysource" />
 				
 				<DetectChar attribute="Value" context="#pop#pop" char="&quot;" />
 				<IncludeRules context="FindEntityRefs" />
 			</context>
 			
 			<context name="Value SQ" attribute="Value" lineEndContext="#stay">
-				<RegExpr attribute="Keyword" context="rubysource" String="&lt;%=?" />
+				<IncludeRules context="find-rubysource" />
 				
 				<DetectChar attribute="Value" context="#pop#pop" char="&apos;" />
 				<IncludeRules context="FindEntityRefs" />
@@ -533,26 +508,36 @@
 				<IncludeRules context="rubysource" />
 			</context>
 			
+			<context name="find-rubysource" attribute="Normal Text" lineEndContext="#stay">
+				<Detect2Chars attribute="Ruby Source" context="rubysource-markup" char="&lt;" char1="%" />
+			</context>
+			<context name="rubysource-markup" attribute="Ruby Source" lineEndContext="#pop!rubysource-block-content" fallthroughContext="#pop!rubysource-block-content">
+				<AnyChar attribute="Ruby Source" context="#pop!rubysource-block-content" String="=-" /> <!-- <%= and <%- -->
+			</context>
+			<context name="rubysource-block-content" attribute="RUBY RAILS ERB Text" lineEndContext="#stay">
+				<StringDetect attribute="Ruby Source" context="#pop" String="-%&gt;" />
+				<Detect2Chars attribute="Ruby Source" context="#pop" char="%" char1="&gt;" />
+				<IncludeRules context="rubysource" />
+			</context>
+
 			<context name="rubysource" attribute="RUBY RAILS ERB Text" lineEndContext="#stay">
 				<!-- ruby ignores newline after \ -->
 				<LineContinue attribute="Ruby Normal Text" context="Line Continue"/>
-				
-				<RegExpr attribute="Keyword" context="#pop" String="-?%&gt;" />
-				
+
 				<!-- __END__ token on own line. -->
-				<RegExpr attribute="Keyword" String="__END__$" context="DATA" column="0"/>
+				<RegExpr attribute="Keyword" String="^__END__$" context="DATA" column="0"/>
 				
 				<!-- "shebang" line -->
-				<RegExpr attribute="Keyword" String="#!\/.*" context="#stay" column="0"/>
+				<StringDetect attribute="Keyword" String="^#!/" context="ShebangLine" column="0"/>
 				
 				<!-- "def" - "end" blocks -->
 				<!-- check for statement modifiers with regexes -->
-				<RegExpr attribute="Keyword" String="(\=|\(|\[|\{)\s*(if|unless|while|until)\b" context="#stay" beginRegion="def block"/>
+				<RegExpr attribute="Keyword" String="(?:\=|\(|\[|\{)\s*(?:if|unless|while|until)\b" context="#stay" beginRegion="def block"/>
 				<RegExpr attribute="Keyword" String="(while|until)\b(?!.*\bdo\b)" context="#stay" beginRegion="def block" firstNonSpace="true"/>
-				<RegExpr attribute="Keyword" String="\;\s*(while|until)\b(?!.*\bdo\b)" context="#stay" beginRegion="def block"/>
+				<RegExpr attribute="Keyword" String="\;\s*(?:while|until)\b(?!.*\bdo\b)" context="#stay" beginRegion="def block"/>
 				<WordDetect attribute="Keyword" String="if" context="#stay" beginRegion="def block" firstNonSpace="true"/>
 				<WordDetect attribute="Keyword" String="unless" context="#stay" beginRegion="def block" firstNonSpace="true"/>
-				<RegExpr attribute="Keyword" String="\;\s*(if|unless)\b" context="#stay" beginRegion="def block"/>
+				<RegExpr attribute="Keyword" String="\;\s*(?:if|unless)\b" context="#stay" beginRegion="def block"/>
 				<WordDetect attribute="Keyword" String="class" context="#stay" beginRegion="def block"/>
 				<WordDetect attribute="Keyword" String="module" context="#stay" beginRegion="def block"/>
 				<WordDetect attribute="Keyword" String="begin" context="#stay" beginRegion="def block"/>
@@ -562,16 +547,16 @@
 				<WordDetect attribute="Keyword" String="def" context="#stay" beginRegion="def block"/>
 				<WordDetect attribute="Keyword" String="end" context="#stay" endRegion="def block"/>
 				<!-- elsif/else close the current block and start a new one -->
-				<RegExpr attribute="Keyword" String="(\b|^\s*)(else|elsif|rescue|ensure)(\s+|$)" context="#stay" endRegion="def block" beginRegion="def block"/>
+				<RegExpr attribute="Keyword" String="(?:\b|^\s*)(?:else|elsif|rescue|ensure)(?:\s+|$)" context="#stay" endRegion="def block" beginRegion="def block"/>
 				
 				<StringDetect attribute="Operator" String="..." context="#stay"/>
 				<Detect2Chars attribute="Operator" char="." char1="." context="#stay"/>
 				
 				<!-- marks a message (being sent, not defined) -->
-				<RegExpr attribute="Message" String="\.[_a-z][_a-zA-Z0-9]*(\?|\!|\b)" context="#stay"/>
+				<RegExpr attribute="Message" String="\.[_a-z][_a-zA-Z0-9]*(?:\?|\!|\b)" context="#stay"/>
 				
 				<!-- Check for "ASCII code operator". e.g.: ?a -->
-				<RegExpr attribute="Dec" String="\s\?(\\M\-)?(\\C\-)?\\?\S" context="#stay"/>
+				<RegExpr attribute="Dec" String="\s\?(?:\\M\-)?(?:\\C\-)?\\?\S" context="#stay"/>
 				
 				<keyword attribute="Keyword" String="keywords" context="#stay"/>
 				<keyword attribute="Attribute Definition" String="attribute-definitions"  context="#stay"/>
@@ -584,18 +569,18 @@
 				<!-- (global) vars starting with $
 					Match them before $_.
 					-->
-				<RegExpr attribute="Global Variable" String="\$(\w+|\-[a-zA-Z_]\b)" context="#stay"/>
+				<RegExpr attribute="Global Variable" String="\$(?:\w+|\-[a-zA-Z_]\b)" context="#stay"/>
 				<!-- special-character globals -->
 				<RegExpr attribute="Default globals" String="\$[\d_*`\!:?'/\\\-\&amp;]" context="#stay"/>
 				<RegExpr attribute="Global Constant" String="\b[_A-Z]+[A-Z_0-9]+\b" context="#stay"/>
 				<!-- Generally a module or class name like "File", "MyModule_1", .. -->
-				<RegExpr attribute="Constant" String="\b[A-Z]+_*([0-9]|[a-z])[_a-zA-Z0-9]*\b" context="#stay"/>
+				<RegExpr attribute="Constant" String="\b[A-Z]+_*(?:[0-9]|[a-z])[_a-zA-Z0-9]*\b" context="#stay"/>
 				
-				<RegExpr attribute="Hex" String="\b\-?0[xX][_0-9a-fA-F]+" context="#stay"/>
-				<RegExpr attribute="Bin" String="\b\-?0[bB][_01]+" context="#stay"/>
-				<RegExpr attribute="Octal" String="\b\-?0[1-7][_0-7]*" context="#stay"/>
-				<RegExpr attribute="Float" String="\b\-?[0-9][0-9_]*\.[0-9][0-9_]*([eE]\-?[1-9][0-9]*(\.[0-9]*)?)?" context="#stay"/>
-				<RegExpr attribute="Dec" String="\b\-?[1-9][0-9_]*\b" context="#stay"/>
+				<RegExpr attribute="Hex" String="(?:\-|\b)0[xX][_0-9a-fA-F]+" context="#stay"/>
+				<RegExpr attribute="Bin" String="(?:\-|\b)0[bB][_01]+" context="#stay"/>
+				<RegExpr attribute="Octal" String="(?:\-|\b)0[1-7][_0-7]*" context="#stay"/>
+				<RegExpr attribute="Float" String="(?:\-|\b)[0-9][0-9_]*\.[0-9][0-9_]*(?:[eE]\-?[1-9][0-9]*(?:\.[0-9]*)?)?" context="#stay"/>
+				<RegExpr attribute="Dec" String="(?:\-|\b)[1-9][0-9_]*\b" context="#stay"/>
 				<Int attribute="Dec" context="#stay"/>
 				<HlCChar attribute="Char" context="#stay"/>
 				
@@ -615,11 +600,8 @@
 				<DetectChar attribute="Operator" char="." context="#stay"/>
 				<Detect2Chars attribute="Operator" char="&amp;" char1="&amp;" context="#stay"/>
 				<Detect2Chars attribute="Operator" char="|" char1="|" context="#stay"/>
-				<RegExpr attribute="Operator" String="\s[\?\:\%/]\s" context="#stay"/>
-				<RegExpr attribute="Operator" String="[|&amp;&lt;&gt;\^\+*~\-=]+" context="#stay"/>
-				<!-- regexp hack -->
-				<RegExpr attribute="Operator" String="\s!" context="#stay"/>
-				<RegExpr attribute="Operator" String="/=\s" context="#stay" insensitive="0"/>
+				<!-- \s! is regexp hack -->
+				<RegExpr attribute="Operator" String="\s[\?\:\%/]\s|[|&amp;&lt;&gt;\^\+*~\-=]+|\s!|/=\s" context="#stay"/>
 				<Detect2Chars attribute="Operator" char="%" char1="=" context="#stay"/>
 				<Detect2Chars attribute="Operator" char=":" char1=":" context="Member Access"/>
 				
@@ -631,8 +613,8 @@
 				
 				<Detect2Chars attribute="Normal Text" char="?" char1="#" context="#stay"/>
 				
-				<RegExpr attribute="Comment" String="#\s*BEGIN.*$"  context="#stay" beginRegion="marker" column="0"/>
-				<RegExpr attribute="Comment" String="#\s*END.*$"  context="#stay" endRegion="marker" column="0"/>
+				<RegExpr attribute="Comment" String="^#\s*BEGIN.*$"  context="#stay" beginRegion="marker" column="0"/>
+				<RegExpr attribute="Comment" String="^#\s*END.*$"  context="#stay" endRegion="marker" column="0"/>
 				<DetectChar attribute="Comment" char="#"  context="Comment Line" firstNonSpace="true"/>
 				<RegExpr attribute="Comment" String="\s#"  context="General Comment"/>
 				
@@ -650,9 +632,11 @@
 				<!-- this moves to the next context to separate out the exact nature of the GDL input -->
 				<RegExpr attribute="GDL input" context="find_gdl_input" String="\s*[%](?=[Qqxw]?[^\s&gt;])" beginRegion="GdlInput" />
 			</context>
+
+			<context name="ShebangLine" attribute="Keyword" lineEndContext="#pop" />
 			
 			<context name="Line Continue" attribute="Ruby Normal Text" lineEndContext="#pop">
-				<RegExpr attribute="Keyword" String="(while|until)\b(?!.*\bdo\b)" context="#stay" firstNonSpace="true"/>
+				<RegExpr attribute="Keyword" String="(?:while|until)\b(?!.*\bdo\b)" context="#stay" firstNonSpace="true"/>
 				<WordDetect attribute="Keyword" String="if" context="#stay" firstNonSpace="true"/>
 				<WordDetect attribute="Keyword" String="unless" context="#stay" firstNonSpace="true"/>
 				<IncludeRules context="rubysource"/>
@@ -711,10 +695,10 @@
 			<!-- This handles access of nested module classes and class methods -->
 			<context name="Member Access" attribute="Member" lineEndContext="#pop">
 				<!-- marks a message (being sent, not defined) -->
-				<RegExpr attribute="Message" String="\.?[_a-z]\w*(\?|\!)?(?=[^\w\d\.\:])" context="#pop"/>
-				<RegExpr attribute="Message" String="\.?[_a-z]\w*(\?|\!)?" context="#stay"/>
-				<RegExpr attribute="Constant" String="[A-Z]+_*(\d|[a-z])\w*(?=[^\w\d\.\:])" context="#pop"/>
-				<RegExpr attribute="Constant" String="[A-Z]+_*([0-9]|[a-z])\w*" context="#stay"/>
+				<RegExpr attribute="Message" String="\.?[_a-z]\w*[\?\!]?(?=[^\w\d\.\:])" context="#pop"/>
+				<RegExpr attribute="Message" String="\.?[_a-z]\w*[\?\!]?" context="#stay"/>
+				<RegExpr attribute="Constant" String="[A-Z]+_*[\da-z]\w*(?=[^\w\d\.\:])" context="#pop"/>
+				<RegExpr attribute="Constant" String="[A-Z]+_*[0-9a-z]\w*" context="#stay"/>
 				<RegExpr attribute="Constant Value" String="[_A-Z][_A-Z0-9]*(?=[^\w\d\.\:])" context="#pop"/>
 				<RegExpr attribute="Constant Value" String="[_A-Z][_A-Z0-9]*" context="#stay"/>
 				<Detect2Chars attribute="Operator" char=":" char1=":" context="#stay"/>
@@ -727,13 +711,16 @@
 			</context>
 			
 			<context name="Comment Line" attribute="Ruby Comment" lineEndContext="#pop">
+				<DetectSpaces />
+				<StringDetect context="#pop" String="-%&gt;" lookAhead="true" />
+				<Detect2Chars context="#pop" char="%" char1="&gt;" lookAhead="true" />
 				<RegExpr attribute="Ruby Comment" String="\w\:\:\s" context="RDoc Label"/>
-				<keyword attribute="Alert" String="attention" context="#stay"/>
-				<RegExpr attribute="Keyword" context="#pop#pop" String="-?%&gt;" />
+				<IncludeRules context="##Comments"/>
 			</context>
 			
 			<context name="General Comment" attribute="Ruby Comment" lineEndContext="#pop">
-				<keyword attribute="Dec" String="attention" context="#stay"/>
+				<DetectSpaces/>
+				<IncludeRules context="##Comments"/>
 			</context>
 			
 			<context name="RDoc Label" attribute="RDoc Value" lineEndContext="#pop"/>
@@ -763,12 +750,12 @@
 			
 			<context name="normal_heredoc" attribute="Ruby Normal Text" lineEndContext="#stay" dynamic="true">
 				<!--				<RegExpr attribute="Keyword" context="#pop#pop" String="^%1$" dynamic="true" endRegion="HereDocument"/>-->
-				<RegExpr attribute="Keyword" context="#pop#pop" String="%1$" dynamic="true" endRegion="HereDocument" column="0"/>
+				<RegExpr attribute="Keyword" context="#pop#pop" String="^%1$" dynamic="true" endRegion="HereDocument" column="0"/>
 				<IncludeRules context="heredoc_rules" />
 			</context>
 			<context name="apostrophed_normal_heredoc" attribute="Ruby Normal Text" lineEndContext="#stay" dynamic="true">
 				<!--				<RegExpr attribute="Keyword" context="#pop#pop" String="^%1$" dynamic="true" endRegion="HereDocument"/>-->
-				<RegExpr attribute="Keyword" context="#pop#pop" String="%1$" dynamic="true" endRegion="HereDocument" column="0"/>
+				<RegExpr attribute="Keyword" context="#pop#pop" String="^%1$" dynamic="true" endRegion="HereDocument" column="0"/>
 			</context>
 			
 			<!-- rules for heredoc types -->
@@ -885,7 +872,7 @@
 				-->
 			<context name="gdl_dq_string_5" attribute="String" lineEndContext="#stay" dynamic="true">
 				<IncludeRules context="dq_string_rules" />
-				<RegExpr attribute="String" String="\\%1" context="#stay" dynamic="true" />
+				<StringDetect attribute="String" String="\%1" context="#stay" dynamic="true" />
 				<RegExpr attribute="GDL input" context="#pop#pop" String="\s*%1" dynamic="true" endRegion="GdlInput" />
 			</context>
 			<!-- rules to be included in all dq_string contexts -->
@@ -950,13 +937,13 @@
 				-->
 			<context name="gdl_token_array_5" attribute="String" lineEndContext="#stay" dynamic="true">
 				<IncludeRules context="token_array_rules" />
-				<RegExpr attribute="String" String="\\%1" context="#stay" dynamic="true"/>
+				<StringDetect attribute="String" String="\%1" context="#stay" dynamic="true"/>
 				<RegExpr attribute="GDL input" context="#pop#pop" String="\s*%1" dynamic="true" endRegion="GdlInput" />
 			</context>
 			
 			<!-- rules to be included in all token_array contexts -->
 			<context name="token_array_rules" attribute="String" lineEndContext="#stay" >
-				<StringDetect attribute="String" String="\\" context="#stay"/>
+				<Detect2Chars attribute="String" char="\" char1="\" context="#stay"/>
 			</context>
 			
 			<!-- apostrophed string specific contexts -->
@@ -1014,7 +1001,7 @@
 				-->
 			<context name="gdl_apostrophed_5" attribute="Raw String" lineEndContext="#stay" dynamic="true">
 				<IncludeRules context="apostrophed_rules" />
-				<RegExpr attribute="Raw String" String="\\%1" context="#stay" dynamic="true"/>
+				<StringDetect attribute="Raw String" String="\%1" context="#stay" dynamic="true"/>
 				<RegExpr attribute="GDL input" context="#pop#pop" String="\s*%1" dynamic="true" endRegion="GdlInput" />
 			</context>
 			
@@ -1078,7 +1065,7 @@
 				-->
 			<context name="gdl_shell_command_5" attribute="Command" lineEndContext="#stay" dynamic="true">
 				<IncludeRules context="shell_command_rules" />
-				<RegExpr attribute="Command" String="\\%1" context="#stay" dynamic="true" />
+				<StringDetect attribute="Command" String="\%1" context="#stay" dynamic="true" />
 				<RegExpr attribute="GDL input" context="#pop#pop" String="\s*%1" dynamic="true" endRegion="GdlInput" />
 			</context>
 			
@@ -1144,7 +1131,7 @@
 				-->
 			<context name="gdl_regexpr_5" attribute="Regular Expression" lineEndContext="#stay" dynamic="true">
 				<IncludeRules context="regexpr_rules" />
-				<RegExpr attribute="Regular Expression" String="\\%1" context="#stay" dynamic="true" />
+				<StringDetect attribute="Regular Expression" String="\%1" context="#stay" dynamic="true" />
 				<RegExpr attribute="GDL input" context="#pop#pop" String="\s*%1[uiomxn]*" dynamic="true" endRegion="GdlInput" />
 			</context>
 			
@@ -1165,73 +1152,74 @@
 		<itemDatas>
 		<!-- BEGIN Ruby itemData -->
 			<itemData name="Ruby Normal Text" defStyleNum="dsNormal"/>
-			<itemData name="RUBY RAILS ERB Text" defStyleNum="dsExtension"/>
+			<itemData name="RUBY RAILS ERB Text" defStyleNum="dsExtension" bold="0" spellChecking="false"/>
+			<itemData name="Ruby Source" defStyleNum="dsDataType" bold="1" spellChecking="false"/>
 			
-			<itemData name="Keyword" defStyleNum="dsKeyword"/>
-			<itemData name="Attribute Definition" defStyleNum="dsOthers"/>
-			<itemData name="Access Control" defStyleNum="dsKeyword" color="#0000FF"/>
-			<itemData name="Definition" defStyleNum="dsKeyword"/>
-			<itemData name="Pseudo variable" defStyleNum="dsDecVal"/>
+			<itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+			<itemData name="Attribute Definition" defStyleNum="dsOthers" spellChecking="false"/>
+			<itemData name="Access Control" defStyleNum="dsAttribute" bold="1" spellChecking="false"/> <!-- #0000FF -->
+			<itemData name="Definition" defStyleNum="dsKeyword" spellChecking="false"/>
+			<itemData name="Pseudo variable" defStyleNum="dsDecVal" spellChecking="false"/>
 			
-			<itemData name="Dec" defStyleNum="dsDecVal"/>
-			<itemData name="Float" defStyleNum="dsFloat"/>
-			<itemData name="Char" defStyleNum="dsChar"/>
-			<itemData name="Octal" defStyleNum="dsBaseN"/>
-			<itemData name="Hex" defStyleNum="dsBaseN"/>
-			<itemData name="Bin" defStyleNum="dsBaseN"/>
+			<itemData name="Dec" defStyleNum="dsDecVal" spellChecking="false"/>
+			<itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+			<itemData name="Char" defStyleNum="dsChar" spellChecking="false"/>
+			<itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false"/>
+			<itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
+			<itemData name="Bin" defStyleNum="dsBaseN" spellChecking="false"/>
 			
-			<itemData name="Symbol" defStyleNum="dsString" color="#D40000"/>
+			<itemData name="Symbol" defStyleNum="dsWarning" bold="0" underline="0" spellChecking="false"/> <!-- #D40000 -->
 			<itemData name="String" defStyleNum="dsString"/>
-			<itemData name="Raw String" defStyleNum="dsString" color="#DD4A4A" selColor="#DD4A4A"/>
-			<itemData name="Command" defStyleNum="dsString" color="#AA3000"/>
-			<itemData name="Message" defStyleNum="dsNormal" color="#4000A7"/> <!-- #4A00C0 -->
-			<itemData name="Regular Expression" defStyleNum="dsOthers" color="#4A5704"/>
-			<itemData name="Substitution"	defStyleNum="dsOthers"/>
+			<itemData name="Raw String" defStyleNum="dsVerbatimString"/> <!-- #DD4A4A -->
+			<itemData name="Command" defStyleNum="dsInformation"/> <!-- #AA3000 -->
+			<itemData name="Message" defStyleNum="dsAttribute" spellChecking="false"/> <!-- #4000A7 -->
+			<itemData name="Regular Expression" defStyleNum="dsSpecialString" spellChecking="false"/> <!-- #4A5704 -->
+			<itemData name="Substitution"	defStyleNum="dsSpecialChar" spellChecking="false"/>
 			<itemData name="Data" defStyleNum="dsNormal"/>
 			<!-- short for 'general delimited input' -->
 			<itemData name="GDL input" defStyleNum="dsOthers" />
 			
-			<itemData name="Default globals" defStyleNum="dsDataType" color="#C00000" bold="1"/>
-			<itemData name="Global Variable" defStyleNum="dsDataType" color="#C00000"/>
-			<itemData name="Global Constant" defStyleNum="dsDataType" color="#bb1188" bold="1"/>
-			<itemData name="Constant" defStyleNum="dsDataType"/>
-			<itemData name="Constant Value" defStyleNum="dsDataType" color="#bb1188"/>
-			<itemData name="Kernel methods" defStyleNum="dsNormal" color="#000080" selColor="#ffffff"/> <!-- #CC0E86 -->
-			<itemData name="Member" defStyleNum="dsNormal"/>
-			<itemData name="Instance Variable" defStyleNum="dsOthers"/>
-			<itemData name="Class Variable" defStyleNum="dsOthers"/>
+			<itemData name="Default globals" defStyleNum="dsVariable" bold="1" spellChecking="false"/> <!-- #C00000 -->
+			<itemData name="Global Variable" defStyleNum="dsVariable" spellChecking="false"/> <!-- #C00000 -->
+			<itemData name="Global Constant" defStyleNum="dsConstant" bold="1" spellChecking="false"/> <!-- #bb1188 -->
+			<itemData name="Constant" defStyleNum="dsDataType" spellChecking="false"/>
+			<itemData name="Constant Value" defStyleNum="dsConstant" bold="0" spellChecking="false"/> <!-- #bb1188 -->
+			<itemData name="Kernel methods" defStyleNum="dsFunction" bold="1" spellChecking="false"/> <!-- #000080, #CC0E86 -->
+			<itemData name="Member" defStyleNum="dsNormal" spellChecking="false"/>
+			<itemData name="Instance Variable" defStyleNum="dsOthers" spellChecking="false"/>
+			<itemData name="Class Variable" defStyleNum="dsOthers" spellChecking="false"/>
 			
 			<itemData name="Ruby Comment" defStyleNum="dsComment"/>
 			<itemData name="Blockcomment" defStyleNum="dsComment"/>
 			<itemData name="RDoc Value" defStyleNum="dsOthers"/>
 			
 			<!-- use these to mark errors and alerts things -->
-			<itemData name="Error" defStyleNum="dsError" />
-			<itemData name="Alert" defStyleNum="dsAlert" />
+			<itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
 
-			<itemData name="Delimiter" defStyleNum="dsChar"/>
-			<itemData name="Operator" defStyleNum="dsChar"/>
+			<itemData name="Delimiter" defStyleNum="dsChar" spellChecking="false"/>
+			<itemData name="Operator" defStyleNum="dsChar" spellChecking="false"/>
 		<!-- END Ruby itemData -->
 			
 		<!-- BEGIN HTML itemData -->
 			<itemData name="Normal Text" defStyleNum="dsNormal" />
 			<itemData name="Comment" defStyleNum="dsComment" />
-			<itemData name="CDATA" defStyleNum="dsBaseN" bold="1" />
-			<itemData name="Processing Instruction" defStyleNum="dsKeyword" />
-			<itemData name="Doctype" defStyleNum="dsDataType" bold="1" />
-			<itemData name="Element" defStyleNum="dsKeyword" />
-			<itemData name="Attribute" defStyleNum="dsOthers" />
-			<itemData name="Value" defStyleNum="dsString" />
-			<itemData name="EntityRef" defStyleNum="dsDecVal" />
-			<itemData name="PEntityRef" defStyleNum="dsDecVal" />
+			<itemData name="CDATA" defStyleNum="dsBaseN" bold="1" spellChecking="false"/>
+			<itemData name="Processing Instruction" defStyleNum="dsKeyword" spellChecking="false"/>
+			<itemData name="Doctype" defStyleNum="dsDataType" bold="1" spellChecking="false"/>
+			<itemData name="Element" defStyleNum="dsKeyword" spellChecking="false"/>
+			<itemData name="Attribute" defStyleNum="dsOthers" spellChecking="false"/>
+			<itemData name="Value" defStyleNum="dsString" spellChecking="false"/>
+			<itemData name="EntityRef" defStyleNum="dsDecVal" spellChecking="false"/>
+			<itemData name="PEntityRef" defStyleNum="dsDecVal" spellChecking="false"/>
 		<!-- END HTML itemData -->
 		
 		</itemDatas>
 	</highlighting>
 	<general>
 		<comments>
-			<comment name="multiLine" start="&lt;!--" end="--&gt;" />
+			<comment name="multiLine" start="&lt;!--" end="--&gt;" region="comment" />
 		</comments>
 		<keywords casesensitive="1" weakDeliminator="!?"/> 
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

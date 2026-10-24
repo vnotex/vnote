@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!--
+Inspired by Rainbow CSV
+
+Language name     | Separator     | Extension | Properties
+ CSV              | , (comma)     |   .csv    | Ignored inside double-quoted fields
+ TSV              | \t (TAB)      | .tsv .tab |
+ CSV (semicolon)  | ; (semicolon) |           | Ignored inside double-quoted fields
+ CSV (whitespace) | whitespace    |           | Consecutive whitespaces are merged
+ CSV (pipe)       | | (pipe)      |
+-->
+<language name="CSV (whitespace)" section="Other" version="2" kateversion="5.62" extensions="*.csv" mimetype="text/csv" priority="4" author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT">
+  <highlighting>
+
+    <contexts>
+      <context name="Column0" lineEndContext="#stay" attribute="Column 0">
+        <DetectChar char=" " context="#pop!Column0Spaces" attribute="Column 0 Separator"/>
+      </context>
+      <context name="Column0Spaces" lineEndContext="#pop!Column0" attribute="Column 0 Separator" fallthroughContext="#pop!Column1">
+        <DetectChar char=" "/>
+      </context>
+
+      <context name="Column1" lineEndContext="#pop!Column0" attribute="Column 1">
+        <DetectChar char=" " context="#pop!Column1Spaces" attribute="Column 1 Separator"/>
+      </context>
+      <context name="Column1Spaces" lineEndContext="#pop!Column0" attribute="Column 1 Separator" fallthroughContext="#pop!Column2">
+        <DetectChar char=" "/>
+      </context>
+
+      <context name="Column2" lineEndContext="#pop!Column0" attribute="Column 2">
+        <DetectChar char=" " context="#pop!Column2Spaces" attribute="Column 2 Separator"/>
+      </context>
+      <context name="Column2Spaces" lineEndContext="#pop!Column0" attribute="Column 2 Separator" fallthroughContext="#pop!Column3">
+        <DetectChar char=" "/>
+      </context>
+
+      <context name="Column3" lineEndContext="#pop!Column0" attribute="Column 3">
+        <DetectChar char=" " context="#pop!Column3Spaces" attribute="Column 3 Separator"/>
+      </context>
+      <context name="Column3Spaces" lineEndContext="#pop!Column0" attribute="Column 3 Separator" fallthroughContext="#pop!Column4">
+        <DetectChar char=" "/>
+      </context>
+
+      <context name="Column4" lineEndContext="#pop!Column0" attribute="Column 4">
+        <DetectChar char=" " context="#pop!Column4Spaces" attribute="Column 4 Separator"/>
+      </context>
+      <context name="Column4Spaces" lineEndContext="#pop!Column0" attribute="Column 4 Separator" fallthroughContext="#pop!Column5">
+        <DetectChar char=" "/>
+      </context>
+
+      <context name="Column5" lineEndContext="#pop!Column0" attribute="Column 5">
+        <DetectChar char=" " context="#pop!Column5Spaces" attribute="Column 5 Separator"/>
+      </context>
+      <context name="Column5Spaces" lineEndContext="#pop!Column0" attribute="Column 5 Separator" fallthroughContext="#pop!Column6">
+        <DetectChar char=" "/>
+      </context>
+
+      <context name="Column6" lineEndContext="#pop!Column0" attribute="Column 6">
+        <DetectChar char=" " context="#pop!Column6Spaces" attribute="Column 6 Separator"/>
+      </context>
+      <context name="Column6Spaces" lineEndContext="#pop!Column0" attribute="Column 6 Separator" fallthroughContext="#pop!Column7">
+        <DetectChar char=" "/>
+      </context>
+
+      <context name="Column7" lineEndContext="#pop!Column0" attribute="Column 7">
+        <DetectChar char=" " context="#pop!Column7Spaces" attribute="Column 7 Separator"/>
+      </context>
+      <context name="Column7Spaces" lineEndContext="#pop!Column0" attribute="Column 7 Separator" fallthroughContext="#pop!Column8">
+        <DetectChar char=" "/>
+      </context>
+
+      <context name="Column8" lineEndContext="#pop!Column0" attribute="Column 8">
+        <DetectChar char=" " context="#pop!Column8Spaces" attribute="Column 8 Separator"/>
+      </context>
+      <context name="Column8Spaces" lineEndContext="#pop!Column0" attribute="Column 8 Separator" fallthroughContext="#pop!Column9">
+        <DetectChar char=" "/>
+      </context>
+
+      <context name="Column9" lineEndContext="#pop!Column0" attribute="Column 9">
+        <DetectChar char=" " context="#pop!Column9Spaces" attribute="Column 9 Separator"/>
+      </context>
+      <context name="Column9Spaces" lineEndContext="#pop!Column0" attribute="Column 9 Separator" fallthroughContext="#pop!Column0">
+        <DetectChar char=" "/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Column 0" defStyleNum="dsNormal"/>
+      <itemData name="Column 1" defStyleNum="dsVariable"/>
+      <itemData name="Column 2" defStyleNum="dsString"/>
+      <itemData name="Column 3" defStyleNum="dsBuiltIn"/>
+      <itemData name="Column 4" defStyleNum="dsPreprocessor"/>
+      <itemData name="Column 5" defStyleNum="dsChar"/>
+      <itemData name="Column 6" defStyleNum="dsFunction"/>
+      <itemData name="Column 7" defStyleNum="dsBaseN"/>
+      <itemData name="Column 8" defStyleNum="dsOperator"/>
+      <itemData name="Column 9" defStyleNum="dsDataType"/>
+
+      <itemData name="Column 0 Separator" defStyleNum="dsNormal"/>
+      <itemData name="Column 1 Separator" defStyleNum="dsVariable"/>
+      <itemData name="Column 2 Separator" defStyleNum="dsString"/>
+      <itemData name="Column 3 Separator" defStyleNum="dsBuiltIn"/>
+      <itemData name="Column 4 Separator" defStyleNum="dsPreprocessor"/>
+      <itemData name="Column 5 Separator" defStyleNum="dsChar"/>
+      <itemData name="Column 6 Separator" defStyleNum="dsFunction"/>
+      <itemData name="Column 7 Separator" defStyleNum="dsBaseN"/>
+      <itemData name="Column 8 Separator" defStyleNum="dsOperator"/>
+      <itemData name="Column 9 Separator" defStyleNum="dsDataType"/>
+    </itemDatas>
+  </highlighting>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->
+

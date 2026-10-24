@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
   *************************************************************************
 
@@ -34,7 +34,7 @@
 
   *************************************************************************
 -->
-<language name="ANS-Forth94" version="4" kateversion="5.0" section="Sources" extensions="*.4th;*.4TH;*.f;*.F;*.frt;*.FRT;*.fs;*.FS;*.fth;*.FTH;*.seq;*.SEQ" mimetype="" author="Mark Corbin (mark@dibsco.co.uk)" license="LGPLv2.1+" priority="5">
+<language name="ANS-Forth94" version="8" kateversion="5.0" section="Sources" extensions="*.4th;*.4TH;*.f;*.F;*.frt;*.FRT;*.fs;*.FS;*.fth;*.FTH;*.seq;*.SEQ" mimetype="" author="Mark Corbin (mark@dibsco.co.uk)" license="LGPLv2.1+" priority="5">
   <highlighting>
     <list name="core-keywords">
       <item>!</item>
@@ -476,8 +476,7 @@
         <RegExpr attribute="Core Ext Keyword" context="String" insensitive="true" String="(^|\s+)(C&quot;)($|\s+)"/>
         <RegExpr attribute="Core Ext Keyword" context="Parse String" insensitive="true" String="(^|\s+)(PARSE)($|\s+)"/>
         <RegExpr attribute="Core Ext Keyword" context="Display String" String="(^|\s+)([\.][\(])($|\s+)"/>
-        <RegExpr attribute="Core Ext Keyword" context="Variable" insensitive="true" String="(^|\s+)(TO)($|\s+)"/>
-        <RegExpr attribute="Core Ext Keyword" context="Variable" insensitive="true" String="(^|\s+)(VALUE)($|\s+)"/>
+        <RegExpr attribute="Core Ext Keyword" context="Variable" insensitive="true" String="(^|\s+)(TO|VALUE)($|\s+)"/>
         <RegExpr attribute="Double Keyword" context="Constant" insensitive="true" String="(^|\s+)(2CONSTANT)($|\s+)"/>
         <RegExpr attribute="Double Keyword" context="Variable" insensitive="true" String="(^|\s+)(2VARIABLE)($|\s+)"/>
         <RegExpr attribute="Floating Keyword" context="Constant" insensitive="true" String="(^|\s+)(FCONSTANT)($|\s+)"/>
@@ -518,10 +517,10 @@
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Comment">
         <DetectChar attribute="Core Keyword" context="#pop" char=")" endRegion="comment"/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="Single Comment">
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="String" lineEndContext="#stay" name="Display String">
         <DetectChar attribute="Core Keyword" context="#pop" char=")"/>
@@ -552,7 +551,7 @@
       <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
       <itemData name="Core Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
       <itemData name="Core Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
-      <itemData name="Obs Core Ext Keyword" defStyleNum="dsKeyword" color="#ff0000" spellChecking="false"/>
+      <itemData name="Obs Core Ext Keyword" defStyleNum="dsWarning" bold="1" spellChecking="false"/> <!-- #ff0000 -->
       <itemData name="Block Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
       <itemData name="Block Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
       <itemData name="Double Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
@@ -570,7 +569,7 @@
       <itemData name="Memory Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
       <itemData name="Tools Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
       <itemData name="Tools Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
-      <itemData name="Obs Tools Ext Keyword" defStyleNum="dsKeyword" color="#ff0000" spellChecking="false"/>
+      <itemData name="Obs Tools Ext Keyword" defStyleNum="dsWarning" bold="1" spellChecking="false"/> <!-- #ff0000 -->
       <itemData name="Search Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
       <itemData name="Search Ext Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
       <itemData name="String Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
@@ -590,6 +589,8 @@
     <keywords casesensitive="0" weakDeliminator="!£$%^&amp;#&apos;~|\(){}*+,-./=@:;&lt;&gt;&quot;?[]"/>
     <comments>
       <comment name="multiLine" start="( " end=")" region="comment"/>
+      <comment name="singleLine" start="\ "/>
     </comments>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd" [ <!ENTITY number "([-]?\d+)"> ] >
-<language name="Rich Text Format" version="2" kateversion="2.4" section="Markup" extensions="*.rtf" mimetype="text/rtf;application/rtf" author="Lukas Sommer" license="LGPL version 2.1, or version 3 or later versions approved by the membership of KDE e.V.; or any other license appoved by the emembership of KDE e.V.">
+<!DOCTYPE language [ <!ENTITY number "([-]?\d+)"> ] >
+<language name="Rich Text Format" version="4" kateversion="2.4" section="Markup" extensions="*.rtf" mimetype="text/rtf;application/rtf" author="Lukas Sommer" license="LGPL version 2.1, or version 3 or later versions approved by the membership of KDE e.V.; or any other license appoved by the emembership of KDE e.V.">
 
   <highlighting>
     
@@ -12,7 +12,7 @@
         <DetectChar char="\" lookAhead="true" context="context_process_backslash" />
       </context>
 
-      <context lineEndContext="context_normal" fallthrough="true" fallthroughContext="context_normal" attribute="Numeric parameter" name="context_process_backslash">
+      <context lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop" attribute="Numeric parameter" name="context_process_backslash">
         <Detect2Chars char="\" char1="|" attribute="Control words" />
         <Detect2Chars char="\" char1="~" attribute="Character" />
         <Detect2Chars char="\" char1="-" attribute="Character" />
@@ -22,14 +22,13 @@
         <Detect2Chars char="\" char1="\" attribute="Character" />
         <Detect2Chars char="\" char1="{" attribute="Character" />
         <Detect2Chars char="\" char1="}" attribute="Character" />
-        <RegExpr String="\\u&number;" attribute="Character"/>
-        <RegExpr String="\\'[01-9a-f]{2}" attribute="Character"/>
+        <RegExpr String="\\u&number;|\\'[01-9a-f]{2}" attribute="Character"/>
         <RegExpr String="\\[a-zA-Z]+" attribute="Control words" context="context_functionparameter" />
         <DetectChar char="\" attribute="Error" />
       </context>
 
-      <context attribute="Control words" lineEndContext="context_normal" fallthrough="true" fallthroughContext="context_normal" name="context_functionparameter">
-        <RegExpr String="[-]?\d+" attribute="Numeric parameter" context="context_normal" />
+      <context attribute="Control words" lineEndContext="#pop#pop" fallthrough="true" fallthroughContext="#pop#pop" name="context_functionparameter">
+        <RegExpr String="[-]?\d+" attribute="Numeric parameter" context="#pop#pop" />
         <DetectChar char="-" attribute="Error" />
       </context>
 

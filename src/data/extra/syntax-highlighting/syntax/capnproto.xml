@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language[
+  <!ENTITY escape_str "\\(x[[:xdigit:]]{2}|[0-7]{1,3}|[abfnrtv\\'&quot;])">
+]>
+<!-- https://capnproto.org/language.html -->
+<language name="Cap'n Proto" section="Sources"
+  version="1" kateversion="5.79"
+  indenter="cstyle"
+  extensions="*.capnp"
+  author="Jonathan Poelen (jonathan.poelen@gmail.com)"
+  license="MIT">
+<highlighting>
+
+<list name="keyword">
+  <item>annotation</item>
+  <item>const</item>
+  <item>enum</item>
+  <item>extends</item>
+  <item>import</item>
+  <item>interface</item>
+  <item>struct</item>
+  <item>union</item>
+  <item>using</item>
+</list>
+
+<list name="type">
+  <item>Void</item>
+  <item>Bool</item>
+  <item>Int8</item>
+  <item>Int16</item>
+  <item>Int32</item>
+  <item>Int64</item>
+  <item>UInt8</item>
+  <item>UInt16</item>
+  <item>UInt32</item>
+  <item>UInt64</item>
+  <item>Float32</item>
+  <item>Float64</item>
+  <item>Text</item>
+  <item>Data</item>
+  <item>List</item>
+
+  <item>union</item>
+  <item>group</item>
+
+  <item>AnyPointer</item>
+</list>
+
+<contexts>
+  <context name="Normal" attribute="Normal Text">
+    <DetectSpaces/>
+    <AnyChar String=",;" attribute="Separator Symbol"/>
+    <AnyChar String="[]()->" attribute="Symbol"/>
+    <HlCHex attribute="Id" context="CheckInvalidSuffix" additionalDeliminator="@"/>
+    <Int attribute="Id" context="CheckInvalidSuffix" additionalDeliminator="@"/>
+    <DetectChar char="@" attribute="Id"/>
+    <DetectChar char=":" attribute="Type Symbol" context="Type"/>
+    <DetectChar char="=" attribute="Field Assignement" context="Value"/>
+    <DetectChar char="#" attribute="Comment" context="Comment"/>
+    <DetectChar char="$" attribute="Annotation Symbol" context="Annotation"/>
+    <DetectChar char="{" attribute="Block Symbol" beginRegion="Brace1"/>
+    <DetectChar char="}" attribute="Block Symbol" endRegion="Brace1"/>
+    <keyword String="keyword" attribute="Keyword"/>
+    <DetectIdentifier/>
+  </context>
+
+  <!-- Type @{ -->
+  <context name="Type" attribute="Type">
+    <AnyChar String="{};:=$)," context="#pop" lookAhead="1"/>
+    <IncludeRules context="FindCommonType"/>
+  </context>
+
+  <context name="ParenType" attribute="Type">
+    <DetectChar char=")" attribute="Type" context="#pop"/>
+    <AnyChar String="{};" context="#pop#pop" lookAhead="1"/>
+    <IncludeRules context="FindCommonType"/>
+    <DetectSpaces attribute="Type"/>
+  </context>
+
+  <context name="FindCommonType" attribute="Type">
+    <DetectChar char="(" attribute="Type" context="ParenType"/>
+    <DetectChar char='"' attribute="String Type" context="TypeDQ"/>
+    <DetectChar char="'" attribute="String Type" context="TypeSQ"/>
+    <DetectChar char="#" attribute="Comment" context="Comment"/>
+    <keyword String="type" attribute="Built-in Type"/>
+    <DetectIdentifier attribute="Type"/>
+  </context>
+
+  <context name="TypeDQ" attribute="Type" lineEndContext="#pop">
+    <DetectChar char='"' attribute="String Type" context="#pop"/>
+    <DetectChar char="\" context="EscapeTypeQ" lookAhead="1"/>
+  </context>
+
+  <context name="TypeSQ" attribute="Type" lineEndContext="#pop">
+    <DetectChar char="'" attribute="String Type" context="#pop"/>
+    <DetectChar char="\" context="EscapeTypeQ" lookAhead="1"/>
+  </context>
+
+  <context name="EscapeTypeQ" attribute="Type" lineEndContext="#pop">
+    <RegExpr String="&escape_str;" attribute="String Type Char" context="#pop"/>
+    <IncludeRules context="InvalidEscapeString"/>
+  </context>
+  <!-- Type @} -->
+
+
+  <!-- Value @{ -->
+  <context name="Value" attribute="Value">
+    <AnyChar context="#pop" String="{};:$)," lookAhead="1"/>
+    <IncludeRules context="FindCommonValue"/>
+  </context>
+
+  <context name="ParenValue" attribute="Value">
+    <AnyChar String="])" attribute="Symbol" context="#pop"/>
+    <AnyChar context="#pop#pop" String="{};" lookAhead="1"/>
+    <IncludeRules context="FindCommonValue"/>
+  </context>
+
+  <context name="FindCommonValue" attribute="Value">
+    <DetectSpaces attribute="Value"/>
+    <AnyChar String="0123456789" context="Number" lookAhead="1"/>
+    <AnyChar String="([" attribute="Symbol" context="ParenValue"/>
+    <DetectChar char="-" attribute="Operator"/>
+    <DetectChar char="=" attribute="Value Assignement"/>
+    <DetectChar char='"' attribute="String" context="StringDQ"/>
+    <DetectChar char="'" attribute="String" context="StringSQ"/>
+    <DetectChar char="#" attribute="Comment" context="Comment"/>
+    <DetectChar char="," attribute="Separator Symbol"/>
+    <WordDetect String="nan" attribute="Number"/>
+    <WordDetect String="inf" attribute="Number"/>
+    <WordDetect String="true" attribute="Constant"/>
+    <WordDetect String="false" attribute="Constant"/>
+    <DetectIdentifier attribute="Value"/>
+  </context>
+  <!-- Value @} -->
+
+
+  <!-- String @{ -->
+  <context name="StringDQ" attribute="String" lineEndContext="#pop">
+    <DetectChar char='"' attribute="String" context="#pop"/>
+    <DetectChar char="\" context="EscapeString" lookAhead="1"/>
+  </context>
+
+  <context name="StringSQ" attribute="String" lineEndContext="#pop">
+    <DetectChar char="'" attribute="String" context="#pop"/>
+    <DetectChar char="\" context="EscapeString" lookAhead="1"/>
+  </context>
+
+  <context name="EscapeString" attribute="String" lineEndContext="#pop">
+    <RegExpr String="&escape_str;" attribute="String Char" context="#pop"/>
+    <IncludeRules context="InvalidEscapeString"/>
+  </context>
+  <!-- String @} -->
+
+
+  <!-- Number @{ -->
+  <context name="Number" attribute="Number">
+    <StringDetect String="0x" attribute="Number Prefix" context="Hex"/>
+    <WordDetect String="0" attribute="Number" context="#pop"
+                additionalDeliminator="@$'&quot;"/>
+    <!-- .2 is an invalid float -->
+    <RegExpr String="[0-9]+([.][0-9]*([eE][-+]?[0-9]+)?|[eE][-+]?[0-9]+)|[1-9][0-9]*"
+              attribute="Number" context="CheckInvalidSuffix"/>
+    <DetectChar char="0" attribute="Number Prefix" context="Oct"/>
+  </context>
+
+  <context name="Hex" attribute="Number" fallthroughContext="#pop!CheckInvalidSuffix">
+    <AnyChar String="0123456789abcdefABCDEF" attribute="Number"/>
+  </context>
+
+  <context name="Oct" attribute="Number" fallthroughContext="#pop!CheckInvalidSuffix">
+    <AnyChar String="01234567" attribute="Number"/>
+  </context>
+
+  <context name="CheckInvalidSuffix" attribute="Error" fallthroughContext="#pop#pop">
+    <DetectIdentifier attribute="Error"/>
+    <AnyChar String="0123456789" attribute="Error"/>
+  </context>
+  <!-- Number @} -->
+
+
+  <!-- Annotation @{ -->
+  <context name="Annotation" attribute="Annotation">
+    <AnyChar String="{};:=$)," context="#pop" lookAhead="1"/>
+    <IncludeRules context="FindCommonAnnotation"/>
+  </context>
+
+  <context name="ParenAnnotation" attribute="Annotation">
+    <AnyChar context="#pop#pop" String="{};" lookAhead="1"/>
+    <DetectChar char=")" attribute="Annotation" context="#pop"/>
+    <IncludeRules context="FindCommonAnnotation"/>
+  </context>
+
+  <context name="FindCommonAnnotation" attribute="Annotation">
+    <DetectChar char="#" attribute="Comment" context="Comment"/>
+    <DetectChar char="(" attribute="Annotation" context="ParenAnnotation"/>
+    <DetectChar char='"' attribute="String Annotation" context="AnnotationDQ"/>
+    <DetectChar char="'" attribute="String Annotation" context="AnnotationSQ"/>
+    <DetectIdentifier attribute="Annotation"/>
+    <DetectSpaces attribute="Annotation"/>
+  </context>
+
+  <context name="AnnotationDQ" attribute="Annotation" lineEndContext="#pop">
+    <DetectChar char='"' attribute="String Annotation" context="#pop"/>
+    <DetectChar char="\" context="EscapeAnnotationQ" lookAhead="1"/>
+  </context>
+
+  <context name="AnnotationSQ" attribute="Annotation" lineEndContext="#pop">
+    <DetectChar char="'" attribute="String Annotation" context="#pop"/>
+    <DetectChar char="\" context="EscapeAnnotationQ" lookAhead="1"/>
+  </context>
+
+  <context name="EscapeAnnotationQ" attribute="Annotation" lineEndContext="#pop">
+    <RegExpr String="&escape_str;" attribute="String Annotation Char" context="#pop"/>
+    <IncludeRules context="InvalidEscapeString"/>
+  </context>
+  <!-- Annotation @} -->
+
+
+  <context name="InvalidEscapeString" attribute="Type" lineEndContext="#pop">
+    <RegExpr String="\\(x[[:xdigit:]]?|[0-7]+)?" attribute="Error" context="#pop"/>
+  </context>
+
+  <context attribute="Comment" lineEndContext="#pop" name="Comment">
+    <DetectSpaces/>
+    <IncludeRules context="##Comments"/>
+    <DetectIdentifier/>
+  </context>
+
+</contexts>
+<itemDatas>
+  <itemData name="Normal Text"    defStyleNum="dsNormal" spellChecking="false"/>
+  <itemData name="Comment"        defStyleNum="dsComment"/>
+  <itemData name="Error"          defStyleNum="dsError" spellChecking="false"/>
+  <itemData name="Keyword"        defStyleNum="dsKeyword" spellChecking="false"/>
+  <itemData name="Id"             defStyleNum="dsFunction" spellChecking="false"/>
+  <itemData name="Field Assignement" defStyleNum="dsOperator" spellChecking="false"/>
+
+  <itemData name="Value"          defStyleNum="dsVariable" spellChecking="false"/>
+  <itemData name="Value Assignement" defStyleNum="dsAttribute" spellChecking="false"/>
+  <itemData name="Operator"       defStyleNum="dsPreprocessor" spellChecking="false"/>
+  <itemData name="Number Prefix"  defStyleNum="dsDecVal" spellChecking="false" italic="1"/>
+  <itemData name="Number"         defStyleNum="dsDecVal" spellChecking="false"/>
+  <itemData name="Constant"       defStyleNum="dsConstant" spellChecking="false"/>
+  <itemData name="String"         defStyleNum="dsString"/>
+  <itemData name="String Char"    defStyleNum="dsChar" spellChecking="false"/>
+
+  <itemData name="Type"           defStyleNum="dsDataType" spellChecking="false"/>
+  <itemData name="Built-in Type"  defStyleNum="dsDataType" spellChecking="false"/>
+  <itemData name="Type Symbol"    defStyleNum="dsDataType" spellChecking="false"/>
+  <itemData name="String Type"    defStyleNum="dsDataType" spellChecking="false"/>
+  <itemData name="String Type Char" defStyleNum="dsDataType" spellChecking="false"/>
+
+  <itemData name="Annotation"     defStyleNum="dsInformation" spellChecking="false"/>
+  <itemData name="Annotation Symbol"  defStyleNum="dsInformation" spellChecking="false"/>
+  <itemData name="String Annotation"  defStyleNum="dsInformation" spellChecking="false"/>
+  <itemData name="String Annotation Char" defStyleNum="dsInformation" spellChecking="false"/>
+
+  <itemData name="Symbol"         defStyleNum="dsNormal" spellChecking="false"/>
+  <itemData name="Block Symbol"   defStyleNum="dsNormal" spellChecking="false" bold="1"/>
+  <itemData name="Separator Symbol" defStyleNum="dsNormal" spellChecking="false"/>
+</itemDatas>
+
+</highlighting>
+<general>
+  <comments>
+    <comment name="singleLine" start="#"/>
+  </comments>
+  <keywords casesensitive="1"/>
+</general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

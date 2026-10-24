@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="AWK" version="3" kateversion="5.0" section="Scripts"
+<!DOCTYPE language>
+<language name="AWK" version="6" kateversion="5.0" section="Scripts"
   extensions="*.awk" mimetype="text/x-awk" indenter="cstyle"
   license="LGPL">
 <!-- patched by igli#kate@irc:chat.freenode.net -->
@@ -134,128 +134,128 @@
       <item>xdigit</item>
     </list>
 
-<contexts>
-<!-- START CONTEXTS -->
-<context name="Pattern" attribute="Normal" lineEndContext="#stay">
-	<DetectSpaces />
-	<DetectChar char="{" attribute="Symbol" context="Block" beginRegion="block" />
-	<DetectChar char="}" attribute="Error" context="#stay"/>
-	<DetectChar char="/" attribute="Regex Op" firstNonSpace="true" context="Regex"/>
-	<IncludeRules context="base" />
-	<keyword String="special" attribute="Special" context="#stay"/>
-</context>
+    <contexts>
+      <!-- START CONTEXTS -->
+      <context name="Pattern" attribute="Normal" lineEndContext="#stay">
+        <DetectSpaces />
+        <DetectChar char="{" attribute="Symbol" context="Block" beginRegion="block" />
+        <DetectChar char="}" attribute="Error" context="#stay"/>
+        <DetectChar char="/" attribute="Regex Op" firstNonSpace="true" context="Regex"/>
+        <IncludeRules context="base" />
+        <keyword String="special" attribute="Special" context="#stay"/>
+      </context>
 
-<context name="Block" attribute="Normal" lineEndContext="#stay">
-	<DetectSpaces />
-	<DetectChar char="}" attribute="Symbol" context="#pop" endRegion="block" />
-	<DetectChar char="{" attribute="Symbol" context="Block" beginRegion="block" />
-	<IncludeRules context="base" />
-	<keyword String="special" attribute="Error" context="#stay"/>
-</context>
+      <context name="Block" attribute="Normal" lineEndContext="#stay">
+        <DetectSpaces />
+        <DetectChar char="}" attribute="Symbol" context="#pop" endRegion="block" />
+        <DetectChar char="{" attribute="Symbol" context="Block" beginRegion="block" />
+        <IncludeRules context="base" />
+        <keyword String="special" attribute="Error" context="#stay"/>
+      </context>
 
-<context name="base" attribute="Normal" lineEndContext="#stay">
-	<DetectChar char=")" attribute="Symbol" context="#stay"/>
-	<DetectChar char="(" attribute="Symbol" context="Match"/>
-	<AnyChar String="=~" attribute="Operator" context="Match"/>
-	<DetectChar char="," attribute="Separator Symbol" context="ArgSep"/>
-	<DetectChar char="&quot;" attribute="String" context="String"/>
-	<DetectChar char="#" attribute="Comment" context="Comment"/>
-	<AnyChar String="@!%&amp;*+-/:&lt;&gt;?^|" attribute="Operator" context="#stay"/>
-	<keyword String="controlflow" attribute="ControlFlow" context="#stay"/>
-	<keyword String="keywords" attribute="Keyword" context="#stay"/>
-	<keyword String="builtins" attribute="Builtin" context="#stay"/>
-	<keyword String="functions" attribute="Function" context="#stay"/>
-	<Float attribute="Float"   context="#stay"/>
-	<Int   attribute="Decimal" context="#stay"/>
-	<RegExpr String="\$[A-Za-z0-9_]+" attribute="Field" context="#stay"/>
-	<DetectChar char=";" attribute="Separator Symbol" context="#stay"/>
-</context>
+      <context name="base" attribute="Normal" lineEndContext="#stay">
+        <DetectChar char=")" attribute="Symbol" context="#stay"/>
+        <DetectChar char="(" attribute="Symbol" context="Match"/>
+        <AnyChar String="=~" attribute="Operator" context="Match"/>
+        <DetectChar char="," attribute="Separator Symbol" context="ArgSep"/>
+        <DetectChar char="&quot;" attribute="String" context="String"/>
+        <DetectChar char="#" attribute="Comment" context="Comment"/>
+        <AnyChar String="@!%&amp;*+-/:&lt;&gt;?^|" attribute="Operator" context="#stay"/>
+        <keyword String="controlflow" attribute="ControlFlow" context="#stay"/>
+        <keyword String="keywords" attribute="Keyword" context="#stay"/>
+        <keyword String="builtins" attribute="Builtin" context="#stay"/>
+        <keyword String="functions" attribute="Function" context="#stay"/>
+        <Float attribute="Float"   context="#stay"/>
+        <Int   attribute="Decimal" context="#stay"/>
+        <RegExpr String="\$[A-Za-z0-9_]+" attribute="Field" context="#stay"/>
+        <DetectChar char=";" attribute="Separator Symbol" context="#stay"/>
+      </context>
 
-<context name="ArgSep" attribute="Normal" lineEndContext="#stay"
-   fallthrough="true" fallthroughContext="#pop">
-	<IncludeRules context="Match" />
-</context>
+      <context name="ArgSep" attribute="Normal" lineEndContext="#stay"
+        fallthrough="true" fallthroughContext="#pop">
+        <IncludeRules context="Match" />
+      </context>
 
-<context name="String" attribute="String" lineEndContext="#stay">
-	<DetectChar char="&quot;" attribute="String" context="#pop"/>
-	<DetectChar char="\" context="Escape" attribute="Escape"/>
-</context>
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <DetectChar char="&quot;" attribute="String" context="#pop"/>
+        <DetectChar char="\" context="Escape" attribute="Escape"/>
+      </context>
 
-<context name="Comment" attribute="Comment" lineEndContext="#pop">
-	<IncludeRules context="##Alerts"/>
-</context>
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <IncludeRules context="##Comments"/>
+      </context>
 
-<context name="Escape" attribute="Error" lineEndContext="#pop">
-	<RegExpr String="[\\abfnrtv]|x[0-9a-fA-F]{1,2}|[0-7]{1,3}" attribute="Escape" context="#pop"/>
-	<RegExpr String="." attribute="Error" context="#pop"/>
-</context>
+      <context name="Escape" attribute="Error" lineEndContext="#pop">
+        <RegExpr String="[\\abfnrtv]|x[0-9a-fA-F]{1,2}|[0-7]{1,3}" attribute="Escape" context="#pop"/>
+        <RegExpr String="." attribute="Error" context="#pop"/>
+      </context>
 
-<context name="Match" attribute="Normal" lineEndContext="#pop"
-   fallthrough="true" fallthroughContext="#pop">
-	<DetectSpaces />
-	<DetectChar char="/" attribute="Regex Op" context="#pop!Regex"/>
-</context>
+      <context name="Match" attribute="Normal" lineEndContext="#pop"
+        fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces />
+        <DetectChar char="/" attribute="Regex Op" context="#pop!Regex"/>
+      </context>
 
-<context name="Regex" attribute="Regex" lineEndContext="#pop">
-	<IncludeRules context="regex"/>
-	<DetectChar char="/" context="#pop" attribute="Regex Op"/>
-</context>
+      <context name="Regex" attribute="Regex" lineEndContext="#pop">
+        <IncludeRules context="regex"/>
+        <DetectChar char="/" context="#pop" attribute="Regex Op"/>
+      </context>
 
-<context name="regex" attribute="Normal" lineEndContext="#stay">
-	<Detect2Chars char="[" char1="^" context="RegexChar" attribute="Regex Op"/>
-	<DetectChar char="[" context="RegexChar" attribute="Regex Op"/>
-	<AnyChar String="^$.+?*()|" context="#stay" attribute="Regex Op"/>
-	<DetectChar char="\" context="Regex Escape" attribute="Regex Op"/>
-</context>
+      <context name="regex" attribute="Normal" lineEndContext="#stay">
+        <Detect2Chars char="[" char1="^" context="RegexChar" attribute="Regex Op"/>
+        <DetectChar char="[" context="RegexChar" attribute="Regex Op"/>
+        <AnyChar String="^$.+?*()|" context="#stay" attribute="Regex Op"/>
+        <DetectChar char="\" context="Regex Escape" attribute="Regex Op"/>
+      </context>
 
-<context name="Regex Escape" attribute="Normal" lineEndContext="#pop">
-	<RegExpr String="[&lt;&gt;sSwW`'[\]{}^$.+?*()|/\\abfnrtv]|x[0-9a-fA-F]{1,2}|[0-7]{1,3}" attribute="Escape" context="#pop"/>
-	<RegExpr String="." attribute="Regex" context="#pop"/>
-</context>
+      <context name="Regex Escape" attribute="Normal" lineEndContext="#pop">
+        <RegExpr String="[&lt;&gt;sSwW`'[\]{}^$.+?*()|/\\abfnrtv]|x[0-9a-fA-F]{1,2}|[0-7]{1,3}" attribute="Escape" context="#pop"/>
+        <RegExpr String="." attribute="Regex" context="#pop"/>
+      </context>
 
-<context name="RegexChar" attribute="Regex" lineEndContext="#pop"
-   fallthrough="true" fallthroughContext="InChar">
-	<AnyChar String="-]" context="InChar" attribute="Regex"/>
-</context>
+      <context name="RegexChar" attribute="Regex" lineEndContext="#pop"
+        fallthrough="true" fallthroughContext="InChar">
+        <AnyChar String="-]" context="InChar" attribute="Regex"/>
+      </context>
 
-<context name="InChar" attribute="Regex" lineEndContext="#pop#pop">
-	<Detect2Chars char="-" char1="]" context="InCharEnd" attribute="Regex" lookAhead="true"/>
-	<DetectChar char="-" context="#stay" attribute="Regex Op"/>
-	<DetectChar char="\" context="Regex Escape" attribute="Regex Op"/>
-	<DetectChar char="[" context="CharClassSelect" attribute="Regex" lookAhead="true"/>
-	<DetectChar char="]" context="#pop#pop" attribute="Regex Op"/>
-</context>
+      <context name="InChar" attribute="Regex" lineEndContext="#pop#pop">
+        <Detect2Chars char="-" char1="]" context="InCharEnd" attribute="Regex" lookAhead="true"/>
+        <DetectChar char="-" context="#stay" attribute="Regex Op"/>
+        <DetectChar char="\" context="Regex Escape" attribute="Regex Op"/>
+        <DetectChar char="[" context="CharClassSelect" attribute="Regex" lookAhead="true"/>
+        <DetectChar char="]" context="#pop#pop" attribute="Regex Op"/>
+      </context>
 
-<context name="InCharEnd" attribute="Regex Op" lineEndContext="#stay">
-	<DetectChar char="-" context="#stay" attribute="Regex"/>
-	<DetectChar char="]" context="#pop#pop#pop" attribute="Regex Op"/>
-</context>
+      <context name="InCharEnd" attribute="Regex Op" lineEndContext="#stay">
+        <DetectChar char="-" context="#stay" attribute="Regex"/>
+        <DetectChar char="]" context="#pop#pop#pop" attribute="Regex Op"/>
+      </context>
 
-<context name="CharClassSelect" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
-	<Detect2Chars char="[" char1=":" context="#pop!CharClass" attribute="CharClass"/>
-	<Detect2Chars char="[" char1="." context="#pop!CollatingSymbols" attribute="CharClass"/>
-	<Detect2Chars char="[" char1="=" context="#pop!EquivalenceClass" attribute="CharClass"/>
-	<DetectChar char="[" context="#pop" attribute="Regex"/>
-</context>
+      <context name="CharClassSelect" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
+        <Detect2Chars char="[" char1=":" context="#pop!CharClass" attribute="CharClass"/>
+        <Detect2Chars char="[" char1="." context="#pop!CollatingSymbols" attribute="CharClass"/>
+        <Detect2Chars char="[" char1="=" context="#pop!EquivalenceClass" attribute="CharClass"/>
+        <DetectChar char="[" context="#pop" attribute="Regex"/>
+      </context>
 
-<context name="CharClass" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
-	<keyword String="charclass" attribute="CharClass" context="#stay"/>
-	<Detect2Chars char=":" char1="]" attribute="CharClass" context="#pop"/>
-	<DetectChar char="]" attribute="Error" context="#pop"/>
-</context>
+      <context name="CharClass" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
+        <keyword String="charclass" attribute="CharClass" context="#stay"/>
+        <Detect2Chars char=":" char1="]" attribute="CharClass" context="#pop"/>
+        <DetectChar char="]" attribute="Error" context="#pop"/>
+      </context>
 
-<context name="CollatingSymbols" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
-	<Detect2Chars char="." char1="]" attribute="CharClass" context="#pop"/>
-	<DetectChar char="]" attribute="Error" context="#pop"/>
-</context>
+      <context name="CollatingSymbols" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
+        <Detect2Chars char="." char1="]" attribute="CharClass" context="#pop"/>
+        <DetectChar char="]" attribute="Error" context="#pop"/>
+      </context>
 
-<context name="EquivalenceClass" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
-	<Detect2Chars char="=" char1="]" attribute="CharClass" context="#pop"/>
-	<DetectChar char="]" attribute="Error" context="#pop"/>
-</context>
+      <context name="EquivalenceClass" attribute="Custom" lineEndContext="#pop#pop#pop#pop">
+        <Detect2Chars char="=" char1="]" attribute="CharClass" context="#pop"/>
+        <DetectChar char="]" attribute="Error" context="#pop"/>
+      </context>
 
-<!-- END OF CONTEXTS -->
-</contexts>
+      <!-- END OF CONTEXTS -->
+  </contexts>
     <itemDatas>
       <itemData name="Normal"   defStyleNum="dsNormal"/>
       <itemData name="ControlFlow" defStyleNum="dsControlFlow" spellChecking="false"/>
@@ -271,8 +271,8 @@
       <itemData name="Error"    defStyleNum="dsError"/>
       <itemData name="Special"  defStyleNum="dsControlFlow" bold="0"/>
       <itemData name="Operator" defStyleNum="dsOperator"/>
-      <itemData name="Symbol"   defStyleNum="dsNormal"/>
-      <itemData name="Separator Symbol" defStyleNum="dsNormal"/>
+      <itemData name="Symbol"   defStyleNum="dsOperator"/>
+      <itemData name="Separator Symbol" defStyleNum="dsOperator"/>
       <itemData name="Regex"    defStyleNum="dsSpecialString" spellChecking="false"/>
       <itemData name="Regex Op" defStyleNum="dsOthers"/>
       <itemData name="CharClass" defStyleNum="dsExtension" spellChecking="false"/>
@@ -286,3 +286,4 @@
     <keywords casesensitive="1" weakDeliminator="@"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

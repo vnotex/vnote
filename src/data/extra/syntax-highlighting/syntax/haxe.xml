@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
   ========================================================================
 
@@ -12,7 +12,7 @@
   ========================================================================
 -->
 
-<language name="Haxe" section="Sources" extensions="*.hx;*.Hx;*.hX;*.HX;" mimetype="text/x-hxsrc" version="2" kateversion="2.4" casesensitive="true" author="Chad Joan" license="MIT">
+<language name="Haxe" section="Sources" extensions="*.hx;*.Hx;*.hX;*.HX;" mimetype="text/x-hxsrc" version="6" kateversion="5.0" casesensitive="true" author="Chad Joan" license="MIT">
   <highlighting>
     <list name="keywords">
     
@@ -91,8 +91,7 @@
 
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="normal">
-        <RegExpr attribute="Preprocessor" context="#pop" String="#if(\s+\w+)?" />
-        <RegExpr attribute="Preprocessor" context="#pop" String="#(else|elseif|end|error)" />
+        <RegExpr attribute="Preprocessor" context="#pop" String="#if(\s+\w+)?|#(else|elseif|end|error)" />
 
         <keyword attribute="Keyword"        context="#stay"      String="keywords"/>
         <keyword attribute="Module"         context="ModuleName" String="modules"/>
@@ -118,8 +117,7 @@
         <!-- Float -->
         <!-- Floats must be matched before Binary|Octal|Hex|Integer -->
         <!-- All floats except integers -->
-        <RegExpr attribute="Float" context="#pop" String="[\d][\d]*(\.(?!\.)[\d]*([eE][-+]?[\d]+)?)"/>
-        <RegExpr attribute="Float" context="#pop" String="\.[\d][\d]*([eE][-+]?[\d]+)?"/>
+        <RegExpr attribute="Float" context="#pop" String="[\d][\d]*(\.(?!\.)[\d]*([eE][-+]?[\d]+)?)|\.[\d][\d]*([eE][-+]?[\d]+)?"/>
 
         <!-- Hex|Integer -->
         <RegExpr attribute="Hex"     context="#pop" String="0[xX][\da-fA-F]+"/>
@@ -135,7 +133,10 @@
       <!-- Strings -->
       <!-- '...' -->
       <context attribute="RawString" lineEndContext="#stay" name="RawString">
+        <Detect2Chars attribute="RawString" context="#stay" char="\" char1="'"/>
         <DetectChar attribute="RawString" context="#pop" char="'"/>
+        <HlCStringChar attribute="EscapeSequence"/>
+        <RegExpr attribute="EscapeSequence" context="#stay" String="\\(u[\da-fA-F]{4}|U[\da-fA-F]{8}|&amp;[a-zA-Z]\w+;)" />
       </context>
       <!-- "..." -->
       <context attribute="String" lineEndContext="#stay" name="String">
@@ -146,9 +147,14 @@
       </context>
 
       <!-- Comments -->
-      <context attribute="Comment" lineEndContext="#pop" name="CommentLine"/>
+      <context attribute="Comment" lineEndContext="#pop" name="CommentLine">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+      </context>
       <context attribute="Comment" lineEndContext="#stay" name="CommentBlock">
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="CommentBlock"/>
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
     </contexts>
     <itemDatas>
@@ -174,8 +180,9 @@
   <general>
     <comments>
       <comment name="singleLine" start="//"/>
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="CommentBlock"/>
     </comments>
     <keywords casesensitive="true"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Clipper" version="5" kateversion="5.0" section="Sources" extensions="*.prg;*.PRG;*.ch" mimetype="text/x-clipper-src" priority="2" author="Andrey Cherepanov (sibskull@mail.ru)" license="GPL">
+<!DOCTYPE language>
+<language name="Clipper" version="8" kateversion="5.0" section="Sources" extensions="*.prg;*.PRG;*.ch" mimetype="text/x-clipper-src" priority="2" author="Andrey Cherepanov (sibskull@mail.ru)" license="GPL">
   <highlighting>
 
     <list name="keywords">
@@ -410,22 +410,22 @@
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
         <WordDetect attribute="Keyword" context="#stay" String="function" insensitive="true" beginRegion="regFunction" />
         <WordDetect attribute="Keyword" context="#stay" column="0" String="return" insensitive="true" endRegion="regFunction" />
-	<RegExpr attribute="Keyword" context="#stay" String="\bbegin\s+sequence\b" insensitive="true" beginRegion="regSequence" />
-	<RegExpr attribute="Keyword" context="#stay" String="\bend\s+sequence\b" insensitive="true" endRegion="regSequence" />
+        <RegExpr attribute="Keyword" context="#stay" String="\bbegin\s+sequence\b" insensitive="true" beginRegion="regSequence" />
+        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+sequence\b" insensitive="true" endRegion="regSequence" />
         <RegExpr attribute="Keyword" context="#stay" String="\bdo\s+case\b" insensitive="true" beginRegion="regDoCase" />
-    <WordDetect attribute="Keyword" context="#stay" String="endcase" insensitive="true" endRegion="regDoCase" />
-	<RegExpr attribute="Keyword" context="#stay" String="\bdo\s+while\b" insensitive="true" beginRegion="regDoWhile" />
-	<WordDetect attribute="Keyword" context="#stay" String="enddo" insensitive="true" endRegion="regDoWhile" />
+        <WordDetect attribute="Keyword" context="#stay" String="endcase" insensitive="true" endRegion="regDoCase" />
+        <RegExpr attribute="Keyword" context="#stay" String="\bdo\s+while\b" insensitive="true" beginRegion="regDoWhile" />
+        <WordDetect attribute="Keyword" context="#stay" String="enddo" insensitive="true" endRegion="regDoWhile" />
         <WordDetect attribute="Keyword" context="#stay" String="for" insensitive="true" beginRegion="regFor" />
         <WordDetect attribute="Keyword" context="#stay" String="next" insensitive="true" endRegion="regFor" />
         <WordDetect attribute="Keyword" context="#stay" String="if" insensitive="true" beginRegion="regIf" />
         <WordDetect attribute="Keyword" context="#stay" String="elseif" insensitive="true" endRegion="regIf" beginRegion="regIf" />
-	<WordDetect attribute="Keyword" context="#stay" String="else" insensitive="true" endRegion="regIf" beginRegion="regIf" />
+        <WordDetect attribute="Keyword" context="#stay" String="else" insensitive="true" endRegion="regIf" beginRegion="regIf" />
         <WordDetect attribute="Keyword" context="#stay" String="endif" insensitive="true" endRegion="regIf" />
-	<WordDetect attribute="Keyword" context="#stay" String="switch" insensitive="true" beginRegion="regSwitch" />
-	<WordDetect attribute="Keyword" context="#stay" String="endswitch" insensitive="true" endRegion="regSwitch" />
+        <WordDetect attribute="Keyword" context="#stay" String="switch" insensitive="true" beginRegion="regSwitch" />
+        <WordDetect attribute="Keyword" context="#stay" String="endswitch" insensitive="true" endRegion="regSwitch" />
 
-	<keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
         <keyword attribute="Command" context="#stay" String="commands"/>
         <keyword attribute="Function" context="#stay" String="functions"/>
         <HlCHex  attribute="String Char" context="#stay"/>
@@ -433,7 +433,7 @@
         <RegExpr attribute="Region Marker" context="#stay" String="//\s*BEGIN.*$" beginRegion="regMarker"/>
         <RegExpr attribute="Region Marker" context="#stay" String="//\s*END.*$" endRegion="regMarker"/>
         <Detect2Chars attribute="Comment" context="LineComment" char="/" char1="/"/>
-	<RegExpr attribute="Comment" context="LineComment" String="^\s*\*.*$"/>
+        <RegExpr attribute="Comment" context="LineComment" String="^\s*\*.*$" column="0"/>
         <Detect2Chars attribute="Comment" context="BlockComment" char="/" char1="*" beginRegion="Comment2" />
         <AnyChar attribute="Symbol" context="#stay" String="!%&amp;()+,-&lt;:=&gt;[]^~"/>
         <DetectChar attribute="Preprocessor" context="Preprocessor" char="#"/>
@@ -447,11 +447,11 @@
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
       <context attribute="Comment" lineEndContext="#pop" name="LineComment">
-        <RegExpr attribute="Command" context="#stay" String="(FIXME|TODO|NOT(IC)?E)" />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="BlockComment">
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment2" />
-        <RegExpr attribute="Command" context="#stay" String="(FIXME|TODO|NOT(IC)?E)" />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
         <LineContinue attribute="Preprocessor" context="#stay"/>
@@ -480,7 +480,7 @@
       <itemData name="String"  		defStyleNum="dsString"/>
       <itemData name="String Char"  defStyleNum="dsSpecialChar"/>
       <itemData name="Comment"  	defStyleNum="dsComment"/>
-      <itemData name="Symbol"  		defStyleNum="dsNormal"/>
+      <itemData name="Symbol"  		defStyleNum="dsOperator"/>
       <itemData name="Preprocessor"	defStyleNum="dsPreprocessor"/>
       <itemData name="Prep. Lib"  	defStyleNum="dsImport"/>
       <itemData name="Eval Block"  	defStyleNum="dsOthers"/>
@@ -489,10 +489,10 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="*" />
       <comment name="singleLine" start="//" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment2" />
     </comments>
     <keywords casesensitive="0" weakDeliminator="?." />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

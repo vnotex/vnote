@@ -1,0 +1,366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+]>
+<language name="Solidity" alternativeNames="Sol" section="Sources"
+          version="7" kateversion="5.0"
+          indenter="cstyle"
+          mimetype=""
+          extensions="*.sol"
+          priority="5"
+          author="Robert Kaiser (kairo@kairo.at)"
+          license="MIT">
+<!--
+  Solidity 0.5+ support, based on Solidity docs, see https://solidity.readthedocs.io/en/latest/index.html
+-->
+<highlighting>
+  <!-- Types, see https://solidity.readthedocs.io/en/latest/types.html -->
+  <list name="types">
+    <item>bool</item>
+    <item>uint</item>
+    <item>uint8</item>
+    <item>uint16</item>
+    <item>uint24</item>
+    <item>uint32</item>
+    <item>uint40</item>
+    <item>uint48</item>
+    <item>uint56</item>
+    <item>uint64</item>
+    <item>uint72</item>
+    <item>uint80</item>
+    <item>uint88</item>
+    <item>uint96</item>
+    <item>uint104</item>
+    <item>uint112</item>
+    <item>uint120</item>
+    <item>uint128</item>
+    <item>uint136</item>
+    <item>uint144</item>
+    <item>uint152</item>
+    <item>uint160</item>
+    <item>uint168</item>
+    <item>uint176</item>
+    <item>uint184</item>
+    <item>uint192</item>
+    <item>uint200</item>
+    <item>uint208</item>
+    <item>uint216</item>
+    <item>uint224</item>
+    <item>uint232</item>
+    <item>uint240</item>
+    <item>uint248</item>
+    <item>uint256</item>
+    <item>int</item>
+    <item>int8</item>
+    <item>int16</item>
+    <item>int24</item>
+    <item>int32</item>
+    <item>int40</item>
+    <item>int48</item>
+    <item>int56</item>
+    <item>int64</item>
+    <item>int72</item>
+    <item>int80</item>
+    <item>int88</item>
+    <item>int96</item>
+    <item>int104</item>
+    <item>int112</item>
+    <item>int120</item>
+    <item>int128</item>
+    <item>int136</item>
+    <item>int144</item>
+    <item>int152</item>
+    <item>int160</item>
+    <item>int168</item>
+    <item>int176</item>
+    <item>int184</item>
+    <item>int192</item>
+    <item>int200</item>
+    <item>int208</item>
+    <item>int216</item>
+    <item>int224</item>
+    <item>int232</item>
+    <item>int240</item>
+    <item>int248</item>
+    <item>int256</item>
+    <!-- the detailed fixed types are not listed for now, as the whole family is not fully supported -->
+    <item>ufixed</item>
+    <item>fixed</item>
+    <item>address</item>
+    <item>byte</item>
+    <item>bytes</item>
+    <item>bytes1</item>
+    <item>bytes2</item>
+    <item>bytes3</item>
+    <item>bytes4</item>
+    <item>bytes5</item>
+    <item>bytes6</item>
+    <item>bytes7</item>
+    <item>bytes8</item>
+    <item>bytes9</item>
+    <item>bytes10</item>
+    <item>bytes11</item>
+    <item>bytes12</item>
+    <item>bytes13</item>
+    <item>bytes14</item>
+    <item>bytes15</item>
+    <item>bytes16</item>
+    <item>bytes17</item>
+    <item>bytes18</item>
+    <item>bytes19</item>
+    <item>bytes20</item>
+    <item>bytes21</item>
+    <item>bytes22</item>
+    <item>bytes23</item>
+    <item>bytes24</item>
+    <item>bytes25</item>
+    <item>bytes26</item>
+    <item>bytes27</item>
+    <item>bytes28</item>
+    <item>bytes29</item>
+    <item>bytes30</item>
+    <item>bytes31</item>
+    <item>bytes32</item>
+    <item>string</item>
+    <item>mapping</item>
+  </list>
+
+  <!-- Units and global variables, see https://solidity.readthedocs.io/en/latest/units-and-global-variables.html -->
+  <list name="units">
+    <item>wei</item>
+    <item>finney</item>
+    <item>szabo</item>
+    <item>ether</item>
+    <item>seconds</item>
+    <item>minutes</item>
+    <item>hours</item>
+    <item>days</item>
+    <item>weeks</item>
+  </list>
+  <list name="globals">
+    <item>block</item>
+    <item>msg</item>
+    <item>now</item>
+    <item>tx</item>
+    <item>this</item>
+    <item>super</item>
+    <!-- global functions, do they belong elswhere? -->
+    <item>blockhash</item>
+    <item>gasleft</item>
+    <item>abi</item>
+    <item>assert</item>
+    <item>require</item>
+    <item>revert</item>
+    <item>addmod</item>
+    <item>mulmod</item>
+    <item>keccak256</item>
+    <item>sha256</item>
+    <item>ripemd160</item>
+    <item>ecrecover</item>
+    <item>selfdestruct</item>
+    <item>type</item>
+    <!-- Low-level log functions, see https://solidity.readthedocs.io/en/latest/contracts.html#low-level-interface-to-logs -->
+    <item>log0</item>
+    <item>log1</item>
+    <item>log2</item>
+    <item>log3</item>
+    <item>log4</item>
+  </list>
+
+  <!-- Keywords, see https://solidity.readthedocs.io/en/latest/miscellaneous.html#cheatsheet -->
+  <!-- Some keywords that are about program flow were moved to control structures. -->
+  <list name="keywords">
+    <item>as</item>
+    <item>from</item>
+    <item>is</item>
+    <item>using</item>
+    <!-- Type-related, see https://solidity.readthedocs.io/en/latest/types.html -->
+    <item>enum</item>
+    <item>true</item>
+    <item>false</item>
+    <item>new</item>
+    <item>struct</item>
+    <item>constant</item>
+    <!-- Function-related, see https://solidity.readthedocs.io/en/latest/types.html#function-types -->
+    <item>internal</item>
+    <item>external</item>
+    <item>public</item>
+    <item>private</item>
+    <item>pure</item>
+    <item>view</item>
+    <item>payable</item>
+    <item>returns</item>
+    <!-- Data location, see https://solidity.readthedocs.io/en/latest/types.html#data-location -->
+    <item>memory</item>
+    <item>storage</item>
+    <item>calldata</item>
+    <!-- Operator? Variable-related, see https://solidity.readthedocs.io/en/latest/types.html -->
+    <item>delete</item>
+    <!-- Events, see https://solidity.readthedocs.io/en/latest/contracts.html#events -->
+    <item>event</item>
+    <item>indexed</item>
+  </list>
+
+  <!-- Control structures and expressions, see https://solidity.readthedocs.io/en/latest/control-structures.html -->
+  <list name="controlstructures">
+    <item>if</item>
+    <item>else</item>
+    <item>while</item>
+    <item>do</item>
+    <item>for</item>
+    <item>break</item>
+    <item>continue</item>
+    <item>return</item>
+    <!-- moved from keywords -->
+    <item>import</item>
+    <item>contract</item>
+    <item>library</item>
+    <item>assembly</item>
+    <item>function</item>
+    <item>constructor</item>
+    <item>modifier</item>
+    <item>emit</item>
+  </list>
+
+  <!-- Reserved keywords, see https://solidity.readthedocs.io/en/latest/miscellaneous.html#reserved-keywords -->
+  <list name="reserved">
+    <item>abstract</item>
+    <item>after</item>
+    <item>alias</item>
+    <item>apply</item>
+    <item>auto</item>
+    <item>case</item>
+    <item>catch</item>
+    <item>copyof</item>
+    <item>default</item>
+    <item>define</item>
+    <item>final</item>
+    <item>immutable</item>
+    <item>implements</item>
+    <item>in</item>
+    <item>inline</item>
+    <item>let</item>
+    <item>macro</item>
+    <item>match</item>
+    <item>mutable</item>
+    <item>null</item>
+    <item>of</item>
+    <item>override</item>
+    <item>partial</item>
+    <item>promise</item>
+    <item>reference</item>
+    <item>relocatable</item>
+    <item>sealed</item>
+    <item>sizeof</item>
+    <item>static</item>
+    <item>supports</item>
+    <item>switch</item>
+    <item>try</item>
+    <item>typedef</item>
+    <item>typeof</item>
+    <item>unchecked</item>
+  </list>
+
+  <contexts>
+    <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+      <DetectSpaces />
+      <StringDetect attribute="Keyword" String="pragma" context="Pragma" firstNonSpace="true" insensitive="true" />
+      <keyword attribute="Control Structures" context="#stay" String="controlstructures" />
+      <keyword attribute="Keyword" context="#stay" String="keywords" />
+      <keyword attribute="Data Type" context="#stay" String="types" />
+      <keyword attribute="Unit" context="#stay" String="units" />
+      <keyword attribute="Built-in" context="#stay" String="globals" />
+      <keyword attribute="Error" context="#stay" String="reserved" />
+      <DetectIdentifier />
+      <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+      <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+
+      <HlCHex attribute="Hex" context="#stay" />
+      <Float attribute="Decimal" context="#stay" />
+      <Int attribute="Decimal" context="#stay" />
+
+      <HlCChar attribute="Char" context="#stay"/>
+      <DetectChar attribute="String" context="String" char="&quot;" />
+
+      <Detect2Chars attribute="Built-in" context="#stay" char="+" char1="+" />
+      <Detect2Chars attribute="Built-in" context="#stay" char="-" char1="-" />
+
+      <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="/" lookAhead="true"/>
+      <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="*" lookAhead="true" />
+      <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^;" />
+    </context>
+
+    <context name="MatchComment" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+      <IncludeRules context="##Doxygen" />
+      <Detect2Chars attribute="Comment" context="#pop!Comment Single" char="/" char1="/" />
+      <Detect2Chars attribute="Comment" context="#pop!Comment Multi" char="/" char1="*" beginRegion="Comment" />
+    </context>
+
+    <context name="Pragma" attribute="Normal Text" lineEndContext="#pop">
+      <WordDetect attribute="Built-in" String="solidity" context="Pragma Solidity" insensitive="true" />
+      <WordDetect attribute="Built-in" String="experimental" context="Pragma Experimental" insensitive="true" />
+      <RegExpr attribute="Error" context="#pop" String="[^\s;]+" />
+    </context>
+
+    <context name="Pragma Solidity" attribute="Normal Text" lineEndContext="#pop">
+      <RegExpr attribute="Normal Text" context="#pop" String="[\^\. \-&lt;&gt;=\|\d\w]+" />
+      <RegExpr attribute="Error" context="#pop" String="[^\s;]+" />
+    </context>
+
+    <context name="Pragma Experimental" attribute="Normal Text" lineEndContext="#pop">
+      <WordDetect attribute="Built-in" context="#pop" String="ABIEncoderV2" />
+      <WordDetect attribute="Built-in" context="#pop" String="SMTChecker" />
+      <RegExpr attribute="Error" context="#pop" String="[^\s;]+" />
+    </context>
+
+    <context name="String" attribute="String" lineEndContext="#pop">
+      <LineContinue attribute="String" context="#stay" />
+      <HlCStringChar attribute="String Char" context="#stay" />
+      <DetectChar attribute="String" context="#pop" char="&quot;"/>
+    </context>
+
+    <context name="Comment Single" attribute="Comment" lineEndContext="#pop">
+      <LineContinue attribute="Comment" context="#stay" />
+      <DetectSpaces />
+      <IncludeRules context="##Comments" />
+      <DetectIdentifier />
+    </context>
+
+    <context name="Comment Multi" attribute="Comment" lineEndContext="#stay">
+      <DetectSpaces />
+      <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment" />
+      <IncludeRules context="##Comments" />
+      <DetectIdentifier />
+    </context>
+  </contexts>
+
+  <itemDatas>
+    <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false" />
+    <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false" />
+    <!-- itemData name="Function" defStyleNum="dsFunction" spellChecking="false" / -->
+    <itemData name="Control Structures" defStyleNum="dsControlFlow" spellChecking="false" />
+    <!-- itemData name="Operator" defStyleNum="dsOperator" spellChecking="false" / -->
+    <itemData name="Symbol" defStyleNum="dsOperator" spellChecking="false" />
+    <itemData name="Built-in" defStyleNum="dsBuiltIn" spellChecking="false" />
+    <itemData name="Unit" defStyleNum="dsConstant" bold="0" spellChecking="false" />
+    <itemData name="Data Type" defStyleNum="dsDataType" spellChecking="false" />
+    <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false" />
+    <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false" />
+    <itemData name="String" defStyleNum="dsString" />
+    <itemData name="Char" defStyleNum="dsChar" />
+    <itemData name="String Char" defStyleNum="dsSpecialChar" />
+    <itemData name="Comment" defStyleNum="dsComment" />
+    <itemData name="Error" defStyleNum="dsError" spellChecking="false" />
+  </itemDatas>
+</highlighting>
+
+<general>
+  <comments>
+    <comment name="singleLine" start="//" />
+    <comment name="multiLine" start="/*" end="*/" region="Comment" />
+  </comments>
+  <keywords casesensitive="1" />
+</general>
+
+</language>
+<!-- kate: replace-tabs on; indent-width 2; tab-width 2; -->

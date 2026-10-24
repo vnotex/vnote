@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- Oracle SQL, syntax definition based on sql.xml by Yury Lebedev -->
-<language name="SQL (Oracle)" version="5" kateversion="5.0" section="Database" extensions="*.sql;*.SQL;*.ddl;*.DDL;*.trg;*.TRG;*.spc;*.SPC;*.bdy;*.DBY" mimetype="text/x-sql" casesensitive="0" author="Andrey Karepin (egdfree@opensuse.org)" license="LGPL">
+<language name="SQL (Oracle)" version="8" kateversion="5.44" section="Database" extensions="*.sql;*.SQL;*.ddl;*.DDL;*.trg;*.TRG;*.spc;*.SPC;*.bdy;*.DBY" mimetype="text/x-sql" casesensitive="0" author="Andrey Karepin (egdfree@opensuse.org)" license="LGPL">
   <highlighting>
     <list name="controlFlow">
       <item>BEGIN</item>
@@ -1869,7 +1869,7 @@
         <DetectSpaces />
         <!-- comments -->
         <Detect2Chars attribute="Comment" context="singleLineComment" char="-" char1="-"/>
-        <Detect2Chars attribute="Comment" context="multiLineComment" char="/" char1="*"/>
+        <Detect2Chars attribute="Comment" context="multiLineComment" char="/" char1="*" beginRegion="Comment"/>
 
         <!-- block's -->
         <WordDetect attribute="ControlFlow" context="#stay" String="if" beginRegion="if_block" insensitive="true"/>
@@ -1883,8 +1883,8 @@
         <keyword attribute="ControlFlow" String="controlFlow" context="#stay"/>
         <keyword attribute="Keyword" String="keywords" context="#stay"/>
 
-        <Int attribute="Number" context="#stay"/>
         <Float attribute="Number" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
         <keyword attribute="Operator Keyword" String="operators" context="#stay"/>
         <AnyChar attribute="Operator" String="+-*/=&lt;&gt;" context="#stay"/>
         <Detect2Chars attribute="Operator" char=":" char1="=" context="#stay"/>
@@ -1925,9 +1925,16 @@
       <context name="NCharOperator" attribute="String"  lineEndContext="#stay">
           <DetectChar attribute="String" context="#pop" char="'"/>
       </context>
-      <context name="singleLineComment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="singleLineComment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier />
+      </context>
       <context name="multiLineComment" attribute="Comment" lineEndContext="#stay">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier />
       </context>
     </contexts>
     <itemDatas>
@@ -1946,9 +1953,10 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="--"/>
-      <comment name="multiLine" start="/*" end="*/"/>
+      <comment name="singleLine" start="--" position="afterwhitespace"/>
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
     </comments>
     <keywords casesensitive="0" weakDeliminator="$"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

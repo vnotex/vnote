@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
   This file is part of KDE's kate project.
 
@@ -22,7 +22,7 @@
  * Boston, MA  02110-1301, USA.                                       *
  **********************************************************************
  -->
-<language version="10" kateversion="5.0" name="Clojure" section="Sources" extensions="*.clj;*.cljs;*.cljc" mimetype="" author="Dominik Haumann [lisp] modified for clojure by Caspar Hasenclever" license="LGPLv2+">
+<language version="18" kateversion="5.0" name="Clojure" alternativeNames="CLJ" section="Sources" extensions="*.clj;*.cljs;*.cljc" mimetype="" author="Dominik Haumann [lisp] modified for clojure by Caspar Hasenclever" license="LGPLv2+">
   <highlighting>
     <list name="definitions">
       <item>def</item>
@@ -697,35 +697,24 @@
       <item>*test-out*</item>
       <item>*use-context-classloader*</item>
       <item>*warn-on-reflection*</item>
-      <item>*warn-on-reflection*</item>
       <item>false</item>
       <item>nil</item>
       <item>true</item>
     </list>
     <contexts>
-      <context name="Level0" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="Brackets1" context="Level1" char="("/>
-        <Detect2Chars attribute="Brackets1" context="Level1" char="'" char1="("/>
-        <Detect2Chars attribute="Brackets1" context="Level1" char="`" char1="("/>
-        <Detect2Chars attribute="Brackets1" context="Level1" char="#" char1="("/>
-        <Detect2Chars attribute="Brackets1" context="Level1" char="@" char1="("/>
-        <IncludeRules context="Default" />
-      </context>
       <context name="Default" attribute="Normal" lineEndContext="#stay">
         <DetectChar attribute="Comment" context="Comment" char=";"/>
         <Detect2Chars attribute="Comment" context="#stay" char="#" char1="_"/>
         <RegExpr attribute="Readermacro" context="#stay" String="#\?@?"/>
-        <RegExpr attribute="Modifier" context="#stay" String="[@~'`][^\s\(\)\{\}\[\]]+"/>
-        <RegExpr attribute="Modifier" context="#stay" String="[^\s&quot;\(\)\{\}\[\]]+#"/>
+        <RegExpr attribute="Modifier" context="#stay" String="[@~'`][^\s\(\)\{\}\[\]]+|[^\s&quot;\(\)\{\}\[\]]+#"/>
         <RegExpr attribute="Modifier2" context="#stay" String="::?[a-zA-Z0-9\-\./]+"/>
         <Detect2Chars attribute="BracketsSet" context="BracketsSet" char="#" char1="{"/>
         <Detect2Chars attribute="BracketsMeta" context="BracketsMeta" char="^" char1="{"/>
         <DetectChar attribute="BracketsMap" context="BracketsMap" char="{"/>
-        <DetectChar attribute="BracketsSquare" context="#stay" char="["/>
-        <DetectChar attribute="BracketsSquare" context="#stay" char="]"/>
-        <RegExpr attribute="Variable" context="#stay" String="#'[^\s\(\)\{\}\[\]]+"/>
+        <AnyChar attribute="Brackets" context="#stay" String="()"/>
+        <AnyChar attribute="BracketsSquare" context="#stay" String="[]"/>
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
-        <RegExpr attribute="Variable" context="#stay" String="%[0-9]*"/>
+        <RegExpr attribute="Variable" context="#stay" String="#'[^\s\(\)\{\}\[\]]+|%[0-9]*"/>
         <keyword attribute="Variable" context="#stay" String="variables"/>
         <keyword attribute="Definition" context="function_decl_documentable" String="documentable_definitions"/>
         <keyword attribute="Definition" context="function_decl" String="definitions"/>
@@ -733,21 +722,19 @@
         <Detect2Chars attribute="Regexpr" context="Regexpr" char="#" char1="&quot;"/>
         <DetectChar attribute="String" context="String" char="&quot;"/>
         <RegExpr attribute="Float" context="#stay" String="[0-9]+/[0-9]+"/>
-        <RegExpr attribute="BaseN" context="#stay" String="0[xX][0-9A-Fa-f]+"/>
-        <RegExpr attribute="BaseN" context="#stay" String="([12]?[0-9]|3[0-6])[rR][0-9a-zA-Z]+"/>
+        <RegExpr attribute="BaseN" context="#stay" String="0[xX][0-9A-Fa-f]+|([12]?[0-9]|3[0-6])[rR][0-9a-zA-Z]+"/>
         <RegExpr attribute="Error" context="#stay" String="(3[7-9]|[0-9]*[4-9][0-9]+)[rR][0-9a-zA-Z]+"/>
         <Float attribute="Float" context="Float Suffixes"/>
         <Int attribute="Decimal" context="Int Suffixes"/>
-        <DetectChar attribute="Brackets1" context="Level1" char="("/>
       </context>
       <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-            <StringDetect attribute="Float" context="#pop" String="M" insensitive="false"/>
+        <DetectChar attribute="Float" context="#pop" char="M"/>
       </context>
       <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-            <StringDetect attribute="Decimal" context="#pop" String="N" insensitive="false"/>
+        <DetectChar attribute="Decimal" context="#pop" char="N"/>
       </context>
       <context name="Comment" attribute="Comment" lineEndContext="#pop">
-        <RegExpr String="(FIXME|TODO):?" attribute="Alert" context="#stay"/>
+        <IncludeRules context="##Comments"/>
       </context>
       <context name="function_decl_documentable" attribute="Function" lineEndContext="#stay">
         <RegExpr attribute="Function" context="#pop!DocumentationPossible" String="\s*[A-Za-z0-9-+\&lt;\&gt;//\*!\?']*\s*"/>
@@ -787,60 +774,6 @@
         <DetectChar attribute="BracketsMap" context="#pop" char="}" />
         <IncludeRules context="Default" />
       </context>
-      <context name="Level1" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="Brackets2" context="Level2" char="("/>
-        <Detect2Chars attribute="Brackets2" context="Level2" char="'" char1="("/>
-        <Detect2Chars attribute="Brackets2" context="Level2" char="`" char1="("/>
-        <Detect2Chars attribute="Brackets2" context="Level2" char="#" char1="("/>
-        <Detect2Chars attribute="Brackets2" context="Level2" char="@" char1="("/>
-        <DetectChar attribute="Brackets1" context="#pop" char=")" />
-        <IncludeRules context="Default" />
-      </context>
-      <context name="Level2" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="Brackets3" context="Level3" char="("/>
-        <Detect2Chars attribute="Brackets3" context="Level3" char="'" char1="("/>
-        <Detect2Chars attribute="Brackets3" context="Level3" char="`" char1="("/>
-        <Detect2Chars attribute="Brackets3" context="Level3" char="#" char1="("/>
-        <Detect2Chars attribute="Brackets3" context="Level3" char="@" char1="("/>
-        <DetectChar attribute="Brackets2" context="#pop" char=")" />
-        <IncludeRules context="Default" />
-      </context>
-      <context name="Level3" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="Brackets4" context="Level4" char="("/>
-        <Detect2Chars attribute="Brackets4" context="Level4" char="'" char1="("/>
-        <Detect2Chars attribute="Brackets4" context="Level4" char="`" char1="("/>
-        <Detect2Chars attribute="Brackets4" context="Level4" char="#" char1="("/>
-        <Detect2Chars attribute="Brackets4" context="Level4" char="@" char1="("/>
-        <DetectChar attribute="Brackets3" context="#pop" char=")" />
-        <IncludeRules context="Default" />
-      </context>
-      <context name="Level4" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="Brackets5" context="Level5" char="("/>
-        <Detect2Chars attribute="Brackets5" context="Level5" char="'" char1="("/>
-        <Detect2Chars attribute="Brackets5" context="Level5" char="`" char1="("/>
-        <Detect2Chars attribute="Brackets5" context="Level5" char="#" char1="("/>
-        <Detect2Chars attribute="Brackets5" context="Level5" char="@" char1="("/>
-        <DetectChar attribute="Brackets4" context="#pop" char=")" />
-        <IncludeRules context="Default" />
-      </context>
-      <context name="Level5" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="Brackets6" context="Level6" char="("/>
-        <Detect2Chars attribute="Brackets6" context="Level6" char="'" char1="("/>
-        <Detect2Chars attribute="Brackets6" context="Level6" char="`" char1="("/>
-        <Detect2Chars attribute="Brackets6" context="Level6" char="#" char1="("/>
-        <Detect2Chars attribute="Brackets6" context="Level6" char="@" char1="("/>
-        <DetectChar attribute="Brackets5" context="#pop" char=")" />
-        <IncludeRules context="Default" />
-      </context>
-      <context name="Level6" attribute="Normal" lineEndContext="#stay">
-        <DetectChar attribute="Brackets1" context="Level1" char="("/>
-        <Detect2Chars attribute="Brackets1" context="Level1" char="'" char1="("/>
-        <Detect2Chars attribute="Brackets1" context="Level1" char="`" char1="("/>
-        <Detect2Chars attribute="Brackets1" context="Level1" char="#" char1="("/>
-        <Detect2Chars attribute="Brackets1" context="Level1" char="@" char1="("/>
-        <DetectChar attribute="Brackets6" context="#pop" char=")" />
-        <IncludeRules context="Default" />
-      </context>
     </contexts>
     <itemDatas>
       <itemData name="Normal" defStyleNum="dsNormal" spellChecking="false"/>
@@ -859,19 +792,13 @@
       <itemData name="Regexpr" defStyleNum="dsSpecialString"/>
       <itemData name="Comment" defStyleNum="dsComment"/>
       <itemData name="Documentation" defStyleNum="dsDocumentation"/>
-      <itemData name="Alert" defStyleNum="dsAlert" spellChecking="false"/>
       <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
       <itemData name="Readermacro" defStyleNum="dsPreprocessor"/>
       <itemData name="BracketsSet" defStyleNum="dsNormal" color="#0000ff" selColor="#00ff00"/>
       <itemData name="BracketsMeta" defStyleNum="dsNormal" color="#0000ff" selColor="#00ff00" bold="1" italic="0"/>
-      <itemData name="BracketsMap" defStyleNum="dsNormal" color="#206620" selColor="#219921"/>
+      <itemData name="BracketsMap" defStyleNum="dsNormal" color="#33ab33" selColor="#219921"/>
+      <itemData name="Brackets"    defStyleNum="dsNormal" color="#0000ff" selColor="#00ff00" bold="1" italic="0"/>
       <itemData name="BracketsSquare" defStyleNum="dsNormal" color="#3333ff" selColor="#3333aa"/>
-      <itemData name="Brackets1" defStyleNum="dsNormal" color="#ff0000" selColor="#ffaa00" bold="0" italic="0"/>
-      <itemData name="Brackets2" defStyleNum="dsNormal" color="#ff8800" selColor="#ffff00" bold="0" italic="0"/>
-      <itemData name="Brackets3" defStyleNum="dsNormal" color="#888800" selColor="#888888" bold="0" italic="0"/>
-      <itemData name="Brackets4" defStyleNum="dsNormal" color="#008800" selColor="#000000" bold="0" italic="0"/>
-      <itemData name="Brackets5" defStyleNum="dsNormal" color="#000088" selColor="#000000" bold="0" italic="0"/>
-      <itemData name="Brackets6" defStyleNum="dsNormal" color="#880088" selColor="#000000" bold="0" italic="0"/>
     </itemDatas>
   </highlighting>
   <general>
@@ -881,3 +808,4 @@
     </comments>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

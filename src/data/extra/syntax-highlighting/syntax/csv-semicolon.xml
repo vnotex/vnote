@@ -1,0 +1,206 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY sep ";">
+]>
+<!--
+Inspired by Rainbow CSV
+
+Language name     | Separator     | Extension | Properties
+ CSV              | , (comma)     |   .csv    | Ignored inside double-quoted fields
+ TSV              | \t (TAB)      | .tsv .tab |
+ CSV (semicolon)  | ; (semicolon) |           | Ignored inside double-quoted fields
+ CSV (whitespace) | whitespace    |           | Consecutive whitespaces are merged
+ CSV (pipe)       | | (pipe)      |
+-->
+<language name="CSV (semicolon)" section="Other" version="2" kateversion="5.62" extensions="*.csv" mimetype="text/csv" priority="4" author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT">
+  <highlighting>
+
+    <contexts>
+      <context name="Column0" lineEndContext="#stay" attribute="Column 0">
+        <DetectChar char="&sep;" context="#pop!Column1" attribute="Column 0 Separator"/>
+        <RangeDetect char="&quot;" char1="&quot;" context="Column0Quote"/>
+        <DetectChar char="&quot;" context="Column0MultiLine"/>
+        <IncludeRules context="FindField"/>
+      </context>
+      <context name="Column0Quote" lineEndContext="#pop" attribute="Column 0" fallthroughContext="#pop">
+        <RangeDetect char="&quot;" char1="&quot;"/>
+        <DetectChar char="&quot;" context="#pop!Column0MultiLine"/>
+        <IncludeRules context="Error"/>
+      </context>
+      <context name="Column0MultiLine" lineEndContext="#stay" attribute="Column 0">
+        <DetectChar char="&quot;" context="#pop!Column0Quote"/>
+      </context>
+
+      <context name="Column1" lineEndContext="#pop!Column0" attribute="Column 1">
+        <DetectChar char="&sep;" context="#pop!Column2" attribute="Column 1 Separator"/>
+        <RangeDetect char="&quot;" char1="&quot;" context="Column1Quote"/>
+        <DetectChar char="&quot;" context="Column1MultiLine"/>
+        <IncludeRules context="FindField"/>
+      </context>
+      <context name="Column1Quote" lineEndContext="#pop#pop!Column0" attribute="Column 1" fallthroughContext="#pop">
+        <RangeDetect char="&quot;" char1="&quot;"/>
+        <DetectChar char="&quot;" context="#pop!Column1MultiLine"/>
+        <IncludeRules context="Error"/>
+      </context>
+      <context name="Column1MultiLine" lineEndContext="#stay" attribute="Column 1">
+        <DetectChar char="&quot;" context="#pop!Column1Quote"/>
+      </context>
+
+      <context name="Column2" lineEndContext="#pop!Column0" attribute="Column 2">
+        <DetectChar char="&sep;" context="#pop!Column3" attribute="Column 2 Separator"/>
+        <RangeDetect char="&quot;" char1="&quot;" context="Column2Quote"/>
+        <DetectChar char="&quot;" context="Column2MultiLine"/>
+        <IncludeRules context="FindField"/>
+      </context>
+      <context name="Column2Quote" lineEndContext="#pop#pop!Column0" attribute="Column 2" fallthroughContext="#pop">
+        <RangeDetect char="&quot;" char1="&quot;"/>
+        <DetectChar char="&quot;" context="#pop!Column2MultiLine"/>
+        <IncludeRules context="Error"/>
+      </context>
+      <context name="Column2MultiLine" lineEndContext="#stay" attribute="Column 2">
+        <DetectChar char="&quot;" context="#pop!Column2Quote"/>
+      </context>
+
+      <context name="Column3" lineEndContext="#pop!Column0" attribute="Column 3">
+        <DetectChar char="&sep;" context="#pop!Column4" attribute="Column 3 Separator"/>
+        <RangeDetect char="&quot;" char1="&quot;" context="Column3Quote"/>
+        <DetectChar char="&quot;" context="Column3MultiLine"/>
+        <IncludeRules context="FindField"/>
+      </context>
+      <context name="Column3Quote" lineEndContext="#pop#pop!Column0" attribute="Column 3" fallthroughContext="#pop">
+        <RangeDetect char="&quot;" char1="&quot;"/>
+        <DetectChar char="&quot;" context="#pop!Column3MultiLine"/>
+        <IncludeRules context="Error"/>
+      </context>
+      <context name="Column3MultiLine" lineEndContext="#stay" attribute="Column 3">
+        <DetectChar char="&quot;" context="#pop!Column3Quote"/>
+      </context>
+
+      <context name="Column4" lineEndContext="#pop!Column0" attribute="Column 4">
+        <DetectChar char="&sep;" context="#pop!Column5" attribute="Column 4 Separator"/>
+        <RangeDetect char="&quot;" char1="&quot;" context="Column4Quote"/>
+        <DetectChar char="&quot;" context="Column4MultiLine"/>
+        <IncludeRules context="FindField"/>
+      </context>
+      <context name="Column4Quote" lineEndContext="#pop#pop!Column0" attribute="Column 4" fallthroughContext="#pop">
+        <RangeDetect char="&quot;" char1="&quot;"/>
+        <DetectChar char="&quot;" context="#pop!Column4MultiLine"/>
+        <IncludeRules context="Error"/>
+      </context>
+      <context name="Column4MultiLine" lineEndContext="#stay" attribute="Column 4">
+        <DetectChar char="&quot;" context="#pop!Column4Quote"/>
+      </context>
+
+      <context name="Column5" lineEndContext="#pop!Column0" attribute="Column 5">
+        <DetectChar char="&sep;" context="#pop!Column6" attribute="Column 5 Separator"/>
+        <RangeDetect char="&quot;" char1="&quot;" context="Column5Quote"/>
+        <DetectChar char="&quot;" context="Column5MultiLine"/>
+        <IncludeRules context="FindField"/>
+      </context>
+      <context name="Column5Quote" lineEndContext="#pop#pop!Column0" attribute="Column 5" fallthroughContext="#pop">
+        <RangeDetect char="&quot;" char1="&quot;"/>
+        <DetectChar char="&quot;" context="#pop!Column5MultiLine"/>
+        <IncludeRules context="Error"/>
+      </context>
+      <context name="Column5MultiLine" lineEndContext="#stay" attribute="Column 5">
+        <DetectChar char="&quot;" context="#pop!Column5Quote"/>
+      </context>
+
+      <context name="Column6" lineEndContext="#pop!Column0" attribute="Column 6">
+        <DetectChar char="&sep;" context="#pop!Column7" attribute="Column 6 Separator"/>
+        <RangeDetect char="&quot;" char1="&quot;" context="Column6Quote"/>
+        <DetectChar char="&quot;" context="Column6MultiLine"/>
+        <IncludeRules context="FindField"/>
+      </context>
+      <context name="Column6Quote" lineEndContext="#pop#pop!Column0" attribute="Column 6" fallthroughContext="#pop">
+        <RangeDetect char="&quot;" char1="&quot;"/>
+        <DetectChar char="&quot;" context="#pop!Column6MultiLine"/>
+        <IncludeRules context="Error"/>
+      </context>
+      <context name="Column6MultiLine" lineEndContext="#stay" attribute="Column 6">
+        <DetectChar char="&quot;" context="#pop!Column6Quote"/>
+      </context>
+
+      <context name="Column7" lineEndContext="#pop!Column0" attribute="Column 7">
+        <DetectChar char="&sep;" context="#pop!Column8" attribute="Column 7 Separator"/>
+        <RangeDetect char="&quot;" char1="&quot;" context="Column7Quote"/>
+        <DetectChar char="&quot;" context="Column7MultiLine"/>
+        <IncludeRules context="FindField"/>
+      </context>
+      <context name="Column7Quote" lineEndContext="#pop#pop!Column0" attribute="Column 7" fallthroughContext="#pop">
+        <RangeDetect char="&quot;" char1="&quot;"/>
+        <DetectChar char="&quot;" context="#pop!Column7MultiLine"/>
+        <IncludeRules context="Error"/>
+      </context>
+      <context name="Column7MultiLine" lineEndContext="#stay" attribute="Column 7">
+        <DetectChar char="&quot;" context="#pop!Column7Quote"/>
+      </context>
+
+      <context name="Column8" lineEndContext="#pop!Column0" attribute="Column 8">
+        <DetectChar char="&sep;" context="#pop!Column9" attribute="Column 8 Separator"/>
+        <RangeDetect char="&quot;" char1="&quot;" context="Column8Quote"/>
+        <DetectChar char="&quot;" context="Column8MultiLine"/>
+        <IncludeRules context="FindField"/>
+      </context>
+      <context name="Column8Quote" lineEndContext="#pop#pop!Column0" attribute="Column 8" fallthroughContext="#pop">
+        <RangeDetect char="&quot;" char1="&quot;"/>
+        <DetectChar char="&quot;" context="#pop!Column8MultiLine"/>
+        <IncludeRules context="Error"/>
+      </context>
+      <context name="Column8MultiLine" lineEndContext="#stay" attribute="Column 8">
+        <DetectChar char="&quot;" context="#pop!Column8Quote"/>
+      </context>
+
+      <context name="Column9" lineEndContext="#pop!Column0" attribute="Column 9">
+        <DetectChar char="&sep;" context="#pop!Column0" attribute="Column 9 Separator"/>
+        <RangeDetect char="&quot;" char1="&quot;" context="Column9Quote"/>
+        <DetectChar char="&quot;" context="Column9MultiLine"/>
+        <IncludeRules context="FindField"/>
+      </context>
+      <context name="Column9Quote" lineEndContext="#pop!Column0" attribute="Column 9" fallthroughContext="#pop">
+        <RangeDetect char="&quot;" char1="&quot;"/>
+        <DetectChar char="&quot;" context="#pop!Column9MultiLine"/>
+        <IncludeRules context="Error"/>
+      </context>
+      <context name="Column9MultiLine" lineEndContext="#stay" attribute="Column 9">
+        <DetectChar char="&quot;" context="#pop!Column9Quote"/>
+      </context>
+
+      <context name="FindField" lineEndContext="#stay" attribute="Column 0">
+        <DetectSpaces/>
+        <RegExpr String="[^&sep;]+"/>
+      </context>
+
+      <context name="Error" lineEndContext="#stay" attribute="Error">
+        <RegExpr String="[^&sep;]+" context="#pop" attribute="Error"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Column 0" defStyleNum="dsNormal"/>
+      <itemData name="Column 1" defStyleNum="dsVariable"/>
+      <itemData name="Column 2" defStyleNum="dsString"/>
+      <itemData name="Column 3" defStyleNum="dsBuiltIn"/>
+      <itemData name="Column 4" defStyleNum="dsPreprocessor"/>
+      <itemData name="Column 5" defStyleNum="dsChar"/>
+      <itemData name="Column 6" defStyleNum="dsFunction"/>
+      <itemData name="Column 7" defStyleNum="dsBaseN"/>
+      <itemData name="Column 8" defStyleNum="dsOperator"/>
+      <itemData name="Column 9" defStyleNum="dsDataType"/>
+
+      <itemData name="Column 0 Separator" bold="1" defStyleNum="dsNormal"/>
+      <itemData name="Column 1 Separator" bold="1" defStyleNum="dsVariable"/>
+      <itemData name="Column 2 Separator" bold="1" defStyleNum="dsString"/>
+      <itemData name="Column 3 Separator" bold="1" defStyleNum="dsBuiltIn"/>
+      <itemData name="Column 4 Separator" bold="1" defStyleNum="dsPreprocessor"/>
+      <itemData name="Column 5 Separator" bold="1" defStyleNum="dsChar"/>
+      <itemData name="Column 6 Separator" bold="1" defStyleNum="dsFunction"/>
+      <itemData name="Column 7 Separator" bold="1" defStyleNum="dsBaseN"/>
+      <itemData name="Column 8 Separator" bold="1" defStyleNum="dsOperator"/>
+      <itemData name="Column 9 Separator" bold="1" defStyleNum="dsDataType"/>
+
+      <itemData name="Error" defStyleNum="dsError"/>
+    </itemDatas>
+  </highlighting>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

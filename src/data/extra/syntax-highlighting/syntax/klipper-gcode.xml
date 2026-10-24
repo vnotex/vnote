@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="Klipper G-Code" version="1" kateversion="5.79" section="3D" extensions="*.gcode" priority="-1" mimetype="" author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT">
+
+  <!-- https://github.com/Klipper3d/klipper/ -->
+
+  <highlighting>
+    <contexts>
+      <context name="Start" attribute="Normal Text" fallthroughContext="GCodeExtendedLine##Klipper Config">
+        <DetectSpaces/>
+        <IncludeRules context="GCodeCommand##Klipper Config"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <folding indentationsensitive="1"/>
+    <comments>
+      <comment name="singleLine" start="#"/>
+    </comments>
+    <keywords casesensitive="0"/>
+  </general>
+</language>
+<!-- kate: replace-tabs on; indent-width 2; tab-width 2; -->

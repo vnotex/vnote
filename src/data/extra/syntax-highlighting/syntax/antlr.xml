@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+
+<!--
+  SPDX-FileCopyrightText: 2023 Andrzej Borucki <borucki.andrzej@gmail.com>
+  SPDX-License-Identifier: MIT
+-->
+
+
+<language name="ANTLR"
+          section="Sources" 
+          version="2"
+          kateversion="5.62"
+          extensions="*.g4"
+          mimetype="" 
+          priority="1"
+          author="Andrzej Borucki (borucki.andrzej@gmail.com)"
+          license="MIT"
+          >
+
+  <highlighting>
+    <list name="keywords">
+      <item>import</item>
+      <item>fragment</item>
+      <item>lexer</item>
+      <item>parser</item>
+      <item>grammar</item>
+      <item>protected</item>
+      <item>public</item>
+      <item>private</item>
+      <item>returns</item>
+      <item>locals</item>
+      <item>throws</item>
+      <item>catch</item>
+      <item>finally</item>
+      <item>mode</item>
+    </list>
+
+    <contexts>
+      <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+        <DetectSpaces/>
+        <IncludeRules context="match keywords" />
+        <IncludeRules context="match attributes" />
+        <IncludeRules context="match symbol" />
+        <IncludeRules context="find literal" />
+        <IncludeRules context="find charset" />
+        <IncludeRules context="MatchComment" />
+        <DetectIdentifier/>
+      </context>
+
+      <context name="match keywords" attribute="Normal Text" lineEndContext="#pop">
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+      </context>
+
+      <context name="find literal" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="String" context="match literal" char="&apos;" />
+      </context>
+
+      <context name="match literal" attribute="String" lineEndContext="#pop">
+        <Detect2Chars attribute="String" char="\" char1="\" />
+        <Detect2Chars attribute="String" char="\" char1="&apos;" />
+        <DetectChar attribute="String" context="#pop" char="&apos;" />
+      </context>
+
+      <context name="find charset" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar attribute="Charset" context="match charset" char="[" />
+      </context>
+
+      <context name="match charset" attribute="Charset" lineEndContext="#pop">
+        <Detect2Chars attribute="Charset" char="\" char1="\" />
+        <Detect2Chars attribute="Charset" char="\" char1="]" />
+        <DetectChar attribute="Charset" context="#pop" char="]" />
+      </context>
+
+      <context name="match attributes" attribute="Normal Text" lineEndContext="#pop">
+        <RegExpr attribute="Attribute" context="#stay" String="(options|tokens|channels)(?=([\s]*{))" />
+      </context>
+
+      <context name="match symbol" attribute="Normal Text" lineEndContext="#stay">
+        <Detect2Chars attribute="Symbol" context="#stay" char="-" char1="&gt;"/>
+        <AnyChar attribute="Symbol" context="#stay" String="{};=,:|*?()+~"/>
+      </context>
+
+      <context name="MatchComment" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
+        <Detect2Chars attribute="Comment" context="#pop!Comment 1" char="/" char1="/" />
+        <Detect2Chars attribute="Comment" context="#pop!Comment 2" char="/" char1="*" beginRegion="Comment" />
+      </context>
+
+      <context name="Comment 1" attribute="Comment" lineEndContext="#pop">
+        <LineContinue attribute="Comment" context="#stay"/>
+        <IncludeRules context="##Comments" />
+      </context>
+
+      <context name="Comment 2" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments" />
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text"  defStyleNum="dsNormal" spellChecking="false"/>
+      <itemData name="Comment"      defStyleNum="dsComment"/>
+      <itemData name="Keyword"      defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="String"       defStyleNum="dsString" spellChecking="false"/>
+      <itemData name="Charset"      defStyleNum="dsChar" spellChecking="false"/>
+      <itemData name="Attribute"    defStyleNum="dsAttribute" spellChecking="false"/>
+      <itemData name="Symbol"       defStyleNum="dsOperator" spellChecking="false"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="//" position="afterwhitespace" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
+    </comments>
+  </general>
+
+</language>

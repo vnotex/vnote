@@ -1,12 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Mathematica" version="9" kateversion="3.4" section="Scientific" extensions="*.nb" indenter="cstyle"
+<!DOCTYPE language>
+<language name="Mathematica" version="12" kateversion="5.0" section="Scientific"
+          extensions="*.nb" mimetype="application/mathematica;application/vnd.wolfram.mathematica" indenter="cstyle"
           author="Sven Brauch (svenbrauch@gmail.com)" license="LGPL" priority="3">
   <highlighting>
+
     <list name="functions">
       <item>A</item>
       <item>AbelianGroup</item>
-      <item>All</item>
       <item>ArcSinh</item>
       <item>Abort</item>
       <item>AllowGroupClose</item>
@@ -94,7 +95,6 @@
       <item>AutoItalicWords</item>
       <item>AiryBiPrime</item>
       <item>AppendTo</item>
-      <item>Automatic</item>
       <item>AiryBiZero</item>
       <item>Apply</item>
       <item>AutoMultiplicationSymbol</item>
@@ -116,7 +116,6 @@
       <item>AlgebraicNumberTrace</item>
       <item>ArcCsch</item>
       <item>AxesLabel</item>
-      <item>Algebraics</item>
       <item>ArcSec</item>
       <item>AxesOrigin</item>
       <item>AlgebraicUnitQ</item>
@@ -142,7 +141,6 @@
       <item>BooleanMinterms</item>
       <item>Backward</item>
       <item>BilateralFilter</item>
-      <item>Booleans</item>
       <item>Band</item>
       <item>Binarize</item>
       <item>BooleanTable</item>
@@ -264,7 +262,6 @@
       <item>BooleanFunction</item>
       <item>ByteOrdering</item>
       <item>C</item>
-      <item>C</item>
       <item>CityData</item>
       <item>ContinuousAction</item>
       <item>CallPacket</item>
@@ -366,6 +363,7 @@
       <item>CellFrame</item>
       <item>ColorSeparate</item>
       <item>CoordinatesToolOptions</item>
+      <item>CellFrameColor</item>
       <item>CellFrameMargins</item>
       <item>ColorSetter</item>
       <item>CoprimeQ</item>
@@ -430,7 +428,6 @@
       <item>Complex</item>
       <item>CountryData</item>
       <item>Character</item>
-      <item>Complexes</item>
       <item>Covariance</item>
       <item>CharacterEncoding</item>
       <item>ComplexExpand</item>
@@ -531,7 +528,6 @@
       <item>CirculantGraph</item>
       <item>ContinuedFractionK</item>
       <item>CylindricalDecomposition</item>
-      <item>D</item>
       <item>D</item>
       <item>DepthFirstScan</item>
       <item>DiskMatrix</item>
@@ -740,7 +736,6 @@
       <item>Disk</item>
       <item>DynamicWrapper</item>
       <item>E</item>
-      <item>E</item>
       <item>End</item>
       <item>ExactNumberQ</item>
       <item>EdgeAdd</item>
@@ -910,7 +905,6 @@
       <item>FactorTermsList</item>
       <item>FindMaxValue</item>
       <item>FourierSinCoefficient</item>
-      <item>False</item>
       <item>FindMinimum</item>
       <item>FourierSinSeries</item>
       <item>FeedbackType</item>
@@ -1008,7 +1002,6 @@
       <item>FrontEndTokenExecute</item>
       <item>Find</item>
       <item>FontFamily</item>
-      <item>Full</item>
       <item>FindArgMax</item>
       <item>FontSize</item>
       <item>FullDefinition</item>
@@ -1214,7 +1207,6 @@
       <item>HermiteH</item>
       <item>HoytDistribution</item>
       <item>I</item>
-      <item>I</item>
       <item>ImportString</item>
       <item>Interrupt</item>
       <item>Identity</item>
@@ -1260,7 +1252,6 @@
       <item>Information</item>
       <item>InverseErfc</item>
       <item>ImageClip</item>
-      <item>Inherited</item>
       <item>InverseFourier</item>
       <item>ImageColorSpace</item>
       <item>Initialization</item>
@@ -1350,7 +1341,6 @@
       <item>IntegerQ</item>
       <item>InverseWaveletTransform</item>
       <item>ImageRotate</item>
-      <item>Integers</item>
       <item>InverseWeierstrassP</item>
       <item>ImageScaled</item>
       <item>IntegerString</item>
@@ -1683,7 +1673,6 @@
       <item>MantissaExponent</item>
       <item>MaxStepSize</item>
       <item>Modal</item>
-      <item>Manual</item>
       <item>MaxValue</item>
       <item>ModularLambda</item>
       <item>Map</item>
@@ -1789,7 +1778,6 @@
       <item>Min</item>
       <item>MultivariateTDistribution</item>
       <item>N</item>
-      <item>N</item>
       <item>NormalizedSquaredEuclideanDistance</item>
       <item>NotPrecedesSlantEqual</item>
       <item>NakagamiDistribution</item>
@@ -1875,7 +1863,6 @@
       <item>NSum</item>
       <item>NextPrime</item>
       <item>NotebookSelection</item>
-      <item>Null</item>
       <item>NHoldAll</item>
       <item>NotebookWrite</item>
       <item>NullRecords</item>
@@ -1927,7 +1914,6 @@
       <item>NonConstants</item>
       <item>NotLess</item>
       <item>NumberPadding</item>
-      <item>None</item>
       <item>NotLessEqual</item>
       <item>NumberPoint</item>
       <item>NonlinearModelFit</item>
@@ -1952,12 +1938,12 @@
       <item>NotNestedLessLess</item>
       <item>NumericQ</item>
       <item>NormalDistribution</item>
+      <item>Nothing</item>
       <item>NotPrecedes</item>
       <item>NyquistGridLines</item>
       <item>Normalize</item>
       <item>NotPrecedesEqual</item>
       <item>NyquistPlot</item>
-      <item>O</item>
       <item>O</item>
       <item>Operate</item>
       <item>OutputForm</item>
@@ -2122,7 +2108,6 @@
       <item>PrimeQ</item>
       <item>ParallelTable</item>
       <item>PlotRange</item>
-      <item>Primes</item>
       <item>ParallelTry</item>
       <item>PlotRangeClipping</item>
       <item>PrimeZetaP</item>
@@ -2324,7 +2309,6 @@
       <item>Rationalize</item>
       <item>RescalingTransform</item>
       <item>RootSum</item>
-      <item>Rationals</item>
       <item>ResetDirectory</item>
       <item>Rotate</item>
       <item>Ratios</item>
@@ -2363,7 +2347,6 @@
       <item>RealExponent</item>
       <item>ReverseBiorthogonalSplineWavelet</item>
       <item>RowLines</item>
-      <item>Reals</item>
       <item>ReverseElement</item>
       <item>RowMinHeight</item>
       <item>Reap</item>
@@ -2856,7 +2839,6 @@
       <item>TrimmedMean</item>
       <item>Thin</item>
       <item>TotalVariationFilter</item>
-      <item>True</item>
       <item>Thinning</item>
       <item>TotalWidth</item>
       <item>TrueQ</item>
@@ -3080,6 +3062,8 @@
       <item>ZipfDistribution</item>
       <item>Zeta</item>
       <item>ZTest</item>
+    </list>
+    <list name="variables">
       <item>$</item>
       <item>$Aborted</item>
       <item>$Inspector</item>
@@ -3198,32 +3182,131 @@
       <item>$InputFileName</item>
       <item>$Output</item>
     </list>
+
+    <list name="option_values">
+      <item>True</item>
+      <item>False</item>
+      <item>Automatic</item>
+      <item>All</item>
+      <item>None</item>
+      <item>Full</item>
+      <item>Inherited</item>
+      <item>Manual</item>
+      <item>Null</item>
+      <item>Anonymous</item>
+    </list>
+
+    <list name="domains">
+      <item>Reals</item>
+      <item>Integers</item>
+      <item>Complexes</item>
+      <item>Algebraics</item>
+      <item>Primes</item>
+      <item>Rationals</item>
+      <item>Booleans</item>
+      <item>PositiveReals</item>
+      <item>NegativeReals</item>
+      <item>NonNegativeReals</item>
+      <item>NonPositiveReals</item>
+      <item>PositiveRationals</item>
+      <item>NegativeRationals</item>
+      <item>NonNegativeRationals</item>
+      <item>NonPositiveRationals</item>
+      <item>PositiveIntegers</item>
+      <item>NegativeIntegers</item>
+      <item>NonNegativeIntegers</item>
+      <item>NonPositiveIntegers</item>
+    </list>
+
     <contexts>
+
       <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
-	<keyword attribute="function" String="functions" context="#stay"/>
-	<Int attribute="Int" context="#stay" />
-	<Float attribute="Float" context="#stay" />
-	<RegExpr attribute="Parameter" String="[a-zA-Z_0-9]+\_" context="#stay"/>
-	<RegExpr attribute="Replace" String="(\-\>|\/\.)" context="#stay"/>
-	<AnyChar attribute="Operator" String="+*/%\|-^" context="#stay"/>
-	<RegExpr attribute="Assign" String="(:=|=)" context="#stay"/>
+        <keyword attribute="Option Value" String="option_values" context="#stay"/>
+        <keyword attribute="Domain" String="domains" context="#stay"/>
+        <keyword attribute="Function" String="functions" context="#stay"/>
+        <keyword attribute="Variable" String="variables" context="#stay"/>
+
+        <Float attribute="Float" context="#stay"/>
+        <Int attribute="Int" context="#stay"/>
+
+        <RegExpr attribute="Comment: Region Marker" String="\(\*+\s*Beginning of Notebook Content\s*\*+\)" context="#stay" insensitive="true" beginRegion="NotebookContent"/>
+        <RegExpr attribute="Comment: Region Marker" String="\(\*+\s*End of Notebook Content\s*\*+\)" context="#stay" insensitive="true" endRegion="NotebookContent"/>
+        <RegExpr attribute="Comment: Region Marker" String="\(\*+\s*Internal cache information\s*\*+\)" context="#stay" insensitive="true" beginRegion="CacheInformation"/>
+        <RegExpr attribute="Comment: Region Marker" String="\(\*+\s*End of internal cache information\s*\*+\)" context="#stay" insensitive="true" endRegion="CacheInformation"/>
+        <Detect2Chars attribute="Comment" char="(" char1="*" context="Comment" beginRegion="Comment"/>
+
+        <DetectChar attribute="String" char="&quot;" context="String"/>
+        <Detect2Chars attribute="Replace" char="-" char1="&gt;" context="#stay"/>
+        <Detect2Chars attribute="Replace" char="/" char1="." context="#stay"/>
+        <Detect2Chars attribute="Assign" char=":" char1="=" context="#stay"/>
+        <DetectChar attribute="Assign" char="=" context="#stay"/>
+        <AnyChar attribute="Math Operator" String="+*/%\|-^" context="#stay"/>
+        <DetectChar attribute="Bracket" char="[" context="#stay" beginRegion="List"/>
+        <DetectChar attribute="Bracket" char="]" context="#stay" endRegion="List"/>
+        <DetectChar attribute="Bracket" char="{" context="#stay" beginRegion="Brace"/>
+        <DetectChar attribute="Bracket" char="}" context="#stay" endRegion="Brace"/>
+        <DetectChar attribute="Bracket" char="," context="#stay"/>
+
+        <RegExpr attribute="Parameter" String="[a-zA-Z_0-9]+\_" context="#stay"/>
       </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" char="*" char1=")" context="#pop" endRegion="Comment"/>
+        <WordDetect attribute="Comment: Annotation" String="Content-type:" context="#stay"/>
+        <WordDetect attribute="Comment: Annotation" String="CacheID:" context="CommentCacheId"/>
+        <WordDetect attribute="Comment: Annotation" String="Internal cache information:" context="#stay"/>
+        <RegExpr attribute="Comment: Annotation" String="\bCreatedBy\s*\=\s*" context="CommentCreatedBy"/>
+        <WordDetect attribute="Comment: File Title" String="Wolfram Notebook File" context="#stay" insensitive="true"/>
+        <WordDetect attribute="Comment: File Title" String="http://www.wolfram.com/nb" context="#stay" insensitive="true"/>
+
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context name="CommentCreatedBy" attribute="Comment" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <RegExpr attribute="String" context="#pop" String="'(?:[^'\*]|\*+[^'\*\)])*\*?'|&quot;(?:[^&quot;\*]|\*+[^&quot;\*\)])*\*?&quot;"/>
+      </context>
+      <context name="CommentCacheId" attribute="Comment" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <Int attribute="Int" context="#pop"/>
+      </context>
+
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="String" char="&quot;" context="#pop"/>
+        <DetectChar attribute="Escape" context="Escape" char="\"/>
+      </context>
+      <context name="Escape" attribute="Escape" lineEndContext="#pop">
+        <RegExpr attribute="Escape" context="#pop" String="." />
+      </context>
+
     </contexts>
     <itemDatas>
       <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
-      <itemData name="function" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Comment: Annotation" defStyleNum="dsAnnotation" spellChecking="false"/>
+      <itemData name="Comment: File Title" defStyleNum="dsComment" underline="1" spellChecking="false"/>
+      <itemData name="Comment: Region Marker" defStyleNum="dsRegionMarker" spellChecking="false"/>
+
+      <itemData name="Function" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Variable" defStyleNum="dsVariable" spellChecking="false"/>
+      <itemData name="Option Value" defStyleNum="dsConstant" bold="1" spellChecking="false"/>
+      <itemData name="Domain" defStyleNum="dsBuiltIn" spellChecking="false"/>
+      <itemData name="Parameter" defStyleNum="dsAttribute" italic="1" spellChecking="false"/>
+
       <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
       <itemData name="Int" defStyleNum="dsDecVal" spellChecking="false"/>
-      <itemData name="Parameter" italic="1" defStyleNum="dsDataType" spellChecking="false"/>
-      <itemData name="Operator" defStyleNum="dsNormal" color="#FF7B00" spellChecking="false"/>
-      <itemData name="Assign" defStyleNum="dsNormal" color="#00A0E4" spellChecking="false"/>
-      <itemData name="Replace" defStyleNum="dsNormal" color="#85C200" spellChecking="false"/>
+      <itemData name="Math Operator" defStyleNum="dsSpecialChar" spellChecking="false"/>
+      <itemData name="Assign" defStyleNum="dsExtension" bold="1" spellChecking="false"/>
+      <itemData name="Replace" defStyleNum="dsOthers" bold="1" spellChecking="false"/>
+      <itemData name="Bracket" defStyleNum="dsOperator" spellChecking="false"/>
+
+      <itemData name="String" defStyleNum="dsString" spellChecking="false"/>
+      <itemData name="Escape" defStyleNum="dsSpecialChar" spellChecking="false"/>
     </itemDatas>
   </highlighting>
   <general>
-    <keywords casesensitive="0" weakDeliminator="-%"/>
+    <keywords casesensitive="0" weakDeliminator="$" additionalDeliminator="`"/>
     <comments>
-      <comment name="multiLine" start="(*" end="*)" />
+      <comment name="multiLine" start="(*" end="*)" region="Comment"/>
     </comments>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

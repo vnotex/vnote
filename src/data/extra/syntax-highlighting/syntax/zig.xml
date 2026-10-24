@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+    <!ENTITY bin_int "(?:[01]+(?:_[01]+)*)">
+    <!ENTITY oct_int "(?:[0-7]+(?:_[0-7]+)*)">
+    <!ENTITY dec_int "(?:[0-9]+(?:_[0-9]+)*)">
+    <!ENTITY hex_int "(?:[0-9A-Fa-f]+(?:_[0-9A-Fa-f]+)*)">
+    <!ENTITY exp_float "(?:[eE][+-]?&dec_int;)">
+    <!ENTITY exp_hexfloat "(?:[pP][-+]?&dec_int;)">
+]>
+<language name="Zig" section="Sources" version="4" kateversion="5.62" indenter="cstyle" extensions="*.zig" mimetype="text/x-zig" priority="1" author="Waqar Ahmed (waqar.17a@gmail.com)" license="MIT">
+    <highlighting>
+        <list name="keywords">
+            <item>addrspace</item>
+            <item>align</item>
+            <item>and</item>
+            <item>anyframe</item>
+            <item>anytype</item>
+            <item>asm</item>
+            <item>callconv</item>
+            <item>enum</item>
+            <item>error</item>
+            <item>export</item>
+            <item>fn</item>
+            <item>inline</item>
+            <item>noalias</item>
+            <item>nosuspend</item>
+            <item>noinline</item>
+            <item>opaque</item>
+            <item>or</item>
+            <item>orelse</item>
+            <item>packed</item>
+            <item>pub</item>
+            <item>resume</item>
+            <item>linksection</item>
+            <item>struct</item>
+            <item>suspend</item>
+            <item>test</item>
+            <item>union</item>
+            <item>unreachable</item>
+            <item>usingnamespace</item>
+        </list>
+        <list name="controlflow">
+            <item>while</item>
+            <item>try</item>
+            <item>switch</item>
+            <item>return</item>
+            <item>for</item>
+            <item>if</item>
+            <item>continue</item>
+            <item>else</item>
+            <item>break</item>
+            <item>catch</item>
+            <item>defer</item>
+            <item>errdefer</item>
+        </list>
+        <list name="types">
+            <item>i8</item>
+            <item>u8</item>
+            <item>i16</item>
+            <item>u16</item>
+            <item>i32</item>
+            <item>u32</item>
+            <item>i64</item>
+            <item>u64</item>
+            <item>i128</item>
+            <item>u128</item>
+            <item>isize</item>
+            <item>usize</item>
+            <item>c_short</item>
+            <item>c_ushort</item>
+            <item>c_int</item>
+            <item>c_uint</item>
+            <item>c_long</item>
+            <item>c_ulong</item>
+            <item>c_longlong</item>
+            <item>c_ulonglong</item>
+            <item>c_longdouble</item>
+            <item>f16</item>
+            <item>f32</item>
+            <item>f64</item>
+            <item>f80</item>
+            <item>f128</item>
+            <item>bool</item>
+            <item>anyopaque</item>
+            <item>void</item>
+            <item>noreturn</item>
+            <item>type</item>
+            <item>anyerror</item>
+            <item>comptime_int</item>
+            <item>comptime_float</item>
+        </list>
+        <list name="modifiers">
+            <item>async</item>
+            <item>await</item>
+            <item>const</item>
+            <item>threadlocal</item>
+            <item>extern</item>
+            <item>allowzero</item>
+            <item>comptime</item>
+            <item>var</item>
+            <item>volatile</item>
+        </list>
+        <list name="literals">
+            <item>false</item>
+            <item>null</item>
+            <item>true</item>
+            <item>undefined</item>
+        </list>
+        <list name="builtin_functions">
+            <item>@addrSpaceCast</item>
+            <item>@addWithOverflow</item>
+            <item>@alignCast</item>
+            <item>@alignOf</item>
+            <item>@as</item>
+            <item>@atomicLoad</item>
+            <item>@atomicRmw</item>
+            <item>@atomicStore</item>
+            <item>@bitCast</item>
+            <item>@bitOffsetOf</item>
+            <item>@boolToInt</item>
+            <item>@bitSizeOf</item>
+            <item>@breakpoint</item>
+            <item>@mulAdd</item>
+            <item>@byteSwap</item>
+            <item>@bitReverse</item>
+            <item>@offsetOf</item>
+            <item>@call</item>
+            <item>@cDefine</item>
+            <item>@cImport</item>
+            <item>@cInclude</item>
+            <item>@clz</item>
+            <item>@cmpxchgStrong</item>
+            <item>@cmpxchgWeak</item>
+            <item>@compileError</item>
+            <item>@compileLog</item>
+            <item>@ctz</item>
+            <item>@cUndef</item>
+            <item>@cVaArg</item>
+            <item>@cVaCopy</item>
+            <item>@cVaEnd</item>
+            <item>@cVaStart</item>
+            <item>@divExact</item>
+            <item>@divFloor</item>
+            <item>@divTrunc</item>
+            <item>@embedFile</item>
+            <item>@enumToInt</item>
+            <item>@errorName</item>
+            <item>@errorReturnTrace</item>
+            <item>@errorToInt</item>
+            <item>@errSetCast</item>
+            <item>@export</item>
+            <item>@extern</item>
+            <item>@fence</item>
+            <item>@field</item>
+            <item>@fieldParentPtr</item>
+            <item>@floatCast</item>
+            <item>@floatToInt</item>
+            <item>@frameAddress</item>
+            <item>@hasDecl</item>
+            <item>@hasField</item>
+            <item>@import</item>
+            <item>@intCast</item>
+            <item>@intToEnum</item>
+            <item>@intToError</item>
+            <item>@intToFloat</item>
+            <item>@intToPtr</item>
+            <item>@max</item>
+            <item>@memcpy</item>
+            <item>@memset</item>
+            <item>@min</item>
+            <item>@wasmMemorySize</item>
+            <item>@wasmMemoryGrow</item>
+            <item>@mod</item>
+            <item>@mulWithOverflow</item>
+            <item>@panic</item>
+            <item>@popCount</item>
+            <item>@prefetch</item>
+            <item>@ptrCast</item>
+            <item>@ptrToInt</item>
+            <item>@rem</item>
+            <item>@returnAddress</item>
+            <item>@select</item>
+            <item>@setAlignStack</item>
+            <item>@setCold</item>
+            <item>@setEvalBranchQuota</item>
+            <item>@setFloatMode</item>
+            <item>@setRuntimeSafety</item>
+            <item>@shlExact</item>
+            <item>@shlWithOverflow</item>
+            <item>@shrExact</item>
+            <item>@shuffle</item>
+            <item>@sizeOf</item>
+            <item>@splat</item>
+            <item>@reduce</item>
+            <item>@src</item>
+            <item>@sqrt</item>
+            <item>@sin</item>
+            <item>@cos</item>
+            <item>@tan</item>
+            <item>@exp</item>
+            <item>@exp2</item>
+            <item>@log</item>
+            <item>@log2</item>
+            <item>@log10</item>
+            <item>@fabs</item>
+            <item>@floor</item>
+            <item>@ceil</item>
+            <item>@trunc</item>
+            <item>@round</item>
+            <item>@subWithOverflow</item>
+            <item>@tagName</item>
+            <item>@This</item>
+            <item>@truncate</item>
+            <item>@Type</item>
+            <item>@typeInfo</item>
+            <item>@typeName</item>
+            <item>@TypeOf</item>
+            <item>@unionInit</item>
+            <item>@Vector</item>
+        </list>
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <DetectSpaces/>
+                <Detect2Chars char="/" char1="/" attribute="Comment" context="Comment"/>
+                <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;+,-/.*&lt;=&gt;?|~^"/>
+                <AnyChar context="Number" String="0123456789" lookAhead="1"/>
+                <DetectChar attribute="String" context="DoubleQuoteString" char="&quot;"/>
+                <DetectChar attribute="Character" context="SingleQuoteString" char="'"/>
+                <Detect2Chars char="\" char1="\" attribute="String" context="Multiline String"/>
+                <keyword String="keywords" attribute="Keyword" context="#stay"/>
+                <keyword String="types" attribute="Type" context="#stay"/>
+                <keyword attribute="Constant" context="#stay" String="literals"/>
+                <keyword attribute="Builtin Functions" context="#stay" String="builtin_functions"/>
+                <keyword attribute="Control Flow" context="#stay" String="controlflow"/>
+                <keyword attribute="Modifiers" context="#stay" String="modifiers"/>
+                <WordDetect attribute="Self Variable" String="self"/>
+                <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1" />
+                <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1" />
+                <!-- <AnyChar context="SpecialType" String="iu" lookAhead="1"/> -->
+                <DetectIdentifier/>
+            </context>
+            <!-- Strings -->
+            <context attribute="String" lineEndContext="#pop" name="DoubleQuoteString">
+                <DetectChar context="EscapeChar" char="\" lookAhead="1"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+            <context attribute="Character" lineEndContext="#pop" name="SingleQuoteString">
+                <DetectChar context="EscapeChar" char="\" lookAhead="1"/>
+                <DetectChar attribute="Character" context="#pop" char="'"/>
+            </context>
+            <context attribute="String" lineEndContext="#pop" name="Multiline String"/>
+            <context attribute="String Char" lineEndContext="#pop" name="EscapeChar">
+                <RegExpr attribute="String Char" context="#pop" String="\\([nrt'&quot;\\]|x[0-9a-fA-F]{2}|u\{[0-9a-fA-F]+\})"/>
+                <RegExpr attribute="Error" context="#pop" String="\\(x[0-9a-fA-F]?|u\{[0-9a-fA-F]{0,8}\}?)?"/>
+            </context>
+            <!-- Comment -->
+            <context attribute="Comment" lineEndContext="#pop" name="Comment">
+                <DetectSpaces attribute="Comment"/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier attribute="Comment"/>
+            </context>
+            <!-- Integer / Float -->
+            <context name="Number" attribute="Normal Text" lineEndContext="#pop">
+                <RegExpr attribute="Float" context="#pop!SuffixNumber" String="&dec_int;(\.&dec_int;&exp_float;?|&exp_float;)"/>
+                <RegExpr attribute="Decimal" context="#pop!SuffixNumber" String="0(?=[^xob]|$)|(?=0[xob])|&dec_int;"/>
+                <RegExpr attribute="Hex Float" context="#pop!SuffixNumber" String="0x&hex_int;(\.&hex_int;&exp_hexfloat;?|&exp_hexfloat;)"/>
+                <RegExpr attribute="Hex" context="#pop!SuffixNumber" String="0x&hex_int;"/>
+                <RegExpr attribute="Octal" context="#pop!SuffixNumber" String="0o&oct_int;"/>
+                <RegExpr attribute="Binary" context="#pop!SuffixNumber" String="0b&bin_int;"/>
+                <DetectChar attribute="Decimal" context="#pop!SuffixNumber" char="0"/>
+            </context>
+            <context name="SuffixNumber" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
+                <StringDetect attribute="Symbol" String=".." context="#pop"/> <!-- in `[0..a]` -->
+                <AnyChar attribute="Error" String=".0123456789" context="#pop"/>
+                <DetectIdentifier attribute="Error" context="#pop"/>
+            </context>
+            <!-- Integer type -->
+            <!-- i or u followed by digits. The maximum allowed bit-width of an integer type is 65535 -->
+            <!--<context name="SpecialType" attribute="Normal Text" lineEndContext="#pop">
+                <RegExpr attribute="Type" context="#pop" String="\b[ui]([0-9]{1,4}|[1-5][0-9]{4}|6([0-4][0-9]{3}|5([0-4][0-9]{2}|5([0-2][0-9]|3[0-5]))))\b"/>
+                <DetectIdentifier attribute="Normal Text" context="#pop"/>
+            </context>-->
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal"/>
+            <itemData name="Self Variable" defStyleNum="dsVariable" spellChecking="false"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Type" defStyleNum="dsDataType" spellChecking="false"/>
+            <itemData name="Builtin Functions" defStyleNum="dsBuiltIn" spellChecking="false"/>
+            <itemData name="Constant" defStyleNum="dsConstant" spellChecking="false"/>
+            <itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="false"/>
+            <itemData name="Modifiers" defStyleNum="dsAttribute" spellChecking="false"/>
+            <itemData name="Comment" defStyleNum="dsComment" spellChecking="true"/>
+            <itemData name="Binary" defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+            <itemData name="Hex Float" defStyleNum="dsFloat" spellChecking="false"/>
+            <itemData name="String" defStyleNum="dsString"/>
+            <itemData name="String Char" defStyleNum="dsSpecialChar"/>
+            <itemData name="Character" defStyleNum="dsChar" spellChecking="false"/>
+            <itemData name="Symbol" defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Error" defStyleNum="dsError" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="//"/>
+        </comments>
+        <keywords casesensitive="true"/>
+    </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

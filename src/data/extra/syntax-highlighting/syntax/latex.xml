@@ -1,11 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
     <!ENTITY bullet "&#xd7;">
     <!ENTITY envname "[a-zA-Z]+\*?">
 ]>
-<language name="LaTeX" version="9" section="Markup" kateversion="5.0" priority="10" extensions="*.tex;*.ltx;*.dtx;*.sty;*.cls;*.bbx;*.cbx;*.lbx;*.tikz;*.pgf" mimetype="text/x-tex" casesensitive="1" author="Jeroen Wijnhout (Jeroen.Wijnhout@kdemail.net)+Holger Danielsson (holger.danielsson@versanet.de)+Michel Ludwig (michel.ludwig@kdemail.net)+Thomas Braun (thomas.braun@virtuell-zuhause.de)" license="LGPL" >
+<language name="LaTeX" version="30" section="Markup" kateversion="6.22" priority="10" extensions="*.tex;*.ltx;*.dtx;*.sty;*.cls;*.bbx;*.cbx;*.lbx;*.tikz;*.pgf" mimetype="text/x-tex" casesensitive="1" author="Jeroen Wijnhout (Jeroen.Wijnhout@kdemail.net)+Holger Danielsson (holger.danielsson@versanet.de)+Michel Ludwig (michel.ludwig@kdemail.net)+Thomas Braun (thomas.braun@virtuell-zuhause.de)" license="LGPL" >
   <highlighting>
+    <!-- NOTE: Keywords of kind "\something" do not need a delimiter before "\".
+         Using a DetectChar rule with lookAhead to detect "\" at the beginning
+         avoids the requirement of the delimiter in the keyword. -->
     <list name="beginEnv">
       <item>\begin</item>
     </list>
@@ -165,6 +168,605 @@
       <item>minted</item>
     </list>
 
+    <list name="MintedCodeLang">
+      <!-- ABAP lexers -->
+      <item>abapcode*</item>
+      <item>abapcode</item>
+      <!-- ActionScript 2.0 lexers -->
+      <item>actionscriptcode*</item>
+      <item>actionscriptcode</item>
+      <item>ascode*</item>
+      <item>ascode</item>
+      <!-- Ada lexers -->
+      <item>adacode*</item>
+      <item>adacode</item>
+      <!-- Agda lexers -->
+      <item>agdacode*</item>
+      <item>agdacode</item>
+      <!-- Apache Configuration lexers -->
+      <item>apacheconfcode*</item>
+      <item>apacheconfcode</item>
+      <item>aconfcode*</item>
+      <item>aconfcode</item>
+      <item>apachecode*</item>
+      <item>apachecode</item>
+      <!-- AutoHotKey lexers -->
+      <item>autohotkeycode*</item>
+      <item>autohotkeycode</item>
+      <item>ahkcode*</item>
+      <item>ahkcode</item>
+      <!-- AWK lexers -->
+      <item>awkcode*</item>
+      <item>awkcode</item>
+      <item>gawkcode*</item>
+      <item>gawkcode</item>
+      <item>mawkcode*</item>
+      <item>mawkcode</item>
+      <item>nawkcode*</item>
+      <item>nawkcode</item>
+      <!-- Bash lexers -->
+      <item>bashcode*</item>
+      <item>bashcode</item>
+      <item>shcode*</item>
+      <item>shcode</item>
+      <item>kshcode*</item>
+      <item>kshcode</item>
+      <item>zshcode*</item>
+      <item>zshcode</item>
+      <item>shellcode*</item>
+      <item>shellcode</item>
+      <!-- BibTeX lexers -->
+      <item>bibtexcode*</item>
+      <item>bibtexcode</item>
+      <item>bibcode*</item>
+      <item>bibcode</item>
+      <!-- Boo lexers -->
+      <item>boocode*</item>
+      <item>boocode</item>
+      <!-- C lexers -->
+      <item>ccode*</item>
+      <item>ccode</item>
+      <!-- CMake lexers -->
+      <item>cmakecode*</item>
+      <item>cmakecode</item>
+      <!-- C# lexers -->
+      <item>csharpcode*</item>
+      <item>csharpcode</item>
+      <item>cscode*</item>
+      <item>cscode</item>
+      <!-- Clojure lexers -->
+      <item>clojurecode*</item>
+      <item>clojurecode</item>
+      <item>cljcode*</item>
+      <item>cljcode</item>
+      <!-- CoffeeScript lexers -->
+      <item>coffeecode*</item>
+      <item>coffeecode</item>
+      <!-- Common Lisp lexers -->
+      <item>commonlispcode*</item>
+      <item>commonlispcode</item>
+      <item>clcode*</item>
+      <item>clcode</item>
+      <item>lispcode*</item>
+      <item>lispcode</item>
+      <!-- C++ lexers -->
+      <item>cppcode*</item>
+      <item>cppcode</item>
+      <!-- CSS lexers -->
+      <item>csscode*</item>
+      <item>csscode</item>
+      <!-- D lexers -->
+      <item>dcode*</item>
+      <item>dcode</item>
+      <!-- Dart lexers -->
+      <item>dartcode*</item>
+      <item>dartcode</item>
+      <!-- Pascal lexers -->
+      <item>delphicode*</item>
+      <item>delphicode</item>
+      <item>pascode*</item>
+      <item>pascode</item>
+      <item>pascalcode*</item>
+      <item>pascalcode</item>
+      <item>objectpascalcode*</item>
+      <item>objectpascalcode</item>
+      <!-- Diff lexers -->
+      <item>diffcode*</item>
+      <item>diffcode</item>
+      <item>udiffcode*</item>
+      <item>udiffcode</item>
+      <!-- DTD lexers -->
+      <item>dtdcode*</item>
+      <item>dtdcode</item>
+      <!-- Eiffel lexers -->
+      <item>eiffelcode*</item>
+      <item>eiffelcode</item>
+      <!-- Elixir lexers -->
+      <item>elixircode*</item>
+      <item>elixircode</item>
+      <item>excode*</item>
+      <item>excode</item>
+      <item>exscode*</item>
+      <item>exscode</item>
+      <!-- Elm lexers -->
+      <item>elmcode*</item>
+      <item>elmcode</item>
+      <!-- Email lexers -->
+      <item>emailcode*</item>
+      <item>emailcode</item>
+      <item>emlcode*</item>
+      <item>emlcode</item>
+      <!-- Erlang lexers -->
+      <item>erlangcode*</item>
+      <item>erlangcode</item>
+      <!-- Fish lexers -->
+      <item>fishcode*</item>
+      <item>fishcode</item>
+      <item>fishshellcode*</item>
+      <item>fishshellcode</item>
+      <!-- ANS-Forth94 lexers -->
+      <item>forthcode*</item>
+      <item>forthcode</item>
+      <!-- Fortran (Fixed Format) lexers -->
+      <item>fortranfixedcode*</item>
+      <item>fortranfixedcode</item>
+      <!-- Fortran (Free Format) lexers -->
+      <item>fortrancode*</item>
+      <item>fortrancode</item>
+      <item>fcode*</item>
+      <item>fcode</item>
+      <!-- GAP lexers -->
+      <item>gapcode*</item>
+      <item>gapcode</item>
+      <!-- Godot lexers -->
+      <item>gdscriptcode*</item>
+      <item>gdscriptcode</item>
+      <item>gdcode*</item>
+      <item>gdcode</item>
+      <!-- GLSL lexers -->
+      <item>glslcode*</item>
+      <item>glslcode</item>
+      <!-- G-Code lexers -->
+      <item>gcodecode*</item>
+      <item>gcodecode</item>
+      <!-- Gnuplot lexers -->
+      <item>gnuplotcode*</item>
+      <item>gnuplotcode</item>
+      <!-- Go lexers -->
+      <item>gocode*</item>
+      <item>gocode</item>
+      <item>golangcode*</item>
+      <item>golangcode</item>
+      <!-- Groovy lexers -->
+      <item>groovycode*</item>
+      <item>groovycode</item>
+      <!-- Haml lexers -->
+      <item>hamlcode*</item>
+      <item>hamlcode</item>
+      <!-- Haskell lexers -->
+      <item>haskellcode*</item>
+      <item>haskellcode</item>
+      <item>hscode*</item>
+      <item>hscode</item>
+      <!-- Haxe lexers -->
+      <item>haxecode*</item>
+      <item>haxecode</item>
+      <item>hxslcode*</item>
+      <item>hxslcode</item>
+      <item>hxcode*</item>
+      <item>hxcode</item>
+      <!-- HTML lexers -->
+      <item>htmlcode*</item>
+      <item>htmlcode</item>
+      <!-- IDL lexers -->
+      <item>idlcode*</item>
+      <item>idlcode</item>
+      <!-- Idris lexers -->
+      <item>idriscode*</item>
+      <item>idriscode</item>
+      <item>idrcode*</item>
+      <item>idrcode</item>
+      <!-- Inform lexers -->
+      <item>informcode*</item>
+      <item>informcode</item>
+      <item>icode*</item>
+      <item>icode</item>
+      <!-- INI Files lexers -->
+      <item>inicode*</item>
+      <item>inicode</item>
+      <item>cfgcode*</item>
+      <item>cfgcode</item>
+      <item>dosinicode*</item>
+      <item>dosinicode</item>
+      <!-- J lexers -->
+      <item>jcode*</item>
+      <item>jcode</item>
+      <!-- Java lexers -->
+      <item>javacode*</item>
+      <item>javacode</item>
+      <!-- JavaScript lexers -->
+      <item>javascriptcode*</item>
+      <item>javascriptcode</item>
+      <item>jscode*</item>
+      <item>jscode</item>
+      <!-- JCL lexers -->
+      <item>jclcode*</item>
+      <item>jclcode</item>
+      <!-- JSON lexers -->
+      <item>jsoncode*</item>
+      <item>jsoncode</item>
+      <item>jsonobjectcode*</item>
+      <item>jsonobjectcode</item>
+      <!-- Julia lexers -->
+      <item>juliacode*</item>
+      <item>juliacode</item>
+      <item>jlcode*</item>
+      <item>jlcode</item>
+      <!-- Kconfig lexers -->
+      <item>kconfigcode*</item>
+      <item>kconfigcode</item>
+      <item>menuconfigcode*</item>
+      <item>menuconfigcode</item>
+      <item>linuxconfigcode*</item>
+      <item>linuxconfigcode</item>
+      <item>kernelconfigcode*</item>
+      <item>kernelconfigcode</item>
+      <!-- Kotlin lexers -->
+      <item>kotlincode*</item>
+      <item>kotlincode</item>
+      <!-- LSL lexers -->
+      <item>lslcode*</item>
+      <item>lslcode</item>
+      <!-- LESSCSS lexers -->
+      <item>lesscode*</item>
+      <item>lesscode</item>
+      <!-- LilyPond lexers -->
+      <item>lilypondcode*</item>
+      <item>lilypondcode</item>
+      <!-- Literate Haskell lexers -->
+      <item>literatehaskellcode*</item>
+      <item>literatehaskellcode</item>
+      <item>lhaskellcode*</item>
+      <item>lhaskellcode</item>
+      <item>lhscode*</item>
+      <item>lhscode</item>
+      <!-- LLVM lexers -->
+      <item>llvmcode*</item>
+      <item>llvmcode</item>
+      <!-- Logtalk lexers -->
+      <item>logtalkcode*</item>
+      <item>logtalkcode</item>
+      <!-- Lua lexers -->
+      <item>luacode*</item>
+      <item>luacode</item>
+      <!-- Makefile lexers -->
+      <item>makecode*</item>
+      <item>makecode</item>
+      <item>makefilecode*</item>
+      <item>makefilecode</item>
+      <item>mfcode*</item>
+      <item>mfcode</item>
+      <item>bsdmakecode*</item>
+      <item>bsdmakecode</item>
+      <!-- Mako lexers -->
+      <item>makocode*</item>
+      <item>makocode</item>
+      <!-- Markdown lexers -->
+      <item>markdowncode*</item>
+      <item>markdowncode</item>
+      <item>mdcode*</item>
+      <item>mdcode</item>
+      <!-- Mason lexers -->
+      <item>masoncode*</item>
+      <item>masoncode</item>
+      <!-- Mathematica lexers -->
+      <item>mathematicacode*</item>
+      <item>mathematicacode</item>
+      <item>mmacode*</item>
+      <item>mmacode</item>
+      <item>nbcode*</item>
+      <item>nbcode</item>
+      <!-- Matlab lexers -->
+      <item>matlabcode*</item>
+      <item>matlabcode</item>
+      <!-- Maxima lexers -->
+      <item>maximacode*</item>
+      <item>maximacode</item>
+      <item>macsymacode*</item>
+      <item>macsymacode</item>
+      <!-- Meson lexers -->
+      <item>mesoncode*</item>
+      <item>mesoncode</item>
+      <item>mesonbuildcode*</item>
+      <item>mesonbuildcode</item>
+      <!-- Modelica lexers -->
+      <item>modelicacode*</item>
+      <item>modelicacode</item>
+      <!-- Modula-2 lexers -->
+      <item>modulacode*</item>
+      <item>modulacode</item>
+      <item>mcode*</item>
+      <item>mcode</item>
+      <!-- SQL (MySQL) lexers -->
+      <item>mysqlcode*</item>
+      <item>mysqlcode</item>
+      <!-- NSIS lexers -->
+      <item>nsiscode*</item>
+      <item>nsiscode</item>
+      <item>nsicode*</item>
+      <item>nsicode</item>
+      <item>nshcode*</item>
+      <item>nshcode</item>
+      <!-- Intel x86 (NASM) lexers -->
+      <item>nasmcode*</item>
+      <item>nasmcode</item>
+      <!-- Nemerle lexers -->
+      <item>nemerlecode*</item>
+      <item>nemerlecode</item>
+      <!-- nesC lexers -->
+      <item>nesccode*</item>
+      <item>nesccode</item>
+      <!-- Nim lexers -->
+      <item>nimrodcode*</item>
+      <item>nimrodcode</item>
+      <item>nimcode*</item>
+      <item>nimcode</item>
+      <!-- Nix lexers -->
+      <item>nixoscode*</item>
+      <item>nixoscode</item>
+      <item>nixcode*</item>
+      <item>nixcode</item>
+      <!-- Objective-C lexers -->
+      <item>objectiveccode*</item>
+      <item>objectiveccode</item>
+      <item>objccode*</item>
+      <item>objccode</item>
+      <!-- Objective-C++ lexers -->
+      <item>objectivecppcode*</item>
+      <item>objectivecppcode</item>
+      <item>objcppcode*</item>
+      <item>objcppcode</item>
+      <!-- Objective Caml lexers -->
+      <item>ocamlcode*</item>
+      <item>ocamlcode</item>
+      <!-- Octave lexers -->
+      <item>octavecode*</item>
+      <item>octavecode</item>
+      <!-- Perl lexers -->
+      <item>perlcode*</item>
+      <item>perlcode</item>
+      <item>plcode*</item>
+      <item>plcode</item>
+      <!-- PHP/PHP lexers -->
+      <item>phpcode*</item>
+      <item>phpcode</item>
+      <!-- Pig lexers -->
+      <item>pigcode*</item>
+      <item>pigcode</item>
+      <!-- Pike lexers -->
+      <item>pikecode*</item>
+      <item>pikecode</item>
+      <!-- Pony lexers -->
+      <item>ponycode*</item>
+      <item>ponycode</item>
+      <!-- PostScript lexers -->
+      <item>postscriptcode*</item>
+      <item>postscriptcode</item>
+      <item>postscrcode*</item>
+      <item>postscrcode</item>
+      <!-- POV-Ray lexers -->
+      <item>povcode*</item>
+      <item>povcode</item>
+      <!-- PowerShell lexers -->
+      <item>powershellcode*</item>
+      <item>powershellcode</item>
+      <item>pwshcode*</item>
+      <item>pwshcode</item>
+      <item>poshcode*</item>
+      <item>poshcode</item>
+      <item>pscode*</item>
+      <item>pscode</item>
+      <item>psmcode*</item>
+      <item>psmcode</item>
+      <!-- Praat lexers -->
+      <item>praatcode*</item>
+      <item>praatcode</item>
+      <!-- Prolog lexers -->
+      <item>prologcode*</item>
+      <item>prologcode</item>
+      <!-- Protobuf lexers -->
+      <item>protobufcode*</item>
+      <item>protobufcode</item>
+      <item>protocode*</item>
+      <item>protocode</item>
+      <!-- Pug lexers -->
+      <item>pugcode*</item>
+      <item>pugcode</item>
+      <item>jadecode*</item>
+      <item>jadecode</item>
+      <!-- Puppet lexers -->
+      <item>puppetcode*</item>
+      <item>puppetcode</item>
+      <!-- Python lexers -->
+      <item>pythoncode*</item>
+      <item>pythoncode</item>
+      <item>pycode*</item>
+      <item>pycode</item>
+      <item>sagecode*</item>
+      <item>sagecode</item>
+      <!-- QML lexers -->
+      <item>qmlcode*</item>
+      <item>qmlcode</item>
+      <item>qbscode*</item>
+      <item>qbscode</item>
+      <!-- RelaxNG-Compact lexers -->
+      <item>rngcompactcode*</item>
+      <item>rngcompactcode</item>
+      <item>rnccode*</item>
+      <item>rnccode</item>
+      <!-- RPM Spec lexers -->
+      <item>speccode*</item>
+      <item>speccode</item>
+      <!-- Racket lexers -->
+      <item>racketcode*</item>
+      <item>racketcode</item>
+      <item>rktcode*</item>
+      <item>rktcode</item>
+      <!-- REXX lexers -->
+      <item>rexxcode*</item>
+      <item>rexxcode</item>
+      <item>arexxcode*</item>
+      <item>arexxcode</item>
+      <!-- Ruby/Rails/RHTML lexers -->
+      <item>rhtmlcode*</item>
+      <item>rhtmlcode</item>
+      <item>htmlerbcode*</item>
+      <item>htmlerbcode</item>
+      <item>htmlrubycode*</item>
+      <item>htmlrubycode</item>
+      <!-- reStructuredText lexers -->
+      <item>rstcode*</item>
+      <item>rstcode</item>
+      <item>restcode*</item>
+      <item>restcode</item>
+      <!-- Ruby lexers -->
+      <item>rubycode*</item>
+      <item>rubycode</item>
+      <item>rbcode*</item>
+      <item>rbcode</item>
+      <item>dubycode*</item>
+      <item>dubycode</item>
+      <!-- Rust lexers -->
+      <item>rustcode*</item>
+      <item>rustcode</item>
+      <item>rscode*</item>
+      <item>rscode</item>
+      <!-- SML lexers -->
+      <item>smlcode*</item>
+      <item>smlcode</item>
+      <!-- SASS lexers -->
+      <item>sasscode*</item>
+      <item>sasscode</item>
+      <!-- Scala lexers -->
+      <item>scalacode*</item>
+      <item>scalacode</item>
+      <!-- Scheme lexers -->
+      <item>schemecode*</item>
+      <item>schemecode</item>
+      <item>scmcode*</item>
+      <item>scmcode</item>
+      <!-- scilab lexers -->
+      <item>scilabcode*</item>
+      <item>scilabcode</item>
+      <!-- SCSS lexers -->
+      <item>scsscode*</item>
+      <item>scsscode</item>
+      <!-- sed lexers -->
+      <item>sedcode*</item>
+      <item>sedcode</item>
+      <item>gsedcode*</item>
+      <item>gsedcode</item>
+      <item>ssedcode*</item>
+      <item>ssedcode</item>
+      <!-- Sieve lexers -->
+      <item>sievecode*</item>
+      <item>sievecode</item>
+      <!-- Smali lexers -->
+      <item>smalicode*</item>
+      <item>smalicode</item>
+      <!-- Solidity lexers -->
+      <item>soliditycode*</item>
+      <item>soliditycode</item>
+      <!-- Spice lexers -->
+      <item>spicecode*</item>
+      <item>spicecode</item>
+      <item>spicelangcode*</item>
+      <item>spicelangcode</item>
+      <!-- SQL lexers -->
+      <item>sqlcode*</item>
+      <item>sqlcode</item>
+      <!-- Stan lexers -->
+      <item>stancode*</item>
+      <item>stancode</item>
+      <!-- Stata lexers -->
+      <item>statacode*</item>
+      <item>statacode</item>
+      <item>docode*</item>
+      <item>docode</item>
+      <!-- Swift lexers -->
+      <item>swiftcode*</item>
+      <item>swiftcode</item>
+      <!-- SystemVerilog lexers -->
+      <item>systemverilogcode*</item>
+      <item>systemverilogcode</item>
+      <item>svcode*</item>
+      <item>svcode</item>
+      <!-- TOML lexers -->
+      <item>tomlcode*</item>
+      <item>tomlcode</item>
+      <!-- TADS 3 lexers -->
+      <item>tadscode*</item>
+      <item>tadscode</item>
+      <!-- Tcl/Tk lexers -->
+      <item>tclcode*</item>
+      <item>tclcode</item>
+      <!-- Tcsh lexers -->
+      <item>tcshcode*</item>
+      <item>tcshcode</item>
+      <item>cshcode*</item>
+      <item>cshcode</item>
+      <!-- Terraform lexers -->
+      <item>terraformcode*</item>
+      <item>terraformcode</item>
+      <item>tfcode*</item>
+      <item>tfcode</item>
+      <!-- LaTeX lexers -->
+      <item>texcode*</item>
+      <item>texcode</item>
+      <item>latexcode*</item>
+      <item>latexcode</item>
+      <!-- Todo.txt lexers -->
+      <item>todotxtcode*</item>
+      <item>todotxtcode</item>
+      <!-- TypeScript lexers -->
+      <item>typescriptcode*</item>
+      <item>typescriptcode</item>
+      <item>tscode*</item>
+      <item>tscode</item>
+      <!-- Vala lexers -->
+      <item>valacode*</item>
+      <item>valacode</item>
+      <item>vapicode*</item>
+      <item>vapicode</item>
+      <!-- Velocity lexers -->
+      <item>velocitycode*</item>
+      <item>velocitycode</item>
+      <!-- Verilog lexers -->
+      <item>verilogcode*</item>
+      <item>verilogcode</item>
+      <item>vcode*</item>
+      <item>vcode</item>
+      <!-- VHDL lexers -->
+      <item>vhdlcode*</item>
+      <item>vhdlcode</item>
+      <!-- XML lexers -->
+      <item>xmlcode*</item>
+      <item>xmlcode</item>
+      <!-- x.org Configuration lexers -->
+      <item>xorgconfcode*</item>
+      <item>xorgconfcode</item>
+      <!-- xslt lexers -->
+      <item>xsltcode*</item>
+      <item>xsltcode</item>
+      <!-- YAML lexers -->
+      <item>yamlcode*</item>
+      <item>yamlcode</item>
+      <!-- YANG lexers -->
+      <item>yangcode*</item>
+      <item>yangcode</item>
+      <!-- Mako lexers -->
+    </list>
+
     <list name="VerbatimEnv">
       <item>Verbatim*</item>
       <item>Verbatim</item>
@@ -248,6 +850,13 @@
       <item>longtable</item>
     </list>
 
+    <list name="TabuEnv">
+      <item>tabu*</item>
+      <item>tabu</item>
+      <item>longtabu*</item>
+      <item>longtabu</item>
+    </list>
+
     <list name="MathModeText">
       <item>\text</item>
       <item>\textit</item>
@@ -279,15 +888,14 @@
         <DetectIdentifier/>
         <DetectChar char="\" attribute="Normal Text" context="LatexMacro" lookAhead="true"/>
         <DetectChar char="$" attribute="Math" context="MathModeTex"/>
-        <RegExpr String="&lt;&lt;.*&gt;&gt;=" attribute="Normal Text" context="NoWeb" column="0"/>
-        <RegExpr String="%\s*(BEGIN|END)" attribute="Region Marker" context="RegionComment" firstNonSpace="true"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <RegExpr String="^&lt;&lt;.*&gt;&gt;=" attribute="Normal Text" context="NoWeb" column="0"/>
+        <IncludeRules context="FindComments"/>
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
       </context>
 
       <context name="LatexMacro" attribute="Normal Text" lineEndContext="#pop">
-        <keyword String="beginEnv" attribute="Structure" context="#pop!FindBeginEnvironment" beginRegion="block"/>
-        <keyword String="endEnv" attribute="Structure" context="#pop!FindEndEnvironment" endRegion="block"/>
+        <WordDetect String="\begin" attribute="Structure" context="#pop!FindBeginEnvironment" beginRegion="block" additionalDeliminator="\"/>
+        <WordDetect String="\end" attribute="Structure" context="#pop!FindEndEnvironment" additionalDeliminator="\"/>
         <keyword String="Label" attribute="Structure" context="#pop!Label"/>
         <keyword String="macroFancyLabel" attribute="Builtin Macro" context="#pop!FancyLabel"/>
         <keyword String="FancyLabel" attribute="Structure" context="#pop!FancyLabel"/>
@@ -305,16 +913,15 @@
 
       <!-- NoWeb -->
       <context name="NoWeb" attribute="Normal Text" lineEndContext="#stay">
-        <RegExpr String="@\s*$" attribute="Normal Text" context="#pop" column="0"/>
+        <RegExpr String="^@\s*$" attribute="Normal Text" context="#pop" column="0"/>
       </context>
 
       <!-- LaTeX sectioning commands -->
-      <context name="Sectioning" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+      <context name="Sectioning" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
         <DetectSpaces/>
         <RangeDetect char="[" char1="]" attribute="Normal Text" context="#stay"/>
-        <DetectChar char="{" attribute="Normal Text" context="SectioningInside"/>
-        <DetectChar char="}" attribute="Normal Text" context="#pop"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="{" attribute="Normal Text" context="#pop!SectioningInside"/>
+        <IncludeRules context="FindComments"/>
       </context>
       <context name="SectioningInside" attribute="Sectioning Text" lineEndContext="#stay">
         <DetectChar char="{" attribute="Normal Text" context="SectioningInside"/>
@@ -322,12 +929,12 @@
         <Detect2Chars char="\" char1="(" attribute="Sectioning Math" context="SectioningMathMode" />
         <DetectChar char="\" attribute="Sectioning Macro" context="SectioningContrSeq"/>
         <DetectChar char="$" attribute="Sectioning Math" context="SectioningMathMode" />
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
       </context>
       <context name="SectioningContrSeq" attribute="Macro" lineEndContext="#pop">
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
-        <RegExpr String="[a-zA-Z]+(\+?|\*{0,3})|." attribute="Sectioning Macro" context="#pop" />
+        <RegExpr String="[a-zA-Z]+(?:\+?|\*{0,3})|." attribute="Sectioning Macro" context="#pop" />
       </context>
       <context name="SectioningMathMode" attribute="Sectioning Math" lineEndContext="#stay">
         <Detect2Chars char="$" char1="$" attribute="Error" context="#stay" />
@@ -335,7 +942,7 @@
         <Detect2Chars char="\" char1=")" attribute="Sectioning Math" context="#pop" />
         <Detect2Chars char="\" char1="]" attribute="Error" context="#stay" />
         <DetectChar char="\" attribute="Sectioning Macro Mathmode" context="SectioningMathContrSeq"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
       </context>
       <context name="SectioningMathContrSeq" attribute="Sectioning Macro Mathmode" lineEndContext="#pop">
@@ -344,12 +951,12 @@
       </context>
 
       <!-- LaTeX Footnote commands -->
-      <context name="Footnoting" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+      <context name="Footnoting" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
         <DetectSpaces/>
         <RangeDetect char="[" char1="]" attribute="Normal Text" context="#stay"/>
         <DetectChar char="{" attribute="Normal Text" context="FootnotingInside"/>
         <DetectChar char="}" attribute="Normal Text" context="#pop"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
       </context>
       <context name="FootnotingInside" attribute="Normal Text" lineEndContext="#stay">
         <DetectChar char="{" attribute="Normal Text" context="FootnotingInside"/>
@@ -358,15 +965,15 @@
       </context>
 
       <!-- LaTeX commands \newcommand and \renewcommand -->
-      <context name="NewCommand" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+      <context name="NewCommand" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
         <DetectSpaces/>
         <DetectChar char="{" attribute="Normal Text" context="LabelParameter"/>
-        <RegExpr String="(\[\d\](\[[^\]]*\])?)?\{" attribute="Normal Text" context="LabelParameter"/>
+        <RegExpr String="(?:\[\d\](?:\[[^\]]*\])?)?\{" attribute="Normal Text" context="LabelParameter"/>
         <DetectChar char="}" attribute="Error" context="#pop"/>
       </context>
 
       <!-- LaTeX command \def -->
-      <context name="DefCommand" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+      <context name="DefCommand" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
         <DetectSpaces/>
         <RegExpr String="\\[a-zA-Z]+[^\{]*\{" attribute="Normal Text" context="#pop!CommandParameter"/>
         <DetectChar char="}" attribute="Error" context="#pop"/>
@@ -377,7 +984,7 @@
         <DetectChar char="{" attribute="Normal Text" context="CommandParameter"/>
         <DetectChar char="}" attribute="Normal Text" context="#pop"/>
         <RegExpr String="\\." attribute="Normal Text" context="#stay"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
       </context>
 
       <!-- LaTeX command in text mode -->
@@ -386,19 +993,18 @@
         <keyword String="Lstinline" attribute="Macro" context="Lstinline"/>
         <keyword String="MintParam" attribute="Macro" context="MintParam"/>
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
-        <RegExpr String="[a-zA-Z@]+(\+?|\*{0,3})|." attribute="Macro" context="#pop" />
+        <RegExpr String="[a-zA-Z@]+(?:\+?|\*{0,3})|." attribute="Macro" context="#pop" />
       </context>
 
       <!-- \mint command with parameter-->
       <context name="MintParam" attribute="Normal Text" lineEndContext="#stay">
         <Detect2Chars char="}" char1="[" attribute="Normal Text" context="#stay"/>
-        <DetectChar char="}" attribute="Normal Text" context="Verb"/>
-        <DetectChar char="]" attribute="Normal Text" context="Verb"/>
+        <AnyChar String="}]" attribute="Normal Text" context="Verb"/>
       </context>
 
       <!-- verb command -->
       <context name="Verb" attribute="Verbatim" lineEndContext="#pop#pop" >
-        <RegExpr String="(.)" attribute="Normal Text" dynamic="true" context="VerbEnd" />
+        <RegExpr String="(.)" attribute="Normal Text" context="VerbEnd" />
       </context>
       <context name="VerbEnd" attribute="Verbatim" lineEndContext="#pop#pop#pop" dynamic="true" >
         <StringDetect String="%1" attribute="Normal Text" context="#pop#pop#pop" dynamic="true" />
@@ -411,7 +1017,7 @@
         <DetectSpaces/>
         <DetectChar char="[" attribute="Normal Text" context="FancyLabelOption"/>
         <DetectChar char="{" attribute="Normal Text" context="LstinlineParameter"/>
-        <RegExpr String="(.)" attribute="Normal Text" dynamic="true" context="LstinlineEnd" />
+        <RegExpr String="(.)" attribute="Normal Text" context="LstinlineEnd" />
       </context>
       <context name="LstinlineEnd" attribute="Verbatim" lineEndContext="#pop#pop#pop" dynamic="true" >
         <!-- TODO DetectChar segfault -->
@@ -433,10 +1039,10 @@
 
       <context name="LabelOption" attribute="Normal Text" lineEndContext="#stay">
         <DetectSpaces/>
-        <DetectChar char="(" attribute="Math" context="MathModeTex" />
+        <Detect2Chars char="\" char1="(" attribute="Math" context="MathModeLatex"/>
         <DetectChar char="\" attribute="Macro" context="ContrSeq"/>
         <DetectChar char="$" attribute="Math" context="MathModeTex" />
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
         <DetectChar char="]" attribute="Normal Text" context="#pop"/>
       </context>
@@ -448,7 +1054,7 @@
       </context>
 
       <!-- labels from biblatex commands -->
-      <context name="FancyLabel" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+      <context name="FancyLabel" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
         <DetectSpaces/>
         <DetectChar char="{" attribute="Normal Text" context="FancyLabelParameter"/>
         <DetectChar char="[" attribute="Normal Text" context="FancyLabelOption"/>
@@ -457,12 +1063,13 @@
 
       <context name="FancyLabelParameter" attribute="Environment" lineEndContext="#stay">
         <DetectSpaces/>
-        <DetectChar char="(" attribute="Math" context="MathModeTex" />
+        <Detect2Chars char="\" char1="(" attribute="Math" context="MathModeLatex"/>
         <DetectChar char="\" attribute="Macro" context="ContrSeq"/>
         <DetectChar char="$" attribute="Math" context="MathModeTex" />
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
         <DetectChar char="}" attribute="Normal Text" context="#pop"/>
+        <DetectChar char="{" attribute="Normal Text" context="FancyLabelParameter"/>
       </context>
 
       <context name="FancyLabelOption" attribute="Option Text" lineEndContext="#stay">
@@ -474,25 +1081,26 @@
         <Detect2Chars char="\" char1="(" attribute="Math" context="MathModeLatex" />
         <DetectChar char="\" attribute="Macro" context="ContrSeq"/>
         <DetectChar char="$" attribute="Math" context="MathModeTex" />
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
         <DetectChar char=")" attribute="Normal Text" context="#pop"/>
       </context>
 
       <!-- Special commands -->
-      <context name="SpecialCommand" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+      <context name="SpecialCommand" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
         <DetectSpaces/>
         <DetectChar char="{" attribute="Normal Text" context="SpecialCommandParameterOption"/>
       </context>
 
       <context name="SpecialCommandParameterOption" attribute="Option Text" lineEndContext="#stay">
         <DetectSpaces/>
-        <Detect2Chars char="\" char1="(" attribute="Math" context="MathModeTex" />
+        <Detect2Chars char="\" char1="(" attribute="Math" context="MathModeLatex" />
         <DetectChar char="\" attribute="Macro" context="ContrSeq"/>
         <DetectChar char="$" attribute="Math" context="MathModeTex" />
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
         <DetectChar char="}" attribute="Normal Text" context="#pop"/>
+        <DetectChar char="{" attribute="Normal Text" context="SpecialCommandParameterOption"/>
       </context>
 
       <!-- end of an environment -->
@@ -527,7 +1135,9 @@
         <keyword String="MathEnvParam" attribute="Environment" context="MathEnvWithParam"/>
         <keyword String="MathEnv" attribute="Environment" context="MathEnv"/>
         <keyword String="TabEnv" attribute="Environment" context="TabEnv"/>
+        <keyword String="TabuEnv" attribute="Environment" context="TabuEnv"/>
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <RegExpr String="\w+code\b" attribute="Environment" context="MintedCodeEnv" lookAhead="true"/>
         <RegExpr String="&envname;" attribute="Environment" context="LatexEnv"/>
         <RegExpr String="." attribute="Error" context="#pop"/>
       </context>
@@ -552,7 +1162,7 @@
       </context>
 
       <!-- environment type 2: verbatim without parameter -->
-      <context name="VerbatimEnv1" attribute="Error" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop#pop">
+      <context name="VerbatimEnv1" attribute="Error" lineEndContext="#stay" fallthroughContext="#pop#pop#pop#pop">
         <DetectChar char="}" attribute="Normal Text" context="Verbatim1"/>
       </context>
       <context name="Verbatim1" attribute="Verbatim" lineEndContext="#stay">
@@ -562,7 +1172,7 @@
         <RegExpr String="\\end(?=\s*\{verbatim\*?\})" attribute="Structure" context="VerbFindEnd"/>
       </context>
 
-      <context name="VerbatimEnv2" attribute="Error" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop#pop">
+      <context name="VerbatimEnv2" attribute="Error" lineEndContext="#stay" fallthroughContext="#pop#pop#pop#pop">
         <DetectChar char="}" attribute="Normal Text" context="Verbatim2"/>
       </context>
       <context name="Verbatim2" attribute="Verbatim" lineEndContext="#stay">
@@ -573,10 +1183,10 @@
       </context>
 
       <!-- environment type 3: verbatim with optional parameter -->
-      <context name="VerbatimEnv3" attribute="Error" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop#pop">
+      <context name="VerbatimEnv3" attribute="Error" lineEndContext="#stay" fallthroughContext="#pop#pop#pop#pop">
         <DetectChar char="}" attribute="Normal Text" context="VerbatimEnv3Param"/>
       </context>
-      <context name="VerbatimEnv3Param" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!Verbatim3">
+      <context name="VerbatimEnv3Param" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!Verbatim3">
         <DetectSpaces/>
         <RangeDetect char="[" char1="]" attribute="Normal Text" context="#pop!Verbatim3"/>
       </context>
@@ -587,10 +1197,10 @@
         <RegExpr String="\\end(?=\s*\{Verbatim\*?\})" attribute="Structure" context="VerbFindEnd"/>
       </context>
 
-      <context name="VerbatimEnv4" attribute="Error" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop#pop">
+      <context name="VerbatimEnv4" attribute="Error" lineEndContext="#stay" fallthroughContext="#pop#pop#pop#pop">
         <DetectChar char="}" attribute="Normal Text" context="VerbatimEnv4Param"/>
       </context>
-      <context name="VerbatimEnv4Param" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!Verbatim4">
+      <context name="VerbatimEnv4Param" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!Verbatim4">
         <DetectSpaces/>
         <RangeDetect char="[" char1="]" attribute="Normal Text" context="#pop!Verbatim4"/>
       </context>
@@ -601,10 +1211,10 @@
         <RegExpr String="\\end(?=\s*\{BVerbatim\*?\})" attribute="Structure" context="VerbFindEnd"/>
       </context>
 
-      <context name="VerbatimEnv5" attribute="Error" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop#pop">
+      <context name="VerbatimEnv5" attribute="Error" lineEndContext="#stay" fallthroughContext="#pop#pop#pop#pop">
         <DetectChar char="}" attribute="Normal Text" context="VerbatimEnv5Param"/>
       </context>
-      <context name="VerbatimEnv5Param" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!Verbatim5">
+      <context name="VerbatimEnv5Param" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!Verbatim5">
         <DetectSpaces/>
         <RangeDetect char="[" char1="]" attribute="Normal Text" context="#pop!Verbatim5"/>
       </context>
@@ -620,99 +1230,1276 @@
         <DetectChar char="}" attribute="Normal Text" context="#pop!ListingsEnvParam"/>
         <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
       </context>
-      <context name="ListingsEnvParam" attribute="Normal Text" lineEndContext="#pop!UnknownHighlighting" fallthrough="true" fallthroughContext="#pop!UnknownHighlighting">
+      <context name="ListingsEnvParam" attribute="Normal Text" lineEndContext="#pop!UnknownHighlighting" fallthroughContext="#pop!UnknownHighlighting">
         <DetectSpaces/>
         <DetectChar char="[" attribute="Normal Text" context="#pop!ListingsEnvParamInside"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
       </context>
       <context name="ListingsEnvParamInside" attribute="Normal Text" lineEndContext="#stay">
-        <DetectIdentifier/>
         <RegExpr String="\s*language\s*=\s*(?=[^],])" attribute="Normal Text" context="HighlightingSelector"/>
         <DetectChar char="]" attribute="Normal Text" context="ListingsEnvParamEnd"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
       </context>
-      <context name="ListingsEnvParamEnd" attribute="Normal Text" lineEndContext="#pop#pop!UnknownHighlighting" fallthrough="true" fallthroughContext="#pop#pop!UnknownHighlighting">
+      <context name="ListingsEnvParamEnd" attribute="Normal Text" lineEndContext="#pop#pop!UnknownHighlighting" fallthroughContext="#pop#pop!UnknownHighlighting">
         <DetectSpaces/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
       </context>
 
       <!-- environment type 5: minted environment with optional and HL switching -->
-      <context name="MintedEnv" attribute="Environment" lineEndContext="#stay">
-        <DetectChar char="}" attribute="Normal Text" context="#pop!MintedEnvParam"/>
-        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+      <context name="MintedEnv" attribute="Error" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop!MintedEnvParam"/>
       </context>
       <context name="MintedEnvParam" attribute="Normal Text" lineEndContext="#stay">
         <DetectSpaces/>
-        <DetectChar char="[" attribute="Normal Text" context="#pop!MintedEnvParamInside"/>
+        <DetectChar char="[" attribute="Normal Text" context="MintedEnvLang!MintedEnvParamInside"/>
         <DetectChar char="{" attribute="Normal Text" context="HighlightingSelector"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
       </context>
       <context name="MintedEnvParamInside" attribute="Normal Text" lineEndContext="#stay">
         <DetectSpaces/>
         <DetectIdentifier/>
-        <DetectChar char="]" attribute="Normal Text" context="#pop!MintedEnvLang"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="]" attribute="Normal Text" context="#pop"/>
+        <IncludeRules context="FindComments"/>
         <RegExpr String="\\&envname;" attribute="Macro" context="#stay"/>
       </context>
       <context name="MintedEnvLang" attribute="Normal Text" lineEndContext="#stay">
         <DetectSpaces/>
-        <DetectChar char="{" attribute="Normal Text" context="HighlightingSelector"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="{" attribute="Normal Text" context="#pop!HighlightingSelector"/>
+        <IncludeRules context="FindComments"/>
       </context>
 
-      <!-- parse verbatim text for lstinline and minted -->
-      <context name="UnknownHighlighting" attribute="Verbatim" lineEndContext="#stay">
-        <DetectSpaces/>
-        <DetectIdentifier/>
-        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
-        <RegExpr String="\\end(?=\s*\{(lstlisting|minted)\*?\})" attribute="Structure" context="UnknownHighlightingEnd"/>
-      </context>
-      <context name="UnknownHighlightingEnd" attribute="Environment" lineEndContext="#stay">
-        <DetectSpaces/>
-        <DetectChar char="{" attribute="Normal Text" context="#stay"/>
-        <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop#pop#pop#pop#pop" endRegion="block"/>
-        <DetectIdentifier/>
+      <!-- environment type 5: minted environment created with newminted -->
+      <context name="MintedCodeEnv" attribute="Environment">
+        <WordDetect String="abapcode" attribute="Environment" context="HighlightingABAP!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="actionscriptcode" attribute="Environment" context="HighlightingActionScript 2.0!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="ascode" attribute="Environment" context="HighlightingActionScript 2.0!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="adacode" attribute="Environment" context="HighlightingAda!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="agdacode" attribute="Environment" context="HighlightingAgda!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="apacheconfcode" attribute="Environment" context="HighlightingApache Configuration!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="aconfcode" attribute="Environment" context="HighlightingApache Configuration!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="apachecode" attribute="Environment" context="HighlightingApache Configuration!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="autohotkeycode" attribute="Environment" context="HighlightingAutoHotKey!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="ahkcode" attribute="Environment" context="HighlightingAutoHotKey!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="awkcode" attribute="Environment" context="HighlightingAWK!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="gawkcode" attribute="Environment" context="HighlightingAWK!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="mawkcode" attribute="Environment" context="HighlightingAWK!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nawkcode" attribute="Environment" context="HighlightingAWK!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="bashcode" attribute="Environment" context="HighlightingBash!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="shcode" attribute="Environment" context="HighlightingBash!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="kshcode" attribute="Environment" context="HighlightingBash!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="zshcode" attribute="Environment" context="HighlightingZsh!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="shellcode" attribute="Environment" context="HighlightingBash!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="bibtexcode" attribute="Environment" context="HighlightingBibTeX!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="bibcode" attribute="Environment" context="HighlightingBibTeX!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="boocode" attribute="Environment" context="HighlightingBoo!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="ccode" attribute="Environment" context="HighlightingC!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="cmakecode" attribute="Environment" context="HighlightingCMake!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="csharpcode" attribute="Environment" context="HighlightingC#!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="cscode" attribute="Environment" context="HighlightingC#!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="clojurecode" attribute="Environment" context="HighlightingClojure!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="cljcode" attribute="Environment" context="HighlightingClojure!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="coffeecode" attribute="Environment" context="HighlightingCoffeeScript!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="commonlispcode" attribute="Environment" context="HighlightingCommon Lisp!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="clcode" attribute="Environment" context="HighlightingCommon Lisp!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="lispcode" attribute="Environment" context="HighlightingCommon Lisp!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="cppcode" attribute="Environment" context="HighlightingC++!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="csscode" attribute="Environment" context="HighlightingCSS!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="dcode" attribute="Environment" context="HighlightingD!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="dartcode" attribute="Environment" context="HighlightingDart!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="delphicode" attribute="Environment" context="HighlightingPascal!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="pascode" attribute="Environment" context="HighlightingPascal!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="pascalcode" attribute="Environment" context="HighlightingPascal!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="objectpascalcode" attribute="Environment" context="HighlightingPascal!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="diffcode" attribute="Environment" context="HighlightingDiff!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="udiffcode" attribute="Environment" context="HighlightingDiff!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="dtdcode" attribute="Environment" context="HighlightingDTD!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="eiffelcode" attribute="Environment" context="HighlightingEiffel!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="elixircode" attribute="Environment" context="HighlightingElixir!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="excode" attribute="Environment" context="HighlightingElixir!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="exscode" attribute="Environment" context="HighlightingElixir!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="elmcode" attribute="Environment" context="HighlightingElm!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="emailcode" attribute="Environment" context="HighlightingEmail!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="emlcode" attribute="Environment" context="HighlightingEmail!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="erlangcode" attribute="Environment" context="HighlightingErlang!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="fishcode" attribute="Environment" context="HighlightingFish!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="fishshellcode" attribute="Environment" context="HighlightingFish!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="forthcode" attribute="Environment" context="HighlightingANS-Forth94!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="fortranfixedcode" attribute="Environment" context="HighlightingFortran (Fixed Format)!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="fortrancode" attribute="Environment" context="HighlightingFortran (Free Format)!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="fcode" attribute="Environment" context="HighlightingFortran (Free Format)!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="gapcode" attribute="Environment" context="HighlightingGAP!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="gdscriptcode" attribute="Environment" context="HighlightingGodot!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="gdcode" attribute="Environment" context="HighlightingGodot!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="glslcode" attribute="Environment" context="HighlightingGLSL!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="gcodecode" attribute="Environment" context="HighlightingG-Code!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="gnuplotcode" attribute="Environment" context="HighlightingGnuplot!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="gocode" attribute="Environment" context="HighlightingGo!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="golangcode" attribute="Environment" context="HighlightingGo!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="groovycode" attribute="Environment" context="HighlightingGroovy!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="hamlcode" attribute="Environment" context="HighlightingHaml!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="haskellcode" attribute="Environment" context="HighlightingHaskell!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="hscode" attribute="Environment" context="HighlightingHaskell!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="haxecode" attribute="Environment" context="HighlightingHaxe!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="hxslcode" attribute="Environment" context="HighlightingHaxe!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="hxcode" attribute="Environment" context="HighlightingHaxe!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="htmlcode" attribute="Environment" context="HighlightingHTML!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="idlcode" attribute="Environment" context="HighlightingIDL!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="idriscode" attribute="Environment" context="HighlightingIdris!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="idrcode" attribute="Environment" context="HighlightingIdris!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="informcode" attribute="Environment" context="HighlightingInform!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="icode" attribute="Environment" context="HighlightingInform!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="inicode" attribute="Environment" context="HighlightingINI Files!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="cfgcode" attribute="Environment" context="HighlightingINI Files!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="dosinicode" attribute="Environment" context="HighlightingINI Files!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="jcode" attribute="Environment" context="HighlightingJ!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="javacode" attribute="Environment" context="HighlightingJava!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="javascriptcode" attribute="Environment" context="HighlightingJavaScript!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="jscode" attribute="Environment" context="HighlightingJavaScript!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="jclcode" attribute="Environment" context="HighlightingJCL!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="jsoncode" attribute="Environment" context="HighlightingJSON!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="jsonobjectcode" attribute="Environment" context="HighlightingJSON!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="juliacode" attribute="Environment" context="HighlightingJulia!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="jlcode" attribute="Environment" context="HighlightingJulia!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="kconfigcode" attribute="Environment" context="HighlightingKconfig!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="menuconfigcode" attribute="Environment" context="HighlightingKconfig!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="linuxconfigcode" attribute="Environment" context="HighlightingKconfig!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="kernelconfigcode" attribute="Environment" context="HighlightingKconfig!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="kotlincode" attribute="Environment" context="HighlightingKotlin!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="lslcode" attribute="Environment" context="HighlightingLSL!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="lesscode" attribute="Environment" context="HighlightingLESSCSS!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="lilypondcode" attribute="Environment" context="HighlightingLilyPond!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="literatehaskellcode" attribute="Environment" context="HighlightingLiterate Haskell!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="lhaskellcode" attribute="Environment" context="HighlightingLiterate Haskell!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="lhscode" attribute="Environment" context="HighlightingLiterate Haskell!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="llvmcode" attribute="Environment" context="HighlightingLLVM!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="logtalkcode" attribute="Environment" context="HighlightingLogtalk!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="luacode" attribute="Environment" context="HighlightingLua!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="makecode" attribute="Environment" context="HighlightingMakefile!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="makefilecode" attribute="Environment" context="HighlightingMakefile!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="mfcode" attribute="Environment" context="HighlightingMakefile!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="bsdmakecode" attribute="Environment" context="HighlightingMakefile!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="makocode" attribute="Environment" context="HighlightingMako!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="markdowncode" attribute="Environment" context="HighlightingMarkdown!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="mdcode" attribute="Environment" context="HighlightingMarkdown!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="masoncode" attribute="Environment" context="HighlightingMason!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="mathematicacode" attribute="Environment" context="HighlightingMathematica!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="mmacode" attribute="Environment" context="HighlightingMathematica!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nbcode" attribute="Environment" context="HighlightingMathematica!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="matlabcode" attribute="Environment" context="HighlightingMatlab!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="maximacode" attribute="Environment" context="HighlightingMaxima!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="macsymacode" attribute="Environment" context="HighlightingMaxima!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="mesoncode" attribute="Environment" context="HighlightingMeson!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="mesonbuildcode" attribute="Environment" context="HighlightingMeson!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="modelicacode" attribute="Environment" context="HighlightingModelica!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="modulacode" attribute="Environment" context="HighlightingModula-2!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="mcode" attribute="Environment" context="HighlightingModula-2!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="mysqlcode" attribute="Environment" context="HighlightingSQL (MySQL)!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nsiscode" attribute="Environment" context="HighlightingNSIS!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nsicode" attribute="Environment" context="HighlightingNSIS!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nshcode" attribute="Environment" context="HighlightingNSIS!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nasmcode" attribute="Environment" context="HighlightingIntel x86 (NASM)!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nemerlecode" attribute="Environment" context="HighlightingNemerle!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nesccode" attribute="Environment" context="HighlightingnesC!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nimrodcode" attribute="Environment" context="HighlightingNim!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nimcode" attribute="Environment" context="HighlightingNim!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nixoscode" attribute="Environment" context="HighlightingNix!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="nixcode" attribute="Environment" context="HighlightingNix!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="objectiveccode" attribute="Environment" context="HighlightingObjective-C!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="objccode" attribute="Environment" context="HighlightingObjective-C!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="objectivecppcode" attribute="Environment" context="HighlightingObjective-C++!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="objcppcode" attribute="Environment" context="HighlightingObjective-C++!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="ocamlcode" attribute="Environment" context="HighlightingObjective Caml!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="octavecode" attribute="Environment" context="HighlightingOctave!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="perlcode" attribute="Environment" context="HighlightingPerl!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="plcode" attribute="Environment" context="HighlightingPerl!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="phpcode" attribute="Environment" context="HighlightingPHP/PHP!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="pigcode" attribute="Environment" context="HighlightingPig!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="pikecode" attribute="Environment" context="HighlightingPike!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="ponycode" attribute="Environment" context="HighlightingPony!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="postscriptcode" attribute="Environment" context="HighlightingPostScript!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="postscrcode" attribute="Environment" context="HighlightingPostScript!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="povcode" attribute="Environment" context="HighlightingPOV-Ray!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="powershellcode" attribute="Environment" context="HighlightingPowerShell!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="pwshcode" attribute="Environment" context="HighlightingPowerShell!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="poshcode" attribute="Environment" context="HighlightingPowerShell!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="pscode" attribute="Environment" context="HighlightingPowerShell!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="psmcode" attribute="Environment" context="HighlightingPowerShell!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="praatcode" attribute="Environment" context="HighlightingPraat!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="prologcode" attribute="Environment" context="HighlightingProlog!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="protobufcode" attribute="Environment" context="HighlightingProtobuf!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="protocode" attribute="Environment" context="HighlightingProtobuf!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="pugcode" attribute="Environment" context="HighlightingPug!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="jadecode" attribute="Environment" context="HighlightingPug!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="puppetcode" attribute="Environment" context="HighlightingPuppet!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="pythoncode" attribute="Environment" context="HighlightingPython!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="pycode" attribute="Environment" context="HighlightingPython!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="sagecode" attribute="Environment" context="HighlightingPython!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="qmlcode" attribute="Environment" context="HighlightingQML!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="qbscode" attribute="Environment" context="HighlightingQML!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="rngcompactcode" attribute="Environment" context="HighlightingRelaxNG-Compact!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="rnccode" attribute="Environment" context="HighlightingRelaxNG-Compact!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="speccode" attribute="Environment" context="HighlightingRPM Spec!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="racketcode" attribute="Environment" context="HighlightingRacket!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="rktcode" attribute="Environment" context="HighlightingRacket!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="rexxcode" attribute="Environment" context="HighlightingREXX!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="arexxcode" attribute="Environment" context="HighlightingREXX!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="rhtmlcode" attribute="Environment" context="HighlightingRuby/Rails/RHTML!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="htmlerbcode" attribute="Environment" context="HighlightingRuby/Rails/RHTML!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="htmlrubycode" attribute="Environment" context="HighlightingRuby/Rails/RHTML!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="rstcode" attribute="Environment" context="HighlightingreStructuredText!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="restcode" attribute="Environment" context="HighlightingreStructuredText!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="rubycode" attribute="Environment" context="HighlightingRuby!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="rbcode" attribute="Environment" context="HighlightingRuby!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="dubycode" attribute="Environment" context="HighlightingRuby!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="rustcode" attribute="Environment" context="HighlightingRust!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="rscode" attribute="Environment" context="HighlightingRust!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="smlcode" attribute="Environment" context="HighlightingSML!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="sasscode" attribute="Environment" context="HighlightingSASS!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="scalacode" attribute="Environment" context="HighlightingScala!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="schemecode" attribute="Environment" context="HighlightingScheme!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="scmcode" attribute="Environment" context="HighlightingScheme!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="scilabcode" attribute="Environment" context="Highlightingscilab!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="scsscode" attribute="Environment" context="HighlightingSCSS!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="sedcode" attribute="Environment" context="Highlightingsed!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="gsedcode" attribute="Environment" context="Highlightingsed!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="ssedcode" attribute="Environment" context="Highlightingsed!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="sievecode" attribute="Environment" context="HighlightingSieve!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="smalicode" attribute="Environment" context="HighlightingSmali!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="soliditycode" attribute="Environment" context="HighlightingSolidity!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="spicecode" attribute="Environment" context="HighlightingSpice!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="spicelangcode" attribute="Environment" context="HighlightingSpice!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="sqlcode" attribute="Environment" context="HighlightingSQL!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="stancode" attribute="Environment" context="HighlightingStan!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="statacode" attribute="Environment" context="HighlightingStata!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="docode" attribute="Environment" context="HighlightingStata!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="swiftcode" attribute="Environment" context="HighlightingSwift!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="systemverilogcode" attribute="Environment" context="HighlightingSystemVerilog!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="svcode" attribute="Environment" context="HighlightingSystemVerilog!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="tomlcode" attribute="Environment" context="HighlightingTOML!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="tadscode" attribute="Environment" context="HighlightingTADS 3!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="tclcode" attribute="Environment" context="HighlightingTcl/Tk!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="tcshcode" attribute="Environment" context="HighlightingTcsh!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="cshcode" attribute="Environment" context="HighlightingTcsh!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="terraformcode" attribute="Environment" context="HighlightingTerraform!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="tfcode" attribute="Environment" context="HighlightingTerraform!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="texcode" attribute="Environment" context="HighlightingLaTeX!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="latexcode" attribute="Environment" context="HighlightingLaTeX!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="todotxtcode" attribute="Environment" context="HighlightingTodo.txt!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="typescriptcode" attribute="Environment" context="HighlightingTypeScript!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="tscode" attribute="Environment" context="HighlightingTypeScript!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="valacode" attribute="Environment" context="HighlightingVala!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="vapicode" attribute="Environment" context="HighlightingVala!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="velocitycode" attribute="Environment" context="HighlightingVelocity!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="verilogcode" attribute="Environment" context="HighlightingVerilog!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="vcode" attribute="Environment" context="HighlightingVerilog!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="vhdlcode" attribute="Environment" context="HighlightingVHDL!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="xmlcode" attribute="Environment" context="HighlightingXML!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="xorgconfcode" attribute="Environment" context="Highlightingx.org Configuration!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="xsltcode" attribute="Environment" context="Highlightingxslt!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="yamlcode" attribute="Environment" context="HighlightingYAML!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <WordDetect String="yangcode" attribute="Environment" context="HighlightingYANG!HighlightingCodeEnvS" additionalDeliminator="*"/>
+        <RegExpr String="\w+code" attribute="Environment" context="UnknownHighlighting!HighlightingCodeEnvS"/>
       </context>
 
 
       <!-- Selector for different highlightning schemes, in case the language is not implemented we pop and thus fallback to verbatim -->
-      <context name="HighlightingSelector" attribute="Normal Text" lineEndContext="#stay">
-        <WordDetect String="C++" insensitive="true" context="HighlightingBeginC++"/>
-        <WordDetect String="Python" insensitive="true" context="HighlightingBeginPython"/>
-        <DetectChar char="}" context="#pop!UnknownHighlighting"/>
-        <DetectChar char="]" context="#pop!UnknownHighlighting"/>
-        <RegExpr String="[^]}]*" context="#stay"/>
+      <context name="HighlightingSelector" attribute="Normal Text" fallthroughContext="UnknownHighlighting!HighlightingSelectorNotFound">
+        <WordDetect String="abap" insensitive="true" context="HighlightingABAP!HighlightingCodeEnv"/>
+        <WordDetect String="actionscript" insensitive="true" context="HighlightingActionScript 2.0!HighlightingCodeEnv"/>
+        <WordDetect String="as" insensitive="true" context="HighlightingActionScript 2.0!HighlightingCodeEnv"/>
+        <WordDetect String="ada" insensitive="true" context="HighlightingAda!HighlightingCodeEnv"/>
+        <WordDetect String="agda" insensitive="true" context="HighlightingAgda!HighlightingCodeEnv"/>
+        <WordDetect String="apacheconf" insensitive="true" context="HighlightingApache Configuration!HighlightingCodeEnv"/>
+        <WordDetect String="aconf" insensitive="true" context="HighlightingApache Configuration!HighlightingCodeEnv"/>
+        <WordDetect String="apache" insensitive="true" context="HighlightingApache Configuration!HighlightingCodeEnv"/>
+        <WordDetect String="autohotkey" insensitive="true" context="HighlightingAutoHotKey!HighlightingCodeEnv"/>
+        <WordDetect String="ahk" insensitive="true" context="HighlightingAutoHotKey!HighlightingCodeEnv"/>
+        <WordDetect String="awk" insensitive="true" context="HighlightingAWK!HighlightingCodeEnv"/>
+        <WordDetect String="gawk" insensitive="true" context="HighlightingAWK!HighlightingCodeEnv"/>
+        <WordDetect String="mawk" insensitive="true" context="HighlightingAWK!HighlightingCodeEnv"/>
+        <WordDetect String="nawk" insensitive="true" context="HighlightingAWK!HighlightingCodeEnv"/>
+        <WordDetect String="bash" insensitive="true" context="HighlightingBash!HighlightingCodeEnv"/>
+        <WordDetect String="sh" insensitive="true" context="HighlightingBash!HighlightingCodeEnv"/>
+        <WordDetect String="ksh" insensitive="true" context="HighlightingBash!HighlightingCodeEnv"/>
+        <WordDetect String="zsh" insensitive="true" context="HighlightingZsh!HighlightingCodeEnv"/>
+        <WordDetect String="shell" insensitive="true" context="HighlightingBash!HighlightingCodeEnv"/>
+        <WordDetect String="bibtex" insensitive="true" context="HighlightingBibTeX!HighlightingCodeEnv"/>
+        <WordDetect String="bib" insensitive="true" context="HighlightingBibTeX!HighlightingCodeEnv"/>
+        <WordDetect String="boo" insensitive="true" context="HighlightingBoo!HighlightingCodeEnv"/>
+        <WordDetect String="c" insensitive="true" context="HighlightingC!HighlightingCodeEnv"/>
+        <WordDetect String="cmake" insensitive="true" context="HighlightingCMake!HighlightingCodeEnv"/>
+        <WordDetect String="csharp" insensitive="true" context="HighlightingC#!HighlightingCodeEnv"/>
+        <WordDetect String="cs" insensitive="true" context="HighlightingC#!HighlightingCodeEnv"/>
+        <WordDetect String="clojure" insensitive="true" context="HighlightingClojure!HighlightingCodeEnv"/>
+        <WordDetect String="clj" insensitive="true" context="HighlightingClojure!HighlightingCodeEnv"/>
+        <WordDetect String="coffee" insensitive="true" context="HighlightingCoffeeScript!HighlightingCodeEnv"/>
+        <WordDetect String="commonlisp" insensitive="true" context="HighlightingCommon Lisp!HighlightingCodeEnv"/>
+        <WordDetect String="cl" insensitive="true" context="HighlightingCommon Lisp!HighlightingCodeEnv"/>
+        <WordDetect String="lisp" insensitive="true" context="HighlightingCommon Lisp!HighlightingCodeEnv"/>
+        <WordDetect String="cpp" insensitive="true" context="HighlightingC++!HighlightingCodeEnv"/>
+        <WordDetect String="css" insensitive="true" context="HighlightingCSS!HighlightingCodeEnv"/>
+        <WordDetect String="d" insensitive="true" context="HighlightingD!HighlightingCodeEnv"/>
+        <WordDetect String="dart" insensitive="true" context="HighlightingDart!HighlightingCodeEnv"/>
+        <WordDetect String="delphi" insensitive="true" context="HighlightingPascal!HighlightingCodeEnv"/>
+        <WordDetect String="pas" insensitive="true" context="HighlightingPascal!HighlightingCodeEnv"/>
+        <WordDetect String="pascal" insensitive="true" context="HighlightingPascal!HighlightingCodeEnv"/>
+        <WordDetect String="objectpascal" insensitive="true" context="HighlightingPascal!HighlightingCodeEnv"/>
+        <WordDetect String="diff" insensitive="true" context="HighlightingDiff!HighlightingCodeEnv"/>
+        <WordDetect String="udiff" insensitive="true" context="HighlightingDiff!HighlightingCodeEnv"/>
+        <WordDetect String="dtd" insensitive="true" context="HighlightingDTD!HighlightingCodeEnv"/>
+        <WordDetect String="eiffel" insensitive="true" context="HighlightingEiffel!HighlightingCodeEnv"/>
+        <WordDetect String="elixir" insensitive="true" context="HighlightingElixir!HighlightingCodeEnv"/>
+        <WordDetect String="ex" insensitive="true" context="HighlightingElixir!HighlightingCodeEnv"/>
+        <WordDetect String="exs" insensitive="true" context="HighlightingElixir!HighlightingCodeEnv"/>
+        <WordDetect String="elm" insensitive="true" context="HighlightingElm!HighlightingCodeEnv"/>
+        <WordDetect String="email" insensitive="true" context="HighlightingEmail!HighlightingCodeEnv"/>
+        <WordDetect String="eml" insensitive="true" context="HighlightingEmail!HighlightingCodeEnv"/>
+        <WordDetect String="erlang" insensitive="true" context="HighlightingErlang!HighlightingCodeEnv"/>
+        <WordDetect String="fish" insensitive="true" context="HighlightingFish!HighlightingCodeEnv"/>
+        <WordDetect String="fishshell" insensitive="true" context="HighlightingFish!HighlightingCodeEnv"/>
+        <WordDetect String="forth" insensitive="true" context="HighlightingANS-Forth94!HighlightingCodeEnv"/>
+        <WordDetect String="fortranfixed" insensitive="true" context="HighlightingFortran (Fixed Format)!HighlightingCodeEnv"/>
+        <WordDetect String="fortran" insensitive="true" context="HighlightingFortran (Free Format)!HighlightingCodeEnv"/>
+        <WordDetect String="f" insensitive="true" context="HighlightingFortran (Free Format)!HighlightingCodeEnv"/>
+        <WordDetect String="gap" insensitive="true" context="HighlightingGAP!HighlightingCodeEnv"/>
+        <WordDetect String="gdscript" insensitive="true" context="HighlightingGodot!HighlightingCodeEnv"/>
+        <WordDetect String="gd" insensitive="true" context="HighlightingGodot!HighlightingCodeEnv"/>
+        <WordDetect String="glsl" insensitive="true" context="HighlightingGLSL!HighlightingCodeEnv"/>
+        <WordDetect String="gcode" insensitive="true" context="HighlightingG-Code!HighlightingCodeEnv"/>
+        <WordDetect String="gnuplot" insensitive="true" context="HighlightingGnuplot!HighlightingCodeEnv"/>
+        <WordDetect String="go" insensitive="true" context="HighlightingGo!HighlightingCodeEnv"/>
+        <WordDetect String="golang" insensitive="true" context="HighlightingGo!HighlightingCodeEnv"/>
+        <WordDetect String="groovy" insensitive="true" context="HighlightingGroovy!HighlightingCodeEnv"/>
+        <WordDetect String="haml" insensitive="true" context="HighlightingHaml!HighlightingCodeEnv"/>
+        <WordDetect String="haskell" insensitive="true" context="HighlightingHaskell!HighlightingCodeEnv"/>
+        <WordDetect String="hs" insensitive="true" context="HighlightingHaskell!HighlightingCodeEnv"/>
+        <WordDetect String="haxe" insensitive="true" context="HighlightingHaxe!HighlightingCodeEnv"/>
+        <WordDetect String="hxsl" insensitive="true" context="HighlightingHaxe!HighlightingCodeEnv"/>
+        <WordDetect String="hx" insensitive="true" context="HighlightingHaxe!HighlightingCodeEnv"/>
+        <WordDetect String="html" insensitive="true" context="HighlightingHTML!HighlightingCodeEnv"/>
+        <WordDetect String="idl" insensitive="true" context="HighlightingIDL!HighlightingCodeEnv"/>
+        <WordDetect String="idris" insensitive="true" context="HighlightingIdris!HighlightingCodeEnv"/>
+        <WordDetect String="idr" insensitive="true" context="HighlightingIdris!HighlightingCodeEnv"/>
+        <WordDetect String="inform" insensitive="true" context="HighlightingInform!HighlightingCodeEnv"/>
+        <WordDetect String="i" insensitive="true" context="HighlightingInform!HighlightingCodeEnv"/>
+        <WordDetect String="ini" insensitive="true" context="HighlightingINI Files!HighlightingCodeEnv"/>
+        <WordDetect String="cfg" insensitive="true" context="HighlightingINI Files!HighlightingCodeEnv"/>
+        <WordDetect String="dosini" insensitive="true" context="HighlightingINI Files!HighlightingCodeEnv"/>
+        <WordDetect String="j" insensitive="true" context="HighlightingJ!HighlightingCodeEnv"/>
+        <WordDetect String="java" insensitive="true" context="HighlightingJava!HighlightingCodeEnv"/>
+        <WordDetect String="javascript" insensitive="true" context="HighlightingJavaScript!HighlightingCodeEnv"/>
+        <WordDetect String="js" insensitive="true" context="HighlightingJavaScript!HighlightingCodeEnv"/>
+        <WordDetect String="jcl" insensitive="true" context="HighlightingJCL!HighlightingCodeEnv"/>
+        <WordDetect String="json" insensitive="true" context="HighlightingJSON!HighlightingCodeEnv"/>
+        <WordDetect String="jsonobject" insensitive="true" context="HighlightingJSON!HighlightingCodeEnv"/>
+        <WordDetect String="julia" insensitive="true" context="HighlightingJulia!HighlightingCodeEnv"/>
+        <WordDetect String="jl" insensitive="true" context="HighlightingJulia!HighlightingCodeEnv"/>
+        <WordDetect String="kconfig" insensitive="true" context="HighlightingKconfig!HighlightingCodeEnv"/>
+        <WordDetect String="menuconfig" insensitive="true" context="HighlightingKconfig!HighlightingCodeEnv"/>
+        <WordDetect String="linuxconfig" insensitive="true" context="HighlightingKconfig!HighlightingCodeEnv"/>
+        <WordDetect String="kernelconfig" insensitive="true" context="HighlightingKconfig!HighlightingCodeEnv"/>
+        <WordDetect String="kotlin" insensitive="true" context="HighlightingKotlin!HighlightingCodeEnv"/>
+        <WordDetect String="lsl" insensitive="true" context="HighlightingLSL!HighlightingCodeEnv"/>
+        <WordDetect String="less" insensitive="true" context="HighlightingLESSCSS!HighlightingCodeEnv"/>
+        <WordDetect String="lilypond" insensitive="true" context="HighlightingLilyPond!HighlightingCodeEnv"/>
+        <WordDetect String="literatehaskell" insensitive="true" context="HighlightingLiterate Haskell!HighlightingCodeEnv"/>
+        <WordDetect String="lhaskell" insensitive="true" context="HighlightingLiterate Haskell!HighlightingCodeEnv"/>
+        <WordDetect String="lhs" insensitive="true" context="HighlightingLiterate Haskell!HighlightingCodeEnv"/>
+        <WordDetect String="llvm" insensitive="true" context="HighlightingLLVM!HighlightingCodeEnv"/>
+        <WordDetect String="logtalk" insensitive="true" context="HighlightingLogtalk!HighlightingCodeEnv"/>
+        <WordDetect String="lua" insensitive="true" context="HighlightingLua!HighlightingCodeEnv"/>
+        <WordDetect String="make" insensitive="true" context="HighlightingMakefile!HighlightingCodeEnv"/>
+        <WordDetect String="makefile" insensitive="true" context="HighlightingMakefile!HighlightingCodeEnv"/>
+        <WordDetect String="mf" insensitive="true" context="HighlightingMakefile!HighlightingCodeEnv"/>
+        <WordDetect String="bsdmake" insensitive="true" context="HighlightingMakefile!HighlightingCodeEnv"/>
+        <WordDetect String="mako" insensitive="true" context="HighlightingMako!HighlightingCodeEnv"/>
+        <WordDetect String="markdown" insensitive="true" context="HighlightingMarkdown!HighlightingCodeEnv"/>
+        <WordDetect String="md" insensitive="true" context="HighlightingMarkdown!HighlightingCodeEnv"/>
+        <WordDetect String="mason" insensitive="true" context="HighlightingMason!HighlightingCodeEnv"/>
+        <WordDetect String="mathematica" insensitive="true" context="HighlightingMathematica!HighlightingCodeEnv"/>
+        <WordDetect String="mma" insensitive="true" context="HighlightingMathematica!HighlightingCodeEnv"/>
+        <WordDetect String="nb" insensitive="true" context="HighlightingMathematica!HighlightingCodeEnv"/>
+        <WordDetect String="matlab" insensitive="true" context="HighlightingMatlab!HighlightingCodeEnv"/>
+        <WordDetect String="maxima" insensitive="true" context="HighlightingMaxima!HighlightingCodeEnv"/>
+        <WordDetect String="macsyma" insensitive="true" context="HighlightingMaxima!HighlightingCodeEnv"/>
+        <WordDetect String="meson" insensitive="true" context="HighlightingMeson!HighlightingCodeEnv"/>
+        <WordDetect String="mesonbuild" insensitive="true" context="HighlightingMeson!HighlightingCodeEnv"/>
+        <WordDetect String="modelica" insensitive="true" context="HighlightingModelica!HighlightingCodeEnv"/>
+        <WordDetect String="modula" insensitive="true" context="HighlightingModula-2!HighlightingCodeEnv"/>
+        <WordDetect String="m" insensitive="true" context="HighlightingModula-2!HighlightingCodeEnv"/>
+        <WordDetect String="mysql" insensitive="true" context="HighlightingSQL (MySQL)!HighlightingCodeEnv"/>
+        <WordDetect String="nsis" insensitive="true" context="HighlightingNSIS!HighlightingCodeEnv"/>
+        <WordDetect String="nsi" insensitive="true" context="HighlightingNSIS!HighlightingCodeEnv"/>
+        <WordDetect String="nsh" insensitive="true" context="HighlightingNSIS!HighlightingCodeEnv"/>
+        <WordDetect String="nasm" insensitive="true" context="HighlightingIntel x86 (NASM)!HighlightingCodeEnv"/>
+        <WordDetect String="nemerle" insensitive="true" context="HighlightingNemerle!HighlightingCodeEnv"/>
+        <WordDetect String="nesc" insensitive="true" context="HighlightingnesC!HighlightingCodeEnv"/>
+        <WordDetect String="nimrod" insensitive="true" context="HighlightingNim!HighlightingCodeEnv"/>
+        <WordDetect String="nim" insensitive="true" context="HighlightingNim!HighlightingCodeEnv"/>
+        <WordDetect String="nixos" insensitive="true" context="HighlightingNix!HighlightingCodeEnv"/>
+        <WordDetect String="nix" insensitive="true" context="HighlightingNix!HighlightingCodeEnv"/>
+        <WordDetect String="objectivec" insensitive="true" context="HighlightingObjective-C!HighlightingCodeEnv"/>
+        <WordDetect String="objc" insensitive="true" context="HighlightingObjective-C!HighlightingCodeEnv"/>
+        <WordDetect String="objectivecpp" insensitive="true" context="HighlightingObjective-C++!HighlightingCodeEnv"/>
+        <WordDetect String="objcpp" insensitive="true" context="HighlightingObjective-C++!HighlightingCodeEnv"/>
+        <WordDetect String="ocaml" insensitive="true" context="HighlightingObjective Caml!HighlightingCodeEnv"/>
+        <WordDetect String="octave" insensitive="true" context="HighlightingOctave!HighlightingCodeEnv"/>
+        <WordDetect String="perl" insensitive="true" context="HighlightingPerl!HighlightingCodeEnv"/>
+        <WordDetect String="pl" insensitive="true" context="HighlightingPerl!HighlightingCodeEnv"/>
+        <WordDetect String="php" insensitive="true" context="HighlightingPHP/PHP!HighlightingCodeEnv"/>
+        <WordDetect String="pig" insensitive="true" context="HighlightingPig!HighlightingCodeEnv"/>
+        <WordDetect String="pike" insensitive="true" context="HighlightingPike!HighlightingCodeEnv"/>
+        <WordDetect String="pony" insensitive="true" context="HighlightingPony!HighlightingCodeEnv"/>
+        <WordDetect String="postscript" insensitive="true" context="HighlightingPostScript!HighlightingCodeEnv"/>
+        <WordDetect String="postscr" insensitive="true" context="HighlightingPostScript!HighlightingCodeEnv"/>
+        <WordDetect String="pov" insensitive="true" context="HighlightingPOV-Ray!HighlightingCodeEnv"/>
+        <WordDetect String="powershell" insensitive="true" context="HighlightingPowerShell!HighlightingCodeEnv"/>
+        <WordDetect String="pwsh" insensitive="true" context="HighlightingPowerShell!HighlightingCodeEnv"/>
+        <WordDetect String="posh" insensitive="true" context="HighlightingPowerShell!HighlightingCodeEnv"/>
+        <WordDetect String="ps" insensitive="true" context="HighlightingPowerShell!HighlightingCodeEnv"/>
+        <WordDetect String="psm" insensitive="true" context="HighlightingPowerShell!HighlightingCodeEnv"/>
+        <WordDetect String="praat" insensitive="true" context="HighlightingPraat!HighlightingCodeEnv"/>
+        <WordDetect String="prolog" insensitive="true" context="HighlightingProlog!HighlightingCodeEnv"/>
+        <WordDetect String="protobuf" insensitive="true" context="HighlightingProtobuf!HighlightingCodeEnv"/>
+        <WordDetect String="proto" insensitive="true" context="HighlightingProtobuf!HighlightingCodeEnv"/>
+        <WordDetect String="pug" insensitive="true" context="HighlightingPug!HighlightingCodeEnv"/>
+        <WordDetect String="jade" insensitive="true" context="HighlightingPug!HighlightingCodeEnv"/>
+        <WordDetect String="puppet" insensitive="true" context="HighlightingPuppet!HighlightingCodeEnv"/>
+        <WordDetect String="python" insensitive="true" context="HighlightingPython!HighlightingCodeEnv"/>
+        <WordDetect String="py" insensitive="true" context="HighlightingPython!HighlightingCodeEnv"/>
+        <WordDetect String="sage" insensitive="true" context="HighlightingPython!HighlightingCodeEnv"/>
+        <WordDetect String="qml" insensitive="true" context="HighlightingQML!HighlightingCodeEnv"/>
+        <WordDetect String="qbs" insensitive="true" context="HighlightingQML!HighlightingCodeEnv"/>
+        <WordDetect String="rngcompact" insensitive="true" context="HighlightingRelaxNG-Compact!HighlightingCodeEnv"/>
+        <WordDetect String="rnc" insensitive="true" context="HighlightingRelaxNG-Compact!HighlightingCodeEnv"/>
+        <WordDetect String="spec" insensitive="true" context="HighlightingRPM Spec!HighlightingCodeEnv"/>
+        <WordDetect String="racket" insensitive="true" context="HighlightingRacket!HighlightingCodeEnv"/>
+        <WordDetect String="rkt" insensitive="true" context="HighlightingRacket!HighlightingCodeEnv"/>
+        <WordDetect String="rexx" insensitive="true" context="HighlightingREXX!HighlightingCodeEnv"/>
+        <WordDetect String="arexx" insensitive="true" context="HighlightingREXX!HighlightingCodeEnv"/>
+        <WordDetect String="rhtml" insensitive="true" context="HighlightingRuby/Rails/RHTML!HighlightingCodeEnv"/>
+        <WordDetect String="htmlerb" insensitive="true" context="HighlightingRuby/Rails/RHTML!HighlightingCodeEnv"/>
+        <WordDetect String="htmlruby" insensitive="true" context="HighlightingRuby/Rails/RHTML!HighlightingCodeEnv"/>
+        <WordDetect String="rst" insensitive="true" context="HighlightingreStructuredText!HighlightingCodeEnv"/>
+        <WordDetect String="rest" insensitive="true" context="HighlightingreStructuredText!HighlightingCodeEnv"/>
+        <WordDetect String="ruby" insensitive="true" context="HighlightingRuby!HighlightingCodeEnv"/>
+        <WordDetect String="rb" insensitive="true" context="HighlightingRuby!HighlightingCodeEnv"/>
+        <WordDetect String="duby" insensitive="true" context="HighlightingRuby!HighlightingCodeEnv"/>
+        <WordDetect String="rust" insensitive="true" context="HighlightingRust!HighlightingCodeEnv"/>
+        <WordDetect String="rs" insensitive="true" context="HighlightingRust!HighlightingCodeEnv"/>
+        <WordDetect String="sml" insensitive="true" context="HighlightingSML!HighlightingCodeEnv"/>
+        <WordDetect String="sass" insensitive="true" context="HighlightingSASS!HighlightingCodeEnv"/>
+        <WordDetect String="scala" insensitive="true" context="HighlightingScala!HighlightingCodeEnv"/>
+        <WordDetect String="scheme" insensitive="true" context="HighlightingScheme!HighlightingCodeEnv"/>
+        <WordDetect String="scm" insensitive="true" context="HighlightingScheme!HighlightingCodeEnv"/>
+        <WordDetect String="scilab" insensitive="true" context="Highlightingscilab!HighlightingCodeEnv"/>
+        <WordDetect String="scss" insensitive="true" context="HighlightingSCSS!HighlightingCodeEnv"/>
+        <WordDetect String="sed" insensitive="true" context="Highlightingsed!HighlightingCodeEnv"/>
+        <WordDetect String="gsed" insensitive="true" context="Highlightingsed!HighlightingCodeEnv"/>
+        <WordDetect String="ssed" insensitive="true" context="Highlightingsed!HighlightingCodeEnv"/>
+        <WordDetect String="sieve" insensitive="true" context="HighlightingSieve!HighlightingCodeEnv"/>
+        <WordDetect String="smali" insensitive="true" context="HighlightingSmali!HighlightingCodeEnv"/>
+        <WordDetect String="solidity" insensitive="true" context="HighlightingSolidity!HighlightingCodeEnv"/>
+        <WordDetect String="spice" insensitive="true" context="HighlightingSpice!HighlightingCodeEnv"/>
+        <WordDetect String="spicelang" insensitive="true" context="HighlightingSpice!HighlightingCodeEnv"/>
+        <WordDetect String="sql" insensitive="true" context="HighlightingSQL!HighlightingCodeEnv"/>
+        <WordDetect String="stan" insensitive="true" context="HighlightingStan!HighlightingCodeEnv"/>
+        <WordDetect String="stata" insensitive="true" context="HighlightingStata!HighlightingCodeEnv"/>
+        <WordDetect String="do" insensitive="true" context="HighlightingStata!HighlightingCodeEnv"/>
+        <WordDetect String="swift" insensitive="true" context="HighlightingSwift!HighlightingCodeEnv"/>
+        <WordDetect String="systemverilog" insensitive="true" context="HighlightingSystemVerilog!HighlightingCodeEnv"/>
+        <WordDetect String="sv" insensitive="true" context="HighlightingSystemVerilog!HighlightingCodeEnv"/>
+        <WordDetect String="toml" insensitive="true" context="HighlightingTOML!HighlightingCodeEnv"/>
+        <WordDetect String="tads" insensitive="true" context="HighlightingTADS 3!HighlightingCodeEnv"/>
+        <WordDetect String="tcl" insensitive="true" context="HighlightingTcl/Tk!HighlightingCodeEnv"/>
+        <WordDetect String="tcsh" insensitive="true" context="HighlightingTcsh!HighlightingCodeEnv"/>
+        <WordDetect String="csh" insensitive="true" context="HighlightingTcsh!HighlightingCodeEnv"/>
+        <WordDetect String="terraform" insensitive="true" context="HighlightingTerraform!HighlightingCodeEnv"/>
+        <WordDetect String="tf" insensitive="true" context="HighlightingTerraform!HighlightingCodeEnv"/>
+        <WordDetect String="tex" insensitive="true" context="HighlightingLaTeX!HighlightingCodeEnv"/>
+        <WordDetect String="latex" insensitive="true" context="HighlightingLaTeX!HighlightingCodeEnv"/>
+        <WordDetect String="todotxt" insensitive="true" context="HighlightingTodo.txt!HighlightingCodeEnv"/>
+        <WordDetect String="typescript" insensitive="true" context="HighlightingTypeScript!HighlightingCodeEnv"/>
+        <WordDetect String="ts" insensitive="true" context="HighlightingTypeScript!HighlightingCodeEnv"/>
+        <WordDetect String="vala" insensitive="true" context="HighlightingVala!HighlightingCodeEnv"/>
+        <WordDetect String="vapi" insensitive="true" context="HighlightingVala!HighlightingCodeEnv"/>
+        <WordDetect String="velocity" insensitive="true" context="HighlightingVelocity!HighlightingCodeEnv"/>
+        <WordDetect String="verilog" insensitive="true" context="HighlightingVerilog!HighlightingCodeEnv"/>
+        <WordDetect String="v" insensitive="true" context="HighlightingVerilog!HighlightingCodeEnv"/>
+        <WordDetect String="vhdl" insensitive="true" context="HighlightingVHDL!HighlightingCodeEnv"/>
+        <WordDetect String="xml" insensitive="true" context="HighlightingXML!HighlightingCodeEnv"/>
+        <WordDetect String="xorgconf" insensitive="true" context="Highlightingx.org Configuration!HighlightingCodeEnv"/>
+        <WordDetect String="xslt" insensitive="true" context="Highlightingxslt!HighlightingCodeEnv"/>
+        <WordDetect String="yaml" insensitive="true" context="HighlightingYAML!HighlightingCodeEnv"/>
+        <WordDetect String="yang" insensitive="true" context="HighlightingYANG!HighlightingCodeEnv"/>
+      </context>
+      <context name="HighlightingSelectorNotFound" attribute="Normal Text">
+        <AnyChar String="}]" context="HighlightingBegin"/>
       </context>
 
-      <context name="HighlightingCommon" attribute="Normal Text" lineEndContext="#stay">
-        <RegExpr String="\\end\s*\{(lstlisting|minted)\*?\}" attribute="Structure" lookAhead="true" context="#pop#pop#pop#pop#pop#pop"/>
+
+      <!--
+      https://distrib-coffee.ipsl.jussieu.fr/pub/mirrors/ctan/macros/latex/contrib/minted/minted.pdf
+
+      12.15 Command shortcuts
+
+      The starred * version of the environment takes a mandatory argument
+      containing options. It is retained for backward compatibility purposes
+      with minted v1 and v2. minted v3 added support for an optional argument
+      to the standard environment, so the starred version is no longer necessary.
+      -->
+      <!--
+        \begin{cppcode*}[linenos=false]
+                      ~~~~~~~~~~~~~~~~~ then #pop
+        \begin{cppcode}[linenos=false]
+                      ~~~~~~~~~~~~~~~~ then #pop
+        [...] is optional with non-starred version
+      -->
+      <context name="HighlightingCodeEnvS" attribute="Error" fallthroughContext="HighlightingCodeEnvS2">
+        <DetectChar char="*" attribute="Environment" context="HighlightingCodeEnvS2"/>
+      </context>
+      <context name="HighlightingCodeEnvS2" attribute="Error">
+        <DetectChar char="}" attribute="Normal Text" context="HighlightingCodeEnvSParam"/>
+      </context>
+      <context name="HighlightingCodeEnvSParam" attribute="Error"
+               lineEndContext="#pop#pop!HighlightingBegin">
+        <DetectChar char="[" attribute="Normal Text"
+                    context="#pop#pop!HighlightingBegin!MintedEnvParamInside"/>
+        <DetectSpaces attribute="Normal Text"/>
+        <IncludeRules context="FindComments"/>
       </context>
 
-      <context name="HighlightingBeginC++" attribute="Normal Text" lineEndContext="#stay">
-        <DetectChar char="}" context="HighlightingC++"/>
-        <DetectChar char="]" context="HighlightingC++"/>
-        <!-- Eat the trailing characters including } or ] after the language specification -->
-        <RegExpr String="[^]}]*" context="#stay"/>
+      <context name="HighlightingCodeEnv" attribute="Normal Text">
+        <DetectChar char="}" context="HighlightingBegin"/>
+      </context>
+      <context name="HighlightingBegin" attribute="Normal Text" lineEndContext="#pop#pop">
+        <DetectSpaces/>
+        <IncludeRules context="FindComments"/>
+        <RegExpr String=".+" attribute="Error"/>
+      </context>
+
+      <context name="FindHighlightingEnd" attribute="Normal Text">
+        <RegExpr String="\\end(?=\s*\{(?:lstlisting|minted|[a-zA-Z]+code)\*?\})"
+                 attribute="Structure" context="HighlightingEnd"/>
+      </context>
+      <context name="HighlightingEnd" attribute="Environment" lineEndContext="#stay">
+        <DetectChar char="{" attribute="Normal Text" context="#stay"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop#pop#pop" endRegion="block"/>
+        <DetectIdentifier/>
+        <DetectSpaces/>
+      </context>
+
+      <!-- parse verbatim text for lstinline and minted -->
+      <context name="UnknownHighlighting" attribute="Verbatim Code" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+        <IncludeRules context="FindHighlightingEnd"/>
+      </context>
+
+      <context name="HighlightingABAP" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##ABAP" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingActionScript 2.0" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##ActionScript 2.0" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingAda" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Ada" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingAgda" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Agda" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingApache Configuration" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Apache Configuration" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingAutoHotKey" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##AutoHotKey" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingAWK" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##AWK" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingBash" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Command##Bash">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Bash" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingBibTeX" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##BibTeX" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingBoo" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Boo" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingC" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##C" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingCMake" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##CMake" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingC#" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##C#" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingClojure" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Clojure" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingCoffeeScript" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##CoffeeScript" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingCommon Lisp" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Common Lisp" includeAttrib="true"/>
       </context>
 
       <context name="HighlightingC++" attribute="Normal Text" lineEndContext="#stay">
-        <IncludeRules context="HighlightingCommon"/>
+        <IncludeRules context="FindHighlightingEnd"/>
         <IncludeRules context="##C++" includeAttrib="true"/>
       </context>
 
-      <context name="HighlightingBeginPython" attribute="Normal Text" lineEndContext="#stay">
-        <DetectChar char="}" context="HighlightingPython"/>
-        <DetectChar char="]" context="HighlightingPython"/>
-        <RegExpr String="[^]}]*" context="#stay"/>
+      <context name="HighlightingCSS" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##CSS" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingD" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##D" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingDart" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Dart" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPascal" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Pascal" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingDiff" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Diff" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingDTD" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##DTD" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingEiffel" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Eiffel" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingElixir" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Elixir" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingElm" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Elm" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingEmail" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Email" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingErlang" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Erlang" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingFish" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Arguments##Fish!FieldSep##Fish!CommandName##Fish">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Fish" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingANS-Forth94" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##ANS-Forth94" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingFortran (Fixed Format)" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Fortran (Fixed Format)" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingFortran (Free Format)" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Fortran (Free Format)" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingGAP" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##GAP" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingGodot" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Godot" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingGLSL" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##GLSL" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingG-Code" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##G-Code" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingGnuplot" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Gnuplot" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingGo" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Go" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingGroovy" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Groovy" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingHaml" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Haml" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingHaskell" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Haskell" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingHaxe" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Haxe" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingHTML" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##HTML" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingIDL" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##IDL" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingIdris" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Idris" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingInform" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Inform" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingINI Files" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##INI Files" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingJ" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##J" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingJava" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Java" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingJavaScript" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="Normal##JavaScript" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingJCL" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##JCL" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingJSON" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##JSON" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingJulia" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Julia" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingKconfig" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Kconfig" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingKotlin" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Kotlin" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingLSL" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##LSL" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingLESSCSS" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##LESSCSS" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingLilyPond" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##LilyPond" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingLiterate Haskell" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Literate Haskell" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingLLVM" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##LLVM" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingLogtalk" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Logtalk" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingLua" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Lua" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingMakefile" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="strings_and_vars##Makefile">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Makefile" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingMako" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Mako" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingMarkdown" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Markdown" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingMason" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Mason" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingMathematica" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Mathematica" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingMatlab" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Matlab" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingMaxima" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Maxima" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingMeson" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Meson" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingModelica" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Modelica" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingModula-2" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Modula-2" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingSQL (MySQL)" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##SQL (MySQL)" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingNSIS" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##NSIS" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingIntel x86 (NASM)" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Intel x86 (NASM)" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingNemerle" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Nemerle" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingnesC" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##nesC" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingNim" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Nim" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingNix" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Nix" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingObjective-C" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Objective-C" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingObjective-C++" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Objective-C++" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingObjective Caml" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Objective Caml" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingOctave" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Octave" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPerl" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Perl" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPHP/PHP" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##PHP/PHP" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPig" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Pig" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPike" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Pike" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPony" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Pony" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPostScript" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##PostScript" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPOV-Ray" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##POV-Ray" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPowerShell" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##PowerShell" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPraat" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Praat" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingProlog" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Prolog" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingProtobuf" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Protobuf" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPug" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Pug" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingPuppet" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Puppet" includeAttrib="true"/>
       </context>
 
       <context name="HighlightingPython" attribute="Normal Text" lineEndContext="#stay">
-        <IncludeRules context="HighlightingCommon"/>
+        <IncludeRules context="FindHighlightingEnd"/>
         <IncludeRules context="##Python"/>
       </context>
 
+      <context name="HighlightingQML" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="Normal##QML" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingRelaxNG-Compact" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##RelaxNG-Compact" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingRPM Spec" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##RPM Spec" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingRacket" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Racket" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingREXX" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##REXX" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingRuby/Rails/RHTML" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Ruby/Rails/RHTML" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingreStructuredText" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##reStructuredText" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingRuby" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Expr##Ruby">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="Ruby##Ruby" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingRust" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Rust" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingSML" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##SML" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingSASS" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##SASS" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingScala" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Scala" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingScheme" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Scheme" includeAttrib="true"/>
+      </context>
+
+      <context name="Highlightingscilab" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##scilab" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingSCSS" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Selector##SCSS">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##SCSS" includeAttrib="true"/>
+      </context>
+
+      <context name="Highlightingsed" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Command##sed">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="Start##sed" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingSieve" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Sieve" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingSmali" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Smali" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingSolidity" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Solidity" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingSpice" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Spice" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingSQL" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##SQL" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingStan" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Stan" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingStata" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Stata" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingSwift" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Swift" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingSystemVerilog" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##SystemVerilog" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingTOML" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##TOML" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingTADS 3" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##TADS 3" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingTcl/Tk" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Tcl/Tk" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingTcsh" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Tcsh" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingTerraform" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Terraform" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingLaTeX" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##LaTeX" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingTodo.txt" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Todo.txt" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingTypeScript" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="Normal##TypeScript" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingVala" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Vala" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingVelocity" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Velocity" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingVerilog" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Verilog" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingVHDL" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##VHDL" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingXML" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##XML" includeAttrib="true"/>
+      </context>
+
+      <context name="Highlightingx.org Configuration" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##x.org Configuration" includeAttrib="true"/>
+      </context>
+
+      <context name="Highlightingxslt" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##xslt" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingYAML" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Lvl0Text##YAML">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##YAML" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingYANG" attribute="Normal Text" lineEndContext="#stay">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##YANG" includeAttrib="true"/>
+      </context>
+
+      <context name="HighlightingZsh" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Command##Zsh">
+        <IncludeRules context="FindHighlightingEnd"/>
+        <IncludeRules context="##Zsh" includeAttrib="true"/>
+      </context>
+      <!-- end of mintedcode environment -->
+
       <!-- end of verbatim environment -->
-      <context name="VerbFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+      <context name="VerbFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
         <DetectSpaces/>
         <DetectChar char="{" attribute="Normal Text" context="#stay"/>
         <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop#pop#pop#pop" endRegion="block"/>
@@ -733,7 +2520,7 @@
       </context>
 
       <!-- end of comment environment -->
-      <context name="CommFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+      <context name="CommFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
         <DetectSpaces/>
         <DetectChar char="{" attribute="Normal Text" context="#stay"/>
         <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop#pop#pop" endRegion="block"/>
@@ -765,39 +2552,24 @@
       <context name="MathModeEnv" attribute="Math" lineEndContext="#stay">
         <DetectSpaces/>
         <DetectIdentifier/>
-        <keyword String="beginEnv" attribute="Structure" context="FindBeginEnvironmentInMathMode" beginRegion="block"/>
-        <keyword String="endEnv" attribute="Structure" context="MathFindEnd" endRegion="block"/>
-        <keyword String="MathModeText" attribute="Macro Mathmode" context="MathModeText"/>
-        <RegExpr String="\\[()\[\]]|\$" attribute="Error" context="#stay"/>
-        <DetectChar char="\" attribute="Macro Mathmode" context="MathContrSeq"/>
-        <RegExpr String="%\s*(BEGIN|END)" attribute="Region Marker" context="RegionComment" firstNonSpace="true"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="\" attribute="Math" context="BackslashMathModeEnv" lookAhead="true"/>
+        <DetectChar char="$" attribute="Error" context="#stay"/>
+        <IncludeRules context="FindComments"/>
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
       </context>
-
-      <!-- start of an environment in math mode -->
-      <context name="FindBeginEnvironmentInMathMode" attribute="Normal Text" lineEndContext="#stay">
-        <DetectSpaces/>
-        <DetectChar char="{" attribute="Normal Text" context="BeginEnvironmentInMathMode"/>
-        <RegExpr String="." attribute="Normal Text" context="#pop"/>
-      </context>
-
-      <!-- filter the environment name and check the type in math mode -->
-      <context name="BeginEnvironmentInMathMode" attribute="Environment" lineEndContext="#stay">
-        <keyword String="ListingsEnv" attribute="Environment" context="ListingsEnv"/>
-        <keyword String="MintedEnv" attribute="Environment" context="MintedEnv"/>
-        <keyword String="VerbatimEnv" attribute="Environment" context="VerbatimEnv" lookAhead="true"/>
-        <keyword String="CommentEnv" attribute="Environment" context="CommentEnv"/>
-        <keyword String="TabEnv" attribute="Environment" context="TabEnv"/>
-        <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
-        <!-- keywords in MathEnvParam and MathEnv. Do not use keyword to avoid autocomplete -->
-        <RegExpr String="(equation|IEEEeqnarray(box)?|([BVvbp]|small)matrix|(fl)?align|x{0,2}alignat|cases|displaymath|gather|math|multline|(sub)?eqnarray)(?=[^a-zA-Z]|$)\*?" attribute="Error" context="#pop"/>
-        <RegExpr String="&envname;" attribute="Environment" context="LatexEnv"/>
-        <RegExpr String="." attribute="Error" context="#pop"/>
+      <context name="BackslashMathModeEnv" attribute="Math" lineEndContext="#pop">
+        <WordDetect String="\begin" attribute="Structure" context="#pop!FindBeginEnvironment" beginRegion="block" additionalDeliminator="\"/>
+        <WordDetect String="\end" attribute="Structure" context="#pop!MathFindEnd" additionalDeliminator="\"/>
+        <keyword String="MathModeText" attribute="Macro Mathmode" context="#pop!MathModeText"/>
+        <Detect2Chars char="\" char1="(" attribute="Error" context="#pop"/>
+        <Detect2Chars char="\" char1=")" attribute="Error" context="#pop"/>
+        <Detect2Chars char="\" char1="[" attribute="Error" context="#pop"/>
+        <Detect2Chars char="\" char1="]" attribute="Error" context="#pop"/>
+        <DetectChar char="\" attribute="Macro Mathmode" context="#pop!MathContrSeq"/>
       </context>
 
       <!-- end of math environment -->
-      <context name="MathFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+      <context name="MathFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
         <DetectSpaces/>
         <DetectChar char="{" attribute="Normal Text" context="#stay"/>
         <keyword String="MathEnvParam" attribute="Environment" context="MathFindEndInside"/>
@@ -815,7 +2587,7 @@
       </context>
 
       <!-- environment type 9: tabular -->
-      <context name="TabEnv" attribute="Environment" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop#pop">
+      <context name="TabEnv" attribute="Environment" lineEndContext="#stay" fallthroughContext="#pop#pop#pop">
         <DetectChar char="}" attribute="Normal Text" context="Tab"/>
         <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
       </context>
@@ -824,7 +2596,7 @@
       <context name="Tab" attribute="Normal Text" lineEndContext="#stay">
         <DetectChar char="&amp;" attribute="Ampersand" context="#stay"/>
         <Detect2Chars char="@" char1="{" attribute="Column Separator" context="Column Separator"/>
-        <keyword String="endEnv" attribute="Structure" context="TabFindEnd"/>
+        <RegExpr String="\\end\b" attribute="Structure" context="TabFindEnd"/> <!-- endEnv -->
         <IncludeRules context="Normal Text" />
       </context>
 
@@ -834,15 +2606,40 @@
       </context>
 
       <!-- end of tabular environment -->
-      <context name="TabFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+      <context name="TabFindEnd" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
         <DetectSpaces/>
         <DetectChar char="{" attribute="Normal Text" context="#stay"/>
         <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop#pop#pop" endRegion="block"/>
         <keyword String="TabEnv" attribute="Environment" context="#stay"/>
+        <keyword String="TabuEnv" attribute="Environment" context="#stay"/>
+      </context>
+
+      <!-- environment type 10: tabu -->
+      <context name="TabuEnv" attribute="Environment" lineEndContext="#stay" fallthroughContext="#pop#pop#pop">
+        <DetectChar char="}" attribute="Normal Text" context="Tabu"/>
+        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+      </context>
+
+      <!-- parse tabu options
+        \begin {tabu} [pos] {tabular preamble}
+        \begin {tabu} to <dimen> [pos] {tabular preamble}
+        \begin {tabu} spread <dimen> [pos] {tabular preamble}
+      -->
+      <context name="Tabu" attribute="Normal Text" lineEndContext="#pop!Tab">
+        <DetectChar char="{" attribute="Normal Text" context="TabuPreambule"/>
+        <DetectChar char="\" context="#pop!Tab" lookAhead="1"/>
+      </context>
+      <context name="TabuPreambule" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop!Tab"/>
+        <DetectChar char="{" attribute="Normal Text" context="TabuPreambuleInside"/>
+      </context>
+      <context name="TabuPreambuleInside" attribute="Normal Text" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="#pop"/>
+        <DetectChar char="{" attribute="Normal Text" context="TabuPreambuleInside"/>
       </context>
 
       <!-- math mode: starting with $ -->
-      <context name="MathModeTex" attribute="Math" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!MathMode">
+      <context name="MathModeTex" attribute="Math" lineEndContext="#stay" fallthroughContext="#pop!MathMode">
         <DetectChar char="$" attribute="Math" context="#pop!MathModeDisplay" beginRegion="mathMode"/>
       </context>
       <context name="MathMode" attribute="Math" lineEndContext="#stay">
@@ -885,13 +2682,15 @@
       <context name="MathModeCommon" attribute="Math" lineEndContext="#stay">
         <DetectSpaces/>
         <DetectIdentifier/>
-        <keyword String="beginEnv" attribute="Structure" context="MathEnvironment" beginRegion="block"/>
-        <keyword String="endEnv" attribute="Structure" context="MathEnvironmentEnd" endRegion="block"/>
-        <keyword String="MathModeText" attribute="Macro Mathmode" context="MathModeText" />
-        <DetectChar char="\" attribute="Macro Mathmode" context="MathContrSeq"/>
-        <RegExpr String="%\s*(BEGIN|END)" attribute="Region Marker" context="RegionComment" firstNonSpace="true"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <DetectChar char="\" attribute="Math" context="BackslashMathModeCommon" lookAhead="true"/>
+        <IncludeRules context="FindComments"/>
         <DetectChar char="&bullet;" attribute="Bullet" context="#stay"/>
+      </context>
+      <context name="BackslashMathModeCommon" attribute="Math" lineEndContext="#pop">
+        <WordDetect String="\begin" attribute="Structure" context="#pop!MathEnvironment" beginRegion="block" additionalDeliminator="\"/>
+        <WordDetect String="\end" attribute="Structure" context="#pop!MathEnvironmentEnd" additionalDeliminator="\"/>
+        <keyword String="MathModeText" attribute="Macro Mathmode" context="#pop!MathModeText" />
+        <DetectChar char="\" attribute="Macro Mathmode" context="#pop!MathContrSeq"/>
       </context>
       <context name="MathEnvironment" attribute="Math" lineEndContext="#stay">
         <DetectSpaces/>
@@ -900,6 +2699,7 @@
       </context>
       <context name="MathEnvironmentInside" attribute="Environment" lineEndContext="#stay">
         <DetectChar char="}" attribute="Normal Text" context="#pop#pop"/>
+        <keyword String="TabuEnv" attribute="Environment" context="MathTabuEnv"/>
         <RegExpr String="&envname;" attribute="Environment" context="#stay"/>
         <RegExpr String="[^}a-zA-Z]+|." attribute="Error" context="#stay"/>
       </context>
@@ -909,10 +2709,29 @@
         <RegExpr String="." attribute="Error" context="#pop"/>
       </context>
       <context name="MathEnvironmentEndInside" attribute="Environment" lineEndContext="#stay">
-        <DetectChar char="}" attribute="Normal Text" context="#pop#pop"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop" endRegion="block"/>
         <WordDetect String="ensuremath" attribute="Environment" context="#pop!LatexEnvEnd"/>
         <RegExpr String="&envname;" attribute="Environment" context="#stay"/>
         <RegExpr String="[^}a-zA-Z]+|." attribute="Error" context="#pop#pop"/>
+      </context>
+
+      <!-- tabu in mathmode
+        \begin {tabu} [pos] {tabular preamble}
+        \begin {tabu} to <dimen> [pos] {tabular preamble}
+        \begin {tabu} spread <dimen> [pos] {tabular preamble}
+      -->
+      <context name="MathTabuEnv" attribute="Environment" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="MathTabu"/>
+        <RegExpr String="[^}]*" attribute="Error" context="#stay"/>
+      </context>
+      <context name="MathTabu" attribute="Math" lineEndContext="#pop#pop#pop#pop">
+        <DetectChar char="{" attribute="Normal Text" context="#pop#pop#pop#pop!MathTabuPreambule"/>
+        <DetectChar char="\" context="#pop#pop#pop#pop" lookAhead="1"/>
+        <DetectChar char="}" attribute="Normal Text" context="#pop#pop#pop#pop"/>
+      </context>
+      <context name="MathTabuPreambule" attribute="Math" lineEndContext="#stay">
+        <DetectChar char="}" attribute="Normal Text" context="#pop"/>
+        <DetectChar char="{" attribute="Normal Text" context="MathTabuPreambule"/>
       </context>
 
       <!-- command in mathmode -->
@@ -922,7 +2741,7 @@
       </context>
 
       <!-- text in mathmode -->
-      <context name="MathModeText" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="MathContrSeq">
+      <context name="MathModeText" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="MathContrSeq">
         <DetectSpaces/>
         <DetectChar char="{" attribute="Normal Text" context="MathModeTextParameterStart"/>
       </context>
@@ -935,22 +2754,35 @@
         <RangeDetect char="$" char1="$" attribute="Math" context="#stay"/>
         <DetectChar char="{" attribute="Normal Text" context="MathModeTextInside" lookAhead="true"/>
         <DetectChar char="}" attribute="Normal Text" context="#pop#pop"/>
-        <DetectChar char="%" attribute="Comment" context="Comment"/>
+        <IncludeRules context="FindComments"/>
         <DetectChar char="\" attribute="Macro Mathmode" context="MathContrSeq"/>
       </context>
 
       <!-- iffalse aka multiline comment -->
       <context name="Multiline Comment" attribute="Comment" lineEndContext="#stay">
-        <keyword String="iffalseend" attribute="Comment" context="#pop"/>
+        <DetectChar char="\" attribute="Comment" context="BackslashMultilineComment" lookAhead="true"/>
+      </context>
+      <context name="BackslashMultilineComment" attribute="Comment" lineEndContext="#pop">
+        <keyword String="iffalseend" attribute="Comment" context="#pop#pop"/>
+        <DetectChar char="\" attribute="Comment" context="#pop"/>
       </context>
 
-     <!-- comment -->
+      <!-- comment -->
+      <context name="FindComments" attribute="Normal Text" lineEndContext="#stay">
+        <RegExpr String="%+\s*BEGIN\b" attribute="Region Marker" context="RegionComment" firstNonSpace="true" beginRegion="region-marker"/>
+        <RegExpr String="%+\s*END\b" attribute="Region Marker" context="RegionComment" firstNonSpace="true" endRegion="region-marker"/>
+        <DetectChar char="%" attribute="Comment" context="Comment"/>
+      </context>
       <context name="RegionComment" attribute="Region Marker" lineEndContext="#pop"/>
       <context name="Comment" attribute="Comment" lineEndContext="#pop">
         <DetectSpaces/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
         <DetectIdentifier/>
-        <keyword String="ResetHL" attribute="Comment" context="Normal Text"/>
+        <DetectChar char="\" attribute="Comment" context="BackslashComment" lookAhead="true"/>
+      </context>
+      <context name="BackslashComment" attribute="Comment" lineEndContext="#pop">
+        <keyword String="ResetHL" attribute="Comment" context="#pop!Normal Text"/>
+        <DetectChar char="\" attribute="Comment" context="#pop"/>
       </context>
     </contexts>
 
@@ -968,6 +2800,7 @@
       <itemData name="Environment" defStyleNum="dsExtension" spellChecking="false"/>
       <itemData name="Reference" defStyleNum="dsExtension" spellChecking="false"/>
       <itemData name="Verbatim" defStyleNum="dsVerbatimString" spellChecking="false"/>
+      <itemData name="Verbatim Code" defStyleNum="dsVerbatimString" spellChecking="false"/>
       <itemData name="Region Marker" defStyleNum="dsRegionMarker" spellChecking="false"/>
       <itemData name="Bullet" defStyleNum="dsInformation" spellChecking="false"/>
       <itemData name="Ampersand" defStyleNum="dsOperator" bold="1" spellChecking="false"/>
@@ -985,123 +2818,123 @@
     <comments>
       <comment name="singleLine" start="%" />
     </comments>
+    <spellchecking>
+      <encodings>
+        <encoding char="&#192;" string="\`{A}" />
+        <encoding char="&#192;" string="\`A" />
+        <encoding char="&#193;" string="\'{A}" />
+        <encoding char="&#193;" string="\'A" />
+        <encoding char="&#194;" string="\^{A}" />
+        <encoding char="&#194;" string="\^A" />
+        <encoding char="&#195;" string="\~{A}" />
+        <encoding char="&#195;" string="\~A" />
+        <encoding char="&#196;" string="\&#34;{A}" />
+        <encoding char="&#196;" string="\&#34;A" />
+        <encoding char="&#197;" string="\AA{}" />
+        <encoding char="&#198;" string="\AE{}" />
+        <encoding char="&#199;" string="\c{C}" />
+        <encoding char="&#200;" string="\`{E}" />
+        <encoding char="&#200;" string="\`E" />
+        <encoding char="&#201;" string="\'{E}" />
+        <encoding char="&#201;" string="\'E" />
+        <encoding char="&#202;" string="\^{E}" />
+        <encoding char="&#202;" string="\^E" />
+        <encoding char="&#203;" string="\&#34;{E}" />
+        <encoding char="&#203;" string="\&#34;E" />
+        <encoding char="&#204;" string="\`{I}" />
+        <encoding char="&#204;" string="\`I" />
+        <encoding char="&#205;" string="\'{I}" />
+        <encoding char="&#205;" string="\'I" />
+        <encoding char="&#206;" string="\^{I}" />
+        <encoding char="&#206;" string="\^I" />
+        <encoding char="&#207;" string="\&#34;{I}" />
+        <encoding char="&#207;" string="\&#34;I" />
+        <encoding char="&#208;" string="\DH{}" />
+        <encoding char="&#209;" string="\~{N}" />
+        <encoding char="&#209;" string="\~N" />
+        <encoding char="&#210;" string="\`{O}" />
+        <encoding char="&#210;" string="\`O" />
+        <encoding char="&#211;" string="\'{O}" />
+        <encoding char="&#211;" string="\'O" />
+        <encoding char="&#212;" string="\^{O}" />
+        <encoding char="&#212;" string="\^O" />
+        <encoding char="&#213;" string="\~{O}" />
+        <encoding char="&#213;" string="\~O" />
+        <encoding char="&#214;" string="\&#34;{O}" />
+        <encoding char="&#214;" string="\&#34;O" />
+        <encoding char="&#216;" string="\O{}" />
+        <encoding char="&#217;" string="\`{U}" />
+        <encoding char="&#217;" string="\`U" />
+        <encoding char="&#218;" string="\'{U}" />
+        <encoding char="&#218;" string="\'U" />
+        <encoding char="&#219;" string="\^{U}" />
+        <encoding char="&#219;" string="\^U" />
+        <encoding char="&#220;" string="\&#34;{U}" />
+        <encoding char="&#220;" string="\&#34;U" />
+        <encoding char="&#221;" string="\'{Y}" />
+        <encoding char="&#221;" string="\'Y" />
+        <encoding char="&#222;" string="\TH{}" />
+        <encoding char="&#223;" string="\ss{}" />
+        <encoding char="&#224;" string="\`{a}" />
+        <encoding char="&#224;" string="\`a" />
+        <encoding char="&#225;" string="\'{a}" />
+        <encoding char="&#225;" string="\'a" />
+        <encoding char="&#226;" string="\^{a}" />
+        <encoding char="&#226;" string="\^a" />
+        <encoding char="&#227;" string="\~{a}" />
+        <encoding char="&#227;" string="\~a" />
+        <encoding char="&#228;" string="\&#34;{a}" />
+        <encoding char="&#228;" string="\&#34;a" />
+        <encoding char="&#229;" string="\aa{}" />
+        <encoding char="&#230;" string="\ae{}" />
+        <encoding char="&#231;" string="\c{c}" />
+        <encoding char="&#232;" string="\`{e}" />
+        <encoding char="&#232;" string="\`e" />
+        <encoding char="&#233;" string="\'{e}" />
+        <encoding char="&#233;" string="\'e" />
+        <encoding char="&#234;" string="\^{e}" />
+        <encoding char="&#234;" string="\^e" />
+        <encoding char="&#235;" string="\&#34;{e}" />
+        <encoding char="&#235;" string="\&#34;e" />
+        <encoding char="&#236;" string="\`{i}" />
+        <encoding char="&#236;" string="\`i" />
+        <encoding char="&#237;" string="\'{i}" />
+        <encoding char="&#237;" string="\'i" />
+        <encoding char="&#238;" string="\^{i}" />
+        <encoding char="&#238;" string="\^i" />
+        <encoding char="&#239;" string="\&#34;{i}" />
+        <encoding char="&#239;" string="\&#34;i" />
+        <encoding char="&#240;" string="\dh{}" />
+        <encoding char="&#241;" string="\~{n}" />
+        <encoding char="&#241;" string="\~n" />
+        <encoding char="&#242;" string="\`{o}" />
+        <encoding char="&#242;" string="\`o" />
+        <encoding char="&#243;" string="\'{o}" />
+        <encoding char="&#243;" string="\'o" />
+        <encoding char="&#244;" string="\^{o}" />
+        <encoding char="&#244;" string="\^o" />
+        <encoding char="&#245;" string="\~{o}" />
+        <encoding char="&#245;" string="\~o" />
+        <encoding char="&#246;" string="\&#34;{o}" />
+        <encoding char="&#246;" string="\&#34;o" />
+        <encoding char="&#248;" string="\o{}" />
+        <encoding char="&#249;" string="\`{u}" />
+        <encoding char="&#249;" string="\`u" />
+        <encoding char="&#250;" string="\'{u}" />
+        <encoding char="&#250;" string="\'u" />
+        <encoding char="&#251;" string="\^{u}" />
+        <encoding char="&#251;" string="\^u" />
+        <encoding char="&#252;" string="\&#34;{u}" />
+        <encoding char="&#252;" string="\&#34;u" />
+        <encoding char="&#253;" string="\'{y}" />
+        <encoding char="&#253;" string="\'y" />
+        <encoding char="&#254;" string="\th{}" />
+        <encoding char="&#255;" string="\&#34;{y}" />
+        <encoding char="&#255;" string="\&#34;y" />
+        <encoding string="''" />
+        <encoding string="\-" />
+      </encodings>
+    </spellchecking>
   </general>
-
-  <spellchecking>
-    <encodings>
-      <encoding char="&#192;" string="\`{A}" />
-      <encoding char="&#192;" string="\`A" />
-      <encoding char="&#193;" string="\'{A}" />
-      <encoding char="&#193;" string="\'A" />
-      <encoding char="&#194;" string="\^{A}" />
-      <encoding char="&#194;" string="\^A" />
-      <encoding char="&#195;" string="\~{A}" />
-      <encoding char="&#195;" string="\~A" />
-      <encoding char="&#196;" string="\&#34;{A}" />
-      <encoding char="&#196;" string="\&#34;A" />
-      <encoding char="&#197;" string="\AA{}" />
-      <encoding char="&#198;" string="\AE{}" />
-      <encoding char="&#199;" string="\c{C}" />
-      <encoding char="&#200;" string="\`{E}" />
-      <encoding char="&#200;" string="\`E" />
-      <encoding char="&#201;" string="\'{E}" />
-      <encoding char="&#201;" string="\'E" />
-      <encoding char="&#202;" string="\^{E}" />
-      <encoding char="&#202;" string="\^E" />
-      <encoding char="&#203;" string="\&#34;{E}" />
-      <encoding char="&#203;" string="\&#34;E" />
-      <encoding char="&#204;" string="\`{I}" />
-      <encoding char="&#204;" string="\`I" />
-      <encoding char="&#205;" string="\'{I}" />
-      <encoding char="&#205;" string="\'I" />
-      <encoding char="&#206;" string="\^{I}" />
-      <encoding char="&#206;" string="\^I" />
-      <encoding char="&#207;" string="\&#34;{I}" />
-      <encoding char="&#207;" string="\&#34;I" />
-      <encoding char="&#208;" string="\DH{}" />
-      <encoding char="&#209;" string="\~{N}" />
-      <encoding char="&#209;" string="\~N" />
-      <encoding char="&#210;" string="\`{O}" />
-      <encoding char="&#210;" string="\`O" />
-      <encoding char="&#211;" string="\'{O}" />
-      <encoding char="&#211;" string="\'O" />
-      <encoding char="&#212;" string="\^{O}" />
-      <encoding char="&#212;" string="\^O" />
-      <encoding char="&#213;" string="\~{O}" />
-      <encoding char="&#213;" string="\~O" />
-      <encoding char="&#214;" string="\&#34;{O}" />
-      <encoding char="&#214;" string="\&#34;O" />
-      <encoding char="&#216;" string="\O{}" />
-      <encoding char="&#217;" string="\`{U}" />
-      <encoding char="&#217;" string="\`U" />
-      <encoding char="&#218;" string="\'{U}" />
-      <encoding char="&#218;" string="\'U" />
-      <encoding char="&#219;" string="\^{U}" />
-      <encoding char="&#219;" string="\^U" />
-      <encoding char="&#220;" string="\&#34;{U}" />
-      <encoding char="&#220;" string="\&#34;U" />
-      <encoding char="&#221;" string="\'{Y}" />
-      <encoding char="&#221;" string="\'Y" />
-      <encoding char="&#222;" string="\TH{}" />
-      <encoding char="&#223;" string="\ss{}" />
-      <encoding char="&#224;" string="\`{a}" />
-      <encoding char="&#224;" string="\`a" />
-      <encoding char="&#225;" string="\'{a}" />
-      <encoding char="&#225;" string="\'a" />
-      <encoding char="&#226;" string="\^{a}" />
-      <encoding char="&#226;" string="\^a" />
-      <encoding char="&#227;" string="\~{a}" />
-      <encoding char="&#227;" string="\~a" />
-      <encoding char="&#228;" string="\&#34;{a}" />
-      <encoding char="&#228;" string="\&#34;a" />
-      <encoding char="&#229;" string="\aa{}" />
-      <encoding char="&#230;" string="\ae{}" />
-      <encoding char="&#231;" string="\c{c}" />
-      <encoding char="&#232;" string="\`{e}" />
-      <encoding char="&#232;" string="\`e" />
-      <encoding char="&#233;" string="\'{e}" />
-      <encoding char="&#233;" string="\'e" />
-      <encoding char="&#234;" string="\^{e}" />
-      <encoding char="&#234;" string="\^e" />
-      <encoding char="&#235;" string="\&#34;{e}" />
-      <encoding char="&#235;" string="\&#34;e" />
-      <encoding char="&#236;" string="\`{i}" />
-      <encoding char="&#236;" string="\`i" />
-      <encoding char="&#237;" string="\'{i}" />
-      <encoding char="&#237;" string="\'i" />
-      <encoding char="&#238;" string="\^{i}" />
-      <encoding char="&#238;" string="\^i" />
-      <encoding char="&#239;" string="\&#34;{i}" />
-      <encoding char="&#239;" string="\&#34;i" />
-      <encoding char="&#240;" string="\dh{}" />
-      <encoding char="&#241;" string="\~{n}" />
-      <encoding char="&#241;" string="\~n" />
-      <encoding char="&#242;" string="\`{o}" />
-      <encoding char="&#242;" string="\`o" />
-      <encoding char="&#243;" string="\'{o}" />
-      <encoding char="&#243;" string="\'o" />
-      <encoding char="&#244;" string="\^{o}" />
-      <encoding char="&#244;" string="\^o" />
-      <encoding char="&#245;" string="\~{o}" />
-      <encoding char="&#245;" string="\~o" />
-      <encoding char="&#246;" string="\&#34;{o}" />
-      <encoding char="&#246;" string="\&#34;o" />
-      <encoding char="&#248;" string="\o{}" />
-      <encoding char="&#249;" string="\`{u}" />
-      <encoding char="&#249;" string="\`u" />
-      <encoding char="&#250;" string="\'{u}" />
-      <encoding char="&#250;" string="\'u" />
-      <encoding char="&#251;" string="\^{u}" />
-      <encoding char="&#251;" string="\^u" />
-      <encoding char="&#252;" string="\&#34;{u}" />
-      <encoding char="&#252;" string="\&#34;u" />
-      <encoding char="&#253;" string="\'{y}" />
-      <encoding char="&#253;" string="\'y" />
-      <encoding char="&#254;" string="\th{}" />
-      <encoding char="&#255;" string="\&#34;{y}" />
-      <encoding char="&#255;" string="\&#34;y" />
-      <encoding string="''" ignored="true" />
-      <encoding string="\-" ignored="true" />
-    </encodings>
-  </spellchecking>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,0 +1,248 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+<!-- Regular expression constants: -->
+<!ENTITY LETTER "A-Za-z\xc0-\xd6\xd8-\xf6\xf8-\xff">                <!-- Latin-1 letters. -->
+<!ENTITY IDENT  "[&LETTER;_][&LETTER;0-9_']*">                      <!-- ATS identifiers. -->
+<!ENTITY ESC    "(\\[ntbr'&quot;\\]|\\[0-9]{3}|\\x[0-9A-Fa-f]{2})"> <!-- ATS character code escapes. -->
+<!ENTITY DEC    "[0-9][0-9_]*">                                     <!-- Decimal digits with underscores. -->
+]>
+<language name="ATS" version="3" kateversion="5.0" section="Sources" extensions="*.dats;*.sats;*.hats" mimetype="" author="Kiwamu Okabe (kiwamu@debian.or.jp)" license="LGPL">
+  <highlighting>
+    <list name="keywords">
+      <item>abstype</item>
+      <item>abst0ype</item>
+      <item>absprop</item>
+      <item>absview</item>
+      <item>absvtype</item>
+      <item>absviewtype</item>
+      <item>absvt0ype</item>
+      <item>absviewt0ype</item>
+      <item>and</item>
+      <item>as</item>
+      <item>assume</item>
+      <item>begin</item>
+      <item>break</item>
+      <item>case</item>
+      <item>continue</item>
+      <item>classdec</item>
+      <item>datasort</item>
+      <item>datatype</item>
+      <item>dataprop</item>
+      <item>dataview</item>
+      <item>datavtype</item>
+      <item>dataviewtype</item>
+      <item>do</item>
+      <item>dynload</item>
+      <item>else</item>
+      <item>end</item>
+      <item>exception</item>
+      <item>extern</item>
+      <item>extype</item>
+      <item>extval</item>
+      <item>if</item>
+      <item>in</item>
+      <item>infix</item>
+      <item>infixl</item>
+      <item>infixr</item>
+      <item>prefix</item>
+      <item>postfix</item>
+      <item>let</item>
+      <item>local</item>
+      <item>macdef</item>
+      <item>macrodef</item>
+      <item>nonfix</item>
+      <item>overload</item>
+      <item>of</item>
+      <item>op</item>
+      <item>rec</item>
+      <item>scase</item>
+      <item>sif</item>
+      <item>sortdef</item>
+      <item>sta</item>
+      <item>stacst</item>
+      <item>stadef</item>
+      <item>stavar</item>
+      <item>staload</item>
+      <item>symelim</item>
+      <item>symintr</item>
+      <item>then</item>
+      <item>try</item>
+      <item>tkindef</item>
+      <item>type</item>
+      <item>typedef</item>
+      <item>propdef</item>
+      <item>viewdef</item>
+      <item>vtypedef</item>
+      <item>viewtypedef</item>
+      <item>val</item>
+      <item>prval</item>
+      <item>var</item>
+      <item>prvar</item>
+      <item>when</item>
+      <item>where</item>
+      <item>for</item>
+      <item>while</item>
+      <item>with</item>
+      <item>withtype</item>
+      <item>withprop</item>
+      <item>withview</item>
+      <item>withvtype</item>
+      <item>withviewtype</item>
+    </list>
+    <list name="special keywords">
+      <item>$arrpsz</item>
+      <item>$arrptrsize</item>
+      <item>$delay</item>
+      <item>$ldelay</item>
+      <item>$effmask</item>
+      <item>$effmask_ntm</item>
+      <item>$effmask_exn</item>
+      <item>$effmask_ref</item>
+      <item>$effmask_wrt</item>
+      <item>$effmask_all</item>
+      <item>$extern</item>
+      <item>$extkind</item>
+      <item>$extype</item>
+      <item>$extype_struct</item>
+      <item>$extval</item>
+      <item>$lst</item>
+      <item>$lst_t</item>
+      <item>$lst_vt</item>
+      <item>$list</item>
+      <item>$list_t</item>
+      <item>$list_vt</item>
+      <item>$rec</item>
+      <item>$rec_t</item>
+      <item>$rec_vt</item>
+      <item>$record</item>
+      <item>$record_t</item>
+      <item>$record_vt</item>
+      <item>$tup</item>
+      <item>$tup_t</item>
+      <item>$tup_vt</item>
+      <item>$tuple</item>
+      <item>$tuple_t</item>
+      <item>$tuple_vt</item>
+      <item>$raise</item>
+      <item>$showtype</item>
+      <item>$myfilename</item>
+      <item>$mylocation</item>
+      <item>$myfunction</item>
+      <item>#assert</item>
+      <item>#define</item>
+      <item>#elif</item>
+      <item>#elifdef</item>
+      <item>#elifndef</item>
+      <item>#else</item>
+      <item>#endif</item>
+      <item>#error</item>
+      <item>#if</item>
+      <item>#ifdef</item>
+      <item>#ifndef</item>
+      <item>#include</item>
+      <item>#print</item>
+      <item>#then</item>
+      <item>#undef</item>
+    </list>
+    <list name="function keywords">
+      <item>fn</item>
+      <item>fnx</item>
+      <item>fun</item>
+      <item>prfn</item>
+      <item>prfun</item>
+      <item>praxi</item>
+      <item>castfn</item>
+      <item>implmnt</item>
+      <item>implement</item>
+      <item>primplmnt</item>
+      <item>primplement</item>
+      <item>lam</item>
+      <item>llam</item>
+      <item>fix</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <StringDetect attribute="Comment" context="Rest-of-file Comment" String="////" beginRegion="comment" />
+        <Detect2Chars attribute="Comment" context="Multiline Comment" char="(" char1="*" beginRegion="comment" />
+        <Detect2Chars attribute="Comment" context="Multiline C-style Comment" char="/" char1="*" beginRegion="Comment"/>
+        <Detect2Chars attribute="Comment" context="Singleline C++ style Comment" char="/" char1="/"/>
+
+        <Detect2Chars attribute="Termination Metrics" context="Termination Metrics Context" char="." char1="&lt;" />
+
+        <RegExpr attribute="Constructor" context="#stay" String="`\s*&IDENT;"/>
+
+        <!-- Identifiers and keywords. -->
+        <keyword attribute="Keyword" context="#stay" String="keywords" />
+        <keyword attribute="Function Keyword" context="Function Keyword Context" String="function keywords" />
+        <keyword attribute="Special Keyword" context="#stay" String="special keywords" />
+        <RegExpr attribute="Identifier" context="#stay" String="&IDENT;" />
+
+        <!-- Numeric constants. -->
+        <!-- Note that they may contain underscores. -->
+        <RegExpr attribute="Hexadecimal" context="#stay" String="~?0[xX][0-9A-Fa-f_]+" />
+        <RegExpr attribute="Float" context="#stay" String="~?&DEC;((\.(&DEC;)?([eE][-+]?&DEC;)?)|([eE][-+]?&DEC;))" />
+        <RegExpr attribute="Decimal" context="#stay" String="~?&DEC;" />
+      </context>
+
+      <context attribute="Comment" lineEndContext="#stay" name="Rest-of-file Comment"/>
+      <context attribute="Comment" lineEndContext="#stay" name="Multiline Comment">
+        <!-- Support for nested comments -->
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")" endRegion="comment" />
+        <Detect2Chars attribute="Comment" context="Multiline Comment" char="(" char1="*" beginRegion="comment" />
+        <IncludeRules context="##Comments" />
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Multiline C-style Comment">
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments" />
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Singleline C++ style Comment">
+        <IncludeRules context="##Comments" />
+      </context>
+
+      <context attribute="Termination Metrics" lineEndContext="#stay" name="Termination Metrics Context">
+        <Detect2Chars attribute="Termination Metrics" context="#pop" char="&gt;" char1="." />
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#stay" name="Function Keyword Context">
+        <DetectChar attribute="Normal Text" context="#pop" char="=" />
+        <DetectChar attribute="Universal" context="Universal Context" char="{" />
+        <DetectChar attribute="Existential" context="Existential Context" char="[" />
+        <IncludeRules context="Normal"/>
+      </context>
+
+      <context attribute="Universal" lineEndContext="#stay" name="Universal Context">
+        <DetectChar attribute="Universal" context="#pop" char="}" />
+      </context>
+
+      <context attribute="Existential" lineEndContext="#stay" name="Existential Context">
+        <DetectChar attribute="Existential" context="#pop" char="]" />
+      </context>
+</contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Identifier" defStyleNum="dsNormal"/>
+      <itemData name="Keyword"  defStyleNum="dsKeyword"/>
+      <itemData name="Function Keyword"  defStyleNum="dsKeyword"/>
+      <itemData name="Special Keyword"  defStyleNum="dsDataType"/>
+      <itemData name="Termination Metrics" defStyleNum="dsDataType"/>
+      <itemData name="Universal" defStyleNum="dsDataType"/>
+      <itemData name="Existential" defStyleNum="dsDataType"/>
+      <itemData name="Decimal"  defStyleNum="dsDecVal"/>
+      <itemData name="Hexadecimal"  defStyleNum="dsBaseN"/>
+      <itemData name="Float"  defStyleNum="dsFloat"/>
+      <itemData name="Comment"  defStyleNum="dsComment"/>
+      <itemData name="Constructor" defStyleNum="dsDataType"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="1" />
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="(*" end="*)" region="comment" />
+    </comments>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

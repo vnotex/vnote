@@ -1,8 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language version="2" kateversion="3.4" name="Gitolite" section="Configuration" extensions="gitolite.conf" author="Andor Dávid (david-andor@kozpontiagy.hu)" license="GPL">
+<!DOCTYPE language
+[
+    <!ENTITY groupname "(?:\s|\A)\@[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*">
+]>
+<language version="6" kateversion="5.0" name="Gitolite" section="Configuration" extensions="gitolite.conf" author="Andor Dávid (david-andor@kozpontiagy.hu)" license="GPL">
   <highlighting>
     <list name="keywords">
+      <item>C</item>
+      <item>R</item>
+      <item>RW</item>
+      <item>RW+</item>
+      <item>RWC</item>
+      <item>RW+C</item>
+      <item>RWD</item>
+      <item>RW+D</item>
+      <item>RWCD</item>
+      <item>RW+CD</item>
+      <item>config</item>
+      <item>option</item>
       <item>repo</item>
     </list>
 
@@ -10,14 +25,26 @@
       <context name="Normal Text" attribute="Normal Text" lineEndContext="#pop">
         <DetectChar                     context="SingleLineComment" char="#" />
         <keyword attribute="Keyword"    context="#stay"   String="keywords" />
-        <RegExpr attribute="Group"      context="#stay"   String="\@[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*" />
-        <RegExpr attribute="Symbol"     context="Value"   String="=" />
+        <RegExpr attribute="Group"      context="#stay"   String="&groupname;" />
+        <DetectChar attribute="Symbol"  context="Value"   char="=" />
+        <RegExpr attribute="Include"    context="IncludeLine" String="\A\s*(include|subconf)" />
       </context>
 
-      <context name="SingleLineComment" attribute="Comment (Single)" lineEndContext="#pop" />
+      <context name="SingleLineComment" attribute="Comment (Single)" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+      </context>
+
+      <context name="IncludeLine" attribute="Normal Text" lineEndContext="#pop">
+        <RangeDetect attribute="String" char="&quot;"     char1="&quot;" />
+        <DetectChar                     context="SingleLineComment" char="#" />
+      </context>
 
       <context name="Value" attribute="Normal Text" lineEndContext="#pop">
-        <RegExpr attribute="Group"       context="#stay" String="\@[a-zA-Z_\x7f-\xff][a-zA-Z0-9_\x7f-\xff]*" />
+        <DetectChar                     context="SingleLineComment" char="#" />
+        <RegExpr attribute="Group"      context="#stay"   String="&groupname;" />
+        <RangeDetect attribute="String" char="&quot;"     char1="&quot;" />
+        <RangeDetect attribute="String" char="'"          char1="'" />
       </context>
     </contexts>
 
@@ -25,20 +52,22 @@
       <itemData name="Normal Text"      defStyleNum="dsNormal"/>
       <itemData name="Comment (Single)" defStyleNum="dsComment" />
       <itemData name="Keyword"          defStyleNum="dsKeyword" spellChecking="false" />
-      <itemData name="Group"            defStyleNum="dsKeyword" spellChecking="false" />
+      <itemData name="Group"            defStyleNum="dsVariable" spellChecking="false" />
  <!-- <itemData name="Refs"             defStyleNum="dsKeyword" spellChecking="false" /> -->
-      <itemData name="Symbol"           defStyleNum="dsString" />
+      <itemData name="Symbol"           defStyleNum="dsOthers" />
+      <itemData name="Include"          defStyleNum="dsPreprocessor" />
+      <itemData name="String"           defStyleNum="dsString" />
     </itemDatas>
   </highlighting>
 
   <general>
-    <keywords casesensitive="1" />
+    <keywords casesensitive="1" weakDeliminator="+" />
 
     <comments>
-      <comment name="singleLine" start="#" />
+      <comment name="singleLine" start="#" position="afterwhitespace" />
     </comments>
 
   </general>
 
-  <!-- kate: space-indent on indent-width 2 replace-tabs on indent-mode xml -->
+  <!-- kate: space-indent on; indent-width 2; replace-tabs on; -->
 </language>

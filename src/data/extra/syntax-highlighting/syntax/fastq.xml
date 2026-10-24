@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <language name="FASTQ" version="2" kateversion="5.0" section="Scientific" extensions="*.fastq;*.fq;*.fastq.gz;*.fq.gz" mimetype="text/x-fastq" author="Philipp A" license="GPL">
 	<highlighting>
 		<contexts>

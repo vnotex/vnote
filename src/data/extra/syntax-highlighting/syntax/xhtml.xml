@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY invalid_attr "[-\w.:_=]+|[^-\w.:_=/&lt;>\s]+[-\w.:_]*|/>|[^&lt;]">
+]>
+<language name="XHTML" version="1" kateversion="5.79" section="Markup" extensions="*.xht;*.xhtml" mimetype="text/html" author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT">
+<highlighting>
+<contexts>
+
+  <context name="Start" attribute="Error">
+    <IncludeRules context="FindText##XML" includeAttrib="1" />
+    <WordDetect context="SpecialElement" String="&lt;style" lookAhead="1"/>
+    <WordDetect context="SpecialElement" String="&lt;script" lookAhead="1"/>
+    <IncludeRules context="FindElement##XML"/>
+  </context>
+
+
+  <context name="SpecialElement" attribute="Error">
+    <DetectChar attribute="Element Symbols" char="&lt;" beginRegion="element"/>
+    <StringDetect attribute="Element" context="#pop!JS_Element" String="script"/>
+    <StringDetect attribute="Element" context="#pop!CSS_Element" String="style"/>
+  </context>
+
+  <context name="EndElement" attribute="Error" fallthroughContext="#pop#pop">
+    <WordDetect context="SpecialEndElement" String="&lt;/style&gt;" lookAhead="1"/>
+    <WordDetect context="SpecialEndElement" String="&lt;/script&gt;" lookAhead="1"/>
+  </context>
+  <context name="SpecialEndElement" attribute="Error">
+    <StringDetect attribute="Element Symbols" context="#pop#pop#pop" String="&gt;"/>
+    <StringDetect attribute="Element Symbols" String="&lt;/" endRegion="element"/>
+    <DetectIdentifier attribute="Element"/>
+  </context>
+
+  <context name="FindXMLInSpecialElement" attribute="Error">
+    <IncludeRules context="FindComment##XML"/>
+    <IncludeRules context="FindEntityRefs##XML"/>
+    <DetectChar context="EndElement" char="&lt;" lookAhead="1" endRegion="element"/>
+    <DetectChar attribute="Error" char="&amp;"/>
+  </context>
+
+
+  <context name="FindInComment" attribute="Comment">
+    <DetectSpaces/>
+    <IncludeRules context="##Comments"/>
+    <DetectIdentifier/>
+  </context>
+
+
+  <!-- CSS -->
+
+  <context name="CSS_Element" attribute="Error" fallthroughContext="CSS_ElementError">
+    <DetectChar attribute="Element Symbols" context="#pop!CSS_Content" char=">"/>
+    <Detect2Chars attribute="Element Symbols" context="#pop" char="/" char1=">" endRegion="element"/>
+    <IncludeRules context="Element##XML" includeAttrib="1"/>
+  </context>
+
+  <context name="CSS_ElementError" attribute="Error">
+    <StringDetect attribute="Error" context="#pop#pop!CSS_CommentInXML" String="/*" beginRegion="comment"/>
+    <RegExpr attribute="Error" context="#pop#pop!CSS_Content" String="&invalid_attr;"/>
+    <IncludeRules context="ElementCommonError##XML"/>
+  </context>
+
+  <context name="CSS_CommentInXML" attribute="Comment">
+    <StringDetect attribute="Comment" context="#pop!CSS_Content" String="*/" endRegion="comment"/>
+    <IncludeRules context="FindInComment"/>
+    <StringDetect attribute="CDATA" context="CSS_CommentCDATA" String="&lt;![CDATA[" beginRegion="cdata"/>
+    <IncludeRules context="FindXMLInSpecialElement"/>
+  </context>
+
+  <context name="CSS_CommentCDATA" attribute="Comment">
+    <StringDetect attribute="Comment" context="#pop#pop!CSS_ContentCDATA" String="*/" endRegion="comment"/>
+    <IncludeRules context="FindInComment"/>
+    <StringDetect attribute="CDATA" context="#pop#pop!CSS_CommentInXML" String="]]>" endRegion="cdata" />
+  </context>
+
+  <context name="CSS_Content" attribute="Error">
+    <StringDetect attribute="CDATA" context="#pop!CSS_ContentCDATA" String="&lt;![CDATA[" beginRegion="cdata"/>
+    <IncludeRules context="FindXMLInSpecialElement"/>
+    <StringDetect attribute="Comment" context="#pop!CSS_CommentInXML" String="/*" beginRegion="comment"/>
+    <IncludeRules context="##CSS" includeAttrib="1"/>
+  </context>
+
+  <context name="CSS_ContentCDATA" attribute="Error">
+    <StringDetect attribute="Comment" context="CSS_CommentCDATA" String="/*" beginRegion="comment"/>
+    <IncludeRules context="##CSS" includeAttrib="1"/>
+    <StringDetect attribute="CDATA" context="#pop!CSS_Content" String="]]>" endRegion="cdata" />
+  </context>
+
+
+  <!-- JS -->
+
+  <context name="JS_Element" attribute="Error" fallthroughContext="JS_ElementError">
+    <DetectChar attribute="Element Symbols" context="#pop!JS_Content" char=">"/>
+    <Detect2Chars attribute="Element Symbols" context="#pop" char="/" char1=">" endRegion="element"/>
+    <IncludeRules context="Element##XML" includeAttrib="1"/>
+  </context>
+
+  <context name="JS_ElementError" attribute="Error">
+    <StringDetect attribute="Error" context="#pop#pop!JS_Comment1InXML" String="//"/>
+    <StringDetect attribute="Error" context="#pop#pop!JS_Comment2InXML" String="/*" beginRegion="comment"/>
+    <RegExpr attribute="Error" context="#pop#pop!JS_Content" String="&invalid_attr;"/>
+    <IncludeRules context="ElementCommonError##XML"/>
+  </context>
+
+  <context name="JS_Comment1InXML" attribute="Comment" lineEndContext="#pop!JS_Content">
+    <IncludeRules context="FindInComment"/>
+    <StringDetect attribute="CDATA" context="JS_Comment1CDATA" String="&lt;![CDATA[" beginRegion="cdata"/>
+    <IncludeRules context="FindXMLInSpecialElement"/>
+  </context>
+
+  <context name="JS_Comment1CDATA" attribute="Comment" lineEndContext="#pop#pop!JS_Content">
+    <IncludeRules context="FindInComment"/>
+    <StringDetect attribute="CDATA" context="#pop#pop!JS_Content" String="]]>" endRegion="cdata" />
+  </context>
+
+  <context name="JS_Comment2InXML" attribute="Comment">
+    <StringDetect attribute="Comment" context="#pop!JS_Content" String="*/" endRegion="comment"/>
+    <IncludeRules context="FindInComment"/>
+    <StringDetect attribute="CDATA" context="JS_Comment2CDATA" String="&lt;![CDATA[" beginRegion="cdata"/>
+    <IncludeRules context="FindXMLInSpecialElement"/>
+  </context>
+
+  <context name="JS_Comment2CDATA" attribute="Comment">
+    <StringDetect attribute="Comment" context="#pop#pop!JS_ContentCDATA" String="*/" endRegion="comment"/>
+    <IncludeRules context="FindInComment"/>
+    <StringDetect attribute="CDATA" context="#pop#pop!JS_Comment2InXML" String="]]>" endRegion="cdata" />
+  </context>
+
+  <context name="JS_Content" attribute="Error">
+    <StringDetect attribute="Comment" context="#pop!JS_Comment1InXML" String="//"/>
+    <StringDetect attribute="Comment" context="#pop!JS_Comment2InXML" String="/*" beginRegion="comment"/>
+    <StringDetect attribute="CDATA" context="#pop!JS_ContentCDATA" String="&lt;![CDATA[" beginRegion="cdata"/>
+    <IncludeRules context="FindXMLInSpecialElement"/>
+    <IncludeRules context="Normal##JavaScript" includeAttrib="1"/>
+  </context>
+
+  <context name="JS_ContentCDATA" attribute="Error">
+    <StringDetect attribute="Comment" context="JS_Comment1CDATA" String="//" beginRegion="comment"/>
+    <StringDetect attribute="Comment" context="JS_Comment2CDATA" String="/*" beginRegion="comment"/>
+    <StringDetect attribute="CDATA" context="#pop!JS_Content" String="]]>" endRegion="cdata" />
+    <IncludeRules context="Normal##JavaScript" includeAttrib="1"/>
+  </context>
+
+  <!--
+    @}
+    JS
+  -->
+
+</contexts>
+<itemDatas>
+  <itemData name="Comment" defStyleNum="dsComment" />
+  <itemData name="CDATA" defStyleNum="dsBaseN" bold="1" italic="0" spellChecking="false" />
+  <itemData name="Element" defStyleNum="dsKeyword" spellChecking="false" />
+  <itemData name="Element Symbols" defStyleNum="dsDataType" spellChecking="false" />
+  <itemData name="Error" defStyleNum="dsError" spellChecking="false" />
+</itemDatas>
+
+</highlighting>
+<general>
+  <comments>
+    <comment name="multiLine" start="&lt;!--" end="--&gt;" region="comment" />
+  </comments>
+</general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

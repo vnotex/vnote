@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE language []>
+
+<!--
+  This file is part of KDE's kate project.
+
+  Copyright 2021 Carson Black (uhhadd@gmail.com)
+  -->
+
+<language xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="language.xsd" name="RETRO" section="Sources" extensions="*.retro" version="1" kateversion="5.0" license="MIT">
+    <highlighting>
+        <contexts>
+            <context name="normal" attribute="not-code" lineEndContext="#stay">
+                <StringDetect String="~~~" attribute="delimter" context="code" firstNonSpace="true" />
+                <StringDetect String="```" attribute="delimter" context="test" firstNonSpace="true" />
+            </context>
+            <context name="code" attribute="code" lineEndContext="#stay">
+                <StringDetect String="~~~" attribute="delimter" context="#pop" firstNonSpace="true" />
+
+                <DetectChar char=":" context="ctx-colon" attribute="colon" />
+                <DetectChar char="(" context="ctx-note" attribute="note" />
+                <DetectChar char="'" context="ctx-str" attribute="str" />
+                <DetectChar char="#" context="ctx-num" attribute="num" />
+                <DetectChar char="." context="ctx-fnum" attribute="fnum" />
+                <DetectChar char="&amp;" context="ctx-ptr" attribute="ptr" />
+                <DetectChar char="$" context="ctx-char" attribute="char" />
+                <AnyChar String="`\\" context="ctx-inst" attribute="inst" />
+                <DetectChar char="|" context="ctx-defer" attribute="defer" />
+                <DetectChar char="@" context="ctx-fetch" attribute="fetch" />
+                <DetectChar char="!" context="ctx-store" attribute="store" />
+            </context>
+            <context name="test" attribute="code" lineEndContext="#stay">
+                <StringDetect String="```" attribute="delimter" context="#pop" firstNonSpace="true" />
+
+                <DetectChar char=":" context="ctx-colon" attribute="colon" />
+                <DetectChar char="(" context="ctx-note" attribute="note" />
+                <DetectChar char="'" context="ctx-str" attribute="str" />
+                <DetectChar char="#" context="ctx-num" attribute="num" />
+                <DetectChar char="." context="ctx-fnum" attribute="fnum" />
+                <DetectChar char="&amp;" context="ctx-ptr" attribute="ptr" />
+                <DetectChar char="$" context="ctx-char" attribute="char" />
+                <AnyChar String="`\\" context="ctx-inst" attribute="inst" />
+                <DetectChar char="|" context="ctx-defer" attribute="defer" />
+                <DetectChar char="@" context="ctx-fetch" attribute="fetch" />
+                <DetectChar char="!" context="ctx-store" attribute="store" />
+            </context>
+            <context name="ctx-colon" attribute="colon" lineEndContext="#pop">
+                <DetectChar char=" " context="#pop"/>
+            </context>
+            <context name="ctx-note" attribute="note" lineEndContext="#pop">
+                <DetectChar char=" " context="#pop"/>
+            </context>
+            <context name="ctx-str" attribute="str" lineEndContext="#pop">
+                <DetectChar char=" " context="#pop"/>
+                <DetectChar char="_" attribute="note"/>
+            </context>
+            <context name="ctx-num" attribute="num" lineEndContext="#pop">
+                <DetectChar char=" " context="#pop"/>
+            </context>
+            <context name="ctx-fnum" attribute="fnum" lineEndContext="#pop">
+                <DetectChar char=" " context="#pop"/>
+            </context>
+            <context name="ctx-ptr" attribute="ptr" lineEndContext="#pop">
+                <DetectChar char=" " context="#pop"/>
+            </context>
+            <context name="ctx-char" attribute="char" lineEndContext="#pop">
+                <DetectChar char=" " context="#pop"/>
+            </context>
+            <context name="ctx-inst" attribute="inst" lineEndContext="#pop">
+                <DetectChar char=" " context="#pop"/>
+            </context>
+            <context name="ctx-defer" attribute="defer" lineEndContext="#pop">
+                <DetectChar char=" " context="#pop"/>
+            </context>
+            <context name="ctx-fetch" attribute="fetch" lineEndContext="#pop">
+                <DetectChar char=" " context="#pop"/>
+            </context>
+            <context name="ctx-store" attribute="store" lineEndContext="#pop">
+                <DetectChar char=" " context="#pop"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="not-code" defStyleNum="dsComment" />
+
+            <itemData name="code" defStyleNum="dsFunction" />
+
+            <itemData name="delimter" defStyleNum="dsPreprocessor" />
+
+            <itemData name="colon" defStyleNum="dsFunction" />
+            <itemData name="note" defStyleNum="dsComment" />
+            <itemData name="str" defStyleNum="dsString" />
+            <itemData name="num" defStyleNum="dsDataType" />
+            <itemData name="fnum" defStyleNum="dsFloat" />
+            <itemData name="ptr" defStyleNum="dsNormal" />
+            <itemData name="char" defStyleNum="dsChar" />
+            <itemData name="inst" defStyleNum="dsFunction" />
+            <itemData name="defer" defStyleNum="dsFunction" />
+            <itemData name="fetch" defStyleNum="dsVariable" />
+            <itemData name="store" defStyleNum="dsVariable" />
+        </itemDatas>
+    </highlighting>
+</language>

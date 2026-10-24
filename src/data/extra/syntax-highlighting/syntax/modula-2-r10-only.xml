@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Modula-2 (R10 only)" mimetype="text/x-modula2" version="1"
-  kateversion="2.2" section="Sources" priority="2" extensions="*.mod;*.def"
+<!DOCTYPE language>
+<language name="Modula-2 (R10 only)" mimetype="text/x-modula2" version="4"
+  kateversion="5.0" section="Sources" priority="2" extensions="*.mod;*.def"
   casesensitive="1"  author="B. Kowarsch (trijezdci@github)"  license="MIT">
 <!--
   *****************************************************************************
@@ -218,12 +218,9 @@
         <keyword attribute="Unsafe" context="#stay" String="unsafe"/>
 
         <!-- Base-2 Integer Literals -->
-        <RegExpr attribute="Number" context="#stay"
-          String="0b([01]+('[01]+)?)+"/>
-
         <!-- Base-16 Integer and Character Code Literals -->
         <RegExpr attribute="Number" context="#stay"
-          String="0[ux]([0-9A-F]+('[0-9A-F]+)?)+"/>
+          String="0b([01]+('[01]+)?)+|0[ux]([0-9A-F]+('[0-9A-F]+)?)+"/>
 
         <!-- Real Number Literals -->
         <Float attribute="Number" context="#stay"/>
@@ -274,6 +271,8 @@
 
       <!-- End of Line Comment -->
       <context attribute="Comment" lineEndContext="#pop" name="LineComment">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
 
       <context attribute="Comment" lineEndContext="#stay" name="BlockComment">
@@ -284,6 +283,9 @@
         <!-- End of Block Comment -->
         <Detect2Chars attribute="Comment"
         context="#pop" char="*" char1=")" endRegion="FoldableComment"/>
+
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
     </contexts>
 
@@ -341,7 +343,8 @@
     <keywords casesensitive="1" />
     <comments>
       <comment name="singleLine" start="!" />
-      <comment name="multiLine" start="(*" end="*)" />
+      <comment name="multiLine" start="(*" end="*)" region="FoldableComment" />
     </comments>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

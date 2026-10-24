@@ -1,9 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language
+[
+
+  <!-- Regular expression matching case-insensitively a single hexadecial digit. -->
+  <!ENTITY hexDigit "[0-9a-fA-F]">
+
+  <!-- Regular expression matching all potential names of PostgresSQL built-in
+  functions and PostGIS functions. -->
+  <!ENTITY functionName "[a-zA-Z][a-zA-Z0-9_]*">
+
+]>
+
 <!-- PostgreSQL SQL, syntax definition based on sql.xml by Yury Lebedev
      v5 fix comments by Gene Thomas <gene@genethomas.com>
   -->
-<language name="SQL (PostgreSQL)" version="7" kateversion="5.0" section="Database" extensions="*.sql;*.SQL;*.ddl;*.DDL" mimetype="text/x-sql" casesensitive="0" author="Shane Wright (me@shanewright.co.uk)" license="">
+
+<!-- Support for escape characters in strings and identifiers, PostGIS highlighting
+     and better functioni highlighting by Lukas Sommer <sommerluk@gamil.com>. These
+     modifications are under MIT License.
+  -->
+
+<language name="SQL (PostgreSQL)"
+          version="17"
+          kateversion="5.44"
+          section="Database"
+          extensions="*.sql;*.SQL;*.ddl;*.DDL"
+          mimetype="text/x-sql"
+          casesensitive="0"
+          author="Shane Wright (me@shanewright.co.uk)"
+          license="">
   <highlighting>
     <list name="controlFlow">
       <item>BEGIN</item>
@@ -473,7 +498,6 @@
       <item>PROCEDURE</item>
       <item>PROGRAM</item>
       <item>PUBLIC</item>
-      <item>RANGE</item>
       <item>PUBLICATION</item>
       <item>QUOTE</item>
       <item>RANGE</item>
@@ -750,6 +774,8 @@
       <item>BIT_LENGTH</item>
       <item>CHAR_LENGTH</item>
       <item>CHARACTER_LENGTH</item>
+      <item>CONCAT</item>
+      <item>CONCAT_WS</item>
       <item>CONVERT</item>
       <item>GET_BYTE</item>
       <item>GET_BIT</item>
@@ -927,6 +953,257 @@
       <item>PG_READ_FILE</item>
       <item>PG_STAT_FILE</item>
     </list>
+    <list name="postgisFunctions">
+      <!-- From https://postgis.net/docs/PostGIS_Special_Functions_Index.html#PostGIS_TypeFunctionMatrix at 2022-09-16 19:15 GMT -->
+      <item>Box2D</item>
+      <item>Box3D</item>
+      <item>GeometryType</item>
+      <item>PostGIS_AddBBox</item>
+      <item>PostGIS_DropBBox</item>
+      <item>PostGIS_Extensions_Upgrade</item>
+      <item>PostGIS_Full_Version</item>
+      <item>PostGIS_GEOS_Version</item>
+      <item>PostGIS_HasBBox</item>
+      <item>PostGIS_LibXML_Version</item>
+      <item>PostGIS_Lib_Build_Date</item>
+      <item>PostGIS_Lib_Version</item>
+      <item>PostGIS_Liblwgeom_Version</item>
+      <item>PostGIS_PROJ_Version</item>
+      <item>PostGIS_Scripts_Build_Date</item>
+      <item>PostGIS_Scripts_Installed</item>
+      <item>PostGIS_Scripts_Released</item>
+      <item>PostGIS_Version</item>
+      <item>PostGIS_Wagyu_Version</item>
+      <item>ST_3DArea</item>
+      <item>ST_3DClosestPoint</item>
+      <item>ST_3DConvexHull</item>
+      <item>ST_3DDifference</item>
+      <item>ST_3DDistance</item>
+      <item>ST_3DExtent</item>
+      <item>ST_3DIntersection</item>
+      <item>ST_3DLength</item>
+      <item>ST_3DLineInterpolatePoint</item>
+      <item>ST_3DLongestLine</item>
+      <item>ST_3DMakeBox</item>
+      <item>ST_3DMaxDistance</item>
+      <item>ST_3DPerimeter</item>
+      <item>ST_3DShortestLine</item>
+      <item>ST_3DUnion</item>
+      <item>ST_AddMeasure</item>
+      <item>ST_AddPoint</item>
+      <item>ST_Affine</item>
+      <item>ST_AlphaShape</item>
+      <item>ST_Angle</item>
+      <item>ST_ApproximateMedialAxis</item>
+      <item>ST_Area</item>
+      <item>ST_Azimuth</item>
+      <item>ST_Boundary</item>
+      <item>ST_BoundingDiagonal</item>
+      <item>ST_Buffer</item>
+      <item>ST_BuildArea</item>
+      <item>ST_CPAWithin</item>
+      <item>ST_Centroid</item>
+      <item>ST_ChaikinSmoothing</item>
+      <item>ST_ClipByBox2D</item>
+      <item>ST_ClosestPoint</item>
+      <item>ST_ClosestPointOfApproach</item>
+      <item>ST_ClusterDBSCAN</item>
+      <item>ST_ClusterIntersecting</item>
+      <item>ST_ClusterKMeans</item>
+      <item>ST_ClusterWithin</item>
+      <item>ST_Collect</item>
+      <item>ST_CollectionExtract</item>
+      <item>ST_CollectionHomogenize</item>
+      <item>ST_ConcaveHull</item>
+      <item>ST_ConstrainedDelaunayTriangles</item>
+      <item>ST_ConvexHull</item>
+      <item>ST_CoordDim</item>
+      <item>ST_CurveToLine</item>
+      <item>ST_DelaunayTriangles</item>
+      <item>ST_Difference</item>
+      <item>ST_Dimension</item>
+      <item>ST_Distance</item>
+      <item>ST_DistanceCPA</item>
+      <item>ST_DistanceSphere</item>
+      <item>ST_DistanceSpheroid</item>
+      <item>ST_Dump</item>
+      <item>ST_DumpPoints</item>
+      <item>ST_DumpRings</item>
+      <item>ST_DumpSegments</item>
+      <item>ST_EndPoint</item>
+      <item>ST_Envelope</item>
+      <item>ST_EstimatedExtent</item>
+      <item>ST_Expand</item>
+      <item>ST_Extent</item>
+      <item>ST_ExteriorRing</item>
+      <item>ST_Extrude</item>
+      <item>ST_FilterByM</item>
+      <item>ST_FlipCoordinates</item>
+      <item>ST_Force2D</item>
+      <item>ST_ForceCurve</item>
+      <item>ST_ForceLHR</item>
+      <item>ST_ForcePolygonCCW</item>
+      <item>ST_ForcePolygonCW</item>
+      <item>ST_ForceRHR</item>
+      <item>ST_ForceSFS</item>
+      <item>ST_Force3D</item>
+      <item>ST_Force3DM</item>
+      <item>ST_Force3DZ</item>
+      <item>ST_Force4D</item>
+      <item>ST_ForceCollection</item>
+      <item>ST_FrechetDistance</item>
+      <item>ST_GeneratePoints</item>
+      <item>ST_GeometricMedian</item>
+      <item>ST_GeometryN</item>
+      <item>ST_GeometryType</item>
+      <item>ST_HasArc</item>
+      <item>ST_HausdorffDistance</item>
+      <item>ST_Hexagon</item>
+      <item>ST_HexagonGrid</item>
+      <item>ST_InteriorRingN</item>
+      <item>ST_InterpolatePoint</item>
+      <item>ST_Intersection</item>
+      <item>ST_IsClosed</item>
+      <item>ST_IsCollection</item>
+      <item>ST_IsEmpty</item>
+      <item>ST_IsPlanar</item>
+      <item>ST_IsPolygonCCW</item>
+      <item>ST_IsPolygonCW</item>
+      <item>ST_IsRing</item>
+      <item>ST_IsSimple</item>
+      <item>ST_IsSolid</item>
+      <item>ST_IsValid</item>
+      <item>ST_IsValidDetail</item>
+      <item>ST_IsValidReason</item>
+      <item>ST_IsValidTrajectory</item>
+      <item>ST_Length</item>
+      <item>ST_Length2D</item>
+      <item>ST_LengthSpheroid</item>
+      <item>ST_Letters</item>
+      <item>ST_LineFromMultiPoint</item>
+      <item>ST_LineInterpolatePoint</item>
+      <item>ST_LineInterpolatePoints</item>
+      <item>ST_LineLocatePoint</item>
+      <item>ST_LineMerge</item>
+      <item>ST_LineSubstring</item>
+      <item>ST_LineToCurve</item>
+      <item>ST_LocateAlong</item>
+      <item>ST_LocateBetween</item>
+      <item>ST_LocateBetweenElevations</item>
+      <item>ST_LongestLine</item>
+      <item>ST_M</item>
+      <item>ST_MakeBox2D</item>
+      <item>ST_MakeEnvelope</item>
+      <item>ST_MakeLine</item>
+      <item>ST_MakePoint</item>
+      <item>ST_MakePointM</item>
+      <item>ST_MakePolygon</item>
+      <item>ST_MakeSolid</item>
+      <item>ST_MakeValid</item>
+      <item>ST_MaxDistance</item>
+      <item>ST_MaximumInscribedCircle</item>
+      <item>ST_MemSize</item>
+      <item>ST_MemUnion</item>
+      <item>ST_MinimumBoundingCircle</item>
+      <item>ST_MinimumBoundingRadius</item>
+      <item>ST_MinimumClearance</item>
+      <item>ST_MinimumClearanceLine</item>
+      <item>ST_MinkowskiSum</item>
+      <item>ST_Multi</item>
+      <item>ST_NDims</item>
+      <item>ST_NPoints</item>
+      <item>ST_NRings</item>
+      <item>ST_Node</item>
+      <item>ST_Normalize</item>
+      <item>ST_NumGeometries</item>
+      <item>ST_NumInteriorRing</item>
+      <item>ST_NumInteriorRings</item>
+      <item>ST_NumPatches</item>
+      <item>ST_NumPoints</item>
+      <item>ST_OffsetCurve</item>
+      <item>ST_OptimalAlphaShape</item>
+      <item>ST_Orientation</item>
+      <item>ST_OrientedEnvelope</item>
+      <item>ST_PatchN</item>
+      <item>ST_Perimeter</item>
+      <item>ST_Perimeter2D</item>
+      <item>ST_Point</item>
+      <item>ST_PointM</item>
+      <item>ST_PointN</item>
+      <item>ST_PointOnSurface</item>
+      <item>ST_PointZ</item>
+      <item>ST_PointZM</item>
+      <item>ST_Points</item>
+      <item>ST_Polygon</item>
+      <item>ST_Polygonize</item>
+      <item>ST_Project</item>
+      <item>ST_QuantizeCoordinates</item>
+      <item>ST_ReducePrecision</item>
+      <item>ST_RemovePoint</item>
+      <item>ST_RemoveRepeatedPoints</item>
+      <item>ST_Reverse</item>
+      <item>ST_Rotate</item>
+      <item>ST_RotateX</item>
+      <item>ST_RotateY</item>
+      <item>ST_RotateZ</item>
+      <item>ST_SRID</item>
+      <item>ST_Scale</item>
+      <item>ST_Scroll</item>
+      <item>ST_Segmentize</item>
+      <item>ST_SetEffectiveArea</item>
+      <item>ST_SetPoint</item>
+      <item>ST_SetSRID</item>
+      <item>ST_SharedPaths</item>
+      <item>ST_ShiftLongitude</item>
+      <item>ST_ShortestLine</item>
+      <item>ST_Simplify</item>
+      <item>ST_SimplifyPolygonHull</item>
+      <item>ST_SimplifyPreserveTopology</item>
+      <item>ST_SimplifyVW</item>
+      <item>ST_Snap</item>
+      <item>ST_SnapToGrid</item>
+      <item>ST_Split</item>
+      <item>ST_Square</item>
+      <item>ST_SquareGrid</item>
+      <item>ST_StartPoint</item>
+      <item>ST_StraightSkeleton</item>
+      <item>ST_Subdivide</item>
+      <item>ST_Summary</item>
+      <item>ST_SwapOrdinates</item>
+      <item>ST_SymDifference</item>
+      <item>ST_Tesselate</item>
+      <item>ST_TileEnvelope</item>
+      <item>ST_TransScale</item>
+      <item>ST_Transform</item>
+      <item>ST_Translate</item>
+      <item>ST_TriangulatePolygon</item>
+      <item>ST_UnaryUnion</item>
+      <item>ST_Union</item>
+      <item>ST_Volume</item>
+      <item>ST_VoronoiLines</item>
+      <item>ST_VoronoiPolygons</item>
+      <item>ST_WrapX</item>
+      <item>ST_X</item>
+      <item>ST_XMax</item>
+      <item>ST_XMin</item>
+      <item>ST_Y</item>
+      <item>ST_YMax</item>
+      <item>ST_YMin</item>
+      <item>ST_Z</item>
+      <item>ST_ZMax</item>
+      <item>ST_ZMin</item>
+      <item>ST_Zmflag</item>
+      <!--<item>postgis.backend</item>--><!-- Commenting out because inner dot is incompatible with the keyword delimiters. -->
+      <!--<item>postgis.enable_outdb_rasters</item>--><!-- Commenting out because inner dot is incompatible with the keyword delimiters. -->
+      <!--<item>postgis.gdal_datapath</item>--><!-- Commenting out because inner dot is incompatible with the keyword delimiters. -->
+      <!--<item>postgis.gdal_enabled_drivers</item>--><!-- Commenting out because inner dot is incompatible with the keyword delimiters. -->
+      <!--<item>postgis.gdal_config_options</item>--><!-- Commenting out because inner dot is incompatible with the keyword delimiters. -->
+      <item>postgis_sfcgal_full_version</item>
+      <item>postgis_sfcgal_version</item>
+
+      <!-- Further functions from https://postgis.net/docs/PostGIS_Special_Functions_Index.html -->
+      <item>ST_DWithin</item>
+    </list>
     <list name="types">
       <!-- https://www.postgresql.org/docs/current/static/datatype.html#DATATYPE-TABLE -->
       <item>BIGINT</item>
@@ -988,12 +1265,11 @@
       <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
 
         <!-- comments before operators -->
-        <DetectChar attribute="Comment" context="SingleLineComment" char="#"/>
         <Detect2Chars attribute="Comment" context="SingleLineComment" char="-" char1="-"/>
         <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*" beginRegion="Comment"/>
-        <RegExpr attribute="Comment" context="SingleLineComment" String="rem\b" insensitive="true" column="0"/>
+        <WordDetect attribute="Comment" context="SingleLineComment" String="rem" insensitive="true" column="0"/>
 
-        <!-- HACK: don't jump into MultiLineString for CREATE FUNCTION $funcName$...$funcName$ -->
+        <!-- HACK: don't jump into DollarQuotedString for CREATE FUNCTION $funcName$...$funcName$ -->
         <RegExpr String="create\s+(or\s+replace\s+)?function" insensitive="true" context="CreateFunction" attribute="Keyword"/>
 
         <RegExpr String="do\s+\$([^\$\n\r]*)\$" insensitive="true" context="FunctionBody" attribute="Keyword"/>
@@ -1001,74 +1277,192 @@
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
         <keyword attribute="Operator Keyword" context="#stay" String="operators"/>
         <keyword attribute="ControlFlow" context="#stay" String="controlFlow"/>
-        <keyword attribute="Function" context="#stay" String="functions"/>
         <keyword attribute="Data Type" context="#stay" String="types"/>
         <RegExpr attribute="Data Type" context="#stay" String="%(bulk_(exceptions|rowcount)|(not)?found|isopen|rowcount|(row)?type)\b" insensitive="true"/>
+        <!-- Highlight the names of functions when they are followed by a “(” character.
+        NOTE Some names are both, function names and data type names. Currently:
+        BOX|CIRCLE|LSEG|PATH|POINT|POLYGON|TEXT|TIMESTAMPTZ Those are always
+        catched by the above rule as data types. Highlighting them differently when
+        used as function would be tricky… -->
+        <RegExpr context="HighlightFunction" String="(?&lt;=\b)&functionName;(?=[\t ]*\()" lookAhead="true" insensitive="true"/>
         <Float attribute="Float" context="#stay"/>
         <Int attribute="Decimal" context="#stay"/>
-        <DetectChar attribute="String" context="String" char="'"/>
-        <DetectChar attribute="Comment" context="Identifier" char="&quot;"/>
-        <AnyChar attribute="Symbol" context="#stay" String=":&#38;"/>
-        <RegExpr attribute="Preprocessor" context="Preprocessor" String="@@?[^@ \t\r\n]" column="0"/>
-        <RegExpr attribute="Operator" context="MultiLineString" String="\$([^\$\n\r]*)\$" dynamic="true"/>
-        <AnyChar attribute="Operator" context="#stay" String="+-*/=%^!&lt;&gt;&amp;|@~#"/>
+        <DetectChar attribute="Verbatim string" context="SingleQuotedString" char="'"/>
+        <Detect2Chars attribute="String delimiter" context="EscapeString" char='e' char1="'"/>
+        <Detect2Chars attribute="String delimiter" context="EscapeString" char='E' char1="'"/>
+        <!-- Supports Unicode Escape String with user-defined escape character. Example:
+             u&'y+000065' UESCAPE  'y'
+             The user-defined escape character is available to dynamic rules as capture-group 1.
+             NOTE As KSyntaxHighlighing is line-based, this highlighting rule works only if all the
+             above code is within the same line (though Postgre allows it to be on different lines). -->
+        <RegExpr attribute="String delimiter" context="UnicodeEscapeStringModified" String="U&amp;'(?=(?:[^']|'')*'[ \t]*UESCAPE[ \t]*'([^0-9a-fA-F+'&quot; \t])')" insensitive="true"/>
+        <StringDetect attribute="String delimiter" context="UnicodeEscapeString" String="U&amp;'" insensitive="true"/>
+        <DetectChar attribute="Identifier" context="Identifier" char="&quot;"/>
+        <!-- Supports Unicode Escape Identifiers with user-defined escape character. Example:
+             u&"y+000065" UESCAPE  'y'
+             The user-defined escape character is available to dynamic rules as capture-group 1.
+             NOTE As KSyntaxHighlighing is line-based, this highlighting rule works only if all the
+             above code is within the same line (though Postgre allows it to be on different lines). -->
+        <RegExpr attribute="Identifier" context="UnicodeEscapeIdentifierModified" String="U&amp;&quot;(?=(?:[^&quot;]|&quot;&quot;)*&quot;[ \t]*UESCAPE[ \t]*'([^0-9a-fA-F+'&quot; \t])')" insensitive="true"/>
+        <StringDetect attribute="Identifier" context="UnicodeEscapeIdentifier" String="U&amp;&quot;" insensitive="true"/>
         <Detect2Chars attribute="Operator" context="#stay" char=":" char1="="/>
+        <AnyChar attribute="Symbol" context="#stay" String=":&amp;"/>
         <Detect2Chars attribute="Operator" context="#stay" char="." char1="."/>
         <!-- geometric operators -->
         <Detect2Chars attribute="Operator" context="#stay" char="?" char1="#"/>
         <Detect2Chars attribute="Operator" context="#stay" char="?" char1="-"/>
         <Detect2Chars attribute="Operator" context="#stay" char="?" char1="|"/>
+        <RegExpr attribute="Preprocessor" context="Preprocessor" String="^@@?[^@ \t\r\n]" column="0"/>
+        <RegExpr attribute="Operator" context="DollarQuotedString" String="\$([^\$\n\r]*)\$"/>
+        <AnyChar attribute="Operator" context="#stay" String="+-*/=%^!&lt;&gt;&amp;|@~#"/>
+      </context>
+      <context attribute="Normal Text" name="HighlightFunction" fallthrough="true" fallthroughContext="#pop" lineEndContext="#pop">
+        <!-- Helper context that expects to see a function on its very beginning.
+        If it’s a PostgreSQL or PostGIS function, it is highlighted accordingly.
+        If not, by a catch-all, it gets the "Normal Text" attribute. After that,
+        it pops back to the previous context. -->
+        <keyword attribute="PostgreSQL function" context="#pop" String="functions"/>
+        <keyword attribute="PostGIS function" context="#pop" String="postgisFunctions"/>
+        <!-- Highlight user-defined functions like "Normal Text". It is not
+        possible to have an own style for this, because the syntax is
+        difficult and we could catch here strings that are not actual
+        user-defined functions. "Normal Text" is a safe alternative. Using
+        &functionName; which is the same regular expression that is used
+        by the rule that calls this context: -->
+        <RegExpr attribute="Normal Text" context="#pop" String="&functionName;" insensitive="true"/>
       </context>
       <context name="CreateFunction" attribute="Normal Text" lineEndContext="#stay">
-        <RegExpr attribute="Function" context="FunctionBody" String="\$([^\$\n\r]*)\$" dynamic="true"/>
+        <RegExpr attribute="Function" context="FunctionBody" String="\$([^\$\n\r]*)\$"/>
         <IncludeRules context="Normal"/>
       </context>
       <context name="FunctionBody" attribute="Normal Text" lineEndContext="#stay" dynamic="true">
         <StringDetect attribute="Function" context="#pop#pop" String="$%1$" dynamic="true"/>
         <IncludeRules context="Normal"/>
       </context>
-      <context name="MultiLineString" attribute="String" lineEndContext="#stay" dynamic="true">
+      <context name="SingleQuotedString" attribute="Verbatim string" lineEndContext="#stay">
+        <Detect2Chars attribute="Escape sequence" context="#stay" char="'" char1="'"/>
+        <DetectChar attribute="String delimiter" context="#pop" char="'"/>
+      </context>
+      <context name="DollarQuotedString" attribute="Verbatim string" lineEndContext="#stay" dynamic="true">
         <StringDetect attribute="Operator" context="#pop" String="$%1$" dynamic="true"/>
       </context>
-      <context name="String" attribute="String" lineEndContext="#stay">
-        <LineContinue attribute="String" context="#pop"/>
-        <HlCStringChar attribute="String Char" context="#stay"/>
-        <DetectChar attribute="Symbol" context="#stay" char="&#38;"/>
-        <DetectChar attribute="String" context="#pop" char="'"/>
+      <context name="EscapeString" attribute="String" lineEndContext="#stay">
+        <Detect2Chars attribute="Escape sequence" context="#stay" char="'" char1="'"/>
+        <!-- Default C style escapes: \n \101 \x41 … : -->
+        <HlCStringChar attribute="Escape sequence" context="#stay"/>
+        <!-- \u escapes: -->
+        <RegExpr attribute="Escape sequence" context="#stay" String="\\u&hexDigit;{4}"/>
+        <!-- Incomplete \u escape sequences are errors: -->
+        <Detect2Chars attribute="Error" context="#stay" char="\" char1="u"/>
+        <!-- \U escapes: -->
+        <RegExpr attribute="Escape sequence" context="#stay" String="\\U&hexDigit;{8}"/>
+        <!-- Incomplete \U escape sequences are errors: -->
+        <Detect2Chars attribute="Error" context="#stay" char="\" char1="U"/>
+        <!-- All other escape sequences are interpreted as escape of the concerned character: \y → y -->
+        <RegExpr attribute="Escape sequence" context="#stay" String="\\."/>
+        <!-- Even an escape sequence with the line break (means: backslash as last character of a line) is possible: -->
+        <LineContinue attribute="Escape sequence" context="#stay" char="\"/>
+        <!-- end of the string -->
+        <DetectChar attribute="String delimiter" context="#pop" char="'"/>
       </context>
-      <context name="SingleLineComment" attribute="Comment" lineEndContext="#pop"/>
+      <context attribute="Normal Text" name="IncludeUnicodeEscapeSequences" lineEndContext="#pop">
+        <!-- four-digit/six-digit escapes: -->
+        <RegExpr attribute="Escape sequence" context="#stay" String="(\\&hexDigit;{4})|(\\\+&hexDigit;{6})"/>
+        <!-- \\ is a valid escape for the backslash: -->
+        <Detect2Chars attribute="Escape sequence" context="#stay" char="\" char1="\"/>
+        <!-- All other occurences of \ are errors: -->
+        <DetectChar attribute="Error" context="#stay" char="\"/>
+      </context>
+      <context attribute="Normal Text" name="IncludeUnicodeEscapeSequencesModified" lineEndContext="#pop">
+        <!-- Context meant to be included in other contexts, not to be used on its own.
+             Containt dynamic rules. Expects that the escape character is available
+             at capture group #1.
+             NOTE The capture group expands literally for the StringDetect and DetectChar
+             rules. For the RegExpr rule, special characters (and only special characters)
+             seem to become escaped automatically: The capture “.” is available as “\.”
+             while the capture “t” is available as “t” (and not as “\t” which would mean a
+             tabulator character). So this works fine out-of-the-box even for special
+             characters.-->
+        <!-- four-digit/six-digit escapes: -->
+        <RegExpr attribute="Escape sequence" context="#stay" String="(%1&hexDigit;{4})|(%1\+&hexDigit;{6})" dynamic="true"/>
+        <!-- The escape character can escape himself: -->
+        <StringDetect attribute="Escape sequence" context="#stay" String="%1%1" dynamic="true"/>
+        <!-- All other occurences of \ are errors: -->
+        <DetectChar attribute="Error" context="#stay" char="1" dynamic="true"/>
+      </context>
+      <context name="UnicodeEscapeString" attribute="String" lineEndContext="#stay">
+        <Detect2Chars attribute="Escape sequence" context="#stay" char="'" char1="'"/>
+        <IncludeRules context="IncludeUnicodeEscapeSequences" />
+        <!-- end of the string -->
+        <DetectChar attribute="String delimiter" context="#pop" char="'"/>
+      </context>
+      <context name="UnicodeEscapeStringModified" attribute="String" lineEndContext="#stay">
+        <Detect2Chars attribute="Escape sequence" context="#stay" char="'" char1="'"/>
+        <IncludeRules context="IncludeUnicodeEscapeSequencesModified" />
+        <!-- end of the string -->
+        <DetectChar attribute="String delimiter" context="#pop" char="'"/>
+      </context>
+      <context name="SingleLineComment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+      </context>
       <context name="MultiLineComment" attribute="Comment" lineEndContext="#stay">
         <LineContinue attribute="Comment" context="#pop"/>
+        <DetectSpaces />
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*" beginRegion="Comment"/>
+        <IncludeRules context="##Comments"/>
       </context>
-      <context name="Identifier" attribute="Identifier" lineEndContext="#pop">
+      <context name="Identifier" attribute="Identifier" lineEndContext="#stay">
+        <Detect2Chars attribute="Escape sequence" context="#stay" char="&quot;" char1="&quot;"/>
+        <DetectChar attribute="Identifier" context="#pop" char="&quot;"/>
+      </context>
+      <context name="UnicodeEscapeIdentifier" attribute="Identifier" lineEndContext="#stay">
+        <Detect2Chars attribute="Escape sequence" context="#stay" char="&quot;" char1="&quot;"/>
+        <IncludeRules context="IncludeUnicodeEscapeSequences" />
+        <!-- end of the string -->
+        <DetectChar attribute="Identifier" context="#pop" char="&quot;"/>
+      </context>
+      <context name="UnicodeEscapeIdentifierModified" attribute="Identifier" lineEndContext="#stay">
+        <Detect2Chars attribute="Escape sequence" context="#stay" char="&quot;" char1="&quot;"/>
+        <IncludeRules context="IncludeUnicodeEscapeSequencesModified" />
+        <!-- end of the string -->
         <DetectChar attribute="Identifier" context="#pop" char="&quot;"/>
       </context>
       <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop"/>
     </contexts>
     <itemDatas>
-      <itemData name="Normal Text"       defStyleNum="dsNormal" spellChecking="false"/>
-      <itemData name="Keyword"           defStyleNum="dsKeyword" spellChecking="false"/>
-      <itemData name="ControlFlow"       defStyleNum="dsControlFlow" spellChecking="false"/>
-      <itemData name="Operator"          defStyleNum="dsOperator" spellChecking="false"/>
-      <itemData name="Operator Keyword"  defStyleNum="dsKeyword" spellChecking="false"/>
-      <itemData name="Function"          defStyleNum="dsFunction" spellChecking="false"/>
-      <itemData name="Data Type"         defStyleNum="dsDataType" spellChecking="false"/>
-      <itemData name="Decimal"           defStyleNum="dsDecVal" spellChecking="false"/>
-      <itemData name="Float"             defStyleNum="dsFloat" spellChecking="false"/>
-      <itemData name="String"            defStyleNum="dsString"/>
-      <itemData name="String Char"       defStyleNum="dsChar" spellChecking="false"/>
-      <itemData name="Comment"           defStyleNum="dsComment"/>
-      <itemData name="Identifier"        defStyleNum="dsOthers" spellChecking="false"/>
-      <itemData name="Symbol"            defStyleNum="dsChar" spellChecking="false"/>
-      <itemData name="Preprocessor"      defStyleNum="dsOthers" spellChecking="false"/>
+      <itemData name="Normal Text"         defStyleNum="dsNormal"      spellChecking="false"/>
+      <itemData name="Keyword"             defStyleNum="dsKeyword"     spellChecking="false"/>
+      <itemData name="ControlFlow"         defStyleNum="dsControlFlow" spellChecking="false"/>
+      <itemData name="Operator"            defStyleNum="dsOperator"    spellChecking="false"/>
+      <itemData name="Operator Keyword"    defStyleNum="dsKeyword"     spellChecking="false"/>
+      <itemData name="Function"            defStyleNum="dsFunction"    spellChecking="false"/>
+      <itemData name="PostgreSQL function" defStyleNum="dsFunction"    spellChecking="false"/>
+      <itemData name="PostGIS function"    defStyleNum="dsExtension"   spellChecking="false"/>
+      <itemData name="Data Type"           defStyleNum="dsDataType"    spellChecking="false"/>
+      <itemData name="Decimal"             defStyleNum="dsDecVal"      spellChecking="false"/>
+      <itemData name="Float"               defStyleNum="dsFloat"       spellChecking="false"/>
+      <itemData name="String"              defStyleNum="dsString"/>
+      <!-- The only purpose of "String delimiter" is correct spell checking. If we would use
+           "String" also for the delimiters, code like E'test' would generate spell checking
+           errors because the E is considered part of the word that will be checked. -->
+      <itemData name="String delimiter"    defStyleNum="dsString"      spellChecking="false"/>
+      <itemData name="Verbatim string"     defStyleNum="dsVerbatimString"/>
+      <itemData name="Escape sequence"     defStyleNum="dsChar"        spellChecking="false"/>
+      <itemData name="Comment"             defStyleNum="dsComment"/>
+      <itemData name="Identifier"          defStyleNum="dsOthers"      spellChecking="false"/>
+      <itemData name="Symbol"              defStyleNum="dsChar"        spellChecking="false"/>
+      <itemData name="Preprocessor"        defStyleNum="dsOthers"      spellChecking="false"/>
+      <itemData name="Error"               defStyleNum="dsError"       spellChecking="false"/>
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="--"/>
-      <comment name="multiLine" start="/*" end="*/"/>
+      <comment name="singleLine" start="--" position="afterwhitespace"/>
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
     </comments>
     <keywords casesensitive="0"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

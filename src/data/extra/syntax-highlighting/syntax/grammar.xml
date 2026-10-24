@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
   Syntax definition for kdev-pg/kdev-pg-qt grammars.
 -->
-<language name="KDev-PG[-Qt] Grammar" version="2" kateversion="3.4" section="Sources" extensions="*.g" casesensitive="1" author="Milian Wolff (mail@milianw.de), Jonathan Schmidt-Dominé (devel@the-user.org)" license="">
+<language name="KDev-PG[-Qt] Grammar" version="4" kateversion="5.79" section="Sources" extensions="*.g" casesensitive="1" author="Milian Wolff (mail@milianw.de), Jonathan Schmidt-Dominé (devel@the-user.org)" license="">
   <highlighting>
     <list name="macros">
       <item>ast_extra_members</item>
@@ -72,7 +72,7 @@
         <AnyChar attribute="Symbol" context="#stay" String=";[()]->|=*#@:?" />
       </context>
       <!-- keywords -->
-      <context name="Macros" attribute="Keyword" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop">
+      <context name="Macros" attribute="Keyword" lineEndContext="#stay" fallthroughContext="#pop">
         <keyword attribute="Keyword" context="#stay" String="macros" />
         <Detect2Chars lookAhead="true" context="#pop" attribute="Normal Text" char="[" char1=":" />
         <Detect2Chars context="#pop" attribute="Keyword" char=";" char1=";" />
@@ -83,7 +83,10 @@
         <DetectChar attribute="String" context="#pop" char="&quot;" />
       </context>
       <!-- comments -->
-      <context name="SingleLineComment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="SingleLineComment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments" />
+      </context>
       <!-- code segments -->
       <context name="CodeSegment" attribute="Code Segment" lineEndContext="#stay">
         <Detect2Chars attribute="Code Segment" context="#pop" char=":" char1="]" endRegion="code" />
@@ -142,4 +145,4 @@
     <keywords casesensitive="true" weakDeliminator="/" />
   </general>
 </language>
-
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

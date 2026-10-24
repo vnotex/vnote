@@ -1,10 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
+<!-- low priority to let Objective-C win for .m files per default -->
 <language name="Magma" section="Scientific"
-          version="2" kateversion="2.4"
+          version="5" kateversion="5.0"
           mimetype="text/x-magma"
           indenter="cstyle"
-          extensions="*.m;*.mag">
+          extensions="*.m;*.mag" priority="-9">
 	<highlighting>
 		<list name="keywords">
 			<item>and</item>
@@ -121,7 +122,7 @@
 				<DetectChar attribute="String" context="String1" char="&quot;" />
 				<DetectChar attribute="String" context="String2" char="'" />
 				<Detect2Chars attribute="Comment" context="Comment1" char="/" char1="/"/>
-				<Detect2Chars attribute="Comment" context="Comment2" char="/" char1="*"/>
+				<Detect2Chars attribute="Comment" context="Comment2" char="/" char1="*" beginRegion="BlockComment"/>
 			</context>
 			<context attribute="String" lineEndContext="#pop" name="String1">
 				<DetectChar attribute="String" context="#pop" char="&quot;"/>
@@ -129,9 +130,14 @@
 			<context attribute="String" lineEndContext="#pop" name="String2">
 				<DetectChar attribute="String" context="#pop" char="'" />
 			</context>
-			<context attribute="Comment" lineEndContext="#pop" name="Comment1" />
+			<context attribute="Comment" lineEndContext="#pop" name="Comment1">
+				<DetectSpaces />
+				<IncludeRules context="##Comments"/>
+			</context>
 			<context attribute="Comment" lineEndContext="#stay" name="Comment2">
-				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="BlockComment"/>
+				<DetectSpaces />
+				<IncludeRules context="##Comments"/>
 			</context>
 		</contexts>
 		<itemDatas>
@@ -148,7 +154,8 @@
 		<keywords casesensitive="1" />
 		<comments>
 			<comment name="singleLine" start="//" />
-			<comment name="multiLine" start="/*" end="*/" />
+			<comment name="multiLine" start="/*" end="*/" region="BlockComment" />
 		</comments>
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

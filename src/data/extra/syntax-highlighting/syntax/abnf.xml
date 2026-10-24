@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY rulename "[[:alpha:]_][-\w]*">
+]>
+<!--
+  SPDX-FileCopyrightText: 2026 Jonathan Poelen <jonathan.poelen@gmail.com>
+  SPDX-License-Identifier: MIT
+
+  https://www.rfc-editor.org/rfc/rfc5234 (Augmented BNF for Syntax Specifications: ABNF)
+  https://www.rfc-editor.org/rfc/rfc7405 (Case-Sensitive String Support in ABNF)
+-->
+<language
+  name="ABNF"
+  section="Sources"
+  version="1"
+  kateversion="5.79"
+  extensions="*.abnf"
+  mimetype="text/x-abnf"
+  author="Jonathan Poelen (jonathan.poelen@gmail.com)"
+  indenter="normal"
+  license="MIT"
+>
+  <highlighting>
+
+    <list name="core rules">
+      <item>ALPHA</item>
+      <item>BIT</item>
+      <item>CHAR</item>
+      <item>CR</item>
+      <item>CRLF</item>
+      <item>CTL</item>
+      <item>DIGIT</item>
+      <item>DQUOTE</item>
+      <item>HEXDIG</item>
+      <item>HTAB</item>
+      <item>LF</item>
+      <item>LWSP</item>
+      <item>OCTET</item>
+      <item>SP</item>
+      <item>VCHAR</item>
+      <item>WSP</item>
+    </list>
+
+    <contexts>
+      <context attribute="Normal Text" name="Normal" fallthroughContext="Elements">
+        <DetectSpaces/>
+
+        <StringDetect String=";" attribute="Comment" context="Comment"/>
+        <StringDetect String="=" attribute="New Rule Operator" context="Elements"/>
+        <RegExpr attribute="New Rule" String="&rulename;(?=\s*=)" context="SetRule"/>
+      </context>
+
+      <context attribute="Normal Text" name="SetRule">
+        <DetectSpaces/>
+        <StringDetect String="=" attribute="New Rule Operator" context="#pop!Elements"/>
+      </context>
+
+      <context attribute="Normal Text" name="Elements" lineEndContext="#pop">
+        <DetectSpaces/>
+
+        <AnyChar String="/" attribute="Alternation"/>
+        <!-- other than '*' as extension -->
+        <AnyChar String="*+?!#$&amp;@^~" attribute="Operator"/>
+
+        <StringDetect String=";" attribute="Comment" context="#pop!Comment"/>
+
+        <AnyChar String="()" attribute="Group"/>
+        <AnyChar String="[]" attribute="Option"/>
+
+        <!-- do not use <Int> to colorize %b012DIGIT
+                                          ~~~~        special char
+                                              ~       Integer
+                                               ~~~~~  Rule
+        -->
+        <AnyChar String="0123456789" attribute="Integer"/>
+
+        <DetectChar attribute="String" context="DQuote" char="&quot;"/>
+
+        <StringDetect String="%b" attribute="Numeric Base" context="NumBin"/>
+        <StringDetect String="%d" attribute="Numeric Base" context="NumDec"/>
+        <StringDetect String="%x" attribute="Numeric Base" context="NumHex"/>
+
+        <StringDetect String="%i" attribute="Case Sensitivity"/>
+        <StringDetect String="%s" attribute="Case Sensitivity"/>
+
+        <DetectChar char="&lt;" attribute="Prose" context="Prose"/>
+
+        <keyword attribute="Core Rule" String="core rules" weakDeliminator="-"/>
+        <RegExpr attribute="Rule Name" String="&rulename;"/>
+
+        <!-- extension -->
+        <DetectChar lookAhead="1" context="Escape" char="\"/>
+      </context>
+
+
+      <!-- ;... -->
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+
+
+      <!-- "..." -->
+      <context name="DQuote" attribute="String">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+
+
+      <!-- %b### -->
+      <context name="NumBin" attribute="Numeric Value" lineEndContext="#pop" fallthroughContext="#pop">
+        <AnyChar attribute="Numeric Value" String="01"/>
+        <IncludeRules context="NumCommon"/>
+      </context>
+      <!-- %d### -->
+      <context name="NumDec" attribute="Numeric Value" lineEndContext="#pop" fallthroughContext="#pop">
+        <AnyChar attribute="Numeric Value" String="0123456789"/>
+        <IncludeRules context="NumCommon"/>
+      </context>
+      <!-- %h### -->
+      <context name="NumHex" attribute="Numeric Value" lineEndContext="#pop" fallthroughContext="#pop">
+        <AnyChar attribute="Numeric Value" String="0123456789abcdefABCDEF"/>
+        <IncludeRules context="NumCommon"/>
+      </context>
+
+      <context name="NumCommon" attribute="Numeric Value">
+        <AnyChar attribute="Concatenation" String="."/>
+        <AnyChar attribute="Range" String="-"/>
+      </context>
+
+
+      <!-- <...> -->
+      <context name="Prose" attribute="Prose" lineEndContext="#pop">
+        <DetectChar char="&gt;" attribute="Prose" context="#pop"/>
+      </context>
+
+
+      <!-- \w, etc -->
+      <context attribute="String" lineEndContext="#stay" name="Escape">
+        <HlCStringChar attribute="String Char" context="#pop"/>
+        <RegExpr attribute="String Char" context="#pop" String="\\u[0-9a-fA-F]{4}|\\U[0-9a-fA-F]{8}|\\[a-zA-Z]\b"/>
+        <DetectChar context="#pop" char="\"/>
+      </context>
+
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Alternation" defStyleNum="dsControlFlow" spellChecking="0"/>
+      <itemData name="Comment" defStyleNum="dsComment" spellChecking="1"/>
+      <itemData name="New Rule" defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="New Rule Operator" defStyleNum="dsVariable" spellChecking="0"/>
+      <itemData name="Integer" defStyleNum="dsDecVal" spellChecking="0"/>
+      <itemData name="Rule Name" defStyleNum="dsNormal" spellChecking="0"/>
+      <itemData name="Core Rule" defStyleNum="dsPreprocessor" spellChecking="0"/>
+      <itemData name="Operator" defStyleNum="dsOperator" bold="true" spellChecking="0"/>
+      <itemData name="Group" defStyleNum="dsInformation" spellChecking="0"/>
+      <itemData name="Option" defStyleNum="dsConstant" spellChecking="0"/>
+      <itemData name="Case Sensitivity" defStyleNum="dsFunction" spellChecking="0"/>
+      <itemData name="Numeric Base" defStyleNum="dsFunction" spellChecking="0"/>
+      <itemData name="Numeric Value" defStyleNum="dsSpecialString" spellChecking="0"/>
+      <itemData name="String" defStyleNum="dsString" spellChecking="0"/>
+      <itemData name="String Char" defStyleNum="dsSpecialChar" spellChecking="0"/>
+      <itemData name="Prose" defStyleNum="dsDataType" spellChecking="1"/>
+      <itemData name="Concatenation" defStyleNum="dsFunction" spellChecking="0"/>
+      <itemData name="Range" defStyleNum="dsFunction" spellChecking="0"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start=";"/>
+    </comments>
+    <folding indentationsensitive="true"/>
+  </general>
+</language>
+<!-- kate: replace-tabs on; indent-width 2; -->

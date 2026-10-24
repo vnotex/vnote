@@ -1,41 +1,126 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Git Ignore" version="2" kateversion="2.4" section="Configuration"  extensions=".gitignore*;" mimetype="text/x-git-ignore" license="LGPL">
+<!DOCTYPE language [
+    <!ENTITY charclasses "(?:alnum|alpha|blank|cntrl|digit|graph|lower|print|punct|space|upper|xdigit)">
+]>
+<language name="Git Ignore" version="4" kateversion="5.62" section="Configuration"  extensions=".gitignore*;" mimetype="text/x-git-ignore" license="LGPL">
     <highlighting>
         <contexts>
            
-            <context name="ini" attribute="Normal Text" lineEndContext="#pop">
-                <DetectChar char="#" attribute="Comment" context="Comment" />
-                <RegExpr attribute="Include" String="^!.*" context="Include"/>
-                <RegExpr attribute="Exclude" String=".*"  context="Exclude" />
+            <context name="ini" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="Exclude">
+                <DetectChar char="#" attribute="Comment" context="Comment"/>
+                <DetectChar char="!" attribute="Include - Prefix" context="Include"/>
             </context>
             
             <context name="Comment" attribute="Comment" lineEndContext="#pop">
-                <DetectSpaces />
             </context>                                                                                          
-        
+
+
             <context name="Include" attribute="Include" lineEndContext="#pop">
+                <AnyChar attribute="Include - Glob" String="?*"/>
+                <DetectChar char="/" attribute="Include - Directory Separator"/>
+                <DetectChar char="[" attribute="Include - Glob Range" context="IncludeGlobRange"/>
+                <DetectChar char="\" attribute="Include - Escape" context="IncludeEscaped"/>
+                <RegExpr attribute="Include" String="[^[?*\\/]+"/>
+            </context>
+            <context name="IncludeEscaped" attribute="Include" lineEndContext="#pop#pop">
+                <RegExpr attribute="Include" String="." context="#pop"/>
             </context>
 
-            <context name="Exclude" attribute="Exclude" lineEndContext="#pop">
+            <context name="IncludeGlobRange" attribute="Include - Glob Range" lineEndContext="#pop#pop" fallthroughContext="IncludeGlobRangeListStart">
+                <AnyChar String="^!" attribute="Include - Glob Range" context="IncludeGlobRangeListStart"/>
             </context>
-        
+            <context name="IncludeGlobRangeListStart" attribute="Include - Glob Range" lineEndContext="#pop#pop" fallthroughContext="#pop!IncludeGlobRangeList">
+                <DetectChar char="]" attribute="Include - Glob Inner Range" context="#pop!IncludeGlobRangeList"/>
+            </context>
+
+            <context name="IncludeGlobRangeList" attribute="Include - Glob Inner Range" lineEndContext="#pop#pop" fallthroughContext="IncludeGlobRangeListSpecial">
+                <RegExpr attribute="Include - Glob Inner Range" String="([^[\\\]]+|\[(?!(:&charclasses;:|\.[a-z-]\.|=[a-z]=)\]))++" context="IncludeGlobRangeListSpecial"/>
+            </context>
+
+            <context name="IncludeGlobRangeListSpecial" attribute="Include - Glob Inner Range" lineEndContext="#pop#pop#pop">
+                <DetectChar char="]" attribute="Include - Glob Range" context="#pop#pop#pop"/>
+                <DetectChar char="\" attribute="Include - Escape" context="IncludeGlobRangeEscape"/>
+                <DetectChar char="[" attribute="Include - Character Class" context="IncludeGlobRangeCharClass"/>
+            </context>
+            <context name="IncludeGlobRangeCharClass" attribute="Include - Character Class" lineEndContext="#pop#pop#pop#pop">
+                <DetectChar char="]" attribute="Include - Character Class" context="#pop#pop"/>
+                <AnyChar String=":.=-" attribute="Include - Character Class"/>
+                <DetectIdentifier attribute="Include - Character Class"/>
+            </context>
+            <context name="IncludeGlobRangeEscape" attribute="Include - Glob Inner Range" lineEndContext="#pop#pop#pop#pop">
+                <RegExpr attribute="Include - Glob Inner Range" String="." context="#pop#pop"/>
+            </context>
+
+
+            <!-- Exclude rules (same of Include, but with Exclude prefix for attribute) -->
+
+            <context name="Exclude" attribute="Exclude" lineEndContext="#pop">
+                <AnyChar attribute="Exclude - Glob" String="?*"/>
+                <DetectChar char="/" attribute="Exclude - Directory Separator"/>
+                <DetectChar char="[" attribute="Exclude - Glob Range" context="ExcludeGlobRange"/>
+                <DetectChar char="\" attribute="Exclude - Escape" context="ExcludeEscaped"/>
+                <RegExpr attribute="Exclude" String="[^[?*\\/]+"/>
+            </context>
+            <context name="ExcludeEscaped" attribute="Exclude" lineEndContext="#pop#pop">
+                <RegExpr attribute="Exclude" String="." context="#pop"/>
+            </context>
+
+            <context name="ExcludeGlobRange" attribute="Exclude - Glob Range" lineEndContext="#pop#pop" fallthroughContext="ExcludeGlobRangeListStart">
+                <AnyChar String="^!" attribute="Exclude - Glob Range" context="ExcludeGlobRangeListStart"/>
+            </context>
+            <context name="ExcludeGlobRangeListStart" attribute="Exclude - Glob Range" lineEndContext="#pop#pop" fallthroughContext="#pop!ExcludeGlobRangeList">
+                <DetectChar char="]" attribute="Exclude - Glob Inner Range" context="#pop!ExcludeGlobRangeList"/>
+            </context>
+
+            <context name="ExcludeGlobRangeList" attribute="Exclude - Glob Inner Range" lineEndContext="#pop#pop" fallthroughContext="ExcludeGlobRangeListSpecial">
+                <RegExpr attribute="Exclude - Glob Inner Range" String="([^[\\\]]+|\[(?!(:&charclasses;:|\.[a-z-]\.|=[a-z]=)\]))++" context="ExcludeGlobRangeListSpecial"/>
+            </context>
+
+            <context name="ExcludeGlobRangeListSpecial" attribute="Exclude - Glob Inner Range" lineEndContext="#pop#pop#pop">
+                <DetectChar char="]" attribute="Exclude - Glob Range" context="#pop#pop#pop"/>
+                <DetectChar char="\" attribute="Exclude - Escape" context="ExcludeGlobRangeEscape"/>
+                <DetectChar char="[" attribute="Exclude - Character Class" context="ExcludeGlobRangeCharClass"/>
+            </context>
+            <context name="ExcludeGlobRangeCharClass" attribute="Exclude - Character Class" lineEndContext="#pop#pop#pop#pop">
+                <DetectChar char="]" attribute="Exclude - Character Class" context="#pop#pop"/>
+                <AnyChar String=":.=-" attribute="Exclude - Character Class"/>
+                <DetectIdentifier attribute="Exclude - Character Class"/>
+            </context>
+            <context name="ExcludeGlobRangeEscape" attribute="Exclude - Glob Inner Range" lineEndContext="#pop#pop#pop#pop">
+                <RegExpr attribute="Exclude - Glob Inner Range" String="." context="#pop#pop"/>
+            </context>
+
         </contexts>
         
         <itemDatas>
-            <itemData name="Normal Text" defStyleNum="dsNormal" />
-            <itemData name="Comment" defStyleNum="dsComment" />
-            <itemData name="Exclude" defStyleNum="dsString" />
-            <itemData name="Include" defStyleNum="dsChar" />
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+
+            <itemData name="Exclude" defStyleNum="dsString" spellChecking="false"/>
+            <itemData name="Exclude - Directory Separator" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Exclude - Escape" defStyleNum="dsString" spellChecking="false"/>
+            <itemData name="Exclude - Glob" defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Exclude - Glob Range" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Exclude - Glob Inner Range" defStyleNum="dsString" spellChecking="false"/>
+            <itemData name="Exclude - Character Class" defStyleNum="dsString" spellChecking="false"/>
+
+            <itemData name="Include" defStyleNum="dsChar" spellChecking="false"/>
+            <itemData name="Include - Prefix" defStyleNum="dsChar" spellChecking="false"/>
+            <itemData name="Include - Directory Separator" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Include - Escape" defStyleNum="dsChar" spellChecking="false"/>
+            <itemData name="Include - Glob" defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Include - Glob Range" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Include - Glob Inner Range" defStyleNum="dsChar" spellChecking="false"/>
+            <itemData name="Include - Character Class" defStyleNum="dsChar" spellChecking="false"/>
         </itemDatas>
     
     </highlighting>
 
     <general>
         <comments>
-            <comment name="singleLine" start="#" />
+            <comment name="singleLine" start="#"/>
         </comments>
-        <keywords casesensitive="0" />
+        <keywords casesensitive="0"/>
     </general>
 </language>
 

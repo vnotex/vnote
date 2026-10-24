@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <language name="TI Basic" version="2" kateversion="2.2" section="Scientific" extensions="">
   <highlighting>
     <list name="keywords">
@@ -32,7 +32,6 @@
       <item>GetCalc</item>
       <item>Get</item>
       <item>Send</item>
-      <item>prgm</item>
     </list>
     <list name="special_sym">
       <item>net</item>

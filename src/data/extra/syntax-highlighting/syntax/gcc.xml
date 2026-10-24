@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
     <!ENTITY space " ">
     <!ENTITY separators ",&#59;">
@@ -13,7 +13,7 @@
   -->
 <language
     name="GCCExtensions"
-    version="4"
+    version="5"
     kateversion="5.0"
     section="Sources"
     extensions="*.c++;*.cxx;*.cpp;*.cc;*.C;*.h;*.hh;*.H;*.h++;*.hxx;*.hpp;*.hcc;"
@@ -528,23 +528,27 @@
   </list>
   <contexts>
     <context name="DetectGccExtensions" attribute="Normal Text" lineEndContext="#stay">
-      <keyword attribute="GNU Macros" context="#stay" String="GNUMacros" />
-      <keyword attribute="GNU Functions" context="#stay" String="GNUFunctions" />
-      <keyword attribute="GNU Types" context="#stay" String="GNUTypes" />
+      <IncludeRules context="DetectGccExtensionsCommon"/>
       <WordDetect attribute="GNU Extensions" context="AttrArgs" String="__attribute__" />
       <WordDetect attribute="GNU Extensions" context="AttrArgs" String="__declspec" />
-      <keyword attribute="GNU Extensions" context="#stay" String="GNUKeywords" />
-      <RegExpr attribute="GNU Functions" context="#stay" String="__builtin_[a-zA-Z0-9_]+" />
     </context>
 
     <context name="DetectGccExtensionsInPP" attribute="Normal Text" lineEndContext="#stay">
+      <IncludeRules context="DetectGccExtensionsCommon"/>
+      <WordDetect attribute="GNU Extensions" context="AttrArgsInPP" String="__attribute__" />
+      <WordDetect attribute="GNU Extensions" context="AttrArgsInPP" String="__declspec" />
+    </context>
+
+    <context name="DetectGccExtensionsCommon" attribute="Normal Text" lineEndContext="#stay">
       <keyword attribute="GNU Macros" context="#stay" String="GNUMacros" />
       <keyword attribute="GNU Functions" context="#stay" String="GNUFunctions" />
       <keyword attribute="GNU Types" context="#stay" String="GNUTypes" />
-      <WordDetect attribute="GNU Extensions" context="AttrArgsInPP" String="__attribute__" />
-      <WordDetect attribute="GNU Extensions" context="AttrArgsInPP" String="__declspec" />
       <keyword attribute="GNU Extensions" context="#stay" String="GNUKeywords" />
-      <RegExpr attribute="GNU Functions" context="#stay" String="__builtin_[a-zA-Z0-9_]+" />
+      <StringDetect attribute="GNU Functions" context="GNUFunctions" String="__builtin_" />
+    </context>
+
+    <context name="GNUFunctions" attribute="Normal Text" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop">
+      <DetectIdentifier attribute="GNU Functions" context="#pop"/>
     </context>
 
     <context name="GNUMacros" attribute="Normal Text" lineEndContext="#stay">

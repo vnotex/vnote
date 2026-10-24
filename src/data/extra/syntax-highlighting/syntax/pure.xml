@@ -1,0 +1,150 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<!--
+
+ Pure syntax highlighting for kate. Usage:
+
+ - Copy this file either to ~/.kde/share/apps/katepart/syntax or to the global
+   /opt/kde3/share/apps/katepart/syntax directory (or wherever the Kate syntax
+   files are located on your system).
+
+ - You may also want to add a mime type for *.pure files so that your file
+   manager can recognize them.
+
+ - Fire up kate on your Pure script and enjoy the syntax highlighting.
+   Folding of comments and block structure is also supported.
+
+ Author: Albert Graef, with some fixes contributed by Eddie Rucker
+
+ This library is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Library General Public
+ License as published by the Free Software Foundation; either
+ version 2 of the License, or (at your option) any later version.
+
+ This library is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Library General Public License for more details.
+
+ You should have received a copy of the GNU Library General Public
+ License along with this library; if not, write to the
+ Free Software Foundation, Inc., 59 Temple Place - Suite 330,
+ Boston, MA 02111-1307, USA.
+
+-->
+<language name="Pure" version="5" kateversion="5.0" section="Sources" extensions="*.pure">
+  <highlighting>
+    <list name="blockstarters">
+      <item>case</item>
+      <item>when</item>
+      <item>with</item>
+    </list>
+    <list name="blockenders">
+      <item>end</item>
+    </list>
+    <list name="keywords">
+      <item>const</item>
+      <item>def</item>
+      <item>else</item>
+      <item>extern</item>
+      <item>if</item>
+      <item>infix</item>
+      <item>infixl</item>
+      <item>infixr</item>
+      <item>interface</item>
+      <item>let</item>
+      <item>namespace</item>
+      <item>nonfix</item>
+      <item>of</item>
+      <item>otherwise</item>
+      <item>outfix</item>
+      <item>postfix</item>
+      <item>prefix</item>
+      <item>private</item>
+      <item>public</item>
+      <item>then</item>
+      <item>type</item>
+      <item>using</item>
+    </list>
+    <list name="special">
+      <item>catch</item>
+      <item>throw</item>
+      <item>__break__</item>
+      <item>__trace__</item>
+    </list>
+    <list name="types">
+      <item>bigint</item>
+      <item>bool</item>
+      <item>char</item>
+      <item>float</item>
+      <item>double</item>
+      <item>expr</item>
+      <item>short</item>
+      <item>int</item>
+      <item>long</item>
+      <item>string</item>
+      <item>pointer</item>
+      <item>void</item>
+      <item>int8</item>
+      <item>int16</item>
+      <item>int32</item>
+      <item>int64</item>
+      <item>matrix</item>
+      <item>dmatrix</item>
+      <item>cmatrix</item>
+      <item>imatrix</item>
+      <item>smatrix</item>
+      <item>nmatrix</item>
+    </list>
+    <contexts>
+      <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+        <DetectSpaces />
+        <keyword attribute="Keyword" context="#stay" String="blockstarters" beginRegion="Block" />
+        <keyword attribute="Keyword" context="#stay" String="blockenders" endRegion="Block" />
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Function" context="#stay" String="special"/>
+        <keyword attribute="Type" context="#stay" String="types"/>
+        <DetectIdentifier attribute="Normal Text" context="#stay"/>
+        <RegExpr attribute="Number" context="#stay" String="0x[A-Za-z0-9]+"/>
+        <Float attribute="Number" context="#stay"/>
+        <Int attribute="Number" context="#stay"/>
+        <HlCChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <Detect2Chars attribute="Comment" context="Comment1" char="/" char1="*" beginRegion="Comment" />
+        <Detect2Chars attribute="Comment" context="Comment2" char="/" char1="/"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop" name="String">
+        <LineContinue attribute="String" context="#stay"/>
+        <HlCStringChar attribute="String Char" context="#stay"/>
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#stay" name="Comment1">
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Comment2">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal" />
+      <itemData name="Keyword"     defStyleNum="dsKeyword" />
+      <itemData name="Function"    defStyleNum="dsFunction"/>
+      <itemData name="Type"        defStyleNum="dsDataType"/>
+      <itemData name="Number"      defStyleNum="dsDecVal" />
+      <itemData name="String"      defStyleNum="dsString" />
+      <itemData name="String Char" defStyleNum="dsChar"/>
+      <itemData name="Comment"     defStyleNum="dsComment" />
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" />
+    <comments>
+      <comment name="singleLine" start="//" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
+    </comments>
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

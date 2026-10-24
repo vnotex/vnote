@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="IATA SSIM" version="2" kateversion="5.0" section="Other" extensions="*.ssim" author="Volker Krause (vkrause@kde.org)" license="MIT">
+    <highlighting>
+        <contexts>
+            <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+                <DetectChar char="0" column="0" attribute="Comment" context="Comment"/>
+                <AnyChar String="15" column="0" attribute="Header" context="Header"/>
+                <DetectChar char="2" column="0" attribute="Keyword" context="CarrierRecord"/>
+                <DetectChar char="3" column="0" attribute="Keyword" context="FlightLeg"/>
+                <DetectChar char="4" column="0" attribute="Keyword"/>
+            </context>
+            <context name="CarrierRecord" attribute="Normal Text" lineEndContext="#pop">
+                <AnyChar String="UL" column="1" attribute="Time Mode"/>
+                <RegExpr String=".{3}" column="2" attribute="Flight Number"/>
+                <RegExpr String="\d\d\S\S\S\d\d" column="14" attribute="Departure Time"/>
+                <RegExpr String="\d\d\S\S\S\d\d" column="21" attribute="Arrival Time"/>
+                <RegExpr String=".{29}" column="35" attribute="String"/>
+            </context>
+            <context name="Comment" attribute="Comment" lineEndContext="#pop">
+                <IncludeRules context="##Comments"/>
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"/>
+            </context>
+            <context name="Header" attribute="Header" lineEndContext="#pop">
+            </context>
+            <context name="FlightLeg" attribute="Normal Text" lineEndContext="#pop">
+                <RegExpr String="[A-Z]{2}[ A-Z][ \d]{4}" column="2" attribute="Flight Number"/>
+                <RegExpr String="\d\d" column="11" attribute="Leg Sequence"/>
+                <RegExpr String="\d\d\S\S\S\d\d" column="14" attribute="Departure Time"/>
+                <RegExpr String="\d\d\S\S\S\d\d" column="21" attribute="Arrival Time"/>
+                <RegExpr String="[A-Z]{3}" column="36" attribute="Departure Airport"/>
+                <RegExpr String="[A-Z]{3}" column="54" attribute="Arrival Airport"/>
+                <RegExpr String="\d{4}" column="39" attribute="Departure Time"/>
+                <RegExpr String="[+-]\d{4}" column="47" attribute="Departure Time"/>
+                <RegExpr String=".{2}" column="52" attribute="Departure Airport"/>
+                <RegExpr String="\d{4}" column="57" attribute="Arrival Time"/>
+                <RegExpr String="[+-]\d{4}" column="65" attribute="Arrival Time"/>
+                <RegExpr String=".{2}" column="70" attribute="Arrival Airport"/>
+                <RegExpr String="[A-Z0-9]{3}" column="72" attribute="Aircraft"/>
+                <RegExpr String=".{20}" column="75" attribute="Aircraft Configuration"/>
+                <RegExpr String=".{8}" column="137" attribute="Flight Number"/>
+                <RegExpr String=".{20}" column="172" attribute="Aircraft Configuration"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text"            defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Comment"                defStyleNum="dsComment"/>
+            <itemData name="Keyword"                defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Departure Time"         defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Arrival Time"           defStyleNum="dsString" spellChecking="false"/>
+            <itemData name="Departure Airport"      defStyleNum="dsVariable" spellChecking="false"/>
+            <itemData name="Arrival Airport"        defStyleNum="dsFunction" spellChecking="false"/>
+            <itemData name="Flight Number"          defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="Leg Sequence"           defStyleNum="dsComment" spellChecking="false"/>
+            <itemData name="Aircraft"               defStyleNum="dsSpecialString" spellChecking="false"/>
+            <itemData name="Aircraft Configuration" defStyleNum="dsComment" spellChecking="false"/>
+            <itemData name="Header"                 defStyleNum="dsPreprocessor" spellChecking="false"/>
+            <itemData name="String"                 defStyleNum="dsString"/>
+            <itemData name="Time Mode"              defStyleNum="dsWarning"/>
+        </itemDatas>
+    </highlighting>
+</language>

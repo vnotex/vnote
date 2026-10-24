@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="SML" version="4" kateversion="2.3" section="Sources" extensions="*.sml;*.ml" mimetype="" author="Christoph Cullmann (cullmann@kde.org)" license="MIT">
+<!DOCTYPE language>
+<language name="SML" version="6" kateversion="5.0" section="Sources" extensions="*.sml;*.ml" mimetype="" author="Christoph Cullmann (cullmann@kde.org)" license="MIT">
   <highlighting>
     <list name="keywords">
       <item>abstype</item>
@@ -65,7 +65,7 @@
     </list>
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
-        <Detect2Chars attribute="Comment" context="Multiline/Inline Comment" char="(" char1="*" />
+        <Detect2Chars attribute="Comment" context="Multiline/Inline Comment" char="(" char1="*" beginRegion="Comment" />
         <DetectChar attribute="String" context="String" char="&quot;" />
         <keyword attribute="Keyword" context="#stay" String="keywords" />
         <keyword attribute="Data Type" context="#stay" String="types" />
@@ -77,7 +77,9 @@
           <AnyChar String="fF" attribute="Float" context="#pop"/>
       </context>
       <context attribute="Comment" lineEndContext="#stay" name="Multiline/Inline Comment">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")" />
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1=")" endRegion="Comment" />
+        <IncludeRules context="##Comments" />
       </context>
       <context attribute="String" lineEndContext="#stay" name="String">
         <HlCStringChar attribute="String Char" context="#stay"/>
@@ -98,7 +100,8 @@
   <general>
     <keywords casesensitive="1" />
     <comments>
-      <comment name="multiLine" start="(*" end="*)" />
+      <comment name="multiLine" start="(*" end="*)" region="Comment" />
     </comments>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

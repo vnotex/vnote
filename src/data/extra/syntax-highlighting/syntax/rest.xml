@@ -1,9 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
-        <!ENTITY inlinestart "(^|[-\s&apos;&quot;\(\[{&lt;/:‘“’«¡¿‐‑‒–— ])">
+        <!ENTITY inlinestart "(?:^|(?&lt;=[-\s&apos;&quot;\(\[{&lt;/:‘“’«¡¿‐‑‒–— ]))">
         <!ENTITY inlineend "(?=[-\s’”»‐‑‒–— &apos;&quot;\)\]}&gt;/:\.,;!\?\\]|$)">
         <!ENTITY SimpleReferenceNameChars "\w_\.:\+\-">
+
+        <!-- Keep in sync with Markdown -->
+        <!ENTITY startlink "(?:https?|ftp)\://">
 ]>
 <!--
   This file is part of KDE's kate project.
@@ -11,7 +14,7 @@
   Copyright 2010 Matt Williams (matt@milliams.com)
   Copyright 2014 Matthew Woehlke (mw_triad@users.sourceforge.net)
   -->
-<language name="reStructuredText" extensions="*.rst" section="Markup" mimetype="text/x-rst" version="5" kateversion="2.4" casesensitive="1">
+<language name="reStructuredText" extensions="*.rst" section="Markup" mimetype="text/x-rst" version="10" kateversion="5.0" casesensitive="1">
 
   <highlighting>
 
@@ -29,7 +32,11 @@
         <RegExpr attribute="Code" String="::$" context="CodeBlock" />
         <RegExpr attribute="SubstitutionDefinition" context="#stay" String="^\s*\.\. \|[&SimpleReferenceNameChars; ]+\|\s+[&SimpleReferenceNameChars;]+::\s" minimal="true" column="0"/>
         <RegExpr attribute="Field" String=":(?=([^:]*\\:)*[^:]*:(\s|$))" context="Field" firstNonSpace="true"/>
-        <RegExpr attribute="Comment" context="Comment" String="^(\s*)\.\.(\s|$)(?!([\w\-_\.]+)(:[\w\-_\.]+)*::(\s|$))" column="0"/>
+        <RegExpr attribute="Comment" context="Comment" String="^(\s*)\.\.(?:\s|$)(?![\w\-_\.]+(?::[\w\-_\.]+)*::(?:\s|$))" column="0"/>
+
+        <!-- Keep in sync with Markdown’s implicitlink entity -->
+        <RegExpr attribute="StandaloneHyperlink" context="#stay" String="\b&startlink;[^&quot;&gt;\s`\)]*[^\s!&quot;&apos;`\(\)\*,\.:;&lt;&gt;\?~\]\}\\](?=[[:punct:]]*(?:[\s\)]|$))" />
+
       </context>
 
       <context name="InlineMarkup" attribute="Normal" lineEndContext="#stay">
@@ -37,7 +44,7 @@
         <RegExpr attribute="SubstitutionReference" context="#stay" String="&inlinestart;\|[^\s].*\|&inlineend;" minimal="true"/>
         <RegExpr attribute="InlineInternalTarget" context="#stay" String="&inlinestart;_`[^\s].*`&inlineend;" minimal="true"/>
         <RegExpr attribute="FootnoteReference" context="#stay" String="&inlinestart;\[[&SimpleReferenceNameChars;]+\]_&inlineend;" minimal="true"/>
-        <RegExpr attribute="HyperlinkReference" context="#stay" String="&inlinestart;(`[^\s].*`|\w+)_&inlineend;" minimal="true"/>
+        <RegExpr attribute="HyperlinkReference" context="#stay" String="&inlinestart;(`[^\s].*`|\w+)_{1,2}&inlineend;" minimal="true"/>
         <RegExpr attribute="InterpretedText" context="TrailingRole" String="&inlinestart;`[^\s].*`(?=:([\w\-_\.\+]+)(:[\w\-_\.\+]+)*:)" minimal="true"/>
         <RegExpr attribute="Role" String=":([\w\-_\.\+]+)(:[\w\-_\.\+]+)*:(?=`)" context="Role"/>
         <RegExpr attribute="DefaultRole" context="#stay" String="&inlinestart;`[^\s].*`&inlineend;" minimal="true"/>
@@ -60,9 +67,9 @@
         <RegExpr attribute="Role" String=":[\w\-_\.\+]+:" context="#pop"/>
       </context>
       <context name="Comment" attribute="Comment" lineEndContext="#stay" dynamic="true">
-        <RegExpr attribute="Code" String="^%1   " context="#stay" column="0" dynamic="true"/>
-        <RegExpr attribute="Normal" String="^(.|$)" lookAhead="true" column="0" context="#pop"/>
-        <IncludeRules context="##Alerts"/>
+        <StringDetect attribute="Code" String="%1   " context="#stay" column="0" dynamic="true"/>
+        <RegExpr attribute="Normal" String="^." lookAhead="true" column="0" context="#pop"/>
+        <IncludeRules context="##Comments"/>
       </context>
 
       <context name="CodeBlock" attribute="Code" lineEndContext="#stay">
@@ -70,8 +77,8 @@
       </context>
 
       <context name="Code" attribute="Code" lineEndContext="#stay" dynamic="true">
-        <RegExpr attribute="Code" String="^%1" context="#stay" column="0" dynamic="true"/>
-        <RegExpr attribute="Normal" String="^(.|$)" lookAhead="true" context="#pop#pop" column="0"/>
+        <StringDetect attribute="Code" String="%1" context="#stay" column="0" dynamic="true"/>
+        <RegExpr attribute="Normal" String="^." lookAhead="true" context="#pop#pop" column="0"/>
       </context>
     </contexts>
 
@@ -97,6 +104,7 @@
       <itemData name="DefaultRole" defStyleNum="dsDecVal" />
       <itemData name="Code" defStyleNum="dsDataType" />
       <itemData name="Comment" defStyleNum="dsComment" />
+      <itemData name="StandaloneHyperlink" defStyleNum="dsOthers" />
     </itemDatas>
 
   </highlighting>
@@ -109,3 +117,4 @@
   </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

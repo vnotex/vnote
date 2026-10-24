@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="OORS" version="3" kateversion="2.4" section="Sources" extensions="*.oors" author="Gernot Gebhard (gebhard@absint.com)" license="MIT">
+<!DOCTYPE language>
+<language name="OORS" version="6" kateversion="5.79" section="Sources" extensions="*.oors" author="Gernot Gebhard (gebhard@absint.com)" license="MIT">
   <highlighting>
     <list name="oors">
       <item>allow</item>
@@ -23,7 +23,7 @@
     <contexts>
       <context name="Main" attribute="Normal Text" lineEndContext="#stay">
         <keyword attribute="Directive" context="#stay" String="oors" />
-        <IncludeRules context="Comment" />
+        <IncludeRules context="FindComments" />
         <DetectSpaces />
         <DetectChar attribute="Normal Text" context="Ordered" char="[" beginRegion="Ordered" />
         <DetectChar attribute="Normal Text" context="Unordered" char="{" beginRegion="Unordered" />
@@ -31,14 +31,14 @@
         <Detect2Chars attribute="Content-Type Delimiter" context="Header" char="%" char1="%" beginRegion="Header" />
       </context>
       <context name="Header" attribute="Normal Text" lineEndContext="#stay">
-        <IncludeRules context="Comment" />
+        <IncludeRules context="FindComments" />
         <Detect2Chars attribute="Content-Type Delimiter" context="#pop" char="%" char1="}" endRegion="Header" />
         <Detect2Chars attribute="Content-Type Delimiter" context="#pop" char="%" char1="%" endRegion="Header" />
         <IncludeRules context="##C++" />
       </context>
       <context name="Ordered" attribute="Normal Text" lineEndContext="#stay">
         <keyword attribute="Directive" context="#stay" String="oors" />
-        <IncludeRules context="Comment" />
+        <IncludeRules context="FindComments" />
         <IncludeRules context="Accessor" />
         <DetectChar attribute="Normal Text" context="Ordered" char="[" beginRegion="Ordered" />
         <DetectChar attribute="Normal Text" context="Unordered" char="{" beginRegion="Unordered" />
@@ -47,7 +47,7 @@
       </context>
       <context name="Unordered" attribute="Normal Text" lineEndContext="#stay">
         <keyword attribute="Directive" context="#stay" String="oors" />
-        <IncludeRules context="Comment" />
+        <IncludeRules context="FindComments" />
         <IncludeRules context="Accessor" />
         <DetectChar attribute="Normal Text" context="Ordered" char="[" beginRegion="Ordered" />
         <DetectChar attribute="Normal Text" context="Unordered" char="{" beginRegion="Unordered" />
@@ -58,16 +58,23 @@
         <Detect2Chars attribute="Directive" context="#stay" char="$" char1="$" />
         <RegExpr attribute="Directive" context="#stay" String="\$-?[_a-zA-Z1-9][_a-zA-Z0-9]*" />
       </context>
-      <context name="Comment" attribute="Comment" lineEndContext="#stay">
+      <context name="FindComments" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="*" lookAhead="1" />
+        <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="/" lookAhead="1" />
+      </context>
+      <context name="MatchComment" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="#pop">
         <IncludeRules context="##Doxygen" />
-        <Detect2Chars attribute="Comment" context="CommentStar" char="/" char1="*" />
-        <Detect2Chars attribute="Comment" context="CommentSlash" char="/" char1="/" />
+        <Detect2Chars attribute="Comment" context="#pop!CommentStar" char="/" char1="*" beginRegion="Comment" />
+        <Detect2Chars attribute="Comment" context="#pop!CommentSlash" char="/" char1="/" />
       </context>
       <context name="CommentStar" attribute="Comment" lineEndContext="#stay">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
+        <DetectSpaces />
+        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments" />
       </context>
       <context name="CommentSlash" attribute="Comment" lineEndContext="#stay">
         <RegExpr attribute="Comment" context="#pop" String="[^\\]$" />
+        <IncludeRules context="##Comments" />
       </context>
     </contexts>
     <itemDatas>
@@ -80,8 +87,9 @@
   <general>
     <comments>
       <comment name="singleLine" start="//" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,0 +1,1298 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+  <!ENTITY xmlattrs "\s+([^&quot;/>]++|&quot;[^&quot;]*+&quot;)*+">
+  <!ENTITY tab      "&#009;">
+  <!ENTITY regex    "(?:[^\\(\[/]++|\\.|\[\^?\]?([^\\\[\]]++|\\.|\[(:[^:]+:\])?)++\]|\((?R)\))+">
+
+  <!ENTITY initial_ascii_set "a-zA-Z!$&#37;&amp;*/:&lt;=&gt;?~_^">
+  <!ENTITY initial_unicode_set "\p{Lu}\p{Ll}\p{Lt}\p{Lm}\p{Lo}\p{Mn}\p{Nl}\p{No}\p{Pd}\p{Pc}\p{Po}\p{Sc}\p{Sm}\p{Sk}\p{So}\p{Co}">
+  <!ENTITY initial_others "\\x[0-9a-fA-F]++;|(?![\x01-\x7f])[&initial_unicode_set;]">
+  <!ENTITY initial "(?:[&initial_ascii_set;]|&initial_others;)">
+  <!ENTITY subsequent "(?:[&initial_ascii_set;0-9-@.+\p{Nd}\p{Mc}\p{Me}]|&initial_others;)">
+  <!ENTITY symbol "(?:&initial;&subsequent;*+)">
+]>
+<!--
+Since Racket supports multiple scheme-like language, this was an extension to scheme.xml
+It also contains keywords for a few popular racket-based langs.
+-->
+<language version="2" kateversion="5.62" name="Racket" section="Scripts" extensions="*.rkt;*.scrbl" author="slbtty(shenlebantongying@gmail.com)" license="MIT" priority="9">
+  <highlighting>
+    <list name="operators">
+      <item>&lt;=</item>
+      <item>&lt;</item>
+      <item>=</item>
+      <item>=&gt;</item>
+      <item>&gt;=</item>
+      <item>&gt;</item>
+      <item>-</item>
+      <item>+</item>
+      <item>!</item>
+      <item>$</item>
+      <item>%</item>
+      <item>*</item>
+      <item>/</item>
+      <item>?</item>
+      <item>^</item>
+      <item>_</item>
+      <item>~</item>
+    </list>
+
+    <list name="characters">
+      <item>alarm</item>
+      <item>backspace</item>
+      <item>delete</item>
+      <item>esc</item>
+      <item>linefeed</item>
+      <item>newline</item>
+      <item>page</item>
+      <item>return</item>
+      <item>space</item>
+      <item>tab</item>
+      <item>vtab</item>
+      <!-- extension -->
+      <item>nul</item>
+      <item>soh</item>
+      <item>stx</item>
+      <item>etx</item>
+      <item>eot</item>
+      <item>enq</item>
+      <item>ack</item>
+      <item>bel</item>
+      <item>bs</item>
+      <item>ht</item>
+      <item>nl</item>
+      <item>vt</item>
+      <item>np</item>
+      <item>cr</item>
+      <item>so</item>
+      <item>si</item>
+      <item>dle</item>
+      <item>dc1</item>
+      <item>dc2</item>
+      <item>dc3</item>
+      <item>dc4</item>
+      <item>nak</item>
+      <item>syn</item>
+      <item>etb</item>
+      <item>can</item>
+      <item>em</item>
+      <item>sub</item>
+      <item>fs</item>
+      <item>gs</item>
+      <item>rs</item>
+      <item>us</item>
+      <item>sp</item>
+      <item>null</item>
+    </list>
+    <list name="defines">
+      <item>define</item>
+      <item>define*</item>
+      <item>define-accessor</item>
+      <item>define-class</item>
+      <item>defined?</item>
+      <item>define-generic</item>
+      <item>define-macro</item>
+      <item>define-method</item>
+      <item>define-module</item>
+      <item>define-private</item>
+      <item>define-public</item>
+      <item>define*-public</item>
+      <item>define-reader-ctor</item>
+      <item>define-syntax</item>
+      <item>define-simple-macro</item>
+      <item>define-syntax-macro</item>
+      <item>efine-syntax-rule </item>
+      <item>define-syntax-class</item>
+      <item>define-syntax-parameter</item>
+      <item>defmacro</item>
+      <item>defmacro*</item>
+      <item>defmacro*-public</item>
+    </list>
+    <list name="keywords">
+      <item>require</item>
+      <item>provide</item>
+      <item>&amp;assertion</item>
+      <item>&amp;condition</item>
+      <item>&amp;error</item>
+      <item>&amp;i/o-decoding</item>
+      <item>&amp;i/o-encoding</item>
+      <item>&amp;i/o-file-already-exists</item>
+      <item>&amp;i/o-file-does-not-exist</item>
+      <item>&amp;i/o-file-is-read-only</item>
+      <item>&amp;i/o-file-protection</item>
+      <item>&amp;i/o-filename</item>
+      <item>&amp;i/o-invalid-position</item>
+      <item>&amp;i/o-port</item>
+      <item>&amp;i/o-read</item>
+      <item>&amp;i/o-write</item>
+      <item>&amp;i/o</item>
+      <item>&amp;implementation-restriction</item>
+      <item>&amp;implementation-violation</item>
+      <item>&amp;irritants</item>
+      <item>&amp;lexical</item>
+      <item>&amp;message</item>
+      <item>&amp;mistake</item>
+      <item>&amp;no-infinities</item>
+      <item>&amp;no-nans</item>
+      <item>&amp;non-continuable</item>
+      <item>&amp;serious</item>
+      <item>&amp;syntax</item>
+      <item>&amp;undefined</item>
+      <item>&amp;violation</item>
+      <item>&amp;warning</item>
+      <item>&amp;who</item>
+      <item>&amp;xcond</item>
+      <item>abs</item>
+      <item>acos</item>
+      <item>and</item>
+      <item>angle</item>
+      <item>append</item>
+      <item>apply</item>
+      <item>applymap</item>
+      <item>asin</item>
+      <item>assert</item>
+      <item>assertion-violation</item>
+      <item>assertion-violation?</item>
+      <item>assoc</item>
+      <item>assp</item>
+      <item>assq</item>
+      <item>assv</item>
+      <item>atan</item>
+      <item>begin</item>
+      <item>binary-port?</item>
+      <item>bitwise-and</item>
+      <item>bitwise-arithmetic-shift-left</item>
+      <item>bitwise-arithmetic-shift-right</item>
+      <item>bitwise-arithmetic-shift</item>
+      <item>bitwise-bit-count</item>
+      <item>bitwise-bit-field</item>
+      <item>bitwise-bit-set?</item>
+      <item>bitwise-copy-bit-field</item>
+      <item>bitwise-copy-bit</item>
+      <item>bitwise-first-bit-set</item>
+      <item>bitwise-if</item>
+      <item>bitwise-ior</item>
+      <item>bitwise-length</item>
+      <item>bitwise-not</item>
+      <item>bitwise-reverse-bit-field</item>
+      <item>bitwise-rotate-bit-field</item>
+      <item>bitwise-xor</item>
+      <item>boolean=?</item>
+      <item>boolean?</item>
+      <item>bound-identifier=?</item>
+      <item>break</item>
+      <item>buffer-mode</item>
+      <item>buffer-mode?</item>
+      <item>bytevector-&gt;sint-list</item>
+      <item>bytevector-&gt;string</item>
+      <item>bytevector-&gt;u8-list</item>
+      <item>bytevector-&gt;uint-list</item>
+      <item>bytevector-copy!</item>
+      <item>bytevector-copy</item>
+      <item>bytevector-fill!</item>
+      <item>bytevector-ieee-double-native-ref</item>
+      <item>bytevector-ieee-double-native-set!</item>
+      <item>bytevector-ieee-double-ref</item>
+      <item>bytevector-ieee-double-set!</item>
+      <item>bytevector-ieee-single-native-ref</item>
+      <item>bytevector-ieee-single-native-set!</item>
+      <item>bytevector-ieee-single-ref</item>
+      <item>bytevector-ieee-single-set!</item>
+      <item>bytevector-length</item>
+      <item>bytevector-s16-native-ref</item>
+      <item>bytevector-s16-native-set!</item>
+      <item>bytevector-s16-ref</item>
+      <item>bytevector-s16-set!</item>
+      <item>bytevector-s32-native-ref</item>
+      <item>bytevector-s32-native-set!</item>
+      <item>bytevector-s32-ref</item>
+      <item>bytevector-s32-set!</item>
+      <item>bytevector-s64-native-ref</item>
+      <item>bytevector-s64-native-set!</item>
+      <item>bytevector-s64-ref</item>
+      <item>bytevector-s64-set!</item>
+      <item>bytevector-s8-ref</item>
+      <item>bytevector-s8-set!</item>
+      <item>bytevector-sint-ref</item>
+      <item>bytevector-sint-set!</item>
+      <item>bytevector-u16-native-ref</item>
+      <item>bytevector-u16-native-set!</item>
+      <item>bytevector-u16-ref</item>
+      <item>bytevector-u16-set!</item>
+      <item>bytevector-u32-native-ref</item>
+      <item>bytevector-u32-native-set!</item>
+      <item>bytevector-u32-ref</item>
+      <item>bytevector-u32-set!</item>
+      <item>bytevector-u64-native-ref</item>
+      <item>bytevector-u64-native-set!</item>
+      <item>bytevector-u64-ref</item>
+      <item>bytevector-u64-set!</item>
+      <item>bytevector-u8-ref</item>
+      <item>bytevector-u8-set!</item>
+      <item>bytevector-uint-ref</item>
+      <item>bytevector-uint-set!</item>
+      <item>bytevector=?</item>
+      <item>bytevector?</item>
+      <item>caaaar</item>
+      <item>caaadr</item>
+      <item>caaar</item>
+      <item>caadar</item>
+      <item>caaddr</item>
+      <item>caadr</item>
+      <item>caar</item>
+      <item>cadaar</item>
+      <item>cadadr</item>
+      <item>cadar</item>
+      <item>caddar</item>
+      <item>cadddr</item>
+      <item>caddr</item>
+      <item>cadr</item>
+      <item>call-with-bytevector-output-port</item>
+      <item>call-with-current-continuation</item>
+      <item>call-with-input-file</item>
+      <item>call-with-output-file</item>
+      <item>call-with-port</item>
+      <item>call-with-string-output-port</item>
+      <item>call-with-values</item>
+      <item>call/cc</item>
+      <item>let/cc</item>
+      <item>car</item>
+      <item>case-lambda</item>
+      <item>case</item>
+      <item>catch</item>
+      <item>cdaaar</item>
+      <item>cdaadr</item>
+      <item>cdaar</item>
+      <item>cdadar</item>
+      <item>cdaddr</item>
+      <item>cdadr</item>
+      <item>cdar</item>
+      <item>cddaar</item>
+      <item>cddadr</item>
+      <item>cddar</item>
+      <item>cdddar</item>
+      <item>cddddr</item>
+      <item>cdddr</item>
+      <item>cddr</item>
+      <item>cdr</item>
+      <item>ceiling</item>
+      <item>char&gt;=?</item>
+      <item>char&gt;?</item>
+      <item>char&lt;=?</item>
+      <item>char&lt;?</item>
+      <item>char&lt;?c</item>
+      <item>char-&gt;integer</item>
+      <item>char-alphabetic?</item>
+      <item>char-ci&gt;=?</item>
+      <item>char-ci&gt;?</item>
+      <item>char-ci&lt;=?</item>
+      <item>char-ci&lt;?</item>
+      <item>char-ci=?</item>
+      <item>char-downcase</item>
+      <item>char-foldcase</item>
+      <item>char-general-category</item>
+      <item>char-lower-case?</item>
+      <item>char-numeric?</item>
+      <item>char-ready?</item>
+      <item>char-title-case?</item>
+      <item>char-titlecase</item>
+      <item>char-upcase</item>
+      <item>char-upper-case?</item>
+      <item>char-whitespace?</item>
+      <item>char=?</item>
+      <item>char?</item>
+      <item>close-input-port</item>
+      <item>close-output-port</item>
+      <item>close-port</item>
+      <item>complex?</item>
+      <item>cond</item>
+      <item>condition-accessor</item>
+      <item>condition-irritants</item>
+      <item>condition-message</item>
+      <item>condition-predicate</item>
+      <item>condition-who</item>
+      <item>condition</item>
+      <item>condition?</item>
+      <item>cons*</item>
+      <item>cons</item>
+      <item>continue</item>
+      <item>cos</item>
+      <item>current-error-port</item>
+      <item>current-input-port</item>
+      <item>current-output-port</item>
+      <item>datum-&gt;syntax</item>
+      <item>define-condition-type</item>
+      <item>define-enumeration</item>
+      <item>define-record-type</item>
+      <item>delete-file</item>
+      <item>denominator</item>
+      <item>display</item>
+      <item>div-and-mod</item>
+      <item>div0-and-mod0</item>
+      <item>div0</item>
+      <item>div</item>
+      <item>do</item>
+      <item>dynamic-wind</item>
+      <item>else</item>
+      <item>endianness</item>
+      <item>enum-set-&gt;list</item>
+      <item>enum-set-complement</item>
+      <item>enum-set-constructor</item>
+      <item>enum-set-difference</item>
+      <item>enum-set-indexer</item>
+      <item>enum-set-intersection</item>
+      <item>enum-set-member?</item>
+      <item>enum-set-projection</item>
+      <item>enum-set-subset?</item>
+      <item>enum-set-union</item>
+      <item>enum-set-universe</item>
+      <item>enum-set=?</item>
+      <item>eof-object</item>
+      <item>eof-object?</item>
+      <item>eol-style</item>
+      <item>eq?</item>
+      <item>equal-hash</item>
+      <item>equal?</item>
+      <item>eqv?</item>
+      <item>error-handling-mode</item>
+      <item>error</item>
+      <item>error?</item>
+      <item>eval</item>
+      <item>even?</item>
+      <item>exact->inexact</item>
+      <item>exact-integer-sqrt</item>
+      <item>exact</item>
+      <item>exact?</item>
+      <item>exp</item>
+      <item>expt</item>
+      <item>file-exists?</item>
+      <item>file-options</item>
+      <item>filter</item>
+      <item>find</item>
+      <item>finite?</item>
+      <item>fixnum-&gt;flonum</item>
+      <item>fixnum-width</item>
+      <item>fixnum?</item>
+      <item>fl&gt;=?</item>
+      <item>fl&gt;?</item>
+      <item>fl&lt;=?</item>
+      <item>fl&lt;?</item>
+      <item>fl*</item>
+      <item>fl+</item>
+      <item>fl-</item>
+      <item>fl/</item>
+      <item>fl=?</item>
+      <item>flabs</item>
+      <item>flacos</item>
+      <item>flasin</item>
+      <item>flatan</item>
+      <item>flceiling</item>
+      <item>flcos</item>
+      <item>fldenominator</item>
+      <item>fldiv-and-mod</item>
+      <item>fldiv0-and-mod0</item>
+      <item>fldiv0</item>
+      <item>fldiv</item>
+      <item>fleven?</item>
+      <item>flexp</item>
+      <item>flexpt</item>
+      <item>flfinite?</item>
+      <item>flfloor</item>
+      <item>flinfinite?</item>
+      <item>flinteger?</item>
+      <item>fllog</item>
+      <item>flmax</item>
+      <item>flmin</item>
+      <item>flmod0</item>
+      <item>flmod</item>
+      <item>flnan?</item>
+      <item>flnegative?</item>
+      <item>flnumerator</item>
+      <item>flodd?</item>
+      <item>flonum?</item>
+      <item>floor</item>
+      <item>flpositive?</item>
+      <item>flround</item>
+      <item>flsin</item>
+      <item>flsqrt</item>
+      <item>fltan</item>
+      <item>fltruncate</item>
+      <item>flush-output-port</item>
+      <item>flzero?</item>
+      <item>for-each</item>
+      <item>force</item>
+      <item>free-identifier=?</item>
+      <item>fx&gt;=?</item>
+      <item>fx&gt;?</item>
+      <item>fx&lt;=?</item>
+      <item>fx&lt;?</item>
+      <item>fx*/carry</item>
+      <item>fx*</item>
+      <item>fx+/carry</item>
+      <item>fx+</item>
+      <item>fx-/carry</item>
+      <item>fx-</item>
+      <item>fx=?</item>
+      <item>fxand</item>
+      <item>fxarithmetic-shift-left</item>
+      <item>fxarithmetic-shift-right</item>
+      <item>fxarithmetic-shift</item>
+      <item>fxbit-count</item>
+      <item>fxbit-field</item>
+      <item>fxbit-set?</item>
+      <item>fxcopy-bit-field</item>
+      <item>fxcopy-bit</item>
+      <item>fxdiv-and-mod</item>
+      <item>fxdiv0-and-mod0</item>
+      <item>fxdiv0</item>
+      <item>fxdiv</item>
+      <item>fxeven?</item>
+      <item>fxfirst-bit-set</item>
+      <item>fxif</item>
+      <item>fxior</item>
+      <item>fxlength</item>
+      <item>fxmax</item>
+      <item>fxmin</item>
+      <item>fxmod0</item>
+      <item>fxmod</item>
+      <item>fxnegative?</item>
+      <item>fxnot</item>
+      <item>fxodd?</item>
+      <item>fxpositive?</item>
+      <item>fxreverse-bit-field</item>
+      <item>fxrotate-bit-field</item>
+      <item>fxxor</item>
+      <item>fxzero?</item>
+      <item>gcd</item>
+      <item>generate-temporaries</item>
+      <item>get-bytevector-all</item>
+      <item>get-bytevector-n!</item>
+      <item>get-bytevector-n</item>
+      <item>get-bytevector-some</item>
+      <item>get-char</item>
+      <item>get-datum</item>
+      <item>get-line</item>
+      <item>get-string-all</item>
+      <item>get-string-n!</item>
+      <item>get-string-n</item>
+      <item>get-u8</item>
+      <item>greatest-fixnum</item>
+      <item>guard</item>
+      <item>har-ci&lt;?</item>
+      <item>hashtable-clear!</item>
+      <item>hashtable-contains?</item>
+      <item>hashtable-copy</item>
+      <item>hashtable-delete!</item>
+      <item>hashtable-entries</item>
+      <item>hashtable-equivalence-function</item>
+      <item>hashtable-hash-function</item>
+      <item>hashtable-keys</item>
+      <item>hashtable-mutable?</item>
+      <item>hashtable-ref</item>
+      <item>hashtable-set!</item>
+      <item>hashtable-size</item>
+      <item>hashtable-update!</item>
+      <item>hashtable?</item>
+      <item>i/o-decoding-error?</item>
+      <item>i/o-encoding-error-char</item>
+      <item>i/o-encoding-error?</item>
+      <item>i/o-error-filename</item>
+      <item>i/o-error-port</item>
+      <item>i/o-error-position</item>
+      <item>i/o-error?</item>
+      <item>i/o-file-already-exists-error?</item>
+      <item>i/o-file-does-not-exist-error?</item>
+      <item>i/o-file-is-read-only-error?</item>
+      <item>i/o-file-protection-error?</item>
+      <item>i/o-filename-error?</item>
+      <item>i/o-invalid-position-error?</item>
+      <item>i/o-port-error?</item>
+      <item>i/o-read-error?</item>
+      <item>i/o-write-error?</item>
+      <item>identifier-syntax</item>
+      <item>identifier?</item>
+      <item>if</item>
+      <item>imag-part</item>
+      <item>implementation-restriction-violation?</item>
+      <item>inexact-&gt;exact</item>
+      <item>inexact</item>
+      <item>inexact?</item>
+      <item>infinite?</item>
+      <item>input-port?</item>
+      <item>integer-&gt;char</item>
+      <item>integer-valued?</item>
+      <item>integer?</item>
+      <item>interaction-environment</item>
+      <item>irritants-condition?</item>
+      <item>lambda</item>
+      <item>latin-1-codec</item>
+      <item>lcm</item>
+      <item>least-fixnum</item>
+      <item>length</item>
+      <item>let*-values</item>
+      <item>let*</item>
+      <item>let-syntax</item>
+      <item>let-values</item>
+      <item>let</item>
+      <item>letrec*</item>
+      <item>letrec-syntax</item>
+      <item>letrec</item>
+      <item>lexical-violation?</item>
+      <item>list-&gt;string</item>
+      <item>list-&gt;vector</item>
+      <item>list-ref</item>
+      <item>list-sort</item>
+      <item>list-tail</item>
+      <item>list</item>
+      <item>list?</item>
+      <item>load</item>
+      <item>log</item>
+      <item>lookahead-char</item>
+      <item>lookahead-u8</item>
+      <item>map</item>
+      <item>magnitude</item>
+      <item>make-assertion-violation</item>
+      <item>make-bytevector</item>
+      <item>make-custom-binary-input-port</item>
+      <item>make-custom-binary-input/output-port</item>
+      <item>make-custom-binary-output-port</item>
+      <item>make-custom-textual-input-port</item>
+      <item>make-custom-textual-input/output-port</item>
+      <item>make-custom-textual-output-port</item>
+      <item>make-enumeration</item>
+      <item>make-eq-hashtable</item>
+      <item>make-eqv-hashtable</item>
+      <item>make-error</item>
+      <item>make-hashtable</item>
+      <item>make-i/o-decoding-error</item>
+      <item>make-i/o-encoding-error</item>
+      <item>make-i/o-error</item>
+      <item>make-i/o-file-already-exists-error</item>
+      <item>make-i/o-file-does-not-exist-error</item>
+      <item>make-i/o-file-is-read-only-error</item>
+      <item>make-i/o-file-protection-error</item>
+      <item>make-i/o-filename-error</item>
+      <item>make-i/o-invalid-position-error</item>
+      <item>make-i/o-port-error</item>
+      <item>make-i/o-read-error</item>
+      <item>make-i/o-write-error</item>
+      <item>make-implementation-restriction-violation</item>
+      <item>make-irritants-condition</item>
+      <item>make-lexical-violation</item>
+      <item>make-message-condition</item>
+      <item>make-no-infinities-violation</item>
+      <item>make-no-nans-violation</item>
+      <item>make-non-continuable-violation</item>
+      <item>make-polar</item>
+      <item>make-record-constructor-descriptor</item>
+      <item>make-record-type-descriptor</item>
+      <item>make-rectangular</item>
+      <item>make-serious-condition</item>
+      <item>make-string</item>
+      <item>make-syntax-violation</item>
+      <item>make-transcoder</item>
+      <item>make-undefined-violation</item>
+      <item>make-variable-transformer</item>
+      <item>make-vector</item>
+      <item>make-violation</item>
+      <item>make-warning</item>
+      <item>make-who-condition</item>
+      <item>max</item>
+      <item>member</item>
+      <item>memp</item>
+      <item>memq</item>
+      <item>memv</item>
+      <item>message-condition?</item>
+      <item>min</item>
+      <item>mod0</item>
+      <item>mod</item>
+      <item>modulo</item>
+      <item>nan?</item>
+      <item>native-endianness</item>
+      <item>native-eol-style</item>
+      <item>native-transcoder</item>
+      <item>negative?</item>
+      <item>newline</item>
+      <item>no-infinities-violation?</item>
+      <item>no-nans-violation?</item>
+      <item>non-continuable-violation?</item>
+      <item>not</item>
+      <item>null-environment</item>
+      <item>null?</item>
+      <item>number->string</item>
+      <item>number?</item>
+      <item>numerator</item>
+      <item>odd?</item>
+      <item>open-bytevector-input-port</item>
+      <item>open-bytevector-output-port</item>
+      <item>open-file-input-port</item>
+      <item>open-file-input/output-port</item>
+      <item>open-file-output-port</item>
+      <item>open-input-file</item>
+      <item>open-output-file</item>
+      <item>open-string-input-port</item>
+      <item>open-string-output-port</item>
+      <item>or</item>
+      <item>output-port-buffer-mode</item>
+      <item>output-port?</item>
+      <item>pair?</item>
+      <item>partition</item>
+      <item>peek-char</item>
+      <item>port-eof?</item>
+      <item>port-has-port-position?</item>
+      <item>port-has-set-port-position!?</item>
+      <item>port-position</item>
+      <item>port-transcoder</item>
+      <item>port?</item>
+      <item>positive?</item>
+      <item>procedure?</item>
+      <item>put-bytevector</item>
+      <item>put-char</item>
+      <item>put-datum</item>
+      <item>put-string</item>
+      <item>put-u8</item>
+      <item>quasiquote</item>
+      <item>quasisyntax</item>
+      <item>quote</item>
+      <item>quotient</item>
+      <item>raise-continuable</item>
+      <item>raise</item>
+      <item>rational-valued?</item>
+      <item>rational?</item>
+      <item>rationalize</item>
+      <item>read-char</item>
+      <item>read</item>
+      <item>real-&gt;flonum</item>
+      <item>real-part</item>
+      <item>real-valued?</item>
+      <item>real?</item>
+      <item>record-accessor</item>
+      <item>record-constructor-descriptor</item>
+      <item>record-constructor</item>
+      <item>record-field-mutable?</item>
+      <item>record-mutator</item>
+      <item>record-predicate</item>
+      <item>record-rtd</item>
+      <item>record-type-descriptor</item>
+      <item>record-type-descriptor?</item>
+      <item>record-type-field-names</item>
+      <item>record-type-generative?</item>
+      <item>record-type-name</item>
+      <item>record-type-opaque?</item>
+      <item>record-type-parent</item>
+      <item>record-type-sealed?</item>
+      <item>record-type-uid</item>
+      <item>record?</item>
+      <item>remainder</item>
+      <item>remove</item>
+      <item>remp</item>
+      <item>remq</item>
+      <item>remv</item>
+      <item>reverse</item>
+      <item>round</item>
+      <item>scheme-report-environment</item>
+      <item>serious-condition?</item>
+      <item>set!</item>
+      <item>set-car!</item>
+      <item>set-cdr!</item>
+      <item>set-port-position!</item>
+      <item>simple-conditions</item>
+      <item>sin</item>
+      <item>sint-list-&gt;bytevector</item>
+      <item>sqrt</item>
+      <item>standard-error-port</item>
+      <item>standard-input-port</item>
+      <item>standard-output-port</item>
+      <item>string&gt;=?</item>
+      <item>string&gt;?</item>
+      <item>string&lt;=?</item>
+      <item>string&lt;?</item>
+      <item>string-&gt;bytevector</item>
+      <item>string-&gt;list</item>
+      <item>string-&gt;number</item>
+      <item>string-&gt;symbol</item>
+      <item>string-&gt;utf16</item>
+      <item>string-&gt;utf32</item>
+      <item>string-&gt;utf8</item>
+      <item>string-append</item>
+      <item>string-ci&gt;=?</item>
+      <item>string-ci&gt;?</item>
+      <item>string-ci&lt;=?</item>
+      <item>string-ci&lt;?</item>
+      <item>string-ci-hash</item>
+      <item>string-ci=?</item>
+      <item>string-copy</item>
+      <item>string-downcase</item>
+      <item>string-fill!</item>
+      <item>string-foldcase</item>
+      <item>string-hash</item>
+      <item>string-length</item>
+      <item>string-normalize-nfc</item>
+      <item>string-normalize-nfd</item>
+      <item>string-normalize-nfkc</item>
+      <item>string-normalize-nfkd</item>
+      <item>string-ref</item>
+      <item>string-set!</item>
+      <item>string-titlecase</item>
+      <item>string-upcase</item>
+      <item>string</item>
+      <item>string=?</item>
+      <item>string?</item>
+      <item>struct</item>
+      <item>substring</item>
+      <item>symbol-&gt;string</item>
+      <item>symbol-hash</item>
+      <item>symbol=?</item>
+      <item>symbol?</item>
+      <item>syntax-&gt;datum</item>
+      <item>syntax-case</item>
+      <item>syntax-rules</item>
+      <item>syntax-violation-form</item>
+      <item>syntax-violation-subform</item>
+      <item>syntax-violation</item>
+      <item>syntax-violation?</item>
+      <item>syntax</item>
+      <item>tan</item>
+      <item>textual-port?</item>
+      <item>transcoded-port</item>
+      <item>transcoder-codec</item>
+      <item>transcoder-eol-style</item>
+      <item>transcoder-error-handling-mode</item>
+      <item>transcript-off</item>
+      <item>transcript-on</item>
+      <item>truncate</item>
+      <item>u8-list-&gt;bytevector</item>
+      <item>uint-list-&gt;bytevector</item>
+      <item>undefined-violation?</item>
+      <item>unquote-splicing</item>
+      <item>unquote</item>
+      <item>unsyntax-splicing</item>
+      <item>unsyntax</item>
+      <item>utf-16-codec</item>
+      <item>utf-8-codec</item>
+      <item>utf16-&gt;string</item>
+      <item>utf32-&gt;string</item>
+      <item>utf8-&gt;string</item>
+      <item>values</item>
+      <item>vector-&gt;list</item>
+      <item>vector-&gt;listlist->vector</item>
+      <item>vector-fill!</item>
+      <item>vector-length</item>
+      <item>vector-ref</item>
+      <item>vector-set!</item>
+      <item>vector-sort!</item>
+      <item>vector-sort</item>
+      <item>vector</item>
+      <item>vector?</item>
+      <item>violation?</item>
+      <item>warning?</item>
+      <item>while</item>
+      <item>who-condition?</item>
+      <item>with-exception-handler</item>
+      <item>with-input-from-file</item>
+      <item>with-output-to-file</item>
+      <item>with-syntax</item>
+      <item>write-char</item>
+      <item>write</item>
+      <item>zero?</item>
+    </list>
+    <contexts>
+
+
+      <context name="Default" attribute="Normal" lineEndContext="#stay">
+        <DetectSpaces/>
+
+        <!-- "#lang x" line -->
+        <RegExpr attribute="Comment" String="^#lang.*" context="#stay" column="0"/>
+        <DetectChar attribute="Comment" context="hash" char="#" lookAhead="1"/>
+        <DetectChar attribute="Comment" context="semicolon" char=";" lookAhead="1"/>
+        <DetectChar attribute="String" context="String" char="&quot;"/>
+        <Detect2Chars attribute="String" context="Template" char="&amp;" char1="{"/>
+        <AnyChar attribute="Brackets" context="#stay" String="(){}[]"/>
+        <keyword attribute="Keyword" context="#stay" String="keywords"/>
+        <keyword attribute="Definition" context="function_decl" String="defines"/>
+        <keyword attribute="Operator" context="#stay" String="operators"/>
+        <RegExpr attribute="Normal" context="#stay" String="&symbol;"/>
+        <!-- s, f, d, l are extensions of Kawa -->
+        <RegExpr attribute="Float" context="#stay" String="[0-9]*+\.[0-9]++([esfdl][+-]?[0-9]++)?|[0-9]++[esfdl][+-]?[0-9]++"/>
+        <RegExpr attribute="Decimal" context="#stay" String="[0-9]++"/>
+      </context>
+
+
+      <context name="Template" attribute="String" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar attribute="String" context="#pop" char="}"/>
+        <DetectChar attribute="String" context="Template" char="{"/>
+        <DetectChar attribute="Char" context="TemplateTemplate" char="&amp;" lookAhead="1"/>
+      </context>
+      <context name="TemplateTemplate" attribute="String" lineEndContext="#pop">
+        <Detect2Chars attribute="Operator" context="#stay" char="&amp;" char1="|" firstNonSpace="1"/>
+        <Detect2Chars attribute="Operator" context="#pop!NotNewlineTemplate" char="&amp;" char1="-"/>
+        <Detect2Chars attribute="Extension" context="#pop!FormatTemplate" char="&amp;" char1="~"/>
+        <StringDetect attribute="Comment" context="#pop!MultiLineComment" String="&amp;#|" beginRegion="comment"/>
+        <RegExpr attribute="Char" context="#pop!EndCharTemplate" String="(&amp;(?:#(?:[0-9]+|x[0-9a-fA-F]+)|[_a-zA-Z][-:_a-zA-Z0-9]*))" lookAhead="1"/>
+        <DetectChar attribute="String" context="#pop" char="&amp;"/>
+      </context>
+      <context name="FormatTemplate" attribute="Extension" lineEndContext="#pop" fallthroughContext="#pop">
+        <AnyChar attribute="Extension" context="#pop" String="({["/>
+        <AnyChar attribute="Extension" context="FormatTemplate" String=")}]"/>
+        <RegExpr attribute="Extension" context="#pop" String="[^(){}\[\]]+"/>
+      </context>
+      <context name="NotNewlineTemplate" attribute="String" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <Detect2Chars attribute="Comment" context="#pop!MultiLineComment" char="#" char1="|" beginRegion="comment"/>
+      </context>
+      <context name="EndCharTemplate" attribute="Comment" lineEndContext="#stay">
+        <StringDetect attribute="Char" context="#pop" String="%1;" dynamic="1"/>
+        <StringDetect attribute="Error" context="#pop" String="%1" dynamic="1"/>
+      </context>
+
+
+      <context name="semicolon" attribute="Comment" lineEndContext="#stay" fallthroughContext="#pop!comment">
+        <RegExpr attribute="Region Marker" context="#pop" String=";+\s*BEGIN\b.*" beginRegion="region"/>
+        <RegExpr attribute="Region Marker" context="#pop" String=";+\s*END\b.*" endRegion="region"/>
+      </context>
+      <context name="comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+
+      <context name="hash" attribute="Normal" lineEndContext="#stay">
+        <Detect2Chars attribute="Decimal" context="#pop" char="#" char1="t"/>
+        <Detect2Chars attribute="Decimal" context="#pop" char="#" char1="T"/>
+        <Detect2Chars attribute="Decimal" context="#pop" char="#" char1="f"/>
+        <Detect2Chars attribute="Decimal" context="#pop" char="#" char1="F"/>
+        <Detect2Chars attribute="Base Prefix" context="#pop!Num16" char="#" char1="x"/>
+        <Detect2Chars attribute="Base Prefix" context="#pop!Num8" char="#" char1="o"/>
+        <Detect2Chars attribute="Base Prefix" context="#pop!Num2" char="#" char1="b"/>
+        <Detect2Chars attribute="Base Prefix" context="#pop!Num10" char="#" char1="e"/>
+        <Detect2Chars attribute="Base Prefix" context="#pop!Num10" char="#" char1="i"/>
+        <Detect2Chars attribute="Base Prefix" context="#pop!Num10" char="#" char1="d"/>
+        <Detect2Chars attribute="Char" context="#pop!Char" char="#" char1="\"/>
+        <Detect2Chars attribute="Comment" context="#pop!DatumComment" char="#" char1=";"/>
+        <Detect2Chars attribute="Comment" context="#pop!MultiLineComment" char="#" char1="|" beginRegion="comment"/>
+        <Detect2Chars attribute="Comment" context="#pop!MultiLineGuileCommentOrExtension" char="#" char1="!" lookAhead="1"/>
+
+        <!-- Kawa extension -->
+        <Detect2Chars attribute="Operator" context="#pop!Regex" char="#" char1="/"/>
+        <Detect2Chars attribute="XML Tag" context="#pop!XML" char="#" char1="&lt;" lookAhead="1"/>
+
+        <DetectChar attribute="Normal" context="#pop" char="#"/>
+      </context>
+
+
+      <context name="XML" attribute="XML Tag" lineEndContext="#pop">
+        <StringDetect attribute="XML Tag" context="#pop!XMLProc" String="#&lt;?"/>
+        <StringDetect attribute="XML Comment" context="#pop!XMLComment" String="#&lt;!--"/>
+        <StringDetect attribute="XML Tag" context="#pop!XMLCDATA" String="#&lt;![CDATA["/>
+        <StringDetect attribute="XML Tag" context="#pop!XMLTagExpr1" String="#&lt;("/>
+        <StringDetect attribute="XML Tag" context="#pop!XMLTagExpr2" String="#&lt;{"/>
+        <RegExpr attribute="XML Tag" context="#pop!XMLTag" String="#&lt;[^\s>]++"/>
+        <Detect2Chars attribute="Error" context="#pop" char="#" char1="&lt;"/>
+      </context>
+
+      <context name="XMLTagExpr1" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="XML Tag" context="#pop!XMLTag" char=")"/>
+        <IncludeRules context="Default"/>
+      </context>
+      <context name="XMLTagExpr2" attribute="Normal" lineEndContext="#stay">
+        <DetectChar attribute="XML Tag" context="#pop!XMLTag" char="}"/>
+        <IncludeRules context="Default"/>
+      </context>
+
+      <context name="XMLTag" attribute="XML Attribute" lineEndContext="#stay">
+        <DetectSpaces/>
+        <Detect2Chars attribute="XML Tag" context="#pop" char="/" char1=">"/>
+        <DetectChar attribute="XML Tag" context="#pop!XMLInnerTag" char=">"/>
+        <RegExpr attribute="XML Attribute" context="XMLAttribute" String="[^\s=/>]++\s*"/>
+      </context>
+      <context name="XMLInnerTag" attribute="XML Tag" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar attribute="XML String" context="XMLEscape" char="&amp;" lookAhead="1"/>
+        <DetectChar attribute="XML Tag" context="XMLFindXML" char="&lt;" lookAhead="1"/>
+      </context>
+      <context name="XMLFindXML" attribute="String" lineEndContext="#stay">
+        <Detect2Chars attribute="XML Tag" context="#pop!XMLProc" char="&lt;" char1="?"/>
+        <Detect2Chars attribute="XML Tag" context="#pop!XMLTagExpr1" char="&lt;" char1="("/>
+        <Detect2Chars attribute="XML Tag" context="#pop!XMLTagExpr2" char="&lt;" char1="{"/>
+        <StringDetect attribute="XML Comment" context="#pop!XMLComment" String="&lt;!--"/>
+        <StringDetect attribute="XML Tag" context="#pop!XMLCDATA" String="&lt;![CDATA["/>
+        <Detect2Chars attribute="XML Tag" context="#pop!XMLCloseTag" char="&lt;" char1="/" lookAhead="1"/>
+        <RegExpr attribute="XML Tag" context="#pop!XMLTag" String="&lt;[^\s>]++"/>
+        <DetectChar attribute="XML Error" context="#pop" char="&lt;"/>
+      </context>
+      <context name="XMLCloseTag" attribute="String" lineEndContext="#pop#pop">
+        <RegExpr attribute="XML Tag" context="#pop#pop" String="&lt;/[^\s>]*>"/>
+        <Detect2Chars attribute="XML Error" context="#pop#pop" char="&lt;" char1="/"/>
+      </context>
+
+      <context name="XMLAttribute" attribute="XML Attribute" lineEndContext="#stay" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="XML Attribute" context="XMLAttributeValue" char="="/>
+      </context>
+      <context name="XMLAttributeValue" attribute="XML Attribute" lineEndContext="#stay" fallthroughContext="#pop#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="XML String" context="XMLDQ" char="&quot;"/>
+        <DetectChar attribute="XML String" context="XMLSQ" char="'"/>
+      </context>
+      <context name="XMLDQ" attribute="XML String" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar attribute="XML String" context="#pop#pop#pop" char="&quot;"/>
+        <IncludeRules context="XMLStringEscape"/>
+      </context>
+      <context name="XMLSQ" attribute="XML String" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar attribute="XML String" context="#pop#pop#pop" char="'"/>
+        <IncludeRules context="XMLStringEscape"/>
+      </context>
+      <context name="XMLStringEscape" attribute="XML String" lineEndContext="#stay">
+        <DetectChar attribute="XML String" context="XMLEscape" char="&amp;" lookAhead="1"/>
+        <DetectChar attribute="XML Error" context="#stay" char="&lt;"/>
+      </context>
+      <context name="XMLEscape" attribute="XML String" lineEndContext="#stay">
+        <RegExpr attribute="XML Entity" context="#pop" String="&amp;(?:lt|gt|amp|quot|apos|#[0-9]+|x[0-9a-fA-F]+);"/>
+        <DetectChar attribute="XML Error" context="#pop" char="&amp;"/>
+      </context>
+      <context name="XMLProc" attribute="XML Attribute" lineEndContext="#stay" fallthroughContext="XMLProcAttrs">
+        <RegExpr attribute="XML Tag" context="XMLProcAttrs" String="[^\s?]+"/>
+      </context>
+      <context name="XMLProcAttrs" attribute="XML Attribute" lineEndContext="#stay">
+        <Detect2Chars attribute="XML Tag" context="#pop#pop" char="?" char1=">"/>
+      </context>
+
+      <context name="XMLComment" attribute="XML Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <Detect2Chars attribute="XML Comment" context="XMLCommentCheck" char="-" char1="-" lookAhead="1"/>
+      </context>
+      <context name="XMLCommentCheck" attribute="Comment" lineEndContext="#stay">
+        <StringDetect attribute="XML Tag" context="#pop#pop" String="-->"/>
+        <Detect2Chars attribute="XML Error" context="#pop" char="-" char1="-"/>
+      </context>
+
+      <context name="XMLCDATA" attribute="XML CDATA" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <StringDetect attribute="XML Tag" context="#pop" String="]]>"/>
+      </context>
+
+
+      <context name="Regex" attribute="Extension" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="Extension" context="RegexEnd" String="&regex;"/>
+      </context>
+      <context name="RegexEnd" attribute="Extension" lineEndContext="#pop#pop" fallthroughContext="#pop#pop">
+        <DetectChar attribute="Operator" context="RegexModifier" char="/"/>
+      </context>
+      <context name="RegexModifier" attribute="Extension" lineEndContext="#pop#pop#pop" fallthroughContext="#pop#pop#pop">
+        <AnyChar attribute="Extension" context="#stay" String="ism"/>
+      </context>
+
+
+      <context name="Num2" attribute="Decimal" lineEndContext="#pop" fallthroughContext="#pop!Digit2">
+        <IncludeRules context="NumPrefix"/>
+        <AnyChar attribute="Function" context="#pop!Digit2" String="+-"/>
+      </context>
+      <context name="Digit2" attribute="Decimal" lineEndContext="#pop" fallthroughContext="#pop">
+        <AnyChar attribute="Decimal" context="#stay" String="01"/>
+      </context>
+
+      <context name="Num8" attribute="Decimal" lineEndContext="#pop" fallthroughContext="#pop!Digit8">
+        <IncludeRules context="NumPrefix"/>
+        <AnyChar attribute="Function" context="#pop!Digit8" String="+-"/>
+      </context>
+      <context name="Digit8" attribute="Decimal" lineEndContext="#pop" fallthroughContext="#pop">
+        <AnyChar attribute="Decimal" context="#stay" String="01234567"/>
+      </context>
+
+      <context name="Num10" attribute="Decimal" lineEndContext="#pop" fallthroughContext="#pop!Digit10">
+        <IncludeRules context="NumPrefix"/>
+        <AnyChar attribute="Function" context="#pop!Digit10" String="+-"/>
+      </context>
+      <context name="Digit10" attribute="Decimal" lineEndContext="#pop" fallthroughContext="#pop">
+        <!-- s, f, d, l are extensions of Kawa -->
+        <RegExpr attribute="Float" context="#pop" String="[0-9]*+\.[0-9]++([esfdl][+-]?[0-9]++)?|[0-9]++[esfdl][+-]?[0-9]++"/>
+        <RegExpr attribute="Decimal" context="#pop" String="[0-9]++"/>
+      </context>
+
+      <context name="Num16" attribute="Decimal" lineEndContext="#pop" fallthroughContext="#pop!Digit16">
+        <IncludeRules context="NumPrefix"/>
+        <AnyChar attribute="Function" context="#pop!Digit16" String="+-"/>
+      </context>
+      <context name="Digit16" attribute="Decimal" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="Decimal" context="#pop" String="[0-9a-fA-F]+"/>
+      </context>
+
+      <context name="NumPrefix" attribute="Decimal" lineEndContext="#pop">
+        <Detect2Chars attribute="Decimal" context="#stay" char="#" char1="e"/>
+        <Detect2Chars attribute="Decimal" context="#stay" char="#" char1="i"/>
+      </context>
+
+
+      <context name="Char" attribute="Char" lineEndContext="#pop">
+        <DetectChar attribute="Char" context="HexChar" char="x"/>
+        <keyword attribute="Char" context="#pop" String="characters" insensitive="1"/>
+        <RegExpr attribute="Char" context="#pop" String=".(?!\w)"/>
+        <RegExpr attribute="Error" context="#pop" String="\w+|."/>
+      </context>
+      <context name="HexChar" attribute="Char" lineEndContext="#pop#pop">
+        <RegExpr attribute="Char" context="#pop#pop" String="[0-9a-fA-F]+"/>
+      </context>
+
+
+      <context name="MultiLineGuileCommentOrExtension" attribute="Comment" lineEndContext="#stay">
+        <RegExpr attribute="Extension" context="#pop" String="#!\w+"/>
+        <Detect2Chars attribute="Comment" context="#pop!MultiLineGuileComment" char="#" char1="!" beginRegion="comment"/>
+      </context>
+
+      <context name="MultiLineGuileComment" attribute="Comment" lineEndContext="#stay" fallthroughContext="comment">
+        <RegExpr attribute="Comment" context="#pop" String="^!#\s*$" endRegion="comment" column="0"/>
+      </context>
+
+      <context name="MultiLineComment" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <Detect2Chars attribute="Comment" context="#pop" char="|" char1="#" endRegion="comment"/>
+        <Detect2Chars attribute="Comment" context="MultiLineComment" char="#" char1="|" beginRegion="comment"/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+
+
+      <context name="DatumComment" attribute="Comment" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectChar attribute="Comment" context="#pop!DatumCommentParent" char="(" beginRegion="comment"/>
+        <DetectChar attribute="Comment" context="#pop!DatumCommentBracket" char="[" beginRegion="comment"/>
+        <DetectChar attribute="Comment" context="#pop!DatumCommentBrace" char="{" beginRegion="comment"/>
+        <DetectChar attribute="Comment" context="#pop!DatumCommentString" char="&quot;"/>
+
+        <DetectChar attribute="Comment" context="#pop!DatumCommentHash" char="#"/>
+
+        <RegExpr attribute="Comment" context="#pop!DatumCommentExpr" String="[^{}\[\]()\s]+"/>
+      </context>
+      <context name="DatumCommentHash" attribute="Comment" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectChar attribute="Comment" context="#pop!DatumCommentRegex" char="/"/>
+        <DetectChar attribute="Comment" context="#pop!DatumCommentXML" char="&lt;"/>
+        <Detect2Chars attribute="Comment" context="#pop!DatumCommentTemplate" char="&amp;" char1="{"/>
+        <DetectIdentifier/>
+      </context>
+
+      <context name="DatumCommentTemplate" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar attribute="Comment" context="#pop" char="}"/>
+        <DetectChar attribute="Comment" context="DatumCommentTemplate" char="{"/>
+        <DetectChar attribute="Comment" context="DatumCommentTemplateTemplate" char="&amp;"/>
+      </context>
+      <context name="DatumCommentTemplateTemplate" attribute="Comment" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectChar attribute="Comment" context="#pop!DatumCommentParent2" char="("/>
+        <DetectChar attribute="Comment" context="#pop!DatumCommentBracket2" char="["/>
+        <Detect2Chars attribute="Comment" context="#pop!MultiLineComment" char="#" char1="|"/>
+        <DetectChar attribute="Comment" context="#pop!DatumCommentFormatTemplate" char="~"/>
+        <RegExpr attribute="Comment" context="#pop" String="&amp;(?:#(?:[0-9]+|x[0-9a-fA-F]+)|[_a-zA-Z][-:_a-zA-Z0-9]*);?"/>
+      </context>
+      <context name="DatumCommentFormatTemplate" attribute="Comment" lineEndContext="#pop" fallthroughContext="#pop">
+        <AnyChar attribute="Comment" context="#pop" String="({["/>
+        <AnyChar attribute="Comment" context="DatumCommentFormatTemplate" String=")}]"/>
+        <RegExpr attribute="Comment" context="#pop" String="[^(){}\[\]]+"/>
+      </context>
+
+      <context name="DatumCommentRegex" attribute="Comment" lineEndContext="#pop" fallthroughContext="#pop">
+        <RegExpr attribute="Comment" context="DatumCommentRegexEnd" String="&regex;"/>
+      </context>
+      <context name="DatumCommentRegexEnd" attribute="Comment" lineEndContext="#pop#pop" fallthroughContext="#pop#pop">
+        <DetectChar attribute="Comment" context="DatumCommentRegexModifier" char="/"/>
+      </context>
+      <context name="DatumCommentRegexModifier" attribute="Comment" lineEndContext="#pop#pop#pop" fallthroughContext="#pop#pop#pop">
+        <AnyChar attribute="Comment" context="#stay" String="ism"/>
+      </context>
+
+      <context name="DatumCommentXML" attribute="Comment" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectChar attribute="Comment" context="#pop!DatumCommentXMLProc" char="?"/>
+        <DetectChar attribute="Comment" context="#pop!DatumCommentXMLTagExpr1" char="("/>
+        <DetectChar attribute="Comment" context="#pop!DatumCommentXMLTagExpr2" char="{"/>
+        <Detect2Chars attribute="Comment" context="#pop" char="/" char1=">"/>
+        <StringDetect attribute="Comment" context="#pop!DatumCommentXMLComment" String="!--"/>
+        <StringDetect attribute="Comment" context="#pop!DatumCommentXMLCDATA" String="![CDATA["/>
+        <RegExpr attribute="Comment" context="#pop!DatumCommentXMLTag" String="[^\s>]++\s*"/>
+      </context>
+
+      <context name="DatumCommentXMLProc" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="#pop" char="?" char1=">"/>
+      </context>
+      <context name="DatumCommentXMLCDATA" attribute="Comment" lineEndContext="#stay">
+        <StringDetect attribute="Comment" context="#pop" String="]]>"/>
+      </context>
+      <context name="DatumCommentXMLComment" attribute="Comment" lineEndContext="#stay">
+        <StringDetect attribute="Comment" context="#pop" String="-->"/>
+      </context>
+      <context name="DatumCommentXMLTagExpr1" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop!DatumCommentXMLTag" char=")"/>
+        <IncludeRules context="DatumCommentInExpr"/>
+      </context>
+      <context name="DatumCommentXMLTagExpr2" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop!DatumCommentXMLTag" char="}"/>
+        <IncludeRules context="DatumCommentInExpr"/>
+      </context>
+
+      <context name="DatumCommentXMLTag" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <Detect2Chars attribute="Comment" context="#pop" char="/" char1=">"/>
+        <DetectChar attribute="Comment" context="#pop!DatumCommentXMLInnerTag" char=">"/>
+        <RegExpr attribute="Comment" context="DatumCommentXMLAttribute" String="[^\s=/>]++\s*"/>
+      </context>
+      <context name="DatumCommentXMLInnerTag" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar attribute="Comment" context="DatumCommentXMLEscape" char="&amp;" lookAhead="1"/>
+        <DetectChar attribute="Comment" context="DatumCommentXMLFindXML" char="&lt;" lookAhead="1"/>
+      </context>
+      <context name="DatumCommentXMLFindXML" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="#pop!DatumCommentXMLProc" char="&lt;" char1="?"/>
+        <Detect2Chars attribute="Comment" context="#pop!DatumCommentXMLTagExpr1" char="&lt;" char1="("/>
+        <Detect2Chars attribute="Comment" context="#pop!DatumCommentXMLTagExpr2" char="&lt;" char1="{"/>
+        <StringDetect attribute="Comment" context="#pop!DatumCommentXMLComment" String="&lt;!--"/>
+        <StringDetect attribute="Comment" context="#pop!DatumCommentXMLCDATA" String="&lt;![CDATA["/>
+        <Detect2Chars attribute="Comment" context="#pop!DatumCommentXMLCloseTag" char="&lt;" char1="/" lookAhead="1"/>
+        <RegExpr attribute="Comment" context="#pop!DatumCommentXMLTag" String="&lt;[^\s>]++"/>
+        <DetectChar attribute="Comment" context="#pop" char="&lt;"/>
+      </context>
+      <context name="DatumCommentXMLCloseTag" attribute="Comment" lineEndContext="#pop#pop">
+        <RegExpr attribute="Comment" context="#pop#pop" String="&lt;/[^\s>]*>"/>
+        <Detect2Chars attribute="XML Error" context="#pop#pop" char="&lt;" char1="/"/>
+      </context>
+
+      <context name="DatumCommentXMLAttribute" attribute="Comment" lineEndContext="#stay" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Comment" context="DatumCommentXMLAttributeValue" char="="/>
+      </context>
+      <context name="DatumCommentXMLAttributeValue" attribute="Comment" lineEndContext="#stay" fallthroughContext="#pop#pop">
+        <DetectSpaces/>
+        <DetectChar attribute="Comment" context="DatumCommentXMLDQ" char="&quot;"/>
+        <DetectChar attribute="Comment" context="DatumCommentXMLSQ" char="'"/>
+      </context>
+      <context name="DatumCommentXMLDQ" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar attribute="Comment" context="#pop#pop#pop" char="&quot;"/>
+        <IncludeRules context="DatumCommentXMLStringEscape"/>
+      </context>
+      <context name="DatumCommentXMLSQ" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar attribute="Comment" context="#pop#pop#pop" char="'"/>
+        <IncludeRules context="DatumCommentXMLStringEscape"/>
+      </context>
+      <context name="DatumCommentXMLStringEscape" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="DatumCommentXMLEscape" char="&amp;" lookAhead="1"/>
+        <DetectChar attribute="XML Error" context="#stay" char="&lt;"/>
+      </context>
+
+      <context name="DatumCommentXMLEscape" attribute="Comment" lineEndContext="#stay">
+        <Detect2Chars attribute="Comment" context="#pop!DatumCommentParent2" char="&amp;" char1="("/>
+        <Detect2Chars attribute="Comment" context="#pop!DatumCommentBrace2" char="&amp;" char1="{"/>
+        <RegExpr attribute="Comment" context="#pop" String="&amp;(?:lt|gt|amp|quot|apos|#[0-9]+|x[0-9a-fA-F]+);"/>
+        <DetectChar attribute="XML Error" context="#pop" char="&amp;"/>
+      </context>
+
+      <context name="DatumCommentExpr" attribute="Comment" lineEndContext="#pop" fallthroughContext="#pop">
+        <DetectChar attribute="Comment" context="#pop!DatumCommentParent2" char="("/>
+        <DetectChar attribute="Comment" context="#pop!DatumCommentBrace2" char="{"/>
+        <DetectChar attribute="Comment" context="#pop!DatumCommentBracket2" char="["/>
+      </context>
+
+      <context name="DatumCommentString" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop" char="&quot;"/>
+        <RegExpr attribute="Comment" context="#stay" String="(?:[^\\&quot;]++|\\.)++"/>
+      </context>
+
+      <context name="DatumCommentParent" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop" char=")" endRegion="comment"/>
+        <IncludeRules context="DatumCommentInExpr"/>
+      </context>
+      <context name="DatumCommentParent2" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop" char=")"/>
+        <IncludeRules context="DatumCommentInExpr"/>
+      </context>
+      <context name="DatumCommentBracket" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop" char="]" endRegion="comment"/>
+        <IncludeRules context="DatumCommentInExpr"/>
+      </context>
+      <context name="DatumCommentBracket2" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop" char="]"/>
+        <IncludeRules context="DatumCommentInExpr"/>
+      </context>
+      <context name="DatumCommentBrace" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop" char="}" endRegion="comment"/>
+        <IncludeRules context="DatumCommentInExpr"/>
+      </context>
+      <context name="DatumCommentBrace2" attribute="Comment" lineEndContext="#stay">
+        <DetectChar attribute="Comment" context="#pop" char="}"/>
+        <IncludeRules context="DatumCommentInExpr"/>
+      </context>
+
+      <context name="DatumCommentInExpr" attribute="Comment" lineEndContext="#stay">
+        <DetectSpaces/>
+        <DetectIdentifier/>
+        <DetectChar attribute="Comment" context="DatumCommentParent2" char="("/>
+        <DetectChar attribute="Comment" context="DatumCommentBrace2" char="{"/>
+        <DetectChar attribute="Comment" context="DatumCommentBracket2" char="["/>
+        <DetectChar attribute="Comment" context="DatumCommentString" char="&quot;"/>
+        <DetectChar attribute="Comment" context="DatumCommentHash" char="#"/>
+      </context>
+
+
+      <context name="String" attribute="String" lineEndContext="#stay">
+        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+        <DetectChar attribute="Char" context="EscapeString" char="\"/>
+      </context>
+      <context name="EscapeString" attribute="Char" lineEndContext="#pop" fallthroughContext="#pop">
+        <AnyChar attribute="Char" context="#pop" String="abfnrtv&quot;\"/>
+        <AnyChar attribute="Char" context="MultiLineString" String="&tab; "/>
+        <RegExpr attribute="Char" context="#pop" String="[xXu][0-9a-fA-F]+;|\\[0-7]{3}|(?:[MC]-|\^)?."/>
+      </context>
+      <context name="MultiLineString" attribute="String" lineEndContext="#stay" fallthroughContext="#pop#pop">
+        <DetectSpaces/>
+      </context>
+
+      <context name="function_decl" attribute="Function" lineEndContext="#stay">
+        <RegExpr attribute="Function" context="#pop" String="\s*[A-Za-z0-9-!$%&quot;*/:&lt;=>?~_^+.@]*\s*"/>
+      </context>
+    </contexts>
+    <itemDatas>
+      <itemData name="Normal"      defStyleNum="dsNormal"/>
+      <itemData name="Keyword"     defStyleNum="dsKeyword" spellChecking="0"/>
+      <itemData name="Definition"  defStyleNum="dsExtension" spellChecking="0"/>
+      <itemData name="Operator"    defStyleNum="dsOperator" spellChecking="0"/>
+      <itemData name="Function"    defStyleNum="dsFunction" spellChecking="0"/>
+      <itemData name="Base Prefix" defStyleNum="dsSpecialChar" spellChecking="0"/>
+      <itemData name="Decimal"     defStyleNum="dsDecVal" spellChecking="0"/>
+      <itemData name="Float"       defStyleNum="dsFloat" spellChecking="0"/>
+      <itemData name="Char"        defStyleNum="dsChar" spellChecking="0"/>
+      <itemData name="String"      defStyleNum="dsString"/>
+      <itemData name="Comment"     defStyleNum="dsComment"/>
+      <itemData name="Error"       defStyleNum="dsError" spellChecking="0"/>
+      <itemData name="Extension"   defStyleNum="dsExtension" spellChecking="0"/>
+      <itemData name="Region Marker" defStyleNum="dsRegionMarker"/>
+      <itemData name="XML Tag"     defStyleNum="dsString" spellChecking="0"/>
+      <itemData name="XML Comment" defStyleNum="dsComment"/>
+      <itemData name="XML CDATA"   defStyleNum="dsString"/>
+      <itemData name="XML Attribute" defStyleNum="dsOthers" spellChecking="0"/>
+      <itemData name="XML String"  defStyleNum="dsString"/>
+      <itemData name="XML Error"   defStyleNum="dsError" spellChecking="0"/>
+      <itemData name="XML Entity"  defStyleNum="dsDecVal" spellChecking="0"/>
+      <itemData name="Brackets" defStyleNum="dsOperator" spellChecking="0"/>
+    </itemDatas>
+  </highlighting>
+  <general>
+    <keywords casesensitive="1" weakDeliminator="-+*?!&lt;&gt;=/:.,\&amp;" additionalDeliminator="&quot;;#"/>
+    <comments>
+      <comment name="singleLine" start=";;"/>
+      <comment name="multiLine" start="#|" end="|#" region="comment"/>
+    </comments>
+  </general>
+</language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

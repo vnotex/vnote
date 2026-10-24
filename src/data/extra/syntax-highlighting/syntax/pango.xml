@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Pango" version="5" kateversion="2.4" section="Markup" extensions="" mimetype="" author="Jonathan Schmidt-Domniné &lt;devel@the-user.org&gt;" license="LGPL" priority="10">
+<!DOCTYPE language>
+<language name="Pango" version="7" kateversion="2.4" section="Markup" extensions="" mimetype="" author="Jonathan Schmidt-Domniné &lt;devel@the-user.org&gt;" license="LGPL" priority="10">
 
 <highlighting>
 <!-- NOTE: Currently, all keyword lists are already matched in the RegExp rules
@@ -72,12 +72,12 @@
 
   <context name="FindAttributes" attribute="Normal Text" lineEndContext="#stay">
       <DetectSpaces/>
-      <RegExpr attribute="Key" context="InGravity" String="gravity=" />
-      <RegExpr attribute="Key" context="InGravityHint" String="gravity_hint=" />
+      <StringDetect attribute="Key" context="InGravity" String="gravity=" />
+      <StringDetect attribute="Key" context="InGravityHint" String="gravity_hint=" />
       <RegExpr attribute="Key" context="InStretch" String="(font_)?stretch=" />
       <RegExpr attribute="Key" context="InBoolean" String="(strikethrough|fallback)=" />
       <RegExpr attribute="Key" context="InStyle" String="(font_)?style=" />
-      <RegExpr attribute="Key" context="InUnderline" String="underline=" />
+      <StringDetect attribute="Key" context="InUnderline" String="underline=" />
       <RegExpr attribute="Key" context="InVariant" String="(font_)?variant=" />
       <RegExpr attribute="Key" context="InWeight" String="(font_)?weight=" />
       <RegExpr attribute="Key" context="InInt" String="(size|font_size|rise|letter_spacing)=" />
@@ -139,7 +139,7 @@
   </context>
   
   <context name="InString" attribute="String" lineEndContext="#stay">
-      <RegExpr attribute="String" context="#pop" String="'[^']*'" />
+      <RangeDetect attribute="String" context="#pop" char="'" char1="'" />
       <RegExpr attribute="Error" context="#pop#pop" String="\S" />
   </context>
 

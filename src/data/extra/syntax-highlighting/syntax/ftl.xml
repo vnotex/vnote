@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="FTL" version="3" kateversion="5.0" section="Markup" extensions="*.ftl" license="LGPLv2+" author="Radomir Svancer (svancer@gmail.com), Robert Kratky (kratky@rob.cz>), Matthias Mailänder (matthias.mailaender@vogella.com)">
+<!DOCTYPE language>
+<language name="FTL" version="6" kateversion="5.0" section="Markup" extensions="*.ftl" license="LGPLv2+" author="Radomir Svancer (svancer@gmail.com), Robert Kratky (kratky@rob.cz>), Matthias Mailänder (matthias.mailaender@vogella.com)">
   <highlighting>
     <contexts>
         <context name="comment start" attribute="NormalText" lineEndContext="#stay">
-            <StringDetect attribute="Comment" context="comment end" String="&lt;!--"/>
-            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--"/>
+            <StringDetect attribute="Comment" context="comment end" String="&lt;!--" beginRegion="Comment"/>
+            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--" beginRegion="FTLComment"/>
             <RegExpr attribute="FTLKeyword" context="syntax start" String="&lt;\s*\/?\s*[#@][a-zA-Z0-9_]*" />
-            <StringDetect attribute="FTLMark" context="variable end" String="${" />
+            <Detect2Chars attribute="FTLMark" context="variable end" char="$" char1="{" />
             <RegExpr attribute="Keyword" context="logic end" String="&lt;\s*\/?\s*[a-zA-Z0-9_]*" />
         </context>
 
         <context name="logic end" attribute="Identifier" lineEndContext="#stay">
             <DetectChar attribute="Keyword" context="#pop" char="&gt;"/>
             <RegExpr attribute="NormalText" context="logic" String="\s*=\s*"/>
-            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--"/>
+            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--" beginRegion="FTLComment"/>
             <RegExpr attribute="FTLKeyword" context="syntax start" String="&lt;\s*\/?\s*[#@][a-zA-Z0-9_]*" />
-            <StringDetect attribute="FTLMark" context="variable end" String="${" />
+            <Detect2Chars attribute="FTLMark" context="variable end" char="$" char1="{" />
         </context>
 
         <context name="logic" attribute="Types" lineEndContext="#stay">
@@ -26,26 +26,30 @@
 
         <context name="logic start" attribute="Types" lineEndContext="#stay">
             <DetectChar attribute="Types" context="#pop#pop" char="&quot;" />
-            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--"/>
+            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--" beginRegion="FTLComment"/>
             <RegExpr attribute="FTLKeyword" context="syntax start" String="&lt;\s*\/?\s*[#@][a-zA-Z0-9_]*" />
-            <StringDetect attribute="FTLMark" context="variable end" String="${" />
+            <Detect2Chars attribute="FTLMark" context="variable end" char="$" char1="{" />
         </context>
 
         <context name="comment end" attribute="Comment" lineEndContext="#stay">
-            <StringDetect attribute="Comment" context="#pop" String="--&gt;"/>
-            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--"/>
+            <DetectSpaces />
+            <StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="Comment"/>
+            <StringDetect attribute="FTLComment" context="comment ending" String="&lt;#--" beginRegion="FTLComment"/>
             <RegExpr attribute="FTLKeyword" context="syntax start" String="&lt;\s*\/?\s*[#@][a-zA-Z0-9_]*" />
-            <StringDetect attribute="FTLMark" context="variable end" String="${" />
+            <Detect2Chars attribute="FTLMark" context="variable end" char="$" char1="{" />
+            <IncludeRules context="##Comments" />
         </context>
 
         <context name="comment ending" attribute="FTLComment" lineEndContext="#stay">
-            <StringDetect attribute="FTLComment" context="#pop" String="--&gt;"/>
+            <StringDetect attribute="FTLComment" context="#pop" String="--&gt;" endRegion="FTLComment"/>
+            <DetectSpaces />
+            <IncludeRules context="##Comments" />
         </context>
 
         <context name="syntax start" attribute="FTLKeyword" lineEndContext="#stay">
             <DetectChar attribute="FTLKeyword" context="#pop" char="&gt;"/>
             <DetectChar attribute="FTLQuot" context="comment string" char="&quot;" />
-            <RegExpr attribute="FTLIdentifier" context="syntax end" String="\s*"/>
+            <DetectSpaces attribute="FTLIdentifier" context="syntax end"/>
         </context>
 
         <context name="comment string" attribute="FTLQuot" lineEndContext="#stay">
@@ -77,8 +81,9 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="multiLine" start="&lt;#--" end="--&gt;" />
+      <comment name="multiLine" start="&lt;#--" end="--&gt;" region="FTLComment" />
     </comments>
     <keywords casesensitive="0" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

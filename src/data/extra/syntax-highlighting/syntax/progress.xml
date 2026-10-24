@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="progress" version="4" kateversion="2.4" section="Database" extensions="*.p;*.w;*.i;*.cls;" author="Rares Stanciulescu (rstanciu@operamail.com)" license="GPL">
+<!DOCTYPE language>
+<language name="progress" version="7" kateversion="5.0" section="Database" extensions="*.p;*.w;*.i;*.cls;" author="Rares Stanciulescu (rstanciu@operamail.com)" license="GPL">
 
 <highlighting>
 
@@ -29,7 +29,6 @@
   <item>FLOAT</item>
   <item>DOUBLE</item>
   <item>CLOB</item>
-  <item>LONGCHAR</item>
   <item>DATETIME</item>
   <item>DATETIME-TZ</item>
   <item>TEMP-TABLE</item>
@@ -373,30 +372,20 @@
   <item>BUFFER-COPY</item>
   <item>CLEAR</item>
   <item>CLOSE</item>
-  <item>QUERY</item>
-  <item>STORED-PROCEDURE</item>
   <item>COLOR</item>
   <item>COMPILE</item>
   <item>CONNECT</item>
   <item>COPY-LOB</item>
   <item>CREATE</item>
   <item>CLIENT-PRINCIPAL</item>
-  <item>ALIAS</item>
-  <item>BROWSE</item>
-  <item>BUFFER</item>
   <item>CALL</item>
   <item>DATABASE</item>
-  <item>DATA-SOURCE</item>
-  <item>QUERY</item>
   <item>SAX-READER</item>
   <item>SERVER</item>
   <item>SERVER-SOCKET</item>
   <item>SOAP-HEADER</item>
   <item>SOAP-HEADER-ENTRYREF</item>
   <item>SOCKET</item>
-  <item>TEMP-TABLE</item>
-  <item>WIDGET</item>
-  <item>WIDGET-POOL</item>
   <item>X-DOCUMENT</item>
   <item>X-NODEREF</item>
   <item>CURRENT-LANGUAGE</item>
@@ -404,7 +393,6 @@
   <item>DDE</item>
   <item>ADVISE</item>
   <item>EXECUTE</item>
-  <item>GET</item>
   <item>INITIATE</item>
   <item>REQUEST</item>
   <item>SEND</item>
@@ -422,12 +410,10 @@
   <item>MENU</item>
   <item>PARAM</item>
   <item>PARAMETER</item>
-  <item>QUERY</item>
   <item>RECTANGLE</item>
   <item>STREAM</item>
   <item>SUB-MENU</item>
   <item>TEMP-TABLE</item>
-  <item>VARIABLE</item>
   <item>WORK-TABLE</item>
   <item>WORKFILE</item>
   <item>DELETE</item>
@@ -444,7 +430,6 @@
   <item>DOWN</item>
   <item>DYNAMIC-CURRENT-VALUE</item>
   <item>EMPTY</item>
-  <item>TEMP-TABLE</item>
   <item>ENABLE</item>
   <item>ENTRY</item>
   <item>EXPORT</item>
@@ -456,11 +441,8 @@
   <item>HIDE</item>
   <item>IMPORT</item>
   <item>INPUT</item>
-  <item>CLEAR</item>
-  <item>CLOSE</item>
   <item>FROM</item>
   <item>TO</item>
-  <item>THROUGH</item>
   <item>INPUT-OUTPUT</item>
   <item>THROUGH</item>
   <item>INSERT</item>
@@ -507,7 +489,6 @@
   <item>READKEY</item>
   <item>RELEASE</item>
   <item>EXTERNAL</item>
-  <item>OBJECT</item>
   <item>REPOSITION</item>
   <item>RETURN</item>
   <item>RETURNS</item>
@@ -526,7 +507,6 @@
   <item>STOP</item>
   <item>SUBSCRIBE</item>
   <item>SUBSTRING</item>
-  <item>COLOR</item>
   <item>SYSTEM-DIALOG</item>
   <item>FONT</item>
   <item>GET-DIR</item>
@@ -1558,16 +1538,13 @@
   <item>CONTENT_LENGTH</item>
   <item>HTTP_ACCEPT</item>
   <item>HTTP_COOKIE</item>
-  <item>HTTP_REFERER</item>
   <item>HTTP_USER_AGENT</item>
   <item>HTTP_REFERER</item>
   <item>HTTPS</item>
-  <item>HTTP_REFERER</item>
   <item>HOSTURL</item>
   <item>SELFURL</item>
   <item>APPPROGRAM</item>
   <item>APPURL</item>
-  <item>APPPROGRAM</item>
   <item>OUTPUT-CONTENT-TYPE</item>
   <item>WEB_SRC_PATH</item>
 </list>
@@ -1592,8 +1569,6 @@
     <Detect2Chars attribute="Comment" context="MultiLineComment"
                   char="/" char1="*" beginRegion="Comment"/>
     <DetectChar attribute="Comment" context="Identifier" char='"'/>
-    <DetectChar attribute="String" context="#stay" char='"'/>
-    <DetectChar attribute="String" context="#stay" char="'"/>
     <AnyChar attribute="Symbol" context="#stay" String="+-*=/\?~{}[]():."/>
 
     <StringDetect attribute="Region Marker" context="#stay"
@@ -1670,7 +1645,8 @@
     <LineContinue attribute="Comment" context="#pop"/>
     <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/"
                   endRegion="Comment"/>
-    <IncludeRules context="##Alerts" />
+    <DetectSpaces />
+    <IncludeRules context="##Comments" />
   </context>
   <context name="Identifier" attribute="Identifier" lineEndContext="#pop">
     <DetectChar attribute="Identifier" context="#pop" char='"'/>
@@ -1700,7 +1676,7 @@
 </highlighting>
   <general>
     <comments>
-      <comment name="multiLine" start="/*" end="*/"/>
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
     </comments>
     <keywords  casesensitive="0" weakDeliminator="-" />
   </general>

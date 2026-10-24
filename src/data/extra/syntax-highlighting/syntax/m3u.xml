@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
 <!-- Changelog:
 
@@ -14,20 +14,26 @@ v1.0:
 -first Release
 -->
 
-<language name="M3U" section="Other" extensions="*.m3u" mimetype="audio/x-mpegurl" version="2" kateversion="2.4" author="Jan Janssen (medhefgo@web.de)" license="LGPL" >
+<language name="M3U" section="Other" extensions="*.m3u;*.m3u8" mimetype="audio/x-mpegurl" version="6" kateversion="5.0" author="Jan Janssen (medhefgo@web.de)" license="LGPL" >
 
 <highlighting>
 <contexts>
  <context name="M3U" attribute="Normal Text" lineEndContext="#stay">
   <StringDetect attribute="M3USpec" context="#pop" String="#EXTM3U" column="0" />
   <StringDetect attribute="EXTINF" context="FindEXTINF" String="#EXTINF" column="0" />
-  <RegExpr attribute="Comment" String="#.*$" firstNonSpace="true" />
+  <DetectChar attribute="Comment" char="#" context="Comment" firstNonSpace="true" />
  </context>
 
  <context name="FindEXTINF" attribute="Normal Text" lineEndContext="#stay">
   <RegExpr attribute="Lenght" String=":\d+" />
-  <RegExpr attribute="Descr" context="#pop" String=",.*$" />
+  <DetectChar attribute="Descr" context="#pop" char="," />
  </context>
+
+ <context name="Comment" attribute="Comment" lineEndContext="#pop">
+  <DetectSpaces />
+  <IncludeRules context="##Comments" />
+ </context>
+
 </contexts>
 
 <itemDatas>
@@ -49,3 +55,4 @@ v1.0:
 </general>
 
 </language>
+<!-- kate: replace-tabs on; indent-width 1; -->

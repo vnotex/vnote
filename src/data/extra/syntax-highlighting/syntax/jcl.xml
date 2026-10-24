@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="JCL" version="2" kateversion="5.0" section="Scripts" extensions="*.JCL;*.jcl" mimetype="" license="MIT">
+<!DOCTYPE language>
+<language name="JCL" version="5" kateversion="5.0" section="Scripts" extensions="*.JCL;*.jcl" mimetype="" license="MIT">
     <!-- 
          JCL, or Job Control Language, is the name for scripting languages used on IBM mainframe operating systems (z/OS, z/VM)
          to instruct the system on how to run a batch job or start a subsystem.
@@ -134,14 +134,17 @@
         <RegExpr attribute="JCLopts"      context="#stay" insensitive="true" String="((?!\/\/\*).*)(\/\/).*?(?=\s)" firstNonSpace="true"/>
         <RegExpr attribute="Variable"     context="#stay" insensitive="true" String="&amp;+[A-Z0-9]*"/>
         <RegExpr attribute="Dataset"      context="#stay" insensitive="true" String="(?&lt;=DSN\=|DSNAME\=)([A-Z0-9.]*)"/>
-        <RegExpr attribute="Comment"      context="#pop"  insensitive="true" String="\/\/\*.*" firstNonSpace="true"/>
+        <StringDetect attribute="Comment" context="Comment"  String="//*" firstNonSpace="true"/>
         <AnyChar attribute="Symbol"       context="#stay" String="|&amp;&lt;=&gt;"/>
-        <DetectChar attribute="String"    context="String" char="&apos;"/>
-        <DetectChar attribute="String"    context="String" char="&quot;"/> 
+        <AnyChar attribute="String"       context="String" String="&apos;&quot;"/>
       </context>
       <context attribute="String" lineEndContext="#pop" name="String">
         <DetectChar attribute="String" context="#pop" char="&apos;"/>
         <DetectChar attribute="String" context="String" char="&quot;"/>
+      </context>
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
       </context>
     </contexts>
     <itemDatas>
@@ -168,3 +171,4 @@
     <keywords casesensitive="0" />
   </general>
 </language>
+<!-- kate: replace-tabs on; indent-width 2; -->

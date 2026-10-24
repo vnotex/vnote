@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
 ========================================================================
 YACC.XML supports syntax highlighting for Yacc/Bison source under Kate.
@@ -12,12 +12,12 @@ This code is released under the LGPL as part of kdelibs/kate.
 == UPDATE HISTORY ==
 2018-02-20 // Nibaldo González <nibgonz@gmail.com>
 
-  Fix '$' symbol, highlighted as 'dsError' by C++ (isocpp.xml). 
+  Fix '$' symbol, highlighted as 'dsError' by C++ (isocpp.xml).
   Update syntax for Bison (3.0.4):
    - Add declarations, directives in rules and the '@' variable.
-   - Allow a tag in '%union', declarations in multiple lines and 
+   - Allow a tag in '%union', declarations in multiple lines and
      grammar declarations in the grammar rules section.
-   - The ';' char is not necessary to finish a rule. Allow '; |' 
+   - The ';' char is not necessary to finish a rule. Allow '; |'
      within rules.
   Add mimetypes and extensions '*.ypp' & '*.y++'.
 
@@ -32,7 +32,7 @@ This code is released under the LGPL as part of kdelibs/kate.
 
 ========================================================================
 -->
-<language name="Yacc/Bison" version="5" kateversion="5.0" section="Sources" extensions="*.y;*.yy;*.ypp;*.y++" mimetype="text/x-yacc;text/x-bison" priority="5" author="Jan Villat (jan.villat@net2000.ch)" license="LGPL">
+<language name="Yacc/Bison" version="9" kateversion="5.79" section="Sources" extensions="*.y;*.yy;*.ypp;*.y++" mimetype="text/x-yacc;text/x-bison" priority="5" author="Jan Villat (jan.villat@net2000.ch)" license="LGPL">
 
 <highlighting>
 <contexts>
@@ -62,7 +62,7 @@ This code is released under the LGPL as part of kdelibs/kate.
     <WordDetect attribute="Directive" context="Percent Command In" String="%&lt;flag&gt;" />
     <!-- Any word followed by '%' (End with ';' or '%') -->
     <DetectChar attribute="Directive" context="Percent Command" char="%" />
-  </context>  
+  </context>
   <context name="Grammar Declarations" attribute="Normal Text" lineEndContext="#stay">
     <WordDetect attribute="Directive" context="Union Start" String="%union" />
     <WordDetect attribute="Directive" context="Union Start" String="%code" />
@@ -74,7 +74,7 @@ This code is released under the LGPL as part of kdelibs/kate.
     <IncludeRules context="Comment" />
     <DetectSpaces />
     <DetectChar attribute="Normal Text" context="Union In" char="{" beginRegion="union" />
-    <RegExpr attribute="Normal Text" context="#pop!Union Tag" String="[^\s\{](?=(\s|$|//))" />
+    <RegExpr attribute="Normal Text" context="#pop!Union Tag" String="[^\s\{](?=\s|$|//)" />
   </context>
   <context name="Union Tag" attribute="Normal Text" lineEndContext="#stay">
     <IncludeRules context="Comment" />
@@ -112,7 +112,7 @@ This code is released under the LGPL as part of kdelibs/kate.
     <IncludeRules context="Symbol-Variable" />
     <IncludeRules context="##C++" />
   </context>
-  <context name="Code-Symbols End" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop!Percent Command In">
+  <context name="Code-Symbols End" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop!Percent Command In">
     <IncludeRules context="Comment" />
     <DetectSpaces />
     <DetectChar attribute="Normal Text" context="#pop" char=";" lookAhead="true" />
@@ -139,13 +139,13 @@ This code is released under the LGPL as part of kdelibs/kate.
     <WordDetect attribute="Directive" context="#stay" String="%merge" />
 
     <!-- Finish rule without the ';' character (see the 'rhses.1' rule in the 'src/parse-gram.y' file, from the Bison source) -->
-    <RegExpr attribute="Open Rule" context="#pop" String="[\w\-\.](?=[\w\-\.]*:)" column="0" endRegion="rule" />
+    <RegExpr attribute="Open Rule" context="#pop" String="^[\w\-\.](?=[\w\-\.]*:)" column="0" endRegion="rule" />
     <Detect2Chars attribute="Content-Type Delimiter" context="#pop" char="%" char1="%" lookAhead="true" firstNonSpace="true" endRegion="rule" />
-    <RegExpr attribute="Directive" context="#pop" String="%(union|code|destructor|printer|start|(no\-)?default\-prec|nterm|token|type|left|right|nonassoc|precedence)\b" lookAhead="true" column="0" endRegion="rule" />
+    <RegExpr attribute="Directive" context="#pop" String="^%(?:union|code|destructor|printer|start|(?:no\-)?default\-prec|nterm|token|type|left|right|nonassoc|precedence)\b" lookAhead="true" column="0" endRegion="rule" />
   </context>
-  <!-- The Bison parser allows to have ';' followed by '|', without the rule ending. 
+  <!-- The Bison parser allows to have ';' followed by '|', without the rule ending.
        The problem here is that the ';' char has endRegion="rule" (although it is not very relevant). -->
-  <context name="Rule End" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop">
+  <context name="Rule End" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop#pop">
     <DetectSpaces />
     <DetectChar attribute="Normal Text" context="#stay" char=";" />
     <DetectChar attribute="Normal Text" context="#pop" char="|" />
@@ -164,7 +164,7 @@ This code is released under the LGPL as part of kdelibs/kate.
     <WordDetect attribute="Directive" context="Percent Command In" String="%left" />
     <WordDetect attribute="Directive" context="Percent Command In" String="%right" />
     <WordDetect attribute="Directive" context="Percent Command In" String="%nonassoc" />
-    <WordDetect attribute="Directive" context="Percent Command In" String="%precedence" /> 
+    <WordDetect attribute="Directive" context="Percent Command In" String="%precedence" />
 
     <DetectChar attribute="Rule" context="#pop" char="%" /> <!-- End when there is an invalid declaration -->
     <DetectChar attribute="Normal Text" context="#pop" char=";" />
@@ -195,17 +195,17 @@ This code is released under the LGPL as part of kdelibs/kate.
   </context>
 
   <context name="Comment" attribute="Comment" lineEndContext="#stay">
-    <Detect2Chars attribute="Comment" context="CommentStar" char="/" char1="*" />
+    <Detect2Chars attribute="Comment" context="CommentStar" char="/" char1="*" beginRegion="comment" />
     <Detect2Chars attribute="Comment" context="CommentSlash" char="/" char1="/" />
   </context>
   <context name="CommentStar" attribute="Comment" lineEndContext="#stay">
-    <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" />
-    <IncludeRules context="##Alerts" />
-    <IncludeRules context="##Modelines" />
+    <DetectSpaces />
+    <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="comment" />
+    <IncludeRules context="##Comments" />
   </context>
   <context name="CommentSlash" attribute="Comment" lineEndContext="#pop">
-    <IncludeRules context="##Alerts" />
-    <IncludeRules context="##Modelines" />
+    <DetectSpaces />
+    <IncludeRules context="##Comments" />
   </context>
 
   <context name="StringOrChar" attribute="Normal Text" lineEndContext="#stay">
@@ -229,12 +229,12 @@ This code is released under the LGPL as part of kdelibs/kate.
   </context>
   <context name="Symbol-Variable" attribute="Normal Text" lineEndContext="#stay">
     <DetectChar attribute="Directive" context="Dol" char="$" />
-    <RegExpr attribute="Directive" context="#stay" String="@(\$?)(\d+|[A-Za-z_]\w*)?" />
+    <RegExpr attribute="Directive" context="#stay" String="@\$?(?:\d+|[A-Za-z_]\w*)?" />
   </context>
-  <context name="Dol" attribute="Normal Text" fallthrough="true" fallthroughContext="DolEnd" lineEndContext="#stay">
+  <context name="Dol" attribute="Normal Text" fallthroughContext="DolEnd" lineEndContext="#stay">
     <RegExpr attribute="Data Type" context="DolEnd" String="&lt;[^&gt;]+&gt;" />
   </context>
-  <context name="DolEnd" attribute="Normal Text" lineEndContext="#stay" fallthrough="true" fallthroughContext="#pop#pop">
+  <context name="DolEnd" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop#pop">
     <RegExpr attribute="Directive" context="#pop#pop" String="@?\d+" />
     <DetectChar attribute="Directive" context="#pop#pop" char="$" />
     <DetectIdentifier attribute="Directive" context="#pop#pop" />
@@ -259,7 +259,7 @@ This code is released under the LGPL as part of kdelibs/kate.
 </highlighting>
 <general>
   <comments>
-    <comment name="multiLine" start="/*" end="*/" />
+    <comment name="multiLine" start="/*" end="*/" region="comment" />
     <comment name="singleLine" start="//" />
   </comments>
 </general>

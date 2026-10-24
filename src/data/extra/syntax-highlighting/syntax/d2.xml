@@ -1,0 +1,732 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language
+[
+  <!ENTITY LabelCharMask "#$&amp;*\-.:;&lt;&gt;\[\\\]\{\}\s">
+  <!ENTITY ValueCharMask "#$;\[\\\]\{\}">
+  <!ENTITY ImportCharMask "@">
+]>
+<language name="D2" version="2" kateversion="6.22" section="Markup" extensions="*.d2" license="MIT">
+  <highlighting>
+
+    <list name="board">
+      <item>layers</item>
+      <item>scenarios</item>
+      <item>steps</item>
+    </list>
+
+    <list name="simple">
+      <item>label</item>
+      <item>shape</item>
+      <item>icon</item>
+      <item>constraint</item>
+      <item>tooltip</item>
+      <item>link</item>
+      <item>near</item>
+      <item>width</item>
+      <item>height</item>
+      <item>direction</item>
+      <item>top</item>
+      <item>left</item>
+      <item>grid-rows</item>
+      <item>grid-columns</item>
+      <item>grid-gap</item>
+      <item>vertical-gap</item>
+      <item>horizontal-gap</item>
+      <item>class</item>
+    </list>
+
+    <list name="composite">
+      <item>constraint</item>
+      <item>label</item>
+      <item>icon</item>
+      <item>tooltip</item>
+    </list>
+
+    <list name="connection">
+      <item>source-arrowhead</item>
+      <item>target-arrowhead</item>
+    </list>
+
+    <list name="style">
+      <item>opacity</item>
+      <item>stroke</item>
+      <item>fill</item>
+      <item>fill-pattern</item>
+      <item>stroke-width</item>
+      <item>stroke-dash</item>
+      <item>border-radius</item>
+
+      <!-- Only for text -->
+      <item>font</item>
+      <item>font-size</item>
+      <item>font-color</item>
+      <item>bold</item>
+      <item>italic</item>
+      <item>underline</item>
+      <item>text-transform</item>
+
+      <!-- Only for shapes -->
+      <item>shadow</item>
+      <item>multiple</item>
+      <item>double-border</item>
+
+      <!-- Only for squares -->
+      <item>3d</item>
+
+      <!-- Only for edges -->
+      <item>animated</item>
+      <item>filled</item>
+    </list>
+
+    <list name="direction">
+      <item>up</item>
+      <item>down</item>
+      <item>right</item>
+      <item>left</item>
+    </list>
+
+    <list name="near">
+      <item>top-left</item>
+      <item>top-center</item>
+      <item>top-right</item>
+
+      <item>center-left</item>
+      <item>center-right</item>
+
+      <item>bottom-left</item>
+      <item>bottom-center</item>
+      <item>bottom-right</item>
+    </list>
+
+    <list name="label-near">
+      <item>top-left</item>
+      <item>top-center</item>
+      <item>top-right</item>
+
+      <item>center-left</item>
+      <item>center-center</item>
+      <item>center-right</item>
+
+      <item>bottom-left</item>
+      <item>bottom-center</item>
+      <item>bottom-right</item>
+
+      <item>outside-top-left</item>
+      <item>outside-top-center</item>
+      <item>outside-top-right</item>
+
+      <item>outside-left-top</item>
+      <item>outside-left-center</item>
+      <item>outside-left-bottom</item>
+
+      <item>outside-right-top</item>
+      <item>outside-right-center</item>
+      <item>outside-right-bottom</item>
+
+      <item>outside-bottom-left</item>
+      <item>outside-bottom-center</item>
+      <item>outside-bottom-right</item>
+
+      <item>border-top-left</item>
+      <item>border-top-center</item>
+      <item>border-top-right</item>
+
+      <item>border-left-top</item>
+      <item>border-left-center</item>
+      <item>border-left-bottom</item>
+
+      <item>border-right-top</item>
+      <item>border-right-center</item>
+      <item>border-right-bottom</item>
+
+      <item>border-bottom-left</item>
+      <item>border-bottom-center</item>
+      <item>border-bottom-right</item>
+    </list>
+
+    <list name="tooltip-near">
+      <item>top-left</item>
+      <item>top-center</item>
+      <item>top-right</item>
+
+      <item>center-left</item>
+      <item>center-right</item>
+
+      <item>bottom-left</item>
+      <item>bottom-center</item>
+      <item>bottom-right</item>
+    </list>
+
+    <list name="fill">
+      <item>none</item>
+      <item>dots</item>
+      <item>lines</item>
+      <item>grain</item>
+      <item>paper</item>
+    </list>
+
+    <list name="text">
+      <item>none</item>
+      <item>uppercase</item>
+      <item>lowercase</item>
+      <item>capitalize</item>
+    </list>
+
+    <list name="shapes">
+      <item>rectangle</item>
+      <item>square</item>
+      <item>page</item>
+      <item>parallelogram</item>
+      <item>document</item>
+      <item>cylinder</item>
+      <item>queue</item>
+      <item>package</item>
+      <item>step</item>
+      <item>callout</item>
+      <item>stored_data</item>
+      <item>person</item>
+      <item>diamond</item>
+      <item>oval</item>
+      <item>circle</item>
+      <item>hexagon</item>
+      <item>cloud</item>
+      <item>c4-person</item>
+      <item>image</item>
+      <item>text</item>
+
+      <item>sql_table</item>
+      <item>class</item>
+      <item>sequence_diagram</item>
+    </list>
+
+    <list name="arrows">
+      <item>triangle</item>
+      <item>arrow</item>
+      <item>diamond</item>
+      <item>circle</item>
+      <item>box</item>
+      <item>cf-one</item>
+      <item>cf-one-required</item>
+      <item>cf-many</item>
+      <item>cf-many-required</item>
+      <item>cross</item>
+    </list>
+
+    <list name="constraint">
+      <item>primary_key</item>
+      <item>PK</item>
+      <item>foreign_key</item>
+      <item>FK</item>
+      <item>unique</item>
+      <item>UNQ</item>
+    </list>
+
+    <list name="value">
+      <item>null</item>
+      <item>suspend</item>
+      <item>unsuspend</item>
+    </list>
+
+    <list name="filter">
+      <item>connected</item>
+      <item>leaf</item>
+      <item>src</item>
+      <item>dst</item>
+    </list>
+
+    <list name="bool">
+      <item>true</item>
+      <item>false</item>
+    </list>
+
+    <list name="colors">
+      <item>transparent</item>
+      <include>colors##CSS</include>
+    </list>
+
+    <list name="functions">
+      <include>functions##CSS</include>
+    </list>
+
+    <list name="font">
+      <item>mono</item>
+    </list>
+
+    <contexts>
+      <context name="Main" attribute="Normal Text" fallthroughContext="Error">
+        <DetectSpaces/>
+        <WordDetect String="classes" attribute="Keyword" additionalDeliminator="#" context="Classes"/>
+        <keyword String="board" attribute="Keyword" additionalDeliminator="#" context="Board"/>
+        <IncludeRules context="Content"/>
+      </context>
+      <context name="Comments" attribute="Normal Text">
+        <Detect2Chars char="\" char1="#" attribute="String Char"/>
+        <DetectChar char="#" attribute="Comment" context="Comment"/>
+        <StringDetect String="&quot;&quot;&quot;" attribute="Comment" context="MultiLineComment" beginRegion="MultiLineComment" firstNonSpace="true"/>
+      </context>
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+      </context>
+      <context name="MultiLineComment" attribute="Comment">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <StringDetect String="&quot;&quot;&quot;" attribute="Comment" context="#pop" endRegion="MultiLineComment"/>
+      </context>
+      <context name="Content" attribute="Normal Text">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <WordDetect String="d2-config" attribute="Keyword" additionalDeliminator="#" context="Vars"/>
+        <WordDetect String="d2-legend" attribute="Keyword" additionalDeliminator="#" context="Vars"/>
+        <WordDetect String="link" attribute="Keyword" additionalDeliminator="#" context="Link"/>
+        <WordDetect String="icon" attribute="Keyword" additionalDeliminator="#" context="Icon"/>
+        <WordDetect String="class" attribute="Keyword" additionalDeliminator="#" context="Class"/>
+        <WordDetect String="label" attribute="Keyword" additionalDeliminator="#" context="Label"/>
+        <WordDetect String="near" attribute="Keyword" additionalDeliminator="#" context="Near"/>
+        <WordDetect String="tooltip" attribute="Keyword" additionalDeliminator="#" context="Tooltip"/>
+        <WordDetect String="style" attribute="Keyword" additionalDeliminator="#" context="Style"/>
+        <WordDetect String="vars" attribute="Keyword" additionalDeliminator="#" context="Vars"/>
+        <WordDetect String="constraint" attribute="Keyword" additionalDeliminator="#" context="Constraint"/>
+        <keyword String="simple" attribute="Keyword" additionalDeliminator="#" weakDeliminator=" " context="Keyword"/>
+        <keyword String="composite" attribute="Keyword" additionalDeliminator="#" weakDeliminator=" " context="Composite"/>
+        <RegExpr String="\.\.\.@[^&ImportCharMask;]+" attribute="Import"/>
+        <StringDetect String="..." attribute="Error" context="Error"/>
+        <Detect2Chars char="!" char1="&amp;" attribute="Operator" context="Filter"/>
+        <Detect2Chars char="*" char1=":" context="Shape" lookAhead="true"/>
+        <Detect2Chars char="*" char1="." context="Shape" lookAhead="true"/>
+        <DetectChar char="&amp;" attribute="Operator" context="Filter"/>
+        <DetectChar char=";" attribute="Symbol"/>
+        <DetectChar char="'" attribute="Symbol" context="ShapeSingleQuote" beginRegion="Shape"/>
+        <DetectChar char="&quot;" attribute="Symbol" context="ShapeDoubleQuote" beginRegion="Shape"/>
+        <AnyChar String=":{" attribute="Error" context="Error"/>
+        <DetectChar char="}" attribute="Operator" context="#pop" endRegion="Content"/>
+        <RegExpr String="\(?(((?!--)([\s\-]|[^&LabelCharMask;]|\*+))+(--+|&lt;-*|-+&gt;|&lt;-+&gt;))+\s*((?!--)([\s\-\.]|[^&LabelCharMask;])|\*+)+\)?(\[(\d+|\*)\])?(\.[a-z]+)*:" context="Connection" lookAhead="true"/>
+        <AnyChar String="*(" attribute="Operator"/>
+       <RegExpr String="[^&LabelCharMask;]+" context="Shape" lookAhead="true"/>
+        <HlCStringChar context="Shape" lookAhead="true"/>
+        <Detect2Chars char="\" char1="." context="Shape" lookAhead="true"/>
+        <Detect2Chars char="-" char1="." context="Shape" lookAhead="true"/>
+        <RegExpr String="-[^\-&gt;]" context="Shape" lookAhead="true"/>
+      </context>
+      <context name="Shape" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <HlCStringChar attribute="String Char"/>
+        <DetectChar char="'" attribute="Symbol" context="ShapeSingleQuote" beginRegion="Shape"/>
+        <DetectChar char="&quot;" attribute="Symbol" context="ShapeDoubleQuote" beginRegion="Shape"/>
+        <DetectChar char=":" attribute="Symbol" context="LabelText"/>
+        <DetectChar char="{" attribute="Operator" context="Content" beginRegion="Content"/>
+        <DetectChar char="}" context="#pop" lookAhead="true"/>
+        <AnyChar String=")" attribute="Shape"/>
+        <DetectChar char="." attribute="Symbol" context="#pop"/>
+        <keyword String="connection" attribute="Error" additionalDeliminator="#" context="Error" weakDeliminator=" "/>
+        <IncludeRules context="ShapeLine"/>
+      </context>
+      <context name="ShapeLine" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectChar char=";" attribute="Symbol" context="#pop"/>
+        <Detect2Chars char="\" char1="." attribute="String Char"/>
+        <Detect2Chars char="-" char1="." attribute="Shape"/>
+        <Detect2Chars char="-" char1=":" attribute="Shape"/>
+        <RegExpr String="&lt;-*&gt;(?=\s*-?\s*(\*|[^&LabelCharMask;]))|(?&lt;!--)\s*&lt;-*(?=(\s-)*\s*(\*|[^&LabelCharMask;]))|\s*-+&gt;(?=\s*\-?(\s-)*\s*(\*|[^&LabelCharMask;]))|(?&lt;!&gt;)--+(?=\s*-?(\*|[^&LabelCharMask;]))|" attribute="Operator"/>
+        <RegExpr String="(-\s*)?[^&LabelCharMask;)]+|(?&lt;!-)-(&lt;(-(?!(&gt;)))?|(?!(&gt;|-)))" attribute="Shape"/>
+        <DetectChar char="\" attribute="String Char"/>
+        <AnyChar String="*" attribute="Operator"/>
+      </context>
+      <context name="Connection" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <HlCStringChar attribute="String Char"/>
+        <DetectChar char=":" attribute="Symbol" context="LabelText"/>
+        <DetectChar char="{" attribute="Operator" context="ConnectionBody" beginRegion="ConnectionBody"/>
+        <DetectChar char="}" attribute="Operator" context="#pop" endRegion="ConnectionBody"/>
+        <DetectChar char="]" attribute="Operator" context="#pop!Shape"/>
+        <AnyChar String=".[()" attribute="Operator"/>
+        <IncludeRules context="ShapeLine"/>
+      </context>
+      <context name="ConnectionBody" attribute="Normal Text" fallthroughContext="Error">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <WordDetect String="link" attribute="Keyword" additionalDeliminator="#" context="Link"/>
+        <WordDetect String="icon" attribute="Keyword" additionalDeliminator="#" context="Icon"/>
+        <WordDetect String="class" attribute="Keyword" additionalDeliminator="#" context="Class"/>
+        <WordDetect String="label" attribute="Keyword" additionalDeliminator="#" context="Label"/>
+        <WordDetect String="tooltip" attribute="Keyword" additionalDeliminator="#" context="Tooltip"/>
+        <WordDetect String="style" attribute="Keyword" additionalDeliminator="#" context="Style"/>
+        <keyword String="simple" attribute="Keyword" additionalDeliminator="#" context="Keyword"/>
+        <keyword String="connection" attribute="Keyword" additionalDeliminator="#"/>
+        <DetectChar char="&amp;" attribute="Operator" context="Filter"/>
+        <DetectChar char="." attribute="Symbol"/>
+        <DetectChar char=":" attribute="Symbol" context="LabelText"/>
+        <DetectChar char="{" attribute="Operator" context="ArrowContent" beginRegion="ArrowContent"/>
+        <DetectChar char="}" attribute="Operator" context="#pop" endRegion="ConnectionBody"/>
+      </context>
+      <context name="ArrowContent" attribute="Normal Text" fallthroughContext="Error">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <WordDetect String="label" attribute="Keyword" additionalDeliminator="#" context="Label"/>
+        <WordDetect String="tooltip" attribute="Keyword" additionalDeliminator="#" context="Tooltip"/>
+        <WordDetect String="style" attribute="Keyword" additionalDeliminator="#" context="Style"/>
+        <keyword String="simple" attribute="Keyword" additionalDeliminator="#" context="Keyword" weakDeliminator=" "/>
+        <DetectChar char="." attribute="Symbol"/>
+        <DetectChar char="}" attribute="Operator" context="#pop" endRegion="ArrowContent"/>
+      </context>
+      <context name="Filter" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <keyword String="simple" attribute="Filter" additionalDeliminator="#"/>
+        <keyword String="filter" attribute="Filter" additionalDeliminator="#"/>
+        <DetectChar char=";" attribute="Symbol" context="#pop"/>
+        <DetectChar char=":" attribute="Symbol" context="FilterValue"/>
+      </context>
+      <context name="FilterValue" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <AnyChar String=".*" attribute="Symbol"/>
+        <AnyChar String=";}" context="#pop" lookAhead="true"/>
+        <RegExpr String="[^&LabelCharMask;]([^&LabelCharMask;]|\-)+" attribute="Shape target"/>
+      </context>
+      <context name="Near" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char="." attribute="Symbol" context="#pop"/>
+        <DetectChar char=":" attribute="Symbol" context="#pop!NearValue"/>
+      </context>
+      <context name="NearValue" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <keyword String="near" attribute="Value"/>
+        <DetectChar char="." attribute="Symbol"/>
+        <RegExpr String="[^&LabelCharMask;]+" attribute="Shape target"/>
+      </context>
+      <context name="Keyword" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char="." attribute="Symbol" context="#pop"/>
+        <DetectChar char=":" attribute="Symbol" context="#pop!KeywordValue"/>
+      </context>
+      <context name="KeywordValue" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <keyword String="direction" attribute="Value" additionalDeliminator="#"/>
+        <keyword String="shapes" attribute="Value" additionalDeliminator="#"/>
+        <keyword String="arrows" attribute="Value" additionalDeliminator="#"/>
+        <keyword String="label-near" attribute="Value"/>
+        <DetectChar char="&quot;" attribute="Symbol" context="DoubleQuote" beginRegion="String"/>
+        <DetectChar char="'" attribute="Symbol" context="SingleQuote" beginRegion="String"/>
+        <Float attribute="Float"/>
+        <Int attribute="Integer"/>
+        <AnyChar String=";}" context="#pop" lookAhead="true"/>
+      </context>
+      <context name="Composite" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char="." attribute="Symbol" context="#pop"/>
+        <DetectChar char=":" attribute="Symbol" context="#pop!CompositeValue"/>
+      </context>
+      <context name="CompositeValue" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <keyword String="direction" attribute="Value" additionalDeliminator="#"/>
+        <keyword String="shapes" attribute="Value" additionalDeliminator="#"/>
+        <keyword String="label-near" attribute="Value"/>
+        <DetectChar char="&quot;" attribute="Symbol" context="DoubleQuote" beginRegion="String"/>
+        <DetectChar char="'" attribute="Symbol" context="SingleQuote" beginRegion="String"/>
+        <Float attribute="Float"/>
+        <Int attribute="Integer"/>
+        <DetectChar char=";" attribute="Symbol" context="#pop"/>
+        <DetectChar char="{" attribute="Operator" context="#pop!Content" beginRegion="Content"/>
+      </context>
+      <context name="Board" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char=":" attribute="Symbol"/>
+        <DetectChar char="{" attribute="Operator" context="Content" beginRegion="Content"/>
+      </context>
+      <context name="Classes" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char=":" attribute="Symbol"/>
+        <DetectChar char="{" attribute="Operator" context="ClassesBody" beginRegion="ClassesBody"/>
+      </context>
+      <context name="ClassesBody" attribute="Normal Text" fallthroughContext="Error">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <WordDetect String="style" attribute="Keyword" additionalDeliminator="#" context="Style"/>
+        <keyword String="simple" attribute="Keyword" additionalDeliminator="#" context="Keyword"/>
+        <keyword String="connection" attribute="Keyword" additionalDeliminator="#"/>
+        <AnyChar String=".:;" attribute="Symbol"/>
+        <DetectChar char="{" attribute="Operator" context="ShapeClass" beginRegion="ShapeClass"/>
+        <DetectChar char="}" attribute="Operator" context="#pop" endRegion="ClassesBody"/>
+        <RegExpr String="[^&LabelCharMask;]+" attribute="Classes"/>
+      </context>
+      <context name="ShapeClass" attribute="Normal Text" fallthroughContext="Error">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char="}" attribute="Operator" context="#pop" endRegion="ShapeClass"/>
+        <WordDetect String="icon" attribute="Keyword" additionalDeliminator="#" context="Icon"/>
+        <WordDetect String="label" attribute="Keyword" additionalDeliminator="#" context="Label"/>
+        <WordDetect String="tooltip" attribute="Keyword" additionalDeliminator="#" context="Tooltip"/>
+        <WordDetect String="style" attribute="Keyword" additionalDeliminator="#" context="Style"/>
+        <keyword String="simple" attribute="Keyword" additionalDeliminator="#" context="Keyword"/>
+        <keyword String="connection" attribute="Keyword" additionalDeliminator="#"/>
+        <AnyChar String=".;" attribute="Symbol"/>
+      </context>
+      <context name="Style" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char=":" attribute="Symbol" context="StyleItemValue"/>
+        <DetectChar char="." attribute="Symbol"/>
+        <AnyChar String=";}" context="#pop" lookAhead="true"/>
+        <keyword String="style" additionalDeliminator="#" attribute="Keyword"/>
+        <DetectChar char="{" attribute="Operator" context="StyleBody" beginRegion="StyleBody"/>
+      </context>
+      <context name="StyleBody" attribute="Normal Text">
+        <WordDetect String="style" attribute="Keyword" additionalDeliminator="#" context="Style"/>
+        <DetectChar char="}" attribute="Operator" context="#pop" endRegion="StyleBody"/>
+        <keyword String="style" additionalDeliminator="#" attribute="Keyword"/>
+        <AnyChar String=":;" attribute="Symbol"/>
+        <IncludeRules context="StyleValue"/>
+      </context>
+      <context name="StyleItemValue" attribute="Normal Text" lineEndContext="#pop">
+        <DetectChar char=";" attribute="Symbol" context="#pop" lookAhead="true"/>
+        <IncludeRules context="StyleValue"/>
+      </context>
+      <context name="StyleValue" attribute="Normal Text" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <WordDetect String="null" attribute="Value" additionalDeliminator="#"/>
+        <keyword String="bool" additionalDeliminator="#" insensitive="true"  attribute="Boolean"/>
+        <keyword String="colors" additionalDeliminator="#" insensitive="true" attribute="Named Color"/>
+        <keyword String="font" additionalDeliminator="#" attribute="Value"/>
+        <keyword String="fill" additionalDeliminator="#" attribute="Value"/>
+        <keyword String="functions" additionalDeliminator="#" attribute="Style function"/>
+        <keyword String="text" additionalDeliminator="#" attribute="Value"/>
+        <Float attribute="Float"/>
+        <Int attribute="Integer"/>
+        <Detect2Chars char="$" char1="{" attribute="Substitution" context="Substitution"/>
+        <DetectChar char="&quot;" attribute="Symbol" context="DoubleQuote" beginRegion="String"/>
+        <DetectChar char="'" attribute="Symbol" context="SingleQuote" beginRegion="String"/>
+        <AnyChar String="{}" context="#pop" lookAhead="true"/>
+      </context>
+      <context name="Vars" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char=":" attribute="Symbol"/>
+        <DetectChar char="{" attribute="Operator" context="Content" beginRegion="Content"/>
+        <DetectChar char="}" context="#pop" lookAhead="true"/>
+      </context>
+      <context name="Constraint" attribute="Label" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <AnyChar String="[:;]" attribute="Symbol"/>
+        <keyword String="constraint" additionalDeliminator="#" attribute="Value"/>
+        <DetectChar char="}" context="#pop" lookAhead="true"/>
+      </context>
+      <context name="LabelText" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <RegExpr String="@[^&ImportCharMask;]+" attribute="Import" context="#pop!Error"/>
+        <RegExpr String="\|([\W]*)(?:markdown|md)" attribute="Code" context="#pop!Markdown" beginRegion="Code"/>
+        <RegExpr String="\|([\W]*)(?:latex|tex)" attribute="Code" context="#pop!LaTeX" beginRegion="Code"/>
+        <RegExpr String="\|([\W]*)(?:javascript|js)" attribute="Code" context="#pop!JavaScript" beginRegion="Code"/>
+        <RegExpr String="\|([\W]*)(?:golang|go)" attribute="Code" context="#pop!GoLang" beginRegion="Code"/>
+        <RegExpr String="\|([\W]*)(?:python|py)" attribute="Code" context="#pop!Python" beginRegion="Code"/>
+        <RegExpr String="\|([\W]*)(?:ruby|rb)" attribute="Code" context="#pop!Ruby" beginRegion="Code"/>
+        <RegExpr String="\|([\W]*)(?:typescript|ts)" attribute="Code" context="#pop!TypeScript" beginRegion="Code"/>
+        <!-- Way more languages are actually supported, full list => https://github.com/alecthomas/chroma?tab=readme-ov-file#supported-languages -->
+        <RegExpr String="\|([\W]*)" attribute="Code" context="#pop!PlainText" beginRegion="Code"/>
+
+        <keyword String="value" attribute="Value"/>
+        <DetectChar char="&quot;" attribute="Symbol" context="DoubleQuote" beginRegion="String"/>
+        <DetectChar char="'" attribute="Symbol" context="SingleQuote" beginRegion="String"/>
+        <AnyChar String=";{}" context="#pop" lookAhead="true"/>
+        <IncludeRules context="Text"/>
+      </context>
+      <context name="DoubleQuote" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <RegExpr String="#([0-9A-Fa-f]{8}|[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3,4})" attribute="Color"/>
+        <HlCStringChar attribute="String Char"/>
+        <Detect2Chars char="\" char1="$" attribute="String Char" />
+        <RegExpr String="\$\s*{" attribute="Substitution" context="Substitution"/>
+        <DetectChar char="\" attribute="String Char"/>
+        <DetectChar char="$" attribute="Error"/>
+        <RegExpr String="[^&quot;\\\$]+" attribute="Label"/>
+        <DetectChar char="&quot;" attribute="Symbol" context="#pop!AfterQuote" endRegion="String"/>
+      </context>
+      <context name="SingleQuote" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <RegExpr String="[^']+" attribute="Label"/>
+        <DetectChar char="'" attribute="Symbol" context="#pop!AfterQuote" endRegion="String"/>
+      </context>
+      <context name="ShapeDoubleQuote" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <HlCStringChar attribute="String Char"/>
+        <DetectChar char="\" attribute="String Char"/>
+        <RegExpr String="[^&quot;\\]+" attribute="Shape"/>
+        <DetectChar char="&quot;" attribute="Symbol" context="#pop!Shape" endRegion="Shape"/>
+      </context>
+      <context name="ShapeSingleQuote" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <RegExpr String="[^']+" attribute="Shape"/>
+        <DetectChar char="'" attribute="Symbol" context="#pop!Shape" endRegion="Shape"/>
+      </context>
+      <context name="Text" attribute="Label" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <HlCStringChar attribute="String Char"/>
+        <Detect2Chars char="\" char1="$" attribute="String Char" />
+        <RegExpr String="\$\s*{" attribute="Substitution" context="Substitution"/>
+        <DetectChar char="\" attribute="String Char"/>
+        <AnyChar String="$[]" attribute="Error"/>
+        <RegExpr String="[^\${}\\\[\];#]+" attribute="Label"/>
+      </context>
+      <context name="PlainText" attribute="Normal Text">
+        <StringDetect String="%1|" attribute="Code" context="#pop" endRegion="Code" dynamic="true"/>
+      </context>
+      <context name="Markdown" attribute="Normal Text">
+        <StringDetect String="%1|" attribute="Code" context="#pop" endRegion="Code" dynamic="true"/>
+        <IncludeRules context="Normal Text##Markdown" includeAttrib="true"/>
+      </context>
+      <context name="LaTeX" attribute="Normal Text">
+        <StringDetect String="%1|" attribute="Code" context="#pop" endRegion="Code" dynamic="true"/>
+        <IncludeRules context="##LaTeX" includeAttrib="true"/>
+      </context>
+      <context name="JavaScript" attribute="Normal Text">
+        <StringDetect String="%1|" attribute="Code" context="#pop" endRegion="Code" dynamic="true"/>
+        <IncludeRules context="##JavaScript" includeAttrib="true"/>
+      </context>
+      <context name="GoLang" attribute="Normal Text">
+        <StringDetect String="%1|" attribute="Code" context="#pop" endRegion="Code" dynamic="true"/>
+        <IncludeRules context="##Go" includeAttrib="true"/>
+      </context>
+      <context name="Python" attribute="Normal Text">
+        <StringDetect String="%1|" attribute="Code" context="#pop" endRegion="Code" dynamic="true"/>
+        <IncludeRules context="##Python" includeAttrib="true"/>
+      </context>
+      <context name="Ruby" attribute="Normal Text">
+        <StringDetect String="%1|" attribute="Code" context="#pop" endRegion="Code" dynamic="true"/>
+        <IncludeRules context="Ruby##Ruby" includeAttrib="true"/>
+      </context>
+      <context name="TypeScript" attribute="Normal Text">
+        <StringDetect String="%1|" attribute="Code" context="#pop" endRegion="Code" dynamic="true"/>
+        <IncludeRules context="Normal##TypeScript" includeAttrib="true"/>
+      </context>
+      <context name="Error" attribute="Error" lineEndContext="#pop">
+      </context>
+      <context name="AfterQuote" attribute="Error" lineEndContext="#pop">
+        <DetectSpaces attribute="Normal Text" />
+        <IncludeRules context="Comments"/>
+        <AnyChar String=";{}" context="#pop" lookAhead="true"/>
+      </context>
+      <context name="Substitution" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <IncludeRules context="Comments"/>
+        <DetectChar char="." attribute="Symbol"/>
+        <DetectChar char=";" attribute="Error" context="Error"/>
+        <DetectChar char="}" attribute="Substitution" context="#pop"/>
+        <RegExpr String="[^#{}\.;]+" attribute="Variable" />
+      </context>
+      <context name="Link" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <Detect2Chars char="\" char1="$" attribute="String Char" />
+        <Detect2Chars char="\" char1="{" attribute="String Char" />
+        <Detect2Chars char="\" char1="}" attribute="String Char" />
+        <Detect2Chars char="\" char1="[" attribute="String Char" />
+        <Detect2Chars char="\" char1="]" attribute="String Char" />
+        <HlCStringChar attribute="String Char"/>
+        <RegExpr String="\$\s*{" attribute="Substitution" context="Substitution"/>
+        <DetectChar char=";" attribute="Symbol" context="#pop"/>
+        <DetectChar char=":" attribute="Symbol"/>
+        <DetectChar char="\" attribute="Link target"/>
+        <DetectChar char="}" context="#pop" lookAhead="true"/>
+        <RegExpr String="[^&ValueCharMask;]+" attribute="Link target"/>
+      </context>
+      <context name="Icon" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char="." attribute="Symbol" context="#pop"/>
+        <Detect2Chars char="\" char1="\" attribute="String Char" />
+        <Detect2Chars char="\" char1="$" attribute="String Char" />
+        <Detect2Chars char="\" char1="{" attribute="String Char" />
+        <Detect2Chars char="\" char1="}" attribute="String Char" />
+        <Detect2Chars char="\" char1="[" attribute="String Char" />
+        <Detect2Chars char="\" char1="]" attribute="String Char" />
+        <HlCStringChar attribute="Error" context="Error"/>
+        <RegExpr String="\$\s*{" attribute="Substitution" context="Substitution"/>
+        <DetectChar char=";" attribute="Symbol" context="#pop"/>
+        <DetectChar char=":" attribute="Symbol"/>
+        <DetectChar char="\" attribute="Icon"/>
+        <DetectChar char="}" context="#pop" lookAhead="true"/>
+        <RegExpr String="[^&ValueCharMask;]+" attribute="Icon"/>
+      </context>
+      <context name="Class" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <Detect2Chars char="\" char1="$" attribute="String Char" />
+        <Detect2Chars char="\" char1="{" attribute="String Char" />
+        <Detect2Chars char="\" char1="}" attribute="String Char" />
+        <Detect2Chars char="\" char1="[" attribute="String Char" />
+        <Detect2Chars char="\" char1="]" attribute="String Char" />
+        <HlCStringChar attribute="String Char"/>
+        <RegExpr String="\$\s*{" attribute="Substitution" context="Substitution"/>
+        <DetectChar char="[" attribute="Symbol" context="ClassList"/>
+        <DetectChar char=";" attribute="Symbol" context="#pop"/>
+        <DetectChar char=":" attribute="Symbol"/>
+        <DetectChar char="\" attribute="Class"/>
+        <DetectChar char="}" context="#pop" lookAhead="true"/>
+        <RegExpr String="[^&ValueCharMask;]+" attribute="Class"/>
+      </context>
+      <context name="ClassList" attribute="Class" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char=";" attribute="Symbol"/>
+        <DetectChar char="]" attribute="Symbol" context="#pop"/>
+      </context>
+      <context name="Label" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char="." attribute="Symbol" context="#pop"/>
+        <DetectChar char=":" attribute="Symbol" context="#pop!LabelText"/>
+      </context>
+      <context name="Tooltip" attribute="Normal Text" fallthroughContext="Error" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="Comments"/>
+        <DetectChar char="." attribute="Symbol" context="#pop"/>
+        <DetectChar char=":" attribute="Symbol" context="#pop!LabelText"/>
+      </context>
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal Text" defStyleNum="dsNormal"/>
+      <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+      <itemData name="Filter" defStyleNum="dsKeyword" italic="true"/>
+      <itemData name="Import" defStyleNum="dsImport"/>
+      <itemData name="Shape" defStyleNum="dsFunction" bold="true" spellChecking="false"/>
+      <itemData name="Shape target" defStyleNum="dsFunction" bold="false" italic="true" spellChecking="false"/>
+      <itemData name="Link target" defStyleNum="dsSpecialString" italic="true" spellChecking="false"/>
+      <itemData name="Icon" defStyleNum="dsSpecialString" italic="true"/>
+      <itemData name="Classes" defStyleNum="dsExtension" spellChecking="false"/>
+      <itemData name="Class" defStyleNum="dsExtension" bold="false" italic="true" spellChecking="false"/>
+      <itemData name="Operator" defStyleNum="dsOperator"/>
+      <itemData name="Symbol" defStyleNum="dsChar"/>
+      <itemData name="Value" defStyleNum="dsDecVal" spellChecking="false"/>
+      <itemData name="Named Color" defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Style function" defStyleNum="dsFunction" spellChecking="false"/>
+      <itemData name="Color" defStyleNum="dsConstant" spellChecking="false"/>
+      <itemData name="Label" defStyleNum="dsString"/>
+      <itemData name="Code" defStyleNum="dsInformation" spellChecking="false"/>
+      <itemData name="String Char" defStyleNum="dsSpecialChar"/>
+      <itemData name="Substitution" defStyleNum="dsSpecialChar"/>
+      <itemData name="Variable" defStyleNum="dsVariable"/>
+      <itemData name="Boolean" defStyleNum="dsChar"/>
+      <itemData name="Integer" defStyleNum="dsDecVal"/>
+      <itemData name="Float" defStyleNum="dsFloat"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Error" defStyleNum="dsError"/>
+    </itemDatas>
+
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="true" weakDeliminator="-@"/>
+    <comments>
+      <comment name="singleLine" start="#" position="afterwhitespace"/>
+      <comment name="multiLine" start="&quot;&quot;&quot;" end="&quot;&quot;&quot;" region="comment"/>
+    </comments>
+  </general>
+
+</language>

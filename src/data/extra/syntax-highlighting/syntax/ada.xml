@@ -1,13 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language
+[
+  <!ENTITY b2 "[0-1]++(_?[0-1])*+">
+  <!ENTITY b3 "[0-2]++(_?[0-2])*+">
+  <!ENTITY b4 "[0-3]++(_?[0-3])*+">
+  <!ENTITY b5 "[0-4]++(_?[0-4])*+">
+  <!ENTITY b6 "[0-5]++(_?[0-5])*+">
+  <!ENTITY b7 "[0-6]++(_?[0-6])*+">
+  <!ENTITY b8 "[0-7]++(_?[0-7])*+">
+  <!ENTITY b9 "[0-8]++(_?[0-8])*+">
+  <!ENTITY b10 "[0-9]++(_?[0-9])*+">
+  <!ENTITY b11 "[0-9a-a]++(_?[0-9]a-a)*+">
+  <!ENTITY b12 "[0-9a-b]++(_?[0-9]a-b)*+">
+  <!ENTITY b13 "[0-9a-c]++(_?[0-9]a-c)*+">
+  <!ENTITY b14 "[0-9a-d]++(_?[0-9]a-d)*+">
+  <!ENTITY b15 "[0-9a-e]++(_?[0-9]a-e)*+">
+  <!ENTITY b16 "[0-9a-f]++(_?[0-9]a-f)*+">
+]>
 <language name="Ada"
-          version="3"
-          kateversion="5.0"
+          version="7"
+          kateversion="5.79"
           section="Sources"
           extensions="*.adb;*.ads;*.ada;*.a"
           indenter="ada"
           mimetype="text/x-adasrc">
   <highlighting>
+    <!-- http://ada-auth.org/standards/rm12_w_tc1/html/RM-P.html -->
+
+    <!-- http://ada-auth.org/standards/rm12_w_tc1/html/RM-2-9.html -->
     <list name="keywords">
       <item>abort</item>
       <item>abs</item>
@@ -21,6 +41,7 @@
       <item>at</item>
       <item>begin</item>
       <item>body</item>
+      <item>case</item>
       <item>constant</item>
       <item>declare</item>
       <item>delay</item>
@@ -37,10 +58,12 @@
       <item>function</item>
       <item>generic</item>
       <item>goto</item>
+      <item>if</item>
       <item>in</item>
       <item>interface</item>
       <item>is</item>
       <item>limited</item>
+      <item>loop</item>
       <item>mod</item>
       <item>new</item>
       <item>not</item>
@@ -57,14 +80,17 @@
       <item>protected</item>
       <item>raise</item>
       <item>range</item>
-      <item>rem</item>
       <item>record</item>
+      <item>rem</item>
       <item>renames</item>
       <item>requeue</item>
       <item>return</item>
       <item>reverse</item>
+      <item>select</item>
       <item>separate</item>
+      <item>some</item>
       <item>subtype</item>
+      <item>synchronized</item>
       <item>tagged</item>
       <item>task</item>
       <item>terminate</item>
@@ -77,6 +103,7 @@
       <item>with</item>
       <item>xor</item>
     </list>
+
     <list name="pragmas">
       <item>all_calls_remote</item>
       <item>assert</item>
@@ -128,6 +155,7 @@
       <item>volatile</item>
       <item>volatile_components</item>
     </list>
+
     <list name="types">
       <item>boolean</item>
       <item>character</item>
@@ -145,37 +173,152 @@
       <item>wide_wide_character</item>
       <item>wide_wide_string</item>
     </list>
+
     <contexts>
       <context attribute="Normal Text" lineEndContext="#stay" name="Default">
-        <RegExpr attribute="Keyword" context="#stay" String="\brecord\b"       insensitive="true" beginRegion="RecordRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+record\b" insensitive="true"   endRegion="RecordRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bcase\b"         insensitive="true" beginRegion="CaseRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+case\b"   insensitive="true"   endRegion="CaseRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bif\b"           insensitive="true" beginRegion="IfRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+if\b"     insensitive="true"   endRegion="IfRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bloop\b"         insensitive="true" beginRegion="LoopRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+loop\b"   insensitive="true"   endRegion="LoopRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bselect\b"       insensitive="true" beginRegion="SelectRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\s+select\b" insensitive="true"   endRegion="SelectRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bbegin\b"        insensitive="true" beginRegion="BeginRegion"/>
-        <RegExpr attribute="Keyword" context="#stay" String="\bend\b"          insensitive="true"   endRegion="BeginRegion"/>
+        <DetectSpaces />
+
         <StringDetect attribute="Region Marker" context="Region Marker" String="--  BEGIN" beginRegion="RegionMarker" firstNonSpace="true" />
         <StringDetect attribute="Region Marker" context="Region Marker" String="--  END" endRegion="RegionMarker" firstNonSpace="true" />
+        <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;|"/>
+        <AnyChar context="Numeric" String="0123456789" lookAhead="1"/>
+        <DetectChar context="String" char="&quot;" lookAhead="1"/>
+
+        <WordDetect attribute="Keyword" context="#stay" String="record" insensitive="true" beginRegion="RecordRegion"/>
+        <WordDetect attribute="Keyword" context="#stay" String="case"   insensitive="true" beginRegion="CaseRegion"/>
+        <WordDetect attribute="Keyword" context="#stay" String="if"     insensitive="true" beginRegion="IfRegion"/>
+        <WordDetect attribute="Keyword" context="#stay" String="loop"   insensitive="true" beginRegion="LoopRegion"/>
+        <WordDetect attribute="Keyword" context="#stay" String="select" insensitive="true" beginRegion="SelectRegion"/>
+        <WordDetect attribute="Keyword" context="#stay" String="begin"  insensitive="true" beginRegion="BeginRegion"/>
+
+        <WordDetect attribute="Keyword" context="End"   String="end"    insensitive="true" lookAhead="1"/>
+        <WordDetect attribute="Keyword" context="Null"  String="null"   insensitive="true"/>
+
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
         <keyword attribute="Pragmas" context="#stay" String="pragmas" />
         <keyword attribute="Data Type" context="#stay" String="types" />
-        <Float attribute="Float" context="#stay"/>
-        <Int attribute="Decimal" context="#stay"/>
+
+        <DetectIdentifier />
+
         <RegExpr attribute="Char" context="#stay" String="'.'"/>
-        <DetectChar attribute="String" context="String" char="&quot;"/>
-        <Detect2Chars attribute="Comment" context="Comment" char="-" char1="-"/>
-        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;|"/>
       </context>
-      <context attribute="Region Marker" lineEndContext="#pop" name="Region Marker"/>
-      <context attribute="String" lineEndContext="#pop" name="String">
-        <DetectChar attribute="String" context="#pop" char="&quot;"/>
+
+      <context attribute="Keyword" lineEndContext="#pop" name="End">
+        <RegExpr    attribute="Keyword" context="#pop" String="end\s+record\b" insensitive="true"   endRegion="RecordRegion"/>
+        <RegExpr    attribute="Keyword" context="#pop" String="end\s+case\b"   insensitive="true"   endRegion="CaseRegion"/>
+        <RegExpr    attribute="Keyword" context="#pop" String="end\s+if\b"     insensitive="true"   endRegion="IfRegion"/>
+        <RegExpr    attribute="Keyword" context="#pop" String="end\s+loop\b"   insensitive="true"   endRegion="LoopRegion"/>
+        <RegExpr    attribute="Keyword" context="#pop" String="end\s+select\b" insensitive="true"   endRegion="SelectRegion"/>
+        <DetectIdentifier attribute="Keyword" context="#pop" endRegion="BeginRegion"/>
       </context>
-      <context attribute="Comment" lineEndContext="#pop" name="Comment"/>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="Null" fallthroughContext="#pop">
+        <DetectSpaces attribute="Normal Text"/>
+        <WordDetect attribute="Keyword" context="#pop" String="record" insensitive="true"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="Numeric">
+        <RegExpr attribute="Float" context="NumericExp" String="\b&b10;\.&b10;"/>
+        <RegExpr attribute="Decimal" context="NumericExp" String="\b&b10;(?!#)"/>
+        <WordDetect attribute="Base" context="Base2" String="2#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base3" String="3#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base4" String="4#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base5" String="5#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base6" String="6#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base7" String="7#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base8" String="8#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base9" String="9#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base10" String="10#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base11" String="11#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base12" String="12#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base13" String="13#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base14" String="14#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base15" String="15#" additionalDeliminator="#"/>
+        <WordDetect attribute="Base" context="Base16" String="16#" additionalDeliminator="#"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="NumericExp" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Exponent" context="#pop#pop" String="(?:[eE][-+]?&b10;)"/>
+      </context>
+
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base2" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b2;\.&b2;"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b2;"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base3" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b3;\.&b3;"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b3;"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base4" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b4;\.&b4;"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b4;"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base5" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b5;\.&b5;"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b5;"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base6" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b6;\.&b6;"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b6;"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base7" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b7;\.&b7;"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b7;"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base8" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b8;\.&b8;"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b8;"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base9" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b9;\.&b9;"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b9;"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base10" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b10;\.&b10;"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b10;"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base11" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b11;\.&b11;" insensitive="1"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b11;" insensitive="1"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base12" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b12;\.&b12;" insensitive="1"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b12;" insensitive="1"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base13" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b13;\.&b13;" insensitive="1"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b13;" insensitive="1"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base14" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b14;\.&b14;" insensitive="1"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b14;" insensitive="1"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base15" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b15;\.&b15;" insensitive="1"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b15;" insensitive="1"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="Base16" fallthroughContext="#pop#pop">
+        <RegExpr attribute="Float" context="BaseExp" String="&b16;\.&b16;" insensitive="1"/>
+        <RegExpr attribute="Decimal" context="BaseExp" String="&b16;" insensitive="1"/>
+      </context>
+      <context attribute="Normal Text" lineEndContext="#pop" name="BaseExp" fallthroughContext="#pop#pop#pop">
+        <DetectChar attribute="Base" context="#pop#pop!NumericExp" char="#"/>
+      </context>
+
+      <context attribute="Region Marker" lineEndContext="#pop" name="Region Marker">
+      </context>
+
+      <context attribute="String" lineEndContext="#pop" name="String" fallthroughContext="PartialString">
+        <RangeDetect attribute="String" context="#pop" char="&quot;" char1="&quot;"/>
+      </context>
+      <context attribute="String" lineEndContext="#pop#pop" name="PartialString">
+      </context>
+
+      <context attribute="Comment" lineEndContext="#pop" name="Comment">
+        <DetectSpaces attribute="Comment"/>
+        <IncludeRules context="##Comments" />
+        <DetectIdentifier attribute="Comment"/>
+      </context>
     </contexts>
     <itemDatas>
       <itemData name="Normal Text" defStyleNum="dsNormal" />
@@ -184,16 +327,18 @@
       <itemData name="Data Type"   defStyleNum="dsDataType"/>
       <itemData name="Decimal"     defStyleNum="dsDecVal" />
       <itemData name="Float"       defStyleNum="dsFloat" />
+      <itemData name="Base"        defStyleNum="dsBaseN" />
+      <itemData name="Exponent"    defStyleNum="dsDecVal" />
       <itemData name="Char"        defStyleNum="dsChar" />
       <itemData name="String"      defStyleNum="dsString" />
       <itemData name="Comment"     defStyleNum="dsComment" />
-      <itemData name="Symbol"      defStyleNum="dsNormal"/>
+      <itemData name="Symbol"      defStyleNum="dsOperator"/>
       <itemData name="Region Marker" defStyleNum="dsRegionMarker" />
     </itemDatas>
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="--" />
+      <comment name="singleLine" start="--" position="afterwhitespace" />
     </comments>
     <keywords casesensitive="0" />
   </general>

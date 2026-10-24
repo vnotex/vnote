@@ -1,0 +1,221 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language>
+<language name="Dart" section="Sources" version="4" kateversion="5.0" indenter="cstyle" extensions="*.dart" mimetype="text/x-dart" priority="1" author="Waqar Ahmed (waqar.17a@gmail.com)" license="MIT">
+    <highlighting>
+        <list name="keywords">
+            <item>Function</item>
+            <item>abstract</item>
+            <item>as</item>
+            <item>assert</item>
+            <item>class</item>
+            <item>covariant</item>
+            <item>deferred</item>
+            <item>enum</item>
+            <item>export</item>
+            <item>extends</item>
+            <item>extension</item>
+            <item>external</item>
+            <item>factory</item>
+            <item>get</item>
+            <item>hide</item>
+            <item>implements</item>
+            <item>import</item>
+            <item>in</item>
+            <item>interface</item>
+            <item>is</item>
+            <item>library</item>
+            <item>mixin</item>
+            <item>new</item>
+            <item>on</item>
+            <item>operator</item>
+            <item>part</item>
+            <item>return</item>
+            <item>set</item>
+            <item>show</item>
+            <item>super</item>
+            <item>sync</item>
+            <item>this</item>
+            <item>typedef</item>
+            <item>with</item>
+            <item>yield</item>
+            <item>@pragma</item>
+            <item>@override</item>
+            <item>@deprecated</item>
+        </list>
+        <list name="controlflow">
+            <item>break</item>
+            <item>case</item>
+            <item>catch</item>
+            <item>continue</item>
+            <item>default</item>
+            <item>do</item>
+            <item>else</item>
+            <item>finally</item>
+            <item>for</item>
+            <item>if</item>
+            <item>rethrow</item>
+            <item>switch</item>
+            <item>throw</item>
+            <item>try</item>
+            <item>when</item>
+            <item>while</item>
+        </list>
+        <list name="modifiers">
+            <item>async</item>
+            <item>await</item>
+            <item>const</item>
+            <item>dynamic</item>
+            <item>final</item>
+            <item>late</item>
+            <item>sealed</item>
+            <item>static</item>
+        </list>
+        <list name="types">
+            <item>Future</item>
+            <item>Iterable</item>
+            <item>List</item>
+            <item>Map</item>
+            <item>Never</item>
+            <item>Object</item>
+            <item>Set</item>
+            <item>Stream</item>
+            <item>String</item>
+            <item>bool</item>
+            <item>double</item>
+            <item>int</item>
+            <item>var</item>
+            <item>void</item>
+        </list>
+        <list name="literals">
+            <item>true</item>
+            <item>false</item>
+            <item>null</item>
+        </list>
+        <list name="exceptions">
+            <item>AbstractClassInstantiationError</item>
+            <item>ArgumentError</item>
+            <item>AssertionError</item>
+            <item>CastError</item>
+            <item>ConcurrentModificationError</item>
+            <item>CyclicInitializationError</item>
+            <item>Error</item>
+            <item>Exception</item>
+            <item>FallThroughError</item>
+            <item>FormatException</item>
+            <item>IndexError</item>
+            <item>IntegerDivisionByZeroException</item>
+            <item>JsonCyclicError</item>
+            <item>JsonUnsupportedObjectError</item>
+            <item>NoSuchMethodError</item>
+            <item>NullThrownError</item>
+            <item>OutOfMemoryError</item>
+            <item>RangeError</item>
+            <item>StackOverflowError</item>
+            <item>StateError</item>
+            <item>TypeError</item>
+            <item>UnimplementedError</item>
+            <item>UnsupportedError</item>
+        </list>
+        <list name="thiskeyword">
+            <item>this</item>
+        </list>
+        <contexts>
+            <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
+                <DetectSpaces/>
+                <keyword attribute="Control Flow" context="#stay" String="controlflow"/>
+                <keyword attribute="Keyword" context="#stay" String="keywords"/>
+                <keyword attribute="Data Type" context="#stay" String="types"/>
+                <keyword attribute="Modifiers" context="#stay" String="modifiers"/>
+                <keyword attribute="Constant" context="#stay" String="literals"/>
+                <keyword attribute="Exceptions" context="#stay" String="exceptions"/>
+                <WordDetect attribute="This Keyword" context="#stay" String="this"/>
+                <DetectIdentifier/>
+                <Float attribute="Float" context="#stay"/>
+                <Int attribute="Decimal" context="#stay"/>
+                <HlCHex attribute="Hex" context="#stay"/>
+                <HlCOct attribute="Octal" context="#stay"/>
+                <StringDetect attribute="String" String="'''" context="SMultilineString" beginRegion="MultilineStringRegion"/>
+                <StringDetect attribute="String" String="&quot;&quot;&quot;" context="SMultilineString" beginRegion="MultilineStringRegion"/>
+                <DetectChar attribute="String" context="DoubleQuoteString" char="&quot;"/>
+                <DetectChar attribute="String" context="SingleQuoteString" char="'"/>
+                <IncludeRules context="FindComments"/>
+                <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1"/>
+                <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1"/>
+                <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;+,-/.*&lt;=&gt;?|~^"/>
+            </context>
+            <!-- Strings -->
+            <context attribute="String" lineEndContext="#pop" name="DoubleQuoteString">
+                <DetectSpaces attribute="String"/>
+                <DetectIdentifier attribute="String"/>
+                <LineContinue attribute="String" context="#stay"/>
+                <HlCStringChar attribute="String Char" context="#stay"/>
+                <DetectChar attribute="String" context="#pop" char="&quot;"/>
+            </context>
+            <context attribute="String" lineEndContext="#pop" name="SingleQuoteString">
+                <DetectSpaces attribute="String"/>
+                <DetectIdentifier attribute="String"/>
+                <HlCStringChar attribute="String Char" context="#stay"/>
+                <DetectChar attribute="String" context="#pop" char="'"/>
+            </context>
+            <!-- Comments -->
+            <context name="FindComments" attribute="Normal Text" lineEndContext="#pop">
+                <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="/" lookAhead="true"/>
+                <Detect2Chars attribute="Comment" context="MatchComment" char="/" char1="*" lookAhead="true"/>
+            </context>
+            <context name="MatchComment" attribute="Normal Text" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
+                <StringDetect attribute="Region Marker" context="#pop!Region Marker" String="//BEGIN" beginRegion="Region1" firstNonSpace="true"/>
+                <StringDetect attribute="Region Marker" context="#pop!Region Marker" String="//END" endRegion="Region1" firstNonSpace="true"/>
+                <IncludeRules context="##Doxygen"/>
+                <Detect2Chars attribute="Comment" context="#pop!Commentar 1" char="/" char1="/"/>
+                <Detect2Chars attribute="Comment" context="#pop!Commentar 2" char="/" char1="*" beginRegion="Comment"/>
+            </context>
+            <context attribute="Region Marker" lineEndContext="#pop" name="Region Marker">
+            </context>
+            <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+                <DetectSpaces attribute="Comment"/>
+                <LineContinue attribute="Comment" context="#stay"/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier attribute="Comment"/>
+            </context>
+            <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
+                <DetectSpaces attribute="Comment"/>
+                <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+                <IncludeRules context="##Comments"/>
+                <DetectIdentifier attribute="Comment"/>
+            </context>
+            <!-- multiline string -->
+            <context attribute="String" lineEndContext="#stay" name="SMultilineString">
+                <DetectSpaces attribute="String"/>
+                <HlCStringChar attribute="String Char" context="#stay"/>
+                <StringDetect attribute="String" String="'''" context="#pop" endRegion="MultilineStringRegion"/>
+                <StringDetect attribute="String" String="&quot;&quot;&quot;" context="#pop" endRegion="MultilineStringRegion"/>
+            </context>
+        </contexts>
+        <itemDatas>
+            <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="false"/>
+            <itemData name="Control Flow" defStyleNum="dsControlFlow" spellChecking="false"/>
+            <itemData name="Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Data Type" defStyleNum="dsDataType" spellChecking="false"/>
+            <itemData name="Decimal" defStyleNum="dsDecVal" spellChecking="false"/>
+            <itemData name="Exceptions" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Octal" defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Hex" defStyleNum="dsBaseN" spellChecking="false"/>
+            <itemData name="Constant" defStyleNum="dsConstant" spellChecking="false"/>
+            <itemData name="Float" defStyleNum="dsFloat" spellChecking="false"/>
+            <itemData name="Modifiers" defStyleNum="dsAttribute" spellChecking="false"/>
+            <itemData name="String" defStyleNum="dsString"/>
+            <itemData name="String Char" defStyleNum="dsSpecialChar"/>
+            <itemData name="Comment" defStyleNum="dsComment"/>
+            <itemData name="Symbol" defStyleNum="dsOperator" spellChecking="false"/>
+            <itemData name="This Keyword" defStyleNum="dsKeyword" spellChecking="false"/>
+            <itemData name="Region Marker" defStyleNum="dsRegionMarker" spellChecking="false"/>
+        </itemDatas>
+    </highlighting>
+    <general>
+        <comments>
+            <comment name="singleLine" start="//" position="afterwhitespace"/>
+            <comment name="multiLine" start="/*" end="*/" region="Comment"/>
+        </comments>
+        <keywords casesensitive="true"/>
+    </general>
+</language>

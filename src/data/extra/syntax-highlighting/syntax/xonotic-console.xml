@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="Xonotic Script" version="3" kateversion="5.0" section="Scripts" extensions="*.cfg" mimetype="" license="LGPLv2+">
+<!DOCTYPE language>
+<language name="Xonotic Script" version="7" kateversion="5.0" section="Scripts" extensions="*.cfg" mimetype="" license="LGPLv2+">
 
 <highlighting>
   <list name="Commands">
@@ -5575,12 +5575,14 @@
       <keyword attribute="Command" context="Alias phrase" String="setFamily"/>
       <keyword attribute="Command" context="Echo" String="PrintsString"/>
       <StringDetect attribute="Command" context="Alias phrase" String="alias" insensitive="true"/>
-      <keyword attribute="Command" context="Echo" String="PrintsString"/>
       <DetectChar attribute="Symbol" context="#stay" char="$"/>
       <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
     </context>
 
-    <context attribute="Comment" lineEndContext="Normal Text" name="Comment"/>
+    <context attribute="Comment" lineEndContext="Normal Text" name="Comment">
+      <DetectSpaces />
+      <IncludeRules context="##Comments"/>
+    </context>
 
     <context attribute="String" lineEndContext="Normal Text" name="String">
       <DetectChar attribute="String" context="#pop" char="&quot;"/>
@@ -5612,9 +5614,8 @@
       <keyword attribute="Command" context="Echo" String="PrintsString"/>
       <StringDetect attribute="Command" context="Alias phrase" String="alias"/>
       <Detect2Chars attribute="Comment" context="Comment" char="/" char1="/"/>
-      <DetectChar attribute="Symbol" context="#stay" char=";"/>
-      <Int attribute="Int" context="#stay"/>
       <DetectChar attribute="Symbol" context="#pop" char=";"/>
+      <Int attribute="Int" context="#stay"/>
     </context>
 
     <context attribute="Normal Text" lineEndContext="Normal Text" name="Bind phrase">
@@ -5635,16 +5636,16 @@
   <itemDatas>
     <itemData name="Command"     defStyleNum="dsKeyword"  />
     <itemData name="Aliases"     defStyleNum="dsVariable" />
-    <itemData name="Action"      defStyleNum="dsNormal"   color="#ffcc00" selColor="#00ff00" />
-    <itemData name="Variable"    defStyleNum="dsKeyword"  color="#7f0000"/>
+    <itemData name="Action"      defStyleNum="dsInformation" /> <!-- #ffcc00 -->
+    <itemData name="Variable"    defStyleNum="dsVariable" bold="1" /> <!-- #7f0000 -->
     <itemData name="Normal Text" defStyleNum="dsNormal"   />
     <itemData name="Comment"     defStyleNum="dsComment"  />
     <itemData name="Float"       defStyleNum="dsFloat"    />
-    <itemData name="Int"         defStyleNum="dsFloat"    />
-    <itemData name="String"      defStyleNum="dsString"   color="#ff0000" selColor="#00ff00" />
+    <itemData name="Int"         defStyleNum="dsDecVal"   />
+    <itemData name="String"      defStyleNum="dsString"   /> <!-- #ff0000 -->
     <itemData name="Hex"         defStyleNum="dsBaseN"    />
     <itemData name="Symbol"      defStyleNum="dsOthers"   />
-    <itemData name="Identifier"  defStyleNum="dsDataType" />
+    <itemData name="Identifier"  defStyleNum="dsDataType" bold="0" />
   </itemDatas>
 
 </highlighting>
@@ -5658,3 +5659,4 @@
 </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

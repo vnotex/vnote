@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="ColdFusion" version="3" kateversion="2.2" section="Markup" extensions="*.cfm;*.cfc;*.cfml;*.dbm" mimetype="text/x-coldfusion">
+<!DOCTYPE language>
+<language name="ColdFusion" version="6" kateversion="5.0" section="Markup" extensions="*.cfm;*.cfc;*.cfml;*.dbm" mimetype="text/x-coldfusion">
 
 	<highlighting>
 
@@ -510,111 +510,116 @@
 		<contexts>
 
 			<context attribute="Normal Text" lineEndContext="#stay" name="Normal Text">
-				<StringDetect attribute="CF Comment" context="ctxCF Comment" String="&lt;!---" />
-				<StringDetect attribute="HTML Comment" context="ctxHTML Comment" String="&lt;!--" />
-				<RegExpr attribute="Script Tags" context="ctxCFSCRIPT Tag" String="&lt;[cC][fF][sS][cC][rR][iI][pP][tT]" />
-				<RegExpr attribute="Script Tags" context="ctxSCRIPT Tag" String="&lt;[sS][cC][rR][iI][pP][tT]" />
-				<RegExpr attribute="Style Tags" context="ctxSTYLE Tag" String="&lt;[sS][tT][yY][lL][eE]" />
+				<DetectSpaces attribute="Normal Text" />
+				<StringDetect attribute="CF Comment" context="ctxCF Comment" String="&lt;!---" beginRegion="CF Comment" />
+				<StringDetect attribute="HTML Comment" context="ctxHTML Comment" String="&lt;!--" beginRegion="HTML Comment" />
+				<StringDetect attribute="Script Tags" context="ctxCFSCRIPT Tag" String="&lt;cfscript" insensitive="true" beginRegion="CF Script" />
+				<StringDetect attribute="Script Tags" context="ctxSCRIPT Tag" String="&lt;script" insensitive="true" beginRegion="Script" />
+				<StringDetect attribute="Style Tags" context="ctxSTYLE Tag" String="&lt;style" insensitive="true" beginRegion="Style" />
 				<DetectChar attribute="HTML Entities" context="ctxHTML Entities" char="&amp;" />
-				<RegExpr attribute="Custom Tags" context="ctxCustom Tag" String="&lt;\/?[cC][fF]_" />
-				<RegExpr attribute="CFX Tags" context="ctxCFX Tag" String="&lt;\/?[cC][fF][xX]_" />
-				<RegExpr attribute="CF Tags" context="ctxCF Tag" String="&lt;\/?[cC][fF]" />
-				<RegExpr attribute="Table Tags" context="ctxTable Tag" String="&lt;\/?([tT][aAhHbBfFrRdD])|([cC][aA][pP][tT])" />
-				<RegExpr attribute="Anchor Tags" context="ctxAnchor Tag" String="&lt;\/?[aA] " />
-				<RegExpr attribute="Image Tags" context="ctxImage Tag" String="&lt;\/?[iI][mM][gG] " />
+				<StringDetect attribute="Custom Tags" context="ctxCustom Tag" String="&lt;cf_" insensitive="true" />
+				<StringDetect attribute="Custom Tags" context="ctxCustom Tag" String="&lt;/cf_" insensitive="true" />
+				<StringDetect attribute="CFX Tags" context="ctxCFX Tag" String="&lt;cfx_" insensitive="true" />
+				<StringDetect attribute="CFX Tags" context="ctxCFX Tag" String="&lt;/cfx_" insensitive="true" />
+				<StringDetect attribute="CF Tags" context="ctxCF Tag" String="&lt;cf" insensitive="true" />
+				<StringDetect attribute="CF Tags" context="ctxCF Tag" String="&lt;/cf" insensitive="true" />
+				<RegExpr attribute="Table Tags" context="ctxTable Tag" String="&lt;\/?(?:[tT][aAhHbBfFrRdD])|(?:[cC][aA][pP][tT])" />
+				<RegExpr attribute="Anchor Tags" context="ctxAnchor Tag" String="&lt;\/?a(?=[&gt;\s]|$)" insensitive="true" />
+				<RegExpr attribute="Image Tags" context="ctxImage Tag" String="&lt;\/?img(?=[&gt;\s]|$)" insensitive="true" />
+				<StringDetect attribute="Anchor Tags" context="#stay" String="&lt;a/&gt;" insensitive="true" />
+				<StringDetect attribute="Image Tags" context="#stay" String="&lt;img/&gt;" insensitive="true" />
 				<RegExpr attribute="Tags" context="ctxTag" String="&lt;!?\/?[a-zA-Z0-9_]+" />
 			</context>
 
 
+			<context name="Tag Content" attribute="Normal Text" lineEndContext="#stay">
+				<DetectChar attribute="Normal Text" context="#stay" char="=" />
+				<RangeDetect attribute="Attribute Values" context="#stay" char="&quot;" char1="&quot;" />
+				<RangeDetect attribute="Attribute Values" context="#stay" char="'" char1="'" />
+				<RegExpr attribute="Tag Attributes" context="#stay" String="(?:\s|^)[A-Za-z_:*][\w.:_-]*(?=\s*\=)" />
+			</context>
 
 			<context name="ctxCFSCRIPT Tag" attribute="Script Tags" lineEndContext="#stay">
 				<DetectChar attribute="Script Tags" context="ctxCFSCRIPT Block" char="&gt;" />
-				<DetectChar attribute="Normal Text" context="#stay" char="=" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+				<IncludeRules context="Tag Content" />
 			</context>
 
 			<context name="ctxSCRIPT Tag" attribute="Script Tags" lineEndContext="#stay">
 				<DetectChar attribute="Script Tags" context="ctxSCRIPT Block" char="&gt;" />
-				<DetectChar attribute="Normal Text" context="#stay" char="=" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+				<IncludeRules context="Tag Content" />
 			</context>
 
 			<context name="ctxSTYLE Tag" attribute="Style Tags" lineEndContext="#stay">
 				<DetectChar attribute="Style Tags" context="ctxSTYLE Block" char="&gt;" />
-				<DetectChar attribute="Normal Text" context="#stay" char="=" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+				<IncludeRules context="Tag Content" />
 			</context>
 
 
 
 			<context name="ctxTag" attribute="Tags" lineEndContext="#stay">
 				<DetectChar attribute="Tags" context="#pop" char="&gt;" />
-				<DetectChar attribute="Normal Text" context="#stay" char="=" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+				<IncludeRules context="Tag Content" />
 			</context>
 
 			<context name="ctxTable Tag" attribute="Table Tags" lineEndContext="#stay">
 				<DetectChar attribute="Table Tags" context="#pop" char="&gt;" />
-				<DetectChar attribute="Normal Text" context="#stay" char="=" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+				<IncludeRules context="Tag Content" />
 			</context>
 
 			<context name="ctxAnchor Tag" attribute="Anchor Tags" lineEndContext="#stay">
 				<DetectChar attribute="Anchor Tags" context="#pop" char="&gt;" />
-				<DetectChar attribute="Normal Text" context="#stay" char="=" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+				<IncludeRules context="Tag Content" />
 			</context>
 
 			<context name="ctxImage Tag" attribute="Image Tags" lineEndContext="#stay">
 				<DetectChar attribute="Image Tags" context="#pop" char="&gt;" />
-				<DetectChar attribute="Normal Text" context="#stay" char="=" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+				<IncludeRules context="Tag Content" />
 			</context>
 
 			<context name="ctxCF Tag" attribute="CF Tags" lineEndContext="#stay">
 				<DetectChar attribute="CF Tags" context="#pop" char="&gt;" />
-				<DetectChar attribute="Normal Text" context="#stay" char="=" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+				<IncludeRules context="Tag Content" />
 			</context>
 
 			<context name="ctxCustom Tag" attribute="Custom Tags" lineEndContext="#stay">
 				<DetectChar attribute="Custom Tags" context="#pop" char="&gt;" />
-				<DetectChar attribute="Normal Text" context="#stay" char="=" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+				<IncludeRules context="Tag Content" />
 			</context>
 
 			<context name="ctxCFX Tag" attribute="CFX Tags" lineEndContext="#stay">
 				<DetectChar attribute="CFX Tags" context="#pop" char="&gt;" />
-				<DetectChar attribute="Normal Text" context="#stay" char="=" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+				<IncludeRules context="Tag Content" />
 			</context>
 
 
 
 			<context name="ctxHTML Comment" attribute="HTML Comment" lineEndContext="#stay">
-				<StringDetect attribute="CF Comment" context="ctxCF Comment" String="&lt;!---" />
-				<StringDetect attribute="HTML Comment" context="#pop" String="--&gt;" />
+				<DetectSpaces attribute="HTML Comment" />
+				<StringDetect attribute="CF Comment" context="ctxCF Comment" String="&lt;!---" beginRegion="CF Comment" />
+				<StringDetect attribute="HTML Comment" context="#pop" String="--&gt;" endRegion="HTML Comment" />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier attribute="HTML Comment" />
 			</context>
 
 			<context name="ctxCF Comment" attribute="CF Comment" lineEndContext="#stay">
-				<StringDetect attribute="CF Comment" context="#pop" String="---&gt;" />
+				<DetectSpaces attribute="CF Comment" />
+				<StringDetect attribute="CF Comment" context="#pop" String="---&gt;" endRegion="CF Comment" />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier attribute="CF Comment" />
 			</context>
 
 			<context name="ctxC Style Comment" attribute="Script Comment" lineEndContext="#stay">
-        		<Detect2Chars attribute="Script Comment" context="#pop" char="*" char1="/" />
+				<DetectSpaces attribute="Script Comment" />
+				<Detect2Chars attribute="Script Comment" context="#pop" char="*" char1="/" endRegion="CComment" />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier attribute="Script Comment" />
 			</context>
 
-			<context name="ctxOne Line Comment" attribute="Script Comment" lineEndContext="#pop" />
+			<context name="ctxOne Line Comment" attribute="Script Comment" lineEndContext="#pop">
+				<DetectSpaces attribute="Script Comment" />
+				<IncludeRules context="##Comments" />
+				<DetectIdentifier attribute="Script Comment" />
+			</context>
 
 			<context name="ctxHTML Entities" attribute="HTML Entities" lineEndContext="#pop">
 				<DetectChar attribute="HTML Entities" context="#pop" char=";" />
@@ -622,93 +627,102 @@
 
 
 
-			<context name="ctxCFSCRIPT Block" attribute="Normal Text" lineEndContext="#stay">
-				<Detect2Chars attribute="Script Comment" context="ctxC Style Comment" char="/" char1="*" />
+			<context name="SCRIPT Block" attribute="Normal Text" lineEndContext="#stay">
+				<DetectSpaces attribute="Normal Text" />
+				<Detect2Chars attribute="Script Comment" context="ctxC Style Comment" char="/" char1="*" beginRegion="CComment" />
 				<Detect2Chars attribute="Script Comment" context="ctxOne Line Comment" char="/" char1="/" />
-				<RegExpr attribute="Script Strings" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Script Strings" context="#stay" String="'[^']*'" />
-				<Int attribute="Script Numbers" context="#stay" />
+				<RangeDetect attribute="Script Strings" context="#stay" char="&quot;" char1="&quot;" />
+				<RangeDetect attribute="Script Strings" context="#stay" char="'" char1="'" />
 				<Float attribute="Script Numbers" context="#stay" />
-				<AnyChar attribute="Script Operators" context="#stay" String="[()[\]=+-*/]+" />
+				<Int attribute="Script Numbers" context="#stay" />
+				<AnyChar attribute="Script Operators" context="#stay" String="()[]=+-*/" />
 				<AnyChar attribute="Brackets" context="#stay" String="{}" />
+			</context>
+
+
+
+			<context name="ctxCFSCRIPT Block" attribute="Normal Text" lineEndContext="#stay">
+				<IncludeRules context="SCRIPT Block" />
 
 				<keyword attribute="Script Keywords" context="#stay" String="CFSCRIPT Keywords" />
 				<keyword attribute="Script Functions" context="#stay" String="CFSCRIPT Functions" />
-				<RegExpr attribute="Script Tags" context="#pop#pop" String="&lt;/[cC][fF][sS][cC][rR][iI][pP][tT]&gt;" />
+				<StringDetect attribute="Script Tags" context="#pop#pop" String="&lt;/cfscript&gt;" insensitive="true" endRegion="CF Script" />
+				<DetectIdentifier attribute="Normal Text" />
 			</context>
 
 
 
 			<context name="ctxSCRIPT Block" attribute="Normal Text" lineEndContext="#stay">
-				<Detect2Chars attribute="Script Comment" context="ctxC Style Comment" char="/" char1="*" />
-				<Detect2Chars attribute="Script Comment" context="ctxOne Line Comment" char="/" char1="/" />
-				<RegExpr attribute="Script Strings" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Script Strings" context="#stay" String="'[^']*'" />
-				<Int attribute="Script Numbers" context="#stay" />
-				<Float attribute="Script Numbers" context="#stay" />
-				<AnyChar attribute="Script Operators" context="#stay" String="[()[\]=+-*/]+" />
-				<AnyChar attribute="Brackets" context="#stay" String="{}" />
+				<IncludeRules context="SCRIPT Block" />
 
 				<keyword attribute="Script Keywords" context="#stay" String="Script Keywords" />
 				<keyword attribute="Script Objects" context="#stay" String="Script Objects" />
 				<keyword attribute="Script Functions" context="#stay" String="Script Methods" />
-				<RegExpr attribute="Script Tags" context="#pop#pop" String="&lt;/[sS][cC][rR][iI][pP][tT]&gt;" />
+				<StringDetect attribute="Script Tags" context="#pop#pop" String="&lt;/script&gt;" insensitive="true" endRegion="Script" />
+				<DetectIdentifier attribute="Normal Text" />
 			</context>
 
 
 
 			<context name="ctxSTYLE Block" attribute="Style Selectors" lineEndContext="#stay">
-				<Detect2Chars attribute="Script Comment" context="ctxC Style Comment" char="/" char1="*" />
+				<DetectSpaces attribute="Style Selectors" />
+				<DetectIdentifier attribute="Style Selectors" />
+				<Detect2Chars attribute="Script Comment" context="ctxC Style Comment" char="/" char1="*" beginRegion="CComment" />
 				<DetectChar attribute="Brackets" context="ctxStyle Properties" char="{" />
-				<RegExpr attribute="Style Tags" context="#pop#pop" String="&lt;/[sS][tT][yY][lL][eE]&gt;" />
+				<StringDetect attribute="Style Tags" context="#pop#pop" String="&lt;/style&gt;" insensitive="true" endRegion="Style" />
 			</context>
 
 			<context name="ctxStyle Properties" attribute="Style Properties" lineEndContext="#stay">
+				<DetectSpaces attribute="Style Properties" />
+				<DetectIdentifier attribute="Style Properties" />
 				<DetectChar attribute="Brackets" context="#pop" char="}" />
-				<Detect2Chars attribute="Script Comment" context="ctxC Style Comment" char="/" char1="*" />
+				<Detect2Chars attribute="Script Comment" context="ctxC Style Comment" char="/" char1="*" beginRegion="CComment" />
 				<DetectChar attribute="Normal Text" context="ctxStyle Values" char=":" />
 			</context>
 
 			<context name="ctxStyle Values" attribute="Style Values" lineEndContext="#pop">
+				<DetectSpaces attribute="Style Values" />
+				<DetectIdentifier attribute="Style Values" />
 				<DetectChar attribute="Normal Text" context="#pop" char=";" />
 				<DetectChar attribute="Normal Text" context="#stay" char="," />
-				<Int attribute="Numbers" context="#stay" />
 				<Float attribute="Numbers" context="#stay" />
-				<RegExpr attribute="Numbers" context="#stay" String="#([0-9a-fA-F]{3})|([0-9a-fA-F]{6})" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="&quot;[^&quot;]*&quot;" />
-				<RegExpr attribute="Attribute Values" context="#stay" String="'[^']*'" />
+				<Int attribute="Numbers" context="#stay" />
+				<RangeDetect attribute="Attribute Values" context="#stay" char="&quot;" char1="&quot;" />
+				<RangeDetect attribute="Attribute Values" context="#stay" char="'" char1="'" />
+				<RegExpr attribute="Numbers" context="#stay" String="#(?:[0-9a-fA-F]{8}|[0-9a-fA-F]{6}|[0-9a-fA-F]{3})" />
 			</context>
 
 		</contexts>
 
 		<itemDatas>
 
-			<itemData name="Normal Text" defStyleNum="dsNormal" />
-			<itemData name="Tags" defStyleNum="dsNormal"				color="#000080" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Table Tags" defStyleNum="dsNormal"			color="#008080" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Script Tags" defStyleNum="dsNormal"			color="#800000" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Image Tags" defStyleNum="dsNormal"			color="#800080" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Style Tags" defStyleNum="dsNormal"			color="#800080" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Anchor Tags" defStyleNum="dsNormal"			color="#008000" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Attribute Values" defStyleNum="dsNormal"	color="#0000ff" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="HTML Comment" defStyleNum="dsComment"		color="#008000" selColor="#999999" bold="0" italic="0" />
-			<itemData name="CF Comment" defStyleNum="dsComment"			color="#ff9900" selColor="#999999" bold="0" italic="0" />
-			<itemData name="Script Comment" defStyleNum="dsComment"		color="#ff9900" selColor="#999999" bold="0" italic="0" />
-			<itemData name="CF Tags" defStyleNum="dsNormal"				color="#800000" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Custom Tags" defStyleNum="dsNormal"			color="#cc6666" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="CFX Tags" defStyleNum="dsNormal"			color="#008000" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Numbers" defStyleNum="dsNormal"				color="#0000ff" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="HTML Entities" defStyleNum="dsNormal"		color="#000000" selColor="#ffffff" bold="1" italic="0" />
-			<itemData name="Style Selectors" defStyleNum="dsNormal"		color="#ff00ff" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Style Properties" defStyleNum="dsNormal"	color="#000080" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Style Values" defStyleNum="dsNormal"		color="#ff0000" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Brackets" defStyleNum="dsNormal"			color="#000080" selColor="#ffffff" bold="1" italic="0" />
-			<itemData name="Script Numbers" defStyleNum="dsNormal"		color="#ff00ff" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Script Strings" defStyleNum="dsNormal"		color="#008080" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Script Operators" defStyleNum="dsNormal"	color="#0000ff" selColor="#ffffff" bold="0" italic="0" />
-			<itemData name="Script Keywords" defStyleNum="dsNormal"		color="#0000cc" selColor="#ffffff" bold="1" italic="0" />
-			<itemData name="Script Functions" defStyleNum="dsFunction"	bold="1" />
-			<itemData name="Script Objects" defStyleNum="dsNormal"		color="#0000cc" selColor="#ffffff" bold="1" italic="0" />
+			<itemData name="Normal Text"      defStyleNum="dsNormal" />
+			<itemData name="Tags"             defStyleNum="dsKeyword" spellChecking="false"/> <!-- #000080 -->
+			<itemData name="Table Tags"       defStyleNum="dsVariable" bold="1" spellChecking="false" /> <!-- #008080 -->
+			<itemData name="Script Tags"      defStyleNum="dsWarning" bold="1" spellChecking="false" /> <!-- #800000 -->
+			<itemData name="Image Tags"       defStyleNum="dsInformation" bold="1" spellChecking="false" /> <!-- #800080 -->
+			<itemData name="Style Tags"       defStyleNum="dsInformation" bold="1" spellChecking="false" /> <!-- #800080 -->
+			<itemData name="Anchor Tags"      defStyleNum="dsPreprocessor" bold="1" spellChecking="false" /> <!-- #008000 -->
+			<itemData name="Tag Attributes"   defStyleNum="dsOthers" spellChecking="false"/>
+			<itemData name="Attribute Values" defStyleNum="dsString" /> <!-- #0000ff -->
+			<itemData name="HTML Comment"     defStyleNum="dsComment" /> <!-- #008000 -->
+			<itemData name="CF Comment"       defStyleNum="dsComment" /> <!-- #ff9900 -->
+			<itemData name="Script Comment"   defStyleNum="dsComment" /> <!-- #ff9900 -->
+			<itemData name="CF Tags"          defStyleNum="dsFunction" bold="1" spellChecking="false" /> <!-- #800000 -->
+			<itemData name="Custom Tags"      defStyleNum="dsDataType" bold="1" spellChecking="false" /> <!-- #cc6666 -->
+			<itemData name="CFX Tags"         defStyleNum="dsOthers" bold="1" spellChecking="false" /> <!-- #008000 -->
+			<itemData name="Numbers"          defStyleNum="dsDecVal" spellChecking="false" /> <!-- #0000ff -->
+			<itemData name="HTML Entities"    defStyleNum="dsInformation" spellChecking="false" /> <!-- #000000 -->
+			<itemData name="Style Selectors"  defStyleNum="dsChar" /> <!-- #ff00ff -->
+			<itemData name="Style Properties" defStyleNum="dsAttribute" /> <!-- #000080 -->
+			<itemData name="Style Values"     defStyleNum="dsVerbatimString" /> <!-- #ff0000 -->
+			<itemData name="Brackets"         defStyleNum="dsKeyword" spellChecking="false" /> <!-- #000080 -->
+			<itemData name="Script Numbers"   defStyleNum="dsDecVal" spellChecking="false" /> <!-- #ff00ff -->
+			<itemData name="Script Strings"   defStyleNum="dsString" /> <!-- #008080 -->
+			<itemData name="Script Operators" defStyleNum="dsKeyword" spellChecking="false" /> <!-- #0000ff -->
+			<itemData name="Script Keywords"  defStyleNum="dsControlFlow" spellChecking="false" /> <!-- #0000cc -->
+			<itemData name="Script Functions" defStyleNum="dsFunction" bold="1" spellChecking="false" />
+			<itemData name="Script Objects"   defStyleNum="dsExtension" spellChecking="false" /> <!-- #0000cc -->
 
 		</itemDatas>
 
@@ -718,9 +732,7 @@
 
 		<comments>
 
-			<comment name="multiLine" start="&lt;!--" end="--&gt;" />
-			<comment name="multiLine" start="/*" end="*/" />
-			<comment name="singleLine" start="//" />
+			<comment name="multiLine" start="&lt;!---" end="---&gt;" region="CF Comment" />
 
 		</comments>
 
@@ -729,3 +741,4 @@
 	</general>
 
 </language>
+<!-- kate: replace-tabs off; -->

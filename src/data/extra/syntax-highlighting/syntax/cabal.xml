@@ -1,0 +1,398 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY version "(?&lt;![-+@$\w.])[0-9]+(\.[0-9]+)*">
+  <!ENTITY noversion "[0-9.]+">
+]>
+<language name="Cabal" section="Configuration" version="1" kateversion="5.62"
+          extensions="*.cabal;cabal.config;cabal.project;cabal.project.freeze;cabal.project.local"
+          author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT">
+  <highlighting>
+
+<list name="conditional">
+  <item>if</item>
+  <item>elif</item>
+  <item>else</item>
+</list>
+
+<list name="function">
+  <item>os</item>
+  <item>arche</item>
+  <item>impl</item>
+  <item>flag</item>
+</list>
+
+<list name="category">
+	<item>executable</item>
+	<item>library</item>
+	<item>benchmark</item>
+	<item>test-suite</item>
+	<item>source-repository</item>
+	<item>flag</item>
+  <item>foreign-library</item>
+	<item>custom-setup</item>
+	<item>common</item>
+</list>
+
+<list name="constant">
+  <item>True</item>
+  <item>False</item>
+</list>
+
+<list name="stmt">
+  <item>asm-options</item>
+  <item>asm-sources</item>
+  <item>author</item>
+  <item>autogen-includes</item>
+  <item>autogen-modules</item>
+  <item>branch</item>
+  <item>bug-reports</item>
+  <item>build-depends</item>
+  <item>build-tool-depends</item>
+  <item>build-tools</item>
+  <item>build-type</item>
+  <item>buildable</item>
+  <item>c-sources</item>
+  <item>cabal-version</item>
+  <item>category</item>
+  <item>cc-options</item>
+  <item>cmm-options</item>
+  <item>cmm-sources</item>
+  <item>copyright</item>
+  <item>cpp-options</item>
+  <item>cxx-options</item>
+  <item>cxx-sources</item>
+  <item>data-dir</item>
+  <item>data-files</item>
+  <item>default-extensions</item>
+  <item>default-language</item>
+  <item>default</item>
+  <item>description</item>
+  <item>executable</item>
+  <item>exposed-modules</item>
+  <item>exposed</item>
+  <item>extensions</item>
+  <item>extra-bundled-libraries</item>
+  <item>extra-doc-files</item>
+  <item>extra-dynamic-library-flavours</item>
+  <item>extra-framework-dirs</item>
+  <item>extra-ghci-libraries</item>
+  <item>extra-lib-dirs-static</item>
+  <item>extra-lib-dirs</item>
+  <item>extra-libraries-static</item>
+  <item>extra-libraries</item>
+  <item>extra-library-flavours</item>
+  <item>extra-source-files</item>
+  <item>extra-tmp-files</item>
+  <item>frameworks</item>
+  <item>ghc-options</item>
+  <item>ghc-prof-options</item>
+  <item>ghc-shared-options</item>
+  <item>ghcjs-options</item>
+  <item>ghcjs-prof-options</item>
+  <item>ghcjs-shared-options</item>
+  <item>homepage</item>
+  <item>hs-source-dir</item>
+  <item>hs-source-dirs</item>
+  <item>hugs-options</item>
+  <item>import</item>
+  <item>include-dirs</item>
+  <item>includes</item>
+  <item>install-includes</item>
+  <item>js-sources</item>
+  <item>ld-options</item>
+  <item>lib-version-info</item>
+  <item>lib-version-linux</item>
+  <item>license-file</item>
+  <item>license</item>
+  <item>location</item>
+  <item>main-is</item>
+  <item>maintainer</item>
+  <item>manual</item>
+  <item>mixins</item>
+  <item>mod-def-file</item>
+  <item>module</item>
+  <item>name</item>
+  <item>nhc98-options</item>
+  <item>options</item>
+  <item>other-extensions</item>
+  <item>other-language</item>
+  <item>other-languages</item>
+  <item>other-modules</item>
+  <item>package-url</item>
+  <item>pkgconfig-depends</item>
+  <item>reexported-modules</item>
+  <item>scope</item>
+  <item>setup-depends</item>
+  <item>signatures</item>
+  <item>stability</item>
+  <item>subdir</item>
+  <item>synopsis</item>
+  <item>tag</item>
+  <item>test-module</item>
+  <item>tested-with</item>
+  <item>type</item>
+  <item>version</item>
+  <item>virtual-modules</item>
+</list>
+
+<list name="language">
+  <item>Haskell98</item>
+  <item>Haskell2010</item>
+</list>
+
+<list name="compiler">
+  <item>ghc</item>
+  <item>nhc</item>
+  <item>yhc</item>
+  <item>hugs</item>
+  <item>hbc</item>
+  <item>helium</item>
+  <item>jhc</item>
+  <item>lhc</item>
+</list>
+
+<list name="build-type">
+  <item>simple</item>
+  <item>custom</item>
+  <item>configure</item>
+</list>
+
+<list name="default-extensions">
+  <include>language_pragmas##Haskell</include>
+</list>
+
+<contexts>
+  <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+    <WordDetect attribute="Statement" context="stmtVersion" String="version" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtVersion" String="cabal-version" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtBuildType" String="build-type" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtTestWith" String="tested-with" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtLicenseFile" String="license-file" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtLicense" String="license" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtMaintainer" String="maintainer" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtAuthor" String="author" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtName" String="name" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtDescription" String="description" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtCopyright" String="copyright" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtHomepage" String="homepage" insensitive="1"/>
+    <WordDetect attribute="Statement" context="stmtBugReports" String="bug-reports" insensitive="1"/>
+    <keyword attribute="Statement" context="stmt" String="stmt"/>
+    <keyword attribute="Category" context="category" String="category"/>
+    <keyword attribute="Conditional" context="conditional" String="conditional"/>
+    <RegExpr attribute="Other Statement" context="stmt" String="[-\w]+"/>
+  </context>
+
+  <context name="Comment" attribute="Comment" lineEndContext="#pop">
+    <DetectSpaces attribute="Comment"/>
+    <IncludeRules context="##Comments"/>
+    <DetectIdentifier attribute="Comment"/>
+  </context>
+
+  <context name="category" attribute="Category Title" lineEndContext="#pop">
+    <StringDetect attribute="Comment" context="#pop!Comment" String="--"/>
+  </context>
+
+  <context name="stmt" attribute="Normal Text" lineEndContext="#pop!stmt2" fallthroughContext="#pop!stmt2">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Symbol Separator" String=":" context="#pop!stmt2"/>
+  </context>
+  <context name="stmt2" attribute="Normal Text" lineEndContext="stmtContinuation">
+    <IncludeRules context="findStmt"/>
+    <RegExpr attribute="Normal Text" String="[-\w.]+\s*"/>
+  </context>
+
+  <context name="findOperator" attribute="Normal Text" lineEndContext="#stay">
+    <StringDetect attribute="Operator" String="!"/>
+    <StringDetect attribute="Operator" String="||"/>
+    <StringDetect attribute="Operator" String="&amp;&amp;"/>
+  </context>
+
+  <context name="findStmt" attribute="Normal Text" lineEndContext="#stay">
+    <DetectSpaces attribute="Normal Text"/>
+    <IncludeRules context="findOperator"/>
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+    <StringDetect attribute="Version Operator" String="==" context="versionOp"/>
+    <StringDetect attribute="Version Operator" String=">=" context="versionOp"/>
+    <StringDetect attribute="Version Operator" String="&lt;=" context="versionOp"/>
+    <StringDetect attribute="Version Operator" String="^>=" context="versionOp"/>
+    <AnyChar attribute="Version Operator" String="&lt;>" context="versionOp"/>
+    <AnyChar String="=^" context="versionOp" lookAhead="1"/>
+    <keyword attribute="Constant" String="constant"/>
+    <keyword attribute="Language" String="language"/>
+  </context>
+
+  <context name="versionOp" attribute="Error" lineEndContext="#pop" fallthroughContext="#pop">
+    <DetectSpaces attribute="Normal Text"/>
+    <AnyChar attribute="Error" String="=^!&lt;>"/>
+    <DetectChar attribute="Normal Text" context="#pop!versionOpList" char="{"/>
+    <RegExpr attribute="Version" String="&version;" context="#pop"/>
+    <RegExpr attribute="Error" String="&noversion;" context="#pop"/>
+  </context>
+  <context name="versionOpList" attribute="Error" lineEndContext="#pop" fallthroughContext="#pop">
+    <DetectSpaces attribute="Normal Text"/>
+    <DetectChar attribute="Normal Text" char=","/>
+    <DetectChar attribute="Normal Text" context="#pop" char="}"/>
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+    <IncludeRules context="findVersion"/>
+  </context>
+  <context name="findVersion" attribute="Normal Text" lineEndContext="#pop">
+    <RegExpr attribute="Version" String="&version;"/>
+    <RegExpr attribute="Error" String="&noversion;"/>
+  </context>
+
+  <context name="stmtContinuation" attribute="Normal Text" lineEndContext="#stay" fallthroughContext="#pop">
+    <RegExpr attribute="Normal Text" String="^\s*[a-zA-Z]+[-0-9a-zA-Z]*\s*:|^\s*(if|else|elif|executable|library|benchmark|test-suite|source-repository|flag|foreign-library|custom-setup|common)(?![-\w])" lookAhead="1" context="#pop#pop" insensitive="1"/>
+  </context>
+
+  <context name="stmtVersion" attribute="Error" lineEndContext="#pop" fallthroughContext="#pop!version">
+    <DetectSpaces attribute="Normal Text"/>
+    <DetectChar attribute="Symbol Separator" char=":" context="#pop!version"/>
+  </context>
+  <context name="version" attribute="Normal Text" lineEndContext="stmtContinuation">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+    <IncludeRules context="findVersion"/>
+  </context>
+
+  <context name="stmtBuildType" attribute="Normal Text" lineEndContext="#pop" fallthroughContext="stmtContinuation">
+    <DetectSpaces attribute="Normal Text"/>
+    <DetectChar attribute="Symbol Separator" char=":"/>
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+    <keyword attribute="Built Type" String="build-type"/>
+  </context>
+
+  <context name="stmtTestWith" attribute="Normal Text" lineEndContext="#pop!testWith" fallthroughContext="#pop!testWith">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Symbol Separator" String=":" context="#pop!testWith"/>
+  </context>
+  <context name="testWith" attribute="Normal Text" lineEndContext="stmtContinuation">
+    <IncludeRules context="findStmt"/>
+    <keyword attribute="Compiler" String="compiler"/>
+    <RegExpr attribute="Error" String="[-\w.]+"/>
+  </context>
+
+  <context name="stmtLicense" attribute="License" lineEndContext="#pop!license" fallthroughContext="#pop!license">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Symbol Separator" String=":" context="#pop!license"/>
+  </context>
+  <context name="license" attribute="License" lineEndContext="stmtContinuation">
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+  </context>
+
+  <context name="stmtLicenseFile" attribute="License File" lineEndContext="#pop!licenseFile" fallthroughContext="#pop!licenseFile">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Symbol Separator" String=":" context="#pop!licenseFile"/>
+  </context>
+  <context name="licenseFile" attribute="License File" lineEndContext="stmtContinuation">
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+  </context>
+
+  <context name="stmtMaintainer" attribute="Maintainer" lineEndContext="#pop!maintainer" fallthroughContext="#pop!maintainer">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Symbol Separator" String=":" context="#pop!maintainer"/>
+  </context>
+  <context name="maintainer" attribute="Maintainer" lineEndContext="stmtContinuation">
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+  </context>
+
+  <context name="stmtAuthor" attribute="Author" lineEndContext="#pop!author" fallthroughContext="#pop!author">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Symbol Separator" String=":" context="#pop!author"/>
+  </context>
+  <context name="author" attribute="Author" lineEndContext="stmtContinuation">
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+  </context>
+
+  <context name="stmtName" attribute="Name" lineEndContext="#pop!name" fallthroughContext="#pop!name">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Symbol Separator" String=":" context="#pop!name"/>
+  </context>
+  <context name="name" attribute="Name" lineEndContext="stmtContinuation">
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+  </context>
+
+  <context name="stmtDescription" attribute="Description" lineEndContext="#pop!description" fallthroughContext="#pop!description">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Symbol Separator" String=":" context="#pop!description"/>
+  </context>
+  <context name="description" attribute="Description" lineEndContext="stmtContinuation">
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+  </context>
+
+  <context name="stmtCopyright" attribute="Copyright" lineEndContext="#pop!copyright" fallthroughContext="#pop!copyright">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Symbol Separator" String=":" context="#pop!copyright"/>
+  </context>
+  <context name="copyright" attribute="Copyright" lineEndContext="stmtContinuation">
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+  </context>
+
+  <context name="stmtHomepage" attribute="Homepage" lineEndContext="#pop!homepage" fallthroughContext="#pop!homepage">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Symbol Separator" String=":" context="#pop!homepage"/>
+  </context>
+  <context name="homepage" attribute="Homepage" lineEndContext="stmtContinuation">
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+  </context>
+
+  <context name="stmtBugReports" attribute="Bug Reports" lineEndContext="#pop!bugReports" fallthroughContext="#pop!bugReports">
+    <DetectSpaces attribute="Normal Text"/>
+    <StringDetect attribute="Symbol Separator" String=":" context="#pop!bugReports"/>
+  </context>
+  <context name="bugReports" attribute="Bug Reports" lineEndContext="stmtContinuation">
+    <StringDetect attribute="Comment" context="Comment" String="--"/>
+  </context>
+
+  <context name="conditional" attribute="Normal Text" lineEndContext="#pop">
+    <DetectSpaces attribute="Normal Text"/>
+    <AnyChar attribute="Symbol" String="()"/>
+    <IncludeRules context="findOperator"/>
+    <StringDetect attribute="Comment" context="#pop!Comment" String="--"/>
+    <keyword attribute="Function" String="function" insensitive="0"/>
+    <keyword attribute="Constant" String="constant"/>
+    <DetectIdentifier attribute="Normal Text"/>
+  </context>
+
+</contexts>
+
+<itemDatas>
+  <itemData name="Normal Text" defStyleNum="dsNormal" spellChecking="0"/>
+  <itemData name="Comment" defStyleNum="dsComment"/>
+  <itemData name="Category" defStyleNum="dsKeyword" spellChecking="0"/>
+  <itemData name="Category Title" defStyleNum="dsAttribute" spellChecking="0"/>
+  <itemData name="Statement" defStyleNum="dsDataType" spellChecking="0"/>
+  <itemData name="Other Statement" defStyleNum="dsPreprocessor" spellChecking="0"/>
+  <itemData name="Name" defStyleNum="dsVerbatimString" spellChecking="0"/>
+  <itemData name="Author" defStyleNum="dsString" spellChecking="0"/>
+  <itemData name="Homepage" defStyleNum="dsSpecialString" spellChecking="0"/>
+  <itemData name="Description" defStyleNum="dsVerbatimString" spellChecking="0"/>
+  <itemData name="Maintainer" defStyleNum="dsString" spellChecking="0"/>
+  <itemData name="Bug Reports" defStyleNum="dsSpecialString" spellChecking="0"/>
+  <itemData name="Copyright" defStyleNum="dsString" spellChecking="0"/>
+  <itemData name="License" defStyleNum="dsString" spellChecking="0"/>
+  <itemData name="License File" defStyleNum="dsString" spellChecking="0"/>
+  <itemData name="Built Type" defStyleNum="dsKeyword" spellChecking="0"/>
+  <itemData name="Operator" defStyleNum="dsOperator" spellChecking="0"/>
+  <itemData name="Version Operator" defStyleNum="dsOperator" spellChecking="0"/>
+  <itemData name="Symbol" defStyleNum="dsNormal" spellChecking="0"/>
+  <itemData name="Symbol Separator" defStyleNum="dsNormal" spellChecking="0"/>
+  <itemData name="Version" defStyleNum="dsDecVal" spellChecking="0"/>
+  <itemData name="Constant" defStyleNum="dsConstant" spellChecking="0"/>
+  <itemData name="Language" defStyleNum="dsConstant" spellChecking="0"/>
+  <itemData name="Function" defStyleNum="dsFunction" spellChecking="0"/>
+  <itemData name="Conditional" defStyleNum="dsControlFlow" spellChecking="0"/>
+  <itemData name="Compiler" defStyleNum="dsConstant" spellChecking="0"/>
+  <itemData name="Error" defStyleNum="dsError" spellChecking="0"/>
+</itemDatas>
+
+  </highlighting>
+  <general>
+    <comments>
+      <comment name="singleLine" start="--"/>
+    </comments>
+    <keywords casesensitive="0" weakDeliminator="-"/>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

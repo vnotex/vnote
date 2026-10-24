@@ -1,39 +1,33 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"[
+<!DOCTYPE language[
   <!ENTITY ident "[-_a-zA-Z0-9]+">
   <!ENTITY deplist "[^$|:]+">
 ]>
 <language
   name="Ninja" section="Other"
-  version="1" kateversion="5.0"
+  version="3" kateversion="5.0"
   extensions="*.ninja"
   author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT"
 >
   <highlighting>
-    <list name="keywordRule"><item>rule</item></list>
-    <list name="keywordBuild"><item>build</item></list>
-    <list name="keywordPool"><item>pool</item></list>
     <list name="keywords">
+      <item>rule</item>
+      <item>build</item>
+      <item>pool</item>
       <item>default</item>
       <item>include</item>
       <item>subninja</item>
     </list>
 
-    <list name="poolValues">
+    <list name="other keywords">
       <item>console</item>
-    </list>
-
-    <list name="rules">
       <item>phony</item>
+      <item>depth</item>
     </list>
 
     <list name="topVariables">
       <item>builddir</item>
       <item>ninja_required_version</item>
-    </list>
-
-    <list name="poolVariables">
-      <item>depth</item>
     </list>
 
     <list name="ruleVariables">
@@ -43,6 +37,7 @@
       <item>deps</item>
       <item>msvc_deps_prefix</item>
       <item>description</item>
+      <item>dyndep</item>
       <item>generator</item>
       <item>in</item>
       <item>in_newline</item>
@@ -56,9 +51,9 @@
     <contexts>
       <context attribute="Normal" name="Normal" lineEndContext="#stay" fallthrough="1" fallthroughContext="ErrorOrComment">
         <DetectChar attribute="Comment" context="Comment" char="#"/>
-        <keyword attribute="Keyword" context="BuildStatement" String="keywordBuild"/>
-        <keyword attribute="Keyword" context="RuleStatement" String="keywordRule"/>
-        <keyword attribute="Keyword" context="PoolStatement" String="keywordPool"/>
+        <WordDetect attribute="Keyword" context="BuildStatement" String="build"/>
+        <WordDetect attribute="Keyword" context="RuleStatement" String="rule"/>
+        <WordDetect attribute="Keyword" context="PoolStatement" String="pool"/>
         <keyword attribute="Keyword" context="SimpleStatement" String="keywords"/>
         <keyword attribute="Special Key" context="VariableAssignment" String="topVariables"/>
         <RegExpr attribute="Key" context="VariableAssignment" String="&ident;"/>
@@ -85,7 +80,7 @@
 
       <context attribute="Normal" name="RuleKey" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!Error">
         <DetectChar attribute="Comment" context="#pop!Comment" char="#"/>
-        <keyword attribute="Special Key" context="#pop!PoolVariableAssignment" String="keywordPool"/>
+        <WordDetect attribute="Special Key" context="#pop!PoolVariableAssignment" String="pool"/>
         <keyword attribute="Special Key" context="#pop!RuleVariableAssignment" String="ruleVariables"/>
       </context>
 
@@ -140,24 +135,26 @@
 
       <context attribute="Normal" name="BuildRuleName" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!Error">
         <DetectSpaces/>
-        <keyword attribute="Special Rule Name" context="#pop!BuildDependancies" String="rules"/>
+        <WordDetect attribute="Special Rule Name" context="#pop!BuildDependancies" String="phony"/>
         <RegExpr attribute="Rule Name" context="#pop!BuildDependancies" String="&ident;"/>
       </context>
 
       <context attribute="Dependancy" name="BuildDependancies" lineEndContext="#pop!BuildKeys">
         <DetectSpaces/>
         <DetectChar attribute="Normal" context="Dollar" char="$" lookAhead="true"/>
+        <Detect2Chars attribute="Operator" context="#pop!ImplicitBuildDependancies" char="|" char1="@"/>
         <DetectChar attribute="Operator" context="#pop!ImplicitBuildDependancies" char="|"/>
-        <RegExpr attribute="Dependancy" context="#stay" String="&deplist;"/>
         <DetectChar attribute="Error" context="#stay" char=":"/>
+        <RegExpr attribute="Dependancy" context="#stay" String="&deplist;"/>
       </context>
 
       <context attribute="Implicit Dependancy" name="ImplicitBuildDependancies" lineEndContext="#pop!BuildKeys">
         <DetectSpaces/>
         <DetectChar attribute="Normal" context="Dollar" char="$" lookAhead="true"/>
-        <RegExpr attribute="Implicit Dependancy" context="#stay" String="&deplist;"/>
+        <Detect2Chars attribute="Operator" context="#stay" char="|" char1="@"/>
         <DetectChar attribute="Operator" context="#stay" char="|"/>
         <DetectChar attribute="Error" context="#stay" char=":"/>
+        <RegExpr attribute="Implicit Dependancy" context="#stay" String="&deplist;"/>
       </context>
 
       <context attribute="Normal" name="BuildKeys" lineEndContext="#stay" fallthrough="1" fallthroughContext="#pop">
@@ -167,7 +164,7 @@
 
       <context attribute="Normal" name="BuildKey" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!Error">
         <DetectChar attribute="Comment" context="#pop!Comment" char="#"/>
-        <keyword attribute="Special Key" context="#pop!PoolVariableAssignment" String="keywordPool"/>
+        <WordDetect attribute="Special Key" context="#pop!PoolVariableAssignment" String="pool"/>
         <keyword attribute="Special Key" context="#pop!VariableAssignment" String="ruleVariables"/>
         <RegExpr attribute="Key" context="#pop!VariableAssignment" String="&ident;"/>
       </context>
@@ -186,7 +183,7 @@
 
       <context attribute="Normal" name="PoolKey" lineEndContext="#pop" fallthrough="1" fallthroughContext="#pop!Error">
         <DetectChar attribute="Comment" context="#pop!Comment" char="#"/>
-        <keyword attribute="Special Key" context="#pop!PoolVariableAssignment" String="poolVariables"/>
+        <WordDetect attribute="Special Key" context="#pop!PoolVariableAssignment" String="depth"/>
       </context>
 
       <context attribute="Normal" name="PoolVariableAssignment" lineEndContext="#pop" fallthrough="1" fallthroughContext="Error">
@@ -197,7 +194,7 @@
       <context attribute="Normal" name="PoolValue" lineEndContext="#pop">
         <DetectSpaces/>
         <DetectChar attribute="Normal" context="Dollar" char="$" lookAhead="true"/>
-        <keyword attribute="Special Value" context="BuildStatement" String="poolValues"/>
+        <WordDetect attribute="Special Value" context="BuildStatement" String="console"/>
         <RegExpr attribute="Normal" context="#stay" String="&ident;"/>
       </context>
 
@@ -250,8 +247,7 @@
 
       <context attribute="Comment" lineEndContext="#pop" name="Comment">
         <DetectSpaces/>
-        <IncludeRules context="##Alerts" />
-        <IncludeRules context="##Modelines" />
+        <IncludeRules context="##Comments" />
         <DetectIdentifier attribute="Comment" />
       </context>
 

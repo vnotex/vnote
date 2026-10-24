@@ -1,0 +1,713 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY hex "0[xX][0-9a-zA-Z]">
+  <!ENTITY dec "[0-9]">
+  <!ENTITY oct "0[0-7]">
+  <!ENTITY ip4_dec "&dec;{1,3}(\.&dec;{1,3}){1,3}">
+  <!ENTITY ip4_oct "&oct;{1,3}(\.&oct;{1,3}){1,3}">
+  <!ENTITY ip4_hex "&hex;{1,2}(\.&hex;{1,2}){1,3}">
+  <!ENTITY ip6 "[a-fA-F0-9]{2,8}(:[:a-fA-F0-9]+)">
+  <!ENTITY ip "\b(localhost|&ip4_oct;|&ip4_hex;|&ip4_dec;|&ip6;)\b|::[:a-fA-F0-9]+\b">
+]>
+<language name="NFTables" section="Configuration" version="1" kateversion="5.79" extensions="*.nft;*.nftables" author="Jonathan Poelen (jonathan.poelen@gmail.com)" license="MIT">
+  <highlighting>
+
+    <list name="units">
+      <item>bytes</item>
+      <item>kbytes</item>
+      <item>mbytes</item>
+    </list>
+
+    <list name="operations">
+      <item>list</item>
+      <item>flush</item>
+      <item>add</item>
+      <item>create</item>
+      <item>delete</item>
+      <item>destroy</item>
+      <item>rename</item>
+      <item>insert</item>
+      <item>replace</item>
+      <item>reset</item>
+      <item>get</item>
+      <item>monitor</item>
+      <item>describe</item>
+    </list>
+
+    <list name="symbolic_variables">
+      <item>define</item>
+      <item>undefine</item>
+      <item>redefine</item>
+    </list>
+
+    <list name="address_families">
+      <item>ip</item>
+      <item>ip6</item>
+      <item>inet</item>
+      <item>arp</item>
+      <item>bridge</item>
+      <item>netdev</item>
+    </list>
+
+    <list name="verdict_statements">
+      <item>accept</item>
+      <item>drop</item>
+      <item>continue</item>
+      <item>return</item>
+      <item>goto</item>
+      <item>jump</item>
+    </list>
+
+    <list name="statements">
+      <item>chain</item>
+      <item>counter</item>
+      <item>counters</item>
+      <item>ct</item>
+      <item>dnat</item>
+      <item>dup</item>
+      <item>element</item>
+      <item>flow</item>
+      <item>flowtable</item>
+      <item>fwd</item>
+      <item>hooks</item>
+      <item>limit</item>
+      <item>log</item>
+      <item>map</item>
+      <item>masquerade</item>
+      <item>meta</item>
+      <item>notrack</item>
+      <item>queue</item>
+      <item>quota</item>
+      <item>quotas</item>
+      <item>redirect</item>
+      <item>reject</item>
+      <item>rule</item>
+      <item>ruleset</item>
+      <item>set</item>
+      <item>snat</item>
+      <item>synproxy</item>
+      <item>table</item>
+      <item>tproxy</item>
+      <item>vmap</item>
+      <item>xt</item>
+      <!-- primary expressions -->
+      <item>socket</item>
+      <item>osf</item>
+      <item>fib</item>
+      <item>rt</item>
+      <item>ipsec</item>
+      <item>numgen</item>
+      <item>jhash</item>
+      <item>symhash</item>
+      <!-- payload expressions -->
+      <item>ether</item>
+      <item>vlan</item>
+      <item>arp</item>
+      <item>ip</item>
+      <item>icmp</item>
+      <item>igmp</item>
+      <item>ip6</item>
+      <item>icmpv6</item>
+      <item>tcp</item>
+      <item>udp</item>
+      <item>udplite</item>
+      <item>sctp</item>
+      <item>dccp</item>
+      <item>ah</item>
+      <item>esp</item>
+      <item>comp</item>
+      <item>gre</item>
+      <item>geneve</item>
+      <item>gretap</item>
+      <item>vxlan</item>
+      <!-- extension header_expressions -->
+      <item>hbh</item>
+      <item>frag</item>
+      <item>rt</item>
+      <item>dst</item>
+      <item>mh</item>
+      <item>srh</item>
+      <item>tcp</item>
+      <item>ip</item>
+      <item>exthdr</item>
+      <item>dccp</item>
+      <!-- others -->
+      <item>route</item>
+    </list>
+
+    <list name="values">
+      <!--
+        Flags
+      -->
+
+      <!-- table flags -->
+      <item>dormant</item>
+      <item>owner</item>
+      <item>persist</item>
+      <!-- set and map flags -->
+      <item>constant</item>
+      <item>dynamic</item>
+      <item>interval</item>
+      <item>timeout</item>
+      <!-- NAT statement flags -->
+      <item>persistent</item>
+      <item>random</item>
+      <item>fully-random</item>
+      <!-- log-flags -->
+      <item>tcp</item>
+      <item>tcp</item>
+      <item>ip</item>
+      <item>skuid</item>
+      <item>ether</item>
+      <item>all</item>
+      <!-- synproxy statement flags -->
+      <item>sack-perm</item>
+      <item>timestamp</item>
+      <!-- queue statement flags -->
+      <item>bypass</item>
+      <item>fanout</item>
+      <!-- Keywords may be used to reject when specifying the ICMP code -->
+      <item>net-unreachable</item>
+      <item>host-unreachable</item>
+      <item>prot-unreachable</item>
+      <item>port-unreachable</item>
+      <item>frag-needed</item>
+      <item>net-prohibited</item>
+      <item>host-prohibited</item>
+      <item>admin-prohibited</item>
+      <!-- keywords may be used to reject when specifying the ICMPv6 code -->
+      <item>no-route</item>
+      <item>addr-unreachable</item>
+      <item>policy-fail</item>
+      <item>reject-route</item>
+      <!-- osf ttl value -->
+      <item>loose</item>
+      <item>skip</item>
+
+      <!--
+        Attributes
+      -->
+
+      <!-- synproxy statement attributes -->
+      <item>mss</item>
+      <item>wscale</item>
+      <!-- socket attributes -->
+      <item>transparent</item>
+      <item>mark</item>
+      <item>wildcard</item>
+      <item>cgroupv2</item>
+      <!-- osf attributes -->
+      <item>ttl</item>
+      <item>version</item>
+      <item>name</item>
+
+      <!--
+        Hooks
+      -->
+
+      <item>prerouting</item>
+      <item>input</item>
+      <item>forward</item>
+      <item>output</item>
+      <item>postrouting</item>
+      <item>ingress</item>
+      <item>input</item>
+      <item>output</item>
+      <item>egress</item>
+
+
+      <!--
+        Data Types
+      -->
+
+      <!-- boolean -->
+      <item>exists</item>
+      <item>missing</item>
+      <!-- icmp and icmpv6 expression keywords -->
+      <item>echo-reply</item>
+      <item>destination-unreachable</item>
+      <item>source-quench</item>
+      <item>redirect</item>
+      <item>echo-request</item>
+      <item>router-advertisement</item>
+      <item>router-solicitation</item>
+      <item>time-exceeded</item>
+      <item>parameter-problem</item>
+      <item>timestamp-request</item>
+      <item>timestamp-reply</item>
+      <item>info-request</item>
+      <item>info-reply</item>
+      <item>address-mask-request</item>
+      <item>address-mask-reply</item>
+      <item>destination-unreachable</item>
+      <item>packet-too-big</item>
+      <item>time-exceeded</item>
+      <item>parameter-problem</item>
+      <item>echo-request</item>
+      <item>echo-reply</item>
+      <item>mld-listener-query</item>
+      <item>mld-listener-report</item>
+      <item>mld-listener-done</item>
+      <item>mld-listener-reduction</item>
+      <item>nd-router-solicit</item>
+      <item>nd-router-advert</item>
+      <item>nd-neighbor-solicit</item>
+      <item>nd-neighbor-advert</item>
+      <item>nd-redirect</item>
+      <item>router-renumbering</item>
+      <item>ind-neighbor-solicit</item>
+      <item>ind-neighbor-advert</item>
+      <item>mld2-listener-report</item>
+
+      <!--
+        Keyword
+      -->
+
+      <!-- ct keywords -->
+      <item>invalid</item>
+      <item>established</item>
+      <item>related</item>
+      <item>new</item>
+      <item>untracked</item>
+      <item>original</item>
+      <item>reply</item>
+      <item>expected</item>
+      <item>seen-reply</item>
+      <item>assured</item>
+      <item>confirmed</item>
+      <item>snat</item>
+      <item>dnat</item>
+      <item>dying</item>
+      <item>new</item>
+      <item>related</item>
+      <item>destroy</item>
+      <item>reply</item>
+      <item>assured</item>
+      <item>protoinfo</item>
+      <item>helper</item>
+      <item>mark</item>
+      <item>seqadj</item>
+      <item>secmark</item>
+      <item>label</item>
+      <item>request</item>
+      <item>response</item>
+      <item>data</item>
+      <item>ack</item>
+      <item>dataack</item>
+      <item>closereq</item>
+      <item>close</item>
+      <item>reset</item>
+      <item>sync</item>
+      <item>syncack</item>
+      <item>timeouts</item>
+      <item>expectation</item>
+      <item>expectations</item>
+      <!-- FIB_TUPLE keywords -->
+      <item>daddr</item>
+      <item>saddr</item>
+      <item>mark</item>
+      <item>iif</item>
+      <item>oif</item>
+      <!-- FIB_RESULT keywords -->
+      <item>oif</item>
+      <item>oifname</item>
+      <!-- <item>type</item> -->
+
+      <!-- Standard priority names, family and hook compatibility matrix -->
+      <item>raw</item>
+      <item>mangle</item>
+      <item>dstnat</item>
+      <item>filter</item>
+      <item>security</item>
+      <item>srcnat</item>
+      <!-- Standard priority names and hook compatibility for the bridge family -->
+      <item>dstnat</item>
+      <item>filter</item>
+      <item>out</item>
+      <item>srcnat</item>
+    </list>
+
+    <list name="options">
+      <!-- element options -->
+      <item>timeout</item>
+      <item>expires</item>
+      <item>comment</item>
+      <!-- frag options -->
+      <item>more-fragments</item>
+      <!-- rt options -->
+      <item>seg-left</item>
+      <!-- TCP Options -->
+      <item>eol</item>
+      <item>nop</item>
+      <item>maxseg</item>
+      <item>window</item>
+      <item>sack-perm</item>
+      <item>sack</item>
+      <item>sack0</item>
+      <item>sack1</item>
+      <item>sack2</item>
+      <item>sack3</item>
+      <item>timestamp</item>
+      <item>mptcp</item>
+      <!-- IP Options -->
+      <item>lsrr</item>
+      <item>ra</item>
+      <item>rr</item>
+      <item>ssrr</item>
+      <!-- log statement options -->
+      <item>prefix</item>
+      <item>level</item>
+      <item>group</item>
+      <item>snaplen</item>
+      <item>queue-threshold</item>
+      <!-- quota -->
+      <item>over</item>
+      <item>until</item>
+      <!-- ipsec -->
+      <item>spnum</item>
+      <!-- numgen -->
+      <item>inc</item>
+      <item>mod</item>
+      <item>offset</item>
+      <!-- rejext -->
+      <item>with</item>
+    </list>
+
+    <list name="header_expressions">
+      <!-- VLAN header_expressions -->
+      <item>id</item>
+      <item>dei</item>
+      <item>pcp</item>
+      <item>type</item>
+      <!-- ARP header_expressions -->
+      <item>htype</item>
+      <item>ptype</item>
+      <item>hlen</item>
+      <item>plen</item>
+      <item>operation</item>
+      <item>saddr</item>
+      <item>daddr</item>
+      <!-- IPv4 header_expressions -->
+      <item>version</item>
+      <item>hdrlength</item>
+      <item>dscp</item>
+      <item>ecn</item>
+      <item>length</item>
+      <item>id</item>
+      <item>frag-off</item>
+      <item>ttl</item>
+      <item>protocol</item>
+      <item>checksum</item>
+      <item>saddr</item>
+      <item>daddr</item>
+      <!-- ICMP header_expressions -->
+      <item>type</item>
+      <item>code</item>
+      <item>checksum</item>
+      <item>id</item>
+      <item>sequence</item>
+      <item>gateway</item>
+      <item>mtu</item>
+      <!-- IGMP header_expressions -->
+      <item>type</item>
+      <item>mrt</item>
+      <item>checksum</item>
+      <item>group</item>
+      <!-- IPv6 header_expressions -->
+      <item>version</item>
+      <item>dscp</item>
+      <item>ecn</item>
+      <item>flowlabel</item>
+      <item>length</item>
+      <item>nexthdr</item>
+      <item>hoplimit</item>
+      <item>saddr</item>
+      <item>daddr</item>
+      <!-- ICMPv6 header_expressions -->
+      <item>type</item>
+      <item>code</item>
+      <item>checksum</item>
+      <item>parameter-problem</item>
+      <item>packet-too-big</item>
+      <item>id</item>
+      <item>sequence</item>
+      <item>max-delay</item>
+      <item>taddr</item>
+      <item>daddr</item>
+      <!-- TCP header_expressions -->
+      <item>sport</item>
+      <item>dport</item>
+      <item>sequence</item>
+      <item>ackseq</item>
+      <item>doff</item>
+      <item>reserved</item>
+      <item>flags</item>
+      <item>window</item>
+      <item>checksum</item>
+      <item>urgptr</item>
+      <!-- UDP header_expressions -->
+      <item>sport</item>
+      <item>dport</item>
+      <item>length</item>
+      <item>checksum</item>
+      <!-- UDP-Lite header_expressions -->
+      <item>sport</item>
+      <item>dport</item>
+      <item>checksum</item>
+      <!-- SCTP header_expressions -->
+      <item>sport</item>
+      <item>dport</item>
+      <item>vtag</item>
+      <item>checksum</item>
+      <item>chunk</item>
+      <!-- DCCP header_expressions -->
+      <item>sport</item>
+      <item>dport</item>
+      <item>type</item>
+      <!-- AH header_expressions -->
+      <item>nexthdr</item>
+      <item>hdrlength</item>
+      <item>reserved</item>
+      <item>spi</item>
+      <item>sequence</item>
+      <!-- ESP header_expressions -->
+      <item>spi</item>
+      <item>sequence</item>
+      <!-- IPComp header_expressions -->
+      <item>nexthdr</item>
+      <item>flags</item>
+      <item>cpi</item>
+      <!-- GRE header_expressions -->
+      <item>flags</item>
+      <item>version</item>
+      <item>protocol</item>
+      <!-- GENEVE header_expressions -->
+      <item>protocol</item>
+      <item>vni</item>
+      <!-- VXLAN header_expressions -->
+      <item>flags</item>
+      <item>vni</item>
+    </list>
+
+    <list name="specifications_and_types">
+      <!--
+        types
+      -->
+
+      <!-- Meta expression types -->
+      <item>length</item>
+      <item>nfproto</item>
+      <item>l4proto</item>
+      <item>protocol</item>
+      <item>priority</item>
+      <item>mark</item>
+      <item>iif</item>
+      <item>iifname</item>
+      <item>iiftype</item>
+      <item>oif</item>
+      <item>oifname</item>
+      <item>oiftype</item>
+      <item>sdif</item>
+      <item>sdifname</item>
+      <item>skuid</item>
+      <item>skgid</item>
+      <item>rtclassid</item>
+      <item>ibrname</item>
+      <item>obrname</item>
+      <item>pkttype</item>
+      <item>cpu</item>
+      <item>iifgroup</item>
+      <item>oifgroup</item>
+      <item>cgroup</item>
+      <item>random</item>
+      <item>ipsec</item>
+      <item>iifkind</item>
+      <item>oifkind</item>
+      <item>time</item>
+      <item>day</item>
+      <item>hour</item>
+      <!-- Routing expression types -->
+      <item>classid</item>
+      <item>nexthop</item>
+      <item>mtu</item>
+      <item>ipsec</item>
+      <item>realm</item>
+      <!-- Ipsec expression types -->
+      <item>reqid</item>
+      <item>spi</item>
+      <item>saddr</item>
+      <item>daddr</item>
+      <!-- Ethernet header_expressions types -->
+      <item>daddr</item>
+      <item>saddr</item>
+      <item>type</item>
+      <!-- Conntrack statement types -->
+      <item>event</item>
+      <item>helper</item>
+      <item>mark</item>
+      <item>label</item>
+      <item>zone</item>
+      <!-- Meta statement types -->
+      <item>priority</item>
+      <item>mark</item>
+      <item>pkttype</item>
+      <item>nftrace</item>
+      <item>broute</item>
+      <!-- numgen -->
+      <item>inc</item>
+      <!-- jhash -->
+      <item>seed</item>
+      <!-- ipsec -->
+      <item>in</item>
+      <item>out</item>
+
+      <!--
+        specifications
+      -->
+
+      <!-- chain -->
+      <item>hook</item>
+      <item>device</item>
+      <item>handle</item>
+      <!-- flowtable -->
+      <item>devices</item>
+      <!-- set and map specifications -->
+      <item>type</item>
+      <item>typeof</item>
+      <item>flags</item>
+      <item>elements</item>
+      <item>size</item>
+      <item>policy</item>
+      <!-- set specifications -->
+      <item>timeout</item>
+      <item>gc-interval</item>
+      <item>auto-merge</item>
+      <!-- conntrack helper specifications -->
+      <item>type</item>
+      <item>protocol</item>
+      <item>l3proto</item>
+      <item>comment</item>
+      <!-- conntrack timeout specifications -->
+      <item>protocol</item>
+      <item>state</item>
+      <item>value</item>
+      <item>l3proto</item>
+      <item>comment</item>
+      <!-- conntrack expectation specifications -->
+      <item>protocol</item>
+      <item>dport</item>
+      <item>timeout</item>
+      <item>size</item>
+      <item>l3proto</item>
+      <item>comment</item>
+      <!-- Counter specifications -->
+      <item>packets</item>
+      <item>bytes</item>
+      <item>comment</item>
+      <!-- Quota specifications -->
+      <!--<item>quota</item>-->
+      <item>used</item>
+      <item>comment</item>
+      <!-- Conntrack expressions -->
+      <item>state</item>
+      <item>direction</item>
+      <item>status</item>
+      <item>mark</item>
+      <item>expiration</item>
+      <item>helper</item>
+      <item>label</item>
+      <item>l3proto</item>
+      <item>saddr</item>
+      <item>daddr</item>
+      <item>protocol</item>
+      <item>proto-src</item>
+      <item>proto-dst</item>
+      <item>packets</item>
+      <item>bytes</item>
+      <item>avgpkt</item>
+      <item>zone</item>
+      <item>count</item>
+      <item>id</item>
+    </list>
+
+    <contexts>
+      <context name="Start" attribute="Normal">
+        <DetectSpaces/>
+        <DetectChar char="#" attribute="Comment" context="Comment"/>
+        <DetectChar char="=" attribute="Assignment Operator"/>
+        <RangeDetect char='"' char1='"' attribute="String"/>
+        <AnyChar String="{" attribute="Block Symbol" beginRegion="block"/>
+        <AnyChar String="}" attribute="Block Symbol" endRegion="block"/>
+        <LineContinue attribute="Line Continuation"/>
+        <RegExpr String="&ip;" attribute="IP"/>
+        <AnyChar String="[]();+-:/" attribute="Symbol"/>
+        <HlCHex attribute="Number" additionalDeliminator="-"/>
+        <Int attribute="Number" context="Unit" additionalDeliminator="-/"/>
+        <keyword String="operations" attribute="Operation"/>
+        <keyword String="address_families" attribute="Address Family"/>
+        <keyword String="statements" attribute="Statement"/>
+        <keyword String="options" attribute="Option"/>
+        <keyword String="specifications_and_types" attribute="Specification"/>
+        <keyword String="values" attribute="Value"/>
+        <keyword String="header_expressions" attribute="Header Expression"/>
+        <keyword String="symbolic_variables" attribute="Symbolic Variable"/>
+        <WordDetect String="accept" attribute="Accept"/>
+        <WordDetect String="drop" attribute="Drop"/>
+        <WordDetect String="include" attribute="Include"/>
+        <keyword String="verdict_statements" attribute="Verdict"/>
+        <RegExpr String="[&lt;&gt;]=?|[!=]=|\b(eq|ne|lt|gt|le|ge)\b" attribute="Operator"/>
+        <RegExpr String="[a-zA-Z][a-zA-Z0-9/\\_.]*"/>
+        <RegExpr String="[$@][-_.a-zA-Z][-_.a-zA-Z0-9]*" attribute="Variable"/>
+      </context>
+
+      <context name="Unit" attribute="Normal" fallthroughContext="#pop">
+        <DetectSpaces/>
+        <keyword String="units" attribute="Unit" context="#pop"/>
+        <RegExpr String="(?&lt;=)[dhms]\b" attribute="Unit" context="#pop"/>
+      </context>
+
+      <context name="Comment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces/>
+        <IncludeRules context="##Comments"/>
+        <DetectIdentifier/>
+      </context>
+
+    </contexts>
+
+    <itemDatas>
+      <itemData name="Normal" defStyleNum="dsNormal"/>
+      <itemData name="Comment" defStyleNum="dsComment"/>
+      <itemData name="Block Symbol" defStyleNum="dsNormal"/>
+      <itemData name="Symbol" defStyleNum="dsNormal"/>
+      <itemData name="Assignment Operator" defStyleNum="dsOperator"/>
+      <itemData name="Operator" defStyleNum="dsOperator"/>
+      <itemData name="Line Continuation" defStyleNum="dsOperator"/>
+      <itemData name="Number" defStyleNum="dsDecVal"/>
+      <itemData name="String" defStyleNum="dsString"/>
+      <itemData name="Variable" defStyleNum="dsVariable"/>
+      <itemData name="IP" defStyleNum="dsFloat"/>
+      <itemData name="Include" defStyleNum="dsImport"/>
+      <itemData name="Unit" defStyleNum="dsSpecialChar"/>
+      <!-- keywords -->
+      <itemData name="Operation" defStyleNum="dsKeyword"/>
+      <itemData name="Symbolic Variable" defStyleNum="dsBuiltIn"/>
+      <itemData name="Address Family" defStyleNum="dsAnnotation"/>
+      <itemData name="Verdict" defStyleNum="dsControlFlow"/>
+      <itemData name="Accept" defStyleNum="dsExtension"/>
+      <itemData name="Drop" defStyleNum="dsError"/>
+      <itemData name="Statement" defStyleNum="dsFunction"/>
+      <itemData name="Value" defStyleNum="dsConstant" bold="0"/>
+      <itemData name="Option" defStyleNum="dsPreprocessor"/>
+      <itemData name="Header Expression" defStyleNum="dsDataType"/>
+      <itemData name="Specification" defStyleNum="dsInformation"/>
+    </itemDatas>
+  </highlighting>
+
+  <general>
+    <keywords casesensitive="0" weakDeliminator="-/\."/>
+    <comments>
+      <comment name="singleLine" start="#" position="afterwhitespace"/>
+    </comments>
+  </general>
+</language>
+<!-- kate: space-indent on; indent-width 2; replace-tabs on; -->

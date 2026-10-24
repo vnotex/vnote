@@ -1,76 +1,149 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [
-	<!-- names must start with a letter, ideogram or underscore. \w matches any
-		 word character *or* a number, hence the lookahead -->
-	<!ENTITY name    "(?![0-9])[\w_:][\w.:_-]*">
-	<!ENTITY entref  "&amp;(#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
+  <!ENTITY name    "[[:alpha:]_:][\w.:_-]*">
+  <!ENTITY entref  "&amp;(?:#[0-9]+|#[xX][0-9A-Fa-f]+|&name;);">
 ]>
-<language name="XML" version="9" kateversion="3.4" section="Markup" extensions="*.docbook;*.xml;*.rc;*.daml;*.rdf;*.rss;*.xspf;*.xsd;*.svg;*.ui;*.kcfg;*.qrc;*.wsdl;*.scxml;*.xbel;*.dae;*.sch;*.brd" mimetype="text/xml;text/book;text/daml;text/rdf;application/rss+xml;application/xspf+xml;image/svg+xml;application/x-designer;application/x-xbel;application/xml;application/scxml+xml" casesensitive="1" indenter="xml" author="Wilbert Berendsen (wilbert@kde.nl)" license="LGPL">
+<language name="XML" version="27" kateversion="5.62" section="Markup" extensions="*.page;*.docbook;*.xml;*ui.rc;*.daml;*.rdf;*.rss;*.xspf;*.xsd;*.svg;*.ui;*.kcfg;*.qrc;*.wsdl;*.scxml;*.xbel;*.dae;*.sch;*.brd;*.fb2" mimetype="text/xml;text/book;text/daml;text/rdf;application/rss+xml;application/xspf+xml;image/svg+xml;application/x-designer;application/x-xbel;application/xml;application/scxml+xml;application/vnd.oasis.opendocument.text-flat-xml;application/vnd.oasis.opendocument.graphics-flat-xml;application/vnd.oasis.opendocument.presentation-flat-xml;application/vnd.oasis.opendocument.spreadsheet-flat-xml;application/gpx+xml;application/x-fictionbook+xml" casesensitive="1" indenter="xml" author="Wilbert Berendsen (wilbert@kde.nl)" license="LGPL">
+
+<!-- https://www.w3.org/TR/xml/ -->
+
+<!--
+  This file also serves as the basis for generating XSLT syntax.
+  Comments beginning with "XSLT:" are used by data/generators/generate-xslt.pl
+  to add specific rules based on the rule in the following line.
+
+  - 'XSLT: keytags': insert xslt functions.
+  - 'XSLT: copy': duplicate a context and modify the duplicated context.
+      The rules of the duplicated context also refer to an XSLT Context
+      (e.g <RegExpr context="#pop!Attribute" String="..."/> becomes
+      <RegExpr context="#pop!XSLT_Attribute" String="..."/>).
+  - 'XSLT: xattr': insert xslt attribute rule.
+  - 'XSLT: xvalue': insert xslt value rule.
+  - 'XSLT: nochange': Do not modify the following rule (only in a XSLT: copy).
+  - 'XSLT: attrvalue': change attribute="Value" to attribute="Attribute Value".
+  - 'XSLT: xpathDQ': insert xpathDQ rule.
+  - 'XSLT: xpathSQ': insert xpathSQ rule.
+-->
 
 <highlighting>
 <contexts>
   <context name="Start" attribute="Normal Text" lineEndContext="#stay">
-    <IncludeRules context="FindXML" />
+    <IncludeRules context="FindText" />
+    <IncludeRules context="FindElement" />
   </context>
 
-  <context name="FindXML" attribute="Normal Text" lineEndContext="#stay">
+  <context name="FindText" attribute="Normal Text" lineEndContext="#stay">
     <DetectSpaces />
-    <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
-    <StringDetect attribute="CDATA" context="CDATA" String="&lt;![CDATA[" beginRegion="cdata" />
-    <RegExpr attribute="Doctype" context="Doctype" String="&lt;!DOCTYPE\s+" beginRegion="doctype" />
-    <RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:_-]*" beginRegion="pi" />
-    <RegExpr attribute="Element" context="Element" String="&lt;&name;" beginRegion="element" />
-    <IncludeRules context="FindEntityRefs" />
     <DetectIdentifier />
+    <Int />
+  </context>
+
+  <context name="FindElement" attribute="Normal Text" lineEndContext="#stay">
+    <RegExpr attribute="Element Symbols" context="ElementTagName" String="&lt;(?=(&name;))" beginRegion="element" />
+    <RegExpr attribute="Element Symbols" context="El End TagName" String="&lt;/(?=(&name;))" endRegion="element" />
+    <IncludeRules context="FindComment" />
+    <StringDetect attribute="CDATA" context="CDATAStart" String="&lt;![CDATA[" lookAhead="true" />
+    <RegExpr attribute="Doctype Symbols" context="DoctypeTagName" String="&lt;!(?=DOCTYPE(\s|$))" beginRegion="doctype" />
+    <IncludeRules context="FindEntityRefs" />
+    <IncludeRules context="FindProcessingInstruction" />
+    <IncludeRules context="FindError" />
+  </context>
+
+  <context name="FindError" attribute="Other Text" lineEndContext="#stay">
+    <IncludeRules context="FindReservedChar" />
+    <StringDetect attribute="Error" String="]]>" />
+  </context>
+
+  <context name="FindComment" attribute="Other Text" lineEndContext="#stay">
+    <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
   </context>
 
   <context name="FindEntityRefs" attribute="Other Text" lineEndContext="#stay">
     <RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
+  </context>
+
+  <context name="FindReservedChar" attribute="Other Text" lineEndContext="#stay">
     <AnyChar attribute="Error" context="#stay" String="&amp;&lt;" />
   </context>
 
   <context name="FindPEntityRefs" attribute="Other Text" lineEndContext="#stay">
     <RegExpr attribute="EntityRef" context="#stay" String="&entref;" />
     <RegExpr attribute="PEntityRef" context="#stay" String="%&name;;" />
-    <AnyChar attribute="Error" context="#stay" String="&amp;%" />
+    <AnyChar attribute="Error" context="#stay" String="&amp;%&lt;" />
   </context>
 
 
   <context name="Comment" attribute="Comment" lineEndContext="#stay">
     <DetectSpaces />
-    <StringDetect attribute="Comment" context="#pop" String="--&gt;" endRegion="comment" />
-    <RegExpr attribute="Error" context="#stay" String="-(-(?!-&gt;))+" />
-    <IncludeRules context="##Alerts" />
+    <StringDetect context="EndComment" String="--" lookAhead="1"/>
+    <IncludeRules context="##Comments" />
     <DetectIdentifier />
   </context>
+  <context name="EndComment" attribute="Comment" lineEndContext="#pop" fallthroughContext="#pop">
+    <StringDetect attribute="Comment" context="#pop#pop" String="-->" endRegion="comment" />
+    <DetectChar attribute="Error" char="-" />
+  </context>
 
+  <context name="CDATAStart" attribute="Other Text" lineEndContext="#pop">
+    <StringDetect attribute="CDATA Symbols" context="#stay" String="&lt;![" beginRegion="cdata" />
+    <StringDetect attribute="CDATA" context="#stay" String="CDATA" />
+    <DetectChar attribute="CDATA Symbols" context="#pop!CDATA" char="[" />
+  </context>
   <context name="CDATA" attribute="Other Text" lineEndContext="#stay">
     <DetectSpaces />
     <DetectIdentifier />
-    <StringDetect attribute="CDATA" context="#pop" String="]]&gt;" endRegion="cdata" />
-    <StringDetect attribute="EntityRef" context="#stay" String="]]&amp;gt;" />
+    <StringDetect attribute="CDATA Symbols" context="#pop" String="]]&gt;" endRegion="cdata" />
   </context>
 
+  <context name="FindProcessingInstruction" attribute="Other Text" lineEndContext="#stay">
+    <RegExpr attribute="PI Symbols" context="PI TagName" String="&lt;\?(?=([\w:_-]*))" beginRegion="pi" />
+  </context>
+  <context name="PI TagName" attribute="Other Text" lineEndContext="#pop!PI" fallthroughContext="#pop!PI">
+    <RegExpr attribute="Processing Instruction" context="#pop!PI-XML" String="xml(?=\s|$)" insensitive="true" />
+    <StringDetect attribute="Processing Instruction" context="#pop!PI" String="%1" dynamic="true" />
+  </context>
   <context name="PI" attribute="Other Text" lineEndContext="#stay">
-    <Detect2Chars attribute="Processing Instruction" context="#pop" char="?" char1="&gt;" endRegion="pi" />
+    <Detect2Chars attribute="PI Symbols" context="#pop" char="?" char1="&gt;" endRegion="pi" />
+  </context>
+  <context name="PI-XML" attribute="Other Text" lineEndContext="#stay">
+    <IncludeRules context="PI" />
+    <DetectSpaces attribute="Other Text"/>
+    <DetectChar attribute="Attribute Separator" context="Value" char="=" />
+    <RegExpr attribute="Attribute" context="#stay" String="(?:^|(?&lt;=\s))&name;" />
   </context>
 
+  <context name="DoctypeTagName" attribute="Other Text" lineEndContext="#pop">
+    <StringDetect attribute="Doctype" context="#pop!DoctypeVariableName" String="DOCTYPE" />
+  </context>
+  <context name="DoctypeVariableName" attribute="Other Text" lineEndContext="#stay" fallthroughContext="#pop!Doctype">
+    <DetectSpaces />
+    <RegExpr attribute="Doctype Name" context="#pop!Doctype" String="&name;" />
+  </context>
   <context name="Doctype" attribute="Other Text" lineEndContext="#stay">
-    <DetectChar attribute="Doctype" context="#pop" char="&gt;" endRegion="doctype" />
-    <DetectChar attribute="Doctype" context="Doctype Internal Subset" char="[" beginRegion="int_subset" />
+    <DetectChar attribute="Doctype Symbols" context="#pop" char="&gt;" endRegion="doctype" />
+    <DetectChar attribute="Doctype Symbols" context="Doctype Internal Subset" char="[" beginRegion="int_subset" />
   </context>
 
   <context name="Doctype Internal Subset" attribute="Other Text" lineEndContext="#stay">
-    <DetectChar attribute="Doctype" context="#pop" char="]" endRegion="int_subset" />
-    <RegExpr attribute="Doctype" context="Doctype Markupdecl" String="&lt;!(ELEMENT|ENTITY|ATTLIST|NOTATION)\b" />
-    <StringDetect attribute="Comment" context="Comment" String="&lt;!--" beginRegion="comment" />
-    <RegExpr attribute="Processing Instruction" context="PI" String="&lt;\?[\w:_-]*" beginRegion="pi" />
+    <DetectSpaces />
+    <DetectChar attribute="Doctype Symbols" context="#pop" char="]" endRegion="int_subset" />
+    <RegExpr attribute="Doctype Symbols" context="Doctype Markupdecl TagName" String="&lt;!(?=(ELEMENT|ENTITY|ATTLIST|NOTATION)\b)" />
+    <IncludeRules context="FindComment" />
+    <IncludeRules context="FindProcessingInstruction" />
     <IncludeRules context="FindPEntityRefs" />
   </context>
 
+  <context name="Doctype Markupdecl TagName" attribute="Other Text" lineEndContext="#pop">
+    <DetectIdentifier attribute="Doctype" context="#pop!Doctype Markupdecl VariableName" />
+  </context>
+  <context name="Doctype Markupdecl VariableName" attribute="Other Text" lineEndContext="#pop!Doctype Markupdecl" fallthroughContext="#pop!Doctype Markupdecl">
+    <DetectSpaces />
+    <DetectChar attribute="Doctype Symbols" char="%"/>
+    <RegExpr attribute="Doctype Name" context="#pop!Doctype Markupdecl" String="&name;" />
+  </context>
   <context name="Doctype Markupdecl" attribute="Other Text" lineEndContext="#stay">
-    <DetectChar attribute="Doctype" context="#pop" char="&gt;" />
+    <DetectChar attribute="Doctype Symbols" context="#pop" char="&gt;" />
     <DetectChar attribute="Value" context="Doctype Markupdecl DQ" char="&quot;" />
     <DetectChar attribute="Value" context="Doctype Markupdecl SQ" char="&apos;" />
   </context>
@@ -85,65 +158,138 @@
     <IncludeRules context="FindPEntityRefs" />
   </context>
 
-  <context name="Element" attribute="Other Text" lineEndContext="#stay">
-    <Detect2Chars attribute="Element" context="#pop" char="/" char1="&gt;" endRegion="element" />
-    <DetectChar attribute="Element" context="El Content" char="&gt;" />
-    <RegExpr attribute="Attribute" context="Attribute" String="^&name;" />
-    <RegExpr attribute="Attribute" context="Attribute" String="\s+&name;" />
-    <RegExpr attribute="Error" context="#stay" String="\S" />
+  <context name="ElementTagName" attribute="Other Text" lineEndContext="#pop!Element">
+    <!-- XSLT: keytags -->
+    <StringDetect attribute="Element" context="#pop!Element" String="%1" dynamic="true" />
+  </context>
+  <!-- XSLT: copy -->
+  <context name="Element" attribute="Other Text" lineEndContext="#stay" fallthroughContext="ElementCommonError">
+    <Detect2Chars attribute="Element Symbols" context="#pop" char="/" char1=">" endRegion="element" />
+    <DetectChar attribute="Element Symbols" context="#pop" char=">" />
+    <DetectSpaces attribute="Other Text"/>
+    <!-- XSLT: xattr -->
+    <RegExpr attribute="Attribute" context="Attribute" String="(?:^|(?&lt;=\s))&name;" />
+
+    <!-- the following rules limit the number of characters or lines marked as an error,
+      which can become very large -->
+    <!-- assume that '>' will be typed afterwards -->
+    <DetectChar attribute="Error" context="#pop" char="/" endRegion="element" />
+    <!-- assume no attribute name, but value -->
+    <DetectChar attribute="Error" context="Value" char="=" />
+    <!-- assume attribute preceded by an invalid character, e.g. <tag foo="x"invalid="y"> -->
+    <!-- XSLT: xattr -->
+    <RegExpr attribute="Error" context="Attribute" String="&name;" />
   </context>
 
-  <context name="El Content" attribute="Other Text" lineEndContext="#stay">
-    <RegExpr attribute="Element" context="El End" String="&lt;/&name;" />
-    <IncludeRules context="FindXML" />
+  <context name="El End TagName" attribute="Other Text" lineEndContext="#pop!El End">
+    <!-- XSLT: keytags -->
+    <StringDetect attribute="Element" context="El End" String="%1" dynamic="true" />
   </context>
-
   <context name="El End" attribute="Other Text" lineEndContext="#stay">
-    <DetectChar attribute="Element" context="#pop#pop#pop" char="&gt;" endRegion="element" />
-    <RegExpr attribute="Error" context="#stay" String="\S" />
+    <DetectChar attribute="Element Symbols" context="#pop#pop" char=">" />
+    <DetectSpaces attribute="Other Text"/>
+    <IncludeRules context="ElementCommonError"/>
   </context>
 
+  <!-- XSLT: copy -->
   <context name="Attribute" attribute="Other Text" lineEndContext="#stay">
-    <DetectChar attribute="Attribute" context="Value" char="=" />
-    <RegExpr attribute="Error" context="#stay" String="\S" />
+    <DetectChar attribute="Attribute Separator" context="#pop!Value" char="=" />
+    <DetectSpaces attribute="Other Text"/>
+
+    <!-- the following rules limit the number of characters or lines marked as an error,
+      which can become very large -->
+    <!-- XSLT: xvalue -->
+    <DetectChar attribute="Error" context="Value DQ" char="&quot;" />
+    <!-- XSLT: xvalue -->
+    <DetectChar attribute="Error" context="Value SQ" char="&apos;" />
+    <IncludeRules context="FindAttributeCommonError"/>
   </context>
 
+  <!-- XSLT: copy -->
   <context name="Value" attribute="Other Text" lineEndContext="#stay">
+    <!-- XSLT: xvalue -->
     <DetectChar attribute="Value" context="Value DQ" char="&quot;" />
+    <!-- XSLT: xvalue -->
     <DetectChar attribute="Value" context="Value SQ" char="&apos;" />
-    <RegExpr attribute="Error" context="#stay" String="\S" />
+    <DetectSpaces attribute="Other Text"/>
+    <IncludeRules context="FindAttributeCommonError"/>
   </context>
 
+  <!-- XSLT: copy -->
+  <context name="FindAttributeCommonError" attribute="Error">
+    <!-- attribute without value -->
+    <DetectChar attribute="Error" context="#pop#pop" char=">" />
+    <StringDetect attribute="Error" context="#pop#pop" String="/>" endRegion="element" />
+    <!-- attribute without value, assume that '>' will be typed afterwards -->
+    <DetectChar attribute="Error" context="#pop#pop" char="/" endRegion="element" />
+    <!-- next word is an attribute -->
+    <!-- XSLT: xattr -->
+    <RegExpr attribute="Error" context="#pop!Attribute" String="&name;(?=\s*=)" />
+    <!-- XSLT: nochange -->
+    <IncludeRules context="ElementCommonError"/>
+  </context>
+
+  <context name="ElementCommonError" attribute="Error">
+    <!-- mark a "word" in error -->
+    <RegExpr attribute="Error" context="#pop#pop" String="[-\w.:_=]+|[^-\w.:_=/&lt;>\s]+[-\w.:_]*|/>|[^&lt;]" />
+    <!-- assume that '>' will be typed afterwards and find a new element -->
+    <!-- XSLT: keytags -->
+    <RegExpr attribute="Error" context="#pop#pop!Element" String="&lt;&name;" />
+    <StringDetect attribute="Error" context="#pop#pop!Comment" String="&lt;!--" beginRegion="comment" />
+    <StringDetect attribute="Error" context="#pop#pop!CDATA" String="&lt;![CDATA[" beginRegion="cdata" />
+    <DetectChar attribute="Error" context="#pop#pop" char="&lt;" />
+  </context>
+
+  <!-- XSLT: attrvalue -->
   <context name="Value DQ" attribute="Value" lineEndContext="#stay">
-    <DetectChar attribute="Value" context="#pop#pop#pop" char="&quot;" />
-    <IncludeRules context="FindEntityRefs" />
+    <!-- XSLT: xpathDQ -->
+    <DetectChar attribute="Value" context="#pop#pop" char="&quot;" />
+    <IncludeRules context="ValueQ" />
   </context>
 
+  <!-- XSLT: attrvalue -->
   <context name="Value SQ" attribute="Value" lineEndContext="#stay">
-    <DetectChar attribute="Value" context="#pop#pop#pop" char="&apos;" />
+    <!-- XSLT: xpathSQ -->
+    <DetectChar attribute="Value" context="#pop#pop" char="&apos;" />
+    <IncludeRules context="ValueQ" />
+  </context>
+
+  <!-- XSLT: attrvalue -->
+  <context name="ValueQ" attribute="Value" lineEndContext="#stay">
+    <DetectIdentifier attribute="Value" />
+    <DetectSpaces attribute="Value" />
+    <Int attribute="Value" />
     <IncludeRules context="FindEntityRefs" />
+    <IncludeRules context="FindReservedChar" />
   </context>
 
 </contexts>
 <itemDatas>
-  <itemData name="Normal Text" defStyleNum="dsNormal" />
-  <itemData name="Other Text" defStyleNum="dsNormal" />
-  <itemData name="Comment" defStyleNum="dsComment" spellChecking="false" />
-  <itemData name="CDATA" defStyleNum="dsBaseN" bold="1" spellChecking="false" />
-  <itemData name="Processing Instruction" defStyleNum="dsKeyword" spellChecking="false" />
-  <itemData name="Doctype" defStyleNum="dsDataType" bold="1" spellChecking="false" />
-  <itemData name="Element" defStyleNum="dsKeyword" spellChecking="false" />
-  <itemData name="Attribute" defStyleNum="dsOthers" spellChecking="false" />
-  <itemData name="Value" defStyleNum="dsString" spellChecking="false" />
-  <itemData name="EntityRef" defStyleNum="dsDecVal" spellChecking="false" />
-  <itemData name="PEntityRef" defStyleNum="dsDecVal" spellChecking="false" />
-  <itemData name="Error" defStyleNum="dsError" spellChecking="false" />
+  <itemData name="Normal Text"     defStyleNum="dsNormal" />
+  <itemData name="Other Text"      defStyleNum="dsNormal" />
+  <itemData name="Comment"         defStyleNum="dsComment" spellChecking="true" />
+  <itemData name="CDATA"           defStyleNum="dsBaseN"    bold="1" italic="0" spellChecking="false" />
+  <itemData name="CDATA Symbols"   defStyleNum="dsBaseN"    bold="0" italic="0" spellChecking="false" />
+  <itemData name="Processing Instruction" defStyleNum="dsFunction" bold="1" italic="0" spellChecking="false" />
+  <itemData name="PI Symbols"      defStyleNum="dsFunction" bold="0" italic="0" spellChecking="false" />
+  <itemData name="Doctype"         defStyleNum="dsDataType" bold="1" italic="0" spellChecking="false" />
+  <itemData name="Doctype Name"    defStyleNum="dsDataType" bold="0" italic="0" spellChecking="false" />
+  <itemData name="Doctype Symbols" defStyleNum="dsDataType" bold="0" italic="0" spellChecking="false" />
+  <itemData name="Element"         defStyleNum="dsKeyword" spellChecking="false" />
+  <itemData name="Element Symbols" defStyleNum="dsNormal" spellChecking="false" />
+  <itemData name="Attribute"       defStyleNum="dsOthers" spellChecking="false" />
+  <itemData name="Attribute Separator" defStyleNum="dsOthers" spellChecking="false" />
+  <itemData name="Value"           defStyleNum="dsString" spellChecking="false" />
+  <itemData name="EntityRef"       defStyleNum="dsDecVal" spellChecking="false" />
+  <itemData name="PEntityRef"      defStyleNum="dsDecVal" spellChecking="false" />
+  <itemData name="Error"           defStyleNum="dsError" spellChecking="false" />
 </itemDatas>
 
 </highlighting>
 <general>
   <comments>
-    <comment name="multiLine" start="&lt;!--" end="--&gt;" />
+    <comment name="multiLine" start="&lt;!--" end="--&gt;" region="comment" />
   </comments>
 </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

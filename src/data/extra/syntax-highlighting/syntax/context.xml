@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="ConTeXt" version="4" section="Markup" kateversion="3.4" priority="8" extensions="*.ctx" mimetype="text/x-tex" casesensitive="1" author="Philipp A. (flying-sheep@web.de)" license="GPL" >
+<!DOCTYPE language
+[
+	<!-- The characters ! ? @ are "internal" or system macros, normally not usable, in general: user macros are just letters, see
+	https://wiki.contextgarden.net/System_Macros/Scratch_Variables and https://www.mail-archive.com/ntg-context@ntg.nl/msg87737.html
+	In practice any non-special character works, though english characters should be used, except for one character macros, they use any symbol -->
+	<!ENTITY macro      "\\([[:alpha:]]+|[[:graph:]])">
+]>
+<language
+	name="ConTeXt"
+	version="12"
+	section="Markup"
+	kateversion="5.79"
+	priority="9"
+	extensions="*.ctx;*.mkiv;*.mkvi;*.mkxl;*.mklx"
+	mimetype="text/x-tex"
+	casesensitive="1"
+	author="Philipp A. (flying-sheep@web.de)"
+	license="GPL"
+>
 	<highlighting>
 		<list name="titles">
 			<item>\part</item>
@@ -8,74 +25,119 @@
 			<item>\section</item>
 			<item>\subsection</item>
 			<item>\subsubsection</item>
+			<item>\subsubsubsection</item>
+			<item>\subsubsubsubsection</item>
 			<item>\title</item>
 			<item>\subject</item>
 			<item>\subsubject</item>
 			<item>\subsubsubject</item>
+			<item>\subsubsubsubject</item>
+			<item>\subsubsubsubsubject</item>
 		</list>
+		<list name="mathMacros">
+			<item>\m</item>
+			<item>\math</item>
+			<item>\mathematics</item>
+			<item>\formula</item>
+		</list>
+		<list name="startEnvironments">
+			<item>\bTABLEhead</item>
+			<item>\bTABLEnext</item>
+			<item>\bTABLEbody</item>
+			<item>\bTABLEfoot</item>
+			<item>\bTABLE</item>
+			<item>\bTR</item>
+			<item>\bTD</item>
+		</list>
+		<list name="stopEnvironments">
+			<item>\eTABLEhead</item>
+			<item>\eTABLEnext</item>
+			<item>\eTABLEbody</item>
+			<item>\eTABLEfoot</item>
+			<item>\eTABLE</item>
+			<item>\eTR</item>
+			<item>\eTD</item>
+		</list>
+		<list name="startMetaPost">
+			<item>\startMPinclusions</item>
+			<item>\startuseMPgraphic</item>
+			<item>\startreusableMPgraphic</item>
+			<item>\startstaticMPfigure</item>
+			<item>\startuniqueMPgraphic</item>
+			<item>\startMPpage</item>
+			<item>\startMPcode</item>
+			<item>\startMP</item>
+		</list>
+		<list name="stopMetaPost">
+			<item>\stopMPinclusions</item>
+			<item>\stopuseMPgraphic</item>
+			<item>\stopreusableMPgraphic</item>
+			<item>\stopstaticMPfigure</item>
+			<item>\stopuniqueMPgraphic</item>
+			<item>\stopMPpage</item>
+			<item>\stopMPcode</item>
+			<item>\stopMP</item>
+		</list>
+
 		<contexts>
 			<!-- Normal text -->
 			<context name="Normal Text" attribute="Normal Text" lineEndContext="#stay">
-				<DetectChar   char="$"               attribute="Block" context="MathMode"/>
+				<keyword      String="titles"        attribute="Section" context="#stay"/>
 				<Detect2Chars char="$" char1="$"     attribute="Block" context="MathModeDisplay"/>
-				<RegExpr String="\\math(ematics)?"   attribute="Block" context="MathModeMacroFind"/>
-				<StringDetect String="\startformula" attribute="Block" context="MathModeFormula"/>
-				<StringDetect String="\starttyping"  attribute="Block" context="Verbatim"/>
-				<keyword String="titles"             attribute="Section" context="#stay"/>
+				<DetectChar   char="$"               attribute="Block" context="MathMode"/>
+				<keyword      String="mathMacros"    attribute="Block" context="MathModeMacroFind"/>
+				<StringDetect String="\startformula" attribute="Block" context="MathModeFormula" beginRegion="mathModeBlock"/>
+				<StringDetect String="\starttyping"  attribute="Block" context="Verbatim"        beginRegion="typingBlock"/>
+				<StringDetect String="\startluacode" attribute="Block" context="LuaCode"         beginRegion="luaBlock"/>
+				<StringDetect String="\startLUA"     attribute="Block" context="LuaCode"         beginRegion="luaBlock"/>
+				<StringDetect String="\startXML"     attribute="Block" context="XmlCode"         beginRegion="xmlBlock"/>
+				<keyword      String="startMetaPost" attribute="Block" context="MetaPostCode"    beginRegion="metaPostBlock"/>
 				<IncludeRules context="Common"/>
-			</context>
-
-			<!-- Macro -->
-			<context name="Macro" attribute="Macro" lineEndContext="#stay">
-				<RegExpr String="[a-zA-Z_]+[a-zA-Z@_]*" attribute="Macro" context="#pop"/>
-				<RegExpr String="[^a-zA-Z_]"            attribute="Macro" context="#pop"/>
 			</context>
 
 			<!-- Comment -->
 			<context name="Comment" attribute="Comment" lineEndContext="#pop">
-				<RegExpr String="(FIXME|TODO):?" attribute="Alert" context="#stay"/>
+				<IncludeRules context="##Comments"/>
 			</context>
 
 			<!-- Math Modes -->
-			<context name="MathMode" attribute="Math" lineEndContext="#pop">
+			<context name="MathMode" attribute="Math" lineEndContext="#stay">
 				<DetectChar   char="$"               attribute="Block" context="#pop"/>
-				<Detect2Chars char="$" char1="$"     attribute="Error" context="#stay"/>
-				<StringDetect String="\stopformula"  attribute="Error" context="#stay"/>
+				<StringDetect String="\stopformula"  attribute="Error" context="#stay" />
 				<IncludeRules context="MathModeCommon"/>
 			</context>
 			<context name="MathModeMacroFind" attribute="Math" lineEndContext="#stay">
-				<DetectChar   char="{"               attribute="Brace" context="#popMathModeMacro"/>
+				<DetectChar   char="{"             attribute="Brace" context="#pop!MathModeMacro"/>
+				<RegExpr      String="&macro;"     attribute="Macro" context="#pop"/> <!-- Single token -->
+				<RegExpr      String="[[:graph:]]" attribute="Math"  context="#pop"/> <!-- Single token -->
 			</context>
 			<context name="MathModeMacro" attribute="Math" lineEndContext="#stay">
 				<DetectChar   char="{"               attribute="Brace" context="MathModeMacro"/>
 				<DetectChar   char="}"               attribute="Brace" context="#pop"/>
 				<DetectChar   char="$"               attribute="Error" context="#stay"/>
-				<Detect2Chars char="$" char1="$"     attribute="Error" context="#stay"/>
 				<StringDetect String="\stopformula"  attribute="Error" context="#stay"/>
 				<IncludeRules context="MathModeCommon"/>
 			</context>
 			<context name="MathModeDisplay" attribute="Math" lineEndContext="#stay">
-				<DetectChar   char="$"               attribute="Error" context="#stay"/>
 				<Detect2Chars char="$" char1="$"     attribute="Block" context="#pop"/>
+				<DetectChar   char="$"               attribute="Error" context="#stay"/>
 				<StringDetect String="\stopformula"  attribute="Error" context="#stay"/>
 				<IncludeRules context="MathModeCommon"/>
 			</context>
 			<context name="MathModeFormula" attribute="Math" lineEndContext="#stay">
 				<DetectChar   char="$"               attribute="Error" context="#stay"/>
-				<Detect2Chars char="$" char1="$"     attribute="Error" context="#stay"/>
-				<StringDetect String="\stopformula"  attribute="Block" context="#pop"/>
+				<StringDetect String="\stopformula"  attribute="Block" context="#pop" endRegion="mathModeBlock"/>
 				<IncludeRules context="MathModeCommon"/>
 			</context>
 			<context name="MathModeCommon" attribute="Error" lineEndContext="#stay">
-				<DetectChar   char="^"               attribute="Brace" context="#stay"/>
-				<DetectChar   char="_"               attribute="Brace" context="#stay"/>
+				<AnyChar      String="^_"            attribute="Brace" context="#stay"/>
 				<StringDetect String="\startformula" attribute="Error" context="#stay"/>
 				<StringDetect String="\text"         attribute="Block" context="MathModeTextFind"/>
 				<IncludeRules context="Common"/>
 			</context>
 			<!--Math text-->
 			<context name="MathModeTextFind" attribute="Normal Text" lineEndContext="#stay" >
-				<DetectChar char="{" attribute="Brace" context="#popMathModeText"/>
+				<DetectChar char="{" attribute="Brace" context="#pop!MathModeText"/>
 			</context>
 			<context name="MathModeText" attribute="Normal Text" lineEndContext="#stay" >
 				<DetectChar char="{" attribute="Brace" context="MathModeText"/>
@@ -85,17 +147,41 @@
 
 			<!--Verbatim TODO: \startC support-->
 			<context name="Verbatim" attribute="Verbatim" lineEndContext="#stay">
-				<StringDetect String="\stoptyping"  attribute="Block" context="#pop"/>
+				<StringDetect String="\starttyping" attribute="Verbatim" context="NestedVerbatim"/>
+				<StringDetect String="\stoptyping"  attribute="Block"    context="#pop" endRegion="typingBlock"/>
+			</context>
+
+			<context name="NestedVerbatim" attribute="Verbatim" lineEndContext="#stay">
+				<StringDetect String="\starttyping" attribute="Verbatim" context="NestedVerbatim"/>
+				<StringDetect String="\stoptyping"  attribute="Verbatim" context="#pop"/>
+			</context>
+
+			<context name="MetaPostCode" attribute="Normal Text" lineEndContext="#stay">
+				<keyword      String="stopMetaPost" attribute="Block" context="#pop" endRegion="metaPostBlock"/>
+				<IncludeRules context="##Metapost/Metafont"/>
+			</context>
+
+			<context name="LuaCode" attribute="Normal Text" lineEndContext="#stay">
+				<StringDetect String="\stopluacode" attribute="Block" context="#pop" endRegion="luaBlock"/>
+				<StringDetect String="\stopLUA"     attribute="Block" context="#pop" endRegion="luaBlock"/>
+				<IncludeRules context="##Lua"/>
+			</context>
+
+			<context name="XmlCode" attribute="Normal Text" lineEndContext="#stay">
+				<StringDetect String="\stopXML"     attribute="Block" context="#pop" endRegion="xmlBlock"/>
+				<IncludeRules context="##XML"/>
 			</context>
 
 			<!--Common-->
 			<context name="Common" attribute="Error" lineEndContext="#stay">
-				<DetectChar char="%" attribute="Comment" context="Comment"/>
-				<RegExpr String="\\start([a-zA-Z_]+)" attribute="Block" context="#stay" beginRegion="block"/>
-				<RegExpr String="\\stop([a-zA-Z_]+)"  attribute="Block" context="#stay" endRegion="block"/>
-				<DetectChar char="\" attribute="Macro"   context="Macro"/>
-				<DetectChar char="{" attribute="Brace"   context="#stay" beginRegion="block"/>
-				<DetectChar char="}" attribute="Brace"   context="#stay" endRegion="block"/>
+				<DetectChar char="%"                    attribute="Comment" context="Comment"/>
+				<RegExpr String="\\start(?:[a-zA-Z_]+)" attribute="Block" context="#stay" beginRegion="block"/>
+				<RegExpr String="\\stop(?:[a-zA-Z_]+)"  attribute="Block" context="#stay" endRegion="block"/>
+				<keyword String="startEnvironments"     attribute="Block" context="#stay" beginRegion="block"/>
+				<keyword String="stopEnvironments"      attribute="Block" context="#stay" endRegion="block"/>
+				<RegExpr String="&macro;"               attribute="Macro" context="#stay"/>
+				<DetectChar char="{"                    attribute="Brace" context="#stay" beginRegion="block"/>
+				<DetectChar char="}"                    attribute="Brace" context="#stay" endRegion="block"/>
 			</context>
 		</contexts>
 
@@ -103,7 +189,6 @@
 			<itemData name="Normal Text" defStyleNum="dsNormal"                            /><!--(Hi, I’m text)-->
 			<itemData name="Comment"     defStyleNum="dsComment"                           /><!--(%Comment)-->
 			<itemData name="Section"     defStyleNum="dsKeyword"                           /><!--\section{(Fancy!)}-->
-			<itemData name="Alert"       defStyleNum="dsAlert"        spellChecking="false"/><!--%(TODO):do sth.!-->
 			<itemData name="Brace"       defStyleNum="dsChar"         spellChecking="false"/><!--({})-->
 			<itemData name="Math"        defStyleNum="dsOthers"       spellChecking="false"/><!--($5$)-->
 			<itemData name="Macro"       defStyleNum="dsFunction"     spellChecking="false"/><!--(\foo)-->
@@ -118,13 +203,12 @@
 		<comments>
 			<comment name="singleLine" start="%" />
 		</comments>
+		<spellchecking>
+			<encodings>
+				<encoding string="''" />
+			</encodings>
+		</spellchecking>
 	</general>
-
-	<spellchecking>
-		<encodings>
-			<encoding string="''" ignored="true" />
-		</encodings>
-	</spellchecking>
 </language>
 
 <!-- kate: space-indent off; indent-width 4; -->

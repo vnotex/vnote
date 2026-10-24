@@ -29,7 +29,7 @@
  * Boston, MA  02110-1301, USA.                                       *
  **********************************************************************
 -->
-<!DOCTYPE language SYSTEM "language.dtd"
+<!DOCTYPE language
 [<!-- [Regular Expressions, Character Classes & Important Tokens]
 E.g. the dot "." has so many different meanings (i.e. in an RegExpr 'any char',
 'fullstop' of a clause, etc. pp.) that I decided it's usefull to write these out
@@ -101,11 +101,11 @@ to make the rules more expressive. -->
     <!ENTITY comma	",">
     <!ENTITY cut        "!">
     <!ENTITY bar        "|">
-    <!ENTITY tab	"	">
+    <!ENTITY tab	"&#x9;">
     <!ENTITY bs         "\">
 ]>
 <language name="Prolog" section="Sources"
-	  version="10" kateversion="3.4"
+	  version="17" kateversion="5.62"
 	  mimetype="text/x-prolog"
 	  extensions="*.prolog;*.dcg;*.pro"
 	  author="Torsten Eichstädt (torsten.eichstaedt@web.de)"
@@ -502,11 +502,10 @@ TODO sorted by priority
 	    clause      := layout term_seq fullstop | term_seq fullstop
 	-->
 	    <!-- shebang: ("#!") Detect shebang and fallthrough to clause_seq -->
-	    <context name="shebang" lineEndContext="clause" lineEmptyContext="clause" attribute="Syntax Error" >
-		<!-- no way: fallthrough="1" fallthroughContext="clause_seq" > -->
+	    <context name="shebang" lineEndContext="clause" lineEmptyContext="clause" attribute="Syntax Error" fallthroughContext="clause">
+		<!-- no way: fallthroughContext="clause_seq" > -->
 		<Detect2Chars column="0" char="#" char1="!" context="1-comment" attribute="% italic predicates: w/ side effects" />
 		<!-- else fallthrough (workaround broken fallthrough) -->
-		<RegExpr String="&any;" lookAhead="true" context="clause" attribute="Syntax Error" />
 	    </context>
 
 	    <!-- syntax error (Test & Debug Aid, too): it's enough to highlight next token -->
@@ -546,8 +545,7 @@ TODO sorted by priority
 		<DetectChar char="(" context="nested" beginRegion="nested" attribute="( ) [ ]" />
 		<DetectChar char="[" context="list" beginRegion="list" attribute="( ) [ ]" />
 		<DetectChar char="{" context="curly" beginRegion="curly" attribute="{ DCG }" />
-		<DetectChar char="&comma;" context="#stay" attribute="Logic &amp; Control" />
-		<DetectChar char="&cut;" context="#stay" attribute="Logic &amp; Control" />
+		<AnyChar String="&comma;&cut;" context="#stay" attribute="Logic &amp; Control" />
 		<DetectChar char="&bar;" context="#stay" attribute="Normal Text" />
 		<!-- lookAhead to give different style to the dot and the brace -->
 		<Detect2Chars lookAhead="true" char="&dot;" char1="(" context="list_functor" attribute="Syntax Error" />
@@ -562,8 +560,7 @@ TODO sorted by priority
 		<DetectChar char="(" context="nested" beginRegion="nested" attribute="( ) [ ]" />
 		<DetectChar char="[" context="list" beginRegion="list" attribute="( ) [ ]" />
 		<DetectChar char="{" context="curly" beginRegion="curly" attribute="{ DCG }" />
-		<DetectChar char="&cut;" context="#stay" attribute="Logic &amp; Control" />
-		<DetectChar char="&comma;" context="#stay" attribute="Logic &amp; Control" />
+		<AnyChar String="&cut;&comma;" context="#stay" attribute="Logic &amp; Control" />
 		<DetectChar char="&bar;" context="#stay" attribute="Normal Text" />
 		<Detect2Chars lookAhead="true" char="&dot;" char1="(" context="list_functor" attribute="Normal Text" />
 		<RegExpr String="&fullstop_iso;" context="#stay" attribute="Warning (!use background)" />
@@ -575,8 +572,7 @@ TODO sorted by priority
 		<DetectChar char="]" context="#pop" endRegion="list" attribute="( ) [ ]" />
 		<DetectChar char="[" context="list" beginRegion="list" attribute="( ) [ ]" />
 		<DetectChar char="{" context="curly" beginRegion="curly" attribute="( ) [ ]" />
-		<DetectChar char="&comma;" context="#stay" attribute="Normal Text" />
-		<DetectChar char="&cut;" context="#stay" attribute="Normal Text" />
+		<AnyChar String="&comma;&cut;" context="#stay" attribute="Normal Text" />
 		<DetectChar char="&bar;" context="#stay" attribute="other built-in operator" />
 		<Detect2Chars lookAhead="true" char="&dot;" char1="(" context="list_functor" attribute="Normal Text" />
 		<IncludeRules context="atomic" />
@@ -587,8 +583,7 @@ TODO sorted by priority
 		<DetectChar char="[" context="list" beginRegion="list" attribute="( ) [ ]" />
 		<DetectChar char="}" context="#pop" endRegion="curly" attribute="{ DCG }" />
 		<DetectChar char="{" context="curly" beginRegion="curly" attribute="{ DCG }" />
-		<DetectChar char="&comma;" context="#stay" attribute="Logic &amp; Control" />
-		<DetectChar char="&cut;" context="#stay" attribute="Logic &amp; Control" />
+		<AnyChar String="&comma;&cut;" context="#stay" attribute="Logic &amp; Control" />
 		<DetectChar char="&bar;" context="#stay" attribute="Normal Text" />
 		<Detect2Chars lookAhead="true" char="&dot;" char1="(" context="list_functor" attribute="Normal Text" />
 		<IncludeRules context="atomic" />
@@ -602,17 +597,11 @@ TODO sorted by priority
 	    "atomic" and "operator" below with context="#stay" (two or three occurrences) -->
 	    <context name="arith_expr" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
 		<DetectChar char="(" context="nested_expr" beginRegion="nested" attribute="( ) [ ]" />
-		<DetectChar lookAhead="true" char=")" context="#pop" attribute="( ) [ ]" />
-		<DetectChar lookAhead="true" char="}" context="#pop" attribute="{ DCG }" />
-		<DetectChar lookAhead="true" char="]" context="#pop" attribute="( ) [ ]" />
 		<!-- FIXME check if cut may be an op, else (and in any case 99.9% likely) it's a usual cut here -->
-		<DetectChar lookAhead="true" char="&cut;" context="#pop" attribute="Logic &amp; Control" />
-		<DetectChar lookAhead="true" char="&comma;" context="#pop" attribute="Logic &amp; Control" />
 		<!-- bar & dot could be a user-def'd op, pre-def'd ops could be
 		redef'd; but let's assume the default and just end the expr -->
-		<DetectChar lookAhead="true" char="&bar;" context="#pop" attribute="other built-in operator" />
-		<RegExpr lookAhead="true" String="&fullstop_iso;" context="#pop" attribute="Logic &amp; Control" />
-		<RegExpr lookAhead="true" String="&logic_control_ops_iso;" context="#pop" attribute="Logic &amp; Control" />
+		<AnyChar lookAhead="true" String=")}]&bar;&cut;&comma;&bar;" context="#pop"/>
+		<RegExpr lookAhead="true" String="&fullstop_iso;|&logic_control_ops_iso;" context="#pop" attribute="Logic &amp; Control" />
 		<IncludeRules context="arith_expr_common" />
 	    </context>
 	    <context name="nested_expr" lineEndContext="#stay" attribute="Syntax Error" noIndentationBasedFolding="true" >
@@ -718,7 +707,7 @@ TODO sorted by priority
 	    <!-- "0'" or "0'\" at EOL is a syntax error, catched below.  If
 	    possible, highlight white @next line to make clear error is the nl -->
 	    <context name="syntax_error_cc" lineEndContext="#stay" attribute="Syntax Error"
-		    fallthrough="true" fallthroughContext="#pop" >
+		    fallthroughContext="#pop" >
 		<DetectSpaces context="#pop" attribute="Syntax Error" />
 	    </context>
 
@@ -727,20 +716,19 @@ TODO sorted by priority
 	    ASSERT esc'd newline is handled by the calling context
 	    ASSERT we get the leading bs here to highlight the whole thing -->
 	    <context name="esc_seq_q" lineEndContext="syntax_error" attribute="Syntax Error" >
-		<RegExpr String="&esc_oct_iso;" context="#pop" attribute="0'a (!use background)" />
-		<RegExpr String="&esc_hex_iso;" context="#pop" attribute="0'a (!use background)" />
+		<RegExpr String="&esc_oct_iso;|&esc_hex_iso;" context="#pop" attribute="0'a (!use background)" />
 		<DetectChar char="&bs;" context="esc_seq_q2" attribute="escaped (!use background)" />
 	    </context>
 	    <!-- esc_seq_cc: #pop#pop out of cc on std esc seq, else pass char back
 	    ASSERT we do NOT need the leading bs here anymore -->
-	    <context name="esc_seq_cc" fallthrough="true" fallthroughContext="#pop"
+	    <context name="esc_seq_cc" fallthroughContext="#pop"
 		    lineEndContext="#pop#pop" attribute="Syntax Error" >
 		<DetectChar char="&tab;" context="#pop#pop" attribute="Warning (!use background)" />
 		<AnyChar String="&any_esc_iso;" context="#pop#pop" attribute="escaped (!use background)" />
 	    </context>
 	    <!-- esc_seq_q2: Handle standard esc seq in quoted else pass char back
 	    ASSERT we do NOT need the leading bs here anymore -->
-	    <context name="esc_seq_q2" fallthrough="true" fallthroughContext="#pop#pop"
+	    <context name="esc_seq_q2" fallthroughContext="#pop#pop"
 		    lineEndContext="syntax_error" attribute="Syntax Error" >
 		<DetectChar char="&tab;" context="#pop#pop" attribute="Warning (!use background)" />
 		<AnyChar String="&any_esc_iso;" context="#pop#pop" attribute="escaped (!use background)" />
@@ -754,18 +742,18 @@ TODO sorted by priority
 	    <context name="var" attribute="Syntax Error" lineEndContext="#stay" >
 		<DetectIdentifier context="#pop" attribute="_VARIABLE" />
 	    </context>
-	    <context name="graphic" lineEndContext="#pop" attribute="Syntax Error" fallthrough="true" fallthroughContext="#pop" >
+	    <context name="graphic" lineEndContext="#pop" attribute="Syntax Error" fallthroughContext="#pop" >
 		<AnyChar String="&any_graphic_iso;" context="#stay" attribute="Normal Text" />
 	    </context>
 
 	    <!-- numbers (after "0[box]") -->
-	    <context name="bin" lineEndContext="#pop" attribute="Syntax Error" fallthrough="true" fallthroughContext="#pop" >
+	    <context name="bin" lineEndContext="#pop" attribute="Syntax Error" fallthroughContext="#pop" >
 		<AnyChar String="&any_bin_iso;" context="#stay" attribute="0b1001 0o007 0xF1" />
 	    </context>
-	    <context name="oct" lineEndContext="#pop" attribute="Syntax Error" fallthrough="true" fallthroughContext="#pop" >
+	    <context name="oct" lineEndContext="#pop" attribute="Syntax Error" fallthroughContext="#pop" >
 		<AnyChar String="&any_oct_iso;" context="#stay" attribute="0b1001 0o007 0xF1" />
 	    </context>
-	    <context name="hex" lineEndContext="#pop" attribute="Syntax Error" fallthrough="true" fallthroughContext="#pop" >
+	    <context name="hex" lineEndContext="#pop" attribute="Syntax Error" fallthroughContext="#pop" >
 		<AnyChar String="&any_hex_iso;" context="#stay" attribute="0b1001 0o007 0xF1" />
 	    </context>
 
@@ -777,7 +765,7 @@ TODO sorted by priority
 		<Detect2Chars char="*" char1="/" context="#pop" endRegion="comment"
 			    attribute="% italic predicates: w/ side effects" />
 		<DetectSpaces />
-		<IncludeRules context="##Alerts" />
+		<IncludeRules context="##Comments" />
 		<DetectIdentifier />
 	    </context>
 
@@ -785,14 +773,14 @@ TODO sorted by priority
 	    <!-- Folding for consecutive 1-line comments: let indentation-based auto-folding work -->
 	    <context name="1-comment" lineEndContext="#pop" attribute="% italic predicates: w/ side effects" >
 		<DetectSpaces />
-		<IncludeRules context="##Alerts" />
+		<IncludeRules context="##Comments" />
 		<DetectIdentifier />
 	    </context>
 	    <context name="region_marker" lineEndContext="#pop" attribute="%BEGIN folding region" noIndentationBasedFolding="true" >
 		<IncludeRules context="1-comment" />
 	    </context>
 	    <context name="layout_fold" lineEndContext="#stay" attribute="Syntax Error"
-		    fallthrough="true" fallthroughContext="#pop" >
+		    fallthroughContext="#pop" >
 		<DetectSpaces attribute="Normal Text" />
 		<StringDetect String="%BEGIN" context="region_marker" attribute="%BEGIN folding region"
 			    firstNonSpace="true" beginRegion="user_region" />
@@ -876,7 +864,6 @@ TODO sorted by priority
 	    <context name="arith_expr_common" lineEndContext="#stay" attribute="Syntax Error" >
 		<IncludeRules context="layout" />
 		<IncludeRules context="number" />
-		<keyword String="arith eval ISO" context="#pop" attribute="Syntax Error" />
 		<keyword String="bogus ISO" context="#stay" attribute="ISO Bogus" />
 		<keyword String="arith expr mixed ISO" context="#stay" attribute="Arithmetics" />
 		<keyword String="arith expr int ISO" context="#stay" attribute="Integer Arithmetics" />
@@ -908,9 +895,7 @@ TODO sorted by priority
 		<Detect2Chars char="0" char1="o" context="oct" attribute="0b1001 0o007 0xF1" />
 		<Detect2Chars char="0" char1="x" context="hex" attribute="0b1001 0o007 0xF1" />
 
-		<RegExpr String="&float1_iso;" context="#stay" attribute="2.718281E-9" />
-		<RegExpr String="&float2_iso;" context="#stay" attribute="2.718281E-9" />
-		<RegExpr String="&float3_iso;" context="#stay" attribute="2.718281E-9" />
+		<RegExpr String="&float1_iso;|&float2_iso;|&float3_iso;" context="#stay" attribute="2.718281E-9" />
 		<Int context="#stay" attribute="1  2  3  42" />
 	    </context>
 
@@ -923,9 +908,7 @@ TODO sorted by priority
 		<RegExpr String="&predefined_ops_iso;" context="#stay" attribute="other built-in operator" />
 		<RegExpr String="&dcg_production_iso;" context="#stay" attribute="{ DCG }" />
 		<RegExpr String="&arith_compare_iso;" context="arith_expr" attribute="Arithmetics" />
-		<RegExpr String="&arith_ops_mixed_iso;" context="#stay" attribute="other built-in operator" />
-		<RegExpr String="&arith_ops_int_iso;" context="#stay" attribute="other built-in operator" />
-		<RegExpr String="&arith_ops_float_iso;" context="#stay" attribute="other built-in operator" />
+		<RegExpr String="&arith_ops_mixed_iso;|&arith_ops_int_iso;|&arith_ops_float_iso;" context="#stay" attribute="other built-in operator" />
 		<RegExpr String="&arith_bogus_iso;" context="#stay" attribute="ISO Bogus" />
 	    </context>
 
@@ -1029,3 +1012,4 @@ TODO sorted by priority
     your home directory. You have to open a new instance of kwrite/kate to use
     the new syntax file.
 -->
+<!-- kate: replace-tabs off; -->

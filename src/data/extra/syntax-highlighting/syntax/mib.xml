@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- Ref SMIv2: RFC 2578, RFC 2579 and RFC 2580 -->
-<language name="MIB" version="1" kateversion="3.4" section="Other" extensions="*.mib" casesensitive="1" author="Jaap Keuter (jaap.keuter@xs4all.nl)" license="MIT">
+<language name="MIB" version="4" kateversion="5.0" section="Other" extensions="*.mib" casesensitive="1" author="Jaap Keuter (jaap.keuter@xs4all.nl)" license="MIT">
     <highlighting>
         <list name="keywords">
             <item>ABSENT</item>
@@ -115,11 +115,8 @@
         <contexts>
             <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
                 <WordDetect attribute="Keyword" context="Import" String="IMPORTS"/>
-                <RegExpr context="Syntax" String="(\w+)\s*::=\s*TEXTUAL-CONVENTION" lookAhead="true"/>
                 <!-- for SEQUENCE on next line -->
-                <RegExpr context="Syntax" String="(\w+)\s*::=\W*$" lookAhead="true"/>
-                <RegExpr context="Syntax" String="(\w+)\s*::=\s*SEQUENCE" lookAhead="true"/>
-                <RegExpr context="Syntax" String="SYNTAX\s*(\w+)" lookAhead="true"/>
+                <RegExpr context="Syntax" String="(?|(\w+)\s*::=(?:\s*TEXTUAL-CONVENTION|\W*$|\s*SEQUENCE)|SYNTAX\s*(\w+))" lookAhead="true"/>
                 <WordDetect attribute="Keyword" context="Sequence" String="SEQUENCE"/>
                 <keyword attribute="Keyword" context="#stay" String="keywords"/>
                 <keyword attribute="Keyword" context="#stay" String="basetypes"/>
@@ -141,8 +138,7 @@
               <DetectChar attribute="Normal Text" context="#pop#pop" char=";"/>
             </context>
             <context name="Syntax" attribute="Syntax" lineEndContext="#pop" dynamic="true">
-                <DetectChar attribute="Normal Text" context="#pop" char="{"/>
-                <DetectChar attribute="Normal Text" context="#pop" char="("/>
+                <AnyChar attribute="Normal Text" context="#pop" String="{("/>
                 <keyword attribute="Keyword" context="#stay" String="keywords"/>
                 <keyword attribute="Keyword" context="#stay" String="basetypes"/>
                 <StringDetect attribute="Syntax" context="#pop" String="%1" dynamic="true"/>
@@ -159,6 +155,8 @@
             </context>
             <context name="Comment" attribute="Comment" lineEndContext="#pop">
                 <Detect2Chars attribute="Comment" context="#pop" char="-" char1="-"/>
+                <DetectSpaces />
+                <IncludeRules context="##Comments"/>
             </context>
         </contexts>
         <itemDatas>
@@ -180,3 +178,4 @@
         <keywords casesensitive="1" weakDeliminator="-"/>
     </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

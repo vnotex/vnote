@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="ActionScript 2.0" version="3" kateversion="5.0" section="Sources" extensions="*.as" mimetype="text/x-actionscript" license="LGPL" author="Aaron Miller (armantic101@gmail.com)">
+<!DOCTYPE language>
+<language name="ActionScript 2.0" version="10" kateversion="5.79" section="Sources" extensions="*.as" mimetype="text/x-actionscript" license="LGPL" author="Aaron Miller (armantic101@gmail.com)">
   <highlighting>
     
     <list name="properties">
@@ -226,7 +226,6 @@
     <list name="const">
       <item>false</item>
       <item>Infinity</item>
-      <item>-Infinity</item>
       <item>NaN</item>
       <item>newline</item>
       <item>null</item>
@@ -247,16 +246,18 @@
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
         <!-- Comment next line if you don't use Javadoc tool -->
         <IncludeRules context="##Javadoc"/>
+        <WordDetect attribute="Keyword" context="Imports" String="package" />
+        <WordDetect attribute="Keyword" context="ImportsPrefix" String="import" lookAhead="true" />
         <keyword attribute="Properties" context="#stay" String="properties"/>
         <keyword attribute="Global Functions" context="#stay" String="global_functions"/>
         <keyword attribute="Classes" context="#stay" String="classes"/>
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
         <keyword attribute="Constants" context="#stay" String="const"/>
         <keyword attribute="Data Type" context="#stay" String="types"/>
-        <Float attribute="Float" context="Float Suffixes"/>
+        <Float attribute="Float" context="#stay"/>
         <HlCOct attribute="Octal" context="#stay"/>
         <HlCHex attribute="Hex" context="#stay"/>
-        <Int attribute="Decimal" context="Int Suffixes"/>
+        <Int attribute="Decimal" context="#stay"/>
         <HlCChar attribute="Char" context="#stay"/>
         <RegExpr attribute="Decimal" context="#stay" String="//\s*BEGIN.*$" beginRegion="Region1"/>
         <RegExpr attribute="Decimal" context="#stay" String="//\s*END.*$" endRegion="Region1"/>
@@ -266,42 +267,30 @@
         <DetectChar attribute="Symbol" context="#stay" char="{" beginRegion="Brace1"/>
         <DetectChar attribute="Symbol" context="#stay" char="}" endRegion="Brace1"/>
         <RegExpr attribute="Keyword" context="#stay" String="\.{3,3}\s+" />  
-        <RegExpr attribute="Keyword" context="StaticImports" String="\b(import\s+static)\b" />
-        <RegExpr attribute="Keyword" context="Imports" String="\b(package|import)\b" /> 
-        <RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*(/\*\s*\d+\s*\*/\s*)?[(])" />
-        <RegExpr attribute="Symbol" context="Member" String="[.]{1,1}" /> 
-        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/.*&lt;=&gt;?[]|~^&#59;"/>
+        <RegExpr attribute="Function" context="#stay" String="\b[_\w][_\w\d]*(?=[\s]*(?:/\*\s*\d+\s*\*/\s*)?[(])" />
+        <DetectChar attribute="Symbol" context="Member" char="." />
+        <AnyChar attribute="Symbol" context="#stay" String=":!%&amp;()+,-/*&lt;=&gt;?[]|~^&#59;"/>
       </context>
-      <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-          <AnyChar String="fF" attribute="Float" context="#pop"/>
-      </context>
-      <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
-          <StringDetect attribute="Decimal" context="#pop" String="ULL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LUL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LLU" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="UL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LU" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="LL" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="U" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="L" insensitive="true"/>
+      <context name="ImportsPrefix" attribute="Keyword" lineEndContext="#pop">
+        <RegExpr attribute="Keyword" context="#pop!StaticImports" String="import\s+static\b" />
+        <WordDetect attribute="Keyword" context="#pop!Imports" String="import" />
       </context>
       <context attribute="String" lineEndContext="#pop" name="String">
         <LineContinue attribute="String" context="#stay"/>
         <HlCStringChar attribute="String Char" context="#stay"/>
         <DetectChar attribute="String" context="#pop" char="&quot;"/>
       </context>
-      <context attribute="Normal Text" lineEndContext="#pop" name="Member" fallthrough="true" fallthroughContext="#pop">  
+      <context attribute="Normal Text" lineEndContext="#pop" name="Member" fallthroughContext="#pop">  
         <RegExpr attribute="Function" context="#pop" String="\b[_a-zA-Z]\w*(?=[\s]*)" />
       </context>
-      <context attribute="Normal Text" lineEndContext="#pop" name="StaticImports">
-        <RegExpr attribute="StaticImports" context="#pop" String="\s*.*$" />
+      <context attribute="StaticImports" lineEndContext="#pop" name="StaticImports"/>
+      <context attribute="Imports" lineEndContext="#pop" name="Imports"/>
+      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
+        <IncludeRules context="##Comments"/>
       </context>
-      <context attribute="Normal Text" lineEndContext="#pop" name="Imports">
-        <RegExpr attribute="Imports" context="#pop" String="\s*.*$" />
-      </context>
-      <context attribute="Comment" lineEndContext="#pop" name="Commentar 1"/>
       <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments"/>
       </context>
     </contexts>
     <itemDatas>
@@ -319,7 +308,7 @@
       <itemData name="String"       defStyleNum="dsString"/>
       <itemData name="String Char"  defStyleNum="dsSpecialString"/>
       <itemData name="Comment"      defStyleNum="dsComment"/>
-      <itemData name="Symbol"       defStyleNum="dsNormal"/>
+      <itemData name="Symbol"       defStyleNum="dsOperator"/>
       <itemData name="Properties"   defStyleNum="dsAttribute" bold="1"/>
       <itemData name="Global Functions"   defStyleNum="dsFunction" bold="1"/>
       <itemData name="Classes"   defStyleNum="dsBuiltIn" bold="1"/>
@@ -329,8 +318,9 @@
   <general>
     <comments>
       <comment name="singleLine" start="//"/>
-      <comment name="multiLine" start="/*" end="*/"/>
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
     </comments>
     <keywords casesensitive="1"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
-<language name="AMPLE" version="7" kateversion="5.2" section="Scripts" extensions="*.ample;*.menu;*.startup" mimetype="text/x-amplesrc" priority="5" author="Christian Parg (cparg@gmx.de)" license="Apache &amp; LGPL" >
+<!DOCTYPE language>
+<language name="AMPLE" version="10" kateversion="5.2" section="Scripts" extensions="*.ample;*.menu;*.startup" mimetype="text/x-amplesrc" priority="5" author="Christian Parg (cparg@gmx.de)" license="Apache &amp; LGPL" >
 <!--
 #################################################################################################
 ## AMPLE Highlight file by Christian Parg (cparg_(at)_gmx_de)
@@ -429,11 +429,8 @@ Note: I used this hack to extract the functions from the reference documentation
       <item>$get_crosshair_target_radius</item>
       <item>$get_crosshair_target_style</item>
       <item>$get_def_bus_bit_characters</item>
-      <item>$get_def_bus_bit_characters</item>
-      <item>$get_def_divider_character</item>
       <item>$get_def_divider_character</item>
       <item>$get_def_non_orthogonal</item>
-      <item>$set_def_non_orthogonal</item>
       <item>$get_design_layers</item>
       <item>$get_design_path</item>
       <item>$get_design_refs</item>
@@ -490,13 +487,9 @@ Note: I used this hack to extract the functions from the reference documentation
       <item>$get_layout_counterpart</item>
       <item>$get_layout_window</item>
       <item>$get_lef_bus_bit_characters</item>
-      <item>$get_lef_bus_bit_characters</item>
-      <item>$get_lef_divider_character</item>
       <item>$get_lef_divider_character</item>
       <item>$get_lef_non_orthogonal</item>
-      <item>$set_lef_non_orthogonal</item>
       <item>$get_lef_overlap_boundary</item>
-      <item>$set_lef_overlap_boundary</item>
       <item>$get_left_orient_set</item>
       <item>$get_library_cells</item>
       <item>$get_licenses</item>
@@ -1090,16 +1083,11 @@ Note: I used this hack to extract the functions from the reference documentation
       <item>$get_join_on_move</item>
       <item>$set_layer_appearance</item>
       <item>$set_layer_palette_height</item>
-      <item>$get_layer_palette_height</item>
       <item>$set_layer_path_width</item>
       <item>$set_lef_bus_bit_characters</item>
-      <item>$get_lef_bus_bit_characters</item>
       <item>$set_lef_divider_character</item>
-      <item>$get_lef_divider_character</item>
       <item>$set_lef_non_orthogonal</item>
-      <item>$get_lef_non_orthogonal</item>
       <item>$set_lef_overlap_boundary</item>
-      <item>$get_lef_overlap_boundary</item>
       <item>$set_library_cell_type</item>
       <item>$set_library_site_types</item>
       <item>$set_location_mode</item>
@@ -3009,7 +2997,6 @@ Note: I used this hack to extract the functions from the reference documentation
       <item>$select_obj</item>
       <item>$show_instance</item>
       <item>$show_n_levels</item>
-      <item>$set_font</item>
       <item>$setup_comp_hierarchy_display</item>
       <item>$setup_hierarchy_selection</item>
       <item>$write_default_startup_file</item>
@@ -3069,7 +3056,6 @@ Note: I used this hack to extract the functions from the reference documentation
 
     <!-- plain IC AMPLE builtin types -->
     <list name="types">
-      <item>name</item>
       <item>callable</item>
       <item>enum</item>
       <item>integer</item>
@@ -3090,7 +3076,7 @@ Note: I used this hack to extract the functions from the reference documentation
       <context attribute="Normal Text" lineEndContext="#stay" name="Normal">
         <DetectSpaces />
 	<!-- org C definition: <RegExpr attribute="Preprocessor" context="Outscoped" String="#\s*if\s+0" beginRegion="PP" firstNonSpace="true" /> -->
-        <RegExpr attribute="Preprocessor" context="#stay" String="#pragma"  firstNonSpace="true" />
+        <StringDetect attribute="Preprocessor" context="#stay" String="#pragma"  firstNonSpace="true" />
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
 
 
@@ -3123,26 +3109,12 @@ Note: I used this hack to extract the functions from the reference documentation
 
       <context name="Float Suffixes" attribute="Float" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
           <StringDetect attribute="Float" context="#pop" String="meg" insensitive="true"/>
-          <StringDetect attribute="Float" context="#pop" String="f" insensitive="true"/>
-          <StringDetect attribute="Float" context="#pop" String="p" insensitive="true"/>
-          <StringDetect attribute="Float" context="#pop" String="n" insensitive="true"/>
-          <StringDetect attribute="Float" context="#pop" String="u" insensitive="true"/>
-          <StringDetect attribute="Float" context="#pop" String="m" insensitive="true"/>
-          <StringDetect attribute="Float" context="#pop" String="k" insensitive="true"/>
-          <StringDetect attribute="Float" context="#pop" String="g" insensitive="true"/>
-          <StringDetect attribute="Float" context="#pop" String="t" insensitive="true"/>
+          <AnyChar attribute="Float" context="#pop" String="fpnumkgtFPNUMKGT"/>
       </context>
 
       <context name="Int Suffixes" attribute="Decimal" lineEndContext="#pop" fallthrough="true" fallthroughContext="#pop">
           <StringDetect attribute="Decimal" context="#pop" String="meg" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="f" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="p" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="n" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="u" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="m" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="k" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="g" insensitive="true"/>
-          <StringDetect attribute="Decimal" context="#pop" String="t" insensitive="true"/>
+          <AnyChar attribute="Decimal" context="#pop" String="fpnumkgtFPNUMKGT"/>
       </context>
 
       <context attribute="String" lineEndContext="#pop" name="String">
@@ -3153,53 +3125,14 @@ Note: I used this hack to extract the functions from the reference documentation
 
       <context attribute="Comment" lineEndContext="#pop" name="Commentar 1">
         <LineContinue attribute="Comment" context="#stay"/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
 
       <context attribute="Comment" lineEndContext="#stay" name="Commentar 2">
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
-        <IncludeRules context="##Alerts" />
+        <IncludeRules context="##Comments" />
       </context>
 
-<!--
-      <context attribute="Preprocessor" lineEndContext="#pop" name="Preprocessor">
-        <LineContinue attribute="Preprocessor" context="#stay"/>
-        <RangeDetect attribute="Prep. Lib" context="#stay" char="&quot;" char1="&quot;"/>
-        <RangeDetect attribute="Prep. Lib" context="#stay" char="&lt;" char1="&gt;"/>
-        <IncludeRules context="##Doxygen" />
-        <Detect2Chars attribute="Comment" context="Commentar/Preprocessor" char="/" char1="*" beginRegion="Comment2" />
-      </context>
-
-      <context attribute="Preprocessor" lineEndContext="#pop" name="Define">
-        <LineContinue attribute="Preprocessor" context="#stay"/>
-      </context>
-
-      <context attribute="Comment" lineEndContext="#stay" name="Commentar/Preprocessor">
-        <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment2" />
-      </context>
-
-      <context attribute="Comment" lineEndContext="#stay" name="Outscoped" >
-        <DetectSpaces />
-        <IncludeRules context="##Alerts" />
-        <DetectIdentifier />
-        <DetectChar attribute="String" context="String" char="&quot;"/>
-        <IncludeRules context="##Doxygen" />
-        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
-        <RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="PP" firstNonSpace="true" />
-      </context>
--->
-
-      <context attribute="Comment" lineEndContext="#stay" name="Outscoped intern">
-        <DetectSpaces />
-        <DetectIdentifier />
-        <DetectChar attribute="String" context="String" char="&quot;"/>
-        <!-- <DetectChar attribute="String" context="String" char="&at;"/> -->
-        <Detect2Chars attribute="Comment" context="Commentar 1" char="/" char1="/"/>
-        <Detect2Chars attribute="Comment" context="Commentar 2" char="/" char1="*" beginRegion="Comment"/>
-        <RegExpr attribute="Comment" context="Outscoped intern" String="#\s*if" beginRegion="PP" firstNonSpace="true" />
-        <RegExpr attribute="Comment" context="#pop" String="#\s*endif" endRegion="PP" firstNonSpace="true" />
-      </context>
     </contexts>
     <itemDatas>
       <itemData name="Normal Text"  defStyleNum="dsNormal"/>
@@ -3227,8 +3160,9 @@ Note: I used this hack to extract the functions from the reference documentation
   <general>
     <comments>
       <comment name="singleLine" start="//" />
-      <comment name="multiLine" start="/*" end="*/" />
+      <comment name="multiLine" start="/*" end="*/" region="Comment" />
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

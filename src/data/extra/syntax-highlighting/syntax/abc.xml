@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!-- Andrea Primiani - primiani at dag dot it
  	version1.10 - 12 december 2005 -->
-<language name="ABC" version="5" kateversion="2.4" section="Other" extensions="*.abc;*.ABC" mimetype="text/vnd.abc" casesensitive="1" author="Andrea Primiani (primiani@dag.it)" license="LGPL">
+<language name="ABC" version="8" kateversion="5.0" section="Other" extensions="*.abc;*.ABC" mimetype="text/vnd.abc" casesensitive="1" author="Andrea Primiani (primiani@dag.it)" license="LGPL">
     <highlighting>
         <contexts>
            <context name="Normal" attribute="Normal Text" lineEndContext="#stay">
@@ -23,9 +23,8 @@
 <!-- detects ] if used to close chords -->	    
 	    <DetectChar attribute="Bar" context="#stay" char="]" />
 <!-- detects () for slurs -->
-	    <AnyChar attribute="Slur" context="#stay" String="()" />
 <!-- detects {} for gracings -->
-	    <AnyChar attribute="Slur" context="#stay" String="{}" />
+	    <AnyChar attribute="Slur" context="#stay" String="(){}" />
 <!-- detects W: and w: lyric lines -->	    
 	    <Detect2Chars attribute="Lyrics" context="Lyrics" char="W" char1=":" />
 	    <Detect2Chars attribute="Lyrics" context="Lyrics" char="w" char1=":" />
@@ -38,7 +37,9 @@
 <!-- returns to Normal context at the end of line -->	   
 	   <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop" />
 	   <context name="Lyrics" attribute="Lyrics" lineEndContext="#pop" />
-	   <context name="Comment" attribute="Comment" lineEndContext="#pop" />
+	   <context name="Comment" attribute="Comment" lineEndContext="#pop">
+	    <IncludeRules context="##Comments" />
+	   </context>
 <!-- returns to Normal context after the end of bar symbols or at EOL -->
 	   <context name="Bar" attribute="Bar" lineEndContext="#pop" >
 	   	<DetectChar attribute="Normal Text" context="#pop" char="&quot;" />
@@ -56,7 +57,7 @@
 <!-- returns to Normal context at the end of header -->
 	   <context name="Header" attribute="Header" lineEndContext="#stay">
 <!-- the header ends after K: line -->
-		<RegExpr attribute="Header" context="#pop" String="K:.+" endRegion="header" column="0"/>
+		<RegExpr attribute="Header" context="#pop" String="^K:.+" endRegion="header" column="0"/>
 <!-- the single header command ends at the ] char -->
 		<DetectChar attribute="Header" context="#pop" char="]" />
 	   </context>
@@ -79,8 +80,9 @@
  </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="%" />
+      <comment name="singleLine" start="%" position="afterwhitespace" />
     </comments>
     <keywords casesensitive="1" />
   </general>
 </language>
+<!-- kate: replace-tabs off; -->

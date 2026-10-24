@@ -19,9 +19,9 @@
     Usage: place maxima.xml in $KDEDIR/share/apps/katepart/syntax.
 -->
 
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 
-<language name="Maxima" version="4" kateversion="5.2" section="Scientific" extensions="*.mac;*.MAC;*.dem;*.DEM" casesensitive="1" author="Alexey Beshenov &lt;al@beshenov.ru&gt;" license="LGPLv2.1+">
+<language name="Maxima" version="7" kateversion="5.2" section="Scientific" extensions="*.mac;*.MAC;*.dem;*.DEM" casesensitive="1" author="Alexey Beshenov &lt;al@beshenov.ru&gt;" license="LGPLv2.1+">
     <highlighting>
 
         <list name="MaximaKeyword">
@@ -40,11 +40,6 @@
             <item>thru</item>
             <item>true</item>
             <item>while</item>
-        </list>
-
-        <list name="SpecialComment">
-            <item>FIXME</item>
-            <item>TODO</item>
         </list>
 
         <list name="MaximaFunction">
@@ -1860,9 +1855,7 @@
                 <DetectChar attribute="String" context="String" char="&quot;"/>
                 <Detect2Chars attribute="Comment" context="Comment" char="/" char1="*" beginRegion="comment"/>
                 <RegExpr attribute="Label" String="[a-zA-Z_][a-zA-Z0-9%_]*"/>
-                <RegExpr attribute="Float" String="[-+]?\d+\.\d*([BbDdEeSs][-+]?\d+)?"/>
-                <RegExpr attribute="Float" String="[-+]?\.\d+([BbDdEeSs][-+]?\d+)?"/>
-                <RegExpr attribute="Float" String="[-+]?\d+[BbDdEeSs][-+]?\d+"/>
+                <RegExpr attribute="Float" String="[-+]?\d+\.\d*([BbDdEeSs][-+]?\d+)?|[-+]?\.\d+([BbDdEeSs][-+]?\d+)?|[-+]?\d+[BbDdEeSs][-+]?\d+"/>
                 <RegExpr attribute="Integer" String="[-+]?\d+"/>
                 <DetectChar attribute="Quote" char="'"/>
             </context>
@@ -1871,9 +1864,9 @@
             </context>
 
             <context attribute="Comment" lineEndContext="#stay" name="Comment">
-                <keyword attribute="Special" String="SpecialComment"/>
                 <DetectSpaces/>
                 <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="comment"/>
+                <IncludeRules context="##Comments"/>
             </context>
         </contexts>
 
@@ -1888,16 +1881,16 @@
             <itemData name="Float" defStyleNum="dsFloat"/>
             <itemData name="Comment" defStyleNum="dsComment"/>
             <itemData name="Quote" defStyleNum="dsDocumentation" bold="true"/>
-            <itemData name="Special" defStyleNum="dsSpecialString" bold="true" />
         </itemDatas>
 
     </highlighting>
 
     <general>
         <comments>
-            <comment name="multiLine" start="/*" end="*/"/>
+            <comment name="multiLine" start="/*" end="*/" region="comment"/>
         </comments>
         <keywords casesensitive="true" weakDeliminator="%" additionalDeliminator="@#"/>
     </general>
 
 </language>
+<!-- kate: replace-tabs on; tab-width 4; indent-width 4; -->

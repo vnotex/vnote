@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<!DOCTYPE language>
 <!--
   MySQL syntax definition based on sql.xml by Yury Lebedev
   original by Shane Wright (me@shanewright.co.uk)
   modifications by Milian Wolff (mail@milianw.de)
   v3 fix comments by Gene Thomas <gene@genethomas.com>
 -->
-<language name="SQL (MySQL)" version="5" kateversion="5.0" section="Database" extensions="*.sql;*.SQL;*.ddl;*.DDL" mimetype="text/x-sql" casesensitive="0" author="Shane Wright (me@shanewright.co.uk)" license="">
+<language name="SQL (MySQL)" version="9" kateversion="5.44" section="Database" extensions="*.sql;*.SQL;*.ddl;*.DDL" mimetype="text/x-sql" casesensitive="0" author="Shane Wright (me@shanewright.co.uk)" license="">
   <highlighting>
     <list name="controlFlow">
       <item>BEGIN</item>
@@ -381,7 +381,7 @@
         <DetectChar attribute="Comment" context="SingleLineComment" char="#"/>
         <Detect2Chars attribute="Comment" context="SingleLineComment" char="-" char1="-"/>
         <Detect2Chars attribute="Comment" context="MultiLineComment" char="/" char1="*" beginRegion="Comment"/>
-        <RegExpr attribute="Comment" context="SingleLineComment" String="rem\b" insensitive="true" column="0"/>
+        <WordDetect attribute="Comment" context="SingleLineComment" String="rem" insensitive="true" column="0"/>
 
         <LineContinue attribute="Symbol" context="#stay" char="/" column="0"/> <!-- conflict with "operators" keywords -->
 
@@ -392,7 +392,6 @@
         <WordDetect attribute="Keyword" context="#stay" insensitive="true" String="CHARACTER SET"/>
         <!-- using the lists -->
         <keyword attribute="Keyword" context="#stay" String="keywords"/>
-        <LineContinue attribute="Symbol" context="#stay" char="/" column="0"/>
         <keyword attribute="Operator Keyword" context="#stay" String="operators"/>
         <keyword attribute="ControlFlow" context="#stay" String="controlFlow"/>
         <AnyChar attribute="Operator" context="#stay" String="+-*/=&lt;&gt;"/>
@@ -418,7 +417,7 @@
         <DetectChar attribute="String" context="String2" char="&quot;"/>
         <DetectChar attribute="Name" context="Name" char="`"/>
 
-        <RegExpr attribute="Preprocessor" context="Preprocessor" String="@@?[^@ \t\r\n]" column="0"/>
+        <RegExpr attribute="Preprocessor" context="Preprocessor" String="^@@?[^@ \t\r\n]" column="0"/>
         <!-- for something like : SELECT DB.TABLE.ROW ... -->
         <DetectChar attribute="String Char" context="#stay" char="."/>
       </context>
@@ -443,10 +442,15 @@
         <DetectChar attribute="Name" context="#pop" char="`"/>
       </context>
       <!-- comments -->
-      <context name="SingleLineComment" attribute="Comment" lineEndContext="#pop"/>
+      <context name="SingleLineComment" attribute="Comment" lineEndContext="#pop">
+        <DetectSpaces />
+        <IncludeRules context="##Comments"/>
+      </context>
       <context name="MultiLineComment" attribute="Comment" lineEndContext="#stay">
         <LineContinue attribute="Comment" context="#pop"/>
+        <DetectSpaces />
         <Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="Comment"/>
+        <IncludeRules context="##Comments"/>
       </context>
       <!-- preprocessor -->
       <context name="Preprocessor" attribute="Preprocessor" lineEndContext="#pop"/>
@@ -472,10 +476,11 @@
   </highlighting>
   <general>
     <comments>
-      <comment name="singleLine" start="--"/>
-      <comment name="multiLine" start="/*" end="*/"/>
+      <comment name="singleLine" start="--" position="afterwhitespace"/>
+      <comment name="multiLine" start="/*" end="*/" region="Comment"/>
     </comments>
     <keywords casesensitive="0"/>
     <folding indentationsensitive="true"/>
   </general>
 </language>
+<!-- kate: replace-tabs on; tab-width 2; indent-width 2; -->

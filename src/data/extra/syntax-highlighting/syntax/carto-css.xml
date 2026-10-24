@@ -1,405 +1,329 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE language SYSTEM "language.dtd">
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE language [
+  <!ENTITY regexpr_identifier "([\w_-]+)">
+  <!ENTITY regexpr_variable "(@&regexpr_identifier;)">
+  <!ENTITY anychar_operator ":,!/*-+=&gt;&lt;()&#x0025;">
+  <!ENTITY regexpr_number "(\-?((\d+(\.\d+)?)|(\.\d+))&#x0025;?)">
+  <!ENTITY regexpr_color "((#[\dabcdefABCDEF]{3}|#[\dabcdefABCDEF]{6})(?=(\W|$)))">
+]>
+<!-- Syntax highlighting definition for CartoCSS MSS, see https://github.com/mapbox/carto
+     CartoCSS defines two file formats: MML (Map Markup Language) and MSS (Map Stylesheet).
+     This file provides syntax highlighting for MSS. MSS is similar in syntax to CSS,
+     but completly different in its semantics. -->
+<language name="CartoCSS MSS"
+          version="6"
+		  kateversion="5.0"
+		  section="Markup"
+		  extensions="*.mss"
+		  author="Lukas Sommer"
+		  license="CC0 Public Domain Dedication, version 1.0, as published by Creative Commons">
 
-<!-- Kate syntax highlighting definition for Mapbox CartoCSS -->
-
-<language name="CartoCSS" version="1" kateversion="5.0" section="Markup" extensions="*.mss" author="Lukas Sommer" license="CC0 Public Domain Dedication, version 1.0, as published by Creative Commons">
 
 	<highlighting>
 
-		<list name="list_boolean">
-			<item>true</item>
-			<item>false</item>
-		</list>
-
-		<list name="list_colornames"> <!-- The 141 official CSS colors -->
-			<item>AliceBlue</item>
-			<item>AntiqueWhite</item>
-			<item>Aqua</item>
-			<item>Aquamarine</item>
-			<item>Azure</item>
-			<item>Beige</item>
-			<item>Bisque</item>
-			<item>Black</item>
-			<item>BlanchedAlmond</item>
-			<item>Blue</item>
-			<item>BlueViolet</item>
-			<item>Brown</item>
-			<item>BurlyWood</item>
-			<item>CadetBlue</item>
-			<item>Chartreuse</item>
-			<item>Chocolate</item>
-			<item>Coral</item>
-			<item>CornflowerBlue</item>
-			<item>Cornsilk</item>
-			<item>Crimson</item>
-			<item>Cyan</item>
-			<item>DarkBlue</item>
-			<item>DarkCyan</item>
-			<item>DarkGoldenRod</item>
-			<item>DarkGray</item>
-			<item>DarkGreen</item>
-			<item>DarkKhaki</item>
-			<item>DarkMagenta</item>
-			<item>DarkOliveGreen</item>
-			<item>DarkOrange</item>
-			<item>DarkOrchid</item>
-			<item>DarkRed</item>
-			<item>DarkSalmon</item>
-			<item>DarkSeaGreen</item>
-			<item>DarkSlateBlue</item>
-			<item>DarkSlateGray</item>
-			<item>DarkTurquoise</item>
-			<item>DarkViolet</item>
-			<item>DeepPink</item>
-			<item>DeepSkyBlue</item>
-			<item>DimGray</item>
-			<item>DodgerBlue</item>
-			<item>FireBrick</item>
-			<item>FloralWhite</item>
-			<item>ForestGreen</item>
-			<item>Fuchsia</item>
-			<item>Gainsboro</item>
-			<item>GhostWhite</item>
-			<item>Gold</item>
-			<item>GoldenRod</item>
-			<item>Gray</item>
-			<item>Green</item>
-			<item>GreenYellow</item>
-			<item>HoneyDew</item>
-			<item>HotPink</item>
-			<item>IndianRed</item>
-			<item>Indigo</item>
-			<item>Ivory</item>
-			<item>Khaki</item>
-			<item>Lavender</item>
-			<item>LavenderBlush</item>
-			<item>LawnGreen</item>
-			<item>LemonChiffon</item>
-			<item>LightBlue</item>
-			<item>LightCoral</item>
-			<item>LightCyan</item>
-			<item>LightGoldenRodYellow</item>
-			<item>LightGray</item>
-			<item>LightGreen</item>
-			<item>LightPink</item>
-			<item>LightSalmon</item>
-			<item>LightSeaGreen</item>
-			<item>LightSkyBlue</item>
-			<item>LightSlateGray</item>
-			<item>LightSteelBlue</item>
-			<item>LightYellow</item>
-			<item>Lime</item>
-			<item>LimeGreen</item>
-			<item>Linen</item>
-			<item>Magenta</item>
-			<item>Maroon</item>
-			<item>MediumAquaMarine</item>
-			<item>MediumBlue</item>
-			<item>MediumOrchid</item>
-			<item>MediumPurple</item>
-			<item>MediumSeaGreen</item>
-			<item>MediumSlateBlue</item>
-			<item>MediumSpringGreen</item>
-			<item>MediumTurquoise</item>
-			<item>MediumVioletRed</item>
-			<item>MidnightBlue</item>
-			<item>MintCream</item>
-			<item>MistyRose</item>
-			<item>Moccasin</item>
-			<item>NavajoWhite</item>
-			<item>Navy</item>
-			<item>OldLace</item>
-			<item>Olive</item>
-			<item>OliveDrab</item>
-			<item>Orange</item>
-			<item>OrangeRed</item>
-			<item>Orchid</item>
-			<item>PaleGoldenRod</item>
-			<item>PaleGreen</item>
-			<item>PaleTurquoise</item>
-			<item>PaleVioletRed</item>
-			<item>PapayaWhip</item>
-			<item>PeachPuff</item>
-			<item>Peru</item>
-			<item>Pink</item>
-			<item>Plum</item>
-			<item>PowderBlue</item>
-			<item>Purple</item>
-			<item>Red</item>
-			<item>RosyBrown</item>
-			<item>RoyalBlue</item>
-			<item>SaddleBrown</item>
-			<item>Salmon</item>
-			<item>SandyBrown</item>
-			<item>SeaGreen</item>
-			<item>SeaShell</item>
-			<item>Sienna</item>
-			<item>Silver</item>
-			<item>SkyBlue</item>
-			<item>SlateBlue</item>
-			<item>SlateGray</item>
-			<item>Snow</item>
-			<item>SpringGreen</item>
-			<item>SteelBlue</item>
-			<item>Tan</item>
-			<item>Teal</item>
-			<item>Thistle</item>
-			<item>Tomato</item>
-			<item>Turquoise</item>
-			<item>Violet</item>
-			<item>Wheat</item>
-			<item>White</item>
-			<item>WhiteSmoke</item>
-			<item>Yellow</item>
-			<item>YellowGreen</item>
-		</list>
-
-			<list name="list_properties"> <!-- Based on https://github.com/mapbox/carto/blob/master/docs/latest.md (date: 19. december 2014) -->
-
-			<!-- Value type: boolean -->
-			<item>line-clip</item> <!-- Element type: line -->
-			<item>line-pattern-clip</item> <!-- Element type: line-pattern -->
-			<item>marker-allow-overlap</item> <!-- Element type: markers -->
-			<item>marker-clip</item> <!-- Element type: markers -->
-			<item>marker-ignore-placement</item> <!-- Element type: markers -->
-			<item>point-allow-overlap</item> <!-- Element type: point -->
-			<item>point-ignore-placement</item> <!-- Element type: point -->
-			<item>polygon-clip</item> <!-- Element type: polygon -->
-			<item>polygon-pattern-clip</item> <!-- Element type: polygon-pattern -->
-			<item>shield-allow-overlap</item> <!-- Element type: shield -->
-			<item>shield-avoid-edges</item> <!-- Element type: shield -->
-			<item>shield-clip</item> <!-- Element type: shield -->
-			<item>shield-unlock-image</item> <!-- Element type: shield -->
-			<item>shield-wrap-before</item> <!-- Element type: shield -->
-			<item>text-allow-overlap</item> <!-- Element type: text -->
-			<item>text-avoid-edges</item> <!-- Element type: text -->
-			<item>text-clip</item> <!-- Element type: text -->
-
-			<!-- Value type: color -->
-			<item>building-fill</item> <!-- Element type: building -->
-			<item>line-color</item> <!-- Element type: line -->
-			<item>background-color</item> <!-- Element type: map -->
-			<item>marker-fill</item> <!-- Element type: markers -->
-			<item>marker-line-color</item> <!-- Element type: markers -->
-			<item>polygon-fill</item> <!-- Element type: polygon -->
-			<item>raster-colorizer-default-color</item> <!-- Element type: raster -->
-			<item>shield-fill</item> <!-- Element type: shield -->
-			<item>shield-halo-fill</item> <!-- Element type: shield -->
-			<item>text-fill</item> <!-- Element type: text -->
-			<item>text-halo-fill</item> <!-- Element type: text -->
-
-			<!-- Value type: expression -->
-			<item>building-height</item> <!-- Element type: building -->
-			<item>marker-height</item> <!-- Element type: markers -->
-			<item>marker-width</item> <!-- Element type: markers -->
-			<item>shield-name</item> <!-- Element type: shield -->
-			<item>text-name</item> <!-- Element type: text -->
-			<item>text-orientation</item> <!-- Element type: text -->
-
-			<!-- Value type: float -->
-			<item>opacity</item> <!-- Element type: All elements -->
-			<item>building-fill-opacity</item> <!-- Element type: building -->
-			<item>line-gamma</item> <!-- Element type: line -->
-			<item>line-miterlimit</item> <!-- Element type: line -->
-			<item>line-offset</item> <!-- Element type: line -->
-			<item>line-opacity</item> <!-- Element type: line -->
-			<item>line-simplify</item> <!-- Element type: line -->
-			<item>line-smooth</item> <!-- Element type: line -->
-			<item>line-width</item> <!-- Element type: line -->
-			<item>line-pattern-offset</item> <!-- Element type: line-pattern -->
-			<item>line-pattern-simplify</item> <!-- Element type: line-pattern -->
-			<item>line-pattern-smooth</item> <!-- Element type: line-pattern -->
-			<item>background-image-opacity</item> <!-- Element type: map -->
-			<item>buffer-size</item> <!-- Element type: map -->
-			<item>marker-fill-opacity</item> <!-- Element type: markers -->
-			<item>marker-line-opacity</item> <!-- Element type: markers -->
-			<item>marker-line-width</item> <!-- Element type: markers -->
-			<item>marker-max-error</item> <!-- Element type: markers -->
-			<item>marker-opacity</item> <!-- Element type: markers -->
-			<item>marker-smooth</item> <!-- Element type: markers -->
-			<item>marker-spacing</item> <!-- Element type: markers -->
-			<item>point-opacity</item> <!-- Element type: point -->
-			<item>polygon-gamma</item> <!-- Element type: polygon -->
-			<item>polygon-opacity</item> <!-- Element type: polygon -->
-			<item>polygon-simplify</item> <!-- Element type: polygon -->
-			<item>polygon-smooth</item> <!-- Element type: polygon -->
-			<item>polygon-pattern-gamma</item> <!-- Element type: polygon-pattern -->
-			<item>polygon-pattern-opacity</item> <!-- Element type: polygon-pattern -->
-			<item>polygon-pattern-simplify</item> <!-- Element type: polygon-pattern -->
-			<item>polygon-pattern-smooth</item> <!-- Element type: polygon-pattern -->
-			<item>raster-colorizer-epsilon</item> <!-- Element type: raster -->
-			<item>raster-filter-factor</item> <!-- Element type: raster -->
-			<item>raster-opacity</item> <!-- Element type: raster -->
-			<item>shield-dx</item> <!-- Element type: shield -->
-			<item>shield-dy</item> <!-- Element type: shield -->
-			<item>shield-halo-radius</item> <!-- Element type: shield -->
-			<item>shield-min-distance</item> <!-- Element type: shield -->
-			<item>shield-min-padding</item> <!-- Element type: shield -->
-			<item>shield-opacity</item> <!-- Element type: shield -->
-			<item>shield-size</item> <!-- Element type: shield -->
-			<item>shield-spacing</item> <!-- Element type: shield -->
-			<item>shield-text-dx</item> <!-- Element type: shield -->
-			<item>shield-text-dy</item> <!-- Element type: shield -->
-			<item>shield-text-opacity</item> <!-- Element type: shield -->
-			<item>text-character-spacing</item> <!-- Element type: text -->
-			<item>text-dx</item> <!-- Element type: text -->
-			<item>text-dy</item> <!-- Element type: text -->
-			<item>text-halo-radius</item> <!-- Element type: text -->
-			<item>text-max-char-angle-delta</item> <!-- Element type: text -->
-			<item>text-min-distance</item> <!-- Element type: text -->
-			<item>text-min-padding</item> <!-- Element type: text -->
-			<item>text-min-path-length</item> <!-- Element type: text -->
-			<item>text-opacity</item> <!-- Element type: text -->
-			<item>text-size</item> <!-- Element type: text -->
-
-			<!-- Value type: functions -->
-			<item>direct-image-filters</item> <!-- Element type: All elements -->
-			<item>image-filters</item> <!-- Element type: All elements -->
-			<item>line-geometry-transform</item> <!-- Element type: line -->
-			<item>line-pattern-geometry-transform</item> <!-- Element type: line-pattern -->
-			<item>marker-geometry-transform</item> <!-- Element type: markers -->
-			<item>marker-transform</item> <!-- Element type: markers -->
-			<item>point-transform</item> <!-- Element type: point -->
-			<item>polygon-geometry-transform</item> <!-- Element type: polygon -->
-			<item>polygon-pattern-geometry-transform</item> <!-- Element type: polygon-pattern -->
-			<item>shield-transform</item> <!-- Element type: shield -->
-
-			<!-- Value type: keyword -->
-			<item>comp-op</item> <!-- Element type: All elements -->
-			<item>line-cap</item> <!-- Element type: line -->
-			<item>line-comp-op</item> <!-- Element type: line -->
-			<item>line-gamma-method</item> <!-- Element type: line -->
-			<item>line-join</item> <!-- Element type: line -->
-			<item>line-rasterizer</item> <!-- Element type: line -->
-			<item>line-simplify-algorithm</item> <!-- Element type: line -->
-			<item>line-pattern-comp-op</item> <!-- Element type: line-pattern -->
-			<item>line-pattern-simplify-algorithm</item> <!-- Element type: line-pattern -->
-			<item>background-image-comp-op</item> <!-- Element type: map -->
-			<item>marker-comp-op</item> <!-- Element type: markers -->
-			<item>marker-multi-policy</item> <!-- Element type: markers -->
-			<item>marker-placement</item> <!-- Element type: markers -->
-			<item>marker-type</item> <!-- Element type: markers -->
-			<item>point-comp-op</item> <!-- Element type: point -->
-			<item>point-placement</item> <!-- Element type: point -->
-			<item>polygon-comp-op</item> <!-- Element type: polygon -->
-			<item>polygon-gamma-method</item> <!-- Element type: polygon -->
-			<item>polygon-simplify-algorithm</item> <!-- Element type: polygon -->
-			<item>polygon-pattern-alignment</item> <!-- Element type: polygon-pattern -->
-			<item>polygon-pattern-comp-op</item> <!-- Element type: polygon-pattern -->
-			<item>polygon-pattern-simplify-algorithm</item> <!-- Element type: polygon-pattern -->
-			<item>raster-colorizer-default-mode</item> <!-- Element type: raster -->
-			<item>raster-comp-op</item> <!-- Element type: raster -->
-			<item>raster-scaling</item> <!-- Element type: raster -->
-			<item>shield-comp-op</item> <!-- Element type: shield -->
-			<item>shield-horizontal-alignment</item> <!-- Element type: shield -->
-			<item>shield-justify-alignment</item> <!-- Element type: shield -->
-			<item>shield-placement</item> <!-- Element type: shield -->
-			<item>shield-placement-type</item> <!-- Element type: shield -->
-			<item>shield-text-transform</item> <!-- Element type: shield -->
-			<item>shield-vertical-alignment</item> <!-- Element type: shield -->
-			<item>text-align</item> <!-- Element type: text -->
-			<item>text-comp-op</item> <!-- Element type: text -->
-			<item>text-halo-rasterizer</item> <!-- Element type: text -->
-			<item>text-horizontal-alignment</item> <!-- Element type: text -->
-			<item>text-placement</item> <!-- Element type: text -->
-			<item>text-placement-type</item> <!-- Element type: text -->
-			<item>text-transform</item> <!-- Element type: text -->
-			<item>text-vertical-alignment</item> <!-- Element type: text -->
-
-			<!-- Value type: numbers -->
-			<item>line-dash-offset</item> <!-- Element type: line -->
-			<item>line-dasharray</item> <!-- Element type: line -->
-
-			<!-- Value type: string -->
-			<item>debug-mode</item> <!-- Element type: debug -->
-			<item>base</item> <!-- Element type: map -->
-			<item>srs</item> <!-- Element type: map -->
-			<item>shield-face-name</item> <!-- Element type: shield -->
-			<item>shield-placements</item> <!-- Element type: shield -->
-			<item>shield-wrap-character</item> <!-- Element type: shield -->
-			<item>text-face-name</item> <!-- Element type: text -->
-			<item>text-placements</item> <!-- Element type: text -->
-			<item>text-wrap-character</item> <!-- Element type: text -->
-
-			<!-- Value type: tags -->
-			<item>raster-colorizer-stops</item> <!-- Element type: raster -->
-
-			<!-- Value type: unsigned -->
-			<item>raster-mesh-size</item> <!-- Element type: raster -->
-			<item>shield-character-spacing</item> <!-- Element type: shield -->
-			<item>shield-line-spacing</item> <!-- Element type: shield -->
-			<item>shield-wrap-width</item> <!-- Element type: shield -->
-			<item>text-label-position-tolerance</item> <!-- Element type: text -->
-			<item>text-line-spacing</item> <!-- Element type: text -->
-			<item>text-ratio</item> <!-- Element type: text -->
-			<item>text-spacing</item> <!-- Element type: text -->
-			<item>text-wrap-width</item> <!-- Element type: text -->
-
-			<!-- Value type: uri -->
-			<item>line-pattern-file</item> <!-- Element type: line-pattern -->
-			<item>background-image</item> <!-- Element type: map -->
-			<item>font-directory</item> <!-- Element type: map -->
-			<item>marker-file</item> <!-- Element type: markers -->
-			<item>point-file</item> <!-- Element type: point -->
-			<item>polygon-pattern-file</item> <!-- Element type: polygon-pattern -->
-			<item>shield-file</item> <!-- Element type: shield -->
-
+		<list name="list_colornames">
+            <!-- This list is based on https://github.com/mapbox/carto/blob/35773a5f519b1ded0d88b14d53ac875cd610bb8c/build/vim-carto/syntax/carto.vim#L53
+                 and https://github.com/mapbox/carto/blob/35773a5f519b1ded0d88b14d53ac875cd610bb8c/build/carto.tmbundle/Syntaxes/carto.tmLanguage#L279
+            -->
+			<item>aliceblue</item>
+			<item>antiquewhite</item>
+			<item>aqua</item>
+			<item>aquamarine</item>
+			<item>azure</item>
+			<item>beige</item>
+			<item>bisque</item>
+			<item>black</item>
+			<item>blanchedalmond</item>
+			<item>blue</item>
+			<item>blueviolet</item>
+			<item>brown</item>
+			<item>burlywood</item>
+			<item>cadetblue</item>
+			<item>chartreuse</item>
+			<item>chocolate</item>
+			<item>coral</item>
+			<item>cornflowerblue</item>
+			<item>cornsilk</item>
+			<item>crimson</item>
+			<item>cyan</item>
+			<item>darkblue</item>
+			<item>darkcyan</item>
+			<item>darkgoldenrod</item>
+			<item>darkgray</item>
+			<item>darkgreen</item>
+			<item>darkgrey</item>
+			<item>darkkhaki</item>
+			<item>darkmagenta</item>
+			<item>darkolivegreen</item>
+			<item>darkorange</item>
+			<item>darkorchid</item>
+			<item>darkred</item>
+			<item>darksalmon</item>
+			<item>darkseagreen</item>
+			<item>darkslateblue</item>
+			<item>darkslategrey</item>
+			<item>darkturquoise</item>
+			<item>darkviolet</item>
+			<item>deeppink</item>
+			<item>deepskyblue</item>
+			<item>dimgray</item>
+			<item>dimgrey</item>
+			<item>dodgerblue</item>
+			<item>firebrick</item>
+			<item>floralwhite</item>
+			<item>forestgreen</item>
+			<item>fuchsia</item>
+			<item>gainsboro</item>
+			<item>ghostwhite</item>
+			<item>gold</item>
+			<item>goldenrod</item>
+			<item>gray</item>
+			<item>grey</item>
+			<item>green</item>
+			<item>greenyellow</item>
+			<item>honeydew</item>
+			<item>hotpink</item>
+			<item>indianred</item>
+			<item>indigo</item>
+			<item>ivory</item>
+			<item>khaki</item>
+			<item>lavender</item>
+			<item>lavenderblush</item>
+			<item>lawngreen</item>
+			<item>lemonchiffon</item>
+			<item>lightblue</item>
+			<item>lightcoral</item>
+			<item>lightcyan</item>
+			<item>lightgoldenrodyellow</item>
+			<item>lightgray</item>
+			<item>lightgreen</item>
+			<item>lightgrey</item>
+			<item>lightpink</item>
+			<item>lightsalmon</item>
+			<item>lightseagreen</item>
+			<item>lightskyblue</item>
+			<item>lightslategray</item>
+			<item>lightslategrey</item>
+			<item>lightsteelblue</item>
+			<item>lightyellow</item>
+			<item>lime</item>
+			<item>limegreen</item>
+			<item>linen</item>
+			<item>magenta</item>
+			<item>maroon</item>
+			<item>mediumaquamarine</item>
+			<item>mediumblue</item>
+			<item>mediumorchid</item>
+			<item>mediumpurple</item>
+			<item>mediumseagreen</item>
+			<item>mediumslateblue</item>
+			<item>mediumspringgreen</item>
+			<item>mediumturquoise</item>
+			<item>mediumvioletred</item>
+			<item>midnightblue</item>
+			<item>mintcream</item>
+			<item>mistyrose</item>
+			<item>moccasin</item>
+			<item>navajowhite</item>
+			<item>navy</item>
+			<item>oldlace</item>
+			<item>olive</item>
+			<item>olivedrab</item>
+			<item>orange</item>
+			<item>orangered</item>
+			<item>orchid</item>
+			<item>palegoldenrod</item>
+			<item>palegreen</item>
+			<item>paleturquoise</item>
+			<item>palevioletred</item>
+			<item>papayawhip</item>
+			<item>peachpuff</item>
+			<item>peru</item>
+			<item>pink</item>
+			<item>plum</item>
+			<item>powderblue</item>
+			<item>purple</item>
+			<item>red</item>
+			<item>rosybrown</item>
+			<item>royalblue</item>
+			<item>saddlebrown</item>
+			<item>salmon</item>
+			<item>sandybrown</item>
+			<item>seagreen</item>
+			<item>seashell</item>
+			<item>sienna</item>
+			<item>silver</item>
+			<item>skyblue</item>
+			<item>slateblue</item>
+			<item>slategray</item>
+			<item>slategrey</item>
+			<item>snow</item>
+			<item>springgreen</item>
+			<item>steelblue</item>
+			<item>tan</item>
+			<item>teal</item>
+			<item>thistle</item>
+			<item>tomato</item>
+			<item>turquoise</item>
+			<item>violet</item>
+			<item>wheat</item>
+			<item>white</item>
+			<item>whitesmoke</item>
+			<item>yellow</item>
+			<item>yellowgreen</item>
+			<item>transparent</item>
 		</list>
 
 		<contexts>
 
-			<context attribute="Normal Text" lineEndContext="#stay" name="context_default">
+			<context attribute="Mapnik Symbolizer Parameter" lineEndContext="#stay" name="context_default">
 				<DetectSpaces/>
 				<Detect2Chars attribute="Comment" context="context_comment_multiline" char="/" char1="*" lookAhead="true" beginRegion="region_comment"/>
-				<Detect2Chars attribute="Comment" context="context_comment_singleline" char="/" char1="/" lookAhead="true" />
+				<Detect2Chars attribute="Comment" context="context_comment_singleline" char="/" char1="/" lookAhead="true"/>
 				<DetectChar attribute="Operator" char="{" beginRegion="region_braces"/>
 				<DetectChar attribute="Operator" char="}" endRegion="region_braces"/>
-				<AnyChar attribute="Operator" String=";:,!/*-+[]=&gt;&lt;()"/>
-				<keyword attribute="Property" context="#stay" String="list_properties" />
-				<keyword attribute="Boolean" context="#stay" String="list_boolean" />
-				<RegExpr attribute="Number" String="((\d+(\.\d+)?)|(\.\d+))%?" />
-				<RegExpr attribute="Variable" String="@[\w_-]+" />
-				<RegExpr attribute="Color" String="(#[\dabcdefABCDEF]{3}|#[\dabcdefABCDEF]{6})(?=(\W|$))" />
-				<keyword attribute="Color" context="#stay" String="list_colornames" />
-				<RegExpr attribute="Layer ID" String="#[\w_-]+"/>
-				<RegExpr attribute="Class" String="\.[\w_-]+" />
-				<RangeDetect char="&quot;"  char1="&quot;" attribute="String" />
-				<RangeDetect char="'"  char1="'" attribute="String" />
+				<DetectChar attribute="Operator" char="[" context="context_filter_attribute"/> <!-- This rule must be _before_ the “Operator” rule to make sure it is working. -->
+				<RegExpr attribute="Attachment" String="::&regexpr_identifier;"/> <!-- This rule must be _before_ the “Operator” rule to make sure it is working. -->
+				<DetectChar attribute="Operator" char=":" context="context_expression"/>
+				<RegExpr attribute="CartoCSS Variable" String="&regexpr_variable;"/>
+				<RegExpr attribute="Named instances" String="&regexpr_identifier;/"/>
+				<RegExpr attribute="Layer ID" String="#&regexpr_identifier;"/>
+				<RegExpr attribute="Class" String="\.&regexpr_identifier;"/>
+			</context>
+
+			<context attribute="Keyword" lineEndContext="#stay" name="context_expression">
+				<DetectSpaces/>
+				<RangeDetect char="[" char1="]" attribute="Data Field"/> <!-- This rule must be _before_ the “Operator” rule to make sure it is working. -->
+				<RegExpr attribute="Number" String="&regexpr_number;"/> <!-- This rule must be _before_ the “Operator” rule to make sure it is working. -->
+				<AnyChar attribute="Operator" String="&anychar_operator;[]"/>
+				<RegExpr attribute="CartoCSS Variable" String="&regexpr_variable;"/>
+				<RegExpr attribute="Function" String="&regexpr_identifier;(?=\()"/>
+				<RegExpr attribute="Color" String="&regexpr_color;"/>
+				<keyword attribute="Color" context="#stay" String="list_colornames"/>
+				<!-- The strings that might appear hear (both single-quoted and double-quoted strings)
+				 are either normal strings or expression strings: If they are the only content
+				 (like in “test: "mystring";”) than they are expression strings. If there is other
+				 content (like in “test: "mystring" + [myfield];” or “test: [myfield] + "mystring";”),
+				 than they are normal strings. This is however difficult to detect, therefore we default
+				 simply to expression strings.-->
+				<DetectChar attribute="Expression String" char="&quot;" context="context_expressionstring_doublequote"/>
+				<DetectChar attribute="Expression String" char="'" context="context_expressionstring_singlequote"/>
+				<!-- An expression ends with a semicolon “;”. However, the
+				CartoCSS parser allows to omit the semicolon at the end
+				of a block of curly braces “{}”. Therefore, we also
+				have to detect the closing curly braces “}” here: -->
+				<DetectChar attribute="Operator" char=";" context="#pop"/>
+				<DetectChar attribute="Operator" char="}" endRegion="region_braces" context="#pop"/>
+			</context>
+
+			<context attribute="Data Field" lineEndContext="#stay" name="context_filter_attribute">
+				<DetectSpaces/>
+				<RegExpr attribute="CartoCSS Variable" String="&regexpr_variable;"/>
+				<AnyChar attribute="Operator" String="&anychar_operator;" context="context_filter_rule"/>
+				<WordDetect String="zoom" insensitive="true" attribute="Keyword"/>
+				<DetectChar attribute="Data Field" char="&quot;" context="context_filter_attribute_doublequote"/>
+				<DetectChar attribute="Data Field" char="'" context="context_filter_attribute_singlequote"/>
+				<DetectChar attribute="Operator" char="]" context="#pop"/>
+			</context>
+
+			<context attribute="Data Field" lineEndContext="#pop" name="context_filter_attribute_doublequote">
+				<DetectChar char="&quot;" context="#pop"/>
+			</context>
+
+			<context attribute="Data Field" lineEndContext="#pop" name="context_filter_attribute_singlequote">
+				<DetectChar char="'" context="#pop"/>
+			</context>
+
+			<context attribute="Keyword" lineEndContext="#stay" name="context_filter_rule">
+				<DetectSpaces/>
+				<RegExpr attribute="Number" String="&regexpr_number;"/> <!-- This rule must be _before_ the “Operator” rule to make sure it is working. -->
+				<AnyChar attribute="Operator" String="&anychar_operator;"/>
+				<RegExpr attribute="CartoCSS Variable" String="&regexpr_variable;"/>
+				<WordDetect String="zoom" insensitive="true" attribute="Keyword"/>
+				<RegExpr attribute="Function" String="&regexpr_identifier;(?=\()"/>
+				<RegExpr attribute="Color" String="&regexpr_color;"/>
+				<keyword attribute="Color" context="#stay" String="list_colornames"/>
+				<DetectChar attribute="Normal String" char="&quot;" context="context_normalstring_doublequote"/>
+				<DetectChar attribute="Normal String" char="'" context="context_normalstring_singlequote"/>
+				<DetectChar attribute="Operator" char="]" context="#pop#pop"/>
 			</context>
 
 			<context attribute="Comment" lineEndContext="#stay" name="context_comment_multiline">
 				<Detect2Chars attribute="Comment" context="#pop" char="*" char1="/" endRegion="region_comment"/>
-				<IncludeRules context="##Alerts"/>
+				<IncludeRules context="##Comments"/>
 			</context>
 
 			<context attribute="Comment" lineEndContext="#pop" name="context_comment_singleline">
-				<IncludeRules context="##Alerts"/>
+				<IncludeRules context="##Comments"/>
+			</context>
+
+			<context attribute="Expression String" lineEndContext="#pop" name="context_expressionstring_doublequote">
+				<DetectChar attribute="Expression String" char="&quot;" context="#pop"/>
+				<RangeDetect char="[" char1="]" attribute="Data Field"/>
+				<RegExpr attribute="Mapnik Render-Time Variable" String="&regexpr_variable;"/>
+				<DetectChar attribute="Normal String" char="'" context="context_normalstring_singlequote"/>
+			</context>
+
+			<context attribute="Expression String" lineEndContext="#pop" name="context_expressionstring_singlequote">
+				<DetectChar attribute="Expression String" char="'" context="#pop"/>
+				<RangeDetect char="[" char1="]" attribute="Data Field"/>
+				<RegExpr attribute="Mapnik Render-Time Variable" String="&regexpr_variable;"/>
+				<DetectChar attribute="Normal String" char="&quot;" context="context_normalstring_doublequote"/>
+			</context>
+
+			<context attribute="Normal String" lineEndContext="#pop" name="context_include_escape_characters">
+				<!-- Helper context. Can be included in other contexts to detect escape characters. -->
+				<RegExpr attribute="Escape Sequenze" String="(\\[abfnrtv&quot;'\\])|(\\u[0-9a-fA-F]{4})|(\\U[0-9a-fA-F]{8})"/>
+				<RegExpr attribute="Error" String="\\[uU]"/>
+			</context>
+
+			<context attribute="Normal String" lineEndContext="#pop" name="context_normalstring_doublequote">
+				<DetectChar attribute="Normal String" char="&quot;" context="#pop"/>
+				<IncludeRules context="context_include_escape_characters"/>
+			</context>
+
+			<context attribute="Normal String" lineEndContext="#pop" name="context_normalstring_singlequote">
+				<DetectChar attribute="Normal String" char="'" context="#pop"/>
+				<IncludeRules context="context_include_escape_characters"/>
 			</context>
 
 		</contexts>
 
 		<itemDatas>
-			<itemData name="Normal Text" defStyleNum="dsNormal"/>
-			<itemData name="Operator" defStyleNum="dsKeyword" />
-			<itemData name="Variable"  defStyleNum="dsVariable"/>
-			<itemData name="Class"  defStyleNum="dsDataType"/>
-			<itemData name="Layer ID" defStyleNum="dsDataType" />
-			<itemData name="Property" defStyleNum="dsKeyword" />
-			<itemData name="String"  defStyleNum="dsString"/>
-			<itemData name="Number"  defStyleNum="dsFloat"/>
-			<itemData name="Color" defStyleNum="dsOthers" />
-			<itemData name="Boolean" defStyleNum="dsKeyword" />
-			<itemData name="Comment" defStyleNum="dsComment" />
+			<itemData name="Class"                       defStyleNum="dsNormal"        spellChecking="false"/>
+			<itemData name="Layer ID"                    defStyleNum="dsNormal"        spellChecking="false"/>
+			<itemData name="Attachment"                  defStyleNum="dsControlFlow"   spellChecking="false"/>
+			<itemData name="Named instances"             defStyleNum="dsDataType"      spellChecking="false"/>
+			<itemData name="Mapnik Symbolizer Parameter" defStyleNum="dsNormal"        spellChecking="false"/>
+			<itemData name="Operator"                    defStyleNum="dsOperator"      spellChecking="false"/>
+			<itemData name="Keyword"                     defStyleNum="dsKeyword"       spellChecking="false"/>
+			<itemData name="Function"                    defStyleNum="dsFunction"      spellChecking="false"/>
+			<itemData name="Number"                      defStyleNum="dsFloat"         spellChecking="false"/>
+			<itemData name="Color"                       defStyleNum="dsConstant"      spellChecking="false"/>
+			<itemData name="Expression String"           defStyleNum="dsSpecialString" spellChecking="false"/>
+			<!-- “Mapnik Render-Time Variable” work completly different from “CartoCSS Variable” and
+			     has therefore a completly different color. -->
+			<itemData name="Mapnik Render-Time Variable" defStyleNum="dsSpecialChar"   spellChecking="false"/>
+			<itemData name="Normal String"               defStyleNum="dsString"        spellChecking="false"/>
+			<itemData name="Escape Sequenze"             defStyleNum="dsSpecialChar"   spellChecking="false"/>
+			<itemData name="Data Field"                  defStyleNum="dsVariable"      spellChecking="false"/>
+			<!-- “CartoCSS Variable”, inspite of its name, uses “dsPreprocessor” as default color.
+			     This is appropriate because it actually behaves rather like a preprocessor: It is even
+			     possible to define strings, and if escape sequences like “\n” are treated as such
+			     is decided later, depending on the position of the actual usage of the variable. -->
+			<itemData name="CartoCSS Variable"           defStyleNum="dsPreprocessor"  spellChecking="false"/>
+			<itemData name="Comment"                     defStyleNum="dsComment"       spellChecking="true" />
+			<itemData name="Error"                       defStyleNum="dsError"         spellChecking="false"/>
 		</itemDatas>
 
 	</highlighting>
 
 	<general>
 		<comments>
-			<comment name="singleLine" start="//"/>
+			<comment name="singleLine" start="//" position="afterwhitespace"/>
 			<comment name="multiLine" start="/*" end="*/" region="region_comment"/>
 		</comments>
-		<keywords casesensitive="false" weakDeliminator="-"/>
+		<keywords casesensitive="true" weakDeliminator="-"/>
 	</general>
 </language>
+<!-- kate: replace-tabs off; -->

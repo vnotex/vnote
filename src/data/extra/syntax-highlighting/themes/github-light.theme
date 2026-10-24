@@ -1,0 +1,442 @@
+{
+    "custom-styles": {
+        "INI Files": {
+            "Section": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            }
+        },
+        "Odin": {
+            "Context Variable": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            }
+        },
+        "Python": {
+            "Builtin Function": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Import": {
+                "selected-text-color": "#d73a49",
+                "text-color": "#d73a49"
+            },
+            "Special Variable": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            }
+        },
+        "Rust": {
+            "Attribute": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            },
+            "Macro": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Self": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Trait": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            }
+        },
+        "XML": {
+            "Element": {
+                "selected-text-color": "#22863a",
+                "text-color": "#22863a"
+            }
+        },
+        "CSV": {
+            "Column 2": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Column 4": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 5": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            },
+            "Column 6": {
+                "selected-text-color": "#e36209",
+                "text-color": "#e36209"
+            },
+            "Column 8": {
+                "selected-text-color": "#d73a49",
+                "text-color": "#d73a49"
+            },
+            "Column 9": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 2 Separator": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Column 4 Separator": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 5 Separator": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            },
+            "Column 6 Separator": {
+                "selected-text-color": "#e36209",
+                "text-color": "#e36209"
+            },
+            "Column 8 Separator": {
+                "selected-text-color": "#d73a49",
+                "text-color": "#d73a49"
+            },
+            "Column 9 Separator": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            }
+        },
+        "TSV": {
+            "Column 2": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Column 4": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 5": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            },
+            "Column 6": {
+                "selected-text-color": "#e36209",
+                "text-color": "#e36209"
+            },
+            "Column 8": {
+                "selected-text-color": "#d73a49",
+                "text-color": "#d73a49"
+            },
+            "Column 9": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 2 Separator": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Column 4 Separator": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 5 Separator": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            },
+            "Column 6 Separator": {
+                "selected-text-color": "#e36209",
+                "text-color": "#e36209"
+            },
+            "Column 8 Separator": {
+                "selected-text-color": "#d73a49",
+                "text-color": "#d73a49"
+            },
+            "Column 9 Separator": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            }
+        },
+        "CSV (semicolon)": {
+            "Column 2": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Column 4": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 5": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            },
+            "Column 6": {
+                "selected-text-color": "#e36209",
+                "text-color": "#e36209"
+            },
+            "Column 8": {
+                "selected-text-color": "#d73a49",
+                "text-color": "#d73a49"
+            },
+            "Column 9": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 2 Separator": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Column 4 Separator": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 5 Separator": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            },
+            "Column 6 Separator": {
+                "selected-text-color": "#e36209",
+                "text-color": "#e36209"
+            },
+            "Column 8 Separator": {
+                "selected-text-color": "#d73a49",
+                "text-color": "#d73a49"
+            },
+            "Column 9 Separator": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            }
+        },
+        "CSV (whitespace)": {
+            "Column 2": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Column 4": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 5": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            },
+            "Column 6": {
+                "selected-text-color": "#e36209",
+                "text-color": "#e36209"
+            },
+            "Column 8": {
+                "selected-text-color": "#d73a49",
+                "text-color": "#d73a49"
+            },
+            "Column 9": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 2 Separator": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Column 4 Separator": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 5 Separator": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            },
+            "Column 6 Separator": {
+                "selected-text-color": "#e36209",
+                "text-color": "#e36209"
+            },
+            "Column 8 Separator": {
+                "selected-text-color": "#d73a49",
+                "text-color": "#d73a49"
+            },
+            "Column 9 Separator": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            }
+        },
+        "CSV (pipe)": {
+            "Column 2": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Column 4": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 5": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            },
+            "Column 6": {
+                "selected-text-color": "#e36209",
+                "text-color": "#e36209"
+            },
+            "Column 8": {
+                "selected-text-color": "#d73a49",
+                "text-color": "#d73a49"
+            },
+            "Column 9": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 2 Separator": {
+                "selected-text-color": "#005cc5",
+                "text-color": "#005cc5"
+            },
+            "Column 4 Separator": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            },
+            "Column 5 Separator": {
+                "selected-text-color": "#24292e",
+                "text-color": "#24292e"
+            },
+            "Column 6 Separator": {
+                "selected-text-color": "#e36209",
+                "text-color": "#e36209"
+            },
+            "Column 8 Separator": {
+                "selected-text-color": "#d73a49",
+                "text-color": "#d73a49"
+            },
+            "Column 9 Separator": {
+                "selected-text-color": "#6f42c1",
+                "text-color": "#6f42c1"
+            }
+        }
+    },
+    "metadata": {
+        "copyright": [
+            "SPDX-FileCopyrightText: 2020 GitHub Inc.",
+            "SPDX-FileCopyrightText: 2020 Waqar Ahmed <waqar.17a@gmail.com>"
+        ],
+        "license": "SPDX-License-Identifier: MIT",
+        "name": "GitHub Light",
+        "revision": 4
+    },
+    "text-styles": {
+        "Alert": {
+            "bold": true,
+            "selected-text-color": "#ff5555",
+            "text-color": "#ff5555"
+        },
+        "Annotation": {
+            "selected-text-color": "#6a737d",
+            "text-color": "#6a737d"
+        },
+        "Attribute": {
+            "selected-text-color": "#d73a49",
+            "text-color": "#d73a49"
+        },
+        "BaseN": {
+            "selected-text-color": "#005cc5",
+            "text-color": "#005cc5"
+        },
+        "BuiltIn": {
+            "selected-text-color": "#d73a49",
+            "text-color": "#d73a49"
+        },
+        "Char": {
+            "selected-text-color": "#032f62",
+            "text-color": "#032f62"
+        },
+        "Comment": {
+            "selected-text-color": "#6a737d",
+            "text-color": "#6a737d"
+        },
+        "CommentVar": {
+            "selected-text-color": "#6a737d",
+            "text-color": "#6a737d"
+        },
+        "Constant": {
+            "selected-text-color": "#005cc5",
+            "text-color": "#005cc5"
+        },
+        "ControlFlow": {
+            "selected-text-color": "#d73a49",
+            "text-color": "#d73a49"
+        },
+        "DataType": {
+            "selected-text-color": "#d73a49",
+            "text-color": "#d73a49"
+        },
+        "DecVal": {
+            "selected-text-color": "#005cc5",
+            "text-color": "#005cc5"
+        },
+        "Documentation": {
+            "selected-text-color": "#6a737d",
+            "text-color": "#6a737d"
+        },
+        "Error": {
+            "selected-text-color": "#ff5555",
+            "text-color": "#ff5555",
+            "underline": true
+        },
+        "Extension": {
+            "bold": true,
+            "selected-text-color": "#d73a49",
+            "text-color": "#d73a49"
+        },
+        "Float": {
+            "selected-text-color": "#005cc5",
+            "text-color": "#005cc5"
+        },
+        "Function": {
+            "selected-text-color": "#6f42c1",
+            "text-color": "#6f42c1"
+        },
+        "Import": {
+            "selected-text-color": "#032f62",
+            "text-color": "#032f62"
+        },
+        "Information": {
+            "selected-text-color": "#6a737d",
+            "text-color": "#6a737d"
+        },
+        "Keyword": {
+            "selected-text-color": "#d73a49",
+            "text-color": "#d73a49"
+        },
+        "Normal": {
+            "selected-text-color": "#24292e",
+            "text-color": "#24292e"
+        },
+        "Operator": {
+            "selected-text-color": "#24292e",
+            "text-color": "#24292e"
+        },
+        "Others": {
+            "selected-text-color": "#6f42c1",
+            "text-color": "#6f42c1"
+        },
+        "Preprocessor": {
+            "selected-text-color": "#d73a49",
+            "text-color": "#d73a49"
+        },
+        "RegionMarker": {
+            "selected-text-color": "#6a737d",
+            "text-color": "#6a737d"
+        },
+        "SpecialChar": {
+            "selected-text-color": "#005cc5",
+            "text-color": "#005cc5"
+        },
+        "SpecialString": {
+            "selected-text-color": "#032f62",
+            "text-color": "#032f62"
+        },
+        "String": {
+            "selected-text-color": "#032f62",
+            "text-color": "#032f62"
+        },
+        "Variable": {
+            "selected-text-color": "#e36209",
+            "text-color": "#e36209"
+        },
+        "VerbatimString": {
+            "selected-text-color": "#034c95",
+            "text-color": "#034c95"
+        },
+        "Warning": {
+            "selected-text-color": "#ff5555",
+            "text-color": "#ff5555"
+        }
+    }
+}
