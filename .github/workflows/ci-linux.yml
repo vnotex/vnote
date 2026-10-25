@@ -61,7 +61,7 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx5-qt-dev fcitx-libs-dev extra-cmake-modules libxkbcommon-dev
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y tree
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y fuse libxcb-cursor-dev
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y fuse libxcb-cursor-dev xvfb xauth
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libsecret-1-dev
           python3 -m pip config set global.break-system-packages true
@@ -175,7 +175,7 @@ jobs:
       - name: Install Test Dependencies
         if: env.VNOTE_TESTS == 'ON'
         run: |
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dbus gnome-keyring libglib2.0-bin libsecret-tools openssl xvfb xauth
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dbus gnome-keyring libglib2.0-bin libsecret-tools openssl
 
       - name: Build and Run Tests
         id: tests
@@ -343,8 +343,8 @@ jobs:
           with tempfile.TemporaryDirectory(prefix='vnote-package-launch-') as directory:
               launch_env = dict(clean_env, HOME=directory, XDG_CONFIG_HOME=directory,
                                 XDG_DATA_HOME=directory, XDG_CACHE_HOME=directory,
-                                QT_QPA_PLATFORM='offscreen', QT_PLUGIN_PATH=str(appdir / 'usr/plugins'))
-              subprocess.run([str(appdir / 'AppRun'), '--help'], cwd=directory,
+                                QT_QPA_PLATFORM='xcb', QT_PLUGIN_PATH=str(appdir / 'usr/plugins'))
+              subprocess.run(['xvfb-run', '-a', str(appdir / 'AppRun'), '--help'], cwd=directory,
                              env=launch_env, check=True, timeout=30)
 
           PY

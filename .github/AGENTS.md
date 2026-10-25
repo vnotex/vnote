@@ -162,7 +162,10 @@ both the suite and failure diagnostics through `.github/scripts/run-linux-tests.
 The wrapper creates a private D-Bus session and unlocked GNOME keyring, verifies
 Secret Service with a write/read/delete probe, then tears down the daemon and
 private XDG directories. CTest runs under Xvfb so tests selecting the native xcb
-backend have a display; install `xvfb` and `xauth` with the test dependencies.
+backend have a display. Install `xvfb` and `xauth` unconditionally: the final AppImage
+consumer check also needs them on release builds. It launches packaged `AppRun --help`
+with `QT_QPA_PLATFORM=xcb` under `xvfb-run -a`; the AppImage ships xcb, not offscreen.
+Keep Qt lookup inside the extracted package and fail on plugin/display/load errors.
 The child `test_typsteditor` suite must select `QT_QPA_PLATFORM=xcb` explicitly:
 its native layout/raster scenarios must not inherit the parent's offscreen default.
 Keep the credential tests on a real vault; headers from
@@ -170,7 +173,8 @@ Keep the credential tests on a real vault; headers from
 
 TLS fixtures use Ubuntu's `/usr/bin/openssl` explicitly, not a PATH executable
 shadowed by the separate packaging OpenSSL install. These environment changes
-apply only to tests; release commits skip the runtime setup and test invocations.
+apply only to tests; release commits skip vault setup and test invocations, not the
+Xvfb-backed packaged-consumer check.
 
 ## macOS test temporary paths
 
