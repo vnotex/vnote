@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Keep Typst resource-consent fixtures alive through nested dialog completion and wait for horizontal-scroll ranges before raster alignment
 * Preserve Markdown presentation startup across native window reconstruction while still cancelling genuinely hidden views
 * Run native Typst host tests in serial fixed-budget groups and anchor raster-test navigation to the observed source cursor
 * Keep Linux failure diagnostics scoped to the failed parent or native-editor suite instead of rerunning a passing suite

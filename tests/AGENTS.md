@@ -203,9 +203,14 @@ a disposable one and restores the previous default after testing.
 
 For asynchronous modal-error tests, wait for controller completion with `QSignalSpy::wait`.
 Keep the dismissal timer active until completion and restrict it to the tested dialog's
-message box. Cocoa can deliver a click during `show()`, before `exec()` starts its nested
-loop: allow repeated clicks on an already-observed box even if that early click hid it.
-Do not stop on the first click or infer dialog readiness from `QThread::loopLevel()`.
+message box. Do not stop on the first click or infer dialog readiness from
+`QThread::loopLevel()`.
+
+`resourceRemoteConsent` owns a parent-matched `QPointer<QMessageBox>` and an answer timer
+until the resource-menu operation returns. Cocoa can deliver an answer during `show()`,
+before `exec()` starts its nested loop. Re-show that observed box if it became hidden,
+then click the expected Yes/No button; repeated clicks alone need not exit a hidden dialog's
+loop. This fixture does not use `DialogDriver`'s visible-active-only tick.
 
 **Native WebEngine raster tests:** on macOS, `test_mindmapexport`, `test_htmlpdfexporter`,
 `test_markdownwebjobs` and `test_webviewservice` use `cocoa` and the matching Qt kit's

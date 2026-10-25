@@ -1294,23 +1294,42 @@ void TestTypstViewWindowInsertion::resourceRemoteConsent() {
   QVERIFY(desktop.opened.isEmpty());
   for (bool accept : {false, true}) {
     bool prompted = false;
-    DialogDriver dialogs;
-    dialogs.otherDialog = [&](QDialog *dialog) {
-      auto *question = qobject_cast<QMessageBox *>(dialog);
+    QPointer<QMessageBox> question;
+    QString error;
+    QTimer answer;
+    answer.setInterval(20);
+    connect(&answer, &QTimer::timeout, &answer, [&] {
       if (!question) {
-        return false;
+        for (auto *box : m_window->findChildren<QMessageBox *>()) {
+          if (box->parentWidget() == m_window.get()) {
+            question = box;
+            break;
+          }
+        }
+      }
+      if (!question) {
+        return;
       }
       prompted = true;
-      auto *button = question->button(accept ? QMessageBox::Yes : QMessageBox::No);
-      if (!button) {
-        dialogs.fail(dialog, QStringLiteral("Missing external consent button"));
-      } else {
-        QTest::mouseClick(button, Qt::LeftButton);
+      // Cocoa may process the first answer during show(), before exec() begins.
+      // Re-show an early-hidden box so the next answer can exit the exec() loop.
+      if (question->isHidden()) {
+        question->show();
       }
-      return true;
-    };
+      if (!question) {
+        return;
+      }
+      if (auto *button = question->button(accept ? QMessageBox::Yes : QMessageBox::No)) {
+        button->click();
+      } else {
+        error = QStringLiteral("Missing external consent button");
+        question->reject();
+      }
+    });
+    answer.start();
     QVERIFY(resourceMenu(target.first, target.second, QStringLiteral("typstOpenLink")).clicked);
-    QVERIFY2(dialogs.error.isEmpty(), qPrintable(dialogs.error));
+    answer.stop();
+    QVERIFY2(error.isEmpty(), qPrintable(error));
     QVERIFY(prompted);
     QCOMPARE(desktop.opened.size(), accept ? 1 : 0);
   }
@@ -3298,27 +3317,34 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
 #endif
 #ifdef Q_OS_WIN
   const auto window = reinterpret_cast<HWND>(m_window->winId());
+  QVERIFY(window);
   SetForegroundWindow(window);
   if (!QTest::qWaitFor([&] { return GetForegroundWindow() == window; }, 1000)) {
     QSKIP("Windows denied foreground input to the native drag fixture");
   }
   const auto scale = m_window->devicePixelRatioF();
+  bool mapped = true;
   const auto nativePoint = [&](const QPoint &point) {
     const auto local = m_edit->viewport()->mapTo(m_window.get(), point);
     POINT native = {qRound(local.x() * scale), qRound(local.y() * scale)};
-    ClientToScreen(window, &native);
+    mapped = ClientToScreen(window, &native) && mapped;
     return QPoint(native.x, native.y);
   };
   struct DragProgress : QObject {
     QSemaphore pressed, entered, arrived;
     QPoint start, end, lastPress{-1, -1}, lastMove{-1, -1};
+    int doubleClicks = 0;
+    Qt::MouseButton lastButton = Qt::NoButton;
     bool eventFilter(QObject *, QEvent *p_event) override {
       if (p_event->type() == QEvent::MouseButtonPress) {
         auto *mouse = static_cast<QMouseEvent *>(p_event);
         lastPress = mouse->position().toPoint();
+        lastButton = mouse->button();
         if (mouse->button() == Qt::LeftButton && (lastPress - start).manhattanLength() <= 2) {
           pressed.release();
         }
+      } else if (p_event->type() == QEvent::MouseButtonDblClick) {
+        ++doubleClicks;
       } else if (p_event->type() == QEvent::DragEnter) {
         entered.release();
       } else if (p_event->type() == QEvent::DragMove) {
@@ -3339,7 +3365,28 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   const QRect virtualDesktop(
       GetSystemMetrics(SM_XVIRTUALSCREEN), GetSystemMetrics(SM_YVIRTUALSCREEN),
       GetSystemMetrics(SM_CXVIRTUALSCREEN), GetSystemMetrics(SM_CYVIRTUALSCREEN));
-  QVERIFY(virtualDesktop.width() > 0 && virtualDesktop.height() > 0);
+  const auto qtStart = m_edit->viewport()->mapToGlobal(start);
+  const auto qtEnd = m_edit->viewport()->mapToGlobal(end);
+  const auto hit = WindowFromPoint(POINT{globalStart.x(), globalStart.y()});
+  DWORD hitProcess = 0;
+  GetWindowThreadProcessId(hit, &hitProcess);
+  wchar_t hitClass[128] = {};
+  GetClassNameW(hit, hitClass, 128);
+  const QPointer<QWidget> qtHit = QApplication::widgetAt(qtStart);
+  const auto targetState = [&] {
+    QString state;
+    QDebug(&state) << "native/Qt source/drop:" << globalStart << globalEnd << qtStart << qtEnd
+                   << "mapped/DPR/desktop:" << mapped << scale << virtualDesktop
+                   << "frame/client/viewport:" << m_window->frameGeometry() << m_window->geometry()
+                   << m_edit->viewport()->geometry() << "owner/hit/foreground:" << quintptr(window)
+                   << quintptr(hit) << quintptr(GetForegroundWindow())
+                   << "hit class/pid/child:" << QString::fromWCharArray(hitClass) << hitProcess
+                   << bool(IsChild(window, hit)) << "Qt hit:" << qtHit.data();
+    return state;
+  };
+  QVERIFY2(mapped && virtualDesktop.contains(globalStart) && virtualDesktop.contains(globalEnd) &&
+               hit && hitProcess == GetCurrentProcessId(),
+           qPrintable(targetState()));
   const auto motion = [&](const QPoint &point) {
     INPUT event = {};
     event.type = INPUT_MOUSE;
@@ -3364,6 +3411,7 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   QVERIFY(GetCursorPos(&previousPointer));
   std::atomic<bool> releasePosted{false}, sequenceComplete{false};
   bool pressAcknowledged = false, enterAcknowledged = false, destinationAcknowledged = false;
+  POINT pointerAfterPress{-1, -1};
   bool moved = false;
   {
     const auto restoreInput = qScopeGuard([&] {
@@ -3372,6 +3420,7 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
     });
     const QDeadlineTimer deadline(qMax(0, safety.remainingTime() - 250));
     QVERIFY(SendInput(1, &pressInput, sizeof(INPUT)) == 1);
+    GetCursorPos(&pointerAfterPress);
     // Observe one real gesture rather than racing OLE with fixed sleeps. The worker
     // always attempts release on that bounded deadline, even if an ack is absent.
     std::thread input([&] {
@@ -3400,7 +3449,9 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
                             << "press/enter/destination ack:" << pressAcknowledged
                             << enterAcknowledged << destinationAcknowledged
                             << "observed press/move:" << progress.lastPress << progress.lastMove
-                            << "DPR/desktop:" << scale << virtualDesktop
+                            << "button/double clicks:" << progress.lastButton
+                            << progress.doubleClicks << "pointer after press:"
+                            << QPoint(pointerAfterPress.x, pointerAfterPress.y) << targetState()
                             << "actual/expected:" << m_edit->toPlainText() << expected
                             << "selection:" << m_edit->textCursor().selectedText()
                             << "source/drop positions:" << start << end
