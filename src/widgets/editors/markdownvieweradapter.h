@@ -11,6 +11,7 @@
 #include <QSize>
 #include <QString>
 
+#include <functional>
 #include <optional>
 
 #include <core/global.h>
@@ -64,6 +65,11 @@ public:
   virtual ~MarkdownViewerAdapter();
 
   void setProtectedView(bool p_protected);
+
+  // Native-only capability binding. The GUI-thread predicate must not emit signals
+  // or process events. Missing/revoked authorization denies protected native math.
+  void setProtectedMathAuthorization(std::function<bool()> p_authorize);
+  void revokeProtectedMath();
 
   // Native render token; independent of buffer and editor revisions.
   void setRenderedHtml(QString p_generation, const QString &p_html, int p_lineNumber = -1);
@@ -230,6 +236,7 @@ private:
     bool m_display = false;
   };
 
+  bool isTypstMathAuthorized() const;
   void startNextTypstMath();
 
   // Empty scope retires all work, or only reader work when p_readersOnly is true.
@@ -242,6 +249,7 @@ private:
   void scrollToAnchor(const QString &p_anchor);
 
   bool m_protectedView = false;
+  std::function<bool()> m_protectedMathAuthorization;
 
   // Never reset the sequence on page reload; delayed web replies must stay obsolete.
   quint64 m_imageViewSequence = 0;

@@ -265,8 +265,8 @@ void TestHtmlTemplateService::testProtectedTemplate_bundledAllowlist() {
   const auto token = QStringLiteral("0123456789abcdef0123456789abcdef");
   const auto nonce = QStringLiteral("fedcba9876543210fedcba9876543210");
   QHash<QString, QByteArray> resources;
-  const auto html = service.protectedMarkdownViewerTemplate(token, nonce, QStringLiteral("pure"),
-                                                            false, resources);
+  const auto html = service.protectedMarkdownViewerTemplate(
+      token, nonce, QStringLiteral("pure"), false, QStringLiteral("katex"), resources);
   QVERIFY(!html.isEmpty());
   QVERIFY(!resources.isEmpty());
   const auto policy = vnotex::HtmlTemplateService::protectedContentSecurityPolicy(nonce);
@@ -310,10 +310,25 @@ void TestHtmlTemplateService::testProtectedTemplate_bundledAllowlist() {
   QVERIFY(!resources.contains(QStringLiteral("/files/private.md")));
   // A custom or traversal-like theme name cannot widen the shipped execution allowlist.
   QHash<QString, QByteArray> customResources;
-  const auto custom = service.protectedMarkdownViewerTemplate(
-      token, nonce, QStringLiteral("../../user-template"), false, customResources);
+  const auto custom =
+      service.protectedMarkdownViewerTemplate(token, nonce, QStringLiteral("../../user-template"),
+                                              false, QStringLiteral("katex"), customResources);
   QCOMPARE(custom, html);
   QCOMPARE(customResources, resources);
+  // Renderer preferences cannot introduce an external engine or widen execution resources.
+  for (const auto &renderer :
+       {QStringLiteral("mathjax"), QString(), QStringLiteral("'; window.injected = true; //")}) {
+    QHash<QString, QByteArray> fallbackResources;
+    const auto fallback = service.protectedMarkdownViewerTemplate(
+        token, nonce, QStringLiteral("pure"), false, renderer, fallbackResources);
+    QCOMPARE(fallback, html);
+    QCOMPARE(fallbackResources, resources);
+  }
+  QHash<QString, QByteArray> typstResources;
+  const auto typst = service.protectedMarkdownViewerTemplate(
+      token, nonce, QStringLiteral("pure"), false, QStringLiteral("typst"), typstResources);
+  QVERIFY(typst.contains(policy.toHtmlEscaped()));
+  QCOMPARE(typstResources, resources);
 }
 
 void TestHtmlTemplateService::testProtectedTemplate_invalidIdentityAndMissingBundleFailClosed() {
@@ -325,13 +340,13 @@ void TestHtmlTemplateService::testProtectedTemplate_invalidIdentityAndMissingBun
     resources.insert(QStringLiteral("/app/old.js"), QByteArray("old"));
     QVERIFY(service
                 .protectedMarkdownViewerTemplate(identity, valid, QStringLiteral("pure"), false,
-                                                 resources)
+                                                 QStringLiteral("typst"), resources)
                 .isEmpty());
     QVERIFY(resources.isEmpty());
     resources.insert(QStringLiteral("/app/old.js"), QByteArray("old"));
     QVERIFY(service
                 .protectedMarkdownViewerTemplate(valid, identity, QStringLiteral("pure"), false,
-                                                 resources)
+                                                 QStringLiteral("typst"), resources)
                 .isEmpty());
     QVERIFY(resources.isEmpty());
   }
@@ -342,10 +357,10 @@ void TestHtmlTemplateService::testProtectedTemplate_invalidIdentityAndMissingBun
       qScopeGuard([&]() { QDir::setSearchPaths(QStringLiteral("app"), oldPaths); });
   QDir::setSearchPaths(QStringLiteral("app"), {emptyDirectory.path()});
   resources.insert(QStringLiteral("/app/old.js"), QByteArray("old"));
-  QVERIFY(
-      service
-          .protectedMarkdownViewerTemplate(valid, valid, QStringLiteral("pure"), false, resources)
-          .isEmpty());
+  QVERIFY(service
+              .protectedMarkdownViewerTemplate(valid, valid, QStringLiteral("pure"), false,
+                                               QStringLiteral("typst"), resources)
+              .isEmpty());
   QVERIFY(resources.isEmpty());
 }
 

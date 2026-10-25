@@ -146,14 +146,33 @@ void MarkdownViewerAdapter::setProtectedView(bool p_protected) {
     return;
   }
   m_protectedView = p_protected;
-  if (p_protected) {
-    const bool retiring = std::exchange(m_retiringTypstMath, true);
-    const QPointer<MarkdownViewerAdapter> guard(this);
-    retireTypstMath();
-    if (guard) {
-      m_retiringTypstMath = retiring;
-    }
+  // A protection transition never carries formulas or authorization into another mode.
+  revokeProtectedMath();
+}
+
+void MarkdownViewerAdapter::setProtectedMathAuthorization(std::function<bool()> p_authorize) {
+  if (!m_protectedView || m_retiringTypstMath) {
+    return;
   }
+  const QPointer<MarkdownViewerAdapter> guard(this);
+  revokeProtectedMath();
+  if (guard && m_protectedView) {
+    m_protectedMathAuthorization = std::move(p_authorize);
+  }
+}
+
+void MarkdownViewerAdapter::revokeProtectedMath() {
+  m_protectedMathAuthorization = {};
+  const bool retiring = std::exchange(m_retiringTypstMath, true);
+  const QPointer<MarkdownViewerAdapter> guard(this);
+  retireTypstMath();
+  if (guard) {
+    m_retiringTypstMath = retiring;
+  }
+}
+
+bool MarkdownViewerAdapter::isTypstMathAuthorized() const {
+  return !m_protectedView || (m_protectedMathAuthorization && m_protectedMathAuthorization());
 }
 
 QString MarkdownViewerAdapter::protectedImageUrl(const QString &p_url) {
@@ -593,7 +612,7 @@ void MarkdownViewerAdapter::renderTypstMath(const QString &p_id, const QString &
   if (m_typstMathIds.contains(p_id)) {
     return;
   }
-  if (m_protectedView || m_retiringTypstMath) {
+  if (m_retiringTypstMath || !isTypstMathAuthorized()) {
     emit typstMathReady(p_id, typstMathFailure(tr("Typst math is unavailable in this view.")));
     return;
   }
@@ -647,7 +666,8 @@ void MarkdownViewerAdapter::renderTypstMath(const QString &p_id, const QString &
                   !request->m_scope.startsWith(QLatin1String("reader:")) ||
                   QStringView(request->m_scope).mid(7) == QStringView(m_generation);
               const auto result = request->m_resetGeneration == getResetGeneration() &&
-                                          currentReader && !m_protectedView && !m_retiringTypstMath
+                                          currentReader && !m_retiringTypstMath &&
+                                          isTypstMathAuthorized()
                                       ? typstMathResult(p_result)
                                       : typstMathFailure(tr("Typst math rendering was cancelled."));
               m_typstMathIds.remove(request->m_id);
@@ -682,7 +702,8 @@ void MarkdownViewerAdapter::startNextTypstMath() {
     m_typstMathQueuedBytes -= request.m_sourceBytes;
     const bool staleReader = request.m_scope.startsWith(QLatin1String("reader:")) &&
                              QStringView(request.m_scope).mid(7) != QStringView(m_generation);
-    if (request.m_resetGeneration != getResetGeneration() || staleReader || m_protectedView) {
+    if (request.m_resetGeneration != getResetGeneration() || staleReader ||
+        !isTypstMathAuthorized()) {
       m_typstMathIds.remove(request.m_id);
       const QPointer<MarkdownViewerAdapter> guard(this);
       emit typstMathReady(request.m_id,
@@ -695,7 +716,7 @@ void MarkdownViewerAdapter::startNextTypstMath() {
     m_typstMathActive = std::move(request);
     m_typstMathInFlight = true;
     if (m_typstMathRenderer->renderToSvg(m_typstMathActive->m_source, m_typstMathActive->m_display,
-                                         m_typstMathActive->m_foreground)) {
+                                         m_typstMathActive->m_foreground, m_protectedView)) {
       // Only native work needs the source now; retain identity, not another formula copy.
       m_typstMathActive->m_source.clear();
       return;

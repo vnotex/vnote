@@ -380,7 +380,7 @@ QString HtmlTemplateService::protectedContentSecurityPolicy(const QString &p_non
 
 QString HtmlTemplateService::protectedMarkdownViewerTemplate(
     const QString &p_token, const QString &p_nonce, const QString &p_themeName, bool p_darkTheme,
-    QHash<QString, QByteArray> &p_resources) const {
+    const QString &p_mathRenderer, QHash<QString, QByteArray> &p_resources) const {
   p_resources.clear();
   static const QRegularExpression c_token(QStringLiteral("^[a-f0-9]{32}$"));
   if (!c_token.match(p_token).hasMatch() || !c_token.match(p_nonce).hasMatch()) {
@@ -580,7 +580,8 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
   }
 
   MarkdownWebGlobalOptions options;
-  options.m_mathRenderer = QStringLiteral("katex");
+  options.m_mathRenderer =
+      p_mathRenderer == QStringLiteral("typst") ? QStringLiteral("typst") : QStringLiteral("katex");
   options.m_webPlantUml = false;
   options.m_webGraphviz = true;
   options.m_protectFromXss = true;

@@ -1076,7 +1076,7 @@ bool MarkdownViewWindow2::setupViewer() {
       }
       const auto html = htmlTemplateService->protectedMarkdownViewerTemplate(
           page.token, page.nonce, themeService->getCurrentTheme().name(),
-          qGray(background.rgb()) < 128, resources);
+          qGray(background.rgb()) < 128, mdConfig.getMathRenderer(), resources);
       for (auto it = resources.cbegin(); it != resources.cend(); ++it) {
         if (it.key().startsWith(QStringLiteral("/app/themes/")) &&
             it.key().endsWith(QStringLiteral("/highlight.css"))) {
@@ -1112,6 +1112,18 @@ bool MarkdownViewWindow2::setupViewer() {
 
   m_viewer = new MarkdownViewer(adapterObj, this, getServices(), bgColor, zoomFactor, this,
                                 m_protectedView ? m_protectedView->page.profile : nullptr);
+  if (m_protectedView) {
+    auto *profiles = getServices().get<WebEngineProfileService>();
+    auto *profile = m_protectedView->page.profile;
+    adapterObj->setProtectedMathAuthorization(m_protectedView->page.isAuthorized);
+    connect(profiles, &WebEngineProfileService::protectedProfileRevoked, adapterObj,
+            [adapterObj, profile](QWebEngineProfile *p_profile) {
+              if (p_profile == profile)
+                adapterObj->revokeProtectedMath();
+            });
+    connect(profile, &QObject::destroyed, adapterObj, &MarkdownViewerAdapter::revokeProtectedMath);
+    connect(profiles, &QObject::destroyed, adapterObj, &MarkdownViewerAdapter::revokeProtectedMath);
+  }
   m_viewer->setController(m_windowController);
   updateSectionNumberOptions();
 

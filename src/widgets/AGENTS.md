@@ -446,14 +446,29 @@ One native facade flight plus 32 waiting requests and 2 MiB queued UTF-8 bound a
 Duplicate IDs cannot replace another completion owner. Scope cancellation retires ownership
 before signals; the cancelled facade flight drains before another queue entry starts.
 Document replacement retires readers only; reset, protected transition and destruction retire
-all work. Protected/unavailable requests fail explicitly. Canonical web `#RRGGBBAA` is parsed
-by channel, not QColor's ARGB parser. Gate: `test_markdownwebjobs::typstAdapterBoundary`.
+all work. Missing/revoked authorization and unavailable runtimes fail explicitly. Canonical web
+`#RRGGBBAA` is parsed by channel, not QColor's ARGB parser. Gate: `test_markdownwebjobs::typstAdapterBoundary`.
 
 The Math renderer setting selects KaTeX (default), MathJax or Typst globally. Typst uses
 Typst math within the existing dollar delimiters and mathjax fences; failures keep source
-and diagnostics without LaTeX fallback. Protected notes remain KaTeX-only. Reader SVGs use
+and diagnostics without LaTeX fallback. Protected notes honor Typst; other preferences use
+bundled KaTeX, never external MathJax. Reader SVGs use
 intrinsic em geometry and a top-relative baseline; previews pin pixels before the existing
-SVG-to-PNG path. HTML keeps self-contained SVG; raster exports and cross-copy retain alignment.
+SVG-to-PNG path. Ordinary HTML keeps self-contained SVG; raster exports and cross-copy retain
+alignment. Existing protected export and clipboard restrictions are unchanged.
+
+Protected Typst admission, dispatch and delivery require the profile's weak authorization
+capability and original lease generation. Checks acquire/drop a current lease; no lease follows
+native work. Bind before loading either the reader or per-note EditOnly host. Profile revocation
+closes state before signalling adapters; profile/service destruction also retires math. Protected
+jobs never use the ordinary shared page. Sensitive native calls purge current shared memoization
+on actual return, not logical cancellation; this is not a heap-erasure guarantee.
+
+Protected in-place math (including mathjax fences) uses the existing native passive SVG-to-PNG
+validator, without widening CSP or loading SVG data/blob images in Chromium. Preserve Typst paint
+attributes, normalize 8-digit colors into separate fill/stroke/stop opacities for QtSvg, and drop
+source-only title/description/accessibility metadata before rasterization. Other graph policy
+is unchanged. Real encrypted/profile coverage: `test_webengineprofileservice::protectedTypstMath`.
 
 Native SVG is parsed in detached XML before insertion. Normalize viewport-free glyph symbols
 to groups (dropping symbol overflow otherwise clips glyphs), then use the unchanged protected

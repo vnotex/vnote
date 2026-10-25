@@ -294,7 +294,8 @@ class GraphPreviewer {
         return this.runPreview(p_args, p_context, true, async (request) => {
             const lang = p_args.language;
             if (window.vxOptions.protectedView
-                && (lang === 'puml' || lang === 'plantuml' || lang === 'mathjax')) {
+                && (lang === 'puml' || lang === 'plantuml'
+                    || (lang === 'mathjax' && this.vxcore.getWorker('math')?.renderer !== 'typst'))) {
                 return this.protectedBlockedPreview(request, lang);
             }
             if (!p_args.source.length) {
@@ -350,7 +351,7 @@ class GraphPreviewer {
 
     previewMath(p_args, p_context) {
         return this.runPreview(p_args, p_context, false, request => {
-            if (window.vxOptions.protectedView) {
+            if (window.vxOptions.protectedView && this.vxcore.getWorker('math')?.renderer !== 'typst') {
                 return this.protectedBlockedPreview(request, 'Math');
             }
             if (!p_args.source.length) {
@@ -384,7 +385,7 @@ class GraphPreviewer {
             if (node.namespaceURI === 'http://www.w3.org/2000/svg') {
                 this.fixSvgCurrentColor(node, p_request.color);
                 this.fixSvgRelativeWidth(node, p_request);
-                return await this.processSvgAsPng(node, p_request);
+                return await this.processSvgAsPng(node, p_request, worker.renderer === 'typst');
             }
             if (p_request.graph) {
                 this.perfNoteRasterStart('webjobs', p_request.id);
@@ -398,12 +399,19 @@ class GraphPreviewer {
         }
     }
 
-    async processSvgAsPng(p_svgNode, p_request) {
+    async processSvgAsPng(p_svgNode, p_request, p_typstMath = false) {
         if (p_request.graph) {
             this.perfNoteRasterStart('webjobs', p_request.id);
         }
         if (window.vxOptions.protectedView) {
-            DocumentRenderer.sanitizeProtectedSvg(p_svgNode);
+            if (p_typstMath) {
+                // The reader keeps source accessibility text. Native preview payloads
+                // contain only painted math, including for a mathjax fenced graph job.
+                p_svgNode.querySelectorAll('title, desc').forEach(node => node.remove());
+            }
+            // Also strips source-only aria metadata. Other protected graphs still
+            // need their live computed styles copied before CSS is removed.
+            DocumentRenderer.sanitizeProtectedSvg(p_svgNode, !p_typstMath);
             const viewBox = p_svgNode.viewBox.baseVal;
             const width = p_svgNode.width.baseVal.value || viewBox.width;
             const height = p_svgNode.height.baseVal.value

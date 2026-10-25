@@ -4,10 +4,15 @@
 
 #include <QApplication>
 #include <QDir>
+#include <QDirIterator>
+#include <QFile>
 #include <QFileInfo>
+#include <QPointer>
+#include <QSemaphore>
 #include <QStandardPaths>
 #include <QString>
 #include <QTemporaryDir>
+#include <QThread>
 #include <QUuid>
 #include <QWebChannel>
 #include <QWebEnginePage>
@@ -22,6 +27,7 @@
 #include <QWebEngineProfile>
 #include <QtConcurrent/QtConcurrentRun>
 
+#include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
@@ -36,7 +42,10 @@
 
 #include <gui/services/webengineprofileservice.h>
 #include <gui/services/webviewjobs.h>
+#include <gui/utils/imageutils.h>
 #include <utils/markdownhtmlrenderer.h>
+#include <vtextedit/typstmathrenderer.h>
+#include <vtextedit/typstruntime.h>
 #include <widgets/editors/markdownvieweradapter.h>
 
 using namespace vnotex;
@@ -57,6 +66,147 @@ QVariant evaluateJavaScript(QWebEnginePage &p_page, const QString &p_script) {
   return state->second;
 }
 
+// A real encrypted profile/channel. The capability is never replaced with a test predicate.
+struct ProtectedMathPage {
+  WebEngineProfileService &service;
+  WebEngineProfileService::ProtectedPage grant;
+  std::unique_ptr<QWebEngineProfile> profile;
+  std::unique_ptr<QWebEnginePage> page;
+  MarkdownViewerAdapter *adapter = nullptr;
+  WebViewJobSession *jobs = nullptr;
+  quint64 generation = 0;
+
+  ProtectedMathPage(WebEngineProfileService &p_service, const Buffer2 &p_note,
+                    ServiceLocator &p_services)
+      : service(p_service), grant(service.createProtectedProfile(p_note)), profile(grant.profile) {
+    if (!profile)
+      return;
+    page = std::make_unique<QWebEnginePage>(profile.get());
+    auto *channel = new QWebChannel(page.get());
+    adapter = new MarkdownViewerAdapter(p_services, page.get());
+    adapter->setProtectedView(true);
+    adapter->setProtectedMathAuthorization(grant.isAuthorized);
+    QObject::connect(&service, &WebEngineProfileService::protectedProfileRevoked, adapter,
+                     [target = adapter, identity = profile.get()](QWebEngineProfile *p_profile) {
+                       if (p_profile == identity)
+                         target->revokeProtectedMath();
+                     });
+    QObject::connect(profile.get(), &QObject::destroyed, adapter,
+                     &MarkdownViewerAdapter::revokeProtectedMath);
+    QObject::connect(&service, &QObject::destroyed, adapter,
+                     &MarkdownViewerAdapter::revokeProtectedMath);
+    channel->registerObject(QStringLiteral("vxAdapter"), adapter);
+    page->setWebChannel(channel);
+    jobs = new WebViewJobSession(page.get(), channel, page.get());
+  }
+
+  ~ProtectedMathPage() {
+    if (profile)
+      service.revokeProtectedProfile(profile.get());
+    // Pages/adapter/jobs are destroyed before the borrowed profile.
+    page.reset();
+  }
+
+  bool load(HtmlTemplateService &p_templates, bool p_dark) {
+    if (!profile)
+      return false;
+    QHash<QString, QByteArray> resources;
+    const auto html = p_templates.protectedMarkdownViewerTemplate(
+        grant.token, grant.nonce, p_dark ? QStringLiteral("vscode-dark") : QStringLiteral("pure"),
+        p_dark, QStringLiteral("typst"), resources);
+    if (html.isEmpty() || !service.setProtectedDocument(profile.get(), html, resources))
+      return false;
+    page->load(grant.url);
+    return QTest::qWaitFor([&] { return jobs->isReady() && adapter->isReady(); }, 30000);
+  }
+
+  bool render(const QByteArray &p_source) {
+    const auto result = MarkdownHtmlRenderer::render(p_source, {});
+    if (!result.error.isEmpty())
+      return false;
+    adapter->setRenderedHtml(QString::number(++generation), result.html);
+    return QTest::qWaitFor([&] { return adapter->isDocumentReady(); }, 30000);
+  }
+};
+
+// Existing runtime-lane gate pattern: no sleeps or pathological Typst programs.
+class ProtectedMathGate {
+public:
+  explicit ProtectedMathGate(vte::TypstRuntime &p_runtime) : state(std::make_shared<State>()) {
+    for (const auto *name : {"typst-compile-0", "typst-compile-1"}) {
+      auto *thread = p_runtime.findChild<QThread *>(QLatin1String(name));
+      auto *worker = thread ? thread->property("worker").value<QObject *>() : nullptr;
+      if (worker && QMetaObject::invokeMethod(
+                        worker,
+                        [held = state] {
+                          held->entered.release();
+                          held->resume.acquire();
+                        },
+                        Qt::QueuedConnection))
+        ++scheduled;
+    }
+  }
+  ~ProtectedMathGate() { release(); }
+  bool entered() { return scheduled == 2 && state->entered.tryAcquire(2, 10000); }
+  void release() {
+    if (scheduled) {
+      state->resume.release(scheduled);
+      scheduled = 0;
+    }
+  }
+
+private:
+  struct State {
+    QSemaphore entered;
+    QSemaphore resume;
+  };
+  std::shared_ptr<State> state;
+  int scheduled = 0;
+};
+
+class RevokeMathOnDelivery : public QObject {
+public:
+  QObject *renderer = nullptr;
+  std::function<void()> revoke;
+
+protected:
+  bool eventFilter(QObject *p_object, QEvent *p_event) override {
+    if (revoke && p_event->type() == QEvent::MetaCall && p_object->parent() == renderer &&
+        QByteArray(p_object->metaObject()->className()) == "vte::TypstRuntimeSession") {
+      auto callback = std::exchange(revoke, {});
+      callback();
+    }
+    return false;
+  }
+};
+
+QImage protectedPreviewImage(const WebViewJobResult &p_result) {
+  if (p_result.status != WebViewJobResult::Status::Success)
+    return {};
+  const auto object = p_result.value.toObject();
+  auto bytes = object.value(QStringLiteral("data")).toString().toUtf8();
+  if (object.value(QStringLiteral("base64")).toBool())
+    bytes = QByteArray::fromBase64(bytes);
+  QByteArray png, mime;
+  if (!ImageUtils::protectedImageData(bytes, png, mime) || mime != "image/png")
+    return {};
+  return QImage::fromData(png, "PNG");
+}
+
+int pixelsMatching(const QImage &p_image, const QColor &p_expected) {
+  int count = 0;
+  for (int y = 0; y < p_image.height(); ++y) {
+    for (int x = 0; x < p_image.width(); ++x) {
+      const auto color = p_image.pixelColor(x, y);
+      if (qAbs(color.red() - p_expected.red()) <= 4 &&
+          qAbs(color.green() - p_expected.green()) <= 4 &&
+          qAbs(color.blue() - p_expected.blue()) <= 4 &&
+          qAbs(color.alpha() - p_expected.alpha()) <= 3)
+        ++count;
+    }
+  }
+  return count;
+}
 } // namespace
 
 class TestWebEngineProfileService : public QObject {
@@ -66,6 +216,8 @@ private slots:
   void profileStorageStaysUnderConfiguredRoot();
   void protectedMathReadingAndLivePreview_data();
   void protectedMathReadingAndLivePreview();
+  void protectedTypstMath_data();
+  void protectedTypstMath();
 };
 
 void TestWebEngineProfileService::profileStorageStaysUnderConfiguredRoot() {
@@ -225,8 +377,9 @@ void TestWebEngineProfileService::protectedMathReadingAndLivePreview() {
   // close and finally context destruction, including on an assertion failure.
   const auto revoke = qScopeGuard([&]() { service.revokeProtectedProfile(profile.get()); });
   QHash<QString, QByteArray> resources;
-  auto html = templates.protectedMarkdownViewerTemplate(protectedPage.token, protectedPage.nonce,
-                                                        themeName, darkTheme, resources);
+  auto html =
+      templates.protectedMarkdownViewerTemplate(protectedPage.token, protectedPage.nonce, themeName,
+                                                darkTheme, QStringLiteral("mathjax"), resources);
   QVERIFY(!html.isEmpty());
   // Deliberately conflict with the protected renderer. The actual document
   // adapter and generic jobs share the page's single native/JS channel.
@@ -449,7 +602,8 @@ $\htmlClass{protected-injected}{unsafe}$
       qScopeGuard([&]() { service.revokeProtectedProfile(replacementProfile.get()); });
   auto replacementHtml = templates.protectedMarkdownViewerTemplate(
       replacement.token, replacement.nonce,
-      darkTheme ? QStringLiteral("pure") : QStringLiteral("vscode-dark"), !darkTheme, resources);
+      darkTheme ? QStringLiteral("pure") : QStringLiteral("vscode-dark"), !darkTheme,
+      QStringLiteral("mathjax"), resources);
   const auto replacementScripts =
       replacementHtml.indexOf(QStringLiteral("<script nonce=\"%1\" src=").arg(replacement.nonce));
   QVERIFY(replacementScripts >= 0);
@@ -475,9 +629,304 @@ $\htmlClass{protected-injected}{unsafe}$
           .toBool());
 }
 
+void TestWebEngineProfileService::protectedTypstMath_data() {
+  QTest::addColumn<bool>("dark");
+  QTest::newRow("light") << false;
+  QTest::newRow("dark") << true;
+}
+
+void TestWebEngineProfileService::protectedTypstMath() {
+  QFETCH(bool, dark);
+  QTemporaryDir temp;
+  QVERIFY(temp.isValid());
+  const QFileInfo bundle(QStringLiteral(VNOTE_TEST_EXTRA_RCC));
+  QVERIFY(bundle.isFile());
+  const auto oldPaths = QDir::searchPaths(QStringLiteral("app"));
+  const auto restorePaths =
+      qScopeGuard([&] { QDir::setSearchPaths(QStringLiteral("app"), oldPaths); });
+  QDir::setSearchPaths(QStringLiteral("app"), {bundle.absolutePath()});
+  vxcore_set_test_mode(1);
+  VxCoreContextHandle context = nullptr;
+  QCOMPARE(vxcore_context_create(nullptr, &context), VXCORE_OK);
+  const auto destroyContext = qScopeGuard([&] { vxcore_context_destroy(context); });
+  SyncWorkQueueManager queues;
+  NotebookIoGate gate;
+  HookManager hooks;
+  NotebookCoreService notebooks(context);
+  notebooks.setHookManager(&hooks);
+  notebooks.setNotebookIoGate(&gate);
+  const auto notebook = notebooks.createNotebook(temp.filePath(QStringLiteral("notebook")),
+                                                 QStringLiteral("{\"name\":\"Protected Typst\"}"),
+                                                 NotebookType::Bundled);
+  QVERIFY(!notebook.isEmpty());
+  BufferService buffers(context, &hooks, &gate, AutoSavePolicy::None);
+  const auto closeNotebook = qScopeGuard([&] { notebooks.closeNotebook(notebook); });
+  const QByteArray password("protected-typst-test-password");
+  const QByteArray marker("ProtectedTypstPlaintextSentinel");
+  const QByteArray source =
+      "# " + marker +
+      "\n\nInline $frac(a^2 + b^2, sqrt(c))$ after.\n\n"
+      "$$sum_(i=1)^n i$$\n\n```mathjax\n$$sqrt(x)$$\n```\n\nInvalid $frac($\n";
+  QString noteId, siblingId;
+  QCOMPARE(QtConcurrent::run([&]() -> VxCoreError {
+             auto setup = notebooks.prepareNotebookEncryption(notebook, QString(), password);
+             if (!setup.isValid())
+               return setup.m_error;
+             auto maintenance = queues.tryAcquireMaintenance({notebook});
+             if (!maintenance.isValid())
+               return VXCORE_ERR_INVALID_STATE;
+             NotebookIoGate::ScopedLock lock(gate, notebook);
+             auto error = notebooks.commitNotebookEncryption(setup);
+             if (error != VXCORE_OK)
+               return error;
+             error =
+                 notebooks.createEncryptedNote(notebook, QString(), QStringLiteral("private.md"),
+                                               QStringLiteral("markdown"), source, &noteId);
+             return error == VXCORE_OK
+                        ? notebooks.createEncryptedNote(notebook, QString(),
+                                                        QStringLiteral("sibling.md"),
+                                                        QStringLiteral("markdown"),
+                                                        QByteArray("Sibling $sqrt(z)$"), &siblingId)
+                        : error;
+           }).result(),
+           VXCORE_OK);
+  QCOMPARE(notebooks.lockAllEncryption(), VXCORE_OK);
+  for (const auto *name : {"private.md.vne", "sibling.md.vne"}) {
+    QCOMPARE(QtConcurrent::run([&] {
+               return notebooks.unlockNoteEncryption(notebook, QLatin1String(name), password);
+             }).result(),
+             VXCORE_OK);
+  }
+  auto note = buffers.openBufferByNodeId(noteId);
+  auto sibling = buffers.openBufferByNodeId(siblingId);
+  QVERIFY(note.isEncrypted() && sibling.isEncrypted());
+  const auto closeNotes = qScopeGuard([&] {
+    buffers.cancelProtectedLocking();
+    buffers.closeBuffer(note.id());
+    buffers.closeBuffer(sibling.id());
+    notebooks.lockAllEncryption();
+  });
+  vte::TypstRuntime runtime;
+  QVERIFY(runtime.isAvailable());
+  ServiceLocator services;
+  services.registerService(&runtime);
+  HtmlTemplateService templates(nullptr);
+  WebEngineProfileService profiles(temp.filePath(QStringLiteral("profiles")), nullptr, nullptr);
+  ProtectedMathPage first(profiles, note, services), second(profiles, sibling, services);
+  QVERIFY(first.profile && second.profile);
+  QVERIFY(first.profile->isOffTheRecord() && second.profile->isOffTheRecord());
+  QCOMPARE(first.profile->httpCacheType(), QWebEngineProfile::NoCache);
+  QVERIFY(first.grant.isAuthorized() && second.grant.isAuthorized());
+  QVERIFY(first.grant.token != second.grant.token);
+  QVERIFY(first.load(templates, dark) && second.load(templates, dark));
+  QVERIFY(first.render(note.getContentRaw()));
+  QVERIFY(second.render(sibling.getContentRaw()));
+  const auto state = evaluateJavaScript(*first.page, QStringLiteral(R"JS((() => {
+    const root = vxcore.contentContainer;
+    const svg = Array.from(root.querySelectorAll('svg.typst-math'));
+    return {renderer:vxOptions.mathRenderer, count:svg.length, workers:vxcore.numOfOngoingWorkers,
+      other:!!window.katex || !!window.MathJax,
+      valid:svg.every(node => node.viewBox.baseVal.width > 0 && node.viewBox.baseVal.width < 200 &&
+        node.viewBox.baseVal.height > 0 && node.viewBox.baseVal.height < 200),
+      failure:Array.from(root.querySelectorAll('.tex-to-render[title]')).some(node =>
+        node.textContent.includes('frac(') && !node.querySelector('svg')),
+      unsafe:!!root.querySelector('svg image, svg script, svg foreignObject, svg style')};
+  })())JS"))
+                         .toMap();
+  QCOMPARE(state.value(QStringLiteral("renderer")).toString(), QStringLiteral("typst"));
+  QCOMPARE(state.value(QStringLiteral("count")).toInt(), 3);
+  QCOMPARE(state.value(QStringLiteral("workers"), -1).toInt(), 0);
+  QVERIFY(state.value(QStringLiteral("valid")).toBool());
+  QVERIFY(state.value(QStringLiteral("failure")).toBool());
+  QVERIFY(!state.value(QStringLiteral("unsafe")).toBool());
+  QVERIFY(!state.value(QStringLiteral("other")).toBool());
+
+  // Source updates never append a second reader pass or fall back to LaTeX.
+  QVERIFY(note.setContentRaw(QByteArray("Changed $sqrt(y)$")));
+  QVERIFY(first.grant.isAuthorized());
+  QVERIFY(first.render(note.getContentRaw()));
+  QCOMPARE(evaluateJavaScript(*first.page,
+                              QStringLiteral("Array.from(document.querySelectorAll('svg.typst-math'"
+                                             "), n => n.getAttribute('aria-label')).join(',')"))
+               .toString(),
+           QStringLiteral("sqrt(y)"));
+  QVERIFY(first.render(
+      QByteArray("$#read(\"private.txt\")$\n\n$#import \"@preview/mitex:0.2.4\": *$\n\n"
+                 "$#link(\"https://protected.invalid/\")[x]$")));
+  QCOMPARE(evaluateJavaScript(*first.page,
+                              QStringLiteral("document.querySelectorAll('svg.typst-math').length"))
+               .toInt(),
+           0);
+  QVERIFY(note.setContentRaw(source));
+  QVERIFY(first.render(note.getContentRaw()));
+
+  QTcpServer external;
+  QVERIFY(external.listen(QHostAddress::LocalHost));
+  QSignalSpy outbound(&external, &QTcpServer::newConnection);
+  const auto origin = QStringLiteral("http://127.0.0.1:%1/probe").arg(external.serverPort());
+  evaluateJavaScript(*first.page, QStringLiteral(R"JS((() => {
+    window.typstNetwork = 0;
+    fetch('%1').then(() => {typstNetwork = -10;}, () => {++typstNetwork;});
+    const image = new Image(); image.onload = () => {typstNetwork = -10;};
+    image.onerror = () => {++typstNetwork;}; image.src = '%1';
+    document.body.appendChild(image);
+  })())JS")
+                                      .arg(origin));
+  QTRY_COMPARE_WITH_TIMEOUT(evaluateJavaScript(*first.page, QStringLiteral("typstNetwork")).toInt(),
+                            2, 10000);
+  QCOMPARE(outbound.count(), 0);
+
+  const auto arguments = [](const QString &p_source, const QString &p_scope, bool p_graph = false) {
+    QJsonObject args{{QStringLiteral("source"), p_source},
+                     {QStringLiteral("scope"), p_scope},
+                     {QStringLiteral("zoom"), 1.5},
+                     {QStringLiteral("devicePixelRatio"), 2},
+                     {QStringLiteral("width"), 96}};
+    if (p_graph)
+      args.insert(QStringLiteral("language"), QStringLiteral("mathjax"));
+    return args;
+  };
+  evaluateJavaScript(
+      *first.page,
+      QStringLiteral("vxcore.contentContainer.style.color = 'rgba(31,83,157,0.6784313725490196)'"));
+  QVector<WebViewJobResult> results;
+  const auto complete = [&](const WebViewJobResult &p_result) { results.append(p_result); };
+  first.jobs->submit(QStringLiteral("markdown.previewMath"),
+                     arguments(QStringLiteral("$frac(a^2, sqrt(b))$"), QStringLiteral("inline")),
+                     this, complete);
+  first.jobs->submit(QStringLiteral("markdown.previewGraph"),
+                     arguments(QStringLiteral("$$sum_(i=1)^n i$$"), QStringLiteral("fence"), true),
+                     this, complete);
+  QTRY_COMPARE_WITH_TIMEOUT(results.size(), 2, 30000);
+  for (const auto &result : results) {
+    QCOMPARE(result.status, WebViewJobResult::Status::Success);
+    const auto object = result.value.toObject();
+    QCOMPARE(object.value(QStringLiteral("format")).toString(), QStringLiteral("svg"));
+    const auto image = protectedPreviewImage(result);
+    QVERIFY(!image.isNull());
+    QVERIFY(image.width() > 10 && image.width() < 300);
+    QVERIFY(image.height() > 10 && image.height() < 300);
+    QVERIFY(pixelsMatching(image, QColor(31, 83, 157, 173)) > 10);
+    QVERIFY(qAbs(image.width() - object.value(QStringLiteral("logicalWidth")).toInt() * 2) <= 2);
+    QVERIFY(qAbs(image.height() - object.value(QStringLiteral("logicalHeight")).toInt() * 2) <= 2);
+  }
+  QCOMPARE(evaluateJavaScript(
+               *first.page,
+               QStringLiteral("document.getElementById('vx-inplace-preview').childElementCount"))
+               .toInt(),
+           0);
+  QCOMPARE(outbound.count(), 0);
+
+  // Real queued native work is retired immediately; the other note's profile survives.
+  {
+    ProtectedMathGate lanes(runtime);
+    QVERIFY(lanes.entered());
+    QVector<WebViewJobResult> retired, live;
+    first.jobs->submit(QStringLiteral("markdown.previewMath"),
+                       arguments(QStringLiteral("$sqrt(x)$"), QStringLiteral("pending")), this,
+                       [&](const WebViewJobResult &r) { retired.append(r); });
+    second.jobs->submit(QStringLiteral("markdown.previewMath"),
+                        arguments(QStringLiteral("$sqrt(z)$"), QStringLiteral("pending")), this,
+                        [&](const WebViewJobResult &r) { live.append(r); });
+    QTRY_VERIFY_WITH_TIMEOUT(first.adapter->findChild<vte::TypstMathRenderer *>()->isRendering(),
+                             10000);
+    profiles.revokeProtectedProfile(first.profile.get());
+    QVERIFY(!first.grant.isAuthorized());
+    QVERIFY(second.grant.isAuthorized());
+    QTRY_COMPARE_WITH_TIMEOUT(retired.size(), 1, 10000);
+    QVERIFY(retired.first().status != WebViewJobResult::Status::Success);
+    QVERIFY(retired.first().value.toObject().value(QStringLiteral("data")).toString().isEmpty());
+    lanes.release();
+    QTRY_COMPARE_WITH_TIMEOUT(live.size(), 1, 30000);
+    QVERIFY(!protectedPreviewImage(live.first()).isNull());
+    QTRY_VERIFY_WITH_TIMEOUT(first.jobs->isIdle() && second.jobs->isIdle(), 10000);
+    QCOMPARE(retired.size(), 1);
+  }
+  // A retired profile cannot be revived by rebinding its old callback.
+  first.adapter->setProtectedMathAuthorization(first.grant.isAuthorized);
+  QSignalSpy denied(first.adapter, &MarkdownViewerAdapter::typstMathReady);
+  first.adapter->renderTypstMath(QStringLiteral("retired"), QStringLiteral("preview:retired"),
+                                 QStringLiteral("sqrt(x)"), false, QStringLiteral("#1f539dff"));
+  QCOMPARE(denied.count(), 1);
+  QVERIFY(!denied.first().at(1).toJsonObject().value(QStringLiteral("error")).toString().isEmpty());
+
+  ProtectedMathPage replacement(profiles, note, services);
+  QVERIFY(replacement.load(templates, !dark));
+  QVERIFY(replacement.render(QByteArray("Fresh $sqrt(y)$")));
+  QVERIFY(
+      buffers.protectedOperationsIdle()); // Capability checks do not retain a native-work lease.
+  QVERIFY(buffers.beginProtectedLocking());
+  QVERIFY(!replacement.grant.isAuthorized());
+  QSignalSpy locked(replacement.adapter, &MarkdownViewerAdapter::typstMathReady);
+  replacement.adapter->renderTypstMath(QStringLiteral("locked"), QStringLiteral("preview:locked"),
+                                       QStringLiteral("sqrt(x)"), false,
+                                       QStringLiteral("#1f539dff"));
+  QCOMPARE(locked.count(), 1);
+  QVERIFY(locked.first().at(1).toJsonObject().value(QStringLiteral("svg")).toString().isEmpty());
+  buffers.cancelProtectedLocking();
+  QVERIFY(replacement.grant.isAuthorized());
+
+  // Revoke after real native output exists but before its GUI delivery/status acknowledgement.
+  {
+    ProtectedMathGate lanes(runtime);
+    QVERIFY(lanes.entered());
+    QSignalSpy completed(replacement.adapter, &MarkdownViewerAdapter::typstMathReady);
+    replacement.adapter->renderTypstMath(
+        QStringLiteral("in-flight"), QStringLiteral("preview:flight"),
+        QStringLiteral("frac(a^2, sqrt(b))"), false, QStringLiteral("#1f539dff"));
+    RevokeMathOnDelivery observer;
+    observer.renderer = replacement.adapter->findChild<vte::TypstMathRenderer *>();
+    QVERIFY(observer.renderer);
+    bool revoked = false;
+    observer.revoke = [&] {
+      revoked = true;
+      profiles.revokeProtectedProfile(replacement.profile.get());
+    };
+    qApp->installEventFilter(&observer);
+    const auto removeObserver = qScopeGuard([&] { qApp->removeEventFilter(&observer); });
+    lanes.release();
+    QTRY_COMPARE_WITH_TIMEOUT(completed.count(), 1, 30000);
+    QVERIFY(revoked);
+    QVERIFY(
+        completed.first().at(1).toJsonObject().value(QStringLiteral("svg")).toString().isEmpty());
+    QVERIFY(!replacement.grant.isAuthorized());
+  }
+  QVERIFY(!first.grant.isAuthorized());
+  QVERIFY(second.grant.isAuthorized());
+  QCOMPARE(outbound.count(), 0);
+  const auto unicodeMarker = QString::fromUtf8(marker);
+  const QByteArray utf16Marker(reinterpret_cast<const char *>(unicodeMarker.utf16()),
+                               unicodeMarker.size() * int(sizeof(char16_t)));
+  QDirIterator files(temp.path(), QDir::Files | QDir::NoSymLinks, QDirIterator::Subdirectories);
+  while (files.hasNext()) {
+    QFile file(files.next());
+    QVERIFY(file.open(QIODevice::ReadOnly));
+    const auto bytes = file.readAll();
+    QVERIFY2(!bytes.contains(marker) && !bytes.contains(utf16Marker), qPrintable(file.fileName()));
+  }
+}
+
 } // namespace tests
 
 int main(int argc, char **argv) {
+  // vxcore test mode uses the OS temporary root. Give this process its own
+  // root instead of sharing notebook/session state with concurrently running suites.
+  QTemporaryDir runtimeRoot;
+  if (!runtimeRoot.isValid())
+    return 1;
+  QHash<QByteArray, QByteArray> oldEnvironment;
+  for (const auto *key : {"TEMP", "TMP", "TMPDIR"}) {
+    oldEnvironment.insert(key, qgetenv(key));
+    qputenv(key, runtimeRoot.path().toUtf8());
+  }
+  const auto restoreEnvironment = qScopeGuard([&] {
+    for (auto it = oldEnvironment.cbegin(); it != oldEnvironment.cend(); ++it) {
+      if (it.value().isNull())
+        qunsetenv(it.key());
+      else
+        qputenv(it.key(), it.value());
+    }
+  });
   WebEngineProfileService::registerProtectedScheme();
   QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
   QStandardPaths::setTestModeEnabled(true);

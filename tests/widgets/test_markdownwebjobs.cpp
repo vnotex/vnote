@@ -32,6 +32,7 @@
 #include <core/servicelocator.h>
 #include <gui/services/webviewjobs.h>
 #include <gui/services/webviewservice.h>
+#include <gui/utils/imageutils.h>
 #include <utils/markdownhtmlrenderer.h>
 #include <utils/webutils.h>
 #include <widgets/editors/markdownvieweradapter.h>
@@ -515,6 +516,7 @@ private slots:
   void typstExportAndCrossCopy();
   void typstProtectedAndUnavailable();
   void typstAdapterBoundary();
+  void typstProtectedSvgRaster();
 };
 
 void TestMarkdownWebJobs::typstAdapterBoundary() {
@@ -1936,10 +1938,143 @@ void TestMarkdownWebJobs::typstExportAndCrossCopy() {
   QCOMPARE(rendered.count(), 1);
 }
 
+void TestMarkdownWebJobs::typstProtectedSvgRaster() {
+  // Isolate the SVG interchange using real native output, not a fabricated reply
+  // or an always-authorized adapter. This fixture grants no protected-note lease.
+  Runtime runtime(false, QColor(31, 83, 157), QUrl::fromLocalFile(webDir() + QLatin1Char('/')),
+                  QString(), QStringLiteral("typst"), true);
+  QVERIFY(runtime.typstRuntime->isAvailable());
+  QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+  QVERIFY(runtime.renderDocument(QStringLiteral("Raster boundary")).error.isEmpty());
+  QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+  vte::TypstMathRenderer renderer(runtime.typstRuntime.get());
+  QSignalSpy finished(&renderer, &vte::TypstMathRenderer::finished);
+  const QStringList formulas{
+      QStringLiteral("frac(a^2, sqrt(b))"),
+      QStringLiteral("#rect(width: 36pt, height: 18pt, "
+                     "fill: gradient.linear(rgb(\"#13579B80\"), rgb(\"#B5371780\")), "
+                     "stroke: (paint: rgb(\"#2A963CC0\"), thickness: 2pt))")};
+  for (int formula = 0; formula < formulas.size(); ++formula) {
+    finished.clear();
+    QVERIFY(renderer.renderToSvg(formulas.at(formula), false, QColor(31, 83, 157, 173)));
+    QTRY_COMPARE_WITH_TIMEOUT(finished.count(), 1, 30000);
+    const auto native = qvariant_cast<vte::TypstMathRenderer::Result>(finished.first().first());
+    QVERIFY2(native.isSuccess(), qPrintable(native.m_error));
+    const QJsonObject reply{{QStringLiteral("svg"), QString::fromUtf8(native.m_svg)},
+                            {QStringLiteral("widthPt"), native.m_sizePt.width()},
+                            {QStringLiteral("heightPt"), native.m_sizePt.height()},
+                            {QStringLiteral("baselinePt"), native.m_baselinePt},
+                            {QStringLiteral("error"), QString()}};
+    const auto serialized = QString::fromUtf8(QJsonDocument(reply).toJson(QJsonDocument::Compact));
+    for (const bool graph : {false, true}) {
+      for (const double opacity : {1.0, 0.5}) {
+        const auto raster = awaitObject(
+            runtime.page, QStringLiteral(R"JS((async () => {
+          const native = %1;
+          const opacity = %2;
+          const graph = %3;
+          const document = new DOMParser().parseFromString(native.svg, 'image/svg+xml');
+          const paints = [['fill', 'fill-opacity'], ['stroke', 'stroke-opacity'],
+            ['stop-color', 'stop-opacity']];
+          const originals = [document.documentElement, ...document.querySelectorAll('svg *')];
+          const expected = [];
+          for (const [index, node] of originals.entries()) {
+            for (const [paint, channel] of paints) {
+              const match = /^#([\da-f]{6})([\da-f]{2})$/i.exec(node.getAttribute(paint) || '');
+              if (!match) continue;
+              const existing = Number(node.getAttribute(channel) || 1);
+              // Exercise multiplication of an existing independent channel opacity
+              // on real native glyph, stroke and gradient geometry.
+              node.setAttribute(channel, existing * opacity);
+              expected.push({index, paint, channel, color:'#' + match[1],
+                alpha:parseInt(match[2], 16) / 255 * existing * opacity});
+            }
+          }
+          native.svg = new XMLSerializer().serializeToString(document.documentElement);
+          const worker = vxcore.getWorker('math');
+          const svg = worker.createTypstSvg(native, 'protected-raster', 'source-only sentinel', 18, false);
+          const nodes = [svg, ...svg.querySelectorAll('*')].filter(node => node.localName !== 'title');
+          const normalized = expected.every(item =>
+            nodes[item.index].getAttribute(item.paint) === item.color
+            && Math.abs(Number(nodes[item.index].getAttribute(item.channel)) - item.alpha) < 1e-9);
+          const genericOpacityUnchanged = nodes.length === originals.length && nodes.every((node, index) =>
+            node.getAttribute('opacity') === originals[index].getAttribute('opacity'));
+          const accessibility = svg.getAttribute('aria-label') === 'source-only sentinel'
+            && svg.querySelector('title').textContent === 'source-only sentinel';
+          const desc = window.document.createElementNS('http://www.w3.org/2000/svg', 'desc');
+          desc.textContent = 'source-only sentinel';
+          svg.appendChild(desc);
+          // Checked native SVG may be attached, but its presentation attributes must
+          // still win over live CSS when the protected raster path sanitizes again.
+          for (const node of nodes) {
+            node.style.fill = 'rgb(255, 0, 255)';
+            node.style.stroke = 'rgb(255, 0, 255)';
+          }
+          vxcore.inplacePreviewContainer.appendChild(svg);
+          try {
+            const previewer = new GraphPreviewer(vxcore, vxcore.inplacePreviewContainer);
+            const result = await previewer.processSvgAsPng(svg,
+              {id:'protected-raster', graph, scale:1.5, pixelRatio:2}, true);
+            return {result, normalized, genericOpacityUnchanged, accessibility,
+              fill:expected.filter(item => item.paint === 'fill').length,
+              stroke:expected.filter(item => item.paint === 'stroke').length,
+              stops:expected.filter(item => item.paint === 'stop-color').length,
+              sourceFree:!result.data.includes('source-only sentinel')
+                && !svg.querySelector('title, desc') && !svg.hasAttribute('aria-label'),
+              viewBox:svg.getAttribute('viewBox') === document.documentElement.getAttribute('viewBox')};
+          } finally {
+            svg.remove();
+          }
+        })())JS")
+                              .arg(serialized, QString::number(opacity),
+                                   graph ? QStringLiteral("true") : QStringLiteral("false")));
+        QVERIFY2(!raster.contains(QStringLiteral("error")),
+                 qPrintable(raster.value(QStringLiteral("error")).toString()));
+        for (const auto &check :
+             {QStringLiteral("normalized"), QStringLiteral("genericOpacityUnchanged"),
+              QStringLiteral("accessibility"), QStringLiteral("sourceFree"),
+              QStringLiteral("viewBox")}) {
+          QVERIFY2(raster.value(check).toBool(), qPrintable(check));
+        }
+        QVERIFY(raster.value(QStringLiteral("stroke")).toInt() > 0);
+        QVERIFY(
+            raster.value(formula == 0 ? QStringLiteral("fill") : QStringLiteral("stops")).toInt() >
+            0);
+        const auto payload = raster.value(QStringLiteral("result")).toObject();
+        QCOMPARE(payload.value(QStringLiteral("format")).toString(), QStringLiteral("svg"));
+        QVERIFY(!payload.value(QStringLiteral("base64")).toBool());
+        QVERIFY(!payload.value(QStringLiteral("needScale")).toBool());
+        QCOMPARE(payload.value(QStringLiteral("logicalWidth")).toInt(),
+                 qRound(native.m_sizePt.width() * 18 / 12 * 1.5));
+        QCOMPARE(payload.value(QStringLiteral("logicalHeight")).toInt(),
+                 qRound(native.m_sizePt.height() * 18 / 12 * 1.5));
+        QByteArray png, mime;
+        QVERIFY(ImageUtils::protectedImageData(
+            payload.value(QStringLiteral("data")).toString().toUtf8(), png, mime));
+        QCOMPARE(mime, QByteArrayLiteral("image/png"));
+        const auto image = QImage::fromData(png, "PNG");
+        QCOMPARE(image.size(),
+                 QSize(static_cast<int>(std::ceil(native.m_sizePt.width() * 18 / 12 * 3)),
+                       static_cast<int>(std::ceil(native.m_sizePt.height() * 18 / 12 * 3))));
+        if (formula == 0)
+          QVERIFY(transparentBorder(image));
+        const auto color = formula == 0 ? QColor(31, 83, 157, qRound(173 * opacity))
+                                        : QColor(42, 150, 60, qRound(192 * opacity));
+        QVERIFY(rgbaPixels(image, color) > 20);
+        if (formula != 0) {
+          QVERIFY(std::abs(image.pixelColor(image.width() / 2, image.height() / 2).alpha() -
+                           qRound(128 * opacity)) <= 2);
+        }
+      }
+    }
+  }
+  QVERIFY(!nativeMathPending(runtime));
+}
+
 void TestMarkdownWebJobs::typstProtectedAndUnavailable() {
   for (const bool shared : {true, false}) {
     Runtime runtime(shared, QColor(31, 83, 157), QUrl::fromLocalFile(webDir() + QLatin1Char('/')),
-                    QString(), QStringLiteral("typst"), true);
+                    QString(), QStringLiteral("mathjax"), true);
     QObject owner;
     QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
     QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstMathReady);
@@ -1981,21 +2116,36 @@ void TestMarkdownWebJobs::typstProtectedAndUnavailable() {
     QCOMPARE(blocked->result.status, WebViewJobResult::Status::Success);
     QCOMPARE(image(blocked->result.value).size(), QSize(560, 32));
     QVERIFY(inkPixels(image(blocked->result.value), QColor(31, 83, 157)) > 30);
+    auto fenceArgs =
+        scopedPreview(QStringLiteral("$$sqrt(x)$$"), QStringLiteral("protected-fence"));
+    fenceArgs.insert(QStringLiteral("language"), QStringLiteral("mathjax"));
+    const auto blockedFence =
+        submit(runtime.session, QStringLiteral("markdown.previewGraph"), fenceArgs, &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(blockedFence->finished, 30000);
+    QCOMPARE(blockedFence->result.status, WebViewJobResult::Status::Success);
+    QCOMPARE(image(blockedFence->result.value).size(), QSize(560, 32));
     QCOMPARE(native.count(), 1); // Only the explicit denied RPC; no preview compiler was reached.
     QCOMPARE(rendered.count(), 1);
     QTRY_VERIFY_WITH_TIMEOUT(runtime.session->isIdle(), 10000);
   }
 
-  for (const bool shared : {true, false}) {
+  for (const auto &[protectedView, shared] : {std::pair{true, true}, std::pair{true, false},
+                                              std::pair{false, true}, std::pair{false, false}}) {
+    // This synthetic profile grants no protected-note lease. Typst is selected,
+    // but a bare protected adapter must fail locally just like an absent runtime.
     Runtime runtime(shared, QColor(31, 83, 157), QUrl::fromLocalFile(webDir() + QLatin1Char('/')),
-                    QString(), QStringLiteral("typst"), false, false);
+                    QString(), QStringLiteral("typst"), protectedView, protectedView);
     QObject owner;
     QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstMathReady);
     QVERIFY(runtime.renderDocument(QStringLiteral("Unavailable $sqrt(x)$ and $frac($ end"))
                 .error.isEmpty());
     QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
     QVERIFY(runtime.adapter->isDocumentReady());
     const auto dom = typstDom(runtime.page);
+    QCOMPARE(evaluate(runtime.page, QStringLiteral("vxcore.getWorker('math').renderer")).toString(),
+             QStringLiteral("typst"));
+    QCOMPARE(native.count(), 2);
     QCOMPARE(dom.value(QStringLiteral("svgs")).toArray().size(), 0);
     QCOMPARE(dom.value(QStringLiteral("workers")).toInt(-1), 0);
     QVERIFY(!dom.value(QStringLiteral("otherEngines")).toBool());
@@ -2009,12 +2159,36 @@ void TestMarkdownWebJobs::typstProtectedAndUnavailable() {
     const auto failed =
         submit(runtime.session, QStringLiteral("markdown.previewMath"),
                scopedPreview(QStringLiteral("$sqrt(x)$"), QStringLiteral("unavailable")), &owner);
+    auto fenceArgs =
+        scopedPreview(QStringLiteral("$$sqrt(x)$$"), QStringLiteral("unavailable-fence"));
+    fenceArgs.insert(QStringLiteral("language"), QStringLiteral("mathjax"));
+    const auto failedFence =
+        submit(runtime.session, QStringLiteral("markdown.previewGraph"), fenceArgs, &owner);
     const auto survivor =
         submit(runtime.session, QStringLiteral("markdown.htmlToMarkdown"),
                source(QStringLiteral("<p><strong>Still available</strong></p>")), &owner);
-    QTRY_VERIFY_WITH_TIMEOUT(failed->finished && survivor->finished, 30000);
+    QTRY_VERIFY_WITH_TIMEOUT(failed->finished && failedFence->finished && survivor->finished,
+                             30000);
     QCOMPARE(failed->result.status, WebViewJobResult::Status::Error);
     QVERIFY(!failed->result.error.isEmpty());
+    QCOMPARE(failedFence->result.status, WebViewJobResult::Status::Error);
+    QVERIFY(!failedFence->result.error.isEmpty());
+    QCOMPARE(native.count(), 4);
+    QVERIFY(!nativeMathPending(runtime));
+    for (const auto &reply : native) {
+      const auto result = reply.at(1).toJsonObject();
+      QVERIFY(!result.value(QStringLiteral("error")).toString().isEmpty());
+      QVERIFY(result.value(QStringLiteral("svg")).toString().isEmpty());
+    }
+    if (protectedView) {
+      for (const auto &language : {QStringLiteral("puml"), QStringLiteral("plantuml")}) {
+        const auto blocked = submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+                                    preview(QStringLiteral("Alice -> Bob"), language), &owner);
+        QTRY_VERIFY_WITH_TIMEOUT(blocked->finished, 30000);
+        QCOMPARE(blocked->result.status, WebViewJobResult::Status::Success);
+        QCOMPARE(image(blocked->result.value).size(), QSize(560, 32));
+      }
+    }
     QCOMPARE(survivor->result.status, WebViewJobResult::Status::Success);
     QCOMPARE(survivor->result.value.toString(), QStringLiteral("**Still available**"));
     QVERIFY(!typstDom(runtime.page).value(QStringLiteral("otherEngines")).toBool());

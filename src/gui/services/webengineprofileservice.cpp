@@ -416,7 +416,8 @@ void WebEngineProfileService::registerProtectedScheme() {
 WebEngineProfileService::ProtectedPage
 WebEngineProfileService::createProtectedProfile(const Buffer2 &p_buffer, QObject *p_parent) {
   ProtectedPage result;
-  if (!p_buffer.isEncrypted() || !p_buffer.acquireProtectedLease()) {
+  const auto authorization = p_buffer.acquireProtectedLease();
+  if (!p_buffer.isEncrypted() || !authorization || !authorization->isCurrent()) {
     return result;
   }
   auto state = std::make_shared<ProtectedPageState>();
@@ -454,6 +455,15 @@ WebEngineProfileService::createProtectedProfile(const Buffer2 &p_buffer, QObject
   result.token = state->token;
   result.nonce = state->nonce;
   result.url = QUrl(QStringLiteral("vxnote://") + state->token + QStringLiteral("/index.html"));
+  result.isAuthorized = [weak = std::weak_ptr<ProtectedPageState>(state),
+                         generation = authorization->generation()]() {
+    const auto current = weak.lock();
+    if (!current || !current->active.load(std::memory_order_acquire)) {
+      return false;
+    }
+    const auto lease = current->buffer.acquireProtectedLease();
+    return lease && lease->isCurrent() && lease->generation() == generation;
+  };
   return result;
 }
 
@@ -471,6 +481,7 @@ void WebEngineProfileService::revokeProtectedProfile(QWebEngineProfile *p_profil
   if (m_protectedProfiles) {
     if (auto *handler = m_protectedProfiles->handlers.value(p_profile)) {
       handler->revoke();
+      emit protectedProfileRevoked(p_profile);
     }
   }
 }

@@ -770,7 +770,8 @@ void MarkdownEditorPage::setupGeneralGroup() {
     m_mathRendererComboBox = WidgetsFactory::createComboBox(this);
     m_mathRendererComboBox->setToolTip(
         tr("Choose how math formulas are rendered in reading mode and previews. Typst uses Typst "
-           "syntax inside existing dollar delimiters; encrypted notes always use KaTeX"));
+           "syntax inside existing dollar delimiters; encrypted notes use Typst when selected, "
+           "otherwise bundled KaTeX"));
     m_mathRendererComboBox->addItem(tr("KaTeX"), QStringLiteral("katex"));
     m_mathRendererComboBox->addItem(tr("MathJax"), QStringLiteral("mathjax"));
     m_mathRendererComboBox->addItem(tr("Typst"), QStringLiteral("typst"));

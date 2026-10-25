@@ -139,7 +139,8 @@ void MarkdownWebJobHost::ensureProtectedSession() {
   auto *profiles = m_services.get<WebEngineProfileService>();
   auto *templates = m_services.get<HtmlTemplateService>();
   auto *theme = m_services.get<ThemeService>();
-  if (!profiles || !templates || !theme) {
+  auto *config = m_services.get<ConfigMgr2>();
+  if (!profiles || !templates || !theme || !config) {
     emit protectedSessionReady(nullptr, {});
     return;
   }
@@ -159,7 +160,8 @@ void MarkdownWebJobHost::ensureProtectedSession() {
   QHash<QString, QByteArray> resources;
   const auto html = templates->protectedMarkdownViewerTemplate(
       runtime.profile.token, runtime.profile.nonce, theme->getCurrentTheme().name(),
-      qGray(background.rgb()) < 128, resources);
+      qGray(background.rgb()) < 128,
+      config->getEditorConfig().getMarkdownEditorConfig().getMathRenderer(), resources);
   for (auto it = resources.cbegin(); it != resources.cend(); ++it) {
     if (it.key().startsWith(QStringLiteral("/app/themes/")) &&
         it.key().endsWith(QStringLiteral("/highlight.css"))) {
@@ -191,6 +193,15 @@ void MarkdownWebJobHost::ensureProtectedSession() {
   auto *channel = new QWebChannel(page);
   auto *adapter = new MarkdownViewerAdapter(m_services, page);
   adapter->setProtectedView(true);
+  auto *profile = runtime.profile.profile;
+  adapter->setProtectedMathAuthorization(runtime.profile.isAuthorized);
+  connect(profiles, &WebEngineProfileService::protectedProfileRevoked, adapter,
+          [adapter, profile](QWebEngineProfile *p_profile) {
+            if (p_profile == profile)
+              adapter->revokeProtectedMath();
+          });
+  connect(profile, &QObject::destroyed, adapter, &MarkdownViewerAdapter::revokeProtectedMath);
+  connect(profiles, &QObject::destroyed, adapter, &MarkdownViewerAdapter::revokeProtectedMath);
   channel->registerObject(QStringLiteral("vxAdapter"), adapter);
   page->setWebChannel(channel);
   runtime.session = new WebViewJobSession(page, channel, page);

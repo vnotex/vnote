@@ -3,9 +3,9 @@ class MathRenderer extends VxWorker {
         super();
         this.name = 'math';
         this.scriptFolderPath = Utils.parentFolder(document.currentScript.src);
-        this.renderer = !window.vxOptions.protectedView
-            && ['mathjax', 'typst'].includes(window.vxOptions.mathRenderer)
-            ? window.vxOptions.mathRenderer : 'katex';
+        this.renderer = window.vxOptions.mathRenderer === 'typst' ? 'typst'
+            : !window.vxOptions.protectedView && window.vxOptions.mathRenderer === 'mathjax'
+                ? 'mathjax' : 'katex';
         this.initialization = null;
         this.mathJaxReady = false;
         this.rasterInitialization = null;
@@ -328,6 +328,29 @@ class MathRenderer extends VxWorker {
                 node.parentNode.replaceChild(group, node);
             }
         }
+        if (window.vxOptions.protectedView) {
+            // Qt's protected SVG rasterizer accepts RGB paints plus channel opacity,
+            // not Typst's eight-digit RGBA paints. Do not fade the entire element:
+            // fill, stroke and gradient stops have independent alpha channels.
+            for (const node of [root, ...Array.from(root.querySelectorAll('*'))]) {
+                for (const [paint, opacity] of [['fill', 'fill-opacity'],
+                    ['stroke', 'stroke-opacity'], ['stop-color', 'stop-opacity']]) {
+                    const match = /^#([\da-f]{6})([\da-f]{2})$/i.exec(node.getAttribute(paint) || '');
+                    if (!match) {
+                        continue;
+                    }
+                    const value = (node.getAttribute(opacity) || '1').trim();
+                    const alpha = value.endsWith('%')
+                        ? Number(value.slice(0, -1)) / 100 : Number(value);
+                    if (!Number.isFinite(alpha)) {
+                        throw new Error('Invalid Typst math paint opacity');
+                    }
+                    node.setAttribute(paint, '#' + match[1]);
+                    node.setAttribute(opacity, parseInt(match[2], 16) / 255
+                        * Math.max(0, Math.min(1, alpha)));
+                }
+            }
+        }
         // No native SVG is ever attached to a live node to obtain computed style.
         DocumentRenderer.sanitizeProtectedSvg(root, false);
         const nodes = [root, ...Array.from(root.querySelectorAll('*'))];
@@ -445,13 +468,21 @@ class MathRenderer extends VxWorker {
                             this.renderKatex(node, check, macros);
                         }
                     } catch (error) {
-                        console.error('failed to render KaTeX', error);
+                        if (window.vxOptions.protectedView) {
+                            console.error('failed to render protected KaTeX');
+                        } else {
+                            console.error('failed to render KaTeX', error);
+                        }
                     }
                 });
                 return this.waitForMathFonts(p_node);
             });
         }).catch((error) => {
-            console.error('failed to render math', this.renderer, error);
+            if (window.vxOptions.protectedView) {
+                console.error('failed to render protected math', this.renderer);
+            } else {
+                console.error('failed to render math', this.renderer, error);
+            }
         }).then(() => this.finishWork(generation));
     }
 
@@ -603,7 +634,7 @@ class MathRenderer extends VxWorker {
 
     // Returns a detached SVG or an attached KaTeX wrapper owned by the preview caller.
     renderText(p_container, p_text, p_callback, p_scope = null) {
-        if (window.vxOptions.protectedView) {
+        if (window.vxOptions.protectedView && this.renderer !== 'typst') {
             p_callback(null);
             return;
         }
@@ -641,7 +672,11 @@ class MathRenderer extends VxWorker {
             }
             return null;
         }).then(p_callback).catch((error) => {
-            console.error('failed to deliver math preview', error);
+            if (window.vxOptions.protectedView) {
+                console.error('failed to deliver protected math preview');
+            } else {
+                console.error('failed to deliver math preview', error);
+            }
         });
     }
 

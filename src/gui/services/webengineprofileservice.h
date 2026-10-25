@@ -8,6 +8,7 @@
 #include <QUrl>
 #include <QtGlobal>
 
+#include <functional>
 #include <memory>
 
 #include "core/noncopyable.h"
@@ -47,6 +48,9 @@ public:
     QString token;
     QString nonce;
     QUrl url;
+    // GUI-thread-only, weakly bound to this profile and its original authorization.
+    // Acquires/releases a current lease for the check, never retains a lease.
+    std::function<bool()> isAuthorized;
   };
 
   // Register before QApplication.
@@ -72,6 +76,10 @@ public:
   static QString webCachePath(const QString &p_root);
 
   static QString webStoragePath(const QString &p_root);
+
+signals:
+  // State is already closed when observers retire their asynchronous work.
+  void protectedProfileRevoked(QWebEngineProfile *p_profile);
 
 private:
   struct ProtectedProfiles;
