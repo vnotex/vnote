@@ -1774,6 +1774,8 @@ if(APPLE)
   set_source_files_properties(test_typstviewwindow_insertion.cpp PROPERTIES LANGUAGE OBJCXX)
   target_link_libraries(test_typstviewwindow_insertion PRIVATE
     "-framework AppKit" "-framework CoreGraphics")
+elseif(WIN32)
+  target_link_libraries(test_typstviewwindow_insertion PRIVATE dwmapi)
 endif()
 target_include_directories(test_typstviewwindow_insertion PRIVATE
   $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>

@@ -5,6 +5,8 @@
 #define NOMINMAX
 #endif
 #include <windows.h>
+
+#include <dwmapi.h>
 #endif
 
 #ifdef Q_OS_MACOS
@@ -1295,9 +1297,16 @@ void TestTypstViewWindowInsertion::resourceRemoteConsent() {
     bool prompted = false;
     QPointer<QMessageBox> question;
     QString error;
+    QElapsedTimer answerDeadline;
+    answerDeadline.start();
+#ifdef Q_OS_MACOS
+    NSTimer *answer = nil;
+    const auto stopAnswer = [&] { [answer invalidate]; };
+#else
     QTimer answer;
-    answer.setInterval(20);
-    connect(&answer, &QTimer::timeout, &answer, [&] {
+    const auto stopAnswer = [&] { answer.stop(); };
+#endif
+    const auto answerQuestion = [&] {
       if (!question) {
         for (auto *box : m_window->findChildren<QMessageBox *>()) {
           if (box->parentWidget() == m_window.get()) {
@@ -1307,6 +1316,16 @@ void TestTypstViewWindowInsertion::resourceRemoteConsent() {
         }
       }
       if (!question) {
+        return;
+      }
+      if (answerDeadline.elapsed() > 8000) {
+        error = QStringLiteral("Timed out answering external consent");
+        qWarning() << error << question.data()
+                   << "visible/native/modality/active:" << question->isVisible()
+                   << question->testAttribute(Qt::WA_DontShowOnScreen) << question->windowModality()
+                   << QApplication::activeModalWidget();
+        stopAnswer();
+        question->reject();
         return;
       }
       const auto choice = accept ? QMessageBox::Yes : QMessageBox::No;
@@ -1325,6 +1344,7 @@ void TestTypstViewWindowInsertion::resourceRemoteConsent() {
         if ([button isKindOfClass:[NSButton class]] &&
             [static_cast<NSButton *>(button) isEnabled]) {
           prompted = true;
+          stopAnswer();
           [static_cast<NSButton *>(button) performClick:nil];
         }
         return;
@@ -1338,15 +1358,35 @@ void TestTypstViewWindowInsertion::resourceRemoteConsent() {
           return;
         }
         prompted = true;
+        stopAnswer();
         button->click();
       } else {
         error = QStringLiteral("Missing external consent button");
+        stopAnswer();
         question->reject();
       }
+    };
+#ifdef Q_OS_MACOS
+    // NSAlert can nest inside a Qt timer/manual event-dispatch callback. Its
+    // native modal loop must not depend on Qt activating another QTimer.
+    answer = [[NSTimer timerWithTimeInterval:0.02
+                                     repeats:YES
+                                       block:^(NSTimer *) {
+                                         answerQuestion();
+                                       }] retain];
+    const auto releaseAnswer = qScopeGuard([&] {
+      stopAnswer();
+      [answer release];
     });
+    for (auto mode : {NSRunLoopCommonModes, NSModalPanelRunLoopMode, NSEventTrackingRunLoopMode})
+      [[NSRunLoop mainRunLoop] addTimer:answer forMode:mode];
+#else
+    answer.setInterval(20);
+    connect(&answer, &QTimer::timeout, &answer, answerQuestion);
     answer.start();
+#endif
     QVERIFY(resourceMenu(target.first, target.second, QStringLiteral("typstOpenLink")).clicked);
-    answer.stop();
+    stopAnswer();
     QVERIFY2(error.isEmpty(), qPrintable(error));
     QVERIFY(prompted);
     QCOMPARE(desktop.opened.size(), accept ? 1 : 0);
@@ -3389,6 +3429,9 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   if (!QTest::qWaitFor([&] { return GetForegroundWindow() == window; }, 1000)) {
     QSKIP("Windows denied foreground input to the native drag fixture");
   }
+  // Win32 activation/exposure precedes the compositor's presented hit-test frame.
+  m_window->repaint();
+  QVERIFY2(SUCCEEDED(DwmFlush()), "Windows could not present the native drag fixture");
   const auto scale = m_window->devicePixelRatioF();
   bool mapped = true;
   const auto nativePoint = [&](const QPoint &point) {
@@ -3419,11 +3462,12 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
                    << m_edit->viewport()->geometry() << "owner/hit/foreground:" << quintptr(window)
                    << quintptr(hit) << quintptr(GetForegroundWindow())
                    << "hit class/pid/child:" << QString::fromWCharArray(hitClass) << hitProcess
-                   << bool(IsChild(window, hit)) << "Qt hit:" << qtHit.data();
+                   << bool(IsChild(window, hit)) << "Qt hit/wanted:" << qtHit.data()
+                   << m_edit->viewport();
     return state;
   };
   QVERIFY2(mapped && virtualDesktop.contains(globalStart) && virtualDesktop.contains(globalEnd) &&
-               hit && hitProcess == GetCurrentProcessId(),
+               hit && hitProcess == GetCurrentProcessId() && qtHit == m_edit->viewport(),
            qPrintable(targetState()));
   const auto motion = [&](const QPoint &point) {
     INPUT event = {};
@@ -3508,15 +3552,15 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   const std::array<QPoint, 4> positions = {start, threshold, end, end};
   std::array<NSPoint, 4> windowPositions;
   std::array<CGPoint, 4> pointerPositions;
+  const auto screenTop = NSMaxY([[[NSScreen screens] firstObject] frame]);
   for (size_t i = 0; i < positions.size(); ++i) {
-    const auto local = m_edit->viewport()->mapTo(m_window.get(), positions[i]);
-    const auto bounds = [nativeView bounds];
-    const auto point = NSMakePoint(NSMinX(bounds) + local.x(), [nativeView isFlipped]
-                                                                   ? NSMinY(bounds) + local.y()
-                                                                   : NSMaxY(bounds) - local.y());
-    windowPositions[i] = [nativeView convertPoint:point toView:nil];
     const auto global = m_edit->viewport()->mapToGlobal(positions[i]);
     pointerPositions[i] = CGPointMake(global.x(), global.y());
+    // Quartz and Qt use top-left global coordinates; AppKit uses bottom-left.
+    // Convert the same screen point, not QWidget-local coordinates into an
+    // NSView whose bounds can include the native titlebar.
+    windowPositions[i] =
+        [nativeWindow convertPointFromScreen:NSMakePoint(global.x(), screenTop - global.y())];
   }
   const auto windowNumber = [nativeWindow windowNumber];
   const auto previousPointer = QCursor::pos();

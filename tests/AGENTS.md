@@ -211,7 +211,10 @@ until the resource-menu operation returns. A Cocoa native alert's QWidget is a h
 mirror (`WA_DontShowOnScreen`), not its interactive surface: click the real NSButton's
 Yes/No tag on the active native alert, or the parent's attached sheet for WindowModal.
 Never re-show or click that dummy QWidget during native modal startup. The QWidget fallback
-requires the matching visible active modal and its visible expected button.
+requires the matching visible active modal and its visible expected button. Cocoa uses
+an `NSTimer` in common/modal/tracking run-loop modes: a native alert nested inside manual
+Qt event dispatch can suppress QTimer activation. Invalidate before answering and on scope
+exit; the same native timer owns the eight-second failure/reject deadline.
 
 **Native WebEngine raster tests:** on macOS, `test_mindmapexport`, `test_htmlpdfexporter`,
 `test_markdownwebjobs` and `test_webviewservice` use `cocoa` and the matching Qt kit's
@@ -232,12 +235,16 @@ without depending on GUI timers: Windows OLE and Cocoa tracking loops can starve
 Use joined native-input workers, restoring the cursor and preventing late input from
 reaching the next case; Cocoa retains app-local NSEvents rather than global HID input.
 Windows drag motion uses non-coalesced `SendInput` records in normalized virtual-desktop
-coordinates, after observing the source pointer position. Native workers wait for the press
+coordinates, after repainting, completing `DwmFlush`, and observing the source pointer
+position. Require the hit widget to be the source viewport, not merely the same process.
+Native workers wait for the press
 and threshold mouse move before sending the destination; waiting for OLE drag entry first
 can deadlock. Destination arrival can be DragEnter or DragMove. Release follows arrival or
 the bounded deadline; workers always attempt release and restore the saved pointer. Cocoa
 creates timestamped NSEvents at dispatch, without warping ahead of delivered source events.
-Create native peers before measuring drag coordinates.
+Create native peers before measuring drag coordinates. Derive Cocoa's Quartz pointer and
+AppKit window event from the same Qt global point, converting through the primary screen
+and `-[NSWindow convertPointFromScreen:]`; QWidget-local and NSView bounds have different origins.
 Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Keep the normal
 QtTest crash handler. Build the host Typst module's `test_typstviewwindow_insertion` executable
 once, then select `^test_typstviewwindow_(insertion|cleanup|resources)$` in CTest. These serial
