@@ -304,6 +304,16 @@ class GraphPreviewer {
             if (lang === 'mathjax') {
                 return this.renderMath(request, p_args.source);
             }
+            if (lang === 'typst') {
+                const svg = await this.vxcore.getWorker('typst').requestMarkup(
+                    'preview:' + request.scope, p_args.source, request.container);
+                this.perfNoteRender('webjobs', request.id);
+                try {
+                    return await this.processSvgAsPng(svg, request, true);
+                } finally {
+                    svg.remove();
+                }
+            }
             const name = lang === 'flow' || lang === 'flowchart' ? 'flowchartjs'
                 : lang === 'mermaid' || lang === 'wavedrom' ? lang : null;
             if (name) {
@@ -399,19 +409,18 @@ class GraphPreviewer {
         }
     }
 
-    async processSvgAsPng(p_svgNode, p_request, p_typstMath = false) {
+    async processSvgAsPng(p_svgNode, p_request, p_typst = false) {
         if (p_request.graph) {
             this.perfNoteRasterStart('webjobs', p_request.id);
         }
         if (window.vxOptions.protectedView) {
-            if (p_typstMath) {
-                // The reader keeps source accessibility text. Native preview payloads
-                // contain only painted math, including for a mathjax fenced graph job.
+            if (p_typst) {
+                // Native preview payloads contain only painted Typst content.
                 p_svgNode.querySelectorAll('title, desc').forEach(node => node.remove());
             }
             // Also strips source-only aria metadata. Other protected graphs still
             // need their live computed styles copied before CSS is removed.
-            DocumentRenderer.sanitizeProtectedSvg(p_svgNode, !p_typstMath);
+            DocumentRenderer.sanitizeProtectedSvg(p_svgNode, !p_typst);
             const viewBox = p_svgNode.viewBox.baseVal;
             const width = p_svgNode.width.baseVal.value || viewBox.width;
             const height = p_svgNode.height.baseVal.value

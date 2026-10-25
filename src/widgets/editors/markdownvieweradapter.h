@@ -17,7 +17,7 @@
 #include <core/global.h>
 
 namespace vte {
-class TypstMathRenderer;
+class TypstFragmentRenderer;
 }
 
 namespace vnotex {
@@ -67,9 +67,9 @@ public:
   void setProtectedView(bool p_protected);
 
   // Native-only capability binding. The GUI-thread predicate must not emit signals
-  // or process events. Missing/revoked authorization denies protected native math.
-  void setProtectedMathAuthorization(std::function<bool()> p_authorize);
-  void revokeProtectedMath();
+  // or process events. Missing/revoked authorization denies protected native Typst rendering.
+  void setProtectedTypstAuthorization(std::function<bool()> p_authorize);
+  void revokeProtectedTypst();
 
   // Native render token; independent of buffer and editor revisions.
   void setRenderedHtml(QString p_generation, const QString &p_html, int p_lineNumber = -1);
@@ -155,7 +155,10 @@ public slots:
   void renderTypstMath(const QString &p_id, const QString &p_scope, const QString &p_source,
                        bool p_display, const QString &p_foreground);
 
-  void cancelTypstMath(const QString &p_scope);
+  void renderTypstBlock(const QString &p_id, const QString &p_scope, const QString &p_source,
+                        const QString &p_foreground);
+
+  void cancelTypst(const QString &p_scope);
 
   // Web side requests to toggle the task list item at 0-based source line
   // @p_lineNumber to @p_checked.
@@ -189,7 +192,7 @@ signals:
   void graphRenderDataReady(quint64 p_id, quint64 p_index, const QString &p_format,
                             const QString &p_data, bool p_success);
 
-  void typstMathReady(const QString &p_id, const QJsonObject &p_result);
+  void typstReady(const QString &p_id, const QJsonObject &p_result);
 
   // The toggle of the task list item at 0-based source line @p_lineNumber was
   // rejected; the web side should restore the checkbox state.
@@ -226,7 +229,7 @@ signals:
   void protectedLinkRequested(const QString &p_url);
 
 private:
-  struct TypstMathRequest {
+  struct TypstRequest {
     QString m_id;
     QString m_scope;
     QString m_source;
@@ -234,13 +237,16 @@ private:
     quint64 m_resetGeneration = 0;
     qsizetype m_sourceBytes = 0;
     bool m_display = false;
+    bool m_markup = false;
   };
 
-  bool isTypstMathAuthorized() const;
-  void startNextTypstMath();
+  void enqueueTypst(const QString &p_id, const QString &p_scope, const QString &p_source,
+                    bool p_display, const QString &p_foreground, bool p_markup);
+  bool isTypstAuthorized() const;
+  void startNextTypst();
 
   // Empty scope retires all work, or only reader work when p_readersOnly is true.
-  void retireTypstMath(const QString &p_scope = QString(), bool p_readersOnly = false);
+  void retireTypst(const QString &p_scope = QString(), bool p_readersOnly = false);
 
   void dispatchHtml(QString p_generation);
 
@@ -249,7 +255,7 @@ private:
   void scrollToAnchor(const QString &p_anchor);
 
   bool m_protectedView = false;
-  std::function<bool()> m_protectedMathAuthorization;
+  std::function<bool()> m_protectedTypstAuthorization;
 
   // Never reset the sequence on page reload; delayed web replies must stay obsolete.
   quint64 m_imageViewSequence = 0;
@@ -283,15 +289,15 @@ private:
   // Targets supported by cross copy. Set by web.
   QStringList m_crossCopyTargets;
 
-  vte::TypstMathRenderer *m_typstMathRenderer = nullptr;
-  std::optional<TypstMathRequest> m_typstMathActive;
-  QList<TypstMathRequest> m_typstMathQueue;
+  vte::TypstFragmentRenderer *m_typstRenderer = nullptr;
+  std::optional<TypstRequest> m_typstActive;
+  QList<TypstRequest> m_typstQueue;
   // Includes detached cancellations until each one's terminal signal is emitted.
-  QSet<QString> m_typstMathIds;
-  qsizetype m_typstMathQueuedBytes = 0;
+  QSet<QString> m_typstIds;
+  qsizetype m_typstQueuedBytes = 0;
   // A cancelled owner can be gone while the facade still owes its terminal callback.
-  bool m_typstMathInFlight = false;
-  bool m_retiringTypstMath = false;
+  bool m_typstInFlight = false;
+  bool m_retiringTypst = false;
 
   ServiceLocator *m_services = nullptr; // Non-owning; set by ServiceLocator-aware constructor
 };

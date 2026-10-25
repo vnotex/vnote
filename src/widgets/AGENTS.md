@@ -439,7 +439,7 @@ can exceed the Markdown input. Measure first paint and full completion separatel
 microbenchmarks are not end-to-end speedups. Existing image-maintenance scans and synchronous
 editor layout/projection work are outside the native HTML job and can still dominate latency.
 
-`MarkdownViewerAdapter` admits isolated Typst math through the application-owned VTextEdit
+`MarkdownViewerAdapter` admits isolated Typst math and markup through the application-owned VTextEdit
 runtime, never a per-view compiler process. `reader:<documentGeneration>` requests require
 the current reader token; `preview:<editorScope>` requests are independent of reader content.
 One native facade flight plus 32 waiting requests and 2 MiB queued UTF-8 bound admission.
@@ -457,14 +457,28 @@ intrinsic em geometry and a top-relative baseline; previews pin pixels before th
 SVG-to-PNG path. Ordinary HTML keeps self-contained SVG; raster exports and cross-copy retain
 alignment. Existing protected export and clipboard restrictions are unchanged.
 
+Fenced `typst` blocks always compile full Typst markup, independently of the Math renderer
+preference. Each fence is self-contained, with compact transparent page defaults; authored page
+settings and all pages are preserved in one merged SVG. The native `TypstFragmentRenderer` shares
+one queue/lifecycle across math and markup. Files/packages/images remain unavailable; link
+annotations become inert without dropping visible text. Failed blocks retain code and diagnostics.
+
+The mandatory `typst.js` worker owns native transport/SVG normalization and a sequential block
+pass; MathRenderer looks it up lazily for native math. Load it after configured dependencies and
+before job providers in readers and exporters, including old resource lists. Protected templates
+bundle it under the existing nonce/resource policy. `PreviewHelper::Typst` belongs to code-block
+previews, not the math toggle. Scope release cancels both native kinds regardless of math setting.
+Block export flattens its SVG when math or diagram rasterization is requested; block accessibility
+metadata never embeds the complete source program. HTML and generic SVG cross-copy remain portable.
+
 Protected Typst admission, dispatch and delivery require the profile's weak authorization
 capability and original lease generation. Checks acquire/drop a current lease; no lease follows
 native work. Bind before loading either the reader or per-note EditOnly host. Profile revocation
-closes state before signalling adapters; profile/service destruction also retires math. Protected
+closes state before signalling adapters; profile/service destruction also retires Typst work. Protected
 jobs never use the ordinary shared page. Sensitive native calls purge current shared memoization
 on actual return, not logical cancellation; this is not a heap-erasure guarantee.
 
-Protected in-place math (including mathjax fences) uses the existing native passive SVG-to-PNG
+Protected in-place Typst (math, mathjax fences and markup) uses the existing native passive SVG-to-PNG
 validator, without widening CSP or loading SVG data/blob images in Chromium. Preserve Typst paint
 attributes, normalize 8-digit colors into separate fill/stroke/stop opacities for QtSvg, and drop
 source-only title/description/accessibility metadata before rasterization. Other graph policy

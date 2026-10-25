@@ -194,14 +194,14 @@ void MarkdownWebJobHost::ensureProtectedSession() {
   auto *adapter = new MarkdownViewerAdapter(m_services, page);
   adapter->setProtectedView(true);
   auto *profile = runtime.profile.profile;
-  adapter->setProtectedMathAuthorization(runtime.profile.isAuthorized);
+  adapter->setProtectedTypstAuthorization(runtime.profile.isAuthorized);
   connect(profiles, &WebEngineProfileService::protectedProfileRevoked, adapter,
           [adapter, profile](QWebEngineProfile *p_profile) {
             if (p_profile == profile)
-              adapter->revokeProtectedMath();
+              adapter->revokeProtectedTypst();
           });
-  connect(profile, &QObject::destroyed, adapter, &MarkdownViewerAdapter::revokeProtectedMath);
-  connect(profiles, &QObject::destroyed, adapter, &MarkdownViewerAdapter::revokeProtectedMath);
+  connect(profile, &QObject::destroyed, adapter, &MarkdownViewerAdapter::revokeProtectedTypst);
+  connect(profiles, &QObject::destroyed, adapter, &MarkdownViewerAdapter::revokeProtectedTypst);
   channel->registerObject(QStringLiteral("vxAdapter"), adapter);
   page->setWebChannel(channel);
   runtime.session = new WebViewJobSession(page, channel, page);

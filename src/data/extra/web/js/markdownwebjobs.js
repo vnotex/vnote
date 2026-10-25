@@ -24,9 +24,18 @@
         return graph ? preview().previewGraph(args, context) : preview().previewMath(args, context);
     };
 
-    jobs.registerHandler('markdown.previewGraph', (args, context) =>
-        args.language === 'mathjax' ? mathPreview(args, context, true)
-            : preview().previewGraph(args, context));
+    jobs.registerHandler('markdown.previewGraph', async (args, context) => {
+        if (args.language === 'mathjax') {
+            return mathPreview(args, context, true);
+        }
+        if (args.language === 'typst') {
+            await core().getWorker('typst').initializeNative();
+            if (context.cancelled) {
+                throw new Error('Preview cancelled');
+            }
+        }
+        return preview().previewGraph(args, context);
+    });
     jobs.registerHandler('markdown.previewMath', (args, context) =>
         mathPreview(args, context, false));
 
@@ -78,6 +87,7 @@
     // Internal lifecycle operation, serialized after any cancelled render drains.
     jobs.registerHandler('markdown.releaseScope', (args) => {
         core().getWorker('math').releasePreviewScope(args.scope);
+        core().getWorker('typst').cancelScope('preview:' + args.scope);
         return null;
     });
 

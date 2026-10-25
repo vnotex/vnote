@@ -93,7 +93,8 @@ void PreviewHelper::MathBlockPreviewData::zoomInplacePreview(qreal p_zoomRatio) 
 PreviewHelper::PreviewHelper(vte::VMarkdownEditor *p_editor, QObject *p_parent)
     : QObject(p_parent),
       m_inplacePreviewSources(SourceFlag::FlowChart | SourceFlag::Mermaid | SourceFlag::WaveDrom |
-                              SourceFlag::PlantUml | SourceFlag::Graphviz | SourceFlag::Math),
+                              SourceFlag::PlantUml | SourceFlag::Graphviz | SourceFlag::Math |
+                              SourceFlag::Typst),
       m_codeBlockCache(100, nullptr), m_mathBlockCache(100, nullptr) {
   setMarkdownEditor(p_editor);
 
@@ -469,6 +470,9 @@ bool PreviewHelper::checkPreviewSourceLang(SourceFlag p_flag, const QString &p_l
 
   case SourceFlag::Math:
     return p_lang == QStringLiteral("mathjax");
+
+  case SourceFlag::Typst:
+    return p_lang == QStringLiteral("typst");
   }
 
   return false;
@@ -487,7 +491,9 @@ QPair<bool, bool> PreviewHelper::isLangNeedPreview(const QString &p_lang) const 
       (isInplacePreviewSourceEnabled(SourceFlag::Graphviz) &&
        checkPreviewSourceLang(SourceFlag::Graphviz, p_lang)) ||
       (isInplacePreviewSourceEnabled(SourceFlag::Math) &&
-       checkPreviewSourceLang(SourceFlag::Math, p_lang))) {
+       checkPreviewSourceLang(SourceFlag::Math, p_lang)) ||
+      (isInplacePreviewSourceEnabled(SourceFlag::Typst) &&
+       checkPreviewSourceLang(SourceFlag::Typst, p_lang))) {
     res.first = res.second = true;
   }
   return res;
@@ -505,7 +511,8 @@ void PreviewHelper::inplacePreviewCodeBlock(int p_blockPreviewIdx) {
       checkPreviewSourceLang(SourceFlag::Mermaid, blockData.m_lang) ||
       checkPreviewSourceLang(SourceFlag::PlantUml, blockData.m_lang) ||
       (checkPreviewSourceLang(SourceFlag::Graphviz, blockData.m_lang) && m_webGraphvizEnabled) ||
-      checkPreviewSourceLang(SourceFlag::Math, blockData.m_lang)) {
+      checkPreviewSourceLang(SourceFlag::Math, blockData.m_lang) ||
+      checkPreviewSourceLang(SourceFlag::Typst, blockData.m_lang)) {
     emit graphPreviewRequested(p_blockPreviewIdx, m_codeBlockTimeStamp, blockData.m_lang,
                                vte::TextUtils::removeCodeBlockFence(blockData.m_text),
                                m_codeBlockRequestZoomRatio);

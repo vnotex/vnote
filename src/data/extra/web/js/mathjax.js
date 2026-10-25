@@ -11,8 +11,6 @@ class MathRenderer extends VxWorker {
         this.rasterInitialization = null;
         this.mathJaxPreviewScopes = null;
         this.katexId = 0;
-        this.typstId = 0;
-        this.typstRequests = new Map();
         this.typstReaderScope = null;
         this.langs = ['mathjax'];
     }
@@ -57,7 +55,7 @@ class MathRenderer extends VxWorker {
             const scope = this.typstReaderScope;
             this.typstReaderScope = null;
             if (scope) {
-                this.cancelTypstScope(scope);
+                this.vxcore.getWorker('typst').cancelScope(scope);
             }
             return;
         }
@@ -108,10 +106,7 @@ class MathRenderer extends VxWorker {
         if (!this.initialization) {
             this.initialization = Promise.resolve().then(() => {
                 if (this.renderer === 'typst') {
-                    if (!window.vxTypstMathBridge) {
-                        throw new Error('Native Typst math bridge unavailable');
-                    }
-                    return;
+                    return this.vxcore.getWorker('typst').initializeNative();
                 }
                 if (this.renderer === 'mathjax') {
                     window.MathJax = {
@@ -198,209 +193,6 @@ class MathRenderer extends VxWorker {
         return this.initialization;
     }
 
-    // Register before initialization: releasing a scope also retires requests
-    // still waiting for the renderer, without ever submitting them to native code.
-    requestTypstMath(p_scope, p_source, p_display, p_container, p_reading = false) {
-        const id = 'typst-' + this.id + '-' + (++this.typstId);
-        return new Promise((resolve, reject) => {
-            const request = { scope: p_scope, source: p_source, reading: p_reading, resolve, reject };
-            this.typstRequests.set(id, request);
-            this.initialize().then(() => {
-                if (this.typstRequests.get(id) !== request) {
-                    return;
-                }
-                // Editor previews inherit the reader's math font and foreground,
-                // not the offscreen helper's default font or available width.
-                const style = window.getComputedStyle(p_reading ? p_container : this.vxcore.contentContainer);
-                request.fontSize = parseFloat(style.fontSize);
-                if (!Number.isFinite(request.fontSize) || request.fontSize <= 0) {
-                    throw new Error('Invalid Typst math font size');
-                }
-                const foreground = MathRenderer.typstForeground(style.color);
-                window.vxTypstMathBridge.renderTypstMath(id, p_scope, p_source, p_display, foreground);
-            }).catch((error) => {
-                if (this.typstRequests.delete(id)) {
-                    reject(error);
-                }
-            });
-        });
-    }
-
-    typstMathReady(p_id, p_result) {
-        const request = this.typstRequests.get(p_id);
-        if (!request) {
-            return;
-        }
-        this.typstRequests.delete(p_id);
-        try {
-            if (!p_result || typeof p_result.error !== 'string') {
-                throw new Error('Invalid Typst math reply');
-            }
-            if (p_result.error) {
-                throw new Error(p_result.error);
-            }
-            request.resolve(this.createTypstSvg(p_result, p_id, request.source,
-                request.fontSize, request.reading));
-        } catch (error) {
-            request.reject(error);
-        }
-    }
-
-    cancelTypstScope(p_scope) {
-        for (const [id, request] of this.typstRequests) {
-            if (request.scope === p_scope) {
-                this.typstRequests.delete(id);
-                request.reject(new Error('Typst math rendering was cancelled'));
-            }
-        }
-        // Clear JS ownership before a bridge callback can settle the old ID.
-        if (window.vxTypstMathBridge) {
-            window.vxTypstMathBridge.cancelTypstMath(p_scope);
-        }
-    }
-
-    static typstForeground(p_color) {
-        // Computed sRGB colors preserve their channels even at fractional alpha;
-        // rasterizing those first would introduce premultiplication rounding.
-        const match = /^rgba?\(([^)]+)\)$/.exec(p_color);
-        let bytes;
-        if (match) {
-            const channels = match[1].trim().split(/[\s,/]+/).map(Number);
-            if ((channels.length !== 3 && channels.length !== 4)
-                || !channels.every(Number.isFinite)) {
-                throw new Error('Invalid Typst math foreground');
-            }
-            bytes = channels.slice(0, 3);
-            bytes.push((channels.length === 4 ? channels[3] : 1) * 255);
-        } else {
-            // Chromium also supports computed colors in non-sRGB color spaces.
-            const canvas = document.createElement('canvas');
-            canvas.width = canvas.height = 1;
-            const context = canvas.getContext('2d');
-            context.fillStyle = p_color;
-            context.fillRect(0, 0, 1, 1);
-            bytes = Array.from(context.getImageData(0, 0, 1, 1).data);
-        }
-        return '#' + bytes.map(value => Math.round(Math.max(0, Math.min(255, value)))
-            .toString(16).padStart(2, '0')).join('').toUpperCase();
-    }
-
-    createTypstSvg(p_result, p_id, p_source, p_fontSize, p_reading) {
-        const { widthPt, heightPt, baselinePt, svg } = p_result;
-        if (![widthPt, heightPt, baselinePt].every(Number.isFinite)
-            || widthPt <= 0 || heightPt <= 0 || widthPt > 16384 || heightPt > 16384
-            || typeof svg !== 'string' || !svg.length || svg.length > 8 * 1024 * 1024
-            || new TextEncoder().encode(svg).length > 8 * 1024 * 1024) {
-            throw new Error('Invalid Typst math SVG geometry or size');
-        }
-        const xml = new DOMParser().parseFromString(svg, 'image/svg+xml');
-        const root = xml.documentElement;
-        const svgNamespace = 'http://www.w3.org/2000/svg';
-        if (xml.doctype || xml.querySelector('parsererror') || !root
-            || root.namespaceURI !== svgNamespace || root.localName !== 'svg') {
-            throw new Error('Invalid Typst math SVG document');
-        }
-        const viewBox = (root.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
-        if (viewBox.length !== 4 || !viewBox.every(Number.isFinite)
-            || viewBox[2] <= 0 || viewBox[3] <= 0) {
-            throw new Error('Invalid Typst math SVG viewport');
-        }
-        for (const node of Array.from(root.querySelectorAll('*'))) {
-            // Color glyph fonts may introduce images without a native FrameItem::Image.
-            // Never publish a silently incomplete equation after stripping an image.
-            if (node.localName === 'image') {
-                throw new Error('Typst math SVG images are unsupported');
-            }
-            if (node.namespaceURI === svgNamespace && node.localName === 'symbol') {
-                if (!node.id || node.getAttribute('overflow') !== 'visible'
-                    || ['viewBox', 'width', 'height'].some(attr => node.hasAttribute(attr))) {
-                    throw new Error('Unsupported Typst math glyph viewport');
-                }
-                // Native glyph symbols have no viewport. A group preserves their
-                // geometry without relying on overflow, which the sanitizer removes.
-                const group = xml.createElementNS(svgNamespace, 'g');
-                for (const attr of Array.from(node.attributes)) {
-                    group.setAttributeNS(attr.namespaceURI, attr.name, attr.value);
-                }
-                while (node.firstChild) {
-                    group.appendChild(node.firstChild);
-                }
-                node.parentNode.replaceChild(group, node);
-            }
-        }
-        if (window.vxOptions.protectedView) {
-            // Qt's protected SVG rasterizer accepts RGB paints plus channel opacity,
-            // not Typst's eight-digit RGBA paints. Do not fade the entire element:
-            // fill, stroke and gradient stops have independent alpha channels.
-            for (const node of [root, ...Array.from(root.querySelectorAll('*'))]) {
-                for (const [paint, opacity] of [['fill', 'fill-opacity'],
-                    ['stroke', 'stroke-opacity'], ['stop-color', 'stop-opacity']]) {
-                    const match = /^#([\da-f]{6})([\da-f]{2})$/i.exec(node.getAttribute(paint) || '');
-                    if (!match) {
-                        continue;
-                    }
-                    const value = (node.getAttribute(opacity) || '1').trim();
-                    const alpha = value.endsWith('%')
-                        ? Number(value.slice(0, -1)) / 100 : Number(value);
-                    if (!Number.isFinite(alpha)) {
-                        throw new Error('Invalid Typst math paint opacity');
-                    }
-                    node.setAttribute(paint, '#' + match[1]);
-                    node.setAttribute(opacity, parseInt(match[2], 16) / 255
-                        * Math.max(0, Math.min(1, alpha)));
-                }
-            }
-        }
-        // No native SVG is ever attached to a live node to obtain computed style.
-        DocumentRenderer.sanitizeProtectedSvg(root, false);
-        const nodes = [root, ...Array.from(root.querySelectorAll('*'))];
-        const ids = new Map();
-        for (const node of nodes) {
-            if (node.hasAttribute('id')) {
-                const oldId = node.getAttribute('id');
-                if (ids.has(oldId)) {
-                    throw new Error('Duplicate Typst math SVG identifier');
-                }
-                const newId = node === root ? p_id : p_id + '-' + oldId;
-                ids.set(oldId, newId);
-                node.setAttribute('id', newId);
-            }
-        }
-        const localReference = (id) => {
-            if (!ids.has(id)) {
-                throw new Error('Unresolved Typst math SVG reference');
-            }
-            return '#' + ids.get(id);
-        };
-        for (const node of nodes) {
-            for (const attr of Array.from(node.attributes)) {
-                let value = attr.value;
-                if (attr.name === 'href' || attr.name === 'xlink:href') {
-                    value = localReference(value.substring(1));
-                } else {
-                    value = value.replace(/url\(#([\w:.-]+)\)/g,
-                        (match, id) => 'url(' + localReference(id) + ')');
-                }
-                if (value !== attr.value) {
-                    node.setAttributeNS(attr.namespaceURI, attr.name, value);
-                }
-            }
-        }
-        root.setAttribute('id', p_id);
-        const result = document.importNode(root, true);
-        result.setAttribute('class', 'typst-math');
-        result.setAttribute('aria-label', p_source);
-        const title = document.createElementNS(svgNamespace, 'title');
-        title.textContent = p_source;
-        result.insertBefore(title, result.firstChild);
-        const scale = (p_reading ? 1 : p_fontSize) / 12;
-        const unit = p_reading ? 'em' : '';
-        result.setAttribute('width', widthPt * scale + unit);
-        result.setAttribute('height', heightPt * scale + unit);
-        result.style.display = 'inline-block';
-        result.style.verticalAlign = (baselinePt - heightPt) * scale + (p_reading ? 'em' : 'px');
-        return result;
-    }
 
     isCurrentTypstReader(p_generation, p_scope) {
         return this.isCurrentWork(p_generation) && this.typstReaderScope === p_scope
@@ -419,7 +211,7 @@ class MathRenderer extends VxWorker {
                 continue;
             }
             try {
-                const svg = await this.requestTypstMath(scope, check.text, check.display, node, true);
+                const svg = await this.vxcore.getWorker('typst').requestMath(scope, check.text, check.display, node, true);
                 if (!this.isCurrentTypstReader(p_generation, scope)) {
                     return;
                 }
@@ -616,9 +408,6 @@ class MathRenderer extends VxWorker {
     }
 
     releasePreviewScope(p_scope) {
-        if (this.renderer === 'typst') {
-            this.cancelTypstScope('preview:' + p_scope);
-        }
         if (this.mathJaxPreviewScopes) {
             const context = this.mathJaxPreviewScopes.get(p_scope);
             if (context) {
@@ -643,7 +432,7 @@ class MathRenderer extends VxWorker {
         // The Typst request must own its scope before initialization can yield.
         const renderTypst = () => {
             const check = this.removeTextGuard(p_text);
-            return check ? this.requestTypstMath('preview:' + p_scope, check.text,
+            return check ? this.vxcore.getWorker('typst').requestMath('preview:' + p_scope, check.text,
                 check.display, p_container) : Promise.resolve(null);
         };
         return (typst ? renderTypst() : this.initialize().then(() => {

@@ -346,7 +346,8 @@ void HtmlTemplateService::updateMarkdownViewerTemplate(const MarkdownEditorConfi
   // Required viewer features, after configured dependencies even for older resource lists.
   const auto scriptPlaceholder = QStringLiteral("<!-- VX_SCRIPTS_PLACEHOLDER -->");
   const auto jobBridge = fillScriptTag(resolveConfigFile(QStringLiteral("web/js/webviewjobs.js")));
-  QString scripts = fillScriptTag(resolveConfigFile(QStringLiteral("web/js/markdownwebjobs.js")));
+  QString scripts = fillScriptTag(resolveConfigFile(QStringLiteral("web/js/typst.js")));
+  scripts += fillScriptTag(resolveConfigFile(QStringLiteral("web/js/markdownwebjobs.js")));
   scripts += fillScriptTag(resolveConfigFile(QStringLiteral("web/js/sectionnumber.js")));
   for (const auto &path : c_presentationScripts) {
     scripts += fillScriptTag(resolveConfigFile(path));
@@ -479,6 +480,7 @@ QString HtmlTemplateService::protectedMarkdownViewerTemplate(
                          QStringLiteral("web/js/turndown.js"),
                          QStringLiteral("web/js/mark.js/mark.min.js"),
                          QStringLiteral("web/js/markjs.js"),
+                         QStringLiteral("web/js/typst.js"),
                          QStringLiteral("web/js/markdownwebjobs.js")};
   scripts += c_presentationScripts;
   const QStringList lazyScripts = {QStringLiteral("web/js/prism/prism.min.js"),

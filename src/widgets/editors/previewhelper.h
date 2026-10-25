@@ -36,7 +36,8 @@ public:
     WaveDrom = 0x4,
     PlantUml = 0x8,
     Graphviz = 0x10,
-    Math = 0x20
+    Math = 0x20,
+    Typst = 0x40
   };
   Q_DECLARE_FLAGS(SourceFlags, SourceFlag);
 

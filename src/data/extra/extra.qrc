@@ -43,6 +43,7 @@
         <file>web/js/wavedrom/wavedrom.min.js</file>
         <file>web/js/wavedrom.js</file>
         <file>web/js/mathjax.js</file>
+        <file>web/js/typst.js</file>
         <!-- KaTeX 0.16.22 and html-to-image 1.11.13; upstream runtime files and licenses -->
         <file>web/js/katex/fonts/KaTeX_AMS-Regular.ttf</file>
         <file>web/js/katex/fonts/KaTeX_AMS-Regular.woff</file>

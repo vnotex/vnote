@@ -44,7 +44,7 @@
 #include <gui/services/webviewjobs.h>
 #include <gui/utils/imageutils.h>
 #include <utils/markdownhtmlrenderer.h>
-#include <vtextedit/typstmathrenderer.h>
+#include <vtextedit/typstfragmentrenderer.h>
 #include <vtextedit/typstruntime.h>
 #include <widgets/editors/markdownvieweradapter.h>
 
@@ -85,16 +85,16 @@ struct ProtectedMathPage {
     auto *channel = new QWebChannel(page.get());
     adapter = new MarkdownViewerAdapter(p_services, page.get());
     adapter->setProtectedView(true);
-    adapter->setProtectedMathAuthorization(grant.isAuthorized);
+    adapter->setProtectedTypstAuthorization(grant.isAuthorized);
     QObject::connect(&service, &WebEngineProfileService::protectedProfileRevoked, adapter,
                      [target = adapter, identity = profile.get()](QWebEngineProfile *p_profile) {
                        if (p_profile == identity)
-                         target->revokeProtectedMath();
+                         target->revokeProtectedTypst();
                      });
     QObject::connect(profile.get(), &QObject::destroyed, adapter,
-                     &MarkdownViewerAdapter::revokeProtectedMath);
+                     &MarkdownViewerAdapter::revokeProtectedTypst);
     QObject::connect(&service, &QObject::destroyed, adapter,
-                     &MarkdownViewerAdapter::revokeProtectedMath);
+                     &MarkdownViewerAdapter::revokeProtectedTypst);
     channel->registerObject(QStringLiteral("vxAdapter"), adapter);
     page->setWebChannel(channel);
     jobs = new WebViewJobSession(page.get(), channel, page.get());
@@ -107,13 +107,14 @@ struct ProtectedMathPage {
     page.reset();
   }
 
-  bool load(HtmlTemplateService &p_templates, bool p_dark) {
+  bool load(HtmlTemplateService &p_templates, bool p_dark,
+            const QString &p_renderer = QStringLiteral("typst")) {
     if (!profile)
       return false;
     QHash<QString, QByteArray> resources;
     const auto html = p_templates.protectedMarkdownViewerTemplate(
         grant.token, grant.nonce, p_dark ? QStringLiteral("vscode-dark") : QStringLiteral("pure"),
-        p_dark, QStringLiteral("typst"), resources);
+        p_dark, p_renderer, resources);
     if (html.isEmpty() || !service.setProtectedDocument(profile.get(), html, resources))
       return false;
     page->load(grant.url);
@@ -786,6 +787,64 @@ void TestWebEngineProfileService::protectedTypstMath() {
       args.insert(QStringLiteral("language"), QStringLiteral("mathjax"));
     return args;
   };
+  // Full Typst fences are independent of protected MathJax -> KaTeX preference.
+  ProtectedMathPage blocks(profiles, note, services);
+  QVERIFY(blocks.load(templates, dark, QStringLiteral("mathjax")));
+  const QString program = QStringLiteral(
+      "#set page(width: 100pt, height: 60pt, margin: 8pt, fill: none)\n"
+      "#let hidden = \"HiddenTypstProgramSentinel\"\n"
+      "#rect(width: 20pt, height: 12pt, fill: rgb(\"#247ac8\"), stroke: none)\n"
+      "#pagebreak()\n"
+      "#link(\"https://protected.invalid/typst\")[Second] #context counter(page).display()\n"
+      "#rect(width: 20pt, height: 12pt, fill: rgb(\"#c84a24\"), stroke: none)");
+  QVERIFY(blocks.render(
+      (QStringLiteral("Before\n\n```typst\n") + program + QStringLiteral("\n```\n\nAfter"))
+          .toUtf8()));
+  const auto blockState = evaluateJavaScript(*blocks.page, QStringLiteral(R"JS((() => {
+    const root = vxcore.contentContainer;
+    const svg = root.querySelector('svg.typst-block');
+    return {renderer:vxOptions.mathRenderer, count:root.querySelectorAll('svg.typst-block').length,
+      width:svg && svg.viewBox.baseVal.width, height:svg && svg.viewBox.baseVal.height,
+      safe:!!svg && !svg.querySelector('a, image, foreignObject, script') &&
+        !svg.outerHTML.includes('HiddenTypstProgramSentinel') &&
+        !svg.outerHTML.includes('https://protected.invalid'),
+      source:root.textContent, other:!!window.katex || !!window.MathJax,
+      workers:vxcore.numOfOngoingWorkers};
+  })())JS"))
+                              .toMap();
+  QCOMPARE(blockState.value(QStringLiteral("renderer")).toString(), QStringLiteral("katex"));
+  QCOMPARE(blockState.value(QStringLiteral("count")).toInt(), 1);
+  QVERIFY(qAbs(blockState.value(QStringLiteral("width")).toDouble() - 100) < 0.01);
+  QVERIFY(qAbs(blockState.value(QStringLiteral("height")).toDouble() - 128) < 0.01);
+  QVERIFY(blockState.value(QStringLiteral("safe")).toBool());
+  QVERIFY(!blockState.value(QStringLiteral("other")).toBool());
+  QVERIFY(blockState.value(QStringLiteral("source")).toString().contains(QStringLiteral("Before")));
+  QVERIFY(blockState.value(QStringLiteral("source")).toString().contains(QStringLiteral("After")));
+  QCOMPARE(blockState.value(QStringLiteral("workers"), -1).toInt(), 0);
+  auto blockArgs = arguments(program, QStringLiteral("markup"));
+  blockArgs.insert(QStringLiteral("language"), QStringLiteral("typst"));
+  QVector<WebViewJobResult> blockResults;
+  blocks.jobs->submit(QStringLiteral("markdown.previewGraph"), blockArgs, this,
+                      [&](const WebViewJobResult &r) { blockResults.append(r); });
+  QTRY_COMPARE_WITH_TIMEOUT(blockResults.size(), 1, 30000);
+  const auto blockImage = protectedPreviewImage(blockResults.first());
+  QVERIFY(!blockImage.isNull());
+  QVERIFY(pixelsMatching(blockImage, QColor(36, 122, 200)) > 100);
+  QVERIFY(pixelsMatching(blockImage, QColor(200, 74, 36)) > 100);
+  {
+    ProtectedMathGate lanes(runtime);
+    QVERIFY(lanes.entered());
+    blocks.jobs->submit(QStringLiteral("markdown.previewGraph"), blockArgs, this,
+                        [&](const WebViewJobResult &r) { blockResults.append(r); });
+    QTRY_VERIFY_WITH_TIMEOUT(
+        blocks.adapter->findChild<vte::TypstFragmentRenderer *>()->isRendering(), 10000);
+    profiles.revokeProtectedProfile(blocks.profile.get());
+    QTRY_COMPARE_WITH_TIMEOUT(blockResults.size(), 2, 10000);
+    QVERIFY(blockResults.last().status != WebViewJobResult::Status::Success);
+    QVERIFY(!blocks.grant.isAuthorized());
+    QVERIFY(first.grant.isAuthorized() && second.grant.isAuthorized());
+  }
+
   evaluateJavaScript(
       *first.page,
       QStringLiteral("vxcore.contentContainer.style.color = 'rgba(31,83,157,0.6784313725490196)'"));
@@ -828,8 +887,8 @@ void TestWebEngineProfileService::protectedTypstMath() {
     second.jobs->submit(QStringLiteral("markdown.previewMath"),
                         arguments(QStringLiteral("$sqrt(z)$"), QStringLiteral("pending")), this,
                         [&](const WebViewJobResult &r) { live.append(r); });
-    QTRY_VERIFY_WITH_TIMEOUT(first.adapter->findChild<vte::TypstMathRenderer *>()->isRendering(),
-                             10000);
+    QTRY_VERIFY_WITH_TIMEOUT(
+        first.adapter->findChild<vte::TypstFragmentRenderer *>()->isRendering(), 10000);
     profiles.revokeProtectedProfile(first.profile.get());
     QVERIFY(!first.grant.isAuthorized());
     QVERIFY(second.grant.isAuthorized());
@@ -843,8 +902,8 @@ void TestWebEngineProfileService::protectedTypstMath() {
     QCOMPARE(retired.size(), 1);
   }
   // A retired profile cannot be revived by rebinding its old callback.
-  first.adapter->setProtectedMathAuthorization(first.grant.isAuthorized);
-  QSignalSpy denied(first.adapter, &MarkdownViewerAdapter::typstMathReady);
+  first.adapter->setProtectedTypstAuthorization(first.grant.isAuthorized);
+  QSignalSpy denied(first.adapter, &MarkdownViewerAdapter::typstReady);
   first.adapter->renderTypstMath(QStringLiteral("retired"), QStringLiteral("preview:retired"),
                                  QStringLiteral("sqrt(x)"), false, QStringLiteral("#1f539dff"));
   QCOMPARE(denied.count(), 1);
@@ -857,7 +916,7 @@ void TestWebEngineProfileService::protectedTypstMath() {
       buffers.protectedOperationsIdle()); // Capability checks do not retain a native-work lease.
   QVERIFY(buffers.beginProtectedLocking());
   QVERIFY(!replacement.grant.isAuthorized());
-  QSignalSpy locked(replacement.adapter, &MarkdownViewerAdapter::typstMathReady);
+  QSignalSpy locked(replacement.adapter, &MarkdownViewerAdapter::typstReady);
   replacement.adapter->renderTypstMath(QStringLiteral("locked"), QStringLiteral("preview:locked"),
                                        QStringLiteral("sqrt(x)"), false,
                                        QStringLiteral("#1f539dff"));
@@ -870,12 +929,12 @@ void TestWebEngineProfileService::protectedTypstMath() {
   {
     ProtectedMathGate lanes(runtime);
     QVERIFY(lanes.entered());
-    QSignalSpy completed(replacement.adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy completed(replacement.adapter, &MarkdownViewerAdapter::typstReady);
     replacement.adapter->renderTypstMath(
         QStringLiteral("in-flight"), QStringLiteral("preview:flight"),
         QStringLiteral("frac(a^2, sqrt(b))"), false, QStringLiteral("#1f539dff"));
     RevokeMathOnDelivery observer;
-    observer.renderer = replacement.adapter->findChild<vte::TypstMathRenderer *>();
+    observer.renderer = replacement.adapter->findChild<vte::TypstFragmentRenderer *>();
     QVERIFY(observer.renderer);
     bool revoked = false;
     observer.revoke = [&] {

@@ -22,7 +22,7 @@
 #include <QWebEngineView>
 #include <QXmlStreamReader>
 
-#include <vtextedit/typstmathrenderer.h>
+#include <vtextedit/typstfragmentrenderer.h>
 #include <vtextedit/typstruntime.h>
 
 #include <cmath>
@@ -75,6 +75,7 @@ const QStringList &scripts() {
                                     QStringLiteral("flowchartjs.js"),
                                     QStringLiteral("wavedrom.js"),
                                     QStringLiteral("mathjax.js"),
+                                    QStringLiteral("typst.js"),
                                     QStringLiteral("plantuml.js"),
                                     QStringLiteral("graphviz.js"),
                                     QStringLiteral("turndown/turndown.js"),
@@ -366,10 +367,35 @@ bool sameMathInk(const QImage &p_actual, const QImage &p_expected) {
   return difference <= quint64(p_actual.width()) * p_actual.height() / 5;
 }
 
-QJsonObject typstDom(QWebEnginePage *p_page) {
-  return evaluateObject(p_page, QStringLiteral(R"JS((() => {
+QString typstBlockMarkup() {
+  return QStringLiteral("#let label = [*Markup*]\n= #label\n"
+                        "#rect(width: 36pt, height: 18pt)\n\n"
+                        "#link(\"https://example.org\")[Visible link]\n");
+}
+
+QString typstBlockPages() {
+  return QStringLiteral("#set page(width: 120pt, height: 80pt)\n"
+                        "#rect(width: 40pt, height: 20pt, fill: rgb(\"#1F539D\"))\n"
+                        "#pagebreak()\n"
+                        "#rect(width: 40pt, height: 20pt, fill: rgb(\"#A12F59\"))\n");
+}
+
+QString typstBlockFence(const QString &p_source) {
+  return QStringLiteral("```typst\n") + p_source + QStringLiteral("\n```\n");
+}
+
+QJsonObject typstBlockPreview(const QString &p_source, const QString &p_scope) {
+  auto args = preview(p_source, QStringLiteral("typst"));
+  args.insert(QStringLiteral("scope"), p_scope);
+  return args;
+}
+
+QJsonObject typstDom(QWebEnginePage *p_page, bool p_blocks = false) {
+  return evaluateObject(
+      p_page,
+      QStringLiteral(R"JS((() => {
     const root = vxcore.contentContainer;
-    const roots = Array.from(root.querySelectorAll('svg.typst-math'));
+    const roots = Array.from(root.querySelectorAll('svg.%1'));
     const globalIds = new Set();
     let localReferences = 0, valid = true;
     const svgs = roots.map(svg => {
@@ -396,6 +422,10 @@ QJsonObject typstDom(QWebEnginePage *p_page) {
         svg:new XMLSerializer().serializeToString(svg), width:box.width, height:box.height,
         align:parseFloat(getComputedStyle(svg).verticalAlign),
         fontSize:parseFloat(getComputedStyle(svg).fontSize),
+        pages:Number(svg.getAttribute('data-typst-pages')),
+        sourceLine:svg.parentElement.getAttribute('data-source-line'),
+        sourceLineEnd:svg.parentElement.getAttribute('data-source-line-end'),
+        sourceClass:svg.parentElement.classList.contains('source-line'),
         viewWidth:svg.viewBox.baseVal.width, viewHeight:svg.viewBox.baseVal.height};
     });
     return {svgs, valid:valid && roots.every(svg => !!svg.id), localReferences,
@@ -404,11 +434,13 @@ QJsonObject typstDom(QWebEnginePage *p_page) {
       cells:root.querySelectorAll('table td').length,
       tableMath:root.querySelectorAll('table svg.typst-math').length,
       code:Array.from(root.querySelectorAll('code'), node => node.textContent),
-      failures:Array.from(root.querySelectorAll('.tex-to-render')).filter(node => !node.querySelector('svg'))
+      failures:Array.from(root.querySelectorAll('%2')).filter(node => !node.querySelector('svg'))
         .map(node => ({text:node.textContent, title:node.getAttribute('title')})),
       otherEngines:!!window.katex || !!window.MathJax,
       unsafe:!!root.querySelector('svg script, svg image, svg foreignObject, svg style')};
-  })())JS"));
+  })())JS")
+          .arg(p_blocks ? QStringLiteral("typst-block") : QStringLiteral("typst-math"),
+               p_blocks ? QStringLiteral("code.lang-typst") : QStringLiteral(".tex-to-render")));
 }
 
 // Decode self-contained SVG with Chromium's real image/canvas path, independently
@@ -486,7 +518,7 @@ private:
 };
 
 bool nativeMathPending(const Runtime &p_runtime) {
-  const auto *renderer = p_runtime.adapter->findChild<vte::TypstMathRenderer *>();
+  const auto *renderer = p_runtime.adapter->findChild<vte::TypstFragmentRenderer *>();
   return renderer && renderer->isRendering();
 }
 
@@ -517,6 +549,9 @@ private slots:
   void typstProtectedAndUnavailable();
   void typstAdapterBoundary();
   void typstProtectedSvgRaster();
+  void typstBlocksReaderAndPreviews();
+  void typstBlocksCancellationAndIsolation();
+  void typstBlocksExportAndCrossCopy();
 };
 
 void TestMarkdownWebJobs::typstAdapterBoundary() {
@@ -543,7 +578,8 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
     return QJsonObject();
   };
   const auto failed = [](const QJsonObject &p_result) {
-    return p_result.size() == 5 && p_result.value(QStringLiteral("svg")).isString() &&
+    return p_result.size() == 6 && p_result.value(QStringLiteral("pageCount")).toInt(-1) == 0 &&
+           p_result.value(QStringLiteral("svg")).isString() &&
            p_result.value(QStringLiteral("svg")).toString().isEmpty() &&
            p_result.value(QStringLiteral("widthPt")).isDouble() &&
            p_result.value(QStringLiteral("widthPt")).toDouble() == 0 &&
@@ -556,7 +592,8 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
   const auto succeeded = [](const QJsonObject &p_result) {
     const auto width = p_result.value(QStringLiteral("widthPt")).toDouble();
     const auto height = p_result.value(QStringLiteral("heightPt")).toDouble();
-    return p_result.size() == 5 && p_result.value(QStringLiteral("error")).isString() &&
+    return p_result.size() == 6 && p_result.value(QStringLiteral("pageCount")).toInt() == 1 &&
+           p_result.value(QStringLiteral("error")).isString() &&
            p_result.value(QStringLiteral("error")).toString().isEmpty() &&
            !p_result.value(QStringLiteral("svg")).toString().isEmpty() &&
            p_result.value(QStringLiteral("svg")).toString().toUtf8().size() <= 8 * 1024 * 1024 &&
@@ -568,7 +605,7 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
 
   {
     MarkdownViewerAdapter adapter(services);
-    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstReady);
     QVERIFY(replies.isValid());
     adapter.renderTypstMath(QStringLiteral("text"), scope, formula, false, color);
     // Even an invalid duplicate must not steal the first caller's completion.
@@ -617,7 +654,7 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
     MarkdownViewerAdapter protectedAdapter(services);
     protectedAdapter.setProtectedView(true);
     for (auto *adapter : {&missingServices, &unavailable, &protectedAdapter}) {
-      QSignalSpy replies(adapter, &MarkdownViewerAdapter::typstMathReady);
+      QSignalSpy replies(adapter, &MarkdownViewerAdapter::typstReady);
       adapter->renderTypstMath(QStringLiteral("unavailable"), scope, formula, false, color);
       QVERIFY(QTest::qWaitFor([&] { return replies.count() == 1; }, 30000));
       QVERIFY(failed(replies.first().at(1).toJsonObject()));
@@ -627,7 +664,7 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
   {
     MarkdownViewerAdapter adapter(services);
     adapter.setRenderedHtml(QStringLiteral("7"), QStringLiteral("<p>reader</p>"));
-    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstReady);
     struct Invalid {
       QString id;
       QString scope;
@@ -681,7 +718,7 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
 
   {
     MarkdownViewerAdapter adapter(services);
-    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstReady);
     const QString fullSource = QStringLiteral("x") + QString(65535, QLatin1Char(' '));
     const QString keep = QStringLiteral("preview:keep");
     const QString retire = QStringLiteral("preview:retire");
@@ -697,9 +734,9 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
     adapter.renderTypstMath(QStringLiteral("overflow"), keep, QStringLiteral("x"), false, color);
     // A duplicate waiting ID also cannot consume capacity or receive a failure.
     adapter.renderTypstMath(QStringLiteral("queued-1"), keep, formula, true, color);
-    adapter.cancelTypstMath(QStringLiteral("preview:not-owned"));
-    adapter.cancelTypstMath(retire);
-    adapter.cancelTypstMath(retire); // Idempotent, no second cancellations.
+    adapter.cancelTypst(QStringLiteral("preview:not-owned"));
+    adapter.cancelTypst(retire);
+    adapter.cancelTypst(retire); // Idempotent, no second cancellations.
     for (int i = 0; i < 16; ++i) {
       const auto id = QStringLiteral("refill-%1").arg(i);
       adapter.renderTypstMath(id, keep, fullSource, false, color);
@@ -734,7 +771,7 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
 
   {
     MarkdownViewerAdapter adapter(services);
-    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstReady);
     adapter.setRenderedHtml(QStringLiteral("1"), QStringLiteral("<p>old</p>"));
     adapter.renderTypstMath(QStringLiteral("old-active"), QStringLiteral("reader:1"), formula,
                             false, color);
@@ -766,7 +803,7 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
 
   for (const bool protect : {false, true}) {
     MarkdownViewerAdapter adapter(services);
-    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstReady);
     adapter.setRenderedHtml(QStringLiteral("1"), QStringLiteral("<p>reader</p>"));
     adapter.renderTypstMath(QStringLiteral("retired-active"), scope, formula, false, color);
     adapter.renderTypstMath(QStringLiteral("retired-queued"), QStringLiteral("preview:other"),
@@ -800,9 +837,9 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
 
   for (const bool cancel : {false, true}) {
     MarkdownViewerAdapter adapter(services);
-    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy replies(&adapter, &MarkdownViewerAdapter::typstReady);
     bool replaced = false;
-    connect(&adapter, &MarkdownViewerAdapter::typstMathReady, &adapter,
+    connect(&adapter, &MarkdownViewerAdapter::typstReady, &adapter,
             [&](const QString &id, const QJsonObject &) {
               if (id != QStringLiteral("reentrant") || replaced)
                 return;
@@ -813,7 +850,7 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
     adapter.renderTypstMath(QStringLiteral("other-owner"), QStringLiteral("preview:other"), formula,
                             false, color);
     if (cancel)
-      adapter.cancelTypstMath(scope);
+      adapter.cancelTypst(scope);
     QVERIFY(QTest::qWaitFor([&] { return replies.count() == 3; }, 30000));
     QCOMPARE(countId(replies, QStringLiteral("reentrant")), 2);
     QVERIFY(replaced);
@@ -829,7 +866,7 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
     QPointer<MarkdownViewerAdapter> guarded(adapter.get());
     int completions = 0;
     QJsonObject result;
-    connect(adapter.get(), &MarkdownViewerAdapter::typstMathReady, this,
+    connect(adapter.get(), &MarkdownViewerAdapter::typstReady, this,
             [&](const QString &, const QJsonObject &p_result) {
               ++completions;
               result = p_result;
@@ -837,13 +874,13 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
             });
     adapter->renderTypstMath(QStringLiteral("delete-on-result"), scope, formula, false, color);
     if (cancel)
-      adapter->cancelTypstMath(scope);
+      adapter->cancelTypst(scope);
     QVERIFY(QTest::qWaitFor([&] { return guarded.isNull(); }, 30000));
     QCOMPARE(completions, 1);
     QVERIFY(cancel ? failed(result) : succeeded(result));
     // A surviving adapter can finish after destruction, with suppressed callbacks harmless.
     MarkdownViewerAdapter survivor(services);
-    QSignalSpy replies(&survivor, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy replies(&survivor, &MarkdownViewerAdapter::typstReady);
     survivor.renderTypstMath(QStringLiteral("survivor"), scope, formula, false, color);
     QVERIFY(QTest::qWaitFor([&] { return replies.count() == 1; }, 30000));
     QVERIFY(succeeded(replies.first().at(1).toJsonObject()));
@@ -853,14 +890,14 @@ void TestMarkdownWebJobs::typstAdapterBoundary() {
   {
     int completions = 0;
     auto adapter = std::make_unique<MarkdownViewerAdapter>(services);
-    connect(adapter.get(), &MarkdownViewerAdapter::typstMathReady, this,
+    connect(adapter.get(), &MarkdownViewerAdapter::typstReady, this,
             [&](const QString &, const QJsonObject &) { ++completions; });
     adapter->renderTypstMath(QStringLiteral("destroy-active"), scope, formula, false, color);
     adapter->renderTypstMath(QStringLiteral("destroy-queued"), scope, formula, false, color);
     adapter.reset();
     QCOMPARE(completions, 0);
     MarkdownViewerAdapter survivor(services);
-    QSignalSpy replies(&survivor, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy replies(&survivor, &MarkdownViewerAdapter::typstReady);
     survivor.renderTypstMath(QStringLiteral("after-destruction"), scope, formula, false, color);
     QVERIFY(QTest::qWaitFor([&] { return replies.count() == 1; }, 30000));
     QVERIFY(succeeded(replies.first().at(1).toJsonObject()));
@@ -1406,7 +1443,7 @@ void TestMarkdownWebJobs::typstReaderAndPreviews() {
     QVERIFY(runtime.typstRuntime->isAvailable());
     QObject owner;
     QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
-    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstReady);
     const auto document = runtime.renderDocument(typstFixture());
     QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
     QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
@@ -1591,7 +1628,7 @@ void TestMarkdownWebJobs::typstCancellationAndIsolation() {
     QObject retiring, siblingOwner;
     MathRuntimeGate gate(*runtime.typstRuntime);
     QVERIFY(gate.entered());
-    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstReady);
     const auto cancelled = submit(runtime.session, QStringLiteral("markdown.previewMath"),
                                   scopedPreview(formula, QStringLiteral("retire")), &retiring);
     QTRY_VERIFY_WITH_TIMEOUT(nativeMathPending(runtime), 10000);
@@ -1604,7 +1641,7 @@ void TestMarkdownWebJobs::typstCancellationAndIsolation() {
     // Scope release is the worker's real lifecycle API. It must settle the live
     // renderText promise, allowing the generic cancelled job to drain before B.
     evaluate(runtime.page,
-             QStringLiteral("vxcore.getWorker('math').releasePreviewScope('retire')"));
+             QStringLiteral("vxcore.getWorker('typst').cancelScope('preview:retire')"));
     QTRY_COMPARE_WITH_TIMEOUT(native.count(), 1, 10000);
     QVERIFY(
         !native.first().at(1).toJsonObject().value(QStringLiteral("error")).toString().isEmpty());
@@ -1645,7 +1682,7 @@ void TestMarkdownWebJobs::typstCancellationAndIsolation() {
     rendered.clear();
     MathRuntimeGate gate(*runtime.typstRuntime);
     QVERIFY(gate.entered());
-    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstReady);
     QVERIFY(runtime.renderDocument(QStringLiteral("Old $sqrt(x)$ document")).error.isEmpty());
     QTRY_VERIFY_WITH_TIMEOUT(nativeMathPending(runtime), 10000);
     QCOMPARE(native.count(), 0);
@@ -1758,7 +1795,7 @@ void TestMarkdownWebJobs::typstExportAndCrossCopy() {
   Runtime runtime(false, foreground, QUrl::fromLocalFile(webDir() + QLatin1Char('/')), QString(),
                   QStringLiteral("typst"));
   QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
-  QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstMathReady);
+  QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstReady);
   QSignalSpy saved(runtime.adapter, &MarkdownViewerAdapter::contentReady);
   QSignalSpy copied(runtime.adapter, &MarkdownViewerAdapter::crossCopyReady);
   QSignalSpy exported(runtime.adapter, &MarkdownViewerAdapter::pdfRenderReady);
@@ -1947,8 +1984,8 @@ void TestMarkdownWebJobs::typstProtectedSvgRaster() {
   QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
   QVERIFY(runtime.renderDocument(QStringLiteral("Raster boundary")).error.isEmpty());
   QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
-  vte::TypstMathRenderer renderer(runtime.typstRuntime.get());
-  QSignalSpy finished(&renderer, &vte::TypstMathRenderer::finished);
+  vte::TypstFragmentRenderer renderer(runtime.typstRuntime.get());
+  QSignalSpy finished(&renderer, &vte::TypstFragmentRenderer::finished);
   const QStringList formulas{
       QStringLiteral("frac(a^2, sqrt(b))"),
       QStringLiteral("#rect(width: 36pt, height: 18pt, "
@@ -1956,14 +1993,15 @@ void TestMarkdownWebJobs::typstProtectedSvgRaster() {
                      "stroke: (paint: rgb(\"#2A963CC0\"), thickness: 2pt))")};
   for (int formula = 0; formula < formulas.size(); ++formula) {
     finished.clear();
-    QVERIFY(renderer.renderToSvg(formulas.at(formula), false, QColor(31, 83, 157, 173)));
+    QVERIFY(renderer.renderMathToSvg(formulas.at(formula), false, QColor(31, 83, 157, 173)));
     QTRY_COMPARE_WITH_TIMEOUT(finished.count(), 1, 30000);
-    const auto native = qvariant_cast<vte::TypstMathRenderer::Result>(finished.first().first());
+    const auto native = qvariant_cast<vte::TypstFragmentRenderer::Result>(finished.first().first());
     QVERIFY2(native.isSuccess(), qPrintable(native.m_error));
     const QJsonObject reply{{QStringLiteral("svg"), QString::fromUtf8(native.m_svg)},
                             {QStringLiteral("widthPt"), native.m_sizePt.width()},
                             {QStringLiteral("heightPt"), native.m_sizePt.height()},
                             {QStringLiteral("baselinePt"), native.m_baselinePt},
+                            {QStringLiteral("pageCount"), native.m_pageCount},
                             {QStringLiteral("error"), QString()}};
     const auto serialized = QString::fromUtf8(QJsonDocument(reply).toJson(QJsonDocument::Compact));
     for (const bool graph : {false, true}) {
@@ -1991,8 +2029,8 @@ void TestMarkdownWebJobs::typstProtectedSvgRaster() {
             }
           }
           native.svg = new XMLSerializer().serializeToString(document.documentElement);
-          const worker = vxcore.getWorker('math');
-          const svg = worker.createTypstSvg(native, 'protected-raster', 'source-only sentinel', 18, false);
+          const worker = vxcore.getWorker('typst');
+          const svg = worker.createSvg(native, 'protected-raster', 'source-only sentinel', 18, false, 'math');
           const nodes = [svg, ...svg.querySelectorAll('*')].filter(node => node.localName !== 'title');
           const normalized = expected.every(item =>
             nodes[item.index].getAttribute(item.paint) === item.color
@@ -2077,7 +2115,7 @@ void TestMarkdownWebJobs::typstProtectedAndUnavailable() {
                     QString(), QStringLiteral("mathjax"), true);
     QObject owner;
     QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
-    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstReady);
     QVERIFY(runtime.renderDocument(QStringLiteral("Protected $\\frac{a^2}{\\sqrt{b}}$ text"))
                 .error.isEmpty());
     QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
@@ -2137,7 +2175,7 @@ void TestMarkdownWebJobs::typstProtectedAndUnavailable() {
                     QString(), QStringLiteral("typst"), protectedView, protectedView);
     QObject owner;
     QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
-    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstMathReady);
+    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstReady);
     QVERIFY(runtime.renderDocument(QStringLiteral("Unavailable $sqrt(x)$ and $frac($ end"))
                 .error.isEmpty());
     QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
@@ -2200,6 +2238,611 @@ void TestMarkdownWebJobs::typstProtectedAndUnavailable() {
                 .error.isEmpty());
     QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 2, 10000);
     QTRY_VERIFY_WITH_TIMEOUT(runtime.session->isIdle(), 10000);
+  }
+}
+
+void TestMarkdownWebJobs::typstBlocksReaderAndPreviews() {
+  const QColor foreground(31, 83, 157);
+  for (const bool shared : {true, false}) {
+    for (const bool mathJax : {false, true}) {
+      Runtime runtime(
+          shared, foreground, QUrl::fromLocalFile(webDir() + QLatin1Char('/')),
+          mathJax ? QUrl::fromLocalFile(QStringLiteral(VNOTE_TEST_MATHJAX_SCRIPT)).toString()
+                  : QString(),
+          mathJax ? QStringLiteral("mathjax") : QString());
+      QVERIFY(runtime.typstRuntime->isAvailable());
+      QObject owner;
+      QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+      QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstReady);
+      const auto document = runtime.renderDocument(
+          QStringLiteral("# Blocks\n\nBefore\n\n") + typstBlockFence(typstBlockMarkup()) +
+          QLatin1Char('\n') + typstBlockFence(typstBlockPages()) + QLatin1Char('\n') +
+          typstBlockFence(QStringLiteral("   ")) + QLatin1Char('\n') +
+          typstBlockFence(QStringLiteral("#let broken = (")) +
+          QStringLiteral("\nAfter\n\n```text\n$literal$ and #markup\n```\n"));
+      QVERIFY2(document.error.isEmpty(), qPrintable(document.error));
+      QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+      QVERIFY(runtime.adapter->isDocumentReady());
+      QCOMPARE(native.count(), 4);
+      const auto dom = typstDom(runtime.page, true);
+      const auto svgs = dom.value(QStringLiteral("svgs")).toArray();
+      QCOMPARE(svgs.size(), 2);
+      QVERIFY(dom.value(QStringLiteral("valid")).toBool());
+      QVERIFY(dom.value(QStringLiteral("localReferences")).toInt() > 0);
+      QVERIFY(!dom.value(QStringLiteral("unsafe")).toBool());
+      QVERIFY(!dom.value(QStringLiteral("otherEngines")).toBool());
+      QCOMPARE(dom.value(QStringLiteral("workers")).toInt(-1), 0);
+      QCOMPARE(
+          evaluate(runtime.page, QStringLiteral("vxcore.getWorker('math').renderer")).toString(),
+          mathJax ? QStringLiteral("mathjax") : QStringLiteral("katex"));
+      QVERIFY(dom.value(QStringLiteral("text")).toString().contains(QStringLiteral("Before")));
+      QVERIFY(dom.value(QStringLiteral("text")).toString().contains(QStringLiteral("After")));
+      QVERIFY(dom.value(QStringLiteral("code"))
+                  .toArray()
+                  .contains(QStringLiteral("$literal$ and #markup\n")));
+      const auto failures = dom.value(QStringLiteral("failures")).toArray();
+      QCOMPARE(failures.size(), 2);
+      QVERIFY(
+          failures.first().toObject().value(QStringLiteral("text")).toString().trimmed().isEmpty());
+      QCOMPARE(failures.last().toObject().value(QStringLiteral("text")).toString(),
+               QStringLiteral("#let broken = (\n"));
+      for (const auto &failure : failures)
+        QVERIFY(!failure.toObject().value(QStringLiteral("title")).toString().isEmpty());
+
+      const auto html =
+          QString::fromUtf8(QJsonDocument(QJsonObject{{QStringLiteral("html"), document.html}})
+                                .toJson(QJsonDocument::Compact));
+      const auto mappings = evaluateObject(runtime.page, QStringLiteral(R"JS((() => {
+        const doc = new DOMParser().parseFromString(%1.html, 'text/html');
+        return {nodes:Array.from(doc.querySelectorAll('code.lang-typst'), code => {
+          const pre = code.parentElement;
+          return {line:pre.getAttribute('data-source-line') || code.getAttribute('data-source-line'),
+            end:pre.getAttribute('data-source-line-end') || code.getAttribute('data-source-line-end')};
+        })};
+      })())JS")
+                                                             .arg(html))
+                                .value(QStringLiteral("nodes"))
+                                .toArray();
+      QCOMPARE(mappings.size(), 4);
+      QJsonArray originals;
+      for (int i = 0; i < svgs.size(); ++i) {
+        const auto svg = svgs.at(i).toObject();
+        const auto reply = native.at(i).at(1).toJsonObject();
+        QVERIFY2(reply.value(QStringLiteral("error")).toString().isEmpty(),
+                 qPrintable(reply.value(QStringLiteral("error")).toString()));
+        QCOMPARE(svg.value(QStringLiteral("source")).toString(), QStringLiteral("Typst"));
+        QCOMPARE(svg.value(QStringLiteral("title")).toString(), QStringLiteral("Typst"));
+        QCOMPARE(svg.value(QStringLiteral("pages")).toInt(), i + 1);
+        QCOMPARE(reply.value(QStringLiteral("pageCount")).toInt(), i + 1);
+        QVERIFY(svg.value(QStringLiteral("sourceClass")).toBool());
+        QVERIFY(!svg.value(QStringLiteral("sourceLine")).toString().isEmpty());
+        QCOMPARE(svg.value(QStringLiteral("sourceLine")),
+                 mappings.at(i).toObject().value(QStringLiteral("line")));
+        QCOMPARE(svg.value(QStringLiteral("sourceLineEnd")),
+                 mappings.at(i).toObject().value(QStringLiteral("end")));
+        QCOMPARE(reply.value(QStringLiteral("baselinePt")).toDouble(), 0.0);
+        for (const auto &dimension : {QStringLiteral("width"), QStringLiteral("height")}) {
+          const double expected =
+              reply.value(dimension + QStringLiteral("Pt")).toDouble() * 18 / 12;
+          QVERIFY(std::abs(svg.value(dimension).toDouble() - expected) < 0.05);
+        }
+        originals.append(
+            QJsonObject{{QStringLiteral("svg"), reply.value(QStringLiteral("svg"))},
+                        {QStringLiteral("width"), svg.value(QStringLiteral("width"))},
+                        {QStringLiteral("height"), svg.value(QStringLiteral("height"))}});
+      }
+      QCOMPARE(svgs.at(1).toObject().value(QStringLiteral("viewWidth")).toDouble(), 120.0);
+      QCOMPARE(svgs.at(1).toObject().value(QStringLiteral("viewHeight")).toDouble(), 168.0);
+      QCOMPARE(evaluate(runtime.page,
+                        QStringLiteral("vxcore.contentContainer.querySelectorAll('svg a').length"))
+                   .toInt(),
+               0);
+      const auto live = rasterSvgs(runtime.page, svgs);
+      const auto reference = rasterSvgs(runtime.page, originals);
+      QVERIFY(!live.contains(QStringLiteral("error")));
+      QVERIFY(!reference.contains(QStringLiteral("error")));
+      QCOMPARE(live.value(QStringLiteral("images")).toArray().size(), 2);
+      QCOMPARE(reference.value(QStringLiteral("images")).toArray().size(), 2);
+      for (int i = 0; i < 2; ++i) {
+        const auto raster = dataImage(live.value(QStringLiteral("images")).toArray().at(i));
+        QVERIFY(inkPixels(raster, foreground) > 30);
+        QVERIFY(transparentBorder(raster));
+        QCOMPARE(raster, dataImage(reference.value(QStringLiteral("images")).toArray().at(i)));
+      }
+      const auto pages = dataImage(live.value(QStringLiteral("images")).toArray().last());
+      QVERIFY(inkPixels(pages.copy(0, 0, pages.width(), pages.height() / 2), foreground) > 100);
+      QVERIFY(inkPixels(pages.copy(0, pages.height() / 2, pages.width(), pages.height() / 2),
+                        QColor(161, 47, 89)) > 100);
+
+      const auto repeatedScript = awaitObject(runtime.page, QStringLiteral(R"JS((async () => {
+        const worker = vxcore.getWorker('typst');
+        const script = document.createElement('script');
+        script.src = document.querySelector('script[src$="/typst.js"]').src;
+        try {
+          await new Promise((resolve, reject) => {
+            script.onload = resolve; script.onerror = reject; document.head.appendChild(script);
+          });
+          return {same:worker === vxcore.getWorker('typst'), workers:vxcore.numOfOngoingWorkers};
+        } finally {script.remove();}
+      })())JS"));
+      QVERIFY2(!repeatedScript.contains(QStringLiteral("error")),
+               qPrintable(repeatedScript.value(QStringLiteral("error")).toString()));
+      QVERIFY(repeatedScript.value(QStringLiteral("same")).toBool());
+      QCOMPARE(repeatedScript.value(QStringLiteral("workers")).toInt(-1), 0);
+
+      const auto normal =
+          submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+                 typstBlockPreview(typstBlockMarkup(), QStringLiteral("block-normal")), &owner);
+      QTRY_VERIFY_WITH_TIMEOUT(normal->finished, 30000);
+      QCOMPARE(normal->result.status, WebViewJobResult::Status::Success);
+      const auto baseline = image(normal->result.value);
+      QVERIFY(inkPixels(baseline, foreground) > 30);
+      const auto logical = normal->result.value.toObject();
+      for (const auto &pair : {QPair<qreal, qreal>(1, 2), {2, 1}, {1.5, 1.25}, {1, 1}}) {
+        auto args = typstBlockPreview(typstBlockMarkup(), QStringLiteral("block-narrow"));
+        args.insert(QStringLiteral("zoom"), pair.first);
+        args.insert(QStringLiteral("devicePixelRatio"), pair.second);
+        args.insert(QStringLiteral("width"), 96);
+        const auto scaled =
+            submit(runtime.session, QStringLiteral("markdown.previewGraph"), args, &owner);
+        QTRY_VERIFY_WITH_TIMEOUT(scaled->finished, 30000);
+        QCOMPARE(scaled->result.status, WebViewJobResult::Status::Success);
+        const auto data = scaled->result.value.toObject();
+        const auto raster = image(scaled->result.value);
+        QCOMPARE(data.value(QStringLiteral("format")).toString(), QStringLiteral("png"));
+        QVERIFY(!data.value(QStringLiteral("needScale")).toBool());
+        QVERIFY(inkPixels(raster, foreground) > 30);
+        for (const auto &dimension :
+             {QStringLiteral("logicalWidth"), QStringLiteral("logicalHeight")})
+          QVERIFY(std::abs(data.value(dimension).toInt() -
+                           qRound(logical.value(dimension).toInt() * pair.first)) <= 1);
+        QVERIFY(std::abs(raster.width() - baseline.width() * pair.first * pair.second) <= 3);
+        QVERIFY(std::abs(raster.height() - baseline.height() * pair.first * pair.second) <= 3);
+        if (pair.first == 1 && pair.second == 1)
+          QCOMPARE(raster, baseline);
+      }
+      if (runtime.reader)
+        runtime.reader->hide();
+      const auto hidden =
+          submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+                 typstBlockPreview(typstBlockMarkup(), QStringLiteral("block-hidden")), &owner);
+      QTRY_VERIFY_WITH_TIMEOUT(hidden->finished, 30000);
+      QCOMPARE(hidden->result.status, WebViewJobResult::Status::Success);
+      QCOMPARE(image(hidden->result.value), baseline);
+      const auto paged =
+          submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+                 typstBlockPreview(typstBlockPages(), QStringLiteral("block-pages")), &owner);
+      QTRY_VERIFY_WITH_TIMEOUT(paged->finished, 30000);
+      QCOMPARE(paged->result.status, WebViewJobResult::Status::Success);
+      QVERIFY(inkPixels(image(paged->result.value), foreground) > 100);
+      QVERIFY(inkPixels(image(paged->result.value), QColor(161, 47, 89)) > 100);
+      for (const auto &invalid : {QStringLiteral("   "), QStringLiteral("#let broken = ("),
+                                  QStringLiteral("#read(\"secret.txt\")")}) {
+        const auto failed =
+            submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+                   typstBlockPreview(invalid, QStringLiteral("block-recovery")), &owner);
+        const auto recovered =
+            submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+                   typstBlockPreview(typstBlockMarkup(), QStringLiteral("block-recovery")), &owner);
+        QTRY_VERIFY_WITH_TIMEOUT(failed->finished && recovered->finished, 30000);
+        QCOMPARE(failed->result.status, WebViewJobResult::Status::Error);
+        QVERIFY(!failed->result.error.isEmpty());
+        QCOMPARE(recovered->result.status, WebViewJobResult::Status::Success);
+        QCOMPARE(image(recovered->result.value), baseline);
+      }
+      QCOMPARE(rendered.count(), 1);
+      QCOMPARE(typstDom(runtime.page, true).value(QStringLiteral("svgs")).toArray().size(), 2);
+      QVERIFY(!typstDom(runtime.page, true).value(QStringLiteral("otherEngines")).toBool());
+      QCOMPARE(
+          evaluate(runtime.page, QStringLiteral("vxcore.inplacePreviewContainer.childElementCount"))
+              .toInt(),
+          0);
+      QTRY_VERIFY_WITH_TIMEOUT(runtime.session->isIdle(), 10000);
+    }
+  }
+
+  // No engine fallback or hung pass when the runtime is unavailable.
+  for (const bool shared : {true, false}) {
+    Runtime runtime(shared, foreground, QUrl::fromLocalFile(webDir() + QLatin1Char('/')), QString(),
+                    QStringLiteral("katex"), false, false);
+    QObject owner;
+    QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+    QVERIFY(runtime.renderDocument(typstBlockFence(typstBlockMarkup())).error.isEmpty());
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+    const auto dom = typstDom(runtime.page, true);
+    QCOMPARE(dom.value(QStringLiteral("svgs")).toArray().size(), 0);
+    QCOMPARE(dom.value(QStringLiteral("workers")).toInt(-1), 0);
+    QVERIFY(!dom.value(QStringLiteral("otherEngines")).toBool());
+    const auto failures = dom.value(QStringLiteral("failures")).toArray();
+    QCOMPARE(failures.size(), 1);
+    QCOMPARE(failures.first().toObject().value(QStringLiteral("text")).toString(),
+             typstBlockMarkup() + QLatin1Char('\n'));
+    QVERIFY(!failures.first().toObject().value(QStringLiteral("title")).toString().isEmpty());
+    const auto failed =
+        submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+               typstBlockPreview(typstBlockMarkup(), QStringLiteral("unavailable")), &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(failed->finished, 30000);
+    QCOMPARE(failed->result.status, WebViewJobResult::Status::Error);
+    QVERIFY(!failed->result.error.isEmpty());
+    QTRY_VERIFY_WITH_TIMEOUT(runtime.session->isIdle(), 10000);
+  }
+}
+
+void TestMarkdownWebJobs::typstBlocksCancellationAndIsolation() {
+  for (const auto &preference : {QStringLiteral("katex"), QStringLiteral("mathjax")}) {
+    Runtime runtime(true, QColor(31, 83, 157), QUrl::fromLocalFile(webDir() + QLatin1Char('/')),
+                    QString(), preference);
+    QObject owner;
+    QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstReady);
+    QVERIFY(runtime.renderDocument(QStringLiteral("Ready")).error.isEmpty());
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+    MathRuntimeGate gate(*runtime.typstRuntime);
+    QVERIFY(gate.entered());
+    // Both operation kinds share ownership. The release provider must reach Typst
+    // even when the selected math engine is KaTeX or MathJax, without initializing it.
+    evaluate(runtime.page, QStringLiteral(R"JS(
+      window.blockScopeResults = [];
+      const worker = vxcore.getWorker('typst');
+      const record = name => svg => blockScopeResults.push({name, id:svg.id, error:false});
+      const failed = name => error => blockScopeResults.push({name, error:true});
+      worker.requestMarkup('preview:retire', '*Retire*', vxcore.contentContainer)
+        .then(record('markup'), failed('markup'));
+      worker.requestMath('preview:retire', 'sqrt(x)', false, vxcore.contentContainer)
+        .then(record('math'), failed('math'));
+      worker.requestMarkup('preview:survivor', '*Survivor*', vxcore.contentContainer)
+        .then(record('survivor'), failed('survivor'));
+    )JS"));
+    QTRY_VERIFY_WITH_TIMEOUT(nativeMathPending(runtime), 10000);
+    QCOMPARE(native.count(), 0);
+    const auto release = submit(runtime.session, QStringLiteral("markdown.releaseScope"),
+                                {{QStringLiteral("scope"), QStringLiteral("retire")}}, &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(release->finished, 10000);
+    QCOMPARE(release->result.status, WebViewJobResult::Status::Success);
+    QTRY_COMPARE_WITH_TIMEOUT(
+        evaluate(runtime.page, QStringLiteral("blockScopeResults.length")).toInt(), 2, 10000);
+    QVERIFY(
+        evaluate(runtime.page, QStringLiteral("blockScopeResults.every(result => result.error)"))
+            .toBool());
+    QTRY_COMPARE_WITH_TIMEOUT(native.count(), 2, 10000);
+    gate.release();
+    QTRY_COMPARE_WITH_TIMEOUT(
+        evaluate(runtime.page, QStringLiteral("blockScopeResults.length")).toInt(), 3, 30000);
+    QVERIFY(evaluate(runtime.page,
+                     QStringLiteral(
+                         "blockScopeResults[2].name === 'survivor' && !blockScopeResults[2].error"))
+                .toBool());
+    QCOMPARE(native.count(), 3);
+    QSet<QString> ids;
+    for (const auto &reply : native)
+      ids.insert(reply.at(0).toString());
+    QCOMPARE(ids.size(), 3);
+    const auto reused =
+        submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+               typstBlockPreview(typstBlockMarkup(), QStringLiteral("retire")), &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(reused->finished, 30000);
+    QCOMPARE(reused->result.status, WebViewJobResult::Status::Success);
+    QVERIFY(inkPixels(image(reused->result.value)) > 30);
+    QVERIFY(!typstDom(runtime.page, true).value(QStringLiteral("otherEngines")).toBool());
+    QCOMPARE(rendered.count(), 1);
+    QTRY_VERIFY_WITH_TIMEOUT(runtime.session->isIdle(), 10000);
+
+    QObject retiring, siblingOwner;
+    MathRuntimeGate cancellationGate(*runtime.typstRuntime);
+    QVERIFY(cancellationGate.entered());
+    const auto cancelled =
+        submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+               typstBlockPreview(typstBlockMarkup(), QStringLiteral("cancelled")), &retiring);
+    QTRY_VERIFY_WITH_TIMEOUT(nativeMathPending(runtime), 10000);
+    const auto sibling =
+        submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+               typstBlockPreview(typstBlockPages(), QStringLiteral("sibling")), &siblingOwner);
+    runtime.session->cancelOwner(&retiring);
+    QTRY_VERIFY_WITH_TIMEOUT(cancelled->finished, 10000);
+    QCOMPARE(cancelled->result.status, WebViewJobResult::Status::Cancelled);
+    evaluate(runtime.page,
+             QStringLiteral("vxcore.getWorker('typst').cancelScope('preview:cancelled')"));
+    QTRY_COMPARE_WITH_TIMEOUT(native.count(), 5, 10000);
+    QTRY_VERIFY_WITH_TIMEOUT(nativeMathPending(runtime), 10000);
+    QVERIFY(!sibling->finished);
+    cancellationGate.release();
+    QTRY_VERIFY_WITH_TIMEOUT(sibling->finished, 30000);
+    QCOMPARE(sibling->result.status, WebViewJobResult::Status::Success);
+    QVERIFY(inkPixels(image(sibling->result.value), QColor(31, 83, 157)) > 100);
+    QVERIFY(inkPixels(image(sibling->result.value), QColor(161, 47, 89)) > 100);
+    QCOMPARE(cancelled->result.status, WebViewJobResult::Status::Cancelled);
+    QCOMPARE(
+        evaluate(runtime.page, QStringLiteral("vxcore.inplacePreviewContainer.childElementCount"))
+            .toInt(),
+        0);
+    QTRY_VERIFY_WITH_TIMEOUT(runtime.session->isIdle(), 10000);
+  }
+
+  {
+    Runtime runtime(false);
+    QObject owner;
+    QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+    QVERIFY(runtime.renderDocument(QStringLiteral("Ready")).error.isEmpty());
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+    rendered.clear();
+    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstReady);
+    MathRuntimeGate gate(*runtime.typstRuntime);
+    QVERIFY(gate.entered());
+    QVERIFY(runtime.renderDocument(QStringLiteral("Old\n\n") + typstBlockFence(typstBlockMarkup()))
+                .error.isEmpty());
+    QTRY_VERIFY_WITH_TIMEOUT(nativeMathPending(runtime), 10000);
+    const auto sibling =
+        submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+               typstBlockPreview(typstBlockMarkup(), QStringLiteral("sibling")), &owner);
+    QTRY_COMPARE_WITH_TIMEOUT(
+        evaluate(runtime.page, QStringLiteral("vxcore.inplacePreviewContainer.childElementCount"))
+            .toInt(),
+        1, 10000);
+    QVERIFY(
+        runtime.renderDocument(QStringLiteral("Current\n\n") + typstBlockFence(typstBlockPages()))
+            .error.isEmpty());
+    QTRY_COMPARE_WITH_TIMEOUT(
+        evaluate(runtime.page, QStringLiteral("vxcore.documentGeneration")).toString(),
+        runtime.adapter->documentGeneration(), 10000);
+    QCOMPARE(rendered.count(), 0);
+    gate.release();
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+    QTRY_VERIFY_WITH_TIMEOUT(sibling->finished, 30000);
+    QCOMPARE(sibling->result.status, WebViewJobResult::Status::Success);
+    QVERIFY(inkPixels(image(sibling->result.value)) > 30);
+    const auto dom = typstDom(runtime.page, true);
+    const auto svgs = dom.value(QStringLiteral("svgs")).toArray();
+    QCOMPARE(svgs.size(), 1);
+    QCOMPARE(svgs.first().toObject().value(QStringLiteral("pages")).toInt(), 2);
+    QVERIFY(dom.value(QStringLiteral("text")).toString().contains(QStringLiteral("Current")));
+    QVERIFY(!dom.value(QStringLiteral("text")).toString().contains(QStringLiteral("Old")));
+    QCOMPARE(dom.value(QStringLiteral("workers")).toInt(-1), 0);
+    QCOMPARE(native.count(), 3);
+    int successes = 0;
+    for (const auto &reply : native)
+      successes += reply.at(1).toJsonObject().value(QStringLiteral("error")).toString().isEmpty();
+    QCOMPARE(successes, 2);
+    const auto raster = rasterSvgs(runtime.page, svgs);
+    QCOMPARE(raster.value(QStringLiteral("images")).toArray().size(), 1);
+    const auto pages = dataImage(raster.value(QStringLiteral("images")).toArray().first());
+    QVERIFY(inkPixels(pages, QColor(31, 83, 157)) > 100);
+    QVERIFY(inkPixels(pages, QColor(161, 47, 89)) > 100);
+    QVERIFY(runtime.renderDocument(QString()).error.isEmpty());
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 2, 10000);
+    QVERIFY(runtime
+                .renderDocument(typstBlockFence(typstBlockMarkup()) + QLatin1Char('\n') +
+                                typstBlockFence(typstBlockMarkup()))
+                .error.isEmpty());
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 3, 30000);
+    const auto repeated = typstDom(runtime.page, true);
+    QCOMPARE(repeated.value(QStringLiteral("svgs")).toArray().size(), 2);
+    QVERIFY(repeated.value(QStringLiteral("valid")).toBool());
+    QCOMPARE(
+        evaluate(runtime.page, QStringLiteral("vxcore.inplacePreviewContainer.childElementCount"))
+            .toInt(),
+        0);
+    QTRY_VERIFY_WITH_TIMEOUT(runtime.session->isIdle(), 10000);
+  }
+
+  for (const bool protect : {false, true}) {
+    Runtime runtime(false);
+    QObject owner;
+    QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+    QVERIFY(runtime.renderDocument(QStringLiteral("Ready")).error.isEmpty());
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+    MathRuntimeGate gate(*runtime.typstRuntime);
+    QVERIFY(gate.entered());
+    const auto pending =
+        submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+               typstBlockPreview(typstBlockMarkup(), QStringLiteral("pending")), &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(nativeMathPending(runtime), 10000);
+    QVERIFY(
+        runtime.renderDocument(QStringLiteral("Pending\n\n") + typstBlockFence(typstBlockPages()))
+            .error.isEmpty());
+    QTRY_VERIFY_WITH_TIMEOUT(
+        evaluate(runtime.page,
+                 QStringLiteral("vxcore.ongoingWorkers.has('typst') && "
+                                "vxcore.contentContainer.textContent.includes('Pending')"))
+            .toBool(),
+        10000);
+    if (protect)
+      runtime.adapter->setProtectedView(true);
+    else
+      runtime.adapter->reset();
+    QTRY_VERIFY_WITH_TIMEOUT(pending->finished, 10000);
+    QCOMPARE(pending->result.status, WebViewJobResult::Status::Error);
+    QTRY_COMPARE_WITH_TIMEOUT(
+        evaluate(runtime.page, QStringLiteral("vxcore.numOfOngoingWorkers")).toInt(), 0, 10000);
+    QCOMPARE(typstDom(runtime.page, true).value(QStringLiteral("svgs")).toArray().size(), 0);
+    QTRY_VERIFY_WITH_TIMEOUT(runtime.session->isIdle(), 10000);
+    gate.release();
+    if (protect)
+      runtime.adapter->setProtectedView(false);
+    const auto recovery =
+        submit(runtime.session, QStringLiteral("markdown.previewGraph"),
+               typstBlockPreview(typstBlockMarkup(), QStringLiteral("pending")), &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(recovery->finished, 30000);
+    QCOMPARE(recovery->result.status, WebViewJobResult::Status::Success);
+    QVERIFY(inkPixels(image(recovery->result.value)) > 30);
+    QCOMPARE(pending->result.status, WebViewJobResult::Status::Error);
+    QCOMPARE(typstDom(runtime.page, true).value(QStringLiteral("svgs")).toArray().size(), 0);
+    QCOMPARE(
+        evaluate(runtime.page, QStringLiteral("vxcore.inplacePreviewContainer.childElementCount"))
+            .toInt(),
+        0);
+  }
+}
+
+void TestMarkdownWebJobs::typstBlocksExportAndCrossCopy() {
+  const QColor foreground(31, 83, 157);
+  for (const bool mathRaster : {false, true}) {
+    Runtime runtime(false, foreground, QUrl::fromLocalFile(webDir() + QLatin1Char('/')), QString(),
+                    QStringLiteral("typst"));
+    QSignalSpy rendered(runtime.adapter, &MarkdownViewerAdapter::workFinished);
+    QSignalSpy native(runtime.adapter, &MarkdownViewerAdapter::typstReady);
+    QSignalSpy saved(runtime.adapter, &MarkdownViewerAdapter::contentReady);
+    QSignalSpy copied(runtime.adapter, &MarkdownViewerAdapter::crossCopyReady);
+    QSignalSpy exported(runtime.adapter, &MarkdownViewerAdapter::pdfRenderReady);
+    QVERIFY(runtime
+                .renderDocument(QStringLiteral("Before $sqrt(x)$\n\n") +
+                                typstBlockFence(typstBlockMarkup()) + QLatin1Char('\n') +
+                                typstBlockFence(typstBlockPages()) + QLatin1Char('\n') +
+                                typstBlockFence(QStringLiteral("#let broken = (")) +
+                                QStringLiteral("\nAfter\n"))
+                .error.isEmpty());
+    QTRY_COMPARE_WITH_TIMEOUT(rendered.count(), 1, 30000);
+    QCOMPARE(native.count(), 4);
+    auto live = typstDom(runtime.page).value(QStringLiteral("svgs")).toArray();
+    QCOMPARE(live.size(), 1);
+    const auto blocks = typstDom(runtime.page, true).value(QStringLiteral("svgs")).toArray();
+    QCOMPARE(blocks.size(), 2);
+    for (const auto &block : blocks)
+      live.append(block);
+    QJsonObject originalById;
+    for (const auto &reply : native) {
+      const auto result = reply.at(1).toJsonObject();
+      if (result.value(QStringLiteral("error")).toString().isEmpty())
+        originalById.insert(reply.at(0).toString(), result.value(QStringLiteral("svg")));
+    }
+    QCOMPARE(originalById.size(), 3);
+    const auto inspectHtml = [&](const QString &p_html) {
+      const auto html =
+          QString::fromUtf8(QJsonDocument(QJsonObject{{QStringLiteral("html"), p_html}})
+                                .toJson(QJsonDocument::Compact));
+      return evaluateObject(runtime.page, QStringLiteral(R"JS((() => {
+        const doc = new DOMParser().parseFromString(%1.html, 'text/html');
+        return {svgs:Array.from(doc.querySelectorAll('svg.typst-math, svg.typst-block'), svg => ({
+            id:svg.id, svg:new XMLSerializer().serializeToString(svg)})),
+          math:doc.querySelectorAll('svg.typst-math').length,
+          blocks:doc.querySelectorAll('svg.typst-block').length,
+          blockImages:doc.querySelectorAll('img[data-typst-block-png]').length,
+          mathImages:doc.querySelectorAll('img[data-math-png]').length,
+          mappedBlocks:doc.querySelectorAll('section.typst-block-container.source-line[data-source-line]').length,
+          images:Array.from(doc.querySelectorAll('img'), img => ({src:img.src,
+            width:parseFloat(img.style.width), height:parseFloat(img.style.height)})),
+          unsafe:!!doc.querySelector('svg image, svg script, svg foreignObject, svg style, svg a'),
+          external:Array.from(doc.querySelectorAll('svg *')).some(node => Array.from(node.attributes).some(attr =>
+            attr.localName === 'href' && !attr.value.startsWith('#'))),
+          failed:!!doc.querySelector('code.lang-typst[title]') &&
+            doc.querySelector('code.lang-typst[title]').textContent === '#let broken = (\n'};
+      })())JS")
+                                              .arg(html));
+    };
+    runtime.adapter->saveContent();
+    QTRY_COMPARE_WITH_TIMEOUT(saved.count(), 1, 10000);
+    const auto html = saved.first().at(2).toString();
+    const auto ordinary = inspectHtml(html);
+    QCOMPARE(ordinary.value(QStringLiteral("math")).toInt(), 1);
+    QCOMPARE(ordinary.value(QStringLiteral("blocks")).toInt(), 2);
+    QCOMPARE(ordinary.value(QStringLiteral("images")).toArray().size(), 0);
+    QCOMPARE(ordinary.value(QStringLiteral("mappedBlocks")).toInt(), 2);
+    QVERIFY(ordinary.value(QStringLiteral("failed")).toBool());
+    QVERIFY(!ordinary.value(QStringLiteral("unsafe")).toBool());
+    QVERIFY(!ordinary.value(QStringLiteral("external")).toBool());
+    QJsonArray standalone;
+    const auto savedSvgs = ordinary.value(QStringLiteral("svgs")).toArray();
+    QCOMPARE(savedSvgs.size(), live.size());
+    for (int i = 0; i < live.size(); ++i) {
+      auto svg = live.at(i).toObject();
+      QCOMPARE(savedSvgs.at(i).toObject().value(QStringLiteral("id")),
+               svg.value(QStringLiteral("id")));
+      svg.insert(QStringLiteral("svg"), savedSvgs.at(i).toObject().value(QStringLiteral("svg")));
+      standalone.append(svg);
+    }
+    const auto standaloneRaster = rasterSvgs(runtime.page, standalone);
+    QVERIFY(!standaloneRaster.contains(QStringLiteral("error")));
+    QCOMPARE(standaloneRaster.value(QStringLiteral("images")).toArray().size(), 3);
+    for (const auto &png : standaloneRaster.value(QStringLiteral("images")).toArray())
+      QVERIFY(inkPixels(dataImage(png), foreground) > 30);
+    QVERIFY(inkPixels(dataImage(standaloneRaster.value(QStringLiteral("images")).toArray().last()),
+                      QColor(161, 47, 89)) > 100);
+
+    runtime.adapter->crossCopyRequested(301, 9, QStringLiteral("Evernote"),
+                                        QUrl::fromLocalFile(webDir() + QLatin1Char('/')).toString(),
+                                        html);
+    QTRY_COMPARE_WITH_TIMEOUT(copied.count(), 1, 30000);
+    QCOMPARE(copied.first().at(0).toULongLong(), quint64(301));
+    QCOMPARE(copied.first().at(1).toULongLong(), quint64(9));
+    const auto clipboard = inspectHtml(copied.first().at(2).toString());
+    QCOMPARE(clipboard.value(QStringLiteral("svgs")).toArray().size(), 0);
+    const auto clipboardImages = clipboard.value(QStringLiteral("images")).toArray();
+    QCOMPARE(clipboardImages.size(), 3);
+    QVERIFY(clipboard.value(QStringLiteral("failed")).toBool());
+    QJsonArray references;
+    for (int i = 0; i < clipboardImages.size(); ++i) {
+      const auto item = clipboardImages.at(i).toObject();
+      const auto png = dataImage(item.value(QStringLiteral("src")));
+      const auto svg = live.at(i).toObject();
+      QVERIFY(inkPixels(png, foreground) > 30);
+      QVERIFY(transparentBorder(png));
+      QVERIFY(std::abs(item.value(QStringLiteral("width")).toDouble() -
+                       svg.value(QStringLiteral("width")).toDouble()) < 0.05);
+      QVERIFY(std::abs(item.value(QStringLiteral("height")).toDouble() -
+                       svg.value(QStringLiteral("height")).toDouble()) < 0.05);
+      references.append(QJsonObject{
+          {QStringLiteral("svg"), originalById.value(svg.value(QStringLiteral("id")).toString())},
+          {QStringLiteral("width"), png.width() / 2.0},
+          {QStringLiteral("height"), png.height() / 2.0}});
+    }
+    const auto reference = rasterSvgs(runtime.page, references);
+    QVERIFY(!reference.contains(QStringLiteral("error")));
+    QCOMPARE(reference.value(QStringLiteral("images")).toArray().size(), 3);
+    for (int i = 0; i < 3; ++i)
+      QVERIFY(sameMathInk(dataImage(clipboardImages.at(i).toObject().value(QStringLiteral("src"))),
+                          dataImage(reference.value(QStringLiteral("images")).toArray().at(i))));
+    QCOMPARE(typstDom(runtime.page, true).value(QStringLiteral("svgs")).toArray().size(), 2);
+
+    // The production export hook settles through the native pdfRenderReady signal.
+    // Diagram-only export must leave Typst math alone; math export includes blocks too.
+    const auto options = mathRaster ? QStringLiteral("{rasterizeMath:true}")
+                                    : QStringLiteral("{rasterizeDiagrams:true}");
+    evaluate(runtime.page, QStringLiteral("vxcore.prepareForExport(%1)").arg(options));
+    QTRY_COMPARE_WITH_TIMEOUT(exported.count(), 1, 30000);
+    runtime.adapter->saveContent();
+    QTRY_COMPARE_WITH_TIMEOUT(saved.count(), 2, 10000);
+    const auto converted = inspectHtml(saved.last().at(2).toString());
+    QCOMPARE(converted.value(QStringLiteral("blocks")).toInt(), 0);
+    QCOMPARE(converted.value(QStringLiteral("math")).toInt(), mathRaster ? 0 : 1);
+    QCOMPARE(converted.value(QStringLiteral("blockImages")).toInt(), 2);
+    QCOMPARE(converted.value(QStringLiteral("mathImages")).toInt(), mathRaster ? 1 : 0);
+    QCOMPARE(converted.value(QStringLiteral("mappedBlocks")).toInt(), 2);
+    QVERIFY(converted.value(QStringLiteral("failed")).toBool());
+    const auto images = converted.value(QStringLiteral("images")).toArray();
+    QCOMPARE(images.size(), mathRaster ? 3 : 2);
+    references = {};
+    for (int i = 0; i < images.size(); ++i) {
+      const auto item = images.at(i).toObject();
+      const auto png = dataImage(item.value(QStringLiteral("src")));
+      const auto svg = live.at(i + (mathRaster ? 0 : 1)).toObject();
+      QVERIFY(inkPixels(png, foreground) > 30);
+      QVERIFY(transparentBorder(png));
+      QCOMPARE(item.value(QStringLiteral("width")).toInt(),
+               static_cast<int>(std::ceil(svg.value(QStringLiteral("width")).toDouble())));
+      QCOMPARE(item.value(QStringLiteral("height")).toInt(),
+               static_cast<int>(std::ceil(svg.value(QStringLiteral("height")).toDouble())));
+      references.append(QJsonObject{
+          {QStringLiteral("svg"), originalById.value(svg.value(QStringLiteral("id")).toString())},
+          {QStringLiteral("width"), png.width() / 2.0},
+          {QStringLiteral("height"), png.height() / 2.0}});
+    }
+    const auto exportReference = rasterSvgs(runtime.page, references);
+    QVERIFY(!exportReference.contains(QStringLiteral("error")));
+    QCOMPARE(exportReference.value(QStringLiteral("images")).toArray().size(), images.size());
+    for (int i = 0; i < images.size(); ++i)
+      QCOMPARE(dataImage(images.at(i).toObject().value(QStringLiteral("src"))),
+               dataImage(exportReference.value(QStringLiteral("images")).toArray().at(i)));
+    QVERIFY(inkPixels(dataImage(images.last().toObject().value(QStringLiteral("src"))),
+                      QColor(161, 47, 89)) > 100);
+    evaluate(runtime.page, QStringLiteral("vxcore.prepareForExport(%1)").arg(options));
+    QTRY_COMPARE_WITH_TIMEOUT(exported.count(), 2, 10000);
+    QCOMPARE(
+        evaluate(
+            runtime.page,
+            QStringLiteral(
+                "vxcore.contentContainer.querySelectorAll('img[data-typst-block-png]').length"))
+            .toInt(),
+        2);
+    QCOMPARE(rendered.count(), 1);
   }
 }
 

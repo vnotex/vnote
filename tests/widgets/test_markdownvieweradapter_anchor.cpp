@@ -21,6 +21,8 @@
 #include <vtextedit/previewmgr.h>
 #include <vtextedit/texteditorconfig.h>
 #include <vtextedit/theme.h>
+#include <vtextedit/typstfragmentrenderer.h>
+#include <vtextedit/typstruntime.h>
 #include <vtextedit/vmarkdowneditor.h>
 #include <vtextedit/vtextedit.h>
 
@@ -45,6 +47,7 @@ private slots:
   void graphPreviewCanvas_data();
   void graphPreviewCanvas();
   void localGraphPreviewCanvas();
+  void typstBlockUsesNativePreview();
   void graphPreviewCanvasChangesWithTheme();
   void numberingStatusTracksDocumentReplacement();
   void htmlAfterRepeatedUnreadyReset_data();
@@ -870,6 +873,48 @@ void TestMarkdownViewerAdapterAnchor::graphPreviewCanvas() {
                                          .arg(QString::fromLatin1(QTest::currentDataTag())))));
   }
   verifyGraphCanvas(image, canvas ? c_graphCanvas : c_editorBackground);
+}
+
+void TestMarkdownViewerAdapterAnchor::typstBlockUsesNativePreview() {
+  vte::TypstRuntime runtime;
+  QVERIFY(runtime.isAvailable());
+  GraphCanvasFixture fixture;
+  fixture.m_helper.setInplacePreviewMathBlocksEnabled(false);
+  QVERIFY(QTest::qWaitForWindowExposed(&fixture.m_editor));
+  vte::TypstFragmentRenderer renderer(&runtime);
+  quint64 requestId = 0;
+  quint64 requestStamp = 0;
+  connect(&fixture.m_helper, &PreviewHelper::graphPreviewRequested, &renderer,
+          [&](quint64 p_id, TimeStamp p_stamp, const QString &p_language, const QString &p_source,
+              qreal) {
+            QCOMPARE(p_language, QStringLiteral("typst"));
+            requestId = p_id;
+            requestStamp = p_stamp;
+            QVERIFY(renderer.renderMarkupToSvg(p_source, QColor(36, 122, 200)));
+          });
+  connect(&renderer, &vte::TypstFragmentRenderer::finished, &fixture.m_editor,
+          [&](const vte::TypstFragmentRenderer::Result &p_result) {
+            QVERIFY2(p_result.isSuccess(), qPrintable(p_result.m_error));
+            fixture.m_helper.handleGraphPreviewData(MarkdownWebJobController::PreviewData(
+                requestId, requestStamp, QStringLiteral("svg"), p_result.m_svg, true));
+          });
+  fixture.setSource(
+      QStringLiteral("typst"),
+      QStringLiteral("#rect(width: 80pt, height: 30pt, fill: rgb(\"#247ac8\"), stroke: none)"));
+  const auto authored = fixture.m_editor.getText();
+  QTRY_COMPARE_WITH_TIMEOUT(fixture.m_publications, 1, 60000);
+  QCOMPARE(fixture.m_editor.getText(), authored);
+  const auto image = fixture.render();
+  int blue = 0;
+  for (int y = 0; y < image.height(); ++y) {
+    for (int x = 0; x < image.width(); ++x) {
+      const auto color = image.pixelColor(x, y);
+      if (qAbs(color.red() - 36) <= 3 && qAbs(color.green() - 122) <= 3 &&
+          qAbs(color.blue() - 200) <= 3 && color.alpha() > 240)
+        ++blue;
+    }
+  }
+  QVERIFY(blue > 100);
 }
 
 void TestMarkdownViewerAdapterAnchor::localGraphPreviewCanvas() {

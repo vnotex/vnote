@@ -1,6 +1,7 @@
 # Changes
 ## Unreleased
 * Allow file-open settings to target an existing main or detached split by workspace ID, preserving background selection and rejecting unavailable destinations without rerouting
+* Render fenced `typst` blocks as full self-contained Typst markup independently of the math setting, preserving authored page layouts and multi-page output in reading, in-place previews, HTML/PDF export and cross-copy, including authorized protected notes
 * Add Typst as a Markdown math renderer through VTextEdit's isolated native runtime, with reader/in-place previews, self-contained HTML, PDF and cross-copy support; existing dollar delimiters use Typst syntax when selected, while KaTeX stays the default
 * Support Typst math in protected notes through profile-bound authorization, native in-place rasterization and revocation-safe cleanup; protected MathJax preferences retain bundled KaTeX, with unchanged CSP and resource restrictions
 * Refresh shared Markdown preview themes after publication, including EditOnly tabs, so math keeps the current foreground after light/dark switching

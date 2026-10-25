@@ -1115,14 +1115,15 @@ bool MarkdownViewWindow2::setupViewer() {
   if (m_protectedView) {
     auto *profiles = getServices().get<WebEngineProfileService>();
     auto *profile = m_protectedView->page.profile;
-    adapterObj->setProtectedMathAuthorization(m_protectedView->page.isAuthorized);
+    adapterObj->setProtectedTypstAuthorization(m_protectedView->page.isAuthorized);
     connect(profiles, &WebEngineProfileService::protectedProfileRevoked, adapterObj,
             [adapterObj, profile](QWebEngineProfile *p_profile) {
               if (p_profile == profile)
-                adapterObj->revokeProtectedMath();
+                adapterObj->revokeProtectedTypst();
             });
-    connect(profile, &QObject::destroyed, adapterObj, &MarkdownViewerAdapter::revokeProtectedMath);
-    connect(profiles, &QObject::destroyed, adapterObj, &MarkdownViewerAdapter::revokeProtectedMath);
+    connect(profile, &QObject::destroyed, adapterObj, &MarkdownViewerAdapter::revokeProtectedTypst);
+    connect(profiles, &QObject::destroyed, adapterObj,
+            &MarkdownViewerAdapter::revokeProtectedTypst);
   }
   m_viewer->setController(m_windowController);
   updateSectionNumberOptions();

@@ -224,6 +224,7 @@ QString generateMarkdownViewerTemplate(ConfigMgr2 &p_configMgr,
       placeholder,
       fillScriptTag(resolveConfigFile(p_configMgr, QStringLiteral("web/js/webviewjobs.js"))) +
           placeholder +
+          fillScriptTag(resolveConfigFile(p_configMgr, QStringLiteral("web/js/typst.js"))) +
           fillScriptTag(
               resolveConfigFile(p_configMgr, QStringLiteral("web/js/markdownwebjobs.js"))));
   fillResources(htmlTemplate, viewerResource, p_configMgr);
