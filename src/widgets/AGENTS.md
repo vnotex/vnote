@@ -237,7 +237,9 @@ views are independent. Pass the action's checked state to
 `m_previewForeground` from `base#content#fg`. The native compiler applies page/text color
 defaults only for previews; explicit document styles win and export colors remain unchanged.
 Set `TypstEditorConfig::m_pdfBackground` from `ThemeService::getBaseBackground()`, matching
-the PDF view's canvas in Edit and Read and the default page fill while theme styling is on.
+the PDF view's outer canvas in Edit and Read. The default preview page fill instead follows
+`text-editor.theme`'s `typst-editor-styles.Text.background-color`, inheriting
+`editor-styles.Text.background-color` when omitted, just like the source editor.
 Turning the option off restores native Typst page/text colors without changing the canvas.
 The native pane paints the canvas color directly:
 QSS can override widget palettes, so a `QPalette::Dark` override is not sufficient.
