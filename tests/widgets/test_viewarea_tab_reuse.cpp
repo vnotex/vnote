@@ -1474,7 +1474,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
     }
     return {};
   };
-  QVERIFY(waitForRender(ordinary, QStringLiteral("Ordinary")));
+  QVERIFY(waitForCurrentRender(ordinary, native, QStringLiteral("Ordinary")));
   const auto ordinaryToken = ordinary->adapter()->documentGeneration();
   QVERIFY(native->isCurrent(ordinaryToken));
   const auto tabId = window->getViewWindowId();
@@ -1485,7 +1485,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   QTRY_VERIFY(ordinary.isNull());
   QPointer<MarkdownViewer> privateReader = window->findChild<MarkdownViewer *>();
   QVERIFY(privateReader);
-  QVERIFY(waitForRender(privateReader, QStringLiteral("Protected alpha")));
+  QVERIFY(waitForCurrentRender(privateReader, native, QStringLiteral("Protected alpha")));
   const auto alphaToken = privateReader->adapter()->documentGeneration();
   QVERIFY(alphaToken != ordinaryToken && native->isCurrent(alphaToken));
   QCOMPARE(window->findChild<MarkdownRenderController *>(), native);
@@ -1589,7 +1589,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   auto *newReader = window->findChild<MarkdownViewer *>();
   QVERIFY(newReader);
   QVERIFY(newReader->page()->url() != oldUrl);
-  QVERIFY(waitForRender(newReader, QStringLiteral("Protected beta")));
+  QVERIFY(waitForCurrentRender(newReader, native, QStringLiteral("Protected beta")));
   const auto betaToken = newReader->adapter()->documentGeneration();
   QVERIFY(betaToken != alphaToken && native->isCurrent(betaToken));
   QCOMPARE(window->findChild<MarkdownRenderController *>(), native);
@@ -1621,7 +1621,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   auto *publicReader = window->findChild<MarkdownViewer *>();
   QVERIFY(publicReader);
   QCOMPARE(publicReader->page()->profile(), f->profiles->profile());
-  QVERIFY(waitForRender(publicReader, QStringLiteral("Public end")));
+  QVERIFY(waitForCurrentRender(publicReader, native, QStringLiteral("Public end")));
   const auto publicToken = publicReader->adapter()->documentGeneration();
   QVERIFY(publicToken != betaToken && native->isCurrent(publicToken));
   QCOMPARE(window->findChild<MarkdownRenderController *>(), native);

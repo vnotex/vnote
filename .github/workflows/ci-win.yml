@@ -161,8 +161,10 @@ jobs:
           VS_CMD: ${{ matrix.config.vs_cmd }}
         run: |
           call "%VS_CMD%"
-          ctest -C Release --output-on-failure || exit /b 1
-          ctest --test-dir libs/vtextedit -C Release -R "^test_typsteditor$" --output-on-failure --no-tests=error || exit /b 1
+          set TEST_RESULT=0
+          ctest -C Release --output-on-failure || set TEST_RESULT=1
+          ctest --test-dir libs/vtextedit -C Release -R "^test_typsteditor$" --output-on-failure --no-tests=error || set TEST_RESULT=1
+          exit /b %TEST_RESULT%
         working-directory: ${{runner.workspace}}/build
 
       - name: Preserve native Typst failure report
@@ -170,21 +172,30 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: native-typst-test-report
-          path: ${{runner.workspace}}/build/tests/widgets/test_typstviewwindow_*.xml
+          path: |
+            ${{runner.workspace}}/build/tests/widgets/test_typstviewwindow_*.xml
+            ${{runner.workspace}}/build/Testing/Temporary/Last*.log
+            ${{runner.workspace}}/build/libs/vtextedit/Testing/Temporary/Last*.log
           if-no-files-found: warn
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
         # On failure of the previous step, re-run only the failing tests with
         # --extra-verbose so Qt Test's PASS/FAIL lines + assertion details
         # land in the CI log; Typst also preserves its JUnit report above.
-        # This step never gates the workflow (|| exit 0) - it's pure diagnostics.
+        # This step never gates the workflow; each suite needs its own failure history.
         if: failure() && steps.tests.outcome == 'failure'
         shell: cmd
         env:
           VS_CMD: ${{ matrix.config.vs_cmd }}
         run: |
           call "%VS_CMD%"
-          ctest -C Release --rerun-failed --extra-verbose || exit 0
+          if exist Testing\Temporary\LastTestsFailed.log (
+            for %%F in (Testing\Temporary\LastTestsFailed.log) do if %%~zF GTR 0 ctest -C Release --rerun-failed --extra-verbose
+          )
+          if exist libs\vtextedit\Testing\Temporary\LastTestsFailed.log (
+            for %%F in (libs\vtextedit\Testing\Temporary\LastTestsFailed.log) do if %%~zF GTR 0 ctest --test-dir libs/vtextedit -C Release --rerun-failed --extra-verbose --no-tests=error
+          )
+          exit /b 0
         working-directory: ${{runner.workspace}}/build
 
       # Runs on EVERY build, not just releases: this is

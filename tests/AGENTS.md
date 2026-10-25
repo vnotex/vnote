@@ -207,10 +207,11 @@ message box. Do not stop on the first click or infer dialog readiness from
 `QThread::loopLevel()`.
 
 `resourceRemoteConsent` owns a parent-matched `QPointer<QMessageBox>` and an answer timer
-until the resource-menu operation returns. Cocoa can deliver an answer during `show()`,
-before `exec()` starts its nested loop. Re-show that observed box if it became hidden,
-then click the expected Yes/No button; repeated clicks alone need not exit a hidden dialog's
-loop. This fixture does not use `DialogDriver`'s visible-active-only tick.
+until the resource-menu operation returns. A Cocoa native alert's QWidget is a hidden
+mirror (`WA_DontShowOnScreen`), not its interactive surface: click the real NSButton's
+Yes/No tag on the active native alert, or the parent's attached sheet for WindowModal.
+Never re-show or click that dummy QWidget during native modal startup. The QWidget fallback
+requires the matching visible active modal and its visible expected button.
 
 **Native WebEngine raster tests:** on macOS, `test_mindmapexport`, `test_htmlpdfexporter`,
 `test_markdownwebjobs` and `test_webviewservice` use `cocoa` and the matching Qt kit's
@@ -221,6 +222,8 @@ Native Markdown render waits observe the adapter's completed document generation
 actual DOM, not the independent web-job handshake. JavaScript observations pump events;
 use one `QTest::qWaitFor` and recheck the generation after observation, rather than a
 `QTRY` predicate that can become false again during its post-success evaluation.
+If the next assertion requires native currentness, use `waitForCurrentRender`, not the
+DOM-only `waitForRender`; protected/public handoffs retain all token and stale-work checks.
 
 Typst context-menu fixtures select Paste by Qt's `edit-paste` action ID and retire
 resources after action admission, not from a timer that can fire during Cocoa's menu
@@ -229,16 +232,20 @@ without depending on GUI timers: Windows OLE and Cocoa tracking loops can starve
 Use joined native-input workers, restoring the cursor and preventing late input from
 reaching the next case; Cocoa retains app-local NSEvents rather than global HID input.
 Windows drag motion uses non-coalesced `SendInput` records in normalized virtual-desktop
-coordinates. Press, drag entry and destination delivery share one bounded deadline; the worker
-attempts button release even if an acknowledgement never arrives. `SetCursorPos` only restores
-the saved pointer.
+coordinates, after observing the source pointer position. Native workers wait for the press
+and threshold mouse move before sending the destination; waiting for OLE drag entry first
+can deadlock. Destination arrival can be DragEnter or DragMove. Release follows arrival or
+the bounded deadline; workers always attempt release and restore the saved pointer. Cocoa
+creates timestamped NSEvents at dispatch, without warping ahead of delivered source events.
+Create native peers before measuring drag coordinates.
 Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Keep the normal
 QtTest crash handler. Build the host Typst module's `test_typstviewwindow_insertion` executable
 once, then select `^test_typstviewwindow_(insertion|cleanup|resources)$` in CTest. These serial
 groups share the executable and each retain a 240-second deadline. With `VNOTE_TYPST_TEST_GROUP`
 unset, a direct executable launch still runs every case. Each group writes plaintext stdout and
-its own `test_typstviewwindow_<group>.xml` JUnit file in the CTest working directory. Windows CI
-preserves all original reports before diagnostic reruns, since hosted stdout can omit assertions.
+its own `test_typstviewwindow_<group>.xml` JUnit file in the CTest working directory. CI
+preserves original parent/native CTest logs and these reports before diagnostic reruns,
+since hosted stdout can omit assertions.
 Set Qt's active window explicitly at focus-sensitive fixture operations; `activateWindow()`
 alone depends on a window manager under Xvfb. After dismissing a modal dialog, wait for
 window activation and editor focus before sending shortcuts. Settle native exposure and

@@ -233,9 +233,22 @@ jobs:
           # libVTextEdit.dylib lives next to the parent build's VNote binary;
           # add it to DYLD_LIBRARY_PATH so Qt-side test exes resolve it at load.
           export DYLD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${DYLD_LIBRARY_PATH:-}"
-          ctest --output-on-failure
-          ctest --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error
+          test_status=0
+          ctest --output-on-failure || test_status=1
+          ctest --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error || test_status=1
+          exit "$test_status"
         working-directory: ${{runner.workspace}}/build
+
+      - name: Preserve original test failure reports
+        if: always() && steps.tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-macos-${{matrix.config.qt}}
+          path: |
+            ${{runner.workspace}}/build/Testing/Temporary/Last*.log
+            ${{runner.workspace}}/build/libs/vtextedit/Testing/Temporary/Last*.log
+            ${{runner.workspace}}/build/tests/widgets/test_typstviewwindow_*.xml
+          if-no-files-found: warn
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
         # On failure of the previous step, re-run only the failing tests with
@@ -250,7 +263,12 @@ jobs:
           export LC_ALL=en_US.UTF-8
           export LANG=en_US.UTF-8
           export DYLD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${DYLD_LIBRARY_PATH:-}"
-          ctest --rerun-failed --extra-verbose || true
+          if [ -s Testing/Temporary/LastTestsFailed.log ]; then
+            ctest --rerun-failed --extra-verbose || true
+          fi
+          if [ -s libs/vtextedit/Testing/Temporary/LastTestsFailed.log ]; then
+            ctest --test-dir libs/vtextedit --rerun-failed --extra-verbose --no-tests=error || true
+          fi
         working-directory: ${{runner.workspace}}/build
 
       - name: Remove Test Keychain

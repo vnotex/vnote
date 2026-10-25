@@ -206,9 +206,22 @@ jobs:
             echo "test_pdfviewercore_js not registered; Qt6::Qml (qtdeclarative) missing" >&2
             exit 1
           fi
-          bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --output-on-failure
-          QT_QPA_PLATFORM=xcb bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error
+          test_status=0
+          bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --output-on-failure || test_status=1
+          QT_QPA_PLATFORM=xcb bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error || test_status=1
+          exit "$test_status"
         working-directory: ${{runner.workspace}}/build
+
+      - name: Preserve original test failure reports
+        if: always() && steps.tests.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-linux
+          path: |
+            ${{runner.workspace}}/build/Testing/Temporary/Last*.log
+            ${{runner.workspace}}/build/libs/vtextedit/Testing/Temporary/Last*.log
+            ${{runner.workspace}}/build/tests/widgets/test_typstviewwindow_*.xml
+          if-no-files-found: warn
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
         # On failure of the previous step, re-run only the failing tests with

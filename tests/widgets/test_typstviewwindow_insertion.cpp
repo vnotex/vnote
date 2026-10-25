@@ -90,7 +90,6 @@
 #include <widgets/typstviewwindow.h>
 
 #include <atomic>
-#include <chrono>
 #include <functional>
 #include <memory>
 #include <thread>
@@ -1310,16 +1309,35 @@ void TestTypstViewWindowInsertion::resourceRemoteConsent() {
       if (!question) {
         return;
       }
-      prompted = true;
-      // Cocoa may process the first answer during show(), before exec() begins.
-      // Re-show an early-hidden box so the next answer can exit the exec() loop.
-      if (question->isHidden()) {
-        question->show();
-      }
-      if (!question) {
+      const auto choice = accept ? QMessageBox::Yes : QMessageBox::No;
+#ifdef Q_OS_MACOS
+      if (question->testAttribute(Qt::WA_DontShowOnScreen)) {
+        // A native alert's QWidget buttons are only mirrors. Answer the actual
+        // modal alert/sheet, after AppKit has started its modal session.
+        auto *parentView = reinterpret_cast<NSView *>(m_window->winId());
+        NSWindow *alert = question->windowModality() == Qt::WindowModal
+                              ? [[parentView window] attachedSheet]
+                              : [NSApp modalWindow];
+        if (!alert || ![alert isVisible]) {
+          return;
+        }
+        auto *button = [[alert contentView] viewWithTag:static_cast<NSInteger>(choice)];
+        if ([button isKindOfClass:[NSButton class]] &&
+            [static_cast<NSButton *>(button) isEnabled]) {
+          prompted = true;
+          [static_cast<NSButton *>(button) performClick:nil];
+        }
         return;
       }
-      if (auto *button = question->button(accept ? QMessageBox::Yes : QMessageBox::No)) {
+#endif
+      if (!question->isVisible() || QApplication::activeModalWidget() != question) {
+        return;
+      }
+      if (auto *button = question->button(choice)) {
+        if (!button->isVisible()) {
+          return;
+        }
+        prompted = true;
         button->click();
       } else {
         error = QStringLiteral("Missing external consent button");
@@ -3290,7 +3308,16 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   const auto url = QStringLiteral("https://example.invalid/move");
   const auto baseline = QStringLiteral("Before\n\n") + url + QStringLiteral("\n\nAfter\n");
   show(openNote(QStringLiteral("main.typst"), baseline));
-  // Settle the native window before measuring the source and drop positions.
+  // Creating a native peer can reconstruct the widget tree. Do this before
+  // settling exposure/focus and measuring the source and drop positions.
+#ifdef Q_OS_WIN
+  const auto window = reinterpret_cast<HWND>(m_window->winId());
+  QVERIFY(window);
+#elif defined(Q_OS_MACOS)
+  auto *nativeView = reinterpret_cast<NSView *>(m_window->winId());
+  NSWindow *nativeWindow = [nativeView window];
+  QVERIFY2(nativeWindow && [nativeWindow isVisible], "Cocoa drag fixture has no visible window");
+#endif
   QVERIFY(QTest::qWaitForWindowExposed(m_window.get()));
   QVERIFY(QTest::qWaitForWindowActive(m_window.get()));
   m_edit->setFocus();
@@ -3315,9 +3342,49 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   connect(&safety, &QTimer::timeout, this, [] { QDrag::cancel(); });
   safety.start(4000);
 #endif
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+  const auto threshold = start + QPoint(QApplication::startDragDistance() + 8, 0);
+  struct DragProgress : QObject {
+    QSemaphore pressed, thresholdMoved, arrived;
+    QPoint start, threshold, end, lastPress{-1, -1}, lastMove{-1, -1};
+    int doubleClicks = 0, enters = 0;
+    Qt::MouseButton lastButton = Qt::NoButton;
+    bool eventFilter(QObject *, QEvent *p_event) override {
+      if (p_event->type() == QEvent::MouseButtonPress) {
+        auto *mouse = static_cast<QMouseEvent *>(p_event);
+        lastPress = mouse->position().toPoint();
+        lastButton = mouse->button();
+        if (mouse->button() == Qt::LeftButton && (lastPress - start).manhattanLength() <= 2) {
+          pressed.release();
+        }
+      } else if (p_event->type() == QEvent::MouseMove) {
+        auto *mouse = static_cast<QMouseEvent *>(p_event);
+        lastMove = mouse->position().toPoint();
+        if (mouse->buttons().testFlag(Qt::LeftButton) &&
+            (lastMove - threshold).manhattanLength() <= 2) {
+          thresholdMoved.release();
+        }
+      } else if (p_event->type() == QEvent::MouseButtonDblClick) {
+        ++doubleClicks;
+      } else if (p_event->type() == QEvent::DragEnter || p_event->type() == QEvent::DragMove) {
+        // The native loop can first enter at the destination; it need not send
+        // another DragMove until the pointer moves again.
+        if (p_event->type() == QEvent::DragEnter)
+          ++enters;
+        lastMove = static_cast<QDragMoveEvent *>(p_event)->position().toPoint();
+        if ((lastMove - end).manhattanLength() <= 2) {
+          arrived.release();
+        }
+      }
+      return false;
+    }
+  } progress;
+  progress.start = start;
+  progress.threshold = threshold;
+  progress.end = end;
+  m_edit->viewport()->installEventFilter(&progress);
+#endif
 #ifdef Q_OS_WIN
-  const auto window = reinterpret_cast<HWND>(m_window->winId());
-  QVERIFY(window);
   SetForegroundWindow(window);
   if (!QTest::qWaitFor([&] { return GetForegroundWindow() == window; }, 1000)) {
     QSKIP("Windows denied foreground input to the native drag fixture");
@@ -3330,35 +3397,6 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
     mapped = ClientToScreen(window, &native) && mapped;
     return QPoint(native.x, native.y);
   };
-  struct DragProgress : QObject {
-    QSemaphore pressed, entered, arrived;
-    QPoint start, end, lastPress{-1, -1}, lastMove{-1, -1};
-    int doubleClicks = 0;
-    Qt::MouseButton lastButton = Qt::NoButton;
-    bool eventFilter(QObject *, QEvent *p_event) override {
-      if (p_event->type() == QEvent::MouseButtonPress) {
-        auto *mouse = static_cast<QMouseEvent *>(p_event);
-        lastPress = mouse->position().toPoint();
-        lastButton = mouse->button();
-        if (mouse->button() == Qt::LeftButton && (lastPress - start).manhattanLength() <= 2) {
-          pressed.release();
-        }
-      } else if (p_event->type() == QEvent::MouseButtonDblClick) {
-        ++doubleClicks;
-      } else if (p_event->type() == QEvent::DragEnter) {
-        entered.release();
-      } else if (p_event->type() == QEvent::DragMove) {
-        lastMove = static_cast<QDragMoveEvent *>(p_event)->position().toPoint();
-        if ((lastMove - end).manhattanLength() <= 2) {
-          arrived.release();
-        }
-      }
-      return false;
-    }
-  } progress;
-  progress.start = start;
-  progress.end = end;
-  m_edit->viewport()->installEventFilter(&progress);
   // Convert Qt logical points to native pixels, then to SendInput's virtual-desktop range.
   const auto globalStart = nativePoint(start);
   const auto globalEnd = nativePoint(end);
@@ -3396,10 +3434,8 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
                        MOUSEEVENTF_MOVE_NOCOALESCE;
     return event;
   };
-  auto pressInput = motion(globalStart);
-  pressInput.mi.dwFlags |= MOUSEEVENTF_LEFTDOWN;
-  auto thresholdInput =
-      motion(globalStart + QPoint(qRound((QApplication::startDragDistance() + 8) * scale), 0));
+  auto positionInput = motion(globalStart);
+  auto thresholdInput = motion(nativePoint(threshold));
   auto destinationInput = motion(globalEnd);
   const auto button = [](DWORD flags) {
     INPUT event = {};
@@ -3410,7 +3446,7 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   POINT previousPointer;
   QVERIFY(GetCursorPos(&previousPointer));
   std::atomic<bool> releasePosted{false}, sequenceComplete{false};
-  bool pressAcknowledged = false, enterAcknowledged = false, destinationAcknowledged = false;
+  bool pressAcknowledged = false, thresholdAcknowledged = false, destinationAcknowledged = false;
   POINT pointerAfterPress{-1, -1};
   bool moved = false;
   {
@@ -3419,20 +3455,28 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
       SetCursorPos(previousPointer.x, previousPointer.y);
     });
     const QDeadlineTimer deadline(qMax(0, safety.remainingTime() - 250));
-    QVERIFY(SendInput(1, &pressInput, sizeof(INPUT)) == 1);
+    QVERIFY(SendInput(1, &positionInput, sizeof(INPUT)) == 1);
+    QVERIFY2(QTest::qWaitFor(
+                 [&] {
+                   POINT pointer;
+                   return GetCursorPos(&pointer) &&
+                          (QPoint(pointer.x, pointer.y) - globalStart).manhattanLength() <= 2;
+                 },
+                 deadline.remainingTime()),
+             "Windows did not deliver the source pointer position");
+    QVERIFY(button(MOUSEEVENTF_LEFTDOWN));
     GetCursorPos(&pointerAfterPress);
-    // Observe one real gesture rather than racing OLE with fixed sleeps. The worker
-    // always attempts release on that bounded deadline, even if an ack is absent.
+    // The threshold mouse move starts QDrag. OLE may need the next motion
+    // before DragEnter, so waiting for enter before sending it deadlocks.
     std::thread input([&] {
       pressAcknowledged = progress.pressed.tryAcquire(1, deadline);
       if (pressAcknowledged && SendInput(1, &thresholdInput, sizeof(INPUT)) == 1) {
-        enterAcknowledged = progress.entered.tryAcquire(1, deadline);
+        thresholdAcknowledged = progress.thresholdMoved.tryAcquire(1, deadline);
       }
-      const bool destinationSent = SendInput(1, &destinationInput, sizeof(INPUT)) == 1;
-      if (enterAcknowledged && destinationSent) {
+      if (thresholdAcknowledged && SendInput(1, &destinationInput, sizeof(INPUT)) == 1) {
         destinationAcknowledged = progress.arrived.tryAcquire(1, deadline);
       }
-      sequenceComplete.store(pressAcknowledged && enterAcknowledged && destinationAcknowledged);
+      sequenceComplete.store(pressAcknowledged && thresholdAcknowledged && destinationAcknowledged);
       releasePosted.store(button(MOUSEEVENTF_LEFTUP));
     });
     const auto joinInput = qScopeGuard([&] { input.join(); });
@@ -3446,8 +3490,9 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   QString failureDetails;
   if (!moved) {
     QDebug(&failureDetails) << "Windows drag release posted:" << releasePosted.load()
-                            << "press/enter/destination ack:" << pressAcknowledged
-                            << enterAcknowledged << destinationAcknowledged
+                            << "press/threshold/destination ack:" << pressAcknowledged
+                            << thresholdAcknowledged << destinationAcknowledged
+                            << "drag enters:" << progress.enters
                             << "observed press/move:" << progress.lastPress << progress.lastMove
                             << "button/double clicks:" << progress.lastButton
                             << progress.doubleClicks << "pointer after press:"
@@ -3460,128 +3505,92 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   QVERIFY2(moved, qPrintable(failureDetails));
   released = releasePosted.load();
 #elif defined(Q_OS_MACOS)
-  struct DragEvents : QObject {
-    int presses = 0, moves = 0, releases = 0, enters = 0, drops = 0;
-    bool eventFilter(QObject *, QEvent *p_event) override {
-      switch (p_event->type()) {
-      case QEvent::MouseButtonPress:
-        ++presses;
-        break;
-      case QEvent::MouseMove:
-        ++moves;
-        break;
-      case QEvent::MouseButtonRelease:
-        ++releases;
-        break;
-      case QEvent::DragEnter:
-        ++enters;
-        break;
-      case QEvent::Drop:
-        ++drops;
-        break;
-      default:
-        break;
-      }
-      return false;
-    }
-  } delivered;
-  m_edit->viewport()->installEventFilter(&delivered);
-  QVERIFY2(QTest::qWaitForWindowActive(m_window.get(), 1000),
-           "Cocoa did not activate the native drag fixture");
-  auto *nativeView = reinterpret_cast<NSView *>(m_window->winId());
-  NSWindow *nativeWindow = [nativeView window];
-  QVERIFY2(nativeWindow && [nativeWindow isVisible], "Cocoa drag fixture has no visible window");
-  const std::array<QPoint, 4> positions = {
-      start, start + QPoint(QApplication::startDragDistance() + 8, 0), end, end};
-  const std::array<int, 4> delays = {0, 80, 160, 280};
-  const std::array<NSEventType, 4> types = {NSEventTypeLeftMouseDown, NSEventTypeLeftMouseDragged,
-                                            NSEventTypeLeftMouseDragged, NSEventTypeLeftMouseUp};
+  const std::array<QPoint, 4> positions = {start, threshold, end, end};
+  std::array<NSPoint, 4> windowPositions;
   std::array<CGPoint, 4> pointerPositions;
-  std::array<NSEvent *, 6> events = {};
-  const auto releaseEvents = qScopeGuard([&] {
-    for (auto *event : events) {
-      [event release];
-    }
-  });
-  const auto timestamp = [[NSProcessInfo processInfo] systemUptime];
   for (size_t i = 0; i < positions.size(); ++i) {
     const auto local = m_edit->viewport()->mapTo(m_window.get(), positions[i]);
     const auto bounds = [nativeView bounds];
     const auto point = NSMakePoint(NSMinX(bounds) + local.x(), [nativeView isFlipped]
                                                                    ? NSMinY(bounds) + local.y()
                                                                    : NSMaxY(bounds) - local.y());
-    const auto windowPoint = [nativeView convertPoint:point toView:nil];
-    events[i] = [[NSEvent mouseEventWithType:types[i]
-                                    location:windowPoint
-                               modifierFlags:0
-                                   timestamp:timestamp + delays[i] / 1000.0
-                                windowNumber:[nativeWindow windowNumber]
-                                     context:nil
-                                 eventNumber:static_cast<NSInteger>(i + 1)
-                                  clickCount:1
-                                    pressure:i == 3 ? 0.0 : 1.0] retain];
-    // Qt's Cocoa cursor uses logical global points directly for Quartz. Do not
-    // multiply by devicePixelRatio, even on Retina or mixed-scale displays.
+    windowPositions[i] = [nativeView convertPoint:point toView:nil];
     const auto global = m_edit->viewport()->mapToGlobal(positions[i]);
     pointerPositions[i] = CGPointMake(global.x(), global.y());
   }
-  for (size_t i = 4; i < events.size(); ++i) {
-    events[i] = [[NSEvent keyEventWithType:i == 4 ? NSEventTypeKeyDown : NSEventTypeKeyUp
-                                  location:NSZeroPoint
-                             modifierFlags:0
-                                 timestamp:timestamp + 4.0
-                              windowNumber:[nativeWindow windowNumber]
-                                   context:nil
-                                characters:@"\033"
-               charactersIgnoringModifiers:@"\033"
-                                 isARepeat:NO
-                                   keyCode:53] retain];
-  }
-  for (auto *event : events) {
-    QVERIFY2(event, "Cocoa could not create a native drag event");
-  }
+  const auto windowNumber = [nativeWindow windowNumber];
   const auto previousPointer = QCursor::pos();
   CGError restoreError = kCGErrorSuccess;
   std::atomic<CGError> pointerError{kCGErrorSuccess};
-  std::atomic<bool> releasePosted{false};
-  std::atomic<bool> stopped{false};
+  std::atomic<bool> releasePosted{false}, sequenceComplete{false};
+  bool pressAcknowledged = false, thresholdAcknowledged = false, destinationAcknowledged = false;
   QSemaphore stop;
   bool moved = false;
   {
-    // AppKit's tracking loop need not dispatch Qt timers. Its own event queue
-    // accepts background posts without Accessibility access or global HID input.
-    // Warp too: native dragging also samples the window-server pointer position.
+    const QDeadlineTimer deadline(3750);
+    const QDeadlineTimer escapeDeadline(4000);
     NSApplication *application = NSApp;
-    std::thread input([application, events, pointerPositions, delays, &pointerError, &releasePosted,
-                       &stopped, &stop] {
+    std::thread input([&] {
       @autoreleasepool {
-        const auto started = std::chrono::steady_clock::now();
-        for (size_t i = 0; i < pointerPositions.size(); ++i) {
-          std::this_thread::sleep_until(started + std::chrono::milliseconds(delays[i]));
-          const auto error = CGWarpMouseCursorPosition(pointerPositions[i]);
-          if (error != kCGErrorSuccess) {
+        const auto postMouse = [&](size_t index, NSEventType type) {
+          const auto error = CGWarpMouseCursorPosition(pointerPositions[index]);
+          if (error != kCGErrorSuccess)
             pointerError.store(error);
+          NSEvent *event = [NSEvent mouseEventWithType:type
+                                              location:windowPositions[index]
+                                         modifierFlags:0
+                                             timestamp:[[NSProcessInfo processInfo] systemUptime]
+                                          windowNumber:windowNumber
+                                               context:nil
+                                           eventNumber:static_cast<NSInteger>(index + 1)
+                                            clickCount:1
+                                              pressure:type == NSEventTypeLeftMouseUp ? 0.0 : 1.0];
+          if (event)
+            [application postEvent:event atStart:NO];
+          return event != nil;
+        };
+        // AppKit samples the current pointer while handling queued events.
+        // Do not warp ahead of the event the source viewport has received.
+        if (postMouse(0, NSEventTypeLeftMouseDown))
+          pressAcknowledged = progress.pressed.tryAcquire(1, deadline);
+        if (pressAcknowledged && postMouse(1, NSEventTypeLeftMouseDragged))
+          thresholdAcknowledged = progress.thresholdMoved.tryAcquire(1, deadline);
+        if (thresholdAcknowledged && postMouse(2, NSEventTypeLeftMouseDragged))
+          destinationAcknowledged = progress.arrived.tryAcquire(1, deadline);
+        sequenceComplete.store(pressAcknowledged && thresholdAcknowledged &&
+                               destinationAcknowledged);
+        releasePosted.store(postMouse(3, NSEventTypeLeftMouseUp));
+        // Cocoa has no QDrag::cancel(). Keep a native Escape fallback independent
+        // of Qt timers, and never leave a worker posting into the next case.
+        if (!stop.tryAcquire(1, escapeDeadline)) {
+          for (const auto type : {NSEventTypeKeyDown, NSEventTypeKeyUp}) {
+            NSEvent *event = [NSEvent keyEventWithType:type
+                                              location:NSZeroPoint
+                                         modifierFlags:0
+                                             timestamp:[[NSProcessInfo processInfo] systemUptime]
+                                          windowNumber:windowNumber
+                                               context:nil
+                                            characters:@"\033"
+                           charactersIgnoringModifiers:@"\033"
+                                             isARepeat:NO
+                                               keyCode:53];
+            [application postEvent:event atStart:NO];
           }
-          [application postEvent:events[i] atStart:NO];
-        }
-        releasePosted.store(true);
-        // QDrag::cancel() has no Cocoa implementation. Keep the original four-
-        // second safety deadline, but wake immediately when the move completes.
-        if (!stop.tryAcquire(1, 3720) && !stopped.load()) {
-          [application postEvent:events[4] atStart:NO];
-          [application postEvent:events[5] atStart:NO];
         }
       }
     });
     const auto joinInput = qScopeGuard([&] {
-      stopped.store(true);
       stop.release();
       input.join();
       restoreError =
           CGWarpMouseCursorPosition(CGPointMake(previousPointer.x(), previousPointer.y()));
     });
     moved = QTest::qWaitFor(
-        [&] { return releasePosted.load() && m_edit->toPlainText() == expected; }, 4500);
+        [&] {
+          return releasePosted.load() && sequenceComplete.load() &&
+                 m_edit->toPlainText() == expected;
+        },
+        4500);
   }
   QVERIFY2(pointerError.load() == kCGErrorSuccess,
            "Cocoa could not position the native drag pointer");
@@ -3589,14 +3598,14 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   QString failureDetails;
   if (!moved) {
     QDebug(&failureDetails) << "Cocoa drag release posted:" << releasePosted.load()
-                            << "text changed:" << (m_edit->toPlainText() != baseline)
+                            << "press/threshold/destination ack:" << pressAcknowledged
+                            << thresholdAcknowledged << destinationAcknowledged
+                            << "observed press/move/enters:" << progress.lastPress
+                            << progress.lastMove << progress.enters
                             << "actual/expected:" << m_edit->toPlainText() << expected
                             << "selection:" << m_edit->textCursor().selectedText()
                             << "source/drop positions:" << start << end
-                            << "press/move/release/enter/drop events:" << delivered.presses
-                            << delivered.moves << delivered.releases << delivered.enters
-                            << delivered.drops << "dialog counts:" << driver.choosers
-                            << driver.images << driver.links;
+                            << "dialog counts:" << driver.choosers << driver.images << driver.links;
   }
   QVERIFY2(moved, qPrintable(failureDetails));
   released = releasePosted.load();
