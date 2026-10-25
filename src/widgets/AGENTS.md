@@ -439,6 +439,33 @@ can exceed the Markdown input. Measure first paint and full completion separatel
 microbenchmarks are not end-to-end speedups. Existing image-maintenance scans and synchronous
 editor layout/projection work are outside the native HTML job and can still dominate latency.
 
+`MarkdownViewerAdapter` admits isolated Typst math through the application-owned VTextEdit
+runtime, never a per-view compiler process. `reader:<documentGeneration>` requests require
+the current reader token; `preview:<editorScope>` requests are independent of reader content.
+One native facade flight plus 32 waiting requests and 2 MiB queued UTF-8 bound admission.
+Duplicate IDs cannot replace another completion owner. Scope cancellation retires ownership
+before signals; the cancelled facade flight drains before another queue entry starts.
+Document replacement retires readers only; reset, protected transition and destruction retire
+all work. Protected/unavailable requests fail explicitly. Canonical web `#RRGGBBAA` is parsed
+by channel, not QColor's ARGB parser. Gate: `test_markdownwebjobs::typstAdapterBoundary`.
+
+The Math renderer setting selects KaTeX (default), MathJax or Typst globally. Typst uses
+Typst math within the existing dollar delimiters and mathjax fences; failures keep source
+and diagnostics without LaTeX fallback. Protected notes remain KaTeX-only. Reader SVGs use
+intrinsic em geometry and a top-relative baseline; previews pin pixels before the existing
+SVG-to-PNG path. HTML keeps self-contained SVG; raster exports and cross-copy retain alignment.
+
+Native SVG is parsed in detached XML before insertion. Normalize viewport-free glyph symbols
+to groups (dropping symbol overflow otherwise clips glyphs), then use the unchanged protected
+SVG filter with computed-style copying disabled. Prefix IDs/local references per request;
+only then import into the page and add accessibility text. No unchecked live SVG staging.
+
+Shared endpoint invalidation listens to published `themeChanged`, connected before view
+subscriptions. Cancellation callbacks may recreate the shared endpoint immediately. Its
+bootstrap must force a current-theme template snapshot (the cache key is editor revision
+only) and sample the published palette, not MainWindow's later-updated base background.
+This keeps EditOnly in-place math legible even when no reader exists to refresh templates.
+
 #### Lazy Markdown reader and editor assistance
 
 Initial EditOnly creates no tab reader or full-note read render. `MarkdownWebJobHost` supplies

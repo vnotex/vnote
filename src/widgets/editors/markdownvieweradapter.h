@@ -3,12 +3,21 @@
 
 #include "webviewadapter.h"
 
+#include <QColor>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QList>
+#include <QSet>
 #include <QSize>
 #include <QString>
 
+#include <optional>
+
 #include <core/global.h>
+
+namespace vte {
+class TypstMathRenderer;
+}
 
 namespace vnotex {
 class ServiceLocator;
@@ -137,6 +146,11 @@ public slots:
   void renderGraph(quint64 p_id, quint64 p_index, const QString &p_format, const QString &p_lang,
                    const QString &p_text, int p_imageIndex);
 
+  void renderTypstMath(const QString &p_id, const QString &p_scope, const QString &p_source,
+                       bool p_display, const QString &p_foreground);
+
+  void cancelTypstMath(const QString &p_scope);
+
   // Web side requests to toggle the task list item at 0-based source line
   // @p_lineNumber to @p_checked.
   void toggleTaskListItem(const QString &p_generation, int p_lineNumber, bool p_checked);
@@ -168,6 +182,8 @@ signals:
 
   void graphRenderDataReady(quint64 p_id, quint64 p_index, const QString &p_format,
                             const QString &p_data, bool p_success);
+
+  void typstMathReady(const QString &p_id, const QJsonObject &p_result);
 
   // The toggle of the task list item at 0-based source line @p_lineNumber was
   // rejected; the web side should restore the checkbox state.
@@ -204,6 +220,21 @@ signals:
   void protectedLinkRequested(const QString &p_url);
 
 private:
+  struct TypstMathRequest {
+    QString m_id;
+    QString m_scope;
+    QString m_source;
+    QColor m_foreground;
+    quint64 m_resetGeneration = 0;
+    qsizetype m_sourceBytes = 0;
+    bool m_display = false;
+  };
+
+  void startNextTypstMath();
+
+  // Empty scope retires all work, or only reader work when p_readersOnly is true.
+  void retireTypstMath(const QString &p_scope = QString(), bool p_readersOnly = false);
+
   void dispatchHtml(QString p_generation);
 
   void scrollToLine(int p_lineNumber);
@@ -243,6 +274,16 @@ private:
 
   // Targets supported by cross copy. Set by web.
   QStringList m_crossCopyTargets;
+
+  vte::TypstMathRenderer *m_typstMathRenderer = nullptr;
+  std::optional<TypstMathRequest> m_typstMathActive;
+  QList<TypstMathRequest> m_typstMathQueue;
+  // Includes detached cancellations until each one's terminal signal is emitted.
+  QSet<QString> m_typstMathIds;
+  qsizetype m_typstMathQueuedBytes = 0;
+  // A cancelled owner can be gone while the facade still owes its terminal callback.
+  bool m_typstMathInFlight = false;
+  bool m_retiringTypstMath = false;
 
   ServiceLocator *m_services = nullptr; // Non-owning; set by ServiceLocator-aware constructor
 };

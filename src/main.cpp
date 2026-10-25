@@ -726,7 +726,9 @@ int main(int argc, char *argv[]) {
     WebViewService webViewService(serviceLocator, webProfileService.profile(),
                                   MarkdownWebJobHost::createSharedRuntime(serviceLocator));
     serviceLocator.registerService<WebViewService>(&webViewService);
-    QObject::connect(&themeService, &ThemeService::themeAboutToChange, &webViewService,
+    // Reentrant shared-session creation must see the published theme. This
+    // connection precedes the MainWindow/ViewWindow themeChanged subscriptions.
+    QObject::connect(&themeService, &ThemeService::themeChanged, &webViewService,
                      &WebViewService::invalidate);
     // Retire the shared runtime before ViewAreaController refreshes tabs at priority 10.
     const auto webViewConfigHook = hookManager.addAction(

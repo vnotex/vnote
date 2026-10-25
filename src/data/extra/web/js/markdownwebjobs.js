@@ -11,10 +11,24 @@
         return previewer;
     };
 
+    const mathPreview = async (args, context, graph) => {
+        const math = core().getWorker('math');
+        if (math.renderer === 'typst') {
+            await math.initialize();
+            // A cancelled job waiting for initialization must not start native work.
+            // Once submitted, the existing preview job still owns callback/raster drain.
+            if (context.cancelled) {
+                throw new Error('Preview cancelled');
+            }
+        }
+        return graph ? preview().previewGraph(args, context) : preview().previewMath(args, context);
+    };
+
     jobs.registerHandler('markdown.previewGraph', (args, context) =>
-        preview().previewGraph(args, context));
+        args.language === 'mathjax' ? mathPreview(args, context, true)
+            : preview().previewGraph(args, context));
     jobs.registerHandler('markdown.previewMath', (args, context) =>
-        preview().previewMath(args, context));
+        mathPreview(args, context, false));
 
     jobs.registerHandler('markdown.highlightCode', (args) => {
         const match = /^```[^\S\n]*(\S+)?\s*\n([\s\S]+)\n```\s*$/.exec(args.source);
@@ -25,7 +39,7 @@
     });
 
     jobs.registerHandler('markdown.highlightMath', (args) => {
-        if (!Prism.languages.latex) {
+        if (core().getWorker('math').renderer === 'typst' || !Prism.languages.latex) {
             return '';
         }
         // Each line must contain complete spans: the native highlighter consumes

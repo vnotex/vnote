@@ -1,5 +1,6 @@
 #include "markdownwebjobhost.h"
 
+#include <QColor>
 #include <QDir>
 #include <QVariant>
 #include <QWebChannel>
@@ -99,8 +100,10 @@ WebViewService::Bootstrap MarkdownWebJobHost::createSharedRuntime(ServiceLocator
       return;
     }
     const auto &markdown = config->getEditorConfig().getMarkdownEditorConfig();
+    // A new immutable endpoint needs the current theme even when the editor
+    // revision is unchanged; theme identity is not part of the template cache key.
     templates->updateMarkdownViewerTemplate(markdown, theme->fetchWebStyleSheet(),
-                                            theme->getFile(Theme::File::HighlightStyleSheet));
+                                            theme->getFile(Theme::File::HighlightStyleSheet), true);
     auto *adapter = new MarkdownViewerAdapter(p_services, p_page);
     p_channel->registerObject(QStringLiteral("vxAdapter"), adapter);
     if (templates->getMarkdownViewerTemplate().isEmpty()) {
@@ -108,7 +111,13 @@ WebViewService::Bootstrap MarkdownWebJobHost::createSharedRuntime(ServiceLocator
       return;
     }
     validateRuntimeOnLoad(p_page, session);
-    p_page->setBackgroundColor(theme->getBaseBackground());
+    // MainWindow updates getBaseBackground() later in themeChanged delivery.
+    QColor background(theme->optionalPaletteColor(
+        QStringLiteral("base#content#bg"))); // palette-token-optional: custom themes may omit this
+    if (!background.isValid()) {
+      background = QColor(theme->paletteColor(QStringLiteral("base#normal#bg")));
+    }
+    p_page->setBackgroundColor(background);
     p_page->settings()->setAttribute(QWebEngineSettings::LocalContentCanAccessRemoteUrls, true);
     p_page->settings()->setAttribute(QWebEngineSettings::JavascriptCanOpenWindows, false);
     p_page->settings()->setAttribute(QWebEngineSettings::JavascriptCanAccessClipboard, false);

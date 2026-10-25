@@ -1099,8 +1099,9 @@ void TestConfigMgr2::testMathRenderer_mergeNormalizationAndPersistence() {
   QCOMPARE(valueAt(reloaded, rendererPath).toString(), QStringLiteral("mathjax"));
   QCOMPARE(valueAt(reloaded, scriptPath).toString(), overrideScript);
 
-  const QVector<QJsonValue> inputs{QStringLiteral("MaThJaX"), QStringLiteral("untrusted'"),
-                                   QString(), QJsonValue(QJsonValue::Null), QJsonValue(42)};
+  const QVector<QJsonValue> inputs{QStringLiteral("MaThJaX"),    QStringLiteral("TyPsT"),
+                                   QStringLiteral("untrusted'"), QString(),
+                                   QJsonValue(QJsonValue::Null), QJsonValue(42)};
   for (const auto &input : inputs) {
     auto onDisk = config.toJson();
     auto editor = onDisk.value(section[0]).toObject();
@@ -1110,10 +1111,17 @@ void TestConfigMgr2::testMathRenderer_mergeNormalizationAndPersistence() {
     onDisk[section[0]] = editor;
     const auto loaded = loadThroughMergePath(onDisk);
     const auto expected = input.toString() == QStringLiteral("MaThJaX") ? QStringLiteral("mathjax")
+                          : input.toString() == QStringLiteral("TyPsT") ? QStringLiteral("typst")
                                                                         : QStringLiteral("katex");
     QCOMPARE(valueAt(loaded, rendererPath).toString(), expected);
     QCOMPARE(valueAt(loaded, scriptPath).toString(), overrideScript);
   }
+
+  md.setMathRenderer(QStringLiteral("TyPsT"));
+  QCOMPARE(md.getMathRenderer(), QStringLiteral("typst"));
+  const auto typstReloaded = loadThroughMergePath(loadThroughMergePath(config.toJson()));
+  QCOMPARE(valueAt(typstReloaded, rendererPath).toString(), QStringLiteral("typst"));
+  QCOMPARE(valueAt(typstReloaded, scriptPath).toString(), overrideScript);
 
   md.setMathRenderer(QStringLiteral("invalid"));
   QCOMPARE(md.getMathRenderer(), QStringLiteral("katex"));

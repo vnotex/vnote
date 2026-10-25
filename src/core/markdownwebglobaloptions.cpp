@@ -17,8 +17,9 @@ QString MarkdownWebGlobalOptions::toJavascriptObject() const {
                                                     : QStringLiteral("plantUmlFormat: 'svg',\n")) +
          QStringLiteral("plantUmlWebService: '%1',\n").arg(m_plantUmlWebService) +
          QStringLiteral("webGraphviz: %1,\n").arg(Utils::boolToString(m_webGraphviz)) +
-         (m_mathRenderer == QStringLiteral("mathjax")
-              ? QStringLiteral("mathRenderer: 'mathjax',\n")
+         (m_mathRenderer == QStringLiteral("mathjax") ? QStringLiteral("mathRenderer: 'mathjax',\n")
+          : m_mathRenderer == QStringLiteral("typst")
+              ? QStringLiteral("mathRenderer: 'typst',\n")
               : QStringLiteral("mathRenderer: 'katex',\n")) +
          QStringLiteral("mathJaxScript: '%1',\n").arg(m_mathJaxScript) +
          QStringLiteral("constrainImageWidthEnabled: %1,\n")

@@ -298,7 +298,7 @@ class DocumentRenderer extends VxWorker {
         });
     }
 
-    static sanitizeProtectedSvg(p_root) {
+    static sanitizeProtectedSvg(p_root, p_preserveComputedStyle = true) {
         const tags = new Set(['svg', 'g', 'defs', 'path', 'rect', 'circle', 'ellipse',
             'line', 'polyline', 'polygon', 'text', 'tspan', 'textPath', 'title', 'desc',
             'marker', 'pattern', 'clipPath', 'mask', 'linearGradient', 'radialGradient',
@@ -320,15 +320,17 @@ class DocumentRenderer extends VxWorker {
                 node.remove();
                 continue;
             }
-            // Preserve computed passive presentation before removing CSS. No
-            // stylesheet or CSS escape remains capable of introducing a URL.
-            const style = window.getComputedStyle(node);
-            for (const property of ['fill', 'stroke', 'font-size', 'font-family',
-                'font-weight', 'font-style', 'text-anchor', 'stroke-width']) {
-                const value = style.getPropertyValue(property);
-                if (value && !/[\\<>]/.test(value)
-                    && (!/url\s*\(/i.test(value) || /^url\(#[\w:.-]+\)$/.test(value))) {
-                    node.setAttribute(property, value);
+            // Detached native SVG already carries presentation attributes. Only
+            // live protected diagrams need computed style copied before stripping CSS.
+            if (p_preserveComputedStyle) {
+                const style = window.getComputedStyle(node);
+                for (const property of ['fill', 'stroke', 'font-size', 'font-family',
+                    'font-weight', 'font-style', 'text-anchor', 'stroke-width']) {
+                    const value = style.getPropertyValue(property);
+                    if (value && !/[\\<>]/.test(value)
+                        && (!/url\s*\(/i.test(value) || /^url\(#[\w:.-]+\)$/.test(value))) {
+                        node.setAttribute(property, value);
+                    }
                 }
             }
             for (const attr of Array.from(node.attributes)) {

@@ -57,6 +57,19 @@ new QWebChannel(qt.webChannelTransport,
         let adapter = p_channel.objects.vxAdapter;
         // Export the adapter globally.
         window.vxMarkdownAdapter = adapter;
+        // Bind native math before either reader kickoff or the jobs-ready handshake.
+        // The channel can arrive before workers register; resolve the worker on reply.
+        if (adapter.typstMathReady && typeof adapter.typstMathReady.connect === 'function'
+            && typeof adapter.renderTypstMath === 'function'
+            && typeof adapter.cancelTypstMath === 'function') {
+            adapter.typstMathReady.connect(function(p_id, p_result) {
+                const math = window.vxcore.getWorker('math');
+                if (math) {
+                    math.typstMathReady(p_id, p_result);
+                }
+            });
+            window.vxTypstMathBridge = adapter;
+        }
         window.vxWebJobs.bind(p_channel.objects.vxJobs);
 
         // Connect signals from CPP side.

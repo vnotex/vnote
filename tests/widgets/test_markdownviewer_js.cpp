@@ -439,7 +439,7 @@ private:
   void setup(QJSEngine &p_engine, bool p_initializedAtChannel);
   void setupHeadingFolding(QJSEngine &p_engine);
   void setupSectionNumber(QJSEngine &p_engine);
-  void setupMath(QJSEngine &p_engine);
+  void setupMath(QWebEnginePage &p_page);
   void setupPresentationPage(QWebEnginePage &p_page);
   void setPresentationActive(QWebEnginePage &p_page, bool p_active, bool p_darkTheme = true);
   void setupNavigationPage(QWebEnginePage &p_page, bool p_protected = false);
@@ -902,63 +902,73 @@ function __sectionNames() {
   QVERIFY2(!res.isError(), qPrintable(res.toString()));
 }
 
-void TestMarkdownViewerJs::setupMath(QJSEngine &p_engine) {
-  auto res = p_engine.evaluate(QStringLiteral(R"JS(
-var window = this;
-var console = { log: function(){}, warn: function(){}, error: function(){} };
-var vxOptions = { mathRenderer: 'katex' };
-var scripts = [], styles = [], results = [], passes = 0;
-var reading = { textContent: '$a+b$', querySelector: function() { return null; } };
-function element() {
-  return { style: {}, querySelector: function() { return null; } };
-}
-var document = {
-  currentScript: { src: 'qrc:/vnotex/data/extra/web/js/mathjax.js' },
-  fonts: [],
-  head: { appendChild: function() {} },
-  createElement: element
+void TestMarkdownViewerJs::setupMath(QWebEnginePage &p_page) {
+  QSignalSpy loaded(&p_page, &QWebEnginePage::loadFinished);
+  p_page.setHtml(QStringLiteral("<!doctype html><html><body><iframe width='640' height='480' "
+                                "srcdoc=\"<!doctype html><html><body><div id='content'>"
+                                "<eq class='tex-to-render'>$a+b$</eq></div><div id='preview'></div>"
+                                "</body></html>\"></iframe></body></html>"),
+                 QUrl::fromLocalFile(webDir() + QLatin1Char('/')));
+  QTRY_COMPARE_WITH_TIMEOUT(loaded.count(), 1, 10000);
+  QVERIFY(loaded.first().first().toBool());
+  QString source = QStringLiteral(R"JS(
+window.vxOptions = {mathRenderer: 'katex'};
+window.mathInit = {passes: 0, results: [], scriptReady: false, styleReady: false};
+window.vxcore = {
+  contentContainer: document.getElementById('content'),
+  getWorker() { return {getCodeNodes() { return []; }}; },
+  registerWorker(worker) { window.mathWorker = worker; worker.vxcore = this; },
+  finishWorker() { ++mathInit.passes; }
 };
-window.getComputedStyle = function() { return { color: 'black', font: '16px serif' }; };
-var container = {
-  getBoundingClientRect: function() { return { width: 100, height: 20 }; },
-  getElementsByClassName: function() { return [reading]; },
-  appendChild: function(node) { node.parentNode = this; },
-  removeChild: function(node) { node.parentNode = null; }
-};
-var Utils = {
-  parentFolder: function(path) { return path.substring(0, path.lastIndexOf('/')); },
-  loadScript: function(url, cb) { scripts.push(cb); },
-  httpGet: function(url, type, cb) { styles.push(cb); }
-};
-var vxcore = {
-  contentContainer: container,
-  on: function() {},
-  getWorker: function() {
-    return { getCodeNodes: function() { return []; }, addLangsToSkipHighlight: function() {} };
-  },
-  registerWorker: function(worker) { window.worker = worker; worker.register(this); },
-  finishWorker: function() { ++passes; }
-};
-function startRequests() {
-  vxcore.documentGeneration = 'math-1';
-  worker.beginWork(vxcore.documentGeneration);
-  worker.render(container, 'tex-to-render');
-  worker.renderText(container, '$x$', function(node) { results.push({ id: 1, node: node }); });
-  worker.renderText(container, '$y$', function(node) { results.push({ id: 2, node: node }); });
-}
-function installLibrary() {
-  window.katex = { render: function(tex, node) { node.rendered = tex; } };
-}
-)JS"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString()));
-  QString err;
-  QString source;
-  for (const auto &name : {QStringLiteral("vxworker.js"), QStringLiteral("mathjax.js")}) {
-    source += readFile(webDir() + QStringLiteral("/js/") + name, &err) + QLatin1Char('\n');
-    QVERIFY2(err.isEmpty(), qPrintable(err));
+)JS");
+  QString error;
+  for (const auto *name : {"utils.js", "vxworker.js", "mathjax.js"}) {
+    source += readFile(webDir() + QStringLiteral("/js/") + QLatin1String(name), &error) +
+              QLatin1Char('\n');
+    QVERIFY2(error.isEmpty(), qPrintable(error));
   }
-  res = p_engine.evaluate(source, QStringLiteral("mathjax.js"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString()));
+  const QJsonObject assets{
+      {QStringLiteral("path"), QUrl::fromLocalFile(webDir() + QStringLiteral("/js")).toString()}};
+  source += QStringLiteral("mathWorker.scriptFolderPath = %1.path;\n")
+                .arg(QString::fromUtf8(QJsonDocument(assets).toJson(QJsonDocument::Compact)));
+  source += QStringLiteral(R"JS(
+const load = Utils.loadScript;
+const get = Utils.httpGet;
+Utils.loadScript = (url, callback) => load(url, () => {
+  window.releaseMathScript = fail => { if (fail) window.katex = null; callback(); };
+  mathInit.scriptReady = true;
+});
+Utils.httpGet = (url, type, callback) => get(url, type, css => {
+  window.releaseMathStyle = fail => callback(fail ? null : css);
+  mathInit.styleReady = true;
+});
+window.startMathRequests = () => {
+  vxcore.documentGeneration = 'math-1';
+  mathWorker.beginWork(vxcore.documentGeneration);
+  mathWorker.render(vxcore.contentContainer, 'tex-to-render');
+  for (const text of ['$x$', '$y$']) {
+    mathWorker.renderText(document.getElementById('preview'), text, node => mathInit.results.push(node));
+  }
+};
+window.mathInitializationState = () => ({
+  passes: mathInit.passes, previews: mathInit.results.length,
+  scriptReady: mathInit.scriptReady, styleReady: mathInit.styleReady,
+  reading: vxcore.contentContainer.querySelector('annotation')?.textContent || '',
+  source: vxcore.contentContainer.textContent,
+  formulas: mathInit.results.map(node => node?.querySelector('annotation')?.textContent || ''),
+  failed: mathInit.results.every(node => node === null),
+  distinct: mathInit.results.length === 2 && mathInit.results[0] !== mathInit.results[1]
+});
+)JS");
+  const QJsonObject script{{QStringLiteral("source"), source}};
+  QJsonObject result;
+  evaluateNavigation(
+      p_page,
+      QStringLiteral(
+          "const script = document.createElement('script'); script.textContent = %1.source; "
+          "document.head.appendChild(script); script.remove(); startMathRequests(); return {};")
+          .arg(QString::fromUtf8(QJsonDocument(script).toJson(QJsonDocument::Compact))),
+      result);
 }
 
 void TestMarkdownViewerJs::evaluateNavigation(QWebEnginePage &p_page, const QString &p_script,
@@ -2286,54 +2296,61 @@ return {liveMath, images, originalBarOffset, baseline:marker.getBoundingClientRe
 }
 
 void TestMarkdownViewerJs::testMathRenderer_initializationFanout() {
-  QJSEngine engine;
-  setupMath(engine);
-  auto res = engine.evaluate(QStringLiteral("startRequests();"));
-  QVERIFY2(!res.isError(), qPrintable(res.toString()));
-  QTRY_COMPARE(engine.evaluate(QStringLiteral("scripts.length")).toInt(), 1);
-  QCOMPARE(engine.evaluate(QStringLiteral("styles.length")).toInt(), 1);
-  QCOMPARE(engine.evaluate(QStringLiteral("passes + results.length")).toInt(), 0);
-
-  engine.evaluate(QStringLiteral("installLibrary(); scripts[0]();"));
-  QTest::qWait(1);
-  QCOMPARE(engine.evaluate(QStringLiteral("passes + results.length")).toInt(), 0);
-  engine.evaluate(QStringLiteral("styles[0]('.katex { display: inline; }');"));
-  QTRY_COMPARE(engine.evaluate(QStringLiteral("results.length")).toInt(), 2);
-  QTRY_COMPARE(engine.evaluate(QStringLiteral("passes")).toInt(), 1);
-  QCOMPARE(engine.evaluate(QStringLiteral("reading.rendered")).toString(), QStringLiteral("a+b"));
-  QCOMPARE(engine
-               .evaluate(QStringLiteral(
-                   "results.map(function(r) { return r.id + ':' + r.node.rendered; }).join(',')"))
-               .toString(),
-           QStringLiteral("1:x,2:y"));
-  QVERIFY(engine.evaluate(QStringLiteral("results[0].node !== results[1].node")).toBool());
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupMath(page);
+  QJsonObject state;
+  const auto update = [&] {
+    evaluateNavigation(page, QStringLiteral("return mathInitializationState();"), state);
+    return state.value(QStringLiteral("scriptReady")).toBool() &&
+           state.value(QStringLiteral("styleReady")).toBool();
+  };
+  QTRY_VERIFY_WITH_TIMEOUT(update(), 10000);
+  QCOMPARE(state.value(QStringLiteral("passes")).toInt(), 0);
+  QCOMPARE(state.value(QStringLiteral("previews")).toInt(), 0);
+  evaluateNavigation(page, QStringLiteral("releaseMathScript(false); return {};"), state);
+  QVERIFY(update());
+  QCOMPARE(state.value(QStringLiteral("passes")).toInt(), 0);
+  QCOMPARE(state.value(QStringLiteral("previews")).toInt(), 0);
+  evaluateNavigation(page, QStringLiteral("releaseMathStyle(false); return {};"), state);
+  QTRY_VERIFY_WITH_TIMEOUT((update(), state.value(QStringLiteral("previews")).toInt() == 2 &&
+                                          state.value(QStringLiteral("passes")).toInt() == 1),
+                           30000);
+  QCOMPARE(state.value(QStringLiteral("reading")).toString(), QStringLiteral("a+b"));
+  QCOMPARE(state.value(QStringLiteral("formulas")).toArray(), QJsonArray({"x", "y"}));
+  QVERIFY(state.value(QStringLiteral("distinct")).toBool());
 }
 
 void TestMarkdownViewerJs::testMathRenderer_failedInitializationReleasesPass() {
   for (const bool scriptFails : {true, false}) {
-    QJSEngine engine;
-    setupMath(engine);
-    engine.evaluate(QStringLiteral("startRequests();"));
-    QTRY_COMPARE(engine.evaluate(QStringLiteral("scripts.length")).toInt(), 1);
-    if (scriptFails) {
-      engine.evaluate(QStringLiteral("scripts[0](); styles[0]('.katex {}');"));
-    } else {
-      engine.evaluate(QStringLiteral("installLibrary(); scripts[0](); styles[0](null);"));
-    }
-    QTRY_COMPARE(engine.evaluate(QStringLiteral("results.length")).toInt(), 2);
-    QTRY_COMPARE(engine.evaluate(QStringLiteral("passes")).toInt(), 1);
-    QVERIFY(
-        engine.evaluate(QStringLiteral("results.every(function(r) { return r.node === null; })"))
-            .toBool());
-    QCOMPARE(engine.evaluate(QStringLiteral("reading.textContent")).toString(),
-             QStringLiteral("$a+b$"));
-
-    engine.evaluate(QStringLiteral("vxcore.documentGeneration = 'math-2'; "
-                                   "worker.beginWork(vxcore.documentGeneration); "
-                                   "worker.render(container, 'tex-to-render');"));
-    QTRY_COMPARE(engine.evaluate(QStringLiteral("passes")).toInt(), 2);
-    QCOMPARE(engine.evaluate(QStringLiteral("results.length")).toInt(), 2);
-    QCOMPARE(engine.evaluate(QStringLiteral("scripts.length")).toInt(), 1);
+    QWebEngineProfile profile;
+    QWebEnginePage page(&profile);
+    setupMath(page);
+    QJsonObject state;
+    const auto update = [&] {
+      evaluateNavigation(page, QStringLiteral("return mathInitializationState();"), state);
+      return state.value(QStringLiteral("scriptReady")).toBool() &&
+             state.value(QStringLiteral("styleReady")).toBool();
+    };
+    QTRY_VERIFY_WITH_TIMEOUT(update(), 10000);
+    evaluateNavigation(page,
+                       QStringLiteral("releaseMathScript(%1); releaseMathStyle(%2); return {};")
+                           .arg(scriptFails ? QStringLiteral("true") : QStringLiteral("false"),
+                                scriptFails ? QStringLiteral("false") : QStringLiteral("true")),
+                       state);
+    QTRY_VERIFY_WITH_TIMEOUT((update(), state.value(QStringLiteral("previews")).toInt() == 2 &&
+                                            state.value(QStringLiteral("passes")).toInt() == 1),
+                             10000);
+    QVERIFY(state.value(QStringLiteral("failed")).toBool());
+    QCOMPARE(state.value(QStringLiteral("source")).toString(), QStringLiteral("$a+b$"));
+    evaluateNavigation(
+        page,
+        QStringLiteral("vxcore.documentGeneration = 'math-2'; "
+                       "mathWorker.beginWork(vxcore.documentGeneration); "
+                       "mathWorker.render(vxcore.contentContainer, 'tex-to-render'); return {};"),
+        state);
+    QTRY_VERIFY_WITH_TIMEOUT((update(), state.value(QStringLiteral("passes")).toInt() == 2), 10000);
+    QCOMPARE(state.value(QStringLiteral("previews")).toInt(), 2);
   }
 }
 

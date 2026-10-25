@@ -264,6 +264,9 @@ void MarkdownEditorConfig::setGraphvizExe(const QString &p_exe) {
 }
 
 QString MarkdownEditorConfig::normalizeMathRenderer(const QString &p_renderer) {
+  if (p_renderer.compare(QStringLiteral("typst"), Qt::CaseInsensitive) == 0) {
+    return QStringLiteral("typst");
+  }
   return p_renderer.compare(QStringLiteral("mathjax"), Qt::CaseInsensitive) == 0
              ? QStringLiteral("mathjax")
              : QStringLiteral("katex");

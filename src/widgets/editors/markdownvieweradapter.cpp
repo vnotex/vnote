@@ -1,10 +1,14 @@
 #include "markdownvieweradapter.h"
 
+#include <QByteArrayView>
 #include <QDateTime>
 #include <QMap>
 #include <QPointer>
+#include <QStringView>
 #include <QUrl>
 
+#include <array>
+#include <cmath>
 #include <utility>
 
 #include "../outlineprovider.h"
@@ -14,8 +18,95 @@
 #include <core/servicelocator.h>
 #include <gui/utils/imageutils.h>
 #include <utils/sectionnumberutils.h>
+#include <vtextedit/typstmathrenderer.h>
+#include <vtextedit/typstruntime.h>
 
 using namespace vnotex;
+
+namespace {
+constexpr qsizetype c_maxTypstMathSource = 64 * 1024;
+constexpr qsizetype c_maxTypstMathQueuedSource = 2 * 1024 * 1024;
+constexpr qsizetype c_maxTypstMathWaiting = 32;
+constexpr qsizetype c_maxTypstMathSvg = 8 * 1024 * 1024;
+constexpr qsizetype c_maxTypstMathError = 64 * 1024;
+constexpr qreal c_maxTypstMathDimension = 16384;
+
+// Count without an intermediate UTF-8 allocation, rejecting ill-formed Unicode and NUL.
+qsizetype typstMathUtf8Size(const QString &p_text, qsizetype p_limit) {
+  qsizetype bytes = 0;
+  for (qsizetype idx = 0; idx < p_text.size(); ++idx) {
+    const auto ch = p_text.at(idx);
+    if (ch.isNull()) {
+      return -1;
+    }
+    if (ch.isHighSurrogate() && idx + 1 < p_text.size() && p_text.at(idx + 1).isLowSurrogate()) {
+      bytes += 4;
+      ++idx;
+    } else if (ch.isSurrogate()) {
+      return -1;
+    } else {
+      const auto code = ch.unicode();
+      bytes += code < 0x80 ? 1 : code < 0x800 ? 2 : 3;
+    }
+    if (bytes > p_limit) {
+      return -1;
+    }
+  }
+  return bytes;
+}
+
+QColor typstMathForeground(const QString &p_text) {
+  if (p_text.size() != 9 || p_text.at(0) != QLatin1Char('#')) {
+    return {};
+  }
+  quint32 rgba = 0;
+  for (qsizetype idx = 1; idx < p_text.size(); ++idx) {
+    const auto ch = p_text.at(idx).unicode();
+    int digit = -1;
+    if (ch >= '0' && ch <= '9') {
+      digit = ch - '0';
+    } else if (ch >= 'A' && ch <= 'F') {
+      digit = ch - 'A' + 10;
+    } else if (ch >= 'a' && ch <= 'f') {
+      digit = ch - 'a' + 10;
+    }
+    if (digit < 0) {
+      return {};
+    }
+    rgba = (rgba << 4) | static_cast<quint32>(digit);
+  }
+  // Web RGBA is not QColor's eight-digit ARGB string format.
+  return QColor((rgba >> 24) & 0xff, (rgba >> 16) & 0xff, (rgba >> 8) & 0xff, rgba & 0xff);
+}
+
+QJsonObject typstMathFailure(const QString &p_error) {
+  return {{QStringLiteral("svg"), QString()},
+          {QStringLiteral("widthPt"), 0},
+          {QStringLiteral("heightPt"), 0},
+          {QStringLiteral("baselinePt"), 0},
+          {QStringLiteral("error"), p_error}};
+}
+
+QJsonObject typstMathResult(const vte::TypstMathRenderer::Result &p_result) {
+  if (!p_result.isSuccess() && typstMathUtf8Size(p_result.m_error, c_maxTypstMathError) > 0) {
+    return typstMathFailure(p_result.m_error);
+  }
+  const auto width = p_result.m_sizePt.width();
+  const auto height = p_result.m_sizePt.height();
+  const QByteArrayView svg(p_result.m_svg);
+  if (!p_result.isSuccess() || svg.isEmpty() || svg.size() > c_maxTypstMathSvg ||
+      !svg.isValidUtf8() || svg.contains('\0') || !std::isfinite(width) || !std::isfinite(height) ||
+      !std::isfinite(p_result.m_baselinePt) || width <= 0 || height <= 0 ||
+      width > c_maxTypstMathDimension || height > c_maxTypstMathDimension) {
+    return typstMathFailure(MarkdownViewerAdapter::tr("Typst returned an invalid math result."));
+  }
+  return {{QStringLiteral("svg"), QString::fromUtf8(p_result.m_svg)},
+          {QStringLiteral("widthPt"), width},
+          {QStringLiteral("heightPt"), height},
+          {QStringLiteral("baselinePt"), p_result.m_baselinePt},
+          {QStringLiteral("error"), QString()}};
+}
+} // namespace
 
 MarkdownViewerAdapter::Position::Position(int p_lineNumber, const QString &p_anchor)
     : m_lineNumber(p_lineNumber), m_anchor(p_anchor) {}
@@ -41,9 +132,29 @@ MarkdownViewerAdapter::MarkdownViewerAdapter(QObject *p_parent) : WebViewAdapter
 MarkdownViewerAdapter::MarkdownViewerAdapter(ServiceLocator &p_services, QObject *p_parent)
     : WebViewAdapter(p_parent), m_services(&p_services) {}
 
-MarkdownViewerAdapter::~MarkdownViewerAdapter() {}
+MarkdownViewerAdapter::~MarkdownViewerAdapter() {
+  m_retiringTypstMath = true;
+  m_typstMathActive.reset();
+  m_typstMathQueue.clear();
+  m_typstMathIds.clear();
+  // Facade destruction suppresses callbacks and releases native work without waiting.
+  delete m_typstMathRenderer;
+}
 
-void MarkdownViewerAdapter::setProtectedView(bool p_protected) { m_protectedView = p_protected; }
+void MarkdownViewerAdapter::setProtectedView(bool p_protected) {
+  if (m_protectedView == p_protected) {
+    return;
+  }
+  m_protectedView = p_protected;
+  if (p_protected) {
+    const bool retiring = std::exchange(m_retiringTypstMath, true);
+    const QPointer<MarkdownViewerAdapter> guard(this);
+    retireTypstMath();
+    if (guard) {
+      m_retiringTypstMath = retiring;
+    }
+  }
+}
 
 QString MarkdownViewerAdapter::protectedImageUrl(const QString &p_url) {
   if (!m_protectedView || p_url.size() > 32 * 1024 * 1024 ||
@@ -94,9 +205,13 @@ void MarkdownViewerAdapter::setRenderedHtml(QString p_generation, const QString 
   m_pendingHtml = p_html;
   m_pendingLineNumber = p_lineNumber;
   m_hasPendingHtml = true;
+  const auto resetGeneration = getResetGeneration();
+  const QPointer<MarkdownViewerAdapter> guard(this);
+  retireTypstMath(QString(), true);
+  if (!guard || guard->getResetGeneration() != resetGeneration || p_generation != m_generation) {
+    return;
+  }
   if (cancelContent) {
-    const auto resetGeneration = getResetGeneration();
-    const QPointer<MarkdownViewerAdapter> guard(this);
     emit contentReady(QString(), QString(), QString(), QString());
     if (!guard || guard->getResetGeneration() != resetGeneration) {
       return;
@@ -390,6 +505,8 @@ void MarkdownViewerAdapter::setSavedContent(const QString &p_generation,
 }
 
 void MarkdownViewerAdapter::reset() {
+  // Block admission through all cancellation signals, including nested resets/unprotects.
+  const bool retiring = std::exchange(m_retiringTypstMath, true);
   const bool cancelContent = std::exchange(m_contentRequested, false);
   m_generation.clear();
   m_finishedGeneration.clear();
@@ -411,6 +528,13 @@ void MarkdownViewerAdapter::reset() {
   cancelImageView();
   if (cancelContent && guard && guard->getResetGeneration() == resetGeneration) {
     emit contentReady(QString(), QString(), QString(), QString());
+  }
+  if (!guard) {
+    return;
+  }
+  retireTypstMath();
+  if (guard) {
+    m_retiringTypstMath = retiring;
   }
 }
 
@@ -460,6 +584,178 @@ void MarkdownViewerAdapter::renderGraph(quint64 p_id, quint64 p_index, const QSt
                << "index=" << p_index;
     Q_ASSERT(false);
   }
+}
+
+void MarkdownViewerAdapter::renderTypstMath(const QString &p_id, const QString &p_scope,
+                                            const QString &p_source, bool p_display,
+                                            const QString &p_foreground) {
+  // A rejection with a duplicate ID would steal the original request's completion.
+  if (m_typstMathIds.contains(p_id)) {
+    return;
+  }
+  if (m_protectedView || m_retiringTypstMath) {
+    emit typstMathReady(p_id, typstMathFailure(tr("Typst math is unavailable in this view.")));
+    return;
+  }
+  const bool readerScope = p_scope.startsWith(QLatin1String("reader:")) &&
+                           !m_generation.isEmpty() &&
+                           QStringView(p_scope).mid(7) == QStringView(m_generation);
+  const bool previewScope = p_scope.startsWith(QLatin1String("preview:")) && p_scope.size() > 8;
+  if (p_id.isEmpty() || p_id.size() > 128 || p_scope.isEmpty() || p_scope.size() > 256 ||
+      (!readerScope && !previewScope)) {
+    emit typstMathReady(p_id,
+                        typstMathFailure(tr("Invalid Typst math request identity or scope.")));
+    return;
+  }
+  const auto foreground = typstMathForeground(p_foreground);
+  if (!foreground.isValid()) {
+    emit typstMathReady(p_id, typstMathFailure(tr("Invalid Typst math foreground.")));
+    return;
+  }
+  // CRLF can occupy twice the normalized library bound; do not copy unbounded input.
+  if (p_source.size() > 2 * c_maxTypstMathSource) {
+    emit typstMathReady(p_id, typstMathFailure(tr("Invalid or oversized Typst math source.")));
+    return;
+  }
+  auto source = p_source;
+  source.replace(QStringLiteral("\r\n"), QStringLiteral("\n"));
+  source.replace(QLatin1Char('\r'), QLatin1Char('\n'));
+  const auto sourceBytes = typstMathUtf8Size(source, c_maxTypstMathSource);
+  if (sourceBytes <= 0 || QStringView(source).trimmed().isEmpty()) {
+    emit typstMathReady(p_id, typstMathFailure(tr("Invalid or oversized Typst math source.")));
+    return;
+  }
+  if (!m_typstMathRenderer) {
+    auto *runtime = m_services ? m_services->get<vte::TypstRuntime>() : nullptr;
+    if (!runtime || !runtime->isAvailable()) {
+      emit typstMathReady(p_id, typstMathFailure(tr("Typst runtime is unavailable.")));
+      return;
+    }
+    m_typstMathRenderer = new vte::TypstMathRenderer(runtime, this);
+    connect(m_typstMathRenderer, &vte::TypstMathRenderer::finished, this,
+            [this](const vte::TypstMathRenderer::Result &p_result) {
+              m_typstMathInFlight = false;
+              auto request = std::exchange(m_typstMathActive, std::nullopt);
+              const QPointer<MarkdownViewerAdapter> guard(this);
+              // Always drain, even if cancellation already removed the active owner.
+              // Reserve its ID until publication so a nested signal cannot steal it.
+              startNextTypstMath();
+              if (!guard || !request) {
+                return;
+              }
+              const bool currentReader =
+                  !request->m_scope.startsWith(QLatin1String("reader:")) ||
+                  QStringView(request->m_scope).mid(7) == QStringView(m_generation);
+              const auto result = request->m_resetGeneration == getResetGeneration() &&
+                                          currentReader && !m_protectedView && !m_retiringTypstMath
+                                      ? typstMathResult(p_result)
+                                      : typstMathFailure(tr("Typst math rendering was cancelled."));
+              m_typstMathIds.remove(request->m_id);
+              emit typstMathReady(request->m_id, result);
+            });
+  }
+  if (m_typstMathQueue.size() >= c_maxTypstMathWaiting ||
+      sourceBytes > c_maxTypstMathQueuedSource - m_typstMathQueuedBytes) {
+    emit typstMathReady(p_id, typstMathFailure(tr("Typst math render queue is full.")));
+    return;
+  }
+  TypstMathRequest request;
+  request.m_id = p_id;
+  request.m_scope = p_scope;
+  request.m_source = std::move(source);
+  request.m_foreground = foreground;
+  request.m_resetGeneration = getResetGeneration();
+  request.m_sourceBytes = sourceBytes;
+  request.m_display = p_display;
+  m_typstMathIds.insert(p_id);
+  m_typstMathQueuedBytes += sourceBytes;
+  m_typstMathQueue.append(std::move(request));
+  startNextTypstMath();
+}
+
+void MarkdownViewerAdapter::startNextTypstMath() {
+  if (m_typstMathInFlight || m_retiringTypstMath) {
+    return;
+  }
+  while (!m_typstMathQueue.isEmpty()) {
+    auto request = m_typstMathQueue.takeFirst();
+    m_typstMathQueuedBytes -= request.m_sourceBytes;
+    const bool staleReader = request.m_scope.startsWith(QLatin1String("reader:")) &&
+                             QStringView(request.m_scope).mid(7) != QStringView(m_generation);
+    if (request.m_resetGeneration != getResetGeneration() || staleReader || m_protectedView) {
+      m_typstMathIds.remove(request.m_id);
+      const QPointer<MarkdownViewerAdapter> guard(this);
+      emit typstMathReady(request.m_id,
+                          typstMathFailure(tr("Typst math rendering was cancelled.")));
+      if (!guard || m_typstMathInFlight || m_retiringTypstMath) {
+        return;
+      }
+      continue;
+    }
+    m_typstMathActive = std::move(request);
+    m_typstMathInFlight = true;
+    if (m_typstMathRenderer->renderToSvg(m_typstMathActive->m_source, m_typstMathActive->m_display,
+                                         m_typstMathActive->m_foreground)) {
+      // Only native work needs the source now; retain identity, not another formula copy.
+      m_typstMathActive->m_source.clear();
+      return;
+    }
+    // Busy accepts nothing. Its existing callback still owns the flight barrier,
+    // never this rejected ID, and will drain any remaining queued work.
+    const auto id = std::move(m_typstMathActive->m_id);
+    m_typstMathActive.reset();
+    m_typstMathIds.remove(id);
+    emit typstMathReady(id, typstMathFailure(tr("Typst math renderer is busy.")));
+    return;
+  }
+}
+
+void MarkdownViewerAdapter::cancelTypstMath(const QString &p_scope) {
+  if (!p_scope.isEmpty() && p_scope.size() <= 256) {
+    retireTypstMath(p_scope);
+  }
+}
+
+void MarkdownViewerAdapter::retireTypstMath(const QString &p_scope, bool p_readersOnly) {
+  if (!m_typstMathActive && m_typstMathQueue.isEmpty()) {
+    return;
+  }
+  const auto matches = [&p_scope, p_readersOnly](const TypstMathRequest &p_request) {
+    return p_readersOnly ? p_request.m_scope.startsWith(QLatin1String("reader:"))
+                         : p_scope.isEmpty() || p_request.m_scope == p_scope;
+  };
+  std::array<QString, c_maxTypstMathWaiting + 1> ids;
+  qsizetype count = 0;
+  const bool cancelActive = m_typstMathActive && matches(*m_typstMathActive);
+  if (cancelActive) {
+    ids[count++] = std::move(m_typstMathActive->m_id);
+    m_typstMathActive.reset();
+  }
+  for (auto it = m_typstMathQueue.begin(); it != m_typstMathQueue.end();) {
+    if (matches(*it)) {
+      m_typstMathQueuedBytes -= it->m_sourceBytes;
+      ids[count++] = std::move(it->m_id);
+      it = m_typstMathQueue.erase(it);
+    } else {
+      ++it;
+    }
+  }
+  const QPointer<MarkdownViewerAdapter> guard(this);
+  if (cancelActive) {
+    // Clear ownership first and cancel before signals can submit replacement work.
+    // Keep m_typstMathInFlight until the facade's asynchronous terminal callback.
+    m_typstMathRenderer->cancel();
+  }
+  const auto result = typstMathFailure(tr("Typst math rendering was cancelled."));
+  for (qsizetype idx = 0; idx < count; ++idx) {
+    const auto &id = ids[idx];
+    m_typstMathIds.remove(id);
+    emit typstMathReady(id, result);
+    if (!guard) {
+      return;
+    }
+  }
+  startNextTypstMath();
 }
 
 void MarkdownViewerAdapter::onPdfRenderReady() { emit pdfRenderReady(); }
