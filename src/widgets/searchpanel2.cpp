@@ -1,5 +1,6 @@
 #include "searchpanel2.h"
 
+#include <QApplication>
 #include <QCheckBox>
 #include <QCloseEvent>
 #include <QComboBox>
@@ -11,6 +12,7 @@
 #include <QProgressBar>
 #include <QProgressDialog>
 #include <QPushButton>
+#include <QScrollArea>
 #include <QSizePolicy>
 #include <QVBoxLayout>
 
@@ -65,7 +67,17 @@ void SearchPanel2::setCurrentFolderId(const NodeIdentifier &p_folderId) {
 }
 
 void SearchPanel2::setupUI() {
-  auto *mainLayout = new QVBoxLayout(this);
+  auto *outerLayout = new QVBoxLayout(this);
+  outerLayout->setContentsMargins(0, 0, 0, 0);
+
+  auto *scrollArea = new QScrollArea(this);
+  scrollArea->setWidgetResizable(true);
+  scrollArea->setFrameShape(QFrame::NoFrame);
+  scrollArea->setFocusPolicy(Qt::NoFocus);
+  outerLayout->addWidget(scrollArea);
+
+  auto *content = new QWidget(scrollArea);
+  auto *mainLayout = new QVBoxLayout(content);
   mainLayout->setContentsMargins(8, 8, 8, 8);
   mainLayout->setSpacing(6);
 
@@ -173,6 +185,18 @@ void SearchPanel2::setupUI() {
 
   mainLayout->addStretch();
 
+  scrollArea->setWidget(content);
+  scrollArea->setAutoFillBackground(false);
+  scrollArea->viewport()->setAutoFillBackground(false);
+  content->setAutoFillBackground(false);
+
+  // Dock activation focuses the keyword directly, bypassing QScrollArea's Tab handling.
+  connect(qApp, &QApplication::focusChanged, scrollArea,
+          [scrollArea, content](QWidget *, QWidget *p_focused) {
+            if (p_focused && content->isAncestorOf(p_focused)) {
+              scrollArea->ensureWidgetVisible(p_focused);
+            }
+          });
   setFocusProxy(m_keywordCombo);
 
   updateModeDependentOptions();

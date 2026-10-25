@@ -571,6 +571,11 @@ in older sessions default to false; `ViewWindowMode::Read` is not a read-only bu
 
 #### Search replacement projection
 
+SearchPanel2 keeps its form, action buttons and status inside a frameless, resizable
+QScrollArea so content-mode fields and wrapped messages do not impose their combined
+minimum height on the dock. Scrollbars appear as needed; focus changes reveal the active
+field, including direct keyword focus when the dock is activated.
+
 SearchPanel2 owns confirmation/progress/error dialogs; SearchController owns completed-result
 eligibility, immutable selected/all targets, sequential replacement, cancellation and refresh.
 LocationList2 emits value selections from `selectedRows(0)`; empty selection never means All.
