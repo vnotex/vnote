@@ -167,8 +167,8 @@ jobs:
           exit /b %TEST_RESULT%
         working-directory: ${{runner.workspace}}/build
 
-      - name: Preserve native Typst failure report
-        if: always() && steps.tests.outcome == 'failure'
+      - name: Preserve native Typst test reports
+        if: always() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
         uses: actions/upload-artifact@v4
         with:
           name: native-typst-test-report

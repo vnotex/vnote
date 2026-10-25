@@ -212,8 +212,8 @@ jobs:
           exit "$test_status"
         working-directory: ${{runner.workspace}}/build
 
-      - name: Preserve original test failure reports
-        if: always() && steps.tests.outcome == 'failure'
+      - name: Preserve original test reports
+        if: always() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
         uses: actions/upload-artifact@v4
         with:
           name: test-report-linux

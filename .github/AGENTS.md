@@ -17,6 +17,8 @@ builds; Make otherwise builds these large targets serially. Keep Cargo's separat
 two-job limit. Run both the parent and native-editor suites even when one fails,
 then fail the step if either returned nonzero. Preserve both original CTest logs
 and the Typst JUnit reports before diagnostics; macOS artifact names include the Qt kit.
+Upload reports for successful test steps too: a QtTest case can skip inside an otherwise
+passing executable, so a green CTest result alone does not prove native input was exercised.
 Diagnostic reruns require the test step itself to have failed and a nonempty
 `Testing/Temporary/LastTestsFailed.log` in that suite's build tree. Parent and
 native-editor histories are independent: `ctest --rerun-failed` without its own
