@@ -320,7 +320,8 @@ QString MindMapViewWindowController::relativeLink(const QUrl &p_url) const {
                                                p_url.fragment(QUrl::FullyEncoded));
 }
 
-void MindMapViewWindowController::requestOpenLink(const QString &p_url) {
+void MindMapViewWindowController::requestOpenLink(const QString &p_url,
+                                                  const FileOpenSettings &p_settings) {
   if (!bufferAvailable() || p_url.isEmpty() || !m_pendingExternalLink.isEmpty()) {
     return;
   }
@@ -384,7 +385,7 @@ void MindMapViewWindowController::requestOpenLink(const QString &p_url) {
     emit errorOccurred(tr("Protected note links can open only indexed notebook notes"));
     return;
   }
-  FileOpenSettings settings;
+  auto settings = p_settings;
   settings.m_anchor = url.fragment(QUrl::FullyDecoded);
   m_services.get<BufferService>()->openBuffer(nodeId, settings);
 }

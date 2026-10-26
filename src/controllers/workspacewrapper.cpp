@@ -4,9 +4,9 @@
 
 using namespace vnotex;
 
-WorkspaceWrapper::WorkspaceWrapper(const QString &p_workspaceId, QObject *p_parent)
-    : QObject(p_parent), m_workspaceId(p_workspaceId) {
-}
+WorkspaceWrapper::WorkspaceWrapper(const QString &p_workspaceId, QObject *p_parent,
+                                   bool p_isPreview)
+    : QObject(p_parent), m_workspaceId(p_workspaceId), m_isPreview(p_isPreview) {}
 
 WorkspaceWrapper::~WorkspaceWrapper() {
   Q_ASSERT(m_viewWindows.isEmpty());
@@ -15,6 +15,8 @@ WorkspaceWrapper::~WorkspaceWrapper() {
 const QString &WorkspaceWrapper::workspaceId() const {
   return m_workspaceId;
 }
+
+bool WorkspaceWrapper::isPreview() const { return m_isPreview; }
 
 void WorkspaceWrapper::receiveViewWindows(const QVector<QObject *> &p_windows,
                                           int p_currentIndex) {

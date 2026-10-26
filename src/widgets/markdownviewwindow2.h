@@ -285,7 +285,7 @@ private:
 
   bool isLastWindowForBuffer() const;
 
-  void handleOpenFileRequest(const QString &p_filePath);
+  void handleOpenFileRequest(const QString &p_filePath, bool p_fromContextMenu = false);
   void handleAnchorJump(const QString &p_anchor);
 
   void handleImageHostChanged(const QString &p_providerName);

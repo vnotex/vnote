@@ -402,6 +402,10 @@ private slots:
   void testNavigation_visibleRectangles();
   void testNavigation_staleSnapshots();
   void testNavigation_protectedDestinations();
+  void testContextLink_hitTesting_data();
+  void testContextLink_hitTesting();
+  void testContextLink_protectedDestinations();
+  void testContextLink_renderReadiness();
   void testCustomAnchors_data();
   void testCustomAnchors();
   void testSanitizedUrls_data();
@@ -1625,6 +1629,228 @@ return {
             wrapped.value(QStringLiteral("y")).toDouble(),
             wrapped.value(QStringLiteral("width")).toDouble(),
             wrapped.value(QStringLiteral("height")).toDouble());
+}
+
+void TestMarkdownViewerJs::testContextLink_hitTesting_data() {
+  QTest::addColumn<qreal>("zoom");
+  QTest::newRow("normal") << qreal(1);
+  QTest::newRow("125-percent") << qreal(1.25);
+  QTest::newRow("150-percent") << qreal(1.5);
+}
+
+void TestMarkdownViewerJs::testContextLink_hitTesting() {
+  QFETCH(qreal, zoom);
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  page.setZoomFactor(zoom);
+  setupNavigationPage(page);
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const content = vxcore.contentContainer;
+content.innerHTML = `
+<a id="nested" href="sibling%20note.md#beta%20heading" style="position:absolute;left:20px;top:20px;width:140px;height:24px"><span>Nested <em>label</em></span></a>
+<a href="#beta%20heading" style="position:absolute;left:190px;top:20px;width:100px;height:24px">Fragment</a>
+<a href="https://example.com/note#heading" style="position:absolute;left:20px;top:60px;width:140px;height:24px">External</a>
+<a href="http://[invalid" style="position:absolute;left:20px;top:100px;width:140px;height:24px">Invalid</a>
+<a href="" style="position:absolute;left:20px;top:140px;width:140px;height:24px">Empty</a>
+<a href="#" style="position:absolute;left:20px;top:180px;width:140px;height:24px">Empty fragment</a>
+<a href="hidden.md" style="position:absolute;left:20px;top:220px;width:140px;height:24px;visibility:hidden">Hidden</a>
+<div style="position:absolute;left:20px;top:260px;opacity:0"><a href="transparent.md">Transparent</a></div>
+<div style="position:absolute;left:20px;top:300px;width:60px;height:20px;overflow:hidden">
+  <a href="clipped.md" style="position:absolute;left:50px;top:0;width:80px;height:20px">Clipped</a>
+</div>
+<a href="covered.md" style="position:absolute;left:200px;top:100px;width:100px;height:24px">Covered</a>
+<div style="position:absolute;left:200px;top:100px;width:100px;height:24px;background:white">Cover</div>
+<div style="position:absolute;left:200px;top:160px;width:80px;font:14px/20px monospace">
+  <a id="wrapped-context" href="wrapped.md">one two three four five six</a>
+</div>
+<a href="  " style="position:absolute;left:20px;top:340px;width:140px;height:24px">Whitespace</a>
+<div style="position:absolute;left:20px;top:380px;display:none"><a href="display-hidden.md">Hidden</a></div>`;
+document.body.insertAdjacentHTML('beforeend', '<a href="outside.md" style="position:fixed;left:350px;top:20px;width:120px;height:24px">Outside content</a>');
+const nested = document.querySelector('#nested em').getBoundingClientRect();
+const wrapped = Array.from(document.getElementById('wrapped-context').getClientRects());
+const last = wrapped[wrapped.length - 1];
+return {
+  nested: vxcore.resolveContextLink(nested.left + nested.width / 2, nested.top + nested.height / 2),
+  fragment: vxcore.resolveContextLink(200, 30),
+  external: vxcore.resolveContextLink(30, 70),
+  clipped: vxcore.resolveContextLink(75, 310),
+  wrapped: vxcore.resolveContextLink(last.left + last.width / 2, last.top + last.height / 2),
+  wrappedLines: wrapped.length,
+  rejected: [[30, 110], [30, 150], [30, 190], [30, 230], [30, 270], [100, 310],
+    [210, 110], [360, 30], [30, 350], [30, 390], [500, 400], [-1, -1],
+    [window.innerWidth + 1, 30], [30, window.innerHeight + 1], [NaN, 30], [30, Infinity],
+    ['30', 30]].every(point => vxcore.resolveContextLink(point[0], point[1]) === null)
+};
+)JS"),
+                     result);
+  const auto nested = result.value(QStringLiteral("nested")).toObject();
+  QCOMPARE(nested.value(QStringLiteral("href")).toString(),
+           QStringLiteral("sibling%20note.md#beta%20heading"));
+  QCOMPARE(nested.value(QStringLiteral("url")).toString(),
+           QStringLiteral("file:///navigation/sibling%20note.md#beta%20heading"));
+  const auto fragment = result.value(QStringLiteral("fragment")).toObject();
+  QCOMPARE(fragment.value(QStringLiteral("href")).toString(), QStringLiteral("#beta%20heading"));
+  QCOMPARE(fragment.value(QStringLiteral("url")).toString(),
+           QStringLiteral("file:///navigation/current.md#beta%20heading"));
+  QCOMPARE(
+      result.value(QStringLiteral("external")).toObject().value(QStringLiteral("url")).toString(),
+      QStringLiteral("https://example.com/note#heading"));
+  QCOMPARE(
+      result.value(QStringLiteral("clipped")).toObject().value(QStringLiteral("href")).toString(),
+      QStringLiteral("clipped.md"));
+  QVERIFY(result.value(QStringLiteral("wrappedLines")).toInt() > 1);
+  QCOMPARE(
+      result.value(QStringLiteral("wrapped")).toObject().value(QStringLiteral("href")).toString(),
+      QStringLiteral("wrapped.md"));
+  QVERIFY(result.value(QStringLiteral("rejected")).toBool());
+
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const link = document.getElementById('nested');
+link.setAttribute('href', 'changed.md#new');
+const changed = vxcore.resolveContextLink(30, 30);
+document.querySelector('base').href = 'file:///another/current.md';
+const rebased = vxcore.resolveContextLink(30, 30);
+link.remove();
+return {changed, rebased, removed: vxcore.resolveContextLink(30, 30) === null};
+)JS"),
+                     result);
+  QCOMPARE(
+      result.value(QStringLiteral("changed")).toObject().value(QStringLiteral("url")).toString(),
+      QStringLiteral("file:///navigation/changed.md#new"));
+  QCOMPARE(
+      result.value(QStringLiteral("rebased")).toObject().value(QStringLiteral("url")).toString(),
+      QStringLiteral("file:///another/changed.md#new"));
+  QVERIFY(result.value(QStringLiteral("removed")).toBool());
+}
+
+void TestMarkdownViewerJs::testContextLink_protectedDestinations() {
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupNavigationPage(page, true);
+  renderNavigationDocument(
+      page, QStringLiteral(R"MD([Relative](private.md#target) [Fragment](#target%20name)
+[External](https://example.com/path)
+<a href="file:///private/note.md">File</a>
+<a href="javascript:alert(1)">Javascript</a>
+<a href="//example.com/path">Network</a>)MD"),
+      QStringLiteral("context-protected-1"));
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral(R"JS(
+window.__contextAt = function(element) {
+  const rect = element.getBoundingClientRect();
+  return vxcore.resolveContextLink(rect.left + rect.width / 2, rect.top + rect.height / 2);
+};
+const links = Array.from(vxcore.contentContainer.querySelectorAll('a'));
+const relative = links.find(link => link.textContent === 'Relative');
+window.__oldContextLink = relative;
+const fragment = links.find(link => link.textContent === 'Fragment');
+const external = links.find(link => link.textContent === 'External');
+const blocked = links.filter(link => ['File', 'Javascript', 'Network'].includes(link.textContent));
+const injected = document.createElement('a');
+injected.href = 'vxprotected-resource://capability/target';
+injected.textContent = 'Unregistered capability';
+vxcore.contentContainer.appendChild(injected);
+return {relative: __contextAt(relative), fragment: __contextAt(fragment), external: __contextAt(external),
+  relativeDomHref: relative.getAttribute('href'), blockedCount: blocked.length,
+  blocked: blocked.every(link => __contextAt(link) === null),
+  unregistered: __contextAt(injected) === null};
+)JS"),
+                     result);
+  QCOMPARE(result.value(QStringLiteral("relativeDomHref")).toString(), QStringLiteral("#"));
+  QCOMPARE(
+      result.value(QStringLiteral("relative")).toObject().value(QStringLiteral("href")).toString(),
+      QStringLiteral("private.md#target"));
+  QCOMPARE(
+      result.value(QStringLiteral("relative")).toObject().value(QStringLiteral("url")).toString(),
+      QStringLiteral("file:///navigation/private.md#target"));
+  QCOMPARE(
+      result.value(QStringLiteral("fragment")).toObject().value(QStringLiteral("href")).toString(),
+      QStringLiteral("#target%20name"));
+  QCOMPARE(
+      result.value(QStringLiteral("external")).toObject().value(QStringLiteral("href")).toString(),
+      QStringLiteral("https://example.com/path"));
+  QCOMPARE(result.value(QStringLiteral("blockedCount")).toInt(), 3);
+  QVERIFY(result.value(QStringLiteral("blocked")).toBool());
+  QVERIFY(result.value(QStringLiteral("unregistered")).toBool());
+
+  renderNavigationDocument(page, QStringLiteral("[New](new.md)"),
+                           QStringLiteral("context-protected-2"));
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const fresh = vxcore.contentContainer.querySelector('a');
+const destination = __contextAt(fresh);
+vxcore.contentContainer.appendChild(__oldContextLink);
+return {destination, stale: __contextAt(__oldContextLink) === null};
+)JS"),
+                     result);
+  QCOMPARE(result.value(QStringLiteral("destination"))
+               .toObject()
+               .value(QStringLiteral("href"))
+               .toString(),
+           QStringLiteral("new.md"));
+  QVERIFY(result.value(QStringLiteral("stale")).toBool());
+}
+
+void TestMarkdownViewerJs::testContextLink_renderReadiness() {
+  QWebEngineProfile profile;
+  QWebEnginePage page(&profile);
+  setupNavigationPage(page, true);
+  renderNavigationDocument(page, QStringLiteral("[Initial](initial.md)"),
+                           QStringLiteral("context-ready-1"));
+  QJsonObject result;
+  evaluateNavigation(page, QStringLiteral(R"JS(
+window.__resolveFirstContextLink = function() {
+  const rect = document.querySelector('#vx-content a').getBoundingClientRect();
+  return vxcore.resolveContextLink(rect.left + rect.width / 2, rect.top + rect.height / 2);
+};
+const initial = __resolveFirstContextLink();
+vxcore.initialized = false;
+const notReady = __resolveFirstContextLink() === null;
+vxcore.initialized = true;
+const container = vxcore.contentContainer;
+vxcore.contentContainer = null;
+const noContainer = __resolveFirstContextLink() === null;
+vxcore.contentContainer = container;
+return {initial, notReady, noContainer};
+)JS"),
+                     result);
+  QCOMPARE(
+      result.value(QStringLiteral("initial")).toObject().value(QStringLiteral("href")).toString(),
+      QStringLiteral("initial.md"));
+  QVERIFY(result.value(QStringLiteral("notReady")).toBool());
+  QVERIFY(result.value(QStringLiteral("noContainer")).toBool());
+
+  // Hold real protected rendering, then queue a newer document while its transport is pending.
+  renderNavigationDocument(
+      page, QStringLiteral("[Held](held.md) ![Held image](data:image/png;base64,AAAA)"),
+      QStringLiteral("context-ready-2"), false);
+  evaluateNavigation(page, QStringLiteral(R"JS(
+return {held: typeof __finishImage === 'function', updating: vxcore.numOfOngoingWorkers > 0,
+  rejected: __resolveFirstContextLink() === null};
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("held")).toBool());
+  QVERIFY(result.value(QStringLiteral("updating")).toBool());
+  QVERIFY(result.value(QStringLiteral("rejected")).toBool());
+  renderNavigationDocument(page, QStringLiteral("[Replacement](replacement.md#done)"),
+                           QStringLiteral("context-ready-3"), false);
+  evaluateNavigation(page, QStringLiteral(R"JS(
+const result = {pending: vxcore.pendingData.document !== null,
+  rejected: __resolveFirstContextLink() === null};
+__finishImage('');
+return result;
+)JS"),
+                     result);
+  QVERIFY(result.value(QStringLiteral("pending")).toBool());
+  QVERIFY(result.value(QStringLiteral("rejected")).toBool());
+  waitForDocument(page, QStringLiteral("context-ready-3"));
+  evaluateNavigation(page, QStringLiteral("return {destination: __resolveFirstContextLink()};"),
+                     result);
+  QCOMPARE(result.value(QStringLiteral("destination"))
+               .toObject()
+               .value(QStringLiteral("href"))
+               .toString(),
+           QStringLiteral("replacement.md#done"));
 }
 
 void TestMarkdownViewerJs::testNavigation_staleSnapshots() {

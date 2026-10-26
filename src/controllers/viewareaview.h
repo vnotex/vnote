@@ -44,6 +44,16 @@ public:
   virtual void maximizeViewSplit(const QString &p_workspaceId) = 0;
   virtual void distributeViewSplits() = 0;
 
+  // Preview routing uses source identity rather than retaining widget pointers in requests.
+  virtual bool isPreviewSourceCurrent(ID p_sourceId, quint64 p_generation) const = 0;
+  virtual QString previewWorkspaceForWindow(ID p_windowId) const = 0;
+  virtual bool isPreviewWorkspaceAvailable(const QString &p_workspaceId) const = 0;
+  virtual bool hostPreviewWorkspace(ID p_sourceId, quint64 p_generation,
+                                    const QString &p_workspaceId) = 0;
+  virtual void removePreviewWorkspaceHost(const QString &p_workspaceId) = 0;
+  virtual bool closePreviewsForSources(const QVector<ID> &p_sourceIds) = 0;
+  virtual QStringList previewWorkspacesForSourceNotebook(const QString &p_notebookId) const = 0;
+
   // Buffer/window management
   virtual void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
                           const QString &p_workspaceId, const FileOpenSettings &p_settings) = 0;

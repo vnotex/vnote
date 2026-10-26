@@ -16,6 +16,7 @@
 #include <QToolButton>
 #include <QUrl>
 
+#include "linkpreviewoverlay.h"
 #include "propertydefs.h"
 #include "viewwindow2.h"
 #include "widgetsfactory.h"
@@ -29,8 +30,24 @@
 #include <utils/clipboardutils.h>
 #include <utils/pathutils.h>
 #include <utils/widgetutils.h>
+#include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
+
+namespace {
+ViewSplit2 *nearestViewSplit(QWidget *p_widget) {
+  for (auto *widget = p_widget; widget; widget = widget->parentWidget()) {
+    if (auto *split = qobject_cast<ViewSplit2 *>(widget)) {
+      return split;
+    }
+    // The preview header is a sibling of its split, not source-editor focus.
+    if (auto *overlay = qobject_cast<LinkPreviewOverlay *>(widget)) {
+      return overlay->getViewSplit();
+    }
+  }
+  return nullptr;
+}
+} // namespace
 
 const QString ViewSplit2::c_activeActionButtonForegroundName =
     QStringLiteral("widgets#viewsplit#action_button#active#fg");
@@ -41,12 +58,21 @@ const QString ViewSplit2::c_actionButtonForegroundName =
 ViewSplit2::ViewSplit2(ServiceLocator &p_services, const QString &p_workspaceId, QWidget *p_parent,
                        bool p_detached)
     : QTabWidget(p_parent), m_services(p_services), m_workspaceId(p_workspaceId),
-      m_detached(p_detached) {
+      m_isPreview([&p_services, &p_workspaceId]() {
+        auto *workspaceService = p_services.get<WorkspaceCoreService>();
+        return workspaceService && workspaceService->getWorkspace(p_workspaceId)
+                                       .value(QLatin1String(vxcore::kJsonKeyIsPreview))
+                                       .toBool(false);
+      }()),
+      m_detached(p_detached && !m_isPreview) {
   setupUI();
   // A detached split hosts a single tab and cannot split or switch workspaces, so
   // it installs none of the split/workspace/tab-navigation shortcuts.
   if (!m_detached) {
     setupShortcuts();
+    connect(qApp, &QApplication::focusChanged, this,
+            [this](QWidget *, QWidget *p_now) { updateShortcutAvailability(p_now); });
+    updateShortcutAvailability(QApplication::focusWidget());
   }
 
   auto *themeService = m_services.get<ThemeService>();
@@ -114,6 +140,8 @@ void ViewSplit2::setupUI() {
     qInfo() << "ViewSplit2::tabMoved: from:" << p_from << "to:" << p_to << "new order:" << ids;
     emit bufferOrderChanged(this, ids);
   });
+
+  updateTabBarVisibility();
 }
 
 void ViewSplit2::setupTabBar() {
@@ -230,8 +258,8 @@ void ViewSplit2::setupCornerWidget() {
     layout->addWidget(m_windowListButton);
   }
 
-  // Menu button.
-  {
+  // Preview tabs retain their window list, but have no workspace/split menu.
+  if (!m_isPreview) {
     m_menuButton = new QToolButton(this);
     m_menuButton->setPopupMode(QToolButton::InstantPopup);
     m_menuButton->setProperty(PropertyDefs::c_actionToolButton, true);
@@ -289,6 +317,9 @@ void ViewSplit2::setVisibleWorkspaceIdsFunc(const VisibleWorkspaceIdsFunc &p_fun
 
 void ViewSplit2::updateMenu(QMenu *p_menu) {
   p_menu->clear();
+  if (m_isPreview || m_detached) {
+    return;
+  }
 
   auto *configMgr = m_services.get<ConfigMgr2>();
   const auto *coreConfig = configMgr ? &configMgr->getCoreConfig() : nullptr;
@@ -297,6 +328,7 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
   {
     p_menu->addSection(tr("Workspaces"));
 
+    int ordinaryWorkspaceCount = 0;
     auto *wsSvc = m_services.get<WorkspaceCoreService>();
     if (wsSvc) {
       auto workspaces = wsSvc->listWorkspaces();
@@ -310,6 +342,10 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
 
       for (int i = 0; i < workspaces.size(); ++i) {
         auto wsObj = workspaces[i].toObject();
+        if (wsObj.value(QLatin1String(vxcore::kJsonKeyIsPreview)).toBool(false)) {
+          continue;
+        }
+        ++ordinaryWorkspaceCount;
         auto wsId = wsObj.value(QStringLiteral("id")).toString();
         auto wsName = wsObj.value(QStringLiteral("name")).toString();
         if (wsName.isEmpty()) {
@@ -342,7 +378,7 @@ void ViewSplit2::updateMenu(QMenu *p_menu) {
 
     p_menu->addAction(tr("Remove Workspace"), [this]() { emit removeWorkspaceRequested(this); });
 
-    bool hasOtherWorkspaces = wsSvc && wsSvc->listWorkspaces().size() > 1;
+    const bool hasOtherWorkspaces = ordinaryWorkspaceCount > 1;
     auto *removeOthersAct = p_menu->addAction(
         tr("Remove Other Workspaces"), [this]() { emit removeOtherWorkspacesRequested(this); });
     removeOthersAct->setEnabled(hasOtherWorkspaces);
@@ -435,7 +471,13 @@ void ViewSplit2::addViewWindow(ViewWindow2 *p_win) {
 
   p_win->setVisible(true);
 
-  connect(p_win, &ViewWindow2::focused, this, [this](ViewWindow2 *) { emit focused(this); });
+  connect(p_win, &ViewWindow2::focused, this, [this](ViewWindow2 *) {
+    // The source is also an ancestor of its preview editor, but does not own
+    // focus inside that nested split.
+    if (nearestViewSplit(QApplication::focusWidget()) == this) {
+      emit focused(this);
+    }
+  });
 
   connect(p_win, &ViewWindow2::statusChanged, this, [this]() {
     auto win = qobject_cast<ViewWindow2 *>(sender());
@@ -490,8 +532,8 @@ ViewWindow2 *ViewSplit2::getCurrentViewWindow() const {
 }
 
 void ViewSplit2::updateTabBarVisibility() {
-  bool hideBar = false;
-  if (count() == 1) {
+  bool hideBar = m_isPreview && count() < 2;
+  if (!m_isPreview && count() == 1) {
     auto *win = getViewWindow(0);
     if (win && win->getBuffer().nodeId().relativePath == QStringLiteral("vx://home")) {
       hideBar = true;
@@ -526,19 +568,23 @@ int ViewSplit2::getViewWindowCount() const { return count(); }
 
 const QString &ViewSplit2::getWorkspaceId() const { return m_workspaceId; }
 
-void ViewSplit2::setWorkspaceId(const QString &p_workspaceId) { m_workspaceId = p_workspaceId; }
+void ViewSplit2::setWorkspaceId(const QString &p_workspaceId) {
+  if (!m_isPreview) {
+    m_workspaceId = p_workspaceId;
+  }
+}
+
+bool ViewSplit2::isPreview() const { return m_isPreview; }
 
 void ViewSplit2::setActive(bool p_active) {
   m_active = p_active;
 
-  if (m_windowListButton && m_menuButton) {
-    if (p_active) {
-      m_windowListButton->defaultAction()->setIcon(m_windowListActiveIcon);
-      m_menuButton->defaultAction()->setIcon(m_menuActiveIcon);
-    } else {
-      m_windowListButton->defaultAction()->setIcon(m_windowListIcon);
-      m_menuButton->defaultAction()->setIcon(m_menuIcon);
-    }
+  if (m_windowListButton) {
+    m_windowListButton->defaultAction()->setIcon(p_active ? m_windowListActiveIcon
+                                                          : m_windowListIcon);
+  }
+  if (m_menuButton) {
+    m_menuButton->defaultAction()->setIcon(p_active ? m_menuActiveIcon : m_menuIcon);
   }
 }
 
@@ -645,7 +691,7 @@ bool ViewSplit2::eventFilter(QObject *p_object, QEvent *p_event) {
           closeTab(idx);
           // closeTab may trigger removal of this split. Return immediately.
           return true;
-        } else {
+        } else if (!m_isPreview) {
           // Double click on the empty area of the tab bar triggers a quick note,
           // mirroring the New -> Quick Note action in the main window toolbar.
           emit newQuickNoteRequested();
@@ -701,8 +747,8 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
   menu.addSeparator();
 
   // ---- Move Actions ----
-  // Detached windows cannot move tabs to other splits or re-detach.
-  if (!m_detached) {
+  // Hosted previews and detached windows cannot move tabs or detach.
+  if (!m_detached && !m_isPreview) {
     auto *moveLeftAct = menu.addAction(tr("Move One Split Left"), [this, win]() {
       emit moveViewWindowOneSplitRequested(this, win, Direction::Left);
     });
@@ -800,6 +846,9 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
 QVector<ViewSplit2::TabNavigationInfo> ViewSplit2::getNavigationModeInfo() const {
   QVector<TabNavigationInfo> infos;
   auto bar = tabBar();
+  if (!bar->isVisible()) {
+    return infos;
+  }
   for (int i = 0; i < bar->count(); ++i) {
     QPoint tl = bar->tabRect(i).topLeft();
     if (tl.x() < 0 || tl.x() >= bar->width()) {
@@ -815,12 +864,78 @@ QVector<ViewSplit2::TabNavigationInfo> ViewSplit2::getNavigationModeInfo() const
   return infos;
 }
 
+void ViewSplit2::updateShortcutAvailability(QWidget *p_focusWidget) {
+  const bool enabled = nearestViewSplit(p_focusWidget) == this;
+  if (m_shortcutsEnabled == enabled) {
+    return;
+  }
+  m_shortcutsEnabled = enabled;
+  // WidgetWithChildrenShortcut also matches a nested preview. Disable the
+  // ancestor registrations to avoid ambiguous tab shortcuts and split actions.
+  for (auto *child : children()) {
+    if (auto *shortcut = qobject_cast<QShortcut *>(child)) {
+      shortcut->setEnabled(enabled);
+    }
+  }
+}
+
 void ViewSplit2::setupShortcuts() {
   auto *configMgr = m_services.get<ConfigMgr2>();
   if (!configMgr) {
     return;
   }
   const auto &coreConfig = configMgr->getCoreConfig();
+
+  // ActivateTab1-9.
+  {
+    const CoreConfig::Shortcut tabShortcuts[] = {
+        CoreConfig::Shortcut::ActivateTab1, CoreConfig::Shortcut::ActivateTab2,
+        CoreConfig::Shortcut::ActivateTab3, CoreConfig::Shortcut::ActivateTab4,
+        CoreConfig::Shortcut::ActivateTab5, CoreConfig::Shortcut::ActivateTab6,
+        CoreConfig::Shortcut::ActivateTab7, CoreConfig::Shortcut::ActivateTab8,
+        CoreConfig::Shortcut::ActivateTab9};
+    for (int i = 0; i < 9; ++i) {
+      auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(tabShortcuts[i]), this,
+                                                  Qt::WidgetWithChildrenShortcut);
+      if (shortcut) {
+        connect(shortcut, &QShortcut::activated, this, [this, i]() { setCurrentViewWindow(i); });
+      }
+    }
+  }
+
+  // AlternateTab.
+  {
+    auto shortcut =
+        WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Shortcut::AlternateTab),
+                                    this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, &ViewSplit2::alternateTab);
+    }
+  }
+
+  // ActivateNextTab.
+  {
+    auto shortcut =
+        WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Shortcut::ActivateNextTab),
+                                    this, Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() { activateNextTab(false); });
+    }
+  }
+
+  // ActivatePreviousTab.
+  {
+    auto shortcut = WidgetUtils::createShortcut(
+        coreConfig.getShortcut(CoreConfig::Shortcut::ActivatePreviousTab), this,
+        Qt::WidgetWithChildrenShortcut);
+    if (shortcut) {
+      connect(shortcut, &QShortcut::activated, this, [this]() { activateNextTab(true); });
+    }
+  }
+
+  if (m_isPreview) {
+    return;
+  }
 
   // NewWorkspace.
   {
@@ -885,53 +1000,6 @@ void ViewSplit2::setupShortcuts() {
     if (shortcut) {
       connect(shortcut, &QShortcut::activated, this,
               [this]() { emit removeSplitAndWorkspaceRequested(this); });
-    }
-  }
-
-  // ActivateTab1-9.
-  {
-    const CoreConfig::Shortcut tabShortcuts[] = {
-        CoreConfig::Shortcut::ActivateTab1, CoreConfig::Shortcut::ActivateTab2,
-        CoreConfig::Shortcut::ActivateTab3, CoreConfig::Shortcut::ActivateTab4,
-        CoreConfig::Shortcut::ActivateTab5, CoreConfig::Shortcut::ActivateTab6,
-        CoreConfig::Shortcut::ActivateTab7, CoreConfig::Shortcut::ActivateTab8,
-        CoreConfig::Shortcut::ActivateTab9};
-    for (int i = 0; i < 9; ++i) {
-      auto shortcut = WidgetUtils::createShortcut(coreConfig.getShortcut(tabShortcuts[i]), this,
-                                                  Qt::WidgetWithChildrenShortcut);
-      if (shortcut) {
-        connect(shortcut, &QShortcut::activated, this, [this, i]() { setCurrentViewWindow(i); });
-      }
-    }
-  }
-
-  // AlternateTab.
-  {
-    auto shortcut =
-        WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Shortcut::AlternateTab),
-                                    this, Qt::WidgetWithChildrenShortcut);
-    if (shortcut) {
-      connect(shortcut, &QShortcut::activated, this, &ViewSplit2::alternateTab);
-    }
-  }
-
-  // ActivateNextTab.
-  {
-    auto shortcut =
-        WidgetUtils::createShortcut(coreConfig.getShortcut(CoreConfig::Shortcut::ActivateNextTab),
-                                    this, Qt::WidgetWithChildrenShortcut);
-    if (shortcut) {
-      connect(shortcut, &QShortcut::activated, this, [this]() { activateNextTab(false); });
-    }
-  }
-
-  // ActivatePreviousTab.
-  {
-    auto shortcut = WidgetUtils::createShortcut(
-        coreConfig.getShortcut(CoreConfig::Shortcut::ActivatePreviousTab), this,
-        Qt::WidgetWithChildrenShortcut);
-    if (shortcut) {
-      connect(shortcut, &QShortcut::activated, this, [this]() { activateNextTab(true); });
     }
   }
 

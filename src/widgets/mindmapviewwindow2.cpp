@@ -77,6 +77,7 @@ QWidget *MindMapViewWindow2::getToolsPanel() {
 
 void MindMapViewWindow2::setupUI() {
   m_editor = new MindMapEditor(getServices(), getBuffer(), this);
+  m_editor->setViewWindow(this);
   setCentralWidget(m_editor);
   connectEditorSignals();
   setupToolBar();

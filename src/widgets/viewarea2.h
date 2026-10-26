@@ -27,6 +27,7 @@ class Buffer2;
 class ViewWindowFactory;
 class IViewWindowContent;
 class DetachedWindow;
+class LinkPreviewOverlay;
 
 // ViewArea2: composite widget owning the GUI (splitter tree + ViewSplit2s) and
 // ViewAreaController.  The controller knows nothing about ViewArea2.
@@ -106,6 +107,14 @@ public:
   void distributeViewSplits() override;
   void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType, const QString &p_workspaceId,
                   const FileOpenSettings &p_settings) override;
+  bool isPreviewSourceCurrent(ID p_sourceId, quint64 p_generation) const override;
+  QString previewWorkspaceForWindow(ID p_windowId) const override;
+  bool isPreviewWorkspaceAvailable(const QString &p_workspaceId) const override;
+  bool hostPreviewWorkspace(ID p_sourceId, quint64 p_generation,
+                            const QString &p_workspaceId) override;
+  void removePreviewWorkspaceHost(const QString &p_workspaceId) override;
+  bool closePreviewsForSources(const QVector<ID> &p_sourceIds) override;
+  QStringList previewWorkspacesForSourceNotebook(const QString &p_notebookId) const override;
   bool canReuseViewWindow(ID p_windowId, const QString &p_fileType) const override;
   bool replaceViewWindowBuffer(ID p_windowId, const Buffer2 &p_buffer,
                                const FileOpenSettings &p_settings,
@@ -157,6 +166,7 @@ protected:
   void clearNavigation() override;
 
   QSize sizeHint() const override;
+  bool eventFilter(QObject *p_object, QEvent *p_event) override;
 
 private slots:
   // ViewSplit2 signal handlers
@@ -169,12 +179,18 @@ private slots:
 
 private:
   void appendReadyNavigationTargets();
+  QVector<ViewSplit2 *> navigationViewSplits() const;
 
   void setupController();
   void setupShortcuts();
   void wireSplitSignals(ViewSplit2 *p_split);
+  void wirePreviewSplitSignals(ViewSplit2 *p_split);
+  void saveAllViewWindows();
+  void updatePreviewAnchor(const QString &p_workspaceId);
 
   ViewSplit2 *splitForWorkspace(const QString &p_workspaceId) const;
+  ViewSplit2 *hostedSplitForWorkspace(const QString &p_workspaceId) const;
+  ViewSplit2 *owningSplitForWindow(ID p_windowId) const;
   ViewWindow2 *windowForId(ID p_windowId) const;
 
   // Resolve the ViewSplit2 hosted by the DetachedWindow for p_workspaceId, or
@@ -234,6 +250,15 @@ private:
   // Top-level detached windows (kept OUT of m_splits / the main splitter tree so
   // they are excluded from layout serialization and main-tree navigation).
   QVector<DetachedWindow *> m_detachedWindows;
+  struct PreviewHost {
+    QPointer<ViewWindow2> source;
+    ID sourceId = 0;
+    quint64 generation = 0;
+    QPointer<LinkPreviewOverlay> overlay;
+    bool anchorUpdatePending = false;
+  };
+  // Tab membership belongs only to the hosted split and m_windows.
+  QMap<QString, PreviewHost> m_previewHosts;
   struct NavigationItem {
     QPointer<ViewWindow2> m_window;
     quint64 m_bufferGeneration = 0;

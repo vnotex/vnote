@@ -149,6 +149,9 @@ public:
   const QString &getSectionNumberPattern() const;
   void setSectionNumberPattern(const QString &p_pattern);
 
+  bool getLinkPreviewEnabled() const;
+  void setLinkPreviewEnabled(bool p_enabled);
+
   bool getDetectHeading1ForSectionNumber() const;
   void setDetectHeading1ForSectionNumber(bool p_enabled);
 
@@ -215,6 +218,8 @@ private:
 
   QString m_sectionNumberPattern = QStringLiteral("1.1.");
   bool m_detectHeading1ForSectionNumber = true;
+
+  bool m_linkPreviewEnabled = true;
 };
 } // namespace vnotex
 

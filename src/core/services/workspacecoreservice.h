@@ -34,8 +34,9 @@ public:
   // ============ Workspace Lifecycle ============
 
   // Create a new workspace with the given name.
+  // Preview workspaces are transient; classification is fixed at creation.
   // Returns workspace ID, or empty string on failure.
-  QString createWorkspace(const QString &p_name);
+  QString createWorkspace(const QString &p_name, bool p_isPreview = false);
 
   // Delete a workspace by ID.
   bool deleteWorkspace(const QString &p_id);

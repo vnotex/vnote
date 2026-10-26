@@ -935,6 +935,8 @@ Buffer2 BufferService::openBuffer(const NodeIdentifier &p_nodeId,
   event.alwaysNewWindow = p_settings.m_alwaysNewWindow;
   event.detachedView = p_settings.m_detachedView;
   event.targetWorkspaceId = p_settings.m_targetWorkspaceId;
+  event.previewSourceWindowId = p_settings.m_previewSourceWindowId;
+  event.previewSourceGeneration = p_settings.m_previewSourceGeneration;
   if (p_settings.m_searchHighlight.m_isValid) {
     event.searchPatterns = p_settings.m_searchHighlight.m_patterns;
     event.searchOptions = static_cast<int>(p_settings.m_searchHighlight.m_options);

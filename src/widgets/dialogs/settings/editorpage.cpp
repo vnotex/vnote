@@ -125,6 +125,21 @@ void EditorPage::setupUI() {
   }
 
   {
+    const QString label(tr("Preview links in an overlay"));
+    m_linkPreviewEnabledCheckBox = WidgetsFactory::createCheckBox(label, this);
+    m_linkPreviewEnabledCheckBox->setObjectName(QStringLiteral("linkPreviewEnabledCheckBox"));
+    m_linkPreviewEnabledCheckBox->setToolTip(
+        tr("Open supported file links in an editable preview overlay; use Open Link in the context "
+           "menu to open normally"));
+    cardLayout->addWidget(SettingsPageHelper::createSeparator(this));
+    cardLayout->addWidget(SettingsPageHelper::createCheckBoxRow(
+        m_linkPreviewEnabledCheckBox, m_linkPreviewEnabledCheckBox->toolTip(), this));
+    addSearchItem(label, m_linkPreviewEnabledCheckBox->toolTip(), m_linkPreviewEnabledCheckBox);
+    connect(m_linkPreviewEnabledCheckBox, &QCheckBox::stateChanged, this,
+            &EditorPage::pageIsChanged);
+  }
+
+  {
     m_toolBarIconSizeSpinBox = WidgetsFactory::createSpinBox(this);
     m_toolBarIconSizeSpinBox->setToolTip(tr("Icon size of the editor tool bar"));
 
@@ -249,6 +264,8 @@ void EditorPage::loadInternal() {
   m_detectHeading1ForSectionNumberCheckBox->setChecked(
       editorConfig.getDetectHeading1ForSectionNumber());
 
+  m_linkPreviewEnabledCheckBox->setChecked(editorConfig.getLinkPreviewEnabled());
+
   m_toolBarIconSizeSpinBox->setValue(editorConfig.getToolBarIconSize());
 
   {
@@ -283,6 +300,8 @@ bool EditorPage::saveInternal() {
   editorConfig.setSectionNumberPattern(m_sectionNumberPatternComboBox->currentData().toString());
   editorConfig.setDetectHeading1ForSectionNumber(
       m_detectHeading1ForSectionNumberCheckBox->isChecked());
+
+  editorConfig.setLinkPreviewEnabled(m_linkPreviewEnabledCheckBox->isChecked());
 
   editorConfig.setToolBarIconSize(m_toolBarIconSizeSpinBox->value());
 

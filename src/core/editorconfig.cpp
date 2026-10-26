@@ -113,6 +113,7 @@ void EditorConfig::loadCore(const QJsonObject &p_jobj) {
   m_sectionNumberPattern =
       SectionNumberUtils::normalizePattern(READSTR(QStringLiteral("sectionNumberPattern")));
   m_detectHeading1ForSectionNumber = READBOOL(QStringLiteral("detectHeading1ForSectionNumber"));
+  m_linkPreviewEnabled = p_jobj.value(QStringLiteral("linkPreviewEnabled")).toBool(true);
 }
 
 QJsonObject EditorConfig::saveCore() const {
@@ -128,6 +129,7 @@ QJsonObject EditorConfig::saveCore() const {
   obj[QStringLiteral("lineEnding")] = lineEndingPolicyToString(m_lineEnding);
   obj[QStringLiteral("sectionNumberPattern")] = m_sectionNumberPattern;
   obj[QStringLiteral("detectHeading1ForSectionNumber")] = m_detectHeading1ForSectionNumber;
+  obj[QStringLiteral("linkPreviewEnabled")] = m_linkPreviewEnabled;
   return obj;
 }
 
@@ -256,6 +258,12 @@ const QString &EditorConfig::getSectionNumberPattern() const { return m_sectionN
 
 void EditorConfig::setSectionNumberPattern(const QString &p_pattern) {
   updateConfig(m_sectionNumberPattern, SectionNumberUtils::normalizePattern(p_pattern), this);
+}
+
+bool EditorConfig::getLinkPreviewEnabled() const { return m_linkPreviewEnabled; }
+
+void EditorConfig::setLinkPreviewEnabled(bool p_enabled) {
+  updateConfig(m_linkPreviewEnabled, p_enabled, this);
 }
 
 bool EditorConfig::getDetectHeading1ForSectionNumber() const {

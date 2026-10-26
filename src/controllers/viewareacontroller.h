@@ -147,6 +147,13 @@ public:
   // Returns true if all closed (false means user cancelled).
   bool closeAll(const QVector<QString> &p_workspaceIds, bool p_force);
 
+  // Preview closure is cancellable and one-shot: accepted protected tabs may
+  // still be retiring, but neither a second consent nor new admission is allowed.
+  bool closePreviewWorkspace(const QString &p_workspaceId);
+  bool closeAllPreviewWorkspaces();
+  bool isPreviewWorkspaceClosing(const QString &p_workspaceId) const;
+  void setPreviewWorkspaceVisible(const QString &p_workspaceId, bool p_visible);
+
   // Close all buffers (visible and hidden) for app quit.
   // Phase 1: Close all visible workspace windows via closeAll().
   // Phase 2: Close hidden workspace windows via aboutToClose().
@@ -167,6 +174,8 @@ public:
   void openLastClosedFile();
 
   // ============ Split Operations ============
+  // Ordinary workspace/layout commands reject preview hosts; previews retain
+  // their own tab operations without entering the main splitter tree.
 
   // Split the workspace p_workspaceId in the given direction.
   // Fires hooks, allocates a new workspace via WorkspaceCoreService,
@@ -220,7 +229,7 @@ public:
   void renameWorkspace(const QString &p_workspaceId, const QString &p_newName);
 
   // Generate a default workspace name like "Workspace 1", "Workspace 2", etc.
-  // Finds the next available number by scanning existing workspace names.
+  // Finds the next available number by scanning ordinary workspace names.
   QString generateWorkspaceName() const;
 
   // Clear the cached per-batch CLI detached workspace so the next
@@ -240,7 +249,7 @@ public:
   // the split's workspace ID during this call.
   bool removeWorkspace(QString p_workspaceId, bool p_force);
 
-  // Remove every workspace except p_keepWorkspaceId. Reuses removeWorkspace for
+  // Remove every ordinary workspace except p_keepWorkspaceId. Reuses removeWorkspace for
   // each; aborts if the user cancels an unsaved-changes prompt on any workspace.
   void removeOtherWorkspaces(const QString &p_keepWorkspaceId);
 
@@ -258,10 +267,16 @@ public:
   // Get the ID of the current active workspace (empty if none).
   QString getCurrentWorkspaceId() const;
 
+  // Preview command focus never changes the ordinary open destination or the
+  // core's global current workspace.
+  void setActivePreviewWindow(const QString &p_workspaceId, ID p_windowId,
+                              const QString &p_bufferId);
+  void clearActivePreviewWindow();
+
   // ============ IViewWindowNavigator ============
 
   // Enumerate open windows grouped by workspace (known this session), in
-  // workspace insertion order; only workspaces with >=1 window are returned.
+  // workspace insertion order; only ordinary workspaces with >=1 window are returned.
   QVector<OpenWindowEntry> listOpenWindows() const override;
 
   // Focus a specific window by workspace + buffer id, surfacing a hidden
@@ -352,6 +367,18 @@ private:
   // Dispose a failed open only when no visible, hidden, or detached workspace owns it.
   void closeUnownedOpenBuffer(const QString &p_bufferId);
 
+  // Wrapper classification is authoritative; consult core for IDs not yet wrapped.
+  bool isPreviewWorkspace(const QString &p_workspaceId) const;
+  QString ensurePreviewWorkspace(ID p_sourceId, quint64 p_generation);
+  bool isPreviewRequestCurrent(const FileOpenSettings &p_settings,
+                               const QString &p_workspaceId) const;
+  // Core membership remains authoritative until protected destruction completes.
+  void removeEmptyPreviewWorkspace(const QString &p_workspaceId);
+  void rejectPreviewWindow(ID p_windowId, const QString &p_bufferId, const QString &p_workspaceId);
+  bool hasActivePreviewWindow() const;
+  void scheduleLockedWindowReactivation(const QString &p_workspaceId, ID p_windowId,
+                                        const QString &p_bufferId);
+
   // Emit currentViewWindowChanged if the active window has changed.
   void checkCurrentViewWindowChange(const QString &p_workspaceId);
 
@@ -405,6 +432,21 @@ private:
   ViewAreaView *m_view = nullptr;
   ID m_currentWindowId = InvalidViewWindowId;
   QString m_currentWorkspaceId;
+  QString m_activePreviewWorkspaceId;
+  ID m_activePreviewWindowId = InvalidViewWindowId;
+
+  // Lifecycle state only; WorkspaceWrapper remains the sole classification.
+  enum class PreviewCloseState { Open, Checking, Accepted };
+  QMap<QString, PreviewCloseState> m_previewCloseStates;
+  // Construction/hook stacks must drain before an empty host can be removed.
+  QMap<QString, int> m_previewAdmissionsInProgress;
+  QSet<ID> m_creatingPreviewSources;
+  struct FailedPreviewAdmission {
+    QString workspaceId;
+    QString bufferId;
+  };
+  // Protected views finish rollback only after their deferred destruction.
+  QMap<ID, FailedPreviewAdmission> m_failedPreviewAdmissions;
 
   // A hook/modal loop must not close, move, or recursively replace the captured tab.
   QSet<ID> m_transitioningWindows;

@@ -7,6 +7,7 @@
 #include <QSet>
 #include <QUrl>
 
+#include <core/fileopensettings.h>
 #include <core/services/buffer2.h>
 
 namespace vnotex {
@@ -32,7 +33,9 @@ public:
   void clearObsoleteImages();
 
   void requestOpenSource(const QString &p_file, int p_start, int p_end);
-  void requestOpenLink(const QUrl &p_url);
+  // Apply caller routing only after resolving an allowed local file; external consent
+  // and internal source-location navigation retain their existing policy.
+  void requestOpenLink(const QUrl &p_url, const FileOpenSettings &p_settings = FileOpenSettings());
   void openConfirmedExternalLink(const QUrl &p_url);
 
   // Read-only context actions decode the compiler's captured bytes, never a live-file

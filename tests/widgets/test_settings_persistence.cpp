@@ -27,6 +27,7 @@
 #include <core/services/hookmanager.h>
 #include <core/services/templateservice.h>
 #include <core/sessionconfig.h>
+#include <widgets/dialogs/settings/editorpage.h>
 #include <widgets/dialogs/settings/fileassociationpage.h>
 #include <widgets/dialogs/settings/generalpage.h>
 #include <widgets/dialogs/settings/mindmapeditorpage.h>
@@ -57,6 +58,7 @@ private slots:
   void test_noteManagementLoadsRecycleBinCleanupSettings();
   void test_noteManagementPersistsRecycleBinCleanupSettings();
   void test_mindMapPreferencesPersistAndReset();
+  void test_linkPreviewPreferenceRequiresApplyAndPersists();
 
 private:
   void seedQuickAccess(const QStringList &p_paths);
@@ -69,7 +71,7 @@ private:
   ConfigMgr2 *m_configMgr = nullptr;
   TemplateService *m_templateService = nullptr;
   HookManager *m_hooks = nullptr;
-  QJsonObject m_originalMindMapConfig;
+  QJsonObject m_originalEditorConfig;
 };
 
 void TestSettingsPersistence::initTestCase() {
@@ -108,7 +110,7 @@ void TestSettingsPersistence::init() {
   m_configMgr = new ConfigMgr2(m_configService);
   m_configMgr->init();
   m_services->registerService<ConfigMgr2>(m_configMgr);
-  m_originalMindMapConfig = m_configMgr->getEditorConfig().getMindMapEditorConfig().toJson();
+  m_originalEditorConfig = m_configMgr->getEditorConfig().toJson();
 
   // QuickAccessPage embeds a NoteTemplateSelector, which dereferences this
   // service unconditionally while building its combo box.
@@ -117,7 +119,7 @@ void TestSettingsPersistence::init() {
 }
 
 void TestSettingsPersistence::cleanup() {
-  m_configMgr->getEditorConfig().getMindMapEditorConfig().fromJson(m_originalMindMapConfig);
+  m_configMgr->getEditorConfig().fromJson(m_originalEditorConfig);
   m_configMgr->updateMainConfig(m_configMgr->getConfig().toJson());
   m_configMgr->getCoreConfig().setAppName(QStringLiteral("VNote"));
   m_configMgr->getCoreConfig().setRecycleBinAutoCleanupEnabled(false, 0);
@@ -318,6 +320,56 @@ void TestSettingsPersistence::test_noteManagementPersistsRecycleBinCleanupSettin
   QVERIFY(reloadedEnabled->isChecked());
   QVERIFY(reloadedRetention->isEnabled());
   QCOMPARE(reloadedRetention->value(), 90);
+}
+
+void TestSettingsPersistence::test_linkPreviewPreferenceRequiresApplyAndPersists() {
+  auto &config = m_configMgr->getEditorConfig();
+  config.setLinkPreviewEnabled(true);
+  {
+    EditorPage unapplied(*m_services);
+    unapplied.load();
+    auto *enabled = unapplied.findChild<QCheckBox *>(QStringLiteral("linkPreviewEnabledCheckBox"));
+    QVERIFY(enabled);
+    QVERIFY(enabled->isChecked());
+    enabled->setChecked(false);
+    QVERIFY(config.getLinkPreviewEnabled());
+  }
+
+  EditorPage page(*m_services);
+  page.load();
+  auto *enabled = page.findChild<QCheckBox *>(QStringLiteral("linkPreviewEnabledCheckBox"));
+  QVERIFY(enabled);
+  QVERIFY(enabled->isChecked());
+  QVERIFY(page.search(QStringLiteral("preview")));
+  const auto persisted = [&] {
+    return m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"))
+        .value(QStringLiteral("editor"))
+        .toObject()
+        .value(QStringLiteral("core"))
+        .toObject()
+        .value(QStringLiteral("linkPreviewEnabled"));
+  };
+  for (const bool value : {false, true}) {
+    enabled->setChecked(value);
+    QCOMPARE(config.getLinkPreviewEnabled(), !value);
+    QVERIFY(!page.isRestartNeeded());
+    // Settings Apply invokes this page's save path.
+    QVERIFY(page.save());
+    QCOMPARE(config.getLinkPreviewEnabled(), value);
+    QTRY_COMPARE(persisted(), QJsonValue(value));
+
+    ConfigMgr2 freshManager(m_configService);
+    freshManager.init();
+    QCOMPARE(freshManager.getEditorConfig().getLinkPreviewEnabled(), value);
+    ServiceLocator freshServices;
+    freshServices.registerService<ConfigMgr2>(&freshManager);
+    freshServices.registerService<HookManager>(m_hooks);
+    EditorPage recreated(freshServices);
+    recreated.load();
+    auto *reloaded = recreated.findChild<QCheckBox *>(QStringLiteral("linkPreviewEnabledCheckBox"));
+    QVERIFY(reloaded);
+    QCOMPARE(reloaded->isChecked(), value);
+  }
 }
 
 void TestSettingsPersistence::test_mindMapPreferencesPersistAndReset() {

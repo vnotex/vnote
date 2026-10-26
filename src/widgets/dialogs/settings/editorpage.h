@@ -44,6 +44,8 @@ private:
 
   QCheckBox *m_detectHeading1ForSectionNumberCheckBox = nullptr;
 
+  QCheckBox *m_linkPreviewEnabledCheckBox = nullptr;
+
   QComboBox *m_layoutModeComboBox = nullptr;
 
   QSpinBox *m_readableWidthSpinBox = nullptr;

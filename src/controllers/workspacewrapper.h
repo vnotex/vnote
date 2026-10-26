@@ -16,10 +16,12 @@ namespace vnotex {
 class WorkspaceWrapper : public QObject {
   Q_OBJECT
 public:
-  explicit WorkspaceWrapper(const QString &p_workspaceId, QObject *p_parent = nullptr);
+  explicit WorkspaceWrapper(const QString &p_workspaceId, QObject *p_parent = nullptr,
+                            bool p_isPreview = false);
   ~WorkspaceWrapper() override;
 
   const QString &workspaceId() const;
+  bool isPreview() const;
 
   // Transfer ViewWindows IN from a ViewSplit (workspace being hidden).
   // Takes ownership conceptually (no Qt parent set — windows are unparented).
@@ -42,6 +44,7 @@ public:
 
 private:
   QString m_workspaceId;
+  const bool m_isPreview;
   QVector<QObject *> m_viewWindows;
   int m_currentIndex = 0;
   bool m_visible = false;

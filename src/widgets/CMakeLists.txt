@@ -99,6 +99,7 @@ target_sources(vnote PRIVATE
     imageviewer.cpp imageviewer.h
     inlinebanner.cpp inlinebanner.h
     legacyimagemigrationbar.cpp legacyimagemigrationbar.h
+    linkpreviewoverlay.cpp linkpreviewoverlay.h
     listwidget.cpp listwidget.h
     locationinputwithbrowsebutton.cpp locationinputwithbrowsebutton.h
     locationlist2.cpp locationlist2.h

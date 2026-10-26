@@ -74,6 +74,17 @@ QString ViewWindow2::s_attachmentFullIconMasterColor;
 
 QIcon ViewWindow2::s_attachmentFullIcon;
 
+namespace {
+ViewWindow2 *viewWindowForFocus(QWidget *p_widget) {
+  for (auto *widget = p_widget; widget; widget = widget->parentWidget()) {
+    if (auto *view = qobject_cast<ViewWindow2 *>(widget)) {
+      return view;
+    }
+  }
+  return nullptr;
+}
+} // namespace
+
 ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QWidget *p_parent)
     : QFrame(p_parent), m_services(p_services), m_buffer(p_buffer) {
   setupUI();
@@ -81,11 +92,13 @@ ViewWindow2::ViewWindow2(ServiceLocator &p_services, const Buffer2 &p_buffer, QW
   // Initialize revision from buffer.
   m_lastKnownRevision = m_buffer.getRevision();
 
-  // Track focus changes for auto-save integration.
-  // Uses the same global pattern as the legacy ViewWindow.
+  // Track the nearest editor, not every ancestor of an interactive preview.
+  installEventFilter(this);
   connect(qApp, &QApplication::focusChanged, this, [this](QWidget *p_old, QWidget *p_now) {
-    bool hasFocusNow = p_now && (p_now == this || isAncestorOf(p_now));
-    bool hadFocusBefore = p_old && (p_old == this || isAncestorOf(p_old));
+    const auto *focusedView = viewWindowForFocus(p_now);
+    updatePreviewShortcutScope(focusedView && focusedView != this && isAncestorOf(focusedView));
+    const bool hasFocusNow = focusedView == this;
+    const bool hadFocusBefore = viewWindowForFocus(p_old) == this;
     if (hasFocusNow && !hadFocusBefore) {
       onFocusGained();
     } else if (!hasFocusNow && hadFocusBefore) {
@@ -208,6 +221,11 @@ bool ViewWindow2::replaceBuffer(const Buffer2 &p_buffer, const FileOpenSettings 
     }
   });
 
+  // Copy before invoking: successful close may clear the installed callback.
+  const auto closePreview = m_closeLinkPreview;
+  if ((closePreview && !closePreview()) || !validTransition()) {
+    return false;
+  }
   prepareBufferReplacement();
   if (!validTransition()) {
     return false;
@@ -439,6 +457,10 @@ bool ViewWindow2::aboutToClose(bool p_force) {
   }
   QPointer<ViewWindow2> guard(this);
   const QString closingId = m_buffer.id();
+  const auto closePreview = m_closeLinkPreview;
+  if ((closePreview && !closePreview()) || !guard || m_buffer.id() != closingId) {
+    return false;
+  }
   // Restore normal window state before opening the Save/Discard dialog.
   setViewFullScreen(false);
 
@@ -1681,6 +1703,22 @@ void ViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) {
   // Subclasses (MarkdownViewWindow2, TextViewWindow2) override for scroll + highlight.
 }
 
+FileOpenSettings ViewWindow2::getLinkOpenSettings(bool p_fromContextMenu) const {
+  FileOpenSettings settings;
+  if (p_fromContextMenu || m_viewWindowId == 0) {
+    return settings;
+  }
+
+  auto *configMgr = m_services.get<ConfigMgr2>();
+  if (configMgr && !configMgr->getEditorConfig().getLinkPreviewEnabled()) {
+    return settings;
+  }
+
+  settings.m_previewSourceWindowId = m_viewWindowId;
+  settings.m_previewSourceGeneration = m_bufferGeneration;
+  return settings;
+}
+
 QVariant ViewWindow2::showFloatingWidget(FloatingWidget *p_widget) {
   // Show the widget through a QWidgetAction in menu.
   QMenu menu;
@@ -1914,7 +1952,31 @@ void ViewWindow2::resizeEvent(QResizeEvent *p_event) {
   applyReadableWidth();
 }
 
+void ViewWindow2::updatePreviewShortcutScope(bool p_nestedViewFocused) {
+  if (p_nestedViewFocused) {
+    for (auto *child : children()) {
+      auto *shortcut = qobject_cast<QShortcut *>(child);
+      if (shortcut && shortcut->context() == Qt::WidgetWithChildrenShortcut) {
+        shortcut->setContext(Qt::WidgetShortcut);
+        m_previewScopedShortcuts.append(shortcut);
+      }
+    }
+  } else {
+    for (const auto &shortcut : m_previewScopedShortcuts) {
+      if (shortcut && shortcut->context() == Qt::WidgetShortcut) {
+        shortcut->setContext(Qt::WidgetWithChildrenShortcut);
+      }
+    }
+    m_previewScopedShortcuts.clear();
+  }
+}
+
 bool ViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (p_obj == this && p_event->type() == QEvent::ShortcutOverride) {
+    // Include shortcuts recreated by a config refresh without a focus transition.
+    const auto *focusedView = viewWindowForFocus(QApplication::focusWidget());
+    updatePreviewShortcutScope(focusedView && focusedView != this && isAncestorOf(focusedView));
+  }
   if (p_obj == m_toolBar) {
     switch (p_event->type()) {
     case QEvent::DragEnter:

@@ -51,6 +51,8 @@ signals:
 
   void exportRequested();
 
+  void contextLinkOpenRequested(const QString &p_link);
+
 protected:
   void contextMenuEvent(QContextMenuEvent *p_event) Q_DECL_OVERRIDE;
 

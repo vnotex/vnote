@@ -6,6 +6,7 @@
 #include <QFrame>
 #include <QIcon>
 #include <QPixmap>
+#include <QPointer>
 #include <QSharedPointer>
 #include <QString>
 #include <QStringList>
@@ -28,6 +29,7 @@ class QAction;
 class QToolBar;
 class QMenu;
 class QResizeEvent;
+class QShortcut;
 class QTextEdit;
 class QWheelEvent;
 
@@ -302,6 +304,9 @@ public slots:
   // Apply file-open settings (scroll to line, search highlight, etc.) after the window is ready.
   // Base implementation does nothing; subclasses override for actual behavior.
   virtual void applyFileOpenSettings(const FileOpenSettings &p_settings);
+
+  // Preserve ordinary open policy, adding source-bound preview intent for direct links.
+  FileOpenSettings getLinkOpenSettings(bool p_fromContextMenu = false) const;
 
   // Called when editor configuration changes at runtime.
   // Subclasses should override to reload config and update their editor widget.
@@ -704,6 +709,8 @@ private:
   // Shows Save/Discard/Cancel dialog if buffer is modified.
   void discardChangesAndRead();
 
+  void updatePreviewShortcutScope(bool p_nestedViewFocused);
+
   ServiceLocator &m_services;
 
   // ViewArea2-assigned window ID. 0 = not assigned.
@@ -719,6 +726,10 @@ private:
   QString m_fileType;
   bool m_bufferReplacementInProgress = false;
   quint64 m_bufferGeneration = 0;
+  // Installed only while this source owns a preview; normal close remains cancellable.
+  std::function<bool()> m_closeLinkPreview;
+  // Narrow ancestor scopes, not action enablement, while a nested editor owns focus.
+  QVector<QPointer<QShortcut>> m_previewScopedShortcuts;
 
   // Main vertical layout: [topLayout] [centralWidget (stretch)] [bottomLayout]
   // Managed by QObject.

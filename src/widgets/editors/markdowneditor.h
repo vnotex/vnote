@@ -4,6 +4,7 @@
 #include <functional>
 
 #include <QHash>
+#include <QPoint>
 #include <QScopedPointer>
 
 #include <vtextedit/markdownhighlighter.h>
@@ -186,7 +187,7 @@ signals:
 
   // Emitted when the editor wants to open a file/URL.
   // Caller connects to file-open handling.
-  void openFileRequested(const QString &p_filePath);
+  void openFileRequested(const QString &p_filePath, bool p_fromContextMenu);
 
   // Web-loadable URL; protected images have already passed the resource validator.
   void imageViewRequested(const QString &p_url);
@@ -194,6 +195,9 @@ signals:
   // Emitted when an image is inserted into the buffer (new architecture).
   // Allows view windows to track inserted images for cleanup.
   void imageInserted(const QString &p_imagePath, const QString &p_urlInLink);
+
+protected:
+  bool eventFilter(QObject *p_obj, QEvent *p_event) Q_DECL_OVERRIDE;
 
 private slots:
   void handleCanInsertFromMimeData(const QMimeData *p_source, bool *p_handled, bool *p_allowed);
@@ -271,7 +275,7 @@ private:
   void installProtectedResourceReader();
   bool readProtectedImage(const QString &p_url, QByteArray &p_data,
                           QByteArray *p_mime = nullptr) const;
-  void openLink(const QString &p_url);
+  void openLink(const QString &p_url, bool p_fromContextMenu = false);
 
   // Update headings outline.
   void updateHeadings(const QVector<vte::md::HeadingInfo> &p_headings, bool p_hasSectionNumber);
@@ -342,6 +346,10 @@ private:
   TimeStamp m_timeStamp = 0;
 
   QTimer *m_headingTimer = nullptr;
+
+  QPoint m_linkPressPosition;
+  bool m_linkPressActive = false;
+  bool m_linkSelectionDrag = false;
 
   // Managed by QObject.
   MarkdownTableHelper *m_tableHelper = nullptr;

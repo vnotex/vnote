@@ -40,6 +40,7 @@
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/imageviewer.h>
+#include <widgets/viewwindow2.h>
 
 #include "../messageboxhelper.h"
 
@@ -153,7 +154,8 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
   connect(this, &m3::qt::MindMapEditor::nodeLinkActivated, this,
           [this](const QString &, const QString &p_url) {
             if (m_contentLoaded && canUseBuffer()) {
-              m_controller->requestOpenLink(p_url);
+              m_controller->requestOpenLink(
+                  p_url, m_viewWindow ? m_viewWindow->getLinkOpenSettings() : FileOpenSettings());
             }
           });
   connect(m_controller, &MindMapViewWindowController::externalLinkConfirmationRequested, this,
@@ -232,6 +234,8 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
 }
 
 MindMapEditor::~MindMapEditor() { closeImageViewer(); }
+
+void MindMapEditor::setViewWindow(ViewWindow2 *p_viewWindow) { m_viewWindow = p_viewWindow; }
 
 void MindMapEditor::populateImageContextMenu(const QString &p_nodeId, QMenu *p_menu) {
   const QPointer<MindMapEditor> guard(this);

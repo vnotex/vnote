@@ -88,9 +88,15 @@ struct FileOpenSettings {
   // the --detached-view CLI flow and the notebook explorer's "Open as Detached".
   bool m_detachedView = false;
 
-  // Existing hosted workspace (main or detached). Takes precedence over m_detachedView.
+  // Existing hosted workspace (main, detached or preview). Overrides preview and detached routing.
   // Empty keeps default routing; missing or hidden targets are rejected, never replaced.
   QString m_targetWorkspaceId;
+
+  // Source-bound link preview request. Zero source ID keeps ordinary routing.
+  ID m_previewSourceWindowId = 0;
+
+  // Exact source buffer generation; zero is valid for a newly created view.
+  quint64 m_previewSourceGeneration = 0;
 
   // Search highlight context for in-page highlighting after open.
   SearchHighlightContext m_searchHighlight;
@@ -108,6 +114,10 @@ struct FileOpenSettings {
     map[QStringLiteral("alwaysNewWindow")] = m_alwaysNewWindow;
     map[QStringLiteral("detachedView")] = m_detachedView;
     map[QStringLiteral("targetWorkspaceId")] = m_targetWorkspaceId;
+    map[QStringLiteral("previewSourceWindowId")] =
+        QVariant::fromValue<quint64>(m_previewSourceWindowId);
+    map[QStringLiteral("previewSourceGeneration")] =
+        QVariant::fromValue<quint64>(m_previewSourceGeneration);
     if (!m_anchor.isEmpty()) {
       map[QStringLiteral("anchor")] = m_anchor;
     }
@@ -150,6 +160,14 @@ struct FileOpenSettings {
     }
     if (p_map.contains(QStringLiteral("targetWorkspaceId"))) {
       s.m_targetWorkspaceId = p_map.value(QStringLiteral("targetWorkspaceId")).toString();
+    }
+    if (p_map.contains(QStringLiteral("previewSourceWindowId"))) {
+      s.m_previewSourceWindowId =
+          p_map.value(QStringLiteral("previewSourceWindowId")).toULongLong();
+    }
+    if (p_map.contains(QStringLiteral("previewSourceGeneration"))) {
+      s.m_previewSourceGeneration =
+          p_map.value(QStringLiteral("previewSourceGeneration")).toULongLong();
     }
     if (p_map.contains(QStringLiteral("anchor"))) {
       s.m_anchor = p_map.value(QStringLiteral("anchor")).toString();

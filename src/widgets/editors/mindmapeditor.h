@@ -16,6 +16,7 @@ class ImageSizeDialog;
 class ImageViewer;
 class MindMapViewWindowController;
 class ServiceLocator;
+class ViewWindow2;
 
 class MindMapEditor : public m3::qt::MindMapEditor {
   Q_OBJECT
@@ -27,6 +28,7 @@ public:
   // Commits the active draft; throws std::runtime_error rather than returning stale content.
   QString contentForSave();
   void setBuffer(const Buffer2 &p_buffer);
+  void setViewWindow(ViewWindow2 *p_viewWindow);
   // Detached hosts have no Tools dock, regardless of the global placement preference.
   void applyConfig(bool p_allowSeparatePropertiesPanel = true);
   void setModified(bool p_modified);
@@ -93,6 +95,7 @@ private:
   Buffer2 m_buffer;
   // Owned by this widget; all resource and link policy stays in the controller.
   MindMapViewWindowController *m_controller = nullptr;
+  QPointer<ViewWindow2> m_viewWindow;
   quint64 m_generation = 0;
   quint64 m_insertionSerial = 0;
   QPointer<QDialog> m_insertionDialog;

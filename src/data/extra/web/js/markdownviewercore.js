@@ -278,6 +278,30 @@ class MarkdownViewerCore extends VXCore {
         return null;
     }
 
+    // Context-menu positions use the same CSS client coordinates as navigation hints.
+    resolveContextLink(p_x, p_y) {
+        if (!this.initialized || !this.contentContainer || this.numOfOngoingWorkers > 0
+            || this.finishingRound || this.pendingData.document !== null
+            || !Number.isFinite(p_x) || !Number.isFinite(p_y)) {
+            return null;
+        }
+        const hit = document.elementFromPoint(p_x, p_y);
+        const element = hit && hit.closest('a[href]');
+        if (!element || !this.visibleNavigationRect(element)) {
+            return null;
+        }
+        const href = window.vxOptions.protectedView
+            ? this.navigationLinkDestinations.get(element) : element.getAttribute('href');
+        if (!href || !href.trim() || href === '#') {
+            return null;
+        }
+        try {
+            return { href, url: new URL(href, document.baseURI).href };
+        } catch (_) {
+            return null;
+        }
+    }
+
     getNavigationTargets() {
         ++this.navigationSnapshot;
         this.navigationTargets = [];

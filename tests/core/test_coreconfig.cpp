@@ -1,3 +1,4 @@
+#include <QJsonArray>
 #include <QJsonObject>
 #include <QtTest>
 
@@ -24,6 +25,9 @@ private slots:
   void testCtrlAltFiltering_data();
   void testCtrlAltFiltering();
   void testCtrlAltFilteringPreservesBindingsAcrossRestarts();
+  void testLinkPreviewDefaultsAndTypedLoading_data();
+  void testLinkPreviewDefaultsAndTypedLoading();
+  void testLinkPreviewTypedRoundTrip();
   void testDefaultWhenAbsent();
   void testRoundTrip();
   void testClampAboveMax();
@@ -134,6 +138,53 @@ void TestCoreConfig::testCtrlAltFilteringPreservesBindingsAcrossRestarts() {
   QVERIFY(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote).isEmpty());
   config.fromJson(config.toJson());
   QCOMPARE(config.getCoreConfig().getShortcut(CoreConfig::NewQuickNote), original);
+}
+
+void TestCoreConfig::testLinkPreviewDefaultsAndTypedLoading_data() {
+  QTest::addColumn<QJsonValue>("value");
+  QTest::addColumn<bool>("expected");
+  QTest::newRow("missing") << QJsonValue(QJsonValue::Undefined) << true;
+  QTest::newRow("null") << QJsonValue(QJsonValue::Null) << true;
+  QTest::newRow("number-zero") << QJsonValue(0) << true;
+  QTest::newRow("number-one") << QJsonValue(1) << true;
+  QTest::newRow("string-false") << QJsonValue(QStringLiteral("false")) << true;
+  QTest::newRow("empty-string") << QJsonValue(QString()) << true;
+  QTest::newRow("array") << QJsonValue(QJsonArray()) << true;
+  QTest::newRow("object") << QJsonValue(QJsonObject()) << true;
+  QTest::newRow("true") << QJsonValue(true) << true;
+  QTest::newRow("false") << QJsonValue(false) << false;
+}
+
+void TestCoreConfig::testLinkPreviewDefaultsAndTypedLoading() {
+  QFETCH(QJsonValue, value);
+  QFETCH(bool, expected);
+  EditorConfig config(&m_mockMgr, nullptr);
+  QVERIFY(config.getLinkPreviewEnabled());
+  // Loading absent/malformed data must reset an earlier false value to the ON default.
+  config.setLinkPreviewEnabled(false);
+  QJsonObject core;
+  core.insert(QStringLiteral("linkPreviewEnabled"), value);
+  config.fromJson(QJsonObject{{QStringLiteral("core"), core}});
+  QCOMPARE(config.getLinkPreviewEnabled(), expected);
+}
+
+void TestCoreConfig::testLinkPreviewTypedRoundTrip() {
+  MainConfig config(&m_mockMgr);
+  QVERIFY(config.getEditorConfig().getLinkPreviewEnabled());
+  for (const bool enabled : {false, true}) {
+    config.getEditorConfig().setLinkPreviewEnabled(enabled);
+    const auto json = config.toJson();
+    const auto value = json.value(QStringLiteral("editor"))
+                           .toObject()
+                           .value(QStringLiteral("core"))
+                           .toObject()
+                           .value(QStringLiteral("linkPreviewEnabled"));
+    QVERIFY(value.isBool());
+    QCOMPARE(value.toBool(), enabled);
+    MainConfig restored(&m_mockMgr);
+    restored.fromJson(json);
+    QCOMPARE(restored.getEditorConfig().getLinkPreviewEnabled(), enabled);
+  }
 }
 
 void TestCoreConfig::testDefaultWhenAbsent() {

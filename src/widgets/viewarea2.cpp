@@ -37,6 +37,7 @@
 #include <gui/utils/widgetutils.h>
 
 #include "detachedwindow.h"
+#include "linkpreviewoverlay.h"
 #include "viewsplit2.h"
 #include "viewwindow2.h"
 #include "widgetviewwindow2.h"
@@ -115,6 +116,16 @@ ViewArea2::ViewArea2(ServiceLocator &p_services, QWidget *p_parent)
 
 ViewArea2::~ViewArea2() {
   clearNavigation();
+  // Normal close/quit already passed cancellable gates. This is resource teardown only.
+  for (const auto &host : m_previewHosts) {
+    if (host.source) {
+      host.source->m_closeLinkPreview = {};
+    }
+    if (host.overlay) {
+      disconnect(host.overlay, nullptr, this, nullptr);
+    }
+  }
+  m_previewHosts.clear();
   // Detached windows are parent-less top-level widgets; delete them explicitly so
   // they don't leak (or keep the app alive) if the view area is torn down while
   // any remain open.
@@ -183,6 +194,10 @@ void ViewArea2::setupController() {
         HookNames::MainWindowBeforeClose,
         [this](HookContext &p_ctx, const QVariantMap &p_args) {
           Q_UNUSED(p_args)
+          if (!m_controller->closeAllPreviewWorkspaces()) {
+            p_ctx.cancel();
+            return;
+          }
           // Reattach any detached windows first so their buffers route through
           // the normal close-all path and no top-level window keeps the app alive.
           reattachAllDetachedWindows();
@@ -552,6 +567,10 @@ QVector<ViewSplit2 *> ViewArea2::getAllViewSplits() const {
 }
 
 ViewSplit2 *ViewArea2::getCurrentViewSplit() const {
+  const auto current = m_controller->getCurrentWorkspaceId();
+  if (m_previewHosts.contains(current) && isPreviewWorkspaceAvailable(current)) {
+    return hostedSplitForWorkspace(current);
+  }
   for (auto *split : getAllViewSplits()) {
     if (split->isActive()) {
       return split;
@@ -562,6 +581,23 @@ ViewSplit2 *ViewArea2::getCurrentViewSplit() const {
 
 int ViewArea2::getViewSplitCount() const { return getAllViewSplits().size(); }
 
+QVector<ViewSplit2 *> ViewArea2::navigationViewSplits() const {
+  QVector<ViewSplit2 *> result;
+  for (auto *split : getAllViewSplits()) {
+    const auto *source = split->getCurrentViewWindow();
+    const auto preview = source ? previewWorkspaceForWindow(source->getViewWindowId()) : QString();
+    if (preview.isEmpty() || !isPreviewWorkspaceAvailable(preview)) {
+      result.append(split);
+    }
+  }
+  for (auto it = m_previewHosts.constBegin(); it != m_previewHosts.constEnd(); ++it) {
+    if (isPreviewWorkspaceAvailable(it.key())) {
+      result.append(it->overlay->getViewSplit());
+    }
+  }
+  return result;
+}
+
 void ViewArea2::showNavigation() {
   NavigationMode::showNavigation();
   m_navigationActive = true;
@@ -571,7 +607,7 @@ void ViewArea2::showNavigation() {
   }
 
   // Prepare every slot before a producer can deliver an inline completion.
-  for (auto *split : getAllViewSplits()) {
+  for (auto *split : navigationViewSplits()) {
     auto *window = split->getCurrentViewWindow();
     if (split->isVisible() && window && window->isVisible()) {
       NavigationRequest request;
@@ -600,7 +636,7 @@ void ViewArea2::showNavigation() {
       if (request.m_window && request.m_split && request.m_window->isVisible() &&
           request.m_split->isVisible() && request.m_window->getMode() == request.m_mode &&
           request.m_window->getBufferGeneration() == request.m_bufferGeneration &&
-          self->getAllViewSplits().contains(request.m_split) &&
+          self->navigationViewSplits().contains(request.m_split) &&
           request.m_split->getCurrentViewWindow() == request.m_window) {
         request.m_targets = std::move(p_targets);
       }
@@ -619,7 +655,7 @@ QVector<void *> ViewArea2::getVisibleNavigationItems() {
   QVector<void *> items;
   m_navigationItems.reserve(c_maxNumOfNavigationItems);
   items.reserve(c_maxNumOfNavigationItems);
-  for (auto *split : getAllViewSplits()) {
+  for (auto *split : navigationViewSplits()) {
     if (split->getViewWindowCount() == 0) {
       continue;
     }
@@ -647,7 +683,7 @@ void ViewArea2::appendReadyNavigationTargets() {
     if (!request.m_window || !request.m_split || !request.m_window->isVisible() ||
         !request.m_split->isVisible() || request.m_window->getMode() != request.m_mode ||
         request.m_window->getBufferGeneration() != request.m_bufferGeneration ||
-        !getAllViewSplits().contains(request.m_split) ||
+        !navigationViewSplits().contains(request.m_split) ||
         request.m_split->getCurrentViewWindow() != request.m_window) {
       continue;
     }
@@ -702,7 +738,7 @@ void ViewArea2::handleTargetHit(void *p_item) {
           !item.m_target.m_activate) {
         return;
       }
-      for (auto *split : getAllViewSplits()) {
+      for (auto *split : navigationViewSplits()) {
         if (split->isVisible() && split->getCurrentViewWindow() == item.m_window) {
           item.m_target.m_activate();
           return;
@@ -711,7 +747,7 @@ void ViewArea2::handleTargetHit(void *p_item) {
     });
     return;
   }
-  for (auto *split : getAllViewSplits()) {
+  for (auto *split : navigationViewSplits()) {
     if (split->indexOf(item.m_window) != -1) {
       const QPointer<ViewSplit2> guardedSplit(split);
       split->setCurrentViewWindow(item.m_window);
@@ -870,6 +906,200 @@ ViewSplit2 *ViewArea2::splitForWorkspace(const QString &p_workspaceId) const {
   return m_splits.value(p_workspaceId, nullptr);
 }
 
+bool ViewArea2::isPreviewSourceCurrent(ID p_sourceId, quint64 p_generation) const {
+  const auto *source = windowForId(p_sourceId);
+  return source && source->getViewWindowId() == p_sourceId && source->isEnabled() &&
+         source->isVisible() && source->getBufferGeneration() == p_generation &&
+         source->getBuffer().isValid() && !source->getBuffer().getBuffer().isEmpty() &&
+         !source->getNodeId().isVirtual() && !source->isNoteConversionFrozen();
+}
+
+ViewSplit2 *ViewArea2::hostedSplitForWorkspace(const QString &p_workspaceId) const {
+  if (auto *split = splitForWorkspace(p_workspaceId)) {
+    return split;
+  }
+  if (auto *split = detachedSplitForWorkspace(p_workspaceId)) {
+    return split;
+  }
+  const auto host = m_previewHosts.constFind(p_workspaceId);
+  return host != m_previewHosts.constEnd() && host->overlay ? host->overlay->getViewSplit()
+                                                            : nullptr;
+}
+
+ViewSplit2 *ViewArea2::owningSplitForWindow(ID p_windowId) const {
+  const auto *window = windowForId(p_windowId);
+  if (!window) {
+    return nullptr;
+  }
+  for (auto *split : m_splits) {
+    if (split->indexOf(window) >= 0) {
+      return split;
+    }
+  }
+  for (auto *detached : m_detachedWindows) {
+    auto *split = detached->getViewSplit();
+    if (split && split->indexOf(window) >= 0) {
+      return split;
+    }
+  }
+  for (const auto &host : m_previewHosts) {
+    auto *split = host.overlay ? host.overlay->getViewSplit() : nullptr;
+    if (split && split->indexOf(window) >= 0) {
+      return split;
+    }
+  }
+  return nullptr;
+}
+
+QString ViewArea2::previewWorkspaceForWindow(ID p_windowId) const {
+  if (auto *split = owningSplitForWindow(p_windowId); split && split->isPreview()) {
+    return split->getWorkspaceId();
+  }
+  for (auto it = m_previewHosts.constBegin(); it != m_previewHosts.constEnd(); ++it) {
+    if (it->sourceId == p_windowId && it->source == windowForId(p_windowId)) {
+      return it.key();
+    }
+  }
+  return QString();
+}
+
+bool ViewArea2::isPreviewWorkspaceAvailable(const QString &p_workspaceId) const {
+  const auto host = m_previewHosts.constFind(p_workspaceId);
+  return host != m_previewHosts.constEnd() && host->overlay && host->overlay->isVisible() &&
+         host->source && host->source == windowForId(host->sourceId) &&
+         isPreviewSourceCurrent(host->sourceId, host->generation) &&
+         !m_controller->isPreviewWorkspaceClosing(p_workspaceId);
+}
+
+bool ViewArea2::hostPreviewWorkspace(ID p_sourceId, quint64 p_generation,
+                                     const QString &p_workspaceId) {
+  if (!isPreviewSourceCurrent(p_sourceId, p_generation) ||
+      !previewWorkspaceForWindow(p_sourceId).isEmpty() || hostedSplitForWorkspace(p_workspaceId)) {
+    return false;
+  }
+  auto *source = windowForId(p_sourceId);
+  auto *overlay = new LinkPreviewOverlay(m_services, source, p_workspaceId);
+  m_previewHosts.insert(p_workspaceId, {source, p_sourceId, p_generation, overlay, false});
+  source->installEventFilter(this);
+  const QPointer<ViewArea2> self(this);
+  const QPointer<ViewWindow2> guardedSource(source);
+  source->m_closeLinkPreview = [self, guardedSource, p_sourceId, p_workspaceId]() {
+    if (!self || !guardedSource) {
+      return true;
+    }
+    const auto host = self->m_previewHosts.constFind(p_workspaceId);
+    if (host == self->m_previewHosts.constEnd() || host->source != guardedSource ||
+        host->sourceId != p_sourceId) {
+      return true;
+    }
+    return self->m_controller->closePreviewWorkspace(p_workspaceId);
+  };
+  wirePreviewSplitSignals(overlay->getViewSplit());
+  connect(overlay, &LinkPreviewOverlay::closeRequested, this,
+          [this, p_workspaceId] { m_controller->closePreviewWorkspace(p_workspaceId); });
+  connect(overlay, &LinkPreviewOverlay::visibilityChanged, this,
+          [this, p_workspaceId](bool p_visible) {
+            m_controller->setPreviewWorkspaceVisible(p_workspaceId, p_visible);
+          });
+  updatePreviewAnchor(p_workspaceId);
+  overlay->show();
+  return isPreviewWorkspaceAvailable(p_workspaceId);
+}
+
+void ViewArea2::removePreviewWorkspaceHost(const QString &p_workspaceId) {
+  const bool active = m_controller->getCurrentWorkspaceId() == p_workspaceId;
+  const auto host = m_previewHosts.take(p_workspaceId);
+  if (host.source && previewWorkspaceForWindow(host.sourceId).isEmpty()) {
+    host.source->m_closeLinkPreview = {};
+    host.source->removeEventFilter(this);
+    for (auto *child : host.source->findChildren<QWidget *>()) {
+      child->removeEventFilter(this);
+    }
+  }
+  if (host.overlay) {
+    host.overlay->hide();
+    host.overlay->deleteLater();
+  }
+  if (active) {
+    m_controller->clearActivePreviewWindow();
+  }
+}
+
+bool ViewArea2::closePreviewsForSources(const QVector<ID> &p_sourceIds) {
+  const QPointer<ViewArea2> guard(this);
+  for (const ID sourceId : p_sourceIds) {
+    const auto *source = windowForId(sourceId);
+    const auto closePreview = source ? source->m_closeLinkPreview : std::function<bool()>();
+    if (closePreview && !closePreview()) {
+      return false;
+    }
+    if (!guard) {
+      return false;
+    }
+  }
+  return true;
+}
+
+QStringList ViewArea2::previewWorkspacesForSourceNotebook(const QString &p_notebookId) const {
+  QStringList result;
+  for (auto it = m_previewHosts.constBegin(); it != m_previewHosts.constEnd(); ++it) {
+    if (it->source && it->source->getNodeId().notebookId == p_notebookId) {
+      result.append(it.key());
+    }
+  }
+  return result;
+}
+
+void ViewArea2::updatePreviewAnchor(const QString &p_workspaceId) {
+  auto host = m_previewHosts.find(p_workspaceId);
+  if (host == m_previewHosts.end() || !host->source || !host->overlay) {
+    return;
+  }
+  host->anchorUpdatePending = false;
+  auto *source = host->source.data();
+  if (source->layout()) {
+    source->layout()->activate();
+  }
+  if (source->m_contentLayout) {
+    host->overlay->setAnchorRect(
+        source->m_contentLayout->geometry().intersected(source->contentsRect()));
+    // Observe late native reader children without treating preview descendants as anchors.
+    for (auto *child : source->findChildren<QWidget *>()) {
+      if (child != host->overlay && !host->overlay->isAncestorOf(child)) {
+        child->installEventFilter(this);
+      }
+    }
+  }
+}
+
+bool ViewArea2::eventFilter(QObject *p_object, QEvent *p_event) {
+  switch (p_event->type()) {
+  case QEvent::Resize:
+  case QEvent::LayoutRequest:
+  case QEvent::Show:
+  case QEvent::WinIdChange:
+  case QEvent::StyleChange:
+  case QEvent::FontChange:
+  case QEvent::PaletteChange:
+  case QEvent::ChildAdded:
+    for (auto it = m_previewHosts.begin(); it != m_previewHosts.end(); ++it) {
+      auto *widget = qobject_cast<QWidget *>(p_object);
+      if (!widget || !it->source || !it->overlay || it->anchorUpdatePending ||
+          (widget != it->source && !it->source->isAncestorOf(widget)) || widget == it->overlay ||
+          it->overlay->isAncestorOf(widget)) {
+        continue;
+      }
+      it->anchorUpdatePending = true;
+      QTimer::singleShot(0, this,
+                         [this, workspaceId = it.key()] { updatePreviewAnchor(workspaceId); });
+    }
+    break;
+  default:
+    break;
+  }
+  return QWidget::eventFilter(p_object, p_event);
+}
+
 ViewWindow2 *ViewArea2::windowForId(ID p_windowId) const {
   return m_windows.value(p_windowId, nullptr);
 }
@@ -881,16 +1111,66 @@ void ViewArea2::getCurrentWindowInfoForWorkspace(const QString &p_workspaceId, I
   if (p_workspaceId.isEmpty()) {
     return;
   }
-  auto it = m_splits.constFind(p_workspaceId);
-  if (it == m_splits.constEnd() || !it.value()) {
+  auto *split = hostedSplitForWorkspace(p_workspaceId);
+  if (!split) {
     return;
   }
-  ViewWindow2 *win = it.value()->getCurrentViewWindow();
+  ViewWindow2 *win = split->getCurrentViewWindow();
   if (!win) {
     return;
   }
   p_windowId = win->getViewWindowId();
   p_bufferId = win->getBuffer().id();
+}
+
+void ViewArea2::saveAllViewWindows() {
+  // Include hidden, detached and preview tabs. Save hooks may close windows.
+  QVector<QPointer<ViewWindow2>> windows;
+  windows.reserve(m_windows.size());
+  for (auto *win : m_windows) {
+    windows.append(QPointer<ViewWindow2>(win));
+  }
+  QSet<QString> savedBuffers;
+  for (const auto &win : windows) {
+    if (!win || !win->isSaveSupported() || win->isNoteConversionFrozen() || !win->isModified()) {
+      continue;
+    }
+    const auto &buffer = win->getBuffer();
+    if (!buffer.isValid() || buffer.isReadOnly() || savedBuffers.contains(buffer.id())) {
+      continue;
+    }
+    savedBuffers.insert(buffer.id());
+    win->save();
+  }
+}
+
+void ViewArea2::wirePreviewSplitSignals(ViewSplit2 *p_split) {
+  const auto workspaceId = p_split->getWorkspaceId();
+  const auto activate = [this, workspaceId](ViewWindow2 *p_window) {
+    if (p_window) {
+      m_controller->setActivePreviewWindow(workspaceId, p_window->getViewWindowId(),
+                                           p_window->getBuffer().id());
+    } else if (m_controller->getCurrentWorkspaceId() == workspaceId) {
+      m_controller->clearActivePreviewWindow();
+    }
+  };
+  connect(p_split, &ViewSplit2::focused, this,
+          [activate](ViewSplit2 *p_focused) { activate(p_focused->getCurrentViewWindow()); });
+  connect(p_split, &ViewSplit2::currentViewWindowChanged, this, activate);
+  connect(p_split, &ViewSplit2::viewWindowCloseRequested, this, [this](ViewWindow2 *p_window) {
+    m_controller->closeViewWindow(p_window->getViewWindowId(), false);
+  });
+  connect(p_split, &ViewSplit2::bufferOrderChanged, this,
+          [this, workspaceId](ViewSplit2 *, const QStringList &p_ids) {
+            m_controller->setBufferOrder(workspaceId, p_ids);
+          });
+  connect(p_split, &ViewSplit2::saveAllRequested, this, &ViewArea2::saveAllViewWindows);
+  connect(p_split, &ViewSplit2::closeTabsRequested, this,
+          [this, workspaceId](ViewSplit2 *, int p_index, CloseTabMode p_mode) {
+            m_controller->closeTabs(workspaceId, p_index, p_mode);
+          });
+  connect(p_split, &ViewSplit2::locateNodeRequested, m_controller,
+          &ViewAreaController::locateNodeRequested);
 }
 
 // ============ wireSplitSignals ============
@@ -984,26 +1264,7 @@ void ViewArea2::wireSplitSignals(ViewSplit2 *p_split) {
             m_controller->setBufferOrder(s->getWorkspaceId(), ids);
           });
 
-  connect(p_split, &ViewSplit2::saveAllRequested, this, [this]() {
-    // Include hidden workspaces and detached tabs. Save hooks may close windows.
-    QVector<QPointer<ViewWindow2>> windows;
-    windows.reserve(m_windows.size());
-    for (auto *win : m_windows) {
-      windows.append(QPointer<ViewWindow2>(win));
-    }
-    QSet<QString> savedBuffers;
-    for (const auto &win : windows) {
-      if (!win || !win->isSaveSupported() || win->isNoteConversionFrozen() || !win->isModified()) {
-        continue;
-      }
-      const auto &buffer = win->getBuffer();
-      if (!buffer.isValid() || buffer.isReadOnly() || savedBuffers.contains(buffer.id())) {
-        continue;
-      }
-      savedBuffers.insert(buffer.id());
-      win->save();
-    }
-  });
+  connect(p_split, &ViewSplit2::saveAllRequested, this, &ViewArea2::saveAllViewWindows);
 
   // Tab context menu: close multiple tabs.
   connect(p_split, &ViewSplit2::closeTabsRequested, this,
@@ -1074,16 +1335,10 @@ void ViewArea2::distributeViewSplits() { distributeViewSplitWidgets(); }
 
 void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
                            const QString &p_workspaceId, const FileOpenSettings &p_settings) {
-  auto *split = splitForWorkspace(p_workspaceId);
-  // Only a main-area open may retire the Home tab; a detached open leaves the
-  // main area (and thus Home) alone.
-  const ID homeId = split ? loneHomeWindowId() : 0;
-  if (!split) {
-    // Detached splits live outside m_splits (tracked in m_detachedWindows);
-    // fall back to them so a detached open (--detached-view CLI flag or the
-    // explorer's "Open as Detached") can target a detached
-    // workspace that has no entry in the main splitter tree.
-    split = detachedSplitForWorkspace(p_workspaceId);
+  const ID homeId = splitForWorkspace(p_workspaceId) ? loneHomeWindowId() : 0;
+  auto *split = hostedSplitForWorkspace(p_workspaceId);
+  if (split && split->isPreview() && !isPreviewWorkspaceAvailable(p_workspaceId)) {
+    return;
   }
   if (!split) {
     qWarning() << "ViewArea2::openBuffer: workspace not found:" << p_workspaceId;
@@ -1138,7 +1393,7 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
   connect(win, &ViewWindow2::exportRequested, this, [this, win]() { emit exportRequested(win); });
   m_controller->onViewWindowOpened(id, p_buffer, p_settings, p_workspaceId);
 
-  if (!win) {
+  if (!win || findWindowIdByBufferId(p_workspaceId, p_buffer.id()) != id) {
     return;
   }
   // Select a focused open after registration and its after-open hook, as for
@@ -1174,22 +1429,7 @@ bool ViewArea2::replaceViewWindowBuffer(ID p_windowId, const Buffer2 &p_buffer,
   if (!window || !window->supportsBufferReplacement() || window->getNodeId().isVirtual()) {
     return false;
   }
-  QPointer<ViewSplit2> owner;
-  for (auto *split : m_splits) {
-    if (split->indexOf(window) >= 0) {
-      owner = split;
-      break;
-    }
-  }
-  if (!owner) {
-    for (auto *detached : m_detachedWindows) {
-      auto *split = detached->getViewSplit();
-      if (split && split->indexOf(window) >= 0) {
-        owner = split;
-        break;
-      }
-    }
-  }
+  QPointer<ViewSplit2> owner(owningSplitForWindow(p_windowId));
   if (!owner) {
     return false;
   }
@@ -1295,22 +1535,7 @@ bool ViewArea2::recreateNoteViews(
       }
       return false;
     }
-    ViewSplit2 *owner = nullptr;
-    for (auto *split : m_splits) {
-      if (split->indexOf(oldWindow) >= 0) {
-        owner = split;
-        break;
-      }
-    }
-    if (!owner) {
-      for (auto *detached : m_detachedWindows) {
-        auto *split = detached->getViewSplit();
-        if (split && split->indexOf(oldWindow) >= 0) {
-          owner = split;
-          break;
-        }
-      }
-    }
+    ViewSplit2 *owner = owningSplitForWindow(id);
     auto *newWindow =
         factory->create(fileType, m_services, p_buffer, nullptr, oldWindow->getMode());
     if (!newWindow) {
@@ -1380,34 +1605,23 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
     return false;
   }
 
-  // Find the owning split.
-  ViewSplit2 *ownerSplit = nullptr;
+  auto *ownerSplit = owningSplitForWindow(p_windowId);
   DetachedWindow *ownerDetached = nullptr;
   QString bufferId;
-  QString workspaceId;
-  for (auto it = m_splits.begin(); it != m_splits.end(); ++it) {
-    if (it.value()->indexOf(win) != -1) {
-      ownerSplit = it.value();
-      workspaceId = it.key();
+  QString workspaceId = ownerSplit ? ownerSplit->getWorkspaceId() : QString();
+  for (auto *dw : m_detachedWindows) {
+    if (dw->getViewSplit() == ownerSplit) {
+      ownerDetached = dw;
       break;
-    }
-  }
-  if (!ownerSplit) {
-    // The window may live inside a detached window's split (not in m_splits).
-    for (auto *dw : m_detachedWindows) {
-      if (dw->getViewSplit() && dw->getViewSplit()->indexOf(win) != -1) {
-        ownerSplit = dw->getViewSplit();
-        ownerDetached = dw;
-        workspaceId = dw->getWorkspaceId();
-        break;
-      }
     }
   }
   if (ownerSplit) {
     Buffer2 buf = win->getBuffer();
     bufferId = buf.id();
     ownerSplit->takeViewWindow(win);
-  } else if (win->getBuffer().isEncrypted()) {
+  } else {
+    // Hidden ordinary sources retain their preview close gate too. Release the
+    // wrapper owner before destruction regardless of encryption classification.
     bufferId = win->getBuffer().id();
     workspaceId = m_controller->releaseHiddenViewWindow(win);
   }
@@ -1460,7 +1674,7 @@ void ViewArea2::setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) 
 }
 
 void ViewArea2::focusViewSplit(const QString &p_workspaceId) {
-  auto *split = splitForWorkspace(p_workspaceId);
+  auto *split = hostedSplitForWorkspace(p_workspaceId);
   if (split) {
     split->focus();
   }
@@ -1469,9 +1683,10 @@ void ViewArea2::focusViewSplit(const QString &p_workspaceId) {
 void ViewArea2::moveViewWindowToSplit(ID p_windowId, const QString &p_srcWorkspaceId,
                                       const QString &p_dstWorkspaceId) {
   auto *win = windowForId(p_windowId);
-  auto *srcSplit = splitForWorkspace(p_srcWorkspaceId);
-  auto *dstSplit = splitForWorkspace(p_dstWorkspaceId);
-  if (!win || !srcSplit || !dstSplit) {
+  auto *srcSplit = owningSplitForWindow(p_windowId);
+  auto *dstSplit = hostedSplitForWorkspace(p_dstWorkspaceId);
+  if (!win || !srcSplit || !dstSplit || srcSplit->isPreview() || dstSplit->isPreview() ||
+      srcSplit->getWorkspaceId() != p_srcWorkspaceId) {
     return;
   }
 
@@ -1584,6 +1799,10 @@ void ViewArea2::hostWorkspaceInDetachedWindow(const QString &p_workspaceId) {
   // tab close (routes through the controller) and current-tab tracking (updates
   // the window title). Splitting/moving/workspace ops from a detached window are
   // out of scope for now.
+  connect(split, &ViewSplit2::focused, this, [this](ViewSplit2 *) {
+    // An ordinary detached editor is not its child preview's command target.
+    m_controller->clearActivePreviewWindow();
+  });
   connect(split, &ViewSplit2::viewWindowCloseRequested, this,
           [this](ViewWindow2 *w) { m_controller->closeViewWindow(w->getViewWindowId(), false); });
   connect(split, &ViewSplit2::currentViewWindowChanged, dw, [dw](ViewWindow2 *w) {
@@ -1596,8 +1815,14 @@ void ViewArea2::hostWorkspaceInDetachedWindow(const QString &p_workspaceId) {
 bool ViewArea2::moveViewWindowToDetached(ID p_windowId, const QString &p_srcWorkspaceId,
                                          const QString &p_detachedWorkspaceId) {
   auto *win = windowForId(p_windowId);
-  auto *srcSplit = splitForWorkspace(p_srcWorkspaceId);
-  auto *dstSplit = detachedSplitForWorkspace(p_detachedWorkspaceId);
+  auto *srcSplit = owningSplitForWindow(p_windowId);
+  auto *dstSplit = hostedSplitForWorkspace(p_detachedWorkspaceId);
+  if (srcSplit && (srcSplit->isPreview() || srcSplit->getWorkspaceId() != p_srcWorkspaceId)) {
+    return false;
+  }
+  if (dstSplit && dstSplit->isPreview()) {
+    return false;
+  }
   if (!win || !srcSplit || !dstSplit) {
     // Transfer cannot proceed. Destroy the empty detached-window shell so the
     // controller can roll back the just-created workspace cleanly.
@@ -1894,13 +2119,8 @@ void ViewArea2::updateSplitWorkspaceId(const QString &p_oldWorkspaceId,
 
 void ViewArea2::setCurrentBuffer(const QString &p_workspaceId, const QString &p_bufferId,
                                  bool p_focus) {
-  auto *split = splitForWorkspace(p_workspaceId);
-  const bool detached = !split;
-  if (!split) {
-    // Detached splits live outside m_splits; resolve them so a --detached-view
-    // duplicate open can activate the existing tab in its DetachedWindow.
-    split = detachedSplitForWorkspace(p_workspaceId);
-  }
+  auto *split = hostedSplitForWorkspace(p_workspaceId);
+  const bool detached = split && !split->isPreview() && !splitForWorkspace(p_workspaceId);
   if (!split) {
     qWarning() << "ViewArea2::setCurrentBuffer: no split for workspace:" << p_workspaceId;
     return;
@@ -1943,7 +2163,7 @@ QStringList ViewArea2::getVisibleWorkspaceIds() const { return m_splits.keys(); 
 
 QVector<ID> ViewArea2::getViewWindowIdsForWorkspace(const QString &p_workspaceId) const {
   QVector<ID> ids;
-  auto *split = splitForWorkspace(p_workspaceId);
+  auto *split = hostedSplitForWorkspace(p_workspaceId);
   if (!split) {
     return ids;
   }
@@ -1960,11 +2180,7 @@ QVector<ID> ViewArea2::getViewWindowIdsForWorkspace(const QString &p_workspaceId
 
 ID ViewArea2::findWindowIdByBufferId(const QString &p_workspaceId,
                                      const QString &p_bufferId) const {
-  auto *split = splitForWorkspace(p_workspaceId);
-  if (!split) {
-    // May be a detached workspace (hosted outside the main splitter tree).
-    split = detachedSplitForWorkspace(p_workspaceId);
-  }
+  auto *split = hostedSplitForWorkspace(p_workspaceId);
   if (!split) {
     return ViewAreaController::InvalidViewWindowId;
   }
@@ -2000,7 +2216,7 @@ QVector<ID> ViewArea2::findWindowIdsByNode(const NodeIdentifier &p_nodeId, bool 
 }
 
 QString ViewArea2::getCurrentBufferIdForWorkspace(const QString &p_workspaceId) const {
-  auto *split = splitForWorkspace(p_workspaceId);
+  auto *split = hostedSplitForWorkspace(p_workspaceId);
   if (!split) {
     return QString();
   }
@@ -2015,7 +2231,7 @@ QString ViewArea2::getCurrentBufferIdForWorkspace(const QString &p_workspaceId) 
 
 QVector<ViewWindowNavInfo> ViewArea2::getViewWindowNavInfos(const QString &p_workspaceId) const {
   QVector<ViewWindowNavInfo> infos;
-  auto *split = splitForWorkspace(p_workspaceId);
+  auto *split = hostedSplitForWorkspace(p_workspaceId);
   if (!split) {
     return infos;
   }

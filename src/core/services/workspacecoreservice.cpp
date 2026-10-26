@@ -21,13 +21,16 @@ void WorkspaceCoreService::setHookManager(HookManager *p_hookMgr) {
 }
 
 // Workspace lifecycle.
-QString WorkspaceCoreService::createWorkspace(const QString &p_name) {
+QString WorkspaceCoreService::createWorkspace(const QString &p_name, bool p_isPreview) {
   if (!checkContext()) {
     return QString();
   }
 
   char *workspaceId = nullptr;
-  VxCoreError err = vxcore_workspace_create(m_context, p_name.toUtf8().constData(), &workspaceId);
+  VxCoreError err =
+      p_isPreview
+          ? vxcore_workspace_create_preview(m_context, p_name.toUtf8().constData(), &workspaceId)
+          : vxcore_workspace_create(m_context, p_name.toUtf8().constData(), &workspaceId);
   if (err != VXCORE_OK) {
     qWarning() << "createWorkspace failed:" << QString::fromUtf8(vxcore_error_message(err));
     return QString();

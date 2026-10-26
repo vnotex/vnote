@@ -1174,7 +1174,7 @@ void MarkdownViewWindow2::connectViewerSignals() {
   connect(adapterObj, &MarkdownViewerAdapter::protectedLinkRequested, this,
           [this, current](const QString &p_url) {
             if (current() && m_viewerReady) {
-              handleOpenFileRequest(p_url);
+              handleOpenFileRequest(p_url, false);
             }
           });
 
@@ -1398,16 +1398,22 @@ void MarkdownViewWindow2::connectViewerSignals() {
     if (!fragment.isEmpty()) {
       combined += QLatin1Char('#') + fragment;
     }
-    handleOpenFileRequest(combined);
+    handleOpenFileRequest(combined, false);
   });
 
   // Read-mode external link interception: route through the same policy sink as
   // edit mode so the security prompt lives in one place.
   connect(m_viewer, &WebViewer::externalLinkRequested, this, [this, current](const QUrl &p_url) {
     if (current() && m_viewerReady) {
-      handleOpenFileRequest(p_url.toString());
+      handleOpenFileRequest(p_url.toString(), false);
     }
   });
+  connect(m_viewer, &MarkdownViewer::contextLinkOpenRequested, this,
+          [this, current](const QString &p_link) {
+            if (current() && m_viewerReady) {
+              handleOpenFileRequest(p_link, true);
+            }
+          });
 }
 
 void MarkdownViewWindow2::updateJobRenderContext() {
@@ -1901,10 +1907,12 @@ void MarkdownViewWindow2::connectEditorSignals() {
 
   // Self-file anchor link resolution.
   connect(m_editor, &MarkdownEditor::openFileRequested, this,
-          [this](const QString &p_filePath) { handleOpenFileRequest(p_filePath); });
+          [this](const QString &p_filePath, bool p_fromContextMenu) {
+            handleOpenFileRequest(p_filePath, p_fromContextMenu);
+          });
 }
 
-void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
+void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath, bool p_fromContextMenu) {
   if (!m_sourceAvailable || m_rebindingBuffer || !isEnabled()) {
     return;
   }
@@ -1914,7 +1922,7 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
   }
 
   // External links (http/https/ftp/mailto) are opened by the system. This is the
-  // single policy sink shared by edit-mode (Ctrl+click, context-menu "Open Link")
+  // single policy sink shared by edit-mode (direct click, context-menu "Open Link")
   // and read-mode navigation, so the security prompt lives in one place.
   const QUrl url(p_filePath);
   const auto scheme = url.scheme();
@@ -1984,7 +1992,7 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath) {
     showMessage(tr("Protected note links can open only indexed notebook notes"));
     return;
   }
-  FileOpenSettings settings;
+  auto settings = getLinkOpenSettings(p_fromContextMenu);
   settings.m_anchor = result.fragment;
   auto *bufSvc = getServices().get<BufferService>();
   if (bufSvc) {

@@ -81,8 +81,11 @@ public:
   const QString &getWorkspaceId() const;
 
   // Set the vxcore workspace ID this split is mapped to.
-  // Used when switching workspaces on an existing split.
+  // Used when switching ordinary workspaces on an existing split.
   void setWorkspaceId(const QString &p_workspaceId);
+
+  // Preview classification is fixed when the split is constructed.
+  bool isPreview() const;
 
   // ============ Navigation ============
 
@@ -193,6 +196,7 @@ private:
   void setupTabBar();
   void setupCornerWidget();
   void setupShortcuts();
+  void updateShortcutAvailability(QWidget *p_focusWidget);
 
   void initIcons();
 
@@ -201,8 +205,8 @@ private:
 
   ViewWindow2 *getViewWindow(int p_idx) const;
 
-  // Hide the tab bar when the only open tab is the Home dashboard (vx://home),
-  // so the home screen reads as a clean surface; show it otherwise.
+  // Previews show the tab bar only for multiple tabs. Ordinary splits retain
+  // the Home-only (vx://home) clean surface.
   void updateTabBarVisibility();
 
   void focusCurrentViewWindow();
@@ -225,10 +229,15 @@ private:
 
   QString m_workspaceId;
 
+  const bool m_isPreview;
+
   // True when this split is hosted in a DetachedWindow (reduced UI/actions).
   bool m_detached = false;
 
   bool m_active = false;
+
+  // A nested preview owns its shortcuts instead of the covered ancestor split.
+  bool m_shortcutsEnabled = true;
 
   // Used for alternate tab tracking.
   ViewWindow2 *m_currentViewWindow = nullptr;

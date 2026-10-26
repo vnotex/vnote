@@ -6,6 +6,7 @@
 #include <QString>
 #include <QUrl>
 
+#include <core/fileopensettings.h>
 #include <core/services/buffer2.h>
 
 namespace vnotex {
@@ -27,7 +28,8 @@ public:
   QString insertAttachment(const QString &p_filePath, QString *p_createdAttachment,
                            QString *p_error);
   QString relativeLink(const QUrl &p_url) const;
-  void requestOpenLink(const QString &p_url);
+  void requestOpenLink(const QString &p_url,
+                       const FileOpenSettings &p_settings = FileOpenSettings());
   void openConfirmedExternalLink(const QUrl &p_url);
 
 signals:

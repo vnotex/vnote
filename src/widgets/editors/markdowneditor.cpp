@@ -2466,7 +2466,7 @@ bool MarkdownEditor::prependLinkMenu(QMenu *p_menu, QAction *p_before, int p_cur
 
   {
     auto act = new QAction(tr("Open Link"), p_menu);
-    connect(act, &QAction::triggered, p_menu, [this, linkUrl]() { openLink(linkUrl); });
+    connect(act, &QAction::triggered, p_menu, [this, linkUrl]() { openLink(linkUrl, true); });
     p_menu->insertAction(p_before, act);
   }
 
@@ -2654,7 +2654,7 @@ QVector<NavigationTarget> MarkdownEditor::getNavigationTargets() {
                         }
                         self->m_textEdit->setFocus(Qt::ShortcutFocusReason);
                         if (valid()) {
-                          self->openLink(url);
+                          self->openLink(url, false);
                         }
                       }});
     }
@@ -2685,7 +2685,7 @@ QVector<NavigationTarget> MarkdownEditor::getNavigationTargets() {
   return targets;
 }
 
-void MarkdownEditor::openLink(const QString &p_url) {
+void MarkdownEditor::openLink(const QString &p_url, bool p_fromContextMenu) {
   if (m_protectedBuffer && m_protectedResourcesRevoked) {
     return;
   }
@@ -2693,11 +2693,48 @@ void MarkdownEditor::openLink(const QString &p_url) {
     emit statusMessageRequested(tr("Use the image menu to copy an embedded image"));
     return;
   }
-  emit openFileRequested(p_url);
+  emit openFileRequested(p_url, p_fromContextMenu);
+}
+
+bool MarkdownEditor::eventFilter(QObject *p_obj, QEvent *p_event) {
+  if (p_obj == m_textEdit->viewport()) {
+    switch (p_event->type()) {
+    case QEvent::MouseButtonPress: {
+      const auto *event = static_cast<QMouseEvent *>(p_event);
+      m_linkPressActive = event->button() == Qt::LeftButton;
+      m_linkSelectionDrag = false;
+      if (m_linkPressActive) {
+        m_linkPressPosition = event->pos();
+      }
+      break;
+    }
+    case QEvent::MouseMove:
+      if (m_linkPressActive &&
+          (static_cast<QMouseEvent *>(p_event)->pos() - m_linkPressPosition).manhattanLength() >
+              QApplication::startDragDistance()) {
+        m_linkSelectionDrag = true;
+      }
+      break;
+    case QEvent::MouseButtonDblClick:
+    case QEvent::Hide:
+      m_linkPressActive = false;
+      m_linkSelectionDrag = false;
+      break;
+    default:
+      break;
+    }
+  }
+  return vte::VMarkdownEditor::eventFilter(p_obj, p_event);
 }
 
 void MarkdownEditor::handleMouseReleased(QMouseEvent *p_event) {
-  if (p_event->button() != Qt::LeftButton || !(p_event->modifiers() & Qt::ControlModifier)) {
+  // VTextEdit emits after QTextEdit handles the release, so its final selection wins.
+  const bool click =
+      m_linkPressActive && !m_linkSelectionDrag &&
+      (p_event->pos() - m_linkPressPosition).manhattanLength() <= QApplication::startDragDistance();
+  m_linkPressActive = false;
+  m_linkSelectionDrag = false;
+  if (p_event->button() != Qt::LeftButton || !click || m_textEdit->textCursor().hasSelection()) {
     return;
   }
 
@@ -2707,6 +2744,6 @@ void MarkdownEditor::handleMouseReleased(QMouseEvent *p_event) {
     return;
   }
 
-  openLink(linkUrl);
+  openLink(linkUrl, false);
   p_event->accept();
 }

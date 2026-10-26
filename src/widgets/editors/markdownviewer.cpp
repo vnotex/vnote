@@ -6,6 +6,7 @@
 #include <QJsonObject>
 #include <QMenu>
 #include <QMimeData>
+#include <QPointer>
 #include <QScopedPointer>
 #include <QUrl>
 #include <QUuid>
@@ -398,6 +399,68 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
     }
   }
 
+  // Native open actions bypass the owning view's link policy and stay hidden.
+  auto *openLinkAction = new QAction(tr("Open Link"), menu);
+  openLinkAction->setObjectName(QStringLiteral("openContextLinkAction"));
+  openLinkAction->setEnabled(false);
+  menu->insertAction(menu->actions().isEmpty() ? nullptr : menu->actions().first(), openLinkAction);
+
+  const QPointer<QMenu> guardedMenu(menu);
+  const QPointer<QAction> guardedAction(openLinkAction);
+  const QPointer<MarkdownViewer> viewer(this);
+  const QPointer<QWebEnginePage> viewerPage(page());
+  const auto generation = m_navigationGeneration;
+  const auto viewerSize = size();
+  const auto zoom = zoomFactor();
+  const auto current = [guardedMenu, viewer, viewerPage, generation, viewerSize, zoom]() {
+    return guardedMenu && viewer && viewerPage && viewer->m_navigationGeneration == generation &&
+           viewer->page() == viewerPage.data() && viewer->isVisible() &&
+           viewer->m_adapter->isReady() && viewer->size() == viewerSize && !viewerSize.isEmpty() &&
+           std::isfinite(zoom) && zoom > 0 && viewer->zoomFactor() == zoom;
+  };
+  if (current()) {
+    const QPointF position = QPointF(p_event->pos()) / zoom;
+    viewerPage->runJavaScript(
+        QStringLiteral("window.vxcore && typeof window.vxcore.resolveContextLink === 'function'"
+                       " ? window.vxcore.resolveContextLink(%1, %2) : null")
+            .arg(QString::number(position.x(), 'g', 17), QString::number(position.y(), 'g', 17)),
+        [viewer, guardedAction, current](const QVariant &p_result) {
+          if (!current() || !guardedAction) {
+            return;
+          }
+          const auto result = QJsonValue::fromVariant(p_result);
+          const auto object = result.toObject();
+          const auto hrefValue = object.value(QStringLiteral("href"));
+          const auto urlValue = object.value(QStringLiteral("url"));
+          if (!result.isObject() || !hrefValue.isString() || !urlValue.isString()) {
+            return;
+          }
+          const auto href = hrefValue.toString();
+          const QUrl url(urlValue.toString());
+          if (href.isEmpty() || url.isEmpty() || !url.isValid()) {
+            return;
+          }
+          QString link;
+          if (viewer->m_protectedView || href.startsWith(QLatin1Char('#'))) {
+            link = href;
+          } else if (url.isLocalFile()) {
+            link = url.toLocalFile();
+            if (!url.fragment().isEmpty()) {
+              link += QLatin1Char('#') + url.fragment();
+            }
+          } else {
+            link = url.toString();
+          }
+          connect(guardedAction.data(), &QAction::triggered, viewer.data(),
+                  [viewer, current, link]() {
+                    if (current()) {
+                      emit viewer->contextLinkOpenRequested(link);
+                    }
+                  });
+          guardedAction->setEnabled(true);
+        });
+  }
+
   hideUnusedActions();
 
   p_event->accept();
@@ -412,7 +475,8 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
   }
 
   if (valid) {
-    menu->exec(p_event->globalPos());
+    // Return from Chromium's context request so the asynchronous hit test can complete.
+    menu->popup(p_event->globalPos());
   }
 
   // The menu is set with WA_DeleteOnClose.

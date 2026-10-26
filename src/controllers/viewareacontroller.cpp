@@ -245,6 +245,22 @@ ViewAreaController::prepareNoteConversion(const NodeIdentifier &p_nodeId, bool p
       return conversion;
     }
   }
+  // Consent must run while source editors and their previews are still editable.
+  // Modal callbacks may close tabs, so only the recollected live IDs may freeze.
+  if (!m_view->closePreviewsForSources(m_view->findWindowIdsByNode(p_nodeId, false))) {
+    conversion->m_errorMessage = tr("Closing a link preview was cancelled.");
+    return conversion;
+  }
+  if (buffers->isProtectedLocking() || isNoteConversionBlocked()) {
+    conversion->m_errorMessage = tr("A protected operation is in progress. Retry conversion.");
+    return conversion;
+  }
+  for (const auto &pending : m_noteConversions) {
+    if (pending->m_nodeId == p_nodeId) {
+      conversion->m_errorMessage = tr("This note is already being converted.");
+      return conversion;
+    }
+  }
   state.windowIds = m_view->findWindowIdsByNode(p_nodeId, false);
   if (!m_view->setNoteConversionFrozen(state.windowIds, true)) {
     conversion->m_errorMessage = tr("The note's views changed. Retry conversion.");
@@ -743,12 +759,29 @@ bool ViewAreaController::lockAllProtectedNotes(QString *p_error) {
     return false;
   };
   if (!buffers || !notebooks || !m_view || !m_noteConversions.isEmpty() ||
-      !buffers->beginProtectedLocking()) {
+      buffers->isProtectedLocking()) {
     return fail(tr("A protected operation is in progress. Finish it before locking."));
   }
-  const auto protectedBuffers = buffers->protectedBuffers();
-  const QVector<ID> windowIds =
+  const QVector<ID> sources =
       m_protectedWindows ? m_protectedWindows->values().toVector() : QVector<ID>();
+  if (!m_view->closePreviewsForSources(sources)) {
+    return fail(tr("Closing a link preview was cancelled."));
+  }
+  // The consent loop may start another conversion or lock. Enter the locking
+  // state only after consent and recheck exclusion before freezing any editor.
+  if (!m_noteConversions.isEmpty() || !buffers->beginProtectedLocking()) {
+    return fail(tr("A protected operation is in progress. Finish it before locking."));
+  }
+  QVector<ID> windowIds;
+  for (const auto &buffer : buffers->protectedBuffers()) {
+    for (const ID id : m_view->findWindowIdsByNode(buffer.nodeId(), false)) {
+      // Protected registrations outlive admitted closes. Retiring views have
+      // left the live view registry and must not enter this new freeze list.
+      if (m_protectedWindows && m_protectedWindows->contains(id) && !windowIds.contains(id)) {
+        windowIds.append(id);
+      }
+    }
+  }
   const auto cancel = [&](const QString &p_message) {
     m_view->setNoteConversionFrozen(windowIds, false);
     buffers->cancelProtectedLocking();
@@ -757,6 +790,9 @@ bool ViewAreaController::lockAllProtectedNotes(QString *p_error) {
   if (!m_view->setNoteConversionFrozen(windowIds, true)) {
     return cancel(tr("Protected views changed while locking. Try again."));
   }
+  // Retiring previews are no longer frozen participants. Drain their admitted
+  // deleteLater completions before waiting for protected-resource operations.
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
   QElapsedTimer timeout;
   timeout.start();
   while (!buffers->protectedOperationsIdle()) {
@@ -766,7 +802,9 @@ bool ViewAreaController::lockAllProtectedNotes(QString *p_error) {
     QCoreApplication::processEvents(QEventLoop::ExcludeUserInputEvents, 20);
     QThread::msleep(1);
   }
-  for (const auto &buffer : protectedBuffers) {
+  // Recollect after retirement: an earlier handle snapshot must not save a
+  // discarded preview whose final owner has just been destroyed.
+  for (const auto &buffer : buffers->protectedBuffers()) {
     if (comments) {
       const auto flush = comments->flushAndWaitForIdle(buffer.nodeId().notebookId,
                                                        buffer.nodeId().relativePath, false, 30000);
@@ -925,10 +963,7 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
             qInfo() << "ViewAreaController::openBuffer: opening with system default app:"
                     << absolutePath;
             QDesktopServices::openUrl(QUrl::fromLocalFile(absolutePath));
-            auto *bufferSvc = m_services.get<BufferService>();
-            if (bufferSvc) {
-              bufferSvc->closeBuffer(p_buffer.id());
-            }
+            closeUnownedOpenBuffer(p_buffer.id());
             return;
           }
           const QStringList argv = program->fetchCommandArgs(absolutePath);
@@ -936,10 +971,7 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
             qInfo() << "ViewAreaController::openBuffer: launching external program for"
                     << absolutePath << "command:" << argv;
             ProcessUtils::startDetached(argv.first(), argv.mid(1));
-            auto *bufferSvc = m_services.get<BufferService>();
-            if (bufferSvc) {
-              bufferSvc->closeBuffer(p_buffer.id());
-            }
+            closeUnownedOpenBuffer(p_buffer.id());
             return;
           }
         }
@@ -961,6 +993,7 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
     return;
   }
   if (!m_view) {
+    closeUnownedOpenBuffer(p_buffer.id());
     return;
   }
 
@@ -970,16 +1003,14 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   auto *factory = m_services.get<ViewWindowFactory>();
   if (!factory || !factory->hasCreator(fileType)) {
     if (p_buffer.isEncrypted()) {
+      closeUnownedOpenBuffer(p_buffer.id());
       return;
     }
     const QString absolutePath = p_buffer.resolvedPath();
     qDebug() << "ViewAreaController::openBuffer: no built-in editor for type" << fileType
              << "- opening with system default:" << absolutePath;
     QDesktopServices::openUrl(QUrl::fromLocalFile(absolutePath));
-    auto *bufferSvc = m_services.get<BufferService>();
-    if (bufferSvc) {
-      bufferSvc->closeBuffer(p_buffer.id());
-    }
+    closeUnownedOpenBuffer(p_buffer.id());
     return;
   }
 
@@ -987,12 +1018,28 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   // create or reveal a workspace. Resolve after before-open hooks can close it.
   QString targetWs = settings.m_targetWorkspaceId;
   if (!targetWs.isEmpty()) {
+    // Explicit destinations take precedence even over stale preview intent.
+    settings.m_previewSourceWindowId = 0;
+    settings.m_previewSourceGeneration = 0;
     const auto *wrapper = m_workspaces.value(targetWs, nullptr);
-    if (!wrapper || !wrapper->isVisible()) {
+    if (!wrapper || !wrapper->isVisible() ||
+        (wrapper->isPreview() &&
+         (isPreviewWorkspaceClosing(targetWs) || !m_view->isPreviewWorkspaceAvailable(targetWs)))) {
       qWarning() << "ViewAreaController::openBuffer: target workspace is not hosted:" << targetWs;
       closeUnownedOpenBuffer(p_buffer.id());
       return;
     }
+  } else if (settings.m_previewSourceWindowId != InvalidViewWindowId) {
+    targetWs = ensurePreviewWorkspace(settings.m_previewSourceWindowId,
+                                      settings.m_previewSourceGeneration);
+    if (!guard) {
+      return;
+    }
+    if (targetWs.isEmpty()) {
+      closeUnownedOpenBuffer(p_buffer.id());
+      return;
+    }
+    settings.m_targetWorkspaceId = targetWs;
   } else if (settings.m_detachedView) {
     targetWs = ensureCliDetachedWorkspace();
     if (targetWs.isEmpty()) {
@@ -1021,28 +1068,56 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
     }
     targetWs = m_currentWorkspaceId;
   }
+  const auto *targetWrapper = m_workspaces.value(targetWs, nullptr);
+  const bool preview = targetWrapper && targetWrapper->isPreview();
   const bool detached = m_detachedWorkspaceIds.contains(targetWs);
   settings.m_detachedView = detached;
+  if (preview) {
+    ++m_previewAdmissionsInProgress[targetWs];
+  }
+  const auto previewAdmission = qScopeGuard([guard, preview, targetWs]() {
+    if (guard && preview) {
+      if (--guard->m_previewAdmissionsInProgress[targetWs] == 0) {
+        guard->m_previewAdmissionsInProgress.remove(targetWs);
+      }
+      guard->removeEmptyPreviewWorkspace(targetWs);
+    }
+  });
+  if (preview && (!isPreviewRequestCurrent(settings, targetWs) || !p_buffer.isValid() ||
+                  p_buffer.getBuffer().isEmpty())) {
+    closeUnownedOpenBuffer(p_buffer.id());
+    return;
+  }
   const auto activateExistingWindow = [&](ID p_windowId) {
+    if (preview && !isPreviewRequestCurrent(settings, targetWs)) {
+      closeUnownedOpenBuffer(p_buffer.id());
+      return;
+    }
     if (settings.m_focus) {
-      if (!detached) {
-        setCurrentViewSplit(targetWs, false);
-        if (!guard) {
-          return;
+      if (preview) {
+        setActivePreviewWindow(targetWs, p_windowId, p_buffer.id());
+      } else {
+        clearActivePreviewWindow();
+        if (guard && !detached) {
+          setCurrentViewSplit(targetWs, false);
         }
       }
-      m_view->setCurrentBuffer(targetWs, p_buffer.id(), true);
-      if (!guard) {
+      if (!guard || !m_view || (preview && !isPreviewRequestCurrent(settings, targetWs))) {
         return;
       }
-      if (m_shouldPropagateToCore && wsSvc) {
+      m_view->setCurrentBuffer(targetWs, p_buffer.id(), true);
+      if (!guard || !m_view || (preview && !isPreviewRequestCurrent(settings, targetWs))) {
+        return;
+      }
+      if (!preview && m_shouldPropagateToCore && wsSvc) {
         wsSvc->setCurrentBuffer(targetWs, p_buffer.id());
       }
-      if (!detached && m_currentWorkspaceId == targetWs) {
+      if (!preview && !detached && m_currentWorkspaceId == targetWs) {
         setCurrentViewWindow(p_windowId, p_buffer.id());
       }
     }
-    if (guard) {
+    if (guard && m_view && m_view->findWindowIdByBufferId(targetWs, p_buffer.id()) == p_windowId &&
+        (!preview || isPreviewRequestCurrent(settings, targetWs))) {
       m_view->applyFileOpenSettings(p_windowId, settings);
     }
   };
@@ -1053,6 +1128,14 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   if (existingWindowId != InvalidViewWindowId && p_buffer.isEncrypted() && m_lockedWindows &&
       m_lockedWindows->contains(existingWindowId)) {
     const QVector<ID> ids{existingWindowId};
+    if (!m_view->closePreviewsForSources(ids) || !guard) {
+      return;
+    }
+    if (!m_view || m_view->findWindowIdByBufferId(targetWs, p_buffer.id()) != existingWindowId ||
+        (preview && !isPreviewRequestCurrent(settings, targetWs))) {
+      closeUnownedOpenBuffer(p_buffer.id());
+      return;
+    }
     if (!m_view->setNoteConversionFrozen(ids, true) ||
         !m_view->recreateNoteViews(ids, p_buffer, p_buffer.editorType(), {})) {
       m_view->setNoteConversionFrozen(ids, false);
@@ -1074,16 +1157,22 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
     return;
   }
   const auto openNewWindow = [&]() {
-    // The view calls onViewWindowOpened synchronously on successful creation.
+    if (preview && !isPreviewRequestCurrent(settings, targetWs)) {
+      closeUnownedOpenBuffer(incomingId);
+      return;
+    }
+    // A BufferService handle is not an acknowledgement: the view must still
+    // be registered after construction, admission, and the after-open hook.
     m_view->openBuffer(p_buffer, fileType, targetWs, settings);
-    if (guard && m_view->findWindowIdByBufferId(targetWs, incomingId) == InvalidViewWindowId) {
+    if (guard &&
+        (!m_view || m_view->findWindowIdByBufferId(targetWs, incomingId) == InvalidViewWindowId)) {
       closeUnownedOpenBuffer(incomingId);
     }
   };
   const auto *configMgr = m_services.get<ConfigMgr2>();
   if (settings.m_alwaysNewWindow || !configMgr ||
-      configMgr->getCoreConfig().getAlwaysOpenNotesInNewTabs() || detached || !settings.m_focus ||
-      !m_shouldPropagateToCore || !wsSvc) {
+      configMgr->getCoreConfig().getAlwaysOpenNotesInNewTabs() || detached || preview ||
+      !settings.m_focus || !m_shouldPropagateToCore || !wsSvc) {
     openNewWindow();
     return;
   }
@@ -1295,6 +1384,11 @@ void ViewAreaController::closeUnownedOpenBuffer(const QString &p_bufferId) {
   if (p_bufferId.isEmpty() || !wsSvc || !bufferSvc) {
     return;
   }
+  for (const auto &admission : m_failedPreviewAdmissions) {
+    if (admission.bufferId == p_bufferId) {
+      return;
+    }
+  }
   const auto workspaces = wsSvc->listWorkspaces();
   for (const auto &workspace : workspaces) {
     if (workspace.toObject().value(QStringLiteral("bufferIds")).toArray().contains(p_bufferId)) {
@@ -1304,6 +1398,151 @@ void ViewAreaController::closeUnownedOpenBuffer(const QString &p_bufferId) {
   if (!bufferSvc->forgetBufferIfClosed(p_bufferId) && !bufferSvc->closeBuffer(p_bufferId)) {
     qWarning() << "ViewAreaController: unable to close unowned buffer after failed open:"
                << p_bufferId;
+  }
+}
+
+bool ViewAreaController::isPreviewRequestCurrent(const FileOpenSettings &p_settings,
+                                                 const QString &p_workspaceId) const {
+  const auto *wrapper = m_workspaces.value(p_workspaceId, nullptr);
+  if (!wrapper || !wrapper->isPreview() || !wrapper->isVisible() || !m_view ||
+      isPreviewWorkspaceClosing(p_workspaceId) ||
+      !m_view->isPreviewWorkspaceAvailable(p_workspaceId)) {
+    return false;
+  }
+  for (const auto &admission : m_failedPreviewAdmissions) {
+    if (admission.workspaceId == p_workspaceId) {
+      return false;
+    }
+  }
+  return p_settings.m_previewSourceWindowId == InvalidViewWindowId ||
+         (m_view->isPreviewSourceCurrent(p_settings.m_previewSourceWindowId,
+                                         p_settings.m_previewSourceGeneration) &&
+          m_view->previewWorkspaceForWindow(p_settings.m_previewSourceWindowId) == p_workspaceId);
+}
+
+QString ViewAreaController::ensurePreviewWorkspace(ID p_sourceId, quint64 p_generation) {
+  if (!m_view || m_creatingPreviewSources.contains(p_sourceId) ||
+      !m_view->isPreviewSourceCurrent(p_sourceId, p_generation)) {
+    return QString();
+  }
+  const QString existing = m_view->previewWorkspaceForWindow(p_sourceId);
+  if (!existing.isEmpty()) {
+    FileOpenSettings settings;
+    settings.m_previewSourceWindowId = p_sourceId;
+    settings.m_previewSourceGeneration = p_generation;
+    return isPreviewRequestCurrent(settings, existing) ? existing : QString();
+  }
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (!wsSvc) {
+    return QString();
+  }
+
+  const QPointer<ViewAreaController> guard(this);
+  m_creatingPreviewSources.insert(p_sourceId);
+  const auto creationGuard = qScopeGuard([guard, p_sourceId]() {
+    if (guard) {
+      guard->m_creatingPreviewSources.remove(p_sourceId);
+    }
+  });
+  ViewSplitCreateEvent event;
+  event.direction = static_cast<int>(Direction::Right);
+  const bool vetoed = wsSvc->fireViewSplitBeforeCreate(event);
+  if (!guard || vetoed || !m_view || !m_view->isPreviewSourceCurrent(p_sourceId, p_generation)) {
+    return QString();
+  }
+
+  const QString workspaceId = wsSvc->createWorkspace(tr("Preview"), true);
+  if (workspaceId.isEmpty()) {
+    return QString();
+  }
+  auto *wrapper = new WorkspaceWrapper(workspaceId, this, true);
+  wrapper->setVisible(true);
+  m_workspaces.insert(workspaceId, wrapper);
+  m_previewCloseStates.insert(workspaceId, PreviewCloseState::Open);
+  ++m_previewAdmissionsInProgress[workspaceId];
+  bool ready = false;
+  const auto rollback = qScopeGuard([guard, workspaceId, &ready]() {
+    if (guard) {
+      if (--guard->m_previewAdmissionsInProgress[workspaceId] == 0) {
+        guard->m_previewAdmissionsInProgress.remove(workspaceId);
+      }
+      if (!ready || guard->isPreviewWorkspaceClosing(workspaceId)) {
+        guard->removeEmptyPreviewWorkspace(workspaceId);
+      }
+    }
+  });
+  const bool hosted = m_view->hostPreviewWorkspace(p_sourceId, p_generation, workspaceId);
+  if (!guard || !hosted) {
+    return QString();
+  }
+  FileOpenSettings settings;
+  settings.m_previewSourceWindowId = p_sourceId;
+  settings.m_previewSourceGeneration = p_generation;
+  if (!isPreviewRequestCurrent(settings, workspaceId)) {
+    return QString();
+  }
+  event.newWorkspaceId = workspaceId;
+  wsSvc->fireViewSplitAfterCreate(event);
+  if (!guard || !isPreviewRequestCurrent(settings, workspaceId)) {
+    return QString();
+  }
+  ready = true;
+  return workspaceId;
+}
+
+void ViewAreaController::removeEmptyPreviewWorkspace(const QString &p_workspaceId) {
+  const auto *wrapper = m_workspaces.value(p_workspaceId, nullptr);
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (!wrapper || !wrapper->isPreview() || !wsSvc ||
+      m_previewCloseStates.value(p_workspaceId) == PreviewCloseState::Checking ||
+      m_previewAdmissionsInProgress.value(p_workspaceId) != 0 ||
+      (m_view && !m_view->getViewWindowIdsForWorkspace(p_workspaceId).isEmpty())) {
+    return;
+  }
+  for (const auto &admission : m_failedPreviewAdmissions) {
+    if (admission.workspaceId == p_workspaceId) {
+      return;
+    }
+  }
+  // A protected tab leaves the widget registry before destruction, but keeps
+  // its core membership until onViewWindowClosed. Never retire its host early.
+  const auto workspace = wsSvc->getWorkspace(p_workspaceId);
+  if (!workspace.value(QStringLiteral("bufferIds")).toArray().isEmpty()) {
+    return;
+  }
+  m_previewCloseStates.insert(p_workspaceId, PreviewCloseState::Accepted);
+  if (!workspace.isEmpty() && !wsSvc->deleteWorkspace(p_workspaceId)) {
+    qWarning() << "ViewAreaController: failed to remove empty preview workspace:" << p_workspaceId;
+    return;
+  }
+  const QPointer<ViewAreaController> guard(this);
+  if (m_activePreviewWorkspaceId == p_workspaceId) {
+    clearActivePreviewWindow();
+    if (!guard) {
+      return;
+    }
+  }
+  delete m_workspaces.take(p_workspaceId);
+  if (m_view) {
+    // The view clears only this host's source callback and uses deleteLater.
+    m_view->removePreviewWorkspaceHost(p_workspaceId);
+  }
+  if (guard) {
+    m_previewCloseStates.remove(p_workspaceId);
+  }
+}
+
+void ViewAreaController::rejectPreviewWindow(ID p_windowId, const QString &p_bufferId,
+                                             const QString &p_workspaceId) {
+  if (!m_view || m_view->findWindowIdByBufferId(p_workspaceId, p_bufferId) != p_windowId ||
+      m_failedPreviewAdmissions.contains(p_windowId)) {
+    return;
+  }
+  // This is failed admission, not a user tab close. Do not let a close hook
+  // veto removal of a view that never acquired valid preview ownership.
+  m_failedPreviewAdmissions.insert(p_windowId, {p_workspaceId, p_bufferId});
+  if (!m_view->closeViewWindow(p_windowId, true)) {
+    qWarning() << "ViewAreaController: failed to retire rejected preview window:" << p_windowId;
   }
 }
 
@@ -1481,9 +1720,70 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
   const auto &registerWs = p_workspaceId;
 
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  const auto *wrapper = m_workspaces.value(registerWs, nullptr);
+  if (!p_settings.m_targetWorkspaceId.isEmpty() && (!wrapper || !wrapper->isVisible())) {
+    rejectPreviewWindow(p_windowId, p_buffer.id(), registerWs);
+    return;
+  }
+  if ((wrapper && wrapper->isPreview()) ||
+      p_settings.m_previewSourceWindowId != InvalidViewWindowId) {
+    const QPointer<ViewAreaController> guard(this);
+    const QString bufferId = p_buffer.id();
+    const auto admissionCurrent = [&]() {
+      return m_view && isPreviewRequestCurrent(p_settings, registerWs) && p_buffer.isValid() &&
+             !p_buffer.getBuffer().isEmpty() &&
+             m_view->findWindowIdByBufferId(registerWs, bufferId) == p_windowId;
+    };
+    if (!admissionCurrent() || !wsSvc || !wsSvc->addBuffer(registerWs, bufferId)) {
+      rejectPreviewWindow(p_windowId, bufferId, registerWs);
+      return;
+    }
+    ViewWindowOpenEvent event;
+    event.bufferId = bufferId;
+    event.nodeId = p_buffer.nodeId().relativePath;
+    wsSvc->fireViewWindowAfterOpen(event);
+    if (!guard) {
+      return;
+    }
+    if (!admissionCurrent() || !wsSvc->getWorkspace(registerWs)
+                                    .value(QStringLiteral("bufferIds"))
+                                    .toArray()
+                                    .contains(bufferId)) {
+      rejectPreviewWindow(p_windowId, bufferId, registerWs);
+      return;
+    }
+    if (p_settings.m_focus) {
+      setActivePreviewWindow(registerWs, p_windowId, bufferId);
+    }
+    if (!guard) {
+      return;
+    }
+    if (!admissionCurrent()) {
+      rejectPreviewWindow(p_windowId, bufferId, registerWs);
+      return;
+    }
+    emit windowsChanged();
+    if (!guard) {
+      return;
+    }
+    // setActivePreviewWindow already publishes focused opens; background
+    // admission must leave both the ordinary and preview command focus alone.
+    if (!admissionCurrent()) {
+      rejectPreviewWindow(p_windowId, bufferId, registerWs);
+      return;
+    }
+    return;
+  }
   const bool membershipReady =
       !m_shouldPropagateToCore || !wsSvc ||
       (!registerWs.isEmpty() && wsSvc->addBuffer(registerWs, p_buffer.id()));
+  if (membershipReady && p_settings.m_focus) {
+    const QPointer<ViewAreaController> guard(this);
+    clearActivePreviewWindow();
+    if (!guard) {
+      return;
+    }
+  }
   // addTab can publish the first current tab before its workspace membership
   // exists. Reconcile the actual selected tab after admission, even if its
   // window ID is unchanged. Background opens must not select the new tab;
@@ -1518,13 +1818,24 @@ void ViewAreaController::onViewWindowOpened(ID p_windowId, const Buffer2 &p_buff
 void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_bufferId,
                                             const QString &p_workspaceId,
                                             const ClosedTabRecord &p_closedTab) {
+  const QPointer<ViewAreaController> guard(this);
   if (m_protectedWindows)
     m_protectedWindows->remove(p_windowId);
   if (m_lockedWindows)
     m_lockedWindows->remove(p_windowId);
-  // Record closed tab for "Open Last Closed File" (skip during session restore/shutdown
-  // and skip virtual buffers which have no valid NodeIdentifier).
-  if (m_shouldPropagateToCore && p_closedTab.nodeId.isValid()) {
+  const bool failedPreviewAdmission = m_failedPreviewAdmissions.remove(p_windowId) > 0;
+  const auto *wrapper = m_workspaces.value(p_workspaceId, nullptr);
+  const bool preview = failedPreviewAdmission || (wrapper && wrapper->isPreview());
+  if (wrapper && wrapper->isPreview() && m_view &&
+      m_previewCloseStates.value(p_workspaceId) != PreviewCloseState::Checking &&
+      m_view->getViewWindowIdsForWorkspace(p_workspaceId).isEmpty()) {
+    // Failed admission and protected locking can close directly through the
+    // view. Seal an emptied host before after-close hooks can reenter admission.
+    m_previewCloseStates.insert(p_workspaceId, PreviewCloseState::Accepted);
+  }
+  // Preview tabs never enter ordinary reopen history, including normal closes.
+  // Session restore/shutdown and virtual buffers likewise have no history.
+  if (!preview && m_shouldPropagateToCore && p_closedTab.nodeId.isValid()) {
     if (m_closedTabStack.size() >= c_maxClosedTabRecords) {
       m_closedTabStack.removeFirst();
     }
@@ -1532,7 +1843,7 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
   }
 
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
-  if (m_shouldPropagateToCore) {
+  if (m_shouldPropagateToCore || preview) {
     if (wsSvc && !p_workspaceId.isEmpty() && !p_bufferId.isEmpty()) {
       wsSvc->removeBuffer(p_workspaceId, p_bufferId);
       // NOTE: vxcore auto-closes the buffer when it's removed from all workspaces
@@ -1548,13 +1859,38 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
   if (m_currentWindowId == p_windowId) {
     m_currentWindowId = InvalidViewWindowId;
   }
+  if (m_activePreviewWindowId == p_windowId) {
+    clearActivePreviewWindow();
+    if (!guard) {
+      return;
+    }
+  }
   if (wsSvc) {
     ViewWindowCloseEvent ha;
     ha.bufferId = p_bufferId;
     wsSvc->fireViewWindowAfterClose(ha);
+    if (!guard) {
+      return;
+    }
   }
   emit windowsChanged();
+  if (!guard) {
+    return;
+  }
   checkCurrentViewWindowChange(p_workspaceId);
+  if (!guard) {
+    return;
+  }
+
+  if (preview) {
+    // Protected completions arrive only after resources retire. Established
+    // and failed-admission previews share this path, never main/Home removal.
+    removeEmptyPreviewWorkspace(p_workspaceId);
+    if (guard && failedPreviewAdmission) {
+      closeUnownedOpenBuffer(p_bufferId);
+    }
+    return;
+  }
 
   // If workspace is now empty and there are other splits, remove it.
   // If single split, try to switch to a hidden workspace instead.
@@ -1577,7 +1913,11 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
           QJsonArray allWs = wsSvc->listWorkspaces();
           QString hiddenWsId;
           for (int i = 0; i < allWs.size(); ++i) {
-            QString wsId = allWs[i].toObject().value(QStringLiteral("id")).toString();
+            const QJsonObject ws = allWs[i].toObject();
+            if (ws.value(QLatin1String(vxcore::kJsonKeyIsPreview)).toBool()) {
+              continue;
+            }
+            QString wsId = ws.value(QStringLiteral("id")).toString();
             if (!visibleIds.contains(wsId) && wsId != p_workspaceId) {
               hiddenWsId = wsId;
               break;
@@ -1669,6 +2009,34 @@ bool ViewAreaController::closeViewWindow(ID p_windowId, bool p_force) {
       }
     }
   }
+  const bool ownsPreviewCheck = isPreviewWorkspace(workspaceId) &&
+                                m_previewCloseStates.value(workspaceId) == PreviewCloseState::Open;
+  const bool wasActivePreview = m_activePreviewWorkspaceId == workspaceId;
+  if (ownsPreviewCheck) {
+    m_previewCloseStates.insert(workspaceId, PreviewCloseState::Checking);
+  }
+  // Individual tab closes also exclude admission during modal close hooks.
+  // An enclosing closePreviewWorkspace owns its Checking state until all tabs
+  // accept, so synchronous last-tab completion cannot dismantle that loop.
+  const auto previewCheck = qScopeGuard([guard, workspaceId, ownsPreviewCheck, wasActivePreview]() {
+    if (!guard || !ownsPreviewCheck || !guard->m_view) {
+      return;
+    }
+    const bool empty = guard->m_view->getViewWindowIdsForWorkspace(workspaceId).isEmpty();
+    guard->m_previewCloseStates.insert(workspaceId, empty ? PreviewCloseState::Accepted
+                                                          : PreviewCloseState::Open);
+    if (empty && guard->m_activePreviewWorkspaceId == workspaceId) {
+      guard->clearActivePreviewWindow();
+    } else if (!empty && wasActivePreview) {
+      ID currentId = InvalidViewWindowId;
+      QString bufferId;
+      guard->m_view->getCurrentWindowInfoForWorkspace(workspaceId, currentId, bufferId);
+      guard->setActivePreviewWindow(workspaceId, currentId, bufferId);
+    }
+    if (guard) {
+      guard->removeEmptyPreviewWorkspace(workspaceId);
+    }
+  });
   ViewWindowCloseEvent event;
   event.windowId = p_windowId;
   event.bufferId = bufferId;
@@ -1684,6 +2052,100 @@ bool ViewAreaController::closeViewWindow(ID p_windowId, bool p_force) {
   return m_view->closeViewWindow(p_windowId, p_force);
 }
 
+bool ViewAreaController::isPreviewWorkspaceClosing(const QString &p_workspaceId) const {
+  return m_previewCloseStates.value(p_workspaceId, PreviewCloseState::Open) !=
+         PreviewCloseState::Open;
+}
+
+void ViewAreaController::setPreviewWorkspaceVisible(const QString &p_workspaceId, bool p_visible) {
+  auto *wrapper = m_workspaces.value(p_workspaceId, nullptr);
+  if (!wrapper || !wrapper->isPreview()) {
+    return;
+  }
+  wrapper->setVisible(p_visible);
+  // Effective getters already fall back after a hide. Inspect stored activation
+  // so providers still receive the notification needed to leave the preview.
+  if (!p_visible && m_activePreviewWorkspaceId == p_workspaceId) {
+    clearActivePreviewWindow();
+  }
+}
+
+bool ViewAreaController::closePreviewWorkspace(const QString &p_workspaceId) {
+  const auto *wrapper = m_workspaces.value(p_workspaceId, nullptr);
+  if (!wrapper) {
+    return !p_workspaceId.isEmpty(); // A previous completion already removed it.
+  }
+  if (!wrapper->isPreview() || !m_view) {
+    return false;
+  }
+  const auto state = m_previewCloseStates.value(p_workspaceId, PreviewCloseState::Open);
+  if (state == PreviewCloseState::Checking) {
+    return false; // Never authorize source destruction inside a consent loop.
+  }
+  if (state == PreviewCloseState::Accepted) {
+    removeEmptyPreviewWorkspace(p_workspaceId);
+    return true; // Pending protected destruction is not a second consent gate.
+  }
+  const QPointer<ViewAreaController> guard(this);
+  const bool wasActive = m_activePreviewWorkspaceId == p_workspaceId;
+  m_previewCloseStates.insert(p_workspaceId, PreviewCloseState::Checking);
+  const auto windowIds = m_view->getViewWindowIdsForWorkspace(p_workspaceId);
+  for (const ID id : windowIds) {
+    // A close hook may already have closed a later tab. Its admitted retirement
+    // still belongs to the core workspace, but must not be closed a second time.
+    if (!m_view->getViewWindowIdsForWorkspace(p_workspaceId).contains(id)) {
+      continue;
+    }
+    const bool accepted = closeViewWindow(id, false);
+    if (!guard) {
+      return false;
+    }
+    if (!accepted) {
+      m_previewCloseStates.insert(p_workspaceId, PreviewCloseState::Open);
+      if (wasActive && m_view) {
+        ID currentId = InvalidViewWindowId;
+        QString bufferId;
+        m_view->getCurrentWindowInfoForWorkspace(p_workspaceId, currentId, bufferId);
+        setActivePreviewWindow(p_workspaceId, currentId, bufferId);
+      }
+      if (guard) {
+        removeEmptyPreviewWorkspace(p_workspaceId);
+      }
+      return false;
+    }
+  }
+  m_previewCloseStates.insert(p_workspaceId, PreviewCloseState::Accepted);
+  if (m_activePreviewWorkspaceId == p_workspaceId) {
+    clearActivePreviewWindow();
+  }
+  if (guard) {
+    removeEmptyPreviewWorkspace(p_workspaceId);
+  }
+  return true;
+}
+
+bool ViewAreaController::closeAllPreviewWorkspaces() {
+  const QPointer<ViewAreaController> guard(this);
+  // Recollect after each consent loop: hooks can create an overlay on another
+  // source. Accepted workspaces may remain only for deferred close completion.
+  for (;;) {
+    QString workspaceId;
+    for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
+      if (it.value()->isPreview() &&
+          m_previewCloseStates.value(it.key()) != PreviewCloseState::Accepted) {
+        workspaceId = it.key();
+        break;
+      }
+    }
+    if (workspaceId.isEmpty()) {
+      return true;
+    }
+    if (!closePreviewWorkspace(workspaceId) || !guard) {
+      return false;
+    }
+  }
+}
+
 bool ViewAreaController::closeAll(const QVector<QString> &p_workspaceIds, bool p_force) {
   if (!m_view) {
     return true;
@@ -1692,6 +2154,13 @@ bool ViewAreaController::closeAll(const QVector<QString> &p_workspaceIds, bool p
   m_suppressAutoRemove = true;
 
   for (const auto &wsId : p_workspaceIds) {
+    if (isPreviewWorkspace(wsId)) {
+      if (!closePreviewWorkspace(wsId)) {
+        m_suppressAutoRemove = false;
+        return false;
+      }
+      continue;
+    }
     QVector<ID> windowIds = m_view->getViewWindowIdsForWorkspace(wsId);
     for (ID winId : windowIds) {
       qDebug() << "ViewAreaController::closeAll: closing window:" << winId
@@ -1710,6 +2179,11 @@ bool ViewAreaController::closeAll(const QVector<QString> &p_workspaceIds, bool p
 }
 
 bool ViewAreaController::closeAllBuffersForQuit() {
+  // ViewArea2 normally gates previews before saving the session; retain this
+  // cancellable gate for direct quit callers and accepted deferred retirements.
+  if (!closeAllPreviewWorkspaces()) {
+    return false;
+  }
   if (!isNoteConversionBlocked()) {
     auto *buffers = m_services.get<BufferService>();
     if (buffers && !buffers->protectedBuffers().isEmpty()) {
@@ -1763,7 +2237,7 @@ bool ViewAreaController::closeAllBuffersForQuit() {
   // are already closed (non-transactional). This is acceptable per spec.
   for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
     auto *wrapper = it.value();
-    if (wrapper->isVisible()) {
+    if (wrapper->isPreview() || wrapper->isVisible()) {
       continue;
     }
     const auto &windows = wrapper->viewWindows();
@@ -1783,6 +2257,10 @@ bool ViewAreaController::closeAllBuffersForQuit() {
 void ViewAreaController::closeTabs(const QString &p_workspaceId, int p_referenceTabIndex,
                                    CloseTabMode p_mode) {
   if (!m_view || p_workspaceId.isEmpty()) {
+    return;
+  }
+  if (p_mode == CloseTabMode::All && isPreviewWorkspace(p_workspaceId)) {
+    closePreviewWorkspace(p_workspaceId);
     return;
   }
 
@@ -1877,9 +2355,23 @@ void ViewAreaController::openLastClosedFile() {
   }
 }
 
+bool ViewAreaController::isPreviewWorkspace(const QString &p_workspaceId) const {
+  if (p_workspaceId.isEmpty()) {
+    return false;
+  }
+  const auto *wrapper = m_workspaces.value(p_workspaceId, nullptr);
+  if (wrapper) {
+    return wrapper->isPreview();
+  }
+  const auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  return wsSvc && wsSvc->getWorkspace(p_workspaceId)
+                      .value(QLatin1String(vxcore::kJsonKeyIsPreview))
+                      .toBool();
+}
+
 void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction p_direction,
                                         bool p_openCurrentBuffer) {
-  if (p_workspaceId.isEmpty()) {
+  if (p_workspaceId.isEmpty() || isPreviewWorkspace(p_workspaceId)) {
     return;
   }
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
@@ -1942,7 +2434,7 @@ void ViewAreaController::splitViewSplit(const QString &p_workspaceId, Direction 
 bool ViewAreaController::removeViewSplit(const QString &p_workspaceId, bool p_keepWorkspace,
                                          bool p_force) {
   int totalSplitCount = m_view ? m_view->getViewSplitCount() : 0;
-  if (p_workspaceId.isEmpty() || totalSplitCount <= 1) {
+  if (p_workspaceId.isEmpty() || isPreviewWorkspace(p_workspaceId) || totalSplitCount <= 1) {
     return false;
   }
   if (m_view && !m_transitioningWindows.isEmpty()) {
@@ -2031,7 +2523,7 @@ bool ViewAreaController::removeViewSplit(const QString &p_workspaceId, bool p_ke
 }
 
 void ViewAreaController::maximizeViewSplit(const QString &p_workspaceId) {
-  if (m_view) {
+  if (m_view && !isPreviewWorkspace(p_workspaceId)) {
     m_view->maximizeViewSplit(p_workspaceId);
   }
 }
@@ -2047,7 +2539,8 @@ void ViewAreaController::moveViewWindowOneSplit(const QString &p_srcWorkspaceId,
                                                 const QString &p_dstWorkspaceId,
                                                 const QString &p_bufferId) {
   if (p_srcWorkspaceId.isEmpty() || p_windowId == InvalidViewWindowId ||
-      p_dstWorkspaceId.isEmpty() || m_transitioningWindows.contains(p_windowId)) {
+      p_dstWorkspaceId.isEmpty() || isPreviewWorkspace(p_srcWorkspaceId) ||
+      isPreviewWorkspace(p_dstWorkspaceId) || m_transitioningWindows.contains(p_windowId)) {
     return;
   }
 
@@ -2122,7 +2615,7 @@ bool ViewAreaController::transferBufferRegistration(const QString &p_srcWorkspac
 bool ViewAreaController::detachViewWindow(const QString &p_srcWorkspaceId, ID p_windowId,
                                           const QString &p_bufferId) {
   if (p_srcWorkspaceId.isEmpty() || p_windowId == InvalidViewWindowId || !m_view ||
-      m_transitioningWindows.contains(p_windowId)) {
+      isPreviewWorkspace(p_srcWorkspaceId) || m_transitioningWindows.contains(p_windowId)) {
     return false;
   }
 
@@ -2219,7 +2712,8 @@ bool ViewAreaController::detachViewWindow(const QString &p_srcWorkspaceId, ID p_
 void ViewAreaController::reattachDetachedWorkspace(const QString &p_detachedWorkspaceId,
                                                    const QString &p_targetWorkspaceId,
                                                    const QStringList &p_bufferIds) {
-  if (p_detachedWorkspaceId.isEmpty()) {
+  if (p_detachedWorkspaceId.isEmpty() || isPreviewWorkspace(p_detachedWorkspaceId) ||
+      isPreviewWorkspace(p_targetWorkspaceId)) {
     return;
   }
 
@@ -2284,16 +2778,79 @@ void ViewAreaController::reattachDetachedWorkspace(const QString &p_detachedWork
   emit viewSplitsCountChanged();
 }
 
-ID ViewAreaController::getCurrentWindowId() const { return m_currentWindowId; }
+bool ViewAreaController::hasActivePreviewWindow() const {
+  if (m_activePreviewWindowId == InvalidViewWindowId || !m_view ||
+      m_failedPreviewAdmissions.contains(m_activePreviewWindowId)) {
+    return false;
+  }
+  FileOpenSettings settings;
+  if (!isPreviewRequestCurrent(settings, m_activePreviewWorkspaceId)) {
+    return false;
+  }
+  const auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (!wsSvc) {
+    return false;
+  }
+  const auto workspace = wsSvc->getWorkspace(m_activePreviewWorkspaceId);
+  const QString bufferId = workspace.value(QStringLiteral("currentBufferId")).toString();
+  return !bufferId.isEmpty() &&
+         workspace.value(QStringLiteral("bufferIds")).toArray().contains(bufferId) &&
+         m_view->findWindowIdByBufferId(m_activePreviewWorkspaceId, bufferId) ==
+             m_activePreviewWindowId;
+}
 
-QString ViewAreaController::getCurrentWorkspaceId() const { return m_currentWorkspaceId; }
+ID ViewAreaController::getCurrentWindowId() const {
+  return hasActivePreviewWindow() ? m_activePreviewWindowId : m_currentWindowId;
+}
+
+QString ViewAreaController::getCurrentWorkspaceId() const {
+  return hasActivePreviewWindow() ? m_activePreviewWorkspaceId : m_currentWorkspaceId;
+}
+
+void ViewAreaController::setActivePreviewWindow(const QString &p_workspaceId, ID p_windowId,
+                                                const QString &p_bufferId) {
+  if (p_windowId == InvalidViewWindowId || p_bufferId.isEmpty() || !m_view ||
+      m_failedPreviewAdmissions.contains(p_windowId)) {
+    return;
+  }
+  FileOpenSettings settings;
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  if (!wsSvc || !isPreviewRequestCurrent(settings, p_workspaceId) ||
+      m_view->findWindowIdByBufferId(p_workspaceId, p_bufferId) != p_windowId ||
+      !wsSvc->getWorkspace(p_workspaceId)
+           .value(QStringLiteral("bufferIds"))
+           .toArray()
+           .contains(p_bufferId)) {
+    return;
+  }
+  if (m_shouldPropagateToCore && !wsSvc->setCurrentBuffer(p_workspaceId, p_bufferId)) {
+    return;
+  }
+  const bool changed =
+      m_activePreviewWorkspaceId != p_workspaceId || m_activePreviewWindowId != p_windowId;
+  m_activePreviewWorkspaceId = p_workspaceId;
+  m_activePreviewWindowId = p_windowId;
+  if (changed) {
+    scheduleLockedWindowReactivation(p_workspaceId, p_windowId, p_bufferId);
+    emit currentViewWindowChanged();
+  }
+}
+
+void ViewAreaController::clearActivePreviewWindow() {
+  if (m_activePreviewWindowId == InvalidViewWindowId && m_activePreviewWorkspaceId.isEmpty()) {
+    return;
+  }
+  m_activePreviewWorkspaceId.clear();
+  m_activePreviewWindowId = InvalidViewWindowId;
+  emit currentViewWindowChanged();
+}
 
 QVector<OpenWindowEntry> ViewAreaController::listOpenWindows() const {
   QVector<OpenWindowEntry> entries;
 
   for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
     auto *wrapper = it.value();
-    if (!wrapper) {
+    if (!wrapper || wrapper->isPreview()) {
       continue;
     }
 
@@ -2354,7 +2911,7 @@ QVector<OpenWindowEntry> ViewAreaController::listOpenWindows() const {
 }
 
 void ViewAreaController::focusWindow(const QString &p_workspaceId, const QString &p_bufferId) {
-  if (p_workspaceId.isEmpty() || !m_view) {
+  if (p_workspaceId.isEmpty() || !m_view || isPreviewWorkspace(p_workspaceId)) {
     return;
   }
 
@@ -2397,6 +2954,14 @@ void ViewAreaController::focusWindow(const QString &p_workspaceId, const QString
 }
 
 void ViewAreaController::setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) {
+  if (isPreviewWorkspace(p_workspaceId)) {
+    return;
+  }
+  const QPointer<ViewAreaController> guard(this);
+  clearActivePreviewWindow();
+  if (!guard) {
+    return;
+  }
   if (m_currentWorkspaceId == p_workspaceId && !p_workspaceId.isEmpty()) {
     if (p_focus && m_view) {
       m_view->focusViewSplit(p_workspaceId);
@@ -2438,6 +3003,27 @@ void ViewAreaController::setCurrentViewWindow(ID p_windowId, const QString &p_bu
   if (m_replacingBuffer && m_transitioningWindows.contains(p_windowId)) {
     return;
   }
+  if (m_view && p_windowId != InvalidViewWindowId) {
+    const QString previewWorkspace = m_view->previewWorkspaceForWindow(p_windowId);
+    if (!previewWorkspace.isEmpty()) {
+      // A source also resolves to its overlay. Reject only the overlay's own
+      // tab, not the ordinary source receiving focus again.
+      if ((!p_bufferId.isEmpty() &&
+           m_view->findWindowIdByBufferId(previewWorkspace, p_bufferId) == p_windowId) ||
+          (p_bufferId.isEmpty() &&
+           m_view->getViewWindowIdsForWorkspace(previewWorkspace).contains(p_windowId))) {
+        return;
+      }
+    }
+  }
+  if (isPreviewWorkspace(m_currentWorkspaceId)) {
+    return;
+  }
+  const QPointer<ViewAreaController> guard(this);
+  clearActivePreviewWindow();
+  if (!guard) {
+    return;
+  }
   // The first addTab notification may precede workspace admission, and buffer
   // replacement deliberately retains the window ID. Keep core identity in
   // sync even when no new current-window notification is needed.
@@ -2453,30 +3039,45 @@ void ViewAreaController::setCurrentViewWindow(ID p_windowId, const QString &p_bu
   qDebug() << "ViewAreaController::setCurrentViewWindow: windowId:" << p_windowId
            << "bufferId:" << p_bufferId << "workspace:" << m_currentWorkspaceId;
   m_currentWindowId = p_windowId;
-  if (m_shouldPropagateToCore && m_lockedWindows && m_lockedWindows->contains(p_windowId)) {
-    QTimer::singleShot(0, this, [this, p_windowId, p_bufferId]() {
-      if (m_currentWindowId != p_windowId || !m_lockedWindows ||
-          !m_lockedWindows->contains(p_windowId))
-        return;
-      for (const auto &conversion : m_noteConversions) {
-        if (conversion->m_state->active && conversion->m_state->windowIds.contains(p_windowId))
-          return;
-      }
-      auto *buffers = m_services.get<BufferService>();
-      if (!buffers || buffers->isProtectedLocking())
-        return;
-      const auto buffer = buffers->getBufferHandle(p_bufferId);
-      if (buffer.isValid())
-        buffers->openBuffer(buffer.nodeId());
-    });
-  }
+  scheduleLockedWindowReactivation(m_currentWorkspaceId, p_windowId, p_bufferId);
 
   emit currentViewWindowChanged();
 }
 
+void ViewAreaController::scheduleLockedWindowReactivation(const QString &p_workspaceId,
+                                                          ID p_windowId,
+                                                          const QString &p_bufferId) {
+  if (!m_shouldPropagateToCore || !m_lockedWindows || !m_lockedWindows->contains(p_windowId)) {
+    return;
+  }
+  QTimer::singleShot(0, this, [this, p_workspaceId, p_windowId, p_bufferId]() {
+    if (!m_view || getCurrentWindowId() != p_windowId || getCurrentWorkspaceId() != p_workspaceId ||
+        !m_lockedWindows || !m_lockedWindows->contains(p_windowId) ||
+        m_view->findWindowIdByBufferId(p_workspaceId, p_bufferId) != p_windowId) {
+      return;
+    }
+    for (const auto &conversion : m_noteConversions) {
+      if (conversion->m_state->active && conversion->m_state->windowIds.contains(p_windowId)) {
+        return;
+      }
+    }
+    auto *buffers = m_services.get<BufferService>();
+    if (!buffers || buffers->isProtectedLocking()) {
+      return;
+    }
+    const auto buffer = buffers->getBufferHandle(p_bufferId);
+    if (buffer.isValid()) {
+      FileOpenSettings settings;
+      settings.m_targetWorkspaceId = p_workspaceId;
+      buffers->openBuffer(buffer.nodeId(), settings);
+    }
+  });
+}
+
 void ViewAreaController::focus() {
-  if (!m_currentWorkspaceId.isEmpty() && m_view) {
-    m_view->focusViewSplit(m_currentWorkspaceId);
+  const QString workspaceId = getCurrentWorkspaceId();
+  if (!workspaceId.isEmpty() && m_view) {
+    m_view->focusViewSplit(workspaceId);
   }
 }
 
@@ -2487,7 +3088,7 @@ void ViewAreaController::setShouldPropagateToCore(bool p_enabled) {
 bool ViewAreaController::shouldPropagateToCore() const { return m_shouldPropagateToCore; }
 
 void ViewAreaController::newWorkspace(const QString &p_currentWorkspaceId, const QString &p_name) {
-  if (p_currentWorkspaceId.isEmpty()) {
+  if (p_currentWorkspaceId.isEmpty() || isPreviewWorkspace(p_currentWorkspaceId)) {
     return;
   }
 
@@ -2509,7 +3110,7 @@ void ViewAreaController::newWorkspace(const QString &p_currentWorkspaceId, const
 }
 
 void ViewAreaController::renameWorkspace(const QString &p_workspaceId, const QString &p_newName) {
-  if (p_workspaceId.isEmpty() || p_newName.isEmpty()) {
+  if (p_workspaceId.isEmpty() || p_newName.isEmpty() || isPreviewWorkspace(p_workspaceId)) {
     return;
   }
 
@@ -2532,7 +3133,7 @@ QString ViewAreaController::getWorkspaceName(const QString &p_workspaceId) const
 }
 
 bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
-  if (p_workspaceId.isEmpty()) {
+  if (p_workspaceId.isEmpty() || isPreviewWorkspace(p_workspaceId)) {
     return false;
   }
 
@@ -2590,6 +3191,9 @@ bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
     QString targetWsId;
     for (int i = 0; i < allWorkspaces.size(); ++i) {
       QJsonObject ws = allWorkspaces[i].toObject();
+      if (ws.value(QLatin1String(vxcore::kJsonKeyIsPreview)).toBool()) {
+        continue;
+      }
       QString wsId = ws.value(QStringLiteral("id")).toString();
       if (wsId != p_workspaceId && !visibleWorkspaceIds.contains(wsId)) {
         targetWsId = wsId;
@@ -2658,6 +3262,9 @@ bool ViewAreaController::removeWorkspace(QString p_workspaceId, bool p_force) {
 }
 
 void ViewAreaController::removeOtherWorkspaces(const QString &p_keepWorkspaceId) {
+  if (isPreviewWorkspace(p_keepWorkspaceId)) {
+    return;
+  }
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (!wsSvc) {
     return;
@@ -2667,7 +3274,11 @@ void ViewAreaController::removeOtherWorkspaces(const QString &p_keepWorkspaceId)
   QStringList targetIds;
   QJsonArray allWorkspaces = wsSvc->listWorkspaces();
   for (int i = 0; i < allWorkspaces.size(); ++i) {
-    QString wsId = allWorkspaces[i].toObject().value(QStringLiteral("id")).toString();
+    const QJsonObject ws = allWorkspaces[i].toObject();
+    if (ws.value(QLatin1String(vxcore::kJsonKeyIsPreview)).toBool()) {
+      continue;
+    }
+    QString wsId = ws.value(QStringLiteral("id")).toString();
     if (!wsId.isEmpty() && wsId != p_keepWorkspaceId) {
       targetIds.append(wsId);
     }
@@ -2683,7 +3294,8 @@ void ViewAreaController::removeOtherWorkspaces(const QString &p_keepWorkspaceId)
 
 void ViewAreaController::switchWorkspace(const QString &p_currentWorkspaceId,
                                          const QString &p_targetWorkspaceId) {
-  if (p_currentWorkspaceId.isEmpty() || p_targetWorkspaceId.isEmpty()) {
+  if (p_currentWorkspaceId.isEmpty() || p_targetWorkspaceId.isEmpty() ||
+      isPreviewWorkspace(p_currentWorkspaceId) || isPreviewWorkspace(p_targetWorkspaceId)) {
     return;
   }
   if (p_currentWorkspaceId == p_targetWorkspaceId) {
@@ -3193,6 +3805,8 @@ void ViewAreaController::onFileAfterOpen(const FileOpenEvent &p_event) {
   settings.m_alwaysNewWindow = p_event.alwaysNewWindow;
   settings.m_detachedView = p_event.detachedView;
   settings.m_targetWorkspaceId = p_event.targetWorkspaceId;
+  settings.m_previewSourceWindowId = p_event.previewSourceWindowId;
+  settings.m_previewSourceGeneration = p_event.previewSourceGeneration;
   // Reconstruct SearchHighlightContext from event's search fields.
   if (!p_event.searchPatterns.isEmpty()) {
     settings.m_searchHighlight.m_patterns = p_event.searchPatterns;
@@ -3489,6 +4103,9 @@ QString ViewAreaController::generateWorkspaceName() const {
     QJsonArray workspaces = wsSvc->listWorkspaces();
     for (int i = 0; i < workspaces.size(); ++i) {
       QJsonObject wsObj = workspaces[i].toObject();
+      if (wsObj.value(QLatin1String(vxcore::kJsonKeyIsPreview)).toBool()) {
+        continue;
+      }
       QString name = wsObj.value(QStringLiteral("name")).toString();
       QRegularExpressionMatch match = re.match(name);
       if (match.hasMatch()) {
@@ -3511,6 +4128,17 @@ void ViewAreaController::onNotebookBeforeClose(HookContext &p_ctx,
     if (conversion->m_nodeId.notebookId == p_event.notebookId) {
       p_ctx.cancel();
       return;
+    }
+  }
+  // A source notebook can own a dirty preview of another notebook, including
+  // while its source tab is stored in a hidden ordinary workspace.
+  if (m_view) {
+    const auto previews = m_view->previewWorkspacesForSourceNotebook(p_event.notebookId);
+    for (const auto &workspaceId : previews) {
+      if (!closePreviewWorkspace(workspaceId)) {
+        p_ctx.cancel();
+        return;
+      }
     }
   }
 
@@ -3543,7 +4171,7 @@ void ViewAreaController::onNotebookBeforeClose(HookContext &p_ctx,
 }
 
 void ViewAreaController::onNotebookAfterClose(const NotebookCloseEvent &p_event) {
-  // Phase 1: Close tabs in visible workspaces and detached windows.
+  // Phase 1: Include preview targets even when their source is hidden.
   if (m_view) {
     QStringList targetWsIds = m_view->getVisibleWorkspaceIds();
     // Detached windows are hosted outside the main splitter tree; include their
@@ -3552,6 +4180,11 @@ void ViewAreaController::onNotebookAfterClose(const NotebookCloseEvent &p_event)
     for (const auto &detWsId : m_detachedWorkspaceIds) {
       if (!targetWsIds.contains(detWsId)) {
         targetWsIds.append(detWsId);
+      }
+    }
+    for (auto it = m_workspaces.constBegin(); it != m_workspaces.constEnd(); ++it) {
+      if (it.value()->isPreview() && !targetWsIds.contains(it.key())) {
+        targetWsIds.append(it.key());
       }
     }
     for (const auto &bufferId : m_pendingNotebookCloseBufferIds) {
@@ -3567,7 +4200,7 @@ void ViewAreaController::onNotebookAfterClose(const NotebookCloseEvent &p_event)
   // Phase 2: Close tabs in hidden workspaces.
   for (auto it = m_workspaces.begin(); it != m_workspaces.end(); ++it) {
     auto *wrapper = it.value();
-    if (wrapper->isVisible()) {
+    if (wrapper->isPreview() || wrapper->isVisible()) {
       continue;
     }
     QVector<QObject *> allWindows = wrapper->takeAllViewWindows();
@@ -3616,8 +4249,9 @@ void ViewAreaController::checkActiveBufferForExternalChanges() {
   }
   m_fileCheckInProgress = true;
 
-  if (!m_currentWorkspaceId.isEmpty() && m_view) {
-    QString activeBufferId = m_view->getCurrentBufferIdForWorkspace(m_currentWorkspaceId);
+  const QString workspaceId = getCurrentWorkspaceId();
+  if (!workspaceId.isEmpty() && m_view) {
+    QString activeBufferId = m_view->getCurrentBufferIdForWorkspace(workspaceId);
     if (!activeBufferId.isEmpty()) {
       auto *bufferSvc = m_services.get<BufferService>();
       if (bufferSvc) {

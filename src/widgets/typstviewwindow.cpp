@@ -945,7 +945,7 @@ void TypstViewWindow::addResourceContextActions(const vte::TypstResourceContext 
               return;
             }
             const auto interaction = owner->retainNativeInteraction();
-            owner->m_typstEditor->openContextLink(context);
+            owner->m_typstEditor->openContextLink(context, true);
           },
           Qt::QueuedConnection);
     }
@@ -1591,10 +1591,10 @@ void TypstViewWindow::connectEditorSignals() {
             }
           });
   connect(m_typstEditor, &vte::VTypstEditor::externalLinkRequested, this,
-          [this](const QUrl &p_url) {
+          [this](const QUrl &p_url, bool p_fromContextMenu) {
             if (m_sourceAvailable && isEnabled()) {
               const auto interaction = retainNativeInteraction();
-              m_controller->requestOpenLink(p_url);
+              m_controller->requestOpenLink(p_url, getLinkOpenSettings(p_fromContextMenu));
             }
           });
   connect(m_typstEditor, &vte::VTypstEditor::pdfNavigationChanged, this,

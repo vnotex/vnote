@@ -140,6 +140,9 @@ QVariantMap FileOpenEvent::toVariantMap() const {
   m[QStringLiteral("alwaysNewWindow")] = alwaysNewWindow;
   m[QStringLiteral("detachedView")] = detachedView;
   m[QStringLiteral("targetWorkspaceId")] = targetWorkspaceId;
+  m[QStringLiteral("previewSourceWindowId")] = QVariant::fromValue<quint64>(previewSourceWindowId);
+  m[QStringLiteral("previewSourceGeneration")] =
+      QVariant::fromValue<quint64>(previewSourceGeneration);
   if (!searchPatterns.isEmpty()) {
     m[QStringLiteral("searchPatterns")] = QVariant::fromValue(searchPatterns);
     m[QStringLiteral("searchOptions")] = searchOptions;
@@ -164,6 +167,8 @@ FileOpenEvent FileOpenEvent::fromVariantMap(const QVariantMap &p_args) {
   e.alwaysNewWindow = p_args.value(QStringLiteral("alwaysNewWindow")).toBool();
   e.detachedView = p_args.value(QStringLiteral("detachedView")).toBool();
   e.targetWorkspaceId = p_args.value(QStringLiteral("targetWorkspaceId")).toString();
+  e.previewSourceWindowId = p_args.value(QStringLiteral("previewSourceWindowId")).toULongLong();
+  e.previewSourceGeneration = p_args.value(QStringLiteral("previewSourceGeneration")).toULongLong();
   e.searchPatterns = p_args.value(QStringLiteral("searchPatterns")).toStringList();
   e.searchOptions = p_args.value(QStringLiteral("searchOptions")).toInt();
   e.searchCurrentMatchLine = p_args.value(QStringLiteral("searchCurrentMatchLine"), -1).toInt();

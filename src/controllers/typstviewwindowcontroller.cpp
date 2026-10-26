@@ -606,7 +606,8 @@ void TypstViewWindowController::requestOpenSource(const QString &p_file, int p_s
   }
 }
 
-void TypstViewWindowController::requestOpenLink(const QUrl &p_url) {
+void TypstViewWindowController::requestOpenLink(const QUrl &p_url,
+                                                const FileOpenSettings &p_settings) {
   if (m_externalConfirmationActive || !bufferAvailable() || p_url.isEmpty() ||
       !m_pendingExternalLink.isEmpty()) {
     return;
@@ -647,7 +648,7 @@ void TypstViewWindowController::requestOpenLink(const QUrl &p_url) {
     // ViewAreaController retains ownership of editor selection and file associations.
     node.relativePath = canonicalPath;
   }
-  FileOpenSettings settings;
+  auto settings = p_settings;
   settings.m_anchor = p_url.fragment(QUrl::FullyDecoded);
   const auto generation = m_generation;
   const QPointer<TypstViewWindowController> guard(this);
