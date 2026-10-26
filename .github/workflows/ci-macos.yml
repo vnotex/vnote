@@ -404,10 +404,16 @@ jobs:
                   try:
                       diagnostics.mkdir(parents=True, exist_ok=True)
                       stem = diagnostics / f'consumer-{architecture}'
+                      # Keep the privileged sample's destination runner-owned/readable.
+                      stem.with_suffix('.rosetta.txt').touch()
                       with stem.with_suffix('.log').open('w') as output:
                           for diagnostic in (
                               ['sample', str(process.pid), '2', '-file', str(stem.with_suffix('.sample.txt'))],
                               ['screencapture', '-x', str(stem.with_suffix('.png'))],
+                              ['/usr/sbin/lsof', '-nP', '-p', str(process.pid)],
+                              ['/usr/bin/vmmap', str(process.pid)],
+                              ['sudo', '-n', '/usr/bin/sample', 'oahd', '2',
+                               '-file', str(stem.with_suffix('.rosetta.txt'))],
                           ):
                               output.write(' '.join(diagnostic) + '\n')
                               output.flush()
@@ -557,6 +563,17 @@ jobs:
           path: ${{runner.temp}}/vnote-package-diagnostics
           if-no-files-found: warn
           retention-days: 7
+
+      # Diagnostic only: upload the app image, never its adjacent signing files.
+      - name: Preserve failed signed package
+        if: ${{ always() && steps.package_verify.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: failed-package-macos-${{matrix.config.qt}}
+          path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg
+          compression-level: 0
+          if-no-files-found: warn
+          retention-days: 1
 
       - name: Archive DMG
         uses: actions/upload-artifact@v4

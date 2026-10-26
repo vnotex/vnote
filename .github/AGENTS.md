@@ -105,7 +105,12 @@ On macOS, architecture probes and ABI workers reuse the gate's already-running P
 probe, mandatory native-architecture execution, and existing non-host availability policy.
 A packaged-consumer timeout remains a failure. Capture bounded native stack/screen diagnostics
 under `RUNNER_TEMP`, terminate only that unreaped probe's own process group, and retain the
-matrix-specific diagnostic artifact. Do not mask the timeout or force-unmount a busy package.
+matrix-specific diagnostic artifact. Include open-file, memory-map and bounded read-only
+Rosetta-daemon samples to locate pre-main loader stalls; pre-create privileged sample output
+as the runner user. A separate one-day `failed-package-macos-<Qt version>` artifact retains
+only the exact signed DMG for reproduction, never adjacent certificates/keychains or the build
+directory. It is diagnostic-only, not a release. Do not mask the timeout, force-unmount a busy
+package, or move SSH sessions past signing-secret provisioning.
 
 ## macOS runtime composition
 
