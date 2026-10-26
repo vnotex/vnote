@@ -8,11 +8,13 @@ then run using only the signed package's frameworks, helper and resources.
 import argparse
 import os
 from pathlib import Path
+import platform
 import re
 import select
 import subprocess
 import sys
 import tempfile
+import time
 
 
 CASES = {
@@ -24,6 +26,9 @@ CASES = {
     "en_GB": "en-US.pak",
 }
 PROBE = r'''
+#if defined(__aarch64__)
+#include <arm_acle.h>
+#endif
 #include <QtCore/QLocale>
 #include <QtCore/QSocketNotifier>
 #include <QtCore/QTimer>
@@ -58,6 +63,21 @@ int main(int argc, char **argv) {
                "Packaged WebEngine rendered</h1></body></html>");
   return app.exec();
 }
+'''
+
+
+PROBE_CMAKE = r'''
+cmake_minimum_required(VERSION 3.21)
+project(VNotePackageProbe LANGUAGES CXX)
+find_package(Qt6 REQUIRED COMPONENTS Widgets WebEngineWidgets)
+add_executable(probe probe.cpp)
+target_compile_features(probe PRIVATE cxx_std_17)
+target_link_libraries(probe PRIVATE Qt6::Widgets Qt6::WebEngineWidgets)
+set_target_properties(probe PROPERTIES
+    BUILD_WITH_INSTALL_RPATH TRUE
+    INSTALL_RPATH "${VNOTE_PACKAGE_FRAMEWORKS}"
+    INSTALL_RPATH_USE_LINK_PATH FALSE
+)
 '''
 
 
@@ -115,12 +135,23 @@ def smoke(app, qt_prefix):
         root = Path(directory)
         source = root / "probe.cpp"
         source.write_text(PROBE, encoding="utf-8")
-        probe = root / "probe"
-        command = ["/usr/bin/clang++", "-std=c++17", str(source), "-o", str(probe),
-                   "-F" + str(qt_prefix / "lib"), "-Wl,-rpath," + str(frameworks)]
-        for framework in ("QtCore", "QtGui", "QtWidgets", "QtWebEngineCore", "QtWebEngineWidgets"):
-            command += ["-framework", framework]
-        subprocess.run(command, check=True, timeout=120)
+        (root / "CMakeLists.txt").write_text(PROBE_CMAKE, encoding="utf-8")
+        build = root / "build"
+        probe = build / "probe"
+        commands = (
+            ["cmake", "-S", str(root), "-B", str(build), "-G", "Unix Makefiles",
+             "-DCMAKE_BUILD_TYPE=Release", f"-DCMAKE_OSX_ARCHITECTURES={platform.machine()}",
+             f"-DQt6_DIR={qt_prefix / 'lib/cmake/Qt6'}",
+             f"-DVNOTE_PACKAGE_FRAMEWORKS={frameworks}"],
+            ["cmake", "--build", str(build), "--config", "Release"],
+        )
+        # Configuration and compilation share the original compiler budget.
+        deadline = time.monotonic() + 120
+        for command in commands:
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                raise subprocess.TimeoutExpired(command, 120)
+            subprocess.run(command, check=True, timeout=remaining)
         clean_env = {key: value for key, value in os.environ.items()
                      if not key.upper().startswith(("QT", "QML", "CARGO", "RUST", "TYPST", "VTEXTEDIT", "LD_", "DYLD"))
                      and key not in ("CMAKE_PREFIX_PATH", "LIBRARY_PATH", "PYTHONPATH", "PYTHONHOME")}

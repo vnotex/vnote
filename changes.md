@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Build the macOS WebEngine package probe with Qt target requirements and the ARM intrinsic declaration while retaining package-only runtime paths and locale assertions
 * Verify the same signed macOS packages on native Apple Silicon and Intel runners within the existing launch deadline, and publish only after both architectures pass
 * Retain failed signed macOS packages and bounded loader/Rosetta diagnostics without weakening the consumer launch gate
 * Unlock the macOS test vault after compilation and preserve bounded package-consumer timeout diagnostics while cleaning up the owned process group

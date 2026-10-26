@@ -152,6 +152,11 @@ probe against the SDK but runs against the signed package: separate processes fo
 each supported locale plus German/British-English fallback, actual DOM rendering,
 and mapped framework/locale paths in both browser and helper. It must not resolve
 runtime resources from the SDK or ship its probe in the app.
+Build the probe with Qt's imported CMake targets, including their transitive header modules,
+not a hand-maintained framework/include list. Declare the ARM yield intrinsic before Qt headers
+on ARM hosts. Configure and compile share one 120-second budget; target only the host architecture.
+Use `BUILD_WITH_INSTALL_RPATH` with the signed package Frameworks directory and no SDK link-path
+RPATH additions. Keep the 45-second render and 15-second shutdown bounds and all locale checks.
 
 ## Windows runtime (Qt 6)
 
