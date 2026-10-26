@@ -1,5 +1,7 @@
 # Changes
 ## Unreleased
+* Open Typst context-menu links after the menu unwinds so native consent cannot strand its event loop; revoke queued actions when the originating view changes
+* Give Linux cold-build jobs the same artifact-publication budget as Windows and macOS without changing test deadlines
 * Settle first-paint gutter layout and acknowledge Windows native drag startup before delivering test drag destinations
 * Keep in-place Typst resource menus alive through native activation when preview replacement retires their card
 * Add key-restricted SSH-only CI debugging and finalize macOS deployment after all test-build relinks

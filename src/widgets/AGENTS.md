@@ -287,6 +287,13 @@ parse Typst with host regexes or use a page crop as the original image. Resize p
 arguments/comments and commits one native Undo step. Viewing/copying also works in Read and
 read-only notes, without source edits, asset writes, or network acquisition.
 
+**Open Link** is queued on the owning `TypstViewWindow`, not on the temporary menu.
+Let the context menu unwind before external-link consent enters a native modal loop;
+otherwise Cocoa can lose the menu's exit interruption while starting its alert. Recheck
+the captured resource generation and context at dispatch. Menu deletion must not cancel
+an admitted link, but edit, retarget, close and owner destruction must revoke it. Other
+resource actions retain direct admission; controller confirmation remains synchronous.
+
 The shared `ImageViewer::Mode::Overlay` covers the composite editor and supports fit, zoom,
 pan, Escape, Close, and backdrop dismissal. Plain preview-image double-click opens it; linked
 images retain link navigation. Restore focus only on explicit dismissal, preserve the source

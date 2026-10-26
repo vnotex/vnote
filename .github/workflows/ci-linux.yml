@@ -32,7 +32,7 @@ jobs:
     name: Build On Ubuntu 22.04
     # Build on the oldest supported Ubuntu so the AppImage works with glibc 2.35 (#2748).
     runs-on: ubuntu-22.04
-    timeout-minutes: 120
+    timeout-minutes: 180
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.

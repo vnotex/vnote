@@ -728,6 +728,8 @@ private slots:
   void resourceLinkMenus_data();
   void resourceLinkMenus();
   void resourceRemoteConsent();
+  void resourceQueuedLinkRetirement_data();
+  void resourceQueuedLinkRetirement();
   void resourceUnrelatedSource_data();
   void resourceUnrelatedSource();
   void resourceResize_data();
@@ -1267,7 +1269,7 @@ void TestTypstViewWindowInsertion::resourceLinkMenus() {
   QVERIFY(desktop.opened.isEmpty());
   menu = resourceMenu(target.first, target.second, QStringLiteral("typstOpenLink"));
   QVERIFY(menu.clicked);
-  QCOMPARE(opened.size(), 1);
+  QTRY_COMPARE(opened.size(), 1);
   QCOMPARE(opened.first().anchor, url.fragment(QUrl::FullyDecoded));
   const auto buffer = m_buffers->getBufferHandle(opened.first().bufferId);
   QVERIFY(buffer.isValid());
@@ -1387,12 +1389,55 @@ void TestTypstViewWindowInsertion::resourceRemoteConsent() {
     answer.start();
 #endif
     QVERIFY(resourceMenu(target.first, target.second, QStringLiteral("typstOpenLink")).clicked);
+    QVERIFY2(
+        QTest::qWaitFor([&] { return !error.isEmpty() || (prompted && question.isNull()); }, 8000),
+        "External-link consent did not complete");
     stopAnswer();
     QVERIFY2(error.isEmpty(), qPrintable(error));
     QVERIFY(prompted);
     QCOMPARE(desktop.opened.size(), accept ? 1 : 0);
   }
   QCOMPARE(desktop.opened.first(), QUrl(destination));
+}
+
+void TestTypstViewWindowInsertion::resourceQueuedLinkRetirement_data() {
+  QTest::addColumn<QString>("change");
+  for (const auto *change : {"edit", "retarget", "close", "destroy"})
+    QTest::newRow(change) << QString::fromLatin1(change);
+}
+
+void TestTypstViewWindowInsertion::resourceQueuedLinkRetirement() {
+  QFETCH(QString, change);
+  QVERIFY(
+      !m_notebooks->createFile(m_notebookId, QString(), QStringLiteral("target.txt")).isEmpty());
+  show(openNote(QStringLiteral("main.typst"),
+                TypstViewWindowController::linkMarkup(QStringLiteral("target.txt"),
+                                                      QStringLiteral("Deferred target"))));
+  QVERIFY(ready());
+  const auto target = resourceTarget(QStringLiteral("source"), QStringLiteral("Deferred target"));
+  QVERIFY(target.first);
+  QList<FileOpenEvent> opened;
+  const auto hook = m_hooks->addAction<FileOpenEvent>(
+      HookNames::FileAfterOpen,
+      [&](HookContext &, const FileOpenEvent &event) { opened.append(event); });
+  const auto remove = qScopeGuard([&] { m_hooks->removeAction(hook); });
+  PreviewUrlSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("file"), &desktop, "open");
+  const auto restore =
+      qScopeGuard([] { QDesktopServices::unsetUrlHandler(QStringLiteral("file")); });
+  bool retired = false;
+  const auto menu =
+      resourceMenu(target.first, target.second, QStringLiteral("typstOpenLink"), [&](QMenu *popup) {
+        auto *action = popup->findChild<QAction *>(QStringLiteral("typstOpenLink"));
+        if (action)
+          connect(action, &QAction::triggered, this, [&] { retired = retireResource(change); });
+      });
+  QVERIFY(menu.clicked);
+  QVERIFY(retired);
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::MetaCall);
+  QVERIFY(opened.isEmpty());
+  QVERIFY(desktop.opened.isEmpty());
+  QVERIFY(!QApplication::activeModalWidget());
 }
 
 void TestTypstViewWindowInsertion::resourceUnrelatedSource_data() {

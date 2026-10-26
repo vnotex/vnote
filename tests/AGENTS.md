@@ -207,7 +207,8 @@ message box. Do not stop on the first click or infer dialog readiness from
 `QThread::loopLevel()`.
 
 `resourceRemoteConsent` owns a parent-matched `QPointer<QMessageBox>` and an answer timer
-until the resource-menu operation returns. A Cocoa native alert's QWidget is a hidden
+through queued Open Link dispatch and destruction of its completed message box, not just
+until the context menu returns. A Cocoa native alert's QWidget is a hidden
 mirror (`WA_DontShowOnScreen`), not its interactive surface: click the real NSButton's
 Yes/No tag on the active native alert, or the parent's attached sheet for WindowModal.
 Never re-show or click that dummy QWidget during native modal startup. The QWidget fallback
