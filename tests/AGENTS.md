@@ -235,15 +235,21 @@ without depending on GUI timers: Windows OLE and Cocoa tracking loops can starve
 Use joined native-input workers, restoring the cursor and preventing late input from
 reaching the next case; Cocoa retains app-local NSEvents rather than global HID input.
 Windows drag motion uses non-coalesced `SendInput` records in normalized virtual-desktop
-coordinates, after repainting, completing `DwmFlush`, and observing the source pointer
-position. Require the hit widget to be the source viewport, not merely the same process.
-Failure diagnostics passively record native move/press/activation messages and GUI-thread
-state. Query `GetGUIThreadInfo(guiThreadId)` from the worker, not its own GetFocus/GetCapture;
+coordinates. After selecting text, acquire foreground, repaint, deliver posted `LayoutRequest`
+events, repaint the resolved gutter layout and complete `DwmFlush` before measuring positions.
+After source-pointer receipt, recheck mapped start/end and `widgetAt` before pressing: a
+first-paint gutter update must not move the viewport underneath cached coordinates.
+Failure diagnostics record native move/press/activation messages and GUI-thread state.
+Query `GetGUIThreadInfo(guiThreadId)` from the worker, not its own GetFocus/GetCapture;
 never consume or reroute an event just to make the fixture pass.
-Native workers wait for the press
-and threshold mouse move before sending the destination; waiting for OLE drag entry first
-can deadlock. Destination arrival can be DragEnter or DragMove. Release follows arrival or
-the bounded deadline; workers always attempt release and restore the saved pointer. Cocoa
+Windows workers acknowledge the press and threshold, then post a registered native message to
+the source HWND. The GUI filter acknowledges it only while an owned `QDrag` exists. Send one
+distinct bootstrap motion, await capture transfer from the fixture to a GUI-thread window,
+then send the final destination; an already-posted capture never skips the bootstrap motion.
+All waits share the original deadline. Qt timers or waiting for DragEnter before startup motion
+can deadlock in Qt's filtered native pump. Destination arrival can be DragEnter or DragMove.
+Release follows arrival or the bounded deadline; joined workers always attempt release and
+restore the saved pointer. Cocoa
 creates timestamped NSEvents at dispatch, without warping ahead of delivered source events.
 Create native peers before measuring drag coordinates. Derive Cocoa's Quartz pointer and
 AppKit window event from the same Qt global point, converting through the primary screen

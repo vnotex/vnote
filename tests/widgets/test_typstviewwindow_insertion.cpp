@@ -3364,6 +3364,18 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   m_edit->setFocus();
   QTRY_VERIFY(m_edit->hasFocus());
   select(url);
+#ifdef Q_OS_WIN
+  SetForegroundWindow(window);
+  if (!QTest::qWaitFor([&] { return GetForegroundWindow() == window; }, 1000)) {
+    QSKIP("Windows denied foreground input to the native drag fixture");
+  }
+  // First paint computes the gutter width and posts a layout request. Resolve
+  // that layout before measuring input, then present the resolved geometry.
+  m_window->repaint();
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::LayoutRequest);
+  m_window->repaint();
+  QVERIFY2(SUCCEEDED(DwmFlush()), "Windows could not present the native drag fixture");
+#endif
   const auto before = filesBelow(assetFolder());
   auto startCursor = m_edit->textCursor();
   startCursor.setPosition(startCursor.selectionStart() + 4);
@@ -3426,12 +3438,29 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   m_edit->viewport()->installEventFilter(&progress);
 #endif
 #ifdef Q_OS_WIN
+  const UINT readyMessage = RegisterWindowMessageW(L"VNoteNativeTextDragReady");
+  QVERIFY2(readyMessage != 0, "Windows could not register the native drag barrier");
   struct NativeMouseTrace : QAbstractNativeEventFilter {
+    QPointer<QWidget> owner;
+    UINT readyMessage = 0;
+    QSemaphore ready, captured;
     int moves = 0, downs = 0, activations = 0, activationHit = 0;
     UINT downType = 0;
     HWND moveWindow = nullptr, downWindow = nullptr;
     bool nativeEventFilter(const QByteArray &, void *p_message, qintptr *) override {
       const auto &message = *static_cast<const MSG *>(p_message);
+      if (message.message == readyMessage && owner && owner->findChild<QDrag *>()) {
+        ready.release();
+      }
+      if (message.message == WM_CAPTURECHANGED && message.lParam && owner &&
+          owner->findChild<QDrag *>()) {
+        const auto *previous = QWidget::find(reinterpret_cast<WId>(message.hwnd));
+        if (previous && previous->window() == owner &&
+            GetWindowThreadProcessId(reinterpret_cast<HWND>(message.lParam), nullptr) ==
+                GetCurrentThreadId()) {
+          captured.release();
+        }
+      }
       if (message.message == WM_MOUSEMOVE) {
         ++moves;
         moveWindow = message.hwnd;
@@ -3446,15 +3475,10 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
       return false;
     }
   } nativeTrace;
+  nativeTrace.owner = m_window.get();
+  nativeTrace.readyMessage = readyMessage;
   qApp->installNativeEventFilter(&nativeTrace);
   const auto removeNativeTrace = qScopeGuard([&] { qApp->removeNativeEventFilter(&nativeTrace); });
-  SetForegroundWindow(window);
-  if (!QTest::qWaitFor([&] { return GetForegroundWindow() == window; }, 1000)) {
-    QSKIP("Windows denied foreground input to the native drag fixture");
-  }
-  // Win32 activation/exposure precedes the compositor's presented hit-test frame.
-  m_window->repaint();
-  QVERIFY2(SUCCEEDED(DwmFlush()), "Windows could not present the native drag fixture");
   const auto scale = m_window->devicePixelRatioF();
   bool mapped = true;
   const auto nativePoint = [&](const QPoint &point) {
@@ -3503,6 +3527,7 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   };
   auto positionInput = motion(globalStart);
   auto thresholdInput = motion(nativePoint(threshold));
+  auto startupInput = motion(nativePoint(threshold + QPoint(1, 0)));
   auto destinationInput = motion(globalEnd);
   const auto button = [](DWORD flags) {
     INPUT event = {};
@@ -3514,6 +3539,7 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   QVERIFY(GetCursorPos(&previousPointer));
   std::atomic<bool> releasePosted{false}, sequenceComplete{false};
   bool pressAcknowledged = false, thresholdAcknowledged = false, destinationAcknowledged = false;
+  bool readyMessagePosted = false, nativeStartAcknowledged = false, captureAcknowledged = false;
   POINT pointerAfterPress{-1, -1};
   const DWORD guiThread = GetCurrentThreadId();
   GUITHREADINFO guiBefore{}, guiAtRelease{};
@@ -3537,21 +3563,38 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
                  },
                  deadline.remainingTime()),
              "Windows did not deliver the source pointer position");
+    QVERIFY2(m_edit->viewport()->mapToGlobal(start) == qtStart &&
+                 m_edit->viewport()->mapToGlobal(end) == qtEnd &&
+                 QApplication::widgetAt(qtStart) == m_edit->viewport(),
+             "Native drag viewport geometry changed after measurement");
     gotGuiBefore = GetGUIThreadInfo(guiThread, &guiBefore);
     leftDownBefore = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
     QVERIFY(button(MOUSEEVENTF_LEFTDOWN));
     GetCursorPos(&pointerAfterPress);
-    // The threshold mouse move starts QDrag. OLE may need the next motion
-    // before DragEnter, so waiting for enter before sending it deadlocks.
+    // The event filter sees the threshold before QTextEdit constructs QDrag.
+    // A native window message reaches its startup pump before bootstrap motion;
+    // a Qt timer or waiting for DragEnter cannot bootstrap that native pump.
     std::thread input([&] {
       pressAcknowledged = progress.pressed.tryAcquire(1, deadline);
       if (pressAcknowledged && SendInput(1, &thresholdInput, sizeof(INPUT)) == 1) {
         thresholdAcknowledged = progress.thresholdMoved.tryAcquire(1, deadline);
       }
-      if (thresholdAcknowledged && SendInput(1, &destinationInput, sizeof(INPUT)) == 1) {
+      if (thresholdAcknowledged) {
+        readyMessagePosted = PostMessageW(hit, readyMessage, 0, 0) != 0;
+        if (readyMessagePosted)
+          nativeStartAcknowledged = nativeTrace.ready.tryAcquire(1, deadline);
+      }
+      if (nativeStartAcknowledged && SendInput(1, &startupInput, sizeof(INPUT)) == 1) {
+        captureAcknowledged = nativeTrace.captured.tryAcquire(1, deadline);
+      }
+      // The bootstrap move is consumed by native startup. OLE's capture handoff
+      // admits a distinct destination move, even if capture was already posted.
+      if (captureAcknowledged && SendInput(1, &destinationInput, sizeof(INPUT)) == 1) {
         destinationAcknowledged = progress.arrived.tryAcquire(1, deadline);
       }
-      sequenceComplete.store(pressAcknowledged && thresholdAcknowledged && destinationAcknowledged);
+      sequenceComplete.store(pressAcknowledged && thresholdAcknowledged &&
+                             nativeStartAcknowledged && captureAcknowledged &&
+                             destinationAcknowledged);
       // Query the GUI thread explicitly; GetFocus/GetCapture here would query this worker.
       gotGuiAtRelease = GetGUIThreadInfo(guiThread, &guiAtRelease);
       leftDownAtRelease = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
@@ -3571,7 +3614,8 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
         << "Windows drag release posted:" << releasePosted.load()
         << "press/threshold/destination ack:" << pressAcknowledged << thresholdAcknowledged
         << destinationAcknowledged << "drag enters:" << progress.enters
-        << "observed press/move:" << progress.lastPress << progress.lastMove
+        << "native barrier posted/ack/capture:" << readyMessagePosted << nativeStartAcknowledged
+        << captureAcknowledged << "observed press/move:" << progress.lastPress << progress.lastMove
         << "button/double clicks:" << progress.lastButton << progress.doubleClicks
         << "pointer after press:" << QPoint(pointerAfterPress.x, pointerAfterPress.y)
         << "native moves/window/downs/type/window/activation/hit:" << nativeTrace.moves

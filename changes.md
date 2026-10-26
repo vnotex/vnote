@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Settle first-paint gutter layout and acknowledge Windows native drag startup before delivering test drag destinations
 * Keep in-place Typst resource menus alive through native activation when preview replacement retires their card
 * Add key-restricted SSH-only CI debugging and finalize macOS deployment after all test-build relinks
 * Preserve successful CI test reports as well as failures so skipped native cases remain visible
