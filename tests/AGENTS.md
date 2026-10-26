@@ -199,7 +199,8 @@ ctest --test-dir build --output-on-failure  # Show output on failure
 which the offscreen UNIX dispatcher does not drain. Do not set
 `QT_EVENT_DISPATCHER_CORE_FOUNDATION`: it also replaces worker-thread dispatchers and
 can stall queued work. Tests also need an unlocked default keychain; macOS CI creates
-a disposable one and restores the previous default after testing.
+a disposable one after compilation, immediately before CTest, so the unlock lease covers
+execution rather than the cold build. It restores the previous default after testing.
 
 For asynchronous modal-error tests, wait for controller completion with `QSignalSpy::wait`.
 Keep the dismissal timer active until completion and restrict it to the tested dialog's

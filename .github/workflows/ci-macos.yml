@@ -149,20 +149,6 @@ jobs:
           cmake -DVNOTE_BUILD_TESTS=${VNOTE_TESTS} -DMACDEPLOYQTFIX_EXECUTABLE=${{runner.workspace}}/macdeployqtfix/macdeployqtfix.py -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64" -DCMAKE_OSX_DEPLOYMENT_TARGET=${{matrix.config.deployment_target}} ${GITHUB_WORKSPACE}
         working-directory: ${{runner.workspace}}/build
 
-      - name: Prepare Test Keychain
-        if: env.VNOTE_TESTS == 'ON'
-        run: |
-          set -e
-          keychain="$RUNNER_TEMP/vnote-tests.keychain-db"
-          password="$(openssl rand -hex 32)"
-          security default-keychain -d user | xargs > "$RUNNER_TEMP/vnote-test-default-keychain"
-          security list-keychains -d user > "$RUNNER_TEMP/vnote-test-keychains"
-          security create-keychain -p "$password" "$keychain"
-          security set-keychain-settings -lut 7200 "$keychain"
-          security unlock-keychain -p "$password" "$keychain"
-          security default-keychain -d user -s "$keychain"
-          xargs security list-keychains -d user -s "$keychain" < "$RUNNER_TEMP/vnote-test-keychains"
-
       - name: Start restricted SSH debug session
         id: debug_session
         if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
@@ -191,19 +177,33 @@ jobs:
         shell: bash
         run: python3 .github/scripts/debug-session.py stop
 
-      - name: Build and Run Tests
-        id: tests
+      - name: Build Tests
         if: env.VNOTE_TESTS == 'ON'
-        # Build the test executables (tests/CMakeLists.txt narrows them to the
-        # host arch on macOS, so this links arm64-only against the universal
-        # libs). Cocoa drains the native main queue used by QtKeychain; the
-        # offscreen platform's UNIX dispatcher does not.
-        # VNOTE_BUILD_TESTS is enabled above only for non-release runs.
-        # QtKeychain tests use the unlocked disposable keychain above and the
-        # native application runner from tests/helpers/test_helper.h.
+        # Cold compilation must not consume the test vault's unlock lease.
+        run: cmake --build . --target all test_typsteditor
+        working-directory: ${{runner.workspace}}/build
+
+      - name: Prepare Test Keychain
+        if: env.VNOTE_TESTS == 'ON'
         run: |
           set -e
-          cmake --build . --target all test_typsteditor
+          keychain="$RUNNER_TEMP/vnote-tests.keychain-db"
+          password="$(openssl rand -hex 32)"
+          security default-keychain -d user | xargs > "$RUNNER_TEMP/vnote-test-default-keychain"
+          security list-keychains -d user > "$RUNNER_TEMP/vnote-test-keychains"
+          security create-keychain -p "$password" "$keychain"
+          security set-keychain-settings -lut 7200 "$keychain"
+          security unlock-keychain -p "$password" "$keychain"
+          security default-keychain -d user -s "$keychain"
+          xargs security list-keychains -d user -s "$keychain" < "$RUNNER_TEMP/vnote-test-keychains"
+
+      - name: Run Tests
+        id: tests
+        if: env.VNOTE_TESTS == 'ON'
+        # QtKeychain needs Cocoa's native main queue and the freshly unlocked vault.
+        # Keep the normal worker-thread dispatchers and native test runner.
+        run: |
+          set -e
           # Path-safety fixtures need a physical temp root, not macOS's /var alias.
           TMPDIR=$(cd "$TMPDIR" && pwd -P)
           export TMPDIR
@@ -372,6 +372,7 @@ jobs:
         working-directory: ${{runner.workspace}}/build
 
       - name: Verify packaged universal Typst runtime
+        id: package_verify
         working-directory: ${{runner.workspace}}/build
         env:
           TYPST_MIN_OS: ${{matrix.config.deployment_target}}
@@ -388,9 +389,51 @@ jobs:
           from pathlib import Path
           import platform
           import re
+          import signal
           import subprocess
           import sys
           import tempfile
+
+          def run_packaged_consumer(command, directory, environment, architecture):
+              process = subprocess.Popen(command, cwd=directory, env=environment,
+                                         start_new_session=True)
+              try:
+                  status = process.wait(timeout=30)
+              except subprocess.TimeoutExpired as original_timeout:
+                  diagnostics = Path(os.environ['RUNNER_TEMP']) / 'vnote-package-diagnostics'
+                  try:
+                      diagnostics.mkdir(parents=True, exist_ok=True)
+                      stem = diagnostics / f'consumer-{architecture}'
+                      with stem.with_suffix('.log').open('w') as output:
+                          for diagnostic in (
+                              ['sample', str(process.pid), '2', '-file', str(stem.with_suffix('.sample.txt'))],
+                              ['screencapture', '-x', str(stem.with_suffix('.png'))],
+                          ):
+                              output.write(' '.join(diagnostic) + '\n')
+                              output.flush()
+                              try:
+                                  observed = subprocess.run(diagnostic, stdout=output,
+                                      stderr=subprocess.STDOUT, timeout=10)
+                                  output.write(f'diagnostic exit={observed.returncode}\n')
+                              except (OSError, subprocess.TimeoutExpired) as error:
+                                  output.write(f'diagnostic unavailable: {error}\n')
+                  except OSError as error:
+                      print(f'Could not retain consumer diagnostics: {error}', file=sys.stderr)
+                  finally:
+                      # Only the timed-out, still-unreaped child's own process group.
+                      try:
+                          os.killpg(process.pid, signal.SIGKILL)
+                      except ProcessLookupError:
+                          pass
+                      except OSError as error:
+                          print(f'Could not stop consumer process group: {error}', file=sys.stderr)
+                      try:
+                          process.wait(timeout=10)
+                      except (OSError, subprocess.TimeoutExpired) as error:
+                          print(f'Could not reap timed-out consumer: {error}', file=sys.stderr)
+                  raise original_timeout
+              if status:
+                  raise subprocess.CalledProcessError(status, command)
 
           app = Path(os.environ['RUNNER_TEMP']) / 'typst-package/VNote.app/Contents'
           # Check every real Mach-O, including dynamically loaded plugins/helpers.
@@ -498,13 +541,22 @@ jobs:
                   launch_env = dict(clean_env, HOME=directory, CFFIXED_USER_HOME=directory,
                                     XDG_CONFIG_HOME=directory, XDG_DATA_HOME=directory,
                                     XDG_CACHE_HOME=directory)
-                  subprocess.run(['/usr/bin/arch', f'-{arch}', str(executable), '--help'],
-                                 cwd=directory, env=launch_env, check=True, timeout=30)
+                  run_packaged_consumer(['/usr/bin/arch', f'-{arch}', str(executable), '--help'],
+                                        directory, launch_env, arch)
           print(f'Library and consumer launches verified on runner macOS {platform.mac_ver()[0]}; '
                 'minimum-OS metadata does not prove launch on Monterey or another older OS.', flush=True)
           PY
           python3 "${GITHUB_WORKSPACE}/scripts/e2e/smoke_webengine_package.py" \
             --app "$mountpoint/VNote.app" --qt-prefix "$(qmake -query QT_INSTALL_PREFIX)"
+
+      - name: Preserve failed package consumer diagnostics
+        if: ${{ always() && steps.package_verify.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-consumer-diagnostics-macos-${{matrix.config.qt}}
+          path: ${{runner.temp}}/vnote-package-diagnostics
+          if-no-files-found: warn
+          retention-days: 7
 
       - name: Archive DMG
         uses: actions/upload-artifact@v4

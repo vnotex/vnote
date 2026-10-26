@@ -27,6 +27,9 @@ failure history can rerun a passing suite after an unrelated failure.
 Linux, Windows and macOS allow 180 minutes for cold builds, full native test suites,
 package gates and artifact publication. Keep the individual CTest deadlines; the job
 budget is not a test timeout.
+macOS creates and unlocks its disposable test keychain only after test compilation,
+right before running CTest. Cold builds must not consume the vault's unlock lease;
+restore the original keychain before final packaging and signing.
 
 ## Interactive CI debugging
 
@@ -35,7 +38,7 @@ budget is not a test timeout.
 pinned `uptermd.upterm.dev` host-certificate authority. There is no web-shell or
 anonymous fallback. Never put a private key into inputs, logs or artifacts.
 
-Debug sessions start after tool setup (and the macOS test keychain), before the
+Debug sessions start after tool setup (and macOS configuration), before the
 expensive build/test steps. The small `debug-connection-*` artifact is available
 while the job is paused; macOS names include the Qt version. Authenticate with the
 matching private key and verify the pinned relay key. `exit 0` in the hosted shell
@@ -100,6 +103,9 @@ ctypes alone does not prove VTextEdit/VNote linkage. Reject the old Typst execut
 On macOS, architecture probes and ABI workers reuse the gate's already-running Python
 (`sys.executable`), not a different `/usr/bin/python3` runtime. Keep the 15-second architecture
 probe, mandatory native-architecture execution, and existing non-host availability policy.
+A packaged-consumer timeout remains a failure. Capture bounded native stack/screen diagnostics
+under `RUNNER_TEMP`, terminate only that unreaped probe's own process group, and retain the
+matrix-specific diagnostic artifact. Do not mask the timeout or force-unmount a busy package.
 
 ## macOS runtime composition
 
