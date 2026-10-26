@@ -103,6 +103,15 @@ ctypes alone does not prove VTextEdit/VNote linkage. Reject the old Typst execut
 On macOS, architecture probes and ABI workers reuse the gate's already-running Python
 (`sys.executable`), not a different `/usr/bin/python3` runtime. Keep the 15-second architecture
 probe, mandatory native-architecture execution, and existing non-host availability policy.
+`scripts/e2e/smoke_macos_consumer.py` requires the expected native architecture and launches
+VNote with the unchanged 30-second budget and an isolated home. Build jobs retain ARM native
+tests, both available ABI slices and the WebEngine gate. Separate `macos-15-intel` jobs download
+the same signed DMGs and require native x86_64 ABI and consumer execution for both Qt kits.
+Cold Rosetta translation of QtWebEngineCore can exceed the launch budget before main; do not
+warm its cache, retry to green, or increase the deadline instead of using native Intel proof.
+Staged DMG artifacts are inputs to verification, not publication approval. Both continuous and
+versioned publication depend on all ARM build/gates and both Intel verification jobs, and
+publish the unchanged signed artifacts. Native macOS 15 Intel proof is not a Monterey test.
 A packaged-consumer timeout remains a failure. Capture bounded native stack/screen diagnostics
 under `RUNNER_TEMP`, terminate only that unreaped probe's own process group, and retain the
 matrix-specific diagnostic artifact. Include open-file, memory-map and bounded read-only

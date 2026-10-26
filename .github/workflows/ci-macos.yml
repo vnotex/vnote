@@ -389,57 +389,8 @@ jobs:
           from pathlib import Path
           import platform
           import re
-          import signal
           import subprocess
           import sys
-          import tempfile
-
-          def run_packaged_consumer(command, directory, environment, architecture):
-              process = subprocess.Popen(command, cwd=directory, env=environment,
-                                         start_new_session=True)
-              try:
-                  status = process.wait(timeout=30)
-              except subprocess.TimeoutExpired as original_timeout:
-                  diagnostics = Path(os.environ['RUNNER_TEMP']) / 'vnote-package-diagnostics'
-                  try:
-                      diagnostics.mkdir(parents=True, exist_ok=True)
-                      stem = diagnostics / f'consumer-{architecture}'
-                      # Keep the privileged sample's destination runner-owned/readable.
-                      stem.with_suffix('.rosetta.txt').touch()
-                      with stem.with_suffix('.log').open('w') as output:
-                          for diagnostic in (
-                              ['sample', str(process.pid), '2', '-file', str(stem.with_suffix('.sample.txt'))],
-                              ['screencapture', '-x', str(stem.with_suffix('.png'))],
-                              ['/usr/sbin/lsof', '-nP', '-p', str(process.pid)],
-                              ['/usr/bin/vmmap', str(process.pid)],
-                              ['sudo', '-n', '/usr/bin/sample', 'oahd', '2',
-                               '-file', str(stem.with_suffix('.rosetta.txt'))],
-                          ):
-                              output.write(' '.join(diagnostic) + '\n')
-                              output.flush()
-                              try:
-                                  observed = subprocess.run(diagnostic, stdout=output,
-                                      stderr=subprocess.STDOUT, timeout=10)
-                                  output.write(f'diagnostic exit={observed.returncode}\n')
-                              except (OSError, subprocess.TimeoutExpired) as error:
-                                  output.write(f'diagnostic unavailable: {error}\n')
-                  except OSError as error:
-                      print(f'Could not retain consumer diagnostics: {error}', file=sys.stderr)
-                  finally:
-                      # Only the timed-out, still-unreaped child's own process group.
-                      try:
-                          os.killpg(process.pid, signal.SIGKILL)
-                      except ProcessLookupError:
-                          pass
-                      except OSError as error:
-                          print(f'Could not stop consumer process group: {error}', file=sys.stderr)
-                      try:
-                          process.wait(timeout=10)
-                      except (OSError, subprocess.TimeoutExpired) as error:
-                          print(f'Could not reap timed-out consumer: {error}', file=sys.stderr)
-                  raise original_timeout
-              if status:
-                  raise subprocess.CalledProcessError(status, command)
 
           app = Path(os.environ['RUNNER_TEMP']) / 'typst-package/VNote.app/Contents'
           # Check every real Mach-O, including dynamically loaded plugins/helpers.
@@ -527,31 +478,27 @@ jobs:
                          cwd=app, env=clean_env, check=True)
           print(f'Architecture smoke interpreter: {sys.executable}', flush=True)
           host_arch = subprocess.check_output(['/usr/bin/uname', '-m'], text=True).strip()
-          with tempfile.TemporaryDirectory(prefix='vnote-typst-arch-') as directory:
-              for arch in ('x86_64', 'arm64'):
-                  # Reuse the interpreter that just passed the host smoke, rather
-                  # than starting a different system/developer-tools Python runtime.
-                  # Never wrap or execute a product Typst helper.
-                  probe = subprocess.run(['/usr/bin/arch', f'-{arch}', sys.executable, '-c',
-                                          f'import platform; assert platform.machine() == {arch!r}'],
-                                         env=clean_env, capture_output=True, text=True, timeout=15)
-                  if probe.returncode != 0:
-                      if arch == host_arch:
-                          raise SystemExit(f'Native {arch} Python execution unavailable: {probe.stderr}')
-                      print(f'::notice::{arch} Python execution unavailable on this runner; '
-                            f'that library slice was inspected but not loaded: {probe.stderr.strip()}', flush=True)
-                      continue
-                  print(f'Compiling with packaged Typst {arch} library slice', flush=True)
-                  subprocess.run(['/usr/bin/arch', f'-{arch}', sys.executable, str(smoke),
-                                  '--library', str(library)], cwd=app, env=clean_env, check=True)
-                  launch_env = dict(clean_env, HOME=directory, CFFIXED_USER_HOME=directory,
-                                    XDG_CONFIG_HOME=directory, XDG_DATA_HOME=directory,
-                                    XDG_CACHE_HOME=directory)
-                  run_packaged_consumer(['/usr/bin/arch', f'-{arch}', str(executable), '--help'],
-                                        directory, launch_env, arch)
-          print(f'Library and consumer launches verified on runner macOS {platform.mac_ver()[0]}; '
+          for arch in ('x86_64', 'arm64'):
+              # Reuse the interpreter that just passed the host smoke, rather
+              # than starting a different system/developer-tools Python runtime.
+              # Never wrap or execute a product Typst helper.
+              probe = subprocess.run(['/usr/bin/arch', f'-{arch}', sys.executable, '-c',
+                                      f'import platform; assert platform.machine() == {arch!r}'],
+                                     env=clean_env, capture_output=True, text=True, timeout=15)
+              if probe.returncode != 0:
+                  if arch == host_arch:
+                      raise SystemExit(f'Native {arch} Python execution unavailable: {probe.stderr}')
+                  print(f'::notice::{arch} Python execution unavailable on this runner; '
+                        f'that library slice was inspected but not loaded: {probe.stderr.strip()}', flush=True)
+                  continue
+              print(f'Compiling with packaged Typst {arch} library slice', flush=True)
+              subprocess.run(['/usr/bin/arch', f'-{arch}', sys.executable, str(smoke),
+                              '--library', str(library)], cwd=app, env=clean_env, check=True)
+          print(f'Library slices verified on runner macOS {platform.mac_ver()[0]}; '
                 'minimum-OS metadata does not prove launch on Monterey or another older OS.', flush=True)
           PY
+          python3 "${GITHUB_WORKSPACE}/scripts/e2e/smoke_macos_consumer.py" \
+            --app "$mountpoint/VNote.app" --architecture arm64
           python3 "${GITHUB_WORKSPACE}/scripts/e2e/smoke_webengine_package.py" \
             --app "$mountpoint/VNote.app" --qt-prefix "$(qmake -query QT_INSTALL_PREFIX)"
 
@@ -580,6 +527,76 @@ jobs:
         with:
           name: VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}
           path: ${{runner.workspace}}/build/VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg
+
+  verify_intel:
+    name: Verify native Intel package (Qt ${{matrix.config.qt}})
+    needs: build
+    runs-on: macos-15-intel
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - qt: 6.10.3
+            arch: universal
+            suffix: ""
+          - qt: 6.9.3
+            arch: universal
+            suffix: "-macos12"
+    steps:
+      - uses: actions/checkout@v2
+      - name: Download signed DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}
+          path: ${{runner.workspace}}/build
+
+      - name: Verify native Intel Typst runtime and consumer
+        id: package_verify
+        working-directory: ${{runner.workspace}}/build
+        run: |
+          mountpoint="$RUNNER_TEMP/typst-package"
+          mkdir "$mountpoint"
+          hdiutil attach "VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}.dmg" -readonly -nobrowse -mountpoint "$mountpoint"
+          trap 'hdiutil detach "$mountpoint"' EXIT
+          python3 "${GITHUB_WORKSPACE}/scripts/e2e/smoke_typst_package.py" \
+            --library "$mountpoint/VNote.app/Contents/Frameworks/libvtextedit_typst.1.dylib"
+          python3 "${GITHUB_WORKSPACE}/scripts/e2e/smoke_macos_consumer.py" \
+            --app "$mountpoint/VNote.app" --architecture x86_64
+
+      - name: Preserve failed Intel consumer diagnostics
+        if: ${{ always() && steps.package_verify.outcome == 'failure' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: package-consumer-diagnostics-macos-intel-${{matrix.config.qt}}
+          path: ${{runner.temp}}/vnote-package-diagnostics
+          if-no-files-found: warn
+          retention-days: 7
+
+  publish:
+    name: Publish macOS package (Qt ${{matrix.config.qt}})
+    needs: [build, verify_intel]
+    if: github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        config:
+          - qt: 6.10.3
+            arch: universal
+            suffix: ""
+          - qt: 6.9.3
+            arch: universal
+            suffix: "-macos12"
+    steps:
+      - name: Download verified signed DMG
+        uses: actions/download-artifact@v4
+        with:
+          name: VNote-${{env.VNOTE_VER}}-mac-${{matrix.config.arch}}${{matrix.config.suffix}}
+          path: ${{runner.workspace}}/build
 
       - name: Update Continuous Build Release
         if: github.ref == 'refs/heads/master'
