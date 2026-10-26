@@ -27,6 +27,27 @@ failure history can rerun a passing suite after an unrelated failure.
 Windows and macOS allow 180 minutes for cold builds, the full native test suites and
 package gates. Keep the individual CTest deadlines; the job budget is not a test timeout.
 
+## Interactive CI debugging
+
+`workflow_dispatch` accepts `debug_enabled=true` plus a single `debug_public_key`
+(`ssh-ed25519`). `.github/scripts/debug-session.py` uses pinned Upterm 0.39.0 and the
+pinned `uptermd.upterm.dev` host-certificate authority. There is no web-shell or
+anonymous fallback. Never put a private key into inputs, logs or artifacts.
+
+Debug sessions start after tool setup (and the macOS test keychain), before the
+expensive build/test steps. The small `debug-connection-*` artifact is available
+while the job is paused; macOS names include the Qt version. Authenticate with the
+matching private key and verify the pinned relay key. `exit 0` in the hosted shell
+ends the session and resumes the workflow; merely disconnecting leaves it open.
+No guest within 15 minutes ends the session; existing job limits still apply.
+
+The helper removes checkout/submodule HTTP auth and credential-bearing URL rewrites,
+scrubs token/secret/key variables from the hosted process, and retains runner orphan
+tracking. Artifact and signing steps keep their normal environment, but run only
+after the always-run session cleanup confirms closure. Restore the original XDG
+values recorded in connection metadata before measuring application behavior.
+Ad-hoc runner edits/debug results do not replace a clean CI run of the committed fix.
+
 ## Release packaging dependencies
 
 `pack` must build `cmark_exe` before CPack runs: upstream cmark installs its CLI
@@ -81,7 +102,10 @@ ctypes alone does not prove VTextEdit/VNote linkage. Reject the old Typst execut
 Run `package/prune-macos-package.cmake` with `VNOTE_APP_DIR` after each deployment
 pass and after the last CI framework fixup, **before signing**. CPack's external
 macOS packager rewrites the build bundle; Windows install-staging pruning does not
-apply. Use `VERIFY_ONLY=ON` on the mounted signed DMG; it must never mutate it.
+apply. Complete all test builds before final `pack`/deployment: those builds can relink
+VNote/VTextEdit and restore build-tree RPATHs. Both framework-fixup passes precede the
+final RPATH cleanup and pruning; no rebuild follows before signing. Use `VERIFY_ONLY=ON`
+on the mounted signed DMG; it must never mutate it.
 
 Remove `PlugIns/imageformats/libqpdf.dylib`, `PlugIns/position/libqtposition_nmea.dylib`
 (and their `_debug` variants), `PlugIns/sqldrivers`, `QtSql.framework`, and

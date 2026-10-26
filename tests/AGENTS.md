@@ -237,6 +237,9 @@ reaching the next case; Cocoa retains app-local NSEvents rather than global HID 
 Windows drag motion uses non-coalesced `SendInput` records in normalized virtual-desktop
 coordinates, after repainting, completing `DwmFlush`, and observing the source pointer
 position. Require the hit widget to be the source viewport, not merely the same process.
+Failure diagnostics passively record native move/press/activation messages and GUI-thread
+state. Query `GetGUIThreadInfo(guiThreadId)` from the worker, not its own GetFocus/GetCapture;
+never consume or reroute an event just to make the fixture pass.
 Native workers wait for the press
 and threshold mouse move before sending the destination; waiting for OLE drag entry first
 can deadlock. Destination arrival can be DragEnter or DragMove. Release follows arrival or

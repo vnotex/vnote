@@ -6,6 +6,7 @@
 #endif
 #include <windows.h>
 
+#include <QAbstractNativeEventFilter>
 #include <dwmapi.h>
 #endif
 
@@ -3425,6 +3426,28 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   m_edit->viewport()->installEventFilter(&progress);
 #endif
 #ifdef Q_OS_WIN
+  struct NativeMouseTrace : QAbstractNativeEventFilter {
+    int moves = 0, downs = 0, activations = 0, activationHit = 0;
+    UINT downType = 0;
+    HWND moveWindow = nullptr, downWindow = nullptr;
+    bool nativeEventFilter(const QByteArray &, void *p_message, qintptr *) override {
+      const auto &message = *static_cast<const MSG *>(p_message);
+      if (message.message == WM_MOUSEMOVE) {
+        ++moves;
+        moveWindow = message.hwnd;
+      } else if (message.message == WM_LBUTTONDOWN || message.message == WM_NCLBUTTONDOWN) {
+        ++downs;
+        downType = message.message;
+        downWindow = message.hwnd;
+      } else if (message.message == WM_MOUSEACTIVATE) {
+        ++activations;
+        activationHit = static_cast<short>(LOWORD(message.lParam));
+      }
+      return false;
+    }
+  } nativeTrace;
+  qApp->installNativeEventFilter(&nativeTrace);
+  const auto removeNativeTrace = qScopeGuard([&] { qApp->removeNativeEventFilter(&nativeTrace); });
   SetForegroundWindow(window);
   if (!QTest::qWaitFor([&] { return GetForegroundWindow() == window; }, 1000)) {
     QSKIP("Windows denied foreground input to the native drag fixture");
@@ -3492,6 +3515,12 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   std::atomic<bool> releasePosted{false}, sequenceComplete{false};
   bool pressAcknowledged = false, thresholdAcknowledged = false, destinationAcknowledged = false;
   POINT pointerAfterPress{-1, -1};
+  const DWORD guiThread = GetCurrentThreadId();
+  GUITHREADINFO guiBefore{}, guiAtRelease{};
+  guiBefore.cbSize = sizeof(guiBefore);
+  guiAtRelease.cbSize = sizeof(guiAtRelease);
+  bool gotGuiBefore = false, gotGuiAtRelease = false;
+  bool leftDownBefore = false, leftDownAtRelease = false;
   bool moved = false;
   {
     const auto restoreInput = qScopeGuard([&] {
@@ -3508,6 +3537,8 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
                  },
                  deadline.remainingTime()),
              "Windows did not deliver the source pointer position");
+    gotGuiBefore = GetGUIThreadInfo(guiThread, &guiBefore);
+    leftDownBefore = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
     QVERIFY(button(MOUSEEVENTF_LEFTDOWN));
     GetCursorPos(&pointerAfterPress);
     // The threshold mouse move starts QDrag. OLE may need the next motion
@@ -3521,6 +3552,9 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
         destinationAcknowledged = progress.arrived.tryAcquire(1, deadline);
       }
       sequenceComplete.store(pressAcknowledged && thresholdAcknowledged && destinationAcknowledged);
+      // Query the GUI thread explicitly; GetFocus/GetCapture here would query this worker.
+      gotGuiAtRelease = GetGUIThreadInfo(guiThread, &guiAtRelease);
+      leftDownAtRelease = (GetAsyncKeyState(VK_LBUTTON) & 0x8000) != 0;
       releasePosted.store(button(MOUSEEVENTF_LEFTUP));
     });
     const auto joinInput = qScopeGuard([&] { input.join(); });
@@ -3533,18 +3567,27 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   }
   QString failureDetails;
   if (!moved) {
-    QDebug(&failureDetails) << "Windows drag release posted:" << releasePosted.load()
-                            << "press/threshold/destination ack:" << pressAcknowledged
-                            << thresholdAcknowledged << destinationAcknowledged
-                            << "drag enters:" << progress.enters
-                            << "observed press/move:" << progress.lastPress << progress.lastMove
-                            << "button/double clicks:" << progress.lastButton
-                            << progress.doubleClicks << "pointer after press:"
-                            << QPoint(pointerAfterPress.x, pointerAfterPress.y) << targetState()
-                            << "actual/expected:" << m_edit->toPlainText() << expected
-                            << "selection:" << m_edit->textCursor().selectedText()
-                            << "source/drop positions:" << start << end
-                            << "dialog counts:" << driver.choosers << driver.images << driver.links;
+    QDebug(&failureDetails)
+        << "Windows drag release posted:" << releasePosted.load()
+        << "press/threshold/destination ack:" << pressAcknowledged << thresholdAcknowledged
+        << destinationAcknowledged << "drag enters:" << progress.enters
+        << "observed press/move:" << progress.lastPress << progress.lastMove
+        << "button/double clicks:" << progress.lastButton << progress.doubleClicks
+        << "pointer after press:" << QPoint(pointerAfterPress.x, pointerAfterPress.y)
+        << "native moves/window/downs/type/window/activation/hit:" << nativeTrace.moves
+        << quintptr(nativeTrace.moveWindow) << nativeTrace.downs << nativeTrace.downType
+        << quintptr(nativeTrace.downWindow) << nativeTrace.activations << nativeTrace.activationHit
+        << "GUI before valid/active/focus/capture/menu/flags/left:" << gotGuiBefore
+        << quintptr(guiBefore.hwndActive) << quintptr(guiBefore.hwndFocus)
+        << quintptr(guiBefore.hwndCapture) << quintptr(guiBefore.hwndMenuOwner) << guiBefore.flags
+        << leftDownBefore
+        << "GUI release valid/active/focus/capture/menu/flags/left:" << gotGuiAtRelease
+        << quintptr(guiAtRelease.hwndActive) << quintptr(guiAtRelease.hwndFocus)
+        << quintptr(guiAtRelease.hwndCapture) << quintptr(guiAtRelease.hwndMenuOwner)
+        << guiAtRelease.flags << leftDownAtRelease << targetState()
+        << "actual/expected:" << m_edit->toPlainText() << expected
+        << "selection:" << m_edit->textCursor().selectedText() << "source/drop positions:" << start
+        << end << "dialog counts:" << driver.choosers << driver.images << driver.links;
   }
   QVERIFY2(moved, qPrintable(failureDetails));
   released = releasePosted.load();

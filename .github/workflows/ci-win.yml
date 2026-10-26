@@ -11,9 +11,14 @@ on:
     inputs:
       debug_enabled:
         type: boolean
-        description: 'Run the build with tmate debugging enabled'
+        description: 'Pause for key-restricted SSH debugging'
         required: false
         default: false
+      debug_public_key:
+        type: string
+        description: 'Single ssh-ed25519 public key authorized for the debug session'
+        required: false
+        default: ''
 
 env:
     VNOTE_VER: 4.11.0
@@ -100,10 +105,33 @@ jobs:
           cargo +1.99.0 fetch --locked --manifest-path Cargo.toml || exit /b 1
         working-directory: ${{github.workspace}}/libs/vtextedit/tools/typst-backend
 
-      # Enable tmate debugging of manually-triggered workflows if the input option was provided
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+      - name: Start restricted SSH debug session
+        id: debug_session
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        shell: pwsh
+        env:
+          DEBUG_SSH_PUBLIC_KEY: ${{ inputs.debug_public_key }}
+        run: python .github/scripts/debug-session.py start
+
+      - name: Upload debug connection (Windows)
+        id: debug_connection
+        if: ${{ !cancelled() && steps.debug_session.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-connection-windows
+          path: ${{ steps.debug_session.outputs.connection_file }}
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Pause for SSH debugging
+        if: ${{ !cancelled() && steps.debug_session.outcome == 'success' && steps.debug_connection.outcome == 'success' }}
+        shell: pwsh
+        run: python .github/scripts/debug-session.py wait
+
+      - name: Close SSH debug session
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        shell: pwsh
+        run: python .github/scripts/debug-session.py stop
 
       # NOTE on the `7z x VNote*.zip` below: extract IN PLACE, never with `-o*`.
       # The CPack ZIP already carries a single top-level VNote-x.y.z-win64/

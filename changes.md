@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Add key-restricted SSH-only CI debugging and finalize macOS deployment after all test-build relinks
 * Preserve successful CI test reports as well as failures so skipped native cases remain visible
 * Use native screen/presentation boundaries and modal timers in CI input fixtures; keep raster fixtures measurable at low DPI without relaxing their assertions
 * Verify Linux AppImages with their shipped xcb platform under Xvfb, including release builds, instead of requesting an unbundled offscreen plugin
