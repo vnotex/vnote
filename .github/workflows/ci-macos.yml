@@ -476,12 +476,14 @@ jobs:
           smoke = Path(os.environ['GITHUB_WORKSPACE']) / 'scripts/e2e/smoke_typst_package.py'
           subprocess.run([sys.executable, str(smoke), '--library', str(library)],
                          cwd=app, env=clean_env, check=True)
+          print(f'Architecture smoke interpreter: {sys.executable}', flush=True)
           host_arch = subprocess.check_output(['/usr/bin/uname', '-m'], text=True).strip()
           with tempfile.TemporaryDirectory(prefix='vnote-typst-arch-') as directory:
               for arch in ('x86_64', 'arm64'):
-                  # A universal system Python loads the selected dylib slice through
-                  # ctypes. Never wrap or execute a product Typst helper.
-                  probe = subprocess.run(['/usr/bin/arch', f'-{arch}', '/usr/bin/python3', '-c',
+                  # Reuse the interpreter that just passed the host smoke, rather
+                  # than starting a different system/developer-tools Python runtime.
+                  # Never wrap or execute a product Typst helper.
+                  probe = subprocess.run(['/usr/bin/arch', f'-{arch}', sys.executable, '-c',
                                           f'import platform; assert platform.machine() == {arch!r}'],
                                          env=clean_env, capture_output=True, text=True, timeout=15)
                   if probe.returncode != 0:
@@ -491,7 +493,7 @@ jobs:
                             f'that library slice was inspected but not loaded: {probe.stderr.strip()}', flush=True)
                       continue
                   print(f'Compiling with packaged Typst {arch} library slice', flush=True)
-                  subprocess.run(['/usr/bin/arch', f'-{arch}', '/usr/bin/python3', str(smoke),
+                  subprocess.run(['/usr/bin/arch', f'-{arch}', sys.executable, str(smoke),
                                   '--library', str(library)], cwd=app, env=clean_env, check=True)
                   launch_env = dict(clean_env, HOME=directory, CFFIXED_USER_HOME=directory,
                                     XDG_CONFIG_HOME=directory, XDG_DATA_HOME=directory,

@@ -3681,20 +3681,29 @@ void TestTypstViewWindowInsertion::internalTextDrag() {
   QVERIFY2(moved, qPrintable(failureDetails));
   released = releasePosted.load();
 #elif defined(Q_OS_MACOS)
+  auto *inputWidget = m_edit->viewport();
+  while (inputWidget && !inputWidget->internalWinId())
+    inputWidget = inputWidget->parentWidget();
+  QVERIFY2(inputWidget, "Cocoa drag has no existing native input ancestor");
+  auto *inputView = reinterpret_cast<NSView *>(inputWidget->internalWinId());
+  NSWindow *inputWindow = [inputView window];
+  QVERIFY2(inputWindow && [inputWindow isVisible] && [inputView isFlipped],
+           "Cocoa drag input ancestor has no visible flipped native view");
   const std::array<QPoint, 4> positions = {start, threshold, end, end};
   std::array<NSPoint, 4> windowPositions;
   std::array<CGPoint, 4> pointerPositions;
   const auto screenTop = NSMaxY([[[NSScreen screens] firstObject] frame]);
   for (size_t i = 0; i < positions.size(); ++i) {
-    const auto global = m_edit->viewport()->mapToGlobal(positions[i]);
-    pointerPositions[i] = CGPointMake(global.x(), global.y());
-    // Quartz and Qt use top-left global coordinates; AppKit uses bottom-left.
-    // Convert the same screen point, not QWidget-local coordinates into an
-    // NSView whose bounds can include the native titlebar.
-    windowPositions[i] =
-        [nativeWindow convertPointFromScreen:NSMakePoint(global.x(), screenTop - global.y())];
+    const auto local = m_edit->viewport()->mapTo(inputWidget, positions[i]);
+    // Invert QNSView's input transform. Its flipped coordinates match the
+    // native QWidget ancestor; do not mix in Qt's cached global frame origin.
+    windowPositions[i] = [inputView convertPoint:NSMakePoint(local.x(), local.y()) toView:nil];
+    const auto screen = [inputWindow convertRectToScreen:NSMakeRect(windowPositions[i].x,
+                                                                    windowPositions[i].y, 1, 1)]
+                            .origin;
+    pointerPositions[i] = CGPointMake(screen.x, screenTop - screen.y);
   }
-  const auto windowNumber = [nativeWindow windowNumber];
+  const auto windowNumber = [inputWindow windowNumber];
   const auto previousPointer = QCursor::pos();
   CGError restoreError = kCGErrorSuccess;
   std::atomic<CGError> pointerError{kCGErrorSuccess};

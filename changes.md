@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Derive Cocoa test input from its native view and reuse the validated Python interpreter for macOS architecture smoke checks
 * Open Typst context-menu links after the menu unwinds so native consent cannot strand its event loop; revoke queued actions when the originating view changes
 * Give Linux cold-build jobs the same artifact-publication budget as Windows and macOS without changing test deadlines
 * Settle first-paint gutter layout and acknowledge Windows native drag startup before delivering test drag destinations

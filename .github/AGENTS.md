@@ -97,6 +97,9 @@ contents without developer Cargo/Qt/Typst overrides. It calls C ABI 1 in a super
 Python test worker and verifies real PDF/heading output and reply lifetime after session
 destruction. Also launch the packaged consumer and inspect native dependency closure;
 ctypes alone does not prove VTextEdit/VNote linkage. Reject the old Typst executable.
+On macOS, architecture probes and ABI workers reuse the gate's already-running Python
+(`sys.executable`), not a different `/usr/bin/python3` runtime. Keep the 15-second architecture
+probe, mandatory native-architecture execution, and existing non-host availability policy.
 
 ## macOS runtime composition
 

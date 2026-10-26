@@ -252,9 +252,11 @@ can deadlock in Qt's filtered native pump. Destination arrival can be DragEnter 
 Release follows arrival or the bounded deadline; joined workers always attempt release and
 restore the saved pointer. Cocoa
 creates timestamped NSEvents at dispatch, without warping ahead of delivered source events.
-Create native peers before measuring drag coordinates. Derive Cocoa's Quartz pointer and
-AppKit window event from the same Qt global point, converting through the primary screen
-and `-[NSWindow convertPointFromScreen:]`; QWidget-local and NSView bounds have different origins.
+Create native peers before measuring drag coordinates. On Cocoa, find the source viewport's
+nearest already-native QWidget ancestor without creating a peer. Its flipped QNSView coordinates
+match Qt's window coordinates: map locally to that ancestor, then use `convertPoint:toView:nil`
+for the event and `convertRectToScreen:` plus the primary-screen Y flip for the Quartz pointer.
+Do not mix Qt's cached global frame origin into native input or compensate with titlebar offsets.
 Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Keep the normal
 QtTest crash handler. Build the host Typst module's `test_typstviewwindow_insertion` executable
 once, then select `^test_typstviewwindow_(insertion|cleanup|resources)$` in CTest. These serial
