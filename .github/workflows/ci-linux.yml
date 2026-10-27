@@ -11,9 +11,14 @@ on:
     inputs:
       debug_enabled:
         type: boolean
-        description: 'Run the build with tmate debugging enabled'
+        description: 'Pause for key-restricted SSH debugging'
         required: false
         default: false
+      debug_public_key:
+        type: string
+        description: 'Single ssh-ed25519 public key authorized for the debug session'
+        required: false
+        default: ''
 
 env:
     VNOTE_VER: 4.11.0
@@ -27,7 +32,7 @@ jobs:
     name: Build On Ubuntu 22.04
     # Build on the oldest supported Ubuntu so the AppImage works with glibc 2.35 (#2748).
     runs-on: ubuntu-22.04
-    timeout-minutes: 120
+    timeout-minutes: 180
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.
@@ -61,7 +66,7 @@ jobs:
           sudo DEBIAN_FRONTEND=noninteractive apt-get update
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libfcitx5-qt-dev fcitx-libs-dev extra-cmake-modules libxkbcommon-dev
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y tree
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y fuse libxcb-cursor-dev
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y fuse libxcb-cursor-dev xvfb xauth
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libssl-dev
           sudo DEBIAN_FRONTEND=noninteractive apt-get install -y libsecret-1-dev
           python3 -m pip config set global.break-system-packages true
@@ -165,6 +170,34 @@ jobs:
           cmake -DVNOTE_BUILD_TESTS=${VNOTE_TESTS} ${GITHUB_WORKSPACE}
         working-directory: ${{runner.workspace}}/build
 
+      - name: Start restricted SSH debug session
+        id: debug_session
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        shell: bash
+        env:
+          DEBUG_SSH_PUBLIC_KEY: ${{ inputs.debug_public_key }}
+        run: python3 .github/scripts/debug-session.py start
+
+      - name: Upload debug connection (Linux)
+        id: debug_connection
+        if: ${{ !cancelled() && steps.debug_session.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-connection-linux
+          path: ${{ steps.debug_session.outputs.connection_file }}
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Pause for SSH debugging
+        if: ${{ !cancelled() && steps.debug_session.outcome == 'success' && steps.debug_connection.outcome == 'success' }}
+        shell: bash
+        run: python3 .github/scripts/debug-session.py wait
+
+      - name: Close SSH debug session
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        shell: bash
+        run: python3 .github/scripts/debug-session.py stop
+
       - name: Build Project
         run: |
           # Remove the libqsqlmimer.so as libmimerapi.so is not deployed with Qt6
@@ -175,14 +208,14 @@ jobs:
       - name: Install Test Dependencies
         if: env.VNOTE_TESTS == 'ON'
         run: |
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dbus gnome-keyring libglib2.0-bin libsecret-tools openssl xvfb xauth
+          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends dbus gnome-keyring libglib2.0-bin libsecret-tools openssl
 
       - name: Build and Run Tests
         id: tests
         if: env.VNOTE_TESTS == 'ON'
         # Build remaining targets (Qt-side tests + vxcore tests; --target pack
-        # above only built the AppImage target) then run them headlessly via
-        # the Qt offscreen platform plugin. VNOTE_BUILD_TESTS defaults to OFF
+        # above only built the AppImage target). Parent tests select their backend;
+        # native Typst layout tests use xcb under Xvfb. VNOTE_BUILD_TESTS defaults to OFF
         # in the root CMakeLists.txt and is enabled above only for non-release runs.
         run: |
           set -e
@@ -206,9 +239,22 @@ jobs:
             echo "test_pdfviewercore_js not registered; Qt6::Qml (qtdeclarative) missing" >&2
             exit 1
           fi
-          bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --output-on-failure
-          bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error
+          test_status=0
+          bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --output-on-failure || test_status=1
+          QT_QPA_PLATFORM=xcb bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit -R '^test_typsteditor$' --output-on-failure --no-tests=error || test_status=1
+          exit "$test_status"
         working-directory: ${{runner.workspace}}/build
+
+      - name: Preserve original test reports
+        if: always() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report-linux
+          path: |
+            ${{runner.workspace}}/build/Testing/Temporary/Last*.log
+            ${{runner.workspace}}/build/libs/vtextedit/Testing/Temporary/Last*.log
+            ${{runner.workspace}}/build/tests/widgets/test_typstviewwindow_*.xml
+          if-no-files-found: warn
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
         # On failure of the previous step, re-run only the failing tests with
@@ -220,7 +266,12 @@ jobs:
           export LC_ALL=C.UTF-8
           export LANG=C.UTF-8
           export LD_LIBRARY_PATH="${{runner.workspace}}/build/libs/vtextedit/src:${LD_LIBRARY_PATH:-}"
-          bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --rerun-failed --extra-verbose || true
+          if [ -s Testing/Temporary/LastTestsFailed.log ]; then
+            bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --rerun-failed --extra-verbose || true
+          fi
+          if [ -s libs/vtextedit/Testing/Temporary/LastTestsFailed.log ]; then
+            QT_QPA_PLATFORM=xcb bash "${GITHUB_WORKSPACE}/.github/scripts/run-linux-tests.sh" --test-dir libs/vtextedit --rerun-failed --extra-verbose --no-tests=error || true
+          fi
         working-directory: ${{runner.workspace}}/build
 
       - name: Fix Package
@@ -325,8 +376,8 @@ jobs:
           with tempfile.TemporaryDirectory(prefix='vnote-package-launch-') as directory:
               launch_env = dict(clean_env, HOME=directory, XDG_CONFIG_HOME=directory,
                                 XDG_DATA_HOME=directory, XDG_CACHE_HOME=directory,
-                                QT_QPA_PLATFORM='offscreen', QT_PLUGIN_PATH=str(appdir / 'usr/plugins'))
-              subprocess.run([str(appdir / 'AppRun'), '--help'], cwd=directory,
+                                QT_QPA_PLATFORM='xcb', QT_PLUGIN_PATH=str(appdir / 'usr/plugins'))
+              subprocess.run(['xvfb-run', '-a', str(appdir / 'AppRun'), '--help'], cwd=directory,
                              env=launch_env, check=True, timeout=30)
 
           PY

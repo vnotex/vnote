@@ -357,6 +357,7 @@ struct Fixture {
     area->resize(1050, 760);
     area->show();
     area->activateWindow();
+    QApplication::setActiveWindow(area.get());
     if (p_existingNotebook.isEmpty()) {
       controller()->openVxUrl(QUrl(QStringLiteral("vx://home")));
       QCoreApplication::processEvents();
@@ -955,21 +956,38 @@ void TestViewAreaTabReuse::imageAndPdfDocuments() {
   // Zoom and rotation can reposition the document; choose A's replay page last.
   adapter->gotoPage(3);
   QTRY_COMPARE(adapter->getViewerState().m_page, 3);
+  const auto outgoing = adapter->getViewerState();
+  const QJsonObject lateState{{QStringLiteral("page"), outgoing.m_page},
+                              {QStringLiteral("pageCount"), outgoing.m_pageCount},
+                              {QStringLiteral("scale"), outgoing.m_scale},
+                              {QStringLiteral("scaleValue"), outgoing.m_scaleValue},
+                              {QStringLiteral("rotation"), outgoing.m_rotation},
+                              {QStringLiteral("scrollMode"), outgoing.m_scrollMode},
+                              {QStringLiteral("spreadMode"), outgoing.m_spreadMode},
+                              {QStringLiteral("cursorTool"), outgoing.m_cursorTool},
+                              {QStringLiteral("sidebarOpen"), outgoing.m_sidebarOpen}};
   QVERIFY(f->open(QStringLiteral("b.pdf")).isValid());
+  QVERIFY(pdf->isHidden());
+  QVERIFY(!adapter->isReady());
+  // An outgoing WebChannel invocation may already be queued during the inert navigation.
+  adapter->setViewerState(lateState);
   QCOMPARE(f->current(), window);
   QCOMPARE(window->findChild<PdfViewer *>(), pdf);
   QCOMPARE(pdf->page(), page);
   QCOMPARE(pdf->adapter(), adapter);
+  QVERIFY(QTest::qWaitFor(
+      [&] {
+        return pdf->isVisible() && evaluate(page, QStringLiteral("document.body.innerText"))
+                                       .toString()
+                                       .contains(QStringLiteral("PDF beta"));
+      },
+      15000));
   QTRY_VERIFY_WITH_TIMEOUT(adapter->getViewerState().m_valid, 30000);
   QTRY_COMPARE_WITH_TIMEOUT(adapter->getDocumentPageCount(), 3, 30000);
   QTRY_COMPARE_WITH_TIMEOUT(adapter->getViewerState().m_pageCount, 3, 30000);
   QCOMPARE(adapter->getViewerState().m_page, 1);
   QCOMPARE(adapter->getViewerState().m_rotation, 0);
   QVERIFY(!adapter->isViewerReplayPending());
-  QTRY_VERIFY_WITH_TIMEOUT(evaluate(page, QStringLiteral("document.body.innerText"))
-                               .toString()
-                               .contains(QStringLiteral("PDF beta")),
-                           15000);
   adapter->gotoPage(2);
   QTRY_COMPARE(adapter->getViewerState().m_page, 2);
   f->theme->switchTheme(QStringLiteral("vscode-dark"));
@@ -996,6 +1014,8 @@ void TestViewAreaTabReuse::dirtyReplacement() {
   auto *editor = window->findChild<MarkdownEditor *>();
   QVERIFY(editor);
   // Real typing follows focus, which registers the outgoing buffer's active writer.
+  f->area->activateWindow();
+  QApplication::setActiveWindow(f->area.get());
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("\nUnsaved alpha draft\n"));
@@ -1428,8 +1448,9 @@ void TestViewAreaTabReuse::explicitDetachedWorkspace() {
   auto *mainWindow = f->current();
   QStringList created;
   const int hook = f->hooks->addAction<ViewSplitCreateEvent>(
-      HookNames::ViewSplitAfterCreate,
-      [&](HookContext &, const ViewSplitCreateEvent &event) { created.append(event.newWorkspaceId); });
+      HookNames::ViewSplitAfterCreate, [&](HookContext &, const ViewSplitCreateEvent &event) {
+        created.append(event.newWorkspaceId);
+      });
   const auto removeHook = qScopeGuard([&] { f->hooks->removeAction(hook); });
   FileOpenSettings settings;
   settings.m_mode = ViewWindowMode::Edit;
@@ -1599,8 +1620,8 @@ void TestViewAreaTabReuse::unavailableTargetWorkspace() {
 }
 
 void TestViewAreaTabReuse::targetWorkspaceWithReentrantOpen() {
-  for (const auto &name : {QStringLiteral("a.txt"), QStringLiteral("b.txt"),
-                           QStringLiteral("outer.txt")})
+  for (const auto &name :
+       {QStringLiteral("a.txt"), QStringLiteral("b.txt"), QStringLiteral("outer.txt")})
     QVERIFY(f->create(name, name.toUtf8()));
   const auto a = f->open(QStringLiteral("a.txt"));
   const auto first = f->workspace();
@@ -1680,7 +1701,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
     }
     return {};
   };
-  QVERIFY(waitForRender(ordinary, QStringLiteral("Ordinary")));
+  QVERIFY(waitForCurrentRender(ordinary, native, QStringLiteral("Ordinary")));
   const auto ordinaryToken = ordinary->adapter()->documentGeneration();
   QVERIFY(native->isCurrent(ordinaryToken));
   const auto tabId = window->getViewWindowId();
@@ -1691,7 +1712,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   QTRY_VERIFY(ordinary.isNull());
   QPointer<MarkdownViewer> privateReader = window->findChild<MarkdownViewer *>();
   QVERIFY(privateReader);
-  QVERIFY(waitForRender(privateReader, QStringLiteral("Protected alpha")));
+  QVERIFY(waitForCurrentRender(privateReader, native, QStringLiteral("Protected alpha")));
   const auto alphaToken = privateReader->adapter()->documentGeneration();
   QVERIFY(alphaToken != ordinaryToken && native->isCurrent(alphaToken));
   QCOMPARE(window->findChild<MarkdownRenderController *>(), native);
@@ -1795,7 +1816,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   auto *newReader = window->findChild<MarkdownViewer *>();
   QVERIFY(newReader);
   QVERIFY(newReader->page()->url() != oldUrl);
-  QVERIFY(waitForRender(newReader, QStringLiteral("Protected beta")));
+  QVERIFY(waitForCurrentRender(newReader, native, QStringLiteral("Protected beta")));
   const auto betaToken = newReader->adapter()->documentGeneration();
   QVERIFY(betaToken != alphaToken && native->isCurrent(betaToken));
   QCOMPARE(window->findChild<MarkdownRenderController *>(), native);
@@ -1827,7 +1848,7 @@ void TestViewAreaTabReuse::protectedResourcesAndLateWork() {
   auto *publicReader = window->findChild<MarkdownViewer *>();
   QVERIFY(publicReader);
   QCOMPARE(publicReader->page()->profile(), f->profiles->profile());
-  QVERIFY(waitForRender(publicReader, QStringLiteral("Public end")));
+  QVERIFY(waitForCurrentRender(publicReader, native, QStringLiteral("Public end")));
   const auto publicToken = publicReader->adapter()->documentGeneration();
   QVERIFY(publicToken != betaToken && native->isCurrent(publicToken));
   QCOMPARE(window->findChild<MarkdownRenderController *>(), native);

@@ -11,9 +11,14 @@ on:
     inputs:
       debug_enabled:
         type: boolean
-        description: 'Run the build with tmate debugging enabled'
+        description: 'Pause for key-restricted SSH debugging'
         required: false
         default: false
+      debug_public_key:
+        type: string
+        description: 'Single ssh-ed25519 public key authorized for the debug session'
+        required: false
+        default: ''
 
 env:
     VNOTE_VER: 4.11.0
@@ -100,10 +105,33 @@ jobs:
           cargo +1.99.0 fetch --locked --manifest-path Cargo.toml || exit /b 1
         working-directory: ${{github.workspace}}/libs/vtextedit/tools/typst-backend
 
-      # Enable tmate debugging of manually-triggered workflows if the input option was provided
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
-        if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+      - name: Start restricted SSH debug session
+        id: debug_session
+        if: ${{ !cancelled() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        shell: pwsh
+        env:
+          DEBUG_SSH_PUBLIC_KEY: ${{ inputs.debug_public_key }}
+        run: python .github/scripts/debug-session.py start
+
+      - name: Upload debug connection (Windows)
+        id: debug_connection
+        if: ${{ !cancelled() && steps.debug_session.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-connection-windows
+          path: ${{ steps.debug_session.outputs.connection_file }}
+          if-no-files-found: error
+          retention-days: 1
+
+      - name: Pause for SSH debugging
+        if: ${{ !cancelled() && steps.debug_session.outcome == 'success' && steps.debug_connection.outcome == 'success' }}
+        shell: pwsh
+        run: python .github/scripts/debug-session.py wait
+
+      - name: Close SSH debug session
+        if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
+        shell: pwsh
+        run: python .github/scripts/debug-session.py stop
 
       # NOTE on the `7z x VNote*.zip` below: extract IN PLACE, never with `-o*`.
       # The CPack ZIP already carries a single top-level VNote-x.y.z-win64/
@@ -161,22 +189,41 @@ jobs:
           VS_CMD: ${{ matrix.config.vs_cmd }}
         run: |
           call "%VS_CMD%"
-          ctest -C Release --output-on-failure || exit /b 1
-          ctest --test-dir libs/vtextedit -C Release -R "^test_typsteditor$" --output-on-failure --no-tests=error || exit /b 1
+          set TEST_RESULT=0
+          ctest -C Release --output-on-failure || set TEST_RESULT=1
+          ctest --test-dir libs/vtextedit -C Release -R "^test_typsteditor$" --output-on-failure --no-tests=error || set TEST_RESULT=1
+          exit /b %TEST_RESULT%
         working-directory: ${{runner.workspace}}/build
+
+      - name: Preserve native Typst test reports
+        if: always() && (steps.tests.outcome == 'success' || steps.tests.outcome == 'failure')
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-typst-test-report
+          path: |
+            ${{runner.workspace}}/build/tests/widgets/test_typstviewwindow_*.xml
+            ${{runner.workspace}}/build/Testing/Temporary/Last*.log
+            ${{runner.workspace}}/build/libs/vtextedit/Testing/Temporary/Last*.log
+          if-no-files-found: warn
 
       - name: Re-run failed tests with extra-verbose output (debug aid)
         # On failure of the previous step, re-run only the failing tests with
         # --extra-verbose so Qt Test's PASS/FAIL lines + assertion details
-        # land in the CI log. Typst's -nocrashhandler test selects -o -,txt explicitly.
-        # This step never gates the workflow (|| exit 0) - it's pure diagnostics.
+        # land in the CI log; Typst also preserves its JUnit report above.
+        # This step never gates the workflow; each suite needs its own failure history.
         if: failure() && steps.tests.outcome == 'failure'
         shell: cmd
         env:
           VS_CMD: ${{ matrix.config.vs_cmd }}
         run: |
           call "%VS_CMD%"
-          ctest -C Release --rerun-failed --extra-verbose || exit 0
+          if exist Testing\Temporary\LastTestsFailed.log (
+            for %%F in (Testing\Temporary\LastTestsFailed.log) do if %%~zF GTR 0 ctest -C Release --rerun-failed --extra-verbose
+          )
+          if exist libs\vtextedit\Testing\Temporary\LastTestsFailed.log (
+            for %%F in (libs\vtextedit\Testing\Temporary\LastTestsFailed.log) do if %%~zF GTR 0 ctest --test-dir libs/vtextedit -C Release --rerun-failed --extra-verbose --no-tests=error
+          )
+          exit /b 0
         working-directory: ${{runner.workspace}}/build
 
       # Runs on EVERY build, not just releases: this is

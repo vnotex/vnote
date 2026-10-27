@@ -3,6 +3,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QBuffer>
+#include <QChildEvent>
 #include <QClipboard>
 #include <QDir>
 #include <QFile>
@@ -30,6 +31,7 @@
 #include <QWebChannel>
 #include <QWebEngineProfile>
 #include <QWebEngineView>
+#include <QWindow>
 #include <QtConcurrent/QtConcurrentRun>
 
 #include <memory>
@@ -69,6 +71,43 @@ using namespace vnotex;
 
 namespace tests {
 namespace {
+class NativeShell : public QWidget {
+public:
+  bool m_recreatePending = false;
+  bool m_recreated = false;
+
+protected:
+  bool eventFilter(QObject *, QEvent *p_event) override {
+    if (m_recreatePending && p_event->type() == QEvent::ChildAdded &&
+        !static_cast<QChildEvent *>(p_event)->child()->isWidgetType()) {
+      // Recreate before the new adapter/viewer has connected page-lifecycle signals.
+      m_recreatePending = false;
+      const auto state = windowState();
+      const bool visible = isVisible();
+      QList<QPointer<QWidget>> visibleChildren;
+      for (auto *child : findChildren<QWidget *>()) {
+        if (child->isVisible()) {
+          visibleChildren.append(child);
+        }
+      }
+      destroy();
+      create();
+      if (auto *handle = windowHandle()) {
+        handle->setWindowStates(state);
+        setVisible(visible);
+        // Windows has native overlay descendants; preserve their prior visibility too.
+        for (const auto &child : visibleChildren) {
+          if (child && !child->isVisible()) {
+            child->show();
+          }
+        }
+        m_recreated = true;
+      }
+    }
+    return false;
+  }
+};
+
 class Window : public MarkdownViewWindow2 {
 public:
   using MarkdownViewWindow2::aboutToClose;
@@ -78,6 +117,7 @@ public:
   using MarkdownViewWindow2::printDocument;
   using ViewWindow2::fetchWordCountInfo;
   using ViewWindow2::isViewFullScreen;
+  using ViewWindow2::onFocusGained;
   ~Window() override {
     getServices().get<BufferService>()->unregisterActiveWriter(getBuffer().id(),
                                                                reinterpret_cast<quintptr>(this));
@@ -224,6 +264,7 @@ private slots:
   void printUsesCurrentMode();
   void presentationCreatesReader_data();
   void presentationCreatesReader();
+  void presentationHiddenDuringPreparationDoesNotResume();
   void protectedLockWithoutReader();
   void nativeGrammarPolicy_data();
   void nativeGrammarPolicy();
@@ -800,7 +841,7 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
   const auto buffer =
       openNote(QStringLiteral("slides.md"), QByteArrayLiteral("# Slides\n\n## First\n"));
   QVERIFY(buffer.isValid());
-  QWidget shell;
+  NativeShell shell;
   QVBoxLayout layout(&shell);
   Window window(m_services, buffer, &shell, ViewWindowMode::Edit);
   layout.addWidget(&window);
@@ -809,6 +850,11 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
   QVERIFY(QTest::qWaitForWindowExposed(&shell));
   auto *editor = window.findChild<MarkdownEditor *>();
   QVERIFY(editor);
+  // Presentation flushes the draft through the focus-registered active writer.
+  shell.activateWindow();
+  QApplication::setActiveWindow(&shell);
+  editor->getTextEdit()->setFocus();
+  QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor, QStringLiteral("\nUnsaved slide text\n"));
   QAction *presentation = nullptr;
   for (auto *action : window.findChildren<QAction *>()) {
@@ -818,15 +864,23 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
     }
   }
   QVERIFY(presentation);
+  QSignalSpy fullscreen(&window, &ViewWindow2::viewFullScreenChanged);
   std::unique_ptr<PoolBlocker> pool;
   if (delayNativeRender) {
     pool = std::make_unique<PoolBlocker>();
     QVERIFY(pool->started());
   }
+  window.installEventFilter(&shell);
+  shell.m_recreatePending = true;
   presentation->trigger();
+  QVERIFY(shell.m_recreated);
   auto *viewer = window.findChild<MarkdownViewer *>();
   QVERIFY(viewer);
   QSignalSpy requests(viewer->adapter(), &MarkdownViewerAdapter::presentationModeRequested);
+  QSignalSpy states(viewer->adapter(), &MarkdownViewerAdapter::presentationStateChanged);
+  // Cocoa can deliver the reader's focus gain after the mode-switch call has returned,
+  // without a preceding dirty focus loss to acknowledge our own buffer sync.
+  window.onFocusGained();
   if (pool) {
     // Exercise real bridge readiness while the initial native HTML is still queued.
     QTRY_VERIFY_WITH_TIMEOUT(viewer->adapter()->isReady(), 30000);
@@ -836,7 +890,23 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
     QCOMPARE(requests.size(), 0);
     pool->unblock();
   }
-  QTRY_VERIFY_WITH_TIMEOUT(window.isViewFullScreen(), 30000);
+  const bool entered = QTest::qWaitFor([&] { return window.isViewFullScreen(); }, 30000);
+  QString failureDetails;
+  if (!entered) {
+    QDebug(&failureDetails)
+        << "fullscreen transitions:" << fullscreen << "post-trigger requests/states:" << requests
+        << states << "adapter ready/document ready:" << viewer->adapter()->isReady()
+        << viewer->adapter()->isDocumentReady() << "native fullscreen:" << window.isFullScreen()
+        << "viewer visible:" << viewer->isVisible() << "mode:" << static_cast<int>(window.getMode())
+        << "web state:"
+        << evaluate(viewer->page(),
+                    QStringLiteral("JSON.stringify({requested: vxPresentation.requested,"
+                                   "active: vxPresentation.isActive(),"
+                                   "ready: vxPresentation.session && vxPresentation.session.ready,"
+                                   "workers: vxcore.numOfOngoingWorkers,pending: "
+                                   "vxcore.pendingData.document !== null})"));
+  }
+  QVERIFY2(entered, qPrintable(failureDetails));
   QVERIFY(presentation->isChecked());
   if (delayNativeRender) {
     QCOMPARE(requests.size(), 1);
@@ -851,6 +921,54 @@ void TestMarkdownViewWindowLazy::presentationCreatesReader() {
   window.setMode(ViewWindowMode::Edit);
   QVERIFY(editor->getText().contains(QStringLiteral("Unsaved slide text")));
   QVERIFY(editor->getTextEdit()->document()->isUndoAvailable());
+}
+
+void TestMarkdownViewWindowLazy::presentationHiddenDuringPreparationDoesNotResume() {
+  const auto buffer =
+      openNote(QStringLiteral("hidden-slides.md"), QByteArrayLiteral("# Hidden presentation\n"));
+  QVERIFY(buffer.isValid());
+  QWidget shell;
+  QVBoxLayout layout(&shell);
+  Window window(m_services, buffer, &shell, ViewWindowMode::Edit);
+  layout.addWidget(&window);
+  shell.resize(1100, 800);
+  shell.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&shell));
+  shell.activateWindow();
+  QApplication::setActiveWindow(&shell);
+  auto *editor = window.findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  editor->getTextEdit()->setFocus();
+  QTRY_VERIFY(editor->getTextEdit()->hasFocus());
+  appendDraft(editor, QStringLiteral("\nHidden draft remains\n"));
+  QAction *presentation = nullptr;
+  for (auto *action : window.findChildren<QAction *>()) {
+    if (action->property("iconName").toString() == QStringLiteral("presentation_editor.svg")) {
+      presentation = action;
+      break;
+    }
+  }
+  QVERIFY(presentation);
+  PoolBlocker pool;
+  QVERIFY(pool.started());
+  const auto hide = connect(&window, &ViewWindow2::modeChanged, &shell, [&]() {
+    if (window.getMode() == ViewWindowMode::Read) {
+      shell.hide();
+    }
+  });
+  presentation->trigger();
+  disconnect(hide);
+  QVERIFY(!shell.isVisible());
+  auto *viewer = window.findChild<MarkdownViewer *>();
+  QVERIFY(viewer);
+  QSignalSpy requests(viewer->adapter(), &MarkdownViewerAdapter::presentationModeRequested);
+  shell.show();
+  pool.unblock();
+  QVERIFY(waitForRenderedHeading(viewer, QStringLiteral("Hidden draft remains")));
+  QCOMPARE(requests.size(), 0);
+  QVERIFY(!window.isViewFullScreen());
+  QVERIFY(!presentation->isChecked());
+  QVERIFY(editor->getText().contains(QStringLiteral("Hidden draft remains")));
 }
 
 void TestMarkdownViewWindowLazy::nativeGrammarPolicy_data() {
@@ -1146,7 +1264,7 @@ void TestMarkdownViewWindowLazy::unavailableReplacementCannotSaveOutgoingSource(
   QCOMPARE(editor->getText(), draft);
   QCOMPARE(editor->getTextEdit()->document()->availableUndoSteps(), undo);
   QVERIFY(waitForRenderedHeading(reader, QStringLiteral("Outgoing draft")));
-  QVERIFY(native->isCurrent(reader->adapter()->documentGeneration()));
+  QTRY_VERIFY(native->isCurrent(reader->adapter()->documentGeneration()));
   QVERIFY(window.save());
   QTRY_VERIFY_WITH_TIMEOUT(!m_buffers->isSaveQueueBusy(alpha.id()) && !window.isModified(), 10000);
   QFile saved(alpha.resolvedPath());
@@ -1175,7 +1293,7 @@ void TestMarkdownViewWindowLazy::unavailableReplacementCannotSaveOutgoingSource(
   QVERIFY(window.replaceBuffer(gamma, settings));
   QCOMPARE(window.findChild<MarkdownRenderController *>(), native);
   QVERIFY(waitForRenderedHeading(reader, QStringLiteral("Gamma")));
-  QVERIFY(native->isCurrent(reader->adapter()->documentGeneration()));
+  QTRY_VERIFY(native->isCurrent(reader->adapter()->documentGeneration()));
   QCOMPARE(editor->getText(), QStringLiteral("# Gamma\n"));
   QVERIFY(!editor->isReadOnly());
 }

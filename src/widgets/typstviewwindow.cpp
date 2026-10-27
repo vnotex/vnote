@@ -888,12 +888,13 @@ void TypstViewWindow::addResourceContextActions(const vte::TypstResourceContext 
   const QPointer<TypstViewWindow> owner(this);
   const auto first = p_menu->actions().value(0);
   const bool available = resourceContextCurrent(context, generation);
-  const auto add = [p_menu, first, available](const QString &p_text, const char *p_name,
-                                              auto p_callback) {
+  const auto add = [p_menu, first, available,
+                    owner](const QString &p_text, const char *p_name, auto p_callback,
+                           Qt::ConnectionType p_type = Qt::AutoConnection) {
     auto *action = new QAction(p_text, p_menu);
     action->setObjectName(QLatin1String(p_name));
     action->setEnabled(available);
-    QObject::connect(action, &QAction::triggered, p_menu, std::move(p_callback));
+    QObject::connect(action, &QAction::triggered, owner.data(), std::move(p_callback), p_type);
     p_menu->insertAction(first, action);
   };
   if (context.m_imageId) {
@@ -936,13 +937,17 @@ void TypstViewWindow::addResourceContextActions(const vte::TypstResourceContext 
   }
   if (context.m_linkIndex >= 0 && (context.m_linkNavigable || !context.m_linkUrl.isEmpty())) {
     if (context.m_linkNavigable) {
-      add(tr("Open Link"), "typstOpenLink", [owner, context, generation] {
-        if (!owner || !owner->resourceContextCurrent(context, generation)) {
-          return;
-        }
-        const auto interaction = owner->retainNativeInteraction();
-        owner->m_typstEditor->openContextLink(context);
-      });
+      // Let the menu unwind before native external-link consent enters its modal loop.
+      add(
+          tr("Open Link"), "typstOpenLink",
+          [owner, context, generation] {
+            if (!owner || !owner->resourceContextCurrent(context, generation)) {
+              return;
+            }
+            const auto interaction = owner->retainNativeInteraction();
+            owner->m_typstEditor->openContextLink(context);
+          },
+          Qt::QueuedConnection);
     }
     if (!context.m_linkUrl.isEmpty()) {
       add(tr("Copy Link"), "typstCopyLink", [owner, context, generation] {

@@ -616,10 +616,17 @@ void MarkdownViewWindow2::setPresentationMode(bool p_on) {
   ++m_presentationGeneration;
   // The fullscreen host owns Escape once promoted; cover the pending page/deck too.
   qApp->installEventFilter(this);
-  {
-    const QScopedValueRollback<bool> preparing(m_preparingPresentation, true);
-    // The normal Edit -> Read path syncs unsaved source through BufferService::syncNow().
-    setMode(ViewWindowMode::Read);
+  const QPointer<MarkdownViewWindow2> guard(this);
+  m_preparingPresentation = true;
+  // The normal Edit -> Read path syncs unsaved source through BufferService::syncNow().
+  setMode(ViewWindowMode::Read);
+  if (!guard) {
+    return;
+  }
+  m_preparingPresentation = false;
+  if (!isVisible() || !isEnabled()) {
+    setPresentationMode(false);
+    return;
   }
   if (!m_presentationRequested) {
     return;
@@ -2175,6 +2182,8 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
       showMessage(tr("Unable to read the editor content"));
       return;
     }
+    // A delayed reader focus gain must not mistake our own sync for an external edit.
+    m_lastKnownRevision = getBuffer().getRevision();
   }
 
   m_previousMode = m_mode;
@@ -3665,9 +3674,12 @@ bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
     }
   }
   if (m_presentationRequested && !m_presentationActive) {
-    if (p_obj == this && ((p_event->type() == QEvent::Hide && !p_event->spontaneous()) ||
-                          p_event->type() == QEvent::Close ||
-                          (p_event->type() == QEvent::EnabledChange && !isEnabled()))) {
+    // A first WebEngine view may rebuild its native ancestor, transiently hiding this
+    // widget during preparation. setPresentationMode() still cancels a settled hidden view.
+    if (p_obj == this &&
+        ((p_event->type() == QEvent::Hide && !p_event->spontaneous() && !m_preparingPresentation) ||
+         p_event->type() == QEvent::Close ||
+         (p_event->type() == QEvent::EnabledChange && !isEnabled()))) {
       setPresentationMode(false);
     } else if ((p_event->type() == QEvent::KeyPress ||
                 p_event->type() == QEvent::ShortcutOverride) &&

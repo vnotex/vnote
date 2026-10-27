@@ -14,12 +14,43 @@ See also: [../AGENTS.md](../AGENTS.md) (repo-wide rules, submodule push discipli
 
 Linux and macOS set `CMAKE_BUILD_PARALLEL_LEVEL=2` for both packaging and test
 builds; Make otherwise builds these large targets serially. Keep Cargo's separate
-two-job limit. Diagnostic reruns require the test step itself to have failed:
-`ctest --rerun-failed` without failure history can run the entire suite after an
-unrelated packaging failure.
+two-job limit. Run both the parent and native-editor suites even when one fails,
+then fail the step if either returned nonzero. Preserve both original CTest logs
+and the Typst JUnit reports before diagnostics; macOS artifact names include the Qt kit.
+Upload reports for successful test steps too: a QtTest case can skip inside an otherwise
+passing executable, so a green CTest result alone does not prove native input was exercised.
+Diagnostic reruns require the test step itself to have failed and a nonempty
+`Testing/Temporary/LastTestsFailed.log` in that suite's build tree. Parent and
+native-editor histories are independent: `ctest --rerun-failed` without its own
+failure history can rerun a passing suite after an unrelated failure.
 
-Windows and macOS allow 180 minutes for cold builds, the full native test suites and
-package gates. Keep the individual CTest deadlines; the job budget is not a test timeout.
+Linux, Windows and macOS allow 180 minutes for cold builds, full native test suites,
+package gates and artifact publication. Keep the individual CTest deadlines; the job
+budget is not a test timeout.
+macOS creates and unlocks its disposable test keychain only after test compilation,
+right before running CTest. Cold builds must not consume the vault's unlock lease;
+restore the original keychain before final packaging and signing.
+
+## Interactive CI debugging
+
+`workflow_dispatch` accepts `debug_enabled=true` plus a single `debug_public_key`
+(`ssh-ed25519`). `.github/scripts/debug-session.py` uses pinned Upterm 0.39.0 and the
+pinned `uptermd.upterm.dev` host-certificate authority. There is no web-shell or
+anonymous fallback. Never put a private key into inputs, logs or artifacts.
+
+Debug sessions start after tool setup (and macOS configuration), before the
+expensive build/test steps. The small `debug-connection-*` artifact is available
+while the job is paused; macOS names include the Qt version. Authenticate with the
+matching private key and verify the pinned relay key. `exit 0` in the hosted shell
+ends the session and resumes the workflow; merely disconnecting leaves it open.
+No guest within 15 minutes ends the session; existing job limits still apply.
+
+The helper removes checkout/submodule HTTP auth and credential-bearing URL rewrites,
+scrubs token/secret/key variables from the hosted process, and retains runner orphan
+tracking. Artifact and signing steps keep their normal environment, but run only
+after the always-run session cleanup confirms closure. Restore the original XDG
+values recorded in connection metadata before measuring application behavior.
+Ad-hoc runner edits/debug results do not replace a clean CI run of the committed fix.
 
 ## Release packaging dependencies
 
@@ -69,13 +100,36 @@ contents without developer Cargo/Qt/Typst overrides. It calls C ABI 1 in a super
 Python test worker and verifies real PDF/heading output and reply lifetime after session
 destruction. Also launch the packaged consumer and inspect native dependency closure;
 ctypes alone does not prove VTextEdit/VNote linkage. Reject the old Typst executable.
+On macOS, architecture probes and ABI workers reuse the gate's already-running Python
+(`sys.executable`), not a different `/usr/bin/python3` runtime. Keep the 15-second architecture
+probe, mandatory native-architecture execution, and existing non-host availability policy.
+`scripts/e2e/smoke_macos_consumer.py` requires the expected native architecture and launches
+VNote with the unchanged 30-second budget and an isolated home. Build jobs retain ARM native
+tests, both available ABI slices and the WebEngine gate. Separate `macos-15-intel` jobs download
+the same signed DMGs and require native x86_64 ABI and consumer execution for both Qt kits.
+Cold Rosetta translation of QtWebEngineCore can exceed the launch budget before main; do not
+warm its cache, retry to green, or increase the deadline instead of using native Intel proof.
+Staged DMG artifacts are inputs to verification, not publication approval. Both continuous and
+versioned publication depend on all ARM build/gates and both Intel verification jobs, and
+publish the unchanged signed artifacts. Native macOS 15 Intel proof is not a Monterey test.
+A packaged-consumer timeout remains a failure. Capture bounded native stack/screen diagnostics
+under `RUNNER_TEMP`, terminate only that unreaped probe's own process group, and retain the
+matrix-specific diagnostic artifact. Include open-file, memory-map and bounded read-only
+Rosetta-daemon samples to locate pre-main loader stalls; pre-create privileged sample output
+as the runner user. A separate one-day `failed-package-macos-<Qt version>` artifact retains
+only the exact signed DMG for reproduction, never adjacent certificates/keychains or the build
+directory. It is diagnostic-only, not a release. Do not mask the timeout, force-unmount a busy
+package, or move SSH sessions past signing-secret provisioning.
 
 ## macOS runtime composition
 
 Run `package/prune-macos-package.cmake` with `VNOTE_APP_DIR` after each deployment
 pass and after the last CI framework fixup, **before signing**. CPack's external
 macOS packager rewrites the build bundle; Windows install-staging pruning does not
-apply. Use `VERIFY_ONLY=ON` on the mounted signed DMG; it must never mutate it.
+apply. Complete all test builds before final `pack`/deployment: those builds can relink
+VNote/VTextEdit and restore build-tree RPATHs. Both framework-fixup passes precede the
+final RPATH cleanup and pruning; no rebuild follows before signing. Use `VERIFY_ONLY=ON`
+on the mounted signed DMG; it must never mutate it.
 
 Remove `PlugIns/imageformats/libqpdf.dylib`, `PlugIns/position/libqtposition_nmea.dylib`
 (and their `_debug` variants), `PlugIns/sqldrivers`, `QtSql.framework`, and
@@ -98,6 +152,11 @@ probe against the SDK but runs against the signed package: separate processes fo
 each supported locale plus German/British-English fallback, actual DOM rendering,
 and mapped framework/locale paths in both browser and helper. It must not resolve
 runtime resources from the SDK or ship its probe in the app.
+Build the probe with Qt's imported CMake targets, including their transitive header modules,
+not a hand-maintained framework/include list. Declare the ARM yield intrinsic before Qt headers
+on ARM hosts. Configure and compile share one 120-second budget; target only the host architecture.
+Use `BUILD_WITH_INSTALL_RPATH` with the signed package Frameworks directory and no SDK link-path
+RPATH additions. Keep the 45-second render and 15-second shutdown bounds and all locale checks.
 
 ## Windows runtime (Qt 6)
 
@@ -158,13 +217,19 @@ both the suite and failure diagnostics through `.github/scripts/run-linux-tests.
 The wrapper creates a private D-Bus session and unlocked GNOME keyring, verifies
 Secret Service with a write/read/delete probe, then tears down the daemon and
 private XDG directories. CTest runs under Xvfb so tests selecting the native xcb
-backend have a display; install `xvfb` and `xauth` with the test dependencies.
+backend have a display. Install `xvfb` and `xauth` unconditionally: the final AppImage
+consumer check also needs them on release builds. It launches packaged `AppRun --help`
+with `QT_QPA_PLATFORM=xcb` under `xvfb-run -a`; the AppImage ships xcb, not offscreen.
+Keep Qt lookup inside the extracted package and fail on plugin/display/load errors.
+The child `test_typsteditor` suite must select `QT_QPA_PLATFORM=xcb` explicitly:
+its native layout/raster scenarios must not inherit the parent's offscreen default.
 Keep the credential tests on a real vault; headers from
 `libsecret-1-dev` alone do not provide one.
 
 TLS fixtures use Ubuntu's `/usr/bin/openssl` explicitly, not a PATH executable
 shadowed by the separate packaging OpenSSL install. These environment changes
-apply only to tests; release commits skip the runtime setup and test invocations.
+apply only to tests; release commits skip vault setup and test invocations, not the
+Xvfb-backed packaged-consumer check.
 
 ## macOS test temporary paths
 

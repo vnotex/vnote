@@ -7,6 +7,26 @@
 * Add Typst as a Markdown math renderer through VTextEdit's isolated native runtime, with reader/in-place previews, self-contained HTML, PDF and cross-copy support; existing dollar delimiters use Typst syntax when selected, while KaTeX stays the default
 * Support Typst math in protected notes through profile-bound authorization, native in-place rasterization and revocation-safe cleanup; protected MathJax preferences retain bundled KaTeX, with unchanged CSP and resource restrictions
 * Refresh shared Markdown preview themes after publication, including EditOnly tabs, so math keeps the current foreground after light/dark switching
+* Build the macOS WebEngine package probe with Qt target requirements and the ARM intrinsic declaration while retaining package-only runtime paths and locale assertions
+* Verify the same signed macOS packages on native Apple Silicon and Intel runners within the existing launch deadline, and publish only after both architectures pass
+* Retain failed signed macOS packages and bounded loader/Rosetta diagnostics without weakening the consumer launch gate
+* Unlock the macOS test vault after compilation and preserve bounded package-consumer timeout diagnostics while cleaning up the owned process group
+* Derive Cocoa test input from its native view and reuse the validated Python interpreter for macOS architecture smoke checks
+* Open Typst context-menu links after the menu unwinds so native consent cannot strand its event loop; revoke queued actions when the originating view changes
+* Give Linux cold-build jobs the same artifact-publication budget as Windows and macOS without changing test deadlines
+* Settle first-paint gutter layout and acknowledge Windows native drag startup before delivering test drag destinations
+* Keep in-place Typst resource menus alive through native activation when preview replacement retires their card
+* Add key-restricted SSH-only CI debugging and finalize macOS deployment after all test-build relinks
+* Preserve successful CI test reports as well as failures so skipped native cases remain visible
+* Use native screen/presentation boundaries and modal timers in CI input fixtures; keep raster fixtures measurable at low DPI without relaxing their assertions
+* Verify Linux AppImages with their shipped xcb platform under Xvfb, including release builds, instead of requesting an unbundled offscreen plugin
+* Subscribe before native raster startup, synchronize drag fixtures on delivered input, and drive Cocoa consent through its real alert buttons; retain original parent/native CI failures independently
+* Keep Typst resource-consent fixtures alive through nested dialog completion and wait for horizontal-scroll ranges before raster alignment
+* Preserve Markdown presentation startup across native window reconstruction while still cancelling genuinely hidden views
+* Run native Typst host tests in serial fixed-budget groups and anchor raster-test navigation to the observed source cursor
+* Keep Linux failure diagnostics scoped to the failed parent or native-editor suite instead of rerunning a passing suite
+* Keep Markdown presentation requests alive when native reader focus arrives after the Edit-to-Read buffer sync
+* Discard late outgoing PDF camera state before binding a replacement note; establish active-window and editor-focus preconditions in native CI fixtures
 * Prevent task command injection from filenames, selected text and other variable values: shell commands/options must be static, variable values belong in literal `args`, and values are no longer recursively expanded; migrate the bundled Git commit task and report guidance for custom tasks (argument-bearing shell tasks require Bash or PowerShell, otherwise use `type: process`)
 * Fix CI test focus and native drag delivery, retain Windows assertion output and allow cold builds to finish
 * Refresh bundled KSyntaxHighlighting 6.30.0 resources: 464 syntax definitions (including generated Jinja grammars) and 31 upstream highlighting themes; use Catppuccin Latte as the default light syntax theme and keep upstream dark fallbacks while retaining UI theme-specific highlighting overrides

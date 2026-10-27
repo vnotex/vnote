@@ -1760,12 +1760,22 @@ endif()
 add_qt_test(test_typstviewwindow_insertion
   SOURCES test_typstviewwindow_insertion.cpp ${_markdown_window_test_sources}
   LINKS ${_markdown_window_links} Qt6::Pdf
-  ARGS -nocrashhandler -o -,txt
+  ARGS -o -,txt -o test_typstviewwindow_insertion.xml,junitxml
+)
+add_test(NAME test_typstviewwindow_cleanup
+  COMMAND $<TARGET_FILE:test_typstviewwindow_insertion>
+    -o -,txt -o test_typstviewwindow_cleanup.xml,junitxml
+)
+add_test(NAME test_typstviewwindow_resources
+  COMMAND $<TARGET_FILE:test_typstviewwindow_insertion>
+    -o -,txt -o test_typstviewwindow_resources.xml,junitxml
 )
 if(APPLE)
   set_source_files_properties(test_typstviewwindow_insertion.cpp PROPERTIES LANGUAGE OBJCXX)
   target_link_libraries(test_typstviewwindow_insertion PRIVATE
     "-framework AppKit" "-framework CoreGraphics")
+elseif(WIN32)
+  target_link_libraries(test_typstviewwindow_insertion PRIVATE dwmapi)
 endif()
 target_include_directories(test_typstviewwindow_insertion PRIVATE
   $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>
@@ -1775,16 +1785,30 @@ target_compile_definitions(test_typstviewwindow_insertion PRIVATE
   VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
 )
 add_dependencies(test_typstviewwindow_insertion VX_EXTRA_RESOURCE)
-set_tests_properties(test_typstviewwindow_insertion PROPERTIES TIMEOUT 240)
-set_property(TEST test_typstviewwindow_insertion PROPERTY ENVIRONMENT
+set_tests_properties(test_typstviewwindow_insertion test_typstviewwindow_cleanup
+  test_typstviewwindow_resources PROPERTIES
+  TIMEOUT 240
+  RUN_SERIAL TRUE
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
+)
+set_property(TEST test_typstviewwindow_insertion test_typstviewwindow_cleanup
+  test_typstviewwindow_resources PROPERTY ENVIRONMENT
   "QT_QPA_PLATFORM=${_tab_reuse_platform}"
   "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_tab_reuse_plugin}>"
   "QT_PLUGIN_PATH=$<TARGET_FILE_DIR:${_tab_reuse_plugin}>/.."
 )
 if(WIN32)
-  set_property(TEST test_typstviewwindow_insertion APPEND PROPERTY
-    ENVIRONMENT "PATH=${_markdown_job_path}")
+  foreach(_typst_test test_typstviewwindow_insertion test_typstviewwindow_cleanup
+      test_typstviewwindow_resources)
+    set_property(TEST ${_typst_test} APPEND PROPERTY ENVIRONMENT "PATH=${_markdown_job_path}")
+  endforeach()
 endif()
+set_property(TEST test_typstviewwindow_insertion APPEND PROPERTY
+  ENVIRONMENT "VNOTE_TYPST_TEST_GROUP=insertion")
+set_property(TEST test_typstviewwindow_cleanup APPEND PROPERTY
+  ENVIRONMENT "VNOTE_TYPST_TEST_GROUP=cleanup")
+set_property(TEST test_typstviewwindow_resources APPEND PROPERTY
+  ENVIRONMENT "VNOTE_TYPST_TEST_GROUP=resources")
 
 if(WIN32)
   # Every widget executable uses this directory. Serialize the two DLL copies,

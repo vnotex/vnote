@@ -199,13 +199,24 @@ ctest --test-dir build --output-on-failure  # Show output on failure
 which the offscreen UNIX dispatcher does not drain. Do not set
 `QT_EVENT_DISPATCHER_CORE_FOUNDATION`: it also replaces worker-thread dispatchers and
 can stall queued work. Tests also need an unlocked default keychain; macOS CI creates
-a disposable one and restores the previous default after testing.
+a disposable one after compilation, immediately before CTest, so the unlock lease covers
+execution rather than the cold build. It restores the previous default after testing.
 
 For asynchronous modal-error tests, wait for controller completion with `QSignalSpy::wait`.
 Keep the dismissal timer active until completion and restrict it to the tested dialog's
-message box. Cocoa can deliver a click during `show()`, before `exec()` starts its nested
-loop: allow repeated clicks on an already-observed box even if that early click hid it.
-Do not stop on the first click or infer dialog readiness from `QThread::loopLevel()`.
+message box. Do not stop on the first click or infer dialog readiness from
+`QThread::loopLevel()`.
+
+`resourceRemoteConsent` owns a parent-matched `QPointer<QMessageBox>` and an answer timer
+through queued Open Link dispatch and destruction of its completed message box, not just
+until the context menu returns. A Cocoa native alert's QWidget is a hidden
+mirror (`WA_DontShowOnScreen`), not its interactive surface: click the real NSButton's
+Yes/No tag on the active native alert, or the parent's attached sheet for WindowModal.
+Never re-show or click that dummy QWidget during native modal startup. The QWidget fallback
+requires the matching visible active modal and its visible expected button. Cocoa uses
+an `NSTimer` in common/modal/tracking run-loop modes: a native alert nested inside manual
+Qt event dispatch can suppress QTimer activation. Invalidate before answering and on scope
+exit; the same native timer owns the eight-second failure/reject deadline.
 
 **Native WebEngine raster tests:** on macOS, `test_mindmapexport`, `test_htmlpdfexporter`,
 `test_markdownwebjobs` and `test_webviewservice` use `cocoa` and the matching Qt kit's
@@ -216,6 +227,8 @@ Native Markdown render waits observe the adapter's completed document generation
 actual DOM, not the independent web-job handshake. JavaScript observations pump events;
 use one `QTest::qWaitFor` and recheck the generation after observation, rather than a
 `QTRY` predicate that can become false again during its post-success evaluation.
+If the next assertion requires native currentness, use `waitForCurrentRender`, not the
+DOM-only `waitForRender`; protected/public handoffs retain all token and stale-work checks.
 
 Typst context-menu fixtures select Paste by Qt's `edit-paste` action ID and retire
 resources after action admission, not from a timer that can fire during Cocoa's menu
@@ -223,10 +236,41 @@ flash. Empty clipboard MIME data is nullable. Native drag fixtures must release 
 without depending on GUI timers: Windows OLE and Cocoa tracking loops can starve them.
 Use joined native-input workers, restoring the cursor and preventing late input from
 reaching the next case; Cocoa retains app-local NSEvents rather than global HID input.
-Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Select `-o -,txt`
-explicitly when disabling QtTest's crash handler so Windows CI retains assertion output.
-Before inserting a tab-replacement draft programmatically, focus the editor and wait
-for focus delivery: that registers the outgoing active writer used by Save.
+Windows drag motion uses non-coalesced `SendInput` records in normalized virtual-desktop
+coordinates. After selecting text, acquire foreground, repaint, deliver posted `LayoutRequest`
+events, repaint the resolved gutter layout and complete `DwmFlush` before measuring positions.
+After source-pointer receipt, recheck mapped start/end and `widgetAt` before pressing: a
+first-paint gutter update must not move the viewport underneath cached coordinates.
+Failure diagnostics record native move/press/activation messages and GUI-thread state.
+Query `GetGUIThreadInfo(guiThreadId)` from the worker, not its own GetFocus/GetCapture;
+never consume or reroute an event just to make the fixture pass.
+Windows workers acknowledge the press and threshold, then post a registered native message to
+the source HWND. The GUI filter acknowledges it only while an owned `QDrag` exists. Send one
+distinct bootstrap motion, await capture transfer from the fixture to a GUI-thread window,
+then send the final destination; an already-posted capture never skips the bootstrap motion.
+All waits share the original deadline. Qt timers or waiting for DragEnter before startup motion
+can deadlock in Qt's filtered native pump. Destination arrival can be DragEnter or DragMove.
+Release follows arrival or the bounded deadline; joined workers always attempt release and
+restore the saved pointer. Cocoa
+creates timestamped NSEvents at dispatch, without warping ahead of delivered source events.
+Create native peers before measuring drag coordinates. On Cocoa, find the source viewport's
+nearest already-native QWidget ancestor without creating a peer. Its flipped QNSView coordinates
+match Qt's window coordinates: map locally to that ancestor, then use `convertPoint:toView:nil`
+for the event and `convertRectToScreen:` plus the primary-screen Y flip for the Quartz pointer.
+Do not mix Qt's cached global frame origin into native input or compensate with titlebar offsets.
+Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Keep the normal
+QtTest crash handler. Build the host Typst module's `test_typstviewwindow_insertion` executable
+once, then select `^test_typstviewwindow_(insertion|cleanup|resources)$` in CTest. These serial
+groups share the executable and each retain a 240-second deadline. With `VNOTE_TYPST_TEST_GROUP`
+unset, a direct executable launch still runs every case. Each group writes plaintext stdout and
+its own `test_typstviewwindow_<group>.xml` JUnit file in the CTest working directory. CI
+preserves original parent/native CTest logs and these reports before diagnostic reruns,
+since hosted stdout can omit assertions.
+Set Qt's active window explicitly at focus-sensitive fixture operations; `activateWindow()`
+alone depends on a window manager under Xvfb. After dismissing a modal dialog, wait for
+window activation and editor focus before sending shortcuts. Settle native exposure and
+activation before measuring drag coordinates. Before inserting tab-replacement or presentation
+drafts programmatically, wait for editor focus: that registers the active writer used by Save.
 
 PDF.js text-item boundaries are not word boundaries: ligatures can split a word across
 items. Reconstruct text by concatenating `item.str` and adding a newline only for

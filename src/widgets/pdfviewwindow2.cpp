@@ -711,8 +711,7 @@ void PdfViewWindow2::setupViewer() {
   // The theme styles are RESOLVED here, in the view layer, and passed down as
   // plain content — HtmlTemplateService must stay free of GUI dependencies.
   auto *tmplService = getServices().get<HtmlTemplateService>();
-  tmplService->updatePdfViewerTemplate(pdfViewerConfig,
-                                       pdfThemeCss(*themeService),
+  tmplService->updatePdfViewerTemplate(pdfViewerConfig, pdfThemeCss(*themeService),
                                        themeService->fetchWebStyleSheet());
 
   auto *pdfAdapter = new PdfViewerAdapter(nullptr);
@@ -791,8 +790,7 @@ void PdfViewWindow2::handleEditorConfigChange() {
 
     auto *themeService = getServices().get<ThemeService>();
     auto *tmplService = getServices().get<HtmlTemplateService>();
-    tmplService->updatePdfViewerTemplate(pdfViewerConfig,
-                                         pdfThemeCss(*themeService),
+    tmplService->updatePdfViewerTemplate(pdfViewerConfig, pdfThemeCss(*themeService),
                                          themeService->fetchWebStyleSheet());
   }
 }
@@ -810,8 +808,7 @@ void PdfViewWindow2::handleThemeChanged() {
   const auto &pdfViewerConfig = configMgr->getEditorConfig().getPdfViewerConfig();
   auto *themeService = getServices().get<ThemeService>();
   auto *tmplService = getServices().get<HtmlTemplateService>();
-  tmplService->updatePdfViewerTemplate(pdfViewerConfig,
-                                       pdfThemeCss(*themeService),
+  tmplService->updatePdfViewerTemplate(pdfViewerConfig, pdfThemeCss(*themeService),
                                        themeService->fetchWebStyleSheet(), /*p_force=*/true);
 
   // Update WebEngine page background color.
@@ -896,6 +893,9 @@ void PdfViewWindow2::bindBufferResources() {
                   showMessage(tr("Unable to load PDF document"));
                   return;
                 }
+                // Calls already queued from the outgoing page can recapture its replay
+                // during retirement. Reset again now that the inert document owns the page.
+                adapter()->resetForNewDocument();
                 auto *channel = m_viewer->page()->webChannel();
                 channel->registerObject(QStringLiteral("vxAdapter"), adapter());
                 m_documentResetPending = false;

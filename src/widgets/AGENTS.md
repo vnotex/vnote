@@ -115,6 +115,16 @@ The split-pane editor area, designed around vxcore workspaces:
 - `ViewSplit2` — QTabWidget-based split pane; each instance maps 1:1 to a vxcore workspace
 - `ViewWindow2` — abstract base for file viewer windows; receives an initial `Buffer2` and owns guarded same-type rebinding
 
+Markdown Edit-to-Read transitions must adopt the revision from their successful `syncNow()`
+before exposing/focusing the reader. A delayed native focus gain otherwise misclassifies that
+own write as an external edit and cancels a pending presentation. Real foreign revisions still
+refresh through `onFocusGained()`. `presentationCreatesReader` covers the delayed-focus ordering.
+First-reader creation can rebuild a native ancestor and transiently hide the view. Ignore those
+Hide notifications only while preparing presentation, then validate the settled visibility and
+enabled state before sending a request. A genuinely hidden view must not start presentation when
+shown later; Close, Escape and disabling still cancel immediately. Preparation may pump events,
+so its state restoration must be guarded by the view's lifetime.
+
 `ViewWindow2` mounts both `StatusBar` and shared `StatusWidget` through `StatusOverlay`,
 not through the bottom layout. Each strip floats over the bottom edge of its own content
 layout, above Find and other bottom widgets; showing, clearing or expiring a message must
@@ -175,8 +185,10 @@ Protected Markdown reader pages/profiles are authorization-bound: retire page be
 when either identity is protected, without terminally destroying the retained native editor.
 Web adapter reset clears pending actions/callbacks even while already not-ready. PDF replacement
 flushes JS-debounced comment drafts before the durable gate, uses `setActiveFile()` for comments,
-and clears document replay through `resetForNewDocument()`; theme reload still replays that PDF's
-own camera. Typst uses native `resetForNewDocument()` and calls `finishDocumentReset()` only
+and clears document replay through `resetForNewDocument()` both on release and after the inert
+navigation succeeds, immediately before re-registering the adapter. The second reset discards
+outgoing WebChannel calls that recaptured replay during retirement; theme reload still replays
+that PDF's own camera. Typst uses native `resetForNewDocument()` and calls `finishDocumentReset()` only
 after installing the validated incoming project and source; its native compiler session survives.
 
 Coverage: `test_viewarea_tab_reuse` uses production services, windows, real explorer gestures,
@@ -276,6 +288,13 @@ URI. The native compiler owns resource identity, evaluated ranges and resize pla
 parse Typst with host regexes or use a page crop as the original image. Resize preserves other
 arguments/comments and commits one native Undo step. Viewing/copying also works in Read and
 read-only notes, without source edits, asset writes, or network acquisition.
+
+**Open Link** is queued on the owning `TypstViewWindow`, not on the temporary menu.
+Let the context menu unwind before external-link consent enters a native modal loop;
+otherwise Cocoa can lose the menu's exit interruption while starting its alert. Recheck
+the captured resource generation and context at dispatch. Menu deletion must not cancel
+an admitted link, but edit, retarget, close and owner destruction must revoke it. Other
+resource actions retain direct admission; controller confirmation remains synchronous.
 
 The shared `ImageViewer::Mode::Overlay` covers the composite editor and supports fit, zoom,
 pan, Escape, Close, and backdrop dismissal. Plain preview-image double-click opens it; linked
