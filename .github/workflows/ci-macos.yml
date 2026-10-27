@@ -23,7 +23,6 @@ on:
 env:
     VNOTE_VER: 4.11.0
     CMAKE_VER: 3.24.3
-    VNOTE_TESTS: ${{ startsWith(github.event.head_commit.message, '[Release]') && 'OFF' || 'ON' }}
     CARGO_BUILD_JOBS: 2
     CMAKE_BUILD_PARALLEL_LEVEL: 2
 
@@ -45,6 +44,7 @@ jobs:
             os: macos-latest
             arch: universal
             qt: 6.10.3
+            tests: "ON"
             deployment_target: "13.0"
             suffix: ""
           - name: "Build for macOS 12 (Qt 6.9.3)"
@@ -52,10 +52,13 @@ jobs:
             os: macos-latest
             arch: universal
             qt: 6.9.3
+            tests: "OFF"
             deployment_target: "12.1"
             suffix: "-macos12"
 
     runs-on: ${{matrix.config.os}}
+    env:
+      VNOTE_TESTS: ${{ startsWith(github.event.head_commit.message, '[Release]') && 'OFF' || matrix.config.tests }}
 
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE.

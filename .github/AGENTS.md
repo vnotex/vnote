@@ -14,7 +14,7 @@ See also: [../AGENTS.md](../AGENTS.md) (repo-wide rules, submodule push discipli
 
 Linux and macOS set `CMAKE_BUILD_PARALLEL_LEVEL=2` for both packaging and test
 builds; Make otherwise builds these large targets serially. Keep Cargo's separate
-two-job limit. Run both the parent and native-editor suites even when one fails,
+two-job limit. In test-enabled jobs, run both parent and native-editor suites even when one fails,
 then fail the step if either returned nonzero. Preserve both original CTest logs
 and the Typst JUnit reports before diagnostics; macOS artifact names include the Qt kit.
 Upload reports for successful test steps too: a QtTest case can skip inside an otherwise
@@ -30,6 +30,12 @@ budget is not a test timeout.
 macOS creates and unlocks its disposable test keychain only after test compilation,
 right before running CTest. Cold builds must not consume the vault's unlock lease;
 restore the original keychain before final packaging and signing.
+
+The macOS matrix enables unit/native GUI tests only for Qt 6.10.3. Qt 6.9.3 sets
+`VNOTE_BUILD_TESTS=OFF` and skips the test build, execution and disposable test keychain.
+The existing `[Release]` condition disables these suites for both kits. Both Qt kits still
+build and sign packages and run the signed-package ABI, consumer and WebEngine gates,
+including native Intel verification; do not describe Qt 6.9.3 as unit-test validated.
 
 ## Interactive CI debugging
 
@@ -104,8 +110,9 @@ On macOS, architecture probes and ABI workers reuse the gate's already-running P
 (`sys.executable`), not a different `/usr/bin/python3` runtime. Keep the 15-second architecture
 probe, mandatory native-architecture execution, and existing non-host availability policy.
 `scripts/e2e/smoke_macos_consumer.py` requires the expected native architecture and launches
-VNote with the unchanged 30-second budget and an isolated home. Build jobs retain ARM native
-tests, both available ABI slices and the WebEngine gate. Separate `macos-15-intel` jobs download
+VNote with the unchanged 30-second budget and an isolated home. Test-enabled builds run ARM
+native suites; all builds retain both available ABI slices and the WebEngine gate. Separate
+`macos-15-intel` jobs download
 the same signed DMGs and require native x86_64 ABI and consumer execution for both Qt kits.
 Cold Rosetta translation of QtWebEngineCore can exceed the launch budget before main; do not
 warm its cache, retry to green, or increase the deadline instead of using native Intel proof.
