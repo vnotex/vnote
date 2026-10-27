@@ -1006,6 +1006,8 @@ void TestViewAreaTabReuse::previewReaderNavigationAndNativeHost() {
   detached->show();
   detached->activateWindow();
   QTRY_VERIFY(detached->isActiveWindow() && overlay->isVisible());
+  // Detachment resizes the source; its overlay re-anchors on the next event-loop turn.
+  QTRY_VERIFY(source->contentsRect().contains(overlay->geometry()));
   QCOMPARE(overlay->parentWidget(), source);
   QCOMPARE(overlay->getViewSplit(), split);
   QCOMPARE(f->area->previewWorkspaceForWindow(source->getViewWindowId()), preview);
@@ -1412,6 +1414,21 @@ void TestViewAreaTabReuse::previewHostRoutingAndGeometry() {
   QVERIFY(f->controller()->closeViewWindow(cWindow, false));
   QCOMPARE(f->order(preview), QStringList({b.id()}));
   QVERIFY(!split->tabBar()->isVisible());
+  const struct {
+    QRect anchor;
+    QRect expected;
+  } geometryCases[] = {
+      {QRect(20, 30, 400, 300), QRect(54, 59, 331, 241)},
+      {QRect(20, 30, 20, 10), QRect(30, 35, 0, 0)},
+      {QRect(20, 30, 401, 301), QRect(54, 59, 332, 242)},
+  };
+  for (const auto &geometryCase : geometryCases) {
+    QVERIFY(source->contentsRect().contains(geometryCase.anchor));
+    overlay->setAnchorRect(geometryCase.anchor);
+    // Observe immediately, before the view area's queued live-layout re-anchor.
+    QCOMPARE(overlay->geometry(), geometryCase.expected);
+    QCOMPARE(source->size(), sourceSize);
+  }
   f->area->resize(760, 550);
   QTRY_VERIFY(source->rect().contains(overlay->geometry()));
   QPointer<LinkPreviewOverlay> closingOverlay(overlay);

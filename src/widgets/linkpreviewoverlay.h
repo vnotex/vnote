@@ -24,7 +24,7 @@ public:
 
   ViewSplit2 *getViewSplit() const;
 
-  // Source-local content geometry, before the overlay's 16-pixel edge inset.
+  // Source-local content geometry, before the 16-pixel inset and centered 90% sizing.
   void setAnchorRect(const QRect &p_rect);
 
 signals:

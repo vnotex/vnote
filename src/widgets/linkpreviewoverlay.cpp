@@ -73,8 +73,10 @@ void LinkPreviewOverlay::setAnchorRect(const QRect &p_rect) {
   const int height = qMax(0, area.height());
   const int horizontalInset = qMin(16, width / 2);
   const int verticalInset = qMin(16, height / 2);
-  const QRect target(area.x() + horizontalInset, area.y() + verticalInset,
-                     width - 2 * horizontalInset, height - 2 * verticalInset);
+  const int previewWidth = (width - 2 * horizontalInset) * 9 / 10;
+  const int previewHeight = (height - 2 * verticalInset) * 9 / 10;
+  const QRect target(area.x() + (width - previewWidth) / 2, area.y() + (height - previewHeight) / 2,
+                     previewWidth, previewHeight);
   if (geometry() != target) {
     setGeometry(target);
   }
