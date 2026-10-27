@@ -40,6 +40,16 @@ target_include_directories(test_textcursorpreserver PRIVATE
   ${CMAKE_SOURCE_DIR}/src
 )
 
+set(_themeservice_report_args)
+if(WIN32)
+  # Keep first-run diagnostics independent of CTest's captured console output.
+  set(_themeservice_report_args
+    -o -,txt
+    -o test_themeservice.txt,txt
+    -o test_themeservice.xml,junitxml
+  )
+endif()
+
 add_qt_test(test_themeservice
   SOURCES
     test_themeservice.cpp
@@ -53,7 +63,10 @@ add_qt_test(test_themeservice
     Qt6::Gui
     Qt6::Widgets
     core_services
+  ARGS
+    ${_themeservice_report_args}
 )
+unset(_themeservice_report_args)
 
 # The comment colour chip, shared by all three colour pickers. It is a LEAF: it
 # names no ThemeService symbol, so it links on its own. That property is what

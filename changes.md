@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Preserve first-run Windows theme-test text and JUnit reports before diagnostic reruns
 * Disable Qt 6.9.3 macOS unit/native GUI suites while retaining build, signing and package verification; keep Qt 6.10.3 test coverage
 * Establish native editor focus before draft fixtures and avoid reinstalling unchanged assets between isolated tab-reuse test cases
 * Remove obsolete implicit-padding checks from Typst markup integration tests while retaining rendering, geometry, export and cross-copy checks

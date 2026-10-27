@@ -560,6 +560,15 @@ As of 2026-06-05, the following tests are compliant:
 
 ## Debugging Tips
 
+### First-run Windows theme reports
+
+The Windows CTest registration for `test_themeservice` writes
+`tests/gui/test_themeservice.txt` and `tests/gui/test_themeservice.xml` in the build tree,
+while retaining console output. CI includes both in `native-typst-test-report` before
+any diagnostic rerun can overwrite the local files. Inspect these original reports first;
+a passing rerun does not establish that the first-run failure was repaired. File reports
+capture QtTest diagnostics, not failures occurring before QtTest initializes.
+
 ### Windows exit code `0xC0000409` is NOT a stack overrun
 
 `0xC0000409` (`STATUS_STACK_BUFFER_OVERRUN`) is misleading. On Windows, Qt's `qFatal()` calls `__fastfail(FAST_FAIL_FATAL_APP_EXIT)`, which the OS reports as `0xC0000409`. The actual cause is almost always a `qFatal()` deep inside Qt, e.g., `QFontDatabase: Must construct a QGuiApplication before accessing QFontDatabase` raised when a `QTEST_GUILESS_MAIN` test transitively touches font-database code.
