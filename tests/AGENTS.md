@@ -271,6 +271,16 @@ alone depends on a window manager under Xvfb. After dismissing a modal dialog, w
 window activation and editor focus before sending shortcuts. Settle native exposure and
 activation before measuring drag coordinates. Before inserting tab-replacement or presentation
 drafts programmatically, wait for editor focus: that registers the active writer used by Save.
+The lazy-view `showWindow()` helper establishes those exposure/activation/focus preconditions;
+do not require editor focus for hidden/disabled editors or encrypted buffers already locking.
+
+`test_viewarea_tab_reuse` retains only its unmodified, version-stamped bundled asset directories
+between QtTest rows. It removes all local state and all non-bundle app entries before creating
+a fresh context, config, notebook, services and WebEngine profile. Obtain cleanup paths from
+ConfigMgr2, and prune only in the test class `init()`, never inside `Fixture::initialize()`:
+intra-row fixture recreation intentionally tests persisted sessions. This suite must not edit
+installed assets, including `web/css/user.css` or user-created templates; asset-customization
+fixtures must retain the full test-directory reset. Keep the existing suite deadlines.
 
 PDF.js text-item boundaries are not word boundaries: ligatures can split a word across
 items. Reconstruct text by concatenating `item.str` and adding a newline only for

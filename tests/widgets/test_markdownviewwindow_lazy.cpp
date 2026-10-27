@@ -458,9 +458,14 @@ Buffer2 TestMarkdownViewWindowLazy::openProtectedNote(const QByteArray &p_source
 void TestMarkdownViewWindowLazy::showWindow(Window &p_window) {
   p_window.resize(1000, 720);
   p_window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&p_window));
   p_window.activateWindow();
-  if (auto *editor = p_window.findChild<MarkdownEditor *>()) {
+  QApplication::setActiveWindow(&p_window);
+  const QPointer<MarkdownEditor> editor = p_window.findChild<MarkdownEditor *>();
+  if (editor && editor->isVisible() && editor->isEnabled() &&
+      !(p_window.getBuffer().isEncrypted() && m_buffers->isProtectedLocking())) {
     editor->getTextEdit()->setFocus();
+    QTRY_VERIFY(editor && editor->getTextEdit()->hasFocus());
   }
   QCoreApplication::processEvents();
 }
@@ -1507,6 +1512,7 @@ void TestMarkdownViewWindowLazy::inactiveTabPreservesDraft() {
   auto *editor = window.findChild<MarkdownEditor *>();
   QVERIFY(editor);
   tabs.activateWindow();
+  QApplication::setActiveWindow(&tabs);
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor, QStringLiteral("\n# Unsaved inactive heading\n"));

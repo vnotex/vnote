@@ -509,15 +509,41 @@ private slots:
 private:
   std::unique_ptr<QTemporaryDir> directory;
   std::unique_ptr<Fixture> f;
+  QString appDataPath;
+  QString userConfigPath;
 };
 
 void TestViewAreaTabReuse::init() {
   vxcore_set_test_mode(1);
-  vxcore_clear_test_directory();
+  if (appDataPath.isEmpty()) {
+    vxcore_clear_test_directory();
+  } else {
+    // Only bundled assets survive rows. Contexts, config, sessions and profiles do not.
+    // This suite must not edit installed assets (including user.css and templates).
+    QVERIFY(!userConfigPath.isEmpty());
+    QVERIFY(QDir(userConfigPath).removeRecursively());
+    static const QStringList bundledFolders{
+        QStringLiteral("themes"), QStringLiteral("tasks"), QStringLiteral("syntax-highlighting"),
+        QStringLiteral("web"),    QStringLiteral("dicts"), QStringLiteral("templates"),
+        QStringLiteral("docs")};
+    const QDir appDirectory(appDataPath);
+    for (const auto &entry : appDirectory.entryInfoList(QDir::AllEntries | QDir::Hidden |
+                                                        QDir::System | QDir::NoDotAndDotDot)) {
+      if (!entry.isSymLink() && entry.isDir() && bundledFolders.contains(entry.fileName()))
+        continue;
+      const bool removed = !entry.isSymLink() && entry.isDir()
+                               ? QDir(entry.filePath()).removeRecursively()
+                               : QFile::remove(entry.filePath());
+      QVERIFY2(removed, qPrintable(entry.filePath()));
+    }
+  }
   directory = std::make_unique<QTemporaryDir>(QDir::tempPath() + QStringLiteral("/n-XXXXXX"));
   QVERIFY(directory->isValid());
   f = std::make_unique<Fixture>(directory->path());
   QVERIFY2(f->initialize(), qPrintable(f->error));
+  appDataPath = f->config->getAppDataPath();
+  userConfigPath = f->config->getUserConfigPath();
+  QVERIFY(!appDataPath.isEmpty() && !userConfigPath.isEmpty());
 }
 
 void TestViewAreaTabReuse::cleanup() {

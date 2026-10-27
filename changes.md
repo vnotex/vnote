@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Establish native editor focus before draft fixtures and avoid reinstalling unchanged assets between isolated tab-reuse test cases
 * Remove obsolete implicit-padding checks from Typst markup integration tests while retaining rendering, geometry, export and cross-copy checks
 * Remove the default page margin from Markdown Typst blocks so they align with surrounding content; explicit Typst margins and standalone document layout are unchanged
 * Match Typst preview page backgrounds to the editor's Text background, including Typst-specific overrides, while preserving outer margins, authored document styles and export colors
