@@ -1032,7 +1032,7 @@ window.__anchors = [];
 window.vxcore.nodeLineMapper = {scrollToAnchor: function(anchor) { __anchors.push(anchor); }};
 window.vxMarkdownAdapter = {
   setWorkFinished: function(generation) { __completedGenerations.push(generation); },
-  activateProtectedLink: function(href) { __protectedLinks.push(href); },
+  activateLink: function(generation, href) { __protectedLinks.push(href); },
   protectedImageUrl: function(src, callback) { window.__finishImage = callback; }
 };
 return {ready: true};

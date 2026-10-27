@@ -1171,7 +1171,7 @@ void MarkdownViewWindow2::connectViewerSignals() {
     return generation == getBufferGeneration() && !m_readerResourcesSuspended &&
            !m_readerLifecycleClosing && viewer && m_viewer == viewer.data();
   };
-  connect(adapterObj, &MarkdownViewerAdapter::protectedLinkRequested, this,
+  connect(adapterObj, &MarkdownViewerAdapter::linkRequested, this,
           [this, current](const QString &p_url) {
             if (current() && m_viewerReady) {
               handleOpenFileRequest(p_url, false);

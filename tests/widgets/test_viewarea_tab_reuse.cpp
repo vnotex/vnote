@@ -37,6 +37,7 @@
 #include <QTextBlock>
 #include <QTextCursor>
 #include <QTimer>
+#include <QToolBar>
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
 #include <QWheelEvent>
@@ -96,6 +97,7 @@
 #include <widgets/editors/pdfviewer.h>
 #include <widgets/editors/pdfvieweradapter.h>
 #include <widgets/editors/texteditor.h>
+#include <widgets/editreaddiscardaction.h>
 #include <widgets/imageviewer.h>
 #include <widgets/linkpreviewoverlay.h>
 #include <widgets/outlineprovider.h>
@@ -656,6 +658,7 @@ private slots:
   void previewHostRoutingAndGeometry();
   void previewEditingCommandTargetAndVisibility();
   void previewCloseConsent();
+  void previewOutsideClickDismissal();
   void previewSourceCancellation();
   void previewSharedOwnership_data();
   void previewSharedOwnership();
@@ -1550,6 +1553,228 @@ void TestViewAreaTabReuse::previewEditingCommandTargetAndVisibility() {
   QVERIFY(f->controller()->closePreviewWorkspace(f->workspace()));
   QTRY_VERIFY(closedPdf.isNull());
   QCOMPARE(f->current(), source.data());
+}
+
+void TestViewAreaTabReuse::previewOutsideClickDismissal() {
+  const QByteArray sourceBytes("[C](c.md)\n\n# Source A\n");
+  QVERIFY(f->create(QStringLiteral("a.md"), sourceBytes));
+  QVERIFY(f->create(QStringLiteral("b.txt"), "Preview B\n"));
+  QVERIFY(f->create(QStringLiteral("c.md"), "# Do not open on dismissal\n"));
+  QVERIFY(f->create(QStringLiteral("other.txt"), "Other editor\n"));
+  const QByteArray readerBytes(
+      "[C](c.md)\n\n[Here](#reader-first-source)\n\n# Reader-first source\n");
+  QVERIFY(f->create(QStringLiteral("reader.md"), readerBytes));
+  {
+    const auto initial = f->buffers->openBuffer(f->node(QStringLiteral("reader.md")));
+    QVERIFY(initial.isValid());
+    const QPointer<ViewWindow2> readerSource(f->current());
+    QVERIFY(!readerSource->findChild<MarkdownEditor *>());
+    auto *reader = readerSource->findChild<MarkdownViewer *>();
+    QVERIFY(reader && waitForRender(reader, QStringLiteral("Reader-first source")));
+    const auto sourceSize = reader->size();
+    QVERIFY(clickNativeSurface(reader, readerLinkPoint(reader, QStringLiteral("Here"))));
+    const auto point = readerLinkPoint(reader, QStringLiteral("C"));
+    QVERIFY(clickNativeSurface(reader, point));
+    QTRY_VERIFY(f->current() != readerSource);
+    QPointer<LinkPreviewOverlay> preview(readerSource->findChild<LinkPreviewOverlay *>());
+    QVERIFY(preview);
+    QVERIFY(clickNativeSurface(reader, point));
+    QTRY_VERIFY(preview.isNull());
+    QCOMPARE(f->current(), readerSource.data());
+    QCOMPARE(reader->size(), sourceSize);
+    QCOMPARE(readerSource->getBuffer().id(), initial.id());
+    QCOMPARE(readerSource->getLatestContent().toUtf8(), readerBytes);
+    QVERIFY(clickNativeSurface(reader, point));
+    QTRY_VERIFY(!f->area->previewWorkspaceForWindow(readerSource->getViewWindowId()).isEmpty());
+    preview = readerSource->findChild<LinkPreviewOverlay *>();
+    QVERIFY(f->controller()->closePreviewWorkspace(f->workspace()));
+    QTRY_VERIFY(preview.isNull());
+    QVERIFY(f->controller()->closeViewWindow(readerSource->getViewWindowId(), false));
+    QTRY_VERIFY(readerSource.isNull());
+  }
+  const auto a = f->open(QStringLiteral("a.md"));
+  QVERIFY(a.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  const auto main = f->workspace();
+  const auto sourceId = source->getViewWindowId();
+  auto *sourceEditor = source->findChild<MarkdownEditor *>();
+  QVERIFY(sourceEditor);
+  auto *sourceEdit = sourceEditor->getTextEdit();
+  sourceEdit->moveCursor(QTextCursor::End);
+  const auto originalCaret = sourceEdit->textCursor().position();
+  f->controller()->splitViewSplit(main, Direction::Right, false);
+  const auto other = f->open(QStringLiteral("other.txt"));
+  QVERIFY(other.isValid());
+  auto *otherEditor = f->current()->findChild<TextEditor *>();
+  QVERIFY(otherEditor);
+  f->controller()->focusWindow(main, a.id());
+  QTRY_VERIFY(source->isVisible());
+  const auto openPreview = [&]() -> QPointer<LinkPreviewOverlay> {
+    f->preview(source, f->node(QStringLiteral("b.txt")));
+    return source->findChild<LinkPreviewOverlay *>();
+  };
+  auto overlay = openPreview();
+  QVERIFY(overlay && overlay->isVisible());
+  const auto preview = f->area->previewWorkspaceForWindow(sourceId);
+  auto *previewEditor = overlay->getViewSplit()->getCurrentViewWindow()->findChild<TextEditor *>();
+  QVERIFY(previewEditor);
+  QVERIFY(clickNativeSurface(previewEditor->getTextEdit()->viewport(),
+                             previewEditor->getTextEdit()->viewport()->rect().center()));
+  QVERIFY(overlay && overlay->isVisible());
+  QVERIFY(clickNativeSurface(otherEditor->getTextEdit()->viewport(),
+                             otherEditor->getTextEdit()->viewport()->rect().center()));
+  QCOMPARE(f->area->previewWorkspaceForWindow(sourceId), preview);
+  {
+    QMenu menu(source);
+    bool triggered = false;
+    auto *action = menu.addAction(QStringLiteral("Unrelated source menu"));
+    connect(action, &QAction::triggered, &menu, [&] { triggered = true; });
+    menu.popup(source->mapToGlobal(QPoint(2, 2)));
+    QTRY_VERIFY(menu.isVisible());
+    QTest::mouseClick(&menu, Qt::LeftButton, Qt::NoModifier, menu.actionGeometry(action).center());
+    QVERIFY(triggered);
+    QVERIFY(overlay && overlay->isVisible());
+  }
+  {
+    QMessageBox message(QMessageBox::Information, QStringLiteral("Other dialog"),
+                        QStringLiteral("Keep the preview"), QMessageBox::Ok, source);
+    message.setWindowModality(Qt::WindowModal);
+    message.show();
+    QTRY_COMPARE(QApplication::activeModalWidget(), &message);
+    QTest::mouseClick(message.button(QMessageBox::Ok), Qt::LeftButton);
+    QTRY_VERIFY(!message.isVisible());
+    QVERIFY(overlay && overlay->isVisible());
+  }
+  source->hide();
+  QTRY_VERIFY(!overlay->isVisible());
+  QVERIFY(clickNativeSurface(otherEditor->getTextEdit()->viewport(),
+                             otherEditor->getTextEdit()->viewport()->rect().center()));
+  source->show();
+  QTRY_VERIFY(overlay->isVisible());
+  f->controller()->focusWindow(main, a.id());
+  QCOMPARE(f->area->previewWorkspaceForWindow(sourceId), preview);
+  QTRY_COMPARE(sourceEditor->getNavigationTargets().size(), 1);
+  const QPoint linkPoint = sourceEditor->getNavigationTargets().first().m_rect.center();
+  const auto sourcePoint = source->mapFromGlobal(sourceEdit->viewport()->mapToGlobal(linkPoint));
+  QVERIFY(!overlay->geometry().contains(sourcePoint));
+  QVERIFY(clickNativeSurface(sourceEdit->viewport(), linkPoint));
+  QTRY_VERIFY(overlay.isNull());
+  QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+  QVERIFY(f->area->findWindowIdsByNode(f->node(QStringLiteral("c.md")), false).isEmpty());
+  QCOMPARE(sourceEdit->textCursor().position(), originalCaret);
+  QCOMPARE(sourceEditor->getText().toUtf8(), sourceBytes);
+  QTRY_VERIFY(sourceEdit->hasFocus());
+
+  overlay = openPreview();
+  QVERIFY(overlay);
+  const auto dragPoint = linkPoint + QPoint(QApplication::startDragDistance() + 5, 0);
+  QTest::mousePress(sourceEdit->viewport(), Qt::LeftButton, Qt::NoModifier, linkPoint);
+  for (const auto &point : {dragPoint, linkPoint}) {
+    QMouseEvent move(QEvent::MouseMove, point, sourceEdit->viewport()->mapToGlobal(point),
+                     Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+    QApplication::sendEvent(sourceEdit->viewport(), &move);
+  }
+  QTest::mouseRelease(sourceEdit->viewport(), Qt::LeftButton, Qt::NoModifier, linkPoint);
+  QVERIFY(overlay && overlay->isVisible());
+  QCOMPARE(sourceEdit->textCursor().position(), originalCaret);
+  QVERIFY(clickNativeSurface(sourceEdit->viewport(), linkPoint));
+  QTRY_VERIFY(overlay.isNull());
+
+  source->setMode(ViewWindowMode::Read);
+  auto *reader = source->findChild<MarkdownViewer *>();
+  QVERIFY(reader && waitForRender(reader, QStringLiteral("Source A")));
+  overlay = openPreview();
+  QVERIFY(overlay);
+  const auto readerPoint = readerLinkPoint(reader, QStringLiteral("C"));
+  const auto global = reader->mapToGlobal(readerPoint);
+  QVERIFY(!overlay->geometry().contains(source->mapFromGlobal(global)));
+  QVERIFY(clickNativeSurface(reader, readerPoint));
+  QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+  // Deliver the platform's second press, not another complete single-click gesture.
+  auto *receiver = QApplication::widgetAt(global);
+  QVERIFY(receiver && (receiver == reader || reader->isAncestorOf(receiver)));
+  QMouseEvent doubleClick(QEvent::MouseButtonDblClick, receiver->mapFromGlobal(global), global,
+                          Qt::LeftButton, Qt::LeftButton, Qt::NoModifier);
+  QApplication::sendEvent(receiver, &doubleClick);
+  QTest::mouseRelease(receiver, Qt::LeftButton, Qt::NoModifier, receiver->mapFromGlobal(global));
+  QVERIFY(evaluate(reader->page(), QStringLiteral("document.body.innerText"))
+              .toString()
+              .contains(QStringLiteral("Source A")));
+  QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+  QVERIFY(f->area->findWindowIdsByNode(f->node(QStringLiteral("c.md")), false).isEmpty());
+  QTRY_VERIFY(overlay.isNull());
+  QTRY_VERIFY(reader->hasFocus() || reader->isAncestorOf(QApplication::focusWidget()));
+  // A subsequent ordinary click must work immediately, not wait for a grace timer.
+  QVERIFY(clickNativeSurface(reader, readerPoint));
+  QTRY_COMPARE(f->current()->getNodeId(), f->node(QStringLiteral("c.md")));
+  const QPointer<LinkPreviewOverlay> next(source->findChild<LinkPreviewOverlay *>());
+  QVERIFY(f->controller()->closePreviewWorkspace(f->workspace()));
+  QTRY_VERIFY(next.isNull());
+
+  auto *toolbar = source->findChild<QToolBar *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(toolbar);
+  auto *modeAction = toolbar->findChild<EditReadDiscardAction *>();
+  QVERIFY(modeAction);
+  auto *modeButton = toolbar->widgetForAction(modeAction);
+  QVERIFY(modeButton && modeButton->isEnabled());
+  for (const auto answer : {QMessageBox::Cancel, QMessageBox::Save, QMessageBox::Discard}) {
+    QVERIFY(writeBytes(f->absolute(QStringLiteral("b.txt")), "Preview B\n"));
+    overlay = openPreview();
+    QVERIFY(overlay);
+    const auto workspace = f->area->previewWorkspaceForWindow(sourceId);
+    auto *window = overlay->getViewSplit()->getCurrentViewWindow();
+    auto *editor = window->findChild<TextEditor *>();
+    QVERIFY(editor);
+    editor->getTextEdit()->setFocus();
+    QTRY_VERIFY(editor->getTextEdit()->hasFocus());
+    appendDraft(editor->getTextEdit(), QStringLiteral("Outside click draft\n"));
+    const auto draft = window->getLatestContent();
+    DialogAnswer dialog(answer);
+    QVERIFY(answer == QMessageBox::Cancel
+                ? clickNativeSurface(reader, readerLinkPoint(reader, QStringLiteral("C")))
+                : clickNativeSurface(modeButton, modeButton->rect().center()));
+    QVERIFY(dialog.accepted());
+    QCOMPARE(dialog.count(), 1);
+    QCOMPARE(source->getMode(), ViewWindowMode::Read);
+    if (answer == QMessageBox::Cancel) {
+      QVERIFY(overlay && overlay->isVisible());
+      QCOMPARE(window->getLatestContent(), draft);
+      QVERIFY(window->isModified() && window->isEnabled());
+      QCOMPARE(f->current(), window);
+      QVERIFY(window->hasFocus() || window->isAncestorOf(QApplication::focusWidget()));
+      QVERIFY(!f->controller()->isPreviewWorkspaceClosing(workspace));
+      QCOMPARE(readBytes(f->absolute(QStringLiteral("b.txt"))), QByteArray("Preview B\n"));
+      DialogAnswer discard(QMessageBox::Discard);
+      QVERIFY(clickNativeSurface(modeButton, modeButton->rect().center()));
+      QVERIFY(discard.accepted());
+    }
+    QTRY_VERIFY(overlay.isNull());
+    QVERIFY(f->workspaces->getWorkspace(workspace).isEmpty());
+    QCOMPARE(readBytes(f->absolute(QStringLiteral("b.txt"))),
+             answer == QMessageBox::Save ? draft.toUtf8() : QByteArray("Preview B\n"));
+    QCOMPARE(source->getMode(), ViewWindowMode::Read);
+  }
+  overlay = openPreview();
+  QVERIFY(overlay);
+  QVERIFY(f->controller()->detachViewWindow(main, sourceId, a.id()));
+  auto *detached = qobject_cast<DetachedWindow *>(source->window());
+  QVERIFY(detached);
+  detached->activateWindow();
+  QTRY_VERIFY(detached->isActiveWindow() && overlay->isVisible());
+  QTRY_VERIFY(source->contentsRect().contains(overlay->geometry()));
+  reader->setFocus(Qt::OtherFocusReason);
+  // Reparenting may suspend the reader bridge while its cached DOM stays visible.
+  // Dismissing from that native surface must not depend on renderer readiness.
+  QVERIFY(evaluate(reader->page(), QStringLiteral("document.body.innerText"))
+              .toString()
+              .contains(QStringLiteral("Source A")));
+  QVERIFY(overlay && overlay->isVisible());
+  QVERIFY(clickNativeSurface(reader, readerLinkPoint(reader, QStringLiteral("C"))));
+  QTRY_VERIFY(overlay.isNull());
+  QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+  QVERIFY(f->area->findWindowIdsByNode(f->node(QStringLiteral("c.md")), false).isEmpty());
+  QCOMPARE(source->getBuffer().id(), a.id());
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("a.md"))), sourceBytes);
 }
 
 void TestViewAreaTabReuse::previewCloseConsent() {

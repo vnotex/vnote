@@ -299,7 +299,7 @@ void MarkdownViewer::activateNavigationTarget(quint64 p_snapshot, int p_index) {
           viewer->adapter()->scrollToPosition(
               MarkdownViewerAdapter::Position(-1, QUrl(href).fragment(QUrl::FullyDecoded)));
         } else if (viewer->m_protectedView && QUrl(href).isRelative()) {
-          viewer->adapter()->activateProtectedLink(href);
+          viewer->adapter()->activateLink(viewer->adapter()->documentGeneration(), href);
         } else if (!viewer->m_protectedView && url.isLocalFile()) {
           emit viewer->localFileOpenRequested(url);
         } else if (!viewer->m_protectedView || url.scheme() == QStringLiteral("http") ||

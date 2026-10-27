@@ -1,11 +1,14 @@
 #include "linkpreviewoverlay.h"
 
 #include <QAction>
+#include <QApplication>
 #include <QEvent>
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QMouseEvent>
+#include <QPointer>
 #include <QStyle>
+#include <QStyleHints>
 #include <QTimer>
 #include <QToolButton>
 #include <QVBoxLayout>
@@ -16,6 +19,86 @@
 #include "viewwindow2.h"
 
 using namespace vnotex;
+
+namespace {
+bool isSourceSurface(QWidget *p_source, QWidget *p_receiver) {
+  if (!p_source || !p_receiver || !p_source->isVisible() || !p_source->isEnabled() ||
+      p_receiver->window() != p_source->window()) {
+    return false;
+  }
+  for (auto *widget = p_receiver; widget; widget = widget->parentWidget()) {
+    if (widget == p_source) {
+      return true;
+    }
+    if (qobject_cast<LinkPreviewOverlay *>(widget)) {
+      return false;
+    }
+  }
+  return false;
+}
+
+// The preview can retire before the platform delivers a double-click's second
+// press. Keep only a short-lived source guard, never a workspace or tab owner.
+class PreviewDismissalTail final : public QObject {
+public:
+  PreviewDismissalTail(QWidget *p_source, const QPoint &p_position)
+      : QObject(p_source), m_source(p_source), m_position(p_position) {
+    qApp->installEventFilter(this);
+    QTimer::singleShot(QApplication::doubleClickInterval(), this, [this] { stop(); });
+  }
+
+protected:
+  bool eventFilter(QObject *p_object, QEvent *p_event) override {
+    const auto type = p_event->type();
+    if (type != QEvent::MouseButtonPress && type != QEvent::MouseButtonDblClick &&
+        type != QEvent::MouseButtonRelease && type != QEvent::MouseMove) {
+      return false;
+    }
+    auto *widget = qobject_cast<QWidget *>(p_object);
+    if (!widget) {
+      return false;
+    }
+    if (!m_source || QApplication::activeModalWidget() || QApplication::activePopupWidget() ||
+        type == QEvent::MouseButtonPress) {
+      stop();
+      return false;
+    }
+    const auto *mouse = static_cast<QMouseEvent *>(p_event);
+    if (type == QEvent::MouseButtonDblClick) {
+      const auto position = mouse->globalPosition().toPoint();
+      const auto delta = position - m_position;
+      const int distance = QApplication::styleHints()->mouseDoubleClickDistance();
+      if (mouse->button() != Qt::LeftButton || !isSourceSurface(m_source, widget) ||
+          !m_source->rect().contains(m_source->mapFromGlobal(position)) ||
+          qAbs(delta.x()) > distance || qAbs(delta.y()) > distance) {
+        stop();
+        return false;
+      }
+      m_releasePending = true;
+      p_event->accept();
+      return true;
+    }
+    if (m_releasePending && (type == QEvent::MouseMove || mouse->button() == Qt::LeftButton)) {
+      p_event->accept();
+      if (type == QEvent::MouseButtonRelease) {
+        stop();
+      }
+      return true;
+    }
+    return false;
+  }
+
+private:
+  void stop() {
+    qApp->removeEventFilter(this);
+    deleteLater();
+  }
+
+  QPointer<QWidget> m_source;
+  QPoint m_position;
+  bool m_releasePending = false;
+};
+} // namespace
 
 LinkPreviewOverlay::LinkPreviewOverlay(ServiceLocator &p_services, ViewWindow2 *p_source,
                                        const QString &p_workspaceId)
@@ -88,11 +171,15 @@ bool LinkPreviewOverlay::event(QEvent *p_event) {
   const bool handled = QFrame::event(p_event);
   switch (p_event->type()) {
   case QEvent::Show:
+    qApp->installEventFilter(this);
     raiseSurface();
     scheduleRaise();
     emit visibilityChanged(true);
     break;
   case QEvent::Hide:
+    qApp->removeEventFilter(this);
+    m_dismissalPressActive = false;
+    m_dismissalClickCancelled = false;
     emit visibilityChanged(false);
     break;
   case QEvent::StyleChange:
@@ -110,6 +197,85 @@ bool LinkPreviewOverlay::event(QEvent *p_event) {
     break;
   }
   return handled;
+}
+
+bool LinkPreviewOverlay::eventFilter(QObject *p_object, QEvent *p_event) {
+  const auto type = p_event->type();
+  if (type != QEvent::MouseButtonPress && type != QEvent::MouseButtonDblClick &&
+      type != QEvent::MouseButtonRelease && type != QEvent::MouseMove) {
+    return false;
+  }
+  auto *widget = qobject_cast<QWidget *>(p_object);
+  if (!widget) {
+    // Native QWindow delivery must reach the QWidget dispatch/grab machinery.
+    return false;
+  }
+  if (!isVisible() || QApplication::activeModalWidget() || QApplication::activePopupWidget()) {
+    m_dismissalPressActive = false;
+    return false;
+  }
+  const auto *mouse = static_cast<QMouseEvent *>(p_event);
+  const auto position = mouse->globalPosition().toPoint();
+  if (type == QEvent::MouseMove) {
+    if (!m_dismissalPressActive) {
+      return false;
+    }
+    if (!(mouse->buttons() & Qt::LeftButton)) {
+      m_dismissalPressActive = false;
+      return false;
+    }
+    if ((position - m_dismissalPressPosition).manhattanLength() >
+        QApplication::startDragDistance()) {
+      m_dismissalClickCancelled = true;
+    }
+    p_event->accept();
+    return true;
+  }
+
+  auto *source = parentWidget();
+  const bool outside = isSourceSurface(source, widget) &&
+                       source->rect().contains(source->mapFromGlobal(position)) &&
+                       !rect().contains(mapFromGlobal(position));
+  if (type == QEvent::MouseButtonPress || type == QEvent::MouseButtonDblClick) {
+    m_dismissalPressActive = false;
+    if (mouse->button() != Qt::LeftButton || !outside) {
+      return false;
+    }
+    m_dismissalPressPosition = position;
+    m_dismissalPressActive = true;
+    // A surviving/cancelled preview must not issue another close for the tail.
+    m_dismissalClickCancelled = type == QEvent::MouseButtonDblClick;
+    p_event->accept();
+    // Qt may focus the source before application filters run. Keep consent and
+    // subsequent typing on the preview if the user cancels dismissal.
+    m_viewSplit->focus();
+    return true;
+  }
+  if (mouse->button() != Qt::LeftButton || !m_dismissalPressActive) {
+    return false;
+  }
+
+  const bool dismiss =
+      outside && !m_dismissalClickCancelled &&
+      (position - m_dismissalPressPosition).manhattanLength() <= QApplication::startDragDistance();
+  m_dismissalPressActive = false;
+  m_dismissalClickCancelled = false;
+  p_event->accept();
+  if (dismiss) {
+    const QPointer<QWidget> guardedSource(source);
+    const QPointer<LinkPreviewOverlay> guardedOverlay(this);
+    emit closeRequested();
+    // Close hooks/modal loops may have destroyed this overlay or its source.
+    if (guardedSource) {
+      new PreviewDismissalTail(guardedSource, position);
+      if (guardedSource->isVisible() && guardedSource->isEnabled() &&
+          !QApplication::activeModalWidget() && !QApplication::activePopupWidget() &&
+          (!guardedOverlay || guardedOverlay->getViewSplit()->getViewWindowCount() == 0)) {
+        guardedSource->setFocus(Qt::MouseFocusReason);
+      }
+    }
+  }
+  return true;
 }
 
 void LinkPreviewOverlay::mousePressEvent(QMouseEvent *p_event) {

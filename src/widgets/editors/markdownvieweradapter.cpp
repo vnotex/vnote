@@ -201,10 +201,25 @@ QString MarkdownViewerAdapter::protectedImageUrl(const QString &p_url) {
   return result;
 }
 
-void MarkdownViewerAdapter::activateProtectedLink(const QString &p_url) {
-  if (m_protectedView && QUrl(p_url).isRelative() && !p_url.startsWith(QLatin1Char('/')) &&
-      !p_url.startsWith(QLatin1Char('\\'))) {
-    emit protectedLinkRequested(p_url);
+void MarkdownViewerAdapter::activateLink(const QString &p_generation, const QString &p_url) {
+  if (!isDocumentReady() || p_generation != m_generation) {
+    return;
+  }
+  const QUrl url(p_url);
+  if (m_protectedView) {
+    if (url.isRelative() && !p_url.startsWith(QLatin1Char('/')) &&
+        !p_url.startsWith(QLatin1Char('\\'))) {
+      emit linkRequested(p_url);
+    }
+  } else if (url.isLocalFile()) {
+    auto path = url.toLocalFile();
+    const auto fragment = url.fragment();
+    if (!fragment.isEmpty()) {
+      path += QLatin1Char('#') + fragment;
+    }
+    emit linkRequested(path);
+  } else {
+    emit linkRequested(p_url);
   }
 }
 

@@ -160,6 +160,30 @@ class DocumentRenderer extends VxWorker {
         } else {
             p_node.innerHTML = p_html;
         }
+        // Rejected browser navigation still emits loadStarted and retires the bridge.
+        // Keep the current document alive when a link opens through native policy.
+        for (const link of p_node.querySelectorAll('a[href]')) {
+            const href = link.getAttribute('href');
+            // Script actions and browser-owned document loads keep their existing behavior.
+            if (!href || ['javascript:', 'vbscript:', 'data:', 'devtools:', 'chrome-devtools:']
+                .includes(link.protocol)) {
+                continue;
+            }
+            link.addEventListener('click', (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!event.isTrusted || p_generation !== this.vxcore.documentGeneration) {
+                    return;
+                }
+                if (href.startsWith('#')) {
+                    let anchor = href.substring(1);
+                    try { anchor = decodeURIComponent(anchor); } catch (_) {}
+                    this.vxcore.scrollToAnchor(anchor);
+                } else {
+                    window.vxMarkdownAdapter.activateLink(p_generation, link.href);
+                }
+            }, true);
+        }
         this.documentInstalled(p_node, p_generation);
     }
 
@@ -282,7 +306,7 @@ class DocumentRenderer extends VxWorker {
                         event.preventDefault();
                         event.stopPropagation();
                         if (event.isTrusted) {
-                            window.vxMarkdownAdapter.activateProtectedLink(href);
+                            window.vxMarkdownAdapter.activateLink(p_generation, href);
                         }
                     }, true);
                 }

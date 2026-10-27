@@ -117,7 +117,7 @@ public slots:
   // Returns only a validated passive image data URL, or an empty string.
   QString protectedImageUrl(const QString &p_url);
 
-  void activateProtectedLink(const QString &p_url);
+  void activateLink(const QString &p_generation, const QString &p_url);
 
   void setWorkFinished(const QString &p_generation);
 
@@ -226,7 +226,7 @@ signals:
   // Web side requested to toggle a task list item.
   void taskListItemToggleRequested(const QString &p_generation, int p_lineNumber, bool p_checked);
 
-  void protectedLinkRequested(const QString &p_url);
+  void linkRequested(const QString &p_url);
 
 private:
   struct TypstRequest {

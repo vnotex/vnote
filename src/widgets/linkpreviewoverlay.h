@@ -2,6 +2,7 @@
 #define LINKPREVIEWOVERLAY_H
 
 #include <QFrame>
+#include <QPoint>
 #include <QRect>
 
 class QAction;
@@ -15,6 +16,8 @@ class ViewWindow2;
 
 // Editable child surface outside the source's layout. ViewArea2 supplies the
 // content rectangle and owns the cancellable workspace/tab lifecycle.
+// Its visible-only application filter captures source-backdrop gestures and
+// sends closeRequested without forwarding the dismissal click to the source.
 class LinkPreviewOverlay : public QFrame {
   Q_OBJECT
 
@@ -33,6 +36,7 @@ signals:
 
 protected:
   bool event(QEvent *p_event) override;
+  bool eventFilter(QObject *p_object, QEvent *p_event) override;
   void mousePressEvent(QMouseEvent *p_event) override;
 
 private:
@@ -42,6 +46,9 @@ private:
   ViewSplit2 *m_viewSplit = nullptr;
   QAction *m_closeAction = nullptr;
   bool m_raisePending = false;
+  QPoint m_dismissalPressPosition;
+  bool m_dismissalPressActive = false;
+  bool m_dismissalClickCancelled = false;
 };
 
 } // namespace vnotex

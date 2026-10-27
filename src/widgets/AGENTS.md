@@ -145,6 +145,25 @@ before sampling its geometry; an invalidated layout can temporarily report an em
 Markdown Read hides an empty overlay; Edit retains its status controls. Regression coverage:
 `test_statusbar` and `test_statuswidget`.
 
+#### Link preview dismissal
+
+`LinkPreviewOverlay` requests the existing cancellable workspace close on a primary click in
+its originating view's exposed content or toolbar. Save/Discard/Cancel remains authoritative;
+Cancel preserves the remaining preview tabs and their keyboard focus; accepted dismissal
+returns focus to the source. Consume the dismissal press/release and double-click continuation
+so source links and toolbar actions do not fire.
+Clicks inside the preview, other views, popups and modal dialogs retain their normal routing.
+Dragging, focus loss and source hide/show do not dismiss drafts. The application mouse filter
+is installed only while the overlay is visible; a short source-owned guard handles a trailing
+double-click after the closed overlay retires, without delaying closure or owning tabs.
+
+Native-rendered Markdown links handled by the application intercept trusted clicks before
+browser navigation and bind activation to the current document generation. Browser-owned
+script/data actions retain their behavior. Local file URLs are converted to paths before
+entering the existing link policy; same-document anchors scroll in place. Chromium emits
+`loadStarted` even for rejected link navigation, so allowing that navigation would retire the
+still-visible source bridge and break subsequent links. Genuine reload invalidation is unchanged.
+
 #### Note tab reuse
 
 Settings → Note Management → **Always open notes in new tabs** persists
