@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Remove obsolete implicit-padding checks from Typst markup integration tests while retaining rendering, geometry, export and cross-copy checks
 * Remove the default page margin from Markdown Typst blocks so they align with surrounding content; explicit Typst margins and standalone document layout are unchanged
 * Match Typst preview page backgrounds to the editor's Text background, including Typst-specific overrides, while preserving outer margins, authored document styles and export colors
 * Allow file-open settings to target an existing main or detached split by workspace ID, preserving background selection and rejecting unavailable destinations without rerouting
