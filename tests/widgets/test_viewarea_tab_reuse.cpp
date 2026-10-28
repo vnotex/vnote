@@ -281,8 +281,11 @@ bool openContextLinkAt(QWidget *p_surface, const QPoint &p_point,
       if (!menu || !menu->isVisible())
         continue;
       for (auto *action : menu->actions()) {
-        if (action->text().remove(QLatin1Char('&')) != QLatin1String("Open Link") ||
-            !action->isEnabled())
+        const bool isOpenLink =
+            qobject_cast<MarkdownViewer *>(p_surface)
+                ? action->objectName() == QLatin1String("openContextLinkAction")
+                : action->text().remove(QLatin1Char('&')) == QLatin1String("Open Link");
+        if (!isOpenLink || !action->isEnabled())
           continue;
         timer.stop();
         selected = true;
@@ -673,6 +676,7 @@ private slots:
   void previewUnavailableDestination();
   void previewCreationReentrancy();
   void previewMarkdownActivationOrigins();
+  void markdownReaderContextMenus();
   void previewReaderNavigationAndNativeHost();
   void previewProtectedLinksAndDispatchFailures();
   void previewMindMapAndTypstActivation();
@@ -868,6 +872,112 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
   }
   QCOMPARE(source->getLatestContent(), QString::fromUtf8(sourceBytes));
   QCOMPARE(readBytes(f->absolute(QStringLiteral("a.md"))), sourceBytes);
+}
+
+void TestViewAreaTabReuse::markdownReaderContextMenus() {
+  QVERIFY(f->create(QStringLiteral("menu.png"), imageBytes(Qt::red)));
+  QVERIFY(f->create(QStringLiteral("menus.md"),
+                    "# Menu source\n\nPlain text\n\n[Local](target.md)\n\n"
+                    "[External](https://example.com/menu)\n\n"
+                    "![Image](menu.png)\n\n[![Linked image](menu.png)](target.md)\n"));
+  QVERIFY(f->open(QStringLiteral("menus.md")).isValid());
+  f->current()->setMode(ViewWindowMode::Read);
+  auto *reader = f->current()->findChild<MarkdownViewer *>();
+  QVERIFY(reader && waitForRender(reader, QStringLiteral("Menu source")));
+  QVERIFY(QTest::qWaitFor(
+      [&] {
+        return evaluate(reader->page(),
+                        QStringLiteral("Array.from(document.querySelectorAll('#vx-content img'))"
+                                       ".every(img => img.complete && img.naturalWidth > 0)"))
+            .toBool();
+      },
+      10000));
+
+  struct Context {
+    const char *selector;
+    bool link;
+    bool image;
+    bool selection;
+  };
+  const Context contexts[] = {{"#vx-content p", false, false, false},
+                              {"#vx-content p a", true, false, false},
+                              {"#vx-content a[href^='https:']", true, false, false},
+                              {"#vx-content p a", true, false, true},
+                              {"#vx-content img", false, true, false},
+                              {"#vx-content a img", true, true, false},
+                              {"#vx-content p", false, false, false}};
+  for (const auto &context : contexts) {
+    const auto selector =
+        QString::fromUtf8(QJsonDocument(QJsonArray{QString::fromUtf8(context.selector)})
+                              .toJson(QJsonDocument::Compact));
+    const auto point =
+        evaluate(reader->page(), QStringLiteral(R"JS((() => {
+      const element = document.querySelector(%1[0]);
+      window.getSelection().removeAllRanges();
+      if (%2) {
+        const range = document.createRange();
+        range.selectNodeContents(element);
+        window.getSelection().addRange(range);
+      }
+      element.scrollIntoView({block: 'center'});
+      const rect = element.getBoundingClientRect();
+      return [rect.x + Math.min(10, rect.width / 2), rect.y + rect.height / 2];
+    })())JS")
+                                     .arg(selector, context.selection ? QStringLiteral("true")
+                                                                      : QStringLiteral("false")))
+            .toList();
+    QCOMPARE(point.size(), 2);
+    if (context.selection)
+      QTRY_VERIFY(reader->hasSelection());
+    const QPoint local(qRound(point[0].toDouble() * reader->zoomFactor()),
+                       qRound(point[1].toDouble() * reader->zoomFactor()));
+    const auto global = reader->mapToGlobal(local);
+    auto *receiver = QApplication::widgetAt(global);
+    QVERIFY(receiver && (receiver == reader || reader->isAncestorOf(receiver)));
+    QTest::mouseClick(receiver, Qt::RightButton, Qt::NoModifier, receiver->mapFromGlobal(global));
+    QPointer<QMenu> menu;
+    QVERIFY(QTest::qWaitFor(
+        [&] {
+          for (auto *widget : QApplication::topLevelWidgets()) {
+            auto *candidate = qobject_cast<QMenu *>(widget);
+            if (candidate && candidate->isVisible()) {
+              menu = candidate;
+              return true;
+            }
+          }
+          return false;
+        },
+        5000));
+    const auto closeMenu = qScopeGuard([&] {
+      if (menu)
+        menu->close();
+    });
+    QList<QAction *> visible;
+    bool edit = false;
+    bool exportAction = false;
+    QAction *openLink = nullptr;
+    for (auto *action : menu->actions()) {
+      if (!action->isVisible() || action->isSeparator() || action->text().isEmpty())
+        continue;
+      visible.append(action);
+      const auto text = action->text().remove(QLatin1Char('&')).section(QLatin1Char('\t'), 0, 0);
+      edit |= text == QLatin1String("Edit");
+      exportAction |= text == QLatin1String("Export");
+      if (action->objectName() == QLatin1String("openContextLinkAction"))
+        openLink = action;
+    }
+    auto *copyLink = reader->pageAction(QWebEnginePage::CopyLinkToClipboard);
+    QCOMPARE(bool(openLink), context.link);
+    QCOMPARE(visible.contains(copyLink), context.link);
+    QCOMPARE(edit, !context.link && !context.image);
+    QCOMPARE(exportAction, !context.link && !context.image);
+    if (context.link) {
+      QCOMPARE(visible.size(), 2);
+      QTRY_VERIFY(openLink->isEnabled());
+    } else {
+      QVERIFY(visible.contains(reader->pageAction(QWebEnginePage::SelectAll)));
+    }
+  }
 }
 
 void TestViewAreaTabReuse::previewReaderNavigationAndNativeHost() {

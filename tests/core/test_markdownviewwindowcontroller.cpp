@@ -45,6 +45,7 @@ private slots:
   void testContextMenu_exportReadModeNoSelection();
   void testContextMenu_exportAbsentWithSelection();
   void testContextMenu_exportAbsentWithoutHandler();
+  void testContextMenu_imageExcludesDocumentActions();
 
   // ============ rewriteTaskListLine ============
 
@@ -332,6 +333,7 @@ void TestMarkdownViewWindowController::testContextMenu_viewImageReadMode() {
 
   MarkdownViewerContextInfo info;
   info.inReadMode = true;
+  info.hasImage = true;
   info.imageUrl = QUrl("file:///tmp/pic.png");
   info.defaultCopyImageAction = defaultCopyImageAct;
 
@@ -373,6 +375,7 @@ void TestMarkdownViewWindowController::testContextMenu_viewImageNotInReadMode() 
 
   MarkdownViewerContextInfo info;
   info.inReadMode = false;
+  info.hasImage = true;
   info.imageUrl = QUrl("file:///tmp/pic.png");
 
   auto *result = controller.createContextMenu(
@@ -490,6 +493,28 @@ void TestMarkdownViewWindowController::testContextMenu_exportAbsentWithoutHandle
   }
   // Edit is still offered.
   QVERIFY(strippedText(result->actions()[0]).contains("Edit"));
+}
+
+void TestMarkdownViewWindowController::testContextMenu_imageExcludesDocumentActions() {
+  for (const auto &url : {QUrl(), QUrl("file:///tmp/pic.png")}) {
+    ServiceLocator services;
+    MarkdownViewWindowController controller(services);
+    QMenu menu;
+    MarkdownViewerContextInfo info;
+    info.inReadMode = true;
+    info.hasImage = true;
+    info.imageUrl = url;
+    bool edited = false;
+    bool exported = false;
+    controller.createContextMenu(
+        info, &menu, [] {}, [&] { edited = true; }, [](const QString &) {}, [] {},
+        [&] { exported = true; });
+    for (auto *action : menu.actions()) {
+      action->trigger();
+    }
+    QVERIFY(!edited);
+    QVERIFY(!exported);
+  }
 }
 
 // ============ rewriteTaskListLine ============

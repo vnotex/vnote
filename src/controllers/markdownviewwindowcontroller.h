@@ -22,6 +22,7 @@ class ServiceLocator;
 struct MarkdownViewerContextInfo {
   bool hasSelection = false;
   bool inReadMode = false;
+  bool hasImage = false;             // Native image hit, independent of media URL validity.
   QStringList crossCopyTargets;      // from adapter->getCrossCopyTargets()
   QStringList crossCopyDisplayNames; // parallel array: display names for each target
 

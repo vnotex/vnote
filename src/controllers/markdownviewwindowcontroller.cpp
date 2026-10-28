@@ -27,7 +27,7 @@ QMenu *MarkdownViewWindowController::createContextMenu(
   const QList<QAction *> actions = p_standardMenu->actions();
   auto firstAct = actions.isEmpty() ? nullptr : actions[0];
 
-  if (!p_info.hasSelection && p_info.inReadMode) {
+  if (!p_info.hasSelection && p_info.inReadMode && !p_info.hasImage) {
     auto editAct = new QAction(QObject::tr("&Edit"), p_standardMenu);
     WidgetUtils::addActionShortcutText(editAct, p_info.editShortcutText);
     connect(editAct, &QAction::triggered, p_standardMenu, p_editHandler);

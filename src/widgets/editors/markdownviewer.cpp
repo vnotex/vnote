@@ -165,7 +165,8 @@ MarkdownViewerContextInfo MarkdownViewer::populateContextInfo() const {
   info.copyAction = pageAction(QWebEnginePage::Copy);
   info.defaultCopyImageAction = pageAction(QWebEnginePage::CopyImageToClipboard);
   if (auto *req = lastContextMenuRequest()) {
-    if (req->mediaType() == QWebEngineContextMenuRequest::MediaTypeImage) {
+    info.hasImage = req->mediaType() == QWebEngineContextMenuRequest::MediaTypeImage;
+    if (info.hasImage) {
       info.imageUrl = req->mediaUrl();
     }
   }
@@ -311,6 +312,87 @@ void MarkdownViewer::activateNavigationTarget(quint64 p_snapshot, int p_index) {
 
 void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
   QMenu *menu(createStandardContextMenu());
+  const auto *request = lastContextMenuRequest();
+  const bool onLink = request && !request->linkUrl().isEmpty();
+  const bool onImage =
+      request && request->mediaType() == QWebEngineContextMenuRequest::MediaTypeImage;
+  if (onLink) {
+    // Detach shared page actions without changing their visibility for later menus.
+    for (auto *action : menu->actions()) {
+      menu->removeAction(action);
+    }
+    auto *copyLinkAction = pageAction(QWebEnginePage::CopyLinkToClipboard);
+    copyLinkAction->setText(tr("Copy Link"));
+    menu->addAction(copyLinkAction);
+
+    // Native open actions bypass the owning view's link policy and stay hidden.
+    auto *openLinkAction = new QAction(tr("Open Link Address"), menu);
+    openLinkAction->setObjectName(QStringLiteral("openContextLinkAction"));
+    openLinkAction->setEnabled(false);
+    menu->addAction(openLinkAction);
+
+    const QPointer<QMenu> guardedMenu(menu);
+    const QPointer<QAction> guardedAction(openLinkAction);
+    const QPointer<MarkdownViewer> viewer(this);
+    const QPointer<QWebEnginePage> viewerPage(page());
+    const auto generation = m_navigationGeneration;
+    const auto viewerSize = size();
+    const auto zoom = zoomFactor();
+    const auto current = [guardedMenu, viewer, viewerPage, generation, viewerSize, zoom]() {
+      return guardedMenu && viewer && viewerPage && viewer->m_navigationGeneration == generation &&
+             viewer->page() == viewerPage.data() && viewer->isVisible() &&
+             viewer->m_adapter->isReady() && viewer->size() == viewerSize &&
+             !viewerSize.isEmpty() && std::isfinite(zoom) && zoom > 0 &&
+             viewer->zoomFactor() == zoom;
+    };
+    if (current()) {
+      const QPointF position = QPointF(p_event->pos()) / zoom;
+      viewerPage->runJavaScript(
+          QStringLiteral("window.vxcore && typeof window.vxcore.resolveContextLink === 'function'"
+                         " ? window.vxcore.resolveContextLink(%1, %2) : null")
+              .arg(QString::number(position.x(), 'g', 17), QString::number(position.y(), 'g', 17)),
+          [viewer, guardedAction, current](const QVariant &p_result) {
+            if (!current() || !guardedAction) {
+              return;
+            }
+            const auto result = QJsonValue::fromVariant(p_result);
+            const auto object = result.toObject();
+            const auto hrefValue = object.value(QStringLiteral("href"));
+            const auto urlValue = object.value(QStringLiteral("url"));
+            if (!result.isObject() || !hrefValue.isString() || !urlValue.isString()) {
+              return;
+            }
+            const auto href = hrefValue.toString();
+            const QUrl url(urlValue.toString());
+            if (href.isEmpty() || url.isEmpty() || !url.isValid()) {
+              return;
+            }
+            QString link;
+            if (viewer->m_protectedView || href.startsWith(QLatin1Char('#'))) {
+              link = href;
+            } else if (url.isLocalFile()) {
+              link = url.toLocalFile();
+              if (!url.fragment().isEmpty()) {
+                link += QLatin1Char('#') + url.fragment();
+              }
+            } else {
+              link = url.toString();
+            }
+            connect(guardedAction.data(), &QAction::triggered, viewer.data(),
+                    [viewer, current, link]() {
+                      if (current()) {
+                        emit viewer->contextLinkOpenRequested(link);
+                      }
+                    });
+            guardedAction->setEnabled(true);
+          });
+    }
+
+    p_event->accept();
+    // Return from Chromium's context request so the asynchronous hit test can complete.
+    menu->popup(p_event->globalPos());
+    return;
+  }
 
   auto *selectAllAct = pageAction(QWebEnginePage::SelectAll);
   if (!menu->actions().contains(selectAllAct)) {
@@ -349,8 +431,7 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
         [this]() { emit exportRequested(); });
   } else {
     // Fallback: inline logic for when no controller is set (e.g., WebViewExporter).
-    // This preserves the exact original behavior.
-    if (!hasSelection()) {
+    if (!hasSelection() && !onImage) {
       bool inReadMode = false;
       if (m_viewWindow2) {
         inReadMode = m_viewWindow2->getMode() == ViewWindowMode::Read;
@@ -399,68 +480,6 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
     }
   }
 
-  // Native open actions bypass the owning view's link policy and stay hidden.
-  auto *openLinkAction = new QAction(tr("Open Link"), menu);
-  openLinkAction->setObjectName(QStringLiteral("openContextLinkAction"));
-  openLinkAction->setEnabled(false);
-  menu->insertAction(menu->actions().isEmpty() ? nullptr : menu->actions().first(), openLinkAction);
-
-  const QPointer<QMenu> guardedMenu(menu);
-  const QPointer<QAction> guardedAction(openLinkAction);
-  const QPointer<MarkdownViewer> viewer(this);
-  const QPointer<QWebEnginePage> viewerPage(page());
-  const auto generation = m_navigationGeneration;
-  const auto viewerSize = size();
-  const auto zoom = zoomFactor();
-  const auto current = [guardedMenu, viewer, viewerPage, generation, viewerSize, zoom]() {
-    return guardedMenu && viewer && viewerPage && viewer->m_navigationGeneration == generation &&
-           viewer->page() == viewerPage.data() && viewer->isVisible() &&
-           viewer->m_adapter->isReady() && viewer->size() == viewerSize && !viewerSize.isEmpty() &&
-           std::isfinite(zoom) && zoom > 0 && viewer->zoomFactor() == zoom;
-  };
-  if (current()) {
-    const QPointF position = QPointF(p_event->pos()) / zoom;
-    viewerPage->runJavaScript(
-        QStringLiteral("window.vxcore && typeof window.vxcore.resolveContextLink === 'function'"
-                       " ? window.vxcore.resolveContextLink(%1, %2) : null")
-            .arg(QString::number(position.x(), 'g', 17), QString::number(position.y(), 'g', 17)),
-        [viewer, guardedAction, current](const QVariant &p_result) {
-          if (!current() || !guardedAction) {
-            return;
-          }
-          const auto result = QJsonValue::fromVariant(p_result);
-          const auto object = result.toObject();
-          const auto hrefValue = object.value(QStringLiteral("href"));
-          const auto urlValue = object.value(QStringLiteral("url"));
-          if (!result.isObject() || !hrefValue.isString() || !urlValue.isString()) {
-            return;
-          }
-          const auto href = hrefValue.toString();
-          const QUrl url(urlValue.toString());
-          if (href.isEmpty() || url.isEmpty() || !url.isValid()) {
-            return;
-          }
-          QString link;
-          if (viewer->m_protectedView || href.startsWith(QLatin1Char('#'))) {
-            link = href;
-          } else if (url.isLocalFile()) {
-            link = url.toLocalFile();
-            if (!url.fragment().isEmpty()) {
-              link += QLatin1Char('#') + url.fragment();
-            }
-          } else {
-            link = url.toString();
-          }
-          connect(guardedAction.data(), &QAction::triggered, viewer.data(),
-                  [viewer, current, link]() {
-                    if (current()) {
-                      emit viewer->contextLinkOpenRequested(link);
-                    }
-                  });
-          guardedAction->setEnabled(true);
-        });
-  }
-
   hideUnusedActions();
 
   p_event->accept();
@@ -475,7 +494,6 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
   }
 
   if (valid) {
-    // Return from Chromium's context request so the asynchronous hit test can complete.
     menu->popup(p_event->globalPos());
   }
 
