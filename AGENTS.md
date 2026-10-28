@@ -67,6 +67,13 @@ cmake --build .
 
 Testing (two suites, two build dirs): [tests/AGENTS.md](tests/AGENTS.md).
 
+### CI runner debugging (SSH)
+
+When a failure needs the hosted runner, follow the key-restricted SSH procedure in
+[CI debugging](.github/AGENTS.md#interactive-ci-debugging). Dispatch a non-publishing
+branch at the intended revision, preserve first-run evidence, and confirm session closure.
+An ad-hoc debug pass is not proof that normal CI is fixed.
+
 ---
 
 ## Submodule Push Discipline (CRITICAL — read before every push)
@@ -405,7 +412,7 @@ put the full detail in the module doc.
 | Utilities | [src/utils/AGENTS.md](src/utils/AGENTS.md) | PathUtils, HtmlUtils, FileUtils2 reference |
 | pdf.js assets | [src/data/extra/web/pdf.js/AGENTS.md](src/data/extra/web/pdf.js/AGENTS.md) | Touching the vendored PDF viewer or its Qt 6.9+ WebEngine requirement |
 | Testing | [tests/AGENTS.md](tests/AGENTS.md) | Agent GUI smoke testing with `--no-single-instance`, test suites, test mode, fixtures, coverage |
-| CI & Packaging | [.github/AGENTS.md](.github/AGENTS.md) | Workflows, `src/Packaging.cmake`, Qt 6 release packages |
+| CI & Packaging | [.github/AGENTS.md](.github/AGENTS.md) | Workflows, SSH runner debugging, `src/Packaging.cmake`, Qt 6 release packages |
 | vxcore (submodule) | [libs/vxcore/AGENTS.md](libs/vxcore/AGENTS.md) | C library: notebook/config/search backend |
 | vxcore Sync | [libs/vxcore/src/sync/AGENTS.md](libs/vxcore/src/sync/AGENTS.md) | Pluggable sync backend interface (ISyncBackend, SyncManager) |
 | vtextedit (submodule) | [libs/vtextedit/AGENTS.md](libs/vtextedit/AGENTS.md) | Qt editor widget library |

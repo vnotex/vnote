@@ -39,24 +39,205 @@ including native Intel verification; do not describe Qt 6.9.3 as unit-test valid
 
 ## Interactive CI debugging
 
+Use this when a failure needs the real hosted OS, desktop, Qt kit or CI setup.
 `workflow_dispatch` accepts `debug_enabled=true` plus a single `debug_public_key`
 (`ssh-ed25519`). `.github/scripts/debug-session.py` uses pinned Upterm 0.39.0 and the
 pinned `uptermd.upterm.dev` host-certificate authority. There is no web-shell or
 anonymous fallback. Never put a private key into inputs, logs or artifacts.
 
-Debug sessions start after tool setup (and macOS configuration), before the
-expensive build/test steps. The small `debug-connection-*` artifact is available
-while the job is paused; macOS names include the Qt version. Authenticate with the
-matching private key and verify the pinned relay key. `exit 0` in the hosted shell
-ends the session and resumes the workflow; merely disconnecting leaves it open.
-No guest within 15 minutes ends the session; existing job limits still apply.
+### Dispatch from the local checkout
+
+The examples use PowerShell 7.3+, an authenticated GitHub CLI, OpenSSH and Python.
+Start at the repository root, at the committed revision you intend to investigate.
+Create a disposable key outside the checkout; keep diagnostic evidence outside this
+key directory so it survives key cleanup:
+
+```powershell
+$debugDir = Join-Path ([IO.Path]::GetTempPath()) ('vnote-ci-ssh-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $debugDir | Out-Null
+$key = Join-Path $debugDir 'id_ed25519'
+ssh-keygen -q -t ed25519 -N '' -C vnote-ci-debug -f $key
+if ($LASTEXITCODE -ne 0) { throw 'Key generation failed' }
+$publicKey = (Get-Content -LiteralPath "$key.pub" -Raw).Trim()
+```
+
+Use a non-`master` branch at that revision. Debugging on `master` can resume into
+continuous-release publication with ad-hoc runner edits; debug mode does not disable
+publication. Follow the submodule push discipline before publishing the branch:
+
+```powershell
+$debugBranch = 'ci-debug-' + (git rev-parse --short HEAD).Trim()
+git push --recurse-submodules=check origin "HEAD:refs/heads/$debugBranch"
+if ($LASTEXITCODE -ne 0) { throw 'Debug branch push failed' }
+gh workflow run ci-win.yml --ref $debugBranch `
+  -f debug_enabled=true -f "debug_public_key=$publicKey"
+if ($LASTEXITCODE -ne 0) { throw 'Debug dispatch failed' }
+```
+
+Choose the workflow and connection artifact for the required platform:
+
+| Workflow | Connection artifact | Pause point |
+|----------|---------------------|-------------|
+| `ci-win.yml` | `debug-connection-windows` | After tools, before configure/build |
+| `ci-linux.yml` | `debug-connection-linux` | After configure, before build and test dependencies |
+| `ci-macos.yml` | `debug-connection-macos-<Qt version>` | After configure, before test build/keychain setup |
+
+macOS build jobs also use the `Mac-code-sign` environment. Any configured approval or
+branch policy applies before SSH setup; inspect a waiting/blocked job before treating
+a missing connection artifact as a helper failure. Do not switch to `master` to bypass
+an environment restriction.
+
+Set `$runId` to the ID in the dispatched run URL. If the CLI did not return a URL,
+use `gh run list --workflow ci-win.yml --branch $debugBranch --event workflow_dispatch`
+and match the intended revision, not an unrelated latest run. Confirm `headSha` and
+`headBranch` with `gh run view $runId --json headSha,headBranch,jobs`.
+
+Download once the connection-upload step succeeds; the artifact is available while
+the job is still running. Do not wait for workflow completion to obtain it. Each
+macOS matrix job has its own session/artifact, including the Qt 6.9 job whose unit
+suite is disabled. Account for every paused job. No guest within 15 minutes ends a
+session; the normal job deadline also continues to run.
+
+```powershell
+$connectionDir = Join-Path $debugDir 'connection'
+gh run download $runId --name debug-connection-windows --dir $connectionDir
+if ($LASTEXITCODE -ne 0) { throw 'Connection artifact download failed' }
+$connection = Get-Content (Join-Path $connectionDir 'connection.json') -Raw | ConvertFrom-Json
+ssh-keygen -lf "$key.pub" -E sha256
+$connection.keyFingerprint
+```
+
+Compare the `SHA256:` fingerprint tokens, not the entire lines: the key comments can
+differ. The artifact contains `sshCommand`, `joinCommand`, `keyFingerprint` and
+`restoreEnvironment`; it contains no private key. Use fresh metadata for this run,
+not an expired session address from an old log.
+
+### Connect with the pinned relay authority
+
+Create a dedicated `known_hosts` from the checked-in helper's pin rather than trusting
+`ssh-keyscan`, accepting a new host key interactively, or disabling host-key checks.
+`runpy` below loads the definitions without invoking the helper's guarded `main()`:
+
+```powershell
+$knownHosts = (Join-Path $debugDir 'known_hosts').Replace('\', '/')
+python -c "import runpy,sys;sys.stdout.write(runpy.run_path('.github/scripts/debug-session.py')['KNOWN_HOSTS'])" |
+  Set-Content -LiteralPath $knownHosts -Encoding ascii
+if ($LASTEXITCODE -ne 0) { throw 'Relay pin extraction failed' }
+if ($connection.sshCommand -notmatch '^ssh ([A-Za-z0-9_-]+@uptermd\.upterm\.dev)$') {
+  throw 'Unexpected SSH command; inspect connection.json without executing its contents'
+}
+$destination = $Matches[1]
+$sshArgs = @(
+  '-F', 'none', '-i', $key,
+  '-o', 'BatchMode=yes', '-o', 'IdentitiesOnly=yes', '-o', 'IdentityAgent=none',
+  '-o', 'ForwardAgent=no', '-o', 'StrictHostKeyChecking=yes',
+  '-o', ('UserKnownHostsFile="' + $knownHosts + '"'), '-o', 'GlobalKnownHostsFile=none'
+)
+ssh -tt @sshArgs $destination
+```
+
+This attaches to the hosted shell (`pwsh -NoProfile` on Windows, clean Bash elsewhere),
+initially in `GITHUB_WORKSPACE`. For agent automation, use a named PTY session and
+send commands to that shell; wait for an explicit completion marker and exit code.
+A live PID, quiet terminal, or SSH disconnect does not prove command completion.
+
+### Restore the environment and reproduce the workflow
 
 The helper removes checkout/submodule HTTP auth and credential-bearing URL rewrites,
 scrubs token/secret/key variables from the hosted process, and retains runner orphan
-tracking. Artifact and signing steps keep their normal environment, but run only
-after the always-run session cleanup confirms closure. Restore the original XDG
-values recorded in connection metadata before measuring application behavior.
-Ad-hoc runner edits/debug results do not replace a clean CI run of the committed fix.
+tracking. Do not inject credentials back into the session to bypass this isolation.
+Artifact/signing steps keep their normal environment and run after session cleanup.
+
+Upterm redirects three XDG variables for its own state. Before measuring application
+behavior, restore the original values in `connection.json`'s `restoreEnvironment`;
+JSON `null` means unset, not an empty or literal `null` value. On the Windows runner:
+
+```powershell
+$metadata = Join-Path $env:RUNNER_TEMP 'vnote-debug/connection.json'
+$original = (Get-Content -LiteralPath $metadata -Raw | ConvertFrom-Json).restoreEnvironment
+foreach ($entry in $original.PSObject.Properties) {
+  if ($null -eq $entry.Value) {
+    Remove-Item -LiteralPath ('Env:' + $entry.Name) -ErrorAction SilentlyContinue
+  } else {
+    [Environment]::SetEnvironmentVariable($entry.Name, $entry.Value, 'Process')
+  }
+}
+$build = Join-Path (Split-Path $env:GITHUB_WORKSPACE -Parent) 'build'
+```
+
+On Bash, use `unset` for null entries and `export` with the recorded values otherwise.
+Restore only the hosted shell's application environment, not the helper's state files.
+
+Read the checked-out workflow's configure/build/test steps and reproduce their commands,
+working directories and **step-local environment**. The build directory is the sibling
+`build` of `GITHUB_WORKSPACE`, not a directory inside the checkout.
+
+- **Windows:** the debug shell is not a Visual Studio developer shell. The earlier
+  `vcvars64.bat` invocation affected only its own `cmd` process; `VS_CMD` and
+  `VNOTE_TESTS` from later steps are not already set. Use the matrix's toolchain and
+  import its environment into the hosted shell, or run the entire command chain in
+  an initialized `cmd`. Match Release/Ninja and `VNOTE_BUILD_TESTS=ON` for test work.
+- **Linux:** test dependencies, D-Bus/keyring setup and the Xvfb/native-platform wrapper
+  come after the pause. Reproduce the workflow and `.github/scripts/run-linux-tests.sh`,
+  rather than replacing native GUI tests with `offscreen` or `minimal`.
+- **macOS:** preserve the configured Qt kit/architectures, normalize `TMPDIR` as the
+  workflow does, and create/unlock the disposable test keychain after compilation.
+  The Qt 6.9 configuration does not register the unit/native suites.
+- **Package-dependent tests:** build/package/extract prerequisites in the original
+  order. For example, Windows updater fixtures need the packaged installation; a
+  target-only build is not equivalent to the full CI setup. A debug-shell-only failure
+  (including PowerShell module lookup) is not automatically the original regression.
+
+### Preserve evidence before rerunning
+
+In the build directory, inspect `ctest --show-only=json-v1` for the executable, arguments, working
+directory and test environment. Build the relevant target, then run its registered
+CTest command without changing assertions, deadlines or platform behavior. A focused
+Windows example, after the workflow's configure/toolchain prerequisites:
+
+```powershell
+cmake --build $build --target test_themeservice
+if ($LASTEXITCODE -ne 0) { throw 'Theme test build failed' }
+ctest --test-dir $build -C Release -R '^test_themeservice$' --output-on-failure --no-tests=error
+$testExit = $LASTEXITCODE
+Write-Output "DEBUG_CTEST_EXIT=$testExit"
+```
+
+Capture the **first** failure to files before standalone repetitions or full-order
+experiments overwrite it. Keep CTest's `Testing/Temporary/Last*.log`, QtTest text/JUnit
+reports, exit code, revision and relevant environment. The Windows theme registration
+already writes `tests/gui/test_themeservice.txt` and `.xml` in the build tree. For other
+QtTest executables, use unique `-o <file>,txt` and `-o <file>,junitxml` outputs while
+retaining `-o -,txt` and the registered runtime environment. File loggers cannot explain
+a failure before QtTest initializes. Inspect skips as well as pass counts.
+
+Export evidence while the session is reachable: from another local terminal with the
+same client variables, use `sftp @sshArgs $destination` (without SSH's `-tt`) and download
+the files to a separate evidence directory. Resolve remote paths with SFTP's `pwd`/`ls`
+instead of guessing Windows drive mappings. Ad-hoc files are not automatically uploaded
+by the workflow; normal report-upload steps run only after the debug pause ends.
+
+A relay disconnect can leave the runner and build alive. Check the run's job state and
+reattach to the same session if still reachable; inspect the saved completion marker
+and files instead of restarting the build blindly. If standalone runs pass, compare
+normal CI setup/order before proposing production or timing changes. Ad-hoc debug
+passes do not replace a clean CI run of the committed fix.
+
+### Close the session and remove the key
+
+Run `exit 0` **inside the hosted shell** to end it and resume the workflow. Closing the
+local SSH client alone merely disconnects; it does not end the pause. Close each macOS
+matrix session you opened and account for any other paused matrix jobs.
+
+If the relay cannot be recovered, cancel the job with `gh run cancel $runId`, then
+await shutdown with `gh run watch $runId --exit-status` (cancellation returns nonzero).
+Verify the `Close SSH debug session` step succeeded via `gh run view $runId --json jobs`;
+do not assume a lost connection means the exposed session is gone. Once closure is
+confirmed and evidence is saved outside `$debugDir`, remove the local disposable key:
+
+```powershell
+Remove-Item -LiteralPath $debugDir -Recurse -Force
+```
 
 ## Release packaging dependencies
 
