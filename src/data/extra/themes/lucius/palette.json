@@ -59,7 +59,6 @@
         "fg_alert_info_icon": "#eeeeee",
         "fg_alert_muted_icon": "#eeeeee",
         "fg_alert_error_icon": "#eeeeee",
-        "fg_heading_anchor": "#626262",
         "bg_code_block_alert": "#e4e4e4",
         "bg_trailing_space": "#afd7af",
         "bg_tab_marker": "#afd7af",
