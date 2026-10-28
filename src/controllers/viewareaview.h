@@ -94,6 +94,11 @@ public:
   virtual void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) = 0;
   virtual void focusViewSplit(const QString &p_workspaceId) = 0;
 
+  // Transfer the live preview widget; close consent stays controller-owned.
+  virtual bool promotePreviewViewWindow(ID p_windowId, const QString &p_previewWorkspaceId,
+                                        const QString &p_targetWorkspaceId,
+                                        const std::function<bool()> &p_closeDuplicate) = 0;
+
   // Window transfer
   virtual void moveViewWindowToSplit(ID p_windowId, const QString &p_srcWorkspaceId,
                                      const QString &p_dstWorkspaceId) = 0;

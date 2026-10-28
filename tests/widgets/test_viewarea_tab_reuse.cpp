@@ -38,6 +38,7 @@
 #include <QTextCursor>
 #include <QTimer>
 #include <QToolBar>
+#include <QToolButton>
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
 #include <QWheelEvent>
@@ -661,6 +662,12 @@ private slots:
   void previewHostRoutingAndGeometry();
   void previewEditingCommandTargetAndVisibility();
   void previewCloseConsent();
+  void previewOpenInNewTabs_data();
+  void previewOpenInNewTabs();
+  void previewOpenInNewTabsDuplicateConsent_data();
+  void previewOpenInNewTabsDuplicateConsent();
+  void previewOpenInNewTabsProtectedDuplicate();
+  void previewOpenInNewTabsReentrancy();
   void previewOutsideClickDismissal();
   void previewSourceCancellation();
   void previewSharedOwnership_data();
@@ -1901,6 +1908,709 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
   QVERIFY(f->area->findWindowIdsByNode(f->node(QStringLiteral("c.md")), false).isEmpty());
   QCOMPARE(source->getBuffer().id(), a.id());
   QCOMPARE(readBytes(f->absolute(QStringLiteral("a.md"))), sourceBytes);
+}
+
+void TestViewAreaTabReuse::previewOpenInNewTabs_data() {
+  QTest::addColumn<bool>("detached");
+  QTest::newRow("main-source") << false;
+  QTest::newRow("detached-source") << true;
+}
+
+void TestViewAreaTabReuse::previewOpenInNewTabs() {
+  QFETCH(bool, detached);
+  QVERIFY(f->create(QStringLiteral("main.txt"), "Main workspace stays here\n"));
+  QVERIFY(f->create(QStringLiteral("a.md"), "# Source A\n\n[B](b.md)\n"));
+  QVERIFY(f->create(QStringLiteral("b.md"), "# Preview B\n\n[C](c.md)\n"));
+  QVERIFY(f->create(QStringLiteral("c.md"), "# Preview C\n"));
+  if (detached)
+    QVERIFY(f->open(QStringLiteral("main.txt")).isValid());
+  const auto a = f->open(QStringLiteral("a.md"), true);
+  QVERIFY(a.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  const auto sourceId = source->getViewWindowId();
+  const auto sourceText = source->getLatestContent();
+  const auto sourceMode = source->getMode();
+  const auto sourceGeneration = source->getLinkOpenSettings().m_previewSourceGeneration;
+  const auto main = f->workspace();
+  QString target = main;
+  ViewSplit2 *targetSplit = f->area->getCurrentViewSplit();
+  if (detached) {
+    QVERIFY(f->controller()->detachViewWindow(main, sourceId, a.id()));
+    auto *host = qobject_cast<DetachedWindow *>(source->window());
+    QVERIFY(host);
+    target = host->getWorkspaceId();
+    targetSplit = host->getViewSplit();
+  }
+  const auto mainOrder = f->order(main);
+  const auto mainCurrent = f->coreCurrent(main);
+  const auto mainWindowId = f->controller()->getCurrentWindowId();
+  f->reuse();
+  const auto b = f->preview(source, f->node(QStringLiteral("b.md")));
+  QVERIFY(b.isValid());
+  const auto preview = f->area->previewWorkspaceForWindow(sourceId);
+  QPointer<LinkPreviewOverlay> overlay(source->findChild<LinkPreviewOverlay *>());
+  QVERIFY(overlay && overlay->isVisible());
+  QPointer<ViewWindow2> bWindow(overlay->getViewSplit()->getCurrentViewWindow());
+  const auto bId = bWindow->getViewWindowId();
+  auto *editor = bWindow->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  auto *edit = editor->getTextEdit();
+  auto *document = edit->document();
+  edit->setFocus();
+  QTRY_VERIFY(edit->hasFocus());
+  appendDraft(edit, QStringLiteral("\nUnsaved promoted draft\n"));
+  auto cursor = edit->textCursor();
+  cursor.setPosition(7);
+  edit->setTextCursor(cursor);
+  const auto draft = editor->getText();
+  const auto undoSteps = document->availableUndoSteps();
+  const auto c = f->preview(bWindow, f->node(QStringLiteral("c.md")));
+  QVERIFY(c.isValid());
+  QPointer<ViewWindow2> cWindow(overlay->getViewSplit()->getCurrentViewWindow());
+  const auto cId = cWindow->getViewWindowId();
+  f->area->setCurrentBuffer(preview, b.id(), true);
+  QCOMPARE(overlay->getViewSplit()->getCurrentViewWindow(), bWindow.data());
+  auto *button =
+      overlay->findChild<QToolButton *>(QStringLiteral("openLinkPreviewInNewTabsButton"));
+  QVERIFY(button);
+  QVERIFY(clickNativeSurface(button, button->rect().center()));
+  QTRY_VERIFY(overlay.isNull());
+  QVERIFY(f->workspaces->getWorkspace(preview).isEmpty());
+  QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+  QCOMPARE(targetSplit->getAllViewWindows(), QVector<ViewWindow2 *>({source, bWindow, cWindow}));
+  QCOMPARE(f->order(target), QStringList({a.id(), b.id(), c.id()}));
+  QCOMPARE(f->area->findWindowIdByBufferId(target, b.id()), bId);
+  QCOMPARE(f->area->findWindowIdByBufferId(target, c.id()), cId);
+  QCOMPARE(targetSplit->getCurrentViewWindow(), bWindow.data());
+  QCOMPARE(f->coreCurrent(target), b.id());
+  QCOMPARE(bWindow->findChild<MarkdownEditor *>(), editor);
+  QCOMPARE(editor->getTextEdit(), edit);
+  QCOMPARE(edit->document(), document);
+  QCOMPARE(editor->getText(), draft);
+  QCOMPARE(document->availableUndoSteps(), undoSteps);
+  QCOMPARE(edit->textCursor().position(), 7);
+  QCOMPARE(source->getViewWindowId(), sourceId);
+  QCOMPARE(source->getBuffer().id(), a.id());
+  QCOMPARE(source->getLinkOpenSettings().m_previewSourceGeneration, sourceGeneration);
+  QCOMPARE(source->getLatestContent(), sourceText);
+  QCOMPARE(source->getMode(), sourceMode);
+  if (detached) {
+    QCOMPARE(f->workspaces->getCurrentWorkspace(), main);
+    QCOMPARE(f->order(main), mainOrder);
+    QCOMPARE(f->coreCurrent(main), mainCurrent);
+    QCOMPARE(f->controller()->getCurrentWindowId(), mainWindowId);
+    QVERIFY(qobject_cast<DetachedWindow *>(bWindow->window()));
+  } else {
+    QCOMPARE(f->controller()->getCurrentWindowId(), bId);
+  }
+  QVERIFY(bWindow->save());
+  QTRY_COMPARE(readBytes(f->absolute(QStringLiteral("b.md"))), draft.toUtf8());
+}
+
+void TestViewAreaTabReuse::previewOpenInNewTabsDuplicateConsent_data() {
+  QTest::addColumn<int>("answer");
+  QTest::addColumn<bool>("sourceDuplicate");
+  QTest::addColumn<bool>("detached");
+  QTest::newRow("other-tab-save") << int(QMessageBox::Save) << false << false;
+  QTest::newRow("other-tab-discard") << int(QMessageBox::Discard) << false << false;
+  QTest::newRow("other-tab-cancel") << int(QMessageBox::Cancel) << false << false;
+  QTest::newRow("source-save") << int(QMessageBox::Save) << true << false;
+  QTest::newRow("source-discard") << int(QMessageBox::Discard) << true << false;
+  QTest::newRow("source-cancel") << int(QMessageBox::Cancel) << true << false;
+  QTest::newRow("detached-source-save") << int(QMessageBox::Save) << true << true;
+  QTest::newRow("detached-source-discard") << int(QMessageBox::Discard) << true << true;
+  QTest::newRow("detached-source-cancel") << int(QMessageBox::Cancel) << true << true;
+}
+
+void TestViewAreaTabReuse::previewOpenInNewTabsDuplicateConsent() {
+  QFETCH(int, answer);
+  QFETCH(bool, sourceDuplicate);
+  QFETCH(bool, detached);
+  const bool cancelled = answer == QMessageBox::Cancel;
+  const QByteArray sourceBytes("# Source reader\n\n[COVERED](covered.md)\n");
+  const QByteArray duplicateBytes("# Destination duplicate\n");
+  QVERIFY(f->create(QStringLiteral("a.md"), sourceBytes));
+  QVERIFY(f->create(QStringLiteral("b.md"), duplicateBytes));
+  QVERIFY(f->create(QStringLiteral("early.txt"), "Earlier committed tab\n"));
+  QVERIFY(f->create(QStringLiteral("remaining.txt"), "Remaining preview\n"));
+  QVERIFY(f->create(QStringLiteral("covered.md"), "# Covered link must not open\n"));
+  if (detached) {
+    QVERIFY(f->create(QStringLiteral("main.txt"), "Unchanged main workspace\n"));
+    QVERIFY(f->open(QStringLiteral("main.txt")).isValid());
+  }
+  const auto a = f->open(QStringLiteral("a.md"));
+  QVERIFY(a.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  const auto sourceId = source->getViewWindowId();
+  const auto ordinaryMain = f->workspace();
+  QString main = ordinaryMain;
+  auto *mainSplit = f->area->getCurrentViewSplit();
+  if (detached) {
+    QVERIFY(f->controller()->detachViewWindow(ordinaryMain, sourceId, a.id()));
+    auto *host = qobject_cast<DetachedWindow *>(source->window());
+    QVERIFY(host);
+    main = host->getWorkspaceId();
+    mainSplit = host->getViewSplit();
+  }
+  const auto ordinaryOrder = f->order(ordinaryMain);
+  const auto ordinaryCurrent = f->coreCurrent(ordinaryMain);
+  auto *sourceEditor = source->findChild<MarkdownEditor *>();
+  QVERIFY(sourceEditor);
+  const QString destinationDraft = QStringLiteral("\nDestination draft awaiting consent\n");
+  if (sourceDuplicate) {
+    sourceEditor->getTextEdit()->setFocus();
+    QTRY_VERIFY(sourceEditor->getTextEdit()->hasFocus());
+    appendDraft(sourceEditor->getTextEdit(), destinationDraft);
+    QVERIFY(source->isModified());
+  }
+  // Direct mode changes retain the draft; the toolbar's Save-and-Read action would save it.
+  source->setMode(ViewWindowMode::Read);
+  QPointer<MarkdownViewer> originalReader(source->findChild<MarkdownViewer *>());
+  QVERIFY(originalReader && waitForRender(originalReader, QStringLiteral("Source reader")));
+  QCOMPARE(source->getMode(), ViewWindowMode::Read);
+  QCOMPARE(readBytes(f->absolute(QStringLiteral("a.md"))), sourceBytes);
+
+  Buffer2 duplicate = a;
+  QPointer<ViewWindow2> oldDuplicate(source);
+  if (!sourceDuplicate) {
+    duplicate = f->open(QStringLiteral("b.md"), true);
+    QVERIFY(duplicate.isValid());
+    oldDuplicate = f->current();
+    auto *editor = oldDuplicate->findChild<MarkdownEditor *>();
+    QVERIFY(editor);
+    editor->getTextEdit()->setFocus();
+    QTRY_VERIFY(editor->getTextEdit()->hasFocus());
+    appendDraft(editor->getTextEdit(), destinationDraft);
+    QVERIFY(oldDuplicate->isModified());
+    f->area->setCurrentBuffer(main, a.id(), true);
+    QTRY_COMPARE(f->current(), source.data());
+  }
+  const auto oldId = oldDuplicate->getViewWindowId();
+  const auto sourceGeneration = source->getLinkOpenSettings().m_previewSourceGeneration;
+  const QString duplicateName = sourceDuplicate ? QStringLiteral("a.md") : QStringLiteral("b.md");
+  const QByteArray originalBytes = sourceDuplicate ? sourceBytes : duplicateBytes;
+  const auto initialMainOrder = f->order(main);
+  f->reuse();
+
+  const auto early = f->preview(source, f->node(QStringLiteral("early.txt")));
+  QVERIFY(early.isValid());
+  const auto preview = f->workspace();
+  QPointer<ViewWindow2> earlyWindow(f->current());
+  const auto earlyId = earlyWindow->getViewWindowId();
+  QPointer<LinkPreviewOverlay> overlay(source->findChild<LinkPreviewOverlay *>());
+  QVERIFY(overlay && overlay->isVisible());
+  auto *previewSplit = overlay->getViewSplit();
+  QCOMPARE(f->preview(earlyWindow, duplicate.nodeId()).id(), duplicate.id());
+  QPointer<ViewWindow2> incoming(f->current());
+  QVERIFY(incoming && incoming != oldDuplicate);
+  const auto incomingId = incoming->getViewWindowId();
+  QPointer<MarkdownEditor> incomingEditor(incoming->findChild<MarkdownEditor *>());
+  QVERIFY(incomingEditor);
+  auto *incomingEdit = incomingEditor->getTextEdit();
+  incomingEdit->setFocus();
+  QTRY_VERIFY(incomingEdit->hasFocus());
+  appendDraft(incomingEdit, QStringLiteral("\nIncoming preview draft must survive\n"));
+  auto cursor = incomingEdit->textCursor();
+  cursor.setPosition(3);
+  cursor.setPosition(9, QTextCursor::KeepAnchor);
+  incomingEdit->setTextCursor(cursor);
+  QPointer<MarkdownViewer> incomingReader;
+  if (sourceDuplicate) {
+    // Both possible owners are real native readers. Promotion must preserve this mode,
+    // rather than recreating the incoming document as an ordinary editable tab.
+    incoming->setMode(ViewWindowMode::Read);
+    incomingReader = incoming->findChild<MarkdownViewer *>();
+    QVERIFY(incomingReader &&
+            waitForRender(incomingReader, QStringLiteral("Incoming preview draft must survive")));
+  }
+  const auto remaining = f->preview(incoming, f->node(QStringLiteral("remaining.txt")));
+  QVERIFY(remaining.isValid());
+  QPointer<ViewWindow2> remainingWindow(f->current());
+  const auto remainingId = remainingWindow->getViewWindowId();
+  auto *remainingEditor = remainingWindow->findChild<TextEditor *>();
+  QVERIFY(remainingEditor);
+  auto *remainingEdit = remainingEditor->getTextEdit();
+  remainingEdit->setFocus();
+  QTRY_VERIFY(remainingEdit->hasFocus());
+  QCOMPARE(f->order(preview), QStringList({early.id(), duplicate.id(), remaining.id()}));
+  QCOMPARE(previewSplit->indexOf(incoming), 1);
+  QCOMPARE(previewSplit->indexOf(remainingWindow), 2);
+
+  const auto document = incomingEdit->document();
+  const auto draft = incomingEditor->getText();
+  const int undoSteps = document->availableUndoSteps();
+  const auto savedCursor = incomingEdit->textCursor();
+  const auto incomingMode = incoming->getMode();
+  const auto oldDraft = oldDuplicate->getLatestContent();
+  QVERIFY(oldDraft.contains(destinationDraft));
+  QVERIFY(draft.contains(QStringLiteral("Incoming preview draft must survive")));
+  QVERIFY(undoSteps > 0);
+  QVERIFY(oldDuplicate->isModified());
+  const auto readerSize = originalReader->size();
+  const auto originalPage = originalReader->page();
+  const auto promotedPage = incomingReader ? incomingReader->page() : nullptr;
+
+  int vetoes = 0;
+  int closeChecks = 0;
+  QVector<ID> committed;
+  const int beforeMove = f->hooks->addAction<ViewWindowMoveEvent>(
+      HookNames::ViewWindowBeforeMove, [&](HookContext &context, const ViewWindowMoveEvent &event) {
+        if (event.windowId == remainingId) {
+          ++vetoes;
+          context.cancel();
+        }
+      });
+  const int afterMove = f->hooks->addAction<ViewWindowMoveEvent>(
+      HookNames::ViewWindowAfterMove, [&](HookContext &, const ViewWindowMoveEvent &event) {
+        if (event.srcWorkspaceId == preview)
+          committed.append(event.windowId);
+      });
+  const int beforeClose = f->hooks->addAction<ViewWindowCloseEvent>(
+      HookNames::ViewWindowBeforeClose, [&](HookContext &, const ViewWindowCloseEvent &event) {
+        if (event.windowId == oldId)
+          ++closeChecks;
+      });
+  const auto removeHooks = qScopeGuard([&] {
+    f->hooks->removeAction(beforeMove);
+    f->hooks->removeAction(afterMove);
+    f->hooks->removeAction(beforeClose);
+  });
+  bool sawConsent = false;
+  DialogAnswer dialog(static_cast<QMessageBox::StandardButton>(answer), [&] {
+    sawConsent = true;
+    QVERIFY(oldDuplicate && incoming && overlay);
+    QVERIFY(f->area->getViewWindowIdsForWorkspace(main).contains(incomingId));
+    QVERIFY(!f->area->getViewWindowIdsForWorkspace(preview).contains(incomingId));
+    // During consent both workspace registrations protect the shared buffer.
+    QVERIFY(f->order(main).contains(duplicate.id()));
+    QVERIFY(f->order(preview).contains(duplicate.id()));
+    QCOMPARE(overlay->parentWidget(), sourceDuplicate ? incoming.data() : source.data());
+    if (sourceDuplicate) {
+      QCOMPARE(oldDuplicate->getMode(), ViewWindowMode::Read);
+      QCOMPARE(oldDuplicate->findChild<MarkdownViewer *>(), originalReader.data());
+      QCOMPARE(f->area->previewWorkspaceForWindow(incomingId), preview);
+      QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+    }
+  });
+  auto *button =
+      overlay->findChild<QToolButton *>(QStringLiteral("openLinkPreviewInNewTabsButton"));
+  QVERIFY(button && button->isVisible() && button->isEnabled());
+  QVERIFY(clickNativeSurface(button, button->rect().center()));
+  QVERIFY(dialog.accepted());
+  QVERIFY(sawConsent);
+  QCOMPARE(dialog.count(), 1);
+  QCOMPARE(closeChecks, 1);
+  QCOMPARE(vetoes, cancelled ? 0 : 1);
+  QCOMPARE(committed, cancelled ? QVector<ID>({earlyId}) : QVector<ID>({earlyId, incomingId}));
+  QVERIFY(earlyWindow && incoming && remainingWindow && overlay);
+  QVERIFY(!f->controller()->isPreviewWorkspaceClosing(preview));
+  QCOMPARE(f->area->findWindowIdByBufferId(main, early.id()), earlyId);
+  QVERIFY(mainSplit->getAllViewWindows().contains(earlyWindow.data()));
+  QCOMPARE(incoming->getViewWindowId(), incomingId);
+  QCOMPARE(incoming->findChild<MarkdownEditor *>(), incomingEditor.data());
+  QCOMPARE(incomingEditor->getTextEdit(), incomingEdit);
+  QCOMPARE(incomingEdit->document(), document);
+  QCOMPARE(incomingEditor->getText(), draft);
+  QCOMPARE(document->availableUndoSteps(), undoSteps);
+  QCOMPARE(incomingEdit->textCursor().position(), savedCursor.position());
+  QCOMPARE(incomingEdit->textCursor().anchor(), savedCursor.anchor());
+  QCOMPARE(incoming->getMode(), incomingMode);
+
+  QStringList expectedMain = initialMainOrder;
+  expectedMain.append(early.id());
+  if (cancelled) {
+    QVERIFY(oldDuplicate);
+    QCOMPARE(oldDuplicate->getViewWindowId(), oldId);
+    // Normal focus can synchronize same-buffer siblings; neither draft may be lost.
+    QVERIFY(oldDuplicate->getLatestContent().contains(destinationDraft));
+    QVERIFY(oldDuplicate->isModified());
+    QCOMPARE(f->area->findWindowIdByBufferId(main, duplicate.id()), oldId);
+    QCOMPARE(f->area->findWindowIdByBufferId(preview, duplicate.id()), incomingId);
+    // The earlier tab is already committed: rollback index is now zero, not one.
+    QCOMPARE(previewSplit->indexOf(incoming), 0);
+    QCOMPARE(previewSplit->indexOf(remainingWindow), 1);
+    QCOMPARE(f->order(preview), QStringList({duplicate.id(), remaining.id()}));
+    QCOMPARE(overlay->parentWidget(), source.data());
+    QCOMPARE(f->area->previewWorkspaceForWindow(sourceId), preview);
+    QCOMPARE(f->area->previewWorkspaceForWindow(incomingId), preview);
+    QCOMPARE(source->getLinkOpenSettings().m_previewSourceGeneration, sourceGeneration);
+  } else {
+    QTRY_VERIFY(oldDuplicate.isNull());
+    expectedMain.removeAll(duplicate.id());
+    expectedMain.append(duplicate.id());
+    QCOMPARE(f->area->findWindowIdByBufferId(main, duplicate.id()), incomingId);
+    QCOMPARE(previewSplit->indexOf(incoming), -1);
+    QCOMPARE(previewSplit->indexOf(remainingWindow), 0);
+    QCOMPARE(f->order(preview), QStringList({remaining.id()}));
+    if (sourceDuplicate) {
+      QVERIFY(source.isNull());
+      QCOMPARE(overlay->parentWidget(), incoming.data());
+      QCOMPARE(f->area->previewWorkspaceForWindow(incomingId), preview);
+      QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+    }
+  }
+  QCOMPARE(f->order(main), expectedMain);
+  QCOMPARE(f->current(), remainingWindow.data());
+  QCOMPARE(f->coreCurrent(preview), remaining.id());
+  QCOMPARE(f->coreCurrent(main), mainSplit->getCurrentViewWindow()->getBuffer().id());
+  if (detached) {
+    QCOMPARE(f->workspaces->getCurrentWorkspace(), ordinaryMain);
+    QCOMPARE(f->order(ordinaryMain), ordinaryOrder);
+    QCOMPARE(f->coreCurrent(ordinaryMain), ordinaryCurrent);
+  }
+  for (const auto &workspace : {main, preview}) {
+    QStringList liveOrder;
+    const auto infos = f->area->getViewWindowNavInfos(workspace);
+    for (const auto &info : infos) {
+      QVERIFY(!liveOrder.contains(info.bufferId));
+      liveOrder.append(info.bufferId);
+      QVERIFY(f->buffers->getBufferHandle(info.bufferId).isValid());
+    }
+    QCOMPARE(f->order(workspace), liveOrder);
+  }
+  if (answer == QMessageBox::Save) {
+    QVERIFY(readBytes(f->absolute(duplicateName)).contains(destinationDraft.toUtf8()));
+  } else {
+    QCOMPARE(readBytes(f->absolute(duplicateName)), originalBytes);
+  }
+
+  // The remaining preview must receive input over the native reader after either
+  // reparenting to the promoted source or rolling back to the original source.
+  auto *host = sourceDuplicate && !cancelled ? incoming.data() : source.data();
+  auto *coveredReader =
+      sourceDuplicate && !cancelled ? incomingReader.data() : originalReader.data();
+  QVERIFY(host && coveredReader);
+  QCOMPARE(host->getMode(), ViewWindowMode::Read);
+  QCOMPARE(coveredReader->page(), sourceDuplicate && !cancelled ? promotedPage : originalPage);
+  QTRY_VERIFY(overlay->isVisible() && remainingWindow->isVisible() && coveredReader->isVisible());
+  QCOMPARE(overlay->parentWidget(), host);
+  QCOMPARE(overlay->getViewSplit(), previewSplit);
+  QTRY_VERIFY(!overlay->geometry().isEmpty() && host->contentsRect().contains(overlay->geometry()));
+  QVERIFY(!overlay->visibleRegion().isEmpty());
+#ifdef Q_OS_WIN
+  QVERIFY(overlay->testAttribute(Qt::WA_NativeWindow));
+  QVERIFY(overlay->windowHandle() && host->windowHandle());
+  QTRY_COMPARE(overlay->windowHandle()->parent(), host->windowHandle());
+  QTRY_VERIFY(overlay->windowHandle()->isExposed());
+  QCOMPARE(overlay->windowHandle()->mapToGlobal(QPoint()), overlay->mapToGlobal(QPoint()));
+  QCOMPARE(overlay->windowHandle()->size(), overlay->size());
+#endif
+  if (!sourceDuplicate || cancelled) {
+    QCOMPARE(originalReader->size(), readerSize);
+    QCOMPARE(source->getMode(), ViewWindowMode::Read);
+  }
+  const auto coveredContent = host->getLatestContent();
+  const auto coveredScroll = evaluate(coveredReader->page(), QStringLiteral("scrollY")).toInt();
+  QVERIFY(
+      clickNativeSurface(remainingEdit->viewport(), remainingEdit->viewport()->rect().center()));
+  QTRY_VERIFY(remainingEdit->hasFocus());
+  QTest::keyClick(remainingEdit, Qt::Key_End, Qt::ControlModifier);
+  QTest::keyClicks(remainingEdit, " Native input after duplicate consent");
+  QVERIFY(
+      remainingEditor->getText().contains(QStringLiteral("Native input after duplicate consent")));
+  QCOMPARE(host->getLatestContent(), coveredContent);
+  QCOMPARE(evaluate(coveredReader->page(), QStringLiteral("scrollY")).toInt(), coveredScroll);
+  QCOMPARE(f->current(), remainingWindow.data());
+  QCOMPARE(f->coreCurrent(preview), remaining.id());
+  QCOMPARE(f->order(main), expectedMain);
+  QCOMPARE(incomingEdit->document(), document);
+  QCOMPARE(incomingEditor->getText(), draft);
+  QCOMPARE(document->availableUndoSteps(), undoSteps);
+  if (!sourceDuplicate)
+    QCOMPARE(readBytes(f->absolute(QStringLiteral("a.md"))), sourceBytes);
+}
+
+void TestViewAreaTabReuse::previewOpenInNewTabsProtectedDuplicate() {
+  QVERIFY(f->create(QStringLiteral("a.txt"), "Ordinary source\n"));
+  const auto secretId =
+      f->createProtected(QStringLiteral("secret.md"), "# Protected duplicate\n", true);
+  QVERIFY(!secretId.isEmpty());
+  const auto a = f->open(QStringLiteral("a.txt"));
+  QVERIFY(a.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  const auto sourceId = source->getViewWindowId();
+  const auto main = f->workspace();
+  const auto secret = f->openProtected(secretId, true);
+  QVERIFY(secret.isValid() && secret.isEncrypted());
+  QPointer<ViewWindow2> outgoing(f->current());
+  const auto outgoingId = outgoing->getViewWindowId();
+  auto *outgoingEditor = outgoing->findChild<MarkdownEditor *>();
+  QVERIFY(outgoingEditor);
+  outgoingEditor->getTextEdit()->setFocus();
+  QTRY_VERIFY(outgoingEditor->getTextEdit()->hasFocus());
+  appendDraft(outgoingEditor->getTextEdit(), QStringLiteral("Shared protected draft\n"));
+  QVERIFY(outgoing->isModified());
+  QVERIFY(f->buffers->syncNow(secret.id()));
+  f->controller()->focusWindow(main, a.id());
+  QCOMPARE(f->preview(source, secret.nodeId()).id(), secret.id());
+  const auto preview = f->workspace();
+  QVERIFY(preview != main);
+  QPointer<ViewWindow2> incoming(f->current());
+  const auto incomingId = incoming->getViewWindowId();
+  QVERIFY(incomingId != outgoingId);
+  QPointer<LinkPreviewOverlay> overlay(source->findChild<LinkPreviewOverlay *>());
+  QVERIFY(overlay);
+  auto *editor = incoming->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  auto *document = editor->getTextEdit()->document();
+  const auto draft = incoming->getLatestContent();
+  QVERIFY(draft.contains(QStringLiteral("Shared protected draft")));
+  QCOMPARE(f->order(main), QStringList({a.id(), secret.id()}));
+  QCOMPARE(f->order(preview), QStringList({secret.id()}));
+
+  int closeChecks = 0;
+  const int hook = f->hooks->addAction<ViewWindowCloseEvent>(
+      HookNames::ViewWindowBeforeClose, [&](HookContext &, const ViewWindowCloseEvent &event) {
+        if (event.windowId == outgoingId)
+          ++closeChecks;
+      });
+  const auto removeHook = qScopeGuard([&] { f->hooks->removeAction(hook); });
+  DialogAnswer discard(QMessageBox::Discard);
+  QVERIFY(f->controller()->openPreviewInNewTabs(preview, main));
+  QVERIFY(discard.accepted());
+  QCOMPARE(closeChecks, 1);
+  // The protected close completes on QObject destruction, after promotion has
+  // already removed the preview's ownership of this shared buffer.
+  QVERIFY(outgoing);
+  QVERIFY(incoming);
+  QCOMPARE(f->area->findWindowIdByBufferId(main, secret.id()), incomingId);
+  QCOMPARE(f->order(main), QStringList({a.id(), secret.id()}));
+  QVERIFY(f->workspaces->getWorkspace(preview).isEmpty());
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QTRY_VERIFY(outgoing.isNull());
+  QTRY_VERIFY(overlay.isNull());
+  QVERIFY(incoming && source);
+  QCOMPARE(incoming->getViewWindowId(), incomingId);
+  QCOMPARE(incoming->findChild<MarkdownEditor *>(), editor);
+  QCOMPARE(editor->getTextEdit()->document(), document);
+  QCOMPARE(incoming->getLatestContent(), draft);
+  QCOMPARE(f->current(), incoming.data());
+  QCOMPARE(f->coreCurrent(main), secret.id());
+  QCOMPARE(f->order(main), QStringList({a.id(), secret.id()}));
+  QCOMPARE(f->area->getViewWindowIdsForWorkspace(main).size(), 2);
+  QVERIFY(f->buffers->getBufferHandle(secret.id()).isValid());
+  QCOMPARE(f->buffers->listBuffers().size(), 2);
+  QCOMPARE(source->getViewWindowId(), sourceId);
+  QCOMPARE(source->getLatestContent(), QStringLiteral("Ordinary source\n"));
+
+  editor->getTextEdit()->setFocus();
+  QTRY_VERIFY(editor->getTextEdit()->hasFocus());
+  appendDraft(editor->getTextEdit(), QStringLiteral("Saved after protected retirement\n"));
+  const auto saved = incoming->getLatestContent();
+  QVERIFY(incoming->save());
+  QTRY_VERIFY_WITH_TIMEOUT(!f->buffers->isSaveQueueBusy(secret.id()) && !incoming->isModified(),
+                           10000);
+  QCOMPARE(incoming->getBuffer().getContentRaw(), saved.toUtf8());
+  QVERIFY(f->controller()->closeViewWindow(incomingId, false));
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QTRY_VERIFY(incoming.isNull());
+  QCOMPARE(f->order(main), QStringList({a.id()}));
+  QCOMPARE(f->area->findWindowIdByBufferId(main, secret.id()),
+           ViewAreaController::InvalidViewWindowId);
+  QVERIFY(!f->buffers->getBufferHandle(secret.id()).isValid());
+  QCOMPARE(f->buffers->listBuffers().size(), 1);
+  QCOMPARE(closeChecks, 1);
+}
+
+void TestViewAreaTabReuse::previewOpenInNewTabsReentrancy() {
+  for (const auto &name : {QStringLiteral("a.txt"), QStringLiteral("b.txt"),
+                           QStringLiteral("c.txt"), QStringLiteral("other-source.txt"),
+                           QStringLiteral("other-preview.txt"), QStringLiteral("busy.txt")})
+    QVERIFY(f->create(name, name.toUtf8()));
+  const auto a = f->open(QStringLiteral("a.txt"));
+  QVERIFY(a.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  const auto sourceId = source->getViewWindowId();
+  const auto main = f->workspace();
+  const auto b = f->open(QStringLiteral("b.txt"), true);
+  QVERIFY(b.isValid());
+  QPointer<ViewWindow2> outgoing(f->current());
+  const auto outgoingId = outgoing->getViewWindowId();
+
+  // Use a different preview destination, not merely the equal-ID rejection.
+  const auto otherSourceBuffer = f->open(QStringLiteral("other-source.txt"), true);
+  QVERIFY(otherSourceBuffer.isValid());
+  QPointer<ViewWindow2> otherSource(f->current());
+  const auto otherSourceId = otherSource->getViewWindowId();
+  const auto otherBuffer = f->preview(otherSource, f->node(QStringLiteral("other-preview.txt")));
+  QVERIFY(otherBuffer.isValid());
+  const auto otherPreview = f->workspace();
+  const auto otherWindowId = f->current()->getViewWindowId();
+  f->controller()->focusWindow(main, a.id());
+  const auto sourceSettings = source->getLinkOpenSettings();
+  QCOMPARE(f->preview(source, b.nodeId()).id(), b.id());
+  const auto preview = f->workspace();
+  QVERIFY(preview != main && preview != otherPreview);
+  QPointer<ViewWindow2> incomingB(f->current());
+  const auto bId = incomingB->getViewWindowId();
+  QVERIFY(bId != outgoingId);
+  const auto c = f->preview(incomingB, f->node(QStringLiteral("c.txt")));
+  QVERIFY(c.isValid());
+  QPointer<ViewWindow2> incomingC(f->current());
+  const auto cId = incomingC->getViewWindowId();
+  QPointer<LinkPreviewOverlay> overlay(source->findChild<LinkPreviewOverlay *>());
+  QVERIFY(overlay);
+  auto *editor = incomingC->findChild<TextEditor *>();
+  QVERIFY(editor);
+  editor->getTextEdit()->setFocus();
+  QTRY_VERIFY(editor->getTextEdit()->hasFocus());
+  appendDraft(editor->getTextEdit(), QStringLiteral(" preserved through hooks"));
+  const auto draft = incomingC->getLatestContent();
+  const auto bText = incomingB->getLatestContent();
+  const auto mainOrder = f->order(main);
+  const auto previewOrder = f->order(preview);
+  const auto otherOrder = f->order(otherPreview);
+  const auto mainCurrent = f->coreCurrent(main);
+  const auto previewCurrent = f->coreCurrent(preview);
+  const auto otherCurrent = f->coreCurrent(otherPreview);
+  const auto bufferCount = f->buffers->listBuffers().size();
+  const auto workspaceCount = f->workspaces->listWorkspaces().size();
+  QVERIFY(!f->controller()->openPreviewInNewTabs(preview, QStringLiteral("missing-workspace")));
+  QVERIFY(!f->controller()->openPreviewInNewTabs(preview, otherPreview));
+  QVERIFY(!f->controller()->openPreviewInNewTabs(preview, preview));
+  QCOMPARE(f->order(main), mainOrder);
+  QCOMPARE(f->order(preview), previewOrder);
+  QCOMPARE(f->order(otherPreview), otherOrder);
+  QCOMPARE(f->coreCurrent(main), mainCurrent);
+  QCOMPARE(f->coreCurrent(preview), previewCurrent);
+  QCOMPARE(f->coreCurrent(otherPreview), otherCurrent);
+  QCOMPARE(f->buffers->listBuffers().size(), bufferCount);
+  QCOMPARE(f->workspaces->listWorkspaces().size(), workspaceCount);
+  QCOMPARE(f->area->findWindowIdByBufferId(otherPreview, otherBuffer.id()), otherWindowId);
+  QCOMPARE(f->area->findWindowIdByBufferId(preview, b.id()), bId);
+  QCOMPARE(f->area->findWindowIdByBufferId(preview, c.id()), cId);
+  QCOMPARE(incomingC->getLatestContent(), draft);
+  QVERIFY(f->controller()->closePreviewWorkspace(otherPreview));
+  QVERIFY(f->controller()->closeViewWindow(otherSourceId, false));
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QVERIFY(otherSource.isNull());
+  f->area->setCurrentBuffer(preview, c.id(), true);
+  QTRY_COMPARE(f->current(), incomingC.data());
+  QCOMPARE(f->order(main), QStringList({a.id(), b.id()}));
+  QCOMPARE(f->buffers->listBuffers().size(), 3);
+
+  QVector<quint64> beforeMoves;
+  QVector<quint64> afterMoves;
+  int duplicateCloseChecks = 0;
+  bool veto = true;
+  bool exercisedGuards = false;
+  bool removedDuplicate = false;
+  FileOpenSettings busy;
+  busy.m_mode = ViewWindowMode::Edit;
+  busy.m_targetWorkspaceId = preview;
+  busy.m_focus = false;
+  const int before = f->hooks->addAction<ViewWindowMoveEvent>(
+      HookNames::ViewWindowBeforeMove, [&](HookContext &ctx, const ViewWindowMoveEvent &event) {
+        beforeMoves.append(event.windowId);
+        QCOMPARE(event.srcWorkspaceId, preview);
+        QCOMPARE(event.dstWorkspaceId, main);
+        QCOMPARE(event.bufferId, event.windowId == bId ? b.id() : c.id());
+        if (!veto)
+          return;
+        ctx.cancel();
+        exercisedGuards = true;
+        QVERIFY(f->controller()->isPreviewWorkspaceClosing(preview));
+        QVERIFY(!f->controller()->openPreviewInNewTabs(preview, main));
+        QVERIFY(!f->controller()->closePreviewWorkspace(preview));
+        QVERIFY(!f->controller()->closeViewWindow(sourceId, true));
+        QVERIFY(!f->controller()->closeViewWindow(bId, true));
+        QVERIFY(!f->controller()->closeViewWindow(cId, true));
+        f->controller()->moveViewWindowOneSplit(preview, bId, Direction::Right, main, b.id());
+        f->buffers->openBuffer(f->node(QStringLiteral("busy.txt")), sourceSettings);
+        f->buffers->openBuffer(f->node(QStringLiteral("busy.txt")), busy);
+        QCOMPARE(f->order(main), QStringList({a.id(), b.id()}));
+        QCOMPARE(f->order(preview), QStringList({b.id(), c.id()}));
+        QCOMPARE(f->area->findWindowIdByBufferId(main, b.id()), outgoingId);
+        QCOMPARE(f->area->findWindowIdByBufferId(preview, b.id()), bId);
+        QCOMPARE(f->area->findWindowIdByBufferId(preview, c.id()), cId);
+        QCOMPARE(f->buffers->listBuffers().size(), 3);
+        QCOMPARE(f->workspaces->listWorkspaces().size(), 2);
+        QVERIFY(source && incomingB && incomingC && overlay);
+        QCOMPARE(source->getBuffer().id(), a.id());
+        QCOMPARE(incomingB->getLatestContent(), bText);
+        QCOMPARE(incomingC->getLatestContent(), draft);
+      });
+  const int after = f->hooks->addAction<ViewWindowMoveEvent>(
+      HookNames::ViewWindowAfterMove, [&](HookContext &, const ViewWindowMoveEvent &event) {
+        afterMoves.append(event.windowId);
+        QCOMPARE(event.srcWorkspaceId, preview);
+        QCOMPARE(event.dstWorkspaceId, main);
+        QCOMPARE(f->area->findWindowIdByBufferId(main, event.bufferId), event.windowId);
+        QVERIFY(f->order(main).contains(event.bufferId));
+        QVERIFY(!f->order(preview).contains(event.bufferId));
+        QVERIFY(f->buffers->getBufferHandle(event.bufferId).isValid());
+      });
+  const int close = f->hooks->addAction<ViewWindowCloseEvent>(
+      HookNames::ViewWindowBeforeClose, [&](HookContext &, const ViewWindowCloseEvent &event) {
+        if (event.windowId != outgoingId)
+          return;
+        ++duplicateCloseChecks;
+        QVERIFY(!veto);
+        QVERIFY(!f->controller()->closeViewWindow(outgoingId, false));
+        // B is already appended when the close hook runs. Remove the old view
+        // directly: the controller's stale close ID will then return false,
+        // but the transfer must recognize that no conflict remains.
+        QVERIFY(f->area->getViewWindowIdsForWorkspace(main).contains(bId));
+        QVERIFY(f->area->closeViewWindow(outgoingId, false));
+        removedDuplicate = true;
+        QCOMPARE(f->area->findWindowIdByBufferId(main, b.id()), bId);
+        QVERIFY(f->order(main).contains(b.id()));
+        QVERIFY(f->buffers->getBufferHandle(b.id()).isValid());
+      });
+  const auto removeHooks = qScopeGuard([&] {
+    f->hooks->removeAction(before);
+    f->hooks->removeAction(after);
+    f->hooks->removeAction(close);
+  });
+
+  QVERIFY(!f->controller()->openPreviewInNewTabs(preview, main));
+  QVERIFY(exercisedGuards);
+  QCOMPARE(beforeMoves, QVector<quint64>({bId}));
+  QVERIFY(afterMoves.isEmpty());
+  QCOMPARE(duplicateCloseChecks, 0);
+  QVERIFY(!removedDuplicate);
+  QVERIFY(!f->controller()->isPreviewWorkspaceClosing(preview));
+  QVERIFY(f->area->isPreviewWorkspaceAvailable(preview));
+  QCOMPARE(f->order(main), QStringList({a.id(), b.id()}));
+  QCOMPARE(f->order(preview), QStringList({b.id(), c.id()}));
+  QCOMPARE(f->current(), incomingC.data());
+  QCOMPARE(f->coreCurrent(preview), c.id());
+  QCOMPARE(f->area->previewWorkspaceForWindow(sourceId), preview);
+  QCOMPARE(overlay->parentWidget(), source.data());
+  QCOMPARE(incomingC->getLatestContent(), draft);
+
+  veto = false;
+  QVERIFY(f->controller()->openPreviewInNewTabs(preview, main));
+  QVERIFY(removedDuplicate);
+  QCOMPARE(duplicateCloseChecks, 1);
+  QCOMPARE(beforeMoves, QVector<quint64>({bId, bId, cId}));
+  QCOMPARE(afterMoves, QVector<quint64>({bId, cId}));
+  QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  QTRY_VERIFY(outgoing.isNull());
+  QTRY_VERIFY(overlay.isNull());
+  QVERIFY(source && incomingB && incomingC);
+  QCOMPARE(f->order(main), QStringList({a.id(), b.id(), c.id()}));
+  QCOMPARE(f->area->getViewWindowIdsForWorkspace(main).size(), 3);
+  const auto infos = f->area->getViewWindowNavInfos(main);
+  QCOMPARE(infos.size(), 3);
+  QCOMPARE(infos.at(0).windowId, sourceId);
+  QCOMPARE(infos.at(1).windowId, bId);
+  QCOMPARE(infos.at(2).windowId, cId);
+  for (const auto &info : infos) {
+    QCOMPARE(f->order(main).count(info.bufferId), 1);
+    QVERIFY(f->buffers->getBufferHandle(info.bufferId).isValid());
+  }
+  QCOMPARE(f->buffers->listBuffers().size(), 3);
+  QCOMPARE(f->workspaces->listWorkspaces().size(), 1);
+  QVERIFY(f->workspaces->getWorkspace(preview).isEmpty());
+  QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+  QCOMPARE(f->current(), incomingC.data());
+  QCOMPARE(f->coreCurrent(main), c.id());
+  QCOMPARE(source->getLatestContent(), QStringLiteral("a.txt"));
+  QCOMPARE(incomingB->getLatestContent(), bText);
+  QCOMPARE(incomingC->findChild<TextEditor *>(), editor);
+  QCOMPARE(incomingC->getLatestContent(), draft);
+  QVERIFY(incomingC->isModified());
 }
 
 void TestViewAreaTabReuse::previewCloseConsent() {

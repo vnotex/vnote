@@ -1844,7 +1844,11 @@ void ViewAreaController::onViewWindowClosed(ID p_windowId, const QString &p_buff
 
   auto *wsSvc = m_services.get<WorkspaceCoreService>();
   if (m_shouldPropagateToCore || preview) {
-    if (wsSvc && !p_workspaceId.isEmpty() && !p_bufferId.isEmpty()) {
+    // Workspace membership is set-like. A promoted preview may already own the
+    // same buffer while the outgoing protected view finishes deferred retirement.
+    const bool hasSurvivor =
+        m_view && m_view->findWindowIdByBufferId(p_workspaceId, p_bufferId) != InvalidViewWindowId;
+    if (wsSvc && !p_workspaceId.isEmpty() && !p_bufferId.isEmpty() && !hasSurvivor) {
       wsSvc->removeBuffer(p_workspaceId, p_bufferId);
       // NOTE: vxcore auto-closes the buffer when it's removed from all workspaces
       // (see workspace_manager.cpp), which bypasses BufferService::closeBuffer.
@@ -2122,6 +2126,223 @@ bool ViewAreaController::closePreviewWorkspace(const QString &p_workspaceId) {
     removeEmptyPreviewWorkspace(p_workspaceId);
   }
   return true;
+}
+
+bool ViewAreaController::openPreviewInNewTabs(const QString &p_previewWorkspaceId,
+                                              const QString &p_targetWorkspaceId) {
+  auto *wsSvc = m_services.get<WorkspaceCoreService>();
+  const QPointer<ViewAreaController> guard(this);
+  const QPointer<WorkspaceWrapper> preview(m_workspaces.value(p_previewWorkspaceId));
+  const QPointer<WorkspaceWrapper> target(m_workspaces.value(p_targetWorkspaceId));
+  auto *const view = m_view;
+  if (!wsSvc || !m_services.get<BufferService>() || !view || p_previewWorkspaceId.isEmpty() ||
+      p_targetWorkspaceId.isEmpty() || p_previewWorkspaceId == p_targetWorkspaceId || !preview ||
+      !preview->isPreview() || !target || target->isPreview() || !target->isVisible() ||
+      isPreviewWorkspaceClosing(p_previewWorkspaceId) ||
+      m_previewAdmissionsInProgress.value(p_previewWorkspaceId) != 0 ||
+      !view->isPreviewWorkspaceAvailable(p_previewWorkspaceId)) {
+    return false;
+  }
+  const bool detached = m_detachedWorkspaceIds.contains(p_targetWorkspaceId);
+  const auto current = [&] {
+    return guard && m_view == view && preview && target &&
+           m_workspaces.value(p_previewWorkspaceId) == preview &&
+           m_workspaces.value(p_targetWorkspaceId) == target && preview->isPreview() &&
+           !target->isPreview() && target->isVisible() &&
+           m_detachedWorkspaceIds.contains(p_targetWorkspaceId) == detached &&
+           (detached || view->getVisibleWorkspaceIds().contains(p_targetWorkspaceId)) &&
+           !wsSvc->getWorkspace(p_previewWorkspaceId).isEmpty() &&
+           !wsSvc->getWorkspace(p_targetWorkspaceId).isEmpty();
+  };
+  if (!current()) {
+    return false;
+  }
+  for (const auto &admission : m_failedPreviewAdmissions) {
+    if (admission.workspaceId == p_previewWorkspaceId) {
+      return false;
+    }
+  }
+  const auto incoming = view->getViewWindowNavInfos(p_previewWorkspaceId);
+  const auto membership =
+      wsSvc->getWorkspace(p_previewWorkspaceId).value(QStringLiteral("bufferIds")).toArray();
+  QSet<QString> buffers;
+  for (const auto &info : incoming) {
+    if (info.windowId == InvalidViewWindowId || info.bufferId.isEmpty() ||
+        buffers.contains(info.bufferId) || !membership.contains(info.bufferId) ||
+        m_transitioningWindows.contains(info.windowId)) {
+      return false;
+    }
+    buffers.insert(info.bufferId);
+  }
+  // Hidden protected retirements still own membership, even after leaving the tab bar.
+  if (incoming.isEmpty() || buffers.size() != membership.size()) {
+    return false;
+  }
+  ID selectedId = InvalidViewWindowId;
+  QString selectedBuffer;
+  view->getCurrentWindowInfoForWorkspace(p_previewWorkspaceId, selectedId, selectedBuffer);
+  m_previewCloseStates.insert(p_previewWorkspaceId, PreviewCloseState::Checking);
+  for (const auto &info : incoming) {
+    m_transitioningWindows.insert(info.windowId);
+  }
+  const auto release = [&] {
+    if (!guard) {
+      return;
+    }
+    for (const auto &info : incoming) {
+      m_transitioningWindows.remove(info.windowId);
+    }
+    if (preview && m_workspaces.value(p_previewWorkspaceId) == preview &&
+        m_previewCloseStates.value(p_previewWorkspaceId) == PreviewCloseState::Checking) {
+      m_previewCloseStates.insert(p_previewWorkspaceId, PreviewCloseState::Open);
+    }
+  };
+  auto transaction = qScopeGuard(release);
+  ID lastMovedId = InvalidViewWindowId;
+  QString lastMovedBuffer;
+  bool selectedMoved = false;
+  int moved = 0;
+  for (const auto &info : incoming) {
+    const auto stillInPreview = [&] {
+      return current() &&
+             view->findWindowIdByBufferId(p_previewWorkspaceId, info.bufferId) == info.windowId &&
+             wsSvc->getWorkspace(p_previewWorkspaceId)
+                 .value(QStringLiteral("bufferIds"))
+                 .toArray()
+                 .contains(info.bufferId);
+    };
+    if (!stillInPreview()) {
+      break;
+    }
+    ViewWindowMoveEvent event;
+    event.windowId = info.windowId;
+    event.bufferId = info.bufferId;
+    event.srcWorkspaceId = p_previewWorkspaceId;
+    event.dstWorkspaceId = p_targetWorkspaceId;
+    event.direction = static_cast<int>(Direction::Right);
+    const bool vetoed = wsSvc->fireViewWindowBeforeMove(event);
+    if (!guard) {
+      return false;
+    }
+    if (vetoed || !stillInPreview()) {
+      break;
+    }
+    const ID duplicate = view->findWindowIdByBufferId(p_targetWorkspaceId, info.bufferId);
+    // addBuffer is idempotent: snapshot BEFORE adding to know what rollback owns.
+    const bool alreadyRegistered = wsSvc->getWorkspace(p_targetWorkspaceId)
+                                       .value(QStringLiteral("bufferIds"))
+                                       .toArray()
+                                       .contains(info.bufferId);
+    if (!wsSvc->addBuffer(p_targetWorkspaceId, info.bufferId)) {
+      break;
+    }
+    std::function<bool()> closeDuplicate;
+    if (duplicate != InvalidViewWindowId) {
+      closeDuplicate = [guard, duplicate] {
+        return guard && guard->closeViewWindow(duplicate, false);
+      };
+    }
+    const bool transferred = view->promotePreviewViewWindow(info.windowId, p_previewWorkspaceId,
+                                                            p_targetWorkspaceId, closeDuplicate);
+    if (!guard || m_view != view) {
+      return false;
+    }
+    if (!transferred || !current() ||
+        view->findWindowIdByBufferId(p_targetWorkspaceId, info.bufferId) != info.windowId ||
+        !wsSvc->getWorkspace(p_targetWorkspaceId)
+             .value(QStringLiteral("bufferIds"))
+             .toArray()
+             .contains(info.bufferId)) {
+      if (!alreadyRegistered &&
+          view->findWindowIdByBufferId(p_targetWorkspaceId, info.bufferId) == InvalidViewWindowId) {
+        wsSvc->removeBuffer(p_targetWorkspaceId, info.bufferId);
+      }
+      break;
+    }
+    // Keep add-before-remove, but do not surrender preview ownership before consent.
+    wsSvc->removeBuffer(p_previewWorkspaceId, info.bufferId);
+    lastMovedId = info.windowId;
+    lastMovedBuffer = info.bufferId;
+    selectedMoved = selectedMoved || info.windowId == selectedId;
+    ++moved;
+    wsSvc->fireViewWindowAfterMove(event);
+    if (!current()) {
+      break;
+    }
+  }
+  release();
+  transaction.dismiss();
+  if (!guard || m_view != view) {
+    return false;
+  }
+  const auto syncWorkspace = [&](const QString &p_workspaceId) {
+    const auto infos = view->getViewWindowNavInfos(p_workspaceId);
+    QStringList order;
+    order.reserve(infos.size());
+    for (const auto &info : infos) {
+      order.append(info.bufferId);
+    }
+    setBufferOrder(p_workspaceId, order);
+    wsSvc->setCurrentBuffer(p_workspaceId, view->getCurrentBufferIdForWorkspace(p_workspaceId));
+  };
+  if (target && m_workspaces.value(p_targetWorkspaceId) == target) {
+    syncWorkspace(p_targetWorkspaceId);
+  }
+  const bool complete = moved == incoming.size() && current();
+  if (preview && m_workspaces.value(p_previewWorkspaceId) == preview) {
+    syncWorkspace(p_previewWorkspaceId);
+    removeEmptyPreviewWorkspace(p_previewWorkspaceId);
+  }
+  if (!guard || m_view != view) {
+    return false;
+  }
+  if (complete && target && m_workspaces.value(p_targetWorkspaceId) == target) {
+    const ID id = selectedMoved ? selectedId : lastMovedId;
+    const QString bufferId = selectedMoved ? selectedBuffer : lastMovedBuffer;
+    if (view->findWindowIdByBufferId(p_targetWorkspaceId, bufferId) == id) {
+      clearActivePreviewWindow();
+      if (!guard || m_view != view) {
+        return false;
+      }
+      if (!detached) {
+        setCurrentViewSplit(p_targetWorkspaceId, false);
+        if (!guard || m_view != view) {
+          return false;
+        }
+        setCurrentViewWindow(id, bufferId);
+      } else {
+        wsSvc->setCurrentBuffer(p_targetWorkspaceId, bufferId);
+      }
+      if (!guard || m_view != view) {
+        return false;
+      }
+      view->setCurrentBuffer(p_targetWorkspaceId, bufferId, true);
+    }
+  } else if (preview && m_workspaces.value(p_previewWorkspaceId) == preview) {
+    const auto remaining = view->getViewWindowNavInfos(p_previewWorkspaceId);
+    if (!remaining.isEmpty()) {
+      const bool selectionRemains =
+          view->findWindowIdByBufferId(p_previewWorkspaceId, selectedBuffer) == selectedId;
+      const auto bufferId = selectionRemains ? selectedBuffer : remaining.first().bufferId;
+      const auto id = selectionRemains ? selectedId : remaining.first().windowId;
+      view->setCurrentBuffer(p_previewWorkspaceId, bufferId, true);
+      if (!guard || m_view != view) {
+        return false;
+      }
+      // Revealing a rebound source changes detached selection without a core
+      // current-buffer notification. Publish that actual selection after reveal.
+      if (detached && current()) {
+        wsSvc->setCurrentBuffer(p_targetWorkspaceId,
+                                view->getCurrentBufferIdForWorkspace(p_targetWorkspaceId));
+      }
+      setActivePreviewWindow(p_previewWorkspaceId, id, bufferId);
+    }
+  }
+  if (!guard) {
+    return false;
+  }
+  emit windowsChanged();
+  return complete;
 }
 
 bool ViewAreaController::closeAllPreviewWorkspaces() {

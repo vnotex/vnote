@@ -17,6 +17,9 @@
 #include "propertydefs.h"
 #include "viewsplit2.h"
 #include "viewwindow2.h"
+#include <core/servicelocator.h>
+#include <gui/services/themeservice.h>
+#include <gui/utils/iconutils.h>
 
 using namespace vnotex;
 
@@ -131,6 +134,29 @@ LinkPreviewOverlay::LinkPreviewOverlay(ServiceLocator &p_services, ViewWindow2 *
   label->setObjectName(QStringLiteral("linkPreviewTitle"));
   headerLayout->addWidget(label);
   headerLayout->addStretch();
+
+  auto *openButton = new QToolButton(header);
+  openButton->setObjectName(QStringLiteral("openLinkPreviewInNewTabsButton"));
+  openButton->setProperty(PropertyDefs::c_actionToolButton, true);
+  openButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  auto *openAction = new QAction(tr("Open in New Tabs"), openButton);
+  openAction->setObjectName(QStringLiteral("openLinkPreviewInNewTabsAction"));
+  openAction->setToolTip(tr("Open in New Tabs"));
+  openButton->setDefaultAction(openAction);
+  if (auto *themeService = p_services.get<ThemeService>()) {
+    const auto refreshIcon = [openAction, themeService] {
+      openAction->setIcon(IconUtils::fetchIcon(
+          themeService->getIconFile(QStringLiteral("square-arrow-out-up-right.svg")),
+          themeService->paletteColor(QStringLiteral("widgets#viewsplit#action_button#fg"))));
+    };
+    refreshIcon();
+    connect(themeService, &ThemeService::themeChanged, this, refreshIcon);
+  } else {
+    openAction->setIcon(IconUtils::fetchIcon(
+        QStringLiteral(":/vnotex/data/core/icons/square-arrow-out-up-right.svg")));
+  }
+  connect(openAction, &QAction::triggered, this, &LinkPreviewOverlay::openInNewTabsRequested);
+  headerLayout->addWidget(openButton);
 
   auto *closeButton = new QToolButton(header);
   closeButton->setObjectName(QStringLiteral("closeLinkPreviewButton"));

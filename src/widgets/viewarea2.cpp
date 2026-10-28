@@ -971,6 +971,65 @@ bool ViewArea2::isPreviewWorkspaceAvailable(const QString &p_workspaceId) const 
          !m_controller->isPreviewWorkspaceClosing(p_workspaceId);
 }
 
+bool ViewArea2::rebindPreviewWorkspaceSource(const QString &p_workspaceId, ID p_sourceId) {
+  auto host = m_previewHosts.find(p_workspaceId);
+  auto *source = p_sourceId ? windowForId(p_sourceId) : nullptr;
+  if (host == m_previewHosts.end() || !host->overlay || (p_sourceId && !source)) {
+    return false;
+  }
+  if (source) {
+    auto *owner = owningSplitForWindow(p_sourceId);
+    const auto existing = previewWorkspaceForWindow(p_sourceId);
+    if (!owner || owner->isPreview() || (!existing.isEmpty() && existing != p_workspaceId)) {
+      return false;
+    }
+  }
+  const QPointer<ViewArea2> self(this);
+  const QPointer<LinkPreviewOverlay> overlay(host->overlay);
+  const QPointer<ViewWindow2> guardedSource(source);
+  const bool shown = !overlay->isHidden();
+  if (host->source) {
+    host->source->m_closeLinkPreview = {};
+    host->source->removeEventFilter(this);
+    for (auto *child : host->source->findChildren<QWidget *>()) {
+      if (child != overlay && !overlay->isAncestorOf(child)) {
+        child->removeEventFilter(this);
+      }
+    }
+  }
+  host->source = source;
+  host->sourceId = p_sourceId;
+  host->generation = source ? source->getBufferGeneration() : 0;
+  if (!source) {
+    return true;
+  }
+  source->installEventFilter(this);
+  source->m_closeLinkPreview = [self, guardedSource, p_sourceId, p_workspaceId]() {
+    if (!self || !guardedSource) {
+      return true;
+    }
+    const auto current = self->m_previewHosts.constFind(p_workspaceId);
+    if (current == self->m_previewHosts.constEnd() || current->source != guardedSource ||
+        current->sourceId != p_sourceId) {
+      return true;
+    }
+    return self->m_controller->closePreviewWorkspace(p_workspaceId);
+  };
+  overlay->setParent(source);
+  if (!self || !overlay || !guardedSource) {
+    return false;
+  }
+  updatePreviewAnchor(p_workspaceId);
+  if (!self || !overlay || !guardedSource) {
+    return false;
+  }
+  // setParent hides even a previously shown native child.
+  if (shown) {
+    overlay->show();
+  }
+  return self && overlay && guardedSource;
+}
+
 bool ViewArea2::hostPreviewWorkspace(ID p_sourceId, quint64 p_generation,
                                      const QString &p_workspaceId) {
   if (!isPreviewSourceCurrent(p_sourceId, p_generation) ||
@@ -979,24 +1038,21 @@ bool ViewArea2::hostPreviewWorkspace(ID p_sourceId, quint64 p_generation,
   }
   auto *source = windowForId(p_sourceId);
   auto *overlay = new LinkPreviewOverlay(m_services, source, p_workspaceId);
-  m_previewHosts.insert(p_workspaceId, {source, p_sourceId, p_generation, overlay, false});
-  source->installEventFilter(this);
-  const QPointer<ViewArea2> self(this);
-  const QPointer<ViewWindow2> guardedSource(source);
-  source->m_closeLinkPreview = [self, guardedSource, p_sourceId, p_workspaceId]() {
-    if (!self || !guardedSource) {
-      return true;
-    }
-    const auto host = self->m_previewHosts.constFind(p_workspaceId);
-    if (host == self->m_previewHosts.constEnd() || host->source != guardedSource ||
-        host->sourceId != p_sourceId) {
-      return true;
-    }
-    return self->m_controller->closePreviewWorkspace(p_workspaceId);
-  };
+  m_previewHosts.insert(p_workspaceId, {nullptr, 0, 0, overlay, false});
+  rebindPreviewWorkspaceSource(p_workspaceId, p_sourceId);
   wirePreviewSplitSignals(overlay->getViewSplit());
   connect(overlay, &LinkPreviewOverlay::closeRequested, this,
           [this, p_workspaceId] { m_controller->closePreviewWorkspace(p_workspaceId); });
+  connect(overlay, &LinkPreviewOverlay::openInNewTabsRequested, this, [this, p_workspaceId] {
+    const auto host = m_previewHosts.constFind(p_workspaceId);
+    if (host == m_previewHosts.constEnd() || !host->source) {
+      return;
+    }
+    if (auto *owner = owningSplitForWindow(host->sourceId); owner && !owner->isPreview()) {
+      const QString targetWorkspaceId = owner->getWorkspaceId();
+      m_controller->openPreviewInNewTabs(p_workspaceId, targetWorkspaceId);
+    }
+  });
   connect(overlay, &LinkPreviewOverlay::visibilityChanged, this,
           [this, p_workspaceId](bool p_visible) {
             m_controller->setPreviewWorkspaceVisible(p_workspaceId, p_visible);
@@ -1008,14 +1064,8 @@ bool ViewArea2::hostPreviewWorkspace(ID p_sourceId, quint64 p_generation,
 
 void ViewArea2::removePreviewWorkspaceHost(const QString &p_workspaceId) {
   const bool active = m_controller->getCurrentWorkspaceId() == p_workspaceId;
+  rebindPreviewWorkspaceSource(p_workspaceId, 0);
   const auto host = m_previewHosts.take(p_workspaceId);
-  if (host.source && previewWorkspaceForWindow(host.sourceId).isEmpty()) {
-    host.source->m_closeLinkPreview = {};
-    host.source->removeEventFilter(this);
-    for (auto *child : host.source->findChildren<QWidget *>()) {
-      child->removeEventFilter(this);
-    }
-  }
   if (host.overlay) {
     host.overlay->hide();
     host.overlay->deleteLater();
@@ -1695,6 +1745,121 @@ void ViewArea2::moveViewWindowToSplit(ID p_windowId, const QString &p_srcWorkspa
   dstSplit->setCurrentViewWindow(win);
 }
 
+bool ViewArea2::promotePreviewViewWindow(ID p_windowId, const QString &p_previewWorkspaceId,
+                                         const QString &p_targetWorkspaceId,
+                                         const std::function<bool()> &p_closeDuplicate) {
+  const QPointer<ViewArea2> self(this);
+  const QPointer<ViewWindow2> incoming(windowForId(p_windowId));
+  const QPointer<ViewSplit2> preview(owningSplitForWindow(p_windowId));
+  const QPointer<ViewSplit2> target(hostedSplitForWorkspace(p_targetWorkspaceId));
+  if (!incoming || !preview || !target || !preview->isPreview() || target->isPreview() ||
+      preview == target || preview->getWorkspaceId() != p_previewWorkspaceId ||
+      hostedSplitForWorkspace(p_previewWorkspaceId) != preview) {
+    return false;
+  }
+  const auto host = m_previewHosts.constFind(p_previewWorkspaceId);
+  if (host == m_previewHosts.constEnd() || !host->source || !host->overlay) {
+    return false;
+  }
+  const QPointer<ViewWindow2> oldSource(host->source);
+  const ID oldSourceId = host->sourceId;
+  const QString bufferId = incoming->getBuffer().id();
+  const bool replaceSource =
+      oldSource->getBuffer().id() == bufferId && owningSplitForWindow(oldSourceId) == target;
+  const int index = preview->indexOf(incoming);
+  const QPointer<ViewWindow2> previewCurrent(preview->getCurrentViewWindow());
+  const QPointer<ViewWindow2> targetCurrent(target->getCurrentViewWindow());
+  const auto registered = [&] {
+    return self && incoming && preview && target && windowForId(p_windowId) == incoming &&
+           hostedSplitForWorkspace(p_previewWorkspaceId) == preview &&
+           hostedSplitForWorkspace(p_targetWorkspaceId) == target && !target->isPreview();
+  };
+  {
+    QSignalBlocker previewSignals(preview), targetSignals(target);
+    const auto unblock = qScopeGuard([&] {
+      if (!preview) {
+        previewSignals.dismiss();
+      }
+      if (!target) {
+        targetSignals.dismiss();
+      }
+    });
+    preview->takeViewWindow(incoming);
+    if (!registered()) {
+      return false;
+    }
+    // Append: normal close finds the first same-buffer tab, the old destination.
+    target->addViewWindow(incoming);
+    if (!registered() || owningSplitForWindow(p_windowId) != target) {
+      return false;
+    }
+    // Reparent only after incoming is no longer a descendant of the overlay.
+    if (replaceSource && !rebindPreviewWorkspaceSource(p_previewWorkspaceId, p_windowId)) {
+      return false;
+    }
+  }
+  if (!registered() || owningSplitForWindow(p_windowId) != target) {
+    return false;
+  }
+  if (p_closeDuplicate) {
+    p_closeDuplicate();
+  }
+  if (!registered() || owningSplitForWindow(p_windowId) != target) {
+    return false;
+  }
+  bool duplicateRemains = false;
+  for (auto *window : target->getAllViewWindows()) {
+    if (window != incoming && window->getBuffer().id() == bufferId) {
+      duplicateRemains = true;
+      break;
+    }
+  }
+  // Ownership, not the callback result, decides: a hook may have closed a stale ID.
+  if (!duplicateRemains) {
+    return true;
+  }
+  {
+    QSignalBlocker previewSignals(preview), targetSignals(target);
+    const auto unblock = qScopeGuard([&] {
+      if (!preview) {
+        previewSignals.dismiss();
+      }
+      if (!target) {
+        targetSignals.dismiss();
+      }
+    });
+    if (replaceSource &&
+        (!oldSource || !rebindPreviewWorkspaceSource(p_previewWorkspaceId, oldSourceId))) {
+      return false;
+    }
+    if (!registered()) {
+      return false;
+    }
+    target->takeViewWindow(incoming);
+    if (!registered()) {
+      return false;
+    }
+    preview->addViewWindow(incoming);
+    if (!registered() || owningSplitForWindow(p_windowId) != preview) {
+      return false;
+    }
+    preview->tabBar()->moveTab(preview->indexOf(incoming), index);
+    if (!registered()) {
+      return false;
+    }
+    if (previewCurrent && preview->indexOf(previewCurrent) >= 0) {
+      preview->setCurrentViewWindow(previewCurrent);
+    }
+    if (!registered()) {
+      return false;
+    }
+    if (targetCurrent && target->indexOf(targetCurrent) >= 0) {
+      target->setCurrentViewWindow(targetCurrent);
+    }
+  }
+  return false;
+}
+
 // ============ ViewSplit2 signal handlers ============
 
 void ViewArea2::onMoveViewWindowOneSplitRequested(ViewSplit2 *p_split, ViewWindow2 *p_win,
@@ -2129,6 +2294,23 @@ void ViewArea2::setCurrentBuffer(const QString &p_workspaceId, const QString &p_
   qCDebug(lcWorkspace) << "ViewArea2::setCurrentBuffer: workspace:" << p_workspaceId
                        << "buffer:" << p_bufferId << "focus:" << p_focus
                        << "currentWidget:" << split->currentWidget();
+
+  if (split->isPreview() && p_focus) {
+    // A partial promotion may have rebound the overlay to a noncurrent tab.
+    // Reveal that source before focusing the remaining preview, without reopening it.
+    const auto host = m_previewHosts.constFind(p_workspaceId);
+    if (host != m_previewHosts.constEnd() && host->source) {
+      const QPointer<ViewArea2> guard(this);
+      const QPointer<ViewSplit2> preview(split);
+      if (auto *owner = owningSplitForWindow(host->sourceId);
+          owner && !owner->isPreview() && owner->getCurrentViewWindow() != host->source) {
+        owner->setCurrentViewWindow(host->source);
+      }
+      if (!guard || !preview) {
+        return;
+      }
+    }
+  }
 
   // Find the ViewWindow2 with the matching buffer ID.
   auto windows = split->getAllViewWindows();

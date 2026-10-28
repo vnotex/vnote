@@ -128,8 +128,7 @@ public:
   // retain the current window, and restore leaves persisted current state intact.
   // Fires the after-open hook and publishes the updated windows.
   void onViewWindowOpened(ID p_windowId, const Buffer2 &p_buffer,
-                          const FileOpenSettings &p_settings,
-                          const QString &p_workspaceId);
+                          const FileOpenSettings &p_settings, const QString &p_workspaceId);
 
   // Called by the view after a window was successfully destroyed.
   // Updates tracking state, records closed tab for reopen, and emits windowsChanged.
@@ -150,6 +149,8 @@ public:
   // Preview closure is cancellable and one-shot: accepted protected tabs may
   // still be retiring, but neither a second consent nor new admission is allowed.
   bool closePreviewWorkspace(const QString &p_workspaceId);
+  bool openPreviewInNewTabs(const QString &p_previewWorkspaceId,
+                            const QString &p_targetWorkspaceId);
   bool closeAllPreviewWorkspaces();
   bool isPreviewWorkspaceClosing(const QString &p_workspaceId) const;
   void setPreviewWorkspaceVisible(const QString &p_workspaceId, bool p_visible);

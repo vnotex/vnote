@@ -32,6 +32,7 @@ public:
 
 signals:
   void closeRequested();
+  void openInNewTabsRequested();
   void visibilityChanged(bool p_visible);
 
 protected:

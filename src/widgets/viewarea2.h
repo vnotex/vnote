@@ -131,6 +131,9 @@ public:
                              const QString &p_fragment) override;
   void setCurrentViewSplit(const QString &p_workspaceId, bool p_focus) override;
   void focusViewSplit(const QString &p_workspaceId) override;
+  bool promotePreviewViewWindow(ID p_windowId, const QString &p_previewWorkspaceId,
+                                const QString &p_targetWorkspaceId,
+                                const std::function<bool()> &p_closeDuplicate) override;
   void moveViewWindowToSplit(ID p_windowId, const QString &p_srcWorkspaceId,
                              const QString &p_dstWorkspaceId) override;
   void hostWorkspaceInDetachedWindow(const QString &p_workspaceId) override;
@@ -187,6 +190,7 @@ private:
   void wirePreviewSplitSignals(ViewSplit2 *p_split);
   void saveAllViewWindows();
   void updatePreviewAnchor(const QString &p_workspaceId);
+  bool rebindPreviewWorkspaceSource(const QString &p_workspaceId, ID p_sourceId);
 
   ViewSplit2 *splitForWorkspace(const QString &p_workspaceId) const;
   ViewSplit2 *hostedSplitForWorkspace(const QString &p_workspaceId) const;
