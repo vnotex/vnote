@@ -204,7 +204,8 @@ changing the loaded masks or partially rebinding a running session.
 ### External-link confirmation
 
 `CoreConfig` stores `core.confirmExternalLinks` in `vnotex.json`, default `true`.
-Markdown Read/Edit and mind-map HTTP/HTTPS/FTP/mailto links share this preference.
+Markdown Read/Edit, Typst source/preview and mind-map HTTP/HTTPS/FTP/mailto links
+share this preference.
 The warning's **Never Ask** button (`QMessageBox::YesToAll`, YesRole) opens the
 current link and persists `false` through normal config debouncing. **Yes** opens
 only this link; **No**, Escape and window-close neither open nor change the setting.

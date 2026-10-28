@@ -43,6 +43,7 @@
 
 #include <controllers/typstviewwindowcontroller.h>
 #include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
@@ -1195,14 +1196,21 @@ TypstViewWindow::TypstViewWindow(ServiceLocator &p_services, const Buffer2 &p_bu
               return;
             }
             const QUrl url(p_url);
-            const int answer = MessageBoxHelper::questionYesNo(
-                MessageBoxHelper::Warning,
-                tr("Are you sure to open link (%1)?").arg(url.toString()),
-                tr("Malicious link might do harm to your device."), QString(), window());
+            const QPointer<ConfigMgr2> configMgr(getServices().get<ConfigMgr2>());
+            int answer = QMessageBox::Yes;
+            if (!configMgr || configMgr->getCoreConfig().isConfirmExternalLinksEnabled()) {
+              answer = MessageBoxHelper::questionYesNoNeverAsk(
+                  MessageBoxHelper::Warning,
+                  tr("Are you sure to open link (%1)?").arg(url.toString()),
+                  tr("Malicious link might do harm to your device."), QString(), window());
+            }
             if (controller) {
               const bool accepted = guard && guard->getBufferGeneration() == generation &&
                                     guard->m_sourceAvailable && guard->isEnabled() &&
-                                    answer == QMessageBox::Yes;
+                                    (answer == QMessageBox::Yes || answer == QMessageBox::YesToAll);
+              if (accepted && answer == QMessageBox::YesToAll && configMgr) {
+                configMgr->getCoreConfig().setConfirmExternalLinksEnabled(false);
+              }
               controller->openConfirmedExternalLink(accepted ? url : QUrl());
             }
           });

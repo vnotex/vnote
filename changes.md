@@ -4,6 +4,7 @@
 * Disable Qt 6.9.3 macOS unit/native GUI suites while retaining build, signing and package verification; keep Qt 6.10.3 test coverage
 * Establish native editor focus before draft fixtures and avoid reinstalling unchanged assets between isolated tab-reuse test cases
 * Remove obsolete implicit-padding checks from Typst markup integration tests while retaining rendering, geometry, export and cross-copy checks
+* Show Never Ask for Typst external-link warnings and honor the shared confirmation preference, while preserving cancellation and stale-view safeguards
 * Remove the default page margin from Markdown Typst blocks so they align with surrounding content; explicit Typst margins and standalone document layout are unchanged
 * Match Typst preview page backgrounds to the editor's Text background, including Typst-specific overrides, while preserving outer margins, authored document styles and export colors
 * Use the same pilcrow heading-link symbol as Pure in the Lucius Markdown viewer instead of H1–H6 badges

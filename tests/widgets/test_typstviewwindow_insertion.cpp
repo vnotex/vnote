@@ -66,6 +66,7 @@
 
 #include <controllers/typstviewwindowcontroller.h>
 #include <core/configmgr2.h>
+#include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/hookevents.h>
 #include <core/hooknames.h>
@@ -703,6 +704,8 @@ private slots:
   void nativeActionsAndLiteralPreview();
   void previewFileLinks_data();
   void previewFileLinks();
+  void previewExternalConsent_data();
+  void previewExternalConsent();
   void unavailableInsertion_data();
   void unavailableInsertion();
   void batchTransaction_data();
@@ -2544,6 +2547,87 @@ void TestTypstViewWindowInsertion::previewFileLinks() {
     QVERIFY(m_window->grab().save(QDir(QCoreApplication::applicationDirPath())
                                       .filePath(QStringLiteral("typst-local-link-toolbar.png"))));
   }
+}
+
+void TestTypstViewWindowInsertion::previewExternalConsent_data() {
+  QTest::addColumn<bool>("readMode");
+  QTest::newRow("edit-preview") << false;
+  QTest::newRow("read-preview") << true;
+}
+
+void TestTypstViewWindowInsertion::previewExternalConsent() {
+  QFETCH(bool, readMode);
+  m_config->getCoreConfig().setConfirmExternalLinksEnabled(true);
+  const auto destination = QStringLiteral("https://example.invalid/a%20b?q=1#part");
+  const auto source = QStringLiteral("#set page(width: 260pt, height: 120pt, margin: 18pt)\n") +
+                      TypstViewWindowController::linkMarkup(destination, QStringLiteral("Remote"));
+  show(openNote(QStringLiteral("main.typst"), source));
+  if (readMode) {
+    m_window->setMode(ViewWindowMode::Read);
+  }
+  QVERIFY(ready());
+  QCoreApplication::processEvents();
+  auto *pane = qobject_cast<QAbstractScrollArea *>(m_pdf.data());
+  QVERIFY(pane);
+  auto *viewport = pane->viewport();
+  const auto point = linkPoint(viewport);
+  QVERIFY(point.x() >= 0);
+
+  PreviewUrlSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("https"), &desktop, "open");
+  const auto restore =
+      qScopeGuard([] { QDesktopServices::unsetUrlHandler(QStringLiteral("https")); });
+  enum Action { No, Escape, Close, Yes, Stale, NeverAsk };
+  for (const auto action : {No, Escape, Close, Yes, Stale, NeverAsk}) {
+    desktop.opened.clear();
+    bool prompted = false;
+    DialogDriver dialogs;
+    dialogs.otherDialog = [&](QDialog *dialog) {
+      auto *question = qobject_cast<QMessageBox *>(dialog);
+      if (!question) {
+        return false;
+      }
+      prompted = true;
+      if (action == Escape) {
+        QTest::keyClick(question, Qt::Key_Escape);
+      } else if (action == Close) {
+        question->close();
+      } else if (action == Stale) {
+        m_window->setEnabled(false);
+        // Disabling this top-level fixture also disables its child dialog.
+        question->done(QMessageBox::YesToAll);
+      } else {
+        const auto choice = action == No ? QMessageBox::No
+                            : action == Yes ? QMessageBox::Yes : QMessageBox::YesToAll;
+        auto *button = question->button(choice);
+        if (button) {
+          QTest::mouseClick(button, Qt::LeftButton);
+        } else {
+          dialogs.fail(dialog, QStringLiteral("Missing external consent button"));
+        }
+      }
+      return true;
+    };
+    QTest::mouseClick(viewport, Qt::LeftButton, Qt::NoModifier, point);
+    QVERIFY2(dialogs.error.isEmpty(), qPrintable(dialogs.error));
+    QVERIFY(prompted);
+    const bool accepted = action == Yes || action == NeverAsk;
+    QCOMPARE(desktop.opened, accepted ? QList<QUrl>{QUrl(destination)} : QList<QUrl>{});
+    QCOMPARE(m_config->getCoreConfig().isConfirmExternalLinksEnabled(), action != NeverAsk);
+    m_window->setEnabled(true);
+  }
+
+  desktop.opened.clear();
+  bool prompted = false;
+  DialogDriver dialogs;
+  dialogs.otherDialog = [&](QDialog *dialog) {
+    prompted = true;
+    dialog->reject();
+    return true;
+  };
+  QTest::mouseClick(viewport, Qt::LeftButton, Qt::NoModifier, point);
+  QVERIFY(!prompted);
+  QCOMPARE(desktop.opened, QList<QUrl>{QUrl(destination)});
 }
 
 void TestTypstViewWindowInsertion::nativeActionsAndLiteralPreview() {
