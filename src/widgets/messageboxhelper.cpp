@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QPushButton>
 #include <QTimer>
+#include <QUrl>
 
 using namespace vnotex;
 
@@ -121,12 +122,15 @@ int MessageBoxHelper::questionYesNo(MessageBoxHelper::Type p_type, const QString
   return ret;
 }
 
-int MessageBoxHelper::questionYesNoNeverAsk(MessageBoxHelper::Type p_type, const QString &p_text,
-                                           const QString &p_informationText,
-                                           const QString &p_detailedText, QWidget *p_parent) {
-  return showMessageBox(p_type, p_text, p_informationText, p_detailedText,
-                        QMessageBox::Yes | QMessageBox::No | QMessageBox::YesToAll,
-                        QMessageBox::Yes, p_parent);
+int MessageBoxHelper::questionOpenLink(const QUrl &p_url, bool p_allowNeverAsk, QWidget *p_parent) {
+  const auto buttons = QMessageBox::Yes | QMessageBox::No |
+                       (p_allowNeverAsk ? QMessageBox::YesToAll : QMessageBox::NoButton);
+  return showMessageBox(
+      Warning,
+      QCoreApplication::translate("MainWindow", "Are you sure to open link (%1)?")
+          .arg(p_url.toString()),
+      QCoreApplication::translate("MainWindow", "Malicious link might do harm to your device."),
+      QString(), buttons, QMessageBox::Yes, p_parent);
 }
 
 int MessageBoxHelper::questionYesNoCancel(MessageBoxHelper::Type p_type, const QString &p_text,

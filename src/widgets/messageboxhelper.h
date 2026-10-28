@@ -3,6 +3,8 @@
 
 #include <QMessageBox>
 
+class QUrl;
+
 namespace vnotex {
 class MessageBoxHelper {
 public:
@@ -28,11 +30,9 @@ public:
                            const QString &p_informationText = QString(),
                            const QString &p_detailedText = QString(), QWidget *p_parent = nullptr);
 
-  // Never Ask accepts this action and returns QMessageBox::YesToAll.
-  static int questionYesNoNeverAsk(MessageBoxHelper::Type p_type, const QString &p_text,
-                                   const QString &p_informationText = QString(),
-                                   const QString &p_detailedText = QString(),
-                                   QWidget *p_parent = nullptr);
+  // Shared link warning UI; Never Ask returns YesToAll without changing preferences.
+  static int questionOpenLink(const QUrl &p_url, bool p_allowNeverAsk,
+                             QWidget *p_parent = nullptr);
 
   // Ask user for Yes/No/Cancel action.
   static int questionYesNoCancel(MessageBoxHelper::Type p_type, const QString &p_text,

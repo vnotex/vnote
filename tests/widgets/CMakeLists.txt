@@ -1574,6 +1574,7 @@ add_qt_test(test_mindmapeditor
     ${CMAKE_SOURCE_DIR}/src/widgets/styleditemdelegate.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/simplesegmenthighlighter.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/linkinsertutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp

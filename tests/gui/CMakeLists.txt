@@ -1,5 +1,33 @@
 find_package(Qt6 REQUIRED COMPONENTS WebChannel WebEngineWidgets)
 
+add_qt_test(test_externallinkconfirmation
+  SOURCES
+    test_externallinkconfirmation.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
+    ${CMAKE_SOURCE_DIR}/src/data/core/core.qrc
+  LINKS
+    core_configs
+    core_services
+)
+if(WIN32)
+  add_custom_command(TARGET test_externallinkconfirmation POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+      $<TARGET_FILE:VTextEdit>
+      $<TARGET_FILE_DIR:test_externallinkconfirmation>
+  )
+  if(TARGET VTextEditTypst)
+    add_custom_command(TARGET test_externallinkconfirmation POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:VTextEditTypst>
+        $<TARGET_FILE_DIR:test_externallinkconfirmation>
+    )
+  endif()
+endif()
+
 add_qt_test(test_navigationmodeservice
   SOURCES
     test_navigationmodeservice.cpp

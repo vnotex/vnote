@@ -117,12 +117,31 @@ Markdown implementation. Consumer policy: [controllers](../controllers/AGENTS.md
 | Class | Purpose |
 |-------|---------|
 | `WidgetUtils` | Widget utility helpers (focus, geometry, etc.) |
+| `ExternalLinkConfirmation` | Shared external-link warning preference and deferred opt-out |
 | `ThemeUtils` | Theme file loading and parsing utilities |
 | `ImageUtils` | Image processing utilities |
 | `GuiUtils` | General GUI utilities |
 | `IconUtils` | Icon loading and management |
 | `PrintUtils` | Print/export utilities |
 | `CommentColorSwatch` | The **single** way to render a `CommentColor` token as a chip in Qt chrome — see below |
+
+## External-link confirmation
+
+`ExternalLinkConfirmation::ask()` (`utils/externallinkconfirmation.{h,cpp}`) owns
+the HTTP/HTTPS/FTP/mailto preference policy for Markdown, Typst and mind-map links.
+It may show a modal warning but never changes configuration or opens the URL.
+Callers retain URL authorization and must recheck their lifetime, generation and
+availability after the modal returns, before calling the result's `accept()`.
+Only that call commits **Never Ask** through the guarded `ConfigMgr2`; discarding
+a stale result has no preference side effects. Typst must also settle rejected
+controller requests with an empty URL so pending one-shot consent is consumed.
+
+`MessageBoxHelper::questionOpenLink()` owns the warning text and button choices,
+using the existing `MainWindow` translations. Keep that generic helper config-free.
+Local-file/program warnings never honor or modify the external-link opt-out.
+`WidgetUtils::openUrlByDesktop()` shares this warning UI but keeps its independent
+policy: HTTP/HTTPS and local directories open directly; other URLs require Yes/No.
+Coverage: `tests/gui/test_externallinkconfirmation.cpp` and Typst preview consent cases.
 
 ## CommentColorSwatch
 

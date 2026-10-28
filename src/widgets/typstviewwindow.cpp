@@ -14,7 +14,6 @@
 #include <QKeySequence>
 #include <QLabel>
 #include <QMenu>
-#include <QMessageBox>
 #include <QMimeData>
 #include <QMimeDatabase>
 #include <QPainter>
@@ -43,7 +42,6 @@
 
 #include <controllers/typstviewwindowcontroller.h>
 #include <core/configmgr2.h>
-#include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
@@ -52,6 +50,7 @@
 #include <core/texteditorconfig.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
+#include <gui/utils/externallinkconfirmation.h>
 #include <gui/utils/imageutils.h>
 #include <gui/utils/widgetutils.h>
 #include <utils/clipboardutils.h>
@@ -66,7 +65,6 @@
 #include "findandreplacewidget2.h"
 #include "imageviewer.h"
 #include "inlinebanner.h"
-#include "messageboxhelper.h"
 #include "outlinepopup.h"
 #include "outlineprovider.h"
 #include "presentationtoolbareffect.h"
@@ -1196,23 +1194,17 @@ TypstViewWindow::TypstViewWindow(ServiceLocator &p_services, const Buffer2 &p_bu
               return;
             }
             const QUrl url(p_url);
-            const QPointer<ConfigMgr2> configMgr(getServices().get<ConfigMgr2>());
-            int answer = QMessageBox::Yes;
-            if (!configMgr || configMgr->getCoreConfig().isConfirmExternalLinksEnabled()) {
-              answer = MessageBoxHelper::questionYesNoNeverAsk(
-                  MessageBoxHelper::Warning,
-                  tr("Are you sure to open link (%1)?").arg(url.toString()),
-                  tr("Malicious link might do harm to your device."), QString(), window());
+            const auto confirmation =
+                ExternalLinkConfirmation::ask(url, getServices().get<ConfigMgr2>(), window());
+            if (!controller) {
+              return;
             }
-            if (controller) {
-              const bool accepted = guard && guard->getBufferGeneration() == generation &&
-                                    guard->m_sourceAvailable && guard->isEnabled() &&
-                                    (answer == QMessageBox::Yes || answer == QMessageBox::YesToAll);
-              if (accepted && answer == QMessageBox::YesToAll && configMgr) {
-                configMgr->getCoreConfig().setConfirmExternalLinksEnabled(false);
-              }
-              controller->openConfirmedExternalLink(accepted ? url : QUrl());
+            if (!guard || guard->getBufferGeneration() != generation ||
+                !guard->m_sourceAvailable || !guard->isEnabled()) {
+              controller->openConfirmedExternalLink(QUrl());
+              return;
             }
+            controller->openConfirmedExternalLink(confirmation.accept() ? url : QUrl());
           });
 
   setupOutlineProvider();

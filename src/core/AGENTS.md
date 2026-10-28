@@ -207,11 +207,14 @@ changing the loaded masks or partially rebinding a running session.
 Markdown Read/Edit, Typst source/preview and mind-map HTTP/HTTPS/FTP/mailto links
 share this preference.
 The warning's **Never Ask** button (`QMessageBox::YesToAll`, YesRole) opens the
-current link and persists `false` through normal config debouncing. **Yes** opens
-only this link; **No**, Escape and window-close neither open nor change the setting.
+current link and persists `false` through normal config debouncing only after the
+caller revalidates the originating context. **Yes** opens only this link; **No**,
+Escape, window-close and discarded stale results do not change the setting or open the link.
 Local-file/program warnings and protected-note authorization remain independent.
 To restore confirmation, close VNote and set `core.confirmExternalLinks` to `true`
 in `vnotex.json`. Missing or non-boolean values also enable confirmation.
+Shared implementation and two-phase caller contract:
+[GUI external-link confirmation](../gui/AGENTS.md#external-link-confirmation).
 
 ### Mind map editor preferences
 

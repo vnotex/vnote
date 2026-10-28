@@ -50,7 +50,6 @@
 #include <controllers/markdownviewwindowcontroller.h>
 #include <controllers/markdownwebjobcontroller.h>
 #include <core/configmgr2.h>
-#include <core/coreconfig.h>
 #include <core/editorconfig.h>
 #include <core/logging.h>
 #include <core/markdowneditorconfig.h>
@@ -66,6 +65,7 @@
 #include <gui/services/themeservice.h>
 #include <gui/services/webengineprofileservice.h>
 #include <gui/services/webviewjobs.h>
+#include <gui/utils/externallinkconfirmation.h>
 #include <gui/utils/printutils.h>
 #include <gui/utils/widgetutils.h>
 #include <imagehost/iimagehostprovider.h>
@@ -1935,22 +1935,14 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath, bool 
   }
   if (scheme == QStringLiteral("http") || scheme == QStringLiteral("https") ||
       scheme == QStringLiteral("ftp") || scheme == QStringLiteral("mailto")) {
-    const QPointer<ConfigMgr2> configMgr(getServices().get<ConfigMgr2>());
     const QPointer<MarkdownViewWindow2> guard(this);
     const auto generation = getBufferGeneration();
-    int ret = QMessageBox::Yes;
-    if (!configMgr || configMgr->getCoreConfig().isConfirmExternalLinksEnabled()) {
-      ret = MessageBoxHelper::questionYesNoNeverAsk(
-          MessageBoxHelper::Warning, tr("Are you sure to open link (%1)?").arg(url.toString()),
-          tr("Malicious link might do harm to your device."), QString(), this);
-    }
+    const auto confirmation =
+        ExternalLinkConfirmation::ask(url, getServices().get<ConfigMgr2>(), this);
     if (!guard || generation != getBufferGeneration() || m_rebindingBuffer) {
       return;
     }
-    if (ret == QMessageBox::YesToAll && configMgr) {
-      configMgr->getCoreConfig().setConfirmExternalLinksEnabled(false);
-    }
-    if (ret == QMessageBox::Yes || ret == QMessageBox::YesToAll) {
+    if (confirmation.accept()) {
       QDesktopServices::openUrl(url);
     }
     return;

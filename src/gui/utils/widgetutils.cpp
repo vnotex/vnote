@@ -83,15 +83,7 @@ void WidgetUtils::openUrlByDesktop(const QUrl &p_url) {
   const auto scheme = p_url.scheme();
   if (scheme != "http" && scheme != "https" &&
       !(p_url.isLocalFile() && QFileInfo(p_url.toLocalFile()).isDir())) {
-    // Prompt for user.
-    int ret = MessageBoxHelper::questionYesNo(
-        MessageBoxHelper::Warning,
-        QCoreApplication::translate("MainWindow", "Are you sure to open link (%1)?")
-            .arg(p_url.toString()),
-        QCoreApplication::translate("MainWindow",
-                                    "Malicious link might do harm to your device."),
-        QString(), nullptr);
-    if (ret == QMessageBox::No) {
+    if (MessageBoxHelper::questionOpenLink(p_url, false) != QMessageBox::Yes) {
       return;
     }
   }
