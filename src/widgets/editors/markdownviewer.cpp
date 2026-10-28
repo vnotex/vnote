@@ -326,10 +326,10 @@ void MarkdownViewer::contextMenuEvent(QContextMenuEvent *p_event) {
     menu->addAction(copyLinkAction);
 
     // Native open actions bypass the owning view's link policy and stay hidden.
-    auto *openLinkAction = new QAction(tr("Open Link Address"), menu);
+    auto *openLinkAction = new QAction(tr("Open Link"), menu);
     openLinkAction->setObjectName(QStringLiteral("openContextLinkAction"));
     openLinkAction->setEnabled(false);
-    menu->addAction(openLinkAction);
+    menu->insertAction(copyLinkAction, openLinkAction);
 
     const QPointer<QMenu> guardedMenu(menu);
     const QPointer<QAction> guardedAction(openLinkAction);

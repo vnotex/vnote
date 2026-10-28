@@ -2734,7 +2734,9 @@ void MarkdownEditor::handleMouseReleased(QMouseEvent *p_event) {
       (p_event->pos() - m_linkPressPosition).manhattanLength() <= QApplication::startDragDistance();
   m_linkPressActive = false;
   m_linkSelectionDrag = false;
-  if (p_event->button() != Qt::LeftButton || !click || m_textEdit->textCursor().hasSelection()) {
+  if (p_event->button() != Qt::LeftButton ||
+      !p_event->modifiers().testFlag(Qt::ControlModifier) || !click ||
+      m_textEdit->textCursor().hasSelection()) {
     return;
   }
 

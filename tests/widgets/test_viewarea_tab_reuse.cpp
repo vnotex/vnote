@@ -780,11 +780,11 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
   QTextCursor start(edit->document());
   start.setPosition(QString::fromUtf8(sourceBytes).indexOf(QStringLiteral("Select")));
   const auto dragStart = edit->cursorRect(start).center();
-  QTest::mousePress(edit->viewport(), Qt::LeftButton, Qt::NoModifier, dragStart);
+  QTest::mousePress(edit->viewport(), Qt::LeftButton, Qt::ControlModifier, dragStart);
   QMouseEvent move(QEvent::MouseMove, linkPoint, edit->viewport()->mapToGlobal(linkPoint),
-                   Qt::NoButton, Qt::LeftButton, Qt::NoModifier);
+                   Qt::NoButton, Qt::LeftButton, Qt::ControlModifier);
   QApplication::sendEvent(edit->viewport(), &move);
-  QTest::mouseRelease(edit->viewport(), Qt::LeftButton, Qt::NoModifier, linkPoint);
+  QTest::mouseRelease(edit->viewport(), Qt::LeftButton, Qt::ControlModifier, linkPoint);
   QVERIFY(edit->textCursor().hasSelection());
   QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
   QCOMPARE(f->buffers->listBuffers().size(), 1);
@@ -794,6 +794,15 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
 
   for (const auto modifiers : {Qt::NoModifier, Qt::ControlModifier}) {
     QVERIFY(clickNativeSurface(edit->viewport(), linkPoint, modifiers));
+    if (modifiers == Qt::NoModifier) {
+      QCOMPARE(f->current(), source);
+      QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+      QCOMPARE(f->buffers->listBuffers().size(), 1);
+      QCOMPARE(edit->textCursor().position(), edit->cursorForPosition(linkPoint).position());
+      QVERIFY(!edit->textCursor().hasSelection());
+      QCOMPARE(editor->getText(), QString::fromUtf8(sourceBytes));
+      continue;
+    }
     QTRY_VERIFY(!f->area->previewWorkspaceForWindow(sourceId).isEmpty());
     const auto preview = f->area->previewWorkspaceForWindow(sourceId);
     auto *target = f->current();
@@ -861,7 +870,14 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
       QVERIFY(f->controller()->closeViewWindow(f->current()->getViewWindowId(), false));
       QCOMPARE(f->current(), source);
       if (!enabled) {
-        QVERIFY(clickNativeSurface(surface, point));
+        if (!reading) {
+          QVERIFY(clickNativeSurface(surface, point));
+          QCOMPARE(f->current(), source);
+          QCOMPARE(f->buffers->listBuffers().size(), 1);
+          QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
+        }
+        QVERIFY(clickNativeSurface(surface, point,
+                                   reading ? Qt::NoModifier : Qt::ControlModifier));
         QTRY_VERIFY(f->current() != source);
         QCOMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
         QCOMPARE(f->workspace(), main);
@@ -972,7 +988,7 @@ void TestViewAreaTabReuse::markdownReaderContextMenus() {
     QCOMPARE(edit, !context.link && !context.image);
     QCOMPARE(exportAction, !context.link && !context.image);
     if (context.link) {
-      QCOMPARE(visible.size(), 2);
+      QCOMPARE(visible, (QList<QAction *>{openLink, copyLink}));
       QTRY_VERIFY(openLink->isEnabled());
     } else {
       QVERIFY(visible.contains(reader->pageAction(QWebEnginePage::SelectAll)));
@@ -1189,7 +1205,7 @@ void TestViewAreaTabReuse::previewProtectedLinksAndDispatchFailures() {
   });
   const auto click = [&](int p_index) {
     const auto target = editor->getNavigationTargets().at(p_index);
-    QTest::mouseClick(target.m_widget, Qt::LeftButton, Qt::NoModifier, target.m_rect.center());
+    QTest::mouseClick(target.m_widget, Qt::LeftButton, Qt::ControlModifier, target.m_rect.center());
   };
   click(0);
   QCOMPARE(beforeOpen, 0);
