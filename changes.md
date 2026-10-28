@@ -4,6 +4,7 @@
 * Disable Qt 6.9.3 macOS unit/native GUI suites while retaining build, signing and package verification; keep Qt 6.10.3 test coverage
 * Establish native editor focus before draft fixtures and avoid reinstalling unchanged assets between isolated tab-reuse test cases
 * Remove obsolete implicit-padding checks from Typst markup integration tests while retaining rendering, geometry, export and cross-copy checks
+* Remove native title bars from notification, attachment, tag and other toolbar popups on macOS; dismiss them with an outside click or Escape, matching Windows
 * Centralize external-link warning text and Never Ask preference handling across Markdown, Typst and mind maps, preserving caller authorization and independent local-file warnings
 * Show Never Ask for Typst external-link warnings and honor the shared confirmation preference, while preserving cancellation and stale-view safeguards
 * Remove the default page margin from Markdown Typst blocks so they align with surrounding content; explicit Typst margins and standalone document layout are unchanged

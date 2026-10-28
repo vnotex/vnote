@@ -8,13 +8,7 @@
 using namespace vnotex;
 
 ButtonPopup::ButtonPopup(QToolButton *p_btn, QWidget *p_parent, Alignment p_alignment)
-    : QMenu(p_parent), m_button(p_btn), m_alignment(p_alignment) {
-#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
-  // Qt::Popup on macOS does not work well with input method.
-  setWindowFlags(Qt::Tool | Qt::NoDropShadowWindowHint);
-  setWindowModality(Qt::ApplicationModal);
-#endif
-}
+    : QMenu(p_parent), m_button(p_btn), m_alignment(p_alignment) {}
 
 void ButtonPopup::showEvent(QShowEvent *p_event) {
   QMenu::showEvent(p_event);

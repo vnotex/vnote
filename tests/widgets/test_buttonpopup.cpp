@@ -1,7 +1,9 @@
 #include <QtTest>
 
+#include <QLineEdit>
 #include <QScreen>
 #include <QToolButton>
+#include <QWidgetAction>
 #include <QWindow>
 
 #include <widgets/buttonpopup.h>
@@ -17,6 +19,7 @@ private slots:
   void editorPopupStaysAnchoredAtScreenEdges();
   void nativeAndHiddenButtonsKeepQtPlacement_data();
   void nativeAndHiddenButtonsKeepQtPlacement();
+  void embeddedInputAndClickAwayDismissal();
 };
 
 void TestButtonPopup::editorPopupStaysAnchoredAtScreenEdges_data() {
@@ -97,6 +100,57 @@ void TestButtonPopup::nativeAndHiddenButtonsKeepQtPlacement() {
   popup.popup(requested);
   QVERIFY(QTest::qWaitForWindowExposed(&popup));
   QCOMPARE(popup.pos(), nativePosition);
+}
+
+void TestButtonPopup::embeddedInputAndClickAwayDismissal() {
+  QWidget window;
+  window.resize(640, 480);
+  QToolButton button(&window);
+  button.setGeometry(20, 20, 100, 30);
+  ButtonPopup popup(&button, &window);
+  auto *edit = new QLineEdit;
+  auto *action = new QWidgetAction(&popup);
+  action->setDefaultWidget(edit);
+  popup.addAction(action);
+  QSignalSpy submitted(edit, &QLineEdit::returnPressed);
+  QSignalSpy hidden(&popup, &QMenu::aboutToHide);
+  window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&window));
+  window.activateWindow();
+  QVERIFY(QTest::qWaitForWindowActive(&window));
+
+  const auto anchor = button.mapToGlobal(QPoint(0, button.height()));
+  popup.popup(anchor);
+  QVERIFY(QTest::qWaitForWindowExposed(&popup));
+  // A modal Tool window restores the macOS title bar and loses popup dismissal.
+  QCOMPARE(popup.windowType(), Qt::Popup);
+  QCOMPARE(popup.windowModality(), Qt::NonModal);
+  QCOMPARE(QApplication::activePopupWidget(), &popup);
+  QTest::mouseClick(edit, Qt::LeftButton);
+  QTRY_VERIFY(edit->hasFocus());
+  QTest::keyClicks(QApplication::focusWidget(), "new-tag");
+  QCOMPARE(edit->text(), QStringLiteral("new-tag"));
+  QTest::keyClick(QApplication::focusWidget(), Qt::Key_Return);
+  QCOMPARE(submitted.count(), 1);
+  QVERIFY(popup.isVisible());
+  QTest::keyClick(QApplication::focusWidget(), Qt::Key_Enter);
+  QCOMPARE(submitted.count(), 2);
+  QVERIFY(popup.isVisible());
+
+  QTest::keyClick(QApplication::focusWidget(), Qt::Key_Escape);
+  QTRY_VERIFY(!popup.isVisible());
+  QCOMPARE(hidden.count(), 1);
+
+  popup.popup(anchor);
+  QVERIFY(QTest::qWaitForWindowExposed(&popup));
+  QCOMPARE(edit->text(), QStringLiteral("new-tag"));
+  const auto outside = window.mapToGlobal(QPoint(window.width() - 20, window.height() - 20));
+  QVERIFY(!popup.frameGeometry().contains(outside));
+  // Use window-system routing so the popup grab handles a press outside its bounds.
+  QTest::mouseClick(window.windowHandle(), Qt::LeftButton, Qt::NoModifier,
+                    window.mapFromGlobal(outside));
+  QTRY_VERIFY(!popup.isVisible());
+  QCOMPARE(hidden.count(), 2);
 }
 } // namespace tests
 
