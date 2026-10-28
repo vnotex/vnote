@@ -39,6 +39,7 @@
 
 #include <application.h>
 #include <controllers/newnotebookcontroller.h>
+#include <controllers/opennotebookcontroller.h>
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
@@ -86,7 +87,9 @@ private slots:
   void testInvalidRemoteUrlSchemeKeepsOpenDisabled();
 
   // Existing destinations, including empty directories, must never be taken over.
+  void testValidRemoteUrlEnablesOpenButton_data();
   void testValidRemoteUrlEnablesOpenButton();
+  void testHttpUsernameEditableAfterCloneFailure();
   void testWebdavAnonymousAndAuthenticatedInputs();
   void testJianguoyunRequiresAuthenticatedManagedCollection();
   void testNewNotebookManagedSelectionRequiresConfiguration();
@@ -397,19 +400,22 @@ void TestOpenNotebookDialog2::testInvalidRemoteUrlSchemeKeepsOpenDisabled() {
   auto *openBtn = box->button(QDialogButtonBox::Open);
   QVERIFY(openBtn);
 
-  // ssh:// is explicitly NOT allowed (we accept only https:// and file:///).
+  TempDirFixture directory;
+  QVERIFY(directory.isValid());
+  auto *destInput =
+      dialog.findChild<LocationInputWithBrowseButton *>(QStringLiteral("remoteDestInput"));
+  QVERIFY(destInput);
+  destInput->setText(directory.filePath("notebook"));
+
+  // SSH remains unsupported; Git settings accept HTTP, HTTPS and file URLs.
   urlEdit->setText(QStringLiteral("ssh://example.com/repo.git"));
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
 
   QVERIFY2(!openBtn->isEnabled(),
-           "Open button must stay disabled when URL scheme is not https or file://");
+           "Open button must stay disabled for an unsupported Git URL scheme");
 
   // Other invalid schemes that previously surfaced in user reports:
   urlEdit->setText(QStringLiteral("git://example.com/repo.git"));
-  QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
-  QVERIFY(!openBtn->isEnabled());
-
-  urlEdit->setText(QStringLiteral("http://example.com/repo.git")); // http not https
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
   QVERIFY(!openBtn->isEnabled());
 
@@ -425,7 +431,14 @@ void TestOpenNotebookDialog2::testInvalidRemoteUrlSchemeKeepsOpenDisabled() {
 // internal QLineEdit; we drive it via setText() to bypass the modal QFileDialog
 // (same observable state).
 // =============================================================================
+void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton_data() {
+  QTest::addColumn<QString>("scheme");
+  QTest::newRow("http") << QStringLiteral("http");
+  QTest::newRow("https") << QStringLiteral("https");
+}
+
 void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton() {
+  QFETCH(QString, scheme);
   ServiceLocator services;
   NotebookCoreService *svc = nullptr;
   buildServices(services, svc);
@@ -456,7 +469,7 @@ void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton() {
   auto *openBtn = box->button(QDialogButtonBox::Open);
   QVERIFY(openBtn);
 
-  urlEdit->setText(QStringLiteral("https://github.com/vnotex/test-notebook.git"));
+  urlEdit->setText(scheme + QStringLiteral("://github.com/vnotex/test-notebook.git"));
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
 
   // Without a destination, Open must still be disabled.
@@ -469,7 +482,22 @@ void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton() {
   destInput->setText(nonExistingDest);
   QCoreApplication::processEvents(QEventLoop::AllEvents, 50);
   QVERIFY2(openBtn->isEnabled(),
-           "Open must be enabled when URL is https://... and dest does not exist");
+           "Open must be enabled for a supported URL and a nonexistent destination");
+
+  if (scheme == QLatin1String("http")) {
+    auto *usernameEdit = dialog.findChild<QLineEdit *>(QStringLiteral("gitUsernameEdit"));
+    auto *patEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remotePatEdit"));
+    QVERIFY(usernameEdit && patEdit);
+    QVERIFY(usernameEdit->isEnabled());
+    patEdit->setText(QStringLiteral("test-token"));
+    QTest::keyClicks(usernameEdit, "writer@mail.test");
+    QCOMPARE(urlEdit->text(),
+             QStringLiteral("http://writer%40mail.test@github.com/vnotex/test-notebook.git"));
+    QVERIFY(!urlEdit->text().contains(patEdit->text()));
+    QCOMPARE(patEdit->text(), QStringLiteral("test-token"));
+    QCOMPARE(patEdit->echoMode(), QLineEdit::Password);
+    QVERIFY(openBtn->isEnabled());
+  }
 
   // (b) Existing EMPTY directory: refused just like the controller.
   const QString existingEmptyDest = QDir::cleanPath(parentDir + QStringLiteral("/empty-dest"));
@@ -495,6 +523,53 @@ void TestOpenNotebookDialog2::testValidRemoteUrlEnablesOpenButton() {
            "Open must be DISABLED when dest is an existing non-empty directory");
 
   delete svc;
+}
+
+void TestOpenNotebookDialog2::testHttpUsernameEditableAfterCloneFailure() {
+  ServiceLocator services;
+  NotebookCoreService *svc = nullptr;
+  buildServices(services, svc);
+  const auto cleanup = qScopeGuard([&]() { delete svc; });
+  TempDirFixture directory;
+  QVERIFY(directory.isValid());
+  OpenNotebookDialog2 dialog(services);
+  auto *remoteRadio = dialog.findChild<QRadioButton *>(QStringLiteral("remoteModeRadio"));
+  auto *backend = dialog.findChild<QComboBox *>(QStringLiteral("syncBackendCombo"));
+  auto *urlEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
+  auto *usernameEdit = dialog.findChild<QLineEdit *>(QStringLiteral("gitUsernameEdit"));
+  auto *patEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remotePatEdit"));
+  auto *destInput =
+      dialog.findChild<LocationInputWithBrowseButton *>(QStringLiteral("remoteDestInput"));
+  QVERIFY(remoteRadio && backend && urlEdit && usernameEdit && patEdit && destInput);
+  remoteRadio->setChecked(true);
+  backend->setCurrentIndex(backend->findData(QStringLiteral("git")));
+  urlEdit->setText(QStringLiteral("http://writer@example.invalid/repo.git"));
+  patEdit->setText(QStringLiteral("test-token"));
+  destInput->setText(directory.filePath("notebook"));
+  auto *openBtn = dialog.getDialogButtonBox()->button(QDialogButtonBox::Open);
+  QVERIFY(openBtn);
+  QSignalSpy accepted(&dialog, &QDialog::accepted);
+  urlEdit->setEnabled(false);
+  usernameEdit->setEnabled(false);
+  patEdit->setEnabled(false);
+  openBtn->setEnabled(false);
+
+  CloneAndOpenResult failure;
+  failure.success = false;
+  failure.errorMessage = QStringLiteral("fixture clone failure");
+  QVERIFY(QMetaObject::invokeMethod(&dialog, "onCloneFinished", Qt::DirectConnection,
+                                   Q_ARG(CloneAndOpenResult, failure)));
+  QVERIFY(urlEdit->isEnabled());
+  QVERIFY(patEdit->isEnabled());
+  QVERIFY(usernameEdit->isEnabled());
+  QVERIFY(openBtn->isEnabled());
+  usernameEdit->selectAll();
+  QTest::keyClicks(usernameEdit, "writer2");
+  QCOMPARE(urlEdit->text(), QStringLiteral("http://writer2@example.invalid/repo.git"));
+  QCOMPARE(patEdit->text(), QStringLiteral("test-token"));
+  QCOMPARE(patEdit->echoMode(), QLineEdit::Password);
+  QVERIFY(openBtn->isEnabled());
+  QCOMPARE(accepted.count(), 0);
 }
 
 void TestOpenNotebookDialog2::testJianguoyunRequiresAuthenticatedManagedCollection() {

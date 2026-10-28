@@ -135,6 +135,16 @@ Therefore a key may be erased from the index **only while the index still points
 `evictOneExistingMessage()` prefers, in order: oldest **dismissed**; else oldest active that is cheap to lose (**no actions and not `Persist`**); else oldest active outright. The middle tier exists so a flood of unique keys cannot silently delete the only "Restart to finish update" / "Open Sync Info…" affordance. Every eviction emits `messageRemoved(id)` — **not** `messageDismissed` — and every renderer must drop the id.
 
 
+## Git remote transport
+
+`canonicalSyncRemoteUrl()` is the shared Git settings/open contract: accept explicit
+`http://`, `https://` and `file:///` URLs, trimming only surrounding whitespace. Reject
+SSH/SCP-style and `git://` URLs. Keep HTTPS examples and recommend HTTPS; the Git URL
+tooltips disclose that HTTP sends credentials and notebook data in plaintext.
+Username-only HTTP/HTTPS edits preserve the endpoint and local history; a scheme change
+is an endpoint change. Keep the PAT separate from the displayed and persisted remote URL.
+The shared username editor and both dialogs' refresh/retry gates must agree on HTTP/HTTPS.
+
 ## Threading rules for SyncService
 
 State-model counterpart (S0-S7, reconcile, disable cleanup): [Sync State Model](#sync-state-model) below.

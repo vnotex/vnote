@@ -193,7 +193,9 @@ void NotebookSyncInfoDialog2::setupUI() {
   m_remoteUrlEdit = WidgetsFactory::createLineEdit(centralWidget);
   m_remoteUrlEdit->setObjectName(QString::fromLatin1(kRemoteUrlEditName));
   m_remoteUrlEdit->setPlaceholderText(tr("https://github.com/example/notes.git"));
-  m_remoteUrlEdit->setToolTip(tr("Remote git repository URL used for syncing this notebook"));
+  m_remoteUrlEdit->setToolTip(
+      tr("Remote Git URL using HTTP, HTTPS, or file://. HTTPS is recommended; "
+         "HTTP sends credentials and data in plaintext"));
   m_remoteUrlLabel = new QLabel(tr("Remote URL"), centralWidget);
   formLayout->addRow(m_remoteUrlLabel, m_remoteUrlEdit);
   connect(m_remoteUrlEdit, &QLineEdit::textChanged, this, &NotebookSyncInfoDialog2::onFieldEdited);
@@ -649,7 +651,8 @@ void NotebookSyncInfoDialog2::refreshBackendFields() {
       : managed         ? tr("Dedicated Jianguoyun collection, not the /dav/ account root")
       : passwordBackend ? tr("Dedicated existing HTTP or HTTPS notebook collection. "
                              "HTTP sends credentials and data in plaintext")
-                        : tr("Remote git repository URL used for syncing this notebook"));
+                        : tr("Remote Git URL using HTTP, HTTPS, or file://. HTTPS is recommended; "
+                             "HTTP sends credentials and data in plaintext"));
   m_remoteUrlHintLabel->setVisible(git && !m_rawNotebook);
   m_webdavHint->setSeverity(managed ? InlineBanner::Severity::Warning
                                     : InlineBanner::Severity::Info);
@@ -666,8 +669,10 @@ void NotebookSyncInfoDialog2::refreshBackendFields() {
   m_webdavHint->setVisible(passwordBackend && !m_rawNotebook);
   m_gitUsernameLabel->setVisible(git && !m_rawNotebook);
   m_gitUsernameEdit->setVisible(git && !m_rawNotebook);
-  m_gitUsernameEdit->setEnabled(git && !m_rawNotebook && !m_applying &&
-                                m_remoteUrlEdit->text().startsWith(QLatin1String("https://")));
+  m_gitUsernameEdit->setEnabled(
+      git && !m_rawNotebook && !m_applying &&
+      (m_remoteUrlEdit->text().startsWith(QLatin1String("http://")) ||
+       m_remoteUrlEdit->text().startsWith(QLatin1String("https://"))));
   m_webdavUsernameLabel->setVisible(passwordBackend && !m_rawNotebook);
   m_webdavUsernameEdit->setVisible(passwordBackend && !m_rawNotebook);
   m_webdavUsernameEdit->setEnabled(available && !m_applying);

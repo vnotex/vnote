@@ -26,6 +26,8 @@ class TestSyncService : public QObject {
 private slots:
   void initTestCase();
   void cleanupTestCase();
+  void gitRemoteUrl_data();
+  void gitRemoteUrl();
   void invalidSettings_data();
   void invalidSettings();
   void webdavCanonicalRemoteUrl_data();
@@ -41,6 +43,36 @@ void TestSyncService::initTestCase() {
 }
 
 void TestSyncService::cleanupTestCase() { vxcore_context_destroy(m_context); }
+
+void TestSyncService::gitRemoteUrl_data() {
+  QTest::addColumn<QString>("remote");
+  QTest::addColumn<QString>("canonical");
+  QTest::newRow("http-trimmed")
+      << QStringLiteral("  http://writer@example.invalid:8080/repo.git  ")
+      << QStringLiteral("http://writer@example.invalid:8080/repo.git");
+  QTest::newRow("https") << QStringLiteral("https://example.invalid/repo.git")
+                         << QStringLiteral("https://example.invalid/repo.git");
+  QTest::newRow("file") << QStringLiteral("file:///tmp/repo.git")
+                        << QStringLiteral("file:///tmp/repo.git");
+  QTest::newRow("ssh") << QStringLiteral("ssh://git@example.invalid/repo.git") << QString();
+  QTest::newRow("scp") << QStringLiteral("git@example.invalid:repo.git") << QString();
+  QTest::newRow("git") << QStringLiteral("git://example.invalid/repo.git") << QString();
+  QTest::newRow("empty") << QString() << QString();
+  QTest::newRow("whitespace") << QStringLiteral("http://example.invalid/repo name.git")
+                             << QString();
+}
+
+void TestSyncService::gitRemoteUrl() {
+  QFETCH(QString, remote);
+  QFETCH(QString, canonical);
+  SyncSettings settings;
+  settings.m_backend = QStringLiteral("git");
+  settings.m_remoteUrl = remote;
+  settings.m_credentials.m_backend = QStringLiteral("git");
+  settings.m_credentials.m_secret = QStringLiteral("test-token");
+  QCOMPARE(canonicalSyncRemoteUrl(settings), canonical);
+  QCOMPARE(validateSyncSettings(settings, true).isEmpty(), !canonical.isEmpty());
+}
 
 void TestSyncService::invalidSettings_data() {
   QTest::addColumn<QString>("backend");

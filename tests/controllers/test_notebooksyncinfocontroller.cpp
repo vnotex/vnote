@@ -165,6 +165,7 @@ private slots:
   void initTestCase();
 
   void applyChangesRoutesUrlAndPat();
+  void gitUsernameChangePreservesHistory_data();
   void gitUsernameChangePreservesHistory();
   void disableSyncRoutesCorrectly();
 
@@ -268,7 +269,14 @@ QString TestNotebookSyncInfoController::seedBareRepo(const QString &p_bareRepoPa
   return QStringLiteral("file://") + normalized;
 }
 
+void TestNotebookSyncInfoController::gitUsernameChangePreservesHistory_data() {
+  QTest::addColumn<QString>("scheme");
+  QTest::newRow("http") << QStringLiteral("http");
+  QTest::newRow("https") << QStringLiteral("https");
+}
+
 void TestNotebookSyncInfoController::gitUsernameChangePreservesHistory() {
+  QFETCH(QString, scheme);
   TempDirFixture directory;
   QVERIFY(directory.isValid());
   VxCoreContextHandle context = nullptr;
@@ -307,8 +315,8 @@ void TestNotebookSyncInfoController::gitUsernameChangePreservesHistory() {
   };
   QByteArray previousHead;
   QVERIFY(git({"rev-parse", "HEAD"}, &previousHead));
-  const QString oldUrl = QStringLiteral("https://old-user@127.0.0.1:1/notebook.git");
-  const QString newUrl = QStringLiteral("https://new-user@127.0.0.1:1/notebook.git");
+  const QString oldUrl = scheme + QStringLiteral("://old-user@127.0.0.1:1/notebook.git");
+  const QString newUrl = scheme + QStringLiteral("://new-user@127.0.0.1:1/notebook.git");
   QVERIFY(git({"remote", "set-url", "origin", oldUrl}));
   auto notebookConfig = notebooks.getNotebookConfig(id);
   notebookConfig[QStringLiteral("syncEnabled")] = true;

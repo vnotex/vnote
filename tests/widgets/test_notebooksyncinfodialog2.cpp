@@ -37,6 +37,7 @@ class TestNotebookSyncInfoDialog2 : public QObject {
 
 private slots:
   void initTestCase();
+  void testGitUsernameEditsRemoteWithoutExposingToken_data();
   void testGitUsernameEditsRemoteWithoutExposingToken();
   void testGitUsernameChangePreservesLocalHistory();
   void testPasswordPreCreateValidationAndSecretMasking_data();
@@ -54,7 +55,14 @@ void TestNotebookSyncInfoDialog2::initTestCase() {
   vxcore_set_test_mode(1);
 }
 
+void TestNotebookSyncInfoDialog2::testGitUsernameEditsRemoteWithoutExposingToken_data() {
+  QTest::addColumn<QString>("scheme");
+  QTest::newRow("http") << QStringLiteral("http");
+  QTest::newRow("https") << QStringLiteral("https");
+}
+
 void TestNotebookSyncInfoDialog2::testGitUsernameEditsRemoteWithoutExposingToken() {
+  QFETCH(QString, scheme);
   ServiceLocator services;
   NotebookSyncInfoDialog2 dialog(services);
   auto *urlEdit = dialog.findChild<QLineEdit *>(QStringLiteral("remoteUrlEdit"));
@@ -63,22 +71,39 @@ void TestNotebookSyncInfoDialog2::testGitUsernameEditsRemoteWithoutExposingToken
   QVERIFY(urlEdit);
   QVERIFY(usernameEdit);
   QVERIFY(patEdit);
-  urlEdit->setText(QStringLiteral("https://gitee.com/team/notes.git"));
+  urlEdit->setText(scheme + QStringLiteral("://gitee.com/team/notes.git"));
+  dialog.setBackend(QStringLiteral("git"));
+  QVERIFY(usernameEdit->isEnabled());
   patEdit->setText(QStringLiteral("test-token"));
   QTest::keyClicks(usernameEdit, "contributor");
   QCOMPARE(dialog.enteredRemoteUrl(),
-           QStringLiteral("https://contributor@gitee.com/team/notes.git"));
+           scheme + QStringLiteral("://contributor@gitee.com/team/notes.git"));
   QCOMPARE(dialog.enteredSettings().m_credentials.m_secret, QStringLiteral("test-token"));
   QCOMPARE(patEdit->echoMode(), QLineEdit::Password);
 
   // Loading/resetting the authoritative URL must not retain the previous login.
-  urlEdit->setText(QStringLiteral("https://other%40mail.test@gitee.com/team/notes.git"));
+  urlEdit->setText(scheme + QStringLiteral("://other%40mail.test@gitee.com/team/notes.git"));
   QCOMPARE(usernameEdit->text(), QStringLiteral("other@mail.test"));
   usernameEdit->selectAll();
   QTest::keyClick(usernameEdit, Qt::Key_Backspace);
-  QCOMPARE(dialog.enteredRemoteUrl(), QStringLiteral("https://gitee.com/team/notes.git"));
+  QCOMPARE(dialog.enteredRemoteUrl(), scheme + QStringLiteral("://gitee.com/team/notes.git"));
   urlEdit->setText(QStringLiteral("file:///repo.git"));
   QVERIFY(!usernameEdit->isEnabled());
+
+  urlEdit->setText(scheme + QStringLiteral("://gitee.com/team/notes.git"));
+  QTest::keyClicks(usernameEdit, "writer@mail.test");
+  const auto remote = scheme + QStringLiteral("://writer%40mail.test@gitee.com/team/notes.git");
+  QCOMPARE(urlEdit->text(), remote);
+  QVERIFY(!urlEdit->text().contains(patEdit->text()));
+  auto *ok = dialog.getDialogButtonBox()->button(QDialogButtonBox::Ok);
+  QVERIFY(ok && ok->isEnabled());
+  QSignalSpy accepted(&dialog, &QDialog::accepted);
+  ok->click();
+  QCOMPARE(accepted.count(), 1);
+  const auto settings = dialog.enteredSettings();
+  QCOMPARE(settings.m_remoteUrl, remote);
+  QCOMPARE(settings.m_credentials.m_secret, QStringLiteral("test-token"));
+  QCOMPARE(patEdit->echoMode(), QLineEdit::Password);
 }
 
 void TestNotebookSyncInfoDialog2::testPasswordPreCreateValidationAndSecretMasking_data() {

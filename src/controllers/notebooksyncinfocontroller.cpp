@@ -106,7 +106,8 @@ bool sameEndpoint(const SyncSettings &p_old, const SyncSettings &p_new) {
   }
   const QUrl oldUrl(p_old.m_remoteUrl);
   const QUrl newUrl(p_new.m_remoteUrl);
-  return oldUrl.isValid() && newUrl.isValid() && oldUrl.scheme() == QLatin1String("https") &&
+  return oldUrl.isValid() && newUrl.isValid() &&
+         (oldUrl.scheme() == QLatin1String("http") || oldUrl.scheme() == QLatin1String("https")) &&
          oldUrl.password().isEmpty() && newUrl.password().isEmpty() &&
          oldUrl.adjusted(QUrl::RemoveUserInfo) == newUrl.adjusted(QUrl::RemoveUserInfo);
 }

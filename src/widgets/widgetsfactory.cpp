@@ -45,12 +45,13 @@ QLineEdit *WidgetsFactory::createUrlUserNameEdit(QLineEdit *p_urlEdit, QWidget *
     const QUrl url(p_text.trimmed());
     const QSignalBlocker blocker(edit);
     edit->setText(url.userName());
-    edit->setEnabled(url.scheme() == QLatin1String("https"));
+    edit->setEnabled(url.scheme() == QLatin1String("http") ||
+                     url.scheme() == QLatin1String("https"));
   };
   QObject::connect(p_urlEdit, &QLineEdit::textChanged, edit, loadUsername);
   QObject::connect(edit, &QLineEdit::textEdited, p_urlEdit, [p_urlEdit](const QString &p_username) {
     QUrl url(p_urlEdit->text().trimmed());
-    if (url.scheme() != QLatin1String("https")) {
+    if (url.scheme() != QLatin1String("http") && url.scheme() != QLatin1String("https")) {
       return;
     }
     const QString username = p_username.trimmed();

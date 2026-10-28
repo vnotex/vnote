@@ -214,7 +214,9 @@ void OpenNotebookDialog2::setupRemotePage(QWidget *p_page) {
   m_remoteUrlEdit->setObjectName(QLatin1String(kRemoteUrlEditName));
   m_remoteUrlEdit->setPlaceholderText(
       tr("https://github.com/user/repo.git  or  file:///path/to/repo.git"));
-  m_remoteUrlEdit->setToolTip(tr("Remote git URL. Only HTTPS and file:// schemes are supported"));
+  m_remoteUrlEdit->setToolTip(
+      tr("Remote Git URL using HTTP, HTTPS, or file://. HTTPS is recommended; "
+         "HTTP sends credentials and data in plaintext"));
   m_remoteUrlLabel = new QLabel(tr("Remote URL"), p_page);
   layout->addRow(m_remoteUrlLabel, m_remoteUrlEdit);
 
@@ -303,7 +305,8 @@ void OpenNotebookDialog2::refreshBackendFields() {
       managed ? tr("Existing VNote-managed Jianguoyun collection, not the /dav/ account root")
       : passwordBackend ? tr("Existing HTTP or HTTPS collection containing one VNote notebook. "
                              "HTTP sends credentials and data in plaintext")
-                        : tr("Remote git URL. Only HTTPS and file:// schemes are supported"));
+                        : tr("Remote Git URL using HTTP, HTTPS, or file://. HTTPS is recommended; "
+                             "HTTP sends credentials and data in plaintext"));
   m_secretLabel->setText(managed           ? tr("App password")
                          : passwordBackend ? tr("Password or app password")
                                            : tr("Personal Access Token"));
@@ -542,8 +545,9 @@ void OpenNotebookDialog2::setRemoteInputsEnabled(bool p_enabled) {
   if (m_remotePatEdit)
     m_remotePatEdit->setEnabled(p_enabled);
   if (m_remoteUsernameEdit)
-    m_remoteUsernameEdit->setEnabled(p_enabled &&
-                                     m_remoteUrlEdit->text().startsWith(QLatin1String("https://")));
+    m_remoteUsernameEdit->setEnabled(
+        p_enabled && (m_remoteUrlEdit->text().startsWith(QLatin1String("http://")) ||
+                      m_remoteUrlEdit->text().startsWith(QLatin1String("https://"))));
   if (m_remoteDestInput)
     m_remoteDestInput->setEnabled(p_enabled);
 }
