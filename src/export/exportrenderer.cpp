@@ -9,3 +9,8 @@ ExportRenderer::ExportRenderer(ServiceLocator &p_services, QWidget *p_widgetPare
     : QObject(p_parent), m_services(p_services), m_widgetParent(p_widgetParent) {}
 
 ExportRenderer::~ExportRenderer() = default;
+
+bool ExportRenderer::renderPdf(const ExportInput &, const ExportOption &, const QString &) {
+  emit logRequested(tr("Native PDF export is not supported by this renderer."));
+  return false;
+}

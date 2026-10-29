@@ -1759,6 +1759,38 @@ if(WIN32)
   set_property(TEST test_markdownviewwindow_lazy APPEND PROPERTY
     ENVIRONMENT "PATH=${_markdown_job_path}")
 endif()
+# Real source-aware export and dialog behavior through the complete application services.
+foreach(_export_test test_typstexport test_exportdialog2)
+  add_qt_test(${_export_test}
+    SOURCES ${_export_test}.cpp ${_markdown_window_test_sources}
+    LINKS ${_markdown_window_links} Qt6::Pdf
+  )
+  target_include_directories(${_export_test} PRIVATE
+    $<TARGET_PROPERTY:vnote,INCLUDE_DIRECTORIES>
+  )
+  target_compile_definitions(${_export_test} PRIVATE
+    $<TARGET_PROPERTY:vnote,COMPILE_DEFINITIONS>
+    VNOTE_SRC_DIR="${CMAKE_SOURCE_DIR}/src"
+    VNOTE_TEST_EXTRA_RCC="${_markdown_job_resource_dir}/vnote_extra.rcc"
+  )
+  add_dependencies(${_export_test} VX_EXTRA_RESOURCE)
+  set_tests_properties(${_export_test} PROPERTIES TIMEOUT 600 RUN_SERIAL TRUE)
+  set_property(TEST ${_export_test} PROPERTY ENVIRONMENT
+    "QT_QPA_PLATFORM=${_markdown_window_platform}"
+    "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_markdown_window_plugin}>"
+    "QTWEBENGINEPROCESS_PATH="
+    "QTWEBENGINE_RESOURCES_PATH="
+    "QTWEBENGINE_LOCALES_PATH="
+    "QTWEBENGINE_CHROMIUM_FLAGS="
+  )
+  if(WIN32)
+    set(_typst_export_path "$<TARGET_FILE_DIR:Qt6::Core>;$<TARGET_FILE_DIR:VTextEdit>;$<TARGET_FILE_DIR:VTextEditTypst>;$ENV{PATH}")
+    string(REPLACE ";" "\;" _typst_export_path "${_typst_export_path}")
+    set_property(TEST ${_export_test} APPEND PROPERTY ENVIRONMENT "PATH=${_typst_export_path}")
+  endif()
+endforeach()
+unset(_export_test)
+unset(_typst_export_path)
 # Print the real mind-map window, checking vector PDF content and editor-state preservation.
 add_qt_test(test_mindmapviewwindow_print
   SOURCES test_mindmapviewwindow_print.cpp ${_markdown_window_test_sources}

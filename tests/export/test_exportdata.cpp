@@ -1,5 +1,5 @@
-// GUI-free round-trip test for ExportPdfOption JSON serialization + equality,
-// covering the header/footer fields (issue #2524) and backward-compat defaults.
+// GUI-free export option persistence tests, including stable target format values,
+// header/footer fields (issue #2524), equality and backward-compatible defaults.
 #include <QtTest>
 
 #include <QJsonObject>
@@ -20,6 +20,11 @@ private slots:
   void testEquality();
   void testExportOptionStyleEquality();
   void testExportOptionStyleRoundTrip();
+  void testExportFormatPersistence_data();
+  void testExportFormatPersistence();
+  void testUnknownExportFormat_data();
+  void testUnknownExportFormat();
+  void testEmptyExportOptionKeepsFormat();
   void testHeadingFoldingRouteMatrix();
   void testIntermediateHtmlMarkerIsRuntimeOnly();
 };
@@ -107,6 +112,69 @@ void TestExportData::testExportOptionStyleRoundTrip() {
   QCOMPARE(restored.m_renderingStyleFile, opt.m_renderingStyleFile);
   QCOMPARE(restored.m_syntaxHighlightStyleFile, opt.m_syntaxHighlightStyleFile);
   QVERIFY(restored == opt);
+}
+
+void TestExportData::testExportFormatPersistence_data() {
+  using vnotex::ExportFormat;
+  QTest::addColumn<int>("format");
+  QTest::addColumn<int>("persistedValue");
+  QTest::addColumn<QString>("displayName");
+  QTest::newRow("markdown") << int(ExportFormat::Markdown) << 0 << QStringLiteral("Markdown");
+  QTest::newRow("html") << int(ExportFormat::HTML) << 1 << QStringLiteral("HTML");
+  QTest::newRow("pdf") << int(ExportFormat::PDF) << 2 << QStringLiteral("PDF");
+  QTest::newRow("custom") << int(ExportFormat::Custom) << 3 << QStringLiteral("Custom");
+  QTest::newRow("typst") << int(ExportFormat::Typst) << 4 << QStringLiteral("Typst");
+  QTest::newRow("mindmap") << int(ExportFormat::MindMap) << 5 << QStringLiteral("MindMap");
+}
+
+void TestExportData::testExportFormatPersistence() {
+  QFETCH(int, format);
+  QFETCH(int, persistedValue);
+  QFETCH(QString, displayName);
+  QCOMPARE(format, persistedValue);
+
+  vnotex::ExportOption option;
+  option.m_targetFormat = static_cast<vnotex::ExportFormat>(format);
+  option.m_exportAttachments = false;
+  option.m_renderingStyleFile = QStringLiteral("retained-style.css");
+  const auto json = option.toJson();
+  QCOMPARE(json.value(QStringLiteral("targetFormat")).toInt(-1), persistedValue);
+  QCOMPARE(vnotex::exportFormatString(option.m_targetFormat), displayName);
+
+  vnotex::ExportOption restored;
+  restored.fromJson(json);
+  QCOMPARE(restored.m_targetFormat, option.m_targetFormat);
+  QVERIFY(restored == option);
+  QCOMPARE(restored.toJson(), json);
+}
+
+void TestExportData::testUnknownExportFormat_data() {
+  QTest::addColumn<int>("format");
+  QTest::newRow("negative") << -1;
+  QTest::newRow("after-native-formats") << 6;
+  QTest::newRow("future-format") << 999;
+}
+
+void TestExportData::testUnknownExportFormat() {
+  QFETCH(int, format);
+  vnotex::ExportOption option;
+  option.m_targetFormat = vnotex::ExportFormat::Typst;
+  option.fromJson(QJsonObject{{QStringLiteral("targetFormat"), format}});
+  QCOMPARE(option.m_targetFormat, vnotex::ExportFormat::HTML);
+  QCOMPARE(option.toJson().value(QStringLiteral("targetFormat")).toInt(-1), 1);
+  QCOMPARE(vnotex::exportFormatString(static_cast<vnotex::ExportFormat>(format)),
+           QStringLiteral("Unknown"));
+}
+
+void TestExportData::testEmptyExportOptionKeepsFormat() {
+  vnotex::ExportOption option;
+  option.fromJson(QJsonObject{});
+  QCOMPARE(option.m_targetFormat, vnotex::ExportFormat::HTML);
+  for (const auto format : {vnotex::ExportFormat::Typst, vnotex::ExportFormat::MindMap}) {
+    option.m_targetFormat = format;
+    option.fromJson(QJsonObject{});
+    QCOMPARE(option.m_targetFormat, format);
+  }
 }
 
 void TestExportData::testHeadingFoldingRouteMatrix() {

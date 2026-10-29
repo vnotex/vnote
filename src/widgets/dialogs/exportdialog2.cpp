@@ -22,12 +22,16 @@
 #include <QPrinter>
 #include <QProgressBar>
 #include <QPushButton>
+#include <QSignalBlocker>
 #include <QStackedLayout>
 #include <QStandardItemModel>
 #include <QTextCursor>
 #include <QToolButton>
 #include <QUrl>
 #include <QVBoxLayout>
+
+#include <algorithm>
+#include <utility>
 
 #include <controllers/exportcontroller.h>
 #include <core/configmgr2.h>
@@ -46,6 +50,50 @@
 
 namespace {
 // Object names used for test discovery (findChild<>). See dialogs/AGENTS.md.
+constexpr const char *kSourceComboName = "sourceCombo";
+constexpr const char *kFormatComboName = "formatCombo";
+constexpr const char *kRecursiveCheckName = "recursiveCheck";
+constexpr const char *kExportAttachmentsCheckName = "exportAttachmentsCheck";
+constexpr const char *kExportButtonName = "exportButton";
+constexpr const char *kUseWkhtmltopdfCheckName = "useWkhtmltopdfCheck";
+constexpr const char *kPdfAllInOneCheckName = "pdfAllInOneCheck";
+constexpr const char *kPageLayoutButtonName = "pageLayoutButton";
+constexpr const char *kNativeFormatInfoName = "nativeFormatInfo";
+constexpr const char *kMixedFormatInfoName = "mixedFormatInfo";
+constexpr const char *kOptionsGroupBoxName = "optionsGroupBox";
+constexpr const char *kFormatGroupBoxName = "formatGroupBox";
+constexpr const char *kSourceOptionsPageName = "sourceOptionsPage";
+constexpr const char *kHtmlOptionsPageName = "htmlOptionsPage";
+constexpr const char *kPdfOptionsPageName = "pdfOptionsPage";
+constexpr const char *kCustomOptionsPageName = "customOptionsPage";
+constexpr const char *kRenderingStyleLabelName = "renderingStyleLabel";
+constexpr const char *kSyntaxStyleLabelName = "syntaxStyleLabel";
+constexpr const char *kTransparentBgCheckName = "transparentBgCheck";
+constexpr const char *kOutputDirInputName = "outputDirInput";
+constexpr const char *kEmbedStylesCheckName = "embedStylesCheck";
+constexpr const char *kEmbedImagesCheckName = "embedImagesCheck";
+constexpr const char *kCompletePageCheckName = "completePageCheck";
+constexpr const char *kAddOutlinePanelCheckName = "addOutlinePanelCheck";
+constexpr const char *kUseMimeHtmlFormatCheckName = "useMimeHtmlFormatCheck";
+constexpr const char *kScrollableCheckName = "scrollableCheck";
+constexpr const char *kAddTableOfContentsCheckName = "addTableOfContentsCheck";
+constexpr const char *kWkhtmltopdfExePathEditName = "wkhtmltopdfExePathEdit";
+constexpr const char *kWkhtmltopdfArgsEditName = "wkhtmltopdfArgsEdit";
+constexpr const char *kCustomSchemeComboName = "customSchemeCombo";
+constexpr const char *kCustomSchemeMenuButtonName = "customSchemeMenuButton";
+constexpr const char *kAddSchemeActionName = "addSchemeAction";
+constexpr const char *kDuplicateSchemeActionName = "duplicateSchemeAction";
+constexpr const char *kDeleteSchemeActionName = "deleteSchemeAction";
+constexpr const char *kTargetSuffixEditName = "targetSuffixEdit";
+constexpr const char *kResourceSeparatorEditName = "resourceSeparatorEdit";
+constexpr const char *kUseHtmlInputCheckName = "useHtmlInputCheck";
+constexpr const char *kCustomAllInOneCheckName = "customAllInOneCheck";
+constexpr const char *kTargetScrollableCheckName = "targetScrollableCheck";
+constexpr const char *kCustomCommandEditName = "customCommandEdit";
+constexpr const char *kCancelButtonName = "cancelButton";
+constexpr const char *kOpenOutputDirButtonName = "openOutputDirButton";
+constexpr const char *kLogEditName = "logEdit";
+constexpr const char *kProgressBarName = "progressBar";
 constexpr const char *kRenderingStyleComboName = "renderingStyleCombo";
 constexpr const char *kSyntaxStyleComboName = "syntaxStyleCombo";
 constexpr const char *kFollowThemeButtonName = "followThemeButton";
@@ -113,6 +161,24 @@ private:
 using namespace vnotex;
 
 namespace {
+QString formatText(ExportFormat p_format) {
+  switch (p_format) {
+  case ExportFormat::Markdown:
+    return ExportDialog2::tr("Markdown");
+  case ExportFormat::HTML:
+    return ExportDialog2::tr("HTML");
+  case ExportFormat::PDF:
+    return ExportDialog2::tr("PDF");
+  case ExportFormat::Custom:
+    return ExportDialog2::tr("Custom");
+  case ExportFormat::Typst:
+    return ExportDialog2::tr("Typst");
+  case ExportFormat::MindMap:
+    return ExportDialog2::tr("MindMap");
+  }
+  return QString();
+}
+
 QString sourceText(ExportSource p_source, const ExportContext &p_context,
                    ServiceLocator &p_services) {
   switch (p_source) {
@@ -234,7 +300,9 @@ int findCustomOption(const QVector<ExportCustomOption> &p_options, const QString
 
 ExportDialog2::ExportDialog2(ServiceLocator &p_services, const ExportContext &p_context,
                              QWidget *p_parent)
-    : ScrollDialog(p_parent), m_services(p_services), m_context(p_context) {
+    : ScrollDialog(p_parent), m_services(p_services), m_context(p_context),
+      m_rendererFactory(p_services) {
+  registerBuiltinExportRenderers(m_rendererFactory);
   m_controller = new ExportController(m_services, this);
 
   setupUI();
@@ -285,12 +353,15 @@ void ExportDialog2::setupUI() {
 
   // Common options (including source + format).
   auto *optionsGroupBox = new QGroupBox(tr("Options"), mainWidget);
+  m_optionsGroupBox = optionsGroupBox;
+  optionsGroupBox->setObjectName(QLatin1String(kOptionsGroupBoxName));
   auto *commonLayout = new QGridLayout(optionsGroupBox);
   commonLayout->setColumnStretch(1, 1);
   commonLayout->setColumnStretch(3, 1);
 
   // Row 0: Source + Format.
   m_sourceCombo = WidgetsFactory::createComboBox(optionsGroupBox);
+  m_sourceCombo->setObjectName(QLatin1String(kSourceComboName));
   for (int i = static_cast<int>(ExportSource::CurrentBuffer);
        i <= static_cast<int>(ExportSource::CurrentNotebook); ++i) {
     auto source = static_cast<ExportSource>(i);
@@ -348,10 +419,7 @@ void ExportDialog2::setupUI() {
   }
 
   m_formatCombo = WidgetsFactory::createComboBox(optionsGroupBox);
-  m_formatCombo->addItem(tr("Markdown"), static_cast<int>(ExportFormat::Markdown));
-  m_formatCombo->addItem(tr("HTML"), static_cast<int>(ExportFormat::HTML));
-  m_formatCombo->addItem(tr("PDF"), static_cast<int>(ExportFormat::PDF));
-  m_formatCombo->addItem(tr("Custom"), static_cast<int>(ExportFormat::Custom));
+  m_formatCombo->setObjectName(QLatin1String(kFormatComboName));
 
   commonLayout->addWidget(new QLabel(tr("Source"), optionsGroupBox), 0, 0);
   commonLayout->addWidget(m_sourceCombo, 0, 1);
@@ -360,6 +428,7 @@ void ExportDialog2::setupUI() {
 
   // Row 1: Output directory.
   m_outputDirInput = new LocationInputWithBrowseButton(optionsGroupBox, getDefaultOutputDir());
+  m_outputDirInput->setObjectName(QLatin1String(kOutputDirInputName));
   m_outputDirInput->setBrowseType(LocationInputWithBrowseButton::Folder,
                                   tr("Select Export Output Directory"));
   commonLayout->addWidget(new QLabel(tr("Output directory"), optionsGroupBox), 1, 0);
@@ -381,12 +450,17 @@ void ExportDialog2::setupUI() {
     m_syntaxStyleCombo->addItem(style.first, style.second);
   }
 
-  commonLayout->addWidget(new QLabel(tr("Rendering style"), optionsGroupBox), 2, 0);
+  m_renderingStyleLabel = new QLabel(tr("Rendering style"), optionsGroupBox);
+  m_renderingStyleLabel->setObjectName(QLatin1String(kRenderingStyleLabelName));
+  commonLayout->addWidget(m_renderingStyleLabel, 2, 0);
   commonLayout->addWidget(m_renderingStyleCombo, 2, 1);
-  commonLayout->addWidget(new QLabel(tr("Syntax style"), optionsGroupBox), 2, 2);
+  m_syntaxStyleLabel = new QLabel(tr("Syntax style"), optionsGroupBox);
+  m_syntaxStyleLabel->setObjectName(QLatin1String(kSyntaxStyleLabelName));
+  commonLayout->addWidget(m_syntaxStyleLabel, 2, 2);
   commonLayout->addWidget(m_syntaxStyleCombo, 2, 3);
 
   auto *followThemeButton = new QToolButton(optionsGroupBox);
+  m_followThemeButton = followThemeButton;
   followThemeButton->setObjectName(QLatin1String(kFollowThemeButtonName));
   followThemeButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
   followThemeButton->setIcon(
@@ -399,9 +473,15 @@ void ExportDialog2::setupUI() {
   // Row 3: Checkboxes.
   m_transparentBgCheck =
       WidgetsFactory::createCheckBox(tr("Use transparent background"), optionsGroupBox);
+  m_transparentBgCheck->setObjectName(QLatin1String(kTransparentBgCheckName));
   m_recursiveCheck = WidgetsFactory::createCheckBox(tr("Process sub-folders"), optionsGroupBox);
+  m_recursiveCheck->setObjectName(QLatin1String(kRecursiveCheckName));
   commonLayout->addWidget(m_transparentBgCheck, 3, 0, 1, 2);
   commonLayout->addWidget(m_recursiveCheck, 3, 2, 1, 3);
+  m_exportAttachmentsCheck =
+      WidgetsFactory::createCheckBox(tr("Export attachments"), optionsGroupBox);
+  m_exportAttachmentsCheck->setObjectName(QLatin1String(kExportAttachmentsCheckName));
+  commonLayout->addWidget(m_exportAttachmentsCheck, 4, 0, 1, 5);
 
   mainLayout->addWidget(optionsGroupBox);
 
@@ -409,43 +489,31 @@ void ExportDialog2::setupUI() {
   auto *stackedScrollWidget = new StackedScrollWidget(mainWidget);
   m_stackedLayout = stackedScrollWidget->stackedLayout();
 
-  connect(m_formatCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), m_stackedLayout,
-          &QStackedLayout::setCurrentIndex);
-  connect(m_formatCombo, QOverload<int>::of(&QComboBox::currentIndexChanged), this,
-          [this](int p_idx) {
-            const QString titles[] = {tr("Markdown options"), tr("HTML options"), tr("PDF options"),
-                                      tr("Custom options")};
-            if (p_idx >= 0 && p_idx < 4) {
-              m_formatGroupBox->setTitle(titles[p_idx]);
-            }
-          });
-
-  // Markdown page.
-  {
-    auto *page = new QWidget(stackedScrollWidget);
-    auto *layout = WidgetsFactory::createFormLayout(page);
-    layout->setContentsMargins(0, 0, 0, 0);
-
-    m_exportAttachmentsCheck = WidgetsFactory::createCheckBox(tr("Export attachments"), page);
-    layout->addRow(m_exportAttachmentsCheck);
-
-    m_stackedLayout->addWidget(page);
-  }
+  // Native and projected source formats share a page, independently of combo order.
+  m_sourcePage = new QWidget(stackedScrollWidget);
+  m_sourcePage->setObjectName(QLatin1String(kSourceOptionsPageName));
+  m_stackedLayout->addWidget(m_sourcePage);
 
   // HTML page.
   {
     auto *page = new QWidget(stackedScrollWidget);
+    m_htmlPage = page;
+    page->setObjectName(QLatin1String(kHtmlOptionsPageName));
     auto *layout = WidgetsFactory::createFormLayout(page);
+    m_htmlLayout = layout;
     layout->setContentsMargins(0, 0, 0, 0);
 
     m_embedStylesCheck = WidgetsFactory::createCheckBox(tr("Embed styles"), page);
+    m_embedStylesCheck->setObjectName(QLatin1String(kEmbedStylesCheckName));
     layout->addRow(m_embedStylesCheck);
 
     m_embedImagesCheck = WidgetsFactory::createCheckBox(tr("Embed images"), page);
+    m_embedImagesCheck->setObjectName(QLatin1String(kEmbedImagesCheckName));
     layout->addRow(m_embedImagesCheck);
 
     m_completePageCheck =
         WidgetsFactory::createCheckBox(tr("Complete page (pack all resources)"), page);
+    m_completePageCheck->setObjectName(QLatin1String(kCompletePageCheckName));
     m_completePageCheck->setToolTip(
         tr("Copy referenced resources next to the exported file (or embed them when "
            "Embed images is checked), so the page renders standalone"));
@@ -454,9 +522,11 @@ void ExportDialog2::setupUI() {
             [this](int p_state) { m_embedImagesCheck->setEnabled(p_state == Qt::Checked); });
 
     m_addOutlinePanelCheck = WidgetsFactory::createCheckBox(tr("Add outline panel"), page);
+    m_addOutlinePanelCheck->setObjectName(QLatin1String(kAddOutlinePanelCheckName));
     layout->addRow(m_addOutlinePanelCheck);
 
     m_useMimeHtmlFormatCheck = WidgetsFactory::createCheckBox(tr("MIME HTML format"), page);
+    m_useMimeHtmlFormatCheck->setObjectName(QLatin1String(kUseMimeHtmlFormatCheckName));
     // MIME HTML format is not yet supported by WebViewExporter.
     m_useMimeHtmlFormatCheck->setChecked(false);
     m_useMimeHtmlFormatCheck->setEnabled(false);
@@ -469,6 +539,7 @@ void ExportDialog2::setupUI() {
     });
 
     m_scrollableCheck = WidgetsFactory::createCheckBox(tr("Scrollable page"), page);
+    m_scrollableCheck->setObjectName(QLatin1String(kScrollableCheckName));
     layout->addRow(m_scrollableCheck);
 
     m_stackedLayout->addWidget(page);
@@ -477,10 +548,14 @@ void ExportDialog2::setupUI() {
   // PDF page.
   {
     auto *page = new QWidget(stackedScrollWidget);
+    m_pdfPage = page;
+    page->setObjectName(QLatin1String(kPdfOptionsPageName));
     auto *layout = WidgetsFactory::createFormLayout(page);
+    m_pdfLayout = layout;
     layout->setContentsMargins(0, 0, 0, 0);
 
     m_pageLayoutBtn = new QPushButton(tr("Settings"), page);
+    m_pageLayoutBtn->setObjectName(QLatin1String(kPageLayoutButtonName));
     layout->addRow(tr("Page layout"), m_pageLayoutBtn);
     connect(m_pageLayoutBtn, &QPushButton::clicked, this, [this]() {
       QPrinter printer;
@@ -505,16 +580,20 @@ void ExportDialog2::setupUI() {
     });
 
     m_addTableOfContentsCheck = WidgetsFactory::createCheckBox(tr("Add table of contents"), page);
+    m_addTableOfContentsCheck->setObjectName(QLatin1String(kAddTableOfContentsCheckName));
     layout->addRow(m_addTableOfContentsCheck);
 
     m_useWkhtmltopdfCheck =
         WidgetsFactory::createCheckBox(tr("Use wkhtmltopdf (outline supported)"), page);
+    m_useWkhtmltopdfCheck->setObjectName(QLatin1String(kUseWkhtmltopdfCheckName));
     layout->addRow(m_useWkhtmltopdfCheck);
 
     m_wkhtmltopdfExePathEdit = WidgetsFactory::createLineEdit(page);
+    m_wkhtmltopdfExePathEdit->setObjectName(QLatin1String(kWkhtmltopdfExePathEditName));
     layout->addRow(tr("Wkhtmltopdf path"), m_wkhtmltopdfExePathEdit);
 
     m_wkhtmltopdfArgsEdit = WidgetsFactory::createLineEdit(page);
+    m_wkhtmltopdfArgsEdit->setObjectName(QLatin1String(kWkhtmltopdfArgsEditName));
     layout->addRow(tr("Wkhtmltopdf arguments"), m_wkhtmltopdfArgsEdit);
 
     m_pdfHeaderLeftEdit = WidgetsFactory::createLineEdit(page);
@@ -544,6 +623,7 @@ void ExportDialog2::setupUI() {
     layout->addRow(tr("Footer right"), m_pdfFooterRightEdit);
 
     m_pdfAllInOneCheck = WidgetsFactory::createCheckBox(tr("All-in-one"), page);
+    m_pdfAllInOneCheck->setObjectName(QLatin1String(kPdfAllInOneCheckName));
     m_pdfAllInOneCheck->setToolTip(tr("Export all source files into one file"));
     layout->addRow(m_pdfAllInOneCheck);
 
@@ -563,10 +643,8 @@ void ExportDialog2::setupUI() {
       }
     }
 
-    connect(m_useWkhtmltopdfCheck, &QCheckBox::stateChanged, this,
-            [this](int) { updatePdfWidgetsByWkhtmltopdf(); });
-
-    updatePdfWidgetsByWkhtmltopdf();
+    connect(m_useWkhtmltopdfCheck, &QCheckBox::toggled, this,
+            &ExportDialog2::updateOptionVisibility);
 
     m_stackedLayout->addWidget(page);
   }
@@ -574,16 +652,21 @@ void ExportDialog2::setupUI() {
   // Custom page.
   {
     auto *page = new QWidget(stackedScrollWidget);
+    m_customPage = page;
+    page->setObjectName(QLatin1String(kCustomOptionsPageName));
     auto *layout = WidgetsFactory::createFormLayout(page);
+    m_customLayout = layout;
     layout->setContentsMargins(0, 0, 0, 0);
 
     auto *schemeLayout = new QHBoxLayout();
     m_customSchemeCombo = WidgetsFactory::createComboBox(page);
+    m_customSchemeCombo->setObjectName(QLatin1String(kCustomSchemeComboName));
     schemeLayout->addWidget(m_customSchemeCombo, 1);
 
     // Single split button: clicking the body runs the default "New" action;
     // the dropdown menu holds "Duplicate" and "Delete".
     auto *schemeMenuBtn = new QToolButton(page);
+    schemeMenuBtn->setObjectName(QLatin1String(kCustomSchemeMenuButtonName));
     schemeMenuBtn->setPopupMode(QToolButton::MenuButtonPopup);
     schemeMenuBtn->setToolButtonStyle(Qt::ToolButtonTextBesideIcon);
 
@@ -591,14 +674,19 @@ void ExportDialog2::setupUI() {
     auto *newSchemeAction =
         new QAction(IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("add.svg"))),
                     tr("New"), schemeMenuBtn);
+    m_addSchemeAction = newSchemeAction;
+    newSchemeAction->setObjectName(QLatin1String(kAddSchemeActionName));
     connect(newSchemeAction, &QAction::triggered, this, &ExportDialog2::addCustomScheme);
     schemeMenuBtn->setDefaultAction(newSchemeAction);
 
     auto *schemeMenu = new QMenu(schemeMenuBtn);
     auto *duplicateSchemeAction = schemeMenu->addAction(tr("Duplicate"));
+    m_duplicateSchemeAction = duplicateSchemeAction;
+    duplicateSchemeAction->setObjectName(QLatin1String(kDuplicateSchemeActionName));
     connect(duplicateSchemeAction, &QAction::triggered, this,
             &ExportDialog2::duplicateCustomScheme);
     m_deleteSchemeAction = schemeMenu->addAction(tr("Delete"));
+    m_deleteSchemeAction->setObjectName(QLatin1String(kDeleteSchemeActionName));
     connect(m_deleteSchemeAction, &QAction::triggered, this, &ExportDialog2::removeCustomScheme);
     schemeMenuBtn->setMenu(schemeMenu);
 
@@ -607,22 +695,31 @@ void ExportDialog2::setupUI() {
     layout->addRow(tr("Scheme"), schemeLayout);
 
     m_targetSuffixEdit = WidgetsFactory::createLineEdit(page);
+    m_targetSuffixEdit->setObjectName(QLatin1String(kTargetSuffixEditName));
     layout->addRow(tr("Target suffix"), m_targetSuffixEdit);
 
     m_resourceSeparatorEdit = WidgetsFactory::createLineEdit(page);
+    m_resourceSeparatorEdit->setObjectName(QLatin1String(kResourceSeparatorEditName));
     layout->addRow(tr("Resource path separator"), m_resourceSeparatorEdit);
 
     m_useHtmlInputCheck = WidgetsFactory::createCheckBox(tr("Use HTML input"), page);
+    m_useHtmlInputCheck->setObjectName(QLatin1String(kUseHtmlInputCheckName));
+    m_useHtmlInputCheck->setToolTip(
+        tr("Pass original files from disk to the command; enable HTML input to render the "
+           "current buffer snapshot"));
     layout->addRow(m_useHtmlInputCheck);
 
     m_customAllInOneCheck = WidgetsFactory::createCheckBox(tr("All-in-one"), page);
+    m_customAllInOneCheck->setObjectName(QLatin1String(kCustomAllInOneCheckName));
     m_customAllInOneCheck->setToolTip(tr("Export all source files into one file"));
     layout->addRow(m_customAllInOneCheck);
 
     m_targetScrollableCheck = WidgetsFactory::createCheckBox(tr("Target page scrollable"), page);
+    m_targetScrollableCheck->setObjectName(QLatin1String(kTargetScrollableCheckName));
     layout->addRow(m_targetScrollableCheck);
 
     m_customCommandEdit = WidgetsFactory::createPlainTextEdit(page);
+    m_customCommandEdit->setObjectName(QLatin1String(kCustomCommandEditName));
     m_customCommandEdit->setMaximumHeight(m_customCommandEdit->minimumSizeHint().height());
     layout->addRow(tr("Command"), m_customCommandEdit);
 
@@ -632,19 +729,31 @@ void ExportDialog2::setupUI() {
     m_stackedLayout->addWidget(page);
   }
 
-  m_formatGroupBox = new QGroupBox(tr("Markdown options"), mainWidget);
+  m_formatGroupBox = new QGroupBox(mainWidget);
+  m_formatGroupBox->setObjectName(QLatin1String(kFormatGroupBoxName));
   auto *groupBoxLayout = new QVBoxLayout(m_formatGroupBox);
   groupBoxLayout->setContentsMargins(0, 0, 0, 0);
+  m_nativeFormatInfo = new QLabel(m_formatGroupBox);
+  m_nativeFormatInfo->setObjectName(QLatin1String(kNativeFormatInfoName));
+  m_nativeFormatInfo->setWordWrap(true);
+  groupBoxLayout->addWidget(m_nativeFormatInfo);
+  m_mixedFormatInfo =
+      new QLabel(tr("Some options apply only to compatible source types."), m_formatGroupBox);
+  m_mixedFormatInfo->setObjectName(QLatin1String(kMixedFormatInfoName));
+  m_mixedFormatInfo->setWordWrap(true);
+  groupBoxLayout->addWidget(m_mixedFormatInfo);
   groupBoxLayout->addWidget(stackedScrollWidget);
   mainLayout->addWidget(m_formatGroupBox);
 
   // Bottom: progress + log.
   m_progressBar = new QProgressBar(mainWidget);
+  m_progressBar->setObjectName(QLatin1String(kProgressBarName));
   m_progressBar->hide();
   m_progressBar->setRange(0, 0);
   mainLayout->addWidget(m_progressBar);
 
   m_logEdit = WidgetsFactory::createPlainTextConsole(mainWidget);
+  m_logEdit->setObjectName(QLatin1String(kLogEditName));
   m_logEdit->setReadOnly(true);
   m_logEdit->setMaximumHeight(m_logEdit->minimumSizeHint().height());
   mainLayout->addWidget(m_logEdit);
@@ -656,9 +765,11 @@ void ExportDialog2::setupUI() {
   auto *box = getDialogButtonBox();
 
   m_exportBtn = box->addButton(tr("Export"), QDialogButtonBox::ActionRole);
+  m_exportBtn->setObjectName(QLatin1String(kExportButtonName));
   connect(m_exportBtn, &QPushButton::clicked, this, &ExportDialog2::onExportClicked);
 
   m_openOutputDirBtn = box->addButton(tr("Open Output Dir"), QDialogButtonBox::ActionRole);
+  m_openOutputDirBtn->setObjectName(QLatin1String(kOpenOutputDirButtonName));
   connect(m_openOutputDirBtn, &QPushButton::clicked, this, [this]() {
     const auto dir = m_outputDirInput->text();
     if (!dir.isEmpty()) {
@@ -667,6 +778,7 @@ void ExportDialog2::setupUI() {
   });
 
   m_cancelBtn = box->button(QDialogButtonBox::Cancel);
+  m_cancelBtn->setObjectName(QLatin1String(kCancelButtonName));
   connect(m_cancelBtn, &QPushButton::clicked, this, [this]() {
     if (m_exporting || m_controller->isExporting()) {
       m_controller->stop();
@@ -675,10 +787,34 @@ void ExportDialog2::setupUI() {
     }
   });
 
+  connect(m_sourceCombo, &QComboBox::currentIndexChanged, this,
+          &ExportDialog2::updateSourceCapabilities);
+  connect(m_recursiveCheck, &QCheckBox::toggled, this, &ExportDialog2::updateSourceCapabilities);
+  connect(m_formatCombo, &QComboBox::currentIndexChanged, this, [this](int p_index) {
+    if (p_index >= 0) {
+      m_targetFormat = static_cast<ExportFormat>(m_formatCombo->itemData(p_index).toInt());
+    }
+    updateOptionVisibility();
+  });
+
+  // Save edits before changing schemes without writing partially restored fields back.
+  const auto customFieldsChanged = [this]() {
+    saveCurrentCustomScheme();
+    updateOptionVisibility();
+  };
+  connect(m_targetSuffixEdit, &QLineEdit::textChanged, this, customFieldsChanged);
+  connect(m_resourceSeparatorEdit, &QLineEdit::textChanged, this, customFieldsChanged);
+  connect(m_useHtmlInputCheck, &QCheckBox::toggled, this, customFieldsChanged);
+  connect(m_customAllInOneCheck, &QCheckBox::toggled, this, customFieldsChanged);
+  connect(m_targetScrollableCheck, &QCheckBox::toggled, this, customFieldsChanged);
+  connect(m_customCommandEdit, &QPlainTextEdit::textChanged, this, customFieldsChanged);
+
   setWindowTitle(tr("Export"));
 }
 
 void ExportDialog2::loadConfig() {
+  const QSignalBlocker sourceBlocker(m_sourceCombo);
+  const QSignalBlocker recursiveBlocker(m_recursiveCheck);
   auto *cfg = m_services.get<ConfigMgr2>();
   const auto option = cfg->getSessionConfig().getExportOption();
   m_customOptions = cfg->getSessionConfig().getCustomExportOptions();
@@ -698,6 +834,7 @@ void ExportDialog2::loadConfig() {
                             .testFlag(Qt::ItemIsEnabled)) {
     m_sourceCombo->setCurrentIndex(presetIdx);
   }
+  updateSourceCapabilities();
 }
 
 void ExportDialog2::saveConfig() {
@@ -724,11 +861,7 @@ void ExportDialog2::restoreFields(const ExportOption &p_option) {
     m_sourceCombo->setCurrentIndex(idx);
   }
 
-  idx = m_formatCombo->findData(static_cast<int>(p_option.m_targetFormat));
-  if (idx >= 0) {
-    m_formatCombo->setCurrentIndex(idx);
-    m_stackedLayout->setCurrentIndex(idx);
-  }
+  m_targetFormat = p_option.m_targetFormat;
 
   m_outputDirInput->setText(p_option.m_outputDir.isEmpty() ? getDefaultOutputDir()
                                                            : p_option.m_outputDir);
@@ -771,7 +904,7 @@ ExportOption ExportDialog2::collectFields() {
   if (option.m_source == ExportSource::Workspace) {
     option.m_workspaceId = m_sourceCombo->currentData(Qt::UserRole + 1).toString();
   }
-  option.m_targetFormat = static_cast<ExportFormat>(m_formatCombo->currentData().toInt());
+  option.m_targetFormat = m_targetFormat;
   option.m_outputDir = m_outputDirInput->text();
   option.m_useTransparentBg = m_transparentBgCheck->isChecked();
   option.m_recursive = m_recursiveCheck->isChecked();
@@ -845,6 +978,7 @@ void ExportDialog2::savePdfFields(ExportPdfOption &p_option) const {
 }
 
 void ExportDialog2::refreshCustomSchemes(const QString &p_currentName) {
+  const QSignalBlocker blocker(m_customSchemeCombo);
   m_customSchemeCombo->clear();
   for (const auto &opt : m_customOptions) {
     // Keep data = raw name so findCustomOption/collectFields still resolve; only
@@ -859,10 +993,18 @@ void ExportDialog2::refreshCustomSchemes(const QString &p_currentName) {
   }
 
   m_customSchemeCombo->setCurrentIndex(idx);
+  onCustomSchemeChanged(idx);
 }
 
 void ExportDialog2::onCustomSchemeChanged(int p_comboIdx) {
+  const QSignalBlocker suffixBlocker(m_targetSuffixEdit);
+  const QSignalBlocker separatorBlocker(m_resourceSeparatorEdit);
+  const QSignalBlocker htmlBlocker(m_useHtmlInputCheck);
+  const QSignalBlocker allInOneBlocker(m_customAllInOneCheck);
+  const QSignalBlocker scrollableBlocker(m_targetScrollableCheck);
+  const QSignalBlocker commandBlocker(m_customCommandEdit);
   const bool enabled = p_comboIdx >= 0;
+  m_duplicateSchemeAction->setEnabled(enabled);
   m_targetSuffixEdit->setEnabled(enabled);
   m_resourceSeparatorEdit->setEnabled(enabled);
   m_useHtmlInputCheck->setEnabled(enabled);
@@ -877,6 +1019,8 @@ void ExportDialog2::onCustomSchemeChanged(int p_comboIdx) {
     m_customAllInOneCheck->setChecked(false);
     m_targetScrollableCheck->setChecked(false);
     m_customCommandEdit->clear();
+    m_deleteSchemeAction->setEnabled(false);
+    updateOptionVisibility();
     return;
   }
 
@@ -899,6 +1043,7 @@ void ExportDialog2::onCustomSchemeChanged(int p_comboIdx) {
   if (m_deleteSchemeAction) {
     m_deleteSchemeAction->setEnabled(!builtin);
   }
+  updateOptionVisibility();
 }
 
 void ExportDialog2::addCustomScheme() {
@@ -1024,7 +1169,7 @@ QString ExportDialog2::getDefaultOutputDir() const {
 }
 
 void ExportDialog2::onExportClicked() {
-  if (m_exporting || m_controller->isExporting()) {
+  if (m_exporting || m_controller->isExporting() || m_formatCombo->currentIndex() < 0) {
     return;
   }
 
@@ -1035,8 +1180,13 @@ void ExportDialog2::onExportClicked() {
   // Scroll the log viewer into view so the user can sense the progress.
   ensureWidgetVisible(m_logEdit);
 
+  auto option = collectFields();
+  // Hidden preferences still persist; only this operation loses unsupported all-in-one.
+  if (!m_pdfAllInOneAvailable) {
+    option.m_pdfOption.m_allInOne = false;
+  }
   updateUiOnExportState(true);
-  m_controller->doExport(collectFields(), m_context);
+  m_controller->doExport(option, m_context);
 }
 
 void ExportDialog2::onExportFinished(const QStringList &p_outputFiles) {
@@ -1076,17 +1226,191 @@ void ExportDialog2::updatePdfWidgetsByWkhtmltopdf() {
   }
 }
 
+void ExportDialog2::updateSourceCapabilities() {
+  if (m_exporting) {
+    return;
+  }
+
+  ExportOption selection;
+  selection.m_source = static_cast<ExportSource>(m_sourceCombo->currentData().toInt());
+  selection.m_workspaceId = m_sourceCombo->currentData(Qt::UserRole + 1).toString();
+  selection.m_recursive = m_recursiveCheck->isChecked();
+  const auto fileTypes = m_controller->sourceFileTypes(selection, m_context);
+  m_typstOnly = fileTypes.size() == 1 && fileTypes.first() == QStringLiteral("Typst");
+  m_sourceCapabilities.clear();
+  m_sourceCapabilities.reserve(fileTypes.size());
+  for (const auto &fileType : fileTypes) {
+    m_sourceCapabilities.append(m_rendererFactory.capabilities(fileType));
+  }
+
+  // Intersect in the first source's declared order without constructing renderers.
+  const QSignalBlocker blocker(m_formatCombo);
+  m_formatCombo->clear();
+  if (!m_sourceCapabilities.isEmpty()) {
+    for (const auto &target : m_sourceCapabilities.constFirst().targets) {
+      const bool supported = std::all_of(
+          m_sourceCapabilities.cbegin(), m_sourceCapabilities.cend(),
+          [&target](const ExportCapabilities &p_capabilities) {
+            return std::any_of(p_capabilities.targets.cbegin(), p_capabilities.targets.cend(),
+                               [&target](const ExportTargetCapability &p_candidate) {
+                                 return p_candidate.format == target.format;
+                               });
+          });
+      if (supported) {
+        m_formatCombo->addItem(formatText(target.format), static_cast<int>(target.format));
+      }
+    }
+  }
+
+  int index = m_formatCombo->findData(static_cast<int>(m_targetFormat));
+  if (index < 0) {
+    index = m_formatCombo->findData(static_cast<int>(ExportFormat::HTML));
+  }
+  if (index < 0 && m_formatCombo->count() > 0) {
+    index = 0;
+  }
+  m_formatCombo->setCurrentIndex(index);
+  if (index >= 0) {
+    m_targetFormat = static_cast<ExportFormat>(m_formatCombo->currentData().toInt());
+  }
+  updateOptionVisibility();
+}
+
+void ExportDialog2::updateOptionVisibility() {
+  if (m_exporting) {
+    return;
+  }
+
+  const bool hasTarget = m_formatCombo->currentIndex() >= 0;
+  const auto source = static_cast<ExportSource>(m_sourceCombo->currentData().toInt());
+  const bool recursive =
+      source == ExportSource::CurrentFolder || source == ExportSource::CurrentNotebook;
+  const bool batch = recursive || source == ExportSource::Workspace;
+  const bool custom = hasTarget && m_targetFormat == ExportFormat::Custom;
+  const bool pdf = hasTarget && m_targetFormat == ExportFormat::PDF;
+  const bool html = hasTarget && m_targetFormat == ExportFormat::HTML;
+
+  ExportOptionGroups groups;
+  ExportOptionGroups sharedGroups;
+  bool first = true;
+  bool allHtmlPdf = pdf && !m_sourceCapabilities.isEmpty();
+  for (const auto &capabilities : std::as_const(m_sourceCapabilities)) {
+    const auto target = std::find_if(capabilities.targets.cbegin(), capabilities.targets.cend(),
+                                     [this](const ExportTargetCapability &p_target) {
+                                       return p_target.format == m_targetFormat;
+                                     });
+    if (!hasTarget || target == capabilities.targets.cend()) {
+      allHtmlPdf = false;
+      continue;
+    }
+    groups |= target->options;
+    sharedGroups = first ? target->options : sharedGroups & target->options;
+    first = false;
+    allHtmlPdf = allHtmlPdf && target->pdfBackend == ExportPdfBackend::Html;
+  }
+  if (custom && !m_useHtmlInputCheck->isChecked()) {
+    groups = {};
+    sharedGroups = {};
+  }
+
+  const auto command = custom ? m_customCommandEdit->toPlainText() : QString();
+  const bool renderingStyle =
+      groups.testFlag(ExportOptionGroup::WebStyles) || command.contains(QLatin1String("%3"));
+  const bool syntaxStyle =
+      groups.testFlag(ExportOptionGroup::WebStyles) || command.contains(QLatin1String("%4"));
+  m_renderingStyleCombo->setVisible(renderingStyle);
+  m_renderingStyleLabel->setVisible(renderingStyle);
+  m_syntaxStyleCombo->setVisible(syntaxStyle);
+  m_syntaxStyleLabel->setVisible(syntaxStyle);
+  m_followThemeButton->setVisible(renderingStyle || syntaxStyle);
+  m_transparentBgCheck->setVisible(groups.testFlag(ExportOptionGroup::TransparentBackground));
+  m_recursiveCheck->setVisible(recursive);
+
+  const bool htmlOptions = html && groups.testFlag(ExportOptionGroup::Html);
+  for (auto *field : {m_embedStylesCheck, m_embedImagesCheck, m_completePageCheck,
+                      m_addOutlinePanelCheck, m_scrollableCheck}) {
+    m_htmlLayout->setRowVisible(field, htmlOptions);
+  }
+  m_htmlLayout->setRowVisible(m_useMimeHtmlFormatCheck, false);
+  m_embedImagesCheck->setEnabled(m_completePageCheck->isChecked());
+
+  m_pdfLayout->setRowVisible(m_pageLayoutBtn, pdf && groups.testFlag(ExportOptionGroup::PdfLayout));
+  m_pdfLayout->setRowVisible(m_addTableOfContentsCheck,
+                             pdf && groups.testFlag(ExportOptionGroup::PdfToc));
+  const bool wkhtmltopdf = pdf && groups.testFlag(ExportOptionGroup::Wkhtmltopdf);
+  m_pdfLayout->setRowVisible(m_useWkhtmltopdfCheck, wkhtmltopdf);
+  for (auto *field :
+       {m_wkhtmltopdfExePathEdit, m_wkhtmltopdfArgsEdit, m_pdfHeaderLeftEdit, m_pdfHeaderCenterEdit,
+        m_pdfHeaderRightEdit, m_pdfFooterLeftEdit, m_pdfFooterCenterEdit, m_pdfFooterRightEdit}) {
+    m_pdfLayout->setRowVisible(field, wkhtmltopdf);
+  }
+  m_pdfAllInOneAvailable = batch && allHtmlPdf && m_useWkhtmltopdfCheck->isChecked();
+  m_pdfLayout->setRowVisible(m_pdfAllInOneCheck, m_pdfAllInOneAvailable);
+  updatePdfWidgetsByWkhtmltopdf();
+
+  m_customLayout->setRowVisible(m_customAllInOneCheck, custom && batch);
+  m_customLayout->setRowVisible(m_targetScrollableCheck,
+                                custom && m_useHtmlInputCheck->isChecked() &&
+                                    groups.testFlag(ExportOptionGroup::CustomScrollable));
+
+  QString nativeInfo;
+  if (hasTarget) {
+    switch (m_targetFormat) {
+    case ExportFormat::Markdown:
+    case ExportFormat::MindMap:
+    case ExportFormat::Typst:
+      m_stackedLayout->setCurrentWidget(m_sourcePage);
+      nativeInfo = m_targetFormat == ExportFormat::Typst
+                       ? tr("Relative internal images are copied. Imported sources and dynamic "
+                            "image references are not bundled.")
+                       : tr("Relative internal images are copied.");
+      break;
+    case ExportFormat::HTML:
+      m_stackedLayout->setCurrentWidget(m_htmlPage);
+      if (m_typstOnly) {
+        nativeInfo = tr("HTML is compiled by Typst; document styles control the output.");
+      }
+      break;
+    case ExportFormat::PDF:
+      m_stackedLayout->setCurrentWidget(m_pdfPage);
+      if (m_typstOnly) {
+        nativeInfo =
+            tr("PDF is compiled by Typst; page layout and numbering come from the document.");
+      }
+      break;
+    case ExportFormat::Custom:
+      m_stackedLayout->setCurrentWidget(m_customPage);
+      break;
+    }
+    m_formatGroupBox->setTitle(tr("%1 options").arg(m_formatCombo->currentText()));
+  }
+  m_nativeFormatInfo->setText(nativeInfo);
+  m_nativeFormatInfo->setVisible(!nativeInfo.isEmpty());
+  m_mixedFormatInfo->setVisible(groups != sharedGroups);
+  m_formatGroupBox->setVisible(hasTarget);
+  m_exportBtn->setEnabled(hasTarget);
+}
+
 void ExportDialog2::updateUiOnExportState(bool p_exporting) {
   m_exporting = p_exporting;
-  m_exportBtn->setEnabled(!p_exporting);
-  m_sourceCombo->setEnabled(!p_exporting);
-  m_formatCombo->setEnabled(!p_exporting);
+  m_exportBtn->setEnabled(!p_exporting && m_formatCombo->currentIndex() >= 0);
+  // Disable parents, not individual fields: scheme read-only and transport-specific
+  // child states must survive the event-loop-pumping export operation.
+  m_optionsGroupBox->setEnabled(!p_exporting);
+  m_formatGroupBox->setEnabled(!p_exporting);
+  // Popup actions do not inherit their owning widgets' enabled state.
+  const int schemeIndex = m_customSchemeCombo->currentIndex();
+  m_addSchemeAction->setEnabled(!p_exporting);
+  m_duplicateSchemeAction->setEnabled(!p_exporting && schemeIndex >= 0);
+  m_deleteSchemeAction->setEnabled(!p_exporting && schemeIndex >= 0 &&
+                                   !m_customOptions[schemeIndex].m_builtin);
 
   if (p_exporting) {
     m_progressBar->setMaximum(0);
     m_progressBar->show();
   } else {
     m_progressBar->hide();
+    updateSourceCapabilities();
   }
 }
 

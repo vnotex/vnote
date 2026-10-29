@@ -34,7 +34,8 @@ public:
 
   ~WebViewExporter() override;
 
-  bool renderMarkdown(const ExportInput &p_input, ExportMarkdown &p_output) override;
+  bool renderSource(const ExportInput &p_input, ExportFormat p_format,
+                    const QString &p_outputFile) override;
 
   bool renderHtml(const ExportInput &p_input, const ExportHtmlRequest &p_request,
                   const QString &p_outputFile) override;

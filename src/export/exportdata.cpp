@@ -288,6 +288,14 @@ void ExportOption::fromJson(const QJsonObject &p_obj) {
       m_targetFormat = ExportFormat::Custom;
       break;
 
+    case static_cast<int>(ExportFormat::Typst):
+      m_targetFormat = ExportFormat::Typst;
+      break;
+
+    case static_cast<int>(ExportFormat::MindMap):
+      m_targetFormat = ExportFormat::MindMap;
+      break;
+
     case static_cast<int>(ExportFormat::HTML):
       Q_FALLTHROUGH();
     default:

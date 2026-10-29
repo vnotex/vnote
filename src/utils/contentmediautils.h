@@ -2,6 +2,7 @@
 #define CONTENTMEDIAUTILS_H
 
 #include <QString>
+#include <QStringList>
 
 namespace vnotex {
 class INotebookBackend;
@@ -24,6 +25,14 @@ public:
   // rationale as LinkInsertUtils and ImageLinkLookup.
   static void copyMarkdownMediaFiles(const QString &p_content, const QString &p_basePath,
                                      INotebookBackend *p_backend, const QString &p_destFilePath);
+
+  // Copy decoded, filesystem-relative image paths without changing source references.
+  // Missing/non-file and escaping paths warn and are skipped. Filesystem failures or
+  // collisions (including the reserved source output itself) fail without overwriting.
+  // No URL decoding is performed; callers classify source-language URLs beforehand.
+  static bool copyRelativeImageFiles(const QStringList &p_decodedPaths, const QString &p_basePath,
+                                     const QString &p_destFilePath,
+                                     QStringList *p_warnings = nullptr);
 };
 } // namespace vnotex
 

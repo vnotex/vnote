@@ -1,13 +1,18 @@
 #include "mindmapexporter.h"
 
 #include <QApplication>
+#include <QDir>
 #include <QEventLoop>
+#include <QFile>
 #include <QFileInfo>
+#include <QJsonArray>
+#include <QJsonDocument>
 #include <QPageLayout>
 #include <QSaveFile>
 #include <QScopeGuard>
 #include <QThread>
 #include <QTimer>
+#include <QUrl>
 #include <QXmlStreamReader>
 #include <cmath>
 #include <memory>
@@ -15,12 +20,16 @@
 
 #include <m3/m3.h>
 #include <m3/qt/editor.h>
+#include <vtextedit/textutils.h>
 
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/exception.h>
 #include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
 #include <gui/services/mindmapimageloader.h>
+#include <utils/contentmediautils.h>
+#include <utils/fileutils2.h>
 
 using namespace vnotex;
 
@@ -33,13 +42,73 @@ MindMapExporter::~MindMapExporter() {
   delete m_editor.data();
 }
 
-bool MindMapExporter::renderMarkdown(const ExportInput &p_input, ExportMarkdown &p_output) {
+bool MindMapExporter::renderSource(const ExportInput &p_input, ExportFormat p_format,
+                                   const QString &p_outputFile) {
+  if (p_format != ExportFormat::Markdown && p_format != ExportFormat::MindMap) {
+    emit logRequested(tr("Source export format is not supported by this renderer."));
+    return false;
+  }
   m_stopped = false;
   const auto bytes = p_input.content.toUtf8();
   // The C API accepts NUL-terminated text; never silently truncate a supplied snapshot.
   if (bytes.contains('\0')) {
     emit logRequested(tr("Invalid NUL in MindMap source."));
     return false;
+  }
+  if (p_format == ExportFormat::MindMap) {
+    QStringList paths;
+    if (!p_input.content.trimmed().isEmpty()) {
+      char *rawImages = nullptr;
+      const auto status = m3_mindmap_collect_image_references(bytes.constData(), &rawImages);
+      const std::unique_ptr<char, decltype(&m3_string_free)> images(rawImages, m3_string_free);
+      if (status != M3_OK) {
+        emit logRequested(
+            tr("Failed to scan MindMap images: %1").arg(QString::fromUtf8(m3_last_error())));
+        return false;
+      }
+      QJsonParseError error;
+      const auto document = QJsonDocument::fromJson(QByteArray(images.get()), &error);
+      if (error.error != QJsonParseError::NoError || !document.isArray()) {
+        emit logRequested(tr("Invalid MindMap image scan result."));
+        return false;
+      }
+      for (const auto &value : document.array()) {
+        if (!value.isString()) {
+          emit logRequested(tr("Invalid MindMap image scan result."));
+          return false;
+        }
+        const auto reference = value.toString();
+        const QUrl url(reference, QUrl::StrictMode);
+        if (!url.isValid() || !url.isRelative() || !url.authority().isEmpty() ||
+            reference.startsWith(QLatin1Char('/')) || reference.startsWith(QLatin1Char('\\'))) {
+          continue;
+        }
+        const auto path = vte::TextUtils::decodeUrl(url.path(QUrl::FullyEncoded));
+        if (path.isEmpty() || path.contains(QChar::Null) || QDir::isAbsolutePath(path) ||
+            path.startsWith(QLatin1Char('/')) || path.startsWith(QLatin1Char('\\')) ||
+            (path.size() > 1 && path.at(1) == QLatin1Char(':'))) {
+          continue;
+        }
+        paths.append(path);
+      }
+    }
+    QStringList warnings;
+    const bool copied = ContentMediaUtils::copyRelativeImageFiles(paths, p_input.file.resourcePath,
+                                                                  p_outputFile, &warnings);
+    for (const auto &warning : warnings) {
+      emit logRequested(warning);
+    }
+    if (!copied || m_stopped) {
+      return false;
+    }
+    QSaveFile output(p_outputFile);
+    if (!output.open(QIODevice::WriteOnly) || output.write(bytes) != bytes.size() || m_stopped ||
+        !output.commit()) {
+      emit logRequested(
+          tr("Failed to write file (%1): %2").arg(p_outputFile, output.errorString()));
+      return false;
+    }
+    return true;
   }
   bool blank = true;
   for (const auto ch : bytes) {
@@ -63,10 +132,18 @@ bool MindMapExporter::renderMarkdown(const ExportInput &p_input, ExportMarkdown 
     emit logRequested(tr("Failed to project MindMap: %1").arg(QString::fromUtf8(m3_last_error())));
     return false;
   }
-  p_output.content = QString::fromUtf8(markdown.get());
-  const auto name = p_input.file.fileName.isEmpty() ? p_input.file.filePath : p_input.file.fileName;
-  p_output.fileName = QFileInfo(name).completeBaseName() + QStringLiteral(".md");
-  p_output.copyMedia = true;
+  if (m_stopped) {
+    return false;
+  }
+  const auto content = QString::fromUtf8(markdown.get());
+  const auto error = FileUtils2::writeFile(p_outputFile, content);
+  if (error) {
+    emit logRequested(tr("Failed to write file (%1): %2").arg(p_outputFile, error.what()));
+    QFile::remove(p_outputFile);
+    return false;
+  }
+  ContentMediaUtils::copyMarkdownMediaFiles(content, p_input.file.resourcePath, nullptr,
+                                            p_outputFile);
   return !m_stopped;
 }
 

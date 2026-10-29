@@ -409,16 +409,58 @@ protection only when saved as part of an encrypted note body.
 
 `ExportController` only selects sources, resolves canonical file-type names through
 `FileTypeCoreService`, rejects protected notes and forwards progress/results. It must not
-construct editors or WebEngine pages. Current Buffer keeps the committed live snapshot from
+construct editors or WebEngine pages. Current Buffer keeps the supplied live snapshot from
 `MainWindow2`; an explicitly supplied empty snapshot is authoritative, never a disk fallback.
 Current Note and batch selections use disk snapshots without saving open notes.
+`sourceFileTypes()` previews the actual selection without reading bodies, rendering or saving;
+protected, empty and unresolvable selections are unavailable. Preview suppresses controller
+collector diagnostics, but actual export retains protected-note refusal before writes.
 
-`ExportRendererFactory` in `src/export` is a value-owned, lowercase-keyed registry. Built-ins map
-Markdown/Text/Others to `WebViewExporter` and MindMap to `MindMapExporter`; unknown or empty
-types use Others. `Exporter` owns naming, attachments, per-operation renderer reuse, batch
-failure policy and final conversion. Every HTML consumer (standalone, PDF or custom) uses an
-`ExportHtmlRequest` carrying its purpose; do not restore format-only source routing or infer
-native types from suffixes inside renderers/batch loops.
+`ExportRendererFactory` in `src/export` stores capabilities and creators together, using the
+same lowercase/Others lookup for metadata and construction. Metadata queries create no renderer,
+editor, browser or compiler. Built-ins map Markdown/Text/Others to `WebViewExporter`, MindMap to
+`MindMapExporter`, and Typst to `TypstExporter`. Typst targets are Typst/HTML/PDF/Custom;
+MindMap adds native MindMap to its Markdown/HTML/PDF/Custom projection targets. Markdown and
+MindMap cannot target Typst. Persisted format values 0–3 are unchanged; Typst=4 and MindMap=5.
+
+`Exporter` owns naming, attachments, per-operation renderer reuse and batch failure policy.
+It validates every selected source/target pair before creating any output directory; empty
+batches create nothing. Mixed selections use only shared formats, never silently omit an
+incompatible source. Source output uses `renderSource` in unique per-note folders, preserving
+the original Markdown filename, `.md` for MindMap projection, `.mmm` for native MindMap, and
+`.typst` for Typst. Failed source attempts remove only their fresh bundle folder. Every HTML
+consumer carries its Standalone/Pdf/Custom purpose in `ExportHtmlRequest`; never infer native
+types from suffixes inside renderers or batch loops.
+
+Native source output preserves the supplied QString text and uses library-owned content scanners.
+MindMap URL paths are classified then URL-decoded; Typst image literals are already filenames
+and retain literal `%`, `#` and `?`. Only internal relative image files are copied, preserving
+subdirectories. Canonical containment includes ancestor symlinks/junctions; outside/missing
+images warn, while copy failures and destination collisions fail without renaming or overwriting.
+Whitespace-only MindMap snapshots bypass parsing and remain unchanged. Typst incomplete scans
+copy known literals and warn; imports and dynamic references are not bundled. Attachments remain
+an independent optional Exporter copy, not an imported-project bundler.
+
+Typst HTML/PDF borrow the application-owned runtime through widget-independent `TypstCompiler`.
+The canonical containing directory and actual main filename identify the project; only the
+supplied text is overlaid. Theme text-font defaults apply, authored styles win, downloads remain
+off and preview colors never enter output. Native PDF preserves document page layout and never
+passes through HTML/wkhtmltopdf. Semantic HTML is reflowable, preserves native warnings, and does
+not rewrite arbitrary authored HTML URLs. MIME HTML is unsupported. Cancellation retires the
+compiler without shutting down the shared runtime; successful bytes publish through QSaveFile.
+
+PDF all-in-one requires every source's Html backend and wkhtmltopdf; any native PDF source is
+rejected before writes. Custom may combine heterogeneous raw disk paths or per-source HTML;
+all HTML preparation must succeed before launching the command. Raw Custom deliberately uses
+original saved files, even for Current Buffer. The selected Custom option is copied at operation
+entry so event-loop mutations cannot invalidate it. `%3`/`%4` remain independent style inputs.
+
+`ExportDialog2` intersects target values in first-source order and maps enum values explicitly
+to source/HTML/PDF/Custom pages. Its visible controls are the union of applicable option groups;
+labels hide with fields. Native Typst HTML/PDF show document-owned styling/layout information,
+not web-print controls. Hidden preferences survive switching: only the effective export copy
+suppresses unavailable PDF all-in-one. Custom style placeholders remain usable for native/raw
+input, and all option widgets and scheme actions are disabled while export pumps events.
 
 MindMap Markdown is the m3 C API's readable document projection with `.md` naming and
 media copied from that projection's resource base. The main topic is H1, levels 2–6 are
@@ -457,7 +499,8 @@ the regression produced 8pt rather than 12pt body text. The Qt 6.9+ host test re
 with the bundled reader and checks map-first/article-next ordering, complete notes and image
 geometry plus actual 12pt body. DOM bounds/signatures alone miss this.
 
-`HtmlPdfExporter` owns final transport, not source rendering. Qt loads the rendered HTML by file
+`HtmlPdfExporter` owns final transport for Html-backend PDF targets, not native Typst or source
+rendering. Qt loads the rendered HTML by file
 URL (including >2 MiB documents), allows local sidecars and the existing unprotected remote-image
 policy, and waits for decoded images/fonts before printing. Its off-record profile/page and scoped
 non-displayed WebEngine view provide the render surface required for `image.decode()` completion.
@@ -470,6 +513,11 @@ also enables SVG-to-PNG and diagram rasterization with its paper geometry and Ma
 custom HTML enables math/SVG-to-PNG but retains vector diagrams and its selected scrollability.
 Keep temporary HTML/resources alive until the external consumer returns. Raw custom input stays raw.
 
-Behavior coverage: `tests/export/test_mindmapexport.cpp`, `test_htmlpdfexporter.cpp`, and the
-complete controller/protected-editor targets. The controller's substitute exporter tests source
-policy only; it is not evidence of rendering correctness.
+Behavior coverage: `tests/export/test_mindmapexport.cpp`, `test_htmlpdfexporter.cpp`,
+`tests/widgets/test_typstexport.cpp`, `test_exportdialog2.cpp`, and the complete
+controller/protected-editor targets.
+The controller's substitute exporter tests source policy only; it is not evidence of rendering
+correctness. Native compiler tests are registered in the vtextedit build subtree, so run its
+`test_typsteditor` CTest directory separately when the parent CTest tree does not include it.
+For Windows Debug GUI smoke, leave `QTWEBENGINEPROCESS_PATH` unset as the export tests do;
+forcing the release `QtWebEngineProcess.exe` into a Debug host causes Mojo IPC failures.

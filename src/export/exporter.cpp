@@ -6,10 +6,10 @@
 #include <QFileInfo>
 #include <QTemporaryDir>
 #include <QWidget>
+#include <optional>
 #include <utility>
 
 #include "htmlpdfexporter.h"
-#include <utils/contentmediautils.h>
 #include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 #include <utils/processutils.h>
@@ -20,7 +20,11 @@ Exporter::Exporter(ServiceLocator &p_services, ExportRendererFactory p_renderers
     : QObject(p_parent), m_services(p_services), m_renderers(std::move(p_renderers)) {}
 
 static QString makeOutputFolder(const QString &p_outputDir, const QString &p_folderName) {
-  const auto name = FileUtils2::generateFileNameWithSequence(p_outputDir, p_folderName);
+  const auto leaf = QFileInfo(QDir::fromNativeSeparators(p_folderName)).fileName();
+  if (!PathUtils::isLegalFileName(leaf)) {
+    return QString();
+  }
+  const auto name = FileUtils2::generateFileNameWithSequence(p_outputDir, leaf);
   const auto outputFolder = PathUtils::concatenateFilePath(p_outputDir, name);
   if (!QDir().mkpath(outputFolder)) {
     return QString();
@@ -44,14 +48,53 @@ bool Exporter::loadInput(const ExportFileInfo &p_file, const QString *p_supplied
   return true;
 }
 
+bool Exporter::validateTarget(const ExportOption &p_option, const QString &p_fileTypeName) {
+  switch (p_option.m_targetFormat) {
+  case ExportFormat::Markdown:
+  case ExportFormat::Typst:
+  case ExportFormat::MindMap:
+  case ExportFormat::HTML:
+  case ExportFormat::PDF:
+  case ExportFormat::Custom:
+    break;
+  default:
+    emit logRequested(tr("Unknown target format %1.").arg(int(p_option.m_targetFormat)));
+    return false;
+  }
+  const auto capabilities = m_renderers.capabilities(p_fileTypeName);
+  for (const auto &target : capabilities.targets) {
+    if (target.format != p_option.m_targetFormat) {
+      continue;
+    }
+    if (target.format == ExportFormat::PDF && p_option.m_pdfOption.m_allInOne &&
+        (!p_option.m_pdfOption.m_useWkhtmltopdf || target.pdfBackend != ExportPdfBackend::Html)) {
+      emit logRequested(tr("All-in-one PDF is not supported for this selection."));
+      return false;
+    }
+    return true;
+  }
+  emit logRequested(tr("Target %1 is not supported for source type %2.")
+                        .arg(exportFormatString(p_option.m_targetFormat), p_fileTypeName));
+  return false;
+}
+
 QString Exporter::doExportFile(const ExportOption &p_option, const QString &p_content,
                                const QString &p_filePath, const QString &p_fileName,
                                const QString &p_resourcePath, const QString &p_attachmentFolderPath,
                                const QString &p_fileTypeName) {
   m_askedToStop = false;
+  ExportOption option(p_option);
+  std::optional<ExportCustomOption> custom;
+  if (option.m_customOption) {
+    custom = *option.m_customOption;
+    option.m_customOption = &*custom;
+  }
+  if (!validateTarget(option, p_fileTypeName)) {
+    return QString();
+  }
 
-  if (!QDir().mkpath(p_option.m_outputDir)) {
-    emit logRequested(tr("Failed to create output folder (%1).").arg(p_option.m_outputDir));
+  if (!QDir().mkpath(option.m_outputDir)) {
+    emit logRequested(tr("Failed to create output folder (%1).").arg(option.m_outputDir));
     return QString();
   }
 
@@ -65,7 +108,7 @@ QString Exporter::doExportFile(const ExportOption &p_option, const QString &p_co
   ExportInput input;
   QString outputFile;
   if (loadInput(fileInfo, &p_content, input)) {
-    outputFile = doExport(p_option, p_option.m_outputDir, input);
+    outputFile = doExport(option, option.m_outputDir, input);
   }
   cleanUp();
   return outputFile;
@@ -75,30 +118,43 @@ QStringList Exporter::doExportBatch(const ExportOption &p_option,
                                     const QVector<ExportFileInfo> &p_files,
                                     const QString &p_batchName) {
   m_askedToStop = false;
+  if (p_files.isEmpty()) {
+    return {};
+  }
+  ExportOption option(p_option);
+  std::optional<ExportCustomOption> custom;
+  if (option.m_customOption) {
+    custom = *option.m_customOption;
+    option.m_customOption = &*custom;
+  }
+  for (const auto &file : p_files) {
+    if (!validateTarget(option, file.fileTypeName)) {
+      return {};
+    }
+  }
 
   QStringList outputFiles;
 
-  if (!QDir().mkpath(p_option.m_outputDir)) {
-    emit logRequested(tr("Failed to create output folder (%1).").arg(p_option.m_outputDir));
+  if (!QDir().mkpath(option.m_outputDir)) {
+    emit logRequested(tr("Failed to create output folder (%1).").arg(option.m_outputDir));
     return outputFiles;
   }
 
-  if (p_option.m_targetFormat == ExportFormat::PDF && p_option.m_pdfOption.m_useWkhtmltopdf &&
-      p_option.m_pdfOption.m_allInOne) {
-    auto file = doExportPdfAllInOne(p_option, p_files, p_batchName);
+  if (option.m_targetFormat == ExportFormat::PDF && option.m_pdfOption.m_allInOne) {
+    auto file = doExportPdfAllInOne(option, p_files, p_batchName);
     if (!file.isEmpty()) {
       outputFiles << file;
     }
-  } else if (p_option.m_targetFormat == ExportFormat::Custom && p_option.m_customOption &&
-             p_option.m_customOption->m_allInOne) {
-    auto file = doExportCustomAllInOne(p_option, p_files, p_batchName);
+  } else if (option.m_targetFormat == ExportFormat::Custom && option.m_customOption &&
+             option.m_customOption->m_allInOne) {
+    auto file = doExportCustomAllInOne(option, p_files, p_batchName);
     if (!file.isEmpty()) {
       outputFiles << file;
     }
   } else {
-    const auto outputFolder = makeOutputFolder(p_option.m_outputDir, p_batchName);
+    const auto outputFolder = makeOutputFolder(option.m_outputDir, p_batchName);
     if (outputFolder.isEmpty()) {
-      emit logRequested(tr("Failed to create output folder under (%1).").arg(p_option.m_outputDir));
+      emit logRequested(tr("Failed to create output folder under (%1).").arg(option.m_outputDir));
       return outputFiles;
     }
 
@@ -110,7 +166,7 @@ QStringList Exporter::doExportBatch(const ExportOption &p_option,
 
       ExportInput input;
       if (loadInput(p_files[i], nullptr, input)) {
-        const auto outputFile = doExport(p_option, outputFolder, input);
+        const auto outputFile = doExport(option, outputFolder, input);
         if (!outputFile.isEmpty()) {
           outputFiles << outputFile;
         }
@@ -129,7 +185,9 @@ QString Exporter::doExport(const ExportOption &p_option, const QString &p_output
   QString output;
   switch (p_option.m_targetFormat) {
   case ExportFormat::Markdown:
-    output = doExportMarkdown(p_outputDir, p_input);
+  case ExportFormat::MindMap:
+  case ExportFormat::Typst:
+    output = doExportSource(p_option, p_outputDir, p_input);
     break;
   case ExportFormat::HTML:
     output = doExportHtml(getExportOptionForIntermediateHtml(p_option, p_outputDir), p_outputDir,
@@ -160,28 +218,39 @@ QString Exporter::doExport(const ExportOption &p_option, const QString &p_output
   return output;
 }
 
-QString Exporter::doExportMarkdown(const QString &p_outputDir, const ExportInput &p_input) {
+QString Exporter::doExportSource(const ExportOption &p_option, const QString &p_outputDir,
+                                 const ExportInput &p_input) {
+  const auto capabilities = m_renderers.capabilities(p_input.file.fileTypeName);
+  const ExportTargetCapability *target = nullptr;
+  for (const auto &candidate : capabilities.targets) {
+    if (candidate.format == p_option.m_targetFormat) {
+      target = &candidate;
+      break;
+    }
+  }
   auto *adapter = renderer(p_input.file.fileTypeName);
-  ExportMarkdown markdown;
-  if (!adapter || !adapter->renderMarkdown(p_input, markdown) || checkAskedToStop()) {
+  if (!target || !adapter || checkAskedToStop()) {
     return QString();
   }
-  const auto name = FileUtils2::generateFileNameWithSequence(p_outputDir, markdown.fileName, "");
-  const auto folder = QDir(p_outputDir).filePath(name);
-  if (!QDir().mkpath(folder)) {
+  auto name =
+      QFileInfo(p_input.file.fileName.isEmpty() ? p_input.file.filePath : p_input.file.fileName)
+          .fileName();
+  if (!target->suffix.isEmpty()) {
+    name = QFileInfo(name).completeBaseName() + QLatin1Char('.') + target->suffix;
+  }
+  if (!PathUtils::isLegalFileName(name)) {
+    emit logRequested(tr("Invalid export file name (%1).").arg(name));
+    return QString();
+  }
+  const auto folder = makeOutputFolder(p_outputDir, name);
+  if (folder.isEmpty()) {
     emit logRequested(tr("Failed to create output folder under (%1).").arg(p_outputDir));
     return QString();
   }
-  const auto destination = QDir(folder).filePath(markdown.fileName);
-  const auto error = FileUtils2::writeFile(destination, markdown.content);
-  if (error) {
-    emit logRequested(tr("Failed to write file (%1): %2").arg(destination, error.what()));
-    QFile::remove(destination);
+  const auto destination = QDir(folder).filePath(name);
+  if (!adapter->renderSource(p_input, p_option.m_targetFormat, destination) || checkAskedToStop()) {
+    QDir(folder).removeRecursively();
     return QString();
-  }
-  if (markdown.copyMedia) {
-    ContentMediaUtils::copyMarkdownMediaFiles(markdown.content, p_input.file.resourcePath, nullptr,
-                                              destination);
   }
   return destination;
 }
@@ -192,8 +261,8 @@ QString Exporter::outputPath(const ExportInput &p_input, const QString &p_output
   if (base.isEmpty()) {
     base = QFileInfo(p_input.file.filePath).completeBaseName();
   }
-  return QDir(p_outputDir)
-      .filePath(FileUtils2::generateFileNameWithSequence(p_outputDir, base, p_suffix));
+  const auto leaf = FileUtils2::generateFileNameWithSequence(p_outputDir, base, p_suffix);
+  return PathUtils::isLegalFileName(leaf) ? QDir(p_outputDir).filePath(leaf) : QString();
 }
 
 QString Exporter::doExportHtml(const ExportHtmlRequest &p_request, const QString &p_outputDir,
@@ -206,7 +275,8 @@ QString Exporter::doExportHtml(const ExportHtmlRequest &p_request, const QString
       outputPath(p_input, p_outputDir,
                  p_request.options.m_htmlOption.m_useMimeHtmlFormat ? QStringLiteral("mht")
                                                                     : QStringLiteral("html"));
-  if (!adapter->renderHtml(p_input, p_request, destination) || checkAskedToStop()) {
+  if (destination.isEmpty() || !adapter->renderHtml(p_input, p_request, destination) ||
+      checkAskedToStop()) {
     QFile::remove(destination);
     return QString();
   }
@@ -215,6 +285,19 @@ QString Exporter::doExportHtml(const ExportHtmlRequest &p_request, const QString
 
 QString Exporter::doExportPdf(const ExportOption &p_option, const QString &p_outputDir,
                               const ExportInput &p_input) {
+  const auto capabilities = m_renderers.capabilities(p_input.file.fileTypeName);
+  for (const auto &target : capabilities.targets) {
+    if (target.format == ExportFormat::PDF && target.pdfBackend == ExportPdfBackend::Native) {
+      auto *adapter = renderer(p_input.file.fileTypeName);
+      const auto destination = outputPath(p_input, p_outputDir, target.suffix);
+      if (!adapter || destination.isEmpty() || checkAskedToStop() ||
+          !adapter->renderPdf(p_input, p_option, destination) || checkAskedToStop()) {
+        QFile::remove(destination);
+        return QString();
+      }
+      return destination;
+    }
+  }
   QTemporaryDir temporary;
   if (!temporary.isValid()) {
     emit logRequested(tr("Failed to create temporary directory to hold HTML files."));
@@ -226,8 +309,10 @@ QString Exporter::doExportPdf(const ExportOption &p_option, const QString &p_out
     return QString();
   }
   const auto destination = outputPath(p_input, p_outputDir, QStringLiteral("pdf"));
-  return pdfExporter()->exportFiles(p_option.m_pdfOption, {html}, destination) ? destination
-                                                                               : QString();
+  return !destination.isEmpty() &&
+                 pdfExporter()->exportFiles(p_option.m_pdfOption, {html}, destination)
+             ? destination
+             : QString();
 }
 
 QStringList Exporter::renderBatchHtml(const ExportHtmlRequest &p_request,
@@ -249,6 +334,9 @@ QStringList Exporter::renderBatchHtml(const ExportHtmlRequest &p_request,
       }
     }
     emit progressUpdated(i + 1, p_files.size());
+  }
+  if (htmlFiles.size() != p_files.size()) {
+    return {};
   }
   return htmlFiles;
 }
@@ -342,6 +430,10 @@ QString Exporter::doExportCustomAllInOne(const ExportOption &p_option,
   auto suffix = p_option.m_customOption ? p_option.m_customOption->m_targetSuffix : QString();
   auto fileName =
       FileUtils2::generateFileNameWithSequence(outputFolder, tr("all_in_one_export"), suffix);
+  if (!PathUtils::isLegalFileName(fileName)) {
+    emit logRequested(tr("Invalid export file name (%1).").arg(fileName));
+    return QString();
+  }
   auto destFilePath = PathUtils::concatenateFilePath(outputFolder, fileName);
   bool success = doExportCustom(p_option, inputFiles, resourcePaths, destFilePath);
   if (success) {
@@ -372,7 +464,9 @@ QString Exporter::doExportCustom(const ExportOption &p_option, const QString &p_
   }
   const auto destination =
       outputPath(p_input, p_outputDir, p_option.m_customOption->m_targetSuffix);
-  return doExportCustom(p_option, {input}, {resourcePath}, destination) ? destination : QString();
+  return !destination.isEmpty() && doExportCustom(p_option, {input}, {resourcePath}, destination)
+             ? destination
+             : QString();
 }
 
 ExportRenderer *Exporter::renderer(const QString &p_fileTypeName) {

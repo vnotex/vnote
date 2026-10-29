@@ -33,9 +33,11 @@ signals:
 private:
   bool loadInput(const ExportFileInfo &p_file, const QString *p_suppliedContent,
                  ExportInput &p_input);
+  bool validateTarget(const ExportOption &p_option, const QString &p_fileTypeName);
   QString doExport(const ExportOption &p_option, const QString &p_outputDir,
                    const ExportInput &p_input);
-  QString doExportMarkdown(const QString &p_outputDir, const ExportInput &p_input);
+  QString doExportSource(const ExportOption &p_option, const QString &p_outputDir,
+                         const ExportInput &p_input);
   QString doExportHtml(const ExportHtmlRequest &p_request, const QString &p_outputDir,
                        const ExportInput &p_input);
   QString doExportPdf(const ExportOption &p_option, const QString &p_outputDir,

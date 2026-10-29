@@ -6,6 +6,7 @@
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QRegularExpression>
+#include <QSignalBlocker>
 #include <QWidget>
 #include <exception>
 #include <utility>
@@ -213,6 +214,81 @@ void ExportController::doExport(const ExportOption &p_option, const ExportContex
 
   m_isExporting = false;
   emit exportFinished(outputFiles);
+}
+
+QStringList ExportController::sourceFileTypes(const ExportOption &p_option,
+                                              const ExportContext &p_context) {
+  const QSignalBlocker blocker(this);
+  auto *notebooks = m_services.get<NotebookCoreService>();
+  if (!notebooks) {
+    return {};
+  }
+
+  QVector<ExportFileInfo> files;
+  QStringList protectedFiles;
+  try {
+    switch (p_option.m_source) {
+    case ExportSource::CurrentBuffer:
+    case ExportSource::CurrentNote: {
+      const auto &node = p_context.currentNodeId;
+      const bool currentBuffer = p_option.m_source == ExportSource::CurrentBuffer;
+      if ((!currentBuffer && !node.isValid()) || node.isVirtual() ||
+          (node.isValid() && !isExportableNode(node)) ||
+          isProtectedExportSource(node, currentBuffer ? p_context.bufferPath : QString())) {
+        return {};
+      }
+      const QString path =
+          node.isValid() ? notebooks->buildAbsolutePath(node.notebookId,
+                                                        normalizedRelativePath(node.relativePath))
+                         : p_context.bufferPath;
+      if (!QDir::isAbsolutePath(path) || !QFileInfo(path).isFile()) {
+        return {};
+      }
+      return {fileTypeName(path)};
+    }
+    case ExportSource::CurrentFolder:
+      if (!p_context.currentFolderId.isValid() || p_context.currentFolderId.isVirtual()) {
+        return {};
+      }
+      collectExportFiles(p_context.currentFolderId.notebookId,
+                         normalizedRelativePath(p_context.currentFolderId.relativePath),
+                         p_option.m_recursive, false, files, protectedFiles);
+      break;
+    case ExportSource::CurrentNotebook: {
+      const QString notebookId = p_context.notebookId.isEmpty() ? p_context.currentNodeId.notebookId
+                                                                : p_context.notebookId;
+      if (notebookId.isEmpty()) {
+        return {};
+      }
+      collectExportFiles(notebookId, QStringLiteral("."), p_option.m_recursive, false, files,
+                         protectedFiles);
+      break;
+    }
+    case ExportSource::Workspace:
+      if (p_option.m_workspaceId.isEmpty()) {
+        return {};
+      }
+      collectWorkspaceFiles(p_option.m_workspaceId, false, files, protectedFiles);
+      break;
+    default:
+      return {};
+    }
+  } catch (const Exception &) {
+    return {};
+  } catch (const std::exception &) {
+    return {};
+  }
+
+  if (!protectedFiles.isEmpty()) {
+    return {};
+  }
+  QStringList types;
+  for (const auto &file : files) {
+    if (QFileInfo(file.filePath).isFile() && !types.contains(file.fileTypeName)) {
+      types.append(file.fileTypeName);
+    }
+  }
+  return types;
 }
 
 void ExportController::stop() {

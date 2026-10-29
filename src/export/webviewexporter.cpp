@@ -26,6 +26,7 @@
 #include <core/services/htmltemplateservice.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/themeutils.h>
+#include <utils/contentmediautils.h>
 #include <utils/fileutils2.h>
 #include <utils/htmlutils.h>
 #include <utils/markdownhtmlrenderer.h>
@@ -319,12 +320,22 @@ void WebViewExporter::clear() {
   m_exportOngoing = false;
 }
 
-bool WebViewExporter::renderMarkdown(const ExportInput &p_input, ExportMarkdown &p_output) {
-  p_output.content = p_input.content;
-  p_output.fileName = p_input.file.fileName.isEmpty() ? QFileInfo(p_input.file.filePath).fileName()
-                                                      : p_input.file.fileName;
-  p_output.copyMedia =
-      p_input.file.fileTypeName.compare(QStringLiteral("Markdown"), Qt::CaseInsensitive) == 0;
+bool WebViewExporter::renderSource(const ExportInput &p_input, ExportFormat p_format,
+                                   const QString &p_outputFile) {
+  if (p_format != ExportFormat::Markdown) {
+    emit logRequested(tr("Source export format is not supported by this renderer."));
+    return false;
+  }
+  const auto error = FileUtils2::writeFile(p_outputFile, p_input.content);
+  if (error) {
+    emit logRequested(tr("Failed to write file (%1): %2").arg(p_outputFile, error.what()));
+    QFile::remove(p_outputFile);
+    return false;
+  }
+  if (p_input.file.fileTypeName.compare(QStringLiteral("Markdown"), Qt::CaseInsensitive) == 0) {
+    ContentMediaUtils::copyMarkdownMediaFiles(p_input.content, p_input.file.resourcePath, nullptr,
+                                              p_outputFile);
+  }
   return true;
 }
 
@@ -440,28 +451,27 @@ bool WebViewExporter::doExportHtml(const ExportHtmlOption &p_htmlOption,
   ExportState state = ExportState::Busy;
 
   const auto connection =
-      connect(
-          m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this,
-          [&, this](const QString &p_headContent, const QString &p_styleContent,
-                    const QString &p_content, const QString &p_bodyClassList) {
-            qDebug() << "doExportHtml contentReady";
-            // Maybe unnecessary. Just to avoid duplicated signal connections.
-            disconnect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this, 0);
+      connect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this,
+              [&, this](const QString &p_headContent, const QString &p_styleContent,
+                        const QString &p_content, const QString &p_bodyClassList) {
+                qDebug() << "doExportHtml contentReady";
+                // Maybe unnecessary. Just to avoid duplicated signal connections.
+                disconnect(m_viewer->adapter(), &MarkdownViewerAdapter::contentReady, this, 0);
 
-            if (m_askedToStop || p_content.isNull()) {
-              state = ExportState::Failed;
-              return;
-            }
+                if (m_askedToStop || p_content.isNull()) {
+                  state = ExportState::Failed;
+                  return;
+                }
 
-            if (!writeHtmlFile(p_outputFile, p_baseUrl, p_headContent, p_styleContent, p_content,
-                               p_bodyClassList, p_htmlOption.m_embedStyles,
-                               p_htmlOption.m_completePage, p_htmlOption.m_embedImages)) {
-              state = ExportState::Failed;
-              return;
-            }
+                if (!writeHtmlFile(p_outputFile, p_baseUrl, p_headContent, p_styleContent,
+                                   p_content, p_bodyClassList, p_htmlOption.m_embedStyles,
+                                   p_htmlOption.m_completePage, p_htmlOption.m_embedImages)) {
+                  state = ExportState::Failed;
+                  return;
+                }
 
-            state = ExportState::Finished;
-          });
+                state = ExportState::Finished;
+              });
 
   // saveContent() serializes the LIVE DOM, so anything the page flattens here is captured. Direct
   // HTML export passes no flags and keeps math and diagrams vector.

@@ -32,6 +32,8 @@
 #include <QWebEngineView>
 #include <QXmlStreamReader>
 
+#include <algorithm>
+#include <m3/m3.h>
 #include <memory>
 
 #include <core/configmgr2.h>
@@ -172,8 +174,8 @@ QString htmlText(const QString &p_html) {
   return document.toPlainText();
 }
 
-QVector<QImage> embeddedNodeImages(
-    const QString &p_html, const QString &p_class = QStringLiteral("m3-node-image")) {
+QVector<QImage> embeddedNodeImages(const QString &p_html,
+                                   const QString &p_class = QStringLiteral("m3-node-image")) {
   QVector<QImage> images;
   QXmlStreamReader reader(p_html);
   while (!reader.atEnd()) {
@@ -253,13 +255,22 @@ ExportFileInfo source(const QString &p_path, const QString &p_type = QStringLite
   return info;
 }
 
+ExportCapabilities mindMapCapabilities() {
+  return {{{ExportFormat::MindMap, QStringLiteral("mmm"), {}},
+           {ExportFormat::Markdown, QStringLiteral("md"), {}},
+           {ExportFormat::HTML, QStringLiteral("html"), {}},
+           {ExportFormat::PDF, QStringLiteral("pdf"),
+            ExportOptionGroup::PdfLayout | ExportOptionGroup::Wkhtmltopdf, ExportPdfBackend::Html},
+           {ExportFormat::Custom, {}, {}}}};
+}
+
 ExportRendererFactory nativeRegistry(ServiceLocator &p_services) {
   ExportRendererFactory registry(p_services);
   const auto creator = [](ServiceLocator &p_locator, QWidget *p_host, QObject *p_parent) {
     return new MindMapExporter(p_locator, p_host, p_parent);
   };
-  registry.registerRenderer(QStringLiteral("MindMap"), creator);
-  registry.registerRenderer(QStringLiteral("NativeAlias"), creator);
+  registry.registerRenderer(QStringLiteral("MindMap"), mindMapCapabilities(), creator);
+  registry.registerRenderer(QStringLiteral("NativeAlias"), mindMapCapabilities(), creator);
   return registry;
 }
 
@@ -463,6 +474,10 @@ int captureExportInputs(const QStringList &p_arguments) {
 class TestMindMapExport : public QObject {
   Q_OBJECT
 private slots:
+  void nativePreservesForestAndCopiesMedia_data();
+  void nativePreservesForestAndCopiesMedia();
+  void nativeSnapshotsAndFailures();
+  void nativeFiltersImageReferences();
   void markdownProjectsWholeForestAndCopiesImage();
   void markdownDoesNotCreateWidgets();
   void markdownRendersDocumentHierarchy();
@@ -486,6 +501,145 @@ private slots:
   void customCapturesRenderedInputs_data();
   void customCapturesRenderedInputs();
 };
+
+void TestMindMapExport::nativePreservesForestAndCopiesMedia_data() {
+  QTest::addColumn<bool>("attachments");
+  QTest::newRow("images-only") << false;
+  QTest::newRow("images-and-attachments") << true;
+}
+
+void TestMindMapExport::nativePreservesForestAndCopiesMedia() {
+  QFETCH(bool, attachments);
+  QTemporaryDir temporary;
+  QVERIFY(temporary.isValid());
+  const auto path = temporary.filePath(QStringLiteral("source/forest.unusual"));
+  const auto bytes = imageBytes(c_localColor);
+  const auto json =
+      forest(QStringLiteral("nested/pixel%20one.png"), QStringLiteral("nested/pixel%20one.png"));
+  QVERIFY(writeBytes(path, simpleMap(QStringLiteral("Disk only")).toUtf8()));
+  QVERIFY(writeBytes(temporary.filePath(QStringLiteral("source/nested/pixel one.png")), bytes));
+  const auto attachmentPath = temporary.filePath(QStringLiteral("source/attachments"));
+  QVERIFY(writeBytes(QDir(attachmentPath).filePath(QStringLiteral("document.txt")), "attachment"));
+  auto file = source(path);
+  file.attachmentFolderPath = attachmentPath;
+  ServiceLocator services;
+  Exporter exporter(services, nativeRegistry(services), nullptr);
+  auto option = options(temporary.filePath(QStringLiteral("out")), ExportFormat::MindMap);
+  option.m_exportAttachments = attachments;
+  const auto output = exportSingle(exporter, option, file, json);
+  QVERIFY(!output.isEmpty());
+  QCOMPARE(QFileInfo(output).fileName(), QStringLiteral("forest.mmm"));
+  QCOMPARE(readBytes(output), json.toUtf8());
+  const auto directory = QFileInfo(output).dir();
+  QCOMPARE(readBytes(directory.filePath(QStringLiteral("nested/pixel one.png"))), bytes);
+  QCOMPARE(QFileInfo::exists(directory.filePath(QStringLiteral("attachments/document.txt"))),
+           attachments);
+  M3Mindmap *raw = nullptr;
+  QCOMPARE(m3_mindmap_from_json(readBytes(output).constData(), &raw), M3_OK);
+  const std::unique_ptr<M3Mindmap, decltype(&m3_mindmap_destroy)> map(raw, m3_mindmap_destroy);
+  char *snapshot = nullptr;
+  QCOMPARE(m3_mindmap_to_json(map.get(), &snapshot), M3_OK);
+  const std::unique_ptr<char, decltype(&m3_string_free)> owned(snapshot, m3_string_free);
+  const auto document = QJsonDocument::fromJson(QByteArray(snapshot)).object();
+  QCOMPARE(document.value(QStringLiteral("orphanIds")).toArray(),
+           QJsonArray{QStringLiteral("orphan")});
+  QCOMPARE(document.value(QStringLiteral("crossLinks"))
+               .toArray()
+               .first()
+               .toObject()
+               .value(QStringLiteral("target"))
+               .toString(),
+           QStringLiteral("orphan-child"));
+  const auto nodes = document.value(QStringLiteral("nodes")).toArray();
+  QCOMPARE(nodes.first().toObject().value(QStringLiteral("topic")).toString(),
+           forestTopics().first());
+  QCOMPARE(nodes.last()
+               .toObject()
+               .value(QStringLiteral("image"))
+               .toObject()
+               .value(QStringLiteral("url"))
+               .toString(),
+           QStringLiteral("nested/pixel%20one.png"));
+  const auto again = exportSingle(exporter, option, file, json);
+  QVERIFY(QFileInfo(again).absolutePath() != QFileInfo(output).absolutePath());
+  QCOMPARE(readBytes(again), json.toUtf8());
+  QCOMPARE(readBytes(QFileInfo(again).dir().filePath(QStringLiteral("nested/pixel one.png"))),
+           bytes);
+}
+
+void TestMindMapExport::nativeSnapshotsAndFailures() {
+  QTemporaryDir temporary;
+  QVERIFY(temporary.isValid());
+  const auto path = temporary.filePath(QStringLiteral("source/snapshot.mmm"));
+  const auto disk = simpleMap(QStringLiteral("Disk content"));
+  QVERIFY(writeBytes(path, disk.toUtf8()));
+  ServiceLocator services;
+  Exporter exporter(services, nativeRegistry(services), nullptr);
+  const auto option = options(temporary.filePath(QStringLiteral("out")), ExportFormat::MindMap);
+  for (const auto &content : {QString(), QStringLiteral(" \t\r\n")}) {
+    const auto output = exportSingle(exporter, option, source(path), content);
+    QVERIFY(!output.isEmpty());
+    QCOMPARE(readBytes(output), content.toUtf8());
+  }
+  for (const auto &content : {QStringLiteral("{invalid"), QStringLiteral("{\"schemaVersion\":1}"),
+                              disk + QChar::Null + disk}) {
+    const auto failedOption =
+        options(temporary.filePath(QStringLiteral("failed")), ExportFormat::MindMap);
+    QVERIFY(exportSingle(exporter, failedOption, source(path), content).isEmpty());
+    QVERIFY(QDir(failedOption.m_outputDir)
+                .entryList(QDir::AllEntries | QDir::NoDotAndDotDot)
+                .isEmpty());
+  }
+  const auto outputs = exporter.doExportBatch(option, {source(path)}, QStringLiteral("disk"));
+  QCOMPARE(outputs.size(), 1);
+  QCOMPARE(readBytes(outputs.first()), disk.toUtf8());
+  QCOMPARE(readBytes(path), disk.toUtf8());
+}
+
+void TestMindMapExport::nativeFiltersImageReferences() {
+  QTemporaryDir temporary;
+  QVERIFY(temporary.isValid());
+  const auto path = temporary.filePath(QStringLiteral("source/map.mmm"));
+  QVERIFY(writeBytes(path, simpleMap(QStringLiteral("disk")).toUtf8()));
+  const auto pixels = imageBytes(c_localColor);
+  QVERIFY(writeBytes(temporary.filePath(QStringLiteral("outside.png")), pixels));
+  QVERIFY(writeBytes(temporary.filePath(QStringLiteral("source/inside.png")), pixels));
+  ServiceLocator services;
+  Exporter exporter(services, nativeRegistry(services), nullptr);
+  QSignalSpy logs(&exporter, &Exporter::logRequested);
+  const auto option = options(temporary.filePath(QStringLiteral("out")), ExportFormat::MindMap);
+  const QStringList ignored{QStringLiteral("../outside.png"),
+                            QStringLiteral("missing.png"),
+                            temporary.filePath(QStringLiteral("outside.png")),
+                            QStringLiteral("https://example.invalid/image.png"),
+                            QStringLiteral("data:image/png;base64,AAAA"),
+                            QStringLiteral("//host/share/image.png"),
+                            QStringLiteral("C:relative.png"),
+                            QStringLiteral("%2Foutside.png")};
+  for (const auto &reference : ignored) {
+    logs.clear();
+    const auto content = forest(QStringLiteral("inside.png"), reference);
+    const auto output = exportSingle(exporter, option, source(path), content);
+    QVERIFY2(!output.isEmpty(), qPrintable(reference));
+    QCOMPARE(readBytes(output), content.toUtf8());
+    QCOMPARE(readBytes(QFileInfo(output).dir().filePath(QStringLiteral("inside.png"))), pixels);
+    QCOMPARE(QFileInfo(output).dir().entryList(QDir::Files).size(), 2);
+    if (reference == QStringLiteral("missing.png") ||
+        reference == QStringLiteral("../outside.png")) {
+      QVERIFY(std::any_of(logs.cbegin(), logs.cend(), [&](const QList<QVariant> &p_log) {
+        return p_log.first().toString().contains(reference);
+      }));
+    }
+  }
+  // An image cannot occupy the reserved output document leaf.
+  const auto failedOption =
+      options(temporary.filePath(QStringLiteral("collision")), ExportFormat::MindMap);
+  QVERIFY(exportSingle(exporter, failedOption, source(path),
+                       simpleMap(QStringLiteral("collision"), QStringLiteral("map.mmm")))
+              .isEmpty());
+  QVERIFY(
+      QDir(failedOption.m_outputDir).entryList(QDir::AllEntries | QDir::NoDotAndDotDot).isEmpty());
+}
 
 void TestMindMapExport::markdownProjectsWholeForestAndCopiesImage() {
   QTemporaryDir temporary;
@@ -535,8 +689,8 @@ void TestMindMapExport::markdownRendersDocumentHierarchy() {
     }
     if (level == 1) {
       node.insert(QStringLiteral("icons"), QJsonArray{QStringLiteral("star"), QString()});
-      node.insert(QStringLiteral("tags"),
-                  QJsonArray{QStringLiteral("release"), QString(), QStringLiteral(" leading *tag*")});
+      node.insert(QStringLiteral("tags"), QJsonArray{QStringLiteral("release"), QString(),
+                                                     QStringLiteral(" leading *tag*")});
       node.insert(QStringLiteral("image"), imageObject(QStringLiteral("image.png")));
     }
     if (level == 7) {
@@ -565,7 +719,8 @@ void TestMindMapExport::markdownRendersDocumentHierarchy() {
           .toJson());
   const auto path = temporary.filePath(QStringLiteral("source/document.emind"));
   QVERIFY(writeBytes(path, json.toUtf8()));
-  QVERIFY(writeBytes(temporary.filePath(QStringLiteral("source/image.png")), imageBytes(c_localColor)));
+  QVERIFY(
+      writeBytes(temporary.filePath(QStringLiteral("source/image.png")), imageBytes(c_localColor)));
   ServiceLocator services;
   Exporter exporter(services, nativeRegistry(services), nullptr);
   const auto output = exportSingle(
@@ -602,7 +757,8 @@ void TestMindMapExport::markdownRendersDocumentHierarchy() {
   QVERIFY(blocks.contains(QStringLiteral("# Literal **text**")));
   QCOMPARE(blocks[QStringLiteral("# Literal **text**")].blockFormat().indent(),
            seventh->format().indent());
-  QCOMPARE(blocks[QStringLiteral("Deep paragraph")].blockFormat().indent(), eighth->format().indent());
+  QCOMPARE(blocks[QStringLiteral("Deep paragraph")].blockFormat().indent(),
+           eighth->format().indent());
   QCOMPARE(blocks[QStringLiteral("Still deep")].blockFormat().indent(), eighth->format().indent());
   const auto text = document.toPlainText();
   QVERIFY(text.contains(QStringLiteral("star")));
@@ -611,10 +767,10 @@ void TestMindMapExport::markdownRendersDocumentHierarchy() {
   const auto tags = document.find(QStringLiteral("# leading *tag*"));
   QCOMPARE(tags.blockFormat().headingLevel(), 0);
   QVERIFY(!text.contains(QStringLiteral("Review dependency")));
-  for (const auto &metadata : {QStringLiteral("private-link-id"), QStringLiteral("Image size:"),
-                               QStringLiteral("Image URL:"), QStringLiteral("(empty)"),
-                               QStringLiteral("Note:"), QStringLiteral("Icon:"),
-                               QStringLiteral("Tag:")}) {
+  for (const auto &metadata :
+       {QStringLiteral("private-link-id"), QStringLiteral("Image size:"),
+        QStringLiteral("Image URL:"), QStringLiteral("(empty)"), QStringLiteral("Note:"),
+        QStringLiteral("Icon:"), QStringLiteral("Tag:")}) {
     QVERIFY2(!text.contains(metadata), qPrintable(text));
   }
 }
@@ -630,7 +786,8 @@ void TestMindMapExport::markdownLinksMatchHtmlDirection_data() {
   QTest::newRow("backward") << true << QJsonValue("backward") << false << false << 0 << 1;
   QTest::newRow("both") << true << QJsonValue("both") << false << false << 1 << 1;
   QTest::newRow("undirected") << false << QJsonValue() << false << false << 1 << 1;
-  QTest::newRow("undirected-backward") << false << QJsonValue("backward") << false << false << 1 << 1;
+  QTest::newRow("undirected-backward")
+      << false << QJsonValue("backward") << false << false << 1 << 1;
   QTest::newRow("opaque-style") << true << QJsonValue(42) << false << false << 1 << 0;
   QTest::newRow("self-backward") << true << QJsonValue("backward") << true << false << 1 << 0;
   QTest::newRow("self-both") << true << QJsonValue("both") << true << false << 1 << 0;
@@ -659,12 +816,13 @@ void TestMindMapExport::markdownLinksMatchHtmlDirection() {
     }
     nodes.append(node);
   }
-  QJsonObject link{{QStringLiteral("id"), QStringLiteral("link-a")},
-                   {QStringLiteral("source"), QStringLiteral("1")},
-                   {QStringLiteral("target"), self ? QStringLiteral("1") : target},
-                   {QStringLiteral("directed"), directed},
-                   {QStringLiteral("topic"), label},
-                   {QStringLiteral("style"), QJsonObject{{QStringLiteral("arrowDirection"), arrow}}}};
+  QJsonObject link{
+      {QStringLiteral("id"), QStringLiteral("link-a")},
+      {QStringLiteral("source"), QStringLiteral("1")},
+      {QStringLiteral("target"), self ? QStringLiteral("1") : target},
+      {QStringLiteral("directed"), directed},
+      {QStringLiteral("topic"), label},
+      {QStringLiteral("style"), QJsonObject{{QStringLiteral("arrowDirection"), arrow}}}};
   QJsonArray links{link};
   if (parallel) {
     link.insert(QStringLiteral("id"), QStringLiteral("link-b"));
@@ -673,18 +831,22 @@ void TestMindMapExport::markdownLinksMatchHtmlDirection() {
   }
   ExportInput input;
   input.file.fileName = QStringLiteral("relations.emind");
-  input.content = QString::fromUtf8(QJsonDocument(QJsonObject{
-      {QStringLiteral("schemaVersion"), 1}, {QStringLiteral("rootId"), QStringLiteral("1")},
-      {QStringLiteral("nodes"), nodes}, {QStringLiteral("crossLinks"), links}}).toJson());
+  input.content =
+      QString::fromUtf8(QJsonDocument(QJsonObject{{QStringLiteral("schemaVersion"), 1},
+                                                  {QStringLiteral("rootId"), QStringLiteral("1")},
+                                                  {QStringLiteral("nodes"), nodes},
+                                                  {QStringLiteral("crossLinks"), links}})
+                            .toJson());
   ServiceLocator services;
   MindMapExporter renderer(services, nullptr, nullptr);
-  ExportMarkdown markdown;
-  QVERIFY(renderer.renderMarkdown(input, markdown));
-  // Render through VNote's native producer, then inspect actual browser link semantics.
-  const auto native = MarkdownHtmlRenderer::render(markdown.content.toUtf8(), {});
-  QVERIFY2(native.error.isEmpty(), qPrintable(native.error));
   QTemporaryDir temporary;
   QVERIFY(temporary.isValid());
+  input.file.resourcePath = temporary.path();
+  const auto sourcePath = temporary.filePath(QStringLiteral("relations.md"));
+  QVERIFY(renderer.renderSource(input, ExportFormat::Markdown, sourcePath));
+  // Render through VNote's native producer, then inspect actual browser link semantics.
+  const auto native = MarkdownHtmlRenderer::render(readBytes(sourcePath), {});
+  QVERIFY2(native.error.isEmpty(), qPrintable(native.error));
   const auto pagePath = temporary.filePath(QStringLiteral("document.html"));
   QVERIFY(writeBytes(pagePath, QByteArrayLiteral("<!doctype html><meta charset=\"utf-8\"><body>") +
                                    native.html.toUtf8() + QByteArrayLiteral("</body>")));
@@ -717,10 +879,12 @@ void TestMindMapExport::markdownLinksMatchHtmlDirection() {
                    reference.value(QStringLiteral("href")).toString(),
                    reference.value(QStringLiteral("title")).toString()});
   }
-  const auto targetAnchor = QStringLiteral("#m3-node-") + QString::fromLatin1(target.toUtf8().toHex());
+  const auto targetAnchor =
+      QStringLiteral("#m3-node-") + QString::fromLatin1(target.toUtf8().toHex());
   QVector<QStringList> expected;
   for (int i = 0; i < rootLinks; ++i) {
-    expected.append({QStringLiteral("m3-node-31"), self ? QStringLiteral("#m3-node-31") : targetAnchor,
+    expected.append({QStringLiteral("m3-node-31"),
+                     self ? QStringLiteral("#m3-node-31") : targetAnchor,
                      i == 0 ? label : secondLabel});
   }
   if (deepLinks) {
@@ -733,21 +897,25 @@ void TestMindMapExport::markdownLinksMatchHtmlDirection() {
 }
 
 void TestMindMapExport::markdownDoesNotCreateWidgets() {
+  QTemporaryDir temporary;
+  QVERIFY(temporary.isValid());
   ServiceLocator services;
   MindMapExporter renderer(services, nullptr, nullptr);
   const auto widgets = QApplication::allWidgets();
   ExportInput input;
   input.file.fileName = QStringLiteral("headless.emind");
+  input.file.resourcePath = temporary.path();
   input.content = forest(QStringLiteral("not-required-for-projection.png"));
-  ExportMarkdown markdown;
-  QVERIFY(renderer.renderMarkdown(input, markdown));
+  const auto sourcePath = temporary.filePath(QStringLiteral("headless.md"));
+  QVERIFY(renderer.renderSource(input, ExportFormat::Markdown, sourcePath));
   QCOMPARE(QApplication::allWidgets(), widgets);
-  QVERIFY(containsForest(markdown.content, true));
-  QVERIFY(markdown.content.contains(QStringLiteral("not-required-for-projection.png")));
+  const auto markdown = QString::fromUtf8(readBytes(sourcePath));
+  QVERIFY(containsForest(markdown, true));
+  QVERIFY(markdown.contains(QStringLiteral("not-required-for-projection.png")));
   input.content = QStringLiteral(" \t\r\n");
-  QVERIFY(renderer.renderMarkdown(input, markdown));
+  QVERIFY(renderer.renderSource(input, ExportFormat::Markdown, sourcePath));
   QCOMPARE(QApplication::allWidgets(), widgets);
-  QVERIFY(markdown.content.contains(QStringLiteral("Central topic")));
+  QVERIFY(readBytes(sourcePath).contains("Central topic"));
 }
 
 void TestMindMapExport::unknownAndEmptyTypesUseRegisteredFallback() {
@@ -755,7 +923,7 @@ void TestMindMapExport::unknownAndEmptyTypesUseRegisteredFallback() {
   QVERIFY(temporary.isValid());
   ServiceLocator services;
   ExportRendererFactory registry(services);
-  registry.registerRenderer(QStringLiteral("oThErS"),
+  registry.registerRenderer(QStringLiteral("oThErS"), mindMapCapabilities(),
                             [](ServiceLocator &p_locator, QWidget *p_host, QObject *p_parent) {
                               return new MindMapExporter(p_locator, p_host, p_parent);
                             });
@@ -890,9 +1058,15 @@ void TestMindMapExport::sectionNumberingReflectsSettingsOnReuse() {
   auto authoredTopics = forestTopics();
   authoredTopics.append(QStringLiteral("Another orphan"));
   authoredTopics.append(QStringLiteral("1. Authored child"));
-  const QStringList numbers{QString(), QStringLiteral("1"), QStringLiteral("1.1"),
-                            QStringLiteral("1.1.1"), QStringLiteral("1.1.1.1"), QString(),
-                            QStringLiteral("1"), QString(), QStringLiteral("1")};
+  const QStringList numbers{QString(),
+                            QStringLiteral("1"),
+                            QStringLiteral("1.1"),
+                            QStringLiteral("1.1.1"),
+                            QStringLiteral("1.1.1.1"),
+                            QString(),
+                            QStringLiteral("1"),
+                            QString(),
+                            QStringLiteral("1")};
   ExportHtmlRequest request;
   request.purpose = ExportHtmlPurpose::Standalone;
   HtmlPage page;

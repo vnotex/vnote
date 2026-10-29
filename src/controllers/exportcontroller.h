@@ -27,6 +27,9 @@ public:
                    QObject *p_parentObject = nullptr);
 
   void doExport(const ExportOption &p_option, const ExportContext &p_context);
+  // Metadata-only preview of the selected, unprotected on-disk sources.
+  // Returns canonical, deduplicated types without reading content or saving buffers.
+  QStringList sourceFileTypes(const ExportOption &p_option, const ExportContext &p_context);
   void stop();
   bool isExporting() const;
 

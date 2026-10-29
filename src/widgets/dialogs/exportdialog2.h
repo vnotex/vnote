@@ -8,9 +8,12 @@
 
 #include <core/exportcontext.h>
 #include <export/exportdata.h>
+#include <export/exportrendererfactory.h>
 
 class QCheckBox;
 class QComboBox;
+class QFormLayout;
+class QLabel;
 class QLineEdit;
 class QPlainTextEdit;
 class QProgressBar;
@@ -18,6 +21,7 @@ class QPushButton;
 class QGroupBox;
 class QPageLayout;
 class QStackedLayout;
+class QToolButton;
 class QAction;
 
 namespace vnotex {
@@ -70,6 +74,8 @@ private:
   void onLogRequested(const QString &p_log);
 
   void updatePdfWidgetsByWkhtmltopdf();
+  void updateSourceCapabilities();
+  void updateOptionVisibility();
   void updateUiOnExportState(bool p_exporting);
 
 private:
@@ -77,6 +83,11 @@ private:
   ExportContext m_context;
 
   ExportController *m_controller = nullptr;
+  ExportRendererFactory m_rendererFactory;
+  QVector<ExportCapabilities> m_sourceCapabilities;
+  ExportFormat m_targetFormat = ExportFormat::HTML;
+  bool m_typstOnly = false;
+  bool m_pdfAllInOneAvailable = false;
 
   // Top row.
   QComboBox *m_sourceCombo = nullptr;
@@ -86,10 +97,14 @@ private:
   QStackedLayout *m_stackedLayout = nullptr;
   QGroupBox *m_formatGroupBox = nullptr;
 
-  // Markdown page.
-  QCheckBox *m_exportAttachmentsCheck = nullptr;
+  // Source page shared by Markdown, Typst, and MindMap.
+  QWidget *m_sourcePage = nullptr;
+  QLabel *m_nativeFormatInfo = nullptr;
+  QLabel *m_mixedFormatInfo = nullptr;
 
   // HTML page.
+  QWidget *m_htmlPage = nullptr;
+  QFormLayout *m_htmlLayout = nullptr;
   QCheckBox *m_embedStylesCheck = nullptr;
   QCheckBox *m_embedImagesCheck = nullptr;
   QCheckBox *m_completePageCheck = nullptr;
@@ -98,6 +113,8 @@ private:
   QCheckBox *m_scrollableCheck = nullptr;
 
   // PDF page.
+  QWidget *m_pdfPage = nullptr;
+  QFormLayout *m_pdfLayout = nullptr;
   QPushButton *m_pageLayoutBtn = nullptr;
   QCheckBox *m_addTableOfContentsCheck = nullptr;
   QCheckBox *m_useWkhtmltopdfCheck = nullptr;
@@ -115,7 +132,11 @@ private:
   QSharedPointer<QPageLayout> m_pageLayout;
 
   // Custom page.
+  QWidget *m_customPage = nullptr;
+  QFormLayout *m_customLayout = nullptr;
   QComboBox *m_customSchemeCombo = nullptr;
+  QAction *m_addSchemeAction = nullptr;
+  QAction *m_duplicateSchemeAction = nullptr;
   QAction *m_deleteSchemeAction = nullptr;
   QLineEdit *m_targetSuffixEdit = nullptr;
   QLineEdit *m_resourceSeparatorEdit = nullptr;
@@ -126,9 +147,14 @@ private:
   QVector<ExportCustomOption> m_customOptions;
 
   // Common options.
+  QGroupBox *m_optionsGroupBox = nullptr;
+  QCheckBox *m_exportAttachmentsCheck = nullptr;
   LocationInputWithBrowseButton *m_outputDirInput = nullptr;
   QComboBox *m_renderingStyleCombo = nullptr;
   QComboBox *m_syntaxStyleCombo = nullptr;
+  QLabel *m_renderingStyleLabel = nullptr;
+  QLabel *m_syntaxStyleLabel = nullptr;
+  QToolButton *m_followThemeButton = nullptr;
   QCheckBox *m_transparentBgCheck = nullptr;
   QCheckBox *m_recursiveCheck = nullptr;
 
