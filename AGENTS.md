@@ -405,6 +405,25 @@ clang-format -i src/core/myfile.cpp
 
 **Excluded from formatting:** `libs/` directory (third-party code)
 
+### Format before staging and committing
+
+Agents MUST format intended C++ changes with the repository configuration and the same formatter
+as the pre-commit hook **before staging**. Review the resulting diff and preserve unrelated edits.
+Prefer explicit `git add -- <paths>` followed by ordinary `git commit` when the index contains only
+intended changes. If other work must remain staged, a path-limited commit (`git commit --only` or
+`git commit <paths>`) must not rely on the hook for further formatting: verify the formatter would
+make no additional changes first.
+
+Path-limited commits use a temporary index. The hook's `clang-format -i` and `git add` can update
+the working file and committed snapshot while leaving the normal index with older formatting.
+After such a commit, compare HEAD, index and working tree for the committed paths; do not blindly
+classify `MM` leftovers as user edits and keep restoring them.
+
+Clean up only residue proven to come from the agent's workflow: when `git diff HEAD -- <path>` is
+empty and staged/unstaged formatting hunks are exact inverses, `git restore --staged -- <path>`
+resynchronizes the index without changing the working file. An empty HEAD diff alone does not
+justify clearing intentional user staging. Never use blanket reset/restore or stash for cleanup.
+
 ---
 
 ## Shared JSON Keys (SSOT)
