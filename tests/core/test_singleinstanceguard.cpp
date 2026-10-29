@@ -14,6 +14,7 @@
 
 #include <QCoreApplication>
 #include <QDataStream>
+#include <QDeadlineTimer>
 #include <QDir>
 #include <QLocalServer>
 #include <QLocalSocket>
@@ -37,6 +38,19 @@ namespace {
 const char *const c_modeHoldLock = "--hold-lock-forever";
 const char *const c_heldMarker = "LOCK_HELD";
 
+// Child stdout is a byte stream, not one notification per complete marker.
+// Keep the primary event loop blocked for the slow-start forwarding case.
+bool waitForMarker(QProcess *p_process, const QByteArray &p_marker) {
+  QDeadlineTimer deadline(10000);
+  auto output = p_process->readAllStandardOutput();
+  while (!output.contains(p_marker)) {
+    if (deadline.hasExpired() || !p_process->waitForReadyRead(deadline.remainingTime())) {
+      return false;
+    }
+    output += p_process->readAllStandardOutput();
+  }
+  return true;
+}
 } // namespace
 
 // Child modes isolate real lock ownership and synchronous secondary forwarding
@@ -149,9 +163,7 @@ void TestSingleInstanceGuard::testUnreachableHolderIsBusyNotPrimary() {
   holder->setArguments(QStringList{QString::fromLatin1(c_modeHoldLock), lockPath()});
   holder->start();
   QVERIFY2(holder->waitForStarted(10000), "lock holder did not start");
-  QVERIFY2(holder->waitForReadyRead(10000), "lock holder did not report the lock");
-  QVERIFY(QString::fromLocal8Bit(holder->readAllStandardOutput())
-              .contains(QLatin1String(c_heldMarker)));
+  QVERIFY2(waitForMarker(holder, c_heldMarker), "lock holder did not report the lock");
 
   // The holder is ALIVE (so the lock is not stale and cannot be reclaimed) but
   // it never started an IPC server, so tryConnect() times out.
@@ -170,7 +182,7 @@ void TestSingleInstanceGuard::testStaleLockFromDeadHolderIsReclaimed() {
   holder->setArguments(QStringList{QString::fromLatin1(c_modeHoldLock), lockPath()});
   holder->start();
   QVERIFY(holder->waitForStarted(10000));
-  QVERIFY(holder->waitForReadyRead(10000));
+  QVERIFY(waitForMarker(holder, c_heldMarker));
 
   // Kill the holder: the lock file survives on disk but its owner is gone, so
   // QLockFile::removeStaleLockFile() can reclaim it and we become primary.
@@ -308,8 +320,7 @@ void TestSingleInstanceGuard::testChildForwarding() {
   auto *child =
       startSender(detached ? QStringLiteral("detached") : QStringLiteral("normal"), files);
   QVERIFY(child->waitForStarted(10000));
-  QVERIFY(child->waitForReadyRead(10000));
-  QVERIFY(child->readAllStandardOutput().contains("SENDER_READY"));
+  QVERIFY(waitForMarker(child, "SENDER_READY"));
   // Deliberately do NOT pump the primary event loop during a slow startup.
   if (delay > 0) {
     QThread::msleep(delay);

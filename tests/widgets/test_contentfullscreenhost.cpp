@@ -68,7 +68,7 @@ struct Fixture {
     m_tabs.show();
     m_tabs.raise();
     m_tabs.activateWindow();
-    return QTest::qWaitForWindowExposed(&m_tabs);
+    return QTest::qWaitForWindowExposed(&m_tabs) && QTest::qWaitForWindowActive(&m_tabs);
   }
 };
 
@@ -341,7 +341,9 @@ void TestContentFullScreenHost::anOwnedButtonPopupHandlesTheFirstEscape() {
   QVERIFY(fixture.show());
   ContentFullScreenHost host;
   QVERIFY(host.setFullScreen(true, fixture.m_page));
-  QVERIFY(QTest::qWaitForWindowActive(fixture.m_page));
+  // Active status is shared with transient parents; wait for this page's native focus.
+  QTRY_COMPARE(QGuiApplication::focusWindow(), fixture.m_page->windowHandle());
+  QTRY_COMPARE(QApplication::activeWindow(), fixture.m_page);
   QTRY_VERIFY(fixture.m_editor->hasFocus());
   QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
   connectExitConsumer(host);

@@ -61,6 +61,9 @@ ctest --test-dir libs/vxcore/build_test -C Debug -R "^test_yourthing$" --output-
 - After a CMake version upgrade, stale build dirs fail to reconfigure with errors like `CMakeSystem.cmake.in does not exist`. Delete the offending build dir and re-run the configure command from scratch — do NOT try to repair in place.
 - After modifying a touched module, run the FULL test target for that module (not just your new subtest) to catch regressions; vxcore tests print each subtest name to stdout so you can verify the new one ran.
 
+Child-process readiness is a byte-stream protocol: accumulate stdout until the complete
+marker arrives under one deadline. IPC slow-start fixtures must use blocking reads rather
+than pumping the primary event loop while waiting for that marker.
 ## Test Structure
 
 ```
@@ -299,6 +302,9 @@ activation before measuring drag coordinates. Before inserting tab-replacement o
 drafts programmatically, wait for editor focus: that registers the active writer used by Save.
 The lazy-view `showWindow()` helper establishes those exposure/activation/focus preconditions;
 do not require editor focus for hidden/disabled editors or encrypted buffers already locking.
+Native popup fixtures must settle the owner's activation before promotion/opening. A
+transient parent shares `QWindow::isActive()`; when exact ownership matters, wait for both
+`QGuiApplication::focusWindow()` and `QApplication::activeWindow()` to match the intended host.
 
 `test_viewarea_tab_reuse` retains only its unmodified, version-stamped bundled asset directories
 between QtTest rows. It removes all local state and all non-bundle app entries before creating
