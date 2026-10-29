@@ -1,5 +1,19 @@
 find_package(Qt6 REQUIRED COMPONENTS WebChannel WebEngineWidgets PrintSupport Core5Compat)
 
+add_qt_test(test_plaintextedit
+  SOURCES
+    test_plaintextedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
+  LINKS
+    Qt6::Widgets
+    VTextEdit
+)
+target_include_directories(test_plaintextedit PRIVATE ${CMAKE_SOURCE_DIR}/src/gui)
+
 add_qt_test(test_docksizememory
   SOURCES
     test_docksizememory.cpp
@@ -278,6 +292,7 @@ add_qt_test(test_settings_persistence
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notetemplateselector.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
@@ -335,6 +350,7 @@ add_qt_test(test_syncservice_lifecycle
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/notebookinfowidget.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
@@ -385,6 +401,7 @@ add_qt_test(test_notebooksyncinfodialog2
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
@@ -415,6 +432,7 @@ add_qt_test(test_notebooksyncinfodialog2_url_change
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
@@ -441,6 +459,7 @@ add_qt_test(test_notebooksyncinfodialog2_error
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
@@ -514,6 +533,7 @@ add_qt_test(test_import_folder_dialog2
     ${CMAKE_SOURCE_DIR}/src/widgets/locationinputwithbrowsebutton.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/selectionitemwidget.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     # widgetsfactory.cpp references both of these, so they must be compiled in
     # too (same reason test_open_notebook_dialog2 lists them).
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
@@ -567,6 +587,7 @@ add_qt_test(test_open_notebook_dialog2
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/locationinputwithbrowsebutton.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
@@ -606,6 +627,7 @@ add_qt_test(test_open_notebook_dialog2_cancel
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/locationinputwithbrowsebutton.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
@@ -886,6 +908,7 @@ add_qt_test(test_notebook_sync_info_dialog2_readonly
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/scrolldialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
@@ -1184,6 +1207,7 @@ add_qt_test(test_notificationpopup2
     ${CMAKE_SOURCE_DIR}/src/widgets/buttonpopup.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/titlebar.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
@@ -1539,6 +1563,7 @@ add_qt_test(test_commentpanel
   SOURCES
     test_commentpanel.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/commentpanel.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/commentprovider.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
@@ -1568,6 +1593,7 @@ add_qt_test(test_mindmapeditor
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/selectdialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp

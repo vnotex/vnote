@@ -427,6 +427,7 @@ add_qt_test(test_markdowneditorcontroller
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/imageinsertdialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/dialogs/dialog.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/widgetsfactory.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/combobox.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/lineeditwithsnippet.cpp

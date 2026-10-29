@@ -4,7 +4,6 @@
 #include <QComboBox>
 #include <QFormLayout>
 #include <QLabel>
-#include <QPlainTextEdit>
 #include <QScopedValueRollback>
 #include <QTextDocument>
 #include <QVBoxLayout>
@@ -20,6 +19,7 @@
 #include <utils/widgetutils.h>
 
 #include "../lineeditwithsnippet.h"
+#include "../plaintextedit.h"
 #include "../widgetsfactory.h"
 #include "notetemplateselector.h"
 #include <vxcore/notebook_json_keys.h>
@@ -111,7 +111,7 @@ void NewNoteDialog2::setupUI() {
 
   // Body source: exactly one of the two controls exists.
   if (m_options.m_bodyMode == BodyMode::LiteralContent) {
-    m_contentEdit = new QPlainTextEdit(mainWidget);
+    m_contentEdit = new PlainTextEdit(mainWidget);
     m_contentEdit->setObjectName(QLatin1String(kContentEditName));
     // Verbatim: no trimming here or on accept. Qt collapses CRLF and lone CR
     // into document block separators on insertion, which literalTextOf() then

@@ -96,6 +96,22 @@ text-only status-bar look.
 
 ## Widget Families
 
+### Plain text input
+
+Use `PlainTextEdit` for editable multiline fields; `WidgetsFactory::createPlainTextEdit()`
+returns it through the existing `QPlainTextEdit *` interface. Direct construction preserves
+ordinary Qt styling; the factory retains its `ConsoleTextEdit` styling property.
+
+- `Ctrl+W` deletes the previous Qt word; `Ctrl+U` deletes back to the logical line's start,
+  not the start of a wrapped visual row. At the logical line's start, `Ctrl+U` does nothing.
+- Either shortcut deletes an existing selection first, including a multiline selection.
+- Each deletion is one undo step. Only an unmodified physical Control chord is accepted
+  (Qt's Meta modifier on macOS); Shift/Alt combinations and other keys retain Qt behavior.
+- Editable fields claim these shortcuts before parent actions. Read-only fields neither
+  claim them nor change text. Read-only consoles continue to use `QPlainTextEdit` directly.
+
+Boundary, selection, undo, wrapping, and parent-shortcut coverage: `test_plaintextedit`.
+
 ### MainWindow
 
 - `MainWindow2` — new main window shell with ServiceLocator DI; owns the top-level layout, toolbar, sidebar, and view area

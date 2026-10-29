@@ -6,7 +6,6 @@
 #include <QHBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
-#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QSignalBlocker>
 #include <QToolButton>
@@ -21,6 +20,7 @@
 #include <utils/pathutils.h>
 #include <widgets/lineeditwithsnippet.h>
 #include <widgets/locationinputwithbrowsebutton.h>
+#include <widgets/plaintextedit.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
@@ -47,7 +47,7 @@ void NotebookInfoWidget::setupUI(ServiceLocator &p_services) {
   connect(m_nameEdit, &QLineEdit::textChanged, this, &NotebookInfoWidget::inputEdited);
   setFocusProxy(m_nameEdit);
 
-  m_descriptionEdit = new QPlainTextEdit(this);
+  m_descriptionEdit = new PlainTextEdit(this);
   m_descriptionEdit->setObjectName(QStringLiteral("notebookDescriptionEdit"));
   m_descriptionEdit->setPlaceholderText(tr("Optional description for the notebook"));
   m_descriptionEdit->setMaximumHeight(100);

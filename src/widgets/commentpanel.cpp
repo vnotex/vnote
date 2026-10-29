@@ -5,7 +5,6 @@
 #include <QCoreApplication>
 #include <QLabel>
 #include <QListWidget>
-#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QStackedWidget>
 #include <QTimer>
@@ -15,6 +14,7 @@
 #include <gui/utils/widgetutils.h>
 
 #include "commentprovider.h"
+#include "plaintextedit.h"
 #include "propertydefs.h"
 
 using namespace vnotex;
@@ -125,7 +125,7 @@ void CommentPanel::setupUI() {
   WidgetUtils::setPropertyDynamically(m_anchorLabel, PropertyDefs::c_mutedText, true);
   editorLayout->addWidget(m_anchorLabel);
 
-  m_editor = new QPlainTextEdit(editorPage);
+  m_editor = new PlainTextEdit(editorPage);
   m_editor->setPlaceholderText(tr("Add a note..."));
   editorLayout->addWidget(m_editor, 1);
 

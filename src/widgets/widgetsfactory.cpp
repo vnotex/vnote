@@ -16,8 +16,9 @@
 #include <core/services/snippetcoreservice.h>
 
 #include "combobox.h"
-#include "propertydefs.h"
 #include "lineeditwithsnippet.h"
+#include "plaintextedit.h"
+#include "propertydefs.h"
 
 using namespace vnotex;
 
@@ -62,14 +63,14 @@ QLineEdit *WidgetsFactory::createUrlUserNameEdit(QLineEdit *p_urlEdit, QWidget *
   return edit;
 }
 
-LineEditWithSnippet *WidgetsFactory::createLineEditWithSnippet(
-    SnippetCoreService *p_snippetService, QWidget *p_parent) {
+LineEditWithSnippet *WidgetsFactory::createLineEditWithSnippet(SnippetCoreService *p_snippetService,
+                                                               QWidget *p_parent) {
   return new LineEditWithSnippet(p_snippetService, p_parent);
 }
 
-LineEditWithSnippet *WidgetsFactory::createLineEditWithSnippet(
-    SnippetCoreService *p_snippetService, const QString &p_contents,
-                                                                QWidget *p_parent) {
+LineEditWithSnippet *WidgetsFactory::createLineEditWithSnippet(SnippetCoreService *p_snippetService,
+                                                               const QString &p_contents,
+                                                               QWidget *p_parent) {
   return new LineEditWithSnippet(p_snippetService, p_contents, p_parent);
 }
 
@@ -128,7 +129,7 @@ QPlainTextEdit *WidgetsFactory::createPlainTextConsole(QWidget *p_parent) {
 }
 
 QPlainTextEdit *WidgetsFactory::createPlainTextEdit(QWidget *p_parent) {
-  auto edit = new QPlainTextEdit(p_parent);
+  auto edit = new PlainTextEdit(p_parent);
   edit->setProperty("ConsoleTextEdit", true);
   return edit;
 }

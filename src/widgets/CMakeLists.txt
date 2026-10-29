@@ -95,6 +95,7 @@ target_sources(vnote PRIVATE
     fullscreentoggleaction.cpp fullscreentoggleaction.h
     lineedit.cpp lineedit.h
     lineeditwithsnippet.cpp lineeditwithsnippet.h
+    plaintextedit.cpp plaintextedit.h
     imageviewwindow.cpp imageviewwindow.h
     imageviewer.cpp imageviewer.h
     inlinebanner.cpp inlinebanner.h
