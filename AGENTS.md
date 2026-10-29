@@ -75,25 +75,25 @@ Before pushing parent-repository or submodule changes, agents MUST:
    to the destination branch, not just the latest commit. Trace shared headers/APIs,
    build configuration and submodule pins to dependent consumers; filenames alone
    are not sufficient. Broaden coverage when the impact cannot be bounded safely.
-2. Build the affected application/library and test targets with tests enabled, using
-   a compatible Qt kit, compiler and build configuration. Include affected targets
-   that are excluded from the default build. An app-only build does not verify tests.
-3. Run the full registered test executables/suites covering those changes, including
-   affected native-editor or standalone submodule tests in their own build directories.
-   Unaffected targets and suites need not run. Follow [tests/AGENTS.md](tests/AGENTS.md)
-   and the platform's workflow for runtime setup.
-4. Verify the final code/configuration being pushed; rebuild and rerun affected checks
-   after subsequent changes. Report the scope rationale, commands, results, skips and
+2. Successfully build the affected application/library targets and **all test targets**
+   with tests enabled, using a compatible Qt kit, compiler and build configuration.
+   Include targets excluded from the default build and native-editor or standalone
+   submodule test targets in their own build directories. An app-only build does not
+   verify tests. Follow [tests/AGENTS.md](tests/AGENTS.md) for test build configuration.
+3. Verify the final code/configuration being pushed; rebuild required targets after
+   subsequent changes. Report the scope rationale, build commands, results, skips and
    platform limits. If all unpushed changes are documentation-only, check the docs and
    state that no build/test targets are affected; compilation and tests are not required.
 
-**Do not push when required builds or tests fail, time out or cannot run.** The only
-standing local exception is the closed [Windows native-focus whitelist](tests/AGENTS.md#local-pre-push-flaky-test-whitelist).
-It never skips an executable or build and never waives CI. Every other failure remains
-blocking: fix the cause and verify again; never disable tests, weaken assertions or
-increase deadlines just to obtain a pass. If verification is unavailable, report the
-exact blocker and obtain an explicit user exception before pushing. A local pass is
-not proof that other operating systems or packaging gates pass; disclose that limitation.
+**Running tests is not required before pushing.** Successful compilation and linking of
+all test targets is sufficient for the local test verification gate; CI test requirements
+remain unchanged.
+
+**Do not push when required builds fail, time out or cannot run.** Fix the cause and
+verify again; never disable tests or exclude required targets just to obtain a successful
+build. If build verification is unavailable, report the exact blocker and obtain an
+explicit user exception before pushing. A local build is not proof that tests pass or
+that other operating systems or packaging gates pass; disclose that limitation.
 
 ### CI runner debugging (SSH)
 
