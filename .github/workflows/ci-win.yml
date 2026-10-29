@@ -23,6 +23,7 @@ on:
 env:
     VNOTE_VER: 4.12.0
     CARGO_BUILD_JOBS: 2
+    VNOTE_TEST_RETAINED_GIF_SNAPSHOT: '1'
 
 jobs:
   build:

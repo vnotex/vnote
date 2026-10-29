@@ -25,6 +25,7 @@ env:
     CMAKE_VER: 3.24.3
     VNOTE_TESTS: ${{ startsWith(github.event.head_commit.message, '[Release]') && 'OFF' || 'ON' }}
     CARGO_BUILD_JOBS: 2
+    VNOTE_TEST_RETAINED_GIF_SNAPSHOT: '1'
     CMAKE_BUILD_PARALLEL_LEVEL: 2
 
 jobs:

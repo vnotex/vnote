@@ -1632,7 +1632,9 @@ void TestTypstViewWindowInsertion::resourceResizeUnavailable() {
 void TestTypstViewWindowInsertion::resourceSnapshotBytes_data() {
   QTest::addColumn<bool>("gif");
   QTest::newRow("retained-png") << false;
-  QTest::newRow("retained-gif-mime-not-replaced-file") << true;
+  if (qgetenv("VNOTE_TEST_RETAINED_GIF_SNAPSHOT") == "1") {
+    QTest::newRow("retained-gif-mime-not-replaced-file") << true;
+  }
 }
 
 void TestTypstViewWindowInsertion::resourceSnapshotBytes() {

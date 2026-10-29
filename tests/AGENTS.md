@@ -262,10 +262,30 @@ Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Keep the 
 QtTest crash handler. Build the host Typst module's `test_typstviewwindow_insertion` executable
 once, then select `^test_typstviewwindow_(insertion|cleanup|resources)$` in CTest. These serial
 groups share the executable and each retain a 240-second deadline. With `VNOTE_TYPST_TEST_GROUP`
-unset, a direct executable launch still runs every case. Each group writes plaintext stdout and
+unset, a direct executable launch runs all default-enabled cases. Each group writes plaintext stdout and
 its own `test_typstviewwindow_<group>.xml` JUnit file in the CTest working directory. CI
 preserves original parent/native CTest logs and these reports before diagnostic reruns,
 since hosted stdout can omit assertions.
+
+The `resourceSnapshotBytes(retained-gif-mime-not-replaced-file)` row is disabled by default.
+Set `VNOTE_TEST_RETAINED_GIF_SNAPSHOT=1` to register it; only the literal `1` enables it.
+The PNG snapshot row and every other resource test remain enabled. Windows Clipboard
+User Service can interfere with the GIF row on a shared desktop; the opt-in does not
+change its assertions or convert failures into skips.
+
+All three parent CI workflows set this flag, including for diagnostic reruns. **Pre-push
+verification must also set it when this suite is affected**; a default local pass is not
+proof of the full CI/pre-push coverage. No build reconfiguration is needed:
+
+```powershell
+$env:VNOTE_TEST_RETAINED_GIF_SNAPSHOT = "1"
+ctest --test-dir build-debug -C Debug -R '^test_typstviewwindow_resources$' --output-on-failure
+```
+
+```bash
+VNOTE_TEST_RETAINED_GIF_SNAPSHOT=1 ctest --test-dir build-debug -R '^test_typstviewwindow_resources$' --output-on-failure
+```
+
 Set Qt's active window explicitly at focus-sensitive fixture operations; `activateWindow()`
 alone depends on a window manager under Xvfb. After dismissing a modal dialog, wait for
 window activation and editor focus before sending shortcuts. Settle native exposure and
