@@ -153,15 +153,15 @@ VNote支持[PlantUML](http://plantuml.com/)来实现UML图表。您需要使用�
 VNote支持[Graphviz](http://www.graphviz.org/)来绘制图表。您需要使用代码块，并标明语言为`dot`，然后在代码块里面定义图表。
 
 ### 数学公式
-VNote默认使用[KaTeX](https://katex.org/)渲染数学公式，也可选用[MathJax](https://www.mathjax.org/)。默认的**公式块**的分隔符是`$$...$$`，**行内公式**的分隔符是`$...$`。
+VNote默认使用[KaTeX](https://katex.org/)渲染数学公式，也可选用[MathJax](https://www.mathjax.org/)或[Typst](https://typst.app/docs/reference/math/)。可在Markdown设置中的**数学公式渲染器**选项中切换。默认的**公式块**的分隔符是`$$...$$`，**行内公式**的分隔符是`$...$`。
 
 * 行内公式不能跨多行
 * 形如`3$abc$`/`$abc$4`/`$ abc$`和`$abc $`的不会被解析为公式
 * 使用`\`转义`$`
 * 对于多行公式，将开始和结束的`$$`分别放在单独的行中；结束分隔符后可以添加公式序号
-* 在公式块的`aligned`环境中，使用`\\`来换行
+* 使用KaTeX或MathJax时，在公式块的`aligned`环境中使用`\\`来换行
 
-VNote也可以使用标明语言`mathjax`的代码块来实现公式块。这种代码块使用当前选定的数学公式渲染器，也支持KaTeX。
+VNote也可以使用标明语言`mathjax`的代码块来实现公式块。这种代码块使用当前选定的数学公式渲染器，包括KaTeX和Typst。以下示例使用适用于KaTeX或MathJax的LaTeX语法；选用Typst时，应改用Typst数学语法。
 
     ```mathjax
     $$
@@ -172,6 +172,37 @@ VNote也可以使用标明语言`mathjax`的代码块来实现公式块。这种
 公式块支持公式序号：
 
     $$vnote x markdown = awesome$$ (1.2.1)
+
+#### Typst数学公式
+将**数学公式渲染器**设为**Typst**后，在原有的Markdown美元符号分隔符内使用Typst数学语法，而非LaTeX。例如，使用`frac(a, b)`而不是`\frac{a}{b}`。
+
+行内公式：
+
+    The length is $sqrt(x^2 + y^2)$.
+
+公式块：
+
+    $$
+    sum_(i=1)^n i = frac(n (n + 1), 2)
+    $$
+
+此设置下，`mathjax`代码块也使用Typst数学语法，但不能包含完整的Typst文档。切换渲染器不会转换已有的公式。
+
+### Typst代码块
+使用标明语言`typst`的围栏代码块可以渲染完整的[Typst标记](https://typst.app/docs/reference/syntax/)，包括文本、公式和布局。这类代码块始终使用Typst，不受**数学公式渲染器**设置影响。
+
+    ```typst
+    #set page(width: auto, height: auto)
+    #set text(size: 12pt)
+    = Typst in Markdown
+    A formula: $sqrt(x^2 + y^2)$
+    ```
+
+**注意**：
+
+* 每个代码块都是自包含的，不能访问外部文件或导入软件包
+* 在`typst`代码块内部使用Typst自身的语法，包括用`$...$`表示行内公式、`$ ... $`表示公式块，而非Markdown的`$$...$$`
+* 默认页边距为零，以便与周围的Markdown内容对齐；显式设置的页面尺寸和页边距会被保留，也支持多页输出
 
 ### 行内代码
 ```md

@@ -153,15 +153,15 @@ VNote supports [PlantUML](http://plantuml.com/) to draw UML diagrams. You should
 VNote supports [Graphviz](http://www.graphviz.org/) to draw diagrams. You should use `dot` specified as the language of the fenced code block and write the definition of your diagram within it.
 
 ### Math Formulas
-VNote renders math formulas with [KaTeX](https://katex.org/) by default; [MathJax](https://www.mathjax.org/) is an optional renderer. The default math delimiters are `$$...$$` for **displayed mathematics**, and `$...$` for **inline mathematics**.
+VNote renders math formulas with [KaTeX](https://katex.org/) by default; [MathJax](https://www.mathjax.org/) and [Typst](https://typst.app/docs/reference/math/) are optional renderers. Select one with **Math renderer** in the Markdown settings. The default math delimiters are `$$...$$` for **displayed mathematics**, and `$...$` for **inline mathematics**.
 
 * Inline mathematics should not cross multiple lines
 * Forms like `3$abc$`, `$abc$4`, `$ abc$`, and `$abc $` will not be treated as mathematics
 * Use `\` to escape `$`
 * For a multiline formula, put the opening and closing `$$` on their own lines; an equation number may follow the closing delimiter
-* Use `\\` inside an `aligned` environment to split a displayed formula into lines
+* With KaTeX or MathJax, use `\\` inside an `aligned` environment to split a displayed formula into lines
 
-VNote also supports displayed mathematics via a fenced code block with language `mathjax`. This fence uses the selected math renderer, including KaTeX.
+VNote also supports displayed mathematics via a fenced code block with language `mathjax`. This fence uses the selected math renderer, including KaTeX and Typst. The following example uses LaTeX syntax for KaTeX or MathJax; when Typst is selected, use Typst math syntax instead.
 
     ```mathjax
     $$
@@ -172,6 +172,37 @@ VNote also supports displayed mathematics via a fenced code block with language 
 Equation numbers for displayed mathematics are supported:
 
     $$vnote x markdown = awesome$$ (1.2.1)
+
+#### Typst Math
+When **Math renderer** is set to **Typst**, write Typst math syntax, not LaTeX, inside the same Markdown dollar delimiters. For example, use `frac(a, b)` instead of `\frac{a}{b}`.
+
+Inline mathematics:
+
+    The length is $sqrt(x^2 + y^2)$.
+
+Displayed mathematics:
+
+    $$
+    sum_(i=1)^n i = frac(n (n + 1), 2)
+    $$
+
+The `mathjax` fence also uses Typst math syntax with this setting; it does not accept a full Typst document. Changing the renderer does not convert existing formulas.
+
+### Typst Blocks
+Use a fenced code block with language `typst` to render full [Typst markup](https://typst.app/docs/reference/syntax/), including text, formulas, and layout. These blocks always use Typst, independently of the **Math renderer** setting.
+
+    ```typst
+    #set page(width: auto, height: auto)
+    #set text(size: 12pt)
+    = Typst in Markdown
+    A formula: $sqrt(x^2 + y^2)$
+    ```
+
+**Notes**:
+
+* Each block is self-contained; external files and package imports are not available
+* Inside a `typst` block, use Typst's own syntax, including `$...$` for inline math and `$ ... $` for display math, rather than Markdown's `$$...$$`
+* The default page margin is zero to align with surrounding Markdown; explicit page sizes and margins are preserved, including multi-page output
 
 ### Inline Code
 ```md
