@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Add Open Link above Copy Link in mind-map URL context menus, preserving link-opening security prompts and read-only access
 * Open localized release notes in a new read-only tab after upgrading VNote, with Simplified Chinese notes and English fallback; replace both bundled documents in the version release commit
 
 ## v4.12.0
