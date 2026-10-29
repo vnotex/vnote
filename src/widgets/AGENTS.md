@@ -136,7 +136,19 @@ The split-pane editor area, designed around vxcore workspaces:
 
 - `ViewArea2` — QSplitter tree managing split panes (pure view, no business logic)
 - `ViewSplit2` — QTabWidget-based split pane; each instance maps 1:1 to a vxcore workspace
-- `ViewWindow2` — abstract base for file viewer windows; receives an initial `Buffer2` and owns guarded same-type rebinding
+- `ViewWindow2` — abstract base for document viewer windows; receives an initial `Buffer2` and owns guarded same-type rebinding
+
+Full Text, Markdown, Typst, MindMap, PDF and Image windows also accept memory documents.
+Use `Buffer2::displayName()`, explicit memory `editorType()`, and `canSave()` / `canReload()`;
+`resolvedPath()` is empty without a backing file. File menus, external programs, attachments
+and sidecar comments require file capabilities, not a suffix in a `vx://` identity. PDF memory
+documents register owned bytes with the existing revocable `vxpdf://` token registry.
+Relative resources require an explicit validated base; empty never means the current directory.
+Rootless Typst compiles its overlay in memory-only project mode, using a normalized project-relative
+`displayName` as its source identity or `main.typ` for an arbitrary title. Rootless Markdown keeps a
+local renderer-shell origin for bundled scripts but an `about:blank` document base, so content
+cannot resolve relative images against the template directory. See the
+[memory-buffer service contract](../core/services/AGENTS.md#memory-document-buffers).
 
 Markdown Edit-to-Read transitions must adopt the revision from their successful `syncNow()`
 before exposing/focusing the reader. A delayed native focus gain otherwise misclassifies that

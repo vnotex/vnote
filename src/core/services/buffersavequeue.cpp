@@ -71,6 +71,15 @@ struct BufferSaveQueue::ProtectedQueue {
   QSet<QString> running;
 };
 
+struct BufferSaveQueue::ContentQueue {
+  struct Job {
+    std::function<int()> execute;
+    std::function<void(int)> complete;
+  };
+  QHash<QString, QQueue<Job>> pending;
+  QSet<QString> running;
+};
+
 BufferSaveQueue::BufferSaveQueue(IBufferCoreService &p_coreService, NotebookIoGate &p_gate,
                                  QObject *p_parent)
     : QObject(p_parent), m_coreService(p_coreService), m_gate(p_gate) {}
@@ -406,6 +415,62 @@ void BufferSaveQueue::runProtectedWorker(const QString &p_bufferId) {
           if (finished)
             finished(static_cast<int>(result));
         },
+        Qt::QueuedConnection);
+  }
+}
+
+bool BufferSaveQueue::enqueueContent(const QString &p_bufferId, std::function<int()> p_execute,
+                                     std::function<void(int)> p_complete) {
+  if (p_bufferId.isEmpty() || !p_execute || !p_complete)
+    return false;
+  bool launch = false;
+  {
+    QMutexLocker lock(&m_mutex);
+    if (m_stopping)
+      return false;
+    if (!m_contentQueue)
+      m_contentQueue = std::make_unique<ContentQueue>();
+    m_contentQueue->pending[p_bufferId].enqueue({std::move(p_execute), std::move(p_complete)});
+    if (!m_contentQueue->running.contains(p_bufferId)) {
+      m_contentQueue->running.insert(p_bufferId);
+      ++m_inFlightCount;
+      launch = true;
+    }
+  }
+  if (launch)
+    QThreadPool::globalInstance()->start([this, p_bufferId]() { runContentWorker(p_bufferId); });
+  return true;
+}
+
+void BufferSaveQueue::runContentWorker(const QString &p_bufferId) {
+  for (;;) {
+    ContentQueue::Job job;
+    {
+      QMutexLocker lock(&m_mutex);
+      auto it = m_contentQueue->pending.find(p_bufferId);
+      if (it == m_contentQueue->pending.end() || it->isEmpty()) {
+        if (it != m_contentQueue->pending.end())
+          m_contentQueue->pending.erase(it);
+        m_contentQueue->running.remove(p_bufferId);
+        --m_inFlightCount;
+        if (!m_inFlightCount)
+          m_drained.wakeAll();
+        return;
+      }
+      job = it->dequeue();
+    }
+    int result = VXCORE_ERR_UNKNOWN;
+    try {
+      result = job.execute();
+    } catch (const std::bad_alloc &) {
+      result = VXCORE_ERR_OUT_OF_MEMORY;
+    } catch (...) {
+      result = VXCORE_ERR_UNKNOWN;
+    }
+    // Post before dropping worker accounting: shutdown cannot destroy the
+    // queue until every accepted operation's owner-thread completion is queued.
+    QMetaObject::invokeMethod(
+        this, [complete = std::move(job.complete), result]() { complete(result); },
         Qt::QueuedConnection);
   }
 }

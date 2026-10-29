@@ -205,7 +205,7 @@ QUrl insertionSourceUrl(const QString &p_root, const QString &p_source) {
     return {};
   }
   QUrl url(p_source, QUrl::StrictMode);
-  if (url.scheme().isEmpty() && !path.startsWith(QLatin1String("//")) &&
+  if (!p_root.isEmpty() && url.scheme().isEmpty() && !path.startsWith(QLatin1String("//")) &&
       QFileInfo(QDir(p_root).filePath(path)).isFile()) {
     // Typed relative filenames are also literal when that exact file exists. URI
     // query/fragment components otherwise remain available for encoded input.
@@ -216,7 +216,7 @@ QUrl insertionSourceUrl(const QString &p_root, const QString &p_source) {
 }
 
 QString localInsertionPath(const QString &p_root, const QUrl &p_url, bool p_linkPolicy = false) {
-  if (p_url.isEmpty() || !p_url.isValid() || containsNull(p_url) ||
+  if (p_root.isEmpty() || p_url.isEmpty() || !p_url.isValid() || containsNull(p_url) ||
       (!p_url.scheme().isEmpty() && !p_url.isLocalFile()) ||
       ((!p_url.isLocalFile() || p_linkPolicy) && !p_url.authority().isEmpty())) {
     return {};
@@ -319,12 +319,26 @@ bool TypstViewWindowController::setBuffer(const Buffer2 &p_buffer, QString *p_er
     }
     return false;
   };
-  if (!p_buffer.isValid() || p_buffer.isEncrypted() || p_buffer.nodeId().isVirtual()) {
-    return fail(tr("Typst requires an available, unencrypted file buffer"));
+  if (!p_buffer.isValid() || p_buffer.isEncrypted() ||
+      (!p_buffer.isFileBacked() && !p_buffer.isMemoryBacked()) || p_buffer.getBuffer().isEmpty()) {
+    return fail(tr("Typst requires an available, unencrypted document buffer"));
   }
-  const auto info = p_buffer.getBuffer();
-  if (info.isEmpty() || info.value(QStringLiteral("isVirtual")).toBool()) {
-    return fail(tr("Typst requires an available, unencrypted file buffer"));
+  if (p_buffer.isMemoryBacked()) {
+    const auto base = p_buffer.getResourceBasePath();
+    if (!base.isEmpty()) {
+      if (base.contains(QChar::Null) || !QDir::isAbsolutePath(base) || !QFileInfo(base).isDir()) {
+        return fail(tr("The Typst project directory is unavailable"));
+      }
+      m_project.root = resolvedFileSystemPath(base);
+      if (m_project.root.isEmpty()) {
+        return fail(tr("The Typst project directory is unavailable"));
+      }
+    }
+    m_buffer = p_buffer;
+    const auto name = p_buffer.displayName();
+    m_project.mainFile = isProjectPath(name) ? name : QStringLiteral("main.typ");
+    m_project.memoryOnly = base.isEmpty();
+    return true;
   }
 
   const auto path = p_buffer.resolvedPath();
@@ -356,7 +370,7 @@ const TypstViewWindowController::Project &TypstViewWindowController::getProject(
 }
 
 void TypstViewWindowController::snapshotInitialImages(const QString &p_source) {
-  if (!m_initialImagesSnapshotted && resourceAvailable()) {
+  if (!m_initialImagesSnapshotted && m_buffer.isFileBacked() && resourceAvailable()) {
     m_initialImageSource = p_source;
     m_initialImagesSnapshotted = true;
   }
@@ -377,7 +391,8 @@ void TypstViewWindowController::clearObsoleteImages() {
   const auto skip = [](const QString &p_reason) {
     qWarning() << "TypstViewWindowController: skipped obsolete-image cleanup:" << p_reason;
   };
-  if (!resourceAvailable() || !m_initialImagesSnapshotted || m_buffer.isReadOnly()) {
+  if (!m_buffer.isFileBacked() || !resourceAvailable() || !m_initialImagesSnapshotted ||
+      m_buffer.isReadOnly()) {
     return;
   }
   auto *buffers = m_services.get<BufferService>();
@@ -554,7 +569,7 @@ void TypstViewWindowController::clearObsoleteImages() {
 }
 
 bool TypstViewWindowController::bufferAvailable() const {
-  return m_buffer.isValid() && !m_buffer.isEncrypted() && !m_project.root.isEmpty() &&
+  return m_buffer.isValid() && !m_buffer.isEncrypted() && !m_project.mainFile.isEmpty() &&
          !m_buffer.getBuffer().isEmpty();
 }
 
@@ -573,7 +588,8 @@ NodeIdentifier TypstViewWindowController::resolveIndexedFile(const QString &p_ab
 }
 
 void TypstViewWindowController::requestOpenSource(const QString &p_file, int p_start, int p_end) {
-  if (!bufferAvailable() || !isProjectPath(p_file) || p_start < 0 || p_end < p_start) {
+  if (!resourceAvailable() || !isProjectPath(p_file) || p_start < 0 || p_end < p_start ||
+      (m_buffer.isMemoryBacked() && p_file == m_project.mainFile)) {
     emit errorOccurred(tr("Unable to open the Typst source location"));
     return;
   }
@@ -626,7 +642,7 @@ void TypstViewWindowController::requestOpenLink(const QUrl &p_url,
   }
 
   const auto path = p_url.isLocalFile() ? p_url.toLocalFile() : p_url.path(QUrl::FullyDecoded);
-  if (!isLocalLinkPath(path)) {
+  if (!resourceAvailable() || !isLocalLinkPath(path)) {
     emit errorOccurred(tr("This link is not allowed for this note"));
     return;
   }
@@ -695,18 +711,25 @@ void TypstViewWindowController::openConfirmedExternalLink(const QUrl &p_url) {
 void TypstViewWindowController::invalidateInsertionRequests() { ++m_insertionGeneration; }
 
 bool TypstViewWindowController::resourceAvailable() const {
-  if (!bufferAvailable() || m_insertionBufferPath.isEmpty()) {
+  if (!bufferAvailable() || m_project.root.isEmpty()) {
     return false;
   }
   // Buffer2 copies retain their original nodeId. Consult the live record as well,
   // so a backend retarget cannot authorize work through an old handle.
   const auto current = m_services.get<BufferService>()->getBufferHandle(m_buffer.id());
-  return current.isValid() && !current.isEncrypted() && current.nodeId() == m_buffer.nodeId() &&
-         current.resolvedPath() == m_insertionBufferPath;
+  if (!current.isValid() || current.isEncrypted() || current.nodeId() != m_buffer.nodeId()) {
+    return false;
+  }
+  if (current.isMemoryBacked()) {
+    const auto base = current.getResourceBasePath();
+    return !base.isEmpty() && resolvedFileSystemPath(base) == m_project.root;
+  }
+  return current.resolvedPath() == m_insertionBufferPath;
 }
 
 bool TypstViewWindowController::insertionAvailable() const {
-  return resourceAvailable() && !m_buffer.isReadOnly();
+  return bufferAvailable() && !m_buffer.isReadOnly() &&
+         (m_buffer.isMemoryBacked() || resourceAvailable());
 }
 
 QImage TypstViewWindowController::decodeImageForViewing(const QByteArray &p_data,
@@ -720,7 +743,7 @@ QImage TypstViewWindowController::decodeImageForViewing(const QByteArray &p_data
     }
     return QImage();
   };
-  if (!resourceAvailable()) {
+  if (!(m_buffer.isMemoryBacked() ? bufferAvailable() : resourceAvailable())) {
     return fail(tr("The note is not available for image viewing"));
   }
   QByteArray validated;
@@ -778,7 +801,7 @@ QByteArray TypstViewWindowController::readImageData(const QString &p_source, QSt
     }
     return QByteArray();
   };
-  if (!insertionAvailable()) {
+  if (!m_buffer.isFileBacked() || !insertionAvailable()) {
     return fail(tr("The note is not available for image insertion"));
   }
   const QPointer<TypstViewWindowController> guard(this);
@@ -828,7 +851,7 @@ QString TypstViewWindowController::insertImage(const QByteArray &p_data, const Q
     }
     return QString();
   };
-  if (!insertionAvailable()) {
+  if (!m_buffer.isFileBacked() || !insertionAvailable()) {
     return fail(tr("The note is not available for image insertion"));
   }
   const QPointer<TypstViewWindowController> guard(this);
@@ -893,7 +916,7 @@ QString TypstViewWindowController::imageReference(const QUrl &p_url, QString *p_
     }
     return QString();
   };
-  if (!insertionAvailable()) {
+  if (!insertionAvailable() || !resourceAvailable()) {
     return fail(tr("The note is not available for image insertion"));
   }
   const auto path = localInsertionPath(m_project.root, p_url);
@@ -936,6 +959,9 @@ QString TypstViewWindowController::linkDestination(const QString &p_source, bool
     }
     return url.toString(QUrl::FullyEncoded);
   }
+  if (!resourceAvailable()) {
+    return fail(tr("This note has no local resource directory"));
+  }
   const auto path = localInsertionPath(m_project.root, url, true);
   if (path.isEmpty() || !QFileInfo(path).isFile()) {
     return fail(tr("The linked file does not exist or this link is not allowed for this note"));
@@ -968,8 +994,8 @@ QString TypstViewWindowController::linkDestination(const QString &p_source, bool
 }
 
 bool TypstViewWindowController::canAttach(const QUrl &p_url) const {
-  if (!insertionAvailable() || !m_buffer.isAttachmentSupported() || !p_url.isLocalFile() ||
-      !QDir::isAbsolutePath(p_url.toLocalFile())) {
+  if (!m_buffer.isFileBacked() || !insertionAvailable() || !m_buffer.isAttachmentSupported() ||
+      !p_url.isLocalFile() || !QDir::isAbsolutePath(p_url.toLocalFile())) {
     return false;
   }
   const auto source = localInsertionPath(m_project.root, p_url);
@@ -1054,7 +1080,7 @@ bool TypstViewWindowController::readFileContent(const QUrl &p_url, QString *p_te
     }
     return false;
   };
-  if (!p_text || !insertionAvailable()) {
+  if (!p_text || !insertionAvailable() || !resourceAvailable()) {
     return fail(tr("The note is not available for file content insertion"));
   }
   const auto path = localInsertionPath(m_project.root, p_url);

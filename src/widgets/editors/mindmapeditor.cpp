@@ -117,7 +117,9 @@ m3::qt::EditorConfig editorConfig(ServiceLocator &p_services, const Buffer2 &p_b
     }
   }
   config.resourceBasePath = p_buffer.getResourceBasePath();
-  config.resolveRelativeUrls = !p_buffer.isEncrypted();
+  // Keep resolution with the buffer-aware host across rebinding. The native
+  // editor's resolution policy is immutable and an empty base otherwise uses cwd.
+  config.resolveRelativeUrls = false;
   // ViewWindow2 owns these window-scoped shortcuts. Native toolbar actions remain available.
   config.shortcuts.zoomIn.clear();
   config.shortcuts.zoomOut.clear();
@@ -512,7 +514,13 @@ void MindMapEditor::setBuffer(const Buffer2 &p_buffer) {
   if (!guard || generation != m_generation) {
     return;
   }
-  setResourceBasePath(m_buffer.getResourceBasePath());
+  const auto base = m_buffer.getResourceBasePath();
+  // The native setter resolves empty to cwd. Relative resolution is disabled
+  // there; our controller always resolves requests against the live buffer.
+  // Keep the unused native base rather than turning absence into cwd access.
+  if (!base.isEmpty()) {
+    setResourceBasePath(base);
+  }
   if (!guard || generation != m_generation) {
     return;
   }

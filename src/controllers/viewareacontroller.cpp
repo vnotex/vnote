@@ -923,7 +923,9 @@ void ViewAreaController::setView(ViewAreaView *p_view) { m_view = p_view; }
 void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings) {
   const QPointer<ViewAreaController> guard(this);
   QString fileType;
-  if (p_buffer.isEncrypted()) {
+  if (p_buffer.isMemoryBacked()) {
+    fileType = p_buffer.editorType();
+  } else if (p_buffer.isEncrypted()) {
     const QString editor = p_buffer.editorType();
     if (editor == QLatin1String("markdown")) {
       fileType = QStringLiteral("Markdown");
@@ -951,7 +953,7 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   }
 
   // External program dispatch: check if this file suffix has a configured external program.
-  if (!p_buffer.isEncrypted()) {
+  if (p_buffer.isFileBacked() && !p_buffer.isEncrypted()) {
     const QString suffix = QFileInfo(p_buffer.nodeId().relativePath).suffix().toLower();
     if (!suffix.isEmpty()) {
       auto *configMgr = m_services.get<ConfigMgr2>();
@@ -1002,7 +1004,7 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
   // leave an empty DetachedWindow behind for a non-editable file type.
   auto *factory = m_services.get<ViewWindowFactory>();
   if (!factory || !factory->hasCreator(fileType)) {
-    if (p_buffer.isEncrypted()) {
+    if (!p_buffer.isFileBacked() || p_buffer.isEncrypted()) {
       closeUnownedOpenBuffer(p_buffer.id());
       return;
     }
@@ -1170,7 +1172,7 @@ void ViewAreaController::openBuffer(const Buffer2 &p_buffer, const FileOpenSetti
     }
   };
   const auto *configMgr = m_services.get<ConfigMgr2>();
-  if (settings.m_alwaysNewWindow || !configMgr ||
+  if (p_buffer.isMemoryBacked() || settings.m_alwaysNewWindow || !configMgr ||
       configMgr->getCoreConfig().getAlwaysOpenNotesInNewTabs() || detached || preview ||
       !settings.m_focus || !m_shouldPropagateToCore || !wsSvc) {
     openNewWindow();

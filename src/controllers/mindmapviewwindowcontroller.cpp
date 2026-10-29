@@ -98,7 +98,23 @@ void MindMapViewWindowController::requestImage(const QString &p_url, quint64 p_r
   }
 
   if (!m_buffer.isEncrypted()) {
-    m_imageLoader->requestImage(p_url, p_requestId, m_buffer.getResourceBasePath());
+    if (QDir::isAbsolutePath(p_url)) {
+      QByteArray bytes;
+      const bool loaded =
+          ImageUtils::readImageFile(p_url, bytes) && bytes.size() <= c_imageByteLimit;
+      const auto image = loaded ? MindMapImageLoader::decodeImage(bytes) : QImage();
+      bytes.fill('\0');
+      if (isCurrent(generation, lease))
+        emit imageReady(p_url, p_requestId, image);
+      return;
+    }
+    const auto base = m_buffer.getResourceBasePath();
+    const QUrl source(p_url, QUrl::StrictMode);
+    if (base.isEmpty() && source.isRelative() && QDir::isRelativePath(p_url)) {
+      emit imageReady(p_url, p_requestId, QImage());
+      return;
+    }
+    m_imageLoader->requestImage(p_url, p_requestId, base);
     return;
   }
 
@@ -357,11 +373,12 @@ void MindMapViewWindowController::requestOpenLink(const QString &p_url,
     return;
   }
   const auto base = m_buffer.getResourceBasePath();
-  if (base.isEmpty()) {
+  if (base.isEmpty() && QDir::isRelativePath(path)) {
     emit errorOccurred(tr("Unable to resolve the note's link base path"));
     return;
   }
-  const auto absolutePath = QDir::cleanPath(QDir(base).absoluteFilePath(path));
+  const auto absolutePath =
+      QDir::cleanPath(QDir::isAbsolutePath(path) ? path : QDir(base).absoluteFilePath(path));
   if (!QFileInfo::exists(absolutePath)) {
     emit errorOccurred(tr("The linked file does not exist"));
     return;

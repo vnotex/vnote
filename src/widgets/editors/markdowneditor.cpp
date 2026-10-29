@@ -1428,9 +1428,11 @@ void MarkdownEditor::insertImageFromUrl(const QString &p_url, bool p_quiet, bool
 
 QString MarkdownEditor::getRelativeLink(const QString &p_path) {
   if (PathUtils::isLocalFile(p_path)) {
-    const auto base = m_contentPath.isEmpty() && m_buffer2
-                          ? QFileInfo(m_buffer2->resolvedPath()).path()
-                          : m_contentPath;
+    const auto base =
+        m_contentPath.isEmpty() && m_buffer2 ? m_buffer2->getResourceBasePath() : m_contentPath;
+    if (base.isEmpty()) {
+      return QString();
+    }
     auto relativePath = PathUtils::relativePath(base, p_path);
     auto link = PathUtils::encodeSpacesInPath(QDir::fromNativeSeparators(relativePath));
     if (m_config.getPrependDotInRelativeLink()) {
@@ -2556,6 +2558,10 @@ QString MarkdownEditor::resolveLinkUrl(const QString &p_linkText) const {
     linkUrl = p_linkText;
   } else {
     auto fragResult = vnotex::splitUrlFragment(p_linkText);
+    const QUrl url(fragResult.path);
+    if (getBasePath().isEmpty() && url.isRelative() && QDir::isRelativePath(fragResult.path)) {
+      return QString();
+    }
     QString resolvedPath = vte::MarkdownUtils::linkUrlToPath(getBasePath(), fragResult.path);
     if (!fragResult.fragment.isEmpty()) {
       linkUrl = resolvedPath + QLatin1Char('#') + fragResult.fragment;
@@ -2734,9 +2740,8 @@ void MarkdownEditor::handleMouseReleased(QMouseEvent *p_event) {
       (p_event->pos() - m_linkPressPosition).manhattanLength() <= QApplication::startDragDistance();
   m_linkPressActive = false;
   m_linkSelectionDrag = false;
-  if (p_event->button() != Qt::LeftButton ||
-      !p_event->modifiers().testFlag(Qt::ControlModifier) || !click ||
-      m_textEdit->textCursor().hasSelection()) {
+  if (p_event->button() != Qt::LeftButton || !p_event->modifiers().testFlag(Qt::ControlModifier) ||
+      !click || m_textEdit->textCursor().hasSelection()) {
     return;
   }
 

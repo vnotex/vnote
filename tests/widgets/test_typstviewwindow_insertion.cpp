@@ -38,6 +38,7 @@
 #include <QGraphicsPixmapItem>
 #include <QGraphicsView>
 #include <QImageReader>
+#include <QInputMethodEvent>
 #include <QLineEdit>
 #include <QListWidget>
 #include <QMenu>
@@ -75,6 +76,7 @@
 #include <core/services/bufferservice.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/hookmanager.h>
+#include <core/services/memorybuffersource.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
 #include <core/services/syncworkqueuemanager.h>
@@ -305,9 +307,16 @@ QLineEdit *linkField(LinkInsertDialog *dialog, int row) {
 void replaceField(QLineEdit *edit, const QString &text) {
   edit->setFocus();
   edit->selectAll();
-  // Paste also exercises the actual line-edit path for Unicode and long data URLs.
-  QApplication::clipboard()->setText(text);
-  QTest::keySequence(edit, QKeySequence::Paste);
+  // An empty IME commit does not delete the selection; clearing is a Backspace edit.
+  // Both input paths avoid the shared OS clipboard. Dedicated paste cases cover that path.
+  if (text.isEmpty()) {
+    QTest::keyClick(edit, Qt::Key_Backspace);
+  } else {
+    QInputMethodEvent input;
+    input.setCommitString(text);
+    QCoreApplication::sendEvent(edit, &input);
+  }
+  QCOMPARE(edit->text(), text);
 }
 
 // A bounded driver runs inside the application's actual modal event loop. Every
@@ -692,6 +701,8 @@ private slots:
   void initTestCase();
   void init();
   void cleanup();
+  void memoryBodyRendersWithoutFileWrites_data();
+  void memoryBodyRendersWithoutFileWrites();
   void nativePaste_data();
   void nativePaste();
   void explicitPlainPaste();
@@ -980,6 +991,77 @@ void TestTypstViewWindowInsertion::show(const Buffer2 &buffer) {
   m_edit->setFocus();
   QCoreApplication::processEvents();
 }
+void TestTypstViewWindowInsertion::memoryBodyRendersWithoutFileWrites_data() {
+  QTest::addColumn<bool>("rooted");
+  QTest::addColumn<QString>("displayName");
+  QTest::addColumn<QString>("sourceName");
+  QTest::newRow("rootless-named") << false << QStringLiteral("memory-note.typ")
+                                  << QStringLiteral("memory-note.typ");
+  QTest::newRow("rootless-title-fallback")
+      << false << QStringLiteral("Memory: document") << QStringLiteral("main.typ");
+  QTest::newRow("explicit-resource-base")
+      << true << QStringLiteral("memory-note.typ") << QStringLiteral("memory-note.typ");
+}
+
+void TestTypstViewWindowInsertion::memoryBodyRendersWithoutFileWrites() {
+  QFETCH(bool, rooted);
+  QFETCH(QString, displayName);
+  QFETCH(QString, sourceName);
+  MemoryBufferSource source;
+  source.address = QStringLiteral("vx://typst-memory-window");
+  source.displayName = displayName;
+  source.editorType = QStringLiteral("Typst");
+  source.content =
+      QByteArrayLiteral("#set page(width: 240pt, height: 160pt, margin: 16pt)\n= Memory body\n");
+  // The authored read must use this document's overlay, not a same-named disk file.
+  source.content +=
+      QStringLiteral("#assert(read(\"%1\").contains(\"Memory body\"))\n").arg(sourceName).toUtf8();
+  const auto resourceDirectory = m_directory->filePath(QStringLiteral("memory-resources"));
+  QVERIFY(QDir().mkpath(resourceDirectory));
+  const QDir resources(resourceDirectory);
+  if (rooted) {
+    source.resourceBasePath = resourceDirectory;
+    QVERIFY(writeBytes(resources.filePath(sourceName), QByteArrayLiteral("#unknown_disk_source")));
+    QVERIFY(writeBytes(resources.filePath(QStringLiteral("resource.png")), png()));
+    source.content += QByteArrayLiteral("#image(\"resource.png\", width: 60pt)\n");
+  } else {
+    source.content += QByteArrayLiteral(
+        "#rect(width: 60pt, height: 40pt, fill: rgb(28, 164, 92), stroke: none)\n");
+  }
+  const auto before = filesBelow(resourceDirectory);
+  auto memory = m_buffers->openMemoryBuffer(source);
+  QVERIFY(memory.isValid());
+  show(memory);
+  QVERIFY(ready());
+  QCOMPARE(m_editor->getConfig().m_memoryOnly, !rooted);
+  QCOMPARE(m_editor->getConfig().m_projectRoot.isEmpty(), !rooted);
+  QCOMPARE(m_edit->toPlainText(), QString::fromUtf8(source.content));
+  QVERIFY(QTest::qWaitFor([&] { return containsColor(m_pdf->grab().toImage(), c_green); }, 5000));
+  auto *imageAction = insertionAction(m_window.get(), true);
+  auto *linkAction = insertionAction(m_window.get(), false);
+  auto *plainPaste = m_window->findChild<QAction *>(QStringLiteral("typstPastePlainText"));
+  QVERIFY(imageAction && linkAction && plainPaste);
+  QVERIFY(!imageAction->isEnabled());
+  QVERIFY(linkAction->isEnabled());
+  QVERIFY(plainPaste->isEnabled());
+  imageAction->trigger();
+  QVERIFY(!m_window->findChild<ImageInsertDialog *>());
+  select(QStringLiteral("Memory body"));
+  QApplication::clipboard()->setText(QStringLiteral("Updated memory"));
+  plainPaste->trigger();
+  QVERIFY(m_edit->toPlainText().contains(QStringLiteral("= Updated memory")));
+  QVERIFY(ready());
+  QVERIFY(memory.resolvedPath().isEmpty());
+  QVERIFY(!memory.isFileBacked());
+  QCOMPARE(filesBelow(resourceDirectory), before);
+  if (rooted) {
+    QCOMPARE(readBytes(resources.filePath(sourceName)), QByteArrayLiteral("#unknown_disk_source"));
+    QCOMPARE(readBytes(resources.filePath(QStringLiteral("resource.png"))), png());
+  } else {
+    QVERIFY(!QFileInfo::exists(resources.filePath(sourceName)));
+  }
+}
+
 void TestTypstViewWindowInsertion::select(const QString &text) {
   auto cursor = m_edit->document()->find(text);
   QVERIFY(!cursor.isNull());
@@ -1006,6 +1088,12 @@ bool TestTypstViewWindowInsertion::ready() {
     qWarning() << "Native compile:"
                << (m_editor ? m_editor->compileMessage() : QStringLiteral("destroyed"))
                << (m_editor ? m_editor->diagnostics() : QStringList());
+    if (m_editor && m_window) {
+      qWarning() << "Current source:" << m_editor->document()->toPlainText()
+                 << "Buffer source:" << m_window->getBuffer().getContent()
+                 << "Project root:" << m_editor->getConfig().m_projectRoot
+                 << "Active file:" << m_editor->activeFile();
+    }
     return false;
   }
   if (m_editor->hasPendingPdfUpdate()) {
@@ -2599,8 +2687,9 @@ void TestTypstViewWindowInsertion::previewExternalConsent() {
         // Disabling this top-level fixture also disables its child dialog.
         question->done(QMessageBox::YesToAll);
       } else {
-        const auto choice = action == No ? QMessageBox::No
-                            : action == Yes ? QMessageBox::Yes : QMessageBox::YesToAll;
+        const auto choice = action == No    ? QMessageBox::No
+                            : action == Yes ? QMessageBox::Yes
+                                            : QMessageBox::YesToAll;
         auto *button = question->button(choice);
         if (button) {
           QTest::mouseClick(button, Qt::LeftButton);

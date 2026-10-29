@@ -39,17 +39,10 @@ void Buffer2::setNodeId(const NodeIdentifier &p_nodeId) {
 // ============ Path Resolution ============
 
 QString Buffer2::resolvedPath() const {
-  if (!isValid()) {
+  if (!isFileBacked()) {
     return QString();
   }
   return m_bufferService->getResolvedPath(m_nodeId.notebookId, m_nodeId.relativePath);
-}
-
-QString Buffer2::getResourceBasePath() const {
-  if (!isValid()) {
-    return QString();
-  }
-  return m_bufferService->getResourceBasePath(m_bufferId);
 }
 
 // ============ Buffer Content ============
@@ -171,6 +164,9 @@ bool Buffer2::isModified() const {
   if (!isValid()) {
     return false;
   }
+  if (isMemoryBacked() && m_bufferService->currentRevision(m_bufferId) !=
+                              m_bufferService->lastSavedRevision(m_bufferId))
+    return true;
   return m_bufferService->isModified(m_bufferId);
 }
 

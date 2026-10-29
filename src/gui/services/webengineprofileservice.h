@@ -68,6 +68,9 @@ public:
   // `vxpdf://pdf/document/<token>` URL. Empty when the handler is unavailable.
   QString registerPdfDocument(const QString &p_absPath);
 
+  // Register an owned memory body without a document file.
+  QString registerPdfDocument(QByteArray p_content);
+
   void unregisterPdfDocument(const QString &p_token);
 
   bool hasPdfDocument(const QString &p_token) const;

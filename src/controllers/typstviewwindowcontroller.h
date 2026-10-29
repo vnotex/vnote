@@ -20,6 +20,7 @@ public:
   struct Project {
     QString root;
     QString mainFile;
+    bool memoryOnly = false;
   };
 
   bool setBuffer(const Buffer2 &p_buffer, QString *p_error = nullptr);

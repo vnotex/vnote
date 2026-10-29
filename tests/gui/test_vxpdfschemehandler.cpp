@@ -48,6 +48,7 @@ private slots:
   void registerDocumentRejectsAnEmptyPath();
   void unregisterDocumentRevokesTheToken();
   void unregisterIsIdempotentAndUnknownTokensAreUnknown();
+  void memoryDocumentsHaveIndependentRevocation();
 
 private:
   static VxPdfSchemeHandler *makeHandler(QObject *p_parent);
@@ -299,6 +300,23 @@ void TestVxPdfSchemeHandler::unregisterIsIdempotentAndUnknownTokensAreUnknown() 
   handler->unregisterDocument(token);
   handler->unregisterDocument(QStringLiteral("never-registered"));
   QVERIFY(!handler->hasDocument(token));
+}
+
+void TestVxPdfSchemeHandler::memoryDocumentsHaveIndependentRevocation() {
+  auto *handler = makeHandler(this);
+  const auto body = QByteArray::fromHex("00255044462dff00");
+  const auto first = handler->registerDocument(body);
+  const auto second = handler->registerDocument(body);
+  const auto empty = handler->registerDocument(QByteArray());
+  QVERIFY(!first.isEmpty() && !second.isEmpty() && !empty.isEmpty());
+  QVERIFY(first != second && first != empty && second != empty);
+  handler->unregisterDocument(first);
+  QVERIFY(!handler->hasDocument(first));
+  QVERIFY(handler->hasDocument(second));
+  QVERIFY(handler->hasDocument(empty));
+  handler->unregisterDocument(second);
+  handler->unregisterDocument(empty);
+  QVERIFY(!handler->hasDocument(second) && !handler->hasDocument(empty));
 }
 
 } // namespace tests

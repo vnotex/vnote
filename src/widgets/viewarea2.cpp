@@ -839,6 +839,13 @@ void ViewArea2::saveSession() {
       auto windows = it.value()->getAllViewWindows();
       for (auto *win : windows) {
         QString bufferId = win->getBuffer().id();
+        // Runtime memory sources are filtered by session serialization. Keep
+        // their live workspace ownership and current selection, including when
+        // a later close prompt cancels shutdown.
+        if (win->getBuffer().isMemoryBacked()) {
+          bufferIds.append(bufferId);
+          continue;
+        }
         // Virtual buffers (vx://home, vx://settings, ...) are not restorable.
         // Explicitly REMOVE them from the workspace: setBufferOrder() alone is
         // reorder-only (vxcore re-appends any existing ID omitted from the new
@@ -865,7 +872,8 @@ void ViewArea2::saveSession() {
       auto *currentWin = it.value()->getCurrentViewWindow();
       if (currentWin) {
         const QString currentBufferId = currentWin->getBuffer().id();
-        if (!bufferSvc || !bufferSvc->isVirtualBuffer(currentBufferId)) {
+        if (currentWin->getBuffer().isMemoryBacked() || !bufferSvc ||
+            !bufferSvc->isVirtualBuffer(currentBufferId)) {
           wsSvc->setCurrentBuffer(it.key(), currentBufferId);
         }
       }
@@ -911,7 +919,8 @@ bool ViewArea2::isPreviewSourceCurrent(ID p_sourceId, quint64 p_generation) cons
   return source && source->getViewWindowId() == p_sourceId && source->isEnabled() &&
          source->isVisible() && source->getBufferGeneration() == p_generation &&
          source->getBuffer().isValid() && !source->getBuffer().getBuffer().isEmpty() &&
-         !source->getNodeId().isVirtual() && !source->isNoteConversionFrozen();
+         (source->getBuffer().isMemoryBacked() || !source->getNodeId().isVirtual()) &&
+         !source->isNoteConversionFrozen();
 }
 
 ViewSplit2 *ViewArea2::hostedSplitForWorkspace(const QString &p_workspaceId) const {

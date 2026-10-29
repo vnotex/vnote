@@ -13,6 +13,7 @@
 #include <core/fileopensettings.h>
 #include <core/services/buffer2.h>
 #include <core/services/buffercoreservice.h>
+#include <core/services/memorybuffersource.h>
 
 class QTimer;
 
@@ -106,6 +107,13 @@ public:
   // @p_address: Virtual address (e.g., "vx://settings").
   // Returns a Buffer2 handle, or invalid Buffer2 on failure.
   Buffer2 openVirtualBuffer(const QString &p_address);
+
+  // Open an owned runtime document through the normal full-view routing path.
+  // Duplicate addresses keep the original callbacks/content. FileAfterOpen is
+  // emitted with an address, not a filesystem path; FileBeforeOpen is not fired.
+  Buffer2 openMemoryBuffer(MemoryBufferSource p_source,
+                           const FileOpenSettings &p_settings = FileOpenSettings(),
+                           VxCoreError *p_outErr = nullptr);
 
   // Close a buffer by ID.
   // Cleans up auto-save state and closes the buffer in vxcore.
@@ -430,6 +438,15 @@ signals:
 
 private:
   friend class Buffer2;
+  struct MemorySave;
+  struct MemoryBufferState;
+  struct MemoryBuffers;
+  MemoryBufferState *memoryBufferState(const QString &p_bufferId) const;
+  std::shared_ptr<MemorySave> enqueueMemorySave(const QString &p_bufferId, bool p_autoSave,
+                                                VxCoreError *p_error);
+  bool saveMemoryBuffer(const Buffer2 &p_buffer, VxCoreError *p_error);
+  bool waitForMemorySave(const std::shared_ptr<MemorySave> &p_save);
+  bool syncMemoryContent(const QString &p_bufferId, const QByteArray &p_content);
   struct SearchReplacement;
   Buffer2 openReplacementBuffer(const NodeIdentifier &p_nodeId);
   void startSearchReplacement(int p_token);
@@ -497,9 +514,10 @@ private:
   // Set of buffer IDs with pending editor changes.
   QSet<QString> m_dirtyBuffers;
 
-  // Set of buffer IDs that are virtual (non-file-backed).
-  // Used to skip auto-save/sync for virtual buffers.
+  // Widget-only virtual buffers have no editor body. Memory documents must
+  // never enter this set: they participate in editor synchronization and saves.
   QSet<QString> m_virtualBufferIds;
+  std::unique_ptr<MemoryBuffers> m_memoryBuffers;
 
   enum BufferFlag : quint8 { ReadOnly = 1, Encrypted = 2, Converting = 4 };
   // Replaces the previous resolved/read-only sets; one cached lookup carries

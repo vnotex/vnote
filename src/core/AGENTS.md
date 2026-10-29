@@ -313,7 +313,10 @@ for the full contract.
 
 ### Buffer2 Handle Pattern
 
-`Buffer2` is a **lightweight copyable value type** (like `QModelIndex`) that represents an open file buffer. It is NOT a `QObject` and is NOT heap-allocated. Obtain a `Buffer2` from `BufferService::openBuffer()`.
+`Buffer2` is a **lightweight copyable value type** (like `QModelIndex`) representing an open
+document, backed by a file or an owned memory source. It is not a `QObject` or heap-allocated.
+Use `BufferService::openBuffer()` for files or `openMemoryBuffer()` for application content;
+see [memory document buffers](services/AGENTS.md#memory-document-buffers) for ownership and saves.
 
 #### Opening a Buffer
 

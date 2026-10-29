@@ -3,6 +3,7 @@
 
 #include <functional>
 
+#include <QByteArray>
 #include <QHash>
 #include <QObject>
 #include <QString>
@@ -40,6 +41,9 @@ public:
   // `vxpdf://pdf/document/<token>` URL. Returns an empty string for an empty path.
   QString registerDocument(const QString &p_absPath);
 
+  // Owns the raw body until revocation; in-flight replies retain their bytes.
+  QString registerDocument(QByteArray p_content);
+
   void unregisterDocument(const QString &p_token);
 
   bool hasDocument(const QString &p_token) const;
@@ -61,8 +65,11 @@ private:
 
   TemplateAccessor m_templateAccessor;
 
-  // token -> absolute PDF path.
-  QHash<QString, QString> m_documents;
+  struct Document {
+    QString path;
+    QByteArray content;
+  };
+  QHash<QString, Document> m_documents;
 };
 
 } // namespace vnotex

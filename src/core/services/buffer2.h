@@ -125,9 +125,17 @@ public:
   // Returns false for an invalid handle.
   bool isReadOnly() const noexcept;
 
+  // Storage capabilities are independent of the view/editor type.
+  bool isMemoryBacked() const;
+  bool isFileBacked() const;
+  bool canSave() const;
+  bool canReload() const;
+  QString displayName() const;
+
   // Cached classification; neither accessor probes storage or key status.
   bool isEncrypted() const noexcept { return bool(m_protectedState); }
-  // Only an authenticated protected manifest supplies this value.
+  // Explicit creator key for memory content; authenticated editor type for
+  // encrypted notes. Empty for ordinary files (selected by file type registry).
   QString editorType() const;
 
   // Keeps a protected operation alive; null while locking or after invalidation.

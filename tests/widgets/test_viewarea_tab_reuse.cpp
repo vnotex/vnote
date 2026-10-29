@@ -39,6 +39,7 @@
 #include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
+#include <QUrlQuery>
 #include <QWebEnginePage>
 #include <QWebEngineProfile>
 #include <QWheelEvent>
@@ -48,6 +49,7 @@
 #include <controllers/commentcontroller.h>
 #include <controllers/markdownrendercontroller.h>
 #include <controllers/markdownwebjobcontroller.h>
+#include <controllers/mindmapviewwindowcontroller.h>
 #include <controllers/notebooknodecontroller.h>
 #include <controllers/viewareacontroller.h>
 #include <core/configmgr2.h>
@@ -65,12 +67,14 @@
 #include <core/services/filetypecoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/htmltemplateservice.h>
+#include <core/services/memorybuffersource.h>
 #include <core/services/notebookcoreservice.h>
 #include <core/services/notebookiogate.h>
 #include <core/services/syncworkqueuemanager.h>
 #include <core/services/templateservice.h>
 #include <core/services/workspacecoreservice.h>
 #include <core/sessionconfig.h>
+#include <core/vxpdfscheme.h>
 #include <core/widgetconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/services/viewwindowfactory.h>
@@ -99,6 +103,7 @@
 #include <widgets/editors/pdfvieweradapter.h>
 #include <widgets/editors/texteditor.h>
 #include <widgets/editreaddiscardaction.h>
+#include <widgets/encodingbutton.h>
 #include <widgets/imageviewer.h>
 #include <widgets/linkpreviewoverlay.h>
 #include <widgets/outlineprovider.h>
@@ -206,6 +211,17 @@ QByteArray mindMapBytes(const QString &p_title) {
                                    {QStringLiteral("rootId"), QStringLiteral("r")},
                                    {QStringLiteral("nodes"), QJsonArray{root}}})
       .toJson();
+}
+
+MemoryBufferSource memorySource(const QString &p_name, const QString &p_type,
+                                const QByteArray &p_content) {
+  MemoryBufferSource source;
+  source.address =
+      QStringLiteral("vx://memory/") + QString::fromLatin1(QUrl::toPercentEncoding(p_name));
+  source.displayName = p_name;
+  source.editorType = p_type;
+  source.content = p_content;
+  return source;
 }
 
 void appendDraft(vte::VTextEdit *p_edit, const QString &p_text) {
@@ -689,6 +705,10 @@ private slots:
   void previewMindMapAndTypstActivation();
   void markdownResourcesAndSaveIdentity_data();
   void markdownResourcesAndSaveIdentity();
+  void memoryTextPersistenceAndSharing();
+  void memoryScratchCapabilities();
+  void memoryMarkdownAndMindMap();
+  void memoryImagePdfAndTypst();
   void nativeTextAndMindMap();
   void typstCompilerAndUnavailableSource();
   void typstSessionPosition_data();
@@ -884,8 +904,7 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
           QCOMPARE(f->buffers->listBuffers().size(), 1);
           QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
         }
-        QVERIFY(clickNativeSurface(surface, point,
-                                   reading ? Qt::NoModifier : Qt::ControlModifier));
+        QVERIFY(clickNativeSurface(surface, point, reading ? Qt::NoModifier : Qt::ControlModifier));
         QTRY_VERIFY(f->current() != source);
         QCOMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
         QCOMPARE(f->workspace(), main);
@@ -3609,6 +3628,435 @@ void TestViewAreaTabReuse::markdownResourcesAndSaveIdentity() {
   QTRY_COMPARE_WITH_TIMEOUT(
       evaluate(page, QStringLiteral("document.querySelector('img')?.naturalWidth")).toInt(), 17,
       10000);
+}
+
+void TestViewAreaTabReuse::memoryImagePdfAndTypst() {
+  const QColor color(28, 164, 92);
+  auto source = memorySource(QStringLiteral("Memory image"), QStringLiteral("Image"),
+                             imageBytes(color, QSize(37, 21)));
+  QVERIFY(f->buffers->openMemoryBuffer(source).isValid());
+  auto *image = f->current()->findChild<ImageViewer *>();
+  QVERIFY(image);
+  auto *canvas = image->findChild<QGraphicsView *>();
+  QVERIFY(canvas);
+  bool imageRendered = false;
+  for (auto *item : canvas->scene()->items()) {
+    if (auto *pixmap = qgraphicsitem_cast<QGraphicsPixmapItem *>(item);
+        pixmap && !pixmap->pixmap().isNull()) {
+      QCOMPARE(pixmap->pixmap().size(), QSize(37, 21));
+      QCOMPARE(pixmap->pixmap().toImage().pixelColor(0, 0), color);
+      imageRendered = true;
+    }
+  }
+  QVERIFY(imageRendered);
+
+  source = memorySource(QStringLiteral("Memory PDF"), QStringLiteral("Pdf"),
+                        pdfBytes(QStringLiteral("Memory PDF")));
+  QVERIFY(f->buffers->openMemoryBuffer(source).isValid());
+  auto *pdfWindow = f->current();
+  auto *pdf = pdfWindow->findChild<PdfViewer *>();
+  QVERIFY(pdf);
+  QTRY_COMPARE_WITH_TIMEOUT(pdf->adapter()->getDocumentPageCount(), 3, 30000);
+  QVERIFY(QTest::qWaitFor(
+      [&] {
+        return evaluate(pdf->page(),
+                        QStringLiteral("Array.from(document.querySelectorAll('.textLayer')).map(e "
+                                       "=> e.textContent).join(' ')"))
+            .toString()
+            .contains(QStringLiteral("Memory PDF page 1"));
+      },
+      15000));
+  QVERIFY(!pdfWindow->getCommentProvider());
+  QVERIFY(!pdfWindow->getBuffer().isAttachmentSupported());
+  const auto documentToken = [pdf] {
+    return QUrl(QUrlQuery(pdf->url()).queryItemValue(QStringLiteral("file"), QUrl::FullyDecoded))
+        .path()
+        .section(QLatin1Char('/'), -1);
+  };
+  const auto firstToken = documentToken();
+  QVERIFY(!firstToken.isEmpty());
+  QVERIFY(f->profiles->hasPdfDocument(firstToken));
+
+  // Exercise the actual QBuffer response, including embedded zero/high bytes,
+  // after the caller changes its byte array. Revocation denies subsequent fetches.
+  QByteArray raw = QByteArray::fromHex("00255044462dff800a00");
+  const auto rawToken = f->profiles->registerPdfDocument(raw);
+  raw.fill('x');
+  const auto rawUrl = VxPdfScheme::documentUrl(rawToken);
+  const auto literal =
+      QString::fromUtf8(QJsonDocument(QJsonArray{rawUrl}).toJson(QJsonDocument::Compact));
+  const auto fetch = [&] {
+    evaluate(pdf->page(), QStringLiteral(R"JS(
+      window.memoryFetch = 'pending';
+      fetch(%1[0], {cache: 'no-store'})
+        .then(response => { if (!response.ok) throw Error(); return response.arrayBuffer(); })
+        .then(bytes => { window.memoryFetch = Array.from(new Uint8Array(bytes)).join(','); })
+        .catch(() => { window.memoryFetch = 'rejected'; });
+    )JS")
+                              .arg(literal));
+  };
+  fetch();
+  QTRY_COMPARE_WITH_TIMEOUT(evaluate(pdf->page(), QStringLiteral("window.memoryFetch")).toString(),
+                            QStringLiteral("0,37,80,68,70,45,255,128,10,0"), 10000);
+  f->profiles->unregisterPdfDocument(rawToken);
+  fetch();
+  QTRY_COMPARE_WITH_TIMEOUT(evaluate(pdf->page(), QStringLiteral("window.memoryFetch")).toString(),
+                            QStringLiteral("rejected"), 10000);
+
+  f->theme->switchTheme(QStringLiteral("vscode-dark"));
+  QVERIFY(!f->profiles->hasPdfDocument(firstToken));
+  QTRY_COMPARE_WITH_TIMEOUT(pdf->adapter()->getDocumentPageCount(), 3, 30000);
+  const auto secondToken = documentToken();
+  QVERIFY(secondToken != firstToken && f->profiles->hasPdfDocument(secondToken));
+  f->controller()->closeViewWindow(pdfWindow->getViewWindowId(), true);
+  QTRY_VERIFY(!f->profiles->hasPdfDocument(secondToken));
+
+  source = memorySource(QStringLiteral("Memory Typst"), QStringLiteral("Typst"),
+                        "#set page(width:120pt,height:80pt,margin:0pt)\n"
+                        "#rect(width:60pt,height:40pt,fill:rgb(28,164,92),stroke:none)\n");
+  QVERIFY(f->buffers->openMemoryBuffer(source).isValid());
+  auto *typst = f->current()->findChild<vte::VTypstEditor *>();
+  QVERIFY(typst);
+  QTRY_COMPARE_WITH_TIMEOUT(typst->compileStatus(), vte::VTypstEditor::CompileStatus::Ready, 60000);
+  QTRY_VERIFY_WITH_TIMEOUT(typst->pdfPageCount() > 0, 60000);
+  QCOMPARE(typst->getTextEditor()->getTextEdit()->toPlainText().toUtf8(), source.content);
+  f->current()->setMode(ViewWindowMode::Read);
+  auto *pane = typst->findChild<QWidget *>(QStringLiteral("typstPdf"));
+  QVERIFY(pane);
+  QTRY_VERIFY_WITH_TIMEOUT(pane->isVisible() && coloredSurfacePoint(pane, color).x() >= 0, 10000);
+}
+
+void TestViewAreaTabReuse::memoryTextPersistenceAndSharing() {
+  f->reuse();
+  QVERIFY(f->create(QStringLiteral("ordinary.txt"), "ordinary"));
+  const auto ordinary = f->open(QStringLiteral("ordinary.txt"));
+  struct Store {
+    QByteArray bytes = QString::fromUtf8("Original α\n").toUtf8();
+    VxCoreError saveError = VXCORE_OK;
+    VxCoreError loadError = VXCORE_OK;
+    int saves = 0;
+  };
+  const auto store = std::make_shared<Store>();
+  auto source = memorySource(QStringLiteral("Text with markdown suffix.md"), QStringLiteral("Text"),
+                             "not the loaded content");
+  source.load = [store](QByteArray &p_bytes) {
+    p_bytes = store->bytes;
+    return store->loadError;
+  };
+  source.save = [store](QByteArrayView p_bytes) {
+    ++store->saves;
+    if (store->saveError == VXCORE_OK)
+      store->bytes = QByteArray(p_bytes.data(), p_bytes.size());
+    return store->saveError;
+  };
+  FileOpenSettings settings;
+  settings.m_mode = ViewWindowMode::Edit;
+  const auto buffer = f->buffers->openMemoryBuffer(source, settings);
+  QVERIFY(buffer.isValid());
+  auto *window = f->current();
+  QVERIFY(window);
+  auto *text = window->findChild<TextEditor *>();
+  QVERIFY(text);
+  QCOMPARE(text->getText().toUtf8(), store->bytes);
+  QCOMPARE(window->getName(), source.displayName);
+  QCOMPARE(f->order(), QStringList({ordinary.id(), buffer.id()}));
+  QVERIFY(buffer.resolvedPath().isEmpty());
+  QVERIFY(buffer.canSave() && buffer.canReload());
+  text->getTextEdit()->setFocus();
+  QTRY_VERIFY(text->getTextEdit()->hasFocus());
+  const auto edited = store->bytes + QString::fromUtf8("Edited β\n").toUtf8();
+  appendDraft(text->getTextEdit(), QString::fromUtf8("Edited β\n"));
+  QVERIFY(window->isModified());
+  QVERIFY(window->save());
+  QCOMPARE(store->bytes, edited);
+  QCOMPARE(store->saves, 1);
+  QVERIFY(!window->isModified());
+  QCOMPARE(buffer.getContentRaw(), edited);
+
+  appendDraft(text->getTextEdit(), QStringLiteral("unsaved"));
+  store->saveError = VXCORE_ERR_IO;
+  QVERIFY(!window->save());
+  QCOMPARE(store->bytes, edited);
+  QCOMPARE(text->getText().toUtf8(), edited + "unsaved");
+  QVERIFY(window->isModified());
+  store->loadError = VXCORE_ERR_IO;
+  {
+    DialogAnswer answer(QMessageBox::Discard);
+    QVERIFY(!window->reload());
+    QVERIFY(answer.accepted());
+  }
+  QCOMPARE(text->getText().toUtf8(), edited + "unsaved");
+  QVERIFY(window->isModified());
+  store->loadError = VXCORE_OK;
+  store->saveError = VXCORE_OK;
+  store->bytes = "Fresh source\n";
+  {
+    DialogAnswer answer(QMessageBox::Discard);
+    QVERIFY(window->reload());
+    QVERIFY(answer.accepted());
+  }
+  QCOMPARE(text->getText().toUtf8(), store->bytes);
+  QVERIFY(!window->isModified());
+
+  auto duplicate = source;
+  duplicate.content = "must not replace the existing source";
+  duplicate.save = [](QByteArrayView) { return VXCORE_ERR_PERMISSION_DENIED; };
+  QCOMPARE(f->buffers->openMemoryBuffer(duplicate, settings).id(), buffer.id());
+  QCOMPARE(f->current(), window);
+  QCOMPARE(f->tabs(), 2);
+  const auto firstWorkspace = f->workspace();
+  f->controller()->splitViewSplit(firstWorkspace, Direction::Right, true);
+  auto *sibling = f->current();
+  QVERIFY(sibling && sibling != window);
+  QCOMPARE(sibling->getBuffer().id(), buffer.id());
+  auto *siblingText = sibling->findChild<TextEditor *>();
+  QVERIFY(siblingText);
+  const auto secondWorkspace = f->workspace();
+  siblingText->getTextEdit()->setFocus();
+  QTRY_VERIFY(siblingText->getTextEdit()->hasFocus());
+  appendDraft(siblingText->getTextEdit(), QStringLiteral("Shared split edit"));
+  QVERIFY(f->buffers->syncNow(buffer.id()));
+  f->controller()->focusWindow(firstWorkspace, buffer.id());
+  text->getTextEdit()->setFocus();
+  QTRY_COMPARE(text->getText(), siblingText->getText());
+  QVERIFY(window->save());
+  QCOMPARE(store->bytes, QByteArray("Fresh source\nShared split edit"));
+
+  auto destination = memorySource(QStringLiteral("Destination"), QStringLiteral("Text"),
+                                  "Only in the named workspace");
+  settings.m_targetWorkspaceId = secondWorkspace;
+  settings.m_focus = false;
+  const auto routed = f->buffers->openMemoryBuffer(destination, settings);
+  QVERIFY(routed.isValid());
+  QCOMPARE(f->order(secondWorkspace), QStringList({buffer.id(), routed.id()}));
+  QVERIFY(!f->order(firstWorkspace).contains(routed.id()));
+  const auto routedWindow = f->area->findWindowIdByBufferId(secondWorkspace, routed.id());
+  QVERIFY(routedWindow != ViewAreaController::InvalidViewWindowId);
+  QCOMPARE(f->buffers->openMemoryBuffer(destination, settings).id(), routed.id());
+  QCOMPARE(f->area->findWindowIdByBufferId(secondWorkspace, routed.id()), routedWindow);
+  QCOMPARE(f->order(secondWorkspace).size(), 2);
+
+  appendDraft(text->getTextEdit(), QStringLiteral(" still live after session save"));
+  QVERIFY(f->buffers->syncNow(buffer.id()));
+  const auto liveText = text->getText();
+  f->area->saveSession();
+  QCOMPARE(f->coreCurrent(firstWorkspace), buffer.id());
+  QCOMPARE(f->order(firstWorkspace), QStringList({ordinary.id(), buffer.id()}));
+  QCOMPARE(buffer.getContentRaw(), liveText.toUtf8());
+  QVERIFY(window->isModified());
+  {
+    DialogAnswer answer(QMessageBox::Cancel);
+    QVERIFY(!window->aboutToClose(false));
+    QVERIFY(answer.accepted());
+  }
+  QCOMPARE(text->getText(), liveText);
+  QVERIFY(!buffer.getBuffer().isEmpty());
+  f->controller()->setShouldPropagateToCore(true);
+  QVERIFY(window->save());
+  QCOMPARE(store->bytes, liveText.toUtf8());
+}
+
+void TestViewAreaTabReuse::memoryScratchCapabilities() {
+  auto source = memorySource(QStringLiteral("Scratch"), QStringLiteral("Text"), "scratch");
+  FileOpenSettings settings;
+  settings.m_mode = ViewWindowMode::Edit;
+  const auto buffer = f->buffers->openMemoryBuffer(source, settings);
+  QVERIFY(buffer.isValid());
+  auto *window = f->current();
+  auto *text = window->findChild<TextEditor *>();
+  QVERIFY(text);
+  text->getTextEdit()->setFocus();
+  QTRY_VERIFY(text->getTextEdit()->hasFocus());
+  appendDraft(text->getTextEdit(), QStringLiteral(" draft"));
+  QVERIFY(!buffer.canSave() && !buffer.canReload());
+  QVERIFY(!window->save());
+  QVERIFY(!window->reload());
+  QVERIFY(window->isModified());
+  QCOMPARE(text->getText(), QStringLiteral("scratch draft"));
+  for (auto *action : window->findChildren<QAction *>())
+    QVERIFY(action->property("iconName").toString() != QStringLiteral("save_editor.svg") ||
+            !action->isEnabled());
+  for (auto *encoding : window->findChildren<EncodingButton *>())
+    QVERIFY(!encoding->isEnabled());
+  QHash<QString, bool> menuActions;
+  {
+    QTimer inspectMenu;
+    inspectMenu.setInterval(20);
+    connect(&inspectMenu, &QTimer::timeout, this, [&] {
+      if (auto *menu = qobject_cast<QMenu *>(QApplication::activePopupWidget())) {
+        for (auto *action : menu->actions())
+          menuActions.insert(action->text().section(QLatin1Char('\t'), 0, 0), action->isEnabled());
+        menu->close();
+      }
+    });
+    inspectMenu.start();
+    auto *bar = f->area->getCurrentViewSplit()->tabBar();
+    bar->customContextMenuRequested(bar->tabRect(bar->currentIndex()).center());
+  }
+  QVERIFY(menuActions.contains(QStringLiteral("Reload")));
+  QVERIFY(!menuActions.value(QStringLiteral("Reload")));
+  QVERIFY(!menuActions.value(QStringLiteral("Auto Reload")));
+  QVERIFY(!menuActions.value(QStringLiteral("Copy Path")));
+  QVERIFY(!menuActions.value(QStringLiteral("Open Location")));
+  QVERIFY(!menuActions.contains(QStringLiteral("Locate Node")));
+  bool offeredSave = true;
+  {
+    DialogAnswer answer(QMessageBox::Cancel, [&] {
+      auto *box = qobject_cast<QMessageBox *>(QApplication::activeModalWidget());
+      offeredSave = !box || box->button(QMessageBox::Save);
+    });
+    QVERIFY(!window->aboutToClose(false));
+    QVERIFY(answer.accepted());
+  }
+  QVERIFY(!offeredSave);
+  QCOMPARE(text->getText(), QStringLiteral("scratch draft"));
+
+  {
+    DialogAnswer answer(QMessageBox::Discard);
+    f->controller()->closeViewWindow(window->getViewWindowId(), false);
+    QVERIFY(answer.accepted());
+  }
+  QVERIFY(f->area->findWindowIdByBufferId(f->workspace(), buffer.id()) ==
+          ViewAreaController::InvalidViewWindowId);
+  auto readOnly = memorySource(QStringLiteral("Read only"), QStringLiteral("Text"), "immutable");
+  readOnly.readOnly = true;
+  readOnly.save = [](QByteArrayView) { return VXCORE_ERR_IO; };
+  const auto locked = f->buffers->openMemoryBuffer(readOnly, settings);
+  QVERIFY(locked.isValid());
+  window = f->current();
+  text = window->findChild<TextEditor *>();
+  QVERIFY(text);
+  QVERIFY(text->isReadOnly());
+  text->getTextEdit()->setFocus();
+  QTest::keyClicks(text->getTextEdit(), "rejected edit");
+  QCOMPARE(text->getText(), QStringLiteral("immutable"));
+  QVERIFY(!locked.canSave() && !window->save());
+  QVERIFY(!window->isModified());
+  PreviewDesktopSink desktop;
+  QDesktopServices::setUrlHandler(QStringLiteral("file"), &desktop, "open");
+  const auto clearHandler =
+      qScopeGuard([] { QDesktopServices::unsetUrlHandler(QStringLiteral("file")); });
+  const auto before = f->tabs();
+  auto unknown = memorySource(QStringLiteral("No system fallback.pdf"),
+                              QStringLiteral("UnknownMemoryEditor"), "body");
+  f->buffers->openMemoryBuffer(unknown, settings);
+  QCOMPARE(f->tabs(), before);
+  QVERIFY(desktop.opened.isEmpty());
+}
+
+void TestViewAreaTabReuse::memoryMarkdownAndMindMap() {
+  const auto image = imageBytes(QColor(28, 164, 92), QSize(23, 19));
+  QVERIFY(f->create(QStringLiteral("memory-resource.png"), image));
+  const auto &resource = f->config->getEditorConfig().getMarkdownEditorConfig().getViewerResource();
+  const auto templateImage = QFileInfo(f->config->getFileFromConfigFolder(resource.m_template))
+                                 .dir()
+                                 .filePath(QStringLiteral("memory-resource.png"));
+  QVERIFY(!QFileInfo::exists(templateImage));
+  QVERIFY(writeBytes(templateImage, image));
+  const auto removeTemplateImage = qScopeGuard([&] { QFile::remove(templateImage); });
+  const auto previousCwd = QDir::currentPath();
+  const auto restoreCwd = qScopeGuard([&] { QDir::setCurrent(previousCwd); });
+  QVERIFY(QDir::setCurrent(f->absolute(QString())));
+  const QByteArray markdown("# Memory Markdown\n\n![resource](memory-resource.png)\n");
+  auto source =
+      memorySource(QStringLiteral("Rootless Markdown"), QStringLiteral("Markdown"), markdown);
+  FileOpenSettings settings;
+  settings.m_mode = ViewWindowMode::Read;
+  QVERIFY(f->buffers->openMemoryBuffer(source, settings).isValid());
+  auto *window = f->current();
+  auto *viewer = window->findChild<MarkdownViewer *>();
+  QVERIFY(viewer);
+  QVERIFY(waitForRender(viewer, QStringLiteral("Memory Markdown")));
+  QCOMPARE(evaluate(viewer->page(), QStringLiteral("document.baseURI")).toString(),
+           QStringLiteral("about:blank"));
+  QVERIFY(QTest::qWaitFor(
+      [&] {
+        return evaluate(viewer->page(),
+                        QStringLiteral("document.querySelector('img')?.complete === true && "
+                                       "document.querySelector('img')?.naturalWidth === 0"))
+            .toBool();
+      },
+      10000));
+  window->setMode(ViewWindowMode::Edit);
+  auto *editor = window->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  QCOMPARE(editor->getText().toUtf8(), markdown);
+  QVERIFY(editor->getBasePath().isEmpty());
+  appendDraft(editor->getTextEdit(), QStringLiteral("\nScratch preview edit\n"));
+  window->setMode(ViewWindowMode::Read);
+  QVERIFY(waitForRender(viewer, QStringLiteral("Scratch preview edit")));
+  QVERIFY(window->isModified());
+
+  source.address += QStringLiteral("-rooted");
+  source.displayName = QStringLiteral("Rooted Markdown");
+  source.resourceBasePath = f->absolute(QString());
+  QVERIFY(f->buffers->openMemoryBuffer(source, settings).isValid());
+  viewer = f->current()->findChild<MarkdownViewer *>();
+  QVERIFY(viewer);
+  QVERIFY(waitForRender(viewer, QStringLiteral("Memory Markdown")));
+  QTRY_COMPARE_WITH_TIMEOUT(
+      evaluate(viewer->page(), QStringLiteral("document.querySelector('img')?.naturalWidth"))
+          .toInt(),
+      23, 10000);
+
+  auto mapSource = memorySource(QStringLiteral("Memory map"), QStringLiteral("MindMap"),
+                                mindMapBytes(QStringLiteral("Memory map topic")));
+  auto mapDocument = QJsonDocument::fromJson(mapSource.content).object();
+  auto nodes = mapDocument.value(QStringLiteral("nodes")).toArray();
+  auto root = nodes.first().toObject();
+  root.insert(QStringLiteral("image"),
+              QJsonObject{{QStringLiteral("url"), QStringLiteral("memory-resource.png")},
+                          {QStringLiteral("width"), 0},
+                          {QStringLiteral("height"), 0}});
+  nodes[0] = root;
+  mapDocument.insert(QStringLiteral("nodes"), nodes);
+  mapSource.content = QJsonDocument(mapDocument).toJson();
+  const auto savedMap = std::make_shared<QByteArray>();
+  mapSource.save = [savedMap](QByteArrayView p_bytes) {
+    *savedMap = QByteArray(p_bytes.data(), p_bytes.size());
+    return VXCORE_OK;
+  };
+  settings.m_mode = ViewWindowMode::Edit;
+  QVERIFY(f->buffers->openMemoryBuffer(mapSource, settings).isValid());
+  window = f->current();
+  auto *map = window->findChild<MindMapEditor *>();
+  QVERIFY(map);
+  auto *canvas = map->findChild<QGraphicsView *>();
+  QVERIFY(canvas);
+  QTRY_VERIFY(canvas->isVisible());
+  auto *policy = map->findChild<MindMapViewWindowController *>();
+  QVERIFY(policy);
+  QSignalSpy imageReplies(policy, &MindMapViewWindowController::imageReady);
+  map->reloadImages();
+  QTRY_VERIFY(!imageReplies.isEmpty());
+  QVERIFY(map->cachedImage(QStringLiteral("memory-resource.png")).isNull());
+  map->selectNode(QStringLiteral("r"));
+  canvas->setFocus();
+  QTest::keyClick(canvas->viewport(), Qt::Key_F2);
+  auto *draft = canvas->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
+  QVERIFY(draft && draft->isVisible());
+  QCOMPARE(draft->toPlainText(), QStringLiteral("Memory map topic"));
+  draft->selectAll();
+  QTest::keyClicks(draft, "Memory map edited");
+  QVERIFY(window->save());
+  const auto saved = QJsonDocument::fromJson(*savedMap).object();
+  QCOMPARE(saved.value(QStringLiteral("nodes"))
+               .toArray()
+               .first()
+               .toObject()
+               .value(QStringLiteral("topic"))
+               .toString(),
+           QStringLiteral("Memory map edited"));
+  mapSource.address += QStringLiteral("-rooted");
+  mapSource.displayName = QStringLiteral("Rooted memory map");
+  mapSource.resourceBasePath = f->absolute(QString());
+  QVERIFY(f->buffers->openMemoryBuffer(mapSource, settings).isValid());
+  map = f->current()->findChild<MindMapEditor *>();
+  QVERIFY(map);
+  QTRY_VERIFY(!map->cachedImage(QStringLiteral("memory-resource.png")).isNull());
+  QCOMPARE(map->cachedImage(QStringLiteral("memory-resource.png")).size(), QSize(23, 19));
+  QCOMPARE(map->cachedImage(QStringLiteral("memory-resource.png")).pixelColor(0, 0),
+           QColor(28, 164, 92));
 }
 
 void TestViewAreaTabReuse::nativeTextAndMindMap() {

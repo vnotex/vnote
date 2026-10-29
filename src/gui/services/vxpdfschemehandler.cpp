@@ -80,7 +80,13 @@ QString VxPdfSchemeHandler::registerDocument(const QString &p_absPath) {
   }
 
   const auto token = QUuid::createUuid().toString(QUuid::WithoutBraces);
-  m_documents.insert(token, p_absPath);
+  m_documents.insert(token, Document{p_absPath, {}});
+  return token;
+}
+
+QString VxPdfSchemeHandler::registerDocument(QByteArray p_content) {
+  const auto token = QUuid::createUuid().toString(QUuid::WithoutBraces);
+  m_documents.insert(token, Document{{}, std::move(p_content)});
   return token;
 }
 
@@ -111,12 +117,22 @@ void VxPdfSchemeHandler::requestStarted(QWebEngineUrlRequestJob *p_job) {
     return;
 
   case VxPdfScheme::Route::Kind::Document: {
-    const auto absPath = m_documents.value(route.m_target);
-    if (absPath.isEmpty()) {
+    const auto document = m_documents.constFind(route.m_target);
+    if (document == m_documents.constEnd()) {
       p_job->fail(QWebEngineUrlRequestJob::UrlNotFound);
       return;
     }
-    serveFile(p_job, absPath, QByteArrayLiteral("application/pdf"));
+    if (!document->path.isEmpty()) {
+      serveFile(p_job, document->path, QByteArrayLiteral("application/pdf"));
+    } else {
+      auto *buffer = new QBuffer(p_job);
+      buffer->setData(document->content);
+      if (!buffer->open(QIODevice::ReadOnly)) {
+        p_job->fail(QWebEngineUrlRequestJob::RequestFailed);
+        return;
+      }
+      p_job->reply(QByteArrayLiteral("application/pdf"), buffer);
+    }
     return;
   }
 

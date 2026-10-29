@@ -735,7 +735,7 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
   });
   openLocAct->setEnabled(!absPath.isEmpty());
 
-  if (nodeId.isValid() && !m_detached) {
+  if (win->getBuffer().isFileBacked() && nodeId.isValid() && !m_detached) {
     auto *locateAct =
         menu.addAction(tr("Locate Node"), [this, nodeId]() { emit locateNodeRequested(nodeId); });
     if (coreConfig) {
@@ -786,13 +786,16 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
 
   // ---- Reload ----
   auto *reloadAct = menu.addAction(tr("Reload"), [win]() { win->reload(); });
-  reloadAct->setToolTip(tr("Reload file from disk, discarding unsaved changes"));
-  reloadAct->setEnabled(!absPath.isEmpty());
+  reloadAct->setToolTip(win->getBuffer().isMemoryBacked()
+                            ? tr("Reload content from its source, discarding unsaved changes")
+                            : tr("Reload file from disk, discarding unsaved changes"));
+  reloadAct->setEnabled(win->getBuffer().canReload());
 
   // ---- Auto Reload ----
   auto *autoReloadAct = menu.addAction(tr("Auto Reload"));
   autoReloadAct->setCheckable(true);
   autoReloadAct->setChecked(win->autoReload());
+  autoReloadAct->setEnabled(win->getBuffer().isFileBacked());
   autoReloadAct->setToolTip(tr("Automatically reload file from disk when modified externally"));
   connect(autoReloadAct, &QAction::toggled, this,
           [win](bool p_checked) { win->setAutoReload(p_checked); });

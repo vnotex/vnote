@@ -77,6 +77,12 @@ public:
   bool isProtectedBusy(const QString &p_bufferId) const;
   bool drainProtected(int p_timeoutMs);
 
+  // Owned immutable content operations. Execute runs on a worker, serially per
+  // buffer; complete runs on this object's thread with the actual result.
+  // Neither closure may borrow a live core Buffer on the worker. No coalescing.
+  bool enqueueContent(const QString &p_bufferId, std::function<int()> p_execute,
+                      std::function<void(int)> p_complete);
+
   // Stop accepting new jobs and wait up to @p_timeoutMs for in-flight workers
   // to drain, including exact/protected jobs. A negative timeout waits forever.
   // Returns true if drained; false on timeout (the queue remains stopped).
@@ -142,6 +148,9 @@ private:
   struct ProtectedQueue;
   void runProtectedWorker(const QString &p_bufferId);
   std::unique_ptr<ProtectedQueue> m_protectedQueue;
+  struct ContentQueue;
+  void runContentWorker(const QString &p_bufferId);
+  std::unique_ptr<ContentQueue> m_contentQueue;
   IBufferCoreService &m_coreService;
   NotebookIoGate &m_gate;
 

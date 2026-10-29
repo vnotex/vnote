@@ -141,8 +141,10 @@ void PdfViewWindow2::setupToolBar() {
   // separated from them, exactly where MarkdownViewWindow2 puts its formatting
   // actions. They are the content-authoring verbs for this window; the right
   // group is for view-level chrome (outline, layout, find).
-  toolBar->addSeparator();
-  setupAnnotationToolBarActions(toolBar);
+  if (getBuffer().isFileBacked()) {
+    toolBar->addSeparator();
+    setupAnnotationToolBarActions(toolBar);
+  }
 
   addRightCommonToolBarActions(toolBar, false);
 }
@@ -458,6 +460,12 @@ QSharedPointer<CommentProvider> PdfViewWindow2::getCommentProvider() const {
 }
 
 void PdfViewWindow2::setupComments() {
+  if (!getBuffer().isFileBacked()) {
+    if (auto *a = adapter()) {
+      a->setCommentsEditable(false);
+    }
+    return;
+  }
   m_commentProvider.reset(new CommentProvider(nullptr));
   m_commentController = new CommentController(getServices(), this);
 
@@ -588,6 +596,9 @@ void PdfViewWindow2::registerReaderFlushParticipant() {
 }
 
 bool PdfViewWindow2::flushPendingReaderComments() {
+  if (!getBuffer().isFileBacked()) {
+    return true;
+  }
   if (m_documentResetPending) {
     // The incoming document is not exposed to JavaScript yet; only the dock
     // can have edits, and its controller is already a flush participant.
@@ -724,8 +735,10 @@ void PdfViewWindow2::setupViewer() {
       },
       themeService->paletteColor(QStringLiteral("base#normal#border")));
   m_viewer->installEventFilter(this);
-  connect(m_viewer, &WebViewer::localFileOpenRequested, this, [](const QUrl &p_url) {
-    QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
+  connect(m_viewer, &WebViewer::localFileOpenRequested, this, [this](const QUrl &p_url) {
+    if (getBuffer().isFileBacked()) {
+      QDesktopServices::openUrl(QUrl::fromLocalFile(p_url.toLocalFile()));
+    }
   });
 
   // Escape leaves presentation mode. Driven entirely from Qt: see
@@ -949,8 +962,16 @@ void PdfViewWindow2::syncEditorFromBuffer() {
     const auto &templateHtml = tmplService->getPdfViewerTemplate();
 
     if (!templateHtml.isEmpty()) {
-      const auto contentPath = m_controller->buildAbsolutePath(buffer.nodeId());
-      m_documentToken = profileService->registerPdfDocument(contentPath);
+      if (buffer.isMemoryBacked()) {
+        VxCoreError error = VXCORE_OK;
+        auto content = buffer.getContentRaw(&error);
+        if (error == VXCORE_OK) {
+          m_documentToken = profileService->registerPdfDocument(std::move(content));
+        }
+      } else if (buffer.isFileBacked()) {
+        const auto contentPath = m_controller->buildAbsolutePath(buffer.nodeId());
+        m_documentToken = profileService->registerPdfDocument(contentPath);
+      }
       auto urlState = PdfViewWindowController::preparePdfUrl(m_documentToken);
       if (urlState.valid) {
         m_viewer->load(urlState.templateUrl);

@@ -402,7 +402,7 @@ void MarkdownViewWindow2::setupUI() {
     auto def = m_statusBinder->buildDef(); // no editor yet
 
     int encodingIndex = -1;
-    if (isEncodingSupported()) {
+    if (isEncodingSupported() && getBuffer().isFileBacked()) {
       StatusBarColumn encoding;
       encoding.type = StatusBarColumnType::Widget;
       encodingIndex = def.size();
@@ -986,12 +986,9 @@ void MarkdownViewWindow2::setupTextEditor() {
   // Set content path and base path from Buffer2.
   // contentPath: used by MarkdownEditor::getRelativeLink() for generating relative links.
   // basePath: used by vtextedit's PreviewMgr for resolving relative URLs to absolute paths.
-  auto resolved = getBuffer().resolvedPath();
-  if (!resolved.isEmpty()) {
-    const auto parentDir = QFileInfo(resolved).path();
-    m_editor->setContentPath(parentDir);
-    m_editor->setBasePath(parentDir);
-  }
+  const auto basePath = getBuffer().getResourceBasePath();
+  m_editor->setContentPath(basePath);
+  m_editor->setBasePath(basePath);
 
   // Provide Buffer2 handle for asset/attachment operations.
   m_editor->setBuffer2(&getBuffer());
@@ -1034,7 +1031,7 @@ void MarkdownViewWindow2::setupTextEditor() {
   connect(m_editor, &MarkdownEditor::readRequested, this, [this]() {
     const QPointer<MarkdownViewWindow2> guard(this);
     const auto generation = getBufferGeneration();
-    if (save() && guard && generation == getBufferGeneration()) {
+    if ((!getBuffer().canSave() || save()) && guard && generation == getBufferGeneration()) {
       setMode(ViewWindowMode::Read);
     }
   });
@@ -1974,7 +1971,12 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath, bool 
   }
 
   QString basePath = getBuffer().getResourceBasePath();
-  QString absPath = QDir(basePath).absoluteFilePath(result.path);
+  if (basePath.isEmpty() && QDir::isRelativePath(result.path)) {
+    return;
+  }
+  const QString absPath = QDir::isAbsolutePath(result.path)
+                              ? result.path
+                              : QDir(basePath).absoluteFilePath(result.path);
   if (!QFileInfo::exists(absPath)) {
     qWarning() << "Cross-file link target not found:" << absPath;
     return;
@@ -2420,6 +2422,9 @@ void MarkdownViewWindow2::syncTextEditorFromBuffer(bool p_syncPositionFromReadMo
   m_sourceAvailable = state.valid;
   if (m_sourceAvailable) {
     m_editor->setReadOnly(state.readOnly);
+    if (getBuffer().isMemoryBacked()) {
+      state.basePath = getBuffer().getResourceBasePath();
+    }
     m_editor->setContentPath(state.basePath);
     m_editor->setBasePath(state.basePath);
     // Saving our own text may advance the buffer revision without changing the document.
@@ -2478,8 +2483,36 @@ void MarkdownViewWindow2::initializeViewerPage() {
   if (m_protectedView) {
     m_viewer->load(m_protectedView->page.url);
   } else {
-    const auto html = getServices().get<HtmlTemplateService>()->getMarkdownViewerTemplate();
-    m_viewer->setHtml(html, PathUtils::pathToUrl(getBuffer().resolvedPath()));
+    auto html = getServices().get<HtmlTemplateService>()->getMarkdownViewerTemplate();
+    QUrl baseUrl = PathUtils::pathToUrl(getBuffer().resolvedPath());
+    if (getBuffer().isMemoryBacked()) {
+      const auto base = getBuffer().getResourceBasePath();
+      if (base.isEmpty()) {
+        // The shell needs a local origin to load its absolute file: scripts.
+        // Its real template path is not a document resource base: an inert first
+        // <base> prevents relative note URLs from probing that folder or cwd.
+        auto *config = getServices().get<ConfigMgr2>();
+        const auto &resource =
+            config->getEditorConfig().getMarkdownEditorConfig().getViewerResource();
+        baseUrl = PathUtils::pathToUrl(config->getFileFromConfigFolder(resource.m_template));
+        static const QRegularExpression head(QStringLiteral("<head\\b[^>]*>"),
+                                             QRegularExpression::CaseInsensitiveOption);
+        const auto match = head.match(html);
+        int insertion = match.hasMatch() ? match.capturedEnd() : 0;
+        if (!match.hasMatch()) {
+          // HTML may omit <head>; insert into its implicit head after the
+          // doctype so the template keeps its standards-mode rendering.
+          static const QRegularExpression doctype(QStringLiteral("^\\s*<!doctype\\b[^>]*>"),
+                                                  QRegularExpression::CaseInsensitiveOption);
+          const auto declaration = doctype.match(html);
+          insertion = declaration.hasMatch() ? declaration.capturedEnd() : 0;
+        }
+        html.insert(insertion, QStringLiteral("\n<base href=\"about:blank\">"));
+      } else {
+        baseUrl = QUrl::fromLocalFile(base + QLatin1Char('/'));
+      }
+    }
+    m_viewer->setHtml(html, baseUrl);
   }
 }
 
@@ -3893,7 +3926,7 @@ bool MarkdownViewWindow2::isClearObsoleteImageAtImageHostEnabled() const {
 }
 
 void MarkdownViewWindow2::clearObsoleteImages() {
-  if (getBuffer().isEncrypted()) {
+  if (!getBuffer().isFileBacked() || getBuffer().isEncrypted()) {
     return;
   }
   auto buffer = getBuffer();

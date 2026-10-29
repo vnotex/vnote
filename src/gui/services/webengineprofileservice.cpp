@@ -566,6 +566,16 @@ QString WebEngineProfileService::registerPdfDocument(const QString &p_absPath) {
 #endif
 }
 
+QString WebEngineProfileService::registerPdfDocument(QByteArray p_content) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+  return m_pdfSchemeHandler ? m_pdfSchemeHandler->registerDocument(std::move(p_content))
+                            : QString();
+#else
+  Q_UNUSED(p_content);
+  return QString();
+#endif
+}
+
 void WebEngineProfileService::unregisterPdfDocument(const QString &p_token) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
   if (m_pdfSchemeHandler) {

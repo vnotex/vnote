@@ -75,6 +75,19 @@ QString ViewWindow2::s_attachmentFullIconMasterColor;
 QIcon ViewWindow2::s_attachmentFullIcon;
 
 namespace {
+int questionSaveOrDiscard(ViewWindow2 *p_view, const QString &p_text,
+                          const QString &p_information) {
+  if (p_view->getBuffer().canSave()) {
+    return MessageBoxHelper::questionSaveDiscardCancel(MessageBoxHelper::Question, p_text,
+                                                       p_information, QString(), p_view);
+  }
+  QMessageBox box(QMessageBox::Question, QObject::tr("Discard Changes"), p_text,
+                  QMessageBox::Discard | QMessageBox::Cancel, p_view);
+  box.setInformativeText(p_information);
+  box.setDefaultButton(QMessageBox::Cancel);
+  return box.exec();
+}
+
 ViewWindow2 *viewWindowForFocus(QWidget *p_widget) {
   for (auto *widget = p_widget; widget; widget = widget->parentWidget()) {
     if (auto *view = qobject_cast<ViewWindow2 *>(widget)) {
@@ -331,6 +344,9 @@ void ViewWindow2::setViewWindowId(ID p_id) { m_viewWindowId = p_id; }
 QIcon ViewWindow2::getIcon() const { return QIcon(); }
 
 QString ViewWindow2::getName() const {
+  if (m_buffer.isMemoryBacked()) {
+    return m_buffer.displayName();
+  }
   // Extract filename from relative path.
   const QString path = m_buffer.nodeId().relativePath;
   int lastSlash = path.lastIndexOf(QLatin1Char('/'));
@@ -465,10 +481,11 @@ bool ViewWindow2::aboutToClose(bool p_force) {
   setViewFullScreen(false);
 
   if (!p_force && isModified()) {
-    // Show Save/Discard/Cancel dialog for unsaved changes.
-    int ret = MessageBoxHelper::questionSaveDiscardCancel(
-        MessageBoxHelper::Question, tr("Do you want to save changes to \"%1\"?").arg(getName()),
-        tr("Your changes will be lost if you don't save them."), QString(), this);
+    const int ret = questionSaveOrDiscard(
+        this, tr("Close note (%1) with unsaved changes?").arg(getName()),
+        m_buffer.canSave()
+            ? tr("Your changes will be lost if you don't save them.")
+            : tr("This buffer has no save destination. Closing it will lose its changes."));
     if (!guard || m_buffer.id() != closingId) {
       return false;
     }
@@ -622,7 +639,7 @@ void ViewWindow2::setStatusWidget(const QSharedPointer<StatusWidget> &p_widget) 
   // Host the encoding picker in the status bar's right corner for windows that
   // opt in. Created here (not in the toolbar) so it lives beside the editor's
   // status indicators. Replacement refreshes the retained picker for its new buffer.
-  if (isEncodingSupported()) {
+  if (isEncodingSupported() && m_buffer.isFileBacked()) {
     p_widget->addCornerWidget(ensureEncodingButton());
   }
 }
@@ -630,6 +647,7 @@ void ViewWindow2::setStatusWidget(const QSharedPointer<StatusWidget> &p_widget) 
 EncodingButton *ViewWindow2::ensureEncodingButton() {
   if (!m_encodingButton) {
     m_encodingButton = new EncodingButton(this);
+    m_encodingButton->setEnabled(m_buffer.isFileBacked());
     m_encodingButton->setCurrentEncoding(m_buffer.isValid() ? m_buffer.encoding()
                                                             : QStringLiteral("UTF-8"));
     connect(m_encodingButton, &EncodingButton::encodingChangeRequested, this,
@@ -680,7 +698,7 @@ void ViewWindow2::addLeftCommonToolBarActions(QToolBar *p_toolBar) {
   // than shown permanently greyed out: a control that is disabled for the whole
   // lifetime of every instance advertises a capability that does not exist.
   // Skipping it also skips its Ctrl+S shortcut, which is the point.
-  if (isSaveSupported()) {
+  if (isSaveSupported() && (!m_buffer.isMemoryBacked() || m_buffer.canSave())) {
     addAction(p_toolBar, ViewWindowToolBarHelper2::Save);
   }
   addAction(p_toolBar, ViewWindowToolBarHelper2::WordCount);
@@ -752,7 +770,7 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
       // re-query isReadOnly() every time per the "do not cache" rule even
       // though the value is in practice constant for the buffer's lifetime.
       const auto &buf = getBuffer();
-      m_saveAction->setEnabled(buf.isValid() && isModified() && !buf.isReadOnly());
+      m_saveAction->setEnabled(buf.canSave() && isModified());
     });
     break;
 
@@ -772,7 +790,7 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
                 // read-only and markDirty rejects read-only buffers), and saving it
                 // would fail at vxcore. Treat "Save And Read" as a plain switch to
                 // Read mode (no save attempt) — i.e. behave like Discard-And-Read.
-                if (m_buffer.isReadOnly() || save()) {
+                if (!m_buffer.canSave() || save()) {
                   setMode(ViewWindowMode::Read);
                 }
                 break;
@@ -991,7 +1009,7 @@ void ViewWindow2::onEditorContentsChanged() {
 bool ViewWindow2::save() {
   if (m_contentReplacementFrozen)
     return false;
-  if (!m_buffer.isValid()) {
+  if (!isSaveSupported() || !m_buffer.canSave()) {
     return false;
   }
 
@@ -1017,8 +1035,14 @@ bool ViewWindow2::save() {
   m_editorDirty = false;
   setModified(false);
 
-  // Save to disk via Buffer2 (fires hooks).
+  // Callback-backed saves return their actual durable completion, which may
+  // process events. Never touch a retired/rebound view after that boundary.
+  const QPointer<ViewWindow2> guard(this);
+  const auto generation = getBufferGeneration();
   bool ok = m_buffer.save();
+  if (!guard || generation != getBufferGeneration()) {
+    return false;
+  }
 
   if (ok) {
     m_lastKnownRevision = m_buffer.getRevision();
@@ -1039,7 +1063,7 @@ bool ViewWindow2::save() {
 void ViewWindow2::reinterpretWithEncoding(const QString &p_codecName) {
   if (m_contentReplacementFrozen)
     return;
-  if (!m_buffer.isValid()) {
+  if (!m_buffer.isFileBacked()) {
     return;
   }
 
@@ -1209,15 +1233,16 @@ bool ViewWindow2::autoReload() const { return m_autoReload; }
 bool ViewWindow2::reload() {
   if (m_contentReplacementFrozen)
     return false;
-  // Defensive guard for unbound/untitled buffers.
-  if (m_buffer.resolvedPath().isEmpty()) {
+  if (!m_buffer.canReload()) {
     return false;
   }
 
   // Sync editor content to buffer first so isModified() is accurate.
   auto *bufferService = m_services.get<BufferService>();
   if (bufferService && m_editorDirty && m_buffer.isValid()) {
-    bufferService->syncNow(m_buffer.id());
+    if (!bufferService->syncNow(m_buffer.id())) {
+      return false;
+    }
   }
 
   const bool wasDirty = isModified();
@@ -1225,10 +1250,9 @@ bool ViewWindow2::reload() {
 
   if (wasDirty) {
     // Ask to save changes.
-    int ret = MessageBoxHelper::questionSaveDiscardCancel(
-        MessageBoxHelper::Question,
-        tr("Reload note (%1) and discard unsaved changes?").arg(getName()),
-        tr("Note path (%1).").arg(m_buffer.resolvedPath()), QString(), this);
+    int ret = questionSaveOrDiscard(
+        this, tr("Reload note (%1) and discard unsaved changes?").arg(getName()),
+        m_buffer.isFileBacked() ? tr("Note path (%1).").arg(m_buffer.resolvedPath()) : QString());
     switch (ret) {
     case QMessageBox::Save:
       // Save first, then reload. After save, buffer is clean — dirty flags
@@ -1863,6 +1887,7 @@ void ViewWindow2::updateEditReadDiscardActionState() {
   if (!m_editReadAction) {
     return;
   }
+  m_editReadAction->getDiscardAction()->setEnabled(m_buffer.canReload());
   switch (m_mode) {
   case ViewWindowMode::Read:
     m_editReadAction->setState(BiAction::State::Default);
@@ -1874,7 +1899,7 @@ void ViewWindow2::updateEditReadDiscardActionState() {
 }
 
 void ViewWindow2::discardChangesAndRead() {
-  if (m_contentReplacementFrozen)
+  if (m_contentReplacementFrozen || !m_buffer.canReload())
     return;
   // Sync editor content to buffer first so isModified() is accurate.
   auto *bufferService = m_services.get<BufferService>();
@@ -1884,9 +1909,9 @@ void ViewWindow2::discardChangesAndRead() {
 
   if (isModified()) {
     // Ask to save changes.
-    int ret = MessageBoxHelper::questionSaveDiscardCancel(
-        MessageBoxHelper::Question, tr("Discard changes to note (%1)?").arg(getName()),
-        tr("Note path (%1).").arg(m_buffer.resolvedPath()), QString(), this);
+    int ret = questionSaveOrDiscard(
+        this, tr("Discard changes to note (%1)?").arg(getName()),
+        m_buffer.isFileBacked() ? tr("Note path (%1).").arg(m_buffer.resolvedPath()) : QString());
     switch (ret) {
     case QMessageBox::Save:
       // Save and read.
@@ -1903,6 +1928,8 @@ void ViewWindow2::discardChangesAndRead() {
 
       // Reload buffer from disk, discarding unsaved changes.
       if (!m_buffer.reload()) {
+        m_editorDirty = true;
+        setModified(true);
         return;
       }
       m_lastKnownRevision = m_buffer.getRevision();

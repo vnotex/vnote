@@ -879,6 +879,40 @@ These keys are Qt-only — vxcore never reads `comments.json` — so they stay *
 Coverage: `tests/core/test_commentservice.cpp`.
 
 
+## Memory document buffers
+
+`BufferService::openMemoryBuffer(MemoryBufferSource, FileOpenSettings, VxCoreError*)` opens
+application content through the normal full-view routing path. The source provides a stable
+`vx://` address, display name, explicit creator key, optional absolute resource directory,
+initial bytes and owned load/save callbacks. No document file is created. `Widget` is reserved
+for `openVirtualBuffer()` / `WidgetViewWindow2`, not a memory-document creator.
+
+Load runs synchronously on the owner thread and supplies the initial/reloaded bytes. Without
+a loader, initial `content` is used and reload is unsupported. Save runs on a worker, serially
+per buffer, borrowing immutable bytes only for the call. Captures must own their dependencies,
+must tolerate worker destruction and must not touch GUI objects or reenter buffer APIs.
+Missing save means editable scratch content, never successful durability. Explicit read-only
+state still forbids edits. Duplicate compatible addresses retain the first callbacks and draft;
+incompatible metadata or widget-address collisions fail without replacing the existing source.
+
+`BufferSaveQueue::enqueueContent()` executes prepared core snapshots without touching a live
+core buffer on the worker. Owner-thread completion checks the original provider/revision;
+`BufferService` also tracks edits not yet pulled from the active editor. An older successful
+save never clears a newer draft. Manual save waits for actual completion with lifecycle guards;
+queue shutdown drains accepted work before releasing the context. None/BackupFile policies
+only synchronize memory for these sources: no implicit disk backup or false backup-success event.
+
+Memory documents are non-file-backed but are **not** members of the widget-only
+`m_virtualBufferIds` sync-skip set. `isVirtualBuffer()` includes both kinds for filesystem and
+session policies. Runtime sources are excluded from serialized sessions; saving a session must
+not remove live memory workspace membership or drafts. `FileAfterOpen` routes their views with
+`filePath` containing an address, not a disk path; `FileBeforeOpen` is not fired. Consumers must
+check buffer capabilities before file operations. Load/save hooks never carry body bytes.
+
+Ordinary and encrypted body persistence share vxcore's provider load/save contract. Memory
+callbacks cannot replace an encrypted provider; protected leases, backups and Lock All retain
+their existing ownership. Coverage: `test_virtual_buffer` and `test_viewarea_tab_reuse`.
+
 ## Per-note encryption
 
 Only bundled Markdown/text/mind-map note bodies support protection. New note and backup
