@@ -67,6 +67,27 @@ cmake --build .
 
 Testing (two suites, two build dirs): [tests/AGENTS.md](tests/AGENTS.md).
 
+### Pre-push verification (REQUIRED)
+
+Before pushing parent-repository or submodule changes, agents MUST:
+
+1. Use a compatible build directory with `VNOTE_BUILD_TESTS=ON` and the Qt kit,
+   compiler and build configuration matching the intended test-enabled CI job.
+2. Build the application and **all enabled test targets**, including explicitly built
+   targets such as `test_typsteditor`. An app-only build or a few focused targets is
+   insufficient: unbuilt tests can contain compile or link failures.
+3. Run the **full parent VNote and native-editor CTest suites**, plus the standalone
+   suites of changed submodules in their own build directories. Follow
+   [tests/AGENTS.md](tests/AGENTS.md) and the platform's workflow for runtime setup.
+4. Verify the final code/configuration being pushed; rebuild and rerun affected checks
+   after subsequent changes. Report the commands, results, skips and platform limits.
+
+**Do not push when required builds or tests fail, time out or cannot run.** Fix the
+cause and verify again; never disable tests, weaken assertions or increase deadlines
+just to obtain a pass. If verification is unavailable, report the exact blocker and
+obtain an explicit user exception before pushing. A local pass is not proof that
+other operating systems or packaging gates pass; disclose that limitation.
+
 ### CI runner debugging (SSH)
 
 When a failure needs the hosted runner, follow the key-restricted SSH procedure in
