@@ -58,5 +58,105 @@
     "en_US": "Use Presentation Mode to present your note at a meeting",
     "zh_CN": "使用“演示模式”，在会议中展示笔记",
     "ko_KR": "프레젠테이션 모드를 사용하여 회의에서 노트를 발표하세요"
+  },
+  {
+    "en_US": "Press Ctrl+G, then G to open United Entry, and type n followed by a keyword to find notes by name in the current notebook",
+    "zh_CN": "按 Ctrl+G，再按 G 打开统一入口，输入 n 和关键词，按名称查找当前笔记本中的笔记",
+    "ko_KR": "Ctrl+G를 누른 다음 G를 눌러 통합 입력창을 열고, n 뒤에 키워드를 입력하여 현재 노트북에서 이름으로 노트를 찾으세요"
+  },
+  {
+    "en_US": "In United Entry, use g followed by a keyword to search notebook content, or b to search content in open notes",
+    "zh_CN": "在统一入口中，输入 g 和关键词搜索当前笔记本的内容，或使用 b 搜索已打开笔记的内容",
+    "ko_KR": "통합 입력창에서 g 뒤에 키워드를 입력하여 현재 노트북의 내용을 검색하거나, b를 사용하여 열린 노트의 내용을 검색하세요"
+  },
+  {
+    "en_US": "Type task in United Entry to find and run your tasks without opening the Tasks panel",
+    "zh_CN": "在统一入口中输入 task，无需打开任务面板即可查找并运行任务",
+    "ko_KR": "통합 입력창에 task를 입력하면 작업 패널을 열지 않고도 작업을 찾아 실행할 수 있습니다"
+  },
+  {
+    "en_US": "Add frequently used notes to Quick Access so you can reopen them without browsing the folder tree",
+    "zh_CN": "将常用笔记添加到快速访问，无需浏览文件夹树即可再次打开",
+    "ko_KR": "자주 사용하는 노트를 빠른 액세스에 추가하면 폴더 트리를 탐색하지 않고도 다시 열 수 있습니다"
+  },
+  {
+    "en_US": "Use the History panel to reopen a recently viewed note when you cannot remember its location",
+    "zh_CN": "忘记笔记的位置时，使用历史面板重新打开最近查看过的笔记",
+    "ko_KR": "노트의 위치가 기억나지 않을 때는 기록 패널에서 최근에 본 노트를 다시 여세요"
+  },
+  {
+    "en_US": "In a writable bundled notebook, select several notes and choose Tags from the context menu to edit their tags together",
+    "zh_CN": "在可写的自包笔记本中，选中多篇笔记，再从右键菜单选择“标签”，即可批量编辑标签",
+    "ko_KR": "쓰기 가능한 번들 노트북에서 여러 노트를 선택하고 상황에 맞는 메뉴의 태그를 선택하여 태그를 한꺼번에 편집하세요"
+  },
+  {
+    "en_US": "Select a tag in the Tags panel to find related notes across folders in the current bundled notebook",
+    "zh_CN": "在标签面板中选择一个标签，即可查找当前自包笔记本中分散在不同文件夹的相关笔记",
+    "ko_KR": "태그 패널에서 태그를 선택하여 현재 번들 노트북의 여러 폴더에 있는 관련 노트를 찾으세요"
+  },
+  {
+    "en_US": "Press Ctrl+G, then I in the editor to find a snippet by name or apply it with its two-digit code",
+    "zh_CN": "在编辑器中按 Ctrl+G，再按 I，按名称查找片段，或输入其两位数字代码来应用片段",
+    "ko_KR": "편집기에서 Ctrl+G를 누른 다음 I를 눌러 이름으로 스니펫을 찾거나 두 자리 숫자 코드를 입력하여 적용하세요"
+  },
+  {
+    "en_US": "In a snippet, the default selection mark $$ inserts selected text, while the cursor mark @@ sets where typing continues",
+    "zh_CN": "在片段中，默认的选中文本标记 $$ 用于插入选中的文本，光标标记 @@ 用于指定继续输入的位置",
+    "ko_KR": "스니펫에서 기본 선택 표시 $$는 선택한 텍스트를 삽입하고, 커서 표시 @@는 계속 입력할 위치를 지정합니다"
+  },
+  {
+    "en_US": "Choose a template in the New Note dialog to start with reusable headings and sections instead of a blank note",
+    "zh_CN": "在新建笔记对话框中选择模板，使用预设的标题和章节开始写作，而不是从空白笔记开始",
+    "ko_KR": "새 노트 대화 상자에서 템플릿을 선택하면 빈 노트 대신 재사용 가능한 제목과 섹션으로 시작할 수 있습니다"
+  },
+  {
+    "en_US": "Use %no% in a note template to insert the new note name without its file extension",
+    "zh_CN": "在笔记模板中使用 %no%，自动插入不含扩展名的新笔记名称",
+    "ko_KR": "노트 템플릿에 %no%를 사용하면 파일 확장자를 제외한 새 노트 이름을 삽입할 수 있습니다"
+  },
+  {
+    "en_US": "Save customized built-in templates under a different name so a VNote update does not overwrite your changes",
+    "zh_CN": "自定义内置模板时，请另存为不同名称，避免 VNote 更新时覆盖你的修改",
+    "ko_KR": "내장 템플릿을 수정할 때는 다른 이름으로 저장하여 VNote 업데이트가 변경 사항을 덮어쓰지 않도록 하세요"
+  },
+  {
+    "en_US": "Double-click the empty area of the tab bar to choose a Quick Note scheme and capture an idea",
+    "zh_CN": "双击标签栏的空白区域，选择快速笔记方案，随手记录灵感",
+    "ko_KR": "탭 표시줄의 빈 영역을 두 번 클릭하여 빠른 노트 구성을 선택하고 아이디어를 기록하세요"
+  },
+  {
+    "en_US": "Leave a Quick Note scheme's Folder field empty to create notes in the folder currently shown in the notebook explorer",
+    "zh_CN": "将快速笔记方案的“文件夹”字段留空，即可在笔记本浏览器当前浏览的文件夹中创建笔记",
+    "ko_KR": "빠른 노트 구성의 폴더 필드를 비워 두면 노트북 탐색기에서 현재 보고 있는 폴더에 노트가 생성됩니다"
+  },
+  {
+    "en_US": "Use journal/%yyyy%/%MM% as a Quick Note folder to organize new notes by year and month automatically",
+    "zh_CN": "将快速笔记的文件夹设为 journal/%yyyy%/%MM%，即可按年和月自动整理新笔记",
+    "ko_KR": "빠른 노트 폴더를 journal/%yyyy%/%MM%로 설정하면 새 노트를 연도와 월별로 자동 정리할 수 있습니다"
+  },
+  {
+    "en_US": "Toggle Live Preview in the Markdown editor's three-dot menu to see the rendered note beside its source",
+    "zh_CN": "在 Markdown 编辑器的三点菜单中切换“实时预览”，并排查看笔记源码与渲染效果",
+    "ko_KR": "Markdown 편집기의 점 세 개 메뉴에서 실시간 미리보기를 전환하여 소스 옆에서 렌더링된 노트를 확인하세요"
+  },
+  {
+    "en_US": "Split the content area to compare two notes or keep a reference visible while editing another note",
+    "zh_CN": "拆分内容区域，并排比较两篇笔记，或在编辑一篇笔记时查看另一篇参考笔记",
+    "ko_KR": "콘텐츠 영역을 분할하여 두 노트를 비교하거나 다른 노트를 편집하면서 참고 노트를 함께 보세요"
+  },
+  {
+    "en_US": "Press Enter in the last cell of an interactive Markdown table preview to append a new row",
+    "zh_CN": "在交互式 Markdown 表格预览的最后一个单元格中按 Enter，即可添加新行",
+    "ko_KR": "대화형 Markdown 표 미리 보기의 마지막 셀에서 Enter를 누르면 새 행이 추가됩니다"
+  },
+  {
+    "en_US": "Choose Save All from a tab's context menu to save all modified notes at once",
+    "zh_CN": "从标签页的右键菜单中选择“全部保存”，一次保存所有已修改的笔记",
+    "ko_KR": "탭의 상황에 맞는 메뉴에서 모두 저장을 선택하여 수정된 모든 노트를 한 번에 저장하세요"
+  },
+  {
+    "en_US": "Use the Stay on Top pin in a detached window to keep a reference note visible above other windows",
+    "zh_CN": "使用独立窗口中的“置顶”图钉，让参考笔记始终显示在其他窗口之上",
+    "ko_KR": "분리된 창의 항상 위에 표시 핀을 사용하여 참고 노트가 다른 창 위에 계속 보이도록 하세요"
   }
 ]
