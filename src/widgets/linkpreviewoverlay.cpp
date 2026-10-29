@@ -138,9 +138,9 @@ LinkPreviewOverlay::LinkPreviewOverlay(ServiceLocator &p_services, ViewWindow2 *
   openButton->setObjectName(QStringLiteral("openLinkPreviewInNewTabsButton"));
   openButton->setProperty(PropertyDefs::c_actionToolButton, true);
   openButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  auto *openAction = new QAction(tr("Open in New Tabs"), openButton);
+  auto *openAction = new QAction(tr("Open in New Tab"), openButton);
   openAction->setObjectName(QStringLiteral("openLinkPreviewInNewTabsAction"));
-  openAction->setToolTip(tr("Open in New Tabs"));
+  openAction->setToolTip(tr("Open in New Tab"));
   openButton->setDefaultAction(openAction);
   connect(openAction, &QAction::triggered, this, &LinkPreviewOverlay::openInNewTabsRequested);
   headerLayout->addWidget(openButton);
