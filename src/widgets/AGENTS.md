@@ -112,6 +112,9 @@ ordinary Qt styling; the factory retains its `ConsoleTextEdit` styling property.
 
 Boundary, selection, undo, wrapping, and parent-shortcut coverage: `test_plaintextedit`.
 
+`MindMapEditor::createNoteEditor()` returns `PlainTextEdit` for m3's node-properties Note
+field, in both embedded and separated panels. Inline topic editors remain unchanged.
+`test_mindmapeditor::noteEditorShortcuts` covers deferred initialization, policy and persistence.
 ### MainWindow
 
 - `MainWindow2` — new main window shell with ServiceLocator DI; owns the top-level layout, toolbar, sidebar, and view area

@@ -43,6 +43,7 @@ signals:
   void statusMessageRequested(const QString &p_message);
 
 protected:
+  QPlainTextEdit *createNoteEditor(QWidget *p_parent) override;
   bool canInsertFromMimeData(const QMimeData *p_source,
                              MimeInsertionSource p_origin) const override;
   void insertFromMimeData(const QString &p_nodeId, const QMimeData *p_source,

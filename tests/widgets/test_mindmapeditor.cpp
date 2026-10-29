@@ -545,6 +545,8 @@ private slots:
   void configuredShortcutsDriveRealCommands();
   void livePreferencesPreserveDraftAndReadOnlyBuffer();
   void separatedPropertiesRespectAdapterPolicy();
+  void noteEditorShortcuts_data();
+  void noteEditorShortcuts();
   void propertyPlacementAppliesLive_data();
   void propertyPlacementAppliesLive();
   void nodeClipboardRoundTrip();
@@ -2136,6 +2138,84 @@ void TestMindMapEditor::separatedPropertiesRespectAdapterPolicy() {
   QVERIFY(editor->isModified());
 }
 
+void TestMindMapEditor::noteEditorShortcuts_data() {
+  QTest::addColumn<bool>("separated");
+  QTest::addColumn<bool>("visibleParent");
+  QTest::newRow("embedded-show") << false << false;
+  QTest::newRow("embedded-visible-parent") << false << true;
+  QTest::newRow("separated-access") << true << false;
+}
+
+void TestMindMapEditor::noteEditorShortcuts() {
+  QFETCH(bool, separated);
+  QFETCH(bool, visibleParent);
+  m_config->getEditorConfig().getMindMapEditorConfig().setSeparateNodePropertiesPanel(separated);
+  auto buffer = openNote(QStringLiteral("note-shortcuts.mmm"), fixture());
+  QVERIFY(buffer.isValid());
+  QWidget parent;
+  if (visibleParent) {
+    parent.resize(1100, 800);
+    parent.show();
+    QVERIFY(QTest::qWaitForWindowExposed(&parent));
+  }
+  MindMapEditor editor(*m_services, buffer, visibleParent ? &parent : nullptr);
+  QVERIFY(editor.loadContent(buffer.getContentRaw()));
+  QVERIFY(editor.selectNode(QStringLiteral("a")));
+  const QString original = QStringLiteral("first\nalpha beta");
+  QVERIFY(editor.updateNode(QStringLiteral("a"),
+                            QJsonDocument(QJsonObject{{QStringLiteral("note"), original}})
+                                .toJson(QJsonDocument::Compact)));
+  editor.setReadOnly(true);
+  editor.setModified(false);
+  QSignalSpy changed(&editor, &MindMapEditor::contentsChanged);
+
+  // The separated accessor must work immediately, without processing posted events.
+  auto *panel = separated ? editor.nodePropertiesPanel() : nullptr;
+  if (!separated) {
+    QVERIFY(showEditor(editor));
+    panel = editor.findChild<QWidget *>(QStringLiteral("nodePropertiesPanel"));
+  }
+  QVERIFY(panel);
+  auto *note = panel->findChild<QPlainTextEdit *>(QStringLiteral("nodeNote"));
+  QVERIFY(note);
+  QCOMPARE(note->toPlainText(), original);
+  QVERIFY(note->isReadOnly());
+  QVERIFY(changed.isEmpty() && !editor.isModified());
+  note->moveCursor(QTextCursor::End);
+#if defined(Q_OS_MACOS) || defined(Q_OS_MAC)
+  const auto control = Qt::MetaModifier;
+#else
+  const auto control = Qt::ControlModifier;
+#endif
+  QTest::keyClick(note, Qt::Key_W, control);
+  QTest::keyClick(note, Qt::Key_U, control);
+  QCOMPARE(note->toPlainText(), original);
+  QVERIFY(changed.isEmpty());
+  editor.setReadOnly(false);
+  editor.setEnabled(false);
+  QTest::keyClick(note, Qt::Key_W, control);
+  QCOMPARE(note->toPlainText(), original);
+  QVERIFY(changed.isEmpty());
+  editor.setEnabled(true);
+
+  QTest::keyClick(note, Qt::Key_W, control);
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("note")).toString(),
+           QStringLiteral("first\nalpha "));
+  QTest::keyClick(note, Qt::Key_U, control);
+  QCOMPARE(node(editor, QStringLiteral("a")).value(QStringLiteral("note")).toString(),
+           QStringLiteral("first\n"));
+  QCOMPARE(changed.count(), 2);
+  QVERIFY(editor.isModified());
+  const auto saved = editor.contentForSave();
+  MindMapEditor reopened(*m_services, buffer);
+  QVERIFY(reopened.loadContent(saved.toUtf8()));
+  QCOMPARE(node(reopened, QStringLiteral("a")).value(QStringLiteral("note")).toString(),
+           QStringLiteral("first\n"));
+  QVERIFY(editor.undo());
+  QCOMPARE(note->toPlainText(), QStringLiteral("first\nalpha "));
+  QVERIFY(editor.undo());
+  QCOMPARE(note->toPlainText(), original);
+}
 void TestMindMapEditor::propertyPlacementAppliesLive_data() {
   QTest::addColumn<bool>("initiallySeparated");
   QTest::addColumn<bool>("readOnlyHidden");

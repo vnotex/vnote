@@ -40,6 +40,7 @@
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/imageviewer.h>
+#include <widgets/plaintextedit.h>
 #include <widgets/viewwindow2.h>
 
 using namespace vnotex;
@@ -224,6 +225,9 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
 
 MindMapEditor::~MindMapEditor() { closeImageViewer(); }
 
+QPlainTextEdit *MindMapEditor::createNoteEditor(QWidget *p_parent) {
+  return new PlainTextEdit(p_parent);
+}
 void MindMapEditor::setViewWindow(ViewWindow2 *p_viewWindow) { m_viewWindow = p_viewWindow; }
 
 void MindMapEditor::populateImageContextMenu(const QString &p_nodeId, QMenu *p_menu) {
