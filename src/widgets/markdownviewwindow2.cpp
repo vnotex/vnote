@@ -770,6 +770,25 @@ void MarkdownViewWindow2::addAdditionalMenuActions(QMenu *p_menu) {
   }
 
   {
+    auto *destinations = addAction(p_menu, ViewWindowToolBarHelper2::ConcealDestinations);
+    auto *markers = addAction(p_menu, ViewWindowToolBarHelper2::ConcealMarkdownMarkers);
+    const auto refreshConcealmentActions = [this, destinations, markers]() {
+      const auto &config =
+          getServices().get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
+      const QSignalBlocker destinationsBlocker(destinations);
+      const QSignalBlocker markersBlocker(markers);
+      destinations->setChecked(config.getConcealmentEnabled());
+      markers->setChecked(config.getConcealMarkdownMarkersEnabled());
+    };
+    refreshConcealmentActions();
+    connect(p_menu, &QMenu::aboutToShow, this, refreshConcealmentActions);
+    connect(destinations, &QAction::toggled, m_editorController,
+            &MarkdownEditorController::setConcealmentEnabled);
+    connect(markers, &QAction::toggled, m_editorController,
+            &MarkdownEditorController::setConcealMarkdownMarkersEnabled);
+  }
+
+  {
     auto *sectionNumberAction = addAction(p_menu, ViewWindowToolBarHelper2::AllowAutoSectionNumber);
     sectionNumberAction->setChecked(m_outlineProvider->getAutoSectionNumberAllowed());
     connect(sectionNumberAction, &QAction::toggled, this, [this](bool p_checked) {

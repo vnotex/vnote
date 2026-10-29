@@ -857,8 +857,24 @@
     </message>
     <message>
         <location line="+13"/>
-        <source>Toggle In-Place Preview</source>
-        <translation>본문 내 미리 보기 전환</translation>
+        <source>In-Place Preview</source>
+        <translation>본문 내 미리 보기</translation>
+    </message>
+    <message>
+        <source>Conceal long link destinations</source>
+        <translation>긴 링크 대상 주소 숨기기</translation>
+    </message>
+    <message>
+        <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
+        <translation>Markdown 소스를 변경하지 않고 이미지, 링크, 참조의 긴 대상 주소를 줄여 표시합니다. 전체 주소를 보려면 마우스를 올려놓으세요</translation>
+    </message>
+    <message>
+        <source>Conceal Markdown Markers</source>
+        <translation>Markdown 마커 숨기기</translation>
+    </message>
+    <message>
+        <source>Hide Markdown formatting markers without changing the source; move the caret into an element to reveal them</source>
+        <translation>소스를 변경하지 않고 Markdown 서식 마커를 숨깁니다. 요소 안으로 커서를 옮기면 마커가 표시됩니다</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -4964,17 +4980,7 @@
         <translation>기존 숫자 접두사를 대체하여 Markdown 제목의 섹션 번호를 작성하고 유지합니다</translation>
     </message>
     <message>
-        <location line="+12"/>
-        <source>Conceal long link destinations</source>
-        <translation>긴 링크 대상 주소 숨기기</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
-        <translation>Markdown 소스를 변경하지 않고 이미지, 링크, 참조의 긴 대상 주소를 줄여 표시합니다. 전체 주소를 보려면 마우스를 올려놓으세요</translation>
-    </message>
-    <message>
-        <location line="+12"/>
+        <location line="+28"/>
         <source>Constrain in-place preview width</source>
         <translation>본문 내 미리 보기 너비 제한</translation>
     </message>

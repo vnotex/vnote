@@ -385,8 +385,24 @@
     </message>
     <message>
         <location line="+13"/>
-        <source>Toggle In-Place Preview</source>
-        <translation>インプレースプレビューの切り替え</translation>
+        <source>In-Place Preview</source>
+        <translation>インプレースプレビュー</translation>
+    </message>
+    <message>
+        <source>Conceal long link destinations</source>
+        <translation>長いリンク先を省略表示</translation>
+    </message>
+    <message>
+        <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
+        <translation>Markdown のソースを変更せずに、長い画像・リンク・参照のリンク先を短く表示します。マウスを重ねるとリンク先全体を表示します</translation>
+    </message>
+    <message>
+        <source>Conceal Markdown Markers</source>
+        <translation>Markdown マーカーを隠す</translation>
+    </message>
+    <message>
+        <source>Hide Markdown formatting markers without changing the source; move the caret into an element to reveal them</source>
+        <translation>ソースを変更せずに Markdown の書式マーカーを非表示にします。要素内にカーソルを移動すると表示されます</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -5004,17 +5020,7 @@
         <translation>テーブルを編集可能なシートとして表示し、編集内容を Markdown のソースに書き戻します</translation>
     </message>
     <message>
-        <location line="-57"/>
-        <source>Conceal long link destinations</source>
-        <translation>長いリンク先を省略表示</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
-        <translation>Markdown のソースを変更せずに、長い画像・リンク・参照のリンク先を短く表示します。マウスを重ねるとリンク先全体を表示します</translation>
-    </message>
-    <message>
-        <location line="+63"/>
+        <location line="+10"/>
         <source>Automatically renumber ordered lists</source>
         <translation>番号付きリストを自動的に振り直す</translation>
     </message>

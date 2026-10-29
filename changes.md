@@ -5,6 +5,8 @@
 * Update vtextedit to `726b33c` and both vendored cmark copies to `6148f31`
 * Fix closing Markdown heading marker highlighting and preserve syntax backgrounds on the cursor line
 * Migrate to the new concealment API while retaining URL-only concealment and its existing on/off setting
+* Move long-link concealment from Settings to the Markdown editor menu and add optional Markdown marker concealment, with independent persisted preferences
+* Rename the editor menu action "Toggle In-Place Preview" to "In-Place Preview"
 
 ## v4.12.0
 A feature release with editable link previews, native Markdown rendering, Typst math and stronger security on top of VNote 4.11.0:

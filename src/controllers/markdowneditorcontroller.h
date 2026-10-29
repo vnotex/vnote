@@ -76,6 +76,9 @@ public:
   // Returns true if any config changed since last check.
   bool checkAndUpdateConfigRevision();
 
+  void setConcealmentEnabled(bool p_enabled);
+  void setConcealMarkdownMarkersEnabled(bool p_enabled);
+
   // ============ Config Building ============
 
   // Build vte::MarkdownEditorConfig from VNote config + theme data.

@@ -97,6 +97,7 @@ void MarkdownEditorConfig::fromJson(const QJsonObject &p_jobj) {
   m_autoSectionNumberEnabled = READBOOL(QStringLiteral("autoSectionNumber"));
   m_autoSectionNumberInEditModeEnabled = READBOOL(QStringLiteral("autoSectionNumberInEditMode"));
   m_concealmentEnabled = READBOOL(QStringLiteral("concealment"));
+  m_concealMarkdownMarkersEnabled = READBOOL(QStringLiteral("concealMarkdownMarkers"));
   m_constrainInplacePreviewWidthEnabled = READBOOL(QStringLiteral("constrainInplacePreviewWidth"));
   m_fetchImagesInParseAndPaste = READBOOL(QStringLiteral("fetchImagesInParseAndPaste"));
 
@@ -153,6 +154,7 @@ QJsonObject MarkdownEditorConfig::toJson() const {
   obj[QStringLiteral("autoSectionNumber")] = m_autoSectionNumberEnabled;
   obj[QStringLiteral("autoSectionNumberInEditMode")] = m_autoSectionNumberInEditModeEnabled;
   obj[QStringLiteral("concealment")] = m_concealmentEnabled;
+  obj[QStringLiteral("concealMarkdownMarkers")] = m_concealMarkdownMarkersEnabled;
   obj[QStringLiteral("constrainInplacePreviewWidth")] = m_constrainInplacePreviewWidthEnabled;
   obj[QStringLiteral("fetchImagesInParseAndPaste")] = m_fetchImagesInParseAndPaste;
   obj[QStringLiteral("protectFromXss")] = m_protectFromXss;
@@ -336,6 +338,14 @@ bool MarkdownEditorConfig::getConcealmentEnabled() const { return m_concealmentE
 
 void MarkdownEditorConfig::setConcealmentEnabled(bool p_enabled) {
   updateConfig(m_concealmentEnabled, p_enabled, this);
+}
+
+bool MarkdownEditorConfig::getConcealMarkdownMarkersEnabled() const {
+  return m_concealMarkdownMarkersEnabled;
+}
+
+void MarkdownEditorConfig::setConcealMarkdownMarkersEnabled(bool p_enabled) {
+  updateConfig(m_concealMarkdownMarkersEnabled, p_enabled, this);
 }
 
 bool MarkdownEditorConfig::getConstrainInplacePreviewWidthEnabled() const {

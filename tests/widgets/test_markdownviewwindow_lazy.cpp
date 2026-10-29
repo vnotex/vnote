@@ -1,5 +1,6 @@
 #include <QtTest>
 
+#include <QAbstractTextDocumentLayout>
 #include <QAction>
 #include <QApplication>
 #include <QBuffer>
@@ -10,6 +11,7 @@
 #include <QFileInfo>
 #include <QHBoxLayout>
 #include <QLabel>
+#include <QMenu>
 #include <QMimeData>
 #include <QPdfDocument>
 #include <QPdfSelection>
@@ -40,6 +42,7 @@
 #include <controllers/markdownwebjobcontroller.h>
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
+#include <core/hooknames.h>
 #include <core/mainconfig.h>
 #include <core/markdowneditorconfig.h>
 #include <core/servicelocator.h>
@@ -259,6 +262,7 @@ private slots:
   void firstReaderUsesCurrentDraft_data();
   void firstReaderUsesCurrentDraft();
   void themeAndOptionsPreserveEditor();
+  void concealmentMenuPreservesSourceAndIndependentPreferences();
   void imagePopupCreatesOnlyRequestedSurface();
   void printUsesCurrentMode_data();
   void printUsesCurrentMode();
@@ -344,6 +348,7 @@ void TestMarkdownViewWindowLazy::init() {
   markdownConfig().setAutoSectionNumberInEditModeEnabled(false);
   markdownConfig().setAutoFoldPreviewedBlocksEnabled(false);
   markdownConfig().setConcealmentEnabled(false);
+  markdownConfig().setConcealMarkdownMarkersEnabled(false);
   markdownConfig().setMathRenderer(QStringLiteral("katex"));
   markdownConfig().setFetchImagesInParseAndPaste(false);
   m_hooks = std::make_unique<HookManager>();
@@ -662,6 +667,120 @@ void TestMarkdownViewWindowLazy::firstReaderUsesCurrentDraft() {
   QCOMPARE(window.findChild<MarkdownEditor *>(), editor);
   editor->getTextEdit()->document()->undo();
   QCOMPARE(editor->getText(), QStringLiteral("# Saved heading\n"));
+}
+
+void TestMarkdownViewWindowLazy::concealmentMenuPreservesSourceAndIndependentPreferences() {
+  markdownConfig().setInplacePreviewSources(MarkdownEditorConfig::NoInplacePreview);
+  const QString destination =
+      QStringLiteral("abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz");
+  const QString source =
+      QStringLiteral("# Heading ###\n\n*emphasis*\n\n**strong**\n\n~~strike~~\n\n==mark==\n\n"
+                     "`code`\n\n[label](https://example.invalid/path)\n\n$math$\n\n$$display$$\n\n"
+                     "![image](%1)\n\noutside")
+          .arg(destination);
+  const auto firstBuffer = openNote(QStringLiteral("conceal-first.md"), source.toUtf8());
+  const auto secondBuffer = openNote(QStringLiteral("conceal-second.md"), source.toUtf8());
+  QVERIFY(firstBuffer.isValid() && secondBuffer.isValid());
+  Window first(m_services, firstBuffer, nullptr, ViewWindowMode::Edit);
+  Window second(m_services, secondBuffer, nullptr, ViewWindowMode::Edit);
+  showWindow(first);
+  showWindow(second);
+  auto *firstEditor = first.findChild<MarkdownEditor *>();
+  auto *secondEditor = second.findChild<MarkdownEditor *>();
+  QVERIFY(firstEditor && secondEditor);
+  appendDraft(firstEditor, QStringLiteral(" draft"));
+  auto secondCursor = secondEditor->getTextEdit()->textCursor();
+  secondCursor.movePosition(QTextCursor::End);
+  secondEditor->getTextEdit()->setTextCursor(secondCursor);
+  const auto firstCursor = firstEditor->getTextEdit()->textCursor();
+  const auto firstUndo = firstEditor->document()->availableUndoSteps();
+  const auto secondUndo = secondEditor->document()->availableUndoSteps();
+
+  // Host the same editor-config notification boundary as ViewAreaController.
+  const int hook =
+      m_hooks->addAction(HookNames::ConfigEditorChanged, [&](HookContext &, const QVariantMap &) {
+        first.handleEditorConfigChange();
+        second.handleEditorConfigChange();
+      });
+  const auto removeHook = qScopeGuard([&] { m_hooks->removeAction(hook); });
+  auto *destinations = first.findChild<QAction *>(QStringLiteral("concealDestinationsAction"));
+  auto *markers = first.findChild<QAction *>(QStringLiteral("concealMarkdownMarkersAction"));
+  auto *otherDestinations =
+      second.findChild<QAction *>(QStringLiteral("concealDestinationsAction"));
+  auto *otherMarkers = second.findChild<QAction *>(QStringLiteral("concealMarkdownMarkersAction"));
+  QVERIFY(destinations && markers && otherDestinations && otherMarkers);
+  auto *otherMenu = qobject_cast<QMenu *>(otherDestinations->parent());
+  QVERIFY(otherMenu);
+
+  const auto width = [](MarkdownEditor *p_editor, const QString &p_token, int p_length) {
+    const int position = p_editor->getText().indexOf(p_token);
+    const auto block = p_editor->document()->findBlock(position);
+    if (position < 0 || !block.isValid()) {
+      return qreal(-1);
+    }
+    p_editor->document()->documentLayout()->blockBoundingRect(block);
+    const auto line = block.layout()->lineForTextPosition(position - block.position());
+    return line.isValid() ? qAbs(line.cursorToX(position + p_length - block.position()) -
+                                 line.cursorToX(position - block.position()))
+                          : qreal(-1);
+  };
+  const QList<QPair<QString, int>> syntax{
+      {QStringLiteral("# Heading"), 1},  {QStringLiteral("###"), 3},
+      {QStringLiteral("*emphasis*"), 1}, {QStringLiteral("**strong**"), 2},
+      {QStringLiteral("~~strike~~"), 2}, {QStringLiteral("==mark=="), 2},
+      {QStringLiteral("`code`"), 1},     {QStringLiteral("[label]"), 1},
+      {QStringLiteral("$math$"), 1},     {QStringLiteral("$$display$$"), 2}};
+  QTRY_VERIFY(width(firstEditor, destination, destination.size()) > 1.0);
+  QTRY_VERIFY(width(secondEditor, destination, destination.size()) > 1.0);
+  const qreal firstFullDestination = width(firstEditor, destination, destination.size());
+  const qreal secondFullDestination = width(secondEditor, destination, destination.size());
+  const auto hasDisplay = [&](bool p_destinations, bool p_markers) {
+    for (auto *editor : {firstEditor, secondEditor}) {
+      for (const auto &span : syntax) {
+        const qreal actual = width(editor, span.first, span.second);
+        if (actual < 0 || (p_markers ? actual > 0.1 : actual <= 0.1)) {
+          return false;
+        }
+      }
+      const qreal full = editor == firstEditor ? firstFullDestination : secondFullDestination;
+      const qreal actual = width(editor, destination, destination.size());
+      if (actual < 0 || (p_destinations ? actual + 1.0 >= full : qAbs(actual - full) >= 1.0)) {
+        return false;
+      }
+    }
+    return true;
+  };
+  const auto verifySourceState = [&] {
+    QCOMPARE(firstEditor->getText(), source + QStringLiteral(" draft"));
+    QCOMPARE(secondEditor->getText(), source);
+    QCOMPARE(firstEditor->getTextEdit()->textCursor().position(), firstCursor.position());
+    QCOMPARE(firstEditor->getTextEdit()->textCursor().anchor(), firstCursor.anchor());
+    QCOMPARE(secondEditor->getTextEdit()->textCursor().position(), secondCursor.position());
+    QCOMPARE(firstEditor->document()->availableUndoSteps(), firstUndo);
+    QCOMPARE(secondEditor->document()->availableUndoSteps(), secondUndo);
+    QVERIFY(first.isModified());
+    QVERIFY(!second.isModified());
+  };
+  QTRY_VERIFY(hasDisplay(false, false));
+  markers->trigger();
+  QTRY_VERIFY(hasDisplay(false, true));
+  verifySourceState();
+  destinations->trigger();
+  QTRY_VERIFY(hasDisplay(true, true));
+  verifySourceState();
+  markers->trigger();
+  QTRY_VERIFY(hasDisplay(true, false));
+  verifySourceState();
+
+  // A sibling menu opened after the preference changed must show the current state.
+  otherMenu->popup(second.mapToGlobal(QPoint(50, 50)));
+  QTRY_VERIFY(otherMenu->isVisible());
+  QVERIFY(otherDestinations->isChecked());
+  QVERIFY(!otherMarkers->isChecked());
+  otherMenu->hide();
+  otherDestinations->trigger();
+  QTRY_VERIFY(hasDisplay(false, false));
+  verifySourceState();
 }
 
 void TestMarkdownViewWindowLazy::themeAndOptionsPreserveEditor() {

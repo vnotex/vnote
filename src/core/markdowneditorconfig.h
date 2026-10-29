@@ -94,6 +94,9 @@ public:
   bool getConcealmentEnabled() const;
   void setConcealmentEnabled(bool p_enabled);
 
+  bool getConcealMarkdownMarkersEnabled() const;
+  void setConcealMarkdownMarkersEnabled(bool p_enabled);
+
   bool getConstrainInplacePreviewWidthEnabled() const;
   void setConstrainInplacePreviewWidthEnabled(bool p_enabled);
 
@@ -222,6 +225,9 @@ private:
 
   // Shorten long destinations visually without changing Markdown source.
   bool m_concealmentEnabled = true;
+
+  // Hide Markdown syntax visually without changing source.
+  bool m_concealMarkdownMarkersEnabled = false;
 
   // Whether enable in-place preview width constraint.
   bool m_constrainInplacePreviewWidthEnabled = false;

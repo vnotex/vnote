@@ -385,8 +385,24 @@
     </message>
     <message>
         <location line="+13"/>
-        <source>Toggle In-Place Preview</source>
-        <translation>切换原地预览</translation>
+        <source>In-Place Preview</source>
+        <translation>原地预览</translation>
+    </message>
+    <message>
+        <source>Conceal long link destinations</source>
+        <translation>省略显示较长的链接目标</translation>
+    </message>
+    <message>
+        <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
+        <translation>缩略显示较长的图片、链接和引用目标，不修改 Markdown 源文本。悬停可查看完整目标</translation>
+    </message>
+    <message>
+        <source>Conceal Markdown Markers</source>
+        <translation>隐藏 Markdown 标记</translation>
+    </message>
+    <message>
+        <source>Hide Markdown formatting markers without changing the source; move the caret into an element to reveal them</source>
+        <translation>在不修改源文本的情况下隐藏 Markdown 格式标记；将光标移入相应元素即可显示标记</translation>
     </message>
     <message>
         <location line="+7"/>
@@ -4999,17 +5015,7 @@
         <translation>将表格渲染为可编辑的表格控件，编辑结果会写回 Markdown 源文本</translation>
     </message>
     <message>
-        <location line="-57"/>
-        <source>Conceal long link destinations</source>
-        <translation>省略显示较长的链接目标</translation>
-    </message>
-    <message>
-        <location line="+4"/>
-        <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
-        <translation>缩略显示较长的图片、链接和引用目标，不修改 Markdown 源文本。悬停可查看完整目标</translation>
-    </message>
-    <message>
-        <location line="+63"/>
+        <location line="+10"/>
         <source>Automatically renumber ordered lists</source>
         <translation>自动调整有序列表编号</translation>
     </message>

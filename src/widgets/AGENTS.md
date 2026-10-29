@@ -630,8 +630,9 @@ base creates one otherwise. Readable Width is first, followed by a separator and
 PDF's existing rotate/cursor/scroll/spread/properties entries. Only viewer-owned entries are
 readiness-gated: Menu and Readable Width remain available during loading/reloading.
 
-`addAdditionalMenuActions()` appends Markdown's Image Host, Live Preview,
-Toggle In-Place Preview, Allow Auto Section Number and Debug after a separator.
+`addAdditionalMenuActions()` appends Markdown's Image Host, Live Preview, In-Place Preview,
+Conceal long link destinations, Conceal Markdown Markers, Allow Auto Section Number and Debug
+after a separator.
 Edit-only/Read-only visibility and encrypted-note restrictions still apply.
 Use the `addAction(QMenu *, ...)` overload for menu actions: it preserves
 window-scoped shortcuts without creating temporary toolbar buttons. The toolbar
@@ -941,8 +942,8 @@ and relative-URL resolution remain buffer/encryption-owned, never user preferenc
 
 ### Automatic section numbers
 
-Markdown windows expose **Allow Auto Section Number** in **Menu**, immediately after
-**Toggle In-Place Preview**.
+Markdown windows expose **Allow Auto Section Number** in **Menu**, immediately after the
+concealment controls.
 The default-on permission lives only in the window's `OutlineProvider`, never in configuration or
 outline snapshots. OFF vetoes read decoration, edit-mode source numbering, and dock/popup outline
 numbering; ON respects each existing global preference. Settings changes, mode changes and new
@@ -980,12 +981,25 @@ popup outlines, without mutating producer names.
 
 ### Markdown concealment
 
-Settings → Markdown Editor → Edit exposes **Conceal long link destinations**. It stores
-`editor.markdown_editor.concealment`, defaulting to `true`; older configurations inherit that
-default through `ConfigMgr2`'s merge. `applyMarkdownConfigFields()` maps both editor-config
-builders: disabling clears vtextedit's concealment flags, while enabling retains its image, link,
-and reference URL flags and length threshold. `ConfigEditorChanged` refreshes open editors.
-Concealment is visual only: never rewrite the Markdown source; hover shows the full destination.
+Markdown's top-right **Menu** exposes two Edit-only checkable preferences immediately below
+**In-Place Preview**; neither appears on the Settings page:
+
+- **Conceal long link destinations** retains `editor.markdown_editor.concealment`, default `true`.
+- **Conceal Markdown Markers** stores `editor.markdown_editor.concealMarkdownMarkers`, default
+  `false`. It hides emphasis, strong, strikethrough, mark, inline-code, link, ATX-heading and
+  inline-formula syntax through vtextedit's typed `MarkdownConcealHideSyntax` rules.
+
+Both preferences are global and persist independently through `ConfigMgr2`; moving the original
+control must preserve saved opt-outs. Menu actions call `MarkdownEditorController`, which emits
+the existing `ConfigEditorChanged` notification to refresh open editors. Each menu refreshes its
+checks from current configuration before opening, without emitting another toggle.
+`applyMarkdownConfigFields()` supplies both editor-config builders: destination opt-out clears
+URL rules before independently adding any enabled marker rules. Link-syntax hiding includes the
+link destination suffix; image/reference URL shortening remains separately controlled.
+
+Concealment is visual only: never rewrite Markdown or change dirty state, cursor or undo history.
+Hover reveals a shortened destination; moving the caret into an element reveals its grouped
+markers. Setext underlines and multiline math-block delimiters remain unchanged.
 
 Every bundled `text-editor.theme` defines `markdown-editor-styles.ConcealedText` with foreground
 and background colors. `ThemeService` resolves palette tokens before vtextedit loads the theme.

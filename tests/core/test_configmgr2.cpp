@@ -82,6 +82,7 @@ private slots:
   void testHeadingFolding_defaultsMergeAndRoundTrip();
   void testInactiveReaderTimeoutMinutes_roundTripAndNormalization();
   void testConcealment_defaultsMergeAndPersistedOptOut();
+  void testConcealmentPreferences_persistIndependently();
   void testAlwaysOpenNotesInNewTabs_defaultsMergeAndPersistedOptOut();
   void testAutoSectionNumber_defaultsMergeAndPersistedOptOut();
   void testEditSectionNumber_mergeAndIndependentPersistence();
@@ -907,6 +908,42 @@ void TestConfigMgr2::testConcealment_defaultsMergeAndPersistedOptOut() {
   ConfigMgr2 restarted(m_configService);
   restarted.init();
   QVERIFY(!restarted.getEditorConfig().getMarkdownEditorConfig().getConcealmentEnabled());
+}
+
+void TestConfigMgr2::testConcealmentPreferences_persistIndependently() {
+  const auto original =
+      m_configService->getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const auto restore = qScopeGuard([&] {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  const QStringList markerPath{QStringLiteral("editor"), QStringLiteral("markdown_editor"),
+                               QStringLiteral("concealMarkdownMarkers")};
+  MainConfig defaults(m_configMgr);
+  defaults.getEditorConfig().getMarkdownEditorConfig().setConcealmentEnabled(false);
+  const auto migrated = loadThroughMergePath(withoutKeyAt(defaults.toJson(), markerPath));
+  QCOMPARE(valueAt(migrated, markerPath), QJsonValue(false));
+  {
+    ConfigMgr2 settings(m_configService);
+    settings.init();
+    QVERIFY(!settings.getEditorConfig().getMarkdownEditorConfig().getConcealmentEnabled());
+  }
+
+  for (const bool destinations : {false, true}) {
+    for (const bool markers : {false, true}) {
+      {
+        ConfigMgr2 settings(m_configService);
+        settings.init();
+        auto &markdown = settings.getEditorConfig().getMarkdownEditorConfig();
+        markdown.setConcealmentEnabled(destinations);
+        markdown.setConcealMarkdownMarkersEnabled(markers);
+      }
+      ConfigMgr2 restarted(m_configService);
+      restarted.init();
+      const auto &markdown = restarted.getEditorConfig().getMarkdownEditorConfig();
+      QCOMPARE(markdown.getConcealmentEnabled(), destinations);
+      QCOMPARE(markdown.getConcealMarkdownMarkersEnabled(), markers);
+    }
+  }
 }
 
 void TestConfigMgr2::testAlwaysOpenNotesInNewTabs_defaultsMergeAndPersistedOptOut() {

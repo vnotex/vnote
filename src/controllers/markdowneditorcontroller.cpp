@@ -17,10 +17,12 @@
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
 #include <core/editorconfig.h>
+#include <core/hooknames.h>
 #include <core/markdowneditorconfig.h>
 #include <core/nodeidentifier.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
+#include <core/services/hookmanager.h>
 #include <core/sessionconfig.h>
 #include <core/texteditorconfig.h>
 #include <gui/utils/imageutils.h>
@@ -77,6 +79,16 @@ void applyMarkdownConfigFields(const MarkdownEditorConfig &p_mdConfig,
 
   if (!p_mdConfig.getConcealmentEnabled()) {
     p_editorConfig->m_concealRules.clear();
+  }
+  if (p_mdConfig.getConcealMarkdownMarkersEnabled()) {
+    for (const auto kind :
+         {vte::MarkdownConcealElement::EmphasisMarkers, vte::MarkdownConcealElement::StrongMarkers,
+          vte::MarkdownConcealElement::StrikethroughMarkers,
+          vte::MarkdownConcealElement::MarkMarkers, vte::MarkdownConcealElement::InlineCodeMarkers,
+          vte::MarkdownConcealElement::LinkSyntax, vte::MarkdownConcealElement::HeadingMarkers,
+          vte::MarkdownConcealElement::InlineFormulaMarkers}) {
+      p_editorConfig->m_concealRules.set(kind, vte::MarkdownConcealHideSyntax{});
+    }
   }
 
   // Map InplacePreviewSources flags from vnotex -> vte.
@@ -185,6 +197,24 @@ int mapThroughHeadingReplacements(int p_position,
 
 MarkdownEditorController::MarkdownEditorController(ServiceLocator &p_services, QObject *p_parent)
     : QObject(p_parent), m_services(p_services) {}
+
+void MarkdownEditorController::setConcealmentEnabled(bool p_enabled) {
+  auto &config = m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
+  if (config.getConcealmentEnabled() == p_enabled) {
+    return;
+  }
+  config.setConcealmentEnabled(p_enabled);
+  m_services.get<HookManager>()->doAction(HookNames::ConfigEditorChanged);
+}
+
+void MarkdownEditorController::setConcealMarkdownMarkersEnabled(bool p_enabled) {
+  auto &config = m_services.get<ConfigMgr2>()->getEditorConfig().getMarkdownEditorConfig();
+  if (config.getConcealMarkdownMarkersEnabled() == p_enabled) {
+    return;
+  }
+  config.setConcealMarkdownMarkersEnabled(p_enabled);
+  m_services.get<HookManager>()->doAction(HookNames::ConfigEditorChanged);
+}
 
 bool MarkdownEditorController::checkAndUpdateConfigRevision() {
   bool changed = false;

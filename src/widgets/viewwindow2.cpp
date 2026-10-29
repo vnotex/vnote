@@ -939,6 +939,8 @@ QAction *ViewWindow2::addAction(QMenu *p_menu, ViewWindowToolBarHelper2::Action 
 
   case ViewWindowToolBarHelper2::ToggleLivePreview:
   case ViewWindowToolBarHelper2::InplacePreview:
+  case ViewWindowToolBarHelper2::ConcealDestinations:
+  case ViewWindowToolBarHelper2::ConcealMarkdownMarkers:
     // Visible only in Edit mode. Subclass wires the toggled signal.
     act->setVisible(m_mode == ViewWindowMode::Edit);
     connect(this, &ViewWindow2::modeChanged, this,

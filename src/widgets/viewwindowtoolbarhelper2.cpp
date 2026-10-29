@@ -418,8 +418,26 @@ QAction *ViewWindowToolBarHelper2::addAction(QMenu *p_menu, Action p_action,
 
   case Action::InplacePreview:
     act = p_menu->addAction(generateIcon(p_services, QStringLiteral("inplace_preview_editor.svg")),
-                            QObject::tr("Toggle In-Place Preview"));
+                            QObject::tr("In-Place Preview"));
     act->setProperty("iconName", QStringLiteral("inplace_preview_editor.svg"));
+    act->setCheckable(true);
+    break;
+
+  case Action::ConcealDestinations:
+    act = p_menu->addAction(QObject::tr("Conceal long link destinations"));
+    act->setObjectName(QStringLiteral("concealDestinationsAction"));
+    act->setToolTip(QObject::tr(
+        "Shorten long image, link, and reference destinations without changing the Markdown "
+        "source. Hover to see the full destination"));
+    act->setCheckable(true);
+    break;
+
+  case Action::ConcealMarkdownMarkers:
+    act = p_menu->addAction(QObject::tr("Conceal Markdown Markers"));
+    act->setObjectName(QStringLiteral("concealMarkdownMarkersAction"));
+    act->setToolTip(QObject::tr(
+        "Hide Markdown formatting markers without changing the source; move the caret into an "
+        "element to reveal them"));
     act->setCheckable(true);
     break;
 
