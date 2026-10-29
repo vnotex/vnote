@@ -132,9 +132,8 @@ ExportInput nativeInput(const QString &p_directory, bool p_tall = false) {
                   QJsonObject{{QStringLiteral("url"), QStringLiteral("fixture.png")},
                               {QStringLiteral("width"), 123},
                               {QStringLiteral("height"), 67}});
-      node.insert(QStringLiteral("tags"),
-                  QJsonArray{QStringLiteral("Research <&>"), QString(),
-                             QStringLiteral("Research <&>")});
+      node.insert(QStringLiteral("tags"), QJsonArray{QStringLiteral("Research <&>"), QString(),
+                                                     QStringLiteral("Research <&>")});
       node.insert(QStringLiteral("icons"),
                   QJsonArray{QStringLiteral("star"), QString(), QStringLiteral("bookmark")});
     }
@@ -199,14 +198,18 @@ bool settleLayout(QWebEnginePage &p_page) {
     window.testLayoutSettled = false;
     requestAnimationFrame(() => requestAnimationFrame(() => { window.testLayoutSettled = true; }));
     return true;
-  })())JS")).toBool()) {
+  })())JS"))
+           .toBool()) {
     return false;
   }
   const QPointer<QWebEnginePage> page(&p_page);
-  return QTest::qWaitFor([page] {
-    return page && evaluateJavaScript(*page, QStringLiteral("window.testLayoutSettled === true"))
-                       .toBool();
-  }, 5000);
+  return QTest::qWaitFor(
+      [page] {
+        return page &&
+               evaluateJavaScript(*page, QStringLiteral("window.testLayoutSettled === true"))
+                   .toBool();
+      },
+      5000);
 }
 
 // All callbacks retain only heap-owned state; a timeout or page destruction cannot leave a
@@ -234,12 +237,13 @@ bool loadFile(QWebEnginePage &p_page, const QString &p_path) {
   }
   const QPointer<QWebEnginePage> page(&p_page);
   return QTest::qWaitFor(
-      [page] {
-        return page &&
-               evaluateJavaScript(*page, QStringLiteral("window.testResourcesReady === true"))
-                   .toBool();
-      },
-      15000) && settleLayout(p_page);
+             [page] {
+               return page && evaluateJavaScript(
+                                  *page, QStringLiteral("window.testResourcesReady === true"))
+                                  .toBool();
+             },
+             15000) &&
+         settleLayout(p_page);
 }
 
 struct BrowserPage {
@@ -257,8 +261,8 @@ struct BrowserPage {
 };
 
 bool clickElement(BrowserPage &p_browser, const QString &p_selector) {
-  const auto selector = QString::fromUtf8(QJsonDocument(QJsonArray{p_selector})
-                                            .toJson(QJsonDocument::Compact));
+  const auto selector =
+      QString::fromUtf8(QJsonDocument(QJsonArray{p_selector}).toJson(QJsonDocument::Compact));
   const auto point = evaluateJavaScript(p_browser.page, QStringLiteral(R"JS((() => {
     const element = document.querySelector(%1[0]);
     if (!element) return null;
@@ -267,7 +271,9 @@ bool clickElement(BrowserPage &p_browser, const QString &p_selector) {
     const x = rect.left + rect.width / 2, y = rect.top + rect.height / 2;
     const hit = document.elementFromPoint(x, y);
     return hit && (hit === element || element.contains(hit)) ? [x,y] : null;
-  })())JS").arg(selector)).toList();
+  })())JS")
+                                                            .arg(selector))
+                         .toList();
   if (point.size() != 2 || !p_browser.view.focusProxy()) {
     return false;
   }
@@ -333,7 +339,6 @@ QJsonObject documentState(QWebEnginePage &p_page) {
     const oldColumnWidth = measure.getBoundingClientRect().width;
     measure.remove();
     return JSON.stringify({
-      scripts:document.scripts.length,
       inlineHandlers:Array.from(document.querySelectorAll('*')).some(element =>
         Array.from(element.attributes).some(attribute => /^on/i.test(attribute.name))),
       directMap:map.parentElement === visual && visual.children.length === 1,
@@ -515,12 +520,14 @@ void verifyCompleteArticles(const QJsonObject &p_state, bool p_tall = false) {
   for (const auto &visible : p_state.value(QStringLiteral("articleVisibility")).toArray()) {
     QVERIFY(visible.toBool());
   }
-  QCOMPARE(p_state.value(QStringLiteral("noteText")).toString().simplified(), longNote().simplified());
+  QCOMPARE(p_state.value(QStringLiteral("noteText")).toString().simplified(),
+           longNote().simplified());
   QCOMPARE(p_state.value(QStringLiteral("noteParagraphs")).toInt(), 1);
   QCOMPARE(p_state.value(QStringLiteral("noteMarkup")).toInt(), 0);
   const auto paragraphs = p_state.value(QStringLiteral("paragraphs")).toArray();
   QCOMPARE(paragraphs.size(), 2);
-  QCOMPARE(paragraphs[0].toString(), QStringLiteral("First paragraph <b>is plain text</b>\nsecond line"));
+  QCOMPARE(paragraphs[0].toString(),
+           QStringLiteral("First paragraph <b>is plain text</b>\nsecond line"));
   QCOMPARE(paragraphs[1].toString(), QStringLiteral("Second paragraph & preserved"));
   bool externalLink = false;
   for (const auto &value : p_state.value(QStringLiteral("links")).toArray()) {
@@ -539,7 +546,8 @@ void verifyCompleteArticles(const QJsonObject &p_state, bool p_tall = false) {
   QCOMPARE(reference.value(QStringLiteral("href")).toString(), QStringLiteral("#m3-node-6e39"));
   QCOMPARE(reference.value(QStringLiteral("owner")).toString(), QStringLiteral("m3-node-6e37"));
   QVERIFY(reference.value(QStringLiteral("text")).toString().contains(topics()[9]));
-  QCOMPARE(reference.value(QStringLiteral("title")).toString(), QStringLiteral("Across the forest"));
+  QCOMPARE(reference.value(QStringLiteral("title")).toString(),
+           QStringLiteral("Across the forest"));
   QVERIFY(reference.value(QStringLiteral("ownRow")).toBool());
   QVERIFY(!reference.value(QStringLiteral("inTitle")).toBool());
   const auto tags = p_state.value(QStringLiteral("tags")).toArray();
@@ -560,17 +568,22 @@ void verifyCompleteArticles(const QJsonObject &p_state, bool p_tall = false) {
     QVERIFY(!icon.value(QStringLiteral("inHeading")).toBool());
     QVERIFY(icon.value(QStringLiteral("ownRow")).toBool());
   }
-  const QStringList rowClasses{QStringLiteral("m3-article-title"), QStringLiteral("m3-article-icons"),
-                               QStringLiteral("m3-article-tags"), QStringLiteral("m3-article-url"),
-                               QStringLiteral("m3-article-references"), QStringLiteral("m3-article-note"),
-                               QStringLiteral("m3-article-figure")};
-  const QStringList rowTags{QStringLiteral("P"), QStringLiteral("DIV"), QStringLiteral("DIV"),
-                            QStringLiteral("P"), QStringLiteral("DIV"), QStringLiteral("DIV"),
+  const QStringList rowClasses{
+      QStringLiteral("m3-article-title"),      QStringLiteral("m3-article-icons"),
+      QStringLiteral("m3-article-tags"),       QStringLiteral("m3-article-url"),
+      QStringLiteral("m3-article-references"), QStringLiteral("m3-article-note"),
+      QStringLiteral("m3-article-figure")};
+  const QStringList rowTags{QStringLiteral("P"),     QStringLiteral("DIV"), QStringLiteral("DIV"),
+                            QStringLiteral("P"),     QStringLiteral("DIV"), QStringLiteral("DIV"),
                             QStringLiteral("FIGURE")};
   const auto rows = p_state.value(QStringLiteral("rows")).toArray();
   QCOMPARE(rows.size(), rowClasses.size());
-  double previousBottom = rows.first().toObject().value(QStringLiteral("bounds"))
-                              .toObject().value(QStringLiteral("top")).toDouble();
+  double previousBottom = rows.first()
+                              .toObject()
+                              .value(QStringLiteral("bounds"))
+                              .toObject()
+                              .value(QStringLiteral("top"))
+                              .toDouble();
   for (int index = 0; index < rows.size(); ++index) {
     const auto row = rows[index].toObject();
     QCOMPARE(row.value(QStringLiteral("classes")).toString(), rowClasses[index]);
@@ -594,7 +607,8 @@ void verifyCompleteArticles(const QJsonObject &p_state, bool p_tall = false) {
   const auto unsafeUrl = p_state.value(QStringLiteral("unsafeUrl")).toObject();
   QCOMPARE(unsafeUrl.value(QStringLiteral("links")).toInt(), 0);
   QCOMPARE(unsafeUrl.value(QStringLiteral("icons")).toInt(), 0);
-  QCOMPARE(unsafeUrl.value(QStringLiteral("text")).toString(), QStringLiteral("javascript:alert('unsafe')"));
+  QCOMPARE(unsafeUrl.value(QStringLiteral("text")).toString(),
+           QStringLiteral("javascript:alert('unsafe')"));
   const auto figures = p_state.value(QStringLiteral("figures")).toArray();
   QCOMPARE(figures.size(), 2);
   for (const auto &value : figures) {
@@ -602,7 +616,8 @@ void verifyCompleteArticles(const QJsonObject &p_state, bool p_tall = false) {
     QVERIFY(figure.value(QStringLiteral("decoded")).toBool());
     QVERIFY(figure.value(QStringLiteral("visible")).toBool());
     QVERIFY(figure.value(QStringLiteral("fits")).toBool());
-    QCOMPARE(figure.value(QStringLiteral("source")).toString(), p_state.value(QStringLiteral("source")).toString());
+    QCOMPARE(figure.value(QStringLiteral("source")).toString(),
+             p_state.value(QStringLiteral("source")).toString());
     const auto bounds = figure.value(QStringLiteral("bounds")).toObject();
     const double ratio = bounds.value(QStringLiteral("width")).toDouble() /
                          bounds.value(QStringLiteral("height")).toDouble();
@@ -611,7 +626,6 @@ void verifyCompleteArticles(const QJsonObject &p_state, bool p_tall = false) {
 }
 
 void verifyMapDocument(const QJsonObject &p_state, bool p_tall = false) {
-  QCOMPARE(p_state.value(QStringLiteral("scripts")).toInt(), 0);
   QVERIFY(!p_state.value(QStringLiteral("inlineHandlers")).toBool());
   QVERIFY(p_state.value(QStringLiteral("directMap")).toBool());
   QVERIFY(p_state.value(QStringLiteral("ancestorsUnscaled")).toBool());
@@ -675,9 +689,11 @@ void verifyNaturalDocument(const QJsonObject &p_state) {
   QVERIFY(articles.value(QStringLiteral("top")).toDouble() >=
           visual.value(QStringLiteral("bottom")).toDouble());
   QVERIFY(p_state.value(QStringLiteral("documentWidth")).toDouble() >=
-          map.value(QStringLiteral("right")).toDouble() + p_state.value(QStringLiteral("scrollX")).toDouble() - 1);
+          map.value(QStringLiteral("right")).toDouble() +
+              p_state.value(QStringLiteral("scrollX")).toDouble() - 1);
   QVERIFY(p_state.value(QStringLiteral("documentHeight")).toDouble() >=
-          articles.value(QStringLiteral("bottom")).toDouble() + p_state.value(QStringLiteral("scrollY")).toDouble() - 1);
+          articles.value(QStringLiteral("bottom")).toDouble() +
+              p_state.value(QStringLiteral("scrollY")).toDouble() - 1);
   QVERIFY(std::abs(articles.value(QStringLiteral("width")).toDouble() -
                    main.value(QStringLiteral("width")).toDouble()) < 1);
   QVERIFY(p_state.value(QStringLiteral("viewportWidth")).toDouble() -
@@ -700,8 +716,8 @@ void verifyPdfMapReservation(const QJsonObject &p_state) {
   QVERIFY(scale > 0 && scale <= 1.001);
   const auto zoom = p_state.value(QStringLiteral("mapZoom")).toString();
   QVERIFY(std::abs((zoom == QStringLiteral("normal") ? 1 : zoom.toDouble()) - scale) < 0.001);
-  for (const auto &edge : {QStringLiteral("left"), QStringLiteral("top"),
-                            QStringLiteral("width"), QStringLiteral("height")}) {
+  for (const auto &edge : {QStringLiteral("left"), QStringLiteral("top"), QStringLiteral("width"),
+                           QStringLiteral("height")}) {
     QVERIFY(std::abs(map.value(edge).toDouble() - visual.value(edge).toDouble()) < 1);
   }
   QCOMPARE(p_state.value(QStringLiteral("bodyFont")).toDouble(), 16.0);
@@ -961,8 +977,8 @@ void TestHtmlPdfExporter::naturalSizeDocumentAndReadableArticles() {
   double smallArticleWidth = 0;
   for (const auto &size : {QSize(640, 700), QSize(1800, 1000)}) {
     browser.view.resize(size);
-    QTRY_COMPARE_WITH_TIMEOUT(evaluateJavaScript(browser.page, QStringLiteral("innerWidth")).toInt(),
-                              size.width(), 5000);
+    QTRY_COMPARE_WITH_TIMEOUT(
+        evaluateJavaScript(browser.page, QStringLiteral("innerWidth")).toInt(), size.width(), 5000);
     QVERIFY(settleLayout(browser.page));
     state = documentState(browser.page);
     QVERIFY(!state.isEmpty());
@@ -972,8 +988,10 @@ void TestHtmlPdfExporter::naturalSizeDocumentAndReadableArticles() {
     const auto map = state.value(QStringLiteral("map")).toObject();
     QVERIFY(std::abs(map.value(QStringLiteral("width")).toDouble() - width) < 1);
     QVERIFY(std::abs(map.value(QStringLiteral("height")).toDouble() - height) < 1);
-    const double articleWidth = state.value(QStringLiteral("articles")).toObject()
-                                    .value(QStringLiteral("width")).toDouble();
+    const double articleWidth = state.value(QStringLiteral("articles"))
+                                    .toObject()
+                                    .value(QStringLiteral("width"))
+                                    .toDouble();
     if (size.width() == 640) {
       smallArticleWidth = articleWidth;
     } else {
@@ -989,7 +1007,8 @@ void TestHtmlPdfExporter::naturalSizeDocumentAndReadableArticles() {
   QVERIFY(evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
     window.scrollTo(document.scrollingElement.scrollWidth, document.scrollingElement.scrollHeight);
     return true;
-  })())JS")).toBool());
+  })())JS"))
+              .toBool());
   QVERIFY(settleLayout(browser.page));
   state = documentState(browser.page);
   QVERIFY(state.value(QStringLiteral("scrollX")).toDouble() > 100);
@@ -1002,7 +1021,8 @@ void TestHtmlPdfExporter::naturalSizeDocumentAndReadableArticles() {
     const box = topic.getBoundingClientRect();
     const hit = document.elementFromPoint(box.left + 4, box.top + 7);
     return hit && hit.closest('.m3-topic') === topic;
-  })())JS")).toBool());
+  })())JS"))
+              .toBool());
   const auto selected = evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
     const range = document.createRange();
     range.selectNodeContents(document.querySelector('#mindmap .m3-topic'));
@@ -1010,24 +1030,29 @@ void TestHtmlPdfExporter::naturalSizeDocumentAndReadableArticles() {
     selection.removeAllRanges(); selection.addRange(range);
     const text = selection.toString(); selection.removeAllRanges();
     return text;
-  })())JS")).toString();
+  })())JS"))
+                            .toString();
   QCOMPARE(selected.simplified(), topics().first().simplified());
 
   // Real pointer input follows the map topic, then the reference on its separate article row.
   QVERIFY(clickElement(browser, QStringLiteral("#mindmap [data-node-id='n7'] .m3-topic")));
-  QTRY_COMPARE_WITH_TIMEOUT(evaluateJavaScript(browser.page, QStringLiteral("location.hash")).toString(),
-                            QStringLiteral("#m3-node-6e37"), 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(
+      evaluateJavaScript(browser.page, QStringLiteral("location.hash")).toString(),
+      QStringLiteral("#m3-node-6e37"), 5000);
   QVERIFY(evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
     const title = document.querySelector('#m3-node-6e37 .m3-article-title').getBoundingClientRect();
     return title.top >= 0 && title.bottom <= innerHeight;
-  })())JS")).toBool());
+  })())JS"))
+              .toBool());
   QVERIFY(clickElement(browser, QStringLiteral("#m3-node-6e37 .m3-cross-reference")));
-  QTRY_COMPARE_WITH_TIMEOUT(evaluateJavaScript(browser.page, QStringLiteral("location.hash")).toString(),
-                            QStringLiteral("#m3-node-6e39"), 5000);
+  QTRY_COMPARE_WITH_TIMEOUT(
+      evaluateJavaScript(browser.page, QStringLiteral("location.hash")).toString(),
+      QStringLiteral("#m3-node-6e39"), 5000);
   QVERIFY(evaluateJavaScript(browser.page, QStringLiteral(R"JS((() => {
     const title = document.querySelector('#m3-node-6e39 .m3-article-title').getBoundingClientRect();
     return title.top >= 0 && title.bottom <= innerHeight;
-  })())JS")).toBool());
+  })())JS"))
+              .toBool());
   state = documentState(browser.page);
   verifyNaturalDocument(state);
   verifyCompleteArticles(state, tall);
@@ -1081,15 +1106,12 @@ void TestHtmlPdfExporter::printableNativeForest() {
   const double nativeRatio = state.value(QStringLiteral("naturalWidth")).toDouble() /
                              state.value(QStringLiteral("naturalHeight")).toDouble();
   QVERIFY(std::abs(width / height - nativeRatio) / nativeRatio < 0.005);
-  const double expectedScale = qMin(1.0, qMin((printable.width() - 1) * pixelsPerMillimeter /
-                                                state.value(QStringLiteral("naturalWidth")).toDouble(),
-                                            (printable.height() - 1) * pixelsPerMillimeter /
-                                                state.value(QStringLiteral("naturalHeight")).toDouble()));
-  QVERIFY(std::abs(width / state.value(QStringLiteral("naturalWidth")).toDouble() - expectedScale) < 0.001);
   for (const auto &value : state.value(QStringLiteral("figures")).toArray()) {
     const auto figure = value.toObject().value(QStringLiteral("bounds")).toObject();
-    QVERIFY(figure.value(QStringLiteral("width")).toDouble() <= printable.width() * pixelsPerMillimeter);
-    QVERIFY(figure.value(QStringLiteral("height")).toDouble() <= printable.height() * pixelsPerMillimeter);
+    QVERIFY(figure.value(QStringLiteral("width")).toDouble() <=
+            printable.width() * pixelsPerMillimeter);
+    QVERIFY(figure.value(QStringLiteral("height")).toDouble() <=
+            printable.height() * pixelsPerMillimeter);
   }
   QVERIFY(articles.value(QStringLiteral("top")).toDouble() >=
           visual.value(QStringLiteral("bottom")).toDouble());
@@ -1133,7 +1155,8 @@ void TestHtmlPdfExporter::printableNativeForest() {
   for (int index = 0; index < pages.size(); ++index) {
     const auto page = pages[index].toObject();
     QCOMPARE(page.value(QStringLiteral("width")).toDouble() >
-                 page.value(QStringLiteral("height")).toDouble(), landscape);
+                 page.value(QStringLiteral("height")).toDouble(),
+             landscape);
     QString text;
     for (const auto &item : page.value(QStringLiteral("items")).toArray()) {
       const auto entry = item.toObject();
@@ -1147,7 +1170,8 @@ void TestHtmlPdfExporter::printableNativeForest() {
         const double height = entry.value(QStringLiteral("height")).toDouble();
         QVERIFY2(std::abs(height - 12.0) < 0.1,
                  qPrintable(QStringLiteral("Map overflow/zoom shrank body text to %1 pt on page %2")
-                                .arg(height).arg(index + 1)));
+                                .arg(height)
+                                .arg(index + 1)));
         readableBody = true;
       }
     }
@@ -1187,8 +1211,9 @@ void TestHtmlPdfExporter::printableNativeForest() {
   }
   const auto firstPage = pageText.first();
   QVERIFY(firstPage.contains(QStringLiteral("Root")));
-  for (const auto &level : {QStringLiteral("two"), QStringLiteral("three"), QStringLiteral("four"),
-                            QStringLiteral("five"), QStringLiteral("six"), QStringLiteral("seven")}) {
+  for (const auto &level :
+       {QStringLiteral("two"), QStringLiteral("three"), QStringLiteral("four"),
+        QStringLiteral("five"), QStringLiteral("six"), QStringLiteral("seven")}) {
     QVERIFY2(firstPage.contains(QStringLiteral("Level ") + level), qPrintable(firstPage));
   }
   QVERIFY(firstPage.contains(QStringLiteral("Deep")));

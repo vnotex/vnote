@@ -1,0 +1,5 @@
+<RCC>
+    <qresource prefix="/vnotex/export/css">
+        <file alias="export.css">../data/extra/web/css/export.css</file>
+    </qresource>
+</RCC>

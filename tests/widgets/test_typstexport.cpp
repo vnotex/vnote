@@ -8,6 +8,7 @@
 #include <QPageSize>
 #include <QPdfDocument>
 #include <QPdfSelection>
+#include <QScopeGuard>
 #include <QSemaphore>
 #include <QStandardPaths>
 #include <QTemporaryDir>
@@ -18,12 +19,18 @@
 #include <QtTest>
 #include <algorithm>
 #include <memory>
+#include <optional>
+
+#ifdef Q_OS_WIN
+#include <qt_windows.h>
+#endif
 
 #include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <core/services/configcoreservice.h>
 #include <core/services/htmltemplateservice.h>
 #include <export/exporter.h>
+#include <export/exportstylesheet.h>
 #include <export/typstexporter.h>
 #include <gui/services/themeservice.h>
 #include <gui/services/vxpdfschemehandler.h>
@@ -62,6 +69,52 @@ QVariant evaluate(QWebEnginePage *page, const QString &script) {
     reply->done = true;
   });
   return QTest::qWaitFor([reply] { return reply->done; }, 10000) ? reply->value : QVariant();
+}
+
+bool loadHtml(QWebEngineView &browser, const QString &path) {
+  QSignalSpy loaded(&browser, &QWebEngineView::loadFinished);
+  browser.resize(1000, 720);
+  browser.show();
+  browser.load(QUrl::fromLocalFile(path));
+  return QTest::qWaitFor([&loaded] { return !loaded.isEmpty(); }, 30000) &&
+         loaded.last().at(0).toBool();
+}
+
+QVariantMap bodyLayout(QWebEngineView &browser) {
+  return evaluate(
+             browser.page(),
+             QStringLiteral(
+                 "(() => { const body = document.body; const rect = body.getBoundingClientRect();"
+                 "const style = getComputedStyle(body); return {"
+                 "viewport: document.documentElement.clientWidth, width: rect.width, left: "
+                 "rect.left,"
+                 "right: document.documentElement.clientWidth - rect.right,"
+                 "boxSizing: style.boxSizing, maxWidth: style.maxWidth,"
+                 "marginLeft: parseFloat(style.marginLeft), marginRight: "
+                 "parseFloat(style.marginRight),"
+                 "custom: style.getPropertyValue('--export-style-test').trim() }; })()"))
+      .toMap();
+}
+
+void verifyCenteredBody(QWebEngineView &browser, int percent) {
+  const auto layout = bodyLayout(browser);
+  QVERIFY(!layout.isEmpty());
+  // Scrollbars can consume viewport width, so percentages use the actual layout viewport.
+  const auto viewport = layout.value(QStringLiteral("viewport")).toDouble();
+  QCOMPARE(layout.value(QStringLiteral("boxSizing")).toString(), QStringLiteral("border-box"));
+  QCOMPARE(layout.value(QStringLiteral("maxWidth")).toString(),
+           QString::number(percent) + QLatin1Char('%'));
+  QVERIFY(qAbs(layout.value(QStringLiteral("width")).toDouble() - viewport * percent / 100.0) <
+          1.0);
+  const auto margin = viewport * (100 - percent) / 200.0;
+  for (const auto *key : {"left", "right", "marginLeft", "marginRight"})
+    QVERIFY2(qAbs(layout.value(QLatin1String(key)).toDouble() - margin) < 1.0, key);
+}
+
+QByteArray customizedCss(int percent) {
+  return "body { box-sizing: border-box; max-width: " + QByteArray::number(percent) +
+         "%; margin-left: auto; margin-right: auto; padding: 11px;"
+         "border: 7px solid rgb(17, 34, 51); --export-style-test: applied; }\n";
 }
 
 QString mindMapSource() {
@@ -158,6 +211,18 @@ private slots:
   void sourceFailures();
   void nativeHtmlAndPdf();
   void htmlOnlyAndMimeRejection();
+  void sharedCssDefaultGeometry_data();
+  void sharedCssDefaultGeometry();
+  void sharedCssPolicy_data();
+  void sharedCssPolicy();
+  void sharedCssFreshAndEmpty();
+  void sharedCssMissingAndDisabled();
+  void sharedCssCollision_data();
+  void sharedCssCollision();
+  void sharedCssUnreadable();
+  void sharedCssHeadBoundary();
+  void sharedCssInvalidHtml_data();
+  void sharedCssInvalidHtml();
   void compiledFailures_data();
   void compiledFailures();
   void cancellationThenExport();
@@ -189,6 +254,10 @@ private:
   std::unique_ptr<vte::TypstRuntime> m_runtime;
   std::unique_ptr<Exporter> m_exporter;
   QString m_project, m_main, m_output, m_attachments;
+  QString m_stylesheet;
+  std::optional<QByteArray> m_savedStylesheet;
+  QFileDevice::Permissions m_savedStylesheetPermissions;
+  bool m_manageStylesheet = false;
   QStringList m_logs;
 };
 
@@ -245,6 +314,19 @@ void TestTypstExport::cleanupTestCase() {
 void TestTypstExport::init() {
   m_case = std::make_unique<QTemporaryDir>(m_root.filePath(QStringLiteral("case-XXXXXX")));
   QVERIFY(m_case->isValid());
+  m_stylesheet = QDir(m_config->getConfigDataFolder(ConfigMgr2::Web))
+                     .filePath(QStringLiteral("css/export.css"));
+  m_savedStylesheet.reset();
+  if (QFileInfo::exists(m_stylesheet)) {
+    QFile saved(m_stylesheet);
+    QVERIFY(saved.open(QIODevice::ReadOnly));
+    m_savedStylesheet = saved.readAll();
+    m_savedStylesheetPermissions = saved.permissions();
+    saved.close();
+  }
+  m_manageStylesheet = true;
+  if (m_savedStylesheet)
+    QVERIFY(QFile::remove(m_stylesheet));
   m_project = m_case->filePath(QStringLiteral("project"));
   m_main = m_project + QStringLiteral("/main.typst");
   m_output = m_case->filePath(QStringLiteral("output"));
@@ -253,6 +335,9 @@ void TestTypstExport::init() {
   QVERIFY(writeBytes(sourceFile(QStringLiteral("Markdown")).filePath,
                      "# Markdown batch heading\n\n![pixel](images/nested/pixel.png)\n"));
   QVERIFY(writeBytes(sourceFile(QStringLiteral("MindMap")).filePath, mindMapSource().toUtf8()));
+  for (const auto &type :
+       {QStringLiteral("Text"), QStringLiteral("Others"), QStringLiteral("Unregistered")})
+    QVERIFY(writeBytes(sourceFile(type).filePath, "Plain source heading\n"));
   QVERIFY(writeBytes(m_project + QStringLiteral("/part.typst"), "#let answer = 42\n"));
   QVERIFY(writeBytes(m_attachments + QStringLiteral("/payload.bin"),
                      QByteArray("attachment\0bytes", 16)));
@@ -270,6 +355,17 @@ void TestTypstExport::init() {
 }
 void TestTypstExport::cleanup() {
   m_exporter.reset();
+  if (m_manageStylesheet) {
+    m_manageStylesheet = false;
+    if (QFileInfo(m_stylesheet).isDir())
+      QVERIFY(QDir(m_stylesheet).removeRecursively());
+    else if (QFileInfo::exists(m_stylesheet))
+      QVERIFY(QFile::remove(m_stylesheet));
+    if (m_savedStylesheet) {
+      QVERIFY(writeBytes(m_stylesheet, *m_savedStylesheet));
+      QVERIFY(QFile::setPermissions(m_stylesheet, m_savedStylesheetPermissions));
+    }
+  }
   m_case.reset();
 }
 ExportOption TestTypstExport::option(ExportFormat format) const {
@@ -291,9 +387,13 @@ ExportInput TestTypstExport::input(const QString &text) const {
   return result;
 }
 ExportFileInfo TestTypstExport::sourceFile(const QString &type) const {
-  const auto name = type == QStringLiteral("Markdown")  ? QStringLiteral("markdown peer.md")
+  const auto name = type.compare(QStringLiteral("Markdown"), Qt::CaseInsensitive) == 0
+                        ? QStringLiteral("markdown peer.md")
                     : type == QStringLiteral("MindMap") ? QStringLiteral("mindmap peer.mmm")
-                                                        : QStringLiteral("main.typst");
+                    : type == QStringLiteral("Typst")   ? QStringLiteral("main.typst")
+                    : type == QStringLiteral("Text")
+                        ? QStringLiteral("text peer.txt")
+                        : type.toLower() + QStringLiteral(" peer.other");
   return {m_project + QLatin1Char('/') + name, name, m_project, m_attachments, type};
 }
 void TestTypstExport::capabilities_data() {
@@ -739,12 +839,17 @@ void TestTypstExport::nativeHtmlAndPdf() {
       "= Live native heading\n#image(\"images/nested/pixel.png\", width: 12pt)\n$answer$\n");
   const auto html = run(ExportFormat::HTML, source);
   QVERIFY2(!html.isEmpty(), qPrintable(diagnostic()));
+  // Native PDF must bypass even an unusable, explicitly enabled HTML stylesheet.
+  QVERIFY(QFile::remove(m_stylesheet));
+  QVERIFY(QDir().mkpath(m_stylesheet));
   auto settings = option(ExportFormat::PDF);
+  settings.m_htmlOption.m_applyCustomizedStyles = true;
   settings.m_pdfOption.m_useWkhtmltopdf = true;
   settings.m_pdfOption.m_wkhtmltopdfExePath = QStringLiteral("nonexistent-must-not-run");
   const auto pdf = m_exporter->doExportFile(settings, source, m_main, QStringLiteral("main.typst"),
                                             m_project, {}, QStringLiteral("Typst"));
   QVERIFY2(!pdf.isEmpty(), qPrintable(diagnostic()));
+  QVERIFY(QFileInfo(m_stylesheet).isDir());
   QPdfDocument document;
   QCOMPARE(document.load(pdf), QPdfDocument::Error::None);
   QTRY_COMPARE(document.status(), QPdfDocument::Status::Ready);
@@ -806,6 +911,340 @@ void TestTypstExport::htmlOnlyAndMimeRejection() {
   for (const auto &path : files(m_output))
     QVERIFY(!path.endsWith(QStringLiteral(".mht")));
 }
+void TestTypstExport::sharedCssDefaultGeometry_data() {
+  QTest::addColumn<QString>("sourceType");
+  for (const auto &type :
+       {QStringLiteral("Typst"), QStringLiteral("MindMap"), QStringLiteral("Text"),
+        QStringLiteral("Others"), QStringLiteral("Unregistered"), QStringLiteral("Markdown")})
+    QTest::newRow(qPrintable(type)) << type;
+}
+void TestTypstExport::sharedCssDefaultGeometry() {
+  QFETCH(QString, sourceType);
+  auto settings = option(ExportFormat::HTML);
+  // Markdown opts in here; its absent-choice default is covered separately.
+  if (sourceType == QStringLiteral("Markdown"))
+    settings.m_htmlOption.m_applyCustomizedStyles = true;
+  const auto file = sourceFile(sourceType);
+  QVERIFY(!QFileInfo::exists(m_stylesheet));
+  const auto html =
+      m_exporter->doExportFile(settings, QString::fromUtf8(bytes(file.filePath)), file.filePath,
+                               file.fileName, file.resourcePath, {}, sourceType);
+  QVERIFY2(!html.isEmpty(), qPrintable(diagnostic()));
+  QVERIFY(QFileInfo(m_stylesheet).isFile());
+  const auto bundled = bytes(QStringLiteral(":/vnotex/export/css/export.css"));
+  QVERIFY(!bundled.isEmpty());
+  QCOMPARE(bytes(m_stylesheet), bundled);
+  QWebEngineView browser;
+  QVERIFY(loadHtml(browser, html));
+  verifyCenteredBody(browser, 80);
+}
+
+void TestTypstExport::sharedCssPolicy_data() {
+  QTest::addColumn<QStringList>("sourceTypes");
+  QTest::addColumn<int>("choice");
+  QTest::addColumn<int>("entry");
+  QTest::addColumn<bool>("enabled");
+  const auto addChoices = [](const QStringList &types, int entry, bool defaultEnabled) {
+    for (const int choice : {-1, 0, 1}) {
+      const auto name =
+          types.join(QLatin1Char('-')) + QStringLiteral("-entry%1-choice%2").arg(entry).arg(choice);
+      QTest::newRow(qPrintable(name))
+          << types << choice << entry << (choice < 0 ? defaultEnabled : choice != 0);
+    }
+  };
+  // Every factory family, including its case-insensitive lookup and Others fallback.
+  for (const auto &type :
+       {QStringLiteral("Typst"), QStringLiteral("MindMap"), QStringLiteral("Text"),
+        QStringLiteral("Others"), QStringLiteral("Unregistered")})
+    addChoices({type}, 0, true);
+  addChoices({QStringLiteral("mArKdOwN")}, 0, false);
+  const QStringList native{QStringLiteral("Typst"), QStringLiteral("MindMap"),
+                           QStringLiteral("Text"), QStringLiteral("Others")};
+  const QStringList markdownLast{QStringLiteral("Typst"), QStringLiteral("MindMap"),
+                                 QStringLiteral("Markdown")};
+  const QStringList markdownFirst{QStringLiteral("Markdown"), QStringLiteral("Typst")};
+  addChoices(native, 1, true);
+  addChoices(markdownLast, 1, false);
+  addChoices(markdownFirst, 1, false);
+  // Copy the actual Custom HTML intermediate, including both all-in-one source orders.
+  addChoices({QStringLiteral("Typst")}, 2, true);
+  addChoices({QStringLiteral("Markdown")}, 2, false);
+  addChoices(native, 3, true);
+  addChoices(markdownLast, 3, false);
+  addChoices(markdownFirst, 3, false);
+}
+void TestTypstExport::sharedCssPolicy() {
+  QFETCH(QStringList, sourceTypes);
+  QFETCH(int, choice);
+  QFETCH(int, entry);
+  QFETCH(bool, enabled);
+  const auto css = customizedCss(61);
+  QVERIFY(writeBytes(m_stylesheet, css));
+  auto custom = copyingCustomOption();
+  custom.m_targetSuffix = QStringLiteral("html");
+  custom.m_useHtmlInput = true;
+  custom.m_allInOne = entry == 3;
+  auto settings = option(entry >= 2 ? ExportFormat::Custom : ExportFormat::HTML);
+  settings.m_customOption = &custom;
+  if (choice >= 0)
+    settings.m_htmlOption.m_applyCustomizedStyles = choice != 0;
+  const auto originalChoice = settings.m_htmlOption.m_applyCustomizedStyles;
+  QVector<ExportFileInfo> inputs;
+  for (const auto &type : sourceTypes)
+    inputs.append(sourceFile(type));
+  QStringList outputs;
+  if (entry == 0 || entry == 2) {
+    const auto &file = inputs.first();
+    const auto html =
+        m_exporter->doExportFile(settings, QString::fromUtf8(bytes(file.filePath)), file.filePath,
+                                 file.fileName, file.resourcePath, {}, file.fileTypeName);
+    QVERIFY2(!html.isEmpty(), qPrintable(diagnostic()));
+    outputs.append(html);
+  } else {
+    outputs = m_exporter->doExportBatch(settings, inputs, QStringLiteral("styled batch"));
+    QCOMPARE(outputs.size(), entry == 3 ? 1 : inputs.size());
+  }
+  QVERIFY(settings.m_htmlOption.m_applyCustomizedStyles == originalChoice);
+  QCOMPARE(bytes(m_stylesheet), css);
+  QWebEngineView browser;
+  for (const auto &html : outputs) {
+    QVERIFY(loadHtml(browser, html));
+    const auto layout = bodyLayout(browser);
+    QVERIFY(!layout.isEmpty());
+    QCOMPARE(layout.value(QStringLiteral("custom")).toString(),
+             enabled ? QStringLiteral("applied") : QString());
+    if (enabled)
+      verifyCenteredBody(browser, 61);
+  }
+}
+
+void TestTypstExport::sharedCssFreshAndEmpty() {
+  const auto source = QStringLiteral("= Shared CSS snapshot");
+  const auto firstCss = customizedCss(55);
+  QVERIFY(writeBytes(m_stylesheet, firstCss));
+  const auto first = run(ExportFormat::HTML, source);
+  QVERIFY2(!first.isEmpty(), qPrintable(diagnostic()));
+  QWebEngineView browser;
+  QVERIFY(loadHtml(browser, first));
+  verifyCenteredBody(browser, 55);
+  const auto narrowerCss = customizedCss(37);
+  QVERIFY(writeBytes(m_stylesheet, narrowerCss));
+  const auto narrower = run(ExportFormat::HTML, source);
+  QVERIFY2(!narrower.isEmpty(), qPrintable(diagnostic()));
+  QVERIFY(loadHtml(browser, narrower));
+  verifyCenteredBody(browser, 37);
+  QCOMPARE(bytes(m_stylesheet), narrowerCss);
+  // Existing exports are self-contained snapshots, not live links to the config directory.
+  QVERIFY(loadHtml(browser, first));
+  verifyCenteredBody(browser, 55);
+
+  auto disabled = option(ExportFormat::HTML);
+  disabled.m_htmlOption.m_applyCustomizedStyles = false;
+  const auto baseline =
+      m_exporter->doExportFile(disabled, source, m_main, QStringLiteral("main.typst"), m_project,
+                               {}, QStringLiteral("Typst"));
+  QVERIFY2(!baseline.isEmpty(), qPrintable(diagnostic()));
+  QVERIFY(loadHtml(browser, baseline));
+  const auto unstyledLayout = bodyLayout(browser);
+  QVERIFY(!unstyledLayout.isEmpty());
+  QVERIFY(writeBytes(m_stylesheet, {}));
+  const auto empty = run(ExportFormat::HTML, source);
+  QVERIFY2(!empty.isEmpty(), qPrintable(diagnostic()));
+  QVERIFY(loadHtml(browser, empty));
+  QCOMPARE(bodyLayout(browser), unstyledLayout);
+  QVERIFY(QFileInfo(m_stylesheet).isFile());
+  QCOMPARE(QFileInfo(m_stylesheet).size(), 0);
+  // The Edit/ensure path must preserve the deliberately empty file too.
+  QString error;
+  QCOMPARE(ExportStyleSheet::ensureUserFile(*m_config, &error), m_stylesheet);
+  QVERIFY2(error.isEmpty(), qPrintable(error));
+  QCOMPARE(QFileInfo(m_stylesheet).size(), 0);
+}
+
+void TestTypstExport::sharedCssMissingAndDisabled() {
+  auto settings = option(ExportFormat::HTML);
+  settings.m_htmlOption.m_applyCustomizedStyles = false;
+  const auto source = QStringLiteral("= Disabled custom CSS");
+  const auto disabled =
+      m_exporter->doExportFile(settings, source, m_main, QStringLiteral("main.typst"), m_project,
+                               {}, QStringLiteral("Typst"));
+  QVERIFY2(!disabled.isEmpty(), qPrintable(diagnostic()));
+  QVERIFY(!QFileInfo::exists(m_stylesheet));
+  QWebEngineView browser;
+  QVERIFY(loadHtml(browser, disabled));
+  const auto baseline = bodyLayout(browser);
+  QVERIFY(!baseline.isEmpty());
+  const auto enabled = run(ExportFormat::HTML, source);
+  QVERIFY2(!enabled.isEmpty(), qPrintable(diagnostic()));
+  QVERIFY(QFileInfo(m_stylesheet).isFile());
+  QVERIFY(loadHtml(browser, enabled));
+  verifyCenteredBody(browser, 80);
+  QVERIFY(bodyLayout(browser) != baseline);
+}
+
+void TestTypstExport::sharedCssCollision_data() {
+  QTest::addColumn<bool>("enabled");
+  QTest::addColumn<bool>("customHtml");
+  QTest::newRow("HTML-disabled") << false << false;
+  QTest::newRow("HTML-enabled") << true << false;
+  QTest::newRow("Custom-disabled") << false << true;
+  QTest::newRow("Custom-enabled") << true << true;
+}
+void TestTypstExport::sharedCssCollision() {
+  QFETCH(bool, enabled);
+  QFETCH(bool, customHtml);
+  QVERIFY(QDir().mkpath(m_stylesheet));
+  const auto sentinel = QDir(m_stylesheet).filePath(QStringLiteral("keep.bin"));
+  QVERIFY(writeBytes(sentinel, "preserved collision"));
+  auto custom = copyingCustomOption();
+  custom.m_targetSuffix = QStringLiteral("html");
+  custom.m_useHtmlInput = true;
+  auto settings = option(customHtml ? ExportFormat::Custom : ExportFormat::HTML);
+  settings.m_customOption = &custom;
+  settings.m_htmlOption.m_applyCustomizedStyles = enabled;
+  const auto html = m_exporter->doExportFile(settings, QStringLiteral("= CSS collision"), m_main,
+                                             QStringLiteral("main.typst"), m_project, {},
+                                             QStringLiteral("Typst"));
+  if (enabled) {
+    QVERIFY(html.isEmpty());
+    QVERIFY(files(m_output).isEmpty());
+    QVERIFY(!diagnostic().isEmpty());
+  } else {
+    QVERIFY2(!html.isEmpty(), qPrintable(diagnostic()));
+    QWebEngineView browser;
+    QVERIFY(loadHtml(browser, html));
+    QVERIFY(evaluate(browser.page(),
+                     QStringLiteral("document.body.textContent.includes('CSS collision')"))
+                .toBool());
+  }
+  QVERIFY(QFileInfo(m_stylesheet).isDir());
+  QCOMPARE(bytes(sentinel), QByteArray("preserved collision"));
+}
+
+void TestTypstExport::sharedCssUnreadable() {
+  QVERIFY(writeBytes(m_stylesheet, customizedCss(61)));
+#ifdef Q_OS_WIN
+  // Qt permission flags do not remove Windows read access; deny sharing on the actual file.
+  const HANDLE locked =
+      CreateFileW(reinterpret_cast<LPCWSTR>(m_stylesheet.utf16()), GENERIC_READ | GENERIC_WRITE, 0,
+                  nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  QVERIFY(locked != INVALID_HANDLE_VALUE);
+  const auto unlock = qScopeGuard([locked] { CloseHandle(locked); });
+#else
+  const auto permissions = QFileInfo(m_stylesheet).permissions();
+  QVERIFY(QFile::setPermissions(m_stylesheet, QFileDevice::WriteOwner));
+  const auto unlock =
+      qScopeGuard([this, permissions] { QFile::setPermissions(m_stylesheet, permissions); });
+#endif
+  QFile probe(m_stylesheet);
+#ifndef Q_OS_WIN
+  if (probe.open(QIODevice::ReadOnly))
+    QSKIP("This account bypasses file read permissions; directory collisions remain covered");
+#else
+  QVERIFY(!probe.open(QIODevice::ReadOnly));
+#endif
+  for (const bool enabled : {false, true}) {
+    auto settings = option(ExportFormat::HTML);
+    settings.m_outputDir += enabled ? QStringLiteral("/enabled") : QStringLiteral("/disabled");
+    settings.m_htmlOption.m_applyCustomizedStyles = enabled;
+    const auto html = m_exporter->doExportFile(settings, QStringLiteral("= Unreadable CSS"), m_main,
+                                               QStringLiteral("main.typst"), m_project, {},
+                                               QStringLiteral("Typst"));
+    if (enabled) {
+      QVERIFY(html.isEmpty());
+      QVERIFY(files(settings.m_outputDir).isEmpty());
+      QVERIFY(!diagnostic().isEmpty());
+    } else {
+      QVERIFY2(!html.isEmpty(), qPrintable(diagnostic()));
+      QWebEngineView browser;
+      QVERIFY(loadHtml(browser, html));
+      QVERIFY(evaluate(browser.page(),
+                       QStringLiteral("document.body.textContent.includes('Unreadable CSS')"))
+                  .toBool());
+    }
+  }
+}
+
+void TestTypstExport::sharedCssHeadBoundary() {
+  const auto html = m_case->filePath(QStringLiteral("head-literals.html"));
+  const QByteArray source =
+      "<!doctype html><html><HeAd data-literal=\"</head>\">"
+      "<!-- </head><body id='comment-breakout'> -->"
+      "<script data-literal='</head>'>window.headLiteral = '</head>';"
+      "window.notAnEnd='</script\xc2\xa0></head>';window.lessThan=1<2;</script>"
+      "<style>/* </head> */ body { max-width:95%; margin:0; box-sizing:content-box; }</style>"
+      "<title>Literal </head> title</title></HeAd>"
+      "<body><p id='content'>Preserved body</p></body></html>";
+  const auto css =
+      customizedCss(61) +
+      QStringLiteral("/* </style></head><script>window.cssBreakout = true;</script> */\n"
+                     "body { --closing-head: \"</style></head>\"; }\n"
+                     "body::after { content: \"Saved Unicode λ\"; }\n")
+          .toUtf8();
+  QVERIFY(writeBytes(html, source));
+  QVERIFY(writeBytes(m_stylesheet, css));
+  QString error;
+  QVERIFY2(ExportStyleSheet::apply(html, m_config.get(), &error), qPrintable(error));
+  QCOMPARE(bytes(m_stylesheet), css);
+  QWebEngineView browser;
+  QVERIFY(loadHtml(browser, html));
+  verifyCenteredBody(browser, 61);
+  QCOMPARE(evaluate(browser.page(), QStringLiteral("document.title")).toString(),
+           QStringLiteral("Literal </head> title"));
+  QCOMPARE(evaluate(browser.page(), QStringLiteral("window.headLiteral")).toString(),
+           QStringLiteral("</head>"));
+  QCOMPARE(evaluate(browser.page(), QStringLiteral("window.notAnEnd")).toString(),
+           QStringLiteral("</script\u00a0></head>"));
+  QVERIFY(evaluate(browser.page(),
+                   QStringLiteral(
+                       "window.lessThan === true && typeof window.cssBreakout === 'undefined' && "
+                       "!document.getElementById('comment-breakout') && "
+                       "document.querySelectorAll('body').length === 1 && "
+                       "document.getElementById('content').textContent === 'Preserved body'"))
+              .toBool());
+  QCOMPARE(
+      evaluate(browser.page(),
+               QStringLiteral(
+                   "getComputedStyle(document.body).getPropertyValue('--closing-head').trim()"))
+          .toString(),
+      QStringLiteral("\"</style></head>\""));
+  QVERIFY(evaluate(
+              browser.page(),
+              QStringLiteral(
+                  "getComputedStyle(document.body, '::after').content.includes('Saved Unicode λ')"))
+              .toBool());
+
+  // The no-ConfigMgr path shares the resource default and does not touch a bad user path.
+  QVERIFY(QFile::remove(m_stylesheet));
+  QVERIFY(QDir().mkpath(m_stylesheet));
+  const auto bundledHtml = m_case->filePath(QStringLiteral("bundled.html"));
+  QVERIFY(writeBytes(bundledHtml, source));
+  error.clear();
+  QVERIFY2(ExportStyleSheet::apply(bundledHtml, nullptr, &error), qPrintable(error));
+  QVERIFY(loadHtml(browser, bundledHtml));
+  verifyCenteredBody(browser, 80);
+  QVERIFY(QFileInfo(m_stylesheet).isDir());
+}
+
+void TestTypstExport::sharedCssInvalidHtml_data() {
+  QTest::addColumn<QByteArray>("source");
+  QTest::newRow("missing-head") << QByteArray("<html><body>Missing head</body></html>");
+  QTest::newRow("unclosed-comment") << QByteArray("<html><head><!-- </head><body>Still a comment");
+  QTest::newRow("unclosed-script") << QByteArray("<html><head><script>const literal = '</head>'; ");
+}
+void TestTypstExport::sharedCssInvalidHtml() {
+  QFETCH(QByteArray, source);
+  const auto html = m_case->filePath(QStringLiteral("invalid.html"));
+  QVERIFY(writeBytes(html, source));
+  const auto css = customizedCss(61);
+  QVERIFY(writeBytes(m_stylesheet, css));
+  QString error;
+  QVERIFY(!ExportStyleSheet::apply(html, m_config.get(), &error));
+  QVERIFY(!error.isEmpty());
+  QCOMPARE(bytes(html), source);
+  QCOMPARE(bytes(m_stylesheet), css);
+}
+
 void TestTypstExport::compiledFailures_data() {
   QTest::addColumn<int>("format");
   QTest::addColumn<QString>("source");
@@ -847,14 +1286,19 @@ void TestTypstExport::cancellationThenExport() {
 }
 void TestTypstExport::customDiskAndLiveHtml() {
   auto custom = copyingCustomOption();
+  custom.m_targetSuffix = QStringLiteral("html");
   auto settings = option(ExportFormat::Custom);
   settings.m_customOption = &custom;
+  settings.m_htmlOption.m_applyCustomizedStyles = true;
+  QVERIFY(QDir().mkpath(m_stylesheet));
   custom.m_useHtmlInput = false;
   const auto raw = m_exporter->doExportFile(settings, QStringLiteral("= Live custom heading"),
                                             m_main, QStringLiteral("main.typst"), m_project, {},
                                             QStringLiteral("Typst"));
   QVERIFY2(!raw.isEmpty(), qPrintable(diagnostic()));
   QCOMPARE(bytes(raw), bytes(m_main));
+  QVERIFY(QFileInfo(m_stylesheet).isDir());
+  QVERIFY(QDir().rmdir(m_stylesheet));
   custom.m_useHtmlInput = true;
   const auto html = m_exporter->doExportFile(settings, QStringLiteral("= Live custom heading"),
                                              m_main, QStringLiteral("main.typst"), m_project, {},
@@ -864,6 +1308,9 @@ void TestTypstExport::customDiskAndLiveHtml() {
   QVERIFY(bytes(html).contains("<h"));
   QVERIFY(!bytes(html).contains("Saved disk heading"));
   QCOMPARE(bytes(raw), bytes(m_main));
+  QWebEngineView browser;
+  QVERIFY(loadHtml(browser, html));
+  verifyCenteredBody(browser, 80);
 }
 
 void TestTypstExport::customMixedAllInOne_data() {

@@ -54,6 +54,7 @@ private:
 
   void restoreHtmlFields(const ExportHtmlOption &p_option);
   void saveHtmlFields(ExportHtmlOption &p_option) const;
+  void editExportStyle();
 
   void restorePdfFields(const ExportPdfOption &p_option);
   void savePdfFields(ExportPdfOption &p_option) const;
@@ -105,6 +106,9 @@ private:
   // HTML page.
   QWidget *m_htmlPage = nullptr;
   QFormLayout *m_htmlLayout = nullptr;
+  QCheckBox *m_applyCustomizedStylesCheck = nullptr;
+  QPushButton *m_editExportStyleButton = nullptr;
+  std::optional<bool> m_applyCustomizedStyles;
   QCheckBox *m_embedStylesCheck = nullptr;
   QCheckBox *m_embedImagesCheck = nullptr;
   QCheckBox *m_completePageCheck = nullptr;

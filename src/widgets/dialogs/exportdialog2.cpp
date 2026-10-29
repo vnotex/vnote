@@ -6,6 +6,7 @@
 #include <QCoreApplication>
 #include <QDesktopServices>
 #include <QDialogButtonBox>
+#include <QFileInfo>
 #include <QFormLayout>
 #include <QGridLayout>
 #include <QGroupBox>
@@ -41,6 +42,7 @@
 #include <core/services/notebookcoreservice.h>
 #include <core/services/workspacecoreservice.h>
 #include <core/sessionconfig.h>
+#include <export/exportstylesheet.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/iconutils.h>
 #include <vxcore/notebook_json_keys.h>
@@ -71,6 +73,8 @@ constexpr const char *kSyntaxStyleLabelName = "syntaxStyleLabel";
 constexpr const char *kTransparentBgCheckName = "transparentBgCheck";
 constexpr const char *kOutputDirInputName = "outputDirInput";
 constexpr const char *kEmbedStylesCheckName = "embedStylesCheck";
+constexpr const char *kApplyCustomizedStylesCheckName = "applyCustomizedStylesCheck";
+constexpr const char *kEditExportStyleButtonName = "editExportStyleButton";
 constexpr const char *kEmbedImagesCheckName = "embedImagesCheck";
 constexpr const char *kCompletePageCheckName = "completePageCheck";
 constexpr const char *kAddOutlinePanelCheckName = "addOutlinePanelCheck";
@@ -503,6 +507,25 @@ void ExportDialog2::setupUI() {
     m_htmlLayout = layout;
     layout->setContentsMargins(0, 0, 0, 0);
 
+    auto *styleRow = new QHBoxLayout();
+    m_applyCustomizedStylesCheck =
+        WidgetsFactory::createCheckBox(tr("Apply customized styles"), page);
+    m_applyCustomizedStylesCheck->setObjectName(QLatin1String(kApplyCustomizedStylesCheckName));
+    const auto styleTip = tr("Save export.css before exporting. These styles apply to HTML and "
+                             "HTML inputs for PDF and Custom exports, not native Typst PDF");
+    m_applyCustomizedStylesCheck->setToolTip(styleTip);
+    styleRow->addWidget(m_applyCustomizedStylesCheck);
+    m_editExportStyleButton = new QPushButton(tr("Edit"), page);
+    m_editExportStyleButton->setObjectName(QLatin1String(kEditExportStyleButtonName));
+    m_editExportStyleButton->setToolTip(styleTip);
+    styleRow->addWidget(m_editExportStyleButton);
+    styleRow->addStretch();
+    // Shared export styles do not depend on the renderer's legacy HTML controls.
+    layout->addRow(styleRow);
+    connect(m_applyCustomizedStylesCheck, &QCheckBox::toggled, this,
+            [this](bool p_checked) { m_applyCustomizedStyles = p_checked; });
+    connect(m_editExportStyleButton, &QPushButton::clicked, this, &ExportDialog2::editExportStyle);
+
     m_embedStylesCheck = WidgetsFactory::createCheckBox(tr("Embed styles"), page);
     m_embedStylesCheck->setObjectName(QLatin1String(kEmbedStylesCheckName));
     layout->addRow(m_embedStylesCheck);
@@ -926,6 +949,9 @@ ExportOption ExportDialog2::collectFields() {
 }
 
 void ExportDialog2::restoreHtmlFields(const ExportHtmlOption &p_option) {
+  const QSignalBlocker blocker(m_applyCustomizedStylesCheck);
+  m_applyCustomizedStyles = p_option.m_applyCustomizedStyles;
+  m_applyCustomizedStylesCheck->setChecked(m_applyCustomizedStyles.value_or(false));
   m_embedStylesCheck->setChecked(p_option.m_embedStyles);
   m_embedImagesCheck->setChecked(p_option.m_embedImages);
   m_completePageCheck->setChecked(p_option.m_completePage);
@@ -935,12 +961,38 @@ void ExportDialog2::restoreHtmlFields(const ExportHtmlOption &p_option) {
 }
 
 void ExportDialog2::saveHtmlFields(ExportHtmlOption &p_option) const {
+  p_option.m_applyCustomizedStyles = m_applyCustomizedStyles;
   p_option.m_embedStyles = m_embedStylesCheck->isChecked();
   p_option.m_embedImages = m_embedImagesCheck->isChecked();
   p_option.m_completePage = m_completePageCheck->isChecked();
   p_option.m_addOutlinePanel = m_addOutlinePanelCheck->isChecked();
   p_option.m_useMimeHtmlFormat = false;
   p_option.m_scrollable = m_scrollableCheck->isChecked();
+}
+
+void ExportDialog2::editExportStyle() {
+  auto *config = m_services.get<ConfigMgr2>();
+  auto *buffers = m_services.get<BufferService>();
+  if (!config || !buffers) {
+    setInformationText(tr("The export stylesheet editor is unavailable."),
+                       ScrollDialog::InformationLevel::Error);
+    return;
+  }
+  QString error;
+  const auto path = ExportStyleSheet::ensureUserFile(*config, &error);
+  if (path.isEmpty()) {
+    setInformationText(error, ScrollDialog::InformationLevel::Error);
+    return;
+  }
+  // FileAfterOpen displays this external buffer without replacing the export snapshot.
+  NodeIdentifier node;
+  node.relativePath = QFileInfo(path).absoluteFilePath();
+  if (!buffers->openBuffer(node, FileOpenSettings()).isValid()) {
+    setInformationText(tr("Failed to open the export stylesheet: %1").arg(path),
+                       ScrollDialog::InformationLevel::Error);
+    return;
+  }
+  clearInformationText();
 }
 
 void ExportDialog2::restorePdfFields(const ExportPdfOption &p_option) {
@@ -1236,6 +1288,13 @@ void ExportDialog2::updateSourceCapabilities() {
   selection.m_workspaceId = m_sourceCombo->currentData(Qt::UserRole + 1).toString();
   selection.m_recursive = m_recursiveCheck->isChecked();
   const auto fileTypes = m_controller->sourceFileTypes(selection, m_context);
+  if (!m_applyCustomizedStyles.has_value()) {
+    const QSignalBlocker blocker(m_applyCustomizedStylesCheck);
+    m_applyCustomizedStylesCheck->setChecked(
+        std::all_of(fileTypes.cbegin(), fileTypes.cend(), [](const QString &p_fileType) {
+          return ExportHtmlOption::defaultApplyCustomizedStyles(p_fileType);
+        }));
+  }
   m_typstOnly = fileTypes.size() == 1 && fileTypes.first() == QStringLiteral("Typst");
   m_sourceCapabilities.clear();
   m_sourceCapabilities.reserve(fileTypes.size());

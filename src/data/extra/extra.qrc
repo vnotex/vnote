@@ -15,6 +15,7 @@
         <file>web/css/imageviewer.css</file>
         <file>web/css/outline.css</file>
         <file>web/css/exportglobalstyles.css</file>
+        <file>web/css/export.css</file>
         <file>web/css/codeblockactions.css</file>
         <file>web/js/qwebchannel.js</file>
         <file>web/js/webviewjobs.js</file>

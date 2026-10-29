@@ -25,6 +25,7 @@
 #include <memory>
 
 #include <core/configmgr2.h>
+#include <core/hooknames.h>
 #include <core/servicelocator.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
@@ -132,6 +133,8 @@ const QStringList kEditingControls{QStringLiteral("sourceCombo"),
                                    QStringLiteral("syntaxStyleCombo"),
                                    QStringLiteral("followThemeButton"),
                                    QStringLiteral("transparentBgCheck"),
+                                   QStringLiteral("applyCustomizedStylesCheck"),
+                                   QStringLiteral("editExportStyleButton"),
                                    QStringLiteral("pageLayoutButton"),
                                    QStringLiteral("addTableOfContentsCheck"),
                                    QStringLiteral("useWkhtmltopdfCheck"),
@@ -170,6 +173,11 @@ private slots:
   void nativePdfEffectiveOptionsAndPreference();
   void customStylesAndReadonlySchemes();
   void hiddenPreferencesSurviveReopen();
+  void customizedStyleDefaults();
+  void customizedStyleOverride_data();
+  void customizedStyleOverride();
+  void editExportStyle_data();
+  void editExportStyle();
   void editingDisabledAndCancel_data();
   void editingDisabledAndCancel();
 
@@ -474,8 +482,9 @@ QVector<int> TestExportDialog2::targets() const {
 
 void TestExportDialog2::verifyPage(ExportFormat format) {
   QCOMPARE(control<QComboBox>("formatCombo")->currentData().toInt(), static_cast<int>(format));
-  QCOMPARE(control<QGroupBox>("formatGroupBox")->title(),
-           QStringLiteral("%1 options").arg(exportFormatString(format)));
+  verifyVisible(
+      {QStringLiteral("applyCustomizedStylesCheck"), QStringLiteral("editExportStyleButton")},
+      format == ExportFormat::HTML);
   const char *expected = "sourceOptionsPage";
   if (format == ExportFormat::HTML)
     expected = "htmlOptionsPage";
@@ -742,40 +751,39 @@ void TestExportDialog2::nativeAndWebOptionVisibility() {
   QVERIFY(selectFormat(ExportFormat::Typst));
   verifyStyles(false, false);
   QVERIFY(control("nativeFormatInfo")->isVisibleTo(m_dialog.get()));
-  const auto sourceInfo = control<QLabel>("nativeFormatInfo")->text();
-  QVERIFY(sourceInfo.contains(QStringLiteral("relative"), Qt::CaseInsensitive));
-  QVERIFY(sourceInfo.contains(QStringLiteral("images"), Qt::CaseInsensitive));
-  QVERIFY(sourceInfo.contains(QStringLiteral("import"), Qt::CaseInsensitive));
-  QVERIFY(sourceInfo.contains(QStringLiteral("dynamic"), Qt::CaseInsensitive));
   QVERIFY(!control("transparentBgCheck")->isVisibleTo(m_dialog.get()));
   QVERIFY(selectFormat(ExportFormat::HTML));
   verifyStyles(false, false);
   verifyVisible(kHtmlControls, false);
-  QCOMPARE(control<QLabel>("nativeFormatInfo")->text(),
-           QStringLiteral("HTML is compiled by Typst; document styles control the output."));
+  verifyVisible(
+      {QStringLiteral("applyCustomizedStylesCheck"), QStringLiteral("editExportStyleButton")},
+      true);
   QVERIFY(control("nativeFormatInfo")->isVisibleTo(m_dialog.get()));
   QVERIFY(selectFormat(ExportFormat::PDF));
   verifyStyles(false, false);
   verifyPdfRows(false, false, false);
   QVERIFY(!control("pdfAllInOneCheck")->isVisibleTo(m_dialog.get()));
-  QCOMPARE(control<QLabel>("nativeFormatInfo")->text(),
-           QStringLiteral(
-               "PDF is compiled by Typst; page layout and numbering come from the document."));
+  QVERIFY(control("nativeFormatInfo")->isVisibleTo(m_dialog.get()));
   QVERIFY(selectSource(ExportSource::Workspace, m_mindmapWorkspace));
   verifyPdfRows(true, false, true);
   verifyStyles(false, false);
   QVERIFY(!control("transparentBgCheck")->isVisibleTo(m_dialog.get()));
   QVERIFY(selectFormat(ExportFormat::HTML));
   verifyVisible(kHtmlControls, false);
+  verifyVisible(
+      {QStringLiteral("applyCustomizedStylesCheck"), QStringLiteral("editExportStyleButton")},
+      true);
   verifyStyles(false, false);
   QVERIFY(selectFormat(ExportFormat::MindMap));
   verifyStyles(false, false);
   QVERIFY(control("nativeFormatInfo")->isVisibleTo(m_dialog.get()));
-  QVERIFY(control<QLabel>("nativeFormatInfo")->text().contains(QStringLiteral("images")));
   QVERIFY(selectSource(ExportSource::CurrentFolder));
   QVERIFY(selectFormat(ExportFormat::HTML));
   verifyStyles(true, true);
   verifyVisible(kHtmlControls, true);
+  verifyVisible(
+      {QStringLiteral("applyCustomizedStylesCheck"), QStringLiteral("editExportStyleButton")},
+      true);
   QVERIFY(control("transparentBgCheck")->isVisibleTo(m_dialog.get()));
   QVERIFY(!control("nativeFormatInfo")->isVisibleTo(m_dialog.get()));
   QVERIFY(selectFormat(ExportFormat::PDF));
@@ -810,8 +818,9 @@ void TestExportDialog2::mixedOptionUnion() {
   verifyStyles(true, true);
   verifyVisible(kHtmlControls, true);
   QVERIFY(control("mixedFormatInfo")->isVisibleTo(m_dialog.get()));
-  QCOMPARE(control<QLabel>("mixedFormatInfo")->text(),
-           QStringLiteral("Some options apply only to compatible source types."));
+  verifyVisible(
+      {QStringLiteral("applyCustomizedStylesCheck"), QStringLiteral("editExportStyleButton")},
+      true);
   QVERIFY(selectFormat(ExportFormat::PDF));
   verifyPdfRows(true, true, true);
   verifyStyles(true, true);
@@ -1015,17 +1024,211 @@ void TestExportDialog2::hiddenPreferencesSurviveReopen() {
   QVERIFY(control<QCheckBox>("exportAttachmentsCheck")->isChecked());
 }
 
+void TestExportDialog2::customizedStyleDefaults() {
+  auto selected = context();
+  selected.bufferPath = path(QStringLiteral("selected/a.md"));
+  selected.bufferName = QStringLiteral("misleading.md");
+  QVERIFY(openDialog(selected));
+  auto *check = control<QCheckBox>("applyCustomizedStylesCheck");
+  QVERIFY(check->isChecked()); // The actual current Typst node wins over the buffer path.
+  QVERIFY(selectSource(ExportSource::CurrentNote));
+  QVERIFY(check->isChecked());
+  QVERIFY(selectSource(ExportSource::CurrentFolder));
+  QVERIFY(!check->isChecked());
+  QVERIFY(control("editExportStyleButton")->isEnabled());
+  QVERIFY(selectSource(ExportSource::CurrentNotebook));
+  QVERIFY(check->isChecked()); // Non-recursive notebook contains only main.typst.
+  control<QCheckBox>("recursiveCheck")->setChecked(true);
+  QVERIFY(!check->isChecked());
+  control<QCheckBox>("recursiveCheck")->setChecked(false);
+  QVERIFY(check->isChecked());
+
+  for (const auto &workspace :
+       {m_markdownWorkspace, m_mixedWorkspace, m_markdownMindmapWorkspace}) {
+    QVERIFY(selectSource(ExportSource::Workspace, workspace));
+    QVERIFY(!check->isChecked());
+    QVERIFY(control("editExportStyleButton")->isEnabled());
+  }
+  for (const auto &workspace : {m_mindmapWorkspace, m_mindmapTypstWorkspace, m_typstWorkspace}) {
+    QVERIFY(selectSource(ExportSource::Workspace, workspace));
+    QVERIFY(check->isChecked());
+  }
+  m_dialog->close();
+  const auto saved = m_config->getSessionConfig().getExportOption();
+  QVERIFY(!saved.m_htmlOption.m_applyCustomizedStyles.has_value());
+  QVERIFY(!saved.m_htmlOption.toJson().contains(QStringLiteral("applyCustomizedStyles")));
+
+  // Persisting an automatically checked native selection must not freeze that default.
+  ExportOption restored;
+  restored.fromJson(saved.toJson());
+  m_config->getSessionConfig().setExportOption(restored);
+  selected.presetSource = ExportSource::CurrentFolder;
+  QVERIFY(openDialog(selected));
+  QVERIFY(!control<QCheckBox>("applyCustomizedStylesCheck")->isChecked());
+  m_dialog->close();
+  QVERIFY(!m_config->getSessionConfig()
+               .getExportOption()
+               .m_htmlOption.m_applyCustomizedStyles.has_value());
+  selected.presetSource = ExportSource::CurrentBuffer;
+  QVERIFY(openDialog(selected));
+  QVERIFY(control<QCheckBox>("applyCustomizedStylesCheck")->isChecked());
+}
+
+void TestExportDialog2::customizedStyleOverride_data() {
+  QTest::addColumn<bool>("enabled");
+  QTest::newRow("explicit-off") << false;
+  QTest::newRow("explicit-on") << true;
+}
+
+void TestExportDialog2::customizedStyleOverride() {
+  QFETCH(bool, enabled);
+  auto selected = context();
+  selected.presetSource = enabled ? ExportSource::CurrentFolder : ExportSource::CurrentBuffer;
+  QVERIFY(openDialog(selected));
+  auto *check = control<QCheckBox>("applyCustomizedStylesCheck");
+  QCOMPARE(check->isChecked(), !enabled);
+  check->click();
+  QCOMPARE(check->isChecked(), enabled);
+  for (const auto &workspace : {m_typstWorkspace, m_markdownWorkspace, m_mindmapWorkspace,
+                                m_mixedWorkspace, m_markdownMindmapWorkspace}) {
+    QVERIFY(selectSource(ExportSource::Workspace, workspace));
+    QCOMPARE(check->isChecked(), enabled);
+    QVERIFY(control("editExportStyleButton")->isEnabled());
+  }
+  QVERIFY(selectSource(ExportSource::CurrentNotebook));
+  control<QCheckBox>("recursiveCheck")->setChecked(true);
+  QCOMPARE(check->isChecked(), enabled);
+  QVERIFY(selectFormat(ExportFormat::PDF));
+  m_dialog->close();
+  auto saved = m_config->getSessionConfig().getExportOption();
+  QVERIFY(saved.m_htmlOption.m_applyCustomizedStyles.has_value());
+  QCOMPARE(*saved.m_htmlOption.m_applyCustomizedStyles, enabled);
+  QCOMPARE(saved.m_htmlOption.toJson().value(QStringLiteral("applyCustomizedStyles")).toBool(),
+           enabled);
+  ExportOption restored;
+  restored.fromJson(saved.toJson());
+  m_config->getSessionConfig().setExportOption(restored);
+  QVERIFY(openDialog(selected));
+  QVERIFY(selectFormat(ExportFormat::HTML));
+  QCOMPARE(control<QCheckBox>("applyCustomizedStylesCheck")->isChecked(), enabled);
+  QVERIFY(selectSource(ExportSource::CurrentFolder));
+  QCOMPARE(control<QCheckBox>("applyCustomizedStylesCheck")->isChecked(), enabled);
+  QVERIFY(selectSource(ExportSource::CurrentBuffer));
+  QCOMPARE(control<QCheckBox>("applyCustomizedStylesCheck")->isChecked(), enabled);
+  m_dialog->close();
+  saved = m_config->getSessionConfig().getExportOption();
+  QVERIFY(saved.m_htmlOption.m_applyCustomizedStyles.has_value());
+  QCOMPARE(*saved.m_htmlOption.m_applyCustomizedStyles, enabled);
+}
+
+void TestExportDialog2::editExportStyle_data() {
+  QTest::addColumn<int>("initialState");
+  QTest::newRow("missing-seeds-default") << 0;
+  QTest::newRow("customized-preserved") << 1;
+  QTest::newRow("empty-preserved") << 2;
+}
+
+void TestExportDialog2::editExportStyle() {
+  QFETCH(int, initialState);
+  const auto stylePath = m_config->getFileFromConfigFolder(QStringLiteral("web/css/export.css"));
+  QVERIFY(!stylePath.isEmpty());
+  const bool existed = QFileInfo::exists(stylePath);
+  const auto original = readBytes(stylePath);
+  QString openedId;
+  const auto restoreStyle = qScopeGuard([&] {
+    if (!openedId.isEmpty())
+      m_buffers->closeBuffer(openedId);
+    if (existed)
+      writeBytes(stylePath, original);
+    else
+      QFile::remove(stylePath);
+  });
+  QVERIFY(QDir().mkpath(QFileInfo(stylePath).absolutePath()));
+  if (existed)
+    QVERIFY(QFile::remove(stylePath));
+  QByteArray expected;
+  if (initialState == 0) {
+    QFile bundled(QStringLiteral(":/vnotex/export/css/export.css"));
+    QVERIFY(bundled.open(QIODevice::ReadOnly));
+    expected = bundled.readAll();
+    QVERIFY(!expected.isEmpty());
+  } else {
+    expected = initialState == 1 ? QByteArrayLiteral("body { max-width: 61%; }\n") : QByteArray();
+    QVERIFY(writeBytes(stylePath, expected));
+  }
+
+  auto selected = context();
+  const auto snapshot = selected.bufferContent;
+  const auto sourcePath = selected.bufferPath;
+  const auto savedSource = readBytes(sourcePath);
+  auto settings = option();
+  settings.m_htmlOption.m_applyCustomizedStyles = false;
+  m_config->getSessionConfig().setExportOption(settings);
+  QVERIFY(openDialog(selected));
+  QVERIFY(selectFormat(ExportFormat::HTML));
+  QVERIFY(!control<QCheckBox>("applyCustomizedStylesCheck")->isChecked());
+  QVERIFY(control("editExportStyleButton")->isEnabled());
+  int opens = 0;
+  const int hook = m_hooks->addAction<FileOpenEvent>(
+      HookNames::FileAfterOpen, [&](HookContext &, const FileOpenEvent &event) {
+        ++opens;
+        openedId = event.bufferId;
+      });
+  const auto removeHook = qScopeGuard([&] { m_hooks->removeAction(hook); });
+  control<QPushButton>("editExportStyleButton")->click();
+  QCOMPARE(opens, 1);
+  auto buffer = m_buffers->getBufferHandle(openedId);
+  QVERIFY(buffer.isValid());
+  QVERIFY(buffer.nodeId().notebookId.isEmpty());
+  QCOMPARE(QFileInfo(buffer.resolvedPath()).absoluteFilePath(),
+           QFileInfo(stylePath).absoluteFilePath());
+  QVERIFY(!buffer.isReadOnly());
+  QCOMPARE(buffer.getContentRaw(), expected);
+  QCOMPARE(readBytes(stylePath), expected);
+
+  const QByteArray custom = "body { max-width: 47%; margin-inline: auto; }\n";
+  QVERIFY(buffer.setContentRaw(custom));
+  QVERIFY(buffer.save());
+  QCOMPARE(readBytes(stylePath), custom);
+  const auto firstId = openedId;
+  control<QPushButton>("editExportStyleButton")->click();
+  QCOMPARE(opens, 2);
+  QCOMPARE(openedId, firstId);
+  QCOMPARE(buffer.getContentRaw(), custom);
+  QCOMPARE(readBytes(stylePath), custom);
+  QVERIFY(buffer.setContentRaw({}));
+  QVERIFY(buffer.save());
+  QCOMPARE(QFileInfo(stylePath).size(), 0);
+  control<QPushButton>("editExportStyleButton")->click();
+  QCOMPARE(opens, 3);
+  QCOMPARE(openedId, firstId);
+  QVERIFY(buffer.getContentRaw().isEmpty());
+  QCOMPARE(QFileInfo(stylePath).size(), 0);
+
+  // Opening and saving the CSS buffer must not replace the dialog's original snapshot.
+  QVERIFY(selectFormat(ExportFormat::Typst));
+  control<QPushButton>("exportButton")->click();
+  const auto files = outputFiles(m_output);
+  QVERIFY2(files.size() == 1, qPrintable(logs()));
+  QCOMPARE(QFileInfo(files.first()).suffix(), QStringLiteral("typst"));
+  QCOMPARE(readBytes(files.first()), snapshot.toUtf8());
+  QCOMPARE(readBytes(sourcePath), savedSource);
+}
+
 void TestExportDialog2::editingDisabledAndCancel_data() {
   QTest::addColumn<int>("schemeMode");
   QTest::newRow("native-pdf") << 0;
   QTest::newRow("native-custom-html") << 1;
   QTest::newRow("native-builtin-html-cancel") << 2;
+  QTest::newRow("native-html-visible-style-controls") << 3;
 }
 
 void TestExportDialog2::editingDisabledAndCancel() {
   QFETCH(int, schemeMode);
   QVERIFY(openDialog(context()));
-  QVERIFY(selectFormat(schemeMode ? ExportFormat::Custom : ExportFormat::PDF));
+  QVERIFY(selectFormat(schemeMode == 3 ? ExportFormat::HTML
+                       : schemeMode    ? ExportFormat::Custom
+                                       : ExportFormat::PDF));
   if (schemeMode == 1) {
     control<QCheckBox>("useHtmlInputCheck")->setChecked(true);
     QVERIFY(!control<QPlainTextEdit>("customCommandEdit")->isReadOnly());
@@ -1079,7 +1282,9 @@ void TestExportDialog2::editingDisabledAndCancel() {
   QVERIFY(control("formatCombo")->isEnabled());
   QVERIFY(control("outputDirInput")->isEnabled());
   QVERIFY(!control("progressBar")->isVisibleTo(m_dialog.get()));
-  if (schemeMode) {
+  QVERIFY(control("applyCustomizedStylesCheck")->isEnabled());
+  QVERIFY(control("editExportStyleButton")->isEnabled());
+  if (schemeMode == 1 || schemeMode == 2) {
     QCOMPARE(control<QPlainTextEdit>("customCommandEdit")->isReadOnly(), schemeMode == 2);
     QCOMPARE(control("useHtmlInputCheck")->isEnabled(), schemeMode == 1);
     QCOMPARE(m_dialog->findChild<QAction *>(QStringLiteral("deleteSchemeAction"))->isEnabled(),

@@ -6,10 +6,13 @@
 #include <QFileInfo>
 #include <QTemporaryDir>
 #include <QWidget>
+#include <algorithm>
 #include <optional>
 #include <utility>
 
+#include "exportstylesheet.h"
 #include "htmlpdfexporter.h"
+#include <core/configmgr2.h>
 #include <utils/fileutils2.h>
 #include <utils/pathutils.h>
 #include <utils/processutils.h>
@@ -92,6 +95,10 @@ QString Exporter::doExportFile(const ExportOption &p_option, const QString &p_co
   if (!validateTarget(option, p_fileTypeName)) {
     return QString();
   }
+  if (!option.m_htmlOption.m_applyCustomizedStyles.has_value()) {
+    option.m_htmlOption.m_applyCustomizedStyles =
+        ExportHtmlOption::defaultApplyCustomizedStyles(p_fileTypeName);
+  }
 
   if (!QDir().mkpath(option.m_outputDir)) {
     emit logRequested(tr("Failed to create output folder (%1).").arg(option.m_outputDir));
@@ -131,6 +138,12 @@ QStringList Exporter::doExportBatch(const ExportOption &p_option,
     if (!validateTarget(option, file.fileTypeName)) {
       return {};
     }
+  }
+  if (!option.m_htmlOption.m_applyCustomizedStyles.has_value()) {
+    option.m_htmlOption.m_applyCustomizedStyles =
+        std::all_of(p_files.cbegin(), p_files.cend(), [](const ExportFileInfo &p_file) {
+          return ExportHtmlOption::defaultApplyCustomizedStyles(p_file.fileTypeName);
+        });
   }
 
   QStringList outputFiles;
@@ -279,6 +292,14 @@ QString Exporter::doExportHtml(const ExportHtmlRequest &p_request, const QString
       checkAskedToStop()) {
     QFile::remove(destination);
     return QString();
+  }
+  if (p_request.options.m_htmlOption.m_applyCustomizedStyles.value_or(false)) {
+    QString error;
+    if (!ExportStyleSheet::apply(destination, m_services.get<ConfigMgr2>(), &error)) {
+      emit logRequested(error);
+      QFile::remove(destination);
+      return QString();
+    }
   }
   return destination;
 }

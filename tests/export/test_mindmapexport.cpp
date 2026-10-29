@@ -7,6 +7,7 @@
 #include <QDirIterator>
 #include <QFile>
 #include <QFileInfo>
+#include <QHash>
 #include <QHostAddress>
 #include <QImage>
 #include <QJsonArray>
@@ -409,6 +410,101 @@ public:
   QWebEnginePage page;
   QWebEngineView view;
 };
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+// Inspect actual PDF text sizes and positions using the application's bundled PDF reader,
+// just like test_htmlpdfexporter. The loopback server never accesses the public network.
+QJsonArray readStyledPdfPages(const QString &p_file) {
+  const auto module = readBytes(QFINDTESTDATA("../../src/data/extra/web/pdf.js/build/pdf.mjs"));
+  const auto worker =
+      readBytes(QFINDTESTDATA("../../src/data/extra/web/pdf.js/build/pdf.worker.mjs"));
+  if (module.isEmpty() || worker.isEmpty()) {
+    return {};
+  }
+  const QHash<QByteArray, QPair<QByteArray, QByteArray>> resources{
+      {"/pdf.mjs", {"text/javascript", module}},
+      {"/pdf.worker.mjs", {"text/javascript", worker}},
+      {"/document.pdf", {"application/pdf", readBytes(p_file)}},
+      {"/reader.html", {"text/html; charset=utf-8", QByteArrayLiteral(R"HTML(
+<!doctype html><meta charset="utf-8"><pre id="result" data-state="loading"></pre>
+<script type="module">
+import * as pdfjs from '/pdf.mjs';
+pdfjs.GlobalWorkerOptions.workerSrc = '/pdf.worker.mjs';
+const result = document.getElementById('result');
+try {
+  const pdf = await pdfjs.getDocument({url:'/document.pdf'}).promise;
+  const pages = [];
+  for (let number = 1; number <= pdf.numPages; ++number) {
+    const page = await pdf.getPage(number);
+    const content = await page.getTextContent();
+    const viewport = page.getViewport({scale:1});
+    pages.push({width:viewport.width, height:viewport.height,
+      items:content.items.map(item => {
+        const [left, baseline] = viewport.convertToViewportPoint(item.transform[4], item.transform[5]);
+        return {text:item.str, height:item.height, hasEOL:item.hasEOL,
+                left:left, right:left + item.width, top:baseline - item.height, bottom:baseline};
+      })});
+  }
+  result.textContent = JSON.stringify(pages);
+  result.dataset.state = 'ready';
+} catch (error) {
+  result.textContent = String(error);
+  result.dataset.state = 'error';
+}
+</script>)HTML")}}};
+  QTcpServer server;
+  QObject::connect(&server, &QTcpServer::newConnection, &server, [&] {
+    while (server.hasPendingConnections()) {
+      auto *socket = server.nextPendingConnection();
+      QObject::connect(
+          socket, &QTcpSocket::readyRead, socket,
+          [socket, &resources, request = QByteArray(), replied = false]() mutable {
+            request += socket->readAll();
+            if (replied || !request.contains("\r\n\r\n")) {
+              return;
+            }
+            replied = true;
+            const auto resource = resources.constFind(request.split(' ').value(1));
+            if (resource == resources.constEnd()) {
+              socket->write(
+                  "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\nConnection: close\r\n\r\n");
+            } else {
+              socket->write(QByteArrayLiteral("HTTP/1.1 200 OK\r\nContent-Type: ") +
+                            resource->first + "\r\nConnection: close\r\nContent-Length: " +
+                            QByteArray::number(resource->second.size()) + "\r\n\r\n");
+              socket->write(resource->second);
+            }
+            socket->disconnectFromHost();
+          });
+    }
+  });
+  if (!server.listen(QHostAddress::LocalHost, 0)) {
+    return {};
+  }
+  HtmlPage browser;
+  QSignalSpy loaded(&browser.page, &QWebEnginePage::loadFinished);
+  browser.page.load(
+      QUrl(QStringLiteral("http://127.0.0.1:%1/reader.html").arg(server.serverPort())));
+  if (!QTest::qWaitFor([&loaded] { return !loaded.isEmpty(); }, 30000) ||
+      !loaded.last().first().toBool() ||
+      !QTest::qWaitFor(
+          [&browser] {
+            const auto state =
+                browser.evaluate(QStringLiteral("document.getElementById('result').dataset.state"))
+                    .toString();
+            return state == QStringLiteral("ready") || state == QStringLiteral("error");
+          },
+          30000)) {
+    return {};
+  }
+  const auto result =
+      browser.evaluate(QStringLiteral("document.getElementById('result').textContent")).toString();
+  const auto document = QJsonDocument::fromJson(result.toUtf8());
+  if (!document.isArray()) {
+    qWarning().noquote() << "PDF text extraction failed:" << result;
+  }
+  return document.array();
+}
+#endif
 
 bool copyDirectory(const QString &p_source, const QString &p_destination) {
   if (!QDir().mkpath(p_destination)) {
@@ -497,6 +593,7 @@ private slots:
   void cancellationDoesNotPublishLateOutput();
   void directConsumerRequests_data();
   void directConsumerRequests();
+  void qtPdfRunsThroughExporter_data();
   void qtPdfRunsThroughExporter();
   void customCapturesRenderedInputs_data();
   void customCapturesRenderedInputs();
@@ -1325,21 +1422,131 @@ void TestMindMapExport::directConsumerRequests() {
   QVERIFY(links.contains(QStringLiteral("#m3-node-6f727068616e2d6368696c64")));
 }
 
+void TestMindMapExport::qtPdfRunsThroughExporter_data() {
+  QTest::addColumn<bool>("customized");
+  QTest::newRow("bundled-centered-80-percent") << false;
+  QTest::newRow("custom-centered-55-percent-padded-parent") << true;
+}
+
 void TestMindMapExport::qtPdfRunsThroughExporter() {
+  QFETCH(bool, customized);
   QTemporaryDir temporary;
   QVERIFY(temporary.isValid());
-  const auto path = temporary.filePath(QStringLiteral("source/map.emind"));
-  const auto json = forest();
+  const auto path = temporary.filePath(QStringLiteral("source/map.mmm"));
+  QStringList topics;
+  QJsonArray nodes;
+  QString note;
+  for (int i = 0; i < 36; ++i) {
+    note += QStringLiteral("Paragraph %1: Readable text remains complete.\n\n").arg(i);
+  }
+  // A deep horizontal chain exceeds the printable width even without the stylesheet.
+  for (int i = 0; i < 12; ++i) {
+    const auto id = QStringLiteral("wide%1").arg(i);
+    const auto topic = QStringLiteral("WideBranch%1").arg(i, 2, 10, QLatin1Char('0'));
+    topics.append(topic);
+    QJsonObject node{{QStringLiteral("id"), id}, {QStringLiteral("topic"), topic}};
+    if (i < 11) {
+      node.insert(QStringLiteral("children"), QJsonArray{QStringLiteral("wide%1").arg(i + 1)});
+    } else {
+      node.insert(QStringLiteral("note"), note);
+    }
+    if (i == 0) {
+      node.insert(QStringLiteral("image"), imageObject(QStringLiteral("image.png")));
+    }
+    nodes.append(node);
+  }
+  const auto json = QString::fromUtf8(
+      QJsonDocument(QJsonObject{{QStringLiteral("schemaVersion"), 1},
+                                {QStringLiteral("rootId"), QStringLiteral("wide0")},
+                                {QStringLiteral("nodes"), nodes},
+                                {QStringLiteral("crossLinks"), QJsonArray{}}})
+          .toJson(QJsonDocument::Compact));
   QVERIFY(writeBytes(path, json.toUtf8()));
   QVERIFY(
       writeBytes(temporary.filePath(QStringLiteral("source/image.png")), imageBytes(c_localColor)));
+
+  VxCoreContextHandle context = nullptr;
+  QCOMPARE(vxcore_context_create("{}", &context), VXCORE_OK);
+  const auto destroyContext = qScopeGuard([&] { vxcore_context_destroy(context); });
+  ConfigCoreService configCore(context);
+  ConfigMgr2 config(&configCore);
+  config.init();
+  const auto cssPath = config.getFileFromConfigFolder(QStringLiteral("web/css/export.css"));
+  const bool hadCss = QFileInfo::exists(cssPath);
+  const auto originalCss = readBytes(cssPath);
+  const auto restoreCss = qScopeGuard([&] {
+    if (customized) {
+      if (hadCss) {
+        QVERIFY(writeBytes(cssPath, originalCss));
+      } else if (QFileInfo::exists(cssPath)) {
+        QVERIFY(QFile::remove(cssPath));
+      }
+    }
+  });
+  const QByteArray customCss =
+      "body { box-sizing: border-box; max-width: 55%; margin-left: auto; margin-right: auto; }\n"
+      "main { padding-left: 19px; padding-right: 31px; }\n";
   ServiceLocator services;
+  if (customized) {
+    QVERIFY(writeBytes(cssPath, customCss));
+    services.registerService(&config);
+  }
+  // The other row deliberately has no ConfigMgr service and consumes the bundled default.
   Exporter exporter(services, nativeRegistry(services), nullptr);
-  auto option = options(temporary.filePath(QStringLiteral("out")), ExportFormat::PDF);
+  auto option = options(temporary.filePath(QStringLiteral("out")), ExportFormat::HTML);
+  option.m_htmlOption.m_applyCustomizedStyles = true;
   option.m_pdfOption.m_layout.reset(new QPageLayout(QPageSize(QPageSize::A4), QPageLayout::Portrait,
                                                     QMarginsF(12, 15, 12, 15),
                                                     QPageLayout::Millimeter));
   option.m_pdfOption.m_useWkhtmltopdf = false;
+  const auto printablePixels = option.m_pdfOption.m_layout->paintRectPixels(96);
+  const auto printablePoints = option.m_pdfOption.m_layout->paintRect(QPageLayout::Point);
+  const double bodyFraction = customized ? 0.55 : 0.8;
+  const double paddingLeft = customized ? 19.0 : 0.0;
+  const double paddingRight = customized ? 31.0 : 0.0;
+
+  // Inspect consumer-visible HTML from the real shared-style boundary, not renderer-only output.
+  const auto html = exportSingle(exporter, option, source(path), json);
+  QVERIFY(!html.isEmpty());
+  QVERIFY(containsImageColor(QString::fromUtf8(readBytes(html)), c_localColor));
+  HtmlPage browser;
+  browser.view.resize(printablePixels.size());
+  QVERIFY(browser.load(html));
+  const auto state = browser
+                         .evaluate(QStringLiteral(R"JS((() => {
+    const body = document.body.getBoundingClientRect();
+    const map = document.getElementById('mindmap');
+    const mapBounds = map.getBoundingClientRect();
+    const fonts = {};
+    for (const line of map.querySelectorAll('.m3-topic .m3-text-line')) {
+      fonts[line.closest('.m3-node').dataset.nodeId] = parseFloat(getComputedStyle(line).fontSize);
+    }
+    return {viewport:document.documentElement.clientWidth,
+            bodyLeft:body.left, bodyRight:body.right, bodyWidth:body.width,
+            naturalWidth:Number(map.dataset.width), naturalHeight:Number(map.dataset.height),
+            mapWidth:mapBounds.width, mapHeight:mapBounds.height, fonts:fonts,
+            noteFont:parseFloat(getComputedStyle(document.querySelector('.m3-article-note p')).fontSize),
+            articleText:document.getElementById('articles').textContent};
+  })())JS"))
+                         .toMap();
+  QVERIFY(!state.isEmpty());
+  const double viewport = state.value(QStringLiteral("viewport")).toDouble();
+  const double bodyWidth = state.value(QStringLiteral("bodyWidth")).toDouble();
+  QVERIFY(qAbs(bodyWidth - viewport * bodyFraction) < 1.0);
+  QVERIFY(qAbs(state.value(QStringLiteral("bodyLeft")).toDouble() -
+               (viewport - state.value(QStringLiteral("bodyRight")).toDouble())) < 1.0);
+  QCOMPARE(state.value(QStringLiteral("noteFont")).toDouble(), 16.0);
+  const double naturalWidth = state.value(QStringLiteral("naturalWidth")).toDouble();
+  const double naturalHeight = state.value(QStringLiteral("naturalHeight")).toDouble();
+  QVERIFY(naturalWidth > printablePixels.width() * 1.5);
+  // Standalone remains natural-size: only PDF may fit/zoom the visual map.
+  QVERIFY(qAbs(state.value(QStringLiteral("mapWidth")).toDouble() - naturalWidth) < 1.0);
+  QVERIFY(qAbs(state.value(QStringLiteral("mapHeight")).toDouble() - naturalHeight) < 1.0);
+  for (const auto &topic : topics) {
+    QVERIFY(state.value(QStringLiteral("articleText")).toString().contains(topic));
+  }
+
+  option.m_targetFormat = ExportFormat::PDF;
   const auto output = exportSingle(exporter, option, source(path), json);
   QVERIFY(!output.isEmpty());
   QCOMPARE(QFileInfo(output).suffix(), QStringLiteral("pdf"));
@@ -1347,6 +1554,91 @@ void TestMindMapExport::qtPdfRunsThroughExporter() {
   QVERIFY(pdf.startsWith("%PDF-"));
   QVERIFY(pdf.trimmed().endsWith("%%EOF"));
   QCOMPARE(readBytes(path), json.toUtf8());
+  if (customized) {
+    QCOMPARE(readBytes(cssPath), customCss);
+  }
+#if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+  const auto pages = readStyledPdfPages(output);
+  QVERIFY2(pages.size() >= 2, "The PDF reader must expose both the map and article pages");
+  constexpr double pointsPerPixel = 72.0 / 96.0;
+  const auto printableMm = option.m_pdfOption.m_layout->paintRect(QPageLayout::Millimeter);
+  const double upperBound =
+      qMin(1.0, qMin((printableMm.width() - 1) * 96.0 / 25.4 / naturalWidth,
+                     (printableMm.height() - 1) * 96.0 / 25.4 / naturalHeight));
+  const double scale =
+      qMin(upperBound,
+           (printablePixels.width() * bodyFraction - paddingLeft - paddingRight) / naturalWidth);
+  const double bodyLeft = printablePoints.left() + printablePoints.width() * (1 - bodyFraction) / 2;
+  const double bodyRight = bodyLeft + printablePoints.width() * bodyFraction;
+  const double contentLeft = bodyLeft + paddingLeft * pointsPerPixel;
+  const double contentRight = bodyRight - paddingRight * pointsPerPixel;
+  const auto mapFonts = state.value(QStringLiteral("fonts")).toMap();
+  QStringList pageText;
+  bool readableBody = false;
+  bool fittedMap = false;
+  for (int index = 0; index < pages.size(); ++index) {
+    const auto page = pages[index].toObject();
+    QString text;
+    for (const auto &value : page.value(QStringLiteral("items")).toArray()) {
+      const auto item = value.toObject();
+      const auto line = item.value(QStringLiteral("text")).toString();
+      text += line;
+      if (item.value(QStringLiteral("hasEOL")).toBool()) {
+        text += QLatin1Char('\n');
+      }
+      if (line.trimmed().isEmpty()) {
+        continue;
+      }
+      // Real printed glyphs must stay inside the styled, centered content and printable page.
+      QVERIFY2(item.value(QStringLiteral("left")).toDouble() >= contentLeft - 2.0,
+               qPrintable(line));
+      QVERIFY2(item.value(QStringLiteral("right")).toDouble() <= contentRight + 2.0,
+               qPrintable(line));
+      QVERIFY2(item.value(QStringLiteral("top")).toDouble() >= printablePoints.top() - 3.0,
+               qPrintable(line));
+      QVERIFY2(item.value(QStringLiteral("bottom")).toDouble() <= printablePoints.bottom() + 2.0,
+               qPrintable(line));
+      if (index == 0) {
+        for (int topicIndex = 0; topicIndex < topics.size(); ++topicIndex) {
+          const auto &topic = topics[topicIndex];
+          if (!line.contains(topic)) {
+            continue;
+          }
+          const double font = mapFonts.value(QStringLiteral("wide%1").arg(topicIndex)).toDouble();
+          QVERIFY(font > 0);
+          QVERIFY2(
+              qAbs(item.value(QStringLiteral("height")).toDouble() -
+                   font * scale * pointsPerPixel) < 0.15,
+              qPrintable(
+                  QStringLiteral("Map topic %1 does not fit the styled content width").arg(topic)));
+          fittedMap = true;
+        }
+      } else if (line.contains(QStringLiteral("Paragraph "))) {
+        const double font = item.value(QStringLiteral("height")).toDouble();
+        QVERIFY2(qAbs(font - 12.0) < 0.1,
+                 qPrintable(QStringLiteral("Map overflow shrank article text to %1 pt on page %2")
+                                .arg(font)
+                                .arg(index + 1)));
+        readableBody = true;
+      }
+    }
+    QVERIFY2(!text.trimmed().isEmpty(), "Map reservation must not insert blank pages");
+    pageText.append(text.simplified());
+  }
+  QVERIFY(fittedMap);
+  QVERIFY(readableBody);
+  const auto articles = pageText.mid(1).join(QLatin1Char(' '));
+  for (const auto &topic : topics) {
+    QVERIFY2(pageText.first().contains(topic), qPrintable(pageText.first()));
+    QVERIFY2(articles.contains(topic), qPrintable(articles));
+  }
+  QVERIFY(!pageText.first().contains(QStringLiteral("Paragraph ")));
+  for (int i = 0; i < 36; ++i) {
+    QVERIFY2(
+        articles.contains(QStringLiteral("Paragraph %1: Readable text remains complete.").arg(i)),
+        qPrintable(articles));
+  }
+#endif
 }
 
 void TestMindMapExport::customCapturesRenderedInputs_data() {

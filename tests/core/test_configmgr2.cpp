@@ -60,6 +60,7 @@ private slots:
   void testExtraData_failureIsReportedThenHealsOnRetry();
   void testExtraData_successfulRetryOnTheSameInstanceClearsTheFailureList();
   void testExtraData_missingBundleFailsEveryFolderAndInstallsNothing();
+  void testExtraData_userCssSurvivesInstallAndFailedRecovery_data();
   void testExtraData_userCssSurvivesInstallAndFailedRecovery();
   void testExtraData_configVersionIsStampedEvenWhenACopyFailed();
 
@@ -475,10 +476,12 @@ QString TestConfigMgr2::buildExtraDataFixture(TempDirFixture &p_tmp) const {
   p_tmp.createTextFile(QStringLiteral("extra/templates/title.md"),
                        QString::fromLatin1(kBundledTemplateContent));
 
-  // The one user-owned file the install must never clobber.
+  // Both user-owned stylesheets must survive installation/recovery.
   p_tmp.createDir(QStringLiteral("extra/web/css"));
-  p_tmp.createTextFile(QStringLiteral("extra/web/css/user.css"),
-                       QStringLiteral("/* bundled stub */"));
+  for (const auto &name : {QStringLiteral("user.css"), QStringLiteral("export.css")}) {
+    p_tmp.createTextFile(QStringLiteral("extra/web/css/") + name,
+                         QStringLiteral("/* bundled stub */"));
+  }
   return root;
 }
 
@@ -631,7 +634,19 @@ void TestConfigMgr2::testExtraData_missingBundleFailsEveryFolderAndInstallsNothi
                              QLatin1String(FileUtils2::c_versionStampFileName)));
 }
 
+void TestConfigMgr2::testExtraData_userCssSurvivesInstallAndFailedRecovery_data() {
+  QTest::addColumn<QString>("name");
+  QTest::addColumn<QByteArray>("content");
+  for (const auto &name : {QStringLiteral("user.css"), QStringLiteral("export.css")}) {
+    QTest::newRow(qPrintable(name + QStringLiteral("-custom")))
+        << name << QByteArray("body { max-width: 65%; margin-inline: auto; }");
+    QTest::newRow(qPrintable(name + QStringLiteral("-empty"))) << name << QByteArray();
+  }
+}
+
 void TestConfigMgr2::testExtraData_userCssSurvivesInstallAndFailedRecovery() {
+  QFETCH(QString, name);
+  QFETCH(QByteArray, content);
   resetInstalledExtraData();
 
   TempDirFixture tmp;
@@ -639,7 +654,7 @@ void TestConfigMgr2::testExtraData_userCssSurvivesInstallAndFailedRecovery() {
   const QString fixture = buildExtraDataFixture(tmp);
 
   const QString webFolder = m_configMgr->getConfigDataFolder(ConfigMgr2::ConfigDataType::Web);
-  const QString userCss = webFolder + QStringLiteral("/css/user.css");
+  const QString userCss = webFolder + QStringLiteral("/css/") + name;
 
   {
     ConfigMgr2 mgr(m_configService);
@@ -655,7 +670,7 @@ void TestConfigMgr2::testExtraData_userCssSurvivesInstallAndFailedRecovery() {
   {
     QFile file(userCss);
     QVERIFY(file.open(QIODevice::WriteOnly | QIODevice::Truncate));
-    file.write("body { color: red; }");
+    QCOMPARE(file.write(content), content.size());
     file.close();
   }
 
@@ -681,9 +696,17 @@ void TestConfigMgr2::testExtraData_userCssSurvivesInstallAndFailedRecovery() {
 
   QFile file(userCss);
   QVERIFY(file.open(QIODevice::ReadOnly));
-  QCOMPARE(QString::fromUtf8(file.readAll()), QStringLiteral("body { color: red; }"));
+  QCOMPARE(file.readAll(), content);
+  file.close();
 
   QVERIFY(QDir(blocker).removeRecursively());
+  ConfigMgr2 healed(m_configService);
+  healed.setExtraDataSourceRootOverrideForTesting(fixture);
+  healed.init();
+  healed.initAfterQtAppStarted();
+  QVERIFY(healed.extraDataCopyFailures().isEmpty());
+  QVERIFY(file.open(QIODevice::ReadOnly));
+  QCOMPARE(file.readAll(), content);
 }
 
 // Pins the DELIBERATE decoupling: the data dump and the config migration are

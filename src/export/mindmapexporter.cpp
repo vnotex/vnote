@@ -382,8 +382,40 @@ bool MindMapExporter::adaptHtml(QString &p_html, const ExportHtmlRequest &p_requ
                QString::number(scale, 'g', 17), QString::number(naturalSize.width(), 'g', 17),
                QString::number(naturalSize.height(), 'g', 17),
                QString::number(size.height() - 1, 'g', 17));
+  // The shared stylesheet is loaded after this adapter. Fit only the map to its parent's
+  // styled content box; shrinking the body would also shrink the readable article text.
+  const auto script =
+      QStringLiteral(R"JS(<script>
+(function () {
+  var naturalWidth = %1, naturalHeight = %2, upperBound = %3;
+  function fitMap() {
+    var visual = document.getElementById('visual-map');
+    var map = document.getElementById('mindmap');
+    if (!visual || !map || !visual.parentElement) { return; }
+    var parent = visual.parentElement;
+    var style = window.getComputedStyle(parent);
+    var width = parent.clientWidth - (parseFloat(style.paddingLeft) || 0) -
+                (parseFloat(style.paddingRight) || 0);
+    if (!isFinite(width) || !(width > 0)) { return; }
+    var scale = Math.min(upperBound, width / naturalWidth);
+    map.style.setProperty('zoom', String(scale), 'important');
+    visual.style.setProperty('width', String(naturalWidth * scale) + 'px', 'important');
+    visual.style.setProperty('height', String(naturalHeight * scale) + 'px', 'important');
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', fitMap, false);
+  } else {
+    fitMap();
+  }
+  window.addEventListener('load', fitMap, false);
+  window.addEventListener('beforeprint', fitMap, false);
+})();
+</script>
+)JS")
+          .arg(QString::number(naturalSize.width(), 'g', 17),
+               QString::number(naturalSize.height(), 'g', 17), QString::number(scale, 'g', 17));
   p_html.insert(p_html.indexOf(QStringLiteral("</head>")),
                 QStringLiteral("<style id=\"vnote-export-layout\">\n") + style +
-                    QStringLiteral("</style>\n"));
+                    QStringLiteral("</style>\n") + script);
   return true;
 }

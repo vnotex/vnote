@@ -2,6 +2,7 @@
 #define EXPORTDATA_H
 
 #include <QSharedPointer>
+#include <optional>
 
 class QPageLayout;
 
@@ -21,6 +22,11 @@ struct ExportHtmlOption {
   void fromJson(const QJsonObject &p_obj);
 
   bool operator==(const ExportHtmlOption &p_other) const;
+
+  static bool defaultApplyCustomizedStyles(const QString &p_fileTypeName);
+
+  // Absent means follow the selected source types; a value is an explicit user choice.
+  std::optional<bool> m_applyCustomizedStyles;
 
   bool m_embedStyles = true;
 

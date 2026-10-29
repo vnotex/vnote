@@ -15,10 +15,16 @@ QJsonObject ExportHtmlOption::toJson() const {
   obj["useMimeHtmlFormat"] = m_useMimeHtmlFormat;
   obj["addOutlinePanel"] = m_addOutlinePanel;
   obj["scrollable"] = m_scrollable;
+  if (m_applyCustomizedStyles.has_value()) {
+    obj["applyCustomizedStyles"] = *m_applyCustomizedStyles;
+  }
   return obj;
 }
 
 void ExportHtmlOption::fromJson(const QJsonObject &p_obj) {
+  const auto applyStyles = p_obj.value(QStringLiteral("applyCustomizedStyles"));
+  m_applyCustomizedStyles =
+      applyStyles.isBool() ? std::optional<bool>(applyStyles.toBool()) : std::nullopt;
   if (p_obj.isEmpty()) {
     return;
   }
@@ -35,7 +41,12 @@ bool ExportHtmlOption::operator==(const ExportHtmlOption &p_other) const {
   return m_embedStyles == p_other.m_embedStyles && m_completePage == p_other.m_completePage &&
          m_embedImages == p_other.m_embedImages &&
          m_useMimeHtmlFormat == p_other.m_useMimeHtmlFormat &&
-         m_addOutlinePanel == p_other.m_addOutlinePanel && m_scrollable == p_other.m_scrollable;
+         m_addOutlinePanel == p_other.m_addOutlinePanel && m_scrollable == p_other.m_scrollable &&
+         m_applyCustomizedStyles == p_other.m_applyCustomizedStyles;
+}
+
+bool ExportHtmlOption::defaultApplyCustomizedStyles(const QString &p_fileTypeName) {
+  return p_fileTypeName.compare(QStringLiteral("Markdown"), Qt::CaseInsensitive) != 0;
 }
 
 static QJsonObject pageLayoutToJsonObject(const QPageLayout &p_layout) {

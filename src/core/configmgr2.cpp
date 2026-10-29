@@ -514,12 +514,11 @@ void ConfigMgr2::ensureExtraData(bool p_force) {
   folders.append(FolderSpec{QStringLiteral("syntax-highlighting"),
                             getConfigDataFolder(ConfigDataType::SyntaxHighlighting),
                             QSet<QString>()});
-  // web/css/user.css is USER-OWNED: the settings page seeds it only when it is
-  // absent (src/widgets/dialogs/settings/markdowneditorpage.cpp:314-326), so
-  // dumping the bundled 2-line stub over it would destroy the user's global
-  // CSS at every version bump.
-  folders.append(FolderSpec{QStringLiteral("web"), getConfigDataFolder(ConfigDataType::Web),
-                            QSet<QString>{QStringLiteral("css/user.css")}});
+  // Reader and export CSS are user-owned. Seed absent files, but preserve customized
+  // and intentionally empty stylesheets across upgrades and recovery attempts.
+  folders.append(
+      FolderSpec{QStringLiteral("web"), getConfigDataFolder(ConfigDataType::Web),
+                 QSet<QString>{QStringLiteral("css/user.css"), QStringLiteral("css/export.css")}});
   folders.append(FolderSpec{QStringLiteral("dicts"), getConfigDataFolder(ConfigDataType::Dicts),
                             QSet<QString>()});
   // Bundled note templates. No preserve list: the shipped title.md is refreshed

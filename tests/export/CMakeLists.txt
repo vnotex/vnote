@@ -24,6 +24,8 @@ set(_native_export_sources
   ${CMAKE_SOURCE_DIR}/src/export/mindmapexporter.cpp
   ${CMAKE_SOURCE_DIR}/src/export/htmlpdfexporter.cpp
   ${CMAKE_SOURCE_DIR}/src/export/exporter.cpp
+  ${CMAKE_SOURCE_DIR}/src/export/exportstylesheet.cpp
+  ${CMAKE_SOURCE_DIR}/src/export/exportstylesheet.qrc
   ${CMAKE_SOURCE_DIR}/src/export/exportfontresolver.cpp
   ${CMAKE_SOURCE_DIR}/src/export/wkhtmltopdfhtmlpatch.cpp
   ${CMAKE_SOURCE_DIR}/src/utils/contentmediautils.cpp

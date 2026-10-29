@@ -27,6 +27,10 @@ private slots:
   void testEmptyExportOptionKeepsFormat();
   void testHeadingFoldingRouteMatrix();
   void testIntermediateHtmlMarkerIsRuntimeOnly();
+  void testCustomizedStylesPersistence_data();
+  void testCustomizedStylesPersistence();
+  void testCustomizedStylesDefaults_data();
+  void testCustomizedStylesDefaults();
 };
 
 void TestExportData::testDefaultFooterRight() {
@@ -207,6 +211,81 @@ void TestExportData::testIntermediateHtmlMarkerIsRuntimeOnly() {
   restored.fromJson(json);
   QVERIFY(!restored.m_intermediateHtml);
   QVERIFY(marked == restored);
+}
+
+void TestExportData::testCustomizedStylesPersistence_data() {
+  QTest::addColumn<int>("choice");
+  QTest::newRow("source-default") << -1;
+  QTest::newRow("explicit-off") << 0;
+  QTest::newRow("explicit-on") << 1;
+}
+
+void TestExportData::testCustomizedStylesPersistence() {
+  QFETCH(int, choice);
+  vnotex::ExportOption option;
+  if (choice >= 0)
+    option.m_htmlOption.m_applyCustomizedStyles = choice != 0;
+  const auto htmlJson = option.m_htmlOption.toJson();
+  QCOMPARE(htmlJson.contains(QStringLiteral("applyCustomizedStyles")), choice >= 0);
+  if (choice >= 0)
+    QCOMPARE(htmlJson.value(QStringLiteral("applyCustomizedStyles")).toBool(), choice != 0);
+
+  vnotex::ExportOption restored;
+  restored.fromJson(option.toJson());
+  QVERIFY(restored == option);
+  QVERIFY(restored.m_htmlOption.m_applyCustomizedStyles ==
+          option.m_htmlOption.m_applyCustomizedStyles);
+  QCOMPARE(restored.m_htmlOption.toJson(), htmlJson);
+
+  auto different = option;
+  different.m_htmlOption.m_applyCustomizedStyles = choice != 1;
+  QVERIFY(!(different.m_htmlOption == option.m_htmlOption));
+  QVERIFY(!(different == option));
+
+  // An old preset restores automatic policy even when the object previously held a choice.
+  auto legacy = htmlJson;
+  legacy.remove(QStringLiteral("applyCustomizedStyles"));
+  restored.m_htmlOption.m_applyCustomizedStyles = true;
+  restored.m_htmlOption.fromJson(legacy);
+  QVERIFY(!restored.m_htmlOption.m_applyCustomizedStyles.has_value());
+  QVERIFY(!restored.m_htmlOption.toJson().contains(QStringLiteral("applyCustomizedStyles")));
+  restored.m_htmlOption.m_applyCustomizedStyles = false;
+  restored.m_htmlOption.fromJson({});
+  QVERIFY(!restored.m_htmlOption.m_applyCustomizedStyles.has_value());
+  for (const auto &invalid : {QJsonValue(QJsonValue::Null), QJsonValue(1), QJsonValue("true")}) {
+    legacy[QStringLiteral("applyCustomizedStyles")] = invalid;
+    restored.m_htmlOption.fromJson(legacy);
+    QVERIFY(!restored.m_htmlOption.m_applyCustomizedStyles.has_value());
+  }
+}
+
+void TestExportData::testCustomizedStylesDefaults_data() {
+  QTest::addColumn<QString>("source");
+  QTest::addColumn<bool>("enabled");
+  QTest::newRow("markdown") << QStringLiteral("Markdown") << false;
+  QTest::newRow("markdown-case-insensitive") << QStringLiteral("mArKdOwN") << false;
+  QTest::newRow("typst") << QStringLiteral("Typst") << true;
+  QTest::newRow("mindmap") << QStringLiteral("MindMap") << true;
+  QTest::newRow("text") << QStringLiteral("Text") << true;
+  QTest::newRow("others") << QStringLiteral("Others") << true;
+  QTest::newRow("unknown") << QStringLiteral("unregistered-source") << true;
+}
+
+void TestExportData::testCustomizedStylesDefaults() {
+  QFETCH(QString, source);
+  QFETCH(bool, enabled);
+  QCOMPARE(vnotex::ExportHtmlOption::defaultApplyCustomizedStyles(source), enabled);
+  vnotex::ExportHtmlOption option;
+  QVERIFY(!option.m_applyCustomizedStyles.has_value());
+  QCOMPARE(option.m_applyCustomizedStyles.value_or(
+               vnotex::ExportHtmlOption::defaultApplyCustomizedStyles(source)),
+           enabled);
+  for (const bool explicitChoice : {false, true}) {
+    option.m_applyCustomizedStyles = explicitChoice;
+    QCOMPARE(option.m_applyCustomizedStyles.value_or(
+                 vnotex::ExportHtmlOption::defaultApplyCustomizedStyles(source)),
+             explicitChoice);
+  }
 }
 
 } // namespace tests

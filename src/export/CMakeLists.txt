@@ -1,6 +1,7 @@
 target_sources(vnote PRIVATE
     exportdata.cpp exportdata.h
     exporter.cpp exporter.h
+    exportstylesheet.cpp exportstylesheet.h exportstylesheet.qrc
     exportrenderer.cpp exportrenderer.h
     exportrendererfactory.cpp exportrendererfactory.h
     exportbuiltinrenderers.cpp

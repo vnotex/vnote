@@ -462,6 +462,22 @@ not web-print controls. Hidden preferences survive switching: only the effective
 suppresses unavailable PDF all-in-one. Custom style placeholders remain usable for native/raw
 input, and all option widgets and scheme actions are disabled while export pumps events.
 
+The HTML page always exposes **Apply customized styles** and **Edit**, including for native
+renderers. The optional `htmlOption.applyCustomizedStyles` value stores only an explicit user
+choice; absence defaults off for Markdown (or any mixed selection containing Markdown) and on
+for other sources. Merely viewing a source's default must not persist it as an override.
+`Exporter::doExportHtml` is the single application point for standalone HTML and PDF/Custom
+HTML intermediates. Native source, raw Custom and native Typst PDF bypass it.
+
+`ExportStyleSheet` resolves the user-owned `web/css/export.css` through ConfigMgr2. Missing
+files are seeded from the single bundled default, including same-version profiles; existing
+customized or empty files survive updates/recovery. Without ConfigMgr2, native-only consumers
+use that bundled default. The default centers a border-box body with `max-width: 80%`. **Edit** opens
+the real external CSS buffer without replacing the export's original source snapshot; save
+before exporting. Each output embeds the saved CSS after renderer styles as a UTF-8 data-URL
+stylesheet; relative CSS resources are not copied. Unreadable CSS or incompatible HTML fails
+without returning a published HTML file. Markdown's exportglobalstyles.css remains separate.
+
 MindMap Markdown is the m3 C API's readable document projection with `.md` naming and
 media copied from that projection's resource base. The main topic is H1, levels 2–6 are
 H2–H6, and deeper nodes are nested lists; orphan roots restart at H1. Notes become literal
@@ -475,8 +491,8 @@ for queued image requests to settle. Missing images retain explicit placeholders
 malformed input and the whole-export image deadline fail rather than snapshot incomplete work.
 The visual map is selectable HTML node text plus inline SVG connectors, not a whole-map PNG;
 only supplied node images are raster data. Standalone and Custom HTML use the same native
-`toHtml()` document: a natural 100% map directly in normal flow, without width caps, nested scrolling,
-viewer controls or sizing JavaScript. Topic anchors navigate to the continuous articles below it.
+`toHtml()` document: a natural 100% map directly in normal flow, without map-width caps,
+nested scrolling, viewer controls or sizing JavaScript. Topic anchors navigate to the continuous articles below it.
 The visual map uses the mind-map automatic-numbering preference and shared editor section-number
 pattern, refreshed for every export including renderer reuse. Main/orphan roots and article titles
 remain unnumbered; article anchors use node identity rather than decorated visual text.
@@ -497,7 +513,10 @@ gutter rather than cumulative print indentation. Bound figures to the printable 
 notes splittable. A paint-only transform or unscaled flow width can shrink every printed page;
 the regression produced 8pt rather than 12pt body text. The Qt 6.9+ host test reads every PDF page
 with the bundled reader and checks map-first/article-next ordering, complete notes and image
-geometry plus actual 12pt body. DOM bounds/signatures alone miss this.
+geometry plus actual 12pt body. DOM bounds/signatures alone miss this. A PDF-only ES5 fitter
+measures the styled parent's content width after load and before print, capping the map's zoom
+and reserved footprint together. It must not undo the user's body width/margins or shrink
+article fonts; standalone and Custom maps remain script-free.
 
 `HtmlPdfExporter` owns final transport for Html-backend PDF targets, not native Typst or source
 rendering. Qt loads the rendered HTML by file
