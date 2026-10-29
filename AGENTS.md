@@ -87,11 +87,13 @@ Before pushing parent-repository or submodule changes, agents MUST:
    platform limits. If all unpushed changes are documentation-only, check the docs and
    state that no build/test targets are affected; compilation and tests are not required.
 
-**Do not push when required builds or tests fail, time out or cannot run.** Fix the
-cause and verify again; never disable tests, weaken assertions or increase deadlines
-just to obtain a pass. If verification is unavailable, report the exact blocker and
-obtain an explicit user exception before pushing. A local pass is not proof that
-other operating systems or packaging gates pass; disclose that limitation.
+**Do not push when required builds or tests fail, time out or cannot run.** The only
+standing local exception is the closed [Windows native-focus whitelist](tests/AGENTS.md#local-pre-push-flaky-test-whitelist).
+It never skips an executable or build and never waives CI. Every other failure remains
+blocking: fix the cause and verify again; never disable tests, weaken assertions or
+increase deadlines just to obtain a pass. If verification is unavailable, report the
+exact blocker and obtain an explicit user exception before pushing. A local pass is
+not proof that other operating systems or packaging gates pass; disclose that limitation.
 
 ### CI runner debugging (SSH)
 

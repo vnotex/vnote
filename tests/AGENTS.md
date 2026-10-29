@@ -286,6 +286,51 @@ PDF.js text-item boundaries are not word boundaries: ligatures can split a word 
 items. Reconstruct text by concatenating `item.str` and adding a newline only for
 `item.hasEOL`, as the bundled viewer does; do not insert spaces between every item.
 
+### Local pre-push flaky-test whitelist
+
+On a **shared interactive Windows desktop only**, the following native-input failures
+may be treated as non-gating for a local push. This is a closed list of failure sites,
+not permission to skip an executable or any product-behavior assertion.
+
+| Executable | Exact QtTest case / row | Eligible failure site |
+|---|---|---|
+| `test_viewarea_tab_reuse` | `previewReaderNavigationAndNativeHost` | First source-reader `B` link's `clickNativeSurface` hit-test precondition |
+| `test_viewarea_tab_reuse` | `previewOpenInNewTabs(main-source)` | Open Link button's `clickNativeSurface` hit-test precondition |
+| `test_viewarea_tab_reuse` | `previewOpenInNewTabsDuplicateConsent(other-tab-save)` | Incoming editor's `hasFocus()` precondition before consent/promotion |
+
+**All** of these conditions are required for each use:
+
+1. Build the affected targets and attempt the **full executable** at the revision being
+   pushed. Preserve the first failure report. Windows GUI executables may omit QtTest
+   assertions from CTest's captured stdout; use explicit QtTest `-o <path>,txt` and
+   `-o <path>,junitxml` outputs for diagnosis with the registered runtime environment.
+2. Match both the exact row and failure site above. For a click failure, diagnostics must
+   show a visible, in-bounds target, an inactive native window, and null/foreign
+   `QApplication::widgetAt()` at the click position. For the editor-focus failure, also
+   establish that the native window was inactive. A bare `clickNativeSurface`/`hasFocus`
+   failure or a passing retry alone is **not** enough to classify the failure.
+3. The affected case must pass in isolation at the same revision, and all remaining rows
+   and other affected suites must run and pass. Prefer an exclusive desktop run when
+   available. Do not retry unchanged runs merely until one passes; reruns must investigate
+   a cause or follow an environment correction.
+4. The unpushed changes must not modify the affected native preview input, focus, geometry,
+   promotion, hit-test helpers, fixture activation or relevant platform configuration.
+   Those changes require a clean native verification run or a separate explicit user exception.
+5. Report the exact case, native-state evidence and local waived gate as a **skip**, not
+   a pass. Any other failure, including later content, routing, save/discard/cancel,
+   persistence assertions, crashes or timeouts, remains blocking even in a listed case.
+
+CI and packaging gates are never waived. Do not add `QSKIP`, exclude the executable or
+rows from CTest, weaken assertions, or change deadlines to implement this policy.
+Reassess/remove an entry when its native activation cause is fixed.
+
+The 2026-10-29 investigation observed a visible/in-bounds preview button with an inactive
+native window and null `widgetAt`, while failing rows varied across runs; the unmodified
+full suite subsequently passed all 73 cases. The fixture requests activation without
+waiting for native activation. The original reader-click rejection and editor-focus
+failure did not identify a covering process or independently prove their native-window
+state, so those assertion messages alone do not qualify for the exception.
+
 ### VTextEdit.dll runtime copy
 
 Tests that link `VTextEdit` (directly, or transitively via `core_configs`) load `VTextEdit.dll` at runtime. **`core_services` alone no longer pulls it in**, so a pure-core test that links only `core_services` + `vxcore` runs with no `VTextEdit.dll` anywhere near it. The build copies the DLL next to each subdirectory's test exes via a `POST_BUILD` step anchored on one test target per subdir (the canonical reference is `tests/utils/CMakeLists.txt:78-83`):
