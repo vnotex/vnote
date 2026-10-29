@@ -220,9 +220,11 @@ void TestMarkdownEditorController::testSourceHeadingEligibility_data() {
       << QStringLiteral("Intro\n---\n\n# 1. Title\n\nOther\n===\n\n## 1.1. Alpha\n## 1.2. Beta\n")
       << false;
   QTest::newRow("setext-containers-and-multiline")
-      << QStringLiteral("> ## Quoted\n>\n> Underlined\n> continuation\n> ---\n\n- ### Nested\n\n## Tail\n")
+      << QStringLiteral(
+             "> ## Quoted\n>\n> Underlined\n> continuation\n> ---\n\n- ### Nested\n\n## Tail\n")
       << QStringLiteral("> ## 1. Quoted\n>\n> Underlined\n> continuation\n> ---\n\n"
-                        "- ### 1.1. Nested\n\n## 2. Tail\n") << false;
+                        "- ### 1.1. Nested\n\n## 2. Tail\n")
+      << false;
   QTest::newRow("setext-existing-number")
       << QStringLiteral("42\\. Existing\n---\n\n## Topic\n")
       << QStringLiteral("42\\. Existing\n---\n\n## 1. Topic\n") << false;
@@ -534,7 +536,7 @@ void TestMarkdownEditorController::testConcealmentControlsRenderedDestinations()
   };
   // A raw display reference independent of the controller's opt-out mapping.
   auto rawConfig = buildConfig();
-  rawConfig->m_concealElements = {};
+  rawConfig->m_concealRules.clear();
   vte::VMarkdownEditor editor(rawConfig, QSharedPointer<vte::TextEditorParameters>::create());
   editor.resize(1000, 400);
   editor.show();
@@ -543,7 +545,7 @@ void TestMarkdownEditorController::testConcealmentControlsRenderedDestinations()
     QObject receiver;
     bool published = false;
     connect(editor.getHighlighter(), &vte::MarkdownHighlighter::concealRangesUpdated, &receiver,
-            [&](vte::TimeStamp, const QVector<vte::md::ConcealRange> &) { published = true; });
+            [&](vte::TimeStamp, const vte::md::ConcealRanges &) { published = true; });
     editor.getHighlighter()->updateHighlight();
     const bool ready = QTest::qWaitFor([&] { return published; }, 5000);
     QTest::qWait(50);

@@ -895,9 +895,6 @@ private:
     auto markdownConfig = QSharedPointer<vte::MarkdownEditorConfig>::create(config(true));
     markdownConfig->m_webCodeBlockHighlighterEnabled = false;
     markdownConfig->m_inplacePreviewSources = vte::MarkdownEditorConfig::NoInplacePreview;
-    markdownConfig->m_concealElements = vte::MarkdownConcealElement::LinkUrl |
-                                        vte::MarkdownConcealElement::ImageUrl |
-                                        vte::MarkdownConcealElement::ReferenceUrl;
     markdownEditor = new vte::VMarkdownEditor(markdownConfig, parameters, splitter);
     markdownEditor->enableInternalContextMenu();
     connect(markdownEditor->getHighlighter(), &vte::MarkdownHighlighter::highlightCompleted, this,

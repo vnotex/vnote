@@ -76,7 +76,7 @@ void applyMarkdownConfigFields(const MarkdownEditorConfig &p_mdConfig,
   p_editorConfig->m_autoFoldPreviewedBlocksEnabled = p_mdConfig.getAutoFoldPreviewedBlocksEnabled();
 
   if (!p_mdConfig.getConcealmentEnabled()) {
-    p_editorConfig->m_concealElements = vte::MarkdownConcealElement::None;
+    p_editorConfig->m_concealRules.clear();
   }
 
   // Map InplacePreviewSources flags from vnotex -> vte.

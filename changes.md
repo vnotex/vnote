@@ -2,6 +2,9 @@
 ## Unreleased
 * Add Open Link above Copy Link in mind-map URL context menus, preserving link-opening security prompts and read-only access
 * Open localized release notes in a new read-only tab after upgrading VNote, with Simplified Chinese notes and English fallback; replace both bundled documents in the version release commit
+* Update vtextedit to `726b33c` and both vendored cmark copies to `6148f31`
+* Fix closing Markdown heading marker highlighting and preserve syntax backgrounds on the cursor line
+* Migrate to the new concealment API while retaining URL-only concealment and its existing on/off setting
 
 ## v4.12.0
 A feature release with editable link previews, native Markdown rendering, Typst math and stronger security on top of VNote 4.11.0:
