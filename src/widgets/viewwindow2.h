@@ -278,6 +278,9 @@ public:
   void setAutoReload(bool p_enabled);
   bool autoReload() const;
 
+  // Preserve ordinary open policy, adding source-bound preview intent for direct links.
+  FileOpenSettings getLinkOpenSettings(bool p_fromContextMenu = false) const;
+
 public slots:
   void findNext(const QString &p_text, FindOptions p_options);
 
@@ -304,9 +307,6 @@ public slots:
   // Apply file-open settings (scroll to line, search highlight, etc.) after the window is ready.
   // Base implementation does nothing; subclasses override for actual behavior.
   virtual void applyFileOpenSettings(const FileOpenSettings &p_settings);
-
-  // Preserve ordinary open policy, adding source-bound preview intent for direct links.
-  FileOpenSettings getLinkOpenSettings(bool p_fromContextMenu = false) const;
 
   // Called when editor configuration changes at runtime.
   // Subclasses should override to reload config and update their editor widget.
