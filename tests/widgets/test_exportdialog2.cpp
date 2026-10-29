@@ -758,12 +758,12 @@ void TestExportDialog2::nativeAndWebOptionVisibility() {
   verifyVisible(
       {QStringLiteral("applyCustomizedStylesCheck"), QStringLiteral("editExportStyleButton")},
       true);
-  QVERIFY(control("nativeFormatInfo")->isVisibleTo(m_dialog.get()));
+  QVERIFY(!control("nativeFormatInfo")->isVisibleTo(m_dialog.get()));
   QVERIFY(selectFormat(ExportFormat::PDF));
   verifyStyles(false, false);
   verifyPdfRows(false, false, false);
   QVERIFY(!control("pdfAllInOneCheck")->isVisibleTo(m_dialog.get()));
-  QVERIFY(control("nativeFormatInfo")->isVisibleTo(m_dialog.get()));
+  QVERIFY(!control("nativeFormatInfo")->isVisibleTo(m_dialog.get()));
   QVERIFY(selectSource(ExportSource::Workspace, m_mindmapWorkspace));
   verifyPdfRows(true, false, true);
   verifyStyles(false, false);

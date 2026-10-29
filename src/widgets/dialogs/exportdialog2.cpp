@@ -508,8 +508,7 @@ void ExportDialog2::setupUI() {
     layout->setContentsMargins(0, 0, 0, 0);
 
     auto *styleRow = new QHBoxLayout();
-    m_applyCustomizedStylesCheck =
-        WidgetsFactory::createCheckBox(tr("Apply customized styles"), page);
+    m_applyCustomizedStylesCheck = WidgetsFactory::createCheckBox(tr("Apply custom styles"), page);
     m_applyCustomizedStylesCheck->setObjectName(QLatin1String(kApplyCustomizedStylesCheckName));
     const auto styleTip = tr("Save export.css before exporting. These styles apply to HTML and "
                              "HTML inputs for PDF and Custom exports, not native Typst PDF");
@@ -1295,7 +1294,6 @@ void ExportDialog2::updateSourceCapabilities() {
           return ExportHtmlOption::defaultApplyCustomizedStyles(p_fileType);
         }));
   }
-  m_typstOnly = fileTypes.size() == 1 && fileTypes.first() == QStringLiteral("Typst");
   m_sourceCapabilities.clear();
   m_sourceCapabilities.reserve(fileTypes.size());
   for (const auto &fileType : fileTypes) {
@@ -1426,16 +1424,9 @@ void ExportDialog2::updateOptionVisibility() {
       break;
     case ExportFormat::HTML:
       m_stackedLayout->setCurrentWidget(m_htmlPage);
-      if (m_typstOnly) {
-        nativeInfo = tr("HTML is compiled by Typst; document styles control the output.");
-      }
       break;
     case ExportFormat::PDF:
       m_stackedLayout->setCurrentWidget(m_pdfPage);
-      if (m_typstOnly) {
-        nativeInfo =
-            tr("PDF is compiled by Typst; page layout and numbering come from the document.");
-      }
       break;
     case ExportFormat::Custom:
       m_stackedLayout->setCurrentWidget(m_customPage);

@@ -457,12 +457,12 @@ entry so event-loop mutations cannot invalidate it. `%3`/`%4` remain independent
 
 `ExportDialog2` intersects target values in first-source order and maps enum values explicitly
 to source/HTML/PDF/Custom pages. Its visible controls are the union of applicable option groups;
-labels hide with fields. Native Typst HTML/PDF show document-owned styling/layout information,
-not web-print controls. Hidden preferences survive switching: only the effective export copy
+labels hide with fields. Native Typst HTML/PDF omit web-print controls and compiler descriptions.
+Hidden preferences survive switching: only the effective export copy
 suppresses unavailable PDF all-in-one. Custom style placeholders remain usable for native/raw
 input, and all option widgets and scheme actions are disabled while export pumps events.
 
-The HTML page always exposes **Apply customized styles** and **Edit**, including for native
+The HTML page always exposes **Apply custom styles** and **Edit**, including for native
 renderers. The optional `htmlOption.applyCustomizedStyles` value stores only an explicit user
 choice; absence defaults off for Markdown (or any mixed selection containing Markdown) and on
 for other sources. Merely viewing a source's default must not persist it as an override.
@@ -471,7 +471,7 @@ HTML intermediates. Native source, raw Custom and native Typst PDF bypass it.
 
 `ExportStyleSheet` resolves the user-owned `web/css/export.css` through ConfigMgr2. Missing
 files are seeded from the single bundled default, including same-version profiles; existing
-customized or empty files survive updates/recovery. Without ConfigMgr2, native-only consumers
+custom or empty files survive updates/recovery. Without ConfigMgr2, native-only consumers
 use that bundled default. The default centers a border-box body with `max-width: 80%`. **Edit** opens
 the real external CSS buffer without replacing the export's original source snapshot; save
 before exporting. Each output embeds the saved CSS after renderer styles as a UTF-8 data-URL

@@ -87,7 +87,6 @@ private:
   ExportRendererFactory m_rendererFactory;
   QVector<ExportCapabilities> m_sourceCapabilities;
   ExportFormat m_targetFormat = ExportFormat::HTML;
-  bool m_typstOnly = false;
   bool m_pdfAllInOneAvailable = false;
 
   // Top row.
