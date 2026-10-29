@@ -160,12 +160,12 @@ LinkPreviewOverlay::LinkPreviewOverlay(ServiceLocator &p_services, ViewWindow2 *
       const auto fg =
           themeService->paletteColor(QStringLiteral("widgets#viewsplit#action_button#fg"));
       openAction->setIcon(IconUtils::fetchIcon(
-          themeService->getIconFile(QStringLiteral("square-arrow-out-up-right.svg")), fg));
+          themeService->getIconFile(QStringLiteral("open_in_new_tab.svg")), fg));
       closeAction->setIcon(
           IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("close.svg")), fg));
     } else {
       openAction->setIcon(IconUtils::fetchIcon(
-          QStringLiteral(":/vnotex/data/core/icons/square-arrow-out-up-right.svg")));
+          QStringLiteral(":/vnotex/data/core/icons/open_in_new_tab.svg")));
       closeAction->setIcon(
           IconUtils::fetchIcon(QStringLiteral(":/vnotex/data/core/icons/close.svg")));
     }
