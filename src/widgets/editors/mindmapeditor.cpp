@@ -150,10 +150,15 @@ MindMapEditor::MindMapEditor(ServiceLocator &p_services, const Buffer2 &p_buffer
   connect(this, &m3::qt::MindMapEditor::nodeImageContextMenuRequested, this,
           &MindMapEditor::populateImageContextMenu);
   connect(this, &m3::qt::MindMapEditor::nodeLinkActivated, this,
-          [this](const QString &, const QString &p_url) {
+          [this](const QString &, const QString &p_url, bool p_fromContextMenu) {
             if (m_contentLoaded && canUseBuffer()) {
-              m_controller->requestOpenLink(
-                  p_url, m_viewWindow ? m_viewWindow->getLinkOpenSettings() : FileOpenSettings());
+              FileOpenSettings settings;
+              if (m_viewWindow) {
+                settings = m_viewWindow->getLinkOpenSettings(p_fromContextMenu);
+              } else {
+                settings.m_alwaysNewWindow = p_fromContextMenu;
+              }
+              m_controller->requestOpenLink(p_url, settings);
             }
           });
   connect(m_controller, &MindMapViewWindowController::externalLinkConfirmationRequested, this,

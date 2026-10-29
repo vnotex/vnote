@@ -278,7 +278,7 @@ public:
   void setAutoReload(bool p_enabled);
   bool autoReload() const;
 
-  // Preserve ordinary open policy, adding source-bound preview intent for direct links.
+  // Context links open in new tabs; direct links retain source-bound preview intent.
   FileOpenSettings getLinkOpenSettings(bool p_fromContextMenu = false) const;
 
 public slots:

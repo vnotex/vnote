@@ -851,8 +851,7 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
   QVERIFY(f->controller()->closeAllPreviewWorkspaces());
   QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 
-  // Menu origin is independent of preference and of source/reader presentation.
-  f->config->getCoreConfig().setAlwaysOpenNotesInNewTabs(true);
+  // Menu opens preserve the source even with tab reuse enabled, in Edit and Read.
   for (bool enabled : {true, false}) {
     f->config->getEditorConfig().setLinkPreviewEnabled(enabled);
     for (bool reading : {false, true}) {
@@ -868,15 +867,17 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
         point = editor->getNavigationTargets().first().m_rect.center();
       }
       QVERIFY(surface->rect().contains(point));
+      f->reuse();
       QVERIFY(openContextLinkAt(surface, point));
       QTRY_VERIFY(f->current() != source);
       QCOMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
       QCOMPARE(f->workspace(), main);
-      QCOMPARE(f->order(main).size(), 2);
+      QCOMPARE(f->order(main), QStringList({a.id(), f->current()->getBuffer().id()}));
       QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
       QVERIFY(f->controller()->closeViewWindow(f->current()->getViewWindowId(), false));
       QCOMPARE(f->current(), source);
       if (!enabled) {
+        f->config->getCoreConfig().setAlwaysOpenNotesInNewTabs(true);
         if (!reading) {
           QVERIFY(clickNativeSurface(surface, point));
           QCOMPARE(f->current(), source);
@@ -1261,13 +1262,14 @@ void TestViewAreaTabReuse::previewProtectedLinksAndDispatchFailures() {
   QVERIFY(f->controller()->closePreviewWorkspace(preview));
   QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 
-  f->config->getCoreConfig().setAlwaysOpenNotesInNewTabs(true);
+  f->reuse();
   QSignalSpy contextLinks(reader, &MarkdownViewer::contextLinkOpenRequested);
   QVERIFY(openContextLinkAt(reader, readerLinkPoint(reader, QStringLiteral("Allowed"))));
   QTRY_COMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
   QCOMPARE(contextLinks.size(), 1);
   QCOMPARE(contextLinks.first().first().toString(), QStringLiteral("b.md#beta"));
   QCOMPARE(f->workspace(), main);
+  QCOMPARE(f->order(main), QStringList({privateBuffer.id(), f->current()->getBuffer().id()}));
   QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
   QCOMPARE(desktop.opened.size(), 2);
   QVERIFY(f->controller()->closeViewWindow(f->current()->getViewWindowId(), false));
@@ -1356,6 +1358,20 @@ void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {
   QCOMPARE(readBytes(f->absolute(QStringLiteral("linked.emind"))), mapBytes);
   QVERIFY(f->controller()->closePreviewWorkspace(mapPreview));
   QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+  f->reuse();
+  for (bool enabled : {true, false}) {
+    f->config->getEditorConfig().setLinkPreviewEnabled(enabled);
+    QVERIFY(openContextLinkAt(canvas->viewport(), indicatorPoint()));
+    QTRY_COMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
+    QCOMPARE(f->workspace(), main);
+    QCOMPARE(f->order(main), QStringList({mapBuffer.id(), f->current()->getBuffer().id()}));
+    QVERIFY(mapWindow);
+    QCOMPARE(mapWindow->getBuffer().id(), mapBuffer.id());
+    QVERIFY(f->area->previewWorkspaceForWindow(mapWindow->getViewWindowId()).isEmpty());
+    QVERIFY(f->controller()->closeViewWindow(f->current()->getViewWindowId(), false));
+    QCOMPARE(f->current(), mapWindow.data());
+  }
+  f->config->getEditorConfig().setLinkPreviewEnabled(true);
   QVERIFY(f->controller()->closeViewWindow(mapWindow->getViewWindowId(), false));
   QTRY_VERIFY(mapWindow.isNull());
 
@@ -1427,7 +1443,7 @@ void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {
     QCoreApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
     QCOMPARE(f->current(), window);
 
-    f->config->getCoreConfig().setAlwaysOpenNotesInNewTabs(true);
+    f->reuse();
     links.clear();
     QVERIFY(openContextLinkAt(surface, point));
     QTRY_COMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
@@ -1435,6 +1451,7 @@ void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {
     QCOMPARE(links.first()[0].toUrl(), destination);
     QCOMPARE(links.first()[1].toBool(), true);
     QCOMPARE(f->workspace(), main);
+    QCOMPARE(f->order(main), QStringList({typstBuffer.id(), f->current()->getBuffer().id()}));
     QVERIFY(f->area->previewWorkspaceForWindow(window->getViewWindowId()).isEmpty());
     QVERIFY(f->controller()->closeViewWindow(f->current()->getViewWindowId(), false));
     QCOMPARE(f->current(), window);

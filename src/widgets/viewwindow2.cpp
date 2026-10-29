@@ -1707,6 +1707,7 @@ void ViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) {
 
 FileOpenSettings ViewWindow2::getLinkOpenSettings(bool p_fromContextMenu) const {
   FileOpenSettings settings;
+  settings.m_alwaysNewWindow = p_fromContextMenu;
   if (p_fromContextMenu || m_viewWindowId == 0) {
     return settings;
   }
