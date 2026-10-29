@@ -77,6 +77,7 @@
 #include <vxcore/notebook_json_keys.h>
 
 #include "../utils/scrollpreservationpolicy.h"
+#include "buttonpopup.h"
 #include "editors/editorstatusbarbinder.h"
 #include "editors/graphvizhelper.h"
 #include "editors/markdowneditor.h"
@@ -3677,7 +3678,7 @@ bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
   if (m_editorImageRequest &&
       (p_event->type() == QEvent::KeyPress || p_event->type() == QEvent::ShortcutOverride) &&
       static_cast<QKeyEvent *>(p_event)->key() == Qt::Key_Escape &&
-      !QApplication::activePopupWidget()) {
+      !ButtonPopup::activePopupWidget()) {
     auto *widget = qobject_cast<QWidget *>(p_obj);
     auto *focus = QApplication::focusWidget();
     const bool belongsToView =
@@ -3703,7 +3704,7 @@ bool MarkdownViewWindow2::eventFilter(QObject *p_obj, QEvent *p_event) {
     } else if ((p_event->type() == QEvent::KeyPress ||
                 p_event->type() == QEvent::ShortcutOverride) &&
                static_cast<QKeyEvent *>(p_event)->key() == Qt::Key_Escape &&
-               !QApplication::activePopupWidget()) {
+               !ButtonPopup::activePopupWidget()) {
       auto *widget = qobject_cast<QWidget *>(p_obj);
       auto *focus = QApplication::focusWidget();
       const bool belongsToView =

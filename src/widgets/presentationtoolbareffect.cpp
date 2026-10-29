@@ -5,6 +5,8 @@
 #include <QGraphicsOpacityEffect>
 #include <QToolBar>
 
+#include "buttonpopup.h"
+
 using namespace vnotex;
 
 namespace {
@@ -100,11 +102,29 @@ void PresentationToolBarEffect::updateOpacity() {
   }
 
   const auto *window = m_toolBar->window();
-  const auto *popup = QApplication::activePopupWidget();
+  const auto *activeWindow = QApplication::activeWindow();
+  const auto *focus = QApplication::focusWidget();
+  const auto *popup = ButtonPopup::activePopupWidget();
   const bool ownsPopup = isOwnedBy(popup, m_toolBar);
-  const bool windowActive = QApplication::activeWindow() == window && window->isActiveWindow();
-  const bool engaged =
-      m_toolBar->underMouse() || isOwnedBy(QApplication::focusWidget(), m_toolBar) || ownsPopup;
+  bool windowActive = activeWindow == window && window->isActiveWindow();
+  if (!windowActive && ownsPopup) {
+    const auto *focusWindow = focus ? focus->window() : nullptr;
+    // A native ButtonPopup panel activates separately from its toolbar host.
+    // Ordinary child menus retain that relationship; unrelated Tool windows do not.
+    for (const QObject *object = popup; object && object != m_toolBar; object = object->parent()) {
+      const auto *panel = qobject_cast<const ButtonPopup *>(object);
+      if (panel && panel->isVisible() &&
+          (activeWindow == panel || focusWindow == panel ||
+           (activeWindow && activeWindow->windowType() == Qt::Popup &&
+            isOwnedBy(activeWindow, panel)) ||
+           (focusWindow && focusWindow->windowType() == Qt::Popup &&
+            isOwnedBy(focusWindow, panel)))) {
+        windowActive = true;
+        break;
+      }
+    }
+  }
+  const bool engaged = m_toolBar->underMouse() || isOwnedBy(focus, m_toolBar) || ownsPopup;
   const qreal opacity = windowActive && (!popup || ownsPopup) && engaged ? 1.0 : 0.1;
   if (m_opacityEffect->opacity() != opacity) {
     m_opacityEffect->setOpacity(opacity);

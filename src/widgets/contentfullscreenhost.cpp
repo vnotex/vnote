@@ -10,6 +10,8 @@
 #include <QWidget>
 #include <QWindow>
 
+#include "buttonpopup.h"
+
 using namespace vnotex;
 
 ContentFullScreenHost::ContentFullScreenHost(QObject *p_parent) : QObject(p_parent) {}
@@ -169,12 +171,12 @@ bool ContentFullScreenHost::ownsEventTarget(QObject *p_obj) const {
     return widget == m_content || widget->window() == m_content;
   }
   // Native Chromium QWindow targets have no QWidget parent chain.
-  return qobject_cast<QWindow *>(p_obj) && !QApplication::activePopupWidget() &&
+  return qobject_cast<QWindow *>(p_obj) && !ButtonPopup::activePopupWidget() &&
          QApplication::activeWindow() == m_content;
 }
 
 bool ContentFullScreenHost::hasOwnedPopup() const {
-  for (QObject *obj = QApplication::activePopupWidget(); obj; obj = obj->parent()) {
+  for (QObject *obj = ButtonPopup::activePopupWidget(); obj; obj = obj->parent()) {
     if (obj == m_content) {
       return true;
     }

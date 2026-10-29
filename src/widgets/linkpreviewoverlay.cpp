@@ -13,6 +13,7 @@
 #include <QVBoxLayout>
 #include <QWindow>
 
+#include "buttonpopup.h"
 #include "propertydefs.h"
 #include "viewsplit2.h"
 #include "viewwindow2.h"
@@ -60,7 +61,7 @@ protected:
     if (!widget) {
       return false;
     }
-    if (!m_source || QApplication::activeModalWidget() || QApplication::activePopupWidget() ||
+    if (!m_source || QApplication::activeModalWidget() || ButtonPopup::activePopupWidget() ||
         type == QEvent::MouseButtonPress) {
       stop();
       return false;
@@ -241,7 +242,7 @@ bool LinkPreviewOverlay::eventFilter(QObject *p_object, QEvent *p_event) {
     // Native QWindow delivery must reach the QWidget dispatch/grab machinery.
     return false;
   }
-  if (!isVisible() || QApplication::activeModalWidget() || QApplication::activePopupWidget()) {
+  if (!isVisible() || QApplication::activeModalWidget() || ButtonPopup::activePopupWidget()) {
     m_dismissalPressActive = false;
     return false;
   }
@@ -300,7 +301,7 @@ bool LinkPreviewOverlay::eventFilter(QObject *p_object, QEvent *p_event) {
     if (guardedSource) {
       new PreviewDismissalTail(guardedSource, position);
       if (guardedSource->isVisible() && guardedSource->isEnabled() &&
-          !QApplication::activeModalWidget() && !QApplication::activePopupWidget() &&
+          !QApplication::activeModalWidget() && !ButtonPopup::activePopupWidget() &&
           (!guardedOverlay || guardedOverlay->getViewSplit()->getViewWindowCount() == 0)) {
         guardedSource->setFocus(Qt::MouseFocusReason);
       }

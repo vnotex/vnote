@@ -26,10 +26,13 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QVBoxLayout>
+#include <QWidgetAction>
 #include <QtTest>
 
+#include <widgets/buttonpopup.h>
 #include <widgets/pdfviewertoolbar.h>
 
+using vnotex::ButtonPopup;
 using vnotex::PdfViewerAdapter;
 using vnotex::PdfViewerToolBar;
 
@@ -162,6 +165,7 @@ private slots:
   void presentationToggleFollowsConfirmedState();
   void presentationCanExitWhileViewerReloads();
   void presentationOpacityTracksHoverFocusAndPopups();
+  void presentationOpacityTracksButtonPopupNativeFocus();
   void presentationOpacityTracksWindowActivation();
   void presentationTrackingEndsWithEitherOwner();
   void standaloneThemeRefreshUpdatesToolBarAndMenuIcons();
@@ -683,6 +687,70 @@ void TestPdfViewerToolBar::presentationOpacityTracksHoverFocusAndPopups() {
   surface.m_controls.setPresentationMode(false);
   QVERIFY(!surface.m_bar.graphicsEffect());
   QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+}
+
+void TestPdfViewerToolBar::presentationOpacityTracksButtonPopupNativeFocus() {
+  const auto platform = QGuiApplication::platformName();
+  if (platform != QLatin1String("windows") && platform != QLatin1String("cocoa")) {
+    QSKIP("Native ButtonPopup focus requires the Windows or Cocoa platform plugin");
+  }
+  PresentationSurface surface;
+  surface.show();
+  QVERIFY(QTest::qWaitForWindowActive(&surface.m_window));
+  QTest::mouseClick(&surface.m_content, Qt::LeftButton);
+  surface.movePointer(&surface.m_content);
+  surface.m_controls.setPresentationMode(true);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.inactiveColor()));
+
+  ButtonPopup popup(surface.m_controls.overflowButton(), &surface.m_bar);
+  auto *input = new QLineEdit;
+  auto *action = new QWidgetAction(&popup);
+  action->setDefaultWidget(input);
+  popup.addAction(action);
+  connect(&popup, &QMenu::aboutToShow, input, [input]() { input->setFocus(); });
+  popup.popup(surface.m_content.mapToGlobal(QPoint(20, 20)));
+  QTRY_COMPARE(QGuiApplication::focusObject(), static_cast<QObject *>(input));
+  QCOMPARE(popup.windowModality(), Qt::NonModal);
+  QVERIFY(!QApplication::activeModalWidget());
+  surface.movePointer(&surface.m_content);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+
+  QMenu child(&popup);
+  child.addAction(QStringLiteral("Child command"));
+  child.popup(input->mapToGlobal(QPoint(0, input->height())));
+  QTRY_VERIFY(child.isVisible());
+  QVERIFY(popup.isVisible());
+  surface.movePointer(&child);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+  QTest::keyClick(&child, Qt::Key_Escape);
+  QTRY_VERIFY(!child.isVisible());
+  QVERIFY(popup.isVisible());
+  QTRY_COMPARE(QGuiApplication::focusObject(), static_cast<QObject *>(input));
+  surface.movePointer(&surface.m_content);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+  QTest::keyClick(input, Qt::Key_Escape);
+  QTRY_VERIFY(!popup.isVisible());
+  QTRY_VERIFY(surface.m_content.hasFocus());
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.inactiveColor()));
+
+  QTest::mouseClick(surface.m_controls.pageSpinBox(), Qt::LeftButton);
+  surface.movePointer(&surface.m_content);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.m_toolBarColor));
+  // Even toolbar ownership must not turn an ordinary Tool into a popup that
+  // keeps the presentation host logically active.
+  QWidget unrelated(&surface.m_bar, Qt::Tool);
+  auto *layout = new QVBoxLayout(&unrelated);
+  auto *toolInput = new QLineEdit(&unrelated);
+  layout->addWidget(toolInput);
+  unrelated.show();
+  unrelated.raise();
+  unrelated.activateWindow();
+  toolInput->setFocus();
+  QVERIFY(QTest::qWaitForWindowActive(&unrelated));
+  QTRY_COMPARE(QGuiApplication::focusObject(), static_cast<QObject *>(toolInput));
+  surface.movePointer(&unrelated);
+  QTRY_VERIFY(colorNear(surface.sampleColor(), surface.inactiveColor()));
+  surface.m_controls.setPresentationMode(false);
 }
 
 void TestPdfViewerToolBar::presentationOpacityTracksWindowActivation() {

@@ -13,12 +13,16 @@
 #include <QSignalSpy>
 #include <QTabWidget>
 #include <QToolBar>
+#include <QToolButton>
 #include <QVBoxLayout>
+#include <QWidgetAction>
 #include <QWindow>
 #include <QtTest>
 
+#include <widgets/buttonpopup.h>
 #include <widgets/contentfullscreenhost.h>
 
+using vnotex::ButtonPopup;
 using vnotex::ContentFullScreenHost;
 
 namespace tests {
@@ -89,6 +93,7 @@ private slots:
   void escapeIsReportedAsAnIntentNotAnExit();
   void escapeFromADeepDescendantClaimsShortcutOverride();
   void anOwnedPopupHandlesTheFirstEscape();
+  void anOwnedButtonPopupHandlesTheFirstEscape();
   void escapeLeavesUnrelatedWidgetsAndChildDialogsAlone();
   void nativeWindowEscapeUsesTheActivePresentation();
   void otherKeysReachTheContent();
@@ -323,6 +328,50 @@ void TestContentFullScreenHost::anOwnedPopupHandlesTheFirstEscape() {
   QCOMPARE(exits.count(), 0);
   QVERIFY(host.isFullScreen());
   QTest::keyClick(fixture.m_editor, Qt::Key_Escape);
+  QCOMPARE(exits.count(), 1);
+  QVERIFY(!host.isFullScreen());
+}
+
+void TestContentFullScreenHost::anOwnedButtonPopupHandlesTheFirstEscape() {
+  const auto platform = QGuiApplication::platformName();
+  if (platform != QLatin1String("windows") && platform != QLatin1String("cocoa")) {
+    QSKIP("Native ButtonPopup focus requires the Windows or Cocoa platform plugin");
+  }
+  Fixture fixture;
+  QVERIFY(fixture.show());
+  ContentFullScreenHost host;
+  QVERIFY(host.setFullScreen(true, fixture.m_page));
+  QVERIFY(QTest::qWaitForWindowActive(fixture.m_page));
+  QTRY_VERIFY(fixture.m_editor->hasFocus());
+  QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
+  connectExitConsumer(host);
+  auto *action = fixture.m_toolbar->addAction(QStringLiteral("Tags"));
+  auto *button = qobject_cast<QToolButton *>(fixture.m_toolbar->widgetForAction(action));
+  QVERIFY(button);
+  ButtonPopup popup(button, fixture.m_toolbar);
+  auto *input = new QLineEdit;
+  auto *inputAction = new QWidgetAction(&popup);
+  inputAction->setDefaultWidget(input);
+  popup.addAction(inputAction);
+  connect(&popup, &QMenu::aboutToShow, input, [input]() { input->setFocus(); });
+  popup.popup(fixture.m_toolbar->mapToGlobal(QPoint(0, fixture.m_toolbar->height())));
+  QTRY_COMPARE(QGuiApplication::focusObject(), static_cast<QObject *>(input));
+  QVERIFY(popup.isVisible());
+  QCOMPARE(popup.windowModality(), Qt::NonModal);
+  QVERIFY(!QApplication::activeModalWidget());
+  QVERIFY(fixture.m_page->isFullScreen());
+
+  QKeyEvent override(QEvent::ShortcutOverride, Qt::Key_Escape, Qt::NoModifier);
+  override.ignore();
+  QCoreApplication::sendEvent(fixture.m_page, &override);
+  QVERIFY(!override.isAccepted());
+  QTest::keyClick(popup.windowHandle(), Qt::Key_Escape);
+  QTRY_VERIFY(!popup.isVisible());
+  QCOMPARE(exits.count(), 0);
+  QVERIFY(host.isFullScreen());
+  QVERIFY(fixture.m_page->isFullScreen());
+  QTRY_VERIFY(fixture.m_editor->hasFocus());
+  QTest::keyClick(fixture.m_page->windowHandle(), Qt::Key_Escape);
   QCOMPARE(exits.count(), 1);
   QVERIFY(!host.isFullScreen());
 }

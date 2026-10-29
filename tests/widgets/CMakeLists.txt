@@ -1466,6 +1466,7 @@ add_qt_test(test_contentfullscreenhost
   SOURCES
     test_contentfullscreenhost.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/contentfullscreenhost.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/buttonpopup.cpp
   LINKS
     Qt6::Widgets
 )
@@ -1521,6 +1522,7 @@ add_qt_test(test_pdfviewertoolbar
     test_pdfviewertoolbar.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/pdfviewertoolbar.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/presentationtoolbareffect.cpp
+    ${CMAKE_SOURCE_DIR}/src/widgets/buttonpopup.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/pdfvieweradapter.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/editors/webviewadapter.cpp

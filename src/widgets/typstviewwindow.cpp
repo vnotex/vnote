@@ -56,6 +56,7 @@
 #include <utils/clipboardutils.h>
 #include <utils/htmlutils.h>
 
+#include "buttonpopup.h"
 #include "dialogs/imageinsertdialog.h"
 #include "dialogs/imagesizedialog.h"
 #include "dialogs/linkinsertdialog.h"
@@ -196,7 +197,7 @@ void disposeRetiredEditor(const QPointer<vte::VTypstEditor> &p_editor) {
   };
   // Native context-menu paste can still be unwinding QMenu::exec. Never destroy
   // that menu's source while an owned popup/modal is running its nested loop.
-  if (owns(QApplication::activePopupWidget()) || owns(QApplication::activeModalWidget())) {
+  if (owns(ButtonPopup::activePopupWidget()) || owns(QApplication::activeModalWidget())) {
     QTimer::singleShot(0, p_editor, [p_editor] { disposeRetiredEditor(p_editor); });
   } else {
     p_editor->deleteLater();
@@ -1230,7 +1231,7 @@ TypstViewWindow::~TypstViewWindow() {
     m_typstEditor->removeEventFilter(this);
     interaction->retiredEditor = m_typstEditor;
     const auto retired = interaction->retiredEditor;
-    if (auto *popup = QApplication::activePopupWidget(); popup && retired->isAncestorOf(popup)) {
+    if (auto *popup = ButtonPopup::activePopupWidget(); popup && retired->isAncestorOf(popup)) {
       popup->close();
     }
     retired->hide();

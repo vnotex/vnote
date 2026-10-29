@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Keep Chinese IME input in toolbar popup fields instead of the note editor on Windows and macOS, preserving frameless dismissal, overflow access and fullscreen focus
 * Always open context-menu Open Link targets in a new tab, even when the new-tab preference is disabled, across Markdown, Typst and mind maps
 * Add Open Link above Copy Link in mind-map URL context menus, preserving link-opening security prompts and read-only access
 * Expand in-app VNote Tips from 12 to 64 with documentation-backed Markdown, navigation, image, PDF, mind-map, export and customization guidance in English, Simplified Chinese and Korean ([source](https://github.com/vnotex/vnote-documentations))

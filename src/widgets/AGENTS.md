@@ -52,6 +52,29 @@ Hidden overflow buttons keep Qt placement, as do non-editor popups using the
 `Native` default (including Notifications). Ordinary `QMenu`s remain Qt-managed.
 Gate: `tests/widgets/test_buttonpopup.cpp`.
 
+On Windows and macOS, `ButtonPopup` uses a frameless, non-modal Tool panel so native
+IME composition targets its focused input rather than the editor behind it. Keep
+ordinary menus and Linux popup policy unchanged. Do not replace native focus with
+key/input-method forwarding or application modality. Deferred activation and focus
+restoration belong to one guarded opening; capture the origin before subclass
+`aboutToShow` callbacks and retain it across an overflow handoff.
+
+An overflow submenu must release its ancestor popup grabs after Qt's opening stack
+unwinds, then reopen at the same anchor without changing QObject ownership. Accept
+no input during that handoff; cancellation must not strand an input-gated panel.
+Keep `aboutToHide` as the existing save boundary. Outside presses and their releases
+are consumed, including native content windows without QWidget peers. Owned menus
+and dialogs remain interactive; window focus loss alone never dismisses a panel.
+Observe composition events, not virtual-keyboard visibility, when deferring
+application-deactivation dismissal.
+
+Use `ButtonPopup::activePopupWidget()` for application popup guards: native Qt
+popups take precedence, followed by a visible focused/active ButtonPopup panel.
+An owned active panel also keeps its presentation toolbar logically active. Native
+regressions cover IME target/content isolation, overflow, cancellation, dismissal,
+fullscreen Escape and toolbar opacity; physical IME candidate selection still
+requires native platform verification.
+
 ## Hiding the QToolButton Menu Indicator
 Status-bar / toolbar `QToolButton`s that open an `InstantPopup` menu
 (e.g. the status bar "Spelling" menu, the `EncodingButton`, the main toolbar
