@@ -70,6 +70,7 @@
 #include <widgets/dialogs/selectdialog.h>
 #include <widgets/editors/mindmapeditor.h>
 #include <widgets/imageviewer.h>
+#include <widgets/viewwindow2.h>
 #include <widgets/zoomtoolbar.h>
 
 #include <deque>
@@ -78,6 +79,16 @@
 #include <stdexcept>
 
 using namespace vnotex;
+
+namespace vnotex {
+
+// This standalone target deliberately excludes the full view-window host.
+FileOpenSettings ViewWindow2::getLinkOpenSettings(bool) const {
+  qFatal("Standalone mind-map editor tests must not bind a ViewWindow2");
+  Q_UNREACHABLE();
+}
+
+} // namespace vnotex
 
 namespace tests {
 namespace {

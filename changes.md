@@ -1,65 +1,45 @@
 # Changes
-## Unreleased
-* Fix widget-test linking by keeping the ordinary link-open settings getter out of Qt slot metadata
-* Style in-editor table preview borders with `TABLEBORDER.text-color`, falling back to the palette text color when omitted and refreshing live on theme changes
-* Use matching themed Lucide icons for link-preview Open in New Tab and Close buttons, refreshing both colors on theme changes
-* Open link-preview tabs in their source workspace without reopening views, preserving drafts and undo; replace destination duplicates through Save/Discard/Cancel and retain earlier moves when cancelled
-* Require Ctrl+click to open links in the Markdown editor; ordinary clicks only position the cursor
-* Limit Markdown reader link menus to Open Link followed by Copy Link; hide Edit and Export on links and images
-* Preserve first-run Windows theme-test text and JUnit reports before diagnostic reruns
-* Disable Qt 6.9.3 macOS unit/native GUI suites while retaining build, signing and package verification; keep Qt 6.10.3 test coverage
-* Establish native editor focus before draft fixtures and avoid reinstalling unchanged assets between isolated tab-reuse test cases
-* Remove obsolete implicit-padding checks from Typst markup integration tests while retaining rendering, geometry, export and cross-copy checks
-* Remove native title bars from notification, attachment, tag and other toolbar popups on macOS; dismiss them with an outside click or Escape, matching Windows
-* Centralize external-link warning text and Never Ask preference handling across Markdown, Typst and mind maps, preserving caller authorization and independent local-file warnings
-* Show Never Ask for Typst external-link warnings and honor the shared confirmation preference, while preserving cancellation and stale-view safeguards
-* Remove the default page margin from Markdown Typst blocks so they align with surrounding content; explicit Typst margins and standalone document layout are unchanged
-* Match Typst preview page backgrounds to the editor's Text background, including Typst-specific overrides, while preserving outer margins, authored document styles and export colors
-* Use the same pilcrow heading-link symbol as Pure in the Lucius Markdown viewer instead of H1–H6 badges
-* Allow file-open settings to target an existing main or detached split by workspace ID, preserving background selection and rejecting unavailable destinations without rerouting
-* Render fenced `typst` blocks as full self-contained Typst markup independently of the math setting, preserving authored page layouts and multi-page output in reading, in-place previews, HTML/PDF export and cross-copy, including authorized protected notes
-* Add Typst as a Markdown math renderer through VTextEdit's isolated native runtime, with reader/in-place previews, self-contained HTML, PDF and cross-copy support; existing dollar delimiters use Typst syntax when selected, while KaTeX stays the default
-* Support Typst math in protected notes through profile-bound authorization, native in-place rasterization and revocation-safe cleanup; protected MathJax preferences retain bundled KaTeX, with unchanged CSP and resource restrictions
-* Refresh shared Markdown preview themes after publication, including EditOnly tabs, so math keeps the current foreground after light/dark switching
-* Build the macOS WebEngine package probe with Qt target requirements and the ARM intrinsic declaration while retaining package-only runtime paths and locale assertions
-* Verify the same signed macOS packages on native Apple Silicon and Intel runners within the existing launch deadline, and publish only after both architectures pass
-* Retain failed signed macOS packages and bounded loader/Rosetta diagnostics without weakening the consumer launch gate
-* Unlock the macOS test vault after compilation and preserve bounded package-consumer timeout diagnostics while cleaning up the owned process group
-* Derive Cocoa test input from its native view and reuse the validated Python interpreter for macOS architecture smoke checks
-* Open Typst context-menu links after the menu unwinds so native consent cannot strand its event loop; revoke queued actions when the originating view changes
-* Give Linux cold-build jobs the same artifact-publication budget as Windows and macOS without changing test deadlines
-* Settle first-paint gutter layout and acknowledge Windows native drag startup before delivering test drag destinations
-* Keep in-place Typst resource menus alive through native activation when preview replacement retires their card
-* Add key-restricted SSH-only CI debugging and finalize macOS deployment after all test-build relinks
-* Preserve successful CI test reports as well as failures so skipped native cases remain visible
-* Use native screen/presentation boundaries and modal timers in CI input fixtures; keep raster fixtures measurable at low DPI without relaxing their assertions
-* Verify Linux AppImages with their shipped xcb platform under Xvfb, including release builds, instead of requesting an unbundled offscreen plugin
-* Subscribe before native raster startup, synchronize drag fixtures on delivered input, and drive Cocoa consent through its real alert buttons; retain original parent/native CI failures independently
-* Keep Typst resource-consent fixtures alive through nested dialog completion and wait for horizontal-scroll ranges before raster alignment
-* Preserve Markdown presentation startup across native window reconstruction while still cancelling genuinely hidden views
-* Run native Typst host tests in serial fixed-budget groups and anchor raster-test navigation to the observed source cursor
-* Keep Linux failure diagnostics scoped to the failed parent or native-editor suite instead of rerunning a passing suite
-* Keep Markdown presentation requests alive when native reader focus arrives after the Edit-to-Read buffer sync
-* Discard late outgoing PDF camera state before binding a replacement note; establish active-window and editor-focus preconditions in native CI fixtures
-* Prevent task command injection from filenames, selected text and other variable values: shell commands/options must be static, variable values belong in literal `args`, and values are no longer recursively expanded; migrate the bundled Git commit task and report guidance for custom tasks (argument-bearing shell tasks require Bash or PowerShell, otherwise use `type: process`)
-* Fix CI test focus and native drag delivery, retain Windows assertion output and allow cold builds to finish
-* Refresh bundled KSyntaxHighlighting 6.30.0 resources: 464 syntax definitions (including generated Jinja grammars) and 31 upstream highlighting themes; use Catppuccin Latte as the default light syntax theme and keep upstream dark fallbacks while retaining UI theme-specific highlighting overrides
-* Support `typst-editor-styles.Text` theme overrides for Typst source editing and default preview/export fonts; bundled themes match their Markdown editor fonts, with authored document styles taking precedence
-* Fix CI build scheduling, WiX package staging and native-platform GUI test execution
-* Keep the PDF WebChannel transport alive across note replacement to avoid renderer double-bind crashes
-* Settle cancelled Markdown heading requests once, wait for the current rendered document before presentation, and keep PDF tab replacement independent of pdf.js history
-* Add a searchable Protect Markdown from XSS checkbox to Settings → Markdown Editor → Read, preserving mandatory filtering for protected notes
-* Fix raw-HTML URL sanitizer bypasses in Markdown reading, live preview and export by validating browser-decoded URLs before installing content
-* Add mind-map image context actions to view, copy, copy the source address and resize with undo support
-* Disable mind-map image tooltips so hovering images never exposes their URLs or base64 data
-* Activate detached windows and focus their editors after detaching a tab
-* Apply mind-map node-properties panel placement live, preserving the map, edits and embedded expansion state without reopening the editor
-* Keep node properties inside detached mind-map editors, including after settings changes, without changing the main-window preference
-* Remove top-left informational overlays from the Typst PDF preview while retaining error messages and compiler diagnostics
-* Fix Chinese characters appearing as squares in Typst previews and exports by discovering installed system fonts while retaining configured-font precedence
-* Replace the Typst helper process with a bundled shared library and bounded background workers; retain previews, exports and conservative image cleanup, with soft timeouts and orderly worker draining at exit
-* Render Markdown natively with cmark in Read, live preview and WebEngine export; reuse current editor parse trees and keep JavaScript for sanitization, highlighting, math and diagrams
-* Preserve the combined native/viewer Markdown features, including wikilinks, tasks, alerts and TOC; remove emoji shortcode and emoticon expansion while preserving authored Unicode emoji
+## v4.12.0
+A feature release with editable link previews, native Markdown rendering, Typst math and stronger security on top of VNote 4.11.0:
+
+* **Link previews and navigation**
+    * Preview supported file links in editable overlays without leaving the current note; use Open Link to open normally and dismiss previews from the source backdrop
+    * Open preview tabs in their source workspace without reopening editors or losing drafts and Undo history; replacing duplicate tabs honors Save, Discard and Cancel
+    * Require Ctrl+click to open links in the Markdown editor so ordinary clicks only position the cursor
+    * Put Open Link before Copy Link in Markdown reader link menus and hide unrelated Edit and Export actions on links and images
+    * Allow file-open settings to target an existing main or detached split, preserving background selection and reporting unavailable destinations without rerouting
+* **Markdown and Typst**
+    * Render Markdown natively with cmark in Read mode, live previews and WebEngine exports, reusing current editor parse trees while preserving wikilinks, tasks, alerts and the table of contents
+    * Remove emoji shortcode and emoticon expansion; authored Unicode emoji remain unchanged
+    * Add Typst as an optional Markdown math renderer, including authorized encrypted notes, in-place previews, self-contained HTML/PDF exports and cross-copy; KaTeX remains the default, and selecting Typst uses Typst syntax inside the existing dollar delimiters
+    * Render fenced `typst` blocks as self-contained markup independently of the math setting, preserving authored page layouts and multi-page output in previews, exports and cross-copy
+    * Align Markdown Typst blocks with surrounding content by removing their default page margin; explicit margins and standalone document layouts remain unchanged
+    * Replace the Typst helper process with a bundled shared runtime and bounded background workers, retaining previews and exports with orderly shutdown
+    * Discover installed system fonts to fix missing Chinese glyphs in Typst previews and exports, while retaining configured-font precedence
+    * Match Typst editor fonts and preview backgrounds to the active theme, including Typst-specific overrides; authored document styles take precedence and theme preview colors do not alter exports
+    * Remove informational overlays from the Typst PDF preview while retaining errors and compiler diagnostics; clean obsolete Typst images when document closure is accepted
+    * Keep presentation requests alive across delayed reader focus and native window reconstruction, and prevent stale PDF state or WebChannel rebinding from disrupting replacement notes
+    * Restrict editor section numbering to ATX headings rather than numbering Setext headings
+* **Security and tasks**
+    * Fix Markdown raw-HTML URL sanitizer bypasses by validating browser-decoded URLs before installing content in readers, live previews and exports
+    * Add a searchable Protect Markdown from XSS setting under Markdown Editor → Read; filtering remains mandatory for encrypted notes
+    * Prevent task command injection through filenames, selected text and other variables: shell commands and options must be static, variable values belong in literal `args`, and values are no longer recursively expanded
+    * Migrate the bundled Git commit task and provide guidance for custom tasks; shell tasks with arguments require Bash or PowerShell, otherwise use `type: process`
+    * Share external-link warnings and the Never Ask preference across Markdown, Typst and mind maps while preserving authorization, cancellation, stale-view checks and independent local-file warnings
+* **Mind maps and interface**
+    * Add image context actions to view, copy, copy the source address and resize with Undo support; hide image tooltips that exposed URLs or base64 data
+    * Apply mind-map node-properties placement immediately without reopening the editor or losing edits; keep properties embedded in detached windows without changing the main-window preference
+    * Activate detached windows and focus their editors after moving a tab
+    * Make the search panel scrollable, fix wrapped notification layouts and correct Mermaid label wrapping at fractional display scaling
+    * Remove native title bars from toolbar popups on macOS and dismiss them with an outside click or Escape, matching Windows
+    * Theme in-editor table borders and link-preview buttons consistently, refreshing them on theme changes; use the shared pilcrow heading-link symbol in Lucius
+* **Synchronization and compatibility**
+    * Allow HTTP Git notebook synchronization alongside HTTPS and file URLs; HTTPS is recommended because HTTP sends credentials and data in plaintext
+    * Refresh bundled KSyntaxHighlighting 6.30.0 resources with 464 syntax definitions and 31 highlighting themes; use Catppuccin Latte as the default light syntax theme while retaining UI theme-specific overrides
+    * Keep shared Markdown preview themes current across light/dark switches, including edit-only tabs, so math retains the correct foreground
+    * Trim unused macOS package dependencies and verify signed packages on native Apple Silicon and Intel runners before publication; retain both macOS package variants
+    * Verify Linux AppImages with their shipped xcb platform, fix Windows package staging and standalone mind-map test linking, and improve native test input and diagnostic-report preservation
+* **Translations**: Simplified Chinese (zh_CN), Japanese (ja) and Korean (ko) catalogs updated
 
 ## v4.11.0
 A feature release with native Typst editing, reusable note tabs and refined mind-map tools on top of VNote 4.10.0:

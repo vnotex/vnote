@@ -21,7 +21,7 @@ on:
         default: ''
 
 env:
-    VNOTE_VER: 4.11.0
+    VNOTE_VER: 4.12.0
     CMAKE_VER: 3.24.3
     CARGO_BUILD_JOBS: 2
     CMAKE_BUILD_PARALLEL_LEVEL: 2

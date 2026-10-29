@@ -123,7 +123,7 @@
 <context>
     <name>LockedNoteView</name>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="+58"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="+59"/>
         <source>This note is locked. Unlock it to read its contents.</source>
         <translation>이 노트는 잠겨 있습니다. 내용을 읽으려면 잠금을 해제하세요.</translation>
     </message>
@@ -136,7 +136,7 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../../gui/utils/widgetutils.cpp" line="+89"/>
+        <location filename="../../../widgets/messageboxhelper.cpp" line="+130"/>
         <source>Are you sure to open link (%1)?</source>
         <translation>링크(%1)를 여시겠습니까?</translation>
     </message>
@@ -149,7 +149,7 @@
 <context>
     <name>MessageBoxHelper</name>
     <message>
-        <location filename="../../../widgets/messageboxhelper.cpp" line="+79"/>
+        <location line="-52"/>
         <source>Never Ask</source>
         <translation>다시 묻지 않음</translation>
     </message>
@@ -204,7 +204,7 @@
     </message>
     <message>
         <location line="+6"/>
-        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+140"/>
+        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+154"/>
         <source>E&amp;xport</source>
         <translation>내보내기(&amp;x)</translation>
     </message>
@@ -946,8 +946,8 @@
     </message>
     <message>
         <location line="+4"/>
-        <source>Remote URL must use HTTPS or file:// scheme.</source>
-        <translation>원격 URL은 HTTPS 또는 file:// 스킴을 사용해야 합니다.</translation>
+        <source>Remote URL must use HTTP, HTTPS, or file:// scheme.</source>
+        <translation>원격 URL은 HTTP, HTTPS 또는 file:// 스킴을 사용해야 합니다.</translation>
     </message>
     <message>
         <location line="+4"/>
@@ -1051,7 +1051,7 @@
 <context>
     <name>m3::qt::NodePropertiesPanel</name>
     <message>
-        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="-75"/>
+        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="-89"/>
         <source>Node Properties</source>
         <translation>노드 속성</translation>
     </message>
@@ -1436,7 +1436,7 @@
         <translation>바꾼 내용이 아직 저장되지 않았습니다: %1</translation>
     </message>
     <message>
-        <location line="+1605"/>
+        <location line="+1608"/>
         <source>The note is being replaced.</source>
         <translation>노트의 내용을 바꾸는 중입니다.</translation>
     </message>
@@ -1785,12 +1785,12 @@
     <name>vnotex::EditorPage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/editorpage.cpp" line="+37"/>
-        <location line="+268"/>
+        <location line="+287"/>
         <source>Editor</source>
         <translation>편집기</translation>
     </message>
     <message>
-        <location line="-264"/>
+        <location line="-283"/>
         <location line="+7"/>
         <source>Auto save policy</source>
         <translation>자동 저장 정책</translation>
@@ -1872,7 +1872,17 @@
         <translation>문서 맨 앞에 있는 유일한 수준 1 제목을 자동 절 번호 매기기에서 제외합니다. 비활성화하면 첫 번째 제목부터 번호를 매깁니다</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+14"/>
+        <source>Preview links in an overlay</source>
+        <translation>오버레이에서 링크 미리 보기</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Open supported file links in an editable preview overlay; use Open Link in the context menu to open normally</source>
+        <translation>지원되는 파일 링크를 편집 가능한 미리 보기 오버레이에서 엽니다. 일반적인 방식으로 열려면 컨텍스트 메뉴의 링크 열기를 사용하세요</translation>
+    </message>
+    <message>
+        <location line="+12"/>
         <source>Icon size of the editor tool bar</source>
         <translation>편집기 도구 모음의 아이콘 크기</translation>
     </message>
@@ -4081,6 +4091,25 @@
     </message>
 </context>
 <context>
+    <name>vnotex::LinkPreviewOverlay</name>
+    <message>
+        <location filename="../../../widgets/linkpreviewoverlay.cpp" line="+132"/>
+        <source>Preview</source>
+        <translation>미리 보기</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <location line="+2"/>
+        <source>Open in New Tab</source>
+        <translation>새 탭에서 열기</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Close Preview</source>
+        <translation>미리 보기 닫기</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::LocationInputWithBrowseButton</name>
     <message>
         <location filename="../../../widgets/locationinputwithbrowsebutton.cpp" line="+26"/>
@@ -4126,7 +4155,7 @@
     </message>
     <message>
         <location line="+15"/>
-        <location line="+665"/>
+        <location line="+667"/>
         <location filename="../../../widgets/toolbarhelper2.cpp" line="+479"/>
         <source>Lock All</source>
         <translation>모두 잠그기</translation>
@@ -4164,18 +4193,18 @@
     <message>
         <location line="+54"/>
         <location line="+22"/>
-        <location line="+290"/>
+        <location line="+303"/>
         <location filename="../../../widgets/toolbarhelper2.cpp" line="-315"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-312"/>
+        <location line="-325"/>
         <source>Exporting encrypted notes is not supported.</source>
         <translation>암호화된 노트 내보내기는 지원하지 않습니다.</translation>
     </message>
     <message>
-        <location line="+174"/>
+        <location line="+187"/>
         <location line="+14"/>
         <source>Tools</source>
         <translation>도구</translation>
@@ -4482,7 +4511,7 @@
 <context>
     <name>vnotex::MarkdownEditor</name>
     <message>
-        <location filename="../../../widgets/editors/markdowneditor.cpp" line="+246"/>
+        <location filename="../../../widgets/editors/markdowneditor.cpp" line="+247"/>
         <location line="+976"/>
         <source>Insert Link</source>
         <translation>링크 삽입</translation>
@@ -4541,12 +4570,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+752"/>
+        <location line="+750"/>
         <source>Paste as Plain Text</source>
         <translation>일반 텍스트로 붙여넣기</translation>
     </message>
     <message>
-        <location line="-674"/>
+        <location line="-672"/>
         <source>Pasted with Linked Images</source>
         <translation>연결된 이미지와 함께 붙여넣었습니다</translation>
     </message>
@@ -4673,7 +4702,7 @@
         <translation>URL에서 이미지 삽입</translation>
     </message>
     <message>
-        <location line="+172"/>
+        <location line="+170"/>
         <source>&amp;Read</source>
         <translation>읽기(&amp;R)</translation>
     </message>
@@ -4739,6 +4768,7 @@
         <location line="-55"/>
         <location line="+65"/>
         <location line="+87"/>
+        <location filename="../../../widgets/editors/mindmapeditor.cpp" line="+292"/>
         <source>Resize Image</source>
         <translation>이미지 크기 조정</translation>
     </message>
@@ -4773,15 +4803,17 @@
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+292"/>
         <source>Protect Markdown from XSS</source>
         <translation>Markdown을 XSS로부터 보호</translation>
     </message>
     <message>
+        <location line="+5"/>
         <source>Block unsafe HTML and URLs in Markdown views and exports. Disable only for trusted notes; protected notes always remain filtered</source>
         <translation>Markdown 보기 및 내보내기에서 안전하지 않은 HTML과 URL을 차단합니다. 신뢰할 수 있는 노트에만 비활성화하세요. 보호된 노트에는 항상 필터링이 적용됩니다</translation>
     </message>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+350"/>
+        <location line="+76"/>
         <source> min</source>
         <translation> 분</translation>
     </message>
@@ -4801,7 +4833,7 @@
         <translation>탭이 지정한 시간 동안 숨겨져 있으면 웹 뷰 메모리를 해제합니다. 탭으로 돌아오면 저장하지 않은 텍스트나 실행 취소 기록을 잃지 않고 현재 Markdown을 다시 불러옵니다</translation>
     </message>
     <message>
-        <location line="-136"/>
+        <location line="-153"/>
         <source>Markdown Editor</source>
         <translation>Markdown 편집기</translation>
     </message>
@@ -4842,12 +4874,12 @@
     </message>
     <message>
         <location line="+10"/>
-        <location line="+163"/>
+        <location line="+180"/>
         <source>Auto Section Number</source>
         <translation>섹션 번호 자동 매기기</translation>
     </message>
     <message>
-        <location line="-160"/>
+        <location line="-177"/>
         <source>Automatically number headings in read mode unless the document is already numbered</source>
         <translation>문서에 이미 번호가 매겨져 있지 않으면 읽기 모드에서 제목에 자동으로 번호 매기기</translation>
     </message>
@@ -4862,7 +4894,7 @@
         <translation>소스에서 HTML 태그 허용</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+26"/>
         <source>Auto break</source>
         <translation>자동 줄바꿈</translation>
     </message>
@@ -5149,12 +5181,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+90"/>
+        <location line="+93"/>
         <source>Empty to use default one</source>
         <translation>비워 두면 기본값을 사용합니다</translation>
     </message>
     <message>
-        <location line="-88"/>
+        <location line="-91"/>
         <source>Override PlantUml web service</source>
         <translation>PlantUml 웹 서비스 재정의</translation>
     </message>
@@ -5200,11 +5232,11 @@
     </message>
     <message>
         <location line="+12"/>
-        <source>Choose how math formulas are rendered in reading mode and previews</source>
-        <translation>읽기 모드와 미리 보기에서 수식을 렌더링할 방식 선택</translation>
+        <source>Choose how math formulas are rendered in reading mode and previews. Typst uses Typst syntax inside existing dollar delimiters; encrypted notes use Typst when selected, otherwise bundled KaTeX</source>
+        <translation>읽기 모드와 미리 보기에서 수식을 렌더링하는 방식을 선택합니다. Typst는 기존 달러 기호 구분자 안에서 Typst 문법을 사용합니다. 암호화된 노트에서는 Typst를 선택하면 Typst를 사용하고, 그 외에는 내장 KaTeX를 사용합니다</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+3"/>
         <source>KaTeX</source>
         <translation>KaTeX</translation>
     </message>
@@ -5212,6 +5244,11 @@
         <location line="+1"/>
         <source>MathJax</source>
         <translation>MathJax</translation>
+    </message>
+    <message>
+        <location line="+1"/>
+        <source>Typst</source>
+        <translation>Typst</translation>
     </message>
     <message>
         <location line="+1"/>
@@ -5232,86 +5269,82 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+141"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+168"/>
         <source>Unable to convert HTML to Markdown</source>
         <translation>HTML을 Markdown으로 변환할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+362"/>
+        <location line="+370"/>
         <source>Presentation Mode</source>
         <translation>프레젠테이션 모드</translation>
     </message>
     <message>
-        <location line="+91"/>
-        <location line="+34"/>
-        <location line="+587"/>
+        <location line="+98"/>
+        <location line="+37"/>
+        <location line="+620"/>
         <source>Unable to start presentation</source>
         <translation>프레젠테이션을 시작할 수 없습니다</translation>
     </message>
     <message>
-        <location line="-460"/>
+        <location line="-493"/>
         <source>Printing encrypted notes is not supported</source>
         <translation>암호화된 노트는 인쇄할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+221"/>
+        <location line="+196"/>
+        <source>Unable to parse Markdown</source>
+        <translation>Markdown을 구문 분석할 수 없습니다</translation>
+    </message>
+    <message>
+        <location line="+45"/>
         <source>Unable to resolve heading link</source>
         <translation>제목 링크를 확인할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+63"/>
+        <location line="+62"/>
         <source>Unable to open protected preview</source>
         <translation>보호된 미리 보기를 열 수 없습니다</translation>
     </message>
     <message>
-        <location line="+148"/>
+        <location line="+161"/>
         <source>Preview renderer stopped</source>
         <translation>미리 보기 렌더러가 중지되었습니다</translation>
     </message>
     <message>
         <location line="+4"/>
-        <location line="+19"/>
+        <location line="+20"/>
         <source>Unable to prepare note for printing</source>
         <translation>노트를 인쇄할 준비를 할 수 없습니다</translation>
     </message>
     <message>
-        <location line="-5"/>
-        <location line="+1839"/>
+        <location line="-4"/>
+        <location line="+2014"/>
         <location line="+16"/>
-        <location line="+82"/>
+        <location line="+84"/>
+        <location line="+14"/>
         <source>Unable to load preview</source>
         <translation>미리 보기를 불러올 수 없습니다</translation>
     </message>
     <message>
-        <location line="-1294"/>
-        <source>Are you sure to open link (%1)?</source>
-        <translation>링크(%1)를 여시겠습니까?</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Malicious link might do harm to your device.</source>
-        <translation>악성 링크는 기기에 피해를 줄 수 있습니다.</translation>
-    </message>
-    <message>
-        <location line="+33"/>
+        <location line="-1442"/>
         <location line="+14"/>
         <source>Protected note links can open only indexed notebook notes</source>
         <translation>보호된 노트의 링크로는 색인에 등록된 노트북 노트만 열 수 있습니다</translation>
     </message>
     <message>
-        <location line="+58"/>
-        <location line="+430"/>
-        <location line="+744"/>
+        <location line="+64"/>
+        <location line="+570"/>
+        <location line="+764"/>
         <source>Unable to load note content</source>
         <translation>노트 내용을 불러올 수 없습니다</translation>
     </message>
     <message>
-        <location line="-1043"/>
+        <location line="-1200"/>
         <source>Unable to read the editor content</source>
         <translation>편집기 내용을 읽을 수 없습니다</translation>
     </message>
     <message>
-        <location line="+160"/>
+        <location line="+162"/>
         <source>Unable to open preview</source>
         <translation>미리 보기를 열 수 없습니다</translation>
     </message>
@@ -5321,7 +5354,7 @@
         <translation>미리 보기를 열 수 없지만 편집기는 계속 사용할 수 있습니다</translation>
     </message>
     <message>
-        <location line="+1273"/>
+        <location line="+1434"/>
         <source>Printing completed</source>
         <translation>인쇄가 완료되었습니다</translation>
     </message>
@@ -5331,19 +5364,24 @@
         <translation>인쇄하지 못했습니다</translation>
     </message>
     <message>
-        <location line="-449"/>
+        <location line="-455"/>
         <location line="+9"/>
         <source>Replace is not supported in read mode</source>
         <translation>읽기 모드에서는 바꾸기를 사용할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+94"/>
+        <location line="-3197"/>
+        <source>Unable to render Markdown</source>
+        <translation>Markdown을 렌더링할 수 없습니다</translation>
+    </message>
+    <message>
+        <location line="+3300"/>
         <location line="+8"/>
         <source>Snippet insertion is not supported in read mode</source>
         <translation>읽기 모드에서는 스니펫을 삽입할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+636"/>
+        <location line="+633"/>
         <source>Failed to save the preference.</source>
         <translation>환경 설정을 저장하지 못했습니다.</translation>
     </message>
@@ -5360,17 +5398,17 @@
         </translation>
     </message>
     <message>
-        <location line="+24"/>
+        <location line="+28"/>
         <source>This note is read-only.</source>
         <translation>이 노트는 읽기 전용입니다.</translation>
     </message>
     <message>
-        <location line="+173"/>
+        <location line="+177"/>
         <source>Local</source>
         <translation>로컬</translation>
     </message>
     <message>
-        <location line="-1491"/>
+        <location line="-1520"/>
         <source>Section numbers could not be restored now. Auto section numbering remains off. Make this note current and editable, then turn Allow Auto Section Number on and off to retry.</source>
         <translation>지금은 섹션 번호를 복원할 수 없습니다. 자동 섹션 번호 매기기는 꺼진 상태로 유지됩니다. 이 노트를 현재 노트로 선택하고 편집 가능한 상태로 만든 다음, 자동 섹션 번호 허용을 켰다가 꺼서 다시 시도하세요.</translation>
     </message>
@@ -5378,7 +5416,17 @@
 <context>
     <name>vnotex::MarkdownViewer</name>
     <message>
-        <location filename="../../../widgets/editors/markdownviewer.cpp" line="+359"/>
+        <location filename="../../../widgets/editors/markdownviewer.cpp" line="+325"/>
+        <source>Copy Link</source>
+        <translation>링크 복사</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Open Link</source>
+        <translation>링크 열기</translation>
+    </message>
+    <message>
+        <location line="+112"/>
         <source>&amp;Edit</source>
         <translation>편집(&amp;E)</translation>
     </message>
@@ -5401,7 +5449,12 @@
 <context>
     <name>vnotex::MarkdownViewerAdapter</name>
     <message>
-        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="+247"/>
+        <location filename="../../../widgets/editors/markdownvieweradapter.cpp" line="+99"/>
+        <source>Typst returned an invalid result.</source>
+        <translation>Typst가 잘못된 결과를 반환했습니다.</translation>
+    </message>
+    <message>
+        <location line="+332"/>
         <source>No Background</source>
         <translation>배경 없음</translation>
     </message>
@@ -5430,21 +5483,54 @@
         <source>Raw HTML</source>
         <translation>원시 HTML</translation>
     </message>
+    <message>
+        <location line="+205"/>
+        <source>Typst is unavailable in this view.</source>
+        <translation>이 보기에서는 Typst를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Invalid Typst request identity or scope.</source>
+        <translation>Typst 요청 식별 정보 또는 범위가 잘못되었습니다.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Invalid Typst foreground.</source>
+        <translation>Typst 전경색이 잘못되었습니다.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <location line="+8"/>
+        <source>Invalid or oversized Typst source.</source>
+        <translation>Typst 소스가 잘못되었거나 너무 큽니다.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Typst runtime is unavailable.</source>
+        <translation>Typst 런타임을 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+21"/>
+        <location line="+37"/>
+        <location line="+65"/>
+        <source>Typst rendering was cancelled.</source>
+        <translation>Typst 렌더링이 취소되었습니다.</translation>
+    </message>
+    <message>
+        <location line="-95"/>
+        <source>Typst render queue is full.</source>
+        <translation>Typst 렌더링 대기열이 가득 찼습니다.</translation>
+    </message>
+    <message>
+        <location line="+54"/>
+        <source>Typst renderer is busy.</source>
+        <translation>Typst 렌더러가 사용 중입니다.</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::MindMapEditor</name>
     <message>
-        <location filename="../../../widgets/editors/mindmapeditor.cpp" line="+170"/>
-        <source>Are you sure to open link (%1)?</source>
-        <translation>링크(%1)를 여시겠습니까?</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Malicious link might do harm to your device.</source>
-        <translation>악성 링크는 기기에 피해를 줄 수 있습니다.</translation>
-    </message>
-    <message>
-        <location line="+201"/>
+        <location filename="../../../widgets/editors/mindmapeditor.cpp" line="+206"/>
         <source>The mind map buffer is unavailable.</source>
         <translation>마인드맵 버퍼를 사용할 수 없습니다.</translation>
     </message>
@@ -5682,7 +5768,7 @@
         <translation>편집기 대신 도구 도크에 노드 속성 표시</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+9"/>
         <source>Keyboard shortcuts can be configured in section [editor.mindMapEditor.shortcuts]</source>
         <translation>키보드 단축키는 [editor.mindMapEditor.shortcuts] 섹션에서 설정할 수 있습니다</translation>
     </message>
@@ -5769,7 +5855,7 @@
 <context>
     <name>vnotex::MindMapViewWindow2</name>
     <message>
-        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+135"/>
+        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+149"/>
         <location line="+31"/>
         <source>Insert Link</source>
         <translation>링크 삽입</translation>
@@ -5917,7 +6003,7 @@
         <translation>첨부 파일 링크를 확인할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+49"/>
+        <location line="+50"/>
         <source>Unable to open an invalid link</source>
         <translation>유효하지 않은 링크를 열 수 없습니다</translation>
     </message>
@@ -8033,7 +8119,7 @@ Description: %4</source>
 <context>
     <name>vnotex::NotebookSyncInfoController</name>
     <message>
-        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="+454"/>
+        <location filename="../../../controllers/notebooksyncinfocontroller.cpp" line="+455"/>
         <location line="+35"/>
         <source>Sync is not available for raw notebooks.</source>
         <translation>일반 노트북에서는 동기화를 사용할 수 없습니다.</translation>
@@ -8159,19 +8245,19 @@ Description: %4</source>
     <name>vnotex::NotebookSyncInfoDialog2</name>
     <message>
         <location filename="../../../widgets/dialogs/notebooksyncinfodialog2.cpp" line="+103"/>
-        <location line="+161"/>
+        <location line="+163"/>
         <location line="+256"/>
         <source>Never</source>
         <translation>안 함</translation>
     </message>
     <message>
-        <location line="-403"/>
-        <location line="+395"/>
+        <location line="-405"/>
+        <location line="+397"/>
         <source>Idle</source>
         <translation>대기 중</translation>
     </message>
     <message>
-        <location line="-359"/>
+        <location line="-361"/>
         <source>Configure Sync</source>
         <translation>동기화 구성</translation>
     </message>
@@ -8212,15 +8298,15 @@ Description: %4</source>
     </message>
     <message>
         <location line="+5"/>
-        <location line="+451"/>
+        <location line="+453"/>
         <source>https://github.com/example/notes.git</source>
         <translation>https://github.com/example/notes.git</translation>
     </message>
     <message>
-        <location line="-450"/>
-        <location line="+456"/>
-        <source>Remote git repository URL used for syncing this notebook</source>
-        <translation>이 노트북의 동기화에 사용할 원격 Git 저장소 URL</translation>
+        <location line="-451"/>
+        <location line="+457"/>
+        <source>Remote Git URL using HTTP, HTTPS, or file://. HTTPS is recommended; HTTP sends credentials and data in plaintext</source>
+        <translation>HTTP, HTTPS 또는 file://를 사용하는 원격 Git URL입니다. HTTPS를 권장합니다. HTTP는 자격 증명과 데이터를 평문으로 전송합니다</translation>
     </message>
     <message>
         <location line="-455"/>
@@ -8235,12 +8321,12 @@ Description: %4</source>
     </message>
     <message>
         <location line="+17"/>
-        <location line="+436"/>
+        <location line="+437"/>
         <source>Use a dedicated existing HTTP or HTTPS collection. HTTPS is recommended; HTTP sends credentials and data in plaintext. Notes remain ordinary files. Safe conditional writes are required; empty remote folders may be retained.</source>
         <translation>이미 존재하는 전용 HTTP 또는 HTTPS 컬렉션을 사용하세요. HTTPS를 권장합니다. HTTP는 인증 정보와 데이터를 평문으로 전송합니다. 노트는 일반 파일로 유지됩니다. 안전한 조건부 쓰기를 지원해야 하며, 원격의 빈 폴더는 남아 있을 수 있습니다.</translation>
     </message>
     <message>
-        <location line="-427"/>
+        <location line="-428"/>
         <source>Required by Gitee; optional for GitHub</source>
         <translation>Gitee에서는 필수, GitHub에서는 선택 사항</translation>
     </message>
@@ -8266,13 +8352,13 @@ Description: %4</source>
     </message>
     <message>
         <location line="+9"/>
-        <location line="+420"/>
+        <location line="+423"/>
         <location line="+7"/>
         <source>Leave blank to keep existing</source>
         <translation>기존 값을 유지하려면 비워 두세요</translation>
     </message>
     <message>
-        <location line="-426"/>
+        <location line="-429"/>
         <source>Personal Access Token used to authenticate against the remote.
 Leave blank to keep the existing token</source>
         <translation>원격 서버 인증에 사용할 개인 액세스 토큰입니다.
@@ -8280,12 +8366,12 @@ Leave blank to keep the existing token</source>
     </message>
     <message>
         <location line="+2"/>
-        <location line="+421"/>
+        <location line="+424"/>
         <source>Personal Access Token</source>
         <translation>개인 액세스 토큰</translation>
     </message>
     <message>
-        <location line="-412"/>
+        <location line="-415"/>
         <source>Last sync</source>
         <translation>마지막 동기화</translation>
     </message>
@@ -8396,12 +8482,12 @@ Leave blank to keep the existing token</source>
         <translation>기존의 전용 HTTP 또는 HTTPS 노트북 컬렉션. HTTP는 인증 정보와 데이터를 평문으로 전송합니다</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+9"/>
         <source>Use a dedicated Jianguoyun collection and an app password. The remote is VNote-managed storage, not ordinary notebook files. Do not edit it in the cloud. History and deleted data are retained, so storage use grows. Disabling sync does not remove remote data.</source>
         <translation>전용 Jianguoyun 컬렉션과 앱 비밀번호를 사용하세요. 원격 저장소는 VNote에서 관리하는 저장 공간이며, 일반 노트북 파일과는 다릅니다. 클라우드에서 직접 편집하지 마세요. 변경 이력과 삭제된 데이터가 보존되므로 저장 공간 사용량이 늘어납니다. 동기화를 비활성화해도 원격 데이터는 제거되지 않습니다.</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+20"/>
         <source>App password</source>
         <translation>앱 비밀번호</translation>
     </message>
@@ -8737,13 +8823,13 @@ Continue?</source>
     </message>
     <message>
         <location line="+3"/>
-        <location line="+132"/>
+        <location line="+134"/>
         <location line="+79"/>
         <source>Remote URL</source>
         <translation>원격 URL</translation>
     </message>
     <message>
-        <location line="-208"/>
+        <location line="-210"/>
         <source>Download a VNote notebook from a Git remote or a WebDAV collection</source>
         <translation>Git 원격 저장소 또는 WebDAV 컬렉션에서 VNote 노트북 다운로드</translation>
     </message>
@@ -8814,15 +8900,15 @@ Continue?</source>
     </message>
     <message>
         <location line="+19"/>
-        <location line="+85"/>
+        <location line="+87"/>
         <source>https://github.com/user/repo.git  or  file:///path/to/repo.git</source>
         <translation>https://github.com/user/repo.git  또는  file:///path/to/repo.git</translation>
     </message>
     <message>
-        <location line="-84"/>
-        <location line="+89"/>
-        <source>Remote git URL. Only HTTPS and file:// schemes are supported</source>
-        <translation>Git 원격 저장소 URL. HTTPS 및 file:// 방식만 지원합니다</translation>
+        <location line="-85"/>
+        <location line="+90"/>
+        <source>Remote Git URL using HTTP, HTTPS, or file://. HTTPS is recommended; HTTP sends credentials and data in plaintext</source>
+        <translation>HTTP, HTTPS 또는 file://를 사용하는 원격 Git URL입니다. HTTPS를 권장합니다. HTTP는 자격 증명과 데이터를 평문으로 전송합니다</translation>
     </message>
     <message>
         <location line="-83"/>
@@ -8841,40 +8927,40 @@ Continue?</source>
     </message>
     <message>
         <location line="+5"/>
-        <location line="+88"/>
+        <location line="+89"/>
         <source>Optional for anonymous download</source>
         <translation>익명 다운로드 시 선택 사항</translation>
     </message>
     <message>
-        <location line="-86"/>
-        <location line="+89"/>
+        <location line="-87"/>
+        <location line="+90"/>
         <source>WebDAV account username; leave both credentials empty for anonymous download</source>
         <translation>WebDAV 계정 사용자 이름. 익명으로 다운로드하려면 인증 정보 두 항목을 모두 비워 두세요</translation>
     </message>
     <message>
-        <location line="-88"/>
+        <location line="-89"/>
         <source>Username</source>
         <translation>사용자 이름</translation>
     </message>
     <message>
         <location line="+8"/>
-        <location line="+70"/>
+        <location line="+71"/>
         <source>Optional — leave empty to open without syncing yet</source>
         <translation>선택 사항 — 아직 동기화하지 않고 열려면 비워 두세요</translation>
     </message>
     <message>
-        <location line="-68"/>
+        <location line="-69"/>
         <source>If empty, the notebook opens normally (fully editable) with sync configured but inactive. Add a token later to start syncing</source>
         <translation>비워 두면 노트북이 정상적으로 열려 모든 내용을 편집할 수 있으며, 동기화는 설정만 되고 활성화되지 않습니다. 나중에 토큰을 추가하여 동기화를 시작하세요</translation>
     </message>
     <message>
         <location line="+2"/>
-        <location line="+63"/>
+        <location line="+64"/>
         <source>Personal Access Token</source>
         <translation>개인 액세스 토큰</translation>
     </message>
     <message>
-        <location line="-56"/>
+        <location line="-57"/>
         <source>Select Local Root Folder</source>
         <translation>로컬 루트 폴더 선택</translation>
     </message>
@@ -8919,7 +9005,7 @@ Continue?</source>
         <translation>VNote 노트북 하나가 들어 있는 기존 HTTP 또는 HTTPS 컬렉션. HTTP는 인증 정보와 데이터를 평문으로 전송합니다</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>App password</source>
         <translation>앱 비밀번호</translation>
     </message>
@@ -8984,7 +9070,7 @@ Continue?</source>
         <translation>복제 중...</translation>
     </message>
     <message>
-        <location line="+65"/>
+        <location line="+66"/>
         <source>Clone cancelled.</source>
         <translation>복제가 취소되었습니다.</translation>
     </message>
@@ -9210,7 +9296,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::PdfViewWindow2</name>
     <message>
-        <location filename="../../../widgets/pdfviewwindow2.cpp" line="+896"/>
+        <location filename="../../../widgets/pdfviewwindow2.cpp" line="+893"/>
         <source>Unable to load PDF document</source>
         <translation>PDF 문서를 불러올 수 없습니다</translation>
     </message>
@@ -9581,7 +9667,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::SearchPanel2</name>
     <message>
-        <location filename="../../../widgets/searchpanel2.cpp" line="+72"/>
+        <location filename="../../../widgets/searchpanel2.cpp" line="+84"/>
         <source>Keyword</source>
         <translation>검색어</translation>
     </message>
@@ -9673,14 +9759,14 @@ The legacy notebook would be kept for data backup.</source>
     </message>
     <message>
         <location line="+4"/>
-        <location line="+258"/>
+        <location line="+270"/>
         <location line="+19"/>
         <location line="+10"/>
         <source>Search</source>
         <translation>검색</translation>
     </message>
     <message>
-        <location line="-282"/>
+        <location line="-294"/>
         <source>Replace Selected</source>
         <translation>선택 항목 바꾸기</translation>
     </message>
@@ -9690,7 +9776,7 @@ The legacy notebook would be kept for data backup.</source>
         <translation>모두 바꾸기</translation>
     </message>
     <message>
-        <location line="+232"/>
+        <location line="+244"/>
         <location line="+87"/>
         <source>Cancel</source>
         <translation>취소</translation>
@@ -10508,11 +10594,12 @@ Notebook: %3</source>
 <context>
     <name>vnotex::Task</name>
     <message>
+        <location filename="../../../core/services/task.cpp" line="+369"/>
         <source>Task (%1) cannot run: shell commands and shell options must not contain VNote variables. Move variables to args and use Bash or PowerShell, or use a process task.</source>
         <translation>작업 (%1)을 실행할 수 없습니다. 셸 명령과 셸 옵션에는 VNote 변수를 포함할 수 없습니다. 변수를 args로 옮기고 Bash 또는 PowerShell을 사용하거나 process 작업을 사용하세요.</translation>
     </message>
     <message>
-        <location filename="../../../core/services/task.cpp" line="+403"/>
+        <location line="+56"/>
         <source>[Task (%1) started]
 </source>
         <translation>[작업 (%1) 시작됨]
@@ -10947,7 +11034,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>확정되지 않은 Typst 리소스를 정리할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+93"/>
+        <location line="+102"/>
         <location line="+42"/>
         <source>Image dimensions exceed the supported limit</source>
         <translation>이미지 크기가 지원 한도를 초과합니다</translation>
@@ -11036,7 +11123,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>선택한 파일을 이 노트에 첨부할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+206"/>
+        <location line="+207"/>
         <source>&amp;View Image</source>
         <translation>이미지 보기(&amp;V)</translation>
     </message>
@@ -11052,17 +11139,17 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+18"/>
-        <location line="+106"/>
+        <location line="+110"/>
         <source>Resize Image</source>
         <translation>이미지 크기 조정</translation>
     </message>
     <message>
-        <location line="-96"/>
+        <location line="-98"/>
         <source>Open Link</source>
         <translation>링크 열기</translation>
     </message>
     <message>
-        <location line="+9"/>
+        <location line="+11"/>
         <source>Copy Link</source>
         <translation>링크 복사</translation>
     </message>
@@ -11072,17 +11159,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>이미지 원본이 변경되었거나 안전하게 크기를 조정할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+139"/>
-        <source>Are you sure to open link (%1)?</source>
-        <translation>링크(%1)를 여시겠습니까?</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Malicious link might do harm to your device.</source>
-        <translation>악성 링크는 기기에 피해를 줄 수 있습니다.</translation>
-    </message>
-    <message>
-        <location line="+50"/>
+        <location line="+191"/>
         <source>Paste as Plain Text</source>
         <translation>일반 텍스트로 붙여넣기</translation>
     </message>
@@ -11112,12 +11189,12 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>Typst 미리보기의 기본 페이지 배경과 텍스트에 테마 색상을 사용합니다. 문서에 명시한 스타일이 우선하며 내보내기에는 영향을 주지 않습니다</translation>
     </message>
     <message>
-        <location line="+292"/>
+        <location line="+289"/>
         <source>Unable to read the Typst source: %1</source>
         <translation>Typst 소스를 읽을 수 없습니다: %1</translation>
     </message>
     <message>
-        <location line="+253"/>
+        <location line="+264"/>
         <location line="+7"/>
         <source>Unable to open the Typst source location</source>
         <translation>Typst 소스 위치를 열 수 없습니다</translation>
@@ -11136,7 +11213,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::TypstViewWindowController</name>
     <message>
-        <location filename="../../../controllers/typstviewwindowcontroller.cpp" line="+308"/>
+        <location filename="../../../controllers/typstviewwindowcontroller.cpp" line="+323"/>
         <location line="+4"/>
         <source>Typst requires an available, unencrypted file buffer</source>
         <translation>Typst에는 사용 가능한 암호화되지 않은 파일 버퍼가 필요합니다</translation>
@@ -11152,14 +11229,14 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>Typst 프로젝트 디렉터리를 사용할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+35"/>
+        <location line="+238"/>
         <location line="+11"/>
         <location line="+17"/>
         <source>Unable to open the Typst source location</source>
         <translation>Typst 소스 위치를 열 수 없습니다</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+11"/>
         <source>Unable to open an invalid link</source>
         <translation>유효하지 않은 링크를 열 수 없습니다</translation>
     </message>
@@ -11661,7 +11738,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewArea2</name>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="+879"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="+1208"/>
         <source>New Workspace</source>
         <translation>새 작업 공간</translation>
     </message>
@@ -11691,17 +11768,29 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+5"/>
+        <location line="+40"/>
         <source>This note is already being converted.</source>
         <translation>이 노트는 이미 변환 중입니다.</translation>
     </message>
     <message>
-        <location line="+16"/>
-        <location line="+69"/>
+        <location line="-24"/>
+        <location line="+85"/>
         <source>The selected note&apos;s encryption state changed.</source>
         <translation>선택한 노트의 암호화 상태가 변경되었습니다.</translation>
     </message>
     <message>
-        <location line="-55"/>
+        <location line="-70"/>
+        <location line="+517"/>
+        <source>Closing a link preview was cancelled.</source>
+        <translation>링크 미리 보기 닫기가 취소되었습니다.</translation>
+    </message>
+    <message>
+        <location line="-513"/>
+        <source>A protected operation is in progress. Retry conversion.</source>
+        <translation>보호된 작업이 진행 중입니다. 변환을 다시 시도하세요.</translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <source>The note&apos;s views changed. Retry conversion.</source>
         <translation>노트의 뷰가 변경되었습니다. 변환을 다시 시도하세요.</translation>
     </message>
@@ -11814,21 +11903,22 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+48"/>
+        <location line="+10"/>
         <source>A protected operation is in progress. Finish it before locking.</source>
         <translation>보호된 작업이 진행 중입니다. 작업을 완료한 후 잠그세요.</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+18"/>
         <source>Protected views changed while locking. Try again.</source>
         <translation>잠그는 동안 보호된 뷰가 변경되었습니다. 다시 시도하세요.</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+9"/>
         <source>Protected work did not finish. Notes remain unlocked.</source>
         <translation>보호된 작업이 완료되지 않았습니다. 노트는 잠금 해제 상태로 유지됩니다.</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+12"/>
         <source>Comments could not be saved.</source>
         <translation>댓글을 저장할 수 없습니다.</translation>
     </message>
@@ -11857,11 +11947,16 @@ This removes the file and any sub-tasks it contains: %2</source>
         <source>A protected buffer is busy. Keys remain available.</source>
         <translation>보호된 버퍼가 사용 중입니다. 키는 계속 사용할 수 있습니다.</translation>
     </message>
+    <message>
+        <location line="+600"/>
+        <source>Preview</source>
+        <translation>미리 보기</translation>
+    </message>
 </context>
 <context>
     <name>vnotex::ViewSplit2</name>
     <message>
-        <location filename="../../../widgets/viewsplit2.cpp" line="+182"/>
+        <location filename="../../../widgets/viewsplit2.cpp" line="+211"/>
         <source>Stay on Top</source>
         <translation>항상 위에 표시</translation>
     </message>
@@ -11881,12 +11976,12 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>표시할 창 없음</translation>
     </message>
     <message>
-        <location line="+32"/>
+        <location line="+35"/>
         <source>Workspaces</source>
         <translation>작업 공간</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+23"/>
         <source>Workspace %1</source>
         <translation>작업 공간 %1</translation>
     </message>
@@ -11946,7 +12041,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>분할 창 및 작업 공간 제거</translation>
     </message>
     <message>
-        <location line="+278"/>
+        <location line="+295"/>
         <source>Copy Path</source>
         <translation>경로 복사</translation>
     </message>
@@ -12093,7 +12188,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>스니펫 선택</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="+448"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="+470"/>
         <source>Do you want to save changes to &quot;%1&quot;?</source>
         <translation>&quot;%1&quot;의 변경 사항을 저장하시겠습니까?</translation>
     </message>
@@ -12136,9 +12231,9 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>편집기 내용을 읽을 수 없습니다</translation>
     </message>
     <message>
-        <location line="-829"/>
+        <location line="-833"/>
         <location line="+5"/>
-        <location line="+436"/>
+        <location line="+440"/>
         <location line="+73"/>
         <location line="+46"/>
         <location line="+26"/>
@@ -12147,12 +12242,12 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>읽기 전용 — 편집할 수 없음</translation>
     </message>
     <message>
-        <location line="-664"/>
+        <location line="-668"/>
         <source>Unable to open another note: comments could not be saved</source>
         <translation>다른 노트를 열 수 없습니다: 주석을 저장하지 못했습니다</translation>
     </message>
     <message>
-        <location line="+803"/>
+        <location line="+807"/>
         <source>Change Encoding</source>
         <translation>인코딩 변경</translation>
     </message>
@@ -12177,12 +12272,12 @@ Continue?</source>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+641"/>
+        <location line="+657"/>
         <source>Note path (%1).</source>
         <translation>노트 경로(%1).</translation>
     </message>
     <message>
-        <location line="-541"/>
+        <location line="-557"/>
         <source>This file is read-only (%1). Changes cannot be saved.</source>
         <translation>이 파일은 읽기 전용입니다(%1). 변경 사항을 저장할 수 없습니다.</translation>
     </message>
@@ -12259,19 +12354,19 @@ Continue?</source>
         <translation>확대/축소: %1%2</translation>
     </message>
     <message>
-        <location line="+183"/>
+        <location line="+199"/>
         <source>Discard changes to note (%1)?</source>
         <translation>노트(%1)의 변경 사항을 버리시겠습니까?</translation>
     </message>
     <message numerus="yes">
-        <location line="+85"/>
+        <location line="+109"/>
         <source>Attached %n file(s)</source>
         <translation>
             <numerusform>파일 %n개 첨부됨</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.h" line="+139"/>
+        <location filename="../../../widgets/viewwindow2.h" line="+151"/>
         <source>Tools</source>
         <translation>도구</translation>
     </message>
@@ -12279,7 +12374,7 @@ Continue?</source>
 <context>
     <name>vnotex::WebViewExporter</name>
     <message>
-        <location filename="../../../export/webviewexporter.cpp" line="+322"/>
+        <location filename="../../../export/webviewexporter.cpp" line="+338"/>
         <source>Export rendering services are unavailable.</source>
         <translation>내보내기 렌더링 서비스를 사용할 수 없습니다.</translation>
     </message>
@@ -12289,12 +12384,17 @@ Continue?</source>
         <translation>MIME HTML 내보내기를 지원하지 않습니다.</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+42"/>
+        <source>Failed to render Markdown for export.</source>
+        <translation>내보내기용 Markdown을 렌더링하지 못했습니다.</translation>
+    </message>
+    <message>
+        <location line="+21"/>
         <source>Failed or cancelled while preparing HTML for (%1).</source>
         <translation>(%1)의 HTML을 준비하는 중 실패하거나 취소되었습니다.</translation>
     </message>
     <message>
-        <location line="+72"/>
+        <location line="+77"/>
         <source>Failed or cancelled while serializing HTML.</source>
         <translation>HTML을 직렬화하는 중 실패하거나 취소되었습니다.</translation>
     </message>
