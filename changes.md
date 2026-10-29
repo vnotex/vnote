@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Style in-editor table preview borders with `TABLEBORDER.text-color`, falling back to the palette text color when omitted and refreshing live on theme changes
 * Use matching themed Lucide icons for link-preview Open in New Tab and Close buttons, refreshing both colors on theme changes
 * Open link-preview tabs in their source workspace without reopening views, preserving drafts and undo; replace destination duplicates through Save/Discard/Cancel and retain earlier moves when cancelled
 * Require Ctrl+click to open links in the Markdown editor; ordinary clicks only position the cursor
