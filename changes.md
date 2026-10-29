@@ -1,4 +1,7 @@
 # Changes
+## Unreleased
+* Open localized release notes in a new read-only tab after upgrading VNote, with Simplified Chinese notes and English fallback; replace both bundled documents in the version release commit
+
 ## v4.12.0
 A feature release with editable link previews, native Markdown rendering, Typst math and stronger security on top of VNote 4.11.0:
 

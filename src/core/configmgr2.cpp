@@ -191,7 +191,11 @@ void ConfigMgr2::init() {
 
       auto mainConfigJson = applyMergePatch(m_mainConfig->toJson(), rawJson).toObject();
       restoreUserOwnedObjects(mainConfigJson, rawJson);
-      m_versionChanged = MainConfig::peekVersion(mainConfigJson) != c_version.toString();
+      const auto previousVersion = MainConfig::peekVersion(mainConfigJson);
+      m_versionChanged = previousVersion != c_version.toString();
+      const auto previousVersionNumber = QVersionNumber::fromString(previousVersion);
+      m_versionUpgraded = !previousVersionNumber.isNull() &&
+                          previousVersionNumber.normalized() < c_version.normalized();
       m_mainConfig->fromJson(mainConfigJson);
     }
   }
@@ -357,6 +361,8 @@ QJsonValue ConfigMgr2::parseAndReadConfig(const QString &p_exp) const {
 QString ConfigMgr2::getApplicationVersion() { return c_version.toString(); }
 
 bool ConfigMgr2::isVersionChanged() const { return m_versionChanged; }
+
+bool ConfigMgr2::isVersionUpgraded() const { return m_versionUpgraded; }
 
 QString ConfigMgr2::getApplicationFilePath() {
 #if defined(Q_OS_LINUX)

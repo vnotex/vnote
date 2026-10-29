@@ -120,6 +120,10 @@ public:
   // whole session even after the new version is persisted.
   bool isVersionChanged() const;
 
+  // True for an upgrade from a known older version, not a first run or downgrade.
+  // Computed during init() and retained after the current version is persisted.
+  bool isVersionUpgraded() const;
+
   // Folders whose bundled extra data could not be fully installed during the
   // last ensureExtraData() call (i.e. during initAfterQtAppStarted()). Empty
   // when everything installed cleanly. A folder that failed AFTER its stamp was
@@ -197,6 +201,7 @@ private:
 
   // Whether version changed since last run
   bool m_versionChanged = false;
+  bool m_versionUpgraded = false;
 
   // Set when init() could not READ an existing main config (as opposed to there being none).
   // Suppresses every main-config write for the rest of the session so defaults cannot

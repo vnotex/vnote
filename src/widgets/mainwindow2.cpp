@@ -77,6 +77,7 @@
 #include <controllers/viewareacontroller.h>
 #include <qwebengineview.h>
 #include <unitedentry/unitedentrymgr.h>
+#include <utils/docsutils.h>
 #include <views/inodeexplorer.h>
 #include <widgets/commentpanel.h>
 #include <widgets/consoleviewer.h>
@@ -874,6 +875,29 @@ void MainWindow2::setupViewArea() {
       settings.m_mode = current->getMode();
       settings.m_focus = true;
       m_serviceLocator.get<BufferService>()->openBuffer(current->getNodeId(), settings);
+    }
+    if (m_serviceLocator.get<ConfigMgr2>()->isVersionUpgraded()) {
+      const auto file = DocsUtils::getDocFile(QStringLiteral("changes.md"));
+      auto *split = m_viewArea->getCurrentViewSplit();
+      if (!split) {
+        const auto splits = m_viewArea->getAllViewSplits();
+        if (!splits.isEmpty()) {
+          split = splits.first();
+        }
+      }
+      if (!file.isEmpty() && split) {
+        NodeIdentifier nodeId;
+        nodeId.relativePath = file;
+        FileOpenSettings settings;
+        settings.m_readOnly = true;
+        settings.m_mode = ViewWindowMode::Read;
+        settings.m_forceMode = true;
+        settings.m_alwaysNewWindow = true;
+        settings.m_targetWorkspaceId = split->getWorkspaceId();
+        m_serviceLocator.get<BufferService>()->openBuffer(nodeId, settings);
+      } else {
+        qWarning() << "Cannot open upgrade release notes: missing document or main workspace";
+      }
     }
 #if defined(Q_OS_WIN)
     if (m_dummyWebView) {

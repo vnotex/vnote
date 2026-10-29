@@ -130,6 +130,16 @@ Bundled help lives in `docs/en_US/` and `docs/zh_CN/`. After translators load, `
 guides through `BufferService` in forced Read mode with read-only buffers; missing locales fall
 back to `en_US`.
 
+Release notes use the same lookup: `src/data/extra/extra.qrc` aliases repository
+`docs/changes.md` and `docs/changes_zh_CN.md` as the localized `changes.md` files.
+`ConfigMgr2::isVersionUpgraded()` captures a known older persisted version before migration,
+comparing normalized version numbers; first runs, unreadable/unknown versions, equivalent
+versions and downgrades are not upgrades. The flag survives stamping for this session only.
+After session restoration and queued file opens, `MainWindow2` opens the notes through
+`BufferService` in a new read-only Read-mode tab in the main window, preserving existing tabs
+and detached-file routing. The release-version skill requires replacing both documents from
+the target root changelog section in the same commit as the version bump.
+
 ### Interface translations
 
 `CoreConfig::getAvailableLocales()` exposes `en_US`, `zh_CN`, `ja_JP` and `ko_KR`.

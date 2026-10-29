@@ -146,6 +146,27 @@ Prepend a new `## vX.Y.Z` section at the TOP of `changes.md` (right under the
   (it is not a separate release) rather than leaving both.
 - Always end with a **Translations** bullet noting zh_CN + ja were updated.
 
+### Refresh the bundled release notes (required in the release commit)
+
+After finalizing `## vX.Y.Z` in root `changes.md`:
+
+1. **Replace** `docs/changes.md` with that exact version section, including its
+   `## vX.Y.Z` heading. Do not append, copy the full history, or include `Unreleased`.
+2. **Replace** `docs/changes_zh_CN.md` with a complete Simplified Chinese translation
+   of the same section. Preserve the version heading, bullet structure, links,
+   code spans and technical identifiers; do not retain the previous release.
+3. Verify both documents contain exactly one version section for `X.Y.Z`, and the
+   English document matches the root section. Rebuild the bundled resources before
+   checking the upgrade UI; an old `vnote_extra.rcc` still contains the old notes.
+4. Stage and commit **both documents in the same `[Release]` commit** as the version
+   bump and root changelog, not in a later documentation commit.
+
+`src/data/extra/extra.qrc` bundles these files under `docs/en_US/changes.md` and
+`docs/zh_CN/changes.md`; no extra source copies are needed. VNote opens the localized
+notes in a new read-only tab after session restoration on an upgrade from an older
+persisted version. Other locales fall back to English; first runs, same-version
+launches and downgrades do not trigger this tab.
+
 ## 4. Review
 
 Use the read-only `checkpoint-reviewer` agent for both required checkpoints:
@@ -167,6 +188,7 @@ requests and manual runs retain testing.
 A green release run is not test-suite evidence; use a non-release run for that.
 
 - Commit message MUST start with `[Release]`, e.g. `[Release] VNote X.Y.Z`.
+- Include `docs/changes.md` and `docs/changes_zh_CN.md` from step 3 in this same commit.
 - Follow repo `AGENTS.md` rule 13 for author/commit date (night-time), and only
   commit when the user explicitly asks.
 - If submodule pointers moved, push submodules first, then the parent (rule +
@@ -297,6 +319,7 @@ with whatever was attached to them.)
 | Extract strings | `lupdate -no-obsolete -locations relative src -ts <zh_CN.ts> <ja.ts>` |
 | Fill translations | edit `vnote_zh_CN.ts`, `vnote_ja.ts` until 0 `unfinished` |
 | Changelog | prepend `## vX.Y.Z` to `changes.md` |
+| Bundled notes | replace `docs/changes.md` with that section, translate `docs/changes_zh_CN.md`, include both in the version-bump commit |
 | Release trigger | commit on `master` with message starting `[Release]` |
 | Set description | `gh release edit vX.Y.Z --notes-file notes.md` (the `## vX.Y.Z` section of `changes.md`) |
 | Assemble release | wait for green CI, ensure draft `vX.Y.Z` has all 4 platform packages + changelog body, then `gh release edit vX.Y.Z --draft=false` |

@@ -52,6 +52,8 @@ private slots:
   void testEditorZoom_sessionPersistence_data();
   void testEditorZoom_sessionPersistence();
   void testDebouncing();
+  void testVersionUpgrade_data();
+  void testVersionUpgrade();
 
   // Extra-data install / recovery.
   void testExtraData_cleanRunInstallsEveryFolderAndStamps();
@@ -385,6 +387,58 @@ void TestConfigMgr2::testDebouncing() {
   QJsonObject loaded = m_configService->getConfigByName(DataLocation::App, "vnotex");
   QVERIFY(!loaded.isEmpty());
   QCOMPARE(loaded["counter"].toInt(), 4); // Last value
+}
+
+void TestConfigMgr2::testVersionUpgrade_data() {
+  QTest::addColumn<QString>("previousVersion");
+  QTest::addColumn<bool>("upgraded");
+
+  const auto current = ConfigMgr2::getApplicationVersion();
+  QTest::newRow("missing") << QString() << false;
+  QTest::newRow("empty") << QStringLiteral("") << false;
+  QTest::newRow("invalid") << QStringLiteral("unknown") << false;
+  QTest::newRow("older") << QStringLiteral("0.0.1") << true;
+  QTest::newRow("numeric-order") << QStringLiteral("4.9.0") << true;
+  QTest::newRow("same") << current << false;
+  QTest::newRow("equivalent-short")
+      << QVersionNumber::fromString(current).normalized().toString() << false;
+  QTest::newRow("equivalent-long") << current + QStringLiteral(".0") << false;
+  QTest::newRow("newer") << QStringLiteral("999.0.0") << false;
+}
+
+void TestConfigMgr2::testVersionUpgrade() {
+  QFETCH(QString, previousVersion);
+  QFETCH(bool, upgraded);
+
+  const auto original = m_configService->getConfigByName(DataLocation::App, "vnotex");
+  const auto restore = qScopeGuard([&]() {
+    m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), original);
+  });
+  QJsonObject config;
+  if (!previousVersion.isNull()) {
+    config.insert(QStringLiteral("metadata"),
+                  QJsonObject{{QStringLiteral("version"), previousVersion}});
+  }
+  QVERIFY(
+      !m_configService->updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), config));
+  TempDirFixture tmp;
+  QVERIFY(tmp.isValid());
+  const auto fixture = buildExtraDataFixture(tmp);
+  {
+    ConfigMgr2 mgr(m_configService);
+    mgr.setExtraDataSourceRootOverrideForTesting(fixture);
+    mgr.init();
+    QCOMPARE(mgr.isVersionUpgraded(), upgraded);
+    mgr.initAfterQtAppStarted();
+    QCOMPARE(mgr.getConfig().getVersion(), ConfigMgr2::getApplicationVersion());
+    QCOMPARE(mgr.isVersionUpgraded(), upgraded);
+  }
+
+  // Destruction flushes the stamp; a subsequent launch must not announce it again.
+  ConfigMgr2 reloaded(m_configService);
+  reloaded.init();
+  QCOMPARE(reloaded.getConfig().getVersion(), ConfigMgr2::getApplicationVersion());
+  QVERIFY(!reloaded.isVersionUpgraded());
 }
 
 // =============================================================================
@@ -1730,6 +1784,7 @@ void TestConfigMgr2::testAnUnreadableConfigIsNeverOverwritten() {
 
     // Running on defaults, and no upgrade migration is attempted.
     QVERIFY(!mgr.isVersionChanged());
+    QVERIFY(!mgr.isVersionUpgraded());
     QVERIFY(mgr.getConfig()
                 .getEditorConfig()
                 .getMarkdownEditorConfig()
