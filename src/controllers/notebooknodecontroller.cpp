@@ -1,6 +1,7 @@
 #include "notebooknodecontroller.h"
 
 #include <QAction>
+#include <QActionGroup>
 #include <QApplication>
 #include <QClipboard>
 #include <QDebug>
@@ -30,6 +31,7 @@
 #include <core/services/workspacecoreservice.h>
 #include <core/sessionconfig.h>
 #include <core/widgetconfig.h>
+#include <gui/utils/commentcolorswatch.h>
 #include <models/notebooknodemodel.h>
 #include <utils/pathutils.h>
 #include <utils/processutils.h>
@@ -543,10 +545,7 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
               [this, p_nodeId]() { manageNodeTags(p_nodeId); });
       tagAction->setEnabled(!p_readOnly && !resolveTagTargets(p_nodeId).isEmpty());
 
-      auto *markAction = p_menu->addAction(tr("&Mark"));
-      connect(markAction, &QAction::triggered, this,
-              [this, p_nodeId]() { markNodes(resolveSelection(p_nodeId)); });
-      markAction->setEnabled(!p_readOnly);
+      addMarkMenu(p_menu, p_nodeId, p_readOnly);
     }
   }
 
@@ -554,6 +553,74 @@ void NotebookNodeController::addInfoActions(QMenu *p_menu, const NodeIdentifier 
   connect(propertiesAction, &QAction::triggered, this,
           [this, p_nodeId]() { showNodeProperties(p_nodeId); });
   propertiesAction->setEnabled(isSingleEffectiveSelection(p_nodeId));
+}
+
+void NotebookNodeController::addMarkMenu(QMenu *p_menu, const NodeIdentifier &p_nodeId,
+                                         bool p_readOnly) {
+  static const QStringList c_presetColors = {
+      QStringLiteral("#e53935"), // Red
+      QStringLiteral("#d81b60"), // Pink
+      QStringLiteral("#8e24aa"), // Purple
+      QStringLiteral("#1e88e5"), // Blue
+      QStringLiteral("#00acc1"), // Cyan
+      QStringLiteral("#00897b"), // Teal
+      QStringLiteral("#43a047"), // Green
+      QStringLiteral("#7cb342"), // Lime
+      QStringLiteral("#fdd835"), // Yellow
+      QStringLiteral("#fb8c00"), // Orange
+      QStringLiteral("#6d4c41"), // Brown
+      QStringLiteral("#757575"), // Grey
+  };
+
+  auto *markMenu = p_menu->addMenu(tr("&Mark"));
+  markMenu->setEnabled(!p_readOnly);
+  QMenu *menus[] = {markMenu->addMenu(tr("Text")), markMenu->addMenu(tr("Background"))};
+  const auto selection = resolveSelection(p_nodeId);
+  const auto firstInfo = getNodeInfo(selection.first());
+  const QString currentColors[] = {firstInfo.textColor, firstInfo.backgroundColor};
+  const QColor currentValues[] = {QColor(currentColors[0]), QColor(currentColors[1])};
+  bool common[] = {true, true};
+  for (const auto &id : selection) {
+    const auto info = getNodeInfo(id);
+    const QString colors[] = {info.textColor, info.backgroundColor};
+    for (int field = 0; field < 2; ++field) {
+      common[field] = common[field] && info.isValid() &&
+                      colors[field].isEmpty() == currentColors[field].isEmpty() &&
+                      QColor(colors[field]) == currentValues[field];
+    }
+  }
+
+  QActionGroup *groups[2];
+  const auto addColorAction = [this, p_nodeId, &menus, &groups](int p_field, const QString &p_color,
+                                                                const QIcon &p_icon,
+                                                                const QString &p_label) {
+    auto *action = menus[p_field]->addAction(p_icon, p_label);
+    action->setCheckable(true);
+    action->setData(p_color);
+    groups[p_field]->addAction(action);
+    connect(action, &QAction::triggered, this, [this, p_nodeId, p_color, p_field]() {
+      markNodes(resolveSelection(p_nodeId), p_color, p_field == 1);
+    });
+    return action;
+  };
+  for (int field = 0; field < 2; ++field) {
+    // The shared PDF swatch paints its own checked tick, without a clipped theme ring.
+    menus[field]->setStyleSheet(QStringLiteral("QMenu::icon:checked { border: none; }"));
+    groups[field] = new QActionGroup(menus[field]);
+    auto *autoAction = addColorAction(field, QString(), QIcon(), tr("Auto"));
+    autoAction->setChecked(common[field] && currentColors[field].isEmpty());
+    menus[field]->addSeparator();
+  }
+  const CommentColorSwatch::ColorResolver resolve = [](const QString &p_color) { return p_color; };
+  const auto border = markMenu->palette().color(QPalette::Mid).name();
+  for (const auto &color : c_presetColors) {
+    const auto icon = CommentColorSwatch::icon(resolve, color, 16, border);
+    const QColor value(color);
+    for (int field = 0; field < 2; ++field) {
+      auto *action = addColorAction(field, color, icon, color);
+      action->setChecked(common[field] && value == currentValues[field]);
+    }
+  }
 }
 
 void NotebookNodeController::addMiscActions(QMenu *p_menu, const NodeIdentifier &p_nodeId,
@@ -1172,11 +1239,6 @@ void NotebookNodeController::renameNode(const NodeIdentifier &p_nodeId) {
   emit renameRequested(p_nodeId, nodeInfo.name);
 }
 
-void NotebookNodeController::markNode(const NodeIdentifier &p_nodeId) {
-  // Delegate to list version (single source of truth).
-  markNodes({p_nodeId});
-}
-
 void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &p_nodeIds,
                                        const NodeIdentifier &p_targetFolderId) {
   for (const auto &nodeId : p_nodeIds) {
@@ -1392,62 +1454,44 @@ void NotebookNodeController::handleRenameResult(const NodeIdentifier &p_nodeId,
   }
 }
 
-void NotebookNodeController::handleMarkResult(const NodeIdentifier &p_nodeId,
-                                              const QString &p_textColor,
-                                              const QString &p_bgColor) {
-  if (!p_nodeId.isValid()) {
-    return;
-  }
-  if (isNotebookReadOnly(p_nodeId.notebookId)) {
-    return;
-  }
-
-  NodeInfo nodeInfo = getNodeInfo(p_nodeId);
-  if (!nodeInfo.isValid()) {
+void NotebookNodeController::markNodes(const QList<NodeIdentifier> &p_ids, const QString &p_color,
+                                       bool p_background) {
+  if (p_ids.isEmpty() || isSelectionReadOnly(p_ids)) {
     return;
   }
 
   auto *notebookService = m_services.get<NotebookCoreService>();
-  QJsonObject metadata;
-  bool success = false;
+  const auto key = p_background ? QStringLiteral("backgroundColor") : QStringLiteral("textColor");
+  for (const auto &id : p_ids) {
+    if (!id.isValid() || isNotebookReadOnly(id.notebookId)) {
+      continue;
+    }
+    const auto info = getNodeInfo(id);
+    if (!info.isValid()) {
+      continue;
+    }
 
-  if (nodeInfo.isFolder) {
-    metadata = notebookService->getFolderMetadata(p_nodeId.notebookId, p_nodeId.relativePath);
-  } else {
-    metadata = notebookService->getFileMetadata(p_nodeId.notebookId, p_nodeId.relativePath);
-  }
-
-  if (p_textColor.isEmpty()) {
-    metadata.remove(QStringLiteral("textColor"));
-  } else {
-    metadata[QStringLiteral("textColor")] = p_textColor;
-  }
-
-  if (p_bgColor.isEmpty()) {
-    metadata.remove(QStringLiteral("backgroundColor"));
-  } else {
-    metadata[QStringLiteral("backgroundColor")] = p_bgColor;
-  }
-
-  QJsonDocument doc(metadata);
-  QString metadataJson = QString::fromUtf8(doc.toJson(QJsonDocument::Compact));
-
-  if (nodeInfo.isFolder) {
-    success = notebookService->updateFolderMetadata(p_nodeId.notebookId, p_nodeId.relativePath,
-                                                    metadataJson);
-  } else {
-    success = notebookService->updateFileMetadata(p_nodeId.notebookId, p_nodeId.relativePath,
-                                                  metadataJson);
-  }
-
-  if (!success) {
-    emit errorOccurred(tr("Error"), tr("Failed to mark %1.").arg(nodeInfo.name));
-    return;
-  }
-
-  if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
-    NodeIdentifier parentId = getParentFolder(p_nodeId);
-    nbModel->reloadNode(parentId);
+    auto metadata = info.isFolder
+                        ? notebookService->getFolderMetadata(id.notebookId, id.relativePath)
+                        : notebookService->getFileMetadata(id.notebookId, id.relativePath);
+    if (p_color.isEmpty()) {
+      metadata.remove(key);
+    } else {
+      metadata[key] = p_color;
+    }
+    const auto metadataJson =
+        QString::fromUtf8(QJsonDocument(metadata).toJson(QJsonDocument::Compact));
+    const bool success =
+        info.isFolder
+            ? notebookService->updateFolderMetadata(id.notebookId, id.relativePath, metadataJson)
+            : notebookService->updateFileMetadata(id.notebookId, id.relativePath, metadataJson);
+    if (!success) {
+      emit errorOccurred(tr("Error"), tr("Failed to mark %1.").arg(info.name));
+      continue;
+    }
+    if (auto *nbModel = dynamic_cast<NotebookNodeModel *>(m_model)) {
+      nbModel->reloadNode(getParentFolder(id));
+    }
   }
 }
 
@@ -1993,16 +2037,6 @@ void NotebookNodeController::reloadNodes(const QList<NodeIdentifier> &p_ids) {
       reloadAll();
     }
   }
-}
-
-void NotebookNodeController::markNodes(const QList<NodeIdentifier> &p_ids) {
-  if (p_ids.isEmpty()) {
-    return;
-  }
-  if (isSelectionReadOnly(p_ids)) {
-    return;
-  }
-  emit markRequested(p_ids);
 }
 
 void NotebookNodeController::encryptNote(const QList<NodeIdentifier> &p_ids) {

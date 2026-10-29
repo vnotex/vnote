@@ -111,11 +111,9 @@ private slots:
   void open_mixedFolderAndNote_skipsFolder();
   void openWith_multiSelection_buildsCommandPerNode();
 
-  // T10: pin / reload / mark resolve full selection through list overloads
+  // T10: pin / reload resolve full selection through list overloads
   void pin_multiSelection_resolvesAllIds();
   void reload_multiSelection_resolvesAllIds();
-  void mark_multiSelection_resolvesAllIds();
-  void mark_multiSelection_listPayloadPreservesOrder();
 
   // T11: single-arg back-compat. Each single-arg xxxNode(id) inline-delegates to
   // xxxNodes({id}); pipeline equivalent yields the singleton, unchanged.
@@ -125,7 +123,6 @@ private slots:
   void singleArg_remove_unchanged();
   void singleArg_pin_unchanged();
   void singleArg_reload_unchanged();
-  void singleArg_mark_unchanged();
 };
 
 void TestNotebookNodeControllerMultiSelect::resolveSelection_emptySelection_returnsClicked() {
@@ -397,16 +394,7 @@ void TestNotebookNodeControllerMultiSelect::openWith_multiSelection_buildsComman
   QCOMPARE(launched.at(1), b);
 }
 
-// T10: Pin / Reload / Mark route through resolveSelection then call the list overload.
-// Production: lambdas in addMiscActions emit
-//   reloadNodes(resolveSelection(p_nodeId))
-//   pinNodesToQuickAccess(resolveSelection(p_nodeId))
-//   markNodes(resolveSelection(p_nodeId))
-// The list overloads iterate the input ids (markNodes emits markRequested per id;
-// reloadNodes emits nodeAboutToReload + nbModel->reloadNode per id;
-// pinNodesToQuickAccess appends each id to QuickAccess items, skipping duplicates).
-// No dedupeDescendants for these (Pin/Reload/Mark are non-destructive — descendant
-// duplicates are harmless; matches Open semantics from T7).
+// Pin and Reload route through resolveSelection without deduplicating descendants.
 // Controller construction needs 18+ services, so we mirror the resolve pipeline.
 
 void TestNotebookNodeControllerMultiSelect::pin_multiSelection_resolvesAllIds() {
@@ -433,46 +421,6 @@ void TestNotebookNodeControllerMultiSelect::reload_multiSelection_resolvesAllIds
   // reloadNodes iterates the full selection; nodeAboutToReload + model reload fire per id.
   QCOMPARE(resolved.size(), 3);
   QCOMPARE(resolved, QList<vnotex::NodeIdentifier>({a, b, c}));
-}
-
-void TestNotebookNodeControllerMultiSelect::mark_multiSelection_resolvesAllIds() {
-  vnotex::NodeIdentifier a, b, c;
-  a.notebookId = b.notebookId = c.notebookId = "nb-1";
-  a.relativePath = "a.md";
-  b.relativePath = "b.md";
-  c.relativePath = "c.md";
-
-  auto resolved = resolveSelectionForTest({a, b, c}, c);
-  // markNodes emits markRequested per id (batch mark dialog coalescing is a known
-  // follow-up, out of scope).
-  QCOMPARE(resolved.size(), 3);
-  QCOMPARE(resolved, QList<vnotex::NodeIdentifier>({a, b, c}));
-}
-
-// Test-only mirror of NotebookNodeController::markNodes payload shape after
-// widening markRequested(NodeIdentifier) → markRequested(QList<NodeIdentifier>).
-// The controller now emits ONE signal carrying the full list; the view shows a
-// single dialog and loops the per-id apply. Identity passthrough captures that
-// the controller does not reorder or drop ids before emit.
-static QList<vnotex::NodeIdentifier>
-markPayloadForTest(const QList<vnotex::NodeIdentifier> &p_ids) {
-  return p_ids;
-}
-
-void TestNotebookNodeControllerMultiSelect::mark_multiSelection_listPayloadPreservesOrder() {
-  vnotex::NodeIdentifier a, b, c;
-  a.notebookId = b.notebookId = c.notebookId = "nb-1";
-  a.relativePath = "a.md";
-  b.relativePath = "b.md";
-  c.relativePath = "c.md";
-
-  QList<vnotex::NodeIdentifier> input{a, b, c};
-  auto payload = markPayloadForTest(input);
-
-  QCOMPARE(payload.size(), 3);
-  QCOMPARE(payload.at(0), a);
-  QCOMPARE(payload.at(1), b);
-  QCOMPARE(payload.at(2), c);
 }
 
 // T11: Single-arg back-compat regression. Each single-arg xxxNode(id) is now an
@@ -526,7 +474,7 @@ void TestNotebookNodeControllerMultiSelect::singleArg_pin_unchanged() {
   vnotex::NodeIdentifier a;
   a.notebookId = "nb-1";
   a.relativePath = "pin.md";
-  // Pin/Reload/Mark do NOT dedupe (non-destructive); single-arg passes through.
+  // Pin/Reload do NOT dedupe (non-destructive); single-arg passes through.
   auto result = singletonPipelineForTest(a);
   QCOMPARE(result.size(), 1);
   QCOMPARE(result.at(0), a);
@@ -536,15 +484,6 @@ void TestNotebookNodeControllerMultiSelect::singleArg_reload_unchanged() {
   vnotex::NodeIdentifier a;
   a.notebookId = "nb-1";
   a.relativePath = "folder/note";
-  auto result = singletonPipelineForTest(a);
-  QCOMPARE(result.size(), 1);
-  QCOMPARE(result.at(0), a);
-}
-
-void TestNotebookNodeControllerMultiSelect::singleArg_mark_unchanged() {
-  vnotex::NodeIdentifier a;
-  a.notebookId = "nb-1";
-  a.relativePath = "mark.md";
   auto result = singletonPipelineForTest(a);
   QCOMPARE(result.size(), 1);
   QCOMPARE(result.at(0), a);

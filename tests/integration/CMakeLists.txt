@@ -131,6 +131,7 @@ add_qt_test(test_missing_nodes_qt
     test_missing_nodes_qt_controller_stubs.cpp
     ${CMAKE_SOURCE_DIR}/src/models/notebooknodemodel.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_shareseam.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_tagseam.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooknodecontroller_reorder.cpp

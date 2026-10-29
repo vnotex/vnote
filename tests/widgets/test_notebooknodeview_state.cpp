@@ -42,7 +42,6 @@ void NotebookNodeController::cutNodes(const QList<NodeIdentifier> &) {}
 void NotebookNodeController::pasteNodes(const NodeIdentifier &) {}
 void NotebookNodeController::duplicateNode(const NodeIdentifier &) {}
 void NotebookNodeController::renameNode(const NodeIdentifier &) {}
-void NotebookNodeController::markNode(const NodeIdentifier &) {}
 void NotebookNodeController::moveNodes(const QList<NodeIdentifier> &, const NodeIdentifier &) {}
 void NotebookNodeController::exportNode(const NodeIdentifier &) {}
 void NotebookNodeController::importExternalNode(const NodeIdentifier &) {}
@@ -71,8 +70,6 @@ void NotebookNodeController::handleNewNoteResult(const NodeIdentifier &, const N
 void NotebookNodeController::handleNewFolderResult(const NodeIdentifier &, const NodeIdentifier &) {
 }
 void NotebookNodeController::handleRenameResult(const NodeIdentifier &, const QString &) {}
-void NotebookNodeController::handleMarkResult(const NodeIdentifier &, const QString &,
-                                              const QString &) {}
 bool NotebookNodeController::handleTagDeltaResult(const NodeIdentifier &, const QSet<QString> &,
                                                   const QSet<QString> &) {
   return true;

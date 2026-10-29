@@ -92,8 +92,6 @@ public:
   // (session-only suppression). Mirrors the handleRemoveConfirmed delegation.
   virtual void handleMissingRemovalConfirmed(const QList<NodeIdentifier> &p_nodeIds) = 0;
   virtual void suppressMissingNodes(const QList<NodeIdentifier> &p_nodeIds) = 0;
-  virtual void handleMarkResult(const NodeIdentifier &p_nodeId, const QString &p_textColor,
-                                const QString &p_bgColor) = 0;
   // Batch Tags flow: per-id apply of the delta produced by ViewTagsDialog2.
   // The view (NotebookExplorer2) shows ONE dialog and loops the ids over this.
   virtual bool handleTagDeltaResult(const NodeIdentifier &p_nodeId, const QSet<QString> &p_added,
@@ -150,7 +148,6 @@ signals:
   void missingNodeRemovalRequested(const QList<NodeIdentifier> &p_nodeIds);
   void crossNotebookPasteRequested(const NodeTransferRequest &p_request);
   void propertiesRequested(const NodeIdentifier &p_nodeId);
-  void markRequested(const QList<NodeIdentifier> &p_ids);
   void encryptNoteRequested(const QList<NodeIdentifier> &p_ids);
   void decryptNoteRequested(const QList<NodeIdentifier> &p_ids);
   void ignoreRequested(const NodeIdentifier &p_nodeId);

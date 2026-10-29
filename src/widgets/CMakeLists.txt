@@ -22,7 +22,6 @@ target_sources(vnote PRIVATE
     dialogs/importfolderdialog2.cpp dialogs/importfolderdialog2.h
     dialogs/linkinsertdialog.cpp dialogs/linkinsertdialog.h
     dialogs/managenotebooksdialog2.cpp dialogs/managenotebooksdialog2.h
-    dialogs/marknodedialog2.cpp dialogs/marknodedialog2.h
     dialogs/newfolderdialog2.cpp dialogs/newfolderdialog2.h
     dialogs/newnotebookdialog2.cpp dialogs/newnotebookdialog2.h
     dialogs/newnotedialog2.cpp dialogs/newnotedialog2.h

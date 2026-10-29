@@ -67,7 +67,6 @@
 #include <core/services/templateservice.h>
 #include <widgets/dialogs/importfolderdialog2.h>
 #include <widgets/dialogs/managenotebooksdialog2.h>
-#include <widgets/dialogs/marknodedialog2.h>
 #include <widgets/dialogs/newfolderdialog2.h>
 #include <widgets/dialogs/newnotebookdialog2.h>
 #include <widgets/dialogs/newnotedialog2.h>
@@ -1235,8 +1234,6 @@ void NotebookExplorer2::setupCombinedMode() {
           &NotebookExplorer2::exportNodeRequested);
   connect(explorer, &CombinedNodeExplorer::shareFolderRequested, this,
           &NotebookExplorer2::onShareFolderRequested);
-  connect(explorer, &CombinedNodeExplorer::markRequested, this,
-          &NotebookExplorer2::onMarkRequested);
   connect(explorer, &CombinedNodeExplorer::encryptNoteRequested, this,
           &NotebookExplorer2::encryptNote);
   connect(explorer, &CombinedNodeExplorer::decryptNoteRequested, this,
@@ -1304,8 +1301,6 @@ void NotebookExplorer2::setupTwoColumnsMode() {
           &NotebookExplorer2::exportNodeRequested);
   connect(explorer, &TwoColumnsNodeExplorer::shareFolderRequested, this,
           &NotebookExplorer2::onShareFolderRequested);
-  connect(explorer, &TwoColumnsNodeExplorer::markRequested, this,
-          &NotebookExplorer2::onMarkRequested);
   connect(explorer, &TwoColumnsNodeExplorer::encryptNoteRequested, this,
           &NotebookExplorer2::encryptNote);
   connect(explorer, &TwoColumnsNodeExplorer::decryptNoteRequested, this,
@@ -2245,27 +2240,6 @@ void NotebookExplorer2::onPropertiesRequested(const NodeIdentifier &p_nodeId) {
 
   NodePropertiesDialog2 dialog(m_services, p_nodeId, nodeInfo, window());
   dialog.exec();
-}
-
-void NotebookExplorer2::onMarkRequested(const QList<NodeIdentifier> &p_ids) {
-  if (p_ids.isEmpty() || !m_nodeExplorer) {
-    return;
-  }
-
-  NodeInfo seedInfo = m_nodeExplorer->getNodeInfo(p_ids.first());
-
-  MarkNodeDialog2 dialog(seedInfo.textColor, seedInfo.backgroundColor, window());
-  if (dialog.exec() != QDialog::Accepted) {
-    return;
-  }
-
-  const QString textColor = dialog.textColor();
-  const QString backgroundColor = dialog.backgroundColor();
-  for (const auto &id : p_ids) {
-    if (id.isValid()) {
-      m_nodeExplorer->handleMarkResult(id, textColor, backgroundColor);
-    }
-  }
 }
 
 void NotebookExplorer2::onIgnoreRequested(const NodeIdentifier &p_nodeId) {

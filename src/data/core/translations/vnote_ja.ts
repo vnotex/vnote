@@ -4476,55 +4476,6 @@
     </message>
 </context>
 <context>
-    <name>vnotex::MarkNodeDialog2</name>
-    <message>
-        <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="+71"/>
-        <source>Preview</source>
-        <translation>プレビュー</translation>
-    </message>
-    <message>
-        <location line="-10"/>
-        <source>Text color</source>
-        <translation>文字色</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Background color</source>
-        <translation>背景色</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Sample text</source>
-        <translation>サンプルテキスト</translation>
-    </message>
-    <message>
-        <location line="+18"/>
-        <source>Mark Node</source>
-        <translation>ノードをマーク</translation>
-    </message>
-    <message>
-        <location line="+55"/>
-        <location line="+83"/>
-        <source>None</source>
-        <translation>なし</translation>
-    </message>
-    <message>
-        <location line="-79"/>
-        <source>Custom</source>
-        <translation>カスタム</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Clear</source>
-        <translation>クリア</translation>
-    </message>
-    <message>
-        <location line="+58"/>
-        <source>Select Color</source>
-        <translation>色を選択</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::MarkdownEditor</name>
     <message>
         <location filename="../../../widgets/editors/markdowneditor.cpp" line="+247"/>
@@ -7744,6 +7695,18 @@ Raw ノートブックの場合、ファイルを含む既存のフォルダー�
 </context>
 <context>
     <name>vnotex::NotebookNodeController</name>
+    <message>
+        <source>Text</source>
+        <translation>テキスト</translation>
+    </message>
+    <message>
+        <source>Background</source>
+        <translation>背景</translation>
+    </message>
+    <message>
+        <source>Auto</source>
+        <translation>自動</translation>
+    </message>
     <message>
         <location filename="../../../controllers/notebooknodecontroller.cpp" line="+274"/>
         <location line="+110"/>

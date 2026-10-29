@@ -95,8 +95,6 @@ void CombinedNodeExplorer::setupUI() {
           &CombinedNodeExplorer::exportNodeRequested);
   connect(m_controller, &NotebookNodeController::shareFolderRequested, this,
           &CombinedNodeExplorer::shareFolderRequested);
-  connect(m_controller, &NotebookNodeController::markRequested, this,
-          &CombinedNodeExplorer::markRequested);
   connect(m_controller, &NotebookNodeController::encryptNoteRequested, this,
           &CombinedNodeExplorer::encryptNoteRequested);
   connect(m_controller, &NotebookNodeController::decryptNoteRequested, this,
@@ -258,13 +256,6 @@ void CombinedNodeExplorer::handleMissingRemovalConfirmed(const QList<NodeIdentif
 void CombinedNodeExplorer::suppressMissingNodes(const QList<NodeIdentifier> &p_nodeIds) {
   if (m_controller) {
     m_controller->suppressMissingNodes(p_nodeIds);
-  }
-}
-
-void CombinedNodeExplorer::handleMarkResult(const NodeIdentifier &p_nodeId,
-                                            const QString &p_textColor, const QString &p_bgColor) {
-  if (m_controller) {
-    m_controller->handleMarkResult(p_nodeId, p_textColor, p_bgColor);
   }
 }
 

@@ -4476,55 +4476,6 @@
     </message>
 </context>
 <context>
-    <name>vnotex::MarkNodeDialog2</name>
-    <message>
-        <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="+61"/>
-        <source>Text color</source>
-        <translation>텍스트 색상</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Background color</source>
-        <translation>배경색</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Preview</source>
-        <translation>미리 보기</translation>
-    </message>
-    <message>
-        <location line="+3"/>
-        <source>Sample text</source>
-        <translation>예시 텍스트</translation>
-    </message>
-    <message>
-        <location line="+18"/>
-        <source>Mark Node</source>
-        <translation>노드 표시</translation>
-    </message>
-    <message>
-        <location line="+55"/>
-        <location line="+83"/>
-        <source>None</source>
-        <translation>없음</translation>
-    </message>
-    <message>
-        <location line="-79"/>
-        <source>Custom</source>
-        <translation>사용자 지정</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Clear</source>
-        <translation>지우기</translation>
-    </message>
-    <message>
-        <location line="+58"/>
-        <source>Select Color</source>
-        <translation>색상 선택</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::MarkdownEditor</name>
     <message>
         <location filename="../../../widgets/editors/markdowneditor.cpp" line="+247"/>
@@ -7744,6 +7695,18 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
 </context>
 <context>
     <name>vnotex::NotebookNodeController</name>
+    <message>
+        <source>Text</source>
+        <translation>텍스트</translation>
+    </message>
+    <message>
+        <source>Background</source>
+        <translation>배경</translation>
+    </message>
+    <message>
+        <source>Auto</source>
+        <translation>자동</translation>
+    </message>
     <message>
         <location filename="../../../controllers/notebooknodecontroller.cpp" line="+274"/>
         <location line="+110"/>

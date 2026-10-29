@@ -95,10 +95,8 @@ private:
 
 const QStringList &TestHardcodedColorDrift::allowedFiles() {
   static const QStringList files = {
-      // No entries. The two literal-color sites in src/ (marknodedialog2's
-      // swatch palette and notebookselector2's avatar colors) offer colors as
-      // DATA and never pair them with a CSS property, so the detector already
-      // ignores them without an allow-list entry.
+      // No entries. Mark-menu swatches and notebook avatar colors are DATA,
+      // not CSS property values, so they need no allow-list entry.
   };
   return files;
 }

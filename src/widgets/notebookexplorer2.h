@@ -152,7 +152,6 @@ private slots:
   // untouched); Cancel suppresses them for the session.
   void onMissingNodeRemovalRequested(const QList<NodeIdentifier> &p_nodeIds);
   void onPropertiesRequested(const NodeIdentifier &p_nodeId);
-  void onMarkRequested(const QList<NodeIdentifier> &p_ids);
   void onIgnoreRequested(const NodeIdentifier &p_nodeId);
   void onManageTagsRequested(const QList<NodeIdentifier> &p_ids);
   void onErrorOccurred(const QString &p_title, const QString &p_message);

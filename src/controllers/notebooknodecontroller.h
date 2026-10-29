@@ -70,7 +70,6 @@ public:
                             const NodeTransferCallbacks &p_callbacks = NodeTransferCallbacks());
   void duplicateNode(const NodeIdentifier &p_nodeId);
   void renameNode(const NodeIdentifier &p_nodeId);
-  void markNode(const NodeIdentifier &p_nodeId);
   void encryptNote(const QList<NodeIdentifier> &p_ids);
   void decryptNote(const QList<NodeIdentifier> &p_ids);
   // T9 (notebook-explorer-drag-reorder): virtual so the GUI drag-drop test
@@ -130,7 +129,6 @@ public:
   void copyNodePaths(const QList<NodeIdentifier> &p_ids);
   void pinNodesToQuickAccess(const QList<NodeIdentifier> &p_ids);
   void reloadNodes(const QList<NodeIdentifier> &p_ids);
-  void markNodes(const QList<NodeIdentifier> &p_ids);
 
   // --- Missing-files-on-disk (phantom node) batch removal (T11) ---
   // A "phantom" node is one that is still indexed in a bundled notebook but
@@ -284,8 +282,6 @@ public slots:
   void handleNewNoteResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);
   void handleNewFolderResult(const NodeIdentifier &p_parentId, const NodeIdentifier &p_newNodeId);
   void handleRenameResult(const NodeIdentifier &p_nodeId, const QString &p_newName);
-  void handleMarkResult(const NodeIdentifier &p_nodeId, const QString &p_textColor,
-                        const QString &p_bgColor);
   // Per-id apply primitive for the batch Tags flow. Applies the DELTA produced
   // by ViewTagsDialog2: tags in p_added are applied with TagService::tagFile,
   // tags in p_removed are dropped with TagService::untagFile. Deliberately NOT
@@ -349,7 +345,6 @@ signals:
   // Signal emitted when nodes are pasted (for cross-panel refresh in two-column view)
   void nodesPasted(const NodeIdentifier &p_targetFolderId);
 
-  void markRequested(const QList<NodeIdentifier> &p_ids);
   void encryptNoteRequested(const QList<NodeIdentifier> &p_ids);
   void decryptNoteRequested(const QList<NodeIdentifier> &p_ids);
 
@@ -442,6 +437,9 @@ public:
                             const QSet<QString> &p_removed);
 
 private:
+  void addMarkMenu(QMenu *p_menu, const NodeIdentifier &p_nodeId, bool p_readOnly);
+  void markNodes(const QList<NodeIdentifier> &p_ids, const QString &p_color, bool p_background);
+
   // Resolve selection following Qt right-click convention:
   // - If clicked node is in current selection, return full selection
   // - Otherwise, return clicked node only

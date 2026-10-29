@@ -4476,55 +4476,6 @@
     </message>
 </context>
 <context>
-    <name>vnotex::MarkNodeDialog2</name>
-    <message>
-        <location filename="../../../widgets/dialogs/marknodedialog2.cpp" line="+71"/>
-        <source>Preview</source>
-        <translation>预览</translation>
-    </message>
-    <message>
-        <location line="-10"/>
-        <source>Text color</source>
-        <translation>文本颜色</translation>
-    </message>
-    <message>
-        <location line="+5"/>
-        <source>Background color</source>
-        <translation>背景颜色</translation>
-    </message>
-    <message>
-        <location line="+8"/>
-        <source>Sample text</source>
-        <translation>示例文本</translation>
-    </message>
-    <message>
-        <location line="+18"/>
-        <source>Mark Node</source>
-        <translation>标记节点</translation>
-    </message>
-    <message>
-        <location line="+55"/>
-        <location line="+83"/>
-        <source>None</source>
-        <translation>无</translation>
-    </message>
-    <message>
-        <location line="-79"/>
-        <source>Custom</source>
-        <translation>自定义</translation>
-    </message>
-    <message>
-        <location line="+7"/>
-        <source>Clear</source>
-        <translation>清空</translation>
-    </message>
-    <message>
-        <location line="+58"/>
-        <source>Select Color</source>
-        <translation>选择颜色</translation>
-    </message>
-</context>
-<context>
     <name>vnotex::MarkdownEditor</name>
     <message>
         <location filename="../../../widgets/editors/markdowneditor.cpp" line="+247"/>
@@ -7744,6 +7695,18 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
 </context>
 <context>
     <name>vnotex::NotebookNodeController</name>
+    <message>
+        <source>Text</source>
+        <translation>文本</translation>
+    </message>
+    <message>
+        <source>Background</source>
+        <translation>背景</translation>
+    </message>
+    <message>
+        <source>Auto</source>
+        <translation>自动</translation>
+    </message>
     <message>
         <location filename="../../../controllers/notebooknodecontroller.cpp" line="+274"/>
         <location line="+110"/>

@@ -183,8 +183,6 @@ void TwoColumnsNodeExplorer::connectControllerSignals(NotebookNodeController *p_
   // NotebookExplorer2, which owns the dialogs.
   connect(p_controller, &NotebookNodeController::shareFolderRequested, this,
           &TwoColumnsNodeExplorer::shareFolderRequested);
-  connect(p_controller, &NotebookNodeController::markRequested, this,
-          &TwoColumnsNodeExplorer::markRequested);
   connect(p_controller, &NotebookNodeController::encryptNoteRequested, this,
           &TwoColumnsNodeExplorer::encryptNoteRequested);
   connect(p_controller, &NotebookNodeController::decryptNoteRequested, this,
@@ -451,15 +449,6 @@ void TwoColumnsNodeExplorer::suppressMissingNodes(const QList<NodeIdentifier> &p
   NotebookNodeController *controller = controllerForNode(p_nodeIds.first());
   if (controller) {
     controller->suppressMissingNodes(p_nodeIds);
-  }
-}
-
-void TwoColumnsNodeExplorer::handleMarkResult(const NodeIdentifier &p_nodeId,
-                                              const QString &p_textColor,
-                                              const QString &p_bgColor) {
-  NotebookNodeController *controller = controllerForNode(p_nodeId);
-  if (controller) {
-    controller->handleMarkResult(p_nodeId, p_textColor, p_bgColor);
   }
 }
 
