@@ -156,8 +156,8 @@ jobs:
           REM needs its own `|| exit /b 1`. Without them a failed build (and the
           REM failed pack and failed extraction that follow it) was reported as
           REM a green step, and the run only died later in a packaging gate.
-          REM vtextedit tests belong to ALL even with VNOTE_BUILD_TESTS=OFF.
-          REM pack builds all release dependencies without compiling tests.
+          REM VNOTE_BUILD_TESTS controls both parent and bundled editor tests.
+          REM With tests OFF, pack builds release dependencies without test targets.
           if "%VNOTE_TESTS%"=="ON" (
             cmake --build . --target all test_typsteditor || exit /b 1
           )

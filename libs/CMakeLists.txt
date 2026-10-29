@@ -26,6 +26,7 @@ add_subdirectory(QHotkey)
 # sonnet, hunspell and VTextEdit. Do not reorder.
 set(VTEXTEDIT_ENABLE_TYPST ON CACHE BOOL "Build the required native Typst editor" FORCE)
 set(VTEXTEDIT_BUILD_DEMOS OFF CACHE BOOL "Disable vtextedit demo applications" FORCE)
+set(VTEXTEDIT_BUILD_TESTS ${VNOTE_BUILD_TESTS} CACHE BOOL "Build vtextedit tests with VNote tests" FORCE)
 add_subdirectory(vtextedit)
 
 # vxcore - VNote core library (notebook management, tags, search)

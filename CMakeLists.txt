@@ -62,6 +62,10 @@ if(WIN32)
   set(CMAKE_INSTALL_SYSTEM_RUNTIME_DESTINATION "${CMAKE_INSTALL_BINDIR}")
 endif()
 
+# OFF by default for both VNote and its bundled editor; CI enables tests explicitly.
+# Declare this before adding dependencies so their test targets follow the same switch.
+option(VNOTE_BUILD_TESTS "Build VNote and bundled editor tests" OFF)
+
 set(QHOTKEY_INSTALL OFF CACHE BOOL "Disable installing QHotKey" FORCE)
 add_subdirectory(libs)
 
@@ -107,11 +111,6 @@ option(VNOTE_BUILD_THEME_DEMO "Build the theme visibility demo" OFF)
 if(VNOTE_BUILD_THEME_DEMO)
     add_subdirectory(tools/theme-demo)
 endif()
-
-# TODO: find a better way to organize tests
-# OFF by default: a plain `cmake ..` builds only the app. CI turns it ON explicitly
-# (see .github/workflows/ci-linux.yml, ci-macos.yml, ci-win.yml).
-option(VNOTE_BUILD_TESTS "Build VNote unit tests" OFF)
 
 enable_testing()
 if(VNOTE_BUILD_TESTS)

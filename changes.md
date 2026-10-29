@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Make bundled editor tests follow VNOTE_BUILD_TESTS so default VNote builds omit tests, while CI enables them explicitly
 * Make the retained-GIF Typst clipboard snapshot regression opt-in locally and enable it explicitly in CI
 * Keep Chinese IME input in toolbar popup fields instead of the note editor on Windows and macOS, preserving frameless dismissal, overflow access and fullscreen focus
 * Always open context-menu Open Link targets in a new tab, even when the new-tab preference is disabled, across Markdown, Typst and mind maps

@@ -17,6 +17,9 @@ is set** (it defaults to OFF; CI turns it ON). Registered via
 the `add_qt_test()` helper (details in [Adding New Tests](#adding-new-tests) below). Categories:
 `controllers/`, `core/`, `gui/`, `integration/`, `models/`, `utils/`, `widgets/`.
 
+`VNOTE_BUILD_TESTS` also controls the bundled vtextedit test targets. VNote sets
+`VTEXTEDIT_BUILD_TESTS` from that flag; standalone vtextedit keeps its own default ON.
+
 Configure the test-enabled build dir from repo root (also re-run this if `tests/CMakeLists.txt`
 itself changed): `cmake -B build-debug -DVNOTE_BUILD_TESTS=ON`.
 
@@ -155,10 +158,13 @@ QTEST_GUILESS_MAIN(tests::TestMyService)
 ```
 
 ## Enable Tests
-Uncomment in root `CMakeLists.txt`:
-```cmake
-add_subdirectory(tests)
+Enable parent and bundled editor tests explicitly at configure time; do not edit CMake files:
+```bash
+cmake -S . -B build -DVNOTE_BUILD_TESTS=ON
 ```
+
+CMake retains cached choices. An existing ON build stays ON even though the default is OFF;
+configure with `-DVNOTE_BUILD_TESTS=OFF` to remove both sets of test targets from that build.
 
 ## Build Tests
 ```bash
