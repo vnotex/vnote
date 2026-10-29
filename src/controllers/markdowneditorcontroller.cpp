@@ -35,7 +35,7 @@ MarkdownEditorController::generateSectionNumbers(const QVector<vte::md::HeadingI
                                                  bool p_detectHeading1ForSectionNumber) {
   QVector<QString> result(p_headings.size());
   const auto levelFor = [](const vte::md::HeadingInfo &p_heading) {
-    return p_heading.m_isEmpty ? 0 : p_heading.m_level;
+    return p_heading.m_isEmpty || p_heading.m_isSetext ? 0 : p_heading.m_level;
   };
   const auto analysis =
       SectionNumberUtils::analyzeStructure(p_headings, levelFor, p_detectHeading1ForSectionNumber);

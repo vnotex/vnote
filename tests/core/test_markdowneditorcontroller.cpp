@@ -57,9 +57,10 @@ class TestMarkdownEditorController : public QObject {
 private slots:
   void testSourceSectionNumbers_data();
   void testSourceSectionNumbers();
-  void testEmptySourceHeadings_data();
-  void testEmptySourceHeadings();
+  void testSourceHeadingEligibility_data();
+  void testSourceHeadingEligibility();
   void testTypingHashWithoutSectionNumber();
+  void testTypingDashWithoutSectionNumber();
 
   // ============ Group 2: getPreviewHelperConfig (static) ============
 
@@ -184,7 +185,7 @@ void TestMarkdownEditorController::testSourceSectionNumbers() {
            expected);
 }
 
-void TestMarkdownEditorController::testEmptySourceHeadings_data() {
+void TestMarkdownEditorController::testSourceHeadingEligibility_data() {
   QTest::addColumn<QString>("source");
   QTest::addColumn<QString>("expected");
   QTest::addColumn<bool>("detectTitle");
@@ -206,9 +207,31 @@ void TestMarkdownEditorController::testEmptySourceHeadings_data() {
       << QStringLiteral("## ![](missing.png)\n## <img src=\"missing.png\">\n## \\#\n")
       << QStringLiteral("## 1. ![](missing.png)\n## 2. <img src=\"missing.png\">\n## 3. \\#\n")
       << false;
+  QTest::newRow("only-setext") << QStringLiteral("Dash\n---\n\nEquals\n===\n")
+                               << QStringLiteral("Dash\n---\n\nEquals\n===\n") << false;
+  QTest::newRow("setext-counters-and-base-level")
+      << QStringLiteral("### Alpha\n\nDash\n---\n\nEquals\n===\n\n### Beta\n")
+      << QStringLiteral("### 1. Alpha\n\nDash\n---\n\nEquals\n===\n\n### 2. Beta\n") << false;
+  QTest::newRow("setext-around-sole-atx-title")
+      << QStringLiteral("Intro\n---\n\n# Title\n\nOther\n===\n\n## Alpha\n## Beta\n")
+      << QStringLiteral("Intro\n---\n\n# Title\n\nOther\n===\n\n## 1. Alpha\n## 2. Beta\n") << true;
+  QTest::newRow("setext-title-detection-off")
+      << QStringLiteral("Intro\n---\n\n# Title\n\nOther\n===\n\n## Alpha\n## Beta\n")
+      << QStringLiteral("Intro\n---\n\n# 1. Title\n\nOther\n===\n\n## 1.1. Alpha\n## 1.2. Beta\n")
+      << false;
+  QTest::newRow("setext-containers-and-multiline")
+      << QStringLiteral("> ## Quoted\n>\n> Underlined\n> continuation\n> ---\n\n- ### Nested\n\n## Tail\n")
+      << QStringLiteral("> ## 1. Quoted\n>\n> Underlined\n> continuation\n> ---\n\n"
+                        "- ### 1.1. Nested\n\n## 2. Tail\n") << false;
+  QTest::newRow("setext-existing-number")
+      << QStringLiteral("42\\. Existing\n---\n\n## Topic\n")
+      << QStringLiteral("42\\. Existing\n---\n\n## 1. Topic\n") << false;
+  QTest::newRow("setext-discarded-reference-definition")
+      << QStringLiteral("## Before\n\n[ref]: /url\nAlpha\n-----\n\n## After\n")
+      << QStringLiteral("## 1. Before\n\n[ref]: /url\nAlpha\n-----\n\n## 2. After\n") << false;
 }
 
-void TestMarkdownEditorController::testEmptySourceHeadings() {
+void TestMarkdownEditorController::testSourceHeadingEligibility() {
   QFETCH(QString, source);
   QFETCH(QString, expected);
   QFETCH(bool, detectTitle);
@@ -230,6 +253,10 @@ void TestMarkdownEditorController::testEmptySourceHeadings() {
     QTest::qWait(800);
   }
   QTRY_COMPARE_WITH_TIMEOUT(editor.document()->toPlainText(), expected, 5000);
+  if (source != expected) {
+    QTest::qWait(800);
+    QCOMPARE(editor.document()->toPlainText(), expected);
+  }
 }
 
 void TestMarkdownEditorController::testTypingHashWithoutSectionNumber() {
@@ -271,6 +298,38 @@ void TestMarkdownEditorController::testTypingHashWithoutSectionNumber() {
   QTest::qWait(800);
   QCOMPARE(editor.document()->toPlainText(), QStringLiteral("#"));
   QCOMPARE(edit->textCursor().position(), 1);
+}
+
+void TestMarkdownEditorController::testTypingDashWithoutSectionNumber() {
+  auto textConfig = QSharedPointer<vte::TextEditorConfig>::create();
+  textConfig->m_inputMode = vte::InputMode::NormalMode;
+  vte::VMarkdownEditor editor(QSharedPointer<vte::MarkdownEditorConfig>::create(textConfig),
+                              QSharedPointer<vte::TextEditorParameters>::create());
+  editor.setHeadingSectionNumberProvider([](const QVector<vte::md::HeadingInfo> &p_headings) {
+    return MarkdownEditorController::generateSectionNumbers(p_headings, QStringLiteral("1.1."),
+                                                            false);
+  });
+  editor.setHeadingSectionNumberingActive(true);
+  editor.resize(640, 240);
+  editor.show();
+  auto *edit = editor.getTextEdit();
+  edit->setFocus();
+  QSignalSpy headings(editor.getHighlighter(), &vte::MarkdownHighlighter::headingsUpdated);
+  editor.setText(QStringLiteral("Paragraph\n"));
+  auto cursor = edit->textCursor();
+  cursor.movePosition(QTextCursor::End);
+  edit->setTextCursor(cursor);
+  QTest::keyClicks(edit, "-");
+  QTRY_VERIFY_WITH_TIMEOUT(!headings.isEmpty(), 5000);
+  QTest::qWait(800);
+  QCOMPARE(editor.document()->toPlainText(), QStringLiteral("Paragraph\n-"));
+  QCOMPARE(edit->textCursor().position(), editor.document()->characterCount() - 1);
+  headings.clear();
+  QTest::keyClicks(edit, " item");
+  QTRY_VERIFY_WITH_TIMEOUT(!headings.isEmpty(), 5000);
+  QTest::qWait(800);
+  QCOMPARE(editor.document()->toPlainText(), QStringLiteral("Paragraph\n- item"));
+  QCOMPARE(edit->textCursor().position(), editor.document()->characterCount() - 1);
 }
 
 // ============ Group 2: getPreviewHelperConfig ============

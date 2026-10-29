@@ -202,10 +202,12 @@ runs before per-window refresh. Coverage: `test_markdownwebjobcontroller` and
 
 ## Editor Section Numbering
 
-`MarkdownEditorController::generateSectionNumbers()` leaves AST-empty headings untouched
-and excludes them from counters, base-level selection and sole-H1 title detection. Use
-`HeadingInfo::m_isEmpty`, not the rendered title: image-only headings still have content.
-This lets a user pause after `#` and continue typing `#abc` without an inserted number.
+`MarkdownEditorController::generateSectionNumbers()` numbers only nonempty ATX (`#`) headings.
+AST-empty headings and both Setext underline forms (`-` and `=`) remain untouched, including
+existing numeric prefixes, and do not affect counters, base level or sole-H1 title detection.
+Use `HeadingInfo::m_isEmpty` and `m_isSetext`, not rendered titles or source regexes:
+image-only ATX headings still have content. Users can pause after `#` or a paragraph's
+following `-` and continue typing `#abc` or `- item` without an inserted number.
 The result stays index-aligned with the parsed headings. This is an editor source-writing
 policy only; Markdown parsing and read-mode/outline numbering are unchanged.
 
