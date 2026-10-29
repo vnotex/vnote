@@ -227,7 +227,7 @@ private:
   bool m_concealmentEnabled = true;
 
   // Hide Markdown syntax visually without changing source.
-  bool m_concealMarkdownMarkersEnabled = false;
+  bool m_concealMarkdownMarkersEnabled = true;
 
   // Whether enable in-place preview width constraint.
   bool m_constrainInplacePreviewWidthEnabled = false;

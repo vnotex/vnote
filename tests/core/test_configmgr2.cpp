@@ -921,7 +921,7 @@ void TestConfigMgr2::testConcealmentPreferences_persistIndependently() {
   MainConfig defaults(m_configMgr);
   defaults.getEditorConfig().getMarkdownEditorConfig().setConcealmentEnabled(false);
   const auto migrated = loadThroughMergePath(withoutKeyAt(defaults.toJson(), markerPath));
-  QCOMPARE(valueAt(migrated, markerPath), QJsonValue(false));
+  QCOMPARE(valueAt(migrated, markerPath), QJsonValue(true));
   {
     ConfigMgr2 settings(m_configService);
     settings.init();

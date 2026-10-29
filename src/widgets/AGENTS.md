@@ -986,8 +986,9 @@ Markdown's top-right **Menu** exposes two Edit-only checkable preferences immedi
 
 - **Conceal long link destinations** retains `editor.markdown_editor.concealment`, default `true`.
 - **Conceal Markdown Markers** stores `editor.markdown_editor.concealMarkdownMarkers`, default
-  `false`. It hides emphasis, strong, strikethrough, mark, inline-code, link, ATX-heading and
-  inline-formula syntax through vtextedit's typed `MarkdownConcealHideSyntax` rules.
+  `true`. A saved `false` remains off. It hides emphasis, strong, strikethrough, mark, inline-code,
+  link, ATX-heading and inline-formula syntax through vtextedit's typed `MarkdownConcealHideSyntax`
+  rules.
 
 Both preferences are global and persist independently through `ConfigMgr2`; moving the original
 control must preserve saved opt-outs. Menu actions call `MarkdownEditorController`, which emits

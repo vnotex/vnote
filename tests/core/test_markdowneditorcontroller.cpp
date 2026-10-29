@@ -519,6 +519,7 @@ void TestMarkdownEditorController::testConcealmentControlsRenderedDestinations()
   QFETCH(bool, fromContent);
   auto ec = makeEditorConfig();
   auto &mdConfig = ec.getMarkdownEditorConfig();
+  mdConfig.setConcealMarkdownMarkersEnabled(false);
   mdConfig.setInplacePreviewSources(MarkdownEditorConfig::NoInplacePreview);
   QTemporaryDir themeDir;
   QVERIFY(themeDir.isValid());
