@@ -158,5 +158,165 @@
     "en_US": "Use the Stay on Top pin in a detached window to keep a reference note visible above other windows",
     "zh_CN": "使用独立窗口中的“置顶”图钉，让参考笔记始终显示在其他窗口之上",
     "ko_KR": "분리된 창의 항상 위에 표시 핀을 사용하여 참고 노트가 다른 창 위에 계속 보이도록 하세요"
+  },
+  {
+    "en_US": "Press Shift+Enter in the Markdown editor to insert a line break without starting a new paragraph",
+    "zh_CN": "在 Markdown 编辑器中按 Shift+Enter，插入换行而不另起一段",
+    "ko_KR": "Markdown 편집기에서 Shift+Enter를 누르면 새 문단을 시작하지 않고 줄을 바꿀 수 있습니다"
+  },
+  {
+    "en_US": "Choose the current folder as the Search scope when you only need results from one part of your notebook",
+    "zh_CN": "只需查找笔记本某个部分的内容时，将搜索范围设为当前文件夹",
+    "ko_KR": "노트북의 특정 부분에서만 결과를 찾으려면 검색 범위를 현재 폴더로 설정하세요"
+  },
+  {
+    "en_US": "Use a wildcard file pattern such as *.md in the Search panel to narrow results to matching file names",
+    "zh_CN": "在搜索面板中使用 *.md 等通配符文件模式，将结果限定为文件名匹配的文件",
+    "ko_KR": "검색 패널에서 *.md 같은 와일드카드 파일 패턴을 사용하여 파일 이름이 일치하는 결과로 범위를 좁히세요"
+  },
+  {
+    "en_US": "Encrypted note bodies are excluded from content search even when unlocked; search their names or tags instead",
+    "zh_CN": "加密笔记即使已解锁，正文也不参与内容搜索；可改为搜索名称或标签",
+    "ko_KR": "암호화된 노트의 본문은 잠금 해제 후에도 내용 검색에서 제외되므로 이름이나 태그로 검색하세요"
+  },
+  {
+    "en_US": "Choose PNG under Settings > Editor > Default image format to preserve transparency in clipboard images saved as files",
+    "zh_CN": "在“设置 > 编辑器 > 默认图片格式”中选择 PNG，保留剪贴板图片保存为文件时的透明度",
+    "ko_KR": "설정 > 편집기 > 기본 이미지 형식에서 PNG를 선택하면 클립보드 이미지를 파일로 저장할 때 투명도가 유지됩니다"
+  },
+  {
+    "en_US": "Right-click an image in Markdown edit mode and choose Resize Image to scale its width and height together",
+    "zh_CN": "在 Markdown 编辑模式下右键点击图片，选择“调整图片大小”，即可按比例缩放宽度和高度",
+    "ko_KR": "Markdown 편집 모드에서 이미지를 마우스 오른쪽 버튼으로 클릭하고 이미지 크기 조정을 선택하여 너비와 높이를 함께 비례 조절하세요"
+  },
+  {
+    "en_US": "Choose Paste with Linked Images when moving text between notes to copy its linked local images and update their paths",
+    "zh_CN": "在笔记之间粘贴文本时，选择“以关联图片的方式粘贴”，复制其中链接的本地图片并更新路径",
+    "ko_KR": "노트 사이에 텍스트를 붙여 넣을 때 연결된 이미지와 함께 붙여넣기를 선택하여 연결된 로컬 이미지를 복사하고 경로를 갱신하세요"
+  },
+  {
+    "en_US": "Base64 image insertion embeds the picture in the Markdown body instead of a separate file; Base64 itself is not encryption",
+    "zh_CN": "以 Base64 插入图片会将图片嵌入 Markdown 正文，而非保存为单独文件；Base64 本身不是加密",
+    "ko_KR": "Base64 이미지 삽입은 별도 파일 대신 Markdown 본문에 그림을 포함하며, Base64 자체는 암호화가 아닙니다"
+  },
+  {
+    "en_US": "Right-click a Markdown heading that starts with # in edit mode and choose Copy Link to link directly to that section",
+    "zh_CN": "在编辑模式下右键点击以 # 开头的 Markdown 标题，选择“复制链接”，即可直接链接到该章节",
+    "ko_KR": "편집 모드에서 #으로 시작하는 Markdown 제목을 마우스 오른쪽 버튼으로 클릭하고 링크 복사를 선택하여 해당 섹션에 직접 연결하세요"
+  },
+  {
+    "en_US": "Press Enter inside a Markdown blockquote to continue the quote with the > marker inserted automatically",
+    "zh_CN": "在 Markdown 引用块中按 Enter，即可自动插入 > 标记并继续引用",
+    "ko_KR": "Markdown 인용문 안에서 Enter를 누르면 > 표시가 자동으로 삽입되어 인용문이 이어집니다"
+  },
+  {
+    "en_US": "Click a Markdown task checkbox in read mode to update its source, then save the note to keep the change",
+    "zh_CN": "在阅读模式下点击 Markdown 任务复选框，即可更新源码；随后保存笔记以保留修改",
+    "ko_KR": "읽기 모드에서 Markdown 작업 확인란을 클릭하면 소스가 갱신되며, 변경 사항을 유지하려면 노트를 저장하세요"
+  },
+  {
+    "en_US": "Add a Markdown footnote with [^1] in the text and a separate line beginning with [^1]: for its explanation",
+    "zh_CN": "在正文中使用 [^1]，再另起一行以 [^1]: 开头填写说明，即可添加 Markdown 脚注",
+    "ko_KR": "본문에 [^1]을 넣고 별도의 줄에 [^1]:로 시작하는 설명을 작성하여 Markdown 각주를 추가하세요"
+  },
+  {
+    "en_US": "Wrap important Markdown text in ==double equals signs== to highlight it when rendered",
+    "zh_CN": "用 ==双等号== 包围重要的 Markdown 文本，即可在渲染时高亮显示",
+    "ko_KR": "중요한 Markdown 텍스트를 ==이중 등호==로 감싸면 렌더링할 때 강조 표시됩니다"
+  },
+  {
+    "en_US": "Add a language name such as python after the opening triple backticks of a Markdown code block to enable syntax highlighting",
+    "zh_CN": "在 Markdown 代码块开头的三个反引号后添加 python 等语言名称，即可启用语法高亮",
+    "ko_KR": "Markdown 코드 블록을 여는 백틱 세 개 뒤에 python 같은 언어 이름을 추가하여 구문 강조를 사용하세요"
+  },
+  {
+    "en_US": "Use Insert Table on the Markdown toolbar to choose the number of rows and columns before inserting a table",
+    "zh_CN": "使用 Markdown 工具栏上的“插入表格”，在插入前选择行数和列数",
+    "ko_KR": "Markdown 도구 모음의 표 삽입을 사용하여 표를 넣기 전에 행과 열의 수를 선택하세요"
+  },
+  {
+    "en_US": "Write a diagram in a fenced mermaid code block to render it directly in your Markdown note",
+    "zh_CN": "在标记为 mermaid 的围栏代码块中编写图表，即可直接在 Markdown 笔记中渲染",
+    "ko_KR": "mermaid로 지정한 코드 블록에 다이어그램을 작성하면 Markdown 노트 안에서 바로 렌더링할 수 있습니다"
+  },
+  {
+    "en_US": "Use the bundled KaTeX math renderer to read, preview and export formulas without an internet connection",
+    "zh_CN": "使用内置 KaTeX 数学渲染器，无需联网即可阅读、预览和导出公式",
+    "ko_KR": "내장 KaTeX 수식 렌더러를 사용하면 인터넷 연결 없이 수식을 읽고 미리 보고 내보낼 수 있습니다"
+  },
+  {
+    "en_US": "For offline PlantUML rendering, choose Local JAR in Markdown settings and configure Java and a PlantUML JAR",
+    "zh_CN": "如需离线渲染 PlantUML，请在 Markdown 设置中选择“本地JAR”，并配置 Java 和 PlantUML JAR",
+    "ko_KR": "PlantUML을 오프라인으로 렌더링하려면 Markdown 설정에서 로컬 JAR을 선택하고 Java와 PlantUML JAR을 구성하세요"
+  },
+  {
+    "en_US": "When a PDF contains bookmarks, use the Outline panel or the view toolbar's Outline popup to jump to a section",
+    "zh_CN": "PDF 包含书签时，使用大纲面板或视图工具栏的大纲弹窗，即可跳转到相应章节",
+    "ko_KR": "PDF에 북마크가 있으면 개요 패널이나 보기 도구 모음의 개요 팝업을 사용하여 해당 섹션으로 이동하세요"
+  },
+  {
+    "en_US": "PDF highlights, drawings and text boxes are saved automatically as separate annotations without modifying the PDF itself",
+    "zh_CN": "PDF 的高亮、绘图和文本框会自动保存为独立批注，不会修改 PDF 文件本身",
+    "ko_KR": "PDF의 강조, 그리기 및 텍스트 상자는 PDF 자체를 수정하지 않고 별도 주석으로 자동 저장됩니다"
+  },
+  {
+    "en_US": "Use Toggle Sidebar in the PDF toolbar to show page thumbnails and document bookmarks",
+    "zh_CN": "使用 PDF 工具栏中的“切换侧边栏”，显示页面缩略图和文档书签",
+    "ko_KR": "PDF 도구 모음의 사이드바 표시 전환을 사용하여 페이지 축소판과 문서 북마크를 표시하세요"
+  },
+  {
+    "en_US": "Use Find beside Outline in the PDF toolbar to search selectable text inside the document",
+    "zh_CN": "使用 PDF 工具栏中大纲旁的“查找”，搜索文档内可选择的文本",
+    "ko_KR": "PDF 도구 모음에서 개요 옆의 찾기를 사용하여 문서 안의 선택 가능한 텍스트를 검색하세요"
+  },
+  {
+    "en_US": "Hold Ctrl while scrolling the mouse wheel over a mind map to zoom the canvas",
+    "zh_CN": "在思维导图上按住 Ctrl 并滚动鼠标滚轮，即可缩放画布",
+    "ko_KR": "마인드맵 위에서 Ctrl을 누른 채 마우스 휠을 굴리면 캔버스를 확대하거나 축소할 수 있습니다"
+  },
+  {
+    "en_US": "Select a mind-map node to edit its properties in the Tools dock, where node properties appear by default",
+    "zh_CN": "选中思维导图节点，即可在默认显示节点属性的工具面板中编辑其属性",
+    "ko_KR": "마인드맵 노드를 선택하면 기본적으로 노드 속성이 표시되는 도구 패널에서 속성을 편집할 수 있습니다"
+  },
+  {
+    "en_US": "Enable Confirm subtree deletion in Mind Map Editor settings to ask before deleting a node and its descendants",
+    "zh_CN": "在思维导图编辑器设置中启用“删除子树前确认”，删除节点及其子节点前先进行确认",
+    "ko_KR": "마인드맵 편집기 설정에서 하위 트리 삭제 확인을 켜면 노드와 그 하위 노드를 삭제하기 전에 확인합니다"
+  },
+  {
+    "en_US": "Fold a mind-map branch to focus on other ideas; folding affects only the current view, not the saved map",
+    "zh_CN": "折叠思维导图分支以专注于其他思路；折叠仅影响当前视图，不改变已保存的导图",
+    "ko_KR": "마인드맵 가지를 접어 다른 아이디어에 집중하세요; 접기는 현재 보기에만 적용되며 저장된 맵은 바뀌지 않습니다"
+  },
+  {
+    "en_US": "For HTML export, enable Complete page (pack all resources) and keep the exported page together with its resource files",
+    "zh_CN": "导出 HTML 时启用“完整页面（打包所有资源）”，并将导出的页面与资源文件保存在一起",
+    "ko_KR": "HTML로 내보낼 때 완전한 페이지(모든 리소스 포함)를 켜고 내보낸 페이지와 리소스 파일을 함께 보관하세요"
+  },
+  {
+    "en_US": "Enable Add outline panel when exporting HTML to give readers a collapsible table of contents",
+    "zh_CN": "导出 HTML 时启用“添加大纲面板”，为读者提供可折叠的目录",
+    "ko_KR": "HTML로 내보낼 때 개요 패널 추가를 켜서 독자에게 접을 수 있는 목차를 제공하세요"
+  },
+  {
+    "en_US": "For PDF export with wkhtmltopdf enabled, choose All-in-one to combine several notes into one document",
+    "zh_CN": "导出 PDF 并启用 wkhtmltopdf 时，选择“合并为单个文件”，将多篇笔记合并为一份文档",
+    "ko_KR": "PDF 내보내기에서 wkhtmltopdf를 켠 경우 하나로 합치기를 선택하여 여러 노트를 하나의 문서로 합치세요"
+  },
+  {
+    "en_US": "Click Follow Theme in the export dialog to apply the active theme's rendering and syntax styles to the export",
+    "zh_CN": "点击导出对话框中的“跟随主题”，将当前主题的渲染样式和语法样式应用于导出",
+    "ko_KR": "내보내기 대화 상자에서 테마 따르기를 클릭하여 현재 테마의 렌더링 스타일과 구문 스타일을 내보내기에 적용하세요"
+  },
+  {
+    "en_US": "Switch themes from the toolbar's Settings > Themes menu without closing and reopening your notes",
+    "zh_CN": "通过工具栏的“设置 > 主题”菜单切换主题，无需关闭并重新打开笔记",
+    "ko_KR": "도구 모음의 설정 > 테마 메뉴에서 테마를 전환하면 노트를 닫았다가 다시 열 필요가 없습니다"
+  },
+  {
+    "en_US": "To customize a theme, copy its folder into the themes folder in your user configuration and give the copy a new name",
+    "zh_CN": "自定义主题时，将主题文件夹复制到用户配置的 themes 文件夹中，并为副本取一个新名称",
+    "ko_KR": "테마를 사용자 지정하려면 테마 폴더를 사용자 구성의 themes 폴더로 복사하고 복사본에 새 이름을 지정하세요"
   }
 ]
