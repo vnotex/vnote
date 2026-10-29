@@ -71,16 +71,21 @@ Testing (two suites, two build dirs): [tests/AGENTS.md](tests/AGENTS.md).
 
 Before pushing parent-repository or submodule changes, agents MUST:
 
-1. Use a compatible build directory with `VNOTE_BUILD_TESTS=ON` and the Qt kit,
-   compiler and build configuration matching the intended test-enabled CI job.
-2. Build the application and **all enabled test targets**, including explicitly built
-   targets such as `test_typsteditor`. An app-only build or a few focused targets is
-   insufficient: unbuilt tests can contain compile or link failures.
-3. Run the **full parent VNote and native-editor CTest suites**, plus the standalone
-   suites of changed submodules in their own build directories. Follow
-   [tests/AGENTS.md](tests/AGENTS.md) and the platform's workflow for runtime setup.
+1. Determine the affected build and test targets from **all unpushed changes** relative
+   to the destination branch, not just the latest commit. Trace shared headers/APIs,
+   build configuration and submodule pins to dependent consumers; filenames alone
+   are not sufficient. Broaden coverage when the impact cannot be bounded safely.
+2. Build the affected application/library and test targets with tests enabled, using
+   a compatible Qt kit, compiler and build configuration. Include affected targets
+   that are excluded from the default build. An app-only build does not verify tests.
+3. Run the full registered test executables/suites covering those changes, including
+   affected native-editor or standalone submodule tests in their own build directories.
+   Unaffected targets and suites need not run. Follow [tests/AGENTS.md](tests/AGENTS.md)
+   and the platform's workflow for runtime setup.
 4. Verify the final code/configuration being pushed; rebuild and rerun affected checks
-   after subsequent changes. Report the commands, results, skips and platform limits.
+   after subsequent changes. Report the scope rationale, commands, results, skips and
+   platform limits. If all unpushed changes are documentation-only, check the docs and
+   state that no build/test targets are affected; compilation and tests are not required.
 
 **Do not push when required builds or tests fail, time out or cannot run.** Fix the
 cause and verify again; never disable tests, weaken assertions or increase deadlines
