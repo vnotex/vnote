@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Use matching themed Lucide icons for link-preview Open in New Tabs and Close buttons, refreshing both colors on theme changes
 * Open link-preview tabs in their source workspace without reopening views, preserving drafts and undo; replace destination duplicates through Save/Discard/Cancel and retain earlier moves when cancelled
 * Require Ctrl+click to open links in the Markdown editor; ordinary clicks only position the cursor
 * Limit Markdown reader link menus to Open Link followed by Copy Link; hide Edit and Export on links and images

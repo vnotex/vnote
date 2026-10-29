@@ -7,7 +7,6 @@
 #include <QLabel>
 #include <QMouseEvent>
 #include <QPointer>
-#include <QStyle>
 #include <QStyleHints>
 #include <QTimer>
 #include <QToolButton>
@@ -143,29 +142,38 @@ LinkPreviewOverlay::LinkPreviewOverlay(ServiceLocator &p_services, ViewWindow2 *
   openAction->setObjectName(QStringLiteral("openLinkPreviewInNewTabsAction"));
   openAction->setToolTip(tr("Open in New Tabs"));
   openButton->setDefaultAction(openAction);
-  if (auto *themeService = p_services.get<ThemeService>()) {
-    const auto refreshIcon = [openAction, themeService] {
-      openAction->setIcon(IconUtils::fetchIcon(
-          themeService->getIconFile(QStringLiteral("square-arrow-out-up-right.svg")),
-          themeService->paletteColor(QStringLiteral("widgets#viewsplit#action_button#fg"))));
-    };
-    refreshIcon();
-    connect(themeService, &ThemeService::themeChanged, this, refreshIcon);
-  } else {
-    openAction->setIcon(IconUtils::fetchIcon(
-        QStringLiteral(":/vnotex/data/core/icons/square-arrow-out-up-right.svg")));
-  }
   connect(openAction, &QAction::triggered, this, &LinkPreviewOverlay::openInNewTabsRequested);
   headerLayout->addWidget(openButton);
 
   auto *closeButton = new QToolButton(header);
   closeButton->setObjectName(QStringLiteral("closeLinkPreviewButton"));
   closeButton->setProperty(PropertyDefs::c_actionToolButton, true);
-  m_closeAction = new QAction(style()->standardIcon(QStyle::SP_TitleBarCloseButton),
-                              tr("Close Preview"), closeButton);
-  m_closeAction->setObjectName(QStringLiteral("closeLinkPreviewAction"));
-  closeButton->setDefaultAction(m_closeAction);
-  connect(m_closeAction, &QAction::triggered, this, &LinkPreviewOverlay::closeRequested);
+  closeButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
+  auto *closeAction = new QAction(tr("Close Preview"), closeButton);
+  closeAction->setObjectName(QStringLiteral("closeLinkPreviewAction"));
+  closeButton->setDefaultAction(closeAction);
+  connect(closeAction, &QAction::triggered, this, &LinkPreviewOverlay::closeRequested);
+
+  auto *themeService = p_services.get<ThemeService>();
+  const auto refreshIcons = [openAction, closeAction, themeService] {
+    if (themeService) {
+      const auto fg =
+          themeService->paletteColor(QStringLiteral("widgets#viewsplit#action_button#fg"));
+      openAction->setIcon(IconUtils::fetchIcon(
+          themeService->getIconFile(QStringLiteral("square-arrow-out-up-right.svg")), fg));
+      closeAction->setIcon(
+          IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("close.svg")), fg));
+    } else {
+      openAction->setIcon(IconUtils::fetchIcon(
+          QStringLiteral(":/vnotex/data/core/icons/square-arrow-out-up-right.svg")));
+      closeAction->setIcon(
+          IconUtils::fetchIcon(QStringLiteral(":/vnotex/data/core/icons/close.svg")));
+    }
+  };
+  refreshIcons();
+  if (themeService) {
+    connect(themeService, &ThemeService::themeChanged, this, refreshIcons);
+  }
   headerLayout->addWidget(closeButton);
   layout->addWidget(header);
 
@@ -211,9 +219,6 @@ bool LinkPreviewOverlay::event(QEvent *p_event) {
   case QEvent::StyleChange:
   case QEvent::PaletteChange:
   case QEvent::FontChange:
-    if (m_closeAction) {
-      m_closeAction->setIcon(style()->standardIcon(QStyle::SP_TitleBarCloseButton));
-    }
     scheduleRaise();
     break;
   case QEvent::WinIdChange:
