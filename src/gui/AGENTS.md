@@ -128,7 +128,8 @@ Markdown implementation. Consumer policy: [controllers](../controllers/AGENTS.md
 ## External-link confirmation
 
 `ExternalLinkConfirmation::ask()` (`utils/externallinkconfirmation.{h,cpp}`) owns
-the HTTP/HTTPS/FTP/mailto preference policy for Markdown, Typst and mind-map links.
+the shared warning preference for every URL scheme, including local files and custom
+protocols. Markdown, Typst, mind-map and desktop-opening warnings share this preference.
 It may show a modal warning but never changes configuration or opens the URL.
 Callers retain URL authorization and must recheck their lifetime, generation and
 availability after the modal returns, before calling the result's `accept()`.
@@ -138,9 +139,13 @@ controller requests with an empty URL so pending one-shot consent is consumed.
 
 `MessageBoxHelper::questionOpenLink()` owns the warning text and button choices,
 using the existing `MainWindow` translations. Keep that generic helper config-free.
-Local-file/program warnings never honor or modify the external-link opt-out.
-`WidgetUtils::openUrlByDesktop()` shares this warning UI but keeps its independent
-policy: HTTP/HTTPS and local directories open directly; other URLs require Yes/No.
+Every link warning offers **Yes / No / Never Ask**. Once accepted, **Never Ask**
+suppresses all link warnings, regardless of scheme or which caller opens the next link.
+`WidgetUtils::openUrlByDesktop()` receives configuration explicitly and uses the same
+confirmation helper for local-file/program and other non-direct URLs; HTTP/HTTPS and
+local directories continue to open directly. A destroyed originating parent discards
+the desktop-opening result. `WebViewer` receives guarded configuration for its fallback.
+URL authorization, including protected-note restrictions, remains independent.
 Coverage: `tests/gui/test_externallinkconfirmation.cpp` and Typst preview consent cases.
 
 ## CommentColorSwatch

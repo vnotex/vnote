@@ -31,8 +31,7 @@ public:
                            const QString &p_detailedText = QString(), QWidget *p_parent = nullptr);
 
   // Shared link warning UI; Never Ask returns YesToAll without changing preferences.
-  static int questionOpenLink(const QUrl &p_url, bool p_allowNeverAsk,
-                             QWidget *p_parent = nullptr);
+  static int questionOpenLink(const QUrl &p_url, QWidget *p_parent = nullptr);
 
   // Ask user for Yes/No/Cancel action.
   static int questionYesNoCancel(MessageBoxHelper::Type p_type, const QString &p_text,

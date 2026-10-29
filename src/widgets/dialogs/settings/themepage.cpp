@@ -55,7 +55,8 @@ void ThemePage::setupUI() {
       if (themeService) {
         auto theme = themeService->findTheme(currentTheme());
         if (theme) {
-          WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(theme->m_folderPath));
+          WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(theme->m_folderPath),
+                                        m_services.get<ConfigMgr2>(), this);
         }
       }
     });
@@ -187,7 +188,8 @@ void ThemePage::applyThemePreview(const QString &p_themeName) {
     return;
   }
 
-  QScopedPointer<Theme> theme(Theme::fromFolder(info->m_folderPath, ThemeUtils::backfillSystemPalette));
+  QScopedPointer<Theme> theme(
+      Theme::fromFolder(info->m_folderPath, ThemeUtils::backfillSystemPalette));
   if (!theme) {
     return;
   }

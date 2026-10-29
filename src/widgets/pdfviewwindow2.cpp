@@ -728,7 +728,7 @@ void PdfViewWindow2::setupViewer() {
   auto *pdfAdapter = new PdfViewerAdapter(nullptr);
   auto *profileService = getServices().get<WebEngineProfileService>();
   m_viewer = new PdfViewer(
-      pdfAdapter, themeService->getBaseBackground(), 1.0, this,
+      configMgr, pdfAdapter, themeService->getBaseBackground(), 1.0, this,
       profileService ? profileService->profile() : nullptr,
       [themeService](const QString &p_token) {
         return themeService->commentHighlightColor(p_token);

@@ -1,6 +1,7 @@
 #ifndef WEBVIEWER_H
 #define WEBVIEWER_H
 
+#include <QPointer>
 #include <QWebEngineView>
 
 #include <core/global.h>
@@ -8,14 +9,16 @@
 class QWebEngineProfile;
 
 namespace vnotex {
+class ConfigMgr2;
+
 class WebViewer : public QWebEngineView {
   Q_OBJECT
 public:
   // p_profile: nullptr means Qt's default profile. When non-null, it must outlive this viewer.
-  WebViewer(const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent = nullptr,
-            QWebEngineProfile *p_profile = nullptr);
+  WebViewer(ConfigMgr2 *p_configMgr, const QColor &p_background, qreal p_zoomFactor,
+            QWidget *p_parent = nullptr, QWebEngineProfile *p_profile = nullptr);
 
-  WebViewer(const QColor &p_background, QWidget *p_parent = nullptr,
+  WebViewer(ConfigMgr2 *p_configMgr, const QColor &p_background, QWidget *p_parent = nullptr,
             QWebEngineProfile *p_profile = nullptr);
 
   virtual ~WebViewer();
@@ -50,6 +53,9 @@ signals:
 
 private slots:
   void handleExternalLinkRequested(const QUrl &p_url);
+
+private:
+  QPointer<ConfigMgr2> m_configMgr;
 };
 } // namespace vnotex
 

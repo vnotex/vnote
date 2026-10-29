@@ -7,6 +7,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 
+#include <core/configmgr2.h>
 #include <core/servicelocator.h>
 #include <core/services/templateservice.h>
 #include <utils/fileutils2.h>
@@ -34,7 +35,8 @@ void NoteTemplateSelector::setupUI() {
   connect(manageBtn, &QPushButton::clicked, this, [this]() {
     auto templateService = m_services.get<TemplateService>();
     templateService->ensureTemplateFolder();
-    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(templateService->getTemplateFolder()));
+    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(templateService->getTemplateFolder()),
+                                  m_services.get<ConfigMgr2>(), this);
   });
 
   m_templateTextEdit = WidgetsFactory::createPlainTextConsole(this);

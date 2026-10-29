@@ -4,14 +4,15 @@
 
 #include <QWebEnginePage>
 
+#include <core/configmgr2.h>
 #include <gui/utils/widgetutils.h>
 #include <utils/utils.h>
 
 using namespace vnotex;
 
-WebViewer::WebViewer(const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent,
-                     QWebEngineProfile *p_profile)
-    : QWebEngineView(p_parent) {
+WebViewer::WebViewer(ConfigMgr2 *p_configMgr, const QColor &p_background, qreal p_zoomFactor,
+                     QWidget *p_parent, QWebEngineProfile *p_profile)
+    : QWebEngineView(p_parent), m_configMgr(p_configMgr) {
   setAcceptDrops(false);
 
   auto viewPage = p_profile ? new WebPage(p_profile, this) : new WebPage(this);
@@ -32,8 +33,9 @@ WebViewer::WebViewer(const QColor &p_background, qreal p_zoomFactor, QWidget *p_
   }
 }
 
-WebViewer::WebViewer(const QColor &p_background, QWidget *p_parent, QWebEngineProfile *p_profile)
-    : WebViewer(p_background, 1.0, p_parent, p_profile) {}
+WebViewer::WebViewer(ConfigMgr2 *p_configMgr, const QColor &p_background, QWidget *p_parent,
+                     QWebEngineProfile *p_profile)
+    : WebViewer(p_configMgr, p_background, 1.0, p_parent, p_profile) {}
 
 WebViewer::~WebViewer() {}
 
@@ -43,7 +45,7 @@ void WebViewer::handleExternalLinkRequested(const QUrl &p_url) {
   if (receivers(SIGNAL(externalLinkRequested(QUrl))) > 0) {
     emit externalLinkRequested(p_url);
   } else {
-    WidgetUtils::openUrlByDesktop(p_url);
+    WidgetUtils::openUrlByDesktop(p_url, m_configMgr, this);
   }
 }
 

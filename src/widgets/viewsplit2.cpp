@@ -727,10 +727,11 @@ void ViewSplit2::createTabContextMenu(int p_tabIndex, const QPoint &p_globalPos)
   });
   copyPathAct->setEnabled(!absPath.isEmpty());
 
-  auto *openLocAct = menu.addAction(tr("Open Location"), [absPath]() {
+  auto *openLocAct = menu.addAction(tr("Open Location"), [this, absPath]() {
     if (!absPath.isEmpty()) {
       QString dirPath = PathUtils::parentDirPath(absPath);
-      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(dirPath));
+      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(dirPath), m_services.get<ConfigMgr2>(),
+                                    this);
     }
   });
   openLocAct->setEnabled(!absPath.isEmpty());

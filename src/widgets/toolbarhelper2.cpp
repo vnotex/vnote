@@ -549,7 +549,8 @@ void ToolBarHelper2::setupSettingsButton(QToolBar *p_toolBar) {
   menu->addAction(MainWindow2::tr("Open Configuration Folder"), menu, [this]() {
     auto folderPath =
         m_services.get<ConfigMgr2>()->getConfigDataFolder(ConfigMgr2::ConfigDataType::Main);
-    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(folderPath));
+    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(folderPath), m_services.get<ConfigMgr2>(),
+                                  m_mainWindow);
   });
 
   menu->addAction(MainWindow2::tr("Reset Main Window Layout"), menu,

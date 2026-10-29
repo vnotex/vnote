@@ -76,8 +76,8 @@ int MessageBoxHelper::showMessageBox(QMessageBox::Icon p_icon, const QString &p_
   msgBox.setDetailedText(p_detailedText);
   msgBox.setDefaultButton(p_defaultButton);
   if (p_buttons.testFlag(QMessageBox::YesToAll)) {
-    msgBox.button(QMessageBox::YesToAll)->setText(
-        QCoreApplication::translate("MessageBoxHelper", "Never Ask"));
+    msgBox.button(QMessageBox::YesToAll)
+        ->setText(QCoreApplication::translate("MessageBoxHelper", "Never Ask"));
     msgBox.setEscapeButton(QMessageBox::No);
   }
   if (!p_parent) {
@@ -122,9 +122,8 @@ int MessageBoxHelper::questionYesNo(MessageBoxHelper::Type p_type, const QString
   return ret;
 }
 
-int MessageBoxHelper::questionOpenLink(const QUrl &p_url, bool p_allowNeverAsk, QWidget *p_parent) {
-  const auto buttons = QMessageBox::Yes | QMessageBox::No |
-                       (p_allowNeverAsk ? QMessageBox::YesToAll : QMessageBox::NoButton);
+int MessageBoxHelper::questionOpenLink(const QUrl &p_url, QWidget *p_parent) {
+  const auto buttons = QMessageBox::Yes | QMessageBox::No | QMessageBox::YesToAll;
   return showMessageBox(
       Warning,
       QCoreApplication::translate("MainWindow", "Are you sure to open link (%1)?")

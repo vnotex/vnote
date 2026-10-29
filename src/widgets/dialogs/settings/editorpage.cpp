@@ -181,7 +181,7 @@ void EditorPage::setupUI() {
           tr("Please download Hunspell's dictionaries, put them under (%1) and restart VNote.")
               .arg(dictsFolder),
           QString(), this);
-      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(dictsFolder));
+      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(dictsFolder), configMgr, this);
     });
     lineLayout->addWidget(addBtn);
 

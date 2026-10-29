@@ -453,7 +453,8 @@ void MarkdownViewWindow2::setDebugVisible(bool p_visible) {
   const bool firstOpen = (m_debugViewer == nullptr);
   if (firstOpen) {
     m_debugViewer =
-        new WebViewer(getServices().get<ThemeService>()->getBaseBackground(), m_mainSplitter);
+        new WebViewer(getServices().get<ConfigMgr2>(),
+                      getServices().get<ThemeService>()->getBaseBackground(), m_mainSplitter);
     m_mainSplitter->addWidget(m_debugViewer);
     connect(m_debugViewer->page(), &QWebEnginePage::windowCloseRequested, this,
             [this]() { setDebugVisible(false); });
@@ -1993,7 +1994,8 @@ void MarkdownViewWindow2::handleOpenFileRequest(const QString &p_filePath, bool 
       return;
     }
     qWarning() << "File not in any notebook:" << absPath;
-    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(absPath));
+    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(absPath), getServices().get<ConfigMgr2>(),
+                                  this);
     return;
   }
 

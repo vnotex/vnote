@@ -19,6 +19,7 @@
 #include <QListView>
 #include <QMenu>
 #include <QModelIndex>
+#include <QPointer>
 #include <QPushButton>
 #include <QScreen>
 #include <QScrollArea>
@@ -28,11 +29,12 @@
 #include <QStyle>
 #include <QTimer>
 #include <QToolButton>
+#include <QUrl>
 #include <QWidget>
 
+#include "externallinkconfirmation.h"
 #include <core/global.h>
 #include <core/logging.h>
-#include <widgets/messageboxhelper.h>
 #include <widgets/propertydefs.h>
 
 using namespace vnotex;
@@ -79,16 +81,23 @@ QSize WidgetUtils::availableScreenSize(QWidget *p_widget) {
   return p_widget->screen()->availableGeometry().size();
 }
 
-void WidgetUtils::openUrlByDesktop(const QUrl &p_url) {
+void WidgetUtils::openUrlByDesktop(const QUrl &p_url, ConfigMgr2 *p_configMgr, QWidget *p_parent) {
   const auto scheme = p_url.scheme();
-  if (scheme != "http" && scheme != "https" &&
-      !(p_url.isLocalFile() && QFileInfo(p_url.toLocalFile()).isDir())) {
-    if (MessageBoxHelper::questionOpenLink(p_url, false) != QMessageBox::Yes) {
-      return;
-    }
+  if (scheme == "http" || scheme == "https" ||
+      (p_url.isLocalFile() && QFileInfo(p_url.toLocalFile()).isDir())) {
+    QDesktopServices::openUrl(p_url);
+    return;
   }
 
-  QDesktopServices::openUrl(p_url);
+  const QUrl url(p_url);
+  const QPointer<QWidget> guard(p_parent);
+  const auto confirmation = ExternalLinkConfirmation::ask(url, p_configMgr, p_parent);
+  if (p_parent && !guard) {
+    return;
+  }
+  if (confirmation.accept()) {
+    QDesktopServices::openUrl(url);
+  }
 }
 
 bool WidgetUtils::processKeyEventLikeVi(QWidget *p_widget, QKeyEvent *p_event,

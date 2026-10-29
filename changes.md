@@ -7,6 +7,7 @@
 * Support application-owned memory documents in the full Text, Markdown, Typst, MindMap, PDF and Image windows, with explicit editor types and load/save callbacks
 * Share body persistence providers between ordinary, encrypted and memory documents; save memory snapshots asynchronously without clearing newer edits or losing backend ownership
 * Keep memory documents session-only, gate file-only actions by capabilities, and render rootless Typst and byte-backed PDFs without temporary document files
+* Allow Never Ask for all link-opening warnings, including local files and custom protocols, and share the saved opt-out across every warning path
 * Add Open Link above Copy Link in mind-map URL context menus, preserving link-opening security prompts and read-only access
 * Expand in-app VNote Tips from 12 to 64 with documentation-backed Markdown, navigation, image, PDF, mind-map, export and customization guidance in English, Simplified Chinese and Korean ([source](https://github.com/vnotex/vnote-documentations))
 * Open localized release notes in a new read-only tab after upgrading VNote, with Simplified Chinese notes and English fallback; replace both bundled documents in the version release commit

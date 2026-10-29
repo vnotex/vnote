@@ -31,6 +31,8 @@ class VTextEdit;
 }
 
 namespace vnotex {
+class ConfigMgr2;
+
 class WidgetUtils {
 public:
   WidgetUtils() = delete;
@@ -47,7 +49,8 @@ public:
 
   static QSize availableScreenSize(QWidget *p_widget);
 
-  static void openUrlByDesktop(const QUrl &p_url);
+  static void openUrlByDesktop(const QUrl &p_url, ConfigMgr2 *p_configMgr,
+                               QWidget *p_parent = nullptr);
 
   // Given @p_event, try to process it by injecting proper event instead if it
   // triggers Vi operation.

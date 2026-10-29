@@ -175,7 +175,7 @@ void MarkdownWebJobHost::ensureProtectedSession() {
     emit protectedSessionReady(nullptr, {});
     return;
   }
-  runtime.view = new WebViewer(background, 1.0, nullptr, runtime.profile.profile);
+  runtime.view = new WebViewer(config, background, 1.0, nullptr, runtime.profile.profile);
   runtime.view->setAttribute(Qt::WA_DontShowOnScreen);
   runtime.view->setAttribute(Qt::WA_ShowWithoutActivating);
   runtime.view->setFocusPolicy(Qt::NoFocus);

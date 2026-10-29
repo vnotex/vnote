@@ -16,10 +16,11 @@
 
 using namespace vnotex;
 
-PdfViewer::PdfViewer(PdfViewerAdapter *p_adapter, const QColor &p_background, qreal p_zoomFactor,
-                     QWidget *p_parent, QWebEngineProfile *p_profile,
-                     CommentColorSwatch::ColorResolver p_resolve, QString p_borderCss)
-    : WebViewer(p_background, p_zoomFactor, p_parent, p_profile), m_adapter(p_adapter),
+PdfViewer::PdfViewer(ConfigMgr2 *p_configMgr, PdfViewerAdapter *p_adapter,
+                     const QColor &p_background, qreal p_zoomFactor, QWidget *p_parent,
+                     QWebEngineProfile *p_profile, CommentColorSwatch::ColorResolver p_resolve,
+                     QString p_borderCss)
+    : WebViewer(p_configMgr, p_background, p_zoomFactor, p_parent, p_profile), m_adapter(p_adapter),
       m_resolve(std::move(p_resolve)), m_borderCss(std::move(p_borderCss)) {
   m_adapter->setParent(this);
 

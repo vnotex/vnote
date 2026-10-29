@@ -975,7 +975,8 @@ void NotebookExplorer2::setupRecycleBinMenu() {
     RecycleBinController controller(m_services);
     RecycleBinResult result = controller.prepareRecycleBinPath(m_currentNotebookId);
     if (result.success) {
-      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(result.path));
+      WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(result.path), m_services.get<ConfigMgr2>(),
+                                    this);
     } else {
       MessageBoxHelper::notify(MessageBoxHelper::Information, result.errorMessage, window());
     }
@@ -2470,7 +2471,8 @@ void NotebookExplorer2::onShareFolderRequested(const NodeIdentifier &p_nodeId) {
                 .arg(QDir::toNativeSeparators(result.m_bundlePath)),
             QString(), this) == QMessageBox::Yes) {
       WidgetUtils::openUrlByDesktop(
-          QUrl::fromLocalFile(QFileInfo(result.m_bundlePath).absolutePath()));
+          QUrl::fromLocalFile(QFileInfo(result.m_bundlePath).absolutePath()),
+          m_services.get<ConfigMgr2>(), this);
     }
     break;
 

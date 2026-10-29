@@ -17,8 +17,8 @@ public:
   // ServiceLocator, and either would put a ThemeService symbol reference into
   // pdfviewer.cpp. PdfViewWindow2 supplies both at the single construction
   // site, where it has already resolved the service.
-  PdfViewer(PdfViewerAdapter *p_adapter, const QColor &p_background, qreal p_zoomFactor,
-            QWidget *p_parent = nullptr, QWebEngineProfile *p_profile = nullptr,
+  PdfViewer(ConfigMgr2 *p_configMgr, PdfViewerAdapter *p_adapter, const QColor &p_background,
+            qreal p_zoomFactor, QWidget *p_parent = nullptr, QWebEngineProfile *p_profile = nullptr,
             CommentColorSwatch::ColorResolver p_resolve = {}, QString p_borderCss = QString());
 
   PdfViewerAdapter *adapter() const;

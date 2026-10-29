@@ -214,13 +214,15 @@ changing the loaded masks or partially rebinding a running session.
 ### External-link confirmation
 
 `CoreConfig` stores `core.confirmExternalLinks` in `vnotex.json`, default `true`.
-Markdown Read/Edit, Typst source/preview and mind-map HTTP/HTTPS/FTP/mailto links
-share this preference.
+All link-opening warnings share this preference: Markdown Read/Edit, Typst
+source/preview, mind maps and desktop-opening warnings, including local files and
+custom protocols. **Never Ask** is available for every URL scheme; a saved `false`
+suppresses every such warning.
 The warning's **Never Ask** button (`QMessageBox::YesToAll`, YesRole) opens the
 current link and persists `false` through normal config debouncing only after the
 caller revalidates the originating context. **Yes** opens only this link; **No**,
 Escape, window-close and discarded stale results do not change the setting or open the link.
-Local-file/program warnings and protected-note authorization remain independent.
+URL authorization and protected-note restrictions remain independent of this preference.
 To restore confirmation, close VNote and set `core.confirmExternalLinks` to `true`
 in `vnotex.json`. Missing or non-boolean values also enable confirmation.
 Shared implementation and two-phase caller contract:

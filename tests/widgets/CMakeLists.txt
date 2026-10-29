@@ -72,7 +72,7 @@ target_include_directories(test_imagesizeedits PRIVATE
 # InlineBanner: reusable pure-view notification strip (no services, no vxcore,
 # no VTextEdit). NOT GUILESS — QFrame/QPushButton need a QApplication. Compiles
 # propertydefs.cpp for the BannerSeverity constant and widgetutils.cpp for the
-# unpolish/polish helper; widgetutils.cpp includes <vtextedit/vtextedit.h>, so
+# unpolish/polish helper. Its link-confirmation path also needs core_configs;
 # VTextEdit is linked and the shared Windows runtime staging below is required.
 add_qt_test(test_inlinebanner
   SOURCES
@@ -80,9 +80,11 @@ add_qt_test(test_inlinebanner
     ${CMAKE_SOURCE_DIR}/src/widgets/inlinebanner.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
   LINKS
+    core_configs
     Qt6::Widgets
     VTextEdit
 )
@@ -101,9 +103,11 @@ add_qt_test(test_legacyimagemigrationbar
     ${CMAKE_SOURCE_DIR}/src/widgets/inlinebanner.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
   LINKS
+    core_configs
     Qt6::Widgets
     VTextEdit
 )
@@ -181,6 +185,7 @@ add_qt_test(test_node_explorer_reload_expansion
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
@@ -225,6 +230,7 @@ add_qt_test(test_explorer_selection_after_save
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
@@ -300,6 +306,7 @@ add_qt_test(test_settings_persistence
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/autostartutils.cpp
   LINKS
     core_configs
@@ -364,6 +371,7 @@ add_qt_test(test_syncservice_lifecycle
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
@@ -408,8 +416,10 @@ add_qt_test(test_notebooksyncinfodialog2
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
   LINKS
+    core_configs
     core_services
     vxcore
     VTextEdit
@@ -439,8 +449,10 @@ add_qt_test(test_notebooksyncinfodialog2_url_change
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
   LINKS
+    core_configs
     core_services
     vxcore
     VTextEdit
@@ -466,8 +478,10 @@ add_qt_test(test_notebooksyncinfodialog2_error
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
   LINKS
+    core_configs
     core_services
     vxcore
     VTextEdit
@@ -542,10 +556,12 @@ add_qt_test(test_import_folder_dialog2
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/importfoldercontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   LINKS
+    core_configs
     core_services
     vxcore
     VTextEdit
@@ -594,6 +610,7 @@ add_qt_test(test_open_notebook_dialog2
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/newnotecontroller.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
@@ -634,11 +651,12 @@ add_qt_test(test_open_notebook_dialog2_cancel
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/opennotebookcontroller.cpp
-    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/error.cpp
   LINKS
+    core_configs
     Qt6::Concurrent
     core_services
     vxcore
@@ -753,6 +771,7 @@ add_qt_test(test_notebook_selector2_readonly_badge
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.h
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/utils/processutils.cpp
   LINKS
@@ -823,6 +842,7 @@ add_qt_test(test_notebook_explorer2_sort
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
@@ -876,6 +896,7 @@ add_qt_test(test_two_columns_node_explorer_sort
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
@@ -915,8 +936,10 @@ add_qt_test(test_notebook_sync_info_dialog2_readonly
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/controllers/notebooksyncinfocontroller.cpp
   LINKS
+    core_configs
     core_services
     vxcore
     VTextEdit
@@ -953,6 +976,7 @@ add_qt_test(test_historysticker
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
@@ -993,6 +1017,7 @@ add_qt_test(test_activitysticker
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
@@ -1032,6 +1057,7 @@ add_qt_test(test_greetingsticker
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
@@ -1173,6 +1199,7 @@ add_qt_test(test_notificationtoast
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
@@ -1216,6 +1243,7 @@ add_qt_test(test_notificationpopup2
     ${CMAKE_SOURCE_DIR}/src/gui/services/themeservice.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/iconutils.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/themeutils.cpp
     ${CMAKE_SOURCE_DIR}/src/core/theme.cpp
@@ -1567,10 +1595,12 @@ add_qt_test(test_commentpanel
     ${CMAKE_SOURCE_DIR}/src/widgets/commentprovider.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     # The dock's colour combo now paints swatches with this leaf helper.
     ${CMAKE_SOURCE_DIR}/src/gui/utils/commentcolorswatch.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
   LINKS
+    core_configs
     core_services
     vxcore
     VTextEdit

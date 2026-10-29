@@ -68,7 +68,7 @@ MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, ServiceLocator 
 MarkdownViewer::MarkdownViewer(MarkdownViewerAdapter *p_adapter, const ViewWindow2 *p_viewWindow2,
                                ServiceLocator &p_services, const QColor &p_background,
                                qreal p_zoomFactor, QWidget *p_parent, QWebEngineProfile *p_profile)
-    : WebViewer(p_background, p_zoomFactor, p_parent,
+    : WebViewer(p_services.get<ConfigMgr2>(), p_background, p_zoomFactor, p_parent,
                 resolveProfile(p_services, p_viewWindow2, p_profile)),
       m_protectedView(p_viewWindow2 && p_viewWindow2->getBuffer().isEncrypted()),
       m_adapter(p_adapter), m_viewWindow2(p_viewWindow2), m_services(p_services) {

@@ -4,11 +4,11 @@
 #include <QDesktopServices>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QScopeGuard>
 #include <QStandardPaths>
 #include <QTemporaryDir>
 #include <QTimer>
 #include <QUrl>
+#include <QWidget>
 
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
@@ -39,15 +39,16 @@ public:
       prompted = true;
       offersNeverAsk = box->button(QMessageBox::YesToAll) != nullptr;
       if (beforeAnswer) {
-        beforeAnswer();
+        beforeAnswer(box);
       }
       if (m_choice == Escape) {
         QTest::keyClick(box, Qt::Key_Escape);
       } else if (m_choice == Close) {
         box->close();
       } else {
-        const auto answer = m_choice == Yes ? QMessageBox::Yes
-                            : m_choice == No ? QMessageBox::No : QMessageBox::YesToAll;
+        const auto answer = m_choice == Yes  ? QMessageBox::Yes
+                            : m_choice == No ? QMessageBox::No
+                                             : QMessageBox::YesToAll;
         if (auto *button = box->button(answer)) {
           QTest::mouseClick(button, Qt::LeftButton);
         } else {
@@ -63,7 +64,7 @@ public:
   bool prompted = false;
   bool offersNeverAsk = false;
   QString error;
-  std::function<void()> beforeAnswer;
+  std::function<void(QMessageBox *)> beforeAnswer;
 
 private:
   QTimer m_timer;
@@ -98,9 +99,16 @@ private slots:
     m_service = std::make_unique<ConfigCoreService>(m_context);
     reloadConfig();
     m_config->getCoreConfig().setConfirmExternalLinksEnabled(true);
+    m_desktop.opened.clear();
+    for (const auto &scheme : schemes()) {
+      QDesktopServices::setUrlHandler(scheme, &m_desktop, "open");
+    }
   }
 
   void cleanup() {
+    for (const auto &scheme : schemes()) {
+      QDesktopServices::unsetUrlHandler(scheme);
+    }
     m_config.reset();
     m_service.reset();
     if (m_context) {
@@ -118,23 +126,18 @@ private slots:
     m_directory.reset();
   }
 
-  void outcomes_data() {
-    QTest::addColumn<int>("choice");
-    QTest::addColumn<bool>("accepted");
-    QTest::newRow("yes") << int(Yes) << true;
-    QTest::newRow("no") << int(No) << false;
-    QTest::newRow("never-ask") << int(NeverAsk) << true;
-    QTest::newRow("escape") << int(Escape) << false;
-    QTest::newRow("window-close") << int(Close) << false;
-  }
+  void outcomes_data() { addOutcomes({QStringLiteral("https")}); }
 
   void outcomes() {
+    QFETCH(QString, scheme);
     QFETCH(int, choice);
     QFETCH(bool, accepted);
     DialogDriver dialog(static_cast<Choice>(choice));
-    const auto confirmation = ExternalLinkConfirmation::ask(m_url, m_config.get(), nullptr);
+    const auto confirmation =
+        ExternalLinkConfirmation::ask(urlForScheme(scheme), m_config.get(), nullptr);
     QVERIFY2(dialog.error.isEmpty(), qPrintable(dialog.error));
     QVERIFY(dialog.prompted);
+    QVERIFY(dialog.offersNeverAsk);
     QVERIFY(m_config->getCoreConfig().isConfirmExternalLinksEnabled());
     QCOMPARE(confirmation.accept(), accepted);
     QCOMPARE(m_config->getCoreConfig().isConfirmExternalLinksEnabled(), choice != NeverAsk);
@@ -154,27 +157,17 @@ private slots:
     QVERIFY(m_config->getCoreConfig().isConfirmExternalLinksEnabled());
   }
 
-  void preferenceEligibility_data() {
-    QTest::addColumn<QUrl>("url");
-    QTest::addColumn<bool>("eligible");
-    QTest::newRow("http") << QUrl("http://example.invalid/path") << true;
-    QTest::newRow("https") << QUrl("https://example.invalid/path") << true;
-    QTest::newRow("ftp") << QUrl("ftp://example.invalid/path") << true;
-    QTest::newRow("mailto") << QUrl("mailto:test@example.invalid") << true;
-    QTest::newRow("file") << QUrl("file:///note.txt") << false;
-    QTest::newRow("program") << QUrl("custom:action") << false;
-  }
+  void disabledPreference_data() { addSchemeRows(); }
 
-  void preferenceEligibility() {
-    QFETCH(QUrl, url);
-    QFETCH(bool, eligible);
+  void disabledPreference() {
+    QFETCH(QString, scheme);
     m_config->getCoreConfig().setConfirmExternalLinksEnabled(false);
     reloadConfig();
     DialogDriver dialog(No);
-    const auto confirmation = ExternalLinkConfirmation::ask(url, m_config.get(), nullptr);
-    QCOMPARE(dialog.prompted, !eligible);
-    QVERIFY(!dialog.offersNeverAsk);
-    QCOMPARE(confirmation.accept(), eligible);
+    const auto confirmation =
+        ExternalLinkConfirmation::ask(urlForScheme(scheme), m_config.get(), nullptr);
+    QVERIFY(!dialog.prompted);
+    QVERIFY(confirmation.accept());
     QVERIFY(!m_config->getCoreConfig().isConfirmExternalLinksEnabled());
   }
 
@@ -191,7 +184,7 @@ private slots:
     if (stage == QLatin1String("before")) {
       m_config.reset();
     } else if (stage == QLatin1String("during")) {
-      dialog.beforeAnswer = [&] { m_config.reset(); };
+      dialog.beforeAnswer = [&](QMessageBox *) { m_config.reset(); };
     }
     const auto confirmation = ExternalLinkConfirmation::ask(m_url, m_config.get(), nullptr);
     if (stage == QLatin1String("after")) {
@@ -205,31 +198,179 @@ private slots:
     QVERIFY(m_config->getCoreConfig().isConfirmExternalLinksEnabled());
   }
 
-  void desktopOpenerKeepsIndependentPolicy() {
-    DesktopUrlSink desktop;
-    for (const auto &scheme : {QStringLiteral("https"), QStringLiteral("file")}) {
-      QDesktopServices::setUrlHandler(scheme, &desktop, "open");
-    }
-    const auto restore = qScopeGuard([] {
-      QDesktopServices::unsetUrlHandler(QStringLiteral("https"));
-      QDesktopServices::unsetUrlHandler(QStringLiteral("file"));
-    });
-    m_config->getCoreConfig().setConfirmExternalLinksEnabled(false);
-    DialogDriver dialog(No);
-    const auto directory = QUrl::fromLocalFile(m_directory->path());
-    WidgetUtils::openUrlByDesktop(m_url);
-    WidgetUtils::openUrlByDesktop(directory);
-    QVERIFY(!dialog.prompted);
-    const QList<QUrl> expected{m_url, directory};
-    QCOMPARE(desktop.opened, expected);
+  void desktopOutcomes_data() { addOutcomes({QStringLiteral("file"), QStringLiteral("custom")}); }
 
-    WidgetUtils::openUrlByDesktop(QUrl::fromLocalFile(m_directory->filePath("program.exe")));
+  void desktopOutcomes() {
+    QFETCH(QString, scheme);
+    QFETCH(int, choice);
+    QFETCH(bool, accepted);
+    const auto url = urlForScheme(scheme);
+    DialogDriver dialog(static_cast<Choice>(choice));
+    WidgetUtils::openUrlByDesktop(url, m_config.get());
+    QVERIFY2(dialog.error.isEmpty(), qPrintable(dialog.error));
     QVERIFY(dialog.prompted);
-    QVERIFY(!dialog.offersNeverAsk);
-    QCOMPARE(desktop.opened, expected);
+    QVERIFY(dialog.offersNeverAsk);
+    const QList<QUrl> expected = accepted ? QList<QUrl>{url} : QList<QUrl>{};
+    QCOMPARE(m_desktop.opened, expected);
+    QCOMPARE(m_config->getCoreConfig().isConfirmExternalLinksEnabled(), choice != NeverAsk);
+    reloadConfig();
+    QCOMPARE(m_config->getCoreConfig().isConfirmExternalLinksEnabled(), choice != NeverAsk);
+  }
+
+  void neverAskSuppressesBothEntryPoints_data() {
+    QTest::addColumn<bool>("desktopFirst");
+    QTest::addColumn<QString>("scheme");
+    QTest::newRow("confirmation-file") << false << QStringLiteral("file");
+    QTest::newRow("confirmation-custom") << false << QStringLiteral("custom");
+    QTest::newRow("desktop-file") << true << QStringLiteral("file");
+    QTest::newRow("desktop-custom") << true << QStringLiteral("custom");
+  }
+
+  void neverAskSuppressesBothEntryPoints() {
+    QFETCH(bool, desktopFirst);
+    QFETCH(QString, scheme);
+    const auto url = urlForScheme(scheme);
+    {
+      DialogDriver dialog(NeverAsk);
+      if (desktopFirst) {
+        WidgetUtils::openUrlByDesktop(url, m_config.get());
+        QCOMPARE(m_desktop.opened, QList<QUrl>{url});
+      } else {
+        const auto confirmation = ExternalLinkConfirmation::ask(url, m_config.get(), nullptr);
+        QVERIFY(confirmation.accept());
+      }
+      QVERIFY2(dialog.error.isEmpty(), qPrintable(dialog.error));
+      QVERIFY(dialog.prompted);
+      QVERIFY(dialog.offersNeverAsk);
+    }
+    reloadConfig();
+    QVERIFY(!m_config->getCoreConfig().isConfirmExternalLinksEnabled());
+    m_desktop.opened.clear();
+    DialogDriver unexpectedDialog(No);
+    QList<QUrl> expected;
+    for (const auto &nextScheme : schemes()) {
+      const auto nextUrl = urlForScheme(nextScheme);
+      const auto confirmation = ExternalLinkConfirmation::ask(nextUrl, m_config.get(), nullptr);
+      QVERIFY(confirmation.accept());
+      WidgetUtils::openUrlByDesktop(nextUrl, m_config.get());
+      expected.append(nextUrl);
+    }
+    QVERIFY(!unexpectedDialog.prompted);
+    QCOMPARE(m_desktop.opened, expected);
+  }
+
+  void desktopDirectPathsDoNotPrompt() {
+    DialogDriver dialog(No);
+    const QList<QUrl> expected{urlForScheme(QStringLiteral("http")), m_url,
+                               QUrl::fromLocalFile(m_directory->path())};
+    for (const auto &url : expected) {
+      WidgetUtils::openUrlByDesktop(url, m_config.get());
+    }
+    QVERIFY(!dialog.prompted);
+    QCOMPARE(m_desktop.opened, expected);
+    QVERIFY(m_config->getCoreConfig().isConfirmExternalLinksEnabled());
+  }
+
+  void desktopConfigLifetime_data() {
+    QTest::addColumn<bool>("destroyDuringDialog");
+    QTest::addColumn<QString>("scheme");
+    QTest::newRow("missing-file") << false << QStringLiteral("file");
+    QTest::newRow("missing-custom") << false << QStringLiteral("custom");
+    QTest::newRow("destroyed-file") << true << QStringLiteral("file");
+    QTest::newRow("destroyed-custom") << true << QStringLiteral("custom");
+  }
+
+  void desktopConfigLifetime() {
+    QFETCH(bool, destroyDuringDialog);
+    QFETCH(QString, scheme);
+    const auto url = urlForScheme(scheme);
+    DialogDriver dialog(NeverAsk);
+    if (destroyDuringDialog) {
+      dialog.beforeAnswer = [&](QMessageBox *) { m_config.reset(); };
+    } else {
+      m_config.reset();
+    }
+    WidgetUtils::openUrlByDesktop(url, m_config.get());
+    QVERIFY2(dialog.error.isEmpty(), qPrintable(dialog.error));
+    QVERIFY(dialog.prompted);
+    QVERIFY(dialog.offersNeverAsk);
+    QVERIFY(!m_config);
+    QCOMPARE(m_desktop.opened, QList<QUrl>{url});
+    reloadConfig();
+    QVERIFY(m_config->getCoreConfig().isConfirmExternalLinksEnabled());
+  }
+
+  void desktopDestroyedParentDiscardsConsent() {
+    auto parent = std::make_unique<QWidget>();
+    DialogDriver dialog(NeverAsk);
+    dialog.beforeAnswer = [&](QMessageBox *box) {
+      // Keep the stack-owned dialog alive while destroying its originating window.
+      box->setParent(nullptr, box->windowFlags());
+      box->show();
+      parent.reset();
+    };
+    WidgetUtils::openUrlByDesktop(urlForScheme(QStringLiteral("custom")), m_config.get(),
+                                  parent.get());
+    QVERIFY2(dialog.error.isEmpty(), qPrintable(dialog.error));
+    QVERIFY(dialog.prompted);
+    QVERIFY(!parent);
+    QVERIFY(m_desktop.opened.isEmpty());
+    reloadConfig();
+    QVERIFY(m_config->getCoreConfig().isConfirmExternalLinksEnabled());
+  }
+
+  void desktopCopiesUrlAcrossDialog() {
+    auto url = urlForScheme(QStringLiteral("file"));
+    const auto originalUrl = url;
+    DialogDriver dialog(Yes);
+    dialog.beforeAnswer = [&](QMessageBox *) { url = urlForScheme(QStringLiteral("custom")); };
+    WidgetUtils::openUrlByDesktop(url, m_config.get());
+    QVERIFY2(dialog.error.isEmpty(), qPrintable(dialog.error));
+    QVERIFY(dialog.prompted);
+    QCOMPARE(m_desktop.opened, QList<QUrl>{originalUrl});
   }
 
 private:
+  static QStringList schemes() {
+    return {QStringLiteral("http"),   QStringLiteral("https"), QStringLiteral("ftp"),
+            QStringLiteral("mailto"), QStringLiteral("file"),  QStringLiteral("custom")};
+  }
+
+  static void addSchemeRows() {
+    QTest::addColumn<QString>("scheme");
+    for (const auto &scheme : schemes()) {
+      QTest::newRow(qPrintable(scheme)) << scheme;
+    }
+  }
+
+  static void addOutcomes(const QStringList &p_schemes) {
+    QTest::addColumn<QString>("scheme");
+    QTest::addColumn<int>("choice");
+    QTest::addColumn<bool>("accepted");
+    for (const auto &scheme : p_schemes) {
+      for (const auto choice : {Yes, No, NeverAsk, Escape, Close}) {
+        const auto name = scheme + QLatin1Char('-') + QString::number(choice);
+        QTest::newRow(qPrintable(name))
+            << scheme << int(choice) << (choice == Yes || choice == NeverAsk);
+      }
+    }
+  }
+
+  QUrl urlForScheme(const QString &p_scheme) const {
+    if (p_scheme == QLatin1String("file")) {
+      return QUrl::fromLocalFile(m_directory->filePath("note.txt"));
+    }
+    if (p_scheme == QLatin1String("custom")) {
+      return QUrl(QStringLiteral("custom:action"));
+    }
+    if (p_scheme == QLatin1String("mailto")) {
+      return QUrl(QStringLiteral("mailto:test@example.invalid"));
+    }
+    auto url = m_url;
+    url.setScheme(p_scheme);
+    return url;
+  }
+
   void reloadConfig() {
     // Destruction flushes the normal debounce before the next instance reads disk.
     m_config.reset();
@@ -238,6 +379,7 @@ private:
   }
 
   const QUrl m_url{QStringLiteral("https://example.invalid/a%20b?q=1#part")};
+  DesktopUrlSink m_desktop;
   std::unique_ptr<QTemporaryDir> m_directory;
   QList<QPair<QByteArray, QByteArray>> m_environment;
   VxCoreContextHandle m_context = nullptr;
