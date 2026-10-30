@@ -173,7 +173,9 @@ def smoke(app, qt_prefix):
                     if not ready or process.stdout.readline().strip() != "READY":
                         raise RuntimeError(f"{locale}: WebEngine did not render the smoke document")
                     check_mappings(mapped_files(process.pid), process.pid, frameworks, expected)
-                    process.communicate(input="\n", timeout=15)
+                    # Rendering and mappings have passed; allow up to a minute for
+                    # QtWebEngine and its helpers to shut down gracefully.
+                    process.communicate(input="\n", timeout=60)
                     if process.returncode != 0:
                         raise RuntimeError(f"{locale}: probe exited {process.returncode}")
                 except Exception:

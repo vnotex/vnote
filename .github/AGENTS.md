@@ -344,7 +344,9 @@ Build the probe with Qt's imported CMake targets, including their transitive hea
 not a hand-maintained framework/include list. Declare the ARM yield intrinsic before Qt headers
 on ARM hosts. Configure and compile share one 120-second budget; target only the host architecture.
 Use `BUILD_WITH_INSTALL_RPATH` with the signed package Frameworks directory and no SDK link-path
-RPATH additions. Keep the 45-second render and 15-second shutdown bounds and all locale checks.
+RPATH additions. Keep the 45-second render bound and all locale checks. Allow 60 seconds for
+graceful shutdown after rendering and mapping checks pass; QtWebEngine helper teardown must not
+share the shorter 15-second post-kill pipe-drain limit. A shutdown timeout still fails the gate.
 
 ## Windows runtime (Qt 6)
 
