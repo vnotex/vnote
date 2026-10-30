@@ -3916,12 +3916,14 @@ void TestViewAreaTabReuse::memoryTextPersistenceAndSharing() {
   auto *siblingText = sibling->findChild<TextEditor *>();
   QVERIFY(siblingText);
   const auto secondWorkspace = f->workspace();
+  QVERIFY(activateNativeHost(siblingText->getTextEdit()));
   siblingText->getTextEdit()->setFocus();
   QTRY_VERIFY(siblingText->getTextEdit()->hasFocus());
   appendDraft(siblingText->getTextEdit(), QStringLiteral("Shared split edit"));
   QVERIFY(f->buffers->syncNow(buffer.id()));
   f->controller()->focusWindow(firstWorkspace, buffer.id());
   text->getTextEdit()->setFocus();
+  QTRY_VERIFY(text->getTextEdit()->hasFocus());
   QTRY_COMPARE(text->getText(), siblingText->getText());
   QVERIFY(window->save());
   QCOMPARE(store->bytes, QByteArray("Fresh source\nShared split edit"));
@@ -4086,6 +4088,9 @@ void TestViewAreaTabReuse::memoryMarkdownAndMindMap() {
   QVERIFY(editor);
   QCOMPARE(editor->getText().toUtf8(), markdown);
   QVERIFY(editor->getBasePath().isEmpty());
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
+  editor->getTextEdit()->setFocus();
+  QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("\nScratch preview edit\n"));
   window->setMode(ViewWindowMode::Read);
   QVERIFY(waitForRender(viewer, QStringLiteral("Scratch preview edit")));

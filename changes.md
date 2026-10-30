@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Establish native host activation and active-writer focus in memory-document CI scenarios before shared-split edits and Markdown scratch previews
 * Fix plain-text editor test linking with the shared link-confirmation dependencies
 * Fix native toolbar-popup overflow activation and restore keyboard focus after owned dialogs
 * Synchronize native CI fixture exposure, focus and consent; partition Typst controller coverage without dropping cases or extending test deadlines

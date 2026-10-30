@@ -311,6 +311,9 @@ alone depends on a window manager under Xvfb. After dismissing a modal dialog, w
 window activation and editor focus before sending shortcuts. Settle native exposure and
 activation before measuring drag coordinates. Before inserting tab-replacement or presentation
 drafts programmatically, wait for editor focus: that registers the active writer used by Save.
+Memory-document fixtures follow the same rule: restore native host activation after reload
+consent before editing a shared split, and wait for Markdown editor focus before inserting a
+scratch draft. Read-mode synchronization pulls that active writer, not an unfocused widget.
 The lazy-view `showWindow()` helper establishes those exposure/activation/focus preconditions;
 do not require editor focus for hidden/disabled editors or encrypted buffers already locking.
 Native popup fixtures must settle the owner's activation before promotion/opening. A
