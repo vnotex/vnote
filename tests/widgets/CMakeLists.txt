@@ -5,10 +5,12 @@ add_qt_test(test_plaintextedit
     test_plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/plaintextedit.cpp
     ${CMAKE_SOURCE_DIR}/src/gui/utils/widgetutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/externallinkconfirmation.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/messageboxhelper.cpp
     ${CMAKE_SOURCE_DIR}/src/widgets/propertydefs.cpp
     ${CMAKE_SOURCE_DIR}/src/core/logging.cpp
   LINKS
+    core_configs
     Qt6::Widgets
     VTextEdit
 )
