@@ -1,16 +1,26 @@
 #include "mindmapviewwindowcontroller.h"
 
+#include <QCoreApplication>
 #include <QDesktopServices>
 #include <QDir>
 #include <QFileInfo>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QPointer>
+#include <QScopeGuard>
+#include <QUuid>
+
+#include <new>
 
 #include <core/configmgr2.h>
 #include <core/editorconfig.h>
 #include <core/fileopensettings.h>
+#include <core/hooknames.h>
 #include <core/markdowneditorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
+#include <core/services/hookmanager.h>
+#include <core/services/memorybuffersource.h>
 #include <core/services/notebookcoreservice.h>
 #include <gui/services/mindmapimageloader.h>
 #include <gui/utils/imageutils.h>
@@ -24,6 +34,11 @@ using namespace vnotex;
 
 namespace {
 constexpr qint64 c_imageByteLimit = 32 * 1024 * 1024;
+
+struct NoteSaveStage {
+  QMutex mutex;
+  QByteArray pendingBytes;
+};
 
 bool relativeResourceUrl(const QUrl &p_url) {
   const auto path = p_url.path(QUrl::FullyDecoded);
@@ -42,7 +57,9 @@ bool externalSchemeAllowed(const QUrl &p_url, bool p_protected) {
 MindMapViewWindowController::MindMapViewWindowController(ServiceLocator &p_services,
                                                          QObject *p_parent)
     : QObject(p_parent), m_services(p_services),
-      m_imageLoader(new MindMapImageLoader(p_services, this)) {
+      m_imageLoader(new MindMapImageLoader(p_services, this)),
+      m_noteAddressPrefix(QStringLiteral("vx://mindmap-note/%1/")
+                              .arg(QUuid::createUuid().toString(QUuid::WithoutBraces))) {
   connect(m_services.get<BufferService>()->asQObject(), SIGNAL(protectedLockingChanged(bool)), this,
           SLOT(onProtectedLockingChanged(bool)));
   connect(m_imageLoader, &MindMapImageLoader::imageReady, this,
@@ -53,9 +70,49 @@ MindMapViewWindowController::MindMapViewWindowController(ServiceLocator &p_servi
               emit imageReady(p_url, p_requestId, p_image);
             }
           });
+  if (auto *hooks = m_services.get<HookManager>()) {
+    const QPointer<MindMapViewWindowController> guard(this);
+    m_noteBeforeOpenHook = hooks->addAction<ViewWindowOpenEvent>(
+        HookNames::ViewWindowBeforeOpen,
+        [guard](HookContext &p_context, const ViewWindowOpenEvent &p_event) {
+          if (!guard || !p_event.nodeId.startsWith(guard->m_noteAddressPrefix)) {
+            return;
+          }
+          if (guard->m_openingNoteAddress == p_event.nodeId && !guard->m_noteOpenAdmitted) {
+            // Consume admission before another hook can reenter with a clone.
+            guard->m_noteOpenAdmitted = true;
+            return;
+          }
+          p_context.cancel();
+          emit guard->errorOccurred(tr("Node notes must remain in their source preview"));
+        },
+        0);
+    m_noteBeforeMoveHook = hooks->addAction<ViewWindowMoveEvent>(
+        HookNames::ViewWindowBeforeMove,
+        [guard](HookContext &p_context, const ViewWindowMoveEvent &p_event) {
+          if (!guard || p_event.bufferId.isEmpty()) {
+            return;
+          }
+          auto *buffers = guard->m_services.get<BufferService>();
+          if (!buffers) {
+            return;
+          }
+          const auto buffer = buffers->getBufferHandle(p_event.bufferId);
+          if (buffer.nodeId().relativePath.startsWith(guard->m_noteAddressPrefix)) {
+            p_context.cancel();
+            emit guard->errorOccurred(tr("Node notes must remain in their source preview"));
+          }
+        });
+  }
 }
 
-MindMapViewWindowController::~MindMapViewWindowController() { invalidateRequests(); }
+MindMapViewWindowController::~MindMapViewWindowController() {
+  if (auto *hooks = m_services.get<HookManager>()) {
+    hooks->removeAction(m_noteBeforeOpenHook);
+    hooks->removeAction(m_noteBeforeMoveHook);
+  }
+  invalidateRequests();
+}
 
 void MindMapViewWindowController::setBuffer(const Buffer2 &p_buffer) {
   invalidateRequests();
@@ -334,6 +391,67 @@ QString MindMapViewWindowController::relativeLink(const QUrl &p_url) const {
   }
   return LinkInsertUtils::appendFragmentToLink(link.toString(QUrl::FullyEncoded),
                                                p_url.fragment(QUrl::FullyEncoded));
+}
+
+void MindMapViewWindowController::requestEditNote(
+    const QString &p_nodeId, const QString &p_note, const FileOpenSettings &p_settings,
+    std::function<VxCoreError(const QString &)> p_apply) {
+  if (!bufferAvailable() || m_buffer.isReadOnly() || p_nodeId.isEmpty() || !p_apply ||
+      p_settings.m_previewSourceWindowId == 0 || !p_settings.m_targetWorkspaceId.isEmpty() ||
+      !m_openingNoteAddress.isEmpty() || m_noteBeforeOpenHook == -1 || m_noteBeforeMoveHook == -1) {
+    emit errorOccurred(QString::fromUtf8(vxcore_error_message(VXCORE_ERR_INVALID_STATE)));
+    return;
+  }
+
+  const QPointer<MindMapViewWindowController> guard(this);
+  const auto generation = m_generation;
+  MemoryBufferSource source;
+  source.address = m_noteAddressPrefix + QString::number(generation) + QLatin1Char('/') +
+                   QString::fromLatin1(QUrl::toPercentEncoding(p_nodeId));
+  source.displayName = QCoreApplication::translate("m3::qt::MindMapEditor", "Edit Note") +
+                       QStringLiteral(": ") + p_nodeId;
+  source.editorType = QStringLiteral("text");
+  source.content = p_note.toUtf8();
+  source.readOnly = false;
+  source.manualSaveOnly = true;
+  const auto stage = std::make_shared<NoteSaveStage>();
+  source.save = [stage](QByteArrayView p_bytes) -> VxCoreError {
+    try {
+      QMutexLocker lock(&stage->mutex);
+      // The worker owns this copy, never the provider's borrowed view or GUI state.
+      stage->pendingBytes = QByteArray(p_bytes.data(), p_bytes.size());
+      return VXCORE_OK;
+    } catch (const std::bad_alloc &) {
+      return VXCORE_ERR_OUT_OF_MEMORY;
+    } catch (...) {
+      return VXCORE_ERR_UNKNOWN;
+    }
+  };
+  source.finalizeSave = [stage, guard, generation, apply = std::move(p_apply)]() -> VxCoreError {
+    QByteArray bytes;
+    {
+      QMutexLocker lock(&stage->mutex);
+      bytes = std::move(stage->pendingBytes);
+    }
+    if (!guard || generation != guard->m_generation) {
+      return VXCORE_ERR_INVALID_STATE;
+    }
+    return apply(QString::fromUtf8(bytes));
+  };
+
+  m_openingNoteAddress = source.address;
+  const auto opening = qScopeGuard([guard] {
+    if (guard) {
+      guard->m_openingNoteAddress.clear();
+      guard->m_noteOpenAdmitted = false;
+    }
+  });
+  VxCoreError error = VXCORE_OK;
+  // FileAfterOpen owns routing and may synchronously destroy this controller.
+  m_services.get<BufferService>()->openMemoryBuffer(std::move(source), p_settings, &error);
+  if (guard && error != VXCORE_OK) {
+    emit guard->errorOccurred(QString::fromUtf8(vxcore_error_message(error)));
+  }
 }
 
 void MindMapViewWindowController::requestOpenLink(const QString &p_url,

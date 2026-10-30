@@ -23,6 +23,7 @@
 #include <exception>
 #include <limits>
 #include <new>
+#include <utility>
 
 #include <core/fileopensettings.h>
 #include <core/hookevents.h>
@@ -120,6 +121,9 @@ struct BufferService::MemoryBufferState {
   QString resourceBasePath;
   bool canSave = false;
   bool canReload = false;
+  bool manualSaveOnly = false;
+  // Owner-thread only; never part of the worker-owned provider descriptor.
+  std::function<VxCoreError()> finalizeSave;
   bool current = true;
   bool manualSaving = false;
   int pending = 0;
@@ -1301,6 +1305,10 @@ Buffer2 BufferService::openMemoryBuffer(MemoryBufferSource p_source,
     error = VXCORE_ERR_INVALID_STATE;
     return {};
   }
+  if (p_source.finalizeSave && (!p_source.save || !p_source.manualSaveOnly)) {
+    error = VXCORE_ERR_INVALID_PARAM;
+    return {};
+  }
   p_source.editorType = p_source.editorType.toLower();
   if (p_source.editorType == QLatin1String("widget")) {
     error = VXCORE_ERR_UNSUPPORTED;
@@ -1326,6 +1334,8 @@ Buffer2 BufferService::openMemoryBuffer(MemoryBufferSource p_source,
       continue;
     if (state.displayName != p_source.displayName || state.editorType != p_source.editorType ||
         state.resourceBasePath != p_source.resourceBasePath ||
+        state.manualSaveOnly != p_source.manualSaveOnly ||
+        bool(state.finalizeSave) != bool(p_source.finalizeSave) ||
         isBufferReadOnly(it.key()) != p_source.readOnly) {
       error = VXCORE_ERR_ALREADY_EXISTS;
       return {};
@@ -1340,6 +1350,10 @@ Buffer2 BufferService::openMemoryBuffer(MemoryBufferSource p_source,
   const QString address = p_source.address;
   m_memoryBuffers->opening.insert(address);
   const auto opening = qScopeGuard([&]() { m_memoryBuffers->opening.remove(address); });
+  const bool manualSaveOnly = p_source.manualSaveOnly;
+  // The core provider can outlive the buffer and be destroyed on a worker.
+  // Remove the GUI callback before transferring that descriptor to vxcore.
+  auto finalizeSave = std::exchange(p_source.finalizeSave, {});
   auto source = std::make_unique<MemoryBufferSource>(std::move(p_source));
   VxCoreBufferContentCallbacks callbacks{};
   callbacks.userdata = source.get();
@@ -1377,6 +1391,9 @@ Buffer2 BufferService::openMemoryBuffer(MemoryBufferSource p_source,
   source.release();        // Ownership transfers only after the unique open succeeds.
   const QString id = cstrToQString(rawId);
   resolveBufferFacts(id, false, BufferCoreService::getBuffer(id));
+  auto *state = memoryBufferState(id);
+  state->manualSaveOnly = manualSaveOnly;
+  state->finalizeSave = std::move(finalizeSave);
   auto event = fileOpenEvent(nodeId, p_settings);
   event.bufferId = id;
   event.readOnly = isBufferReadOnly(id);
@@ -2129,13 +2146,34 @@ BufferService::enqueueMemorySave(const QString &p_bufferId, bool p_autoSave, VxC
   const bool accepted = m_saveQueue->enqueueContent(
       p_bufferId, [save]() { return int(vxcore_buffer_execute_save(save->handle)); },
       [this, state, save, p_bufferId, p_autoSave](int p_result) {
+        QPointer<QObject> alive(asQObject());
+        bool current = state->current && memoryBufferState(p_bufferId) == state.get();
+        save->result = static_cast<VxCoreError>(p_result);
+        if (current && save->result == VXCORE_OK && state->finalizeSave) {
+          // Keep this save pending (and manual-saving exclusion active) while
+          // committing outside vxcore. Copy before invoking: notifications may
+          // retire the source or destroy the service and its callback owner.
+          try {
+            const auto finalizeSave = state->finalizeSave;
+            save->result = finalizeSave();
+          } catch (const std::bad_alloc &) {
+            save->result = VXCORE_ERR_OUT_OF_MEMORY;
+          } catch (...) {
+            save->result = VXCORE_ERR_UNKNOWN;
+          }
+          current = alive && state->current && memoryBufferState(p_bufferId) == state.get();
+        }
+        if (!current) {
+          save->result = VXCORE_ERR_INVALID_STATE;
+        } else if (p_result != VXCORE_OK || save->result == VXCORE_OK) {
+          // Worker failures still need core completion. A successfully staged
+          // snapshot whose finalization failed must NOT be acknowledged as saved.
+          const auto result =
+              vxcore_buffer_complete_save(m_context, p_bufferId.toUtf8().constData(), save->handle);
+          if (result != VXCORE_OK)
+            save->result = result;
+        }
         --state->pending;
-        const bool current = state->current && memoryBufferState(p_bufferId) == state.get();
-        save->result = current ? vxcore_buffer_complete_save(
-                                     m_context, p_bufferId.toUtf8().constData(), save->handle)
-                               : VXCORE_ERR_INVALID_STATE;
-        if (save->result == VXCORE_OK && p_result != VXCORE_OK)
-          save->result = static_cast<VxCoreError>(p_result);
         // Retain only the small completion record, not a second document body
         // until the next save or close. Execution has returned before delivery.
         vxcore_buffer_save_free(save->handle);
@@ -3277,9 +3315,10 @@ bool BufferService::executeSyncForBuffer(const QString &p_bufferId, bool *p_snap
       emit bufferAutoSaveFailed(p_bufferId);
       return false;
     }
-    // BackupFile has no filesystem target for memory content. Keep the draft
-    // in the shared buffer, without claiming a nonexistent backup was written.
-    if (m_autoSavePolicy != AutoSavePolicy::AutoSave || !state->canSave || state->manualSaving)
+    // Manual-only saves and BackupFile have no automatic persistence target.
+    // Keep the shared draft without acknowledging durability or backup success.
+    if (state->manualSaveOnly || m_autoSavePolicy != AutoSavePolicy::AutoSave || !state->canSave ||
+        state->manualSaving)
       return true;
     m_dirtyBuffers.insert(p_bufferId);
     if (m_saveFailureCounts.value(p_bufferId) >= c_maxSaveFailures)

@@ -3,13 +3,20 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMutex>
+#include <QMutexLocker>
 #include <QScopeGuard>
 #include <QSemaphore>
 #include <QThread>
+#include <QTimer>
 
 #include <atomic>
+#include <limits>
 #include <memory>
+#include <new>
+#include <stdexcept>
 
+#include <core/hooknames.h>
 #include <core/services/buffer2.h>
 #include <core/services/bufferservice.h>
 #include <core/services/hookmanager.h>
@@ -18,6 +25,78 @@
 using namespace vnotex;
 
 namespace tests {
+
+namespace {
+
+// Drive the real autosave timeout explicitly, without a wall-clock race against
+// semaphore-controlled saves or the manual-save nested event loop.
+class ScopedAutoSaveTimer {
+public:
+  explicit ScopedAutoSaveTimer(BufferService *service)
+      : m_timer(service->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly)),
+        m_interval(m_timer->interval()) {
+    m_timer->setInterval(std::numeric_limits<int>::max());
+  }
+
+  ~ScopedAutoSaveTimer() { m_timer->setInterval(m_interval); }
+
+  bool tick() { return QMetaObject::invokeMethod(m_timer, "timeout", Qt::DirectConnection); }
+
+private:
+  QTimer *m_timer;
+  int m_interval;
+};
+
+struct MemoryDestination {
+  QMutex mutex;
+  QByteArray pending;
+  QByteArray committed = "original destination";
+  std::atomic<int> stages{0};
+  std::atomic<bool> stagedOffThread{false};
+  std::atomic<int> stageError{VXCORE_OK};
+  int finalizations = 0;
+  bool finalizedOnOwner = false;
+  bool throwException = false;
+  bool throwBadAlloc = false;
+  VxCoreError finalizeError = VXCORE_OK;
+};
+
+MemoryBufferSource manualSource(const QString &address,
+                                const std::shared_ptr<MemoryDestination> &destination) {
+  MemoryBufferSource source;
+  source.address = address;
+  source.displayName = QStringLiteral("Manual destination");
+  source.editorType = QStringLiteral("Text");
+  source.content = destination->committed;
+  source.manualSaveOnly = true;
+  const auto owner = QThread::currentThread();
+  source.save = [destination, owner](QByteArrayView bytes) {
+    ++destination->stages;
+    destination->stagedOffThread = QThread::currentThread() != owner;
+    const auto error = static_cast<VxCoreError>(destination->stageError.load());
+    if (error != VXCORE_OK)
+      return error;
+    QMutexLocker lock(&destination->mutex);
+    destination->pending = QByteArray(bytes.data(), bytes.size());
+    return VXCORE_OK;
+  };
+  source.finalizeSave = [destination, owner]() {
+    ++destination->finalizations;
+    destination->finalizedOnOwner = QThread::currentThread() == owner;
+    if (destination->throwBadAlloc)
+      throw std::bad_alloc();
+    if (destination->throwException)
+      throw std::runtime_error("destination refused the staged snapshot");
+    if (destination->finalizeError != VXCORE_OK)
+      return destination->finalizeError;
+    QMutexLocker lock(&destination->mutex);
+    destination->committed = std::move(destination->pending);
+    return VXCORE_OK;
+  };
+  return source;
+}
+
+} // namespace
 
 class TestVirtualBuffer : public QObject {
   Q_OBJECT
@@ -38,6 +117,14 @@ private slots:
   void testMemoryAutosaveKeepsNewerEdits();
   void testMemorySourceLifetime();
   void testMemoryDedupAndWidgetCollision();
+  void testMemoryManualSave_data();
+  void testMemoryManualSave();
+  void testMemoryFinalizerFailures_data();
+  void testMemoryFinalizerFailures();
+  void testMemoryManualSaveCancelled();
+  void testMemoryManualSaveRetired();
+  void testMemoryFinalizerKeepsNewerEdits();
+  void testMemoryFinalizerPolicy();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -334,6 +421,415 @@ void TestVirtualBuffer::testMemoryDedupAndWidgetCollision() {
   source.address = QStringLiteral("vx://widget/collision");
   QVERIFY(m_bufferService->openVirtualBuffer(source.address).isValid());
   QVERIFY(!m_bufferService->openMemoryBuffer(source, {}, &error).isValid());
+  QCOMPARE(error, VXCORE_ERR_ALREADY_EXISTS);
+}
+
+void TestVirtualBuffer::testMemoryManualSave_data() {
+  QTest::addColumn<int>("policy");
+  QTest::addColumn<bool>("withFinalizer");
+  QTest::newRow("sync-only-finalizer") << int(AutoSavePolicy::None) << true;
+  QTest::newRow("autosave-finalizer") << int(AutoSavePolicy::AutoSave) << true;
+  QTest::newRow("backup-finalizer") << int(AutoSavePolicy::BackupFile) << true;
+  QTest::newRow("sync-only-worker") << int(AutoSavePolicy::None) << false;
+  QTest::newRow("autosave-worker") << int(AutoSavePolicy::AutoSave) << false;
+  QTest::newRow("backup-worker") << int(AutoSavePolicy::BackupFile) << false;
+}
+
+void TestVirtualBuffer::testMemoryManualSave() {
+  QFETCH(int, policy);
+  QFETCH(bool, withFinalizer);
+  ScopedAutoSaveTimer timer(m_bufferService);
+  m_bufferService->setAutoSavePolicy(static_cast<AutoSavePolicy>(policy));
+  const auto restorePolicy =
+      qScopeGuard([&]() { m_bufferService->setAutoSavePolicy(AutoSavePolicy::AutoSave); });
+  const auto destination = std::make_shared<MemoryDestination>();
+  auto source = manualSource(QStringLiteral("vx://memory/manual"), destination);
+  if (!withFinalizer) {
+    source.finalizeSave = {};
+    const auto owner = QThread::currentThread();
+    source.save = [destination, owner](QByteArrayView bytes) {
+      ++destination->stages;
+      destination->stagedOffThread = QThread::currentThread() != owner;
+      QMutexLocker lock(&destination->mutex);
+      destination->committed = QByteArray(bytes.data(), bytes.size());
+      return VXCORE_OK;
+    };
+  }
+  auto buffer = m_bufferService->openMemoryBuffer(std::move(source));
+  QVERIFY(buffer.isMemoryBacked());
+  QString editor = QString::fromUtf8("Changed \xce\xb2\nthird line");
+  int captures = 0;
+  m_bufferService->registerActiveWriter(buffer.id(), 1, [&]() {
+    ++captures;
+    return editor;
+  });
+  QSignalSpy autosaved(m_bufferService->asQObject(), SIGNAL(bufferAutoSaved(QString)));
+  QSignalSpy failed(m_bufferService->asQObject(), SIGNAL(bufferAutoSaveFailed(QString)));
+  QSignalSpy errors(m_bufferService->asQObject(), SIGNAL(saveError(QString, QString)));
+  int afterSaves = 0;
+  bool durableAtAfterSave = false;
+  const int hook = m_hookMgr->addAction(
+      HookNames::FileAfterSave,
+      [&](HookContext &, const QVariantMap &) {
+        ++afterSaves;
+        QMutexLocker lock(&destination->mutex);
+        durableAtAfterSave = destination->committed == editor.toUtf8() && !buffer.isModified();
+      },
+      10);
+  const auto removeHook = qScopeGuard([&]() { m_hookMgr->removeAction(hook); });
+
+  m_bufferService->markDirty(buffer.id());
+  QVERIFY(m_bufferService->syncNow(buffer.id()));
+  QCOMPARE(captures, 1);
+  QCOMPARE(buffer.getContentRaw(), editor.toUtf8());
+  QVERIFY(buffer.isModified());
+  QCOMPARE(m_bufferService->lastSavedRevision(buffer.id()), quint64(0));
+  editor += QStringLiteral("\nnew edit before the autosave tick");
+  m_bufferService->markDirty(buffer.id());
+  const auto revision = m_bufferService->currentRevision(buffer.id());
+  QVERIFY(timer.tick());
+  QCOMPARE(captures, 2);
+  QCOMPARE(buffer.getContentRaw(), editor.toUtf8());
+  QVERIFY(!m_bufferService->isSaveQueueBusy(buffer.id()));
+  QCOMPARE(destination->stages.load(), 0);
+  QCOMPARE(destination->finalizations, 0);
+  QCOMPARE(destination->committed, QByteArray("original destination"));
+  QVERIFY(buffer.isModified());
+  QCOMPARE(m_bufferService->lastSavedRevision(buffer.id()), quint64(0));
+  QCOMPARE(afterSaves, 0);
+  QVERIFY(autosaved.isEmpty());
+  QVERIFY(failed.isEmpty());
+  QVERIFY(errors.isEmpty());
+
+  VxCoreError error = VXCORE_ERR_UNKNOWN;
+  QVERIFY(buffer.save(&error));
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(destination->committed, editor.toUtf8());
+  QCOMPARE(destination->stages.load(), 1);
+  QVERIFY(destination->stagedOffThread.load());
+  QCOMPARE(destination->finalizations, withFinalizer ? 1 : 0);
+  QCOMPARE(destination->finalizedOnOwner, withFinalizer);
+  QVERIFY(!buffer.isModified());
+  QVERIFY(!m_bufferService->isDirty(buffer.id()));
+  QCOMPARE(m_bufferService->lastSavedRevision(buffer.id()), revision);
+  QCOMPARE(afterSaves, 1);
+  QVERIFY(durableAtAfterSave);
+  QVERIFY(autosaved.isEmpty());
+
+  // A later save must use the new snapshot, not the previous staged bytes.
+  editor = QString();
+  m_bufferService->markDirty(buffer.id());
+  QVERIFY(buffer.save(&error));
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(destination->committed, QByteArray());
+  QCOMPARE(destination->stages.load(), 2);
+  QCOMPARE(destination->finalizations, withFinalizer ? 2 : 0);
+  QCOMPARE(afterSaves, 2);
+  QVERIFY(durableAtAfterSave);
+  QVERIFY(!buffer.isModified());
+}
+
+void TestVirtualBuffer::testMemoryFinalizerFailures_data() {
+  QTest::addColumn<int>("failure");
+  QTest::addColumn<int>("expectedError");
+  QTest::newRow("destination-error") << 0 << int(VXCORE_ERR_IO);
+  QTest::newRow("destination-exception") << 1 << int(VXCORE_ERR_UNKNOWN);
+  QTest::newRow("destination-bad-alloc") << 2 << int(VXCORE_ERR_OUT_OF_MEMORY);
+  QTest::newRow("worker-error") << 3 << int(VXCORE_ERR_IO);
+}
+
+void TestVirtualBuffer::testMemoryFinalizerFailures() {
+  QFETCH(int, failure);
+  QFETCH(int, expectedError);
+  ScopedAutoSaveTimer timer(m_bufferService);
+  const auto destination = std::make_shared<MemoryDestination>();
+  destination->finalizeError = failure == 0 ? VXCORE_ERR_IO : VXCORE_OK;
+  destination->throwException = failure == 1;
+  destination->throwBadAlloc = failure == 2;
+  destination->stageError = failure == 3 ? VXCORE_ERR_IO : VXCORE_OK;
+  auto source = manualSource(QStringLiteral("vx://memory/finalizer-errors"), destination);
+  auto buffer = m_bufferService->openMemoryBuffer(std::move(source));
+  QVERIFY(buffer.isMemoryBacked());
+  const QByteArray draft("retained\0binary draft", 21);
+  QVERIFY(buffer.setContentRaw(draft));
+  const auto coreRevision = buffer.getRevision();
+  const auto revision = m_bufferService->currentRevision(buffer.id());
+  int afterSaves = 0;
+  const int hook = m_hookMgr->addAction(
+      HookNames::FileAfterSave, [&](HookContext &, const QVariantMap &) { ++afterSaves; }, 10);
+  const auto removeHook = qScopeGuard([&]() { m_hookMgr->removeAction(hook); });
+  QSignalSpy errors(m_bufferService->asQObject(), SIGNAL(saveError(QString, QString)));
+  VxCoreError error = VXCORE_OK;
+  QVERIFY(!buffer.save(&error));
+  QCOMPARE(int(error), expectedError);
+  QCOMPARE(destination->committed, QByteArray("original destination"));
+  QCOMPARE(destination->stages.load(), 1);
+  QCOMPARE(destination->finalizations, failure == 3 ? 0 : 1);
+  QCOMPARE(buffer.getContentRaw(), draft);
+  QCOMPARE(buffer.getRevision(), coreRevision);
+  QVERIFY(buffer.isModified());
+  QVERIFY(m_bufferService->isDirty(buffer.id()));
+  QCOMPARE(m_bufferService->lastSavedRevision(buffer.id()), quint64(0));
+  QVERIFY(!m_bufferService->isSaveQueueBusy(buffer.id()));
+  QCOMPARE(afterSaves, 0);
+  QCOMPARE(errors.size(), 1);
+  QCOMPARE(errors.at(0).at(0).toString(), buffer.id());
+  QCOMPARE(errors.at(0).at(1).toString(), QString::fromUtf8(vxcore_error_message(error)));
+
+  destination->finalizeError = VXCORE_OK;
+  destination->throwException = false;
+  destination->throwBadAlloc = false;
+  destination->stageError = VXCORE_OK;
+  QVERIFY(buffer.save(&error));
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(destination->committed, draft);
+  QCOMPARE(destination->stages.load(), 2);
+  QCOMPARE(destination->finalizations, failure == 3 ? 1 : 2);
+  QVERIFY(destination->finalizedOnOwner);
+  QVERIFY(!buffer.isModified());
+  QCOMPARE(m_bufferService->lastSavedRevision(buffer.id()), revision);
+  QCOMPARE(afterSaves, 1);
+  QCOMPARE(errors.size(), 1);
+}
+
+void TestVirtualBuffer::testMemoryManualSaveCancelled() {
+  ScopedAutoSaveTimer timer(m_bufferService);
+  const auto destination = std::make_shared<MemoryDestination>();
+  auto source = manualSource(QStringLiteral("vx://memory/manual-cancelled"), destination);
+  auto buffer = m_bufferService->openMemoryBuffer(std::move(source));
+  QVERIFY(buffer.isMemoryBacked());
+  QVERIFY(buffer.setContentRaw("cancelled draft"));
+  bool cancel = true;
+  int beforeSaves = 0;
+  int afterSaves = 0;
+  const int before = m_hookMgr->addAction(
+      HookNames::FileBeforeSave,
+      [&](HookContext &context, const QVariantMap &) {
+        ++beforeSaves;
+        if (cancel)
+          context.cancel();
+      },
+      10);
+  const int after = m_hookMgr->addAction(
+      HookNames::FileAfterSave, [&](HookContext &, const QVariantMap &) { ++afterSaves; }, 10);
+  const auto removeHooks = qScopeGuard([&]() {
+    m_hookMgr->removeAction(before);
+    m_hookMgr->removeAction(after);
+  });
+  VxCoreError error = VXCORE_OK;
+  QVERIFY(!buffer.save(&error));
+  QCOMPARE(error, VXCORE_ERR_CANCELLED);
+  QCOMPARE(beforeSaves, 1);
+  QCOMPARE(afterSaves, 0);
+  QVERIFY(timer.tick());
+  QVERIFY(!m_bufferService->isSaveQueueBusy(buffer.id()));
+  QCOMPARE(destination->stages.load(), 0);
+  QCOMPARE(destination->finalizations, 0);
+  QCOMPARE(destination->committed, QByteArray("original destination"));
+  QCOMPARE(buffer.getContentRaw(), QByteArray("cancelled draft"));
+  QVERIFY(buffer.isModified());
+  cancel = false;
+  QVERIFY(buffer.save(&error));
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(beforeSaves, 2);
+  QCOMPARE(afterSaves, 1);
+  QCOMPARE(destination->stages.load(), 1);
+  QCOMPARE(destination->finalizations, 1);
+  QCOMPARE(destination->committed, QByteArray("cancelled draft"));
+  QVERIFY(!buffer.isModified());
+}
+
+void TestVirtualBuffer::testMemoryManualSaveRetired() {
+  ScopedAutoSaveTimer timer(m_bufferService);
+  const auto destination = std::make_shared<MemoryDestination>();
+  const auto replacementDestination = std::make_shared<MemoryDestination>();
+  const auto entered = std::make_shared<QSemaphore>();
+  const auto release = std::make_shared<QSemaphore>();
+  const auto unblock = qScopeGuard([release]() { release->release(); });
+  auto source = manualSource(QStringLiteral("vx://memory/manual-retired"), destination);
+  const auto destroyedOnOwner = std::make_shared<std::atomic<int>>(0);
+  const auto owner = QThread::currentThread();
+  auto lifetime = std::shared_ptr<int>(new int(0), [owner, destroyedOnOwner](int *token) {
+    destroyedOnOwner->store(QThread::currentThread() == owner ? 1 : -1);
+    delete token;
+  });
+  source.finalizeSave = [lifetime = std::move(lifetime),
+                         finalize = std::move(source.finalizeSave)]() { return finalize(); };
+  const auto stage = std::move(source.save);
+  source.save = [stage, entered, release](QByteArrayView bytes) {
+    const auto error = stage(bytes);
+    entered->release();
+    release->acquire();
+    return error;
+  };
+  auto buffer = m_bufferService->openMemoryBuffer(std::move(source));
+  QVERIFY(buffer.isMemoryBacked());
+  QVERIFY(buffer.setContentRaw("old generation draft"));
+  const auto oldId = buffer.id();
+  Buffer2 reopened;
+  bool workerEntered = false;
+  bool closed = false;
+  bool replacementEdited = false;
+  VxCoreError openError = VXCORE_ERR_UNKNOWN;
+  int afterSaves = 0;
+  const int hook = m_hookMgr->addAction(
+      HookNames::FileAfterSave, [&](HookContext &, const QVariantMap &) { ++afterSaves; }, 10);
+  const auto removeHook = qScopeGuard([&]() { m_hookMgr->removeAction(hook); });
+  QTimer retire;
+  retire.setSingleShot(true);
+  connect(&retire, &QTimer::timeout, this, [&]() {
+    // This timer runs inside save()'s event loop. The worker cannot finish
+    // until the same address has acquired its replacement source.
+    workerEntered = entered->tryAcquire(1, 5000);
+    if (workerEntered) {
+      closed = m_bufferService->closeBuffer(oldId);
+      auto replacement =
+          manualSource(QStringLiteral("vx://memory/manual-retired"), replacementDestination);
+      reopened = m_bufferService->openMemoryBuffer(std::move(replacement), {}, &openError);
+      if (reopened.isValid())
+        replacementEdited = reopened.setContentRaw("replacement draft");
+    }
+    release->release();
+  });
+  retire.start(0);
+  VxCoreError error = VXCORE_OK;
+  QVERIFY(!buffer.save(&error));
+  QCOMPARE(error, VXCORE_ERR_INVALID_STATE);
+  QVERIFY(workerEntered);
+  QVERIFY(closed);
+  QCOMPARE(openError, VXCORE_OK);
+  QVERIFY(replacementEdited);
+  QVERIFY(reopened.id() != oldId);
+  QTRY_COMPARE(destroyedOnOwner->load(), 1);
+  QCOMPARE(destination->stages.load(), 1);
+  QCOMPARE(destination->finalizations, 0);
+  QCOMPARE(destination->committed, QByteArray("original destination"));
+  QCOMPARE(replacementDestination->stages.load(), 0);
+  QCOMPARE(replacementDestination->finalizations, 0);
+  QCOMPARE(reopened.getContentRaw(), QByteArray("replacement draft"));
+  QVERIFY(reopened.isModified());
+  QCOMPARE(m_bufferService->lastSavedRevision(reopened.id()), quint64(0));
+  QCOMPARE(afterSaves, 0);
+  QVERIFY(reopened.save(&error));
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(replacementDestination->committed, QByteArray("replacement draft"));
+  QCOMPARE(replacementDestination->stages.load(), 1);
+  QCOMPARE(replacementDestination->finalizations, 1);
+  QCOMPARE(destination->finalizations, 0);
+  QCOMPARE(afterSaves, 1);
+  QVERIFY(!reopened.isModified());
+}
+
+void TestVirtualBuffer::testMemoryFinalizerKeepsNewerEdits() {
+  ScopedAutoSaveTimer timer(m_bufferService);
+  const auto destination = std::make_shared<MemoryDestination>();
+  auto source = manualSource(QStringLiteral("vx://memory/finalizer-revision"), destination);
+  Buffer2 buffer;
+  QString editor = QStringLiteral("snapshot being saved");
+  bool changedEditor = false;
+  bool dirtyDuringFinalization = false;
+  const auto finalize = std::move(source.finalizeSave);
+  source.finalizeSave = [&, finalize]() {
+    dirtyDuringFinalization = buffer.isModified();
+    const auto error = finalize();
+    if (!changedEditor) {
+      changedEditor = true;
+      editor = QStringLiteral("newer editor revision from destination notification");
+      m_bufferService->markDirty(buffer.id());
+    }
+    return error;
+  };
+  buffer = m_bufferService->openMemoryBuffer(std::move(source));
+  QVERIFY(buffer.isMemoryBacked());
+  m_bufferService->registerActiveWriter(buffer.id(), 1, [&]() { return editor; });
+  m_bufferService->markDirty(buffer.id());
+  const auto revision = m_bufferService->currentRevision(buffer.id());
+  int afterSaves = 0;
+  const int hook = m_hookMgr->addAction(
+      HookNames::FileAfterSave, [&](HookContext &, const QVariantMap &) { ++afterSaves; }, 10);
+  const auto removeHook = qScopeGuard([&]() { m_hookMgr->removeAction(hook); });
+  VxCoreError error = VXCORE_OK;
+  QVERIFY(!buffer.save(&error));
+  QCOMPARE(error, VXCORE_ERR_FILE_CHANGED_OUTSIDE);
+  QVERIFY(dirtyDuringFinalization);
+  QCOMPARE(destination->committed, QByteArray("snapshot being saved"));
+  QCOMPARE(destination->finalizations, 1);
+  QCOMPARE(m_bufferService->lastSavedRevision(buffer.id()), revision);
+  QVERIFY(m_bufferService->currentRevision(buffer.id()) > revision);
+  QVERIFY(buffer.isModified());
+  QVERIFY(m_bufferService->isDirty(buffer.id()));
+  QCOMPARE(afterSaves, 0);
+  QVERIFY(m_bufferService->syncNow(buffer.id()));
+  QCOMPARE(buffer.getContentRaw(), editor.toUtf8());
+  QVERIFY(buffer.isModified());
+  QCOMPARE(destination->stages.load(), 1);
+  QVERIFY(buffer.save(&error));
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(destination->committed, editor.toUtf8());
+  QCOMPARE(destination->finalizations, 2);
+  QVERIFY(!buffer.isModified());
+  QCOMPARE(afterSaves, 1);
+}
+
+void TestVirtualBuffer::testMemoryFinalizerPolicy() {
+  ScopedAutoSaveTimer timer(m_bufferService);
+  const auto firstDestination = std::make_shared<MemoryDestination>();
+  auto source = manualSource(QStringLiteral("vx://memory/finalizer-policy"), firstDestination);
+  int opens = 0;
+  const int hook = m_hookMgr->addAction(
+      HookNames::FileAfterOpen, [&](HookContext &, const QVariantMap &) { ++opens; }, 10);
+  const auto removeHook = qScopeGuard([&]() { m_hookMgr->removeAction(hook); });
+  VxCoreError error = VXCORE_OK;
+  auto invalid = source;
+  invalid.manualSaveOnly = false;
+  QVERIFY(!m_bufferService->openMemoryBuffer(invalid, {}, &error).isValid());
+  QCOMPARE(error, VXCORE_ERR_INVALID_PARAM);
+  invalid = source;
+  invalid.save = {};
+  QVERIFY(!m_bufferService->openMemoryBuffer(invalid, {}, &error).isValid());
+  QCOMPARE(error, VXCORE_ERR_INVALID_PARAM);
+  invalid.manualSaveOnly = false;
+  QVERIFY(!m_bufferService->openMemoryBuffer(invalid, {}, &error).isValid());
+  QCOMPARE(error, VXCORE_ERR_INVALID_PARAM);
+  QCOMPARE(opens, 0);
+  QVERIFY(m_bufferService->listBuffers().isEmpty());
+
+  auto first = m_bufferService->openMemoryBuffer(source, {}, &error);
+  QCOMPARE(error, VXCORE_OK);
+  QVERIFY(first.isMemoryBacked());
+  QCOMPARE(opens, 1);
+  QVERIFY(first.setContentRaw("first retained draft"));
+  const auto replacementDestination = std::make_shared<MemoryDestination>();
+  auto duplicate = manualSource(source.address, replacementDestination);
+  duplicate.content = "must not replace draft";
+  auto second = m_bufferService->openMemoryBuffer(duplicate, {}, &error);
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(second.id(), first.id());
+  QCOMPARE(second.getContentRaw(), QByteArray("first retained draft"));
+  QVERIFY(second.isModified());
+  const int compatibleOpens = opens;
+  duplicate.finalizeSave = {};
+  QVERIFY(!m_bufferService->openMemoryBuffer(duplicate, {}, &error).isValid());
+  QCOMPARE(error, VXCORE_ERR_ALREADY_EXISTS);
+  duplicate.manualSaveOnly = false;
+  QVERIFY(!m_bufferService->openMemoryBuffer(duplicate, {}, &error).isValid());
+  QCOMPARE(error, VXCORE_ERR_ALREADY_EXISTS);
+  QCOMPARE(opens, compatibleOpens);
+  QVERIFY(second.save(&error));
+  QCOMPARE(error, VXCORE_OK);
+  QCOMPARE(firstDestination->committed, QByteArray("first retained draft"));
+  QCOMPARE(firstDestination->finalizations, 1);
+  QCOMPARE(replacementDestination->stages.load(), 0);
+  QCOMPARE(replacementDestination->finalizations, 0);
+
+  // Isolate the manualSaveOnly mismatch when neither descriptor has a finalizer.
+  auto workerOnly = manualSource(QStringLiteral("vx://memory/manual-policy"), firstDestination);
+  workerOnly.finalizeSave = {};
+  auto workerBuffer = m_bufferService->openMemoryBuffer(workerOnly, {}, &error);
+  QCOMPARE(error, VXCORE_OK);
+  QVERIFY(workerBuffer.isMemoryBacked());
+  workerOnly.manualSaveOnly = false;
+  QVERIFY(!m_bufferService->openMemoryBuffer(workerOnly, {}, &error).isValid());
   QCOMPARE(error, VXCORE_ERR_ALREADY_EXISTS);
 }
 

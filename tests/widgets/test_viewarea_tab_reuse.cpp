@@ -268,9 +268,9 @@ public:
         });
     timer.start();
   }
-  bool accepted() {
+  bool accepted(int p_expectedCount = 1) {
     timer.stop();
-    return answerCount == 1 && !timedOut;
+    return answerCount == p_expectedCount && !timedOut;
   }
   int count() const { return answerCount; }
 
@@ -444,6 +444,63 @@ QPoint coloredSurfacePoint(QWidget *p_surface, const QColor &p_color) {
   }
   return bounds.isEmpty() ? QPoint(-1, -1)
                           : (QPointF(bounds.center()) / image.devicePixelRatio()).toPoint();
+}
+
+QByteArray noteMapBytes() {
+  return QString::fromUtf8(
+             R"({"schemaVersion":1,"rootId":"r","nodes":[{"id":"r","topic":"Root","children":["a","b"]},{"id":"a","topic":"Alpha","note":"Original α\nsecond line"},{"id":"b","topic":"Beta"}],"crossLinks":[]})")
+      .toUtf8();
+}
+
+QJsonObject mapNode(MindMapEditor *p_map, const QString &p_id = QStringLiteral("a")) {
+  return QJsonDocument::fromJson(p_map->nodeJson(p_id)).object();
+}
+
+// Find the actual scroll-text scene control after layout, then send the click
+// through the native host. Never retain scene items across an event-loop turn.
+bool clickNoteControl(MindMapEditor *p_map, const QString &p_id = QStringLiteral("a")) {
+  p_map->selectNode(p_id);
+  auto *canvas = p_map->findChild<QGraphicsView *>();
+  if (!canvas || !activateNativeHost(canvas->viewport()))
+    return false;
+  const auto point = [&] {
+    for (auto *item : canvas->scene()->items()) {
+      if (item->isVisible() && item->cursor().shape() == Qt::PointingHandCursor &&
+          item->toolTip() == QCoreApplication::translate("m3::qt::MindMapEditor", "Edit Note")) {
+        const auto pos = canvas->mapFromScene(item->sceneBoundingRect().center());
+        if (canvas->viewport()->rect().contains(pos))
+          return pos;
+      }
+    }
+    return QPoint(-1, -1);
+  };
+  return QTest::qWaitFor([&] { return point().x() >= 0; }) &&
+         clickNativeSurface(canvas->viewport(), point());
+}
+
+// A visible preview covers the source canvas. Its host-presentable action is
+// still the same Edit Note route; do not bypass native hit testing underneath it.
+bool triggerNoteCommand(MindMapEditor *p_map, const QString &p_id = QStringLiteral("a")) {
+  p_map->selectNode(p_id);
+  auto *action = p_map->commandAction(QStringLiteral("editNote"));
+  if (!action || !action->isEnabled())
+    return false;
+  action->trigger();
+  return true;
+}
+
+bool replaceNoteDraft(TextEditor *p_editor, const QString &p_text) {
+  auto *edit = p_editor->getTextEdit();
+  if (!activateNativeHost(edit->viewport()) ||
+      !clickNativeSurface(edit->viewport(), edit->viewport()->rect().center()))
+    return false;
+  if (!QTest::qWaitFor([&] { return edit->hasFocus(); }))
+    return false;
+  auto cursor = edit->textCursor();
+  cursor.select(QTextCursor::Document);
+  cursor.insertText(p_text);
+  edit->setTextCursor(cursor);
+  return p_editor->getText() == p_text;
 }
 
 struct Fixture {
@@ -666,7 +723,8 @@ struct Fixture {
   }
   int tabs() const { return area->getCurrentViewSplit()->getViewWindowCount(); }
   void reuse() { config->getCoreConfig().setAlwaysOpenNotesInNewTabs(false); }
-  QString createProtected(const QString &p_name, const QByteArray &p_source, bool p_setup) {
+  QString createProtected(const QString &p_name, const QByteArray &p_source, bool p_setup,
+                          const QString &p_type = QStringLiteral("markdown")) {
     QString id;
     const auto result =
         QtConcurrent::run([&]() {
@@ -682,15 +740,14 @@ struct Fixture {
             const auto error = notebooks->commitNotebookEncryption(setup);
             if (error != VXCORE_OK)
               return error;
-            return notebooks->createEncryptedNote(notebook, QString(), p_name,
-                                                  QStringLiteral("markdown"), p_source, &id);
+            return notebooks->createEncryptedNote(notebook, QString(), p_name, p_type, p_source,
+                                                  &id);
           }
           auto maintenance = queues->tryAcquireMaintenance({notebook});
           if (!maintenance.isValid())
             return VXCORE_ERR_INVALID_STATE;
           NotebookIoGate::ScopedLock lock(*gate, notebook);
-          return notebooks->createEncryptedNote(notebook, QString(), p_name,
-                                                QStringLiteral("markdown"), p_source, &id);
+          return notebooks->createEncryptedNote(notebook, QString(), p_name, p_type, p_source, &id);
         }).result();
     return result == VXCORE_OK ? id : QString();
   }
@@ -737,6 +794,13 @@ private slots:
   void previewReaderNavigationAndNativeHost();
   void previewProtectedLinksAndDispatchFailures();
   void previewMindMapAndTypstActivation();
+  void previewMindMapNoteEditing();
+  void previewMindMapNoteLifecycle_data();
+  void previewMindMapNoteLifecycle();
+  void previewMindMapNoteClose_data();
+  void previewMindMapNoteClose();
+  void previewMindMapNoteOwnership_data();
+  void previewMindMapNoteOwnership();
   void markdownResourcesAndSaveIdentity_data();
   void markdownResourcesAndSaveIdentity();
   void memoryTextPersistenceAndSharing();
@@ -1390,6 +1454,462 @@ void TestViewAreaTabReuse::previewProtectedLinksAndDispatchFailures() {
   QCOMPARE(f->order(main), QStringList({next.id()}));
   QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
   QCOMPARE(desktop.opened.size(), 2);
+}
+
+void TestViewAreaTabReuse::previewMindMapNoteEditing() {
+  const auto name = QStringLiteral("notes.emind");
+  const auto original = QString::fromUtf8("Original α\nsecond line");
+  const auto changed = QString::fromUtf8("Changed β\nthird line");
+  QVERIFY(f->create(name, noteMapBytes()));
+  const auto sourceBuffer = f->open(name);
+  QVERIFY(sourceBuffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  auto *map = source->findChild<MindMapEditor *>();
+  QVERIFY(map);
+  const auto main = f->workspace();
+  const auto before = QJsonDocument::fromJson(map->toJson());
+  const auto nodeBefore = mapNode(map);
+  const auto rootBefore = mapNode(map, QStringLiteral("r"));
+  const auto betaBefore = mapNode(map, QStringLiteral("b"));
+  f->config->getEditorConfig().setLinkPreviewEnabled(false);
+  QVERIFY(clickNoteControl(map));
+  QTRY_VERIFY(f->current() != source);
+  QPointer<ViewWindow2> note(f->current());
+  const auto preview = f->workspace();
+  const auto noteBuffer = note->getBuffer();
+  auto *overlay = source->findChild<LinkPreviewOverlay *>();
+  QVERIFY(overlay && overlay->isVisible() && overlay->isAncestorOf(note));
+  QCOMPARE(f->area->previewWorkspaceForWindow(source->getViewWindowId()), preview);
+  QVERIFY(preview != main);
+  auto *editor = note->findChild<TextEditor *>();
+  QVERIFY(editor && editor->getTextEdit());
+  QVERIFY(!note->findChild<MarkdownEditor *>());
+  QCOMPARE(editor->getText(), original);
+  QCOMPARE(editor->getTextEdit()->toPlainText(), original);
+  QVERIFY(noteBuffer.isMemoryBacked());
+  QVERIFY(noteBuffer.resolvedPath().isEmpty());
+  QVERIFY(noteBuffer.getResourceBasePath().isEmpty());
+  QVERIFY(noteBuffer.nodeId().relativePath.startsWith(QStringLiteral("vx://mindmap-note/")));
+  QCOMPARE(note->getMode(), ViewWindowMode::Edit);
+  QVERIFY(replaceNoteDraft(editor, changed));
+  QVERIFY(f->buffers->syncNow(noteBuffer.id()));
+  QTest::qWait(1100);
+  QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), original);
+  QVERIFY(note->isModified());
+
+  // A duplicate activation, even after renaming the topic, must retain the
+  // original editor/document, local undo stack, selection and unsaved bytes.
+  auto *document = editor->getTextEdit()->document();
+  auto cursor = editor->getTextEdit()->textCursor();
+  cursor.setPosition(3);
+  editor->getTextEdit()->setTextCursor(cursor);
+  const auto undoSteps = document->availableUndoSteps();
+  source->hide();
+  QTRY_VERIFY(!overlay->isVisible());
+  source->show();
+  QTRY_VERIFY(overlay->isVisible());
+  QCOMPARE(editor->getText(), changed);
+  QCOMPARE(document->availableUndoSteps(), undoSteps);
+  QCOMPARE(editor->getTextEdit()->textCursor().position(), 3);
+  QVERIFY(map->updateNode(QStringLiteral("a"), R"({"topic":"Renamed Alpha"})"));
+  QVERIFY(triggerNoteCommand(map));
+  QTRY_COMPARE(f->current(), note.data());
+  QCOMPARE(f->order(preview), QStringList({noteBuffer.id()}));
+  QCOMPARE(note->findChild<TextEditor *>(), editor);
+  QCOMPARE(editor->getTextEdit()->document(), document);
+  QCOMPARE(document->availableUndoSteps(), undoSteps);
+  QCOMPARE(editor->getTextEdit()->textCursor().position(), 3);
+  QCOMPARE(editor->getText(), changed);
+  QVERIFY(map->undo()); // Remove the independent topic command before note history assertions.
+  QCOMPARE(mapNode(map), nodeBefore);
+
+  map->selectNode(QStringLiteral("b")); // Selection must not retarget the captured node.
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
+  editor->getTextEdit()->setFocus();
+  QTRY_VERIFY(editor->getTextEdit()->hasFocus());
+  QTest::keyClick(editor->getTextEdit(), Qt::Key_S, Qt::ControlModifier);
+  QTRY_VERIFY(!note->isModified());
+  QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), changed);
+  auto expected = nodeBefore;
+  expected.insert(QStringLiteral("note"), changed);
+  QCOMPARE(mapNode(map), expected);
+  QCOMPARE(mapNode(map, QStringLiteral("r")), rootBefore);
+  QCOMPARE(mapNode(map, QStringLiteral("b")), betaBefore);
+  QVERIFY(source->isModified());
+  QVERIFY(map->undo());
+  QCOMPARE(QJsonDocument::fromJson(map->toJson()), before);
+  QVERIFY(!map->canUndo());
+  QVERIFY(map->redo());
+  QCOMPARE(mapNode(map), expected);
+
+  const auto second = QString::fromUtf8("Second γ save");
+  const auto third = QString::fromUtf8("Third δ after duplicate");
+  for (const auto &next : {second, third}) {
+    const auto previous = mapNode(map).value(QStringLiteral("note")).toString();
+    QVERIFY(replaceNoteDraft(editor, next));
+    if (next == third) {
+      QVERIFY(triggerNoteCommand(map));
+      QTRY_COMPARE(f->current(), note.data());
+      QCOMPARE(editor->getText(), next);
+    }
+    QVERIFY(note->save());
+    QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), next);
+    QVERIFY(map->undo());
+    QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), previous);
+    QVERIFY(map->redo());
+    QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), next);
+  }
+  // Exactly one atomic command per save, not one per line/property or a reload.
+  QVERIFY(map->undo());
+  QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), second);
+  QVERIFY(map->undo());
+  QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), changed);
+  QVERIFY(map->undo());
+  QCOMPARE(mapNode(map), nodeBefore);
+  QVERIFY(!map->canUndo());
+  QVERIFY(map->redo());
+  QVERIFY(map->redo());
+  QVERIFY(map->redo());
+  QVERIFY(source->save());
+  const auto persisted = QJsonDocument::fromJson(readBytes(f->absolute(name)));
+  QCOMPARE(persisted, QJsonDocument::fromJson(map->toJson()));
+  QVERIFY(f->controller()->closeViewWindow(source->getViewWindowId(), false));
+  QTRY_VERIFY(source.isNull() && note.isNull());
+  QVERIFY(f->open(name).isValid());
+  source = f->current();
+  map = source->findChild<MindMapEditor *>();
+  QVERIFY(map);
+  QCOMPARE(QJsonDocument::fromJson(map->toJson()), persisted);
+  QVERIFY(clickNoteControl(map));
+  note = f->current();
+  editor = note->findChild<TextEditor *>();
+  QVERIFY(editor);
+  QCOMPARE(editor->getText(), third);
+  QVERIFY(replaceNoteDraft(editor, QString()));
+  QVERIFY(note->save());
+  QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), QString());
+  QVERIFY(map->undo());
+  QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), third);
+  QVERIFY(map->redo());
+  QVERIFY(source->save());
+}
+
+void TestViewAreaTabReuse::previewMindMapNoteLifecycle_data() {
+  QTest::addColumn<QString>("operation");
+  for (const auto *name :
+       {"detached", "missing-note", "deleted", "reload", "read-only", "conflict"})
+    QTest::newRow(name) << QString::fromLatin1(name);
+}
+
+void TestViewAreaTabReuse::previewMindMapNoteLifecycle() {
+  QFETCH(QString, operation);
+  QVERIFY(f->create(QStringLiteral("lifecycle.emind"), noteMapBytes()));
+  QVERIFY(f->open(QStringLiteral("lifecycle.emind")).isValid());
+  auto *source = f->current();
+  auto *map = source->findChild<MindMapEditor *>();
+  QVERIFY(map);
+  f->config->getEditorConfig().setLinkPreviewEnabled(false);
+  if (operation == QLatin1String("detached")) {
+    QVERIFY(f->controller()->detachViewWindow(f->workspace(), source->getViewWindowId(),
+                                              source->getBuffer().id()));
+    auto *detached = qobject_cast<DetachedWindow *>(source->window());
+    QVERIFY(detached && activateNativeHost(detached));
+  }
+  const auto id =
+      operation == QLatin1String("missing-note") ? QStringLiteral("b") : QStringLiteral("a");
+  QVERIFY(clickNoteControl(map, id));
+  QTRY_VERIFY(f->current() != source);
+  QPointer<ViewWindow2> note(f->current());
+  const auto preview = f->workspace();
+  const auto buffer = note->getBuffer();
+  auto *editor = note->findChild<TextEditor *>();
+  QVERIFY(editor);
+  auto *overlay = source->findChild<LinkPreviewOverlay *>();
+  QVERIFY(overlay && overlay->isVisible() && overlay->isAncestorOf(note));
+  QCOMPARE(f->area->previewWorkspaceForWindow(source->getViewWindowId()), preview);
+  QCOMPARE(editor->getText(),
+           id == QLatin1String("b") ? QString() : QString::fromUtf8("Original α\nsecond line"));
+  const auto draft = QString::fromUtf8("Retained ζ draft\nsecond line");
+  QVERIFY(replaceNoteDraft(editor, draft));
+  if (operation == QLatin1String("detached") || operation == QLatin1String("missing-note")) {
+    QVERIFY(note->save());
+    QCOMPARE(mapNode(map, id).value(QStringLiteral("note")).toString(), draft);
+    return;
+  }
+  if (operation == QLatin1String("deleted")) {
+    QVERIFY(map->removeNode(id));
+  } else if (operation == QLatin1String("reload")) {
+    QVERIFY(source->reload());
+  } else if (operation == QLatin1String("read-only")) {
+    map->setReadOnly(true);
+  } else {
+    auto *field =
+        map->nodePropertiesPanel()->findChild<QPlainTextEdit *>(QStringLiteral("nodeNote"));
+    QVERIFY(field);
+    field->setPlainText(QStringLiteral("Newer properties note"));
+    QTRY_COMPARE(mapNode(map, id).value(QStringLiteral("note")).toString(),
+                 QStringLiteral("Newer properties note"));
+  }
+  const auto live = QJsonDocument::fromJson(map->toJson());
+  QVERIFY(!note->save());
+  QVERIFY(note->isModified());
+  QCOMPARE(editor->getText(), draft);
+  QCOMPARE(QJsonDocument::fromJson(map->toJson()), live);
+  QCOMPARE(mapNode(map, QStringLiteral("b")).value(QStringLiteral("topic")).toString(),
+           QStringLiteral("Beta"));
+  if (operation == QLatin1String("reload")) {
+    QVERIFY(triggerNoteCommand(map));
+    QTRY_VERIFY(f->current() != note);
+    auto *fresh = f->current();
+    QVERIFY(fresh->getBuffer().id() != buffer.id());
+    QVERIFY(fresh->getBuffer().nodeId().relativePath != buffer.nodeId().relativePath);
+    QCOMPARE(f->order(preview).size(), 2);
+    auto *freshEditor = fresh->findChild<TextEditor *>();
+    QVERIFY(freshEditor);
+    QCOMPARE(freshEditor->getText(), QString::fromUtf8("Original α\nsecond line"));
+    QVERIFY(!note->save());
+    QCOMPARE(editor->getText(), draft);
+  }
+  {
+    // Source closure cannot claim success after the preview's finalizer refuses
+    // its snapshot. Answer Save, then Cancel at the existing save-failure UI.
+    std::unique_ptr<DialogAnswer> failureCancel;
+    DialogAnswer save(QMessageBox::Save, [&] {
+      QTimer::singleShot(
+          0, this, [&] { failureCancel = std::make_unique<DialogAnswer>(QMessageBox::Cancel); });
+    });
+    QVERIFY(!f->controller()->closeViewWindow(source->getViewWindowId(), false));
+    QVERIFY(save.accepted());
+    QVERIFY(failureCancel && failureCancel->accepted());
+    QVERIFY(note && note->isModified());
+    QCOMPARE(editor->getText(), draft);
+    QCOMPARE(QJsonDocument::fromJson(map->toJson()), live);
+  }
+  {
+    DialogAnswer cancel(QMessageBox::Cancel);
+    QVERIFY(!f->controller()->closeViewWindow(note->getViewWindowId(), false));
+    QVERIFY(cancel.accepted());
+    QVERIFY(note && note->isModified());
+    QCOMPARE(editor->getText(), draft);
+  }
+  {
+    DialogAnswer discard(QMessageBox::Discard);
+    QVERIFY(f->controller()->closeViewWindow(note->getViewWindowId(), false));
+    QVERIFY(discard.accepted());
+  }
+  QTRY_VERIFY(note.isNull());
+  QCOMPARE(QJsonDocument::fromJson(map->toJson()), live);
+}
+
+void TestViewAreaTabReuse::previewMindMapNoteClose_data() {
+  QTest::addColumn<QString>("operation");
+  QTest::addColumn<int>("answer");
+  for (const auto *operation : {"preview", "source", "lock"}) {
+    for (const auto answer : {QMessageBox::Save, QMessageBox::Discard, QMessageBox::Cancel}) {
+      const auto row = QByteArray(operation) + '-' + QByteArray::number(int(answer));
+      QTest::newRow(row.constData()) << QString::fromLatin1(operation) << int(answer);
+    }
+  }
+}
+
+void TestViewAreaTabReuse::previewMindMapNoteClose() {
+  QFETCH(QString, operation);
+  QFETCH(int, answer);
+  const bool locking = operation == QLatin1String("lock");
+  const auto name = QStringLiteral("consent.emind");
+  QString protectedId;
+  Buffer2 sourceBuffer;
+  if (locking) {
+    protectedId = f->createProtected(name, noteMapBytes(), true, QStringLiteral("mindmap"));
+    QVERIFY(!protectedId.isEmpty());
+    sourceBuffer = f->openProtected(protectedId);
+  } else {
+    QVERIFY(f->create(name, noteMapBytes()));
+    sourceBuffer = f->open(name);
+  }
+  QVERIFY(sourceBuffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  auto *map = source->findChild<MindMapEditor *>();
+  QVERIFY(map);
+  QVERIFY(clickNoteControl(map));
+  QTRY_VERIFY(f->current() != source);
+  QPointer<ViewWindow2> note(f->current());
+  const auto preview = f->workspace();
+  auto *editor = note->findChild<TextEditor *>();
+  QVERIFY(editor);
+  const auto draft = QString::fromUtf8("Consent η\nprotected draft");
+  QVERIFY(replaceNoteDraft(editor, draft));
+  const auto expected =
+      answer == QMessageBox::Save ? draft : QString::fromUtf8("Original α\nsecond line");
+  bool accepted = false;
+  {
+    DialogAnswer dialog(static_cast<QMessageBox::StandardButton>(answer), [&] {
+      QVERIFY(source && note && source->isEnabled() && note->isEnabled());
+      QVERIFY(!f->buffers->isProtectedLocking());
+      QCOMPARE(editor->getText(), draft);
+    });
+    if (locking) {
+      QString error;
+      accepted = f->controller()->lockAllProtectedNotes(&error);
+    } else if (operation == QLatin1String("source")) {
+      accepted = f->controller()->closeViewWindow(source->getViewWindowId(), false);
+    } else {
+      accepted = f->controller()->closePreviewWorkspace(preview);
+    }
+    QVERIFY(dialog.accepted(
+        operation == QLatin1String("source") && answer == QMessageBox::Save ? 2 : 1));
+  }
+  QCOMPARE(accepted, answer != QMessageBox::Cancel);
+  if (answer == QMessageBox::Cancel) {
+    QVERIFY(source && note && note->isModified());
+    QCOMPARE(editor->getText(), draft);
+    QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), expected);
+    QVERIFY(!f->buffers->isProtectedLocking());
+    QVERIFY(!source->isNoteConversionFrozen());
+    // A cancelled Lock All must leave usable keys, not just visible cached text.
+    QVERIFY(note->save());
+    QVERIFY(source->save());
+    QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), draft);
+    return;
+  }
+  QTRY_VERIFY(note.isNull());
+  if (operation == QLatin1String("preview")) {
+    QVERIFY(source);
+    QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), expected);
+    QVERIFY(source->save());
+    QVERIFY(f->controller()->closeViewWindow(source->getViewWindowId(), false));
+  }
+  QTRY_VERIFY(source.isNull());
+  if (locking) {
+    QByteArray password("reuse-test-password");
+    QCOMPARE(f->controller()->unlockNoteEncryption(f->notebook, sourceBuffer.nodeId().relativePath,
+                                                   password),
+             VXCORE_OK);
+    QVERIFY(f->openProtected(protectedId).isValid());
+  } else {
+    QVERIFY(f->open(name).isValid());
+  }
+  map = f->current()->findChild<MindMapEditor *>();
+  QVERIFY(map);
+  QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), expected);
+}
+
+void TestViewAreaTabReuse::previewMindMapNoteOwnership_data() {
+  QTest::addColumn<bool>("protectedSource");
+  QTest::addColumn<bool>("mixed");
+  QTest::newRow("ordinary-note-only") << false << false;
+  QTest::newRow("ordinary-mixed") << false << true;
+  QTest::newRow("protected-note-only") << true << false;
+  QTest::newRow("protected-mixed") << true << true;
+}
+
+void TestViewAreaTabReuse::previewMindMapNoteOwnership() {
+  QFETCH(bool, protectedSource);
+  QFETCH(bool, mixed);
+  QVERIFY(f->create(QStringLiteral("ordinary.txt"), "Ordinary preview\n"));
+  if (protectedSource) {
+    const auto id = f->createProtected(QStringLiteral("ownership.emind"), noteMapBytes(), true,
+                                       QStringLiteral("mindmap"));
+    QVERIFY(!id.isEmpty());
+    QVERIFY(f->openProtected(id).isValid());
+  } else {
+    QVERIFY(f->create(QStringLiteral("ownership.emind"), noteMapBytes()));
+    QVERIFY(f->open(QStringLiteral("ownership.emind")).isValid());
+  }
+  auto *source = f->current();
+  auto *map = source->findChild<MindMapEditor *>();
+  QVERIFY(map);
+  const auto main = f->workspace();
+  Buffer2 ordinary;
+  if (mixed) {
+    ordinary = f->preview(source, f->node(QStringLiteral("ordinary.txt")));
+    QVERIFY(ordinary.isValid());
+  }
+  bool reentrantCloneAttempted = false;
+  const int reentrantHook = f->hooks->addAction<FileOpenEvent>(
+      HookNames::FileAfterOpen, [&](HookContext &, const FileOpenEvent &event) {
+        const auto incoming = f->buffers->getBufferHandle(event.bufferId);
+        if (reentrantCloneAttempted ||
+            !incoming.nodeId().relativePath.startsWith(QStringLiteral("vx://mindmap-note/")))
+          return;
+        reentrantCloneAttempted = true;
+        FileOpenSettings settings;
+        settings.m_mode = ViewWindowMode::Edit;
+        settings.m_alwaysNewWindow = true;
+        settings.m_targetWorkspaceId = main;
+        // This runs before requestEditNote's synchronous scope unwinds, after
+        // its single legitimate admission has already been consumed.
+        f->controller()->openBuffer(incoming, settings);
+        QVERIFY(!f->order(main).contains(incoming.id()));
+      });
+  const auto removeReentrantHook = qScopeGuard([&] { f->hooks->removeAction(reentrantHook); });
+  QVERIFY(mixed ? triggerNoteCommand(map) : clickNoteControl(map));
+  QVERIFY(reentrantCloneAttempted);
+  QTRY_VERIFY(f->current() != source);
+  QPointer<ViewWindow2> note(f->current());
+  const auto preview = f->workspace();
+  const auto buffer = note->getBuffer();
+  const auto address = buffer.nodeId().relativePath;
+  QVERIFY(address.startsWith(QStringLiteral("vx://mindmap-note/")));
+  auto *editor = note->findChild<TextEditor *>();
+  QVERIFY(editor);
+  const auto draft = QStringLiteral("Source-owned secret draft");
+  QVERIFY(replaceNoteDraft(editor, draft));
+  QCOMPARE(f->order(preview),
+           mixed ? QStringList({ordinary.id(), buffer.id()}) : QStringList({buffer.id()}));
+  // Keep another note current: move admission must inspect the event's
+  // buffer, not whichever editor happens to have focus.
+  QVERIFY(triggerNoteCommand(map, QStringLiteral("b")));
+  QTRY_VERIFY(f->current() != note);
+  QPointer<ViewWindow2> secondNote(f->current());
+  const auto secondBuffer = secondNote->getBuffer();
+  const auto secondAddress = secondBuffer.nodeId().relativePath;
+  QVERIFY(secondAddress != address);
+  auto *secondEditor = secondNote->findChild<TextEditor *>();
+  QVERIFY(secondEditor);
+  QVERIFY(replaceNoteDraft(secondEditor, QStringLiteral("Second source-owned draft")));
+  FileOpenSettings clone;
+  clone.m_mode = ViewWindowMode::Edit;
+  clone.m_alwaysNewWindow = true;
+  clone.m_targetWorkspaceId = main;
+  f->controller()->openBuffer(buffer, clone);
+  QVERIFY(!f->order(main).contains(buffer.id()));
+  QCOMPARE(f->area->getViewWindowIdsForWorkspace(preview).count(note->getViewWindowId()), 1);
+  // A clone into the same preview is also outside the owning controller's
+  // synchronous admission scope; a second view would leak draft ownership.
+  clone.m_targetWorkspaceId = preview;
+  const auto windows = f->area->getViewWindowIdsForWorkspace(preview);
+  f->controller()->openBuffer(buffer, clone);
+  QCOMPARE(f->area->getViewWindowIdsForWorkspace(preview), windows);
+  QVERIFY(!f->controller()->openPreviewInNewTabs(preview, main));
+  QVERIFY(note && secondNote);
+  QCOMPARE(secondNote->getBuffer().nodeId().relativePath, secondAddress);
+  QVERIFY(f->order(preview).contains(secondBuffer.id()));
+  QVERIFY(!f->order(main).contains(secondBuffer.id()));
+  QCOMPARE(secondEditor->getText(), QStringLiteral("Second source-owned draft"));
+  QVERIFY(secondNote->isModified());
+  QCOMPARE(note->getBuffer().nodeId().relativePath, address);
+  QVERIFY(f->order(preview).contains(buffer.id()));
+  QVERIFY(!f->order(main).contains(buffer.id()));
+  if (mixed) {
+    // The established promotion loop may already have moved ordinary tabs.
+    QVERIFY(f->order(main).contains(ordinary.id()));
+    QVERIFY(!f->order(preview).contains(ordinary.id()));
+  }
+  for (const auto &value : f->workspaces->listWorkspaces()) {
+    const auto workspace = value.toObject().value(QStringLiteral("id")).toString();
+    if (workspace != preview) {
+      for (const auto &id : f->order(workspace)) {
+        const auto candidate = f->buffers->getBufferHandle(id);
+        QVERIFY(candidate.nodeId().relativePath != address);
+        QVERIFY(candidate.nodeId().relativePath != secondAddress);
+      }
+    }
+  }
+  QCOMPARE(editor->getText(), draft);
+  QVERIFY(note->isModified());
+  QVERIFY(note->save());
+  QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), draft);
 }
 
 void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {

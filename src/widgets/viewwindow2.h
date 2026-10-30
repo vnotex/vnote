@@ -280,6 +280,9 @@ public:
 
   // Context links open in new tabs; direct links retain source-bound preview intent.
   FileOpenSettings getLinkOpenSettings(bool p_fromContextMenu = false) const;
+  // Explicit source-bound previews bypass the direct-link preference. An unbound
+  // window returns default settings; callers must reject its zero source ID.
+  FileOpenSettings getPreviewOpenSettings() const;
 
 public slots:
   void findNext(const QString &p_text, FindOptions p_options);

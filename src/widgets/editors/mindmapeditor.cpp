@@ -21,6 +21,7 @@
 #include <QScopeGuard>
 #include <QUrl>
 
+#include <memory>
 #include <stdexcept>
 
 #include <controllers/mindmapviewwindowcontroller.h>
@@ -229,6 +230,69 @@ QPlainTextEdit *MindMapEditor::createNoteEditor(QWidget *p_parent) {
   return new PlainTextEdit(p_parent);
 }
 void MindMapEditor::setViewWindow(ViewWindow2 *p_viewWindow) { m_viewWindow = p_viewWindow; }
+
+void MindMapEditor::onEditNote(const QString &p_nodeId) {
+  const QString nodeId(p_nodeId);
+  if (!m_viewWindow || !canEdit() || m_buffer.getBuffer().isEmpty()) {
+    emit statusMessageRequested(tr("The mind map buffer is unavailable."));
+    return;
+  }
+  const auto record = nodeJson(nodeId);
+  auto settings = m_viewWindow->getPreviewOpenSettings();
+  if (record.isEmpty() || settings.m_previewSourceWindowId == 0) {
+    emit statusMessageRequested(tr("The mind map buffer is unavailable."));
+    return;
+  }
+  const auto note =
+      QJsonDocument::fromJson(record).object().value(QStringLiteral("note")).toString();
+  settings.m_mode = ViewWindowMode::Edit;
+  settings.m_forceMode = true;
+  settings.m_focus = true;
+  settings.m_alwaysNewWindow = true;
+
+  const QPointer<MindMapEditor> guard(this);
+  const auto generation = m_generation;
+  // BufferService copies the GUI finalizer before calling it. All copies must
+  // advance the same accepted baseline, including after duplicate activations.
+  const auto expectedNote = std::make_shared<QString>(note);
+  m_controller->requestEditNote(
+      nodeId, note, settings,
+      [guard, generation, nodeId, expectedNote](const QString &p_text) -> VxCoreError {
+        if (!guard || generation != guard->m_generation || !guard->m_viewWindow ||
+            !guard->m_contentLoaded || guard->m_loading || !guard->canUseBuffer() ||
+            guard->m_buffer.getBuffer().isEmpty()) {
+          return VXCORE_ERR_INVALID_STATE;
+        }
+        if (guard->isReadOnly() || guard->m_buffer.isReadOnly()) {
+          return VXCORE_ERR_READ_ONLY;
+        }
+        if (!guard->isEnabled()) {
+          return VXCORE_ERR_INVALID_STATE;
+        }
+        const auto record = guard->nodeJson(nodeId);
+        if (record.isEmpty()) {
+          return VXCORE_ERR_NOT_FOUND;
+        }
+        const auto currentNote =
+            QJsonDocument::fromJson(record).object().value(QStringLiteral("note")).toString();
+        if (currentNote != *expectedNote && currentNote != p_text) {
+          return VXCORE_ERR_FILE_CHANGED_OUTSIDE;
+        }
+        if (currentNote != p_text) {
+          const auto patch = QJsonDocument(QJsonObject{{QStringLiteral("note"), p_text}})
+                                 .toJson(QJsonDocument::Compact);
+          if (!guard->updateNode(nodeId, patch)) {
+            return VXCORE_ERR_INVALID_STATE;
+          }
+          // updateNode emits normal map notifications, which can rebind/destroy us.
+          if (!guard || generation != guard->m_generation) {
+            return VXCORE_ERR_INVALID_STATE;
+          }
+        }
+        *expectedNote = p_text;
+        return VXCORE_OK;
+      });
+}
 
 void MindMapEditor::populateImageContextMenu(const QString &p_nodeId, QMenu *p_menu) {
   const QPointer<MindMapEditor> guard(this);

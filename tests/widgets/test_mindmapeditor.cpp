@@ -88,6 +88,11 @@ FileOpenSettings ViewWindow2::getLinkOpenSettings(bool) const {
   Q_UNREACHABLE();
 }
 
+FileOpenSettings ViewWindow2::getPreviewOpenSettings() const {
+  qFatal("Standalone mind-map editor tests must not bind a ViewWindow2");
+  Q_UNREACHABLE();
+}
+
 } // namespace vnotex
 
 namespace tests {

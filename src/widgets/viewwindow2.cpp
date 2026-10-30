@@ -1741,8 +1741,16 @@ FileOpenSettings ViewWindow2::getLinkOpenSettings(bool p_fromContextMenu) const 
     return settings;
   }
 
-  settings.m_previewSourceWindowId = m_viewWindowId;
-  settings.m_previewSourceGeneration = m_bufferGeneration;
+  return getPreviewOpenSettings();
+}
+
+FileOpenSettings ViewWindow2::getPreviewOpenSettings() const {
+  FileOpenSettings settings;
+  if (m_viewWindowId != 0) {
+    settings.m_previewSourceWindowId = m_viewWindowId;
+    settings.m_previewSourceGeneration = m_bufferGeneration;
+  }
+
   return settings;
 }
 

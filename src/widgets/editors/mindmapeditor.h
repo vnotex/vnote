@@ -44,6 +44,10 @@ signals:
 
 protected:
   QPlainTextEdit *createNoteEditor(QWidget *p_parent) override;
+  // Edit Note targets the captured node in this source's preview. Only explicit
+  // Save applies a note-only undo step; stale/conflicting saves retain the draft.
+  // The separate properties-panel Note field keeps createNoteEditor's policy.
+  void onEditNote(const QString &p_nodeId) override;
   bool canInsertFromMimeData(const QMimeData *p_source,
                              MimeInsertionSource p_origin) const override;
   void insertFromMimeData(const QString &p_nodeId, const QMimeData *p_source,
