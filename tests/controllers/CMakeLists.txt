@@ -682,8 +682,21 @@ add_qt_test(test_typstviewwindowcontroller
     Qt6::Svg
   ARGS -nocrashhandler
 )
+# Keep each policy group within the existing deadline without duplicating the executable.
+add_test(NAME test_typstviewwindowcontroller_images
+  COMMAND $<TARGET_FILE:test_typstviewwindowcontroller> -nocrashhandler
+)
+add_test(NAME test_typstviewwindowcontroller_resources
+  COMMAND $<TARGET_FILE:test_typstviewwindowcontroller> -nocrashhandler
+)
 target_include_directories(test_typstviewwindowcontroller PRIVATE
   ${CMAKE_SOURCE_DIR}/libs/vtextedit/src/include
+)
+set_tests_properties(test_typstviewwindowcontroller test_typstviewwindowcontroller_images
+  test_typstviewwindowcontroller_resources PROPERTIES
+  TIMEOUT 60
+  RUN_SERIAL TRUE
+  WORKING_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}"
 )
 # SVG image validation needs a GUI application and the native platform plugins.
 set(_typst_controller_platform offscreen)
@@ -695,16 +708,26 @@ elseif(APPLE)
   set(_typst_controller_platform cocoa)
   set(_typst_controller_plugin Qt6::QCocoaIntegrationPlugin)
 endif()
-set_property(TEST test_typstviewwindowcontroller PROPERTY ENVIRONMENT
+set_property(TEST test_typstviewwindowcontroller test_typstviewwindowcontroller_images
+  test_typstviewwindowcontroller_resources PROPERTY ENVIRONMENT
   "QT_QPA_PLATFORM=${_typst_controller_platform}"
   "QT_QPA_PLATFORM_PLUGIN_PATH=$<TARGET_FILE_DIR:${_typst_controller_plugin}>"
   "QT_PLUGIN_PATH=$<TARGET_FILE_DIR:${_typst_controller_plugin}>/.."
 )
+set_property(TEST test_typstviewwindowcontroller APPEND PROPERTY
+  ENVIRONMENT "VNOTE_TYPST_CONTROLLER_TEST_GROUP=navigation")
+set_property(TEST test_typstviewwindowcontroller_images APPEND PROPERTY
+  ENVIRONMENT "VNOTE_TYPST_CONTROLLER_TEST_GROUP=images")
+set_property(TEST test_typstviewwindowcontroller_resources APPEND PROPERTY
+  ENVIRONMENT "VNOTE_TYPST_CONTROLLER_TEST_GROUP=resources")
 if(WIN32)
   set(_typst_controller_path "$<TARGET_FILE_DIR:Qt6::Core>;$<TARGET_FILE_DIR:VTextEdit>;$ENV{PATH}")
   string(REPLACE ";" "\;" _typst_controller_path "${_typst_controller_path}")
-  set_property(TEST test_typstviewwindowcontroller APPEND PROPERTY
-    ENVIRONMENT "PATH=${_typst_controller_path}")
+  foreach(_typst_controller_test test_typstviewwindowcontroller test_typstviewwindowcontroller_images
+      test_typstviewwindowcontroller_resources)
+    set_property(TEST ${_typst_controller_test} APPEND PROPERTY
+      ENVIRONMENT "PATH=${_typst_controller_path}")
+  endforeach()
   # Building only this target must also produce a runnable isolated test directory.
   add_custom_command(TARGET test_typstviewwindowcontroller POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_if_different

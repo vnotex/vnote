@@ -57,7 +57,11 @@ IME composition targets its focused input rather than the editor behind it. Keep
 ordinary menus and Linux popup policy unchanged. Do not replace native focus with
 key/input-method forwarding or application modality. Deferred activation and focus
 restoration belong to one guarded opening; capture the origin before subclass
-`aboutToShow` callbacks and retain it across an overflow handoff.
+`aboutToShow` callbacks and retain it across an overflow handoff. Tool panels set
+`Qt::WA_ShowWithoutActivating`: implicit native keying during show can dismiss the
+causing overflow menu before Qt finishes its submenu bookkeeping. Post handoff/activation
+only after base `setVisible()` returns, not from `showEvent()`. Explicit `requestActivate()`
+then establishes the input-method target.
 
 An overflow submenu must release its ancestor popup grabs after Qt's opening stack
 unwinds, then reopen at the same anchor without changing QObject ownership. Accept
@@ -66,7 +70,11 @@ Keep `aboutToHide` as the existing save boundary. Outside presses and their rele
 are consumed, including native content windows without QWidget peers. Owned menus
 and dialogs remain interactive; window focus loss alone never dismisses a panel.
 Observe composition events, not virtual-keyboard visibility, when deferring
-application-deactivation dismissal.
+application-deactivation dismissal. An owned dialog's completed `finished` signal restores
+panel activation through a single-shot queued, opening-generation-guarded callback. Reopened
+or reparented dialogs and newer modal/popup windows veto it; a hidden finished dialog is not
+a foreign active window. Do not restore synchronously inside native dialog hiding or reopen
+the panel just to recover focus.
 
 Use `ButtonPopup::activePopupWidget()` for application popup guards: native Qt
 popups take precedence, followed by a visible focused/active ButtonPopup panel.

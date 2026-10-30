@@ -17,6 +17,8 @@ public:
               Alignment p_alignment = Alignment::Native);
   ~ButtonPopup() override;
 
+  void setVisible(bool p_visible) override;
+
   // Includes native-focus panels, which Qt does not put in its popup stack.
   static QWidget *activePopupWidget();
 
@@ -34,7 +36,7 @@ protected:
 
 private:
   void beginOpening();
-  void activateOpening(quint64 p_generation);
+  void activateOpening(quint64 p_generation, QWidget *p_finishedDialog = nullptr);
   void transferFromPopup(quint64 p_generation);
   void dismissWhenInactive();
   bool ownsObject(QObject *p_object) const;

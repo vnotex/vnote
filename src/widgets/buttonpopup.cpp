@@ -1,6 +1,7 @@
 #include "buttonpopup.h"
 
 #include <QApplication>
+#include <QDialog>
 #include <QHideEvent>
 #include <QInputMethodEvent>
 #include <QKeyEvent>
@@ -53,6 +54,7 @@ ButtonPopup::ButtonPopup(QToolButton *p_btn, QWidget *p_parent, Alignment p_alig
   // context without foreground-activating a menu or making the application modal.
   setWindowFlags(Qt::Tool | Qt::FramelessWindowHint);
   setWindowModality(Qt::NonModal);
+  setAttribute(Qt::WA_ShowWithoutActivating);
 #endif
   // This connection precedes subclass callbacks which focus their embedded input.
   connect(this, &QMenu::aboutToShow, this, &ButtonPopup::beginOpening);
@@ -99,6 +101,26 @@ void ButtonPopup::beginOpening() {
   qApp->installEventFilter(this);
 }
 
+void ButtonPopup::setVisible(bool p_visible) {
+  const bool opening = p_visible && !isVisible();
+  const QPointer<ButtonPopup> guard(this);
+  QMenu::setVisible(p_visible);
+  if (!guard || !opening || !isVisible()) {
+    return;
+  }
+
+  // Cocoa can deliver queued work after showEvent but before native visibility
+  // finishes. Do not retire the causing menu until Qt completes that transition.
+  const auto generation = m_openGeneration;
+  if (m_transferPending) {
+    QTimer::singleShot(0, this, [this, generation]() { transferFromPopup(generation); });
+  } else {
+#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
+    QTimer::singleShot(0, this, [this, generation]() { activateOpening(generation); });
+#endif
+  }
+}
+
 void ButtonPopup::showEvent(QShowEvent *p_event) {
   QMenu::showEvent(p_event);
   // Also support callers using QWidget::show() rather than QMenu::popup().
@@ -113,25 +135,18 @@ void ButtonPopup::showEvent(QShowEvent *p_event) {
     const int maxX = qMax(available.x(), available.x() + available.width() - width());
     move(qBound(available.x(), preferredX, maxX), y());
   }
-
-  const auto generation = m_openGeneration;
-  if (m_transferPending) {
-    QTimer::singleShot(0, this, [this, generation]() { transferFromPopup(generation); });
-  } else {
-#if defined(Q_OS_WIN) || defined(Q_OS_MACOS)
-    QTimer::singleShot(0, this, [this, generation]() { activateOpening(generation); });
-#endif
-  }
 }
 
-void ButtonPopup::activateOpening(quint64 p_generation) {
+void ButtonPopup::activateOpening(quint64 p_generation, QWidget *p_finishedDialog) {
   if (p_generation != m_openGeneration || !m_open || !isVisible() || !isEnabled() ||
       !m_originWindow || !m_originWindow->isVisible() || !m_originWindow->isEnabled() ||
       QGuiApplication::applicationState() != Qt::ApplicationActive) {
     return;
   }
   auto *active = QApplication::activeWindow();
-  if (active && active != this && active != m_originWindow) {
+  const bool finishedDialogActive =
+      p_finishedDialog && active == p_finishedDialog && !p_finishedDialog->isVisible();
+  if (active && active != this && active != m_originWindow && !finishedDialogActive) {
     return; // A newer dialog/window owns activation; never take it back from a queued show.
   }
   if (auto *popup = QApplication::activePopupWidget();
@@ -270,6 +285,23 @@ bool ButtonPopup::eventFilter(QObject *p_object, QEvent *p_event) {
   }
   if (!m_open) {
     return QMenu::eventFilter(p_object, p_event);
+  }
+  if (type == QEvent::Show && !p_event->spontaneous() && windowType() == Qt::Tool) {
+    if (auto *dialog = qobject_cast<QDialog *>(p_object); dialog && ownsObject(dialog)) {
+      const auto generation = m_openGeneration;
+      // The panel stays visible while its child dialog closes. Restore native
+      // activation after completion, not during the dialog's native hide path.
+      connect(
+          dialog, &QDialog::finished, this,
+          [this, generation, closed = QPointer<QDialog>(dialog)] {
+            if ((closed && (closed->isVisible() || !ownsObject(closed))) ||
+                QApplication::activeModalWidget() || QApplication::activePopupWidget()) {
+              return;
+            }
+            activateOpening(generation, closed.data());
+          },
+          static_cast<Qt::ConnectionType>(Qt::QueuedConnection | Qt::SingleShotConnection));
+    }
   }
   if (type == QEvent::InputMethod && ownsObject(p_object)) {
     if (m_transferPending) {

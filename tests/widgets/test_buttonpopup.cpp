@@ -438,6 +438,7 @@ void TestButtonPopup::ownedChildrenTakeEscapeFirst() {
   QTRY_COMPARE(QApplication::activeModalWidget(), &dialog);
   QVERIFY(fixture.m_popup->isVisible());
   QTRY_VERIFY(dialogInput->hasFocus());
+  QTRY_COMPARE(QGuiApplication::focusObject(), static_cast<QObject *>(dialogInput));
   QTest::keyClick(dialogInput, Qt::Key_Escape);
   QTRY_VERIFY(!dialog.isVisible());
   QVERIFY(fixture.m_popup->isVisible());

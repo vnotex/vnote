@@ -345,6 +345,8 @@ void TestContentFullScreenHost::anOwnedButtonPopupHandlesTheFirstEscape() {
   QTRY_COMPARE(QGuiApplication::focusWindow(), fixture.m_page->windowHandle());
   QTRY_COMPARE(QApplication::activeWindow(), fixture.m_page);
   QTRY_VERIFY(fixture.m_editor->hasFocus());
+  QTRY_COMPARE(QApplication::activeWindow(), fixture.m_page);
+  QTRY_COMPARE(QGuiApplication::focusObject(), static_cast<QObject *>(fixture.m_editor));
   QSignalSpy exits(&host, &ContentFullScreenHost::exitRequested);
   connectExitConsumer(host);
   auto *action = fixture.m_toolbar->addAction(QStringLiteral("Tags"));

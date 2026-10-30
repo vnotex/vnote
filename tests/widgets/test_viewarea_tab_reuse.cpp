@@ -359,6 +359,38 @@ QPoint readerLinkPoint(MarkdownViewer *p_viewer, const QString &p_text) {
                            : QPoint(-1, -1);
 }
 
+// Activate the actual native host, not a transient parent that also reports active.
+// Leave child focus to the existing explicit requests and automatic-transfer assertions.
+bool activateNativeHost(QWidget *p_target) {
+  if (!p_target)
+    return false;
+  const QPointer<QWidget> target(p_target);
+  const QPointer<QWidget> host(p_target->window());
+  const auto surfaceExposed = [&] {
+    if (!target || !host || target->window() != host || !target->isVisible() || !host->isVisible())
+      return false;
+    auto *nativeHost = host->windowHandle();
+    auto *nativeWidget = target->windowHandle() ? target.data() : target->nativeParentWidget();
+    auto *surface = nativeWidget ? nativeWidget->windowHandle() : nullptr;
+    return nativeHost && surface && surface->isExposed() &&
+           (surface == nativeHost || nativeHost->isAncestorOf(surface, QWindow::ExcludeTransients));
+  };
+  // Native children can cover a fullscreen host's entire exposed region.
+  if (!QTest::qWaitFor(surfaceExposed))
+    return false;
+  host->raise();
+  host->activateWindow();
+  // Xvfb need not have a window manager to update Qt's active QWidget.
+  QApplication::setActiveWindow(host);
+  return QTest::qWaitFor([&] {
+    auto *nativeHost = host ? host->windowHandle() : nullptr;
+    auto *focusWindow = QGuiApplication::focusWindow();
+    return surfaceExposed() && QApplication::activeWindow() == host && nativeHost && focusWindow &&
+           (focusWindow == nativeHost ||
+            nativeHost->isAncestorOf(focusWindow, QWindow::ExcludeTransients));
+  });
+}
+
 // Send through the top-level QWindow instead of directly delivering a click to a
 // preselected child. Both Qt hit testing and the late WebEngine native child are live.
 bool clickNativeSurface(QWidget *p_surface, const QPoint &p_point,
@@ -534,8 +566,10 @@ struct Fixture {
     area = std::make_unique<ViewArea2>(services);
     area->resize(1050, 760);
     area->show();
-    area->activateWindow();
-    QApplication::setActiveWindow(area.get());
+    if (!activateNativeHost(area.get())) {
+      error = QStringLiteral("Could not activate the native view area host");
+      return false;
+    }
     if (p_existingNotebook.isEmpty()) {
       controller()->openVxUrl(QUrl(QStringLiteral("vx://home")));
       QCoreApplication::processEvents();
@@ -802,6 +836,7 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
   const auto viewportSize = edit->viewport()->size();
   const auto readerSize = reader->size();
 
+  QVERIFY(activateNativeHost(edit->viewport()));
   // A real selection drag ends on the link, but must remain ordinary text editing.
   const auto linkPoint = editor->getNavigationTargets().first().m_rect.center();
   QTextCursor start(edit->document());
@@ -820,6 +855,7 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
   edit->setTextCursor(cursor);
 
   for (const auto modifiers : {Qt::NoModifier, Qt::ControlModifier}) {
+    QVERIFY(activateNativeHost(edit->viewport()));
     QVERIFY(clickNativeSurface(edit->viewport(), linkPoint, modifiers));
     if (modifiers == Qt::NoModifier) {
       QCOMPARE(f->current(), source);
@@ -888,6 +924,7 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
       }
       QVERIFY(surface->rect().contains(point));
       f->reuse();
+      QVERIFY(activateNativeHost(surface));
       QVERIFY(openContextLinkAt(surface, point));
       QTRY_VERIFY(f->current() != source);
       QCOMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
@@ -899,11 +936,13 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
       if (!enabled) {
         f->config->getCoreConfig().setAlwaysOpenNotesInNewTabs(true);
         if (!reading) {
+          QVERIFY(activateNativeHost(surface));
           QVERIFY(clickNativeSurface(surface, point));
           QCOMPARE(f->current(), source);
           QCOMPARE(f->buffers->listBuffers().size(), 1);
           QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
         }
+        QVERIFY(activateNativeHost(surface));
         QVERIFY(clickNativeSurface(surface, point, reading ? Qt::NoModifier : Qt::ControlModifier));
         QTRY_VERIFY(f->current() != source);
         QCOMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
@@ -920,7 +959,9 @@ void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
 void TestViewAreaTabReuse::markdownReaderContextMenus() {
   QVERIFY(f->create(QStringLiteral("menu.png"), imageBytes(Qt::red)));
   QVERIFY(f->create(QStringLiteral("menus.md"),
-                    "# Menu source\n\nPlain text\n\n[Local](target.md)\n\n"
+                    "# Menu source\n\nPlain text\n\n"
+                    "<div id=\"empty-menu-context\" style=\"height:40px\"></div>\n\n"
+                    "[Local](target.md)\n\n"
                     "[External](https://example.com/menu)\n\n"
                     "![Image](menu.png)\n\n[![Linked image](menu.png)](target.md)\n"));
   QVERIFY(f->open(QStringLiteral("menus.md")).isValid());
@@ -942,20 +983,22 @@ void TestViewAreaTabReuse::markdownReaderContextMenus() {
     bool image;
     bool selection;
   };
-  const Context contexts[] = {{"#vx-content p", false, false, false},
+  const Context contexts[] = {{"#empty-menu-context", false, false, false},
                               {"#vx-content p a", true, false, false},
                               {"#vx-content a[href^='https:']", true, false, false},
                               {"#vx-content p a", true, false, true},
                               {"#vx-content img", false, true, false},
                               {"#vx-content a img", true, true, false},
-                              {"#vx-content p", false, false, false}};
+                              {"#empty-menu-context", false, false, false}};
   for (const auto &context : contexts) {
+    QVERIFY(activateNativeHost(reader));
     const auto selector =
         QString::fromUtf8(QJsonDocument(QJsonArray{QString::fromUtf8(context.selector)})
                               .toJson(QJsonDocument::Compact));
     const auto point =
         evaluate(reader->page(), QStringLiteral(R"JS((() => {
       const element = document.querySelector(%1[0]);
+      if (!element) return null;
       window.getSelection().removeAllRanges();
       if (%2) {
         const range = document.createRange();
@@ -964,14 +1007,14 @@ void TestViewAreaTabReuse::markdownReaderContextMenus() {
       }
       element.scrollIntoView({block: 'center'});
       const rect = element.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return null;
       return [rect.x + Math.min(10, rect.width / 2), rect.y + rect.height / 2];
     })())JS")
                                      .arg(selector, context.selection ? QStringLiteral("true")
                                                                       : QStringLiteral("false")))
             .toList();
     QCOMPARE(point.size(), 2);
-    if (context.selection)
-      QTRY_VERIFY(reader->hasSelection());
+    QTRY_COMPARE(reader->hasSelection(), context.selection);
     const QPoint local(qRound(point[0].toDouble() * reader->zoomFactor()),
                        qRound(point[1].toDouble() * reader->zoomFactor()));
     const auto global = reader->mapToGlobal(local);
@@ -1041,6 +1084,7 @@ void TestViewAreaTabReuse::previewReaderNavigationAndNativeHost() {
   QVERIFY(sourceReader && waitForRender(sourceReader, QStringLiteral("Source reader")));
   const auto originalReaderSize = sourceReader->size();
   f->reuse();
+  QVERIFY(activateNativeHost(sourceReader));
   QVERIFY(clickNativeSurface(sourceReader, readerLinkPoint(sourceReader, QStringLiteral("B"))));
   QTRY_VERIFY(f->current() != source);
   const auto preview = f->workspace();
@@ -1063,9 +1107,11 @@ void TestViewAreaTabReuse::previewReaderNavigationAndNativeHost() {
   QVERIFY(split->tabBar()->isVisible());
   auto *cReader = f->current()->findChild<MarkdownViewer *>();
   QVERIFY(cReader && waitForRender(cReader, QStringLiteral("Preview C")));
+  QVERIFY(activateNativeHost(cReader));
   QVERIFY(clickNativeSurface(cReader, readerLinkPoint(cReader, QStringLiteral("B"))));
   QTRY_COMPARE(f->current(), bWindow.data());
   QCOMPARE(f->order(preview), QStringList({b.id(), c.id()}));
+  QVERIFY(activateNativeHost(bReader));
   QVERIFY(clickNativeSurface(bReader, readerLinkPoint(bReader, QStringLiteral("C"))));
   QTRY_COMPARE(f->current()->getBuffer().id(), c.id());
   QCOMPARE(f->order(preview), QStringList({b.id(), c.id()}));
@@ -1073,6 +1119,7 @@ void TestViewAreaTabReuse::previewReaderNavigationAndNativeHost() {
   QCOMPARE(f->current(), bWindow.data());
   QVERIFY(!split->tabBar()->isVisible());
 
+  QVERIFY(activateNativeHost(bReader));
   // Scroll a native WebEngine child through the actual hit-tested receiver.
   const auto sourceScroll = evaluate(sourceReader->page(), QStringLiteral("scrollY")).toInt();
   const auto previewScroll = evaluate(bReader->page(), QStringLiteral("scrollY")).toInt();
@@ -1093,6 +1140,7 @@ void TestViewAreaTabReuse::previewReaderNavigationAndNativeHost() {
   auto *editor = bWindow->findChild<MarkdownEditor *>();
   QVERIFY(editor);
   auto *edit = editor->getTextEdit();
+  QVERIFY(activateNativeHost(edit->viewport()));
   QVERIFY(clickNativeSurface(edit->viewport(), edit->viewport()->rect().center()));
   QTRY_VERIFY(edit->hasFocus());
   QTest::keyClick(edit, Qt::Key_End, Qt::ControlModifier);
@@ -1152,6 +1200,7 @@ void TestViewAreaTabReuse::previewReaderNavigationAndNativeHost() {
   presentation->trigger();
   QTRY_VERIFY_WITH_TIMEOUT(source->window()->isFullScreen() && overlay->isVisible(), 30000);
   QVERIFY(source->rect().contains(overlay->geometry()));
+  QVERIFY(activateNativeHost(edit->viewport()));
   QVERIFY(clickNativeSurface(edit->viewport(), edit->viewport()->rect().center()));
   presentation->trigger();
   QTRY_VERIFY(!source->window()->isFullScreen());
@@ -1160,7 +1209,7 @@ void TestViewAreaTabReuse::previewReaderNavigationAndNativeHost() {
   auto *detached = qobject_cast<DetachedWindow *>(source->window());
   QVERIFY(detached);
   detached->show();
-  detached->activateWindow();
+  QVERIFY(activateNativeHost(detached));
   QTRY_VERIFY(detached->isActiveWindow() && overlay->isVisible());
   // Detachment resizes the source; its overlay re-anchors on the next event-loop turn.
   QTRY_VERIFY(source->contentsRect().contains(overlay->geometry()));
@@ -1169,13 +1218,16 @@ void TestViewAreaTabReuse::previewReaderNavigationAndNativeHost() {
   QCOMPARE(f->area->previewWorkspaceForWindow(source->getViewWindowId()), preview);
   QCOMPARE(edit->document(), document);
   QCOMPARE(editor->getText(), draft);
+  QVERIFY(activateNativeHost(edit->viewport()));
   QVERIFY(clickNativeSurface(edit->viewport(), edit->viewport()->rect().center()));
   QTRY_VERIFY(edit->hasFocus());
   QCOMPARE(f->workspace(), preview);
+  QVERIFY(activateNativeHost(sourceReader));
   sourceReader->setFocus(Qt::OtherFocusReason);
   QTRY_VERIFY(sourceReader->hasFocus() || sourceReader->isAncestorOf(QApplication::focusWidget()));
   QCOMPARE(f->workspace(), main);
   QVERIFY(f->controller()->getCurrentWindowId() != bWindow->getViewWindowId());
+  QVERIFY(activateNativeHost(edit));
   edit->setFocus(Qt::OtherFocusReason);
   QTRY_COMPARE(f->current(), bWindow.data());
   const auto detachedReaderSize = sourceReader->size();
@@ -1231,6 +1283,7 @@ void TestViewAreaTabReuse::previewProtectedLinksAndDispatchFailures() {
     f->hooks->removeAction(splitHook);
   });
   const auto click = [&](int p_index) {
+    QVERIFY(activateNativeHost(editor->getTextEdit()));
     const auto target = editor->getNavigationTargets().at(p_index);
     QTest::mouseClick(target.m_widget, Qt::LeftButton, Qt::ControlModifier, target.m_rect.center());
   };
@@ -1273,6 +1326,7 @@ void TestViewAreaTabReuse::previewProtectedLinksAndDispatchFailures() {
   QPointer<MarkdownViewer> reader(source->findChild<MarkdownViewer *>());
   QVERIFY(reader && waitForRender(reader, QStringLiteral("Private source")));
   QVERIFY(reader->page()->url().scheme() == QLatin1String("vxnote"));
+  QVERIFY(activateNativeHost(reader));
   QVERIFY(clickNativeSurface(reader, readerLinkPoint(reader, QStringLiteral("Allowed"))));
   QTRY_COMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
   const auto preview = f->workspace();
@@ -1283,6 +1337,7 @@ void TestViewAreaTabReuse::previewProtectedLinksAndDispatchFailures() {
 
   f->reuse();
   QSignalSpy contextLinks(reader, &MarkdownViewer::contextLinkOpenRequested);
+  QVERIFY(activateNativeHost(reader));
   QVERIFY(openContextLinkAt(reader, readerLinkPoint(reader, QStringLiteral("Allowed"))));
   QTRY_COMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
   QCOMPARE(contextLinks.size(), 1);
@@ -1294,6 +1349,7 @@ void TestViewAreaTabReuse::previewProtectedLinksAndDispatchFailures() {
   QVERIFY(f->controller()->closeViewWindow(f->current()->getViewWindowId(), false));
   QCOMPARE(f->current(), source.data());
   contextLinks.clear();
+  QVERIFY(activateNativeHost(reader));
   QVERIFY(openContextLinkAt(reader, readerLinkPoint(reader, QStringLiteral("Allowed")),
                             [&] { reader->invalidateNavigationTargets(); }));
   QVERIFY(contextLinks.isEmpty());
@@ -1367,6 +1423,7 @@ void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {
   };
   QTRY_VERIFY(indicatorPoint().x() >= 0);
   QSignalSpy mapLinks(map, &MindMapEditor::nodeLinkActivated);
+  QVERIFY(activateNativeHost(canvas->viewport()));
   QVERIFY(clickNativeSurface(canvas->viewport(), indicatorPoint()));
   QCOMPARE(mapLinks.size(), 1);
   QTRY_COMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
@@ -1380,6 +1437,7 @@ void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {
   f->reuse();
   for (bool enabled : {true, false}) {
     f->config->getEditorConfig().setLinkPreviewEnabled(enabled);
+    QVERIFY(activateNativeHost(canvas->viewport()));
     QVERIFY(openContextLinkAt(canvas->viewport(), indicatorPoint()));
     QTRY_COMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
     QCOMPARE(f->workspace(), main);
@@ -1448,6 +1506,7 @@ void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {
           10000));
     }
     links.clear();
+    QVERIFY(activateNativeHost(surface));
     QVERIFY(clickNativeSurface(surface, point));
     QTRY_COMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
     QCOMPARE(links.size(), 1);
@@ -1464,6 +1523,7 @@ void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {
 
     f->reuse();
     links.clear();
+    QVERIFY(activateNativeHost(surface));
     QVERIFY(openContextLinkAt(surface, point));
     QTRY_COMPARE(f->current()->getNodeId(), f->node(QStringLiteral("b.md")));
     QCOMPARE(links.size(), 1);
@@ -1490,6 +1550,7 @@ void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {
       },
       10000));
   links.clear();
+  QVERIFY(activateNativeHost(pane->viewport()));
   QVERIFY(clickNativeSurface(pane->viewport(), internalPoint));
   QTRY_COMPARE(typst->currentPdfPage(), 1);
   QVERIFY(links.isEmpty());
@@ -1503,6 +1564,7 @@ void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {
   internal.setPosition(typstSource.indexOf(QStringLiteral("Internal page")) + 2);
   edit->setTextCursor(internal);
   edit->ensureCursorVisible();
+  QVERIFY(activateNativeHost(edit->viewport()));
   QVERIFY(openContextLinkAt(edit->viewport(), edit->cursorRect(internal).center()));
   QTRY_COMPARE(typst->currentPdfPage(), 1);
   QVERIFY(links.isEmpty());
@@ -1520,6 +1582,7 @@ void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {
       },
       10000));
   QSignalSpy sourceLocations(typst, &vte::VTypstEditor::sourceLocationRequested);
+  QVERIFY(activateNativeHost(pane->viewport()));
   QTest::mouseClick(pane->viewport(), Qt::LeftButton, Qt::ControlModifier, sourcePoint);
   QTRY_COMPARE(edit->textCursor().blockNumber(),
                edit->document()
@@ -1636,6 +1699,7 @@ void TestViewAreaTabReuse::previewEditingCommandTargetAndVisibility() {
   QVERIFY(preview != main);
   auto *overlay = source->findChild<LinkPreviewOverlay *>();
   QVERIFY(overlay);
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   QCOMPARE(f->controller()->getCurrentWindowId(), previewWindow->getViewWindowId());
@@ -1664,6 +1728,7 @@ void TestViewAreaTabReuse::previewEditingCommandTargetAndVisibility() {
   const int undoSteps = editor->getTextEdit()->document()->availableUndoSteps();
   QLineEdit dock(f->area.get());
   dock.show();
+  QVERIFY(activateNativeHost(&dock));
   dock.setFocus();
   QTRY_VERIFY(dock.hasFocus());
   QCOMPARE(f->current(), previewWindow.data());
@@ -1679,6 +1744,7 @@ void TestViewAreaTabReuse::previewEditingCommandTargetAndVisibility() {
   QCOMPARE(editor->getText(), draft);
   source->show();
   QTRY_VERIFY(overlay->isVisible());
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_COMPARE(f->current(), previewWindow.data());
   QCOMPARE(editor->getTextEdit()->document()->availableUndoSteps(), undoSteps);
@@ -1696,6 +1762,7 @@ void TestViewAreaTabReuse::previewEditingCommandTargetAndVisibility() {
   QCOMPARE(previewWindow->getLatestContent(), draft);
   f->controller()->focusWindow(main, a.id());
   QTRY_VERIFY(overlay->isVisible());
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_COMPARE(f->controller()->getCurrentWindowId(), previewWindow->getViewWindowId());
   DialogAnswer discard(QMessageBox::Discard);
@@ -1741,18 +1808,22 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
     auto *reader = readerSource->findChild<MarkdownViewer *>();
     QVERIFY(reader && waitForRender(reader, QStringLiteral("Reader-first source")));
     const auto sourceSize = reader->size();
+    QVERIFY(activateNativeHost(reader));
     QVERIFY(clickNativeSurface(reader, readerLinkPoint(reader, QStringLiteral("Here"))));
     const auto point = readerLinkPoint(reader, QStringLiteral("C"));
+    QVERIFY(activateNativeHost(reader));
     QVERIFY(clickNativeSurface(reader, point));
     QTRY_VERIFY(f->current() != readerSource);
     QPointer<LinkPreviewOverlay> preview(readerSource->findChild<LinkPreviewOverlay *>());
     QVERIFY(preview);
+    QVERIFY(activateNativeHost(reader));
     QVERIFY(clickNativeSurface(reader, point));
     QTRY_VERIFY(preview.isNull());
     QCOMPARE(f->current(), readerSource.data());
     QCOMPARE(reader->size(), sourceSize);
     QCOMPARE(readerSource->getBuffer().id(), initial.id());
     QCOMPARE(readerSource->getLatestContent().toUtf8(), readerBytes);
+    QVERIFY(activateNativeHost(reader));
     QVERIFY(clickNativeSurface(reader, point));
     QTRY_VERIFY(!f->area->previewWorkspaceForWindow(readerSource->getViewWindowId()).isEmpty());
     preview = readerSource->findChild<LinkPreviewOverlay *>();
@@ -1787,9 +1858,11 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
   const auto preview = f->area->previewWorkspaceForWindow(sourceId);
   auto *previewEditor = overlay->getViewSplit()->getCurrentViewWindow()->findChild<TextEditor *>();
   QVERIFY(previewEditor);
+  QVERIFY(activateNativeHost(previewEditor->getTextEdit()->viewport()));
   QVERIFY(clickNativeSurface(previewEditor->getTextEdit()->viewport(),
                              previewEditor->getTextEdit()->viewport()->rect().center()));
   QVERIFY(overlay && overlay->isVisible());
+  QVERIFY(activateNativeHost(otherEditor->getTextEdit()->viewport()));
   QVERIFY(clickNativeSurface(otherEditor->getTextEdit()->viewport(),
                              otherEditor->getTextEdit()->viewport()->rect().center()));
   QCOMPARE(f->area->previewWorkspaceForWindow(sourceId), preview);
@@ -1816,6 +1889,7 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
   }
   source->hide();
   QTRY_VERIFY(!overlay->isVisible());
+  QVERIFY(activateNativeHost(otherEditor->getTextEdit()->viewport()));
   QVERIFY(clickNativeSurface(otherEditor->getTextEdit()->viewport(),
                              otherEditor->getTextEdit()->viewport()->rect().center()));
   source->show();
@@ -1826,6 +1900,7 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
   const QPoint linkPoint = sourceEditor->getNavigationTargets().first().m_rect.center();
   const auto sourcePoint = source->mapFromGlobal(sourceEdit->viewport()->mapToGlobal(linkPoint));
   QVERIFY(!overlay->geometry().contains(sourcePoint));
+  QVERIFY(activateNativeHost(sourceEdit->viewport()));
   QVERIFY(clickNativeSurface(sourceEdit->viewport(), linkPoint));
   QTRY_VERIFY(overlay.isNull());
   QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
@@ -1836,6 +1911,7 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
 
   overlay = openPreview();
   QVERIFY(overlay);
+  QVERIFY(activateNativeHost(sourceEdit->viewport()));
   const auto dragPoint = linkPoint + QPoint(QApplication::startDragDistance() + 5, 0);
   QTest::mousePress(sourceEdit->viewport(), Qt::LeftButton, Qt::NoModifier, linkPoint);
   for (const auto &point : {dragPoint, linkPoint}) {
@@ -1846,6 +1922,7 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
   QTest::mouseRelease(sourceEdit->viewport(), Qt::LeftButton, Qt::NoModifier, linkPoint);
   QVERIFY(overlay && overlay->isVisible());
   QCOMPARE(sourceEdit->textCursor().position(), originalCaret);
+  QVERIFY(activateNativeHost(sourceEdit->viewport()));
   QVERIFY(clickNativeSurface(sourceEdit->viewport(), linkPoint));
   QTRY_VERIFY(overlay.isNull());
 
@@ -1854,6 +1931,7 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
   QVERIFY(reader && waitForRender(reader, QStringLiteral("Source A")));
   overlay = openPreview();
   QVERIFY(overlay);
+  QVERIFY(activateNativeHost(reader));
   const auto readerPoint = readerLinkPoint(reader, QStringLiteral("C"));
   const auto global = reader->mapToGlobal(readerPoint);
   QVERIFY(!overlay->geometry().contains(source->mapFromGlobal(global)));
@@ -1894,10 +1972,12 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
     auto *window = overlay->getViewSplit()->getCurrentViewWindow();
     auto *editor = window->findChild<TextEditor *>();
     QVERIFY(editor);
+    QVERIFY(activateNativeHost(editor->getTextEdit()));
     editor->getTextEdit()->setFocus();
     QTRY_VERIFY(editor->getTextEdit()->hasFocus());
     appendDraft(editor->getTextEdit(), QStringLiteral("Outside click draft\n"));
     const auto draft = window->getLatestContent();
+    QVERIFY(activateNativeHost(answer == QMessageBox::Cancel ? reader : modeButton));
     DialogAnswer dialog(answer);
     QVERIFY(answer == QMessageBox::Cancel
                 ? clickNativeSurface(reader, readerLinkPoint(reader, QStringLiteral("C")))
@@ -1910,9 +1990,11 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
       QCOMPARE(window->getLatestContent(), draft);
       QVERIFY(window->isModified() && window->isEnabled());
       QCOMPARE(f->current(), window);
-      QVERIFY(window->hasFocus() || window->isAncestorOf(QApplication::focusWidget()));
+      QVERIFY(activateNativeHost(reader));
+      QTRY_VERIFY(window->hasFocus() || window->isAncestorOf(QApplication::focusWidget()));
       QVERIFY(!f->controller()->isPreviewWorkspaceClosing(workspace));
       QCOMPARE(readBytes(f->absolute(QStringLiteral("b.txt"))), QByteArray("Preview B\n"));
+      QVERIFY(activateNativeHost(modeButton));
       DialogAnswer discard(QMessageBox::Discard);
       QVERIFY(clickNativeSurface(modeButton, modeButton->rect().center()));
       QVERIFY(discard.accepted());
@@ -1928,9 +2010,10 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
   QVERIFY(f->controller()->detachViewWindow(main, sourceId, a.id()));
   auto *detached = qobject_cast<DetachedWindow *>(source->window());
   QVERIFY(detached);
-  detached->activateWindow();
+  QVERIFY(activateNativeHost(detached));
   QTRY_VERIFY(detached->isActiveWindow() && overlay->isVisible());
   QTRY_VERIFY(source->contentsRect().contains(overlay->geometry()));
+  QVERIFY(activateNativeHost(reader));
   reader->setFocus(Qt::OtherFocusReason);
   // Reparenting may suspend the reader bridge while its cached DOM stays visible.
   // Dismissing from that native surface must not depend on renderer readiness.
@@ -1938,6 +2021,7 @@ void TestViewAreaTabReuse::previewOutsideClickDismissal() {
               .toString()
               .contains(QStringLiteral("Source A")));
   QVERIFY(overlay && overlay->isVisible());
+  QVERIFY(activateNativeHost(reader));
   QVERIFY(clickNativeSurface(reader, readerLinkPoint(reader, QStringLiteral("C"))));
   QTRY_VERIFY(overlay.isNull());
   QVERIFY(f->area->previewWorkspaceForWindow(sourceId).isEmpty());
@@ -1992,6 +2076,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabs() {
   QVERIFY(editor);
   auto *edit = editor->getTextEdit();
   auto *document = edit->document();
+  QVERIFY(activateNativeHost(edit));
   edit->setFocus();
   QTRY_VERIFY(edit->hasFocus());
   appendDraft(edit, QStringLiteral("\nUnsaved promoted draft\n"));
@@ -2009,6 +2094,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabs() {
   auto *button =
       overlay->findChild<QToolButton *>(QStringLiteral("openLinkPreviewInNewTabsButton"));
   QVERIFY(button);
+  QVERIFY(activateNativeHost(button));
   QVERIFY(clickNativeSurface(button, button->rect().center()));
   QTRY_VERIFY(overlay.isNull());
   QVERIFY(f->workspaces->getWorkspace(preview).isEmpty());
@@ -2094,6 +2180,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabsDuplicateConsent() {
   QVERIFY(sourceEditor);
   const QString destinationDraft = QStringLiteral("\nDestination draft awaiting consent\n");
   if (sourceDuplicate) {
+    QVERIFY(activateNativeHost(sourceEditor->getTextEdit()));
     sourceEditor->getTextEdit()->setFocus();
     QTRY_VERIFY(sourceEditor->getTextEdit()->hasFocus());
     appendDraft(sourceEditor->getTextEdit(), destinationDraft);
@@ -2114,6 +2201,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabsDuplicateConsent() {
     oldDuplicate = f->current();
     auto *editor = oldDuplicate->findChild<MarkdownEditor *>();
     QVERIFY(editor);
+    QVERIFY(activateNativeHost(editor->getTextEdit()));
     editor->getTextEdit()->setFocus();
     QTRY_VERIFY(editor->getTextEdit()->hasFocus());
     appendDraft(editor->getTextEdit(), destinationDraft);
@@ -2143,6 +2231,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabsDuplicateConsent() {
   QPointer<MarkdownEditor> incomingEditor(incoming->findChild<MarkdownEditor *>());
   QVERIFY(incomingEditor);
   auto *incomingEdit = incomingEditor->getTextEdit();
+  QVERIFY(activateNativeHost(incomingEdit));
   incomingEdit->setFocus();
   QTRY_VERIFY(incomingEdit->hasFocus());
   appendDraft(incomingEdit, QStringLiteral("\nIncoming preview draft must survive\n"));
@@ -2166,6 +2255,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabsDuplicateConsent() {
   auto *remainingEditor = remainingWindow->findChild<TextEditor *>();
   QVERIFY(remainingEditor);
   auto *remainingEdit = remainingEditor->getTextEdit();
+  QVERIFY(activateNativeHost(remainingEdit));
   remainingEdit->setFocus();
   QTRY_VERIFY(remainingEdit->hasFocus());
   QCOMPARE(f->order(preview), QStringList({early.id(), duplicate.id(), remaining.id()}));
@@ -2212,6 +2302,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabsDuplicateConsent() {
     f->hooks->removeAction(beforeClose);
   });
   bool sawConsent = false;
+  QVERIFY(activateNativeHost(overlay));
   DialogAnswer dialog(static_cast<QMessageBox::StandardButton>(answer), [&] {
     sawConsent = true;
     QVERIFY(oldDuplicate && incoming && overlay);
@@ -2337,6 +2428,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabsDuplicateConsent() {
   }
   const auto coveredContent = host->getLatestContent();
   const auto coveredScroll = evaluate(coveredReader->page(), QStringLiteral("scrollY")).toInt();
+  QVERIFY(activateNativeHost(remainingEdit->viewport()));
   QVERIFY(
       clickNativeSurface(remainingEdit->viewport(), remainingEdit->viewport()->rect().center()));
   QTRY_VERIFY(remainingEdit->hasFocus());
@@ -2372,6 +2464,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabsProtectedDuplicate() {
   const auto outgoingId = outgoing->getViewWindowId();
   auto *outgoingEditor = outgoing->findChild<MarkdownEditor *>();
   QVERIFY(outgoingEditor);
+  QVERIFY(activateNativeHost(outgoingEditor->getTextEdit()));
   outgoingEditor->getTextEdit()->setFocus();
   QTRY_VERIFY(outgoingEditor->getTextEdit()->hasFocus());
   appendDraft(outgoingEditor->getTextEdit(), QStringLiteral("Shared protected draft\n"));
@@ -2429,6 +2522,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabsProtectedDuplicate() {
   QCOMPARE(source->getViewWindowId(), sourceId);
   QCOMPARE(source->getLatestContent(), QStringLiteral("Ordinary source\n"));
 
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("Saved after protected retirement\n"));
@@ -2488,6 +2582,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabsReentrancy() {
   QVERIFY(overlay);
   auto *editor = incomingC->findChild<TextEditor *>();
   QVERIFY(editor);
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral(" preserved through hooks"));
@@ -2665,6 +2760,7 @@ void TestViewAreaTabReuse::previewCloseConsent() {
     QVERIFY(overlay);
     auto *editor = window->findChild<TextEditor *>();
     QVERIFY(editor);
+    QVERIFY(activateNativeHost(editor->getTextEdit()));
     editor->getTextEdit()->setFocus();
     QTRY_VERIFY(editor->getTextEdit()->hasFocus());
     appendDraft(editor->getTextEdit(), QStringLiteral("Unsaved B\n"));
@@ -2731,7 +2827,7 @@ void TestViewAreaTabReuse::previewSourceCancellation() {
       QCOMPARE(
           f->area->getAllViewSplits().first()->getCurrentViewWindow()->getNodeId().relativePath,
           QStringLiteral("vx://home"));
-      detached->activateWindow();
+      QVERIFY(activateNativeHost(detached));
       QTRY_VERIFY(detached->isActiveWindow());
     }
     const auto sourceSettings = source->getLinkOpenSettings();
@@ -2744,6 +2840,7 @@ void TestViewAreaTabReuse::previewSourceCancellation() {
     auto *window = overlay->getViewSplit()->getCurrentViewWindow();
     auto *editor = window->findChild<TextEditor *>();
     QVERIFY(editor);
+    QVERIFY(activateNativeHost(editor->getTextEdit()));
     editor->getTextEdit()->setFocus();
     QTRY_VERIFY(editor->getTextEdit()->hasFocus());
     appendDraft(editor->getTextEdit(), QStringLiteral("Keep this preview draft\n"));
@@ -2852,6 +2949,7 @@ void TestViewAreaTabReuse::previewSharedOwnership() {
   QVERIFY(window != owner);
   auto *editor = window->findChild<TextEditor *>();
   QVERIFY(editor);
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("Shared in-memory edit\n"));
@@ -2892,6 +2990,7 @@ void TestViewAreaTabReuse::previewCloseReentrancyAndPartialCancellation() {
   const auto dirtyId = dirty->getViewWindowId();
   auto *editor = dirty->findChild<TextEditor *>();
   QVERIFY(editor);
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral(" draft awaiting consent"));
@@ -2960,6 +3059,7 @@ void TestViewAreaTabReuse::previewProtectedAcceptedCloseThenSourceReplacement() 
   const auto retiringId = retiring->getViewWindowId();
   auto *editor = retiring->findChild<MarkdownEditor *>();
   QVERIFY(editor);
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("Unsaved protected consent\n"));
@@ -3036,6 +3136,7 @@ void TestViewAreaTabReuse::previewConversionAndLockRefusal() {
   QPointer<ViewWindow2> window(f->current());
   auto *editor = window->findChild<TextEditor *>();
   QVERIFY(editor);
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("Cancel before freezing source\n"));
@@ -3110,6 +3211,7 @@ void TestViewAreaTabReuse::previewHiddenCrossNotebookCloseCancellation() {
   QVERIFY(overlay);
   auto *editor = previewWindow->findChild<TextEditor *>();
   QVERIFY(editor);
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("Do not abandon cross-notebook draft\n"));
@@ -3363,6 +3465,7 @@ void TestViewAreaTabReuse::previewConversionRecollectsRetiringViews() {
   const auto retiringId = retiring->getViewWindowId();
   auto *editor = retiring->findChild<MarkdownEditor *>();
   QVERIFY(editor);
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("Preview consent before conversion\n"));
@@ -3415,7 +3518,7 @@ void TestViewAreaTabReuse::previewQuitCancellationBeforeSession() {
   QTRY_VERIFY(f->area->getAllViewSplits().first()->getCurrentViewWindow());
   QCOMPARE(f->area->getAllViewSplits().first()->getCurrentViewWindow()->getNodeId().relativePath,
            QStringLiteral("vx://home"));
-  detached->activateWindow();
+  QVERIFY(activateNativeHost(detached));
   QTRY_VERIFY(detached->isActiveWindow());
   const auto b = f->preview(source, f->node(QStringLiteral("b.txt")));
   QVERIFY(b.isValid());
@@ -3423,6 +3526,7 @@ void TestViewAreaTabReuse::previewQuitCancellationBeforeSession() {
   auto *window = f->current();
   auto *editor = window->findChild<TextEditor *>();
   QVERIFY(editor);
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("Cancel quit without reattachment\n"));
@@ -4117,6 +4221,7 @@ void TestViewAreaTabReuse::nativeTextAndMindMap() {
   QVERIFY(window->getLatestContent().contains(QStringLiteral("Map beta")));
   QVERIFY(!window->getLatestContent().contains(QStringLiteral("Map alpha")));
   map->selectNode(QStringLiteral("r"));
+  QVERIFY(activateNativeHost(surface));
   surface->setFocus();
   QTest::keyClick(surface->viewport(), Qt::Key_F2);
   auto *draft = surface->findChild<QPlainTextEdit *>(QStringLiteral("topicEditor"));
@@ -4164,6 +4269,7 @@ void TestViewAreaTabReuse::typstSessionPosition() {
   QVERIFY(edit->viewport()->rect().intersects(edit->cursorRect()));
 
   // Exercise the source surface, then persist through the real session shutdown path.
+  QVERIFY(activateNativeHost(edit));
   edit->setFocus();
   for (int line = 0; line < 80; ++line)
     QTest::keyClick(edit, Qt::Key_Down);
@@ -4362,8 +4468,7 @@ void TestViewAreaTabReuse::dirtyReplacement() {
   auto *editor = window->findChild<MarkdownEditor *>();
   QVERIFY(editor);
   // Real typing follows focus, which registers the outgoing buffer's active writer.
-  f->area->activateWindow();
-  QApplication::setActiveWindow(f->area.get());
+  QVERIFY(activateNativeHost(editor->getTextEdit()));
   editor->getTextEdit()->setFocus();
   QTRY_VERIFY(editor->getTextEdit()->hasFocus());
   appendDraft(editor->getTextEdit(), QStringLiteral("\nUnsaved alpha draft\n"));
@@ -4593,7 +4698,7 @@ void TestViewAreaTabReuse::explorerGestures() {
           });
   explorer->resize(420, 520);
   explorer->show();
-  explorer->activateWindow();
+  QVERIFY(activateNativeHost(explorer.get()));
   if (model.canFetchMore(QModelIndex()))
     model.fetchMore(QModelIndex());
   QCoreApplication::processEvents();
@@ -4601,6 +4706,7 @@ void TestViewAreaTabReuse::explorerGestures() {
   const auto activate = [&](const QModelIndex &index, Qt::KeyboardModifiers modifiers) {
     explorer->setCurrentIndex(index);
     explorer->scrollTo(index);
+    QVERIFY(activateNativeHost(explorer.get()));
     explorer->setFocus();
     const QPoint point = explorer->visualRect(index).center();
     if (gesture == 0)

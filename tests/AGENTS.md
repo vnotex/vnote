@@ -216,16 +216,18 @@ Keep the dismissal timer active until completion and restrict it to the tested d
 message box. Do not stop on the first click or infer dialog readiness from
 `QThread::loopLevel()`.
 
-`resourceRemoteConsent` owns a parent-matched `QPointer<QMessageBox>` and an answer timer
-through queued Open Link dispatch and destruction of its completed message box, not just
-until the context menu returns. A Cocoa native alert's QWidget is a hidden
+`ConsentDialogDriver` shares the native resource/preview consent fixture. It owns a
+parent-matched `QPointer<QMessageBox>` and an answer timer through dispatch and destruction
+of the completed message box, not just until the context menu or click returns. A Cocoa native alert's QWidget is a hidden
 mirror (`WA_DontShowOnScreen`), not its interactive surface: click the real NSButton's
-Yes/No tag on the active native alert, or the parent's attached sheet for WindowModal.
+Yes/No/YesToAll tag on the active native alert, or the parent's attached sheet for WindowModal.
 Never re-show or click that dummy QWidget during native modal startup. The QWidget fallback
 requires the matching visible active modal and its visible expected button. Cocoa uses
 an `NSTimer` in common/modal/tracking run-loop modes: a native alert nested inside manual
 Qt event dispatch can suppress QTimer activation. Invalidate before answering and on scope
-exit; the same native timer owns the eight-second failure/reject deadline.
+exit; the same original eight-second deadline covers readiness and completion. Native Escape
+uses the alert's key-equivalent path; Close uses `QMessageBox::close()` to end its native
+modal helper as well. Neither may be replaced with a No-button click.
 
 **Native WebEngine raster tests:** on macOS, `test_mindmapexport`, `test_htmlpdfexporter`,
 `test_markdownwebjobs` and `test_webviewservice` use `cocoa` and the matching Qt kit's
@@ -276,6 +278,15 @@ its own `test_typstviewwindow_<group>.xml` JUnit file in the CTest working direc
 preserves original parent/native CTest logs and these reports before diagnostic reruns,
 since hosted stdout can omit assertions.
 
+The controller executable is also partitioned without extending deadlines. Build
+`test_typstviewwindowcontroller` once and run
+`^test_typstviewwindowcontroller(_images|_resources)?$`: the base registration covers
+navigation, followed by image validation/storage and resource acquisition/viewing.
+All three are serial, retain 60-second deadlines and `-nocrashhandler`, and use the
+same native runtime environment. Empty/unset `VNOTE_TYPST_CONTROLLER_TEST_GROUP` runs
+all cases directly; unknown groups fail. Slot boundaries `imageStorage()` and
+`resourceSourceRejection()` keep every test in exactly one group.
+
 The `resourceSnapshotBytes(retained-gif-mime-not-replaced-file)` row is disabled by default.
 Set `VNOTE_TEST_RETAINED_GIF_SNAPSHOT=1` to register it; only the literal `1` enables it.
 The PNG snapshot row and every other resource test remain enabled. Windows Clipboard
@@ -305,6 +316,17 @@ do not require editor focus for hidden/disabled editors or encrypted buffers alr
 Native popup fixtures must settle the owner's activation before promotion/opening. A
 transient parent shares `QWindow::isActive()`; when exact ownership matters, wait for both
 `QGuiApplication::focusWindow()` and `QApplication::activeWindow()` to match the intended host.
+`activateNativeHost()` observes the target's closest existing native surface, not only the
+root window: fullscreen native children can cover the root's entire exposed region. Retain
+current host/surface ancestry and exact native activation checks, without creating peers or
+forcing the child focus that a test is meant to observe. After modal cancellation, restore
+the fixture's native top-level activation if needed, then observe automatic child-focus
+restoration; never call `setFocus()` to supply the child focus under test. Native dialog
+input similarly waits for `QGuiApplication::focusObject()`, not just QWidget `hasFocus()`.
+Context-menu fixtures wait for both selection and deselection to reach WebEngine before clicking.
+Use an explicit blank non-text region for an unselected context: Cocoa/Chromium can select
+the word under a right-click even after the fixture cleared selection. Keep selected-link,
+image and empty-context reset assertions distinct.
 
 `test_viewarea_tab_reuse` retains only its unmodified, version-stamped bundled asset directories
 between QtTest rows. It removes all local state and all non-bundle app entries before creating
@@ -358,8 +380,9 @@ Reassess/remove an entry when its native activation cause is fixed.
 
 The 2026-10-29 investigation observed a visible/in-bounds preview button with an inactive
 native window and null `widgetAt`, while failing rows varied across runs; the unmodified
-full suite subsequently passed all 73 cases. The fixture requests activation without
-waiting for native activation. The original reader-click rejection and editor-focus
+full suite subsequently passed all 73 cases. That earlier fixture requested activation
+without waiting for native activation; the current fixture observes its owned native surface.
+The original reader-click rejection and editor-focus
 failure did not identify a covering process or independently prove their native-window
 state, so those assertion messages alone do not qualify for the exception.
 
