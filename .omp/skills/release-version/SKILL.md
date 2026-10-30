@@ -244,25 +244,31 @@ gh run download <run-id> -D _artifacts
 gh release upload vX.Y.Z "_artifacts\<path>\VNote-X.Y.Z-...zip" --clobber
 ```
 
-### Set the release description from `changes.md`
+### Set the bilingual release description
 
-The draft's body is driven from `## vX.Y.Z` section of `changes.md` (the same
-changelog written in step 3) focusing on user experience changes. CI creates the
-release with an empty body, so set it.
+CI creates the release with an empty body, so set it from the finalized notes in
+step 3: the `## vX.Y.Z` section of root `changes.md` first, then append the complete
+Simplified Chinese translation from `docs/changes_zh_CN.md`, separated by a
+Markdown horizontal rule. `docs/changes.md` is the bundled English copy, not the
+Chinese source. Both sections must describe the target version.
 
 ```pwsh
-# Extract the ## vX.Y.Z section into a temp notes file...
+# Extract the English section and append its existing Chinese translation.
 $ver = "X.Y.Z"
-$md  = Get-Content changes.md -Raw
+$md  = Get-Content changes.md -Raw -Encoding utf8
 $sec = [regex]::Match($md, "(?ms)^## v$([regex]::Escape($ver))\b.*?(?=^## |\z)").Value.TrimEnd()
-Set-Content -Path notes.md -Value $sec -NoNewline -Encoding utf8
+$zh = (Get-Content docs/changes_zh_CN.md -Raw -Encoding utf8).TrimEnd()
+$notes = "$sec`n`n---`n`n$zh"
+Set-Content -Path notes.md -Value $notes -NoNewline -Encoding utf8
 
-# ...and apply it as the draft's description after rewriting it to focus on user experience changes.
+# Apply both languages together as the draft's description.
 gh release edit vX.Y.Z --notes-file notes.md
 ```
 
-Drop the leading `## vX.Y.Z` line if you prefer the version to appear only as the
-release title; keep the bullet body either way. Verify with `gh release view vX.Y.Z`.
+If the version should appear only as the release title, drop the leading
+`## vX.Y.Z` line from both sections; retain both complete bullet bodies. Verify
+with `gh release view vX.Y.Z` that English is followed by the Chinese translation
+for the same version, with links, code spans and technical identifiers preserved.
 
 `ncipollo/release-action` REPLACES the body and the name on every update unless
 told not to, and all four platform jobs target the same draft with
@@ -277,7 +283,8 @@ before re-typing the notes.
 ### Publish
 
 Only when the draft `vX.Y.Z` release shows all **4** platform packages (linux /
-macos / macos12 / win64) AND its body matches the `changes.md` section
+macos / macos12 / win64) AND its body contains the target `changes.md` section
+followed by its complete `docs/changes_zh_CN.md` translation
 do you publish it:
 
 ```pwsh
@@ -321,8 +328,8 @@ with whatever was attached to them.)
 | Changelog | prepend `## vX.Y.Z` to `changes.md` |
 | Bundled notes | replace `docs/changes.md` with that section, translate `docs/changes_zh_CN.md`, include both in the version-bump commit |
 | Release trigger | commit on `master` with message starting `[Release]` |
-| Set description | `gh release edit vX.Y.Z --notes-file notes.md` (the `## vX.Y.Z` section of `changes.md`) |
-| Assemble release | wait for green CI, ensure draft `vX.Y.Z` has all 4 platform packages + changelog body, then `gh release edit vX.Y.Z --draft=false` |
+| Set description | `gh release edit vX.Y.Z --notes-file notes.md` (English `changes.md` version section, then `docs/changes_zh_CN.md` translation) |
+| Assemble release | wait for green CI, ensure draft `vX.Y.Z` has all 4 platform packages + both English and Chinese notes, then `gh release edit vX.Y.Z --draft=false` |
 
 ## Release artifacts (must all be present before publishing)
 
