@@ -795,6 +795,8 @@ private slots:
   void previewProtectedLinksAndDispatchFailures();
   void previewMindMapAndTypstActivation();
   void previewMindMapNoteEditing();
+  void previewMindMapNoteSavePolicy_data();
+  void previewMindMapNoteSavePolicy();
   void previewMindMapNoteLifecycle_data();
   void previewMindMapNoteLifecycle();
   void previewMindMapNoteClose_data();
@@ -1592,6 +1594,111 @@ void TestViewAreaTabReuse::previewMindMapNoteEditing() {
   QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), third);
   QVERIFY(map->redo());
   QVERIFY(source->save());
+}
+
+void TestViewAreaTabReuse::previewMindMapNoteSavePolicy_data() {
+  QTest::addColumn<int>("policy");
+  QTest::addColumn<QString>("nodeId");
+  for (const auto policy :
+       {AutoSavePolicy::None, AutoSavePolicy::AutoSave, AutoSavePolicy::BackupFile}) {
+    for (const auto &id : {QStringLiteral("a"), QStringLiteral("a.cpp")}) {
+      const auto row = QByteArray::number(int(policy)) + '-' + id.toUtf8();
+      QTest::newRow(row.constData()) << int(policy) << id;
+    }
+  }
+}
+
+void TestViewAreaTabReuse::previewMindMapNoteSavePolicy() {
+  QFETCH(int, policy);
+  QFETCH(QString, nodeId);
+  const bool automatic = policy == int(AutoSavePolicy::AutoSave);
+  auto document = QJsonDocument::fromJson(noteMapBytes()).object();
+  auto nodes = document.value(QStringLiteral("nodes")).toArray();
+  auto root = nodes[0].toObject();
+  root.insert(QStringLiteral("children"), QJsonArray{nodeId, QStringLiteral("b")});
+  nodes[0] = root;
+  auto target = nodes[1].toObject();
+  target.insert(QStringLiteral("id"), nodeId);
+  nodes[1] = target;
+  document.insert(QStringLiteral("nodes"), nodes);
+  const auto name = QStringLiteral("note-policy.emind");
+  QVERIFY(f->create(name, QJsonDocument(document).toJson()));
+  const auto sourceBuffer = f->open(name);
+  QVERIFY(sourceBuffer.isValid());
+  auto *source = f->current();
+  auto *map = source->findChild<MindMapEditor *>();
+  QVERIFY(map);
+  QVERIFY(clickNoteControl(map, nodeId));
+  QTRY_VERIFY(f->current() != source);
+  auto *note = f->current();
+  const auto noteBuffer = note->getBuffer();
+  auto *editor = note->findChild<TextEditor *>();
+  QVERIFY(editor);
+  // VTextEdit normalizes the .txt suffix to its plain-text syntax name.
+  QCOMPARE(editor->getSyntax(), QStringLiteral("plaintext"));
+
+  auto *timer = f->buffers->asQObject()->findChild<QTimer *>(QString(), Qt::FindDirectChildrenOnly);
+  QVERIFY(timer);
+  const auto interval = timer->interval();
+  timer->setInterval(60 * 60 * 1000);
+  f->buffers->setAutoSavePolicy(static_cast<AutoSavePolicy>(policy));
+  const auto restorePolicy = qScopeGuard([&] {
+    f->buffers->setAutoSavePolicy(AutoSavePolicy::None);
+    timer->setInterval(interval);
+  });
+  const auto tick = [&] {
+    return QMetaObject::invokeMethod(timer, "timeout", Qt::DirectConnection);
+  };
+  const auto changed = QString::fromUtf8("Normal policy β\nnext line");
+  QVERIFY(replaceNoteDraft(editor, changed));
+  QVERIFY(tick());
+  QTRY_VERIFY(!f->buffers->isSaveQueueBusy(noteBuffer.id()));
+  QCOMPARE(editor->getText(), changed);
+  QCOMPARE(mapNode(map, nodeId).value(QStringLiteral("note")).toString(),
+           automatic ? changed : target.value(QStringLiteral("note")).toString());
+  QCOMPARE(note->isModified(), !automatic);
+  if (!automatic) {
+    QCOMPARE(QJsonDocument::fromJson(readBytes(f->absolute(name))).object(), document);
+    QVERIFY(note->save());
+    QCOMPARE(mapNode(map, nodeId).value(QStringLiteral("note")).toString(), changed);
+    QVERIFY(source->save());
+  } else {
+    // The source map uses that same timer policy for its ordinary JSON save.
+    QVERIFY(tick());
+  }
+  QTRY_VERIFY(!f->buffers->isSaveQueueBusy(sourceBuffer.id()));
+  const auto persisted = QJsonDocument::fromJson(readBytes(f->absolute(name))).object();
+  QJsonObject persistedTarget;
+  for (const auto &entry : persisted.value(QStringLiteral("nodes")).toArray()) {
+    const auto node = entry.toObject();
+    if (node.value(QStringLiteral("id")).toString() == nodeId)
+      persistedTarget = node;
+  }
+  QCOMPARE(persistedTarget.value(QStringLiteral("note")).toString(), changed);
+  QCOMPARE(persistedTarget.value(QStringLiteral("topic")), target.value(QStringLiteral("topic")));
+  QVERIFY(!note->isModified());
+
+  if (automatic) {
+    const auto conflict = QStringLiteral("A newer properties edit");
+    QVERIFY(map->updateNode(
+        nodeId, QJsonDocument(QJsonObject{{QStringLiteral("note"), conflict}}).toJson()));
+    const auto draft = QStringLiteral("Draft awaiting conflict resolution");
+    QVERIFY(replaceNoteDraft(editor, draft));
+    QSignalSpy errors(f->buffers->asQObject(), SIGNAL(saveError(QString, QString)));
+    QVERIFY(tick());
+    QTRY_VERIFY(!f->buffers->isSaveQueueBusy(noteBuffer.id()));
+    QCOMPARE(mapNode(map, nodeId).value(QStringLiteral("note")).toString(), conflict);
+    QCOMPARE(editor->getText(), draft);
+    QVERIFY(note->isModified());
+    QCOMPARE(errors.size(), 1);
+    QCOMPARE(errors.first().at(0).toString(), noteBuffer.id());
+    QVERIFY(map->updateNode(
+        nodeId, QJsonDocument(QJsonObject{{QStringLiteral("note"), changed}}).toJson()));
+    QVERIFY(tick());
+    QTRY_VERIFY(!f->buffers->isSaveQueueBusy(noteBuffer.id()));
+    QCOMPARE(mapNode(map, nodeId).value(QStringLiteral("note")).toString(), draft);
+    QVERIFY(!note->isModified());
+  }
 }
 
 void TestViewAreaTabReuse::previewMindMapNoteLifecycle_data() {

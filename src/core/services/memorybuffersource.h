@@ -24,8 +24,6 @@ struct MemoryBufferSource {
   QString resourceBasePath; // Optional absolute directory for relative reads.
   QByteArray content;       // Initial content when load is absent.
   bool readOnly = false;
-  // Sync still pulls editor drafts, but only explicit Save may persist them.
-  bool manualSaveOnly = false;
 
   // Empty output is valid. Failure must leave the existing document untouched.
   std::function<VxCoreError(QByteArray &)> load;
@@ -35,12 +33,13 @@ struct MemoryBufferSource {
   // Without a saver the document is editable scratch content, not durable.
   std::function<VxCoreError(QByteArrayView)> save;
 
-  // Optional owner-thread commit of the exact snapshot staged by save. Legal only
-  // with save and manualSaveOnly. Runs outside vxcore callbacks, synchronously and
-  // non-modally; must not reenter save/close of its own buffer. Notifications that
-  // affect another source buffer are allowed. Captures may be GUI-owned, must
-  // guard their dependencies' lifetimes, and are never transferred to the worker.
-  // Failure leaves the draft unsaved. Exceptions become VxCoreError failures.
+  // Optional owner-thread commit of the exact snapshot staged by save; requires
+  // save. Autosave follows the normal policy. Each stage and its finalization
+  // finish before the next stage can start. Runs outside vxcore callbacks,
+  // synchronously and non-modally; must not reenter save/close of its own buffer. Notifications
+  // that affect another source buffer are allowed. Captures may be GUI-owned, must guard their
+  // dependencies' lifetimes, and are never transferred to the worker. Failure leaves the draft
+  // unsaved. Exceptions become VxCoreError failures.
   std::function<VxCoreError()> finalizeSave;
 };
 

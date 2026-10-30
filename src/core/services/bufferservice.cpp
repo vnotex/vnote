@@ -121,7 +121,6 @@ struct BufferService::MemoryBufferState {
   QString resourceBasePath;
   bool canSave = false;
   bool canReload = false;
-  bool manualSaveOnly = false;
   // Owner-thread only; never part of the worker-owned provider descriptor.
   std::function<VxCoreError()> finalizeSave;
   bool current = true;
@@ -1305,7 +1304,7 @@ Buffer2 BufferService::openMemoryBuffer(MemoryBufferSource p_source,
     error = VXCORE_ERR_INVALID_STATE;
     return {};
   }
-  if (p_source.finalizeSave && (!p_source.save || !p_source.manualSaveOnly)) {
+  if (p_source.finalizeSave && !p_source.save) {
     error = VXCORE_ERR_INVALID_PARAM;
     return {};
   }
@@ -1334,7 +1333,6 @@ Buffer2 BufferService::openMemoryBuffer(MemoryBufferSource p_source,
       continue;
     if (state.displayName != p_source.displayName || state.editorType != p_source.editorType ||
         state.resourceBasePath != p_source.resourceBasePath ||
-        state.manualSaveOnly != p_source.manualSaveOnly ||
         bool(state.finalizeSave) != bool(p_source.finalizeSave) ||
         isBufferReadOnly(it.key()) != p_source.readOnly) {
       error = VXCORE_ERR_ALREADY_EXISTS;
@@ -1350,7 +1348,6 @@ Buffer2 BufferService::openMemoryBuffer(MemoryBufferSource p_source,
   const QString address = p_source.address;
   m_memoryBuffers->opening.insert(address);
   const auto opening = qScopeGuard([&]() { m_memoryBuffers->opening.remove(address); });
-  const bool manualSaveOnly = p_source.manualSaveOnly;
   // The core provider can outlive the buffer and be destroyed on a worker.
   // Remove the GUI callback before transferring that descriptor to vxcore.
   auto finalizeSave = std::exchange(p_source.finalizeSave, {});
@@ -1392,7 +1389,6 @@ Buffer2 BufferService::openMemoryBuffer(MemoryBufferSource p_source,
   const QString id = cstrToQString(rawId);
   resolveBufferFacts(id, false, BufferCoreService::getBuffer(id));
   auto *state = memoryBufferState(id);
-  state->manualSaveOnly = manualSaveOnly;
   state->finalizeSave = std::move(finalizeSave);
   auto event = fileOpenEvent(nodeId, p_settings);
   event.bufferId = id;
@@ -2132,8 +2128,12 @@ BufferService::enqueueMemorySave(const QString &p_bufferId, bool p_autoSave, VxC
   }
   const int coreRevision = BufferCoreService::getRevision(p_bufferId);
   const quint64 revision = currentRevision(p_bufferId);
-  if (state->lastSave && !state->lastSave->done && state->lastSave->coreRevision == coreRevision &&
-      state->lastSave->revision == revision) {
+  // A staged destination has only one pending snapshot. Its next worker must
+  // wait for GUI finalization, not merely for the previous worker to return.
+  // A newer draft stays dirty and the normal autosave timer captures it later.
+  if (state->lastSave && !state->lastSave->done &&
+      (state->finalizeSave ||
+       (state->lastSave->coreRevision == coreRevision && state->lastSave->revision == revision))) {
     *p_error = VXCORE_OK;
     return state->lastSave;
   }
@@ -2150,7 +2150,7 @@ BufferService::enqueueMemorySave(const QString &p_bufferId, bool p_autoSave, VxC
         bool current = state->current && memoryBufferState(p_bufferId) == state.get();
         save->result = static_cast<VxCoreError>(p_result);
         if (current && save->result == VXCORE_OK && state->finalizeSave) {
-          // Keep this save pending (and manual-saving exclusion active) while
+          // Keep this save pending (including staging exclusion) while
           // committing outside vxcore. Copy before invoking: notifications may
           // retire the source or destroy the service and its callback owner.
           try {
@@ -3315,10 +3315,9 @@ bool BufferService::executeSyncForBuffer(const QString &p_bufferId, bool *p_snap
       emit bufferAutoSaveFailed(p_bufferId);
       return false;
     }
-    // Manual-only saves and BackupFile have no automatic persistence target.
-    // Keep the shared draft without acknowledging durability or backup success.
-    if (state->manualSaveOnly || m_autoSavePolicy != AutoSavePolicy::AutoSave || !state->canSave ||
-        state->manualSaving)
+    // BackupFile has no filesystem target for memory content. Keep the shared
+    // draft without acknowledging durability or nonexistent backup success.
+    if (m_autoSavePolicy != AutoSavePolicy::AutoSave || !state->canSave || state->manualSaving)
       return true;
     m_dirtyBuffers.insert(p_bufferId);
     if (m_saveFailureCounts.value(p_bufferId) >= c_maxSaveFailures)

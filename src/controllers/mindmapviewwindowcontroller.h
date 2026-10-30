@@ -32,7 +32,8 @@ public:
   QString relativeLink(const QUrl &p_url) const;
   void requestOpenLink(const QString &p_url,
                        const FileOpenSettings &p_settings = FileOpenSettings());
-  // Opens a manual-save plain-text buffer confined to this source's preview.
+  // Opens a .txt plain-text buffer confined to this source's preview, following
+  // the normal memory-buffer autosave policy.
   // Settings must identify that preview, with no explicit target workspace.
   // Duplicate node/generation opens retain the first draft and callbacks. Apply
   // runs synchronously on the GUI thread, outside vxcore callbacks; it must

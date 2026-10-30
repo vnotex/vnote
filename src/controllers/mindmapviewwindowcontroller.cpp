@@ -406,14 +406,14 @@ void MindMapViewWindowController::requestEditNote(
   const QPointer<MindMapViewWindowController> guard(this);
   const auto generation = m_generation;
   MemoryBufferSource source;
+  // Text windows infer syntax from the address suffix, not the display name.
   source.address = m_noteAddressPrefix + QString::number(generation) + QLatin1Char('/') +
-                   QString::fromLatin1(QUrl::toPercentEncoding(p_nodeId));
+                   QString::fromLatin1(QUrl::toPercentEncoding(p_nodeId)) + QStringLiteral(".txt");
   source.displayName = QCoreApplication::translate("m3::qt::MindMapEditor", "Edit Note") +
                        QStringLiteral(": ") + p_nodeId;
   source.editorType = QStringLiteral("text");
   source.content = p_note.toUtf8();
   source.readOnly = false;
-  source.manualSaveOnly = true;
   const auto stage = std::make_shared<NoteSaveStage>();
   source.save = [stage](QByteArrayView p_bytes) -> VxCoreError {
     try {
