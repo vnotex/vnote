@@ -1927,10 +1927,21 @@ void TestViewAreaTabReuse::previewMindMapNoteOwnership() {
   auto *map = source->findChild<MindMapEditor *>();
   QVERIFY(map);
   const auto main = f->workspace();
+  QSignalSpy statusMessages(map, &MindMapEditor::statusMessageRequested);
+  auto *noteController = map->findChild<MindMapViewWindowController *>();
+  QVERIFY(noteController);
+  QSignalSpy ownershipErrors(noteController, &MindMapViewWindowController::errorOccurred);
+  QVERIFY(!f->controller()->canPromotePreviewBuffer(Buffer2()));
   Buffer2 ordinary;
   if (mixed) {
     ordinary = f->preview(source, f->node(QStringLiteral("ordinary.txt")));
     QVERIFY(ordinary.isValid());
+    QVERIFY(f->controller()->canPromotePreviewBuffer(ordinary));
+    auto *ordinaryOverlay = source->findChild<LinkPreviewOverlay *>();
+    QVERIFY(ordinaryOverlay && ordinaryOverlay->isVisible());
+    auto *ordinaryButton =
+        ordinaryOverlay->findChild<QToolButton *>(QStringLiteral("openLinkPreviewInNewTabsButton"));
+    QVERIFY(ordinaryButton && ordinaryButton->isVisible() && ordinaryButton->isEnabled());
   }
   bool reentrantCloneAttempted = false;
   const int reentrantHook = f->hooks->addAction<FileOpenEvent>(
@@ -1957,7 +1968,16 @@ void TestViewAreaTabReuse::previewMindMapNoteOwnership() {
   const auto preview = f->workspace();
   const auto buffer = note->getBuffer();
   const auto address = buffer.nodeId().relativePath;
-  QVERIFY(address.startsWith(QStringLiteral("vx://mindmap-note/")));
+  QVERIFY(address.startsWith(MindMapViewWindowController::c_noteAddressPrefix));
+  QVERIFY(!f->controller()->canPromotePreviewBuffer(buffer));
+  QPointer<LinkPreviewOverlay> overlay(source->findChild<LinkPreviewOverlay *>());
+  QVERIFY(overlay && overlay->isVisible());
+  auto *button =
+      overlay->findChild<QToolButton *>(QStringLiteral("openLinkPreviewInNewTabsButton"));
+  QVERIFY(button && button->isVisible() && !button->isEnabled());
+  QVERIFY(!button->defaultAction()->isEnabled());
+  QVERIFY(statusMessages.isEmpty());
+  QVERIFY(ownershipErrors.isEmpty());
   auto *editor = note->findChild<TextEditor *>();
   QVERIFY(editor);
   const auto draft = QStringLiteral("Source-owned secret draft");
@@ -1975,6 +1995,43 @@ void TestViewAreaTabReuse::previewMindMapNoteOwnership() {
   auto *secondEditor = secondNote->findChild<TextEditor *>();
   QVERIFY(secondEditor);
   QVERIFY(replaceNoteDraft(secondEditor, QStringLiteral("Second source-owned draft")));
+  QVERIFY(!button->isEnabled());
+  // Eligibility covers every tab, not just the current ordinary document.
+  if (mixed) {
+    f->area->setCurrentBuffer(preview, ordinary.id(), true);
+    QCOMPARE(f->current()->getBuffer().id(), ordinary.id());
+    QVERIFY(!button->isEnabled());
+  }
+  const auto beforeMain = f->order(main);
+  const auto beforePreview = f->order(preview);
+  const auto beforeWindows = f->area->getViewWindowIdsForWorkspace(preview);
+  const auto beforeBuffers = f->buffers->listBuffers().size();
+  const auto beforeCurrent = f->current()->getViewWindowId();
+  QVERIFY(activateNativeHost(button));
+  QVERIFY(clickNativeSurface(button, button->rect().center()));
+  QCoreApplication::processEvents();
+  QVERIFY(overlay && overlay->isVisible());
+  QCOMPARE(f->order(main), beforeMain);
+  QCOMPARE(f->order(preview), beforePreview);
+  QCOMPARE(f->area->getViewWindowIdsForWorkspace(preview), beforeWindows);
+  QCOMPARE(f->buffers->listBuffers().size(), beforeBuffers);
+  QCOMPARE(f->current()->getViewWindowId(), beforeCurrent);
+  QCOMPARE(note->getBuffer().nodeId().relativePath, address);
+  QCOMPARE(secondNote->getBuffer().nodeId().relativePath, secondAddress);
+  QCOMPARE(editor->getText(), draft);
+  QCOMPARE(secondEditor->getText(), QStringLiteral("Second source-owned draft"));
+  QVERIFY(statusMessages.isEmpty());
+  QVERIFY(ownershipErrors.isEmpty());
+  // Direct operations still consult the silent per-buffer ownership hooks.
+  f->area->setCurrentBuffer(preview, secondBuffer.id(), true);
+  f->controller()->moveViewWindowOneSplit(preview, note->getViewWindowId(), Direction::Right, main,
+                                          buffer.id());
+  QCOMPARE(f->order(main), beforeMain);
+  QCOMPARE(f->order(preview), beforePreview);
+  QCOMPARE(f->area->getViewWindowIdsForWorkspace(preview), beforeWindows);
+  QCOMPARE(f->buffers->listBuffers().size(), beforeBuffers);
+  QVERIFY(statusMessages.isEmpty());
+  QVERIFY(ownershipErrors.isEmpty());
   FileOpenSettings clone;
   clone.m_mode = ViewWindowMode::Edit;
   clone.m_alwaysNewWindow = true;
@@ -1988,7 +2045,15 @@ void TestViewAreaTabReuse::previewMindMapNoteOwnership() {
   const auto windows = f->area->getViewWindowIdsForWorkspace(preview);
   f->controller()->openBuffer(buffer, clone);
   QCOMPARE(f->area->getViewWindowIdsForWorkspace(preview), windows);
+  QCOMPARE(f->order(main), beforeMain);
+  QCOMPARE(f->order(preview), beforePreview);
+  QCOMPARE(f->buffers->listBuffers().size(), beforeBuffers);
+  QVERIFY(statusMessages.isEmpty());
+  QVERIFY(ownershipErrors.isEmpty());
   QVERIFY(!f->controller()->openPreviewInNewTabs(preview, main));
+  QCOMPARE(f->buffers->listBuffers().size(), beforeBuffers);
+  QVERIFY(statusMessages.isEmpty());
+  QVERIFY(ownershipErrors.isEmpty());
   QVERIFY(note && secondNote);
   QCOMPARE(secondNote->getBuffer().nodeId().relativePath, secondAddress);
   QVERIFY(f->order(preview).contains(secondBuffer.id()));
@@ -2017,6 +2082,47 @@ void TestViewAreaTabReuse::previewMindMapNoteOwnership() {
   QVERIFY(note->isModified());
   QVERIFY(note->save());
   QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), draft);
+  if (mixed) {
+    // Restore an ordinary tab after the intentionally partial programmatic move.
+    // Close background notes while this ordinary tab stays current, so refresh
+    // must follow membership changes rather than current-window changes alone.
+    QCOMPARE(f->preview(source, f->node(QStringLiteral("ordinary.txt"))).id(), ordinary.id());
+    QCOMPARE(f->workspace(), preview);
+    QCOMPARE(f->current()->getBuffer().id(), ordinary.id());
+    QPointer<ViewWindow2> ordinaryWindow(f->current());
+    const auto ordinaryWindowId = ordinaryWindow->getViewWindowId();
+    const auto ordinaryText = ordinaryWindow->getLatestContent();
+    QVERIFY(!button->isEnabled());
+    QVERIFY(f->controller()->closeViewWindow(note->getViewWindowId(), false));
+    QTRY_VERIFY(note.isNull());
+    QCOMPARE(f->current(), ordinaryWindow.data());
+    QCOMPARE(f->order(preview), QStringList({secondBuffer.id(), ordinary.id()}));
+    QVERIFY(!button->isEnabled());
+    QVERIFY(!button->defaultAction()->isEnabled());
+    {
+      DialogAnswer discard(QMessageBox::Discard);
+      QVERIFY(f->controller()->closeViewWindow(secondNote->getViewWindowId(), false));
+      QVERIFY(discard.accepted());
+    }
+    QTRY_VERIFY(secondNote.isNull());
+    QCOMPARE(f->current(), ordinaryWindow.data());
+    QCOMPARE(f->order(preview), QStringList({ordinary.id()}));
+    QVERIFY(button->isEnabled());
+    QVERIFY(button->defaultAction()->isEnabled());
+    QVERIFY(statusMessages.isEmpty());
+    QVERIFY(ownershipErrors.isEmpty());
+    QVERIFY(activateNativeHost(button));
+    QVERIFY(clickNativeSurface(button, button->rect().center()));
+    QTRY_VERIFY(overlay.isNull());
+    QVERIFY(ordinaryWindow);
+    QVERIFY(f->workspaces->getWorkspace(preview).isEmpty());
+    QCOMPARE(f->order(main), QStringList({source->getBuffer().id(), ordinary.id()}));
+    QCOMPARE(f->area->findWindowIdByBufferId(main, ordinary.id()), ordinaryWindowId);
+    QCOMPARE(ordinaryWindow->getLatestContent(), ordinaryText);
+    QCOMPARE(mapNode(map).value(QStringLiteral("note")).toString(), draft);
+    QVERIFY(statusMessages.isEmpty());
+    QVERIFY(ownershipErrors.isEmpty());
+  }
 }
 
 void TestViewAreaTabReuse::previewMindMapAndTypstActivation() {
@@ -2720,7 +2826,8 @@ void TestViewAreaTabReuse::previewOpenInNewTabs() {
   QCOMPARE(overlay->getViewSplit()->getCurrentViewWindow(), bWindow.data());
   auto *button =
       overlay->findChild<QToolButton *>(QStringLiteral("openLinkPreviewInNewTabsButton"));
-  QVERIFY(button);
+  QVERIFY(button && button->isVisible() && button->isEnabled());
+  QVERIFY(button->defaultAction()->isEnabled());
   QVERIFY(activateNativeHost(button));
   QVERIFY(clickNativeSurface(button, button->rect().center()));
   QTRY_VERIFY(overlay.isNull());

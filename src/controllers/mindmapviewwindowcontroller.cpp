@@ -58,8 +58,8 @@ MindMapViewWindowController::MindMapViewWindowController(ServiceLocator &p_servi
                                                          QObject *p_parent)
     : QObject(p_parent), m_services(p_services),
       m_imageLoader(new MindMapImageLoader(p_services, this)),
-      m_noteAddressPrefix(QStringLiteral("vx://mindmap-note/%1/")
-                              .arg(QUuid::createUuid().toString(QUuid::WithoutBraces))) {
+      m_noteAddressPrefix(c_noteAddressPrefix + QUuid::createUuid().toString(QUuid::WithoutBraces) +
+                          QLatin1Char('/')) {
   connect(m_services.get<BufferService>()->asQObject(), SIGNAL(protectedLockingChanged(bool)), this,
           SLOT(onProtectedLockingChanged(bool)));
   connect(m_imageLoader, &MindMapImageLoader::imageReady, this,
@@ -84,7 +84,6 @@ MindMapViewWindowController::MindMapViewWindowController(ServiceLocator &p_servi
             return;
           }
           p_context.cancel();
-          emit guard->errorOccurred(tr("Node notes must remain in their source preview"));
         },
         0);
     m_noteBeforeMoveHook = hooks->addAction<ViewWindowMoveEvent>(
@@ -100,7 +99,6 @@ MindMapViewWindowController::MindMapViewWindowController(ServiceLocator &p_servi
           const auto buffer = buffers->getBufferHandle(p_event.bufferId);
           if (buffer.nodeId().relativePath.startsWith(guard->m_noteAddressPrefix)) {
             p_context.cancel();
-            emit guard->errorOccurred(tr("Node notes must remain in their source preview"));
           }
         });
   }

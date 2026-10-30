@@ -149,6 +149,10 @@ public:
   // Preview closure is cancellable and one-shot: accepted protected tabs may
   // still be retiring, but neither a second consent nor new admission is allowed.
   bool closePreviewWorkspace(const QString &p_workspaceId);
+  // Side-effect-free UI policy: invalid and source-bound node-note buffers cannot
+  // be promoted. Hosts disable the whole action if any preview tab is ineligible.
+  // Programmatic promotion retains its per-tab cancellable move hooks.
+  bool canPromotePreviewBuffer(const Buffer2 &p_buffer) const;
   bool openPreviewInNewTabs(const QString &p_previewWorkspaceId,
                             const QString &p_targetWorkspaceId);
   bool closeAllPreviewWorkspaces();

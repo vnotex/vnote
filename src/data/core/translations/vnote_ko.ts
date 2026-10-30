@@ -5894,10 +5894,6 @@
 <context>
     <name>vnotex::MindMapViewWindowController</name>
     <message>
-        <source>Node notes must remain in their source preview</source>
-        <translation>노드 노트는 원본 미리보기 안에 있어야 합니다</translation>
-    </message>
-    <message>
         <location filename="../../../controllers/mindmapviewwindowcontroller.cpp" line="+143"/>
         <location line="+54"/>
         <source>The note is not available for image insertion</source>

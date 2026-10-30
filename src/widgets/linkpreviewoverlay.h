@@ -5,6 +5,7 @@
 #include <QPoint>
 #include <QRect>
 
+class QAction;
 class QMouseEvent;
 
 namespace vnotex {
@@ -26,6 +27,9 @@ public:
 
   ViewSplit2 *getViewSplit() const;
 
+  // Presentation only: the host supplies whole-preview promotion eligibility.
+  void setOpenInNewTabsEnabled(bool p_enabled);
+
   // Source-local content geometry, before the 16-pixel inset and centered 90% sizing.
   void setAnchorRect(const QRect &p_rect);
 
@@ -44,6 +48,7 @@ private:
   void scheduleRaise();
 
   ViewSplit2 *m_viewSplit = nullptr;
+  QAction *m_openInNewTabsAction = nullptr;
   bool m_raisePending = false;
   QPoint m_dismissalPressPosition;
   bool m_dismissalPressActive = false;

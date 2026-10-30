@@ -139,7 +139,8 @@ LinkPreviewOverlay::LinkPreviewOverlay(ServiceLocator &p_services, ViewWindow2 *
   openButton->setObjectName(QStringLiteral("openLinkPreviewInNewTabsButton"));
   openButton->setProperty(PropertyDefs::c_actionToolButton, true);
   openButton->setToolButtonStyle(Qt::ToolButtonIconOnly);
-  auto *openAction = new QAction(tr("Open in New Tab"), openButton);
+  m_openInNewTabsAction = new QAction(tr("Open in New Tab"), openButton);
+  auto *openAction = m_openInNewTabsAction;
   openAction->setObjectName(QStringLiteral("openLinkPreviewInNewTabsAction"));
   openAction->setToolTip(tr("Open in New Tab"));
   openButton->setDefaultAction(openAction);
@@ -165,8 +166,8 @@ LinkPreviewOverlay::LinkPreviewOverlay(ServiceLocator &p_services, ViewWindow2 *
       closeAction->setIcon(
           IconUtils::fetchIcon(themeService->getIconFile(QStringLiteral("close.svg")), fg));
     } else {
-      openAction->setIcon(IconUtils::fetchIcon(
-          QStringLiteral(":/vnotex/data/core/icons/open_in_new_tab.svg")));
+      openAction->setIcon(
+          IconUtils::fetchIcon(QStringLiteral(":/vnotex/data/core/icons/open_in_new_tab.svg")));
       closeAction->setIcon(
           IconUtils::fetchIcon(QStringLiteral(":/vnotex/data/core/icons/close.svg")));
     }
@@ -184,6 +185,10 @@ LinkPreviewOverlay::LinkPreviewOverlay(ServiceLocator &p_services, ViewWindow2 *
 }
 
 ViewSplit2 *LinkPreviewOverlay::getViewSplit() const { return m_viewSplit; }
+
+void LinkPreviewOverlay::setOpenInNewTabsEnabled(bool p_enabled) {
+  m_openInNewTabsAction->setEnabled(p_enabled);
+}
 
 void LinkPreviewOverlay::setAnchorRect(const QRect &p_rect) {
   const QRect area = p_rect.intersected(parentWidget()->contentsRect());

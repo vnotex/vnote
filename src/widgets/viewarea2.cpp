@@ -1066,6 +1066,17 @@ bool ViewArea2::hostPreviewWorkspace(ID p_sourceId, quint64 p_generation,
           [this, p_workspaceId](bool p_visible) {
             m_controller->setPreviewWorkspaceVisible(p_workspaceId, p_visible);
           });
+  const auto refreshPromotion = [this, overlay] {
+    const auto *split = overlay->getViewSplit();
+    bool enabled = split->count() > 0;
+    for (int i = 0; enabled && i < split->count(); ++i) {
+      const auto *window = qobject_cast<ViewWindow2 *>(split->widget(i));
+      enabled = window && m_controller->canPromotePreviewBuffer(window->getBuffer());
+    }
+    overlay->setOpenInNewTabsEnabled(enabled);
+  };
+  connect(m_controller, &ViewAreaController::windowsChanged, overlay, refreshPromotion);
+  refreshPromotion();
   updatePreviewAnchor(p_workspaceId);
   overlay->show();
   return isPreviewWorkspaceAvailable(p_workspaceId);

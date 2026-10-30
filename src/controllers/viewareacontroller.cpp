@@ -23,6 +23,7 @@
 #include <QtConcurrent>
 #include <QtGlobal>
 
+#include <controllers/mindmapviewwindowcontroller.h>
 #include <controllers/workspacewrapper.h>
 #include <core/configmgr2.h>
 #include <core/coreconfig.h>
@@ -2128,6 +2129,11 @@ bool ViewAreaController::closePreviewWorkspace(const QString &p_workspaceId) {
     removeEmptyPreviewWorkspace(p_workspaceId);
   }
   return true;
+}
+
+bool ViewAreaController::canPromotePreviewBuffer(const Buffer2 &p_buffer) const {
+  return p_buffer.isValid() && !p_buffer.nodeId().relativePath.startsWith(
+                                   MindMapViewWindowController::c_noteAddressPrefix);
 }
 
 bool ViewAreaController::openPreviewInNewTabs(const QString &p_previewWorkspaceId,
