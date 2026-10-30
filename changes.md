@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Preserve preformatted and class-hinted HTML code blocks when pasting Markdown, including indentation, language hints and embedded fences, without copying code-block controls or swallowing surrounding prose
 * Update bundled Turndown to 7.2.4 for improved link escaping and ordered-list indentation, preserving VNote's custom Markdown paste rules
 * Establish native host activation and active-writer focus in memory-document CI scenarios before shared-split edits and Markdown scratch previews
 * Fix plain-text editor test linking with the shared link-confirmation dependencies

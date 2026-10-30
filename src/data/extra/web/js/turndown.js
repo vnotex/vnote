@@ -10,14 +10,22 @@ class TurndownConverter {
                                        emDelimiter: '*',
                                        hr: '***',
                                        codeBlockStyle: 'fenced',
-                                       blankReplacement: function(content, node) {
+                                       blankReplacement: (content, node) => {
+                                           if (node.nodeName === 'PRE') {
+                                               return this.codeBlockMarkdown(node);
+                                           }
+
                                            if (node.nodeName == 'SPAN') {
                                                return content;
                                            }
 
                                            return node.isBlock ? '\n\n' : ''
                                        }});
-        this.ts.use(turndownPluginGfm.gfm);
+        // Code blocks use the shared classifier below, not GFM's narrower DIV rule.
+        this.ts.use([turndownPluginGfm.strikethrough,
+                     turndownPluginGfm.tables,
+                     turndownPluginGfm.taskListItems]);
+        this.fixCodeBlock();
 
         // TODO: verify and copy several rules from VNote 2.0.
         // No <head> and <style> parse.
@@ -33,8 +41,196 @@ class TurndownConverter {
     }
 
     turndown(p_html) {
-        let markdown = this.ts.turndown(p_html);
-        return markdown;
+        // Normalize before Turndown collapses whitespace in non-PRE elements.
+        // This detached document never installs clipboard markup in the live page.
+        const root = document.implementation.createHTMLDocument('').body;
+        root.innerHTML = p_html;
+        this.normalizeCodeBlocks(root);
+        return this.ts.turndown(root);
+    }
+
+    getCodeBlockLanguage(p_node) {
+        if (!p_node) {
+            return '';
+        }
+        const valid = value => /^[a-z0-9][a-z0-9_+#.-]*$/i.test(value);
+        for (const name of ['data-language', 'data-lang']) {
+            const value = (p_node.getAttribute(name) || '').trim();
+            if (valid(value)) {
+                return value.toLowerCase();
+            }
+        }
+        for (const name of p_node.classList) {
+            const match = /^(?:language-|lang-|highlight-(?:source|text)-)(.+)$/i.exec(name);
+            if (match && valid(match[1])) {
+                return match[1].toLowerCase();
+            }
+        }
+        return '';
+    }
+
+    isCodeBlockChrome(p_node) {
+        if (p_node.nodeType !== 1) {
+            return false;
+        }
+        const name = p_node.nodeName.toLowerCase();
+        const role = p_node.getAttribute('role');
+        if (name === 'button' || name === 'svg' || role === 'button' || role === 'toolbar') {
+            return true;
+        }
+        if (name === 'input' && /^(?:button|submit|reset)$/i.test(p_node.type)) {
+            return true;
+        }
+        const classes = Array.from(p_node.classList);
+        // Syntax tokens such as "token header" are source, not a banner.
+        return !classes.some(value => value === 'token' || /^hljs-/.test(value)) &&
+            classes.some(value => /(?:^|[-_])(?:banner|header|toolbar|gutter|line[-_]?numbers?)(?:$|[-_])/i.test(value));
+    }
+
+    isCodeBlockContent(p_node, p_body) {
+        if (p_node === p_body || this.isCodeBlockChrome(p_node)) {
+            return true;
+        }
+        if (p_node.nodeType === 3) {
+            // Outside a dedicated code body, only layout whitespace is expendable.
+            return !p_body || !p_node.data.trim();
+        }
+        if (p_node.nodeType !== 1) {
+            return true;
+        }
+        if (!/^(?:DIV|SPAN|CODE|BR|B|I|EM|STRONG|MARK|SAMP|KBD|A|SUB|SUP)$/.test(p_node.nodeName)) {
+            return false;
+        }
+        return Array.from(p_node.childNodes).every(node => this.isCodeBlockContent(node, p_body));
+    }
+
+    getCodeBlock(p_node) {
+        let body = p_node;
+        if (p_node.nodeName !== 'PRE') {
+            if (p_node.nodeName !== 'DIV' || this.isCodeBlockChrome(p_node)) {
+                return null;
+            }
+            const classes = Array.from(p_node.classList);
+            // Bounded tokens, not arbitrary substrings such as "decode" or "code-description".
+            const strongHint = classes.some(value =>
+                /(?:^|[-_])(?:code[-_]?block|source[-_]?code)$/i.test(value) ||
+                /^(?:hljs|prettyprint)$/.test(value));
+            const weakHint = this.getCodeBlockLanguage(p_node) ||
+                classes.some(value => /^(?:highlight|code)$/.test(value));
+            if (!strongHint && !weakHint) {
+                return null;
+            }
+            let bodies = p_node.querySelectorAll('pre');
+            if (bodies.length === 0) {
+                bodies = p_node.querySelectorAll('code');
+            }
+            if (bodies.length > 1) {
+                return null;
+            }
+            body = bodies[0] || null;
+            if (!body && !strongHint) {
+                const tokens = Array.from(p_node.querySelectorAll('span[class]'));
+                if (!tokens.some(node => Array.from(node.classList).some(value =>
+                    value === 'token' || /^hljs-/.test(value)))) {
+                    return null;
+                }
+            }
+            if (!this.isCodeBlockContent(p_node, body)) {
+                return null;
+            }
+            body = body || p_node;
+        }
+        let language = this.getCodeBlockLanguage(body.querySelector('code'));
+        for (let node = body; !language && node; node = node === p_node ? null : node.parentElement) {
+            language = this.getCodeBlockLanguage(node);
+        }
+        if (!language && p_node.nodeName === 'DIV') {
+            // A marked banner may supply a language, but controls never supply its text.
+            for (const node of p_node.querySelectorAll('[class], [role]')) {
+                const isBanner = node.getAttribute('role') === 'toolbar' ||
+                    Array.from(node.classList).some(value =>
+                        /(?:^|[-_])(?:banner|header|toolbar)(?:$|[-_])/i.test(value));
+                if (!isBanner || (body !== p_node && body.contains(node)) ||
+                    !this.isCodeBlockChrome(node) || node.matches('button, input, svg, [role="button"]')) {
+                    continue;
+                }
+                const banner = node.cloneNode(true);
+                for (const control of banner.querySelectorAll('button, input, svg, [role="button"]')) {
+                    control.remove();
+                }
+                const label = banner.textContent.trim();
+                if (/^[a-z0-9][a-z0-9_+#.-]*$/i.test(label)) {
+                    language = label.toLowerCase();
+                    break;
+                }
+            }
+        }
+        return { body: body, language: language, stripChrome: body === p_node && p_node.nodeName === 'DIV' };
+    }
+
+    getCodeBlockText(p_node, p_stripChrome) {
+        if (p_node.nodeType === 3) {
+            return p_node.data;
+        }
+        if (p_node.nodeType !== 1 || (p_stripChrome && this.isCodeBlockChrome(p_node))) {
+            return '';
+        }
+        if (p_node.nodeName === 'BR') {
+            return '\n';
+        }
+        const children = Array.from(p_node.childNodes).filter(node =>
+            !p_stripChrome || !this.isCodeBlockChrome(node));
+        const hasLines = children.some(node => node.nodeName === 'DIV');
+        let text = '';
+        for (const node of children) {
+            // Whitespace between explicit DIV lines is HTML layout, not another code line.
+            if (hasLines && node.nodeType === 3 && !node.data.trim()) {
+                continue;
+            }
+            const content = this.getCodeBlockText(node, p_stripChrome);
+            if (node.nodeName === 'DIV' && text && !text.endsWith('\n')) {
+                text += '\n';
+            }
+            text += content;
+            if (node.nodeName === 'DIV' && (!content || !text.endsWith('\n'))) {
+                text += '\n';
+            }
+        }
+        return text;
+    }
+
+    normalizeCodeBlocks(p_root) {
+        for (const node of p_root.querySelectorAll('pre, div')) {
+            if (!p_root.contains(node)) {
+                continue; // An accepted outer wrapper already consumed this subtree.
+            }
+            const block = this.getCodeBlock(node);
+            if (!block) {
+                continue;
+            }
+            const pre = node.ownerDocument.createElement('pre');
+            pre.textContent = this.getCodeBlockText(block.body, block.stripChrome);
+            pre.setAttribute('data-language', block.language);
+            node.replaceWith(pre);
+        }
+    }
+
+    codeBlockMarkdown(p_node) {
+        const code = p_node.textContent;
+        let fenceSize = 3;
+        for (const match of code.matchAll(/`+/g)) {
+            fenceSize = Math.max(fenceSize, match[0].length + 1);
+        }
+        const fence = '`'.repeat(fenceSize);
+        return '\n\n' + fence + this.getCodeBlockLanguage(p_node) + '\n' +
+            code.replace(/\n$/, '') + '\n' + fence + '\n\n';
+    }
+
+    fixCodeBlock() {
+        this.ts.addRule('codeBlock', {
+            filter: 'pre',
+            replacement: (content, node) => this.codeBlockMarkdown(node)
+        });
     }
 
     // Trim a string into 3 parts: leading spaces, content, trailing spaces.
