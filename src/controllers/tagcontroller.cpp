@@ -147,6 +147,7 @@ void TagController::onMoveTagAction(const QString &p_notebookId, const QString &
   }
 
   emit tagOperationCompleted();
+  emit tagMoved(notebookId, p_tagName);
 }
 
 void TagController::handleNewTagResult(const QString &p_notebookId, const QString &p_tagName) {

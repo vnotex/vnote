@@ -39,6 +39,7 @@ protected:
                         const QItemSelection &p_deselected) override;
 
   void keyPressEvent(QKeyEvent *p_event) override;
+  void startDrag(Qt::DropActions p_supportedActions) override;
 
 private slots:
   void onItemActivated(const QModelIndex &p_index);

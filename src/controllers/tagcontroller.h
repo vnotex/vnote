@@ -45,6 +45,7 @@ signals:
   void openNodeRequested(const NodeIdentifier &p_nodeId);
   void tagOperationCompleted();
   void tagCreated(const QString &p_tagName);
+  void tagMoved(const QString &p_notebookId, const QString &p_tagName);
 
 private:
   QString resolveNotebookId(const QString &p_notebookId) const;

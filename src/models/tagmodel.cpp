@@ -1,8 +1,11 @@
 #include "tagmodel.h"
 
 #include <QApplication>
+#include <QDataStream>
+#include <QIODevice>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QMimeData>
 #include <QPalette>
 #include <QSet>
 
@@ -10,6 +13,8 @@
 #include <core/services/tagservice.h>
 
 using namespace vnotex;
+
+static const QString c_tagMimeType = QStringLiteral("application/x-vnotex-tag");
 
 TagModel::TagModel(ServiceLocator &p_services, QObject *p_parent)
     : QAbstractItemModel(p_parent), m_services(p_services) {
@@ -135,15 +140,106 @@ QVariant TagModel::data(const QModelIndex &p_index, int p_role) const {
 
 Qt::ItemFlags TagModel::flags(const QModelIndex &p_index) const {
   if (!p_index.isValid()) {
+    return m_notebookId.isEmpty() ? Qt::NoItemFlags : Qt::ItemIsDropEnabled;
+  }
+  if (p_index.model() != this || p_index.column() != 0) {
     return Qt::NoItemFlags;
   }
 
   const QString tagName = tagNameFromIndex(p_index);
+  if (!m_nodeCache.contains(tagName)) {
+    return Qt::NoItemFlags;
+  }
   if (m_incompatibleTags.contains(tagName)) {
-    return Qt::ItemIsSelectable;
+    return Qt::ItemIsSelectable | Qt::ItemIsDropEnabled;
   }
 
-  return Qt::ItemIsEnabled | Qt::ItemIsSelectable;
+  return Qt::ItemIsEnabled | Qt::ItemIsSelectable | Qt::ItemIsDragEnabled |
+         Qt::ItemIsDropEnabled;
+}
+
+Qt::DropActions TagModel::supportedDropActions() const { return Qt::MoveAction; }
+
+QStringList TagModel::mimeTypes() const { return {c_tagMimeType}; }
+
+QMimeData *TagModel::mimeData(const QModelIndexList &p_indexes) const {
+  if (m_notebookId.isEmpty() || p_indexes.size() != 1 ||
+      !p_indexes.first().isValid() || !(flags(p_indexes.first()) & Qt::ItemIsDragEnabled)) {
+    return nullptr;
+  }
+
+  QByteArray encodedData;
+  QDataStream stream(&encodedData, QIODevice::WriteOnly);
+  stream << m_notebookId << tagNameFromIndex(p_indexes.first()) << m_hierarchyRevision;
+  auto *mimeData = new QMimeData();
+  mimeData->setData(c_tagMimeType, encodedData);
+  return mimeData;
+}
+
+bool TagModel::decodeTagMimeData(const QMimeData *p_data, QString &p_tagName) const {
+  if (!p_data || !p_data->hasFormat(c_tagMimeType)) {
+    return false;
+  }
+
+  QDataStream stream(p_data->data(c_tagMimeType));
+  QString notebookId;
+  quint64 revision = 0;
+  stream >> notebookId >> p_tagName >> revision;
+  return stream.status() == QDataStream::Ok && stream.atEnd() && !notebookId.isEmpty() &&
+         notebookId == m_notebookId && revision == m_hierarchyRevision &&
+         !p_tagName.isEmpty() && m_nodeCache.contains(p_tagName);
+}
+
+bool TagModel::canDropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row,
+                              int p_column, const QModelIndex &p_parent) const {
+  if (p_action != Qt::MoveAction || p_row != -1 || (p_column != -1 && p_column != 0)) {
+    return false;
+  }
+  if (p_parent.isValid() && (p_parent.model() != this || p_parent.column() != 0)) {
+    return false;
+  }
+
+  QString tagName;
+  if (!decodeTagMimeData(p_data, tagName)) {
+    return false;
+  }
+  const QString parentName = p_parent.isValid() ? tagNameFromIndex(p_parent) : QString();
+  if ((p_parent.isValid() && !m_nodeCache.contains(parentName)) ||
+      m_nodeCache.constFind(tagName)->parent == parentName) {
+    return false;
+  }
+
+  // Validate against the complete hierarchy, including ancestors hidden by a proxy.
+  QString ancestor = parentName;
+  auto remaining = m_nodeCache.size();
+  while (!ancestor.isEmpty()) {
+    if (remaining-- == 0 || ancestor == tagName) {
+      return false;
+    }
+    const auto it = m_nodeCache.constFind(ancestor);
+    if (it == m_nodeCache.cend()) {
+      return false;
+    }
+    ancestor = it->parent;
+  }
+  return true;
+}
+
+bool TagModel::dropMimeData(const QMimeData *p_data, Qt::DropAction p_action, int p_row,
+                           int p_column, const QModelIndex &p_parent) {
+  if (!canDropMimeData(p_data, p_action, p_row, p_column, p_parent)) {
+    return false;
+  }
+
+  QString tagName;
+  if (!decodeTagMimeData(p_data, tagName)) {
+    return false;
+  }
+  // The receiver can synchronously reset this model. Retain names, never indexes/cache refs.
+  const QString notebookId = m_notebookId;
+  const QString parentName = p_parent.isValid() ? tagNameFromIndex(p_parent) : QString();
+  emit moveTagRequested(notebookId, tagName, parentName);
+  return true; // Intent dispatched; the controller owns persistence success or failure.
 }
 
 void TagModel::setNotebookId(const QString &p_notebookId) {
@@ -155,6 +251,7 @@ void TagModel::setNotebookId(const QString &p_notebookId) {
 QString TagModel::getNotebookId() const { return m_notebookId; }
 
 void TagModel::reload() {
+  ++m_hierarchyRevision;
   beginResetModel();
 
   m_nodeCache.clear();

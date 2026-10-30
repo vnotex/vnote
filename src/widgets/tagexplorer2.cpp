@@ -80,6 +80,9 @@ void TagExplorer2::setupUI() {
 
   mainLayout->addWidget(m_splitter, 1);
 
+  connect(m_tagModel, &TagModel::moveTagRequested,
+          m_tagController, &TagController::onMoveTagAction);
+
   // Wire signals
 
   // 1. TagView selection → TagController
@@ -173,6 +176,15 @@ void TagExplorer2::setupUI() {
   // 6. After tag creation, locate the new tag in the tree.
   connect(m_tagController, &TagController::tagCreated,
           m_tagView, &TagView::selectAndScrollToTag);
+
+  // Resolve the tag after both the service's queued reload and synchronous completion reload.
+  connect(m_tagController, &TagController::tagMoved, this,
+          [this](const QString &p_notebookId, const QString &p_tagName) {
+            if (p_notebookId == m_notebookId) {
+              m_tagView->selectAndScrollToTag(p_tagName);
+            }
+          },
+          Qt::QueuedConnection);
 
   // 7. Tag compatibility changed -> model state update (MVC)
   connect(m_tagController, &TagController::tagCompatibilityChanged,

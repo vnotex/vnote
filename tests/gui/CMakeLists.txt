@@ -169,6 +169,19 @@ target_include_directories(test_notebook_node_view_reorder PRIVATE
 # links VTextEdit. The dir-wide copies live on test_navigationmodeservice and
 # test_file_list_view_reorder, which do.
 
+add_qt_test(test_tag_view_drag_drop
+  SOURCES
+    test_tag_view_drag_drop.cpp
+    ${CMAKE_SOURCE_DIR}/src/views/tagview.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/tagmodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/models/treefilterproxymodel.cpp
+    ${CMAKE_SOURCE_DIR}/src/controllers/tagcontroller.cpp
+    ${CMAKE_SOURCE_DIR}/src/gui/utils/treehorizontalscrollhelper.cpp
+  LINKS
+    core_services
+    vxcore
+)
+
 # Horizontal scrolling helper for the QTreeView family. Needs a real
 # QApplication (QTEST_MAIN) so viewport geometry and indexAt() are meaningful.
 add_qt_test(test_treehorizontalscroll

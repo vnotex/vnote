@@ -22,6 +22,29 @@ See [MVC Rules](../../AGENTS.md#mvc-rules-must-follow) — Key rule for views: *
 | `NodeIconHelper` | Helper for node icon resolution |
 | `INodeExplorer` | Interface for node explorers |
 
+## Tag hierarchy dragging
+
+`TagView` moves one tag and its existing subtree within the current notebook. Dropping
+anywhere on a tag row, including its edges, makes that tag the parent; empty viewport
+space moves to root. Siblings remain alphabetical. Extended selection still means note
+intersection, not a batch move; dimmed incompatible tags remain valid drop destinations.
+The matching-file list does not accept drags or drops.
+
+`TagModel` validates the notebook/reload revision and cached ancestor chain, then emits
+`moveTagRequested`; it never mutates rows optimistically. `TagController` persists through
+the cancellable `TagService` move path. Drop acceptance acknowledges dispatch, not storage
+success. `TagExplorer2` reveals successful moves by name after both model resets, with a
+notebook guard on queued delivery; it leaves search text unchanged.
+
+Keep the custom `TagView::startDrag()`: Qt's base Move implementation can clear the source
+after the controller has already moved it. Native Qt handlers own target feedback, auto-expand
+and cancellation. On-item drops through `TreeFilterProxyModel` require **both** row and column
+`-1`; Qt otherwise maps an insertion coordinate rather than just the destination index.
+
+Coverage: `tests/gui/test_tag_view_drag_drop.cpp` uses real storage, hooks, proxy and view.
+Native mouse smoke is also required to prove source preservation after `QDrag::exec()` and
+whole-row feedback over disabled destinations; MIME-only tests cannot prove those behaviors.
+
 ## Item Heights: the delegate owns content, the theme owns padding
 
 Qt applies a theme's `QTreeView::item { padding: 4px 8px; }` inside

@@ -1,5 +1,7 @@
 #include "tagview.h"
 
+#include <QDrag>
+#include <QDragLeaveEvent>
 #include <QItemSelectionModel>
 #include <QKeyEvent>
 #include <QSortFilterProxyModel>
@@ -15,6 +17,11 @@ TagView::TagView(QWidget *p_parent) : QTreeView(p_parent) { setupView(); }
 void TagView::setupView() {
   setSelectionMode(QAbstractItemView::ExtendedSelection);
   setSelectionBehavior(QAbstractItemView::SelectRows);
+  setDragDropMode(QAbstractItemView::InternalMove);
+  setDefaultDropAction(Qt::MoveAction);
+  setDragDropOverwriteMode(true);
+  setDropIndicatorShown(true);
+  setAutoExpandDelay(600);
 
   setContextMenuPolicy(Qt::CustomContextMenu);
 
@@ -30,6 +37,30 @@ void TagView::setupView() {
 
   connect(this, &QTreeView::doubleClicked, this, &TagView::onItemActivated);
   connect(this, &QTreeView::customContextMenuRequested, this, &TagView::onContextMenuRequested);
+}
+
+void TagView::startDrag(Qt::DropActions p_supportedActions) {
+  if (!model() || !selectionModel() || !(p_supportedActions & Qt::MoveAction)) {
+    return;
+  }
+  const QModelIndexList rows = selectionModel()->selectedRows();
+  if (rows.size() != 1) {
+    return;
+  }
+  auto *mimeData = model()->mimeData(rows);
+  if (!mimeData) {
+    return;
+  }
+
+  auto *drag = new QDrag(this);
+  drag->setMimeData(mimeData);
+  drag->exec(Qt::MoveAction, Qt::MoveAction);
+  drag->deleteLater();
+
+  // Persistence belongs to the controller; base startDrag() may clear the source after Move.
+  QDragLeaveEvent leaveEvent;
+  QTreeView::dragLeaveEvent(&leaveEvent);
+  viewport()->update();
 }
 
 QString TagView::tagNameFromIndex(const QModelIndex &p_index) const {
