@@ -129,7 +129,7 @@ Tray, toolbar, keyboard and tab-bar requests share the picker and honor the sele
 scheme; they do not override its destination. Quick notes still open in Edit mode.
 
 New schemes use `ConfigMgr2::getDefaultNotebookPath()`, shared with `FirstRunController`:
-`my_notebook` under Qt's writable Documents location, without an explicit home-folder fallback.
+`vnote_notebook` under Qt's writable Documents location, without an explicit home-folder fallback.
 The helper only calculates the path; startup creation still requires a version change
 and zero open notebooks. Existing schemes, including an explicitly empty Folder, are
 not migrated. `SystemTrayHelper` registers the configured `NewQuickNote` binding as an

@@ -427,7 +427,7 @@ instance. **It skips locking and IPC, not data isolation.** Never launch the age
 against the normal profile or real notebooks. Create a fresh portable copy for each run; its
 existing `config/` folder redirects config, session and WebEngine data to that copy.
 
-Before using this recipe, check the OS Documents folder's `my_notebook` path. If it is missing or
+Before using this recipe, check the OS Documents folder's `vnote_notebook` path. If it is missing or
 an empty directory, first-run setup can create/open a bundled notebook there, **outside the portable
 copy**; use a disposable OS account instead. Do not edit, empty, or delete the user's directory to
 satisfy the collision guard. Continue testing only the scratch file in the disposable copy.

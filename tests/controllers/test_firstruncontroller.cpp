@@ -117,10 +117,10 @@ void TestFirstRunController::test_create_targetAbsent() {
            QStringLiteral("My default notebook in VNote"));
   QVERIFY(nb.value(QLatin1String(vxcore::kJsonKeyRootFolder))
               .toString()
-              .endsWith(QStringLiteral("my_notebook")));
+              .endsWith(QStringLiteral("vnote_notebook")));
 
   // The bundled notebook content was copied onto disk and is writable.
-  const QString root = parentDir + QStringLiteral("/my_notebook");
+  const QString root = parentDir + QStringLiteral("/vnote_notebook");
   QVERIFY(QFileInfo::exists(root + QStringLiteral("/Welcome.md")));
   QVERIFY(QFileInfo::exists(root + QStringLiteral("/vx_notebook/config.json")));
   QFileInfo welcomeInfo(root + QStringLiteral("/Welcome.md"));
@@ -155,8 +155,8 @@ void TestFirstRunController::test_existingNotebook_skip() {
 // S4: target dir non-empty -> skip; sentinel preserved.
 void TestFirstRunController::test_targetNonEmpty_skip() {
   QString override = m_tempDir.createDir("s4");
-  m_tempDir.createDir("s4/my_notebook");
-  QString sentinel = m_tempDir.createFile("s4/my_notebook/sentinel.txt", "keep");
+  m_tempDir.createDir("s4/vnote_notebook");
+  QString sentinel = m_tempDir.createFile("s4/vnote_notebook/sentinel.txt", "keep");
   QVERIFY(QFileInfo::exists(sentinel));
 
   FirstRunController controller(m_services);
@@ -172,7 +172,7 @@ void TestFirstRunController::test_targetNonEmpty_skip() {
 // S5: target dir exists but empty -> copy + open.
 void TestFirstRunController::test_targetEmptyDir_create() {
   QString override = m_tempDir.createDir("s5");
-  m_tempDir.createDir("s5/my_notebook");
+  m_tempDir.createDir("s5/vnote_notebook");
 
   FirstRunController controller(m_services);
   controller.setParentDirOverrideForTesting(override);
@@ -187,7 +187,7 @@ void TestFirstRunController::test_targetEmptyDir_create() {
 // S6: target is a regular file -> skip; file preserved.
 void TestFirstRunController::test_targetIsFile_skip() {
   QString override = m_tempDir.createDir("s6");
-  QString file = m_tempDir.createFile("s6/my_notebook", "iamafile");
+  QString file = m_tempDir.createFile("s6/vnote_notebook", "iamafile");
   QVERIFY(QFileInfo(file).isFile());
 
   FirstRunController controller(m_services);

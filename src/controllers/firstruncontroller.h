@@ -29,7 +29,7 @@ public:
   // Create the default notebook under the resolved parent dir by copying the
   // bundled notebook from Qt resources, then opening it. Returns true on
   // success (and emits defaultNotebookCreated). Skips (returns false, no
-  // signal) when the target "my_notebook" path is an existing file or a
+  // signal) when the target "vnote_notebook" path is an existing file or a
   // non-empty directory, or when the copy/open fails.
   bool createDefaultNotebook();
 
