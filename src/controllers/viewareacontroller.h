@@ -1,6 +1,7 @@
 #ifndef VIEWAREACONTROLLER_H
 #define VIEWAREACONTROLLER_H
 
+#include <QBitArray>
 #include <QHash>
 #include <QJsonObject>
 #include <QMap>
@@ -117,6 +118,9 @@ public:
   bool openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer, const Outline &p_outline,
                                  ID p_sourceId, quint64 p_sourceGeneration,
                                  QString *p_error = nullptr);
+  // False with no error is a non-heading node, unavailable target or cancelled close.
+  bool activateOutlineMindMapNode(const Buffer2 &p_buffer, const QString &p_nodeId,
+                                  QString *p_error = nullptr);
   bool closeOutlineMindMapPreviews(ID p_sourceId);
   bool isOutlineMindMapPreview(const Buffer2 &p_buffer) const;
   bool isProtectedOutlineMindMapPreview(const Buffer2 &p_buffer) const;
@@ -394,11 +398,15 @@ private:
     QString m_bufferId;
     QString m_workspaceId;
     ID m_windowId = 0;
+    QByteArray m_outlineFingerprint;
+    QBitArray m_navigableHeadings;
+    int m_titleHeadingIndex = -1;
     bool m_protectedSource = false;
     bool m_admitting = true;
     bool m_closing = false;
   };
-  bool isOutlineMindMapSourceCurrent(const OutlineMindMapPreview &p_preview) const;
+  bool isOutlineMindMapSourceCurrent(const OutlineMindMapPreview &p_preview,
+                                     bool p_requireVisible = true) const;
   bool isOutlineMindMapRequestCurrent(const Buffer2 &p_buffer,
                                       const FileOpenSettings &p_settings) const;
   // Provenance only: never retain the source outline or serialized plaintext.

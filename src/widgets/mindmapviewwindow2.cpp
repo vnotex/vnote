@@ -93,6 +93,11 @@ void MindMapViewWindow2::setupUI() {
 }
 
 void MindMapViewWindow2::connectEditorSignals() {
+  connect(m_editor, &m3::qt::MindMapEditor::nodeClicked, this, [this](const QString &p_nodeId) {
+    if (isOutlineMindMapPreview()) {
+      emit outlineMindMapNodeRequested(p_nodeId);
+    }
+  });
   connect(m_editor, &m3::qt::MindMapEditor::nodePropertiesPanelAboutToChange, this,
           &ViewWindow2::toolsPanelAboutToChange);
   connect(m_editor, &m3::qt::MindMapEditor::nodePropertiesPanelChanged, this,

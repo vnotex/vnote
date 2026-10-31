@@ -18,6 +18,7 @@
 #include <QScopeGuard>
 #include <QScopedValueRollback>
 #include <QSet>
+#include <QStringView>
 #include <QThread>
 #include <QTimer>
 #include <QUrl>
@@ -26,6 +27,8 @@
 #include <QWidget>
 #include <QtConcurrent>
 #include <QtGlobal>
+
+#include <algorithm>
 
 #include <controllers/mindmapviewwindowcontroller.h>
 #include <controllers/workspacewrapper.h>
@@ -64,7 +67,10 @@ using namespace vnotex;
 
 namespace {
 QByteArray outlineMindMapContent(const QString &p_title, const Outline &p_outline,
+                                 int &p_titleHeadingIndex, QBitArray &p_navigableHeadings,
                                  QString *p_error) {
+  p_titleHeadingIndex = -1;
+  p_navigableHeadings.fill(false, p_outline.m_headings.size());
   const auto fail = [p_error](const QString &p_message) {
     if (p_error) {
       *p_error = p_message;
@@ -98,6 +104,10 @@ QByteArray outlineMindMapContent(const QString &p_title, const Outline &p_outlin
     if (heading.m_isPlaceholder) {
       continue;
     }
+    p_navigableHeadings.setBit(index);
+    if (nodes.size() == 1) {
+      p_titleHeadingIndex = int(index);
+    }
     if (heading.m_level == 1) {
       ++headingOneCount;
     }
@@ -121,6 +131,8 @@ QByteArray outlineMindMapContent(const QString &p_title, const Outline &p_outlin
       children.append(nodes[0].children[index]);
     }
     nodes[0].children = std::move(children);
+  } else {
+    p_titleHeadingIndex = -1;
   }
   auto branchColors = m3::qt::MindMapEditor::automaticBranchColors();
   auto unusedColors = branchColors.size();
@@ -1055,12 +1067,13 @@ ViewAreaController::~ViewAreaController() {
 
 void ViewAreaController::setView(ViewAreaView *p_view) { m_view = p_view; }
 
-bool ViewAreaController::isOutlineMindMapSourceCurrent(
-    const OutlineMindMapPreview &p_preview) const {
+bool ViewAreaController::isOutlineMindMapSourceCurrent(const OutlineMindMapPreview &p_preview,
+                                                       bool p_requireVisible) const {
   auto *buffers = m_services.get<BufferService>();
   if (!buffers || !m_view || buffers->isProtectedLocking() ||
       buffers->isContentReplacementActive(p_preview.m_sourceBufferId) ||
-      !m_view->isPreviewSourceCurrent(p_preview.m_sourceWindowId, p_preview.m_sourceGeneration)) {
+      (p_requireVisible &&
+       !m_view->isPreviewSourceCurrent(p_preview.m_sourceWindowId, p_preview.m_sourceGeneration))) {
     return false;
   }
   const auto source = buffers->getBufferHandle(p_preview.m_sourceBufferId);
@@ -1078,6 +1091,65 @@ bool ViewAreaController::isOutlineMindMapSourceCurrent(
     return source.isEncrypted() && lease && lease->isCurrent();
   }
   return !source.isEncrypted();
+}
+
+bool ViewAreaController::activateOutlineMindMapNode(const Buffer2 &p_buffer,
+                                                    const QString &p_nodeId, QString *p_error) {
+  if (p_error) {
+    p_error->clear();
+  }
+  const auto entry = m_outlineMindMapPreviews.constFind(p_buffer.nodeId().relativePath);
+  if (entry == m_outlineMindMapPreviews.constEnd() || entry->m_bufferId != p_buffer.id() ||
+      entry->m_admitting || entry->m_closing || entry->m_windowId == InvalidViewWindowId) {
+    return false;
+  }
+  const auto target = *entry;
+  int headingIndex = -1;
+  if (p_nodeId == QLatin1String("root")) {
+    headingIndex = target.m_titleHeadingIndex;
+  } else if (p_nodeId.startsWith(QLatin1Char('h')) && p_nodeId.size() > 1) {
+    const auto digits = QStringView(p_nodeId).sliced(1);
+    if ((digits.size() > 1 && digits.front() == QLatin1Char('0')) ||
+        std::any_of(digits.begin(), digits.end(), [](QChar p_char) {
+          return p_char < QLatin1Char('0') || p_char > QLatin1Char('9');
+        })) {
+      return false;
+    }
+    bool valid = false;
+    headingIndex = digits.toInt(&valid);
+    if (!valid || headingIndex == target.m_titleHeadingIndex) {
+      return false;
+    }
+  }
+  // A filename root and non-existent/placeholder heading IDs never dismiss the map.
+  if (headingIndex < 0 || headingIndex >= target.m_navigableHeadings.size() ||
+      !target.m_navigableHeadings.testBit(headingIndex)) {
+    return false;
+  }
+  auto *const view = m_view;
+  const QPointer<ViewAreaController> guard(this);
+  if (!view || !p_buffer.isValid() || !isOutlineMindMapSourceCurrent(target) ||
+      view->findWindowIdByBufferId(target.m_workspaceId, target.m_bufferId) != target.m_windowId) {
+    return false;
+  }
+  if (!view->isOutlineHeadingCurrent(target.m_sourceWindowId, target.m_sourceGeneration,
+                                     headingIndex, target.m_outlineFingerprint)) {
+    if (p_error) {
+      *p_error = tr("The outline has changed. Reopen the mind map to navigate.");
+    }
+    return false;
+  }
+  // The overlay host also resolves to this preview workspace; actual tab membership
+  // distinguishes a nested source which must survive the navigation close.
+  const bool nested =
+      view->getViewWindowIdsForWorkspace(target.m_workspaceId).contains(target.m_sourceWindowId);
+  const bool accepted = nested ? closeViewWindow(target.m_windowId, false)
+                               : closePreviewWorkspace(target.m_workspaceId);
+  if (!guard || !accepted || m_view != view || !isOutlineMindMapSourceCurrent(target, false)) {
+    return false;
+  }
+  return view->navigateToOutlineHeading(target.m_sourceWindowId, target.m_sourceGeneration,
+                                        headingIndex, target.m_outlineFingerprint);
 }
 
 bool ViewAreaController::closeOutlineMindMapPreviews(ID p_sourceId) {
@@ -1176,10 +1248,12 @@ bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer
   if (title.isEmpty()) {
     title = tr("Document");
   }
-  auto content = outlineMindMapContent(title, p_outline, p_error);
+  auto content = outlineMindMapContent(title, p_outline, provenance.m_titleHeadingIndex,
+                                       provenance.m_navigableHeadings, p_error);
   if (content.isEmpty()) {
     return false;
   }
+  provenance.m_outlineFingerprint = p_outline.navigationFingerprint();
   MemoryBufferSource source;
   source.address = QStringLiteral("vx://outline-mind-map/%1")
                        .arg(QUuid::createUuid().toString(QUuid::WithoutBraces));

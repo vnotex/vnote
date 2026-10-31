@@ -245,6 +245,25 @@ loading the read-only snapshot. Colors are distinct until the palette is exhaust
 inherit their branch's color and the document root stays neutral. The snapshot retains these
 colors through navigation and theme switches. Ordinary map files and their preferences are unchanged.
 
+A completed plain primary click on a node body/topic navigates to its original source heading.
+The promoted title maps to its original H1; a document-name-only root has no destination.
+Ctrl/Shift selection, keyboard/API selection, folding, dragging and other controls do not navigate.
+The controller closes the source's preview through existing save/cancel consent before revealing
+that exact source window. If the source is itself a tab in the preview, only the generated map
+closes and unrelated tabs survive. Whole-preview closure remains sequential/nontransactional;
+a later veto prevents the jump but does not restore already-closed tabs.
+
+Navigation retains each provider's normal Outline behavior: Markdown uses its current mode,
+PDF follows its bookmark destination, and Typst reveals the source heading (Read enters Edit).
+The roster stores original navigable-index bits, promoted-title index and an ordered heading
+fingerprint, never another plaintext outline. `Outline::navigationFingerprint()` covers names,
+levels and placeholders, not display/reordering permissions. Validate it before consent and
+again after source focus; changed headings require reopening the snapshot. Body-only edits use
+the current heading positions. Recheck source ID/generation/protection across callbacks, and
+retain no source outline or protected operation lease across consent. Ordinary file mind maps
+do not navigate other source windows. Coverage includes real bookmarked PDF/Typst destinations,
+protected/nested sources and cancellation/stale-source races in `test_viewarea_tab_reuse`.
+
 `ViewAreaController` admits generated `vx://outline-mind-map/` buffers only with their exact
 source window/generation. Its metadata-only provenance roster survives until native view
 destruction and membership release. Every full document view closes its generated dependents

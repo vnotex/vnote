@@ -333,6 +333,7 @@ public slots:
 
 signals:
   void outlineMindMapRequested();
+  void outlineMindMapNodeRequested(const QString &p_nodeId);
 
   // The destination split's hosting policy is ready before the view is shown.
   void detachedChanged(bool p_detached);

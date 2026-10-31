@@ -1,5 +1,7 @@
 #include "outlineprovider.h"
 
+#include <QCryptographicHash>
+
 using namespace vnotex;
 
 void Outline::clear() {
@@ -12,6 +14,26 @@ bool Outline::operator==(const Outline &p_a) const {
 }
 
 bool Outline::isEmpty() const { return m_headings.isEmpty(); }
+
+QByteArray Outline::navigationFingerprint() const {
+  QCryptographicHash hash(QCryptographicHash::Sha256);
+  const auto addScalar = [&hash](const auto &p_value) {
+    hash.addData(QByteArrayView(reinterpret_cast<const char *>(&p_value), sizeof(p_value)));
+  };
+  const quint64 count = m_headings.size();
+  addScalar(count);
+  for (const auto &heading : m_headings) {
+    const qint32 level = heading.m_level;
+    const quint8 placeholder = heading.m_isPlaceholder;
+    const quint64 length = heading.m_name.size();
+    addScalar(level);
+    addScalar(placeholder);
+    addScalar(length);
+    hash.addData(QByteArrayView(reinterpret_cast<const char *>(heading.m_name.constData()),
+                                heading.m_name.size() * sizeof(QChar)));
+  }
+  return hash.result();
+}
 
 Outline::Heading::Heading(const QString &p_name, int p_level) : m_name(p_name), m_level(p_level) {}
 

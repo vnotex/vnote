@@ -932,6 +932,61 @@ bool ViewArea2::isPreviewSourceCurrent(ID p_sourceId, quint64 p_generation) cons
          !source->isNoteConversionFrozen();
 }
 
+bool ViewArea2::isOutlineHeadingCurrent(ID p_sourceId, quint64 p_generation, int p_headingIndex,
+                                        const QByteArray &p_fingerprint) const {
+  const auto *source = windowForId(p_sourceId);
+  auto *buffers = m_services.get<BufferService>();
+  if (!source || source->getViewWindowId() != p_sourceId ||
+      source->getBufferGeneration() != p_generation || !source->isEnabled() ||
+      source->m_bufferReplacementInProgress || source->m_noteConversionFrozen ||
+      source->m_contentReplacementFrozen || !buffers || buffers->isProtectedLocking() ||
+      !source->getBuffer().isValid() || source->getBuffer().getBuffer().isEmpty()) {
+    return false;
+  }
+  const auto provider = source->getOutlineProvider();
+  const auto outline = provider ? provider->getOutline() : QSharedPointer<Outline>();
+  return outline && p_headingIndex >= 0 && p_headingIndex < outline->m_headings.size() &&
+         !outline->m_headings[p_headingIndex].m_isPlaceholder &&
+         outline->m_headings[p_headingIndex].m_level > 0 &&
+         outline->navigationFingerprint() == p_fingerprint;
+}
+
+bool ViewArea2::navigateToOutlineHeading(ID p_sourceId, quint64 p_generation, int p_headingIndex,
+                                         const QByteArray &p_fingerprint) {
+  const QPointer<ViewArea2> self(this);
+  const QPointer<ViewWindow2> source(windowForId(p_sourceId));
+  const QPointer<ViewSplit2> owner(owningSplitForWindow(p_sourceId));
+  if (!source || !owner || source->getBufferGeneration() != p_generation) {
+    return false;
+  }
+  const QString workspace = owner->getWorkspaceId();
+  const QString bufferId = source->getBuffer().id();
+  if (owner->isPreview()) {
+    m_controller->setActivePreviewWindow(workspace, p_sourceId, bufferId);
+  }
+  if (!self || !source || !owner || source->getBufferGeneration() != p_generation ||
+      windowForId(p_sourceId) != source || owningSplitForWindow(p_sourceId) != owner) {
+    return false;
+  }
+  // Unlike the ordinary-workspace focus command, this also handles a source tab
+  // nested in a preview and an original source in a detached window.
+  setCurrentBuffer(workspace, bufferId, true);
+  if (!self || !source || !owner || windowForId(p_sourceId) != source ||
+      source->getBufferGeneration() != p_generation || source->getBuffer().id() != bufferId ||
+      owner->getCurrentViewWindow() != source) {
+    return false;
+  }
+  if (!isOutlineHeadingCurrent(p_sourceId, p_generation, p_headingIndex, p_fingerprint)) {
+    source->showMessage(tr("The outline has changed. Reopen the mind map to navigate."));
+    return false;
+  }
+  const QPointer<OutlineProvider> provider(source->getOutlineProvider().data());
+  // Each source owns its existing Read/Edit/PDF navigation policy. The receiver
+  // can retire this view synchronously; no source/provider state is read afterward.
+  emit provider->headingClicked(p_headingIndex);
+  return true;
+}
+
 ViewSplit2 *ViewArea2::hostedSplitForWorkspace(const QString &p_workspaceId) const {
   if (auto *split = splitForWorkspace(p_workspaceId)) {
     return split;
@@ -1431,6 +1486,20 @@ void ViewArea2::wireOutlineMindMapSignals(ViewWindow2 *p_window) {
     return !self || !window ||
            self->m_controller->closeOutlineMindMapPreviews(window->getViewWindowId());
   };
+  if (p_window->m_isOutlineMindMapPreview) {
+    connect(p_window, &ViewWindow2::outlineMindMapNodeRequested, this,
+            [self, window](const QString &p_nodeId) {
+              if (!self || !window) {
+                return;
+              }
+              const Buffer2 snapshot = window->getBuffer();
+              QString error;
+              if (!self->m_controller->activateOutlineMindMapNode(snapshot, p_nodeId, &error) &&
+                  self && window && window->isVisible() && !error.isEmpty()) {
+                window->showMessage(error);
+              }
+            });
+  }
   connect(p_window, &ViewWindow2::outlineMindMapRequested, this, [self, window] {
     if (!self || !window) {
       return;

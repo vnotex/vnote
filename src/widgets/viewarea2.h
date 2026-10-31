@@ -108,6 +108,10 @@ public:
   void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType, const QString &p_workspaceId,
                   const FileOpenSettings &p_settings) override;
   bool isPreviewSourceCurrent(ID p_sourceId, quint64 p_generation) const override;
+  bool isOutlineHeadingCurrent(ID p_sourceId, quint64 p_generation, int p_headingIndex,
+                               const QByteArray &p_fingerprint) const override;
+  bool navigateToOutlineHeading(ID p_sourceId, quint64 p_generation, int p_headingIndex,
+                                const QByteArray &p_fingerprint) override;
   QString previewWorkspaceForWindow(ID p_windowId) const override;
   bool isPreviewWorkspaceAvailable(const QString &p_workspaceId) const override;
   bool hostPreviewWorkspace(ID p_sourceId, quint64 p_generation,

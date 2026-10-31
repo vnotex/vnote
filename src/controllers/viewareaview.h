@@ -1,6 +1,7 @@
 #ifndef VIEWAREAVIEW_H
 #define VIEWAREAVIEW_H
 
+#include <QByteArray>
 #include <QIcon>
 #include <QJsonObject>
 #include <QString>
@@ -53,6 +54,12 @@ public:
   virtual void removePreviewWorkspaceHost(const QString &p_workspaceId) = 0;
   virtual bool closePreviewsForSources(const QVector<ID> &p_sourceIds) = 0;
   virtual QStringList previewWorkspacesForSourceNotebook(const QString &p_notebookId) const = 0;
+
+  // Snapshot navigation: validate before consent and again after revealing the source.
+  virtual bool isOutlineHeadingCurrent(ID p_sourceId, quint64 p_generation, int p_headingIndex,
+                                       const QByteArray &p_fingerprint) const = 0;
+  virtual bool navigateToOutlineHeading(ID p_sourceId, quint64 p_generation, int p_headingIndex,
+                                        const QByteArray &p_fingerprint) = 0;
 
   // Buffer/window management
   virtual void openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,

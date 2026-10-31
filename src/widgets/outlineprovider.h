@@ -1,6 +1,7 @@
 #ifndef OUTLINEPROVIDER_H
 #define OUTLINEPROVIDER_H
 
+#include <QByteArray>
 #include <QObject>
 #include <QSharedPointer>
 #include <QVector>
@@ -33,6 +34,10 @@ struct Outline {
   bool operator==(const Outline &p_a) const;
 
   bool isEmpty() const;
+
+  // In-process identity of heading order, literal names, levels and placeholders.
+  // Excludes display/reordering permissions and retains no heading text.
+  QByteArray navigationFingerprint() const;
 
   QVector<Heading> m_headings;
 
