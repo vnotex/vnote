@@ -13,6 +13,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QPointer>
+#include <QRandomGenerator>
 #include <QRegularExpression>
 #include <QScopeGuard>
 #include <QScopedValueRollback>
@@ -56,6 +57,7 @@
 #include <widgets/settingswidget.h>
 #include <widgets/viewwindow2.h>
 
+#include <m3/qt/editor.h>
 #include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
@@ -77,7 +79,10 @@ QByteArray outlineMindMapContent(const QString &p_title, const Outline &p_outlin
     QString topic;
     QVector<qsizetype> children;
     int level = 0;
+    QString branchColor;
   };
+  auto branchColors = m3::qt::MindMapEditor::automaticBranchColors();
+  auto unusedColors = branchColors.size();
   QVector<Node> nodes;
   QVector<qsizetype> ancestors;
   nodes.reserve(p_outline.m_headings.size() + 1);
@@ -98,6 +103,14 @@ QByteArray outlineMindMapContent(const QString &p_title, const Outline &p_outlin
     const qsizetype child = nodes.size();
     nodes[parent].children.append(child);
     nodes.append({QStringLiteral("h%1").arg(index), heading.m_name, {}, heading.m_level});
+    if (parent == 0) {
+      const auto picked = QRandomGenerator::global()->bounded(
+          int(unusedColors > 0 ? unusedColors : branchColors.size()));
+      nodes.last().branchColor = branchColors[picked];
+      if (unusedColors > 0) {
+        branchColors.swapItemsAt(picked, --unusedColors);
+      }
+    }
     ancestors.append(child);
   }
   if (nodes.size() == 1) {
@@ -109,9 +122,14 @@ QByteArray outlineMindMapContent(const QString &p_title, const Outline &p_outlin
     for (const auto child : node.children) {
       children.append(nodes[child].id);
     }
-    serialized.append(QJsonObject{{QStringLiteral("id"), node.id},
-                                  {QStringLiteral("topic"), node.topic},
-                                  {QStringLiteral("children"), children}});
+    QJsonObject record{{QStringLiteral("id"), node.id},
+                       {QStringLiteral("topic"), node.topic},
+                       {QStringLiteral("children"), children}};
+    if (!node.branchColor.isEmpty()) {
+      record.insert(QStringLiteral("style"),
+                    QJsonObject{{QStringLiteral("branchColor"), node.branchColor}});
+    }
+    serialized.append(record);
   }
   return QJsonDocument(QJsonObject{{QStringLiteral("schemaVersion"), 1},
                                    {QStringLiteral("rootId"), QStringLiteral("root")},

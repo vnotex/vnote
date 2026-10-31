@@ -61,6 +61,7 @@
 #include <core/hooknames.h>
 #include <core/mainconfig.h>
 #include <core/markdowneditorconfig.h>
+#include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
 #include <core/services/bufferservice.h>
 #include <core/services/commentservice.h>
@@ -899,6 +900,7 @@ private slots:
   void previewMindMapNoteOwnership();
   void outlineMindMapPreview_data();
   void outlineMindMapPreview();
+  void outlineMindMapBranchColors();
   void outlineMindMapSnapshotAndLifecycle();
   void outlineMindMapReadOnlyAndPromotion();
   void outlineMindMapProtectedLifetime_data();
@@ -1083,6 +1085,24 @@ void TestViewAreaTabReuse::outlineMindMapPreview() {
            buffer.displayName());
   QCOMPARE(mapChildren(map, QStringLiteral("root")), QStringList({alphaId, betaId}));
   QCOMPARE(mapChildren(map, alphaId), QStringList({deepId}));
+  const auto palette = MindMapEditor::automaticBranchColors();
+  const auto alphaColor = mapNode(map, alphaId)
+                              .value(QStringLiteral("style"))
+                              .toObject()
+                              .value(QStringLiteral("branchColor"))
+                              .toString();
+  const auto betaColor = mapNode(map, betaId)
+                             .value(QStringLiteral("style"))
+                             .toObject()
+                             .value(QStringLiteral("branchColor"))
+                             .toString();
+  QVERIFY(palette.contains(alphaColor) && palette.contains(betaColor));
+  QVERIFY(alphaColor != betaColor);
+  for (const auto &id : {QStringLiteral("root"), deepId})
+    QVERIFY(!mapNode(map, id)
+                 .value(QStringLiteral("style"))
+                 .toObject()
+                 .contains(QStringLiteral("branchColor")));
   // Reader numbering belongs to the provider: preserve every published name,
   // including its section prefix, rather than expecting editor-mode wording.
   for (const int index : headingIndexes)
@@ -1140,6 +1160,61 @@ void TestViewAreaTabReuse::outlineMindMapPreview() {
     QCOMPARE(mapNode(map, QStringLiteral("h%1").arg(i)).value(QStringLiteral("topic")).toString(),
              literal->m_headings[i].m_name);
   QCOMPARE(source->getLatestContent(), sourceBytes);
+}
+
+void TestViewAreaTabReuse::outlineMindMapBranchColors() {
+  f->config->getEditorConfig().getMindMapEditorConfig().setAutoRandomBranchColor(false);
+  QVERIFY(f->create(QStringLiteral("colors.md"), "# Source\n"));
+  const auto buffer = f->open(QStringLiteral("colors.md"));
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Source")), 30000);
+  const auto palette = MindMapEditor::automaticBranchColors();
+  auto outline = QSharedPointer<Outline>::create();
+  const int branchCount = int(palette.size()) + 2;
+  for (int index = 0; index < branchCount; ++index) {
+    // Real document-root children need not have level 1; descendants inherit color.
+    outline->m_headings.append(Outline::Heading(QStringLiteral("Branch %1").arg(index), 3));
+    outline->m_headings.append(Outline::Heading(QStringLiteral("Nested %1").arg(index), 6));
+  }
+  source->getOutlineProvider()->setOutline(outline);
+  QVERIFY(clickOutlineMindMap(source));
+  QPointer<ViewWindow2> generated(f->current());
+  QVERIFY(generated && generated != source && generated->isOutlineMindMapPreview());
+  auto *map = generated->findChild<MindMapEditor *>();
+  QVERIFY(map && map->isReadOnly());
+  QTRY_COMPARE(map->outline().size(), branchCount * 2 + 1);
+  QSet<QString> used;
+  for (int index = 0; index < branchCount; ++index) {
+    const auto branch = QStringLiteral("h%1").arg(index * 2);
+    const auto nested = QStringLiteral("h%1").arg(index * 2 + 1);
+    const auto color = mapNode(map, branch)
+                           .value(QStringLiteral("style"))
+                           .toObject()
+                           .value(QStringLiteral("branchColor"))
+                           .toString();
+    QVERIFY(QColor(color).isValid() && palette.contains(color));
+    if (index < palette.size()) {
+      QVERIFY(!used.contains(color));
+      used.insert(color);
+    }
+    QCOMPARE(mapChildren(map, branch), QStringList({nested}));
+    QVERIFY(!mapNode(map, nested)
+                 .value(QStringLiteral("style"))
+                 .toObject()
+                 .contains(QStringLiteral("branchColor")));
+  }
+  QCOMPARE(used.size(), palette.size());
+  QVERIFY(!mapNode(map, QStringLiteral("root"))
+               .value(QStringLiteral("style"))
+               .toObject()
+               .contains(QStringLiteral("branchColor")));
+  QVERIFY(!f->config->getEditorConfig().getMindMapEditorConfig().getAutoRandomBranchColor());
+  QVERIFY(!generated->isModified() && !map->isModified());
+  const auto json = map->toJson();
+  map->commandAction(QStringLiteral("zoomIn"))->trigger();
+  QCOMPARE(map->toJson(), json);
+  QCOMPARE(source->getLatestContent(), QStringLiteral("# Source\n"));
 }
 
 void TestViewAreaTabReuse::outlineMindMapSnapshotAndLifecycle() {

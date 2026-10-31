@@ -313,11 +313,11 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     break;
 
   case Action::MindMap:
-    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("layout_dashboard_editor.svg")),
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("brain_editor.svg")),
                           QObject::tr("Mind Map"));
     act->setToolTip(QObject::tr("Mind Map"));
     act->setObjectName(QStringLiteral("outlineMindMapAction"));
-    act->setProperty("iconName", QStringLiteral("layout_dashboard_editor.svg"));
+    act->setProperty("iconName", QStringLiteral("brain_editor.svg"));
     break;
 
   case Action::Outline: {
