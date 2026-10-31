@@ -26,7 +26,7 @@ TreeHorizontalScrollHelper::TreeHorizontalScrollHelper(QTreeView *p_view)
 
   m_timer = new QTimer(this);
   m_timer->setSingleShot(true);
-  m_timer->setInterval(0);
+  m_timer->setInterval(50);
   connect(m_timer, &QTimer::timeout, this, &TreeHorizontalScrollHelper::recompute);
 
   m_view->viewport()->installEventFilter(this);

@@ -125,6 +125,14 @@ Markdown implementation. Consumer policy: [controllers](../controllers/AGENTS.md
 | `PrintUtils` | Print/export utilities |
 | `CommentColorSwatch` | The **single** way to render a `CommentColor` token as a chip in Qt chrome — see below |
 
+## Tree horizontal scrolling
+
+`TreeHorizontalScrollHelper` coalesces resize, show, expansion/collapse and model
+changes through one 50 ms single-shot timer. Start it only when inactive: continuous
+resizing still updates the column periodically instead of waiting for the drag to end.
+Each callback measures current content and viewport geometry. Tests should wait for
+column coverage or scrollbar behavior, not a fixed sleep or the timer interval.
+
 ## External-link confirmation
 
 `ExternalLinkConfirmation::ask()` (`utils/externallinkconfirmation.{h,cpp}`) owns
