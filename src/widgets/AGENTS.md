@@ -240,6 +240,20 @@ heading IDs and the document-based preview tab name remain unchanged. Synthetic 
 are omitted; real empty/numbered/Unicode names remain literal. Missing/invalid outlines never
 open blank maps.
 
+Opening captures the clicked provider's current heading index with the outline, before open
+hooks can change selection. A valid real index selects its `h<original-index>` node, or `root`
+for the promoted title; missing/out-of-range/placeholder selections retain the central node.
+Providers that report no current item (currently PDF) use that fallback rather than inferring
+one from page position. `FileOpenSettings::m_anchor` carries the initial node ID only for this
+generated-preview path; ordinary mind-map file anchors remain unchanged.
+
+`MindMapViewWindow2::applyFileOpenSettings()` applies this one-shot focus after show/layout,
+using the current zoom/fit policy and native `focusNode()`. It reveals collapsed ancestors,
+centers the node and focuses the canvas; centering survives subsequent host/Tools-dock resizing.
+Generation, visibility, enabled/content and protected-locking guards cancel stale queued work.
+Initial focus does not emit `nodeClicked`, close the preview, change source position or mutate
+snapshot JSON. Later source selection changes do not retarget the open snapshot.
+
 Real document-root children receive automatic colors from m3's public branch palette before
 loading the read-only snapshot. Colors are distinct until the palette is exhausted; descendants
 inherit their branch's color and the document root stays neutral. The snapshot retains these

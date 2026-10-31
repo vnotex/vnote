@@ -21,6 +21,7 @@
 #include <QJsonDocument>
 #include <QLabel>
 #include <QLineEdit>
+#include <QLineF>
 #include <QListView>
 #include <QMenu>
 #include <QMessageBox>
@@ -987,6 +988,11 @@ private slots:
   void previewMindMapNoteOwnership();
   void outlineMindMapPreview_data();
   void outlineMindMapPreview();
+  void outlineMindMapInitialFocus_data();
+  void outlineMindMapInitialFocus();
+  void outlineMindMapCursorFocus();
+  void outlineMindMapFocusRetirement_data();
+  void outlineMindMapFocusRetirement();
   void outlineMindMapTitle_data();
   void outlineMindMapTitle();
   void outlineMindMapBranchColors();
@@ -1558,7 +1564,7 @@ void TestViewAreaTabReuse::outlineMindMapNavigationConsent() {
   const auto preview = f->workspace();
   QString error;
   QVERIFY(f->controller()->openOutlineMindMapPreview(
-      buffer, *source->getOutlineProvider()->getOutline(), sourceId, generation, &error));
+      buffer, *source->getOutlineProvider()->getOutline(), sourceId, generation, -1, &error));
   QPointer<ViewWindow2> generated(f->current());
   QVERIFY(generated && generated->isOutlineMindMapPreview());
   const auto snapshot = generated->getBuffer();
@@ -1713,7 +1719,7 @@ void TestViewAreaTabReuse::outlineMindMapNavigationCloseRace() {
   QTRY_VERIFY(draftWindow->isModified());
   QString error;
   QVERIFY(f->controller()->openOutlineMindMapPreview(buffer, *provider->getOutline(), sourceId,
-                                                     generation, &error));
+                                                     generation, -1, &error));
   QPointer<ViewWindow2> generated(f->current());
   QVERIFY(generated && generated->isOutlineMindMapPreview());
   const auto snapshot = generated->getBuffer();
@@ -1988,6 +1994,240 @@ void TestViewAreaTabReuse::outlineMindMapPreview() {
   QCOMPARE(source->getLatestContent(), sourceBytes);
 }
 
+void TestViewAreaTabReuse::outlineMindMapInitialFocus_data() {
+  QTest::addColumn<int>("current");
+  QTest::addColumn<QString>("expected");
+  QTest::addColumn<bool>("promoted");
+  QTest::addColumn<bool>("encrypted");
+  QTest::addColumn<bool>("retarget");
+  QTest::addColumn<qreal>("zoom");
+  QTest::newRow("deep") << 6 << QStringLiteral("h6") << true << false << false << qreal(1.35);
+  QTest::newRow("duplicate-label")
+      << 3 << QStringLiteral("h3") << true << false << false << qreal(1);
+  QTest::newRow("promoted-title") << 0 << QStringLiteral("root") << true << false << false
+                                  << qreal(1);
+  QTest::newRow("unpromoted-h1") << 0 << QStringLiteral("h0") << false << false << false
+                                 << qreal(1);
+  QTest::newRow("no-current") << -1 << QStringLiteral("root") << true << false << false << qreal(1);
+  QTest::newRow("placeholder") << 2 << QStringLiteral("root") << true << false << false << qreal(1);
+  QTest::newRow("out-of-range") << 99 << QStringLiteral("root") << true << false << false
+                                << qreal(1);
+  QTest::newRow("protected-deep") << 6 << QStringLiteral("h6") << true << true << false
+                                  << qreal(1.35);
+  QTest::newRow("captured-before-hooks")
+      << 6 << QStringLiteral("h6") << true << false << true << qreal(1);
+  QTest::newRow("fit-page") << 6 << QStringLiteral("h6") << true << false << false << qreal(0);
+  QTest::newRow("fit-width") << 6 << QStringLiteral("h6") << true << false << false << qreal(-1);
+}
+
+void TestViewAreaTabReuse::outlineMindMapInitialFocus() {
+  QFETCH(int, current);
+  QFETCH(QString, expected);
+  QFETCH(bool, promoted);
+  QFETCH(bool, encrypted);
+  QFETCH(bool, retarget);
+  QFETCH(qreal, zoom);
+  f->config->getSessionConfig().setMindMapZoomFactor(zoom);
+  Buffer2 sourceBuffer;
+  if (encrypted) {
+    const auto id = f->createProtected(QStringLiteral("focus.md"), "# Source\n", true);
+    QVERIFY(!id.isEmpty());
+    sourceBuffer = f->openProtected(id);
+  } else {
+    QVERIFY(f->create(QStringLiteral("focus.md"), "# Source\n"));
+    sourceBuffer = f->open(QStringLiteral("focus.md"));
+  }
+  QVERIFY(sourceBuffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Source")), 30000);
+  const auto provider = source->getOutlineProvider();
+  auto outline = outlineHeadings({{QStringLiteral("Title"), 1},
+                                  {QStringLiteral("Same long branch heading"), 2},
+                                  {QStringLiteral("[EMPTY]"), 3},
+                                  {QStringLiteral("Same long branch heading"), 4},
+                                  {QStringLiteral("Fourth long branch heading"), 5},
+                                  {QStringLiteral("Fifth long branch heading"), 6},
+                                  {QStringLiteral("Current target"), 7},
+                                  {QStringLiteral("Other"), 2}});
+  outline->m_headings[2].m_isPlaceholder = true;
+  if (!promoted)
+    outline->m_headings.append(Outline::Heading(QStringLiteral("Second H1"), 1));
+  provider->setOutline(outline);
+  provider->setCurrentHeadingIndex(current);
+  const auto main = f->workspace();
+  const auto sourceOrder = f->order(main);
+  const auto sourceText = source->getLatestContent();
+  QSignalSpy navigation(provider.data(), &OutlineProvider::headingClicked);
+  QByteArray baseline;
+  std::unique_ptr<QSignalSpy> clicks;
+  const auto hook = f->hooks->addAction<ViewWindowOpenEvent>(
+      HookNames::ViewWindowAfterOpen, [&](HookContext &, const ViewWindowOpenEvent &event) {
+        const auto buffer = f->buffers->getBufferHandle(event.bufferId);
+        if (!f->controller()->isOutlineMindMapPreview(buffer))
+          return;
+        for (auto *window : f->area->findChildren<ViewWindow2 *>()) {
+          if (window->getBuffer().id() != buffer.id())
+            continue;
+          auto *map = window->findChild<MindMapEditor *>();
+          QVERIFY(map);
+          QVERIFY(map->setExpanded(QStringLiteral("h1"), false));
+          baseline = map->toJson();
+          clicks = std::make_unique<QSignalSpy>(map, &m3::qt::MindMapEditor::nodeClicked);
+          if (retarget)
+            provider->setCurrentHeadingIndex(0);
+          break;
+        }
+      });
+  const auto removeHook = qScopeGuard([&] { f->hooks->removeAction(hook); });
+  QVERIFY(clickOutlineMindMap(source));
+  QPointer<ViewWindow2> generated(f->current());
+  QVERIFY(generated && generated != source && generated->isOutlineMindMapPreview());
+  QPointer<MindMapEditor> map(generated->findChild<MindMapEditor *>());
+  QVERIFY(map && clicks);
+  QPointer<QGraphicsView> canvas(map->findChild<QGraphicsView *>());
+  QVERIFY(canvas);
+  QTRY_COMPARE(map->selectedNodeId(), expected);
+  const auto selectedVisible = [&] {
+    if (!map || !canvas || map->selectedNodeId() != expected)
+      return false;
+    const auto items = canvas->scene()->selectedItems();
+    if (items.size() != 1 || !items.first()->isVisible())
+      return false;
+    const QRect bounds = canvas->mapFromScene(items.first()->sceneBoundingRect()).boundingRect();
+    return canvas->viewport()->visibleRegion().boundingRect().contains(
+        bounds.adjusted(1, 1, -1, -1));
+  };
+  QTRY_VERIFY(selectedVisible());
+  // A late initial camera/layout must not undo the reveal after its ID was selected.
+  bool queuedTurn = false;
+  QTimer::singleShot(0, f->area.get(), [&] { queuedTurn = true; });
+  QTRY_VERIFY(queuedTurn);
+  QVERIFY(selectedVisible());
+  if (current >= 0 && current < outline->m_headings.size() &&
+      !outline->m_headings[current].m_isPlaceholder) {
+    const auto centered = [&] {
+      const auto items = canvas->scene()->selectedItems();
+      return items.size() == 1 &&
+             QLineF(canvas->mapFromScene(items.first()->sceneBoundingRect().center()),
+                    canvas->viewport()->rect().center())
+                     .length() <= 2.0;
+    };
+    QVERIFY(centered());
+    // Emulate the later host/Tools-dock geometry change observed in the app smoke.
+    const int width = canvas->viewport()->visibleRegion().boundingRect().width();
+    f->area->resize(f->area->width() * 2 / 3, f->area->height());
+    QTRY_VERIFY(canvas->viewport()->visibleRegion().boundingRect().width() < width);
+    QTRY_VERIFY(selectedVisible() && centered());
+  }
+  if (zoom > 0)
+    QCOMPARE(map->zoomFactor(), zoom);
+  else
+    QCOMPARE(map->zoomMode(),
+             zoom == 0 ? MindMapEditor::ZoomMode::Page : MindMapEditor::ZoomMode::Width);
+  QCOMPARE(map->toJson(), baseline);
+  QVERIFY(map->isReadOnly() && !map->isModified() && !generated->isModified());
+  QVERIFY(clicks->isEmpty() && navigation.isEmpty());
+  QCOMPARE(source->getLatestContent(), sourceText);
+  QCOMPARE(source->getBuffer().id(), sourceBuffer.id());
+  QCOMPARE(f->order(main), sourceOrder);
+  QCOMPARE(f->order(f->workspace()), QStringList({generated->getBuffer().id()}));
+}
+
+void TestViewAreaTabReuse::outlineMindMapCursorFocus() {
+  QVERIFY(f->create(QStringLiteral("cursor-focus.md"), navigationMarkdown().toUtf8()));
+  const auto sourceBuffer = f->open(QStringLiteral("cursor-focus.md"));
+  QVERIFY(sourceBuffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  auto *editor = source->findChild<MarkdownEditor *>();
+  QVERIFY(editor);
+  QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Deep")), 30000);
+  auto *edit = editor->getTextEdit();
+  const auto cursor = edit->document()->find(QStringLiteral("### Deep"));
+  QVERIFY(!cursor.isNull());
+  edit->setTextCursor(cursor);
+  const int index = outlineTopicIndex(source, QStringLiteral("Deep"));
+  QVERIFY(index >= 0);
+  QTRY_COMPARE(source->getOutlineProvider()->getCurrentHeadingIndex(), index);
+  const auto position = edit->textCursor().position();
+  QSignalSpy navigation(source->getOutlineProvider().data(), &OutlineProvider::headingClicked);
+  QVERIFY(clickOutlineMindMap(source));
+  QPointer<ViewWindow2> generated(f->current());
+  QVERIFY(generated && generated != source);
+  auto *map = generated->findChild<MindMapEditor *>();
+  QVERIFY(map);
+  QTRY_COMPARE(map->selectedNodeId(), QStringLiteral("h%1").arg(index));
+  QCOMPARE(edit->textCursor().position(), position);
+  QVERIFY(navigation.isEmpty());
+  QVERIFY(generated->getBuffer().isReadOnly() && !generated->isModified());
+  QCOMPARE(source->getBuffer().id(), sourceBuffer.id());
+}
+
+void TestViewAreaTabReuse::outlineMindMapFocusRetirement_data() {
+  QTest::addColumn<bool>("locking");
+  QTest::newRow("close-before-reveal") << false;
+  QTest::newRow("lock-before-reveal") << true;
+}
+
+void TestViewAreaTabReuse::outlineMindMapFocusRetirement() {
+  QFETCH(bool, locking);
+  const QByteArray content("# Title\n\n## Branch\n\n### Deeper\n\n#### Deep\n");
+  Buffer2 sourceBuffer;
+  if (locking) {
+    const auto id = f->createProtected(QStringLiteral("focus-retire.md"), content, true);
+    QVERIFY(!id.isEmpty());
+    sourceBuffer = f->openProtected(id);
+  } else {
+    QVERIFY(f->create(QStringLiteral("focus-retire.md"), content));
+    sourceBuffer = f->open(QStringLiteral("focus-retire.md"));
+  }
+  QVERIFY(sourceBuffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Deep")), 30000);
+  const int index = outlineTopicIndex(source, QStringLiteral("Deep"));
+  const auto intent = source->getLinkOpenSettings();
+  const auto outline = *source->getOutlineProvider()->getOutline();
+  QString error;
+  // Stay on one stack: close or lock before the queued initial reveal can run.
+  QVERIFY2(
+      f->controller()->openOutlineMindMapPreview(sourceBuffer, outline, source->getViewWindowId(),
+                                                 intent.m_previewSourceGeneration, index, &error),
+      qPrintable(error));
+  QPointer<ViewWindow2> generated(f->current());
+  QVERIFY(generated && generated != source);
+  QPointer<MindMapEditor> map(generated->findChild<MindMapEditor *>());
+  QVERIFY(map);
+  const auto snapshot = generated->getBuffer();
+  QCOMPARE(map->selectedNodeId(), QStringLiteral("root"));
+  if (locking) {
+    QVERIFY2(f->controller()->lockAllProtectedNotes(&error), qPrintable(error));
+    QVERIFY(source.isNull());
+  } else {
+    QVERIFY(f->controller()->closeViewWindow(generated->getViewWindowId(), false));
+  }
+  QTRY_VERIFY(generated.isNull() && map.isNull());
+  QVERIFY(!f->buffers->getBufferHandle(snapshot.id()).isValid());
+  QVERIFY(!f->controller()->isOutlineMindMapPreview(snapshot));
+  if (!locking) {
+    QVERIFY(source);
+    QCOMPARE(source->getLatestContent(), QString::fromUtf8(content));
+    const QByteArray ordinary(
+        R"({"schemaVersion":1,"rootId":"r","nodes":[{"id":"r","topic":"Ordinary","children":["h3"]},{"id":"h3","topic":"Not an initial destination"}]})");
+    QVERIFY(f->create(QStringLiteral("ordinary-focus.mmm"), ordinary));
+    FileOpenSettings settings;
+    settings.m_alwaysNewWindow = true;
+    settings.m_anchor = QStringLiteral("h3");
+    QVERIFY(
+        f->buffers->openBuffer(f->node(QStringLiteral("ordinary-focus.mmm")), settings).isValid());
+    auto *ordinaryMap = f->current()->findChild<MindMapEditor *>();
+    QVERIFY(ordinaryMap);
+    bool queuedTurn = false;
+    QTimer::singleShot(0, f->area.get(), [&] { queuedTurn = true; });
+    QTRY_VERIFY(queuedTurn);
+    QCOMPARE(ordinaryMap->selectedNodeId(), QStringLiteral("r"));
+    QVERIFY(!f->current()->isOutlineMindMapPreview());
+  }
+}
+
 void TestViewAreaTabReuse::outlineMindMapTitle_data() {
   QTest::addColumn<QStringList>("topics");
   QTest::addColumn<QList<int>>("levels");
@@ -2193,8 +2433,9 @@ void TestViewAreaTabReuse::outlineMindMapSnapshotAndLifecycle() {
     QVERIFY(!button->isEnabled());
     if (empty) {
       QString error;
-      QVERIFY(!f->controller()->openOutlineMindMapPreview(
-          buffer, *empty, source->getViewWindowId(), oldIntent.m_previewSourceGeneration, &error));
+      QVERIFY(!f->controller()->openOutlineMindMapPreview(buffer, *empty, source->getViewWindowId(),
+                                                          oldIntent.m_previewSourceGeneration, -1,
+                                                          &error));
       QCOMPARE(error, QStringLiteral("No outline is available for a mind map"));
     }
   }
@@ -2203,8 +2444,9 @@ void TestViewAreaTabReuse::outlineMindMapSnapshotAndLifecycle() {
         outlineHeadings({{QStringLiteral("Negative"), -1}}),
         outlineHeadings({{QStringLiteral("Embedded") + QChar(0) + QStringLiteral("Nul"), 1}})}) {
     QString error;
-    QVERIFY(!f->controller()->openOutlineMindMapPreview(
-        buffer, *invalid, source->getViewWindowId(), oldIntent.m_previewSourceGeneration, &error));
+    QVERIFY(!f->controller()->openOutlineMindMapPreview(buffer, *invalid, source->getViewWindowId(),
+                                                        oldIntent.m_previewSourceGeneration, -1,
+                                                        &error));
     QCOMPARE(error, QStringLiteral("Unable to create a mind map from this outline"));
   }
   QCOMPARE(f->buffers->listBuffers().size(), beforeBuffers);
@@ -2225,12 +2467,12 @@ void TestViewAreaTabReuse::outlineMindMapSnapshotAndLifecycle() {
   QTRY_VERIFY(!f->buffers->getBufferHandle(replacingBuffer.id()).isValid());
   const auto remainingBuffers = f->buffers->listBuffers().size();
   QString error;
-  QVERIFY(!f->controller()->openOutlineMindMapPreview(replacement, *changed,
-                                                      source->getViewWindowId(),
-                                                      oldIntent.m_previewSourceGeneration, &error));
+  QVERIFY(
+      !f->controller()->openOutlineMindMapPreview(replacement, *changed, source->getViewWindowId(),
+                                                  oldIntent.m_previewSourceGeneration, -1, &error));
   QVERIFY(!f->controller()->openOutlineMindMapPreview(
       replacement, *changed, source->getViewWindowId() + 100000,
-      source->getLinkOpenSettings().m_previewSourceGeneration, &error));
+      source->getLinkOpenSettings().m_previewSourceGeneration, -1, &error));
   QCOMPARE(f->buffers->listBuffers().size(), remainingBuffers);
   QVERIFY(f->area->previewWorkspaceForWindow(source->getViewWindowId()).isEmpty());
   QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Replacement")), 30000);
@@ -2583,7 +2825,7 @@ void TestViewAreaTabReuse::outlineMindMapProtectedLifetime() {
           QString error;
           QVERIFY2(f->controller()->openOutlineMindMapPreview(
                        lateBuffer, outline, lateSource->getViewWindowId(),
-                       lateIntent.m_previewSourceGeneration, &error),
+                       lateIntent.m_previewSourceGeneration, -1, &error),
                    qPrintable(error));
           admittedDuringConsent = f->current();
           QVERIFY(admittedDuringConsent && admittedDuringConsent != lateSource);
@@ -2835,8 +3077,8 @@ void TestViewAreaTabReuse::outlineMindMapAdmissionFailure() {
   // below observe the interval before Qt drains native deferred destruction.
   if (failure != QLatin1String("before")) {
     QString error;
-    QVERIFY(!f->controller()->openOutlineMindMapPreview(buffer, outline, sourceId,
-                                                        intent.m_previewSourceGeneration, &error));
+    QVERIFY(!f->controller()->openOutlineMindMapPreview(
+        buffer, outline, sourceId, intent.m_previewSourceGeneration, -1, &error));
     QVERIFY(!error.isEmpty());
   } else {
     QVERIFY(clickOutlineMindMap(source));

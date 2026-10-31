@@ -1217,7 +1217,8 @@ bool ViewAreaController::isOutlineMindMapRequestCurrent(const Buffer2 &p_buffer,
 
 bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer,
                                                    const Outline &p_outline, ID p_sourceId,
-                                                   quint64 p_sourceGeneration, QString *p_error) {
+                                                   quint64 p_sourceGeneration,
+                                                   int p_currentHeadingIndex, QString *p_error) {
   if (p_error) {
     p_error->clear();
   }
@@ -1303,6 +1304,12 @@ bool ViewAreaController::openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer
   settings.m_readOnly = true;
   settings.m_focus = true;
   settings.m_alwaysNewWindow = true;
+  if (p_currentHeadingIndex >= 0 && p_currentHeadingIndex < provenance.m_navigableHeadings.size() &&
+      provenance.m_navigableHeadings.testBit(p_currentHeadingIndex)) {
+    settings.m_anchor = p_currentHeadingIndex == provenance.m_titleHeadingIndex
+                            ? QStringLiteral("root")
+                            : QStringLiteral("h%1").arg(p_currentHeadingIndex);
+  }
   VxCoreError error = VXCORE_OK;
   const auto buffer = buffers->openMemoryBuffer(std::move(source), settings, &error);
   if (!guard) {

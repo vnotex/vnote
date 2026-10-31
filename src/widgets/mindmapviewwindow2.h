@@ -32,6 +32,7 @@ public:
   QString getToolsPanelTitle() const override;
   QWidget *getToolsPanel() override;
   void setMode(ViewWindowMode p_mode) override;
+  void applyFileOpenSettings(const FileOpenSettings &p_settings) override;
   void handleNodeRetargeted(const NodeIdentifier &p_newNodeId) override;
 
 public slots:

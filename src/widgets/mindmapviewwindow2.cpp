@@ -13,6 +13,7 @@
 #include <QPrinter>
 #include <QScopeGuard>
 #include <QSignalBlocker>
+#include <QTimer>
 #include <QToolBar>
 #include <QToolButton>
 
@@ -27,6 +28,7 @@
 #include <core/editorconfig.h>
 #include <core/mindmapeditorconfig.h>
 #include <core/servicelocator.h>
+#include <core/services/bufferservice.h>
 #include <core/sessionconfig.h>
 #include <gui/services/themeservice.h>
 #include <gui/utils/printutils.h>
@@ -73,6 +75,39 @@ QWidget *MindMapViewWindow2::getToolsPanel() {
     panel->setParent(this);
   }
   return panel.data();
+}
+
+void MindMapViewWindow2::applyFileOpenSettings(const FileOpenSettings &p_settings) {
+  if (!isOutlineMindMapPreview() || p_settings.m_anchor.isEmpty()) {
+    return;
+  }
+  const QPointer<MindMapViewWindow2> guard(this);
+  const auto generation = m_generation;
+  QTimer::singleShot(0, this, [guard, generation, nodeId = p_settings.m_anchor] {
+    const auto current = [&] {
+      if (!guard || generation != guard->m_generation || !guard->isOutlineMindMapPreview() ||
+          !guard->m_contentLoaded || !guard->getBuffer().isValid() || !guard->isVisible() ||
+          !guard->isEnabled() || !guard->m_editor->isVisible() || !guard->m_editor->isEnabled()) {
+        return false;
+      }
+      const auto *buffers = guard->getServices().get<BufferService>();
+      return buffers && !buffers->isProtectedLocking();
+    };
+    if (!current()) {
+      return;
+    }
+    auto *view = guard->m_editor->findChild<QGraphicsView *>();
+    if (!view || view->viewport()->width() <= 4 || view->viewport()->height() <= 4) {
+      return;
+    }
+    // Finish the current camera policy on the laid-out viewport. This consumes
+    // pending initial fit/centering, so a late native callback cannot undo reveal.
+    guard->applyZoom(guard->zoomChoice());
+    if (current()) {
+      // Programmatic selection never emits nodeClicked or navigates the source.
+      guard->m_editor->focusNode(nodeId);
+    }
+  });
 }
 
 void MindMapViewWindow2::setupUI() {

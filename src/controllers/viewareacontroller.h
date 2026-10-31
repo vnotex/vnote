@@ -115,9 +115,10 @@ public:
   // a different viewer before attempting to close the captured outgoing tab.
   void openBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings = FileOpenSettings());
 
+  // A negative/unavailable current heading keeps the central node selected.
   bool openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer, const Outline &p_outline,
                                  ID p_sourceId, quint64 p_sourceGeneration,
-                                 QString *p_error = nullptr);
+                                 int p_currentHeadingIndex, QString *p_error = nullptr);
   // False with no error is a non-heading node, unavailable target or cancelled close.
   bool activateOutlineMindMapNode(const Buffer2 &p_buffer, const QString &p_nodeId,
                                   QString *p_error = nullptr);
