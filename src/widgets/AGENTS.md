@@ -226,6 +226,33 @@ entering the existing link policy; same-document anchors scroll in place. Chromi
 `loadStarted` even for rejected link navigation, so allowing that navigation would retire the
 still-visible source bridge and break subsequent links. Genuine reload invalidation is unchanged.
 
+#### Outline mind-map snapshots
+
+Markdown, PDF and Typst expose **Mind Map** immediately before **Outline**. The clicked
+window's published `OutlineProvider` supplies a read-only native map, without saving,
+reparsing or changing source mode. Each activation captures fresh memory content; open maps
+never follow later edits. The document name is the root, heading names are literal, and only
+synthetic placeholder headings are omitted. Missing/invalid outlines never open blank maps.
+
+`ViewAreaController` admits generated `vx://outline-mind-map/` buffers only with their exact
+source window/generation. Its metadata-only provenance roster survives until native view
+destruction and membership release. Every full document view closes its generated dependents
+through normal consent before close, replacement or conversion, including sources nested in an
+existing preview. A live nested source remains current when selecting its map hides that tab;
+hidden ordinary sources and unavailable preview hosts still reject admission.
+
+Generated snapshots use existing source-bound preview workspaces, never detached/main tabs or
+session persistence. Any generated entry, including pending admission or retirement, disables
+**Open in New Tab** for the entire mixed preview. The existing per-tab node-note promotion
+policy remains an additional gate; closing the last generated map restores ordinary promotion.
+
+Unlocked encrypted sources require a current lease during admission. Derived memory is not
+classified as an encrypted file: `ViewWindow2::isContentProtected()` covers its Print/Export
+policy and deferred destruction. Lock All rejects reentrant protected admission, closes
+protected dependencies before consent and again after locking seals admission, then drains
+native destruction before locking keys. Close vetoes keep sources available. Clipboard policy
+is unchanged. Coverage: `test_viewarea_tab_reuse::outlineMindMap*`.
+
 #### Note tab reuse
 
 Settings → Note Management → **Always open notes in new tabs** persists
@@ -682,7 +709,7 @@ secondary actions in a three-dot **Menu** (`menu.svg`):
 | Position | What |
 |---|---|
 | spacer | |
-| `addAdditionalRightToolBarActions()` | Markdown and Typst: Outline; PDF: sidebar, Outline, Find And Replace, Presentation Mode, page and zoom controls |
+| `addAdditionalRightToolBarActions()` | Markdown and Typst: Mind Map, Outline; PDF: sidebar, Mind Map, Outline, Find And Replace, Presentation Mode, page and zoom controls |
 | Find And Replace | Default position; PDF opts out because Find is beside Outline |
 | `addAdditionalViewToolBarActions()` | Text and Markdown: Presentation Mode; Typst: Presentation Mode, page and zoom controls; Mind Map: Presentation Mode, Layout, then zoom controls |
 | Menu | Readable Width and Print, when `isPrintSupported()` |
@@ -707,11 +734,11 @@ its editor is lazily created. History signals, mode changes and status changes r
 connections use the editor as their context so protected-editor teardown disconnects them.
 
 Text keeps **Find And Replace → Presentation Mode → Menu**. Markdown keeps
-**Outline → Find And Replace → Presentation Mode → Menu**. PDF keeps
-**Outline → Find And Replace → Presentation Mode** together before page/zoom controls.
+**Mind Map → Outline → Find And Replace → Presentation Mode → Menu**. PDF keeps
+**Mind Map → Outline → Find And Replace → Presentation Mode** together before page/zoom controls.
 Mind Map adds Lucide Undo and Redo after the left common actions and keeps
 Outline → Find And Replace → Presentation Mode → Layout → Zoom Out → percentage combo → Zoom In → Menu.
-Typst keeps Outline → Find And Replace → Presentation Mode → page navigation →
+Typst keeps Mind Map → Outline → Find And Replace → Presentation Mode → page navigation →
 Zoom Out → percentage combo → Zoom In → Menu on the right of the common spacer, matching PDF.
 
 `ZoomToolBar` owns the shared Typst/mind-map controls: Fit Width, Fit Page, 100%, 125%,

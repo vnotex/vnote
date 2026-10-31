@@ -92,6 +92,10 @@ public:
   void setFileType(const QString &p_fileType) { m_fileType = p_fileType; }
   virtual bool supportsBufferReplacement() const { return false; }
   bool replaceBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings);
+  bool isOutlineMindMapPreview() const { return m_isOutlineMindMapPreview; }
+  bool isContentProtected() const {
+    return m_buffer.isEncrypted() || m_isProtectedOutlineMindMapPreview;
+  }
 
   // Public accessor for the current selection (used by task context to resolve
   // ${selectedText}). Delegates to the protected virtual selectedText().
@@ -328,6 +332,8 @@ public slots:
   void reinterpretWithEncoding(const QString &p_codecName);
 
 signals:
+  void outlineMindMapRequested();
+
   // The destination split's hosting policy is ready before the view is shown.
   void detachedChanged(bool p_detached);
 
@@ -731,6 +737,9 @@ private:
   quint64 m_bufferGeneration = 0;
   // Installed only while this source owns a preview; normal close remains cancellable.
   std::function<bool()> m_closeLinkPreview;
+  std::function<bool()> m_closeOutlineMindMapPreviews;
+  bool m_isOutlineMindMapPreview = false;
+  bool m_isProtectedOutlineMindMapPreview = false;
   // Narrow ancestor scopes, not action enablement, while a nested editor owns focus.
   QVector<QPointer<QShortcut>> m_previewScopedShortcuts;
 

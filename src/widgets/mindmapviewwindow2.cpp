@@ -155,10 +155,10 @@ void MindMapViewWindow2::connectEditorSignals() {
             WidgetUtils::addActionShortcutText(
                 action, getServices().get<ConfigMgr2>()->getCoreConfig().getShortcut(
                             CoreConfig::Shortcut::Export));
-            action->setEnabled(m_contentLoaded);
+            action->setEnabled(m_contentLoaded && !isContentProtected());
             const auto generation = m_generation;
             connect(action, &QAction::triggered, this, [this, generation]() {
-              if (generation == m_generation && m_contentLoaded) {
+              if (generation == m_generation && m_contentLoaded && !isContentProtected()) {
                 emit exportRequested();
               }
             });
@@ -540,7 +540,7 @@ void MindMapViewWindow2::syncEditorFromBuffer() {
 }
 
 void MindMapViewWindow2::handlePrint() {
-  if (getBuffer().isEncrypted()) {
+  if (isContentProtected()) {
     showMessage(tr("Printing encrypted notes is not supported"));
     return;
   }
@@ -562,7 +562,7 @@ void MindMapViewWindow2::handlePrint() {
 
 void MindMapViewWindow2::printDocument(const QSharedPointer<QPrinter> &p_printer) {
   if (!p_printer || m_printing || !m_contentLoaded || !isEnabled() || !m_editor->isEnabled() ||
-      !getBuffer().isValid() || getBuffer().isEncrypted()) {
+      !getBuffer().isValid() || isContentProtected()) {
     return;
   }
   if (p_printer->printRange() == QPrinter::PageRange && p_printer->fromPage() > 1) {
@@ -585,7 +585,7 @@ void MindMapViewWindow2::printDocument(const QSharedPointer<QPrinter> &p_printer
     return;
   }
   if (generation != m_generation || !m_contentLoaded || !isEnabled() || !m_editor->isEnabled() ||
-      !getBuffer().isValid() || getBuffer().isEncrypted()) {
+      !getBuffer().isValid() || isContentProtected()) {
     return;
   }
   QPainter painter;
@@ -600,7 +600,7 @@ void MindMapViewWindow2::printDocument(const QSharedPointer<QPrinter> &p_printer
     return;
   }
   if (generation != m_generation || !m_contentLoaded || !isEnabled() || !m_editor->isEnabled() ||
-      !getBuffer().isValid() || getBuffer().isEncrypted()) {
+      !getBuffer().isValid() || isContentProtected()) {
     p_printer->abort();
     return;
   }

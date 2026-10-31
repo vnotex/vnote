@@ -66,6 +66,9 @@ public:
     // Per-window permission for automatic section numbering in every mode.
     AllowAutoSectionNumber,
 
+    // Snapshot of the current outline in a source-bound preview.
+    MindMap,
+
     // Outline popup button.
     Outline,
 

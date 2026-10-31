@@ -237,6 +237,7 @@ private:
   // the vx://home dashboard, return its window ID; otherwise return 0.
   ID loneHomeWindowId() const;
 
+  void wireOutlineMindMapSignals(ViewWindow2 *p_window);
   void updateScreenVisibility();
 
   ServiceLocator &m_services;

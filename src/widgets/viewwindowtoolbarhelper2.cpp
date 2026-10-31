@@ -312,6 +312,14 @@ QAction *ViewWindowToolBarHelper2::addAction(QToolBar *p_tb, Action p_action,
     addActionShortcut(act, editorConfig.getShortcut(Shortcut::TypeTable), p_shortcutWidget);
     break;
 
+  case Action::MindMap:
+    act = p_tb->addAction(generateIcon(p_services, QStringLiteral("layout_dashboard_editor.svg")),
+                          QObject::tr("Mind Map"));
+    act->setToolTip(QObject::tr("Mind Map"));
+    act->setObjectName(QStringLiteral("outlineMindMapAction"));
+    act->setProperty("iconName", QStringLiteral("layout_dashboard_editor.svg"));
+    break;
+
   case Action::Outline: {
     act = p_tb->addAction(generateIcon(p_services, QStringLiteral("outline_editor.svg")),
                           QObject::tr("Outline"));

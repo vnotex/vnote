@@ -231,9 +231,18 @@ bool ViewWindow2::replaceBuffer(const Buffer2 &p_buffer, const FileOpenSettings 
   const auto finish = qScopeGuard([guard]() {
     if (guard) {
       guard->m_bufferReplacementInProgress = false;
+      emit guard->statusChanged();
     }
   });
+  emit statusChanged();
+  if (!validTransition()) {
+    return false;
+  }
 
+  const auto closeMindMaps = m_closeOutlineMindMapPreviews;
+  if ((closeMindMaps && !closeMindMaps()) || !validTransition()) {
+    return false;
+  }
   // Copy before invoking: successful close may clear the installed callback.
   const auto closePreview = m_closeLinkPreview;
   if ((closePreview && !closePreview()) || !validTransition()) {
@@ -465,6 +474,7 @@ void ViewWindow2::setNoteConversionFrozen(bool p_frozen) {
       comments->setEditable(m_noteConversionCommentsEditable);
     }
   }
+  emit statusChanged();
 }
 
 bool ViewWindow2::aboutToClose(bool p_force) {
@@ -473,6 +483,10 @@ bool ViewWindow2::aboutToClose(bool p_force) {
   }
   QPointer<ViewWindow2> guard(this);
   const QString closingId = m_buffer.id();
+  const auto closeMindMaps = m_closeOutlineMindMapPreviews;
+  if ((closeMindMaps && !closeMindMaps()) || !guard || m_buffer.id() != closingId) {
+    return false;
+  }
   const auto closePreview = m_closeLinkPreview;
   if ((closePreview && !closePreview()) || !guard || m_buffer.id() != closingId) {
     return false;
@@ -754,6 +768,48 @@ QAction *ViewWindow2::addAction(QToolBar *p_toolBar, ViewWindowToolBarHelper2::A
   auto *act = ViewWindowToolBarHelper2::addAction(p_toolBar, p_action, getServices(), this);
 
   switch (p_action) {
+  case ViewWindowToolBarHelper2::MindMap: {
+    const auto eligible = [this]() {
+      const auto *buffers = m_services.get<BufferService>();
+      if (!m_buffer.isValid() || m_buffer.getBuffer().isEmpty() || !buffers ||
+          m_bufferReplacementInProgress || m_noteConversionFrozen || m_contentReplacementFrozen ||
+          buffers->isProtectedLocking() || buffers->isContentReplacementActive(m_buffer.id()) ||
+          (m_mode != ViewWindowMode::Read && m_mode != ViewWindowMode::Edit) ||
+          (m_buffer.isEncrypted() && !m_buffer.acquireProtectedLease())) {
+        return false;
+      }
+      const auto provider = getOutlineProvider();
+      const auto outline = provider ? provider->getOutline() : QSharedPointer<Outline>();
+      if (outline) {
+        for (const auto &heading : outline->m_headings) {
+          if (!heading.m_isPlaceholder) {
+            return true;
+          }
+        }
+      }
+      return false;
+    };
+    const auto refresh = [act, eligible]() { act->setEnabled(eligible()); };
+    // These providers live with the window and are retained across buffer replacement.
+    // Always query their current publication; never retain an outline snapshot here.
+    if (const auto provider = getOutlineProvider()) {
+      connect(provider.data(), &OutlineProvider::outlineChanged, act, refresh);
+    }
+    connect(this, &ViewWindow2::statusChanged, act, refresh);
+    connect(this, &ViewWindow2::modeChanged, act, refresh);
+    if (auto *buffers = m_services.get<BufferService>()) {
+      connect(buffers->asQObject(), SIGNAL(protectedLockingChanged(bool)), this,
+              SIGNAL(statusChanged()));
+    }
+    connect(act, &QAction::triggered, this, [this, eligible]() {
+      if (eligible()) {
+        emit outlineMindMapRequested();
+      }
+    });
+    refresh();
+    break;
+  }
+
   case ViewWindowToolBarHelper2::Save:
     m_saveAction = act;
     act->setEnabled(false);
@@ -1179,6 +1235,7 @@ void ViewWindow2::onContentReplacementStateChanged(const QString &p_bufferId, bo
     m_contentReplacementPosition = capturePositionState();
     setViewFullScreen(false);
     setEnabled(false);
+    emit statusChanged();
     return;
   }
   if (!m_contentReplacementFrozen)

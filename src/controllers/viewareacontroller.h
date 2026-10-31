@@ -1,6 +1,7 @@
 #ifndef VIEWAREACONTROLLER_H
 #define VIEWAREACONTROLLER_H
 
+#include <QHash>
 #include <QJsonObject>
 #include <QMap>
 #include <QObject>
@@ -39,6 +40,7 @@ class HookContext;
 class IViewWindowContent;
 class WorkspaceWrapper;
 struct PreparedNotebookEncryption;
+struct Outline;
 struct NoteEncryptionConversion;
 
 // Transient preparation, never serialized. Captured body bytes stay in memory
@@ -112,6 +114,13 @@ public:
   // a different viewer before attempting to close the captured outgoing tab.
   void openBuffer(const Buffer2 &p_buffer, const FileOpenSettings &p_settings = FileOpenSettings());
 
+  bool openOutlineMindMapPreview(const Buffer2 &p_sourceBuffer, const Outline &p_outline,
+                                 ID p_sourceId, quint64 p_sourceGeneration,
+                                 QString *p_error = nullptr);
+  bool closeOutlineMindMapPreviews(ID p_sourceId);
+  bool isOutlineMindMapPreview(const Buffer2 &p_buffer) const;
+  bool isProtectedOutlineMindMapPreview(const Buffer2 &p_buffer) const;
+
   // Open a widget-based content (e.g., Settings) as a tab in the view area.
   // Creates a virtual buffer, checks for duplicate tabs across all workspaces,
   // and delegates to the view layer to create WidgetViewWindow2.
@@ -153,6 +162,7 @@ public:
   // be promoted. Hosts disable the whole action if any preview tab is ineligible.
   // Programmatic promotion retains its per-tab cancellable move hooks.
   bool canPromotePreviewBuffer(const Buffer2 &p_buffer) const;
+  bool canPromotePreviewWorkspace(const QString &p_workspaceId) const;
   bool openPreviewInNewTabs(const QString &p_previewWorkspaceId,
                             const QString &p_targetWorkspaceId);
   bool closeAllPreviewWorkspaces();
@@ -377,6 +387,23 @@ private:
   QString ensurePreviewWorkspace(ID p_sourceId, quint64 p_generation);
   bool isPreviewRequestCurrent(const FileOpenSettings &p_settings,
                                const QString &p_workspaceId) const;
+  struct OutlineMindMapPreview {
+    ID m_sourceWindowId = 0;
+    quint64 m_sourceGeneration = 0;
+    QString m_sourceBufferId;
+    QString m_bufferId;
+    QString m_workspaceId;
+    ID m_windowId = 0;
+    bool m_protectedSource = false;
+    bool m_admitting = true;
+    bool m_closing = false;
+  };
+  bool isOutlineMindMapSourceCurrent(const OutlineMindMapPreview &p_preview) const;
+  bool isOutlineMindMapRequestCurrent(const Buffer2 &p_buffer,
+                                      const FileOpenSettings &p_settings) const;
+  // Provenance only: never retain the source outline or serialized plaintext.
+  QHash<QString, OutlineMindMapPreview> m_outlineMindMapPreviews;
+
   // Core membership remains authoritative until protected destruction completes.
   void removeEmptyPreviewWorkspace(const QString &p_workspaceId);
   void rejectPreviewWindow(ID p_windowId, const QString &p_bufferId, const QString &p_workspaceId);

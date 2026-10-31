@@ -790,7 +790,7 @@ void MainWindow2::setupNotebookExplorer() {
 
 void MainWindow2::exportNotes(ViewWindow2 *p_source) {
   auto *source = p_source ? p_source : m_viewArea->getCurrentViewWindow();
-  if (source && source->getBuffer().isEncrypted()) {
+  if (source && source->isContentProtected()) {
     QMessageBox::information(this, tr("Export"), tr("Exporting encrypted notes is not supported."));
     return;
   }

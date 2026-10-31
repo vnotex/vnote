@@ -1,5 +1,6 @@
 #include "viewarea2.h"
 
+#include <QAction>
 #include <QApplication>
 #include <QCoreApplication>
 #include <QInputDialog>
@@ -38,6 +39,7 @@
 
 #include "detachedwindow.h"
 #include "linkpreviewoverlay.h"
+#include "outlineprovider.h"
 #include "viewsplit2.h"
 #include "viewwindow2.h"
 #include "widgetviewwindow2.h"
@@ -916,9 +918,16 @@ ViewSplit2 *ViewArea2::splitForWorkspace(const QString &p_workspaceId) const {
 
 bool ViewArea2::isPreviewSourceCurrent(ID p_sourceId, quint64 p_generation) const {
   const auto *source = windowForId(p_sourceId);
-  return source && source->getViewWindowId() == p_sourceId && source->isEnabled() &&
-         source->isVisible() && source->getBufferGeneration() == p_generation &&
-         source->getBuffer().isValid() && !source->getBuffer().getBuffer().isEmpty() &&
+  const auto *owner = source ? owningSplitForWindow(p_sourceId) : nullptr;
+  // Opening a sibling preview selects it and hides a nested source tab. That
+  // tab remains current in its visible source-bound host, not in a hidden or
+  // retired ordinary workspace.
+  const bool available =
+      source && (source->isVisible() || (owner && owner->isPreview() &&
+                                         isPreviewWorkspaceAvailable(owner->getWorkspaceId())));
+  return source && source->getViewWindowId() == p_sourceId && source->isEnabled() && available &&
+         source->getBufferGeneration() == p_generation && source->getBuffer().isValid() &&
+         !source->getBuffer().getBuffer().isEmpty() &&
          (source->getBuffer().isMemoryBacked() || !source->getNodeId().isVirtual()) &&
          !source->isNoteConversionFrozen();
 }
@@ -1066,9 +1075,9 @@ bool ViewArea2::hostPreviewWorkspace(ID p_sourceId, quint64 p_generation,
           [this, p_workspaceId](bool p_visible) {
             m_controller->setPreviewWorkspaceVisible(p_workspaceId, p_visible);
           });
-  const auto refreshPromotion = [this, overlay] {
+  const auto refreshPromotion = [this, overlay, p_workspaceId] {
     const auto *split = overlay->getViewSplit();
-    bool enabled = split->count() > 0;
+    bool enabled = split->count() > 0 && m_controller->canPromotePreviewWorkspace(p_workspaceId);
     for (int i = 0; enabled && i < split->count(); ++i) {
       const auto *window = qobject_cast<ViewWindow2 *>(split->widget(i));
       enabled = window && m_controller->canPromotePreviewBuffer(window->getBuffer());
@@ -1098,7 +1107,12 @@ void ViewArea2::removePreviewWorkspaceHost(const QString &p_workspaceId) {
 bool ViewArea2::closePreviewsForSources(const QVector<ID> &p_sourceIds) {
   const QPointer<ViewArea2> guard(this);
   for (const ID sourceId : p_sourceIds) {
-    const auto *source = windowForId(sourceId);
+    const QPointer<ViewWindow2> source(windowForId(sourceId));
+    const auto closeMindMaps =
+        source ? source->m_closeOutlineMindMapPreviews : std::function<bool()>();
+    if ((closeMindMaps && !closeMindMaps()) || !guard) {
+      return false;
+    }
     const auto closePreview = source ? source->m_closeLinkPreview : std::function<bool()>();
     if (closePreview && !closePreview()) {
       return false;
@@ -1403,6 +1417,38 @@ void ViewArea2::maximizeViewSplit(const QString &p_workspaceId) {
 
 void ViewArea2::distributeViewSplits() { distributeViewSplitWidgets(); }
 
+void ViewArea2::wireOutlineMindMapSignals(ViewWindow2 *p_window) {
+  p_window->m_isOutlineMindMapPreview =
+      m_controller->isOutlineMindMapPreview(p_window->getBuffer());
+  p_window->m_isProtectedOutlineMindMapPreview =
+      m_controller->isProtectedOutlineMindMapPreview(p_window->getBuffer());
+  if (p_window->m_isProtectedOutlineMindMapPreview && p_window->m_printAction) {
+    p_window->m_printAction->setEnabled(false);
+  }
+  const QPointer<ViewArea2> self(this);
+  const QPointer<ViewWindow2> window(p_window);
+  p_window->m_closeOutlineMindMapPreviews = [self, window] {
+    return !self || !window ||
+           self->m_controller->closeOutlineMindMapPreviews(window->getViewWindowId());
+  };
+  connect(p_window, &ViewWindow2::outlineMindMapRequested, this, [self, window] {
+    if (!self || !window) {
+      return;
+    }
+    const ID id = window->getViewWindowId();
+    const auto generation = window->getBufferGeneration();
+    const auto provider = window->getOutlineProvider();
+    const Outline outline =
+        provider && provider->getOutline() ? *provider->getOutline() : Outline();
+    const Buffer2 source = window->getBuffer();
+    QString error;
+    if (!self->m_controller->openOutlineMindMapPreview(source, outline, id, generation, &error) &&
+        self && window && self->isPreviewSourceCurrent(id, generation)) {
+      window->showMessage(error);
+    }
+  });
+}
+
 void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
                            const QString &p_workspaceId, const FileOpenSettings &p_settings) {
   const ID homeId = splitForWorkspace(p_workspaceId) ? loneHomeWindowId() : 0;
@@ -1447,6 +1493,7 @@ void ViewArea2::openBuffer(const Buffer2 &p_buffer, const QString &p_fileType,
       emit viewWindowCreationFailed(p_fileType, p_buffer.nodeId().relativePath);
       return;
     }
+    wireOutlineMindMapSignals(win);
     id = m_nextWindowId++;
     m_windows[id] = win;
     win->setViewWindowId(id);
@@ -1614,6 +1661,7 @@ bool ViewArea2::recreateNoteViews(
       }
       return false;
     }
+    wireOutlineMindMapSignals(newWindow);
     newWindow->setNoteConversionFrozen(true);
     newWindow->setAutoReload(oldWindow->autoReload());
     replacements.append({id, oldWindow, newWindow, owner, oldWindow->capturePositionState()});
@@ -1718,7 +1766,7 @@ bool ViewArea2::closeViewWindow(ID p_windowId, bool p_force) {
       detached->deleteLater();
     }
   };
-  if (win->getBuffer().isEncrypted()) {
+  if (win->isContentProtected() || win->isOutlineMindMapPreview()) {
     connect(win, &QObject::destroyed, this, finishClose);
     win->deleteLater();
   } else {

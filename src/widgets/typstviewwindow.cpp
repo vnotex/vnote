@@ -1343,6 +1343,7 @@ void TypstViewWindow::setupPdfToolBar(QToolBar *p_toolBar) {
 }
 
 void TypstViewWindow::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
+  addAction(p_toolBar, ViewWindowToolBarHelper2::MindMap);
   auto *action = addAction(p_toolBar, ViewWindowToolBarHelper2::Outline);
   auto *button = qobject_cast<QToolButton *>(p_toolBar->widgetForAction(action));
   if (button) {

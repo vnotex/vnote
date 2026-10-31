@@ -202,6 +202,7 @@ void PdfViewWindow2::setupViewerToolBarActions(QToolBar *p_toolBar) {
         return ViewWindowToolBarHelper2::generateIcon(services, p_iconName);
       },
       [this, p_toolBar]() {
+        addAction(p_toolBar, ViewWindowToolBarHelper2::MindMap);
         // Outline popup button: wire it to this window's outline provider. It
         // needs the ServiceLocator and the provider, which is exactly why
         // PdfViewerToolBar takes a hook rather than building it itself.

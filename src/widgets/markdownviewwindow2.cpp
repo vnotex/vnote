@@ -521,6 +521,7 @@ void MarkdownViewWindow2::setupToolBar() {
 }
 
 void MarkdownViewWindow2::addAdditionalRightToolBarActions(QToolBar *p_toolBar) {
+  addAction(p_toolBar, ViewWindowToolBarHelper2::MindMap);
   // Keep Outline directly on the toolbar.
   {
     auto *outlineAct = addAction(p_toolBar, ViewWindowToolBarHelper2::Outline);
