@@ -5,6 +5,7 @@
 #include <QFileInfo>
 #include <QJsonArray>
 #include <QJsonObject>
+#include <QScopeGuard>
 #include <QSignalSpy>
 
 #include <vxcore/notebook_json_keys.h>
@@ -12,8 +13,12 @@
 
 #include <controllers/firstruncontroller.h>
 #include <controllers/newnotebookcontroller.h>
+#include <core/configmgr2.h>
+#include <core/error.h>
 #include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/sessionconfig.h>
 #include <temp_dir_fixture.h>
 
 using namespace vnotex;
@@ -37,6 +42,8 @@ private slots:
   void test_targetEmptyDir_create();
   void test_targetIsFile_skip();
   void test_doubleTrigger_single();
+  void test_quickAccessInitialization_data();
+  void test_quickAccessInitialization();
 
 private:
   VxCoreContextHandle m_context = nullptr;
@@ -214,6 +221,127 @@ void TestFirstRunController::test_doubleTrigger_single() {
 
   QCOMPARE(m_service->listNotebooks().size(), 1);
   QCOMPARE(spy.count(), 1);
+}
+
+void TestFirstRunController::test_quickAccessInitialization_data() {
+  QTest::addColumn<bool>("existingItem");
+  QTest::addColumn<bool>("collision");
+  QTest::addColumn<bool>("unreadableSession");
+  QTest::newRow("first-run") << false << false << false;
+  QTest::newRow("existing-quick-access") << true << false << false;
+  QTest::newRow("creation-skipped") << false << true << false;
+  QTest::newRow("unreadable-session") << false << false << true;
+}
+
+void TestFirstRunController::test_quickAccessInitialization() {
+  QFETCH(bool, existingItem);
+  QFETCH(bool, collision);
+  QFETCH(bool, unreadableSession);
+
+  ConfigCoreService configService(m_context);
+  const auto savedMain = configService.getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
+  const QString sessionPath =
+      QDir(configService.getDataPath(DataLocation::Local)).filePath(QStringLiteral("session.json"));
+  QFile sessionFile(sessionPath);
+  const bool sessionExisted = sessionFile.exists();
+  QByteArray savedSession;
+  if (sessionExisted) {
+    QVERIFY(sessionFile.open(QIODevice::ReadOnly));
+    savedSession = sessionFile.readAll();
+    sessionFile.close();
+  }
+  const auto restore = qScopeGuard([&] {
+    configService.updateConfigByName(DataLocation::App, QStringLiteral("vnotex"), savedMain);
+    if (sessionExisted) {
+      if (sessionFile.open(QIODevice::WriteOnly | QIODevice::Truncate)) {
+        sessionFile.write(savedSession);
+        sessionFile.close();
+      }
+    } else {
+      sessionFile.remove();
+    }
+  });
+  QVERIFY(configService
+              .updateConfigByName(
+                  DataLocation::App, QStringLiteral("vnotex"),
+                  {{QStringLiteral("metadata"),
+                    QJsonObject{{QStringLiteral("version"), ConfigMgr2::getApplicationVersion()}}}})
+              .isOk());
+
+  QJsonArray expectedItems;
+  if (existingItem) {
+    SessionConfig::QuickAccessItem item;
+    item.m_path = m_tempDir.createFile(QStringLiteral("existing-quick-access.md"), "keep");
+    item.m_openMode = QuickAccessOpenMode::Read;
+    item.m_uuid = QStringLiteral("aef273cb-65cb-458b-985a-5aa6c5415a59");
+    expectedItems.append(item.toJson());
+    QVERIFY(configService
+                .updateConfigByName(DataLocation::Local, QStringLiteral("session"),
+                                    {{QStringLiteral("core"),
+                                      QJsonObject{{QStringLiteral("quickAccess"), expectedItems}}}})
+                .isOk());
+  } else if (unreadableSession) {
+    QVERIFY(sessionFile.open(QIODevice::WriteOnly | QIODevice::Truncate));
+    QCOMPARE(sessionFile.write("{broken session"), qint64(15));
+    sessionFile.close();
+  } else if (sessionFile.exists()) {
+    QVERIFY(sessionFile.remove());
+  }
+
+  {
+    ConfigMgr2 configMgr(&configService);
+    configMgr.init();
+    ServiceLocator services;
+    services.registerService<ConfigMgr2>(&configMgr);
+    services.registerService<ConfigCoreService>(&configService);
+    services.registerService<NotebookCoreService>(m_service);
+
+    const QString relativeParent =
+        QStringLiteral("quick-access-%1").arg(QString::fromLatin1(QTest::currentDataTag()));
+    const QString parent = m_tempDir.createDir(relativeParent);
+    if (collision) {
+      m_tempDir.createDir(relativeParent + QStringLiteral("/vnote_notebook"));
+      m_tempDir.createFile(relativeParent + QStringLiteral("/vnote_notebook/keep"), "keep");
+    }
+    FirstRunController controller(services);
+    controller.setParentDirOverrideForTesting(parent);
+    controller.setSourceDirOverrideForTesting(QStringLiteral(DEFAULT_NOTEBOOK_FIXTURE_DIR));
+    QSignalSpy spy(&controller, &FirstRunController::defaultNotebookCreated);
+    QCOMPARE(controller.createDefaultNotebook(), !collision);
+    QCOMPARE(spy.count(), collision ? 0 : 1);
+
+    if (!collision && !existingItem && !unreadableSession) {
+      const QString notebookId = spy.first().first().toString();
+      SessionConfig::QuickAccessItem item;
+      item.m_path = m_service->buildAbsolutePath(notebookId, QStringLiteral("all-in-one.md"));
+      item.m_uuid = m_service->getFileInfo(notebookId, QStringLiteral("all-in-one.md"))
+                        .value(QLatin1String(vxcore::kJsonKeyId))
+                        .toString();
+      QVERIFY(QFileInfo(item.m_path).isFile());
+      QVERIFY(!item.m_uuid.isEmpty());
+      expectedItems.append(item.toJson());
+    }
+    QCOMPARE(configMgr.getSessionConfig()
+                 .toJson()
+                 .value(QStringLiteral("core"))
+                 .toObject()
+                 .value(QStringLiteral("quickAccess"))
+                 .toArray(),
+             expectedItems);
+  }
+
+  if (unreadableSession) {
+    QVERIFY(sessionFile.open(QIODevice::ReadOnly));
+    QCOMPARE(sessionFile.readAll(), QByteArray("{broken session"));
+    sessionFile.close();
+  } else {
+    QCOMPARE(configService.getConfigByName(DataLocation::Local, QStringLiteral("session"))
+                 .value(QStringLiteral("core"))
+                 .toObject()
+                 .value(QStringLiteral("quickAccess"))
+                 .toArray(),
+             expectedItems);
+  }
 }
 
 } // namespace tests

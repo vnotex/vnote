@@ -2,7 +2,10 @@
 ## Unreleased
 * Preserve preformatted and class-hinted HTML code blocks when pasting Markdown, including indentation, language hints and embedded fences, without copying code-block controls or swallowing surrounding prose
 * Update bundled Turndown to 7.2.4 for improved link escaping and ordered-list indentation, preserving VNote's custom Markdown paste rules
-* Use `Documents/vnote_notebook` for new first-run notebooks and new quick-note schemes; existing notebook folders and saved scheme paths remain unchanged
+* Add `all-in-one.md` to the default notebook and pin it to Quick Access after first-run creation when Quick Access is empty
+* Add the default **Quick Note in Current Notebook** scheme, creating `Quick Notes/quick_note_%da%.md` within the selected notebook; existing installations are not migrated
+* Capitalize the bundled Chinese welcome note filename as `Welcome_zh_CN.md`
+* Use `Documents/vnote_notebook` for new first-run notebooks and manually added quick-note schemes; existing notebook folders and saved scheme paths remain unchanged
 * Establish native host activation and active-writer focus in memory-document CI scenarios before shared-split edits and Markdown scratch previews
 * Fix plain-text editor test linking with the shared link-confirmation dependencies
 * Fix native toolbar-popup overflow activation and restore keyboard focus after owned dialogs

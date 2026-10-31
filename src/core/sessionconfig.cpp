@@ -113,7 +113,12 @@ bool SessionConfig::ExternalProgram::isSystemProgram() const {
   return m_name.compare(c_systemProgramName, Qt::CaseInsensitive) == 0;
 }
 
-SessionConfig::SessionConfig(IConfigMgr *p_mgr) : IConfig(p_mgr, nullptr) {}
+SessionConfig::SessionConfig(IConfigMgr *p_mgr)
+    : IConfig(p_mgr, nullptr), m_quickNoteSchemes{{QStringLiteral("Quick Note in Current Notebook"),
+                                                   QStringLiteral("Quick Notes"),
+                                                   QStringLiteral("quick_note_%da%.md"),
+                                                   {},
+                                                   false}} {}
 
 SessionConfig::~SessionConfig() {}
 

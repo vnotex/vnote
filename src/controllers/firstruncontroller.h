@@ -31,6 +31,8 @@ public:
   // success (and emits defaultNotebookCreated). Skips (returns false, no
   // signal) when the target "vnote_notebook" path is an existing file or a
   // non-empty directory, or when the copy/open fails.
+  // On success, pins all-in-one.md when Quick Access is empty and the session
+  // can be read (or is absent), before emitting defaultNotebookCreated.
   bool createDefaultNotebook();
 
   // Override the default notebook parent directory. For testing only,
@@ -49,6 +51,8 @@ signals:
 
 private:
   void onMainWindowAfterStart();
+
+  void initializeQuickAccess(const QString &p_notebookId);
 
   // Recursively clear the read-only bit on every file under p_dirPath, adding
   // owner/user write permission. Files copied out of a Qt .rcc inherit the

@@ -128,7 +128,11 @@ older schemes. Include this flag in scheme equality: a toggle-only edit must per
 Tray, toolbar, keyboard and tab-bar requests share the picker and honor the selected
 scheme; they do not override its destination. Quick notes still open in Edit mode.
 
-New schemes use `ConfigMgr2::getDefaultNotebookPath()`, shared with `FirstRunController`:
+Fresh `SessionConfig` instances start with **Quick Note in Current Notebook**, using the
+notebook-relative folder `Quick Notes` and filename `quick_note_%da%.md`, with no template.
+This is a constructor default only: loading saved schemes replaces it, without migration.
+
+Manually added schemes use `ConfigMgr2::getDefaultNotebookPath()`, shared with `FirstRunController`:
 `vnote_notebook` under Qt's writable Documents location, without an explicit home-folder fallback.
 The helper only calculates the path; startup creation still requires a version change
 and zero open notebooks. Existing schemes, including an explicitly empty Folder, are

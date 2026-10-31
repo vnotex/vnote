@@ -12,9 +12,12 @@
 #include <core/hookcontext.h>
 #include <core/hooknames.h>
 #include <core/servicelocator.h>
+#include <core/services/configcoreservice.h>
 #include <core/services/hookmanager.h>
 #include <core/services/notebookcoreservice.h>
+#include <core/sessionconfig.h>
 #include <utils/fileutils2.h>
+#include <vxcore/notebook_json_keys.h>
 
 using namespace vnotex;
 
@@ -144,8 +147,44 @@ bool FirstRunController::createDefaultNotebook() {
     return false;
   }
 
+  initializeQuickAccess(notebookId);
   emit defaultNotebookCreated(notebookId);
   return true;
+}
+
+void FirstRunController::initializeQuickAccess(const QString &p_notebookId) {
+  auto *cfg = m_services.get<ConfigMgr2>();
+  if (!cfg || !cfg->getSessionConfig().getQuickAccessItems().isEmpty()) {
+    return;
+  }
+
+  if (!cfg->isSessionConfigLoaded()) {
+    // A missing session is safe to initialize; an unreadable one is not.
+    auto *configService = m_services.get<ConfigCoreService>();
+    if (!configService) {
+      return;
+    }
+    bool readOk = false;
+    configService->getConfigByName(DataLocation::Local, QStringLiteral("session"), &readOk);
+    if (!readOk) {
+      return;
+    }
+  }
+
+  auto *nb = m_services.get<NotebookCoreService>();
+  const QString noteName = QStringLiteral("all-in-one.md");
+  VxCoreError error = VXCORE_OK;
+  const auto fileInfo = nb->getFileInfo(p_notebookId, noteName, &error);
+  if (error != VXCORE_OK) {
+    return;
+  }
+  SessionConfig::QuickAccessItem item;
+  item.m_path = nb->buildAbsolutePath(p_notebookId, noteName);
+  item.m_uuid = fileInfo.value(QLatin1String(vxcore::kJsonKeyId)).toString();
+  if (item.m_path.isEmpty() || item.m_uuid.isEmpty()) {
+    return;
+  }
+  cfg->getSessionConfig().setQuickAccessItems({item});
 }
 
 void FirstRunController::onMainWindowAfterStart() {
