@@ -900,6 +900,8 @@ private slots:
   void previewMindMapNoteOwnership();
   void outlineMindMapPreview_data();
   void outlineMindMapPreview();
+  void outlineMindMapTitle_data();
+  void outlineMindMapTitle();
   void outlineMindMapBranchColors();
   void outlineMindMapSnapshotAndLifecycle();
   void outlineMindMapReadOnlyAndPromotion();
@@ -1162,6 +1164,107 @@ void TestViewAreaTabReuse::outlineMindMapPreview() {
   QCOMPARE(source->getLatestContent(), sourceBytes);
 }
 
+void TestViewAreaTabReuse::outlineMindMapTitle_data() {
+  QTest::addColumn<QStringList>("topics");
+  QTest::addColumn<QList<int>>("levels");
+  QTest::addColumn<QList<int>>("placeholders");
+  QTest::addColumn<int>("promoted");
+  QTest::addColumn<QJsonObject>("children");
+  QTest::newRow("leading-title") << QStringList{QString::fromUtf8("Title 世界 \"<&>"), "Alpha",
+                                                "Deep", "Beta"}
+                                 << QList<int>{1, 2, 4, 2} << QList<int>{} << 0
+                                 << QJsonObject{{"root", QJsonArray{"h1", "h3"}},
+                                                {"h1", QJsonArray{"h2"}}};
+  QTest::newRow("title-only") << QStringList{"Only title"} << QList<int>{1} << QList<int>{} << 0
+                              << QJsonObject{{"root", QJsonArray{}}};
+  QTest::newRow("multiple-h1") << QStringList{"First", "Child", "Second"} << QList<int>{1, 2, 1}
+                               << QList<int>{} << -1
+                               << QJsonObject{{"root", QJsonArray{"h0", "h2"}},
+                                              {"h0", QJsonArray{"h1"}}};
+  QTest::newRow("h1-after-heading")
+      << QStringList{"Before", "Title", "Child"} << QList<int>{2, 1, 2} << QList<int>{} << -1
+      << QJsonObject{{"root", QJsonArray{"h0", "h1"}}, {"h1", QJsonArray{"h2"}}};
+  QTest::newRow("no-h1") << QStringList{"Alpha", "Deep", "Beta"} << QList<int>{2, 4, 2}
+                         << QList<int>{} << -1
+                         << QJsonObject{{"root", QJsonArray{"h0", "h2"}}, {"h0", QJsonArray{"h1"}}};
+  QTest::newRow("leading-placeholder")
+      << QStringList{"Synthetic", "Title", "Child"} << QList<int>{1, 1, 2} << QList<int>{0} << 1
+      << QJsonObject{{"root", QJsonArray{"h2"}}};
+  QTest::newRow("placeholder-resets-ancestor")
+      << QStringList{"Title", "Alpha", "Synthetic", "Beta", "Deep"} << QList<int>{1, 2, 1, 2, 3}
+      << QList<int>{2} << 0
+      << QJsonObject{{"root", QJsonArray{"h1", "h3"}}, {"h3", QJsonArray{"h4"}}};
+  QTest::newRow("empty-title") << QStringList{QString(), "Child"} << QList<int>{1, 2}
+                               << QList<int>{} << 0 << QJsonObject{{"root", QJsonArray{"h1"}}};
+  QTest::newRow("literal-empty-marker")
+      << QStringList{"[EMPTY]", "Child"} << QList<int>{1, 2} << QList<int>{} << 0
+      << QJsonObject{{"root", QJsonArray{"h1"}}};
+  QTest::newRow("numbered-title") << QStringList{"1. Title", "Child"} << QList<int>{1, 2}
+                                  << QList<int>{} << 0 << QJsonObject{{"root", QJsonArray{"h1"}}};
+}
+
+void TestViewAreaTabReuse::outlineMindMapTitle() {
+  QFETCH(QStringList, topics);
+  QFETCH(QList<int>, levels);
+  QFETCH(QList<int>, placeholders);
+  QFETCH(int, promoted);
+  QFETCH(QJsonObject, children);
+  QVERIFY(f->create(QStringLiteral("title.md"), "# Source\n"));
+  const auto buffer = f->open(QStringLiteral("title.md"));
+  QVERIFY(buffer.isValid());
+  QPointer<ViewWindow2> source(f->current());
+  QTRY_VERIFY_WITH_TIMEOUT(hasOutlineTopic(source, QStringLiteral("Source")), 30000);
+  auto outline = QSharedPointer<Outline>::create();
+  for (int index = 0; index < topics.size(); ++index) {
+    Outline::Heading heading(topics[index], levels[index]);
+    heading.m_isPlaceholder = placeholders.contains(index);
+    outline->m_headings.append(heading);
+  }
+  source->getOutlineProvider()->setOutline(outline);
+  QVERIFY(clickOutlineMindMap(source));
+  QPointer<ViewWindow2> generated(f->current());
+  QVERIFY(generated && generated != source && generated->isOutlineMindMapPreview());
+  auto *map = generated->findChild<MindMapEditor *>();
+  QVERIFY(map && map->isReadOnly());
+  QCOMPARE(mapNode(map, QStringLiteral("root")).value(QStringLiteral("topic")).toString(),
+           promoted >= 0 ? topics[promoted] : buffer.displayName());
+  QCOMPARE(generated->getBuffer().displayName(), QStringLiteral("Mind Map: title.md"));
+  QCOMPARE(map->outline().size(), topics.size() - placeholders.size() + 1 - (promoted >= 0));
+  const auto palette = MindMapEditor::automaticBranchColors();
+  QSet<QString> colors;
+  QStringList rootChildren;
+  for (const auto &value : children.value(QStringLiteral("root")).toArray())
+    rootChildren.append(value.toString());
+  QCOMPARE(mapChildren(map, QStringLiteral("root")), rootChildren);
+  QVERIFY(!mapNode(map, QStringLiteral("root"))
+               .value(QStringLiteral("style"))
+               .toObject()
+               .contains(QStringLiteral("branchColor")));
+  for (int index = 0; index < topics.size(); ++index) {
+    const auto id = QStringLiteral("h%1").arg(index);
+    const auto node = mapNode(map, id);
+    if (index == promoted || placeholders.contains(index)) {
+      QVERIFY(node.isEmpty());
+      continue;
+    }
+    QCOMPARE(node.value(QStringLiteral("topic")).toString(), topics[index]);
+    QStringList expectedChildren;
+    for (const auto &value : children.value(id).toArray())
+      expectedChildren.append(value.toString());
+    QCOMPARE(mapChildren(map, id), expectedChildren);
+    const auto style = node.value(QStringLiteral("style")).toObject();
+    if (rootChildren.contains(id)) {
+      const auto color = style.value(QStringLiteral("branchColor")).toString();
+      QVERIFY(palette.contains(color) && !colors.contains(color));
+      colors.insert(color);
+    } else {
+      QVERIFY(!style.contains(QStringLiteral("branchColor")));
+    }
+  }
+  QVERIFY(!generated->isModified() && !map->isModified());
+  QCOMPARE(source->getLatestContent(), QStringLiteral("# Source\n"));
+}
+
 void TestViewAreaTabReuse::outlineMindMapBranchColors() {
   f->config->getEditorConfig().getMindMapEditorConfig().setAutoRandomBranchColor(false);
   QVERIFY(f->create(QStringLiteral("colors.md"), "# Source\n"));
@@ -1249,7 +1352,7 @@ void TestViewAreaTabReuse::outlineMindMapSnapshotAndLifecycle() {
   QVERIFY(secondBuffer.id() != firstBuffer.id());
   map = second->findChild<MindMapEditor *>();
   QVERIFY(map);
-  QCOMPARE(mapNode(map, QStringLiteral("h0")).value(QStringLiteral("topic")).toString(),
+  QCOMPARE(mapNode(map, QStringLiteral("root")).value(QStringLiteral("topic")).toString(),
            QStringLiteral("Changed"));
   QVERIFY(f->controller()->closePreviewWorkspace(f->workspace()));
   QTRY_VERIFY(second.isNull());

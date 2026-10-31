@@ -232,8 +232,13 @@ Markdown, PDF and Typst expose **Mind Map** (Lucide Brain, `brain_editor.svg`) i
 before **Outline**. The clicked
 window's published `OutlineProvider` supplies a read-only native map, without saving,
 reparsing or changing source mode. Each activation captures fresh memory content; open maps
-never follow later edits. The document name is the root, heading names are literal, and only
-synthetic placeholder headings are omitted. Missing/invalid outlines never open blank maps.
+never follow later edits. When the first real outline heading is the only H1, its literal
+name becomes the central topic without a duplicate heading node; its children become root
+branches. Otherwise the document name remains central. This uses outline order, not the
+position of preceding prose. A title-only outline produces a single central node. Other
+heading IDs and the document-based preview tab name remain unchanged. Synthetic placeholders
+are omitted; real empty/numbered/Unicode names remain literal. Missing/invalid outlines never
+open blank maps.
 
 Real document-root children receive automatic colors from m3's public branch palette before
 loading the read-only snapshot. Colors are distinct until the palette is exhausted; descendants

@@ -81,13 +81,12 @@ QByteArray outlineMindMapContent(const QString &p_title, const Outline &p_outlin
     int level = 0;
     QString branchColor;
   };
-  auto branchColors = m3::qt::MindMapEditor::automaticBranchColors();
-  auto unusedColors = branchColors.size();
   QVector<Node> nodes;
   QVector<qsizetype> ancestors;
   nodes.reserve(p_outline.m_headings.size() + 1);
   ancestors.reserve(p_outline.m_headings.size());
   nodes.append({QStringLiteral("root"), p_title, {}, 0});
+  qsizetype headingOneCount = 0;
   for (qsizetype index = 0; index < p_outline.m_headings.size(); ++index) {
     const auto &heading = p_outline.m_headings[index];
     if (heading.m_level <= 0 || heading.m_name.contains(QChar::Null)) {
@@ -99,25 +98,46 @@ QByteArray outlineMindMapContent(const QString &p_title, const Outline &p_outlin
     if (heading.m_isPlaceholder) {
       continue;
     }
+    if (heading.m_level == 1) {
+      ++headingOneCount;
+    }
     const qsizetype parent = ancestors.isEmpty() ? 0 : ancestors.back();
     const qsizetype child = nodes.size();
     nodes[parent].children.append(child);
     nodes.append({QStringLiteral("h%1").arg(index), heading.m_name, {}, heading.m_level});
-    if (parent == 0) {
-      const auto picked = QRandomGenerator::global()->bounded(
-          int(unusedColors > 0 ? unusedColors : branchColors.size()));
-      nodes.last().branchColor = branchColors[picked];
-      if (unusedColors > 0) {
-        branchColors.swapItemsAt(picked, --unusedColors);
-      }
-    }
     ancestors.append(child);
   }
   if (nodes.size() == 1) {
     return fail(ViewAreaController::tr("No outline is available for a mind map"));
   }
+  const bool promoteTitle = headingOneCount == 1 && nodes[1].level == 1;
+  if (promoteTitle) {
+    nodes[0].topic = std::move(nodes[1].topic);
+    auto children = std::move(nodes[1].children);
+    // A synthetic low-level row can have popped the title ancestor. Retain
+    // those later document-root branches after the title's own children.
+    children.reserve(children.size() + nodes[0].children.size() - 1);
+    for (qsizetype index = 1; index < nodes[0].children.size(); ++index) {
+      children.append(nodes[0].children[index]);
+    }
+    nodes[0].children = std::move(children);
+  }
+  auto branchColors = m3::qt::MindMapEditor::automaticBranchColors();
+  auto unusedColors = branchColors.size();
+  for (const auto child : std::as_const(nodes[0].children)) {
+    const auto picked = QRandomGenerator::global()->bounded(
+        int(unusedColors > 0 ? unusedColors : branchColors.size()));
+    nodes[child].branchColor = branchColors[picked];
+    if (unusedColors > 0) {
+      branchColors.swapItemsAt(picked, --unusedColors);
+    }
+  }
   QJsonArray serialized;
-  for (const auto &node : std::as_const(nodes)) {
+  for (qsizetype index = 0; index < nodes.size(); ++index) {
+    if (promoteTitle && index == 1) {
+      continue;
+    }
+    const auto &node = nodes[index];
     QJsonArray children;
     for (const auto child : node.children) {
       children.append(nodes[child].id);
