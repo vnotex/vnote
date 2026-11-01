@@ -2,6 +2,7 @@
 ## Unreleased
 * Preserve preformatted and class-hinted HTML code blocks when pasting Markdown, including indentation, language hints and embedded fences, without copying code-block controls or swallowing surrounding prose
 * Update bundled Turndown to 7.2.4 for improved link escaping and ordered-list indentation, preserving VNote's custom Markdown paste rules
+* Fix the clipped Tags label in mind-map node properties when keyboard shortcut underlines are visible
 * Reopen an existing notebook at `Documents/vnote_notebook` during first-run setup instead of skipping it; never replace existing contents with bundled files when opening fails
 * Add `all-in-one.md` to the default notebook and pin it to Quick Access after first-run setup when Quick Access is empty
 * Add the default **Quick Note in Current Notebook** scheme, creating `Quick Notes/quick_note_%da%.md` within the selected notebook; existing installations are not migrated
