@@ -379,8 +379,8 @@ void MainWindow2::setupUI() {
   m_recycleBinController->startAutomaticCleanup();
   // First-run experience: construct BEFORE kickOffPostInit() so the controller's
   // MainWindowAfterStart subscription (priority 5) is registered before the hook
-  // fires. Surface the created notebook via a queued connection so the explorer
-  // refresh runs after the synchronous hook-dispatch chain completes.
+  // fires. Surface the created or reopened notebook via a queued connection so
+  // the explorer refresh runs after the synchronous hook-dispatch chain completes.
   m_firstRunController = new FirstRunController(m_serviceLocator, this);
   connect(
       m_firstRunController, &FirstRunController::defaultNotebookCreated, this,

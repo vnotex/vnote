@@ -84,56 +84,52 @@ void FirstRunController::clearReadOnlyRecursively(const QString &p_dirPath) {
 bool FirstRunController::createDefaultNotebook() {
   const QString root = ConfigMgr2::getDefaultNotebookPath(m_parentDirOverride);
 
-  // Collision guard: skip when the target path is an existing file or a
-  // non-empty directory. An empty existing dir (or a non-existent path) is
-  // allowed to proceed; the bundled notebook is copied INTO root below.
-  // NOTE: PathUtils::isEmptyDir() returns TRUE for a non-existent path, so it
-  // is the wrong primitive here -- use QFileInfo/QDir directly.
-  QFileInfo fi(root);
-  if (fi.exists()) {
-    if (fi.isFile() || (fi.isDir() && !QDir(root).isEmpty())) {
-      qInfo() << "FirstRunController: skip FRE, target not empty:" << root;
-      return false; // no signal
-    }
-    // empty existing dir is allowed to proceed
+  const QFileInfo fi(root);
+  if (fi.exists() && !fi.isDir()) {
+    qInfo() << "FirstRunController: skip FRE, target is not a directory:" << root;
+    return false;
   }
 
-  // Resolve the bundled-notebook source. In production it lives inside the
-  // separately-packaged vnote_extra.rcc (mounted via the "app:" prefix); tests
-  // point at a writable on-disk fixture and skip the rcc entirely.
-  QString sourceDir = m_sourceDirOverride;
-  const QString extraRcc(QStringLiteral("app:vnote_extra.rcc"));
-  bool rccRegistered = false;
-  auto rccCleanup = qScopeGuard([&extraRcc, &rccRegistered] {
-    if (rccRegistered) {
-      QResource::unregisterResource(extraRcc);
+  // Only materialize a new notebook into an absent or empty destination.
+  // Existing content is opened below without copying or changing permissions.
+  if (!fi.exists() || QDir(root).isEmpty()) {
+    // Resolve the bundled-notebook source. In production it lives inside the
+    // separately-packaged vnote_extra.rcc (mounted via the "app:" prefix); tests
+    // point at a writable on-disk fixture and skip the rcc entirely.
+    QString sourceDir = m_sourceDirOverride;
+    const QString extraRcc(QStringLiteral("app:vnote_extra.rcc"));
+    bool rccRegistered = false;
+    auto rccCleanup = qScopeGuard([&extraRcc, &rccRegistered] {
+      if (rccRegistered) {
+        QResource::unregisterResource(extraRcc);
+      }
+    });
+    if (sourceDir.isEmpty()) {
+      if (!QResource::registerResource(extraRcc)) {
+        qWarning() << "FirstRunController: failed to register resource" << extraRcc;
+        return false;
+      }
+      rccRegistered = true;
+      sourceDir = QStringLiteral(":/vnotex/data/extra/default-notebook");
     }
-  });
-  if (sourceDir.isEmpty()) {
-    if (!QResource::registerResource(extraRcc)) {
-      qWarning() << "FirstRunController: failed to register resource" << extraRcc;
+
+    if (!QFileInfo::exists(sourceDir)) {
+      qWarning() << "FirstRunController: bundled notebook source missing:" << sourceDir;
       return false;
     }
-    rccRegistered = true;
-    sourceDir = QStringLiteral(":/vnotex/data/extra/default-notebook");
+
+    // Copy the bundled notebook tree into the target root.
+    const Error copyErr = FileUtils2::copyDir(sourceDir, root);
+    if (copyErr) {
+      qWarning() << "FirstRunController: failed to copy bundled notebook:" << copyErr.what();
+      return false;
+    }
+
+    // Files copied from the rcc are read-only; make them writable on disk.
+    clearReadOnlyRecursively(root);
   }
 
-  if (!QFileInfo::exists(sourceDir)) {
-    qWarning() << "FirstRunController: bundled notebook source missing:" << sourceDir;
-    return false;
-  }
-
-  // Copy the bundled notebook tree into the target root.
-  const Error copyErr = FileUtils2::copyDir(sourceDir, root);
-  if (copyErr) {
-    qWarning() << "FirstRunController: failed to copy bundled notebook:" << copyErr.what();
-    return false;
-  }
-
-  // Files copied from the rcc are read-only; make them writable on disk.
-  clearReadOnlyRecursively(root);
-
-  // Open the freshly-materialized notebook (fires NotebookAfterOpen).
+  // Open the new or existing notebook (fires NotebookAfterOpen).
   auto *nb = m_services.get<NotebookCoreService>();
   if (!nb) {
     qWarning()

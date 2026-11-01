@@ -427,10 +427,11 @@ instance. **It skips locking and IPC, not data isolation.** Never launch the age
 against the normal profile or real notebooks. Create a fresh portable copy for each run; its
 existing `config/` folder redirects config, session and WebEngine data to that copy.
 
-Before using this recipe, check the OS Documents folder's `vnote_notebook` path. If it is missing or
-an empty directory, first-run setup can create/open a bundled notebook there, **outside the portable
-copy**; use a disposable OS account instead. Do not edit, empty, or delete the user's directory to
-satisfy the collision guard. Continue testing only the scratch file in the disposable copy.
+Run this fresh-profile recipe in a disposable OS account. First-run setup can create a notebook
+in Documents/`vnote_notebook` or reopen an existing notebook there, **outside the portable copy**.
+A non-empty destination is not an isolation guard: a valid user notebook will be opened.
+Do not edit, empty, rename, or delete the user's directory to avoid that behavior. Continue testing
+only the scratch file in the disposable copy.
 
 Run from the repository root after building `vnote`. Set `$build` to the build you just verified;
 the example derives the matching Qt runtime from its CMake cache, rather than mixing Qt versions.

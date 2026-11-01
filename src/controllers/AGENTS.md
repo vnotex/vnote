@@ -10,14 +10,17 @@ See [MVC Example](../AGENTS.md#mvc-example-notebook-node-operations) for the Con
 
 ## First-run notebook
 
-`FirstRunController` creates the bundled notebook only on a version change with zero open
-notebooks, and never overwrites a non-empty target. After opening it successfully, empty
+`FirstRunController` creates or reopens the default notebook only on a version change with zero
+open notebooks. Missing or empty destinations receive the bundled notebook; an existing non-empty
+directory is opened directly, without copying files or changing their permissions. Failed opens
+never fall back to copying, and non-directory targets are rejected. Both successful paths emit
+`defaultNotebookCreated`, which reloads the explorer and selects the notebook. Before that signal,
 Quick Access is initialized with `all-in-one.md` using the notebook service's absolute path
-and node UUID, through `SessionConfig::setQuickAccessItems()`, before the created signal.
+and node UUID, through `SessionConfig::setQuickAccessItems()`, only when Quick Access is empty.
 Existing entries are untouched. An unloaded session must be checked through `ConfigCoreService`
 to distinguish absent from unreadable; an unreadable session or unavailable note is not pinned.
-Skipped or failed creation never initializes Quick Access. Existing notebook contents are
-not migrated when the bundled notes change.
+Skipped or failed setup never initializes Quick Access. Reopened notebooks are not given missing
+bundled notes, and their existing contents are not migrated when the bundled notes change.
 
 ## Explicit file-open destinations
 

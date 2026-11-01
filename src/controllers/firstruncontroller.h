@@ -9,11 +9,11 @@ namespace vnotex {
 class ServiceLocator;
 
 // Headless controller for the first-run experience (FRE).
-// On the MainWindowAfterStart hook, materializes a default notebook
-// ("My Notebook") under the Documents folder by copying the bundled notebook
-// shipped in Qt resources, then opens it -- but ONLY when the application
-// version changed AND there are zero notebooks. Contains no UI logic; the
-// View/MainWindow2 is responsible for surfacing the created notebook.
+// On MainWindowAfterStart, opens the default notebook under Documents, reusing
+// an existing notebook or copying the bundled "My Notebook" into an absent or
+// empty destination. Runs ONLY when the application version changed AND there
+// are zero notebooks. Contains no UI logic; View/MainWindow2 surfaces the
+// created or reopened notebook.
 class FirstRunController : public QObject {
   Q_OBJECT
 
@@ -22,15 +22,15 @@ public:
 
   ~FirstRunController() override;
 
-  // Whether a default notebook should be created. Returns true only when the
+  // Whether a default notebook should be created or reopened. True only when the
   // version changed AND there are currently zero notebooks.
   bool shouldCreateDefaultNotebook(bool p_versionChanged) const;
 
-  // Create the default notebook under the resolved parent dir by copying the
-  // bundled notebook from Qt resources, then opening it. Returns true on
-  // success (and emits defaultNotebookCreated). Skips (returns false, no
-  // signal) when the target "vnote_notebook" path is an existing file or a
-  // non-empty directory, or when the copy/open fails.
+  // Open the default notebook under the resolved parent directory. Copy bundled
+  // content only into an absent or empty destination; reuse a non-empty one.
+  // Returns true and emits defaultNotebookCreated for a new or reopened notebook.
+  // Returns false without a signal for non-directory targets or copy/open failure.
+  // Never fall back to copying over an existing notebook when opening fails.
   // On success, pins all-in-one.md when Quick Access is empty and the session
   // can be read (or is absent), before emitting defaultNotebookCreated.
   bool createDefaultNotebook();

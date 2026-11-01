@@ -38,10 +38,11 @@ private slots:
   void test_versionUnchanged_noCreation();
   void test_create_targetAbsent();
   void test_existingNotebook_skip();
+  void test_targetNonEmpty_skip_data();
   void test_targetNonEmpty_skip();
   void test_targetEmptyDir_create();
   void test_targetIsFile_skip();
-  void test_doubleTrigger_single();
+  void test_existingDestination_reopen();
   void test_quickAccessInitialization_data();
   void test_quickAccessInitialization();
 
@@ -159,19 +160,43 @@ void TestFirstRunController::test_existingNotebook_skip() {
   QCOMPARE(spy.count(), 0);
 }
 
-// S4: target dir non-empty -> skip; sentinel preserved.
+// S4: non-notebook content is not overwritten, even with a usable bundled source.
+void TestFirstRunController::test_targetNonEmpty_skip_data() {
+  QTest::addColumn<bool>("corruptNotebook");
+  QTest::newRow("ordinary-folder") << false;
+  QTest::newRow("corrupt-notebook") << true;
+}
+
 void TestFirstRunController::test_targetNonEmpty_skip() {
-  QString override = m_tempDir.createDir("s4");
-  m_tempDir.createDir("s4/vnote_notebook");
-  QString sentinel = m_tempDir.createFile("s4/vnote_notebook/sentinel.txt", "keep");
+  QFETCH(bool, corruptNotebook);
+  const QString parent = QStringLiteral("s4-%1").arg(QString::fromLatin1(QTest::currentDataTag()));
+  QString override = m_tempDir.createDir(parent);
+  const QString root = m_tempDir.createDir(parent + QStringLiteral("/vnote_notebook"));
+  QString sentinel =
+      m_tempDir.createFile(parent + QStringLiteral("/vnote_notebook/sentinel.txt"), "keep");
   QVERIFY(QFileInfo::exists(sentinel));
+  QString configPath;
+  if (corruptNotebook) {
+    m_tempDir.createDir(parent + QStringLiteral("/vnote_notebook/vx_notebook"));
+    configPath = m_tempDir.createFile(
+        parent + QStringLiteral("/vnote_notebook/vx_notebook/config.json"), "{broken notebook");
+  }
 
   FirstRunController controller(m_services);
   controller.setParentDirOverrideForTesting(override);
+  controller.setSourceDirOverrideForTesting(QStringLiteral(DEFAULT_NOTEBOOK_FIXTURE_DIR));
   QSignalSpy spy(&controller, &FirstRunController::defaultNotebookCreated);
 
   QCOMPARE(controller.createDefaultNotebook(), false);
-  QVERIFY(QFileInfo::exists(sentinel));
+  QFile sentinelFile(sentinel);
+  QVERIFY(sentinelFile.open(QIODevice::ReadOnly));
+  QCOMPARE(sentinelFile.readAll(), QByteArray("keep"));
+  QVERIFY(!QFileInfo::exists(root + QStringLiteral("/Welcome.md")));
+  if (corruptNotebook) {
+    QFile configFile(configPath);
+    QVERIFY(configFile.open(QIODevice::ReadOnly));
+    QCOMPARE(configFile.readAll(), QByteArray("{broken notebook"));
+  }
   QCOMPARE(m_service->listNotebooks().size(), 0);
   QCOMPARE(spy.count(), 0);
 }
@@ -207,36 +232,64 @@ void TestFirstRunController::test_targetIsFile_skip() {
   QCOMPARE(spy.count(), 0);
 }
 
-// S7: calling createDefaultNotebook twice creates exactly one notebook.
-// The first creation populates vx_notebook/ in the root, so the second call is
-// blocked by the non-empty-dir collision guard.
-void TestFirstRunController::test_doubleTrigger_single() {
+// S7: a notebook left on disk is reopened without needing bundled resources.
+void TestFirstRunController::test_existingDestination_reopen() {
   FirstRunController controller(m_services);
-  controller.setParentDirOverrideForTesting(m_tempDir.createDir("s7"));
+  const QString parent = m_tempDir.createDir("s7");
+  controller.setParentDirOverrideForTesting(parent);
   controller.setSourceDirOverrideForTesting(QStringLiteral(DEFAULT_NOTEBOOK_FIXTURE_DIR));
   QSignalSpy spy(&controller, &FirstRunController::defaultNotebookCreated);
 
   QVERIFY(controller.createDefaultNotebook());
-  controller.createDefaultNotebook();
+  const QString notebookId = spy.first().first().toString();
+  QVERIFY(m_service->closeNotebook(notebookId));
+  QCOMPARE(m_service->listNotebooks().size(), 0);
+
+  const QString welcomePath = parent + QStringLiteral("/vnote_notebook/Welcome.md");
+  QFile welcome(welcomePath);
+  QVERIFY(welcome.open(QIODevice::WriteOnly | QIODevice::Truncate));
+  QCOMPARE(welcome.write("user edits"), qint64(10));
+  welcome.close();
+  const auto originalPermissions = welcome.permissions();
+  const auto restorePermissions = qScopeGuard([&] { welcome.setPermissions(originalPermissions); });
+  QVERIFY(welcome.setPermissions(QFileDevice::ReadOwner | QFileDevice::ReadUser));
+  const auto readOnlyPermissions = welcome.permissions();
+  const QString sentinel = m_tempDir.createFile("s7/vnote_notebook/keep.txt", "keep");
+
+  controller.setSourceDirOverrideForTesting(m_tempDir.filePath("missing-source"));
+  QVERIFY(controller.shouldCreateDefaultNotebook(true));
+  QVERIFY(controller.createDefaultNotebook());
 
   QCOMPARE(m_service->listNotebooks().size(), 1);
-  QCOMPARE(spy.count(), 1);
+  QCOMPARE(spy.count(), 2);
+  QCOMPARE(spy.last().first().toString(), notebookId);
+  QVERIFY(!controller.shouldCreateDefaultNotebook(true));
+  QCOMPARE(welcome.permissions(), readOnlyPermissions);
+  QVERIFY(welcome.open(QIODevice::ReadOnly));
+  QCOMPARE(welcome.readAll(), QByteArray("user edits"));
+  QFile sentinelFile(sentinel);
+  QVERIFY(sentinelFile.open(QIODevice::ReadOnly));
+  QCOMPARE(sentinelFile.readAll(), QByteArray("keep"));
 }
 
 void TestFirstRunController::test_quickAccessInitialization_data() {
   QTest::addColumn<bool>("existingItem");
   QTest::addColumn<bool>("collision");
   QTest::addColumn<bool>("unreadableSession");
-  QTest::newRow("first-run") << false << false << false;
-  QTest::newRow("existing-quick-access") << true << false << false;
-  QTest::newRow("creation-skipped") << false << true << false;
-  QTest::newRow("unreadable-session") << false << false << true;
+  QTest::addColumn<bool>("reuseDestination");
+  QTest::newRow("first-run") << false << false << false << false;
+  QTest::newRow("existing-quick-access") << true << false << false << false;
+  QTest::newRow("creation-skipped") << false << true << false << false;
+  QTest::newRow("unreadable-session") << false << false << true << false;
+  QTest::newRow("reopen-empty-quick-access") << false << false << false << true;
+  QTest::newRow("reopen-existing-quick-access") << true << false << false << true;
 }
 
 void TestFirstRunController::test_quickAccessInitialization() {
   QFETCH(bool, existingItem);
   QFETCH(bool, collision);
   QFETCH(bool, unreadableSession);
+  QFETCH(bool, reuseDestination);
 
   ConfigCoreService configService(m_context);
   const auto savedMain = configService.getConfigByName(DataLocation::App, QStringLiteral("vnotex"));
@@ -303,12 +356,25 @@ void TestFirstRunController::test_quickAccessInitialization() {
       m_tempDir.createDir(relativeParent + QStringLiteral("/vnote_notebook"));
       m_tempDir.createFile(relativeParent + QStringLiteral("/vnote_notebook/keep"), "keep");
     }
+    if (reuseDestination) {
+      m_tempDir.copyFrom(QStringLiteral(DEFAULT_NOTEBOOK_FIXTURE_DIR),
+                         relativeParent + QStringLiteral("/vnote_notebook"));
+    }
     FirstRunController controller(services);
     controller.setParentDirOverrideForTesting(parent);
-    controller.setSourceDirOverrideForTesting(QStringLiteral(DEFAULT_NOTEBOOK_FIXTURE_DIR));
+    controller.setSourceDirOverrideForTesting(reuseDestination
+                                                  ? m_tempDir.filePath("missing-source")
+                                                  : QStringLiteral(DEFAULT_NOTEBOOK_FIXTURE_DIR));
     QSignalSpy spy(&controller, &FirstRunController::defaultNotebookCreated);
     QCOMPARE(controller.createDefaultNotebook(), !collision);
     QCOMPARE(spy.count(), collision ? 0 : 1);
+    if (collision) {
+      const QString root = ConfigMgr2::getDefaultNotebookPath(parent);
+      QFile sentinel(root + QStringLiteral("/keep"));
+      QVERIFY(sentinel.open(QIODevice::ReadOnly));
+      QCOMPARE(sentinel.readAll(), QByteArray("keep"));
+      QVERIFY(!QFileInfo::exists(root + QStringLiteral("/Welcome.md")));
+    }
 
     if (!collision && !existingItem && !unreadableSession) {
       const QString notebookId = spy.first().first().toString();
