@@ -363,10 +363,10 @@ void EditorConfig::initDefaults() {
   m_shortcuts[Shortcut::TypeBold] = QStringLiteral("Ctrl+B");
   m_shortcuts[Shortcut::TypeItalic] = QStringLiteral("Ctrl+I");
   m_shortcuts[Shortcut::TypeStrikethrough] = QStringLiteral("");
-  m_shortcuts[Shortcut::TypeUnorderedList] = QStringLiteral("Ctrl+8");
-  m_shortcuts[Shortcut::TypeOrderedList] = QStringLiteral("Ctrl+9");
-  m_shortcuts[Shortcut::TypeTodoList] = QStringLiteral("");
-  m_shortcuts[Shortcut::TypeCheckedTodoList] = QStringLiteral("");
+  m_shortcuts[Shortcut::TypeUnorderedList] = QStringLiteral("");
+  m_shortcuts[Shortcut::TypeOrderedList] = QStringLiteral("");
+  m_shortcuts[Shortcut::TypeTodoList] = QStringLiteral("Ctrl+8");
+  m_shortcuts[Shortcut::TypeCheckedTodoList] = QStringLiteral("Ctrl+9");
   m_shortcuts[Shortcut::TypeCode] = QStringLiteral("Ctrl+;");
   m_shortcuts[Shortcut::TypeCodeBlock] = QStringLiteral("Ctrl+'");
   m_shortcuts[Shortcut::TypeMath] = QStringLiteral("Ctrl+.");
