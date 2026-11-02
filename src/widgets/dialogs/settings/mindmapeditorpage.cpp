@@ -128,6 +128,7 @@ void MindMapEditorPage::setupUI() {
   const auto shortcuts =
       tr("Keyboard shortcuts can be configured in section [editor.mindMapEditor.shortcuts]");
   auto *description = SettingsPageHelper::createDescription(shortcuts, this);
+  description->setContentsMargins(16, 6, 16, 6);
   behavior->addWidget(SettingsPageHelper::createSeparator(this));
   behavior->addWidget(description);
   addSearchItem(shortcuts, description);
