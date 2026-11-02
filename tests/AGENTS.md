@@ -272,8 +272,10 @@ Do not mix Qt's cached global frame origin into native input or compensate with 
 Typst shortcut/focus tests use xcb under Xvfb on Linux, not offscreen. Keep the normal
 QtTest crash handler. Build the host Typst module's `test_typstviewwindow_insertion` executable
 once, then select `^test_typstviewwindow_(insertion|cleanup|resources)$` in CTest. These serial
-groups share the executable and each retain a 240-second deadline. With `VNOTE_TYPST_TEST_GROUP`
-unset, a direct executable launch runs all default-enabled cases. Each group writes plaintext stdout and
+groups share the executable and each retain a 240-second deadline. On macOS, CTest runs
+only cleanup and resources; the insertion group is disabled (see below). With
+`VNOTE_TYPST_TEST_GROUP` unset, a direct executable launch still runs all default-enabled
+cases. Each group writes plaintext stdout and
 its own `test_typstviewwindow_<group>.xml` JUnit file in the CTest working directory. CI
 preserves original parent/native CTest logs and these reports before diagnostic reruns,
 since hosted stdout can omit assertions.
@@ -338,6 +340,16 @@ ConfigMgr2, and prune only in the test class `init()`, never inside `Fixture::in
 intra-row fixture recreation intentionally tests persisted sessions. This suite must not edit
 installed assets, including `web/css/user.css` or user-created templates; asset-customization
 fixtures must retain the full test-directory reset. Keep the existing suite deadlines.
+
+On macOS, CTest marks the entire `test_viewarea_tab_reuse` and
+`test_typstviewwindow_insertion` tests `DISABLED`, including their previously passing rows.
+Both targets still compile. Repeated Cocoa focus/input failures and the tab-reuse SIGBUS
+([example job](https://github.com/vnotex/vnote/actions/runs/41394392636/job/125112492727))
+remain unresolved; this exclusion is not a product fix. Typst cleanup/resources, controller,
+export and native-editor tests remain enabled. Windows/Linux registration is unchanged.
+This CTest-only exclusion does not affect direct executable launches, add `QSKIP`, weaken
+assertions, change deadlines, or relax the separate local Windows whitelist below.
+Re-enable after the failures are fixed and verified on native macOS.
 
 PDF.js text-item boundaries are not word boundaries: ligatures can split a word across
 items. Reconstruct text by concatenating `item.str` and adding a newline only for

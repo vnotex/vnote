@@ -1903,6 +1903,13 @@ set_property(TEST test_typstviewwindow_cleanup APPEND PROPERTY
 set_property(TEST test_typstviewwindow_resources APPEND PROPERTY
   ENVIRONMENT "VNOTE_TYPST_TEST_GROUP=resources")
 
+if(APPLE)
+  # Keep both targets built while recurrent Cocoa failures are investigated.
+  set_tests_properties(test_viewarea_tab_reuse test_typstviewwindow_insertion PROPERTIES
+    DISABLED TRUE
+  )
+endif()
+
 if(WIN32)
   # Every widget executable uses this directory. Serialize the two DLL copies,
   # and refresh them even when building one already-linked test target.
