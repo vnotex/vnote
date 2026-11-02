@@ -22,9 +22,9 @@ StatusBar::StatusBar(const StatusBarDef &p_def, QWidget *p_parent) : QWidget(p_p
   // Page 0: columns host.
   m_columnsHost = new QWidget(this);
   m_layout = new QHBoxLayout(m_columnsHost);
-  // Small outer left/right margins plus inter-column spacing so adjacent
-  // columns (cursor / spelling / syntax / mode / encoding) are not cramped.
-  m_layout->setContentsMargins(6, 0, 6, 0);
+  // Keep column widgets, including opaque nested widget mounts, clear of the
+  // status frame with a shared vertical inset.
+  m_layout->setContentsMargins(6, 2, 6, 2);
   m_layout->setSpacing(8);
   m_stackLayout->addWidget(m_columnsHost);
 
