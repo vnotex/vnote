@@ -6802,8 +6802,8 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>Open Folder as &amp;Raw Notebook</source>
-        <translation>将文件夹作为原生笔记本打开(&amp;R)</translation>
+        <source>Open Folder as Raw Notebook</source>
+        <translation>将文件夹作为原生笔记本打开</translation>
     </message>
     <message>
         <location line="+7"/>

@@ -6802,8 +6802,8 @@
     </message>
     <message>
         <location line="+2"/>
-        <source>Open Folder as &amp;Raw Notebook</source>
-        <translation>フォルダーを Raw ノートブックとして開く(&amp;R)</translation>
+        <source>Open Folder as Raw Notebook</source>
+        <translation>フォルダーを Raw ノートブックとして開く</translation>
     </message>
     <message>
         <location line="+7"/>

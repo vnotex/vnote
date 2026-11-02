@@ -869,6 +869,13 @@ void NotebookExplorer2::setupTitleBar() {
     connect(btn, &QToolButton::clicked, this, &NotebookExplorer2::importNotebook);
   }
 
+  // Open Folder as Raw Notebook button
+  {
+    auto btn = m_titleBar->addActionButton(QStringLiteral("folder_pen.svg"),
+                                           tr("Open Folder as Raw Notebook"));
+    connect(btn, &QToolButton::clicked, this, &NotebookExplorer2::newNotebookFromFolder);
+  }
+
   // Sync button (T15) — always visible.
   // Enabled state and tooltip are driven by updateSyncButtonState().
   m_syncButton = m_titleBar->addActionButton(QStringLiteral("sync_now.svg"), tr("Sync"));
@@ -882,9 +889,6 @@ void NotebookExplorer2::setupTitleBarMenu() {
   const auto &widgetConfig = m_services.get<ConfigMgr2>()->getWidgetConfig();
 
   m_titleBar->addMenuAction(tr("Manage Notebooks"), m_titleBar, [this]() { manageNotebooks(); });
-
-  m_titleBar->addMenuAction(tr("Open Folder as &Raw Notebook"), m_titleBar,
-                            [this]() { newNotebookFromFolder(); });
 
   m_titleBar->addMenuSeparator();
 

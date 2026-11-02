@@ -7063,8 +7063,8 @@ Notebook: %1
     </message>
     <message>
         <location line="+2"/>
-        <source>Open Folder as &amp;Raw Notebook</source>
-        <translation>폴더를 일반 노트북으로 열기(&amp;R)</translation>
+        <source>Open Folder as Raw Notebook</source>
+        <translation>폴더를 일반 노트북으로 열기</translation>
     </message>
     <message>
         <location line="+7"/>
