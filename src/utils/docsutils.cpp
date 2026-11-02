@@ -4,14 +4,18 @@
 #include <QDir>
 
 #include "fileutils2.h"
+#include "localeutils.h"
 
 using namespace vnotex;
 
 QStringList DocsUtils::s_searchPaths;
-
-QString DocsUtils::s_locale = "en_US";
+QStringList DocsUtils::s_uiLanguages{QStringLiteral("en_US")};
 
 void DocsUtils::addSearchPath(const QString &p_path) { s_searchPaths.append(p_path); }
+
+void DocsUtils::setLocale(const QString &p_locale) {
+  s_uiLanguages = QLocale(p_locale).uiLanguages();
+}
 
 QString DocsUtils::getDocText(const QString &p_baseName) {
   auto filePath = getDocFile(p_baseName);
@@ -28,11 +32,7 @@ QString DocsUtils::getDocText(const QString &p_baseName) {
   return "";
 }
 
-QString DocsUtils::getDocFile(const QString &p_baseName) {
-  const auto shortLocale = s_locale.split('_')[0];
-
-  const auto fullLocaleName = QStringLiteral("%1/%2").arg(s_locale, p_baseName);
-  const auto shortLocaleName = QStringLiteral("%1/%2").arg(shortLocale, p_baseName);
+QString DocsUtils::getDocFile(const QString &p_baseName, const QStringList &p_uiLanguages) {
   const auto defaultLocaleName = QStringLiteral("%1/%2").arg(QStringLiteral("en_US"), p_baseName);
 
   for (const auto &pa : s_searchPaths) {
@@ -41,16 +41,17 @@ QString DocsUtils::getDocFile(const QString &p_baseName) {
       continue;
     }
 
-    if (dir.exists(fullLocaleName)) {
-      return dir.filePath(fullLocaleName);
-    } else if (dir.exists(shortLocaleName)) {
-      return dir.filePath(shortLocaleName);
-    } else if (dir.exists(defaultLocaleName)) {
+    const auto localized = findLocalizedValue(p_uiLanguages, [&](const QString &p_locale) {
+      const auto name = QStringLiteral("%1/%2").arg(p_locale, p_baseName);
+      return dir.exists(name) ? dir.filePath(name) : QString();
+    });
+    if (!localized.isEmpty()) {
+      return localized;
+    }
+    if (dir.exists(defaultLocaleName)) {
       return dir.filePath(defaultLocaleName);
     }
   }
 
   return "";
 }
-
-void DocsUtils::setLocale(const QString &p_locale) { s_locale = p_locale; }

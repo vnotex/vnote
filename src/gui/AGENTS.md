@@ -65,10 +65,10 @@ reset therefore restarts daily eligibility and rotation without undoing opt-out.
 keys, then retires the old main-config keys through normal persistence. Explicit
 session values, including an empty date and index zero, take precedence.
 
-Select catalog translations using `QLocale().uiLanguages()` in preference order,
-trying each tag with underscores, its canonical `QLocale(tag).name()` key (so
-`zh-Hans-CN` can match `zh_CN` even without Qt-expanded aliases), and its language
-prefix before falling back to `en_US`.
+Select catalog translations using `QLocale().uiLanguages()` in preference order through
+`findLocalizedValue()` in `utils/localeutils.h` (shared with theme names and bundled docs).
+The tip callback trims each candidate; after no usable match, fall back to `en_US`.
+The helper's tag/canonical/language ordering is documented in `utils/AGENTS.md`.
 Do not use `getLocaleToUse()` here: it returns the regional-format locale, which
 can differ from the system UI language. Startup already applies explicit language
 settings through `QLocale::setDefault()` before tips are produced.

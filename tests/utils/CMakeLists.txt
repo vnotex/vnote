@@ -1,4 +1,16 @@
 # Utils module tests
+add_qt_test(test_docsutils
+  SOURCES
+    test_docsutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/docsutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/fileutils2.cpp
+    ${CMAKE_SOURCE_DIR}/src/utils/pathutils.cpp
+    ${CMAKE_SOURCE_DIR}/src/core/error.cpp
+  LINKS
+    Qt6::Gui
+  GUILESS
+)
+
 add_qt_test(test_autostartutils
   SOURCES
     test_autostartutils.cpp

@@ -82,7 +82,7 @@
 
 using namespace vnotex;
 
-void loadTranslators(QApplication &p_app, const ConfigMgr2 &configMgr) {
+QString loadTranslators(QApplication &p_app, const ConfigMgr2 &configMgr) {
   auto localeName = configMgr.getCoreConfig().getLocale();
   if (!localeName.isEmpty()) {
     QLocale::setDefault(QLocale(localeName));
@@ -91,11 +91,13 @@ void loadTranslators(QApplication &p_app, const ConfigMgr2 &configMgr) {
   QLocale locale;
   qInfo() << "locale:" << locale.name();
 
+  // Source text is English when no VNote catalog loads.
+  QString uiLocale = QStringLiteral("en_US");
   const auto translationsPath = QDir("app:translations").absolutePath();
   qInfo() << "translations dir: " << translationsPath;
   if (translationsPath.isEmpty()) {
     qWarning() << "failed to locate translations directory";
-    return;
+    return uiLocale;
   }
 
   // For QTextEdit/QTextBrowser and other basic widgets.
@@ -127,6 +129,9 @@ void loadTranslators(QApplication &p_app, const ConfigMgr2 &configMgr) {
 
   std::unique_ptr<QTranslator> vnoteTranslator(new QTranslator(&p_app));
   if (vnoteTranslator->load(locale, "vnote", "_", translationsPath)) {
+    // Qt can skip an untranslated preference (including English) and load a later one.
+    // Bundled documents must follow that catalog, not the regional-format locale.
+    uiLocale = vnoteTranslator->language();
     p_app.installTranslator(vnoteTranslator.release());
   }
 
@@ -139,6 +144,7 @@ void loadTranslators(QApplication &p_app, const ConfigMgr2 &configMgr) {
   if (m3Translator->load(locale, "m3", "_", translationsPath)) {
     p_app.installTranslator(m3Translator.release());
   }
+  return uiLocale;
 }
 
 void setOpenGLOption(const ConfigMgr2 &configMgr) {
@@ -590,7 +596,7 @@ int main(int argc, char *argv[]) {
       app.setApplicationVersion(ConfigMgr2::getApplicationVersion());
     }
 
-    loadTranslators(app, configMgr);
+    const auto uiLocale = loadTranslators(app, configMgr);
 
     CommandLineOptions cmdOptions;
     bool earlyExit = false;
@@ -779,7 +785,7 @@ int main(int argc, char *argv[]) {
                      "(update check, image hosting) will not work.";
     }
 
-    DocsUtils::setLocale(configMgr.getCoreConfig().getLocaleToUse());
+    DocsUtils::setLocale(uiLocale);
     DocsUtils::addSearchPath(configMgr.getFileFromConfigFolder(QStringLiteral("docs")));
 
     // Push the effective locale into vxcore so its locale-aware, UTF-8 output

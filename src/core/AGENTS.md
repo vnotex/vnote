@@ -126,9 +126,13 @@ QString templatePath = configMgr->getFileFromConfigFolder("web/markdown-viewer-t
 5. **Bundled extra data** — `ensureExtraData(bool p_force)` installs `themes/`, `tasks/`, `syntax-highlighting/`, `web/`, `dicts/`, `templates/` and `docs/` from `vnote_extra.rcc`. It runs on every **primary-instance** launch, after `SingleInstanceGuard::tryRun()` succeeds (or the explicit testing bypass below), not just on a version change; a rejected secondary must never mutate resources used by the running primary. Installation is gated per folder by a stamp file (`FileUtils2::c_versionStampFileName`, `.vnote-extra-version`) that `FileUtils2::installVersionedDir` writes **only after that folder copied completely**. A partial copy therefore leaves the folder unstamped and is retried on the next launch instead of being remembered as done. Deliberately decoupled from the config version stamp above: coupling them would re-run `doVersionSpecificOverride` on every launch and pin the config version to the old value forever whenever a copy is permanently broken. Per-folder failures are aggregated in `extraDataCopyFailures()` and PULLED once by `NotificationRouter` at `MainWindowAfterStart` (ConfigMgr2 has no `ServiceLocator`, and the copy runs in `main()` long before the router exists). `web/css/user.css` is on a preserve list because Settings treats an existing regular file there as user-owned; an incompatible node is a copy failure and prevents the completion stamp. `templates/` has NO preserve list: the bundled `templates/title.md` (`# %no%` plus a trailing `@@` cursor mark, so a new note opens with a level-1 heading matching its base name and the caret on the blank line below) is overwritten on every version bump, so a user who wants a variant must save it under a different name; user-created templates are untouched because only bundled paths are written.
 
 Bundled help lives in `docs/en_US/` and `docs/zh_CN/`. After translators load, `main()` initializes
-`DocsUtils` with the effective locale and the installed `docs/` path. The Settings menu opens the
-guides through `BufferService` in forced Read mode with read-only buffers; missing locales fall
-back to `en_US`.
+`DocsUtils` with the loaded **VNote catalog's `QTranslator::language()`**, or `en_US` when no
+VNote catalog loads, and the installed `docs/` path. Neither `QLocale().name()` nor the first
+system UI preference identifies that catalog: Qt can skip an untranslated preference (including
+English) and load a later language. This does not change regional number/date formatting.
+`DocsUtils` uses the shared `findLocalizedValue()` matcher from `utils/localeutils.h`; missing
+documents fall back to `en_US` within each search path. The Settings menu opens the guides
+through `BufferService` in forced Read mode with read-only buffers.
 
 Release notes use the same lookup: `src/data/extra/extra.qrc` aliases repository
 `docs/changes.md` and `docs/changes_zh_CN.md` as the localized `changes.md` files.

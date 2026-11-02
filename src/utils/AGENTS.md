@@ -33,6 +33,21 @@ Units are selected from the original byte count, before display rounding; a valu
 below the next threshold can therefore display `1024.00` in the lower unit.
 Coverage: `tests/utils/test_stringutils.cpp`.
 
+## Localized resources
+
+`localeutils.h` exposes `findLocalizedValue(uiLanguages, lookup)`, shared by bundled
+documents, theme names and startup tips. For each preference, try its underscore tag,
+canonical `QLocale(tag).name()` (so `zh-Hans-CN` matches `zh_CN`), then bare language,
+before trying the next preference. The lookup returns an empty string on a miss; the
+caller owns trimming and its final fallback. Candidates are evaluated lazily.
+
+`DocsUtils::setLocale()` receives the language of the loaded VNote translation catalog
+from startup, not the regional-format locale or the first system UI preference. Its
+expanded UI tags feed the shared matcher. Search paths retain priority: try localized
+documents, then `en_US`, before moving to the next path. Both help and upgrade release
+notes use this lookup. Coverage: `tests/utils/test_docsutils.cpp`; theme and tip behavior
+remain covered by `test_theme_core` and `test_configmgr2`.
+
 ## C++ to web translations
 
 `WebUtils::translationScript()` snapshots the current Qt translations into a standalone

@@ -11,6 +11,7 @@
 
 #include "exception.h"
 #include <utils/fileutils2.h>
+#include <utils/localeutils.h>
 #include <utils/pathutils.h>
 #include <utils/utils.h>
 
@@ -44,21 +45,11 @@ QString Theme::getDisplayName(const QString &p_folder, const QString &p_locale) 
   QString prefix("display_name");
 
   const auto locales = p_locale.isEmpty() ? QLocale().uiLanguages() : QStringList{p_locale};
-  for (auto locale : locales) {
-    locale.replace(QLatin1Char('-'), QLatin1Char('_'));
-    auto name = metaObj.value(QStringLiteral("%1_%2").arg(prefix, locale)).toString();
-    if (name.isEmpty()) {
-      // Match script tags such as zh-Hans-CN to existing zh_CN metadata.
-      name = metaObj.value(QStringLiteral("%1_%2").arg(prefix, QLocale(locale).name())).toString();
-    }
-    if (name.isEmpty()) {
-      name =
-          metaObj.value(QStringLiteral("%1_%2").arg(prefix, locale.section(QLatin1Char('_'), 0, 0)))
-              .toString();
-    }
-    if (!name.isEmpty()) {
-      return name;
-    }
+  const auto name = findLocalizedValue(locales, [&](const QString &p_candidate) {
+    return metaObj.value(QStringLiteral("%1_%2").arg(prefix, p_candidate)).toString();
+  });
+  if (!name.isEmpty()) {
+    return name;
   }
 
   if (metaObj.contains(prefix)) {
