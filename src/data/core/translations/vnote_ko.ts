@@ -121,9 +121,47 @@
     </message>
 </context>
 <context>
+    <name>ExportStyleSheet</name>
+    <message>
+        <location filename="../../../export/exportstylesheet.cpp" line="+121"/>
+        <source>Export stylesheet is not a file: %1</source>
+        <translation>내보내기 스타일시트가 파일이 아닙니다: %1</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Failed to create export stylesheet: %1</source>
+        <translation>내보내기 스타일시트를 만들지 못했습니다: %1</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Failed to make export stylesheet writable: %1</source>
+        <translation>내보내기 스타일시트를 쓰기 가능으로 설정하지 못했습니다: %1</translation>
+    </message>
+    <message>
+        <location line="+18"/>
+        <source>Failed to read export stylesheet (%1): %2</source>
+        <translation>내보내기 스타일시트(%1)를 읽지 못했습니다: %2</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Failed to read exported HTML (%1): %2</source>
+        <translation>내보낸 HTML(%1)을 읽지 못했습니다: %2</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Exported HTML has no complete head element: %1</source>
+        <translation>내보낸 HTML에 완전한 head 요소가 없습니다: %1</translation>
+    </message>
+    <message>
+        <location line="+13"/>
+        <source>Failed to write styled HTML (%1): %2</source>
+        <translation>스타일을 적용한 HTML(%1)을 쓰지 못했습니다: %2</translation>
+    </message>
+</context>
+<context>
     <name>LockedNoteView</name>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="+59"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="+61"/>
         <source>This note is locked. Unlock it to read its contents.</source>
         <translation>이 노트는 잠겨 있습니다. 내용을 읽으려면 잠금을 해제하세요.</translation>
     </message>
@@ -136,7 +174,7 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../../../widgets/messageboxhelper.cpp" line="+130"/>
+        <location filename="../../../widgets/messageboxhelper.cpp" line="+129"/>
         <source>Are you sure to open link (%1)?</source>
         <translation>링크(%1)를 여시겠습니까?</translation>
     </message>
@@ -149,7 +187,7 @@
 <context>
     <name>MessageBoxHelper</name>
     <message>
-        <location line="-52"/>
+        <location line="-51"/>
         <source>Never Ask</source>
         <translation>다시 묻지 않음</translation>
     </message>
@@ -204,7 +242,7 @@
     </message>
     <message>
         <location line="+6"/>
-        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+154"/>
+        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+194"/>
         <source>E&amp;xport</source>
         <translation>내보내기(&amp;x)</translation>
     </message>
@@ -822,6 +860,12 @@
     </message>
     <message>
         <location line="+7"/>
+        <location line="+1"/>
+        <source>Mind Map</source>
+        <translation>마인드맵</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Outline</source>
         <translation>개요</translation>
     </message>
@@ -861,23 +905,27 @@
         <translation>본문 내 미리 보기</translation>
     </message>
     <message>
+        <location line="+6"/>
         <source>Conceal long link destinations</source>
         <translation>긴 링크 대상 주소 숨기기</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Shorten long image, link, and reference destinations without changing the Markdown source. Hover to see the full destination</source>
         <translation>Markdown 소스를 변경하지 않고 이미지, 링크, 참조의 긴 대상 주소를 줄여 표시합니다. 전체 주소를 보려면 마우스를 올려놓으세요</translation>
     </message>
     <message>
+        <location line="+7"/>
         <source>Conceal Markdown Markers</source>
         <translation>Markdown 마커 숨기기</translation>
     </message>
     <message>
+        <location line="+2"/>
         <source>Hide Markdown formatting markers without changing the source; move the caret into an element to reveal them</source>
         <translation>소스를 변경하지 않고 Markdown 서식 마커를 숨깁니다. 요소 안으로 커서를 옮기면 마커가 표시됩니다</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+8"/>
         <source>Allow Auto Section Number</source>
         <translation>자동 섹션 번호 허용</translation>
     </message>
@@ -900,6 +948,11 @@
         <location line="+1"/>
         <source>Redo</source>
         <translation>다시 실행</translation>
+    </message>
+    <message>
+        <location filename="../../../widgets/viewwindow2.cpp" line="+84"/>
+        <source>Discard Changes</source>
+        <translation>변경 사항 버리기</translation>
     </message>
 </context>
 <context>
@@ -1065,9 +1118,17 @@
     </message>
 </context>
 <context>
+    <name>m3::qt::MindMapEditor</name>
+    <message>
+        <location filename="../../../controllers/mindmapviewwindowcontroller.cpp" line="+410"/>
+        <source>Edit Note</source>
+        <translation>노트 편집</translation>
+    </message>
+</context>
+<context>
     <name>m3::qt::NodePropertiesPanel</name>
     <message>
-        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="-89"/>
+        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="-127"/>
         <source>Node Properties</source>
         <translation>노드 속성</translation>
     </message>
@@ -1315,8 +1376,8 @@
 <context>
     <name>vnotex::BufferService</name>
     <message>
-        <location filename="../../../core/services/bufferservice.cpp" line="+127"/>
-        <location line="+217"/>
+        <location filename="../../../core/services/bufferservice.cpp" line="+183"/>
+        <location line="+259"/>
         <location line="+211"/>
         <location line="+121"/>
         <location line="+67"/>
@@ -1325,7 +1386,7 @@
         <translation>바꾸기가 취소되었습니다.</translation>
     </message>
     <message>
-        <location line="-653"/>
+        <location line="-695"/>
         <location line="+5"/>
         <source>The note cannot be read or exceeds the search size limit.</source>
         <translation>노트를 읽을 수 없거나 노트가 검색 크기 제한을 초과합니다.</translation>
@@ -1342,7 +1403,7 @@
     </message>
     <message>
         <location line="+8"/>
-        <location line="+469"/>
+        <location line="+511"/>
         <location line="+85"/>
         <source>Could not prepare the replacement.</source>
         <translation>바꾸기를 준비하지 못했습니다.</translation>
@@ -1452,7 +1513,7 @@
         <translation>바꾼 내용이 아직 저장되지 않았습니다: %1</translation>
     </message>
     <message>
-        <location line="+1608"/>
+        <location line="+1959"/>
         <source>The note is being replaced.</source>
         <translation>노트의 내용을 바꾸는 중입니다.</translation>
     </message>
@@ -1462,7 +1523,7 @@
         <translation>노트가 더 이상 열려 있지 않습니다.</translation>
     </message>
     <message>
-        <location line="+11"/>
+        <location line="+17"/>
         <source>A note was closed while the folder was being prepared.</source>
         <translation>폴더를 준비하는 동안 노트가 닫혔습니다.</translation>
     </message>
@@ -1993,18 +2054,18 @@
 <context>
     <name>vnotex::ExportController</name>
     <message>
-        <location filename="../../../controllers/exportcontroller.cpp" line="+37"/>
+        <location filename="../../../controllers/exportcontroller.cpp" line="+38"/>
         <source>Export is already in progress.</source>
         <translation>내보내기가 이미 진행 중입니다.</translation>
     </message>
     <message>
         <location line="+11"/>
-        <location line="+196"/>
+        <location line="+271"/>
         <source>NotebookCoreService not available.</source>
         <translation>NotebookCoreService를 사용할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="-190"/>
+        <location line="-265"/>
         <source>Failed to create exporter.</source>
         <translation>내보내기 도구를 만들지 못했습니다.</translation>
     </message>
@@ -2060,7 +2121,7 @@
         <translation>지원하지 않는 내보내기 원본입니다.</translation>
     </message>
     <message>
-        <location line="+67"/>
+        <location line="+142"/>
         <location line="+95"/>
         <source>Failed to resolve file path for (%1).</source>
         <translation>(%1)의 파일 경로를 확인하지 못했습니다.</translation>
@@ -2081,7 +2142,7 @@
 <context>
     <name>vnotex::ExportDialog2</name>
     <message>
-        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="+121"/>
+        <location filename="../../../widgets/dialogs/exportdialog2.cpp" line="+191"/>
         <source>Current buffer (%1)</source>
         <translation>현재 버퍼 (%1)</translation>
     </message>
@@ -2146,12 +2207,12 @@
         <translation>현재 노트북을 사용할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+103"/>
+        <location line="+105"/>
         <source>Options</source>
         <translation>옵션</translation>
     </message>
     <message>
-        <location line="+44"/>
+        <location line="+47"/>
         <source>Workspace: %1</source>
         <translation>작업 공간: %1</translation>
     </message>
@@ -2161,27 +2222,37 @@
         <translation>작업 공간에 내보낼 수 있는 버퍼가 없습니다</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="-249"/>
         <source>Markdown</source>
         <translation>Markdown</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>HTML</source>
         <translation>HTML</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>PDF</source>
         <translation>PDF</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>Custom</source>
         <translation>사용자 지정</translation>
     </message>
     <message>
         <location line="+2"/>
+        <source>Typst</source>
+        <translation>Typst</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>MindMap</source>
+        <translation>마인드맵</translation>
+    </message>
+    <message>
+        <location line="+247"/>
         <source>Source</source>
         <translation>원본</translation>
     </message>
@@ -2191,7 +2262,7 @@
         <translation>형식</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Select Export Output Directory</source>
         <translation>내보내기 출력 디렉터리 선택</translation>
     </message>
@@ -2206,12 +2277,12 @@
         <translation>렌더링 스타일</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+4"/>
         <source>Syntax style</source>
         <translation>구문 스타일</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="+11"/>
         <location line="+1"/>
         <source>Follow Theme</source>
         <translation>테마 따르기</translation>
@@ -2222,53 +2293,47 @@
         <translation>투명한 배경 사용</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>Process sub-folders</source>
         <translation>하위 폴더 처리</translation>
     </message>
     <message>
-        <location line="+14"/>
-        <location line="+219"/>
-        <source>Markdown options</source>
-        <translation>Markdown 옵션</translation>
-    </message>
-    <message>
-        <location line="-219"/>
-        <source>HTML options</source>
-        <translation>HTML 옵션</translation>
-    </message>
-    <message>
-        <location line="+0"/>
-        <source>PDF options</source>
-        <translation>PDF 옵션</translation>
-    </message>
-    <message>
-        <location line="+1"/>
-        <source>Custom options</source>
-        <translation>사용자 지정 옵션</translation>
-    </message>
-    <message>
-        <location line="+12"/>
+        <location line="+5"/>
         <source>Export attachments</source>
         <translation>첨부 파일 내보내기</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+25"/>
+        <source>Apply custom styles</source>
+        <translation>사용자 지정 스타일 적용</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Save export.css before exporting. These styles apply to HTML and HTML inputs for PDF and Custom exports, not native Typst PDF</source>
+        <translation>내보내기 전에 export.css를 저장하세요. 이 스타일은 HTML 및 PDF·사용자 지정 내보내기의 HTML 입력에 적용되며, 네이티브 Typst PDF에는 적용되지 않습니다</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Edit</source>
+        <translation>편집</translation>
+    </message>
+    <message>
+        <location line="+11"/>
         <source>Embed styles</source>
         <translation>스타일 포함</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Embed images</source>
         <translation>이미지 포함</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>Complete page (pack all resources)</source>
         <translation>완전한 페이지(모든 리소스 포함)</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>Copy referenced resources next to the exported file (or embed them when Embed images is checked), so the page renders standalone</source>
         <translation>페이지가 독립적으로 표시되도록 참조된 리소스를 내보낸 파일과 같은 폴더에 복사합니다(이미지 포함을 선택한 경우 파일 안에 포함)</translation>
     </message>
@@ -2278,22 +2343,22 @@
         <translation>개요 패널 추가</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>MIME HTML format</source>
         <translation>MIME HTML 형식</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+13"/>
         <source>Scrollable page</source>
         <translation>스크롤 가능한 페이지</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+16"/>
         <source>Settings</source>
         <translation>설정</translation>
     </message>
     <message>
-        <location line="+1"/>
+        <location line="+2"/>
         <source>Page layout</source>
         <translation>페이지 레이아웃</translation>
     </message>
@@ -2303,17 +2368,17 @@
         <translation>목차 추가</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+5"/>
         <source>Use wkhtmltopdf (outline supported)</source>
         <translation>wkhtmltopdf 사용(개요 지원)</translation>
     </message>
     <message>
-        <location line="+4"/>
+        <location line="+6"/>
         <source>Wkhtmltopdf path</source>
         <translation>Wkhtmltopdf 경로</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Wkhtmltopdf arguments</source>
         <translation>Wkhtmltopdf 인수</translation>
     </message>
@@ -2354,43 +2419,43 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+72"/>
+        <location line="+87"/>
         <source>All-in-one</source>
         <translation>하나로 합치기</translation>
     </message>
     <message>
-        <location line="-71"/>
-        <location line="+72"/>
+        <location line="-85"/>
+        <location line="+87"/>
         <source>Export all source files into one file</source>
         <translation>모든 원본 파일을 하나의 파일로 내보내기</translation>
     </message>
     <message>
-        <location line="-26"/>
+        <location line="-38"/>
         <source>New</source>
         <translation>새로 만들기</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+7"/>
         <source>Duplicate</source>
         <translation>복제</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+5"/>
         <source>Delete</source>
         <translation>삭제</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Scheme</source>
         <translation>구성</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Target suffix</source>
         <translation>대상 확장자</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Resource path separator</source>
         <translation>리소스 경로 구분자</translation>
     </message>
@@ -2400,33 +2465,53 @@
         <translation>HTML 입력 사용</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+3"/>
+        <source>Pass original files from disk to the command; enable HTML input to render the current buffer snapshot</source>
+        <translation>디스크의 원본 파일을 명령에 전달합니다. 현재 버퍼 스냅샷을 렌더링하려면 HTML 입력을 활성화하세요</translation>
+    </message>
+    <message>
+        <location line="+9"/>
         <source>Target page scrollable</source>
         <translation>대상 페이지 스크롤 허용</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+7"/>
         <source>Command</source>
         <translation>명령</translation>
     </message>
     <message>
-        <location line="+31"/>
-        <location line="+20"/>
+        <location line="+17"/>
+        <source>Some options apply only to compatible source types.</source>
+        <translation>일부 옵션은 호환되는 원본 유형에만 적용됩니다.</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <location line="+45"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-17"/>
+        <location line="-41"/>
         <source>Open Output Dir</source>
         <translation>출력 디렉터리 열기</translation>
     </message>
     <message>
-        <location line="+191"/>
+        <location line="+183"/>
+        <source>The export stylesheet editor is unavailable.</source>
+        <translation>내보내기 스타일시트 편집기를 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Failed to open the export stylesheet: %1</source>
+        <translation>내보내기 스타일시트를 열지 못했습니다: %1</translation>
+    </message>
+    <message>
+        <location line="+47"/>
         <source> (built-in)</source>
         <translation> (기본 제공)</translation>
     </message>
     <message>
-        <location line="+57"/>
+        <location line="+68"/>
         <source>New Custom Export Scheme</source>
         <translation>새 사용자 지정 내보내기 구성</translation>
     </message>
@@ -2473,34 +2558,58 @@
         <translation>vnote_exports</translation>
     </message>
     <message>
-        <location line="+21"/>
+        <location line="+26"/>
         <source>Export finished: %1 file(s)</source>
         <translation>내보내기 완료: 파일 %1개</translation>
+    </message>
+    <message>
+        <location line="+176"/>
+        <source>Relative internal images are copied. Imported sources and dynamic image references are not bundled.</source>
+        <translation>상대 경로의 내부 이미지를 복사합니다. 가져온 소스와 동적 이미지 참조는 포함되지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="+2"/>
+        <source>Relative internal images are copied.</source>
+        <translation>상대 경로의 내부 이미지를 복사합니다.</translation>
+    </message>
+    <message>
+        <location line="+12"/>
+        <source>%1 options</source>
+        <translation>%1 옵션</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::ExportRenderer</name>
+    <message>
+        <location filename="../../../export/exportrenderer.cpp" line="+14"/>
+        <source>Native PDF export is not supported by this renderer.</source>
+        <translation>이 렌더러는 네이티브 PDF 내보내기를 지원하지 않습니다.</translation>
     </message>
 </context>
 <context>
     <name>vnotex::Exporter</name>
     <message>
-        <location filename="../../../export/exporter.cpp" line="+54"/>
-        <location line="+28"/>
+        <location filename="../../../export/exporter.cpp" line="+104"/>
+        <location line="+48"/>
         <source>Failed to create output folder (%1).</source>
         <translation>출력 폴더(%1)를 만들지 못했습니다.</translation>
     </message>
     <message>
-        <location line="+19"/>
-        <location line="+71"/>
-        <location line="+89"/>
+        <location line="+18"/>
+        <location line="+90"/>
+        <location line="+110"/>
         <location line="+37"/>
         <source>Failed to create output folder under (%1).</source>
         <translation>(%1) 아래에 출력 폴더를 만들지 못했습니다.</translation>
     </message>
     <message>
-        <location line="-257"/>
+        <location line="-359"/>
         <source>Failed to read file (%1): %2</source>
         <translation>파일(%1)을 읽지 못했습니다: %2</translation>
     </message>
     <message>
-        <location line="+105"/>
+        <location line="+16"/>
+        <location line="+153"/>
         <source>Unknown target format %1.</source>
         <translation>알 수 없는 대상 형식 %1입니다.</translation>
     </message>
@@ -2511,42 +2620,53 @@
     </message>
     <message>
         <location line="+2"/>
-        <location line="+90"/>
+        <location line="+125"/>
         <source>Failed to export file (%1)</source>
         <translation>파일(%1)을 내보내지 못했습니다</translation>
     </message>
     <message>
-        <location line="-70"/>
-        <source>Failed to write file (%1): %2</source>
-        <translation>파일(%1)을 쓰지 못했습니다: %2</translation>
-    </message>
-    <message>
-        <location line="+294"/>
+        <location line="+233"/>
         <source>Failed to copy attachment folder (%1): %2</source>
         <translation>첨부 파일 폴더(%1)를 복사하지 못했습니다: %2</translation>
     </message>
     <message>
-        <location line="-252"/>
-        <location line="+47"/>
+        <location line="-263"/>
+        <location line="+52"/>
         <location line="+41"/>
-        <location line="+55"/>
+        <location line="+59"/>
         <source>Failed to create temporary directory to hold HTML files.</source>
         <translation>HTML 파일을 저장할 임시 디렉터리를 만들지 못했습니다.</translation>
     </message>
     <message>
-        <location line="-80"/>
+        <location line="-402"/>
+        <source>All-in-one PDF is not supported for this selection.</source>
+        <translation>현재 선택 항목은 단일 PDF로 합치기를 지원하지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Target %1 is not supported for source type %2.</source>
+        <translation>원본 유형 %2는 대상 %1을 지원하지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="+176"/>
+        <location line="+200"/>
+        <source>Invalid export file name (%1).</source>
+        <translation>내보내기 파일 이름(%1)이 올바르지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="-63"/>
         <location line="+61"/>
         <source>all_in_one_export</source>
         <translation>all_in_one_export</translation>
     </message>
     <message>
         <location line="-58"/>
-        <location line="+62"/>
+        <location line="+66"/>
         <source>Exported to (%1).</source>
         <translation>(%1)로 내보냈습니다.</translation>
     </message>
     <message>
-        <location line="+36"/>
+        <location line="+38"/>
         <source>No export renderer registered for (%1).</source>
         <translation>(%1)에 대한 내보내기 렌더러가 등록되어 있지 않습니다.</translation>
     </message>
@@ -4109,13 +4229,13 @@
 <context>
     <name>vnotex::LinkPreviewOverlay</name>
     <message>
-        <location filename="../../../widgets/linkpreviewoverlay.cpp" line="+132"/>
+        <location filename="../../../widgets/linkpreviewoverlay.cpp" line="+133"/>
         <source>Preview</source>
         <translation>미리 보기</translation>
     </message>
     <message>
         <location line="+9"/>
-        <location line="+2"/>
+        <location line="+3"/>
         <source>Open in New Tab</source>
         <translation>새 탭에서 열기</translation>
     </message>
@@ -4149,7 +4269,7 @@
 <context>
     <name>vnotex::MainWindow2</name>
     <message>
-        <location filename="../../../widgets/mainwindow2.cpp" line="+149"/>
+        <location filename="../../../widgets/mainwindow2.cpp" line="+150"/>
         <location line="+25"/>
         <source>Unlock Protected Notes</source>
         <translation>보호된 노트 잠금 해제</translation>
@@ -4209,18 +4329,18 @@
     <message>
         <location line="+54"/>
         <location line="+22"/>
-        <location line="+303"/>
+        <location line="+326"/>
         <location filename="../../../widgets/toolbarhelper2.cpp" line="-315"/>
         <source>Export</source>
         <translation>내보내기</translation>
     </message>
     <message>
-        <location line="-325"/>
+        <location line="-348"/>
         <source>Exporting encrypted notes is not supported.</source>
         <translation>암호화된 노트 내보내기는 지원하지 않습니다.</translation>
     </message>
     <message>
-        <location line="+187"/>
+        <location line="+210"/>
         <location line="+14"/>
         <source>Tools</source>
         <translation>도구</translation>
@@ -4254,12 +4374,12 @@
     </message>
     <message>
         <location line="+33"/>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="+502"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="+503"/>
         <source>Quit</source>
         <translation>종료</translation>
     </message>
     <message>
-        <location filename="../../../widgets/toolbarhelper2.cpp" line="-529"/>
+        <location filename="../../../widgets/toolbarhelper2.cpp" line="-530"/>
         <source>File</source>
         <translation>파일</translation>
     </message>
@@ -4352,7 +4472,7 @@
         <translation>설정 폴더 열기</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+7"/>
         <source>Reset Main Window Layout</source>
         <translation>메인 창 배치 초기화</translation>
     </message>
@@ -4537,12 +4657,12 @@
     </message>
     <message>
         <location line="+1"/>
-        <location line="+750"/>
+        <location line="+752"/>
         <source>Paste as Plain Text</source>
         <translation>일반 텍스트로 붙여넣기</translation>
     </message>
     <message>
-        <location line="-672"/>
+        <location line="-674"/>
         <source>Pasted with Linked Images</source>
         <translation>연결된 이미지와 함께 붙여넣었습니다</translation>
     </message>
@@ -4669,7 +4789,7 @@
         <translation>URL에서 이미지 삽입</translation>
     </message>
     <message>
-        <location line="+170"/>
+        <location line="+172"/>
         <source>&amp;Read</source>
         <translation>읽기(&amp;R)</translation>
     </message>
@@ -4735,7 +4855,7 @@
         <location line="-55"/>
         <location line="+65"/>
         <location line="+87"/>
-        <location filename="../../../widgets/editors/mindmapeditor.cpp" line="+292"/>
+        <location filename="../../../widgets/editors/mindmapeditor.cpp" line="+367"/>
         <source>Resize Image</source>
         <translation>이미지 크기 조정</translation>
     </message>
@@ -4762,7 +4882,7 @@
         <translation>링크 복사</translation>
     </message>
     <message>
-        <location line="+186"/>
+        <location line="+190"/>
         <source>Use the image menu to copy an embedded image</source>
         <translation>문서에 포함된 이미지를 복사하려면 이미지 메뉴를 사용하세요</translation>
     </message>
@@ -4770,7 +4890,7 @@
 <context>
     <name>vnotex::MarkdownEditorPage</name>
     <message>
-        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+292"/>
+        <location filename="../../../widgets/dialogs/settings/markdowneditorpage.cpp" line="+288"/>
         <source>Protect Markdown from XSS</source>
         <translation>Markdown을 XSS로부터 보호</translation>
     </message>
@@ -4931,7 +5051,7 @@
         <translation>기존 숫자 접두사를 대체하여 Markdown 제목의 섹션 번호를 작성하고 유지합니다</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+13"/>
         <source>Constrain in-place preview width</source>
         <translation>본문 내 미리 보기 너비 제한</translation>
     </message>
@@ -5226,29 +5346,29 @@
 <context>
     <name>vnotex::MarkdownViewWindow2</name>
     <message>
-        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+168"/>
+        <location filename="../../../widgets/markdownviewwindow2.cpp" line="+169"/>
         <source>Unable to convert HTML to Markdown</source>
         <translation>HTML을 Markdown으로 변환할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+370"/>
+        <location line="+372"/>
         <source>Presentation Mode</source>
         <translation>프레젠테이션 모드</translation>
     </message>
     <message>
         <location line="+98"/>
         <location line="+37"/>
-        <location line="+620"/>
+        <location line="+636"/>
         <source>Unable to start presentation</source>
         <translation>프레젠테이션을 시작할 수 없습니다</translation>
     </message>
     <message>
-        <location line="-493"/>
+        <location line="-490"/>
         <source>Printing encrypted notes is not supported</source>
         <translation>암호화된 노트는 인쇄할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+196"/>
+        <location line="+193"/>
         <source>Unable to parse Markdown</source>
         <translation>Markdown을 구문 분석할 수 없습니다</translation>
     </message>
@@ -5275,7 +5395,7 @@
     </message>
     <message>
         <location line="-4"/>
-        <location line="+2014"/>
+        <location line="+2051"/>
         <location line="+16"/>
         <location line="+84"/>
         <location line="+14"/>
@@ -5283,20 +5403,20 @@
         <translation>미리 보기를 불러올 수 없습니다</translation>
     </message>
     <message>
-        <location line="-1442"/>
-        <location line="+14"/>
+        <location line="-1474"/>
+        <location line="+15"/>
         <source>Protected note links can open only indexed notebook notes</source>
         <translation>보호된 노트의 링크로는 색인에 등록된 노트북 노트만 열 수 있습니다</translation>
     </message>
     <message>
         <location line="+64"/>
-        <location line="+570"/>
+        <location line="+601"/>
         <location line="+764"/>
         <source>Unable to load note content</source>
         <translation>노트 내용을 불러올 수 없습니다</translation>
     </message>
     <message>
-        <location line="-1200"/>
+        <location line="-1231"/>
         <source>Unable to read the editor content</source>
         <translation>편집기 내용을 읽을 수 없습니다</translation>
     </message>
@@ -5311,7 +5431,7 @@
         <translation>미리 보기를 열 수 없지만 편집기는 계속 사용할 수 있습니다</translation>
     </message>
     <message>
-        <location line="+1434"/>
+        <location line="+1465"/>
         <source>Printing completed</source>
         <translation>인쇄가 완료되었습니다</translation>
     </message>
@@ -5327,12 +5447,12 @@
         <translation>읽기 모드에서는 바꾸기를 사용할 수 없습니다</translation>
     </message>
     <message>
-        <location line="-3197"/>
+        <location line="-3252"/>
         <source>Unable to render Markdown</source>
         <translation>Markdown을 렌더링할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+3300"/>
+        <location line="+3355"/>
         <location line="+8"/>
         <source>Snippet insertion is not supported in read mode</source>
         <translation>읽기 모드에서는 스니펫을 삽입할 수 없습니다</translation>
@@ -5487,7 +5607,9 @@
 <context>
     <name>vnotex::MindMapEditor</name>
     <message>
-        <location filename="../../../widgets/editors/mindmapeditor.cpp" line="+206"/>
+        <location filename="../../../widgets/editors/mindmapeditor.cpp" line="-130"/>
+        <location line="+6"/>
+        <location line="+330"/>
         <source>The mind map buffer is unavailable.</source>
         <translation>마인드맵 버퍼를 사용할 수 없습니다.</translation>
     </message>
@@ -5497,7 +5619,7 @@
         <translation>마인드맵을 아직 불러오지 않았습니다.</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+51"/>
         <source>The mind map buffer is unavailable or changed while loading.</source>
         <translation>마인드맵 버퍼를 사용할 수 없거나 불러오는 중에 버퍼가 변경되었습니다.</translation>
     </message>
@@ -5738,12 +5860,34 @@
 <context>
     <name>vnotex::MindMapExporter</name>
     <message>
-        <location filename="../../../export/mindmapexporter.cpp" line="+41"/>
+        <location filename="../../../export/mindmapexporter.cpp" line="+48"/>
+        <source>Source export format is not supported by this renderer.</source>
+        <translation>이 렌더러는 원본 형식 내보내기를 지원하지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="+7"/>
         <source>Invalid NUL in MindMap source.</source>
         <translation>마인드맵 원본에 잘못된 NUL 문자가 있습니다.</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+11"/>
+        <source>Failed to scan MindMap images: %1</source>
+        <translation>마인드맵 이미지를 검색하지 못했습니다: %1</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <location line="+5"/>
+        <source>Invalid MindMap image scan result.</source>
+        <translation>마인드맵 이미지 검색 결과가 올바르지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="+31"/>
+        <location line="+33"/>
+        <source>Failed to write file (%1): %2</source>
+        <translation>파일(%1)을 쓰지 못했습니다: %2</translation>
+    </message>
+    <message>
+        <location line="-16"/>
         <source>Failed to parse MindMap: %1</source>
         <translation>마인드맵을 구문 분석하지 못했습니다: %1</translation>
     </message>
@@ -5753,7 +5897,7 @@
         <translation>마인드맵을 Markdown으로 변환하지 못했습니다: %1</translation>
     </message>
     <message>
-        <location line="+31"/>
+        <location line="+39"/>
         <source>MindMap HTML export requires the GUI thread.</source>
         <translation>마인드맵 HTML 내보내기에는 GUI 스레드가 필요합니다.</translation>
     </message>
@@ -5812,7 +5956,7 @@
 <context>
     <name>vnotex::MindMapViewWindow2</name>
     <message>
-        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+149"/>
+        <location filename="../../../widgets/mindmapviewwindow2.cpp" line="+187"/>
         <location line="+31"/>
         <source>Insert Link</source>
         <translation>링크 삽입</translation>
@@ -5894,7 +6038,7 @@
 <context>
     <name>vnotex::MindMapViewWindowController</name>
     <message>
-        <location filename="../../../controllers/mindmapviewwindowcontroller.cpp" line="+143"/>
+        <location filename="../../../controllers/mindmapviewwindowcontroller.cpp" line="-196"/>
         <location line="+54"/>
         <source>The note is not available for image insertion</source>
         <translation>이 노트에는 이미지를 삽입할 수 없습니다</translation>
@@ -5960,23 +6104,23 @@
         <translation>첨부 파일 링크를 확인할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+50"/>
+        <location line="+111"/>
         <source>Unable to open an invalid link</source>
         <translation>유효하지 않은 링크를 열 수 없습니다</translation>
     </message>
     <message>
         <location line="+12"/>
-        <location line="+69"/>
+        <location line="+70"/>
         <source>This link is not allowed for this note</source>
         <translation>이 노트에서는 이 링크가 허용되지 않습니다</translation>
     </message>
     <message>
-        <location line="-59"/>
+        <location line="-60"/>
         <source>Unable to resolve the note&apos;s link base path</source>
         <translation>노트의 링크 기준 경로를 확인할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+6"/>
         <source>The linked file does not exist</source>
         <translation>연결된 파일이 존재하지 않습니다</translation>
     </message>
@@ -6689,12 +6833,12 @@
 <context>
     <name>vnotex::NoteTemplateSelector</name>
     <message>
-        <location filename="../../../widgets/dialogs/notetemplateselector.cpp" line="+32"/>
+        <location filename="../../../widgets/dialogs/notetemplateselector.cpp" line="+33"/>
         <source>Manage</source>
         <translation>관리</translation>
     </message>
     <message>
-        <location line="+17"/>
+        <location line="+18"/>
         <source>None</source>
         <translation>없음</translation>
     </message>
@@ -6771,7 +6915,7 @@
 <context>
     <name>vnotex::NotebookExplorer2</name>
     <message>
-        <location filename="../../../widgets/notebookexplorer2.cpp" line="+126"/>
+        <location filename="../../../widgets/notebookexplorer2.cpp" line="+125"/>
         <source>Encrypt Note</source>
         <translation>노트 암호화</translation>
     </message>
@@ -6867,12 +7011,12 @@ Images and attachments stored as separate files are NOT encrypted. Comments also
     </message>
     <message>
         <location line="+6"/>
-        <location line="+2292"/>
+        <location line="+2273"/>
         <source>%1: %2</source>
         <translation>%1: %2</translation>
     </message>
     <message>
-        <location line="-2270"/>
+        <location line="-2251"/>
         <source>The note encryption services are unavailable.</source>
         <translation>노트 암호화 서비스를 사용할 수 없습니다.</translation>
     </message>
@@ -7052,7 +7196,7 @@ Notebook: %1
         <translation>노트북 열기</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+13"/>
         <source>Sync</source>
         <translation>동기화</translation>
     </message>
@@ -7062,12 +7206,12 @@ Notebook: %1
         <translation>노트북 관리</translation>
     </message>
     <message>
-        <location line="+2"/>
+        <location line="-16"/>
         <source>Open Folder as Raw Notebook</source>
         <translation>폴더를 일반 노트북으로 열기</translation>
     </message>
     <message>
-        <location line="+7"/>
+        <location line="+22"/>
         <source>Sync Info</source>
         <translation>동기화 정보</translation>
     </message>
@@ -7112,7 +7256,7 @@ Notebook: %1
         <translation>휴지통 열기</translation>
     </message>
     <message>
-        <location line="+14"/>
+        <location line="+15"/>
         <source>Empty Recycle Bin</source>
         <translation>휴지통 비우기</translation>
     </message>
@@ -7211,7 +7355,7 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>&quot;%1&quot;의 데이터베이스를 다시 구축하지 못했습니다.</translation>
     </message>
     <message>
-        <location line="+216"/>
+        <location line="+212"/>
         <source>&lt;img src=&quot;:/vnotex/data/core/icons/read_only.svg&quot; width=&quot;14&quot; height=&quot;14&quot;&gt; Read-only</source>
         <translation>&lt;img src=&quot;:/vnotex/data/core/icons/read_only.svg&quot; width=&quot;14&quot; height=&quot;14&quot;&gt; 읽기 전용</translation>
     </message>
@@ -7314,7 +7458,7 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
         <translation>암호화된 폴더 가져오기</translation>
     </message>
     <message>
-        <location line="+60"/>
+        <location line="+39"/>
         <source>Ignore</source>
         <translation>무시</translation>
     </message>
@@ -7345,12 +7489,12 @@ This will re-scan all files and rebuild the metadata cache from the filesystem.<
     </message>
     <message>
         <location line="+0"/>
-        <location line="+71"/>
+        <location line="+72"/>
         <source>Cancel</source>
         <translation>취소</translation>
     </message>
     <message>
-        <location line="-70"/>
+        <location line="-71"/>
         <source>Share Folder</source>
         <translation>폴더 공유</translation>
     </message>
@@ -7369,7 +7513,7 @@ Open the bundle location?</source>
 번들 위치를 여시겠습니까?</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+16"/>
         <source>Failed to share the folder.</source>
         <translation>폴더를 공유하지 못했습니다.</translation>
     </message>
@@ -7696,19 +7840,22 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
 <context>
     <name>vnotex::NotebookNodeController</name>
     <message>
+        <location filename="../../../controllers/notebooknodecontroller.cpp" line="+577"/>
         <source>Text</source>
         <translation>텍스트</translation>
     </message>
     <message>
+        <location line="+0"/>
         <source>Background</source>
         <translation>배경</translation>
     </message>
     <message>
+        <location line="+33"/>
         <source>Auto</source>
         <translation>자동</translation>
     </message>
     <message>
-        <location filename="../../../controllers/notebooknodecontroller.cpp" line="+274"/>
+        <location line="-334"/>
         <location line="+110"/>
         <source>&amp;Open</source>
         <translation>열기(&amp;O)</translation>
@@ -7760,12 +7907,12 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
     </message>
     <message>
         <location line="-173"/>
-        <location line="+200"/>
+        <location line="+197"/>
         <source>P&amp;roperties</source>
         <translation>속성(&amp;R)</translation>
     </message>
     <message>
-        <location line="-187"/>
+        <location line="-184"/>
         <source>New &amp;Note</source>
         <translation>새 노트(&amp;N)</translation>
     </message>
@@ -7845,12 +7992,12 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
         <translation>태그(&amp;T)</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="+32"/>
         <source>&amp;Mark</source>
         <translation>표시(&amp;M)</translation>
     </message>
     <message>
-        <location line="+15"/>
+        <location line="+53"/>
         <source>Re&amp;load</source>
         <translation>다시 불러오기(&amp;L)</translation>
     </message>
@@ -7861,18 +8008,18 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
     </message>
     <message>
         <location line="+55"/>
-        <location line="+1202"/>
+        <location line="+1179"/>
         <source>Protected Note</source>
         <translation>보호된 노트</translation>
     </message>
     <message>
-        <location line="-1201"/>
-        <location line="+1202"/>
+        <location line="-1178"/>
+        <location line="+1179"/>
         <source>Encrypted notes cannot be opened in external applications. Open the note in VNote.</source>
         <translation>암호화된 노트는 외부 애플리케이션에서 열 수 없습니다. VNote에서 노트를 여세요.</translation>
     </message>
     <message>
-        <location line="-1187"/>
+        <location line="-1164"/>
         <source>Open With</source>
         <translation>다른 앱으로 열기</translation>
     </message>
@@ -7887,18 +8034,18 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
         <location line="+16"/>
         <location line="+8"/>
         <location line="+6"/>
-        <location line="+311"/>
+        <location line="+306"/>
         <location line="+6"/>
         <location line="+156"/>
-        <location line="+61"/>
-        <location line="+90"/>
+        <location line="+44"/>
+        <location line="+89"/>
         <location line="+29"/>
         <location line="+95"/>
         <source>Error</source>
         <translation>오류</translation>
     </message>
     <message>
-        <location line="-794"/>
+        <location line="-771"/>
         <source>Node not found: %1</source>
         <translation>노드를 찾을 수 없음: %1</translation>
     </message>
@@ -7943,13 +8090,13 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
         <translation>클립보드 항목을 전송하지 못했습니다.</translation>
     </message>
     <message>
-        <location line="+173"/>
-        <location line="+460"/>
+        <location line="+168"/>
+        <location line="+442"/>
         <source>NotebookService not available.</source>
         <translation>NotebookService를 사용할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="-454"/>
+        <location line="-436"/>
         <source>Failed to import external node to index.</source>
         <translation>외부 노드를 색인으로 가져오지 못했습니다.</translation>
     </message>
@@ -7959,12 +8106,12 @@ The folder&apos;s contents will be indexed as notebook nodes</source>
         <translation>%1의 이름을 바꾸지 못했습니다.</translation>
     </message>
     <message>
-        <location line="+61"/>
+        <location line="+44"/>
         <source>Failed to mark %1.</source>
         <translation>%1에 표시하지 못했습니다.</translation>
     </message>
     <message>
-        <location line="+90"/>
+        <location line="+89"/>
         <source>Failed to delete %1.</source>
         <translation>%1을(를) 삭제하지 못했습니다.</translation>
     </message>
@@ -9181,7 +9328,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::OutlineProvider</name>
     <message>
-        <location filename="../../../widgets/outlineprovider.h" line="+114"/>
+        <location filename="../../../widgets/outlineprovider.h" line="+119"/>
         <source>[EMPTY]</source>
         <translation>[비어 있음]</translation>
     </message>
@@ -9265,7 +9412,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::PdfViewWindow2</name>
     <message>
-        <location filename="../../../widgets/pdfviewwindow2.cpp" line="+893"/>
+        <location filename="../../../widgets/pdfviewwindow2.cpp" line="+907"/>
         <source>Unable to load PDF document</source>
         <translation>PDF 문서를 불러올 수 없습니다</translation>
     </message>
@@ -9273,7 +9420,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::PdfViewer</name>
     <message>
-        <location filename="../../../widgets/editors/pdfviewer.cpp" line="+61"/>
+        <location filename="../../../widgets/editors/pdfviewer.cpp" line="+62"/>
         <source>Highlight</source>
         <translation>강조</translation>
     </message>
@@ -10387,22 +10534,22 @@ The legacy notebook would be kept for data backup.</source>
         <location line="+72"/>
         <location line="+10"/>
         <location line="+16"/>
-        <location line="+26"/>
+        <location line="+27"/>
         <location line="+33"/>
         <source>No notebook selected.</source>
         <translation>선택한 노트북이 없습니다.</translation>
     </message>
     <message>
-        <location line="-147"/>
+        <location line="-148"/>
         <location line="+99"/>
-        <location line="+26"/>
+        <location line="+27"/>
         <location line="+33"/>
         <source>Tag service is not available.</source>
         <translation>태그 서비스를 사용할 수 없습니다.</translation>
     </message>
     <message>
-        <location line="-81"/>
-        <location line="+70"/>
+        <location line="-82"/>
+        <location line="+71"/>
         <location line="+5"/>
         <location line="+6"/>
         <location line="+5"/>
@@ -10410,15 +10557,15 @@ The legacy notebook would be kept for data backup.</source>
         <translation>태그 삭제</translation>
     </message>
     <message>
-        <location line="-86"/>
+        <location line="-87"/>
         <location line="+16"/>
-        <location line="+26"/>
+        <location line="+27"/>
         <location line="+33"/>
         <source>Tag name cannot be empty.</source>
         <translation>태그 이름은 비워 둘 수 없습니다.</translation>
     </message>
     <message>
-        <location line="-59"/>
+        <location line="-60"/>
         <location line="+6"/>
         <location line="+5"/>
         <source>Move Tag</source>
@@ -10430,7 +10577,7 @@ The legacy notebook would be kept for data backup.</source>
         <translation>태그를 이동하지 못했습니다: </translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+11"/>
         <location line="+5"/>
         <location line="+6"/>
         <location line="+5"/>
@@ -10451,7 +10598,7 @@ The legacy notebook would be kept for data backup.</source>
 <context>
     <name>vnotex::TagExplorer2</name>
     <message>
-        <location filename="../../../widgets/tagexplorer2.cpp" line="+121"/>
+        <location filename="../../../widgets/tagexplorer2.cpp" line="+124"/>
         <source>Open</source>
         <translation>열기</translation>
     </message>
@@ -10481,7 +10628,7 @@ Notebook: %3</source>
 노트북: %3</translation>
     </message>
     <message>
-        <location line="+45"/>
+        <location line="+54"/>
         <source>Search tags</source>
         <translation>태그 검색</translation>
     </message>
@@ -10910,13 +11057,13 @@ This removes the file and any sub-tasks it contains: %2</source>
     <name>vnotex::ThemePage</name>
     <message>
         <location filename="../../../widgets/dialogs/settings/themepage.cpp" line="+33"/>
-        <location line="+54"/>
+        <location line="+55"/>
         <location line="+28"/>
         <source>Theme</source>
         <translation>테마</translation>
     </message>
     <message>
-        <location line="-74"/>
+        <location line="-75"/>
         <source>Refresh</source>
         <translation>새로 고침</translation>
     </message>
@@ -10996,9 +11143,57 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
 </context>
 <context>
+    <name>vnotex::TypstExporter</name>
+    <message>
+        <location filename="../../../export/typstexporter.cpp" line="+33"/>
+        <source>Failed to write file (%1): %2</source>
+        <translation>파일(%1)을 쓰지 못했습니다: %2</translation>
+    </message>
+    <message>
+        <location line="+9"/>
+        <source>Source export format is not supported by this renderer.</source>
+        <translation>이 렌더러는 원본 형식 내보내기를 지원하지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Typst image references may be incomplete; dynamic references and imported sources were not copied.</source>
+        <translation>Typst 이미지 참조가 불완전할 수 있습니다. 동적 참조와 가져온 소스는 복사되지 않았습니다.</translation>
+    </message>
+    <message>
+        <location line="+26"/>
+        <source>MIME HTML export is not supported for Typst.</source>
+        <translation>Typst는 MIME HTML 내보내기를 지원하지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="+14"/>
+        <source>Typst export is already in progress.</source>
+        <translation>Typst 내보내기가 이미 진행 중입니다.</translation>
+    </message>
+    <message>
+        <location line="+8"/>
+        <source>Typst runtime is unavailable.</source>
+        <translation>Typst 런타임을 사용할 수 없습니다.</translation>
+    </message>
+    <message>
+        <location line="+4"/>
+        <source>Typst export requires an existing source file and project directory.</source>
+        <translation>Typst 내보내기에는 기존 소스 파일과 프로젝트 디렉터리가 필요합니다.</translation>
+    </message>
+    <message>
+        <location line="+29"/>
+        <source>Typst export timed out.</source>
+        <translation>Typst 내보내기 시간이 초과되었습니다.</translation>
+    </message>
+    <message>
+        <location line="+6"/>
+        <source>Typst compiler is busy.</source>
+        <translation>Typst 컴파일러가 사용 중입니다.</translation>
+    </message>
+</context>
+<context>
     <name>vnotex::TypstViewWindow</name>
     <message>
-        <location filename="../../../widgets/typstviewwindow.cpp" line="+301"/>
+        <location filename="../../../widgets/typstviewwindow.cpp" line="+302"/>
         <source>Unable to clean up an uncommitted Typst resource</source>
         <translation>확정되지 않은 Typst 리소스를 정리할 수 없습니다</translation>
     </message>
@@ -11024,7 +11219,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>클립보드 이미지를 읽을 수 없습니다</translation>
     </message>
     <message>
-        <location line="+26"/>
+        <location line="+30"/>
         <source>Insert From Drop</source>
         <translation>끌어다 놓은 항목에서 삽입</translation>
     </message>
@@ -11034,7 +11229,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>클립보드에서 삽입</translation>
     </message>
     <message>
-        <location line="+23"/>
+        <location line="+24"/>
         <source>Insert From URL</source>
         <translation>URL에서 삽입</translation>
     </message>
@@ -11044,25 +11239,25 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>이미지 데이터에서 삽입</translation>
     </message>
     <message>
-        <location line="+2"/>
-        <location line="+4"/>
-        <location line="+21"/>
+        <location line="+3"/>
+        <location line="+6"/>
+        <location line="+23"/>
         <source>Insert As Text</source>
         <translation>텍스트로 삽입</translation>
     </message>
     <message>
-        <location line="-22"/>
-        <location line="+8"/>
+        <location line="-25"/>
+        <location line="+10"/>
         <source>Insert As Image</source>
         <translation>이미지로 삽입</translation>
     </message>
     <message>
-        <location line="-4"/>
+        <location line="-5"/>
         <source>The selected resource cannot be inserted</source>
         <translation>선택한 리소스를 삽입할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+8"/>
         <source>Insert As Relative Image Link</source>
         <translation>상대 경로 이미지 링크로 삽입</translation>
     </message>
@@ -11092,7 +11287,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>선택한 파일을 이 노트에 첨부할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+207"/>
+        <location line="+206"/>
         <source>&amp;View Image</source>
         <translation>이미지 보기(&amp;V)</translation>
     </message>
@@ -11148,7 +11343,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>다음 페이지</translation>
     </message>
     <message>
-        <location line="+58"/>
+        <location line="+59"/>
         <source>Theme Style in Preview</source>
         <translation>미리보기 테마 스타일</translation>
     </message>
@@ -11158,12 +11353,12 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>Typst 미리보기의 기본 페이지 배경과 텍스트에 테마 색상을 사용합니다. 문서에 명시한 스타일이 우선하며 내보내기에는 영향을 주지 않습니다</translation>
     </message>
     <message>
-        <location line="+289"/>
+        <location line="+290"/>
         <source>Unable to read the Typst source: %1</source>
         <translation>Typst 소스를 읽을 수 없습니다: %1</translation>
     </message>
     <message>
-        <location line="+264"/>
+        <location line="+272"/>
         <location line="+7"/>
         <source>Unable to open the Typst source location</source>
         <translation>Typst 소스 위치를 열 수 없습니다</translation>
@@ -11182,23 +11377,24 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::TypstViewWindowController</name>
     <message>
-        <location filename="../../../controllers/typstviewwindowcontroller.cpp" line="+323"/>
-        <location line="+4"/>
-        <source>Typst requires an available, unencrypted file buffer</source>
-        <translation>Typst에는 사용 가능한 암호화되지 않은 파일 버퍼가 필요합니다</translation>
-    </message>
-    <message>
-        <location line="+8"/>
+        <location filename="../../../controllers/typstviewwindowcontroller.cpp" line="+349"/>
         <source>Unable to resolve the Typst source file</source>
         <translation>Typst 소스 파일을 확인할 수 없습니다</translation>
     </message>
     <message>
+        <location line="-19"/>
         <location line="+4"/>
+        <location line="+19"/>
         <source>The Typst project directory is unavailable</source>
         <translation>Typst 프로젝트 디렉터리를 사용할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+238"/>
+        <location line="-29"/>
+        <source>Typst requires an available, unencrypted document buffer</source>
+        <translation>Typst에는 사용 가능하고 암호화되지 않은 문서 버퍼가 필요합니다</translation>
+    </message>
+    <message>
+        <location line="+269"/>
         <location line="+11"/>
         <location line="+17"/>
         <source>Unable to open the Typst source location</source>
@@ -11229,7 +11425,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>링크를 열 수 없습니다</translation>
     </message>
     <message>
-        <location line="+33"/>
+        <location line="+40"/>
         <source>The note is not available for image viewing</source>
         <translation>이 노트에서는 이미지를 볼 수 없습니다</translation>
     </message>
@@ -11287,12 +11483,12 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+9"/>
-        <location line="+158"/>
+        <location line="+161"/>
         <source>Unable to clean up an uncommitted Typst resource</source>
         <translation>확정되지 않은 Typst 리소스를 정리할 수 없습니다</translation>
     </message>
     <message>
-        <location line="-152"/>
+        <location line="-155"/>
         <source>The note changed during image insertion</source>
         <translation>이미지를 삽입하는 중에 노트가 변경되었습니다</translation>
     </message>
@@ -11328,7 +11524,12 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>유효하지 않은 링크를 삽입할 수 없습니다</translation>
     </message>
     <message>
-        <location line="+6"/>
+        <location line="+5"/>
+        <source>This note has no local resource directory</source>
+        <translation>이 노트에는 로컬 리소스 디렉터리가 없습니다</translation>
+    </message>
+    <message>
+        <location line="+4"/>
         <source>The linked file does not exist or this link is not allowed for this note</source>
         <translation>연결된 파일이 존재하지 않거나 이 노트에서 허용되지 않는 링크입니다</translation>
     </message>
@@ -11707,7 +11908,12 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewArea2</name>
     <message>
-        <location filename="../../../widgets/viewarea2.cpp" line="+1208"/>
+        <location filename="../../../widgets/viewarea2.cpp" line="+915"/>
+        <source>The outline has changed. Reopen the mind map to navigate.</source>
+        <translation>개요가 변경되었습니다. 탐색하려면 마인드맵을 다시 여세요.</translation>
+    </message>
+    <message>
+        <location line="+380"/>
         <source>New Workspace</source>
         <translation>새 작업 공간</translation>
     </message>
@@ -11726,7 +11932,7 @@ This removes the file and any sub-tasks it contains: %2</source>
 <context>
     <name>vnotex::ViewAreaController</name>
     <message>
-        <location filename="../../../controllers/viewareacontroller.cpp" line="+208"/>
+        <location filename="../../../controllers/viewareacontroller.cpp" line="+321"/>
         <source>The note encryption services are unavailable.</source>
         <translation>노트 암호화 서비스를 사용할 수 없습니다.</translation>
     </message>
@@ -11749,12 +11955,14 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="-70"/>
-        <location line="+517"/>
+        <location line="+535"/>
+        <location line="+5"/>
+        <location line="+11"/>
         <source>Closing a link preview was cancelled.</source>
         <translation>링크 미리 보기 닫기가 취소되었습니다.</translation>
     </message>
     <message>
-        <location line="-513"/>
+        <location line="-547"/>
         <source>A protected operation is in progress. Retry conversion.</source>
         <translation>보호된 작업이 진행 중입니다. 변환을 다시 시도하세요.</translation>
     </message>
@@ -11872,12 +12080,13 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+48"/>
-        <location line="+10"/>
+        <location line="+4"/>
+        <location line="+29"/>
         <source>A protected operation is in progress. Finish it before locking.</source>
         <translation>보호된 작업이 진행 중입니다. 작업을 완료한 후 잠그세요.</translation>
     </message>
     <message>
-        <location line="+18"/>
+        <location line="+24"/>
         <source>Protected views changed while locking. Try again.</source>
         <translation>잠그는 동안 보호된 뷰가 변경되었습니다. 다시 시도하세요.</translation>
     </message>
@@ -11887,7 +12096,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>보호된 작업이 완료되지 않았습니다. 노트는 잠금 해제 상태로 유지됩니다.</translation>
     </message>
     <message>
-        <location line="+12"/>
+        <location line="+17"/>
         <source>Comments could not be saved.</source>
         <translation>댓글을 저장할 수 없습니다.</translation>
     </message>
@@ -11907,17 +12116,53 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>보호된 뷰를 닫을 수 없습니다. 키는 계속 사용할 수 있습니다.</translation>
     </message>
     <message>
-        <location line="+8"/>
+        <location line="-39"/>
+        <location line="+47"/>
         <source>A protected view is still closing. Keys remain available.</source>
         <translation>보호된 뷰를 아직 닫는 중입니다. 키는 계속 사용할 수 있습니다.</translation>
     </message>
     <message>
-        <location line="+5"/>
+        <location line="-915"/>
+        <location line="+18"/>
+        <source>Unable to create a mind map from this outline</source>
+        <translation>이 개요로 마인드맵을 만들 수 없습니다</translation>
+    </message>
+    <message>
+        <location line="+22"/>
+        <source>No outline is available for a mind map</source>
+        <translation>마인드맵에 사용할 수 있는 개요가 없습니다</translation>
+    </message>
+    <message>
+        <location line="+880"/>
         <source>A protected buffer is busy. Keys remain available.</source>
         <translation>보호된 버퍼가 사용 중입니다. 키는 계속 사용할 수 있습니다.</translation>
     </message>
     <message>
-        <location line="+600"/>
+        <location line="+137"/>
+        <source>The outline has changed. Reopen the mind map to navigate.</source>
+        <translation>개요가 변경되었습니다. 탐색하려면 마인드맵을 다시 여세요.</translation>
+    </message>
+    <message>
+        <location line="+103"/>
+        <location line="+5"/>
+        <location line="+51"/>
+        <location line="+19"/>
+        <location line="+16"/>
+        <source>Unable to open the outline mind map</source>
+        <translation>개요 마인드맵을 열 수 없습니다</translation>
+    </message>
+    <message>
+        <location line="-82"/>
+        <source>Document</source>
+        <translation>문서</translation>
+    </message>
+    <message>
+        <location line="+11"/>
+        <source>Mind Map: %1</source>
+        <translation>마인드맵: %1</translation>
+    </message>
+    <message>
+        <location line="+637"/>
         <source>Preview</source>
         <translation>미리 보기</translation>
     </message>
@@ -12020,7 +12265,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>위치 열기</translation>
     </message>
     <message>
-        <location line="+10"/>
+        <location line="+11"/>
         <source>Locate Node</source>
         <translation>노드 위치 찾기</translation>
     </message>
@@ -12055,6 +12300,11 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>다시 불러오기</translation>
     </message>
     <message>
+        <location line="+2"/>
+        <source>Reload content from its source, discarding unsaved changes</source>
+        <translation>저장하지 않은 변경 사항을 버리고 원본에서 내용을 다시 불러옵니다</translation>
+    </message>
+    <message>
         <location line="+1"/>
         <source>Reload file from disk, discarding unsaved changes</source>
         <translation>저장하지 않은 변경 사항을 버리고 디스크에서 파일 다시 불러오기</translation>
@@ -12065,7 +12315,7 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>자동 새로 고침</translation>
     </message>
     <message>
-        <location line="+3"/>
+        <location line="+4"/>
         <source>Automatically reload file from disk when modified externally</source>
         <translation>외부에서 변경된 파일을 디스크에서 자동으로 다시 불러오기</translation>
     </message>
@@ -12157,17 +12407,12 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>스니펫 선택</translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.cpp" line="+470"/>
-        <source>Do you want to save changes to &quot;%1&quot;?</source>
-        <translation>&quot;%1&quot;의 변경 사항을 저장하시겠습니까?</translation>
-    </message>
-    <message>
-        <location line="+1"/>
+        <location filename="../../../widgets/viewwindow2.cpp" line="+417"/>
         <source>Your changes will be lost if you don&apos;t save them.</source>
         <translation>저장하지 않으면 변경 사항이 사라집니다.</translation>
     </message>
     <message>
-        <location line="+28"/>
+        <location line="+29"/>
         <source>Save Changes</source>
         <translation>변경 사항 저장</translation>
     </message>
@@ -12188,21 +12433,21 @@ This removes the file and any sub-tasks it contains: %2</source>
     </message>
     <message>
         <location line="+37"/>
-        <location line="+491"/>
+        <location line="+542"/>
         <source>Failed to save note (%1).</source>
         <translation>노트(%1)를 저장하지 못했습니다.</translation>
     </message>
     <message>
-        <location line="-487"/>
-        <location line="+465"/>
-        <location line="+126"/>
+        <location line="-538"/>
+        <location line="+510"/>
+        <location line="+132"/>
         <source>Unable to read the editor content</source>
         <translation>편집기 내용을 읽을 수 없습니다</translation>
     </message>
     <message>
-        <location line="-833"/>
+        <location line="-893"/>
         <location line="+5"/>
-        <location line="+440"/>
+        <location line="+492"/>
         <location line="+73"/>
         <location line="+46"/>
         <location line="+26"/>
@@ -12211,12 +12456,22 @@ This removes the file and any sub-tasks it contains: %2</source>
         <translation>읽기 전용 — 편집할 수 없음</translation>
     </message>
     <message>
-        <location line="-668"/>
+        <location line="-720"/>
         <source>Unable to open another note: comments could not be saved</source>
         <translation>다른 노트를 열 수 없습니다: 주석을 저장하지 못했습니다</translation>
     </message>
     <message>
-        <location line="+807"/>
+        <location line="+231"/>
+        <source>Close note (%1) with unsaved changes?</source>
+        <translation>저장하지 않은 변경 사항이 있는 노트(%1)를 닫으시겠습니까?</translation>
+    </message>
+    <message>
+        <location line="+3"/>
+        <source>This buffer has no save destination. Closing it will lose its changes.</source>
+        <translation>이 버퍼에는 저장 위치가 없습니다. 닫으면 변경 사항이 사라집니다.</translation>
+    </message>
+    <message>
+        <location line="+633"/>
         <source>Change Encoding</source>
         <translation>인코딩 변경</translation>
     </message>
@@ -12235,18 +12490,18 @@ Continue?</source>
         <translation>버리기 &amp;&amp; 다시 해석</translation>
     </message>
     <message>
-        <location line="+171"/>
+        <location line="+172"/>
         <source>Reload note (%1) and discard unsaved changes?</source>
         <translation>저장하지 않은 변경 사항을 버리고 노트(%1)를 다시 불러오시겠습니까?</translation>
     </message>
     <message>
         <location line="+1"/>
-        <location line="+657"/>
+        <location line="+667"/>
         <source>Note path (%1).</source>
         <translation>노트 경로(%1).</translation>
     </message>
     <message>
-        <location line="-557"/>
+        <location line="-567"/>
         <source>This file is read-only (%1). Changes cannot be saved.</source>
         <translation>이 파일은 읽기 전용입니다(%1). 변경 사항을 저장할 수 없습니다.</translation>
     </message>
@@ -12323,19 +12578,19 @@ Continue?</source>
         <translation>확대/축소: %1%2</translation>
     </message>
     <message>
-        <location line="+199"/>
+        <location line="+209"/>
         <source>Discard changes to note (%1)?</source>
         <translation>노트(%1)의 변경 사항을 버리시겠습니까?</translation>
     </message>
     <message numerus="yes">
-        <location line="+109"/>
+        <location line="+111"/>
         <source>Attached %n file(s)</source>
         <translation>
             <numerusform>파일 %n개 첨부됨</numerusform>
         </translation>
     </message>
     <message>
-        <location filename="../../../widgets/viewwindow2.h" line="+151"/>
+        <location filename="../../../widgets/viewwindow2.h" line="+155"/>
         <source>Tools</source>
         <translation>도구</translation>
     </message>
@@ -12343,7 +12598,17 @@ Continue?</source>
 <context>
     <name>vnotex::WebViewExporter</name>
     <message>
-        <location filename="../../../export/webviewexporter.cpp" line="+338"/>
+        <location filename="../../../export/webviewexporter.cpp" line="+326"/>
+        <source>Source export format is not supported by this renderer.</source>
+        <translation>이 렌더러는 원본 형식 내보내기를 지원하지 않습니다.</translation>
+    </message>
+    <message>
+        <location line="+5"/>
+        <source>Failed to write file (%1): %2</source>
+        <translation>파일(%1)을 쓰지 못했습니다: %2</translation>
+    </message>
+    <message>
+        <location line="+18"/>
         <source>Export rendering services are unavailable.</source>
         <translation>내보내기 렌더링 서비스를 사용할 수 없습니다.</translation>
     </message>
@@ -12363,7 +12628,7 @@ Continue?</source>
         <translation>(%1)의 HTML을 준비하는 중 실패하거나 취소되었습니다.</translation>
     </message>
     <message>
-        <location line="+77"/>
+        <location line="+76"/>
         <source>Failed or cancelled while serializing HTML.</source>
         <translation>HTML을 직렬화하는 중 실패하거나 취소되었습니다.</translation>
     </message>
