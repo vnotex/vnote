@@ -2314,12 +2314,12 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     if (m_legacyImageBar) {
       m_legacyImageBar->hide();
     }
-    // Clear in-flight messages on mode changes, then hide the overlay until
-    // the next transient message. Neither showing nor hiding it resizes content.
+    // Release the editor status row; Read only overlays transient messages.
     showMessage(QString());
     if (statusBar()) {
       statusBar()->hide();
     }
+    setStatusBarFixed(false);
     break;
 
   case ViewWindowMode::Edit:
@@ -2333,6 +2333,7 @@ void MarkdownViewWindow2::setModeInternal(ViewWindowMode p_mode, bool p_syncBuff
     // Clear any transient message left over from Read mode (e.g. a hovered link
     // URL) so we don't carry it into Edit's editor status surface.
     showMessage(QString());
+    setStatusBarFixed(true);
     if (statusBar()) {
       statusBar()->show();
     }

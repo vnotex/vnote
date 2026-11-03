@@ -50,6 +50,7 @@ private slots:
   void testMessageVisibilitySignal();
   void testColumnIndexProperty();
   void testOverlayPreservesContentGeometry();
+  void testFixedStatusReservesContentSpace();
   void testNativeOverlayInputAndLateContent_data();
   void testNativeOverlayInputAndLateContent();
 
@@ -467,12 +468,14 @@ void TestStatusBar::testOverlayPreservesContentGeometry() {
   layout->addLayout(content, 1);
   auto *canvas = new QWidget(&window);
   content->addWidget(canvas);
+  auto *bottom = new QVBoxLayout;
+  layout->addLayout(bottom);
   auto *footer = new QLabel(QStringLiteral("Find"), &window);
   layout->addWidget(footer);
   StatusBarColumn column;
   column.text = QStringLiteral("Ready");
   auto *bar = new StatusBar({column}, &window);
-  new StatusOverlay(bar, content);
+  new StatusOverlay(bar, content, bottom, false);
   window.resize(420, 260);
   window.show();
   QVERIFY(QTest::qWaitForWindowExposed(&window));
@@ -513,6 +516,93 @@ void TestStatusBar::testOverlayPreservesContentGeometry() {
   QCOMPARE(bar->geometry(), detached);
 }
 
+void TestStatusBar::testFixedStatusReservesContentSpace() {
+  QWidget window;
+  auto *layout = new QVBoxLayout(&window);
+  layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(0);
+  auto *content = new QHBoxLayout;
+  layout->addLayout(content, 1);
+  auto *canvas = new QWidget(&window);
+  content->addWidget(canvas);
+  auto *bottom = new QVBoxLayout;
+  layout->addLayout(bottom);
+  auto *footer = new QLabel(QStringLiteral("Find"), &window);
+  layout->addWidget(footer);
+  window.resize(420, 260);
+  window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&window));
+  const int minimumWidth = window.minimumSizeHint().width();
+
+  StatusBarColumn column;
+  column.text = QString(256, QLatin1Char('W'));
+  auto *bar = new StatusBar({column}, &window);
+  auto *attachment = new StatusOverlay(bar, content, bottom, true);
+  bar->show();
+  QTRY_COMPARE(canvas->geometry().bottom() + 1, bar->geometry().top());
+  QCOMPARE(bar->geometry().bottom() + 1, footer->geometry().top());
+  QVERIFY(!canvas->geometry().intersects(bar->geometry()));
+  QCOMPARE(window.minimumSizeHint().width(), minimumWidth);
+  window.resize(220, 180);
+  QTRY_COMPARE(window.width(), 220);
+  QTRY_COMPARE(bar->width(), canvas->width());
+  QCOMPARE(canvas->geometry().bottom() + 1, bar->geometry().top());
+
+  const QRect original = canvas->geometry();
+  const int messageMinimumWidth = window.minimumSizeHint().width();
+  const QString url = QStringLiteral("https://example.com/") + QString(4096, QLatin1Char('x'));
+  bar->showMessage(url, 0);
+  QCoreApplication::processEvents();
+  QCOMPARE(canvas->geometry(), original);
+  QCOMPARE(window.minimumSizeHint().width(), messageMinimumWidth);
+  bar->showMessage(QString());
+  QCoreApplication::processEvents();
+  QCOMPARE(canvas->geometry(), original);
+  QCOMPARE(window.minimumSizeHint().width(), messageMinimumWidth);
+  bar->showMessage(url, 100);
+  QTRY_VERIFY(!bar->isMessageVisible());
+  QCOMPARE(canvas->geometry(), original);
+  QCOMPARE(window.minimumSizeHint().width(), messageMinimumWidth);
+
+  bar->hide();
+  QTRY_COMPARE(canvas->geometry().bottom() + 1, footer->geometry().top());
+  bar->show();
+  QTRY_COMPARE(canvas->geometry(), original);
+  window.hide();
+  window.show();
+  QVERIFY(QTest::qWaitForWindowExposed(&window));
+  QTRY_COMPARE(canvas->geometry(), original);
+
+  attachment->setFixed(false);
+  attachment->setFixed(false);
+  QTRY_COMPARE(canvas->geometry().bottom() + 1, footer->geometry().top());
+  QCOMPARE(bar->geometry().bottom(), canvas->geometry().bottom());
+  QVERIFY(canvas->geometry().intersects(bar->geometry()));
+  attachment->setFixed(true);
+  attachment->setFixed(true);
+  QTRY_COMPARE(canvas->geometry(), original);
+  window.resize(480, 320);
+  QTRY_COMPARE(canvas->geometry().bottom() + 1, bar->geometry().top());
+  QCOMPARE(bar->geometry().bottom() + 1, footer->geometry().top());
+  QFont font = bar->font();
+  font.setPointSize(20);
+  bar->setFont(font);
+  QTRY_COMPARE(bar->height(), bar->sizeHint().height());
+  QCOMPARE(canvas->geometry().bottom() + 1, bar->geometry().top());
+  QCOMPARE(bar->geometry().bottom() + 1, footer->geometry().top());
+  QVERIFY(!canvas->geometry().intersects(bar->geometry()));
+
+  QWidget otherHost;
+  bar->setParent(&otherHost);
+  const QRect detached = bar->geometry();
+  attachment->setFixed(false);
+  attachment->setFixed(true);
+  window.resize(520, 360);
+  QTRY_COMPARE(canvas->geometry().bottom() + 1, footer->geometry().top());
+  QCOMPARE(bar->parentWidget(), &otherHost);
+  QCOMPARE(bar->geometry(), detached);
+}
+
 void TestStatusBar::testNativeOverlayInputAndLateContent_data() {
   QTest::addColumn<bool>("nested");
   QTest::newRow("top-level") << false;
@@ -540,17 +630,22 @@ void TestStatusBar::testNativeOverlayInputAndLateContent() {
     view = new QWidget(&window);
     shell->addWidget(view, 1);
   }
-  auto *layout = new QHBoxLayout(view);
+  auto *layout = new QVBoxLayout(view);
   layout->setContentsMargins(0, 0, 0, 0);
+  layout->setSpacing(0);
+  auto *content = new QHBoxLayout;
+  layout->addLayout(content, 1);
   auto *canvas = new QWidget(view);
-  layout->addWidget(canvas);
+  content->addWidget(canvas);
+  auto *bottom = new QVBoxLayout;
+  layout->addLayout(bottom);
   int controlClicks = 0;
   StatusBarColumn column;
   column.type = StatusBarColumnType::Button;
   column.text = QStringLiteral("Encoding");
   column.onClicked = [&] { ++controlClicks; };
   auto *bar = new StatusBar({column}, view);
-  new StatusOverlay(bar, layout);
+  auto *attachment = new StatusOverlay(bar, content, bottom, true);
   window.resize(400, 240);
   window.show();
   QVERIFY(QTest::qWaitForWindowExposed(&window));
@@ -559,7 +654,11 @@ void TestStatusBar::testNativeOverlayInputAndLateContent() {
   auto *native = new QPushButton(QStringLiteral("Content link"), canvas);
   native->setAttribute(Qt::WA_DontCreateNativeAncestors);
   native->setAttribute(Qt::WA_NativeWindow);
-  native->setGeometry(canvas->rect());
+  auto *nativeLayout = new QVBoxLayout(canvas);
+  nativeLayout->setContentsMargins(0, 0, 0, 0);
+  nativeLayout->setSpacing(0);
+  nativeLayout->addWidget(native);
+  native->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
   native->show();
   QSignalSpy contentClicks(native, &QPushButton::clicked);
   QCoreApplication::processEvents();
@@ -587,13 +686,17 @@ void TestStatusBar::testNativeOverlayInputAndLateContent() {
   QTRY_COMPARE(controlClicks, 1);
   QCOMPARE(contentClicks.count(), 0);
   bar->hide();
+  attachment->setFixed(false);
   bar->showMessage(QStringLiteral("https://example.com/"), 0);
   bar->show();
   QCoreApplication::processEvents();
-  clickCovered();
+  QCOMPARE(native->geometry(), canvas->rect());
+  clickAt(bar->mapTo(&window, bar->rect().center()));
   QTRY_COMPARE(contentClicks.count(), 1);
   QCOMPARE(controlClicks, 1);
   bar->showMessage(QString());
+  attachment->setFixed(true);
+  QCoreApplication::processEvents();
   clickCovered();
   QTRY_COMPARE(controlClicks, 2);
   QCOMPARE(contentClicks.count(), 1);
@@ -604,19 +707,32 @@ void TestStatusBar::testNativeOverlayInputAndLateContent() {
       view->show();
       QCoreApplication::processEvents();
       native->setGeometry(canvas->rect());
-      QCOMPARE(bar->width(), canvas->width());
-      QVERIFY(canvas->geometry().contains(bar->geometry()));
-      RECT bounds;
-      QVERIFY(GetWindowRect(reinterpret_cast<HWND>(bar->winId()), &bounds));
-      const QPoint origin = canvas->mapToGlobal(QPoint());
-      const qreal ratio = window.devicePixelRatioF();
-      QVERIFY(bounds.left >= qRound(origin.x() * ratio));
-      QVERIFY(bounds.top >= qRound(origin.y() * ratio));
-      QVERIFY(bounds.right <= qRound((origin.x() + canvas->width()) * ratio));
-      QVERIFY(bounds.bottom <= qRound((origin.y() + canvas->height()) * ratio));
-      clickAt(outside->mapTo(&window, outside->rect().center()));
-      QTRY_COMPARE(outsideClicks, size.width() == 560 ? 1 : 2);
-      QCOMPARE(controlClicks, 2);
+      for (bool fixed : {false, true}) {
+        attachment->setFixed(fixed);
+        QCoreApplication::processEvents();
+        QCOMPARE(bar->width(), canvas->width());
+        if (fixed) {
+          QCOMPARE(canvas->geometry().bottom() + 1, bar->geometry().top());
+          QVERIFY(!canvas->geometry().intersects(bar->geometry()));
+        } else {
+          QVERIFY(canvas->geometry().contains(bar->geometry()));
+        }
+        RECT bounds;
+        QVERIFY(GetWindowRect(reinterpret_cast<HWND>(bar->winId()), &bounds));
+        const auto *area = fixed ? view : canvas;
+        const QPoint origin = area->mapToGlobal(QPoint());
+        const qreal ratio = window.devicePixelRatioF();
+        // Native origins and sizes are rounded independently at fractional display scaling.
+        const QPoint nativeOrigin(qRound(origin.x() * ratio), qRound(origin.y() * ratio));
+        QVERIFY(bounds.left >= nativeOrigin.x());
+        QVERIFY(bounds.top >= nativeOrigin.y());
+        QVERIFY(bounds.right <= nativeOrigin.x() + qRound(area->width() * ratio));
+        QVERIFY(bounds.bottom <= nativeOrigin.y() + qRound(area->height() * ratio));
+        const int expectedClicks = outsideClicks + 1;
+        clickAt(outside->mapTo(&window, outside->rect().center()));
+        QTRY_COMPARE(outsideClicks, expectedClicks);
+        QCOMPARE(controlClicks, 2);
+      }
     }
     clickCovered();
     QTRY_COMPARE(controlClicks, 3);

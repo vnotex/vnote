@@ -44,6 +44,7 @@ class FloatingWidget;
 class OutlineProvider;
 class CommentProvider;
 class ServiceLocator;
+class StatusOverlay;
 class StatusWidget;
 class FindAndReplaceWidget2;
 
@@ -56,7 +57,7 @@ class FindAndReplaceWidget2;
 //   [top widgets]      ← addTopWidget()
 //   [central widget]   ← setCentralWidget() (stretch=1)
 //   [bottom widgets]   ← addBottomWidget()
-// Status widgets float over the bottom of the central content, outside these slots.
+// Persistent status reserves the first bottom row; temporary-only messages overlay content.
 //
 // Usage:
 //   class MarkdownViewWindow2 : public ViewWindow2 {
@@ -479,13 +480,16 @@ protected:
   // Add a widget below the central widget.
   void addBottomWidget(QWidget *p_widget);
 
-  // Float the status widget over the bottom of the content. Takes shared ownership.
+  // Reserve a row for permanent controls; overlay message-only status. Takes shared ownership.
   void setStatusWidget(const QSharedPointer<StatusWidget> &p_widget);
 
   // Register the column-based status bar for this window. Call once in a
   // subclass constructor. An empty def is a no-op (no bar created). A non-empty
-  // def creates a StatusBar floating over the bottom of the content.
+  // def creates a StatusBar in a reserved row below the content.
   void setStatusBarDef(const StatusBarDef &p_def);
+
+  // Read-mode messages overlay content; Edit keeps its permanent status row.
+  void setStatusBarFixed(bool p_fixed);
 
   // Access the column-based status bar (nullptr if none registered).
   StatusBar *statusBar() const { return m_statusBar; }
@@ -752,7 +756,7 @@ private:
   // Managed by QObject.
   QVBoxLayout *m_topLayout = nullptr;
 
-  // Bottom layout: bottom widgets only; status overlays never reserve a row.
+  // Bottom layout: fixed status first, then other bottom widgets.
   // Managed by QObject.
   QVBoxLayout *m_bottomLayout = nullptr;
 
@@ -778,6 +782,8 @@ private:
   // Column-based status bar (phase 1 infra). Managed by QObject. nullptr until
   // a subclass registers a non-empty StatusBarDef via setStatusBarDef.
   StatusBar *m_statusBar = nullptr;
+  // Owned by m_statusBar.
+  StatusOverlay *m_statusBarOverlay = nullptr;
 
   // Find and replace widget. Managed by QObject.
   FindAndReplaceWidget2 *m_findAndReplace = nullptr;

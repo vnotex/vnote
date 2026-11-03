@@ -647,7 +647,10 @@ void ViewWindow2::addBottomWidget(QWidget *p_widget) { m_bottomLayout->addWidget
 
 void ViewWindow2::setStatusWidget(const QSharedPointer<StatusWidget> &p_widget) {
   m_statusWidget = p_widget;
-  new StatusOverlay(p_widget.data(), m_contentLayout);
+  auto *overlay = new StatusOverlay(p_widget.data(), m_contentLayout, m_bottomLayout,
+                                    p_widget->hasPermanentStatus());
+  connect(p_widget.data(), &StatusWidget::permanentStatusChanged, overlay,
+          &StatusOverlay::setFixed);
   p_widget->show();
 
   // Host the encoding picker in the status bar's right corner for windows that
@@ -690,8 +693,14 @@ void ViewWindow2::setStatusBarDef(const StatusBarDef &p_def) {
   }
 
   m_statusBar = new StatusBar(p_def, this);
-  new StatusOverlay(m_statusBar, m_contentLayout);
+  m_statusBarOverlay = new StatusOverlay(m_statusBar, m_contentLayout, m_bottomLayout, true);
   m_statusBar->show();
+}
+
+void ViewWindow2::setStatusBarFixed(bool p_fixed) {
+  if (m_statusBarOverlay) {
+    m_statusBarOverlay->setFixed(p_fixed);
+  }
 }
 
 QToolBar *ViewWindow2::createToolBar(QWidget *p_parent) {

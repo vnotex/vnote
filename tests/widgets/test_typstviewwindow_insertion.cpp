@@ -92,6 +92,7 @@
 #include <widgets/dialogs/imagesizedialog.h>
 #include <widgets/dialogs/linkinsertdialog.h>
 #include <widgets/dialogs/selectdialog.h>
+#include <widgets/editors/statusbar.h>
 #include <widgets/imageviewer.h>
 #include <widgets/typstviewwindow.h>
 
@@ -173,6 +174,8 @@ class Window : public TypstViewWindow {
 public:
   using TypstViewWindow::syncEditorFromBuffer;
   using TypstViewWindow::TypstViewWindow;
+  using TypstViewWindow::zoom;
+  using ViewWindow2::statusBar;
   void invokeImage() { handleTypeAction(TypeImage); }
   void invokeLink() { handleTypeAction(TypeLink); }
   ~Window() override {
@@ -880,6 +883,7 @@ private slots:
   void initTestCase();
   void init();
   void cleanup();
+  void statusPlacementFollowsMode();
   void memoryBodyRendersWithoutFileWrites_data();
   void memoryBodyRendersWithoutFileWrites();
   void nativePaste_data();
@@ -1170,6 +1174,84 @@ void TestTypstViewWindowInsertion::show(const Buffer2 &buffer) {
   m_edit->setFocus();
   QCoreApplication::processEvents();
 }
+void TestTypstViewWindowInsertion::statusPlacementFollowsMode() {
+  show(openNote());
+  QVERIFY(m_window && m_editor && m_pdf);
+  QVERIFY(ready());
+  QCoreApplication::processEvents();
+  QCOMPARE(m_window->getMode(), ViewWindowMode::Edit);
+  auto *bar = m_window->statusBar();
+  QVERIFY(bar);
+  const auto windowRect = [this](const QWidget *widget) {
+    return QRect(widget->mapTo(m_window.get(), QPoint()), widget->size());
+  };
+  QVERIFY(bar->isVisible());
+  QVERIFY(bar->height() > 0);
+  const auto editRect = windowRect(m_editor);
+  const auto fixedBarRect = windowRect(bar);
+  QCOMPARE(editRect.bottom() + 1, fixedBarRect.top());
+  QVERIFY(!editRect.intersects(fixedBarRect));
+
+  m_window->setMode(ViewWindowMode::Read);
+  QVERIFY(ready());
+  QCoreApplication::processEvents();
+  QCOMPARE(m_window->getMode(), ViewWindowMode::Read);
+  QVERIFY(!bar->isMessageVisible());
+  const auto readRect = windowRect(m_editor);
+  const auto pdfRect = windowRect(m_pdf);
+  QVERIFY(readRect.height() > editRect.height());
+  QCOMPARE(readRect.bottom(), fixedBarRect.bottom());
+
+  // Use the real zoom path; ready() would fit the page and undo the zoom under test.
+  m_window->zoom(true);
+  QCoreApplication::processEvents();
+  QVERIFY(bar->isMessageVisible());
+  QVERIFY(bar->isVisible());
+  QVERIFY(bar->height() > 0);
+  QVERIFY(readRect.intersects(windowRect(bar)));
+  QCOMPARE(windowRect(m_editor), readRect);
+  QCOMPARE(windowRect(m_pdf), pdfRect);
+
+  bar->showMessage(QString());
+  QCoreApplication::processEvents();
+  QVERIFY(!bar->isMessageVisible());
+  QCOMPARE(windowRect(m_editor), readRect);
+  QCOMPARE(windowRect(m_pdf), pdfRect);
+
+  m_window->zoom(true);
+  QCoreApplication::processEvents();
+  QVERIFY(bar->isMessageVisible());
+  QCOMPARE(windowRect(m_editor), readRect);
+  QCOMPARE(windowRect(m_pdf), pdfRect);
+  bool geometryStayedStable = true;
+  QVERIFY(QTest::qWaitFor(
+      [&] {
+        geometryStayedStable = geometryStayedStable && windowRect(m_editor) == readRect &&
+                               windowRect(m_pdf) == pdfRect;
+        return !bar->isMessageVisible();
+      },
+      5000));
+  QCoreApplication::processEvents();
+  QVERIFY(geometryStayedStable);
+  QCOMPARE(windowRect(m_editor), readRect);
+  QCOMPARE(windowRect(m_pdf), pdfRect);
+
+  m_window->zoom(true);
+  QCoreApplication::processEvents();
+  QVERIFY(bar->isMessageVisible());
+  QCOMPARE(windowRect(m_editor), readRect);
+  QCOMPARE(windowRect(m_pdf), pdfRect);
+  m_window->setMode(ViewWindowMode::Edit);
+  QCoreApplication::processEvents();
+  QCOMPARE(m_window->getMode(), ViewWindowMode::Edit);
+  QVERIFY(!bar->isMessageVisible());
+  QVERIFY(bar->isVisible());
+  QVERIFY(bar->height() > 0);
+  QCOMPARE(windowRect(m_editor), editRect);
+  QCOMPARE(windowRect(m_editor).bottom() + 1, windowRect(bar).top());
+  QVERIFY(!windowRect(m_editor).intersects(windowRect(bar)));
+}
+
 void TestTypstViewWindowInsertion::memoryBodyRendersWithoutFileWrites_data() {
   QTest::addColumn<bool>("rooted");
   QTest::addColumn<QString>("displayName");

@@ -21,6 +21,8 @@ public:
   // Explicit show requests must not reserve a blank status row.
   void setVisible(bool p_visible) Q_DECL_OVERRIDE;
 
+  bool hasPermanentStatus() const;
+
   void showMessage(const QString &p_msg, int p_milliseconds = 3000);
 
   void setEditorStatusWidget(const QSharedPointer<QWidget> &p_editorWidget);
@@ -30,6 +32,9 @@ public:
   // regardless of which stacked page is shown. Ownership passes to this widget
   // via reparenting.
   void addCornerWidget(QWidget *p_widget);
+
+signals:
+  void permanentStatusChanged(bool p_permanent);
 
 protected:
   void resizeEvent(QResizeEvent *p_event) Q_DECL_OVERRIDE;

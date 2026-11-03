@@ -67,6 +67,7 @@
 #include <widgets/editors/markdownvieweradapter.h>
 #include <widgets/editors/markdownwebjobhost.h>
 #include <widgets/editors/previewhelper.h>
+#include <widgets/editors/statusbar.h>
 #include <widgets/markdownviewwindow2.h>
 #include <widgets/outlineprovider.h>
 
@@ -121,6 +122,7 @@ public:
   using ViewWindow2::fetchWordCountInfo;
   using ViewWindow2::isViewFullScreen;
   using ViewWindow2::onFocusGained;
+  using ViewWindow2::statusBar;
   ~Window() override {
     getServices().get<BufferService>()->unregisterActiveWriter(getBuffer().id(),
                                                                reinterpret_cast<quintptr>(this));
@@ -257,6 +259,7 @@ private slots:
   void cleanup();
   void initialMode_data();
   void initialMode();
+  void statusPlacementFollowsMode();
   void assistanceBeforeReader();
   void endpointChangeReplaysCachedMath();
   void firstReaderUsesCurrentDraft_data();
@@ -507,6 +510,104 @@ void TestMarkdownViewWindowLazy::initialMode() {
   } else {
     QCOMPARE(webViewCount(), previousViews);
   }
+}
+
+void TestMarkdownViewWindowLazy::statusPlacementFollowsMode() {
+  markdownConfig().setInplacePreviewSources(MarkdownEditorConfig::NoInplacePreview);
+  markdownConfig().setEditViewMode(MarkdownEditorConfig::EditOnly);
+  const auto buffer = openNote(QStringLiteral("status-placement.md"),
+                               QByteArrayLiteral("# Status placement\n\nA plain note.\n"));
+  QVERIFY(buffer.isValid());
+  Window window(m_services, buffer, nullptr, ViewWindowMode::Read);
+  showWindow(window);
+  auto *surface = window.findChild<QSplitter *>(QString(), Qt::FindDirectChildrenOnly);
+  auto *bar = window.statusBar();
+  auto *viewer = window.findChild<MarkdownViewer *>();
+  QVERIFY(surface && bar && viewer);
+  QTRY_VERIFY_WITH_TIMEOUT(viewer->jobSession()->isReady(), 30000);
+  const auto rectInWindow = [&](QWidget *p_widget) {
+    return QRect(p_widget->mapTo(&window, QPoint()), p_widget->size());
+  };
+  QTRY_VERIFY(!bar->isVisible());
+  QTRY_COMPARE(rectInWindow(surface).bottom(), window.contentsRect().bottom());
+  const QRect initialReadSurface = rectInWindow(surface);
+
+  window.setMode(ViewWindowMode::Edit);
+  QTRY_VERIFY(bar->isVisible());
+  QTRY_COMPARE(rectInWindow(surface).bottom() + 1, rectInWindow(bar).top());
+  QVERIFY(!rectInWindow(surface).intersects(rectInWindow(bar)));
+  QCOMPARE(rectInWindow(bar).bottom(), window.contentsRect().bottom());
+  const QRect editSurface = rectInWindow(surface);
+  const QRect editBar = rectInWindow(bar);
+  QVERIFY(editSurface.height() < initialReadSurface.height());
+  const QString message = QStringLiteral("https://example.com/") + QString(4096, QLatin1Char('x'));
+
+  bar->showMessage(message, 0);
+  QTRY_VERIFY(bar->isMessageVisible());
+  QCoreApplication::processEvents();
+  QCOMPARE(rectInWindow(surface), editSurface);
+  QCOMPARE(rectInWindow(bar), editBar);
+  bar->showMessage(QString());
+  QTRY_VERIFY(!bar->isMessageVisible());
+  QCoreApplication::processEvents();
+  QVERIFY(bar->isVisible());
+  QCOMPARE(rectInWindow(surface), editSurface);
+  QCOMPARE(rectInWindow(bar), editBar);
+
+  bar->showMessage(message, 100);
+  QVERIFY(bar->isMessageVisible());
+  QCoreApplication::processEvents();
+  QCOMPARE(rectInWindow(surface), editSurface);
+  QCOMPARE(rectInWindow(bar), editBar);
+  QTRY_VERIFY_WITH_TIMEOUT(!bar->isMessageVisible(), 5000);
+  QCoreApplication::processEvents();
+  QVERIFY(bar->isVisible());
+  QCOMPARE(rectInWindow(surface), editSurface);
+  QCOMPARE(rectInWindow(bar), editBar);
+
+  window.setMode(ViewWindowMode::Read);
+  viewer = window.findChild<MarkdownViewer *>();
+  QVERIFY(viewer);
+  QTRY_VERIFY_WITH_TIMEOUT(viewer->jobSession()->isReady(), 30000);
+  QTRY_VERIFY(!bar->isVisible());
+  QTRY_COMPARE(rectInWindow(surface), initialReadSurface);
+  const QRect readSurface = rectInWindow(surface);
+  const QRect readViewer = rectInWindow(viewer);
+  QCOMPARE(readSurface.bottom(), window.contentsRect().bottom());
+
+  bar->showMessage(message, 0);
+  QTRY_VERIFY(bar->isVisible() && bar->isMessageVisible());
+  QCoreApplication::processEvents();
+  QCOMPARE(rectInWindow(surface), readSurface);
+  QCOMPARE(rectInWindow(viewer), readViewer);
+  QVERIFY(rectInWindow(surface).intersects(rectInWindow(bar)));
+  QVERIFY(rectInWindow(viewer).intersects(rectInWindow(bar)));
+  QCOMPARE(rectInWindow(bar).bottom(), readSurface.bottom());
+  bar->showMessage(QString());
+  QTRY_VERIFY(!bar->isVisible() && !bar->isMessageVisible());
+  QCoreApplication::processEvents();
+  QCOMPARE(rectInWindow(surface), readSurface);
+  QCOMPARE(rectInWindow(viewer), readViewer);
+
+  bar->showMessage(message, 100);
+  QVERIFY(bar->isVisible() && bar->isMessageVisible());
+  QCoreApplication::processEvents();
+  QCOMPARE(rectInWindow(surface), readSurface);
+  QCOMPARE(rectInWindow(viewer), readViewer);
+  QVERIFY(rectInWindow(viewer).intersects(rectInWindow(bar)));
+  QTRY_VERIFY_WITH_TIMEOUT(!bar->isMessageVisible(), 5000);
+  QTRY_VERIFY(!bar->isVisible());
+  QCoreApplication::processEvents();
+  QCOMPARE(rectInWindow(surface), readSurface);
+  QCOMPARE(rectInWindow(viewer), readViewer);
+  QCOMPARE(rectInWindow(surface).bottom(), window.contentsRect().bottom());
+
+  window.setMode(ViewWindowMode::Edit);
+  QTRY_VERIFY(bar->isVisible());
+  QTRY_COMPARE(rectInWindow(surface).bottom() + 1, rectInWindow(bar).top());
+  QVERIFY(!rectInWindow(surface).intersects(rectInWindow(bar)));
+  QCOMPARE(rectInWindow(surface), editSurface);
+  QCOMPARE(rectInWindow(bar), editBar);
 }
 
 void TestMarkdownViewWindowLazy::assistanceBeforeReader() {

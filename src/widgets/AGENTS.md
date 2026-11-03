@@ -194,13 +194,20 @@ ready reader under a visible parent is eligible; showing a child under a hidden 
 not wake its page. Keep ordinary hide and inactivity-unload behavior unchanged, and guard
 window lifetime across the synchronous page visibility notification.
 
-`ViewWindow2` mounts both `StatusBar` and shared `StatusWidget` through `StatusOverlay`,
-not through the bottom layout. Each strip floats over the bottom edge of its own content
-layout, above Find and other bottom widgets; showing, clearing or expiring a message must
-not resize the editor/WebEngine viewport. Persistent editor controls also float: the strip
-covers content rather than reserving a row. Geometry follows layout, resize and theme/font
-changes, including detached and fullscreen hosts; shared widgets reparented away are no
-longer positioned by their previous attachment.
+`ViewWindow2` mounts both `StatusBar` and shared `StatusWidget` through `StatusOverlay`.
+Permanent controls reserve the first row of the bottom layout: content, status, other bottom
+widgets, then Find. Temporary-only messages float over the bottom edge of the content instead.
+Replacing permanent controls with a message keeps the reserved row; showing, clearing or
+expiring a message must not resize the editor/WebEngine viewport. Explicitly hiding fixed
+status releases its row. Ancestor visibility does not change its attachment mode.
+
+Fixed geometry belongs to the bottom layout, with an ignored horizontal size policy to avoid
+column/URL width pressure and fixed vertical policy using the styled stacked size hint. Do not
+set a fixed height or reset maximum height in the attachment: Typst owns its Read-mode cap.
+`StatusWidget::hasPermanentStatus()` depends on installed editor/corner controls, never the
+current message page; `permanentStatusChanged` updates attachment before showing new controls.
+Geometry follows layout, resize and theme/font changes, including detached and fullscreen
+hosts; shared widgets reparented away are no longer positioned or reclaimed by old attachments.
 
 Message-only surfaces pass mouse input through; editor and corner controls remain interactive.
 Windows overlays need native stacking above late-created WebEngine children and input
@@ -212,10 +219,13 @@ background theme-painted and URLs plain text. Every bundled `interface.qss` give
 status surfaces a 6px radius, palette-based border/fill, and padded messages; internal stack
 pages stay transparent without overriding the nested editor chips or corner controls.
 Windows derives the native mask from the QSS-painted surface, cached until size/style changes,
-so changing the QSS radius does not require a matching C++ value. Activate the content layout
-before sampling its geometry; an invalidated layout can temporarily report an empty rectangle.
-Markdown Read hides an empty overlay; Edit retains its status controls. Regression coverage:
-`test_statusbar` and `test_statuswidget`.
+so changing the QSS radius does not require a matching C++ value. Activate the owning layout
+before sampling content geometry; an invalidated layout can temporarily report an empty rectangle.
+Markdown and Typst Read release the fixed row and only overlay messages; Edit reserves the
+status row. Attachment changes only at mode transitions, not in message-visibility callbacks.
+Plain text always reserves its controls; message-only MindMap status remains an overlay.
+Regression coverage: `test_statusbar`, `test_statuswidget`, `test_markdownviewwindow_lazy`,
+and `test_typstviewwindow_insertion`.
 
 `LinkPreviewOverlay` uses the same native-child-only ancestry policy, but keeps normal hit
 testing. Its QWidget parent remains the source view; its native parent may be the containing

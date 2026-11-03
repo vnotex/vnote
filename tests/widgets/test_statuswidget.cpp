@@ -3,8 +3,8 @@
 #include <QLabel>
 #include <QVBoxLayout>
 
-#include <widgets/editors/statuswidget.h>
 #include <widgets/editors/statusoverlay.h>
+#include <widgets/editors/statuswidget.h>
 
 using namespace vnotex;
 
@@ -14,14 +14,20 @@ struct StatusHost {
   QWidget *canvas = nullptr;
   StatusWidget *status = nullptr;
 
-  StatusHost() {
+  explicit StatusHost(StatusWidget *p_status = nullptr) {
     auto *layout = new QVBoxLayout(&window);
     layout->setContentsMargins(0, 0, 0, 0);
     layout->setSpacing(0);
+    auto *content = new QHBoxLayout;
+    layout->addLayout(content, 1);
     canvas = new QWidget(&window);
-    layout->addWidget(canvas, 1);
-    status = new StatusWidget(&window);
-    new StatusOverlay(status, layout);
+    content->addWidget(canvas);
+    auto *bottom = new QVBoxLayout;
+    layout->addLayout(bottom);
+    status = p_status ? p_status : new StatusWidget(&window);
+    auto *attachment = new StatusOverlay(status, content, bottom, status->hasPermanentStatus());
+    QObject::connect(status, &StatusWidget::permanentStatusChanged, attachment,
+                     &StatusOverlay::setFixed);
     window.resize(400, 240);
     window.show();
     // ViewWindow2 explicitly shows the status widget after hosting it.
@@ -36,6 +42,9 @@ private slots:
   void emptyRowDoesNotReserveSpace() {
     StatusHost host;
     QTRY_COMPARE_WITH_TIMEOUT(host.canvas->geometry(), host.window.rect(), 1000);
+    QVERIFY(!host.status->isVisible());
+    host.status->addCornerWidget(nullptr);
+    QCOMPARE(host.canvas->geometry(), host.window.rect());
     QVERIFY(!host.status->isVisible());
   }
 
@@ -59,36 +68,93 @@ private slots:
     QVERIFY(!host.status->isVisible());
   }
 
+  void editorStatusSurvivesMessageExpiry_data() {
+    QTest::addColumn<bool>("beforeHosting");
+    QTest::newRow("controls-before-hosting") << true;
+    QTest::newRow("controls-after-hosting") << false;
+  }
+
   void editorStatusSurvivesMessageExpiry() {
-    StatusHost host;
+    QFETCH(bool, beforeHosting);
     auto editorStatus = QSharedPointer<QLabel>::create(QStringLiteral("Line 2, column 3"));
-    host.status->setEditorStatusWidget(editorStatus);
+    auto *status = new StatusWidget;
+    if (beforeHosting) {
+      status->setEditorStatusWidget(editorStatus);
+      QVERIFY(!status->isVisible());
+    }
+    StatusHost host(status);
+    if (!beforeHosting) {
+      status->setEditorStatusWidget(editorStatus);
+    }
     QTRY_VERIFY(editorStatus->isVisible());
-    QVERIFY(host.status->isVisible());
-    host.status->showMessage(QStringLiteral("Saved"), 100);
+    QTRY_COMPARE(host.canvas->geometry().bottom() + 1, status->geometry().top());
+    QCOMPARE(status->geometry().bottom(), host.window.rect().bottom());
+    const QRect canvas = host.canvas->geometry();
+    status->showMessage(QStringLiteral("https://example.com/") + QString(4096, QLatin1Char('x')),
+                        0);
+    QCoreApplication::processEvents();
     QVERIFY(!editorStatus->isVisible());
+    QCOMPARE(host.canvas->geometry(), canvas);
+    QVERIFY(status->testAttribute(Qt::WA_TransparentForMouseEvents));
+    status->showMessage(QString());
     QTRY_VERIFY(editorStatus->isVisible());
-    QVERIFY(host.status->isVisible());
-    QCOMPARE(host.canvas->geometry(), host.window.rect());
+    QCOMPARE(host.canvas->geometry(), canvas);
+    QVERIFY(!status->testAttribute(Qt::WA_TransparentForMouseEvents));
+    status->showMessage(QStringLiteral("Saved"), 100);
+    QVERIFY(!editorStatus->isVisible());
+    QCOMPARE(host.canvas->geometry(), canvas);
+    QTRY_VERIFY(editorStatus->isVisible());
+    QVERIFY(status->isVisible());
+    QCOMPARE(host.canvas->geometry(), canvas);
+    status->hide();
+    QTRY_COMPARE(host.canvas->geometry(), host.window.rect());
+    status->show();
+    QTRY_COMPARE(host.canvas->geometry(), canvas);
+  }
+
+  void cornerStatusSurvivesClearing_data() {
+    QTest::addColumn<bool>("beforeHosting");
+    QTest::newRow("controls-before-hosting") << true;
+    QTest::newRow("controls-after-hosting") << false;
   }
 
   void cornerStatusSurvivesClearing() {
-    StatusHost host;
+    QFETCH(bool, beforeHosting);
+    auto *status = new StatusWidget;
     auto *corner = new QLabel(QStringLiteral("UTF-8"));
-    host.status->addCornerWidget(corner);
+    if (beforeHosting) {
+      status->addCornerWidget(corner);
+      QVERIFY(!status->isVisible());
+    }
+    StatusHost host(status);
+    if (!beforeHosting) {
+      status->addCornerWidget(corner);
+    }
     QTRY_VERIFY(corner->isVisible());
-    host.status->showMessage(QStringLiteral("Saved"), 0);
-    host.status->showMessage(QString());
-    QVERIFY(host.status->isVisible() && corner->isVisible());
-    QCOMPARE(host.canvas->geometry(), host.window.rect());
-    host.status->hide();
+    QTRY_COMPARE(host.canvas->geometry().bottom() + 1, status->geometry().top());
+    QCOMPARE(status->geometry().bottom(), host.window.rect().bottom());
+    const QRect canvas = host.canvas->geometry();
+    status->showMessage(QStringLiteral("Saved"), 0);
+    QCoreApplication::processEvents();
+    QCOMPARE(host.canvas->geometry(), canvas);
+    QVERIFY(corner->isVisible());
+    QVERIFY(!status->testAttribute(Qt::WA_TransparentForMouseEvents));
+    status->showMessage(QString());
+    QVERIFY(status->isVisible() && corner->isVisible());
+    QCOMPARE(host.canvas->geometry(), canvas);
+    status->showMessage(QStringLiteral("Saved"), 100);
+    auto *message = status->findChild<QLabel *>(QStringLiteral("StatusWidgetMessage"));
+    QVERIFY(message);
+    QTRY_VERIFY(message->text().isEmpty());
+    QCOMPARE(host.canvas->geometry(), canvas);
+    status->hide();
     QTRY_COMPARE_WITH_TIMEOUT(host.canvas->geometry(), host.window.rect(), 1000);
   }
 
   void longMessageAndResizeKeepCanvasGeometry() {
     StatusHost host;
-    host.status->showMessage(QStringLiteral("https://example.com/") +
-                                QString(4096, QLatin1Char('x')), 0);
+    host.status->showMessage(
+        QStringLiteral("https://example.com/") + QString(4096, QLatin1Char('x')), 0);
     QTRY_VERIFY(host.status->isVisible());
     QCOMPARE(host.canvas->geometry(), host.window.rect());
     host.window.resize(220, 180);
@@ -100,17 +166,16 @@ private slots:
   }
 
   void parentlessMessagesWaitForHosting() {
-    QWidget host;
-    auto *layout = new QVBoxLayout(&host);
-    StatusWidget status;
-    status.showMessage(QStringLiteral("Ready"), 0);
-    QVERIFY(!status.isVisible());
-    layout->addWidget(&status);
-    host.show();
-    status.show();
-    QTRY_VERIFY(status.isVisible());
-    status.showMessage(QString());
-    QTRY_VERIFY_WITH_TIMEOUT(!status.isVisible(), 1000);
+    auto *status = new StatusWidget;
+    status->showMessage(QStringLiteral("Ready"), 0);
+    QVERIFY(!status->isVisible());
+    StatusHost host(status);
+    QTRY_VERIFY(status->isVisible());
+    QCOMPARE(host.canvas->geometry(), host.window.rect());
+    QCOMPARE(host.window.childAt(status->geometry().center()), host.canvas);
+    status->showMessage(QString());
+    QTRY_VERIFY_WITH_TIMEOUT(!status->isVisible(), 1000);
+    QCOMPARE(host.canvas->geometry(), host.window.rect());
   }
 };
 

@@ -1291,8 +1291,10 @@ void TypstViewWindow::setupUI() {
   connect(this, &ViewWindow2::modeChanged, this, [this]() {
     showMessage(QString());
     statusBar()->setMaximumHeight(m_mode == ViewWindowMode::Read ? 0 : QWIDGETSIZE_MAX);
+    setStatusBarFixed(m_mode != ViewWindowMode::Read);
   });
   statusBar()->setMaximumHeight(m_mode == ViewWindowMode::Read ? 0 : QWIDGETSIZE_MAX);
+  setStatusBarFixed(m_mode != ViewWindowMode::Read);
 
   syncEditorFromBuffer();
   m_propagateEditorToBuffer = true;

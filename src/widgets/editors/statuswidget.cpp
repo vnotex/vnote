@@ -40,14 +40,18 @@ StatusWidget::~StatusWidget() {
   }
 }
 
+bool StatusWidget::hasPermanentStatus() const {
+  return m_editorWidget || m_outerLayout->count() > 1;
+}
+
 void StatusWidget::setVisible(bool p_visible) {
-  QWidget::setVisible(p_visible && (m_editorWidget || m_outerLayout->count() > 1 ||
-                                    !m_messageLabel->text().isEmpty()));
+  QWidget::setVisible(p_visible && (hasPermanentStatus() || !m_messageLabel->text().isEmpty()));
 }
 
 void StatusWidget::updateVisibility() {
-  const bool hasControls = m_outerLayout->count() > 1 ||
-                           (m_editorWidget && m_mainLayout->currentWidget() == m_editorWidget.data());
+  const bool hasControls =
+      m_outerLayout->count() > 1 ||
+      (m_editorWidget && m_mainLayout->currentWidget() == m_editorWidget.data());
   StatusOverlay::setInputTransparent(this, !hasControls);
   // A shared widget may receive content before it is attached to its host.
   if (parentWidget() || isVisible()) {
@@ -72,10 +76,14 @@ void StatusWidget::showMessage(const QString &p_msg, int p_milliseconds) {
 
 void StatusWidget::setEditorStatusWidget(const QSharedPointer<QWidget> &p_editorWidget) {
   Q_ASSERT(!m_editorWidget);
+  const bool wasPermanent = hasPermanentStatus();
   m_editorWidget = p_editorWidget;
   m_editorWidget->setParent(m_stackHost);
   m_mainLayout->addWidget(m_editorWidget.data());
   m_mainLayout->setCurrentWidget(m_editorWidget.data());
+  if (wasPermanent != hasPermanentStatus()) {
+    emit permanentStatusChanged(hasPermanentStatus());
+  }
   updateVisibility();
 }
 
@@ -83,9 +91,13 @@ void StatusWidget::addCornerWidget(QWidget *p_widget) {
   if (!p_widget) {
     return;
   }
+  const bool wasPermanent = hasPermanentStatus();
   p_widget->setParent(this);
   m_outerLayout->addWidget(p_widget, 0);
   p_widget->show();
+  if (wasPermanent != hasPermanentStatus()) {
+    emit permanentStatusChanged(hasPermanentStatus());
+  }
   updateVisibility();
 }
 
