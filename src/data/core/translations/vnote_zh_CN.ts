@@ -12774,6 +12774,10 @@ Continue?</source>
 <context>
     <name>vnotex::HttpApiPage</name>
     <message>
+        <source>New</source>
+        <translation>新建</translation>
+    </message>
+    <message>
         <source>HTTP API</source>
         <translation>HTTP API</translation>
     </message>
@@ -12842,6 +12846,45 @@ Continue?</source>
         <translation>刷新</translation>
     </message>
     <message>
+        <source>HTTP API controller is unavailable.</source>
+        <translation>HTTP API 控制器不可用。</translation>
+    </message>
+    <message>
+        <source>Expired</source>
+        <translation>已过期</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation>有效</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation>已停用</translation>
+    </message>
+    <message>
+        <source>Token issued and saved.</source>
+        <translation>令牌已签发并保存。</translation>
+    </message>
+    <message>
+        <source>Revoke Token</source>
+        <translation>撤销令牌</translation>
+    </message>
+    <message>
+        <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
+        <translation>是否撤销此令牌？排队中的请求会立即失去访问权限；已提交的更改无法撤销。</translation>
+    </message>
+    <message>
+        <source>Token revoked and the revocation saved.</source>
+        <translation>令牌已撤销，撤销记录已保存。</translation>
+    </message>
+    <message>
+        <source>Revocation could not be saved durably. Check the listener status before restarting. %1</source>
+        <translation>无法持久保存撤销记录。请在重启前检查监听器状态。%1</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::NewHttpApiTokenDialog</name>
+    <message>
         <source>Issue Client Token</source>
         <translation>签发客户端令牌</translation>
     </message>
@@ -12890,28 +12933,8 @@ Continue?</source>
         <translation>签发令牌</translation>
     </message>
     <message>
-        <source>HTTP API controller is unavailable.</source>
-        <translation>HTTP API 控制器不可用。</translation>
-    </message>
-    <message>
-        <source>Expired</source>
-        <translation>已过期</translation>
-    </message>
-    <message>
-        <source>Active</source>
-        <translation>有效</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <translation>已停用</translation>
-    </message>
-    <message>
         <source>Enter a client label, select at least one notebook and permission, and choose a future expiry.</source>
         <translation>请输入客户端标签，选择至少一个笔记本和一项权限，并设置将来的到期时间。</translation>
-    </message>
-    <message>
-        <source>Token issued and saved.</source>
-        <translation>令牌已签发并保存。</translation>
     </message>
     <message>
         <source>Token Issued</source>
@@ -12922,20 +12945,12 @@ Continue?</source>
         <translation>请立即复制此持有者令牌并妥善保密。之后将无法再次查看。</translation>
     </message>
     <message>
-        <source>Revoke Token</source>
-        <translation>撤销令牌</translation>
+        <source>Permissions</source>
+        <translation>权限</translation>
     </message>
     <message>
-        <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
-        <translation>是否撤销此令牌？排队中的请求会立即失去访问权限；已提交的更改无法撤销。</translation>
-    </message>
-    <message>
-        <source>Token revoked and the revocation saved.</source>
-        <translation>令牌已撤销，撤销记录已保存。</translation>
-    </message>
-    <message>
-        <source>Revocation could not be saved durably. Check the listener status before restarting. %1</source>
-        <translation>无法持久保存撤销记录。请在重启前检查监听器状态。%1</translation>
+        <source>HTTP API controller is unavailable.</source>
+        <translation>HTTP API 控制器不可用。</translation>
     </message>
 </context>
 <context>

@@ -12774,6 +12774,10 @@ Continue?</source>
 <context>
     <name>vnotex::HttpApiPage</name>
     <message>
+        <source>New</source>
+        <translation>新規</translation>
+    </message>
+    <message>
         <source>HTTP API</source>
         <translation>HTTP API</translation>
     </message>
@@ -12842,6 +12846,45 @@ Continue?</source>
         <translation>再表示</translation>
     </message>
     <message>
+        <source>HTTP API controller is unavailable.</source>
+        <translation>HTTP API コントローラーを利用できません。</translation>
+    </message>
+    <message>
+        <source>Expired</source>
+        <translation>期限切れ</translation>
+    </message>
+    <message>
+        <source>Active</source>
+        <translation>有効</translation>
+    </message>
+    <message>
+        <source>Disabled</source>
+        <translation>無効</translation>
+    </message>
+    <message>
+        <source>Token issued and saved.</source>
+        <translation>トークンを発行して保存しました。</translation>
+    </message>
+    <message>
+        <source>Revoke Token</source>
+        <translation>トークンを失効</translation>
+    </message>
+    <message>
+        <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
+        <translation>このトークンを失効させますか？待機中のリクエストは直ちにアクセスできなくなります。確定済みの変更は元に戻せません。</translation>
+    </message>
+    <message>
+        <source>Token revoked and the revocation saved.</source>
+        <translation>トークンを失効させ、失効情報を保存しました。</translation>
+    </message>
+    <message>
+        <source>Revocation could not be saved durably. Check the listener status before restarting. %1</source>
+        <translation>失効情報を永続的に保存できませんでした。再起動する前に待ち受け状態を確認してください。%1</translation>
+    </message>
+</context>
+<context>
+    <name>vnotex::NewHttpApiTokenDialog</name>
+    <message>
         <source>Issue Client Token</source>
         <translation>クライアントトークンを発行</translation>
     </message>
@@ -12890,28 +12933,8 @@ Continue?</source>
         <translation>トークンを発行</translation>
     </message>
     <message>
-        <source>HTTP API controller is unavailable.</source>
-        <translation>HTTP API コントローラーを利用できません。</translation>
-    </message>
-    <message>
-        <source>Expired</source>
-        <translation>期限切れ</translation>
-    </message>
-    <message>
-        <source>Active</source>
-        <translation>有効</translation>
-    </message>
-    <message>
-        <source>Disabled</source>
-        <translation>無効</translation>
-    </message>
-    <message>
         <source>Enter a client label, select at least one notebook and permission, and choose a future expiry.</source>
         <translation>クライアントのラベル、1 つ以上のノートブックと権限、将来の有効期限を指定してください。</translation>
-    </message>
-    <message>
-        <source>Token issued and saved.</source>
-        <translation>トークンを発行して保存しました。</translation>
     </message>
     <message>
         <source>Token Issued</source>
@@ -12922,20 +12945,12 @@ Continue?</source>
         <translation>この Bearer トークンを今すぐコピーし、安全に保管してください。再表示はできません。</translation>
     </message>
     <message>
-        <source>Revoke Token</source>
-        <translation>トークンを失効</translation>
+        <source>Permissions</source>
+        <translation>権限</translation>
     </message>
     <message>
-        <source>Revoke this token? Queued requests lose access immediately; already committed changes cannot be undone.</source>
-        <translation>このトークンを失効させますか？待機中のリクエストは直ちにアクセスできなくなります。確定済みの変更は元に戻せません。</translation>
-    </message>
-    <message>
-        <source>Token revoked and the revocation saved.</source>
-        <translation>トークンを失効させ、失効情報を保存しました。</translation>
-    </message>
-    <message>
-        <source>Revocation could not be saved durably. Check the listener status before restarting. %1</source>
-        <translation>失効情報を永続的に保存できませんでした。再起動する前に待ち受け状態を確認してください。%1</translation>
+        <source>HTTP API controller is unavailable.</source>
+        <translation>HTTP API コントローラーを利用できません。</translation>
     </message>
 </context>
 <context>

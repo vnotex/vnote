@@ -39,6 +39,7 @@ void ThemePage::setupUI() {
     buttonWidget->setProperty(PropertyDefs::c_settingsContainer, true);
     auto *buttonLayout = new QHBoxLayout(buttonWidget);
     buttonLayout->setContentsMargins(16, 6, 16, 6);
+    buttonLayout->addStretch();
 
     auto *refreshBtn = new QPushButton(tr("Refresh"), this);
     buttonLayout->addWidget(refreshBtn);
@@ -63,7 +64,6 @@ void ThemePage::setupUI() {
       }
     });
 
-    buttonLayout->addStretch();
     cardLayout->addWidget(buttonWidget);
   }
 

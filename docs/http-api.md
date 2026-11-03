@@ -8,8 +8,9 @@ headless product, or public TLS listener. The machine-readable contract is
 ## Enable and authorize a client
 
 1. Open **Settings → HTTP API** in the normal primary VNote application. Keep a notebook open.
-2. Issue a token with a label, an explicit selection of notebook UUIDs, scopes and expiry.
-   New grants default to read-only and expire after 90 days; select notebooks deliberately.
+2. Under **Client Tokens**, click **New**. In **Issue Client Token**, enter a label, select
+   notebooks, choose permissions and expiry, then click **Issue Token**. New grants default to
+   read-only and expire after 90 days; select notebooks deliberately.
    A grant never automatically includes notebooks opened or created later.
 3. Copy the token when shown. It is displayed only once. Store it in the client's secret store,
    not in notebook content, a URL, a command history, source control or an MCP tool argument.

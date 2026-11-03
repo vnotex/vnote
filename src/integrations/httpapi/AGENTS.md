@@ -106,9 +106,19 @@ Show that single controller status on its own row below Enable HTTP API, using S
 for the disabled service; do not append a second endpoint line or derive status from an unsaved checkbox value.
 Keep the status plain-text, selectable and wrapping without widening the row; validation errors
 remain below the listener fields.
-Use a compact Revoke/Refresh action row below the token list, following ThemePage's zero-margin
-horizontal layout with trailing stretch. Revoke still requires a selection and confirmation;
-Refresh updates both tokens and notebook grant choices without discarding selections.
+Use a compact, right-aligned New/Revoke/Refresh row below the token list, following ThemePage's
+zero-margin horizontal layout with leading stretch. Revoke requires a selection and confirmation;
+Refresh updates token rows, their notebook display names and status without losing token selection.
+
+New opens `NewHttpApiTokenDialog`, using the standard `ScrollDialog` form and button box.
+Load current notebook choices per opening, with no checked notebooks and only read permission
+selected. Put the full-width notebook list below its label/help, and Permissions above all four
+scope checkboxes. Keep expiry's existing vertical label/help/input layout, local-time format,
+calendar popup and 90-day default. Invalid submissions stay open; cancellation issues nothing.
+Successful issuance shows the existing one-time secret dialog, clears its field/local string,
+then closes the form. Never retain a secret getter or restore a previous form's grants/secret.
+The controller still owns current-grant validation and durable publication; the page has no
+inline issuance controls or hidden grant refresh path.
 
 ## Verification
 

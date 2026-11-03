@@ -43,6 +43,7 @@ target_sources(vnote PRIVATE
     dialogs/settings/markdowneditorpage.cpp dialogs/settings/markdowneditorpage.h
     dialogs/settings/mindmapeditorpage.cpp dialogs/settings/mindmapeditorpage.h
     dialogs/settings/httpapipage.cpp dialogs/settings/httpapipage.h
+    dialogs/settings/newhttpapitokendialog.cpp dialogs/settings/newhttpapitokendialog.h
     dialogs/settings/newimagehostdialog.cpp dialogs/settings/newimagehostdialog.h
     dialogs/settings/newquickaccessitemdialog.cpp dialogs/settings/newquickaccessitemdialog.h
     dialogs/settings/notemanagementpage.cpp dialogs/settings/notemanagementpage.h

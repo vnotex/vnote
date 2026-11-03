@@ -1,9 +1,8 @@
 #include "httpapipage.h"
 
 #include <QCheckBox>
-#include <QDateTimeEdit>
+#include <QDateTime>
 #include <QDialog>
-#include <QDialogButtonBox>
 #include <QHBoxLayout>
 #include <QHash>
 #include <QHeaderView>
@@ -12,14 +11,13 @@
 #include <QJsonObject>
 #include <QLabel>
 #include <QLineEdit>
-#include <QListWidget>
 #include <QLocale>
 #include <QMessageBox>
 #include <QPushButton>
-#include <QSet>
 #include <QTreeWidget>
 #include <QVBoxLayout>
 
+#include "newhttpapitokendialog.h"
 #include "settingspagehelper.h"
 #include <core/configmgr2.h>
 #include <core/httpapiconfig.h>
@@ -113,6 +111,13 @@ void HttpApiPage::setupUI() {
   auto *buttonWidget = new QWidget(this);
   auto *buttonLayout = new QHBoxLayout(buttonWidget);
   buttonLayout->setContentsMargins(0, 0, 0, 0);
+  buttonLayout->addStretch();
+  auto *newToken = new QPushButton(tr("New"), this);
+  newToken->setObjectName(QStringLiteral("HttpApiNewToken"));
+  newToken->setEnabled(m_controller != nullptr);
+  buttonLayout->addWidget(newToken);
+  addSearchItem(newToken->text(), newToken);
+  connect(newToken, &QPushButton::clicked, this, &HttpApiPage::newToken);
 
   m_revoke = new QPushButton(tr("Revoke"), this);
   m_revoke->setObjectName(QStringLiteral("HttpApiRevokeToken"));
@@ -126,11 +131,9 @@ void HttpApiPage::setupUI() {
   refresh->setEnabled(m_controller != nullptr);
   buttonLayout->addWidget(refresh);
   connect(refresh, &QPushButton::clicked, this, [this]() {
-    refreshNotebooks();
     refreshTokens();
     refreshStatus();
   });
-  buttonLayout->addStretch();
   tokens->addWidget(buttonWidget);
   m_tokenResult = new QLabel(this);
   m_tokenResult->setObjectName(QStringLiteral("HttpApiTokenResult"));
@@ -138,55 +141,6 @@ void HttpApiPage::setupUI() {
   m_tokenResult->setWordWrap(true);
   tokens->addWidget(m_tokenResult);
 
-  auto *grant = SettingsPageHelper::addSection(
-      layout, tr("Issue Client Token"),
-      tr("Choose explicit notebook grants and permissions. Live reads may expose unsaved editor "
-         "text. "
-         "Write changes notes; trash moves notes to the recycle bin."),
-      this);
-  m_tokenLabel = WidgetsFactory::createLineEdit(this);
-  m_tokenLabel->setObjectName(QStringLiteral("HttpApiTokenLabel"));
-  m_tokenLabel->setMaxLength(128);
-  grant->addWidget(
-      SettingsPageHelper::createSettingRow(tr("Client label"), QString(), m_tokenLabel, this));
-  m_notebooks = new QListWidget(this);
-  m_notebooks->setObjectName(QStringLiteral("HttpApiNotebookGrants"));
-  m_notebooks->setMinimumHeight(120);
-  grant->addWidget(SettingsPageHelper::createSettingRow(
-      tr("Allowed notebooks"), tr("Select one or more currently open notebooks"), m_notebooks,
-      this));
-
-  m_read = WidgetsFactory::createCheckBox(tr("Read saved notes and search (notes:read)"), this);
-  m_read->setObjectName(QStringLiteral("HttpApiReadScope"));
-  m_read->setChecked(true);
-  m_readLive = WidgetsFactory::createCheckBox(tr("Read live editor text (notes:read-live)"), this);
-  m_readLive->setObjectName(QStringLiteral("HttpApiReadLiveScope"));
-  m_write = WidgetsFactory::createCheckBox(tr("Create and edit notes (notes:write)"), this);
-  m_write->setObjectName(QStringLiteral("HttpApiWriteScope"));
-  m_trash = WidgetsFactory::createCheckBox(tr("Trash notes (notes:trash)"), this);
-  m_trash->setObjectName(QStringLiteral("HttpApiTrashScope"));
-  for (auto *scope : {m_read, m_readLive, m_write, m_trash}) {
-    grant->addWidget(SettingsPageHelper::createCheckBoxRow(scope, QString(), this));
-    addSearchItem(scope->text(), scope);
-  }
-
-  m_expiry = new QDateTimeEdit(QDateTime::currentDateTime().addDays(90), this);
-  m_expiry->setObjectName(QStringLiteral("HttpApiTokenExpiry"));
-  m_expiry->setCalendarPopup(true);
-  m_expiry->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm"));
-  grant->addWidget(SettingsPageHelper::createSettingRow(
-      tr("Expiry (local time)"), tr("A future expiry is required; new tokens default to 90 days"),
-      m_expiry, this));
-  m_issue = new QPushButton(tr("Issue Token"), this);
-  m_issue->setObjectName(QStringLiteral("HttpApiIssueToken"));
-  m_issue->setEnabled(m_controller != nullptr);
-  grant->addWidget(m_issue);
-  connect(m_issue, &QPushButton::clicked, this, &HttpApiPage::issueToken);
-  m_issueResult = new QLabel(this);
-  m_issueResult->setObjectName(QStringLiteral("HttpApiIssueResult"));
-  m_issueResult->setTextFormat(Qt::PlainText);
-  m_issueResult->setWordWrap(true);
-  grant->addWidget(m_issueResult);
   layout->addStretch();
 }
 
@@ -199,7 +153,6 @@ void HttpApiPage::loadInternal() {
   config.isValid(&error);
   m_configError->setText(error);
   refreshStatus();
-  refreshNotebooks();
   refreshTokens();
 }
 
@@ -239,30 +192,6 @@ void HttpApiPage::refreshStatus() {
     return;
   }
   m_status->setText(m_controller->statusText());
-}
-
-void HttpApiPage::refreshNotebooks() {
-  QSet<QString> selected;
-  for (int i = 0; i < m_notebooks->count(); ++i) {
-    const auto *item = m_notebooks->item(i);
-    if (item->checkState() == Qt::Checked) {
-      selected.insert(item->data(Qt::UserRole).toString());
-    }
-  }
-  m_notebooks->clear();
-  if (!m_controller) {
-    return;
-  }
-  for (const auto &value : m_controller->availableNotebooks()) {
-    const auto notebook = value.toObject();
-    const QString id = notebook.value(QStringLiteral("id")).toString();
-    auto *item =
-        new QListWidgetItem(notebook.value(QStringLiteral("name")).toString(), m_notebooks);
-    item->setData(Qt::UserRole, id);
-    item->setToolTip(id);
-    item->setFlags(item->flags() | Qt::ItemIsUserCheckable);
-    item->setCheckState(selected.contains(id) ? Qt::Checked : Qt::Unchecked);
-  }
 }
 
 void HttpApiPage::refreshTokens() {
@@ -308,66 +237,11 @@ void HttpApiPage::refreshTokens() {
   m_revoke->setEnabled(m_tokens->currentItem() != nullptr);
 }
 
-void HttpApiPage::issueToken() {
-  if (!m_controller) {
-    return;
+void HttpApiPage::newToken() {
+  NewHttpApiTokenDialog dialog(m_services, this);
+  if (dialog.exec() == QDialog::Accepted) {
+    m_tokenResult->setText(tr("Token issued and saved."));
   }
-  QSet<QString> notebooks;
-  for (int i = 0; i < m_notebooks->count(); ++i) {
-    const auto *item = m_notebooks->item(i);
-    if (item->checkState() == Qt::Checked) {
-      notebooks.insert(item->data(Qt::UserRole).toString());
-    }
-  }
-  QSet<QString> scopes;
-  if (m_read->isChecked()) {
-    scopes.insert(QStringLiteral("notes:read"));
-  }
-  if (m_readLive->isChecked()) {
-    scopes.insert(QStringLiteral("notes:read-live"));
-  }
-  if (m_write->isChecked()) {
-    scopes.insert(QStringLiteral("notes:write"));
-  }
-  if (m_trash->isChecked()) {
-    scopes.insert(QStringLiteral("notes:trash"));
-  }
-  if (m_tokenLabel->text().trimmed().isEmpty() || notebooks.isEmpty() || scopes.isEmpty() ||
-      !m_expiry->dateTime().isValid() || m_expiry->dateTime() <= QDateTime::currentDateTime()) {
-    m_issueResult->setText(tr("Enter a client label, select at least one notebook and permission, "
-                              "and choose a future expiry."));
-    return;
-  }
-  QString secret;
-  QString error;
-  if (!m_controller->issueToken(m_tokenLabel->text().trimmed(), notebooks, scopes,
-                                m_expiry->dateTime().toUTC(), &secret, &error)) {
-    m_issueResult->setText(error);
-    refreshStatus();
-    return;
-  }
-  m_issueResult->setText(tr("Token issued and saved."));
-  refreshTokens();
-  QDialog dialog(this);
-  dialog.setObjectName(QStringLiteral("HttpApiIssuedTokenDialog"));
-  dialog.setWindowTitle(tr("Token Issued"));
-  auto *layout = new QVBoxLayout(&dialog);
-  auto *description = new QLabel(
-      tr("Copy this bearer token now and keep it private. It will not be shown again."), &dialog);
-  description->setWordWrap(true);
-  layout->addWidget(description);
-  auto *value = WidgetsFactory::createLineEdit(secret, &dialog);
-  value->setObjectName(QStringLiteral("HttpApiIssuedSecret"));
-  value->setReadOnly(true);
-  value->setMinimumWidth(480);
-  value->selectAll();
-  layout->addWidget(value);
-  auto *buttons = new QDialogButtonBox(QDialogButtonBox::Close, &dialog);
-  connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-  layout->addWidget(buttons);
-  dialog.exec();
-  value->clear();
-  secret.clear();
 }
 
 void HttpApiPage::revokeToken() {
