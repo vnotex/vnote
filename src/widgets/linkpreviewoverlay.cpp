@@ -114,7 +114,9 @@ LinkPreviewOverlay::LinkPreviewOverlay(ServiceLocator &p_services, ViewWindow2 *
   setAttribute(Qt::WA_ShowWithoutActivating);
 #ifdef Q_OS_WIN
   // An interactive native child must cover late-created WebEngine HWNDs.
-  // Unlike StatusOverlay, this surface must retain ordinary native hit testing.
+  // Keep tab ancestors alien across promotion/reparenting; unlike StatusOverlay,
+  // this surface retains ordinary native hit testing.
+  setAttribute(Qt::WA_DontCreateNativeAncestors);
   setAttribute(Qt::WA_NativeWindow);
 #endif
 

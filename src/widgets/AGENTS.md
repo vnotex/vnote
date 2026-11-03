@@ -197,7 +197,10 @@ longer positioned by their previous attachment.
 
 Message-only surfaces pass mouse input through; editor and corner controls remain interactive.
 Windows overlays need native stacking above late-created WebEngine children and input
-transparency on both QWidget and its native window, preserved across hide/show. Keep the
+transparency on both QWidget and its native window, preserved across hide/show. Set
+`WA_DontCreateNativeAncestors` before `WA_NativeWindow` on the overlay: making the tab
+containers native exposes stale tab backing surfaces during rapid reader switches. The
+overlay must stay inside its content bounds and must not intercept sibling panes. Keep the
 background theme-painted and URLs plain text. Every bundled `interface.qss` gives both
 status surfaces a 6px radius, palette-based border/fill, and padded messages; internal stack
 pages stay transparent without overriding the nested editor chips or corner controls.
@@ -206,6 +209,12 @@ so changing the QSS radius does not require a matching C++ value. Activate the c
 before sampling its geometry; an invalidated layout can temporarily report an empty rectangle.
 Markdown Read hides an empty overlay; Edit retains its status controls. Regression coverage:
 `test_statusbar` and `test_statuswidget`.
+
+`LinkPreviewOverlay` uses the same native-child-only ancestry policy, but keeps normal hit
+testing. Its QWidget parent remains the source view; its native parent may be the containing
+main or detached window. Rebinding a preview must not promote the source/tab stack or steal
+focus from the remaining preview. `test_viewarea_tab_reuse` covers warm reader switching and
+preview promotion/rollback with native geometry, hit testing and keyboard ownership.
 
 #### Link preview dismissal
 

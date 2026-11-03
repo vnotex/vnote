@@ -949,6 +949,7 @@ private slots:
   void init();
   void cleanup();
   void missingPreferenceAndBackgroundOpen();
+  void warmReaderTabSwitching();
   void previewHostRoutingAndGeometry();
   void previewEditingCommandTargetAndVisibility();
   void previewCloseConsent();
@@ -3154,6 +3155,74 @@ void TestViewAreaTabReuse::outlineMindMapAdmissionFailure() {
   if (ordinary.isValid())
     QVERIFY(f->buffers->getBufferHandle(ordinary.id()).isValid());
 }
+
+void TestViewAreaTabReuse::warmReaderTabSwitching() {
+  f->config->getEditorConfig().getMarkdownEditorConfig().setEditViewMode(
+      MarkdownEditorConfig::EditOnly);
+  QVERIFY(f->create(QStringLiteral("1.md"), QByteArrayLiteral("# Editing one\n")));
+  QVERIFY(f->create(QStringLiteral("2.md"), QByteArrayLiteral("# Reading two\n")));
+  QVERIFY(f->create(QStringLiteral("3.md"), QByteArrayLiteral("# Reading three\n")));
+  QVERIFY(f->open(QStringLiteral("1.md"), true).isValid());
+  auto *first = f->current();
+  auto *split = f->area->getCurrentViewSplit();
+  for (auto *window : split->getAllViewWindows()) {
+    if (window->getNodeId().relativePath == QStringLiteral("vx://home"))
+      f->controller()->closeViewWindow(window->getViewWindowId(), true);
+  }
+  ViewWindow2 *windows[2];
+  QPointer<MarkdownViewer> readers[2];
+  QSize sizes[2];
+  for (int i = 0; i < 2; ++i) {
+    FileOpenSettings settings;
+    settings.m_mode = ViewWindowMode::Read;
+    settings.m_alwaysNewWindow = true;
+    QVERIFY(
+        f->buffers->openBuffer(f->node(QString::number(i + 2) + QStringLiteral(".md")), settings)
+            .isValid());
+    windows[i] = f->current();
+    readers[i] = windows[i]->findChild<MarkdownViewer *>();
+    QVERIFY(waitForRender(readers[i], i == 0 ? QStringLiteral("Reading two")
+                                             : QStringLiteral("Reading three")));
+    sizes[i] = readers[i]->size();
+  }
+  QCOMPARE(split->count(), 3);
+  struct Observer : QObject {
+    QWidget *first = nullptr;
+    int unexpectedShows = 0;
+    int resizes = 0;
+    bool eventFilter(QObject *p_object, QEvent *p_event) override {
+      if (p_object == first && p_event->type() == QEvent::Show)
+        ++unexpectedShows;
+      if (p_object != first && p_event->type() == QEvent::Resize)
+        ++resizes;
+      return false;
+    }
+  } observer;
+  observer.first = first;
+  first->installEventFilter(&observer);
+  for (const auto &reader : readers)
+    reader->installEventFilter(&observer);
+  for (int turn = 0; turn < 30; ++turn) {
+    const int index = turn % 2;
+    QTest::mouseClick(split->tabBar(), Qt::LeftButton, Qt::NoModifier,
+                      split->tabBar()->tabRect(split->indexOf(windows[index])).center());
+    QTest::qWait(20);
+    QCOMPARE(split->getCurrentViewWindow(), windows[index]);
+    QVERIFY(!first->isVisible());
+    QCOMPARE(first->getMode(), ViewWindowMode::Edit);
+    QCOMPARE(windows[index]->getMode(), ViewWindowMode::Read);
+    QCOMPARE(windows[index]->findChild<MarkdownViewer *>(), readers[index].data());
+    QCOMPARE(readers[index]->size(), sizes[index]);
+  }
+  QCOMPARE(observer.unexpectedShows, 0);
+  QCOMPARE(observer.resizes, 0);
+  for (int i = 0; i < 2; ++i) {
+    split->setCurrentViewWindow(windows[i]);
+    QVERIFY(waitForRender(readers[i], i == 0 ? QStringLiteral("Reading two")
+                                             : QStringLiteral("Reading three")));
+  }
+}
+
 void TestViewAreaTabReuse::previewMarkdownActivationOrigins() {
   const QByteArray sourceBytes("# Source A\n\nSelect this text, not the link.\n\n[B](b.md#beta)\n");
   QByteArray targetBytes("# Before the destination\n\n");
@@ -5426,9 +5495,7 @@ void TestViewAreaTabReuse::previewOpenInNewTabsDuplicateConsent() {
   QTRY_VERIFY(!overlay->geometry().isEmpty() && host->contentsRect().contains(overlay->geometry()));
   QVERIFY(!overlay->visibleRegion().isEmpty());
 #ifdef Q_OS_WIN
-  QVERIFY(overlay->testAttribute(Qt::WA_NativeWindow));
-  QVERIFY(overlay->windowHandle() && host->windowHandle());
-  QTRY_COMPARE(overlay->windowHandle()->parent(), host->windowHandle());
+  QVERIFY(overlay->windowHandle());
   QTRY_VERIFY(overlay->windowHandle()->isExposed());
   QCOMPARE(overlay->windowHandle()->mapToGlobal(QPoint()), overlay->mapToGlobal(QPoint()));
   QCOMPARE(overlay->windowHandle()->size(), overlay->size());
@@ -8416,6 +8483,7 @@ int main(int argc, char **argv) {
   qputenv("TMPDIR", root);
   vxcore_set_test_mode(1);
   QCoreApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
+  QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
   WebEngineProfileService::registerProtectedScheme();
   VxPdfSchemeHandler::registerScheme();
   QApplication app(argc, argv);

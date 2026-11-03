@@ -1,12 +1,12 @@
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QPushButton>
-#include <QScopeGuard>
-#include <QVBoxLayout>
 #include <QLineEdit>
 #include <QMenu>
+#include <QPushButton>
+#include <QScopeGuard>
 #include <QSignalSpy>
 #include <QToolButton>
+#include <QVBoxLayout>
 #include <QtTest>
 
 #include <algorithm>
@@ -50,6 +50,7 @@ private slots:
   void testMessageVisibilitySignal();
   void testColumnIndexProperty();
   void testOverlayPreservesContentGeometry();
+  void testNativeOverlayInputAndLateContent_data();
   void testNativeOverlayInputAndLateContent();
 
 private:
@@ -512,26 +513,43 @@ void TestStatusBar::testOverlayPreservesContentGeometry() {
   QCOMPARE(bar->geometry(), detached);
 }
 
+void TestStatusBar::testNativeOverlayInputAndLateContent_data() {
+  QTest::addColumn<bool>("nested");
+  QTest::newRow("top-level") << false;
+  QTest::newRow("alien-tab") << true;
+}
+
 void TestStatusBar::testNativeOverlayInputAndLateContent() {
 #ifndef Q_OS_WIN
   QSKIP("Windows native-child hit testing");
 #else
   const bool previous = QCoreApplication::testAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
   QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
-  const auto restore = qScopeGuard([&] {
-    QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings, previous);
-  });
+  const auto restore = qScopeGuard(
+      [&] { QCoreApplication::setAttribute(Qt::AA_DontCreateNativeWidgetSiblings, previous); });
+  QFETCH(bool, nested);
   QWidget window;
-  auto *layout = new QHBoxLayout(&window);
+  QWidget *view = &window;
+  QPushButton *outside = nullptr;
+  int outsideClicks = 0;
+  if (nested) {
+    auto *shell = new QVBoxLayout(&window);
+    outside = new QPushButton(QStringLiteral("Other pane"), &window);
+    shell->addWidget(outside);
+    connect(outside, &QPushButton::clicked, this, [&] { ++outsideClicks; });
+    view = new QWidget(&window);
+    shell->addWidget(view, 1);
+  }
+  auto *layout = new QHBoxLayout(view);
   layout->setContentsMargins(0, 0, 0, 0);
-  auto *canvas = new QWidget(&window);
+  auto *canvas = new QWidget(view);
   layout->addWidget(canvas);
   int controlClicks = 0;
   StatusBarColumn column;
   column.type = StatusBarColumnType::Button;
   column.text = QStringLiteral("Encoding");
   column.onClicked = [&] { ++controlClicks; };
-  auto *bar = new StatusBar({column}, &window);
+  auto *bar = new StatusBar({column}, view);
   new StatusOverlay(bar, layout);
   window.resize(400, 240);
   window.show();
@@ -539,6 +557,7 @@ void TestStatusBar::testNativeOverlayInputAndLateContent() {
 
   // WebEngine's HWND appears after status construction in Markdown Read mode.
   auto *native = new QPushButton(QStringLiteral("Content link"), canvas);
+  native->setAttribute(Qt::WA_DontCreateNativeAncestors);
   native->setAttribute(Qt::WA_NativeWindow);
   native->setGeometry(canvas->rect());
   native->show();
@@ -546,14 +565,13 @@ void TestStatusBar::testNativeOverlayInputAndLateContent() {
   QCoreApplication::processEvents();
   auto *button = bar->findChild<QToolButton *>();
   QVERIFY(button);
-  const QPoint covered = button->mapTo(&window, button->rect().center());
-  auto clickCovered = [&] {
+  auto clickAt = [&](const QPoint &p_position) {
     const qreal ratio = window.devicePixelRatioF();
-    POINT point{qRound(covered.x() * ratio), qRound(covered.y() * ratio)};
+    POINT point{qRound(p_position.x() * ratio), qRound(p_position.y() * ratio)};
     HWND target = reinterpret_cast<HWND>(window.winId());
     while (true) {
-      HWND child = ChildWindowFromPointEx(target, point,
-          CWP_SKIPINVISIBLE | CWP_SKIPDISABLED | CWP_SKIPTRANSPARENT);
+      HWND child = ChildWindowFromPointEx(
+          target, point, CWP_SKIPINVISIBLE | CWP_SKIPDISABLED | CWP_SKIPTRANSPARENT);
       if (!child || child == target) {
         break;
       }
@@ -564,6 +582,7 @@ void TestStatusBar::testNativeOverlayInputAndLateContent() {
     PostMessage(target, WM_LBUTTONDOWN, MK_LBUTTON, position);
     PostMessage(target, WM_LBUTTONUP, 0, position);
   };
+  auto clickCovered = [&] { clickAt(button->mapTo(&window, button->rect().center())); };
   clickCovered();
   QTRY_COMPARE(controlClicks, 1);
   QCOMPARE(contentClicks.count(), 0);
@@ -578,6 +597,31 @@ void TestStatusBar::testNativeOverlayInputAndLateContent() {
   clickCovered();
   QTRY_COMPARE(controlClicks, 2);
   QCOMPARE(contentClicks.count(), 1);
+  if (outside) {
+    for (const QSize size : {QSize(560, 320), QSize(300, 180)}) {
+      view->hide();
+      window.resize(size);
+      view->show();
+      QCoreApplication::processEvents();
+      native->setGeometry(canvas->rect());
+      QCOMPARE(bar->width(), canvas->width());
+      QVERIFY(canvas->geometry().contains(bar->geometry()));
+      RECT bounds;
+      QVERIFY(GetWindowRect(reinterpret_cast<HWND>(bar->winId()), &bounds));
+      const QPoint origin = canvas->mapToGlobal(QPoint());
+      const qreal ratio = window.devicePixelRatioF();
+      QVERIFY(bounds.left >= qRound(origin.x() * ratio));
+      QVERIFY(bounds.top >= qRound(origin.y() * ratio));
+      QVERIFY(bounds.right <= qRound((origin.x() + canvas->width()) * ratio));
+      QVERIFY(bounds.bottom <= qRound((origin.y() + canvas->height()) * ratio));
+      clickAt(outside->mapTo(&window, outside->rect().center()));
+      QTRY_COMPARE(outsideClicks, size.width() == 560 ? 1 : 2);
+      QCOMPARE(controlClicks, 2);
+    }
+    clickCovered();
+    QTRY_COMPARE(controlClicks, 3);
+    QCOMPARE(contentClicks.count(), 1);
+  }
 #endif
 }
 

@@ -31,7 +31,9 @@ public:
     m_status->setAttribute(Qt::WA_StyledBackground);
     m_status->setAttribute(Qt::WA_ShowWithoutActivating);
 #ifdef Q_OS_WIN
-    // Alien siblings cannot paint over WebEngine with native siblings disabled.
+    // Keep only the overlay native. Native tab ancestors expose stale backing
+    // surfaces while QStackedWidget hides one reader and shows the next.
+    m_status->setAttribute(Qt::WA_DontCreateNativeAncestors);
     m_status->setAttribute(Qt::WA_NativeWindow);
 #endif
     m_window->installEventFilter(this);
@@ -61,10 +63,9 @@ protected:
     if (!m_window || !m_contentLayout || m_status->parentWidget() != m_window) {
       return false;
     }
-    const bool styleChanged = p_watched == m_status &&
-                              (p_event->type() == QEvent::StyleChange ||
-                               p_event->type() == QEvent::FontChange ||
-                               p_event->type() == QEvent::PaletteChange);
+    const bool styleChanged = p_watched == m_status && (p_event->type() == QEvent::StyleChange ||
+                                                        p_event->type() == QEvent::FontChange ||
+                                                        p_event->type() == QEvent::PaletteChange);
 #ifdef Q_OS_WIN
     if (styleChanged) {
       m_maskDirty = true;
