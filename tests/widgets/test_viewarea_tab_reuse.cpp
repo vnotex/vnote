@@ -3213,6 +3213,7 @@ void TestViewAreaTabReuse::warmReaderTabSwitching() {
     QCOMPARE(windows[index]->getMode(), ViewWindowMode::Read);
     QCOMPARE(windows[index]->findChild<MarkdownViewer *>(), readers[index].data());
     QCOMPARE(readers[index]->size(), sizes[index]);
+    QVERIFY(!readers[1 - index]->page()->isVisible());
   }
   QCOMPARE(observer.unexpectedShows, 0);
   QCOMPARE(observer.resizes, 0);

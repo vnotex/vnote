@@ -72,6 +72,8 @@ public:
 
   void setMode(ViewWindowMode p_mode) Q_DECL_OVERRIDE;
 
+  void setVisible(bool p_visible) override;
+
   void fetchNavigationTargets(NavigationTargetsCallback p_callback) override;
 
   int getCursorPosition() const Q_DECL_OVERRIDE;

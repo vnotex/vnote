@@ -212,6 +212,25 @@ MarkdownViewWindow2::~MarkdownViewWindow2() {
   // bar's Widget-column mount (raw overload).
 }
 
+void MarkdownViewWindow2::setVisible(bool p_visible) {
+  if (p_visible && isHidden() && m_viewer && m_viewerReady && !m_viewer->isHidden() &&
+      !m_readerResourcesSuspended && !m_readerLifecycleClosing && !m_rebindingBuffer &&
+      !m_nativeLocking && m_sourceAvailable && (!parentWidget() || parentWidget()->isVisible())) {
+    const QPointer<QWebEnginePage> page(m_viewer->page());
+    if (!page->isVisible()) {
+      // Qt shows rendering children before delivering QWebEngineView's Show event.
+      // Restore the warm page first, so that first render does not draw a hidden
+      // WebEngine item. Hiding still follows Qt's normal page-visibility policy.
+      const QPointer<MarkdownViewWindow2> guard(this);
+      page->setVisible(true);
+      if (!guard) {
+        return;
+      }
+    }
+  }
+  ViewWindow2::setVisible(p_visible);
+}
+
 void MarkdownViewWindow2::releaseProtectedView() {
   cancelEditorImageView();
   setPresentationMode(false);

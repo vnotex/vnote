@@ -1717,6 +1717,16 @@ void TestMarkdownViewWindowLazy::inactiveTimeoutLivePolicy() {
   QVERIFY(!timer->isActive());
   QTest::qWait(60);
   QVERIFY(reader);
+  QVERIFY(!reader->page()->isVisible());
+  shell.hide();
+  first.show();
+  // An explicit show under a hidden ancestor must not wake Chromium early.
+  QVERIFY(!reader->page()->isVisible());
+  shell.show();
+  QVERIFY(waitForRenderedHeading(reader, QStringLiteral("Policy")));
+  QVERIFY(reader->page()->isVisible());
+  first.hide();
+  QVERIFY(!reader->page()->isVisible());
   markdownConfig().setInactiveReaderTimeoutMinutes(12);
   first.handleEditorConfigChange();
   second.handleEditorConfigChange();

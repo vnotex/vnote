@@ -187,6 +187,13 @@ enabled state before sending a request. A genuinely hidden view must not start p
 shown later; Close, Escape and disabling still cancel immediately. Preparation may pump events,
 so its state restoration must be guarded by the view's lifetime.
 
+Warm Markdown tab activation restores the ready reader page's visibility before QWidget
+show recursion reaches its rendering children. `QWebEngineView::showEvent()` is too late:
+Qt Quick can otherwise paint the still-hidden WebEngine item first. Only an intended-visible,
+ready reader under a visible parent is eligible; showing a child under a hidden ancestor must
+not wake its page. Keep ordinary hide and inactivity-unload behavior unchanged, and guard
+window lifetime across the synchronous page visibility notification.
+
 `ViewWindow2` mounts both `StatusBar` and shared `StatusWidget` through `StatusOverlay`,
 not through the bottom layout. Each strip floats over the bottom edge of its own content
 layout, above Find and other bottom widgets; showing, clearing or expiring a message must
