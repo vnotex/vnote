@@ -26,6 +26,7 @@ class TurndownConverter {
                      turndownPluginGfm.tables,
                      turndownPluginGfm.taskListItems]);
         this.fixCodeBlock();
+        this.fixMath();
 
         // TODO: verify and copy several rules from VNote 2.0.
         // No <head> and <style> parse.
@@ -46,7 +47,64 @@ class TurndownConverter {
         const root = document.implementation.createHTMLDocument('').body;
         root.innerHTML = p_html;
         this.normalizeCodeBlocks(root);
+        this.normalizeMath(root);
         return this.ts.turndown(root);
+    }
+
+    normalizeMath(p_root) {
+        // Accept only the formula shell, never a caption or surrounding prose.
+        const isShell = (node, math) => {
+            if (node === math) {
+                return true;
+            }
+            if (node.nodeType === 3) {
+                return !node.data.trim();
+            }
+            if (node.nodeType !== 1) {
+                return true;
+            }
+            if (node.matches('.katex-html')) {
+                return true;
+            }
+            return node.matches('.katex, .katex-display, .katex-mathml') &&
+                Array.from(node.childNodes).every(child => isShell(child, math));
+        };
+        for (const math of p_root.querySelectorAll('math')) {
+            if (!p_root.contains(math) || math.closest('pre, code')) {
+                continue;
+            }
+            const annotation = Array.from(math.querySelectorAll('semantics > annotation')).find(node =>
+                node.closest('math') === math &&
+                (node.getAttribute('encoding') || '').trim().toLowerCase() === 'application/x-tex');
+            const tex = annotation ? annotation.textContent.trim() : '';
+            if (!tex) {
+                continue;
+            }
+            const display = (math.getAttribute('display') || '').trim().toLowerCase() === 'block' ||
+                !!math.closest('.katex-display') || /[\r\n]/.test(tex);
+            let target = math;
+            while (target.parentElement !== p_root &&
+                   target.parentElement.querySelectorAll('math').length === 1 &&
+                   isShell(target.parentElement, math)) {
+                target = target.parentElement;
+            }
+            // Attributes survive Turndown's clone/whitespace collapse. A nonblank
+            // placeholder keeps its blank rule from bypassing the math rule.
+            const replacement = math.ownerDocument.createElement(display ? 'div' : 'span');
+            replacement.setAttribute('data-vnote-math', tex);
+            replacement.textContent = 'math';
+            target.replaceWith(replacement);
+        }
+    }
+
+    fixMath() {
+        this.ts.addRule('math', {
+            filter: node => node.hasAttribute('data-vnote-math'),
+            replacement: (content, node) => {
+                const tex = node.getAttribute('data-vnote-math');
+                return node.nodeName === 'DIV' ? '\n\n$$\n' + tex + '\n$$\n\n' : '$' + tex + '$';
+            }
+        });
     }
 
     getCodeBlockLanguage(p_node) {

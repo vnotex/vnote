@@ -530,6 +530,7 @@ class TestMarkdownWebJobs : public QObject {
 private slots:
   void initTestCase();
   void htmlCodeBlocks();
+  void htmlMath();
   void allOperations_data();
   void allOperations();
   void graphAlgorithms_data();
@@ -1033,6 +1034,98 @@ void TestMarkdownWebJobs::htmlCodeBlocks() {
        QStringLiteral("```\nx\n```")}};
   // One real runtime covers normalization and the complete production converter.
   Runtime runtime(true, QColor(17, 85, 153), QUrl::fromLocalFile(webDir() + QLatin1Char('/')));
+  QObject owner;
+  for (const auto &entry : cases) {
+    const auto job = submit(runtime.session, QStringLiteral("markdown.htmlToMarkdown"),
+                            source(entry.html), &owner);
+    QTRY_VERIFY_WITH_TIMEOUT(job->finished, 10000);
+    QVERIFY2(job->result.status == WebViewJobResult::Status::Success, entry.name);
+    QVERIFY2(job->result.value.toString() == entry.markdown,
+             qPrintable(QStringLiteral("%1\nExpected: %2\nActual: %3")
+                            .arg(QString::fromUtf8(entry.name), entry.markdown,
+                                 job->result.value.toString())));
+  }
+}
+
+void TestMarkdownWebJobs::htmlMath() {
+  const auto math = [](const QString &tex, const QString &display = QString()) {
+    return QStringLiteral("<math xmlns=\"http://www.w3.org/1998/Math/MathML\"%1><semantics>"
+                          "<mrow><mi>x</mi></mrow><annotation encoding=\"application/x-tex\">"
+                          "%2</annotation></semantics></math>")
+        .arg(display.isEmpty() ? QString() : QStringLiteral(" display=\"%1\"").arg(display),
+             tex.toHtmlEscaped());
+  };
+  const auto katex = [](const QString &mathml) {
+    return QStringLiteral("<span class=\"katex\"><span class=\"katex-mathml\">%1</span>"
+                          "<span class=\"katex-html\" aria-hidden=\"true\"><span class=\"base\">"
+                          "Rendered formula</span></span></span>")
+        .arg(mathml);
+  };
+  const QString formula =
+      QStringLiteral(R"(\operatorname{sinc}(x)=\frac{\sin x}{x},\qquad x\neq 0)");
+  const QString block = QStringLiteral("$$\n%1\n$$").arg(formula);
+  const QString x = math(QStringLiteral("x"));
+  struct Case {
+    const char *name;
+    QString html;
+    QString markdown;
+  };
+  const Case cases[] = {
+      {"reported-katex-display",
+       QStringLiteral("<span class=\"katex-display ds-markdown-math\">%1</span>")
+           .arg(katex(math(formula, QStringLiteral("block")))),
+       block},
+      {"inline-katex-with-prose",
+       QStringLiteral("<p>Before %1 after.</p>")
+           .arg(katex(math(QStringLiteral(R"(a_b^2+\alpha)")))),
+       QStringLiteral(R"(Before $a_b^2+\alpha$ after.)")},
+      {"generic-mathml-block",
+       QStringLiteral("Before%1After").arg(math(formula, QStringLiteral("block"))),
+       QStringLiteral("Before\n\n%1\n\nAfter").arg(block)},
+      {"generic-mathml-inline-and-entities", math(QStringLiteral(R"(a < b & \text{a_b*})")),
+       QStringLiteral(R"($a < b & \text{a_b*}$)")},
+      {"display-wrapper-without-display-attribute",
+       QStringLiteral("<span class=\"katex-display\">%1</span>").arg(katex(x)),
+       QStringLiteral("$$\nx\n$$")},
+      {"multiline-source-with-comment",
+       math(QStringLiteral("  \n\\begin{aligned}\na &= b \\\\\n% keep newline\nc &= d\n"
+                           "\\end{aligned}\n  ")),
+       QStringLiteral("$$\n\\begin{aligned}\na &= b \\\\\n% keep newline\nc &= d\n"
+                      "\\end{aligned}\n$$")},
+      {"annotation-boundary-whitespace", math(QStringLiteral(" \t x ")), QStringLiteral("$x$")},
+      {"adjacent-formulas", katex(x) + QStringLiteral(" + ") + katex(math(QStringLiteral("y"))),
+       QStringLiteral("$x$ + $y$")},
+      {"multiple-math-elements-in-one-shell",
+       QStringLiteral("<span class=\"katex\">%1 and %2</span>").arg(x, math(QStringLiteral("y"))),
+       QStringLiteral("$x$ and $y$")},
+      {"caption-outside-formula-shell",
+       QStringLiteral("<span class=\"katex-display\">%1<span>Keep caption</span></span>")
+           .arg(katex(x)),
+       QStringLiteral("$$\nx\n$$\n\nKeep caption")},
+      {"class-substring-is-not-shell",
+       QStringLiteral("<span class=\"not-katex\">%1 Keep text</span>").arg(x),
+       QStringLiteral("$x$ Keep text")},
+      {"unannotated-math", QStringLiteral("<math><mi>x</mi></math>"), QStringLiteral("x")},
+      {"empty-tex-annotation", math(QStringLiteral(" \n ")), QStringLiteral("x")},
+      {"encoding-case-insensitive",
+       QStringLiteral("<math><semantics><annotation encoding=\" Application/X-TeX \">"
+                      "x</annotation></semantics></math>"),
+       QStringLiteral("$x$")},
+      {"non-tex-annotation",
+       QStringLiteral("<math><semantics><annotation encoding=\"text/plain\">"
+                      "plain</annotation></semantics></math>"),
+       QStringLiteral("plain")},
+      {"annotation-outside-math",
+       QStringLiteral("<span><annotation encoding=\"application/x-tex\">x</annotation></span>"),
+       QStringLiteral("x")},
+      {"inline-code-keeps-literal-html", QStringLiteral("<code>%1</code>").arg(x.toHtmlEscaped()),
+       QStringLiteral("`%1`").arg(x)},
+      {"code-block-keeps-literal-html",
+       QStringLiteral("<pre><code>%1</code></pre>").arg(x.toHtmlEscaped()),
+       QStringLiteral("```\n%1\n```").arg(x)},
+      {"math-inside-inline-code-is-not-converted", QStringLiteral("<code>%1</code>").arg(x),
+       QStringLiteral("`xx`")}};
+  Runtime runtime(true);
   QObject owner;
   for (const auto &entry : cases) {
     const auto job = submit(runtime.session, QStringLiteral("markdown.htmlToMarkdown"),
