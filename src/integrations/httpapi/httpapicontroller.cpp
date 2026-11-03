@@ -19,7 +19,7 @@
 using namespace vnotex;
 
 HttpApiController::HttpApiController(ServiceLocator &p_services, QObject *p_parent)
-    : QObject(p_parent), m_services(p_services), m_status(tr("Disabled")) {
+    : QObject(p_parent), m_services(p_services), m_status(tr("Service disabled")) {
   // Loading an absent store never creates it. Keeping the registry independent
   // of the listener allows the owner to manage tokens while HTTP is disabled.
   QString error;
@@ -109,7 +109,7 @@ bool HttpApiController::apply(QString *p_error) {
   }
   if (!settings.isEnabled()) {
     stopRuntime();
-    m_status = tr("Disabled");
+    m_status = tr("Service disabled");
     emit stateChanged();
     return true;
   }

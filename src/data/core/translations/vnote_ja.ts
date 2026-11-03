@@ -12894,12 +12894,6 @@ Continue?</source>
         <translation>HTTP API コントローラーを利用できません。</translation>
     </message>
     <message>
-        <source>%1
-Endpoint: %2</source>
-        <translation>%1
-エンドポイント: %2</translation>
-    </message>
-    <message>
         <source>Expired</source>
         <translation>期限切れ</translation>
     </message>
@@ -12970,8 +12964,8 @@ Endpoint: %2</source>
 <context>
     <name>vnotex::HttpApiController</name>
     <message>
-        <source>Disabled</source>
-        <translation>無効</translation>
+        <source>Service disabled</source>
+        <translation>サービスは無効です</translation>
     </message>
     <message>
         <source>HTTP API configuration is unavailable</source>

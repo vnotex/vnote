@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Move HTTP API service status beside Enable HTTP API, show Service disabled when off, and remove the duplicate endpoint line
 * Remove the unused External HTTPS URL setting; public endpoints remain configured in the reverse proxy and API clients
 * Remove note paths and raw exception details from raw-note create/rename diagnostics; verify the raw-notebook HTTP API lifecycle and nonmutating trash rejection
 * Add an opt-in, loopback-only HTTP API for local agents and HTTPS reverse-proxy clients, with independent transport, REST and VNote integration modules

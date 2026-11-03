@@ -4,6 +4,7 @@
 #include <QDateTimeEdit>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QHBoxLayout>
 #include <QHash>
 #include <QHeaderView>
 #include <QIntValidator>
@@ -25,6 +26,7 @@
 #include <core/mainconfig.h>
 #include <core/servicelocator.h>
 #include <integrations/httpapi/httpapicontroller.h>
+#include <widgets/propertydefs.h>
 #include <widgets/widgetsfactory.h>
 
 using namespace vnotex;
@@ -48,7 +50,22 @@ void HttpApiPage::setupUI() {
 
   m_enabled = WidgetsFactory::createCheckBox(tr("Enable HTTP API"), this);
   m_enabled->setObjectName(QStringLiteral("HttpApiEnabled"));
-  listener->addWidget(SettingsPageHelper::createCheckBoxRow(m_enabled, QString(), this));
+  m_status = new QLabel(this);
+  m_status->setObjectName(QStringLiteral("HttpApiStatus"));
+  m_status->setTextFormat(Qt::PlainText);
+  m_status->setSizePolicy(QSizePolicy::Ignored, QSizePolicy::Preferred);
+  m_status->setWordWrap(true);
+  m_status->setMinimumSize(0, 0);
+  m_status->setTextInteractionFlags(Qt::TextSelectableByMouse);
+
+  auto *enableRow = new QWidget(this);
+  enableRow->setProperty(PropertyDefs::c_settingsRow, true);
+  auto *enableLayout = new QHBoxLayout(enableRow);
+  enableLayout->setContentsMargins(16, 6, 16, 6);
+  enableLayout->setSpacing(12);
+  enableLayout->addWidget(m_enabled, 0, Qt::AlignVCenter);
+  enableLayout->addWidget(m_status, 1);
+  listener->addWidget(enableRow);
   addSearchItem(m_enabled->text(), m_enabled);
   connect(m_enabled, &QCheckBox::toggled, this, &HttpApiPage::pageIsChanged);
 
@@ -69,12 +86,6 @@ void HttpApiPage::setupUI() {
   addField(m_port, tr("Port"),
            tr("Use a port from 1 to 65535; an occupied port is not replaced automatically"));
 
-  m_status = new QLabel(this);
-  m_status->setObjectName(QStringLiteral("HttpApiStatus"));
-  m_status->setTextFormat(Qt::PlainText);
-  m_status->setWordWrap(true);
-  m_status->setTextInteractionFlags(Qt::TextSelectableByMouse);
-  listener->addWidget(m_status);
   m_configError = new QLabel(this);
   m_configError->setObjectName(QStringLiteral("HttpApiConfigError"));
   m_configError->setTextFormat(Qt::PlainText);
@@ -221,10 +232,7 @@ void HttpApiPage::refreshStatus() {
     m_status->setText(tr("HTTP API controller is unavailable."));
     return;
   }
-  const QString endpoint = m_controller->endpoint();
-  m_status->setText(endpoint.isEmpty() || !m_controller->isListening()
-                        ? m_controller->statusText()
-                        : tr("%1\nEndpoint: %2").arg(m_controller->statusText(), endpoint));
+  m_status->setText(m_controller->statusText());
 }
 
 void HttpApiPage::refreshNotebooks() {
