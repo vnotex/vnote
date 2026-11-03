@@ -123,10 +123,9 @@ void NotificationToast::setupUI() {
   m_progressBar->hide();
   m_mainLayout->addWidget(m_progressBar);
 
-  m_actionLayout = new QHBoxLayout();
+  m_actionLayout = new QVBoxLayout();
   m_actionLayout->setContentsMargins(0, 0, 0, 0);
   m_actionLayout->setSpacing(4);
-  m_actionLayout->addStretch();
   m_mainLayout->addLayout(m_actionLayout);
 }
 
@@ -314,7 +313,6 @@ void NotificationToast::render(const NotificationMessage &p_msg) {
     }
     delete item;
   }
-  m_actionLayout->addStretch();
 
   const quint64 id = p_msg.m_id;
   for (int ai = 0; ai < p_msg.m_actions.size(); ++ai) {

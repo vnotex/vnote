@@ -385,10 +385,9 @@ void NotificationPopup2::rebuild() {
     }
 
     // Actions, plus a generic Dismiss unless an explicit action already does only that.
-    auto *actionLayout = new QHBoxLayout();
+    auto *actionLayout = new QVBoxLayout();
     actionLayout->setContentsMargins(0, 0, 0, 0);
     actionLayout->setSpacing(4);
-    actionLayout->addStretch();
 
     const quint64 id = msg.m_id;
     bool hasDismissOnlyAction = false;

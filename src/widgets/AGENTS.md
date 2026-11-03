@@ -1319,6 +1319,10 @@ Three surfaces, one rule each:
 - `NotificationButton2` (`QToolButton`) lives on the settings toolbar immediately after the Settings menu. It paints a red badge with `NotificationService::activeCount()` and refreshes its bell icon on `ThemeService::themeChanged`. It **does not auto-show the popup** — `showPopup()` is called on click, or by `MainWindow2` forwarding `NotificationToast::popupRequested`.
 - `NotificationPopup2` (extends `ButtonPopup`) is the click-to-open **notification centre**: messages newest-first with severity icon + title + text + optional collapsible "Details" + optional progress bar + per-message action buttons + Dismiss, in a height-capped `QScrollArea`, under the shared `TitleBar` holding "Notifications" and Clear All. Do NOT hand-roll a titlebar.
 
+Popup and toast action buttons form a full-width vertical stack in producer order, with 4px
+spacing. The popup's generic Dismiss, when needed, stays last. Do not add a leading stretch
+to the action layouts; narrow notifications must not squeeze several buttons into one row.
+
 Toast sizing chooses the width within the anchor first, then uses the polished layout's
 `totalHeightForWidth()` so wrapped text and styled action buttons keep their full height.
 Visible toasts remeasure after `LayoutRequest` (including font/theme changes); retired actions

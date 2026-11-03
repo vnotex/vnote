@@ -8,7 +8,6 @@
 
 #include <core/services/notificationservice.h>
 
-class QHBoxLayout;
 class QLabel;
 class QProgressBar;
 class QTimer;
@@ -117,7 +116,7 @@ private:
   QLabel *m_textLabel = nullptr;
   QToolButton *m_closeButton = nullptr;
   QProgressBar *m_progressBar = nullptr;
-  QHBoxLayout *m_actionLayout = nullptr;
+  QVBoxLayout *m_actionLayout = nullptr;
   QVBoxLayout *m_mainLayout = nullptr;
 
   QTimer *m_autoHideTimer = nullptr;
