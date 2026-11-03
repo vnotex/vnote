@@ -12834,12 +12834,12 @@ Continue?</source>
         <translation>状態</translation>
     </message>
     <message>
-        <source>Revoke Selected Token</source>
-        <translation>選択したトークンを失効</translation>
+        <source>Revoke</source>
+        <translation>失効</translation>
     </message>
     <message>
-        <source>Refresh Tokens and Notebooks</source>
-        <translation>トークンとノートブックを更新</translation>
+        <source>Refresh</source>
+        <translation>再表示</translation>
     </message>
     <message>
         <source>Issue Client Token</source>

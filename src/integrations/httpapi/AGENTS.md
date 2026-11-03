@@ -106,6 +106,9 @@ Show that single controller status on its own row below Enable HTTP API, using S
 for the disabled service; do not append a second endpoint line or derive status from an unsaved checkbox value.
 Keep the status plain-text, selectable and wrapping without widening the row; validation errors
 remain below the listener fields.
+Use a compact Revoke/Refresh action row below the token list, following ThemePage's zero-margin
+horizontal layout with trailing stretch. Revoke still requires a selection and confirmation;
+Refresh updates both tokens and notebook grant choices without discarding selections.
 
 ## Verification
 

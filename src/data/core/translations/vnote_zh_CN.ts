@@ -12834,12 +12834,12 @@ Continue?</source>
         <translation>状态</translation>
     </message>
     <message>
-        <source>Revoke Selected Token</source>
-        <translation>撤销所选令牌</translation>
+        <source>Revoke</source>
+        <translation>撤销</translation>
     </message>
     <message>
-        <source>Refresh Tokens and Notebooks</source>
-        <translation>刷新令牌和笔记本</translation>
+        <source>Refresh</source>
+        <translation>刷新</translation>
     </message>
     <message>
         <source>Issue Client Token</source>

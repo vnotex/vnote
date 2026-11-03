@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Group HTTP API Revoke and Refresh buttons into one compact row, matching the other settings pages
 * Store Windows HTTP API token verifiers in the local profile instead of roaming configuration, preserving portable-profile isolation
 * Move HTTP API service status to its own row below Enable HTTP API, show Service disabled when off, and remove the duplicate endpoint line
 * Remove the unused External HTTPS URL setting; public endpoints remain configured in the reverse proxy and API clients

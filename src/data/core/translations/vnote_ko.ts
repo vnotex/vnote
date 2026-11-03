@@ -12834,12 +12834,12 @@ Continue?</source>
         <translation>상태</translation>
     </message>
     <message>
-        <source>Revoke Selected Token</source>
-        <translation>선택한 토큰 취소</translation>
+        <source>Revoke</source>
+        <translation>취소</translation>
     </message>
     <message>
-        <source>Refresh Tokens and Notebooks</source>
-        <translation>토큰 및 노트북 새로 고침</translation>
+        <source>Refresh</source>
+        <translation>새로 고침</translation>
     </message>
     <message>
         <source>Issue Client Token</source>

@@ -4,6 +4,7 @@
 #include <QDateTimeEdit>
 #include <QDialog>
 #include <QDialogButtonBox>
+#include <QHBoxLayout>
 #include <QHash>
 #include <QHeaderView>
 #include <QIntValidator>
@@ -109,22 +110,28 @@ void HttpApiPage::setupUI() {
   tokens->addWidget(m_tokens);
   addSearchItem(tr("Client Tokens"), m_tokens);
 
-  m_revoke = new QPushButton(tr("Revoke Selected Token"), this);
+  auto *buttonWidget = new QWidget(this);
+  auto *buttonLayout = new QHBoxLayout(buttonWidget);
+  buttonLayout->setContentsMargins(0, 0, 0, 0);
+
+  m_revoke = new QPushButton(tr("Revoke"), this);
   m_revoke->setObjectName(QStringLiteral("HttpApiRevokeToken"));
   m_revoke->setEnabled(false);
-  tokens->addWidget(m_revoke);
+  buttonLayout->addWidget(m_revoke);
   connect(m_revoke, &QPushButton::clicked, this, &HttpApiPage::revokeToken);
   connect(m_tokens, &QTreeWidget::itemSelectionChanged, this,
           [this]() { m_revoke->setEnabled(m_controller && m_tokens->currentItem()); });
-  auto *refresh = new QPushButton(tr("Refresh Tokens and Notebooks"), this);
+  auto *refresh = new QPushButton(tr("Refresh"), this);
   refresh->setObjectName(QStringLiteral("HttpApiRefresh"));
   refresh->setEnabled(m_controller != nullptr);
-  tokens->addWidget(refresh);
+  buttonLayout->addWidget(refresh);
   connect(refresh, &QPushButton::clicked, this, [this]() {
     refreshNotebooks();
     refreshTokens();
     refreshStatus();
   });
+  buttonLayout->addStretch();
+  tokens->addWidget(buttonWidget);
   m_tokenResult = new QLabel(this);
   m_tokenResult->setObjectName(QStringLiteral("HttpApiTokenResult"));
   m_tokenResult->setTextFormat(Qt::PlainText);
