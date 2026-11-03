@@ -302,7 +302,7 @@ void FileAssociationPage::addSystemProgramRow(const QString &p_suffixes) {
   rowLayout->setContentsMargins(0, 0, 0, 0);
 
   auto *nameLabel = new QLabel(tr("System default app"), rowWidget);
-  nameLabel->setToolTip(tr("Built-in program that opens files with the OS default application"));
+  nameLabel->setToolTip(tr("Operating system will choose the application to open the given file"));
 
   auto *suffixesEdit = WidgetsFactory::createLineEdit(rowWidget);
   suffixesEdit->setObjectName(QStringLiteral("suffixesEdit"));
