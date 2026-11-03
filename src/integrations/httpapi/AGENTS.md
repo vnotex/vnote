@@ -38,6 +38,13 @@ application configuration headers. Core services never depend on API/HTTP types.
 not bearer secrets. It is not notebook/session/sync data and not a replacement for
 `SyncCredentialsStore`'s keychain policy.
 
+On Windows the base is `ConfigMgr2::getUserConfigPath()` (local data), giving
+`%LOCALAPPDATA%/VNote/http-api/tokens.json` or portable `config/local/http-api/tokens.json`.
+Reject an empty Windows local-data root rather than resolving against the working directory.
+Other platforms retain `getFileFromConfigFolder()` (application data): their local-data namespace
+is a cache and must not own these credentials. The selected directory is the sole authority.
+This does not change token generation or add machine-bound cryptography.
+
 - An absent read never creates the store. Explicit owner provisioning works while
   the HTTP listener is disabled.
 - Reject corrupt/oversized JSON, symlinks/reparse points, unexpected ownership and

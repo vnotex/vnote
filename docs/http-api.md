@@ -27,6 +27,16 @@ durable storage succeeds. Revocation takes effect in memory immediately; if pers
 the listener stops and Settings reports the error. Do not treat failed persistence as durable
 revocation: fix storage protections before re-enabling.
 
+On Windows, the registry is `%LOCALAPPDATA%/VNote/http-api/tokens.json`, not the roaming
+configuration directory. Portable Windows profiles use `config/local/http-api/tokens.json`
+beside the executable. Other platforms keep it in their application-data profile, not a cache.
+This storage choice avoids ordinary Windows profile roaming; it is not cryptographic machine
+binding, and deliberately copying a valid registry can still make its tokens usable elsewhere.
+
+The bearer combines a random ID and an OS-random secret. Its verifier is an unkeyed SHA-256 hash
+of the complete `id.secret` value; no separate signing, encryption or HMAC key is used. Validation
+compares digests in constant time and separately enforces expiry, enabled state and grants.
+
 Scopes are independent grants:
 
 | Scope | Permission |

@@ -548,6 +548,9 @@ Noninteractive provisioning may use the real vxcore C API and `ApiAuth`/`ApiCred
 a disposable native helper, not hand-written verifier records. Copy the helper and VNote beside
 preexisting `config/app` and `config/local`, keep vxcore test mode off, and check the actual data
 paths. A test-mode profile belongs to the unit-test process and is not the portable app profile.
+Provision Windows portable API grants in `config/local/http-api`; other platforms retain
+`config/app/http-api`. The Windows lifecycle regression must reload the issued token from local
+data and ensure issuance did not create an app/roaming credential directory.
 Persist a fixture notebook/session before launching the app to avoid first-run Documents writes;
 host Python must not load a non-isolated vxcore context. Keep all credentials inside the fixture.
 HTTPS smoke takes `--ca-file` for process-local certificate verification; never install a test

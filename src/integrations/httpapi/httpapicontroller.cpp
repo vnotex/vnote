@@ -1,5 +1,6 @@
 #include "httpapicontroller.h"
 
+#include <QDir>
 #include <QJsonObject>
 #include <QThread>
 #include <QUrl>
@@ -43,8 +44,21 @@ bool HttpApiController::ensureCredentials(QString *p_error) {
     return false;
   }
   if (!m_store) {
+#ifdef Q_OS_WIN
+    const auto localPath = config->getUserConfigPath();
+    if (localPath.isEmpty()) {
+      if (p_error) {
+        *p_error = tr("HTTP API configuration is unavailable");
+      }
+      return false;
+    }
+    m_store =
+        std::make_unique<ApiCredentialStore>(QDir(localPath).filePath(QStringLiteral("http-api")));
+#else
+    // The local-data namespace is a cache directory on these platforms.
     m_store = std::make_unique<ApiCredentialStore>(
         config->getFileFromConfigFolder(QStringLiteral("http-api")));
+#endif
     m_auth = std::make_unique<ApiAuth>(*m_store);
   }
   QString error;

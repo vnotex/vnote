@@ -256,14 +256,31 @@ void TestHttpApiLifecycle::controllerOwnsStartupDisableAndRevocation() {
   QString token;
   QString tokenId;
   QString error;
+#ifdef Q_OS_WIN
+  const auto registryDirectory =
+      QDir(config.getUserConfigPath()).filePath(QStringLiteral("http-api"));
+#else
+  const auto registryDirectory = config.getFileFromConfigFolder(QStringLiteral("http-api"));
+#endif
+  const auto registry = QDir(registryDirectory).filePath(QStringLiteral("tokens.json"));
   {
     HttpApiController controller(services);
     QVERIFY(!controller.isListening());
+    QVERIFY(!QFileInfo::exists(registryDirectory));
     QVERIFY2(controller.issueToken(QStringLiteral("Agent"), {notebook},
                                    {QStringLiteral("notes:read")},
                                    QDateTime::currentDateTimeUtc().addDays(1), &token, &error),
              qPrintable(error));
     QVERIFY(!controller.isListening());
+    {
+      ApiCredentialStore persistedStore(registryDirectory);
+      ApiAuth persistedAuth(persistedStore);
+      QVERIFY2(persistedAuth.load(&error), qPrintable(error));
+      QVERIFY(persistedAuth.authenticate(token.toUtf8()).has_value());
+    }
+#ifdef Q_OS_WIN
+    QVERIFY(!QFileInfo::exists(config.getFileFromConfigFolder(QStringLiteral("http-api"))));
+#endif
     tokenId = token.section(QLatin1Char('.'), 0, 0);
     settings.setEnabled(true);
     QVERIFY2(controller.apply(&error), qPrintable(error));
@@ -280,7 +297,6 @@ void TestHttpApiLifecycle::controllerOwnsStartupDisableAndRevocation() {
     QVERIFY(rejectedSecret.isEmpty());
     QCOMPARE(request(controller.endpoint(), token).status, 200);
 
-    const auto registry = config.getFileFromConfigFolder(QStringLiteral("http-api/tokens.json"));
     const auto backup = registry + QStringLiteral(".saved");
     QVERIFY(QFile::rename(registry, backup));
     {
