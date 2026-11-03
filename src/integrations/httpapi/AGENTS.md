@@ -72,6 +72,12 @@ not bearer secrets. It is not notebook/session/sync data and not a replacement f
 - Shared `NoteOperationService` owns mutation semantics. It uses existing buffer
   reservations, save queue and NotebookIoGate, refuses dirty editor conflicts and
   rechecks authorization at commitment. HTTP handlers do not write files.
+- Raw and bundled notebooks share ordinary read/search/create/edit/rename routes. Raw
+  UUIDs are profile-backed and must survive context restart; explicit notebook removal
+  is a different lifecycle and may discard that identity. Test nested folder discovery
+  and creation by UUID, not just the synthetic root.
+- Raw trash remains unsupported. An authorized admitted DELETE ends in
+  `422/unsupported_trash` with no committed/saved changes; do not call legacy deletion.
 - Strict trash uses `vxcore_node_trash`, never legacy deletion: legacy bundled
   delete can permanently remove a file if recycling fails. Keep recovery-required,
   committed and saved outcomes distinct.
@@ -92,6 +98,9 @@ runtime state when applying settings fails, not merely the persisted enabled fla
 
 `test_httpapilifecycle` covers real protected registry persistence, revocation and
 HTTP listener lifecycle. `test_vnoteapibackend` covers real service-backed snapshots,
-authorization and mutations. Transport/API policy have separate independent tests.
+authorization and mutations for both raw and bundled notebooks, including raw identity
+restoration and nonmutating trash rejection. The real HTTP smoke runner's `--expect-no-trash`
+mode verifies the raw contract; its default mode must still verify bundled recycling.
+Transport/API policy have separate independent tests.
 Use the isolated portable-profile rules in [`../../../tests/AGENTS.md`](../../../tests/AGENTS.md)
 for actual application smoke runs; `--no-single-instance` alone is not isolation.

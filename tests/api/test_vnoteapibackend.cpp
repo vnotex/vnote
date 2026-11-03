@@ -63,7 +63,7 @@ struct Fixture {
   QSet<QByteArray> presentTemp;
   bool tempChanged = false;
 
-  bool init() {
+  bool init(NotebookType p_type = NotebookType::Bundled) {
     if (!directory.isValid())
       return false;
     // Test mode otherwise shares one vxcore_test_config directory with other
@@ -75,6 +75,16 @@ struct Fixture {
       qputenv(key.constData(), QFile::encodeName(directory.path()));
     }
     tempChanged = true;
+    if (!initServices())
+      return false;
+    const auto root = directory.filePath(QStringLiteral("notes"));
+    if (p_type == NotebookType::Raw && !QDir().mkpath(root))
+      return false;
+    notebookId =
+        notebooks->createNotebook(root, QStringLiteral("{\"name\":\"API fixture\"}"), p_type);
+    return !notebookId.isEmpty();
+  }
+  bool initServices() {
     vxcore_set_test_mode(1);
     if (vxcore_context_create(nullptr, &context) != VXCORE_OK)
       return false;
@@ -102,13 +112,14 @@ struct Fixture {
     services.registerService(buffers.get());
     services.registerService(searchCore.get());
     services.registerService(search.get());
-    notebookId = notebooks->createNotebook(directory.filePath(QStringLiteral("notes")),
-                                           QStringLiteral("{\"name\":\"API fixture\"}"),
-                                           NotebookType::Bundled);
     backend = std::make_unique<VNoteApiBackend>(services);
-    return !notebookId.isEmpty();
+    return true;
   }
-  ~Fixture() {
+  bool restart() {
+    releaseServices();
+    return initServices();
+  }
+  void releaseServices() {
     backend.reset();
     search.reset();
     searchCore.reset();
@@ -117,8 +128,13 @@ struct Fixture {
     notebooks.reset();
     config.reset();
     configCore.reset();
-    if (context)
+    if (context) {
       vxcore_context_destroy(context);
+      context = nullptr;
+    }
+  }
+  ~Fixture() {
+    releaseServices();
     if (tempChanged) {
       for (auto it = previousTemp.cbegin(); it != previousTemp.cend(); ++it) {
         if (presentTemp.contains(it.key()))
@@ -181,14 +197,22 @@ struct Fixture {
   }
   ApiResult execute(ApiCommand command) { return execute(std::move(command), principal()); }
 };
+
+void notebookTypes() {
+  QTest::addColumn<int>("notebookType");
+  QTest::newRow("bundled") << static_cast<int>(NotebookType::Bundled);
+  QTest::newRow("raw") << static_cast<int>(NotebookType::Raw);
+}
 } // namespace
 
 class TestVNoteApiBackend : public QObject {
   Q_OBJECT
 private slots:
+  void savedAndLiveAreDifferentAndNonmutating_data() { notebookTypes(); }
   void savedAndLiveAreDifferentAndNonmutating() {
+    QFETCH(int, notebookType);
     Fixture fixture;
-    QVERIFY(fixture.init());
+    QVERIFY(fixture.init(static_cast<NotebookType>(notebookType)));
     const auto id = fixture.add(QStringLiteral("draft.md"), QByteArrayLiteral("saved\r\n"));
     QVERIFY(!id.isEmpty());
     auto buffer = fixture.buffers->openBuffer({fixture.notebookId, QStringLiteral("draft.md")});
@@ -335,9 +359,11 @@ private slots:
     QCOMPARE(fixture.execute(live, principal).error.status, 403);
   }
 
+  void mutationsUseVersionsAndPersistentIds_data() { notebookTypes(); }
   void mutationsUseVersionsAndPersistentIds() {
+    QFETCH(int, notebookType);
     Fixture fixture;
-    QVERIFY(fixture.init());
+    QVERIFY(fixture.init(static_cast<NotebookType>(notebookType)));
     auto create = fixture.command(ApiCommandKind::CreateNote);
     create.name = QStringLiteral("new.md");
     create.format = QStringLiteral("markdown");
@@ -375,6 +401,22 @@ private slots:
     const auto contents = fixture.execute(fixture.command(ApiCommandKind::ReadContent, id));
     QCOMPARE(contents.data.value("text").toString(), QStringLiteral("one\ntwo"));
     auto trash = fixture.command(ApiCommandKind::TrashNote, id);
+    const bool supportsTrash = notebookType == static_cast<int>(NotebookType::Bundled);
+    QCOMPARE(metadata.data.value("capabilities").toObject().value("trash").toBool(), supportsTrash);
+    if (!supportsTrash) {
+      trash.expectedVersion = contents.data.value("noteStateVersion").toString();
+      const auto rejected = fixture.execute(trash);
+      QCOMPARE(rejected.error.status, 422);
+      QCOMPARE(rejected.error.code, QStringLiteral("unsupported_trash"));
+      QVERIFY(!rejected.committed && !rejected.saved);
+      const auto retained = fixture.execute(fixture.command(ApiCommandKind::ReadContent, id));
+      QCOMPARE(retained.error.status, 0);
+      QCOMPARE(retained.data.value("id").toString(), id);
+      QCOMPARE(retained.data.value("contentVersion"), contents.data.value("contentVersion"));
+      QCOMPARE(readFile(fixture.directory.filePath(QStringLiteral("notes/renamed.md"))),
+               QByteArrayLiteral("one\ntwo"));
+      return;
+    }
     trash.expectedVersion = contents.data.value("contentVersion").toString();
     QCOMPARE(fixture.execute(trash).error.status, 412);
     trash.expectedVersion = contents.data.value("noteStateVersion").toString();
@@ -384,9 +426,11 @@ private slots:
     QCOMPARE(fixture.execute(fixture.command(ApiCommandKind::ReadNote, id)).error.status, 404);
   }
 
+  void dirtyDraftAndExternalChangesRefuseWrites_data() { notebookTypes(); }
   void dirtyDraftAndExternalChangesRefuseWrites() {
+    QFETCH(int, notebookType);
     Fixture fixture;
-    QVERIFY(fixture.init());
+    QVERIFY(fixture.init(static_cast<NotebookType>(notebookType)));
     const auto id = fixture.add(QStringLiteral("guard.md"), QByteArrayLiteral("original"));
     const auto initial = fixture.execute(fixture.command(ApiCommandKind::ReadContent, id));
     auto buffer = fixture.buffers->openBuffer({fixture.notebookId, QStringLiteral("guard.md")});
@@ -408,6 +452,82 @@ private slots:
         fixture.notebooks->buildAbsolutePath(fixture.notebookId, QStringLiteral("guard.md")),
         QByteArrayLiteral("external")));
     QCOMPARE(fixture.execute(replace).error.status, 412);
+  }
+
+  void rawDiscoveryAndNestedIdentitySurviveContextRestart() {
+    Fixture fixture;
+    QVERIFY(fixture.init(NotebookType::Raw));
+    const auto nestedPath = fixture.directory.filePath(QStringLiteral("notes/nested"));
+    QVERIFY(QDir().mkpath(nestedPath));
+    const auto externalPath = QDir(nestedPath).filePath(QStringLiteral("external.txt"));
+    const auto bytes = QByteArrayLiteral("raw-content-needle\n");
+    QVERIFY(writeFile(externalPath, bytes));
+    auto itemNamed = [](const ApiResult &result, const QString &name) {
+      for (const auto &entry : result.data.value("items").toArray()) {
+        const auto item = entry.toObject();
+        if (item.value("name").toString() == name)
+          return item;
+      }
+      return QJsonObject();
+    };
+    auto listing = fixture.command(ApiCommandKind::ListNodes);
+    const auto root = fixture.execute(listing);
+    QCOMPARE(root.error.status, 0);
+    const auto folderId = itemNamed(root, QStringLiteral("nested")).value("id").toString();
+    QVERIFY(!folderId.isEmpty());
+    listing.parentId = folderId;
+    const auto children = fixture.execute(listing);
+    QCOMPARE(children.error.status, 0);
+    const auto fileId = itemNamed(children, QStringLiteral("external.txt")).value("id").toString();
+    QVERIFY(!fileId.isEmpty());
+    const auto saved = fixture.execute(fixture.command(ApiCommandKind::ReadContent, fileId));
+    QCOMPARE(saved.error.status, 0);
+    QCOMPARE(saved.data.value("text").toString().toUtf8(), bytes);
+    for (bool content : {false, true}) {
+      auto search = fixture.command(ApiCommandKind::Search);
+      search.searchContent = content;
+      search.query = content ? QStringLiteral("raw-content-needle") : QStringLiteral("external");
+      const auto found = fixture.execute(search);
+      QCOMPARE(found.error.status, 0);
+      QCOMPARE(itemNamed(found, QStringLiteral("external.txt")).value("id").toString(), fileId);
+    }
+    auto create = fixture.command(ApiCommandKind::CreateNote);
+    create.parentId = folderId;
+    create.name = QStringLiteral("created.txt");
+    create.format = QStringLiteral("text");
+    const auto created = fixture.execute(create);
+    QCOMPARE(created.error.status, 0);
+    QVERIFY(created.committed && created.saved);
+    const auto createdId = created.data.value("id").toString();
+    QVERIFY(!createdId.isEmpty());
+    QCOMPARE(fixture.notebooks->getNodePathById(fixture.notebookId, createdId),
+             QStringLiteral("nested/created.txt"));
+    QVERIFY(QFileInfo::exists(QDir(nestedPath).filePath(QStringLiteral("created.txt"))));
+    const auto metadata = fixture.execute(fixture.command(ApiCommandKind::ReadNote, fileId));
+    auto rename = fixture.command(ApiCommandKind::RenameNote, fileId);
+    rename.name = QStringLiteral("renamed.txt");
+    rename.expectedVersion = metadata.data.value("metadataVersion").toString();
+    const auto renamed = fixture.execute(rename);
+    QCOMPARE(renamed.error.status, 0);
+    QCOMPARE(renamed.data.value("id").toString(), fileId);
+    QVERIFY(!QFileInfo::exists(externalPath));
+    QCOMPARE(readFile(QDir(nestedPath).filePath(QStringLiteral("renamed.txt"))), bytes);
+
+    const auto notebookId = fixture.notebookId;
+    QVERIFY(fixture.restart());
+    QCOMPARE(fixture.notebooks->getNotebookConfig(notebookId).value("id").toString(), notebookId);
+    const auto restoredRoot = fixture.execute(fixture.command(ApiCommandKind::ListNodes));
+    QCOMPARE(restoredRoot.error.status, 0);
+    QCOMPARE(itemNamed(restoredRoot, QStringLiteral("nested")).value("id").toString(), folderId);
+    const auto restoredChildren = fixture.execute(listing);
+    QCOMPARE(restoredChildren.error.status, 0);
+    QCOMPARE(itemNamed(restoredChildren, QStringLiteral("renamed.txt")).value("id").toString(),
+             fileId);
+    QCOMPARE(itemNamed(restoredChildren, QStringLiteral("created.txt")).value("id").toString(),
+             createdId);
+    const auto restored = fixture.execute(fixture.command(ApiCommandKind::ReadContent, fileId));
+    QCOMPARE(restored.error.status, 0);
+    QCOMPARE(restored.data.value("text").toString().toUtf8(), bytes);
   }
 
   void listingCursorRejectsRename() {

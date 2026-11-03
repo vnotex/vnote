@@ -150,9 +150,12 @@ def smoke(args):
     info = client.get("/info")
     if info.get("apiVersion") != "1":
         raise RuntimeError("Unexpected API version")
-    visible = {item["id"] for item in client.get("/notebooks")["items"]}
+    notebooks = client.get("/notebooks")["items"]
+    visible = {item["id"] for item in notebooks}
     if visible != {notebook}:
         raise RuntimeError("The token's notebook allowlist is not isolated to its fixture")
+    if notebooks[0]["capabilities"]["trash"] != (not args.expect_no_trash):
+        raise RuntimeError("Notebook trash capability does not match the smoke mode")
     status, _, _ = client.call("GET", "/notebooks/not-granted/notes/not-granted")
     if status != 404:
         raise RuntimeError("Unauthorized notebook identity was disclosed")
@@ -168,6 +171,10 @@ def smoke(args):
     created = client.mutate("POST", notes, create)
     node = created["resource"]["id"]
     note = notes + "/" + urllib.parse.quote(node, safe="")
+    nodes = "/notebooks/" + urllib.parse.quote(notebook, safe="") + "/nodes?limit=200"
+    listed = [item for item in client.get(nodes)["items"] if item["id"] == node]
+    if len(listed) != 1 or listed[0]["name"] != name:
+        raise RuntimeError("Created note is missing from its notebook listing")
     initial = client.get(note + "/content")
     if initial["text"] != "" or initial["view"] != "saved":
         raise RuntimeError("New note is not an empty persisted resource")
@@ -188,19 +195,26 @@ def smoke(args):
     current = client.get(note + "/content")
     if current["text"] != text:
         raise RuntimeError("Append changed more than the requested text")
-    status, results, _ = client.call("POST", "/search", {
-        "query": marker_text, "notebookIds": [notebook], "searchContent": True, "limit": 10,
-    })
-    if status != 200 or not any(item["id"] == node for item in results["items"]):
-        raise RuntimeError("Search did not find the persisted fixture note")
+    for search_content in (False, True):
+        status, results, _ = client.call("POST", "/search", {
+            "query": marker_text, "notebookIds": [notebook],
+            "searchContent": search_content, "limit": 10,
+        })
+        if status != 200 or not any(item["id"] == node for item in results["items"]):
+            raise RuntimeError("Search did not find the persisted fixture note")
     print("Create, conditional replace, stale-write rejection, append and search: passed")
 
     metadata = client.get(note)
+    if metadata["capabilities"]["trash"] != (not args.expect_no_trash):
+        raise RuntimeError("Note trash capability does not match the smoke mode")
     renamed = marker_text + "-renamed.md"
     client.mutate("PATCH", note, {"name": renamed}, metadata["metadataVersion"])
     after = client.get(note)
     if after["id"] != node or after["name"] != renamed:
         raise RuntimeError("Rename did not preserve the node's identity")
+    listed = [item for item in client.get(nodes)["items"] if item["id"] == node]
+    if len(listed) != 1 or listed[0]["name"] != renamed:
+        raise RuntimeError("Rename did not update the notebook listing")
     matches = [path for path in root.rglob(renamed) if path.is_file() and not path.is_symlink()]
     if len(matches) != 1:
         raise RuntimeError("Cannot uniquely locate the fixture note for disk verification")
@@ -208,6 +222,25 @@ def smoke(args):
     if saved_path.read_bytes().decode("utf-8-sig") != text:
         raise RuntimeError("HTTP results do not match the actual on-disk note")
     current = client.get(note + "/content")
+    if args.expect_no_trash:
+        before_bytes = saved_path.read_bytes()
+        before_tree = set(saved_path.parent.rglob("*"))
+        rejected = client.mutate("DELETE", note, version=current["noteStateVersion"],
+                                 expected_error=422)
+        if (rejected.get("state") != "failed"
+                or rejected.get("error", {}).get("code") != "unsupported_trash"
+                or rejected.get("committed") is not False or rejected.get("saved") is not False):
+            raise RuntimeError("Raw trash did not fail as a noncommitted asynchronous operation")
+        retained = client.get(note + "/content")
+        if (retained["id"] != node or retained["text"] != text
+                or retained["contentVersion"] != current["contentVersion"]
+                or retained["noteStateVersion"] != current["noteStateVersion"]
+                or saved_path.read_bytes() != before_bytes
+                or set(saved_path.parent.rglob("*")) != before_tree):
+            raise RuntimeError("Rejected trash changed the raw note or created a recycle entry")
+        print("Rename, stable identity, disk persistence and nonmutating trash rejection: passed")
+        print("HTTP API smoke passed; unsupported raw trash remains unsupported")
+        return
     client.mutate("DELETE", note, version=current["noteStateVersion"])
     if saved_path.exists():
         raise RuntimeError("Trash left the original note in place")
@@ -230,6 +263,8 @@ def main():
     parser.add_argument("--read-token-file", type=pathlib.Path)
     parser.add_argument("--ca-file", type=pathlib.Path)
     parser.add_argument("--expect-revoked", action="store_true")
+    parser.add_argument("--expect-no-trash", action="store_true",
+                        help="Require unsupported trash without mutation (raw notebooks)")
     args = parser.parse_args()
     if args.check_registration is not None:
         check_registration(args.check_registration)

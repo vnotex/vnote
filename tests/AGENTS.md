@@ -445,6 +445,12 @@ A non-empty destination is not an isolation guard: a valid user notebook will be
 Do not edit, empty, rename, or delete the user's directory to avoid that behavior. Continue testing
 only the scratch file in the disposable copy.
 
+Portable mode does not isolate Windows startup registration. Before launching a fixture with a
+loaded Qt session, inspect `HKCU\Software\Microsoft\Windows\CurrentVersion\Run` read-only and
+abort if its `VNote` value exists; use an authorized disposable OS account instead. Never enable
+startup or remove/replace the user's entry to run a smoke. Keep fixture `startOnSystemStartup`
+false and verify the value remains absent after the owned process exits.
+
 Run from the repository root after building `vnote`. Set `$build` to the build you just verified;
 the example derives the matching Qt runtime from its CMake cache, rather than mixing Qt versions.
 Run both blocks in the same persistent PowerShell terminal, keeping it open during GUI inspection
@@ -520,6 +526,12 @@ Use an OS temp root outside any Git worktree for these regression runs: a temp d
 `build*` still inherits this repository's `.gitattributes`, invalidating tests that intentionally
 exercise files outside Git. Normalize the temp path before passing it to native path guards.
 
+Backend coverage shares saved/live, conditional mutation and dirty/external-write scenarios
+between bundled and raw fixtures. Raw-only coverage discovers external nested files, creates by
+a discovered non-root folder UUID, and restarts the context/services on the same profile to check
+identity persistence. Do not use `closeNotebook` for that assertion: closing a raw notebook removes
+its local metadata, unlike application/context restart.
+
 For application smoke, use the disposable portable profile rules above, issue separate
 read-only and write/trash tokens from its Settings page, and create `.http-api-smoke.json`
 in the fixture root containing `{"disposable":true,"notebookId":"<fixture UUID>"}`.
@@ -527,6 +539,17 @@ Keep token files inside that root. Run `scripts/e2e/smoke_http_api.py` with `--b
 `--fixture-root`, `--token-file` and `--read-token-file`; the script only touches uniquely named
 fixture notes and verifies actual disk/recycle contents. Exercise dirty-editor rejection and
 owner revocation in the GUI; `--expect-revoked` checks the issued token after revocation.
+For raw fixtures, add `--expect-no-trash`. The writer must still have `notes:trash`: require a
+202-admitted operation that ends in `422/unsupported_trash`, not a scope-denied 403. The runner
+checks unchanged bytes, versions, UUID and notebook tree; it never permanently deletes a raw
+note as cleanup. The default bundled mode must continue proving actual recoverable trash.
+
+Noninteractive provisioning may use the real vxcore C API and `ApiAuth`/`ApiCredentialStore` in
+a disposable native helper, not hand-written verifier records. Copy the helper and VNote beside
+preexisting `config/app` and `config/local`, keep vxcore test mode off, and check the actual data
+paths. A test-mode profile belongs to the unit-test process and is not the portable app profile.
+Persist a fixture notebook/session before launching the app to avoid first-run Documents writes;
+host Python must not load a non-isolated vxcore context. Keep all credentials inside the fixture.
 HTTPS smoke takes `--ca-file` for process-local certificate verification; never install a test
 CA globally or disable TLS verification. A loopback HTTPS proxy run does not prove public
 network reachability. Strict-trash changes also require the separate vxcore `test_node` suite.

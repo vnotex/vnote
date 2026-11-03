@@ -45,6 +45,21 @@ editor. Direct authorized access fails with `protected_note_unavailable` (422). 
 notes may have metadata with `contentReadable=false`; content access gives
 `unsupported_note_type` (422). Capability flags, not a filename extension, determine support.
 
+## Notebook types
+
+Granted, currently open **raw and bundled notebooks** use the same listing, saved/live read,
+search, create, replace, append and rename endpoints. Ordinary Markdown/text notes still require
+usable stable IDs and the appropriate scopes; read-only and protected-note restrictions apply.
+
+Raw identities live in the local profile's metadata database. Restarting VNote with that profile
+preserves them; removing a raw notebook and adding it again is not identity-preserving. Do not
+substitute filesystem paths for node IDs or automatically grant a newly added notebook access.
+
+Raw notebooks report `capabilities.trash=false`. An otherwise valid DELETE with `notes:trash`
+is admitted as 202, then its operation fails with `error.status=422`, `code=unsupported_trash`,
+`committed=false` and `saved=false`. The file is neither moved nor deleted. Bundled notebooks
+retain the strict reversible-trash implementation; neither backend gets a permanent-delete fallback.
+
 ## HTTPS for other machines
 
 Use a separately installed reverse proxy on the **same host**:
