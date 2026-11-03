@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Prevent concealed Markdown markers from blinking during unrelated typing by retaining and remapping the last parsed concealment until fresh results arrive
 * Preserve annotated KaTeX and MathML formulas when parsing HTML to Markdown and pasting, retaining inline/display math and TeX source without duplicate rendered text
 * Fix Windows HTTP API token issuance under elevated accounts while retaining strict owner-only credential storage
 * Synchronize notification backlog scrolling tests with completed layout and preserve first-run Windows HTTP API test diagnostics
