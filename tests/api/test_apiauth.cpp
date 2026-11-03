@@ -160,6 +160,125 @@ private slots:
     QVERIFY(!auth.authenticate(token.secret.toLatin1()));
   }
 
+  void neverTokensRemainScopedAndRevocable() {
+    MemoryStore store;
+    ApiAuth auth(store);
+    ApiIssuedToken token;
+    QString error;
+    auto unlimited = grant();
+    unlimited.expiresAt = std::nullopt;
+    QCOMPARE(auth.issue(unlimited, &token, &error), ApiAuth::IssueResult::Issued);
+    auto record = store.records[0].toObject();
+    QVERIFY(record.value("expiresAt").isNull());
+    record.insert("issuedAt",
+                  QDateTime::currentDateTimeUtc().addYears(-5).toString(Qt::ISODateWithMs));
+    store.records = {record};
+    ApiAuth reloaded(store);
+    QVERIFY(reloaded.load(&error));
+    const auto principal = reloaded.authenticate(token.secret.toUtf8());
+    QVERIFY(principal.has_value());
+    ApiCommand command;
+    command.kind = ApiCommandKind::ReadContent;
+    command.notebookId = QStringLiteral("nb-a");
+    QVERIFY(reloaded.isAuthorized(*principal, command));
+    command.notebookId = QStringLiteral("nb-b");
+    QVERIFY(!reloaded.isAuthorized(*principal, command));
+    command.notebookId = QStringLiteral("nb-a");
+    command.kind = ApiCommandKind::ReplaceContent;
+    QVERIFY(!reloaded.isAuthorized(*principal, command));
+    record.insert("enabled", false);
+    store.records = {record};
+    QVERIFY(reloaded.load(&error));
+    QVERIFY(!reloaded.authenticate(token.secret.toUtf8()).has_value());
+    command.kind = ApiCommandKind::ReadContent;
+    QVERIFY(!reloaded.isAuthorized(*principal, command));
+    record.insert("enabled", true);
+    store.records = {record};
+    QVERIFY(reloaded.load(&error));
+    QVERIFY(reloaded.revoke(token.id, &error));
+    QVERIFY(!reloaded.authenticate(token.secret.toUtf8()).has_value());
+    QVERIFY(!reloaded.isAuthorized(*principal, command));
+    ApiAuth revoked(store);
+    QVERIFY(revoked.load(&error));
+    QVERIFY(!revoked.authenticate(token.secret.toUtf8()).has_value());
+  }
+
+  void malformedExpiryNeverGrantsAuthority_data() {
+    QTest::addColumn<QJsonValue>("expiry");
+    QTest::newRow("missing") << QJsonValue(QJsonValue::Undefined);
+    QTest::newRow("numeric-zero") << QJsonValue(0);
+    QTest::newRow("invalid-string") << QJsonValue(QStringLiteral("Never"));
+    QTest::newRow("before-issuance")
+        << QJsonValue(QDateTime::currentDateTimeUtc().addDays(-1).toString(Qt::ISODateWithMs));
+  }
+
+  void malformedExpiryNeverGrantsAuthority() {
+    QFETCH(QJsonValue, expiry);
+    MemoryStore store;
+    ApiAuth auth(store);
+    ApiIssuedToken token;
+    QString error;
+    auto unlimited = grant();
+    unlimited.expiresAt = std::nullopt;
+    QCOMPARE(auth.issue(unlimited, &token, &error), ApiAuth::IssueResult::Issued);
+    auto record = store.records[0].toObject();
+    if (expiry.isUndefined())
+      record.remove("expiresAt");
+    else
+      record.insert("expiresAt", expiry);
+    store.records = {record};
+    QVERIFY(!auth.load(&error));
+    QVERIFY(!auth.authenticate(token.secret.toUtf8()).has_value());
+    QVERIFY(auth.tokens().isEmpty());
+  }
+
+  void unspecifiedGrantExpiryIsRejected() {
+    MemoryStore store;
+    ApiAuth auth(store);
+    ApiTokenGrant unspecified{
+        QStringLiteral("automation"), {QStringLiteral("nb-a")}, {QStringLiteral("notes:read")}};
+    ApiIssuedToken token;
+    QString error;
+    QCOMPARE(auth.issue(unspecified, &token, &error), ApiAuth::IssueResult::Rejected);
+    QVERIFY(token.secret.isEmpty());
+    QVERIFY(store.records.isEmpty());
+  }
+
+  void neverTokensCountTowardQuotaAndDisabledArePruned() {
+    MemoryStore store;
+    ApiAuth auth(store);
+    auto unlimited = grant();
+    unlimited.expiresAt = std::nullopt;
+    ApiIssuedToken token;
+    QString error, firstBearer, secondId, lastId;
+    for (int i = 0; i < 64; ++i) {
+      QCOMPARE(auth.issue(unlimited, &token, &error), ApiAuth::IssueResult::Issued);
+      if (i == 0)
+        firstBearer = token.secret;
+      if (i == 1)
+        secondId = token.id;
+      lastId = token.id;
+    }
+    QCOMPARE(auth.issue(unlimited, &token, &error), ApiAuth::IssueResult::Rejected);
+    for (int i = 0; i < store.records.size(); ++i) {
+      auto record = store.records[i].toObject();
+      if (record.value("id").toString() == lastId) {
+        record.insert("enabled", false);
+        store.records[i] = record;
+      }
+    }
+    QVERIFY(auth.load(&error));
+    QCOMPARE(auth.issue(grant(), &token, &error), ApiAuth::IssueResult::Issued);
+    QCOMPARE(auth.tokens().size(), 64);
+    for (const auto &record : auth.tokens())
+      QVERIFY(record.toObject().value("id").toString() != lastId);
+    QVERIFY(auth.authenticate(firstBearer.toUtf8()).has_value());
+    QVERIFY(auth.revoke(secondId, &error));
+    QCOMPARE(auth.issue(unlimited, &token, &error), ApiAuth::IssueResult::Issued);
+    QCOMPARE(auth.tokens().size(), 64);
+    QVERIFY(auth.authenticate(firstBearer.toUtf8()).has_value());
+  }
+
   void finiteRegistryAndGrantValidation() {
     MemoryStore store;
     ApiAuth auth(store);

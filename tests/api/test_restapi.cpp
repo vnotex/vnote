@@ -381,8 +381,10 @@ private slots:
     ApiTokenGrant grant{"owner",
                         {"nb-a"},
                         {"notes:read", "notes:read-live", "notes:write", "notes:trash"},
-                        QDateTime::currentDateTimeUtc().addDays(1)};
+                        std::nullopt};
+    // Exercise HTTP authorization/revocation with an unlimited owner and finite readers.
     QCOMPARE(auth->issue(grant, &token, &error), ApiAuth::IssueResult::Issued);
+    grant.expiresAt = QDateTime::currentDateTimeUtc().addDays(1);
     grant.scopes = {"notes:read"};
     QCOMPARE(auth->issue(grant, &reader, &error), ApiAuth::IssueResult::Issued);
     grant.notebookIds = {"nb-b"};

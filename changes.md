@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Simplify token expiry to day presets or Never, retain the 90-day default, and show dates without detailed timestamps
 * Right-align HTTP API New/Revoke/Refresh and Theme Refresh/Open Location action rows
 * Move HTTP API token issuance into a separate dialog with a full-width notebook list and a labeled permissions group
 * Store Windows HTTP API token verifiers in the local profile instead of roaming configuration, preserving portable-profile isolation
@@ -7,7 +8,7 @@
 * Remove the unused External HTTPS URL setting; public endpoints remain configured in the reverse proxy and API clients
 * Remove note paths and raw exception details from raw-note create/rename diagnostics; verify the raw-notebook HTTP API lifecycle and nonmutating trash rejection
 * Add an opt-in, loopback-only HTTP API for local agents and HTTPS reverse-proxy clients, with independent transport, REST and VNote integration modules
-* Add owner-issued expiring notebook-scoped API tokens, separate read/live-read/write/trash permissions, private verifier storage and immediate revocation controls in Settings
+* Add owner-issued notebook-scoped API tokens with optional expiry, separate read/live-read/write/trash permissions, private verifier storage and immediate revocation controls in Settings
 * Expose bounded note listing, saved/live reads, search and conditional create/edit/append/rename/trash operations without overwriting dirty editors or exporting protected notes
 * Add strict reversible note trash without the legacy permanent-delete fallback, and preserve save/sync coordination, actual mutation outcomes and orderly API shutdown
 

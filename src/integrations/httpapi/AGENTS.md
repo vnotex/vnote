@@ -113,8 +113,11 @@ Refresh updates token rows, their notebook display names and status without losi
 New opens `NewHttpApiTokenDialog`, using the standard `ScrollDialog` form and button box.
 Load current notebook choices per opening, with no checked notebooks and only read permission
 selected. Put the full-width notebook list below its label/help, and Permissions above all four
-scope checkboxes. Keep expiry's existing vertical label/help/input layout, local-time format,
-calendar popup and 90-day default. Invalid submissions stay open; cancellation issues nothing.
+scope checkboxes. Expiry is a noneditable combo below its label: 1/7/30/60/90/180 days or Never,
+with 90 days selected initially. Validate the selection before mapping Never to explicit nullopt;
+a missing selection is not Never. Compute finite expiry at submission as local now plus calendar
+days, then convert to UTC. The token table shows locale date-only or Never, never a detailed time;
+persist precise UTC expiry internally. Invalid submissions stay open; cancellation issues nothing.
 Successful issuance shows the existing one-time secret dialog, clears its field/local string,
 then closes the form. Never retain a secret getter or restore a previous form's grants/secret.
 The controller still owns current-grant validation and durable publication; the page has no

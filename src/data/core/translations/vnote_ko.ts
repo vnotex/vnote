@@ -12774,6 +12774,10 @@ Continue?</source>
 <context>
     <name>vnotex::HttpApiPage</name>
     <message>
+        <source>Never</source>
+        <translation>무기한</translation>
+    </message>
+    <message>
         <source>New</source>
         <translation>새로 만들기</translation>
     </message>
@@ -12885,6 +12889,38 @@ Continue?</source>
 <context>
     <name>vnotex::NewHttpApiTokenDialog</name>
     <message>
+        <source>Expiry</source>
+        <translation>유효 기간</translation>
+    </message>
+    <message>
+        <source>1 day</source>
+        <translation>1일</translation>
+    </message>
+    <message>
+        <source>7 days</source>
+        <translation>7일</translation>
+    </message>
+    <message>
+        <source>30 days</source>
+        <translation>30일</translation>
+    </message>
+    <message>
+        <source>60 days</source>
+        <translation>60일</translation>
+    </message>
+    <message>
+        <source>90 days</source>
+        <translation>90일</translation>
+    </message>
+    <message>
+        <source>180 days</source>
+        <translation>180일</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>무기한</translation>
+    </message>
+    <message>
         <source>Issue Client Token</source>
         <translation>클라이언트 토큰 발급</translation>
     </message>
@@ -12921,20 +12957,12 @@ Continue?</source>
         <translation>노트를 휴지통으로 이동 (notes:trash)</translation>
     </message>
     <message>
-        <source>Expiry (local time)</source>
-        <translation>만료 시간(현지 시간)</translation>
-    </message>
-    <message>
-        <source>A future expiry is required; new tokens default to 90 days</source>
-        <translation>미래의 만료 시간 필수; 새 토큰의 기본 유효 기간은 90일</translation>
-    </message>
-    <message>
         <source>Issue Token</source>
         <translation>토큰 발급</translation>
     </message>
     <message>
-        <source>Enter a client label, select at least one notebook and permission, and choose a future expiry.</source>
-        <translation>클라이언트 레이블을 입력하고 노트북과 권한을 하나 이상 선택한 후 미래의 만료 시간을 지정하세요.</translation>
+        <source>Enter a client label, select at least one notebook and permission, and choose a valid expiry option.</source>
+        <translation>클라이언트 레이블을 입력하고 노트북과 권한을 하나 이상 선택한 후 올바른 유효 기간 옵션을 선택하세요.</translation>
     </message>
     <message>
         <source>Token Issued</source>
@@ -12964,8 +12992,8 @@ Continue?</source>
         <translation>토큰 레지스트리가 잘못됨</translation>
     </message>
     <message>
-        <source>Select notebooks, valid scopes, a label, and a future token expiry</source>
-        <translation>노트북, 유효한 권한, 레이블 및 미래의 토큰 만료 시간을 선택</translation>
+        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
+        <translation>노트북, 유효한 권한, 레이블 및 올바른 유효 기간 옵션을 선택</translation>
     </message>
     <message>
         <source>The token limit of 64 has been reached</source>

@@ -268,8 +268,7 @@ void TestHttpApiLifecycle::controllerOwnsStartupDisableAndRevocation() {
     QVERIFY(!controller.isListening());
     QVERIFY(!QFileInfo::exists(registryDirectory));
     QVERIFY2(controller.issueToken(QStringLiteral("Agent"), {notebook},
-                                   {QStringLiteral("notes:read")},
-                                   QDateTime::currentDateTimeUtc().addDays(1), &token, &error),
+                                   {QStringLiteral("notes:read")}, std::nullopt, &token, &error),
              qPrintable(error));
     QVERIFY(!controller.isListening());
     {

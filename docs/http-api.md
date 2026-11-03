@@ -9,8 +9,9 @@ headless product, or public TLS listener. The machine-readable contract is
 
 1. Open **Settings → HTTP API** in the normal primary VNote application. Keep a notebook open.
 2. Under **Client Tokens**, click **New**. In **Issue Client Token**, enter a label, select
-   notebooks, choose permissions and expiry, then click **Issue Token**. New grants default to
-   read-only and expire after 90 days; select notebooks deliberately.
+   notebooks, choose permissions and an expiry preset, then click **Issue Token**. Choose
+   **1 day, 7 days, 30 days, 60 days, 90 days, 180 days, or Never**. New grants default to
+   read-only and 90 days; select notebooks deliberately.
    A grant never automatically includes notebooks opened or created later.
 3. Copy the token when shown. It is displayed only once. Store it in the client's secret store,
    not in notebook content, a URL, a command history, source control or an MCP tool argument.
@@ -27,6 +28,12 @@ frees a slot and later issuance prunes expired/disabled records. Issuance is pub
 durable storage succeeds. Revocation takes effect in memory immediately; if persistence fails,
 the listener stops and Settings reports the error. Do not treat failed persistence as durable
 revocation: fix storage protections before re-enabling.
+
+Finite expiry is calculated when the token is issued, using the selected number of local calendar
+days. The token list displays the local expiry date without time-of-day detail. **Never** disables
+automatic expiry, not authorization: notebook grants, scopes, disabled state and revocation still
+apply. Never tokens also count toward the 64-token limit. Precise finite UTC timestamps remain
+internal; a non-expiring token is represented explicitly, not by a distant placeholder date.
 
 On Windows, the registry is `%LOCALAPPDATA%/VNote/http-api/tokens.json`, not the roaming
 configuration directory. Portable Windows profiles use `config/local/http-api/tokens.json`

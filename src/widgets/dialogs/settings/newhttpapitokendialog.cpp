@@ -1,7 +1,8 @@
 #include "newhttpapitokendialog.h"
 
 #include <QCheckBox>
-#include <QDateTimeEdit>
+#include <QComboBox>
+#include <QDateTime>
 #include <QDialogButtonBox>
 #include <QJsonObject>
 #include <QLabel>
@@ -91,13 +92,18 @@ void NewHttpApiTokenDialog::setupUI() {
     permissions->addWidget(scope);
   }
 
-  m_expiry = new QDateTimeEdit(QDateTime::currentDateTime().addDays(90), widget);
+  auto *expiry = addGroup(tr("Expiry"));
+  m_expiry = WidgetsFactory::createComboBox(widget);
   m_expiry->setObjectName(QStringLiteral("HttpApiTokenExpiry"));
-  m_expiry->setCalendarPopup(true);
-  m_expiry->setDisplayFormat(QStringLiteral("yyyy-MM-dd HH:mm"));
-  layout->addWidget(SettingsPageHelper::createSettingRow(
-      tr("Expiry (local time)"), tr("A future expiry is required; new tokens default to 90 days"),
-      m_expiry, widget));
+  m_expiry->addItem(tr("1 day"), 1);
+  m_expiry->addItem(tr("7 days"), 7);
+  m_expiry->addItem(tr("30 days"), 30);
+  m_expiry->addItem(tr("60 days"), 60);
+  m_expiry->addItem(tr("90 days"), 90);
+  m_expiry->addItem(tr("180 days"), 180);
+  m_expiry->addItem(tr("Never"), 0);
+  m_expiry->setCurrentIndex(m_expiry->findData(90));
+  expiry->addWidget(m_expiry);
 
   setDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel);
   auto *issue = getDialogButtonBox()->button(QDialogButtonBox::Ok);
@@ -130,18 +136,23 @@ void NewHttpApiTokenDialog::acceptedButtonClicked() {
   if (m_trash->isChecked())
     scopes.insert(QStringLiteral("notes:trash"));
   const auto label = m_tokenLabel->text().trimmed();
-  if (label.isEmpty() || notebooks.isEmpty() || scopes.isEmpty() ||
-      !m_expiry->dateTime().isValid() || m_expiry->dateTime() <= QDateTime::currentDateTime()) {
+  bool expiryOk = false;
+  const int days = m_expiry->currentData().toInt(&expiryOk);
+  if (label.isEmpty() || notebooks.isEmpty() || scopes.isEmpty() || m_expiry->currentIndex() < 0 ||
+      !expiryOk || days < 0) {
     setInformationText(tr("Enter a client label, select at least one notebook and permission, "
-                          "and choose a future expiry."),
+                          "and choose a valid expiry option."),
                        InformationLevel::Error);
     return;
+  }
+  std::optional<QDateTime> expiresAt;
+  if (days > 0) {
+    expiresAt = QDateTime::currentDateTime().addDays(days).toUTC();
   }
   QString secret;
   QString error;
   setButtonEnabled(QDialogButtonBox::Ok, false);
-  if (!m_controller->issueToken(label, notebooks, scopes, m_expiry->dateTime().toUTC(), &secret,
-                                &error)) {
+  if (!m_controller->issueToken(label, notebooks, scopes, expiresAt, &secret, &error)) {
     setButtonEnabled(QDialogButtonBox::Ok, true);
     setInformationText(error, InformationLevel::Error);
     return;

@@ -4,7 +4,7 @@
 #include "../scrolldialog.h"
 
 class QCheckBox;
-class QDateTimeEdit;
+class QComboBox;
 class QLineEdit;
 class QListWidget;
 
@@ -30,7 +30,7 @@ private:
   QCheckBox *m_readLive = nullptr;
   QCheckBox *m_write = nullptr;
   QCheckBox *m_trash = nullptr;
-  QDateTimeEdit *m_expiry = nullptr;
+  QComboBox *m_expiry = nullptr;
 };
 } // namespace vnotex
 

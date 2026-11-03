@@ -13,6 +13,12 @@ The consumer contract is [OpenAPI](../../docs/http-api.openapi.yaml) and the
 - `ApiAuth::issue` returns `Issued`, `Rejected` (invalid grant or quota), or `Unavailable`
   (admin-thread/storage failure). Rejected issuance must not interrupt existing clients;
   the integration stops on unavailable credentials without parsing human error strings.
+- Token expiry is `std::optional<QDateTime>`: explicit `nullopt` means Never. The default grant
+  retains an engaged invalid date so omitted expiry cannot silently become unlimited. Present
+  dates must be valid/future at issue. Registry `expiresAt` remains required: explicit JSON null
+  means Never, otherwise a valid ISO UTC date after `issuedAt`; missing/wrong/malformed values
+  invalidate the registry. Never still obeys enabled state, scopes, grants and revocation and
+  counts toward 64. Only finite dates expire; disabled records of either kind are still pruned.
 - Issue persists before publishing the full bearer value once; revoke removes authority before
   persistence. A failed revoke save requires the controller to stop the listener. Never roll
   back in-memory revocation or put a token/verifier in diagnostics, URLs, normal preferences,

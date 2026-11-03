@@ -12774,6 +12774,10 @@ Continue?</source>
 <context>
     <name>vnotex::HttpApiPage</name>
     <message>
+        <source>Never</source>
+        <translation>永不过期</translation>
+    </message>
+    <message>
         <source>New</source>
         <translation>新建</translation>
     </message>
@@ -12885,6 +12889,38 @@ Continue?</source>
 <context>
     <name>vnotex::NewHttpApiTokenDialog</name>
     <message>
+        <source>Expiry</source>
+        <translation>有效期</translation>
+    </message>
+    <message>
+        <source>1 day</source>
+        <translation>1 天</translation>
+    </message>
+    <message>
+        <source>7 days</source>
+        <translation>7 天</translation>
+    </message>
+    <message>
+        <source>30 days</source>
+        <translation>30 天</translation>
+    </message>
+    <message>
+        <source>60 days</source>
+        <translation>60 天</translation>
+    </message>
+    <message>
+        <source>90 days</source>
+        <translation>90 天</translation>
+    </message>
+    <message>
+        <source>180 days</source>
+        <translation>180 天</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>永不过期</translation>
+    </message>
+    <message>
         <source>Issue Client Token</source>
         <translation>签发客户端令牌</translation>
     </message>
@@ -12921,20 +12957,12 @@ Continue?</source>
         <translation>将笔记移至回收站 (notes:trash)</translation>
     </message>
     <message>
-        <source>Expiry (local time)</source>
-        <translation>到期时间（本地时间）</translation>
-    </message>
-    <message>
-        <source>A future expiry is required; new tokens default to 90 days</source>
-        <translation>到期时间必须在将来；新令牌默认有效期为 90 天</translation>
-    </message>
-    <message>
         <source>Issue Token</source>
         <translation>签发令牌</translation>
     </message>
     <message>
-        <source>Enter a client label, select at least one notebook and permission, and choose a future expiry.</source>
-        <translation>请输入客户端标签，选择至少一个笔记本和一项权限，并设置将来的到期时间。</translation>
+        <source>Enter a client label, select at least one notebook and permission, and choose a valid expiry option.</source>
+        <translation>请输入客户端标签，选择至少一个笔记本和一项权限，并选择有效的有效期选项。</translation>
     </message>
     <message>
         <source>Token Issued</source>
@@ -12964,8 +12992,8 @@ Continue?</source>
         <translation>令牌注册表无效</translation>
     </message>
     <message>
-        <source>Select notebooks, valid scopes, a label, and a future token expiry</source>
-        <translation>请选择笔记本、有效权限、标签和将来的令牌到期时间</translation>
+        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
+        <translation>请选择笔记本、有效权限、标签和有效的有效期选项</translation>
     </message>
     <message>
         <source>The token limit of 64 has been reached</source>

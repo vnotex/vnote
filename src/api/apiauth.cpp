@@ -19,7 +19,8 @@ struct Record {
   ApiPrincipal principal;
   QString label;
   QByteArray verifier;
-  QDateTime issuedAt, expiresAt;
+  QDateTime issuedAt;
+  std::optional<QDateTime> expiresAt;
   bool enabled = true;
 };
 
@@ -42,7 +43,9 @@ QJsonObject publicRecord(const Record &p_record) {
           {QStringLiteral("notebookIds"), strings(p_record.principal.notebookIds)},
           {QStringLiteral("scopes"), strings(p_record.principal.scopes)},
           {QStringLiteral("issuedAt"), p_record.issuedAt.toUTC().toString(Qt::ISODateWithMs)},
-          {QStringLiteral("expiresAt"), p_record.expiresAt.toUTC().toString(Qt::ISODateWithMs)},
+          {QStringLiteral("expiresAt"),
+           p_record.expiresAt ? QJsonValue(p_record.expiresAt->toUTC().toString(Qt::ISODateWithMs))
+                              : QJsonValue(QJsonValue::Null)},
           {QStringLiteral("enabled"), p_record.enabled}};
 }
 
@@ -79,7 +82,8 @@ bool stringSet(const QJsonValue &p_value, QSet<QString> *p_result) {
 }
 
 bool permits(const Record &p_record, const ApiPrincipal &p_principal, const ApiCommand &p_command) {
-  if (!p_record.enabled || p_record.expiresAt <= QDateTime::currentDateTimeUtc()) {
+  if (!p_record.enabled ||
+      (p_record.expiresAt && *p_record.expiresAt <= QDateTime::currentDateTimeUtc())) {
     return false;
   }
   auto hasNotebook = [&](const QString &id) {
@@ -195,8 +199,10 @@ bool ApiAuth::load(QString *p_error) {
     const auto verifier = object.value(QStringLiteral("verifier")).toString();
     record.issuedAt = QDateTime::fromString(object.value(QStringLiteral("issuedAt")).toString(),
                                             Qt::ISODateWithMs);
-    record.expiresAt = QDateTime::fromString(object.value(QStringLiteral("expiresAt")).toString(),
-                                             Qt::ISODateWithMs);
+    const auto expiresAt = object.value(QStringLiteral("expiresAt"));
+    if (!expiresAt.isNull()) {
+      record.expiresAt = QDateTime::fromString(expiresAt.toString(), Qt::ISODateWithMs);
+    }
     if (QSet<QString>(objectKeys.begin(), objectKeys.end()) != keys ||
         !hexId.match(record.principal.tokenId).hasMatch() ||
         records.contains(record.principal.tokenId) || record.label.trimmed().isEmpty() ||
@@ -204,7 +210,8 @@ bool ApiAuth::load(QString *p_error) {
         !stringSet(object.value(QStringLiteral("notebookIds")), &record.principal.notebookIds) ||
         !stringSet(object.value(QStringLiteral("scopes")), &record.principal.scopes) ||
         !c_scopes.contains(record.principal.scopes) || !record.issuedAt.isValid() ||
-        !record.expiresAt.isValid() || record.expiresAt <= record.issuedAt ||
+        (record.expiresAt &&
+         (!record.expiresAt->isValid() || *record.expiresAt <= record.issuedAt)) ||
         !object.value(QStringLiteral("enabled")).isBool()) {
       valid = false;
       break;
@@ -243,13 +250,14 @@ ApiAuth::IssueResult ApiAuth::issue(const ApiTokenGrant &p_grant, ApiIssuedToken
   if (!p_token || p_grant.label.trimmed().isEmpty() || p_grant.label.size() > 128 ||
       p_grant.notebookIds.isEmpty() || p_grant.notebookIds.size() > 256 ||
       p_grant.scopes.isEmpty() || !c_scopes.contains(p_grant.scopes) ||
-      !p_grant.expiresAt.isValid() || p_grant.expiresAt <= QDateTime::currentDateTimeUtc()) {
-    fail(p_error, "Select notebooks, valid scopes, a label, and a future token expiry");
+      (p_grant.expiresAt &&
+       (!p_grant.expiresAt->isValid() || *p_grant.expiresAt <= QDateTime::currentDateTimeUtc()))) {
+    fail(p_error, "Select notebooks, valid scopes, a label, and a valid expiry option");
     return IssueResult::Rejected;
   }
   for (const auto &id : p_grant.notebookIds) {
     if (!validId(id)) {
-      fail(p_error, "Select notebooks, valid scopes, a label, and a future token expiry");
+      fail(p_error, "Select notebooks, valid scopes, a label, and a valid expiry option");
       return IssueResult::Rejected;
     }
   }
@@ -268,7 +276,7 @@ ApiAuth::IssueResult ApiAuth::issue(const ApiTokenGrant &p_grant, ApiIssuedToken
   }
   const auto now = QDateTime::currentDateTimeUtc();
   for (auto it = next.begin(); it != next.end();) {
-    if (!it->enabled || it->expiresAt <= now) {
+    if (!it->enabled || (it->expiresAt && *it->expiresAt <= now)) {
       it = next.erase(it);
     } else {
       ++it;
@@ -290,7 +298,9 @@ ApiAuth::IssueResult ApiAuth::issue(const ApiTokenGrant &p_grant, ApiIssuedToken
   record.label = p_grant.label.trimmed();
   record.verifier = QCryptographicHash::hash(bearer, QCryptographicHash::Sha256);
   record.issuedAt = now;
-  record.expiresAt = p_grant.expiresAt.toUTC();
+  if (p_grant.expiresAt) {
+    record.expiresAt = p_grant.expiresAt->toUTC();
+  }
   next.insert(record.principal.tokenId, record);
   if (!m_store.save(serialize(next), p_error)) {
     return IssueResult::Unavailable;
@@ -355,7 +365,7 @@ std::optional<ApiPrincipal> ApiAuth::authenticate(const QByteArray &p_bearerValu
   const QByteArray &expected = it == m_state->records.cend() ? absentVerifier : it->verifier;
   const bool equal = constantEqual(digest, expected);
   if (!equal || it == m_state->records.cend() || !m_state->alive || !it->enabled ||
-      it->expiresAt <= QDateTime::currentDateTimeUtc()) {
+      (it->expiresAt && *it->expiresAt <= QDateTime::currentDateTimeUtc())) {
     return std::nullopt;
   }
   return it->principal;

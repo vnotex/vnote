@@ -204,8 +204,9 @@ QJsonArray HttpApiController::availableNotebooks() const {
 }
 
 bool HttpApiController::issueToken(const QString &p_label, const QSet<QString> &p_notebooks,
-                                   const QSet<QString> &p_scopes, const QDateTime &p_expires,
-                                   QString *p_secret, QString *p_error) {
+                                   const QSet<QString> &p_scopes,
+                                   const std::optional<QDateTime> &p_expires, QString *p_secret,
+                                   QString *p_error) {
   Q_ASSERT(QThread::currentThread() == thread());
   if (p_secret) {
     p_secret->clear();

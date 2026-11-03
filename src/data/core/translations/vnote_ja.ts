@@ -12774,6 +12774,10 @@ Continue?</source>
 <context>
     <name>vnotex::HttpApiPage</name>
     <message>
+        <source>Never</source>
+        <translation>無期限</translation>
+    </message>
+    <message>
         <source>New</source>
         <translation>新規</translation>
     </message>
@@ -12885,6 +12889,38 @@ Continue?</source>
 <context>
     <name>vnotex::NewHttpApiTokenDialog</name>
     <message>
+        <source>Expiry</source>
+        <translation>有効期限</translation>
+    </message>
+    <message>
+        <source>1 day</source>
+        <translation>1日</translation>
+    </message>
+    <message>
+        <source>7 days</source>
+        <translation>7日</translation>
+    </message>
+    <message>
+        <source>30 days</source>
+        <translation>30日</translation>
+    </message>
+    <message>
+        <source>60 days</source>
+        <translation>60日</translation>
+    </message>
+    <message>
+        <source>90 days</source>
+        <translation>90日</translation>
+    </message>
+    <message>
+        <source>180 days</source>
+        <translation>180日</translation>
+    </message>
+    <message>
+        <source>Never</source>
+        <translation>無期限</translation>
+    </message>
+    <message>
         <source>Issue Client Token</source>
         <translation>クライアントトークンを発行</translation>
     </message>
@@ -12921,20 +12957,12 @@ Continue?</source>
         <translation>ノートをごみ箱に移動 (notes:trash)</translation>
     </message>
     <message>
-        <source>Expiry (local time)</source>
-        <translation>有効期限（現地時刻）</translation>
-    </message>
-    <message>
-        <source>A future expiry is required; new tokens default to 90 days</source>
-        <translation>将来の有効期限が必要です。新規トークンの既定は 90 日間</translation>
-    </message>
-    <message>
         <source>Issue Token</source>
         <translation>トークンを発行</translation>
     </message>
     <message>
-        <source>Enter a client label, select at least one notebook and permission, and choose a future expiry.</source>
-        <translation>クライアントのラベル、1 つ以上のノートブックと権限、将来の有効期限を指定してください。</translation>
+        <source>Enter a client label, select at least one notebook and permission, and choose a valid expiry option.</source>
+        <translation>クライアントのラベル、1 つ以上のノートブックと権限、有効な期限の選択肢を指定してください。</translation>
     </message>
     <message>
         <source>Token Issued</source>
@@ -12964,8 +12992,8 @@ Continue?</source>
         <translation>トークンレジストリが無効です</translation>
     </message>
     <message>
-        <source>Select notebooks, valid scopes, a label, and a future token expiry</source>
-        <translation>ノートブック、有効な権限、ラベル、将来のトークン有効期限を指定してください</translation>
+        <source>Select notebooks, valid scopes, a label, and a valid expiry option</source>
+        <translation>ノートブック、有効な権限、ラベル、有効な期限の選択肢を指定してください</translation>
     </message>
     <message>
         <source>The token limit of 64 has been reached</source>

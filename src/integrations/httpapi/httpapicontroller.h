@@ -7,6 +7,7 @@
 #include <QSet>
 #include <QString>
 #include <memory>
+#include <optional>
 
 namespace vnotex {
 class ServiceLocator;
@@ -32,8 +33,8 @@ public:
   QJsonArray tokens() const;
   QJsonArray availableNotebooks() const;
   bool issueToken(const QString &p_label, const QSet<QString> &p_notebooks,
-                  const QSet<QString> &p_scopes, const QDateTime &p_expires, QString *p_secret,
-                  QString *p_error);
+                  const QSet<QString> &p_scopes, const std::optional<QDateTime> &p_expires,
+                  QString *p_secret, QString *p_error);
   bool revokeToken(const QString &p_id, QString *p_error);
 
 signals:

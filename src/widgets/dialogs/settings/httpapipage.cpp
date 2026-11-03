@@ -220,15 +220,19 @@ void HttpApiPage::refreshTokens() {
       const QString notebookId = notebook.toString();
       notebooks.append(notebookNames.value(notebookId, notebookId));
     }
-    const auto expiry = QDateTime::fromString(token.value(QStringLiteral("expiresAt")).toString(),
-                                              Qt::ISODateWithMs);
-    const QString status = !expiry.isValid() || expiry <= now                ? tr("Expired")
-                           : token.value(QStringLiteral("enabled")).toBool() ? tr("Active")
-                                                                             : tr("Disabled");
-    auto *item = new QTreeWidgetItem(
-        m_tokens, {token.value(QStringLiteral("label")).toString(), id,
-                   scopes.join(QStringLiteral(", ")), notebooks.join(QStringLiteral(", ")),
-                   QLocale().toString(expiry.toLocalTime(), QLocale::ShortFormat), status});
+    const auto expiryValue = token.value(QStringLiteral("expiresAt"));
+    const bool neverExpires = expiryValue.isNull();
+    const auto expiry = QDateTime::fromString(expiryValue.toString(), Qt::ISODateWithMs);
+    const QString status = !neverExpires && (!expiry.isValid() || expiry <= now) ? tr("Expired")
+                           : token.value(QStringLiteral("enabled")).toBool()     ? tr("Active")
+                                                                                 : tr("Disabled");
+    const QString expiryText =
+        neverExpires ? tr("Never")
+                     : QLocale().toString(expiry.toLocalTime().date(), QLocale::ShortFormat);
+    auto *item =
+        new QTreeWidgetItem(m_tokens, {token.value(QStringLiteral("label")).toString(), id,
+                                       scopes.join(QStringLiteral(", ")),
+                                       notebooks.join(QStringLiteral(", ")), expiryText, status});
     item->setData(0, Qt::UserRole, id);
     if (id == selected) {
       m_tokens->setCurrentItem(item);

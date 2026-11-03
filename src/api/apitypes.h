@@ -8,6 +8,7 @@
 #include <atomic>
 #include <functional>
 #include <memory>
+#include <optional>
 
 namespace vnotex {
 enum class ApiCommandKind {
@@ -62,7 +63,8 @@ struct ApiResult {
 struct ApiTokenGrant {
   QString label;
   QSet<QString> notebookIds, scopes;
-  QDateTime expiresAt;
+  // nullopt explicitly selects Never; an unconfigured grant must still fail validation.
+  std::optional<QDateTime> expiresAt{QDateTime{}};
 };
 
 struct ApiIssuedToken {
