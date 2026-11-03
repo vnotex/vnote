@@ -12770,10 +12770,6 @@ Continue?</source>
         <source>The HTTP API address must be a literal loopback address, such as 127.0.0.1 or ::1.</source>
         <translation>HTTP API のアドレスには 127.0.0.1 や ::1 などのループバック IP アドレスを指定してください。</translation>
     </message>
-    <message>
-        <source>The external URL must use HTTPS and contain no credentials, query or fragment.</source>
-        <translation>外部 URL は HTTPS を使用し、認証情報、クエリ、フラグメントを含めないでください。</translation>
-    </message>
 </context>
 <context>
     <name>vnotex::HttpApiPage</name>
@@ -12804,14 +12800,6 @@ Continue?</source>
     <message>
         <source>Use a port from 1 to 65535; an occupied port is not replaced automatically</source>
         <translation>1～65535 のポートを指定。使用中のポートは自動で変更されません</translation>
-    </message>
-    <message>
-        <source>External HTTPS URL</source>
-        <translation>外部 HTTPS URL</translation>
-    </message>
-    <message>
-        <source>Optional display URL for your reverse proxy; no credentials, query or fragment</source>
-        <translation>リバースプロキシの表示用 URL（任意）。認証情報、クエリ、フラグメントは使用不可</translation>
     </message>
     <message>
         <source>Client Tokens</source>

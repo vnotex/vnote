@@ -68,10 +68,6 @@ void HttpApiPage::setupUI() {
   m_port->setValidator(new QIntValidator(1, 65535, m_port));
   addField(m_port, tr("Port"),
            tr("Use a port from 1 to 65535; an occupied port is not replaced automatically"));
-  m_externalUrl = WidgetsFactory::createLineEdit(this);
-  m_externalUrl->setObjectName(QStringLiteral("HttpApiExternalUrl"));
-  addField(m_externalUrl, tr("External HTTPS URL"),
-           tr("Optional display URL for your reverse proxy; no credentials, query or fragment"));
 
   m_status = new QLabel(this);
   m_status->setObjectName(QStringLiteral("HttpApiStatus"));
@@ -182,7 +178,6 @@ void HttpApiPage::loadInternal() {
   m_enabled->setChecked(config.isEnabled());
   m_address->setText(config.getAddress());
   m_port->setText(config.toJson().value(QStringLiteral("port")).toVariant().toString());
-  m_externalUrl->setText(config.getExternalBaseUrl());
   QString error;
   config.isValid(&error);
   m_configError->setText(error);
@@ -199,7 +194,6 @@ bool HttpApiPage::saveInternal() {
   candidate.setEnabled(m_enabled->isChecked());
   candidate.setAddress(m_address->text());
   candidate.setPort(portOk ? port : 0);
-  candidate.setExternalBaseUrl(m_externalUrl->text());
   if (!candidate.isValid(&error) || !m_controller) {
     if (error.isEmpty()) {
       error = tr("HTTP API controller is unavailable.");
@@ -214,7 +208,6 @@ bool HttpApiPage::saveInternal() {
   config.setEnabled(candidate.isEnabled());
   config.setAddress(candidate.getAddress());
   config.setPort(candidate.getPort());
-  config.setExternalBaseUrl(candidate.getExternalBaseUrl());
   const bool applied = m_controller->apply(&error);
   setError(error);
   m_configError->setText(error);

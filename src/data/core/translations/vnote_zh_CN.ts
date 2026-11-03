@@ -12770,10 +12770,6 @@ Continue?</source>
         <source>The HTTP API address must be a literal loopback address, such as 127.0.0.1 or ::1.</source>
         <translation>HTTP API 地址必须是回环 IP 地址，例如 127.0.0.1 或 ::1。</translation>
     </message>
-    <message>
-        <source>The external URL must use HTTPS and contain no credentials, query or fragment.</source>
-        <translation>外部 URL 必须使用 HTTPS，且不得包含凭据、查询参数或片段。</translation>
-    </message>
 </context>
 <context>
     <name>vnotex::HttpApiPage</name>
@@ -12804,14 +12800,6 @@ Continue?</source>
     <message>
         <source>Use a port from 1 to 65535; an occupied port is not replaced automatically</source>
         <translation>使用 1 至 65535 的端口；端口被占用时不会自动更换</translation>
-    </message>
-    <message>
-        <source>External HTTPS URL</source>
-        <translation>外部 HTTPS URL</translation>
-    </message>
-    <message>
-        <source>Optional display URL for your reverse proxy; no credentials, query or fragment</source>
-        <translation>可选的反向代理显示 URL；不得包含凭据、查询参数或片段</translation>
     </message>
     <message>
         <source>Client Tokens</source>

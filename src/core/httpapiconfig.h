@@ -18,8 +18,6 @@ public:
   void setAddress(const QString &p_address);
   int getPort() const;
   void setPort(int p_port);
-  QString getExternalBaseUrl() const;
-  void setExternalBaseUrl(const QString &p_url);
 
   // Validate before using any listener settings, including when enabled is false.
   bool isValid(QString *p_error = nullptr) const;

@@ -85,7 +85,9 @@ not bearer secrets. It is not notebook/session/sync data and not a replacement f
 ## Configuration and settings
 
 `HttpApiConfig` is a typed MainConfig child in both app and core_configs builds.
-Access it only through ConfigMgr2's merged configuration. Missing-after-merge,
+Access it only through ConfigMgr2's merged configuration. Its persisted listener fields are
+`enabled`, `address` and `port`; public HTTPS URLs belong in proxy/client configuration, not here.
+Undeclared input keys are ignored and omitted by normal serialization/save. Missing-after-merge,
 null or malformed values stay invalid through unrelated preference saves; validate
 before reading listener settings even when enabled is false.
 

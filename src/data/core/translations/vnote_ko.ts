@@ -12770,10 +12770,6 @@ Continue?</source>
         <source>The HTTP API address must be a literal loopback address, such as 127.0.0.1 or ::1.</source>
         <translation>HTTP API 주소는 127.0.0.1 또는 ::1 같은 루프백 IP 주소여야 합니다.</translation>
     </message>
-    <message>
-        <source>The external URL must use HTTPS and contain no credentials, query or fragment.</source>
-        <translation>외부 URL은 HTTPS를 사용해야 하며 인증 정보, 쿼리 또는 프래그먼트를 포함할 수 없습니다.</translation>
-    </message>
 </context>
 <context>
     <name>vnotex::HttpApiPage</name>
@@ -12804,14 +12800,6 @@ Continue?</source>
     <message>
         <source>Use a port from 1 to 65535; an occupied port is not replaced automatically</source>
         <translation>1에서 65535 사이의 포트 사용; 이미 사용 중인 포트는 자동으로 변경되지 않음</translation>
-    </message>
-    <message>
-        <source>External HTTPS URL</source>
-        <translation>외부 HTTPS URL</translation>
-    </message>
-    <message>
-        <source>Optional display URL for your reverse proxy; no credentials, query or fragment</source>
-        <translation>역방향 프록시의 표시용 URL(선택 사항); 인증 정보, 쿼리 또는 프래그먼트 사용 불가</translation>
     </message>
     <message>
         <source>Client Tokens</source>

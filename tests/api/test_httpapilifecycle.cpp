@@ -252,7 +252,6 @@ void TestHttpApiLifecycle::controllerOwnsStartupDisableAndRevocation() {
   auto &settings = config.getConfig().getHttpApiConfig();
   settings.setAddress(QStringLiteral("127.0.0.1"));
   settings.setPort(port);
-  settings.setExternalBaseUrl(QString());
   settings.setEnabled(false);
   QString token;
   QString tokenId;

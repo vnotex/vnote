@@ -1,7 +1,6 @@
 #include "httpapiconfig.h"
 
 #include <QCoreApplication>
-#include <QUrl>
 
 #include <cmath>
 
@@ -11,8 +10,7 @@ HttpApiConfig::HttpApiConfig(IConfigMgr *p_mgr, IConfig *p_parentConfig)
     : IConfig(p_mgr, p_parentConfig),
       m_values{{QStringLiteral("enabled"), false},
                {QStringLiteral("address"), QStringLiteral("127.0.0.1")},
-               {QStringLiteral("port"), 18765},
-               {QStringLiteral("externalBaseUrl"), QString()}} {
+               {QStringLiteral("port"), 18765}} {
   m_sectionName = QStringLiteral("httpApi");
 }
 
@@ -43,14 +41,6 @@ int HttpApiConfig::getPort() const { return m_values.value(QStringLiteral("port"
 
 void HttpApiConfig::setPort(int p_port) { setValue(QStringLiteral("port"), p_port); }
 
-QString HttpApiConfig::getExternalBaseUrl() const {
-  return m_values.value(QStringLiteral("externalBaseUrl")).toString();
-}
-
-void HttpApiConfig::setExternalBaseUrl(const QString &p_url) {
-  setValue(QStringLiteral("externalBaseUrl"), p_url);
-}
-
 void HttpApiConfig::setValue(const QString &p_key, const QJsonValue &p_value) {
   if (m_values.value(p_key) != p_value) {
     m_values.insert(p_key, p_value);
@@ -70,8 +60,7 @@ bool HttpApiConfig::isValid(QString *p_error) const {
   };
   if (!m_values.value(QStringLiteral("enabled")).isBool() ||
       !m_values.value(QStringLiteral("address")).isString() ||
-      !m_values.value(QStringLiteral("port")).isDouble() ||
-      !m_values.value(QStringLiteral("externalBaseUrl")).isString()) {
+      !m_values.value(QStringLiteral("port")).isDouble()) {
     return fail(
         QT_TRANSLATE_NOOP("vnotex::HttpApiConfig",
                           "HTTP API settings contain missing fields or invalid value types."));
@@ -86,18 +75,6 @@ bool HttpApiConfig::isValid(QString *p_error) const {
     return fail(QT_TRANSLATE_NOOP(
         "vnotex::HttpApiConfig",
         "The HTTP API address must be a literal loopback address, such as 127.0.0.1 or ::1."));
-  }
-  const QString externalUrl = getExternalBaseUrl();
-  if (!externalUrl.isEmpty()) {
-    const QUrl url(externalUrl, QUrl::StrictMode);
-    if (!url.isValid() || url.isRelative() || url.scheme() != QStringLiteral("https") ||
-        url.host().isEmpty() || !url.userInfo().isEmpty() ||
-        url.authority().contains(QLatin1Char('@')) || url.hasQuery() || url.hasFragment() ||
-        url.port() == 0 || externalUrl != externalUrl.trimmed()) {
-      return fail(QT_TRANSLATE_NOOP(
-          "vnotex::HttpApiConfig",
-          "The external URL must use HTTPS and contain no credentials, query or fragment."));
-    }
   }
   return true;
 }

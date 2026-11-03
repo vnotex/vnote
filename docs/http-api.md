@@ -71,8 +71,8 @@ HTTPS client → Caddy / administrator-managed TLS → 127.0.0.1:18765 → VNote
 Start from [http-api.Caddyfile.example](http-api.Caddyfile.example), replace the public hostname,
 and configure your own certificate/renewal, authentication-secret handling, connection/per-IP
 rate limits, firewall and DNS. Caddy is not bundled, launched, or privileged by VNote. Never expose
-the embedded HTTP port publicly or redirect a public port directly to it. The configured external
-HTTPS URL is informational; it does not bind a public listener or change authorization.
+the embedded HTTP port publicly or redirect a public port directly to it. Configure the public
+HTTPS URL in the reverse proxy and its clients; VNote only needs its loopback address and port.
 
 The gateway must preserve Authorization and set the upstream Host to exactly `127.0.0.1:18765`
 (or `[::1]:PORT` for explicit IPv6). VNote rejects every Origin-bearing request, any Cookie header,

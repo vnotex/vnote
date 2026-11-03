@@ -1581,11 +1581,13 @@ void TestConfigMgr2::testHttpApi_mergeAndPersistence() {
     QVERIFY(!api.isEnabled());
     QCOMPARE(api.getAddress(), QStringLiteral("127.0.0.1"));
     QCOMPARE(api.getPort(), 18765);
-    QVERIFY(api.getExternalBaseUrl().isEmpty());
   }
   QVERIFY(!loadThroughMergePath(QJsonObject{{QStringLiteral("httpApi"),
-                                             QJsonObject{{QStringLiteral("enabled"), true}}}})
+                                             QJsonObject{{QStringLiteral("enabled"), true},
+                                                         {QStringLiteral("externalBaseUrl"),
+                                                          QJsonObject{{"obsolete", true}}}}}})
                .isEmpty());
+  QString configFile;
   {
     ConfigMgr2 mgr(m_configService);
     mgr.init();
@@ -1593,10 +1595,29 @@ void TestConfigMgr2::testHttpApi_mergeAndPersistence() {
     QVERIFY(api.isValid());
     QVERIFY(api.isEnabled());
     QCOMPARE(api.getPort(), 18765);
+    configFile = mgr.getFileFromConfigFolder(QStringLiteral("vnotex.json"));
+    QFile before(configFile);
+    QVERIFY(before.open(QIODevice::ReadOnly));
+    QVERIFY(QJsonDocument::fromJson(before.readAll())
+                .object()
+                .value("httpApi")
+                .toObject()
+                .value("externalBaseUrl")
+                .isObject());
+    before.close();
     api.setAddress(QStringLiteral("::1"));
     api.setPort(23456);
-    api.setExternalBaseUrl(QStringLiteral("https://notes.example.test/api/v1"));
     QVERIFY(api.isValid());
+  }
+  {
+    QFile after(configFile);
+    QVERIFY(after.open(QIODevice::ReadOnly));
+    const auto persisted =
+        QJsonDocument::fromJson(after.readAll()).object().value("httpApi").toObject();
+    QVERIFY(!persisted.contains("externalBaseUrl"));
+    QCOMPARE(persisted.value("enabled"), QJsonValue(true));
+    QCOMPARE(persisted.value("address").toString(), QStringLiteral("::1"));
+    QCOMPARE(persisted.value("port").toInt(), 23456);
   }
   {
     ConfigMgr2 restarted(m_configService);
@@ -1606,16 +1627,13 @@ void TestConfigMgr2::testHttpApi_mergeAndPersistence() {
     QVERIFY(api.isEnabled());
     QCOMPARE(api.getAddress(), QStringLiteral("::1"));
     QCOMPARE(api.getPort(), 23456);
-    QCOMPARE(api.getExternalBaseUrl(), QStringLiteral("https://notes.example.test/api/v1"));
     api.setEnabled(false);
-    api.setExternalBaseUrl(QString());
   }
   ConfigMgr2 disabled(m_configService);
   disabled.init();
   auto &api = disabled.getConfig().getHttpApiConfig();
   QVERIFY(api.isValid());
   QVERIFY(!api.isEnabled());
-  QVERIFY(api.getExternalBaseUrl().isEmpty());
   QCOMPARE(api.getAddress(), QStringLiteral("::1"));
   QCOMPARE(api.getPort(), 23456);
 }
@@ -1646,21 +1664,6 @@ void TestConfigMgr2::testHttpApi_rejectsMalformedSettings_data() {
   field("other-loopback-ipv4", QStringLiteral("address"), QStringLiteral("127.0.0.2"));
   field("scoped-ipv6", QStringLiteral("address"), QStringLiteral("::1%1"));
   field("mapped-ipv6", QStringLiteral("address"), QStringLiteral("::ffff:127.0.0.1"));
-  field("url-number", QStringLiteral("externalBaseUrl"), 12);
-  field("url-null", QStringLiteral("externalBaseUrl"), QJsonValue(QJsonValue::Null));
-  field("url-http", QStringLiteral("externalBaseUrl"), QStringLiteral("http://notes.example.test"));
-  field("url-relative", QStringLiteral("externalBaseUrl"), QStringLiteral("/api/v1"));
-  field("url-no-host", QStringLiteral("externalBaseUrl"), QStringLiteral("https:///api/v1"));
-  field("url-user", QStringLiteral("externalBaseUrl"),
-        QStringLiteral("https://user@notes.example.test"));
-  field("url-empty-user", QStringLiteral("externalBaseUrl"),
-        QStringLiteral("https://@notes.example.test"));
-  field("url-query", QStringLiteral("externalBaseUrl"),
-        QStringLiteral("https://notes.example.test?"));
-  field("url-fragment", QStringLiteral("externalBaseUrl"),
-        QStringLiteral("https://notes.example.test#"));
-  field("url-port-zero", QStringLiteral("externalBaseUrl"),
-        QStringLiteral("https://notes.example.test:0"));
   QTest::newRow("enabled-invalid-port")
       << QJsonObject{{section, QJsonObject{{QStringLiteral("enabled"), true},
                                            {QStringLiteral("port"), QStringLiteral("18765")}}}};
@@ -1697,7 +1700,6 @@ void TestConfigMgr2::testHttpApi_rejectsMalformedSettings() {
     api.setEnabled(false);
     api.setAddress(QStringLiteral("127.0.0.1"));
     api.setPort(18765);
-    api.setExternalBaseUrl(QString());
     QVERIFY(api.isValid());
   }
   ConfigMgr2 repaired(m_configService);

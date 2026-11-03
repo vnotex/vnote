@@ -38,7 +38,6 @@ private:
   QCheckBox *m_enabled = nullptr;
   QLineEdit *m_address = nullptr;
   QLineEdit *m_port = nullptr;
-  QLineEdit *m_externalUrl = nullptr;
   QLabel *m_status = nullptr;
   QLabel *m_configError = nullptr;
   QLineEdit *m_tokenLabel = nullptr;
