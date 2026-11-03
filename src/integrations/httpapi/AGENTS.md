@@ -61,6 +61,12 @@ This does not change token generation or add machine-bound cryptography.
   not just the router: debug logs and ripgrep commands must remain payload-free. Use
   existing stable IDs and error codes; the controller supplies translated storage errors.
 
+API access and operation audit messages use `vnote.api.audit` INFO through the existing Qt
+logger; see [access auditing](../../../docs/http-api.md#access-auditing). Do not duplicate them
+in the controller/backend. Backend stop can detach domain work and return generic stopping:
+that is an unknown audit outcome, never proof that an accepted mutation rolled back. Preserve
+normal drain/reconciliation semantics and all privacy exclusions above.
+
 ## Backend ownership
 
 - All live services, buffer/editor callbacks and metadata are accessed on the GUI

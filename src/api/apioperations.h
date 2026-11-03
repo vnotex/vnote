@@ -2,15 +2,17 @@
 #define VNOTEX_APIOPERATIONS_H
 
 #include "apitypes.h"
+#include <QElapsedTimer>
 #include <QHash>
 #include <QMutex>
+#include <http/httptypes.h>
 
 namespace vnotex {
 // Private protocol registry. Active records are never evicted; terminal records hold no note text.
 class ApiOperations {
 public:
   explicit ApiOperations(QString p_instance);
-  QString admit(const QString &p_owner, std::function<bool()> p_authorized,
+  QString admit(const HttpAuditContext &p_audit, std::function<bool()> p_authorized,
                 std::shared_ptr<std::atomic_bool> p_cancelled, ApiError *p_error);
   bool running(const QString &p_id);
   void complete(const QString &p_id, ApiResult p_result);
@@ -19,7 +21,11 @@ public:
 
 private:
   struct Entry {
-    QString id, owner, state;
+    QString id, state;
+    HttpAuditContext audit;
+    QElapsedTimer elapsed;
+    bool awaitingResult = false;
+    bool auditCompleted = false;
     std::function<bool()> authorized;
     std::shared_ptr<std::atomic_bool> cancelled;
     QDateTime createdAt, completedAt;

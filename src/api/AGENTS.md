@@ -46,6 +46,27 @@ state and cannot access a destroyed server/backend/auth. A stopped server/backen
 on re-enable; the controller retains the auth registry. Committed saves may drain after API
 promises are detached and must report actual committed/saved outcomes in domain state.
 
+## Access auditing
+
+`apiaudit.{h,cpp}` projects only trusted scalar metadata to the API-local `vnote.api.audit`
+INFO category. The transport observer reports every observed HTTP attempt, including parser
+rejections; API admission adds the authenticated principal ID and existing parser's static
+route template without extra authentication or path parsing. Preserve pre-body policy order;
+null identity/route before those stages is intentional. Reuse the transport ID in response,
+problem body and ApiRequestContext; never trust a client correlation header.
+
+ApiOperations stores safe audit context and monotonic timing, not request payloads. Normal
+completion and pre-dispatch cancellation emit one terminal result. Stop of dispatched work
+emits an unknown interruption; the first retained completion can emit one result without
+reviving the registry or touching destroyed services. Generic negative post-stop results are
+unknown (null committed/saved); only positive commitment proves those facts after detachment.
+Duplicate callbacks and already-terminal running() calls are silent. 202 remains acceptance.
+
+Never serialize raw method/target/query/headers, principal labels, resource JSON, error messages
+or arbitrary backend codes into audit output. Fixed templates and token IDs are not secrets.
+Use existing Qt logging, not application/core dependencies or a second filesystem sink. Sink
+filters/retention/durability limits are documented in the consumer guide, not security guarantees.
+
 ## Wire invariants and tests
 
 Reject unknown/duplicate JSON members, non-object or invalid UTF-8 bodies, duplicate query keys,

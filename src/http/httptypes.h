@@ -5,8 +5,27 @@
 #include <QPair>
 #include <QString>
 #include <QVector>
+#include <functional>
 
 namespace vnotex {
+
+// Transport supplies the ID/method; applications annotate only verified identity and
+// a static route template. No raw target, headers or payload belongs in this context.
+struct HttpAuditContext {
+  QString requestId;
+  QString principalId;
+  QString routeTemplate;
+  QByteArray method;
+};
+
+struct HttpAccessRecord {
+  HttpAuditContext context;
+  int status = 0; // No response selected when zero.
+  qint64 durationMs = 0;
+  bool responseWritten = false; // Write completed, not proof of client receipt.
+  enum class Rejection { None, QueueFull, Stopping, SocketSetupFailed };
+  Rejection rejection = Rejection::None;
+};
 
 struct HttpRequest {
   QByteArray method;
@@ -15,6 +34,7 @@ struct HttpRequest {
   QVector<QPair<QByteArray, QByteArray>> headers;
   QByteArray body;
   QString peerAddress;
+  HttpAuditContext audit;
 
   QByteArray header(const QByteArray &p_name) const {
     for (const auto &field : headers) {
@@ -52,6 +72,8 @@ struct HttpServerOptions {
   int ioTimeoutSeconds = 5;
   int keepAliveSeconds = 2;
   int keepAliveRequests = 10;
+  // Synchronous, thread-safe observer; stop() joins all callbacks. Receives no payload.
+  std::function<void(const HttpAccessRecord &)> accessObserver;
 };
 
 } // namespace vnotex

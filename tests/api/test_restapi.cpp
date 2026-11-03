@@ -1,6 +1,7 @@
 #include <QCryptographicHash>
 #include <QElapsedTimer>
 #include <QJsonDocument>
+#include <QScopeGuard>
 #include <QTcpServer>
 #include <QTcpSocket>
 #include <QThread>
@@ -11,11 +12,63 @@
 #include <api/apiserver.h>
 #include <api/iapibackend.h>
 #include <future>
+#include <mutex>
 #include <vector>
 
 using namespace vnotex;
 
 namespace {
+
+class AuditCapture {
+public:
+  AuditCapture() {
+    std::lock_guard lock(mutex);
+    active = this;
+    previous = qInstallMessageHandler(handler);
+  }
+  ~AuditCapture() {
+    std::lock_guard lock(mutex);
+    qInstallMessageHandler(previous);
+    active = nullptr;
+  }
+  QString text() const {
+    std::lock_guard lock(mutex);
+    return messages.join('\n');
+  }
+  QList<QJsonObject> records(const QString &p_event) const {
+    std::lock_guard lock(mutex);
+    QList<QJsonObject> result;
+    for (const auto &message : messages) {
+      const auto object = QJsonDocument::fromJson(message.toUtf8()).object();
+      if (object.value("event").toString() == p_event) {
+        result.append(object);
+      }
+    }
+    return result;
+  }
+
+private:
+  static void handler(QtMsgType p_type, const QMessageLogContext &p_context,
+                      const QString &p_message) {
+    QtMessageHandler forward;
+    {
+      std::lock_guard lock(mutex);
+      if (active && p_type == QtInfoMsg && QByteArray(p_context.category) == "vnote.api.audit") {
+        active->messages.append(p_message);
+        return;
+      }
+      forward = previous;
+    }
+    if (forward) {
+      forward(p_type, p_context, p_message);
+    }
+  }
+  inline static std::mutex mutex;
+  inline static AuditCapture *active = nullptr;
+  inline static QtMessageHandler previous = nullptr;
+  QStringList messages;
+};
+
 class MemoryStore : public IApiCredentialStore {
 public:
   QJsonArray records;
@@ -269,6 +322,7 @@ public:
 
 struct Response {
   int status = 0;
+  int requestIdHeaders = 0;
   QMap<QByteArray, QByteArray> headers;
   QByteArray bytes;
   QJsonObject object() const { return QJsonDocument::fromJson(bytes).object(); }
@@ -305,6 +359,7 @@ Response exchange(quint16 p_port, const QByteArray &p_request) {
   for (qsizetype i = 1; i < lines.size(); ++i) {
     const auto colon = lines[i].indexOf(':');
     if (colon > 0) {
+      response.requestIdHeaders += lines[i].first(colon).toLower() == "x-request-id";
       response.headers.insert(lines[i].first(colon).toLower(),
                               lines[i].sliced(colon + 1).trimmed());
     }
@@ -403,6 +458,174 @@ private slots:
     server.reset();
     backend.reset();
     auth.reset();
+  }
+
+  void accessAuditCorrelatesAndRedacts() {
+    AuditCapture audit;
+    const auto stop = qScopeGuard([&] { server->stop(); });
+    const QByteArray canary = "PRIVATE_AUDIT_CANARY";
+    QList<Response> responses;
+    responses.append(request("GET", "/api/v1/info", {}, "X-Request-Id: " + canary + "\r\n"));
+    responses.append(request("GET", "/api/v1/info?private=" + canary));
+    responses.append(request("GET", "/api/v1/info", {}, {}, QString::fromLatin1(canary)));
+    responses.append(request("GET", "/api/v1/notebooks/" + canary + "/notes/" + canary));
+    responses.append(request("POST", "/api/v1/search", "{\"query\":\"" + canary + "\"}"));
+    responses.append(request(canary, "/api/v1/info"));
+    responses.append(request("GET", "/api/v1/info", {}, "Host: " + canary + "\r\n"));
+    responses.append(request("POST", "/api/v1/notebooks/nb-a/notes",
+                             "{\"name\":\"" + canary + "\",\"format\":\"markdown\"}", {},
+                             reader.secret));
+    responses.append(
+        request("GET", "/api/v1/info", {}, "Content-Length: 0\r\nContent-Length: 0\r\n"));
+    server->stop();
+    const auto records = audit.records("api.access");
+    QCOMPARE(records.size(), responses.size());
+    const QList<int> statuses{200, 400, 401, 404, 200, 400, 400, 403, 400};
+    QSet<QString> ids;
+    for (int i = 0; i < responses.size(); ++i) {
+      QCOMPARE(responses[i].status, statuses[i]);
+      QCOMPARE(responses[i].requestIdHeaders, 1);
+      const auto requestId = QString::fromLatin1(responses[i].headers.value("x-request-id"));
+      QCOMPARE(records[i].value("requestId").toString(), requestId);
+      QCOMPARE(records[i].value("status").toInt(), statuses[i]);
+      QVERIFY(records[i].value("responseWritten").toBool());
+      QVERIFY(records[i].value("durationMs").toInteger(-1) >= 0);
+      QVERIFY(QDateTime::fromString(records[i].value("timestamp").toString(), Qt::ISODateWithMs)
+                  .isValid());
+      if (responses[i].object().contains("requestId")) {
+        QCOMPARE(responses[i].object().value("requestId").toString(), requestId);
+      }
+      ids.insert(requestId);
+    }
+    QCOMPARE(ids.size(), responses.size());
+    QCOMPARE(records[0].value("tokenId").toString(), token.id);
+    QCOMPARE(records[0].value("route").toString(), QStringLiteral("/api/v1/info"));
+    QCOMPARE(records[1].value("route").toString(), QStringLiteral("/api/v1/info"));
+    QVERIFY(records[2].value("tokenId").isNull());
+    QVERIFY(records[2].value("route").isNull());
+    QCOMPARE(records[3].value("route").toString(),
+             QStringLiteral("/api/v1/notebooks/{notebookId}/notes/{noteId}"));
+    QCOMPARE(records[4].value("route").toString(), QStringLiteral("/api/v1/search"));
+    QCOMPARE(records[5].value("method").toString(), QStringLiteral("OTHER"));
+    QVERIFY(records[6].value("tokenId").isNull());
+    QCOMPARE(records[7].value("tokenId").toString(), reader.id);
+    QVERIFY(records[8].value("tokenId").isNull());
+    QVERIFY(!audit.text().contains(QString::fromLatin1(canary)));
+    QVERIFY(!audit.text().contains(token.secret));
+    QVERIFY(!audit.text().contains(reader.secret));
+  }
+
+  void auditOperationOutcomes() {
+    AuditCapture audit;
+    const auto stop = qScopeGuard([&] { server->stop(); });
+    const auto created = request("POST", "/api/v1/notebooks/nb-a/notes",
+                                 "{\"name\":\"PRIVATE_AUDIT_NAME.md\",\"format\":\"markdown\"}");
+    QCOMPARE(created.status, 202);
+    QCOMPARE(operation(created).object()["state"].toString(), QStringLiteral("succeeded"));
+    QCOMPARE(backend->notes.size(), 5);
+    backend->failSave = true;
+    const auto failed = request("PUT", "/api/v1/notebooks/nb-a/notes/note-a/content",
+                                "{\"text\":\"PRIVATE_AUDIT_BODY\"}",
+                                match(backend->notes["note-a"].contentVersion()));
+    QCOMPARE(failed.status, 202);
+    QCOMPARE(operation(failed).object()["state"].toString(), QStringLiteral("failed"));
+    QVERIFY(backend->notes["note-a"].dirty);
+    QCOMPARE(backend->notes["note-a"].live, QStringLiteral("PRIVATE_AUDIT_BODY"));
+    server->stop();
+    const auto records = audit.records("api.operation");
+    QCOMPARE(records.size(), 2);
+    QCOMPARE(records[0].value("requestId").toString(),
+             QString::fromLatin1(created.headers.value("x-request-id")));
+    QCOMPARE(records[0].value("operationId").toString(), created.object()["id"].toString());
+    QCOMPARE(records[0].value("state").toString(), QStringLiteral("succeeded"));
+    QVERIFY(records[0].value("committed").toBool());
+    QVERIFY(records[0].value("saved").toBool());
+    QCOMPARE(records[1].value("requestId").toString(),
+             QString::fromLatin1(failed.headers.value("x-request-id")));
+    QCOMPARE(records[1].value("operationId").toString(), failed.object()["id"].toString());
+    QCOMPARE(records[1].value("state").toString(), QStringLiteral("failed"));
+    QCOMPARE(records[1].value("status").toInt(), 503);
+    QVERIFY(records[1].value("outcomeKnown").toBool());
+    QVERIFY(records[1].value("committed").toBool());
+    QVERIFY(!records[1].value("saved").toBool());
+    QVERIFY(!audit.text().contains("PRIVATE_AUDIT_"));
+    QVERIFY(!audit.text().contains(token.secret));
+  }
+
+  void auditInterruptedOperations_data() {
+    QTest::addColumn<bool>("committedBeforeStop");
+    QTest::newRow("production-stopping-result") << false;
+    QTest::newRow("committed-result-delivered-late") << true;
+  }
+
+  void auditInterruptedOperations() {
+    QFETCH(bool, committedBeforeStop);
+    AuditCapture audit;
+    const auto stop = qScopeGuard([&] {
+      if (server)
+        server->stop();
+    });
+    backend->hold = true;
+    const auto accepted = request("POST", "/api/v1/notebooks/nb-a/notes",
+                                  "{\"name\":\"late.md\",\"format\":\"markdown\"}");
+    QCOMPARE(accepted.status, 202);
+    QTRY_COMPARE(backend->pending.size(), 1);
+    auto pending = backend->pending.takeFirst();
+    ApiResult result{{}, {503, "stopping", "The API stopped; reconcile any accepted mutation."}};
+    if (committedBeforeStop) {
+      result = backend->run(pending.command, pending.context);
+      QCOMPARE(backend->notes.size(), 5);
+      QVERIFY(result.committed && result.saved);
+    }
+    server->stop();
+    server.reset();
+    auth.reset();
+    const auto interruptions = audit.records("api.operation_interrupted");
+    QCOMPARE(interruptions.size(), 1);
+    QVERIFY(!interruptions[0].value("outcomeKnown").toBool());
+    QVERIFY(interruptions[0].value("committed").isNull());
+    QVERIFY(interruptions[0].value("saved").isNull());
+    QVERIFY(audit.records("api.operation").isEmpty());
+    pending.completion(result);
+    pending.completion(result);
+    const auto records = audit.records("api.operation");
+    QCOMPARE(records.size(), 1);
+    QCOMPARE(records[0].value("operationId").toString(), accepted.object()["id"].toString());
+    QCOMPARE(records[0].value("outcomeKnown").toBool(), committedBeforeStop);
+    if (committedBeforeStop) {
+      QVERIFY(records[0].value("committed").toBool());
+      QVERIFY(records[0].value("saved").toBool());
+      QCOMPARE(records[0].value("state").toString(), QStringLiteral("succeeded"));
+    } else {
+      QCOMPARE(backend->notes.size(), 4);
+      QVERIFY(records[0].value("committed").isNull());
+      QVERIFY(records[0].value("saved").isNull());
+      QCOMPARE(records[0].value("state").toString(), QStringLiteral("interrupted"));
+    }
+  }
+
+  void auditRevocationBeforeDispatch() {
+    AuditCapture audit;
+    const auto stop = qScopeGuard([&] { server->stop(); });
+    auto future = std::async(std::launch::async, exchange, port,
+                             wire("POST", "/api/v1/notebooks/nb-a/notes",
+                                  "{\"name\":\"revoked.md\",\"format\":\"markdown\"}"));
+    QVERIFY(future.wait_for(std::chrono::seconds(3)) == std::future_status::ready);
+    const auto accepted = future.get();
+    QCOMPARE(accepted.status, 202);
+    QString error;
+    QVERIFY(auth->revoke(token.id, &error));
+    QCoreApplication::processEvents();
+    server->stop();
+    QCOMPARE(backend->calls, 0);
+    const auto records = audit.records("api.operation");
+    QCOMPARE(records.size(), 1);
+    QCOMPARE(records[0].value("operationId").toString(), accepted.object()["id"].toString());
+    QCOMPARE(records[0].value("state").toString(), QStringLiteral("cancelled"));
+    QVERIFY(records[0].value("outcomeKnown").toBool());
+    QVERIFY(!records[0].value("committed").toBool());
+    QVERIFY(!records[0].value("saved").toBool());
+    QVERIFY(audit.records("api.operation_interrupted").isEmpty());
   }
 
   void authenticationAndPreBodyAdmission() {
@@ -683,13 +906,14 @@ private slots:
     QStringList active;
     auto authorized = [] { return true; };
     for (int i = 0; i < 16; ++i) {
-      const auto id = operations.admit(QString::number(i / 4), authorized,
+      const auto id = operations.admit({{}, QString::number(i / 4), {}, {}}, authorized,
                                        std::make_shared<std::atomic_bool>(false), &error);
       QVERIFY(!id.isEmpty());
       active.append(id);
     }
     QVERIFY(operations
-                .admit("fifth-owner", authorized, std::make_shared<std::atomic_bool>(false), &error)
+                .admit({{}, QStringLiteral("fifth-owner"), {}, {}}, authorized,
+                       std::make_shared<std::atomic_bool>(false), &error)
                 .isEmpty());
     QCOMPARE(error.status, 429);
     for (const auto &id : active) {
@@ -698,8 +922,8 @@ private slots:
     QString first;
     for (int i = 0; i < 257; ++i) {
       error = {};
-      const auto id =
-          operations.admit("owner", authorized, std::make_shared<std::atomic_bool>(false), &error);
+      const auto id = operations.admit({{}, QStringLiteral("owner"), {}, {}}, authorized,
+                                       std::make_shared<std::atomic_bool>(false), &error);
       QVERIFY(!id.isEmpty());
       if (i == 0) {
         first = id;
@@ -712,7 +936,9 @@ private slots:
     }
     QCOMPARE(operations.lookup(first, "owner").error.status, 410);
     operations.stop();
-    QVERIFY(operations.admit("owner", authorized, std::make_shared<std::atomic_bool>(false), &error)
+    QVERIFY(operations
+                .admit({{}, QStringLiteral("owner"), {}, {}}, authorized,
+                       std::make_shared<std::atomic_bool>(false), &error)
                 .isEmpty());
     QCOMPARE(error.status, 503);
   }
@@ -743,6 +969,8 @@ private slots:
   }
 
   void stopPreventsQueuedDispatch() {
+    AuditCapture audit;
+    const auto stop = qScopeGuard([&] { server->stop(); });
     auto admission = std::async(std::launch::async, exchange, port,
                                 wire("POST", "/api/v1/notebooks/nb-a/notes",
                                      "{\"name\":\"not-created.md\",\"format\":\"markdown\"}"));
@@ -754,6 +982,13 @@ private slots:
     QCoreApplication::processEvents();
     QCOMPARE(backend->calls, 0);
     QCOMPARE(backend->notes.size(), 4);
+    const auto records = audit.records("api.operation");
+    QCOMPARE(records.size(), 1);
+    QCOMPARE(records[0].value("state").toString(), QStringLiteral("cancelled"));
+    QVERIFY(records[0].value("outcomeKnown").toBool());
+    QVERIFY(!records[0].value("committed").toBool());
+    QVERIFY(!records[0].value("saved").toBool());
+    QVERIFY(audit.records("api.operation_interrupted").isEmpty());
   }
 
   void lifecycleRecreationAndOldOperations() {

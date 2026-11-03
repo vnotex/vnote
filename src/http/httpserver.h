@@ -13,8 +13,8 @@ namespace vnotex {
 // Callbacks run on fixed workers. All captured state must survive stop().
 class HttpServer final {
 public:
-  using Admission = std::function<std::optional<HttpResponse>(const HttpRequest &)>;
-  using Handler = std::function<HttpResponse(const HttpRequest &)>;
+  using Admission = std::function<std::optional<HttpResponse>(HttpRequest &)>;
+  using Handler = std::function<HttpResponse(HttpRequest &)>;
 
   HttpServer();
   ~HttpServer();
@@ -22,6 +22,7 @@ public:
   HttpServer &operator=(const HttpServer &) = delete;
 
   // Port zero is available for isolated tests; production callers must reject it.
+  // Callbacks may annotate audit identity/route, never modify raw request fields.
   // Admission sees headers and an empty body. Returning a response closes the
   // connection without consuming the body or calling Handler.
   bool start(const HttpServerOptions &p_options, Admission p_admission, Handler p_handler,

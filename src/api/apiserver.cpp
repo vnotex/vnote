@@ -1,5 +1,6 @@
 #include "apiserver.h"
 
+#include "apiaudit.h"
 #include "apiauth.h"
 #include "apioperations.h"
 #include "iapibackend.h"
@@ -231,6 +232,7 @@ struct Route {
   enum class Local { None, Info, Operation } local = Local::None;
   QString operationId;
   QByteArray allowed;
+  QString auditTemplate;
   bool mutation = false;
   bool body = false;
 };
@@ -248,12 +250,15 @@ ApiError parseRoute(const HttpRequest &p_request, Route *p_route, bool p_headers
   const auto parts = QString::fromLatin1(path).split('/');
   auto &cmd = p_route->command;
   if (parts.size() == 4 && parts[3] == QStringLiteral("info")) {
+    p_route->auditTemplate = QStringLiteral("/api/v1/info");
     p_route->local = Route::Local::Info;
     p_route->allowed = "GET";
   } else if (parts.size() == 4 && parts[3] == QStringLiteral("notebooks")) {
+    p_route->auditTemplate = QStringLiteral("/api/v1/notebooks");
     cmd.kind = ApiCommandKind::ListNotebooks;
     p_route->allowed = "GET";
   } else if (parts.size() == 4 && parts[3] == QStringLiteral("search")) {
+    p_route->auditTemplate = QStringLiteral("/api/v1/search");
     cmd.kind = ApiCommandKind::Search;
     p_route->allowed = "POST";
     p_route->body = true;
@@ -262,21 +267,25 @@ ApiError parseRoute(const HttpRequest &p_request, Route *p_route, bool p_headers
     if (!operation.match(parts[4]).hasMatch()) {
       return invalid();
     }
+    p_route->auditTemplate = QStringLiteral("/api/v1/operations/{operationId}");
     p_route->local = Route::Local::Operation;
     p_route->operationId = parts[4];
     p_route->allowed = "GET";
   } else if (parts.size() >= 6 && parts[3] == QStringLiteral("notebooks") && id(parts[4])) {
     cmd.notebookId = parts[4];
     if (parts.size() == 6 && parts[5] == QStringLiteral("nodes")) {
+      p_route->auditTemplate = QStringLiteral("/api/v1/notebooks/{notebookId}/nodes");
       cmd.kind = ApiCommandKind::ListNodes;
       p_route->allowed = "GET";
     } else if (parts.size() == 6 && parts[5] == QStringLiteral("notes")) {
+      p_route->auditTemplate = QStringLiteral("/api/v1/notebooks/{notebookId}/notes");
       cmd.kind = ApiCommandKind::CreateNote;
       p_route->allowed = "POST";
       p_route->mutation = p_route->body = true;
     } else if (parts.size() >= 7 && parts[5] == QStringLiteral("notes") && id(parts[6])) {
       cmd.nodeId = parts[6];
       if (parts.size() == 7) {
+        p_route->auditTemplate = QStringLiteral("/api/v1/notebooks/{notebookId}/notes/{noteId}");
         p_route->allowed = "GET, PATCH, DELETE";
         cmd.kind = p_request.method == "PATCH"    ? ApiCommandKind::RenameNote
                    : p_request.method == "DELETE" ? ApiCommandKind::TrashNote
@@ -284,6 +293,8 @@ ApiError parseRoute(const HttpRequest &p_request, Route *p_route, bool p_headers
         p_route->body = p_request.method == "PATCH";
         p_route->mutation = p_request.method != "GET";
       } else if (parts.size() == 8 && parts[7] == QStringLiteral("content")) {
+        p_route->auditTemplate =
+            QStringLiteral("/api/v1/notebooks/{notebookId}/notes/{noteId}/content");
         p_route->allowed = "GET, PUT";
         cmd.kind = p_request.method == "PUT" ? ApiCommandKind::ReplaceContent
                                              : ApiCommandKind::ReadContent;
@@ -292,6 +303,8 @@ ApiError parseRoute(const HttpRequest &p_request, Route *p_route, bool p_headers
           cmd.limit = 65536;
         }
       } else if (parts.size() == 8 && parts[7] == QStringLiteral("append")) {
+        p_route->auditTemplate =
+            QStringLiteral("/api/v1/notebooks/{notebookId}/notes/{noteId}/append");
         p_route->allowed = "POST";
         cmd.kind = ApiCommandKind::AppendContent;
         p_route->mutation = p_route->body = true;
@@ -545,8 +558,8 @@ struct ApiServer::Impl {
     return auth.authenticate(authorization.sliced(7));
   }
 
-  std::optional<HttpResponse> admit(const HttpRequest &p_request) const {
-    const auto requestId = QUuid::createUuid().toString(QUuid::Id128);
+  std::optional<HttpResponse> admit(HttpRequest &p_request) const {
+    const auto &requestId = p_request.audit.requestId;
     if (shared->stopping.load()) {
       return problem({503, QStringLiteral("stopping"), QStringLiteral("The API is stopping")},
                      requestId);
@@ -571,8 +584,10 @@ struct ApiServer::Impl {
                       QStringLiteral("A valid bearer token is required")},
                      requestId);
     }
+    p_request.audit.principalId = identity->tokenId;
     Route route;
     const auto error = parseRoute(p_request, &route, true);
+    p_request.audit.routeTemplate = route.auditTemplate;
     if (error.status) {
       auto response = problem(error, requestId);
       if (error.status == 405) {
@@ -604,11 +619,11 @@ struct ApiServer::Impl {
     return {};
   }
 
-  HttpResponse handle(const HttpRequest &p_request) {
+  HttpResponse handle(HttpRequest &p_request) {
     if (auto denial = admit(p_request)) {
       return std::move(*denial);
     }
-    const auto requestId = QUuid::createUuid().toString(QUuid::Id128);
+    const auto &requestId = p_request.audit.requestId;
     const auto identity = principal(p_request);
     if (!identity) {
       return problem({401, QStringLiteral("invalid_token"),
@@ -617,6 +632,7 @@ struct ApiServer::Impl {
     }
     Route route;
     const auto error = parseRoute(p_request, &route, false);
+    p_request.audit.routeTemplate = route.auditTemplate;
     if (error.status) {
       return problem(error, requestId);
     }
@@ -660,7 +676,7 @@ struct ApiServer::Impl {
     context.cancelled = std::make_shared<std::atomic_bool>(false);
     if (route.mutation) {
       ApiError admissionError;
-      const auto operation = shared->operations.admit(identity->tokenId, context.authorized,
+      const auto operation = shared->operations.admit(p_request.audit, context.authorized,
                                                       context.cancelled, &admissionError);
       if (admissionError.status) {
         return problem(admissionError, requestId);
@@ -788,9 +804,11 @@ bool ApiServer::start(const HttpServerOptions &p_options, QString *p_error) {
                                                              : p_options.address.toLatin1()) +
                  ':' + QByteArray::number(p_options.port);
   m_impl->maxBodyBytes = p_options.maxBodyBytes;
+  auto options = p_options;
+  options.accessObserver = logApiAccess;
   const bool result = m_impl->http.start(
-      p_options, [impl = m_impl.get()](const HttpRequest &request) { return impl->admit(request); },
-      [impl = m_impl.get()](const HttpRequest &request) { return impl->handle(request); }, p_error);
+      options, [impl = m_impl.get()](HttpRequest &request) { return impl->admit(request); },
+      [impl = m_impl.get()](HttpRequest &request) { return impl->handle(request); }, p_error);
   m_impl->started = result;
   return result;
 }

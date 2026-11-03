@@ -827,7 +827,7 @@
       "description": "Exactly one quoted strong saved noteStateVersion. Reject W/, wildcard, list and duplicate headers. The HTTP response-page ETag is not this value."
   "headers":
     "RequestId":
-      "description": "Server-generated safe request correlation ID. Client values are not trusted."
+      "description": "Server-generated safe request correlation ID shared with the API access audit and asynchronous operation records. Exactly one response header; client values are not trusted."
       "schema":
         "type": "string"
     "NoStore":

@@ -52,6 +52,23 @@ parsing.
   is the socket peer; forwarded headers never rewrite it. TLS belongs to the
   same-host HTTPS reverse proxy, not the embedded listener.
 
+## Access observation
+
+`HttpServerOptions::accessObserver` receives owned, payload-free `HttpAccessRecord` values,
+not raw requests/responses. It is optional and synchronous on workers (or the accept loop for
+queue rejection); captures must survive stop/join and observers must not call lifecycle APIs.
+The transport assigns one lazy UUID and an allowlisted method. Admission/Handler may annotate
+only verified `HttpRequest::audit.principalId` and a static `routeTemplate`, not raw fields.
+With an observer installed, post-routing replaces all X-Request-Id fields with that one UUID.
+
+The pinned httplib logger fires BEFORE writing. It only records selected status/method; the
+outer process_request scope emits after the write attempt, including exceptions and partial
+input. `responseWritten` is write completion, not client receipt. A complete ignored leading
+CRLF followed by EOF/timeout is idle; partial nonempty input, invalid framing and unfinished CR
+are attempts. Reset worker-local pointers on every exit. Observer exceptions produce a fixed
+safe warning and must not escape scope cleanup. Queue/stopping/socket-setup rejections have a
+fixed enum reason and no fabricated HTTP identity/status. No API/logging dependency lives here.
+
 ## Finite resources and shutdown
 
 Defaults: four fixed workers, sixteen queued accepted connections, 1 MiB decoded

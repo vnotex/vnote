@@ -1,5 +1,7 @@
 #include "apioperations.h"
 
+#include "apiaudit.h"
+
 #include <QMutexLocker>
 #include <QUuid>
 #include <algorithm>
@@ -27,7 +29,7 @@ void ApiOperations::prune() {
   }
 }
 
-QString ApiOperations::admit(const QString &p_owner, std::function<bool()> p_authorized,
+QString ApiOperations::admit(const HttpAuditContext &p_audit, std::function<bool()> p_authorized,
                              std::shared_ptr<std::atomic_bool> p_cancelled, ApiError *p_error) {
   QMutexLocker lock(&m_mutex);
   prune();
@@ -40,7 +42,7 @@ QString ApiOperations::admit(const QString &p_owner, std::function<bool()> p_aut
   for (const auto &entry : m_entries) {
     if (!entry.completedAt.isValid()) {
       ++active;
-      owned += entry.owner == p_owner;
+      owned += entry.audit.principalId == p_audit.principalId;
     }
   }
   if (active >= 16 || owned >= 4) {
@@ -50,7 +52,8 @@ QString ApiOperations::admit(const QString &p_owner, std::function<bool()> p_aut
   }
   Entry entry;
   entry.id = m_instance + '.' + QUuid::createUuid().toString(QUuid::Id128);
-  entry.owner = p_owner;
+  entry.audit = p_audit;
+  entry.elapsed.start();
   entry.state = QStringLiteral("pending");
   entry.authorized = std::move(p_authorized);
   entry.cancelled = std::move(p_cancelled);
@@ -73,19 +76,37 @@ bool ApiOperations::running(const QString &p_id) {
     it->completionOrder = ++m_completionOrder;
     it->result.error = {401, QStringLiteral("authorization_revoked"),
                         QStringLiteral("The request is no longer authorized")};
+    it->auditCompleted = true;
+    logApiOperation(it->audit, it->id, it->elapsed.elapsed(), it->state, it->result, true);
     prune();
     return false;
   }
   it->state = QStringLiteral("running");
+  it->awaitingResult = true;
   return true;
 }
 
 void ApiOperations::complete(const QString &p_id, ApiResult p_result) {
   QMutexLocker lock(&m_mutex);
   auto it = m_entries.find(p_id);
-  if (it == m_entries.end() || it->completedAt.isValid() || m_stopped) {
+  if (it == m_entries.end() || it->auditCompleted) {
     return;
   }
+  if (it->completedAt.isValid() || m_stopped) {
+    if (it->awaitingResult) {
+      it->awaitingResult = false;
+      it->auditCompleted = true;
+      // Stop can detach domain work and synthesize an uncommitted result. Only a
+      // positive commitment is authoritative after that boundary; never imply rollback.
+      const auto state =
+          p_result.error.status ? QStringLiteral("failed") : QStringLiteral("succeeded");
+      logApiOperation(it->audit, it->id, it->elapsed.elapsed(), state, p_result,
+                      p_result.committed);
+    }
+    return;
+  }
+  it->awaitingResult = false;
+  it->auditCompleted = true;
   it->state = p_result.error.status ? QStringLiteral("failed") : QStringLiteral("succeeded");
   if (!p_result.committed && it->cancelled->load()) {
     it->state = QStringLiteral("cancelled");
@@ -93,6 +114,7 @@ void ApiOperations::complete(const QString &p_id, ApiResult p_result) {
   it->result = std::move(p_result);
   it->completedAt = QDateTime::currentDateTimeUtc();
   it->completionOrder = ++m_completionOrder;
+  logApiOperation(it->audit, it->id, it->elapsed.elapsed(), it->state, it->result, true);
   prune();
 }
 
@@ -124,7 +146,7 @@ ApiResult ApiOperations::lookup(const QString &p_id, const QString &p_owner) {
             {410, QStringLiteral("operation_gone"),
              QStringLiteral("The operation is from another instance or is no longer retained")}};
   }
-  if (it->owner != p_owner || !it->authorized()) {
+  if (it->audit.principalId != p_owner || !it->authorized()) {
     return {{}, {404, QStringLiteral("not_found"), QStringLiteral("Resource not found")}};
   }
   return {json(*it)};
@@ -141,6 +163,9 @@ void ApiOperations::stop() {
       entry.completedAt = QDateTime::currentDateTimeUtc();
       entry.completionOrder = ++m_completionOrder;
       entry.result.error = {503, QStringLiteral("stopping"), QStringLiteral("The API is stopping")};
+      entry.auditCompleted = !entry.awaitingResult;
+      logApiOperation(entry.audit, entry.id, entry.elapsed.elapsed(), entry.state, entry.result,
+                      !entry.awaitingResult, entry.awaitingResult);
     }
   }
   prune();

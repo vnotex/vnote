@@ -7,6 +7,7 @@
 
 #include <http/httpserver.h>
 
+#include <algorithm>
 #include <atomic>
 #include <chrono>
 #include <condition_variable>
@@ -81,6 +82,19 @@ bool waitCount(const std::atomic_int &p_count, int p_expected, int p_timeout = 2
   return p_count.load() >= p_expected;
 }
 
+struct AccessRecords {
+  std::mutex mutex;
+  QList<HttpAccessRecord> events;
+  void append(const HttpAccessRecord &p_record) {
+    std::lock_guard lock(mutex);
+    events.append(p_record);
+  }
+  QList<HttpAccessRecord> snapshot() {
+    std::lock_guard lock(mutex);
+    return events;
+  }
+};
+
 struct Gate {
   std::mutex mutex;
   std::condition_variable changed;
@@ -124,6 +138,8 @@ private slots:
   void ipv6Loopback();
   void keepAliveAndHead();
   void callbackExceptionsAreContained();
+  void accessRecordsCoverRejectedAndPartialRequests();
+  void accessRecordsIgnoreIdleEmptyLines();
 };
 
 void TestHttpServer::rawValuesAndFragmentation() {
@@ -462,10 +478,12 @@ void TestHttpServer::stopInterruptsSockets() {
 }
 
 void TestHttpServer::stopInterruptsSlowReader() {
+  AccessRecords records;
   std::atomic_int handlers{0};
   HttpServer server;
   auto config = options();
   config.ioTimeoutSeconds = 30;
+  config.accessObserver = [&](const HttpAccessRecord &p_record) { records.append(p_record); };
   QVERIFY(server.start(
       config, {},
       [&](const HttpRequest &) {
@@ -485,15 +503,21 @@ void TestHttpServer::stopInterruptsSlowReader() {
   timer.start();
   server.stop();
   QVERIFY(timer.elapsed() < 1500);
+  const auto events = records.snapshot();
+  QCOMPARE(events.size(), 1);
+  QCOMPARE(events[0].status, 200);
+  QVERIFY(!events[0].responseWritten);
 }
 
 void TestHttpServer::boundedWorkersAndQueue() {
+  AccessRecords records;
   Gate gate;
   std::atomic_int entered{0}, active{0}, maximum{0};
   HttpServer server;
   auto config = options();
   config.workerCount = 2;
   config.maxQueuedConnections = 1;
+  config.accessObserver = [&](const HttpAccessRecord &p_record) { records.append(p_record); };
   QVERIFY(server.start(
       config, {},
       [&](const HttpRequest &p_request) {
@@ -532,6 +556,15 @@ void TestHttpServer::boundedWorkersAndQueue() {
   server.stop();
   QCOMPARE(entered.load(), 3);
   QCOMPARE(maximum.load(), 2);
+  const auto events = records.snapshot();
+  QCOMPARE(events.size(), 4);
+  QCOMPARE(std::count_if(events.cbegin(), events.cend(),
+                         [](const HttpAccessRecord &p_event) {
+                           return p_event.rejection == HttpAccessRecord::Rejection::QueueFull &&
+                                  p_event.status == 0 && p_event.context.requestId.isEmpty() &&
+                                  !p_event.responseWritten;
+                         }),
+           1);
 }
 
 void TestHttpServer::lifecycleAndBindConflict() {
@@ -598,9 +631,11 @@ void TestHttpServer::ipv6Loopback() {
 }
 
 void TestHttpServer::keepAliveAndHead() {
+  AccessRecords records;
   HttpServer server;
   auto config = options();
   config.keepAliveRequests = 2;
+  config.accessObserver = [&](const HttpAccessRecord &p_record) { records.append(p_record); };
   QVERIFY(server.start(config, {}, ok, nullptr));
   QTcpSocket socket;
   QVERIFY(connectSocket(socket, server.port()));
@@ -620,6 +655,17 @@ void TestHttpServer::keepAliveAndHead() {
       "GET / HTTP/1.1\r\nHost: localhost\r\nRange: bytes=0-1\r\nConnection: close\r\n\r\n");
   QCOMPARE(status(range), 200);
   QCOMPARE(body(range), QByteArray("complete"));
+  server.stop();
+  const auto events = records.snapshot();
+  QCOMPARE(events.size(), 4);
+  QSet<QString> ids;
+  for (const auto &event : events) {
+    QCOMPARE(event.status, 200);
+    QVERIFY(event.responseWritten);
+    ids.insert(event.context.requestId);
+  }
+  QCOMPARE(ids.size(), 4);
+  QCOMPARE(events[2].context.method, QByteArray("HEAD"));
 }
 
 void TestHttpServer::callbackExceptionsAreContained() {
@@ -649,6 +695,85 @@ void TestHttpServer::callbackExceptionsAreContained() {
   QCOMPARE(status(exchange(server.port(),
                            "GET / HTTP/1.1\r\nHost: localhost\r\nConnection: close\r\n\r\n")),
            200);
+}
+
+void TestHttpServer::accessRecordsCoverRejectedAndPartialRequests() {
+  AccessRecords records;
+  HttpServer server;
+  auto config = options();
+  config.accessObserver = [&](const HttpAccessRecord &p_record) { records.append(p_record); };
+  QVERIFY(server.start(
+      config, {},
+      [](const HttpRequest &p_request) {
+        if (p_request.target == "/throw") {
+          throw std::runtime_error("private detail");
+        }
+        auto response = ok(p_request);
+        response.headers = {{"X-Request-Id", "untrusted"}, {"x-request-id", "duplicate"}};
+        return response;
+      },
+      nullptr));
+  const auto success =
+      exchange(server.port(), "GET / HTTP/1.1\r\nHost: local\r\nConnection: close\r\n\r\n");
+  QCOMPARE(status(success), 200);
+  QCOMPARE(success.toLower().count("x-request-id:"), 1);
+  QVERIFY(!success.contains("untrusted"));
+  QCOMPARE(status(exchange(server.port(), "GET / HTTP/9.9\r\n\r\n")), 400);
+  QCOMPARE(status(exchange(server.port(),
+                           "GET /throw HTTP/1.1\r\nHost: local\r\nConnection: close\r\n\r\n")),
+           500);
+  QVERIFY(exchange(server.port(), "GET /unfinished").isEmpty());
+  server.stop();
+  const auto events = records.snapshot();
+  QCOMPARE(events.size(), 4);
+  const QList<int> expected{200, 400, 500, 0};
+  QSet<QString> ids;
+  for (int i = 0; i < events.size(); ++i) {
+    QCOMPARE(events[i].status, expected[i]);
+    QCOMPARE(events[i].responseWritten, i != 3);
+    QCOMPARE(events[i].context.requestId.size(), 32);
+    QVERIFY(events[i].durationMs >= 0);
+    ids.insert(events[i].context.requestId);
+  }
+  QCOMPARE(ids.size(), 4);
+  QVERIFY(success.contains("X-Request-Id: " + events[0].context.requestId.toLatin1()));
+  QVERIFY(events.last().durationMs >= 500);
+}
+
+void TestHttpServer::accessRecordsIgnoreIdleEmptyLines() {
+  AccessRecords records;
+  HttpServer server;
+  auto config = options();
+  config.accessObserver = [&](const HttpAccessRecord &p_record) { records.append(p_record); };
+  QVERIFY(server.start(config, {}, ok, nullptr));
+  for (const bool closeEarly : {true, false}) {
+    QTcpSocket socket;
+    QVERIFY(connectSocket(socket, server.port()));
+    QVERIFY(sendBytes(socket, "GET / HTTP/1.1\r\nHost: local\r\n\r\n\r\n"));
+    QByteArray response;
+    QDeadlineTimer deadline(2000);
+    while (!response.endsWith("complete") && !deadline.hasExpired()) {
+      socket.waitForReadyRead(static_cast<int>(deadline.remainingTime()));
+      response += socket.readAll();
+    }
+    QCOMPARE(status(response), 200);
+    if (closeEarly) {
+      socket.disconnectFromHost();
+      if (socket.state() != QAbstractSocket::UnconnectedState) {
+        QVERIFY(socket.waitForDisconnected(2000));
+      }
+    } else {
+      receiveClosed(socket);
+      QCOMPARE(socket.state(), QAbstractSocket::UnconnectedState);
+    }
+  }
+  server.stop();
+  const auto events = records.snapshot();
+  QCOMPARE(events.size(), 2);
+  for (const auto &event : events) {
+    QCOMPARE(event.status, 200);
+    QVERIFY(event.responseWritten);
+  }
 }
 
 QTEST_GUILESS_MAIN(TestHttpServer)

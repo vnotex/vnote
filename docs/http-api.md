@@ -67,6 +67,47 @@ editor. Direct authorized access fails with `protected_note_unavailable` (422). 
 notes may have metadata with `contentReadable=false`; content access gives
 `unsupported_note_type` (422). Capability flags, not a filename extension, determine support.
 
+## Access auditing
+
+While the listener is enabled, normal launches write structured JSON messages through the
+`vnote.api.audit` INFO category to the existing `vnote.log` in VNote's local-data directory
+(portable: `config/local/vnote.log`). No `--verbose` flag is required. The normal log prefix
+precedes each JSON object; this is not a separate JSON-lines file.
+
+- `api.access` records each nonempty HTTP attempt observed by a worker, including denied,
+  malformed, partial and timed-out requests. Fields are UTC `timestamp`, server `requestId`,
+  authenticated `tokenId`, allowlisted `method`, matched route template `route`, HTTP `status`,
+  monotonic `durationMs` and `responseWritten`. Unknown fields are JSON null. Unknown methods
+  use `OTHER`; no raw method string is retained. The ID matches the single `X-Request-Id`
+  response header and any problem-body `requestId`; client-supplied IDs are ignored.
+- `tokenId` is null until authentication succeeds, and `route` is null until route matching.
+  The existing Host/Origin/Cookie checks run before authentication. Templates replace resource
+  IDs with placeholders, and never include a query string.
+- `api.operation` records an asynchronous mutation result, joined to its accepting request by
+  `requestId`, with `operationId`, `state`, `status`, `durationMs`, `outcomeKnown`, `committed`
+  and `saved`. A 202 access record means accepted, not committed. Failure can still mean
+  `committed: true`, including a save or post-save failure; never infer rollback from status.
+- Shutdown before dispatch records a known cancellation. Shutdown of a running mutation emits
+  `api.operation_interrupted` with unknown outcome. A retained completion may subsequently emit
+  one `api.operation`: a positive commitment preserves its committed/saved facts; a generic
+  post-stop failure remains `outcomeKnown: false` with null committed/saved. Work detached from
+  the API can finish without a final observable API result; reconcile it rather than replaying.
+- `api.connection_rejected` records accepted connections rejected before HTTP parsing, with
+  fixed reason `queue_full`, `stopping` or `socket_setup_failed`. It invents no request identity
+  or HTTP status. Empty connections, idle keepalive EOF (including one ignored empty line),
+  and connections dropped outside the application are not HTTP access records.
+
+Audit messages contain no bearer secrets, verifier hashes, labels, note names/content, search
+queries, raw URLs, filesystem paths, request/response headers or arbitrary backend error text.
+`responseWritten` means the server completed its write, not proof the client received it;
+`status` is null if no response was prepared. Durations exclude time waiting in the socket queue.
+
+These are **operational logs, not tamper-proof or crash-durable security records**. `--quiet`
+or INFO category filters suppress them; debug builds and `--log-stderr` use stderr. An
+unwritable log file falls back to stderr. The existing logger truncates `vnote.log` on the next
+startup if it is at least 5 MiB; it does not cap growth during a session or retain rotated files.
+Preserve logs externally when retention is required. See [logging](logging.md).
+
 ## Notebook types
 
 Granted, currently open **raw and bundled notebooks** use the same listing, saved/live read,

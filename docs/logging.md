@@ -16,6 +16,25 @@ VNote defines the following logging categories:
 | `lcVxBridge` | `vnote.vxbridge` | VxCore library integration and communication |
 | `lcUi` | `vnote.ui` | User interface events and state changes |
 | `lcConfig` | `vnote.config` | Configuration loading and management |
+| `lcApiAudit` (API-local) | `vnote.api.audit` | Privacy-safe HTTP access and asynchronous mutation audit records |
+
+## HTTP API Access Auditing
+
+Normal launches emit compact JSON at INFO for API requests/rejections and asynchronous mutation
+results. Look for `"event":"api.access"`, `api.operation`, `api.operation_interrupted` and
+`api.connection_rejected` after the normal log prefix. Join request and operation records by the
+server-generated `requestId`, also returned as `X-Request-Id`. Records include UTC timestamps,
+route templates, authenticated token IDs (never bearer secrets), status and monotonic duration.
+Unknown outcomes are explicit, not rollback claims. Field semantics and privacy exclusions:
+[HTTP API access auditing](http-api.md#access-auditing).
+
+This uses the existing log sink: `--quiet` and INFO filters suppress it; debug builds and
+`--log-stderr` use stderr. File mode writes local-data `vnote.log` (portable
+`config/local/vnote.log`), falling back to stderr if it cannot open the file. At startup a file
+of at least 5 MiB is truncated, not archived; within a session it can grow beyond that size.
+There is no tamper protection, per-record fsync or crash-durable audit guarantee. Preserve logs
+externally for longer retention; enabling audit logging does not change application behavior
+when logging is unavailable.
 
 ## Git Sync Diagnostics
 

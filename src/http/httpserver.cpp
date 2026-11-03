@@ -9,6 +9,9 @@
 #endif
 #include <httplib.h>
 
+#include <QDebug>
+#include <QUuid>
+
 #include <algorithm>
 #include <atomic>
 #include <cerrno>
@@ -105,6 +108,9 @@ public:
   bool failed() const { return m_invalid || m_stopping.load() || Clock::now() >= m_readDeadline; }
 
   bool tooLarge() const { return m_tooLarge; }
+
+  // One complete leading CRLF followed by EOF/timeout is idle, not an access.
+  bool hasRequestInput() const { return m_nonEmptyInput || m_invalid || m_previous == '\r'; }
 
   ssize_t read(char *p_data, size_t p_size) override {
     if (failed()) {
@@ -204,6 +210,7 @@ private:
   void account(const char *p_data, size_t p_size) {
     for (size_t i = 0; i < p_size && m_phase != Phase::Body; ++i) {
       const char ch = p_data[i];
+      m_nonEmptyInput = m_nonEmptyInput || (ch != '\r' && ch != '\n');
       if (remaining() == 0) {
         m_tooLarge = m_invalid = true;
         return;
@@ -235,6 +242,7 @@ private:
   size_t m_lineBytes = 0;
   size_t m_headerBytes = 0;
   char m_previous = 0;
+  bool m_nonEmptyInput = false;
   bool m_invalid = false;
   bool m_tooLarge = false;
   Clock::time_point m_readDeadline = Clock::time_point::max();
@@ -244,6 +252,26 @@ private:
 // Each upstream callback executes synchronously inside process_request() on
 // this worker. The scoped pointer never escapes the callback or its stack.
 thread_local BoundedStream *currentStream = nullptr;
+thread_local HttpAccessRecord *currentAccess = nullptr;
+
+void ensureRequestId() {
+  if (currentAccess && currentAccess->context.requestId.isEmpty()) {
+    currentAccess->context.requestId = QUuid::createUuid().toString(QUuid::Id128);
+  }
+}
+
+QByteArray auditMethod(const std::string &p_method) {
+  static const QByteArray methods[] = {
+      QByteArrayLiteral("GET"),     QByteArrayLiteral("HEAD"),  QByteArrayLiteral("POST"),
+      QByteArrayLiteral("PUT"),     QByteArrayLiteral("PATCH"), QByteArrayLiteral("DELETE"),
+      QByteArrayLiteral("OPTIONS"), QByteArrayLiteral("TRACE"), QByteArrayLiteral("CONNECT")};
+  for (const auto &method : methods) {
+    if (p_method == method.constData()) {
+      return method;
+    }
+  }
+  return p_method.empty() ? QByteArray() : QByteArrayLiteral("OTHER");
+}
 
 void setResponse(httplib::Response &p_target, HttpResponse p_response, bool p_close = false) {
   if (p_response.status < 200 || p_response.status > 599) {
@@ -314,6 +342,29 @@ public:
         setResponse(p_response, failure(p_response.status), true);
       }
     });
+    if (m_options.accessObserver) {
+      set_post_routing_handler([](const httplib::Request &, httplib::Response &p_response) {
+        ensureRequestId();
+        if (currentAccess) {
+          // set_header emplaces: replace all values, including application-provided ones.
+          p_response.headers.erase("X-Request-Id");
+          p_response.set_header("X-Request-Id", currentAccess->context.requestId.toStdString());
+        }
+      });
+      set_logger([](const httplib::Request &p_request, const httplib::Response &p_response) {
+        if (currentAccess) {
+          currentAccess->status = p_response.status;
+          if (currentAccess->context.method.isEmpty()) {
+            currentAccess->context.method = auditMethod(p_request.method);
+          }
+        }
+      });
+      set_error_logger([this](const httplib::Error &p_error, const httplib::Request *) {
+        if (p_error == httplib::Error::ResourceExhaustion) {
+          rejectConnection(HttpAccessRecord::Rejection::QueueFull);
+        }
+      });
+    }
     m_sockets.reserve(static_cast<size_t>(m_options.workerCount));
     new_task_queue = [this] { return m_pool.release(); };
     // Create all workers before binding or publishing listener readiness.
@@ -340,10 +391,30 @@ public:
   }
 
 private:
+  void observe(const HttpAccessRecord &p_record) const noexcept {
+    if (!m_options.accessObserver) {
+      return;
+    }
+    try {
+      m_options.accessObserver(p_record);
+    } catch (...) {
+      qWarning("HTTP access observer failed");
+    }
+  }
+
+  void rejectConnection(HttpAccessRecord::Rejection p_reason) const {
+    if (m_options.accessObserver) {
+      HttpAccessRecord record;
+      record.rejection = p_reason;
+      observe(record);
+    }
+  }
+
   bool process_and_close_socket(socket_t p_socket) override {
     {
       std::lock_guard<std::mutex> lock(m_socketsMutex);
       if (m_stopping.load()) {
+        rejectConnection(HttpAccessRecord::Rejection::Stopping);
         httplib::detail::shutdown_socket(p_socket);
         httplib::detail::close_socket(p_socket);
         return false;
@@ -356,6 +427,7 @@ private:
       const bool configured = flags >= 0 && fcntl(p_socket, F_SETFL, flags | O_NONBLOCK) == 0;
 #endif
       if (!configured) {
+        rejectConnection(HttpAccessRecord::Rejection::SocketSetupFailed);
         httplib::detail::close_socket(p_socket);
         return false;
       }
@@ -371,14 +443,29 @@ private:
           read_timeout_usec_, write_timeout_sec_, write_timeout_usec_,
           [&](httplib::Stream &p_stream, bool p_close, bool &p_closed) {
             BoundedStream bounded(p_stream, m_options.ioTimeoutSeconds, m_stopping);
+            HttpAccessRecord access;
+            const auto started = m_options.accessObserver ? Clock::now() : Clock::time_point{};
             currentStream = &bounded;
-            const auto reset = httplib::detail::scope_exit([] { currentStream = nullptr; });
-            return process_request(bounded, remote, remotePort, local, localPort, p_close, p_closed,
-                                   [](httplib::Request &p_request) {
-                                     // Byte ranges are application semantics, not an
-                                     // invitation to slice a generic handler's output.
-                                     p_request.ranges.clear();
-                                   });
+            currentAccess = m_options.accessObserver ? &access : nullptr;
+            const auto reset = httplib::detail::scope_exit([&] {
+              if (currentAccess && (bounded.hasRequestInput() || access.status != 0)) {
+                ensureRequestId();
+                access.durationMs =
+                    std::chrono::duration_cast<std::chrono::milliseconds>(Clock::now() - started)
+                        .count();
+                observe(access);
+              }
+              currentAccess = nullptr;
+              currentStream = nullptr;
+            });
+            access.responseWritten =
+                process_request(bounded, remote, remotePort, local, localPort, p_close, p_closed,
+                                [](httplib::Request &p_request) {
+                                  // Byte ranges are application semantics, not an
+                                  // invitation to slice a generic handler's output.
+                                  p_request.ranges.clear();
+                                });
+            return access.responseWritten;
           });
     });
     {
@@ -432,6 +519,17 @@ private:
     }
 
     HttpRequest request;
+    if (currentAccess) {
+      ensureRequestId();
+      currentAccess->context.method = auditMethod(p_request.method);
+      request.audit = currentAccess->context;
+    }
+    const auto retainAudit = httplib::detail::scope_exit([&] {
+      if (currentAccess) {
+        currentAccess->context.principalId = std::move(request.audit.principalId);
+        currentAccess->context.routeTemplate = std::move(request.audit.routeTemplate);
+      }
+    });
     request.method = QByteArray::fromStdString(p_request.method);
     request.target = QByteArray::fromStdString(p_request.target);
     request.peerAddress = QString::fromStdString(p_request.remote_addr);

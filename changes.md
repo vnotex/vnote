@@ -1,5 +1,6 @@
 # Changes
 ## Unreleased
+* Audit HTTP API requests, rejected connections and asynchronous mutation outcomes with privacy-safe structured records and shared request IDs
 * Add Copy to the one-time HTTP API token dialog, remove the token-status footer, and report revocation failures through VNote notifications
 * Simplify token expiry to day presets or Never, retain the 90-day default, and show dates without detailed timestamps
 * Right-align HTTP API New/Revoke/Refresh and Theme Refresh/Open Location action rows
