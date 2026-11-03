@@ -71,26 +71,22 @@ Testing (two suites, two build dirs): [tests/AGENTS.md](tests/AGENTS.md).
 
 Before pushing parent-repository or submodule changes, agents MUST:
 
-1. Determine the affected build and test targets from **all unpushed changes** relative
+1. Determine the affected application/library targets from **all unpushed changes** relative
    to the destination branch, not just the latest commit. Trace shared headers/APIs,
    build configuration and submodule pins to dependent consumers; filenames alone
    are not sufficient. Broaden coverage when the impact cannot be bounded safely.
-2. Successfully build the affected application/library targets and **all test targets**
-   with tests enabled, using a compatible Qt kit, compiler and build configuration.
-   Include targets excluded from the default build and native-editor or standalone
-   submodule test targets in their own build directories. An app-only build does not
-   verify tests. Follow [tests/AGENTS.md](tests/AGENTS.md) for test build configuration.
+2. Successfully build the affected application/library targets using a compatible Qt kit,
+   compiler and build configuration, including required targets excluded from the default build.
 3. Verify the final code/configuration being pushed; rebuild required targets after
    subsequent changes. Report the scope rationale, build commands, results, skips and
    platform limits. If all unpushed changes are documentation-only, check the docs and
-   state that no build/test targets are affected; compilation and tests are not required.
+   state that no application/library targets are affected; compilation is not required.
 
-**Running tests is not required before pushing.** Successful compilation and linking of
-all test targets is sufficient for the local test verification gate; CI test requirements
+**Building and running tests are not required before pushing.** CI test requirements
 remain unchanged.
 
 **Do not push when required builds fail, time out or cannot run.** Fix the cause and
-verify again; never disable tests or exclude required targets just to obtain a successful
+verify again; never exclude required application/library targets just to obtain a successful
 build. If build verification is unavailable, report the exact blocker and obtain an
 explicit user exception before pushing. A local build is not proof that tests pass or
 that other operating systems or packaging gates pass; disclose that limitation.
