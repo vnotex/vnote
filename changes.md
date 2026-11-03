@@ -30,6 +30,7 @@ A feature release with outline mind maps, editable node-note previews, source-aw
     * Always open context-menu links in a new tab across Markdown, Typst and mind maps, regardless of the new-tab preference
     * Allow Never Ask for local-file and custom-protocol link warnings and share the saved opt-out across warning paths
 * **Editing and Markdown**
+    * Add Collapse and Expand to read-mode code-block context menus below Export, using the existing toolbar controls
     * Enable Markdown marker concealment by default and move long-link concealment into the editor menu, with independent persisted preferences and existing opt-outs preserved
     * Fix closing Markdown heading-marker highlighting and preserve syntax backgrounds on the cursor line; update vtextedit and both vendored cmark copies
     * Preserve preformatted and class-hinted HTML code blocks when pasting Markdown, including indentation, language hints and embedded fences, without copying controls or swallowing surrounding prose

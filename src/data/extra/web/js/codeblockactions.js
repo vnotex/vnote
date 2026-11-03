@@ -108,10 +108,42 @@
       constructor() {
         super();
         this.name = 'codeblockactions';
+        this.contextActionId = 0;
+        this.contextAction = null;
+      }
+
+      resolveContextAction(x, y) {
+        this.contextAction = null;
+        const codeToolbar = document.elementFromPoint(x, y)?.closest('div.code-toolbar');
+        if (!codeToolbar || !this.vxcore.contentContainer.contains(codeToolbar)) {
+          return null;
+        }
+        const button = codeToolbar.querySelector('.vx-collapse-btn');
+        if (!button) {
+          return null;
+        }
+        const id = ++this.contextActionId;
+        const collapsed = codeToolbar.classList.contains('vx-collapsed');
+        this.contextAction = {id, button, codeToolbar, collapsed};
+        return {id, collapsed};
+      }
+
+      activateContextAction(id) {
+        const target = this.contextAction;
+        if (!target || target.id !== id) {
+          return;
+        }
+        this.contextAction = null;
+        if (target.button.isConnected && this.vxcore.contentContainer.contains(target.codeToolbar) &&
+            target.codeToolbar.querySelector('.vx-collapse-btn') === target.button &&
+            target.codeToolbar.classList.contains('vx-collapsed') === target.collapsed) {
+          target.button.click();
+        }
       }
 
       registerInternal() {
         this.vxcore.on('basicMarkdownRendered', () => {
+          this.contextAction = null;
           try {
             if (!window.vxOptions.removeCodeToolBarEnabled) {
               actions.bind(this.vxcore.contentContainer);
