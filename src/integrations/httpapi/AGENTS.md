@@ -95,8 +95,8 @@ The Settings page is a view. Issue/revoke are explicit immediate controller
 commands; resetting the page changes no grants. Default token choices are read-only
 and no notebooks selected. Expiry and grants are explicit. The page reports actual
 runtime state when applying settings fails, not merely the persisted enabled flag.
-Show that single controller status beside Enable HTTP API, using Service disabled for the disabled
-service; do not append a second endpoint line or derive status from an unsaved checkbox value.
+Show that single controller status on its own row below Enable HTTP API, using Service disabled
+for the disabled service; do not append a second endpoint line or derive status from an unsaved checkbox value.
 Keep the status plain-text, selectable and wrapping without widening the row; validation errors
 remain below the listener fields.
 

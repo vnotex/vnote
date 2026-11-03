@@ -4,7 +4,6 @@
 #include <QDateTimeEdit>
 #include <QDialog>
 #include <QDialogButtonBox>
-#include <QHBoxLayout>
 #include <QHash>
 #include <QHeaderView>
 #include <QIntValidator>
@@ -60,11 +59,11 @@ void HttpApiPage::setupUI() {
 
   auto *enableRow = new QWidget(this);
   enableRow->setProperty(PropertyDefs::c_settingsRow, true);
-  auto *enableLayout = new QHBoxLayout(enableRow);
+  auto *enableLayout = new QVBoxLayout(enableRow);
   enableLayout->setContentsMargins(16, 6, 16, 6);
-  enableLayout->setSpacing(12);
-  enableLayout->addWidget(m_enabled, 0, Qt::AlignVCenter);
-  enableLayout->addWidget(m_status, 1);
+  enableLayout->setSpacing(2);
+  enableLayout->addWidget(m_enabled);
+  enableLayout->addWidget(m_status);
   listener->addWidget(enableRow);
   addSearchItem(m_enabled->text(), m_enabled);
   connect(m_enabled, &QCheckBox::toggled, this, &HttpApiPage::pageIsChanged);
